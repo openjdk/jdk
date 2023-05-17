@@ -123,17 +123,12 @@ final class CertificateAuthoritiesExtension {
             return authorities;
         }
 
-        X500Principal[] getAuthorities() throws SSLException{
+        X500Principal[] getAuthorities() throws IllegalArgumentException {
             X500Principal[] principals = new X500Principal[authorities.size()];
 
-            try {
-                int i = 0;
-                for (byte[] encoded : authorities) {
-                    principals[i++] = new X500Principal(encoded);
-                }
-            } catch (IllegalArgumentException iae) {
-                throw new SSLException("X500Principal could not be parsed " +
-                        "successfully", iae);
+            int i = 0;
+            for (byte[] encoded : authorities) {
+                principals[i++] = new X500Principal(encoded);
             }
 
             return principals;
@@ -288,7 +283,11 @@ final class CertificateAuthoritiesExtension {
                     new CertificateAuthoritiesSpec(shc, buffer);
 
             // Update the context.
-            shc.peerSupportedAuthorities = spec.getAuthorities();
+            try {
+                shc.peerSupportedAuthorities = spec.getAuthorities();
+            } catch (IllegalArgumentException iae) {
+                shc.conContext.fatal(Alert.DECODE_ERROR, "X500Principal could not be parsed");
+            }
             shc.handshakeExtensions.put(
                     SSLExtension.CH_CERTIFICATE_AUTHORITIES, spec);
 
@@ -409,7 +408,11 @@ final class CertificateAuthoritiesExtension {
                     new CertificateAuthoritiesSpec(chc, buffer);
 
             // Update the context.
-            chc.peerSupportedAuthorities = spec.getAuthorities();
+            try {
+                chc.peerSupportedAuthorities = spec.getAuthorities();
+            } catch (IllegalArgumentException iae) {
+                chc.conContext.fatal(Alert.DECODE_ERROR, "X500Principal could not be parsed");
+            }
             chc.handshakeExtensions.put(
                     SSLExtension.CR_CERTIFICATE_AUTHORITIES, spec);
 
