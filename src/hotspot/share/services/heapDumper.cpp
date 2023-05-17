@@ -56,7 +56,7 @@
 #include "runtime/vmThread.hpp"
 #include "runtime/timerTrace.hpp"
 #include "services/heapDumper.hpp"
-#include "services/heapDumperWriter.hpp"
+#include "services/heapDumperCompression.hpp"
 #include "services/threadService.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"

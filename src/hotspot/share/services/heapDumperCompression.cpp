@@ -32,7 +32,7 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
 #include "services/heapDumper.hpp"
-#include "services/heapDumperWriter.hpp"
+#include "services/heapDumperCompression.hpp"
 
 char const* FileWriter::open_writer() {
   assert(_fd < 0, "Must not already be open");
