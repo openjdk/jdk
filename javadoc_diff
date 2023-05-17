@@ -1,0 +1,88 @@
+diff --git a/src/java.base/share/classes/java/lang/foreign/snippet-files/Snippets.java b/src/java.base/share/classes/java/lang/foreign/snippet-files/Snippets.java
+new file mode 100644
+index 00000000000..01a80301684
+--- /dev/null
++++ b/src/java.base/share/classes/java/lang/foreign/snippet-files/Snippets.java
+@@ -0,0 +1,82 @@
++/*
++ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
++ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
++ *
++ * This code is free software; you can redistribute it and/or modify it
++ * under the terms of the GNU General Public License version 2 only, as
++ * published by the Free Software Foundation.  Oracle designates this
++ * particular file as subject to the "Classpath" exception as provided
++ * by Oracle in the LICENSE file that accompanied this code.
++ *
++ * This code is distributed in the hope that it will be useful, but WITHOUT
++ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
++ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
++ * version 2 for more details (a copy is included in the LICENSE file that
++ * accompanied this code).
++ *
++ * You should have received a copy of the GNU General Public License version
++ * 2 along with this work; if not, write to the Free Software Foundation,
++ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
++ *
++ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
++ * or visit www.oracle.com if you need additional information or have any
++ * questions.
++ */
++package java.lang.foreign.snippets;
++
++import java.lang.foreign.Arena;
++import java.lang.foreign.MemorySegment;
++import java.lang.foreign.ValueLayout;
++
++/**
++ * Snippets for the java.lang.foreign documentation.
++ */
++class Snippets {
++
++    /**
++     * Creates a new snippet.
++     */
++    public Snippets() {
++    }
++
++    // Arena
++
++    void globalArena() {
++        // @start region="global-allocation"
++        MemorySegment segment = Arena.global().allocate(100, 1); // @highlight regex='global()'
++        // ...
++        // segment is never deallocated!
++        // @end
++    }
++
++    void autoArena() {
++        // @start region="auto-allocation"
++        MemorySegment segment = Arena.ofAuto().allocate(100, 1); // @highlight regex='ofAuto()'
++        // ...
++        segment = null; // the segment region becomes available for deallocation after this points
++        // @end
++    }
++
++    void confinedArena() {
++        // @start region="confined-allocation"
++        MemorySegment segment;
++        try (Arena arena = Arena.ofConfined()) { // @highlight regex='ofConfined()'
++            segment = arena.allocate(100);
++            // ...
++        } // segment region deallocated here
++        segment.get(ValueLayout.JAVA_BYTE, 0); // throws IllegalStateException
++        // @end
++    }
++
++    void arenaOverlap() {
++        try (var arena = Arena.ofConfined()) {
++            var S1 = arena.allocate(16L);
++            var S2 = arena.allocate(16L);
++            // @start region="arena-overlap"
++            S1.asOverlappingSlice(S2).isEmpty();
++            // @end
++        }
++    }
++
++
++}

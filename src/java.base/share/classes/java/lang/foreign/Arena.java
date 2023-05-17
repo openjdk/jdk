@@ -164,16 +164,16 @@ import java.lang.foreign.MemorySegment.Scope;
  *          slicingAllocator = SegmentAllocator.slicingAllocator(arena.allocate(size));
  *      }
  *
- *      public void allocate(long byteSize, long byteAlignment) {
- *          return slicingAllocator.allocate(byteSize, byteAlignment);
+ *      public MemorySegment allocate(long byteSize, long byteAlignment) {
+ *            return slicingAllocator.allocate(byteSize, byteAlignment);
  *      }
  *
  *      public MemorySegment.Scope scope() {
- *          return arena.scope();
+ *            return arena.scope();
  *      }
  *
  *      public void close() {
- *          return arena.close();
+ *            arena.close();
  *      }
  * }
  * }

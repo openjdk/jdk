@@ -179,7 +179,6 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
 
     /**
      * {@return the layout size, in bytes}
-     * @throws UnsupportedOperationException if {@code bitSize()} is not a multiple of 8.
      */
     long byteSize();
 
@@ -746,20 +745,20 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      * padding layout} elements. As such, the following struct layout creation will fail with an exception:
      *
      * {@snippet lang = java:
-     * structLayout(JAVA_SHORT, JAVA_INT)
+     * structLayout(JAVA_SHORT, JAVA_INT);
      * }
      *
      * To avoid the exception, clients can either insert additional padding layout elements:
      *
      * {@snippet lang = java:
-     * structLayout(JAVA_SHORT, MemoryLayout.ofPadding(16), JAVA_INT)
+     * structLayout(JAVA_SHORT, MemoryLayout.paddingLayout(16), JAVA_INT);
      * }
      *
      * Or, alternatively, they can use a member layout which features a smaller alignment constraint. This will result
      * in a <em>packed</em> struct layout:
      *
      * {@snippet lang = java:
-     * structLayout(JAVA_SHORT, JAVA_INT.withBitAlignment(16))
+     * structLayout(JAVA_SHORT, JAVA_INT.withBitAlignment(16));
      * }
      */
     static StructLayout structLayout(MemoryLayout... elements) {
