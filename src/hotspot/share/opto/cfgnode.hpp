@@ -457,7 +457,7 @@ public:
 // Runtime Predicates. Together they form a Regular Predicate Block. There are three kinds of Parse Predicates:
 // Loop Parse Predicate, Profiled Loop Parse Predicate (both used by Loop Predication), and Loop Limit Check Parse
 // Predicate (used for integer overflow checks when creating a counted loop).
-// More information about predicates can be found at loopPredicate.cpp.
+// More information about predicates can be found in loopPredicate.cpp.
 class ParsePredicateNode : public IfNode {
   Deoptimization::DeoptReason _deopt_reason;
  public:

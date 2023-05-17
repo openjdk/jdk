@@ -242,7 +242,7 @@ static Node* split_if(IfNode *iff, PhaseIterGVN *igvn) {
     if (phi->in(ii) == con1) {
       req_c++;
     }
-    if (Node::is_maybe_loop_entry(r->in(ii))) {
+    if (Node::may_be_loop_entry(r->in(ii))) {
       // Bail out if splitting through a region with a Parse Predicate input (could
       // also be a loop header before loop opts creates a LoopNode for it).
       return nullptr;
