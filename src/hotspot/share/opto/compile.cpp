@@ -621,6 +621,7 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
                   _for_post_loop_igvn(comp_arena(), 8, 0, nullptr),
                   _unstable_if_traps (comp_arena(), 8, 0, nullptr),
                   _coarsened_locks   (comp_arena(), 8, 0, nullptr),
+                  _pea_objects       (comp_arena(), 8, 0, nullptr),
                   _congraph(nullptr),
                   NOT_PRODUCT(_igv_printer(nullptr) COMMA)
                   _dead_node_list(comp_arena()),

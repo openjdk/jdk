@@ -457,6 +457,7 @@ void PEAState::add_new_allocation(Node* obj) {
 
   if (nfields >= 0) {
     AllocateNode* alloc = obj->in(1)->in(0)->as_Allocate();
+    int idx = Compile::current()->add_pea_object(alloc);
 #ifndef PRODUCT
     // node_idx_t is unsigned. Use static_cast<> here to avoid comparison between signed and unsigned.
     if (PEA_debug_idx > 0 && alloc->_idx != static_cast<node_idx_t>(PEA_debug_idx)) {         // only allow PEA_debug_idx
@@ -479,7 +480,9 @@ void PEAState::add_new_allocation(Node* obj) {
         !ik->can_be_instantiated() || ik->has_finalizer()) {
       return;
     }
-
+    if (idx < PEA_debug_start || idx >= PEA_debug_stop) {
+      return;
+    }
     bool result = _state.put(alloc, new VirtualState(oop_type));
     assert(result, "the key existed in _state");
     add_alias(alloc, obj);
@@ -537,14 +540,14 @@ static void replace_in_map(GraphKit* kit, Node* old, Node* neww) {
 
 EscapedState* PEAState::materialize(GraphKit* kit, Node* var) {
   ObjID alloc = is_alias(var);
+  Compile* C = kit->C;
   assert(alloc != nullptr && get_object_state(alloc)->is_virtual(), "sanity check");
 #ifndef PRODUCT
-  if (Verbose) {
-    tty->print_cr("PEA materializes a virtual object: %d", alloc->_idx);
+  if (Verbose || PEAVerbose) {
+    tty->print_cr("PEA materializes a virtual %d obj%d ", C->get_pea_object(alloc), alloc->_idx);
   }
   Atomic::inc(&peaNumMaterializations);
 #endif
-  Compile* C = kit->C;
   const TypeOopPtr* oop_type = var->as_Type()->type()->is_oopptr();
   Node* objx = kit->materialize_object(alloc, oop_type);
   VirtualState* virt = static_cast<VirtualState*>(get_object_state(alloc));
@@ -552,7 +555,7 @@ EscapedState* PEAState::materialize(GraphKit* kit, Node* var) {
   if (oop_type->isa_instptr()) {
     ciInstanceKlass* ik = oop_type->is_instptr()->instance_klass();
 #ifndef PRODUCT
-    if (Verbose) {
+    if (Verbose || PEAVerbose) {
       tty->print("ciInstanceKlass: ");
       ik->print_name_on(tty);
       tty->cr();

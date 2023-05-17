@@ -48,6 +48,7 @@
 
 class AbstractLockNode;
 class AddPNode;
+class AllocateNode;
 class Block;
 class Bundle;
 class CallGenerator;
@@ -93,6 +94,8 @@ class nmethod;
 class Node_Stack;
 struct Final_Reshape_Counts;
 class VerifyMeetResult;
+
+typedef AllocateNode* ObjID;
 
 enum LoopOptsMode {
   LoopOptsDefault,
@@ -358,6 +361,7 @@ class Compile : public Phase {
   GrowableArray<Node*>  _for_post_loop_igvn;    // List of nodes for IGVN after loop opts are over
   GrowableArray<UnstableIfTrap*> _unstable_if_traps;        // List of ifnodes after IGVN
   GrowableArray<Node_List*> _coarsened_locks;   // List of coarsened Lock and Unlock nodes
+  GrowableArray<ObjID>  _pea_objects;
   ConnectionGraph*      _congraph;
 #ifndef PRODUCT
   IdealGraphPrinter*    _igv_printer;
@@ -721,6 +725,18 @@ class Compile : public Phase {
   void remove_coarsened_lock(Node* n);
   bool coarsened_locks_consistent();
 
+  // PEA tracks all new instances in the current compilation unit
+  // so we could bisect for bugs.
+  int add_pea_object(ObjID obj) {
+    _pea_objects.push(obj);
+    return _pea_objects.length() - 1;
+  }
+  int get_pea_object(ObjID obj) const {
+    return _pea_objects.find(obj);
+  }
+  const GrowableArray<ObjID>& get_pea_objects() const {
+    return _pea_objects;
+  }
   bool       post_loop_opts_phase() { return _post_loop_opts_phase;  }
   void   set_post_loop_opts_phase() { _post_loop_opts_phase = true;  }
   void reset_post_loop_opts_phase() { _post_loop_opts_phase = false; }

@@ -107,6 +107,39 @@ JVMState* ParseGenerator::generate(JVMState* jvms) {
 
   assert(exits.jvms()->same_calls_as(jvms), "sanity");
 
+#ifndef PRODUCT
+  if (PEAVerbose) {
+    for (uint i = 0; i < jvms->depth(); ++i) {
+      tty->print("..");
+    }
+    tty->print("Parse [");
+    method()->print_short_name(tty);
+    tty->print_cr("]  completed.");
+
+    PEAState& as = jvms->alloc_state();
+    auto objs = C->get_pea_objects();
+    bool seen = false;
+    for (int i = 0; i < objs.length(); ++i) {
+      ObjID obj = objs.at(i);
+
+      if (as.contains(obj)) {
+        if (seen) {
+          tty->print_cr("[PEA Allocation State]");
+          seen = true;
+        }
+
+        ObjectState* os = as.get_object_state(obj);
+        tty->print("%4d | Obj%d\t", i, obj->_idx);
+
+        if (os->is_virtual()) {
+          tty->print_cr("V");
+        } else {
+          tty->print_cr("M");
+        }
+      }
+    }
+  }
+#endif
   // Simply return the exit state of the parser,
   // augmented by any exceptional states.
   return exits.transfer_exceptions_into_jvms();

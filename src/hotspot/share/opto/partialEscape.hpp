@@ -116,7 +116,6 @@ class EscapedState: public ObjectState {
 template<typename K, typename V>
 using PEAMap = ResourceHashtable<K, V, 17, /*table_size*/
                                  AnyObj::C_HEAP, mtCompiler>;
-using ObjID = AllocateNode*;
 
 class PEAState {
   friend class Parse;
