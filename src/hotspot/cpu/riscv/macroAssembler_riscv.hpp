@@ -430,6 +430,10 @@ class MacroAssembler: public Assembler {
   void load_sized_value(Register dst, Address src, size_t size_in_bytes, bool is_signed);
   void store_sized_value(Address dst, Register src, size_t size_in_bytes);
 
+  // Misaligned loads, will use the best way, according to the AvoidUnalignedAccess flag
+  void load_int_misaligned(Register dst, Address src, Register tmp, bool is_signed, int granularity = 1);
+  void load_long_misaligned(Register dst, Address src, Register tmp, int granularity = 1);
+
  public:
   // Standard pseudo instructions
   inline void nop() {
@@ -689,6 +693,7 @@ public:
   void la(Register Rd, const address dest);
   void la(Register Rd, const Address &adr);
 
+  void li16u(Register Rd, int32_t imm);
   void li32(Register Rd, int32_t imm);
   void li64(Register Rd, int64_t imm);
   void li  (Register Rd, int64_t imm);  // optimized load immediate
@@ -1264,7 +1269,7 @@ public:
     vmnand_mm(vd, vs, vs);
   }
 
-  inline void vncvt_x_x_w(VectorRegister vd, VectorRegister vs, VectorMask vm) {
+  inline void vncvt_x_x_w(VectorRegister vd, VectorRegister vs, VectorMask vm = unmasked) {
     vnsrl_wx(vd, vs, x0, vm);
   }
 
@@ -1274,6 +1279,45 @@ public:
 
   inline void vfneg_v(VectorRegister vd, VectorRegister vs) {
     vfsgnjn_vv(vd, vs, vs);
+  }
+
+  inline void vmsgt_vv(VectorRegister vd, VectorRegister vs2, VectorRegister vs1, VectorMask vm = unmasked) {
+    vmslt_vv(vd, vs1, vs2, vm);
+  }
+
+  inline void vmsgtu_vv(VectorRegister vd, VectorRegister vs2, VectorRegister vs1, VectorMask vm = unmasked) {
+    vmsltu_vv(vd, vs1, vs2, vm);
+  }
+
+  inline void vmsge_vv(VectorRegister vd, VectorRegister vs2, VectorRegister vs1, VectorMask vm = unmasked) {
+    vmsle_vv(vd, vs1, vs2, vm);
+  }
+
+  inline void vmsgeu_vv(VectorRegister vd, VectorRegister vs2, VectorRegister vs1, VectorMask vm = unmasked) {
+    vmsleu_vv(vd, vs1, vs2, vm);
+  }
+
+  inline void vmfgt_vv(VectorRegister vd, VectorRegister vs2, VectorRegister vs1, VectorMask vm = unmasked) {
+    vmflt_vv(vd, vs1, vs2, vm);
+  }
+
+  inline void vmfge_vv(VectorRegister vd, VectorRegister vs2, VectorRegister vs1, VectorMask vm = unmasked) {
+    vmfle_vv(vd, vs1, vs2, vm);
+  }
+
+  // Copy mask register
+  inline void vmmv_m(VectorRegister vd, VectorRegister vs) {
+    vmand_mm(vd, vs, vs);
+  }
+
+  // Clear mask register
+  inline void vmclr_m(VectorRegister vd) {
+    vmxor_mm(vd, vd, vd);
+  }
+
+  // Set mask register
+  inline void vmset_m(VectorRegister vd) {
+    vmxnor_mm(vd, vd, vd);
   }
 
   static const int zero_words_block_size;
@@ -1379,6 +1423,10 @@ private:
 
   void load_reserved(Register addr, enum operand_size size, Assembler::Aqrl acquire);
   void store_conditional(Register addr, Register new_val, enum operand_size size, Assembler::Aqrl release);
+
+public:
+  void fast_lock(Register obj, Register hdr, Register tmp1, Register tmp2, Label& slow);
+  void fast_unlock(Register obj, Register hdr, Register tmp1, Register tmp2, Label& slow);
 };
 
 #ifdef ASSERT

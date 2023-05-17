@@ -37,12 +37,10 @@ G1FullGCJFRTracerMark::~G1FullGCJFRTracerMark() {
 }
 
 G1FullGCScope::G1FullGCScope(G1MonitoringSupport* monitoring_support,
-                             bool explicit_gc,
                              bool clear_soft,
                              bool do_maximal_compaction,
                              G1FullGCTracer* tracer) :
     _rm(),
-    _explicit_gc(explicit_gc),
     _do_maximal_compaction(do_maximal_compaction),
     _g1h(G1CollectedHeap::heap()),
     _svc_marker(SvcGCMarker::FULL),
@@ -56,10 +54,6 @@ G1FullGCScope::G1FullGCScope(G1MonitoringSupport* monitoring_support,
     _region_compaction_threshold(do_maximal_compaction ?
                                  HeapRegion::GrainWords :
                                  (1 - MarkSweepDeadRatio / 100.0) * HeapRegion::GrainWords) { }
-
-bool G1FullGCScope::is_explicit_gc() {
-  return _explicit_gc;
-}
 
 bool G1FullGCScope::should_clear_soft_refs() {
   return _soft_refs.should_clear();

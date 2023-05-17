@@ -60,13 +60,13 @@ protected:
                       CardTable* card_table,
                       const BarrierSet::FakeRtti& fake_rtti);
 
- public:
+public:
   CardTableBarrierSet(CardTable* card_table);
-  ~CardTableBarrierSet();
+  virtual ~CardTableBarrierSet();
 
   CardTable* card_table() const { return _card_table; }
 
-  virtual void initialize();
+  void initialize();
 
   void write_region(JavaThread* thread, MemRegion mr) {
     invalidate(mr);

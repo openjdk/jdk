@@ -921,7 +921,7 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
 //   object  - Address of the object to be locked.
 //
 void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
-  if (UseHeavyMonitors) {
+  if (LockingMode == LM_MONITOR) {
     call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter), monitor);
   } else {
     // template code:
@@ -1037,7 +1037,7 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
 //
 // Throw IllegalMonitorException if object is not locked by current thread.
 void InterpreterMacroAssembler::unlock_object(Register monitor) {
-  if (UseHeavyMonitors) {
+  if (LockingMode == LM_MONITOR) {
     call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorexit), monitor);
   } else {
 
@@ -1171,7 +1171,7 @@ void InterpreterMacroAssembler::call_from_interpreter(Register Rtarget_method, R
   // to meet the abi scratch requirements.
   // The max_stack pointer will get restored by means of the GR_Lmax_stack local in
   // the return entry of the interpreter.
-  addi(Rscratch2, R15_esp, Interpreter::stackElementSize - frame::abi_reg_args_size);
+  addi(Rscratch2, R15_esp, Interpreter::stackElementSize - frame::top_ijava_frame_abi_size);
   clrrdi(Rscratch2, Rscratch2, exact_log2(frame::alignment_in_bytes)); // round towards smaller address
   resize_frame_absolute(Rscratch2, Rscratch2, R0);
 
@@ -2186,7 +2186,7 @@ void InterpreterMacroAssembler::save_interpreter_state(Register scratch) {
 void InterpreterMacroAssembler::restore_interpreter_state(Register scratch, bool bcp_and_mdx_only, bool restore_top_frame_sp) {
   ld_ptr(scratch, _abi0(callers_sp), R1_SP);   // Load frame pointer.
   if (restore_top_frame_sp) {
-    // After thawing the top frame of a continuation we reach here with frame::abi_minframe.
+    // After thawing the top frame of a continuation we reach here with frame::java_abi.
     // therefore we have to restore top_frame_sp before the assertion below.
     assert(!bcp_and_mdx_only, "chose other registers");
     Register tfsp = R18_locals;
@@ -2211,7 +2211,7 @@ void InterpreterMacroAssembler::restore_interpreter_state(Register scratch, bool
   {
     Label Lok;
     subf(R0, R1_SP, scratch);
-    cmpdi(CCR0, R0, frame::abi_reg_args_size + frame::ijava_state_size);
+    cmpdi(CCR0, R0, frame::top_ijava_frame_abi_size + frame::ijava_state_size);
     bge(CCR0, Lok);
     stop("frame too small (restore istate)");
     bind(Lok);

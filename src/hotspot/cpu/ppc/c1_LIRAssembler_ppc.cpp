@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2022 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1834,7 +1834,7 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
 
   // Set up the arraycopy stub information.
   ArrayCopyStub* stub = op->stub();
-  const int frame_resize = frame::abi_reg_args_size - sizeof(frame::jit_abi); // C calls need larger frame.
+  const int frame_resize = frame::native_abi_reg_args_size - sizeof(frame::java_abi); // C calls need larger frame.
 
   // Always do stub if no type information is available. It's ok if
   // the known type isn't loaded since the code sanity checks
@@ -2686,7 +2686,7 @@ void LIR_Assembler::emit_lock(LIR_OpLock* op) {
   // Obj may not be an oop.
   if (op->code() == lir_lock) {
     MonitorEnterStub* stub = (MonitorEnterStub*)op->stub();
-    if (!UseHeavyMonitors) {
+    if (LockingMode != LM_MONITOR) {
       assert(BasicLock::displaced_header_offset_in_bytes() == 0, "lock_reg must point to the displaced header");
       // Add debug info for NullPointerException only if one is possible.
       if (op->info() != nullptr) {
@@ -2712,7 +2712,7 @@ void LIR_Assembler::emit_lock(LIR_OpLock* op) {
     }
   } else {
     assert (op->code() == lir_unlock, "Invalid code, expected lir_unlock");
-    if (!UseHeavyMonitors) {
+    if (LockingMode != LM_MONITOR) {
       assert(BasicLock::displaced_header_offset_in_bytes() == 0, "lock_reg must point to the displaced header");
       __ unlock_object(hdr, obj, lock, *op->stub()->entry());
     } else {

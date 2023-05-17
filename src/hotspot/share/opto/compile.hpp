@@ -373,7 +373,6 @@ class Compile : public Phase {
   DEBUG_ONLY(Unique_Node_List* _modified_nodes;)   // List of nodes which inputs were modified
   DEBUG_ONLY(bool       _phase_optimize_finished;) // Used for live node verification while creating new nodes
 
-  debug_only(static int _debug_idx;)            // Monotonic counter (not reset), use -XX:BreakAtNode=<idx>
   Arena                 _node_arena;            // Arena for new-space Nodes
   Arena                 _old_arena;             // Arena for old-space Nodes, lifetime during xform
   RootNode*             _root;                  // Unique root of compilation, or null after bail-out.
@@ -780,8 +779,6 @@ class Compile : public Phase {
   uint         unique() const              { return _unique; }
   uint         next_unique()               { return _unique++; }
   void         set_unique(uint i)          { _unique = i; }
-  static int   debug_idx()                 { return debug_only(_debug_idx)+0; }
-  static void  set_debug_idx(int i)        { debug_only(_debug_idx = i); }
   Arena*       node_arena()                { return &_node_arena; }
   Arena*       old_arena()                 { return &_old_arena; }
   RootNode*    root() const                { return _root; }

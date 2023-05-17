@@ -412,6 +412,8 @@
   template(run_finalization_name,                     "runFinalization")                          \
   template(dispatchUncaughtException_name,            "dispatchUncaughtException")                \
   template(loadClass_name,                            "loadClass")                                \
+  template(notifyJvmtiStart_name,                     "notifyJvmtiStart")                         \
+  template(notifyJvmtiEnd_name,                       "notifyJvmtiEnd")                           \
   template(notifyJvmtiMount_name,                     "notifyJvmtiMount")                         \
   template(notifyJvmtiUnmount_name,                   "notifyJvmtiUnmount")                       \
   template(notifyJvmtiHideFrames_name,                "notifyJvmtiHideFrames")                    \
@@ -756,6 +758,8 @@
   template(encodeThrowable_name,                       "encodeThrowable")                                         \
   template(encodeThrowable_signature,                  "(Ljava/lang/Throwable;JI)I")                              \
   template(decodeAndThrowThrowable_name,               "decodeAndThrowThrowable")                                 \
+  template(encodeAnnotations_name,                     "encodeAnnotations")                                       \
+  template(encodeAnnotations_signature,                "([BLjava/lang/Class;Ljdk/internal/reflect/ConstantPool;Z[Ljava/lang/Class;)[B")\
   template(decodeAndThrowThrowable_signature,          "(JZ)V")                                                   \
   template(classRedefinedCount_name,                   "classRedefinedCount")                                     \
   template(classLoader_name,                           "classLoader")                                             \

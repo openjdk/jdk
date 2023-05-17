@@ -280,9 +280,15 @@ void TemplateTable::bipush() {
 
 void TemplateTable::sipush() {
   transition(vtos, itos);
-  __ load_unsigned_short(x10, at_bcp(1));
-  __ revb_w_w(x10, x10);
-  __ sraiw(x10, x10, 16);
+  if (AvoidUnalignedAccesses) {
+    __ load_signed_byte(x10, at_bcp(1));
+    __ load_unsigned_byte(t1, at_bcp(2));
+    __ slli(x10, x10, 8);
+    __ add(x10, x10, t1);
+  } else {
+    __ load_unsigned_short(x10, at_bcp(1));
+    __ revb_h_h(x10, x10); // reverse bytes in half-word and sign-extend
+  }
 }
 
 void TemplateTable::ldc(LdcType type) {
@@ -368,7 +374,8 @@ void TemplateTable::fast_aldc(LdcType type) {
   // We are resolved if the resolved reference cache entry contains a
   // non-null object (String, MethodType, etc.)
   assert_different_registers(result, tmp);
-  __ get_cache_index_at_bcp(tmp, 1, index_size);
+  // register result is trashed by next load, let's use it as temporary register
+  __ get_cache_index_at_bcp(tmp, result, 1, index_size);
   __ load_resolved_reference_at_index(result, tmp);
   __ bnez(result, resolved);
 
@@ -1600,12 +1607,6 @@ void TemplateTable::float_cmp(bool is_float, int unordered_result) {
 }
 
 void TemplateTable::branch(bool is_jsr, bool is_wide) {
-  // We might be moving to a safepoint.  The thread which calls
-  // Interpreter::notice_safepoints() will effectively flush its cache
-  // when it makes a system call, but we need to do something to
-  // ensure that we see the changed dispatch table.
-  __ membar(MacroAssembler::LoadLoad);
-
   __ profile_taken_branch(x10, x11);
   const ByteSize be_offset = MethodCounters::backedge_counter_offset() +
                              InvocationCounter::counter_offset();
@@ -1614,8 +1615,15 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
 
   // load branch displacement
   if (!is_wide) {
-    __ lhu(x12, at_bcp(1));
-    __ revb_h_h(x12, x12); // reverse bytes in half-word and sign-extend
+    if (AvoidUnalignedAccesses) {
+      __ lb(x12, at_bcp(1));
+      __ lbu(t1, at_bcp(2));
+      __ slli(x12, x12, 8);
+      __ add(x12, x12, t1);
+    } else {
+      __ lhu(x12, at_bcp(1));
+      __ revb_h_h(x12, x12); // reverse bytes in half-word and sign-extend
+    }
   } else {
     __ lwu(x12, at_bcp(1));
     __ revb_w_w(x12, x12); // reverse bytes in word and sign-extend
@@ -1854,12 +1862,6 @@ void TemplateTable::if_acmp(Condition cc) {
 
 void TemplateTable::ret() {
   transition(vtos, vtos);
-  // We might be moving to a safepoint.  The thread which calls
-  // Interpreter::notice_safepoints() will effectively flush its cache
-  // when it makes a system call, but we need to do something to
-  // ensure that we see the changed dispatch table.
-  __ membar(MacroAssembler::LoadLoad);
-
   locals_index(x11);
   __ ld(x11, aaddress(x11, t1, _masm)); // get return bci, compute return bcp
   __ profile_ret(x11, x12);
@@ -2020,7 +2022,7 @@ void TemplateTable::fast_binaryswitch() {
     // else [i = h]
     // Convert array[h].match to native byte-ordering before compare
     __ shadd(temp, h, array, temp, 3);
-    __ ld(temp, Address(temp, 0));
+    __ lwu(temp, Address(temp, 0));
     __ revb_w_w(temp, temp); // reverse bytes in word (32bit) and sign-extend
 
     Label L_done, L_greater;
@@ -2043,7 +2045,7 @@ void TemplateTable::fast_binaryswitch() {
   Label default_case;
   // Convert array[i].match to native byte-ordering before compare
   __ shadd(temp, i, array, temp, 3);
-  __ ld(temp, Address(temp, 0));
+  __ lwu(temp, Address(temp, 0));
   __ revb_w_w(temp, temp); // reverse bytes in word (32bit) and sign-extend
   __ bne(key, temp, default_case);
 

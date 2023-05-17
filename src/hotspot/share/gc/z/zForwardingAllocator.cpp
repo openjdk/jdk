@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,9 @@
 #include "memory/allocation.inline.hpp"
 
 ZForwardingAllocator::ZForwardingAllocator() :
-    _start(NULL),
-    _end(NULL),
-    _top(NULL) {}
+    _start(nullptr),
+    _end(nullptr),
+    _top(nullptr) {}
 
 ZForwardingAllocator::~ZForwardingAllocator() {
   FREE_C_HEAP_ARRAY(char, _start);

@@ -623,14 +623,14 @@ ciInstanceKlass* ciInstanceKlass::implementor() {
     } else {
       // Go into the VM to fetch the implementor.
       VM_ENTRY_MARK;
-      MutexLocker ml(Compile_lock);
-      Klass* k = get_instanceKlass()->implementor();
-      if (k != nullptr) {
-        if (k == get_instanceKlass()) {
+      InstanceKlass* ik = get_instanceKlass();
+      Klass* implk = ik->implementor();
+      if (implk != nullptr) {
+        if (implk == ik) {
           // More than one implementors. Use 'this' in this case.
           impl = this;
         } else {
-          impl = CURRENT_THREAD_ENV->get_instance_klass(k);
+          impl = CURRENT_THREAD_ENV->get_instance_klass(implk);
         }
       }
     }

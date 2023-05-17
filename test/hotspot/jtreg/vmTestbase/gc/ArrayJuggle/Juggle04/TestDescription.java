@@ -35,7 +35,7 @@
  *      -XX:+HeapDumpOnOutOfMemoryError
  *      -Xlog:gc=debug:gc.log
  *      gc.ArrayJuggle.Juggle01.Juggle01
- *      -gp byteArr
+ *      -gp booleanArr
  *      -ms low
  */
 

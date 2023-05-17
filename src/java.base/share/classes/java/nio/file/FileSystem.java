@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -212,14 +212,14 @@ public abstract class FileSystem
      *
      * <p> <b>Usage Example:</b>
      * Suppose we want to print the space usage for all file stores:
-     * <pre>
+     * {@snippet lang=java :
      *     for (FileStore store: FileSystems.getDefault().getFileStores()) {
      *         long total = store.getTotalSpace() / 1024;
      *         long used = (store.getTotalSpace() - store.getUnallocatedSpace()) / 1024;
      *         long avail = store.getUsableSpace() / 1024;
      *         System.out.format("%-20s %12d %12d %12d%n", store, total, used, avail);
      *     }
-     * </pre>
+     * }
      *
      * @return  An object to iterate over the backing file stores
      */
@@ -444,10 +444,10 @@ public abstract class FileSystem
      *
      * <p> <b>Usage Example:</b>
      * Suppose we want to make "joe" the owner of a file:
-     * <pre>
+     * {@snippet lang=java :
      *     UserPrincipalLookupService lookupService = FileSystems.getDefault().getUserPrincipalLookupService();
      *     Files.setOwner(path, lookupService.lookupPrincipalByName("joe"));
-     * </pre>
+     * }
      *
      * @throws  UnsupportedOperationException
      *          If this {@code FileSystem} does not does have a lookup service
