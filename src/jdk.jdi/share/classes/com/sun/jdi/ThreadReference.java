@@ -370,7 +370,7 @@ public interface ThreadReference extends ObjectReference {
      * Thus the target program may
      * proceed differently than the user would expect.
      * <P>
-     * The specified thread must be suspended.
+     * This thread must be suspended.
      * <P>
      * All <code>StackFrame</code> objects for this thread are
      * invalidated.
