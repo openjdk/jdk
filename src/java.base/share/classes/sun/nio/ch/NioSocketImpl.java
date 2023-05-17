@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -177,6 +177,11 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
             millis = -1;
         } else {
             millis = NANOSECONDS.toMillis(nanos);
+            if (nanos > MILLISECONDS.toNanos(millis)) {
+                // Round up any excess nanos to the nearest millisecond to
+                // avoid parking for less than requested.
+                millis++;
+            }
         }
         Net.poll(fd, event, millis);
     }
