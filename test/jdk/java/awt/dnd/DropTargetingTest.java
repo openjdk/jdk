@@ -71,6 +71,9 @@ public class DropTargetingTest implements AWTEventListener {
     volatile Transferable transferable;
     volatile DragSourceListener dragSourceListener;
     volatile DragGestureListener dragGestureListener;
+    volatile Point srcPoint;
+    volatile Point dstPoint;
+    volatile Dimension d;
 
     static class TestDropTargetListener extends DropTargetAdapter {
         private boolean dropRecognized = false;
@@ -158,8 +161,9 @@ public class DropTargetingTest implements AWTEventListener {
     }
 
     public void start() throws Exception {
-        final Robot robot = new Robot();
-        Thread.sleep(FRAME_ACTIVATION_TIMEOUT);
+        Robot robot = new Robot();
+        robot.delay(FRAME_ACTIVATION_TIMEOUT);
+
         if (!test(robot, targetFrame1)) {
             throw new RuntimeException("Failed to recognize drop on a glass pane");
         }
@@ -202,20 +206,21 @@ public class DropTargetingTest implements AWTEventListener {
         return c == comp;
     }
 
-    boolean test(Robot robot, JFrame targetFrame) throws InterruptedException {
-//        robot.waitForIdle();
-
-        final Point srcPoint = sourceFrame.getLocationOnScreen();
-        Dimension d = sourceFrame.getSize();
+    boolean test(Robot robot, JFrame targetFrame) throws Exception {
+        EventQueue.invokeAndWait(() -> {
+            srcPoint = sourceFrame.getLocationOnScreen();
+            d = sourceFrame.getSize();
+        });
         srcPoint.translate(d.width / 2, d.height / 2);
 
         if (!pointInComponent(robot, srcPoint, sourceFrame)) {
             System.err.println("WARNING: Couldn't locate source frame.");
             return true;
         }
-
-        final Point dstPoint = targetFrame.getLocationOnScreen();
-        d = targetFrame.getSize();
+        EventQueue.invokeAndWait(() -> {
+            dstPoint = targetFrame.getLocationOnScreen();
+            d = targetFrame.getSize();
+        });
         dstPoint.translate(d.width / 2, d.height / 2);
 
         if (!pointInComponent(robot, dstPoint, targetFrame)) {
@@ -231,7 +236,7 @@ public class DropTargetingTest implements AWTEventListener {
              srcPoint.translate(sign(dstPoint.x - srcPoint.x),
                                 sign(dstPoint.y - srcPoint.y))) {
             robot.mouseMove(srcPoint.x, srcPoint.y);
-            Thread.sleep(10);
+            robot.delay(10);
         }
         synchronized (SYNC_LOCK) {
             robot.mouseRelease(InputEvent.BUTTON1_MASK);

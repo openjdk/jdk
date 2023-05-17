@@ -174,40 +174,35 @@ public class IntraJVMGetDropSuccessTest implements AWTEventListener {
         return n < 0 ? -1 : n == 0 ? 0 : 1;
     }
 
-    public void start() {
-        try {
-            final Robot robot = new Robot();
+    public void start() throws Exception {
+        Robot robot = new Robot();
 
-            Thread.sleep(FRAME_ACTIVATION_TIMEOUT);
+        robot.delay(FRAME_ACTIVATION_TIMEOUT);
 
-            final Point srcPoint = getCenterLocationOnScreen(canvas2);
+        final Point srcPoint = getCenterLocationOnScreen(canvas2);
 
-            if (!pointInComponent(robot, srcPoint, canvas2)) {
-                System.err.println("WARNING: Couldn't locate " + canvas2);
-                return;
-            }
-
-            final Point dstPoint1 = getCenterLocationOnScreen(canvas1);
-
-            if (!pointInComponent(robot, dstPoint1, canvas1)) {
-                System.err.println("WARNING: Couldn't locate " + canvas1);
-                return;
-            }
-
-            final Point dstPoint2 = getCenterLocationOnScreen(canvas3);
-            if (!pointInComponent(robot, dstPoint2, canvas3)) {
-                System.err.println("WARNING: Couldn't locate " + canvas3);
-                return;
-            }
-
-            test(robot, srcPoint, dstPoint1, false);
-            test(robot, srcPoint, dstPoint2, true);
-            test(robot, srcPoint, dstPoint1, false);
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new RuntimeException("The test failed.");
+        if (!pointInComponent(robot, srcPoint, canvas2)) {
+            System.err.println("WARNING: Couldn't locate " + canvas2);
+            return;
         }
+
+        final Point dstPoint1 = getCenterLocationOnScreen(canvas1);
+
+        if (!pointInComponent(robot, dstPoint1, canvas1)) {
+            System.err.println("WARNING: Couldn't locate " + canvas1);
+            return;
+        }
+
+        final Point dstPoint2 = getCenterLocationOnScreen(canvas3);
+        if (!pointInComponent(robot, dstPoint2, canvas3)) {
+            System.err.println("WARNING: Couldn't locate " + canvas3);
+            return;
+        }
+
+        robot.waitForIdle();
+        test(robot, srcPoint, dstPoint1, false);
+        test(robot, srcPoint, dstPoint2, true);
+        test(robot, srcPoint, dstPoint1, false);
     }
 
     public Point getCenterLocationOnScreen(Component c) throws Exception {
@@ -230,7 +225,7 @@ public class IntraJVMGetDropSuccessTest implements AWTEventListener {
              p.translate(sign(dst.x - p.x),
                          sign(dst.y - p.y))) {
             robot.mouseMove(p.x, p.y);
-            Thread.sleep(50);
+            robot.delay(50);
         }
 
         synchronized (SYNC_LOCK) {
