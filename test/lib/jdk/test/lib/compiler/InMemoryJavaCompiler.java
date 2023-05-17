@@ -184,8 +184,6 @@ public class InMemoryJavaCompiler {
             }
 
             return file.getByteCode();
-        } catch (IOException ioe) {
-            throw new RuntimeException(ioe);
         }
     }
 
@@ -230,8 +228,12 @@ public class InMemoryJavaCompiler {
         }
 
         @Override
-        public void close() throws IOException {
-            fileManager.close();
+        public void close() {
+            try {
+                fileManager.close();
+            } catch (IOException ioe) {
+                throw new RuntimeException(ioe);
+            }
         }
 
         @Override
