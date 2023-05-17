@@ -1789,7 +1789,7 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
 
   // Compute start of first itableOffsetEntry (which is at the end of the vtable).
   int vtable_base = in_bytes(Klass::vtable_start_offset());
-  int itentry_off = itableMethodEntry::method_offset_in_bytes();
+  int itentry_off = in_bytes(itableMethodEntry::method_offset_in_bytes());
   int logMEsize   = exact_log2(itableMethodEntry::size() * wordSize);
   int scan_step   = itableOffsetEntry::size() * wordSize;
   int log_vte_size= exact_log2(vtableEntry::size_in_bytes());
@@ -1826,7 +1826,7 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
   for (int peel = 1; peel >= 0; peel--) {
     // %%%% Could load both offset and interface in one ldx, if they were
     // in the opposite order. This would save a load.
-    ld(temp2, itableOffsetEntry::interface_offset_in_bytes(), scan_temp);
+    ld(temp2, in_bytes(itableOffsetEntry::interface_offset_in_bytes()), scan_temp);
 
     // Check that this entry is non-null. A null entry means that
     // the receiver class doesn't implement the interface, and wasn't the
@@ -1853,7 +1853,7 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
 
   // Got a hit.
   if (return_method) {
-    int ito_offset = itableOffsetEntry::offset_offset_in_bytes();
+    int ito_offset = in_bytes(itableOffsetEntry::offset_offset_in_bytes());
     lwz(scan_temp, ito_offset, scan_temp);
     ldx(method_result, scan_temp, method_result);
   }
@@ -1866,7 +1866,7 @@ void MacroAssembler::lookup_virtual_method(Register recv_klass,
 
   assert_different_registers(recv_klass, method_result, vtable_index.register_or_noreg());
 
-  const int base = in_bytes(Klass::vtable_start_offset());
+  const ByteSize base = Klass::vtable_start_offset();
   assert(vtableEntry::size() * wordSize == wordSize, "adjust the scaling in the code below");
 
   if (vtable_index.is_register()) {
@@ -1875,7 +1875,7 @@ void MacroAssembler::lookup_virtual_method(Register recv_klass,
   } else {
     addi(recv_klass, recv_klass, vtable_index.as_constant() << LogBytesPerWord);
   }
-  ld(R19_method, base + vtableEntry::method_offset_in_bytes(), recv_klass);
+  ld(R19_method, in_bytes(base + vtableEntry::method_offset_in_bytes()), recv_klass);
 }
 
 /////////////////////////////////////////// subtype checking ////////////////////////////////////////////
@@ -2353,7 +2353,7 @@ void MacroAssembler::rtm_abort_ratio_calculation(Register rtm_counters_Reg,
     // Set rtm_state to "no rtm" in MDO.
     // Not using a metadata relocation. Method and Class Loader are kept alive anyway.
     // (See nmethod::metadata_do and CodeBuffer::finalize_oop_references.)
-    load_const(R0, (address)method_data + MethodData::rtm_state_offset_in_bytes(), tmpReg);
+    load_const(R0, (address)method_data + in_bytes(MethodData::rtm_state_offset_in_bytes()), tmpReg);
     atomic_ori_int(R0, tmpReg, NoRTM);
   }
   b(L_done);
@@ -2373,7 +2373,7 @@ void MacroAssembler::rtm_abort_ratio_calculation(Register rtm_counters_Reg,
   if (method_data != nullptr) {
     // Set rtm_state to "always rtm" in MDO.
     // Not using a metadata relocation. See above.
-    load_const(R0, (address)method_data + MethodData::rtm_state_offset_in_bytes(), tmpReg);
+    load_const(R0, (address)method_data + in_bytes(MethodData::rtm_state_offset_in_bytes()), tmpReg);
     atomic_ori_int(R0, tmpReg, UseRTM);
   }
   bind(L_done);

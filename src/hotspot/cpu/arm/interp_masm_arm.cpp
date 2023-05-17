@@ -894,8 +894,8 @@ void InterpreterMacroAssembler::lock_object(Register Rlock) {
     const Register Rmark = R3;
     assert_different_registers(Robj, Rmark, Rlock, R0, Rtemp);
 
-    const int obj_offset = BasicObjectLock::obj_offset_in_bytes();
-    const int lock_offset = BasicObjectLock::lock_offset_in_bytes ();
+    const int obj_offset = in_bytes(BasicObjectLock::obj_offset_in_bytes());
+    const int lock_offset = in_bytes(BasicObjectLock::lock_offset_in_bytes());
     const int mark_offset = lock_offset + BasicLock::displaced_header_offset_in_bytes();
 
     Label already_locked, slow_case;
@@ -1011,8 +1011,8 @@ void InterpreterMacroAssembler::unlock_object(Register Rlock) {
     const Register Rmark = R3;
     assert_different_registers(Robj, Rmark, Rlock, Rtemp);
 
-    const int obj_offset = BasicObjectLock::obj_offset_in_bytes();
-    const int lock_offset = BasicObjectLock::lock_offset_in_bytes ();
+    const int obj_offset = in_bytes(BasicObjectLock::obj_offset_in_bytes());
+    const int lock_offset = in_bytes(BasicObjectLock::lock_offset_in_bytes());
     const int mark_offset = lock_offset + BasicLock::displaced_header_offset_in_bytes();
 
     const Register Rzero = zero_register(Rtemp);

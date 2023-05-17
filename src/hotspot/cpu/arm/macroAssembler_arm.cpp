@@ -94,7 +94,7 @@ void AddressLiteral::set_rspec(relocInfo::relocType rtype) {
 void MacroAssembler::lookup_virtual_method(Register recv_klass,
                                            Register vtable_index,
                                            Register method_result) {
-  const int base_offset = in_bytes(Klass::vtable_start_offset()) + vtableEntry::method_offset_in_bytes();
+  const ByteSize base_offset = Klass::vtable_start_offset() + vtableEntry::method_offset_in_bytes();
   assert(vtableEntry::size() * wordSize == wordSize, "adjust the scaling in the code below");
   add(recv_klass, recv_klass, AsmOperand(vtable_index, lsl, LogBytesPerWord));
   ldr(method_result, Address(recv_klass, base_offset));
@@ -1404,7 +1404,7 @@ void MacroAssembler::lookup_interface_method(Register Rklass,
 
   if (method_result != noreg) {
     // Interface found at previous position of Rscan, now load the method
-    ldr_s32(Rtmp, Address(Rscan, itableOffsetEntry::offset_offset_in_bytes() - entry_size));
+    ldr_s32(Rtmp, Address(Rscan, in_bytes(itableOffsetEntry::offset_offset_in_bytes()) - entry_size));
     if (itable_index.is_register()) {
       add(Rtmp, Rtmp, Rklass); // Add offset to Klass*
       assert(itableMethodEntry::size() * HeapWordSize == wordSize, "adjust the scaling in the code below");
@@ -1412,7 +1412,7 @@ void MacroAssembler::lookup_interface_method(Register Rklass,
       ldr(method_result, Address::indexed_ptr(Rtmp, itable_index.as_register()));
     } else {
       int method_offset = itableMethodEntry::size() * HeapWordSize * itable_index.as_constant() +
-                          itableMethodEntry::method_offset_in_bytes();
+                          in_bytes(itableMethodEntry::method_offset_in_bytes());
       add_slow(method_result, Rklass, method_offset);
       ldr(method_result, Address(method_result, Rtmp));
     }

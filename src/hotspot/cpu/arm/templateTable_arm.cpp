@@ -3689,7 +3689,7 @@ void TemplateTable::invokevirtual_helper(Register index,
   __ profile_virtual_call(R0_tmp, recv_klass);
 
   // get target Method* & entry point
-  const int base = in_bytes(Klass::vtable_start_offset());
+  const ByteSize base = Klass::vtable_start_offset();
   assert(vtableEntry::size() == 1, "adjust the scaling in the code below");
   __ add(Rtemp, recv_klass, AsmOperand(index, lsl, LogHeapWordSize));
   __ ldr(Rmethod, Address(Rtemp, base + vtableEntry::method_offset_in_bytes()));

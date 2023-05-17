@@ -217,13 +217,11 @@ private:
 
   static int Knob_SpinLimit;
 
-  // TODO-FIXME: the "offset" routines should return a type of off_t instead of int ...
-  // ByteSize would also be an appropriate type.
-  static int owner_offset_in_bytes()       { return offset_of(ObjectMonitor, _owner); }
-  static int recursions_offset_in_bytes()  { return offset_of(ObjectMonitor, _recursions); }
-  static int cxq_offset_in_bytes()         { return offset_of(ObjectMonitor, _cxq); }
-  static int succ_offset_in_bytes()        { return offset_of(ObjectMonitor, _succ); }
-  static int EntryList_offset_in_bytes()   { return offset_of(ObjectMonitor, _EntryList); }
+  static int owner_offset_in_bytes()       { return (int)offset_of(ObjectMonitor, _owner); }
+  static int recursions_offset_in_bytes()  { return (int)offset_of(ObjectMonitor, _recursions); }
+  static int cxq_offset_in_bytes()         { return (int)offset_of(ObjectMonitor, _cxq); }
+  static int succ_offset_in_bytes()        { return (int)offset_of(ObjectMonitor, _succ); }
+  static int EntryList_offset_in_bytes()   { return (int)offset_of(ObjectMonitor, _EntryList); }
 
   // ObjectMonitor references can be ORed with markWord::monitor_value
   // as part of the ObjectMonitor tagging mechanism. When we combine an

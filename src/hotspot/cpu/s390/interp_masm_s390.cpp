@@ -391,8 +391,8 @@ void InterpreterMacroAssembler::load_resolved_reference_at_index(Register result
   Register tmp = index;  // reuse
   z_sllg(index, index, LogBytesPerHeapOop); // Offset into resolved references array.
   // Load pointer for resolved_references[] objArray.
-  z_lg(result, ConstantPool::cache_offset_in_bytes(), result);
-  z_lg(result, ConstantPoolCache::resolved_references_offset_in_bytes(), result);
+  z_lg(result, in_bytes(ConstantPool::cache_offset_in_bytes()), result);
+  z_lg(result, in_bytes(ConstantPoolCache::resolved_references_offset_in_bytes()), result);
   resolve_oop_handle(result); // Load resolved references array itself.
 #ifdef ASSERT
   NearLabel index_ok;
@@ -1025,7 +1025,7 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
   // monitor->lock()->set_displaced_header(displaced_header);
 
   // Initialize the box (Must happen before we update the object mark!).
-  z_stg(displaced_header, BasicObjectLock::lock_offset_in_bytes() +
+  z_stg(displaced_header, in_bytes(BasicObjectLock::lock_offset_in_bytes()) +
                           BasicLock::displaced_header_offset_in_bytes(), monitor);
 
   // if (Atomic::cmpxchg(/*addr*/obj->mark_addr(), /*cmp*/displaced_header, /*ex=*/monitor) == displaced_header) {
@@ -1059,7 +1059,7 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
   // header indicating it is a recursive lock and be done.
   z_brne(slow_case);
   z_release();  // Membar unnecessary on zarch AND because the above csg does a sync before and after.
-  z_stg(Z_R0/*==0!*/, BasicObjectLock::lock_offset_in_bytes() +
+  z_stg(Z_R0/*==0!*/, in_bytes(BasicObjectLock::lock_offset_in_bytes()) +
                       BasicLock::displaced_header_offset_in_bytes(), monitor);
   z_bru(done);
 
@@ -1128,7 +1128,7 @@ void InterpreterMacroAssembler::unlock_object(Register monitor, Register object)
 
   // Test first if we are in the fast recursive case.
   MacroAssembler::load_and_test_long(displaced_header,
-                                     Address(monitor, BasicObjectLock::lock_offset_in_bytes() +
+                                     Address(monitor, in_bytes(BasicObjectLock::lock_offset_in_bytes()) +
                                                       BasicLock::displaced_header_offset_in_bytes()));
   z_bre(done); // displaced_header == 0 -> goto done
 
@@ -1810,10 +1810,10 @@ void InterpreterMacroAssembler::profile_return_type(Register mdp, Register ret, 
       get_method(tmp);
       // Supplement to 8139891: _intrinsic_id exceeded 1-byte size limit.
       if (Method::intrinsic_id_size_in_bytes() == 1) {
-        z_cli(Method::intrinsic_id_offset_in_bytes(), tmp, static_cast<int>(vmIntrinsics::_compiledLambdaForm));
+        z_cli(in_bytes(Method::intrinsic_id_offset_in_bytes()), tmp, static_cast<int>(vmIntrinsics::_compiledLambdaForm));
       } else {
         assert(Method::intrinsic_id_size_in_bytes() == 2, "size error: check Method::_intrinsic_id");
-        z_lh(tmp, Method::intrinsic_id_offset_in_bytes(), Z_R0, tmp);
+        z_lh(tmp, in_bytes(Method::intrinsic_id_offset_in_bytes()), Z_R0, tmp);
         z_chi(tmp, static_cast<int>(vmIntrinsics::_compiledLambdaForm));
       }
       z_brne(profile_continue);

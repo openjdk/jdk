@@ -1208,8 +1208,8 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg) {
     const Register obj_reg = LP64_ONLY(c_rarg3) NOT_LP64(rcx); // Will contain the oop
     const Register rklass_decode_tmp = rscratch1;
 
-    const int obj_offset = BasicObjectLock::obj_offset_in_bytes();
-    const int lock_offset = BasicObjectLock::lock_offset_in_bytes ();
+    const int obj_offset = in_bytes(BasicObjectLock::obj_offset_in_bytes());
+    const int lock_offset = in_bytes(BasicObjectLock::lock_offset_in_bytes());
     const int mark_offset = lock_offset +
                             BasicLock::displaced_header_offset_in_bytes();
 

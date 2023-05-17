@@ -737,7 +737,7 @@ void InterpreterMacroAssembler::remove_activation(
 
     bind(loop);
     // check if current entry is used
-    add(t0, c_rarg1, BasicObjectLock::obj_offset_in_bytes());
+    add(t0, c_rarg1, in_bytes(BasicObjectLock::obj_offset_in_bytes()));
     ld(t0, Address(t0, 0));
     bnez(t0, exception);
 
@@ -811,8 +811,8 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
     const Register tmp = c_rarg2;
     const Register obj_reg = c_rarg3; // Will contain the oop
 
-    const int obj_offset = BasicObjectLock::obj_offset_in_bytes();
-    const int lock_offset = BasicObjectLock::lock_offset_in_bytes ();
+    const int obj_offset = in_bytes(BasicObjectLock::obj_offset_in_bytes());
+    const int lock_offset = in_bytes(BasicObjectLock::lock_offset_in_bytes());
     const int mark_offset = lock_offset +
                             BasicLock::displaced_header_offset_in_bytes();
 

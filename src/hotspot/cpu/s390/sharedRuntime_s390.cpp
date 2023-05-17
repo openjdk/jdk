@@ -2318,8 +2318,8 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
   {
     Label ic_miss;
     const int klass_offset           = oopDesc::klass_offset_in_bytes();
-    const int holder_klass_offset    = CompiledICHolder::holder_klass_offset();
-    const int holder_metadata_offset = CompiledICHolder::holder_metadata_offset();
+    const int holder_klass_offset    = in_bytes(CompiledICHolder::holder_klass_offset());
+    const int holder_metadata_offset = in_bytes(CompiledICHolder::holder_metadata_offset());
 
     // Out-of-line call to ic_miss handler.
     __ call_ic_miss_handler(ic_miss, 0x11, 0, Z_R1_scratch);
