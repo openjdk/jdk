@@ -40,10 +40,9 @@ package gc.stress.systemgc;
  * @bug 8190703
  * @library /
  * @requires vm.gc.G1
- * @requires vm.debug
  * @requires (vm.bits == "64")
  * @summary Stress the G1 GC full GC by allocating objects of different lifetimes concurrently with System.gc().
- * @run main/othervm/timeout=300 -XX:+UseAltGCForwarding -Xlog:gc*=info -Xmx512m -XX:+UseG1GC gc.stress.systemgc.TestSystemGCWithG1 270
+ * @run main/othervm/timeout=300 -XX:+UnlockExperimentalVMOptions -XX:+UseAltGCForwarding -Xlog:gc*=info -Xmx512m -XX:+UseG1GC gc.stress.systemgc.TestSystemGCWithG1 270
  */
 public class TestSystemGCWithG1 {
     public static void main(String[] args) throws Exception {
