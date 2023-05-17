@@ -97,14 +97,9 @@ public class LookupNameInPoolTest {
         if (entry == null) {
             return;
         }
-        int index = cpi;
-        String cached = "";
-        int cpci = dummyClass.getCPCacheIndex(cpi);
-        if (cpci != ConstantPoolTestsHelper.NO_CP_CACHE_PRESENT) {
-            index = cpci;
-            cached = "cached ";
-        }
         int opcode;
+        int index = dummyClass.getCPCacheIndex(cpi);
+        Asserts.assertTrue(index != ConstantPoolTestsHelper.NO_CP_CACHE_PRESENT, "the class must have been rewritten");
         // Select an arbitrary bytecode of the type associated with the Constant pool entry
         switch(cpType) {
           case CONSTANT_FIELDREF:
@@ -122,7 +117,7 @@ public class LookupNameInPoolTest {
         }
         String nameToVerify = CompilerToVMHelper.lookupNameInPool(constantPoolCTVM, index, opcode);
         String nameToRefer = entry.name;
-        String msg = String.format("Wrong name accessed by %sconstant pool index %d", cached, index);
+        String msg = String.format("Wrong name accessed by cached constant pool index %d", index);
         Asserts.assertEQ(nameToVerify, nameToRefer, msg);
     }
 }
