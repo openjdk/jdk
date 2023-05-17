@@ -155,8 +155,8 @@ public abstract class CiReplayBase {
         removeFromCurrentDirectoryStartingWith("core");
         removeFromCurrentDirectoryStartingWith("replay");
         removeFromCurrentDirectoryStartingWith(HS_ERR_NAME);
-        remove(TEST_CORE_FILE_NAME);
-        remove(REPLAY_FILE_NAME);
+        remove(TEST_CORE_FILE_NAME);x
+        //remove(REPLAY_FILE_NAME);
     }
 
     public String getReplayFileName() {
