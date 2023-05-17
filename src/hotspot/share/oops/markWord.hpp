@@ -44,6 +44,10 @@
 //  --------
 //  unused:25 hash:31 -->| unused_gap:1  age:4  unused_gap:1  lock:2 (normal object)
 //
+//  64 bits (alternative GC forwarding):
+//  ------------------------------------
+//  unused:25 hash:31 -->| unused_gap:1  age:4  self-fwd:1  lock:2 (normal object)
+//
 //  - hash contains the identity hash value: largest value is
 //    31 bits, see os::random().  Also, 64-bit vm's require
 //    a hash value no bigger than 32 bits because they will not
