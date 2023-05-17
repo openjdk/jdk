@@ -738,6 +738,10 @@ public final class HSS extends SignatureSpi {
                 throws InvalidKeyException {
             if (x509Encoded) {
                 decode(keyArray);
+                if (!KnownOIDs.HSSLMS.value().equals(algid.getOID().toString()) ||
+                        (algid.getParameters() != null)) {
+                    throw new InvalidKeyException("X509Key is not an HSS key");
+                }
             } else {
                 int inLen = keyArray.length;
                 if (inLen < 4) {
@@ -775,6 +779,9 @@ public final class HSS extends SignatureSpi {
         @Override
         protected void parseKeyBits() throws InvalidKeyException {
             byte[] keyArray = getKey().toByteArray();
+            if ((keyArray[0] != DerValue.tag_OctetString) || (keyArray[1] != keyArray.length -2)) {
+                throw new InvalidKeyException("Bad X509Key");
+            }
             L = LMSUtils.fourBytesToInt(keyArray, 2);
             lmsPublicKey = new LMSPublicKey(keyArray, 6, true);
         }
