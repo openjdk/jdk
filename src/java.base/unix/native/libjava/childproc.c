@@ -324,6 +324,9 @@ childProcess(void *arg)
         restartableWrite(fail_pipe_fd, &code, sizeof(code));
     }
 
+#ifdef DEBUG
+    jtregSimulateCrash(0, 6);
+#endif
     /* Close the parent sides of the pipes.
        Closing pipe fds here is redundant, since closeDescriptors()
        would do it anyways, but a little paranoia is a good thing. */
@@ -396,3 +399,19 @@ childProcess(void *arg)
     _exit(-1);
     return 0;  /* Suppress warning "no return value from function" */
 }
+
+#ifdef DEBUG
+/* This method is only used in debug builds for testing MODE_POSIX_SPAWN
+ * in the light of abnormal program termination of either the parent JVM
+ * or the newly created jspawnhelper child process during the execution of
+ * Java_java_lang_ProcessImpl_forkAndExec().
+ * See: test/jdk/java/lang/ProcessBuilder/JspawnhelperProtocol.java
+ */
+void jtregSimulateCrash(pid_t child, int stage) {
+    const char* env = getenv("JTREG_JSPAWNHELPER_PROTOCOL_TEST");
+    if (env != NULL && atoi(env) == stage) {
+        printf("posix_spawn:%d\n", child);
+        exit(stage);
+    }
+}
+#endif

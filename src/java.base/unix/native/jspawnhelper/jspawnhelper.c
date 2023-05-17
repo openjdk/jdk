@@ -84,6 +84,10 @@ void initChildStuff (int fdin, int fdout, ChildStuff *c) {
         error (fdout, ERR_PIPE);
     }
 
+#ifdef DEBUG
+    jtregSimulateCrash(0, 5);
+#endif
+
     if (readFully (fdin, c, sizeof(*c)) != sizeof(*c)) {
         error (fdout, ERR_PIPE);
     }
@@ -136,6 +140,9 @@ int main(int argc, char *argv[]) {
     int r, fdinr, fdinw, fdout;
     sigset_t unblock_signals;
 
+#ifdef DEBUG
+    jtregSimulateCrash(0, 4);
+#endif
     r = sscanf (argv[argc-1], "%d:%d:%d", &fdinr, &fdinw, &fdout);
     if (r == 3 && fcntl(fdinr, F_GETFD) != -1 && fcntl(fdinw, F_GETFD) != -1) {
         fstat(fdinr, &buf);

@@ -527,7 +527,7 @@ spawnChild(JNIEnv *env, jobject process, ChildStuff *c, const char *helperpath) 
         if (c->fds[i] != -1) {
             int flags = fcntl(c->fds[i], F_GETFD);
             if (flags & FD_CLOEXEC) {
-                fcntl(c->fds[i], F_SETFD, flags & (~1));
+                fcntl(c->fds[i], F_SETFD, flags & (~FD_CLOEXEC));
             }
         }
     }
@@ -537,6 +537,10 @@ spawnChild(JNIEnv *env, jobject process, ChildStuff *c, const char *helperpath) 
     if (rval != 0) {
         return -1;
     }
+
+#ifdef DEBUG
+    jtregSimulateCrash(resultPid, 1);
+#endif
 
     /* now the lengths are known, copy the data */
     buf = NEW(char, bufsize);
@@ -554,10 +558,16 @@ spawnChild(JNIEnv *env, jobject process, ChildStuff *c, const char *helperpath) 
 
     /* write the two structs and the data buffer */
     restartableWrite(c->childenv[1], (char *)&magic, sizeof(magic)); // magic number first
+#ifdef DEBUG
+    jtregSimulateCrash(resultPid, 2);
+#endif
     restartableWrite(c->childenv[1], (char *)c, sizeof(*c));
     restartableWrite(c->childenv[1], (char *)&sp, sizeof(sp));
     restartableWrite(c->childenv[1], buf, bufsize);
     free(buf);
+#ifdef DEBUG
+    jtregSimulateCrash(resultPid, 3);
+#endif
 
     /* In this mode an external main() in invoked which calls back into
      * childProcess() in this file, rather than directly
