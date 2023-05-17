@@ -685,7 +685,7 @@ public class TestSearch extends JavadocTester {
                 "AnotherClass.java:29: warning: invalid usage of tag {@index",
                 "AnotherClass.java:39: warning: invalid usage of tag {@index",
                 "AnotherClass.java:34: warning: invalid usage of tag {@index",
-                "AnotherClass.java:69: warning: invalid usage of tag {@index");
+                "AnotherClass.java:68: warning: invalid usage of tag {@index");
     }
 
     void checkJqueryAndImageFiles(boolean expectedOutput) {
