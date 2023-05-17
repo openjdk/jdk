@@ -45,6 +45,7 @@ import org.testng.annotations.*;
 
 import static java.lang.foreign.Linker.Option.firstVariadicArg;
 import static java.lang.invoke.MethodType.methodType;
+import static java.lang.foreign.ValueLayout.JAVA_CHAR;
 import static org.testng.Assert.assertEquals;
 
 public class TestIntrinsics extends NativeTestHelper {
@@ -113,8 +114,8 @@ public class TestIntrinsics extends NativeTestHelper {
 
         { // high_arity
             FunctionDescriptor baseFD = FunctionDescriptor.ofVoid(C_INT, C_DOUBLE, C_LONG_LONG, C_FLOAT, C_CHAR,
-                    C_SHORT, C_SHORT);
-            Object[] args = {1, 10D, 2L, 3F, (byte) 0, (short) 13, (short) 14};
+                    C_SHORT, JAVA_CHAR);
+            Object[] args = {1, 10D, 2L, 3F, (byte) 0, (short) 13, 'a'};
             for (int i = 0; i < args.length; i++) {
                 MemorySegment ma = findNativeOrThrow("invoke_high_arity" + i);
                 FunctionDescriptor fd = baseFD.changeReturnLayout(baseFD.argumentLayouts().get(i));

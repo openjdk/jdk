@@ -202,15 +202,29 @@ import java.util.stream.Stream;
  * </tbody>
  * </table></blockquote>
  * <p>
- * All the native linker implementations limit the function descriptors that they support to those that contain
- * either {@linkplain ValueLayout value layouts} that are also {@linkplain #canonicalLayouts() canonical layouts},
- * or {@linkplain GroupLayout group layouts} that are derived according to the following rules:
+ * All the native linker implementations can only operate on a subset of memory layouts, called <em>supported layouts</em>.
+ * A layout {@code L} is supported iff:
+ * <ul>
+ * <li>{@code L} is a value layout {@code V} and {@code V.withoutName()} is a canonical layout</li>
+ * <li>{@code L} is an address layout {@code A} and {@code A.withoutTargetLayout().withoutName()} is a canonical layout</li>
+ * <li>{@code L} is a sequence layout {@code S} and all the following conditions hold:
  * <ol>
- * <li>The alignment constraint of the group layout is set to its <a href="MemoryLayout.html#layout-align">natural alignment</a></li>
- * <li>The size of the group layout is a multiple of its alignment constraint, and</li>
- * <li>The group layout does not contain padding other than what is strictly required to align its non-padding layout elements,
- * or to satisfy constraint 1</li>
+ * <li>the alignment constraint of {@code S} is set to its <a href="MemoryLayout.html#layout-align">natural alignment</a>, and</li>
+ * <li>{@code S.elementLayout()} is a supported layout.</li>
  * </ol>
+ * </li>
+ * <li>{@code L} is a group layout {@code G} and all the following conditions hold:
+ * <ol>
+ * <li>the alignment constraint of {@code G} is set to its <a href="MemoryLayout.html#layout-align">natural alignment</a>;</li>
+ * <li>the size of {@code G} is a multiple of its alignment constraint;</li>
+ * <li>each member layout in {@code G.memberLayouts()} is either a padding layout or a supported layout, and</li>
+ * <li>{@code G} does not contain padding other than what is strictly required to align its non-padding layout elements, or to satisfy (2).</li>
+ * </ol>
+ * </li>
+ * </ul>
+ *
+ * Native linkers only support function descriptors whose argument/return layouts are supported layouts and
+ * are not sequence layouts.
  *
  * <h3 id="function-pointers">Function pointers</h3>
  *

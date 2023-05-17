@@ -186,6 +186,7 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
             }
             checkGroupSize(ul, maxUnpaddedLayout);
         } else if (layout instanceof SequenceLayout sl) {
+            checkHasNaturalAlignment(layout);
             checkLayoutRecursive(sl.elementLayout());
         }
     }
@@ -265,8 +266,9 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
             Map.entry("int8_t", ValueLayout.JAVA_BYTE),
             Map.entry("int16_t", ValueLayout.JAVA_SHORT),
             Map.entry("int32_t", ValueLayout.JAVA_INT),
-            Map.entry("size_t", ValueLayout.ADDRESS.bitSize() == Integer.SIZE ? ValueLayout.JAVA_INT : ValueLayout.JAVA_LONG),
-            Map.entry("int64_t", ValueLayout.JAVA_LONG)
+            Map.entry("int64_t", ValueLayout.JAVA_LONG),
+            Map.entry("char16_t", ValueLayout.JAVA_CHAR),
+            Map.entry("size_t", ValueLayout.ADDRESS.bitSize() == Integer.SIZE ? ValueLayout.JAVA_INT : ValueLayout.JAVA_LONG)
     );
 
     private static final Set<MemoryLayout> CANONICAL_LAYOUTS = new HashSet<>(CANONICAL_LAYOUTS_MAP.values());
