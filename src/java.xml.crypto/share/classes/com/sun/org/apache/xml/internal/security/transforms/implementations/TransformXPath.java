@@ -55,9 +55,6 @@ import org.w3c.dom.Node;
  */
 public class TransformXPath extends TransformSpi {
 
-    private static final com.sun.org.slf4j.internal.Logger LOG =
-            com.sun.org.slf4j.internal.LoggerFactory.getLogger(TransformXPath.class);
-
     // Whether the here() XPath function is supported.
     static final boolean HEREFUNC;
 
@@ -165,20 +162,19 @@ public class TransformXPath extends TransformSpi {
         /**
          * @see com.sun.org.apache.xml.internal.security.signature.NodeFilter#isNodeInclude(org.w3c.dom.Node)
          */
-        public int isNodeInclude(Node currentNode) {
+        public int isNodeInclude(Node currentNode) throws TransformationException {
             try {
                 boolean include = xPathAPI.evaluate(currentNode, xpathnode, str, xpathElement);
                 if (include) {
                     return 1;
                 }
                 return 0;
-            } catch (TransformerException e) {
-                LOG.debug("Error evaluating XPath expression", e);
-                return 0;
+            } catch (TransformerException ex) {
+                throw new TransformationException(ex);
             }
         }
 
-        public int isNodeIncludeDO(Node n, int level) {
+        public int isNodeIncludeDO(Node n, int level) throws TransformationException {
             return isNodeInclude(n);
         }
 

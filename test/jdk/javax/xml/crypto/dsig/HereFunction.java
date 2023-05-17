@@ -38,6 +38,9 @@
 import java.io.File;
 import java.io.FileInputStream;
 import java.security.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import javax.xml.crypto.Data;
 import javax.xml.crypto.KeySelector;
 import javax.xml.crypto.OctetStreamData;
@@ -45,48 +48,166 @@ import javax.xml.crypto.URIDereferencer;
 import javax.xml.crypto.URIReference;
 import javax.xml.crypto.URIReferenceException;
 import javax.xml.crypto.XMLCryptoContext;
-import javax.xml.crypto.dsig.XMLSignatureFactory;
+import javax.xml.crypto.dsig.*;
+import javax.xml.crypto.dsig.dom.DOMSignContext;
+import javax.xml.crypto.dsig.dom.DOMValidateContext;
+import javax.xml.crypto.dsig.keyinfo.KeyInfo;
+import javax.xml.crypto.dsig.keyinfo.KeyInfoFactory;
+import javax.xml.crypto.dsig.spec.C14NMethodParameterSpec;
+import javax.xml.crypto.dsig.spec.XPathFilterParameterSpec;
+import javax.xml.parsers.DocumentBuilderFactory;
 
+import jdk.test.lib.Asserts;
+import jdk.test.lib.Utils;
 import jdk.test.lib.security.SecurityUtils;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
 
 public class HereFunction {
 
-    private static SignatureValidator validator;
     private final static String DIR = System.getProperty("test.src", ".");
     private final static String DATA_DIR =
             DIR + System.getProperty("file.separator") + "data";
-    private final static String KEYSTORE =
+    private final static String KEYSTORE_VERIFY =
             DATA_DIR + System.getProperty("file.separator") + "certs" +
                     System.getProperty("file.separator") + "xmldsig.jks";
+    private final static String KEYSTORE_SIGN =
+            DATA_DIR + System.getProperty("file.separator") + "certs" +
+                    System.getProperty("file.separator") + "test.jks";
     private final static String STYLESHEET =
             "http://www.w3.org/TR/xml-stylesheet";
     private final static String STYLESHEET_B64 =
             "http://www.w3.org/Signature/2002/04/xml-stylesheet.b64";
+    private final static char[] PASS = "changeit".toCharArray();
 
-    public static void main(String args[]) throws Exception {
-
+    public static void main(String args[]) throws Throwable {
         if (!args[0].equals("default")) {
             Security.setProperty("jdk.xml.dsig.hereFunctionSupported", args[0]);
         }
-        boolean expected = Boolean.parseBoolean(args[1]);
-
         // Re-enable sha1 algs
         SecurityUtils.removeAlgsFromDSigPolicy("sha1");
 
-        validator = new SignatureValidator(new File(DATA_DIR));
+        boolean expected = Boolean.parseBoolean(args[1]);
 
-        KeyStore keystore = KeyStore.getInstance("JKS");
-        KeySelector ks;
-        try (FileInputStream fis = new FileInputStream(KEYSTORE)) {
-            keystore.load(fis, "changeit".toCharArray());
-            ks = new X509KeySelector(keystore, false);
+        sign(expected);
+
+        // Validating an old signature signed by JDK < 21
+        validate(expected);
+    }
+
+    static void validate(boolean expected) throws Exception {
+        SignatureValidator validator = new SignatureValidator(new File(DATA_DIR));
+
+        KeyStore keystore = KeyStore.getInstance(new File(KEYSTORE_VERIFY), PASS);
+        KeySelector ks = new X509KeySelector(keystore, false);
+
+        if (expected) {
+            Asserts.assertTrue(validator.validate(
+                    "signature.xml", ks, new HttpURIDereferencer(), false));
+        } else {
+            Utils.runAndCheckException(() -> validator.validate(
+                    "signature.xml", ks, new HttpURIDereferencer(), false),
+                    XMLSignatureException.class);
+        }
+    }
+
+    static void sign(boolean expected) throws Exception {
+        XMLSignatureFactory fac = XMLSignatureFactory.getInstance();
+        DigestMethod sha1 = fac.newDigestMethod(DigestMethod.SHA1, null);
+        CanonicalizationMethod withoutComments = fac.newCanonicalizationMethod
+                (CanonicalizationMethod.INCLUSIVE, (C14NMethodParameterSpec)null);
+        SignatureMethod dsaSha1 = fac.newSignatureMethod(SignatureMethod.DSA_SHA1, null);
+        KeyInfoFactory kifac = fac.getKeyInfoFactory();
+        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+        dbf.setNamespaceAware(true);
+
+        String ENVELOPE =
+                DATA_DIR + System.getProperty("file.separator") + "envelope.xml";
+
+        var ks = KeyStore.getInstance(new File(KEYSTORE_SIGN), PASS);
+        var signingKey = ks.getKey("user", PASS);
+        var signingCert = ks.getCertificate("user");
+
+        // create references
+        List<Reference> refs = new ArrayList<>();
+
+        // Reference 1
+        refs.add(fac.newReference(STYLESHEET, sha1));
+
+        // Reference 2
+        String expr = "\n"
+                + " ancestor-or-self::dsig:SignedInfo                  " + "\n"
+                + "  and                                               " + "\n"
+                + " count(ancestor-or-self::dsig:Reference |           " + "\n"
+                + "      here()/ancestor::dsig:Reference[1]) >         " + "\n"
+                + " count(ancestor-or-self::dsig:Reference)            " + "\n"
+                + "  or                                                " + "\n"
+                + " count(ancestor-or-self::node() |                   " + "\n"
+                + "      id('notaries')) =                             " + "\n"
+                + " count(ancestor-or-self::node())                    " + "\n";
+
+        XPathFilterParameterSpec xfp = new XPathFilterParameterSpec(expr,
+                Collections.singletonMap("dsig", XMLSignature.XMLNS));
+        refs.add(fac.newReference("", sha1, Collections.singletonList
+                        (fac.newTransform(Transform.XPATH, xfp)),
+                XMLObject.TYPE, null));
+
+        // create SignedInfo
+        SignedInfo si = fac.newSignedInfo(withoutComments, dsaSha1, refs);
+
+        // create keyinfo
+        KeyInfo ki = kifac.newKeyInfo(List.of(
+                kifac.newX509Data(List.of(signingCert))), null);
+
+        // create XMLSignature
+        XMLSignature sig = fac.newXMLSignature(si, ki, null, "signature", null);
+
+        dbf.setValidating(false);
+        Document envDoc = dbf.newDocumentBuilder()
+                .parse(new FileInputStream(ENVELOPE));
+        Element ys = (Element)
+                envDoc.getElementsByTagName("YoursSincerely").item(0);
+
+        DOMSignContext dsc = new DOMSignContext(signingKey, ys);
+        dsc.setURIDereferencer(new HttpURIDereferencer());
+
+        if (expected) {
+            sig.sign(dsc);
+        } else {
+            Utils.runAndCheckException(
+                    () -> sig.sign(dsc), XMLSignatureException.class);
+            return; // Signing fails, no need to validate
         }
 
-        boolean actual = validator.validate(
-                "signature.xml", ks, new HttpURIDereferencer(), false);
+//      StringWriter sw = new StringWriter();
+//        dumpDocument(envDoc, sw);
 
-        if (actual != expected) {
-            throw new Exception("Expected: " + expected + ", actual: " + actual);
+        NodeList nl =
+                envDoc.getElementsByTagNameNS(XMLSignature.XMLNS, "Signature");
+        if (nl.getLength() == 0) {
+            throw new Exception("Couldn't find signature Element");
+        }
+        Element sigElement = (Element) nl.item(0);
+
+        DOMValidateContext dvc = new DOMValidateContext
+                (new X509KeySelector(ks), sigElement);
+        dvc.setURIDereferencer(new HttpURIDereferencer());
+        File f = new File(
+                System.getProperty("dir.test.vector.baltimore") +
+                        System.getProperty("file.separator") +
+                        "merlin-xmldsig-twenty-three" +
+                        System.getProperty("file.separator"));
+        dvc.setBaseURI(f.toURI().toString());
+
+        XMLSignature sig2 = fac.unmarshalXMLSignature(dvc);
+
+        if (sig.equals(sig2) == false) {
+            throw new Exception
+                    ("Unmarshalled signature is not equal to generated signature");
+        }
+        if (sig2.validate(dvc) == false) {
+            throw new Exception("Validation of generated signature failed");
         }
     }
 
@@ -95,7 +216,7 @@ public class HereFunction {
      * avoid test failures due to network glitches, etc.
      */
     private static class HttpURIDereferencer implements URIDereferencer {
-        private URIDereferencer defaultUd;
+        private final URIDereferencer defaultUd;
 
         HttpURIDereferencer() {
             defaultUd = XMLSignatureFactory.getInstance().getURIDereferencer();
