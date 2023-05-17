@@ -108,8 +108,11 @@ public:
 
   static jlong exited_allocated_bytes()       { return _exited_allocated_bytes; }
   static void incr_exited_allocated_bytes(jlong size) {
-    // No need for atomicity, method is called under the Threads_lock
-    _exited_allocated_bytes += size;
+    // No need for an atomic add because called under the Threads_lock,
+    // but because _exited_allocated_bytes is read concurrently, need
+    // atomic load/store to avoid readers seeing a partial update
+    jlong old = Atomic::load(&_exited_allocated_bytes);
+    Atomic::store(&_exited_allocated_bytes, old + size);
   }
 
   // Support for thread dump
