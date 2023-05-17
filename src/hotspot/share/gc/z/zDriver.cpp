@@ -46,8 +46,8 @@ private:
   DriverT* _driver;
 
 public:
-  ZGCCauseSetter(DriverT* driver, GCCause::Cause cause) :
-      GCCauseSetter(ZCollectedHeap::heap(), cause),
+  ZGCCauseSetter(DriverT* driver, GCCause::Cause cause)
+    : GCCauseSetter(ZCollectedHeap::heap(), cause),
       _driver(driver) {
     _driver->set_gc_cause(cause);
   }
@@ -105,9 +105,8 @@ ZDriverUnlocker::~ZDriverUnlocker() {
   ZDriver::lock();
 }
 
-ZDriver::ZDriver() :
-    _gc_cause(GCCause::_no_gc) {
-}
+ZDriver::ZDriver()
+  : _gc_cause(GCCause::_no_gc) {}
 
 void ZDriver::set_gc_cause(GCCause::Cause cause) {
   _gc_cause = cause;
@@ -117,8 +116,8 @@ GCCause::Cause ZDriver::gc_cause() {
   return _gc_cause;
 }
 
-ZDriverMinor::ZDriverMinor() :
-    ZDriver(),
+ZDriverMinor::ZDriverMinor()
+  : ZDriver(),
     _port(),
     _gc_timer(),
     _jfr_tracer(),
@@ -175,8 +174,8 @@ private:
   ZServiceabilityCycleTracer   _tracer;
 
 public:
-  ZDriverScopeMinor(const ZDriverRequest& request, ConcurrentGCTimer* gc_timer) :
-      _gc_id(),
+  ZDriverScopeMinor(const ZDriverRequest& request, ConcurrentGCTimer* gc_timer)
+    : _gc_id(),
       _gc_cause(request.cause()),
       _gc_cause_setter(ZDriver::minor(), _gc_cause),
       _stat_timer(ZPhaseCollectionMinor, gc_timer),
@@ -307,8 +306,8 @@ static bool should_preclean_young(GCCause::Cause cause) {
   return ScavengeBeforeFullGC;
 }
 
-ZDriverMajor::ZDriverMajor() :
-    ZDriver(),
+ZDriverMajor::ZDriverMajor()
+  : ZDriver(),
     _port(),
     _gc_timer(),
     _jfr_tracer(),
@@ -380,8 +379,8 @@ private:
   ZServiceabilityCycleTracer   _tracer;
 
 public:
-  ZDriverScopeMajor(const ZDriverRequest& request, ConcurrentGCTimer* gc_timer) :
-      _gc_id(),
+  ZDriverScopeMajor(const ZDriverRequest& request, ConcurrentGCTimer* gc_timer)
+    : _gc_id(),
       _gc_cause(request.cause()),
       _gc_cause_setter(ZDriver::major(), _gc_cause),
       _stat_timer(ZPhaseCollectionMajor, gc_timer),

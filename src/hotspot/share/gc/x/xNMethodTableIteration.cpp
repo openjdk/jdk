@@ -30,12 +30,12 @@
 #include "utilities/globalDefinitions.hpp"
 
 XNMethodTableIteration::XNMethodTableIteration() :
-    _table(NULL),
+    _table(nullptr),
     _size(0),
     _claimed(0) {}
 
 bool XNMethodTableIteration::in_progress() const {
-  return _table != NULL;
+  return _table != nullptr;
 }
 
 void XNMethodTableIteration::nmethods_do_begin(XNMethodTableEntry* table, size_t size) {
@@ -50,7 +50,7 @@ void XNMethodTableIteration::nmethods_do_end() {
   assert(_claimed >= _size, "Failed to claim all table entries");
 
   // Finish iteration
-  _table = NULL;
+  _table = nullptr;
 }
 
 void XNMethodTableIteration::nmethods_do(NMethodClosure* cl) {
