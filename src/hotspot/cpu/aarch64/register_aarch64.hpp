@@ -191,6 +191,7 @@ class FloatRegister {
 
   int operator==(const FloatRegister r) const { return _encoding == r._encoding; }
   int operator!=(const FloatRegister r) const { return _encoding != r._encoding; }
+  int operator<(const FloatRegister r) const  { return _encoding < r._encoding; }
 
   constexpr const FloatRegisterImpl* operator->() const { return FloatRegisterImpl::first() + _encoding; }
 };

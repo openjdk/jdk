@@ -36,7 +36,7 @@
 class oopDesc;
 
 // ShowRegistersOnAssert support (for now Linux only)
-#if defined(LINUX) && !defined(ZERO)
+#if 0 && defined(LINUX) && !defined(ZERO)
 #define CAN_SHOW_REGISTERS_ON_ASSERT
 extern char* g_assert_poison;
 #define TOUCH_ASSERT_POISON (*g_assert_poison) = 'X';
@@ -284,4 +284,6 @@ void report_java_out_of_memory(const char* message);
 extern "C" bool dbg_is_safe(const void* p, intptr_t errvalue);
 extern "C" bool dbg_is_good_oop(oopDesc* o);
 
+void print128(__uint128_t n);
+void print52(unsigned long hi, unsigned long mid, unsigned long lo);
 #endif // SHARE_UTILITIES_DEBUG_HPP

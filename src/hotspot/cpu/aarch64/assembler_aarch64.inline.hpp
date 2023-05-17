@@ -48,4 +48,42 @@ inline bool Address::offset_ok_for_immed(int64_t offset, uint shift) {
   }
 }
 
+template <typename T>
+inline RelocationHolder Address::address_relocation(T *target, relocInfo::relocType rtype) {
+  const address addr = (address)target;
+  switch (rtype) {
+  case relocInfo::oop_type:
+  case relocInfo::metadata_type:
+    // Oops are a special case. Normally they would be their own section
+    // but in cases like icBuffer they are literals in the code stream that
+    // we don't have a section for. We use none so that we get a literal address
+    // which is always patchable.
+    return RelocationHolder::none;
+  case relocInfo::external_word_type:
+    return external_word_Relocation::spec(addr);
+  case relocInfo::internal_word_type:
+    return internal_word_Relocation::spec(addr);
+  case relocInfo::opt_virtual_call_type:
+    return opt_virtual_call_Relocation::spec();
+  case relocInfo::static_call_type:
+    return static_call_Relocation::spec();
+  case relocInfo::runtime_call_type:
+    return runtime_call_Relocation::spec();
+  case relocInfo::poll_type:
+  case relocInfo::poll_return_type:
+    return Relocation::spec_simple(rtype);
+  case relocInfo::none:
+    return RelocationHolder::none;
+  default:
+    ShouldNotReachHere();
+    return RelocationHolder::none;
+  }
+}
+
+template <typename T>
+inline Address::Address(T *target, relocInfo::relocType rtype) :
+  _mode(literal),
+  _literal((address)target, address_relocation(target, rtype))
+{}
+
 #endif // CPU_AARCH64_ASSEMBLER_AARCH64_INLINE_HPP
