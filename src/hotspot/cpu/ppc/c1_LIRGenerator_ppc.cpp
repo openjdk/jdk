@@ -40,6 +40,7 @@
 #include "runtime/vm_version.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "vmreg_ppc.inline.hpp"
+#include <stdint.h>
 
 #ifdef ASSERT
 #define __ gen()->lir(__FILE__, __LINE__)->
@@ -421,9 +422,9 @@ void LIRGenerator::do_ArithmeticOp_Long(ArithmeticOp* x) {
   bool is_div_rem = x->op() == Bytecodes::_ldiv || x->op() == Bytecodes::_lrem;
 
   LIRItem right(x->y(), this);
-  // Missing test if instr is commutative and if we should swap. -32768 means same as ((-1)<<15)) , but the compiler doesn't like this anymore.
+  // Missing test if instr is commutative and if we should swap.
   if (right.value()->type()->as_LongConstant() &&
-      (x->op() == Bytecodes::_lsub && right.value()->type()->as_LongConstant()->value() == -32768 ) ) {
+      (x->op() == Bytecodes::_lsub && right.value()->type()->as_LongConstant()->value() == INT16_MIN) ) {
     // Sub is implemented by addi and can't support min_simm16 as constant..
     right.load_item();
   } else {
@@ -475,9 +476,9 @@ void LIRGenerator::do_ArithmeticOp_Int(ArithmeticOp* x) {
   bool is_div_rem = x->op() == Bytecodes::_idiv || x->op() == Bytecodes::_irem;
 
   LIRItem right(x->y(), this);
-  // Missing test if instr is commutative and if we should swap.  -32768 means same as ((-1)<<15)) , but the compiler doesn't like this anymore.
+  // Missing test if instr is commutative and if we should swap.
   if (right.value()->type()->as_IntConstant() &&
-      (x->op() == Bytecodes::_isub && right.value()->type()->as_IntConstant()->value() == -32768) ) {
+      (x->op() == Bytecodes::_isub && right.value()->type()->as_IntConstant()->value() == INT16_MIN) ) {
     // Sub is implemented by addi and can't support min_simm16 as constant.
     right.load_item();
   } else {

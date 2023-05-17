@@ -81,6 +81,9 @@
 #include "utilities/vmError.hpp"
 
 // put OS-includes here (sorted alphabetically)
+#ifdef AIX_XLC_GE_17
+#include <alloca.h>
+#endif
 #include <errno.h>
 #include <fcntl.h>
 #include <inttypes.h>
@@ -461,7 +464,7 @@ static void query_multipage_support() {
         IPC_CREAT | S_IRUSR | S_IWUSR);
       guarantee0(shmid != -1); // Should always work.
       // Try to set pagesize.
-      struct shmid_ds shm_buf = { {0,0,0,0,0,0,0,0},0,0,0,0,0,0,0,0,0,0,0,0,0,0 };
+      struct shmid_ds shm_buf = { };
       shm_buf.shm_pagesize = pagesize;
       if (::shmctl(shmid, SHM_PAGESIZE, &shm_buf) != 0) {
         const int en = errno;
@@ -672,9 +675,6 @@ bool os::Aix::get_meminfo(meminfo_t* pmi) {
 
 //////////////////////////////////////////////////////////////////////////////
 // create new thread
-#ifdef AIX_XLC_GE_17
-#include "alloca.h"
-#endif
 
 // Thread start routine for all newly created threads
 static void *thread_native_entry(Thread *thread) {
