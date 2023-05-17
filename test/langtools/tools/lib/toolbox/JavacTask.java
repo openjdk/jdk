@@ -89,7 +89,7 @@ public class JavacTask extends AbstractTask<JavacTask> {
      * @return this task object
      */
     public JavacTask classpath(String classpath) {
-        this.classpath = Stream.of(classpath.split(File.pathSeparator))
+        this.classpath = Stream.of(classpath.split(ToolBox.pathSeparator))
                 .filter(s -> !s.isEmpty())
                 .map(s -> Paths.get(s))
                 .collect(Collectors.toList());
@@ -122,7 +122,7 @@ public class JavacTask extends AbstractTask<JavacTask> {
      * @return this task object
      */
     public JavacTask sourcepath(String sourcepath) {
-        this.sourcepath = Stream.of(sourcepath.split(File.pathSeparator))
+        this.sourcepath = Stream.of(sourcepath.split(ToolBox.pathSeparator))
                 .filter(s -> !s.isEmpty())
                 .map(s -> Paths.get(s))
                 .collect(Collectors.toList());
