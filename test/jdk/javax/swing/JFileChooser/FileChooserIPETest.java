@@ -38,7 +38,7 @@ import java.lang.reflect.InvocationTargetException;
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @summary Test to check if the certain windows like "This PC",
- * "Library","network" does not throw Invalid Path Exception on selection.
+ * "Library", "Network" does not throw Invalid Path Exception on selection.
  * @run main/manual FileChooserIPETest
  */
 
