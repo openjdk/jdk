@@ -304,7 +304,10 @@ void G1FullCollector::phase1_mark_live_objects() {
     _heap->complete_cleaning(&_is_alive, purged_class);
   }
 
-  scope()->tracer()->report_object_count_after_gc(&_is_alive);
+  {
+    GCTraceTime(Debug, gc, phases) debug("Report Object Count", scope()->timer());
+    scope()->tracer()->report_object_count_after_gc(&_is_alive);
+  }
 }
 
 void G1FullCollector::phase2_prepare_compaction() {

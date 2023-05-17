@@ -230,7 +230,10 @@ void GenMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
     JVMCI_ONLY(JVMCI::do_unloading(purged_class));
   }
 
-  gc_tracer()->report_object_count_after_gc(&is_alive);
+  {
+    GCTraceTime(Debug, gc, phases) tm_m("Report Object Count", gc_timer());
+    gc_tracer()->report_object_count_after_gc(&is_alive);
+  }
 }
 
 

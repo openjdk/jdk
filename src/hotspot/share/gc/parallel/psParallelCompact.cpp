@@ -2137,7 +2137,10 @@ void PSParallelCompact::marking_phase(ParCompactionManager* cm,
     JVMCI_ONLY(JVMCI::do_unloading(purged_class));
   }
 
-  _gc_tracer.report_object_count_after_gc(is_alive_closure());
+  {
+    GCTraceTime(Debug, gc, phases) tm("Report Object Count", &_gc_timer);
+    _gc_tracer.report_object_count_after_gc(is_alive_closure());
+  }
 }
 
 #ifdef ASSERT
