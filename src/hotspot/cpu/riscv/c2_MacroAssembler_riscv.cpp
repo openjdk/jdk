@@ -1643,8 +1643,8 @@ void C2_MacroAssembler::minmax_fp_v(VectorRegister dst, VectorRegister src1, Vec
 // The destination vector register elements corresponding to masked-off elements
 // are handled with a mask-undisturbed policy.
 void C2_MacroAssembler::minmax_fp_masked_v(VectorRegister dst, VectorRegister src1, VectorRegister src2,
-                                           VectorRegister vmask, int vector_length, VectorRegister tmp1,
-                                           VectorRegister tmp2, bool is_double, bool is_min) {
+                                           VectorRegister vmask, VectorRegister tmp1, VectorRegister tmp2,
+                                           bool is_double, bool is_min, int vector_length) {
   assert_different_registers(src1, src2, tmp1, tmp2);
   vsetvli_helper(is_double ? T_DOUBLE : T_FLOAT, vector_length);
 
@@ -1668,35 +1668,33 @@ void C2_MacroAssembler::reduce_minmax_fp_v(FloatRegister dst,
                                            FloatRegister src1, VectorRegister src2,
                                            VectorRegister tmp1, VectorRegister tmp2,
                                            bool is_double, bool is_min, int vector_length, VectorMask vm) {
+  assert_different_registers(dst, src1);
   assert_different_registers(src2, tmp1, tmp2);
 
-  Label L_done, L_done_check, L_NaN_v, L_NaN_f;
-  // If src1 is NaN, set dst to src1 directly.
+  Label L_done, L_NaN_1, L_NaN_2;
+  // Set dst to src1 if src1 is NaN
   is_double ? feq_d(t0, src1, src1)
             : feq_s(t0, src1, src1);
-  beqz(t0, L_NaN_f);
+  beqz(t0, L_NaN_2);
 
   vsetvli_helper(is_double ? T_DOUBLE : T_FLOAT, vector_length);
   vfmv_s_f(tmp2, src1);
 
   is_min ? vfredmin_vs(tmp1, src2, tmp2, vm)
          : vfredmax_vs(tmp1, src2, tmp2, vm);
+  vfmv_f_s(dst, tmp1);
 
   // Checking NaNs in src2
-  vmfne_vv(tmp2, src2, src2, vm);
-  vcpop_m(t0, tmp2, vm);
-  bnez(t0, L_NaN_v);
-  j(L_done_check);
+  vmfne_vv(tmp1, src2, src2, vm);
+  vcpop_m(t0, tmp1, vm);
+  beqz(t0, L_done);
 
-  bind(L_NaN_v);
-  vfmv_s_f(tmp2, src1);
+  bind(L_NaN_1);
   vfredusum_vs(tmp1, src2, tmp2, vm);
-
-  bind(L_done_check);
   vfmv_f_s(dst, tmp1);
   j(L_done);
 
-  bind(L_NaN_f);
+  bind(L_NaN_2);
   is_double ? fmv_d(dst, src1)
             : fmv_s(dst, src1);
   bind(L_done);
@@ -1712,9 +1710,9 @@ bool C2_MacroAssembler::in_scratch_emit_size() {
   return MacroAssembler::in_scratch_emit_size();
 }
 
-void C2_MacroAssembler::reduce_integral_v(Register dst, VectorRegister tmp,
-                                          Register src1, VectorRegister src2,
-                                          BasicType bt, int opc, int vector_length, VectorMask vm) {
+void C2_MacroAssembler::reduce_integral_v(Register dst, Register src1,
+                                          VectorRegister src2, VectorRegister tmp,
+                                          int opc, BasicType bt, int vector_length, VectorMask vm) {
   assert(bt == T_BYTE || bt == T_SHORT || bt == T_INT || bt == T_LONG, "unsupported element type");
   vsetvli_helper(bt, vector_length);
   vmv_s_x(tmp, src1);
