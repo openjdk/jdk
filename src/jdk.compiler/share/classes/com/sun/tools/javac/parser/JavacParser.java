@@ -2063,22 +2063,30 @@ public class JavacParser implements Parser {
     };
 
     class LambdaClassifier {
-
         LambdaParameterKind kind;
         Fragment diagFragment;
-        List<JCVariableDecl> params;
 
+        /**
+         * analyzeParens() has already classified the lambda as EXPLICIT_LAMBDA, due to
+         * two consecutive identifiers. adding an erroneous parameter (one that
+         * introduces a mixed implicit/explicit state) does not need to class with
+         * either:
+         *
+         *  - an explicit parameter, or
+         *  - one declared with var
+         * */
         void addParameter(JCVariableDecl param) {
-            if (param.vartype != null && param.name != names.error) {
-                if (restrictedTypeName(param.vartype, false) != null) {
-                    reduce(LambdaParameterKind.VAR);
-                } else {
-                    reduce(LambdaParameterKind.EXPLICIT);
-                }
-            }
-            if (param.vartype == null && param.name != names.error ||
-                param.vartype != null && param.name == names.error) {
+            Assert.check(param.vartype != null);
+
+            if (param.name == names.error) {
                 reduce(LambdaParameterKind.IMPLICIT);
+                return;
+            }
+
+            if (restrictedTypeName(param.vartype, false) != null) {
+                reduce(LambdaParameterKind.VAR);
+            } else {
+                reduce(LambdaParameterKind.EXPLICIT);
             }
         }
 
