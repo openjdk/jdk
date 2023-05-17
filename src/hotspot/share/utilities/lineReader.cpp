@@ -60,8 +60,8 @@ void LineReader::close() {
 }
 
 // Returns nullptr if we have reached EOF.
-// \n is treated as the line separator
-// All occurrences of \r are stripper.
+// \n is treated as the line separator.
+// All occurrences of \r are stripped.
 char* LineReader::get_line() {
   if (_stream == nullptr) {
     return nullptr;
