@@ -309,7 +309,6 @@ public final class HSS extends SignatureSpi {
         final int otSigType;
         final LMOTSParams lmotsParams;
         private final int n;
-        private final int p;
         private final byte[] C;
         private final byte[][] y;
 
@@ -322,7 +321,7 @@ public final class HSS extends SignatureSpi {
             otSigType = lmotsParams.lmotSigType;
             this.lmotsParams = lmotsParams;
             n = lmotsParams.n;
-            p = lmotsParams.p;
+            int p = lmotsParams.p;
             if (inLen != (4 + n * (p + 1))) {
                 throw new InvalidParameterException("OTS signature has incorrect length");
             }
@@ -351,7 +350,7 @@ public final class HSS extends SignatureSpi {
         final int twoPowh;
         final String hashAlgStr;
 
-        LMSParams(int type, int m, int h, String hashAlgStr) {
+        LMSParams(int m, int h, String hashAlgStr) {
             this.m = m;
             this.h = h;
             this.hashAlgStr = hashAlgStr;
@@ -392,11 +391,11 @@ public final class HSS extends SignatureSpi {
                     throw new IllegalArgumentException("Unsupported or bad LMS type");
             }
 
-            return new LMSParams(type, m, h, hashAlgStr);
+            return new LMSParams(m, h, hashAlgStr);
         }
 
         boolean hasSameHash(LMSParams other) {
-            return (other.hashAlgStr.equals(hashAlgStr)) && (other.m == m);
+            return other.hashAlgStr.equals(hashAlgStr) && (other.m == m);
         }
 
         boolean hasSameHash(LMOTSParams lmotsParams) {
@@ -621,6 +620,7 @@ public final class HSS extends SignatureSpi {
                 preCandidate[21] = (byte) 0x80;
 
                 byte[] preZi = hashBuf.clone();
+                int hashLen = hashBuf.length;
                 SHA2.SHA256 sha256 = new SHA2.SHA256();
                 pKey.getI(preZi, 0);
                 lmSig.getQArr(preZi, 16);
@@ -640,10 +640,10 @@ public final class HSS extends SignatureSpi {
                         preZi[22] = (byte) j;
                         if (j < twoPowWMinus2) {
                             digestFixedLengthPreprocessed(
-                                    sha256, preZi, 64, preZi, 23, n);
+                                    sha256, preZi, hashLen, preZi, 23, n);
                         } else {
                             digestFixedLengthPreprocessed(
-                                    sha256, preZi, 64, preCandidate, 22 + i * n, n);
+                                    sha256, preZi, hashLen, preCandidate, 22 + i * n, n);
                         }
                     }
                 }
@@ -664,7 +664,7 @@ public final class HSS extends SignatureSpi {
         @Override
         protected PublicKey engineGeneratePublic(KeySpec keySpec)
                 throws InvalidKeySpecException {
-            if (keySpec instanceof X509EncodedKeySpec x) {
+            if (keySpec instanceof X509EncodedKeySpec) {
                 try {
                     X509EncodedKeySpec x509Spec = (X509EncodedKeySpec)keySpec;
                     return new HSSPublicKey(
