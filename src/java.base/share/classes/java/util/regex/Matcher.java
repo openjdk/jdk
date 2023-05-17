@@ -275,9 +275,7 @@ public final class Matcher implements MatchResult {
      */
     public MatchResult toMatchResult() {
         String capturedText = hasMatch()
-                ? text instanceof String s
-                    ? s.substring(first, last)
-                    : text.subSequence(first, last).toString()
+                ? text.subSequence(first, last).toString()
                 : null;
         return new ImmutableMatchResult(first, last, groupCount(),
                 groups.clone(), capturedText,
