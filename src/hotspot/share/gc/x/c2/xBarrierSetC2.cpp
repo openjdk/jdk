@@ -51,7 +51,7 @@ private:
 
 public:
   XBarrierSetC2State(Arena* arena) :
-    _stubs(new (arena) GrowableArray<XLoadBarrierStubC2*>(arena, 8,  0, NULL)),
+    _stubs(new (arena) GrowableArray<XLoadBarrierStubC2*>(arena, 8,  0, nullptr)),
     _live(arena) {}
 
   GrowableArray<XLoadBarrierStubC2*>* stubs() {
@@ -61,17 +61,17 @@ public:
   RegMask* live(const Node* node) {
     if (!node->is_Mach()) {
       // Don't need liveness for non-MachNodes
-      return NULL;
+      return nullptr;
     }
 
     const MachNode* const mach = node->as_Mach();
     if (mach->barrier_data() == XLoadBarrierElided) {
       // Don't need liveness data for nodes without barriers
-      return NULL;
+      return nullptr;
     }
 
     RegMask* live = (RegMask*)_live[node->_idx];
-    if (live == NULL) {
+    if (live == nullptr) {
       live = new (Compile::current()->comp_arena()->AmallocWords(sizeof(RegMask))) RegMask();
       _live.map(node->_idx, (Node*)live);
     }
@@ -136,7 +136,7 @@ address XLoadBarrierStubC2::slow_path() const {
 
 RegMask& XLoadBarrierStubC2::live() const {
   RegMask* mask = barrier_set_state()->live(_node);
-  assert(mask != NULL, "must be mach-node with barrier");
+  assert(mask != nullptr, "must be mach-node with barrier");
   return *mask;
 }
 
@@ -167,7 +167,7 @@ void XBarrierSetC2::emit_stubs(CodeBuffer& cb) const {
 
   for (int i = 0; i < stubs->length(); i++) {
     // Make sure there is enough space in the code buffer
-    if (cb.insts()->maybe_expand_to_ensure_remaining(PhaseOutput::MAX_inst_size) && cb.blob() == NULL) {
+    if (cb.insts()->maybe_expand_to_ensure_remaining(PhaseOutput::MAX_inst_size) && cb.blob() == nullptr) {
       ciEnv::current()->record_failure("CodeCache is full");
       return;
     }
@@ -272,7 +272,7 @@ void XBarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* a
   Node* const src = ac->in(ArrayCopyNode::Src);
   const TypeAryPtr* ary_ptr = src->get_ptr_type()->isa_aryptr();
 
-  if (ac->is_clone_array() && ary_ptr != NULL) {
+  if (ac->is_clone_array() && ary_ptr != nullptr) {
     BasicType bt = ary_ptr->elem()->array_element_basic_type();
     if (is_reference_type(bt)) {
       // Clone object array
@@ -309,7 +309,7 @@ void XBarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* a
     Node* payload_dst = phase->basic_plus_adr(dest, dest_offset);
 
     const char* copyfunc_name = "arraycopy";
-    address     copyfunc_addr = phase->basictype2arraycopy(bt, NULL, NULL, true, copyfunc_name, true);
+    address     copyfunc_addr = phase->basictype2arraycopy(bt, nullptr, nullptr, true, copyfunc_name, true);
 
     const TypePtr* raw_adr_type = TypeRawPtr::BOTTOM;
     const TypeFunc* call_type = OptoRuntime::fast_arraycopy_Type();
@@ -425,7 +425,7 @@ void XBarrierSetC2::analyze_dominating_barriers() const {
   // Step 2 - Find dominating accesses for each load
   for (uint i = 0; i < barrier_loads.size(); i++) {
     MachNode* const load = barrier_loads.at(i)->as_Mach();
-    const TypePtr* load_adr_type = NULL;
+    const TypePtr* load_adr_type = nullptr;
     intptr_t load_offset = 0;
     const Node* const load_obj = load->get_base_and_disp(load_offset, load_adr_type);
     Block* const load_block = cfg->get_block_for_node(load);
@@ -433,14 +433,14 @@ void XBarrierSetC2::analyze_dominating_barriers() const {
 
     for (uint j = 0; j < mem_ops.size(); j++) {
       MachNode* mem = mem_ops.at(j)->as_Mach();
-      const TypePtr* mem_adr_type = NULL;
+      const TypePtr* mem_adr_type = nullptr;
       intptr_t mem_offset = 0;
       const Node* mem_obj = mem->get_base_and_disp(mem_offset, mem_adr_type);
       Block* mem_block = cfg->get_block_for_node(mem);
       uint mem_index = block_index(mem_block, mem);
 
       if (load_obj == NodeSentinel || mem_obj == NodeSentinel ||
-          load_obj == NULL || mem_obj == NULL ||
+          load_obj == nullptr || mem_obj == nullptr ||
           load_offset < 0 || mem_offset < 0) {
         continue;
       }
@@ -547,7 +547,7 @@ void XBarrierSetC2::compute_liveness_at_stubs() const {
 
       // If this node tracks liveness, update it
       RegMask* const regs = barrier_set_state()->live(node);
-      if (regs != NULL) {
+      if (regs != nullptr) {
         regs->OR(new_live);
       }
     }

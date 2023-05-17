@@ -3977,10 +3977,8 @@ InitializeNode* AllocateNode::initialization() {
   return nullptr;
 }
 
-//----------------------------- loop predicates ---------------------------
-
-//------------------------------add_predicate_impl----------------------------
-void GraphKit::add_empty_predicate_impl(Deoptimization::DeoptReason reason, int nargs) {
+// Add a Parse Predicate with an uncommon trap on the failing/false path. Normal control will continue on the true path.
+void GraphKit::add_parse_predicate(Deoptimization::DeoptReason reason, const int nargs) {
   // Too many traps seen?
   if (too_many_traps(reason)) {
 #ifdef ASSERT
@@ -3993,16 +3991,16 @@ void GraphKit::add_empty_predicate_impl(Deoptimization::DeoptReason reason, int 
     }
 #endif
     // We cannot afford to take more traps here,
-    // do not generate predicate.
+    // do not generate Parse Predicate.
     return;
   }
 
-  Node *cont    = _gvn.intcon(1);
+  Node* cont    = _gvn.intcon(1);
   Node* opq     = _gvn.transform(new Opaque1Node(C, cont));
-  Node *bol     = _gvn.transform(new Conv2BNode(opq));
+  Node* bol     = _gvn.transform(new Conv2BNode(opq));
   IfNode* iff   = create_and_map_if(control(), bol, PROB_MAX, COUNT_UNKNOWN);
   Node* iffalse = _gvn.transform(new IfFalseNode(iff));
-  C->add_predicate_opaq(opq);
+  C->add_parse_predicate_opaq(opq);
   {
     PreserveJVMState pjvms(this);
     set_control(iffalse);
@@ -4013,19 +4011,17 @@ void GraphKit::add_empty_predicate_impl(Deoptimization::DeoptReason reason, int 
   set_control(iftrue);
 }
 
-//------------------------------add_predicate---------------------------------
-void GraphKit::add_empty_predicates(int nargs) {
-  // These loop predicates remain empty. All concrete loop predicates are inserted above the corresponding
-  // empty loop predicate later by 'PhaseIdealLoop::create_new_if_for_predicate'. All concrete loop predicates of
-  // a specific kind (normal, profile or limit check) share the same uncommon trap as the empty loop predicate.
+// Add Parse Predicates which serve as placeholders to create new Runtime Predicates above them. All
+// Runtime Predicates inside a Runtime Predicate block share the same uncommon trap as the Parse Predicate.
+void GraphKit::add_parse_predicates(int nargs) {
   if (UseLoopPredicate) {
-    add_empty_predicate_impl(Deoptimization::Reason_predicate, nargs);
+    add_parse_predicate(Deoptimization::Reason_predicate, nargs);
   }
   if (UseProfiledLoopPredicate) {
-    add_empty_predicate_impl(Deoptimization::Reason_profile_predicate, nargs);
+    add_parse_predicate(Deoptimization::Reason_profile_predicate, nargs);
   }
-  // loop's limit check predicate should be near the loop.
-  add_empty_predicate_impl(Deoptimization::Reason_loop_limit_check, nargs);
+  // Loop Limit Check Predicate should be near the loop.
+  add_parse_predicate(Deoptimization::Reason_loop_limit_check, nargs);
 }
 
 void GraphKit::sync_kit(IdealKit& ideal) {
@@ -4149,7 +4145,7 @@ void GraphKit::inflate_string_slow(Node* src, Node* dst, Node* start, Node* coun
    *   dst[i_char++] = (char)(src[i_byte] & 0xff);
    * }
    */
-  add_empty_predicates();
+  add_parse_predicates();
   C->set_has_loops(true);
 
   RegionNode* head = new RegionNode(3);

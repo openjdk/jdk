@@ -67,8 +67,8 @@ private:
   Function _function;
 
 public:
-  ZBasicOopIterateClosure(Function function) :
-      _function(function) {}
+  ZBasicOopIterateClosure(Function function)
+    : _function(function) {}
 
   virtual void do_oop(oop* p) {
     _function((volatile zpointer*)p);
@@ -93,8 +93,8 @@ void ZIterator::basic_oop_iterate(oop obj, Function function) {
 }
 
 template <typename Function>
-ZObjectClosure<Function>::ZObjectClosure(Function function) :
-    _function(function) {}
+ZObjectClosure<Function>::ZObjectClosure(Function function)
+  : _function(function) {}
 
 template <typename Function>
 void ZObjectClosure<Function>::do_object(oop obj) {

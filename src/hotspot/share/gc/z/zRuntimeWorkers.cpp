@@ -27,9 +27,8 @@
 #include "gc/z/zRuntimeWorkers.hpp"
 #include "runtime/java.hpp"
 
-ZRuntimeWorkers::ZRuntimeWorkers() :
-    _workers("RuntimeWorker",
-             ParallelGCThreads) {
+ZRuntimeWorkers::ZRuntimeWorkers()
+  : _workers("RuntimeWorker", ParallelGCThreads) {
 
   log_info_p(gc, init)("Runtime Workers: %u", _workers.max_workers());
 

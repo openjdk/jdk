@@ -42,6 +42,7 @@
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/classLoaderMetaspace.hpp"
+#include "memory/metaspace.hpp"
 #include "memory/metaspaceUtils.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
@@ -229,7 +230,7 @@ bool CollectedHeap::is_oop(oop object) const {
 
   // With compact headers, we can't safely access the class, due
   // to possibly forwarded objects.
-  if (!UseCompactObjectHeaders && is_in(object->klass_raw())) {
+  if (!UseCompactObjectHeaders && !Metaspace::contains(object->klass_raw())) {
     return false;
   }
 

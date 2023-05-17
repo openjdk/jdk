@@ -66,8 +66,8 @@ public:
     size_t _current_index;
 
   public:
-    Iterator(ZArenaHashtable* table) :
-        _table(table),
+    Iterator(ZArenaHashtable* table)
+      : _table(table),
         _current_entry(table->_table[0]),
         _current_index(0) {
       if (_current_entry == nullptr) {
@@ -89,8 +89,8 @@ public:
     }
   };
 
-  ZArenaHashtable(Arena* arena) :
-      _arena(arena),
+  ZArenaHashtable(Arena* arena)
+    : _arena(arena),
       _table() {
     Copy::zero_to_bytes(&_table, sizeof(_table));
   }
@@ -127,8 +127,8 @@ private:
   int                             _stubs_start_offset;
 
 public:
-  ZBarrierSetC2State(Arena* arena) :
-      _stubs(new (arena) GrowableArray<ZBarrierStubC2*>(arena, 8,  0, nullptr)),
+  ZBarrierSetC2State(Arena* arena)
+    : _stubs(new (arena) GrowableArray<ZBarrierStubC2*>(arena, 8,  0, nullptr)),
       _live(arena),
       _trampoline_stubs_count(0),
       _stubs_start_offset(0) {}
@@ -200,8 +200,8 @@ int ZBarrierStubC2::stubs_start_offset() {
   return barrier_set_state()->stubs_start_offset();
 }
 
-ZBarrierStubC2::ZBarrierStubC2(const MachNode* node) :
-    _node(node),
+ZBarrierStubC2::ZBarrierStubC2(const MachNode* node)
+  : _node(node),
     _entry(),
     _continuation() {}
 
@@ -232,8 +232,8 @@ ZLoadBarrierStubC2* ZLoadBarrierStubC2::create(const MachNode* node, Address ref
   return stub;
 }
 
-ZLoadBarrierStubC2::ZLoadBarrierStubC2(const MachNode* node, Address ref_addr, Register ref) :
-    ZBarrierStubC2(node),
+ZLoadBarrierStubC2::ZLoadBarrierStubC2(const MachNode* node, Address ref_addr, Register ref)
+  : ZBarrierStubC2(node),
     _ref_addr(ref_addr),
     _ref(ref) {
   assert_different_registers(ref, ref_addr.base());
@@ -281,14 +281,13 @@ ZStoreBarrierStubC2* ZStoreBarrierStubC2::create(const MachNode* node, Address r
   return stub;
 }
 
-ZStoreBarrierStubC2::ZStoreBarrierStubC2(const MachNode* node, Address ref_addr, Register new_zaddress, Register new_zpointer, bool is_native, bool is_atomic) :
-    ZBarrierStubC2(node),
+ZStoreBarrierStubC2::ZStoreBarrierStubC2(const MachNode* node, Address ref_addr, Register new_zaddress, Register new_zpointer, bool is_native, bool is_atomic)
+  : ZBarrierStubC2(node),
     _ref_addr(ref_addr),
     _new_zaddress(new_zaddress),
     _new_zpointer(new_zpointer),
     _is_native(is_native),
-    _is_atomic(is_atomic) {
-}
+    _is_atomic(is_atomic) {}
 
 Address ZStoreBarrierStubC2::ref_addr() const {
   return _ref_addr;
