@@ -206,11 +206,11 @@
 
  void vsetvli_helper(BasicType bt, int vector_length, LMUL vlmul = Assembler::m1, Register tmp = t0);
 
- void compare_integral_v(VectorRegister dst, BasicType bt, int vector_length,
-                         VectorRegister src1, VectorRegister src2, int cond, VectorMask vm = Assembler::unmasked);
+ void compare_integral_v(VectorRegister dst, VectorRegister src1, VectorRegister src2, int cond,
+                         BasicType bt, int vector_length, VectorMask vm = Assembler::unmasked);
 
- void compare_fp_v(VectorRegister dst, BasicType bt, int vector_length,
-                   VectorRegister src1, VectorRegister src2, int cond, VectorMask vm = Assembler::unmasked);
+ void compare_fp_v(VectorRegister dst, VectorRegister src1, VectorRegister src2, int cond,
+                   BasicType bt, int vector_length, VectorMask vm = Assembler::unmasked);
 
  // In Matcher::scalable_predicate_reg_slots,
  // we assume each predicate register is one-eighth of the size of

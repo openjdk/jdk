@@ -172,8 +172,9 @@ instruct vmaskcmp(vRegMask dst, vReg src1, vReg src2, immI cond) %{
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     uint vector_length = Matcher::vector_length(this);
-    __ compare_integral_v(as_VectorRegister($dst$$reg), bt, vector_length, as_VectorRegister($src1$$reg),
-                          as_VectorRegister($src2$$reg), (int)($cond$$constant));
+    __ compare_integral_v(as_VectorRegister($dst$$reg),
+                          as_VectorRegister($src1$$reg), as_VectorRegister($src2$$reg),
+                          (int)($cond$$constant), bt, vector_length);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -189,8 +190,9 @@ instruct vmaskcmp_masked(vRegMask dst, vReg src1, vReg src2, immI cond, vRegMask
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     uint vector_length = Matcher::vector_length(this);
-    __ compare_integral_v(as_VectorRegister($dst$$reg), bt, vector_length, as_VectorRegister($src1$$reg),
-                          as_VectorRegister($src2$$reg), (int)($cond$$constant), Assembler::v0_t);
+    __ compare_integral_v(as_VectorRegister($dst$$reg),
+                          as_VectorRegister($src1$$reg), as_VectorRegister($src2$$reg),
+                          (int)($cond$$constant), bt, vector_length, Assembler::v0_t);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -206,9 +208,9 @@ instruct vmaskcmp_fp(vRegMask dst, vReg src1, vReg src2, immI cond) %{
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     uint vector_length = Matcher::vector_length(this);
-    __ compare_fp_v(as_VectorRegister($dst$$reg), bt, vector_length,
+    __ compare_fp_v(as_VectorRegister($dst$$reg),
                     as_VectorRegister($src1$$reg), as_VectorRegister($src2$$reg),
-                    (int)($cond$$constant));
+                    (int)($cond$$constant), bt, vector_length);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -222,9 +224,9 @@ instruct vmaskcmp_fp_masked(vRegMask dst, vReg src1, vReg src2, immI cond, vRegM
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     uint vector_length = Matcher::vector_length(this);
-    __ compare_fp_v(as_VectorRegister($dst$$reg), bt, vector_length,
+    __ compare_fp_v(as_VectorRegister($dst$$reg),
                     as_VectorRegister($src1$$reg), as_VectorRegister($src2$$reg),
-                    (int)($cond$$constant), Assembler::v0_t);
+                    (int)($cond$$constant), bt, vector_length, Assembler::v0_t);
   %}
   ins_pipe(pipe_slow);
 %}

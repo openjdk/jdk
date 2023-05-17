@@ -1756,8 +1756,8 @@ void C2_MacroAssembler::vsetvli_helper(BasicType bt, int vector_length, LMUL vlm
   }
 }
 
-void C2_MacroAssembler::compare_integral_v(VectorRegister vd, BasicType bt, int vector_length,
-                                           VectorRegister src1, VectorRegister src2, int cond, VectorMask vm) {
+void C2_MacroAssembler::compare_integral_v(VectorRegister vd, VectorRegister src1, VectorRegister src2,
+                                           int cond, BasicType bt, int vector_length, VectorMask vm) {
   assert(is_integral_type(bt), "unsupported element type");
   assert(vm == Assembler::v0_t ? vd != v0 : true, "should be different registers");
   vsetvli_helper(bt, vector_length);
@@ -1775,8 +1775,8 @@ void C2_MacroAssembler::compare_integral_v(VectorRegister vd, BasicType bt, int 
   }
 }
 
-void C2_MacroAssembler::compare_fp_v(VectorRegister vd, BasicType bt, int vector_length,
-                                     VectorRegister src1, VectorRegister src2, int cond, VectorMask vm) {
+void C2_MacroAssembler::compare_fp_v(VectorRegister vd, VectorRegister src1, VectorRegister src2,
+                                     int cond, BasicType bt, int vector_length, VectorMask vm) {
   assert(is_floating_point_type(bt), "unsupported element type");
   assert(vm == Assembler::v0_t ? vd != v0 : true, "should be different registers");
   vsetvli_helper(bt, vector_length);
