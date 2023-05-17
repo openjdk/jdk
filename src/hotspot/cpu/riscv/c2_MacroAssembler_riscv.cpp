@@ -1111,8 +1111,10 @@ void C2_MacroAssembler::arrays_equals(Register a1, Register a2, Register tmp3,
 // and a2 and the length in cnt1.
 // elem_size is the element size in bytes: either 1 or 2.
 // There are two implementations.  For arrays >= 8 bytes, all
-// comparisons (including the final one, which may overlap) are
-// performed 8 bytes at a time.  For strings < 8 bytes, we compare a
+// comparisons (for hw supporting unaligned access: including the final one,
+// which may overlap) are performed 8 bytes at a time.
+// For strings < 8 bytes (and for tails of long strings when
+// AvoidUnalignedAccesses is true), we compare a
 // halfword, then a short, and then a byte.
 
 void C2_MacroAssembler::string_equals(Register a1, Register a2,
@@ -1123,10 +1125,11 @@ void C2_MacroAssembler::string_equals(Register a1, Register a2,
   Register tmp2 = t1;
 
   assert(elem_size == 1 || elem_size == 2, "must be 2 or 1 byte");
-  assert_different_registers(a1, a2, result, cnt1, t0, t1);
+  assert_different_registers(a1, a2, result, cnt1, tmp1, tmp2);
 
   BLOCK_COMMENT("string_equals {");
 
+  beqz(cnt1, SAME);
   mv(result, false);
 
   // Check for short strings, i.e. smaller than wordSize.
@@ -1141,26 +1144,31 @@ void C2_MacroAssembler::string_equals(Register a1, Register a2,
     add(a2, a2, wordSize);
     sub(cnt1, cnt1, wordSize);
     bne(tmp1, tmp2, DONE);
-  } bgtz(cnt1, NEXT_WORD);
+  } bgez(cnt1, NEXT_WORD);
 
-  // Last longword.  In the case where length == 4 we compare the
-  // same longword twice, but that's still faster than another
-  // conditional branch.
-  // cnt1 could be 0, -1, -2, -3, -4 for chars; -4 only happens when
-  // length == 4.
-  add(tmp1, a1, cnt1);
-  ld(tmp1, Address(tmp1, 0));
-  add(tmp2, a2, cnt1);
-  ld(tmp2, Address(tmp2, 0));
-  bne(tmp1, tmp2, DONE);
-  j(SAME);
+  if (!AvoidUnalignedAccesses) {
+    // Last longword.  In the case where length == 4 we compare the
+    // same longword twice, but that's still faster than another
+    // conditional branch.
+    // cnt1 could be 0, -1, -2, -3, -4 for chars; -4 only happens when
+    // length == 4.
+    add(tmp1, a1, cnt1);
+    ld(tmp1, Address(tmp1, 0));
+    add(tmp2, a2, cnt1);
+    ld(tmp2, Address(tmp2, 0));
+    bne(tmp1, tmp2, DONE);
+    j(SAME);
+  } else {
+    add(tmp1, cnt1, wordSize);
+    beqz(tmp1, SAME);
+  }
 
   bind(SHORT);
   Label TAIL03, TAIL01;
 
   // 0-7 bytes left.
-  test_bit(t0, cnt1, 2);
-  beqz(t0, TAIL03);
+  test_bit(tmp1, cnt1, 2);
+  beqz(tmp1, TAIL03);
   {
     lwu(tmp1, Address(a1, 0));
     add(a1, a1, 4);
@@ -1171,8 +1179,8 @@ void C2_MacroAssembler::string_equals(Register a1, Register a2,
 
   bind(TAIL03);
   // 0-3 bytes left.
-  test_bit(t0, cnt1, 1);
-  beqz(t0, TAIL01);
+  test_bit(tmp1, cnt1, 1);
+  beqz(tmp1, TAIL01);
   {
     lhu(tmp1, Address(a1, 0));
     add(a1, a1, 2);
@@ -1184,8 +1192,8 @@ void C2_MacroAssembler::string_equals(Register a1, Register a2,
   bind(TAIL01);
   if (elem_size == 1) { // Only needed when comparing 1-byte elements
     // 0-1 bytes left.
-    test_bit(t0, cnt1, 0);
-    beqz(t0, SAME);
+    test_bit(tmp1, cnt1, 0);
+    beqz(tmp1, SAME);
     {
       lbu(tmp1, Address(a1, 0));
       lbu(tmp2, Address(a2, 0));

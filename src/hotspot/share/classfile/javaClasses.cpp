@@ -1570,8 +1570,16 @@ JavaThread* java_lang_Thread::thread(oop java_thread) {
   return reinterpret_cast<JavaThread*>(java_thread->address_field(_eetop_offset));
 }
 
+JavaThread* java_lang_Thread::thread_acquire(oop java_thread) {
+  return reinterpret_cast<JavaThread*>(java_thread->address_field_acquire(_eetop_offset));
+}
+
 void java_lang_Thread::set_thread(oop java_thread, JavaThread* thread) {
   java_thread->address_field_put(_eetop_offset, (address)thread);
+}
+
+void java_lang_Thread::release_set_thread(oop java_thread, JavaThread* thread) {
+  java_thread->release_address_field_put(_eetop_offset, (address)thread);
 }
 
 JvmtiThreadState* java_lang_Thread::jvmti_thread_state(oop java_thread) {

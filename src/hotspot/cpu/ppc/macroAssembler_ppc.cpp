@@ -3039,7 +3039,7 @@ void MacroAssembler::decode_klass_not_null(Register dst, Register src) {
   if (src == noreg) src = dst;
   Register shifted_src = src;
   if (CompressedKlassPointers::shift() != 0 ||
-      CompressedKlassPointers::base() == 0 && src != dst) {  // Move required.
+      (CompressedKlassPointers::base() == 0 && src != dst)) {  // Move required.
     shifted_src = dst;
     sldi(shifted_src, src, CompressedKlassPointers::shift());
   }

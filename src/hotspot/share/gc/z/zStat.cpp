@@ -62,10 +62,10 @@ struct ZStatSamplerData {
   uint64_t _sum;
   uint64_t _max;
 
-  ZStatSamplerData() :
-    _nsamples(0),
-    _sum(0),
-    _max(0) {}
+  ZStatSamplerData()
+    : _nsamples(0),
+      _sum(0),
+      _max(0) {}
 
   void add(const ZStatSamplerData& new_sample) {
     _nsamples += new_sample._nsamples;
@@ -77,8 +77,8 @@ struct ZStatSamplerData {
 struct ZStatCounterData {
   uint64_t _counter;
 
-  ZStatCounterData() :
-    _counter(0) {}
+  ZStatCounterData()
+    : _counter(0) {}
 };
 
 //
@@ -93,8 +93,8 @@ private:
   ZStatSamplerData _total;
 
 public:
-  ZStatSamplerHistoryInterval() :
-      _next(0),
+  ZStatSamplerHistoryInterval()
+    : _next(0),
       _samples(),
       _accumulated(),
       _total() {}
@@ -164,8 +164,8 @@ private:
   }
 
 public:
-  ZStatSamplerHistory() :
-      _10seconds(),
+  ZStatSamplerHistory()
+    : _10seconds(),
       _10minutes(),
       _10hours(),
       _total() {}
@@ -341,8 +341,8 @@ uint32_t  ZStatValue::_cpu_offset = 0;
 ZStatValue::ZStatValue(const char* group,
                           const char* name,
                           uint32_t id,
-                          uint32_t size) :
-    _group(group),
+                          uint32_t size)
+  : _group(group),
     _name(name),
     _id(id),
     _offset(_cpu_offset) {
@@ -428,8 +428,8 @@ void ZStatIterableValue<T>::sort() {
 //
 // Stat sampler
 //
-ZStatSampler::ZStatSampler(const char* group, const char* name, ZStatUnitPrinter printer) :
-    ZStatIterableValue<ZStatSampler>(group, name, sizeof(ZStatSamplerData)),
+ZStatSampler::ZStatSampler(const char* group, const char* name, ZStatUnitPrinter printer)
+  : ZStatIterableValue<ZStatSampler>(group, name, sizeof(ZStatSamplerData)),
     _printer(printer) {}
 
 ZStatSamplerData* ZStatSampler::get() const {
@@ -464,8 +464,8 @@ ZStatUnitPrinter ZStatSampler::printer() const {
 //
 // Stat counter
 //
-ZStatCounter::ZStatCounter(const char* group, const char* name, ZStatUnitPrinter printer) :
-    ZStatIterableValue<ZStatCounter>(group, name, sizeof(ZStatCounterData)),
+ZStatCounter::ZStatCounter(const char* group, const char* name, ZStatUnitPrinter printer)
+  : ZStatIterableValue<ZStatCounter>(group, name, sizeof(ZStatCounterData)),
     _sampler(group, name, printer) {}
 
 ZStatCounterData* ZStatCounter::get() const {
@@ -487,8 +487,8 @@ void ZStatCounter::sample_and_reset() const {
 //
 // Stat unsampled counter
 //
-ZStatUnsampledCounter::ZStatUnsampledCounter(const char* name) :
-    ZStatIterableValue<ZStatUnsampledCounter>("Unsampled", name, sizeof(ZStatCounterData)) {}
+ZStatUnsampledCounter::ZStatUnsampledCounter(const char* name)
+  : ZStatIterableValue<ZStatUnsampledCounter>("Unsampled", name, sizeof(ZStatCounterData)) {}
 
 ZStatCounterData* ZStatUnsampledCounter::get() const {
   return get_cpu_local<ZStatCounterData>(ZCPU::id());
@@ -509,12 +509,12 @@ ZStatCounterData ZStatUnsampledCounter::collect_and_reset() const {
 //
 // Stat MMU (Minimum Mutator Utilization)
 //
-ZStatMMUPause::ZStatMMUPause() :
-    _start(0.0),
+ZStatMMUPause::ZStatMMUPause()
+  : _start(0.0),
     _end(0.0) {}
 
-ZStatMMUPause::ZStatMMUPause(const Ticks& start, const Ticks& end) :
-    _start(TimeHelper::counter_to_millis(start.value())),
+ZStatMMUPause::ZStatMMUPause(const Ticks& start, const Ticks& end)
+  : _start(TimeHelper::counter_to_millis(start.value())),
     _end(TimeHelper::counter_to_millis(end.value())) {}
 
 double ZStatMMUPause::end() const {
@@ -593,8 +593,8 @@ void ZStatMMU::print() {
 // Stat phases
 //
 
-ZStatPhase::ZStatPhase(const char* group, const char* name) :
-    _sampler(group, name, ZStatUnitTime) {}
+ZStatPhase::ZStatPhase(const char* group, const char* name)
+  : _sampler(group, name, ZStatUnitTime) {}
 
 void ZStatPhase::log_start(LogTargetHandle log, bool thread) const {
   if (!log.is_enabled()) {
@@ -626,8 +626,8 @@ const char* ZStatPhase::name() const {
   return _sampler.name();
 }
 
-ZStatPhaseCollection::ZStatPhaseCollection(const char* name, bool minor) :
-    ZStatPhase(minor ? "Minor Collection" : "Major Collection", name),
+ZStatPhaseCollection::ZStatPhaseCollection(const char* name, bool minor)
+  : ZStatPhase(minor ? "Minor Collection" : "Major Collection", name),
     _minor(minor) {}
 
 GCTracer* ZStatPhaseCollection::jfr_tracer() const {
@@ -689,8 +689,8 @@ void ZStatPhaseCollection::register_end(ConcurrentGCTimer* timer, const Ticks& s
                duration.seconds());
 }
 
-ZStatPhaseGeneration::ZStatPhaseGeneration(const char* name, ZGenerationId id) :
-    ZStatPhase(id == ZGenerationId::old ? "Old Generation" : "Young Generation", name),
+ZStatPhaseGeneration::ZStatPhaseGeneration(const char* name, ZGenerationId id)
+  : ZStatPhase(id == ZGenerationId::old ? "Old Generation" : "Young Generation", name),
     _id(id) {}
 
 ZGenerationTracer* ZStatPhaseGeneration::jfr_tracer() const {
@@ -748,8 +748,8 @@ void ZStatPhaseGeneration::register_end(ConcurrentGCTimer* timer, const Ticks& s
 
 Tickspan ZStatPhasePause::_max;
 
-ZStatPhasePause::ZStatPhasePause(const char* name, ZGenerationId id) :
-    ZStatPhase(id == ZGenerationId::young ? "Young Pause" : "Old Pause", name) {}
+ZStatPhasePause::ZStatPhasePause(const char* name, ZGenerationId id)
+  : ZStatPhase(id == ZGenerationId::young ? "Young Pause" : "Old Pause", name) {}
 
 const Tickspan& ZStatPhasePause::max() {
   return _max;
@@ -780,8 +780,8 @@ void ZStatPhasePause::register_end(ConcurrentGCTimer* timer, const Ticks& start,
   log_end(log, duration);
 }
 
-ZStatPhaseConcurrent::ZStatPhaseConcurrent(const char* name, ZGenerationId id) :
-    ZStatPhase(id == ZGenerationId::young ? "Young Phase" : "Old Phase", name) {}
+ZStatPhaseConcurrent::ZStatPhaseConcurrent(const char* name, ZGenerationId id)
+  : ZStatPhase(id == ZGenerationId::young ? "Young Phase" : "Old Phase", name) {}
 
 void ZStatPhaseConcurrent::register_start(ConcurrentGCTimer* timer, const Ticks& start) const {
   timer->register_gc_concurrent_start(name(), start);
@@ -804,8 +804,8 @@ void ZStatPhaseConcurrent::register_end(ConcurrentGCTimer* timer, const Ticks& s
   log_end(log, duration);
 }
 
-ZStatSubPhase::ZStatSubPhase(const char* name, ZGenerationId id) :
-    ZStatPhase(id == ZGenerationId::young ? "Young Subphase" : "Old Subphase", name) {}
+ZStatSubPhase::ZStatSubPhase(const char* name, ZGenerationId id)
+  : ZStatPhase(id == ZGenerationId::young ? "Young Subphase" : "Old Subphase", name) {}
 
 void ZStatSubPhase::register_start(ConcurrentGCTimer* timer, const Ticks& start) const {
   if (timer != nullptr) {
@@ -846,8 +846,8 @@ void ZStatSubPhase::register_end(ConcurrentGCTimer* timer, const Ticks& start, c
   }
 }
 
-ZStatCriticalPhase::ZStatCriticalPhase(const char* name, bool verbose) :
-    ZStatPhase("Critical", name),
+ZStatCriticalPhase::ZStatCriticalPhase(const char* name, bool verbose)
+  : ZStatPhase("Critical", name),
     _counter("Critical", name, ZStatUnitOpsPerSecond),
     _verbose(verbose) {}
 
@@ -874,14 +874,14 @@ void ZStatCriticalPhase::register_end(ConcurrentGCTimer* timer, const Ticks& sta
   }
 }
 
-ZStatTimerYoung::ZStatTimerYoung(const ZStatPhase& phase) :
-    ZStatTimer(phase, ZGeneration::young()->gc_timer()) {}
+ZStatTimerYoung::ZStatTimerYoung(const ZStatPhase& phase)
+  : ZStatTimer(phase, ZGeneration::young()->gc_timer()) {}
 
-ZStatTimerOld::ZStatTimerOld(const ZStatPhase& phase) :
-    ZStatTimer(phase, ZGeneration::old()->gc_timer()) {}
+ZStatTimerOld::ZStatTimerOld(const ZStatPhase& phase)
+  : ZStatTimer(phase, ZGeneration::old()->gc_timer()) {}
 
-ZStatTimerWorker::ZStatTimerWorker(const ZStatPhase& phase) :
-    ZStatTimer(phase, nullptr /* gc_timer */) {
+ZStatTimerWorker::ZStatTimerWorker(const ZStatPhase& phase)
+  : ZStatTimer(phase, nullptr /* gc_timer */) {
   assert(Thread::current()->is_Worker_thread(), "Should only be called by worker thread");
 }
 
@@ -1014,8 +1014,8 @@ ZStatMutatorAllocRateStats ZStatMutatorAllocRate::stats() {
 //
 // Stat thread
 //
-ZStat::ZStat() :
-    _metronome(sample_hz) {
+ZStat::ZStat()
+  : _metronome(sample_hz) {
   set_name("ZStat");
   create_and_start();
   ZStatMutatorAllocRate::initialize();
@@ -1124,8 +1124,8 @@ public:
     }
 
   public:
-    ZColumn(char* buffer, size_t position, size_t width, size_t width_next) :
-        _buffer(buffer),
+    ZColumn(char* buffer, size_t position, size_t width, size_t width_next)
+      : _buffer(buffer),
         _position(position),
         _width(width),
         _width_next(width_next) {}
@@ -1206,8 +1206,8 @@ public:
   };
 
 public:
-  ZStatTablePrinter(size_t column0_width, size_t columnN_width) :
-      _column0_width(column0_width),
+  ZStatTablePrinter(size_t column0_width, size_t columnN_width)
+    : _column0_width(column0_width),
       _columnN_width(columnN_width) {}
 
   ZColumn operator()() {
@@ -1218,8 +1218,8 @@ public:
 //
 // Stat cycle
 //
-ZStatCycle::ZStatCycle() :
-    _stat_lock(),
+ZStatCycle::ZStatCycle()
+  : _stat_lock(),
     _nwarmup_cycles(0),
     _start_of_last(),
     _end_of_last(),
@@ -1227,8 +1227,7 @@ ZStatCycle::ZStatCycle() :
     _serial_time(0.7 /* alpha */),
     _parallelizable_time(0.7 /* alpha */),
     _parallelizable_duration(0.7 /* alpha */),
-    _last_active_workers(0.0) {
-}
+    _last_active_workers(0.0) {}
 
 void ZStatCycle::at_start() {
   ZLocker<ZLock> locker(&_stat_lock);
@@ -1323,8 +1322,8 @@ ZStatCycleStats ZStatCycle::stats() {
 //
 // Stat workers
 //
-ZStatWorkers::ZStatWorkers() :
-    _stat_lock(),
+ZStatWorkers::ZStatWorkers()
+  : _stat_lock(),
     _active_workers(0),
     _start_of_last(),
     _accumulated_duration(),
@@ -1415,14 +1414,13 @@ void ZStatLoad::print() {
 //
 // Stat mark
 //
-ZStatMark::ZStatMark() :
-    _nstripes(),
+ZStatMark::ZStatMark()
+  : _nstripes(),
     _nproactiveflush(),
     _nterminateflush(),
     _ntrycomplete(),
     _ncontinue(),
-    _mark_stack_usage() {
-}
+    _mark_stack_usage() {}
 
 void ZStatMark::at_mark_start(size_t nstripes) {
   _nstripes = nstripes;
@@ -1461,14 +1459,13 @@ void ZStatMark::print() {
 //
 // Stat relocation
 //
-ZStatRelocation::ZStatRelocation() :
-    _selector_stats(),
+ZStatRelocation::ZStatRelocation()
+  : _selector_stats(),
     _forwarding_usage(),
     _small_selected(),
     _small_in_place_count(),
     _medium_selected(),
-    _medium_in_place_count() {
-}
+    _medium_in_place_count() {}
 
 void ZStatRelocation::at_select_relocation_set(const ZRelocationSetSelectorStats& selector_stats) {
   _selector_stats = selector_stats;
@@ -1706,15 +1703,14 @@ void ZStatReferences::print() {
 // Stat heap
 //
 
-ZStatHeap::ZStatHeap() :
-    _stat_lock(),
+ZStatHeap::ZStatHeap()
+  : _stat_lock(),
     _at_collection_start(),
     _at_mark_start(),
     _at_mark_end(),
     _at_relocate_start(),
     _at_relocate_end(),
-    _reclaimed_bytes(0.7 /* alpha */) {
-}
+    _reclaimed_bytes(0.7 /* alpha */) {}
 
 ZStatHeap::ZAtInitialize ZStatHeap::_at_initialize;
 

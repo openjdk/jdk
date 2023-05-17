@@ -24,16 +24,16 @@
 #include "precompiled.hpp"
 #include "gc/z/zTask.hpp"
 
-ZTask::Task::Task(ZTask* task, const char* name) :
-    WorkerTask(name),
+ZTask::Task::Task(ZTask* task, const char* name)
+  : WorkerTask(name),
     _task(task) {}
 
 void ZTask::Task::work(uint worker_id) {
   _task->work();
 }
 
-ZTask::ZTask(const char* name) :
-    _worker_task(this, name) {}
+ZTask::ZTask(const char* name)
+  : _worker_task(this, name) {}
 
 const char* ZTask::name() const {
   return _worker_task.name();
@@ -43,7 +43,7 @@ WorkerTask* ZTask::worker_task() {
   return &_worker_task;
 }
 
-ZRestartableTask::ZRestartableTask(const char* name) :
-    ZTask(name) {}
+ZRestartableTask::ZRestartableTask(const char* name)
+  : ZTask(name) {}
 
 void ZRestartableTask::resize_workers(uint nworkers) {}
