@@ -513,7 +513,7 @@ class DigestAuthentication extends AuthenticationInfo {
         String ncstring=null;
 
         if (nccount != -1) {
-            ncstring = Integer.toHexString (nccount).toLowerCase(Locale.ROOT);
+            ncstring = Integer.toHexString(nccount);
             int len = ncstring.length();
             if (len < 8)
                 ncstring = zeroPad [len] + ncstring;
