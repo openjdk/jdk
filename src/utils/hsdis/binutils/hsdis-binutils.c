@@ -242,25 +242,36 @@ static const char* format_insn_close(const char* close,
   case dis_noninsn:     type = "noninsn";    break;
   }
 
-  /* the buf capacity has been checked previously */
   size_t used_size = snprintf(buf, bufsize, "%s", close);
+  if ((used_size < 0) || (used_size >= bufsize)) {
+    return close;
+  }
   char* p = buf + used_size;
   bufsize -= used_size;
 
   if (type) {
     used_size = snprintf(p, bufsize, " type='%s'", type);
+    if ((used_size < 0) || (used_size >= bufsize)) {
+      return close;
+    }
     p += used_size;
     bufsize -= used_size;
   }
 
   if (dsize) {
     used_size = snprintf(p, bufsize, " dsize='%d'", dsize);
+    if ((used_size < 0) || (used_size >= bufsize)) {
+      return close;
+    }
     p += used_size;
     bufsize -= used_size;
   }
 
   if (delays) {
-    snprintf(p, bufsize, " delay='%d'", delays);
+    used_size = snprintf(p, bufsize, " delay='%d'", delays);
+    if ((used_size < 0) || (used_size >= bufsize)) {
+      return close;
+    }
   }
 
   return buf;
