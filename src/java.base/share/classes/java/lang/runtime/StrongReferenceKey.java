@@ -25,16 +25,11 @@
 
 package java.lang.runtime;
 
-import java.lang.ref.ReferenceQueue;
-import java.lang.ref.SoftReference;
-import java.lang.ref.WeakReference;
 import java.util.Objects;
 
 /**
- * View/wrapper of keys used by the backing {@link ReferencedKeyMap}.
- * There are two style of keys; one for entries in the backing map and
- * one for queries to the backing map. This second style avoids the
- * overhead of a {@link Reference} object.
+ * Wrapper for querying the backing map. Avoids the overhead of an
+ * {@link java.lang.ref.Reference} object.
  *
  * @param <T> key type
  *
@@ -43,15 +38,48 @@ import java.util.Objects;
  * Warning: This class is part of PreviewFeature.Feature.STRING_TEMPLATES.
  *          Do not rely on its availability.
  */
-sealed interface ReferenceKey<T> permits StrongReferenceKey, WeakReferenceKey, SoftReferenceKey {
-    /**
-     * {@return the value of the unwrapped key}
-     */
-    T get();
+final class StrongReferenceKey<T> implements ReferenceKey<T> {
+    T key;
 
     /**
-     * Cleanup unused key.
+     * Package-Protected constructor.
+     *
+     * @param key unwrapped key value
      */
-    void unused();
+    StrongReferenceKey(T key) {
+        this.key = key;
+    }
 
+    /**
+     * {@return the unwrapped key}
+     */
+    @Override
+    public T get() {
+        return key;
+    }
+
+    @Override
+    public void unused() {
+        key = null;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        // Necessary when comparing an unwrapped key
+        if (obj instanceof ReferenceKey<?> key) {
+            obj = key.get();
+        }
+        return Objects.equals(get(), obj);
+    }
+
+    @Override
+    public int hashCode() {
+        // Use unwrapped key hash code
+        return get().hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return this.getClass().getCanonicalName() + "#" + System.identityHashCode(this);
+    }
 }
