@@ -35,8 +35,8 @@ private:
   ZListNode<ZTestEntry> _node;
 
 public:
-  ZTestEntry(int id) :
-      _id(id),
+  ZTestEntry(int id)
+    : _id(id),
       _node() {}
 
   int id() const {

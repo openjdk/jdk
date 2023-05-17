@@ -351,8 +351,8 @@ class Compile : public Phase {
   const char*           _failure_reason;        // for record_failure/failing pattern
   GrowableArray<CallGenerator*> _intrinsics;    // List of intrinsics.
   GrowableArray<Node*>  _macro_nodes;           // List of nodes which need to be expanded before matching.
-  GrowableArray<Node*>  _predicate_opaqs;       // List of Opaque1 nodes for the loop predicates.
-  GrowableArray<Node*>  _skeleton_predicate_opaqs; // List of Opaque4 nodes for the loop skeleton predicates.
+  GrowableArray<Node*>  _parse_predicate_opaqs; // List of Opaque1 nodes for the Parse Predicates.
+  GrowableArray<Node*>  _template_assertion_predicate_opaqs; // List of Opaque4 nodes for Template Assertion Predicates.
   GrowableArray<Node*>  _expensive_nodes;       // List of nodes that are expensive to compute and that we'd better not let the GVN freely common
   GrowableArray<Node*>  _for_post_loop_igvn;    // List of nodes for IGVN after loop opts are over
   GrowableArray<UnstableIfTrap*> _unstable_if_traps;        // List of ifnodes after IGVN
@@ -373,7 +373,6 @@ class Compile : public Phase {
   DEBUG_ONLY(Unique_Node_List* _modified_nodes;)   // List of nodes which inputs were modified
   DEBUG_ONLY(bool       _phase_optimize_finished;) // Used for live node verification while creating new nodes
 
-  debug_only(static int _debug_idx;)            // Monotonic counter (not reset), use -XX:BreakAtNode=<idx>
   Arena                 _node_arena;            // Arena for new-space Nodes
   Arena                 _old_arena;             // Arena for old-space Nodes, lifetime during xform
   RootNode*             _root;                  // Unique root of compilation, or null after bail-out.
@@ -669,14 +668,18 @@ class Compile : public Phase {
 #endif
 
   int           macro_count()             const { return _macro_nodes.length(); }
-  int           predicate_count()         const { return _predicate_opaqs.length(); }
-  int           skeleton_predicate_count() const { return _skeleton_predicate_opaqs.length(); }
+  int           parse_predicate_count()   const { return _parse_predicate_opaqs.length(); }
+  int           template_assertion_predicate_count() const { return _template_assertion_predicate_opaqs.length(); }
   int           expensive_count()         const { return _expensive_nodes.length(); }
   int           coarsened_count()         const { return _coarsened_locks.length(); }
 
   Node*         macro_node(int idx)       const { return _macro_nodes.at(idx); }
-  Node*         predicate_opaque1_node(int idx) const { return _predicate_opaqs.at(idx); }
-  Node*         skeleton_predicate_opaque4_node(int idx) const { return _skeleton_predicate_opaqs.at(idx); }
+  Node*         parse_predicate_opaque1_node(int idx) const { return _parse_predicate_opaqs.at(idx); }
+
+  Node* template_assertion_predicate_opaq_node(int idx) const {
+    return _template_assertion_predicate_opaqs.at(idx);
+  }
+
   Node*         expensive_node(int idx)   const { return _expensive_nodes.at(idx); }
 
   ConnectionGraph* congraph()                   { return _congraph;}
@@ -690,9 +693,9 @@ class Compile : public Phase {
     // this function may be called twice for a node so we can only remove it
     // if it's still existing.
     _macro_nodes.remove_if_existing(n);
-    // remove from _predicate_opaqs list also if it is there
-    if (predicate_count() > 0) {
-      _predicate_opaqs.remove_if_existing(n);
+    // remove from _parse_predicate_opaqs list also if it is there
+    if (parse_predicate_count() > 0) {
+      _parse_predicate_opaqs.remove_if_existing(n);
     }
     // Remove from coarsened locks list if present
     if (coarsened_count() > 0) {
@@ -703,18 +706,19 @@ class Compile : public Phase {
   void remove_expensive_node(Node* n) {
     _expensive_nodes.remove_if_existing(n);
   }
-  void add_predicate_opaq(Node* n) {
-    assert(!_predicate_opaqs.contains(n), "duplicate entry in predicate opaque1");
+  void add_parse_predicate_opaq(Node* n) {
+    assert(!_parse_predicate_opaqs.contains(n), "duplicate entry in Parse Predicate opaque1 list");
     assert(_macro_nodes.contains(n), "should have already been in macro list");
-    _predicate_opaqs.append(n);
+    _parse_predicate_opaqs.append(n);
   }
-  void add_skeleton_predicate_opaq(Node* n) {
-    assert(!_skeleton_predicate_opaqs.contains(n), "duplicate entry in skeleton predicate opaque4 list");
-    _skeleton_predicate_opaqs.append(n);
+  void add_template_assertion_predicate_opaq(Node* n) {
+    assert(!_template_assertion_predicate_opaqs.contains(n),
+           "duplicate entry in template assertion predicate opaque4 list");
+    _template_assertion_predicate_opaqs.append(n);
   }
-  void remove_skeleton_predicate_opaq(Node* n) {
-    if (skeleton_predicate_count() > 0) {
-      _skeleton_predicate_opaqs.remove_if_existing(n);
+  void remove_template_assertion_predicate_opaq(Node* n) {
+    if (template_assertion_predicate_count() > 0) {
+      _template_assertion_predicate_opaqs.remove_if_existing(n);
     }
   }
   void add_coarsened_locks(GrowableArray<AbstractLockNode*>& locks);
@@ -736,11 +740,11 @@ class Compile : public Phase {
 
   void sort_macro_nodes();
 
-  // remove the opaque nodes that protect the predicates so that the unused checks and
+  // Remove the opaque nodes that protect the Parse Predicates so that the unused checks and
   // uncommon traps will be eliminated from the graph.
-  void cleanup_loop_predicates(PhaseIterGVN &igvn);
-  bool is_predicate_opaq(Node* n) {
-    return _predicate_opaqs.contains(n);
+  void cleanup_parse_predicates(PhaseIterGVN &igvn) const;
+  bool is_predicate_opaq(Node* n) const {
+    return _parse_predicate_opaqs.contains(n);
   }
 
   // Are there candidate expensive nodes for optimization?
@@ -780,8 +784,6 @@ class Compile : public Phase {
   uint         unique() const              { return _unique; }
   uint         next_unique()               { return _unique++; }
   void         set_unique(uint i)          { _unique = i; }
-  static int   debug_idx()                 { return debug_only(_debug_idx)+0; }
-  static void  set_debug_idx(int i)        { debug_only(_debug_idx = i); }
   Arena*       node_arena()                { return &_node_arena; }
   Arena*       old_arena()                 { return &_old_arena; }
   RootNode*    root() const                { return _root; }
