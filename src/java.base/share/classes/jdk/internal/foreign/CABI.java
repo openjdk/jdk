@@ -25,10 +25,13 @@
  */
 package jdk.internal.foreign;
 
+import jdk.internal.foreign.abi.fallback.FallbackLinker;
+import jdk.internal.vm.ForeignLinkerSupport;
 import jdk.internal.util.OperatingSystem;
 import jdk.internal.util.StaticProperty;
 
 import static java.lang.foreign.ValueLayout.ADDRESS;
+import static sun.security.action.GetPropertyAction.privilegedGetProperty;
 
 public enum CABI {
     SYS_V,
@@ -36,51 +39,52 @@ public enum CABI {
     LINUX_AARCH_64,
     MAC_OS_AARCH_64,
     WIN_AARCH_64,
-    LINUX_RISCV_64;
+    LINUX_RISCV_64,
+    FALLBACK,
+    UNSUPPORTED;
 
-    private static final CABI ABI;
-    private static final String ARCH;
-    private static final long ADDRESS_SIZE;
+    private static final CABI CURRENT = computeCurrent();
 
-    static {
-        ARCH = StaticProperty.osArch();
-        ADDRESS_SIZE = ADDRESS.bitSize();
-        // might be running in a 32-bit VM on a 64-bit platform.
-        // addressSize will be correctly 32
-        if ((ARCH.equals("amd64") || ARCH.equals("x86_64")) && ADDRESS_SIZE == 64) {
-            if (OperatingSystem.isWindows()) {
-                ABI = WIN_64;
-            } else {
-                ABI = SYS_V;
-            }
-        } else if (ARCH.equals("aarch64")) {
-            if (OperatingSystem.isMacOS()) {
-                ABI = MAC_OS_AARCH_64;
-            } else if (OperatingSystem.isWindows()) {
-                ABI = WIN_AARCH_64;
-            } else {
-                // The Linux ABI follows the standard AAPCS ABI
-                ABI = LINUX_AARCH_64;
-            }
-        } else if (ARCH.equals("riscv64")) {
-            if (OperatingSystem.isLinux()) {
-                ABI = LINUX_RISCV_64;
-            } else {
-                // unsupported
-                ABI = null;
-            }
-        } else {
-            // unsupported
-            ABI = null;
+    private static CABI computeCurrent() {
+        String abi = privilegedGetProperty("jdk.internal.foreign.CABI");
+        if (abi != null) {
+            return CABI.valueOf(abi);
         }
+
+        if (ForeignLinkerSupport.isSupported()) {
+            // figure out the ABI based on the platform
+            String arch = StaticProperty.osArch();
+            long addressSize = ADDRESS.bitSize();
+            // might be running in a 32-bit VM on a 64-bit platform.
+            // addressSize will be correctly 32
+            if ((arch.equals("amd64") || arch.equals("x86_64")) && addressSize == 64) {
+                if (OperatingSystem.isWindows()) {
+                    return WIN_64;
+                } else {
+                    return SYS_V;
+                }
+            } else if (arch.equals("aarch64")) {
+                if (OperatingSystem.isMacOS()) {
+                    return MAC_OS_AARCH_64;
+                } else if (OperatingSystem.isWindows()) {
+                    return WIN_AARCH_64;
+                } else {
+                    // The Linux ABI follows the standard AAPCS ABI
+                    return LINUX_AARCH_64;
+                }
+            } else if (arch.equals("riscv64")) {
+                if (OperatingSystem.isLinux()) {
+                    return LINUX_RISCV_64;
+                }
+            }
+        } else if (FallbackLinker.isSupported()) {
+            return FALLBACK; // fallback linker
+        }
+
+        return UNSUPPORTED;
     }
 
     public static CABI current() {
-        if (ABI == null) {
-            throw new UnsupportedOperationException(
-                    "Unsupported os, arch, or address size: " + OperatingSystem.current() +
-                            ", " + ARCH + ", " + ADDRESS_SIZE);
-        }
-        return ABI;
+        return CURRENT;
     }
 }

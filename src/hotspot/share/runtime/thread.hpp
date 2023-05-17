@@ -55,6 +55,7 @@ class SafeThreadsListPtr;
 class ThreadClosure;
 class ThreadsList;
 class ThreadsSMRSupport;
+class VMErrorCallback;
 
 class OopClosure;
 class CodeBlobClosure;
@@ -104,6 +105,8 @@ class JavaThread;
 //       - this->entry_point()  // set differently for each kind of JavaThread
 
 class Thread: public ThreadShadow {
+  friend class VMError;
+  friend class VMErrorCallbackMark;
   friend class VMStructs;
   friend class JVMCIVMStructs;
  private:
@@ -202,6 +205,7 @@ class Thread: public ThreadShadow {
 
  private:
   DEBUG_ONLY(bool _suspendible_thread;)
+  DEBUG_ONLY(bool _indirectly_suspendible_thread;)
 
  public:
   // Determines if a heap allocation failure will be retried
@@ -213,15 +217,13 @@ class Thread: public ThreadShadow {
   virtual bool in_retryable_allocation() const { return false; }
 
 #ifdef ASSERT
-  void set_suspendible_thread() {
-    _suspendible_thread = true;
-  }
+  void set_suspendible_thread()   { _suspendible_thread = true; }
+  void clear_suspendible_thread() { _suspendible_thread = false; }
+  bool is_suspendible_thread()    { return _suspendible_thread; }
 
-  void clear_suspendible_thread() {
-    _suspendible_thread = false;
-  }
-
-  bool is_suspendible_thread() { return _suspendible_thread; }
+  void set_indirectly_suspendible_thread()   { _indirectly_suspendible_thread = true; }
+  void clear_indirectly_suspendible_thread() { _indirectly_suspendible_thread = false; }
+  bool is_indirectly_suspendible_thread()    { return _indirectly_suspendible_thread; }
 #endif
 
  private:
@@ -319,6 +321,7 @@ class Thread: public ThreadShadow {
   virtual bool is_Named_thread() const               { return false; }
   virtual bool is_Worker_thread() const              { return false; }
   virtual bool is_JfrSampler_thread() const          { return false; }
+  virtual bool is_monitor_deflation_thread() const   { return false; }
 
   // Can this thread make Java upcalls
   virtual bool can_call_java() const                 { return false; }
@@ -633,6 +636,9 @@ protected:
     Thread *cur = Thread::current_or_null_safe();
     return cur != nullptr && cur->in_asgct();
   }
+
+ private:
+  VMErrorCallback* _vm_error_callbacks;
 };
 
 class ThreadInAsgct {

@@ -35,8 +35,8 @@ G1HeapTransition::Data::Data(G1CollectedHeap* g1_heap) :
   _old_length(g1_heap->old_regions_count()),
   _humongous_length(g1_heap->humongous_regions_count()),
   _meta_sizes(MetaspaceUtils::get_combined_statistics()),
-  _eden_length_per_node(NULL),
-  _survivor_length_per_node(NULL) {
+  _eden_length_per_node(nullptr),
+  _survivor_length_per_node(nullptr) {
 
   uint node_count = G1NUMA::numa()->num_active_nodes();
 
@@ -111,8 +111,8 @@ static void log_regions(const char* msg, size_t before_length, size_t after_leng
 
     ls.print("%s regions: " SIZE_FORMAT "->" SIZE_FORMAT "("  SIZE_FORMAT ")",
              msg, before_length, after_length, capacity);
-    // Not NULL only if gc+heap+numa at Debug level is enabled.
-    if (before_per_node_length != NULL && after_per_node_length != NULL) {
+    // Not null only if gc+heap+numa at Debug level is enabled.
+    if (before_per_node_length != nullptr && after_per_node_length != nullptr) {
       G1NUMA* numa = G1NUMA::numa();
       uint num_nodes = numa->num_active_nodes();
       const int* node_ids = numa->node_ids();

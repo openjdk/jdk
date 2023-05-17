@@ -111,12 +111,11 @@ uint G1FullCollector::calc_active_workers() {
 }
 
 G1FullCollector::G1FullCollector(G1CollectedHeap* heap,
-                                 bool explicit_gc,
                                  bool clear_soft_refs,
                                  bool do_maximal_compaction,
                                  G1FullGCTracer* tracer) :
     _heap(heap),
-    _scope(heap->monitoring_support(), explicit_gc, clear_soft_refs, do_maximal_compaction, tracer),
+    _scope(heap->monitoring_support(), clear_soft_refs, do_maximal_compaction, tracer),
     _num_workers(calc_active_workers()),
     _has_compaction_targets(false),
     _has_humongous(false),
@@ -183,7 +182,7 @@ void G1FullCollector::prepare_collection() {
 
   // Verification needs the bitmap, so we should clear the bitmap only later.
   bool in_concurrent_cycle = _heap->abort_concurrent_cycle();
-  _heap->verify_before_full_collection(scope()->is_explicit_gc());
+  _heap->verify_before_full_collection();
   if (in_concurrent_cycle) {
     GCTraceTime(Debug, gc) debug("Clear Bitmap");
     _heap->concurrent_mark()->clear_bitmap(_heap->workers());
@@ -257,7 +256,9 @@ void G1FullCollector::complete_collection() {
 void G1FullCollector::before_marking_update_attribute_table(HeapRegion* hr) {
   if (hr->is_free()) {
     _region_attr_table.set_free(hr->hrm_index());
-  } else if (hr->is_pinned()) {
+  } else if (hr->is_humongous()) {
+    // Humongous objects will never be moved in the "main" compaction phase, but
+    // afterwards in a special phase if needed.
     _region_attr_table.set_skip_compacting(hr->hrm_index());
   } else {
     // Everything else should be compacted.
@@ -324,7 +325,10 @@ void G1FullCollector::phase1_mark_live_objects() {
     _heap->complete_cleaning(purged_class);
   }
 
-  scope()->tracer()->report_object_count_after_gc(&_is_alive);
+  {
+    GCTraceTime(Debug, gc, phases) debug("Report Object Count", scope()->timer());
+    scope()->tracer()->report_object_count_after_gc(&_is_alive, _heap->workers());
+  }
 #if TASKQUEUE_STATS
   oop_queue_set()->print_and_reset_taskqueue_stats("Oop Queue");
   array_queue_set()->print_and_reset_taskqueue_stats("ObjArrayOop Queue");

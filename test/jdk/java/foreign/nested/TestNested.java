@@ -25,8 +25,8 @@
  * @test
  * @enablePreview
  * @library ../ /test/lib
- * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64" | os.arch == "riscv64"
- * @requires vm.flavor != "zero"
+ * @requires jdk.foreign.linker != "UNSUPPORTED"
+ * @requires jdk.foreign.linker != "FALLBACK"
  * @build NativeTestHelper
  * @run testng/othervm --enable-native-access=ALL-UNNAMED TestNested
  */
@@ -55,7 +55,7 @@ public class TestNested extends NativeTestHelper {
 
     @Test(dataProvider = "nestedLayouts")
     public void testNested(GroupLayout layout) throws Throwable {
-        try (Arena arena = Arena.openConfined()) {
+        try (Arena arena = Arena.ofConfined()) {
             Random random = new Random(0);
             TestValue testValue = genTestValue(random, layout, arena);
 
