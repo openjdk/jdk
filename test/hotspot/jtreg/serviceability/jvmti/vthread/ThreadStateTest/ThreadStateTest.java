@@ -38,11 +38,10 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
 public class ThreadStateTest {
-    private static final String agentLib = "ThreadStateTest";
     static final int VTHREAD_COUNT = 64;
 
-    private static native void SetSingleSteppingMode(boolean enable);
-    private static native void SetMonitorContendedMode(boolean enable);
+    private static native void setSingleSteppingMode(boolean enable);
+    private static native void setMonitorContendedMode(boolean enable);
 
     final Runnable FOO = () -> {
         Thread.yield();
@@ -52,7 +51,7 @@ public class ThreadStateTest {
         int tryCount = 150;
 
         // Force creation of JvmtiThreadState on vthread start.
-        SetMonitorContendedMode(true);
+        setMonitorContendedMode(true);
 
         while (tryCount-- > 0) {
             ExecutorService scheduler = Executors.newFixedThreadPool(8);
@@ -71,8 +70,8 @@ public class ThreadStateTest {
             Thread.sleep(10);
 
             // Trigger race of JvmtiThreadState creation with terminating vthreads.
-            SetMonitorContendedMode(false);
-            SetMonitorContendedMode(true);
+            setMonitorContendedMode(false);
+            setMonitorContendedMode(true);
 
             for (Thread t : virtualThreads) {
                 t.join();
@@ -82,21 +81,14 @@ public class ThreadStateTest {
             Thread.sleep(20);
 
             // Check that looping over all JvmtiThreadStates works fine.
-            SetSingleSteppingMode(true);
+            setSingleSteppingMode(true);
 
             // Reset for next iteration
-            SetSingleSteppingMode(false);
+            setSingleSteppingMode(false);
         }
     }
 
     public static void main(String[] args) throws Exception {
-        try {
-            System.loadLibrary(agentLib);
-        } catch (UnsatisfiedLinkError ex) {
-            System.err.println("Failed to load " + agentLib + " lib");
-            System.err.println("java.library.path: " + System.getProperty("java.library.path"));
-            throw ex;
-        }
         ThreadStateTest obj = new ThreadStateTest();
         obj.runTest();
     }

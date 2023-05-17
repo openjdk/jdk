@@ -43,13 +43,13 @@ MonitorContended(jvmtiEnv* jvmti, JNIEnv* jni_env, jthread thread,
 }
 
 JNIEXPORT void JNICALL
-Java_ThreadStateTest_SetSingleSteppingMode(JNIEnv* jni, jclass klass, jboolean enable) {
+Java_ThreadStateTest_setSingleSteppingMode(JNIEnv* jni, jclass klass, jboolean enable) {
   jvmtiError err = jvmti->SetEventNotificationMode(enable ? JVMTI_ENABLE : JVMTI_DISABLE, JVMTI_EVENT_SINGLE_STEP, nullptr);
   check_jvmti_status(jni, err, "event handler: error in JVMTI SetEventNotificationMode for event JVMTI_EVENT_SINGLE_STEP");
 }
 
 JNIEXPORT void JNICALL
-Java_ThreadStateTest_SetMonitorContendedMode(JNIEnv* jni, jclass klass, jboolean enable) {
+Java_ThreadStateTest_setMonitorContendedMode(JNIEnv* jni, jclass klass, jboolean enable) {
   jvmtiError err = jvmti->SetEventNotificationMode(enable ? JVMTI_ENABLE : JVMTI_DISABLE, JVMTI_EVENT_MONITOR_CONTENDED_ENTER, nullptr);
   check_jvmti_status(jni, err, "event handler: error in JVMTI SetEventNotificationMode for event JVMTI_EVENT_MONITOR_CONTENDED_ENTER");
 }
