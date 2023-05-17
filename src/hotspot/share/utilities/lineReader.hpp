@@ -43,8 +43,9 @@ public:
   bool is_opened() const {
     return _stream != nullptr;
   }
-  void close();
+  const char* filename() const { return _filename; }
   char* get_line();
+  void close();
 };
 
 #endif // SHARE_UTILITIES_LINEREADER_HPP

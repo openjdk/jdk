@@ -58,11 +58,11 @@ ClassListParser::ClassListParser(const char* file, ParseMode parse_mode)
   : _reader(file), _id2klass_table(INITIAL_TABLE_SIZE, MAX_TABLE_SIZE) {
   log_info(cds)("Parsing %s%s", file,
                 (parse_mode == _parse_lambda_forms_invokers_only) ? " (lambda form invokers only)" : "");
-  _classlist_file = file;
   if (!_reader.is_opened()) {
     char errmsg[JVM_MAXPATHLEN];
     os::lasterror(errmsg, JVM_MAXPATHLEN);
-    vm_exit_during_initialization("Loading classlist failed", errmsg); // FIXME
+    log_error(cds)("Loading classlist %s failed: %s", _reader.filename(), errmsg);
+    MetaspaceShared::unrecoverable_writing_error();
   }
   _line_no = 0;
   _interfaces = new (mtClass) GrowableArray<int>(10, mtClass);
@@ -418,7 +418,7 @@ void ClassListParser::error(const char* msg, ...) {
 
   jio_fprintf(defaultStream::error_stream(),
               "An error has occurred while processing class list file %s %d:%d.\n",
-              _classlist_file, _line_no, (error_index + 1));
+              _reader.filename(), _line_no, (error_index + 1));
   jio_vfprintf(defaultStream::error_stream(), msg, ap);
 
   if (_line_len <= 0) {

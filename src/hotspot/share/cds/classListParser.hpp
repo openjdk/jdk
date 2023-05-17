@@ -96,7 +96,6 @@ private:
   static const int MAX_TABLE_SIZE = 61333;
   static volatile Thread* _parsing_thread; // the thread that created _instance
   static ClassListParser* _instance; // the singleton.
-  const char* _classlist_file;
   LineReader _reader;
 
   ID2KlassTable _id2klass_table;
