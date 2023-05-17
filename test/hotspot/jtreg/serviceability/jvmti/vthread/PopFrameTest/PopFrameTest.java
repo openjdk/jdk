@@ -219,7 +219,7 @@ public class PopFrameTest {
             finished = true;
         }
 
-        // Method is blocked on entering a synchronized statement.
+        // Method is busy in a while loop.
         // PopFrame is used two times:
         //  - when not suspended: THREAD_NOT_SUSPENDED is expected
         //  - when suspended: JVMTI_ERROR_NONE is expected
@@ -238,7 +238,7 @@ public class PopFrameTest {
             log("TestTask.B: started");
         }
 
-        // This method uses PoopFrame on its own thread. It is expected to succeed.
+        // This method uses PopFrame on its own thread. It is expected to return OPAQUE_FRAME.
         static void C() {
             log("TestTask.C: started");
             int errCode = PopFrameTest.popFrame(Thread.currentThread());

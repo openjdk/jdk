@@ -45,19 +45,11 @@ Breakpoint(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread,
   check_jvmti_status(jni, err, "Breakpoint: Failed in JVMTI ClearBreakpoint");
 
   LOG("Breakpoint: In method TestTask.B(): before sync section enter\n");
-
-  err = jvmti->RawMonitorEnter(monitor);
-  check_jvmti_status(jni, err, "Breakpoint: Failed in RawMonitorEnter");
-
-  bp_sync_reached = true;
-
-  // wait for notify from notifyAtBreakpoint
-  err = jvmti->RawMonitorWait(monitor, 0);
-  check_jvmti_status(jni, err, "Breakpoint: Failed in RawMonitorWait");
-
-  err = jvmti->RawMonitorExit(monitor);
-  check_jvmti_status(jni, err, "Breakpoint: Failed in RawMonitorExit");
-
+  {
+    RawMonitorLocker rml(jvmti, jni, monitor);
+    bp_sync_reached = true;
+    rml.wait(0);
+  }
   err = jvmti->PopFrame(thread);
   LOG("Main: popFrame: PopFrame returned code: %s (%d)\n", TranslateError(err), err);
   check_jvmti_status(jni, err, "Breakpoint: Failed in PopFrame");
@@ -158,16 +150,9 @@ Java_PopFrameTest_ensureAtBreakpoint(JNIEnv *jni, jclass cls) {
   bool need_stop = false;
 
   LOG("Main: ensureAtBreakpoint\n");
-
   while (!need_stop) {
-    err = jvmti->RawMonitorEnter(monitor);
-    check_jvmti_status(jni, err, "ensureAtBreakpoint: Failed in RawMonitorEnter");
-
+    RawMonitorLocker rml(jvmti, jni, monitor);
     need_stop = bp_sync_reached;
-
-    err = jvmti->RawMonitorExit(monitor);
-    check_jvmti_status(jni, err, "ensureAtBreakpoint: Failed in RawMonitorExit");
-
     sleep_ms(1); // 1 millisecond
   }
 }
@@ -177,15 +162,8 @@ Java_PopFrameTest_notifyAtBreakpoint(JNIEnv *jni, jclass cls) {
   jvmtiError err;
 
   LOG("Main: notifyAtBreakpoint\n");
-
-  err = jvmti->RawMonitorEnter(monitor);
-  check_jvmti_status(jni, err, "notifyAtBreakpoint: Fatal Error in RawMonitorEnter");
-
-  err = jvmti->RawMonitorNotify(monitor);
-  check_jvmti_status(jni, err, "notifyAtBreakpoint: Fatal Error in RawMonitorNotify");
-
-  err = jvmti->RawMonitorExit(monitor);
-  check_jvmti_status(jni, err, "notifyAtBreakpoint: Fatal Error in RawMonitorExit");
+  RawMonitorLocker rml(jvmti, jni, monitor);
+  rml.notify_all();
 }
 
 } // extern "C"
