@@ -121,7 +121,7 @@ XServiceability::XServiceability(size_t min_capacity, size_t max_capacity) :
     _memory_pool(_min_capacity, _max_capacity),
     _cycle_memory_manager("ZGC Cycles", &_memory_pool),
     _pause_memory_manager("ZGC Pauses", &_memory_pool),
-    _counters(NULL) {}
+    _counters(nullptr) {}
 
 void XServiceability::initialize() {
   _counters = new XServiceabilityCounters(_min_capacity, _max_capacity);

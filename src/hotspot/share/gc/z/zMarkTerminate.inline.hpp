@@ -33,8 +33,8 @@
 #include "runtime/osThread.hpp"
 #include "runtime/thread.inline.hpp"
 
-inline ZMarkTerminate::ZMarkTerminate() :
-    _nworkers(0),
+inline ZMarkTerminate::ZMarkTerminate()
+  : _nworkers(0),
     _nworking(0),
     _nawakening(0),
     _resurrected(false),

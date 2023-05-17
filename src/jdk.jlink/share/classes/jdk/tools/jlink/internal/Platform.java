@@ -50,8 +50,9 @@ public record Platform(OperatingSystem os, Architecture arch) {
         OperatingSystem os = OperatingSystem.valueOf(osName.toUpperCase(Locale.ROOT));
 
         archName = platformString.substring(index + 1);
-        // Alias architecture "amd64" to "X64"
+        // Alias architecture names, if needed
         archName = archName.replace("amd64", "X64");
+        archName = archName.replace("ppc64le", "PPC64");
         Architecture arch = Architecture.valueOf(archName.toUpperCase(Locale.ROOT));
 
         return new Platform(os, arch);

@@ -30,6 +30,7 @@
 #include "memory/metadataFactory.hpp"
 #include "oops/constantPool.hpp"
 #include "oops/symbol.hpp"
+#include "runtime/atomic.hpp"
 
 inline Symbol* FieldInfo::name(ConstantPool* cp) const {
   int index = _name_index;
@@ -151,23 +152,11 @@ inline FieldInfoReader& FieldInfoReader::set_position_and_next_index(int positio
 }
 
 inline void FieldStatus::atomic_set_bits(u1& flags, u1 mask) {
-  // Atomically update the flags with the bits given
-  u1 old_flags, new_flags, witness;
-  do {
-    old_flags = flags;
-    new_flags = old_flags | mask;
-    witness = Atomic::cmpxchg(&flags, old_flags, new_flags);
-  } while (witness != old_flags);
+  Atomic::fetch_then_or(&flags, mask);
 }
 
 inline void FieldStatus::atomic_clear_bits(u1& flags, u1 mask) {
-  // Atomically update the flags with the bits given
-  u1 old_flags, new_flags, witness;
-  do {
-    old_flags = flags;
-    new_flags = old_flags & ~mask;
-    witness = Atomic::cmpxchg(&flags, old_flags, new_flags);
-  } while (witness != old_flags);
+  Atomic::fetch_then_and(&flags, (u1)(~mask));
 }
 
 inline void FieldStatus::update_flag(FieldStatusBitPosition pos, bool z) {
