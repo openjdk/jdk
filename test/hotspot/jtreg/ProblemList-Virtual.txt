@@ -114,6 +114,8 @@ vmTestbase/nsk/jdi/ThreadReference/popFrames/popframes002/TestDescription.java 8
 vmTestbase/nsk/jdi/ThreadReference/popFrames/popframes003/TestDescription.java 8285414 generic-all
 vmTestbase/nsk/jdi/ThreadReference/popFrames/popframes004/TestDescription.java 8285414 generic-all
 
+vmTestbase/nsk/jdi/ThreadReference/popFrames/popframes001/TestDescription.java 8308237 generic-all
+
 ####
 ## JVMTI ForceEarlyReturn not supported for vthreads (JVMTI_ERROR_OPAQUE_FRAME)
 ## Note forceEarlyReturn002 was converted to support vthreads. The rest were not
