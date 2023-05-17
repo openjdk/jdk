@@ -109,8 +109,8 @@ static const ZStatSampler ZSamplerJavaThreads("System", "Java Threads", ZStatUni
 ZGenerationYoung* ZGeneration::_young;
 ZGenerationOld*   ZGeneration::_old;
 
-ZGeneration::ZGeneration(ZGenerationId id, ZPageTable* page_table, ZPageAllocator* page_allocator) :
-    _id(id),
+ZGeneration::ZGeneration(ZGenerationId id, ZPageTable* page_table, ZPageAllocator* page_allocator)
+  : _id(id),
     _page_allocator(page_allocator),
     _page_table(page_table),
     _forwarding_table(),
@@ -128,8 +128,7 @@ ZGeneration::ZGeneration(ZGenerationId id, ZPageTable* page_table, ZPageAllocato
     _stat_workers(),
     _stat_mark(),
     _stat_relocation(),
-    _gc_timer(nullptr) {
-}
+    _gc_timer(nullptr) {}
 
 bool ZGeneration::is_initialized() const {
   return _mark.is_initialized();
@@ -403,8 +402,8 @@ private:
   bool       _success;
 
 public:
-  VM_ZOperation() :
-      _gc_id(GCId::current()),
+  VM_ZOperation()
+    : _gc_id(GCId::current()),
       _success(false) {}
 
   virtual bool block_jni_critical() const {
@@ -475,8 +474,8 @@ ZYoungTypeSetter::~ZYoungTypeSetter() {
 
 ZGenerationYoung::ZGenerationYoung(ZPageTable* page_table,
                                    const ZForwardingTable* old_forwarding_table,
-                                   ZPageAllocator* page_allocator) :
-    ZGeneration(ZGenerationId::young, page_table, page_allocator),
+                                   ZPageAllocator* page_allocator)
+  : ZGeneration(ZGenerationId::young, page_table, page_allocator),
     _active_type(ZYoungType::none),
     _tenuring_threshold(0),
     _remembered(page_table, old_forwarding_table, page_allocator),
@@ -494,8 +493,8 @@ private:
   ZStatTimer       _stat_timer;
 
 public:
-  ZGenerationCollectionScopeYoung(ZYoungType type, ConcurrentGCTimer* gc_timer) :
-      _type_setter(type),
+  ZGenerationCollectionScopeYoung(ZYoungType type, ConcurrentGCTimer* gc_timer)
+    : _type_setter(type),
       _stat_timer(ZPhaseGenerationYoung[(int)type], gc_timer) {
     // Update statistics and set the GC timer
     ZGeneration::young()->at_collection_start(gc_timer);
@@ -933,8 +932,8 @@ ZGenerationTracer* ZGenerationYoung::jfr_tracer() {
   return &_jfr_tracer;
 }
 
-ZGenerationOld::ZGenerationOld(ZPageTable* page_table, ZPageAllocator* page_allocator) :
-    ZGeneration(ZGenerationId::old, page_table, page_allocator),
+ZGenerationOld::ZGenerationOld(ZPageTable* page_table, ZPageAllocator* page_allocator)
+  : ZGeneration(ZGenerationId::old, page_table, page_allocator),
     _reference_processor(&_workers),
     _weak_roots_processor(&_workers),
     _unload(&_workers),
@@ -950,8 +949,8 @@ private:
   ZDriverUnlocker _unlocker;
 
 public:
-  ZGenerationCollectionScopeOld(ConcurrentGCTimer* gc_timer) :
-      _stat_timer(ZPhaseGenerationOld, gc_timer),
+  ZGenerationCollectionScopeOld(ConcurrentGCTimer* gc_timer)
+    : _stat_timer(ZPhaseGenerationOld, gc_timer),
       _unlocker() {
     // Update statistics and set the GC timer
     ZGeneration::old()->at_collection_start(gc_timer);
@@ -1248,8 +1247,8 @@ void ZGenerationOld::set_soft_reference_policy(bool clear) {
 
 class ZRendezvousHandshakeClosure : public HandshakeClosure {
 public:
-  ZRendezvousHandshakeClosure() :
-      HandshakeClosure("ZRendezvous") {}
+  ZRendezvousHandshakeClosure()
+    : HandshakeClosure("ZRendezvous") {}
 
   void do_thread(Thread* thread) {
     // Does nothing
@@ -1377,8 +1376,8 @@ private:
   ZBarrierSetNMethod* const _bs_nm;
 
 public:
-  ZRemapNMethodClosure() :
-      _bs_nm(static_cast<ZBarrierSetNMethod*>(BarrierSet::barrier_set()->barrier_set_nmethod())) {}
+  ZRemapNMethodClosure()
+    : _bs_nm(static_cast<ZBarrierSetNMethod*>(BarrierSet::barrier_set()->barrier_set_nmethod())) {}
 
   virtual void do_nmethod(nmethod* nm) {
     ZLocker<ZReentrantLock> locker(ZNMethod::lock_for_nmethod(nm));
@@ -1414,8 +1413,8 @@ private:
   ZRemapNMethodClosure             _nm_cl;
 
 public:
-  ZRemapYoungRootsTask(ZPageTable* page_table, ZPageAllocator* page_allocator) :
-      ZTask("ZRemapYoungRootsTask"),
+  ZRemapYoungRootsTask(ZPageTable* page_table, ZPageAllocator* page_allocator)
+    : ZTask("ZRemapYoungRootsTask"),
       _old_pages_parallel_iterator(page_table, ZGenerationId::old, page_allocator),
       _roots_colored(ZGenerationIdOptional::old),
       _roots_uncolored(ZGenerationIdOptional::old),

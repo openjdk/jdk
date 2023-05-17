@@ -74,17 +74,17 @@ void XNMethod::attach_gc_data(nmethod* nm) {
       continue;
     }
 
-    if (r->oop_value() != NULL) {
-      // Non-NULL immediate oop found. NULL oops can safely be
+    if (r->oop_value() != nullptr) {
+      // Non-null immediate oop found. Null oops can safely be
       // ignored since the method will be re-registered if they
-      // are later patched to be non-NULL.
+      // are later patched to be non-null.
       immediate_oops.push(r->oop_addr());
     }
   }
 
   // Attach GC data to nmethod
   XNMethodData* data = gc_data(nm);
-  if (data == NULL) {
+  if (data == nullptr) {
     data = new XNMethodData();
     set_gc_data(nm, data);
   }

@@ -45,11 +45,11 @@ XPage* XUnmapper::dequeue() {
 
   for (;;) {
     if (_stop) {
-      return NULL;
+      return nullptr;
     }
 
     XPage* const page = _queue.remove_first();
-    if (page != NULL) {
+    if (page != nullptr) {
       return page;
     }
 
@@ -85,7 +85,7 @@ void XUnmapper::unmap_and_destroy_page(XPage* page) {
 void XUnmapper::run_service() {
   for (;;) {
     XPage* const page = dequeue();
-    if (page == NULL) {
+    if (page == nullptr) {
       // Stop
       return;
     }

@@ -228,7 +228,7 @@ char* CppVtables::dumptime_init(ArchiveBuilder* builder) {
 }
 
 void CppVtables::serialize(SerializeClosure* soc) {
-  soc->do_ptr((void**)&_index);
+  soc->do_ptr(&_index);
   if (soc->reading()) {
     CPP_VTABLE_TYPES_DO(INITIALIZE_VTABLE);
   }
@@ -253,6 +253,7 @@ intptr_t* CppVtables::get_archived_vtable(MetaspaceObj::Type msotype, address ob
   case MetaspaceObj::ConstantPoolCacheType:
   case MetaspaceObj::AnnotationsType:
   case MetaspaceObj::MethodCountersType:
+  case MetaspaceObj::SharedClassPathEntryType:
   case MetaspaceObj::RecordComponentType:
     // These have no vtables.
     break;
@@ -268,7 +269,7 @@ intptr_t* CppVtables::get_archived_vtable(MetaspaceObj::Type msotype, address ob
     }
     if (kind >= _num_cloned_vtable_kinds) {
       fatal("Cannot find C++ vtable for " INTPTR_FORMAT " -- you probably added"
-            " a new subtype of Klass or MetaData without updating CPP_VTABLE_TYPES_DO",
+            " a new subtype of Klass or MetaData without updating CPP_VTABLE_TYPES_DO or the cases in this 'switch' statement",
             p2i(obj));
     }
   }

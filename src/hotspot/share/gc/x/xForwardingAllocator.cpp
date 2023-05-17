@@ -26,9 +26,9 @@
 #include "memory/allocation.inline.hpp"
 
 XForwardingAllocator::XForwardingAllocator() :
-    _start(NULL),
-    _end(NULL),
-    _top(NULL) {}
+    _start(nullptr),
+    _end(nullptr),
+    _top(nullptr) {}
 
 XForwardingAllocator::~XForwardingAllocator() {
   FREE_C_HEAP_ARRAY(char, _start);

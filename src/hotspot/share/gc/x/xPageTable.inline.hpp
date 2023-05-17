@@ -36,7 +36,7 @@ inline XPage* XPageTable::get(uintptr_t addr) const {
 
 inline XPageTableIterator::XPageTableIterator(const XPageTable* page_table) :
     _iter(&page_table->_map),
-    _prev(NULL) {}
+    _prev(nullptr) {}
 
 inline bool XPageTableIterator::next(XPage** page) {
   for (XPage* entry; _iter.next(&entry);) {

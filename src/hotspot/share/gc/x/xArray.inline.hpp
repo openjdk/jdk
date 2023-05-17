@@ -67,7 +67,7 @@ inline XArrayIteratorImpl<T, Parallel>::XArrayIteratorImpl(const T* array, size_
 
 template <typename T, bool Parallel>
 inline XArrayIteratorImpl<T, Parallel>::XArrayIteratorImpl(const XArray<T>* array) :
-    XArrayIteratorImpl<T, Parallel>(array->is_empty() ? NULL : array->adr_at(0), array->length()) {}
+    XArrayIteratorImpl<T, Parallel>(array->is_empty() ? nullptr : array->adr_at(0), array->length()) {}
 
 template <typename T, bool Parallel>
 inline bool XArrayIteratorImpl<T, Parallel>::next(T* elem) {
