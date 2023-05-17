@@ -146,7 +146,6 @@ Java_PopFrameTest_popFrame(JNIEnv *jni, jclass cls, jthread thread) {
 
 JNIEXPORT void JNICALL
 Java_PopFrameTest_ensureAtBreakpoint(JNIEnv *jni, jclass cls) {
-  jvmtiError err;
   bool need_stop = false;
 
   LOG("Main: ensureAtBreakpoint\n");
@@ -159,8 +158,6 @@ Java_PopFrameTest_ensureAtBreakpoint(JNIEnv *jni, jclass cls) {
 
 JNIEXPORT void JNICALL
 Java_PopFrameTest_notifyAtBreakpoint(JNIEnv *jni, jclass cls) {
-  jvmtiError err;
-
   LOG("Main: notifyAtBreakpoint\n");
   RawMonitorLocker rml(jvmti, jni, monitor);
   rml.notify_all();
