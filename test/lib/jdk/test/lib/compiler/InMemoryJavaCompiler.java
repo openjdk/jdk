@@ -33,6 +33,7 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.Callable;
 
 import javax.tools.DiagnosticListener;
 import javax.tools.FileObject;
@@ -205,7 +206,7 @@ public class InMemoryJavaCompiler {
         return CloseableCompilationTask.createTask(null, new FileManagerWrapper(file, moduleOverride), null, opts, null, Arrays.asList(file));
     }
 
-    private static class CloseableCompilationTask implements Closeable {
+    private static class CloseableCompilationTask implements Closeable, Callable<Boolean> {
         final CompilationTask task;
         final JavaFileManager fileManager;
         private CloseableCompilationTask(CompilationTask task, JavaFileManager fileManager) {
@@ -228,10 +229,12 @@ public class InMemoryJavaCompiler {
             return new CloseableCompilationTask(task, fileManager);
         }
 
+        @Override
         public void close() throws IOException {
             fileManager.close();
         }
 
+        @Override
         public Boolean call() {
             return task.call();
         }
