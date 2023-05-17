@@ -94,7 +94,7 @@ void C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hd
   z_lg(hdr, Address(obj, hdr_offset));
 
   // Save object being locked into the BasicObjectLock...
-  z_stg(obj, Address(disp_hdr, BasicObjectLock::obj_offset_in_bytes()));
+  z_stg(obj, Address(disp_hdr, BasicObjectLock::obj_offset()));
 
   if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(Z_R1_scratch, obj);
@@ -149,7 +149,7 @@ void C1_MacroAssembler::unlock_object(Register hdr, Register obj, Register disp_
   // If the loaded hdr is null we had recursive locking, and we are done.
   z_bre(done);
   // Load object.
-  z_lg(obj, Address(disp_hdr, BasicObjectLock::obj_offset_in_bytes()));
+  z_lg(obj, Address(disp_hdr, BasicObjectLock::obj_offset()));
   verify_oop(obj, FILE_AND_LINE);
   // Test if object header is pointing to the displaced header, and if so, restore
   // the displaced header in the object. If the object header is not pointing to

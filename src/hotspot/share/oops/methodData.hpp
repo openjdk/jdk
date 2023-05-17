@@ -2253,7 +2253,7 @@ public:
     Atomic::store(&_rtm_state, (int)rstate);
   }
 
-  static ByteSize rtm_state_offset_in_bytes() {
+  static ByteSize rtm_state_offset() {
     return byte_offset_of(MethodData, _rtm_state);
   }
 #endif
