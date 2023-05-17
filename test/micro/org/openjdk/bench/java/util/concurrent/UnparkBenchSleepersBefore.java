@@ -95,7 +95,8 @@ public class UnparkBenchSleepersBefore {
     public void setup() {
         idleRunnables = new IdleRunnable[idles];
         for(int i = 0; i < idleRunnables.length; i++) {
-            new Thread(idleRunnables[i] = new IdleRunnable()).start();
+            idleRunnables[i] = new IdleRunnable();
+            new Thread(idleRunnables[i]).start();
         }
         barrier = new CyclicBarrier(workers);
         exec = Executors.newFixedThreadPool(workers); // order is important, create this executor only after idle threads
@@ -103,14 +104,14 @@ public class UnparkBenchSleepersBefore {
 
     @TearDown
     public void tearDown() {
-        for(IdleRunnable it : idleRunnables) {
-            it.stop();
+        for (IdleRunnable r : idleRunnables) {
+            r.stop();
         }
         exec.shutdown();
     }
 
     public static class IdleRunnable implements Runnable {
-        volatile boolean done = false;
+        volatile boolean done;
         Thread myThread;
 
         @Override

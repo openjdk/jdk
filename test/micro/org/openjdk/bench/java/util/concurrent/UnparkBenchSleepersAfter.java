@@ -115,14 +115,14 @@ public class UnparkBenchSleepersAfter {
 
     @TearDown
     public void tearDown() {
-        for (IdleRunnable it : idleRunnables) {
-            it.stop();
+        for (IdleRunnable r : idleRunnables) {
+            r.stop();
         }
         exec.shutdown();
     }
 
     public static class IdleRunnable implements Runnable {
-        volatile boolean done = false;
+        volatile boolean done;
         Thread myThread;
 
         @Override
