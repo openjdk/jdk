@@ -688,7 +688,8 @@ Symbol* ConstantPool::impl_signature_ref_at(int which, bool uncached) {
 
 int ConstantPool::impl_name_and_type_ref_index_at(int which, bool uncached) {
   int i = which;
-  if (!uncached && cache() != nullptr) {
+  if (!uncached) {
+    assert(cache() != nullptr, "'which' is a rewritten index so this class must have been rewritten");
     if (ConstantPool::is_invokedynamic_index(which)) {
       // Invokedynamic index is index into the resolved indy array in the constant pool cache
       int pool_index = invokedynamic_bootstrap_ref_index_at(which);
@@ -713,7 +714,8 @@ int ConstantPool::impl_name_and_type_ref_index_at(int which, bool uncached) {
 
 constantTag ConstantPool::impl_tag_ref_at(int which, bool uncached) {
   int pool_index = which;
-  if (!uncached && cache() != nullptr) {
+  if (!uncached) {
+    assert(cache() != nullptr, "'which' is a rewritten index so this class must have been rewritten");
     if (ConstantPool::is_invokedynamic_index(which)) {
       // Invokedynamic index is index into resolved_references
       pool_index = invokedynamic_bootstrap_ref_index_at(which);
@@ -729,7 +731,8 @@ int ConstantPool::impl_klass_ref_index_at(int which, bool uncached) {
   guarantee(!ConstantPool::is_invokedynamic_index(which),
             "an invokedynamic instruction does not have a klass");
   int i = which;
-  if (!uncached && cache() != nullptr) {
+  if (!uncached) {
+    assert(cache() != nullptr, "'which' is a rewritten index so this class must have been rewritten");
     // change byte-ordering and go via cache
     i = remap_instruction_operand_from_cache(which);
   }

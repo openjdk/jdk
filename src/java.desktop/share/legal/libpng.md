@@ -1,4 +1,4 @@
-## libpng v1.6.38
+## libpng v1.6.39
 
 ### libpng License
 <pre>
@@ -188,9 +188,10 @@ Authors, for copyright and licensing purposes.
  * Arm Holdings
    - Richard Townsend
  * Google Inc.
+   - Dan Field
+   - Leon Scroggins III
    - Matt Sarett
    - Mike Klein
-   - Dan Field
    - Sami Boukortt
 
 The build projects, the build scripts, the test scripts, and other

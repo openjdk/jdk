@@ -1528,6 +1528,30 @@ public class Flow {
             }
         }
 
+        @Override
+        public void visitStringTemplate(JCStringTemplate tree) {
+            JCExpression processor = tree.processor;
+
+            if (processor != null) {
+                scan(processor);
+                Type interfaceType = types.asSuper(processor.type, syms.processorType.tsym);
+
+                if (interfaceType != null) {
+                    List<Type> typeArguments = interfaceType.getTypeArguments();
+
+                    if (typeArguments.size() == 2) {
+                        Type throwType = typeArguments.tail.head;
+
+                        if (throwType != null) {
+                            markThrown(tree, throwType);
+                        }
+                    }
+                }
+            }
+
+            scan(tree.expressions);
+        }
+
         void checkCaughtType(DiagnosticPosition pos, Type exc, List<Type> thrownInTry, List<Type> caughtInTry) {
             if (chk.subset(exc, caughtInTry)) {
                 log.error(pos, Errors.ExceptAlreadyCaught(exc));
@@ -2859,6 +2883,7 @@ public class Flow {
         @Override
         public void visitLambda(JCLambda tree) {
             final Bits prevUninits = new Bits(uninits);
+            final Bits prevUninitsTry = new Bits(uninitsTry);
             final Bits prevInits = new Bits(inits);
             int returnadrPrev = returnadr;
             int nextadrPrev = nextadr;
@@ -2886,6 +2911,7 @@ public class Flow {
             finally {
                 returnadr = returnadrPrev;
                 uninits.assign(prevUninits);
+                uninitsTry.assign(prevUninitsTry);
                 inits.assign(prevInits);
                 pendingExits = prevPending;
                 nextadr = nextadrPrev;
