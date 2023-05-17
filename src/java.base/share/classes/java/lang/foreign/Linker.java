@@ -31,12 +31,11 @@ import jdk.internal.foreign.abi.CapturableState;
 import jdk.internal.foreign.abi.SharedUtils;
 import jdk.internal.javac.PreviewFeature;
 import jdk.internal.reflect.CallerSensitive;
-import jdk.internal.reflect.Reflection;
 
 import java.lang.invoke.MethodHandle;
 import java.nio.ByteOrder;
+import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -59,6 +58,11 @@ import java.util.stream.Stream;
  * <li>A linker allows foreign functions to call Java method handles,
  * via the generation of {@linkplain #upcallStub(MethodHandle, FunctionDescriptor, Arena, Option...) upcall stubs}.</li>
  * </ul>
+ * A linker provides a way to lookup up the <em>canonical layouts</em> associated with the data types used by the ABI.
+ * For example, the canonical layout for the C {@code size_t} type is equal to {@link ValueLayout#JAVA_LONG}. The canonical
+ * layouts supported by a linker are exposed via the {@link #canonicalLayouts()} method, which returns a map from
+ * ABI type names to canonical layouts.
+ * <p>
  * In addition, a linker provides a way to look up foreign functions in libraries that conform to the ABI. Each linker
  * chooses a set of libraries that are commonly used on the OS and processor combination associated with the ABI.
  * For example, a linker for Linux/x64 might choose two libraries: {@code libc} and {@code libm}. The functions in these
@@ -103,11 +107,12 @@ import java.util.stream.Stream;
  * defines the layouts associated with the parameter types and return type (if any) of the C function.
  * <p>
  * Scalar C types such as {@code bool}, {@code int} are modelled as {@linkplain ValueLayout value layouts}
- * of a suitable carrier. The mapping between a scalar type and its corresponding layout is dependent on the ABI
- * implemented by the native linker. For instance, the C type {@code long} maps to the layout constant
- * {@link ValueLayout#JAVA_LONG} on Linux/x64, but maps to the layout constant {@link ValueLayout#JAVA_INT} on
- * Windows/x64. Similarly, the C type {@code size_t} maps to the layout constant {@link ValueLayout#JAVA_LONG}
- * on 64-bit platforms, but maps to the layout constant {@link ValueLayout#JAVA_INT} on 32-bit platforms.
+ * of a suitable carrier. The {@linkplain #canonicalLayouts() mapping} between a scalar type and its corresponding
+ * canonical layout is dependent on the ABI implemented by the native linker. For instance, the C type {@code long}
+ * maps to the layout constant {@link ValueLayout#JAVA_LONG} on Linux/x64, but maps to the layout constant
+ * {@link ValueLayout#JAVA_INT} on Windows/x64. Similarly, the C type {@code size_t} maps to the layout constant
+ * {@link ValueLayout#JAVA_LONG} on 64-bit platforms, but maps to the layout constant {@link ValueLayout#JAVA_INT} on
+ * 32-bit platforms.
  * <p>
  * Composite types are modelled as {@linkplain GroupLayout group layouts}. More specifically, a C {@code struct} type
  * maps to a {@linkplain StructLayout struct layout}, whereas a C {@code union} type maps to a {@link UnionLayout union
@@ -198,14 +203,13 @@ import java.util.stream.Stream;
  * </table></blockquote>
  * <p>
  * All the native linker implementations limit the function descriptors that they support to those that contain
- * only so-called <em>canonical</em> layouts. A canonical layout has the following characteristics:
+ * either {@linkplain ValueLayout value layouts} that are also {@linkplain #canonicalLayouts() canonical layouts},
+ * or {@linkplain GroupLayout group layouts} that are derived according to the following rules:
  * <ol>
- * <li>Its alignment constraint is set to its <a href="MemoryLayout.html#layout-align">natural alignment</a></li>
- * <li>If it is a {@linkplain ValueLayout value layout}, its {@linkplain ValueLayout#order() byte order} is
- * the {@linkplain ByteOrder#nativeOrder() native byte order}.
- * <li>If it is a {@linkplain GroupLayout group layout}, its size is a multiple of its alignment constraint, and</li>
- * <li>It does not contain padding other than what is strictly required to align its non-padding layout elements,
- * or to satisfy constraint 3</li>
+ * <li>The alignment constraint of the group layout is set to its <a href="MemoryLayout.html#layout-align">natural alignment</a></li>
+ * <li>The size of the group layout is a multiple of its alignment constraint, and</li>
+ * <li>The group layout does not contain padding other than what is strictly required to align its non-padding layout elements,
+ * or to satisfy constraint 1</li>
  * </ol>
  *
  * <h3 id="function-pointers">Function pointers</h3>
@@ -572,6 +576,22 @@ public sealed interface Linker permits AbstractLinker {
      * @return a symbol lookup for symbols in a set of commonly used libraries.
      */
     SymbolLookup defaultLookup();
+
+    /**
+     * {@return a mapping between the names of data types used by the ABI implemented by this linker and their
+     * <em>canonical layouts</em>}
+     * <p>
+     * Each {@link Linker} is responsible for choosing the data types that are widely recognized as useful on the OS
+     * and processor combination supported by the {@link Linker}. Accordingly, the precise set of data type names
+     * and canonical layouts exposed by the linker is unspecified; it varies from one {@link Linker} to another.
+     * @implNote It is strongly recommended that the result of {@link #canonicalLayouts()} exposes a set of symbols that is stable over time.
+     * Clients of {@link #canonicalLayouts()} are likely to fail if a data type that was previously exposed by the linker
+     * is no longer exposed, or if its canonical layout is updated.
+     * <p>If an implementer provides {@link Linker} implementations for multiple OS and processor combinations, then it is strongly
+     * recommended that the result of {@link #canonicalLayouts()} exposes, as much as possible, a consistent set of symbols
+     * across all the OS and processor combinations.
+     */
+    Map<String, MemoryLayout> canonicalLayouts();
 
     /**
      * A linker option is used to indicate additional linking requirements to the linker,

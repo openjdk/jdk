@@ -167,7 +167,6 @@ public class TestNormalize extends NativeTestHelper {
             { JAVA_BOOLEAN, booleanToInt(true),     BOOLEAN_HOB_MASK, BOOLEAN_TO_INT, SAVE_BOOLEAN_AS_INT },
             { JAVA_BYTE,    byteToInt((byte) 42),   BYTE_HOB_MASK,    BYTE_TO_INT,    SAVE_BYTE_AS_INT    },
             { JAVA_SHORT,   shortToInt((short) 42), SHORT_HOB_MASK,   SHORT_TO_INT,   SAVE_SHORT_AS_INT   },
-            { JAVA_CHAR,    charToInt('a'),         CHAR_HOB_MASK,    CHAR_TO_INT,    SAVE_CHAR_AS_INT    }
         };
     }
 

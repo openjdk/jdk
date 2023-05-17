@@ -119,15 +119,15 @@ public class TestIllegalLink extends NativeTestHelper {
             },
             {
                     FunctionDescriptor.ofVoid(C_INT.withBitAlignment(16)),
-                    "Layout bit alignment must be natural alignment"
+                    "Value layout is not a canonical layout: 16%i32"
             },
             {
                     FunctionDescriptor.ofVoid(C_POINTER.withBitAlignment(16)),
-                    "Layout bit alignment must be natural alignment"
+                    "Value layout is not a canonical layout: 16%a64"
             },
             {
                     FunctionDescriptor.ofVoid(ValueLayout.JAVA_CHAR.withBitAlignment(32)),
-                    "Layout bit alignment must be natural alignment"
+                    "Value layout is not a canonical layout: 32%c16"
             },
             {
                     FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
@@ -135,7 +135,7 @@ public class TestIllegalLink extends NativeTestHelper {
                             C_SHORT.withName("y").withBitAlignment(8),
                             C_INT.withName("z").withBitAlignment(8)
                             ).withBitAlignment(8)),
-                    "Layout bit alignment must be natural alignment"
+                    "Value layout is not a canonical layout: 8%s16"
             },
             {
                     FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
@@ -144,14 +144,14 @@ public class TestIllegalLink extends NativeTestHelper {
                                 C_SHORT.withName("y").withBitAlignment(8),
                                 C_INT.withName("z").withBitAlignment(8)
                             ))),
-                    "Layout bit alignment must be natural alignment"
+                    "Value layout is not a canonical layout: 8%s16"
             },
             {
                     FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
                             MemoryLayout.sequenceLayout(
                                 C_INT.withBitAlignment(8)
                             ))),
-                    "Layout bit alignment must be natural alignment"
+                    "Value layout is not a canonical layout: 8%i32"
             },
             {
                     FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
@@ -162,15 +162,15 @@ public class TestIllegalLink extends NativeTestHelper {
             },
             {
                     FunctionDescriptor.of(C_INT.withOrder(nonNativeOrder())),
-                    "Layout does not have the right byte order"
+                    "Value layout is not a canonical layout: I32"
             },
             {
                     FunctionDescriptor.of(MemoryLayout.structLayout(C_INT.withOrder(nonNativeOrder()))),
-                    "Layout does not have the right byte order"
+                    "Value layout is not a canonical layout: I32"
             },
             {
                     FunctionDescriptor.of(MemoryLayout.structLayout(MemoryLayout.sequenceLayout(C_INT.withOrder(nonNativeOrder())))),
-                    "Layout does not have the right byte order"
+                    "Value layout is not a canonical layout: I32"
             },
             {
                     FunctionDescriptor.ofVoid(MemoryLayout.structLayout(

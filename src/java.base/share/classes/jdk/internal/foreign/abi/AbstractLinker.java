@@ -24,6 +24,7 @@
  */
 package jdk.internal.foreign.abi;
 
+import jdk.internal.foreign.CABI;
 import jdk.internal.foreign.SystemLookup;
 import jdk.internal.foreign.Utils;
 import jdk.internal.foreign.abi.aarch64.linux.LinuxAArch64Linker;
@@ -51,9 +52,12 @@ import java.lang.foreign.UnionLayout;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
+import java.util.HashSet;
 import java.util.List;
 import java.nio.ByteOrder;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 public abstract sealed class AbstractLinker implements Linker permits LinuxAArch64Linker, MacOsAArch64Linker,
                                                                       SysVx64Linker, WindowsAArch64Linker,
@@ -130,6 +134,11 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
         return SystemLookup.getInstance();
     }
 
+    @Override
+    public Map<String, MemoryLayout> canonicalLayouts() {
+        return CANONICAL_LAYOUTS_MAP;
+    }
+
     /** {@return byte order used by this linker} */
     protected abstract ByteOrder linkerByteOrder();
 
@@ -148,10 +157,10 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
     }
 
     private void checkLayoutRecursive(MemoryLayout layout) {
-        checkHasNaturalAlignment(layout);
         if (layout instanceof ValueLayout vl) {
-            checkByteOrder(vl);
+            checkCanonical(vl);
         } else if (layout instanceof StructLayout sl) {
+            checkHasNaturalAlignment(layout);
             long offset = 0;
             long lastUnpaddedOffset = 0;
             for (MemoryLayout member : sl.memberLayouts()) {
@@ -167,6 +176,7 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
             }
             checkGroupSize(sl, lastUnpaddedOffset);
         } else if (layout instanceof UnionLayout ul) {
+            checkHasNaturalAlignment(layout);
             long maxUnpaddedLayout = 0;
             for (MemoryLayout member : ul.memberLayouts()) {
                 checkLayoutRecursive(member);
@@ -197,6 +207,16 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
         if (expectedOffset != offset) {
             throw new IllegalArgumentException("Member layout '" + memberLayout + "', of '" + parent + "'" +
                     " found at unexpected offset: " + offset + " != " + expectedOffset);
+        }
+    }
+
+    private static void checkCanonical(ValueLayout valueLayout) {
+        valueLayout = valueLayout.withoutName();
+        if (valueLayout instanceof AddressLayout addressLayout) {
+            valueLayout = addressLayout.withoutTargetLayout();
+        }
+        if (!CANONICAL_LAYOUTS.contains(valueLayout.withoutName())) {
+            throw new IllegalArgumentException("Value layout is not a canonical layout: " + valueLayout);
         }
     }
 
@@ -232,9 +252,22 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
                 .orElseGet(() -> FunctionDescriptor.ofVoid(stripNames(function.argumentLayouts())));
     }
 
-    private void checkByteOrder(ValueLayout vl) {
-        if (vl.order() != linkerByteOrder()) {
-            throw new IllegalArgumentException("Layout does not have the right byte order: " + vl);
-        }
-    }
+    private static final Map<String, MemoryLayout> CANONICAL_LAYOUTS_MAP = Map.ofEntries(
+            Map.entry("bool", ValueLayout.JAVA_BOOLEAN),
+            Map.entry("char", ValueLayout.JAVA_BYTE),
+            Map.entry("short", ValueLayout.JAVA_SHORT),
+            Map.entry("int", ValueLayout.JAVA_INT),
+            Map.entry("float", ValueLayout.JAVA_FLOAT),
+            Map.entry("long", CABI.current() == CABI.WIN_64 ? ValueLayout.JAVA_INT : ValueLayout.JAVA_LONG),
+            Map.entry("long long", ValueLayout.JAVA_LONG),
+            Map.entry("double", ValueLayout.JAVA_DOUBLE),
+            Map.entry("void*", ValueLayout.ADDRESS),
+            Map.entry("int8_t", ValueLayout.JAVA_BYTE),
+            Map.entry("int16_t", ValueLayout.JAVA_SHORT),
+            Map.entry("int32_t", ValueLayout.JAVA_INT),
+            Map.entry("size_t", ValueLayout.ADDRESS.bitSize() == Integer.SIZE ? ValueLayout.JAVA_INT : ValueLayout.JAVA_LONG),
+            Map.entry("int64_t", ValueLayout.JAVA_LONG)
+    );
+
+    private static final Set<MemoryLayout> CANONICAL_LAYOUTS = new HashSet<>(CANONICAL_LAYOUTS_MAP.values());
 }
