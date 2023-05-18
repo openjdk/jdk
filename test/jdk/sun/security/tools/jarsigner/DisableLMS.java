@@ -27,6 +27,7 @@
  * @summary verify JAR files signed with HSS/LMS
  * @author Wang Weijun
  * @library /test/lib
+ * @run testng/othervm DisableLMS
  */
 
 import jdk.test.lib.SecurityTools;

@@ -28,6 +28,7 @@
  * @summary tests for HSS/LMS provider
  * @author Mark Powers
  * @modules java.base/sun.security.util
+ * @run testng/othervm TestLMS
  */
 
 import java.io.*;
