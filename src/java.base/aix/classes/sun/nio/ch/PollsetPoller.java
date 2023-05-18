@@ -37,7 +37,7 @@ class PollsetPoller extends Poller {
 
     static { Pollset.init(); /* Dynamically loads pollset C functions */ }
 
-    private int setid;
+    private int final setid;
     private int setsize;
 
     PollsetPoller(boolean read) throws IOException {
@@ -99,7 +99,7 @@ class PollsetPoller extends Poller {
         // We avoid that by just passing set size 1, and letting poll block for subInterval.
         long buffer = Pollset.allocatePollArray(setsize > 0 ? setsize : 1);
         int n = Pollset.pollsetPoll(setid, buffer, setsize, subInterval);
-        for(int i=0; i<n; i++) {
+        for (int i=0; i<n; i++) {
             long eventAddress = Pollset.getEvent(buffer, i);
             int fd = Pollset.getDescriptor(eventAddress);
             polled(fd);
