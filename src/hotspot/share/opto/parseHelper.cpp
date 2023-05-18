@@ -543,7 +543,7 @@ EscapedState* PEAState::materialize(GraphKit* kit, Node* var) {
   Compile* C = kit->C;
   assert(alloc != nullptr && get_object_state(alloc)->is_virtual(), "sanity check");
 #ifndef PRODUCT
-  if (Verbose || PEAVerbose) {
+  if (PEAVerbose) {
     tty->print_cr("PEA materializes a virtual %d obj%d ", C->get_pea_object(alloc), alloc->_idx);
   }
   Atomic::inc(&peaNumMaterializations);
@@ -555,7 +555,7 @@ EscapedState* PEAState::materialize(GraphKit* kit, Node* var) {
   if (oop_type->isa_instptr()) {
     ciInstanceKlass* ik = oop_type->is_instptr()->instance_klass();
 #ifndef PRODUCT
-    if (Verbose || PEAVerbose) {
+    if (PEAVerbose) {
       tty->print("ciInstanceKlass: ");
       ik->print_name_on(tty);
       tty->cr();

@@ -649,6 +649,34 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses, PEAS
                       C->unique(), C->live_nodes(), C->node_arena()->used());
 }
 
+#ifndef PRODUCT
+Parse::~Parse() {
+  if (TraceOptoParse) {
+    tty->print("} // ");
+    method()->print_short_name(tty);
+    tty->cr();
+  }
+
+  if (PEAVerbose) {
+    PEAState& as = _exits.jvms()->alloc_state();
+    auto objs = C->get_pea_objects();
+    for (int i = 0; i < objs.length(); ++i) {
+      ObjID obj = objs.at(i);
+
+      if (as.contains(obj)) {
+        ObjectState* os = as.get_object_state(obj);
+        tty->print("%4d | Obj%d\t", i, obj->_idx);
+
+        if (os->is_virtual()) {
+          tty->print_cr("V");
+        } else {
+          tty->print_cr("M");
+        }
+      }
+    }
+  }
+}
+#endif
 //---------------------------do_all_blocks-------------------------------------
 void Parse::do_all_blocks() {
   bool has_irreducible = flow()->has_irreducible_entry();
@@ -1584,6 +1612,12 @@ void Parse::do_one_block() {
     tty->cr();
   }
 
+#ifndef PRODUCT
+  if (PEAVerbose) {
+    PEAState& as = jvms()->alloc_state();
+    as.print_on(tty);
+  }
+#endif
   assert(block()->is_merged(), "must be merged before being parsed");
   block()->mark_parsed();
 

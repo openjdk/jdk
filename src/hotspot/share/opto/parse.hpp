@@ -405,11 +405,7 @@ class Parse : public GraphKit {
   Parse(JVMState* caller, ciMethod* parse_method, float expected_uses, PEAState* caller_state = nullptr);
 
 #ifndef PRODUCT
-  ~Parse() {
-    if (TraceOptoParse) {
-      tty->print_cr("}");
-    }
-  }
+  ~Parse();
 #endif
   virtual Parse* is_Parse() const { return (Parse*)this; }
 
