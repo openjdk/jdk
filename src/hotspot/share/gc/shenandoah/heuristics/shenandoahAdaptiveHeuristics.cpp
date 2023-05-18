@@ -325,14 +325,13 @@ static double saturate(double value, double min, double max) {
 }
 
 bool ShenandoahAdaptiveHeuristics::should_start_gc() {
-  size_t max_capacity = _generation->max_capacity();
   size_t capacity = _generation->soft_max_capacity();
-  size_t available = _generation->available();
+  size_t available = _generation->soft_available();
   size_t allocated = _generation->bytes_allocated_since_gc_start();
 
   log_debug(gc)("should_start_gc (%s)? available: " SIZE_FORMAT ", soft_max_capacity: " SIZE_FORMAT
-                ", max_capacity: " SIZE_FORMAT ", allocated: " SIZE_FORMAT,
-                _generation->name(), available, capacity, max_capacity, allocated);
+                ", allocated: " SIZE_FORMAT,
+                _generation->name(), available, capacity, allocated);
 
   // The collector reserve may eat into what the mutator is allowed to use. Make sure we are looking
   // at what is available to the mutator when deciding whether to start a GC.
@@ -378,7 +377,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
   //    1. At certain phase changes, we may discard large amounts of data and replace it with large numbers of newly
   //       allocated objects.  This "spike" looks more like a phase change.  We were in steady state at M bytes/sec
   //       allocation rate and now we're in a "reinitialization phase" that looks like N bytes/sec.  We need the "spike"
-  //       accomodation to give us enough runway to recalibrate our "average allocation rate".
+  //       accommodation to give us enough runway to recalibrate our "average allocation rate".
   //
   //   2. The typical workload changes.  "Suddenly", our typical workload of N TPS increases to N+delta TPS.  This means
   //       our average allocation rate needs to be adjusted.  Once again, we need the "spike" accomodation to give us

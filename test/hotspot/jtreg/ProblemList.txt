@@ -85,9 +85,8 @@ gc/stress/TestStressG1Humongous.java 8286554 windows-x64
 
 gc/shenandoah/oom/TestThreadFailure.java 8306335 generic-all
 gc/shenandoah/oom/TestClassLoaderLeak.java 8306336 generic-all
-gc/shenandoah/TestDynamicSoftMaxHeapSize.java#generational 8306333 generic-all
 gc/stress/gclocker/TestGCLockerWithShenandoah.java#generational 8306341 generic-all
-
+gc/TestAllocHumongousFragment.java#generational 8306342 generic-all
 
 #############################################################################
 

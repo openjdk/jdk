@@ -111,21 +111,27 @@ private:
   virtual size_t used() const { return _used; }
   virtual size_t available() const;
 
+  // Returns the memory available based on the _soft_ max heap capacity (soft_max_heap - used).
+  // The soft max heap size may be adjusted lower than the max heap size to cause the trigger
+  // to believe it has less memory available than is _really_ available. Lowering the soft
+  // max heap size will cause the adaptive heuristic to run more frequent cycles.
+  size_t soft_available() const;
+
   // During evacuation and update-refs, some memory may be shifted between generations.  In particular, memory
   // may be loaned by old-gen to young-gen based on the promise the loan will be promptly repaid from the memory reclaimed
   // when the current collection set is recycled.  The capacity adjustment also takes into consideration memory that is
   // set aside within each generation to hold the results of evacuation, but not promotion, into that region.  Promotions
   // into old-gen are bounded by adjusted_available() whereas evacuations into old-gen are pre-committed.
-  virtual size_t adjusted_available() const;
-  virtual size_t adjusted_capacity() const;
+  size_t adjusted_available() const;
+  size_t adjusted_capacity() const;
 
   // This is the number of FREE regions that are eligible to be affiliated with this generation according to the current
   // adjusted capacity.
-  virtual size_t adjusted_unaffiliated_regions() const;
+  size_t adjusted_unaffiliated_regions() const;
 
   // Both of following return new value of available
-  virtual size_t adjust_available(intptr_t adjustment);
-  virtual size_t unadjust_available();
+  size_t adjust_available(intptr_t adjustment);
+  size_t unadjust_available();
 
   size_t bytes_allocated_since_gc_start();
   void reset_bytes_allocated_since_gc_start();

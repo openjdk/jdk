@@ -262,12 +262,12 @@ void ShenandoahGeneration::compute_evacuation_budgets(ShenandoahHeap* heap, bool
     old_evacuation_reserve = old_generation->available();
     // This assertion has been disabled because we expect this code to be replaced by 05/2023
     // assert(old_evacuation_reserve > minimum_evacuation_reserve, "Old-gen available has not been preserved!");
-    size_t old_evac_reserve_max = old_generation->soft_max_capacity() * ShenandoahOldEvacReserve / 100;
+    size_t old_evac_reserve_max = old_generation->max_capacity() * ShenandoahOldEvacReserve / 100;
     if (old_evac_reserve_max < old_evacuation_reserve) {
       old_evacuation_reserve = old_evac_reserve_max;
     }
     young_evac_reserve_max =
-      (((young_generation->soft_max_capacity() * ShenandoahEvacReserve) / 100) * ShenandoahOldEvacRatioPercent) / 100;
+      (((young_generation->max_capacity() * ShenandoahEvacReserve) / 100) * ShenandoahOldEvacRatioPercent) / 100;
     if (young_evac_reserve_max < old_evacuation_reserve) {
       old_evacuation_reserve = young_evac_reserve_max;
     }
@@ -897,7 +897,7 @@ ShenandoahGeneration::ShenandoahGeneration(ShenandoahGenerationType type,
   _collection_thread_time_s(0.0),
   _affiliated_region_count(0), _humongous_waste(0), _used(0), _bytes_allocated_since_gc_start(0),
   _max_capacity(max_capacity), _soft_max_capacity(soft_max_capacity),
-  _adjusted_capacity(soft_max_capacity), _heuristics(nullptr) {
+  _adjusted_capacity(max_capacity), _heuristics(nullptr) {
   _is_marking_complete.set();
   assert(max_workers > 0, "At least one queue");
   for (uint i = 0; i < max_workers; ++i) {
@@ -994,7 +994,7 @@ size_t ShenandoahGeneration::used_regions() const {
 }
 
 size_t ShenandoahGeneration::free_unaffiliated_regions() const {
-  size_t result = soft_max_capacity() / ShenandoahHeapRegion::region_size_bytes();
+  size_t result = max_capacity() / ShenandoahHeapRegion::region_size_bytes();
   if (_affiliated_region_count > result) {
     result = 0;                 // If old-gen is loaning regions to young-gen, affiliated regions may exceed capacity temporarily.
   } else {
@@ -1009,6 +1009,12 @@ size_t ShenandoahGeneration::used_regions_size() const {
 
 size_t ShenandoahGeneration::available() const {
   size_t in_use = used() + get_humongous_waste();
+  size_t capacity = max_capacity();
+  return in_use > capacity ? 0 : capacity - in_use;
+}
+
+size_t ShenandoahGeneration::soft_available() const {
+  size_t in_use = used() + get_humongous_waste();
   size_t soft_capacity = soft_max_capacity();
   return in_use > soft_capacity ? 0 : soft_capacity - in_use;
 }
@@ -1016,12 +1022,12 @@ size_t ShenandoahGeneration::available() const {
 size_t ShenandoahGeneration::adjust_available(intptr_t adjustment) {
   assert(adjustment % ShenandoahHeapRegion::region_size_bytes() == 0,
         "Adjustment to generation size must be multiple of region size");
-  _adjusted_capacity = soft_max_capacity() + adjustment;
+  _adjusted_capacity = max_capacity() + adjustment;
   return _adjusted_capacity;
 }
 
 size_t ShenandoahGeneration::unadjust_available() {
-  _adjusted_capacity = soft_max_capacity();
+  _adjusted_capacity = max_capacity();
   return _adjusted_capacity;
 }
 
@@ -1054,7 +1060,6 @@ void ShenandoahGeneration::increase_capacity(size_t increment) {
                     increment, ShenandoahHeapRegion::region_size_bytes());
   }
   _max_capacity += increment;
-  _soft_max_capacity += increment;
   _adjusted_capacity += increment;
 }
 
@@ -1068,7 +1073,6 @@ void ShenandoahGeneration::decrease_capacity(size_t decrement) {
                     decrement, ShenandoahHeapRegion::region_size_bytes());
   }
   _max_capacity -= decrement;
-  _soft_max_capacity -= decrement;
   _adjusted_capacity -= decrement;
 }
 
