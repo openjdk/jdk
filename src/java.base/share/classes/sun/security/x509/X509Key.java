@@ -364,8 +364,7 @@ public class X509Key implements PublicKey, DerEncoder {
                 throw new InvalidKeyException ("excess key data");
 
         } catch (IOException e) {
-            throw new InvalidKeyException("IOException: " +
-                                          e.getMessage());
+            throw new InvalidKeyException("Unable to decode key", e);
         }
     }
 
@@ -373,8 +372,7 @@ public class X509Key implements PublicKey, DerEncoder {
         try {
             decode(new DerValue(encodedKey));
         } catch (IOException e) {
-            throw new InvalidKeyException("IOException: " +
-                    e.getMessage());
+            throw new InvalidKeyException("Unable to decode key", e);
         }
     }
 
@@ -396,9 +394,7 @@ public class X509Key implements PublicKey, DerEncoder {
         try {
             decode(new DerValue(stream));
         } catch (InvalidKeyException e) {
-            e.printStackTrace();
-            throw new IOException("deserialized key is invalid: " +
-                                  e.getMessage());
+            throw new IOException("deserialized key is invalid", e);
         }
     }
 

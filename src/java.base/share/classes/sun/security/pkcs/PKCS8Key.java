@@ -95,8 +95,7 @@ public class PKCS8Key implements PrivateKey, InternalPrivateKey {
         try {
             decode(new DerValue(input));
         } catch (IOException e) {
-            throw new InvalidKeyException("IOException: " +
-                    e.getMessage());
+            throw new InvalidKeyException("Unable to decode key", e);
         }
     }
 
@@ -135,7 +134,7 @@ public class PKCS8Key implements PrivateKey, InternalPrivateKey {
             }
             throw new InvalidKeyException("Extra bytes");
         } catch (IOException e) {
-            throw new InvalidKeyException("IOException : " + e.getMessage());
+            throw new InvalidKeyException("Unable to decode key", e);
         } finally {
             if (val != null) {
                 val.clear();
@@ -246,8 +245,7 @@ public class PKCS8Key implements PrivateKey, InternalPrivateKey {
         try {
             decode(new DerValue(stream));
         } catch (InvalidKeyException e) {
-            throw new IOException("deserialized key is invalid: " +
-                                  e.getMessage());
+            throw new IOException("deserialized key is invalid", e);
         }
     }
 
