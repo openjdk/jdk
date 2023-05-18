@@ -127,7 +127,8 @@ final class CertificateAuthoritiesExtension {
             return authorities;
         }
 
-        // This method will throw IllegalArgumentException if the X500Principal cannot be parsed.
+        // This method will throw IllegalArgumentException if the
+        // X500Principal cannot be parsed.
         X500Principal[] getAuthorities() {
             X500Principal[] principals = new X500Principal[authorities.size()];
 

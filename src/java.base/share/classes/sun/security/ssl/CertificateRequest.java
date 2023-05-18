@@ -204,7 +204,8 @@ final class CertificateRequest {
             return  ClientCertificateType.getKeyTypes(types);
         }
 
-        // This method will throw IllegalArgumentException if the X500Principal cannot be parsed.
+        // This method will throw IllegalArgumentException if the
+        // X500Principal cannot be parsed.
         X500Principal[] getAuthorities() {
             X500Principal[] principals = new X500Principal[authorities.size()];
             int i = 0;
@@ -386,15 +387,19 @@ final class CertificateRequest {
             try {
                 if (chc.conContext.transport instanceof SSLSocketImpl) {
                     clientAlias = km.chooseClientAlias(crm.getKeyTypes(),
-                            crm.getAuthorities(), (SSLSocket) chc.conContext.transport);
+                        crm.getAuthorities(),
+                        (SSLSocket) chc.conContext.transport);
                 } else if (chc.conContext.transport instanceof SSLEngineImpl) {
-                    clientAlias = km.chooseEngineClientAlias(crm.getKeyTypes(),
-                            crm.getAuthorities(), (SSLEngine) chc.conContext.transport);
+                    clientAlias =
+                        km.chooseEngineClientAlias(crm.getKeyTypes(),
+                            crm.getAuthorities(),
+                            (SSLEngine) chc.conContext.transport);
                 }
             } catch (IllegalArgumentException iae) {
-                chc.conContext.fatal(Alert.DECODE_ERROR, "The distinguished " +
-                        "names of the peer's certificate authorities could " +
-                        "not be parsed", iae);
+                chc.conContext.fatal(Alert.DECODE_ERROR,
+                    "The distinguished names of the peer's "
+                    + "certificate authorities could not be parsed",
+                        iae);
             }
 
 
@@ -531,7 +536,8 @@ final class CertificateRequest {
             return ClientCertificateType.getKeyTypes(types);
         }
 
-        // This method will throw IllegalArgumentException if the X500Principal cannot be parsed.
+        // This method will throw IllegalArgumentException if the
+        // X500Principal cannot be parsed.
         X500Principal[] getAuthorities() {
             X500Principal[] principals = new X500Principal[authorities.size()];
             int i = 0;
@@ -604,7 +610,8 @@ final class CertificateRequest {
                     X500Principal principal = new X500Principal(encoded);
                     authorityNames.add(principal.toString());
                 } catch (IllegalArgumentException iae) {
-                    authorityNames.add("unparseable distinguished name: " + iae);
+                    authorityNames.add("unparseable distinguished name: " +
+                        iae);
                 }
             }
             Object[] messageFields = {
@@ -745,9 +752,9 @@ final class CertificateRequest {
             try {
                 chc.peerSupportedAuthorities = crm.getAuthorities();
             } catch (IllegalArgumentException iae) {
-                chc.conContext.fatal(Alert.DECODE_ERROR, "The distinguished " +
-                        "names of the peer's certificate authorities could " +
-                        "not be parsed", iae);
+                chc.conContext.fatal(Alert.DECODE_ERROR, "The "
+                    + "distinguished names of the peer's certificate "
+                    + "authorities could not be parsed", iae);
             }
             // For TLS 1.2, we no longer use the certificate_types field
             // from the CertificateRequest message to directly determine
