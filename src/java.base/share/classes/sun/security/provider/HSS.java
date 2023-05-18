@@ -33,10 +33,10 @@ import java.security.*;
 import java.security.spec.*;
 import java.util.Arrays;
 
-/*
- * This class implements the Hierarchical Signature System using the
+/**
+ * Implementation of the Hierarchical Signature System using the
  * Leighton-Micali Signatures (HSS/LMS) as described in RFC 8554 and
- *  NIST Special publication 800-208.
+ * NIST Special publication 800-208.
  */
 public final class HSS extends SignatureSpi {
     private HSSPublicKey pubKey;
@@ -188,12 +188,12 @@ public final class HSS extends SignatureSpi {
     }
 
     static class LMSUtils {
-        final static int LMS_RESERVED = 0;
-        final static int LMS_SHA256_M32_H5 = 5;
-        final static int LMS_SHA256_M32_H10 = 6;
-        final static int LMS_SHA256_M32_H15 = 7;
-        final static int LMS_SHA256_M32_H20 = 8;
-        final static int LMS_SHA256_M32_H25 = 9;
+        static final int LMS_RESERVED = 0;
+        static final int LMS_SHA256_M32_H5 = 5;
+        static final int LMS_SHA256_M32_H10 = 6;
+        static final int LMS_SHA256_M32_H15 = 7;
+        static final int LMS_SHA256_M32_H20 = 8;
+        static final int LMS_SHA256_M32_H25 = 9;
 
         static String lmsType(int type) {
             String typeStr;
@@ -209,11 +209,11 @@ public final class HSS extends SignatureSpi {
             return typeStr;
         }
 
-        final static int LMOTS_RESERVED = 0;
-        final static int LMOTS_SHA256_N32_W1 = 1;
-        final static int LMOTS_SHA256_N32_W2 = 2;
-        final static int LMOTS_SHA256_N32_W4 = 3;
-        final static int LMOTS_SHA256_N32_W8 = 4;
+        static final int LMOTS_RESERVED = 0;
+        static final int LMOTS_SHA256_N32_W1 = 1;
+        static final int LMOTS_SHA256_N32_W2 = 2;
+        static final int LMOTS_SHA256_N32_W4 = 3;
+        static final int LMOTS_SHA256_N32_W8 = 4;
 
         static String lmotsType(int type) {
             String typeStr;
@@ -407,15 +407,14 @@ public final class HSS extends SignatureSpi {
     static class LMSignature {
         final int sigLmType;
         final int sigOtsType;
-        final private byte[] qArr;
+        private final byte[] qArr;
         final int q; // serial number of the LMS key being used for this signature
         final LMOTSignature lmotSig;
         final int n; // output length of the hash function used in the OTS
         final int p; // number of hash chains in the signature
-        final int m; // output length of the hash fubction used in the Merkle tree
+        final int m; // output length of the hash function used in the Merkle tree
         final int h; // height of the Merkle tree
-        final byte[][] path;
-        final byte[] sigArr;
+        private final byte[][] path;
 
         LMSignature(byte[] sigArray, int offset, boolean checkExactLen)
                 throws SignatureException {
@@ -425,9 +424,9 @@ public final class HSS extends SignatureSpi {
             }
 
             LMOTSParams lmotsParams;
-                q = LMSUtils.fourBytesToInt(sigArray, offset);
-                qArr = Arrays.copyOfRange(sigArray, offset, offset + 4);
-                sigOtsType = LMSUtils.fourBytesToInt(sigArray, offset + 4);
+            q = LMSUtils.fourBytesToInt(sigArray, offset);
+            qArr = Arrays.copyOfRange(sigArray, offset, offset + 4);
+            sigOtsType = LMSUtils.fourBytesToInt(sigArray, offset + 4);
             try {
                 lmotsParams = LMOTSParams.of(sigOtsType);
             } catch (IllegalArgumentException e) {
@@ -443,7 +442,7 @@ public final class HSS extends SignatureSpi {
 
             int otsSigLen = 4 + n * (p + 1);
             byte[] otSigArr = Arrays.copyOfRange(
-                            sigArray, offset + 4, offset + 4 + otsSigLen);
+                    sigArray, offset + 4, offset + 4 + otsSigLen);
             lmotSig = new LMOTSignature(otSigArr, lmotsParams);
 
             int sigTypePos = offset + 4 + otsSigLen;
@@ -464,8 +463,6 @@ public final class HSS extends SignatureSpi {
                     (checkExactLen && (inLen != sigArrLen))) {
                 throw new SignatureException("LMS signature length is incorrect");
             }
-
-            sigArr = Arrays.copyOfRange(sigArray, offset, offset + sigArrLen);
 
             int pStart = offset + 12 + n * (p + 1);
             path = new byte[h][m];
@@ -509,7 +506,7 @@ public final class HSS extends SignatureSpi {
         final byte[] hashBuf;
         // Precomputed block for SHA256 when the message size is 55 bytes
         // (i.e. when SHA256 is used)
-        private final static byte[] hashbufSha256_32 = {
+        private static final byte[] hashbufSha256_32 = {
                 0, 0, 0, 0, 0, 0, 0, 0,
                 0, 0, 0, 0, 0, 0, 0, 0,
                 0, 0, 0, 0, 0, 0, 0, 0,
@@ -708,7 +705,7 @@ public final class HSS extends SignatureSpi {
         @Override
         protected Key engineTranslateKey(Key key) throws InvalidKeyException {
             if (key == null) {
-                throw  new InvalidKeyException("key cannot be null");
+                throw new InvalidKeyException("key cannot be null");
             }
             PublicKey pKey;
             try {
