@@ -40,16 +40,20 @@ import java.util.function.Consumer;
 import static jdk.internal.classfile.Classfile.*;
 import jdk.internal.classfile.CodeBuilder;
 import jdk.internal.classfile.components.ClassPrinter;
+import jdk.internal.classfile.instruction.NopInstruction;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 
 class BuilderFinalizersTest {
 
-    public void testFinalizers(int cases, Consumer<CodeBuilder> gen) throws Throwable {
-        byte[] bytes = build(ClassDesc.of("TestFinalizer"), List.of(Option.generateStackmap(true)), clb ->
-                clb.withFlags(ACC_PUBLIC)
-                   .withMethodBody("main", MethodTypeDesc.of(CD_int, CD_int), ACC_PUBLIC | ACC_STATIC, gen));
-//        ClassPrinter.toYaml(parse(bytes), ClassPrinter.Verbosity.CRITICAL_ATTRIBUTES, System.out::print);
+    public void testFinalizers(int cases, int nops, Consumer<CodeBuilder> gen) throws Throwable {
+        byte[] bytes = build(ClassDesc.of("TestFinalizer"), List.of(Option.patchDeadCode(false)), //fail when dead code is generated
+                clb -> clb.withFlags(ACC_PUBLIC)
+                          .withMethodBody("main", MethodTypeDesc.of(CD_int, CD_int), ACC_PUBLIC | ACC_STATIC, gen));
+        var clm = parse(bytes);
+        ClassPrinter.toYaml(clm, ClassPrinter.Verbosity.CRITICAL_ATTRIBUTES, System.out::print);
+        //counting the finalizers
+        assertEquals(nops, (int)clm.methods().get(0).code().get().elementStream().filter(e -> e instanceof NopInstruction).count());
         MethodHandles.Lookup lookup = MethodHandles.lookup().defineHiddenClass(bytes, true);
         MethodHandle main = lookup.findStatic(lookup.lookupClass(), "main",
                 MethodType.methodType(Integer.TYPE, Integer.TYPE));
@@ -60,7 +64,7 @@ class BuilderFinalizersTest {
 
     @Test
     public void testFinalizers() throws Throwable {
-        testFinalizers(14, cob -> {
+        testFinalizers(14, 4, cob -> {
             var externalLabel1 = cob.newBoundLabel();
             var externalLabel2 = cob.newBoundLabel();
             cob.tryWithFinalizer(
@@ -88,7 +92,7 @@ class BuilderFinalizersTest {
                                     .switchCase(12, b -> b.goto_(externalLabel2))
                                     .switchCase(13, b -> {}))
                             .iload(0).ireturn(),
-                finb -> finb.nop().nop().nop().nop().nop().nop().nop().nop().nop()
+                finb -> finb.nop()
                             .constantInstruction(42).ireturn(), externalLabel1, externalLabel2);;
         });
     }

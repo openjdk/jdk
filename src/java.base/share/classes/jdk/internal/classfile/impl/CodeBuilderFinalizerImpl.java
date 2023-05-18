@@ -24,6 +24,7 @@
  */
 package jdk.internal.classfile.impl;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -50,17 +51,19 @@ public final class CodeBuilderFinalizerImpl {
         var endLabel = parent.newLabel();
         BlockCodeBuilderImpl topBlock = new BlockCodeBuilderImpl(parent, endLabel);
         topBlock.start();
+        var excTable = new ArrayList<Label>();
+        excTable.add(topBlock.startLabel());
         topBlock.transforming(
                 (cob, coe) -> {
                     switch (coe) {
                         case BranchInstruction bi -> buildConditionally(
                             mapping, bi.target(), cob, bi,
                             () -> {
+                                excTable.add(cob.newBoundLabel()); //try block ends here
                                 if (bi.opcode().isUnconditionalBranch()) {
                                     finalizerHandler.accept(cob); //unconditional branch finalizer
                                     if (topBlock.reachable()) cob.with(bi);
                                 } else {
-                                    //!!! conditional bypass must be generated for each call !!!
                                     var bypass = cob.newLabel();
                                     cob.branchInstruction(BytecodeHelpers.reverseBranchOpcode(bi.opcode()), bypass);
                                     finalizerHandler.accept(cob); //conditional branch finalizer
@@ -70,10 +73,14 @@ public final class CodeBuilderFinalizerImpl {
                                     }
 
                                 }
-                            });
+                                excTable.add(cob.newBoundLabel()); //try block re-starts here
+                            },
+                            finalizerLabel ->
+                                cob.branchInstruction(bi.opcode(), finalizerLabel));
                         case ReturnInstruction ri -> buildConditionally(
                             mapping, null, cob, ri,
                             () -> {
+                                excTable.add(cob.newBoundLabel()); //try block ends here
                                 if (ri.typeKind() == TypeKind.VoidType) {
                                     finalizerHandler.accept(cob); //void return finalizer
                                     if (topBlock.reachable()) cob.with(ri);
@@ -86,7 +93,10 @@ public final class CodeBuilderFinalizerImpl {
                                            .with(ri);
                                     }
                                 }
-                            });
+                                excTable.add(cob.newBoundLabel()); //try block re-starts here
+                            },
+                            finalizerLabel ->
+                                cob.goto_(finalizerLabel));
                         default -> cob.with(coe);
                     }
                 },
@@ -94,16 +104,18 @@ public final class CodeBuilderFinalizerImpl {
         if (topBlock.isEmpty()) {
             throw new IllegalStateException("The body of the try block is empty");
         }
-        Label tryEnd;
         var fallthrough = topBlock.newLabel();
         if (topBlock.reachable()) {
-            tryEnd = topBlock.newBoundLabel();
+            excTable.add(topBlock.newBoundLabel());  //try block ends here
             finalizerHandler.accept(topBlock); //pass-through finalizer
             topBlock.goto_(topBlock.endLabel());
         } else {
-            tryEnd = topBlock.newBoundLabel();
+            excTable.add(topBlock.newBoundLabel());  //try block ends here
         }
-        topBlock.exceptionCatchAll(topBlock.startLabel(), tryEnd, topBlock.newBoundLabel());
+        var handlerLabel = topBlock.newBoundLabel();
+        for (int i = 0; i < excTable.size(); i += 2) {
+            topBlock.exceptionCatchAll(excTable.get(i), excTable.get(i + 1), handlerLabel);
+        }
         var excSlot = topBlock.allocateLocal(TypeKind.ReferenceType);
         topBlock.astore(excSlot);
         finalizerHandler.accept(topBlock); //exception handler finalizer
@@ -120,14 +132,15 @@ public final class CodeBuilderFinalizerImpl {
                                            Label labelKey,
                                            CodeBuilder cb,
                                            Instruction originalInstruction,
-                                           Runnable customFinalizerBuilder) {
+                                           Runnable firstFinalizerHandler,
+                                           Consumer<Label> subsequentFinalizersHandler) {
         if (mapping.containsKey(labelKey)) { //call finalizer for this label
             mapping.compute(labelKey, (l, finalizerLabel) -> {
                 if (finalizerLabel == null) { //finalizer not built yet
                     finalizerLabel = cb.newBoundLabel();
-                    customFinalizerBuilder.run();
+                    firstFinalizerHandler.run();
                 } else {
-                    cb.goto_(finalizerLabel); //compaction of subsequent finalizer calls
+                    subsequentFinalizersHandler.accept(finalizerLabel);
                 }
                 return finalizerLabel;
             });
