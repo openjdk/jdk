@@ -73,7 +73,6 @@ import static jdk.internal.org.objectweb.asm.Opcodes.V12;
         "--add-exports", "java.base/jdk.internal.classfile.attribute=ALL-UNNAMED",
         "--add-exports", "java.base/jdk.internal.classfile.constantpool=ALL-UNNAMED",
         "--add-exports", "java.base/jdk.internal.classfile.instruction=ALL-UNNAMED",
-        "--add-exports", "java.base/jdk.internal.classfile.java.lang.constant=ALL-UNNAMED",
         "--add-exports", "java.base/jdk.internal.classfile.components=ALL-UNNAMED",
         "--add-exports", "java.base/jdk.internal.classfile.impl=ALL-UNNAMED"})
 public class Write {

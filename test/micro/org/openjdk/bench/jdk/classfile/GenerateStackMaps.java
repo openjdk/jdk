@@ -61,7 +61,6 @@ import org.openjdk.jmh.annotations.Warmup;
         "--add-exports", "java.base/jdk.internal.classfile.attribute=ALL-UNNAMED",
         "--add-exports", "java.base/jdk.internal.classfile.constantpool=ALL-UNNAMED",
         "--add-exports", "java.base/jdk.internal.classfile.instruction=ALL-UNNAMED",
-        "--add-exports", "java.base/jdk.internal.classfile.java.lang.constant=ALL-UNNAMED",
         "--add-exports", "java.base/jdk.internal.classfile.components=ALL-UNNAMED",
         "--add-exports", "java.base/jdk.internal.classfile.impl=ALL-UNNAMED"})
 @Warmup(iterations = 2)
