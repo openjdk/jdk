@@ -69,7 +69,7 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
 
     /** Records a possible cancellation raised before any operation
      * has been initiated, or an error received while sending the request. */
-    private AtomicReference<Throwable> failedRef = new AtomicReference<>();
+    private final AtomicReference<Throwable> failedRef = new AtomicReference<>();
     private final List<CompletableFuture<?>> operations; // used for cancel
 
     /** Must be held when operating on any internal state or data. */
