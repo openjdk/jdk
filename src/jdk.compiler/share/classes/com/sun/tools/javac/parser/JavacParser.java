@@ -2068,22 +2068,22 @@ public class JavacParser implements Parser {
 
         /**
          * analyzeParens() has already classified the lambda as EXPLICIT_LAMBDA, due to
-         * two consecutive identifiers. adding an erroneous parameter (one that
-         * introduces a mixed implicit/explicit state) does not need to class with
-         * either:
-         *
-         *  - an explicit parameter, or
-         *  - one declared with var
+         * two consecutive identifiers. Because of that {@code (<explicit lambda>)}, the
+         * parser will always attempt to parse a type, followed by a name. If the lambda
+         * contains an illegal mix of implicit and explicit parameters, it is possible
+         * for the parser to see a {@code ,} when expecting a name, in which case the
+         * variable is created with an erroneous name. The logic below makes sure that
+         * the lambda parameters are all declared with either an explicit type (e.g.
+         * {@code String x}), or with an inferred type (using {@code var x}). Any other
+         * combination is rejected.
          * */
         void addParameter(JCVariableDecl param) {
             Assert.check(param.vartype != null);
 
             if (param.name == names.error) {
                 reduce(LambdaParameterKind.IMPLICIT);
-                return;
             }
-
-            if (restrictedTypeName(param.vartype, false) != null) {
+            else if (restrictedTypeName(param.vartype, false) != null) {
                 reduce(LambdaParameterKind.VAR);
             } else {
                 reduce(LambdaParameterKind.EXPLICIT);
