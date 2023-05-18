@@ -243,7 +243,7 @@ static const char* format_insn_close(const char* close,
   }
 
   int used_size = snprintf(buf, bufsize, "%s", close);
-  if ((used_size < 0) || (used_size >= bufsize)) {
+  if ((used_size < 0) || ((size_t)used_size >= bufsize)) {
     return close;
   }
   char* p = buf + used_size;
@@ -251,7 +251,7 @@ static const char* format_insn_close(const char* close,
 
   if (type) {
     used_size = snprintf(p, bufsize, " type='%s'", type);
-    if ((used_size < 0) || (used_size >= bufsize)) {
+    if ((used_size < 0) || ((size_t)used_size >= bufsize)) {
       return close;
     }
     p += used_size;
@@ -260,7 +260,7 @@ static const char* format_insn_close(const char* close,
 
   if (dsize) {
     used_size = snprintf(p, bufsize, " dsize='%d'", dsize);
-    if ((used_size < 0) || (used_size >= bufsize)) {
+    if ((used_size < 0) || ((size_t)used_size >= bufsize)) {
       return close;
     }
     p += used_size;
@@ -269,7 +269,7 @@ static const char* format_insn_close(const char* close,
 
   if (delays) {
     used_size = snprintf(p, bufsize, " delay='%d'", delays);
-    if ((used_size < 0) || (used_size >= bufsize)) {
+    if ((used_size < 0) || ((size_t)used_size >= bufsize)) {
       return close;
     }
   }
