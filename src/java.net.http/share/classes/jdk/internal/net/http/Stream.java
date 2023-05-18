@@ -151,7 +151,7 @@ class Stream<T> extends ExchangeImpl<T> {
 
     // send lock: prevent sending DataFrames after reset occurred.
     private final Lock sendLock = new ReentrantLock();
-    final Lock stateLock = new ReentrantLock();
+    private final Lock stateLock = new ReentrantLock();
 
     /**
      * A reference to this Stream's connection Send Window controller. The
