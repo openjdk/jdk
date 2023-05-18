@@ -139,7 +139,11 @@ oop ZObjArrayAllocator::initialize(HeapWord* mem) const {
   ZThreadLocalData::clear_invisible_root(_thread);
 
   // Signal to the ZIterator that this is no longer an invisible root
-  oopDesc::release_set_mark(mem, markWord::prototype());
+  if (UseCompactObjectHeaders) {
+    oopDesc::release_set_mark(mem, _klass->prototype_header());
+  } else {
+    oopDesc::release_set_mark(mem, markWord::prototype());
+  }
 
   return cast_to_oop(mem);
 }
