@@ -447,7 +447,6 @@ instruct storeV(vReg src, vmemA mem) %{
 // vector load/store - predicated
 
 instruct loadV_masked(vReg dst, vmemA mem, pRegGov pg) %{
-  predicate(UseSVE > 0);
   match(Set dst (LoadVectorMasked mem pg));
   format %{ "loadV_masked $dst, $pg, $mem" %}
   ins_encode %{
@@ -460,7 +459,6 @@ instruct loadV_masked(vReg dst, vmemA mem, pRegGov pg) %{
 %}
 
 instruct storeV_masked(vReg src, vmemA mem, pRegGov pg) %{
-  predicate(UseSVE > 0);
   match(Set mem (StoreVectorMasked mem (Binary src pg)));
   format %{ "storeV_masked $mem, $pg, $src" %}
   ins_encode %{
@@ -607,7 +605,6 @@ instruct vaddD(vReg dst, vReg src1, vReg src2) %{
 // vector add - predicated
 
 instruct vaddB_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
-  predicate(UseSVE > 0);
   match(Set dst_src1 (AddVB (Binary dst_src1 src2) pg));
   format %{ "vaddB_masked $dst_src1, $pg, $dst_src1, $src2" %}
   ins_encode %{
@@ -617,7 +614,6 @@ instruct vaddB_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
 %}
 
 instruct vaddS_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
-  predicate(UseSVE > 0);
   match(Set dst_src1 (AddVS (Binary dst_src1 src2) pg));
   format %{ "vaddS_masked $dst_src1, $pg, $dst_src1, $src2" %}
   ins_encode %{
@@ -627,7 +623,6 @@ instruct vaddS_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
 %}
 
 instruct vaddI_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
-  predicate(UseSVE > 0);
   match(Set dst_src1 (AddVI (Binary dst_src1 src2) pg));
   format %{ "vaddI_masked $dst_src1, $pg, $dst_src1, $src2" %}
   ins_encode %{
@@ -637,7 +632,6 @@ instruct vaddI_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
 %}
 
 instruct vaddL_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
-  predicate(UseSVE > 0);
   match(Set dst_src1 (AddVL (Binary dst_src1 src2) pg));
   format %{ "vaddL_masked $dst_src1, $pg, $dst_src1, $src2" %}
   ins_encode %{
@@ -647,7 +641,6 @@ instruct vaddL_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
 %}
 
 instruct vaddF_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
-  predicate(UseSVE > 0);
   match(Set dst_src1 (AddVF (Binary dst_src1 src2) pg));
   format %{ "vaddF_masked $dst_src1, $pg, $dst_src1, $src2" %}
   ins_encode %{
@@ -657,7 +650,6 @@ instruct vaddF_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
 %}
 
 instruct vaddD_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
-  predicate(UseSVE > 0);
   match(Set dst_src1 (AddVD (Binary dst_src1 src2) pg));
   format %{ "vaddD_masked $dst_src1, $pg, $dst_src1, $src2" %}
   ins_encode %{
@@ -831,7 +823,6 @@ instruct vsubD(vReg dst, vReg src1, vReg src2) %{
 // vector sub - predicated
 
 instruct vsubB_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
-  predicate(UseSVE > 0);
   match(Set dst_src1 (SubVB (Binary dst_src1 src2) pg));
   format %{ "vsubB_masked $dst_src1, $pg, $dst_src1, $src2" %}
   ins_encode %{
@@ -841,7 +832,6 @@ instruct vsubB_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
 %}
 
 instruct vsubS_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
-  predicate(UseSVE > 0);
   match(Set dst_src1 (SubVS (Binary dst_src1 src2) pg));
   format %{ "vsubS_masked $dst_src1, $pg, $dst_src1, $src2" %}
   ins_encode %{
@@ -851,7 +841,6 @@ instruct vsubS_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
 %}
 
 instruct vsubI_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
-  predicate(UseSVE > 0);
   match(Set dst_src1 (SubVI (Binary dst_src1 src2) pg));
   format %{ "vsubI_masked $dst_src1, $pg, $dst_src1, $src2" %}
   ins_encode %{
@@ -861,7 +850,6 @@ instruct vsubI_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
 %}
 
 instruct vsubL_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
-  predicate(UseSVE > 0);
   match(Set dst_src1 (SubVL (Binary dst_src1 src2) pg));
   format %{ "vsubL_masked $dst_src1, $pg, $dst_src1, $src2" %}
   ins_encode %{
@@ -871,7 +859,6 @@ instruct vsubL_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
 %}
 
 instruct vsubF_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
-  predicate(UseSVE > 0);
   match(Set dst_src1 (SubVF (Binary dst_src1 src2) pg));
   format %{ "vsubF_masked $dst_src1, $pg, $dst_src1, $src2" %}
   ins_encode %{
@@ -881,7 +868,6 @@ instruct vsubF_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
 %}
 
 instruct vsubD_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
-  predicate(UseSVE > 0);
   match(Set dst_src1 (SubVD (Binary dst_src1 src2) pg));
   format %{ "vsubD_masked $dst_src1, $pg, $dst_src1, $src2" %}
   ins_encode %{
@@ -1028,7 +1014,6 @@ instruct vmulD(vReg dst, vReg src1, vReg src2) %{
 // vector mul - predicated
 
 instruct vmulB_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
-  predicate(UseSVE > 0);
   match(Set dst_src1 (MulVB (Binary dst_src1 src2) pg));
   format %{ "vmulB_masked $dst_src1, $pg, $dst_src1, $src2" %}
   ins_encode %{
@@ -1038,7 +1023,6 @@ instruct vmulB_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
 %}
 
 instruct vmulS_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
-  predicate(UseSVE > 0);
   match(Set dst_src1 (MulVS (Binary dst_src1 src2) pg));
   format %{ "vmulS_masked $dst_src1, $pg, $dst_src1, $src2" %}
   ins_encode %{
@@ -1048,7 +1032,6 @@ instruct vmulS_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
 %}
 
 instruct vmulI_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
-  predicate(UseSVE > 0);
   match(Set dst_src1 (MulVI (Binary dst_src1 src2) pg));
   format %{ "vmulI_masked $dst_src1, $pg, $dst_src1, $src2" %}
   ins_encode %{
@@ -1058,7 +1041,6 @@ instruct vmulI_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
 %}
 
 instruct vmulL_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
-  predicate(UseSVE > 0);
   match(Set dst_src1 (MulVL (Binary dst_src1 src2) pg));
   format %{ "vmulL_masked $dst_src1, $pg, $dst_src1, $src2" %}
   ins_encode %{
@@ -1068,7 +1050,6 @@ instruct vmulL_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
 %}
 
 instruct vmulF_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
-  predicate(UseSVE > 0);
   match(Set dst_src1 (MulVF (Binary dst_src1 src2) pg));
   format %{ "vmulF_masked $dst_src1, $pg, $dst_src1, $src2" %}
   ins_encode %{
@@ -1078,7 +1059,6 @@ instruct vmulF_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
 %}
 
 instruct vmulD_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
-  predicate(UseSVE > 0);
   match(Set dst_src1 (MulVD (Binary dst_src1 src2) pg));
   format %{ "vmulD_masked $dst_src1, $pg, $dst_src1, $src2" %}
   ins_encode %{
@@ -1138,7 +1118,6 @@ instruct vdivD_sve(vReg dst_src1, vReg src2) %{
 // vector float div - predicated
 
 instruct vdivF_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
-  predicate(UseSVE > 0);
   match(Set dst_src1 (DivVF (Binary dst_src1 src2) pg));
   format %{ "vdivF_masked $dst_src1, $pg, $dst_src1, $src2" %}
   ins_encode %{
@@ -1148,7 +1127,6 @@ instruct vdivF_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
 %}
 
 instruct vdivD_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
-  predicate(UseSVE > 0);
   match(Set dst_src1 (DivVD (Binary dst_src1 src2) pg));
   format %{ "vdivD_masked $dst_src1, $pg, $dst_src1, $src2" %}
   ins_encode %{
@@ -1180,7 +1158,6 @@ instruct vand(vReg dst, vReg src1, vReg src2) %{
 // vector and - predicated
 
 instruct vand_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
-  predicate(UseSVE > 0);
   match(Set dst_src1 (AndV (Binary dst_src1 src2) pg));
   format %{ "vand_masked $dst_src1, $pg, $dst_src1, $src2" %}
   ins_encode %{
@@ -1256,7 +1233,6 @@ instruct vor(vReg dst, vReg src1, vReg src2) %{
 // vector or - predicated
 
 instruct vor_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
-  predicate(UseSVE > 0);
   match(Set dst_src1 (OrV (Binary dst_src1 src2) pg));
   format %{ "vor_masked $dst_src1, $pg, $dst_src1, $src2" %}
   ins_encode %{
@@ -1332,7 +1308,6 @@ instruct vxor(vReg dst, vReg src1, vReg src2) %{
 // vector xor - predicated
 
 instruct vxor_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
-  predicate(UseSVE > 0);
   match(Set dst_src1 (XorV (Binary dst_src1 src2) pg));
   format %{ "vxor_masked $dst_src1, $pg, $dst_src1, $src2" %}
   ins_encode %{
@@ -1450,7 +1425,6 @@ instruct vnotL(vReg dst, vReg src, immL_M1 m1) %{
 // vector not - predicated
 
 instruct vnotI_masked(vReg dst_src, immI_M1 m1, pRegGov pg) %{
-  predicate(UseSVE > 0);
   match(Set dst_src (XorV (Binary dst_src (ReplicateB m1)) pg));
   match(Set dst_src (XorV (Binary dst_src (ReplicateS m1)) pg));
   match(Set dst_src (XorV (Binary dst_src (ReplicateI m1)) pg));
@@ -1464,7 +1438,6 @@ instruct vnotI_masked(vReg dst_src, immI_M1 m1, pRegGov pg) %{
 %}
 
 instruct vnotL_masked(vReg dst_src, immL_M1 m1, pRegGov pg) %{
-  predicate(UseSVE > 0);
   match(Set dst_src (XorV (Binary dst_src (ReplicateL m1)) pg));
   format %{ "vnotL_masked $dst_src, $pg, $dst_src" %}
   ins_encode %{
@@ -1516,7 +1489,6 @@ instruct vand_notL(vReg dst, vReg src1, vReg src2, immL_M1 m1) %{
 // vector and_not - predicated
 
 instruct vand_notI_masked(vReg dst_src1, vReg src2, immI_M1 m1, pRegGov pg) %{
-  predicate(UseSVE > 0);
   match(Set dst_src1 (AndV (Binary dst_src1 (XorV src2 (ReplicateB m1))) pg));
   match(Set dst_src1 (AndV (Binary dst_src1 (XorV src2 (ReplicateS m1))) pg));
   match(Set dst_src1 (AndV (Binary dst_src1 (XorV src2 (ReplicateI m1))) pg));
@@ -1530,7 +1502,6 @@ instruct vand_notI_masked(vReg dst_src1, vReg src2, immI_M1 m1, pRegGov pg) %{
 %}
 
 instruct vand_notL_masked(vReg dst_src1, vReg src2, immL_M1 m1, pRegGov pg) %{
-  predicate(UseSVE > 0);
   match(Set dst_src1 (AndV (Binary dst_src1 (XorV src2 (ReplicateL m1))) pg));
   format %{ "vand_notL_masked $dst_src1, $pg, $dst_src1, $src2" %}
   ins_encode %{
@@ -1638,7 +1609,6 @@ instruct vabsD(vReg dst, vReg src) %{
 // vector abs - predicated
 
 instruct vabsB_masked(vReg dst_src, pRegGov pg) %{
-  predicate(UseSVE > 0);
   match(Set dst_src (AbsVB dst_src pg));
   format %{ "vabsB_masked $dst_src, $pg, $dst_src" %}
   ins_encode %{
@@ -1648,7 +1618,6 @@ instruct vabsB_masked(vReg dst_src, pRegGov pg) %{
 %}
 
 instruct vabsS_masked(vReg dst_src, pRegGov pg) %{
-  predicate(UseSVE > 0);
   match(Set dst_src (AbsVS dst_src pg));
   format %{ "vabsS_masked $dst_src, $pg, $dst_src" %}
   ins_encode %{
@@ -1658,7 +1627,6 @@ instruct vabsS_masked(vReg dst_src, pRegGov pg) %{
 %}
 
 instruct vabsI_masked(vReg dst_src, pRegGov pg) %{
-  predicate(UseSVE > 0);
   match(Set dst_src (AbsVI dst_src pg));
   format %{ "vabsI_masked $dst_src, $pg, $dst_src" %}
   ins_encode %{
@@ -1668,7 +1636,6 @@ instruct vabsI_masked(vReg dst_src, pRegGov pg) %{
 %}
 
 instruct vabsL_masked(vReg dst_src, pRegGov pg) %{
-  predicate(UseSVE > 0);
   match(Set dst_src (AbsVL dst_src pg));
   format %{ "vabsL_masked $dst_src, $pg, $dst_src" %}
   ins_encode %{
@@ -1678,7 +1645,6 @@ instruct vabsL_masked(vReg dst_src, pRegGov pg) %{
 %}
 
 instruct vabsF_masked(vReg dst_src, pRegGov pg) %{
-  predicate(UseSVE > 0);
   match(Set dst_src (AbsVF dst_src pg));
   format %{ "vabsF_masked $dst_src, $pg, $dst_src" %}
   ins_encode %{
@@ -1688,7 +1654,6 @@ instruct vabsF_masked(vReg dst_src, pRegGov pg) %{
 %}
 
 instruct vabsD_masked(vReg dst_src, pRegGov pg) %{
-  predicate(UseSVE > 0);
   match(Set dst_src (AbsVD dst_src pg));
   format %{ "vabsD_masked $dst_src, $pg, $dst_src" %}
   ins_encode %{
@@ -1730,7 +1695,6 @@ instruct vfabd_sve(vReg dst_src1, vReg src2) %{
 // vector fabs diff - predicated
 
 instruct vfabd_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
-  predicate(UseSVE > 0);
   match(Set dst_src1 (AbsVF (SubVF (Binary dst_src1 src2) pg) pg));
   match(Set dst_src1 (AbsVD (SubVD (Binary dst_src1 src2) pg) pg));
   format %{ "vfabd_masked $dst_src1, $pg, $dst_src1, $src2" %}
@@ -1811,7 +1775,6 @@ instruct vnegD(vReg dst, vReg src) %{
 // vector neg - predicated
 
 instruct vnegI_masked(vReg dst_src, pRegGov pg) %{
-  predicate(UseSVE > 0);
   match(Set dst_src (NegVI dst_src pg));
   format %{ "vnegI_masked $dst_src, $pg, $dst_src" %}
   ins_encode %{
@@ -1823,7 +1786,6 @@ instruct vnegI_masked(vReg dst_src, pRegGov pg) %{
 %}
 
 instruct vnegL_masked(vReg dst_src, pRegGov pg) %{
-  predicate(UseSVE > 0);
   match(Set dst_src (NegVL dst_src pg));
   format %{ "vnegL_masked $dst_src, $pg, $dst_src" %}
   ins_encode %{
@@ -1833,7 +1795,6 @@ instruct vnegL_masked(vReg dst_src, pRegGov pg) %{
 %}
 
 instruct vnegF_masked(vReg dst_src, pRegGov pg) %{
-  predicate(UseSVE > 0);
   match(Set dst_src (NegVF dst_src pg));
   format %{ "vnegF_masked $dst_src, $pg, $dst_src" %}
   ins_encode %{
@@ -1843,7 +1804,6 @@ instruct vnegF_masked(vReg dst_src, pRegGov pg) %{
 %}
 
 instruct vnegD_masked(vReg dst_src, pRegGov pg) %{
-  predicate(UseSVE > 0);
   match(Set dst_src (NegVD dst_src pg));
   format %{ "vnegD_masked $dst_src, $pg, $dst_src" %}
   ins_encode %{
@@ -1889,7 +1849,6 @@ instruct vsqrtD(vReg dst, vReg src) %{
 // vector sqrt - predicated
 
 instruct vsqrtF_masked(vReg dst_src, pRegGov pg) %{
-  predicate(UseSVE > 0);
   match(Set dst_src (SqrtVF dst_src pg));
   format %{ "vsqrtF_masked $dst_src, $pg, $dst_src" %}
   ins_encode %{
@@ -1899,7 +1858,6 @@ instruct vsqrtF_masked(vReg dst_src, pRegGov pg) %{
 %}
 
 instruct vsqrtD_masked(vReg dst_src, pRegGov pg) %{
-  predicate(UseSVE > 0);
   match(Set dst_src (SqrtVD dst_src pg));
   format %{ "vsqrtD_masked $dst_src, $pg, $dst_src" %}
   ins_encode %{
@@ -1978,7 +1936,6 @@ instruct vmin_sve(vReg dst_src1, vReg src2) %{
 // vector min - predicated
 
 instruct vmin_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
-  predicate(UseSVE > 0);
   match(Set dst_src1 (MinV (Binary dst_src1 src2) pg));
   format %{ "vmin_masked $dst_src1, $pg, $dst_src1, $src2" %}
   ins_encode %{
@@ -2065,7 +2022,6 @@ instruct vmax_sve(vReg dst_src1, vReg src2) %{
 // vector max - predicated
 
 instruct vmax_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
-  predicate(UseSVE > 0);
   match(Set dst_src1 (MaxV (Binary dst_src1 src2) pg));
   format %{ "vmax_masked $dst_src1, $pg, $dst_src1, $src2" %}
   ins_encode %{
@@ -2120,7 +2076,6 @@ instruct vmlaL(vReg dst_src1, vReg src2, vReg src3) %{
 %}
 
 instruct vmla_masked(vReg dst_src1, vReg src2, vReg src3, pRegGov pg) %{
-  predicate(UseSVE > 0);
   match(Set dst_src1 (AddVB (Binary dst_src1 (MulVB src2 src3)) pg));
   match(Set dst_src1 (AddVS (Binary dst_src1 (MulVS src2 src3)) pg));
   match(Set dst_src1 (AddVI (Binary dst_src1 (MulVI src2 src3)) pg));
@@ -2161,7 +2116,7 @@ instruct vfmla(vReg dst_src1, vReg src2, vReg src3) %{
 // dst_src1 = dst_src1 * src2 + src3
 
 instruct vfmad_masked(vReg dst_src1, vReg src2, vReg src3, pRegGov pg) %{
-  predicate(UseFMA && UseSVE > 0);
+  predicate(UseFMA);
   match(Set dst_src1 (FmaVF (Binary dst_src1 src2) (Binary src3 pg)));
   match(Set dst_src1 (FmaVD (Binary dst_src1 src2) (Binary src3 pg)));
   format %{ "vfmad_masked $dst_src1, $pg, $src2, $src3" %}
@@ -2209,7 +2164,6 @@ instruct vmlsL(vReg dst_src1, vReg src2, vReg src3) %{
 %}
 
 instruct vmls_masked(vReg dst_src1, vReg src2, vReg src3, pRegGov pg) %{
-  predicate(UseSVE > 0);
   match(Set dst_src1 (SubVB (Binary dst_src1 (MulVB src2 src3)) pg));
   match(Set dst_src1 (SubVS (Binary dst_src1 (MulVS src2 src3)) pg));
   match(Set dst_src1 (SubVI (Binary dst_src1 (MulVI src2 src3)) pg));
@@ -2271,7 +2225,7 @@ instruct vfmls2(vReg dst_src1, vReg src2, vReg src3) %{
 
 // dst_src1 = dst_src1 * -src2 + src3
 instruct vfmsb_masked(vReg dst_src1, vReg src2, vReg src3, pRegGov pg) %{
-  predicate(UseFMA && UseSVE > 0);
+  predicate(UseFMA);
   match(Set dst_src1 (FmaVF (Binary dst_src1 (NegVF src2)) (Binary src3 pg)));
   match(Set dst_src1 (FmaVD (Binary dst_src1 (NegVD src2)) (Binary src3 pg)));
   format %{ "vfmsb_masked $dst_src1, $pg, $src2, $src3" %}
@@ -2317,7 +2271,7 @@ instruct vfnmla2(vReg dst_src1, vReg src2, vReg src3) %{
 
 // dst_src1 = -src3 + dst_src1 * -src2
 instruct vfnmad_masked(vReg dst_src1, vReg src2, vReg src3, pRegGov pg) %{
-  predicate(UseFMA && UseSVE > 0);
+  predicate(UseFMA);
   match(Set dst_src1 (FmaVF (Binary dst_src1 (NegVF src2)) (Binary (NegVF src3) pg)));
   match(Set dst_src1 (FmaVD (Binary dst_src1 (NegVD src2)) (Binary (NegVD src3) pg)));
   format %{ "vfnmad_masked $dst_src1, $pg, $src2, $src3" %}
@@ -2349,7 +2303,7 @@ instruct vfnmls(vReg dst_src1, vReg src2, vReg src3) %{
 
 // dst_src1 = -src3 + dst_src1 * src2
 instruct vfnmsb_masked(vReg dst_src1, vReg src2, vReg src3, pRegGov pg) %{
-  predicate(UseFMA && UseSVE > 0);
+  predicate(UseFMA);
   match(Set dst_src1 (FmaVF (Binary dst_src1 src2) (Binary (NegVF src3) pg)));
   match(Set dst_src1 (FmaVD (Binary dst_src1 src2) (Binary (NegVD src3) pg)));
   format %{ "vfnmsb_masked $dst_src1, $pg, $src2, $src3" %}
@@ -2720,7 +2674,6 @@ instruct vlsra_imm(vReg dst, vReg src, immI_positive shift) %{
 // vector shift - predicated
 
 instruct vlsl_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
-  predicate(UseSVE > 0);
   match(Set dst_src1 (LShiftVB (Binary dst_src1 src2) pg));
   match(Set dst_src1 (LShiftVS (Binary dst_src1 src2) pg));
   match(Set dst_src1 (LShiftVI (Binary dst_src1 src2) pg));
@@ -2735,7 +2688,6 @@ instruct vlsl_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
 %}
 
 instruct vasr_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
-  predicate(UseSVE > 0);
   match(Set dst_src1 (RShiftVB (Binary dst_src1 src2) pg));
   match(Set dst_src1 (RShiftVS (Binary dst_src1 src2) pg));
   match(Set dst_src1 (RShiftVI (Binary dst_src1 src2) pg));
@@ -2750,7 +2702,6 @@ instruct vasr_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
 %}
 
 instruct vlsr_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
-  predicate(UseSVE > 0);
   match(Set dst_src1 (URShiftVB (Binary dst_src1 src2) pg));
   match(Set dst_src1 (URShiftVS (Binary dst_src1 src2) pg));
   match(Set dst_src1 (URShiftVI (Binary dst_src1 src2) pg));
@@ -2767,7 +2718,6 @@ instruct vlsr_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
 // vector shift with imm - predicated
 
 instruct vlsl_imm_masked(vReg dst_src, immI shift, pRegGov pg) %{
-  predicate(UseSVE > 0);
   match(Set dst_src (LShiftVB (Binary dst_src (LShiftCntV shift)) pg));
   match(Set dst_src (LShiftVS (Binary dst_src (LShiftCntV shift)) pg));
   match(Set dst_src (LShiftVI (Binary dst_src (LShiftCntV shift)) pg));
@@ -2785,7 +2735,6 @@ instruct vlsl_imm_masked(vReg dst_src, immI shift, pRegGov pg) %{
 %}
 
 instruct vasr_imm_masked(vReg dst_src, immI_positive shift, pRegGov pg) %{
-  predicate(UseSVE > 0);
   match(Set dst_src (RShiftVB (Binary dst_src (RShiftCntV shift)) pg));
   match(Set dst_src (RShiftVS (Binary dst_src (RShiftCntV shift)) pg));
   match(Set dst_src (RShiftVI (Binary dst_src (RShiftCntV shift)) pg));
@@ -2803,7 +2752,6 @@ instruct vasr_imm_masked(vReg dst_src, immI_positive shift, pRegGov pg) %{
 %}
 
 instruct vlsr_imm_masked(vReg dst_src, immI_positive shift, pRegGov pg) %{
-  predicate(UseSVE > 0);
   match(Set dst_src (URShiftVB (Binary dst_src (RShiftCntV shift)) pg));
   match(Set dst_src (URShiftVS (Binary dst_src (RShiftCntV shift)) pg));
   match(Set dst_src (URShiftVI (Binary dst_src (RShiftCntV shift)) pg));
@@ -2962,7 +2910,6 @@ instruct reduce_addD_sve(vRegD dst_src1, vReg src2) %{
 // reduction add - predicated
 
 instruct reduce_addI_masked(iRegINoSp dst, iRegIorL2I isrc, vReg vsrc, pRegGov pg, vRegD tmp) %{
-  predicate(UseSVE > 0);
   match(Set dst (AddReductionVI (Binary isrc vsrc) pg));
   effect(TEMP_DEF dst, TEMP tmp);
   format %{ "reduce_addI_masked $dst, $isrc, $pg, $vsrc\t# KILL $tmp" %}
@@ -2976,7 +2923,6 @@ instruct reduce_addI_masked(iRegINoSp dst, iRegIorL2I isrc, vReg vsrc, pRegGov p
 %}
 
 instruct reduce_addL_masked(iRegLNoSp dst, iRegL isrc, vReg vsrc, pRegGov pg, vRegD tmp) %{
-  predicate(UseSVE > 0);
   match(Set dst (AddReductionVL (Binary isrc vsrc) pg));
   effect(TEMP_DEF dst, TEMP tmp);
   format %{ "reduce_addL_masked $dst, $isrc, $pg, $vsrc\t# KILL $tmp" %}
@@ -2990,7 +2936,6 @@ instruct reduce_addL_masked(iRegLNoSp dst, iRegL isrc, vReg vsrc, pRegGov pg, vR
 %}
 
 instruct reduce_addF_masked(vRegF dst_src1, vReg src2, pRegGov pg) %{
-  predicate(UseSVE > 0);
   match(Set dst_src1 (AddReductionVF (Binary dst_src1 src2) pg));
   format %{ "reduce_addF_masked $dst_src1, $pg, $dst_src1, $src2" %}
   ins_encode %{
@@ -3001,7 +2946,6 @@ instruct reduce_addF_masked(vRegF dst_src1, vReg src2, pRegGov pg) %{
 %}
 
 instruct reduce_addD_masked(vRegD dst_src1, vReg src2, pRegGov pg) %{
-  predicate(UseSVE > 0);
   match(Set dst_src1 (AddReductionVD (Binary dst_src1 src2) pg));
   format %{ "reduce_addD_masked $dst_src1, $pg, $dst_src1, $src2" %}
   ins_encode %{
@@ -3136,7 +3080,7 @@ instruct reduce_andL_sve(iRegLNoSp dst, iRegL isrc, vReg vsrc, vRegD tmp) %{
 // reduction and - predicated
 
 instruct reduce_andI_masked(iRegINoSp dst, iRegIorL2I isrc, vReg vsrc, pRegGov pg, vRegD tmp) %{
-  predicate(UseSVE > 0 && Matcher::vector_element_basic_type(n->in(1)->in(2)) != T_LONG);
+  predicate(Matcher::vector_element_basic_type(n->in(1)->in(2)) != T_LONG);
   match(Set dst (AndReductionV (Binary isrc vsrc) pg));
   effect(TEMP_DEF dst, TEMP tmp);
   format %{ "reduce_andI_masked $dst, $isrc, $pg, $vsrc\t# KILL $tmp" %}
@@ -3150,7 +3094,7 @@ instruct reduce_andI_masked(iRegINoSp dst, iRegIorL2I isrc, vReg vsrc, pRegGov p
 %}
 
 instruct reduce_andL_masked(iRegLNoSp dst, iRegL isrc, vReg vsrc, pRegGov pg, vRegD tmp) %{
-  predicate(UseSVE > 0 && Matcher::vector_element_basic_type(n->in(1)->in(2)) == T_LONG);
+  predicate(Matcher::vector_element_basic_type(n->in(1)->in(2)) == T_LONG);
   match(Set dst (AndReductionV (Binary isrc vsrc) pg));
   effect(TEMP_DEF dst, TEMP tmp);
   format %{ "reduce_andL_masked $dst, $isrc, $pg, $vsrc\t# KILL $tmp" %}
@@ -3232,7 +3176,7 @@ instruct reduce_orL_sve(iRegLNoSp dst, iRegL isrc, vReg vsrc, vRegD tmp) %{
 // reduction or - predicated
 
 instruct reduce_orI_masked(iRegINoSp dst, iRegIorL2I isrc, vReg vsrc, pRegGov pg, vRegD tmp) %{
-  predicate(UseSVE > 0 && Matcher::vector_element_basic_type(n->in(1)->in(2)) != T_LONG);
+  predicate(Matcher::vector_element_basic_type(n->in(1)->in(2)) != T_LONG);
   match(Set dst (OrReductionV (Binary isrc vsrc) pg));
   effect(TEMP_DEF dst, TEMP tmp);
   format %{ "reduce_orI_masked $dst, $isrc, $pg, $vsrc\t# KILL $tmp" %}
@@ -3246,7 +3190,7 @@ instruct reduce_orI_masked(iRegINoSp dst, iRegIorL2I isrc, vReg vsrc, pRegGov pg
 %}
 
 instruct reduce_orL_masked(iRegLNoSp dst, iRegL isrc, vReg vsrc, pRegGov pg, vRegD tmp) %{
-  predicate(UseSVE > 0 && Matcher::vector_element_basic_type(n->in(1)->in(2)) == T_LONG);
+  predicate(Matcher::vector_element_basic_type(n->in(1)->in(2)) == T_LONG);
   match(Set dst (OrReductionV (Binary isrc vsrc) pg));
   effect(TEMP_DEF dst, TEMP tmp);
   format %{ "reduce_orL_masked $dst, $isrc, $pg, $vsrc\t# KILL $tmp" %}
@@ -3328,7 +3272,7 @@ instruct reduce_xorL_sve(iRegLNoSp dst, iRegL isrc, vReg vsrc, vRegD tmp) %{
 // reduction xor - predicated
 
 instruct reduce_xorI_masked(iRegINoSp dst, iRegIorL2I isrc, vReg vsrc, pRegGov pg, vRegD tmp) %{
-  predicate(UseSVE > 0 && Matcher::vector_element_basic_type(n->in(1)->in(2)) != T_LONG);
+  predicate(Matcher::vector_element_basic_type(n->in(1)->in(2)) != T_LONG);
   match(Set dst (XorReductionV (Binary isrc vsrc) pg));
   effect(TEMP_DEF dst, TEMP tmp);
   format %{ "reduce_xorI_masked $dst, $isrc, $pg, $vsrc\t# KILL $tmp" %}
@@ -3342,7 +3286,7 @@ instruct reduce_xorI_masked(iRegINoSp dst, iRegIorL2I isrc, vReg vsrc, pRegGov p
 %}
 
 instruct reduce_xorL_masked(iRegLNoSp dst, iRegL isrc, vReg vsrc, pRegGov pg, vRegD tmp) %{
-  predicate(UseSVE > 0 && Matcher::vector_element_basic_type(n->in(1)->in(2)) == T_LONG);
+  predicate(Matcher::vector_element_basic_type(n->in(1)->in(2)) == T_LONG);
   match(Set dst (XorReductionV (Binary isrc vsrc) pg));
   effect(TEMP_DEF dst, TEMP tmp);
   format %{ "reduce_xorL_masked $dst, $isrc, $pg, $vsrc\t# KILL $tmp" %}
@@ -3480,10 +3424,9 @@ instruct reduce_maxD(vRegD dst, vRegD dsrc, vReg vsrc) %{
 
 instruct reduce_maxI_masked(iRegINoSp dst, iRegIorL2I isrc, vReg vsrc, pRegGov pg,
                             vRegD tmp, rFlagsReg cr) %{
-  predicate(UseSVE > 0 &&
-            (Matcher::vector_element_basic_type(n->in(1)->in(2)) == T_BYTE ||
-             Matcher::vector_element_basic_type(n->in(1)->in(2)) == T_SHORT ||
-             Matcher::vector_element_basic_type(n->in(1)->in(2)) == T_INT));
+  predicate(Matcher::vector_element_basic_type(n->in(1)->in(2)) == T_BYTE ||
+            Matcher::vector_element_basic_type(n->in(1)->in(2)) == T_SHORT ||
+            Matcher::vector_element_basic_type(n->in(1)->in(2)) == T_INT);
   match(Set dst (MaxReductionV (Binary isrc vsrc) pg));
   effect(TEMP_DEF dst, TEMP tmp, KILL cr);
   format %{ "reduce_maxI_masked $dst, $isrc, $pg, $vsrc\t# KILL $tmp, cr" %}
@@ -3498,7 +3441,7 @@ instruct reduce_maxI_masked(iRegINoSp dst, iRegIorL2I isrc, vReg vsrc, pRegGov p
 
 instruct reduce_maxL_masked(iRegLNoSp dst, iRegL isrc, vReg vsrc, pRegGov pg,
                             vRegD tmp, rFlagsReg cr) %{
-  predicate(UseSVE > 0 && Matcher::vector_element_basic_type(n->in(1)->in(2)) == T_LONG);
+  predicate(Matcher::vector_element_basic_type(n->in(1)->in(2)) == T_LONG);
   match(Set dst (MaxReductionV (Binary isrc vsrc) pg));
   effect(TEMP_DEF dst, TEMP tmp, KILL cr);
   format %{ "reduce_maxL_masked $dst, $isrc, $pg, $vsrc\t# KILL $tmp, cr" %}
@@ -3512,7 +3455,7 @@ instruct reduce_maxL_masked(iRegLNoSp dst, iRegL isrc, vReg vsrc, pRegGov pg,
 %}
 
 instruct reduce_maxF_masked(vRegF dst, vRegF fsrc, vReg vsrc, pRegGov pg) %{
-  predicate(UseSVE > 0 && Matcher::vector_element_basic_type(n->in(1)->in(2)) == T_FLOAT);
+  predicate(Matcher::vector_element_basic_type(n->in(1)->in(2)) == T_FLOAT);
   match(Set dst (MaxReductionV (Binary fsrc vsrc) pg));
   effect(TEMP_DEF dst);
   format %{ "reduce_maxF_masked $dst, $fsrc, $pg, $vsrc" %}
@@ -3524,7 +3467,7 @@ instruct reduce_maxF_masked(vRegF dst, vRegF fsrc, vReg vsrc, pRegGov pg) %{
 %}
 
 instruct reduce_maxD_masked(vRegD dst, vRegD dsrc, vReg vsrc, pRegGov pg) %{
-  predicate(UseSVE > 0 && Matcher::vector_element_basic_type(n->in(1)->in(2)) == T_DOUBLE);
+  predicate(Matcher::vector_element_basic_type(n->in(1)->in(2)) == T_DOUBLE);
   match(Set dst (MaxReductionV (Binary dsrc vsrc) pg));
   effect(TEMP_DEF dst);
   format %{ "reduce_maxD_masked $dst, $dsrc, $pg, $vsrc" %}
@@ -3660,10 +3603,9 @@ instruct reduce_minD(vRegD dst, vRegD dsrc, vReg vsrc) %{
 
 instruct reduce_minI_masked(iRegINoSp dst, iRegIorL2I isrc, vReg vsrc, pRegGov pg,
                             vRegD tmp, rFlagsReg cr) %{
-  predicate(UseSVE > 0 &&
-            (Matcher::vector_element_basic_type(n->in(1)->in(2)) == T_BYTE ||
-             Matcher::vector_element_basic_type(n->in(1)->in(2)) == T_SHORT ||
-             Matcher::vector_element_basic_type(n->in(1)->in(2)) == T_INT));
+  predicate(Matcher::vector_element_basic_type(n->in(1)->in(2)) == T_BYTE ||
+            Matcher::vector_element_basic_type(n->in(1)->in(2)) == T_SHORT ||
+            Matcher::vector_element_basic_type(n->in(1)->in(2)) == T_INT);
   match(Set dst (MinReductionV (Binary isrc vsrc) pg));
   effect(TEMP_DEF dst, TEMP tmp, KILL cr);
   format %{ "reduce_minI_masked $dst, $isrc, $pg, $vsrc\t# KILL $tmp, cr" %}
@@ -3678,7 +3620,7 @@ instruct reduce_minI_masked(iRegINoSp dst, iRegIorL2I isrc, vReg vsrc, pRegGov p
 
 instruct reduce_minL_masked(iRegLNoSp dst, iRegL isrc, vReg vsrc, pRegGov pg,
                             vRegD tmp, rFlagsReg cr) %{
-  predicate(UseSVE > 0 && Matcher::vector_element_basic_type(n->in(1)->in(2)) == T_LONG);
+  predicate(Matcher::vector_element_basic_type(n->in(1)->in(2)) == T_LONG);
   match(Set dst (MinReductionV (Binary isrc vsrc) pg));
   effect(TEMP_DEF dst, TEMP tmp, KILL cr);
   format %{ "reduce_minL_masked $dst, $isrc, $pg, $vsrc\t# KILL $tmp, cr" %}
@@ -3692,7 +3634,7 @@ instruct reduce_minL_masked(iRegLNoSp dst, iRegL isrc, vReg vsrc, pRegGov pg,
 %}
 
 instruct reduce_minF_masked(vRegF dst, vRegF fsrc, vReg vsrc, pRegGov pg) %{
-  predicate(UseSVE > 0 && Matcher::vector_element_basic_type(n->in(1)->in(2)) == T_FLOAT);
+  predicate(Matcher::vector_element_basic_type(n->in(1)->in(2)) == T_FLOAT);
   match(Set dst (MinReductionV (Binary fsrc vsrc) pg));
   effect(TEMP_DEF dst);
   format %{ "reduce_minF_masked $dst, $fsrc, $pg, $vsrc" %}
@@ -3704,7 +3646,7 @@ instruct reduce_minF_masked(vRegF dst, vRegF fsrc, vReg vsrc, pRegGov pg) %{
 %}
 
 instruct reduce_minD_masked(vRegD dst, vRegD dsrc, vReg vsrc, pRegGov pg) %{
-  predicate(UseSVE > 0 && Matcher::vector_element_basic_type(n->in(1)->in(2)) == T_DOUBLE);
+  predicate(Matcher::vector_element_basic_type(n->in(1)->in(2)) == T_DOUBLE);
   match(Set dst (MinReductionV (Binary dsrc vsrc) pg));
   effect(TEMP_DEF dst);
   format %{ "reduce_minD_masked $dst, $dsrc, $pg, $vsrc" %}
@@ -4790,7 +4732,7 @@ instruct vloadmask_extend_sve(pReg dst, vReg src, vReg tmp, rFlagsReg cr) %{
 %}
 
 instruct vloadmaskB_masked(pReg dst, vReg src, pRegGov pg, rFlagsReg cr) %{
-  predicate(UseSVE > 0 && Matcher::vector_element_basic_type(n) == T_BYTE);
+  predicate(Matcher::vector_element_basic_type(n) == T_BYTE);
   match(Set dst (VectorLoadMask src pg));
   effect(KILL cr);
   format %{ "vloadmaskB_masked $dst, $pg, $src\t# KILL cr" %}
@@ -4802,7 +4744,7 @@ instruct vloadmaskB_masked(pReg dst, vReg src, pRegGov pg, rFlagsReg cr) %{
 %}
 
 instruct vloadmask_extend_masked(pReg dst, vReg src, pRegGov pg, vReg tmp, rFlagsReg cr) %{
-  predicate(UseSVE > 0 && Matcher::vector_element_basic_type(n) != T_BYTE);
+  predicate(Matcher::vector_element_basic_type(n) != T_BYTE);
   match(Set dst (VectorLoadMask src pg));
   effect(TEMP tmp, KILL cr);
   format %{ "vloadmask_extend_masked $dst, $pg, $src\t# KILL $tmp, cr" %}
@@ -4819,7 +4761,6 @@ instruct vloadmask_extend_masked(pReg dst, vReg src, pRegGov pg, vReg tmp, rFlag
 // vector store mask - neon
 
 instruct vstoremaskB_neon(vReg dst, vReg src, immI_1 size) %{
-  predicate(UseSVE == 0);
   match(Set dst (VectorStoreMask src size));
   format %{ "vstoremaskB_neon $dst, $src" %}
   ins_encode %{
@@ -4832,7 +4773,6 @@ instruct vstoremaskB_neon(vReg dst, vReg src, immI_1 size) %{
 %}
 
 instruct vstoremask_narrow_neon(vReg dst, vReg src, immI_gt_1 size) %{
-  predicate(UseSVE == 0);
   match(Set dst (VectorStoreMask src size));
   format %{ "vstoremask_narrow_neon $dst, $src" %}
   ins_encode %{
@@ -4856,7 +4796,6 @@ instruct vstoremask_narrow_neon(vReg dst, vReg src, immI_gt_1 size) %{
 // vector store mask - sve
 
 instruct vstoremaskB_sve(vReg dst, pReg src, immI_1 size) %{
-  predicate(UseSVE > 0);
   match(Set dst (VectorStoreMask src size));
   format %{ "vstoremaskB_sve $dst, $src" %}
   ins_encode %{
@@ -4866,7 +4805,6 @@ instruct vstoremaskB_sve(vReg dst, pReg src, immI_1 size) %{
 %}
 
 instruct vstoremask_narrow_sve(vReg dst, pReg src, immI_gt_1 size, vReg tmp) %{
-  predicate(UseSVE > 0);
   match(Set dst (VectorStoreMask src size));
   effect(TEMP_DEF dst, TEMP tmp);
   format %{ "vstoremask_narrow_sve $dst, $src\t# KILL $tmp" %}
@@ -4906,8 +4844,7 @@ instruct vloadmask_loadV(pReg dst, indirect mem, vReg tmp, rFlagsReg cr) %{
 // VectorLoadMask+LoadVector, and the VectorLoadMask is predicated.
 instruct vloadmask_loadV_masked(pReg dst, indirect mem, pRegGov pg,
                                 vReg tmp, rFlagsReg cr) %{
-  predicate(UseSVE > 0 &&
-            type2aelembytes(Matcher::vector_element_basic_type(n)) > 1);
+  predicate(type2aelembytes(Matcher::vector_element_basic_type(n)) > 1);
   match(Set dst (VectorLoadMask (LoadVector mem) pg));
   effect(TEMP tmp, KILL cr);
   format %{ "vloadmask_loadV_masked $dst, $pg, $mem\t# KILL $tmp, cr" %}
@@ -4926,8 +4863,7 @@ instruct vloadmask_loadV_masked(pReg dst, indirect mem, pRegGov pg,
 
 // VectorLoadMask+LoadVectorMasked, and the VectorLoadMask is unpredicated.
 instruct vloadmask_loadVMasked(pReg dst, vmemA mem, pRegGov pg, vReg tmp, rFlagsReg cr) %{
-  predicate(UseSVE > 0 &&
-            type2aelembytes(Matcher::vector_element_basic_type(n)) > 1);
+  predicate(type2aelembytes(Matcher::vector_element_basic_type(n)) > 1);
   match(Set dst (VectorLoadMask (LoadVectorMasked mem pg)));
   effect(TEMP tmp, KILL cr);
   format %{ "vloadmask_loadVMasked $dst, $mem\t# KILL $tmp, cr" %}
@@ -4954,8 +4890,7 @@ instruct vloadmask_loadVMasked(pReg dst, vmemA mem, pRegGov pg, vReg tmp, rFlags
 // VectorLoadMask+LoadVectorMasked, and the VectorLoadMask is predicated.
 instruct vloadmask_loadVMasked_masked(pReg dst, vmemA mem, pRegGov pg1, pRegGov pg2,
                                       vReg tmp, rFlagsReg cr) %{
-  predicate(UseSVE > 0 &&
-            type2aelembytes(Matcher::vector_element_basic_type(n)) > 1);
+  predicate(type2aelembytes(Matcher::vector_element_basic_type(n)) > 1);
   match(Set dst (VectorLoadMask (LoadVectorMasked mem pg1) pg2));
   effect(TEMP tmp, KILL cr);
   format %{ "vloadmask_loadVMasked_masked $dst, $pg2, $mem\t# KILL $tmp, cr" %}
@@ -4983,8 +4918,7 @@ instruct vloadmask_loadVMasked_masked(pReg dst, vmemA mem, pRegGov pg1, pRegGov 
 
 // StoreVector+VectorStoreMask, and the vector size of "src" is equal to the MaxVectorSize.
 instruct storeV_vstoremask(indirect mem, pReg src, immI_gt_1 esize, vReg tmp) %{
-  predicate(UseSVE > 0 &&
-            Matcher::vector_length_in_bytes(n->as_StoreVector()->in(MemNode::ValueIn)->in(1)) == MaxVectorSize);
+  predicate(Matcher::vector_length_in_bytes(n->as_StoreVector()->in(MemNode::ValueIn)->in(1)) == MaxVectorSize);
   match(Set mem (StoreVector mem (VectorStoreMask src esize)));
   effect(TEMP tmp);
   format %{ "storeV_vstoremask $mem, $src\t# KILL $tmp" %}
@@ -5005,8 +4939,7 @@ instruct storeV_vstoremask(indirect mem, pReg src, immI_gt_1 esize, vReg tmp) %{
 // StoreVector+VectorStoreMask, and the vector size of "src" is less than the MaxVectorSize.
 instruct storeV_vstoremask_masked(indirect mem, pReg src, immI_gt_1 esize,
                                   vReg tmp, pRegGov pgtmp, rFlagsReg cr) %{
-  predicate(UseSVE > 0 &&
-            Matcher::vector_length_in_bytes(n->as_StoreVector()->in(MemNode::ValueIn)->in(1)) < MaxVectorSize);
+  predicate(Matcher::vector_length_in_bytes(n->as_StoreVector()->in(MemNode::ValueIn)->in(1)) < MaxVectorSize);
   match(Set mem (StoreVector mem (VectorStoreMask src esize)));
   effect(TEMP tmp, TEMP pgtmp, KILL cr);
   format %{ "storeV_vstoremask_masked $mem, $src\t# KILL $tmp, $pgtmp, cr" %}
@@ -5026,8 +4959,7 @@ instruct storeV_vstoremask_masked(indirect mem, pReg src, immI_gt_1 esize,
 
 // StoreVectorMasked+VectorStoreMask, and the vector size of "src" is equal to the MaxVectorSize.
 instruct storeVMasked_vstoremask(vmemA mem, pReg src, pRegGov pg, immI_gt_1 esize, vReg tmp) %{
-  predicate(UseSVE > 0 &&
-            Matcher::vector_length_in_bytes(n->as_StoreVector()->in(MemNode::ValueIn)->in(1)) == MaxVectorSize);
+  predicate(Matcher::vector_length_in_bytes(n->as_StoreVector()->in(MemNode::ValueIn)->in(1)) == MaxVectorSize);
   match(Set mem (StoreVectorMasked mem (Binary (VectorStoreMask src esize) pg)));
   effect(TEMP tmp);
   format %{ "storeVMasked_vstoremask $mem, $src\t# KILL $tmp" %}
@@ -5053,8 +4985,7 @@ instruct storeVMasked_vstoremask(vmemA mem, pReg src, pRegGov pg, immI_gt_1 esiz
 // StoreVectorMasked+VectorStoreMask, and the vector size of "src" is less than the MaxVectorSize.
 instruct storeVMasked_vstoremask_masked(vmemA mem, pReg src, pRegGov pg, immI_gt_1 esize,
                                         vReg tmp, pRegGov pgtmp, rFlagsReg cr) %{
-  predicate(UseSVE > 0 &&
-            Matcher::vector_length_in_bytes(n->as_StoreVector()->in(MemNode::ValueIn)->in(1)) < MaxVectorSize);
+  predicate(Matcher::vector_length_in_bytes(n->as_StoreVector()->in(MemNode::ValueIn)->in(1)) < MaxVectorSize);
   match(Set mem (StoreVectorMasked mem (Binary (VectorStoreMask src esize) pg)));
   effect(TEMP tmp, TEMP pgtmp, KILL cr);
   format %{ "storeVMasked_vstoremask_masked $mem, $src\t# KILL $tmp, $pgtmp, cr" %}
@@ -5082,7 +5013,6 @@ instruct storeVMasked_vstoremask_masked(vmemA mem, pReg src, pRegGov pg, immI_gt
 // vector mask logical ops: and/or/xor/and_not
 
 instruct vmask_and(pReg pd, pReg pn, pReg pm) %{
-  predicate(UseSVE > 0);
   match(Set pd (AndVMask pn pm));
   format %{ "vmask_and $pd, $pn, $pm" %}
   ins_encode %{
@@ -5092,7 +5022,6 @@ instruct vmask_and(pReg pd, pReg pn, pReg pm) %{
 %}
 
 instruct vmask_or(pReg pd, pReg pn, pReg pm) %{
-  predicate(UseSVE > 0);
   match(Set pd (OrVMask pn pm));
   format %{ "vmask_or $pd, $pn, $pm" %}
   ins_encode %{
@@ -5102,7 +5031,6 @@ instruct vmask_or(pReg pd, pReg pn, pReg pm) %{
 %}
 
 instruct vmask_xor(pReg pd, pReg pn, pReg pm) %{
-  predicate(UseSVE > 0);
   match(Set pd (XorVMask pn pm));
   format %{ "vmask_xor $pd, $pn, $pm" %}
   ins_encode %{
@@ -5112,7 +5040,6 @@ instruct vmask_xor(pReg pd, pReg pn, pReg pm) %{
 %}
 
 instruct vmask_and_notI(pReg pd, pReg pn, pReg pm, immI_M1 m1) %{
-  predicate(UseSVE > 0);
   match(Set pd (AndVMask pn (XorVMask pm (MaskAll m1))));
   format %{ "vmask_and_notI $pd, $pn, $pm" %}
   ins_encode %{
@@ -5122,7 +5049,6 @@ instruct vmask_and_notI(pReg pd, pReg pn, pReg pm, immI_M1 m1) %{
 %}
 
 instruct vmask_and_notL(pReg pd, pReg pn, pReg pm, immL_M1 m1) %{
-  predicate(UseSVE > 0);
   match(Set pd (AndVMask pn (XorVMask pm (MaskAll m1))));
   format %{ "vmask_and_notL $pd, $pn, $pm" %}
   ins_encode %{
@@ -5334,7 +5260,6 @@ instruct vmaskcmpU_immL_sve(pReg dst, vReg src, immLU7 imm, immI_cmpU_cond cond,
 
 instruct vmaskcmp_masked(pReg dst, vReg src1, vReg src2, immI cond,
                          pRegGov pg, rFlagsReg cr) %{
-  predicate(UseSVE > 0);
   match(Set dst (VectorMaskCmp (Binary src1 src2) (Binary cond pg)));
   effect(KILL cr);
   format %{ "vmaskcmp_masked $dst, $pg, $src1, $src2, $cond\t# KILL cr" %}
@@ -5350,8 +5275,7 @@ instruct vmaskcmp_masked(pReg dst, vReg src1, vReg src2, immI cond,
 // vector mask cast
 
 instruct vmaskcast_same_esize_neon(vReg dst_src) %{
-  predicate(UseSVE == 0 &&
-            Matcher::vector_length_in_bytes(n) == Matcher::vector_length_in_bytes(n->in(1)) &&
+  predicate(Matcher::vector_length_in_bytes(n) == Matcher::vector_length_in_bytes(n->in(1)) &&
             (Matcher::vector_length_in_bytes(n) == 8 || Matcher::vector_length_in_bytes(n) == 16));
   match(Set dst_src (VectorMaskCast dst_src));
   ins_cost(0);
@@ -5361,8 +5285,7 @@ instruct vmaskcast_same_esize_neon(vReg dst_src) %{
 %}
 
 instruct vmaskcast_extend_neon(vReg dst, vReg src) %{
-  predicate(UseSVE == 0 &&
-            Matcher::vector_length_in_bytes(n) > Matcher::vector_length_in_bytes(n->in(1)));
+  predicate(Matcher::vector_length_in_bytes(n) > Matcher::vector_length_in_bytes(n->in(1)));
   match(Set dst (VectorMaskCast src));
   format %{ "vmaskcast_extend_neon $dst, $src" %}
   ins_encode %{
@@ -5382,8 +5305,7 @@ instruct vmaskcast_extend_neon(vReg dst, vReg src) %{
 %}
 
 instruct vmaskcast_narrow_neon(vReg dst, vReg src) %{
-  predicate(UseSVE == 0 &&
-            Matcher::vector_length_in_bytes(n) < Matcher::vector_length_in_bytes(n->in(1)));
+  predicate(Matcher::vector_length_in_bytes(n) < Matcher::vector_length_in_bytes(n->in(1)));
   match(Set dst (VectorMaskCast src));
   format %{ "vmaskcast_narrow_neon $dst, $src" %}
   ins_encode %{
@@ -5403,8 +5325,7 @@ instruct vmaskcast_narrow_neon(vReg dst, vReg src) %{
 %}
 
 instruct vmaskcast_same_esize_sve(pReg dst_src) %{
-  predicate(UseSVE > 0 &&
-            Matcher::vector_length_in_bytes(n) == Matcher::vector_length_in_bytes(n->in(1)));
+  predicate(Matcher::vector_length_in_bytes(n) == Matcher::vector_length_in_bytes(n->in(1)));
   match(Set dst_src (VectorMaskCast dst_src));
   ins_cost(0);
   format %{ "vmaskcast_same_esize_sve $dst_src\t# do nothing" %}
@@ -5413,8 +5334,7 @@ instruct vmaskcast_same_esize_sve(pReg dst_src) %{
 %}
 
 instruct vmaskcast_extend_sve(pReg dst, pReg src) %{
-  predicate(UseSVE > 0 &&
-            Matcher::vector_length_in_bytes(n) > Matcher::vector_length_in_bytes(n->in(1)));
+  predicate(Matcher::vector_length_in_bytes(n) > Matcher::vector_length_in_bytes(n->in(1)));
   match(Set dst (VectorMaskCast src));
   format %{ "vmaskcast_extend_sve $dst, $src" %}
   ins_encode %{
@@ -5430,8 +5350,7 @@ instruct vmaskcast_extend_sve(pReg dst, pReg src) %{
 %}
 
 instruct vmaskcast_narrow_sve(pReg dst, pReg src, pReg ptmp) %{
-  predicate(UseSVE > 0 &&
-            Matcher::vector_length_in_bytes(n) < Matcher::vector_length_in_bytes(n->in(1)));
+  predicate(Matcher::vector_length_in_bytes(n) < Matcher::vector_length_in_bytes(n->in(1)));
   match(Set dst (VectorMaskCast src));
   effect(TEMP_DEF dst, TEMP ptmp);
   format %{ "vmaskcast_narrow_sve $dst, $src\t# KILL $ptmp" %}
@@ -5450,8 +5369,7 @@ instruct vmaskcast_narrow_sve(pReg dst, pReg src, pReg ptmp) %{
 // vector mask reinterpret
 
 instruct vmask_reinterpret_same_esize(pReg dst_src) %{
-  predicate(UseSVE > 0 &&
-            Matcher::vector_length(n) == Matcher::vector_length(n->in(1)) &&
+  predicate(Matcher::vector_length(n) == Matcher::vector_length(n->in(1)) &&
             Matcher::vector_length_in_bytes(n) == Matcher::vector_length_in_bytes(n->in(1)));
   match(Set dst_src (VectorReinterpret dst_src));
   ins_cost(0);
@@ -5461,8 +5379,7 @@ instruct vmask_reinterpret_same_esize(pReg dst_src) %{
 %}
 
 instruct vmask_reinterpret_diff_esize(pReg dst, pReg src, vReg tmp, rFlagsReg cr) %{
-  predicate(UseSVE > 0 &&
-            Matcher::vector_length(n) != Matcher::vector_length(n->in(1)) &&
+  predicate(Matcher::vector_length(n) != Matcher::vector_length(n->in(1)) &&
             Matcher::vector_length_in_bytes(n) == Matcher::vector_length_in_bytes(n->in(1)));
   match(Set dst (VectorReinterpret src));
   effect(TEMP tmp, KILL cr);
@@ -5483,7 +5400,6 @@ instruct vmask_reinterpret_diff_esize(pReg dst, pReg src, vReg tmp, rFlagsReg cr
 // true count
 
 instruct vmask_truecount_neon(iRegINoSp dst, vReg src, vReg tmp) %{
-  predicate(UseSVE == 0);
   match(Set dst (VectorMaskTrueCount src));
   effect(TEMP tmp);
   format %{ "vmask_truecount_neon $dst, $src\t# KILL $tmp" %}
@@ -5501,7 +5417,6 @@ instruct vmask_truecount_neon(iRegINoSp dst, vReg src, vReg tmp) %{
 %}
 
 instruct vmask_truecount_sve(iRegINoSp dst, pReg src) %{
-  predicate(UseSVE > 0);
   match(Set dst (VectorMaskTrueCount src));
   format %{ "vmask_truecount_sve $dst, $src" %}
   ins_encode %{
@@ -5515,8 +5430,7 @@ instruct vmask_truecount_sve(iRegINoSp dst, pReg src) %{
 // first true
 
 instruct vmask_firsttrue_lt8e(iRegINoSp dst, vReg src, rFlagsReg cr) %{
-  predicate(UseSVE == 0 &&
-            Matcher::vector_length(n->in(1)) < 8);
+  predicate(Matcher::vector_length(n->in(1)) < 8);
   match(Set dst (VectorMaskFirstTrue src));
   effect(KILL cr);
   format %{ "vmask_firsttrue_lt8e $dst, $src\t# vector < 8 elements (neon). KILL cr" %}
@@ -5543,8 +5457,7 @@ instruct vmask_firsttrue_lt8e(iRegINoSp dst, vReg src, rFlagsReg cr) %{
 %}
 
 instruct vmask_firsttrue_8or16e(iRegINoSp dst, vReg src) %{
-  predicate(UseSVE == 0 &&
-            (Matcher::vector_length(n->in(1)) == 8 || Matcher::vector_length(n->in(1)) == 16));
+  predicate(Matcher::vector_length(n->in(1)) == 8 || Matcher::vector_length(n->in(1)) == 16);
   match(Set dst (VectorMaskFirstTrue src));
   format %{ "vmask_firsttrue_8or16e $dst, $src\t# vector 8B/16B (neon)" %}
   ins_encode %{
@@ -5592,7 +5505,6 @@ instruct vmask_firsttrue_8or16e(iRegINoSp dst, vReg src) %{
 // them are set.
 
 instruct vmask_firsttrue_sve(iRegINoSp dst, pReg src, pReg ptmp) %{
-  predicate(UseSVE > 0);
   match(Set dst (VectorMaskFirstTrue src));
   effect(TEMP ptmp);
   format %{ "vmask_firsttrue_sve $dst, $src\t# KILL $ptmp" %}
@@ -5607,7 +5519,6 @@ instruct vmask_firsttrue_sve(iRegINoSp dst, pReg src, pReg ptmp) %{
 %}
 
 instruct vmask_firsttrue_masked(iRegINoSp dst, pReg src, pReg pg, pReg ptmp) %{
-  predicate(UseSVE > 0);
   match(Set dst (VectorMaskFirstTrue src pg));
   effect(TEMP ptmp);
   format %{ "vmask_firsttrue_masked $dst, $pg, $src\t# KILL $ptmp" %}
@@ -5622,7 +5533,6 @@ instruct vmask_firsttrue_masked(iRegINoSp dst, pReg src, pReg pg, pReg ptmp) %{
 // last true
 
 instruct vmask_lasttrue_neon(iRegINoSp dst, vReg src) %{
-  predicate(UseSVE == 0);
   match(Set dst (VectorMaskLastTrue src));
   format %{ "vmask_lasttrue_neon $dst, $src" %}
   ins_encode %{
@@ -5665,7 +5575,6 @@ instruct vmask_lasttrue_neon(iRegINoSp dst, vReg src) %{
 %}
 
 instruct vmask_lasttrue_sve(iRegINoSp dst, pReg src, pReg ptmp) %{
-  predicate(UseSVE > 0);
   match(Set dst (VectorMaskLastTrue src));
   effect(TEMP ptmp);
   format %{ "vmask_lasttrue_sve $dst, $src\t# KILL $ptmp" %}
@@ -5679,7 +5588,6 @@ instruct vmask_lasttrue_sve(iRegINoSp dst, pReg src, pReg ptmp) %{
 // tolong
 
 instruct vmask_tolong_neon(iRegLNoSp dst, vReg src) %{
-  predicate(UseSVE == 0);
   match(Set dst (VectorMaskToLong src));
   format %{ "vmask_tolong_neon $dst, $src" %}
   ins_encode %{
@@ -5703,7 +5611,6 @@ instruct vmask_tolong_neon(iRegLNoSp dst, vReg src) %{
 %}
 
 instruct vmask_tolong_sve(iRegLNoSp dst, pReg src, vReg tmp1, vReg tmp2) %{
-  predicate(UseSVE > 0);
   match(Set dst (VectorMaskToLong src));
   effect(TEMP tmp1, TEMP tmp2);
   format %{ "vmask_tolong_sve $dst, $src\t# KILL $tmp1, $tmp2" %}
@@ -5736,7 +5643,6 @@ instruct vmask_fromlong(pReg dst, iRegL src, vReg tmp1, vReg tmp2) %{
 // maskAll
 
 instruct vmaskAll_immI(pReg dst, immI src, rFlagsReg cr) %{
-  predicate(UseSVE > 0);
   match(Set dst (MaskAll src));
   effect(KILL cr);
   format %{ "vmaskAll_immI $dst, $src\t# KILL cr" %}
@@ -5754,7 +5660,6 @@ instruct vmaskAll_immI(pReg dst, immI src, rFlagsReg cr) %{
 %}
 
 instruct vmaskAllI(pReg dst, iRegIorL2I src, vReg tmp, rFlagsReg cr) %{
-  predicate(UseSVE > 0);
   match(Set dst (MaskAll src));
   effect(TEMP tmp, KILL cr);
   format %{ "vmaskAllI $dst, $src\t# KILL $tmp, cr" %}
@@ -5770,7 +5675,6 @@ instruct vmaskAllI(pReg dst, iRegIorL2I src, vReg tmp, rFlagsReg cr) %{
 %}
 
 instruct vmaskAllI_masked(pReg dst, iRegIorL2I src, pRegGov pg, vReg tmp, rFlagsReg cr) %{
-  predicate(UseSVE > 0);
   match(Set dst (MaskAll src pg));
   effect(TEMP tmp, KILL cr);
   format %{ "vmaskAllI_masked $dst, $pg, $src\t# KILL $tmp, cr" %}
@@ -5785,7 +5689,6 @@ instruct vmaskAllI_masked(pReg dst, iRegIorL2I src, pRegGov pg, vReg tmp, rFlags
 %}
 
 instruct vmaskAll_immL(pReg dst, immL src, rFlagsReg cr) %{
-  predicate(UseSVE > 0);
   match(Set dst (MaskAll src));
   effect(KILL cr);
   format %{ "vmaskAll_immL $dst, $src\t# KILL cr" %}
@@ -5803,7 +5706,6 @@ instruct vmaskAll_immL(pReg dst, immL src, rFlagsReg cr) %{
 %}
 
 instruct vmaskAllL(pReg dst, iRegL src, vReg tmp, rFlagsReg cr) %{
-  predicate(UseSVE > 0);
   match(Set dst (MaskAll src));
   effect(TEMP tmp, KILL cr);
   format %{ "vmaskAllL $dst, $src\t# KILL $tmp, cr" %}
@@ -5819,7 +5721,6 @@ instruct vmaskAllL(pReg dst, iRegL src, vReg tmp, rFlagsReg cr) %{
 %}
 
 instruct vmaskAllL_masked(pReg dst, iRegL src, pRegGov pg, vReg tmp, rFlagsReg cr) %{
-  predicate(UseSVE > 0);
   match(Set dst (MaskAll src pg));
   effect(TEMP tmp, KILL cr);
   format %{ "vmaskAllL_masked $dst, $pg, $src\t# KILL $tmp, cr" %}
@@ -5836,7 +5737,6 @@ instruct vmaskAllL_masked(pReg dst, iRegL src, pRegGov pg, vReg tmp, rFlagsReg c
 // vetcor mask generation
 
 instruct vmask_gen_I(pReg pd, iRegIorL2I src, rFlagsReg cr) %{
-  predicate(UseSVE > 0);
   match(Set pd (VectorMaskGen (ConvI2L src)));
   effect(KILL cr);
   format %{ "vmask_gen_I $pd, $src\t# KILL cr" %}
@@ -5848,7 +5748,6 @@ instruct vmask_gen_I(pReg pd, iRegIorL2I src, rFlagsReg cr) %{
 %}
 
 instruct vmask_gen_L(pReg pd, iRegL src, rFlagsReg cr) %{
-  predicate(UseSVE > 0);
   match(Set pd (VectorMaskGen src));
   effect(KILL cr);
   format %{ "vmask_gen_L $pd, $src\t# KILL cr" %}
@@ -5860,7 +5759,6 @@ instruct vmask_gen_L(pReg pd, iRegL src, rFlagsReg cr) %{
 %}
 
 instruct vmask_gen_imm(pReg pd, immL con, rFlagsReg cr) %{
-  predicate(UseSVE > 0);
   match(Set pd (VectorMaskGen con));
   effect(KILL cr);
   format %{ "vmask_gen_imm $pd, $con\t# KILL cr" %}
@@ -5872,7 +5770,6 @@ instruct vmask_gen_imm(pReg pd, immL con, rFlagsReg cr) %{
 %}
 
 instruct vmask_gen_sub(pReg pd, iRegL src1, iRegL src2, rFlagsReg cr) %{
-  predicate(UseSVE > 0);
   match(Set pd (VectorMaskGen (SubL src1 src2)));
   effect(KILL cr);
   format %{ "vmask_gen_sub $pd, $src2, $src1\t# KILL cr" %}
@@ -5943,7 +5840,6 @@ instruct vpopcountL(vReg dst, vReg src) %{
 // vector popcount - predicated
 
 instruct vpopcountI_masked(vReg dst_src, pRegGov pg) %{
-  predicate(UseSVE > 0);
   match(Set dst_src (PopCountVI dst_src pg));
   format %{ "vpopcountI_masked $dst_src, $pg, $dst_src" %}
   ins_encode %{
@@ -5955,7 +5851,6 @@ instruct vpopcountI_masked(vReg dst_src, pRegGov pg) %{
 %}
 
 instruct vpopcountL_masked(vReg dst_src, pRegGov pg) %{
-  predicate(UseSVE > 0);
   match(Set dst_src (PopCountVL dst_src pg));
   format %{ "vpopcountL_masked $dst_src, $pg, $dst_src" %}
   ins_encode %{
@@ -5968,7 +5863,6 @@ instruct vpopcountL_masked(vReg dst_src, pRegGov pg) %{
 // ------------------------------ Vector blend ---------------------------------
 
 instruct vblend_neon(vReg dst, vReg src1, vReg src2) %{
-  predicate(UseSVE == 0);
   match(Set dst (VectorBlend (Binary src1 src2) dst));
   format %{ "vblend_neon $dst, $src1, $src2" %}
   ins_encode %{
@@ -5981,7 +5875,6 @@ instruct vblend_neon(vReg dst, vReg src1, vReg src2) %{
 %}
 
 instruct vblend_sve(vReg dst, vReg src1, vReg src2, pReg pg) %{
-  predicate(UseSVE > 0);
   match(Set dst (VectorBlend (Binary src1 src2) pg));
   format %{ "vblend_sve $dst, $pg, $src1, $src2" %}
   ins_encode %{
@@ -6122,8 +6015,7 @@ instruct vroundD(vReg dst, vReg src, immI rmode) %{
 // anytrue
 
 instruct vtest_anytrue_neon(rFlagsReg cr, vReg src1, vReg src2, vReg tmp) %{
-  predicate(UseSVE == 0 &&
-            static_cast<const VectorTestNode*>(n)->get_predicate() == BoolTest::ne);
+  predicate(static_cast<const VectorTestNode*>(n)->get_predicate() == BoolTest::ne);
   match(Set cr (VectorTest src1 src2));
   effect(TEMP tmp);
   format %{ "vtest_anytrue_neon $src1\t# KILL $tmp" %}
@@ -6139,8 +6031,7 @@ instruct vtest_anytrue_neon(rFlagsReg cr, vReg src1, vReg src2, vReg tmp) %{
 %}
 
 instruct vtest_anytrue_sve(rFlagsReg cr, pReg src1, pReg src2) %{
-  predicate(UseSVE > 0 &&
-            static_cast<const VectorTestNode*>(n)->get_predicate() == BoolTest::ne);
+  predicate(static_cast<const VectorTestNode*>(n)->get_predicate() == BoolTest::ne);
   match(Set cr (VectorTest src1 src2));
   format %{ "vtest_anytrue_sve $src1" %}
   ins_encode %{
@@ -6153,8 +6044,7 @@ instruct vtest_anytrue_sve(rFlagsReg cr, pReg src1, pReg src2) %{
 // alltrue
 
 instruct vtest_alltrue_neon(rFlagsReg cr, vReg src1, vReg src2, vReg tmp) %{
-  predicate(UseSVE == 0 &&
-            static_cast<const VectorTestNode*>(n)->get_predicate() == BoolTest::overflow);
+  predicate(static_cast<const VectorTestNode*>(n)->get_predicate() == BoolTest::overflow);
   match(Set cr (VectorTest src1 src2));
   effect(TEMP tmp);
   format %{ "vtest_alltrue_neon $src1\t# KILL $tmp" %}
@@ -6170,8 +6060,7 @@ instruct vtest_alltrue_neon(rFlagsReg cr, vReg src1, vReg src2, vReg tmp) %{
 %}
 
 instruct vtest_alltrue_sve(rFlagsReg cr, pReg src1, pReg src2, pReg ptmp) %{
-  predicate(UseSVE > 0 &&
-            static_cast<const VectorTestNode*>(n)->get_predicate() == BoolTest::overflow);
+  predicate(static_cast<const VectorTestNode*>(n)->get_predicate() == BoolTest::overflow);
   match(Set cr (VectorTest src1 src2));
   effect(TEMP ptmp);
   format %{ "vtest_alltrue_sve $src1, $src2\t# KILL $ptmp" %}
@@ -6259,8 +6148,7 @@ instruct rearrange(vReg dst, vReg src, vReg shuffle) %{
 // ------------------------------ Vector Load Gather ---------------------------
 
 instruct gather_loadS(vReg dst, indirect mem, vReg idx) %{
-  predicate(UseSVE > 0 &&
-            type2aelembytes(Matcher::vector_element_basic_type(n)) == 4);
+  predicate(type2aelembytes(Matcher::vector_element_basic_type(n)) == 4);
   match(Set dst (LoadVectorGather mem idx));
   format %{ "gather_loadS $dst, $mem, $idx\t# vector (sve)" %}
   ins_encode %{
@@ -6273,8 +6161,7 @@ instruct gather_loadS(vReg dst, indirect mem, vReg idx) %{
 %}
 
 instruct gather_loadD(vReg dst, indirect mem, vReg idx, vReg tmp) %{
-  predicate(UseSVE > 0 &&
-            type2aelembytes(Matcher::vector_element_basic_type(n)) == 8);
+  predicate(type2aelembytes(Matcher::vector_element_basic_type(n)) == 8);
   match(Set dst (LoadVectorGather mem idx));
   effect(TEMP tmp);
   format %{ "gather_loadD $dst, $mem, $idx\t# vector (sve). KILL $tmp" %}
@@ -6289,8 +6176,7 @@ instruct gather_loadD(vReg dst, indirect mem, vReg idx, vReg tmp) %{
 %}
 
 instruct gather_loadS_masked(vReg dst, indirect mem, vReg idx, pRegGov pg) %{
-  predicate(UseSVE > 0 &&
-            type2aelembytes(Matcher::vector_element_basic_type(n)) == 4);
+  predicate(type2aelembytes(Matcher::vector_element_basic_type(n)) == 4);
   match(Set dst (LoadVectorGatherMasked mem (Binary idx pg)));
   format %{ "gather_loadS_masked $dst, $pg, $mem, $idx" %}
   ins_encode %{
@@ -6301,8 +6187,7 @@ instruct gather_loadS_masked(vReg dst, indirect mem, vReg idx, pRegGov pg) %{
 %}
 
 instruct gather_loadD_masked(vReg dst, indirect mem, vReg idx, pRegGov pg, vReg tmp) %{
-  predicate(UseSVE > 0 &&
-            type2aelembytes(Matcher::vector_element_basic_type(n)) == 8);
+  predicate(type2aelembytes(Matcher::vector_element_basic_type(n)) == 8);
   match(Set dst (LoadVectorGatherMasked mem (Binary idx pg)));
   effect(TEMP tmp);
   format %{ "gather_loadD_masked $dst, $pg, $mem, $idx\t# KILL $tmp" %}
@@ -6317,8 +6202,7 @@ instruct gather_loadD_masked(vReg dst, indirect mem, vReg idx, pRegGov pg, vReg 
 // ------------------------------ Vector Store Scatter -------------------------
 
 instruct scatter_storeS(indirect mem, vReg src, vReg idx) %{
-  predicate(UseSVE > 0 &&
-            type2aelembytes(Matcher::vector_element_basic_type(n->in(3)->in(1))) == 4);
+  predicate(type2aelembytes(Matcher::vector_element_basic_type(n->in(3)->in(1))) == 4);
   match(Set mem (StoreVectorScatter mem (Binary src idx)));
   format %{ "scatter_storeS $mem, $idx, $src\t# vector (sve)" %}
   ins_encode %{
@@ -6331,8 +6215,7 @@ instruct scatter_storeS(indirect mem, vReg src, vReg idx) %{
 %}
 
 instruct scatter_storeD(indirect mem, vReg src, vReg idx, vReg tmp) %{
-  predicate(UseSVE > 0 &&
-            type2aelembytes(Matcher::vector_element_basic_type(n->in(3)->in(1))) == 8);
+  predicate(type2aelembytes(Matcher::vector_element_basic_type(n->in(3)->in(1))) == 8);
   match(Set mem (StoreVectorScatter mem (Binary src idx)));
   effect(TEMP tmp);
   format %{ "scatter_storeD $mem, $idx, $src\t# vector (sve). KILL $tmp" %}
@@ -6347,8 +6230,7 @@ instruct scatter_storeD(indirect mem, vReg src, vReg idx, vReg tmp) %{
 %}
 
 instruct scatter_storeS_masked(indirect mem, vReg src, vReg idx, pRegGov pg) %{
-  predicate(UseSVE > 0 &&
-            type2aelembytes(Matcher::vector_element_basic_type(n->in(3)->in(1))) == 4);
+  predicate(type2aelembytes(Matcher::vector_element_basic_type(n->in(3)->in(1))) == 4);
   match(Set mem (StoreVectorScatterMasked mem (Binary src (Binary idx pg))));
   format %{ "scatter_storeS_masked $mem, $pg, $idx, $src" %}
   ins_encode %{
@@ -6359,8 +6241,7 @@ instruct scatter_storeS_masked(indirect mem, vReg src, vReg idx, pRegGov pg) %{
 %}
 
 instruct scatter_storeD_masked(indirect mem, vReg src, vReg idx, pRegGov pg, vReg tmp) %{
-  predicate(UseSVE > 0 &&
-            type2aelembytes(Matcher::vector_element_basic_type(n->in(3)->in(1))) == 8);
+  predicate(type2aelembytes(Matcher::vector_element_basic_type(n->in(3)->in(1))) == 8);
   match(Set mem (StoreVectorScatterMasked mem (Binary src (Binary idx pg))));
   effect(TEMP tmp);
   format %{ "scatter_storeD_masked $mem, $pg, $idx, $src\t# KILL $tmp" %}
@@ -6408,7 +6289,6 @@ instruct vcountLeadingZeros(vReg dst, vReg src) %{
 // inactive lanes in dst save the same elements as src.
 
 instruct vcountLeadingZeros_masked(vReg dst_src, pRegGov pg) %{
-  predicate(UseSVE > 0);
   match(Set dst_src (CountLeadingZerosV dst_src pg));
   format %{ "vcountLeadingZeros_masked $dst_src, $pg, $dst_src" %}
   ins_encode %{
@@ -6466,7 +6346,6 @@ instruct vcountTrailingZeros(vReg dst, vReg src) %{
 // The dst and src should use the same register to make sure the
 // inactive lanes in dst save the same elements as src.
 instruct vcountTrailingZeros_masked(vReg dst_src, pRegGov pg) %{
-  predicate(UseSVE > 0);
   match(Set dst_src (CountTrailingZerosV dst_src pg));
   format %{ "vcountTrailingZeros_masked $dst_src, $pg, $dst_src" %}
   ins_encode %{
@@ -6515,7 +6394,6 @@ instruct vreverse(vReg dst, vReg src) %{
 // inactive lanes in dst save the same elements as src.
 
 instruct vreverse_masked(vReg dst_src, pRegGov pg) %{
-  predicate(UseSVE > 0);
   match(Set dst_src (ReverseV dst_src pg));
   format %{ "vreverse_masked $dst_src, $pg, $dst_src" %}
   ins_encode %{
@@ -6563,7 +6441,6 @@ instruct vreverseBytes(vReg dst, vReg src) %{
 // The dst and src should use the same register to make sure the
 // inactive lanes in dst save the same elements as src.
 instruct vreverseBytes_masked(vReg dst_src, pRegGov pg) %{
-  predicate(UseSVE > 0);
   match(Set dst_src (ReverseBytesV dst_src pg));
   format %{ "vreverseBytes_masked $dst_src, $pg, $dst_src" %}
   ins_encode %{
@@ -6581,7 +6458,6 @@ instruct vreverseBytes_masked(vReg dst_src, pRegGov pg) %{
 // ------------------------------ Populate Index to a Vector -------------------
 
 instruct populateindex(vReg dst, iRegIorL2I src1, immI src2) %{
-  predicate(UseSVE > 0);
   match(Set dst (PopulateIndex src1 src2));
   format %{ "populateindex $dst, $src1, $src2\t # populate index (sve)" %}
   ins_encode %{
@@ -6595,7 +6471,6 @@ instruct populateindex(vReg dst, iRegIorL2I src1, immI src2) %{
 // ------------------------------ Compress/Expand Operations -------------------
 
 instruct mcompress(pReg dst, pReg pg, rFlagsReg cr) %{
-  predicate(UseSVE > 0);
   match(Set dst (CompressM pg));
   effect(KILL cr);
   format %{ "mcompress $dst, $pg\t# KILL cr" %}
@@ -6609,8 +6484,7 @@ instruct mcompress(pReg dst, pReg pg, rFlagsReg cr) %{
 %}
 
 instruct vcompress(vReg dst, vReg src, pRegGov pg) %{
-  predicate(UseSVE > 0 &&
-            !is_subword_type(Matcher::vector_element_basic_type(n)));
+  predicate(!is_subword_type(Matcher::vector_element_basic_type(n)));
   match(Set dst (CompressV src pg));
   format %{ "vcompress $dst, $src, $pg" %}
   ins_encode %{
@@ -6623,7 +6497,7 @@ instruct vcompress(vReg dst, vReg src, pRegGov pg) %{
 
 instruct vcompressB(vReg dst, vReg src, pReg pg, vReg tmp1, vReg tmp2,
                     vReg tmp3, vReg tmp4, pReg ptmp, pRegGov pgtmp) %{
-  predicate(UseSVE > 0 && Matcher::vector_element_basic_type(n) == T_BYTE);
+  predicate(Matcher::vector_element_basic_type(n) == T_BYTE);
   effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, TEMP ptmp, TEMP pgtmp);
   match(Set dst (CompressV src pg));
   format %{ "vcompressB $dst, $src, $pg\t# KILL $tmp1, $tmp2, $tmp3, tmp4, $ptmp, $pgtmp" %}
@@ -6638,7 +6512,7 @@ instruct vcompressB(vReg dst, vReg src, pReg pg, vReg tmp1, vReg tmp2,
 
 instruct vcompressS(vReg dst, vReg src, pReg pg,
                     vReg tmp1, vReg tmp2, pRegGov pgtmp) %{
-  predicate(UseSVE > 0 && Matcher::vector_element_basic_type(n) == T_SHORT);
+  predicate(Matcher::vector_element_basic_type(n) == T_SHORT);
   effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2, TEMP pgtmp);
   match(Set dst (CompressV src pg));
   format %{ "vcompressS $dst, $src, $pg\t# KILL $tmp1, $tmp2, $pgtmp" %}
