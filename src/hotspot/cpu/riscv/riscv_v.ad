@@ -3375,20 +3375,6 @@ instruct vmaskAllI(vRegMask dst, iRegIorL2I src) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vmaskAllI_masked(vRegMask dst, iRegIorL2I src, vRegMask_V0 v0, vReg tmp) %{
-  match(Set dst (MaskAll src v0));
-  effect(TEMP_DEF dst, TEMP tmp);
-  format %{ "vmaskAllI_masked $dst, $src, $v0\t# KILL $tmp" %}
-  ins_encode %{
-    BasicType bt = Matcher::vector_element_basic_type(this);
-    __ vsetvli_helper(bt, Matcher::vector_length(this));
-    __ vmv_v_x(as_VectorRegister($tmp$$reg), as_Register($src$$reg));
-    __ vmxor_mm(as_VectorRegister($dst$$reg), as_VectorRegister($dst$$reg), as_VectorRegister($dst$$reg));
-    __ vmsne_vx(as_VectorRegister($dst$$reg), as_VectorRegister($tmp$$reg), zr, Assembler::v0_t);
-  %}
-  ins_pipe(pipe_slow);
-%}
-
 instruct vmaskAll_immL(vRegMask dst, immL src) %{
   match(Set dst (MaskAll src));
   format %{ "vmaskAll_immL $dst, $src" %}
@@ -3414,20 +3400,6 @@ instruct vmaskAllL(vRegMask dst, iRegL src) %{
     __ vsetvli_helper(bt, Matcher::vector_length(this));
     __ vmv_v_x(as_VectorRegister($dst$$reg), as_Register($src$$reg));
     __ vmsne_vx(as_VectorRegister($dst$$reg), as_VectorRegister($dst$$reg), zr);
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct vmaskAllL_masked(vRegMask dst, iRegL src, vRegMask_V0 v0, vReg tmp) %{
-  match(Set dst (MaskAll src v0));
-  effect(TEMP_DEF dst, TEMP tmp);
-  format %{ "vmaskAllL_masked $dst, $src, $v0\t# KILL $tmp" %}
-  ins_encode %{
-    BasicType bt = Matcher::vector_element_basic_type(this);
-    __ vsetvli_helper(bt, Matcher::vector_length(this));
-    __ vmv_v_x(as_VectorRegister($tmp$$reg), as_Register($src$$reg));
-    __ vmxor_mm(as_VectorRegister($dst$$reg), as_VectorRegister($dst$$reg), as_VectorRegister($dst$$reg));
-    __ vmsne_vx(as_VectorRegister($dst$$reg), as_VectorRegister($tmp$$reg), zr, Assembler::v0_t);
   %}
   ins_pipe(pipe_slow);
 %}
