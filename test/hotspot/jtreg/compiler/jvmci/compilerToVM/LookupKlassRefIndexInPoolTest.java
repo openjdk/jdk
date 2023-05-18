@@ -51,7 +51,6 @@ import compiler.jvmci.compilerToVM.ConstantPoolTestCase.Validator;
 import compiler.jvmci.compilerToVM.ConstantPoolTestsHelper.DummyClasses;
 import jdk.test.lib.Asserts;
 import jdk.vm.ci.hotspot.CompilerToVMHelper;
-import jdk.vm.ci.hotspot.HotSpotConstantPool.Bytecodes;
 import jdk.vm.ci.meta.ConstantPool;
 
 import java.util.HashMap;
