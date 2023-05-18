@@ -25,17 +25,21 @@
 
 package sun.security.ssl;
 
+import sun.security.ssl.SSLExtension.ExtensionConsumer;
+import sun.security.ssl.SSLExtension.SSLExtensionSpec;
+import sun.security.ssl.SSLHandshake.HandshakeMessage;
+
+import javax.net.ssl.SSLProtocolException;
+import javax.security.auth.x500.X500Principal;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.security.cert.X509Certificate;
 import java.text.MessageFormat;
-import java.util.*;
-import javax.net.ssl.SSLException;
-import javax.net.ssl.SSLProtocolException;
-import javax.security.auth.x500.X500Principal;
-import sun.security.ssl.SSLExtension.ExtensionConsumer;
-import sun.security.ssl.SSLExtension.SSLExtensionSpec;
-import sun.security.ssl.SSLHandshake.HandshakeMessage;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Locale;
 
 /**
  * Pack of the "certificate_authorities" extensions.
@@ -145,7 +149,7 @@ final class CertificateAuthoritiesExtension {
                     X500Principal principal = new X500Principal(encoded);
                     builder.append(principal.toString());
                 } catch (IllegalArgumentException iae) {
-                    builder.append("unparseable X500Principal: " + iae.getMessage());
+                    builder.append("unparseable X500Principal: " + iae);
                 }
                 builder.append("\n");
             }
