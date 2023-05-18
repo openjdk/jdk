@@ -50,17 +50,17 @@ class BuilderFinalizersTest {
 
     @Test
     public void testClosedTryClosedFinalizerCompact() throws Throwable {
-        testClosedTryClosedFinalizer(true, 4);
+        testClosedFinalizers(true, 4);
     }
 
     @Test
     public void testClosedTryClosedFinalizerExpanded() throws Throwable {
-        testClosedTryClosedFinalizer(false, 14);
+        testClosedFinalizers(false, 14);
     }
 
     @Test
     public void testNoCatchingFinalizer() throws Throwable {
-        testFinalizers(1, 1, cob -> {
+        testClosedFinalizers(1, 1, cob -> {
             var externalLabel1 = cob.newBoundLabel();
             cob.tryWithFinalizer(
                 tryb -> tryb.goto_(externalLabel1),
@@ -71,48 +71,71 @@ class BuilderFinalizersTest {
         });
     }
 
-    private void testClosedTryClosedFinalizer(boolean compactForm, int finalizers) throws Throwable {
-        testFinalizers(14, finalizers, cob -> {
+    @Test
+    public void testCatchingFinalizer() throws Throwable {
+        testClosedFinalizers(1, 3, cob -> {
             var externalLabel1 = cob.newBoundLabel();
-            var externalLabel2 = cob.newBoundLabel();
             cob.tryWithFinalizer(
-                tryb -> tryb.iload(0)
-                            .tableswitch(swb -> swb
-                                    .switchCase(0, b -> b.iload(0)
-                                                         .ireturn())
-                                    .switchCase(1, b -> b.iload(0)
-                                                         .ireturn())
-                                    .switchCase(2, b -> b.iload(0)
-                                                         .ireturn())
-                                    .switchCase(3, b -> b.iload(0)
-                                                         .ireturn())
-                                    .switchCase(4, b -> b.new_(CD_Throwable)
-                                                         .dup()
-                                                         .invokespecial(CD_Throwable, INIT_NAME, MethodTypeDesc.of(CD_void))
-                                                         .athrow())
-                                    .switchCase(5, b -> b.goto_(externalLabel1))
-                                    .switchCase(6, b -> b.goto_(externalLabel1))
-                                    .switchCase(7, b -> b.iload(0)
-                                                         .ifeq(externalLabel2))
-                                    .switchCase(8, b -> b.goto_(externalLabel2))
-                                    .switchCase(9, b -> b.goto_(externalLabel1))
-                                    .switchCase(10, b -> b.goto_(externalLabel1))
-                                    .switchCase(11, b -> b.goto_(externalLabel2))
-                                    .switchCase(12, b -> b.goto_(externalLabel2))
-                                    .switchCase(13, b -> {}))
-                            .iload(0).ireturn(),
+                tryb -> tryb.nop()
+                            .goto_(externalLabel1),
                 finb -> finb.nop()
                             .constantInstruction(42).ireturn(),
-                compactForm,
-                externalLabel1, externalLabel2);
+                false,
+                externalLabel1);;
         });
     }
 
-    private void testFinalizers(int cases, int nops, Consumer<CodeBuilder> gen) throws Throwable {
-        byte[] bytes = build(ClassDesc.of("TestFinalizer"), List.of(Option.patchDeadCode(false)), //fail when dead code is generated
+    @Test
+    public void testOpenTryOpenFinalizerCompact() throws Throwable {
+        testOpenFinalizers(true, 5);
+    }
+
+    @Test
+    public void testOpenTryOpenFinalizerExpanded() throws Throwable {
+        testOpenFinalizers(false, 14);
+    }
+
+    private void testClosedFinalizers(boolean compactForm, int finalizers) throws Throwable {
+        testClosedFinalizers(14, finalizers, cob -> {
+            var externalLabel1 = cob.newBoundLabel();
+            var externalLabel2 = cob.newBoundLabel();
+            cob.tryWithFinalizer(
+                    tryb -> tryb.iload(0)
+                                .tableswitch(swb -> swb
+                                        .switchCase(0, b -> b.iload(0)
+                                                             .ireturn())
+                                        .switchCase(1, b -> b.iload(0)
+                                                             .ireturn())
+                                        .switchCase(2, b -> b.iload(0)
+                                                             .ireturn())
+                                        .switchCase(3, b -> b.iload(0)
+                                                             .ireturn())
+                                        .switchCase(4, b -> b.new_(CD_Throwable)
+                                                             .dup()
+                                                             .invokespecial(CD_Throwable, INIT_NAME, MethodTypeDesc.of(CD_void))
+                                                             .athrow())
+                                        .switchCase(5, b -> b.goto_(externalLabel1))
+                                        .switchCase(6, b -> b.goto_(externalLabel1))
+                                        .switchCase(7, b -> b.iload(0)
+                                                             .ifeq(externalLabel2))
+                                        .switchCase(8, b -> b.goto_(externalLabel2))
+                                        .switchCase(9, b -> b.goto_(externalLabel1))
+                                        .switchCase(10, b -> b.goto_(externalLabel1))
+                                        .switchCase(11, b -> b.goto_(externalLabel2))
+                                        .switchCase(12, b -> b.goto_(externalLabel2))
+                                        .switchCase(13, b -> {}))
+                                .iload(0).ireturn(),
+                    finb -> finb.nop()
+                                .constantInstruction(42).ireturn(),
+                    compactForm,
+                    externalLabel1, externalLabel2);
+        });
+    }
+
+    private void testClosedFinalizers(int cases, int nops, Consumer<CodeBuilder> gen) throws Throwable {
+        byte[] bytes = build(ClassDesc.of("TestClosedFinalizer"), List.of(Option.patchDeadCode(false)), //fail when dead code is generated
                 clb -> clb.withFlags(ACC_PUBLIC)
                           .withMethodBody("main", MethodTypeDesc.of(CD_int, CD_int), ACC_PUBLIC | ACC_STATIC, gen));
-        Files.write(Path.of("/Users/asotona/dev/TestFinalizer.class"), bytes);
         var clm = parse(bytes);
         assertEquals(List.of(), clm.verify(null));
         //counting the finalizers
@@ -122,6 +145,66 @@ class BuilderFinalizersTest {
                 MethodType.methodType(Integer.TYPE, Integer.TYPE));
         for (int i = 0; i < cases; i++) {
             assertEquals(42, main.invoke(i));
+        }
+    }
+
+    private void testOpenFinalizers(boolean compactForm, int finalizers) throws Throwable {
+        byte[] bytes = build(ClassDesc.of("TestFinalizer"), List.of(Option.patchDeadCode(false)), //fail when dead code is generated
+                clb -> clb.withFlags(ACC_PUBLIC)
+                          .withField("fin", CD_int, ACC_PUBLIC | ACC_STATIC)
+                          .withMethodBody("main", MethodTypeDesc.of(CD_int, CD_int), ACC_PUBLIC | ACC_STATIC, cob -> {
+            var externalLabel1 = cob.newLabel();
+            var externalLabel2 = cob.newLabel();
+            cob.tryWithFinalizer(
+                    tryb -> tryb.iload(0)
+                                .tableswitch(swb -> swb
+                                        .switchCase(0, b -> b.iload(0)
+                                                             .ireturn())
+                                        .switchCase(1, b -> b.iload(0)
+                                                             .ireturn())
+                                        .switchCase(2, b -> b.iload(0)
+                                                             .ireturn())
+                                        .switchCase(3, b -> b.iload(0)
+                                                             .ireturn())
+                                        .switchCase(4, b -> b.new_(CD_Throwable)
+                                                             .dup()
+                                                             .invokespecial(CD_Throwable, INIT_NAME, MethodTypeDesc.of(CD_void))
+                                                             .athrow())
+                                        .switchCase(5, b -> b.goto_(externalLabel1))
+                                        .switchCase(6, b -> b.goto_(externalLabel1))
+                                        .switchCase(7, b -> b.iload(0)
+                                                             .ifeq(externalLabel2))
+                                        .switchCase(8, b -> b.goto_(externalLabel2))
+                                        .switchCase(9, b -> b.goto_(externalLabel1))
+                                        .switchCase(10, b -> b.goto_(externalLabel1))
+                                        .switchCase(11, b -> b.goto_(externalLabel2))
+                                        .switchCase(12, b -> b.goto_(externalLabel2))
+                                        .switchCase(13, b -> {})),
+                    finb -> finb.nop()
+                                .constantInstruction(42).putstatic(ClassDesc.of("TestFinalizer"), "fin", CD_int),
+                    compactForm,
+                    externalLabel1, externalLabel2)
+                .labelBinding(externalLabel1)
+                .labelBinding(externalLabel2)
+                .iload(0)
+                .ireturn();
+        }));
+        var clm = parse(bytes);
+        assertEquals(List.of(), clm.verify(null));
+        //counting the finalizers
+        assertEquals(finalizers, (int)clm.methods().get(0).code().get().elementStream().filter(e -> e instanceof NopInstruction).count());
+        MethodHandles.Lookup lookup = MethodHandles.lookup().defineHiddenClass(bytes, true);
+        MethodHandle main = lookup.findStatic(lookup.lookupClass(), "main",
+                MethodType.methodType(Integer.TYPE, Integer.TYPE));
+        var fin = lookup.findStaticVarHandle(lookup.lookupClass(), "fin", Integer.TYPE);
+        for (int i = 0; i < 14; i++) {
+            try {
+                main.invoke(i);
+            } catch (Throwable t) {
+
+            }
+            assertEquals(42, fin.get());
+            fin.set(0);
         }
     }
 }

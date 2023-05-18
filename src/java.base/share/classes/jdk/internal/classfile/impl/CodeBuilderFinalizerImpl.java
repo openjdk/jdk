@@ -58,7 +58,7 @@ public final class CodeBuilderFinalizerImpl {
                         case BranchInstruction bi -> {
                             if (mapping.containsKey(bi.target())) { //call finalizer for this label
                                 mapping.compute(bi.target(), (l, finalizerLabel) -> {
-                                    if (finalizerLabel == null || !compactForm) { //finalizer not built yet
+                                    if (finalizerLabel == null || !compactForm) { //finalizer not built yet or expanded form
                                         if (bi.opcode().isUnconditionalBranch()) {
                                             finalizerLabel = cob.newBoundLabel();
                                             if ((excTable.size() & 1) != 0) excTable.add(finalizerLabel); //try block ends here
@@ -84,7 +84,7 @@ public final class CodeBuilderFinalizerImpl {
                         }
                         case ReturnInstruction ri -> {
                             mapping.compute(null, (l, finalizerLabel) -> {
-                                if (finalizerLabel == null || !compactForm) { //finalizer not built yet
+                                if (finalizerLabel == null || !compactForm) { //finalizer not built yet or expanded form
                                     finalizerLabel = cob.newBoundLabel();
                                     if ((excTable.size() & 1) != 0) excTable.add(finalizerLabel); //try block ends here
                                     if (ri.typeKind() == TypeKind.VoidType) {
