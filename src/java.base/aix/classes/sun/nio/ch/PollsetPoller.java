@@ -37,7 +37,7 @@ class PollsetPoller extends Poller {
 
     static { Pollset.init(); /* Dynamically loads pollset C functions */ }
 
-    private int final setid;
+    private final int setid;
     private int setsize;
 
     PollsetPoller(boolean read) throws IOException {
