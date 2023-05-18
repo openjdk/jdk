@@ -40,6 +40,7 @@ public final class CodeBuilderFinalizerImpl {
     public static void buildWithFinalizer(CodeBuilder parent,
                                           Consumer<CodeBuilder> tryHandler,
                                           Consumer<CodeBuilder> finalizerHandler,
+                                          boolean compactForm,
                                           Label... externalLabels) {
 
         var mapping = new HashMap<Label, Label>(externalLabels.length + 1);
@@ -52,14 +53,13 @@ public final class CodeBuilderFinalizerImpl {
         BlockCodeBuilderImpl topBlock = new BlockCodeBuilderImpl(parent, endLabel);
         topBlock.start();
         var excTable = new ArrayList<Label>();
-        excTable.add(topBlock.startLabel());
         topBlock.transforming(
                 (cob, coe) -> {
                     switch (coe) {
                         case BranchInstruction bi -> buildConditionally(
-                            mapping, bi.target(), cob, bi,
+                            mapping, bi.target(), cob, bi, compactForm,
                             () -> {
-                                excTable.add(cob.newBoundLabel()); //try block ends here
+                                if ((excTable.size() & 1) != 0) excTable.add(cob.newBoundLabel()); //try block ends here
                                 if (bi.opcode().isUnconditionalBranch()) {
                                     finalizerHandler.accept(cob); //unconditional branch finalizer
                                     if (topBlock.reachable()) cob.with(bi);
@@ -73,14 +73,13 @@ public final class CodeBuilderFinalizerImpl {
                                     }
 
                                 }
-                                excTable.add(cob.newBoundLabel()); //try block re-starts here
                             },
                             finalizerLabel ->
                                 cob.branchInstruction(bi.opcode(), finalizerLabel));
                         case ReturnInstruction ri -> buildConditionally(
-                            mapping, null, cob, ri,
+                            mapping, null, cob, ri, compactForm,
                             () -> {
-                                excTable.add(cob.newBoundLabel()); //try block ends here
+                                if ((excTable.size() & 1) != 0) excTable.add(cob.newBoundLabel()); //try block ends here
                                 if (ri.typeKind() == TypeKind.VoidType) {
                                     finalizerHandler.accept(cob); //void return finalizer
                                     if (topBlock.reachable()) cob.with(ri);
@@ -93,10 +92,13 @@ public final class CodeBuilderFinalizerImpl {
                                            .with(ri);
                                     }
                                 }
-                                excTable.add(cob.newBoundLabel()); //try block re-starts here
                             },
                             finalizerLabel ->
                                 cob.goto_(finalizerLabel));
+                        case Instruction i -> {
+                            if ((excTable.size() & 1) == 0) excTable.add(cob.newBoundLabel()); //try block re-starts here
+                            cob.with(coe);
+                        }
                         default -> cob.with(coe);
                     }
                 },
@@ -104,24 +106,25 @@ public final class CodeBuilderFinalizerImpl {
         if (topBlock.isEmpty()) {
             throw new IllegalStateException("The body of the try block is empty");
         }
-        var fallthrough = topBlock.newLabel();
         if (topBlock.reachable()) {
-            excTable.add(topBlock.newBoundLabel());  //try block ends here
+            if ((excTable.size() & 1) != 0) excTable.add(topBlock.newBoundLabel());  //try block ends here
             finalizerHandler.accept(topBlock); //pass-through finalizer
             topBlock.goto_(topBlock.endLabel());
         } else {
-            excTable.add(topBlock.newBoundLabel());  //try block ends here
+            if ((excTable.size() & 1) != 0) excTable.add(topBlock.newBoundLabel());  //try block ends here
         }
-        var handlerLabel = topBlock.newBoundLabel();
-        for (int i = 0; i < excTable.size(); i += 2) {
-            topBlock.exceptionCatchAll(excTable.get(i), excTable.get(i + 1), handlerLabel);
-        }
-        var excSlot = topBlock.allocateLocal(TypeKind.ReferenceType);
-        topBlock.astore(excSlot);
-        finalizerHandler.accept(topBlock); //exception handler finalizer
-        if (topBlock.reachable()) {
-            topBlock.aload(excSlot)
-                    .athrow();
+        if (!excTable.isEmpty()) {
+            var handlerLabel = topBlock.newBoundLabel();
+            for (int i = 0; i < excTable.size(); i += 2) {
+                topBlock.exceptionCatchAll(excTable.get(i), excTable.get(i + 1), handlerLabel);
+            }
+            var excSlot = topBlock.allocateLocal(TypeKind.ReferenceType);
+            topBlock.astore(excSlot);
+            finalizerHandler.accept(topBlock); //exception handler finalizer
+            if (topBlock.reachable()) {
+                topBlock.aload(excSlot)
+                        .athrow();
+            }
         }
         topBlock.end();
         parent.labelBinding(endLabel);
@@ -132,11 +135,12 @@ public final class CodeBuilderFinalizerImpl {
                                            Label labelKey,
                                            CodeBuilder cb,
                                            Instruction originalInstruction,
+                                           boolean  compactForm,
                                            Runnable firstFinalizerHandler,
                                            Consumer<Label> subsequentFinalizersHandler) {
         if (mapping.containsKey(labelKey)) { //call finalizer for this label
             mapping.compute(labelKey, (l, finalizerLabel) -> {
-                if (finalizerLabel == null) { //finalizer not built yet
+                if (finalizerLabel == null || !compactForm) { //finalizer not built yet
                     finalizerLabel = cb.newBoundLabel();
                     firstFinalizerHandler.run();
                 } else {

@@ -63,8 +63,17 @@ class BuilderFinalizersTest {
     }
 
     @Test
-    public void testFinalizers() throws Throwable {
-        testFinalizers(14, 4, cob -> {
+    public void testClosedTryClosedFinalizerCompact() throws Throwable {
+        testClosedTryClosedFinalizer(true, 4);
+    }
+
+    @Test
+    public void testClosedTryClosedFinalizerExpanded() throws Throwable {
+        testClosedTryClosedFinalizer(false, 14);
+    }
+
+    public void testClosedTryClosedFinalizer(boolean compactForm, int finalizers) throws Throwable {
+        testFinalizers(14, finalizers, cob -> {
             var externalLabel1 = cob.newBoundLabel();
             var externalLabel2 = cob.newBoundLabel();
             cob.tryWithFinalizer(
@@ -93,7 +102,22 @@ class BuilderFinalizersTest {
                                     .switchCase(13, b -> {}))
                             .iload(0).ireturn(),
                 finb -> finb.nop()
-                            .constantInstruction(42).ireturn(), externalLabel1, externalLabel2);;
+                            .constantInstruction(42).ireturn(),
+                compactForm,
+                externalLabel1, externalLabel2);;
+        });
+    }
+
+    @Test
+    public void testNoCatchingFinalizer() throws Throwable {
+        testFinalizers(1, 1, cob -> {
+            var externalLabel1 = cob.newBoundLabel();
+            cob.tryWithFinalizer(
+                tryb -> tryb.goto_(externalLabel1),
+                finb -> finb.nop()
+                            .constantInstruction(42).ireturn(),
+                false,
+                externalLabel1);;
         });
     }
 }

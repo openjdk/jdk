@@ -1439,10 +1439,18 @@ public sealed interface CodeBuilder
     default CodeBuilder tryWithFinalizer(Consumer<CodeBuilder> tryHandler,
                                          Consumer<CodeBuilder> finalizerHandler,
                                          Label... externalLabels) {
+        return tryWithFinalizer(tryHandler, finalizerHandler, true, externalLabels);
+    }
+
+    default CodeBuilder tryWithFinalizer(Consumer<CodeBuilder> tryHandler,
+                                         Consumer<CodeBuilder> finalizerHandler,
+                                         boolean compactForm,
+                                         Label... externalLabels) {
 
         CodeBuilderFinalizerImpl.buildWithFinalizer(this,
                                                     tryHandler,
                                                     finalizerHandler,
+                                                    compactForm,
                                                     externalLabels);
         return this;
     }
