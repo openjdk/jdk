@@ -81,6 +81,9 @@
 #include "utilities/vmError.hpp"
 
 // put OS-includes here (sorted alphabetically)
+#ifdef AIX_XLC_GE_17
+#include <alloca.h>
+#endif
 #include <errno.h>
 #include <fcntl.h>
 #include <inttypes.h>
@@ -286,7 +289,7 @@ static bool my_disclaim64(char* addr, size_t size) {
 
   char* p = addr;
 
-  for (int i = 0; i < numFullDisclaimsNeeded; i ++) {
+  for (unsigned int i = 0; i < numFullDisclaimsNeeded; i ++) {
     if (::disclaim(p, maxDisclaimSize, DISCLAIM_ZEROMEM) != 0) {
       trcVerbose("Cannot disclaim %p - %p (errno %d)\n", p, p + maxDisclaimSize, errno);
       return false;
@@ -371,7 +374,7 @@ static const char* describe_pagesize(size_t pagesize) {
 // Must be called before calling os::large_page_init().
 static void query_multipage_support() {
 
-  guarantee(g_multipage_support.pagesize == -1,
+  guarantee(g_multipage_support.pagesize == (size_t)-1,
             "do not call twice");
 
   g_multipage_support.pagesize = ::sysconf(_SC_PAGESIZE);
@@ -461,7 +464,7 @@ static void query_multipage_support() {
         IPC_CREAT | S_IRUSR | S_IWUSR);
       guarantee0(shmid != -1); // Should always work.
       // Try to set pagesize.
-      struct shmid_ds shm_buf = { 0 };
+      struct shmid_ds shm_buf = { };
       shm_buf.shm_pagesize = pagesize;
       if (::shmctl(shmid, SHM_PAGESIZE, &shm_buf) != 0) {
         const int en = errno;
@@ -1578,7 +1581,7 @@ static char* reserve_shmated_memory (size_t bytes, char* requested_addr) {
   // Just for info: query the real page size. In case setting the page size did not
   // work (see above), the system may have given us something other then 4K (LDR_CNTRL).
   const size_t real_pagesize = os::Aix::query_pagesize(addr);
-  if (real_pagesize != shmbuf.shm_pagesize) {
+  if (real_pagesize != (size_t)shmbuf.shm_pagesize) {
     trcVerbose("pagesize is, surprisingly, " SIZE_FORMAT, real_pagesize);
   }
 
