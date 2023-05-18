@@ -52,6 +52,7 @@ public class DynamicCodeGeneratedTest {
 
         Runnable task = () -> {
             String result = "string" + System.currentTimeMillis();
+            // Park to provoke re-mounting of virtual thread.
             LockSupport.parkNanos(1);
             Reference.reachabilityFence(result);
         };
