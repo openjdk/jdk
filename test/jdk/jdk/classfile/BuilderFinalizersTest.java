@@ -35,6 +35,8 @@ import java.lang.constant.MethodTypeDesc;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.function.Consumer;
 import static jdk.internal.classfile.Classfile.*;
@@ -46,22 +48,6 @@ import org.junit.jupiter.api.Test;
 
 class BuilderFinalizersTest {
 
-    public void testFinalizers(int cases, int nops, Consumer<CodeBuilder> gen) throws Throwable {
-        byte[] bytes = build(ClassDesc.of("TestFinalizer"), List.of(Option.patchDeadCode(false)), //fail when dead code is generated
-                clb -> clb.withFlags(ACC_PUBLIC)
-                          .withMethodBody("main", MethodTypeDesc.of(CD_int, CD_int), ACC_PUBLIC | ACC_STATIC, gen));
-        var clm = parse(bytes);
-        ClassPrinter.toYaml(clm, ClassPrinter.Verbosity.CRITICAL_ATTRIBUTES, System.out::print);
-        //counting the finalizers
-        assertEquals(nops, (int)clm.methods().get(0).code().get().elementStream().filter(e -> e instanceof NopInstruction).count());
-        MethodHandles.Lookup lookup = MethodHandles.lookup().defineHiddenClass(bytes, true);
-        MethodHandle main = lookup.findStatic(lookup.lookupClass(), "main",
-                MethodType.methodType(Integer.TYPE, Integer.TYPE));
-        for (int i = 0; i < cases; i++) {
-            assertEquals(42, main.invoke(i));
-        }
-    }
-
     @Test
     public void testClosedTryClosedFinalizerCompact() throws Throwable {
         testClosedTryClosedFinalizer(true, 4);
@@ -72,7 +58,20 @@ class BuilderFinalizersTest {
         testClosedTryClosedFinalizer(false, 14);
     }
 
-    public void testClosedTryClosedFinalizer(boolean compactForm, int finalizers) throws Throwable {
+    @Test
+    public void testNoCatchingFinalizer() throws Throwable {
+        testFinalizers(1, 1, cob -> {
+            var externalLabel1 = cob.newBoundLabel();
+            cob.tryWithFinalizer(
+                tryb -> tryb.goto_(externalLabel1),
+                finb -> finb.nop()
+                            .constantInstruction(42).ireturn(),
+                false,
+                externalLabel1);;
+        });
+    }
+
+    private void testClosedTryClosedFinalizer(boolean compactForm, int finalizers) throws Throwable {
         testFinalizers(14, finalizers, cob -> {
             var externalLabel1 = cob.newBoundLabel();
             var externalLabel2 = cob.newBoundLabel();
@@ -93,7 +92,8 @@ class BuilderFinalizersTest {
                                                          .athrow())
                                     .switchCase(5, b -> b.goto_(externalLabel1))
                                     .switchCase(6, b -> b.goto_(externalLabel1))
-                                    .switchCase(7, b -> b.goto_(externalLabel2))
+                                    .switchCase(7, b -> b.iload(0)
+                                                         .ifeq(externalLabel2))
                                     .switchCase(8, b -> b.goto_(externalLabel2))
                                     .switchCase(9, b -> b.goto_(externalLabel1))
                                     .switchCase(10, b -> b.goto_(externalLabel1))
@@ -104,20 +104,24 @@ class BuilderFinalizersTest {
                 finb -> finb.nop()
                             .constantInstruction(42).ireturn(),
                 compactForm,
-                externalLabel1, externalLabel2);;
+                externalLabel1, externalLabel2);
         });
     }
 
-    @Test
-    public void testNoCatchingFinalizer() throws Throwable {
-        testFinalizers(1, 1, cob -> {
-            var externalLabel1 = cob.newBoundLabel();
-            cob.tryWithFinalizer(
-                tryb -> tryb.goto_(externalLabel1),
-                finb -> finb.nop()
-                            .constantInstruction(42).ireturn(),
-                false,
-                externalLabel1);;
-        });
+    private void testFinalizers(int cases, int nops, Consumer<CodeBuilder> gen) throws Throwable {
+        byte[] bytes = build(ClassDesc.of("TestFinalizer"), List.of(Option.patchDeadCode(false)), //fail when dead code is generated
+                clb -> clb.withFlags(ACC_PUBLIC)
+                          .withMethodBody("main", MethodTypeDesc.of(CD_int, CD_int), ACC_PUBLIC | ACC_STATIC, gen));
+        Files.write(Path.of("/Users/asotona/dev/TestFinalizer.class"), bytes);
+        var clm = parse(bytes);
+        assertEquals(List.of(), clm.verify(null));
+        //counting the finalizers
+        assertEquals(nops, (int)clm.methods().get(0).code().get().elementStream().filter(e -> e instanceof NopInstruction).count());
+        MethodHandles.Lookup lookup = MethodHandles.lookup().defineHiddenClass(bytes, true);
+        MethodHandle main = lookup.findStatic(lookup.lookupClass(), "main",
+                MethodType.methodType(Integer.TYPE, Integer.TYPE));
+        for (int i = 0; i < cases; i++) {
+            assertEquals(42, main.invoke(i));
+        }
     }
 }

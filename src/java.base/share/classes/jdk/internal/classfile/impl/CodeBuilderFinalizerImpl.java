@@ -44,7 +44,6 @@ public final class CodeBuilderFinalizerImpl {
                                           Label... externalLabels) {
 
         var mapping = new HashMap<Label, Label>(externalLabels.length + 1);
-        mapping.put(null, null); //placeholder for return finalizer
         for (var extLabel : externalLabels) {
             mapping.put(extLabel, null);
         }
@@ -56,45 +55,56 @@ public final class CodeBuilderFinalizerImpl {
         topBlock.transforming(
                 (cob, coe) -> {
                     switch (coe) {
-                        case BranchInstruction bi -> buildConditionally(
-                            mapping, bi.target(), cob, bi, compactForm,
-                            () -> {
-                                if ((excTable.size() & 1) != 0) excTable.add(cob.newBoundLabel()); //try block ends here
-                                if (bi.opcode().isUnconditionalBranch()) {
-                                    finalizerHandler.accept(cob); //unconditional branch finalizer
-                                    if (topBlock.reachable()) cob.with(bi);
-                                } else {
-                                    var bypass = cob.newLabel();
-                                    cob.branchInstruction(BytecodeHelpers.reverseBranchOpcode(bi.opcode()), bypass);
-                                    finalizerHandler.accept(cob); //conditional branch finalizer
-                                    if (topBlock.reachable()) {
-                                        cob.goto_(bi.target())
-                                           .labelBinding(bypass);
+                        case BranchInstruction bi -> {
+                            if (mapping.containsKey(bi.target())) { //call finalizer for this label
+                                mapping.compute(bi.target(), (l, finalizerLabel) -> {
+                                    if (finalizerLabel == null || !compactForm) { //finalizer not built yet
+                                        if (bi.opcode().isUnconditionalBranch()) {
+                                            finalizerLabel = cob.newBoundLabel();
+                                            if ((excTable.size() & 1) != 0) excTable.add(finalizerLabel); //try block ends here
+                                            finalizerHandler.accept(cob); //unconditional branch finalizer
+                                            if (topBlock.reachable()) cob.with(bi);
+                                        } else {
+                                            var bypass = cob.newLabel();
+                                            cob.branchInstruction(BytecodeHelpers.reverseBranchOpcode(bi.opcode()), bypass);
+                                            finalizerLabel = cob.newBoundLabel();
+                                            if ((excTable.size() & 1) != 0) excTable.add(finalizerLabel); //try block ends here
+                                            finalizerHandler.accept(cob); //conditional branch finalizer
+                                            if (topBlock.reachable()) cob.goto_(bi.target());
+                                            cob.labelBinding(bypass);
+                                        }
+                                    } else {
+                                        cob.branchInstruction(bi.opcode(), finalizerLabel);
                                     }
-
-                                }
-                            },
-                            finalizerLabel ->
-                                cob.branchInstruction(bi.opcode(), finalizerLabel));
-                        case ReturnInstruction ri -> buildConditionally(
-                            mapping, null, cob, ri, compactForm,
-                            () -> {
-                                if ((excTable.size() & 1) != 0) excTable.add(cob.newBoundLabel()); //try block ends here
-                                if (ri.typeKind() == TypeKind.VoidType) {
-                                    finalizerHandler.accept(cob); //void return finalizer
-                                    if (topBlock.reachable()) cob.with(ri);
-                                } else {
-                                    var retSlot = cob.allocateLocal(ri.typeKind());
-                                    cob.storeInstruction(ri.typeKind(), retSlot);
-                                    finalizerHandler.accept(cob); //non-void return finalizer
-                                    if (topBlock.reachable()) {
-                                        cob.loadInstruction(ri.typeKind(), retSlot)
-                                           .with(ri);
+                                    return finalizerLabel;
+                                });
+                            } else {
+                                cob.with(bi); //bypass without finalizer
+                            }
+                        }
+                        case ReturnInstruction ri -> {
+                            mapping.compute(null, (l, finalizerLabel) -> {
+                                if (finalizerLabel == null || !compactForm) { //finalizer not built yet
+                                    finalizerLabel = cob.newBoundLabel();
+                                    if ((excTable.size() & 1) != 0) excTable.add(finalizerLabel); //try block ends here
+                                    if (ri.typeKind() == TypeKind.VoidType) {
+                                        finalizerHandler.accept(cob); //void return finalizer
+                                        if (topBlock.reachable()) cob.with(ri);
+                                    } else {
+                                        var retSlot = cob.allocateLocal(ri.typeKind());
+                                        cob.storeInstruction(ri.typeKind(), retSlot);
+                                        finalizerHandler.accept(cob); //non-void return finalizer
+                                        if (topBlock.reachable()) {
+                                            cob.loadInstruction(ri.typeKind(), retSlot)
+                                               .with(ri);
+                                        }
                                     }
+                                } else {
+                                    cob.goto_(finalizerLabel);
                                 }
-                            },
-                            finalizerLabel ->
-                                cob.goto_(finalizerLabel));
+                                return finalizerLabel;
+                            });
+                        }
                         case Instruction i -> {
                             if ((excTable.size() & 1) == 0) excTable.add(cob.newBoundLabel()); //try block re-starts here
                             cob.with(coe);
@@ -128,28 +138,5 @@ public final class CodeBuilderFinalizerImpl {
         }
         topBlock.end();
         parent.labelBinding(endLabel);
-    }
-
-    //helper method to conditionally build finalizers for external labels
-    private static void buildConditionally(Map<Label, Label> mapping,
-                                           Label labelKey,
-                                           CodeBuilder cb,
-                                           Instruction originalInstruction,
-                                           boolean  compactForm,
-                                           Runnable firstFinalizerHandler,
-                                           Consumer<Label> subsequentFinalizersHandler) {
-        if (mapping.containsKey(labelKey)) { //call finalizer for this label
-            mapping.compute(labelKey, (l, finalizerLabel) -> {
-                if (finalizerLabel == null || !compactForm) { //finalizer not built yet
-                    finalizerLabel = cb.newBoundLabel();
-                    firstFinalizerHandler.run();
-                } else {
-                    subsequentFinalizersHandler.accept(finalizerLabel);
-                }
-                return finalizerLabel;
-            });
-        } else {
-            cb.with(originalInstruction); //bypass without finalizer
-        }
     }
 }
