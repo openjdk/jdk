@@ -230,9 +230,39 @@ public abstract class Collator
      * has the "{@code ks}" and/or the "{@code kk}"
      * <a href="https://www.unicode.org/reports/tr35/tr35-collation.html#Setting_Options">
      * Unicode collation settings</a>, the returned {@code Collator} instance
-     * will have the specified strength and/or decomposition respectively. If the specified
-     * setting value is not recognized, strength and/or decomposition will not be
-     * overridden.
+     * will have the specified strength and/or decomposition respectively. The following
+     * table describes the mappings between recognizable BCP47 values and their corresponding
+     * Collator constants.
+     * <table class="striped">
+     * <caption style="display:none">Strength/Decomposition mappings</caption>
+     * <thead>
+     * <tr><th scope="col">BCP 47 values for strength (ks)</th>
+     *     <th scope="col">Collator constants for strength</th></tr>
+     * </thead>
+     * <tbody>
+     * <tr><th scope="row" style="text-align:left">level1</th>
+     *     <td>PRIMARY</td></tr>
+     * <tr><th scope="row" style="text-align:left">level2</th>
+     *     <td>SECONDARY</td></tr>
+     * <tr><th scope="row" style="text-align:left">level3</th>
+     *     <td>TERTIARY</td></tr>
+     * <tr><th scope="row" style="text-align:left">identic</th>
+     *     <td>IDENTICAL</td></tr>
+     * </tbody>
+     * <thead>
+     * <tr><th scope="col">BCP 47 values for normalization (kk)</th>
+     *     <th scope="col">Collator constants for decomposition</th></tr>
+     * </thead>
+     * <tbody>
+     * <tr><th scope="row" style="text-align:left">true</th>
+     *     <td>CANONICAL_DECOMPOSITION</td></tr>
+     * <tr><th scope="row" style="text-align:left">false</th>
+     *     <td>NO_DECOMPOSITION</td></tr>
+     * </tbody>
+     * </table>
+     * If the specified setting value is not recognized, strength and/or
+     * decomposition will not be overridden.
+     *
      * @apiNote Implementations of {@code Collator} class may produce
      * different instances based on the "{@code co}"
      * <a href="https://www.unicode.org/reports/tr35/#UnicodeCollationIdentifier">
