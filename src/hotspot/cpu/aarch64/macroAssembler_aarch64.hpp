@@ -1393,12 +1393,14 @@ public:
   void char_array_compress(Register src, Register dst, Register len,
                            Register res,
                            FloatRegister vtmp0, FloatRegister vtmp1,
-                           FloatRegister vtmp2, FloatRegister vtmp3);
+                           FloatRegister vtmp2, FloatRegister vtmp3,
+                           FloatRegister vtmp4, FloatRegister vtmp5);
 
   void encode_iso_array(Register src, Register dst,
                         Register len, Register res, bool ascii,
                         FloatRegister vtmp0, FloatRegister vtmp1,
-                        FloatRegister vtmp2, FloatRegister vtmp3);
+                        FloatRegister vtmp2, FloatRegister vtmp3,
+                        FloatRegister vtmp4, FloatRegister vtmp5);
 
   void fast_log(FloatRegister vtmp0, FloatRegister vtmp1, FloatRegister vtmp2,
                 FloatRegister vtmp3, FloatRegister vtmp4, FloatRegister vtmp5,
@@ -1579,6 +1581,9 @@ public:
 
   // Code for java.lang.Thread::onSpinWait() intrinsic.
   void spin_wait();
+
+  void fast_lock(Register obj, Register hdr, Register t1, Register t2, Label& slow);
+  void fast_unlock(Register obj, Register hdr, Register t1, Register t2, Label& slow);
 
 private:
   // Check the current thread doesn't need a cross modify fence.

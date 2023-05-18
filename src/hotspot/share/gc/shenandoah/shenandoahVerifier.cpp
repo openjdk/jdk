@@ -520,7 +520,7 @@ public:
                                   _options);
 
     while (true) {
-      size_t v = Atomic::fetch_and_add(&_claimed, 1u, memory_order_relaxed);
+      size_t v = Atomic::fetch_then_add(&_claimed, 1u, memory_order_relaxed);
       if (v < _heap->num_regions()) {
         ShenandoahHeapRegion* r = _heap->get_region(v);
         if (!r->is_humongous() && !r->is_trash()) {

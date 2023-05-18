@@ -11441,7 +11441,7 @@ instruct cmpL3_reg_reg(iRegIdst dst, iRegLsrc src1, iRegLsrc src2, flagsRegCR0 c
   match(Set dst (CmpL3 src1 src2));
   effect(KILL cr0);
   ins_cost(DEFAULT_COST * 5);
-  size(VM_Version::has_brw() ? 16 : 20);
+  size((VM_Version::has_brw() ? 16 : 20));
 
   format %{ "cmpL3_reg_reg $dst, $src1, $src2" %}
 
@@ -11776,7 +11776,7 @@ instruct cmpF3_reg_reg(iRegIdst dst, regF src1, regF src2, flagsRegCR0 cr0) %{
   match(Set dst (CmpF3 src1 src2));
   effect(KILL cr0);
   ins_cost(DEFAULT_COST * 6);
-  size(VM_Version::has_brw() ? 20 : 24);
+  size((VM_Version::has_brw() ? 20 : 24));
 
   format %{ "cmpF3_reg_reg $dst, $src1, $src2" %}
 
@@ -11860,7 +11860,7 @@ instruct cmpD3_reg_reg(iRegIdst dst, regD src1, regD src2, flagsRegCR0 cr0) %{
   match(Set dst (CmpD3 src1 src2));
   effect(KILL cr0);
   ins_cost(DEFAULT_COST * 6);
-  size(VM_Version::has_brw() ? 20 : 24);
+  size((VM_Version::has_brw() ? 20 : 24));
 
   format %{ "cmpD3_reg_reg $dst, $src1, $src2" %}
 
@@ -14403,7 +14403,7 @@ instruct CallStaticJavaDirect(method meth) %{
   ins_num_consts(3 /* up to 3 patchable constants: inline cache, 2 call targets. */);
 
   format %{ "CALL,static $meth \t// ==> " %}
-  size(Continuations::enabled() ? 8 : 4);
+  size((Continuations::enabled() ? 8 : 4));
   ins_encode( enc_java_static_call(meth) );
   ins_pipe(pipe_class_call);
 %}
@@ -14424,7 +14424,7 @@ instruct CallDynamicJavaDirectSched(method meth) %{
   ins_num_consts(1 /* 1 patchable constant: call destination */);
 
   format %{ "BL        \t// dynamic $meth ==> " %}
-  size(Continuations::enabled() ? 8 : 4);
+  size((Continuations::enabled() ? 8 : 4));
   ins_encode( enc_java_dynamic_call_sched(meth) );
   ins_pipe(pipe_class_call);
 %}
@@ -14502,7 +14502,7 @@ instruct CallLeafDirect(method meth) %{
   predicate(false);  // but never match.
 
   format %{ "BCTRL     \t// leaf call $meth ==> " %}
-  size(Continuations::enabled() ? 8 : 4);
+  size((Continuations::enabled() ? 8 : 4));
   ins_encode %{
     __ bctrl();
     __ post_call_nop();
