@@ -127,7 +127,7 @@ class Http1Response<T> {
             this.debug = logger;
         }
 
-        public  boolean acquire() {
+        public boolean acquire() {
             if (STATE.compareAndSet(this, (byte)0, (byte)0x01)) {
                 // increment the reference count on the HttpClientImpl
                 // to prevent the SelectorManager thread from exiting
