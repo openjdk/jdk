@@ -119,15 +119,15 @@ public class TestIllegalLink extends NativeTestHelper {
             },
             {
                     FunctionDescriptor.ofVoid(C_INT.withByteAlignment(2)),
-                    "Layout bit alignment must be natural alignment"
+                    "Layout alignment must be natural alignment"
             },
             {
                     FunctionDescriptor.ofVoid(C_POINTER.withByteAlignment(2)),
-                    "Layout bit alignment must be natural alignment"
+                    "Layout alignment must be natural alignment"
             },
             {
                     FunctionDescriptor.ofVoid(ValueLayout.JAVA_CHAR.withByteAlignment(4)),
-                    "Layout bit alignment must be natural alignment"
+                    "Layout alignment must be natural alignment"
             },
             {
                     FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
@@ -135,7 +135,7 @@ public class TestIllegalLink extends NativeTestHelper {
                             C_SHORT.withName("y").withByteAlignment(1),
                             C_INT.withName("z").withByteAlignment(1)
                             ).withByteAlignment(1)),
-                    "Layout bit alignment must be natural alignment"
+                    "Layout alignment must be natural alignment"
             },
             {
                     FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
@@ -144,14 +144,14 @@ public class TestIllegalLink extends NativeTestHelper {
                                 C_SHORT.withName("y").withByteAlignment(1),
                                 C_INT.withName("z").withByteAlignment(1)
                             ))),
-                    "Layout bit alignment must be natural alignment"
+                    "Layout alignment must be natural alignment"
             },
             {
                     FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
                             MemoryLayout.sequenceLayout(
                                 C_INT.withByteAlignment(1)
                             ))),
-                    "Layout bit alignment must be natural alignment"
+                    "Layout alignment must be natural alignment"
             },
             {
                     FunctionDescriptor.ofVoid(MemoryLayout.structLayout(

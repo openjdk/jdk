@@ -47,12 +47,6 @@ import static org.testng.Assert.*;
 public class TestLayoutPaths {
 
     @Test(expectedExceptions = IllegalArgumentException.class)
-    public void testBadBitSelectFromSeq() {
-        SequenceLayout seq = MemoryLayout.sequenceLayout(5, JAVA_INT);
-        seq.byteOffset(groupElement("foo"));
-    }
-
-    @Test(expectedExceptions = IllegalArgumentException.class)
     public void testBadByteSelectFromSeq() {
         SequenceLayout seq = MemoryLayout.sequenceLayout(5, JAVA_INT);
         seq.byteOffset(groupElement("foo"));
