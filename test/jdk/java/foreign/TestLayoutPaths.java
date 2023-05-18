@@ -242,8 +242,8 @@ public class TestLayoutPaths {
                                  long expectedByteOffset) throws Throwable {
         MethodHandle byteOffsetHandle = layout.byteOffsetHandle(pathElements);
         byteOffsetHandle = byteOffsetHandle.asSpreader(long[].class, indexes.length);
-        long actualBitOffset = (long) byteOffsetHandle.invokeExact(indexes);
-        assertEquals(actualBitOffset, expectedByteOffset);
+        long actualByteOffset = (long) byteOffsetHandle.invokeExact(indexes);
+        assertEquals(actualByteOffset, expectedByteOffset);
     }
 
     @DataProvider
