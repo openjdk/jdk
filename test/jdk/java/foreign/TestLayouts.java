@@ -283,7 +283,7 @@ public class TestLayouts {
     }
 
     @Test(dataProvider="layoutsAndAlignments")
-    public void testBadBitAlignment(MemoryLayout layout, long byteAlign) {
+    public void testBadByteAlignment(MemoryLayout layout, long byteAlign) {
         long[] alignments = { 1, 2, 4, 8, 16 };
         for (long a : alignments) {
             if (a < byteAlign && !(layout instanceof ValueLayout)) {
