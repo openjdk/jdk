@@ -47,7 +47,6 @@
 #define PRAGMA_INFINITE_RECURSION_IGNORED PRAGMA_DISABLE_GCC_WARNING("-Winfinite-recursion")
 #endif
 
-
 #define PRAGMA_FORMAT_NONLITERAL_IGNORED                \
   PRAGMA_DISABLE_GCC_WARNING("-Wformat-nonliteral")     \
   PRAGMA_DISABLE_GCC_WARNING("-Wformat-security")
