@@ -80,6 +80,7 @@ id="toc-getting-jdk-binaries">Getting JDK binaries</a></li>
 id="toc-external-library-requirements">External Library Requirements</a>
 <ul>
 <li><a href="#freetype" id="toc-freetype">FreeType</a></li>
+<li><a href="#fontconfig" id="toc-fontconfig">Fontconfig</a></li>
 <li><a href="#cups" id="toc-cups">CUPS</a></li>
 <li><a href="#x11" id="toc-x11">X11</a></li>
 <li><a href="#alsa" id="toc-alsa">ALSA</a></li>
@@ -677,6 +678,17 @@ copy.</p>
 <p>Use <code>--with-freetype-include=&lt;path&gt;</code> and
 <code>--with-freetype-lib=&lt;path&gt;</code> if <code>configure</code>
 does not automatically locate the platform FreeType files.</p>
+<h3 id="fontconfig">Fontconfig</h3>
+<p>Fontconfig from <a href="http://fontconfig.org">freedesktop.org
+Fontconfig</a> is required on all platforms except Windows and
+macOS.</p>
+<ul>
+<li>To install on an rpm-based Linux, try running
+<code>sudo yum install     fontconfig-devel</code>.</li>
+</ul>
+<p>Use <code>--with-fontconfig-include=&lt;path&gt;</code> and
+<code>--with-fontconfig=&lt;path&gt;</code> if <code>configure</code>
+does not automatically locate the platform Fontconfig files.</p>
 <h3 id="cups">CUPS</h3>
 <p>CUPS, <a href="http://www.cups.org">Common UNIX Printing System</a>
 header files are required on all platforms, except Windows. Often these

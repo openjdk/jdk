@@ -487,7 +487,7 @@ static pid_t
 spawnChild(JNIEnv *env, jobject process, ChildStuff *c, const char *helperpath) {
     pid_t resultPid;
     int i, offset, rval, bufsize, magic;
-    char *buf, buf1[16];
+    char *buf, buf1[(2 * 11) + 2]; // "%d:%d\0"
     char *hlpargs[2];
     SpawnInfo sp;
 
