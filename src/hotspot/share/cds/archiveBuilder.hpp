@@ -135,7 +135,13 @@ private:
     SourceObjInfo(MetaspaceClosure::Ref* ref, bool read_only, FollowMode follow_mode) :
       _ptrmap_start(0), _ptrmap_end(0), _read_only(read_only), _follow_mode(follow_mode),
       _size_in_bytes(ref->size() * BytesPerWord), _msotype(ref->msotype()),
-      _source_addr(ref->obj()), _buffered_addr(nullptr) {}
+      _source_addr(ref->obj()) {
+      if (follow_mode == point_to_it) {
+        _buffered_addr = ref->obj();
+      } else {
+        _buffered_addr = nullptr;
+      }
+    }
 
     bool should_copy() const { return _follow_mode == make_a_copy; }
     void set_buffered_addr(address addr)  {
@@ -152,7 +158,7 @@ private:
     int size_in_bytes()   const    { return _size_in_bytes; }
     address source_addr() const    { return _source_addr; }
     address buffered_addr() const  {
-      if (should_copy()) {
+      if (_follow_mode != set_to_null) {
         assert(_buffered_addr != nullptr, "must be initialized");
       }
       return _buffered_addr;
