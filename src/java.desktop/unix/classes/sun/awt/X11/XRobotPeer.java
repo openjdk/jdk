@@ -140,13 +140,6 @@ final class XRobotPeer implements RobotPeer {
         return pixelArray;
     }
 
-    @Override
-    public void resetScreenCapturePermission() {
-        if (useScreencast && ScreencastHelper.isAvailable()) {
-            ScreencastHelper.resetToken();
-        }
-    }
-
     private static synchronized native void setup(int numberOfButtons, int[] buttonDownMasks);
     private static native void loadNativeLibraries();
 

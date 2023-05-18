@@ -98,6 +98,8 @@ gboolean rebuildScreenData(GVariantIter *iterStreams, gboolean isTheOnlyMon) {
         }
 
         struct ScreenProps * screen = &screenSpace.screens[screenIndex];
+        memset(screen, 0, sizeof(struct ScreenProps));
+
         screenSpace.screenCount = screenIndex + 1;
 
         screen->id = nodeID;
@@ -576,38 +578,20 @@ static void callbackScreenCastStart(
         void *data
 ) {
     struct DBusCallbackHelper *helper = data;
+    struct StartHelper *startHelper = helper->data;
 
     uint32_t status;
     GVariant* result = NULL;
-    const gchar *oldToken = (const gchar *) helper->data;
+    const gchar *oldToken = startHelper->token;
 
     gtk->g_variant_get(parameters, "(u@a{sv})", &status, &result);
 
     if (status != 0) {
+        // Cancel pressed on the system dialog
         DEBUG_SCREENCAST("Failed to start screencast: %u\n", status);
-        helper->data = (void *) START_DENIED;
+        startHelper->result = START_DENIED;
         helper->isDone = TRUE;
         return;
-    }
-
-    GVariant *restoreTokenVar = gtk->g_variant_lookup_value(
-            result,
-            "restore_token",
-            G_VARIANT_TYPE_STRING
-    );
-
-    if (restoreTokenVar) {
-        gsize len;
-        const gchar * newToken = gtk->g_variant_get_string(restoreTokenVar, &len);
-        DEBUG_SCREENCAST("restore_token |%s|\n", newToken);
-
-        if (!oldToken || (strcmp(newToken, oldToken) != 0)) {
-            DEBUG_SCREENCAST("restore_token changed |%s| > |%s|\n",
-                             oldToken, newToken);
-            storeRestoreToken(newToken);
-        }
-
-        gtk->g_variant_unref(restoreTokenVar);
     }
 
     GVariant *streams = gtk->g_variant_lookup_value(
@@ -626,12 +610,30 @@ static void callbackScreenCastStart(
 
     DEBUG_SCREENCAST("available screen count %i\n", count);
 
-    helper->data = (rebuildScreenData(&iter, count == 1))
-                   ? (void *) START_OK
-                   : (void *) -1;
+    startHelper->result = (rebuildScreenData(&iter, count == 1))
+                   ? START_OK
+                   : -1;
 
-    DEBUG_SCREENCAST("rebuildScreenData result |%i|\n",
-                     helper->data);
+    DEBUG_SCREENCAST("rebuildScreenData result |%i|\n", startHelper->result);
+
+    if (startHelper->result == START_OK) {
+        GVariant *restoreTokenVar = gtk->g_variant_lookup_value(
+                result,
+                "restore_token",
+                G_VARIANT_TYPE_STRING
+        );
+
+        if (restoreTokenVar) {
+            gsize len;
+            const gchar *newToken = gtk->
+                    g_variant_get_string(restoreTokenVar, &len);
+            DEBUG_SCREENCAST("restore_token |%s|\n", newToken);
+
+            storeRestoreToken(oldToken, newToken);
+
+            gtk->g_variant_unref(restoreTokenVar);
+        }
+    }
 
     helper->isDone = TRUE;
 
@@ -646,8 +648,11 @@ ScreenCastStartResult portalScreenCastStart(const gchar *token) {
     gchar *requestPath = NULL;
     gchar *requestToken = NULL;
 
+    struct StartHelper startHelper = { 0 };
+    startHelper.token = token;
+
     struct DBusCallbackHelper helper = { 0 };
-    helper.data = (void *) token;
+    helper.data = &startHelper;
 
     updateRequestPath(
             &requestPath,
@@ -701,9 +706,9 @@ ScreenCastStartResult portalScreenCastStart(const gchar *token) {
     free(requestPath);
     free(requestToken);
 
-    DEBUG_SCREENCAST("ScreenCastStartResult |%i|\n",
-                     (ScreenCastStartResult) helper.data);
-    return (ScreenCastStartResult) helper.data;
+    DEBUG_SCREENCAST("ScreenCastStartResult |%i|\n", startHelper.result);
+
+    return startHelper.result;
 }
 
 int portalScreenCastOpenPipewireRemote() {
@@ -813,12 +818,60 @@ void portalScreenCastCleanup() {
     portal = NULL;
 }
 
+gboolean rectanglesEqual(GdkRectangle rect1, GdkRectangle rect2) {
+    return rect1.x == rect2.x
+           && rect1.y == rect2.y
+           && rect1.width == rect2.width
+           && rect1.height == rect2.height;
+}
+
+gboolean checkCanCaptureAllRequiredScreens(GdkRectangle *affectedBounds,
+                        gint affectedBoundsLength) {
+
+
+    if (affectedBoundsLength > screenSpace.screenCount) {
+        DEBUG_SCREENCAST("Requested screen count is greater "
+                         "than allowed with token (%i > %i)\n",
+                         affectedBoundsLength, screenSpace.screenCount);
+        return false;
+    }
+
+
+    for (int i = 0; i < affectedBoundsLength; ++i) {
+        gboolean found = false;
+        GdkRectangle affBounds = affectedBounds[i];
+        for (int j = 0; j < screenSpace.screenCount; ++j) {
+            GdkRectangle allowedBounds = screenSpace.screens[j].bounds;
+
+            if (rectanglesEqual(allowedBounds, affBounds)) {
+                DEBUG_SCREENCAST("Found allowed screen bounds in affected "
+                                 "screen bounds %i %i %i %i\n",
+                                 affBounds.x, affBounds.y,
+                                 affBounds.width, affBounds.height);
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            DEBUG_SCREENCAST("Could not find required screen %i %i %i %i "
+                             "in allowed bounds\n",
+                             affBounds.x, affBounds.y,
+                             affBounds.width, affBounds.height);
+            return false;
+        }
+    }
+
+    return true;
+}
+
 
 /**
  * @return negative values on error,
  * -1 for generic error, or enum value of ScreenCastStartResult for specific failure
  */
-int getPipewireFd(const gchar *token) {
+int getPipewireFd(const gchar *token,
+                  GdkRectangle *affectedBounds,
+                  gint affectedBoundsLength) {
     if (!portalScreenCastCreateSession())  {
         DEBUG_SCREENCAST("Failed to create ScreenCast session\n", NULL);
         return -1;
@@ -832,8 +885,16 @@ int getPipewireFd(const gchar *token) {
     ScreenCastStartResult startResult = portalScreenCastStart(token);
     DEBUG_SCREENCAST("portalScreenCastStart result |%i|\n", startResult);
     if (startResult != START_OK) {
-        DEBUG_SCREENCAST("Failed to get pipewire node\n", NULL);
+        DEBUG_SCREENCAST("Failed to start\n", NULL);
         return startResult;
+    } else {
+        if (!checkCanCaptureAllRequiredScreens(affectedBounds,
+                                               affectedBoundsLength)) {
+            DEBUG_SCREENCAST("The location of the screens has changed, "
+                             "the capture area is outside the allowed "
+                             "area.\n", NULL)
+            return START_DENIED;
+        }
     }
 
     DEBUG_SCREENCAST("--- portalScreenCastStart\n", NULL);

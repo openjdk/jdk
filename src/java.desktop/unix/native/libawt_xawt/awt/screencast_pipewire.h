@@ -39,7 +39,7 @@
 #include <spa/param/video/format-utils.h>
 #include <spa/debug/types.h>
 
-void storeRestoreToken(const gchar* token);
+void storeRestoreToken(const gchar* oldToken, const gchar* newToken);
 
 struct ScreenProps {
     guint32 id;

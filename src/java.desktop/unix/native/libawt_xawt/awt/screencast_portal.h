@@ -38,7 +38,9 @@
 
 void debug_screencast(const char *__restrict fmt, ...);
 
-int getPipewireFd();
+int getPipewireFd(const gchar *token,
+                  GdkRectangle *affectedBounds,
+                  gint affectedBoundsLength);
 
 void portalScreenCastCleanup();
 
@@ -63,5 +65,10 @@ typedef enum {
     START_OK = 0,
     START_DENIED = -11,
 } ScreenCastStartResult;
+
+struct StartHelper {
+    const gchar *token;
+    ScreenCastStartResult result;
+};
 
 #endif //_SCREENCAST_PORTAL_H

@@ -29,7 +29,6 @@
 
 #include <dlfcn.h>
 #include "jni_util.h"
-#include "awt_p.h"
 #include "awt.h"
 #include "screencast_pipewire.h"
 #include "fp_pipewire.h"
@@ -40,11 +39,15 @@
 
 int DEBUG_SCREENCAST_ENABLED = FALSE;
 
+#define EXCEPTION_CHECK_DESCRIBE_CLEAR() if ((*env)->ExceptionCheck(env)) { \
+                                            (*env)->ExceptionDescribe(env); \
+                                            (*env)->ExceptionClear(env);    \
+                                         }
+
 struct ScreenSpace screenSpace = {0};
 static struct PwLoopData pw = {0};
 
-extern JavaVM *jvm;
-jclass screencastHelperClass = NULL;
+jclass tokenStorageClass = NULL;
 jmethodID storeTokenMethodID = NULL;
 
 inline void debug_screencast(
@@ -120,14 +123,18 @@ static void doCleanup() {
 /**
  * @return TRUE on success
  */
-static gboolean initScreencast(const gchar *token) {
+static gboolean initScreencast(const gchar *token,
+                               GdkRectangle *affectedBounds,
+                               gint affectedBoundsLength) {
     fp_pw_init(NULL, NULL);
 
     pw.pwFd = -1;
 
     if (!initScreenSpace()
         || !initXdgDesktopPortal()
-        || (pw.pwFd = getPipewireFd(token)) < 0) {
+        || (pw.pwFd = getPipewireFd(token,
+                                    affectedBounds,
+                                    affectedBoundsLength)) < 0) {
         doCleanup();
         return FALSE;
     }
@@ -640,24 +647,70 @@ static gboolean loadSymbols() {
     return FALSE;
 }
 
-void storeRestoreToken(const gchar* token) {
+void storeRestoreToken(const gchar* oldToken, const gchar* newToken) {
+
     JNIEnv* env = (JNIEnv *) JNU_GetEnv(jvm, JNI_VERSION_1_2);
-    DEBUG_SCREENCAST("saving token %s\n", token);
+    DEBUG_SCREENCAST("saving token, old: |%s| > new: |%s|\n", oldToken, newToken);
     if (env) {
-        jstring jtoken = (*env)->NewStringUTF(env, token);
-        if ((*env)->ExceptionCheck(env)) {
-            (*env)->ExceptionClear(env);
+        jstring jOldToken = NULL;
+        if (oldToken) {
+            jOldToken = (*env)->NewStringUTF(env, oldToken);
+            EXCEPTION_CHECK_DESCRIBE_CLEAR();
+            if (!jOldToken) {
+                return;
+            }
         }
-        if (!jtoken) {
+        jstring jNewToken = (*env)->NewStringUTF(env, newToken);
+        EXCEPTION_CHECK_DESCRIBE_CLEAR();
+        if (!jNewToken) {
+            (*env)->DeleteLocalRef(env, jOldToken);
             return;
         }
-        (*env)->CallStaticVoidMethod(env, screencastHelperClass,
-                                     storeTokenMethodID, jtoken);
-        if ((*env)->ExceptionCheck(env)) {
-            (*env)->ExceptionClear(env);
-        }
 
-        (*env)->DeleteLocalRef(env, jtoken);
+        jintArray allowedBounds = NULL;
+        if (screenSpace.screenCount > 0) {
+            allowedBounds = (*env)->NewIntArray(env, screenSpace.screenCount*4);
+            EXCEPTION_CHECK_DESCRIBE_CLEAR();
+            if (!allowedBounds) {
+                (*env)->ExceptionClear(env);
+                return;
+            }
+            jint* elements = (*env)->GetIntArrayElements(env, allowedBounds, NULL);
+            EXCEPTION_CHECK_DESCRIBE_CLEAR();
+            if (!elements) {
+                return;
+            }
+
+            gboolean failed = false;
+
+            for (int i = 0; i < screenSpace.screenCount; ++i) {
+                GdkRectangle bounds = screenSpace.screens[i].bounds;
+                elements[4 * i] = bounds.x;
+                elements[4 * i + 1] = bounds.y;
+                elements[4 * i + 2] = bounds.width;
+                elements[4 * i + 3] = bounds.height;
+
+                if ((*env)->ExceptionCheck(env)) {
+                    (*env)->ExceptionDescribe(env);
+                    (*env)->ExceptionClear(env);
+                    failed = true;
+                    break;
+                }
+            }
+
+            (*env)->ReleaseIntArrayElements(env, allowedBounds, elements, 0);
+            EXCEPTION_CHECK_DESCRIBE_CLEAR();
+
+            if (!failed) {
+                (*env)->CallStaticVoidMethod(env, tokenStorageClass,
+                                             storeTokenMethodID,
+                                             jOldToken, jNewToken,
+                                             allowedBounds);
+                EXCEPTION_CHECK_DESCRIBE_CLEAR();
+            }
+        }
+        (*env)->DeleteLocalRef(env, jOldToken);
+        (*env)->DeleteLocalRef(env, jNewToken);
     } else {
         DEBUG_SCREENCAST("⚠ Could not get env\n", NULL);
     }
@@ -674,19 +727,30 @@ JNIEXPORT jboolean JNICALL Java_sun_awt_screencast_ScreencastHelper_loadPipewire
     DEBUG_SCREENCAST_ENABLED = screencastDebug;
 
     if (!loadSymbols()) {
-        return FALSE;
+        return JNI_FALSE;
     }
-    screencastHelperClass = (*env)->NewGlobalRef(env, cls);
-    if (screencastHelperClass) {
+
+    tokenStorageClass = (*env)->FindClass(env, "sun/awt/screencast/TokenStorage");
+    if (!tokenStorageClass) {
+        return JNI_FALSE;
+    }
+
+    tokenStorageClass = (*env)->NewGlobalRef(env, tokenStorageClass);
+
+    if (tokenStorageClass) {
         storeTokenMethodID = (*env)->GetStaticMethodID(
                 env,
-                screencastHelperClass,
-                "storeToken",
-                "(Ljava/lang/String;)V"
+                tokenStorageClass,
+                "storeTokenFromNative",
+                "(Ljava/lang/String;Ljava/lang/String;[I)V"
                 );
+        if (!storeTokenMethodID) {
+            return JNI_FALSE;
+        }
     } else {
-        DEBUG_SCREENCAST("⚠ @@@ screencastHelperClass %p\n",
-                         screencastHelperClass);
+        DEBUG_SCREENCAST("⚠ @@@ tokenStorageClass %p\n",
+                         tokenStorageClass);
+        return JNI_FALSE;
     }
 
     gboolean usable = initXdgDesktopPortal();
@@ -700,10 +764,36 @@ static void releaseToken(JNIEnv *env, jstring jtoken, const gchar *token) {
     }
 }
 
+static void arrayToRectangles(JNIEnv *env,
+                             jintArray boundsArray,
+                             jint boundsLen,
+                             GdkRectangle *out
+) {
+    if (!boundsArray) {
+        return;
+    }
+
+    jint * body = (*env)->GetIntArrayElements(env, boundsArray, 0);
+    EXCEPTION_CHECK_DESCRIBE_CLEAR();
+    if (!body) {
+        return;
+    }
+
+    for (int i = 0; i < boundsLen; i += 4) {
+        GdkRectangle screenBounds = {
+                body[i], body[i + 1],
+                body[i + 2], body[i + 3]
+        };
+        out[i / 4] = screenBounds;
+    }
+
+    (*env)->ReleaseIntArrayElements(env, boundsArray, body, 0);
+}
+
 /*
  * Class:     sun_awt_screencast_ScreencastHelper
  * Method:    getRGBPixelsImpl
- * Signature: (IIII[ILjava/lang/String;)I
+ * Signature: (IIII[I[ILjava/lang/String;)I
  */
 JNIEXPORT jint JNICALL Java_sun_awt_screencast_ScreencastHelper_getRGBPixelsImpl(
         JNIEnv *env,
@@ -713,8 +803,26 @@ JNIEXPORT jint JNICALL Java_sun_awt_screencast_ScreencastHelper_getRGBPixelsImpl
         jint jwidth,
         jint jheight,
         jintArray pixelArray,
+        jintArray affectedScreensBoundsArray,
         jstring jtoken
 ) {
+    jsize boundsLen = 0;
+    gint affectedBoundsLength = 0;
+    if (affectedScreensBoundsArray) {
+        boundsLen = (*env)->GetArrayLength(env, affectedScreensBoundsArray);
+        EXCEPTION_CHECK_DESCRIBE_CLEAR();
+        if (boundsLen % 4 != 0) {
+            DEBUG_SCREENCAST("%s:%i incorrect array length\n", __FUNCTION__, __LINE__);
+            return -1;
+        }
+        affectedBoundsLength = boundsLen / 4;
+    }
+
+    GdkRectangle affectedScreenBounds[affectedBoundsLength];
+    arrayToRectangles(env,
+                     affectedScreensBoundsArray,
+                     boundsLen,
+                     (GdkRectangle *) &affectedScreenBounds);
 
     GdkRectangle requestedArea = { jx, jy, jwidth, jheight};
 
@@ -723,11 +831,11 @@ JNIEXPORT jint JNICALL Java_sun_awt_screencast_ScreencastHelper_getRGBPixelsImpl
                          : NULL;
 
     DEBUG_SCREENCAST(
-            "taking screenshot at \n\tx: %5i y %5i w %5i h %5i token |%s|\n",
+            "taking screenshot at \n\tx: %5i y %5i w %5i h %5i with token |%s|\n",
             jx, jy, jwidth, jheight, token
     );
 
-    if (!initScreencast(token)) {
+    if (!initScreencast(token, affectedScreenBounds, affectedBoundsLength)) {
         releaseToken(env, jtoken, token);
         if (pw.pwFd == START_DENIED) {
             return START_DENIED;
@@ -735,6 +843,7 @@ JNIEXPORT jint JNICALL Java_sun_awt_screencast_ScreencastHelper_getRGBPixelsImpl
             return -1;
         }
     }
+
     if (!doLoop(requestedArea)) {
         releaseToken(env, jtoken, token);
         return -1;
