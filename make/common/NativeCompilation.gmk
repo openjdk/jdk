@@ -1190,7 +1190,7 @@ define SetupNativeCompilationBody
       $1_TARGET_RELOCATABLE := $$($1_OBJECT_DIR)/$$($1_PREFIX)$$($1_NAME)_relocatable$(OBJ_SUFFIX)
       $1_AR_OBJ_ARG := $$($1_TARGET_RELOCATABLE)
     else
-      $1_AR_OBJ_ARG := $1_LD_OBJ_ARG
+      $1_AR_OBJ_ARG := $$($1_LD_OBJ_ARG)
     endif
 
     $$($1_TARGET): $$($1_TARGET_DEPS)
