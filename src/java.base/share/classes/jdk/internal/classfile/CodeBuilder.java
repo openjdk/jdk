@@ -51,6 +51,7 @@ import jdk.internal.classfile.impl.BlockCodeBuilderImpl;
 import jdk.internal.classfile.impl.BytecodeHelpers;
 import jdk.internal.classfile.impl.CatchBuilderImpl;
 import jdk.internal.classfile.impl.ChainedCodeBuilder;
+import jdk.internal.classfile.impl.CodeBuilderFinalizerImpl;
 import jdk.internal.classfile.impl.LabelImpl;
 import jdk.internal.classfile.impl.NonterminalCodeBuilder;
 import jdk.internal.classfile.impl.SwitchBuilderImpl;
@@ -1435,96 +1436,14 @@ public sealed interface CodeBuilder
         });
     }
 
-    default CodeBuilder tryWithFinalizer(Consumer<CodeBuilder> switchHandler,
+    default CodeBuilder tryWithFinalizer(Consumer<CodeBuilder> tryHandler,
                                          Consumer<CodeBuilder> finalizerHandler,
                                          Label... externalLabels) {
 
-        var mapping = new HashMap<Label, Label>(externalLabels.length + 1) {
-            //helper method to conditionally build finalizers for external labels
-            void buildConditionally(Label labelKey,
-                                    CodeBuilder cb,
-                                    Instruction originalInstruction,
-                                    Runnable customFinalizerBuilder) {
-                if (containsKey(labelKey)) { //call finalizer for this label
-                    compute(labelKey, (l, finalizerLabel) -> {
-                        if (finalizerLabel == null) { //finalizer not built yet
-                            finalizerLabel = cb.newBoundLabel();
-                            customFinalizerBuilder.run();
-                        } else {
-                            cb.goto_(finalizerLabel); //compaction of subsequent finalizer calls
-                        }
-                        return finalizerLabel;
-                    });
-                } else {
-                    cb.with(originalInstruction); //bypass without finalizer
-                }
-            }
-        };
-        mapping.put(null, null); //placeholder for return finalizer
-        for (var extLabel : externalLabels) {
-            mapping.put(extLabel, null);
-        }
-
-        BlockCodeBuilderImpl topBlock = new BlockCodeBuilderImpl(this, newLabel());
-        topBlock.start();
-        topBlock.transforming(
-                (cob, coe) -> {
-                    switch (coe) {
-                        case BranchInstruction bi -> mapping.buildConditionally(
-                            bi.target(), cob, bi,
-                            () -> {
-                                if (bi.opcode().isUnconditionalBranch()) {
-                                    finalizerHandler.accept(cob); //unconditional branch finalizer
-                                    if (topBlock.reachable()) cob.with(bi);
-                                } else {
-                                    var bypass = cob.newLabel();
-                                    cob.branchInstruction(BytecodeHelpers.reverseBranchOpcode(bi.opcode()), bypass);
-                                    finalizerHandler.accept(cob); //conditional branch finalizer
-                                    if (topBlock.reachable()) {
-                                        cob.goto_(bi.target())
-                                           .labelBinding(bypass);
-                                    }
-
-                                }
-                            });
-                        case ReturnInstruction ri -> mapping.buildConditionally(
-                            null, cob, ri,
-                            () -> {
-                                if (ri.typeKind() == TypeKind.VoidType) {
-                                    finalizerHandler.accept(cob); //void return finalizer
-                                    if (topBlock.reachable()) cob.with(ri);
-                                } else {
-                                    var retSlot = cob.allocateLocal(ri.typeKind());
-                                    cob.storeInstruction(ri.typeKind(), retSlot);
-                                    finalizerHandler.accept(cob); //non-void return finalizer
-                                    if (topBlock.reachable()) {
-                                        cob.loadInstruction(ri.typeKind(), retSlot)
-                                           .with(ri);
-                                    }
-                                }
-                            });
-                        default -> cob.with(coe);
-                    }
-                },
-                switchHandler::accept);
-        if (topBlock.isEmpty()) {
-            throw new IllegalStateException("The body of the try block is empty");
-        }
-        var tryEnd = newBoundLabel();
-        var fallthrough = newLabel();
-        if (topBlock.reachable()) {
-            finalizerHandler.accept(topBlock); //pass-through finalizer
-            goto_(topBlock.endLabel());
-        }
-        exceptionCatchAll(topBlock.startLabel(), tryEnd, newBoundLabel());
-        var excSlot = topBlock.allocateLocal(TypeKind.ReferenceType);
-        astore(excSlot);
-        finalizerHandler.accept(this); //exception handler finalizer
-        if (topBlock.reachable()) {
-            aload(excSlot);
-            athrow();
-        }
-        topBlock.end();
+        CodeBuilderFinalizerImpl.buildWithFinalizer(this,
+                                                    tryHandler,
+                                                    finalizerHandler,
+                                                    externalLabels);
         return this;
     }
 }
