@@ -40,7 +40,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class CollationSettingsTests {
-    private static final Collator ENG_DEF =  Collator.getInstance(Locale.ENGLISH);
+    private static final Collator ENG_DEF = Collator.getInstance(Locale.ENGLISH);
 
     private static Stream<Arguments> strengthData() {
         return Stream.of(
