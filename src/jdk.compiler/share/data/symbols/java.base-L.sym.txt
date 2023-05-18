@@ -127,15 +127,15 @@ innerclass innerClass java/io/ObjectOutputStream$PutField outerClass java/io/Obj
 innerclass innerClass java/io/ObjectInputStream$GetField outerClass java/io/ObjectInputStream innerClassName GetField flags 409
 method name repeat descriptor (II)Ljava/lang/StringBuffer; flags 21
 method name repeat descriptor (Ljava/lang/CharSequence;I)Ljava/lang/StringBuffer; flags 21
-method name repeat descriptor (Ljava/lang/CharSequence;I)Ljava/lang/AbstractStringBuilder; flags 1041 methodParameters 1000:null,1000:null
-method name repeat descriptor (II)Ljava/lang/AbstractStringBuilder; flags 1041 methodParameters 1000:null,1000:null
+method name repeat descriptor (Ljava/lang/CharSequence;I)Ljava/lang/AbstractStringBuilder; flags 1041 methodParameters 3e8:null,3e8:null
+method name repeat descriptor (II)Ljava/lang/AbstractStringBuilder; flags 1041 methodParameters 3e8:null,3e8:null
 
 class name java/lang/StringBuilder
 header extends java/lang/AbstractStringBuilder implements java/lang/Appendable,java/io/Serializable,java/lang/Comparable,java/lang/CharSequence flags 31 signature Ljava/lang/AbstractStringBuilder;Ljava/lang/Appendable;Ljava/io/Serializable;Ljava/lang/Comparable<Ljava/lang/StringBuilder;>;Ljava/lang/CharSequence;
 method name repeat descriptor (II)Ljava/lang/StringBuilder; flags 1
 method name repeat descriptor (Ljava/lang/CharSequence;I)Ljava/lang/StringBuilder; flags 1
-method name repeat descriptor (Ljava/lang/CharSequence;I)Ljava/lang/AbstractStringBuilder; flags 1041 methodParameters 1000:null,1000:null
-method name repeat descriptor (II)Ljava/lang/AbstractStringBuilder; flags 1041 methodParameters 1000:null,1000:null
+method name repeat descriptor (Ljava/lang/CharSequence;I)Ljava/lang/AbstractStringBuilder; flags 1041 methodParameters 3e8:null,3e8:null
+method name repeat descriptor (II)Ljava/lang/AbstractStringBuilder; flags 1041 methodParameters 3e8:null,3e8:null
 
 class name java/lang/StringTemplate
 header extends java/lang/Object nestMembers java/lang/StringTemplate$Processor,java/lang/StringTemplate$Processor$Linkage flags 601 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;STRING_TEMPLATES;)
@@ -222,7 +222,7 @@ header extends java/lang/Object implements java/lang/constant/ConstantDesc,java/
 innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
 innerclass innerClass java/lang/invoke/TypeDescriptor$OfField outerClass java/lang/invoke/TypeDescriptor innerClassName OfField flags 609
 method name resolveConstantDesc descriptor (Ljava/lang/invoke/MethodHandles$Lookup;)Ljava/lang/Class; thrownTypes java/lang/ReflectiveOperationException flags 401 signature (Ljava/lang/invoke/MethodHandles$Lookup;)Ljava/lang/Class<*>;
-method name resolveConstantDesc descriptor (Ljava/lang/invoke/MethodHandles$Lookup;)Ljava/lang/Object; thrownTypes java/lang/ReflectiveOperationException flags 1041 methodParameters 1000:null
+method name resolveConstantDesc descriptor (Ljava/lang/invoke/MethodHandles$Lookup;)Ljava/lang/Object; thrownTypes java/lang/ReflectiveOperationException flags 1041 methodParameters 3e8:null
 
 class name java/lang/constant/ConstantDesc
 header extends java/lang/Object sealed true flags 601
@@ -244,7 +244,7 @@ header extends java/lang/Object implements java/lang/constant/ConstantDesc seale
 innerclass innerClass java/lang/constant/DirectMethodHandleDesc$Kind outerClass java/lang/constant/DirectMethodHandleDesc innerClassName Kind flags 4019
 innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
 method name resolveConstantDesc descriptor (Ljava/lang/invoke/MethodHandles$Lookup;)Ljava/lang/invoke/MethodHandle; thrownTypes java/lang/ReflectiveOperationException flags 401
-method name resolveConstantDesc descriptor (Ljava/lang/invoke/MethodHandles$Lookup;)Ljava/lang/Object; thrownTypes java/lang/ReflectiveOperationException flags 1041 methodParameters 1000:null
+method name resolveConstantDesc descriptor (Ljava/lang/invoke/MethodHandles$Lookup;)Ljava/lang/Object; thrownTypes java/lang/ReflectiveOperationException flags 1041 methodParameters 3e8:null
 
 class name java/lang/constant/MethodTypeDesc
 header extends java/lang/Object implements java/lang/constant/ConstantDesc,java/lang/invoke/TypeDescriptor$OfMethod sealed true flags 601 signature Ljava/lang/Object;Ljava/lang/constant/ConstantDesc;Ljava/lang/invoke/TypeDescriptor$OfMethod<Ljava/lang/constant/ClassDesc;Ljava/lang/constant/MethodTypeDesc;>;
@@ -252,7 +252,7 @@ innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang
 innerclass innerClass java/lang/invoke/TypeDescriptor$OfMethod outerClass java/lang/invoke/TypeDescriptor innerClassName OfMethod flags 609
 innerclass innerClass java/lang/invoke/TypeDescriptor$OfField outerClass java/lang/invoke/TypeDescriptor innerClassName OfField flags 609
 method name resolveConstantDesc descriptor (Ljava/lang/invoke/MethodHandles$Lookup;)Ljava/lang/invoke/MethodType; thrownTypes java/lang/ReflectiveOperationException flags 401
-method name resolveConstantDesc descriptor (Ljava/lang/invoke/MethodHandles$Lookup;)Ljava/lang/Object; thrownTypes java/lang/ReflectiveOperationException flags 1041 methodParameters 1000:null
+method name resolveConstantDesc descriptor (Ljava/lang/invoke/MethodHandles$Lookup;)Ljava/lang/Object; thrownTypes java/lang/ReflectiveOperationException flags 1041 methodParameters 3e8:null
 
 class name java/lang/constant/ModuleDesc
 header extends java/lang/Object sealed true flags 601
@@ -277,13 +277,13 @@ method name withOrder descriptor (Ljava/nio/ByteOrder;)Ljava/lang/foreign/Addres
 method name withTargetLayout descriptor (Ljava/lang/foreign/MemoryLayout;)Ljava/lang/foreign/AddressLayout; flags 401 runtimeAnnotations @Ljdk/internal/reflect/CallerSensitive;
 method name withoutTargetLayout descriptor ()Ljava/lang/foreign/AddressLayout; flags 401
 method name targetLayout descriptor ()Ljava/util/Optional; flags 401 signature ()Ljava/util/Optional<Ljava/lang/foreign/MemoryLayout;>;
-method name withBitAlignment descriptor (J)Ljava/lang/foreign/ValueLayout; flags 1041 methodParameters 1000:null
-method name withName descriptor (Ljava/lang/String;)Ljava/lang/foreign/ValueLayout; flags 1041 methodParameters 1000:null
+method name withBitAlignment descriptor (J)Ljava/lang/foreign/ValueLayout; flags 1041 methodParameters 3e8:null
+method name withName descriptor (Ljava/lang/String;)Ljava/lang/foreign/ValueLayout; flags 1041 methodParameters 3e8:null
 method name withoutName descriptor ()Ljava/lang/foreign/ValueLayout; flags 1041
-method name withOrder descriptor (Ljava/nio/ByteOrder;)Ljava/lang/foreign/ValueLayout; flags 1041 methodParameters 1000:null
-method name withBitAlignment descriptor (J)Ljava/lang/foreign/MemoryLayout; flags 1041 methodParameters 1000:null
+method name withOrder descriptor (Ljava/nio/ByteOrder;)Ljava/lang/foreign/ValueLayout; flags 1041 methodParameters 3e8:null
+method name withBitAlignment descriptor (J)Ljava/lang/foreign/MemoryLayout; flags 1041 methodParameters 3e8:null
 method name withoutName descriptor ()Ljava/lang/foreign/MemoryLayout; flags 1041
-method name withName descriptor (Ljava/lang/String;)Ljava/lang/foreign/MemoryLayout; flags 1041 methodParameters 1000:null
+method name withName descriptor (Ljava/lang/String;)Ljava/lang/foreign/MemoryLayout; flags 1041 methodParameters 3e8:null
 
 class name java/lang/foreign/Arena
 header extends java/lang/Object implements java/lang/foreign/SegmentAllocator,java/lang/AutoCloseable flags 601 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;FOREIGN;)
@@ -309,8 +309,14 @@ method name withoutName descriptor ()Ljava/lang/foreign/MemoryLayout; flags 1041
 class name java/lang/foreign/Linker
 header extends java/lang/Object nestMembers java/lang/foreign/Linker$Option sealed true flags 601 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;FOREIGN;)
 innerclass innerClass java/lang/foreign/Linker$Option outerClass java/lang/foreign/Linker innerClassName Option flags 609
+-method name nativeLinker descriptor ()Ljava/lang/foreign/Linker;
+-method name downcallHandle descriptor (Ljava/lang/foreign/MemorySegment;Ljava/lang/foreign/FunctionDescriptor;[Ljava/lang/foreign/Linker$Option;)Ljava/lang/invoke/MethodHandle;
+-method name downcallHandle descriptor (Ljava/lang/foreign/FunctionDescriptor;[Ljava/lang/foreign/Linker$Option;)Ljava/lang/invoke/MethodHandle;
 -method name upcallStub descriptor (Ljava/lang/invoke/MethodHandle;Ljava/lang/foreign/FunctionDescriptor;Ljava/lang/foreign/SegmentScope;)Ljava/lang/foreign/MemorySegment;
-method name upcallStub descriptor (Ljava/lang/invoke/MethodHandle;Ljava/lang/foreign/FunctionDescriptor;Ljava/lang/foreign/Arena;[Ljava/lang/foreign/Linker$Option;)Ljava/lang/foreign/MemorySegment; flags 481
+method name nativeLinker descriptor ()Ljava/lang/foreign/Linker; flags 9
+method name downcallHandle descriptor (Ljava/lang/foreign/MemorySegment;Ljava/lang/foreign/FunctionDescriptor;[Ljava/lang/foreign/Linker$Option;)Ljava/lang/invoke/MethodHandle; flags 481 runtimeAnnotations @Ljdk/internal/reflect/CallerSensitive;
+method name downcallHandle descriptor (Ljava/lang/foreign/FunctionDescriptor;[Ljava/lang/foreign/Linker$Option;)Ljava/lang/invoke/MethodHandle; flags 481 runtimeAnnotations @Ljdk/internal/reflect/CallerSensitive;
+method name upcallStub descriptor (Ljava/lang/invoke/MethodHandle;Ljava/lang/foreign/FunctionDescriptor;Ljava/lang/foreign/Arena;[Ljava/lang/foreign/Linker$Option;)Ljava/lang/foreign/MemorySegment; flags 481 runtimeAnnotations @Ljdk/internal/reflect/CallerSensitive;
 
 class name java/lang/foreign/Linker$Option
 header extends java/lang/Object nestHost java/lang/foreign/Linker sealed true flags 601 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;FOREIGN;)
@@ -814,7 +820,7 @@ field name FMT descriptor Ljava/util/FormatProcessor; flags 19
 method name create descriptor (Ljava/util/Locale;)Ljava/util/FormatProcessor; flags 9
 method name process descriptor (Ljava/lang/StringTemplate;)Ljava/lang/String; flags 11
 method name linkage descriptor (Ljava/util/List;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/MethodHandle; flags 1 signature (Ljava/util/List<Ljava/lang/String;>;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/MethodHandle;
-method name process descriptor (Ljava/lang/StringTemplate;)Ljava/lang/Object; thrownTypes java/lang/Throwable flags 1041 methodParameters 1000:null
+method name process descriptor (Ljava/lang/StringTemplate;)Ljava/lang/Object; thrownTypes java/lang/Throwable flags 1041 methodParameters 3e8:null
 
 class name java/util/GregorianCalendar
 header extends java/util/Calendar flags 21
