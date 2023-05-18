@@ -37,6 +37,7 @@ import jdk.internal.classfile.constantpool.MethodRefEntry;
 import jdk.internal.classfile.constantpool.NameAndTypeEntry;
 import jdk.internal.classfile.constantpool.Utf8Entry;
 import jdk.internal.classfile.impl.AbstractInstruction;
+import jdk.internal.classfile.impl.AbstractPoolEntry;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.classfile.impl.Util;
 
@@ -89,7 +90,7 @@ public sealed interface InvokeInstruction extends Instruction
      * {@return a symbolic descriptor for the method type}
      */
     default MethodTypeDesc typeSymbol() {
-        return MethodTypeDesc.ofDescriptor(type().stringValue());
+        return Util.methodTypeSymbol(method().nameAndType());
     }
 
 
