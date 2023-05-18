@@ -389,24 +389,24 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
      * Gets the {@code JVM_CONSTANT_NameAndType} reference index constant pool entry at index
      * {@code index}.
      *
-     * @param index constant pool index
+     * @param rawIndex rewritten index in the bytecode stream
      * @param opcode the opcode of the instruction for which the lookup is being performed
      * @return {@code JVM_CONSTANT_NameAndType} reference constant pool entry
      */
-    private int getNameAndTypeRefIndexAt(int index, int opcode) {
-        return compilerToVM().lookupNameAndTypeRefIndexInPool(this, index, opcode);
+    private int getNameAndTypeRefIndexAt(int rawIndex, int opcode) {
+        return compilerToVM().lookupNameAndTypeRefIndexInPool(this, rawIndex, opcode);
     }
 
     /**
      * Gets the name of a {@code JVM_CONSTANT_NameAndType} constant pool entry referenced by another
      * entry denoted by {@code which}.
      *
-     * @param which constant pool index or constant pool cache index
+     * @param rawIndex rewritten index in the bytecode stream
      * @param opcode the opcode of the instruction for which the lookup is being performed
      * @return name as {@link String}
      */
-    private String getNameOf(int which, int opcode) {
-        return compilerToVM().lookupNameInPool(this, which, opcode);
+    private String getNameOf(int rawIndex, int opcode) {
+        return compilerToVM().lookupNameInPool(this, rawIndex, opcode);
     }
 
     /**
@@ -414,7 +414,6 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
      * index {@code index}.
      *
      * @param index constant pool index
-     * @param opcode the opcode of the instruction for which the lookup is being performed
      * @return name reference index
      */
     private int getNameRefIndexAt(int index) {
@@ -427,12 +426,12 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
      * Gets the signature of a {@code JVM_CONSTANT_NameAndType} constant pool entry referenced by
      * another entry denoted by {@code which}.
      *
-     * @param which constant pool index or constant pool cache index
+     * @param rawIndex rewritten index in the bytecode stream
      * @param opcode the opcode of the instruction for which the lookup is being performed
      * @return signature as {@link String}
      */
-    private String getSignatureOf(int which, int opcode) {
-        return compilerToVM().lookupSignatureInPool(this, which, opcode);
+    private String getSignatureOf(int rawIndex, int opcode) {
+        return compilerToVM().lookupSignatureInPool(this, rawIndex, opcode);
     }
 
     /**
@@ -451,11 +450,12 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
     /**
      * Gets the klass reference index constant pool entry at index {@code index}.
      *
-     * @param index constant pool index
+     * @param rawIndex rewritten index in the bytecode stream
+     * @param opcode the opcode of the instruction for which the lookup is being performed
      * @return klass reference index
      */
-    private int getKlassRefIndexAt(int index, int opcode) {
-        return compilerToVM().lookupKlassRefIndexInPool(this, index, opcode);
+    private int getKlassRefIndexAt(int rawIndex, int opcode) {
+        return compilerToVM().lookupKlassRefIndexInPool(this, rawIndex, opcode);
     }
 
     /**

@@ -1798,7 +1798,7 @@ Klass* JVMCIRuntime::get_klass_by_index(const constantPoolHandle& cpool,
 // Implementation note: the results of field lookups are cached
 // in the accessor klass.
 void JVMCIRuntime::get_field_by_index_impl(InstanceKlass* klass, fieldDescriptor& field_desc,
-                                        int index) {
+                                        int index, Bytecodes::Code bc) {
   JVMCI_EXCEPTION_CONTEXT;
 
   assert(klass->is_linked(), "must be linked before using its constant-pool");
@@ -1806,14 +1806,14 @@ void JVMCIRuntime::get_field_by_index_impl(InstanceKlass* klass, fieldDescriptor
   constantPoolHandle cpool(thread, klass->constants());
 
   // Get the field's name, signature, and type.
-  Symbol* name  = cpool->name_ref_at(index, Bytecodes::_getfield /*We know it's a field*/);
+  Symbol* name  = cpool->name_ref_at(index, bc);
 
-  int nt_index = cpool->name_and_type_ref_index_at(index, Bytecodes::_getfield);
+  int nt_index = cpool->name_and_type_ref_index_at(index, bc);
   int sig_index = cpool->signature_ref_index_at(nt_index);
   Symbol* signature = cpool->symbol_at(sig_index);
 
   // Get the field's declared holder.
-  int holder_index = cpool->klass_ref_index_at(index, Bytecodes::_getfield);
+  int holder_index = cpool->klass_ref_index_at(index, bc);
   bool holder_is_accessible;
   Klass* declared_holder = get_klass_by_index(cpool, holder_index,
                                                holder_is_accessible,
@@ -1838,9 +1838,9 @@ void JVMCIRuntime::get_field_by_index_impl(InstanceKlass* klass, fieldDescriptor
 
 // ------------------------------------------------------------------
 // Get a field by index from a klass's constant pool.
-void JVMCIRuntime::get_field_by_index(InstanceKlass* accessor, fieldDescriptor& fd, int index) {
+void JVMCIRuntime::get_field_by_index(InstanceKlass* accessor, fieldDescriptor& fd, int index, Bytecodes::Code bc) {
   ResourceMark rm;
-  return get_field_by_index_impl(accessor, fd, index);
+  return get_field_by_index_impl(accessor, fd, index, bc);
 }
 
 // ------------------------------------------------------------------

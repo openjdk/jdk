@@ -97,27 +97,12 @@ public class LookupSignatureInPoolTest {
         if (entry == null) {
             return;
         }
-        int opcode;
+        int opcode = ConstantPoolTestsHelper.getDummyOpcode(cpType);
         int index = dummyClass.getCPCacheIndex(cpi);
         Asserts.assertTrue(index != ConstantPoolTestsHelper.NO_CP_CACHE_PRESENT, "the class must have been rewritten");
-        // Select an arbitrary bytecode of the type associated with the Constant pool entry
-        switch(cpType) {
-          case CONSTANT_FIELDREF:
-            opcode = Bytecodes.GETFIELD;
-            break;
-          case CONSTANT_METHODREF:
-          case CONSTANT_INTERFACEMETHODREF:
-            opcode = Bytecodes.INVOKEVIRTUAL;
-            break;
-          case CONSTANT_INVOKEDYNAMIC:
-            opcode = Bytecodes.INVOKEDYNAMIC;
-            break;
-          default:
-            throw new Error("Unexpected consant pool entry");
-        }
         String sigToVerify = CompilerToVMHelper.lookupSignatureInPool(constantPoolCTVM, index, opcode);
         String sigToRefer = entry.type;
-        String msg = String.format("Wrong signature accessed by cache constant pool index %d", index);
+        String msg = String.format("Wrong signature accessed by cached constant pool index %d", index);
         Asserts.assertEQ(sigToVerify, sigToRefer, msg);
     }
 }

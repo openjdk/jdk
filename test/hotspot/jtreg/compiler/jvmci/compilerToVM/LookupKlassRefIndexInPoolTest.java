@@ -94,21 +94,9 @@ public class LookupKlassRefIndexInPoolTest {
         if (entry == null) {
             return;
         }
-        int opcode;
+        int opcode = ConstantPoolTestsHelper.getDummyOpcode(cpType);
         int index = dummyClass.getCPCacheIndex(cpi);
         Asserts.assertTrue(index != ConstantPoolTestsHelper.NO_CP_CACHE_PRESENT, "the class must have been rewritten");
-        // Select an arbitrary bytecode of the type associated with the Constant pool entry
-        switch(cpType) {
-          case CONSTANT_FIELDREF:
-            opcode = Bytecodes.GETFIELD;
-            break;
-          case CONSTANT_METHODREF:
-          case CONSTANT_INTERFACEMETHODREF:
-            opcode = Bytecodes.INVOKEVIRTUAL;
-            break;
-          default:
-            throw new Error("Unexpected consant pool entry");
-        }
         int indexToVerify = CompilerToVMHelper.lookupKlassRefIndexInPool(constantPoolCTVM, index, opcode);
         int indexToRefer = dummyClass.constantPoolSS.getClassRefIndexAt(cpi);
         String msg = String.format("Wrong class index returned by lookupKlassRefIndexInPool method "
