@@ -149,7 +149,7 @@ final class CertificateAuthoritiesExtension {
                     X500Principal principal = new X500Principal(encoded);
                     builder.append(principal.toString());
                 } catch (IllegalArgumentException iae) {
-                    builder.append("unparseable X500Principal: " + iae);
+                    builder.append("unparseable distinguished name: " + iae);
                 }
                 builder.append("\n");
             }
@@ -291,7 +291,9 @@ final class CertificateAuthoritiesExtension {
             try {
                 shc.peerSupportedAuthorities = spec.getAuthorities();
             } catch (IllegalArgumentException iae) {
-                shc.conContext.fatal(Alert.DECODE_ERROR, "X500Principal could not be parsed", iae);
+                shc.conContext.fatal(Alert.DECODE_ERROR, "The distinguished " +
+                        "names of the peer's certificate authorities could " +
+                        "not be parsed", iae);
             }
             shc.handshakeExtensions.put(
                     SSLExtension.CH_CERTIFICATE_AUTHORITIES, spec);
@@ -416,7 +418,9 @@ final class CertificateAuthoritiesExtension {
             try {
                 chc.peerSupportedAuthorities = spec.getAuthorities();
             } catch (IllegalArgumentException iae) {
-                chc.conContext.fatal(Alert.DECODE_ERROR, "X500Principal could not be parsed", iae);
+                chc.conContext.fatal(Alert.DECODE_ERROR, "The distinguished " +
+                        "names of the peer's certificate authorities could " +
+                        "not be parsed", iae);
             }
             chc.handshakeExtensions.put(
                     SSLExtension.CR_CERTIFICATE_AUTHORITIES, spec);

@@ -266,7 +266,7 @@ final class CertificateRequest {
                     X500Principal principal = new X500Principal(encoded);
                     authorityNames.add(principal.toString());
                 } catch (IllegalArgumentException iae) {
-                    authorityNames.add("unparseable X500Principal: " + iae);
+                    authorityNames.add("unparseable distinguished name: " + iae);
                 }
             }
             Object[] messageFields = {
@@ -392,7 +392,9 @@ final class CertificateRequest {
                             crm.getAuthorities(), (SSLEngine) chc.conContext.transport);
                 }
             } catch (IllegalArgumentException iae) {
-                chc.conContext.fatal(Alert.DECODE_ERROR, "X500Principal could not be parsed", iae);
+                chc.conContext.fatal(Alert.DECODE_ERROR, "The distinguished " +
+                        "names of the peer's certificate authorities could " +
+                        "not be parsed", iae);
             }
 
 
@@ -602,7 +604,7 @@ final class CertificateRequest {
                     X500Principal principal = new X500Principal(encoded);
                     authorityNames.add(principal.toString());
                 } catch (IllegalArgumentException iae) {
-                    authorityNames.add("unparseable X500Principal: " + iae);
+                    authorityNames.add("unparseable distinguished name: " + iae);
                 }
             }
             Object[] messageFields = {
@@ -743,7 +745,9 @@ final class CertificateRequest {
             try {
                 chc.peerSupportedAuthorities = crm.getAuthorities();
             } catch (IllegalArgumentException iae) {
-                chc.conContext.fatal(Alert.DECODE_ERROR, "X500Principal could not be parsed", iae);
+                chc.conContext.fatal(Alert.DECODE_ERROR, "The distinguished " +
+                        "names of the peer's certificate authorities could " +
+                        "not be parsed", iae);
             }
             // For TLS 1.2, we no longer use the certificate_types field
             // from the CertificateRequest message to directly determine
