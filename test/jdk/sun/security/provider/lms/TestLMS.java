@@ -23,10 +23,9 @@
 
 /*
  * @test
- * @bug JDK-8307794
+ * @bug JDK-8298127
  * @library /test/lib
  * @summary tests for HSS/LMS provider
- * @author Mark Powers
  * @modules java.base/sun.security.util
  * @run testng/othervm TestLMS
  */

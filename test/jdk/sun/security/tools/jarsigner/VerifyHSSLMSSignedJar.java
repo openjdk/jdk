@@ -23,9 +23,8 @@
 
 /*
  * @test
- * @bug JDK-8307794
+ * @bug JDK-8298127
  * @summary verify JAR files signed with HSS/LMS
- * @author Wang Weijun
  * @library /test/lib
  * @run testng/othervm DisableLMS
  */
@@ -37,7 +36,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Base64;
 
-public class DisableLMS {
+public class VerifyHSSLMSSignedJar {
 
     public static void main(String[] args) throws Exception {
 
