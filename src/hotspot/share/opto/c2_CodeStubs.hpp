@@ -26,16 +26,23 @@
 #include "asm/codeBuffer.hpp"
 #include "memory/allocation.hpp"
 #include "opto/c2_MacroAssembler.hpp"
+#include "opto/compile.hpp"
+#include "opto/output.hpp"
 #include "utilities/growableArray.hpp"
+#include "utilities/tuple.hpp"
 
 #ifndef SHARE_OPTO_C2_CODESTUBS_HPP
 #define SHARE_OPTO_C2_CODESTUBS_HPP
+
+template <class... Ts>
+class C2GeneralStub;
 
 class C2CodeStub : public ArenaObj {
 private:
   Label _entry;
   Label _continuation;
 
+  void add_to_stub_list();
 protected:
   C2CodeStub() :
     _entry(),
@@ -47,6 +54,10 @@ public:
 
   virtual void emit(C2_MacroAssembler& masm) = 0;
   virtual int max_size() const = 0;
+
+  template <class... Ts>
+  static C2GeneralStub<Ts...>* make(const Ts&... data, int max_size,
+                                    void (*emit)(C2_MacroAssembler&, C2GeneralStub<Ts...>&));
 };
 
 class C2CodeStubList {
@@ -100,5 +111,33 @@ public:
   void emit(C2_MacroAssembler& masm);
 };
 #endif
+
+template <class... Ts>
+class C2GeneralStub : public C2CodeStub {
+private:
+  Tuple<Ts...> _data;
+  int _max_size;
+  void (*_emit)(C2_MacroAssembler&, C2GeneralStub&);
+
+  constexpr C2GeneralStub(const Ts&... data, int max_size,
+                          void (*emit)(C2_MacroAssembler&, C2GeneralStub<Ts...>&))
+    : _data(data...), _max_size(max_size), _emit(emit) {}
+
+  friend C2CodeStub;
+public:
+  template <std::size_t I>
+  constexpr const auto& data() const { return _data.template get<I>(); }
+
+  int max_size() const { return _max_size; }
+  void emit(C2_MacroAssembler& masm) { _emit(masm, *this); }
+};
+
+template <class... Ts>
+C2GeneralStub<Ts...>* C2CodeStub::make(const Ts&... data, int max_size,
+                                       void (*emit)(C2_MacroAssembler&, C2GeneralStub<Ts...>&)) {
+  auto stub = new (Compile::current()->comp_arena()) C2GeneralStub<Ts...>(data..., max_size, emit);
+  stub->add_to_stub_list();
+  return stub;
+}
 
 #endif // SHARE_OPTO_C2_CODESTUBS_HPP
