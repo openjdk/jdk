@@ -2546,7 +2546,7 @@ void MacroAssembler::rtm_inflated_locking(ConditionRegister flag,
   assert(UseRTMLocking, "why call this otherwise?");
   Label L_rtm_retry, L_decrement_retry, L_on_abort;
   // Clean monitor_value bit to get valid pointer.
-  int owner_offset = ObjectMonitor::owner_offset_in_bytes() - markWord::monitor_value;
+  int owner_offset = in_bytes(ObjectMonitor::owner_offset()) - markWord::monitor_value;
 
   // Store non-null, using boxReg instead of (intptr_t)markWord::unused_mark().
   std(boxReg, BasicLock::displaced_header_offset_in_bytes(), boxReg);
@@ -2719,7 +2719,7 @@ void MacroAssembler::compiler_fast_lock_object(ConditionRegister flag, Register 
 #endif // INCLUDE_RTM_OPT
 
   // Try to CAS m->owner from null to current thread.
-  addi(temp, displaced_header, ObjectMonitor::owner_offset_in_bytes()-markWord::monitor_value);
+  addi(temp, displaced_header, in_bytes(ObjectMonitor::owner_offset()) - markWord::monitor_value);
   cmpxchgd(/*flag=*/flag,
            /*current_value=*/current_header,
            /*compare_value=*/(intptr_t)0,
@@ -2738,9 +2738,9 @@ void MacroAssembler::compiler_fast_lock_object(ConditionRegister flag, Register 
 
   // Current thread already owns the lock. Just increment recursions.
   Register recursions = displaced_header;
-  ld(recursions, ObjectMonitor::recursions_offset_in_bytes()-ObjectMonitor::owner_offset_in_bytes(), temp);
+  ld(recursions, in_bytes(ObjectMonitor::recursions_offset()-ObjectMonitor::owner_offset()), temp);
   addi(recursions, recursions, 1);
-  std(recursions, ObjectMonitor::recursions_offset_in_bytes()-ObjectMonitor::owner_offset_in_bytes(), temp);
+  std(recursions, in_bytes(ObjectMonitor::recursions_offset()-ObjectMonitor::owner_offset()), temp);
 
 #if INCLUDE_RTM_OPT
   } // use_rtm()
@@ -2817,7 +2817,7 @@ void MacroAssembler::compiler_fast_unlock_object(ConditionRegister flag, Registe
   bind(object_has_monitor);
   STATIC_ASSERT(markWord::monitor_value <= INT_MAX);
   addi(current_header, current_header, -(int)markWord::monitor_value); // monitor
-  ld(temp,             ObjectMonitor::owner_offset_in_bytes(), current_header);
+  ld(temp,             in_bytes(ObjectMonitor::owner_offset()), current_header);
 
     // It's inflated.
 #if INCLUDE_RTM_OPT
@@ -2832,24 +2832,24 @@ void MacroAssembler::compiler_fast_unlock_object(ConditionRegister flag, Registe
   }
 #endif
 
-  ld(displaced_header, ObjectMonitor::recursions_offset_in_bytes(), current_header);
+  ld(displaced_header, in_bytes(ObjectMonitor::recursions_offset()), current_header);
 
   cmpd(flag, temp, R16_thread);
   bne(flag, failure);
 
   addic_(displaced_header, displaced_header, -1);
   blt(CCR0, notRecursive); // Not recursive if negative after decrement.
-  std(displaced_header, ObjectMonitor::recursions_offset_in_bytes(), current_header);
+  std(displaced_header, in_bytes(ObjectMonitor::recursions_offset()), current_header);
   b(success); // flag is already EQ here.
 
   bind(notRecursive);
-  ld(temp,             ObjectMonitor::EntryList_offset_in_bytes(), current_header);
-  ld(displaced_header, ObjectMonitor::cxq_offset_in_bytes(), current_header);
+  ld(temp,             in_bytes(ObjectMonitor::EntryList_offset()), current_header);
+  ld(displaced_header, in_bytes(ObjectMonitor::cxq_offset()), current_header);
   orr(temp, temp, displaced_header); // Will be 0 if both are 0.
   cmpdi(flag, temp, 0);
   bne(flag, failure);
   release();
-  std(temp, ObjectMonitor::owner_offset_in_bytes(), current_header);
+  std(temp, in_bytes(ObjectMonitor::owner_offset()), current_header);
 
   // flag == EQ indicates success, decrement held monitor count
   // flag == NE indicates failure
