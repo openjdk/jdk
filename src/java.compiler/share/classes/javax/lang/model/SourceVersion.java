@@ -73,7 +73,7 @@ public enum SourceVersion {
      *      record patterns in second preview)
      *  21: pattern matching for switch and record patterns (string
      *      templates in preview, unnamed patterns and variables, unnamed
-     *      classes and instance main methods in preview
+     *      classes and instance main methods in preview)
      */
 
     /**
