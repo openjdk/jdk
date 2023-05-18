@@ -41,7 +41,6 @@
 #include "opto/loopnode.hpp"
 #include "opto/macro.hpp"
 #include "opto/memnode.hpp"
-#include "opto/movenode.hpp"
 #include "opto/narrowptrnode.hpp"
 #include "opto/node.hpp"
 #include "opto/opaquenode.hpp"

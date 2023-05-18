@@ -1525,7 +1525,7 @@ static Node *is_x2logic( PhaseGVN *phase, PhiNode *phi, int true_path ) {
   assert(true_path !=0, "only diamond shape graph expected");
 
   // If we're late in the optimization process, we may have already expanded Conv2B nodes
-  if (phase->C->post_loop_opts_phase()) {
+  if (phase->C->post_loop_opts_phase() && !Matcher::match_rule_supported(Op_Conv2B)) {
     return nullptr;
   }
 
@@ -1571,9 +1571,10 @@ static Node *is_x2logic( PhaseGVN *phase, PhiNode *phi, int true_path ) {
   } else return nullptr;
 
   // Build int->bool conversion
-  Node *n = new Conv2BNode(cmp->in(1));
-  if( flipped )
-  n = new XorINode( phase->transform(n), phase->intcon(1) );
+  Node* n = new Conv2BNode(cmp->in(1));
+  if (flipped) {
+    n = new XorINode(phase->transform(n), phase->intcon(1));
+  }
 
   return n;
 }
