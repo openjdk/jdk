@@ -759,7 +759,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * {@code 0 <= b <= 255},
      * then the result is:
      * {@snippet lang=java :
-     *         (byte)(b)
+     *     (byte)(b)
      * }
      * <p>
      * This method blocks until the byte is read, the end of the stream
@@ -802,7 +802,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * between {@code 0} and {@code 255}, inclusive, then the
      * result is equal to:
      * {@snippet lang=java :
-     *         (short)((b1 << 8) | b2)
+     *     (short)((b1 << 8) | b2)
      * }
      * <p>
      * This method blocks until the two bytes are read, the end of the
@@ -826,7 +826,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * {@code 0 <= b1, b2 <= 255},
      * then the result is equal to:
      * {@snippet lang=java :
-     *         (b1 << 8) | b2
+     *     (b1 << 8) | b2
      * }
      * <p>
      * This method blocks until the two bytes are read, the end of the
@@ -852,7 +852,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * {@code 0 <= b1, b2 <= 255},
      * then the result is equal to:
      * {@snippet lang=java :
-     *         (char)((b1 << 8) | b2)
+     *     (char)((b1 << 8) | b2)
      * }
      * <p>
      * This method blocks until the two bytes are read, the end of the
@@ -876,7 +876,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * {@code 0 <= b1, b2, b3, b4 <= 255},
      * then the result is equal to:
      * {@snippet lang=java :
-     *         (b1 << 24) | (b2 << 16) + (b3 << 8) + b4
+     *     (b1 << 24) | (b2 << 16) + (b3 << 8) + b4
      * }
      * <p>
      * This method blocks until the four bytes are read, the end of the
@@ -901,12 +901,12 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * {@code b4}, {@code b5}, {@code b6},
      * {@code b7}, and {@code b8,} where:
      * {@snippet :
-     *         0 <= b1, b2, b3, b4, b5, b6, b7, b8 <= 255
+     *     0 <= b1, b2, b3, b4, b5, b6, b7, b8 <= 255
      * }
      * <p>
      * then the result is equal to:
      * {@snippet lang=java :
-     *         ((long)b1 << 56) + ((long)b2 << 48)
+     *     ((long)b1 << 56) + ((long)b2 << 48)
      *         + ((long)b3 << 40) + ((long)b4 << 32)
      *         + ((long)b5 << 24) + ((long)b6 << 16)
      *         + ((long)b7 << 8) + b8

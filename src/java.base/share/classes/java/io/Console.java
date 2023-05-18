@@ -118,11 +118,11 @@ public sealed class Console implements Flushable permits ProxyingConsole {
      * example, a {@link java.util.Scanner} object which utilizes the rich
      * parsing/scanning functionality provided by the {@code Scanner}:
      * {@snippet lang=java :
-     *         Console con = System.console();
-     *         if (con != null) {
-     *             Scanner sc = new Scanner(con.reader());
-     *             code: // @replace substring="code:" replacement="..."
-     *         }
+     *     Console con = System.console();
+     *     if (con != null) {
+     *         Scanner sc = new Scanner(con.reader());
+     *         code: // @replace substring="code:" replacement="..."
+     *     }
      * }
      * <p>
      * For simple applications requiring only line-oriented reading, use

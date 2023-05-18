@@ -281,7 +281,7 @@ public class ByteArrayOutputStream extends OutputStream {
      * constructed from the corresponding element <i>b</i> in the byte
      * array such that:
      * {@snippet lang=java :
-     *         c == (char)(((hibyte & 0xff) << 8) | (b & 0xff))
+     *     c == (char)(((hibyte & 0xff) << 8) | (b & 0xff))
      * }
      *
      * @deprecated This method does not properly convert bytes into characters.
