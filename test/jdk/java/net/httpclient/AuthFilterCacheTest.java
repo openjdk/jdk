@@ -295,7 +295,7 @@ public class AuthFilterCacheTest implements HttpServerAdapters {
             int count;
             synchronized (this) {
                 count = ++this.count;
-                passwordAuthentication =  super.requestPasswordAuthenticationInstance(
+                passwordAuthentication = super.requestPasswordAuthenticationInstance(
                         host, addr, port, protocol, prompt, scheme, url, reqType);
             }
             // log outside of synchronized block
