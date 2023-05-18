@@ -51,7 +51,7 @@ Breakpoint(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread,
     rml.wait(0);
   }
   err = jvmti->PopFrame(thread);
-  LOG("Main: popFrame: PopFrame returned code: %s (%d)\n", TranslateError(err), err);
+  LOG("Breakpoint: PopFrame returned code: %s (%d)\n", TranslateError(err), err);
   check_jvmti_status(jni, err, "Breakpoint: Failed in PopFrame");
 
   LOG("Breakpoint: In method TestTask.B(): after sync section exit\n");
