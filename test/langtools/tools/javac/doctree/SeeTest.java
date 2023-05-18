@@ -75,6 +75,7 @@ DocComment[DOC_COMMENT, pos:1
      * @see
      *    "{@code}"
      */
+    @PrettyCheck(false)
     void new_line_before_quoted_string() { }
 /*
 DocComment[DOC_COMMENT, pos:1
