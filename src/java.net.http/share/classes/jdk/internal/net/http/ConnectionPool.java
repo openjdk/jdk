@@ -164,8 +164,8 @@ final class ConnectionPool {
     }
 
     private HttpConnection getConnection0(boolean secure,
-                                  InetSocketAddress addr,
-                                  InetSocketAddress proxy) {
+                                          InetSocketAddress addr,
+                                          InetSocketAddress proxy) {
         if (stopped) return null;
         // for plain (unsecure) proxy connection the destination address is irrelevant.
         addr = secure || proxy == null ? addr : null;
