@@ -1002,7 +1002,7 @@ jdk.xml.dsig.secureValidationPolicy=\
     noRetrievalMethodLoops
 
 #
-# Support here() function
+# Support for the here() function
 #
 # This security property determines whether the here() XPath function is
 # supported in XML Signature generation and verification.
