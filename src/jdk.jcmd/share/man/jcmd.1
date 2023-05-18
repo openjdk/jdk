@@ -1,4 +1,4 @@
-.\" Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+.\" Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
 .\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 .\"
 .\" This code is free software; you can redistribute it and/or modify it
@@ -169,8 +169,6 @@ Prints code cache layout and bounds.
 .RS
 .PP
 Impact: Low
-.PP
-Permission: \f[V]java.lang.management.ManagementPermission(monitor)\f[R]
 .RE
 .TP
 \f[V]Compiler.codelist\f[R]
@@ -178,8 +176,6 @@ Prints all compiled methods in code cache that are alive.
 .RS
 .PP
 Impact: Medium
-.PP
-Permission: \f[V]java.lang.management.ManagementPermission(monitor)\f[R]
 .RE
 .TP
 \f[V]Compiler.perfmap\f[R] (Linux only)
@@ -187,8 +183,6 @@ Write map file for Linux perf tool.
 .RS
 .PP
 Impact: Low
-.PP
-Permission: \f[V]java.lang.management.ManagementPermission(monitor)\f[R]
 .RE
 .TP
 \f[V]Compiler.queue\f[R]
@@ -196,8 +190,6 @@ Prints methods queued for compilation.
 .RS
 .PP
 Impact: Low
-.PP
-Permission: \f[V]java.lang.management.ManagementPermission(monitor)\f[R]
 .RE
 .TP
 \f[V]Compiler.directives_add *filename* *arguments*\f[R]
@@ -205,8 +197,6 @@ Adds compiler directives from a file.
 .RS
 .PP
 Impact: Low
-.PP
-Permission: \f[V]java.lang.management.ManagementPermission(monitor)\f[R]
 .PP
 \f[I]arguments\f[R]:
 .PP
@@ -219,8 +209,6 @@ Remove all compiler directives.
 .RS
 .PP
 Impact: Low
-.PP
-Permission: \f[V]java.lang.management.ManagementPermission(monitor)\f[R]
 .RE
 .TP
 \f[V]Compiler.directives_print\f[R]
@@ -228,8 +216,6 @@ Prints all active compiler directives.
 .RS
 .PP
 Impact: Low
-.PP
-Permission: \f[V]java.lang.management.ManagementPermission(monitor)\f[R]
 .RE
 .TP
 \f[V]Compiler.directives_remove\f[R]
@@ -237,8 +223,6 @@ Remove latest added compiler directive.
 .RS
 .PP
 Impact: Low
-.PP
-Permission: \f[V]java.lang.management.ManagementPermission(monitor)\f[R]
 .RE
 .TP
 \f[V]GC.class_histogram\f[R] [\f[I]options\f[R]]
@@ -246,8 +230,6 @@ Provides statistics about the Java heap usage.
 .RS
 .PP
 Impact: High --- depends on Java heap size and content.
-.PP
-Permission: \f[V]java.lang.management.ManagementPermission(monitor)\f[R]
 .PP
 \f[B]Note:\f[R]
 .PP
@@ -273,8 +255,6 @@ Provides information about the Java finalization queue.
 .RS
 .PP
 Impact: Medium
-.PP
-Permission: \f[V]java.lang.management.ManagementPermission(monitor)\f[R]
 .RE
 .TP
 \f[V]GC.heap_dump\f[R] [\f[I]options\f[R]] [\f[I]arguments\f[R]]
@@ -283,8 +263,6 @@ Generates a HPROF format dump of the Java heap.
 .PP
 Impact: High --- depends on the Java heap size and content.
 Request a full GC unless the \f[V]-all\f[R] option is specified.
-.PP
-Permission: \f[V]java.lang.management.ManagementPermission(monitor)\f[R]
 .PP
 \f[B]Note:\f[R]
 .PP
@@ -314,8 +292,6 @@ Provides generic Java heap information.
 .RS
 .PP
 Impact: Medium
-.PP
-Permission: \f[V]java.lang.management.ManagementPermission(monitor)\f[R]
 .RE
 .TP
 \f[V]GC.run\f[R]
@@ -649,8 +625,6 @@ Loads JVMTI native agent.
 .PP
 Impact: Low
 .PP
-Permission: \f[V]java.lang.management.ManagementPermission(control)\f[R]
-.PP
 \f[I]arguments\f[R]:
 .IP \[bu] 2
 \f[I]library path\f[R]: Absolute path of the JVMTI agent to load.
@@ -665,8 +639,6 @@ Signals the JVM to do a data-dump request for JVMTI.
 .RS
 .PP
 Impact: High
-.PP
-Permission: \f[V]java.lang.management.ManagementPermission(monitor)\f[R]
 .RE
 .TP
 \f[V]ManagementAgent.start\f[R] [\f[I]options\f[R]]
@@ -770,8 +742,6 @@ Print the management agent status.
 .RS
 .PP
 Impact: Low --- no impact
-.PP
-Permission: \f[V]java.lang.management.ManagementPermission(monitor)\f[R]
 .RE
 .TP
 \f[V]ManagementAgent.stop\f[R]
@@ -786,8 +756,6 @@ Prints information about native heap usage through malloc_info(3).
 .RS
 .PP
 Impact: Low
-.PP
-Permission: \f[V]java.lang.management.ManagementPermission(monitor)\f[R]
 .RE
 .TP
 \f[V]System.trim_native_heap\f[R] (Linux only)
@@ -795,8 +763,6 @@ Attempts to free up memory by trimming the C-heap.
 .RS
 .PP
 Impact: Low
-.PP
-Permission: \f[V]java.lang.management.ManagementPermission(control)\f[R]
 .RE
 .TP
 \f[V]Thread.print\f[R] [\f[I]options\f[R]]
@@ -804,8 +770,6 @@ Prints all threads with stacktraces.
 .RS
 .PP
 Impact: Medium --- depends on the number of threads.
-.PP
-Permission: \f[V]java.lang.management.ManagementPermission(monitor)\f[R]
 .PP
 \f[B]Note:\f[R]
 .PP
@@ -827,8 +791,6 @@ loaded classes.
 .RS
 .PP
 Impact: Medium --- pause time depends on number of loaded classes
-.PP
-Permission: \f[V]java.lang.management.ManagementPermission(monitor)\f[R]
 .PP
 \f[I]arguments\f[R]:
 .IP \[bu] 2
@@ -857,8 +819,6 @@ Prints classloader hierarchy.
 Impact: Medium --- Depends on number of class loaders and classes
 loaded.
 .PP
-Permission: \f[V]java.lang.management.ManagementPermission(monitor)\f[R]
-.PP
 The following \f[I]options\f[R] must be specified using either
 \f[I]key\f[R] or \f[I]key\f[R]\f[V]=\f[R]\f[I]value\f[R] syntax.
 .PP
@@ -880,8 +840,6 @@ Prints statistics about all ClassLoaders.
 .RS
 .PP
 Impact: Low
-.PP
-Permission: \f[V]java.lang.management.ManagementPermission(monitor)\f[R]
 .RE
 .TP
 \f[V]VM.class_hierarchy\f[R] [\f[I]options\f[R]] [\f[I]arguments\f[R]]
@@ -893,8 +851,6 @@ loader.
 .RS
 .PP
 Impact: Medium --- depends on the number of loaded classes.
-.PP
-Permission: \f[V]java.lang.management.ManagementPermission(monitor)\f[R]
 .PP
 \f[B]Note:\f[R]
 .PP
@@ -924,8 +880,6 @@ Prints the command line used to start this VM instance.
 .RS
 .PP
 Impact: Low
-.PP
-Permission: \f[V]java.lang.management.ManagementPermission(monitor)\f[R]
 .RE
 .TP
 \f[V]VM.dynlibs\f[R]
@@ -933,8 +887,6 @@ Prints the loaded dynamic libraries.
 .RS
 .PP
 Impact: Low
-.PP
-Permission: \f[V]java.lang.management.ManagementPermission(monitor)\f[R]
 .RE
 .TP
 \f[V]VM.events\f[R] [\f[I]options\f[R]]
@@ -942,8 +894,6 @@ Print VM event logs
 .RS
 .PP
 Impact: Low --- Depends on event log size.
-.PP
-Permission: \f[V]java.lang.management.ManagementPermission(monitor)\f[R]
 .PP
 \f[I]options\f[R]:
 .PP
@@ -967,8 +917,6 @@ Prints information about the JVM environment and status.
 .RS
 .PP
 Impact: Low
-.PP
-Permission: \f[V]java.lang.management.ManagementPermission(monitor)\f[R]
 .RE
 .TP
 \f[V]VM.log\f[R] [\f[I]options\f[R]]
@@ -977,8 +925,6 @@ output, or rotates all logs.
 .RS
 .PP
 Impact: Low
-.PP
-Permission: \f[V]java.lang.management.ManagementPermission(control)\f[R]
 .PP
 \f[I]options\f[R]:
 .PP
@@ -1018,8 +964,6 @@ Prints the VM flag options and their current values.
 .PP
 Impact: Low
 .PP
-Permission: \f[V]java.lang.management.ManagementPermission(monitor)\f[R]
-.PP
 \f[B]Note:\f[R]
 .PP
 The following \f[I]options\f[R] must be specified using either
@@ -1036,8 +980,6 @@ Prints the statistics for the metaspace
 .RS
 .PP
 Impact: Medium --- Depends on number of classes loaded.
-.PP
-Permission: \f[V]java.lang.management.ManagementPermission(monitor)\f[R]
 .PP
 \f[B]Note:\f[R]
 .PP
@@ -1078,8 +1020,6 @@ Prints native memory usage
 .RS
 .PP
 Impact: Medium
-.PP
-Permission: \f[V]java.lang.management.ManagementPermission(monitor)\f[R]
 .PP
 \f[B]Note:\f[R]
 .PP
@@ -1132,8 +1072,6 @@ Sets the VM flag option by using the provided value.
 .PP
 Impact: Low
 .PP
-Permission: \f[V]java.lang.management.ManagementPermission(control)\f[R]
-.PP
 \f[I]arguments\f[R]:
 .IP \[bu] 2
 \f[I]flag name\f[R]: The name of the flag that you want to set (STRING,
@@ -1148,8 +1086,6 @@ Dumps the string table.
 .RS
 .PP
 Impact: Medium --- depends on the Java content.
-.PP
-Permission: \f[V]java.lang.management.ManagementPermission(monitor)\f[R]
 .PP
 \f[B]Note:\f[R]
 .PP
@@ -1168,8 +1104,6 @@ Dumps the symbol table.
 .PP
 Impact: Medium --- depends on the Java content.
 .PP
-Permission: \f[V]java.lang.management.ManagementPermission(monitor)\f[R]
-.PP
 \f[B]Note:\f[R]
 .PP
 The following \f[I]options\f[R] must be specified using either
@@ -1187,8 +1121,6 @@ Prints the statistics for dictionary hashtable sizes and bucket length.
 .PP
 Impact: Medium
 .PP
-Permission: \f[V]java.lang.management.ManagementPermission(monitor)\f[R]
-.PP
 \f[B]Note:\f[R]
 .PP
 The following \f[I]options\f[R] must be specified using either
@@ -1205,8 +1137,6 @@ Prints the system properties.
 .RS
 .PP
 Impact: Low
-.PP
-Permission: \f[V]java.util.PropertyPermission(*, read)\f[R]
 .RE
 .TP
 \f[V]VM.uptime\f[R] [\f[I]options\f[R]]
@@ -1231,7 +1161,4 @@ Prints JVM version information.
 .RS
 .PP
 Impact: Low
-.PP
-Permission:
-\f[V]java.util.PropertyPermission(java.vm.version, read)\f[R]
 .RE

@@ -42,6 +42,7 @@
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/classLoaderMetaspace.hpp"
+#include "memory/metaspace.hpp"
 #include "memory/metaspaceUtils.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
@@ -227,7 +228,7 @@ bool CollectedHeap::is_oop(oop object) const {
     return false;
   }
 
-  if (is_in(object->klass_raw())) {
+  if (!Metaspace::contains(object->klass_raw())) {
     return false;
   }
 
@@ -637,10 +638,6 @@ void CollectedHeap::reset_promotion_should_fail() {
 }
 
 #endif  // #ifndef PRODUCT
-
-bool CollectedHeap::is_archived_object(oop object) const {
-  return false;
-}
 
 // It's the caller's responsibility to ensure glitch-freedom
 // (if required).

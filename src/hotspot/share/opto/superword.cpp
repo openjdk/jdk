@@ -36,6 +36,7 @@
 #include "opto/mulnode.hpp"
 #include "opto/opcodes.hpp"
 #include "opto/opaquenode.hpp"
+#include "opto/rootnode.hpp"
 #include "opto/superword.hpp"
 #include "opto/vectornode.hpp"
 #include "opto/movenode.hpp"
@@ -71,6 +72,7 @@ SuperWord::SuperWord(PhaseIdealLoop* phase) :
   _lpt(nullptr),                                            // loop tree node
   _lp(nullptr),                                             // CountedLoopNode
   _pre_loop_end(nullptr),                                   // Pre loop CountedLoopEndNode
+  _loop_reductions(arena()),                                // reduction nodes in the current loop
   _bb(nullptr),                                             // basic block
   _iv(nullptr),                                             // induction var
   _race_possible(false),                                    // cases where SDMU is true
@@ -110,7 +112,17 @@ bool SuperWord::transform_loop(IdealLoopTree* lpt, bool do_optimization) {
     return false; // skip malformed counted loop
   }
 
-  if (cl->is_rce_post_loop() && cl->is_reduction_loop()) {
+  // Initialize simple data used by reduction marking early.
+  set_lpt(lpt);
+  set_lp(cl);
+  // For now, define one block which is the entire loop body.
+  set_bb(cl);
+
+  if (SuperWordReductions) {
+    mark_reductions();
+  }
+
+  if (cl->is_rce_post_loop() && is_marked_reduction_loop()) {
     // Post loop vectorization doesn't support reductions
     return false;
   }
@@ -166,18 +178,12 @@ bool SuperWord::transform_loop(IdealLoopTree* lpt, bool do_optimization) {
 
   init(); // initialize data structures
 
-  set_lpt(lpt);
-  set_lp(cl);
-
-  // For now, define one block which is the entire loop body
-  set_bb(cl);
-
   bool success = true;
   if (do_optimization) {
     assert(_packset.length() == 0, "packset must be empty");
     success = SLP_extract();
     if (PostLoopMultiversioning) {
-      if (cl->is_vectorized_loop() && cl->is_main_loop() && !cl->is_reduction_loop()) {
+      if (cl->is_vectorized_loop() && cl->is_main_loop() && !is_marked_reduction_loop()) {
         IdealLoopTree *lpt_next = cl->is_strip_mined() ? lpt->_parent->_next : lpt->_next;
         CountedLoopNode *cl_next = lpt_next->_head->as_CountedLoop();
         // Main loop SLP works well for manually unrolled loops. But post loop
@@ -201,7 +207,6 @@ bool SuperWord::transform_loop(IdealLoopTree* lpt, bool do_optimization) {
 //------------------------------early unrolling analysis------------------------------
 void SuperWord::unrolling_analysis(int &local_loop_unroll_factor) {
   bool is_slp = true;
-  ResourceMark rm;
   size_t ignored_size = lpt()->_body.size();
   int *ignored_loop_nodes = NEW_RESOURCE_ARRAY(int, ignored_size);
   Node_Stack nstack((int)ignored_size);
@@ -223,7 +228,7 @@ void SuperWord::unrolling_analysis(int &local_loop_unroll_factor) {
   for (uint i = 0; i < lpt()->_body.size(); i++) {
     Node* n = lpt()->_body.at(i);
     if (n == cl->incr() ||
-      n->is_reduction() ||
+      is_marked_reduction(n) ||
       n->is_AddP() ||
       n->is_Cmp() ||
       n->is_Bool() ||
@@ -407,6 +412,139 @@ void SuperWord::unrolling_analysis(int &local_loop_unroll_factor) {
     cl->mark_was_slp();
     if (cl->is_main_loop() || cl->is_rce_post_loop()) {
       cl->set_slp_max_unroll(local_loop_unroll_factor);
+    }
+  }
+}
+
+bool SuperWord::is_reduction(const Node* n) {
+  if (!is_reduction_operator(n)) {
+    return false;
+  }
+  // Test whether there is a reduction cycle via every edge index
+  // (typically indices 1 and 2).
+  for (uint input = 1; input < n->req(); input++) {
+    if (in_reduction_cycle(n, input)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool SuperWord::is_reduction_operator(const Node* n) {
+  int opc = n->Opcode();
+  return (opc != ReductionNode::opcode(opc, n->bottom_type()->basic_type()));
+}
+
+bool SuperWord::in_reduction_cycle(const Node* n, uint input) {
+  // First find input reduction path to phi node.
+  auto has_my_opcode = [&](const Node* m){ return m->Opcode() == n->Opcode(); };
+  PathEnd path_to_phi = find_in_path(n, input, LoopMaxUnroll, has_my_opcode,
+                                     [&](const Node* m) { return m->is_Phi(); });
+  const Node* phi = path_to_phi.first;
+  if (phi == nullptr) {
+    return false;
+  }
+  // If there is an input reduction path from the phi's loop-back to n, then n
+  // is part of a reduction cycle.
+  const Node* first = phi->in(LoopNode::LoopBackControl);
+  PathEnd path_from_phi = find_in_path(first, input, LoopMaxUnroll, has_my_opcode,
+                                       [&](const Node* m) { return m == n; });
+  return path_from_phi.first != nullptr;
+}
+
+Node* SuperWord::original_input(const Node* n, uint i) {
+  if (n->has_swapped_edges()) {
+    assert(n->is_Add() || n->is_Mul(), "n should be commutative");
+    if (i == 1) {
+      return n->in(2);
+    } else if (i == 2) {
+      return n->in(1);
+    }
+  }
+  return n->in(i);
+}
+
+void SuperWord::mark_reductions() {
+
+  _loop_reductions.clear();
+
+  // Iterate through all phi nodes associated to the loop and search for
+  // reduction cycles in the basic block.
+  for (DUIterator_Fast imax, i = lp()->fast_outs(imax); i < imax; i++) {
+    const Node* phi = lp()->fast_out(i);
+    if (!phi->is_Phi()) {
+      continue;
+    }
+    if (phi->outcnt() == 0) {
+      continue;
+    }
+    if (phi == iv()) {
+      continue;
+    }
+    // The phi's loop-back is considered the first node in the reduction cycle.
+    const Node* first = phi->in(LoopNode::LoopBackControl);
+    if (first == nullptr) {
+      continue;
+    }
+    // Test that the node fits the standard pattern for a reduction operator.
+    if (!is_reduction_operator(first)) {
+      continue;
+    }
+    // Test that 'first' is the beginning of a reduction cycle ending in 'phi'.
+    // To contain the number of searched paths, assume that all nodes in a
+    // reduction cycle are connected via the same edge index, modulo swapped
+    // inputs. This assumption is realistic because reduction cycles usually
+    // consist of nodes cloned by loop unrolling.
+    int reduction_input = -1;
+    int path_nodes = -1;
+    for (uint input = 1; input < first->req(); input++) {
+      // Test whether there is a reduction path in the basic block from 'first'
+      // to the phi node following edge index 'input'.
+      PathEnd path =
+        find_in_path(
+          first, input, lpt()->_body.size(),
+          [&](const Node* n) { return n->Opcode() == first->Opcode() && in_bb(n); },
+          [&](const Node* n) { return n == phi; });
+      if (path.first != nullptr) {
+        reduction_input = input;
+        path_nodes = path.second;
+        break;
+      }
+    }
+    if (reduction_input == -1) {
+      continue;
+    }
+    // Test that reduction nodes do not have any users in the loop besides their
+    // reduction cycle successors.
+    const Node* current = first;
+    const Node* succ = phi; // current's successor in the reduction cycle.
+    bool used_in_loop = false;
+    for (int i = 0; i < path_nodes; i++) {
+      for (DUIterator_Fast jmax, j = current->fast_outs(jmax); j < jmax; j++) {
+        Node* u = current->fast_out(j);
+        if (!in_bb(u)) {
+          continue;
+        }
+        if (u == succ) {
+          continue;
+        }
+        used_in_loop = true;
+        break;
+      }
+      if (used_in_loop) {
+        break;
+      }
+      succ = current;
+      current = original_input(current, reduction_input);
+    }
+    if (used_in_loop) {
+      continue;
+    }
+    // Reduction cycle found. Mark all nodes in the found path as reductions.
+    current = first;
+    for (int i = 0; i < path_nodes; i++) {
+      _loop_reductions.set(current->_idx);
+      current = original_input(current, reduction_input);
     }
   }
 }
@@ -1291,11 +1429,13 @@ bool SuperWord::are_adjacent_refs(Node* s1, Node* s2) {
     return false;
   }
 
-  // FIXME - co_locate_pack fails on Stores in different mem-slices, so
-  // only pack memops that are in the same alias set until that's fixed.
+  // Adjacent memory references must be on the same slice.
   if (!same_memory_slice(s1->as_Mem(), s2->as_Mem())) {
     return false;
   }
+
+  // Adjacent memory references must have the same base, be comparable
+  // and have the correct distance between them.
   SWPointer p1(s1->as_Mem(), this, nullptr, false);
   SWPointer p2(s2->as_Mem(), this, nullptr, false);
   if (p1.base() != p2.base() || !p1.comparable(p2)) return false;
@@ -1376,7 +1516,7 @@ bool SuperWord::independent(Node* s1, Node* s2) {
 // those nodes, and have not found another node from the pack, we know
 // that all nodes in the pack are independent.
 Node* SuperWord::find_dependence(Node_List* p) {
-  if (p->at(0)->is_reduction()) {
+  if (is_marked_reduction(p->at(0))) {
     return nullptr; // ignore reductions
   }
   ResourceMark rm;
@@ -1434,7 +1574,7 @@ bool SuperWord::reduction(Node* s1, Node* s2) {
   int d1 = depth(s1);
   int d2 = depth(s2);
   if (d2 > d1) {
-    if (s1->is_reduction() && s2->is_reduction()) {
+    if (is_marked_reduction(s1) && is_marked_reduction(s2)) {
       // This is an ordered set, so s1 should define s2
       for (DUIterator_Fast imax, i = s1->fast_outs(imax); i < imax; i++) {
         Node* t1 = s1->fast_out(i);
@@ -1651,7 +1791,7 @@ void SuperWord::order_def_uses(Node_List* p) {
   if (s1->is_Store()) return;
 
   // reductions are always managed beforehand
-  if (s1->is_reduction()) return;
+  if (is_marked_reduction(s1)) return;
 
   for (DUIterator_Fast imax, i = s1->fast_outs(imax); i < imax; i++) {
     Node* t1 = s1->fast_out(i);
@@ -1687,15 +1827,15 @@ void SuperWord::order_def_uses(Node_List* p) {
 bool SuperWord::opnd_positions_match(Node* d1, Node* u1, Node* d2, Node* u2) {
   // check reductions to see if they are marshalled to represent the reduction
   // operator in a specified opnd
-  if (u1->is_reduction() && u2->is_reduction()) {
+  if (is_marked_reduction(u1) && is_marked_reduction(u2)) {
     // ensure reductions have phis and reduction definitions feeding the 1st operand
     Node* first = u1->in(2);
-    if (first->is_Phi() || first->is_reduction()) {
+    if (first->is_Phi() || is_marked_reduction(first)) {
       u1->swap_edges(1, 2);
     }
     // ensure reductions have phis and reduction definitions feeding the 1st operand
     first = u2->in(2);
-    if (first->is_Phi() || first->is_reduction()) {
+    if (first->is_Phi() || is_marked_reduction(first)) {
       u2->swap_edges(1, 2);
     }
     return true;
@@ -1918,7 +2058,7 @@ void SuperWord::filter_packs() {
       remove_pack_at(i);
     }
     Node *n = pk->at(0);
-    if (n->is_reduction()) {
+    if (is_marked_reduction(n)) {
       _num_reductions++;
     } else {
       _num_work_vecs++;
@@ -2169,7 +2309,7 @@ bool SuperWord::implemented(Node_List* p) {
   if (p0 != nullptr) {
     int opc = p0->Opcode();
     uint size = p->size();
-    if (p0->is_reduction()) {
+    if (is_marked_reduction(p0)) {
       const Type *arith_type = p0->bottom_type();
       // Length 2 reductions of INT/LONG do not offer performance benefits
       if (((arith_type->basic_type() == T_INT) || (arith_type->basic_type() == T_LONG)) && (size == 2)) {
@@ -2259,13 +2399,13 @@ bool SuperWord::profitable(Node_List* p) {
     }
   }
   // Check if reductions are connected
-  if (p0->is_reduction()) {
+  if (is_marked_reduction(p0)) {
     Node* second_in = p0->in(2);
     Node_List* second_pk = my_pack(second_in);
     if ((second_pk == nullptr) || (_num_work_vecs == _num_reductions)) {
-      // Remove reduction flag if no parent pack or if not enough work
+      // Unmark reduction if no parent pack or if not enough work
       // to cover reduction expansion overhead
-      p0->remove_flag(Node::Flag_is_reduction);
+      _loop_reductions.remove(p0->_idx);
       return false;
     } else if (second_pk->size() != p->size()) {
       return false;
@@ -2297,7 +2437,7 @@ bool SuperWord::profitable(Node_List* p) {
           if (def == n) {
             // Reductions should only have a Phi use at the loop head or a non-phi use
             // outside of the loop if it is the last element of the pack (e.g. SafePoint).
-            if (def->is_reduction() &&
+            if (is_marked_reduction(def) &&
                 ((use->is_Phi() && use->in(0) == _lpt->_head) ||
                  (!_lpt->is_member(_phase->get_loop(_phase->ctrl_or_self(use))) && i == p->size()-1))) {
               continue;
@@ -2336,271 +2476,361 @@ void SuperWord::verify_packs() {
 }
 #endif
 
-//------------------------------schedule---------------------------
-// Adjust the memory graph for the packed operations
-void SuperWord::schedule() {
-
-  // Co-locate in the memory graph the members of each memory pack
-  for (int i = 0; i < _packset.length(); i++) {
-    co_locate_pack(_packset.at(i));
-  }
-}
-
-//-------------------------------remove_and_insert-------------------
-// Remove "current" from its current position in the memory graph and insert
-// it after the appropriate insertion point (lip or uip).
-void SuperWord::remove_and_insert(MemNode *current, MemNode *prev, MemNode *lip,
-                                  Node *uip, Unique_Node_List &sched_before) {
-  Node* my_mem = current->in(MemNode::Memory);
-  bool sched_up = sched_before.member(current);
-
-  // remove current_store from its current position in the memory graph
-  for (DUIterator i = current->outs(); current->has_out(i); i++) {
-    Node* use = current->out(i);
-    if (use->is_Mem()) {
-      assert(use->in(MemNode::Memory) == current, "must be");
-      if (use == prev) { // connect prev to my_mem
-          _igvn.replace_input_of(use, MemNode::Memory, my_mem);
-          --i; //deleted this edge; rescan position
-      } else if (sched_before.member(use)) {
-        if (!sched_up) { // Will be moved together with current
-          _igvn.replace_input_of(use, MemNode::Memory, uip);
-          --i; //deleted this edge; rescan position
-        }
-      } else {
-        if (sched_up) { // Will be moved together with current
-          _igvn.replace_input_of(use, MemNode::Memory, lip);
-          --i; //deleted this edge; rescan position
-        }
-      }
-    }
-  }
-
-  Node *insert_pt =  sched_up ?  uip : lip;
-
-  // all uses of insert_pt's memory state should use current's instead
-  for (DUIterator i = insert_pt->outs(); insert_pt->has_out(i); i++) {
-    Node* use = insert_pt->out(i);
-    if (use->is_Mem()) {
-      assert(use->in(MemNode::Memory) == insert_pt, "must be");
-      _igvn.replace_input_of(use, MemNode::Memory, current);
-      --i; //deleted this edge; rescan position
-    } else if (!sched_up && use->is_Phi() && use->bottom_type() == Type::MEMORY) {
-      uint pos; //lip (lower insert point) must be the last one in the memory slice
-      for (pos=1; pos < use->req(); pos++) {
-        if (use->in(pos) == insert_pt) break;
-      }
-      _igvn.replace_input_of(use, pos, current);
-      --i;
-    }
-  }
-
-  //connect current to insert_pt
-  _igvn.replace_input_of(current, MemNode::Memory, insert_pt);
-}
-
-//------------------------------co_locate_pack----------------------------------
-// To schedule a store pack, we need to move any sandwiched memory ops either before
-// or after the pack, based upon dependence information:
-// (1) If any store in the pack depends on the sandwiched memory op, the
-//     sandwiched memory op must be scheduled BEFORE the pack;
-// (2) If a sandwiched memory op depends on any store in the pack, the
-//     sandwiched memory op must be scheduled AFTER the pack;
-// (3) If a sandwiched memory op (say, memA) depends on another sandwiched
-//     memory op (say memB), memB must be scheduled before memA. So, if memA is
-//     scheduled before the pack, memB must also be scheduled before the pack;
-// (4) If there is no dependence restriction for a sandwiched memory op, we simply
-//     schedule this store AFTER the pack
-// (5) We know there is no dependence cycle, so there in no other case;
-// (6) Finally, all memory ops in another single pack should be moved in the same direction.
+// The PacksetGraph combines the DepPreds graph with the packset. In the PackSet
+// graph, we have two kinds of nodes:
+//  (1) pack-node:   Represents all nodes of some pack p in a single node, which
+//                   shall later become a vector node.
+//  (2) scalar-node: Represents a node that is not in any pack.
+// For any edge (n1, n2) in DepPreds, we add an edge to the PacksetGraph for the
+// PacksetGraph nodes corresponding to n1 and n2.
+// We work from the DepPreds graph, because it gives us all the data-dependencies,
+// as well as more refined memory-dependencies than the C2 graph. DepPreds does
+// not have cycles. But packing nodes can introduce cyclic dependencies. Example:
 //
-// To schedule a load pack, we use the memory state of either the first or the last load in
-// the pack, based on the dependence constraint.
-void SuperWord::co_locate_pack(Node_List* pk) {
-  if (pk->at(0)->is_Store()) {
-    MemNode* first     = executed_first(pk)->as_Mem();
-    MemNode* last      = executed_last(pk)->as_Mem();
-    Unique_Node_List schedule_before_pack;
-    Unique_Node_List memops;
+//                                                       +--------+
+//  A -> X                                               |        v
+//                     Pack [A,B] and [X,Y]             [A,B]    [X,Y]
+//  Y -> B                                                 ^        |
+//                                                         +--------+
+//
+class PacksetGraph {
+private:
+  // pid: packset graph node id.
+  GrowableArray<int> _pid;                 // bb_idx(n) -> pid
+  GrowableArray<Node*> _pid_to_node;       // one node per pid, find rest via my_pack
+  GrowableArray<GrowableArray<int>> _out;  // out-edges
+  GrowableArray<int> _incnt;               // number of (implicit) in-edges
+  int _max_pid = 0;
 
-    MemNode* current   = last->in(MemNode::Memory)->as_Mem();
-    MemNode* previous  = last;
-    while (true) {
-      assert(in_bb(current), "stay in block");
-      memops.push(previous);
-      for (DUIterator i = current->outs(); current->has_out(i); i++) {
-        Node* use = current->out(i);
-        if (use->is_Mem() && use != previous)
-          memops.push(use);
+  bool _schedule_success;
+
+  SuperWord* _slp;
+public:
+  PacksetGraph(SuperWord* slp)
+  : _pid(8, 0, /* default */ 0), _slp(slp) {
+  }
+  // Get pid, if there is a packset node that n belongs to. Else return 0.
+  int get_pid_or_zero(const Node* n) const {
+    if (!_slp->in_bb(n)) {
+      return 0;
+    }
+    int idx = _slp->bb_idx(n);
+    if (idx >= _pid.length()) {
+      return 0;
+    } else {
+      return _pid.at(idx);
+    }
+  }
+  int get_pid(const Node* n) {
+    int poz = get_pid_or_zero(n);
+    assert(poz != 0, "pid should not be zero");
+    return poz;
+  }
+  void set_pid(Node* n, int pid) {
+    assert(n != nullptr && pid > 0, "sane inputs");
+    assert(_slp->in_bb(n), "must be");
+    int idx = _slp->bb_idx(n);
+    _pid.at_put_grow(idx, pid);
+    _pid_to_node.at_put_grow(pid - 1, n, nullptr);
+  }
+  Node* get_node(int pid) {
+    assert(pid > 0 && pid <= _pid_to_node.length(), "pid must be mapped");
+    Node* n = _pid_to_node.at(pid - 1);
+    assert(n != nullptr, "sanity");
+    return n;
+  }
+  int new_pid() {
+    _incnt.push(0);
+    _out.push(GrowableArray<int>());
+    return ++_max_pid;
+  }
+  int incnt(int pid) { return _incnt.at(pid - 1); }
+  void incnt_set(int pid, int cnt) { return _incnt.at_put(pid - 1, cnt); }
+  GrowableArray<int>& out(int pid) { return _out.at(pid - 1); }
+  bool schedule_success() const { return _schedule_success; }
+
+  // Create nodes (from packs and scalar-nodes), and add edges, based on DepPreds.
+  void build() {
+    const GrowableArray<Node_List*> &packset = _slp->packset();
+    const GrowableArray<Node*> &block = _slp->block();
+    const DepGraph &dg = _slp->dg();
+    // Map nodes in packsets
+    for (int i = 0; i < packset.length(); i++) {
+      Node_List* p = packset.at(i);
+      int pid = new_pid();
+      for (uint k = 0; k < p->size(); k++) {
+        Node* n = p->at(k);
+        set_pid(n, pid);
+        assert(_slp->my_pack(n) == p, "matching packset");
       }
-      if (current == first) break;
-      previous = current;
-      current  = current->in(MemNode::Memory)->as_Mem();
     }
 
-    // determine which memory operations should be scheduled before the pack
-    for (uint i = 1; i < memops.size(); i++) {
-      Node *s1 = memops.at(i);
-      if (!in_pack(s1, pk) && !schedule_before_pack.member(s1)) {
-        for (uint j = 0; j< i; j++) {
-          Node *s2 = memops.at(j);
-          if (!independent(s1, s2)) {
-            if (in_pack(s2, pk) || schedule_before_pack.member(s2)) {
-              schedule_before_pack.push(s1); // s1 must be scheduled before
-              Node_List* mem_pk = my_pack(s1);
-              if (mem_pk != nullptr) {
-                for (uint ii = 0; ii < mem_pk->size(); ii++) {
-                  Node* s = mem_pk->at(ii);  // follow partner
-                  if (memops.member(s) && !schedule_before_pack.member(s))
-                    schedule_before_pack.push(s);
-                }
-              }
-              break;
-            }
+    int max_pid_packset = _max_pid;
+
+    // Map nodes not in packset
+    for (int i = 0; i < block.length(); i++) {
+      Node* n = block.at(i);
+      if (n->is_Phi() || n->is_CFG()) {
+        continue; // ignore control flow
+      }
+      int pid = get_pid_or_zero(n);
+      if (pid == 0) {
+        pid = new_pid();
+        set_pid(n, pid);
+        assert(_slp->my_pack(n) == nullptr || UseVectorCmov, "no packset");
+      }
+    }
+
+    // Map edges for packset nodes
+    VectorSet set;
+    for (int i = 0; i < packset.length(); i++) {
+      Node_List* p = packset.at(i);
+      set.clear();
+      int pid = get_pid(p->at(0));
+      for (uint k = 0; k < p->size(); k++) {
+        Node* n = p->at(k);
+        assert(pid == get_pid(n), "all nodes in pack have same pid");
+        for (DepPreds preds(n, dg); !preds.done(); preds.next()) {
+          Node* pred = preds.current();
+          int pred_pid = get_pid_or_zero(pred);
+          if (pred_pid == pid && _slp->is_marked_reduction(n)) {
+            continue; // reduction -> self-cycle is not a cyclic dependency
+          }
+          // Only add edges once, and only for mapped nodes (in block)
+          if (pred_pid > 0 && !set.test_set(pred_pid)) {
+            incnt_set(pid, incnt(pid) + 1); // increment
+            out(pred_pid).push(pid);
           }
         }
       }
     }
 
-    Node*    upper_insert_pt = first->in(MemNode::Memory);
-    // Following code moves loads connected to upper_insert_pt below aliased stores.
-    // Collect such loads here and reconnect them back to upper_insert_pt later.
-    memops.clear();
-    for (DUIterator i = upper_insert_pt->outs(); upper_insert_pt->has_out(i); i++) {
-      Node* use = upper_insert_pt->out(i);
-      if (use->is_Mem() && !use->is_Store()) {
-        memops.push(use);
+    // Map edges for nodes not in packset
+    for (int i = 0; i < block.length(); i++) {
+      Node* n = block.at(i);
+      int pid = get_pid_or_zero(n); // zero for Phi or CFG
+      if (pid <= max_pid_packset) {
+        continue; // Only scalar-nodes
+      }
+      for (DepPreds preds(n, dg); !preds.done(); preds.next()) {
+        Node* pred = preds.current();
+        int pred_pid = get_pid_or_zero(pred);
+        // Only add edges for mapped nodes (in block)
+        if (pred_pid > 0) {
+          incnt_set(pid, incnt(pid) + 1); // increment
+          out(pred_pid).push(pid);
+        }
       }
     }
+  }
 
-    MemNode* lower_insert_pt = last;
-    previous                 = last; //previous store in pk
-    current                  = last->in(MemNode::Memory)->as_Mem();
+  // Schedule nodes of PacksetGraph to worklist, using topsort: schedule a node
+  // that has zero incnt. If a PacksetGraph node corresponds to memops, then add
+  // those to the memops_schedule. At the end, we return the memops_schedule, and
+  // note if topsort was successful.
+  Node_List schedule() {
+    Node_List memops_schedule;
+    GrowableArray<int> worklist;
+    // Directly schedule all nodes without precedence
+    for (int pid = 1; pid <= _max_pid; pid++) {
+      if (incnt(pid) == 0) {
+        worklist.push(pid);
+      }
+    }
+    // Continue scheduling via topological sort
+    for (int i = 0; i < worklist.length(); i++) {
+      int pid = worklist.at(i);
 
-    // start scheduling from "last" to "first"
-    while (true) {
-      assert(in_bb(current), "stay in block");
-      assert(in_pack(previous, pk), "previous stays in pack");
-      Node* my_mem = current->in(MemNode::Memory);
-
-      if (in_pack(current, pk)) {
-        // Forward users of my memory state (except "previous) to my input memory state
-        for (DUIterator i = current->outs(); current->has_out(i); i++) {
-          Node* use = current->out(i);
-          if (use->is_Mem() && use != previous) {
-            assert(use->in(MemNode::Memory) == current, "must be");
-            if (schedule_before_pack.member(use)) {
-              _igvn.replace_input_of(use, MemNode::Memory, upper_insert_pt);
-            } else {
-              _igvn.replace_input_of(use, MemNode::Memory, lower_insert_pt);
-            }
-            --i; // deleted this edge; rescan position
+      // Add memops to memops_schedule
+      Node* n = get_node(pid);
+      Node_List* p = _slp->my_pack(n);
+      if (n->is_Mem()) {
+        if (p == nullptr) {
+          memops_schedule.push(n);
+        } else {
+          for (uint k = 0; k < p->size(); k++) {
+            memops_schedule.push(p->at(k));
+            assert(p->at(k)->is_Mem(), "only schedule memops");
           }
         }
-        previous = current;
-      } else { // !in_pack(current, pk) ==> a sandwiched store
-        remove_and_insert(current, previous, lower_insert_pt, upper_insert_pt, schedule_before_pack);
       }
 
-      if (current == first) break;
-      current = my_mem->as_Mem();
-    } // end while
-
-    // Reconnect loads back to upper_insert_pt.
-    for (uint i = 0; i < memops.size(); i++) {
-      Node *ld = memops.at(i);
-      if (ld->in(MemNode::Memory) != upper_insert_pt) {
-        _igvn.replace_input_of(ld, MemNode::Memory, upper_insert_pt);
-      }
-    }
-  } else if (pk->at(0)->is_Load()) { // Load pack
-    // All loads in the pack should have the same memory state. By default,
-    // we use the memory state of the last load. However, if any load could
-    // not be moved down due to the dependence constraint, we use the memory
-    // state of the first load.
-    Node* mem_input = pick_mem_state(pk);
-    _igvn.hash_delete(mem_input);
-    // Give each load the same memory state
-    for (uint i = 0; i < pk->size(); i++) {
-      LoadNode* ld = pk->at(i)->as_Load();
-      _igvn.replace_input_of(ld, MemNode::Memory, mem_input);
-    }
-  }
-}
-
-// Finds the first and last memory state and then picks either of them by checking dependence constraints.
-// If a store is dependent on an earlier load then we need to pick the memory state of the first load and cannot
-// pick the memory state of the last load.
-Node* SuperWord::pick_mem_state(Node_List* pk) {
-  Node* first_mem = find_first_mem_state(pk);
-  bool is_dependent = false;
-  Node* last_mem  = find_last_mem_state(pk, first_mem, is_dependent);
-
-  for (uint i = 0; i < pk->size(); i++) {
-    Node* ld = pk->at(i);
-    for (Node* current = last_mem; current != ld->in(MemNode::Memory); current = current->in(MemNode::Memory)) {
-      assert(current->is_Mem() && in_bb(current), "unexpected memory");
-      assert(current != first_mem, "corrupted memory graph");
-      if (!independent(current, ld)) {
-        // A later unvectorized store depends on this load, pick the memory state of the first load. This can happen,
-        // for example, if a load pack has interleaving stores that are part of a store pack which, however, is removed
-        // at the pack filtering stage. This leaves us with only a load pack for which we cannot take the memory state
-        // of the last load as the remaining unvectorized stores could interfere since they have a dependency to the loads.
-        // Some stores could be executed before the load vector resulting in a wrong result. We need to take the
-        // memory state of the first load to prevent this.
-        if (my_pack(current) != nullptr && is_dependent) {
-          // For vectorized store pack, when the load pack depends on
-          // some memory operations locating after first_mem, we still
-          // take the memory state of the last load.
-          continue;
+      // Decrement incnt for all successors
+      for (int j = 0; j < out(pid).length(); j++){
+        int pid_use = out(pid).at(j);
+        int incnt_use = incnt(pid_use) - 1;
+        incnt_set(pid_use, incnt_use);
+        // Did use lose its last input?
+        if (incnt_use == 0) {
+          worklist.push(pid_use);
         }
-        return first_mem;
       }
     }
+
+    // Was every pid scheduled? If not, we found some cycles in the PacksetGraph.
+    _schedule_success = (worklist.length() == _max_pid);
+    return memops_schedule;
   }
-  return last_mem;
+
+  // Print the PacksetGraph.
+  // print_nodes = true: print all C2 nodes beloning to PacksetGrahp node.
+  // print_zero_incnt = false: do not print nodes that have no in-edges (any more).
+  void print(bool print_nodes, bool print_zero_incnt) {
+    const GrowableArray<Node*> &block = _slp->block();
+    tty->print_cr("PacksetGraph");
+    for (int pid = 1; pid <= _max_pid; pid++) {
+      if (incnt(pid) == 0 && !print_zero_incnt) {
+        continue;
+      }
+      tty->print("Node %d. incnt %d [", pid, incnt(pid));
+      for (int j = 0; j < out(pid).length(); j++) {
+        tty->print("%d ", out(pid).at(j));
+      }
+      tty->print_cr("]");
+#ifndef PRODUCT
+      if (print_nodes) {
+        for (int i = 0; i < block.length(); i++) {
+          Node* n = block.at(i);
+          if (get_pid_or_zero(n) == pid) {
+            tty->print("    ");
+            n->dump();
+          }
+        }
+      }
+#endif
+    }
+  }
+};
+
+// The C2 graph (specifically the memory graph), needs to be re-ordered.
+// (1) Build the PacksetGraph. It combines the DepPreds graph with the
+//     packset. The PacksetGraph gives us the dependencies that must be
+//     respected after scheduling.
+// (2) Schedule the PacksetGraph to the memops_schedule, which represents
+//     a linear order of all memops in the body. The order respects the
+//     dependencies of the PacksetGraph.
+// (3) If the PacksetGraph has cycles, we cannot schedule. Abort.
+// (4) Use the memops_schedule to re-order the memops in all slices.
+void SuperWord::schedule() {
+  if (_packset.length() == 0) {
+    return; // empty packset
+  }
+  ResourceMark rm;
+
+  // (1) Build the PacksetGraph.
+  PacksetGraph graph(this);
+  graph.build();
+
+  // (2) Schedule the PacksetGraph.
+  Node_List memops_schedule = graph.schedule();
+
+  // (3) Check if the PacksetGraph schedule succeeded (had no cycles).
+  // We now know that we only have independent packs, see verify_packs.
+  // This is a necessary but not a sufficient condition for an acyclic
+  // graph (DAG) after scheduling. Thus, we must check if the packs have
+  // introduced a cycle. The SuperWord paper mentions the need for this
+  // in "3.7 Scheduling".
+  if (!graph.schedule_success()) {
+    if (TraceSuperWord) {
+      tty->print_cr("SuperWord::schedule found cycle in PacksetGraph:");
+      graph.print(true, false);
+      tty->print_cr("removing all packs from packset.");
+    }
+    _packset.clear();
+    return;
+  }
+
+#ifndef PRODUCT
+  if (TraceSuperWord) {
+    tty->print_cr("SuperWord::schedule: memops_schedule:");
+    memops_schedule.dump();
+  }
+#endif
+
+  // (4) Use the memops_schedule to re-order the memops in all slices.
+  schedule_reorder_memops(memops_schedule);
 }
 
-// Walk the memory graph from the current first load until the
-// start of the loop and check if nodes on the way are memory
-// edges of loads in the pack. The last one we encounter is the
-// first load.
-Node* SuperWord::find_first_mem_state(Node_List* pk) {
-  Node* first_mem = pk->at(0)->in(MemNode::Memory);
-  for (Node* current = first_mem; in_bb(current); current = current->is_Phi() ? current->in(LoopNode::EntryControl) : current->in(MemNode::Memory)) {
-    assert(current->is_Mem() || (current->is_Phi() && current->in(0) == bb()), "unexpected memory");
-    for (uint i = 1; i < pk->size(); i++) {
-      Node* ld = pk->at(i);
-      if (ld->in(MemNode::Memory) == current) {
-        first_mem = current;
-        break;
-      }
-    }
-  }
-  return first_mem;
-}
 
-// Find the last load by going over the pack again and walking
-// the memory graph from the loads of the pack to the memory of
-// the first load. If we encounter the memory of the current last
-// load, then we started from further down in the memory graph and
-// the load we started from is the last load. At the same time, the
-// function also helps determine if some loads in the pack depend on
-// early memory operations which locate after first_mem.
-Node* SuperWord::find_last_mem_state(Node_List* pk, Node* first_mem, bool &is_dependent) {
-  Node* last_mem = pk->at(0)->in(MemNode::Memory);
-  for (uint i = 0; i < pk->size(); i++) {
-    Node* ld = pk->at(i);
-    for (Node* current = ld->in(MemNode::Memory); current != first_mem; current = current->in(MemNode::Memory)) {
-      assert(current->is_Mem() && in_bb(current), "unexpected memory");
-      // Determine if the load pack is dependent on some memory operations locating after first_mem.
-      is_dependent |= !independent(current, ld);
-      if (current->in(MemNode::Memory) == last_mem) {
-        last_mem = ld->in(MemNode::Memory);
+// Reorder the memory graph for all slices in parallel. We walk over the schedule once,
+// and track the current memory state of each slice.
+void SuperWord::schedule_reorder_memops(Node_List &memops_schedule) {
+  int max_slices = _phase->C->num_alias_types();
+  // When iterating over the memops_schedule, we keep track of the current memory state,
+  // which is the Phi or a store in the loop.
+  GrowableArray<Node*> current_state_in_slice(max_slices, max_slices, nullptr);
+  // The memory state after the loop is the last store inside the loop. If we reorder the
+  // loop we may have a different last store, and we need to adjust the uses accordingly.
+  GrowableArray<Node*> old_last_store_in_slice(max_slices, max_slices, nullptr);
+
+  // (1) Set up the initial memory state from Phi. And find the old last store.
+  for (int i = 0; i < _mem_slice_head.length(); i++) {
+    Node* phi  = _mem_slice_head.at(i);
+    assert(phi->is_Phi(), "must be phi");
+    int alias_idx = _phase->C->get_alias_index(phi->adr_type());
+    current_state_in_slice.at_put(alias_idx, phi);
+
+    // If we have a memory phi, we have a last store in the loop, find it over backedge.
+    StoreNode* last_store = phi->in(2)->as_Store();
+    old_last_store_in_slice.at_put(alias_idx, last_store);
+  }
+
+  // (2) Walk over memops_schedule, append memops to the current state
+  //     of that slice. If it is a Store, we take it as the new state.
+  for (uint i = 0; i < memops_schedule.size(); i++) {
+    MemNode* n = memops_schedule.at(i)->as_Mem();
+    assert(n->is_Load() || n->is_Store(), "only loads or stores");
+    int alias_idx = _phase->C->get_alias_index(n->adr_type());
+    Node* current_state = current_state_in_slice.at(alias_idx);
+    if (current_state == nullptr) {
+      // If there are only loads in a slice, we never update the memory
+      // state in the loop, hence there is no phi for the memory state.
+      // We just keep the old memory state that was outside the loop.
+      assert(n->is_Load() && !in_bb(n->in(MemNode::Memory)),
+             "only loads can have memory state from outside loop");
+    } else {
+      _igvn.replace_input_of(n, MemNode::Memory, current_state);
+      if (n->is_Store()) {
+        current_state_in_slice.at_put(alias_idx, n);
       }
     }
   }
-  return last_mem;
+
+  // (3) For each slice, we add the current state to the backedge
+  //     in the Phi. Further, we replace uses of the old last store
+  //     with uses of the new last store (current_state).
+  Node_List uses_after_loop;
+  for (int i = 0; i < _mem_slice_head.length(); i++) {
+    Node* phi  = _mem_slice_head.at(i);
+    int alias_idx = _phase->C->get_alias_index(phi->adr_type());
+    Node* current_state = current_state_in_slice.at(alias_idx);
+    assert(current_state != nullptr, "slice is mapped");
+    assert(current_state != phi, "did some work in between");
+    assert(current_state->is_Store(), "sanity");
+    _igvn.replace_input_of(phi, 2, current_state);
+
+    // Replace uses of old last store with current_state (new last store)
+    // Do it in two loops: first find all the uses, and change the graph
+    // in as second loop so that we do not break the iterator.
+    Node* last_store = old_last_store_in_slice.at(alias_idx);
+    assert(last_store != nullptr, "we have a old last store");
+    uses_after_loop.clear();
+    for (DUIterator_Fast kmax, k = last_store->fast_outs(kmax); k < kmax; k++) {
+      Node* use = last_store->fast_out(k);
+      if (!in_bb(use)) {
+        uses_after_loop.push(use);
+      }
+    }
+    for (uint k = 0; k < uses_after_loop.size(); k++) {
+      Node* use = uses_after_loop.at(k);
+      for (uint j = 0; j < use->req(); j++) {
+        Node* def = use->in(j);
+        if (def == last_store) {
+          _igvn.replace_input_of(use, j, current_state);
+        }
+      }
+    }
+  }
 }
 
 #ifndef PRODUCT
@@ -2673,12 +2903,14 @@ bool SuperWord::output() {
   for (int i = 0; i < _block.length(); i++) {
     Node* n = _block.at(i);
     Node_List* p = my_pack(n);
-    if (p && n == executed_last(p)) {
+    if (p != nullptr && n == p->at(p->size()-1)) {
+      // After schedule_reorder_memops, we know that the memops have the same order in the pack
+      // as in the memory slice. Hence, "first" is the first memop in the slice from the pack,
+      // and "n" is the last node in the slice from the pack.
+      Node* first = p->at(0);
       uint vlen = p->size();
       uint vlen_in_bytes = 0;
       Node* vn = nullptr;
-      Node* low_adr = p->at(0);
-      Node* first   = executed_first(p);
       if (cl->is_rce_post_loop()) {
         // override vlen with the main loops vector length
         vlen = cl->slp_max_unroll();
@@ -2702,7 +2934,7 @@ bool SuperWord::output() {
             break; // dependent memory
           }
         }
-        Node* adr = low_adr->in(MemNode::Address);
+        Node* adr = first->in(MemNode::Address);
         const TypePtr* atyp = n->adr_type();
         if (cl->is_rce_post_loop()) {
           assert(vmask != nullptr, "vector mask should be generated");
@@ -2725,7 +2957,7 @@ bool SuperWord::output() {
 
         Node* ctl = n->in(MemNode::Control);
         Node* mem = first->in(MemNode::Memory);
-        Node* adr = low_adr->in(MemNode::Address);
+        Node* adr = first->in(MemNode::Address);
         const TypePtr* atyp = n->adr_type();
         if (cl->is_rce_post_loop()) {
           assert(vmask != nullptr, "vector mask should be generated");
@@ -2736,8 +2968,8 @@ bool SuperWord::output() {
         }
         vlen_in_bytes = vn->as_StoreVector()->memory_size();
       } else if (VectorNode::is_scalar_rotate(n)) {
-        Node* in1 = low_adr->in(1);
-        Node* in2 = p->at(0)->in(2);
+        Node* in1 = first->in(1);
+        Node* in2 = first->in(2);
         // If rotation count is non-constant or greater than 8bit value create a vector.
         if (!in2->is_Con() || !Matcher::supports_vector_constant_rotates(in2->get_int())) {
           in2 =  vector_opd(p, 2);
@@ -2746,7 +2978,7 @@ bool SuperWord::output() {
         vlen_in_bytes = vn->as_Vector()->length_in_bytes();
       } else if (VectorNode::is_roundopD(n)) {
         Node* in1 = vector_opd(p, 1);
-        Node* in2 = low_adr->in(2);
+        Node* in2 = first->in(2);
         assert(in2->is_Con(), "Constant rounding mode expected.");
         vn = VectorNode::make(opc, in1, in2, vlen, velt_basic_type(n));
         vlen_in_bytes = vn->as_Vector()->length_in_bytes();
@@ -2766,10 +2998,10 @@ bool SuperWord::output() {
       } else if (n->req() == 3 && !is_cmov_pack(p)) {
         // Promote operands to vector
         Node* in1 = nullptr;
-        bool node_isa_reduction = n->is_reduction();
+        bool node_isa_reduction = is_marked_reduction(n);
         if (node_isa_reduction) {
           // the input to the first reduction operation is retained
-          in1 = low_adr->in(1);
+          in1 = first->in(1);
         } else {
           in1 = vector_opd(p, 1);
           if (in1 == nullptr) {
@@ -2837,7 +3069,7 @@ bool SuperWord::output() {
         Node* in = vector_opd(p, 1);
         Node* longval = VectorNode::make(opc, in, nullptr, vlen, T_LONG);
         _igvn.register_new_node_with_optimizer(longval);
-        _phase->set_ctrl(longval, _phase->get_ctrl(p->at(0)));
+        _phase->set_ctrl(longval, _phase->get_ctrl(first));
         vn = VectorCastNode::make(Op_VectorCastL2X, longval, T_INT, vlen);
         vlen_in_bytes = vn->as_Vector()->length_in_bytes();
       } else if (VectorNode::is_convert_opcode(opc)) {
@@ -2952,7 +3184,7 @@ bool SuperWord::output() {
 
       _block.at_put(i, vn);
       _igvn.register_new_node_with_optimizer(vn);
-      _phase->set_ctrl(vn, _phase->get_ctrl(p->at(0)));
+      _phase->set_ctrl(vn, _phase->get_ctrl(first));
       for (uint j = 0; j < p->size(); j++) {
         Node* pm = p->at(j);
         _igvn.replace_node(pm, vn);
@@ -3020,7 +3252,7 @@ bool SuperWord::output() {
 Node* SuperWord::create_post_loop_vmask() {
   CountedLoopNode *cl = lpt()->_head->as_CountedLoop();
   assert(cl->is_rce_post_loop(), "Must be an rce post loop");
-  assert(!cl->is_reduction_loop(), "no vector reduction in post loop");
+  assert(!is_marked_reduction_loop(), "no vector reduction in post loop");
   assert(abs(cl->stride_con()) == 1, "post loop stride can only be +/-1");
 
   // Collect vector element types of all post loop packs. Also collect
@@ -3298,7 +3530,7 @@ void SuperWord::insert_extracts(Node_List* p) {
     _n_idx_list.pop();
     Node* def = use->in(idx);
 
-    if (def->is_reduction()) continue;
+    if (is_marked_reduction(def)) continue;
 
     // Insert extract operation
     _igvn.hash_delete(def);
@@ -3321,7 +3553,7 @@ void SuperWord::insert_extracts(Node_List* p) {
 bool SuperWord::is_vector_use(Node* use, int u_idx) {
   Node_List* u_pk = my_pack(use);
   if (u_pk == nullptr) return false;
-  if (use->is_reduction()) return true;
+  if (is_marked_reduction(use)) return true;
   Node* def = use->in(u_idx);
   Node_List* d_pk = my_pack(def);
   if (d_pk == nullptr) {
@@ -3482,7 +3714,7 @@ bool SuperWord::construct_bb() {
         if (in_bb(use) && !visited_test(use) &&
             // Don't go around backedge
             (!use->is_Phi() || n == entry)) {
-          if (use->is_reduction()) {
+          if (is_marked_reduction(use)) {
             // First see if we can map the reduction on the given system we are on, then
             // make a data entry operation for each reduction we see.
             BasicType bt = use->bottom_type()->basic_type();
@@ -3708,14 +3940,15 @@ void SuperWord::compute_vector_element_type() {
           }
           if (same_type) {
             // In any Java arithmetic operation, operands of small integer types
-            // (boolean, byte, char & short) should be promoted to int first. As
-            // vector elements of small types don't have upper bits of int, for
-            // RShiftI or AbsI operations, the compiler has to know the precise
-            // signedness info of the 1st operand. These operations shouldn't be
-            // vectorized if the signedness info is imprecise.
+            // (boolean, byte, char & short) should be promoted to int first.
+            // During narrowed integer type backward propagation, for some operations
+            // like RShiftI, Abs, and ReverseBytesI,
+            // the compiler has to know the higher order bits of the 1st operand,
+            // which will be lost in the narrowed type. These operations shouldn't
+            // be vectorized if the higher order bits info is imprecise.
             const Type* vt = vtn;
             int op = in->Opcode();
-            if (VectorNode::is_shift_opcode(op) || op == Op_AbsI) {
+            if (VectorNode::is_shift_opcode(op) || op == Op_AbsI || op == Op_ReverseBytesI) {
               Node* load = in->in(1);
               if (load->is_Load() && in_bb(load) && (velt_type(load)->basic_type() == T_INT)) {
                 // Only Load nodes distinguish signed (LoadS/LoadB) and unsigned
@@ -3831,17 +4064,6 @@ bool SuperWord::in_packset(Node* s1, Node* s2) {
   return false;
 }
 
-//------------------------------in_pack---------------------------
-// Is s in pack p?
-Node_List* SuperWord::in_pack(Node* s, Node_List* p) {
-  for (uint i = 0; i < p->size(); i++) {
-    if (p->at(i) == s) {
-      return p;
-    }
-  }
-  return nullptr;
-}
-
 //------------------------------remove_pack_at---------------------------
 // Remove the pack at position pos in the packset
 void SuperWord::remove_pack_at(int pos) {
@@ -3872,39 +4094,6 @@ void SuperWord::packset_sort(int n) {
     if (swapped == false) break;
     n--;
   }
-}
-
-//------------------------------executed_first---------------------------
-// Return the node executed first in pack p.  Uses the RPO block list
-// to determine order.
-Node* SuperWord::executed_first(Node_List* p) {
-  Node* n = p->at(0);
-  int n_rpo = bb_idx(n);
-  for (uint i = 1; i < p->size(); i++) {
-    Node* s = p->at(i);
-    int s_rpo = bb_idx(s);
-    if (s_rpo < n_rpo) {
-      n = s;
-      n_rpo = s_rpo;
-    }
-  }
-  return n;
-}
-
-//------------------------------executed_last---------------------------
-// Return the node executed last in pack p.
-Node* SuperWord::executed_last(Node_List* p) {
-  Node* n = p->at(0);
-  int n_rpo = bb_idx(n);
-  for (uint i = 1; i < p->size(); i++) {
-    Node* s = p->at(i);
-    int s_rpo = bb_idx(s);
-    if (s_rpo > n_rpo) {
-      n = s;
-      n_rpo = s_rpo;
-    }
-  }
-  return n;
 }
 
 LoadNode::ControlDependency SuperWord::control_dependency(Node_List* p) {
@@ -4022,19 +4211,7 @@ void SuperWord::align_initial_loop_index(MemNode* align_to_ref) {
       invar = new ConvL2INode(invar);
       _igvn.register_new_node_with_optimizer(invar);
     }
-    Node* invar_scale = align_to_ref_p.invar_scale();
-    if (invar_scale != nullptr) {
-      invar = new LShiftINode(invar, invar_scale);
-      _igvn.register_new_node_with_optimizer(invar);
-    }
-    Node* aref = new URShiftINode(invar, log2_elt);
-    _igvn.register_new_node_with_optimizer(aref);
-    _phase->set_ctrl(aref, pre_ctrl);
-    if (align_to_ref_p.negate_invar()) {
-      e = new SubINode(e, aref);
-    } else {
-      e = new AddINode(e, aref);
-    }
+    e = new URShiftINode(invar, log2_elt);
     _igvn.register_new_node_with_optimizer(e);
     _phase->set_ctrl(e, pre_ctrl);
   }
@@ -4130,10 +4307,6 @@ void SuperWord::init() {
   _iteration_last.clear();
   _node_info.clear();
   _align_to_ref = nullptr;
-  _lpt = nullptr;
-  _lp = nullptr;
-  _bb = nullptr;
-  _iv = nullptr;
   _race_possible = 0;
   _early_return = false;
   _num_work_vecs = 0;
@@ -4198,25 +4371,17 @@ void SuperWord::print_stmt(Node* s) {
 #endif
 }
 
-//------------------------------blank---------------------------
-char* SuperWord::blank(uint depth) {
-  static char blanks[101];
-  assert(depth < 101, "too deep");
-  for (uint i = 0; i < depth; i++) blanks[i] = ' ';
-  blanks[depth] = '\0';
-  return blanks;
-}
-
-
 //==============================SWPointer===========================
 #ifndef PRODUCT
 int SWPointer::Tracer::_depth = 0;
 #endif
 //----------------------------SWPointer------------------------
 SWPointer::SWPointer(MemNode* mem, SuperWord* slp, Node_Stack *nstack, bool analyze_only) :
-  _mem(mem), _slp(slp),  _base(nullptr),  _adr(nullptr),
-  _scale(0), _offset(0), _invar(nullptr), _negate_invar(false),
-  _invar_scale(nullptr),
+  _mem(mem), _slp(slp), _base(nullptr), _adr(nullptr),
+  _scale(0), _offset(0), _invar(nullptr),
+#ifdef ASSERT
+  _debug_invar(nullptr), _debug_negate_invar(false), _debug_invar_scale(nullptr),
+#endif
   _nstack(nstack), _analyze_only(analyze_only),
   _stack_idx(0)
 #ifndef PRODUCT
@@ -4247,7 +4412,7 @@ SWPointer::SWPointer(MemNode* mem, SuperWord* slp, Node_Stack *nstack, bool anal
   NOT_PRODUCT(_tracer.ctor_2(adr);)
 
   int i;
-  for (i = 0; i < 3; i++) {
+  for (i = 0; ; i++) {
     NOT_PRODUCT(_tracer.ctor_3(adr, i);)
 
     if (!scaled_iv_plus_offset(adr->in(AddPNode::Offset))) {
@@ -4283,9 +4448,11 @@ SWPointer::SWPointer(MemNode* mem, SuperWord* slp, Node_Stack *nstack, bool anal
 // Following is used to create a temporary object during
 // the pattern match of an address expression.
 SWPointer::SWPointer(SWPointer* p) :
-  _mem(p->_mem), _slp(p->_slp),  _base(nullptr),  _adr(nullptr),
-  _scale(0), _offset(0), _invar(nullptr), _negate_invar(false),
-  _invar_scale(nullptr),
+  _mem(p->_mem), _slp(p->_slp), _base(nullptr), _adr(nullptr),
+  _scale(0), _offset(0), _invar(nullptr),
+#ifdef ASSERT
+  _debug_invar(nullptr), _debug_negate_invar(false), _debug_invar_scale(nullptr),
+#endif
   _nstack(p->_nstack), _analyze_only(p->_analyze_only),
   _stack_idx(p->_stack_idx)
   #ifndef PRODUCT
@@ -4399,7 +4566,7 @@ bool SWPointer::scaled_iv(Node* n) {
       return true;
     }
   } else if (opc == Op_LShiftL && n->in(2)->is_Con()) {
-    if (!has_iv() && _invar == nullptr) {
+    if (!has_iv()) {
       // Need to preserve the current _offset value, so
       // create a temporary object for this expression subtree.
       // Hacky, so should re-engineer the address pattern match.
@@ -4411,12 +4578,15 @@ bool SWPointer::scaled_iv(Node* n) {
         int scale = n->in(2)->get_int();
         _scale   = tmp._scale  << scale;
         _offset += tmp._offset << scale;
-        _invar = tmp._invar;
-        if (_invar != nullptr) {
-          _negate_invar = tmp._negate_invar;
-          _invar_scale = n->in(2);
+        if (tmp._invar != nullptr) {
+          BasicType bt = tmp._invar->bottom_type()->basic_type();
+          assert(bt == T_INT || bt == T_LONG, "");
+          maybe_add_to_invar(register_if_new(LShiftNode::make(tmp._invar, n->in(2), bt)), false);
+#ifdef ASSERT
+          _debug_invar_scale = n->in(2);
+#endif
         }
-        NOT_PRODUCT(_tracer.scaled_iv_9(n, _scale, _offset, _invar, _negate_invar);)
+        NOT_PRODUCT(_tracer.scaled_iv_9(n, _scale, _offset, _invar);)
         return true;
       }
     }
@@ -4450,41 +4620,34 @@ bool SWPointer::offset_plus_k(Node* n, bool negate) {
     NOT_PRODUCT(_tracer.offset_plus_k_4(n);)
     return false;
   }
-  if (_invar != nullptr) { // already has an invariant
-    NOT_PRODUCT(_tracer.offset_plus_k_5(n, _invar);)
-    return false;
-  }
+  assert((_debug_invar == nullptr) == (_invar == nullptr), "");
 
   if (_analyze_only && is_loop_member(n)) {
     _nstack->push(n, _stack_idx++);
   }
   if (opc == Op_AddI) {
     if (n->in(2)->is_Con() && invariant(n->in(1))) {
-      _negate_invar = negate;
-      _invar = n->in(1);
+      maybe_add_to_invar(n->in(1), negate);
       _offset += negate ? -(n->in(2)->get_int()) : n->in(2)->get_int();
-      NOT_PRODUCT(_tracer.offset_plus_k_6(n, _invar, _negate_invar, _offset);)
+      NOT_PRODUCT(_tracer.offset_plus_k_6(n, _invar, negate, _offset);)
       return true;
     } else if (n->in(1)->is_Con() && invariant(n->in(2))) {
       _offset += negate ? -(n->in(1)->get_int()) : n->in(1)->get_int();
-      _negate_invar = negate;
-      _invar = n->in(2);
-      NOT_PRODUCT(_tracer.offset_plus_k_7(n, _invar, _negate_invar, _offset);)
+      maybe_add_to_invar(n->in(2), negate);
+      NOT_PRODUCT(_tracer.offset_plus_k_7(n, _invar, negate, _offset);)
       return true;
     }
   }
   if (opc == Op_SubI) {
     if (n->in(2)->is_Con() && invariant(n->in(1))) {
-      _negate_invar = negate;
-      _invar = n->in(1);
+      maybe_add_to_invar(n->in(1), negate);
       _offset += !negate ? -(n->in(2)->get_int()) : n->in(2)->get_int();
-      NOT_PRODUCT(_tracer.offset_plus_k_8(n, _invar, _negate_invar, _offset);)
+      NOT_PRODUCT(_tracer.offset_plus_k_8(n, _invar, negate, _offset);)
       return true;
     } else if (n->in(1)->is_Con() && invariant(n->in(2))) {
       _offset += negate ? -(n->in(1)->get_int()) : n->in(1)->get_int();
-      _negate_invar = !negate;
-      _invar = n->in(2);
-      NOT_PRODUCT(_tracer.offset_plus_k_9(n, _invar, _negate_invar, _offset);)
+      maybe_add_to_invar(n->in(2), !negate);
+      NOT_PRODUCT(_tracer.offset_plus_k_9(n, _invar, !negate, _offset);)
       return true;
     }
   }
@@ -4501,15 +4664,75 @@ bool SWPointer::offset_plus_k(Node* n, bool negate) {
     }
     // Check if 'n' can really be used as invariant (not in main loop and dominating the pre loop).
     if (invariant(n)) {
-      _negate_invar = negate;
-      _invar = n;
-      NOT_PRODUCT(_tracer.offset_plus_k_10(n, _invar, _negate_invar, _offset);)
+      maybe_add_to_invar(n, negate);
+      NOT_PRODUCT(_tracer.offset_plus_k_10(n, _invar, negate, _offset);)
       return true;
     }
   }
 
   NOT_PRODUCT(_tracer.offset_plus_k_11(n);)
   return false;
+}
+
+Node* SWPointer::maybe_negate_invar(bool negate, Node* invar) {
+#ifdef ASSERT
+  _debug_negate_invar = negate;
+#endif
+  if (negate) {
+    BasicType bt = invar->bottom_type()->basic_type();
+    assert(bt == T_INT || bt == T_LONG, "");
+    PhaseIterGVN& igvn = phase()->igvn();
+    Node* zero = igvn.zerocon(bt);
+    phase()->set_ctrl(zero, phase()->C->root());
+    Node* sub = SubNode::make(zero, invar, bt);
+    invar = register_if_new(sub);
+  }
+  return invar;
+}
+
+Node* SWPointer::register_if_new(Node* n) const {
+  PhaseIterGVN& igvn = phase()->igvn();
+  Node* prev = igvn.hash_find_insert(n);
+  if (prev != nullptr) {
+    n->destruct(&igvn);
+    n = prev;
+  } else {
+    Node* c = phase()->get_early_ctrl(n);
+    phase()->register_new_node(n, c);
+  }
+  return n;
+}
+
+void SWPointer::maybe_add_to_invar(Node* new_invar, bool negate) {
+  new_invar = maybe_negate_invar(negate, new_invar);
+  if (_invar == nullptr) {
+    _invar = new_invar;
+#ifdef ASSERT
+    _debug_invar = new_invar;
+#endif
+    return;
+  }
+#ifdef ASSERT
+  _debug_invar = NodeSentinel;
+#endif
+  BasicType new_invar_bt = new_invar->bottom_type()->basic_type();
+  assert(new_invar_bt == T_INT || new_invar_bt == T_LONG, "");
+  BasicType invar_bt = _invar->bottom_type()->basic_type();
+  assert(invar_bt == T_INT || invar_bt == T_LONG, "");
+
+  BasicType bt = (new_invar_bt == T_LONG || invar_bt == T_LONG) ? T_LONG : T_INT;
+  Node* current_invar = _invar;
+  if (invar_bt != bt) {
+    assert(bt == T_LONG && invar_bt == T_INT, "");
+    assert(new_invar_bt == bt, "");
+    current_invar = register_if_new(new ConvI2LNode(current_invar));
+  } else if (new_invar_bt != bt) {
+    assert(bt == T_LONG && new_invar_bt == T_INT, "");
+    assert(invar_bt == bt, "");
+    new_invar = register_if_new(new ConvI2LNode(new_invar));
+  }
+  Node* add = AddNode::make(current_invar, new_invar, bt);
+  _invar = register_if_new(add);
 }
 
 //-----------------has_potential_dependence-----------------
@@ -4548,7 +4771,7 @@ void SWPointer::print() {
              _adr  != nullptr ? _adr->_idx  : 0,
              _scale, _offset);
   if (_invar != nullptr) {
-    tty->print("  invar: %c[%d] << [%d]", _negate_invar?'-':'+', _invar->_idx, _invar_scale->_idx);
+    tty->print("  invar: [%d]", _invar->_idx);
   }
   tty->cr();
 #endif
@@ -4738,13 +4961,13 @@ void SWPointer::Tracer::scaled_iv_8(Node* n, SWPointer* tmp) {
   }
 }
 
-void SWPointer::Tracer::scaled_iv_9(Node* n, int scale, int offset, Node* invar, bool negate_invar) {
+void SWPointer::Tracer::scaled_iv_9(Node* n, int scale, int offset, Node* invar) {
   if(_slp->is_trace_alignment()) {
     print_depth(); tty->print_cr(" %d SWPointer::scaled_iv: Op_LShiftL PASSED, setting _scale = %d, _offset = %d", n->_idx, scale, offset);
     print_depth(); tty->print_cr("  \\ SWPointer::scaled_iv: in(1) [%d] is scaled_iv_plus_offset, in(2) [%d] used to scale: _scale = %d, _offset = %d",
     n->in(1)->_idx, n->in(2)->_idx, scale, offset);
     if (invar != nullptr) {
-      print_depth(); tty->print_cr("  \\ SWPointer::scaled_iv: scaled invariant: %c[%d]", (negate_invar?'-':'+'), invar->_idx);
+      print_depth(); tty->print_cr("  \\ SWPointer::scaled_iv: scaled invariant: [%d]", invar->_idx);
     }
     inc_depth(); inc_depth();
     print_depth(); n->in(1)->dump();
@@ -4796,7 +5019,7 @@ void SWPointer::Tracer::offset_plus_k_5(Node* n, Node* _invar) {
 
 void SWPointer::Tracer::offset_plus_k_6(Node* n, Node* _invar, bool _negate_invar, int _offset) {
   if(_slp->is_trace_alignment()) {
-    print_depth(); tty->print_cr(" %d SWPointer::offset_plus_k: Op_AddI PASSED, setting _negate_invar = %d, _invar = %d, _offset = %d",
+    print_depth(); tty->print_cr(" %d SWPointer::offset_plus_k: Op_AddI PASSED, setting _debug_negate_invar = %d, _invar = %d, _offset = %d",
     n->_idx, _negate_invar, _invar->_idx, _offset);
     print_depth(); tty->print("  \\ %d SWPointer::offset_plus_k: in(2) is Con: ", n->in(2)->_idx); n->in(2)->dump();
     print_depth(); tty->print("  \\ %d SWPointer::offset_plus_k: in(1) is invariant: ", _invar->_idx); _invar->dump();
@@ -4805,7 +5028,7 @@ void SWPointer::Tracer::offset_plus_k_6(Node* n, Node* _invar, bool _negate_inva
 
 void SWPointer::Tracer::offset_plus_k_7(Node* n, Node* _invar, bool _negate_invar, int _offset) {
   if(_slp->is_trace_alignment()) {
-    print_depth(); tty->print_cr(" %d SWPointer::offset_plus_k: Op_AddI PASSED, setting _negate_invar = %d, _invar = %d, _offset = %d",
+    print_depth(); tty->print_cr(" %d SWPointer::offset_plus_k: Op_AddI PASSED, setting _debug_negate_invar = %d, _invar = %d, _offset = %d",
     n->_idx, _negate_invar, _invar->_idx, _offset);
     print_depth(); tty->print("  \\ %d SWPointer::offset_plus_k: in(1) is Con: ", n->in(1)->_idx); n->in(1)->dump();
     print_depth(); tty->print("  \\ %d SWPointer::offset_plus_k: in(2) is invariant: ", _invar->_idx); _invar->dump();
@@ -4814,7 +5037,7 @@ void SWPointer::Tracer::offset_plus_k_7(Node* n, Node* _invar, bool _negate_inva
 
 void SWPointer::Tracer::offset_plus_k_8(Node* n, Node* _invar, bool _negate_invar, int _offset) {
   if(_slp->is_trace_alignment()) {
-    print_depth(); tty->print_cr(" %d SWPointer::offset_plus_k: Op_SubI is PASSED, setting _negate_invar = %d, _invar = %d, _offset = %d",
+    print_depth(); tty->print_cr(" %d SWPointer::offset_plus_k: Op_SubI is PASSED, setting _debug_negate_invar = %d, _invar = %d, _offset = %d",
     n->_idx, _negate_invar, _invar->_idx, _offset);
     print_depth(); tty->print("  \\ %d SWPointer::offset_plus_k: in(2) is Con: ", n->in(2)->_idx); n->in(2)->dump();
     print_depth(); tty->print("  \\ %d SWPointer::offset_plus_k: in(1) is invariant: ", _invar->_idx); _invar->dump();
@@ -4823,7 +5046,7 @@ void SWPointer::Tracer::offset_plus_k_8(Node* n, Node* _invar, bool _negate_inva
 
 void SWPointer::Tracer::offset_plus_k_9(Node* n, Node* _invar, bool _negate_invar, int _offset) {
   if(_slp->is_trace_alignment()) {
-    print_depth(); tty->print_cr(" %d SWPointer::offset_plus_k: Op_SubI PASSED, setting _negate_invar = %d, _invar = %d, _offset = %d", n->_idx, _negate_invar, _invar->_idx, _offset);
+    print_depth(); tty->print_cr(" %d SWPointer::offset_plus_k: Op_SubI PASSED, setting _debug_negate_invar = %d, _invar = %d, _offset = %d", n->_idx, _negate_invar, _invar->_idx, _offset);
     print_depth(); tty->print("  \\ %d SWPointer::offset_plus_k: in(1) is Con: ", n->in(1)->_idx); n->in(1)->dump();
     print_depth(); tty->print("  \\ %d SWPointer::offset_plus_k: in(2) is invariant: ", _invar->_idx); _invar->dump();
   }
@@ -4831,7 +5054,7 @@ void SWPointer::Tracer::offset_plus_k_9(Node* n, Node* _invar, bool _negate_inva
 
 void SWPointer::Tracer::offset_plus_k_10(Node* n, Node* _invar, bool _negate_invar, int _offset) {
   if(_slp->is_trace_alignment()) {
-    print_depth(); tty->print_cr(" %d SWPointer::offset_plus_k: PASSED, setting _negate_invar = %d, _invar = %d, _offset = %d", n->_idx, _negate_invar, _invar->_idx, _offset);
+    print_depth(); tty->print_cr(" %d SWPointer::offset_plus_k: PASSED, setting _debug_negate_invar = %d, _invar = %d, _offset = %d", n->_idx, _negate_invar, _invar->_idx, _offset);
     print_depth(); tty->print_cr("  \\ %d SWPointer::offset_plus_k: is invariant", n->_idx);
   }
 }
@@ -4920,7 +5143,7 @@ void DepEdge::print() {
 // Iterator over predecessor edges in the dependence graph.
 
 //------------------------------DepPreds---------------------------
-DepPreds::DepPreds(Node* n, DepGraph& dg) {
+DepPreds::DepPreds(Node* n, const DepGraph& dg) {
   _n = n;
   _done = false;
   if (_n->is_Store() || _n->is_Load()) {

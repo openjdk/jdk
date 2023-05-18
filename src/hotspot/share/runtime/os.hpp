@@ -34,8 +34,8 @@
 # include <mach/mach_time.h>
 #endif
 
-class AgentLibrary;
 class frame;
+class JvmtiAgent;
 
 // Rules for using and implementing methods declared in the "os" class
 // ===================================================================
@@ -310,7 +310,13 @@ class os: AllStatic {
     return (_processor_count != 1);
   }
 
+  // On some platforms there is a distinction between "available" memory and "free" memory.
+  // For example, on Linux, "available" memory (`MemAvailable` in `/proc/meminfo`) is greater
+  // than "free" memory (`MemFree` in `/proc/meminfo`) because Linux can free memory
+  // aggressively (e.g. clear caches) so that it becomes available.
   static julong available_memory();
+  static julong free_memory();
+
   static julong physical_memory();
   static bool has_allocatable_memory_limit(size_t* limit);
   static bool is_server_class_machine();
@@ -732,11 +738,11 @@ class os: AllStatic {
   static void* get_default_process_handle();
 
   // Check for static linked agent library
-  static bool find_builtin_agent(AgentLibrary *agent_lib, const char *syms[],
+  static bool find_builtin_agent(JvmtiAgent *agent_lib, const char *syms[],
                                  size_t syms_len);
 
   // Find agent entry point
-  static void *find_agent_function(AgentLibrary *agent_lib, bool check_lib,
+  static void *find_agent_function(JvmtiAgent *agent_lib, bool check_lib,
                                    const char *syms[], size_t syms_len);
 
   // Provide C99 compliant versions of these functions, since some versions
@@ -765,6 +771,7 @@ class os: AllStatic {
   static void print_tos_pc(outputStream* st, const void* context);
   static void print_tos(outputStream* st, address sp);
   static void print_instructions(outputStream* st, address pc, int unitsize);
+  static void print_register_info(outputStream* st, const void* context, int& continuation);
   static void print_register_info(outputStream* st, const void* context);
   static bool signal_sent_by_kill(const void* siginfo);
   static void print_siginfo(outputStream* st, const void* siginfo);

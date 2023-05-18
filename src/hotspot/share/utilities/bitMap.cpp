@@ -638,7 +638,7 @@ BitMap::idx_t BitMap::count_one_bits(idx_t beg, idx_t end) const {
     sum += count_one_bits_within_word(boundary, end);
   }
 
-  assert(sum <= (beg - end), "must be");
+  assert(sum <= (end - beg), "must be");
 
   return sum;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,13 @@
 
 /**
  * @test
- * @bug 8291769 8301858 8304694
+ * @bug 8291769 8301858 8304694 8304883
  * @summary Verify more complex switches work properly
  * @compile --enable-preview -source ${jdk.version} DeconstructionDesugaring.java
  * @run main/othervm --enable-preview DeconstructionDesugaring
  */
 
+import java.util.Objects;
 import java.util.function.ToIntFunction;
 public class DeconstructionDesugaring {
 
@@ -45,8 +46,21 @@ public class DeconstructionDesugaring {
         assertEquals(runCheckExpressionWithUnconditional1(new R5(null)), 3);
         assertEquals(runCheckExpressionWithUnconditionalAndParams(new R1(42)), 1);
         assertEquals(runCheckExpressionWithUnconditionalAndParams(new R1(new Object())), 2);
-        assertEquals(runFallThrough(new R6(1, 1)), 0);
-        assertEquals(runFallThrough(new R6(0, 0)), 1);
+        assertEquals(switchNullable1(new R6(0, 0)), "int: 0, int: 0");
+        assertEquals(switchNullable1(new R6(0L, 0)), "obj: 0, obj: 0");
+        assertEquals(switchNullable2(new R6(0, 0)), "int: 0, int: 0");
+        assertEquals(switchNullable2(new R6(0L, 0)), "obj: 0, int: 0");
+        assertEquals(switchNullable2(new R6(0, 0L)), "int: 0, obj: 0");
+        assertEquals(switchNullable2(new R6(0L, 0L)), "obj: 0, obj: 0");
+        assertEquals(switchNullableNPE(new R6(1, 1)), "obj: 1, obj: 1");
+        try {
+            switchNullableNPE(new R6(null, 1));
+            throw new AssertionError("Expected NPE, but got none.");
+        } catch (NullPointerException ex) {
+            //expected.
+        }
+        assertEquals(runFallThrough(new R7(1, 1)), 0);
+        assertEquals(runFallThrough(new R7(0, 0)), 1);
     }
 
     private void test(ToIntFunction<Object> task) {
@@ -116,10 +130,33 @@ public class DeconstructionDesugaring {
         }
     }
 
-    public static int runFallThrough(R6 r) {
+    private String switchNullable1(R6 r) {
+        return switch (r) {
+            case R6(Integer i1, Integer i2) -> "int: " + i1 + ", int: " + i2;
+            case R6(Object o1, Object o2) -> "obj: " + o1 + ", obj: " + o2;
+        };
+    }
+
+    private String switchNullable2(R6 r) {
+        return switch (r) {
+            case R6(Integer i1, Integer i2) -> "int: " + i1 + ", int: " + i2;
+            case R6(Integer i1, Object o2) -> "int: " + i1 + ", obj: " + o2;
+            case R6(Object o1, Integer i2) -> "obj: " + o1 + ", int: " + i2;
+            case R6(Object o1, Object o2) -> "obj: " + o1 + ", obj: " + o2;
+        };
+    }
+
+    private String switchNullableNPE(R6 r) {
+        return switch (r) {
+            case R6(Object o1, Object o2) when ((int) o1) == 0 && ((int) o2) == 0 -> "int: " + o1 + ", int: " + o2;
+            case R6(Object o1, Object o2) -> "obj: " + o1 + ", obj: " + o2;
+        };
+    }
+
+    public static int runFallThrough(R7 r) {
         switch (r) {
-            case R6(var v1, var v2) when v1 != 0: return 0;
-            case R6(var v1, var v2):
+            case R7(var v1, var v2) when v1 != 0: return 0;
+            case R7(var v1, var v2):
         }
         return 1;
     }
@@ -129,6 +166,13 @@ public class DeconstructionDesugaring {
 
     private void assertEquals(int expected, int actual) {
         if (expected != actual) {
+            throw new AssertionError("expected: " + expected + ", " +
+                                     "actual: " + actual);
+        }
+    }
+
+    private void assertEquals(String expected, String actual) {
+        if (!Objects.equals(expected, actual)) {
             throw new AssertionError("expected: " + expected + ", " +
                                      "actual: " + actual);
         }
@@ -145,5 +189,6 @@ public class DeconstructionDesugaring {
 
     record R4(Super o) {}
     record R5(R4 o) {}
-    record R6(int i1, int i2) {}
+    record R6(Object o1, Object o2) {}
+    record R7(int i1, int i2) {}
 }

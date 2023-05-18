@@ -299,6 +299,10 @@ For terms of use, see http://www.unicode.org/copyright.html
             <unitPreference regions="001">hectare</unitPreference>
             <unitPreference regions="US GB">acre</unitPreference>
         </unitPreferences>
+        <unitPreferences category="area" usage="floor">
+            <unitPreference regions="001">square-meter</unitPreference>
+            <unitPreference regions="CA US GB MM">square-foot</unitPreference>
+        </unitPreferences>
         <unitPreferences category="concentration" usage="blood-glucose">
             <unitPreference regions="AG AI AO AU BA BG BH BM BN BW BY CA CH CM CN CZ DK DM EE FI FJ GB GD HK HR HU IE IM IS KE KN KW KZ LC LI LT LU LV ME MG MK MO MS MT MU MY MZ NA NL NO NZ OM PG RS RU SE SG SI SK TC TO UA UG VC VG VN VU ZA">millimole-per-liter</unitPreference>
             <unitPreference regions="001">milligram-ofglucose-per-deciliter</unitPreference>
@@ -442,6 +446,15 @@ For terms of use, see http://www.unicode.org/copyright.html
         <unitPreferences category="speed" usage="default">
             <unitPreference regions="001">kilometer-per-hour</unitPreference>
             <unitPreference regions="GB US">mile-per-hour</unitPreference>
+        </unitPreferences>
+        <unitPreferences category="speed" usage="rainfall">
+            <unitPreference regions="001">millimeter-per-hour</unitPreference>
+            <unitPreference regions="BR">centimeter-per-hour</unitPreference>
+            <unitPreference regions="US">inch-per-hour</unitPreference>
+        </unitPreferences>
+        <unitPreferences category="speed" usage="snowfall">
+            <unitPreference regions="001">centimeter-per-hour</unitPreference>
+            <unitPreference regions="US">inch-per-hour</unitPreference>
         </unitPreferences>
         <unitPreferences category="speed" usage="wind">
             <unitPreference regions="001">kilometer-per-hour</unitPreference>

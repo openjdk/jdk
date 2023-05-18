@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
@@ -51,6 +52,14 @@ import java.util.stream.Collectors;
 public class CtwRunner {
     private static final Predicate<String> IS_CLASS_LINE = Pattern.compile(
             "^\\[\\d+\\]\\s*\\S+\\s*$").asPredicate();
+
+    /**
+     * Value of {@code -Dsun.hotspot.tools.ctwrunner.ctw_extra_args}. Extra
+     * comma-separated arguments to pass to CTW subprocesses.
+     */
+    private static final String CTW_EXTRA_ARGS
+            = System.getProperty("sun.hotspot.tools.ctwrunner.ctw_extra_args", "");
+
 
     private static final String USAGE = "Usage: CtwRunner <artifact to compile> [start[%] stop[%]]";
 
@@ -258,43 +267,51 @@ public class CtwRunner {
         String phase = phaseName(classStart);
         Path file = Paths.get(phase + ".cmd");
         var rng = Utils.getRandomInstance();
+
+        ArrayList<String> Args = new ArrayList<String>(Arrays.asList(
+                "-Xbatch",
+                "-XX:-UseCounterDecay",
+                "-XX:-ShowMessageBoxOnError",
+                "-XX:+UnlockDiagnosticVMOptions",
+                // redirect VM output to cerr so it won't collide w/ ctw output
+                "-XX:+DisplayVMOutputToStderr",
+                // define phase start
+                "-DCompileTheWorldStartAt=" + classStart,
+                "-DCompileTheWorldStopAt=" + classStop,
+                // CTW library uses WhiteBox API
+                "-XX:+WhiteBoxAPI", "-Xbootclasspath/a:.",
+                // export jdk.internal packages used by CTW library
+                "--add-exports", "java.base/jdk.internal.jimage=ALL-UNNAMED",
+                "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED",
+                "--add-exports", "java.base/jdk.internal.reflect=ALL-UNNAMED",
+                "--add-exports", "java.base/jdk.internal.access=ALL-UNNAMED",
+                // enable diagnostic logging
+                "-XX:+LogCompilation",
+                // use phase specific log, hs_err and ciReplay files
+                String.format("-XX:LogFile=hotspot_%s_%%p.log", phase),
+                String.format("-XX:ErrorFile=hs_err_%s_%%p.log", phase),
+                String.format("-XX:ReplayDataFile=replay_%s_%%p.log", phase),
+                // MethodHandle MUST NOT be compiled
+                "-XX:CompileCommand=exclude,java/lang/invoke/MethodHandle.*",
+                // Stress* are c2-specific stress flags, so IgnoreUnrecognizedVMOptions is needed
+                "-XX:+IgnoreUnrecognizedVMOptions",
+                "-XX:+StressLCM",
+                "-XX:+StressGCM",
+                "-XX:+StressIGVN",
+                "-XX:+StressCCP",
+                // StressSeed is uint
+                "-XX:StressSeed=" + Math.abs(rng.nextInt())));
+
+        for (String arg : CTW_EXTRA_ARGS.split(",")) {
+            Args.add(arg);
+        }
+
+        // CTW entry point
+        Args.add(CompileTheWorld.class.getName());
+        Args.add(target);
+
         try {
-            Files.write(file, List.of(
-                    "-Xbatch",
-                    "-XX:-UseCounterDecay",
-                    "-XX:-ShowMessageBoxOnError",
-                    "-XX:+UnlockDiagnosticVMOptions",
-                    // redirect VM output to cerr so it won't collide w/ ctw output
-                    "-XX:+DisplayVMOutputToStderr",
-                    // define phase start
-                    "-DCompileTheWorldStartAt=" + classStart,
-                    "-DCompileTheWorldStopAt=" + classStop,
-                    // CTW library uses WhiteBox API
-                    "-XX:+WhiteBoxAPI", "-Xbootclasspath/a:.",
-                    // export jdk.internal packages used by CTW library
-                    "--add-exports", "java.base/jdk.internal.jimage=ALL-UNNAMED",
-                    "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED",
-                    "--add-exports", "java.base/jdk.internal.reflect=ALL-UNNAMED",
-                    "--add-exports", "java.base/jdk.internal.access=ALL-UNNAMED",
-                    // enable diagnostic logging
-                    "-XX:+LogCompilation",
-                    // use phase specific log, hs_err and ciReplay files
-                    String.format("-XX:LogFile=hotspot_%s_%%p.log", phase),
-                    String.format("-XX:ErrorFile=hs_err_%s_%%p.log", phase),
-                    String.format("-XX:ReplayDataFile=replay_%s_%%p.log", phase),
-                    // MethodHandle MUST NOT be compiled
-                    "-XX:CompileCommand=exclude,java/lang/invoke/MethodHandle.*",
-                    // Stress* are c2-specific stress flags, so IgnoreUnrecognizedVMOptions is needed
-                    "-XX:+IgnoreUnrecognizedVMOptions",
-                    "-XX:+StressLCM",
-                    "-XX:+StressGCM",
-                    "-XX:+StressIGVN",
-                    "-XX:+StressCCP",
-                    // StressSeed is uint
-                    "-XX:StressSeed=" + Math.abs(rng.nextInt()),
-                    // CTW entry point
-                    CompileTheWorld.class.getName(),
-                    target));
+            Files.write(file, Args);
         } catch (IOException e) {
             throw new Error("can't create " + file, e);
         }

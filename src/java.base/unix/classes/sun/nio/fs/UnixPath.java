@@ -138,12 +138,18 @@ class UnixPath implements Path {
 
     // use this path when making system/library calls
     byte[] getByteArrayForSysCalls() {
-        if (!isEmpty()) {
-            return path;
+        // resolve against default directory if required (chdir allowed or
+        // file system default directory is not working directory)
+        if (getFileSystem().needToResolveAgainstDefaultDirectory()) {
+            return resolve(getFileSystem().defaultDirectory(), path);
         } else {
-            // empty path case will access current directory
-            byte[] here = { '.' };
-            return here;
+            if (!isEmpty()) {
+                return path;
+            } else {
+                // empty path case will access current directory
+                byte[] here = { '.' };
+                return here;
+            }
         }
     }
 
@@ -154,7 +160,11 @@ class UnixPath implements Path {
 
     // use this path for permission checks
     String getPathForPermissionCheck() {
-        return toString();
+        if (getFileSystem().needToResolveAgainstDefaultDirectory()) {
+            return Util.toString(getByteArrayForSysCalls());
+        } else {
+            return toString();
+        }
     }
 
     // Checks that the given file is a UnixPath
