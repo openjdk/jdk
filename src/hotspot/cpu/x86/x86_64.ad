@@ -3235,7 +3235,7 @@ operand immL_32bits()
 operand immI_Pow2M1()
 %{
   predicate((n->get_int() > 0)
-            && is_power_of_2(n->get_int() + 1));
+            && is_power_of_2((juint)n->get_int() + 1));
   match(ConI);
 
   op_cost(20);
@@ -12449,6 +12449,17 @@ instruct testI_reg_imm(rFlagsReg cr, rRegI src, immI con, immI_0 zero)
   ins_pipe(ialu_cr_reg_imm);
 %}
 
+instruct testI_reg_reg(rFlagsReg cr, rRegI src1, rRegI src2, immI_0 zero)
+%{
+  match(Set cr (CmpI (AndI src1 src2) zero));
+
+  format %{ "testl   $src1, $src2" %}
+  ins_encode %{
+    __ testl($src1$$Register, $src2$$Register);
+  %}
+  ins_pipe(ialu_cr_reg_imm);
+%}
+
 instruct testI_reg_mem(rFlagsReg cr, rRegI src, memory mem, immI_0 zero)
 %{
   match(Set cr (CmpI (AndI src (LoadI mem)) zero));
@@ -12761,6 +12772,17 @@ instruct testL_reg_imm(rFlagsReg cr, rRegL src, immL32 con, immL0 zero)
   format %{ "testq   $src, $con\t# long" %}
   ins_encode %{
     __ testq($src$$Register, $con$$constant);
+  %}
+  ins_pipe(ialu_cr_reg_imm);
+%}
+
+instruct testL_reg_reg(rFlagsReg cr, rRegL src1, rRegL src2, immL0 zero)
+%{
+  match(Set cr (CmpL (AndL src1 src2) zero));
+
+  format %{ "testq   $src1, $src2\t# long" %}
+  ins_encode %{
+    __ testq($src1$$Register, $src2$$Register);
   %}
   ins_pipe(ialu_cr_reg_imm);
 %}
@@ -13291,7 +13313,7 @@ instruct cmpFastLockRTM(rFlagsReg cr, rRegP object, rbx_RegP box, rax_RegI tmp, 
   format %{ "fastlock $object,$box\t! kills $box,$tmp,$scr,$cx1,$cx2" %}
   ins_encode %{
     __ fast_lock($object$$Register, $box$$Register, $tmp$$Register,
-                 $scr$$Register, $cx1$$Register, $cx2$$Register,
+                 $scr$$Register, $cx1$$Register, $cx2$$Register, r15_thread,
                  _rtm_counters, _stack_rtm_counters,
                  ((Method*)(ra_->C->method()->constant_encoding()))->method_data(),
                  true, ra_->C->profile_rtm());
@@ -13307,7 +13329,7 @@ instruct cmpFastLock(rFlagsReg cr, rRegP object, rbx_RegP box, rax_RegI tmp, rRe
   format %{ "fastlock $object,$box\t! kills $box,$tmp,$scr" %}
   ins_encode %{
     __ fast_lock($object$$Register, $box$$Register, $tmp$$Register,
-                 $scr$$Register, noreg, noreg, NULL, NULL, NULL, false, false);
+                 $scr$$Register, noreg, noreg, r15_thread, nullptr, nullptr, nullptr, false, false);
   %}
   ins_pipe(pipe_slow);
 %}

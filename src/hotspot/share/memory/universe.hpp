@@ -43,6 +43,7 @@ class CollectedHeap;
 class DeferredObjAllocEvent;
 class OopStorage;
 class ReservedHeapSpace;
+class SerializeClosure;
 
 // A helper class for caching a Method* when the user of the cache
 // only cares about the latest version of the Method*.  This cache safely
@@ -67,9 +68,7 @@ class LatestMethodCache : public CHeapObj<mtClass> {
 
   // CDS support.  Replace the klass in this with the archive version
   // could use this for Enhanced Class Redefinition also.
-  void serialize(SerializeClosure* f) {
-    f->do_ptr((void**)&_klass);
-  }
+  void serialize(SerializeClosure* f);
   void metaspace_pointers_do(MetaspaceClosure* it);
 };
 
@@ -208,6 +207,7 @@ class Universe: AllStatic {
 
  public:
   static void calculate_verify_data(HeapWord* low_boundary, HeapWord* high_boundary) PRODUCT_RETURN;
+  static void set_verify_data(uintptr_t mask, uintptr_t bits) PRODUCT_RETURN;
 
   // Known classes in the VM
   static Klass* boolArrayKlassObj()                 { return typeArrayKlassObj(T_BOOLEAN); }
