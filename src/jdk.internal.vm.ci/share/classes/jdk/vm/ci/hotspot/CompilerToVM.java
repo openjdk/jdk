@@ -884,23 +884,33 @@ final class CompilerToVM {
 
     /**
      * Read a {@code Klass*} value from the memory location described by {@code base} plus
-     * {@code displacement} and return the {@link HotSpotResolvedObjectTypeImpl} wrapping it. This
-     * method does no checking that the memory location actually contains a valid pointer and may
-     * crash the VM if an invalid location is provided. If the {@code base} is null then
-     * {@code displacement} is used by itself. If {@code base} is a
-     * {@link HotSpotResolvedJavaMethodImpl}, {@link HotSpotConstantPool} or
-     * {@link HotSpotResolvedObjectTypeImpl} then the metaspace pointer is fetched from that object
-     * and added to {@code displacement}. Any other non-null object type causes an
-     * {@link IllegalArgumentException} to be thrown.
+     * {@code displacement} and return the {@link HotSpotResolvedObjectTypeImpl} wrapping it. This method
+     * only performs the read if the memory location is known to contain a valid Klass*.  If
+     * {@code base} is a {@link HotSpotConstantPool}, {@link HotSpotMethodData}, {@link HotSpotObjectConstantImpl},
+     * or {@link HotSpotResolvedObjectTypeImpl} then the field
+     * corresopnding to {@code displacement} is fetched using the appropriate HotSpot accessor. Any
+     * other object type or an unexpected displacement causes an {@link IllegalArgumentException} to
+     * be thrown.  The set of fields which can be read in this fashion corresponds to the {@link VMField}
+     * with type {@code Klass*} that are described in the {@link HotSpotVMConfigStore#getFields()}.
+     * Additionally several injected fields in {@link Class} are also handled.
      *
-     * @param base an object to read from or null
+     * @param base an object to read from
      * @param displacement
      * @param compressed true if the location contains a compressed Klass*
      * @return null or the resolved method for this location
+     * @throws NullPointerException if {@code base == null}
      */
     private native HotSpotResolvedObjectTypeImpl getResolvedJavaType0(Object base, long displacement, boolean compressed);
 
-    HotSpotResolvedObjectTypeImpl getResolvedJavaType(MetaspaceObject base, long displacement, boolean compressed) {
+    HotSpotResolvedObjectTypeImpl getResolvedJavaType(HotSpotConstantPool base, long displacement) {
+        return getResolvedJavaType0(base, displacement, false);
+    }
+
+    HotSpotResolvedObjectTypeImpl getResolvedJavaType(HotSpotMethodData base, long displacement) {
+        return getResolvedJavaType0(base, displacement, false);
+    }
+
+    HotSpotResolvedObjectTypeImpl getResolvedJavaType(HotSpotResolvedObjectTypeImpl base, long displacement, boolean compressed) {
         return getResolvedJavaType0(base, displacement, compressed);
     }
 
@@ -931,6 +941,9 @@ final class CompilerToVM {
      * @throws IllegalArgumentException if an out of range position is given
      */
     native int methodDataProfileDataSize(long metaspaceMethodData, int position);
+
+
+    native int methodDataExceptionSeen(long metaspaceMethodData, int bci);
 
     /**
      * Return the amount of native stack required for the interpreter frames represented by

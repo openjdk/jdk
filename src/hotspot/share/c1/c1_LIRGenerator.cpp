@@ -621,7 +621,7 @@ void LIRGenerator::monitor_exit(LIR_Opr object, LIR_Opr lock, LIR_Opr new_hdr, L
   // setup registers
   LIR_Opr hdr = lock;
   lock = new_hdr;
-  CodeStub* slow_path = new MonitorExitStub(lock, !UseHeavyMonitors, monitor_no);
+  CodeStub* slow_path = new MonitorExitStub(lock, LockingMode != LM_MONITOR, monitor_no);
   __ load_stack_address_monitor(monitor_no, lock);
   __ unlock_object(hdr, object, lock, scratch, slow_path);
 }
@@ -843,8 +843,8 @@ void LIRGenerator::arraycopy_helper(Intrinsic* x, int* flagsp, ciArrayKlass** ex
     if (expected_type != NULL) {
       BasicType t = expected_type->element_type()->basic_type();
       int element_size = type2aelembytes(t);
-      if (((arrayOopDesc::base_offset_in_bytes(t) + s_offs * element_size) % HeapWordSize == 0) &&
-          ((arrayOopDesc::base_offset_in_bytes(t) + d_offs * element_size) % HeapWordSize == 0)) {
+      if (((arrayOopDesc::base_offset_in_bytes(t) + (uint)s_offs * element_size) % HeapWordSize == 0) &&
+          ((arrayOopDesc::base_offset_in_bytes(t) + (uint)d_offs * element_size) % HeapWordSize == 0)) {
         flags &= ~LIR_OpArrayCopy::unaligned;
       }
     }

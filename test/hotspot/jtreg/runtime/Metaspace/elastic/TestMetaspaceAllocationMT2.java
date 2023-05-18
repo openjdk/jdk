@@ -58,24 +58,6 @@
  */
 
 /*
- * @test id=debug-aggressive
- * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
- * @build jdk.test.whitebox.WhiteBox
- * @key randomness
- * @requires (vm.debug == true)
- *
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- *
- * @run main/othervm/timeout=400
- *      -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *      -XX:VerifyMetaspaceInterval=10
- *      -XX:MetaspaceReclaimPolicy=aggressive
- *      TestMetaspaceAllocationMT2
- */
-
-/*
  * @test id=debug-guard
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
@@ -109,23 +91,6 @@
  *      TestMetaspaceAllocationMT2
  */
 
-/*
- * @test id=ndebug-aggressive
- * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
- * @build jdk.test.whitebox.WhiteBox
- * @key randomness
- * @requires (vm.debug == false)
- *
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- *
- * @run main/othervm/timeout=400
- *      -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *      -XX:MetaspaceReclaimPolicy=aggressive
- *      TestMetaspaceAllocationMT2
- */
-
 public class TestMetaspaceAllocationMT2 {
 
     public static void main(String[] args) throws Exception {
@@ -147,7 +112,6 @@ public class TestMetaspaceAllocationMT2 {
             System.out.println("#### seconds: " + seconds);
             System.out.println("#### commitLimit: " + commitLimit);
             System.out.println("#### reserveLimit: " + reserveLimit);
-            System.out.println("#### ReclaimPolicy: " + Settings.settings().reclaimPolicy);
             System.out.println("#### guards: " + Settings.settings().usesAllocationGuards);
 
             MetaspaceTestContext context = new MetaspaceTestContext(commitLimit, reserveLimit);

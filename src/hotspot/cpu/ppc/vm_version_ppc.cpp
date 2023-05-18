@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2020 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -380,7 +380,7 @@ void VM_Version::initialize() {
   // Adjust RTM (Restricted Transactional Memory) flags.
   if (UseRTMLocking) {
     // If CPU or OS do not support RTM:
-    if (PowerArchitecturePPC64 < 8) {
+    if (PowerArchitecturePPC64 < 8 || PowerArchitecturePPC64 > 9) {
       vm_exit_during_initialization("RTM instructions are not available on this CPU.");
     }
 
@@ -673,7 +673,7 @@ void VM_Version::determine_features() {
   // We don't want to change this property, as user code might depend on it.
   // So the tests can not check on subversion 3.30, and we only enable RTM
   // with AIX 7.2.
-  if (has_lqarx()) { // POWER8 or above
+  if (has_lqarx() && !has_brw()) { // POWER8 or POWER9
     if (os::Aix::os_version() >= 0x07020000) { // At least AIX 7.2.
       _features |= rtm_m;
     }

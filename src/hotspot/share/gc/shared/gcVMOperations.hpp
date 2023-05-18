@@ -171,6 +171,7 @@ class VM_GC_HeapInspection: public VM_GC_Operation {
   ~VM_GC_HeapInspection() {}
   virtual VMOp_Type type() const { return VMOp_GC_HeapInspection; }
   virtual bool skip_operation() const;
+  virtual bool doit_prologue();
   virtual void doit();
  protected:
   bool collect();

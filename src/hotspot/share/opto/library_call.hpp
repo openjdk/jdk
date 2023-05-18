@@ -246,7 +246,7 @@ class LibraryCallKit : public GraphKit {
 
   bool inline_native_time_funcs(address method, const char* funcName);
 #if INCLUDE_JVMTI
-  bool inline_native_notify_jvmti_funcs(address funcAddr, const char* funcName);
+  bool inline_native_notify_jvmti_funcs(address funcAddr, const char* funcName, bool is_start, bool is_end);
   bool inline_native_notify_jvmti_hide();
 #endif
 
