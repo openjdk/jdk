@@ -625,7 +625,11 @@ public class JavacParser implements Parser {
             } else if (asVariable) {
                 checkSourceLevel(Feature.UNNAMED_VARIABLES);
             } else {
-                log.error(DiagnosticFlag.SYNTAX, token.pos, Errors.UnderscoreAsIdentifier);
+                if (preview.isEnabled() && Feature.UNNAMED_VARIABLES.allowedInSource(source)) {
+                    log.error(DiagnosticFlag.SYNTAX, token.pos, Errors.UseOfUnderscoreNotAllowed);
+                } else {
+                    log.error(DiagnosticFlag.SYNTAX, token.pos, Errors.UnderscoreAsIdentifier);
+                }
             }
             Name name = token.name();
             nextToken();
@@ -880,7 +884,7 @@ public class JavacParser implements Parser {
                 if (e == null) {
                     var.startPos = pos;
                     if (var.name == names.underscore && !allowVar) {
-                        log.error(DiagnosticFlag.SYNTAX, varPos, Errors.UnderscoreAsIdentifier);
+                        log.error(DiagnosticFlag.SYNTAX, varPos, Errors.UseOfUnderscoreNotAllowed);
                     }
                 }
                 pattern = toP(F.at(pos).BindingPattern(var));
@@ -3637,7 +3641,7 @@ public class JavacParser implements Parser {
 
         if (Feature.UNNAMED_VARIABLES.allowedInSource(source) && name == names.underscore) {
             if (!localDecl && !isTypePattern) {
-                log.error(DiagnosticFlag.SYNTAX, pos, Errors.UnderscoreAsIdentifier);
+                log.error(DiagnosticFlag.SYNTAX, pos, Errors.UseOfUnderscoreNotAllowed);
             }
             name = names.empty;
         }

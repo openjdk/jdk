@@ -1,19 +1,19 @@
-UnnamedErrors.java:9:17: compiler.err.underscore.as.identifier
-UnnamedErrors.java:10:17: compiler.err.underscore.as.identifier
-UnnamedErrors.java:11:20: compiler.err.underscore.as.identifier
-UnnamedErrors.java:11:26: compiler.err.underscore.as.identifier
-UnnamedErrors.java:11:32: compiler.err.underscore.as.identifier
-UnnamedErrors.java:12:17: compiler.err.underscore.as.identifier
-UnnamedErrors.java:12:24: compiler.err.underscore.as.identifier
-UnnamedErrors.java:13:24: compiler.err.underscore.as.identifier
-UnnamedErrors.java:15:18: compiler.err.underscore.as.identifier
-UnnamedErrors.java:16:23: compiler.err.underscore.as.identifier
-UnnamedErrors.java:17:19: compiler.err.underscore.as.identifier
-UnnamedErrors.java:22:26: compiler.err.underscore.as.identifier
-UnnamedErrors.java:24:26: compiler.err.underscore.as.identifier
-UnnamedErrors.java:27:18: compiler.err.underscore.as.identifier
+UnnamedErrors.java:9:17: compiler.err.use.of.underscore.not.allowed
+UnnamedErrors.java:10:17: compiler.err.use.of.underscore.not.allowed
+UnnamedErrors.java:11:20: compiler.err.use.of.underscore.not.allowed
+UnnamedErrors.java:11:26: compiler.err.use.of.underscore.not.allowed
+UnnamedErrors.java:11:32: compiler.err.use.of.underscore.not.allowed
+UnnamedErrors.java:12:17: compiler.err.use.of.underscore.not.allowed
+UnnamedErrors.java:12:24: compiler.err.use.of.underscore.not.allowed
+UnnamedErrors.java:13:24: compiler.err.use.of.underscore.not.allowed
+UnnamedErrors.java:15:18: compiler.err.use.of.underscore.not.allowed
+UnnamedErrors.java:16:23: compiler.err.use.of.underscore.not.allowed
+UnnamedErrors.java:17:19: compiler.err.use.of.underscore.not.allowed
+UnnamedErrors.java:22:26: compiler.err.use.of.underscore.not.allowed
+UnnamedErrors.java:24:26: compiler.err.use.of.underscore.not.allowed
+UnnamedErrors.java:27:18: compiler.err.use.of.underscore.not.allowed
 UnnamedErrors.java:34:18: compiler.err.restricted.type.not.allowed.here: var
-UnnamedErrors.java:77:18: compiler.err.underscore.as.identifier
+UnnamedErrors.java:77:18: compiler.err.use.of.underscore.not.allowed
 UnnamedErrors.java:77:19: compiler.err.expected: token.identifier
 UnnamedErrors.java:82:40: compiler.err.expected2: :, ->
 UnnamedErrors.java:82:51: compiler.err.expected: =
