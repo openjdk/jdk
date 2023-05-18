@@ -124,15 +124,45 @@ public class InstanceMainTest extends TestHelper {
     public void testSuperMain() throws Exception {
         test("""
            class MainClass extends SuperClass {
-                void main() {
-                   throw new AssertionError();
+               void main() {
                }
            }
            class SuperClass {
                void main(String[] args) {
+                   throw new AssertionError();
                }
            }
            """);
+    }
+
+    @Test
+    public void testPublicMain() throws Exception {
+        test("""
+           class MainClass {
+               void main(String[] args) {
+                   throw new AssertionError();
+               }
+               public void main() {
+               }
+           }
+           """);
+    }
+
+    @Test
+    public void testIgnoreBridgeMain() throws Exception {
+        test("""
+            public class MainClass extends Super {
+            }
+            
+            class Super {
+                public void main(String... args) {
+                }
+            
+                public void main() {
+                    throw new AssertionError();
+                }
+            }
+            """);
     }
 
     void test(String source) throws Exception {

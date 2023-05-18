@@ -31,14 +31,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MainMethodFinder {
-    private static boolean isPrivate(Method method) {
-        return Modifier.isPrivate(method.getModifiers());
-    }
-
-    private static boolean isStatic(Method method) {
-        return Modifier.isStatic(method.getModifiers());
-    }
-
     private static boolean correctArgs(Method method) {
         int argc = method.getParameterCount();
 
@@ -55,14 +47,13 @@ public class MainMethodFinder {
     private static void gatherMains(Class<?> declc, Class<?> refc, List<Method> mains) {
         if (refc != null && refc != Object.class) {
             for (Method method : refc.getDeclaredMethods()) {
-                // Must be named "main", public|protected|package-private and either
+                // Must be named "main", public|protected|package-private, not synthetic (bridge) and either
                 // no arguments or one string array argument.
                 if ("main".equals(method.getName()) &&
-                        !isPrivate(method) &&
-                        correctArgs(method) &&
-                        // Only statics in the declaring class
-                        (!isStatic(method) || declc == refc)
-                ) {
+                        !method.isSynthetic() &&
+                        !Modifier.isPrivate(method.getModifiers()) &&
+                        correctArgs(method))
+                {
                     mains.add(method);
                 }
             }
@@ -74,10 +65,10 @@ public class MainMethodFinder {
     /**
      * Comparator for two methods.
      * Priority order is;
+     * sub-class < super-class.
      * static < non-static,
      * public < non-public,
      * string arg < no arg and
-     * sub-class < super-class.
      *
      * @param a  first method
      * @param b  second method
@@ -85,6 +76,17 @@ public class MainMethodFinder {
      * @return -1, 0 or 1 to represent higher priority. equals priority or lesser priority.
      */
     private static int compareMethods(Method a, Method b) {
+        Class<?> aClass = a.getDeclaringClass();
+        Class<?> bClass = b.getDeclaringClass();
+
+        if (aClass != bClass) {
+            if (bClass.isAssignableFrom(aClass)) {
+                return -1;
+            } else {
+                return 1;
+            }
+        }
+
         int aMods = a.getModifiers();
         int bMods = b.getModifiers();
         boolean aIsStatic = Modifier.isStatic(aMods);
@@ -92,7 +94,7 @@ public class MainMethodFinder {
 
         if (aIsStatic && !bIsStatic) {
             return -1;
-        } else if (bIsStatic && !aIsStatic) {
+        } else if (!aIsStatic && bIsStatic) {
             return 1;
         }
 
@@ -108,18 +110,9 @@ public class MainMethodFinder {
         int aCount = a.getParameterCount();
         int bCount = b.getParameterCount();
 
-        if (aCount > bCount) {
+        if (bCount < aCount) {
             return -1;
-        } else if (bCount > aCount) {
-            return 1;
-        }
-
-        Class<?> aClass = a.getDeclaringClass();
-        Class<?> bClass = b.getDeclaringClass();
-
-        if (bClass.isAssignableFrom(aClass)) {
-            return -1;
-        } else if (bClass.isAssignableFrom(aClass)) {
+        } else if (aCount < bCount) {
             return 1;
         }
 
@@ -134,34 +127,24 @@ public class MainMethodFinder {
      * @throws NoSuchMethodException when not preview and no method found
      */
     public static Method findMainMethod(Class<?> mainClass) throws NoSuchMethodException {
-        try {
-            Method mainMethod = mainClass.getMethod("main", String[].class);
-            int mods = mainMethod.getModifiers();
-
-            if (Modifier.isStatic(mods) && mainMethod.getDeclaringClass() != mainClass) {
-                System.err.println("WARNING: static main in super class will be deprecated.");
-            }
-
-            return mainMethod;
-        } catch (NoSuchMethodException nsme) {
-            if (!PreviewFeatures.isEnabled()) {
-                throw nsme;
-            }
-
-            List<Method> mains = new ArrayList<>();
-            gatherMains(mainClass, mainClass, mains);
-
-            if (mains.isEmpty()) {
-                throw new NoSuchMethodException("No main method found");
-            }
-
-            if (1 < mains.size()) {
-                mains.sort(MainMethodFinder::compareMethods);
-            }
-
-            Method mainMethod = mains.get(0);
-
-            return mainMethod;
+        boolean traditionalMain = !PreviewFeatures.isEnabled();
+        if (traditionalMain) {
+            return mainClass.getMethod("main", String[].class);
         }
+
+        List<Method> mains = new ArrayList<>();
+        gatherMains(mainClass, mainClass, mains);
+
+        if (mains.isEmpty()) {
+            throw new NoSuchMethodException("No main method found");
+        }
+
+        if (1 < mains.size()) {
+            mains.sort(MainMethodFinder::compareMethods);
+        }
+
+        Method mainMethod = mains.get(0);
+
+        return mainMethod;
     }
 }
