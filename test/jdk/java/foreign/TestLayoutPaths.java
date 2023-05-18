@@ -232,8 +232,8 @@ public class TestLayoutPaths {
         // test offset
 
         for (int i = 0 ; i < 4 ; i++) {
-            long bitOffset = g.byteOffset(sequenceElement(i));
-            assertEquals(offsets[i], bitOffset);
+            long byteOffset = g.byteOffset(sequenceElement(i));
+            assertEquals(offsets[i], byteOffset);
         }
     }
 
