@@ -1482,29 +1482,10 @@ void Arguments::set_use_compressed_oops() {
 #endif // _LP64
 }
 
-
-// NOTE: set_use_compressed_klass_ptrs() must be called after calling
-// set_use_compressed_oops().
 void Arguments::set_use_compressed_klass_ptrs() {
 #ifdef _LP64
-  // On some architectures, the use of UseCompressedClassPointers implies the use of
-  // UseCompressedOops. The reason is that the rheap_base register of said platforms
-  // is reused to perform some optimized spilling, in order to use rheap_base as a
-  // temp register. But by treating it as any other temp register, spilling can typically
-  // be completely avoided instead. So it is better not to perform this trick. And by
-  // not having that reliance, large heaps, or heaps not supporting compressed oops,
-  // can still use compressed class pointers.
-  // Turn on UseCompressedClassPointers too
-  if (FLAG_IS_DEFAULT(UseCompressedClassPointers)) {
-    FLAG_SET_ERGO(UseCompressedClassPointers, true);
-  }
-  // Check the CompressedClassSpaceSize to make sure we use compressed klass ptrs.
-  if (UseCompressedClassPointers) {
-    if (CompressedClassSpaceSize > KlassEncodingMetaspaceMax) {
-      warning("CompressedClassSpaceSize is too large for UseCompressedClassPointers");
-      FLAG_SET_DEFAULT(UseCompressedClassPointers, false);
-    }
-  }
+  assert(!UseCompressedClassPointers || CompressedClassSpaceSize <= KlassEncodingMetaspaceMax,
+         "CompressedClassSpaceSize is too large for UseCompressedClassPointers");
 #endif // _LP64
 }
 
@@ -1526,9 +1507,6 @@ jint Arguments::set_ergonomics_flags() {
 
 #ifdef _LP64
   set_use_compressed_oops();
-
-  // set_use_compressed_klass_ptrs() must be called after calling
-  // set_use_compressed_oops().
   set_use_compressed_klass_ptrs();
 
   // Also checks that certain machines are slower with compressed oops
@@ -1943,7 +1921,7 @@ bool Arguments::check_vm_args_consistency() {
     FLAG_SET_CMDLINE(LockingMode, LM_MONITOR);
   }
 
-#if !defined(X86) && !defined(AARCH64) && !defined(PPC64) && !defined(RISCV64)
+#if !defined(X86) && !defined(AARCH64) && !defined(PPC64) && !defined(RISCV64) && !defined(S390)
   if (LockingMode == LM_MONITOR) {
     jio_fprintf(defaultStream::error_stream(),
                 "LockingMode == 0 (LM_MONITOR) is not fully implemented on this architecture");
