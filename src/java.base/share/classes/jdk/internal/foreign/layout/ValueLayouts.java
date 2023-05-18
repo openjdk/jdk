@@ -152,7 +152,7 @@ public final class ValueLayouts {
         static void assertCarrierSize(Class<?> carrier, long byteSize) {
             assert isValidCarrier(carrier);
             assert carrier != MemorySegment.class
-                    // MemorySegment byteSize must always equal ADDRESS_SIZE_BITS
+                    // MemorySegment byteSize must always equal ADDRESS_SIZE_BYTES
                     || byteSize == ADDRESS_SIZE_BYTES;
             assert !carrier.isPrimitive() ||
                     // Primitive class byteSize must always correspond
