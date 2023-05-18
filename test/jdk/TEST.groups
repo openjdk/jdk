@@ -273,6 +273,7 @@ jdk_launcher = \
 jdk_loom = \
     com/sun/management/HotSpotDiagnosticMXBean \
     com/sun/management/ThreadMXBean \
+    com/sun/management/Threads \
     java/lang/Thread \
     java/lang/ThreadGroup \
     java/lang/management/ThreadMXBean \
