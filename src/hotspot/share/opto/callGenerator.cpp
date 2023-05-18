@@ -123,7 +123,7 @@ JVMState* ParseGenerator::generate(JVMState* jvms) {
       ObjID obj = objs.at(i);
 
       if (as.contains(obj)) {
-        if (seen) {
+        if (!seen) {
           tty->print_cr("[PEA Allocation State]");
           seen = true;
         }

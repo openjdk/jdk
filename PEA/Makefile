@@ -6,7 +6,7 @@ export PATH := ${JAVA_HOME}/bin:$(PATH)
 
 CTW_DIR := $(abspath ../test/hotspot/jtreg/testlibrary/ctw)
 CTW_DIST= ${CTW_DIR}/dist
-CTW_JAVA_OPTIONS := -XX:+CITime -XX:-TieredCompilation -XX:+UseTLAB -XX:+PrintCompilation -XX:+UnlockExperimentalVMOptions -XX:+DoPartialEscapeAnalysis
+CTW_JAVA_OPTIONS := -XX:+CITime -XX:-TieredCompilation -XX:+UseTLAB -XX:+PrintCompilation -XX:+PrintOptoStatistics -XX:+UnlockExperimentalVMOptions -XX:+DoPartialEscapeAnalysis
 comma := ,
 empty :=
 space := $(empty) $(empty)
