@@ -58,7 +58,7 @@ final class ConnectionPool {
 
     // Pools of idle connections
 
-    private final ReentrantLock stateLock =  new ReentrantLock();
+    private final ReentrantLock stateLock = new ReentrantLock();
     private final HashMap<CacheKey,LinkedList<HttpConnection>> plainPool;
     private final HashMap<CacheKey,LinkedList<HttpConnection>> sslPool;
     private final ExpiryList expiryList;
