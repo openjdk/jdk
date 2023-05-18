@@ -38,7 +38,7 @@ class Tuple<T, Ts...> {
 private:
   T _first;
   Tuple<Ts...> _remaining;
-  
+
 public:
   constexpr Tuple(const T& first, const Ts&... remaining) noexcept
     : _first(first), _remaining(remaining...) {}
