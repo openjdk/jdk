@@ -65,7 +65,11 @@ uintptr_t SlidingForwarding::encode_forwarding(HeapWord* from, HeapWord* to) {
       *base = to_region_base;
     } else {
       // Both primary and alternate are not fitting
-      assert(UseG1GC, "Only happens with G1 serial compaction");
+      // This happens only in the following rare situations:
+      // - In Serial GC, sometimes when compact-top switches spaces, because the
+      //   region boudaries are virtual and objects can cross regions
+      // - In G1 serial compaction, because tails of various compaction chains
+      //   are distributed across the remainders of already compacted regions.
       return (1 << FALLBACK_SHIFT) | markWord::marked_value;
     }
     alternate = 1;
