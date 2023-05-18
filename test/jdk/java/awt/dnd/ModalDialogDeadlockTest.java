@@ -132,9 +132,8 @@ public class ModalDialogDeadlockTest implements AWTEventListener {
 
     public void start() throws Exception {
         final Robot robot = new Robot();
-        robot.waitForIdle();
 
-        Thread.sleep(FRAME_ACTIVATION_TIMEOUT);
+        robot.delay(FRAME_ACTIVATION_TIMEOUT);
 
         EventQueue.invokeAndWait(() -> {
             dstPoint = frame.getLocationOnScreen();
@@ -151,7 +150,7 @@ public class ModalDialogDeadlockTest implements AWTEventListener {
             dialog.setVisible(true);
         });
 
-        Thread.sleep(FRAME_ACTIVATION_TIMEOUT);
+        robot.delay(FRAME_ACTIVATION_TIMEOUT);
 
         EventQueue.invokeAndWait(() -> {
             srcPoint = dialog.getLocationOnScreen();
@@ -170,7 +169,7 @@ public class ModalDialogDeadlockTest implements AWTEventListener {
              srcPoint.translate(sign(dstPoint.x - srcPoint.x),
                                 sign(dstPoint.y - srcPoint.y))) {
             robot.mouseMove(srcPoint.x, srcPoint.y);
-            Thread.sleep(50);
+            robot.delay(50);
         }
         synchronized (SYNC_LOCK) {
             robot.mouseRelease(InputEvent.BUTTON1_MASK);

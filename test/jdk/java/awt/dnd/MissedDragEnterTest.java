@@ -99,9 +99,8 @@ public class MissedDragEnterTest {
 
     public void start() throws Exception {
         Robot robot = new Robot();
-        robot.waitForIdle();
 
-        Thread.sleep(FRAME_ACTIVATION_TIMEOUT);
+        robot.delay(FRAME_ACTIVATION_TIMEOUT);
         EventQueue.invokeAndWait(() -> {
             p = panel.getLocationOnScreen();
             d = panel.getSize();
