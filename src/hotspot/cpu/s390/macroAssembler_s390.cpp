@@ -3171,22 +3171,28 @@ void MacroAssembler::compiler_fast_lock_object(Register oop, Register box, Regis
   z_nill(temp, markWord::monitor_value);
   z_brne(object_has_monitor);
 
-  // Set mark to markWord | markWord::unlocked_value.
-  z_oill(displacedHeader, markWord::unlocked_value);
+  if (LockingMode != LM_MONITOR) {
+    // Set mark to markWord | markWord::unlocked_value.
+    z_oill(displacedHeader, markWord::unlocked_value);
 
-  // Load Compare Value application register.
+    // Load Compare Value application register.
 
-  // Initialize the box (must happen before we update the object mark).
-  z_stg(displacedHeader, BasicLock::displaced_header_offset_in_bytes(), box);
+    // Initialize the box (must happen before we update the object mark).
+    z_stg(displacedHeader, BasicLock::displaced_header_offset_in_bytes(), box);
 
-  // Memory Fence (in cmpxchgd)
-  // Compare object markWord with mark and if equal exchange scratch1 with object markWord.
+    // Memory Fence (in cmpxchgd)
+    // Compare object markWord with mark and if equal exchange scratch1 with object markWord.
 
-  // If the compare-and-swap succeeded, then we found an unlocked object and we
-  // have now locked it.
-  z_csg(displacedHeader, box, 0, oop);
-  assert(currentHeader==displacedHeader, "must be same register"); // Identified two registers from z/Architecture.
-  z_bre(done);
+    // If the compare-and-swap succeeded, then we found an unlocked object and we
+    // have now locked it.
+    z_csg(displacedHeader, box, 0, oop);
+    assert(currentHeader == displacedHeader, "must be same register"); // Identified two registers from z/Architecture.
+    z_bre(done);
+  } else {
+    // Set NE to indicate 'failure' -> take slow-path
+    z_ltgr(oop, oop);
+    z_bru(done);
+  }
 
   // We did not see an unlocked object so try the fast recursive case.
 
@@ -3238,10 +3244,12 @@ void MacroAssembler::compiler_fast_unlock_object(Register oop, Register box, Reg
 
   BLOCK_COMMENT("compiler_fast_unlock_object {");
 
-  // Find the lock address and load the displaced header from the stack.
-  // if the displaced header is zero, we have a recursive unlock.
-  load_and_test_long(displacedHeader, Address(box, BasicLock::displaced_header_offset_in_bytes()));
-  z_bre(done);
+  if (LockingMode != LM_MONITOR) {
+    // Find the lock address and load the displaced header from the stack.
+    // if the displaced header is zero, we have a recursive unlock.
+    load_and_test_long(displacedHeader, Address(box, BasicLock::displaced_header_offset_in_bytes()));
+    z_bre(done);
+  }
 
   // Handle existing monitor.
   // The object has an existing monitor iff (mark & monitor_value) != 0.
@@ -3250,12 +3258,18 @@ void MacroAssembler::compiler_fast_unlock_object(Register oop, Register box, Reg
   z_nill(currentHeader, markWord::monitor_value);
   z_brne(object_has_monitor);
 
-  // Check if it is still a light weight lock, this is true if we see
-  // the stack address of the basicLock in the markWord of the object
-  // copy box to currentHeader such that csg does not kill it.
-  z_lgr(currentHeader, box);
-  z_csg(currentHeader, displacedHeader, 0, oop);
-  z_bru(done); // Csg sets CR as desired.
+  if (LockingMode != LM_MONITOR) {
+    // Check if it is still a light weight lock, this is true if we see
+    // the stack address of the basicLock in the markWord of the object
+    // copy box to currentHeader such that csg does not kill it.
+    z_lgr(currentHeader, box);
+    z_csg(currentHeader, displacedHeader, 0, oop);
+    z_bru(done); // Csg sets CR as desired.
+  } else {
+    // Set NE to indicate 'failure' -> take slow-path
+    z_ltgr(oop, oop);
+    z_bru(done);
+  }
 
   // Handle existing monitor.
   bind(object_has_monitor);

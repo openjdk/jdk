@@ -377,6 +377,7 @@ tier1_runtime = \
  -runtime/CompressedOops/UseCompressedOops.java \
  -runtime/ConstantPool/IntfMethod.java \
  -runtime/ErrorHandling/CreateCoredumpOnCrash.java \
+ -runtime/ErrorHandling/ReattemptErrorTest.java \
  -runtime/ErrorHandling/TestHeapDumpOnOutOfMemoryError.java \
  -runtime/ErrorHandling/TimeoutInErrorHandlingTest.java \
  -runtime/InvocationTests \

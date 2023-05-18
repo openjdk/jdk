@@ -471,6 +471,17 @@ rather than bundling the JDK's own copy.
 Use `--with-freetype-include=<path>` and `--with-freetype-lib=<path>`
 if `configure` does not automatically locate the platform FreeType files.
 
+### Fontconfig
+
+Fontconfig from [freedesktop.org Fontconfig](http://fontconfig.org) is required
+on all platforms except Windows and macOS.
+
+  * To install on an rpm-based Linux, try running `sudo yum install
+    fontconfig-devel`.
+
+Use `--with-fontconfig-include=<path>` and `--with-fontconfig=<path>`
+if `configure` does not automatically locate the platform Fontconfig files.
+
 ### CUPS
 
 CUPS, [Common UNIX Printing System](http://www.cups.org) header files are
