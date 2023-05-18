@@ -339,7 +339,7 @@ public class EventFilters
                 "JFR request timer",
                 "Reference Handler",
                 "VirtualThread-unparker",
-                "Common-",
+                "Cleaner-",
                 "Common-Cleaner",
                 "FinalizerThread",
                 "ForkJoinPool"
