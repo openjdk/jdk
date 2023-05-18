@@ -5514,11 +5514,10 @@ instruct vmask_truecount_sve(iRegINoSp dst, pReg src) %{
 
 // Combined rule for VectorStoreMask + VectorMaskTrueCount when the vector element type is not T_BYTE.
 
-instruct vstoremask_truecount(iRegINoSp dst, vReg src, immI_gt_1 size, vReg vtmp) %{
-  predicate(UseSVE == 0);
+instruct vstoremask_truecount_neon(iRegINoSp dst, vReg src, immI_gt_1 size, vReg vtmp) %{
   match(Set dst (VectorMaskTrueCount (VectorStoreMask src size)));
   effect(TEMP vtmp);
-  format %{ "vstoremask_truecount $dst, $src\t# KILL $vtmp" %}
+  format %{ "vstoremask_truecount_neon $dst, $src\t# KILL $vtmp" %}
   ins_encode %{
     // Input "src" is a vector mask represented as lanes with
     // 0/-1 as element values.

@@ -35,7 +35,7 @@ public class StoreMaskTrueCount {
     private static final VectorSpecies<Short> S_SPECIES = ShortVector.SPECIES_PREFERRED;
     private static final VectorSpecies<Integer> I_SPECIES = IntVector.SPECIES_PREFERRED;
     private static final VectorSpecies<Long> L_SPECIES = LongVector.SPECIES_PREFERRED;
-    private static final int LENGTH = 1024;
+    private static final int LENGTH = 128;
     private static final Random RD = new Random();
     private static boolean[] ba;
 
@@ -48,11 +48,10 @@ public class StoreMaskTrueCount {
 
     @Benchmark
     public static int testShort() {
-        VectorMask<Short> m = VectorMask.fromArray(S_SPECIES, ba, 0);
         int res = 0;
-        for (int i = 0; i < LENGTH; i++) {
-            m = m.not();
-            res += m.trueCount();
+        for (int i = 0; i < LENGTH; i += S_SPECIES.length()) {
+            VectorMask<Short> m = VectorMask.fromArray(S_SPECIES, ba, i);
+            res += m.not().trueCount();
         }
 
         return res;
@@ -60,11 +59,10 @@ public class StoreMaskTrueCount {
 
     @Benchmark
     public static int testInt() {
-        VectorMask<Integer> m = VectorMask.fromArray(I_SPECIES, ba, 0);
         int res = 0;
-        for (int i = 0; i < LENGTH; i++) {
-            m = m.not();
-            res += m.trueCount();
+        for (int i = 0; i < LENGTH; i += I_SPECIES.length()) {
+            VectorMask<Integer> m = VectorMask.fromArray(I_SPECIES, ba, i);
+            res += m.not().trueCount();
         }
 
         return res;
@@ -72,11 +70,10 @@ public class StoreMaskTrueCount {
 
     @Benchmark
     public static int testLong() {
-        VectorMask<Long> m = VectorMask.fromArray(L_SPECIES, ba, 0);
         int res = 0;
-        for (int i = 0; i < LENGTH; i++) {
-            m = m.not();
-            res += m.trueCount();
+        for (int i = 0; i < LENGTH; i += L_SPECIES.length()) {
+            VectorMask<Long> m = VectorMask.fromArray(L_SPECIES, ba, i);
+            res += m.not().trueCount();
         }
 
         return res;

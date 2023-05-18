@@ -1470,7 +1470,7 @@ public class IRNode {
 
     public static final String VSTOREMASK_TRUECOUNT = PREFIX + "VSTOREMASK_TRUECOUNT" + POSTFIX;
     static {
-        machOnlyNameRegex(VSTOREMASK_TRUECOUNT, "vstoremask_truecount");
+        machOnlyNameRegex(VSTOREMASK_TRUECOUNT, "vstoremask_truecount_neon");
     }
 
     public static final String XOR = PREFIX + "XOR" + POSTFIX;
