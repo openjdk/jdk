@@ -571,8 +571,7 @@ public sealed interface Linker permits AbstractLinker {
     SymbolLookup defaultLookup();
 
     /**
-     * A linker option is used to indicate additional linking requirements to the linker,
-     * besides what is described by a function descriptor.
+     * A linker option is used to provide additional parameters to a linkage request.
      * @since 20
      */
     @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
@@ -580,9 +579,10 @@ public sealed interface Linker permits AbstractLinker {
             permits LinkerOptions.LinkerOptionImpl {
 
         /**
-         * {@return a linker option used to denote the index of the first variadic argument layout in a
-         *          foreign function call}
-         * @param index the index of the first variadic argument in a downcall handle linkage request.
+         * {@return a linker option used to denote the index of the first variadic argument layout in the
+         *          function descriptor associated with a downcall linkage request}
+         * @param index the index of the first variadic argument layout in the function descriptor associated
+         *              with a downcall linkage request.
          */
         static Option firstVariadicArg(int index) {
             return new LinkerOptions.FirstVariadicArg(index);
@@ -598,11 +598,12 @@ public sealed interface Linker permits AbstractLinker {
          * For this purpose, a downcall method handle linked with this
          * option will feature an additional {@link MemorySegment} parameter directly
          * following the target address, and optional {@link SegmentAllocator} parameters.
-         * This parameter, called the 'capture state segment', represents the native segment into which
+         * This parameter, the <em>capture state segment</em>, represents the native segment into which
          * the captured state is written.
          * <p>
-         * The capture state segment should have the layout returned by {@linkplain #captureStateLayout}.
-         * This layout is a struct layout which has a named field for each captured value.
+         * The capture state segment must have size and alignment compatible with the layout returned by
+         * {@linkplain #captureStateLayout}. This layout is a struct layout which has a named field for
+         * each captured value.
          * <p>
          * Captured state can be retrieved from the capture state segment by constructing var handles
          * from the {@linkplain #captureStateLayout capture state layout}.
@@ -638,7 +639,7 @@ public sealed interface Linker permits AbstractLinker {
 
          /**
          * {@return a struct layout that represents the layout of the capture state segment that is passed
-         *          to a downcall handle linked with {@link #captureCallState(String...)}}.
+         *          to a downcall handle linked with {@link #captureCallState(String...)}}
          * <p>
          * The capture state layout is <em>platform-dependent</em> but is guaranteed to be
          * a {@linkplain StructLayout struct layout} containing only {@linkplain ValueLayout value layouts}
@@ -649,13 +650,13 @@ public sealed interface Linker permits AbstractLinker {
          *     <li>WSAGetLastError</li>
          *     <li>errno</li>
          * </ul>
-         * The following snipet shows how to obtain the names of the supported captured value layouts:
+         * <p>
+         * Clients can obtain the names of the supported captured value layouts as follows:
          * {@snippet lang = java:
-         *    String capturedNames = Linker.Option.captureStateLayout().memberLayouts().stream()
+         *    List<String> capturedNames = Linker.Option.captureStateLayout().memberLayouts().stream()
          *        .map(MemoryLayout::name)
          *        .flatMap(Optional::stream)
-         *        .map(Objects::toString)
-         *        .collect(Collectors.joining(", "));
+         *        .toList();
          * }
          *
          * @see #captureCallState(String...)
