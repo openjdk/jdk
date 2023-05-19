@@ -90,8 +90,12 @@ public class FileURLConnection extends URLConnection {
         }
     }
 
-    public boolean isConnected() {
-        return connected;
+    public synchronized void closeInputStream() throws IOException {
+        if (is != null) {
+            is.close();
+            is = null;
+            connected = false;
+        }
     }
 
     private boolean initializedHeaders = false;

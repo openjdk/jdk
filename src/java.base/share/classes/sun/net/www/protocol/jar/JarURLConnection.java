@@ -94,9 +94,8 @@ public class JarURLConnection extends java.net.JarURLConnection {
                         jarFile.close();
                     }
                 } finally {
-                    if (jarFileURLConnection instanceof FileURLConnection fileURLConnection
-                        && fileURLConnection.isConnected()) {
-                        fileURLConnection.getInputStream().close();
+                    if (jarFileURLConnection instanceof FileURLConnection fileURLConnection) {
+                        fileURLConnection.closeInputStream();
                     }
                 }
             }
