@@ -855,7 +855,7 @@ void HeapShared::serialize_root(SerializeClosure* soc) {
 void HeapShared::serialize_tables(SerializeClosure* soc) {
 
 #ifndef PRODUCT
-  soc->do_ptr((void**)&_archived_ArchiveHeapTestClass);
+  soc->do_ptr(&_archived_ArchiveHeapTestClass);
   if (soc->reading() && _archived_ArchiveHeapTestClass != nullptr) {
     _test_class_name = _archived_ArchiveHeapTestClass->adr_at(0);
     setup_test_class(_test_class_name);

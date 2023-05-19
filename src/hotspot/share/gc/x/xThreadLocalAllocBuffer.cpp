@@ -31,11 +31,11 @@
 #include "runtime/javaThread.hpp"
 #include "runtime/stackWatermarkSet.inline.hpp"
 
-XPerWorker<ThreadLocalAllocStats>* XThreadLocalAllocBuffer::_stats = NULL;
+XPerWorker<ThreadLocalAllocStats>* XThreadLocalAllocBuffer::_stats = nullptr;
 
 void XThreadLocalAllocBuffer::initialize() {
   if (UseTLAB) {
-    assert(_stats == NULL, "Already initialized");
+    assert(_stats == nullptr, "Already initialized");
     _stats = new XPerWorker<ThreadLocalAllocStats>();
     reset_statistics();
   }
