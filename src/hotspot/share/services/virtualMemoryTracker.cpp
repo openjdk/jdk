@@ -526,6 +526,8 @@ bool VirtualMemoryTracker::remove_released_region(address addr, size_t size) {
   }
 
   if (size <= reserved_rgn->size() && reserved_rgn->contain_region(addr, size)) {
+    // The requested chunk to be freed is smaller or same size as the real
+    // underlaying region and is fully contained within one (i.e. single region)
     VirtualMemorySummary::record_released_memory(size, reserved_rgn->flag());
     assert(reserved_rgn->contain_region(addr, size), "Not completely contained");
     if (reserved_rgn->base() == addr || reserved_rgn->end() == addr + size) {
@@ -548,13 +550,27 @@ bool VirtualMemoryTracker::remove_released_region(address addr, size_t size) {
       }
     }
   } else {
+    // The requested chunk to be freed is either larger than a single real
+    // underlaying region or spawns accross multiple real underlaying regions
+    //
+    // underlying regions: aaaa bbbb cccc
+    //
+    // asked to be freed:  xxxx xxxx ....
+    // or:                 ..xx xxxx ....
+    // or:                 .... xxxx xx..
+    // or:                 .... xxxx xxxx
+    // or:                 ..xx xxxx xx..
+    // or:                 ..xx xxxx xxxx
+    // or:                 xxxx xxxx xx..
+    // or variations thereof
+
     address end = addr+size;
     size_t remaining = size;
     LinkedListNode<ReservedMemoryRegion>* node_rgn = _reserved_regions->find_node(rgn);
     // Segment the region into stripes to be further processed recursively
     while (remaining > 0) {
       ReservedMemoryRegion* remove_rgn = node_rgn->data();
-      assert(remove_rgn != nullptr, "NULL region");
+      assert(remove_rgn != nullptr, "null region");
 
       node_rgn = node_rgn->next();
       assert(remove_rgn->base() < node_rgn->data()->base(), "not ascending bases");
