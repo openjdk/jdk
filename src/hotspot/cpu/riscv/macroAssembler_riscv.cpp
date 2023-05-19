@@ -3383,7 +3383,7 @@ void MacroAssembler::load_method_holder_cld(Register result, Register method) {
 void MacroAssembler::load_method_holder(Register holder, Register method) {
   ld(holder, Address(method, Method::const_offset()));                      // ConstMethod*
   ld(holder, Address(holder, ConstMethod::constants_offset()));             // ConstantPool*
-  ld(holder, Address(holder, ConstantPool::pool_holder_offset())); // InstanceKlass*
+  ld(holder, Address(holder, ConstantPool::pool_holder_offset()));          // InstanceKlass*
 }
 
 // string indexof

@@ -5116,7 +5116,7 @@ void MacroAssembler::load_method_holder_cld(Register rresult, Register rmethod) 
 void MacroAssembler::load_method_holder(Register holder, Register method) {
   movptr(holder, Address(method, Method::const_offset()));                      // ConstMethod*
   movptr(holder, Address(holder, ConstMethod::constants_offset()));             // ConstantPool*
-  movptr(holder, Address(holder, ConstantPool::pool_holder_offset())); // InstanceKlass*
+  movptr(holder, Address(holder, ConstantPool::pool_holder_offset()));          // InstanceKlass*
 }
 
 void MacroAssembler::load_klass(Register dst, Register src, Register tmp) {
