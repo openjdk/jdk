@@ -72,8 +72,8 @@ public enum SourceVersion {
      *  20: no changes (pattern matching for switch in fourth preview,
      *      record patterns in second preview)
      *  21: pattern matching for switch and record patterns (string
-     *      templates in preview, unnamed patterns and variables, unnamed
-     *      classes and instance main methods in preview)
+     *      templates in preview, unnamed patterns and variables in
+     *      preview, unnamed classes and instance main methods in preview)
      */
 
     /**
