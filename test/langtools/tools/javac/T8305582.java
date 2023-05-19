@@ -26,7 +26,7 @@
  * @bug 8305582
  * @summary Compiler crash when compiling record patterns with var
  * @enablePreview
- * @compile/fail/ref=T8305582.out -XDrawDiagnostics --enable-preview -source ${jdk.version} T8305582.java
+ * @compile/fail/ref=T8305582.out -XDrawDiagnostics --enable-preview -source ${jdk.version} -XDshould-stop.at=FLOW T8305582.java
  */
 
 public class T8305582 {
@@ -42,5 +42,9 @@ public class T8305582 {
                 break;
             default:
         }
+
+        if (o instanceof ColoredPoint(var(int x, int y), var c)) { }
+        if (o instanceof ColoredPoint(var(int x, var y), var c)) { }
+        if (o instanceof var(Point x, Point y)) { }
     }
 }
