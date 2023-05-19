@@ -51,6 +51,10 @@ com/sun/jdi/cds/CDSBreakpointTest.java 8307778 generic-all
 com/sun/jdi/cds/CDSDeleteAllBkptsTest.java 8307778 generic-all
 com/sun/jdi/cds/CDSFieldWatchpoints.java 8307778 generic-all
 
+sun/tools/jcmd/JcmdOutputEncodingTest.java 8308033 generic-all
+sun/tools/jstack/BasicJStackTest.java 8308033 generic-all
+
+javax/management/remote/mandatory/connection/BrokenConnectionTest.java 8308035 windows-x64
 
 ##########
 ## Tests incompatible with  with virtual test thread factory.
@@ -74,3 +78,4 @@ java/lang/SecurityManager/modules/CustomSecurityManagerTest.java 0000000 generic
 java/util/PluggableLocale/PermissionTest.java 0000000 generic-all
 java/util/Properties/StoreReproducibilityTest.java 0000000 generic-all
 java/util/Properties/StoreReproducibilityTest.java 0000000 generic-all
+javax/management/remote/mandatory/subjectDelegation/SubjectDelegation1Test.java 0000000 generic-all

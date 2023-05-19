@@ -829,8 +829,6 @@ JvmtiExport::cv_external_thread_to_JavaThread(ThreadsList * t_list,
   }
   // Looks like a live JavaThread at this point.
 
-  // We do not check the EnableThreadSMRExtraValidityChecks option
-  // for this includes() call because JVM/TI's spec is tighter.
   if (!t_list->includes(java_thread)) {
     // Not on the JavaThreads list so it is not alive.
     return JVMTI_ERROR_THREAD_NOT_ALIVE;
@@ -872,8 +870,6 @@ JvmtiExport::cv_oop_to_JavaThread(ThreadsList * t_list, oop thread_oop,
   }
   // Looks like a live JavaThread at this point.
 
-  // We do not check the EnableThreadSMRExtraValidityChecks option
-  // for this includes() call because JVM/TI's spec is tighter.
   if (!t_list->includes(java_thread)) {
     // Not on the JavaThreads list so it is not alive.
     return JVMTI_ERROR_THREAD_NOT_ALIVE;
@@ -2596,8 +2592,6 @@ void JvmtiExport::post_dynamic_code_generated_while_holding_locks(const char* na
                                                                   address code_begin, address code_end)
 {
   JavaThread* thread = JavaThread::current();
-  assert(!thread->is_in_any_VTMS_transition(), "dynamic code generated events are not allowed in any VTMS transition");
-
   // register the stub with the current dynamic code event collector
   // Cannot take safepoint here so do not use state_for to get
   // jvmti thread state.

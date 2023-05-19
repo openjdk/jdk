@@ -317,9 +317,10 @@ public abstract class FileChannel
      *
      * <p> An invocation of this method behaves in exactly the same way as the
      * invocation
-     * <pre>
-     *     fc.{@link #open(Path,Set,FileAttribute[]) open}(file, opts, new FileAttribute&lt;?&gt;[0]);
-     * </pre>
+     * {@snippet lang=java :
+     *     // @link substring="open" target="#open(Path,Set,FileAttribute[])" :
+     *     fc.open(file, opts, new FileAttribute<?>[0]);
+     * }
      * where {@code opts} is a set of the options specified in the {@code
      * options} array.
      *
@@ -1201,8 +1202,10 @@ public abstract class FileChannel
      * <p> An invocation of this method of the form {@code fc.lock()} behaves
      * in exactly the same way as the invocation
      *
-     * <pre>
-     *     fc.{@link #lock(long,long,boolean) lock}(0L, Long.MAX_VALUE, false) </pre>
+     * {@snippet lang=java :
+     *     // @link substring="lock" target="#lock(long,long,boolean)" :
+     *     fc.lock(0L, Long.MAX_VALUE, false)
+     * }
      *
      * @return  A lock object representing the newly-acquired lock
      *
@@ -1325,8 +1328,10 @@ public abstract class FileChannel
      * <p> An invocation of this method of the form {@code fc.tryLock()}
      * behaves in exactly the same way as the invocation
      *
-     * <pre>
-     *     fc.{@link #tryLock(long,long,boolean) tryLock}(0L, Long.MAX_VALUE, false) </pre>
+     * {@snippet lang=java :
+     *     // @link substring="tryLock" target="#tryLock(long,long,boolean)" :
+     *     fc.tryLock(0L, Long.MAX_VALUE, false)
+     * }
      *
      * @return  A lock object representing the newly-acquired lock,
      *          or {@code null} if the lock could not be acquired

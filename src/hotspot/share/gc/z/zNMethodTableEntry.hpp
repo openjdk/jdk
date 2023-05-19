@@ -55,13 +55,13 @@ private:
   uint64_t _entry;
 
 public:
-  explicit ZNMethodTableEntry(bool unregistered = false) :
-      _entry(field_registered::encode(false) |
+  explicit ZNMethodTableEntry(bool unregistered = false)
+    : _entry(field_registered::encode(false) |
              field_unregistered::encode(unregistered) |
              field_method::encode(nullptr)) {}
 
-  explicit ZNMethodTableEntry(nmethod* method) :
-      _entry(field_registered::encode(true) |
+  explicit ZNMethodTableEntry(nmethod* method)
+    : _entry(field_registered::encode(true) |
              field_unregistered::encode(false) |
              field_method::encode(method)) {}
 

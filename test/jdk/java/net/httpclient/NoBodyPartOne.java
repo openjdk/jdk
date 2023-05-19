@@ -33,7 +33,6 @@
  *      NoBodyPartOne
  */
 
-import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -44,6 +43,7 @@ import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandler;
 import java.net.http.HttpResponse.BodyHandlers;
 import org.testng.annotations.Test;
+
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
@@ -55,20 +55,20 @@ public class NoBodyPartOne extends AbstractNoBody {
         printStamp(START, "testAsString(\"%s\", %s)", uri, sameClient);
         HttpClient client = null;
         for (int i=0; i< ITERATION_COUNT; i++) {
-            if (!sameClient || client == null)
-                client = newHttpClient();
-
-            HttpRequest req = HttpRequest.newBuilder(URI.create(uri))
-                                         .PUT(BodyPublishers.ofString(SIMPLE_STRING))
-                                         .build();
-            BodyHandler<String> handler = i % 2 == 0 ? BodyHandlers.ofString()
-                                                     : BodyHandlers.ofString(UTF_8);
-            HttpResponse<String> response = client.send(req, handler);
-            String body = response.body();
-            assertEquals(body, "");
+            if (!sameClient || client == null) {
+                client = newHttpClient(sameClient);
+            }
+            try (var cl = new CloseableClient(client, sameClient)) {
+                HttpRequest req = newRequestBuilder(uri)
+                        .PUT(BodyPublishers.ofString(SIMPLE_STRING))
+                        .build();
+                BodyHandler<String> handler = i % 2 == 0 ? BodyHandlers.ofString()
+                        : BodyHandlers.ofString(UTF_8);
+                HttpResponse<String> response = client.send(req, handler);
+                String body = response.body();
+                assertEquals(body, "");
+            }
         }
-        // We have created many clients here. Try to speed up their release.
-        if (!sameClient) System.gc();
     }
 
     @Test(dataProvider = "variants")
@@ -76,20 +76,22 @@ public class NoBodyPartOne extends AbstractNoBody {
         printStamp(START, "testAsFile(\"%s\", %s)", uri, sameClient);
         HttpClient client = null;
         for (int i=0; i< ITERATION_COUNT; i++) {
-            if (!sameClient || client == null)
-                client = newHttpClient();
+            if (!sameClient || client == null) {
+                client = newHttpClient(sameClient);
+            }
 
-            HttpRequest req = HttpRequest.newBuilder(URI.create(uri))
-                                         .PUT(BodyPublishers.ofString(SIMPLE_STRING))
-                                         .build();
-            Path p = Paths.get("NoBody_testAsFile.txt");
-            HttpResponse<Path> response = client.send(req, BodyHandlers.ofFile(p));
-            Path bodyPath = response.body();
-            assertTrue(Files.exists(bodyPath));
-            assertEquals(Files.size(bodyPath), 0);
+            try (var cl = new CloseableClient(client, sameClient)) {
+                HttpRequest req = newRequestBuilder(uri)
+                        .PUT(BodyPublishers.ofString(SIMPLE_STRING))
+                        .build();
+                Path p = Paths.get("NoBody_testAsFile.txt");
+                HttpResponse<Path> response = client.send(req, BodyHandlers.ofFile(p));
+                Path bodyPath = response.body();
+                assertEquals(response.statusCode(), 200);
+                assertTrue(Files.exists(bodyPath));
+                assertEquals(Files.size(bodyPath), 0, Files.readString(bodyPath));
+            }
         }
-        // We have created many clients here. Try to speed up their release.
-        if (!sameClient) System.gc();
     }
 
     @Test(dataProvider = "variants")
@@ -97,17 +99,18 @@ public class NoBodyPartOne extends AbstractNoBody {
         printStamp(START, "testAsByteArray(\"%s\", %s)", uri, sameClient);
         HttpClient client = null;
         for (int i=0; i< ITERATION_COUNT; i++) {
-            if (!sameClient || client == null)
-                client = newHttpClient();
+            if (!sameClient || client == null) {
+                client = newHttpClient(sameClient);
+            }
 
-            HttpRequest req = HttpRequest.newBuilder(URI.create(uri))
-                                         .PUT(BodyPublishers.ofString(SIMPLE_STRING))
-                                         .build();
-            HttpResponse<byte[]> response = client.send(req, BodyHandlers.ofByteArray());
-            byte[] body = response.body();
-            assertEquals(body.length, 0);
+            try (var cl = new CloseableClient(client, sameClient)) {
+                HttpRequest req = newRequestBuilder(uri)
+                        .PUT(BodyPublishers.ofString(SIMPLE_STRING))
+                        .build();
+                HttpResponse<byte[]> response = client.send(req, BodyHandlers.ofByteArray());
+                byte[] body = response.body();
+                assertEquals(body.length, 0);
+            }
         }
-        // We have created many clients here. Try to speed up their release.
-        if (!sameClient) System.gc();
     }
 }
