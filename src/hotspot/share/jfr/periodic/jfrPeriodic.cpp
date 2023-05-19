@@ -65,6 +65,7 @@
 #include "runtime/vm_version.hpp"
 #include "services/classLoadingService.hpp"
 #include "services/management.hpp"
+#include "services/memoryPool.hpp"
 #include "services/threadService.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -525,6 +526,37 @@ TRACE_REQUEST_FUNC(JavaThreadStatistics) {
   event.set_peakCount(ThreadService::get_peak_thread_count());
   event.commit();
 }
+
+TRACE_REQUEST_FUNC(GCHeapMemoryUsage) {
+  MemoryUsage usage = Universe::heap()->memory_usage();
+  EventGCHeapMemoryUsage event(UNTIMED);
+  event.set_used(usage.used());
+  event.set_committed(usage.committed());
+  event.set_max(usage.max_size());
+  event.set_starttime(timestamp());
+  event.set_endtime(timestamp());
+  event.commit();
+}
+
+TRACE_REQUEST_FUNC(GCHeapMemoryPoolUsage) {
+  ResourceMark mark;
+  GrowableArray<MemoryPool*> pools = Universe::heap()->memory_pools();
+  for (int i = 0; i < pools.length(); i++) {
+    MemoryPool* pool = pools.at(i);
+    if (pool->is_heap()) {
+      MemoryUsage usage = pool->get_memory_usage();
+      EventGCHeapMemoryPoolUsage event(UNTIMED);
+      event.set_name(pool->name());
+      event.set_used(usage.used());
+      event.set_committed(usage.committed());
+      event.set_max(usage.max_size());
+      event.set_starttime(timestamp());
+      event.set_endtime(timestamp());
+      event.commit();
+    }
+  }
+}
+
 
 TRACE_REQUEST_FUNC(ClassLoadingStatistics) {
 #if INCLUDE_MANAGEMENT
