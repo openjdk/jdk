@@ -116,7 +116,7 @@ public class ArchTest {
                 Arguments.of("x86", X86, 32, ByteOrder.LITTLE_ENDIAN),
                 Arguments.of("i386", X86, 32, ByteOrder.LITTLE_ENDIAN),
                 Arguments.of("aarch64", AARCH64, 64, ByteOrder.LITTLE_ENDIAN),
-                Arguments.of("arm", ARM, 64, ByteOrder.LITTLE_ENDIAN),
+                Arguments.of("arm", ARM, 32, ByteOrder.LITTLE_ENDIAN),
                 Arguments.of("riscv64", RISCV64, 64, ByteOrder.LITTLE_ENDIAN),
                 Arguments.of("s390", S390, 64, ByteOrder.BIG_ENDIAN),
                 Arguments.of("s390x", S390, 64, ByteOrder.BIG_ENDIAN),

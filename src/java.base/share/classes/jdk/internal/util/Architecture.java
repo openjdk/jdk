@@ -39,7 +39,7 @@ public enum Architecture {
     X64(64, ByteOrder.LITTLE_ENDIAN),  // Represents AMD64 and X86_64
     X86(32, ByteOrder.LITTLE_ENDIAN),
     AARCH64(64, ByteOrder.LITTLE_ENDIAN),
-    ARM(64, ByteOrder.LITTLE_ENDIAN),
+    ARM(32, ByteOrder.LITTLE_ENDIAN),
     RISCV64(64, ByteOrder.LITTLE_ENDIAN),
     S390(64, ByteOrder.BIG_ENDIAN),
     PPC64(64, ByteOrder.BIG_ENDIAN),
