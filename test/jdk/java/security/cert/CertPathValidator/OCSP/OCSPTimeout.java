@@ -37,11 +37,16 @@
  * @library ../../../../../java/security/testlibrary
  * @build CertificateBuilder SimpleOCSPServer
  * @run main/othervm OCSPTimeout 1000 true
- * @run main/othervm -Dcom.sun.security.ocsp.timeout=2 OCSPTimeout 1000 true
- * @run main/othervm -Dcom.sun.security.ocsp.timeout=1 OCSPTimeout 2000 false
- * @run main/othervm -Dcom.sun.security.ocsp.timeout=1s OCSPTimeout 2000 false
- * @run main/othervm -Dcom.sun.security.ocsp.timeout=1500ms OCSPTimeout 2000 false
- * @run main/othervm -Dcom.sun.security.ocsp.timeout=2750ms OCSPTimeout 2000 true
+ * @run main/othervm -Dcom.sun.security.ocsp.readtimeout=2
+ *      OCSPTimeout 1000 true
+ * @run main/othervm -Dcom.sun.security.ocsp.readtimeout=1
+ *      OCSPTimeout 2000 false
+ * @run main/othervm -Dcom.sun.security.ocsp.readtimeout=1s
+ *      OCSPTimeout 2000 false
+ * @run main/othervm -Dcom.sun.security.ocsp.readtimeout=1500ms
+ *      OCSPTimeout 2000 false
+ * @run main/othervm -Dcom.sun.security.ocsp.readtimeout=2750ms
+ *      OCSPTimeout 2000 true
  */
 
 import java.io.*;
@@ -56,9 +61,6 @@ import java.util.concurrent.TimeUnit;
 
 import sun.security.testlibrary.SimpleOCSPServer;
 import sun.security.testlibrary.CertificateBuilder;
-
-import sun.security.x509.*;
-
 
 import static java.security.cert.PKIXRevocationChecker.Option.*;
 

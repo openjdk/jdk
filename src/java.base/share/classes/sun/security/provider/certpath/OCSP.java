@@ -67,14 +67,23 @@ public final class OCSP {
     private static final Debug debug = Debug.getInstance("certpath");
 
     private static final int DEFAULT_CONNECT_TIMEOUT = 15000;
+    private static final int DEFAULT_READ_TIMEOUT = 15000;
 
     /**
      * Integer value indicating the timeout length, in milliseconds, to be
-     * used for the OCSP check. A timeout of zero is interpreted as
-     * an infinite timeout.
+     * used for establishing a connection to an OCSP responder. A timeout of
+     * zero is interpreted as an infinite timeout.
      */
     private static final int CONNECT_TIMEOUT = initializeTimeout(
             "com.sun.security.ocsp.timeout", DEFAULT_CONNECT_TIMEOUT);
+
+    /**
+     * Integer value indicating the timeout length, in milliseconds, to be
+     * used for reading an OCSP response from the responder.  A timeout of
+     * zero is interpreted as an infinite timeout.
+     */
+    private static final int READ_TIMEOUT = initializeTimeout(
+            "com.sun.security.ocsp.readtimeout", DEFAULT_READ_TIMEOUT);
 
     /**
      * Initialize the timeout length by getting the OCSP timeout
@@ -180,7 +189,7 @@ public final class OCSP {
                 url = new URI(encodedGetReq.toString()).toURL();
                 con = (HttpURLConnection)url.openConnection();
                 con.setConnectTimeout(CONNECT_TIMEOUT);
-                con.setReadTimeout(CONNECT_TIMEOUT);
+                con.setReadTimeout(READ_TIMEOUT);
                 con.setDoOutput(true);
                 con.setDoInput(true);
                 con.setRequestMethod("GET");
@@ -188,7 +197,7 @@ public final class OCSP {
                 url = responderURI.toURL();
                 con = (HttpURLConnection)url.openConnection();
                 con.setConnectTimeout(CONNECT_TIMEOUT);
-                con.setReadTimeout(CONNECT_TIMEOUT);
+                con.setReadTimeout(READ_TIMEOUT);
                 con.setDoOutput(true);
                 con.setDoInput(true);
                 con.setRequestMethod("POST");
