@@ -546,6 +546,8 @@ JVM_LIBS := @JVM_LIBS@
 
 BASIC_ASFLAGS := @BASIC_ASFLAGS@
 
+MACHINE_FLAG := @MACHINE_FLAG@
+
 # These flags might contain variables set by a custom extension that is included later.
 EXTRA_CFLAGS = @EXTRA_CFLAGS@
 EXTRA_CXXFLAGS = @EXTRA_CXXFLAGS@

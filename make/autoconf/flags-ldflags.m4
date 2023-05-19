@@ -72,18 +72,18 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
 
     BASIC_LDFLAGS_JVM_ONLY=""
 
-    LDFLAGS_CXX_PARTIAL_LINKING="-r"
-    if test "x$OPENJDK_TARGET_OS" = xlinux; then
-      if test "x$OPENJDK_TARGET_CPU_BITS" = "x32"; then
-        LDFLAGS_CXX_PARTIAL_LINKING="-m32 $LDFLAGS_CXX_PARTIAL_LINKING"
-      fi
-    fi
+    LDFLAGS_CXX_PARTIAL_LINKING="$MACHINE_FLAG -r"
+    #if test "x$OPENJDK_TARGET_OS" = xlinux; then
+    #  if test "x$OPENJDK_TARGET_CPU_BITS" = "x32"; then
+    #    LDFLAGS_CXX_PARTIAL_LINKING="-m${OPENJDK_TARGET_CPU_BITS} $LDFLAGS_CXX_PARTIAL_LINKING"
+    #  fi
+    #fi
 
   elif test "x$TOOLCHAIN_TYPE" = xclang; then
     BASIC_LDFLAGS_JVM_ONLY="-mno-omit-leaf-frame-pointer -mstack-alignment=16 \
         -fPIC"
 
-    LDFLAGS_CXX_PARTIAL_LINKING="-r"
+    LDFLAGS_CXX_PARTIAL_LINKING="$MACHINE_FLAG -r"
 
     if test "x$OPENJDK_TARGET_OS" = xaix; then
       BASIC_LDFLAGS="-Wl,-b64 -Wl,-brtl -Wl,-bnorwexec -Wl,-bnolibpath -Wl,-bnoexpall \
