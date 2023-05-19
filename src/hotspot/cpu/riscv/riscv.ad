@@ -1944,6 +1944,7 @@ const bool Matcher::match_rule_supported_vector_masked(int opcode, int vlen, Bas
     case Op_URShiftVI:
     case Op_URShiftVL:
     case Op_VectorBlend:
+    case Op_VectorReinterpret:
       break;
     case Op_LoadVector:
       opcode = Op_LoadVectorMasked;
@@ -2030,7 +2031,10 @@ const int Matcher::min_vector_size(const BasicType bt) {
   int max_size = max_vector_size(bt);
   // Limit the min vector size to 8 bytes.
   int size = 8 / type2aelembytes(bt);
-  if (bt == T_BOOLEAN) {
+  if (bt == T_BYTE) {
+    // To support vector api shuffle/rearrange.
+    size = 4;
+  } else if (bt == T_BOOLEAN) {
     // To support vector api load/store mask.
     size = 2;
   }
@@ -2481,7 +2485,7 @@ encode %{
     }
   %}
 
-  // using the cr register as the bool result: 0 for success; others failed.
+  // Use cr register to indicate the fast_lock result: zero for success; non-zero for failure.
   enc_class riscv_enc_fast_lock(iRegP object, iRegP box, iRegPNoSp tmp1, iRegPNoSp tmp2) %{
     C2_MacroAssembler _masm(&cbuf);
     Register flag = t1;
@@ -2491,7 +2495,7 @@ encode %{
     Register tmp = as_Register($tmp2$$reg);
     Label cont;
     Label object_has_monitor;
-    Label no_count;
+    Label count, no_count;
 
     assert_different_registers(oop, box, tmp, disp_hdr, t0);
 
@@ -2509,7 +2513,10 @@ encode %{
     __ test_bit(t0, disp_hdr, exact_log2(markWord::monitor_value));
     __ bnez(t0, object_has_monitor);
 
-    if (!UseHeavyMonitors) {
+    if (LockingMode == LM_MONITOR) {
+      __ mv(flag, 1); // Set non-zero flag to indicate 'failure' -> take slow-path
+      __ j(cont);
+    } else if (LockingMode == LM_LEGACY) {
       // Set tmp to be (markWord of object | UNLOCK_VALUE).
       __ ori(tmp, disp_hdr, markWord::unlocked_value);
 
@@ -2540,11 +2547,19 @@ encode %{
       __ andr(tmp/*==0?*/, disp_hdr, tmp);
       __ sd(tmp/*==0, perhaps*/, Address(box, BasicLock::displaced_header_offset_in_bytes()));
       __ mv(flag, tmp); // we can use the value of tmp as the result here
+      __ j(cont);
     } else {
-      __ mv(flag, 1); // Set non-zero flag to indicate 'failure' -> take slow-path
-    }
+      assert(LockingMode == LM_LIGHTWEIGHT, "");
+      Label slow;
+      __ fast_lock(oop, disp_hdr, tmp, t0, slow);
 
-    __ j(cont);
+      // Indicate success on completion.
+      __ mv(flag, zr);
+      __ j(count);
+      __ bind(slow);
+      __ mv(flag, 1); // Set non-zero flag to indicate 'failure' -> take slow-path
+      __ j(no_count);
+    }
 
     // Handle existing monitor.
     __ bind(object_has_monitor);
@@ -2556,12 +2571,14 @@ encode %{
     __ cmpxchg(/*memory address*/tmp, /*expected value*/zr, /*new value*/xthread, Assembler::int64, Assembler::aq,
              Assembler::rl, /*result*/flag); // cas succeeds if flag == zr(expected)
 
-    // Store a non-null value into the box to avoid looking like a re-entrant
-    // lock. The fast-path monitor unlock code checks for
-    // markWord::monitor_value so use markWord::unused_mark which has the
-    // relevant bit set, and also matches ObjectSynchronizer::slow_enter.
-    __ mv(tmp, (address)markWord::unused_mark().value());
-    __ sd(tmp, Address(box, BasicLock::displaced_header_offset_in_bytes()));
+    if (LockingMode != LM_LIGHTWEIGHT) {
+      // Store a non-null value into the box to avoid looking like a re-entrant
+      // lock. The fast-path monitor unlock code checks for
+      // markWord::monitor_value so use markWord::unused_mark which has the
+      // relevant bit set, and also matches ObjectSynchronizer::slow_enter.
+      __ mv(tmp, (address)markWord::unused_mark().value());
+      __ sd(tmp, Address(box, BasicLock::displaced_header_offset_in_bytes()));
+    }
 
     __ beqz(flag, cont); // CAS success means locking succeeded
 
@@ -2572,15 +2589,17 @@ encode %{
     __ increment(Address(disp_hdr, ObjectMonitor::recursions_offset_in_bytes() - markWord::monitor_value), 1, t0, tmp);
 
     __ bind(cont);
-
+    // zero flag indicates success
+    // non-zero flag indicates failure
     __ bnez(flag, no_count);
 
+    __ bind(count);
     __ increment(Address(xthread, JavaThread::held_monitor_count_offset()), 1, t0, tmp);
 
     __ bind(no_count);
   %}
 
-  // using cr flag to indicate the fast_unlock result: 0 for success; others failed.
+  // Use cr register to indicate the fast_unlock result: zero for success; non-zero for failure.
   enc_class riscv_enc_fast_unlock(iRegP object, iRegP box, iRegPNoSp tmp1, iRegPNoSp tmp2) %{
     C2_MacroAssembler _masm(&cbuf);
     Register flag = t1;
@@ -2590,11 +2609,11 @@ encode %{
     Register tmp = as_Register($tmp2$$reg);
     Label cont;
     Label object_has_monitor;
-    Label no_count;
+    Label count, no_count;
 
     assert_different_registers(oop, box, tmp, disp_hdr, flag);
 
-    if (!UseHeavyMonitors) {
+    if (LockingMode == LM_LEGACY) {
       // Find the lock address and load the displaced header from the stack.
       __ ld(disp_hdr, Address(box, BasicLock::displaced_header_offset_in_bytes()));
 
@@ -2608,7 +2627,10 @@ encode %{
     __ test_bit(t0, tmp, exact_log2(markWord::monitor_value));
     __ bnez(t0, object_has_monitor);
 
-    if (!UseHeavyMonitors) {
+    if (LockingMode == LM_MONITOR) {
+      __ mv(flag, 1); // Set non-zero flag to indicate 'failure' -> take slow path
+      __ j(cont);
+    } else if (LockingMode == LM_LEGACY) {
       // Check if it is still a light weight lock, this is true if we
       // see the stack address of the basicLock in the markWord of the
       // object.
@@ -2616,10 +2638,19 @@ encode %{
       __ cmpxchg(/*memory address*/oop, /*expected value*/box, /*new value*/disp_hdr, Assembler::int64, Assembler::relaxed,
                  Assembler::rl, /*result*/tmp);
       __ xorr(flag, box, tmp); // box == tmp if cas succeeds
+      __ j(cont);
     } else {
+      assert(LockingMode == LM_LIGHTWEIGHT, "");
+      Label slow;
+      __ fast_unlock(oop, tmp, box, disp_hdr, slow);
+
+      // Indicate success on completion.
+      __ mv(flag, zr);
+      __ j(count);
+      __ bind(slow);
       __ mv(flag, 1); // Set non-zero flag to indicate 'failure' -> take slow path
+      __ j(no_count);
     }
-    __ j(cont);
 
     assert(oopDesc::mark_offset_in_bytes() == 0, "offset of _mark is not 0");
 
@@ -2627,6 +2658,18 @@ encode %{
     __ bind(object_has_monitor);
     STATIC_ASSERT(markWord::monitor_value <= INT_MAX);
     __ add(tmp, tmp, -(int)markWord::monitor_value); // monitor
+
+    if (LockingMode == LM_LIGHTWEIGHT) {
+      // If the owner is anonymous, we need to fix it -- in an outline stub.
+      Register tmp2 = disp_hdr;
+      __ ld(tmp2, Address(tmp, ObjectMonitor::owner_offset_in_bytes()));
+      __ test_bit(t0, tmp2, exact_log2(ObjectMonitor::ANONYMOUS_OWNER));
+      C2HandleAnonOMOwnerStub* stub = new (Compile::current()->comp_arena()) C2HandleAnonOMOwnerStub(tmp, tmp2);
+      Compile::current()->output()->add_stub(stub);
+      __ bnez(t0, stub->entry(), /* is_far */ true);
+      __ bind(stub->continuation());
+    }
+
     __ ld(disp_hdr, Address(tmp, ObjectMonitor::recursions_offset_in_bytes()));
 
     Label notRecursive;
@@ -2649,9 +2692,11 @@ encode %{
     __ sd(zr, Address(tmp)); // set unowned
 
     __ bind(cont);
-
+    // zero flag indicates success
+    // non-zero flag indicates failure
     __ bnez(flag, no_count);
 
+    __ bind(count);
     __ decrement(Address(xthread, JavaThread::held_monitor_count_offset()), 1, t0, tmp);
 
     __ bind(no_count);
@@ -5293,15 +5338,15 @@ instruct storeN(iRegN src, memory mem)
   ins_pipe(istore_reg_mem);
 %}
 
-instruct storeImmN0(iRegIHeapbase heapbase, immN0 zero, memory mem)
+instruct storeImmN0(immN0 zero, memory mem)
 %{
   match(Set mem (StoreN mem zero));
 
   ins_cost(STORE_COST);
-  format %{ "sw  rheapbase, $mem\t# compressed ptr (rheapbase==0), #@storeImmN0" %}
+  format %{ "sw  zr, $mem\t# compressed ptr, #@storeImmN0" %}
 
   ins_encode %{
-    __ sw(as_Register($heapbase$$reg), Address(as_Register($mem$$base), $mem$$disp));
+    __ sw(zr, Address(as_Register($mem$$base), $mem$$disp));
   %}
 
   ins_pipe(istore_reg_mem);
@@ -10161,7 +10206,7 @@ instruct stringU_indexof_char(iRegP_R11 str1, iRegI_R12 cnt1, iRegI_R13 ch,
   effect(USE_KILL str1, USE_KILL cnt1, USE_KILL ch, TEMP_DEF result,
          TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, KILL cr);
 
-  format %{ "StringUTF16 IndexOf char[] $str1,$cnt1,$ch -> $result" %}
+  format %{ "StringUTF16 IndexOf char[] $str1, $cnt1, $ch -> $result" %}
   ins_encode %{
     __ string_indexof_char($str1$$Register, $cnt1$$Register, $ch$$Register,
                            $result$$Register, $tmp1$$Register, $tmp2$$Register,
@@ -10180,7 +10225,7 @@ instruct stringL_indexof_char(iRegP_R11 str1, iRegI_R12 cnt1, iRegI_R13 ch,
   effect(USE_KILL str1, USE_KILL cnt1, USE_KILL ch, TEMP_DEF result,
          TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, KILL cr);
 
-  format %{ "StringUTF16 IndexOf char[] $str1,$cnt1,$ch -> $result" %}
+  format %{ "StringLatin1 IndexOf char[] $str1, $cnt1, $ch -> $result" %}
   ins_encode %{
     __ string_indexof_char($str1$$Register, $cnt1$$Register, $ch$$Register,
                            $result$$Register, $tmp1$$Register, $tmp2$$Register,

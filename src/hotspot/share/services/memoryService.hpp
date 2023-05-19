@@ -116,20 +116,21 @@ public:
 class TraceMemoryManagerStats : public StackObj {
 private:
   GCMemoryManager* _gc_memory_manager;
-  bool         _allMemoryPoolsAffected;
-  bool         _recordGCBeginTime;
-  bool         _recordPreGCUsage;
-  bool         _recordPeakUsage;
-  bool         _recordPostGCUsage;
-  bool         _recordAccumulatedGCTime;
-  bool         _recordGCEndTime;
-  bool         _countCollection;
-  GCCause::Cause _cause;
-  const char*  _notificationMessage;
+  GCCause::Cause   _cause;
+  const char*      _end_message;
+  bool             _allMemoryPoolsAffected;
+  bool             _recordGCBeginTime;
+  bool             _recordPreGCUsage;
+  bool             _recordPeakUsage;
+  bool             _recordPostGCUsage;
+  bool             _recordAccumulatedGCTime;
+  bool             _recordGCEndTime;
+  bool             _countCollection;
 public:
   TraceMemoryManagerStats() {}
   TraceMemoryManagerStats(GCMemoryManager* gc_memory_manager,
                           GCCause::Cause cause,
+                          const char* end_message,
                           bool allMemoryPoolsAffected = true,
                           bool recordGCBeginTime = true,
                           bool recordPreGCUsage = true,
@@ -137,11 +138,11 @@ public:
                           bool recordPostGCUsage = true,
                           bool recordAccumulatedGCTime = true,
                           bool recordGCEndTime = true,
-                          bool countCollection = true,
-                          const char* notificationMessage = nullptr);
+                          bool countCollection = true);
 
   void initialize(GCMemoryManager* gc_memory_manager,
                   GCCause::Cause cause,
+                  const char* end_message,
                   bool allMemoryPoolsAffected,
                   bool recordGCBeginTime,
                   bool recordPreGCUsage,
@@ -149,8 +150,7 @@ public:
                   bool recordPostGCUsage,
                   bool recordAccumulatedGCTime,
                   bool recordGCEndTime,
-                  bool countCollection,
-                  const char* notificationMessage = nullptr);
+                  bool countCollection);
 
   ~TraceMemoryManagerStats();
 };

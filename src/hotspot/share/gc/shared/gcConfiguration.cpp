@@ -23,6 +23,7 @@
  */
 #include "precompiled.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/gcArguments.hpp"
 #include "gc/shared/gcConfiguration.hpp"
 #include "gc/shared/tlab_globals.hpp"
@@ -51,10 +52,13 @@ GCName GCConfiguration::young_collector() const {
     return NA;
   }
 
-  if (UseZGC) {
-    return NA;
+ if (UseZGC) {
+    if (ZGenerational) {
+      return ZMinor;
+    } else {
+      return NA;
+    }
   }
-
   return DefNew;
 }
 
@@ -68,11 +72,20 @@ GCName GCConfiguration::old_collector() const {
   }
 
   if (UseZGC) {
-    return Z;
+    if (ZGenerational) {
+      return ZMajor;
+    } else {
+      return Z;
+    }
   }
 
   if (UseShenandoahGC) {
-    return Shenandoah;
+#if INCLUDE_SHENANDOAHGC
+    if (strcmp(ShenandoahGCMode, "generational") == 0) {
+      return Shenandoah;
+    }
+#endif
+    return NA;
   }
 
   return SerialOld;

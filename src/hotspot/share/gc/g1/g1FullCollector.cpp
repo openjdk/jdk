@@ -325,7 +325,10 @@ void G1FullCollector::phase1_mark_live_objects() {
     _heap->complete_cleaning(purged_class);
   }
 
-  scope()->tracer()->report_object_count_after_gc(&_is_alive);
+  {
+    GCTraceTime(Debug, gc, phases) debug("Report Object Count", scope()->timer());
+    scope()->tracer()->report_object_count_after_gc(&_is_alive, _heap->workers());
+  }
 #if TASKQUEUE_STATS
   oop_queue_set()->print_and_reset_taskqueue_stats("Oop Queue");
   array_queue_set()->print_and_reset_taskqueue_stats("ObjArrayOop Queue");

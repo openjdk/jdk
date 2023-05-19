@@ -706,6 +706,7 @@ public:
 
   bool has_resolved_methods() const { return _misc_flags.has_resolved_methods(); }
   void set_has_resolved_methods()   { _misc_flags.set_has_resolved_methods(true); }
+  void set_has_resolved_methods(bool value)   { _misc_flags.set_has_resolved_methods(value); }
 
 public:
 #if INCLUDE_JVMTI
@@ -715,7 +716,7 @@ public:
   }
 
  private:
-  static bool  _has_previous_versions;
+  static bool  _should_clean_previous_versions;
  public:
   static void purge_previous_versions(InstanceKlass* ik) {
     if (ik->has_been_redefined()) {
@@ -723,8 +724,8 @@ public:
     }
   }
 
-  static bool has_previous_versions_and_reset();
-  static bool has_previous_versions() { return _has_previous_versions; }
+  static bool should_clean_previous_versions_and_reset();
+  static bool should_clean_previous_versions() { return _should_clean_previous_versions; }
 
   // JVMTI: Support for caching a class file before it is modified by an agent that can do retransformation
   void set_cached_class_file(JvmtiCachedClassFileData *data) {
@@ -744,7 +745,7 @@ public:
 #else // INCLUDE_JVMTI
 
   static void purge_previous_versions(InstanceKlass* ik) { return; };
-  static bool has_previous_versions_and_reset() { return false; }
+  static bool should_clean_previous_versions_and_reset() { return false; }
 
   void set_cached_class_file(JvmtiCachedClassFileData *data) {
     assert(data == nullptr, "unexpected call with JVMTI disabled");
@@ -1126,6 +1127,7 @@ public:
 #if INCLUDE_CDS
   // CDS support - remove and restore oops from metadata. Oops are not shared.
   virtual void remove_unshareable_info();
+  void remove_unshareable_flags();
   virtual void remove_java_mirror();
   void restore_unshareable_info(ClassLoaderData* loader_data, Handle protection_domain, PackageEntry* pkg_entry, TRAPS);
   void init_shared_package_entry();
