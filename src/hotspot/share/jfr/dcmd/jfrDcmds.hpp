@@ -59,7 +59,7 @@ class JfrStartFlightRecordingDCmd : public JfrDCmd {
     return "Medium: Depending on the settings for a recording, the impact can range from low to high.";
   }
   static const JavaPermission permission() {
-    JavaPermission p = {"java.lang.management.ManagementPermission", "monitor", NULL};
+    JavaPermission p = {"java.lang.management.ManagementPermission", "monitor", nullptr};
     return p;
   }
   virtual const char* javaClass() const {
@@ -84,7 +84,7 @@ class JfrDumpFlightRecordingDCmd : public JfrDCmd {
     return "Low";
   }
   static const JavaPermission permission() {
-    JavaPermission p = {"java.lang.management.ManagementPermission", "monitor", NULL};
+    JavaPermission p = {"java.lang.management.ManagementPermission", "monitor", nullptr};
     return p;
   }
   virtual const char* javaClass() const {
@@ -109,7 +109,7 @@ class JfrCheckFlightRecordingDCmd : public JfrDCmd {
     return "Low";
   }
   static const JavaPermission permission() {
-    JavaPermission p = {"java.lang.management.ManagementPermission", "monitor", NULL};
+    JavaPermission p = {"java.lang.management.ManagementPermission", "monitor", nullptr};
     return p;
   }
   virtual const char* javaClass() const {
@@ -134,7 +134,7 @@ class JfrStopFlightRecordingDCmd : public JfrDCmd {
     return "Low";
   }
   static const JavaPermission permission() {
-    JavaPermission p = {"java.lang.management.ManagementPermission", "monitor", NULL};
+    JavaPermission p = {"java.lang.management.ManagementPermission", "monitor", nullptr};
     return p;
   }
   virtual const char* javaClass() const {
@@ -175,7 +175,7 @@ class JfrConfigureFlightRecorderDCmd : public DCmdWithParser {
     return "Low";
   }
   static const JavaPermission permission() {
-    JavaPermission p = {"java.lang.management.ManagementPermission", "monitor", NULL};
+    JavaPermission p = {"java.lang.management.ManagementPermission", "monitor", nullptr};
     return p;
   }
   static int num_arguments() { return 10; }

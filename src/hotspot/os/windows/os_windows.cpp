@@ -568,7 +568,7 @@ unsigned __stdcall os::win32::thread_native_entry(void* t) {
 static OSThread* create_os_thread(Thread* thread, HANDLE thread_handle,
                                   int thread_id) {
   // Allocate the OSThread object
-  OSThread* osthread = new OSThread();
+  OSThread* osthread = new (std::nothrow) OSThread();
   if (osthread == nullptr) return nullptr;
 
   // Initialize the JDK library's interrupt event.
@@ -673,7 +673,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
   unsigned thread_id;
 
   // Allocate the OSThread object
-  OSThread* osthread = new OSThread();
+  OSThread* osthread = new (std::nothrow) OSThread();
   if (osthread == nullptr) {
     return false;
   }
@@ -827,6 +827,10 @@ jlong os::elapsed_frequency() {
 
 
 julong os::available_memory() {
+  return win32::available_memory();
+}
+
+julong os::free_memory() {
   return win32::available_memory();
 }
 

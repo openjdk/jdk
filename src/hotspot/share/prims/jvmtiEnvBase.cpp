@@ -1319,6 +1319,19 @@ JvmtiEnvBase::is_cthread_with_continuation(JavaThread* jt) {
   return cont_entry != nullptr && is_cthread_with_mounted_vthread(jt);
 }
 
+// Check if VirtualThread or BoundVirtualThread is suspended.
+bool
+JvmtiEnvBase::is_vthread_suspended(oop vt_oop, JavaThread* jt) {
+  bool suspended = false;
+  if (java_lang_VirtualThread::is_instance(vt_oop)) {
+    suspended = JvmtiVTSuspender::is_vthread_suspended(vt_oop);
+  }
+  if (vt_oop->is_a(vmClasses::BoundVirtualThread_klass())) {
+    suspended = jt->is_suspended();
+  }
+  return suspended;
+}
+
 // If (thread == null) then return current thread object.
 // Otherwise return JNIHandles::resolve_external_guard(thread).
 oop
