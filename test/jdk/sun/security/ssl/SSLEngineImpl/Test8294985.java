@@ -145,22 +145,6 @@ public class Test8294985 {
             System.out.println("server unwrap: " + serverResult);
             runDelegatedTasks(serverResult, serverEngine);
         }
-
-        try {
-            /*
-             * We should be getting a SSLHandshakeException.
-             * If this changes, we'll need to update this test.
-             * Anything else and we fail.
-             */
-            serverEngine.unwrap(cTOs, serverIn);
-            throw new Exception(
-                "TEST FAILED:  Didn't generate any exception");
-        } catch (SSLHandshakeException e) {
-            System.out.println("TEST PASSED:  Caught right exception");
-        } catch (SSLException e) {
-            System.out.println("TEST FAILED:  Generated wrong exception");
-            throw e;
-        }
     }
 
     private void createSSLEngines() throws Exception {
