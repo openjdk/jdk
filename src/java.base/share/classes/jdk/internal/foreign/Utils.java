@@ -208,6 +208,10 @@ public final class Utils {
             throw new IllegalArgumentException("Invalid allocation size : " + byteSize);
         }
 
+        checkAlign(byteAlignment);
+    }
+
+    public static void checkAlign(long byteAlignment) {
         // alignment should be > 0, and power of two
         if (byteAlignment <= 0 ||
                 ((byteAlignment & (byteAlignment - 1)) != 0L)) {

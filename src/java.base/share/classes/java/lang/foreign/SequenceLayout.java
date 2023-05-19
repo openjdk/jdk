@@ -71,7 +71,8 @@ public sealed interface SequenceLayout extends MemoryLayout permits SequenceLayo
      * but with the specified element count.
      * @param elementCount the new element count.
      * @return a sequence layout with the given element count.
-     * @throws IllegalArgumentException if {@code elementCount < 0}.
+     * @throws IllegalArgumentException if {@code elementCount} is negative.
+     * @throws IllegalArgumentException if {@code elementLayout.bitSize() * elementCount} overflows.
      */
     SequenceLayout withElementCount(long elementCount);
 

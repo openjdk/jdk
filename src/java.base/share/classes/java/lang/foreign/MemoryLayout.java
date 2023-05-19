@@ -703,7 +703,8 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      * @param elementCount the sequence element count.
      * @param elementLayout the sequence element layout.
      * @return the new sequence layout with the given element layout and size.
-     * @throws IllegalArgumentException if {@code elementCount } is negative.
+     * @throws IllegalArgumentException if {@code elementCount} is negative.
+     * @throws IllegalArgumentException if {@code elementLayout.bitSize() * elementCount} overflows.
      * @throws IllegalArgumentException if {@code elementLayout.bitSize() % elementLayout.bitAlignment() != 0}.
      */
     static SequenceLayout sequenceLayout(long elementCount, MemoryLayout elementLayout) {

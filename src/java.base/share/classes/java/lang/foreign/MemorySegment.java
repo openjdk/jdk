@@ -506,7 +506,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * <p>
      * Equivalent to the following code:
      * {@snippet lang=java :
-     * asSlice(offset, layout.byteSize(), 1);
+     * asSlice(offset, newSize, 1);
      * }
      *
      * @see #asSlice(long, long, long)
@@ -514,7 +514,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @param offset The new segment base offset (relative to the address of this segment), specified in bytes.
      * @param newSize The new segment size, specified in bytes.
      * @return a slice of this memory segment.
-     * @throws IndexOutOfBoundsException if {@code offset < 0}, {@code offset > byteSize()}, {@code newSize < 0}, or {@code newSize > byteSize() - offset}
+     * @throws IndexOutOfBoundsException if {@code offset < 0}, {@code offset > byteSize()}, {@code newSize < 0},
+     * or {@code newSize > byteSize() - offset}
      */
     MemorySegment asSlice(long offset, long newSize);
 
@@ -526,9 +527,11 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @param newSize The new segment size, specified in bytes.
      * @param byteAlignment The alignment constraint (in bytes) of the returned slice.
      * @return a slice of this memory segment.
-     * @throws IndexOutOfBoundsException if {@code offset < 0}, {@code offset > byteSize()}, {@code newSize < 0}, or {@code newSize > byteSize() - offset}
+     * @throws IndexOutOfBoundsException if {@code offset < 0}, {@code offset > byteSize()}, {@code newSize < 0},
+     * or {@code newSize > byteSize() - offset}
      * @throws IllegalArgumentException if this segment cannot be accessed at {@code offset} under
      * the provided alignment constraint.
+     * @throws IllegalArgumentException if {@code byteAlignment <= 0}, or if {@code byteAlignment} is not a power of 2.
      */
     MemorySegment asSlice(long offset, long newSize, long byteAlignment);
 
@@ -545,8 +548,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *
      * @param offset The new segment base offset (relative to the address of this segment), specified in bytes.
      * @param layout The layout of the segment slice.
-     * @throws IndexOutOfBoundsException if {@code offset < 0}, {@code offset > layout.byteSize()},
-     * {@code newSize < 0}, or {@code newSize > layout.byteSize() - offset}
+     * @throws IndexOutOfBoundsException if {@code offset < 0}, {@code offset > byteSize()},
+     * or {@code layout.byteSize() > byteSize() - offset}
      * @throws IllegalArgumentException if this segment cannot be accessed at {@code offset} under
      * the alignment constraint specified by {@code layout}.
      * @return a slice of this memory segment.
@@ -603,7 +606,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * Clients can specify an optional cleanup action that should be executed when the provided scope becomes
      * invalid. This cleanup action receives a fresh memory segment that is obtained from this segment as follows:
      * {@snippet lang=java :
-     * MemorySegment cleanupSegment = MemorySegment.ofAddress(this.address());
+     * MemorySegment cleanupSegment = MemorySegment.ofAddress(this.address())
+     *                                             .reinterpret(newSize);
      * }
      * That is, the cleanup action receives a segment that is associated with a fresh scope that is always alive,
      * and is accessible from any thread. The size of the segment accepted by the cleanup action is {@link #byteSize()}.
@@ -622,8 +626,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @param arena the arena to be associated with the returned segment.
      * @param cleanup the cleanup action that should be executed when the provided arena is closed (can be {@code null}).
      * @return a new memory segment with unbounded size.
-     * @throws IllegalArgumentException if {@code newSize < 0}.
-     * @throws IllegalStateException if {@code scope.isAlive() == false}.
+     * @throws IllegalStateException if {@code arena.scope().isAlive() == false}.
      * @throws UnsupportedOperationException if this segment is not a {@linkplain #isNative() native} segment.
      * @throws IllegalCallerException If the caller is in a module that does not have native access enabled.
      */
@@ -642,7 +645,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * Clients can specify an optional cleanup action that should be executed when the provided scope becomes
      * invalid. This cleanup action receives a fresh memory segment that is obtained from this segment as follows:
      * {@snippet lang=java :
-     * MemorySegment cleanupSegment = MemorySegment.ofAddress(this.address());
+     * MemorySegment cleanupSegment = MemorySegment.ofAddress(this.address())
+     *                                             .reinterpret(newSize);
      * }
      * That is, the cleanup action receives a segment that is associated with a fresh scope that is always alive,
      * and is accessible from any thread. The size of the segment accepted by the cleanup action is {@code newSize}.
@@ -665,7 +669,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * that of the provided arena.
      * @throws UnsupportedOperationException if this segment is not a {@linkplain #isNative() native} segment.
      * @throws IllegalArgumentException if {@code newSize < 0}.
-     * @throws IllegalStateException if {@code scope.isAlive() == false}.
+     * @throws IllegalStateException if {@code arena.scope().isAlive() == false}.
      * @throws IllegalCallerException If the caller is in a module that does not have native access enabled.
      */
     @CallerSensitive
@@ -726,7 +730,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * can be computed as follows:
      *
      * {@snippet lang=java :
-     * other.address() - segment.address()
+     * other.address() - address()
      * }
      *
      * If the segments share the same address, {@code 0} is returned. If
@@ -735,32 +739,30 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *
      * @param other the segment to retrieve an offset to.
      * @throws UnsupportedOperationException if the two segments cannot be compared, e.g. because they are of
-     * a different kind, or because they are backed by different Java arrays.
+     * different kinds, or because they are backed by different Java arrays.
      * @return the relative offset, in bytes, of the provided segment.
      */
     long segmentOffset(MemorySegment other);
 
     /**
-     * Fills a value into this memory segment.
+     * Fills the contents of this memory segment with the given value.
      * <p>
-     * More specifically, the given value is filled into each address of this
+     * More specifically, the given value is written into each address of this
      * segment. Equivalent to (but likely more efficient than) the following code:
      *
      * {@snippet lang=java :
-     * byteHandle = MemoryLayout.ofSequence(ValueLayout.JAVA_BYTE)
-     *         .varHandle(byte.class, MemoryLayout.PathElement.sequenceElement());
-     * for (long l = 0; l < segment.byteSize(); l++) {
-     *     byteHandle.set(segment.address(), l, value);
+     * for (long offset = 0; offset < segment.byteSize(); offset++) {
+     *     byteHandle.set(ValueLayout.JAVA_BYTE, offset, value);
      * }
      * }
      *
-     * without any regard or guarantees on the ordering of particular memory
+     * But without any regard or guarantees on the ordering of particular memory
      * elements being set.
      * <p>
-     * Fill can be useful to initialize or reset the memory of a segment.
+     * This method can be useful to initialize or reset the contents of a memory segment.
      *
-     * @param value the value to fill into this segment
-     * @return this memory segment
+     * @param value the value to write into this segment.
+     * @return this memory segment.
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with this segment is not
      * {@linkplain Scope#isAlive() alive}.
      * @throws WrongThreadException if this method is called from a thread {@code T},
@@ -811,9 +813,9 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * valid for the larger segment. Otherwise, there is no mismatch and {@code
      * -1} is returned.
      *
-     * @param other the segment to be tested for a mismatch with this segment
+     * @param other the segment to be tested for a mismatch with this segment.
      * @return the relative offset, in bytes, of the first mismatch between this
-     * and the given other segment, otherwise -1 if no mismatch
+     * and the given other segment, otherwise -1 if no mismatch.
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with this segment is not
      * {@linkplain Scope#isAlive() alive}.
      * @throws WrongThreadException if this method is called from a thread {@code T},
@@ -921,23 +923,22 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
 
     /**
      * Wraps this segment in a {@link ByteBuffer}. Some properties of the returned buffer are linked to
-     * the properties of this segment. For instance, if this segment is <em>immutable</em>
-     * (e.g. the segment is a read-only segment, see {@link #isReadOnly()}), then the resulting buffer is <em>read-only</em>
-     * (see {@link ByteBuffer#isReadOnly()}). Additionally, if this is a native segment, the resulting buffer is
-     * <em>direct</em> (see {@link ByteBuffer#isDirect()}).
+     * the properties of this segment. For instance, if this segment is a {@linkplain #isReadOnly() read-only segment},
+     * then the resulting buffer is also {@linkplain ByteBuffer#isReadOnly() read-only}. Additionally, if this is a native
+     * segment, the resulting buffer is a {@linkplain ByteBuffer#isDirect() direct buffer}.
      * <p>
-     * The returned buffer's position (see {@link ByteBuffer#position()}) is initially set to zero, while
-     * the returned buffer's capacity and limit (see {@link ByteBuffer#capacity()} and {@link ByteBuffer#limit()}, respectively)
-     * are set to this segment' size (see {@link MemorySegment#byteSize()}). For this reason, a byte buffer cannot be
+     * The returned buffer's {@linkplain ByteBuffer#position() position} is set to zero, while
+     * the returned buffer's {@linkplain ByteBuffer#capacity() capacity} and {@linkplain ByteBuffer#limit() limit}
+     * are both set to this segment' {@linkplain MemorySegment#byteSize() size}. For this reason, a byte buffer cannot be
      * returned if this segment' size is greater than {@link Integer#MAX_VALUE}.
      * <p>
-     * The life-cycle of the returned buffer will be tied to that of this segment. That is, accessing the returned buffer
+     * The life-cycle of the returned buffer is tied to that of this segment. That is, accessing the returned buffer
      * after the scope associated with this segment is no longer {@linkplain Scope#isAlive() alive}, will
      * throw an {@link IllegalStateException}. Similarly, accessing the returned buffer from a thread {@code T}
      * such that {@code isAccessible(T) == false} will throw a {@link WrongThreadException}.
      * <p>
-     * If this segment is accessible from a single thread, calling read/write I/O
-     * operations on the resulting buffer might result in an unspecified exception being thrown. Examples of such problematic operations are
+     * If this segment is {@linkplain #isAccessibleBy(Thread) accessible} from a single thread, calling read/write I/O
+     * operations on the resulting buffer might result in an unspecified exceptions being thrown. Examples of such problematic operations are
      * {@link java.nio.channels.AsynchronousSocketChannel#read(ByteBuffer)} and
      * {@link java.nio.channels.AsynchronousSocketChannel#write(ByteBuffer)}.
      * <p>
@@ -946,7 +947,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *
      * @return a {@link ByteBuffer} view of this memory segment.
      * @throws UnsupportedOperationException if this segment cannot be mapped onto a {@link ByteBuffer} instance,
-     * e.g. because it models a heap-based segment that is not based on a {@code byte[]}), or if its size is greater
+     * e.g. if it is a heap segment backed by an array other than {@code byte[]}), or if its size is greater
      * than {@link Integer#MAX_VALUE}.
      */
     ByteBuffer asByteBuffer();
@@ -1126,7 +1127,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
 
     /**
      * Creates a heap segment backed by the on-heap region of memory that holds the given byte array.
-     * The scope of the returned segment is a fresh scope that is always alive, and keeps the given byte array reachable.
+     * The scope of the returned segment is a fresh scope that is always alive, and keeps the given array reachable.
      * The returned segment is always accessible, from any thread. Its {@link #address()} is set to zero.
      *
      * @param byteArray the primitive array backing the heap memory segment.
@@ -1138,7 +1139,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
 
     /**
      * Creates a heap segment backed by the on-heap region of memory that holds the given char array.
-     * The scope of the returned segment is a fresh scope that is always alive, and keeps the given byte array reachable.
+     * The scope of the returned segment is a fresh scope that is always alive, and keeps the given array reachable.
      * The returned segment is always accessible, from any thread. Its {@link #address()} is set to zero.
      *
      * @param charArray the primitive array backing the heap segment.
@@ -1150,7 +1151,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
 
     /**
      * Creates a heap segment backed by the on-heap region of memory that holds the given short array.
-     * The scope of the returned segment is a fresh scope that is always alive, and keeps the given byte array reachable.
+     * The scope of the returned segment is a fresh scope that is always alive, and keeps the given array reachable.
      * The returned segment is always accessible, from any thread. Its {@link #address()} is set to zero.
      *
      * @param shortArray the primitive array backing the heap segment.
@@ -1162,7 +1163,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
 
     /**
      * Creates a heap segment backed by the on-heap region of memory that holds the given int array.
-     * The scope of the returned segment is a fresh scope that is always alive, and keeps the given byte array reachable.
+     * The scope of the returned segment is a fresh scope that is always alive, and keeps the given array reachable.
      * The returned segment is always accessible, from any thread. Its {@link #address()} is set to zero.
      *
      * @param intArray the primitive array backing the heap segment.
@@ -1174,7 +1175,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
 
     /**
      * Creates a heap segment backed by the on-heap region of memory that holds the given float array.
-     * The scope of the returned segment is a fresh scope that is always alive, and keeps the given byte array reachable.
+     * The scope of the returned segment is a fresh scope that is always alive, and keeps the given array reachable.
      * The returned segment is always accessible, from any thread. Its {@link #address()} is set to zero.
      *
      * @param floatArray the primitive array backing the heap segment.
@@ -1186,7 +1187,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
 
     /**
      * Creates a heap segment backed by the on-heap region of memory that holds the given long array.
-     * The scope of the returned segment is a fresh scope that is always alive, and keeps the given byte array reachable.
+     * The scope of the returned segment is a fresh scope that is always alive, and keeps the given array reachable.
      * The returned segment is always accessible, from any thread. Its {@link #address()} is set to zero.
      *
      * @param longArray the primitive array backing the heap segment.
@@ -1198,7 +1199,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
 
     /**
      * Creates a heap segment backed by the on-heap region of memory that holds the given double array.
-     * The scope of the returned segment is a fresh scope that is always alive, and keeps the given byte array reachable.
+     * The scope of the returned segment is a fresh scope that is always alive, and keeps the given array reachable.
      * The returned segment is always accessible, from any thread. Its {@link #address()} is set to zero.
      *
      * @param doubleArray the primitive array backing the heap segment.
@@ -2153,7 +2154,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * object is also a memory segment, and if the two segments refer to the same location, in some region of memory.
      * More specifically, for two segments {@code s1} and {@code s2} to be considered equals, all the following must be true:
      * <ul>
-     *     <li>{@code s1.array().equals(s2.array())}, that is, the two segments must be of the same kind;
+     *     <li>{@code s1.heapBase().equals(s2.heapBase())}, that is, the two segments must be of the same kind;
      *     either both are {@linkplain #isNative() native segments}, backed by off-heap memory, or both are backed by
      *     the same on-heap Java array;
      *     <li>{@code s1.address() == s2.address()}, that is, the address of the two segments should be the same.
@@ -2163,7 +2164,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @apiNote This method does not perform a structural comparison of the contents of the two memory segments. Clients can
      * compare memory segments structurally by using the {@link #mismatch(MemorySegment)} method instead. Note that this
      * method does <em>not</em> compare the temporal and spatial bounds of two segments. As such it is suitable
-     * to perform address checks, such as checking if a native segment has the {@code NULL} address.
+     * to check whether two segments have the same address.
      *
      * @param that the object to be compared for equality with this memory segment.
      * @return {@code true} if the specified object is equal to this memory segment.

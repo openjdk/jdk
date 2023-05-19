@@ -338,7 +338,7 @@ public interface SegmentAllocator {
      * @param byteAlignment the alignment (in bytes) of the block of memory to be allocated.
      * @return a segment for the newly allocated memory block.
      * @throws IllegalArgumentException if {@code byteSize < 0}, {@code byteAlignment <= 0},
-     * or if {@code alignmentBytes} is not a power of 2.
+     * or if {@code byteAlignment} is not a power of 2.
      */
     MemorySegment allocate(long byteSize, long byteAlignment);
 
