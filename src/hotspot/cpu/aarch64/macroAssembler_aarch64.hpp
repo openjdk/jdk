@@ -1688,12 +1688,11 @@ public:
   // Code for java.lang.Thread::onSpinWait() intrinsic.
   void spin_wait();
 
-<<<<<<< HEAD
   void fast_lock(Register obj, Register hdr, Register t1, Register t2, Label& slow);
   void fast_unlock(Register obj, Register hdr, Register t1, Register t2, Label& slow);
 
-private:
-=======
+  // Poly1305
+
   void pack_26(Register dest0, Register dest1, Register dest2, Register src);
   void wide_mul(RegPair prod, Register n, Register m);
   void wide_madd(RegPair sum, Register n, Register m);
@@ -1772,7 +1771,6 @@ private:
   void add_3_reg_pairs(const RegPair dest[], const RegPair src[]);
 
  private:
->>>>>>> JDK-8296411
   // Check the current thread doesn't need a cross modify fence.
   void verify_cross_modify_fence_not_required() PRODUCT_RETURN;
 
