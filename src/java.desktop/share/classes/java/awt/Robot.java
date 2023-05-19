@@ -430,7 +430,7 @@ public class Robot {
      * to capture screen content, and the required permissions are not granted,
      * then a {@code SecurityException} may be thrown,
      * or the content of the returned {@code Color} is undefined.
-     * <p>
+     * </p>
      * @apiNote It is recommended to avoid calling this method on
      * the AWT Event Dispatch Thread since screen capture may be a lengthy
      * operation, particularly if acquiring permissions is needed and involves
@@ -457,7 +457,7 @@ public class Robot {
      * to capture screen content, and the required permissions are not granted,
      * then a {@code SecurityException} may be thrown,
      * or the contents of the returned {@code BufferedImage} are undefined.
-     * <p>
+     * </p>
      * @apiNote It is recommended to avoid calling this method on
      * the AWT Event Dispatch Thread since screen capture may be a lengthy
      * operation, particularly if acquiring permissions is needed and involves
