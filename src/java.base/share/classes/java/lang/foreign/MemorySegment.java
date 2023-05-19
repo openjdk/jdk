@@ -459,10 +459,11 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *
      * @param elementLayout the layout to be used for splitting.
      * @return the element spliterator for this segment
-     * @throws IllegalArgumentException if the {@code elementLayout} size is zero, or the segment size modulo the
-     * {@code elementLayout} size is greater than zero, if this segment is
-     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a> in the provided layout,
-     * or if the {@code elementLayout} alignment is greater than its size.
+     * @throws IllegalArgumentException if {@code elementLayout.byteSize() == 0}.
+     * @throws IllegalArgumentException if {@code byteSize() % elementLayout.byteSize() != 0}.
+     * @throws IllegalArgumentException if {@code elementLayout.bitSize() % elementLayout.bitAlignment() != 0}.
+     * @throws IllegalArgumentException if this segment is <a href="MemorySegment.html#segment-alignment">incompatible
+     * with the alignment constraint</a> in the provided layout.
      */
     Spliterator<MemorySegment> spliterator(MemoryLayout elementLayout);
 
@@ -475,10 +476,11 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *
      * @param elementLayout the layout to be used for splitting.
      * @return a sequential {@code Stream} over disjoint slices in this segment.
-     * @throws IllegalArgumentException if the {@code elementLayout} size is zero, or the segment size modulo the
-     * {@code elementLayout} size is greater than zero, if this segment is
-     * <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a> in the provided layout,
-     * or if the {@code elementLayout} alignment is greater than its size.
+     * @throws IllegalArgumentException if {@code elementLayout.byteSize() == 0}.
+     * @throws IllegalArgumentException if {@code byteSize() % elementLayout.byteSize() != 0}.
+     * @throws IllegalArgumentException if {@code elementLayout.bitSize() % elementLayout.bitAlignment() != 0}.
+     * @throws IllegalArgumentException if this segment is <a href="MemorySegment.html#segment-alignment">incompatible
+     * with the alignment constraint</a> in the provided layout.
      */
     Stream<MemorySegment> elements(MemoryLayout elementLayout);
 
@@ -616,11 +618,6 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * if the provided scope is the scope of an {@linkplain Arena#ofAuto() automatic arena}, the cleanup action
      * must not prevent the scope from becoming <a href="../../../java/lang/ref/package.html#reachability">unreachable</a>.
      * A failure to do so will permanently prevent the regions of memory allocated by the automatic arena from being deallocated.
-     * <p>
-     * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
-     * Restricted methods are unsafe, and, if used incorrectly, their use might crash
-     * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
-     * restricted methods, and use safe and supported functionalities, where possible.
      *
      * @param arena the arena to be associated with the returned segment.
      * @param cleanup the cleanup action that should be executed when the provided arena is closed (can be {@code null}).

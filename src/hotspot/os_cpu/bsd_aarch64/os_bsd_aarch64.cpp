@@ -481,51 +481,34 @@ void os::print_tos_pc(outputStream *st, const void *context) {
   st->cr();
 }
 
-void os::print_register_info(outputStream *st, const void *context) {
-  if (context == nullptr) return;
+void os::print_register_info(outputStream *st, const void *context, int& continuation) {
+  const int register_count = 29 /* x0-x28 */ + 3 /* fp, lr, sp */;
+  int n = continuation;
+  assert(n >= 0 && n <= register_count, "Invalid continuation value");
+  if (context == nullptr || n == register_count) {
+    return;
+  }
 
   const ucontext_t *uc = (const ucontext_t*)context;
-
-  st->print_cr("Register to memory mapping:");
-  st->cr();
-
-  // this is horrendously verbose but the layout of the registers in the
-  // context does not match how we defined our abstract Register set, so
-  // we can't just iterate through the gregs area
-
-  // this is only for the "general purpose" registers
-
-  st->print(" x0="); print_location(st, uc->context_x[ 0]);
-  st->print(" x1="); print_location(st, uc->context_x[ 1]);
-  st->print(" x2="); print_location(st, uc->context_x[ 2]);
-  st->print(" x3="); print_location(st, uc->context_x[ 3]);
-  st->print(" x4="); print_location(st, uc->context_x[ 4]);
-  st->print(" x5="); print_location(st, uc->context_x[ 5]);
-  st->print(" x6="); print_location(st, uc->context_x[ 6]);
-  st->print(" x7="); print_location(st, uc->context_x[ 7]);
-  st->print(" x8="); print_location(st, uc->context_x[ 8]);
-  st->print(" x9="); print_location(st, uc->context_x[ 9]);
-  st->print("x10="); print_location(st, uc->context_x[10]);
-  st->print("x11="); print_location(st, uc->context_x[11]);
-  st->print("x12="); print_location(st, uc->context_x[12]);
-  st->print("x13="); print_location(st, uc->context_x[13]);
-  st->print("x14="); print_location(st, uc->context_x[14]);
-  st->print("x15="); print_location(st, uc->context_x[15]);
-  st->print("x16="); print_location(st, uc->context_x[16]);
-  st->print("x17="); print_location(st, uc->context_x[17]);
-  st->print("x18="); print_location(st, uc->context_x[18]);
-  st->print("x19="); print_location(st, uc->context_x[19]);
-  st->print("x20="); print_location(st, uc->context_x[20]);
-  st->print("x21="); print_location(st, uc->context_x[21]);
-  st->print("x22="); print_location(st, uc->context_x[22]);
-  st->print("x23="); print_location(st, uc->context_x[23]);
-  st->print("x24="); print_location(st, uc->context_x[24]);
-  st->print("x25="); print_location(st, uc->context_x[25]);
-  st->print("x26="); print_location(st, uc->context_x[26]);
-  st->print("x27="); print_location(st, uc->context_x[27]);
-  st->print("x28="); print_location(st, uc->context_x[28]);
-
-  st->cr();
+  while (n < register_count) {
+    // Update continuation with next index before printing location
+    continuation = n + 1;
+    switch (n) {
+    case 29:
+      st->print(" fp="); print_location(st, uc->context_fp);
+      break;
+    case 30:
+      st->print(" lr="); print_location(st, uc->context_lr);
+      break;
+    case 31:
+      st->print(" sp="); print_location(st, uc->context_sp);
+      break;
+    default:
+      st->print("x%-2d=",n); print_location(st, uc->context_x[n]);
+      break;
+    }
+    ++n;
+  }
 }
 
 void os::setup_fpu() {
