@@ -495,6 +495,11 @@ static void addCertificatesToKeystore(JNIEnv *env, jobject keyStore)
                 CFRelease(trustSettings);
             }
 
+            // Only add certificates with trust settings
+            if (inputTrust == NULL) {
+                continue;
+            }
+
             // Find the creation date.
             jlong creationDate = getModDateFromItem(env, theItem);
 

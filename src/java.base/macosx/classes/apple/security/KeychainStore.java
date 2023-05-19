@@ -829,23 +829,20 @@ public final class KeychainStore extends KeyStoreSpi {
                 }
             }
 
-            // inputTrust data is optional, so is tce.trustSettings
-            if (inputTrust != null) {
-                tce.trustSettings = new ArrayList<>();
-                Map<String, String> tmpMap = new LinkedHashMap<>();
-                for (int i = 0; i < inputTrust.size(); i++) {
-                    if (inputTrust.get(i) == null) {
-                        tce.trustSettings.add(tmpMap);
-                        if (i < inputTrust.size() - 1) {
-                            // Prepare an empty map for the next trust setting.
-                            // Do not just clear(), must be a new object.
-                            // Only create if not at end of list.
-                            tmpMap = new LinkedHashMap<>();
-                        }
-                    } else {
-                        tmpMap.put(inputTrust.get(i), inputTrust.get(i+1));
-                        i++;
+            tce.trustSettings = new ArrayList<>();
+            Map<String, String> tmpMap = new LinkedHashMap<>();
+            for (int i = 0; i < inputTrust.size(); i++) {
+                if (inputTrust.get(i) == null) {
+                    tce.trustSettings.add(tmpMap);
+                    if (i < inputTrust.size() - 1) {
+                        // Prepare an empty map for the next trust setting.
+                        // Do not just clear(), must be a new object.
+                        // Only create if not at end of list.
+                        tmpMap = new LinkedHashMap<>();
                     }
+                } else {
+                    tmpMap.put(inputTrust.get(i), inputTrust.get(i+1));
+                    i++;
                 }
             }
 
@@ -853,17 +850,14 @@ public final class KeychainStore extends KeyStoreSpi {
             boolean isSelfSigned = false;
             try {
                 cert.verify(cert.getPublicKey());
-                var usage = cert.getKeyUsage();
-                if ((usage == null) || (!usage[5] && !usage[6])) {
-                    isSelfSigned = true;
-                }
+                isSelfSigned = true;
             } catch (Exception e) {
                 // ignore silently, cert is not self signed then
             }
 
-            if (tce.trustSettings == null) {
+            if (tce.trustSettings.isEmpty()) {
                 if (isSelfSigned) {
-                    // If a self-signed certificate has no trust settings,
+                    // If a self-signed certificate has empty trust settings,
                     // trust it for all purposes
                     tce.trustedKeyUsageValue = KnownOIDs.anyExtendedKeyUsage.value();
                 } else {
@@ -873,10 +867,7 @@ public final class KeychainStore extends KeyStoreSpi {
                 }
             } else {
                 List<String> values = new ArrayList<>();
-                if (tce.trustSettings.isEmpty()) {
-                    // a trust dictionary with no entries means full/default trust
-                    values.add(KnownOIDs.anyExtendedKeyUsage.value());
-                } else for (var oneTrust : tce.trustSettings) {
+                for (var oneTrust : tce.trustSettings) {
                     var result = oneTrust.get("kSecTrustSettingsResult");
                     // https://developer.apple.com/documentation/security/sectrustsettingsresult?language=objc
                     // 1 = kSecTrustSettingsResultTrustRoot, 2 = kSecTrustSettingsResultTrustAsRoot,
