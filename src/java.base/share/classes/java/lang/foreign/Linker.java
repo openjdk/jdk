@@ -643,7 +643,7 @@ public sealed interface Linker permits AbstractLinker {
          * {@return a struct layout that represents the layout of the capture state segment that is passed
          *          to a downcall handle linked with {@link #captureCallState(String...)}}.
          * <p>
-         * The capture state layout is <em>platform dependent</em> but is guaranteed to be
+         * The capture state layout is <em>platform-dependent</em> but is guaranteed to be
          * a {@linkplain StructLayout struct layout} containing only {@linkplain ValueLayout value layouts}
          * and possibly {@linkplain PaddingLayout padding layouts}.
          * As an example, on Windows, the returned layout might contain three value layouts named:

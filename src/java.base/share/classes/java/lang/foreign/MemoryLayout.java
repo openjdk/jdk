@@ -194,7 +194,7 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      * but with the specified name.
      *
      * @param name the layout name.
-     * @return a memory layout with the given name.
+     * @return a memory layout with the same characteristics as this layout, but with the given name.
      * @see MemoryLayout#name()
      */
     MemoryLayout withName(String name);
@@ -205,7 +205,7 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      * <p>
      * This can be useful to compare two layouts that have different names, but are otherwise equal.
      *
-     * @return a memory layout without a name.
+     * @return a memory layout with the same characteristics as this layout, but with no name.
      * @see MemoryLayout#name()
      */
     MemoryLayout withoutName();
@@ -252,7 +252,7 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      * but with the specified alignment constraint (in bits).
      *
      * @param bitAlignment the layout alignment constraint, expressed in bits.
-     * @return a memory layout with the given alignment constraint.
+     * @return a memory layout with the same characteristics of this layout, but with the given alignment constraint.
      * @throws IllegalArgumentException if {@code bitAlignment} is not a power of two, or if it's less than 8.
      */
     MemoryLayout withBitAlignment(long bitAlignment);

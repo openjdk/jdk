@@ -70,7 +70,7 @@ public sealed interface SequenceLayout extends MemoryLayout permits SequenceLayo
      * Returns a sequence layout with the same element layout, alignment constraint and name as this sequence layout,
      * but with the specified element count.
      * @param elementCount the new element count.
-     * @return a sequence layout with the given element count.
+     * @return a sequence layout with the same characteristics of this layout, but with the given element count.
      * @throws IllegalArgumentException if {@code elementCount} is negative.
      * @throws IllegalArgumentException if {@code elementLayout.bitSize() * elementCount} overflows.
      */

@@ -77,8 +77,8 @@
  * <h2 id="ffa">Foreign function access</h2>
  * The key abstractions introduced to support foreign function access are {@link java.lang.foreign.SymbolLookup},
  * {@link java.lang.foreign.FunctionDescriptor} and {@link java.lang.foreign.Linker}. The first is used to look up symbols
- * inside libraries; the second is used to model the signature of foreign functions, while the third provides
- * linking capabilities which allows modelling foreign functions as {@link java.lang.invoke.MethodHandle} instances,
+ * inside libraries; the second is used to model the signature of foreign functions, while the third is used
+ * to link foreign functions as {@link java.lang.invoke.MethodHandle} instances,
  * so that clients can perform foreign function calls directly in Java, without the need for intermediate layers of C/C++
  * code (as is the case with the <a href="{@docRoot}/../specs/jni/index.html">Java Native Interface (JNI)</a>).
  * <p>
@@ -116,7 +116,7 @@
  * <h2 id="restricted">Restricted methods</h2>
  * Some methods in this package are considered <em>restricted</em>. Restricted methods are typically used to bind native
  * foreign data and/or functions to first-class Java API elements which can then be used directly by clients. For instance
- * the restricted method {@link java.lang.foreign.MemorySegment#reinterpret(long)} ()}
+ * the restricted method {@link java.lang.foreign.MemorySegment#reinterpret(long)}
  * can be used to create a fresh segment with the same address and temporal bounds,
  * but with the provided size. This can be useful to resize memory segments obtained when interacting with native functions.
  * <p>
