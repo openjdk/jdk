@@ -2778,7 +2778,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
 #ifdef ASSERT
   assert(Immediate::is_uimm8(Deoptimization::Unpack_LIMIT), "Code not fit for larger immediates");
   assert(Immediate::is_uimm8(Deoptimization::Unpack_uncommon_trap), "Code not fit for larger immediates");
-  const int unpack_kind_byte_offset = Deoptimization::UnrollBlock::unpack_kind_offset()
+  const int unpack_kind_byte_offset = in_bytes(Deoptimization::UnrollBlock::unpack_kind_offset())
 #ifndef VM_LITTLE_ENDIAN
   + 3
 #endif
