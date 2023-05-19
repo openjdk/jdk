@@ -165,15 +165,15 @@ import java.lang.foreign.MemorySegment.Scope;
  *      }
  *
  *      public MemorySegment allocate(long byteSize, long byteAlignment) {
- *            return slicingAllocator.allocate(byteSize, byteAlignment);
+ *          return slicingAllocator.allocate(byteSize, byteAlignment);
  *      }
  *
  *      public MemorySegment.Scope scope() {
- *            return arena.scope();
+ *          return arena.scope();
  *      }
  *
  *      public void close() {
- *            arena.close();
+ *          arena.close();
  *      }
  * }
  * }

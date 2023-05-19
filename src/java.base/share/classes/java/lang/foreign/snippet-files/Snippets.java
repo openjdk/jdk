@@ -161,7 +161,7 @@ class Snippets {
 
             try (Arena arena = Arena.ofConfined()) {
                 MemorySegment str = arena.allocateUtf8String("Hello");
-                long len = (long) strlen.invoke(str);  // 5
+                long len = (long) strlen.invokeExact(str);  // 5
             }
 
         }

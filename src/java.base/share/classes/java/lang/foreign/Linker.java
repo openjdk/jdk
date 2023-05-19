@@ -93,7 +93,7 @@ import java.util.stream.Stream;
  * {@snippet lang = java:
  * try (Arena arena = Arena.ofConfined()) {
  *     MemorySegment str = arena.allocateUtf8String("Hello");
- *     long len          = (long) strlen.invoke(str);  // 5
+ *     long len = (long) strlen.invokeExact(str);  // 5
  * }
  * }
  * <h3 id="describing-c-sigs">Describing C signatures</h3>
