@@ -7668,7 +7668,7 @@ instruct absD_reg(fRegD dst, fRegD src) %{
 %}
 
 instruct sqrtF_reg(fRegF dst, fRegF src) %{
-  match(Set dst (ConvD2F (SqrtD (ConvF2D src))));
+  match(Set dst (SqrtF src));
 
   ins_cost(FSQRT_COST);
   format %{ "fsqrt.s  $dst, $src\t#@sqrtF_reg" %}
