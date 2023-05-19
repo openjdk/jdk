@@ -317,8 +317,8 @@ import java.util.stream.Stream;
  * );
  * }
  *
- * When interacting with a native functions returning a pointer (such as {@code malloc}), the Java runtime has no insight
- * into the size or the lifetime of the returned pointer. Consider the following code:
+ * When a native function returning a pointer (such as {@code malloc}) is invoked using a downcall method handle,
+ * the Java runtime has no insight into the size or the lifetime of the returned pointer. Consider the following code:
  *
  * {@snippet lang = java:
  * MemorySegment segment = (MemorySegment)malloc.invokeExact(100);
@@ -330,8 +330,8 @@ import java.util.stream.Stream;
  * unsafely, resize the segment to the desired size (100, in this case). It might also be desirable to
  * attach the segment to some existing {@linkplain Arena arena}, so that the lifetime of the region of memory
  * backing the segment can be managed automatically, as for any other native segment created directly from Java code.
- * Both these operations are accomplished using the restricted {@link MemorySegment#reinterpret(long, Arena, Consumer)}
- * method, as follows:
+ * Both these operations are accomplished using the restricted method {@link MemorySegment#reinterpret(long, Arena, Consumer)},
+ * as follows:
  *
  * {@snippet lang = java:
  * MemorySegment allocateMemory(long byteSize, Arena arena) {
@@ -379,12 +379,12 @@ import java.util.stream.Stream;
  * }
  *
  * To perform an equivalent call using a downcall method handle we must create a function descriptor which
- * describes the specialized signature of the C function we want to call. This descriptor must include layouts for any
- * additional variadic argument we intend to provide. In this case, the specialized signature of the C
- * function is {@code (char*, int, int, int)} as the format string accepts three integer parameters. Then, we need to use
- * a linker option to specify the position of the first variadic layout in the provided function descriptor (starting from 0).
- * In this case, since the first parameter is the format string (a non-variadic argument), the first variadic index
- * needs to be set to 1, as follows:
+ * describes the specialized signature of the C function we want to call. This descriptor must include an additional layout
+ * for each variadic argument we intend to provide. In this case, the specialized signature of the C
+ * function is {@code (char*, int, int, int)} as the format string accepts three integer parameters. We then need to use
+ * a {@linkplain Linker.Option#firstVariadicArg(int) linker option} to specify the position of the first variadic layout
+ * in the provided function descriptor (starting from 0). In this case, since the first parameter is the format string
+ * (a non-variadic argument), the first variadic index needs to be set to 1, as follows:
  *
  * {@snippet lang = java:
  * Linker linker = Linker.nativeLinker();
@@ -411,10 +411,8 @@ import java.util.stream.Stream;
  * through an invalid linkage request (e.g. by specifying a function descriptor featuring too many argument layouts),
  * the result of such interaction is unspecified and can lead to JVM crashes.
  * <p>
- * When creating upcall stubs the linker runtime validates the type of the target method handle against the provided
- * function descriptor and report an error if any mismatch is detected. As for downcalls, JVM crashes might occur,
- * if the foreign code casts the function pointer associated with an upcall stub to a type
- * that is incompatible with the provided function descriptor. Moreover, if the target method
+ * When an upcall stub is passed to a foreign function, a JVM crash might occur, if the foreign code casts the function pointer
+ * associated with the upcall stub to a type that is incompatible with the type of the upcall stub. Moreover, if the method
  * handle associated with an upcall stub returns a {@linkplain MemorySegment memory segment}, clients must ensure
  * that this address cannot become invalid after the upcall completes. This can lead to unspecified behavior,
  * and even JVM crashes, since an upcall is typically executed in the context of a downcall method handle invocation.
@@ -428,7 +426,7 @@ import java.util.stream.Stream;
 public sealed interface Linker permits AbstractLinker {
 
     /**
-     * Returns a linker for the ABI associated with the underlying native platform. The underlying native platform
+     * {@return a linker for the ABI associated with the underlying native platform} The underlying native platform
      * is the combination of OS and processor where the Java runtime is currently executing.
      *
      * @apiNote It is not currently possible to obtain a linker for a different combination of OS and processor.
@@ -436,7 +434,6 @@ public sealed interface Linker permits AbstractLinker {
      * linker are the native libraries loaded in the process where the Java runtime is currently executing. For example,
      * on Linux, these libraries typically include {@code libc}, {@code libm} and {@code libdl}.
      *
-     * @return a linker for the ABI associated with the underlying native platform.
      * @throws UnsupportedOperationException if the underlying native platform is not supported.
      */
     static Linker nativeLinker() {
@@ -444,7 +441,7 @@ public sealed interface Linker permits AbstractLinker {
     }
 
     /**
-     * Creates a method handle which is used to call a foreign function with the given signature and address.
+     * Creates a method handle which is used to call a foreign function with the given signature and symbol.
      * <p>
      * Calling this method is equivalent to the following code:
      * {@snippet lang=java :
@@ -456,10 +453,10 @@ public sealed interface Linker permits AbstractLinker {
      * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
      * restricted methods, and use safe and supported functionalities, where possible.
      *
-     * @param symbol   the address of the target function.
-     * @param function the function descriptor of the target function.
-     * @param options  any linker options.
-     * @return a downcall method handle. The method handle type is <a href="Linker.html#downcall-method-handles"><em>inferred</em></a>
+     * @param symbol   the symbol of the target foreign function.
+     * @param function the function descriptor of the target foreign function.
+     * @param options  the linker options associated with this linkage request.
+     * @return a downcall method handle.
      * @throws IllegalArgumentException if the provided function descriptor is not supported by this linker.
      *                                  or if the symbol is {@link MemorySegment#NULL}
      * @throws IllegalArgumentException if an invalid combination of linker options is given.
@@ -478,22 +475,22 @@ public sealed interface Linker permits AbstractLinker {
      * downcall method handle accepts an additional leading parameter of type {@link SegmentAllocator}, which is used by
      * the linker runtime to allocate the memory region associated with the struct returned by the downcall method handle.
      * <p>
-     * Upon invoking a downcall method handle, the linker runtime will guarantee the following for any argument
+     * Upon invoking a downcall method handle, the linker provides the following guarantees for any argument
      * {@code A} of type {@link MemorySegment} whose corresponding layout is an {@linkplain AddressLayout address layout}:
      * <ul>
      *     <li>{@code A.scope().isAlive() == true}. Otherwise, the invocation throws {@link IllegalStateException};</li>
      *     <li>The invocation occurs in a thread {@code T} such that {@code A.isAccessibleBy(T) == true}.
      *     Otherwise, the invocation throws {@link WrongThreadException}; and</li>
      *     <li>{@code A} is kept alive during the invocation. For instance, if {@code A} has been obtained using a
-     *     {@linkplain Arena#ofShared()} shared arena}, any attempt to {@linkplain Arena#close() close}
-     *     the shared arena while the downcall method handle is executing will result in an {@link IllegalStateException}.</li>
+     *     {@linkplain Arena#ofShared() shared arena}, any attempt to {@linkplain Arena#close() close}
+     *     the arena while the downcall method handle is still executing will result in an {@link IllegalStateException}.</li>
      *</ul>
      * <p>
      * Moreover, if the provided function descriptor's return layout is an {@linkplain AddressLayout address layout},
      * invoking the returned method handle will return a native segment associated with
      * a fresh scope that is always alive. Under normal conditions, the size of the returned segment is {@code 0}.
-     * However, if the function descriptor's return layout has a {@linkplain AddressLayout#targetLayout()} {@code T},
-     * then the size of the returned segment is set to {@code T.byteSize()}.
+     * However, if the function descriptor's return layout has a {@linkplain AddressLayout#targetLayout() target layout}
+     * {@code T}, then the size of the returned segment is set to {@code T.byteSize()}.
      * <p>
      * The returned method handle will throw an {@link IllegalArgumentException} if the {@link MemorySegment}
      * representing the target address of the foreign function is the {@link MemorySegment#NULL} address.
@@ -504,10 +501,9 @@ public sealed interface Linker permits AbstractLinker {
      * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
      * restricted methods, and use safe and supported functionalities, where possible.
      *
-     * @param function the function descriptor of the target function.
-     * @param options  any linker options.
-     * @return a downcall method handle. The method handle type is <a href="Linker.html#downcall-method-handles"><em>inferred</em></a>
-     * from the provided function descriptor.
+     * @param function the function descriptor of the target foreign function.
+     * @param options  the linker options associated with this linkage request.
+     * @return a downcall method handle.
      * @throws IllegalArgumentException if the provided function descriptor is not supported by this linker.
      * @throws IllegalArgumentException if an invalid combination of linker options is given.
      * @throws IllegalCallerException If the caller is in a module that does not have native access enabled.
@@ -516,7 +512,7 @@ public sealed interface Linker permits AbstractLinker {
     MethodHandle downcallHandle(FunctionDescriptor function, Option... options);
 
     /**
-     * Creates a stub which can be passed to other foreign functions as a function pointer, associated with the given
+     * Creates an upcall stub which can be passed to other foreign functions as a function pointer, associated with the given
      * arena. Calling such a function pointer from foreign code will result in the execution of the provided
      * method handle.
      * <p>
@@ -528,14 +524,14 @@ public sealed interface Linker permits AbstractLinker {
      * An upcall stub argument whose corresponding layout is an {@linkplain AddressLayout address layout}
      * is a native segment associated with a fresh scope that is always alive.
      * Under normal conditions, the size of this segment argument is {@code 0}.
-     * However, if the address layout has a {@linkplain AddressLayout#targetLayout()} {@code T}, then the size of the
+     * However, if the address layout has a {@linkplain AddressLayout#targetLayout() target layout} {@code T}, then the size of the
      * segment argument is set to {@code T.byteSize()}.
      * <p>
      * The target method handle should not throw any exceptions. If the target method handle does throw an exception,
-     * the VM will exit with a non-zero exit code. To avoid the VM aborting due to an uncaught exception, clients
-     * could wrap all code in the target method handle in a try/catch block that catches any {@link Throwable}, for
-     * instance by using the {@link java.lang.invoke.MethodHandles#catchException(MethodHandle, Class, MethodHandle)}
-     * method handle combinator, and handle exceptions as desired in the corresponding catch block.
+     * the JVM will terminate abruptly. To avoid this, clients should wrap the code in the target method handle in a
+     * try/catch block to catch any unexpected exceptions. This can be done using the
+     * {@link java.lang.invoke.MethodHandles#catchException(MethodHandle, Class, MethodHandle)} method handle combinator,
+     * and handle exceptions as desired in the corresponding catch block.
      * <p>
      * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
      * Restricted methods are unsafe, and, if used incorrectly, their use might crash
@@ -545,11 +541,12 @@ public sealed interface Linker permits AbstractLinker {
      * @param target the target method handle.
      * @param function the upcall stub function descriptor.
      * @param arena the arena associated with the returned upcall stub segment.
-     * @param options  any linker options.
+     * @param options  the linker options associated with this linkage request.
      * @return a zero-length segment whose address is the address of the upcall stub.
      * @throws IllegalArgumentException if the provided function descriptor is not supported by this linker.
-     * @throws IllegalArgumentException if it is determined that the target method handle can throw an exception, or if the target method handle
-     * has a type that does not match the upcall stub <a href="Linker.html#upcall-stubs"><em>inferred type</em></a>.
+     * @throws IllegalArgumentException if the type of {@code target} is incompatible with the
+     * type {@linkplain FunctionDescriptor#toMethodType() derived} from {@code function}.
+     * @throws IllegalArgumentException if it is determined that the target method handle can throw an exception.
      * @throws IllegalStateException if {@code arena.scope().isAlive() == false}
      * @throws WrongThreadException if {@code arena} is a confined arena, and this method is called from a
      * thread {@code T}, other than the arena's owner thread.

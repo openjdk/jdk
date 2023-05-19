@@ -1656,7 +1656,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * Reads an address from this segment at the given offset, with the given layout. The read address is wrapped in
      * a native segment, associated with a fresh scope that is always alive. Under normal conditions,
      * the size of the returned segment is {@code 0}. However, if the provided address layout has a
-     * {@linkplain AddressLayout#targetLayout()} {@code T}, then the size of the returned segment
+     * {@linkplain AddressLayout#targetLayout() target layout} {@code T}, then the size of the returned segment
      * is set to {@code T.byteSize()}.
      * @param layout the layout of the region of memory to be read.
      * @param offset offset in bytes (relative to this segment address) at which this access operation will occur.
@@ -2097,7 +2097,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * Reads an address from this segment at the given at the given index, scaled by the given layout size. The read address is wrapped in
      * a native segment, associated with a fresh scope that is always alive. Under normal conditions,
      * the size of the returned segment is {@code 0}. However, if the provided address layout has a
-     * {@linkplain AddressLayout#targetLayout()} {@code T}, then the size of the returned segment
+     * {@linkplain AddressLayout#targetLayout() target layout} {@code T}, then the size of the returned segment
      * is set to {@code T.byteSize()}.
      * @param layout the layout of the region of memory to be read.
      * @param index a logical index. The offset in bytes (relative to this segment address) at which the access operation
