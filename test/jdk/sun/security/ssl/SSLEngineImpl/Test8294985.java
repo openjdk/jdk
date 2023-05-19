@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8164879
+ * @bug 8294985
  * @library /test/lib
  * @summary test for proper exception handling
  */
