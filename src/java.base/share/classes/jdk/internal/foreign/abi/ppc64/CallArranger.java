@@ -25,12 +25,7 @@
  */
 package jdk.internal.foreign.abi.ppc64;
 
-import java.lang.foreign.AddressLayout;
-import java.lang.foreign.FunctionDescriptor;
-import java.lang.foreign.GroupLayout;
-import java.lang.foreign.MemoryLayout;
-import java.lang.foreign.MemorySegment;
-import java.lang.foreign.ValueLayout;
+import jdk.internal.foreign.Utils;
 import jdk.internal.foreign.abi.ABIDescriptor;
 import jdk.internal.foreign.abi.AbstractLinker.UpcallStubFactory;
 import jdk.internal.foreign.abi.Binding;
@@ -38,15 +33,18 @@ import jdk.internal.foreign.abi.CallingSequence;
 import jdk.internal.foreign.abi.CallingSequenceBuilder;
 import jdk.internal.foreign.abi.DowncallLinker;
 import jdk.internal.foreign.abi.LinkerOptions;
-import jdk.internal.foreign.abi.UpcallLinker;
 import jdk.internal.foreign.abi.SharedUtils;
 import jdk.internal.foreign.abi.VMStorage;
 import jdk.internal.foreign.abi.ppc64.ABIv2CallArranger;
-import jdk.internal.foreign.Utils;
 
+import java.lang.foreign.AddressLayout;
+import java.lang.foreign.FunctionDescriptor;
+import java.lang.foreign.GroupLayout;
+import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
-import java.nio.ByteOrder;
 import java.util.List;
 import java.util.Optional;
 
@@ -67,11 +65,12 @@ public abstract class CallArranger {
     protected abstract boolean useABIv2();
 
     private static final int STACK_SLOT_SIZE = 8;
+    private static final int MAX_COPY_SIZE = 8;
     public static final int MAX_REGISTER_ARGUMENTS = 8;
     public static final int MAX_FLOAT_REGISTER_ARGUMENTS = 13;
 
-    // This is derived from the 64-Bit ELF V2 ABI spec, restricted to what's
-    // possible when calling to/from C code.
+    // This is derived from the 64-Bit ELF v2 ABI spec, restricted to what's
+    // possible when calling to/from C code. (v1 is compatible, but uses fewer output registers.)
     private final ABIDescriptor C = abiFor(
         new VMStorage[] { r3, r4, r5, r6, r7, r8, r9, r10 }, // GP input
         new VMStorage[] { f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13 }, // FP intput
@@ -155,7 +154,6 @@ public abstract class CallArranger {
 
     class StorageCalculator {
         private final boolean forArguments;
-        private boolean forVarArgs = false;
 
         private final int[] nRegs = new int[] { 0, 0 };
         private long stackOffset = 0;
@@ -218,10 +216,10 @@ public abstract class CallArranger {
             // TODO: Big Endian can't pass partially used slots correctly in some cases with:
             // !useABIv2() && layout.byteSize() > 8 && layout.byteSize() % 8 != 0
 
-            // Allocate individual fields as gp slots (regs and stack).
-            int nFields = (int) ((layout.byteSize() + 7) / 8);
-            VMStorage[] result = new VMStorage[nFields];
-            for (int i = 0; i < nFields; i++) {
+            // Allocate enough gp slots (regs and stack) such that the struct fits in them.
+            int numChunks = (int) Utils.alignUp(layout.byteSize(), MAX_COPY_SIZE) / MAX_COPY_SIZE;
+            VMStorage[] result = new VMStorage[numChunks];
+            for (int i = 0; i < numChunks; i++) {
                 result[i] = nextStorage(StorageType.INTEGER, false);
             }
             return result;
@@ -304,7 +302,6 @@ public abstract class CallArranger {
         void adjustForVarArgs() {
             // PPC64 can pass VarArgs in GP regs. But we're not using FP regs.
             nRegs[StorageType.FLOAT] = MAX_FLOAT_REGISTER_ARGUMENTS;
-            forVarArgs = true;
         }
     }
 
@@ -335,7 +332,7 @@ public abstract class CallArranger {
                     long offset = 0;
                     for (VMStorage storage : regs) {
                         // Last slot may be partly used.
-                        final long size = Math.min(layout.byteSize() - offset, 8);
+                        final long size = Math.min(layout.byteSize() - offset, MAX_COPY_SIZE);
                         Class<?> type = SharedUtils.primitiveCarrierForSize(size, false);
                         if (offset + size < layout.byteSize()) {
                             bindings.dup();
@@ -413,7 +410,7 @@ public abstract class CallArranger {
                     long offset = 0;
                     for (VMStorage storage : regs) {
                         // Last slot may be partly used.
-                        final long size = Math.min(layout.byteSize() - offset, 8);
+                        final long size = Math.min(layout.byteSize() - offset, MAX_COPY_SIZE);
                         Class<?> type = SharedUtils.primitiveCarrierForSize(size, false);
                         bindings.dup()
                                 .vmLoad(storage, type)

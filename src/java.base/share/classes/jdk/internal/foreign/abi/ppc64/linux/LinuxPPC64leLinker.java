@@ -35,13 +35,17 @@ import java.lang.invoke.MethodType;
 import java.nio.ByteOrder;
 
 public final class LinuxPPC64leLinker extends AbstractLinker {
-    private static LinuxPPC64leLinker instance;
 
     public static LinuxPPC64leLinker getInstance() {
-        if (instance == null) {
-            instance = new LinuxPPC64leLinker();
+        final class Holder {
+            private static final LinuxPPC64leLinker INSTANCE = new LinuxPPC64leLinker();
         }
-        return instance;
+
+        return Holder.INSTANCE;
+    }
+
+    private LinuxPPC64leLinker() {
+        // Ensure there is only one instance
     }
 
     @Override
