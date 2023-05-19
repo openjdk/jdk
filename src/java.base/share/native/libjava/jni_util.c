@@ -185,6 +185,16 @@ JNU_ThrowIOExceptionWithLastError(JNIEnv *env, const char *defaultDetail)
     JNU_ThrowByNameWithLastError(env, "java/io/IOException", defaultDetail);
 }
 
+/*
+ * Convenience method.
+ * Call JNU_ThrowByNameWithMessageAndLastError for java.io.IOException.
+ */
+JNIEXPORT void JNICALL
+JNU_ThrowIOExceptionWithMessageAndLastError(JNIEnv *env, const char *message)
+{
+    JNU_ThrowByNameWithMessageAndLastError(env, "java/io/IOException", message);
+}
+
 
 JNIEXPORT jvalue JNICALL
 JNU_CallStaticMethodByName(JNIEnv *env,
