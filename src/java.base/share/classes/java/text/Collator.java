@@ -260,8 +260,9 @@ public abstract class Collator
      *     <td>NO_DECOMPOSITION</td></tr>
      * </tbody>
      * </table>
-     * If the specified setting value is not recognized, strength and/or
-     * decomposition will not be overridden.
+     * If the specified setting value is not recognized, the strength and/or
+     * decomposition will not be overridden, as if there were no BCP 47 collation
+     * options in the desired locale.
      *
      * @apiNote Implementations of {@code Collator} class may produce
      * different instances based on the "{@code co}"
