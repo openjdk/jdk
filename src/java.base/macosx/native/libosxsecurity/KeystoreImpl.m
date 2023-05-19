@@ -465,7 +465,6 @@ static void addCertificatesToKeystore(JNIEnv *env, jobject keyStore)
             }
 
             // See KeychainStore::createTrustedCertEntry for content of inputTrust
-            // When inputTrust object is NULL, no trust settings were found for the cert
             // We load trust settings from domains kSecTrustSettingsDomainUser and kSecTrustSettingsDomainAdmin
             // kSecTrustSettingsDomainSystem is ignored because it seems to only contain data for root certificates
             jobject inputTrust = NULL;
