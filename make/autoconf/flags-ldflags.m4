@@ -73,11 +73,6 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
     BASIC_LDFLAGS_JVM_ONLY=""
 
     LDFLAGS_CXX_PARTIAL_LINKING="$MACHINE_FLAG -r"
-    #if test "x$OPENJDK_TARGET_OS" = xlinux; then
-    #  if test "x$OPENJDK_TARGET_CPU_BITS" = "x32"; then
-    #    LDFLAGS_CXX_PARTIAL_LINKING="-m${OPENJDK_TARGET_CPU_BITS} $LDFLAGS_CXX_PARTIAL_LINKING"
-    #  fi
-    #fi
 
   elif test "x$TOOLCHAIN_TYPE" = xclang; then
     BASIC_LDFLAGS_JVM_ONLY="-mno-omit-leaf-frame-pointer -mstack-alignment=16 \
