@@ -23,9 +23,9 @@
 
 /*
  * @test
- * @bug 8294985
  * @library /test/lib
- * @summary test for proper exception handling
+ * @summary verify correct exception handling in the event of an unparseable
+ *  DN in the peer CA
  */
 
 import javax.net.ssl.KeyManagerFactory;
@@ -33,7 +33,6 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
 import javax.net.ssl.SSLEngineResult.HandshakeStatus;
-import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.TrustManagerFactory;
 import java.io.FileInputStream;
@@ -42,7 +41,7 @@ import java.security.KeyStore;
 import java.util.Base64;
 
 
-public class Test8294985 {
+public class TestBadDNForPeerCA {
 
     // Test was originally written for TLSv1.2
     private static String proto = "TLSv1.2";
@@ -90,7 +89,7 @@ public class Test8294985 {
 
         System.out.println("payload len:" + payload.length);
 
-        Test8294985 test = new Test8294985();
+        TestBadDNForPeerCA test = new TestBadDNForPeerCA();
 
         try {
             test.runTest(payload);
@@ -101,13 +100,13 @@ public class Test8294985 {
         }
     }
 
-    static Test8294985 fuzzdemoref = null;
+    static TestBadDNForPeerCA fuzzdemoref = null;
 
     /*
      * Create an initialized SSLContext to use for this demo.
      */
 
-    public Test8294985() throws Exception {
+    public TestBadDNForPeerCA() throws Exception {
 
         KeyStore ks = KeyStore.getInstance("JKS");
         KeyStore ts = KeyStore.getInstance("JKS");
