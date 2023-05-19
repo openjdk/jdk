@@ -179,7 +179,7 @@ public class InMemoryJavaCompiler {
     public static byte[] compile(String className, CharSequence sourceCode, String... options) {
         MemoryJavaFileObject file = new MemoryJavaFileObject(className, sourceCode);
         try (CloseableCompilationTask task = getCompilationTask(file, options)) {
-            if(!task.call()) {
+            if (!task.call()) {
                 throw new RuntimeException("Could not compile " + className + " with source code " + sourceCode);
             }
 
