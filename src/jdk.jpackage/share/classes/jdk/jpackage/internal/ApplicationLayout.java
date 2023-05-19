@@ -185,7 +185,7 @@ public final class ApplicationLayout implements PathGroup.Facade<ApplicationLayo
             return windowsAppImage();
         }
 
-        if (OperatingSystem.isLinux() | OperatingSystem.isAix()) {
+        if (OperatingSystem.isLinux()) {
             return linuxAppImage();
         }
 

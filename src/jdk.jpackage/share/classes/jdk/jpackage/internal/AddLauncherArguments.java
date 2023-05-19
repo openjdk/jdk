@@ -141,7 +141,7 @@ class AddLauncherArguments {
                     getOptionValue(CLIOptions.WIN_MENU_HINT));
         }
 
-        if (OperatingSystem.isLinux() | OperatingSystem.isAix()) {
+        if (OperatingSystem.isLinux()) {
             Arguments.putUnlessNull(bundleParams, CLIOptions.LINUX_CATEGORY.getId(),
                     getOptionValue(CLIOptions.LINUX_CATEGORY));
             Arguments.putUnlessNull(bundleParams, SHORTCUT_HINT.getID(),

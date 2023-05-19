@@ -43,7 +43,7 @@ class I18N {
     private static final ResourceBundle PLATFORM;
 
     static {
-        if (OperatingSystem.isLinux() | OperatingSystem.isAix()) {
+        if (OperatingSystem.isLinux()) {
             PLATFORM = ResourceBundle.getBundle(
                     "jdk.jpackage.internal.resources.LinuxResources");
         } else if (OperatingSystem.isWindows()) {

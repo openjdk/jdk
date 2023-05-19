@@ -68,7 +68,6 @@ public class CLIHelp {
                             = I18N.getString("MSG_Help_mac_sign_sample_usage");
                     break;
                 case LINUX:
-                case AIX:
                     types = "{\"app-image\", \"rpm\", \"deb\"}";
                     pLaunchOptions = "";
                     pInstallOptions = I18N.getString("MSG_Help_linux_install");

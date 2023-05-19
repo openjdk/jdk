@@ -509,8 +509,7 @@ public class LinuxDebBundler extends LinuxPackageBundler {
 
     @Override
     public boolean supported(boolean runtimeInstaller) {
-        return (OperatingSystem.isLinux() | OperatingSystem.isAix())
-                && (new ToolValidator(TOOL_DPKG_DEB).validate() == null);
+        return OperatingSystem.isLinux() && (new ToolValidator(TOOL_DPKG_DEB).validate() == null);
     }
 
     @Override
