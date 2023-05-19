@@ -97,7 +97,7 @@
   // ABI_160:
 
   // REMARK: z_abi_160_base structure reflect the "minimal" ABI frame
-  // layout. There is an field in the z_abi_160
+  // layout. There is a field in the z_abi_160
   // structure that marks the area where arguments are passed, when
   // the argument registers "overflow". Thus, sizeof(z_abi_160)
   // doesn't yield the expected (and desired) result. Therefore, as
