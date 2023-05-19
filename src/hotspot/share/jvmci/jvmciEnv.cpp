@@ -392,7 +392,7 @@ class HotSpotToSharedLibraryExceptionTranslation : public ExceptionTranslation {
     JNIAccessMark jni(_to_env, THREAD);
     jni()->CallStaticVoidMethod(JNIJVMCI::VMSupport::clazz(),
                                 JNIJVMCI::VMSupport::decodeAndThrowThrowable_method(),
-                                buffer);
+                                buffer, false);
   }
  public:
   HotSpotToSharedLibraryExceptionTranslation(JVMCIEnv* hotspot_env, JVMCIEnv* jni_env, const Handle& throwable) :
@@ -414,11 +414,12 @@ class SharedLibraryToHotSpotExceptionTranslation : public ExceptionTranslation {
   void decode(JavaThread* THREAD, Klass* vmSupport, jlong buffer) {
     JavaCallArguments jargs;
     jargs.push_long(buffer);
+    jargs.push_int(true);
     JavaValue result(T_VOID);
     JavaCalls::call_static(&result,
                             vmSupport,
                             vmSymbols::decodeAndThrowThrowable_name(),
-                            vmSymbols::long_void_signature(), &jargs, THREAD);
+                            vmSymbols::decodeAndThrowThrowable_signature(), &jargs, THREAD);
   }
  public:
   SharedLibraryToHotSpotExceptionTranslation(JVMCIEnv* hotspot_env, JVMCIEnv* jni_env, jthrowable throwable) :
@@ -1162,16 +1163,19 @@ JVMCIObject JVMCIEnv::get_jvmci_method(const methodHandle& method, JVMCI_TRAPS) 
   if (method() == nullptr) {
     return method_object;
   }
+  JavaThread* THREAD = JVMCI::compilation_tick(JavaThread::current()); // For exception macros.
+  JVMCIKlassHandle holder_klass(THREAD, method->method_holder());
+  JVMCIObject holder = get_jvmci_type(holder_klass, JVMCI_CHECK_(JVMCIObject()));
 
   CompilerOracle::tag_blackhole_if_possible(method);
 
-  JavaThread* THREAD = JVMCI::compilation_tick(JavaThread::current()); // For exception macros.
   jmetadata handle = _runtime->allocate_handle(method);
   jboolean exception = false;
   if (is_hotspot()) {
     JavaValue result(T_OBJECT);
     JavaCallArguments args;
     args.push_long((jlong) handle);
+    args.push_oop(Handle(THREAD, HotSpotJVMCI::resolve(holder)));
     JavaCalls::call_static(&result, HotSpotJVMCI::HotSpotResolvedJavaMethodImpl::klass(),
                            vmSymbols::fromMetaspace_name(),
                            vmSymbols::method_fromMetaspace_signature(), &args, THREAD);
@@ -1184,7 +1188,7 @@ JVMCIObject JVMCIEnv::get_jvmci_method(const methodHandle& method, JVMCI_TRAPS) 
     JNIAccessMark jni(this, THREAD);
     method_object = JNIJVMCI::wrap(jni()->CallStaticObjectMethod(JNIJVMCI::HotSpotResolvedJavaMethodImpl::clazz(),
                                                                   JNIJVMCI::HotSpotResolvedJavaMethodImpl_fromMetaspace_method(),
-                                                                  (jlong) handle));
+                                                                 (jlong) handle, holder.as_jobject()));
     exception = jni()->ExceptionCheck();
   }
 
@@ -1206,6 +1210,9 @@ JVMCIObject JVMCIEnv::get_jvmci_type(const JVMCIKlassHandle& klass, JVMCI_TRAPS)
   if (klass.is_null()) {
     return type;
   }
+
+  guarantee(klass->is_klass(), "must be valid klass");
+  guarantee(klass->is_loader_alive(), "klass must be alive");
 
   jlong pointer = (jlong) klass();
   JavaThread* THREAD = JVMCI::compilation_tick(JavaThread::current()); // For exception macros.
@@ -1419,6 +1426,33 @@ JVMCIObject JVMCIEnv::new_JVMCIError(JVMCI_TRAPS) {
   }
 }
 
+JVMCIObject JVMCIEnv::new_FieldInfo(FieldInfo* fieldinfo, JVMCI_TRAPS) {
+  JavaThread* THREAD = JavaThread::current(); // For exception macros.
+  if (is_hotspot()) {
+    HotSpotJVMCI::FieldInfo::klass()->initialize(CHECK_(JVMCIObject()));
+    oop obj = HotSpotJVMCI::FieldInfo::klass()->allocate_instance(CHECK_(JVMCIObject()));
+    Handle obj_h(THREAD, obj);
+    HotSpotJVMCI::FieldInfo::set_nameIndex(JVMCIENV, obj_h(), (jint)fieldinfo->name_index());
+    HotSpotJVMCI::FieldInfo::set_signatureIndex(JVMCIENV, obj_h(), (jint)fieldinfo->signature_index());
+    HotSpotJVMCI::FieldInfo::set_offset(JVMCIENV, obj_h(), (jint)fieldinfo->offset());
+    HotSpotJVMCI::FieldInfo::set_classfileFlags(JVMCIENV, obj_h(), (jint)fieldinfo->access_flags().as_int());
+    HotSpotJVMCI::FieldInfo::set_internalFlags(JVMCIENV, obj_h(), (jint)fieldinfo->field_flags().as_uint());
+    HotSpotJVMCI::FieldInfo::set_initializerIndex(JVMCIENV, obj_h(), (jint)fieldinfo->initializer_index());
+    return wrap(obj_h());
+  } else {
+    JNIAccessMark jni(this, THREAD);
+    jobject result = jni()->NewObject(JNIJVMCI::FieldInfo::clazz(),
+                                      JNIJVMCI::FieldInfo::constructor(),
+                                      (jint)fieldinfo->name_index(),
+                                      (jint)fieldinfo->signature_index(),
+                                      (jint)fieldinfo->offset(),
+                                      (jint)fieldinfo->access_flags().as_int(),
+                                      (jint)fieldinfo->field_flags().as_uint(),
+                                      (jint)fieldinfo->initializer_index());
+
+    return wrap(result);
+  }
+}
 
 JVMCIObject JVMCIEnv::get_object_constant(oop objOop, bool compressed, bool dont_register) {
   JavaThread* THREAD = JavaThread::current(); // For exception macros.
@@ -1478,9 +1512,9 @@ jlong JVMCIEnv::make_oop_handle(const Handle& obj) {
 
 oop JVMCIEnv::resolve_oop_handle(jlong oopHandle) {
   assert(oopHandle != 0, "should be a valid handle");
-  oop obj = *((oopDesc**) oopHandle);
+  oop obj = NativeAccess<>::oop_load(reinterpret_cast<oop*>(oopHandle));
   if (obj != nullptr) {
-    oopDesc::verify(obj);
+    guarantee(oopDesc::is_oop_or_null(obj), "invalid oop: " INTPTR_FORMAT, p2i((oopDesc*) obj));
   }
   return obj;
 }
@@ -1590,7 +1624,11 @@ void JVMCIEnv::invalidate_nmethod_mirror(JVMCIObject mirror, bool deoptimize, JV
     // the address field to still be pointing at the nmethod.
    } else {
     // Deoptimize the nmethod immediately.
-    Deoptimization::deoptimize_all_marked(nm);
+    DeoptimizationScope deopt_scope;
+    deopt_scope.mark(nm);
+    nm->make_not_entrant();
+    nm->make_deoptimized();
+    deopt_scope.deoptimize_marked();
 
     // A HotSpotNmethod instance can only reference a single nmethod
     // during its lifetime so simply clear it here.
@@ -1612,6 +1650,9 @@ ConstantPool* JVMCIEnv::asConstantPool(JVMCIObject obj) {
   return *constantPoolHandle;
 }
 
+MethodData* JVMCIEnv::asMethodData(JVMCIObject obj) {
+  return (MethodData*) get_HotSpotMethodData_methodDataPointer(obj);
+}
 
 // Lookup an nmethod with a matching base and compile id
 nmethod* JVMCIEnv::lookup_nmethod(address code, jlong compile_id_snapshot) {

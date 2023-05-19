@@ -74,10 +74,21 @@
     object_field(HotSpotResolvedJavaFieldImpl, type, "Ljdk/vm/ci/meta/JavaType;")                             \
     object_field(HotSpotResolvedJavaFieldImpl, holder, "Ljdk/vm/ci/hotspot/HotSpotResolvedObjectTypeImpl;")   \
     int_field(HotSpotResolvedJavaFieldImpl, offset)                                                           \
-    int_field(HotSpotResolvedJavaFieldImpl, modifiers)                                                        \
+  end_class                                                                                                   \
+  start_class(FieldInfo, jdk_vm_ci_hotspot_HotSpotResolvedObjectTypeImpl_FieldInfo)                           \
+    int_field(FieldInfo, nameIndex)                                                                           \
+    int_field(FieldInfo, signatureIndex)                                                                      \
+    int_field(FieldInfo, offset)                                                                              \
+    int_field(FieldInfo, classfileFlags)                                                                      \
+    int_field(FieldInfo, internalFlags)                                                                       \
+    int_field(FieldInfo, initializerIndex)                                                                    \
+    jvmci_constructor(FieldInfo, "(IIIIII)V")                                                                 \
   end_class                                                                                                   \
   start_class(HotSpotResolvedJavaMethodImpl, jdk_vm_ci_hotspot_HotSpotResolvedJavaMethodImpl)                 \
     long_field(HotSpotResolvedJavaMethodImpl, methodHandle)                                                   \
+  end_class                                                                                                   \
+  start_class(HotSpotMethodData, jdk_vm_ci_hotspot_HotSpotMethodData)                                         \
+    long_field(HotSpotMethodData, methodDataPointer)                                                          \
   end_class                                                                                                   \
   start_class(InstalledCode, jdk_vm_ci_code_InstalledCode)                                                    \
     long_field(InstalledCode, address)                                                                        \
@@ -216,7 +227,7 @@
   end_class                                                                                                   \
   start_class(VMSupport, jdk_internal_vm_VMSupport)                                                           \
     jvmci_method(CallStaticIntMethod, GetStaticMethodID, call_static, int, VMSupport, encodeThrowable, encodeThrowable_signature, (JVMCIObject throwable, jlong buffer, int buffer_size)) \
-    jvmci_method(CallStaticVoidMethod, GetStaticMethodID, call_static, void, VMSupport, decodeAndThrowThrowable, long_void_signature, (jlong buffer)) \
+    jvmci_method(CallStaticVoidMethod, GetStaticMethodID, call_static, void, VMSupport, decodeAndThrowThrowable, decodeAndThrowThrowable_signature, (jlong buffer)) \
   end_class                                                                                                   \
   start_class(ArrayIndexOutOfBoundsException, java_lang_ArrayIndexOutOfBoundsException)                       \
     jvmci_constructor(ArrayIndexOutOfBoundsException, "(Ljava/lang/String;)V")                                \

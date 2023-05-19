@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -271,6 +271,7 @@ int main(int argc, char *argv[])
   AD.addInclude(AD._DFA_file, "opto/narrowptrnode.hpp");
   AD.addInclude(AD._DFA_file, "opto/opcodes.hpp");
   AD.addInclude(AD._DFA_file, "opto/convertnode.hpp");
+  AD.addInclude(AD._DFA_file, "opto/superword.hpp");
   AD.addInclude(AD._DFA_file, "utilities/powerOfTwo.hpp");
 
   // Make sure each .cpp file starts with include lines:

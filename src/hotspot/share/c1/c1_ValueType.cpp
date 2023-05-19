@@ -50,27 +50,34 @@ IntConstant*    intOne       = NULL;
 ObjectConstant* objectNull   = NULL;
 
 
-void ValueType::initialize(Arena* arena) {
-  // Note: Must initialize all types for each compilation
-  //       as they are allocated within a ResourceMark!
+void ValueType::initialize() {
+#define VALUE_TYPE_STORAGE_NAME(name) name##_storage
+#define VALUE_TYPE_STORAGE(name, type) alignas(type) static uint8_t VALUE_TYPE_STORAGE_NAME(name)[sizeof(type)]
+#define VALUE_TYPE(name, type, ...)                                \
+  assert(name == nullptr, "ValueType initialized more than once"); \
+  VALUE_TYPE_STORAGE(name, type);                                  \
+  name = ::new(static_cast<void*>(VALUE_TYPE_STORAGE_NAME(name))) type(__VA_ARGS__)
 
-  // types
-  voidType     = new (arena) VoidType();
-  intType      = new (arena) IntType();
-  longType     = new (arena) LongType();
-  floatType    = new (arena) FloatType();
-  doubleType   = new (arena) DoubleType();
-  objectType   = new (arena) ObjectType();
-  arrayType    = new (arena) ArrayType();
-  instanceType = new (arena) InstanceType();
-  classType    = new (arena) ClassType();
-  addressType  = new (arena) AddressType();
-  illegalType  = new (arena) IllegalType();
+  VALUE_TYPE(voidType    , VoidType);
+  VALUE_TYPE(intType     , IntType);
+  VALUE_TYPE(longType    , LongType);
+  VALUE_TYPE(floatType   , FloatType);
+  VALUE_TYPE(doubleType  , DoubleType);
+  VALUE_TYPE(objectType  , ObjectType);
+  VALUE_TYPE(arrayType   , ArrayType);
+  VALUE_TYPE(instanceType, InstanceType);
+  VALUE_TYPE(classType   , ClassType);
+  VALUE_TYPE(addressType , AddressType);
+  VALUE_TYPE(illegalType , IllegalType);
 
-  intZero     = new (arena) IntConstant(0);
-  intOne      = new (arena) IntConstant(1);
-  objectNull  = new (arena) ObjectConstant(ciNullObject::make());
-};
+  VALUE_TYPE(intZero     , IntConstant   , 0);
+  VALUE_TYPE(intOne      , IntConstant   , 1);
+  VALUE_TYPE(objectNull  , ObjectConstant, ciNullObject::make());
+
+#undef VALUE_TYPE
+#undef VALUE_TYPE_STORAGE
+#undef VALUE_TYPE_STORAGE_NAME
+}
 
 
 ValueType* ValueType::meet(ValueType* y) const {

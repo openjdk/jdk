@@ -29,9 +29,7 @@
 private:
   void pd_initialize() {}
   bool pd_finalize_stubs() {
-    if (_finalize_stubs) {
-      Unimplemented();
-    }
+    Unimplemented();
     return true;
   }
 

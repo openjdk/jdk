@@ -437,11 +437,6 @@ void TenuredGeneration::collect(bool   full,
                                 bool   is_tlab) {
   GenCollectedHeap* gch = GenCollectedHeap::heap();
 
-  // Temporarily expand the span of our ref processor, so
-  // refs discovery is over the entire heap, not just this generation
-  ReferenceProcessorSpanMutator
-    x(ref_processor(), gch->reserved_region());
-
   STWGCTimer* gc_timer = GenMarkSweep::gc_timer();
   gc_timer->register_gc_start();
 
@@ -450,7 +445,7 @@ void TenuredGeneration::collect(bool   full,
 
   gch->pre_full_gc_dump(gc_timer);
 
-  GenMarkSweep::invoke_at_safepoint(ref_processor(), clear_all_soft_refs);
+  GenMarkSweep::invoke_at_safepoint(clear_all_soft_refs);
 
   gch->post_full_gc_dump(gc_timer);
 

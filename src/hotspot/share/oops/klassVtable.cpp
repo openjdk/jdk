@@ -572,6 +572,7 @@ void klassVtable::check_constraints(GrowableArray<InstanceKlass*>* supers, TRAPS
       // Do not check loader constraints for overpass methods because overpass
       // methods are created by the jvm to throw exceptions.
       if (!target_method->is_overpass()) {
+        HandleMark hm(THREAD);
         // Override vtable entry if passes loader constraint check
         // if loader constraint checking requested
         // No need to visit his super, since he and his super

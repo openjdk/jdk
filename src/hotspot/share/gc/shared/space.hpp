@@ -53,7 +53,7 @@ class BlockOffsetArrayContigSpace;
 class BlockOffsetTable;
 #endif
 class Generation;
-class CompactibleSpace;
+class ContiguousSpace;
 class CardTableRS;
 class DirtyCardToOopClosure;
 class FilteringClosure;
@@ -290,33 +290,52 @@ public:
 class CompactPoint : public StackObj {
 public:
   Generation* gen;
-  CompactibleSpace* space;
+  ContiguousSpace* space;
 
   CompactPoint(Generation* g = nullptr) :
     gen(g), space(nullptr) {}
 };
 
-// A space that supports compaction operations.  This is usually, but not
-// necessarily, a space that is normally contiguous.  But, for example, a
-// free-list-based space whose normal collection is a mark-sweep without
-// compaction could still support compaction in full GC's.
-class CompactibleSpace: public Space {
+class GenSpaceMangler;
+
+// A space in which the free area is contiguous.  It therefore supports
+// faster allocation, and compaction.
+class ContiguousSpace: public Space {
   friend class VMStructs;
+
 private:
   HeapWord* _compaction_top;
-  CompactibleSpace* _next_compaction_space;
+  ContiguousSpace* _next_compaction_space;
 
-  template <class SpaceType>
-  static inline void verify_up_to_first_dead(SpaceType* space) NOT_DEBUG_RETURN;
+  static inline void verify_up_to_first_dead(ContiguousSpace* space) NOT_DEBUG_RETURN;
 
-  template <class SpaceType>
-  static inline void clear_empty_region(SpaceType* space);
+  static inline void clear_empty_region(ContiguousSpace* space);
 
-public:
-  CompactibleSpace() :
-   _compaction_top(nullptr), _next_compaction_space(nullptr) {}
+ protected:
+  HeapWord* _top;
+  // A helper for mangling the unused area of the space in debug builds.
+  GenSpaceMangler* _mangler;
+
+  // Used during compaction.
+  HeapWord* _first_dead;
+  HeapWord* _end_of_live;
+
+  // This the function to invoke when an allocation of an object covering
+  // "start" to "end" occurs to update other internal data structures.
+  virtual void alloc_block(HeapWord* start, HeapWord* the_end) { }
+
+  GenSpaceMangler* mangler() { return _mangler; }
+
+  // Allocation helpers (return null if full).
+  inline HeapWord* allocate_impl(size_t word_size);
+  inline HeapWord* par_allocate_impl(size_t word_size);
+
+ public:
+  ContiguousSpace();
+  ~ContiguousSpace();
 
   void initialize(MemRegion mr, bool clear_space, bool mangle_space) override;
+
   void clear(bool mangle_space) override;
 
   // Used temporarily during a compaction phase to hold the value
@@ -329,19 +348,15 @@ public:
     _compaction_top = value;
   }
 
-  // Perform operations on the space needed after a compaction
-  // has been performed.
-  virtual void reset_after_compaction() = 0;
-
   // Returns the next space (in the current generation) to be compacted in
   // the global compaction order.  Also is used to select the next
   // space into which to compact.
 
-  virtual CompactibleSpace* next_compaction_space() const {
+  virtual ContiguousSpace* next_compaction_space() const {
     return _next_compaction_space;
   }
 
-  void set_next_compaction_space(CompactibleSpace* csp) {
+  void set_next_compaction_space(ContiguousSpace* csp) {
     _next_compaction_space = csp;
   }
 
@@ -356,7 +371,7 @@ public:
   // "cp->compaction_space" up-to-date.  Offset tables may be updated in
   // this phase as if the final copy had occurred; if so, "cp->threshold"
   // indicates when the next such action should be taken.
-  virtual void prepare_for_compaction(CompactPoint* cp) = 0;
+  void prepare_for_compaction(CompactPoint* cp);
   // MarkSweep support phase3
   void adjust_pointers() override;
   // MarkSweep support phase4
@@ -385,40 +400,6 @@ public:
   // space.
   virtual HeapWord* forward(oop q, size_t size, CompactPoint* cp,
                     HeapWord* compact_top);
-protected:
-  // Used during compaction.
-  HeapWord* _first_dead;
-  HeapWord* _end_of_live;
-
-  // This the function to invoke when an allocation of an object covering
-  // "start" to "end" occurs to update other internal data structures.
-  virtual void alloc_block(HeapWord* start, HeapWord* the_end) { }
-};
-
-class GenSpaceMangler;
-
-// A space in which the free area is contiguous.  It therefore supports
-// faster allocation, and compaction.
-class ContiguousSpace: public CompactibleSpace {
-  friend class VMStructs;
-
- protected:
-  HeapWord* _top;
-  // A helper for mangling the unused area of the space in debug builds.
-  GenSpaceMangler* _mangler;
-
-  GenSpaceMangler* mangler() { return _mangler; }
-
-  // Allocation helpers (return null if full).
-  inline HeapWord* allocate_impl(size_t word_size);
-  inline HeapWord* par_allocate_impl(size_t word_size);
-
- public:
-  ContiguousSpace();
-  ~ContiguousSpace();
-
-  void initialize(MemRegion mr, bool clear_space, bool mangle_space) override;
-  void clear(bool mangle_space) override;
 
   // Accessors
   HeapWord* top() const            { return _top;    }
@@ -467,7 +448,7 @@ class ContiguousSpace: public CompactibleSpace {
   void object_iterate(ObjectClosure* blk) override;
 
   // Compaction support
-  void reset_after_compaction() override {
+  void reset_after_compaction() {
     assert(compaction_top() >= bottom() && compaction_top() <= end(), "should point inside space");
     set_top(compaction_top());
   }
@@ -496,11 +477,6 @@ class ContiguousSpace: public CompactibleSpace {
   // Addresses for inlined allocation
   HeapWord** top_addr() { return &_top; }
   HeapWord** end_addr() { return &_end; }
-
-#if INCLUDE_SERIALGC
-  // Overrides for more efficient compaction support.
-  void prepare_for_compaction(CompactPoint* cp) override;
-#endif
 
   void print_on(outputStream* st) const override;
 

@@ -57,7 +57,6 @@ public final class MetadataRepository {
 
     private final List<EventType> nativeEventTypes = new ArrayList<>(150);
     private final List<EventControl> nativeControls = new ArrayList<EventControl>(nativeEventTypes.size());
-    private final TypeLibrary typeLibrary = TypeLibrary.getInstance();
     private final SettingsManager settingsManager = new SettingsManager();
     private final Map<String, Class<? extends Event>> mirrors = new HashMap<>();
     private Constructor<EventConfiguration> cachedEventConfigurationConstructor;
@@ -70,7 +69,8 @@ public final class MetadataRepository {
     }
 
     private void initializeJVMEventTypes() {
-        for (Type type : new ArrayList<>(typeLibrary.getTypes())) {
+        TypeLibrary.initialize();
+        for (Type type : TypeLibrary.getTypes()) {
             if (type instanceof PlatformEventType pEventType) {
                 EventType eventType = PrivateAccess.getInstance().newEventType(pEventType);
                 pEventType.setHasDuration(eventType.getAnnotation(Threshold.class) != null);
@@ -152,7 +152,7 @@ public final class MetadataRepository {
             configuration = makeConfiguration(eventClass, pe, dynamicAnnotations, dynamicFields);
         }
         configuration.getPlatformEventType().setRegistered(true);
-        typeLibrary.addType(configuration.getPlatformEventType());
+        TypeLibrary.addType(configuration.getPlatformEventType());
         if (jvm.isRecording()) {
             settingsManager.setEventControl(configuration.getEventControl(), true, JVM.counterTime());
             settingsManager.updateRetransform(Collections.singletonList((eventClass)));
@@ -169,7 +169,7 @@ public final class MetadataRepository {
         }
         Utils.verifyMirror(mirrorClass, eventClass);
         PlatformEventType et = (PlatformEventType) TypeLibrary.createType(mirrorClass);
-        typeLibrary.removeType(et.getId());
+        TypeLibrary.removeType(et.getId());
         long id = Type.getTypeId(eventClass);
         et.setId(id);
         return et;
@@ -260,7 +260,7 @@ public final class MetadataRepository {
         ByteArrayOutputStream baos = new ByteArrayOutputStream(40000);
         DataOutputStream daos = new DataOutputStream(baos);
         try {
-            List<Type> types = typeLibrary.getVisibleTypes();
+            List<Type> types = TypeLibrary.getVisibleTypes();
             if (Logger.shouldLog(LogTag.JFR_METADATA, LogLevel.DEBUG)) {
                 Collections.sort(types,Comparator.comparing(Type::getName));
                 for (Type t: types) {
@@ -303,7 +303,7 @@ public final class MetadataRepository {
         }
         unregisterUnloaded();
         if (unregistered) {
-            if (typeLibrary.clearUnregistered()) {
+            if (TypeLibrary.clearUnregistered()) {
                 storeDescriptorInJVM();
             }
             unregistered = false;
@@ -320,7 +320,7 @@ public final class MetadataRepository {
             for (Class<? extends jdk.internal.event.Event>  ec: eventClasses) {
                 knownIds.add(Type.getTypeId(ec));
             }
-            for (Type type : typeLibrary.getTypes()) {
+            for (Type type : TypeLibrary.getTypes()) {
                 if (type instanceof PlatformEventType pe) {
                     if (!knownIds.contains(pe.getId())) {
                         if (!pe.isJVM()) {
@@ -354,7 +354,7 @@ public final class MetadataRepository {
     }
 
     static void unhideInternalTypes() {
-        for (Type t : TypeLibrary.getInstance().getTypes()) {
+        for (Type t : TypeLibrary.getTypes()) {
             if (t.isInternal()) {
                 t.setVisible(true);
                 Logger.log(LogTag.JFR_METADATA, LogLevel.DEBUG, "Unhiding internal type " + t.getName());
@@ -367,6 +367,6 @@ public final class MetadataRepository {
     }
 
     public synchronized List<Type> getVisibleTypes() {
-        return typeLibrary.getVisibleTypes();
+        return TypeLibrary.getVisibleTypes();
     }
 }

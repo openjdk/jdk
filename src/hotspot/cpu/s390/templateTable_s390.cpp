@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2020 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 #include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "compiler/disassembler.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "interpreter/interpreter.hpp"
@@ -51,7 +52,8 @@
 #define BLOCK_COMMENT(str)
 #define BIND(label)        __ bind(label);
 #else
-#define __ (PRODUCT_ONLY(false&&)Verbose ? (_masm->block_comment(FILE_AND_LINE),_masm):_masm)->
+#define __ Disassembler::hook<InterpreterMacroAssembler>(__FILE__, __LINE__, _masm)->
+// #define __ (PRODUCT_ONLY(false&&)Verbose ? (_masm->block_comment(FILE_AND_LINE),_masm):_masm)->
 #define BLOCK_COMMENT(str) __ block_comment(str)
 #define BIND(label)        __ bind(label); BLOCK_COMMENT(#label ":")
 #endif
@@ -136,7 +138,7 @@ static inline Address aaddress(int n) {
   return iaddress(n);
 }
 
-// Pass NULL, if no shift instruction should be emitted.
+// Pass null, if no shift instruction should be emitted.
 static inline Address iaddress(InterpreterMacroAssembler *masm, Register r) {
   if (masm) {
     masm->z_sllg(r, r, LogBytesPerWord);  // index2bytes
@@ -144,7 +146,7 @@ static inline Address iaddress(InterpreterMacroAssembler *masm, Register r) {
   return Address(Z_locals, r, Interpreter::local_offset_in_bytes(0));
 }
 
-// Pass NULL, if no shift instruction should be emitted.
+// Pass null, if no shift instruction should be emitted.
 static inline Address laddress(InterpreterMacroAssembler *masm, Register r) {
   if (masm) {
     masm->z_sllg(r, r, LogBytesPerWord);  // index2bytes
@@ -462,7 +464,7 @@ void TemplateTable::fast_aldc(LdcType type) {
   __ z_ltgr(Z_tos, Z_tos);
   __ z_bre(L_do_resolve);
 
-  // Convert null sentinel to NULL.
+  // Convert null sentinel to null.
   __ load_const_optimized(Z_R1_scratch, (intptr_t)Universe::the_null_sentinel_addr());
   __ resolve_oop_handle(Z_R1_scratch);
   __ z_cg(Z_tos, Address(Z_R1_scratch));
@@ -771,9 +773,6 @@ void TemplateTable::wide_aload() {
 
 void TemplateTable::index_check(Register array, Register index, unsigned int shift) {
   assert_different_registers(Z_R1_scratch, array, index);
-
-  // Check array.
-  __ null_check(array, Z_R0_scratch, arrayOopDesc::length_offset_in_bytes());
 
   // Sign extend index for use by indexed load.
   __ z_lgfr(index, index);
@@ -1168,7 +1167,7 @@ void TemplateTable::aastore() {
   // Address where the store goes to, i.e. &(Rarry[index])
   __ load_address(Rstore_addr, Address(Rarray, Rindex, arrayOopDesc::base_offset_in_bytes(T_OBJECT)));
 
-  // do array store check - check for NULL value first.
+  // do array store check - check for null value first.
   __ compareU64_and_branch(Rvalue, (intptr_t)0, Assembler::bcondEqual, is_null);
 
   Register Rsub_klass   = Z_ARG4;
@@ -1192,11 +1191,11 @@ void TemplateTable::aastore() {
 
   Register tmp3 = Rsub_klass;
 
-  // Have a NULL in Rvalue.
+  // Have a null in Rvalue.
   __ bind(is_null);
   __ profile_null_seen(tmp1);
 
-  // Store a NULL.
+  // Store a null.
   do_oop_store(_masm, Address(Rstore_addr, (intptr_t)0), noreg,
                tmp3, tmp2, tmp1, IS_ARRAY);
   __ z_bru(done);
@@ -1938,7 +1937,7 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
       const Address mask(mdo, MethodData::backedge_mask_offset());
       __ increment_mask_and_jump(mdo_backedge_counter, increment, mask,
                                  Z_ARG2, false, Assembler::bcondZero,
-                                 UseOnStackReplacement ? &backedge_counter_overflow : NULL);
+                                 UseOnStackReplacement ? &backedge_counter_overflow : nullptr);
       __ z_bru(dispatch);
       __ bind(no_mdo);
     }
@@ -1949,7 +1948,7 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
     __ increment_mask_and_jump(Address(m_counters, be_offset),
                                increment, mask,
                                Z_ARG2, false, Assembler::bcondZero,
-                               UseOnStackReplacement ? &backedge_counter_overflow : NULL);
+                               UseOnStackReplacement ? &backedge_counter_overflow : nullptr);
     __ bind(dispatch);
   }
 
@@ -1973,7 +1972,7 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
                CAST_FROM_FN_PTR(address, InterpreterRuntime::frequency_counter_overflow),
                Z_ARG2);
 
-    // Z_RET: osr nmethod (osr ok) or NULL (osr not possible).
+    // Z_RET: osr nmethod (osr ok) or null (osr not possible).
     __ compare64_and_branch(Z_RET, (intptr_t) 0, Assembler::bcondEqual, dispatch);
 
     // Nmethod may have been invalidated (VM may block upon call_VM return).
@@ -2386,7 +2385,7 @@ void TemplateTable::resolve_cache_and_index(int byte_no,
 
     __ load_resolved_method_at_index(byte_no, cache, cpe_offset, method);
     __ load_method_holder(klass, method);
-    __ clinit_barrier(klass, Z_thread, NULL /*L_fast_path*/, &clinit_barrier_slow);
+    __ clinit_barrier(klass, Z_thread, nullptr /*L_fast_path*/, &clinit_barrier_slow);
   }
 
   BLOCK_COMMENT("} resolve_cache_and_index");
@@ -2416,13 +2415,71 @@ void TemplateTable::load_field_cp_cache_entry(Register obj,
   }
 }
 
+void TemplateTable::load_invokedynamic_entry(Register method) {
+  const Register cache    = Z_tmp_1;
+  const Register index    = Z_tmp_3;
+  const Register appendix = Z_R1_scratch;
+  assert_different_registers(cache, index, appendix, method);
+
+  Label resolved;
+  __ load_resolved_indy_entry(cache, index);
+  __ z_lg(method, Address(cache, in_bytes(ResolvedIndyEntry::method_offset())));
+
+  // The invokedynamic is unresolved iff method is null
+  __ z_clgij(method, (unsigned long)nullptr, Assembler::bcondNotEqual, resolved); // method != 0, jump to resolved
+  Bytecodes::Code code = bytecode();
+  // Call to the interpreter runtime to resolve invokedynamic
+  address entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_from_cache);
+  __ load_const_optimized(Z_ARG2, (int)code);
+  __ call_VM(noreg, entry, Z_ARG2);
+  // Update registers with resolved info
+  __ load_resolved_indy_entry(cache, index);
+  __ z_lg(method, Address(cache, in_bytes(ResolvedIndyEntry::method_offset())));
+#ifdef ASSERT
+  __ z_clgij(method, (unsigned long)nullptr, Assembler::bcondNotEqual, resolved); // method != 0, jump to resolved
+  __ stop("should be resolved by now");
+#endif // ASSERT
+  __ bind(resolved);
+
+  Label L_no_push;
+  __ z_llgc(index, Address(cache, in_bytes(ResolvedIndyEntry::flags_offset())));
+  __ testbit(index, ResolvedIndyEntry::has_appendix_shift);
+  __ z_bfalse(L_no_push);
+  // get appendix
+  __ z_llgh(index, Address(cache, in_bytes(ResolvedIndyEntry::resolved_references_index_offset())));
+  // Push the appendix as a trailing parameter.
+  // This must be done before we get the receiver,
+  // since the parameter_size includes it.
+  __ load_resolved_reference_at_index(appendix, index);
+  __ verify_oop(appendix);
+  __ push_ptr(appendix);  // Push appendix (MethodType, CallSite, etc.).
+  __ bind(L_no_push);
+
+  // Compute return type.
+  Register ret_type = index;
+  __ z_llgc(ret_type, Address(cache, in_bytes(ResolvedIndyEntry::result_type_offset())));
+
+  const address table_addr = (address)Interpreter::invoke_return_entry_table_for(code);
+  __ load_absolute_address(Z_R14, table_addr);
+
+  const int bit_shift = LogBytesPerWord;           // Size of each table entry.
+  // const int r_bitpos  = 63 - bit_shift;
+  // const int l_bitpos  = r_bitpos - ConstantPoolCacheEntry::tos_state_bits + 1;
+  // const int n_rotate  = bit_shift-ConstantPoolCacheEntry::tos_state_shift;
+  // __ rotate_then_insert(ret_type, Z_R0_scratch, l_bitpos, r_bitpos, n_rotate, true);
+  // Make sure we don't need to mask flags for tos_state after the above shift.
+  __ z_sllg(ret_type, ret_type, bit_shift);
+  ConstantPoolCacheEntry::verify_tos_state_shift();
+  __ z_lg(Z_R14, Address(Z_R14, ret_type));
+}
+
 void TemplateTable::load_invoke_cp_cache_entry(int byte_no,
                                                Register method,
                                                Register itable_index,
                                                Register flags,
                                                bool is_invokevirtual,
                                                bool is_invokevfinal, // unused
-                                               bool is_invokedynamic) {
+                                               bool is_invokedynamic /* unused */) {
   BLOCK_COMMENT("load_invoke_cp_cache_entry {");
   // Setup registers.
   const Register cache     = Z_ARG1;
@@ -2445,7 +2502,7 @@ void TemplateTable::load_invoke_cp_cache_entry(int byte_no,
      __ get_cache_and_index_at_bcp(cache, cpe_offset, 1);
   } else {
     // Need to resolve.
-    resolve_cache_and_index(byte_no, cache, cpe_offset, is_invokedynamic ? sizeof(u4) : sizeof(u2));
+    resolve_cache_and_index(byte_no, cache, cpe_offset, sizeof(u2));
   }
   __ z_lg(method, Address(cache, cpe_offset, method_offset));
 
@@ -2490,12 +2547,12 @@ void TemplateTable::jvmti_post_field_access(Register cache, Register index,
                         Z_ARG3, Z_R1_scratch);
 
   if (is_static) {
-    __ clear_reg(Z_ARG2, true, false); // NULL object reference. Don't set CC.
+    __ clear_reg(Z_ARG2, true, false); // null object reference. Don't set CC.
   } else {
     __ mem2reg_opt(Z_ARG2, at_tos());  // Get object pointer without popping it.
     __ verify_oop(Z_ARG2);
   }
-  // Z_ARG2: object pointer or NULL
+  // Z_ARG2: object pointer or null
   // Z_ARG3: cache entry pointer
   __ call_VM(noreg,
              CAST_FROM_FN_PTR(address, InterpreterRuntime::post_field_access),
@@ -2807,7 +2864,7 @@ void TemplateTable::jvmti_post_field_mod(Register cache,
 
   // object(tos)
   __ load_address(Z_ARG4, Address(Z_esp, Interpreter::stackElementSize));
-  // Z_ARG2: object pointer set up above (NULL if static)
+  // Z_ARG2: object pointer set up above (null if static)
   // Z_ARG3: cache entry pointer
   // Z_ARG4: jvalue object on the stack
   __ call_VM(noreg,
@@ -3382,7 +3439,7 @@ void TemplateTable::prepare_invoke(int byte_no,
   // Determine flags.
   const Bytecodes::Code code = bytecode();
   const bool is_invokeinterface  = code == Bytecodes::_invokeinterface;
-  const bool is_invokedynamic    = code == Bytecodes::_invokedynamic;
+  const bool is_invokedynamic    = false; // should not reach here with invokedynamic
   const bool is_invokehandle     = code == Bytecodes::_invokehandle;
   const bool is_invokevirtual    = code == Bytecodes::_invokevirtual;
   const bool is_invokespecial    = code == Bytecodes::_invokespecial;
@@ -3399,7 +3456,7 @@ void TemplateTable::prepare_invoke(int byte_no,
   load_invoke_cp_cache_entry(byte_no, method, index, flags, is_invokevirtual, false, is_invokedynamic);
 
   // Maybe push appendix to arguments.
-  if (is_invokedynamic || is_invokehandle) {
+  if (is_invokehandle) {
     Label L_no_push;
     Register resolved_reference = Z_R1_scratch;
     __ testbit(flags, ConstantPoolCacheEntry::has_appendix_shift);
@@ -3489,7 +3546,7 @@ void TemplateTable::invokevirtual_helper(Register index,
   __ bind(notFinal);
 
   // Get receiver klass.
-  __ load_klass_check_null(Z_tmp_2, recv, Z_R0_scratch);
+  __ load_klass(Z_tmp_2, recv);
 
   // Profile this call.
   __ profile_virtual_call(Z_tmp_2, Z_ARG4, Z_ARG5);
@@ -3698,9 +3755,8 @@ void TemplateTable::invokedynamic(int byte_no) {
   transition(vtos, vtos);
 
   const Register Rmethod   = Z_tmp_2;
-  const Register Rcallsite = Z_tmp_1;
 
-  prepare_invoke(byte_no, Rmethod, Rcallsite);
+  load_invokedynamic_entry(Rmethod);
 
   // Rmethod: CallSite object (from f1)
   // Rcallsite: MH.linkToCallSite method (from f2)
@@ -3730,7 +3786,7 @@ void TemplateTable::invokedynamic(int byte_no) {
 //    spec jbb2005 shows no measurable performance degradation.
 void TemplateTable::_new() {
   transition(vtos, atos);
-  address prev_instr_address = NULL;
+  address prev_instr_address = nullptr;
   Register tags  = Z_tmp_1;
   Register RallocatedObject   = Z_tos;
   Register cpool = Z_ARG2;
@@ -3865,8 +3921,6 @@ void TemplateTable::arraylength() {
   transition(atos, itos);
 
   int offset = arrayOopDesc::length_offset_in_bytes();
-
-  __ null_check(Z_tos, Z_R0_scratch, offset);
   __ mem2reg_opt(Z_tos, Address(Z_tos, offset), false);
 }
 
@@ -3876,7 +3930,7 @@ void TemplateTable::checkcast() {
   NearLabel done, is_null, ok_is_subtype, quicked, resolved;
 
   BLOCK_COMMENT("checkcast {");
-  // If object is NULL, we are almost done.
+  // If object is null, we are almost done.
   __ compareU64_and_branch(Z_tos, (intptr_t) 0, Assembler::bcondZero, is_null);
 
   // Get cpool & tags index.
@@ -3930,7 +3984,7 @@ void TemplateTable::checkcast() {
 
   __ z_lgr(Z_tos, receiver); // Restore object.
 
-  // Collect counts on whether this test sees NULLs a lot or not.
+  // Collect counts on whether this test sees nulls a lot or not.
   if (ProfileInterpreter) {
     __ z_bru(done);
     __ bind(is_null);
@@ -3949,7 +4003,7 @@ void TemplateTable::instanceof() {
   NearLabel done, is_null, ok_is_subtype, quicked, resolved;
 
   BLOCK_COMMENT("instanceof {");
-  // If object is NULL, we are almost done.
+  // If object is null, we are almost done.
   __ compareU64_and_branch(Z_tos, (intptr_t) 0, Assembler::bcondZero, is_null);
 
   // Get cpool & tags index.
@@ -4000,7 +4054,7 @@ void TemplateTable::instanceof() {
   __ bind(ok_is_subtype);
   __ load_const_optimized(Z_tos, 1);
 
-  // Collect counts on whether this test sees NULLs a lot or not.
+  // Collect counts on whether this test sees nulls a lot or not.
   if (ProfileInterpreter) {
     __ z_bru(done);
     __ bind(is_null);
@@ -4010,8 +4064,8 @@ void TemplateTable::instanceof() {
   }
 
   __ bind(done);
-  // tos = 0: obj == NULL or  obj is not an instanceof the specified klass
-  // tos = 1: obj != NULL and obj is     an instanceof the specified klass
+  // tos = 0: obj is    null or  obj is not an instanceof the specified klass
+  // tos = 1: obj isn't null and obj is     an instanceof the specified klass
   BLOCK_COMMENT("} instanceof");
 }
 
@@ -4087,13 +4141,13 @@ void TemplateTable::monitorenter() {
 
   BLOCK_COMMENT("monitorenter {");
 
-  // Check for NULL object.
+  // Check for null object.
   __ null_check(Z_tos);
   const int entry_size = frame::interpreter_frame_monitor_size() * wordSize;
   NearLabel allocated;
   // Initialize entry pointer.
   const Register Rfree_slot = Z_tmp_1;
-  __ clear_reg(Rfree_slot, true, false); // Points to free slot or NULL. Don't set CC.
+  __ clear_reg(Rfree_slot, true, false); // Points to free slot or null. Don't set CC.
 
   // Find a free slot in the monitor block from top to bot (result in Rfree_slot).
   {
@@ -4106,7 +4160,7 @@ void TemplateTable::monitorenter() {
     __ add2reg(Rbot, -frame::z_ijava_state_size, Z_fp);
 
 #ifdef ASSERT
-    address reentry = NULL;
+    address reentry = nullptr;
     { NearLabel ok;
       __ compareU64_and_branch(Rcurr_monitor, Rbot, Assembler::bcondNotHigh, ok);
       reentry = __ stop_chain_static(reentry, "IJAVA_STATE.monitors points below monitor block bottom");
@@ -4139,7 +4193,7 @@ void TemplateTable::monitorenter() {
     __ bind(exit);
   }
 
-  // Rfree_slot != NULL -> found one
+  // Rfree_slot isn't null -> found one
   __ compareU64_and_branch(Rfree_slot, (intptr_t)0L, Assembler::bcondNotEqual, allocated);
 
   // Allocate one if there's no free slot.
@@ -4176,7 +4230,7 @@ void TemplateTable::monitorexit() {
 
   BLOCK_COMMENT("monitorexit {");
 
-  // Check for NULL object.
+  // Check for null object.
   __ null_check(Z_tos);
 
   NearLabel found, not_found;
@@ -4194,7 +4248,7 @@ void TemplateTable::monitorexit() {
     __ add2reg(Rbot, -frame::z_ijava_state_size, Z_fp);
 
 #ifdef ASSERT
-    address reentry = NULL;
+    address reentry = nullptr;
     { NearLabel ok;
       __ compareU64_and_branch(Rcurr_monitor, Rbot, Assembler::bcondNotHigh, ok);
       reentry = __ stop_chain_static(reentry, "IJAVA_STATE.monitors points below monitor block bottom");

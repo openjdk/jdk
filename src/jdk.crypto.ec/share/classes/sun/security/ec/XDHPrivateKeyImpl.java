@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ public final class XDHPrivateKeyImpl extends PKCS8Key implements XECPrivateKey {
     private static final long serialVersionUID = 1L;
 
     @SuppressWarnings("serial") // Type of field is not Serializable
-    private final AlgorithmParameterSpec paramSpec;
+    private final NamedParameterSpec paramSpec;
     private byte[] k;
 
     XDHPrivateKeyImpl(XECParameters params, byte[] k)
@@ -99,6 +99,20 @@ public final class XDHPrivateKeyImpl extends PKCS8Key implements XECPrivateKey {
     @Override
     public Optional<byte[]> getScalar() {
         return Optional.of(getK());
+    }
+
+    @Override
+    public PublicKey calculatePublicKey() {
+        XECParameters params = paramSpec.getName().equals("X25519")
+                ? XECParameters.X25519
+                : XECParameters.X448;
+        try {
+            return new XDHPublicKeyImpl(params,
+                    new XECOperations(params).computePublic(k.clone()));
+        } catch (InvalidKeyException e) {
+            throw new ProviderException(
+                    "Unexpected error calculating public key", e);
+        }
     }
 }
 

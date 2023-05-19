@@ -76,6 +76,7 @@ public class TransTypes extends TreeTranslator {
     private final Resolve resolve;
     private final CompileStates compileStates;
 
+    @SuppressWarnings("this-escape")
     protected TransTypes(Context context) {
         context.put(transTypesKey, this);
         compileStates = CompileStates.instance(context);
@@ -835,6 +836,13 @@ public class TransTypes extends TreeTranslator {
             tree.type = erasure(tree.type);
             result = tree;
         }
+    }
+
+    public void visitStringTemplate(JCStringTemplate tree) {
+        tree.expressions = tree.expressions.stream()
+                .map(e -> translate(e, erasure(e.type))).collect(List.collector());
+        tree.type = erasure(tree.type);
+        result = tree;
     }
 
     public void visitSelect(JCFieldAccess tree) {

@@ -119,6 +119,111 @@ void BarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators
   }
 }
 
+void BarrierSetAssembler::copy_load_at(MacroAssembler* masm,
+                                       DecoratorSet decorators,
+                                       BasicType type,
+                                       size_t bytes,
+                                       Register dst1,
+                                       Register dst2,
+                                       Address src,
+                                       Register tmp) {
+  if (bytes == 1) {
+    assert(dst2 == noreg, "invariant");
+    __ ldrb(dst1, src);
+  } else if (bytes == 2) {
+    assert(dst2 == noreg, "invariant");
+    __ ldrh(dst1, src);
+  } else if (bytes == 4) {
+    assert(dst2 == noreg, "invariant");
+    __ ldrw(dst1, src);
+  } else if (bytes == 8) {
+    assert(dst2 == noreg, "invariant");
+    __ ldr(dst1, src);
+  } else if (bytes == 16) {
+    assert(dst2 != noreg, "invariant");
+    assert(dst2 != dst1, "invariant");
+    __ ldp(dst1, dst2, src);
+  } else {
+    // Not the right size
+    ShouldNotReachHere();
+  }
+  if ((decorators & ARRAYCOPY_CHECKCAST) != 0 && UseCompressedOops) {
+    __ decode_heap_oop(dst1);
+  }
+}
+
+void BarrierSetAssembler::copy_store_at(MacroAssembler* masm,
+                                        DecoratorSet decorators,
+                                        BasicType type,
+                                        size_t bytes,
+                                        Address dst,
+                                        Register src1,
+                                        Register src2,
+                                        Register tmp1,
+                                        Register tmp2,
+                                        Register tmp3) {
+  if ((decorators & ARRAYCOPY_CHECKCAST) != 0 && UseCompressedOops) {
+    __ encode_heap_oop(src1);
+  }
+  if (bytes == 1) {
+    assert(src2 == noreg, "invariant");
+    __ strb(src1, dst);
+  } else if (bytes == 2) {
+    assert(src2 == noreg, "invariant");
+    __ strh(src1, dst);
+  } else if (bytes == 4) {
+    assert(src2 == noreg, "invariant");
+    __ strw(src1, dst);
+  } else if (bytes == 8) {
+    assert(src2 == noreg, "invariant");
+    __ str(src1, dst);
+  } else if (bytes == 16) {
+    assert(src2 != noreg, "invariant");
+    assert(src2 != src1, "invariant");
+    __ stp(src1, src2, dst);
+  } else {
+    // Not the right size
+    ShouldNotReachHere();
+  }
+}
+
+void BarrierSetAssembler::copy_load_at(MacroAssembler* masm,
+                                       DecoratorSet decorators,
+                                       BasicType type,
+                                       size_t bytes,
+                                       FloatRegister dst1,
+                                       FloatRegister dst2,
+                                       Address src,
+                                       Register tmp1,
+                                       Register tmp2,
+                                       FloatRegister vec_tmp) {
+  if (bytes == 32) {
+    __ ldpq(dst1, dst2, src);
+  } else {
+    ShouldNotReachHere();
+  }
+}
+
+void BarrierSetAssembler::copy_store_at(MacroAssembler* masm,
+                                        DecoratorSet decorators,
+                                        BasicType type,
+                                        size_t bytes,
+                                        Address dst,
+                                        FloatRegister src1,
+                                        FloatRegister src2,
+                                        Register tmp1,
+                                        Register tmp2,
+                                        Register tmp3,
+                                        FloatRegister vec_tmp1,
+                                        FloatRegister vec_tmp2,
+                                        FloatRegister vec_tmp3) {
+  if (bytes == 32) {
+    __ stpq(src1, src2, dst);
+  } else {
+    ShouldNotReachHere();
+  }
+}
+
 void BarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm, Register jni_env,
                                                         Register obj, Register tmp, Label& slowpath) {
   // If mask changes we need to ensure that the inverse is still encodable as an immediate
@@ -192,7 +297,7 @@ void BarrierSetAssembler::clear_patching_epoch() {
 void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slow_path, Label* continuation, Label* guard) {
   BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
 
-  if (bs_nm == NULL) {
+  if (bs_nm == nullptr) {
     return;
   }
 
@@ -200,13 +305,13 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slo
   Label skip_barrier;
   NMethodPatchingType patching_type = nmethod_patching_type();
 
-  if (slow_path == NULL) {
+  if (slow_path == nullptr) {
     guard = &local_guard;
   }
 
   // If the slow path is out of line in a stub, we flip the condition
-  Assembler::Condition condition = slow_path == NULL ? Assembler::EQ : Assembler::NE;
-  Label& barrier_target = slow_path == NULL ? skip_barrier : *slow_path;
+  Assembler::Condition condition = slow_path == nullptr ? Assembler::EQ : Assembler::NE;
+  Label& barrier_target = slow_path == nullptr ? skip_barrier : *slow_path;
 
   __ ldrw(rscratch1, *guard);
 
@@ -252,7 +357,7 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slo
   }
   __ br(condition, barrier_target);
 
-  if (slow_path == NULL) {
+  if (slow_path == nullptr) {
     __ movptr(rscratch1, (uintptr_t) StubRoutines::aarch64::method_entry_barrier());
     __ blr(rscratch1);
     __ b(skip_barrier);
@@ -269,7 +374,7 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slo
 
 void BarrierSetAssembler::c2i_entry_barrier(MacroAssembler* masm) {
   BarrierSetNMethod* bs = BarrierSet::barrier_set()->barrier_set_nmethod();
-  if (bs == NULL) {
+  if (bs == nullptr) {
     return;
   }
 
@@ -312,5 +417,5 @@ void BarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Register
 
   // make sure klass is 'reasonable', which is not zero.
   __ load_klass(obj, obj); // get klass
-  __ cbz(obj, error);      // if klass is NULL it is broken
+  __ cbz(obj, error);      // if klass is null it is broken
 }

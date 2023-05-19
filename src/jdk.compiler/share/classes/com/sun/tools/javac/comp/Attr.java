@@ -46,7 +46,6 @@ import com.sun.tools.javac.code.Scope.WriteableScope;
 import com.sun.tools.javac.code.Source.Feature;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Type.*;
-import com.sun.tools.javac.code.TypeMetadata.Annotations;
 import com.sun.tools.javac.code.Types.FunctionDescriptorLookupError;
 import com.sun.tools.javac.comp.ArgumentAttr.LocalCacheContext;
 import com.sun.tools.javac.comp.Check.CheckContext;
@@ -133,6 +132,7 @@ public class Attr extends JCTree.Visitor {
         return instance;
     }
 
+    @SuppressWarnings("this-escape")
     protected Attr(Context context) {
         context.put(attrKey, this);
 
@@ -4984,6 +4984,27 @@ public class Attr extends JCTree.Visitor {
         return (tag == CLASS) ? syms.stringType : syms.typeOfTag[tag.ordinal()];
     }
 
+    public void visitStringTemplate(JCStringTemplate tree) {
+        JCExpression processor = tree.processor;
+        Type resultType = syms.stringTemplateType;
+
+        if (processor != null) {
+            resultType = attribTree(processor, env, new ResultInfo(KindSelector.VAL, Type.noType));
+            resultType = chk.checkProcessorType(processor, resultType, env);
+        }
+
+        Env<AttrContext> localEnv = env.dup(tree, env.info.dup());
+
+        for (JCExpression arg : tree.expressions) {
+            chk.checkNonVoid(arg.pos(), attribExpr(arg, localEnv));
+        }
+
+        tree.type = resultType;
+        result = resultType;
+
+        check(tree, resultType, KindSelector.VAL, resultInfo);
+    }
+
     public void visitTypeIdent(JCPrimitiveTypeTree tree) {
         result = check(tree, syms.typeOfTag[tree.typetag.ordinal()], KindSelector.TYP, resultInfo);
     }
@@ -5210,7 +5231,7 @@ public class Attr extends JCTree.Visitor {
     public void visitAnnotatedType(JCAnnotatedType tree) {
         attribAnnotationTypes(tree.annotations, env);
         Type underlyingType = attribType(tree.underlyingType, env);
-        Type annotatedType = underlyingType.annotatedType(Annotations.TO_BE_SET);
+        Type annotatedType = underlyingType.preannotatedType();
 
         if (!env.info.isNewClass)
             annotate.annotateTypeSecondStage(tree, tree.annotations, annotatedType);

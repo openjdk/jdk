@@ -25,11 +25,13 @@
  */
 package jdk.internal.foreign.abi.aarch64;
 
+import java.lang.foreign.AddressLayout;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.GroupLayout;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import jdk.internal.foreign.abi.ABIDescriptor;
+import jdk.internal.foreign.abi.AbstractLinker.UpcallStubFactory;
 import jdk.internal.foreign.abi.Binding;
 import jdk.internal.foreign.abi.CallingSequence;
 import jdk.internal.foreign.abi.CallingSequenceBuilder;
@@ -43,14 +45,12 @@ import jdk.internal.foreign.abi.aarch64.macos.MacOsAArch64CallArranger;
 import jdk.internal.foreign.abi.aarch64.windows.WindowsAArch64CallArranger;
 import jdk.internal.foreign.Utils;
 
-import java.lang.foreign.SegmentScope;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.util.List;
 import java.util.Optional;
 
-import static jdk.internal.foreign.PlatformLayouts.*;
 import static jdk.internal.foreign.abi.aarch64.AArch64Architecture.*;
 import static jdk.internal.foreign.abi.aarch64.AArch64Architecture.Regs.*;
 
@@ -81,7 +81,7 @@ public abstract class CallArranger {
     //
     // Although the AAPCS64 says r0-7 and v0-7 are all valid return
     // registers, it's not possible to generate a C function that uses
-    // r2-7 and v4-7 so they are omitted here.
+    // r2-7 and v4-7 so, they are omitted here.
     protected static final ABIDescriptor C = abiFor(
         new VMStorage[] { r0, r1, r2, r3, r4, r5, r6, r7, INDIRECT_RESULT},
         new VMStorage[] { v0, v1, v2, v3, v4, v5, v6, v7 },
@@ -157,7 +157,7 @@ public abstract class CallArranger {
 
         boolean returnInMemory = isInMemoryReturn(cDesc.returnLayout());
         if (returnInMemory) {
-            csb.addArgumentBindings(MemorySegment.class, AArch64.C_POINTER,
+            csb.addArgumentBindings(MemorySegment.class, SharedUtils.C_POINTER,
                     argCalc.getIndirectBindings());
         } else if (cDesc.returnLayout().isPresent()) {
             Class<?> carrier = mt.returnType();
@@ -189,14 +189,12 @@ public abstract class CallArranger {
         return handle;
     }
 
-    public MemorySegment arrangeUpcall(MethodHandle target, MethodType mt, FunctionDescriptor cDesc, SegmentScope session) {
-        Bindings bindings = getBindings(mt, cDesc, true);
-
-        if (bindings.isInMemoryReturn) {
-            target = SharedUtils.adaptUpcallForIMR(target, true /* drop return, since we don't have bindings for it */);
-        }
-
-        return UpcallLinker.make(abiDescriptor(), target, bindings.callingSequence, session);
+    public UpcallStubFactory arrangeUpcall(MethodType mt, FunctionDescriptor cDesc,
+                                                          LinkerOptions options) {
+        Bindings bindings = getBindings(mt, cDesc, true, options);
+        final boolean dropReturn = true; /* drop return, since we don't have bindings for it */
+        return SharedUtils.arrangeUpcallHelper(mt, bindings.isInMemoryReturn, dropReturn, abiDescriptor(),
+                bindings.callingSequence);
     }
 
     private static boolean isInMemoryReturn(Optional<MemoryLayout> returnLayout) {
@@ -236,7 +234,7 @@ public abstract class CallArranger {
             return carrier;
         }
 
-        record StructStorage(long offset, Class<?> carrier, VMStorage storage) {}
+        record StructStorage(long offset, Class<?> carrier, int byteWidth, VMStorage storage) {}
 
         /*
         In the simplest case structs are copied in chunks. i.e. the fields don't matter, just the size.
@@ -305,12 +303,14 @@ public abstract class CallArranger {
             long offset = 0;
             for (int i = 0; i < structStorages.length; i++) {
                 ValueLayout copyLayout;
+                long copySize;
                 if (isFieldWise) {
                     // We should only get here for HFAs, which can't have padding
                     copyLayout = (ValueLayout) scalarLayouts.get(i);
+                    copySize = Utils.byteWidthOfPrimitive(copyLayout.carrier());
                 } else {
                     // chunk-wise copy
-                    long copySize = Math.min(layout.byteSize() - offset, MAX_COPY_SIZE);
+                    copySize = Math.min(layout.byteSize() - offset, MAX_COPY_SIZE);
                     boolean useFloat = false; // never use float for chunk-wise copies
                     copyLayout = SharedUtils.primitiveLayoutForSize(copySize, useFloat);
                 }
@@ -322,7 +322,7 @@ public abstract class CallArranger {
                     // Don't use floats on the stack
                     carrier = adjustCarrierForStack(carrier);
                 }
-                structStorages[i] = new StructStorage(offset, carrier, storage);
+                structStorages[i] = new StructStorage(offset, carrier, (int) copySize, storage);
                 offset += copyLayout.byteSize();
             }
 
@@ -421,7 +421,7 @@ public abstract class CallArranger {
                         if (i < structStorages.length - 1) {
                             bindings.dup();
                         }
-                        bindings.bufferLoad(structStorage.offset(), structStorage.carrier())
+                        bindings.bufferLoad(structStorage.offset(), structStorage.carrier(), structStorage.byteWidth())
                                 .vmStore(structStorage.storage(), structStorage.carrier());
                     }
                 }
@@ -429,7 +429,7 @@ public abstract class CallArranger {
                     assert carrier == MemorySegment.class;
                     bindings.copy(layout)
                             .unboxAddress();
-                    VMStorage storage = storageCalculator.nextStorage(StorageType.INTEGER, AArch64.C_POINTER);
+                    VMStorage storage = storageCalculator.nextStorage(StorageType.INTEGER, SharedUtils.C_POINTER);
                     bindings.vmStore(storage, long.class);
                 }
                 case POINTER -> {
@@ -464,7 +464,7 @@ public abstract class CallArranger {
         List<Binding> getIndirectBindings() {
             return Binding.builder()
                 .vmLoad(INDIRECT_RESULT, long.class)
-                .boxAddressRaw(Long.MAX_VALUE)
+                .boxAddressRaw(Long.MAX_VALUE, 1)
                 .build();
         }
 
@@ -480,22 +480,25 @@ public abstract class CallArranger {
                     StorageCalculator.StructStorage[] structStorages
                             = storageCalculator.structStorages((GroupLayout) layout, forHFA);
 
-                    for (StorageCalculator.StructStorage structStorage : structStorages) {
+                    for (StorageCalculator.StructStorage(
+                            long offset, Class<?> ca, int byteWidth, VMStorage storage
+                    ) : structStorages) {
                         bindings.dup();
-                        bindings.vmLoad(structStorage.storage(), structStorage.carrier())
-                                .bufferStore(structStorage.offset(), structStorage.carrier());
+                        bindings.vmLoad(storage, ca)
+                                .bufferStore(offset, ca, byteWidth);
                     }
                 }
                 case STRUCT_REFERENCE -> {
                     assert carrier == MemorySegment.class;
-                    VMStorage storage = storageCalculator.nextStorage(StorageType.INTEGER, AArch64.C_POINTER);
+                    VMStorage storage = storageCalculator.nextStorage(StorageType.INTEGER, SharedUtils.C_POINTER);
                     bindings.vmLoad(storage, long.class)
                             .boxAddress(layout);
                 }
                 case POINTER -> {
-                    VMStorage storage = storageCalculator.nextStorage(StorageType.INTEGER, (ValueLayout) layout);
+                    AddressLayout addressLayout = (AddressLayout) layout;
+                    VMStorage storage = storageCalculator.nextStorage(StorageType.INTEGER, addressLayout);
                     bindings.vmLoad(storage, long.class)
-                            .boxAddressRaw(Utils.pointeeSize(layout));
+                            .boxAddressRaw(Utils.pointeeByteSize(addressLayout), Utils.pointeeByteAlign(addressLayout));
                 }
                 case INTEGER -> {
                     VMStorage storage = storageCalculator.nextStorage(StorageType.INTEGER, (ValueLayout) layout);

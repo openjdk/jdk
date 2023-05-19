@@ -812,8 +812,6 @@ void TemplateTable::index_check(Register array, Register index) {
 
 void TemplateTable::index_check_without_pop(Register array, Register index) {
   assert_different_registers(array, index, Rtemp);
-  // check array
-  __ null_check(array, Rtemp, arrayOopDesc::length_offset_in_bytes());
   // check index
   __ ldr_s32(Rtemp, Address(array, arrayOopDesc::length_offset_in_bytes()));
   __ cmp_32(index, Rtemp);
@@ -2610,6 +2608,66 @@ void TemplateTable::load_field_cp_cache_entry(Register Rcache,
   }
 }
 
+// The rmethod register is input and overwritten to be the adapter method for the
+// indy call. Link Register (lr) is set to the return address for the adapter and
+// an appendix may be pushed to the stack. Registers R1-R3, Rtemp (R12) are clobbered
+void TemplateTable::load_invokedynamic_entry(Register method) {
+  // setup registers
+  const Register appendix = R1;
+  const Register cache = R2_tmp;
+  const Register index = R3_tmp;
+  assert_different_registers(method, appendix, cache, index);
+
+  __ save_bcp();
+
+  Label resolved;
+  __ load_resolved_indy_entry(cache, index);
+  // Load-acquire the adapter method to match store-release in ResolvedIndyEntry::fill_in()
+  __ ldr(method, Address(cache, in_bytes(ResolvedIndyEntry::method_offset())));
+  TemplateTable::volatile_barrier(MacroAssembler::Membar_mask_bits(MacroAssembler::LoadLoad | MacroAssembler::LoadStore), noreg, true);
+  // Compare the method to zero
+  __ cbnz(method, resolved);
+
+  Bytecodes::Code code = bytecode();
+
+  // Call to the interpreter runtime to resolve invokedynamic
+  address entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_from_cache);
+  __ mov(R1, code); // this is essentially Bytecodes::_invokedynamic, call_VM requires R1
+  __ call_VM(noreg, entry, R1);
+  // Update registers with resolved info
+  __ load_resolved_indy_entry(cache, index);
+  // Load-acquire the adapter method to match store-release in ResolvedIndyEntry::fill_in()
+  __ ldr(method, Address(cache, in_bytes(ResolvedIndyEntry::method_offset())));
+  TemplateTable::volatile_barrier(MacroAssembler::Membar_mask_bits(MacroAssembler::LoadLoad | MacroAssembler::LoadStore), noreg, true);
+
+#ifdef ASSERT
+  __ cbnz(method, resolved);
+  __ stop("Should be resolved by now");
+#endif // ASSERT
+  __ bind(resolved);
+
+  Label L_no_push;
+  // Check if there is an appendix
+  __ ldrb(index, Address(cache, in_bytes(ResolvedIndyEntry::flags_offset())));
+  __ tbz(index, ResolvedIndyEntry::has_appendix_shift, L_no_push);
+  // Get appendix
+  __ ldrh(index, Address(cache, in_bytes(ResolvedIndyEntry::resolved_references_index_offset())));
+  // Push the appendix as a trailing parameter
+  // since the parameter_size includes it.
+  __ load_resolved_reference_at_index(appendix, index);
+  __ verify_oop(appendix);
+  __ push(appendix);  // push appendix (MethodType, CallSite, etc.)
+  __ bind(L_no_push);
+
+  // compute return type
+  __ ldrb(index, Address(cache, in_bytes(ResolvedIndyEntry::result_type_offset())));
+  // load return address
+  {
+    const address table_addr = (address) Interpreter::invoke_return_entry_table_for(code);
+    __ mov_address(Rtemp, table_addr);
+    __ ldr(LR, Address(Rtemp, index, lsl, Interpreter::logStackElementSize));
+  }
+}
 
 // Blows all volatile registers: R0-R3, Rtemp, LR.
 void TemplateTable::load_invoke_cp_cache_entry(int byte_no,
@@ -2618,7 +2676,7 @@ void TemplateTable::load_invoke_cp_cache_entry(int byte_no,
                                                Register flags,
                                                bool is_invokevirtual,
                                                bool is_invokevfinal/*unused*/,
-                                               bool is_invokedynamic) {
+                                               bool is_invokedynamic /*unused*/) {
   // setup registers
   const Register cache = R2_tmp;
   const Register index = R3_tmp;
@@ -2641,7 +2699,7 @@ void TemplateTable::load_invoke_cp_cache_entry(int byte_no,
   const int index_offset = in_bytes(ConstantPoolCache::base_offset() +
                                     ConstantPoolCacheEntry::f2_offset());
 
-  size_t index_size = (is_invokedynamic ? sizeof(u4) : sizeof(u2));
+  size_t index_size = sizeof(u2);
   resolve_cache_and_index(byte_no, cache, index, index_size);
     __ add(temp_reg, cache, AsmOperand(index, lsl, LogBytesPerWord));
     __ ldr(method, Address(temp_reg, method_offset));
@@ -3567,7 +3625,7 @@ void TemplateTable::prepare_invoke(int byte_no,
   load_invoke_cp_cache_entry(byte_no, method, index, flags, is_invokevirtual, false, is_invokedynamic);
 
   // maybe push extra argument
-  if (is_invokedynamic || is_invokehandle) {
+  if (is_invokehandle) {
     Label L_no_push;
     __ tbz(flags, ConstantPoolCacheEntry::has_appendix_shift, L_no_push);
     __ mov(temp, index);
@@ -3625,7 +3683,7 @@ void TemplateTable::invokevirtual_helper(Register index,
   __ bind(notFinal);
 
   // get receiver klass
-  __ load_klass_check_null(recv_klass, recv, Rtemp);
+  __ load_klass(recv_klass, recv);
 
   // profile this call
   __ profile_virtual_call(R0_tmp, recv_klass);
@@ -3812,7 +3870,7 @@ void TemplateTable::invokedynamic(int byte_no) {
   const Register Rcallsite = R4_tmp;
   const Register R5_method = R5_tmp;  // can't reuse Rmethod!
 
-  prepare_invoke(byte_no, R5_method, Rcallsite);
+  load_invokedynamic_entry(R5_method);
 
   // Rcallsite: CallSite object (from cpool->resolved_references[f1])
   // Rmethod:   MH.linkToCallSite method (from f2)
@@ -4004,7 +4062,6 @@ void TemplateTable::anewarray() {
 
 void TemplateTable::arraylength() {
   transition(atos, itos);
-  __ null_check(R0_tos, Rtemp, arrayOopDesc::length_offset_in_bytes());
   __ ldr_s32(R0_tos, Address(R0_tos, arrayOopDesc::length_offset_in_bytes()));
 }
 

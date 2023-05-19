@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,6 @@
  */
 
 package sun.util.calendar;
-
-import java.util.HashMap;
-import java.util.Map;
 
 public class CalendarUtils {
 
@@ -106,29 +103,6 @@ public class CalendarUtils {
         }
         int q = ((n + 1) / d) - 1;
         r[0] = n - (q * d);
-        return q;
-    }
-
-    /**
-     * Divides two integers and returns the floor of the quotient and
-     * the modulus remainder.  For example,
-     * <code>floorDivide(-1,4)</code> returns <code>-1</code> with
-     * <code>3</code> as its remainder, while <code>-1/4</code> is
-     * <code>0</code> and <code>-1%4</code> is <code>-1</code>.
-     *
-     * @param n the numerator
-     * @param d a divisor which must be {@literal > 0}
-     * @param r an array of at least one element in which the value
-     * <code>mod(n, d)</code> is returned.
-     * @return the floor of the quotient.
-     */
-    public static final int floorDivide(long n, int d, int[] r) {
-        if (n >= 0) {
-            r[0] = (int)(n % d);
-            return (int)(n / d);
-        }
-        int q = (int)(((n + 1) / d) - 1);
-        r[0] = (int)(n - (q * d));
         return q;
     }
 

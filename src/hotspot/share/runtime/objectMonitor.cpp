@@ -334,7 +334,7 @@ bool ObjectMonitor::enter(JavaThread* current) {
     return true;
   }
 
-  if (current->is_lock_owned((address)cur)) {
+  if (LockingMode != LM_LIGHTWEIGHT && current->is_lock_owned((address)cur)) {
     assert(_recursions == 0, "internal state error");
     _recursions = 1;
     set_owner_from_BasicLock(cur, current);  // Convert from BasicLock* to Thread*.
@@ -1135,7 +1135,7 @@ void ObjectMonitor::UnlinkAfterAcquire(JavaThread* current, ObjectWaiter* curren
 void ObjectMonitor::exit(JavaThread* current, bool not_suspended) {
   void* cur = owner_raw();
   if (current != cur) {
-    if (current->is_lock_owned((address)cur)) {
+    if (LockingMode != LM_LIGHTWEIGHT && current->is_lock_owned((address)cur)) {
       assert(_recursions == 0, "invariant");
       set_owner_from_BasicLock(cur, current);  // Convert from BasicLock* to Thread*.
       _recursions = 0;
@@ -1340,12 +1340,7 @@ void ObjectMonitor::ExitEpilog(JavaThread* current, ObjectWaiter* Wakee) {
   OM_PERFDATA_OP(Parks, inc());
 }
 
-
-// -----------------------------------------------------------------------------
-// Class Loader deadlock handling.
-//
 // complete_exit exits a lock returning recursion count
-// complete_exit/reenter operate as a wait without waiting
 // complete_exit requires an inflated monitor
 // The _owner field is not always the Thread addr even with an
 // inflated monitor, e.g. the monitor can be inflated by a non-owning
@@ -1355,7 +1350,7 @@ intx ObjectMonitor::complete_exit(JavaThread* current) {
 
   void* cur = owner_raw();
   if (current != cur) {
-    if (current->is_lock_owned((address)cur)) {
+    if (LockingMode != LM_LIGHTWEIGHT && current->is_lock_owned((address)cur)) {
       assert(_recursions == 0, "internal state error");
       set_owner_from_BasicLock(cur, current);  // Convert from BasicLock* to Thread*.
       _recursions = 0;
@@ -1368,20 +1363,6 @@ intx ObjectMonitor::complete_exit(JavaThread* current) {
   exit(current);           // exit the monitor
   guarantee(owner_raw() != current, "invariant");
   return save;
-}
-
-// reenter() enters a lock and sets recursion count
-// complete_exit/reenter operate as a wait without waiting
-bool ObjectMonitor::reenter(intx recursions, JavaThread* current) {
-
-  guarantee(owner_raw() != current, "reenter already owner");
-  if (!enter(current)) {
-    return false;
-  }
-  // Entered the monitor.
-  guarantee(_recursions == 0, "reenter recursion");
-  _recursions = recursions;
-  return true;
 }
 
 // Checks that the current THREAD owns this monitor and causes an
@@ -1404,10 +1385,11 @@ bool ObjectMonitor::reenter(intx recursions, JavaThread* current) {
 bool ObjectMonitor::check_owner(TRAPS) {
   JavaThread* current = THREAD;
   void* cur = owner_raw();
+  assert(cur != anon_owner_ptr(), "no anon owner here");
   if (cur == current) {
     return true;
   }
-  if (current->is_lock_owned((address)cur)) {
+  if (LockingMode != LM_LIGHTWEIGHT && current->is_lock_owned((address)cur)) {
     set_owner_from_BasicLock(cur, current);  // Convert from BasicLock* to Thread*.
     _recursions = 0;
     return true;

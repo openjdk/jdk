@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,11 +122,11 @@ class StubGenerator: public StubCodeGenerator {
   void array_overlap_test(address no_overlap_target, Label* NOLp, Address::ScaleFactor sf);
 
   void array_overlap_test(address no_overlap_target, Address::ScaleFactor sf) {
-    assert(no_overlap_target != NULL, "must be generated");
-    array_overlap_test(no_overlap_target, NULL, sf);
+    assert(no_overlap_target != nullptr, "must be generated");
+    array_overlap_test(no_overlap_target, nullptr, sf);
   }
   void array_overlap_test(Label& L_no_overlap, Address::ScaleFactor sf) {
-    array_overlap_test(NULL, &L_no_overlap, sf);
+    array_overlap_test(nullptr, &L_no_overlap, sf);
   }
 
 
@@ -140,19 +140,23 @@ class StubGenerator: public StubCodeGenerator {
 
   // This is used in places where r10 is a scratch register, and can
   // be adapted if r9 is needed also.
-  void setup_arg_regs_using_thread();
+  void setup_arg_regs_using_thread(int nargs = 3);
 
   void restore_arg_regs_using_thread();
 
   // Copy big chunks forward
   void copy_bytes_forward(Register end_from, Register end_to,
-                          Register qword_count, Register to,
-                          Label& L_copy_bytes, Label& L_copy_8_bytes);
+                          Register qword_count, Register tmp1,
+                          Register tmp2, Label& L_copy_bytes,
+                          Label& L_copy_8_bytes, DecoratorSet decorators,
+                          BasicType type);
 
   // Copy big chunks backward
   void copy_bytes_backward(Register from, Register dest,
-                           Register qword_count, Register to,
-                           Label& L_copy_bytes, Label& L_copy_8_bytes);
+                           Register qword_count, Register tmp1,
+                           Register tmp2, Label& L_copy_bytes,
+                           Label& L_copy_8_bytes, DecoratorSet decorators,
+                           BasicType type);
 
   void setup_argument_regs(BasicType type);
 
@@ -470,6 +474,8 @@ class StubGenerator: public StubCodeGenerator {
   address generate_bigIntegerRightShift();
   address generate_bigIntegerLeftShift();
 
+  address generate_float16ToFloat();
+  address generate_floatToFloat16();
 
   // Libm trigonometric stubs
 
@@ -544,21 +550,13 @@ class StubGenerator: public StubCodeGenerator {
   void create_control_words();
 
   // Initialization
-  void generate_initial();
-  void generate_phase1();
-  void generate_all();
+  void generate_initial_stubs();
+  void generate_continuation_stubs();
+  void generate_compiler_stubs();
+  void generate_final_stubs();
 
  public:
-  StubGenerator(CodeBuffer* code, int phase) : StubCodeGenerator(code) {
-    DEBUG_ONLY( _regs_in_thread = false; )
-    if (phase == 0) {
-      generate_initial();
-    } else if (phase == 1) {
-      generate_phase1(); // stubs that must be available for the interpreter
-    } else {
-      generate_all();
-    }
-  }
+  StubGenerator(CodeBuffer* code, StubsKind kind);
 };
 
 #endif // CPU_X86_STUBGENERATOR_X86_64_HPP

@@ -568,7 +568,7 @@ unsigned __stdcall os::win32::thread_native_entry(void* t) {
 static OSThread* create_os_thread(Thread* thread, HANDLE thread_handle,
                                   int thread_id) {
   // Allocate the OSThread object
-  OSThread* osthread = new OSThread();
+  OSThread* osthread = new (std::nothrow) OSThread();
   if (osthread == nullptr) return nullptr;
 
   // Initialize the JDK library's interrupt event.
@@ -621,9 +621,9 @@ bool os::create_attached_thread(JavaThread* thread) {
   thread->set_osthread(osthread);
 
   log_info(os, thread)("Thread attached (tid: " UINTX_FORMAT ", stack: "
-                       PTR_FORMAT " - " PTR_FORMAT " (" SIZE_FORMAT "k) ).",
+                       PTR_FORMAT " - " PTR_FORMAT " (" SIZE_FORMAT "K) ).",
                        os::current_thread_id(), p2i(thread->stack_base()),
-                       p2i(thread->stack_end()), thread->stack_size());
+                       p2i(thread->stack_end()), thread->stack_size() / K);
 
   return true;
 }
@@ -673,7 +673,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
   unsigned thread_id;
 
   // Allocate the OSThread object
-  OSThread* osthread = new OSThread();
+  OSThread* osthread = new (std::nothrow) OSThread();
   if (osthread == nullptr) {
     return false;
   }
@@ -827,6 +827,10 @@ jlong os::elapsed_frequency() {
 
 
 julong os::available_memory() {
+  return win32::available_memory();
+}
+
+julong os::free_memory() {
   return win32::available_memory();
 }
 
@@ -5249,6 +5253,21 @@ class HighResolutionInterval : public CHeapObj<mtThread> {
 // explicit "PARKED" == 01b and "SIGNALED" == 10b bits.
 //
 
+int PlatformEvent::park_nanos(jlong nanos) {
+  assert(nanos > 0, "nanos are positive");
+
+  // Windows timers are still quite unpredictable to handle sub-millisecond granularity.
+  // Instead of implementing sub-millisecond sleeps, fall back to the usual behavior of
+  // rounding up any excess requested nanos to the full millisecond. This is how
+  // Thread.sleep(millis, nanos) has always behaved with only millisecond granularity.
+  jlong millis = nanos / NANOSECS_PER_MILLISEC;
+  if (nanos > millis * NANOSECS_PER_MILLISEC) {
+    millis++;
+  }
+  assert(millis > 0, "should always be positive");
+  return park(millis);
+}
+
 int PlatformEvent::park(jlong Millis) {
   // Transitions for _Event:
   //   -1 => -1 : illegal
@@ -5531,10 +5550,6 @@ static jint initSock() {
     return JNI_ERR;
   }
   return JNI_OK;
-}
-
-struct hostent* os::get_host_by_name(char* name) {
-  return (struct hostent*)gethostbyname(name);
 }
 
 int os::socket_close(int fd) {

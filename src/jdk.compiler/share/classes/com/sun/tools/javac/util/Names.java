@@ -222,8 +222,17 @@ public class Names {
     public final Name typeSwitch;
     public final Name enumSwitch;
 
+    // templated string
+    public final Name process;
+    public final Name STR;
+    public final Name RAW;
+    public final Name newStringTemplate;
+    public final Name newLargeStringTemplate;
+    public final Name processStringTemplate;
+
     public final Name.Table table;
 
+    @SuppressWarnings("this-escape")
     public Names(Context context) {
         Options options = Options.instance(context);
         table = createTable(options);
@@ -395,6 +404,14 @@ public class Names {
         permits = fromString("permits");
         sealed = fromString("sealed");
 
+        // templated string
+        process = fromString("process");
+        STR = fromString("STR");
+        RAW = fromString("RAW");
+        newStringTemplate = fromString("newStringTemplate");
+        newLargeStringTemplate = fromString("newLargeStringTemplate");
+        processStringTemplate = fromString("processStringTemplate");
+
         // pattern switches
         typeSwitch = fromString("typeSwitch");
         enumSwitch = fromString("enumSwitch");
@@ -420,11 +437,19 @@ public class Names {
         return table.fromString(s);
     }
 
-    public Name fromUtf(byte[] cs) {
+    public Name fromUtf(byte[] cs) throws InvalidUtfException {
         return table.fromUtf(cs);
     }
 
-    public Name fromUtf(byte[] cs, int start, int len) {
-        return table.fromUtf(cs, start, len);
+    public Name fromUtf(byte[] cs, int start, int len, Convert.Validation validation) throws InvalidUtfException {
+        return table.fromUtf(cs, start, len, validation);
+    }
+
+    public Name fromUtfLax(byte[] cs, int start, int len) {
+        try {
+            return table.fromUtf(cs, start, len, Convert.Validation.NONE);
+        } catch (InvalidUtfException e) {
+            throw new AssertionError(e);
+        }
     }
 }

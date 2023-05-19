@@ -33,15 +33,10 @@
 #include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
-#include "oops/instanceClassLoaderKlass.inline.hpp"
-#include "oops/instanceKlass.inline.hpp"
-#include "oops/instanceMirrorKlass.inline.hpp"
-#include "oops/instanceRefKlass.inline.hpp"
 #include "oops/methodData.hpp"
 #include "oops/objArrayKlass.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
-#include "utilities/macros.hpp"
 #include "utilities/stack.inline.hpp"
 
 uint                    MarkSweep::_total_invocations = 0;
@@ -53,9 +48,11 @@ Stack<PreservedMark, mtGC>    MarkSweep::_preserved_overflow_stack;
 size_t                  MarkSweep::_preserved_count = 0;
 size_t                  MarkSweep::_preserved_count_max = 0;
 PreservedMark*          MarkSweep::_preserved_marks = nullptr;
-ReferenceProcessor*     MarkSweep::_ref_processor   = nullptr;
 STWGCTimer*             MarkSweep::_gc_timer        = nullptr;
 SerialOldTracer*        MarkSweep::_gc_tracer       = nullptr;
+
+AlwaysTrueClosure   MarkSweep::_always_true_closure;
+ReferenceProcessor* MarkSweep::_ref_processor;
 
 StringDedup::Requests*  MarkSweep::_string_dedup_requests = nullptr;
 
@@ -168,11 +165,6 @@ void MarkSweep::preserve_mark(oop obj, markWord mark) {
   }
 }
 
-void MarkSweep::set_ref_processor(ReferenceProcessor* rp) {
-  _ref_processor = rp;
-  mark_and_push_closure.set_ref_discoverer(_ref_processor);
-}
-
 void MarkSweep::mark_object(oop obj) {
   if (StringDedup::is_enabled() &&
       java_lang_String::is_instance(obj) &&
@@ -252,4 +244,9 @@ void MarkSweep::initialize() {
   MarkSweep::_gc_timer = new STWGCTimer();
   MarkSweep::_gc_tracer = new SerialOldTracer();
   MarkSweep::_string_dedup_requests = new StringDedup::Requests();
+
+  // The Full GC operates on the entire heap so all objects should be subject
+  // to discovery, hence the _always_true_closure.
+  MarkSweep::_ref_processor = new ReferenceProcessor(&_always_true_closure);
+  mark_and_push_closure.set_ref_discoverer(_ref_processor);
 }

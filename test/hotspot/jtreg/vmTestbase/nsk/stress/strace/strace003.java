@@ -47,10 +47,6 @@
 
 package nsk.stress.strace;
 
-import nsk.share.ArgumentParser;
-import nsk.share.Log;
-
-import java.io.PrintStream;
 
 /**
  * The test check up <code>java.lang.Thread.getStackTrace()</code> method for many threads,
@@ -67,27 +63,15 @@ public class strace003 extends StraceBase {
     static final int REPEAT_COUNT = 10;
 
     static volatile boolean isLocked = false;
-    static PrintStream out;
-    static long waitTime = 2;
 
     static Object waitStart = new Object();
 
     static strace003Thread[] threads;
     static StackTraceElement[][] snapshots = new StackTraceElement[THRD_COUNT][];
-    static Log log;
 
     volatile int achivedCount = 0;
 
     public static void main(String[] args) {
-        out = System.out;
-        int exitCode = run(args);
-        System.exit(exitCode + 95);
-    }
-
-    public static int run(String[] args) {
-        ArgumentParser argHandler = new ArgumentParser(args);
-        log = new Log(out, argHandler);
-        waitTime = argHandler.getWaitTime() * 60000;
 
         strace003 test = new strace003();
         boolean res = true;
@@ -102,11 +86,9 @@ public class strace003 extends StraceBase {
         }
 
         if (!res) {
-            complain("***>>>Test failed<<<***");
-            return 2;
+            new RuntimeException("***>>>Test failed<<<***");
         }
 
-        return 0;
     }
 
     void startThreads() {
@@ -215,14 +197,6 @@ public class strace003 extends StraceBase {
             complain("" + e);
         }
         isLocked = false;
-    }
-
-    static void display(String message) {
-        log.display(message);
-    }
-
-    static void complain(String message) {
-        log.complain(message);
     }
 
 }

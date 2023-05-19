@@ -231,7 +231,9 @@ public abstract class SunToolkit extends Toolkit
      *     }
      */
 
-    private static final ReentrantLock AWT_LOCK = new ReentrantLock();
+    @SuppressWarnings("removal")
+    private static final ReentrantLock AWT_LOCK = new ReentrantLock(
+            AccessController.doPrivileged(new GetBooleanAction("awt.lock.fair")));
     private static final Condition AWT_LOCK_COND = AWT_LOCK.newCondition();
 
     public static final void awtLock() {

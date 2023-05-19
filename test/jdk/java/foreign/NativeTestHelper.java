@@ -22,6 +22,7 @@
  *
  */
 
+import java.lang.foreign.AddressLayout;
 import java.lang.foreign.Arena;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.GroupLayout;
@@ -30,7 +31,6 @@ import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.PaddingLayout;
 import java.lang.foreign.SegmentAllocator;
-import java.lang.foreign.SegmentScope;
 import java.lang.foreign.SequenceLayout;
 import java.lang.foreign.StructLayout;
 import java.lang.foreign.SymbolLookup;
@@ -43,6 +43,8 @@ import java.lang.invoke.MethodType;
 import java.lang.invoke.VarHandle;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
@@ -56,8 +58,14 @@ public class NativeTestHelper {
     public static final boolean IS_WINDOWS = System.getProperty("os.name").startsWith("Windows");
 
     private static final MethodHandle MH_SAVER;
+    private static final RandomGenerator DEFAULT_RANDOM;
 
     static {
+        int seed = Integer.getInteger("NativeTestHelper.DEFAULT_RANDOM.seed", ThreadLocalRandom.current().nextInt());
+        System.out.println("NativeTestHelper::DEFAULT_RANDOM.seed = " + seed);
+        System.out.println("Re-run with '-DNativeTestHelper.DEFAULT_RANDOM.seed=" + seed + "' to reproduce");
+        DEFAULT_RANDOM = new Random(seed);
+
         try {
             MH_SAVER = MethodHandles.lookup().findStatic(NativeTestHelper.class, "saver",
                     MethodType.methodType(Object.class, Object[].class, List.class, AtomicReference.class, SegmentAllocator.class, int.class));
@@ -113,9 +121,10 @@ public class NativeTestHelper {
     /**
      * The {@code T*} native type.
      */
-    public static final ValueLayout.OfAddress C_POINTER = ValueLayout.ADDRESS.withBitAlignment(64).asUnbounded();
+    public static final AddressLayout C_POINTER = ValueLayout.ADDRESS.withBitAlignment(64)
+            .withTargetLayout(MemoryLayout.sequenceLayout(C_CHAR));
 
-    private static final Linker LINKER = Linker.nativeLinker();
+    public static final Linker LINKER = Linker.nativeLinker();
 
     private static final MethodHandle FREE = LINKER.downcallHandle(
             LINKER.defaultLookup().find("free").get(), FunctionDescriptor.ofVoid(C_POINTER));
@@ -150,13 +159,29 @@ public class NativeTestHelper {
     public static MemorySegment upcallStub(Class<?> holder, String name, FunctionDescriptor descriptor) {
         try {
             MethodHandle target = MethodHandles.lookup().findStatic(holder, name, descriptor.toMethodType());
-            return LINKER.upcallStub(target, descriptor, SegmentScope.auto());
+            return LINKER.upcallStub(target, descriptor, Arena.ofAuto());
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }
     }
 
+    public static TestValue[] genTestArgs(FunctionDescriptor descriptor, SegmentAllocator allocator) {
+        return genTestArgs(DEFAULT_RANDOM, descriptor, allocator);
+    }
+
+    public static TestValue[] genTestArgs(RandomGenerator random, FunctionDescriptor descriptor, SegmentAllocator allocator) {
+        TestValue[] result = new TestValue[descriptor.argumentLayouts().size()];
+        for (int i = 0; i < result.length; i++) {
+            result[i] = genTestValue(random, descriptor.argumentLayouts().get(i), allocator);
+        }
+        return result;
+    }
+
     public record TestValue (Object value, Consumer<Object> check) {}
+
+    public static TestValue genTestValue(MemoryLayout layout, SegmentAllocator allocator) {
+        return genTestValue(DEFAULT_RANDOM, layout, allocator);
+    }
 
     public static TestValue genTestValue(RandomGenerator random, MemoryLayout layout, SegmentAllocator allocator) {
         if (layout instanceof StructLayout struct) {
@@ -185,7 +210,7 @@ public class NativeTestHelper {
                 elementChecks.add(initField(random, segment, array, array.elementLayout(), sequenceElement(i), allocator));
             }
             return new TestValue(segment, actual -> elementChecks.forEach(check -> check.accept(actual)));
-        } else if (layout instanceof ValueLayout.OfAddress) {
+        } else if (layout instanceof AddressLayout) {
             MemorySegment value = MemorySegment.ofAddress(random.nextLong());
             return new TestValue(value, actual -> assertEquals(actual, value));
         }else if (layout instanceof ValueLayout.OfByte) {
@@ -263,7 +288,7 @@ public class NativeTestHelper {
         MethodHandle target = MethodHandles.insertArguments(MH_SAVER, 1, fd.argumentLayouts(), capturedArgs, arena, retIdx);
         target = target.asCollector(Object[].class, fd.argumentLayouts().size());
         target = target.asType(fd.toMethodType());
-        return LINKER.upcallStub(target, fd, arena.scope());
+        return LINKER.upcallStub(target, fd, arena);
     }
 
     private static Object saver(Object[] o, List<MemoryLayout> argLayouts, AtomicReference<Object[]> ref, SegmentAllocator allocator, int retArg) {

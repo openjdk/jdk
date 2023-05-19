@@ -149,7 +149,7 @@ public class AllClassesIndexWriter extends HtmlDocletWriter {
     protected void addTableRow(Table<TypeElement> table, TypeElement klass) {
         List<Content> rowContents = new ArrayList<>();
         Content classLink = getLink(new HtmlLinkInfo(
-                configuration, HtmlLinkInfo.Kind.LINK_TYPE_PARAMS_AND_BOUNDS, klass));
+                configuration, HtmlLinkInfo.Kind.SHOW_TYPE_PARAMS_IN_LABEL, klass));
         ContentBuilder description = new ContentBuilder();
         Set<ElementFlag> flags = utils.elementFlags(klass);
         if (flags.contains(ElementFlag.PREVIEW)) {

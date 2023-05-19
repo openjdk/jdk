@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -166,6 +166,7 @@ public class JavacParser implements Parser {
     }
     /** Construct a parser from a given scanner, tree factory and log.
      */
+    @SuppressWarnings("this-escape")
     protected JavacParser(ParserFactory fac,
                      Lexer S,
                      boolean keepDocComments,
@@ -647,6 +648,59 @@ public class JavacParser implements Parser {
                 t = toP(F.at(tyannos.head.pos).AnnotatedType(tyannos, t));
             }
         }
+        return t;
+    }
+
+    /**
+     * StringTemplate =
+     *    [STRINGFRAGMENT] [EmbeddedExpression]
+     *  | STRINGLITERAL
+     *
+     * EmbeddedExpression =
+     *  LBRACE term RBRACE
+     */
+    JCExpression stringTemplate(JCExpression processor) {
+        checkSourceLevel(Feature.STRING_TEMPLATES);
+        // Disable standalone string templates
+        if (processor == null) {
+            log.error(DiagnosticFlag.SYNTAX, token.pos,
+                    Errors.ProcessorMissingFromStringTemplateExpression);
+        }
+        int oldmode = mode;
+        selectExprMode();
+        Token stringToken = token;
+        int pos = stringToken.pos;
+        int endPos = stringToken.endPos;
+        TokenKind kind = stringToken.kind;
+        String string = token.stringVal();
+        List<String> fragments = List.of(string);
+        List<JCExpression> expressions = List.nil();
+        nextToken();
+        if (kind != STRINGLITERAL) {
+            while (token.kind == STRINGFRAGMENT) {
+                stringToken = token;
+                endPos = stringToken.endPos;
+                string = stringToken.stringVal();
+                fragments = fragments.append(string);
+                nextToken();
+             }
+            while (token.pos < endPos && token.kind != DEFAULT && token.kind != ERROR) {
+                accept(LBRACE);
+                JCExpression expression = token.kind == RBRACE ? F.at(pos).Literal(TypeTag.BOT, null)
+                                                               : term(EXPR);
+                expressions = expressions.append(expression);
+                if (token.kind != ERROR) {
+                    accept(RBRACE);
+                }
+            }
+            // clean up remaining expression tokens if error
+            while (token.pos < endPos && token.kind != DEFAULT) {
+                nextToken();
+            }
+            S.setPrevToken(stringToken);
+        }
+        JCExpression t = toP(F.at(pos).StringTemplate(processor, fragments, expressions));
+        setMode(oldmode);
         return t;
     }
 
@@ -1278,6 +1332,14 @@ public class JavacParser implements Parser {
                 t = literal(names.empty);
             } else return illegal();
             break;
+         case STRINGFRAGMENT:
+             if (typeArgs == null && isMode(EXPR)) {
+                 selectExprMode();
+                 t = stringTemplate(null);
+             } else {
+                 return illegal();
+             }
+             break;
         case NEW:
             if (typeArgs != null) return illegal();
             if (isMode(EXPR)) {
@@ -1406,6 +1468,12 @@ public class JavacParser implements Parser {
                                 nextToken();
                                 if (token.kind == LT) typeArgs = typeArguments(false);
                                 t = innerCreator(pos1, typeArgs, t);
+                                typeArgs = null;
+                                break loop;
+                            case STRINGFRAGMENT:
+                            case STRINGLITERAL:
+                                if (typeArgs != null) return illegal();
+                                t = stringTemplate(t);
                                 typeArgs = null;
                                 break loop;
                             }
@@ -1630,6 +1698,12 @@ public class JavacParser implements Parser {
                     if (token.kind == LT) typeArgs = typeArguments(false);
                     t = innerCreator(pos2, typeArgs, t);
                     typeArgs = null;
+                } else if (token.kind == TokenKind.STRINGFRAGMENT ||
+                           token.kind == TokenKind.STRINGLITERAL) {
+                    if (typeArgs != null) {
+                        return illegal();
+                    }
+                    t = stringTemplate(t);
                 } else {
                     List<JCAnnotation> tyannos = null;
                     if (isMode(TYPE) && token.kind == MONKEYS_AT) {
@@ -1789,6 +1863,7 @@ public class JavacParser implements Parser {
                         case LPAREN: case THIS: case SUPER:
                         case INTLITERAL: case LONGLITERAL: case FLOATLITERAL:
                         case DOUBLELITERAL: case CHARLITERAL: case STRINGLITERAL:
+                        case STRINGFRAGMENT:
                         case TRUE: case FALSE: case NULL:
                         case NEW: case IDENTIFIER: case ASSERT: case ENUM: case UNDERSCORE:
                         case SWITCH:
@@ -2706,6 +2781,7 @@ public class JavacParser implements Parser {
                 boolean isYieldStatement;
                 switch (next.kind) {
                     case PLUS: case SUB: case STRINGLITERAL: case CHARLITERAL:
+                    case STRINGFRAGMENT:
                     case INTLITERAL: case LONGLITERAL: case FLOATLITERAL: case DOUBLELITERAL:
                     case NULL: case IDENTIFIER: case TRUE: case FALSE:
                     case NEW: case SWITCH: case THIS: case SUPER:
@@ -3838,16 +3914,32 @@ public class JavacParser implements Parser {
             defs.append(pd);
         }
 
-        boolean checkForImports = true;
-        boolean firstTypeDecl = true;
+        boolean firstTypeDecl = true;   // have we see a class, enum, or interface declaration yet?
         while (token.kind != EOF) {
             if (token.pos <= endPosTable.errorEndPos) {
                 // error recovery
-                skip(checkForImports, false, false, false);
+                skip(firstTypeDecl, false, false, false);
                 if (token.kind == EOF)
                     break;
             }
-            if (checkForImports && mods == null && token.kind == IMPORT) {
+            // JLS 7.3 doesn't allow extra semicolons after package or import declarations,
+            // but here we try to provide a more helpful error message if we encounter any.
+            // Do that by slurping in as many semicolons as possible, and then seeing what
+            // comes after before deciding how best to handle them.
+            ListBuffer<JCTree> semiList = new ListBuffer<>();
+            while (firstTypeDecl && mods == null && token.kind == SEMI) {
+                semiList.append(toP(F.at(token.pos).Skip()));
+                nextToken();
+                if (token.kind == EOF)
+                    break;
+            }
+            if (firstTypeDecl && mods == null && token.kind == IMPORT) {
+                if (!semiList.isEmpty()) {
+                    if (source.compareTo(Source.JDK21) >= 0)
+                        reportSyntaxError(semiList.first().pos, Errors.ExtraneousSemicolon);
+                    else
+                        log.warning(semiList.first().pos, Warnings.ExtraneousSemicolon);
+                }
                 seenImport = true;
                 defs.append(importDeclaration());
             } else {
@@ -3859,6 +3951,12 @@ public class JavacParser implements Parser {
                 if (mods != null || token.kind != SEMI)
                     mods = modifiersOpt(mods);
                 if (firstTypeDecl && token.kind == IDENTIFIER) {
+                    if (!semiList.isEmpty()) {
+                        if (source.compareTo(Source.JDK21) >= 0)
+                            reportSyntaxError(semiList.first().pos, Errors.ExtraneousSemicolon);
+                        else
+                            log.warning(semiList.first().pos, Warnings.ExtraneousSemicolon);
+                    }
                     ModuleKind kind = ModuleKind.STRONG;
                     if (token.name() == names.open) {
                         kind = ModuleKind.OPEN;
@@ -3875,12 +3973,11 @@ public class JavacParser implements Parser {
                         reportSyntaxError(token.pos, Errors.ExpectedModule);
                     }
                 }
+                defs.appendList(semiList.toList());
                 JCTree def = typeDeclaration(mods, docComment);
                 if (def instanceof JCExpressionStatement statement)
                     def = statement.expr;
                 defs.append(def);
-                if (def instanceof JCClassDecl)
-                    checkForImports = false;
                 mods = null;
                 firstTypeDecl = false;
             }
@@ -4131,7 +4228,7 @@ public class JavacParser implements Parser {
                     for (JCVariableDecl param : headerFields) {
                         tmpParams.add(F.at(param)
                                 // we will get flags plus annotations from the record component
-                                .VarDef(F.Modifiers(Flags.PARAMETER | Flags.GENERATED_MEMBER | param.mods.flags & Flags.VARARGS,
+                                .VarDef(F.Modifiers(Flags.PARAMETER | Flags.GENERATED_MEMBER | Flags.MANDATED | param.mods.flags & Flags.VARARGS,
                                         param.mods.annotations),
                                 param.name, param.vartype, null));
                     }
@@ -4302,10 +4399,13 @@ public class JavacParser implements Parser {
         return defs.toList();
     }
 
+    @SuppressWarnings("fallthrough")
     private EnumeratorEstimate estimateEnumeratorOrMember(Name enumName) {
         // if we are seeing a record declaration inside of an enum we want the same error message as expected for a
         // let's say an interface declaration inside an enum
-        if (token.kind == TokenKind.IDENTIFIER && token.name() != enumName &&
+        boolean ident = token.kind == TokenKind.IDENTIFIER ||
+                        token.kind == TokenKind.UNDERSCORE;
+        if (ident && token.name() != enumName &&
                 (!allowRecords || !isRecordStart())) {
             Token next = S.token(1);
             switch (next.kind) {
@@ -4314,12 +4414,11 @@ public class JavacParser implements Parser {
             }
         }
         switch (token.kind) {
-            case IDENTIFIER: case MONKEYS_AT: case LT:
-                if (token.kind == IDENTIFIER) {
-                    if (allowRecords && isRecordStart()) {
-                        return EnumeratorEstimate.MEMBER;
-                    }
+            case IDENTIFIER:
+                if (allowRecords && isRecordStart()) {
+                    return EnumeratorEstimate.MEMBER;
                 }
+            case MONKEYS_AT: case LT: case UNDERSCORE:
                 return EnumeratorEstimate.UNKNOWN;
             default:
                 return EnumeratorEstimate.MEMBER;

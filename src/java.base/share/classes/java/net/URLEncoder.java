@@ -71,6 +71,7 @@ import jdk.internal.util.StaticProperty;
  * &#252; is encoded as two bytes C3 (hex) and BC (hex), and the
  * character @ is encoded as one byte 40 (hex).
  *
+ * @spec https://www.w3.org/TR/html4 HTML 4.01 Specification
  * @see Charset#defaultCharset()
  *
  * @author  Herb Jellinek
@@ -211,6 +212,7 @@ public class URLEncoder {
      * @param charset the given charset
      * @return  the translated {@code String}.
      * @throws NullPointerException if {@code s} or {@code charset} is {@code null}.
+     * @spec https://www.w3.org/TR/html4 HTML 4.01 Specification
      * @see URLDecoder#decode(java.lang.String, Charset)
      * @since 10
      */

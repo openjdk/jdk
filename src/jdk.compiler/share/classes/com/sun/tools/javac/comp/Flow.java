@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -224,6 +224,7 @@ public class Flow {
         new AssignAnalyzer().analyzeTree(env, make);
         new FlowAnalyzer().analyzeTree(env, make);
         new CaptureAnalyzer().analyzeTree(env, make);
+        new ThisEscapeAnalyzer(names, syms, types, log, lint).analyzeTree(env);
     }
 
     public void analyzeLambda(Env<AttrContext> env, JCLambda that, TreeMaker make, boolean speculative) {
@@ -324,6 +325,7 @@ public class Flow {
         }
     }
 
+    @SuppressWarnings("this-escape")
     protected Flow(Context context) {
         context.put(flowKey, this);
         names = Names.instance(context);
@@ -1216,7 +1218,7 @@ public class Flow {
                     }
                 }
 
-                // add intersection of all thrown clauses of initial constructors
+                // add intersection of all throws clauses of initial constructors
                 // to set of caught exceptions, unless class is anonymous.
                 if (!anonymousClass) {
                     boolean firstConstructor = true;
@@ -1524,6 +1526,30 @@ public class Flow {
             if (tree.elsepart != null) {
                 scan(tree.elsepart);
             }
+        }
+
+        @Override
+        public void visitStringTemplate(JCStringTemplate tree) {
+            JCExpression processor = tree.processor;
+
+            if (processor != null) {
+                scan(processor);
+                Type interfaceType = types.asSuper(processor.type, syms.processorType.tsym);
+
+                if (interfaceType != null) {
+                    List<Type> typeArguments = interfaceType.getTypeArguments();
+
+                    if (typeArguments.size() == 2) {
+                        Type throwType = typeArguments.tail.head;
+
+                        if (throwType != null) {
+                            markThrown(tree, throwType);
+                        }
+                    }
+                }
+            }
+
+            scan(tree.expressions);
         }
 
         void checkCaughtType(DiagnosticPosition pos, Type exc, List<Type> thrownInTry, List<Type> caughtInTry) {
@@ -2230,6 +2256,15 @@ public class Flow {
                         }
                     }
 
+                    // verify all static final fields got initailized
+                    for (int i = firstadr; i < nextadr; i++) {
+                        JCVariableDecl vardecl = vardecls[i];
+                        VarSymbol var = vardecl.sym;
+                        if (var.owner == classDef.sym && var.isStatic()) {
+                            checkInit(TreeInfo.diagnosticPositionFor(var, vardecl), var);
+                        }
+                    }
+
                     // define all the instance fields
                     for (List<JCTree> l = tree.defs; l.nonEmpty(); l = l.tail) {
                         if (l.head.hasTag(VARDEF)) {
@@ -2318,7 +2353,7 @@ public class Flow {
                         for (int i = firstadr; i < nextadr; i++) {
                             JCVariableDecl vardecl = vardecls[i];
                             VarSymbol var = vardecl.sym;
-                            if (var.owner == classDef.sym) {
+                            if (var.owner == classDef.sym && !var.isStatic()) {
                                 // choose the diagnostic position based on whether
                                 // the ctor is default(synthesized) or not
                                 if (isSynthesized && !isCompactOrGeneratedRecordConstructor) {
@@ -2327,7 +2362,6 @@ public class Flow {
                                 } else if (isCompactOrGeneratedRecordConstructor) {
                                     boolean isInstanceRecordField = var.enclClass().isRecord() &&
                                             (var.flags_field & (Flags.PRIVATE | Flags.FINAL | Flags.GENERATED_MEMBER | Flags.RECORD)) != 0 &&
-                                            !var.isStatic() &&
                                             var.owner.kind == TYP;
                                     if (isInstanceRecordField) {
                                         boolean notInitialized = !inits.isMember(var.adr);
@@ -2849,11 +2883,17 @@ public class Flow {
         @Override
         public void visitLambda(JCLambda tree) {
             final Bits prevUninits = new Bits(uninits);
+            final Bits prevUninitsTry = new Bits(uninitsTry);
             final Bits prevInits = new Bits(inits);
             int returnadrPrev = returnadr;
             int nextadrPrev = nextadr;
             ListBuffer<PendingExit> prevPending = pendingExits;
             try {
+                // JLS 16.1.10: No rule allows V to be definitely unassigned before a lambda
+                // body. This is by design: a variable that was definitely unassigned before the
+                // lambda body may end up being assigned to later on, so we cannot conclude that
+                // the variable will be unassigned when the body is executed.
+                uninits.excludeFrom(firstadr);
                 returnadr = nextadr;
                 pendingExits = new ListBuffer<>();
                 for (List<JCVariableDecl> l = tree.params; l.nonEmpty(); l = l.tail) {
@@ -2871,6 +2911,7 @@ public class Flow {
             finally {
                 returnadr = returnadrPrev;
                 uninits.assign(prevUninits);
+                uninitsTry.assign(prevUninitsTry);
                 inits.assign(prevInits);
                 pendingExits = prevPending;
                 nextadr = nextadrPrev;

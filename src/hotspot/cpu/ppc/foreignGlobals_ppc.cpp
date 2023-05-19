@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 SAP SE. All rights reserved.
+ * Copyright (c) 2020, 2023, SAP SE. All rights reserved.
  * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -28,6 +28,10 @@
 #include "utilities/debug.hpp"
 
 class MacroAssembler;
+
+bool ForeignGlobals::is_foreign_linker_supported() {
+  return false;
+}
 
 // Stubbed out, implement later
 const ABIDescriptor ForeignGlobals::parse_abi_descriptor(jobject jabi) {

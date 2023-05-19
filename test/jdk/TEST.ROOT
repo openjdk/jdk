@@ -12,7 +12,7 @@
 # A "headful" test requires a graphical environment to meaningfully
 # run. Tests that are not headful are "headless".
 # A test flagged with key sound needs audio devices on the system, this
-# may be accompanied by the headful keyword since audio device access 
+# may be accompanied by the headful keyword since audio device access
 # is often linked to access to desktop resources and headful systems are
 # also more likely to have audio devices (ie meaning both input and output)
 # A test flagged with key "printer" requires a printer to succeed, else
@@ -46,7 +46,10 @@ requires.extraPropDefns.bootlibs = ../lib/jdk/test/whitebox
 requires.extraPropDefns.libs = \
     ../lib/jdk/test/lib/Platform.java \
     ../lib/jdk/test/lib/Container.java
-requires.extraPropDefns.vmOpts = -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+requires.extraPropDefns.javacOpts = --add-exports java.base/jdk.internal.foreign=ALL-UNNAMED
+requires.extraPropDefns.vmOpts = \
+    -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI \
+    --add-exports java.base/jdk.internal.foreign=ALL-UNNAMED
 requires.properties= \
     sun.arch.data.model \
     java.runtime.name \
@@ -69,10 +72,11 @@ requires.properties= \
     vm.jvmci \
     docker.support \
     release.implementor \
-    jdk.containerized
+    jdk.containerized \
+    jdk.foreign.linker
 
 # Minimum jtreg version
-requiredVersion=7.1.1+1
+requiredVersion=7.2+1
 
 # Path to libraries in the topmost test directory. This is needed so @library
 # does not need ../../ notation to reach them

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7073631 7159445 7156633 8028235 8065753 8205418 8205913 8228451 8237041 8253584 8246774 8256411 8256149 8259050 8266436 8267221 8271928 8275097 8293897 8295401
+ * @bug 7073631 7159445 7156633 8028235 8065753 8205418 8205913 8228451 8237041 8253584 8246774 8256411 8256149 8259050 8266436 8267221 8271928 8275097 8293897 8295401 8304671
  * @summary tests error and diagnostics positions
  * @author  Jan Lahoda
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -87,6 +87,7 @@ import com.sun.source.tree.DefaultCaseLabelTree;
 import com.sun.source.tree.ModuleTree;
 import com.sun.source.util.TreePathScanner;
 import com.sun.tools.javac.api.JavacTaskPool;
+import com.sun.tools.javac.api.JavacTaskPool.Worker;
 import java.util.Objects;
 
 public class JavacParserTest extends TestCase {
@@ -1912,6 +1913,52 @@ public class JavacParserTest extends TestCase {
         }.scan(cut, null);
     }
 
+    @Test
+    void testStringTemplate1() throws IOException {
+        String code = """
+                      package test;
+                      public class Test {
+                           Test(int a) {
+                               String s = "prefix \\{a} suffix";
+                           }
+                      }
+                      """;
+
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, null,
+                null, null, Arrays.asList(new MyFileObject(code)));
+        CompilationUnitTree cut = ct.parse().iterator().next();
+        ClassTree clazz = (ClassTree) cut.getTypeDecls().get(0);
+        MethodTree constr = (MethodTree) clazz.getMembers().get(0);
+        VariableTree decl = (VariableTree) constr.getBody().getStatements().get(0);
+        SourcePositions sp = Trees.instance(ct).getSourcePositions();
+        int initStart = (int) sp.getStartPosition(cut, decl.getInitializer());
+        int initEnd   = (int) sp.getEndPosition(cut, decl.getInitializer());
+        assertEquals("correct templated String span expected", code.substring(initStart, initEnd), "\"prefix \\{a} suffix\"");
+    }
+
+    @Test
+    void testStringTemplate2() throws IOException {
+        String code = """
+                      package test;
+                      public class Test {
+                           Test(int a) {
+                               String s = STR."prefix \\{a} suffix";
+                           }
+                      }
+                      """;
+
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, null,
+                null, null, Arrays.asList(new MyFileObject(code)));
+        CompilationUnitTree cut = ct.parse().iterator().next();
+        ClassTree clazz = (ClassTree) cut.getTypeDecls().get(0);
+        MethodTree constr = (MethodTree) clazz.getMembers().get(0);
+        VariableTree decl = (VariableTree) constr.getBody().getStatements().get(0);
+        SourcePositions sp = Trees.instance(ct).getSourcePositions();
+        int initStart = (int) sp.getStartPosition(cut, decl.getInitializer());
+        int initEnd   = (int) sp.getEndPosition(cut, decl.getInitializer());
+        assertEquals("correct templated String span expected", code.substring(initStart, initEnd), "STR.\"prefix \\{a} suffix\"");
+    }
+
     @Test //JDK-8293897
     void testImplicitFinalInTryWithResources() throws IOException {
         String code = """
@@ -1993,6 +2040,63 @@ public class JavacParserTest extends TestCase {
         }.scan(cut, null);
     }
 
+    @Test
+    void testIncompleteStringTemplate() throws IOException {
+        String template = "\"\\{o.toString()}\"";
+        String prefix = """
+                      package t;
+                      class Test {
+                          void test(Object o) {
+                              String s = STR.""";
+
+        Worker<Void> verifyParseable = task -> {
+            try {
+                task.parse().iterator().next();
+                return null;
+            } catch (IOException ex) {
+                throw new AssertionError(ex);
+            }
+        };
+        JavacTaskPool pool = new JavacTaskPool(1);
+        DiagnosticListener<JavaFileObject> dl = d -> {};
+        List<String> options = List.of("--enable-preview",
+                                       "-source", System.getProperty("java.specification.version"));
+        for (int i = 0; i < template.length(); i++) {
+            pool.getTask(null, fm, dl, options,
+                    null, Arrays.asList(new MyFileObject(prefix + template.substring(0, i))),
+                    verifyParseable
+            );
+        }
+        for (int i = 0; i < template.length() - 1; i++) {
+            pool.getTask(null, fm, dl, options,
+                    null, Arrays.asList(new MyFileObject(prefix + template.substring(0, i) + "\"")),
+                    verifyParseable);
+        }
+        String incomplete = prefix + "\"\\{o.";
+        pool.getTask(null, fm, dl, options,
+                null, Arrays.asList(new MyFileObject(incomplete)), task -> {
+            try {
+                CompilationUnitTree cut = task.parse().iterator().next();
+                String result = cut.toString().replaceAll("\\R", "\n");
+                System.out.println("RESULT\n" + result);
+                assertEquals("incorrect AST",
+                             result,
+                             """
+                             package t;
+                             \n\
+                             class Test {
+                                 \n\
+                                 void test(Object o) {
+                                     String s = STR.<error>;
+                                 }
+                             }""");
+                return null;
+            } catch (IOException ex) {
+                throw new AssertionError(ex);
+            }
+        });
+    }
+
     @Test //JDK-8295401
     void testModuleInfoProvidesRecovery() throws IOException {
         String code = """
@@ -2059,6 +2163,183 @@ public class JavacParserTest extends TestCase {
                 throw new IllegalStateException(ex);
             }
         });
+    }
+
+    @Test //JDK-8304671
+    void testEnumConstantUnderscore() throws IOException {
+        record TestCase(String code, String release, String ast, String errors) {}
+        TestCase[] testCases = new TestCase[] {
+            new TestCase("""
+                         package t;
+                         enum Test {
+                             _
+                         }
+                         """,
+                         "8",
+                         """
+                         package t;
+                         \n\
+                         enum Test {
+                             /*public static final*/ _ /* = new Test() */ /*enum*/ ;
+                         } """,
+                         """
+                         - compiler.warn.option.obsolete.source: 8
+                         - compiler.warn.option.obsolete.target: 8
+                         - compiler.warn.option.obsolete.suppression
+                         Test.java:3:5: compiler.warn.underscore.as.identifier
+                         """),
+            new TestCase("""
+                         package t;
+                         enum Test {
+                             _
+                         }
+                         """,
+                         System.getProperty("java.specification.version"),
+                         """
+                         package t;
+                         \n\
+                         enum Test {
+                             /*public static final*/ _ /* = new Test() */ /*enum*/ ;
+                         } """,
+                         """
+                         Test.java:3:5: compiler.err.underscore.as.identifier
+                         """),
+            new TestCase("""
+                         package t;
+                         enum Test {
+                             _;
+                         }
+                         """,
+                         "8",
+                         """
+                         package t;
+                         \n\
+                         enum Test {
+                             /*public static final*/ _ /* = new Test() */ /*enum*/ ;
+                         } """,
+                         """
+                         - compiler.warn.option.obsolete.source: 8
+                         - compiler.warn.option.obsolete.target: 8
+                         - compiler.warn.option.obsolete.suppression
+                         Test.java:3:5: compiler.warn.underscore.as.identifier
+                         """),
+            new TestCase("""
+                         package t;
+                         enum Test {
+                             _;
+                         }
+                         """,
+                         System.getProperty("java.specification.version"),
+                         """
+                         package t;
+                         \n\
+                         enum Test {
+                             /*public static final*/ _ /* = new Test() */ /*enum*/ ;
+                         } """,
+                         """
+                         Test.java:3:5: compiler.err.underscore.as.identifier
+                         """),
+            new TestCase("""
+                         package t;
+                         enum Test {
+                             A;
+                             void t() {}
+                             _;
+                         }
+                         """,
+                         "8",
+                         """
+                         package t;
+                         \n\
+                         enum Test {
+                             /*public static final*/ A /* = new Test() */ /*enum*/ ,
+                             /*public static final*/ _ /* = new Test() */ /*enum*/ ;
+                             \n\
+                             void t() {
+                             }
+                         } """,
+                         """
+                         - compiler.warn.option.obsolete.source: 8
+                         - compiler.warn.option.obsolete.target: 8
+                         - compiler.warn.option.obsolete.suppression
+                         Test.java:5:5: compiler.err.enum.constant.not.expected
+                         Test.java:5:5: compiler.warn.underscore.as.identifier
+                         """),
+            new TestCase("""
+                         package t;
+                         enum Test {
+                             A;
+                             void t() {}
+                             _;
+                         }
+                         """,
+                         System.getProperty("java.specification.version"),
+                         """
+                         package t;
+                         \n\
+                         enum Test {
+                             /*public static final*/ A /* = new Test() */ /*enum*/ ,
+                             /*public static final*/ _ /* = new Test() */ /*enum*/ ;
+                             \n\
+                             void t() {
+                             }
+                         } """,
+                         """
+                         Test.java:5:5: compiler.err.enum.constant.not.expected
+                         """),
+            new TestCase("""
+                         package t;
+                         enum Test {
+                             _ {},
+                             A;
+                         }
+                         """,
+                         "8",
+                         """
+                         package t;
+                         \n\
+                         enum Test {
+                             /*public static final*/ _ /* = new Test() */ /*enum*/  {
+                             },
+                             /*public static final*/ A /* = new Test() */ /*enum*/ ;
+                         } """,
+                         """
+                         - compiler.warn.option.obsolete.source: 8
+                         - compiler.warn.option.obsolete.target: 8
+                         - compiler.warn.option.obsolete.suppression
+                         Test.java:3:5: compiler.warn.underscore.as.identifier
+                         """),
+            new TestCase("""
+                         package t;
+                         enum Test {
+                             _ {},
+                             A;
+                         }
+                         """,
+                         System.getProperty("java.specification.version"),
+                         """
+                         package t;
+                         \n\
+                         enum Test {
+                             /*public static final*/ _ /* = new Test() */ /*enum*/  {
+                             },
+                             /*public static final*/ A /* = new Test() */ /*enum*/ ;
+                         } """,
+                         """
+                         Test.java:3:5: compiler.err.underscore.as.identifier
+                         """),
+        };
+        for (TestCase testCase : testCases) {
+            StringWriter out = new StringWriter();
+            JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(out, fm, null,
+                    List.of("-XDrawDiagnostics", "--release", testCase.release),
+                    null, Arrays.asList(new MyFileObject(testCase.code)));
+            String ast = ct.parse().iterator().next().toString().replaceAll("\\R", "\n");
+            assertEquals("Unexpected AST, got:\n" + ast, testCase.ast, ast);
+            assertEquals("Unexpected errors, got:\n" + out.toString(),
+                         out.toString().replaceAll("\\R", "\n"),
+                         testCase.errors);
+        }
     }
 
     void run(String[] args) throws Exception {

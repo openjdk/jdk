@@ -43,7 +43,7 @@ JNIEXPORT jint JNICALL
 Java_com_sun_management_internal_Flag_getInternalFlagCount
   (JNIEnv *env, jclass cls)
 {
-    jlong count = jmm_interface->GetLongAttribute(env, NULL,
+    jlong count = jmm_interface_management_ext->GetLongAttribute(env, NULL,
                                                   JMM_VM_GLOBAL_COUNT);
     return (jint) count;
 }
@@ -52,7 +52,7 @@ JNIEXPORT jobjectArray JNICALL
   Java_com_sun_management_internal_Flag_getAllFlagNames
 (JNIEnv *env, jclass cls)
 {
-  return jmm_interface->GetVMGlobalNames(env);
+  return jmm_interface_management_ext->GetVMGlobalNames(env);
 }
 
 static jobject find_origin_constant(JNIEnv* env, const char* enum_name) {
@@ -110,7 +110,7 @@ Java_com_sun_management_internal_Flag_getFlags
     }
 
     memset(globals, 0, gsize);
-    num_flags = jmm_interface->GetVMGlobals(env, names, globals, count);
+    num_flags = jmm_interface_management_ext->GetVMGlobals(env, names, globals, count);
     if (num_flags == 0) {
         free(globals);
         return 0;
@@ -209,7 +209,7 @@ Java_com_sun_management_internal_Flag_setLongValue
    jvalue v;
    v.j = value;
 
-   jmm_interface->SetVMGlobal(env, name, v);
+   jmm_interface_management_ext->SetVMGlobal(env, name, v);
 }
 
 JNIEXPORT void JNICALL
@@ -219,7 +219,7 @@ Java_com_sun_management_internal_Flag_setDoubleValue
    jvalue v;
    v.d = value;
 
-   jmm_interface->SetVMGlobal(env, name, v);
+   jmm_interface_management_ext->SetVMGlobal(env, name, v);
 }
 
 JNIEXPORT void JNICALL
@@ -229,7 +229,7 @@ Java_com_sun_management_internal_Flag_setBooleanValue
    jvalue v;
    v.z = value;
 
-   jmm_interface->SetVMGlobal(env, name, v);
+   jmm_interface_management_ext->SetVMGlobal(env, name, v);
 }
 
 JNIEXPORT void JNICALL
@@ -239,5 +239,5 @@ Java_com_sun_management_internal_Flag_setStringValue
    jvalue v;
    v.l = value;
 
-   jmm_interface->SetVMGlobal(env, name, v);
+   jmm_interface_management_ext->SetVMGlobal(env, name, v);
 }

@@ -63,6 +63,7 @@ public class JavacTypes implements javax.lang.model.util.Types {
         return instance;
     }
 
+    @SuppressWarnings("this-escape")
     protected JavacTypes(Context context) {
         context.put(JavacTypes.class, this);
         syms = Symtab.instance(context);

@@ -59,6 +59,8 @@ static bool must_be_in_vm() {
 }
 #endif //ASSERT
 
+bool Dependencies::_verify_in_progress = false;  // don't -Xlog:dependencies
+
 void Dependencies::initialize(ciEnv* env) {
   Arena* arena = env->arena();
   _oop_recorder = env->oop_recorder();
@@ -638,7 +640,7 @@ Dependencies::DepType Dependencies::validate_dependencies(CompileTask* task, cha
           // resizing in the context of an inner resource mark.
           char* buffer = NEW_RESOURCE_ARRAY(char, O_BUFLEN);
           stringStream st(buffer, O_BUFLEN);
-          deps.print_dependency(witness, true, &st);
+          deps.print_dependency(&st, witness, true);
           *failure_detail = st.as_string();
         }
       }
@@ -866,7 +868,7 @@ void Dependencies::DepStream::log_dependency(Klass* witness) {
   guarantee(argslen == args->length(), "args array cannot grow inside nested ResoureMark scope");
 }
 
-void Dependencies::DepStream::print_dependency(Klass* witness, bool verbose, outputStream* st) {
+void Dependencies::DepStream::print_dependency(outputStream* st, Klass* witness, bool verbose) {
   ResourceMark rm;
   int nargs = argument_count();
   GrowableArray<DepArgument>* args = new GrowableArray<DepArgument>(nargs);
@@ -1166,7 +1168,7 @@ Klass* AbstractClassHierarchyWalker::find_witness(InstanceKlass* context_type, K
       return nullptr; // no implementors
     } else if (nof_impls == 1) { // unique implementor
       assert(context_type != context_type->implementor(), "not unique");
-      context_type = InstanceKlass::cast(context_type->implementor());
+      context_type = context_type->implementor();
     } else { // nof_impls >= 2
       // Avoid this case: *I.m > { A.m, C }; B.m > C
       // Here, I.m has 2 concrete implementations, but m appears unique
@@ -1597,10 +1599,9 @@ bool Dependencies::verify_method_context(InstanceKlass* ctxk, Method* m) {
     return true;  // Must punt the assertion to true.
   }
   Method* lm = ctxk->lookup_method(m->name(), m->signature());
-  if (lm == nullptr && ctxk->is_instance_klass()) {
+  if (lm == nullptr) {
     // It might be an interface method
-    lm = InstanceKlass::cast(ctxk)->lookup_method_in_ordered_interfaces(m->name(),
-                                                                        m->signature());
+    lm = ctxk->lookup_method_in_ordered_interfaces(m->name(), m->signature());
   }
   if (lm == m) {
     // Method m is inherited into ctxk.
@@ -1764,7 +1765,7 @@ Klass* Dependencies::find_unique_concrete_subtype(InstanceKlass* ctxk) {
     // Make sure the dependency mechanism will pass this discovery:
     if (VerifyDependencies) {
       // Turn off dependency tracing while actually testing deps.
-      FlagSetting fs(TraceDependencies, false);
+      FlagSetting fs(_verify_in_progress, true);
       if (!Dependencies::is_concrete_klass(ctxk)) {
         guarantee(nullptr == (void *)
                   check_abstract_with_unique_concrete_subtype(ctxk, conck),
@@ -2059,9 +2060,12 @@ Klass* Dependencies::check_call_site_target_value(oop call_site, oop method_hand
 }
 
 void Dependencies::DepStream::trace_and_log_witness(Klass* witness) {
+  if (_verify_in_progress) return;  // don't log
   if (witness != nullptr) {
-    if (TraceDependencies) {
-      print_dependency(witness, /*verbose=*/ true);
+    LogTarget(Debug, dependencies) lt;
+    if (lt.is_enabled()) {
+      LogStream ls(&lt);
+      print_dependency(&ls, witness, /*verbose=*/ true);
     }
     // The following is a no-op unless logging is enabled:
     log_dependency(witness);
@@ -2171,26 +2175,28 @@ Klass* Dependencies::DepStream::spot_check_dependency_at(DepChange& changes) {
 }
 
 
-void DepChange::print() {
+void DepChange::print() { print_on(tty); }
+
+void DepChange::print_on(outputStream* st) {
   int nsup = 0, nint = 0;
   for (ContextStream str(*this); str.next(); ) {
-    Klass* k = str.klass();
+    InstanceKlass* k = str.klass();
     switch (str.change_type()) {
     case Change_new_type:
-      tty->print_cr("  dependee = %s", k->external_name());
+      st->print_cr("  dependee = %s", k->external_name());
       break;
     case Change_new_sub:
       if (!WizardMode) {
         ++nsup;
       } else {
-        tty->print_cr("  context super = %s", k->external_name());
+        st->print_cr("  context super = %s", k->external_name());
       }
       break;
     case Change_new_impl:
       if (!WizardMode) {
         ++nint;
       } else {
-        tty->print_cr("  context interface = %s", k->external_name());
+        st->print_cr("  context interface = %s", k->external_name());
       }
       break;
     default:
@@ -2198,12 +2204,12 @@ void DepChange::print() {
     }
   }
   if (nsup + nint != 0) {
-    tty->print_cr("  context supers = %d, interfaces = %d", nsup, nint);
+    st->print_cr("  context supers = %d, interfaces = %d", nsup, nint);
   }
 }
 
 void DepChange::ContextStream::start() {
-  Klass* type = (_changes.is_klass_change() ? _changes.as_klass_change()->type() : (Klass*) nullptr);
+  InstanceKlass* type = (_changes.is_klass_change() ? _changes.as_klass_change()->type() : (InstanceKlass*) nullptr);
   _change_type = (type == nullptr ? NO_CHANGE : Start_Klass);
   _klass = type;
   _ti_base = nullptr;
@@ -2214,7 +2220,7 @@ void DepChange::ContextStream::start() {
 bool DepChange::ContextStream::next() {
   switch (_change_type) {
   case Start_Klass:             // initial state; _klass is the new type
-    _ti_base = InstanceKlass::cast(_klass)->transitive_interfaces();
+    _ti_base = _klass->transitive_interfaces();
     _ti_index = 0;
     _change_type = Change_new_type;
     return true;
@@ -2224,7 +2230,7 @@ bool DepChange::ContextStream::next() {
   case Change_new_sub:
     // 6598190: brackets workaround Sun Studio C++ compiler bug 6629277
     {
-      _klass = _klass->super();
+      _klass = _klass->java_super();
       if (_klass != nullptr) {
         return true;
       }
@@ -2254,9 +2260,9 @@ void KlassDepChange::initialize() {
   // Mark all dependee and all its superclasses
   // Mark transitive interfaces
   for (ContextStream str(*this); str.next(); ) {
-    Klass* d = str.klass();
-    assert(!InstanceKlass::cast(d)->is_marked_dependent(), "checking");
-    InstanceKlass::cast(d)->set_is_marked_dependent(true);
+    InstanceKlass* d = str.klass();
+    assert(!d->is_marked_dependent(), "checking");
+    d->set_is_marked_dependent(true);
   }
 }
 
@@ -2264,8 +2270,8 @@ KlassDepChange::~KlassDepChange() {
   // Unmark all dependee and all its superclasses
   // Unmark transitive interfaces
   for (ContextStream str(*this); str.next(); ) {
-    Klass* d = str.klass();
-    InstanceKlass::cast(d)->set_is_marked_dependent(false);
+    InstanceKlass* d = str.klass();
+    d->set_is_marked_dependent(false);
   }
 }
 

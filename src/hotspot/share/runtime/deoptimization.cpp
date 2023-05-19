@@ -98,6 +98,121 @@
 #include "jfr/metadata/jfrSerializer.hpp"
 #endif
 
+uint64_t DeoptimizationScope::_committed_deopt_gen = 0;
+uint64_t DeoptimizationScope::_active_deopt_gen    = 1;
+bool     DeoptimizationScope::_committing_in_progress = false;
+
+DeoptimizationScope::DeoptimizationScope() : _required_gen(0) {
+  DEBUG_ONLY(_deopted = false;)
+
+  MutexLocker ml(CompiledMethod_lock, Mutex::_no_safepoint_check_flag);
+  // If there is nothing to deopt _required_gen is the same as comitted.
+  _required_gen = DeoptimizationScope::_committed_deopt_gen;
+}
+
+DeoptimizationScope::~DeoptimizationScope() {
+  assert(_deopted, "Deopt not executed");
+}
+
+void DeoptimizationScope::mark(CompiledMethod* cm, bool inc_recompile_counts) {
+  MutexLocker ml(CompiledMethod_lock->owned_by_self() ? nullptr : CompiledMethod_lock,
+                 Mutex::_no_safepoint_check_flag);
+
+  // If it's already marked but we still need it to be deopted.
+  if (cm->is_marked_for_deoptimization()) {
+    dependent(cm);
+    return;
+  }
+
+  CompiledMethod::DeoptimizationStatus status =
+    inc_recompile_counts ? CompiledMethod::deoptimize : CompiledMethod::deoptimize_noupdate;
+  Atomic::store(&cm->_deoptimization_status, status);
+
+  // Make sure active is not committed
+  assert(DeoptimizationScope::_committed_deopt_gen < DeoptimizationScope::_active_deopt_gen, "Must be");
+  assert(cm->_deoptimization_generation == 0, "Is already marked");
+
+  cm->_deoptimization_generation = DeoptimizationScope::_active_deopt_gen;
+  _required_gen                  = DeoptimizationScope::_active_deopt_gen;
+}
+
+void DeoptimizationScope::dependent(CompiledMethod* cm) {
+  MutexLocker ml(CompiledMethod_lock->owned_by_self() ? nullptr : CompiledMethod_lock,
+                 Mutex::_no_safepoint_check_flag);
+  // A method marked by someone else may have a _required_gen lower than what we marked with.
+  // Therefore only store it if it's higher than _required_gen.
+  if (_required_gen < cm->_deoptimization_generation) {
+    _required_gen = cm->_deoptimization_generation;
+  }
+}
+
+void DeoptimizationScope::deoptimize_marked() {
+  assert(!_deopted, "Already deopted");
+
+  // We are not alive yet.
+  if (!Universe::is_fully_initialized()) {
+    DEBUG_ONLY(_deopted = true;)
+    return;
+  }
+
+  // Safepoints are a special case, handled here.
+  if (SafepointSynchronize::is_at_safepoint()) {
+    DeoptimizationScope::_committed_deopt_gen = DeoptimizationScope::_active_deopt_gen;
+    DeoptimizationScope::_active_deopt_gen++;
+    Deoptimization::deoptimize_all_marked();
+    DEBUG_ONLY(_deopted = true;)
+    return;
+  }
+
+  uint64_t comitting = 0;
+  bool wait = false;
+  while (true) {
+    {
+      MutexLocker ml(CompiledMethod_lock->owned_by_self() ? nullptr : CompiledMethod_lock,
+                 Mutex::_no_safepoint_check_flag);
+      // First we check if we or someone else already deopted the gen we want.
+      if (DeoptimizationScope::_committed_deopt_gen >= _required_gen) {
+        DEBUG_ONLY(_deopted = true;)
+        return;
+      }
+      if (!_committing_in_progress) {
+        // The version we are about to commit.
+        comitting = DeoptimizationScope::_active_deopt_gen;
+        // Make sure new marks use a higher gen.
+        DeoptimizationScope::_active_deopt_gen++;
+        _committing_in_progress = true;
+        wait = false;
+      } else {
+        // Another thread is handshaking and committing a gen.
+        wait = true;
+      }
+    }
+    if (wait) {
+      // Wait and let the concurrent handshake be performed.
+      ThreadBlockInVM tbivm(JavaThread::current());
+      os::naked_yield();
+    } else {
+      // Performs the handshake.
+      Deoptimization::deoptimize_all_marked(); // May safepoint and an additional deopt may have occurred.
+      DEBUG_ONLY(_deopted = true;)
+      {
+        MutexLocker ml(CompiledMethod_lock->owned_by_self() ? nullptr : CompiledMethod_lock,
+                       Mutex::_no_safepoint_check_flag);
+        // Make sure that committed doesn't go backwards.
+        // Should only happen if we did a deopt during a safepoint above.
+        if (DeoptimizationScope::_committed_deopt_gen < comitting) {
+          DeoptimizationScope::_committed_deopt_gen = comitting;
+        }
+        _committing_in_progress = false;
+
+        assert(DeoptimizationScope::_committed_deopt_gen >= _required_gen, "Must be");
+
+        return;
+      }
+    }
+  }
+}
+
 Deoptimization::UnrollBlock::UnrollBlock(int  size_of_deoptimized_frame,
                                          int  caller_adjustment,
                                          int  caller_actual_parameters,
@@ -915,17 +1030,11 @@ class DeoptimizeMarkedClosure : public HandshakeClosure {
   }
 };
 
-void Deoptimization::deoptimize_all_marked(nmethod* nmethod_only) {
+void Deoptimization::deoptimize_all_marked() {
   ResourceMark rm;
 
   // Make the dependent methods not entrant
-  if (nmethod_only != nullptr) {
-    nmethod_only->mark_for_deoptimization();
-    nmethod_only->make_not_entrant();
-    CodeCache::make_nmethod_deoptimized(nmethod_only);
-  } else {
-    CodeCache::make_marked_nmethods_deoptimized();
-  }
+  CodeCache::make_marked_nmethods_deoptimized();
 
   DeoptimizeMarkedClosure deopt;
   if (SafepointSynchronize::is_at_safepoint()) {
@@ -947,8 +1056,10 @@ protected:
     char* klass_name_str = klass_name->as_C_string();
     InstanceKlass* ik = SystemDictionary::find_instance_klass(thread, klass_name, Handle(), Handle());
     guarantee(ik != nullptr, "%s must be loaded", klass_name_str);
-    guarantee(ik->is_initialized(), "%s must be initialized", klass_name_str);
-    CacheType::compute_offsets(ik);
+    if (!ik->is_in_error_state()) {
+      guarantee(ik->is_initialized(), "%s must be initialized", klass_name_str);
+      CacheType::compute_offsets(ik);
+    }
     return ik;
   }
 };
@@ -961,11 +1072,17 @@ protected:
   static BoxCache<PrimitiveType, CacheType, BoxType> *_singleton;
   BoxCache(Thread* thread) {
     InstanceKlass* ik = BoxCacheBase<CacheType>::find_cache_klass(thread, CacheType::symbol());
-    objArrayOop cache = CacheType::cache(ik);
-    assert(cache->length() > 0, "Empty cache");
-    _low = BoxType::value(cache->obj_at(0));
-    _high = _low + cache->length() - 1;
-    _cache = JNIHandles::make_global(Handle(thread, cache));
+    if (ik->is_in_error_state()) {
+      _low = 1;
+      _high = 0;
+      _cache = nullptr;
+    } else {
+      objArrayOop cache = CacheType::cache(ik);
+      assert(cache->length() > 0, "Empty cache");
+      _low = BoxType::value(cache->obj_at(0));
+      _high = _low + cache->length() - 1;
+      _cache = JNIHandles::make_global(Handle(thread, cache));
+    }
   }
   ~BoxCache() {
     JNIHandles::destroy_global(_cache);
@@ -987,7 +1104,11 @@ public:
     }
     return nullptr;
   }
-  oop lookup_raw(intptr_t raw_value) {
+  oop lookup_raw(intptr_t raw_value, bool& cache_init_error) {
+    if (_cache == nullptr) {
+      cache_init_error = true;
+      return nullptr;
+    }
     // Have to cast to avoid little/big-endian problems.
     if (sizeof(PrimitiveType) > sizeof(jint)) {
       jlong value = (jlong)raw_value;
@@ -1017,8 +1138,13 @@ protected:
   static BooleanBoxCache *_singleton;
   BooleanBoxCache(Thread *thread) {
     InstanceKlass* ik = find_cache_klass(thread, java_lang_Boolean::symbol());
-    _true_cache = JNIHandles::make_global(Handle(thread, java_lang_Boolean::get_TRUE(ik)));
-    _false_cache = JNIHandles::make_global(Handle(thread, java_lang_Boolean::get_FALSE(ik)));
+    if (ik->is_in_error_state()) {
+      _true_cache = nullptr;
+      _false_cache = nullptr;
+    } else {
+      _true_cache = JNIHandles::make_global(Handle(thread, java_lang_Boolean::get_TRUE(ik)));
+      _false_cache = JNIHandles::make_global(Handle(thread, java_lang_Boolean::get_FALSE(ik)));
+    }
   }
   ~BooleanBoxCache() {
     JNIHandles::destroy_global(_true_cache);
@@ -1034,7 +1160,11 @@ public:
     }
     return _singleton;
   }
-  oop lookup_raw(intptr_t raw_value) {
+  oop lookup_raw(intptr_t raw_value, bool& cache_in_error) {
+    if (_true_cache == nullptr) {
+      cache_in_error = true;
+      return nullptr;
+    }
     // Have to cast to avoid little/big-endian problems.
     jboolean value = (jboolean)*((jint*)&raw_value);
     return lookup(value);
@@ -1049,18 +1179,18 @@ public:
 
 BooleanBoxCache* BooleanBoxCache::_singleton = nullptr;
 
-oop Deoptimization::get_cached_box(AutoBoxObjectValue* bv, frame* fr, RegisterMap* reg_map, TRAPS) {
+oop Deoptimization::get_cached_box(AutoBoxObjectValue* bv, frame* fr, RegisterMap* reg_map, bool& cache_init_error, TRAPS) {
    Klass* k = java_lang_Class::as_Klass(bv->klass()->as_ConstantOopReadValue()->value()());
    BasicType box_type = vmClasses::box_klass_type(k);
    if (box_type != T_OBJECT) {
      StackValue* value = StackValue::create_stack_value(fr, reg_map, bv->field_at(box_type == T_LONG ? 1 : 0));
      switch(box_type) {
-       case T_INT:     return IntegerBoxCache::singleton(THREAD)->lookup_raw(value->get_int());
-       case T_CHAR:    return CharacterBoxCache::singleton(THREAD)->lookup_raw(value->get_int());
-       case T_SHORT:   return ShortBoxCache::singleton(THREAD)->lookup_raw(value->get_int());
-       case T_BYTE:    return ByteBoxCache::singleton(THREAD)->lookup_raw(value->get_int());
-       case T_BOOLEAN: return BooleanBoxCache::singleton(THREAD)->lookup_raw(value->get_int());
-       case T_LONG:    return LongBoxCache::singleton(THREAD)->lookup_raw(value->get_int());
+       case T_INT:     return IntegerBoxCache::singleton(THREAD)->lookup_raw(value->get_int(), cache_init_error);
+       case T_CHAR:    return CharacterBoxCache::singleton(THREAD)->lookup_raw(value->get_int(), cache_init_error);
+       case T_SHORT:   return ShortBoxCache::singleton(THREAD)->lookup_raw(value->get_int(), cache_init_error);
+       case T_BYTE:    return ByteBoxCache::singleton(THREAD)->lookup_raw(value->get_int(), cache_init_error);
+       case T_BOOLEAN: return BooleanBoxCache::singleton(THREAD)->lookup_raw(value->get_int(), cache_init_error);
+       case T_LONG:    return LongBoxCache::singleton(THREAD)->lookup_raw(value->get_int(), cache_init_error);
        default:;
      }
    }
@@ -1084,21 +1214,26 @@ bool Deoptimization::realloc_objects(JavaThread* thread, frame* fr, RegisterMap*
     Klass* k = java_lang_Class::as_Klass(sv->klass()->as_ConstantOopReadValue()->value()());
     oop obj = nullptr;
 
+    bool cache_init_error = false;
     if (k->is_instance_klass()) {
 #if INCLUDE_JVMCI
       CompiledMethod* cm = fr->cb()->as_compiled_method_or_null();
       if (cm->is_compiled_by_jvmci() && sv->is_auto_box()) {
         AutoBoxObjectValue* abv = (AutoBoxObjectValue*) sv;
-        obj = get_cached_box(abv, fr, reg_map, THREAD);
+        obj = get_cached_box(abv, fr, reg_map, cache_init_error, THREAD);
         if (obj != nullptr) {
           // Set the flag to indicate the box came from a cache, so that we can skip the field reassignment for it.
           abv->set_cached(true);
+        } else if (cache_init_error) {
+          // Results in an OOME which is valid (as opposed to a class initialization error)
+          // and is fine for the rare case a cache initialization failing.
+          failures = true;
         }
       }
 #endif // INCLUDE_JVMCI
 
       InstanceKlass* ik = InstanceKlass::cast(k);
-      if (obj == nullptr) {
+      if (obj == nullptr && !cache_init_error) {
 #ifdef COMPILER2
         if (EnableVectorSupport && VectorSupport::is_vector(ik)) {
           obj = VectorSupport::allocate_vector(ik, fr, reg_map, sv, THREAD);
@@ -1124,7 +1259,7 @@ bool Deoptimization::realloc_objects(JavaThread* thread, frame* fr, RegisterMap*
     }
 
     assert(sv->value().is_null(), "redundant reallocation");
-    assert(obj != nullptr || HAS_PENDING_EXCEPTION, "allocation should succeed or we should get an exception");
+    assert(obj != nullptr || HAS_PENDING_EXCEPTION || cache_init_error, "allocation should succeed or we should get an exception");
     CLEAR_PENDING_EXCEPTION;
     sv->set_value(obj);
   }
@@ -1328,7 +1463,7 @@ static int reassign_fields_by_klass(InstanceKlass* klass, frame* fr, RegisterMap
   InstanceKlass* ik = klass;
   while (ik != nullptr) {
     for (AllFieldStream fs(ik); !fs.done(); fs.next()) {
-      if (!fs.access_flags().is_static() && (!skip_internal || !fs.access_flags().is_internal())) {
+      if (!fs.access_flags().is_static() && (!skip_internal || !fs.field_flags().is_injected())) {
         ReassignedField field;
         field._offset = fs.offset();
         field._type = Signature::basic_type(fs.signature());
@@ -1495,7 +1630,7 @@ bool Deoptimization::relock_objects(JavaThread* thread, GrowableArray<MonitorInf
         Handle obj(thread, mon_info->owner());
         markWord mark = obj->mark();
         if (exec_mode == Unpack_none) {
-          if (mark.has_locker() && fr.sp() > (intptr_t*)mark.locker()) {
+          if (LockingMode == LM_LEGACY && mark.has_locker() && fr.sp() > (intptr_t*)mark.locker()) {
             // With exec_mode == Unpack_none obj may be thread local and locked in
             // a callee frame. Make the lock in the callee a recursive lock and restore the displaced header.
             markWord dmw = mark.displaced_mark_helper();

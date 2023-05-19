@@ -54,13 +54,15 @@ JVMCICompiler* JVMCICompiler::instance(bool require_non_null, TRAPS) {
   return _instance;
 }
 
+void compiler_stubs_init(bool in_compiler_thread);
+
 // Initialization
 void JVMCICompiler::initialize() {
   assert(!CompilerConfig::is_c1_or_interpreter_only_no_jvmci(), "JVMCI is launched, it's not c1/interpreter only mode");
   if (!UseCompiler || !EnableJVMCI || !UseJVMCICompiler || !should_perform_init()) {
     return;
   }
-
+  compiler_stubs_init(true /* in_compiler_thread */); // generate compiler's intrinsics stubs
   set_state(initialized);
 }
 

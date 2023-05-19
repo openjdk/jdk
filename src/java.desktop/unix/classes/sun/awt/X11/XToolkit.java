@@ -2385,7 +2385,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
     private static int oops_position = 0;
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     protected boolean syncNativeQueue(long timeout) {

@@ -138,6 +138,10 @@ julong os::available_memory() {
   return Bsd::available_memory();
 }
 
+julong os::free_memory() {
+  return Bsd::available_memory();
+}
+
 // available here means free
 julong os::Bsd::available_memory() {
   uint64_t available = physical_memory() >> 2;
@@ -586,7 +590,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
   assert(thread->osthread() == nullptr, "caller responsible");
 
   // Allocate the OSThread object
-  OSThread* osthread = new OSThread();
+  OSThread* osthread = new (std::nothrow) OSThread();
   if (osthread == nullptr) {
     return false;
   }
@@ -679,7 +683,7 @@ bool os::create_attached_thread(JavaThread* thread) {
 #endif
 
   // Allocate the OSThread object
-  OSThread* osthread = new OSThread();
+  OSThread* osthread = new (std::nothrow) OSThread();
 
   if (osthread == nullptr) {
     return false;
@@ -708,9 +712,9 @@ bool os::create_attached_thread(JavaThread* thread) {
   PosixSignals::hotspot_sigmask(thread);
 
   log_info(os, thread)("Thread attached (tid: " UINTX_FORMAT ", pthread id: " UINTX_FORMAT
-                       ", stack: " PTR_FORMAT " - " PTR_FORMAT " (" SIZE_FORMAT "k) ).",
+                       ", stack: " PTR_FORMAT " - " PTR_FORMAT " (" SIZE_FORMAT "K) ).",
                        os::current_thread_id(), (uintx) pthread_self(),
-                       p2i(thread->stack_base()), p2i(thread->stack_end()), thread->stack_size());
+                       p2i(thread->stack_base()), p2i(thread->stack_end()), thread->stack_size() / K);
   return true;
 }
 
@@ -1769,9 +1773,6 @@ char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes, bool 
   // in one of the methods further up the call chain.  See bug 5044738.
   assert(bytes % os::vm_page_size() == 0, "reserving unexpected size block");
 
-  // Repeatedly allocate blocks until the block is allocated at the
-  // right spot.
-
   // Bsd mmap allows caller to pass an address as hint; give it a try first,
   // if kernel honors the hint then we can return immediately.
   char * addr = anon_mmap(requested_addr, bytes, exec);
@@ -2076,7 +2077,7 @@ uint os::processor_id() {
     // Assign processor id to APIC id
     processor_id = Atomic::cmpxchg(&processor_id_map[apic_id], processor_id_unassigned, processor_id_assigning);
     if (processor_id == processor_id_unassigned) {
-      processor_id = Atomic::fetch_and_add(&processor_id_next, 1) % os::processor_count();
+      processor_id = Atomic::fetch_then_add(&processor_id_next, 1) % os::processor_count();
       Atomic::store(&processor_id_map[apic_id], processor_id);
     }
   }

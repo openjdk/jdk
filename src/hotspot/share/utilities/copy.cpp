@@ -26,6 +26,7 @@
 #include "utilities/copy.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/align.hpp"
+#include "utilities/byteswap.hpp"
 #include "utilities/copy.hpp"
 
 
@@ -84,33 +85,6 @@ public:
   }
 
 private:
-  /**
-   * Byte swap a 16-bit value
-   */
-  static uint16_t byte_swap(uint16_t x) {
-    return (x << 8) | (x >> 8);
-  }
-
-  /**
-   * Byte swap a 32-bit value
-   */
-  static uint32_t byte_swap(uint32_t x) {
-    uint16_t lo = (uint16_t)x;
-    uint16_t hi = (uint16_t)(x >> 16);
-
-    return ((uint32_t)byte_swap(lo) << 16) | (uint32_t)byte_swap(hi);
-  }
-
-  /**
-   * Byte swap a 64-bit value
-   */
-  static uint64_t byte_swap(uint64_t x) {
-    uint32_t lo = (uint32_t)x;
-    uint32_t hi = (uint32_t)(x >> 32);
-
-    return ((uint64_t)byte_swap(lo) << 32) | (uint64_t)byte_swap(hi);
-  }
-
   enum CopyDirection {
     RIGHT, // lower -> higher address
     LEFT   // higher -> lower address
@@ -154,7 +128,7 @@ private:
       }
 
       if (swap) {
-        tmp = byte_swap(tmp);
+        tmp = byteswap(tmp);
       }
 
       if (is_dst_aligned) {

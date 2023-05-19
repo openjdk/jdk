@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,10 +86,6 @@ class ImmutableGregorianDate extends BaseCalendar.Date {
         unsupported(); return this;
     }
 
-    public CalendarDate addDayOfMonth(int n) {
-        unsupported(); return this;
-    }
-
     public int getDayOfWeek() {
         return date.getDayOfWeek();
     }
@@ -114,19 +110,11 @@ class ImmutableGregorianDate extends BaseCalendar.Date {
         unsupported(); return this;
     }
 
-    public CalendarDate addMinutes(int n) {
-        unsupported(); return this;
-    }
-
     public int getSeconds() {
         return date.getSeconds();
     }
 
     public CalendarDate setSeconds(int seconds) {
-        unsupported(); return this;
-    }
-
-    public CalendarDate addSeconds(int n) {
         unsupported(); return this;
     }
 
@@ -138,10 +126,6 @@ class ImmutableGregorianDate extends BaseCalendar.Date {
         unsupported(); return this;
     }
 
-    public CalendarDate addMillis(int n) {
-        unsupported(); return this;
-    }
-
     public long getTimeOfDay() {
         return date.getTimeOfDay();
     }
@@ -150,15 +134,7 @@ class ImmutableGregorianDate extends BaseCalendar.Date {
         unsupported(); return this;
     }
 
-    public CalendarDate addDate(int year, int month, int dayOfMonth) {
-        unsupported(); return this;
-    }
-
     public CalendarDate setTimeOfDay(int hours, int minutes, int seconds, int millis) {
-        unsupported(); return this;
-    }
-
-    public CalendarDate addTimeOfDay(int hours, int minutes, int seconds, int millis) {
         unsupported(); return this;
     }
 
@@ -172,10 +148,6 @@ class ImmutableGregorianDate extends BaseCalendar.Date {
 
     public boolean isStandardTime() {
         return date.isStandardTime();
-    }
-
-    public void setStandardTime(boolean standardTime) {
-        unsupported();
     }
 
     public boolean isDaylightTime() {

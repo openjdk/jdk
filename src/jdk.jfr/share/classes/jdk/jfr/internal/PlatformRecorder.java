@@ -474,6 +474,7 @@ public final class PlatformRecorder {
                         r.getId(),
                         r.getName(),
                         path == null ? null : path.getRealPathText(),
+                        r.isToDisk(),
                         age == null ? Long.MAX_VALUE : age.toMillis(),
                         flush == null ? Long.MAX_VALUE : flush.toMillis(),
                         size == null ? Long.MAX_VALUE : size,
