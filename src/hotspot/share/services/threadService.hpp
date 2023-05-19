@@ -106,15 +106,12 @@ public:
   static jlong get_live_thread_count()        { return _atomic_threads_count; }
   static jlong get_daemon_thread_count()      { return _atomic_daemon_threads_count; }
 
-  static jlong exited_allocated_bytes()       { return _exited_allocated_bytes; }
+  static jlong exited_allocated_bytes()       { return Atomic::load(&_exited_allocated_bytes); }
   static void incr_exited_allocated_bytes(jlong size) {
     // No need for an atomic add because called under the Threads_lock,
     // but because _exited_allocated_bytes is read concurrently, need
-    // atomic store to avoid readers seeing a partial update. Also need
-    // acquire/release because the hardware might move a subsequent
-    // store to _exited_allocated_bytes above this one.
-    jlong old = Atomic::load_acquire(&_exited_allocated_bytes);
-    Atomic::release_store(&_exited_allocated_bytes, old + size);
+    // atomic store to avoid readers seeing a partial update.
+    Atomic::store(&_exited_allocated_bytes, _exited_allocated_bytes + size);
   }
 
   // Support for thread dump
