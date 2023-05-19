@@ -877,6 +877,15 @@ public class JavacParser implements Parser {
                 }
                 accept(RPAREN);
                 pattern = toP(F.at(pos).RecordPattern(e, nested.toList()));
+                if (mods.annotations.nonEmpty()) {
+                    log.error(mods.annotations.head.pos(), Errors.RecordPatternsAnnotationsNotAllowed);
+                }
+                new TreeScanner() {
+                    @Override
+                    public void visitAnnotatedType(JCAnnotatedType tree) {
+                        log.error(tree.pos(), Errors.RecordPatternsAnnotationsNotAllowed);
+                    }
+                }.scan(e);
             } else {
                 //type test pattern:
                 int varPos = token.pos;
