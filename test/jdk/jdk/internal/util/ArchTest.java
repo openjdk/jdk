@@ -20,6 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+import java.nio.ByteOrder;
 import java.util.Locale;
 import java.util.stream.Stream;
 
@@ -30,6 +31,7 @@ import static jdk.internal.util.Architecture.OTHER;
 import static jdk.internal.util.Architecture.AARCH64;
 import static jdk.internal.util.Architecture.ARM;
 import static jdk.internal.util.Architecture.PPC64;
+import static jdk.internal.util.Architecture.PPC64LE;
 import static jdk.internal.util.Architecture.RISCV64;
 import static jdk.internal.util.Architecture.S390;
 import static jdk.internal.util.Architecture.X64;
@@ -41,7 +43,6 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @test
@@ -52,9 +53,9 @@ import static org.junit.jupiter.api.Assertions.fail;
  * @run junit ArchTest
  */
 public class ArchTest {
-    private static boolean IS_BIG_ENDIAN = Unsafe.getUnsafe().isBigEndian();
+    private static final boolean IS_BIG_ENDIAN = Unsafe.getUnsafe().isBigEndian();
 
-    private static boolean IS_64BIT_ADDRESS = Unsafe.getUnsafe().addressSize() == 8;
+    private static final boolean IS_64BIT_ADDRESS = Unsafe.getUnsafe().addressSize() == 8;
 
     /**
      * Test consistency of System property "os.arch" with Architecture.current().
@@ -71,7 +72,8 @@ public class ArchTest {
             case "arm" -> ARM;
             case "riscv64" -> RISCV64;
             case "s390x", "s390" -> S390;
-            case "ppc64", "ppc64le" -> PPC64;
+            case "ppc64" -> PPC64;
+            case "ppc64le" -> PPC64LE;
             default -> OTHER;
         };
         assertEquals(Architecture.current(), arch, "mismatch in Architecture.current vs " + osArch);
@@ -89,7 +91,9 @@ public class ArchTest {
                 Arguments.of(ARM, Architecture.isARM()),
                 Arguments.of(RISCV64, Architecture.isRISCV64()),
                 Arguments.of(S390, Architecture.isS390()),
-                Arguments.of(PPC64, Architecture.isPPC64())
+                Arguments.of(PPC64, Architecture.isPPC64()),
+                Arguments.of(PPC64LE, Architecture.isPPC64LE()),
+                Arguments.of(OTHER, false)
         );
     }
 
@@ -99,6 +103,42 @@ public class ArchTest {
         Architecture current = Architecture.current();
         assertEquals(arch == current, isArch,
                 "Method is" + arch + "(): returned " + isArch + ", should be (" + arch + " == " + current + ")");
+    }
+
+    /**
+     * Test various Architecture names vs Arch enums.
+     * @return a stream of arguments for parameterized test
+     */
+    private static Stream<Arguments> archNames() {
+        return Stream.of(
+                Arguments.of("x64", X64, 64, ByteOrder.LITTLE_ENDIAN),
+                Arguments.of("X86_64", X64, 64, ByteOrder.LITTLE_ENDIAN),
+                Arguments.of("x86", X86, 32, ByteOrder.LITTLE_ENDIAN),
+                Arguments.of("i386", X86, 32, ByteOrder.LITTLE_ENDIAN),
+                Arguments.of("aarch64", AARCH64, 64, ByteOrder.LITTLE_ENDIAN),
+                Arguments.of("arm", ARM, 64, ByteOrder.LITTLE_ENDIAN),
+                Arguments.of("riscv64", RISCV64, 64, ByteOrder.LITTLE_ENDIAN),
+                Arguments.of("s390", S390, 64, ByteOrder.BIG_ENDIAN),
+                Arguments.of("s390x", S390, 64, ByteOrder.BIG_ENDIAN),
+                Arguments.of("ppc64", PPC64, 64, ByteOrder.BIG_ENDIAN),
+                Arguments.of("ppc64le", PPC64LE, 64, ByteOrder.LITTLE_ENDIAN)
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("archNames")
+    public void isArch(String archName, Architecture arch, int addrSize, ByteOrder byteOrder) {
+        Architecture actual = Architecture.lookupByName(archName);
+        assertEquals(actual, arch, "Wrong Architecture from lookupByName");
+
+        actual = Architecture.lookupByName(archName.toUpperCase(Locale.ROOT));
+        assertEquals(actual, arch, "Wrong Architecture from lookupByName (upper-case)");
+
+        actual = Architecture.lookupByName(archName.toLowerCase(Locale.ROOT));
+        assertEquals(actual, arch, "Wrong Architecture from lookupByName (lower-case)");
+
+        assertEquals(addrSize, actual.addressSize(), "Wrong address size");
+        assertEquals(byteOrder, actual.byteOrder(), "Wrong byteOrder");
     }
 
     /**
