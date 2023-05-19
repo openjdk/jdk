@@ -47,20 +47,6 @@ public class MantissaDigits {
             1, 12, 123, 1234, 12345, 123456, 1234567,
             -1, -12, -123, -1234, -12345, -123456, -1234567,
             1.1234, 1.1111, 1.412, 222.333, -771.2222
-
-            // The following numbers when formatted, may produce
-            // results that have leading or trailing 0s (which ultimately,
-            // are ignored, but were "included" as significant digits)
-            // 1.101013, 1.10011, 0.00101, 0.100, -1.00130, -0.00131
-            // ie: 0.00101 formatted with #0.000##E0 gives 10.10E-4
-            // which implies there was only "4" significant digits even
-            // if the mathematical expression produced 6 significant digits.
-            // This is because the leading (or trailing) (00)10.10E-4 was
-            // stripped, but when un-stripping them, the # of significant digits
-            // still matches that of the mathematical expression. Thus, these
-            // values cannot be tested via this test, but a manual comparison
-            // of the results while keeping in mind the stripping of leading
-            // or trailing zeroes still aligns to the mathematical expression.
             };
 
     @ParameterizedTest
