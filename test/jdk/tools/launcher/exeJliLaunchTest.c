@@ -36,15 +36,17 @@ int
 main(int argc, char **args)
 {
     //avoid null-terminated array of arguments to test JDK-8303669
-    char *argv[argc];
+    char **argv = malloc(sizeof(char *) * argc);
     for (int i = 0; i < argc; i++) {
         argv[i] = args[i];
     }
 
-    return JLI_Launch(argc, argv,
+    int ret = JLI_Launch(argc, argv,
                    0, NULL,
                    0, NULL,
                    "1", "0",
                    *argv, *argv,
                    0, 0, 0, 0);
+    free(argv);
+    return ret;
 }
