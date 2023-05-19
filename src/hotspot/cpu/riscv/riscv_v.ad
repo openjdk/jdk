@@ -3939,7 +3939,7 @@ instruct vcompress(vReg dst, vReg src, vRegMask_V0 v0) %{
 instruct vexpand(vReg dst, vReg src, vRegMask_V0 v0, vReg tmp) %{
   match(Set dst (ExpandV src v0));
   effect(TEMP_DEF dst, TEMP tmp);
-  format %{ "vexpand $dst, $src, $v0" %}
+  format %{ "vexpand $dst, $src, $v0\t# KILL $tmp" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ vsetvli_helper(bt, Matcher::vector_length(this));
@@ -4032,17 +4032,17 @@ instruct scatter_store_masked(indirect mem, vReg src, vReg idx, vRegMask_V0 v0, 
 
 // ------------------------------ Populate Index to a Vector -------------------
 
-instruct populateindex(vReg dst, iRegIorL2I src1, iRegIorL2I src2, vReg tmp1) %{
+instruct populateindex(vReg dst, iRegIorL2I src1, iRegIorL2I src2, vReg tmp) %{
   match(Set dst (PopulateIndex src1 src2));
-  effect(TEMP_DEF dst, TEMP tmp1);
-  format %{ "populateindex $dst, $src1, $src2\t# KILL $tmp1" %}
+  effect(TEMP_DEF dst, TEMP tmp);
+  format %{ "populateindex $dst, $src1, $src2\t# KILL $tmp" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     Assembler::SEW sew = Assembler::elemtype_to_sew(bt);
     __ vsetvli_helper(bt, Matcher::vector_length(this));
     __ vmv_v_x(as_VectorRegister($dst$$reg), as_Register($src1$$reg));
-    __ vid_v(as_VectorRegister($tmp1$$reg));
-    __ vmacc_vx(as_VectorRegister($dst$$reg), as_Register($src2$$reg), as_VectorRegister($tmp1$$reg));
+    __ vid_v(as_VectorRegister($tmp$$reg));
+    __ vmacc_vx(as_VectorRegister($dst$$reg), as_Register($src2$$reg), as_VectorRegister($tmp$$reg));
   %}
   ins_pipe(pipe_slow);
 %}
@@ -4070,20 +4070,20 @@ instruct insertI_index_lt32(vReg dst, vReg src, iRegIorL2I val, immI idx, vRegMa
   ins_pipe(pipe_slow);
 %}
 
-instruct insertI_index(vReg dst, vReg src, iRegIorL2I val, iRegIorL2I idx, vReg tmp1, vRegMask_V0 v0) %{
+instruct insertI_index(vReg dst, vReg src, iRegIorL2I val, iRegIorL2I idx, vReg tmp, vRegMask_V0 v0) %{
   predicate(n->in(2)->get_int() >= 32 &&
             (Matcher::vector_element_basic_type(n) == T_BYTE ||
              Matcher::vector_element_basic_type(n) == T_SHORT ||
              Matcher::vector_element_basic_type(n) == T_INT));
   match(Set dst (VectorInsert (Binary src val) idx));
-  effect(TEMP tmp1, TEMP v0);
-  format %{ "insertI_index $dst, $src, $val, $idx\t# KILL $tmp1" %}
+  effect(TEMP tmp, TEMP v0);
+  format %{ "insertI_index $dst, $src, $val, $idx\t# KILL $tmp" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ vsetvli_helper(bt, Matcher::vector_length(this));
     __ vid_v(as_VectorRegister($v0$$reg));
-    __ vmv_v_x(as_VectorRegister($tmp1$$reg), $idx$$Register);
-    __ vmseq_vv(as_VectorRegister($v0$$reg), as_VectorRegister($v0$$reg), as_VectorRegister($tmp1$$reg));
+    __ vmv_v_x(as_VectorRegister($tmp$$reg), $idx$$Register);
+    __ vmseq_vv(as_VectorRegister($v0$$reg), as_VectorRegister($v0$$reg), as_VectorRegister($tmp$$reg));
     __ vmerge_vxm(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg), $val$$Register);
   %}
   ins_pipe(pipe_slow);
@@ -4108,18 +4108,18 @@ instruct insertL_index_lt32(vReg dst, vReg src, iRegL val, immI idx, vRegMask_V0
   ins_pipe(pipe_slow);
 %}
 
-instruct insertL_index(vReg dst, vReg src, iRegL val, iRegIorL2I idx, vReg tmp1, vRegMask_V0 v0) %{
+instruct insertL_index(vReg dst, vReg src, iRegL val, iRegIorL2I idx, vReg tmp, vRegMask_V0 v0) %{
   predicate(n->in(2)->get_int() >= 32 &&
             (Matcher::vector_element_basic_type(n) == T_LONG));
   match(Set dst (VectorInsert (Binary src val) idx));
-  effect(TEMP tmp1, TEMP v0);
-  format %{ "insertL_index $dst, $src, $val, $idx\t# KILL $tmp1" %}
+  effect(TEMP tmp, TEMP v0);
+  format %{ "insertL_index $dst, $src, $val, $idx\t# KILL $tmp" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ vsetvli_helper(bt, Matcher::vector_length(this));
     __ vid_v(as_VectorRegister($v0$$reg));
-    __ vmv_v_x(as_VectorRegister($tmp1$$reg), $idx$$Register);
-    __ vmseq_vv(as_VectorRegister($v0$$reg), as_VectorRegister($v0$$reg), as_VectorRegister($tmp1$$reg));
+    __ vmv_v_x(as_VectorRegister($tmp$$reg), $idx$$Register);
+    __ vmseq_vv(as_VectorRegister($v0$$reg), as_VectorRegister($v0$$reg), as_VectorRegister($tmp$$reg));
     __ vmerge_vxm(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg), $val$$Register);
   %}
   ins_pipe(pipe_slow);
@@ -4143,17 +4143,17 @@ instruct insertF_index_lt32(vReg dst, vReg src, fRegF val, immI idx, vRegMask_V0
   ins_pipe(pipe_slow);
 %}
 
-instruct insertF_index(vReg dst, vReg src, fRegF val, iRegIorL2I idx, vReg tmp1, vRegMask_V0 v0) %{
+instruct insertF_index(vReg dst, vReg src, fRegF val, iRegIorL2I idx, vReg tmp, vRegMask_V0 v0) %{
   predicate(n->in(2)->get_int() >= 32 &&
             (Matcher::vector_element_basic_type(n) == T_FLOAT));
   match(Set dst (VectorInsert (Binary src val) idx));
-  effect(TEMP tmp1, TEMP v0);
-  format %{ "insertF_index $dst, $src, $val, $idx\t# KILL $tmp1" %}
+  effect(TEMP tmp, TEMP v0);
+  format %{ "insertF_index $dst, $src, $val, $idx\t# KILL $tmp" %}
   ins_encode %{
     __ vsetvli_helper(T_FLOAT, Matcher::vector_length(this));
     __ vid_v(as_VectorRegister($v0$$reg));
-    __ vmv_v_x(as_VectorRegister($tmp1$$reg), $idx$$Register);
-    __ vmseq_vv(as_VectorRegister($v0$$reg), as_VectorRegister($v0$$reg), as_VectorRegister($tmp1$$reg));
+    __ vmv_v_x(as_VectorRegister($tmp$$reg), $idx$$Register);
+    __ vmseq_vv(as_VectorRegister($v0$$reg), as_VectorRegister($v0$$reg), as_VectorRegister($tmp$$reg));
     __ vfmerge_vfm(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg), $val$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
@@ -4177,17 +4177,17 @@ instruct insertD_index_lt32(vReg dst, vReg src, fRegD val, immI idx, vRegMask_V0
   ins_pipe(pipe_slow);
 %}
 
-instruct insertD_index(vReg dst, vReg src, fRegD val, iRegIorL2I idx, vReg tmp1, vRegMask_V0 v0) %{
+instruct insertD_index(vReg dst, vReg src, fRegD val, iRegIorL2I idx, vReg tmp, vRegMask_V0 v0) %{
   predicate(n->in(2)->get_int() >= 32 &&
             (Matcher::vector_element_basic_type(n) == T_DOUBLE));
   match(Set dst (VectorInsert (Binary src val) idx));
-  effect(TEMP tmp1, TEMP v0);
-  format %{ "insertD_index $dst, $src, $val, $idx\t# KILL $tmp1" %}
+  effect(TEMP tmp, TEMP v0);
+  format %{ "insertD_index $dst, $src, $val, $idx\t# KILL $tmp" %}
   ins_encode %{
     __ vsetvli_helper(T_DOUBLE, Matcher::vector_length(this));
     __ vid_v(as_VectorRegister($v0$$reg));
-    __ vmv_v_x(as_VectorRegister($tmp1$$reg), $idx$$Register);
-    __ vmseq_vv(as_VectorRegister($v0$$reg), as_VectorRegister($v0$$reg), as_VectorRegister($tmp1$$reg));
+    __ vmv_v_x(as_VectorRegister($tmp$$reg), $idx$$Register);
+    __ vmseq_vv(as_VectorRegister($v0$$reg), as_VectorRegister($v0$$reg), as_VectorRegister($tmp$$reg));
     __ vfmerge_vfm(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg), $val$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
