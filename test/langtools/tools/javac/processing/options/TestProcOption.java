@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,30 +21,21 @@
  * questions.
  */
 
-
 /*
- * This file contains the main entry point into the launcher code
- * this is the only file which will be repeatedly compiled by other
- * tools. The rest of the files will be linked in.
+ * @test
+ * @bug 8308245
+ * @summary Test trivial handling of -proc:full option
+ * @compile -proc:full TestProcOption.java
+ * @run main TestProcOption
  */
 
-#include "java.h"
+/*
+ * The test verifies that compilation takes place when -proc:full is used.
+ */
+public class TestProcOption {
+    private TestProcOption(){};
 
-int
-main(int argc, char **args)
-{
-    //avoid null-terminated array of arguments to test JDK-8303669
-    char **argv = malloc(sizeof(char *) * argc);
-    for (int i = 0; i < argc; i++) {
-        argv[i] = args[i];
+    public static void main(String... args) {
+        ; // do nothing
     }
-
-    int ret = JLI_Launch(argc, argv,
-                   0, NULL,
-                   0, NULL,
-                   "1", "0",
-                   *argv, *argv,
-                   0, 0, 0, 0);
-    free(argv);
-    return ret;
 }

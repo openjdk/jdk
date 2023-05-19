@@ -300,8 +300,8 @@ void InterpreterMacroAssembler::load_resolved_reference_at_index(
 
   get_constant_pool(result);
   // Load pointer for resolved_references[] objArray
-  ld(result, Address(result, ConstantPool::cache_offset_in_bytes()));
-  ld(result, Address(result, ConstantPoolCache::resolved_references_offset_in_bytes()));
+  ld(result, Address(result, ConstantPool::cache_offset()));
+  ld(result, Address(result, ConstantPoolCache::resolved_references_offset()));
   resolve_oop_handle(result, tmp, t1);
   // Add in the index
   addi(index, index, arrayOopDesc::base_offset_in_bytes(T_OBJECT) >> LogBytesPerHeapOop);
@@ -313,7 +313,7 @@ void InterpreterMacroAssembler::load_resolved_klass_at_offset(
                                 Register cpool, Register index, Register klass, Register temp) {
   shadd(temp, index, cpool, temp, LogBytesPerWord);
   lhu(temp, Address(temp, sizeof(ConstantPool))); // temp = resolved_klass_index
-  ld(klass, Address(cpool, ConstantPool::resolved_klasses_offset_in_bytes())); // klass = cpool->_resolved_klasses
+  ld(klass, Address(cpool, ConstantPool::resolved_klasses_offset())); // klass = cpool->_resolved_klasses
   shadd(klass, temp, klass, temp, LogBytesPerWord);
   ld(klass, Address(klass, Array<Klass*>::base_offset_in_bytes()));
 }
@@ -658,7 +658,7 @@ void InterpreterMacroAssembler::remove_activation(
   // register for unlock_object to pass to VM directly
   la(c_rarg1, monitor); // address of first monitor
 
-  ld(x10, Address(c_rarg1, BasicObjectLock::obj_offset_in_bytes()));
+  ld(x10, Address(c_rarg1, BasicObjectLock::obj_offset()));
   bnez(x10, unlock);
 
   pop(state);
@@ -737,7 +737,7 @@ void InterpreterMacroAssembler::remove_activation(
 
     bind(loop);
     // check if current entry is used
-    add(t0, c_rarg1, BasicObjectLock::obj_offset_in_bytes());
+    add(t0, c_rarg1, in_bytes(BasicObjectLock::obj_offset()));
     ld(t0, Address(t0, 0));
     bnez(t0, exception);
 
@@ -811,8 +811,8 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
     const Register tmp = c_rarg2;
     const Register obj_reg = c_rarg3; // Will contain the oop
 
-    const int obj_offset = BasicObjectLock::obj_offset_in_bytes();
-    const int lock_offset = BasicObjectLock::lock_offset_in_bytes ();
+    const int obj_offset = in_bytes(BasicObjectLock::obj_offset());
+    const int lock_offset = in_bytes(BasicObjectLock::lock_offset());
     const int mark_offset = lock_offset +
                             BasicLock::displaced_header_offset_in_bytes();
 
@@ -914,14 +914,14 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg)
     if (LockingMode != LM_LIGHTWEIGHT) {
       // Convert from BasicObjectLock structure to object and BasicLock
       // structure Store the BasicLock address into x10
-      la(swap_reg, Address(lock_reg, BasicObjectLock::lock_offset_in_bytes()));
+      la(swap_reg, Address(lock_reg, BasicObjectLock::lock_offset()));
     }
 
     // Load oop into obj_reg(c_rarg3)
-    ld(obj_reg, Address(lock_reg, BasicObjectLock::obj_offset_in_bytes()));
+    ld(obj_reg, Address(lock_reg, BasicObjectLock::obj_offset()));
 
     // Free entry
-    sd(zr, Address(lock_reg, BasicObjectLock::obj_offset_in_bytes()));
+    sd(zr, Address(lock_reg, BasicObjectLock::obj_offset()));
 
     if (LockingMode == LM_LIGHTWEIGHT) {
       Label slow_case;
@@ -960,7 +960,7 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg)
     }
 
     // Call the runtime routine for slow case.
-    sd(obj_reg, Address(lock_reg, BasicObjectLock::obj_offset_in_bytes())); // restore obj
+    sd(obj_reg, Address(lock_reg, BasicObjectLock::obj_offset())); // restore obj
     call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorexit), lock_reg);
 
     j(done);
@@ -1908,7 +1908,7 @@ void InterpreterMacroAssembler::profile_return_type(Register mdp, Register ret, 
       mv(tmp, (u1)Bytecodes::_invokehandle);
       beq(t0, tmp, do_profile);
       get_method(tmp);
-      lhu(t0, Address(tmp, Method::intrinsic_id_offset_in_bytes()));
+      lhu(t0, Address(tmp, Method::intrinsic_id_offset()));
       mv(t1, static_cast<int>(vmIntrinsics::_compiledLambdaForm));
       bne(t0, t1, profile_continue);
       bind(do_profile);

@@ -666,9 +666,7 @@ public:
   static ByteSize access_flags_offset()          { return byte_offset_of(Method, _access_flags      ); }
   static ByteSize from_compiled_offset()         { return byte_offset_of(Method, _from_compiled_entry); }
   static ByteSize code_offset()                  { return byte_offset_of(Method, _code); }
-  static ByteSize method_data_offset()           {
-    return byte_offset_of(Method, _method_data);
-  }
+
   static ByteSize method_counters_offset()       {
     return byte_offset_of(Method, _method_counters);
   }
@@ -682,8 +680,8 @@ public:
   static ByteSize itable_index_offset()          { return byte_offset_of(Method, _vtable_index ); }
 
   // for code generation
-  static int method_data_offset_in_bytes()       { return offset_of(Method, _method_data); }
-  static int intrinsic_id_offset_in_bytes()      { return offset_of(Method, _intrinsic_id); }
+  static ByteSize method_data_offset()  { return byte_offset_of(Method, _method_data); }
+  static ByteSize intrinsic_id_offset() { return byte_offset_of(Method, _intrinsic_id); }
   static int intrinsic_id_size_in_bytes()        { return sizeof(u2); }
 
   // Static methods that are used to implement member methods where an exposed this pointer
