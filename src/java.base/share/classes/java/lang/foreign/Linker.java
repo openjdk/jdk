@@ -108,11 +108,7 @@ import java.util.stream.Stream;
  * <p>
  * Scalar C types such as {@code bool}, {@code int} are modelled as {@linkplain ValueLayout value layouts}
  * of a suitable carrier. The {@linkplain #canonicalLayouts() mapping} between a scalar type and its corresponding
- * canonical layout is dependent on the ABI implemented by the native linker. For instance, the C type {@code long}
- * maps to the layout constant {@link ValueLayout#JAVA_LONG} on Linux/x64, but maps to the layout constant
- * {@link ValueLayout#JAVA_INT} on Windows/x64. Similarly, the C type {@code size_t} maps to the layout constant
- * {@link ValueLayout#JAVA_LONG} on 64-bit platforms, but maps to the layout constant {@link ValueLayout#JAVA_INT} on
- * 32-bit platforms.
+ * canonical layout is dependent on the ABI implemented by the native linker (see below).
  * <p>
  * Composite types are modelled as {@linkplain GroupLayout group layouts}. More specifically, a C {@code struct} type
  * maps to a {@linkplain StructLayout struct layout}, whereas a C {@code union} type maps to a {@link UnionLayout union
@@ -126,6 +122,26 @@ import java.util.stream.Stream;
  * the address layout can be associated with a {@linkplain AddressLayout#targetLayout() target layout}. For instance,
  * a pointer that is known to point to a C {@code int[2]} array can be modelled as an address layout whose
  * target layout is a sequence layout whose element count is 2, and whose element type is {@link ValueLayout#JAVA_INT}.
+ * <p>
+ * All native linker implementations are guaranteed to provide canonical layouts for the following set of types:
+ * <ul>
+ *     <li>{@code bool}</li>
+ *     <li>{@code char}</li>
+ *     <li>{@code short}</li>
+ *     <li>{@code unsigned short}</li>
+ *     <li>{@code int}</li>
+ *     <li>{@code long}</li>
+ *     <li>{@code long long}</li>
+ *     <li>{@code float}</li>
+ *     <li>{@code double}</li>
+ *     <li>{@code size_t}</li>
+ *     <li>{@code void*}</li>
+ * </ul>
+ * As noted above, the specific canonical layout associated with each type can vary, depending on the data model
+ * supported by a given ABI. For instance, the C type {@code long} maps to the layout constant {@link ValueLayout#JAVA_LONG}
+ * on Linux/x64, but maps to the layout constant {@link ValueLayout#JAVA_INT} on Windows/x64. Similarly, the C type
+ * {@code size_t} maps to the layout constant {@link ValueLayout#JAVA_LONG} on 64-bit platforms, but maps to the layout
+ * constant {@link ValueLayout#JAVA_INT} on 32-bit platforms.
  * <p>
  * The following table shows some examples of how C types are modelled in Linux/x64:
  *
@@ -148,6 +164,9 @@ import java.util.stream.Stream;
  * <tr><th scope="row" style="font-weight:normal">{@code short}</th>
  *     <td style="text-align:center;">{@link ValueLayout#JAVA_SHORT}</td>
  *     <td style="text-align:center;">{@code short}</td>
+ * <tr><th scope="row" style="font-weight:normal">{@code unsigned short}</th>
+ *     <td style="text-align:center;">{@link ValueLayout#JAVA_CHAR}</td>
+ *     <td style="text-align:center;">{@code char}</td>
  * <tr><th scope="row" style="font-weight:normal">{@code int}</th>
  *     <td style="text-align:center;">{@link ValueLayout#JAVA_INT}</td>
  *     <td style="text-align:center;">{@code int}</td>
