@@ -26,7 +26,7 @@
  * @bug 8308235
  * @summary Unreference ExecutorService objects returned by the Executors without shutdown
  *    and termination, this should not leak memory
- * @run main/othervm -Xmx32m Leak
+ * @run main/othervm -Xmx32m UnreferencedExecutor
  */
 
 import java.util.concurrent.Executors;
@@ -43,5 +43,3 @@ public class UnreferencedExecutor {
         }
     }
 }
-
-
