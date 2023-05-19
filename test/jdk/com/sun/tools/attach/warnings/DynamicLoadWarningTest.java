@@ -109,7 +109,7 @@ class DynamicLoadWarningTest {
     }
 
     /**
-     * Test loading JVM TI agent into a running VM with jcmd VMTI.agent_load command.
+     * Test loading JVM TI agent into a running VM with jcmd JVMTI.agent_load command.
      */
     @Test
     void testJCmdJvmtiAgentLoad() throws Exception {

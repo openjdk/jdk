@@ -30,64 +30,68 @@
 /**
  * Provides services that allow Java programming language agents to instrument
  * programs running on the Java Virtual Machine (JVM). The mechanism for
- * instrumentation is modification of the byte-codes of methods.
+ * instrumentation is modification of the bytecodes of methods.
  *
- * <p> Agent classes are packaged in a JAR file. An agent can be <em>started</em>
- * in a number of ways:
+ * <p> The class files that comprise an agent are packaged into a JAR file, either
+ * with the application in an executable JAR, or more commonly, as a separate JAR file
+ * called an <em>agent JAR</em>. An attribute in the main manifest of the JAR file
+ * identifies one of the class files in the JAR file as the <em>agent class</em>.
+ * The agent class defines a special method that the JVM invokes to <em>start</em>
+ * the agent.
  *
- * <ol>
- *   <li><p> At JVM Startup when named in the manifest of the application's executable
- *   JAR file.
- *
- *   <li><p> At JVM Startup with a command-line option.
- *
- *   <li><p> After JVM Startup where an implementation supports a mechanism to start
- *   agents some time after the JVM has started.
- * </ol>
+ * <p> Agents that are packaged with an application in an executable JAR are started
+ * at JVM statup time. Agents that are packaged into an agent JAR file may be started
+ * at JVM startup time via a command line option, or where an implementation supports
+ * it, started in a running JVM.
  *
  * <p> Agents can transform classes in arbitrary ways at load time, transform
  * modules, or transform the bytecode of methods of already loaded classes.
  * Developers or administrators that deploy agents, deploy applications that
  * package an agent with the application, or use tools that load agents into a
  * running application, are responsible for verifying the trustworthiness of each
- * agent including the content and structure of the agent JAR file..
+ * agent including the content and structure of the agent JAR file.
  *
- * <h2>Starting an Agent</h2>
+ * <h2>Starting an agent</h2>
  *
- * <h3>Starting an Agent named in the manifest of the application's executable JAR file </h3>
+ * <h3>Starting an agent packaged with an application in an executable JAR file</h3>
  *
- * <p> The <a href="{@docRoot}/../specs/jar/jar.html">JAR FileSpecification</a> defines
+ * <p> The <a href="{@docRoot}/../specs/jar/jar.html">JAR File Specification</a> defines
  * manifest attributes for standalone applications that are packaged as <em>executable
  * JAR files</em>. If an implementation supports a mechanism to start an application as
- * an executable JAR then the main manifest may include the {@code Launcher-Agent-Class}
- * attribute to specify the class name of an agent to start before the application
- * {@code main} method is invoked. The JVM attempts to load the agent class and invoke
- * the following method on the class:
+ * an executable JAR then the main manifest of the JAR file can include the
+ * {@code Launcher-Agent-Class} attribute to specify the binary name of a Java agent
+ * class that is packaged with the application. If the attribute is present then the
+ * JVM starts the agent, by loading the agent class and invoking its {@code agentmain}
+ * method, before the application {@code main} method is invoked.
+ * The {@code agentmain} method has one of two possible signatures. The JVM first
+ * attempts to invoke the following method on the agent class:
  *
  * <blockquote>{@code
  *     public static void agentmain(String agentArgs, Instrumentation inst)
  * }</blockquote>
  *
- * <p> If the agent class does not implement this method then the JVM will
- * attempt to invoke:
+ * <p> If the agent class does not define this method then the JVM will attempt
+ * to invoke:
  *
  * <blockquote>{@code
  *     public static void agentmain(String agentArgs)
  * }</blockquote>
  *
- * <p> The value of the {@code agentArgs} parameter is always the empty string.
+ * <p> The value of the {@code agentArgs} parameter is always the empty string. In
+ * the first method, the {@code inst} parameter is an {@link Instrumentation} object
+ * that the agent can use to instrument code.
  *
  * <p> The {@code agentmain} method should do any necessary initialization
  * required to start the agent and return. If the agent cannot be started, for
  * example the agent class cannot be loaded, the agent class does not define a
  * conformant {@code agentmain} method, or the {@code agentmain} method throws
- * an uncaught exception or error, the JVM will abort.
+ * an uncaught exception or error, the JVM will abort before the application
+ * {@code main} method is invoked.
  *
- * <h3>Starting an Agent from the command-line interface</h3>
+ * <h3>Starting an agent from the command-line interface</h3>
  *
- * <p> Where an implementation provides a means to start agents from the
- * command-line interface, an agent can be started by adding the following option
- * to the command-line:
+ * <p> Where an implementation provides a means to start agents from the command-line
+ * interface, an agent JAR is specified via the following command line option:
  *
  * <blockquote>{@code
  *     -javaagent:<jarpath>[=<options>]
@@ -96,40 +100,32 @@
  * where <i>{@code <jarpath>}</i> is the path to the agent JAR file and
  * <i>{@code <options>}</i> is the agent options.
  *
- * <p> The manifest of the agent JAR file must contain the attribute {@code
- * Premain-Class} in its main manifest. The value of this attribute is the
- * name of the <i>agent class</i>. The agent class must implement a public
- * static {@code premain} method similar in principle to the {@code main}
- * application entry point. After the Java Virtual Machine (JVM) has
- * initialized, the {@code premain} method will be called, then the real
- * application {@code main} method. The {@code premain} method must return
- * in order for the startup to proceed.
- *
- * <p> The {@code premain} method has one of two possible signatures. The
- * JVM first attempts to invoke the following method on the agent class:
+ * <p> The main manifest of the agent JAR file must contain the attribute {@code
+ * Premain-Class}. The value of this attribute is the binary name of the agent class
+ * in the JAR file. The JVM starts the agent, by loading the agent class and invoking
+ * its {@code premain} method, before the application {@code main} method is invoked.
+ * The {@code premain} method has one of two possible signatures. The JVM first
+ * attempts to invoke the following method on the agent class:
  *
  * <blockquote>{@code
  *     public static void premain(String agentArgs, Instrumentation inst)
  * }</blockquote>
  *
- * <p> If the agent class does not implement this method then the JVM will
- * attempt to invoke:
+ * <p> If the agent class does not define this method then the JVM will attempt to invoke:
  * <blockquote>{@code
  *     public static void premain(String agentArgs)
  * }</blockquote>
-
- * <p> The agent class may also have an {@code agentmain} method for use when
- * the agent is started after JVM startup (see below). When the agent is started
- * using a command-line option, the {@code agentmain} method is not invoked.
  *
- * <p> Each agent is passed its agent options via the {@code agentArgs} parameter.
+ * <p> The agent is passed its agent options via the {@code agentArgs} parameter.
  * The agent options are passed as a single string, any additional parsing
- * should be performed by the agent itself.
+ * should be performed by the agent itself. In the first method, the {@code inst}
+ * parameter is an {@link Instrumentation} object that the agent can use to instrument
+ * code.
  *
- * <p> If the agent cannot be started (for example, because the agent class
- * cannot be loaded, or because the agent class does not have an appropriate
- * {@code premain} method), the JVM will abort. If a {@code premain} method
- * throws an uncaught exception, the JVM will abort.
+ * <p> If the agent cannot be started, for example the agent class cannot be loaded,
+ * the agent class does not define a conformant {@code premain} method, or the {@code
+ * premain} method throws an uncaught exception or error, the JVM will abort before
+ * the application {@code main} method is invoked.
  *
  * <p> An implementation is not required to provide a way to start agents
  * from the command-line interface. When it does, then it supports the
@@ -139,56 +135,51 @@
  * agents are specified on the command line. More than one agent may use the
  * same <i>{@code <jarpath>}</i>.
  *
- * <p> There are no modeling restrictions on what the agent {@code premain}
- * method may do. Anything application {@code main} can do, including creating
- * threads, is legal from {@code premain}.
+ * <p> The agent class may also have an {@code agentmain} method for use when the agent
+ * is started after in a running JVM (see below). When the agent is started using a
+ * command-line option, the {@code agentmain} method is not invoked.
  *
+ * <h3>Starting an agent in a running JVM</h3>
  *
- * <h3>Starting an Agent after JVM startup</h3>
- *
- * <p> An implementation may provide a mechanism to start agents sometime after
- * the JVM has started. The details as to how this is initiated are
- * implementation specific but typically the application has already started and
- * its {@code main} method has already been invoked. In cases where an
- * implementation supports starting an agent after the JVM has started, the
- * following applies:
- *
+ * <p> An implementation may provide a mechanism to start agents in a running VM (meaning
+ * after JVM startup). The details as to how this is initiated are implementation specific
+ * but typically the application has already started and its {@code main} method has
+ * already been invoked. Where an implementation supports starting an agent in a running
+ * JVM, the following applies:
  * <ol>
  *
- *   <li><p> The manifest of the agent JAR must contain the attribute {@code
- *   Agent-Class} in its main manfiest. The value of this attribute is the name
- *   of the <i>agent class</i>. </p></li>
+ *   <li><p> The agent class must be packaged into an agent JAR file. The main manifest
+ *   of the agent JAR file must contain the attribute {@code Agent-Class}. The value of
+ *   this attribute is the binary name of the agent class in the JAR file. </p></li>
  *
- *   <li><p> The agent class must implement a public static {@code agentmain}
- *   method. </p></li>
+ *   <li><p> The agent class must define a public static {@code agentmain} method. </p></li>
  *
  *   <li><p> The JVM prints a warning on the standard error stream for each agent that
- *   the JVM attempts to start after the JVM has started. Warnings can be disabled by
- *   means of an implementation-specific command line option. </p></li>
+ *   it attempts to start in a running JVM. Warnings can be disabled by means of an
+ *   implementation-specific command line option. </p></li>
  *
  * </ol>
  *
- * <p> The {@code agentmain} method has one of two possible signatures. The JVM
- * first attempts to invoke the following method on the agent class:
+ * <p> The JVM starts the agent by loading the agent class and invoking its {@code
+ * agentmain} method. The {@code agentmain} method has one of two possible signatures.
+ * The JVM first attempts to invoke the following method on the agent class:
  *
  * <blockquote>{@code
  *     public static void agentmain(String agentArgs, Instrumentation inst)
  * }</blockquote>
  *
- * <p> If the agent class does not implement this method then the JVM will
+ * <p> If the agent class does not define this method then the JVM will
  * attempt to invoke:
  *
  * <blockquote>{@code
  *     public static void agentmain(String agentArgs)
  * }</blockquote>
  *
- * <p> The agent class may also have a {@code premain} method for use when the
- * agent is started using a command-line option. When the agent is started after
- * JVM startup the {@code premain} method is not invoked.
- *
- * <p> The agent is passed its agent options via the {@code agentArgs}
- * parameter. The agent options are passed as a single string, any additional
- * parsing should be performed by the agent itself.
+ * <p> The agent is passed its agent options via the {@code agentArgs} parameter.
+ * The agent options are passed as a single string, any additional parsing
+ * should be performed by the agent itself. In the first method, the {@code inst}
+ * parameter is an {@link Instrumentation} object that the agent can use to instrument
+ * code.
  *
  * <p> The {@code agentmain} method should do any necessary initialization
  * required to start the agent. When startup is complete the method should
@@ -197,6 +188,10 @@
  * {@code agentmain} method), the JVM will not abort. If the {@code agentmain}
  * method throws an uncaught exception it will be ignored (but may be logged
  * by the JVM for troubleshooting purposes).
+ *
+ * <p> The agent class may also have a {@code premain} method for use when the agent
+ * is started using a command-line option. When the agent is started in a running JVM
+ * the {@code premain} method is not invoked.
  *
  * <h2> Loading agent classes and the modules/classes available to the agent
  * class </h2>
@@ -246,31 +241,33 @@
  * In other words, a custom system class loader must support the mechanism to
  * add an agent JAR file to the system class loader search.
  *
- * <h2>Manifest Attributes</h2>
+ * <h2>JAR File Manifest Attributes</h2>
  *
- * <p> The following manifest attributes are defined for an agent JAR file:
+ * <p> The following attributes in the main section of the application or agent
+ * JAR file manifest are defined for Java agents:
  *
  * <blockquote><dl>
  *
+ * <dt>{@code Launcher-Agent-Class}</dt>
+ * <dd> If an implementation supports a mechanism to start an application in an
+ * executable JAR file then this attribute, if present, specifies the binary name
+ * of the agent class that is packaged with the application.
+ * The agent is started, by invoking the agent class {@code agentmain} method,
+ * before the application {@code main} method is invoked. </dd>
+ *
  * <dt>{@code Premain-Class}</dt>
- * <dd> When an agent is specified at JVM launch time this attribute specifies
- * the agent class. That is, the class containing the {@code premain} method.
- * When an agent is specified at JVM launch time this attribute is required. If
- * the attribute is not present the JVM will abort. Note: this is a class name,
- * not a file name or path. </dd>
+ * <dd> If an agent JAR is specified at JVM launch time, this attribute specifies
+ * the binary name of the agent class in the JAR file.
+ * The agent is started, by invoking the agent class {@code premain} method,
+ * before the application {@code main} method is invoked.
+ * If the attribute is not present the JVM will abort. </dd>
  *
  * <dt>{@code Agent-Class}</dt>
- * <dd> If an implementation supports a mechanism to start agents sometime after
- * the JVM has started then this attribute specifies the agent class. That is,
- * the class containing the {@code agentmain} method. This attribute is required
- * if it is not present the agent will not be started. Note: this is a class name,
- * not a file name or path. </dd>
- *
- * <dt>{@code Launcher-Agent-Class}</dt>
- * <dd> If an implementation supports a mechanism to start an application as an
- * executable JAR then the main manifest may include this attribute to specify
- * the class name of an agent to start before the application {@code main}
- * method is invoked. </dd>
+ * <dd> If an implementation supports a mechanism to start an agent sometime after
+ * the JVM has started then this attribute specifies the binary name of the Java
+ * agent class in the agent JAR file.
+ * The agent is started by invoking the agent class {@code agentmain} method.
+ * This attribute is required; if not present the agent will not be started. </dd>
  *
  * <dt>{@code Boot-Class-Path}</dt>
  * <dd> A list of paths to be searched by the bootstrap class loader. Paths
@@ -308,10 +305,10 @@
  * <p> An agent JAR file may have both the {@code Premain-Class} and {@code
  * Agent-Class} attributes present in the manifest. When the agent is started
  * on the command-line using the {@code -javaagent} option then the {@code
- * Premain-Class} attribute specifies the name of the agent class and the {@code
+ * Premain-Class} attribute specifies the binary name of the agent class and the {@code
  * Agent-Class} attribute is ignored. Similarly, if the agent is started sometime
  * after the JVM has started, then the {@code Agent-Class} attribute specifies
- * the name of the agent class (the value of {@code Premain-Class} attribute is
+ * the binary name of the agent class (the value of {@code Premain-Class} attribute is
  * ignored).
  *
  *
