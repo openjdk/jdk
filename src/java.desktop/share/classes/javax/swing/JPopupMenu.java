@@ -41,9 +41,6 @@ import java.awt.Window;
 import java.awt.event.FocusEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
-import java.awt.event.WindowFocusListener;
 import java.beans.BeanProperty;
 import java.beans.JavaBean;
 import java.beans.PropertyChangeEvent;
@@ -54,7 +51,6 @@ import java.io.ObjectOutputStream;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Vector;
 
 import javax.accessibility.Accessible;
@@ -71,7 +67,6 @@ import javax.swing.plaf.PopupMenuUI;
 import javax.swing.plaf.basic.BasicComboPopup;
 
 import sun.awt.SunToolkit;
-import sun.awt.UngrabEvent;
 
 /**
  * An implementation of a popup menu -- a small window that pops up
@@ -764,59 +759,13 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
         }
     }
 
-    // We rely on the X11 input grab mechanism, but for the Wayland session
-    // it only works inside the XWayland server, so mouse clicks outside of it
-    // will not be detected.
-    // (window decorations, pure Wayland applications, desktop, etc.)
-    //
-    // As a workaround, we can dismiss menus when the window loses focus.
-    //
-    // However, there are "blind spots" though, which, when clicked, don't
-    // transfer the focus away and don't dismiss the menu
-    // (e.g. the window's own title or the area in the side dock without
-    // application icons).
-    private static final WindowFocusListener waylandWindowFocusListener;
-
-    static {
-        Toolkit toolkit = Toolkit.getDefaultToolkit();
-        if ((toolkit instanceof SunToolkit
-                && ((SunToolkit) toolkit).isRunningOnWayland())) {
-            waylandWindowFocusListener = new WindowAdapter() {
-                @Override
-                public void windowLostFocus(WindowEvent e) {
-                    Window window = e.getWindow();
-                    window.removeWindowFocusListener(this);
-                    window.dispatchEvent(new UngrabEvent(window));
-                }
-            };
+    private Window getMenuInvoker() {
+        if (invoker instanceof Window menuInvoker) {
+            return menuInvoker;
         } else {
-            waylandWindowFocusListener = null;
-        }
-    }
-
-    private void waylandDismissOnWindowFocusLostAdd() {
-        if (waylandWindowFocusListener == null) return;
-
-        Window invokerWindow = (invoker instanceof Window)
-                ? (Window) invoker
-                : SwingUtilities.getWindowAncestor(invoker);
-
-        if (invokerWindow != null &&
-                !Arrays.asList(invokerWindow.getWindowFocusListeners())
-                        .contains(waylandWindowFocusListener)) {
-            invokerWindow.addWindowFocusListener(waylandWindowFocusListener);
-        }
-    }
-
-    private void waylandDismissOnWindowFocusLostRemove() {
-        if (waylandWindowFocusListener == null) return;
-
-        Window invokerWindow = (invoker instanceof Window)
-                ? (Window) invoker
-                : SwingUtilities.getWindowAncestor(invoker);
-
-        if (invokerWindow != null) {
-            invokerWindow.removeWindowFocusListener(waylandWindowFocusListener);
+            return invoker == null
+                    ? null
+                    : SwingUtilities.getWindowAncestor(invoker);
         }
     }
 
@@ -861,16 +810,24 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
             }
         }
 
-        if(b) {
+        if (b) {
             firePopupMenuWillBecomeVisible();
-            waylandDismissOnWindowFocusLostAdd();
+
+            if (Toolkit.getDefaultToolkit() instanceof SunToolkit sunToolkit) {
+                sunToolkit.dismissPopupOnFocusLostIfNeeded(getMenuInvoker());
+            }
+
             showPopup();
             firePropertyChange("visible", Boolean.FALSE, Boolean.TRUE);
 
 
-        } else if(popup != null) {
+        } else if (popup != null) {
             firePopupMenuWillBecomeInvisible();
-            waylandDismissOnWindowFocusLostRemove();
+
+            if (Toolkit.getDefaultToolkit() instanceof SunToolkit sunToolkit) {
+                sunToolkit.dismissPopupOnFocusLostIfNeededCleanUp(getMenuInvoker());
+            }
+
             popup.hide();
             popup = null;
             firePropertyChange("visible", Boolean.TRUE, Boolean.FALSE);

@@ -35,12 +35,14 @@ import java.awt.MenuItem;
 import java.awt.Point;
 import java.awt.PopupMenu;
 import java.awt.Rectangle;
+import java.awt.Toolkit;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 
 import java.awt.peer.PopupMenuPeer;
 import java.util.Vector;
 import sun.awt.AWTAccessor;
+import sun.awt.SunToolkit;
 import sun.util.logging.PlatformLogger;
 
 public class XPopupMenuPeer extends XMenuWindow implements PopupMenuPeer {
@@ -136,7 +138,9 @@ public class XPopupMenuPeer extends XMenuWindow implements PopupMenuPeer {
             //near the periphery of the screen, XToolkit
             Rectangle bounds = getWindowBounds(pt, dim);
             reshape(bounds);
-            waylandDismissOnWindowFocusLostAdd();
+            if (Toolkit.getDefaultToolkit() instanceof SunToolkit sunToolkit) {
+                sunToolkit.dismissPopupOnFocusLostIfNeeded(getMenuTarget());
+            }
             xSetVisible(true);
             toFront();
             selectItem(null, false);
