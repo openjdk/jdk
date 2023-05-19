@@ -80,7 +80,7 @@ public class Pollset {
      * Returns event[i];
      */
     public static long getEvent(long address, int i) {
-        return address + (SIZEOF_POLLFD*i);
+        return address + (SIZEOF_POLLFD * i);
     }
 
     /**
