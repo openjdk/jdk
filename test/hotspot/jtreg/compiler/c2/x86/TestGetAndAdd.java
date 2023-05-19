@@ -29,7 +29,7 @@ import java.lang.invoke.VarHandle;
 
 /*
  * @test
- * bug 8290529
+ * bug 8308444
  * @summary verify that the correct node is matched for atomic getAndAdd
  * @requires os.arch=="amd64" | os.arch=="x86_64"
  * @library /test/lib /
@@ -65,7 +65,9 @@ public class TestGetAndAdd {
     static long l2;
 
     public static void main(String[] args) {
-        TestFramework.run();
+        new TestFramework()
+                .addFlags("-XX:+UseStoreImmI16")
+                .start();
     }
 
     @Test
