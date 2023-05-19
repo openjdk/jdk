@@ -176,7 +176,7 @@ JNU_ThrowByNameWithMessageAndLastError
 }
 
 /*
- * Convenience method.
+ * Convenience function.
  * Call JNU_ThrowByNameWithLastError for java.io.IOException.
  */
 JNIEXPORT void JNICALL
@@ -186,8 +186,8 @@ JNU_ThrowIOExceptionWithLastError(JNIEnv *env, const char *defaultDetail)
 }
 
 /*
- * Convenience method.
- * Call JNU_ThrowByNameWithMessageAndLastError for java.io.IOException.
+ * Throw java.io.IOException using a given message and the string
+ * returned by getLastErrorString to construct the detail string.
  */
 JNIEXPORT void JNICALL
 JNU_ThrowIOExceptionWithMessageAndLastError(JNIEnv *env, const char *message)
