@@ -364,6 +364,13 @@ public class TestLayouts {
                 .toArray(Object[][]::new);
     }
 
+    @Test
+    public void testLongDoubleLayoutConstants() {
+        // check that alignment of long/double constants is set to reflect address size
+        assertEquals(ValueLayout.JAVA_LONG.byteAlignment(), ValueLayout.ADDRESS.byteSize());
+        assertEquals(ValueLayout.JAVA_DOUBLE.byteAlignment(), ValueLayout.ADDRESS.byteSize());
+    }
+
     enum SizedLayoutFactory {
         VALUE_LE(size -> valueLayoutForSize((int)size).withOrder(ByteOrder.LITTLE_ENDIAN)),
         VALUE_BE(size -> valueLayoutForSize((int)size).withOrder(ByteOrder.BIG_ENDIAN)),
