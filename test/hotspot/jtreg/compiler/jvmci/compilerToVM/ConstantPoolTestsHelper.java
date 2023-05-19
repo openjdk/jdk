@@ -99,10 +99,13 @@ public class ConstantPoolTestsHelper {
     }
 
     /**
-     * Select an arbitrary bytecode of the type associated with the Constant pool entry type
      *
-     * @param cpType Constant type from the Constant pool cache
-     * @return Arbitrary opcode of the kind associated with the CP entry
+     * @param cpType Constant type from the Constant pool
+     * @return a bytecode that's suitable for passing to the following functions for the given cpType:
+     *     - CompilerToVMHelper.lookupNameAndTypeRefIndexInPool()
+     *     - CompilerToVMHelper.lookupNameInPool()
+     *     - CompilerToVMHelper.lookupSignatureInPool()
+     *     - CompilerToVMHelper.lookupKlassRefIndexInPool()
      */
     public static int getDummyOpcode(ConstantTypes cpType) {
         switch (cpType) {
@@ -110,7 +113,7 @@ public class ConstantPoolTestsHelper {
               return Bytecodes.GETFIELD;
           case CONSTANT_METHODREF:
           case CONSTANT_INTERFACEMETHODREF:
-              return Bytecodes.INVOKEVIRTUAL;
+              return Bytecodes.INVOKEINTERFACE;
           case CONSTANT_INVOKEDYNAMIC:
               return Bytecodes.INVOKEDYNAMIC;
           default:
