@@ -122,7 +122,7 @@ class Http1Response<T> {
         // state & 0x01 != 0 => acquire called
         // state & 0x02 != 0 => tryRelease called
         volatile byte state;
-        
+
         ClientRefCountTracker(HttpClientImpl client, Logger logger) {
             this.client = client;
             this.debug = logger;
