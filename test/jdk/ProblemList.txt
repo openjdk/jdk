@@ -524,6 +524,8 @@ javax/management/monitor/DerivedGaugeMonitorTest.java           8042211 generic-
 
 javax/management/remote/mandatory/connection/RMIConnector_NPETest.java 8267887 generic-all
 
+javax/management/remote/mandatory/connection/BrokenConnectionTest.java 8262312 linux-all
+
 ############################################################################
 
 # jdk_net
