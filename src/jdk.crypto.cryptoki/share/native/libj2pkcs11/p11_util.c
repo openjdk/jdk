@@ -422,6 +422,10 @@ void freeCKMechanismPtr(CK_MECHANISM_PTR mechPtr) {
                  case CKM_NSS_PKCS12_PBE_SHA512_HMAC_KEY_GEN:
                      TRACE0("[ CK_PBE_PARAMS ]\n");
                      free(((CK_PBE_PARAMS_PTR)tmp)->pInitVector);
+                     if (((CK_PBE_PARAMS_PTR)tmp)->pPassword != NULL) {
+                         memset(((CK_PBE_PARAMS_PTR)tmp)->pPassword, 0,
+                                 ((CK_PBE_PARAMS_PTR)tmp)->ulPasswordLen);
+                     }
                      free(((CK_PBE_PARAMS_PTR)tmp)->pPassword);
                      free(((CK_PBE_PARAMS_PTR)tmp)->pSalt);
                      break;
@@ -713,19 +717,20 @@ void jCharArrayToCKUTF8CharArray(JNIEnv *env, const jcharArray jArray, CK_UTF8CH
     }
     (*env)->GetCharArrayRegion(env, jArray, 0, *ckpLength, jTemp);
     if ((*env)->ExceptionCheck(env)) {
-        free(jTemp);
-        return;
+        goto cleanup;
     }
 
     *ckpArray = (CK_UTF8CHAR_PTR) calloc(*ckpLength, sizeof(CK_UTF8CHAR));
     if (*ckpArray == NULL) {
-        free(jTemp);
         p11ThrowOutOfMemoryError(env, 0);
-        return;
+        goto cleanup;
     }
     for (i=0; i<(*ckpLength); i++) {
         (*ckpArray)[i] = jCharToCKUTF8Char(jTemp[i]);
     }
+cleanup:
+    // Clean possible temporary copies of passwords.
+    memset(jTemp, 0, *ckpLength * sizeof(jchar));
     free(jTemp);
 }
 

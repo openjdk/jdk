@@ -412,18 +412,28 @@ typedef struct {
     ParamVersion version;
 } VersionedPbkd2Params, *VersionedPbkd2ParamsPtr;
 
-#define FREE_VERSIONED_PBKD2_MEMBERS(verParamsPtr)                  \
-    do {                                                            \
-        if ((verParamsPtr)->version == PARAMS) {                    \
-            free((verParamsPtr)->params.v1.pSaltSourceData);        \
-            free((verParamsPtr)->params.v1.pPrfData);               \
-            free((verParamsPtr)->params.v1.pPassword);              \
-            free((verParamsPtr)->params.v1.ulPasswordLen);          \
-        } else {                                                    \
-            free((verParamsPtr)->params.v2.pSaltSourceData);        \
-            free((verParamsPtr)->params.v2.pPrfData);               \
-            free((verParamsPtr)->params.v2.pPassword);              \
-        }                                                           \
+#define FREE_VERSIONED_PBKD2_MEMBERS(verParamsPtr)                   \
+    do {                                                             \
+        if ((verParamsPtr)->version == PARAMS) {                     \
+            free((verParamsPtr)->params.v1.pSaltSourceData);         \
+            free((verParamsPtr)->params.v1.pPrfData);                \
+            if ((verParamsPtr)->params.v1.pPassword != NULL &&       \
+                    (verParamsPtr)->params.v1.ulPasswordLen          \
+                            != NULL) {                               \
+                memset((verParamsPtr)->params.v1.pPassword, 0,       \
+                        *((verParamsPtr)->params.v1.ulPasswordLen)); \
+            }                                                        \
+            free((verParamsPtr)->params.v1.pPassword);               \
+            free((verParamsPtr)->params.v1.ulPasswordLen);           \
+        } else {                                                     \
+            free((verParamsPtr)->params.v2.pSaltSourceData);         \
+            free((verParamsPtr)->params.v2.pPrfData);                \
+            if ((verParamsPtr)->params.v2.pPassword != NULL) {       \
+                memset((verParamsPtr)->params.v2.pPassword, 0,       \
+                        (verParamsPtr)->params.v2.ulPasswordLen);    \
+            }                                                        \
+            free((verParamsPtr)->params.v2.pPassword);               \
+        }                                                            \
     } while(0)
 
 /* functions to copy the returned values inside CK-mechanism back to Java object */

@@ -32,6 +32,7 @@ import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.InvalidKeySpecException;
 
 import javax.crypto.MacSpi;
+import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.PBEParameterSpec;
 
 import jdk.internal.access.JavaNioAccess;
@@ -213,11 +214,21 @@ final class P11Mac extends MacSpi {
                 // params. Use SunPKCS11 PBE key derivation to obtain a P11Key.
                 // Assign the derived key to p11Key because conversion is never
                 // needed for this case.
+                PBEKeySpec pbeKeySpec = PBEUtil.getPBAKeySpec(key, params);
                 try {
-                    p11Key = P11SecretKeyFactory.derivePBEKey(token,
-                            PBEUtil.getPBAKeySpec(key, params), svcPbeKi);
+                    P11Key.P11PBEKey p11PBEKey =
+                            P11SecretKeyFactory.derivePBEKey(token,
+                            pbeKeySpec, svcPbeKi);
+                    // This Mac service uses the token where the derived key
+                    // lives so there won't be any need to re-derive and use
+                    // the password. The p11Key cannot be accessed out of this
+                    // class.
+                    p11PBEKey.clearPassword();
+                    p11Key = p11PBEKey;
                 } catch (InvalidKeySpecException e) {
                     throw new InvalidKeyException(e);
+                } finally {
+                    pbeKeySpec.clearPassword();
                 }
             }
             if (params instanceof PBEParameterSpec pbeParams) {

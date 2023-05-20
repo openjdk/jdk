@@ -1701,6 +1701,9 @@ jPbeParamToCKPbeParamPtr(JNIEnv *env, jobject jParam, CK_ULONG *pLength)
     return ckParamPtr;
 cleanup:
     free(ckParamPtr->pInitVector);
+    if (ckParamPtr->pPassword != NULL) {
+        memset(ckParamPtr->pPassword, 0, ckParamPtr->ulPasswordLen);
+    }
     free(ckParamPtr->pPassword);
     free(ckParamPtr->pSalt);
     free(ckParamPtr);

@@ -27,9 +27,11 @@ package com.sun.crypto.provider;
 
 import java.security.*;
 import java.security.spec.*;
+import java.util.Arrays;
 import javax.crypto.*;
 import javax.crypto.spec.*;
 
+import jdk.internal.access.SharedSecrets;
 import sun.security.util.PBEUtil;
 
 /**
@@ -150,22 +152,32 @@ abstract class PBES2Core extends CipherSpi {
 
         PBEKeySpec pbeSpec = pbes2Params.getPBEKeySpec(blkSize, keyLength,
                 opmode, key, params, random);
-
-        PBKDF2KeyImpl s;
-
+        PBKDF2KeyImpl s = null;
+        byte[] derivedKey;
         try {
             s = (PBKDF2KeyImpl)kdf.engineGenerateSecret(pbeSpec);
+            derivedKey = s.getEncoded();
         } catch (InvalidKeySpecException ikse) {
             throw new InvalidKeyException("Cannot construct PBE key", ikse);
         } finally {
+            if (s != null) {
+                s.clear();
+            }
             pbeSpec.clearPassword();
         }
-        byte[] derivedKey = s.getEncoded();
-        s.clearPassword();
-        SecretKeySpec cipherKey = new SecretKeySpec(derivedKey, cipherAlgo);
 
-        // initialize the underlying cipher
-        cipher.init(opmode, cipherKey, pbes2Params.getIvSpec(), random);
+        SecretKeySpec cipherKey = null;
+        try {
+            cipherKey = new SecretKeySpec(derivedKey, cipherAlgo);
+            // initialize the underlying cipher
+            cipher.init(opmode, cipherKey, pbes2Params.getIvSpec(), random);
+        } finally {
+            if (cipherKey != null) {
+                SharedSecrets.getJavaxCryptoSpecAccess()
+                        .clearSecretKeySpec(cipherKey);
+            }
+            Arrays.fill(derivedKey, (byte) 0);
+        }
     }
 
     protected void engineInit(int opmode, Key key, AlgorithmParameters params,

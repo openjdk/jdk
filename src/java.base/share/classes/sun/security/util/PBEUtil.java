@@ -59,7 +59,7 @@ public final class PBEUtil {
      * ::getAlgorithmParameters (as AlgorithmParameters) or ::getIvSpec (as
      * IvParameterSpec).
      */
-    public final static class PBES2Params {
+    public static final class PBES2Params {
         private static final int DEFAULT_SALT_LENGTH = 20;
         private static final int DEFAULT_ITERATIONS = 4096;
 
@@ -126,20 +126,17 @@ public final class PBEUtil {
                 throw new InvalidKeyException("Null key");
             }
 
-            byte[] passwdBytes = key.getEncoded();
             char[] passwdChars = null;
             salt = null;
             iCount = 0;
             ivSpec = null;
-
             PBEKeySpec pbeSpec;
+            byte[] passwdBytes;
+            if (!(key.getAlgorithm().regionMatches(true, 0, "PBE", 0, 3)) ||
+                    (passwdBytes = key.getEncoded()) == null) {
+                throw new InvalidKeyException("Missing password");
+            }
             try {
-                if ((passwdBytes == null) ||
-                        !(key.getAlgorithm().regionMatches(true, 0, "PBE", 0,
-                                3))) {
-                    throw new InvalidKeyException("Missing password");
-                }
-
                 boolean doEncrypt = ((opmode == Cipher.ENCRYPT_MODE) ||
                             (opmode == Cipher.WRAP_MODE));
 

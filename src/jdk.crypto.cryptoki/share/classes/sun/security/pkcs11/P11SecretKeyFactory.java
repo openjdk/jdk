@@ -36,6 +36,8 @@ import javax.crypto.interfaces.PBEKey;
 import javax.crypto.spec.*;
 
 import static sun.security.pkcs11.TemplateManager.*;
+
+import jdk.internal.access.SharedSecrets;
 import sun.security.pkcs11.wrapper.*;
 import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
 
@@ -266,8 +268,7 @@ final class P11SecretKeyFactory extends SecretKeyFactorySpi {
      * Used in P11KeyStore.storeSkey.
      */
     static P11Key convertKey(Token token, Key key, String svcAlgo,
-            CK_ATTRIBUTE[] extraAttrs)
-            throws InvalidKeyException {
+            CK_ATTRIBUTE[] extraAttrs) throws InvalidKeyException {
         token.ensureValid();
         if (!(key instanceof SecretKey)) {
             throw new InvalidKeyException("Key must be a SecretKey");
@@ -326,10 +327,13 @@ final class P11SecretKeyFactory extends SecretKeyFactorySpi {
         if (key instanceof PBEKey pbeKey) {
             ki = ki == null ? getKeyInfo(keyAlgo) : ki;
             if (ki instanceof PBEKeyInfo pbeKi) {
+                PBEKeySpec keySpec = getPbeKeySpec(pbeKey);
                 try {
-                    p11Key = derivePBEKey(token, getPbeKeySpec(pbeKey), pbeKi);
+                    p11Key = derivePBEKey(token, keySpec, pbeKi);
                 } catch (InvalidKeySpecException e) {
                     throw new InvalidKeyException(e);
+                } finally {
+                    keySpec.clearPassword();
                 }
             } else {
                 throw new InvalidKeyException("Cannot derive unknown " +
@@ -349,17 +353,19 @@ final class P11SecretKeyFactory extends SecretKeyFactorySpi {
         return p11Key;
     }
 
-    static P11Key derivePBEKey(Token token, PBEKeySpec keySpec,
+    static P11Key.P11PBEKey derivePBEKey(Token token, PBEKeySpec keySpec,
             PBEKeyInfo pbeKi) throws InvalidKeySpecException {
         token.ensureValid();
         if (keySpec == null) {
             throw new InvalidKeySpecException("PBEKeySpec must not be null");
         }
         Session session = null;
+        char[] password = null;
+        char[] encPassword = null;
         try {
             session = token.getObjSession();
             CK_MECHANISM ckMech;
-            char[] password = keySpec.getPassword();
+            password = keySpec.getPassword();
             byte[] salt = keySpec.getSalt();
             int itCount = keySpec.getIterationCount();
             int keySize = keySpec.getKeyLength();
@@ -388,7 +394,6 @@ final class P11SecretKeyFactory extends SecretKeyFactorySpi {
                         "multiple of 8 and greater than zero");
             }
 
-            char[] encPassword;
             if (pbeKi.kdfMech == CKM_PKCS5_PBKD2) {
                 encPassword = P11Util.encodePassword(password,
                         StandardCharsets.UTF_8, 0);
@@ -429,11 +434,17 @@ final class P11SecretKeyFactory extends SecretKeyFactorySpi {
             CK_ATTRIBUTE[] attr = token.getAttributes(
                     O_GENERATE, CKO_SECRET_KEY, pbeKi.keyType, attrs);
             long keyID = token.p11.C_GenerateKey(session.id(), ckMech, attr);
-            return (P11Key) P11Key.pbeKey(session, keyID, pbeKi.algo,
+            return (P11Key.P11PBEKey) P11Key.pbeKey(session, keyID, pbeKi.algo,
                     keySize, attr, password, salt, itCount);
         } catch (PKCS11Exception e) {
             throw new InvalidKeySpecException("Could not create key", e);
         } finally {
+            if (encPassword != null) {
+                Arrays.fill(encPassword, '\0');
+            }
+            if (password != null) {
+                Arrays.fill(password, '\0');
+            }
             token.releaseSession(session);
         }
     }
@@ -444,14 +455,21 @@ final class P11SecretKeyFactory extends SecretKeyFactorySpi {
             byte[] encoded = pbeKey.getEncoded();
             if (encoded != null) {
                 keyLength = encoded.length << 3;
+                Arrays.fill(encoded, (byte) 0);
             }
         }
         int ic = pbeKey.getIterationCount();
-        char[] pwd = pbeKey.getPassword();
         byte[] salt = pbeKey.getSalt();
-        return keyLength == 0 ?
-                new PBEKeySpec(pwd, salt, ic) :
-                new PBEKeySpec(pwd, salt, ic, keyLength);
+        char[] pwd = pbeKey.getPassword();
+        try {
+            return keyLength == 0 ?
+                    new PBEKeySpec(pwd, salt, ic) :
+                    new PBEKeySpec(pwd, salt, ic, keyLength);
+        } finally {
+            if (pwd != null) {
+                Arrays.fill(pwd, '\0');
+            }
+        }
     }
 
     static void fixDESParity(byte[] key, int offset) {
@@ -559,19 +577,32 @@ final class P11SecretKeyFactory extends SecretKeyFactorySpi {
             return (SecretKey) derivePBEKey(token, pbeKeySpec, svcPbeKi);
         } else if (algorithm.equalsIgnoreCase("DES")) {
             if (keySpec instanceof DESKeySpec desKeySpec) {
-                byte[] keyBytes = desKeySpec.getKey();
-                keySpec = new SecretKeySpec(keyBytes, "DES");
-                return engineGenerateSecret(keySpec);
+                return generateDESSecret(desKeySpec.getKey(), "DES");
             }
         } else if (algorithm.equalsIgnoreCase("DESede")) {
             if (keySpec instanceof DESedeKeySpec desEdeKeySpec) {
-                byte[] keyBytes = desEdeKeySpec.getKey();
-                keySpec = new SecretKeySpec(keyBytes, "DESede");
-                return engineGenerateSecret(keySpec);
+                return generateDESSecret(desEdeKeySpec.getKey(), "DESede");
             }
         }
         throw new InvalidKeySpecException
                 ("Unsupported spec: " + keySpec.getClass().getName());
+    }
+
+    private SecretKey generateDESSecret(byte[] keyBytes, String desAlgo)
+            throws InvalidKeySpecException {
+        SecretKeySpec secretKeySpec = null;
+        try {
+            secretKeySpec = new SecretKeySpec(keyBytes, desAlgo);
+            return engineGenerateSecret(secretKeySpec);
+        } finally {
+            if (secretKeySpec != null) {
+                SharedSecrets.getJavaxCryptoSpecAccess()
+                        .clearSecretKeySpec(secretKeySpec);
+            }
+            if (keyBytes != null) {
+                Arrays.fill(keyBytes, (byte) 0);
+            }
+        }
     }
 
     private byte[] getKeyBytes(SecretKey key) throws InvalidKeySpecException {

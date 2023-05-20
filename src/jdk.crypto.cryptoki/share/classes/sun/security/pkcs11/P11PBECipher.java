@@ -41,7 +41,6 @@ import javax.crypto.ShortBufferException;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.PBEParameterSpec;
 
-import com.sun.crypto.provider.SunJCE;
 import sun.security.jca.JCAUtil;
 import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
 import sun.security.pkcs11.wrapper.PKCS11Exception;
@@ -146,10 +145,18 @@ final class P11PBECipher extends CipherSpi {
             PBEKeySpec pbeSpec = pbes2Params.getPBEKeySpec(
                     blkSize, svcPbeKi.keyLen, opmode, key, params, random);
             try {
-                key = P11SecretKeyFactory.derivePBEKey(
+                P11Key.P11PBEKey p11PBEKey = P11SecretKeyFactory.derivePBEKey(
                         token, pbeSpec, svcPbeKi);
+                // The internal Cipher service uses the token where the
+                // derived key lives so there won't be any need to re-derive
+                // and use the password. The key cannot be accessed out of this
+                // class.
+                p11PBEKey.clearPassword();
+                key = p11PBEKey;
             } catch (InvalidKeySpecException e) {
                 throw new InvalidKeyException(e);
+            } finally {
+                pbeSpec.clearPassword();
             }
             params = pbes2Params.getIvSpec();
         }

@@ -25,12 +25,13 @@
 
 package com.sun.crypto.provider;
 
-import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import javax.crypto.spec.PBEKeySpec;
 import java.security.*;
 import java.security.spec.*;
+import java.util.Arrays;
 
+import jdk.internal.access.SharedSecrets;
 import sun.security.util.PBEUtil;
 
 /**
@@ -108,17 +109,30 @@ abstract class HmacPKCS12PBECore extends HmacCore {
      */
     protected void engineInit(Key key, AlgorithmParameterSpec params)
         throws InvalidKeyException, InvalidAlgorithmParameterException {
+        char[] password = null;
+        byte[] derivedKey = null;
+        SecretKeySpec cipherKey = null;
         PBEKeySpec keySpec = PBEUtil.getPBAKeySpec(key, params);
-        byte[] derivedKey;
         try {
+            password = keySpec.getPassword();
             derivedKey = PKCS12PBECipherCore.derive(
-                    keySpec.getPassword(), keySpec.getSalt(),
+                    password, keySpec.getSalt(),
                     keySpec.getIterationCount(), engineGetMacLength(),
                     PKCS12PBECipherCore.MAC_KEY, algorithm, bl);
+            cipherKey = new SecretKeySpec(derivedKey, "HmacSHA1");
+            super.engineInit(cipherKey, null);
         } finally {
+            if (cipherKey != null) {
+                SharedSecrets.getJavaxCryptoSpecAccess()
+                        .clearSecretKeySpec(cipherKey);
+            }
+            if (derivedKey != null) {
+                Arrays.fill(derivedKey, (byte) 0);
+            }
+            if (password != null) {
+                Arrays.fill(password, '\0');
+            }
             keySpec.clearPassword();
         }
-        SecretKey cipherKey = new SecretKeySpec(derivedKey, "HmacSHA1");
-        super.engineInit(cipherKey, null);
     }
 }
