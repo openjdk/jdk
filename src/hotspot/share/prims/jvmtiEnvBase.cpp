@@ -2036,12 +2036,25 @@ JvmtiEnvBase::force_early_return(jthread thread, jvalue value, TosState tos) {
   oop thread_obj = nullptr;
   jvmtiError err = get_threadOop_and_JavaThread(tlh.list(), thread, &java_thread, &thread_obj);
 
-  if (thread_obj != nullptr && thread_obj->is_a(vmClasses::BaseVirtualThread_klass())) {
-    // No support for virtual threads (yet).
-    return JVMTI_ERROR_OPAQUE_FRAME;
-  }
   if (err != JVMTI_ERROR_NONE) {
     return err;
+  }
+  bool is_virtual = thread_obj != nullptr && thread_obj->is_a(vmClasses::BaseVirtualThread_klass());
+
+  if (is_virtual) {
+    if (!is_JavaThread_current(java_thread, thread_obj)) {
+      if (!is_vthread_suspended(thread_obj, java_thread)) {
+        return JVMTI_ERROR_THREAD_NOT_SUSPENDED;
+      }
+      if (java_thread == nullptr) { // unmounted virtual thread
+        return JVMTI_ERROR_OPAQUE_FRAME;
+      }
+    }
+  } else { // platform thread
+    if (java_thread != current_thread && !java_thread->is_suspended() &&
+        !java_thread->is_carrier_thread_suspended()) {
+      return JVMTI_ERROR_THREAD_NOT_SUSPENDED;
+    }
   }
 
   // retrieve or create the state
@@ -2074,12 +2087,6 @@ SetForceEarlyReturn::doit(Thread *target, bool self) {
 
   if (java_thread->is_exiting()) {
     return; /* JVMTI_ERROR_THREAD_NOT_ALIVE (default) */
-  }
-  if (!self) {
-    if (!java_thread->is_suspended()) {
-      _result = JVMTI_ERROR_THREAD_NOT_SUSPENDED;
-      return;
-    }
   }
 
   // Check to see if a ForceEarlyReturn was already in progress
