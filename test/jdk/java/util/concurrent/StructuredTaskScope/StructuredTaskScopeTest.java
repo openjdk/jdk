@@ -231,7 +231,7 @@ class StructuredTaskScopeTest {
                 executed.set(true);
                 return null;
             });
-            assertEquals(Subtask.State.STILLBORN, subtask.state());
+            assertEquals(Subtask.State.NOT_RUN, subtask.state());
             assertThrows(IllegalStateException.class, subtask::get);
             assertTrue(subtask.exception() instanceof CancellationException);
         }
@@ -637,7 +637,7 @@ class StructuredTaskScopeTest {
             scope.shutdown();
             // should not invoke the ThreadFactory to create thread
             Subtask<Void> subtask = scope.fork(() -> null);
-            assertEquals(Subtask.State.STILLBORN, subtask.state());
+            assertEquals(Subtask.State.NOT_RUN, subtask.state());
         }
     }
 
@@ -962,7 +962,7 @@ class StructuredTaskScopeTest {
                     executed.set(true);
                     return null;
                 });
-                assertEquals(Subtask.State.STILLBORN, subtask.state());
+                assertEquals(Subtask.State.NOT_RUN, subtask.state());
                 scope2.join();
                 assertFalse(executed.get());
             }
@@ -1059,7 +1059,7 @@ class StructuredTaskScopeTest {
             assertTrue(subtask2.exception() instanceof InterruptedException);
 
             var subtask3 = scope.find(task3);
-            assertEquals(Subtask.State.STILLBORN, subtask3.state());
+            assertEquals(Subtask.State.NOT_RUN, subtask3.state());
             assertTrue(subtask3.exception() instanceof CancellationException);
         }
     }
@@ -1271,7 +1271,7 @@ class StructuredTaskScopeTest {
     }
 
     /**
-     * Test Subtask with a stillborn task.
+     * Test Subtask when forked after shutdown.
      */
     @ParameterizedTest
     @MethodSource("factories")
@@ -1283,11 +1283,11 @@ class StructuredTaskScopeTest {
             };
 
             scope.shutdown();
-            Subtask<Void> subtask = scope.fork(task);
 
-            // not completed before shutdown
+            // fork after shutdown
+            Subtask<Void> subtask = scope.fork(task);
             assertEquals(task, subtask.task());
-            assertEquals(Subtask.State.STILLBORN, subtask.state());
+            assertEquals(Subtask.State.NOT_RUN, subtask.state());
             assertThrows(IllegalStateException.class, subtask::get);
             assertTrue(subtask.exception() instanceof CancellationException);
         }
@@ -1319,9 +1319,9 @@ class StructuredTaskScopeTest {
 
             scope.shutdown();
 
-            // stillborn
+            // forked after shutdown
             var subtask4 = scope.fork(sleepForDay);
-            assertTrue(subtask4.toString().contains("Stillborn"));
+            assertTrue(subtask4.toString().contains("Not run"));
 
             scope.join();
         }

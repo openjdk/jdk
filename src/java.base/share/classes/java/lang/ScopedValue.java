@@ -244,12 +244,12 @@ public final class ScopedValue<T> {
     /**
      * A mapping of scoped values, as <em>keys</em>, to values.
      *
-     * <p> A {@code Carrier} is used to accumlate mappings so that an operation (a
+     * <p> A {@code Carrier} is used to accumulate mappings so that an operation (a
      * {@link Runnable} or {@link Callable}) can be executed with all scoped values in the
      * mapping bound to values. The following example runs an operation with {@code k1}
      * bound (or rebound) to {@code v1}, and {@code k2} bound (or rebound) to {@code v2}.
      * {@snippet lang=java :
-     *     // @link substring="runWhere" target="#runWhere(ScopedValue, Object)" :
+     *     // @link substring="where" target="#where(ScopedValue, Object)" :
      *     ScopedValue.where(k1, v1).where(k2, v2).run(() -> ... );
      * }
      *
@@ -285,8 +285,7 @@ public final class ScopedValue<T> {
         /**
          * Add a binding to this map, returning a new Carrier instance.
          */
-        private static final <T> Carrier where(ScopedValue<T> key, T value,
-                                               Carrier prev) {
+        private static <T> Carrier where(ScopedValue<T> key, T value, Carrier prev) {
             return new Carrier(key, value, prev);
         }
 
@@ -313,11 +312,11 @@ public final class ScopedValue<T> {
             return where(key, value, null);
         }
 
-        final Object get() {
+        Object get() {
             return value;
         }
 
-        final ScopedValue<?> getKey() {
+        ScopedValue<?> getKey() {
             return key;
         }
 
@@ -405,7 +404,7 @@ public final class ScopedValue<T> {
         // Carrier#call() in this thread because it needs neither
         // runtime bytecode generation nor any release fencing.
         private static final class CallableAdapter<V> implements Callable<V> {
-            private Supplier<? extends V> s;
+            private final Supplier<? extends V> s;
             CallableAdapter(Supplier<? extends V> s) {
                 this.s = s;
             }
@@ -533,8 +532,8 @@ public final class ScopedValue<T> {
      * @throws Exception if the operation completes with an exception
      */
     public static <T, R> R callWhere(ScopedValue<T> key,
-                                 T value,
-                                 Callable<? extends R> op) throws Exception {
+                                     T value,
+                                     Callable<? extends R> op) throws Exception {
         return where(key, value).call(op);
     }
 
@@ -555,7 +554,7 @@ public final class ScopedValue<T> {
      * @implNote
      * This method is implemented to be equivalent to:
      * {@snippet lang=java :
-     *     // @link substring="call" target="Carrier#call(Callable)" :
+     *     // @link substring="get" target="Carrier#get(Supplier)" :
      *     ScopedValue.where(key, value).get(op);
      * }
      *
@@ -567,8 +566,8 @@ public final class ScopedValue<T> {
      * @return the result
      */
     public static <T, R> R getWhere(ScopedValue<T> key,
-                                 T value,
-                                 Supplier<? extends R> op) {
+                                    T value,
+                                    Supplier<? extends R> op) {
         return where(key, value).get(op);
     }
 

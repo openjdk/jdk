@@ -142,7 +142,7 @@ class WithScopedValue {
                 fail();
             } catch (StructureViolationException expected) { }
 
-            // underlying flock should be closed, fork should return a stillborn task
+            // underlying flock should be closed and fork should fail to start a thread
             StructuredTaskScope<Object> scope = box.scope;
             AtomicBoolean ran = new AtomicBoolean();
             Subtask<Object> subtask = scope.fork(() -> {
@@ -150,7 +150,7 @@ class WithScopedValue {
                 return null;
             });
             scope.join();
-            assertEquals(Subtask.State.STILLBORN, subtask.state());
+            assertEquals(Subtask.State.NOT_RUN, subtask.state());
             assertFalse(ran.get());
         } finally {
             StructuredTaskScope<Object> scope = box.scope;

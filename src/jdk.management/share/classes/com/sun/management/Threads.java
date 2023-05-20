@@ -31,7 +31,7 @@ import jdk.internal.vm.ThreadContainers;
 
 /**
  * This class consists exclusively of static methods that operate on threads for the
- * purpoes of monitoring and management.
+ * purposes of monitoring and management.
  *
  * @since 21
  */

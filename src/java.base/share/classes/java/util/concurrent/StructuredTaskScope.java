@@ -353,7 +353,7 @@ public class StructuredTaskScope<T> implements AutoCloseable {
              * after the scope was {@linkplain StructuredTaskScope#shutdown() shut down}.
              * This is a terminal state.
              */
-            STILLBORN
+            NOT_RUN
         }
 
         /**
@@ -373,7 +373,7 @@ public class StructuredTaskScope<T> implements AutoCloseable {
 
         /**
          * {@return the exception thrown by the subtask}. Returns a {@link
-         * CancellationException} if the subtask is {@linkplain  State#STILLBORN stillborn}.
+         * CancellationException} if the subtask did {@linkplain State#NOT_RUN not run}.
          * @throws IllegalStateException if the subtask has not completed, completed with
          * a result, or the current thread is the task scope owner and did not invoke join
          * after forking
@@ -483,8 +483,8 @@ public class StructuredTaskScope<T> implements AutoCloseable {
     }
 
     /**
-     * Invoked by a subtask when it completes successfully or fails in this task scope.
-     * It is also invoked for {@linkplain Subtask.State#STILLBORN stillborn} subtasks.
+     * Invoked by a subtask when it completes successfully or fails in this task scope. It
+     * is also invoked for subtasks that did {@linkplain Subtask.State#NOT_RUN not run}.
      *
      * @implSpec The default implementation throws {@code NullPointerException} if the
      * subtask is {@code null}. It throws {@link IllegalArgumentException} if the subtask
@@ -523,8 +523,8 @@ public class StructuredTaskScope<T> implements AutoCloseable {
      *
      * <p> If this task scope is {@linkplain #shutdown() shutdown} (or in the process
      * of shutting down) then the subtask will not run. In that case, this method returns
-     * a {@code Subtask} representing a {@linkplain Subtask.State#STILLBORN stillborn}
-     * subtask. The {@code handleComplete} method is invoked.
+     * a {@code Subtask} representing a subtask that did {@linkplain Subtask.State#NOT_RUN
+     * not run}. The {@code handleComplete} method is invoked.
      *
      * <p> This method may only be invoked by the task scope owner or threads contained
      * in the task scope.
@@ -569,13 +569,13 @@ public class StructuredTaskScope<T> implements AutoCloseable {
         }
 
         if (!started) {
-            subtask.stillborn();
+            subtask.cancelUnstarted();
         } else if (Thread.currentThread() == flock.owner() && !needJoin) {
             // force owner to join
             needJoin = true;
         }
 
-        // return forked or stillborn subtask
+        // return forked subtask or a subtask that did not run
         return subtask;
     }
 
@@ -829,7 +829,7 @@ public class StructuredTaskScope<T> implements AutoCloseable {
      */
     private static final class SubtaskImpl<T> implements Subtask<T>, Runnable {
         private static final AltResult RESULT_NULL = new AltResult(Subtask.State.SUCCESS);
-        private static final AltResult RESULT_STILLBORN = new AltResult(State.STILLBORN);
+        private static final AltResult RESULT_NOT_RUN = new AltResult(State.NOT_RUN);
 
         private record AltResult(Subtask.State state, Throwable exception) {
             AltResult(Subtask.State state) {
@@ -850,11 +850,11 @@ public class StructuredTaskScope<T> implements AutoCloseable {
         }
 
         /**
-         * Task is stillborn.
+         * Task did not start.
          */
-        void stillborn() {
+        void cancelUnstarted() {
             assert result == null;
-            result = RESULT_STILLBORN;
+            result = RESULT_NOT_RUN;
             scope.handleComplete(this);
         }
 
@@ -880,7 +880,7 @@ public class StructuredTaskScope<T> implements AutoCloseable {
             if (result == null) {
                 return Subtask.State.RUNNING;
             } else if (result instanceof AltResult alt) {
-                // null, failed or stillborn
+                // null, failed or did not run
                 return alt.state();
             } else {
                 return Subtask.State.SUCCESS;
@@ -907,7 +907,7 @@ public class StructuredTaskScope<T> implements AutoCloseable {
             if (result instanceof AltResult alt) {
                 if (alt.state() == State.FAILED)
                     return alt.exception();
-                if (alt.state() == State.STILLBORN)
+                if (alt.state() == State.NOT_RUN)
                     return new CancellationException();
             }
             throw new IllegalStateException("Task not completed or completed successfully");
@@ -922,7 +922,7 @@ public class StructuredTaskScope<T> implements AutoCloseable {
                     Throwable ex = ((AltResult) result).exception();
                     yield "[Failed: " + ex + "]";
                 }
-                case STILLBORN -> "[Stillborn]";
+                case NOT_RUN -> "[Not run]";
             };
             return Objects.toIdentityString(this ) + stateAsString;
         }
