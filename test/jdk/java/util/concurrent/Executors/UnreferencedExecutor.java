@@ -29,13 +29,18 @@
  * @run main/othervm -Xmx32m UnreferencedExecutor
  */
 
+import java.time.Duration;
 import java.util.concurrent.Executors;
 
 public class UnreferencedExecutor {
+
+    private static final int DURATION_IN_SECONDS = 5;
+
     public static void main(String[] args) throws Exception {
         int ncores = Runtime.getRuntime().availableProcessors();
-        long start = System.currentTimeMillis();
-        while (System.currentTimeMillis() - start < 5000) {
+        long durationNanos = Duration.ofSeconds(DURATION_IN_SECONDS).toNanos();
+        long start = System.nanoTime();
+        while (System.nanoTime() - start < durationNanos) {
             Executors.newFixedThreadPool(ncores);
             Executors.newCachedThreadPool();
             Executors.newVirtualThreadPerTaskExecutor();
