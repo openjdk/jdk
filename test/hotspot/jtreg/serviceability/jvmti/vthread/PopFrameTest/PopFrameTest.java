@@ -61,7 +61,7 @@ public class PopFrameTest {
 
     static void log(String str) { System.out.println(str); }
 
-    static native void prepareAgent(Class taskClass);
+    static native void prepareAgent(Class taskClass, boolean doPopFrame);
     static native void suspendThread(Thread thread);
     static native void resumeThread(Thread thread);
     static native void ensureAtBreakpoint();
@@ -94,8 +94,6 @@ public class PopFrameTest {
         TestTask testTask = new TestTask();
         Thread testTaskThread = null;
         int errCode;
-
-        prepareAgent(TestTask.class);
 
         log("\nMain #A: method A() must be blocked on entering a synchronized statement");
         if (is_virtual) {
@@ -157,7 +155,7 @@ public class PopFrameTest {
 
         log("\nMain #C: method C() calls PopFrame on its own thread");
         {
-            // PopFrame is called from the test task (own thread) and expected to succeed.
+            // PopFrame is called from method C() on own thread. Expected to return OPAQUE_FRAME.
             // No suspension of the test task thread is required or can be done in this case.
             TestTask.ensureFinished();
         }
@@ -209,9 +207,11 @@ public class PopFrameTest {
             A();
             sleep(1); // to cause yield
 
+            prepareAgent(TestTask.class, false); // No doPopFrame
             B();
             sleep(1); // to cause yield
 
+            prepareAgent(TestTask.class, true); // doPopFrame
             B();
             sleep(1); // to cause yield
 

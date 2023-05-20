@@ -28,10 +28,11 @@
 
 extern "C" {
 
-static jvmtiEnv *jvmti = NULL;
-static jmethodID mid_B = NULL;
-static jrawMonitorID monitor = NULL;
-static volatile bool bp_sync_reached = false;
+static jvmtiEnv *jvmti;
+static jmethodID mid_B;
+static jrawMonitorID monitor;
+static jboolean do_pop_frame;
+static volatile bool bp_sync_reached;
 
 static void JNICALL
 Breakpoint(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread,
@@ -44,17 +45,20 @@ Breakpoint(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread,
   err = jvmti->ClearBreakpoint(mid_B, 0);
   check_jvmti_status(jni, err, "Breakpoint: Failed in JVMTI ClearBreakpoint");
 
-  LOG("Breakpoint: In method TestTask.B(): before sync section enter\n");
+  LOG("Breakpoint: In method TestTask.B(): before sync section\n");
   {
     RawMonitorLocker rml(jvmti, jni, monitor);
     bp_sync_reached = true;
     rml.wait(0);
   }
-  err = jvmti->PopFrame(thread);
-  LOG("Breakpoint: PopFrame returned code: %s (%d)\n", TranslateError(err), err);
-  check_jvmti_status(jni, err, "Breakpoint: Failed in PopFrame");
+  LOG("Breakpoint: In method TestTask.B(): after sync section\n");
 
-  LOG("Breakpoint: In method TestTask.B(): after sync section exit\n");
+  if (do_pop_frame != 0) {
+    err = jvmti->PopFrame(thread);
+    LOG("Breakpoint: PopFrame returned code: %s (%d)\n", TranslateError(err), err);
+    check_jvmti_status(jni, err, "Breakpoint: Failed in PopFrame");
+  }
+  LOG("Breakpoint: In method TestTask.B() finished\n");
 }
 
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
@@ -105,7 +109,7 @@ Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
 }
 
 JNIEXPORT void JNICALL
-Java_PopFrameTest_prepareAgent(JNIEnv *jni, jclass cls, jclass task_clazz) {
+Java_PopFrameTest_prepareAgent(JNIEnv *jni, jclass cls, jclass task_clazz, jboolean do_pop) {
   jvmtiError err;
 
   LOG("Main: prepareAgent started\n");
@@ -113,6 +117,8 @@ Java_PopFrameTest_prepareAgent(JNIEnv *jni, jclass cls, jclass task_clazz) {
   if (jvmti == NULL) {
     fatal(jni, "prepareAgent: Failed as JVMTI client was not properly loaded!\n");
   }
+  do_pop_frame = do_pop;
+
   mid_B = jni->GetStaticMethodID(task_clazz, "B", "()V");
   if (mid_B == NULL) {
     fatal(jni, "prepareAgent: Failed to find Method ID for method: TestTask.B()\n");
@@ -160,6 +166,7 @@ JNIEXPORT void JNICALL
 Java_PopFrameTest_notifyAtBreakpoint(JNIEnv *jni, jclass cls) {
   LOG("Main: notifyAtBreakpoint\n");
   RawMonitorLocker rml(jvmti, jni, monitor);
+  bp_sync_reached = false;
   rml.notify_all();
 }
 
