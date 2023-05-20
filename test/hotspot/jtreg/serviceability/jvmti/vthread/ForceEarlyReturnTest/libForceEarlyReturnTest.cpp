@@ -189,6 +189,7 @@ JNIEXPORT void JNICALL
 Java_ForceEarlyReturnTest_notifyAtBreakpoint(JNIEnv *jni, jclass cls) {
   LOG("Main: notifyAtBreakpoint\n");
   RawMonitorLocker rml(jvmti, jni, monitor);
+  bp_sync_reached = false;
   rml.notify_all();
 }
 
