@@ -3335,27 +3335,26 @@ class StubGenerator: public StubCodeGenerator {
   class Cached64Bytes {
   private:
     MacroAssembler *_masm;
-    Register _base;
     Register _regs[8];
 
   public:
-    Cached64Bytes(MacroAssembler *masm, Register base, RegSet rs):
-      _masm(masm), _base(base) {
+    Cached64Bytes(MacroAssembler *masm, RegSet rs): _masm(masm) {
       assert(rs.size() == 8, "%u registers are used to cache 16 4-byte data", rs.size());
       auto it = rs.begin();
-      for (int i = 0; i < 8; ++i, ++it) {
-        _regs[i] = *it;
+      for (auto &r: _regs) {
+        r = *it;
+        ++it;
       }
     }
 
-    void gen_loads() {
+    void gen_loads(Register base) {
       for (int i = 0; i < 8; i += 2) {
-        __ ldp(_regs[i], _regs[i + 1], Address(_base, 8 * i));
+        __ ldp(_regs[i], _regs[i + 1], Address(base, 8 * i));
       }
     }
 
     // Generate code extracting i-th unsigned word (4 bytes) from cached 64 bytes.
-    void gen_unsigned_word_extract(Register dest, int i) {
+    void extract_u32(Register dest, int i) {
       __ ubfx(dest, _regs[i / 2], 32 * (i % 2), 32);
     }
   };
@@ -3371,7 +3370,7 @@ class StubGenerator: public StubCodeGenerator {
     __ movw(rscratch2, t);
     __ andw(rscratch3, rscratch3, r2);
     __ addw(rscratch4, r1, rscratch2);
-    reg_cache.gen_unsigned_word_extract(rscratch1, k);
+    reg_cache.extract_u32(rscratch1, k);
     __ eorw(rscratch3, rscratch3, r4);
     __ addw(rscratch4, rscratch4, rscratch1);
     __ addw(rscratch3, rscratch3, rscratch4);
@@ -3386,7 +3385,7 @@ class StubGenerator: public StubCodeGenerator {
 
     __ andw(rscratch3, r2, r4);
     __ bicw(rscratch4, r3, r4);
-    reg_cache.gen_unsigned_word_extract(rscratch1, k);
+    reg_cache.extract_u32(rscratch1, k);
     __ movw(rscratch2, t);
     __ orrw(rscratch3, rscratch3, rscratch4);
     __ addw(rscratch4, r1, rscratch2);
@@ -3404,7 +3403,7 @@ class StubGenerator: public StubCodeGenerator {
     __ eorw(rscratch3, r3, r4);
     __ movw(rscratch2, t);
     __ addw(rscratch4, r1, rscratch2);
-    reg_cache.gen_unsigned_word_extract(rscratch1, k);
+    reg_cache.extract_u32(rscratch1, k);
     __ eorw(rscratch3, rscratch3, r2);
     __ addw(rscratch4, rscratch4, rscratch1);
     __ addw(rscratch3, rscratch3, rscratch4);
@@ -3420,7 +3419,7 @@ class StubGenerator: public StubCodeGenerator {
     __ movw(rscratch3, t);
     __ ornw(rscratch2, r2, r4);
     __ addw(rscratch4, r1, rscratch3);
-    reg_cache.gen_unsigned_word_extract(rscratch1, k);
+    reg_cache.extract_u32(rscratch1, k);
     __ eorw(rscratch3, rscratch2, r3);
     __ addw(rscratch4, rscratch4, rscratch1);
     __ addw(rscratch3, rscratch3, rscratch4);
@@ -3454,7 +3453,7 @@ class StubGenerator: public StubCodeGenerator {
 
     Register state_regs[2] = { r12, r13 };
     RegSet saved_regs = RegSet::range(r16, r22) - r18_tls;
-    Cached64Bytes reg_cache(_masm, buf, RegSet::of(r14, r15) + saved_regs);
+    Cached64Bytes reg_cache(_masm, RegSet::of(r14, r15) + saved_regs);  // using 8 registers
 
     __ push(saved_regs, sp);
 
@@ -3467,7 +3466,7 @@ class StubGenerator: public StubCodeGenerator {
     Label md5_loop;
     __ BIND(md5_loop);
 
-    reg_cache.gen_loads();
+    reg_cache.gen_loads(buf);
 
     // Round 1
     md5_FF(reg_cache, a, b, c, d,  0,  7, 0xd76aa478);
@@ -3541,14 +3540,11 @@ class StubGenerator: public StubCodeGenerator {
     md5_II(reg_cache, c, d, a, b,  2, 15, 0x2ad7d2bb);
     md5_II(reg_cache, b, c, d, a,  9, 21, 0xeb86d391);
 
-    __ ubfx(rscratch1, state_regs[0],  0, 32);
+    __ addw(a, state_regs[0], a);
     __ ubfx(rscratch2, state_regs[0], 32, 32);
-    __ ubfx(rscratch3, state_regs[1],  0, 32);
-    __ ubfx(rscratch4, state_regs[1], 32, 32);
-
-    __ addw(a, rscratch1, a);
     __ addw(b, rscratch2, b);
-    __ addw(c, rscratch3, c);
+    __ addw(c, state_regs[1], c);
+    __ ubfx(rscratch4, state_regs[1], 32, 32);
     __ addw(d, rscratch4, d);
 
     __ orr(state_regs[0], a, b, Assembler::LSL, 32);
