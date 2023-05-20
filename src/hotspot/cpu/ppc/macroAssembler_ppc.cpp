@@ -2629,7 +2629,7 @@ void MacroAssembler::compiler_fast_lock_object(ConditionRegister flag, Register 
                                                Metadata* method_data,
                                                bool use_rtm, bool profile_rtm) {
   assert_different_registers(oop, box, temp, displaced_header, current_header);
-  assert(flag == CCR0, "bad condition register");
+  assert(LockingMode != LM_LIGHTWEIGHT || flag == CCR0, "bad condition register");
   Label object_has_monitor;
   Label cas_failed;
   Label success, failure;
@@ -2700,7 +2700,9 @@ void MacroAssembler::compiler_fast_lock_object(ConditionRegister flag, Register 
     // displaced header in the box, which indicates that it is a recursive lock.
     std(R0/*==0, perhaps*/, BasicLock::displaced_header_offset_in_bytes(), box);
 
-    // Uses flag == CCR0.
+    if (flag != CCR0) {
+      mcrf(flag, CCR0);
+    }
     beq(CCR0, success);
     b(failure);
   } else {
@@ -2719,6 +2721,7 @@ void MacroAssembler::compiler_fast_lock_object(ConditionRegister flag, Register 
   if (use_rtm) {
     rtm_inflated_locking(flag, oop, displaced_header, box, temp, /*temp*/ current_header,
                          rtm_counters, method_data, profile_rtm, success);
+    bne(flag, failure);
   } else {
 #endif // INCLUDE_RTM_OPT
 
@@ -2763,7 +2766,7 @@ void MacroAssembler::compiler_fast_unlock_object(ConditionRegister flag, Registe
                                                  Register temp, Register displaced_header, Register current_header,
                                                  bool use_rtm) {
   assert_different_registers(oop, box, temp, displaced_header, current_header);
-  assert(flag == CCR0, "bad condition register");
+  assert(LockingMode != LM_LIGHTWEIGHT || flag == CCR0, "bad condition register");
   Label success, failure, anonymous, not_anonymous, object_has_monitor, notRecursive;
 
 #if INCLUDE_RTM_OPT
