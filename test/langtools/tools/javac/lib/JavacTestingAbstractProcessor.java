@@ -30,7 +30,7 @@ import javax.lang.model.util.*;
 import static javax.lang.model.SourceVersion.*;
 
 /**
- * An abstract annotation processor tailored to {@code javac} regression testing.u
+ * An abstract annotation processor tailored to {@code javac} regression testing.
  */
 public abstract class JavacTestingAbstractProcessor extends AbstractProcessor {
     private static final Set<String> allAnnotations = Set.of("*");
