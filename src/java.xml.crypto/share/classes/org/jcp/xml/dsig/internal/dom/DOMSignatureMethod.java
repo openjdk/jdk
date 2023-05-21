@@ -82,6 +82,12 @@ public abstract class DOMSignatureMethod extends AbstractDOMSignatureMethod {
     static final String DSA_SHA256 =
         "http://www.w3.org/2009/xmldsig11#dsa-sha256";
 
+    // see RFC 9231 for these algorithm definitions
+    static final String ED25519 =
+        "http://www.w3.org/2021/04/xmldsig-more#eddsa-ed25519";
+    static final String ED448 =
+        "http://www.w3.org/2021/04/xmldsig-more#eddsa-ed448";
+
     // see RFC 6931 for these algorithm definitions
     static final String ECDSA_RIPEMD160 =
         "http://www.w3.org/2007/05/xmldsig-more#ecdsa-ripemd160";
@@ -220,6 +226,10 @@ public abstract class DOMSignatureMethod extends AbstractDOMSignatureMethod {
             return new DOMHMACSignatureMethod.SHA512(smElem);
         } else if (alg.equals(DOMHMACSignatureMethod.HMAC_RIPEMD160)) {
             return new DOMHMACSignatureMethod.RIPEMD160(smElem);
+        } else if (alg.equals(ED25519)) {
+            return new EDDSA_ED25519(smElem);
+        } else if (alg.equals(ED448)) {
+            return new EDDSA_ED448(smElem);
         } else {
             throw new MarshalException
                 ("unsupported SignatureMethod algorithm: " + alg);
@@ -540,6 +550,39 @@ public abstract class DOMSignatureMethod extends AbstractDOMSignatureMethod {
                 return sig;
             }
         }
+    }
+
+    abstract static class AbstractEDDSASignatureMethod
+            extends DOMSignatureMethod {
+
+
+        AbstractEDDSASignatureMethod(AlgorithmParameterSpec params)
+                throws InvalidAlgorithmParameterException {
+            super(params);
+        }
+
+        AbstractEDDSASignatureMethod(Element dmElem) throws MarshalException {
+            super(dmElem);
+        }
+
+        /**
+         * Returns {@code sig}. No extra formatting is necessary for EDDSA
+         * See the RFC8032
+         */
+        @Override
+        byte[] postSignFormat(Key key, byte[] sig) {
+            return sig;
+        }
+
+        /**
+         * Returns {@code sig}. No extra formatting is necessary for EDDSA
+         * See the RFC8032
+         */
+        @Override
+        byte[] preVerifyFormat(Key key, byte[] sig) {
+            return sig;
+        }
+
     }
 
     static final class SHA1withRSA extends AbstractRSASignatureMethod {
@@ -1021,4 +1064,56 @@ public abstract class DOMSignatureMethod extends AbstractDOMSignatureMethod {
         }
     }
 
+    static final class EDDSA_ED25519 extends AbstractEDDSASignatureMethod {
+
+        EDDSA_ED25519(AlgorithmParameterSpec params)
+                throws InvalidAlgorithmParameterException {
+            super(params);
+        }
+
+        EDDSA_ED25519(Element dmElem) throws MarshalException {
+            super(dmElem);
+        }
+
+        @Override
+        public String getAlgorithm() {
+            return ED25519;
+        }
+
+        @Override
+        String getJCAAlgorithm() {
+            return "Ed25519";
+        }
+
+        @Override
+        Type getAlgorithmType() {
+            return Type.EDDSA;
+        }
+    }
+
+    static final class EDDSA_ED448 extends AbstractEDDSASignatureMethod {
+        EDDSA_ED448(AlgorithmParameterSpec params)
+                throws InvalidAlgorithmParameterException {
+            super(params);
+        }
+
+        EDDSA_ED448(Element dmElem) throws MarshalException {
+            super(dmElem);
+        }
+
+        @Override
+        public String getAlgorithm() {
+            return ED448;
+        }
+
+        @Override
+        String getJCAAlgorithm() {
+            return "Ed448";
+        }
+
+        @Override
+        Type getAlgorithmType() {
+            return Type.EDDSA;
+        }
+    }
 }
