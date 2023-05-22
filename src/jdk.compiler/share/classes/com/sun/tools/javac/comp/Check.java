@@ -4626,7 +4626,7 @@ public class Check {
         return false;
     }
     void checkSwitchCaseLabelDominated(List<JCCase> cases) {
-        List<JCCaseLabel> caseLabels = List.nil();
+        List<Pair<JCCase, JCCaseLabel>> caseLabels = List.nil();
         boolean seenDefault = false;
         boolean seenDefaultLabel = false;
         boolean warnDominatedByDefault = false;
@@ -4653,7 +4653,9 @@ public class Check {
                     }
                 }
                 Type currentType = labelType(label);
-                for (JCCaseLabel testCaseLabel : caseLabels) {
+                for (Pair<JCCase, JCCaseLabel> caseAndLabel : caseLabels) {
+                    JCCase testCase = caseAndLabel.fst;
+                    JCCaseLabel testCaseLabel = caseAndLabel.snd;
                     Type testType = labelType(testCaseLabel);
                     if (types.isSubtype(currentType, testType) &&
                         !currentType.hasTag(ERROR) && !testType.hasTag(ERROR)) {
@@ -4663,7 +4665,7 @@ public class Check {
                             dominated |= !(testCaseLabel instanceof JCConstantCaseLabel);
                         } else if (label instanceof JCPatternCaseLabel patternCL &&
                                    testCaseLabel instanceof JCPatternCaseLabel testPatternCaseLabel &&
-                                   TreeInfo.unguardedCaseLabel(testCaseLabel)) {
+                                   TreeInfo.unguardedCase(testCase)) {
                             dominated = patternDominated(testPatternCaseLabel.pat,
                                                          patternCL.pat);
                         }
@@ -4672,7 +4674,7 @@ public class Check {
                         }
                     }
                 }
-                caseLabels = caseLabels.prepend(label);
+                caseLabels = caseLabels.prepend(Pair.of(c, label));
             }
         }
     }
@@ -4696,12 +4698,6 @@ public class Check {
                 if (!types.isSubtype(currentPatternType, existingPatternType)) {
                     return false;
                 }
-            }
-            while (existingPattern instanceof JCParenthesizedPattern parenthesized) {
-                existingPattern = parenthesized.pattern;
-            }
-            while (currentPattern instanceof JCParenthesizedPattern parenthesized) {
-                currentPattern = parenthesized.pattern;
             }
             if (currentPattern instanceof JCBindingPattern) {
                 return existingPattern instanceof JCBindingPattern;
