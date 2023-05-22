@@ -379,7 +379,7 @@ import jdk.internal.vm.annotation.ForceInline;
  * to read a pointer from some memory segment. This can be done via the
  * {@linkplain MemorySegment#get(AddressLayout, long)} access method. This method accepts an
  * {@linkplain AddressLayout address layout} (e.g. {@link ValueLayout#ADDRESS}), the layout of the pointer
- * to be read. For instance on a 64-bit platform, the size of an address layout is 64 bits. The access operation
+ * to be read. For instance on a 64-bit platform, the size of an address layout is 8 bytes. The access operation
  * also accepts an offset, expressed in bytes, which indicates the position (relative to the start of the memory segment)
  * at which the pointer is stored. The access operation returns a zero-length native memory segment, backed by a region
  * of memory whose starting address is the 64-bit value read at the specified offset.
@@ -470,7 +470,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @return the element spliterator for this segment
      * @throws IllegalArgumentException if {@code elementLayout.byteSize() == 0}.
      * @throws IllegalArgumentException if {@code byteSize() % elementLayout.byteSize() != 0}.
-     * @throws IllegalArgumentException if {@code elementLayout.bitSize() % elementLayout.bitAlignment() != 0}.
+     * @throws IllegalArgumentException if {@code elementLayout.byteSize() % elementLayout.byteAlignment() != 0}.
      * @throws IllegalArgumentException if this segment is <a href="MemorySegment.html#segment-alignment">incompatible
      * with the alignment constraint</a> in the provided layout.
      */
@@ -487,7 +487,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @return a sequential {@code Stream} over disjoint slices in this segment.
      * @throws IllegalArgumentException if {@code elementLayout.byteSize() == 0}.
      * @throws IllegalArgumentException if {@code byteSize() % elementLayout.byteSize() != 0}.
-     * @throws IllegalArgumentException if {@code elementLayout.bitSize() % elementLayout.bitAlignment() != 0}.
+     * @throws IllegalArgumentException if {@code elementLayout.byteSize() % elementLayout.byteAlignment() != 0}.
      * @throws IllegalArgumentException if this segment is <a href="MemorySegment.html#segment-alignment">incompatible
      * with the alignment constraint</a> in the provided layout.
      */
