@@ -426,14 +426,6 @@ size_t CollectedHeap::max_tlab_size() const {
   return align_down(max_int_size, MinObjAlignment);
 }
 
-size_t CollectedHeap::filler_array_hdr_size() {
-  return align_object_offset(arrayOopDesc::header_size(T_INT)); // align to Long
-}
-
-size_t CollectedHeap::filler_array_min_size() {
-  return align_object_size(filler_array_hdr_size()); // align to MinObjAlignment
-}
-
 void CollectedHeap::zap_filler_array_with(HeapWord* start, size_t words, juint value) {
   Copy::fill_to_words(start + filler_array_hdr_size(),
                       words - filler_array_hdr_size(), value);

@@ -88,18 +88,19 @@ private:
                                    size_t desired_word_size,
                                    size_t* actual_word_size);
 
-  // Node index of current thread.
-  inline uint current_node_index() const;
-
 public:
   G1Allocator(G1CollectedHeap* heap);
   ~G1Allocator();
 
   uint num_nodes() { return (uint)_num_alloc_regions; }
 
+  // Node index of current thread.
+  inline uint current_node_index() const;
+
 #ifdef ASSERT
   // Do we currently have an active mutator region to allocate into?
   bool has_mutator_alloc_region();
+  bool has_mutator_alloc_region(uint node_index);
 #endif
 
   void init_mutator_alloc_regions();
@@ -120,6 +121,7 @@ public:
   // This is to be called when holding an appropriate lock. It first tries in the
   // current allocation region, and then attempts an allocation using a new region.
   inline HeapWord* attempt_allocation_locked(size_t word_size);
+  inline HeapWord* attempt_allocation_locked(size_t word_size, uint node_index);
 
   inline HeapWord* attempt_allocation_force(size_t word_size);
 

@@ -1106,6 +1106,10 @@ class G1UpdateRemSetTrackingBeforeRebuildTask : public WorkerTask {
 
       bool selected_for_rebuild;
       if (hr->is_humongous()) {
+        oop obj = cast_to_oop(hr->humongous_start_region()->bottom());
+        if (G1CollectedHeap::is_obj_filler(obj)) { // Object allocated, but not well-formed
+          return;
+        }
         bool const is_live = _cm->contains_live_object(hr->humongous_start_region()->hrm_index());
         selected_for_rebuild = tracking_policy->update_humongous_before_rebuild(hr, is_live);
       } else {
@@ -1155,6 +1159,10 @@ class G1UpdateRemSetTrackingBeforeRebuildTask : public WorkerTask {
                "Should not have live bytes %zu in continues humongous region %u (%s)",
                marked_bytes, region_idx, hr->get_type_str());
         if (hr->is_starts_humongous()) {
+          oop obj = cast_to_oop(hr->bottom());
+          if (G1CollectedHeap::is_obj_filler(obj)) { // Object allocated, but not well-formed
+            return;
+          }
           distribute_marked_bytes(hr, marked_bytes);
         }
       } else {

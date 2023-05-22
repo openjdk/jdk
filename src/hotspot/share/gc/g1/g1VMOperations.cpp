@@ -51,6 +51,8 @@ bool VM_G1CollectFull::skip_operation() const {
 void VM_G1CollectFull::doit() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   GCCauseSetter x(g1h, _gc_cause);
+
+  g1h->reset_allocation_requests();
   _gc_succeeded = g1h->do_full_collection(false /* clear_all_soft_refs */,
                                           false /* do_maximal_compaction */);
 }
@@ -125,33 +127,40 @@ VM_G1CollectForAllocation::VM_G1CollectForAllocation(size_t         word_size,
 void VM_G1CollectForAllocation::doit() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
-  if (_word_size > 0) {
-    // An allocation has been requested. So, try to do that first.
-    _result = g1h->attempt_allocation_at_safepoint(_word_size,
-                                                   false /* expect_null_cur_alloc_region */);
-    if (_result != nullptr) {
-      // If we can successfully allocate before we actually do the
-      // pause then we will consider this pause successful.
-      _gc_succeeded = true;
-      return;
+  // Any allocation requests that were handled during a previous GC safepoint but have not been observed
+  // by the requesting mutator thread should be reset to pending. This makes it easier for the current GC to
+  // treat the unclaimed memory as garbage.
+  g1h->reset_allocation_requests();
+
+  bool gc_succeeded = false;
+  bool has_pending_allocations = !g1h->_stalled_allocations.is_empty();
+
+  if (has_pending_allocations) {
+    bool success = g1h->handle_allocation_requests(false /* expect_null_mutator_alloc_region*/);
+
+    if (success) {
+    return;
     }
+    // Could not handle all pending allocations, so we reset those that were handled
+    // before attempting the collection.
+    g1h->reset_allocation_requests();
   }
 
   GCCauseSetter x(g1h, _gc_cause);
   // Try a partial collection of some kind.
   _gc_succeeded = g1h->do_collection_pause_at_safepoint();
 
-  if (_gc_succeeded) {
-    if (_word_size > 0) {
-      // An allocation had been requested. Do it, eventually trying a stronger
-      // kind of GC.
-      _result = g1h->satisfy_failed_allocation(_word_size, &_gc_succeeded);
-    } else if (g1h->should_upgrade_to_full_gc()) {
-      // There has been a request to perform a GC to free some space. We have no
-      // information on how much memory has been asked for. In case there are
-      // absolutely no regions left to allocate into, do a full compaction.
-      _gc_succeeded = g1h->upgrade_to_full_collection();
-    }
+  if (!_gc_succeeded) {
+    return;
+  }
+
+  if (has_pending_allocations) {
+    g1h->satisfy_failed_allocations(&_gc_succeeded);
+  } else if (g1h->should_upgrade_to_full_gc()) {
+    // There has been a request to perform a GC to free some space. We have no
+    // information on how much memory has been asked for. In case there are
+    // absolutely no regions left to allocate into, do a full compaction.
+    _gc_succeeded = g1h->upgrade_to_full_collection();
   }
 }
 
