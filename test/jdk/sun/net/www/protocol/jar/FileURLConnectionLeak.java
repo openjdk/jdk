@@ -50,7 +50,7 @@ public class FileURLConnectionLeak {
         }
         // FileURLConnection.is opened implicitly:
         var conn = u.openConnection();
-        conn.getContentEncoding();
+        conn.getLastModified();
         // Idiom to close URLConnection (cf. JDK-8224095), which must also close the other stream:
         conn.getInputStream().close();
         var fds = Path.of("/proc/" + ProcessHandle.current().pid() + "/fd");
