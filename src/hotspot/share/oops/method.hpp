@@ -841,7 +841,7 @@ public:
 
   // Find if klass for method is loaded
   bool is_klass_loaded_by_klass_index(int klass_index) const;
-  bool is_klass_loaded(int refinfo_index, bool must_be_resolved = false) const;
+  bool is_klass_loaded(int refinfo_index, Bytecodes::Code bc, bool must_be_resolved = false) const;
 
   // Indicates whether compilation failed earlier for this method, or
   // whether it is not compilable for another reason like having a
