@@ -978,7 +978,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
     }
 
     {
-      // Print current thread slack
+      // Print current timer slack, if available
       int slack = prctl(PR_GET_TIMERSLACK);
       if (slack >= 0) {
         log_info(os, thread)("Thread \"%s\" (pthread id: " UINTX_FORMAT ") timer slack: %dns",
