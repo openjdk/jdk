@@ -44,11 +44,11 @@ import java.util.Base64;
 public class TestBadDNForPeerCA {
 
     // Test was originally written for TLSv1.2
-    private static String proto = "TLSv1.2";
+    private static final String proto = "TLSv1.2";
 
-    private static boolean debug = false;
+    private static final boolean debug = false;
 
-    private SSLContext sslc;
+    private final SSLContext sslc;
 
     private SSLEngine serverEngine;     // server Engine
     private ByteBuffer serverIn;        // read side of serverEngine
@@ -60,7 +60,9 @@ public class TestBadDNForPeerCA {
         System.getProperty("test.src", "./")
             + "/../../../../javax/net/ssl/etc/keystore";
 
-    private static byte[] payload = Base64.getDecoder().decode(
+    // the following contains a certificate with an invalid/unparseable
+    // distinguished name
+    private static final byte[] payload = Base64.getDecoder().decode(
         "FgMDAcsBAAHHAwPbDfeUCIStPzVIfXuGgCu56dSJOJ6xeus1W44frG5tciDEcBfYt"
             + "/PN/6MFCGojEVcmPw21mVyjYInMo0UozIn4NwBiEwITARMDwCzAK8ypwDDMqMAvA"
             + "J/MqgCjAJ4AosAkwCjAI8AnAGsAagBnAEDALsAywC3AMcAmCgAFKsApJcDAFMAJw"
@@ -77,17 +79,15 @@ public class TestBadDNForPeerCA {
     /*
      * The following is to set up the keystores.
      */
-    private static String passwd = "passphrase";
+    private static final String passwd = "passphrase";
 
     /*
      * Main entry point for this demo.
      */
-    public static void main(String args[]) throws Exception {
+    public static void main(String[] args) throws Exception {
         if (debug) {
             System.setProperty("javax.net.debug", "all");
         }
-
-        System.out.println("payload len:" + payload.length);
 
         TestBadDNForPeerCA test = new TestBadDNForPeerCA();
 
@@ -99,8 +99,6 @@ public class TestBadDNForPeerCA {
             System.out.println("TEST PASSED:  Caught expected exception");
         }
     }
-
-    static TestBadDNForPeerCA fuzzdemoref = null;
 
     /*
      * Create an initialized SSLContext to use for this demo.
