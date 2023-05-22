@@ -25,17 +25,18 @@
 
 package java.lang.runtime;
 
+import java.lang.Enum.EnumDesc;
 import java.lang.invoke.CallSite;
 import java.lang.invoke.ConstantBootstraps;
 import java.lang.invoke.ConstantCallSite;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.util.Objects;
 import java.util.stream.Stream;
 
-import jdk.internal.javac.PreviewFeature;
-
 import static java.util.Objects.requireNonNull;
+import jdk.internal.vm.annotation.Stable;
 
 /**
  * Bootstrap methods for linking {@code invokedynamic} call sites that implement
@@ -43,9 +44,8 @@ import static java.util.Objects.requireNonNull;
  * take additional static arguments corresponding to the {@code case} labels
  * of the {@code switch}, implicitly numbered sequentially from {@code [0..N)}.
  *
- * @since 17
+ * @since 21
  */
-@PreviewFeature(feature=PreviewFeature.Feature.SWITCH_PATTERN_MATCHING)
 public class SwitchBootstraps {
 
     private SwitchBootstraps() {}
@@ -60,7 +60,8 @@ public class SwitchBootstraps {
             DO_TYPE_SWITCH = LOOKUP.findStatic(SwitchBootstraps.class, "doTypeSwitch",
                                            MethodType.methodType(int.class, Object.class, int.class, Object[].class));
             DO_ENUM_SWITCH = LOOKUP.findStatic(SwitchBootstraps.class, "doEnumSwitch",
-                                           MethodType.methodType(int.class, Enum.class, int.class, Object[].class));
+                                           MethodType.methodType(int.class, Enum.class, int.class, Object[].class,
+                                                                 MethodHandles.Lookup.class, Class.class, ResolvedEnumLabels.class));
         }
         catch (ReflectiveOperationException e) {
             throw new ExceptionInInitializerError(e);
@@ -71,7 +72,7 @@ public class SwitchBootstraps {
      * Bootstrap method for linking an {@code invokedynamic} call site that
      * implements a {@code switch} on a target of a reference type.  The static
      * arguments are an array of case labels which must be non-null and of type
-     * {@code String} or {@code Integer} or {@code Class}.
+     * {@code String} or {@code Integer} or {@code Class} or {@code EnumDesc}.
      * <p>
      * The type of the returned {@code CallSite}'s method handle will have
      * a return type of {@code int}.   It has two parameters: the first argument
@@ -89,10 +90,16 @@ public class SwitchBootstraps {
      *       from the target's class; or</li>
      *   <li>the element is of type {@code String} or {@code Integer} and
      *       equals to the target.</li>
+     *   <li>the element is of type {@code EnumDesc}, that describes a constant that is
+     *       equals to the target.</li>
      * </ul>
      * <p>
      * If no element in the {@code labels} array matches the target, then
      * the method of the call site return the length of the {@code labels} array.
+     * <p>
+     * The value of the {@code restart} index must be between {@code 0} (inclusive) and
+     * the length of the {@code labels} array (inclusive),
+     * both  or an {@link IndexOutOfBoundsException} is thrown.
      *
      * @param lookup Represents a lookup context with the accessibility
      *               privileges of the caller.  When used with {@code invokedynamic},
@@ -101,7 +108,7 @@ public class SwitchBootstraps {
      * @param invocationType The invocation type of the {@code CallSite} with two parameters,
      *                       a reference type, an {@code int}, and {@code int} as a return type.
      * @param labels case labels - {@code String} and {@code Integer} constants
-     *               and {@code Class} instances, in any combination
+     *               and {@code Class} and {@code EnumDesc} instances, in any combination
      * @return a {@code CallSite} returning the first matching element as described above
      *
      * @throws NullPointerException if any argument is {@code null}
@@ -109,7 +116,7 @@ public class SwitchBootstraps {
      * invocation type is not not a method type of first parameter of a reference type,
      * second parameter of type {@code int} and with {@code int} as its return type,
      * or if {@code labels} contains an element that is not of type {@code String},
-     * {@code Integer} or {@code Class}.
+     * {@code Integer}, {@code Class} or {@code EnumDesc}.
      * @jvms 4.4.6 The CONSTANT_NameAndType_info Structure
      * @jvms 4.4.10 The CONSTANT_Dynamic_info and CONSTANT_InvokeDynamic_info Structures
      */
@@ -138,12 +145,15 @@ public class SwitchBootstraps {
         Class<?> labelClass = label.getClass();
         if (labelClass != Class.class &&
             labelClass != String.class &&
-            labelClass != Integer.class) {
+            labelClass != Integer.class &&
+            labelClass != EnumDesc.class) {
             throw new IllegalArgumentException("label with illegal type found: " + label.getClass());
         }
     }
 
     private static int doTypeSwitch(Object target, int startIndex, Object[] labels) {
+        Objects.checkIndex(startIndex, labels.length + 1);
+
         if (target == null)
             return -1;
 
@@ -158,6 +168,11 @@ public class SwitchBootstraps {
                 if (target instanceof Number input && constant.intValue() == input.intValue()) {
                     return i;
                 } else if (target instanceof Character input && constant.intValue() == input.charValue()) {
+                    return i;
+                }
+            } else if (label instanceof EnumDesc<?> enumDesc) {
+                if (target.getClass().isEnum() &&
+                    ((Enum<?>) target).describeConstable().stream().anyMatch(d -> d.equals(enumDesc))) {
                     return i;
                 }
             } else if (label.equals(target)) {
@@ -200,6 +215,10 @@ public class SwitchBootstraps {
      * <p>
      * If no element in the {@code labels} array matches the target, then
      * the method of the call site return the length of the {@code labels} array.
+     * <p>
+     * The value of the {@code restart} index must be between {@code 0} (inclusive) and
+     * the length of the {@code labels} array (inclusive),
+     * both  or an {@link IndexOutOfBoundsException} is thrown.
      *
      * @param lookup Represents a lookup context with the accessibility
      *               privileges of the caller. When used with {@code invokedynamic},
@@ -235,13 +254,28 @@ public class SwitchBootstraps {
         labels = labels.clone();
 
         Class<?> enumClass = invocationType.parameterType(0);
-        labels = Stream.of(labels).map(l -> convertEnumConstants(lookup, enumClass, l)).toArray();
+        Stream.of(labels).forEach(l -> validateEnumLabel(enumClass, l));
+        MethodHandle temporary =
+                MethodHandles.insertArguments(DO_ENUM_SWITCH, 2, labels, lookup, enumClass, new ResolvedEnumLabels());
+        temporary = temporary.asType(invocationType);
 
-        MethodHandle target =
-                MethodHandles.insertArguments(DO_ENUM_SWITCH, 2, (Object) labels);
-        target = target.asType(invocationType);
+        return new ConstantCallSite(temporary);
+    }
 
-        return new ConstantCallSite(target);
+    private static <E extends Enum<E>> void validateEnumLabel(Class<?> enumClassTemplate, Object label) {
+        if (label == null) {
+            throw new IllegalArgumentException("null label found");
+        }
+        Class<?> labelClass = label.getClass();
+        if (labelClass == Class.class) {
+            if (label != enumClassTemplate) {
+                throw new IllegalArgumentException("the Class label: " + label +
+                                                   ", expected the provided enum class: " + enumClassTemplate);
+            }
+        } else if (labelClass != String.class) {
+            throw new IllegalArgumentException("label with illegal type found: " + labelClass +
+                                               ", expected label of type either String or Class");
+        }
     }
 
     private static <E extends Enum<E>> Object convertEnumConstants(MethodHandles.Lookup lookup, Class<?> enumClassTemplate, Object label) {
@@ -269,9 +303,21 @@ public class SwitchBootstraps {
         }
     }
 
-    private static int doEnumSwitch(Enum<?> target, int startIndex, Object[] labels) {
+    private static int doEnumSwitch(Enum<?> target, int startIndex, Object[] unresolvedLabels,
+                                    MethodHandles.Lookup lookup, Class<?> enumClass,
+                                    ResolvedEnumLabels resolvedLabels) {
+        Objects.checkIndex(startIndex, unresolvedLabels.length + 1);
+
         if (target == null)
             return -1;
+
+        if (resolvedLabels.resolvedLabels == null) {
+            resolvedLabels.resolvedLabels = Stream.of(unresolvedLabels)
+                                                  .map(l -> convertEnumConstants(lookup, enumClass, l))
+                                                  .toArray();
+        }
+
+        Object[] labels = resolvedLabels.resolvedLabels;
 
         // Dumbest possible strategy
         Class<?> targetClass = target.getClass();
@@ -288,4 +334,8 @@ public class SwitchBootstraps {
         return labels.length;
     }
 
+    private static final class ResolvedEnumLabels {
+        @Stable
+        public Object[] resolvedLabels;
+    }
 }

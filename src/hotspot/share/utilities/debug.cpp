@@ -398,15 +398,8 @@ extern "C" JNIEXPORT void pp(void* p) {
     // catch the signal and disable the pp() command for further use.
     // In order to avoid that, switch off SIGSEGV handling with "handle SIGSEGV nostop" before
     // invoking pp()
-    if (MemTracker::enabled()) {
-      // Does it point into a known mmapped region?
-      if (VirtualMemoryTracker::print_containing_region(p, tty)) {
-        return;
-      }
-      // Does it look like the start of a malloced block?
-      if (MallocTracker::print_pointer_information(p, tty)) {
-        return;
-      }
+    if (MemTracker::print_containing_region(p, tty)) {
+      return;
     }
     tty->print_cr(PTR_FORMAT, p2i(p));
   }

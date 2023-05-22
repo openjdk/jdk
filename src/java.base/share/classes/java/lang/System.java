@@ -77,10 +77,11 @@ import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.misc.VM;
+import jdk.internal.javac.PreviewFeature;
 import jdk.internal.logger.LoggerFinderLoader;
 import jdk.internal.logger.LazyLoggers;
 import jdk.internal.logger.LocalizedLoggerWrapper;
+import jdk.internal.misc.VM;
 import jdk.internal.util.SystemProps;
 import jdk.internal.vm.Continuation;
 import jdk.internal.vm.ContinuationScope;
@@ -89,7 +90,6 @@ import jdk.internal.vm.ThreadContainer;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.Stable;
-import jdk.internal.vm.annotation.ChangesCurrentThread;
 import sun.nio.fs.DefaultFileSystemProvider;
 import sun.reflect.annotation.AnnotationType;
 import sun.nio.ch.Interruptible;
@@ -761,8 +761,6 @@ public final class System {
      *     <td>List of paths to search when loading libraries</td></tr>
      * <tr><th scope="row">{@systemProperty java.io.tmpdir}</th>
      *     <td>Default temp file path</td></tr>
-     * <tr><th scope="row">{@systemProperty java.compiler}</th>
-     *     <td>Name of JIT compiler to use</td></tr>
      * <tr><th scope="row">{@systemProperty os.name}</th>
      *     <td>Operating system name</td></tr>
      * <tr><th scope="row">{@systemProperty os.arch}</th>
@@ -1889,18 +1887,18 @@ public final class System {
     }
 
     /**
-     * Initiates the <a href="Runtime.html#shutdown">shutdown sequence</a> of the
-     * Java Virtual Machine. This method always blocks indefinitely. The argument
-     * serves as a status code; by convention, a nonzero status code indicates
-     * abnormal termination.
+     * Initiates the {@linkplain Runtime##shutdown shutdown sequence} of the Java Virtual Machine.
+     * Unless the security manager denies exiting, this method initiates the shutdown sequence
+     * (if it is not already initiated) and then blocks indefinitely. This method neither returns
+     * nor throws an exception; that is, it does not complete either normally or abruptly.
      * <p>
-     * This method calls the {@code exit} method in class {@code Runtime}. This
-     * method never returns normally.
+     * The argument serves as a status code. By convention, a nonzero status code
+     * indicates abnormal termination.
      * <p>
      * The call {@code System.exit(n)} is effectively equivalent to the call:
-     * <blockquote><pre>
-     * Runtime.getRuntime().exit(n)
-     * </pre></blockquote>
+     * {@snippet :
+     *     Runtime.getRuntime().exit(n)
+     * }
      *
      * @implNote
      * The initiation of the shutdown sequence is logged by {@link Runtime#exit(int)}.
@@ -2010,6 +2008,8 @@ public final class System {
      *             linked with the VM, or the library cannot be mapped to
      *             a native library image by the host system.
      * @throws     NullPointerException if {@code filename} is {@code null}
+     *
+     * @spec jni/index.html Java Native Interface Specification
      * @see        java.lang.Runtime#load(java.lang.String)
      * @see        java.lang.SecurityManager#checkLink(java.lang.String)
      */
@@ -2046,6 +2046,8 @@ public final class System {
      *             linked with the VM,  or the library cannot be mapped to a
      *             native library image by the host system.
      * @throws     NullPointerException if {@code libname} is {@code null}
+     *
+     * @spec jni/index.html Java Native Interface Specification
      * @see        java.lang.Runtime#loadLibrary(java.lang.String)
      * @see        java.lang.SecurityManager#checkLink(java.lang.String)
      */
@@ -2521,6 +2523,23 @@ public final class System {
                 return StringConcatHelper.mix(lengthCoder, constant);
             }
 
+            @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
+            public long stringConcatCoder(char value) {
+                return StringConcatHelper.coder(value);
+            }
+
+            @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
+            public long stringBuilderConcatMix(long lengthCoder,
+                                               StringBuilder sb) {
+                return sb.mix(lengthCoder);
+            }
+
+            @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
+            public long stringBuilderConcatPrepend(long lengthCoder, byte[] buf,
+                                                   StringBuilder sb) {
+                return sb.prepend(lengthCoder, buf);
+            }
+
             public String join(String prefix, String suffix, String delimiter, String[] elements, int size) {
                 return String.join(prefix, suffix, delimiter, elements, size);
             }
@@ -2563,17 +2582,9 @@ public final class System {
                 return Thread.currentCarrierThread();
             }
 
-            @ChangesCurrentThread
             public <V> V executeOnCarrierThread(Callable<V> task) throws Exception {
-                Thread thread = Thread.currentThread();
-                if (thread.isVirtual()) {
-                    Thread carrier = Thread.currentCarrierThread();
-                    carrier.setCurrentThread(carrier);
-                    try {
-                        return task.call();
-                    } finally {
-                        carrier.setCurrentThread(thread);
-                    }
+                if (Thread.currentThread() instanceof VirtualThread vthread) {
+                    return vthread.executeOnCarrierThread(task);
                 } else {
                     return task.call();
                 }

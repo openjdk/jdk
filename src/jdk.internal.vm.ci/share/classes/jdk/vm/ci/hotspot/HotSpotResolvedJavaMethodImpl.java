@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,10 +35,14 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 
+import jdk.internal.vm.VMSupport;
 import jdk.vm.ci.common.JVMCIError;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.Option;
+import jdk.vm.ci.meta.AnnotationData;
 import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.ConstantPool;
 import jdk.vm.ci.meta.DefaultProfilingInfo;
@@ -82,22 +86,6 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
     private String nameCache;
 
     /**
-     * Gets the holder of a HotSpot metaspace method native object.
-     *
-     * @param metaspaceHandle a handle to a metaspace Method object
-     * @return the {@link ResolvedJavaType} corresponding to the holder of the
-     *         {@code metaspaceMethod}
-     */
-    private static HotSpotResolvedObjectTypeImpl getHolder(long metaspaceHandle) {
-        HotSpotVMConfig config = config();
-        long methodPointer = UNSAFE.getLong(metaspaceHandle);
-        assert methodPointer != 0 : metaspaceHandle;
-        final long constMethodPointer = UNSAFE.getAddress(methodPointer + config.methodConstMethodOffset);
-        final long constantPoolPointer = UNSAFE.getAddress(constMethodPointer + config.constMethodConstantsOffset);
-        return Objects.requireNonNull(compilerToVM().getResolvedJavaType(constantPoolPointer + config.constantPoolHolderOffset));
-    }
-
-    /**
      * Gets the JVMCI mirror from a HotSpot method. The VM is responsible for ensuring that the
      * Method* is kept alive for the duration of this call and the {@link HotSpotJVMCIRuntime} keeps
      * it alive after that.
@@ -109,8 +97,7 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
      */
     @SuppressWarnings("unused")
     @VMEntryPoint
-    private static HotSpotResolvedJavaMethod fromMetaspace(long metaspaceHandle) {
-        HotSpotResolvedObjectTypeImpl holder = getHolder(metaspaceHandle);
+    private static HotSpotResolvedJavaMethod fromMetaspace(long metaspaceHandle, HotSpotResolvedObjectTypeImpl holder) {
         return holder.createMethod(metaspaceHandle);
     }
 
@@ -313,7 +300,7 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
      */
     @Override
     public boolean isCallerSensitive() {
-        return (getFlags() & config().methodFlagsCallerSensitive) != 0;
+        return (getConstMethodFlags() & config().constMethodFlagsCallerSensitive) != 0;
     }
 
     /**
@@ -333,7 +320,7 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
      */
     @Override
     public boolean hasReservedStackAccess() {
-        return (getFlags() & config().methodFlagsReservedStackAccess) != 0;
+        return (getConstMethodFlags() & config().constMethodFlagsReservedStackAccess) != 0;
     }
 
     /**
@@ -523,7 +510,7 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
 
     @Override
     public Annotation[] getAnnotations() {
-        if ((getConstMethodFlags() & config().constMethodHasMethodAnnotations) == 0 || isClassInitializer()) {
+        if (!hasAnnotations()) {
             return new Annotation[0];
         }
         return runtime().reflection.getMethodAnnotations(this);
@@ -531,7 +518,7 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
 
     @Override
     public Annotation[] getDeclaredAnnotations() {
-        if ((getConstMethodFlags() & config().constMethodHasMethodAnnotations) == 0 || isClassInitializer()) {
+        if (!hasAnnotations()) {
             return new Annotation[0];
         }
         return runtime().reflection.getMethodDeclaredAnnotations(this);
@@ -539,10 +526,17 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
 
     @Override
     public <T extends Annotation> T getAnnotation(Class<T> annotationClass) {
-        if ((getConstMethodFlags() & config().constMethodHasMethodAnnotations) == 0 || isClassInitializer()) {
+        if (!hasAnnotations()) {
             return null;
         }
         return runtime().reflection.getMethodAnnotation(this, annotationClass);
+    }
+
+    /**
+     * Returns whether this method has annotations.
+     */
+    private boolean hasAnnotations() {
+        return (getConstMethodFlags() & config().constMethodHasMethodAnnotations) != 0 && !isClassInitializer();
     }
 
     @Override
@@ -726,7 +720,7 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
 
     @Override
     public boolean isIntrinsicCandidate() {
-        return (getFlags() & config().methodFlagsIntrinsicCandidate) != 0;
+        return (getConstMethodFlags() & config().constMethodFlagsIntrinsicCandidate) != 0;
     }
 
     /**
@@ -751,5 +745,26 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
     @Override
     public int methodIdnum() {
         return UNSAFE.getChar(getConstMethod() + config().constMethodMethodIdnumOffset);
+    }
+
+    @Override
+    public AnnotationData getAnnotationData(ResolvedJavaType type) {
+        if (!hasAnnotations()) {
+            return null;
+        }
+        return getAnnotationData0(type).get(0);
+    }
+
+    @Override
+    public List<AnnotationData> getAnnotationData(ResolvedJavaType type1, ResolvedJavaType type2, ResolvedJavaType... types) {
+        if (!hasAnnotations()) {
+            return Collections.emptyList();
+        }
+        return getAnnotationData0(AnnotationDataDecoder.asArray(type1, type2, types));
+    }
+
+    private List<AnnotationData> getAnnotationData0(ResolvedJavaType... filter) {
+        byte[] encoded = compilerToVM().getEncodedExecutableAnnotationData(this, filter);
+        return VMSupport.decodeAnnotations(encoded, AnnotationDataDecoder.INSTANCE);
     }
 }

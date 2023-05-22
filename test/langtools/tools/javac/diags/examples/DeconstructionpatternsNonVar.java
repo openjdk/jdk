@@ -22,9 +22,6 @@
  */
 
 // key: compiler.err.deconstruction.pattern.var.not.allowed
-// key: compiler.warn.preview.feature.use.plural
-// key: compiler.misc.feature.deconstruction.patterns
-// options: --enable-preview -source ${jdk.version} -Xlint:preview
 
 class DeconstructionpatternsNonVar {
     record Point(int x, int y) {}

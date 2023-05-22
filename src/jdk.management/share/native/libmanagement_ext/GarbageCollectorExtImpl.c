@@ -34,8 +34,8 @@ JNIEXPORT void JNICALL Java_com_sun_management_internal_GarbageCollectorExtImpl_
         JNU_ThrowNullPointerException(env, "Invalid GarbageCollectorMXBean");
         return;
     }
-    if((jmm_version > JMM_VERSION_1_2)
-       || (jmm_version == JMM_VERSION_1_2 && ((jmm_version&0xFF)>=1))) {
-      jmm_interface->SetGCNotificationEnabled(env, gc, enabled);
+    if((jmm_version_management_ext > JMM_VERSION_1_2)
+       || (jmm_version_management_ext == JMM_VERSION_1_2 && ((jmm_version_management_ext&0xFF)>=1))) {
+      jmm_interface_management_ext->SetGCNotificationEnabled(env, gc, enabled);
     }
 }

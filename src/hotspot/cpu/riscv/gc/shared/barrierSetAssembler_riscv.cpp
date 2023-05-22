@@ -240,7 +240,7 @@ void BarrierSetAssembler::clear_patching_epoch() {
 void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slow_path, Label* continuation, Label* guard) {
   BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
 
-  if (bs_nm == NULL) {
+  if (bs_nm == nullptr) {
     return;
   }
 
@@ -249,7 +249,7 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slo
   Label local_guard;
   NMethodPatchingType patching_type = nmethod_patching_type();
 
-  if (slow_path == NULL) {
+  if (slow_path == nullptr) {
     guard = &local_guard;
 
     // RISCV atomic operations require that the memory address be naturally aligned.
@@ -304,7 +304,7 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slo
       ShouldNotReachHere();
   }
 
-  if (slow_path == NULL) {
+  if (slow_path == nullptr) {
     Label skip_barrier;
     __ beq(t0, t1, skip_barrier);
 
@@ -327,7 +327,7 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slo
 
 void BarrierSetAssembler::c2i_entry_barrier(MacroAssembler* masm) {
   BarrierSetNMethod* bs = BarrierSet::barrier_set()->barrier_set_nmethod();
-  if (bs == NULL) {
+  if (bs == nullptr) {
     return;
   }
 

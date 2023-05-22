@@ -1025,6 +1025,10 @@ const bool Matcher::vector_needs_partial_operations(Node* node, const TypeVect* 
   return false;
 }
 
+const bool Matcher::vector_needs_load_shuffle(BasicType elem_bt, int vlen) {
+  return false;
+}
+
 const RegMask* Matcher::predicate_reg_mask(void) {
   return NULL;
 }

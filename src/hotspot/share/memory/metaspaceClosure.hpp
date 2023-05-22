@@ -78,10 +78,6 @@ public:
     _default
   };
 
-  enum SpecialRef {
-    _method_entry_ref
-  };
-
   // class MetaspaceClosure::Ref --
   //
   // MetaspaceClosure can be viewed as a very simple type of copying garbage
@@ -110,14 +106,13 @@ public:
   // [2] All Array<T> dimensions are statically declared.
   class Ref : public CHeapObj<mtMetaspace> {
     Writability _writability;
-    bool _keep_after_pushing;
     Ref* _next;
     void* _user_data;
     NONCOPYABLE(Ref);
 
   protected:
     virtual void** mpp() const = 0;
-    Ref(Writability w) : _writability(w), _keep_after_pushing(false), _next(nullptr), _user_data(nullptr) {}
+    Ref(Writability w) : _writability(w), _next(nullptr), _user_data(nullptr) {}
   public:
     virtual bool not_null() const = 0;
     virtual int size() const = 0;
@@ -138,8 +133,6 @@ public:
     void update(address new_loc) const;
 
     Writability writability() const { return _writability; };
-    void set_keep_after_pushing()   { _keep_after_pushing = true; }
-    bool keep_after_pushing()       { return _keep_after_pushing; }
     void set_user_data(void* data)  { _user_data = data; }
     void* user_data()               { return _user_data; }
     void set_next(Ref* n)           { _next = n; }
@@ -356,19 +349,6 @@ public:
   }
 #endif
 
-  template <class T> void push_method_entry(T** mpp, intptr_t* p) {
-    Ref* ref = new MSORef<T>(mpp, _default);
-    push_special(_method_entry_ref, ref, (intptr_t*)p);
-    if (!ref->keep_after_pushing()) {
-      delete ref;
-    }
-  }
-
-  // This is for tagging special pointers that are not a reference to MetaspaceObj. It's currently
-  // used to mark the method entry points in Method/ConstMethod.
-  virtual void push_special(SpecialRef type, Ref* obj, intptr_t* p) {
-    assert(type == _method_entry_ref, "only special type allowed for now");
-  }
 };
 
 // This is a special MetaspaceClosure that visits each unique MetaspaceObj once.

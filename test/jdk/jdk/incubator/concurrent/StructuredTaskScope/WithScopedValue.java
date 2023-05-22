@@ -24,7 +24,6 @@
 /*
  * @test
  * @summary Basic tests for StructuredTaskScope with scoped values
- * @enablePreview
  * @modules jdk.incubator.concurrent
  * @run junit WithScopedValue
  */

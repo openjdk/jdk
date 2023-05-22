@@ -2637,7 +2637,7 @@ JNIEXPORT jint JNICALL Java_sun_awt_windows_WPrinterJob_getGDIAdvance
  */
 JNIEXPORT void JNICALL Java_sun_awt_windows_WPrinterJob_textOut
 (JNIEnv *env, jobject self, jlong printDC, jstring text, jint strLen,
-     boolean glyphCodes, jfloat x, jfloat y, jfloatArray positions)
+     jboolean glyphCodes, jfloat x, jfloat y, jfloatArray positions)
 {
 
     long posX = ROUND_TO_LONG(x);

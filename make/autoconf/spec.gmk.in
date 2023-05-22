@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -358,6 +358,8 @@ BUILDJDK_OUTPUTDIR=$(OUTPUTDIR)/buildjdk
 
 BUILD_FAILURE_HANDLER := @BUILD_FAILURE_HANDLER@
 
+BUILD_JTREG_TEST_THREAD_FACTORY := @BUILD_JTREG_TEST_THREAD_FACTORY@
+
 ENABLE_GENERATE_CLASSLIST := @ENABLE_GENERATE_CLASSLIST@
 
 EXCLUDE_TRANSLATIONS := @EXCLUDE_TRANSLATIONS@
@@ -406,6 +408,9 @@ TEST_JOBS?=@TEST_JOBS@
 # Default make target
 DEFAULT_MAKE_TARGET:=@DEFAULT_MAKE_TARGET@
 DEFAULT_LOG:=@DEFAULT_LOG@
+
+# Fallback linker
+ENABLE_FALLBACK_LINKER:=@ENABLE_FALLBACK_LINKER@
 
 FREETYPE_TO_USE:=@FREETYPE_TO_USE@
 FREETYPE_LIBS:=@FREETYPE_LIBS@
@@ -690,6 +695,8 @@ INTERIM_LANGTOOLS_ADD_EXPORTS := \
     --add-exports java.base/sun.invoke.util=jdk.compiler.interim \
     --add-exports java.base/jdk.internal.javac=java.compiler.interim \
     --add-exports java.base/jdk.internal.javac=jdk.compiler.interim \
+    --add-exports jdk.internal.opt/jdk.internal.opt=jdk.compiler.interim \
+    --add-exports jdk.internal.opt/jdk.internal.opt=jdk.javadoc.interim \
     #
 INTERIM_LANGTOOLS_MODULES_COMMA := $(strip $(subst $(SPACE),$(COMMA),$(strip \
     $(INTERIM_LANGTOOLS_MODULES))))
