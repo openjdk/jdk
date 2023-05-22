@@ -134,7 +134,11 @@ void fill_call_trace_for_non_java_thread(ASGST_CallTrace *trace, jint depth, voi
   }
   frame ret_frame;
   if (!frame_from_context(&ret_frame, ucontext)) {
-    trace->kind = ASGST_UNKNOWN_TRACE; // 4
+    if ((trace->kind & ASGST_UNKNOWN_TRACE) == 0) {
+      trace->num_frames = ASGST_WRONG_KIND;
+      return;
+    }
+    trace->kind = ASGST_UNKNOWN_TRACE;
     trace->num_frames = ASGST_UNKNOWN_NOT_JAVA; // -3
     return;
   }
@@ -148,6 +152,8 @@ void asyncGetStackTraceImpl(ASGST_CallTrace *trace, jint depth, void* ucontext, 
   bool include_non_java_threads = (options & ASGST_INCLUDE_NON_JAVA_THREADS) != 0;
   bool walk_during_unsafe_states = (options & ASGST_WALK_DURING_UNSAFE_STATES) != 0;
   bool walk_same_thread = (options & ASGST_WALK_SAME_THREAD) != 0;
+  bool check_kind = trace->kind != 0;
+  int kind_mask = check_kind ? trace->kind : -1;
   Thread* raw_thread;
 
   if (walk_same_thread) {
@@ -169,7 +175,11 @@ void asyncGetStackTraceImpl(ASGST_CallTrace *trace, jint depth, void* ucontext, 
   JavaThread* thread;
 
   if (raw_thread == NULL || !raw_thread->is_Java_thread()) {
-    trace->kind = ASGST_CPP_TRACE; // 1
+    trace->kind = ASGST_CPP_TRACE;
+    if ((trace->kind & kind_mask) == 0) {
+      trace->num_frames = ASGST_WRONG_KIND;
+      return;
+    }
     if (include_non_java_threads) {
       // the raw thread is null for all non JVM threads
       // as these threads could not have called the required
@@ -182,6 +192,10 @@ void asyncGetStackTraceImpl(ASGST_CallTrace *trace, jint depth, void* ucontext, 
   }
 
   trace->kind = ASGST_JAVA_TRACE; // 0
+  if ((trace->kind & kind_mask) == 0) {
+    trace->num_frames = ASGST_WRONG_KIND;
+    return;
+  }
 
   if ((thread = JavaThread::cast(raw_thread))->is_exiting()) {
     trace->num_frames = (jint)ASGST_THREAD_EXIT; // -8
@@ -194,7 +208,11 @@ void asyncGetStackTraceImpl(ASGST_CallTrace *trace, jint depth, void* ucontext, 
   }
 
   if (thread->in_deopt_handler()) {
-    trace->kind = ASGST_DEOPT_TRACE; // 3
+    trace->kind = ASGST_DEOPT_TRACE;
+    if ((trace->kind & kind_mask) == 0) {
+      trace->num_frames = ASGST_WRONG_KIND;
+      return;
+    }
     if (include_non_java_threads) {
       fill_call_trace_for_non_java_thread(trace, depth, ucontext, include_c_frames);
     } else {
@@ -207,7 +225,11 @@ void asyncGetStackTraceImpl(ASGST_CallTrace *trace, jint depth, void* ucontext, 
   // we check for GC before (!) should_post_class_load,
   // as we might be able to get a valid c stack trace for the GC
   if (Universe::heap()->is_gc_active()) {
-    trace->kind = ASGST_GC_TRACE; // 2
+    trace->kind = ASGST_GC_TRACE;
+    if ((trace->kind & kind_mask) == 0) {
+      trace->num_frames = ASGST_WRONG_KIND;
+      return;
+    }
     if (include_non_java_threads) {
       fill_call_trace_for_non_java_thread(trace, depth, ucontext, include_c_frames);
     } else {

@@ -26,6 +26,7 @@
 #ifndef JVM_PROFILE_H
 #define JVM_PROFILE_H
 
+#include <_types/_uint8_t.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <stdint.h>
@@ -47,6 +48,8 @@ enum ASGST_Error {
   ASGST_THREAD_NOT_JAVA       = -10,
   ASGST_NO_THREAD             = -11,
   ASGST_UNSAFE_STATE          = -12,
+  ASGST_WRONG_STATE           = -13,
+  ASGST_WRONG_KIND            = -14,
 };
 
 enum ASGST_FrameTypeId {
@@ -86,17 +89,18 @@ typedef union {
 };*/
 
 enum ASGST_TRACE_KIND {
-  ASGST_JAVA_TRACE     = 0,
-  ASGST_CPP_TRACE      = 1,
-  ASGST_GC_TRACE       = 2,
-  ASGST_DEOPT_TRACE    = 3,
-  ASGST_UNKNOWN_TRACE  = 4,
+  ASGST_JAVA_TRACE     =  1,
+  ASGST_CPP_TRACE      =  2,
+  ASGST_GC_TRACE       =  4,
+  ASGST_DEOPT_TRACE    =  8,
+  ASGST_UNKNOWN_TRACE  = 16,
 };
 
 typedef struct {
   jint num_frames;                // number of frames in this trace,
                                   // (< 0 indicates the frame is not walkable).
-  uint8_t kind;                   // kind of the trace
+  uint8_t kind;                   // kind of the trace, if non zero intialized, it is a bit mask for accepted kinds
+  uint8_t state;
   ASGST_CallFrame *frames;        // frames that make up this trace. Callee followed by callers.
   void* frame_info;               // more information on frames
 } ASGST_CallTrace;
