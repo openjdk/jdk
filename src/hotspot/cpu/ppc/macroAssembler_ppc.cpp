@@ -2862,7 +2862,10 @@ void MacroAssembler::compiler_fast_unlock_object(ConditionRegister flag, Registe
   addic_(displaced_header, displaced_header, -1);
   blt(CCR0, notRecursive); // Not recursive if negative after decrement.
   std(displaced_header, in_bytes(ObjectMonitor::recursions_offset()), current_header);
-  b(success); // flag is already EQ here.
+  if (flag == CCR0) { // Otherwise, flag is already EQ, here.
+    crorc(CCR0, Assembler::equal, CCR0, Assembler::equal); // Set CCR0 EQ
+  }
+  b(success);
 
   if (LockingMode == LM_LIGHTWEIGHT) {
     bind(anonymous);
