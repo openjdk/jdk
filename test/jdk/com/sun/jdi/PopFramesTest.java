@@ -23,7 +23,11 @@
 
 /**
  * @test
- * @summary Call popFrames() on an unmounted virtual thread
+ * @summary Call popFrames() on threads in various states not covered
+ *          well by other tests. Most notably, this test includes
+ *          test cases for a suspended but unmounted virtual thread.
+ *          It is mostly for testing for OpaqueFrameException and
+ *          NativeMethodException.
  *
  * @run build TestScaffold VMConnection TargetListener TargetAdapter
  * @run compile -g PopFramesTest.java
@@ -38,6 +42,74 @@ import com.sun.jdi.*;
 import com.sun.jdi.event.*;
 import java.util.*;
 
+/*
+ * There are six test modes covered by this test:
+ *   SLEEP_NATIVE
+ *   LOOP_NATIVE
+ *   SLEEP_PRENATIVE
+ *   LOOP_PRENATIVE
+ *   SLEEP_NONATIVE
+ *   LOOP_NONATIVE
+ *
+ * SLEEP:     the debuggee blocks in Thread.sleep()
+ * LOOP:      the debuggee sits in a tight loop
+ * NATIVE:    there is a native frame within the set of frames to pop.
+ * PRENATIVE: there is a native frame before the set of frames to pop.
+ * NONATIVE:  there is no native frame (purposefully) present in the stack.
+ *
+ * In all cases the thread is suspended and errors such as IllegalArgumentException
+ * and InvalidStackFrameException should not happen. The popFrames() calls  should
+ * either pass, or produce OpaqueFrameException or NativeMethodException.
+ *
+ * Call stacks for each test mode (and expected result):
+ *  - Note in all cases the popMethod() frame is the frame passed to popFrames()..
+ *  - Note that Thread.sleep() usually results in the native Thread.sleep0() frame
+ *    being at the top of the stack. However, for a mounted virtual thread
+ *    it does not result in any native frames due to how the VM parks virtual threads.
+ *
+ * SLEEP_NATIVE (NativeMethodException):
+ *   Thread.sleep() + methods called by Thread.sleep()
+ *   loopOrSleep()
+ *   upcallMethod()
+ *   doUpcall()  <-- native method
+ *   popMethod()
+ *   main()
+ *
+ * LOOP_NATIVE (NativeMethodException):
+ *   loopOrSleep()  <-- tight loop
+ *   upcallMethod()
+ *   doUpcall()  <-- native method
+ *   popMethod()
+ *   main()
+ *
+ * SLEEP_PRENATIVE (NativeMethodException due to Thread.sleep() blocking in a native method):
+ *   Thread.sleep() + methods called by Thread.sleep()
+ *   loopOrSleep()
+ *   popMethod()
+ *   upcallMethod()
+ *   doUpcall()  <-- native method
+ *   main()
+ *
+ * LOOP_PRENATIVE (no exception):
+ *   loopOrSleep()  <-- tight loop
+ *   popMethod()
+ *   upcallMethod()
+ *   doUpcall()  <-- native method
+ *   main()
+ *
+ * SLEEP_NONATIVE (NativeMethodException for platform thread or OpaqueFrameException
+ * for virtual thread. See explanation in runTests().):
+ *   Thread.sleep() + methods called by Thread.sleep()
+ *   loopOrSleep()
+ *   popMethod()
+ *   main()
+ *
+ * LOOP_NONATIVE (no exception):
+ *   loopOrSleep()  <-- tight loop
+ *   popMethod()
+ *   main()
+ */
+
 class PopFramesTestTarg {
     static TestMode mode;
 
@@ -46,56 +118,7 @@ class PopFramesTestTarg {
     }
 
     /*
-     * Call stack for each test mode:
-     *  - Note in all cases the popMethod() frame is the frame passed to popFrames()..
-     *  - Note that Thread.sleep() usually results in the native Thread.sleep0() frame
-     *    being at the top of the stack. However, for a mounted virtual thread
-     *    it does not result in any native frames due to how the VM parks virtual threads.
-     *
-     * SLEEP_NATIVE:
-     *   Thread.sleep() + methods called by Thread.sleep()
-     *   loopOrSleep()
-     *   upcallMethod()
-     *   doUpcall()  <-- native method
-     *   popMethod()
-     *   main()
-     *
-     * LOOP_NATIVE:
-     *   loopOrSleep()  <-- tight loop
-     *   upcallMethod()
-     *   doUpcall()  <-- native method
-     *   popMethod()
-     *   main()
-     *
-     * SLEEP_PRENATIVE:
-     *   Thread.sleep() + methods called by Thread.sleep()
-     *   loopOrSleep()
-     *   popMethod()
-     *   upcallMethod()
-     *   doUpcall()  <-- native method
-     *   main()
-     *
-     * LOOP_PRENATIVE:
-     *   loopOrSleep()  <-- tight loop
-     *   popMethod()
-     *   upcallMethod()
-     *   doUpcall()  <-- native method
-     *   main()
-     *
-     * SLEEP_NONATIVE:
-     *   Thread.sleep() + methods called by Thread.sleep()
-     *   loopOrSleep()
-     *   popMethod()
-     *   main()
-     *
-     * LOOP_NONATIVE:
-     *   loopOrSleep()  <-- tight loop
-     *   popMethod()
-     *   main()
-     */
-
-    /*
-     * This is the method whose frame will be popped.
+     * This is the method whose frame (and all those after it) will be popped.
      */
     public static void popMethod() {
         System.out.println("    debuggee: in popMethod");
@@ -152,12 +175,7 @@ class PopFramesTestTarg {
 }
 
 /*
- * The different modes the test can be run in. Each mode will produce a different stack:
- *  - SLEEP means the debuggee blocks in Thread.sleep()
- *  - LOOP means the debuggee sits in a tight loop
- *  - NATIVE means there is a native frame within the set of frames to pop.
- *  - PRENATIVE means there is a native frame before the set of frame to pop.
- *  - NONATIVE means there is no native frame (purposefully) present in the stack.
+ * The different modes the test can be run in. See test description comment above.
  */
 enum TestMode {
     SLEEP_NATIVE,
@@ -167,14 +185,18 @@ enum TestMode {
     SLEEP_NONATIVE,
     LOOP_NONATIVE;
 
+    // Returns true if debuggee should block in an infinite loop. Otherwise it calls Thread.sleep()
     boolean isDoLoop() {
         return this == LOOP_NATIVE || this == LOOP_PRENATIVE || this == LOOP_NONATIVE;
     }
 
+    // Returns true if debuggee should introduce a native frame within the set of frames to pop
     boolean isCallNative() {
         return this == LOOP_NATIVE || this == SLEEP_NATIVE;
     }
 
+    // Returns true if debuggee should introduce a native frame before the set of frames to pop.
+    // The purpose is to cause the virtual thread to be pinned.
     boolean isCallPrenative() {
         return this == LOOP_PRENATIVE || this == SLEEP_PRENATIVE;
     }
@@ -268,11 +290,9 @@ public class PopFramesTest extends TestScaffold {
             /*
              * For the two NATIVE cases, there is a native frame within the set of frames
              * to pop. For the SLEEP_PRENATIVE case, there also ends up being a native
-             * frame due to Thread.sleep0() being native. However, see the the SLEEP_NATIVE
-             * comment below. The only reason we end up in Thread.sleep0() for a virtual
-             * thread in the SLEEP_PRENATIVE case is because it is pinned due to the earlier
-             * native method. It is not pinned in the SLEEP_NATIVE case as described below,
-             * which is why it does not end up in Thread.sleep0().
+             * frame. It will either be Thread.sleep0() for platform threads or
+             * Unsafe.park() for virtual threads. See the SLEEP_NATIVE comment below
+             * for more details.
              */
             expected_exception = NativeMethodException.class;
             break;
@@ -287,12 +307,16 @@ public class PopFramesTest extends TestScaffold {
             break;
         case SLEEP_NONATIVE:
             /*
-             * Normally a Thread.sleep() results in the Thread.sleep0() native frame
-             * on the stack, so the end result is NativeMethodException. However, for
-             * a virtual thread that is not pinned, you end up with no native methods
-             * on the stack due to how the VM parks virtual threads. So we have an
-             * unmounted virtual thread with no native frames, which means
-             * OpaqueFrameException will be thrown.
+             * For platform threads, Thread.sleep() results in the Thread.sleep0() native
+             * frame on the stack, so the end result is NativeMethodException. For virtual
+             * threads it is not quite so simple. If the thead is pinned (such as when
+             * there is already a native method on the stack), you end up in 
+             * VirtualThread.parkOnCarrierThread(), which calls Unsafe.park(), which is a
+             * native method, so again this results in NativeMethodException. However, for
+             * a virtual thread that is not pinned (which is true for this test case), you
+             * end up with no native methods on the stack due to how Continuation.yield()
+             * works. So you have an unmounted virtual thread with no native frames, which
+             * results in OpaqueFrameException being thrown.
              */
             String mainWrapper = System.getProperty("main.wrapper");
             if ("Virtual".equals(mainWrapper)) {
