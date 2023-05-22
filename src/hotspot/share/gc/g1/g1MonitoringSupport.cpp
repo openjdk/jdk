@@ -86,8 +86,8 @@ public:
 
 G1MonitoringSupport::G1MonitoringSupport(G1CollectedHeap* g1h) :
   _g1h(g1h),
-  _incremental_memory_manager("G1 Young Generation", "end of minor GC"),
-  _full_gc_memory_manager("G1 Old Generation", "end of major GC"),
+  _incremental_memory_manager("G1 Young Generation"),
+  _full_gc_memory_manager("G1 Old Generation"),
   _eden_space_pool(NULL),
   _survivor_space_pool(NULL),
   _old_gen_pool(NULL),
@@ -345,5 +345,5 @@ MemoryUsage G1MonitoringSupport::old_gen_memory_usage(size_t initial_size, size_
 G1MonitoringScope::G1MonitoringScope(G1MonitoringSupport* g1mm, bool full_gc, bool all_memory_pools_affected) :
   _tcs(full_gc ? g1mm->_full_collection_counters : g1mm->_incremental_collection_counters),
   _tms(full_gc ? &g1mm->_full_gc_memory_manager : &g1mm->_incremental_memory_manager,
-       G1CollectedHeap::heap()->gc_cause(), all_memory_pools_affected) {
+       G1CollectedHeap::heap()->gc_cause(), full_gc ? "end of major GC" : "end of minor GC", all_memory_pools_affected) {
 }

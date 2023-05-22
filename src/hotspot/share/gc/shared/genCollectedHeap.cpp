@@ -444,7 +444,7 @@ void GenCollectedHeap::collect_generation(Generation* gen, bool full, size_t siz
   FormatBuffer<> title("Collect gen: %s", gen->short_name());
   GCTraceTime(Trace, gc, phases) t1(title);
   TraceCollectorStats tcs(gen->counters());
-  TraceMemoryManagerStats tmms(gen->gc_manager(), gc_cause());
+  TraceMemoryManagerStats tmms(gen->gc_manager(), gc_cause(), heap()->is_young_gen(gen) ? "end of minor GC" : "end of major GC");
 
   gen->stat_record()->invocations++;
   gen->stat_record()->accumulated_time.start();

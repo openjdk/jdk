@@ -182,10 +182,10 @@ void MemoryService::gc_end(GCMemoryManager* manager, bool recordPostGCUsage,
                            bool recordAccumulatedGCTime,
                            bool recordGCEndTime, bool countCollection,
                            GCCause::Cause cause,
-                           bool allMemoryPoolsAffected) {
+                           bool allMemoryPoolsAffected, const char* message) {
   // register the GC end statistics and memory usage
   manager->gc_end(recordPostGCUsage, recordAccumulatedGCTime, recordGCEndTime,
-                  countCollection, cause, allMemoryPoolsAffected);
+                  countCollection, cause, allMemoryPoolsAffected, message);
 }
 
 bool MemoryService::set_verbose(bool verbose) {
@@ -219,6 +219,7 @@ Handle MemoryService::create_MemoryUsage_obj(MemoryUsage usage, TRAPS) {
 
 TraceMemoryManagerStats::TraceMemoryManagerStats(GCMemoryManager* gc_memory_manager,
                                                  GCCause::Cause cause,
+                                                 const char* end_message,
                                                  bool allMemoryPoolsAffected,
                                                  bool recordGCBeginTime,
                                                  bool recordPreGCUsage,
@@ -227,16 +228,17 @@ TraceMemoryManagerStats::TraceMemoryManagerStats(GCMemoryManager* gc_memory_mana
                                                  bool recordAccumulatedGCTime,
                                                  bool recordGCEndTime,
                                                  bool countCollection) {
-  initialize(gc_memory_manager, cause, allMemoryPoolsAffected,
-             recordGCBeginTime, recordPreGCUsage, recordPeakUsage,
-             recordPostGCUsage, recordAccumulatedGCTime, recordGCEndTime,
-             countCollection);
+  initialize(gc_memory_manager, cause, end_message,
+             allMemoryPoolsAffected, recordGCBeginTime, recordPreGCUsage,
+             recordPeakUsage, recordPostGCUsage, recordAccumulatedGCTime,
+             recordGCEndTime, countCollection);
 }
 
 // for a subclass to create then initialize an instance before invoking
 // the MemoryService
 void TraceMemoryManagerStats::initialize(GCMemoryManager* gc_memory_manager,
                                          GCCause::Cause cause,
+                                         const char* end_message,
                                          bool allMemoryPoolsAffected,
                                          bool recordGCBeginTime,
                                          bool recordPreGCUsage,
@@ -246,6 +248,8 @@ void TraceMemoryManagerStats::initialize(GCMemoryManager* gc_memory_manager,
                                          bool recordGCEndTime,
                                          bool countCollection) {
   _gc_memory_manager = gc_memory_manager;
+  _cause = cause;
+  _end_message = end_message;
   _allMemoryPoolsAffected = allMemoryPoolsAffected;
   _recordGCBeginTime = recordGCBeginTime;
   _recordPreGCUsage = recordPreGCUsage;
@@ -254,7 +258,6 @@ void TraceMemoryManagerStats::initialize(GCMemoryManager* gc_memory_manager,
   _recordAccumulatedGCTime = recordAccumulatedGCTime;
   _recordGCEndTime = recordGCEndTime;
   _countCollection = countCollection;
-  _cause = cause;
 
   MemoryService::gc_begin(_gc_memory_manager, _recordGCBeginTime, _recordAccumulatedGCTime,
                           _recordPreGCUsage, _recordPeakUsage);
@@ -262,5 +265,6 @@ void TraceMemoryManagerStats::initialize(GCMemoryManager* gc_memory_manager,
 
 TraceMemoryManagerStats::~TraceMemoryManagerStats() {
   MemoryService::gc_end(_gc_memory_manager, _recordPostGCUsage, _recordAccumulatedGCTime,
-                        _recordGCEndTime, _countCollection, _cause, _allMemoryPoolsAffected);
+                        _recordGCEndTime, _countCollection, _cause, _allMemoryPoolsAffected,
+                        _end_message);
 }

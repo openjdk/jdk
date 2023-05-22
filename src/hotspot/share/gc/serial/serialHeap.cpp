@@ -42,8 +42,8 @@ SerialHeap::SerialHeap() :
     _eden_pool(NULL),
     _survivor_pool(NULL),
     _old_pool(NULL) {
-  _young_manager = new GCMemoryManager("Copy", "end of minor GC");
-  _old_manager = new GCMemoryManager("MarkSweepCompact", "end of major GC");
+  _young_manager = new GCMemoryManager("Copy");
+  _old_manager = new GCMemoryManager("MarkSweepCompact");
 }
 
 void SerialHeap::initialize_serviceability() {

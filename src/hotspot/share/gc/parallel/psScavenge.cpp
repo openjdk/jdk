@@ -420,7 +420,7 @@ bool PSScavenge::invoke_no_policy() {
     GCTraceCPUTime tcpu;
     GCTraceTime(Info, gc) tm("Pause Young", NULL, gc_cause, true);
     TraceCollectorStats tcs(counters());
-    TraceMemoryManagerStats tms(heap->young_gc_manager(), gc_cause);
+    TraceMemoryManagerStats tms(heap->young_gc_manager(), gc_cause, "end of minor GC");
 
     if (log_is_enabled(Debug, gc, heap, exit)) {
       accumulated_time()->start();
