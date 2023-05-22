@@ -600,257 +600,47 @@ public class SwingUtilities implements SwingConstants
      *         that do not overlap with {@code rectB}.
      */
     public static Rectangle[] computeDifference(Rectangle rectA,Rectangle rectB) {
-        if (rectB == null || !rectA.intersects(rectB) || isRectangleContainingRectangle(rectB,rectA)) {
-            return new Rectangle[0];
-        }
-
-        Rectangle t = new Rectangle();
-        Rectangle a=null,b=null,c=null,d=null;
-        Rectangle[] result;
-        int rectCount = 0;
-
-        /* rectA contains rectB */
-        if (isRectangleContainingRectangle(rectA,rectB)) {
-            t.x = rectA.x; t.y = rectA.y; t.width = rectB.x - rectA.x; t.height = rectA.height;
-            if(t.width > 0 && t.height > 0) {
-                a = new Rectangle(t);
-                rectCount++;
-            }
-
-            t.x = rectB.x; t.y = rectA.y; t.width = rectB.width; t.height = rectB.y - rectA.y;
-            if(t.width > 0 && t.height > 0) {
-                b = new Rectangle(t);
-                rectCount++;
-            }
-
-            t.x = rectB.x; t.y = rectB.y + rectB.height; t.width = rectB.width;
-            t.height = rectA.y + rectA.height - (rectB.y + rectB.height);
-            if(t.width > 0 && t.height > 0) {
-                c = new Rectangle(t);
-                rectCount++;
-            }
-
-            t.x = rectB.x + rectB.width; t.y = rectA.y; t.width = rectA.x + rectA.width - (rectB.x + rectB.width);
-            t.height = rectA.height;
-            if(t.width > 0 && t.height > 0) {
-                d = new Rectangle(t);
-                rectCount++;
-            }
-        } else {
-            /* 1 */
-            if (rectB.x <= rectA.x && rectB.y <= rectA.y) {
-                if ((rectB.x + rectB.width) > (rectA.x + rectA.width)) {
-
-                    t.x = rectA.x; t.y = rectB.y + rectB.height;
-                    t.width = rectA.width; t.height = rectA.y + rectA.height - (rectB.y + rectB.height);
-                    if(t.width > 0 && t.height > 0) {
-                        a = t;
-                        rectCount++;
-                    }
-                } else if ((rectB.y + rectB.height) > (rectA.y + rectA.height)) {
-                    t.setBounds((rectB.x + rectB.width), rectA.y,
-                                (rectA.x + rectA.width) - (rectB.x + rectB.width), rectA.height);
-                    if(t.width > 0 && t.height > 0) {
-                        a = t;
-                        rectCount++;
-                    }
-                } else {
-                    t.setBounds((rectB.x + rectB.width), rectA.y,
-                                (rectA.x + rectA.width) - (rectB.x + rectB.width),
-                                (rectB.y + rectB.height) - rectA.y);
-                    if(t.width > 0 && t.height > 0) {
-                        a = new Rectangle(t);
-                        rectCount++;
-                    }
-
-                    t.setBounds(rectA.x, (rectB.y + rectB.height), rectA.width,
-                                (rectA.y + rectA.height) - (rectB.y + rectB.height));
-                    if(t.width > 0 && t.height > 0) {
-                        b = new Rectangle(t);
-                        rectCount++;
-                    }
-                }
-            } else if (rectB.x <= rectA.x && (rectB.y + rectB.height) >= (rectA.y + rectA.height)) {
-                if ((rectB.x + rectB.width) > (rectA.x + rectA.width)) {
-                    t.setBounds(rectA.x, rectA.y, rectA.width, rectB.y - rectA.y);
-                    if(t.width > 0 && t.height > 0) {
-                        a = t;
-                        rectCount++;
-                    }
-                } else {
-                    t.setBounds(rectA.x, rectA.y, rectA.width, rectB.y - rectA.y);
-                    if(t.width > 0 && t.height > 0) {
-                        a = new Rectangle(t);
-                        rectCount++;
-                    }
-                    t.setBounds((rectB.x + rectB.width), rectB.y,
-                                (rectA.x + rectA.width) - (rectB.x + rectB.width),
-                                (rectA.y + rectA.height) - rectB.y);
-                    if(t.width > 0 && t.height > 0) {
-                        b = new Rectangle(t);
-                        rectCount++;
-                    }
-                }
-            } else if (rectB.x <= rectA.x) {
-                if ((rectB.x + rectB.width) >= (rectA.x + rectA.width)) {
-                    t.setBounds(rectA.x, rectA.y, rectA.width, rectB.y - rectA.y);
-                    if(t.width>0 && t.height > 0) {
-                        a = new Rectangle(t);
-                        rectCount++;
-                    }
-
-                    t.setBounds(rectA.x, (rectB.y + rectB.height), rectA.width,
-                                (rectA.y + rectA.height) - (rectB.y + rectB.height));
-                    if(t.width > 0 && t.height > 0) {
-                        b = new Rectangle(t);
-                        rectCount++;
-                    }
-                } else {
-                    t.setBounds(rectA.x, rectA.y, rectA.width, rectB.y - rectA.y);
-                    if(t.width > 0 && t.height > 0) {
-                        a = new Rectangle(t);
-                        rectCount++;
-                    }
-
-                    t.setBounds((rectB.x + rectB.width), rectB.y,
-                                (rectA.x + rectA.width) - (rectB.x + rectB.width),
-                                rectB.height);
-                    if(t.width > 0 && t.height > 0) {
-                        b = new Rectangle(t);
-                        rectCount++;
-                    }
-
-                    t.setBounds(rectA.x, (rectB.y + rectB.height), rectA.width,
-                                (rectA.y + rectA.height) - (rectB.y + rectB.height));
-                    if(t.width > 0 && t.height > 0) {
-                        c = new Rectangle(t);
-                        rectCount++;
-                    }
-                }
-            } else if (rectB.x <= (rectA.x + rectA.width) && (rectB.x + rectB.width) > (rectA.x + rectA.width)) {
-                if (rectB.y <= rectA.y && (rectB.y + rectB.height) > (rectA.y + rectA.height)) {
-                    t.setBounds(rectA.x, rectA.y, rectB.x - rectA.x, rectA.height);
-                    if(t.width > 0 && t.height > 0) {
-                        a = t;
-                        rectCount++;
-                    }
-                } else if (rectB.y <= rectA.y) {
-                    t.setBounds(rectA.x, rectA.y, rectB.x - rectA.x,
-                                (rectB.y + rectB.height) - rectA.y);
-                    if(t.width > 0 && t.height > 0) {
-                        a = new Rectangle(t);
-                        rectCount++;
-                    }
-
-                    t.setBounds(rectA.x, (rectB.y + rectB.height), rectA.width,
-                                (rectA.y + rectA.height) - (rectB.y + rectB.height));
-                    if(t.width > 0 && t.height > 0) {
-                        b = new Rectangle(t);
-                        rectCount++;
-                    }
-                } else if ((rectB.y + rectB.height) > (rectA.y + rectA.height)) {
-                    t.setBounds(rectA.x, rectA.y, rectA.width, rectB.y - rectA.y);
-                    if(t.width > 0 && t.height > 0) {
-                        a = new Rectangle(t);
-                        rectCount++;
-                    }
-
-                    t.setBounds(rectA.x, rectB.y, rectB.x - rectA.x,
-                                (rectA.y + rectA.height) - rectB.y);
-                    if(t.width > 0 && t.height > 0) {
-                        b = new Rectangle(t);
-                        rectCount++;
-                    }
-                } else {
-                    t.setBounds(rectA.x, rectA.y, rectA.width, rectB.y - rectA.y);
-                    if(t.width > 0 && t.height > 0) {
-                        a = new Rectangle(t);
-                        rectCount++;
-                    }
-
-                    t.setBounds(rectA.x, rectB.y, rectB.x - rectA.x,
-                                rectB.height);
-                    if(t.width > 0 && t.height > 0) {
-                        b = new Rectangle(t);
-                        rectCount++;
-                    }
-
-                    t.setBounds(rectA.x, (rectB.y + rectB.height), rectA.width,
-                                (rectA.y + rectA.height) - (rectB.y + rectB.height));
-                    if(t.width > 0 && t.height > 0) {
-                        c = new Rectangle(t);
-                        rectCount++;
-                    }
-                }
-            } else if (rectB.x >= rectA.x && (rectB.x + rectB.width) <= (rectA.x + rectA.width)) {
-                if (rectB.y <= rectA.y && (rectB.y + rectB.height) > (rectA.y + rectA.height)) {
-                    t.setBounds(rectA.x, rectA.y, rectB.x - rectA.x, rectA.height);
-                    if(t.width > 0 && t.height > 0) {
-                        a = new Rectangle(t);
-                        rectCount++;
-                    }
-                    t.setBounds((rectB.x + rectB.width), rectA.y,
-                                (rectA.x + rectA.width) - (rectB.x + rectB.width), rectA.height);
-                    if(t.width > 0 && t.height > 0) {
-                        b = new Rectangle(t);
-                        rectCount++;
-                    }
-                } else if (rectB.y <= rectA.y) {
-                    t.setBounds(rectA.x, rectA.y, rectB.x - rectA.x, rectA.height);
-                    if(t.width > 0 && t.height > 0) {
-                        a = new Rectangle(t);
-                        rectCount++;
-                    }
-
-                    t.setBounds(rectB.x, (rectB.y + rectB.height),
-                                rectB.width,
-                                (rectA.y + rectA.height) - (rectB.y + rectB.height));
-                    if(t.width > 0 && t.height > 0) {
-                        b = new Rectangle(t);
-                        rectCount++;
-                    }
-
-                    t.setBounds((rectB.x + rectB.width), rectA.y,
-                                (rectA.x + rectA.width) - (rectB.x + rectB.width), rectA.height);
-                    if(t.width > 0 && t.height > 0) {
-                        c = new Rectangle(t);
-                        rectCount++;
-                    }
-                } else {
-                    t.setBounds(rectA.x, rectA.y, rectB.x - rectA.x, rectA.height);
-                    if(t.width > 0 && t.height > 0) {
-                        a = new Rectangle(t);
-                        rectCount++;
-                    }
-
-                    t.setBounds(rectB.x, rectA.y, rectB.width,
-                                rectB.y - rectA.y);
-                    if(t.width > 0 && t.height > 0) {
-                        b = new Rectangle(t);
-                        rectCount++;
-                    }
-
-                    t.setBounds((rectB.x + rectB.width), rectA.y,
-                                (rectA.x + rectA.width) - (rectB.x + rectB.width), rectA.height);
-                    if(t.width > 0 && t.height > 0) {
-                        c = new Rectangle(t);
-                        rectCount++;
-                    }
-                }
-            }
-        }
-
-        result = new Rectangle[rectCount];
-        rectCount = 0;
-        if(a != null)
-            result[rectCount++] = a;
-        if(b != null)
-            result[rectCount++] = b;
-        if(c != null)
-            result[rectCount++] = c;
-        if(d != null)
-            result[rectCount++] = d;
-        return result;
+        Rectangle[] ret;
+		int rectCount = 0;
+		Rectangle north = null, west = null, east = null, south = null;
+		Rectangle intersection = rectB.intersection(rectA);
+		if(rectB.equals(intersection)) {
+			//If rectB is completely obscured by rectA.
+			ret = new Rectangle[0];
+			return ret;
+		}else if(intersection.isEmpty()) {
+			//If rectB is not being obscured at all.
+			ret = new Rectangle[] {new Rectangle(rectB)};
+			return ret;
+		}else {
+			int oriX = rectB.x, oriY = rectB.y, oriW = rectB.width, oriH = rectB.height;
+			int interX = intersection.x, interY = intersection.y, interW = intersection.width, interH = intersection.height;
+			
+			if(interY > oriY) {
+				north = new Rectangle(oriX, oriY, oriW, interY - oriY);
+				rectCount++;
+			}
+			if(interX > oriX) {
+				west = new Rectangle(oriX, interY, interX - oriX, interH);
+				rectCount++;
+			}
+			if(oriX + oriW > interX + interW) {
+				east = new Rectangle(interX + interW, interY, oriX + oriW - interX - interW, interH);
+				rectCount++;
+			}
+			if(oriY + oriH > interY + interH) {
+				south = new Rectangle(oriX, interY + interH, oriW, oriY + oriH - interY - interH);
+				rectCount++;
+			}
+			
+			ret = new Rectangle[rectCount];
+			rectCount = 0;
+			if(north != null) ret[rectCount++] = north;
+			if(west != null) ret[rectCount++] = west;
+			if(east != null) ret[rectCount++] = east;
+			if(south != null) ret[rectCount++] = south;
+			return ret;
+		}
     }
 
     /**
