@@ -602,10 +602,10 @@ getStringCp1252Chars(JNIEnv *env, jstring jstr, jboolean strict)
         if (strict && c == 0) {
             (*env)->ReleaseStringCritical(env, jstr, str);
             free(result);
-            JNU_ThrowIllegalArgumentException(env, 
+            JNU_ThrowIllegalArgumentException(env,
                    "NULL character not allowed in native string");
             return 0;
-        } 
+        }
         if (c < 256) {
             if ((c >= 0x80) && (c <= 0x9f)) {
                 result[i] = '?';
@@ -861,7 +861,7 @@ static const char* getStringBytes(JNIEnv *env, jstring jstr, jboolean strict) {
             if (strict) {
                 for (int i=0; i<len; i++) {
                     if (result[i] == 0) {
-                        JNU_ThrowIllegalArgumentException(env, 
+                        JNU_ThrowIllegalArgumentException(env,
                             "NULL character not allowed in native string");
                         free(result);
                         result = 0;
@@ -869,7 +869,7 @@ static const char* getStringBytes(JNIEnv *env, jstring jstr, jboolean strict) {
                     }
                 }
             }
-        } 
+        }
         (*env)->DeleteLocalRef(env, hab);
     }
     return result;
@@ -947,7 +947,7 @@ JNU_GetStringPlatformCharsStrict(JNIEnv *env, jstring jstr, jboolean *isCopy)
     return getStringPlatformChars0(env, jstr, isCopy, JNI_TRUE);
 }
 
-static const char * 
+static const char *
 getStringPlatformChars0(JNIEnv *env, jstring jstr, jboolean *isCopy, jboolean strict)
 {
 
