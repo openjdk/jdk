@@ -104,6 +104,7 @@ runtime/ErrorHandling/TestDwarf.java 8305489 linux-all
 applications/jcstress/copy.java 8229852 linux-all
 
 containers/docker/TestJcmd.java 8278102 linux-all
+containers/docker/TestMemoryAwareness.java 8303470 linux-x64
 
 #############################################################################
 
