@@ -491,18 +491,15 @@ void G1ConcurrentMark::humongous_object_eagerly_reclaimed(HeapRegion* r) {
   // Need to clear mark bit of the humongous object. Doing this unconditionally is fine.
   mark_bitmap()->clear(r->bottom());
 
+  if (!_g1h->collector_state()->mark_or_rebuild_in_progress()) {
+    return;
+  }
+
   // Clear any statistics about the region gathered so far.
   _g1h->humongous_obj_regions_iterate(r,
                                       [&] (HeapRegion* r) {
                                         clear_statistics(r);
                                       });
-}
-
-void G1ConcurrentMark::region_reclaimed(HeapRegion* r) {
-  assert_at_safepoint();
-  assert(!r->is_humongous(), "must be");
-
-  clear_statistics(r);
 }
 
 void G1ConcurrentMark::reset_marking_for_restart() {
@@ -556,11 +553,6 @@ void G1ConcurrentMark::reset_at_marking_complete() {
   // We set the global marking state to some default values when we're
   // not doing marking.
   reset_marking_for_restart();
-
-  uint max_reserved_regions = _g1h->max_reserved_regions();
-  for (uint i = 0; i < max_reserved_regions; i++) {
-    _region_mark_stats[i].clear();
-  }
   _num_active_tasks = 0;
 }
 
@@ -1312,12 +1304,8 @@ void G1ConcurrentMark::remark() {
     verify_during_pause(G1HeapVerifier::G1VerifyRemark, VerifyLocation::RemarkAfter);
 
     assert(!restart_for_overflow(), "sanity");
-
-    {
-      GCTraceTime(Debug, gc, phases) debug("Reset at marking complete");
-      // Completely reset the marking state (except bitmaps) since marking completed.
-      reset_at_marking_complete();
-    }
+    // Completely reset the marking state (except bitmaps) since marking completed.
+    reset_at_marking_complete();
 
     G1CollectedHeap::finish_codecache_marking_cycle();
 
@@ -2013,7 +2001,11 @@ bool G1ConcurrentMark::concurrent_cycle_abort() {
     return false;
   }
 
-  reset();
+  // Empty mark stack
+  reset_marking_for_restart();
+  for (uint i = 0; i < _max_num_tasks; ++i) {
+    _tasks[i]->clear_region_fields();
+  }
 
   abort_marking_threads();
 

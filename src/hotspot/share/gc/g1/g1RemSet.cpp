@@ -1128,11 +1128,10 @@ class G1MergeHeapRootsTask : public WorkerTask {
       if (should_clear_region(hr)) {
         _g1h->clear_bitmap_for_region(hr);
         hr->reset_top_at_mark_start();
-        _g1h->concurrent_mark()->clear_statistics(hr);
       } else {
         assert_bitmap_clear(hr, _g1h->concurrent_mark()->mark_bitmap());
-        assert(!_g1h->concurrent_mark()->contains_live_object(hr->hrm_index()), "must be");
       }
+      _g1h->concurrent_mark()->clear_statistics(hr);
       return false;
     }
   };
