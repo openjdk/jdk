@@ -112,6 +112,7 @@ public class ConstantPoolTestsHelper {
             case CONSTANT_FIELDREF:
               return Bytecodes.GETFIELD;
           case CONSTANT_METHODREF:
+              return Bytecodes.INVOKEVIRTUAL;
           case CONSTANT_INTERFACEMETHODREF:
               return Bytecodes.INVOKEINTERFACE;
           case CONSTANT_INVOKEDYNAMIC:
