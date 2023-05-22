@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shared/threadLocalAllocBuffer.hpp"
 #include "gc/z/zBarrier.hpp"
+#include "gc/z/zUncoloredRoot.hpp"
 #include "memory/allocation.hpp"
 #include "memory/iterator.hpp"
 #include "oops/oopsHierarchy.hpp"
@@ -47,13 +48,28 @@ public:
   ZOnStackCodeBlobClosure();
 };
 
+struct ZColorWatermark {
+  uintptr_t _color;
+  uintptr_t _watermark;
+
+  bool covers(const ZColorWatermark& other) const;
+};
+
 class ZStackWatermark : public StackWatermark {
 private:
-  ZLoadBarrierOopClosure  _jt_cl;
-  ZOnStackCodeBlobClosure _cb_cl;
-  ThreadLocalAllocStats   _stats;
+  // Stores old watermarks, which describes the
+  // colors of the non-processed part of the stack.
+  const static int      _old_watermarks_max = 3;
+  ZColorWatermark       _old_watermarks[_old_watermarks_max];
+  int                   _old_watermarks_newest;
 
-  OopClosure* closure_from_context(void* context);
+  ThreadLocalAllocStats _stats;
+
+  uintptr_t prev_head_color() const;
+  uintptr_t prev_frame_color(const frame& fr) const;
+  void save_old_watermark();
+
+  void process_head(void* context);
 
   virtual uint32_t epoch_id() const;
   virtual void start_processing_impl(void* context);
