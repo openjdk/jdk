@@ -1821,8 +1821,9 @@ void os::print_dll_info(outputStream *st) {
   unsigned num = 0;
   if (!_print_ascii_file(fname, st, &num)) {
     st->print_cr("Can not get library information for pid = %d", pid);
+  } else {
+    st->print_cr("Total number of mappings: %u", num);
   }
-  st->print_cr("Total number of mappings: %u", num);
 }
 
 struct loaded_modules_info_param {
