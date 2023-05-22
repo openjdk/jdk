@@ -27,7 +27,6 @@
 #include "memory/metaspace/metaspaceArena.hpp"
 #include "memory/metaspace/metaspaceArenaGrowthPolicy.hpp"
 #include "memory/metaspace/metaspaceContext.hpp"
-#include "memory/metaspace/metaspaceSettings.hpp"
 #include "memory/metaspace/testHelpers.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
@@ -45,9 +44,6 @@ MetaspaceTestArena::MetaspaceTestArena(Mutex* lock, MetaspaceArena* arena) :
 {}
 
 MetaspaceTestArena::~MetaspaceTestArena() {
-  if (Settings::use_allocation_guard()) {
-    DEBUG_ONLY(_arena->verify_allocation_guards();)
-  }
   delete _arena;
   delete _lock;
 }
