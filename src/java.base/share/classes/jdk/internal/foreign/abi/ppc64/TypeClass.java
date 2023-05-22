@@ -57,7 +57,7 @@ public enum TypeClass {
     }
 
     static boolean isReturnRegisterAggregate(MemoryLayout type) {
-        return type.bitSize() <= MAX_RETURN_AGGREGATE_REGS_SIZE * 64;
+        return type.byteSize() <= MAX_RETURN_AGGREGATE_REGS_SIZE * 8;
     }
 
     static List<MemoryLayout> scalarLayouts(GroupLayout gl) {
@@ -102,8 +102,8 @@ public enum TypeClass {
                 return false;
 
             TypeClass argClass = classifyValueType((ValueLayout) elem);
-            if (elem.bitSize() != baseType.bitSize() ||
-                    elem.bitAlignment() != baseType.bitAlignment() ||
+            if (elem.byteSize() != baseType.byteSize() ||
+                    elem.byteAlignment() != baseType.byteAlignment() ||
                     baseArgClass != argClass) {
                 return false;
             }
