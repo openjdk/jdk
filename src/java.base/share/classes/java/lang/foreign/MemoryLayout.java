@@ -146,6 +146,8 @@ import jdk.internal.javac.PreviewFeature;
  *                                          PathElement.groupElement("value"));
  * }
  *
+ * <h3 id="open-path-elements">Open path elements</h3>
+ *
  * Some layout path elements, said <em>open path elements</em>, can select multiple layouts at once. For instance,
  * the open path elements {@link PathElement#sequenceElement()}, {@link PathElement#sequenceElement(long, long)} select
  * an unspecified element in a sequence layout. A var handles derived from a layout path containing one or more
@@ -171,6 +173,67 @@ import jdk.internal.javac.PreviewFeature;
  * long offset1 = (long) offsetHandle.invokeExact(1L); // 8
  * long offset2 = (long) offsetHandle.invokeExact(2L); // 16
  * }
+ *
+ * <h3 id="deref-path-elements">Dereference path elements</h3>
+ *
+ * A special kind of path element, called <em>dereference path element</em>, allows var handles obtained from
+ * memory layouts to follow pointers. Consider the following layout:
+ *
+ * {@snippet lang=java :
+ * StructLayout RECTANGLE = MemoryLayout.structLayout(
+ *         ValueLayout.ADDRESS.withTargetLayout(
+ *                 MemoryLayout.sequenceLayout(4,
+ *                         MemoryLayout.structLayout(
+ *                                 ValueLayout.JAVA_INT.withName("x"),
+ *                                 ValueLayout.JAVA_INT.withName("y")
+ *                         ).withName("point")
+*                   )
+*          ).withName("points")
+ * );
+ * }
+ *
+ * This layout is a struct layout which describe a rectangle. It contains a single field, namely {@code points},
+ * which points to a region of memory containing four point structs, where each point is defined as a pair
+ * or {@link ValueLayout#JAVA_INT} coordinates, with names {@code x} and {@code y}, respectively.
+ * <p>
+ * With dereference path elements, we can obtain a var handle which accesses the {@code y} coordinate of one of the
+ * point in the rectangle, as follows:
+ *
+ * {@snippet lang=java :
+ * VarHandle rectPointYs = RECTANGLE.varHandle(
+ *         PathElement.groupElement("points"),
+ *         PathElement.dereferenceElement(),
+ *         PathElement.sequenceElement(),
+ *         PathElement.groupElement("y")
+ * );
+ *
+ * MemorySegment rect = ...
+ * int rect_y_4 = (int) rectPointYs.get(rect, 2); // *(rect.points)[2].y
+ * }
+ *
+ * <h3 id="well-formedness">Layout path well-formedness</h3>
+ *
+ * A layout path is applied to a layout {@code C_0}, also called the <em>initial layout</em>. Each path element in a
+ * layout path can be thought of as a function which updates the current layout {@code C_i-1} to some other layout
+ * {@code C_i}. That is, for each path element {@code E1, E2, ... En}, in a layout path {@code P}, we compute
+ * {@code C_i = f_i(C_i-1)}, where {@code f_i} is the selection function expressed the path element under consideration,
+ * denoted as {@code E_i}. The final layout {@code C_i} is also called the <em>selected layout</em>.
+ * <p>
+ * A layout path P is considered well-formed for an initial layout {@code C_0} if all its path elements
+ * {@code E1, E2, ... En} are well-formed for their corresponding input layouts {@code C_0, C_1, ... C_n-1}.
+ * A path element {@code E} is considered well-formed for a layout {@code L} if any of the following is true:
+ * <ul>
+ * <li>{@code L} is a sequence layout and {@code E} is a sequence path element (one of {@link PathElement#sequenceElement(long)},
+ * {@link PathElement#sequenceElement(long, long)} or {@link PathElement#sequenceElement()}). Moreover, if {@code E}
+ * contains one or more sequence indices, such indices have to be compatible with the sequence layout's element count;</li>
+ * <li>{@code L} is a group layout and {@code E} is a group path element (one of {@link PathElement#groupElement(long)}
+ * or {@link PathElement#groupElement(long)}). Moreover, the group path element must refer to a valid member layout in
+ * {@code L}, either by name, or index;</li>
+ * <li>{@code L} is an address layout and {@code E} is a {@linkplain PathElement#dereferenceElement() dereference path element}.
+ * Moreover, {@code L} must define some {@linkplain AddressLayout#targetLayout() target layout}.</li>
+ * </ul>
+ * Any attempt to provide a layout path {@code P} that is not well-formed for an initial layout {@code C_0} will result
+ * in an {@link IllegalArgumentException}.
  *
  * @implSpec
  * Implementations of this interface are immutable, thread-safe and <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
@@ -261,15 +324,14 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
     MemoryLayout withBitAlignment(long bitAlignment);
 
     /**
-     * Computes the offset, in bits, of the layout selected by the given layout path, where the path is considered rooted in this
-     * layout.
+     * Computes the offset, in bits, of the layout selected by the given layout path, where the initial layout in the
+     * path is this layout.
      *
      * @param elements the layout path elements.
      * @return The offset, in bits, of the layout selected by the layout path in {@code elements}.
-     * @throws IllegalArgumentException if the layout path does not select any layout nested in this layout.
-     * @throws IllegalArgumentException if the layout path contains one or more open path elements.
-     * @throws IllegalArgumentException if the layout path contains one or more
-     * {@linkplain PathElement#dereferenceElement() dereference path} elements.
+          * @throws IllegalArgumentException if the layout path is not <a href="#well-formedness">well-formed</a> for this layout.
+     * @throws IllegalArgumentException if the layout path contains one or more <a href=#open-path-elements>open path elements</a>.
+     * @throws IllegalArgumentException if the layout path contains one or more <a href=#deref-path-elements>dereference path elements</a>.
      */
     default long bitOffset(PathElement... elements) {
         return computePathOp(LayoutPath.rootPath(this), LayoutPath::offset,
@@ -278,16 +340,16 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
 
     /**
      * Creates a method handle that computes the offset, in bits, of the layout selected
-     * by the given layout path, where the path is considered rooted in this layout.
+     * by the given layout path, where the initial layout in the path is this layout.
      * <p>
      * The returned method handle has the following characteristics:
      * <ul>
      *     <li>its return type is {@code long};</li>
      *     <li>it has a leading parameter of type {@code MemorySegment}, corresponding to the memory segment
      *     to be accessed;</li>
-     *     <li>it has as many parameters of type {@code long}, one for each open path elements in the provided layout path.
-     *     The order of these parameters corresponds to the order in which the open path elements occur in the provided
-     *     layout path.
+     *     <li>it has as many parameters of type {@code long}, one for each <a href=#open-path-elements>open path elements</a>
+     *     in the provided layout path. The order of these parameters corresponds to the order in which the open path
+     *     elements occur in the provided layout path.
      * </ul>
      * <p>
      * The final offset returned by the method handle is computed as follows:
@@ -306,9 +368,8 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      *
      * @param elements the layout path elements.
      * @return a method handle that computes the offset, in bits, of the layout selected by the given layout path.
-     * @throws IllegalArgumentException if the layout path does not select any layout nested in this layout.
-     * @throws IllegalArgumentException if the layout path contains one or more
-     * {@linkplain PathElement#dereferenceElement() dereference path} elements.
+          * @throws IllegalArgumentException if the layout path is not <a href="#well-formedness">well-formed</a> for this layout.
+     * @throws IllegalArgumentException if the layout path contains one or more <a href=#deref-path-elements>dereference path elements</a>.
      */
     default MethodHandle bitOffsetHandle(PathElement... elements) {
         return computePathOp(LayoutPath.rootPath(this), LayoutPath::offsetHandle,
@@ -316,15 +377,14 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
     }
 
     /**
-     * Computes the offset, in bytes, of the layout selected by the given layout path, where the path is considered rooted in this
-     * layout.
+     * Computes the offset, in bytes, of the layout selected by the given layout path, where the initial layout in the
+     * path is this layout.
      *
      * @param elements the layout path elements.
      * @return The offset, in bytes, of the layout selected by the layout path in {@code elements}.
-     * @throws IllegalArgumentException if the layout path does not select any layout nested in this layout.
-     * @throws IllegalArgumentException if the layout path contains one or more open path elements.
-     * @throws IllegalArgumentException if the layout path contains one or more
-     * {@linkplain PathElement#dereferenceElement() dereference path elements}.
+          * @throws IllegalArgumentException if the layout path is not <a href="#well-formedness">well-formed</a> for this layout.
+     * @throws IllegalArgumentException if the layout path contains one or more <a href=#open-path-elements>open path elements</a>.
+     * @throws IllegalArgumentException if the layout path contains one or more <a href=#deref-path-elements>dereference path elements</a>.
      * @throws UnsupportedOperationException if {@code bitOffset(elements)} is not a multiple of 8.
      */
     default long byteOffset(PathElement... elements) {
@@ -333,16 +393,16 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
 
     /**
      * Creates a method handle that computes the offset, in bytes, of the layout selected
-     * by the given layout path, where the path is considered rooted in this layout.
+     * by the given layout path, where the initial layout in the path is this layout.
      * <p>
      * The returned method handle has the following characteristics:
      * <ul>
      *     <li>its return type is {@code long};</li>
      *     <li>it has a leading parameter of type {@code MemorySegment}, corresponding to the memory segment
      *     to be accessed;</li>
-     *     <li>it has as many parameters of type {@code long}, one for each open path elements in the provided layout path.
-     *     The order of these parameters corresponds to the order in which the open path elements occur in the provided
-     *     layout path.
+     *     <li>it has as many parameters of type {@code long}, one for each <a href=#open-path-elements>open path elements</a>
+     *     in the provided layout path. The order of these parameters corresponds to the order in which the open path
+     *     elements occur in the provided layout path.
      * </ul>
      * <p>
      * The final offset returned by the method handle is computed as follows:
@@ -362,9 +422,8 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      *
      * @param elements the layout path elements.
      * @return a method handle that computes the offset, in bytes, of the layout selected by the given layout path.
-     * @throws IllegalArgumentException if the layout path does not select any layout nested in this layout.
-     * @throws IllegalArgumentException if the layout path contains one or more
-     * {@linkplain PathElement#dereferenceElement() dereference path elements}.
+          * @throws IllegalArgumentException if the layout path is not <a href="#well-formedness">well-formed</a> for this layout.
+     * @throws IllegalArgumentException if the layout path contains one or more <a href=#deref-path-elements>dereference path elements</a>.
      */
     default MethodHandle byteOffsetHandle(PathElement... elements) {
         MethodHandle mh = bitOffsetHandle(elements);
@@ -374,14 +433,15 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
 
     /**
      * Creates a var handle that accesses a memory segment at the offset selected by the given layout path,
-     * where the path is considered rooted in this layout.
+     * where the initial layout in the path is this layout.
      * <p>
      * The returned var handle has the following characteristics:
      * <ul>
      *     <li>its type is derived from the {@linkplain ValueLayout#carrier() carrier} of the
      *     selected value layout;</li>
-     *     <li>it has as many access coordinates of type {@code long}, one for each open path elements in the provided layout path.
-     *     The order of these access coordinates corresponds to the order in which the open path elements occur in the provided
+     *     <li>it has as many access coordinates of type {@code long}, one for each
+     *     <a href=#open-path-elements>open path elements</a> in the provided layout path. The order of these access
+     *     coordinates corresponds to the order in which the open path elements occur in the provided
      *     layout path.
      * </ul>
      * <p>
@@ -408,7 +468,7 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      * Additionally, the provided dynamic values must conform to bounds which are derived from the layout path, that is,
      * {@code 0 <= x_i < b_i}, where {@code 1 <= i <= n}, or {@link IndexOutOfBoundsException} is thrown.
      * <p>
-     * Multiple paths can be chained, by using {@linkplain PathElement#dereferenceElement() dereference path elements}.
+     * Multiple paths can be chained, by using <a href=#deref-path-elements>dereference path elements</a>.
      * A dereference path element allows to obtain a native memory segment whose base address is the address value
      * obtained by accessing a memory segment at the offset determined by the layout path elements immediately preceding
      * the dereference path element. In other words, if a layout path contains one or more dereference path elements,
@@ -435,8 +495,8 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      *
      * @param elements the layout path elements.
      * @return a var handle that accesses a memory segment at the offset selected by the given layout path.
-     * @throws IllegalArgumentException if the layout path does not select any layout nested in this layout.
-     * @throws IllegalArgumentException if the layout path does not select a {@linkplain ValueLayout value layout}.
+          * @throws IllegalArgumentException if the layout path is not <a href="#well-formedness">well-formed</a> for this layout.
+     * @throws IllegalArgumentException if the layout selected by the provided path is not a {@linkplain ValueLayout value layout}.
      * @throws IllegalArgumentException if the layout path contains a {@linkplain PathElement#dereferenceElement()
      * dereference path element} for an address layout that has no {@linkplain AddressLayout#targetLayout() target layout}.
      * @see MethodHandles#memorySegmentViewVarHandle(ValueLayout)
@@ -448,16 +508,16 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
 
     /**
      * Creates a method handle which, given a memory segment, returns a {@linkplain MemorySegment#asSlice(long,long) slice}
-     * corresponding to the layout selected by the given layout path, where the path is considered rooted in this layout.
+     * corresponding to the layout selected by the given layout path, where the initial layout in the path is this layout.
      * <p>
      * The returned method handle has the following characteristics:
      * <ul>
      *     <li>its return type is {@code MemorySegment};</li>
      *     <li>it has a leading parameter of type {@code MemorySegment}, corresponding to the memory segment
      *     to be accessed;</li>
-     *     <li>it has as many parameters of type {@code long}, one for each open path elements in the provided layout path.
-     *     The order of these parameters corresponds to the order in which the open path elements occur in the provided
-     *     layout path.
+     *     <li>it has as many parameters of type {@code long}, one for each <a href=#open-path-elements>open path elements</a>
+     *     in the provided layout path. The order of these parameters corresponds to the order in which the open path
+     *     elements occur in the provided layout path.
      * </ul>
      * <p>
      * The offset of the returned segment is computed as follows:
@@ -472,9 +532,8 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      *
      * @param elements the layout path elements.
      * @return a method handle which is used to slice a memory segment at the offset selected by the given layout path.
-     * @throws IllegalArgumentException if the layout path does not select any layout nested in this layout.
-     * @throws IllegalArgumentException if the layout path contains one or more
-     * {@linkplain PathElement#dereferenceElement() dereference path elements}.
+          * @throws IllegalArgumentException if the layout path is not <a href="#well-formedness">well-formed</a> for this layout.
+     * @throws IllegalArgumentException if the layout path contains one or more <a href=#deref-path-elements>dereference path elements</a>.
      */
     default MethodHandle sliceHandle(PathElement... elements) {
         return computePathOp(LayoutPath.rootPath(this), LayoutPath::sliceHandle,
@@ -482,13 +541,12 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
     }
 
     /**
-     * Selects the layout from a path rooted in this layout.
+     * Returns the layout selected from the provided path, where the initial layout in the path is this layout.
      *
      * @param elements the layout path elements.
      * @return the layout selected by the layout path in {@code elements}.
-     * @throws IllegalArgumentException if the layout path does not select any layout nested in this layout.
-     * @throws IllegalArgumentException if the layout path contains one or more
-     * {@linkplain PathElement#dereferenceElement() dereference path elements}.
+          * @throws IllegalArgumentException if the layout path is not <a href="#well-formedness">well-formed</a> for this layout.
+     * @throws IllegalArgumentException if the layout path contains one or more <a href=#deref-path-elements>dereference path elements</a>.
      * @throws IllegalArgumentException if the layout path contains one or more path elements that select one or more
      * sequence element indices, such as {@link PathElement#sequenceElement(long)} and {@link PathElement#sequenceElement(long, long)}).
      */
@@ -512,12 +570,15 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
 
     /**
      * An element in a <a href="MemoryLayout.html#layout-paths"><em>layout path</em></a>. There
-     * are two kinds of path elements: <em>group path elements</em> and <em>sequence path elements</em>. Group
-     * path elements are used to select a named member layout within a {@link GroupLayout}. Sequence
-     * path elements are used to select a sequence element layout within a {@link SequenceLayout}; selection
-     * of sequence element layout can be <em>explicit</em> (see {@link PathElement#sequenceElement(long)}) or
-     * <em>implicit</em> (see {@link PathElement#sequenceElement()}). When a path uses one or more implicit
-     * sequence path elements, it acquires additional <em>free dimensions</em>.
+     * are three kinds of path elements:
+     * <ul>
+     *     <li><em>group path elements</em>, used to select a member layout within a {@link GroupLayout}, either by name or by index;</li>
+     *     <li><em>sequence path elements</em>, used to select one or more sequence element layouts within a {@link SequenceLayout}; and</li>
+     *     <li><em>dereference path elements</em>, used to <a href="MemoryLayout.html#deref-path-elements">dereference</a>
+     *     an address layout as its target layout.</li>
+     * </ul>
+     * Sequence path elements selecting more than a sequence element layout are called
+     * <a href="MemoryLayout.html#open-path-elements">open path elements</a>.
      *
      * @implSpec
      * Implementations of this interface are immutable, thread-safe and <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
@@ -529,15 +590,13 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
 
         /**
          * Returns a path element which selects a member layout with the given name in a group layout.
-         * The path element returned by this method does not alter the number of free dimensions of any path
-         * that is combined with such element.
          *
          * @implSpec in case multiple group elements with a matching name exist, the path element returned by this
          * method will select the first one; that is, the group element with the lowest offset from current path is selected.
          * In such cases, using {@link #groupElement(long)} might be preferable.
          *
-         * @param name the name of the group element to be selected.
-         * @return a path element which selects the group element with the given name.
+         * @param name the name of the member layout to be selected.
+         * @return a path element which selects the group member layout with the given name.
          */
         static PathElement groupElement(String name) {
             Objects.requireNonNull(name);
@@ -547,11 +606,9 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
 
         /**
          * Returns a path element which selects a member layout with the given index in a group layout.
-         * The path element returned by this method does not alter the number of free dimensions of any path
-         * that is combined with such element.
          *
-         * @param index the index of the group element to be selected.
-         * @return a path element which selects the group element with the given index.
+         * @param index the index of the member layout element to be selected.
+         * @return a path element which selects the group member layout with the given index.
          * @throws IllegalArgumentException if {@code index < 0}.
          */
         static PathElement groupElement(long index) {
@@ -564,8 +621,6 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
 
         /**
          * Returns a path element which selects the element layout at the specified position in a sequence layout.
-         * The path element returned by this method does not alter the number of free dimensions of any path
-         * that is combined with such element.
          *
          * @param index the index of the sequence element to be selected.
          * @return a path element which selects the sequence element layout with the given index.
@@ -580,24 +635,12 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
         }
 
         /**
-         * Returns a path element which selects the element layout in a <em>range</em> of positions in a sequence layout.
-         * The range is expressed as a pair of starting index (inclusive) {@code S} and step factor (which can also be negative)
-         * {@code F}.
+         * Returns an <a href="MemoryLayout.html#open-path-elements">open path element</a> which selects the element
+         * layout in a <em>range</em> of positions in a sequence layout. The range is expressed as a pair of starting
+         * index (inclusive) {@code S} and step factor (which can also be negative) {@code F}.
          * <p>
-         * If a path with free dimensions {@code n} is combined with the path element returned by this method,
-         * the number of free dimensions of the resulting path will be {@code 1 + n}. If the free dimension associated
-         * with this path is bound by an index {@code I}, the resulting accessed offset can be obtained with the following
-         * formula:
-         *
-         * <blockquote><pre>{@code
-         * E * (S + I * F)
-         * }</pre></blockquote>
-         *
-         * where {@code E} is the size (in bytes) of the sequence element layout.
-         * <p>
-         * Additionally, if {@code C} is the sequence element count, it follows that {@code 0 <= I < B},
-         * where {@code B} is computed as follows:
-         *
+         * The exact sequence element selected by this layout is expressed as an index {@code I}. If {@code C} is the
+         * sequence element count, it follows that {@code 0 <= I < B}, where {@code B} is computed as follows:
          * <ul>
          *    <li>if {@code F > 0}, then {@code B = ceilDiv(C - S, F)}</li>
          *    <li>if {@code F < 0}, then {@code B = ceilDiv(-(S + 1), -F)}</li>
@@ -620,20 +663,11 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
         }
 
         /**
-         * Returns a path element which selects an unspecified element layout in a sequence layout.
+         * Returns an <a href="MemoryLayout.html#open-path-elements">open path element</a> which selects an unspecified
+         * element layout in a sequence layout.
          * <p>
-         * If a path with free dimensions {@code n} is combined with the path element returned by this method,
-         * the number of free dimensions of the resulting path will be {@code 1 + n}. If the free dimension associated
-         * with this path is bound by an index {@code I}, the resulting accessed offset can be obtained with the following
-         * formula:
-         *
-         * <blockquote><pre>{@code
-         * E * I
-         * }</pre></blockquote>
-         *
-         * where {@code E} is the size (in bytes) of the sequence element layout.
-         * <p>
-         * Additionally, if {@code C} is the sequence element count, it follows that {@code 0 <= I < C}.
+         * The exact sequence element selected by this layout is expressed as an index {@code I}. If {@code C} is the
+         * sequence element count, it follows that {@code 0 <= I < C}.
          *
          * @return a path element which selects an unspecified sequence element layout.
          */
@@ -645,10 +679,6 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
         /**
          * Returns a path element which dereferences an address layout as its
          * {@linkplain AddressLayout#targetLayout() target layout} (where set).
-         * The path element returned by this method does not alter the number of free dimensions of any path
-         * that is combined with such element. Using this path layout to dereference an address layout
-         * that has no target layout results in an {@link IllegalArgumentException} (e.g. when
-         * a var handle is {@linkplain #varHandle(PathElement...) obtained}).
          *
          * @return a path element which dereferences an address layout.
          */
