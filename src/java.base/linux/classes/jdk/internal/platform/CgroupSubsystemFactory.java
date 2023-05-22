@@ -104,8 +104,7 @@ public class CgroupSubsystemFactory {
         // not ready to deal with that on a per-controller basis. Return no metrics
         // in that case
         if (result.isAnyCgroupV1Controllers() && result.isAnyCgroupV2Controllers()) {
-            Logger logger = System.getLogger("jdk.internal.platform");
-            logger.log(Level.DEBUG, "Mixed cgroupv1 and cgroupv2 not supported. Metrics disabled.");
+            warn("Mixed cgroupv1 and cgroupv2 not supported. Metrics disabled.");
             return null;
         }
 
@@ -119,6 +118,11 @@ public class CgroupSubsystemFactory {
             CgroupV1Subsystem subsystem = CgroupV1Subsystem.getInstance(infos);
             return subsystem != null ? new CgroupV1MetricsImpl(subsystem) : null;
         }
+    }
+
+    private static void warn(String msg) {
+        Logger logger = System.getLogger("jdk.internal.platform");
+        logger.log(Level.DEBUG, msg);
     }
 
     /*
