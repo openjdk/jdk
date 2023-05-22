@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,18 +24,14 @@
 package jdk.test.lib.compiler;
 
 import java.io.ByteArrayOutputStream;
-import java.io.Closeable;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.Writer;
 
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.Callable;
 
-import javax.tools.DiagnosticListener;
 import javax.tools.FileObject;
 import javax.tools.ForwardingJavaFileManager;
 import javax.tools.JavaCompiler;
@@ -178,20 +174,6 @@ public class InMemoryJavaCompiler {
      */
     public static byte[] compile(String className, CharSequence sourceCode, String... options) {
         MemoryJavaFileObject file = new MemoryJavaFileObject(className, sourceCode);
-        try (CloseableCompilationTask task = getCompilationTask(file, options)) {
-            if (!task.call()) {
-                throw new RuntimeException("Could not compile " + className + " with source code " + sourceCode);
-            }
-
-            return file.getByteCode();
-        }
-    }
-
-    private static JavaCompiler getCompiler() {
-        return ToolProvider.getSystemJavaCompiler();
-    }
-
-    private static CloseableCompilationTask getCompilationTask(MemoryJavaFileObject file, String... options) {
         List<String> opts = new ArrayList<>();
         String moduleOverride = null;
         for (String opt : options) {
@@ -201,44 +183,19 @@ public class InMemoryJavaCompiler {
                 opts.add(opt);
             }
         }
-        return CloseableCompilationTask.createTask(null, new FileManagerWrapper(file, moduleOverride), null, opts, null, Arrays.asList(file));
+        try (JavaFileManager fileManager = new FileManagerWrapper(file, moduleOverride)) {
+            CompilationTask task = getCompiler().getTask(null, fileManager, null, opts, null, Arrays.asList(file));
+            if (!task.call()) {
+                throw new RuntimeException("Could not compile " + className + " with source code " + sourceCode);
+            }
+
+            return file.getByteCode();
+        } catch (IOException ioe) {
+            throw new RuntimeException(ioe);
+        }
     }
 
-    private static class CloseableCompilationTask implements Closeable, Callable<Boolean> {
-        final CompilationTask task;
-        final JavaFileManager fileManager;
-        private CloseableCompilationTask(CompilationTask task, JavaFileManager fileManager) {
-            this.task = task;
-            this.fileManager = fileManager;
-        }
-
-        public static CloseableCompilationTask createTask(Writer out,
-                                                          JavaFileManager fileManager,
-                                                          DiagnosticListener<? super JavaFileObject> diagnosticListener,
-                                                          Iterable<String> options,
-                                                          Iterable<String> classes,
-                                                          Iterable<? extends JavaFileObject> compilationUnits) {
-            CompilationTask task = getCompiler().getTask(out,
-                                                         fileManager,
-                                                         diagnosticListener,
-                                                         options,
-                                                         classes,
-                                                         compilationUnits);
-            return new CloseableCompilationTask(task, fileManager);
-        }
-
-        @Override
-        public void close() {
-            try {
-                fileManager.close();
-            } catch (IOException ioe) {
-                throw new RuntimeException(ioe);
-            }
-        }
-
-        @Override
-        public Boolean call() {
-            return task.call();
-        }
+    private static JavaCompiler getCompiler() {
+        return ToolProvider.getSystemJavaCompiler();
     }
 }
