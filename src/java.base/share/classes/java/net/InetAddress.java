@@ -221,8 +221,8 @@ import static java.net.spi.InetAddressResolver.LookupPolicy.IPV6_FIRST;
  * will be cached for 1 day but an attempt to refresh it will be done every
  * 30 seconds.
  * <p>
- * A value of 0 (zero) means do not use stale names, the negative value is
- * ignored.
+ * A value of 0 (zero) or if the property is not set means do not use stale
+ * names, the negative value is ignored.
  * </dd>
  * <dt><b>networkaddress.cache.negative.ttl</b> (default: 10)</dt>
  * <dd>Indicates the caching policy for un-successful name lookups

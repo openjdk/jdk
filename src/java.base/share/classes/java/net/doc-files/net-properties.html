@@ -272,7 +272,8 @@ tuning on how the cache is operating.</P>
 	will be kept in the cache. The name is considered stale if it expired and
 	attempts to refresh it were unsuccessful. This property is useful if it is
 	preferable to use a stale name rather than result of unsuccessful name lookup.
-	A value of 0 (zero) means do not use stale names, the negative value is ignored.
+	A value of 0 (zero) or if the property is not set means do not use stale
+	names, the negative value is ignored.
 	The default value is implementation-specific.</P>
 	<LI><P><B>{@systemProperty networkaddress.cache.negative.ttl}</B> (default: {@code 10})<BR>
 	Value is an integer corresponding to the number of seconds an
