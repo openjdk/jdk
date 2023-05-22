@@ -24,7 +24,7 @@
 
 /**
  * @test
- * @bug 8213362 8238225
+ * @bug 8213362 8238225 8303669
  * @comment Test JLI_Launch for tools distributed outside JDK
  * @library /test/lib
  * @run main/native JliLaunchTest

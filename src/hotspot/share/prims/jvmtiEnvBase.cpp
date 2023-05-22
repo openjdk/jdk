@@ -1319,6 +1319,19 @@ JvmtiEnvBase::is_cthread_with_continuation(JavaThread* jt) {
   return cont_entry != nullptr && is_cthread_with_mounted_vthread(jt);
 }
 
+// Check if VirtualThread or BoundVirtualThread is suspended.
+bool
+JvmtiEnvBase::is_vthread_suspended(oop vt_oop, JavaThread* jt) {
+  bool suspended = false;
+  if (java_lang_VirtualThread::is_instance(vt_oop)) {
+    suspended = JvmtiVTSuspender::is_vthread_suspended(vt_oop);
+  }
+  if (vt_oop->is_a(vmClasses::BoundVirtualThread_klass())) {
+    suspended = jt->is_suspended();
+  }
+  return suspended;
+}
+
 // If (thread == null) then return current thread object.
 // Otherwise return JNIHandles::resolve_external_guard(thread).
 oop
@@ -2197,11 +2210,6 @@ UpdateForPopTopFrameClosure::doit(Thread *target, bool self) {
     return; /* JVMTI_ERROR_THREAD_NOT_ALIVE (default) */
   }
   assert(java_thread == _state->get_thread(), "Must be");
-
-  if (!self && !java_thread->is_suspended() && !java_thread->is_carrier_thread_suspended()) {
-    _result = JVMTI_ERROR_THREAD_NOT_SUSPENDED;
-    return;
-  }
 
   // Check to see if a PopFrame was already in progress
   if (java_thread->popframe_condition() != JavaThread::popframe_inactive) {
