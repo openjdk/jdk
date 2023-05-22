@@ -112,7 +112,7 @@ class PopFramesTestTarg {
         } else {
             try {
                 Thread.sleep(10000);
-            }  catch (InterruptedException e) {
+            } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
         }
@@ -189,7 +189,7 @@ public class PopFramesTest extends TestScaffold {
         super(args);
     }
 
-    public static void main(String[] args)      throws Exception {
+    public static void main(String[] args) throws Exception {
         // We should get one argument that indicates the test mode, such as SLEEP_NONATIVE.
         if (args.length != 1) {
             throw new RuntimeException("Must pass one argument to PopFramesTestTarg");
@@ -245,13 +245,13 @@ public class PopFramesTest extends TestScaffold {
     protected void runTests() throws Exception {
         BreakpointEvent bpe = startTo("PopFramesTestTarg", "popMethod", "()V");
         ClassType targetClass = (ClassType)bpe.location().declaringType();
-        ThreadReference mainThread  = bpe.thread();
+        ThreadReference mainThread = bpe.thread();
 
         // Resume main thread until it is in Thread.sleep() or the infinite loop.
         mainThread.resume();
         try {
             Thread.sleep(1000); // give thread chance to get into Thread.sleep() or loop
-        }  catch (InterruptedException e) {
+        } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
         mainThread.suspend(); // Suspend thread while in Thread.sleep() or loop
