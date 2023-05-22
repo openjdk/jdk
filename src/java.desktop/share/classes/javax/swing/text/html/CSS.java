@@ -39,6 +39,7 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Objects;
+import java.util.Scanner;
 
 import javax.swing.ImageIcon;
 import javax.swing.SizeRequirements;
@@ -2033,7 +2034,7 @@ public class CSS implements Serializable {
         @Override
         public boolean equals(Object val) {
             return val instanceof CSS.StringValue strVal
-                    && Objects.equals(this.svalue, strVal.svalue);
+                   && Objects.equals(this.svalue, strVal.svalue);
         }
 
     }
@@ -2220,7 +2221,18 @@ public class CSS implements Serializable {
 
         @Override
         public boolean equals(Object val) {
-            return val instanceof CSS.FontSize size && value == size.value;
+            if (val instanceof CSS.FontSize size) {
+                // If fontsize contains numeric along with units
+                // and does not contain only alphabets like "smaller", "medium" etc
+                if (size.lu != null && !size.svalue.matches("^[a-zA-Z]*$")) {
+                    int sz = new Scanner(size.svalue).useDelimiter("\\D").nextInt();
+                    int oldsz = new Scanner(svalue).useDelimiter("\\D").nextInt();
+                    return sz == oldsz
+                           && Objects.equals(size.lu.units, lu.units);
+                }
+                return value == size.value;
+            }
+            return false;
         }
 
         float value;
@@ -2331,7 +2343,7 @@ public class CSS implements Serializable {
         @Override
         public boolean equals(Object val) {
             return val instanceof CSS.FontFamily font
-                       && Objects.equals(family, font.family);
+                   && Objects.equals(family, font.family);
         }
 
         String family;
@@ -2678,7 +2690,9 @@ public class CSS implements Serializable {
             if (percentage) {
                 return false;
             } else {
-                return val instanceof CSS.LengthValue lu && span == lu.span;
+                return val instanceof CSS.LengthValue lu
+                        && span == lu.span
+                        && Objects.equals(lu.units, units);
             }
         }
 
