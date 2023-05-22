@@ -112,6 +112,7 @@ public class ScrollPaneLimitation {
                         // be at (inset left, inset top + position)
                         Container cp = child.getParent();
                         p = cp.getLocation();
+                        System.out.println("Child's parent pos = " + p);
                         if (p.y != -SCROLL_POS) {
                             throw new RuntimeException("wrong child location");
                         }
