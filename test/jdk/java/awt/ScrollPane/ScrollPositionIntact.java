@@ -73,8 +73,8 @@ public class ScrollPositionIntact {
     public void start() throws Exception {
         try {
             Robot robot = new Robot();
-            robot.delay(1000);
             robot.waitForIdle();
+            robot.delay(1000);
 
             EventQueue.invokeAndWait(() -> {
                 frame.toFront();

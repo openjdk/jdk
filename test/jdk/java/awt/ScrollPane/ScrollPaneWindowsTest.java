@@ -44,7 +44,7 @@ import java.awt.event.AdjustmentEvent;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 
-public class ScrollPaneWindowsTest {
+public class ScrollPaneWindowsTest implements AdjustmentListener {
     ScrollPane sp;
     Panel p;
     Robot robot;
@@ -73,26 +73,8 @@ public class ScrollPaneWindowsTest {
             sp = new ScrollPane(ScrollPane.SCROLLBARS_ALWAYS);
             vScroll = (ScrollPaneAdjustable) sp.getVAdjustable();
             hScroll = (ScrollPaneAdjustable) sp.getHAdjustable();
-            vScroll.addAdjustmentListener(new AdjustmentListener() {
-                @Override
-                public void adjustmentValueChanged(AdjustmentEvent adjustmentEvent) {
-                    synchronized (ScrollPaneWindowsTest.LOCK) {
-                        notifyReceived = true;
-                        ScrollPaneWindowsTest.LOCK.notify();
-                    }
-                    System.out.println("Adjustment Vertical Scroll Event called ");
-                }
-            });
-            hScroll.addAdjustmentListener(new AdjustmentListener() {
-                @Override
-                public void adjustmentValueChanged(AdjustmentEvent adjustmentEvent) {
-                    synchronized (ScrollPaneWindowsTest.LOCK) {
-                        notifyReceived = true;
-                        ScrollPaneWindowsTest.LOCK.notify();
-                    }
-                    System.out.println("Adjustment Horizontal Scroll Event called ");
-                }
-            });
+            vScroll.addAdjustmentListener(ScrollPaneWindowsTest.this);
+            hScroll.addAdjustmentListener(ScrollPaneWindowsTest.this);
             sp.add(p);
             frame.add(sp);
             frame.pack();
@@ -111,8 +93,9 @@ public class ScrollPaneWindowsTest {
                 System.out.println("Insets: right = " + paneInsets.right + " bottom =  " + paneInsets.bottom);
             });
 
-            robot.delay(100);
             robot.waitForIdle();
+            robot.delay(100);
+
             EventQueue.invokeAndWait(() -> {
                 xPos = sp.getLocationOnScreen().x + sp.getWidth() - paneInsets.right / 2;
                 yPos = sp.getLocationOnScreen().y + sp.getHeight() / 2;
@@ -121,8 +104,8 @@ public class ScrollPaneWindowsTest {
             robot.mouseMove(xPos, yPos);
             testOneScrollbar(vScroll);
 
-            robot.delay(100);
             robot.waitForIdle();
+            robot.delay(100);
 
             EventQueue.invokeAndWait(() -> {
                 xPos = sp.getLocationOnScreen().x + sp.getWidth() / 2;
@@ -145,8 +128,8 @@ public class ScrollPaneWindowsTest {
         //to Bottom  - right
         robot.mousePress(InputEvent.BUTTON3_DOWN_MASK);
         robot.mouseRelease(InputEvent.BUTTON3_DOWN_MASK);
-        robot.delay(2000);
         robot.waitForIdle();
+        robot.delay(2000);
 
         synchronized (LOCK) {
             notifyReceived = false;
@@ -174,8 +157,8 @@ public class ScrollPaneWindowsTest {
         //to top-left
         robot.mousePress(InputEvent.BUTTON3_DOWN_MASK);
         robot.mouseRelease(InputEvent.BUTTON3_DOWN_MASK);
-        robot.delay(2000);
         robot.waitForIdle();
+        robot.delay(2000);
 
         synchronized (LOCK) {
             for (int i = 0; i < 2; i++) {
@@ -195,5 +178,14 @@ public class ScrollPaneWindowsTest {
                 System.out.println("Test stage 2 passed.");
             }
         }
+    }
+
+    @Override
+    public void adjustmentValueChanged(AdjustmentEvent adjustmentEvent) {
+        synchronized (ScrollPaneWindowsTest.LOCK) {
+            notifyReceived = true;
+            ScrollPaneWindowsTest.LOCK.notify();
+        }
+        System.out.println("Adjustment Event called ");
     }
 }

@@ -67,8 +67,8 @@ public class ScrollPaneExtraScrollBar {
 
     public void start() throws Exception {
         try {
-            robot.delay(100);
             robot.waitForIdle();
+            robot.delay(100);
             EventQueue.invokeAndWait(() -> {
                 r = f.getBounds();
             });
@@ -77,8 +77,8 @@ public class ScrollPaneExtraScrollBar {
             robot.mouseMove(r.x + r.width + 50, r.y + r.height + 50);
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
 
-            robot.delay(1000);
             robot.waitForIdle();
+            robot.delay(1000);
 
             EventQueue.invokeAndWait(() -> {
                 Insets insets = sp.getInsets();

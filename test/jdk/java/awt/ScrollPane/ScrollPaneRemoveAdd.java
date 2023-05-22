@@ -80,7 +80,6 @@ public class ScrollPaneRemoveAdd {
 
     public void start() throws Exception {
         try {
-            Robot robot = new Robot();
             EventQueue.invokeAndWait(() -> {
                 pane.remove(0);
                 pane.add(button);
@@ -88,6 +87,7 @@ public class ScrollPaneRemoveAdd {
                 buttonSize = button.getSize();
             });
 
+            Robot robot = new Robot();
             robot.waitForIdle();
             robot.delay(1000);
 

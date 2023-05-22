@@ -122,7 +122,7 @@ public class ScrollPaneLimitation {
 
                 p = pane.getLocationOnScreen();
                 Dimension d = pane.getSize();
-                point = new Point(p.x += d.width / 2, p.y += d.height / 2);
+                point = new Point(p.x + d.width / 2, p.y + d.height / 2);
             });
             robot.mouseMove(point.x, point.y);
             robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
