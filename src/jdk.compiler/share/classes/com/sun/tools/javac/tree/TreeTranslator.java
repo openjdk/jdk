@@ -364,6 +364,10 @@ public class TreeTranslator extends JCTree.Visitor {
         result = tree;
     }
 
+    public void visitAnyPattern(JCAnyPattern tree) {
+        result = tree;
+    }
+
     @Override
     public void visitDefaultCaseLabel(JCDefaultCaseLabel tree) {
         result = tree;

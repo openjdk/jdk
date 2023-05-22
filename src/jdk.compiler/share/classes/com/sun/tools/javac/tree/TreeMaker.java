@@ -483,6 +483,12 @@ public class TreeMaker implements JCTree.Factory {
         return tree;
     }
 
+    public JCAnyPattern AnyPattern() {
+        JCAnyPattern tree = new JCAnyPattern();
+        tree.pos = pos;
+        return tree;
+    }
+
     public JCBindingPattern BindingPattern(JCVariableDecl var) {
         JCBindingPattern tree = new JCBindingPattern(var);
         tree.pos = pos;
