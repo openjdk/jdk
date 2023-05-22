@@ -977,6 +977,15 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
       return false;
     }
 
+    {
+      // Print current thread slack
+      int slack = prctl(PR_GET_TIMERSLACK);
+      if (slack >= 0) {
+        log_info(os, thread)("Thread \"%s\" (pthread id: " UINTX_FORMAT ") timer slack: %dns",
+                             thread->name(), (uintx) tid, slack);
+      }
+    }
+
     // Store pthread info into the OSThread
     osthread->set_pthread_id(tid);
 
@@ -4647,7 +4656,9 @@ jint os::init_2(void) {
     FLAG_SET_DEFAULT(UseCodeCacheFlushing, false);
   }
 
-  // Override the timer slack value if needed.
+  // Override the timer slack value if needed. The adjustment for the main
+  // thread would inherit the setting the children threads, which would be
+  // most threads in JDK/JVM.
   if (TimerSlack > 0) {
     if (prctl(PR_SET_TIMERSLACK, TimerSlack) < 0) {
       vm_exit_during_initialization("Setting timer slack failed: %s", os::strerror(errno));
