@@ -100,28 +100,28 @@ public class NativeTestHelper {
     /**
      * The layout for the {@code short} C type
      */
-    public static final ValueLayout.OfShort C_SHORT = ValueLayout.JAVA_SHORT.withBitAlignment(16);
+    public static final ValueLayout.OfShort C_SHORT = ValueLayout.JAVA_SHORT;
     /**
      * The layout for the {@code int} C type
      */
-    public static final ValueLayout.OfInt C_INT = ValueLayout.JAVA_INT.withBitAlignment(32);
+    public static final ValueLayout.OfInt C_INT = ValueLayout.JAVA_INT;
 
     /**
      * The layout for the {@code long long} C type.
      */
-    public static final ValueLayout.OfLong C_LONG_LONG = ValueLayout.JAVA_LONG.withBitAlignment(64);
+    public static final ValueLayout.OfLong C_LONG_LONG = ValueLayout.JAVA_LONG;
     /**
      * The layout for the {@code float} C type
      */
-    public static final ValueLayout.OfFloat C_FLOAT = ValueLayout.JAVA_FLOAT.withBitAlignment(32);
+    public static final ValueLayout.OfFloat C_FLOAT = ValueLayout.JAVA_FLOAT;
     /**
      * The layout for the {@code double} C type
      */
-    public static final ValueLayout.OfDouble C_DOUBLE = ValueLayout.JAVA_DOUBLE.withBitAlignment(64);
+    public static final ValueLayout.OfDouble C_DOUBLE = ValueLayout.JAVA_DOUBLE;
     /**
      * The {@code T*} native type.
      */
-    public static final AddressLayout C_POINTER = ValueLayout.ADDRESS.withBitAlignment(64)
+    public static final AddressLayout C_POINTER = ValueLayout.ADDRESS
             .withTargetLayout(MemoryLayout.sequenceLayout(C_CHAR));
 
     public static final Linker LINKER = Linker.nativeLinker();
