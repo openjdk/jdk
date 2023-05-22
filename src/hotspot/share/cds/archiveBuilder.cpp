@@ -92,7 +92,7 @@ void ArchiveBuilder::SourceObjList::remember_embedded_pointer(SourceObjInfo* src
   // To mark the f->ptr pointer on 64-bit platform, this function is called with
   //    src_info()->obj() == 0x100
   //    ref->addr() == 0x108
-  address src_obj = src_info->obj();
+  address src_obj = src_info->source_addr();
   address* field_addr = ref->addr();
   assert(src_info->ptrmap_start() < _total_bytes, "sanity");
   assert(src_info->ptrmap_end() <= _total_bytes, "sanity");
@@ -175,8 +175,6 @@ ArchiveBuilder::ArchiveBuilder() :
 ArchiveBuilder::~ArchiveBuilder() {
   assert(_current == this, "must be");
   _current = nullptr;
-
-  clean_up_src_obj_table();
 
   for (int i = 0; i < _symbols->length(); i++) {
     _symbols->at(i)->decrement_refcount();
@@ -427,7 +425,6 @@ bool ArchiveBuilder::gather_one_source_obj(MetaspaceClosure::Ref* enclosing_ref,
   if (src_obj == nullptr) {
     return false;
   }
-  ref->set_keep_after_pushing();
   remember_embedded_pointer_in_gathered_obj(enclosing_ref, ref);
 
   FollowMode follow_mode = get_follow_mode(ref);
@@ -589,15 +586,14 @@ void ArchiveBuilder::make_shallow_copies(DumpRegion *dump_region,
 }
 
 void ArchiveBuilder::make_shallow_copy(DumpRegion *dump_region, SourceObjInfo* src_info) {
-  MetaspaceClosure::Ref* ref = src_info->ref();
-  address src = ref->obj();
+  address src = src_info->source_addr();
   int bytes = src_info->size_in_bytes();
   char* dest;
   char* oldtop;
   char* newtop;
 
   oldtop = dump_region->top();
-  if (ref->msotype() == MetaspaceObj::ClassType) {
+  if (src_info->msotype() == MetaspaceObj::ClassType) {
     // Save a pointer immediate in front of an InstanceKlass, so
     // we can do a quick lookup from InstanceKlass* -> RunTimeClassInfo*
     // without building another hashtable. See RunTimeClassInfo::get_for()
@@ -621,7 +617,7 @@ void ArchiveBuilder::make_shallow_copy(DumpRegion *dump_region, SourceObjInfo* s
     }
   }
 
-  intptr_t* archived_vtable = CppVtables::get_archived_vtable(ref->msotype(), (address)dest);
+  intptr_t* archived_vtable = CppVtables::get_archived_vtable(src_info->msotype(), (address)dest);
   if (archived_vtable != nullptr) {
     *(address*)dest = (address)archived_vtable;
     ArchivePtrMarker::mark_pointer((address*)dest);
@@ -630,7 +626,7 @@ void ArchiveBuilder::make_shallow_copy(DumpRegion *dump_region, SourceObjInfo* s
   log_trace(cds)("Copy: " PTR_FORMAT " ==> " PTR_FORMAT " %d", p2i(src), p2i(dest), bytes);
   src_info->set_buffered_addr((address)dest);
 
-  _alloc_stats.record(ref->msotype(), int(newtop - oldtop), src_info->read_only());
+  _alloc_stats.record(src_info->msotype(), int(newtop - oldtop), src_info->read_only());
 }
 
 // This is used by code that hand-assemble data structures, such as the LambdaProxyClassKey, that are
@@ -1095,11 +1091,6 @@ public:
 
 void ArchiveBuilder::print_stats() {
   _alloc_stats.print_stats(int(_ro_region.used()), int(_rw_region.used()));
-}
-
-void ArchiveBuilder::clean_up_src_obj_table() {
-  SrcObjTableCleaner cleaner;
-  _src_obj_table.iterate(&cleaner);
 }
 
 void ArchiveBuilder::write_archive(FileMapInfo* mapinfo, ArchiveHeapInfo* heap_info) {

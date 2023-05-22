@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,10 +21,13 @@
  * questions.
  */
 
-// key: compiler.err.instanceof.pattern.no.subtype
+// key: compiler.err.record.patterns.annotations.not.allowed
 
-class InstanceofPatternNoSubtype {
-    boolean test(Object o) {
-        return o instanceof Object obj;
+class RecordPatternsAnnotationsNotAllowed {
+
+    public boolean test(Object o) {
+        return o instanceof @Deprecated R(String s);
     }
+
+    record R(String s) {}
 }
