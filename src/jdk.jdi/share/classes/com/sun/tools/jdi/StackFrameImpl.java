@@ -396,20 +396,25 @@ public class StackFrameImpl extends MirrorImpl
             switch (exc.errorCode()) {
             case JDWP.Error.OPAQUE_FRAME:
                 if (thread.isVirtual()) {
-                    // We first need to find out if the current frame is native.
-                    StackFrameImpl sf;
-                    try {
-                        sf = (StackFrameImpl)thread.frame(0);
-                    } catch (IndexOutOfBoundsException e) {
-                        throw new InvalidStackFrameException("No more frames on the stack");
+                    // We first need to find out if the current frame is native, or if the
+                    // previous frame is native, in which case we throw NativeMethodException
+                    for (int i = 0; i < 2; i++) {
+                        StackFrameImpl sf;
+                        try {
+                            sf = (StackFrameImpl)thread.frame(i);
+                        } catch (IndexOutOfBoundsException e) {
+                            // This should never happen, but we need to check for it.
+                            break;
+                        }
+                        sf.validateStackFrame();
+                        MethodImpl meth = (MethodImpl)sf.location().method();
+                        if (meth.isNative()) {
+                            throw new NativeMethodException();
+                        }
                     }
-                    sf.validateStackFrame();
-                    MethodImpl meth = (MethodImpl)sf.location().method();
-                    if (meth.isNative()) {
-                        throw new NativeMethodException();
-                    } else {
-                        throw new OpaqueFrameException();
-                    }
+                    // No native frames involved. Must have been due to thread
+                    // not being mounted.
+                    throw new OpaqueFrameException();
                 } else {
                     throw new NativeMethodException();
                 }
