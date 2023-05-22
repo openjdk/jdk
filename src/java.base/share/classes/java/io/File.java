@@ -1820,6 +1820,12 @@ public class File
      * that the canonical pathname of any file physically present on the local
      * machine will begin with one of the roots returned by this method.
      *
+     * <p> Unlike most methods in this class, this method does not throw
+     * security exceptions.  If a security manager exists and its {@link
+     * SecurityManager#checkRead(String)} method denies read access to a
+     * particular root directory, then that directory will not appear in the
+     * result.
+     *
      * @implNote
      * Windows platforms, for example, have a root directory
      * for each active drive; UNIX platforms have a single root directory,
@@ -1836,12 +1842,6 @@ public class File
      * denoting the root directories of the mapped network drives of a Windows
      * platform will be returned by this method, while {@code File} objects
      * containing UNC pathnames will not be returned by this method.
-     *
-     * <p> Unlike most methods in this class, this method does not throw
-     * security exceptions.  If a security manager exists and its {@link
-     * SecurityManager#checkRead(String)} method denies read access to a
-     * particular root directory, then that directory will not appear in the
-     * result.
      *
      * @return  An array of {@code File} objects denoting the available
      *          filesystem roots, or {@code null} if the set of roots could not
