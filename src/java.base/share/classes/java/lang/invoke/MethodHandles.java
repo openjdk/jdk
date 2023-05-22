@@ -7964,7 +7964,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * <p>As an example, consider the memory layout expressed by a {@link GroupLayout} instance constructed as follows:
      * {@snippet lang="java" :
      *     GroupLayout seq = java.lang.foreign.MemoryLayout.structLayout(
-     *             MemoryLayout.paddingLayout(32),
+     *             MemoryLayout.paddingLayout(4),
      *             ValueLayout.JAVA_INT.withOrder(ByteOrder.BIG_ENDIAN).withName("value")
      *     );
      * }

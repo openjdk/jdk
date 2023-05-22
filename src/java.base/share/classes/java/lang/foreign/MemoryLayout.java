@@ -80,7 +80,7 @@ import jdk.internal.javac.PreviewFeature;
  * SequenceLayout taggedValues = MemoryLayout.sequenceLayout(5,
  *     MemoryLayout.structLayout(
  *         ValueLayout.JAVA_BYTE.withName("kind"),
- *         MemoryLayout.paddingLayout(24),
+ *         MemoryLayout.paddingLayout(3),
  *         ValueLayout.JAVA_INT.withName("value")
  *     )
  * ).withName("TaggedValues");
@@ -88,7 +88,7 @@ import jdk.internal.javac.PreviewFeature;
  *
  * <h2 id="layout-align">Size, alignment and byte order</h2>
  *
- * All layouts have a <em>size</em>, which is defined as follows:
+ * All layouts have a <em>size</em> (expressed in bytes), which is defined as follows:
  * <ul>
  *     <li>The size of a value layout is determined by the {@linkplain ValueLayout#carrier()}
  *     associated with the value layout. That is, the constant {@link ValueLayout#JAVA_INT} has carrier {@code int}, and
@@ -104,7 +104,7 @@ import jdk.internal.javac.PreviewFeature;
  *     <em>S1</em>, <em>S2</em>, ... <em>Sn</em>, respectively, is <em>max(S1, S2, ... Sn).</em></li>
  * </ul>
  * <p>
- * Furthermore, all layouts have a <em>natural alignment</em> which is defined as follows:
+ * Furthermore, all layouts have a <em>natural alignment</em> (expressed in bytes) which is defined as follows:
  * <ul>
  *     <li>The natural alignment of a padding layout is 1, regardless of its size; that is, in the absence
  *     of an explicit alignment constraint, a padding layout should not affect the alignment constraint of the group
@@ -114,7 +114,7 @@ import jdk.internal.javac.PreviewFeature;
  *     <li>The natural alignment of a group layout with member layouts <em>M1</em>, <em>M2</em>, ... <em>Mn</em> whose
  *     alignments are <em>A1</em>, <em>A2</em>, ... <em>An</em>, respectively, is <em>max(A1, A2 ... An)</em>.</li>
  * </ul>
- * A layout's alignment can be overridden if needed (see {@link MemoryLayout#withBitAlignment(long)}), which can be useful to describe
+ * A layout's alignment can be overridden if needed (see {@link MemoryLayout#withByteAlignment(long)}), which can be useful to describe
  * layouts with weaker or stronger alignment constraints.
  * <p>
  * All value layouts have an <em>explicit</em> byte order (see {@link java.nio.ByteOrder}).
@@ -127,17 +127,17 @@ import jdk.internal.javac.PreviewFeature;
  * <p>
  * Layout paths can be used to:
  * <ul>
- *     <li>obtain {@linkplain MemoryLayout#bitOffset(PathElement...) offsets} of arbitrarily nested layouts;</li>
+ *     <li>obtain {@linkplain MemoryLayout#byteOffset(PathElement...) offsets} of arbitrarily nested layouts;</li>
  *     <li>obtain a {@linkplain #varHandle(PathElement...) var handle} that can be used to access the value corresponding
  *     to the selected layout;</li>
  *     <li>{@linkplain #select(PathElement...) select} an arbitrarily nested layout.</li>
  * </ul>
  * <p>
  * For instance, given the {@code taggedValues} sequence layout constructed above, we can obtain the offset,
- * in bits, of the member layout named <code>value</code> in the <em>first</em> sequence element, as follows:
+ * in bytes, of the member layout named <code>value</code> in the <em>first</em> sequence element, as follows:
  * {@snippet lang=java :
- * long valueOffset = taggedValues.bitOffset(PathElement.sequenceElement(0),
- *                                           PathElement.groupElement("value")); // yields 32
+ * long valueOffset = taggedValues.byteOffset(PathElement.sequenceElement(0),
+ *                                           PathElement.groupElement("value")); // yields 4
  * }
  *
  * Similarly, we can select the member layout named {@code value}, as follows:
@@ -245,11 +245,6 @@ import jdk.internal.javac.PreviewFeature;
 public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, PaddingLayout, ValueLayout {
 
     /**
-     * {@return the layout size, in bits}
-     */
-    long bitSize();
-
-    /**
      * {@return the layout size, in bytes}
      */
     long byteSize();
@@ -282,22 +277,6 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
     MemoryLayout withoutName();
 
     /**
-     * {@return the alignment constraint associated with this layout, expressed in bits} Layout alignment defines a power
-     * of two {@code A} which is the bit-wise alignment of the layout. If {@code A >= 8} then {@code A/8} is the number of
-     * bytes that must be aligned for any pointer that correctly points to this layout. Thus:
-     *
-     * <ul>
-     * <li>{@code A=8} means unaligned (in the usual sense), which is common in packets.</li>
-     * <li>{@code A=64} means word aligned (on LP64), {@code A=32} int aligned, {@code A=16} short aligned, etc.</li>
-     * <li>{@code A=512} is the most strict alignment required by the x86/SV ABI (for AVX-512 data).</li>
-     * </ul>
-     *
-     * If no explicit alignment constraint was set on this layout (see {@link #withBitAlignment(long)}),
-     * then this method returns the <a href="#layout-align">natural alignment</a> constraint (in bits) associated with this layout.
-     */
-    long bitAlignment();
-
-    /**
      * {@return the alignment constraint associated with this layout, expressed in bytes} Layout alignment defines a power
      * of two {@code A} which is the byte-wise alignment of the layout, where {@code A} is the number of bytes that must be aligned
      * for any pointer that correctly points to this layout. Thus:
@@ -308,38 +287,40 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      * <li>{@code A=64} is the most strict alignment required by the x86/SV ABI (for AVX-512 data).</li>
      * </ul>
      *
-     * If no explicit alignment constraint was set on this layout (see {@link #withBitAlignment(long)}),
+     * If no explicit alignment constraint was set on this layout (see {@link #withByteAlignment(long)}),
      * then this method returns the <a href="#layout-align">natural alignment</a> constraint (in bytes) associated with this layout.
      */
     long byteAlignment();
 
     /**
      * Returns a memory layout of the same type with the same size and name as this layout,
-     * but with the specified alignment constraint (in bits).
+     * but with the specified alignment constraint (in bytes).
      *
-     * @param bitAlignment the layout alignment constraint, expressed in bits.
+     * @param byteAlignment the layout alignment constraint, expressed in bytes.
      * @return a memory layout with the same characteristics of this layout, but with the given alignment constraint.
-     * @throws IllegalArgumentException if {@code bitAlignment} is not a power of two, or if it's less than 8.
+     * @throws IllegalArgumentException if {@code byteAlignment} is not a power of two, or if it's less than 1.
      */
-    MemoryLayout withBitAlignment(long bitAlignment);
+    MemoryLayout withByteAlignment(long byteAlignment);
 
     /**
-     * Computes the offset, in bits, of the layout selected by the given layout path, where the initial layout in the
+     * Computes the offset, in bytes, of the layout selected by the given layout path, where the initial layout in the
      * path is this layout.
      *
      * @param elements the layout path elements.
-     * @return The offset, in bits, of the layout selected by the layout path in {@code elements}.
+     * @return The offset, in bytes, of the layout selected by the layout path in {@code elements}.
           * @throws IllegalArgumentException if the layout path is not <a href="#well-formedness">well-formed</a> for this layout.
      * @throws IllegalArgumentException if the layout path contains one or more <a href=#open-path-elements>open path elements</a>.
      * @throws IllegalArgumentException if the layout path contains one or more <a href=#deref-path-elements>dereference path elements</a>.
+     * @throws NullPointerException if either {@code elements == null}, or if any of the elements
+     * in {@code elements} is {@code null}.
      */
-    default long bitOffset(PathElement... elements) {
+    default long byteOffset(PathElement... elements) {
         return computePathOp(LayoutPath.rootPath(this), LayoutPath::offset,
                 EnumSet.of(PathKind.SEQUENCE_ELEMENT, PathKind.SEQUENCE_RANGE, PathKind.DEREF_ELEMENT), elements);
     }
 
     /**
-     * Creates a method handle that computes the offset, in bits, of the layout selected
+     * Creates a method handle that computes the offset, in bytes, of the layout selected
      * by the given layout path, where the initial layout in the path is this layout.
      * <p>
      * The returned method handle has the following characteristics:
@@ -363,60 +344,6 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      * and {@code s_0}, {@code s_1}, ... {@code s_n} are <em>static</em> stride constants which are derived from
      * the layout path.
      *
-     * @apiNote The returned method handle can be used to compute a layout offset, similarly to {@link #bitOffset(PathElement...)},
-     * but more flexibly, as some indices can be specified when invoking the method handle.
-     *
-     * @param elements the layout path elements.
-     * @return a method handle that computes the offset, in bits, of the layout selected by the given layout path.
-          * @throws IllegalArgumentException if the layout path is not <a href="#well-formedness">well-formed</a> for this layout.
-     * @throws IllegalArgumentException if the layout path contains one or more <a href=#deref-path-elements>dereference path elements</a>.
-     */
-    default MethodHandle bitOffsetHandle(PathElement... elements) {
-        return computePathOp(LayoutPath.rootPath(this), LayoutPath::offsetHandle,
-                EnumSet.of(PathKind.DEREF_ELEMENT), elements);
-    }
-
-    /**
-     * Computes the offset, in bytes, of the layout selected by the given layout path, where the initial layout in the
-     * path is this layout.
-     *
-     * @param elements the layout path elements.
-     * @return The offset, in bytes, of the layout selected by the layout path in {@code elements}.
-          * @throws IllegalArgumentException if the layout path is not <a href="#well-formedness">well-formed</a> for this layout.
-     * @throws IllegalArgumentException if the layout path contains one or more <a href=#open-path-elements>open path elements</a>.
-     * @throws IllegalArgumentException if the layout path contains one or more <a href=#deref-path-elements>dereference path elements</a>.
-     * @throws UnsupportedOperationException if {@code bitOffset(elements)} is not a multiple of 8.
-     */
-    default long byteOffset(PathElement... elements) {
-        return Utils.bitsToBytes(bitOffset(elements));
-    }
-
-    /**
-     * Creates a method handle that computes the offset, in bytes, of the layout selected
-     * by the given layout path, where the initial layout in the path is this layout.
-     * <p>
-     * The returned method handle has the following characteristics:
-     * <ul>
-     *     <li>its return type is {@code long};</li>
-     *     <li>it has a leading parameter of type {@code MemorySegment}, corresponding to the memory segment
-     *     to be accessed;</li>
-     *     <li>it has as many parameters of type {@code long}, one for each <a href=#open-path-elements>open path elements</a>
-     *     in the provided layout path. The order of these parameters corresponds to the order in which the open path
-     *     elements occur in the provided layout path.
-     * </ul>
-     * <p>
-     * The final offset returned by the method handle is computed as follows:
-     *
-     * <blockquote><pre>{@code
-     * bitOffset = c_1 + c_2 + ... + c_m + (x_1 * s_1) + (x_2 * s_2) + ... + (x_n * s_n)
-     * offset = bitOffset / 8
-     * }</pre></blockquote>
-     *
-     * where {@code x_1}, {@code x_2}, ... {@code x_n} are <em>dynamic</em> values provided as {@code long}
-     * arguments, whereas {@code c_1}, {@code c_2}, ... {@code c_m} are <em>static</em> offset constants
-     * and {@code s_0}, {@code s_1}, ... {@code s_n} are <em>static</em> stride constants which are derived from
-     * the layout path.
-     *
      * @apiNote The returned method handle can be used to compute a layout offset, similarly to {@link #byteOffset(PathElement...)},
      * but more flexibly, as some indices can be specified when invoking the method handle.
      *
@@ -426,9 +353,8 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      * @throws IllegalArgumentException if the layout path contains one or more <a href=#deref-path-elements>dereference path elements</a>.
      */
     default MethodHandle byteOffsetHandle(PathElement... elements) {
-        MethodHandle mh = bitOffsetHandle(elements);
-        mh = MethodHandles.filterReturnValue(mh, Utils.BITS_TO_BYTES);
-        return mh;
+        return computePathOp(LayoutPath.rootPath(this), LayoutPath::offsetHandle,
+                EnumSet.of(PathKind.SEQUENCE_RANGE, PathKind.DEREF_ELEMENT), elements);
     }
 
     /**
@@ -532,7 +458,7 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      *
      * @param elements the layout path elements.
      * @return a method handle which is used to slice a memory segment at the offset selected by the given layout path.
-          * @throws IllegalArgumentException if the layout path is not <a href="#well-formedness">well-formed</a> for this layout.
+     * @throws IllegalArgumentException if the layout path is not <a href="#well-formedness">well-formed</a> for this layout.
      * @throws IllegalArgumentException if the layout path contains one or more <a href=#deref-path-elements>dereference path elements</a>.
      */
     default MethodHandle sliceHandle(PathElement... elements) {
@@ -719,14 +645,14 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
     String toString();
 
     /**
-     * Creates a padding layout with the given bitSize and a bit-alignment of eight.
+     * Creates a padding layout with the given byte size and a byte-alignment of one.
      *
-     * @param bitSize the padding size in bits.
+     * @param byteSize the padding size (expressed in bytes).
      * @return the new selector layout.
-     * @throws IllegalArgumentException if {@code bitSize <= 0} or {@code bitSize % 8 != 0}
+     * @throws IllegalArgumentException if {@code byteSize <= 0}.
      */
-    static PaddingLayout paddingLayout(long bitSize) {
-        return PaddingLayoutImpl.of(MemoryLayoutUtil.requireBitSizeValid(bitSize, false));
+    static PaddingLayout paddingLayout(long byteSize) {
+        return PaddingLayoutImpl.of(MemoryLayoutUtil.requireByteSizeValid(byteSize, false));
     }
 
     /**
@@ -736,8 +662,8 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      * @param elementLayout the sequence element layout.
      * @return the new sequence layout with the given element layout and size.
      * @throws IllegalArgumentException if {@code elementCount} is negative.
-     * @throws IllegalArgumentException if {@code elementLayout.bitSize() * elementCount} overflows.
-     * @throws IllegalArgumentException if {@code elementLayout.bitSize() % elementLayout.bitAlignment() != 0}.
+     * @throws IllegalArgumentException if {@code elementLayout.byteSize() * elementCount} overflows.
+     * @throws IllegalArgumentException if {@code elementLayout.byteSize() % elementLayout.byteAlignment() != 0}.
      */
     static SequenceLayout sequenceLayout(long elementCount, MemoryLayout elementLayout) {
         MemoryLayoutUtil.requireNonNegative(elementCount);
@@ -753,16 +679,16 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      *
      * This is equivalent to the following code:
      * {@snippet lang = java:
-     * sequenceLayout(Long.MAX_VALUE / elementLayout.bitSize(), elementLayout);
+     * sequenceLayout(Long.MAX_VALUE / elementLayout.byteSize(), elementLayout);
      * }
      *
      * @param elementLayout the sequence element layout.
      * @return a new sequence layout with the given element layout and maximum element count.
-     * @throws IllegalArgumentException if {@code elementLayout.bitSize() % elementLayout.bitAlignment() != 0}.
+     * @throws IllegalArgumentException if {@code elementLayout.byteSize() % elementLayout.byteAlignment() != 0}.
      */
     static SequenceLayout sequenceLayout(MemoryLayout elementLayout) {
         Objects.requireNonNull(elementLayout);
-        return sequenceLayout(Long.MAX_VALUE / elementLayout.bitSize(), elementLayout);
+        return sequenceLayout(Long.MAX_VALUE / elementLayout.byteSize(), elementLayout);
     }
 
     /**
@@ -770,7 +696,7 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      *
      * @param elements The member layouts of the struct layout.
      * @return a struct layout with the given member layouts.
-     * @throws IllegalArgumentException if the sum of the {@linkplain #bitSize() bit sizes} of the member layouts
+     * @throws IllegalArgumentException if the sum of the {@linkplain #byteSize() byte sizes} of the member layouts
      * overflows.
      * @throws IllegalArgumentException if a member layout in {@code elements} occurs at an offset (relative to the start
      * of the struct layout) which is not compatible with its alignment constraint.
@@ -785,14 +711,14 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      * To avoid the exception, clients can either insert additional padding layout elements:
      *
      * {@snippet lang = java:
-     * structLayout(JAVA_SHORT, MemoryLayout.ofPadding(16), JAVA_INT)
+     * structLayout(JAVA_SHORT, MemoryLayout.ofPadding(2), JAVA_INT)
      * }
      *
      * Or, alternatively, they can use a member layout which features a smaller alignment constraint. This will result
      * in a <em>packed</em> struct layout:
      *
      * {@snippet lang = java:
-     * structLayout(JAVA_SHORT, JAVA_INT.withBitAlignment(16))
+     * structLayout(JAVA_SHORT, JAVA_INT.withByteAlignment(2))
      * }
      */
     static StructLayout structLayout(MemoryLayout... elements) {

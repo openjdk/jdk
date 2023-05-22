@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,15 +22,16 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.internal.org.jline.terminal.impl.jna.win;
+package jdk.internal.org.jline.terminal.impl.jna.linux;
 
-@SuppressWarnings("serial")
-class LastErrorException extends RuntimeException{
+import jdk.internal.org.jline.terminal.impl.jna.LastErrorException;
+import jdk.internal.org.jline.terminal.impl.jna.linux.LinuxNativePty.UtilLibrary;
 
-    public final long lastError;
+public final class UtilLibraryImpl implements UtilLibrary {
 
-    public LastErrorException(long lastError) {
-        this.lastError = lastError;
+    @Override
+    public void openpty(int[] master, int[] slave, byte[] name, CLibrary.termios t, CLibrary.winsize s) throws LastErrorException {
+        throw new UnsupportedOperationException();
     }
 
 }
