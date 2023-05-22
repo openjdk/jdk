@@ -37,8 +37,8 @@ inline ZPageAllocatorStats::ZPageAllocatorStats(size_t min_capacity,
                                                 size_t freed,
                                                 size_t promoted,
                                                 size_t compacted,
-                                                size_t allocation_stalls) :
-    _min_capacity(min_capacity),
+                                                size_t allocation_stalls)
+  : _min_capacity(min_capacity),
     _max_capacity(max_capacity),
     _soft_max_capacity(soft_max_capacity),
     _capacity(capacity),

@@ -23,6 +23,7 @@
 
 #include "precompiled.hpp"
 #include "gc/shared/gcId.hpp"
+#include "gc/z/zGeneration.inline.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zPageType.hpp"
 #include "gc/z/zStat.hpp"
@@ -86,12 +87,11 @@ static void register_jfr_type_serializers() {
 
 #endif // INCLUDE_JFR
 
-ZMinorTracer::ZMinorTracer() :
-    GCTracer(ZMinor) {
-}
+ZMinorTracer::ZMinorTracer()
+  : GCTracer(ZMinor) {}
 
-ZMajorTracer::ZMajorTracer() :
-    GCTracer(ZMajor) {}
+ZMajorTracer::ZMajorTracer()
+  : GCTracer(ZMajor) {}
 
 void ZGenerationTracer::report_start(const Ticks& timestamp) {
   _start = timestamp;

@@ -31,7 +31,7 @@ import java.lang.reflect.AccessFlag;
 import java.nio.ByteBuffer;
 import java.util.Map;
 import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.java.lang.constant.PackageDesc;
+import java.lang.constant.PackageDesc;
 import jdk.internal.classfile.attribute.ModuleAttribute;
 import jdk.internal.classfile.attribute.ModuleExportInfo;
 import jdk.internal.classfile.attribute.ModuleMainClassAttribute;
