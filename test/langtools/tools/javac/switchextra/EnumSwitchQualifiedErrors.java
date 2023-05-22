@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,20 +21,38 @@
  * questions.
  */
 
-// key: compiler.misc.feature.deconstruction.patterns
-// key: compiler.misc.feature.pattern.switch
-// key: compiler.warn.preview.feature.use.plural
-// key: compiler.err.foreach.not.exhaustive.on.type
-// options: --enable-preview -source ${jdk.version} -Xlint:preview
+/**
+ * @test
+ * @bug 8300543
+ * @summary Check switches work correctly with qualified enum constants
+ * @compile/fail/ref=EnumSwitchQualifiedErrors.out -XDrawDiagnostics EnumSwitchQualifiedErrors.java
+*/
 
-import java.util.List;
+public class EnumSwitchQualifiedErrors {
 
-class ForeachNotExhaustive {
-    void m(List<Object> points) {
-        for (Point(var x, var y): points) {
-            System.out.println();
-        }
+    int testPatternMatchingSwitch1(I i) {
+        return switch(i) {
+            case E1.A -> 1;
+            case E2.A -> 2;
+        };
     }
 
-    record Point(Integer x, Integer y) { }
+    int testPatternMatchingSwitch2(E1 e) {
+        return switch(e) {
+            case E1.A -> 1;
+            case E2.A -> 4;
+        };
+    }
+
+    int testPatternMatchingSwitch3(Number n) {
+        return switch(n) {
+            case E1.A -> 1;
+            case E2.A -> 2;
+        };
+    }
+
+    sealed interface I {}
+    enum E1 implements I { A; }
+    enum E2 { A; }
+
 }

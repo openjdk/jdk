@@ -830,48 +830,52 @@ public class JavacParser implements Parser {
 
     /** parses patterns.
      */
+
     public JCPattern parsePattern(int pos, JCModifiers mods, JCExpression parsedType,
                                   boolean allowVar, boolean checkGuard) {
         JCPattern pattern;
-        if (token.kind == LPAREN && parsedType == null) {
-            //parenthesized pattern:
-            int startPos = token.pos;
-            accept(LPAREN);
-            JCPattern p = parsePattern(token.pos, null, null, true, false);
-            accept(RPAREN);
-            pattern = toP(F.at(startPos).ParenthesizedPattern(p));
+        mods = mods != null ? mods : optFinal(0);
+        JCExpression e;
+        if (parsedType == null) {
+            boolean var = token.kind == IDENTIFIER && token.name() == names.var;
+            e = unannotatedType(allowVar, TYPE | NOLAMBDA);
+            if (var) {
+                e = null;
+            }
         } else {
-            mods = mods != null ? mods : optFinal(0);
-            JCExpression e;
-            if (parsedType == null) {
-                boolean var = token.kind == IDENTIFIER && token.name() == names.var;
-                e = unannotatedType(allowVar, TYPE | NOLAMBDA);
-                if (var) {
-                    e = null;
-                }
-            } else {
-                e = parsedType;
-            }
-            if (token.kind == LPAREN) {
-                //deconstruction pattern:
-                checkSourceLevel(Feature.RECORD_PATTERNS);
-                ListBuffer<JCPattern> nested = new ListBuffer<>();
-                if (!peekToken(RPAREN)) {
-                    do {
-                        nextToken();
-                        JCPattern nestedPattern = parsePattern(token.pos, null, null, true, false);
-                        nested.append(nestedPattern);
-                    } while (token.kind == COMMA);
-                } else {
+            e = parsedType;
+        }
+        if (token.kind == LPAREN) {
+            //deconstruction pattern:
+            checkSourceLevel(Feature.RECORD_PATTERNS);
+            ListBuffer<JCPattern> nested = new ListBuffer<>();
+            if (!peekToken(RPAREN)) {
+                do {
                     nextToken();
-                }
-                accept(RPAREN);
-                pattern = toP(F.at(pos).RecordPattern(e, nested.toList()));
+                    JCPattern nestedPattern = parsePattern(token.pos, null, null, true, false);
+                    nested.append(nestedPattern);
+                } while (token.kind == COMMA);
             } else {
-                //type test pattern:
-                JCVariableDecl var = toP(F.at(token.pos).VarDef(mods, ident(), e, null));
-                pattern = toP(F.at(pos).BindingPattern(var));
+                nextToken();
             }
+            accept(RPAREN);
+            pattern = toP(F.at(pos).RecordPattern(e, nested.toList()));
+            if (mods.annotations.nonEmpty()) {
+                log.error(mods.annotations.head.pos(), Errors.RecordPatternsAnnotationsNotAllowed);
+            }
+            new TreeScanner() {
+                @Override
+                public void visitAnnotatedType(JCAnnotatedType tree) {
+                    log.error(tree.pos(), Errors.RecordPatternsAnnotationsNotAllowed);
+                }
+            }.scan(e);
+        } else {
+            //type test pattern:
+            JCVariableDecl var = toP(F.at(token.pos).VarDef(mods, ident(), e, null));
+            if (e == null) {
+                var.startPos = pos;
+            }
+            pattern = toP(F.at(pos).BindingPattern(var));
         }
         return pattern;
     }
@@ -1620,6 +1624,7 @@ public class JavacParser implements Parser {
                 allowDefault = TreeInfo.isNullCaseLabel(label);
             };
         }
+        JCExpression guard = parseGuard(pats.last());
         List<JCStatement> stats = null;
         JCTree body = null;
         CaseTree.CaseKind kind;
@@ -1645,7 +1650,7 @@ public class JavacParser implements Parser {
                 kind = JCCase.STATEMENT;
                 break;
         }
-        caseExprs.append(toP(F.at(casePos).Case(kind, pats.toList(), stats, body)));
+        caseExprs.append(toP(F.at(casePos).Case(kind, pats.toList(), guard, stats, body)));
         return caseExprs.toList();
     }
 
@@ -2910,47 +2915,25 @@ public class JavacParser implements Parser {
         case FOR: {
             nextToken();
             accept(LPAREN);
-            JCTree pattern;
-
-            ForInitResult initResult = analyzeForInit();
-
-            if (initResult == ForInitResult.RecordPattern) {
-                int patternPos = token.pos;
-                JCModifiers mods = optFinal(0);
-                int typePos = token.pos;
-                JCExpression type = unannotatedType(false);
-
-                pattern = parsePattern(patternPos, mods, type, false, false);
-
-                if (pattern != null) {
-                    checkSourceLevel(token.pos, Feature.PATTERN_SWITCH);
-                }
+            List<JCStatement> inits = token.kind == SEMI ? List.nil() : forInit();
+            if (inits.length() == 1 &&
+                inits.head.hasTag(VARDEF) &&
+                ((JCVariableDecl) inits.head).init == null &&
+                token.kind == COLON) {
+                JCVariableDecl var = (JCVariableDecl)inits.head;
                 accept(COLON);
                 JCExpression expr = parseExpression();
                 accept(RPAREN);
                 JCStatement body = parseStatementAsBlock();
-                return F.at(pos).ForeachLoop(pattern, expr, body);
+                return F.at(pos).ForeachLoop(var, expr, body);
             } else {
-                List<JCStatement> inits = token.kind == SEMI ? List.nil() : forInit();
-                if (inits.length() == 1 &&
-                        inits.head.hasTag(VARDEF) &&
-                        ((JCVariableDecl) inits.head).init == null &&
-                        token.kind == COLON) {
-                    JCVariableDecl var = (JCVariableDecl) inits.head;
-                    accept(COLON);
-                    JCExpression expr = parseExpression();
-                    accept(RPAREN);
-                    JCStatement body = parseStatementAsBlock();
-                    return F.at(pos).ForeachLoop(var, expr, body);
-                } else {
-                    accept(SEMI);
-                    JCExpression cond = token.kind == SEMI ? null : parseExpression();
-                    accept(SEMI);
-                    List<JCExpressionStatement> steps = token.kind == RPAREN ? List.nil() : forUpdate();
-                    accept(RPAREN);
-                    JCStatement body = parseStatementAsBlock();
-                    return F.at(pos).ForLoop(inits, cond, steps, body);
-                }
+                accept(SEMI);
+                JCExpression cond = token.kind == SEMI ? null : parseExpression();
+                accept(SEMI);
+                List<JCExpressionStatement> steps = token.kind == RPAREN ? List.nil() : forUpdate();
+                accept(RPAREN);
+                JCStatement body = parseStatementAsBlock();
+                return F.at(pos).ForLoop(inits, cond, steps, body);
             }
         }
         case WHILE: {
@@ -3067,91 +3050,6 @@ public class JavacParser implements Parser {
         }
     }
 
-    private enum ForInitResult {
-        LocalVarDecl,
-        RecordPattern
-    }
-
-    @SuppressWarnings("fallthrough")
-    ForInitResult analyzeForInit() {
-        boolean inType = false;
-        boolean inSelectionAndParenthesis = false;
-        int typeParameterPossibleStart = -1;
-        outer: for (int lookahead = 0; ; lookahead++) {
-            TokenKind tk = S.token(lookahead).kind;
-            switch (tk) {
-                case DOT:
-                    if (inType) break; // in qualified type
-                case COMMA:
-                    typeParameterPossibleStart = lookahead;
-                    break;
-                case QUES:
-                    // "?" only allowed in a type parameter position - otherwise it's an expression
-                    if (typeParameterPossibleStart == lookahead - 1) break;
-                    else return ForInitResult.LocalVarDecl;
-                case EXTENDS: case SUPER: case AMP:
-                case GTGTGT: case GTGT: case GT:
-                case FINAL: case ELLIPSIS:
-                    break;
-                case BYTE: case SHORT: case INT: case LONG: case FLOAT:
-                case DOUBLE: case BOOLEAN: case CHAR: case VOID:
-                    if (peekToken(lookahead, IDENTIFIER)) {
-                        return inSelectionAndParenthesis ? ForInitResult.RecordPattern
-                                                         : ForInitResult.LocalVarDecl;
-                    }
-                    break;
-                case LPAREN:
-                    if (lookahead != 0 && inType) {
-                        inSelectionAndParenthesis = true;
-                        inType = false;
-                    }
-                    break;
-                case RPAREN:
-                    // a method call in the init part or a record pattern?
-                    if (inSelectionAndParenthesis) {
-                        if (peekToken(lookahead, DOT)  ||
-                                peekToken(lookahead, SEMI) ||
-                                peekToken(lookahead, ARROW)) {
-                            return ForInitResult.LocalVarDecl;
-                        }
-                        else if(peekToken(lookahead, COLON)) {
-                            return ForInitResult.RecordPattern;
-                        }
-                        break;
-                    }
-                case UNDERSCORE:
-                case ASSERT:
-                case ENUM:
-                case IDENTIFIER:
-                    if (lookahead == 0) {
-                        inType = true;
-                    }
-                    break;
-                case MONKEYS_AT: {
-                    int prevLookahead = lookahead;
-                    lookahead = skipAnnotation(lookahead);
-                    if (typeParameterPossibleStart == prevLookahead - 1) {
-                        // move possible start of type param after the anno
-                        typeParameterPossibleStart = lookahead;
-                    }
-                    break;
-                }
-                case LBRACKET:
-                    if (peekToken(lookahead, RBRACKET)) {
-                        return inSelectionAndParenthesis ? ForInitResult.RecordPattern
-                                                         : ForInitResult.LocalVarDecl;
-                    }
-                    return ForInitResult.LocalVarDecl;
-                case LT:
-                    typeParameterPossibleStart = lookahead;
-                    break;
-                default:
-                    //this includes EOF
-                    return ForInitResult.LocalVarDecl;
-            }
-        }
-    }
-
     @Override
     public JCStatement parseStatement() {
         return parseStatementAsBlock();
@@ -3234,6 +3132,7 @@ public class JavacParser implements Parser {
                 checkSourceLevel(Feature.SWITCH_MULTIPLE_CASE_LABELS);
                 allowDefault = TreeInfo.isNullCaseLabel(label);
             };
+            JCExpression guard = parseGuard(pats.last());
             CaseTree.CaseKind caseKind;
             JCTree body = null;
             if (token.kind == ARROW) {
@@ -3251,7 +3150,7 @@ public class JavacParser implements Parser {
                 caseKind = JCCase.STATEMENT;
                 stats = blockStatements();
             }
-            c = F.at(pos).Case(caseKind, pats.toList(), stats, body);
+            c = F.at(pos).Case(caseKind, pats.toList(), guard, stats, body);
             if (stats.isEmpty())
                 storeEnd(c, S.prevToken().endPos);
             return cases.append(c).toList();
@@ -3259,6 +3158,7 @@ public class JavacParser implements Parser {
         case DEFAULT: {
             nextToken();
             JCCaseLabel defaultPattern = toP(F.at(pos).DefaultCaseLabel());
+            JCExpression guard = parseGuard(defaultPattern);
             CaseTree.CaseKind caseKind;
             JCTree body = null;
             if (token.kind == ARROW) {
@@ -3276,7 +3176,7 @@ public class JavacParser implements Parser {
                 caseKind = JCCase.STATEMENT;
                 stats = blockStatements();
             }
-            c = F.at(pos).Case(caseKind, List.of(defaultPattern), stats, body);
+            c = F.at(pos).Case(caseKind, List.of(defaultPattern), guard, stats, body);
             if (stats.isEmpty())
                 storeEnd(c, S.prevToken().endPos);
             return cases.append(c).toList();
@@ -3304,12 +3204,7 @@ public class JavacParser implements Parser {
             if (pattern) {
                 checkSourceLevel(token.pos, Feature.PATTERN_SWITCH);
                 JCPattern p = parsePattern(patternPos, mods, null, false, true);
-                JCExpression guard = null;
-                if (token.kind == IDENTIFIER && token.name() == names.when) {
-                    nextToken();
-                    guard = term(EXPR | NOLAMBDA);
-                }
-                return toP(F.at(patternPos).PatternCaseLabel(p, guard));
+                return toP(F.at(patternPos).PatternCaseLabel(p));
             } else {
                 JCExpression expr = term(EXPR | NOLAMBDA);
                 return toP(F.at(patternPos).ConstantCaseLabel(expr));
@@ -3319,6 +3214,22 @@ public class JavacParser implements Parser {
         return label;
     }
 
+    private JCExpression parseGuard(JCCaseLabel label) {
+        JCExpression guard = null;
+
+        if (token.kind == IDENTIFIER && token.name() == names.when) {
+            int pos = token.pos;
+
+            nextToken();
+            guard = term(EXPR | NOLAMBDA);
+
+            if (!(label instanceof JCPatternCaseLabel)) {
+                guard = syntaxError(pos, List.of(guard), Errors.GuardNotAllowed);
+            }
+        }
+
+        return guard;
+    }
     @SuppressWarnings("fallthrough")
     PatternResult analyzePattern(int lookahead) {
         int typeDepth = 0;
