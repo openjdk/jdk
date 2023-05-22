@@ -56,23 +56,10 @@ public class $NAME_CLZ$ extends Charset
         return new DoubleByte.Encoder$ENCTYPE$(this, $ENC_REPLACEMENT$ EncodeHolder.c2b, EncodeHolder.c2bIndex, $ASCIICOMPATIBLE$);
     }
 
-    public static char[][] getb2c() {
-        char[][] b2c = new char[DecodeHolder.b2c.length][];
-        for (int i = 0; i < b2c.length; i++) {
-            b2c[i] = DecodeHolder.b2c[i] == null
-                ? null : DecodeHolder.b2c[i].clone();
-        }
-        return b2c;
-    }
-
-    public static char[] getb2cSB() {
-        return DecodeHolder.b2cSB.clone();
-    }
-
-    static class DecodeHolder {
+    public static class DecodeHolder {
         $B2C$
-        static final char[][] b2c = new char[b2cStr.length][];
-        static final char[] b2cSB;
+        public static final char[][] b2c = new char[b2cStr.length][];
+        public static final char[] b2cSB;
 
         static {
             for (int i = 0; i < b2cStr.length; i++) {
@@ -85,17 +72,9 @@ public class $NAME_CLZ$ extends Charset
         }
     }
 
-    public static char[] getc2b() {
-        return EncodeHolder.c2b.clone();
-    }
-
-    public static char[] getc2bIndex() {
-        return EncodeHolder.c2bIndex.clone();
-    }
-
-    static class EncodeHolder {
-        static final char[] c2b = new char[$C2BLENGTH$];
-        static final char[] c2bIndex = new char[0x100];
+    public static class EncodeHolder {
+        public static final char[] c2b = new char[$C2BLENGTH$];
+        public static final char[] c2bIndex = new char[0x100];
 
         static {
             $NONROUNDTRIP_B2C$

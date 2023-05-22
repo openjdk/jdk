@@ -75,13 +75,13 @@ public class EUC_JP
     public static class Decoder extends CharsetDecoder
         implements DelegatableDecoder {
 
-        static final SingleByte.Decoder DEC0201 =
+        public static final SingleByte.Decoder DEC0201 =
             (SingleByte.Decoder)new JIS_X_0201().newDecoder();
 
-        static final DoubleByte.Decoder DEC0208 =
+        public static final DoubleByte.Decoder DEC0208 =
             (DoubleByte.Decoder)new JIS_X_0208().newDecoder();
 
-        static final DoubleByte.Decoder DEC0212 =
+        public static final DoubleByte.Decoder DEC0212 =
             (DoubleByte.Decoder)new JIS_X_0212().newDecoder();
 
         private final SingleByte.Decoder dec0201;

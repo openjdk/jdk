@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,12 +63,6 @@ public class EUC_JP_Open
     }
 
     private static class Decoder extends EUC_JP.Decoder {
-        private static final SingleByte.Decoder DEC0201 =
-            (SingleByte.Decoder)new JIS_X_0201().newDecoder();
-
-        private static final DoubleByte.Decoder DEC0208 =
-            (DoubleByte.Decoder)new JIS_X_0208().newDecoder();
-
         private static DoubleByte.Decoder DEC0208_Solaris =
             (DoubleByte.Decoder)new JIS_X_0208_Solaris().newDecoder();
         private static DoubleByte.Decoder DEC0212_Solaris =

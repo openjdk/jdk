@@ -28,8 +28,6 @@ package $PACKAGE$;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
-import sun.nio.cs.DoubleByte;
-import sun.nio.cs.HistoricallyNamedCharset;
 import sun.nio.cs.*;
 import java.util.Arrays;
 import static sun.nio.cs.CharsetMapping.*;
@@ -65,7 +63,7 @@ public class Big5_Solaris extends Charset implements HistoricallyNamedCharset
         static final char[] c2bIndex;
 
         static {
-            b2c = Big5.getb2c();
+            b2c = Big5.DecodeHolder.b2c.clone();
             // Big5 Solaris implementation has 7 additional mappings
             int[] sol = new int[] {
                 0xF9D6, 0x7881,
@@ -83,10 +81,10 @@ public class Big5_Solaris extends Charset implements HistoricallyNamedCharset
             for (int i = 0; i < sol.length;) {
                 b2c[0xf9][sol[i++] & 0xff - 0x40] = (char)sol[i++];
             }
-            b2cSB = Big5.getb2cSB();
+            b2cSB = Big5.DecodeHolder.b2cSB;
 
-            c2b = Big5.getc2b();
-            c2bIndex = Big5.getc2bIndex();
+            c2b = Big5.EncodeHolder.c2b.clone();
+            c2bIndex = Big5.EncodeHolder.c2bIndex.clone();
             sol = new int[] {
                 0x7881, 0xF9D6,
                 0x92B9, 0xF9D7,
