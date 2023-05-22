@@ -430,6 +430,10 @@ class MacroAssembler: public Assembler {
   void load_sized_value(Register dst, Address src, size_t size_in_bytes, bool is_signed);
   void store_sized_value(Address dst, Register src, size_t size_in_bytes);
 
+  // Misaligned loads, will use the best way, according to the AvoidUnalignedAccess flag
+  void load_int_misaligned(Register dst, Address src, Register tmp, bool is_signed, int granularity = 1);
+  void load_long_misaligned(Register dst, Address src, Register tmp, int granularity = 1);
+
  public:
   // Standard pseudo instructions
   inline void nop() {
@@ -1269,12 +1273,12 @@ public:
     vnsrl_wx(vd, vs, x0, vm);
   }
 
-  inline void vneg_v(VectorRegister vd, VectorRegister vs) {
-    vrsub_vx(vd, vs, x0);
+  inline void vneg_v(VectorRegister vd, VectorRegister vs, VectorMask vm = unmasked) {
+    vrsub_vx(vd, vs, x0, vm);
   }
 
-  inline void vfneg_v(VectorRegister vd, VectorRegister vs) {
-    vfsgnjn_vv(vd, vs, vs);
+  inline void vfneg_v(VectorRegister vd, VectorRegister vs, VectorMask vm = unmasked) {
+    vfsgnjn_vv(vd, vs, vs, vm);
   }
 
   inline void vmsgt_vv(VectorRegister vd, VectorRegister vs2, VectorRegister vs1, VectorMask vm = unmasked) {

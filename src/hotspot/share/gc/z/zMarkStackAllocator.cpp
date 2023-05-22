@@ -32,8 +32,8 @@
 #include "runtime/os.hpp"
 #include "utilities/debug.hpp"
 
-ZMarkStackSpace::ZMarkStackSpace() :
-    _expand_lock(),
+ZMarkStackSpace::ZMarkStackSpace()
+  : _expand_lock(),
     _start(0),
     _top(0),
     _end(0) {
@@ -146,7 +146,7 @@ uintptr_t ZMarkStackSpace::expand_and_alloc_space(size_t size) {
 
   // Increment top before end to make sure another
   // thread can't steal out newly expanded space.
-  addr = Atomic::fetch_and_add(&_top, size);
+  addr = Atomic::fetch_then_add(&_top, size);
   Atomic::add(&_end, expand_size);
 
   return addr;
@@ -168,8 +168,8 @@ void ZMarkStackSpace::free() {
   _top = _start;
 }
 
-ZMarkStackAllocator::ZMarkStackAllocator() :
-    _space(),
+ZMarkStackAllocator::ZMarkStackAllocator()
+  : _space(),
     _freelist(_space.start()),
     _expanded_recently(false) {}
 

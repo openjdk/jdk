@@ -726,7 +726,7 @@ abstract public class TestScaffold extends TargetAdapter {
      * Tests that expect an exitValue other than 0 or 1 will need to override this method.
      */
     protected boolean allowedExitValue(int exitValue) {
-        return exitValue == 0 || exitValue == 1;
+        return exitValue == 0;
     }
 
     public synchronized void waitForVMDisconnect() {
@@ -1033,6 +1033,15 @@ abstract public class TestScaffold extends TargetAdapter {
             vthread.setName("main");
             vthread.start();
             vthread.join();
+            if (tg.uncaughtThrowable != null) {
+                // Note we cant just rethrow tg.uncaughtThrowable because there are tests
+                // that track ExceptionEvents, and they will complain about the extra
+                // exception. So instead mimic what happens when the main thread exits
+                // with an exception.
+                System.out.println("Uncaught Exception: " + tg.uncaughtThrowable);
+                tg.uncaughtThrowable.printStackTrace(System.out);
+                System.exit(1);
+            }
         } else if (wrapper.equals("Kernel")) {
             MainThreadGroup tg = new MainThreadGroup();
             Thread t = new Thread(tg, () -> {

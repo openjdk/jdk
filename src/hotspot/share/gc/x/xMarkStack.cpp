@@ -79,16 +79,16 @@ XMarkStripe* XMarkStripeSet::stripe_for_worker(uint nworkers, uint worker_id) {
 }
 
 XMarkThreadLocalStacks::XMarkThreadLocalStacks() :
-    _magazine(NULL) {
+    _magazine(nullptr) {
   for (size_t i = 0; i < XMarkStripesMax; i++) {
-    _stacks[i] = NULL;
+    _stacks[i] = nullptr;
   }
 }
 
 bool XMarkThreadLocalStacks::is_empty(const XMarkStripeSet* stripes) const {
   for (size_t i = 0; i < stripes->nstripes(); i++) {
     XMarkStack* const stack = _stacks[i];
-    if (stack != NULL) {
+    if (stack != nullptr) {
       return false;
     }
   }
@@ -97,21 +97,21 @@ bool XMarkThreadLocalStacks::is_empty(const XMarkStripeSet* stripes) const {
 }
 
 XMarkStack* XMarkThreadLocalStacks::allocate_stack(XMarkStackAllocator* allocator) {
-  if (_magazine == NULL) {
+  if (_magazine == nullptr) {
     // Allocate new magazine
     _magazine = allocator->alloc_magazine();
-    if (_magazine == NULL) {
-      return NULL;
+    if (_magazine == nullptr) {
+      return nullptr;
     }
   }
 
-  XMarkStack* stack = NULL;
+  XMarkStack* stack = nullptr;
 
   if (!_magazine->pop(stack)) {
     // Magazine is empty, convert magazine into a new stack
     _magazine->~XMarkStackMagazine();
     stack = new ((void*)_magazine) XMarkStack();
-    _magazine = NULL;
+    _magazine = nullptr;
   }
 
   return stack;
@@ -119,7 +119,7 @@ XMarkStack* XMarkThreadLocalStacks::allocate_stack(XMarkStackAllocator* allocato
 
 void XMarkThreadLocalStacks::free_stack(XMarkStackAllocator* allocator, XMarkStack* stack) {
   for (;;) {
-    if (_magazine == NULL) {
+    if (_magazine == nullptr) {
       // Convert stack into a new magazine
       stack->~XMarkStack();
       _magazine = new ((void*)stack) XMarkStackMagazine();
@@ -133,7 +133,7 @@ void XMarkThreadLocalStacks::free_stack(XMarkStackAllocator* allocator, XMarkSta
 
     // Free and uninstall full magazine
     allocator->free_magazine(_magazine);
-    _magazine = NULL;
+    _magazine = nullptr;
   }
 }
 
@@ -145,10 +145,10 @@ bool XMarkThreadLocalStacks::push_slow(XMarkStackAllocator* allocator,
   XMarkStack* stack = *stackp;
 
   for (;;) {
-    if (stack == NULL) {
+    if (stack == nullptr) {
       // Allocate and install new stack
       *stackp = stack = allocate_stack(allocator);
-      if (stack == NULL) {
+      if (stack == nullptr) {
         // Out of mark stack memory
         return false;
       }
@@ -161,7 +161,7 @@ bool XMarkThreadLocalStacks::push_slow(XMarkStackAllocator* allocator,
 
     // Publish/Overflow and uninstall stack
     stripe->publish_stack(stack, publish);
-    *stackp = stack = NULL;
+    *stackp = stack = nullptr;
   }
 }
 
@@ -172,10 +172,10 @@ bool XMarkThreadLocalStacks::pop_slow(XMarkStackAllocator* allocator,
   XMarkStack* stack = *stackp;
 
   for (;;) {
-    if (stack == NULL) {
+    if (stack == nullptr) {
       // Try steal and install stack
       *stackp = stack = stripe->steal_stack();
-      if (stack == NULL) {
+      if (stack == nullptr) {
         // Nothing to steal
         return false;
       }
@@ -188,7 +188,7 @@ bool XMarkThreadLocalStacks::pop_slow(XMarkStackAllocator* allocator,
 
     // Free and uninstall stack
     free_stack(allocator, stack);
-    *stackp = stack = NULL;
+    *stackp = stack = nullptr;
   }
 }
 
@@ -200,7 +200,7 @@ bool XMarkThreadLocalStacks::flush(XMarkStackAllocator* allocator, XMarkStripeSe
     XMarkStripe* const stripe = stripes->stripe_at(i);
     XMarkStack** const stackp = &_stacks[i];
     XMarkStack* const stack = *stackp;
-    if (stack == NULL) {
+    if (stack == nullptr) {
       continue;
     }
 
@@ -211,7 +211,7 @@ bool XMarkThreadLocalStacks::flush(XMarkStackAllocator* allocator, XMarkStripeSe
       stripe->publish_stack(stack);
       flushed = true;
     }
-    *stackp = NULL;
+    *stackp = nullptr;
   }
 
   return flushed;
@@ -219,8 +219,8 @@ bool XMarkThreadLocalStacks::flush(XMarkStackAllocator* allocator, XMarkStripeSe
 
 void XMarkThreadLocalStacks::free(XMarkStackAllocator* allocator) {
   // Free and uninstall magazine
-  if (_magazine != NULL) {
+  if (_magazine != nullptr) {
     allocator->free_magazine(_magazine);
-    _magazine = NULL;
+    _magazine = nullptr;
   }
 }
