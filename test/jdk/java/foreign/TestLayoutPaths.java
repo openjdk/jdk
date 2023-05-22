@@ -164,16 +164,26 @@ public class TestLayoutPaths {
         seq.varHandle(sequenceElement());
     }
 
+    public void testBitOffsetHandleRange() {
+        SequenceLayout seq = MemoryLayout.sequenceLayout(5, MemoryLayout.structLayout(JAVA_INT));
+        seq.byteOffsetHandle(sequenceElement(0, 1));
+    }
+
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testBitOffsetHandleBadRange() {
         SequenceLayout seq = MemoryLayout.sequenceLayout(5, MemoryLayout.structLayout(JAVA_INT));
-        seq.bitOffsetHandle(sequenceElement(0, 1)); // ranges not accepted
+        seq.bitOffsetHandle(sequenceElement(5, 1)); // invalid range (starting position is outside the sequence)
+    }
+
+    public void testByteOffsetHandleRange() {
+        SequenceLayout seq = MemoryLayout.sequenceLayout(5, MemoryLayout.structLayout(JAVA_INT));
+        seq.byteOffsetHandle(sequenceElement(0, 1));
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testByteOffsetHandleBadRange() {
         SequenceLayout seq = MemoryLayout.sequenceLayout(5, MemoryLayout.structLayout(JAVA_INT));
-        seq.byteOffsetHandle(sequenceElement(0, 1)); // ranges not accepted
+        seq.byteOffsetHandle(sequenceElement(5, 1)); // invalid range (starting position is outside the sequence)
     }
 
     @Test
