@@ -48,6 +48,11 @@ class fileStream;
   product(bool, EnableJVMCI, false, EXPERIMENTAL,                           \
           "Enable JVMCI")                                                   \
                                                                             \
+  product(bool, UseGraalJIT, false,                                         \
+          "Select the Graal JVMCI compiler. This is a macro for: "          \
+          "  -XX:+EnableJVMCIProduct "                                      \
+          "  -Djvmci.Compiler=graal ")                                      \
+                                                                            \
   product(bool, EnableJVMCIProduct, false, EXPERIMENTAL,                    \
           "Allow JVMCI to be used in product mode. This alters a subset of "\
           "JVMCI flags to be non-experimental, defaults UseJVMCICompiler "  \

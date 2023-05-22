@@ -71,6 +71,7 @@ bool JVMCIGlobals::check_jvmci_flags_are_consistent() {
   JVMCI_FLAG_CHECKED(UseJVMCICompiler)
   JVMCI_FLAG_CHECKED(EnableJVMCI)
   JVMCI_FLAG_CHECKED(EnableJVMCIProduct)
+  JVMCI_FLAG_CHECKED(UseGraalJIT)
 
   CHECK_NOT_SET(BootstrapJVMCI,   UseJVMCICompiler)
   CHECK_NOT_SET(PrintBootstrap,   UseJVMCICompiler)

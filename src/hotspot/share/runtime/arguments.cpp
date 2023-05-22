@@ -2827,14 +2827,27 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
         return JNI_ERR;
 #endif // INCLUDE_MANAGEMENT
 #if INCLUDE_JVMCI
-    } else if (match_option(option, "-XX:-EnableJVMCIProduct")) {
+    } else if (match_option(option, "-XX:-EnableJVMCIProduct") || match_option(option, "-XX:-UseGraalJIT")) {
       if (EnableJVMCIProduct) {
         jio_fprintf(defaultStream::error_stream(),
-                  "-XX:-EnableJVMCIProduct cannot come after -XX:+EnableJVMCIProduct\n");
+                  "-XX:-EnableJVMCIProduct or -XX:-UseGraalJIT cannot come after -XX:+EnableJVMCIProduct or -XX:+UseGraalJIT\n");
         return JNI_EINVAL;
       }
-    } else if (match_option(option, "-XX:+EnableJVMCIProduct")) {
-      // Just continue, since "-XX:+EnableJVMCIProduct" has been specified before
+    } else if (match_option(option, "-XX:+EnableJVMCIProduct") || match_option(option, "-XX:+UseGraalJIT")) {
+      if (match_option(option, "-XX:+UseGraalJIT")) {
+        const char* jvmci_compiler = get_property("jvmci.Compiler");
+        if (jvmci_compiler != nullptr) {
+          if (strcmp(jvmci_compiler, "graal") != 0) {
+            jio_fprintf(defaultStream::error_stream(),
+              "Value of jvmci.Compiler incompatible with +UseGraalJIT: %s", jvmci_compiler);
+            return JNI_ERR;
+          }
+        } else if (!add_property("jvmci.Compiler=graal")) {
+            return JNI_ENOMEM;
+        }
+      }
+
+      // Just continue, since "-XX:+EnableJVMCIProduct" or "-XX:+UseGraalJIT" has been specified before
       if (EnableJVMCIProduct) {
         continue;
       }
