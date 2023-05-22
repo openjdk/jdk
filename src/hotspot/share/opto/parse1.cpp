@@ -2171,7 +2171,7 @@ void Parse::rtm_deopt() {
     // Load the rtm_state from the MethodData.
     const TypePtr* adr_type = TypeMetadataPtr::make(C->method()->method_data());
     Node* mdo = makecon(adr_type);
-    int offset = MethodData::rtm_state_offset_in_bytes();
+    int offset = in_bytes(MethodData::rtm_state_offset());
     Node* adr_node = basic_plus_adr(mdo, mdo, offset);
     Node* rtm_state = make_load(control(), adr_node, TypeInt::INT, T_INT, adr_type, MemNode::unordered);
 

@@ -1789,7 +1789,7 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
 
   // Compute start of first itableOffsetEntry (which is at the end of the vtable).
   int vtable_base = in_bytes(Klass::vtable_start_offset());
-  int itentry_off = itableMethodEntry::method_offset_in_bytes();
+  int itentry_off = in_bytes(itableMethodEntry::method_offset());
   int logMEsize   = exact_log2(itableMethodEntry::size() * wordSize);
   int scan_step   = itableOffsetEntry::size() * wordSize;
   int log_vte_size= exact_log2(vtableEntry::size_in_bytes());
@@ -1826,7 +1826,7 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
   for (int peel = 1; peel >= 0; peel--) {
     // %%%% Could load both offset and interface in one ldx, if they were
     // in the opposite order. This would save a load.
-    ld(temp2, itableOffsetEntry::interface_offset_in_bytes(), scan_temp);
+    ld(temp2, in_bytes(itableOffsetEntry::interface_offset()), scan_temp);
 
     // Check that this entry is non-null. A null entry means that
     // the receiver class doesn't implement the interface, and wasn't the
@@ -1853,7 +1853,7 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
 
   // Got a hit.
   if (return_method) {
-    int ito_offset = itableOffsetEntry::offset_offset_in_bytes();
+    int ito_offset = in_bytes(itableOffsetEntry::offset_offset());
     lwz(scan_temp, ito_offset, scan_temp);
     ldx(method_result, scan_temp, method_result);
   }
@@ -1866,7 +1866,7 @@ void MacroAssembler::lookup_virtual_method(Register recv_klass,
 
   assert_different_registers(recv_klass, method_result, vtable_index.register_or_noreg());
 
-  const int base = in_bytes(Klass::vtable_start_offset());
+  const ByteSize base = Klass::vtable_start_offset();
   assert(vtableEntry::size() * wordSize == wordSize, "adjust the scaling in the code below");
 
   if (vtable_index.is_register()) {
@@ -1875,7 +1875,7 @@ void MacroAssembler::lookup_virtual_method(Register recv_klass,
   } else {
     addi(recv_klass, recv_klass, vtable_index.as_constant() << LogBytesPerWord);
   }
-  ld(R19_method, base + vtableEntry::method_offset_in_bytes(), recv_klass);
+  ld(R19_method, in_bytes(base + vtableEntry::method_offset()), recv_klass);
 }
 
 /////////////////////////////////////////// subtype checking ////////////////////////////////////////////
@@ -2353,7 +2353,7 @@ void MacroAssembler::rtm_abort_ratio_calculation(Register rtm_counters_Reg,
     // Set rtm_state to "no rtm" in MDO.
     // Not using a metadata relocation. Method and Class Loader are kept alive anyway.
     // (See nmethod::metadata_do and CodeBuffer::finalize_oop_references.)
-    load_const(R0, (address)method_data + MethodData::rtm_state_offset_in_bytes(), tmpReg);
+    load_const(R0, (address)method_data + in_bytes(MethodData::rtm_state_offset()), tmpReg);
     atomic_ori_int(R0, tmpReg, NoRTM);
   }
   b(L_done);
@@ -2373,7 +2373,7 @@ void MacroAssembler::rtm_abort_ratio_calculation(Register rtm_counters_Reg,
   if (method_data != nullptr) {
     // Set rtm_state to "always rtm" in MDO.
     // Not using a metadata relocation. See above.
-    load_const(R0, (address)method_data + MethodData::rtm_state_offset_in_bytes(), tmpReg);
+    load_const(R0, (address)method_data + in_bytes(MethodData::rtm_state_offset()), tmpReg);
     atomic_ori_int(R0, tmpReg, UseRTM);
   }
   bind(L_done);
@@ -2546,7 +2546,7 @@ void MacroAssembler::rtm_inflated_locking(ConditionRegister flag,
   assert(UseRTMLocking, "why call this otherwise?");
   Label L_rtm_retry, L_decrement_retry, L_on_abort;
   // Clean monitor_value bit to get valid pointer.
-  int owner_offset = ObjectMonitor::owner_offset_in_bytes() - markWord::monitor_value;
+  int owner_offset = in_bytes(ObjectMonitor::owner_offset()) - markWord::monitor_value;
 
   // Store non-null, using boxReg instead of (intptr_t)markWord::unused_mark().
   std(boxReg, BasicLock::displaced_header_offset_in_bytes(), boxReg);
@@ -2719,7 +2719,7 @@ void MacroAssembler::compiler_fast_lock_object(ConditionRegister flag, Register 
 #endif // INCLUDE_RTM_OPT
 
   // Try to CAS m->owner from null to current thread.
-  addi(temp, displaced_header, ObjectMonitor::owner_offset_in_bytes()-markWord::monitor_value);
+  addi(temp, displaced_header, in_bytes(ObjectMonitor::owner_offset()) - markWord::monitor_value);
   cmpxchgd(/*flag=*/flag,
            /*current_value=*/current_header,
            /*compare_value=*/(intptr_t)0,
@@ -2738,9 +2738,9 @@ void MacroAssembler::compiler_fast_lock_object(ConditionRegister flag, Register 
 
   // Current thread already owns the lock. Just increment recursions.
   Register recursions = displaced_header;
-  ld(recursions, ObjectMonitor::recursions_offset_in_bytes()-ObjectMonitor::owner_offset_in_bytes(), temp);
+  ld(recursions, in_bytes(ObjectMonitor::recursions_offset() - ObjectMonitor::owner_offset()), temp);
   addi(recursions, recursions, 1);
-  std(recursions, ObjectMonitor::recursions_offset_in_bytes()-ObjectMonitor::owner_offset_in_bytes(), temp);
+  std(recursions, in_bytes(ObjectMonitor::recursions_offset() - ObjectMonitor::owner_offset()), temp);
 
 #if INCLUDE_RTM_OPT
   } // use_rtm()
@@ -2817,7 +2817,7 @@ void MacroAssembler::compiler_fast_unlock_object(ConditionRegister flag, Registe
   bind(object_has_monitor);
   STATIC_ASSERT(markWord::monitor_value <= INT_MAX);
   addi(current_header, current_header, -(int)markWord::monitor_value); // monitor
-  ld(temp,             ObjectMonitor::owner_offset_in_bytes(), current_header);
+  ld(temp,             in_bytes(ObjectMonitor::owner_offset()), current_header);
 
     // It's inflated.
 #if INCLUDE_RTM_OPT
@@ -2832,24 +2832,24 @@ void MacroAssembler::compiler_fast_unlock_object(ConditionRegister flag, Registe
   }
 #endif
 
-  ld(displaced_header, ObjectMonitor::recursions_offset_in_bytes(), current_header);
+  ld(displaced_header, in_bytes(ObjectMonitor::recursions_offset()), current_header);
 
   cmpd(flag, temp, R16_thread);
   bne(flag, failure);
 
   addic_(displaced_header, displaced_header, -1);
   blt(CCR0, notRecursive); // Not recursive if negative after decrement.
-  std(displaced_header, ObjectMonitor::recursions_offset_in_bytes(), current_header);
+  std(displaced_header, in_bytes(ObjectMonitor::recursions_offset()), current_header);
   b(success); // flag is already EQ here.
 
   bind(notRecursive);
-  ld(temp,             ObjectMonitor::EntryList_offset_in_bytes(), current_header);
-  ld(displaced_header, ObjectMonitor::cxq_offset_in_bytes(), current_header);
+  ld(temp,             in_bytes(ObjectMonitor::EntryList_offset()), current_header);
+  ld(displaced_header, in_bytes(ObjectMonitor::cxq_offset()), current_header);
   orr(temp, temp, displaced_header); // Will be 0 if both are 0.
   cmpdi(flag, temp, 0);
   bne(flag, failure);
   release();
-  std(temp, ObjectMonitor::owner_offset_in_bytes(), current_header);
+  std(temp, in_bytes(ObjectMonitor::owner_offset()), current_header);
 
   // flag == EQ indicates success, decrement held monitor count
   // flag == NE indicates failure
@@ -3085,7 +3085,7 @@ void MacroAssembler::resolve_weak_handle(Register result, Register tmp1, Registe
 void MacroAssembler::load_method_holder(Register holder, Register method) {
   ld(holder, in_bytes(Method::const_offset()), method);
   ld(holder, in_bytes(ConstMethod::constants_offset()), holder);
-  ld(holder, ConstantPool::pool_holder_offset_in_bytes(), holder);
+  ld(holder, ConstantPool::pool_holder_offset(), holder);
 }
 
 // Clear Array

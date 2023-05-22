@@ -2211,11 +2211,6 @@ UpdateForPopTopFrameClosure::doit(Thread *target, bool self) {
   }
   assert(java_thread == _state->get_thread(), "Must be");
 
-  if (!self && !java_thread->is_suspended() && !java_thread->is_carrier_thread_suspended()) {
-    _result = JVMTI_ERROR_THREAD_NOT_SUSPENDED;
-    return;
-  }
-
   // Check to see if a PopFrame was already in progress
   if (java_thread->popframe_condition() != JavaThread::popframe_inactive) {
     // Probably possible for JVMTI clients to trigger this, but the

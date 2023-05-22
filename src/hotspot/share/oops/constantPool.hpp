@@ -264,10 +264,10 @@ class ConstantPool : public Metadata {
   }
 
   // Assembly code support
-  static int tags_offset_in_bytes()         { return offset_of(ConstantPool, _tags); }
-  static int cache_offset_in_bytes()        { return offset_of(ConstantPool, _cache); }
-  static int pool_holder_offset_in_bytes()  { return offset_of(ConstantPool, _pool_holder); }
-  static int resolved_klasses_offset_in_bytes()    { return offset_of(ConstantPool, _resolved_klasses); }
+  static ByteSize tags_offset()         { return byte_offset_of(ConstantPool, _tags); }
+  static ByteSize cache_offset()        { return byte_offset_of(ConstantPool, _cache); }
+  static ByteSize pool_holder_offset()  { return byte_offset_of(ConstantPool, _pool_holder); }
+  static ByteSize resolved_klasses_offset()    { return byte_offset_of(ConstantPool, _resolved_klasses); }
 
   // Storing constants
 

@@ -449,7 +449,7 @@ C2V_VMENTRY_NULL(jobject, getResolvedJavaType0, (JNIEnv* env, jobject, jobject b
   } else if (!compressed) {
     if (JVMCIENV->isa_HotSpotConstantPool(base_object)) {
       ConstantPool* cp = JVMCIENV->asConstantPool(base_object);
-      if (offset == ConstantPool::pool_holder_offset_in_bytes()) {
+      if (offset == in_bytes(ConstantPool::pool_holder_offset())) {
         klass = cp->pool_holder();
       } else {
         base_desc = FormatBufferResource("[constant pool for %s]", cp->pool_holder()->signature_name());
