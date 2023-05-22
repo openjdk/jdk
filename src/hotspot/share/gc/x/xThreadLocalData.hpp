@@ -39,7 +39,7 @@ private:
   XThreadLocalData() :
       _address_bad_mask(0),
       _stacks(),
-      _invisible_root(NULL) {}
+      _invisible_root(nullptr) {}
 
   static XThreadLocalData* data(Thread* thread) {
     return thread->gc_data<XThreadLocalData>();
@@ -63,18 +63,18 @@ public:
   }
 
   static void set_invisible_root(Thread* thread, oop* root) {
-    assert(data(thread)->_invisible_root == NULL, "Already set");
+    assert(data(thread)->_invisible_root == nullptr, "Already set");
     data(thread)->_invisible_root = root;
   }
 
   static void clear_invisible_root(Thread* thread) {
-    assert(data(thread)->_invisible_root != NULL, "Should be set");
-    data(thread)->_invisible_root = NULL;
+    assert(data(thread)->_invisible_root != nullptr, "Should be set");
+    data(thread)->_invisible_root = nullptr;
   }
 
   template <typename T>
   static void do_invisible_root(Thread* thread, T f) {
-    if (data(thread)->_invisible_root != NULL) {
+    if (data(thread)->_invisible_root != nullptr) {
       f(data(thread)->_invisible_root);
     }
   }

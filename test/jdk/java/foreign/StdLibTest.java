@@ -233,7 +233,7 @@ public class StdLibTest extends NativeTestHelper {
                     C_INT.withName("wday"),
                     C_INT.withName("yday"),
                     C_BOOL.withName("isdst"),
-                    MemoryLayout.paddingLayout(24)
+                    MemoryLayout.paddingLayout(3)
             );
 
             Tm(MemorySegment addr) {

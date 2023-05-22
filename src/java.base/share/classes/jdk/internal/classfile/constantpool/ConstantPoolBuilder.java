@@ -40,9 +40,11 @@ import jdk.internal.classfile.ClassModel;
 import jdk.internal.classfile.Classfile;
 import jdk.internal.classfile.impl.ClassReaderImpl;
 import jdk.internal.classfile.impl.Options;
-import jdk.internal.classfile.java.lang.constant.ModuleDesc;
-import jdk.internal.classfile.java.lang.constant.PackageDesc;
+import java.lang.constant.ModuleDesc;
+import java.lang.constant.PackageDesc;
 import jdk.internal.classfile.WritableElement;
+import jdk.internal.classfile.impl.AbstractPoolEntry.ClassEntryImpl;
+import jdk.internal.classfile.impl.AbstractPoolEntry.NameAndTypeEntryImpl;
 import jdk.internal.classfile.impl.SplitConstantPool;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.classfile.impl.Util;
@@ -160,7 +162,9 @@ public sealed interface ConstantPoolBuilder
         if (classDesc.isPrimitive()) {
             throw new IllegalArgumentException("Cannot be encoded as ClassEntry: " + classDesc.displayName());
         }
-        return classEntry(utf8Entry(classDesc.isArray() ? classDesc.descriptorString() : Util.toInternalName(classDesc)));
+        ClassEntryImpl ret = (ClassEntryImpl)classEntry(utf8Entry(classDesc.isArray() ? classDesc.descriptorString() : Util.toInternalName(classDesc)));
+        ret.sym = classDesc;
+        return ret;
     }
 
     /**
@@ -185,7 +189,7 @@ public sealed interface ConstantPoolBuilder
      * @param packageDesc the symbolic descriptor for the class
      */
     default PackageEntry packageEntry(PackageDesc packageDesc) {
-        return packageEntry(utf8Entry(packageDesc.packageInternalName()));
+        return packageEntry(utf8Entry(packageDesc.internalName()));
     }
 
     /**
@@ -209,7 +213,7 @@ public sealed interface ConstantPoolBuilder
      * @param moduleDesc the symbolic descriptor for the class
      */
     default ModuleEntry moduleEntry(ModuleDesc moduleDesc) {
-        return moduleEntry(utf8Entry(moduleDesc.moduleName()));
+        return moduleEntry(utf8Entry(moduleDesc.name()));
     }
 
     /**
@@ -233,7 +237,9 @@ public sealed interface ConstantPoolBuilder
      * @param type the symbolic descriptor for a field type
      */
     default NameAndTypeEntry nameAndTypeEntry(String name, ClassDesc type) {
-        return nameAndTypeEntry(utf8Entry(name), utf8Entry(type.descriptorString()));
+        var ret = (NameAndTypeEntryImpl)nameAndTypeEntry(utf8Entry(name), utf8Entry(type.descriptorString()));
+        ret.typeSym = type;
+        return ret;
     }
 
     /**
@@ -246,7 +252,9 @@ public sealed interface ConstantPoolBuilder
      * @param type the symbolic descriptor for a method type
      */
     default NameAndTypeEntry nameAndTypeEntry(String name, MethodTypeDesc type) {
-        return nameAndTypeEntry(utf8Entry(name), utf8Entry(type.descriptorString()));
+        var ret = (NameAndTypeEntryImpl)nameAndTypeEntry(utf8Entry(name), utf8Entry(type.descriptorString()));
+        ret.typeSym = type;
+        return ret;
     }
 
     /**

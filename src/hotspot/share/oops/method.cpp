@@ -408,6 +408,7 @@ void Method::remove_unshareable_info() {
 
 void Method::restore_unshareable_info(TRAPS) {
   assert(is_method() && is_valid_method(this), "ensure C++ vtable is restored");
+  assert(!queued_for_compilation(), "method's queued_for_compilation flag should not be set");
 }
 #endif
 
@@ -977,8 +978,8 @@ bool Method::is_klass_loaded_by_klass_index(int klass_index) const {
 }
 
 
-bool Method::is_klass_loaded(int refinfo_index, bool must_be_resolved) const {
-  int klass_index = constants()->klass_ref_index_at(refinfo_index);
+bool Method::is_klass_loaded(int refinfo_index, Bytecodes::Code bc, bool must_be_resolved) const {
+  int klass_index = constants()->klass_ref_index_at(refinfo_index, bc);
   if (must_be_resolved) {
     // Make sure klass is resolved in constantpool.
     if (constants()->tag_at(klass_index).is_unresolved_klass()) return false;
@@ -1193,6 +1194,21 @@ void Method::unlink_method() {
 
   set_method_data(nullptr);
   clear_method_counters();
+  remove_unshareable_flags();
+}
+
+void Method::remove_unshareable_flags() {
+  // clear all the flags that shouldn't be in the archived version
+  assert(!is_old(), "must be");
+  assert(!is_obsolete(), "must be");
+  assert(!is_deleted(), "must be");
+
+  set_is_prefixed_native(false);
+  set_queued_for_compilation(false);
+  set_is_not_c2_compilable(false);
+  set_is_not_c1_compilable(false);
+  set_is_not_c2_osr_compilable(false);
+  set_on_stack_flag(false);
 }
 #endif
 

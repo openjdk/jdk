@@ -40,16 +40,16 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-ZPhysicalMemory::ZPhysicalMemory() :
-    _segments() {}
+ZPhysicalMemory::ZPhysicalMemory()
+  : _segments() {}
 
-ZPhysicalMemory::ZPhysicalMemory(const ZPhysicalMemorySegment& segment) :
-    _segments() {
+ZPhysicalMemory::ZPhysicalMemory(const ZPhysicalMemorySegment& segment)
+  : _segments() {
   add_segment(segment);
 }
 
-ZPhysicalMemory::ZPhysicalMemory(const ZPhysicalMemory& pmem) :
-    _segments() {
+ZPhysicalMemory::ZPhysicalMemory(const ZPhysicalMemory& pmem)
+  : _segments() {
   add_segments(pmem);
 }
 
@@ -231,8 +231,8 @@ ZPhysicalMemory ZPhysicalMemory::split_committed() {
   return pmem;
 }
 
-ZPhysicalMemoryManager::ZPhysicalMemoryManager(size_t max_capacity) :
-    _backing(max_capacity) {
+ZPhysicalMemoryManager::ZPhysicalMemoryManager(size_t max_capacity)
+  : _backing(max_capacity) {
   // Make the whole range free
   _manager.free(zoffset(0), max_capacity);
 }

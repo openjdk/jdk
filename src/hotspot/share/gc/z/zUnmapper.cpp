@@ -31,8 +31,8 @@
 #include "jfr/jfrEvents.hpp"
 #include "runtime/globals.hpp"
 
-ZUnmapper::ZUnmapper(ZPageAllocator* page_allocator) :
-    _page_allocator(page_allocator),
+ZUnmapper::ZUnmapper(ZPageAllocator* page_allocator)
+  : _page_allocator(page_allocator),
     _lock(),
     _queue(),
     _stop(false) {

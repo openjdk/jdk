@@ -57,7 +57,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
 
     static final int FORBID_OPCODE_KIND = VO_ONLYFP;
 
-    static final ValueLayout.OfByte ELEMENT_LAYOUT = ValueLayout.JAVA_BYTE.withBitAlignment(8);
+    static final ValueLayout.OfByte ELEMENT_LAYOUT = ValueLayout.JAVA_BYTE.withByteAlignment(1);
 
     @ForceInline
     static int opCode(Operator op) {
@@ -3302,7 +3302,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
      * byte[] ar = new byte[species.length()];
      * for (int n = 0; n < ar.length; n++) {
      *     if (m.laneIsSet(n)) {
-     *         ar[n] = slice.getAtIndex(ValuaLayout.JAVA_BYTE.withBitAlignment(8), n);
+     *         ar[n] = slice.getAtIndex(ValuaLayout.JAVA_BYTE.withByteAlignment(1), n);
      *     }
      * }
      * ByteVector r = ByteVector.fromArray(species, ar, 0);

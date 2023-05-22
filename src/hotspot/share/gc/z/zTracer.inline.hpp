@@ -52,8 +52,8 @@ inline void ZTracer::report_thread_debug(const char* name, const Ticks& start, c
   }
 }
 
-inline ZTraceThreadDebug::ZTraceThreadDebug(const char* name) :
-    _start(Ticks::now()),
+inline ZTraceThreadDebug::ZTraceThreadDebug(const char* name)
+  : _start(Ticks::now()),
     _name(name) {}
 
 inline ZTraceThreadDebug::~ZTraceThreadDebug() {

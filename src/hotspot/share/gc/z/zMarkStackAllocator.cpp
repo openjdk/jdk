@@ -32,8 +32,8 @@
 #include "runtime/os.hpp"
 #include "utilities/debug.hpp"
 
-ZMarkStackSpace::ZMarkStackSpace() :
-    _expand_lock(),
+ZMarkStackSpace::ZMarkStackSpace()
+  : _expand_lock(),
     _start(0),
     _top(0),
     _end(0) {
@@ -168,8 +168,8 @@ void ZMarkStackSpace::free() {
   _top = _start;
 }
 
-ZMarkStackAllocator::ZMarkStackAllocator() :
-    _space(),
+ZMarkStackAllocator::ZMarkStackAllocator()
+  : _space(),
     _freelist(_space.start()),
     _expanded_recently(false) {}
 
