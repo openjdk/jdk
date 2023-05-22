@@ -100,10 +100,9 @@
   // layout. There is a field in the z_abi_160
   // structure that marks the area where arguments are passed, when
   // the argument registers "overflow". Thus, sizeof(z_abi_160)
-  // doesn't yield the expected (and desired) result. Therefore, as
-  // long as we do not provide extra infrastructure, one should use
-  // either z_abi_160_size, or _z_abi(remaining_cargs) instead of
-  // sizeof(...).
+  // doesn't yield the expected (and desired) result.
+  // Therefore, please use sizeof(z_abi_160_base) or
+  // the enum value z_abi_160_size to find out the size of the ABI structure.
   struct z_abi_160_base : z_native_abi {
     uint64_t carg_1;
     uint64_t carg_2;
