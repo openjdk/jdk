@@ -2958,6 +2958,10 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
           <jthread impl="noconvert"/>
             <description>
               The thread whose current frame is to be popped.
+              The <functionlink id="PopFrame"></functionlink> function may be used to
+              pop the current frame of a virtual thread when it is suspended at an event.
+              An implementation may support popping the current frame of a suspended
+              virtual thread in other cases.
             </description>
         </param>
       </parameters>
@@ -2967,8 +2971,8 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
           The implementation is unable to pop this frame.
         </error>
         <error id="JVMTI_ERROR_OPAQUE_FRAME">
-          The thread is a virtual thread and the implementation is unable
-          to pop this frame.
+          The thread is a suspended virtual thread and the implementation
+          was unable to pop the current frame.
         </error>
         <error id="JVMTI_ERROR_THREAD_NOT_SUSPENDED">
           Thread was not suspended and was not the current thread.
