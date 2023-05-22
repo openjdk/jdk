@@ -1174,6 +1174,9 @@ define SetupNativeCompilationBody
   ifeq ($$($1_TYPE), STATIC_LIBRARY)
     $1_VARDEPS := $$($1_AR) $$(ARFLAGS) $$($1_ARFLAGS) $$($1_LIBS) \
         $$($1_EXTRA_LIBS)
+    ifneq ($(findstring $(TOOLCHAIN_TYPE), gcc clang), )
+      $1_VARDEPS += $$($1_LD) $$($1_SYSROOT_LDFLAGS)
+    endif
     $1_VARDEPS_FILE := $$(call DependOnVariable, $1_VARDEPS, \
         $$($1_OBJECT_DIR)/$$($1_NOSUFFIX).vardeps)
 
