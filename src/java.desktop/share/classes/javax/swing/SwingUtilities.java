@@ -601,46 +601,46 @@ public class SwingUtilities implements SwingConstants
      */
     public static Rectangle[] computeDifference(Rectangle rectA,Rectangle rectB) {
         Rectangle[] ret;
-		int rectCount = 0;
-		Rectangle north = null, west = null, east = null, south = null;
-		Rectangle intersection = rectB.intersection(rectA);
-		if(rectB.equals(intersection)) {
-			//If rectB is completely obscured by rectA.
-			ret = new Rectangle[0];
-			return ret;
-		}else if(intersection.isEmpty()) {
-			//If rectB is not being obscured at all.
-			ret = new Rectangle[] {new Rectangle(rectB)};
-			return ret;
-		}else {
-			int oriX = rectB.x, oriY = rectB.y, oriW = rectB.width, oriH = rectB.height;
-			int interX = intersection.x, interY = intersection.y, interW = intersection.width, interH = intersection.height;
+	int rectCount = 0;
+	Rectangle north = null, west = null, east = null, south = null;
+	Rectangle intersection = rectB.intersection(rectA);
+	if(rectB.equals(intersection)) {
+	    //If rectB is completely obscured by rectA.
+	    ret = new Rectangle[0];
+	    return ret;
+	}else if(intersection.isEmpty()) {
+	    //If rectB is not being obscured at all.
+	    ret = new Rectangle[] {new Rectangle(rectB)};
+	    return ret;
+	}else {
+	    int oriX = rectB.x, oriY = rectB.y, oriW = rectB.width, oriH = rectB.height;
+	    int interX = intersection.x, interY = intersection.y, interW = intersection.width, interH = intersection.height;
 			
-			if(interY > oriY) {
-				north = new Rectangle(oriX, oriY, oriW, interY - oriY);
-				rectCount++;
-			}
-			if(interX > oriX) {
-				west = new Rectangle(oriX, interY, interX - oriX, interH);
-				rectCount++;
-			}
-			if(oriX + oriW > interX + interW) {
-				east = new Rectangle(interX + interW, interY, oriX + oriW - interX - interW, interH);
-				rectCount++;
-			}
-			if(oriY + oriH > interY + interH) {
-				south = new Rectangle(oriX, interY + interH, oriW, oriY + oriH - interY - interH);
-				rectCount++;
-			}
+	    if(interY > oriY) {
+		north = new Rectangle(oriX, oriY, oriW, interY - oriY);
+		rectCount++;
+	    }
+	    if(interX > oriX) {
+		west = new Rectangle(oriX, interY, interX - oriX, interH);
+		rectCount++;
+	    }
+	    if(oriX + oriW > interX + interW) {
+		east = new Rectangle(interX + interW, interY, oriX + oriW - interX - interW, interH);
+		rectCount++;
+	    }
+	    if(oriY + oriH > interY + interH) {
+		south = new Rectangle(oriX, interY + interH, oriW, oriY + oriH - interY - interH);
+		rectCount++;
+	    }
 			
-			ret = new Rectangle[rectCount];
-			rectCount = 0;
-			if(north != null) ret[rectCount++] = north;
-			if(west != null) ret[rectCount++] = west;
-			if(east != null) ret[rectCount++] = east;
-			if(south != null) ret[rectCount++] = south;
-			return ret;
-		}
+	    ret = new Rectangle[rectCount];
+	    rectCount = 0;
+	    if(north != null) ret[rectCount++] = north;
+	    if(west != null) ret[rectCount++] = west;
+	    if(east != null) ret[rectCount++] = east;
+	    if(south != null) ret[rectCount++] = south;
+	    return ret;
+	}
     }
 
     /**
