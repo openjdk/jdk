@@ -117,9 +117,6 @@ public:
       return;
     }
 
-    // save dumptime tables
-    SystemDictionaryShared::clone_dumptime_tables();
-
     init_header();
     gather_source_objs();
     reserve_buffer();
@@ -166,9 +163,6 @@ public:
     release_header();
 
     post_dump();
-
-    // Restore dumptime tables
-    SystemDictionaryShared::restore_dumptime_tables();
 
     assert(_num_dump_regions_used == _total_dump_regions, "must be");
     verify_universe("After CDS dynamic dump");

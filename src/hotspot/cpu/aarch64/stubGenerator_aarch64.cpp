@@ -3332,9 +3332,36 @@ class StubGenerator: public StubCodeGenerator {
      return start;
   }
 
+  class Cached64Bytes {
+  private:
+    MacroAssembler *_masm;
+    Register _regs[8];
+
+  public:
+    Cached64Bytes(MacroAssembler *masm, RegSet rs): _masm(masm) {
+      assert(rs.size() == 8, "%u registers are used to cache 16 4-byte data", rs.size());
+      auto it = rs.begin();
+      for (auto &r: _regs) {
+        r = *it;
+        ++it;
+      }
+    }
+
+    void gen_loads(Register base) {
+      for (int i = 0; i < 8; i += 2) {
+        __ ldp(_regs[i], _regs[i + 1], Address(base, 8 * i));
+      }
+    }
+
+    // Generate code extracting i-th unsigned word (4 bytes) from cached 64 bytes.
+    void extract_u32(Register dest, int i) {
+      __ ubfx(dest, _regs[i / 2], 32 * (i % 2), 32);
+    }
+  };
+
   // Utility routines for md5.
   // Clobbers r10 and r11.
-  void md5_FF(Register buf, Register r1, Register r2, Register r3, Register r4,
+  void md5_FF(Cached64Bytes& reg_cache, Register r1, Register r2, Register r3, Register r4,
               int k, int s, int t) {
     Register rscratch3 = r10;
     Register rscratch4 = r11;
@@ -3343,7 +3370,7 @@ class StubGenerator: public StubCodeGenerator {
     __ movw(rscratch2, t);
     __ andw(rscratch3, rscratch3, r2);
     __ addw(rscratch4, r1, rscratch2);
-    __ ldrw(rscratch1, Address(buf, k*4));
+    reg_cache.extract_u32(rscratch1, k);
     __ eorw(rscratch3, rscratch3, r4);
     __ addw(rscratch4, rscratch4, rscratch1);
     __ addw(rscratch3, rscratch3, rscratch4);
@@ -3351,14 +3378,14 @@ class StubGenerator: public StubCodeGenerator {
     __ addw(r1, rscratch2, r2);
   }
 
-  void md5_GG(Register buf, Register r1, Register r2, Register r3, Register r4,
+  void md5_GG(Cached64Bytes& reg_cache, Register r1, Register r2, Register r3, Register r4,
               int k, int s, int t) {
     Register rscratch3 = r10;
     Register rscratch4 = r11;
 
     __ andw(rscratch3, r2, r4);
     __ bicw(rscratch4, r3, r4);
-    __ ldrw(rscratch1, Address(buf, k*4));
+    reg_cache.extract_u32(rscratch1, k);
     __ movw(rscratch2, t);
     __ orrw(rscratch3, rscratch3, rscratch4);
     __ addw(rscratch4, r1, rscratch2);
@@ -3368,7 +3395,7 @@ class StubGenerator: public StubCodeGenerator {
     __ addw(r1, rscratch2, r2);
   }
 
-  void md5_HH(Register buf, Register r1, Register r2, Register r3, Register r4,
+  void md5_HH(Cached64Bytes& reg_cache, Register r1, Register r2, Register r3, Register r4,
               int k, int s, int t) {
     Register rscratch3 = r10;
     Register rscratch4 = r11;
@@ -3376,7 +3403,7 @@ class StubGenerator: public StubCodeGenerator {
     __ eorw(rscratch3, r3, r4);
     __ movw(rscratch2, t);
     __ addw(rscratch4, r1, rscratch2);
-    __ ldrw(rscratch1, Address(buf, k*4));
+    reg_cache.extract_u32(rscratch1, k);
     __ eorw(rscratch3, rscratch3, r2);
     __ addw(rscratch4, rscratch4, rscratch1);
     __ addw(rscratch3, rscratch3, rscratch4);
@@ -3384,7 +3411,7 @@ class StubGenerator: public StubCodeGenerator {
     __ addw(r1, rscratch2, r2);
   }
 
-  void md5_II(Register buf, Register r1, Register r2, Register r3, Register r4,
+  void md5_II(Cached64Bytes& reg_cache, Register r1, Register r2, Register r3, Register r4,
               int k, int s, int t) {
     Register rscratch3 = r10;
     Register rscratch4 = r11;
@@ -3392,7 +3419,7 @@ class StubGenerator: public StubCodeGenerator {
     __ movw(rscratch3, t);
     __ ornw(rscratch2, r2, r4);
     __ addw(rscratch4, r1, rscratch3);
-    __ ldrw(rscratch1, Address(buf, k*4));
+    reg_cache.extract_u32(rscratch1, k);
     __ eorw(rscratch3, rscratch2, r3);
     __ addw(rscratch4, rscratch4, rscratch1);
     __ addw(rscratch3, rscratch3, rscratch4);
@@ -3424,103 +3451,104 @@ class StubGenerator: public StubCodeGenerator {
     Register rscratch3 = r10;
     Register rscratch4 = r11;
 
+    Register state_regs[2] = { r12, r13 };
+    RegSet saved_regs = RegSet::range(r16, r22) - r18_tls;
+    Cached64Bytes reg_cache(_masm, RegSet::of(r14, r15) + saved_regs);  // using 8 registers
+
+    __ push(saved_regs, sp);
+
+    __ ldp(state_regs[0], state_regs[1], Address(state));
+    __ ubfx(a, state_regs[0],  0, 32);
+    __ ubfx(b, state_regs[0], 32, 32);
+    __ ubfx(c, state_regs[1],  0, 32);
+    __ ubfx(d, state_regs[1], 32, 32);
+
     Label md5_loop;
     __ BIND(md5_loop);
 
-    // Save hash values for addition after rounds
-    __ ldrw(a, Address(state,  0));
-    __ ldrw(b, Address(state,  4));
-    __ ldrw(c, Address(state,  8));
-    __ ldrw(d, Address(state, 12));
+    reg_cache.gen_loads(buf);
 
     // Round 1
-    md5_FF(buf, a, b, c, d,  0,  7, 0xd76aa478);
-    md5_FF(buf, d, a, b, c,  1, 12, 0xe8c7b756);
-    md5_FF(buf, c, d, a, b,  2, 17, 0x242070db);
-    md5_FF(buf, b, c, d, a,  3, 22, 0xc1bdceee);
-    md5_FF(buf, a, b, c, d,  4,  7, 0xf57c0faf);
-    md5_FF(buf, d, a, b, c,  5, 12, 0x4787c62a);
-    md5_FF(buf, c, d, a, b,  6, 17, 0xa8304613);
-    md5_FF(buf, b, c, d, a,  7, 22, 0xfd469501);
-    md5_FF(buf, a, b, c, d,  8,  7, 0x698098d8);
-    md5_FF(buf, d, a, b, c,  9, 12, 0x8b44f7af);
-    md5_FF(buf, c, d, a, b, 10, 17, 0xffff5bb1);
-    md5_FF(buf, b, c, d, a, 11, 22, 0x895cd7be);
-    md5_FF(buf, a, b, c, d, 12,  7, 0x6b901122);
-    md5_FF(buf, d, a, b, c, 13, 12, 0xfd987193);
-    md5_FF(buf, c, d, a, b, 14, 17, 0xa679438e);
-    md5_FF(buf, b, c, d, a, 15, 22, 0x49b40821);
+    md5_FF(reg_cache, a, b, c, d,  0,  7, 0xd76aa478);
+    md5_FF(reg_cache, d, a, b, c,  1, 12, 0xe8c7b756);
+    md5_FF(reg_cache, c, d, a, b,  2, 17, 0x242070db);
+    md5_FF(reg_cache, b, c, d, a,  3, 22, 0xc1bdceee);
+    md5_FF(reg_cache, a, b, c, d,  4,  7, 0xf57c0faf);
+    md5_FF(reg_cache, d, a, b, c,  5, 12, 0x4787c62a);
+    md5_FF(reg_cache, c, d, a, b,  6, 17, 0xa8304613);
+    md5_FF(reg_cache, b, c, d, a,  7, 22, 0xfd469501);
+    md5_FF(reg_cache, a, b, c, d,  8,  7, 0x698098d8);
+    md5_FF(reg_cache, d, a, b, c,  9, 12, 0x8b44f7af);
+    md5_FF(reg_cache, c, d, a, b, 10, 17, 0xffff5bb1);
+    md5_FF(reg_cache, b, c, d, a, 11, 22, 0x895cd7be);
+    md5_FF(reg_cache, a, b, c, d, 12,  7, 0x6b901122);
+    md5_FF(reg_cache, d, a, b, c, 13, 12, 0xfd987193);
+    md5_FF(reg_cache, c, d, a, b, 14, 17, 0xa679438e);
+    md5_FF(reg_cache, b, c, d, a, 15, 22, 0x49b40821);
 
     // Round 2
-    md5_GG(buf, a, b, c, d,  1,  5, 0xf61e2562);
-    md5_GG(buf, d, a, b, c,  6,  9, 0xc040b340);
-    md5_GG(buf, c, d, a, b, 11, 14, 0x265e5a51);
-    md5_GG(buf, b, c, d, a,  0, 20, 0xe9b6c7aa);
-    md5_GG(buf, a, b, c, d,  5,  5, 0xd62f105d);
-    md5_GG(buf, d, a, b, c, 10,  9, 0x02441453);
-    md5_GG(buf, c, d, a, b, 15, 14, 0xd8a1e681);
-    md5_GG(buf, b, c, d, a,  4, 20, 0xe7d3fbc8);
-    md5_GG(buf, a, b, c, d,  9,  5, 0x21e1cde6);
-    md5_GG(buf, d, a, b, c, 14,  9, 0xc33707d6);
-    md5_GG(buf, c, d, a, b,  3, 14, 0xf4d50d87);
-    md5_GG(buf, b, c, d, a,  8, 20, 0x455a14ed);
-    md5_GG(buf, a, b, c, d, 13,  5, 0xa9e3e905);
-    md5_GG(buf, d, a, b, c,  2,  9, 0xfcefa3f8);
-    md5_GG(buf, c, d, a, b,  7, 14, 0x676f02d9);
-    md5_GG(buf, b, c, d, a, 12, 20, 0x8d2a4c8a);
+    md5_GG(reg_cache, a, b, c, d,  1,  5, 0xf61e2562);
+    md5_GG(reg_cache, d, a, b, c,  6,  9, 0xc040b340);
+    md5_GG(reg_cache, c, d, a, b, 11, 14, 0x265e5a51);
+    md5_GG(reg_cache, b, c, d, a,  0, 20, 0xe9b6c7aa);
+    md5_GG(reg_cache, a, b, c, d,  5,  5, 0xd62f105d);
+    md5_GG(reg_cache, d, a, b, c, 10,  9, 0x02441453);
+    md5_GG(reg_cache, c, d, a, b, 15, 14, 0xd8a1e681);
+    md5_GG(reg_cache, b, c, d, a,  4, 20, 0xe7d3fbc8);
+    md5_GG(reg_cache, a, b, c, d,  9,  5, 0x21e1cde6);
+    md5_GG(reg_cache, d, a, b, c, 14,  9, 0xc33707d6);
+    md5_GG(reg_cache, c, d, a, b,  3, 14, 0xf4d50d87);
+    md5_GG(reg_cache, b, c, d, a,  8, 20, 0x455a14ed);
+    md5_GG(reg_cache, a, b, c, d, 13,  5, 0xa9e3e905);
+    md5_GG(reg_cache, d, a, b, c,  2,  9, 0xfcefa3f8);
+    md5_GG(reg_cache, c, d, a, b,  7, 14, 0x676f02d9);
+    md5_GG(reg_cache, b, c, d, a, 12, 20, 0x8d2a4c8a);
 
     // Round 3
-    md5_HH(buf, a, b, c, d,  5,  4, 0xfffa3942);
-    md5_HH(buf, d, a, b, c,  8, 11, 0x8771f681);
-    md5_HH(buf, c, d, a, b, 11, 16, 0x6d9d6122);
-    md5_HH(buf, b, c, d, a, 14, 23, 0xfde5380c);
-    md5_HH(buf, a, b, c, d,  1,  4, 0xa4beea44);
-    md5_HH(buf, d, a, b, c,  4, 11, 0x4bdecfa9);
-    md5_HH(buf, c, d, a, b,  7, 16, 0xf6bb4b60);
-    md5_HH(buf, b, c, d, a, 10, 23, 0xbebfbc70);
-    md5_HH(buf, a, b, c, d, 13,  4, 0x289b7ec6);
-    md5_HH(buf, d, a, b, c,  0, 11, 0xeaa127fa);
-    md5_HH(buf, c, d, a, b,  3, 16, 0xd4ef3085);
-    md5_HH(buf, b, c, d, a,  6, 23, 0x04881d05);
-    md5_HH(buf, a, b, c, d,  9,  4, 0xd9d4d039);
-    md5_HH(buf, d, a, b, c, 12, 11, 0xe6db99e5);
-    md5_HH(buf, c, d, a, b, 15, 16, 0x1fa27cf8);
-    md5_HH(buf, b, c, d, a,  2, 23, 0xc4ac5665);
+    md5_HH(reg_cache, a, b, c, d,  5,  4, 0xfffa3942);
+    md5_HH(reg_cache, d, a, b, c,  8, 11, 0x8771f681);
+    md5_HH(reg_cache, c, d, a, b, 11, 16, 0x6d9d6122);
+    md5_HH(reg_cache, b, c, d, a, 14, 23, 0xfde5380c);
+    md5_HH(reg_cache, a, b, c, d,  1,  4, 0xa4beea44);
+    md5_HH(reg_cache, d, a, b, c,  4, 11, 0x4bdecfa9);
+    md5_HH(reg_cache, c, d, a, b,  7, 16, 0xf6bb4b60);
+    md5_HH(reg_cache, b, c, d, a, 10, 23, 0xbebfbc70);
+    md5_HH(reg_cache, a, b, c, d, 13,  4, 0x289b7ec6);
+    md5_HH(reg_cache, d, a, b, c,  0, 11, 0xeaa127fa);
+    md5_HH(reg_cache, c, d, a, b,  3, 16, 0xd4ef3085);
+    md5_HH(reg_cache, b, c, d, a,  6, 23, 0x04881d05);
+    md5_HH(reg_cache, a, b, c, d,  9,  4, 0xd9d4d039);
+    md5_HH(reg_cache, d, a, b, c, 12, 11, 0xe6db99e5);
+    md5_HH(reg_cache, c, d, a, b, 15, 16, 0x1fa27cf8);
+    md5_HH(reg_cache, b, c, d, a,  2, 23, 0xc4ac5665);
 
     // Round 4
-    md5_II(buf, a, b, c, d,  0,  6, 0xf4292244);
-    md5_II(buf, d, a, b, c,  7, 10, 0x432aff97);
-    md5_II(buf, c, d, a, b, 14, 15, 0xab9423a7);
-    md5_II(buf, b, c, d, a,  5, 21, 0xfc93a039);
-    md5_II(buf, a, b, c, d, 12,  6, 0x655b59c3);
-    md5_II(buf, d, a, b, c,  3, 10, 0x8f0ccc92);
-    md5_II(buf, c, d, a, b, 10, 15, 0xffeff47d);
-    md5_II(buf, b, c, d, a,  1, 21, 0x85845dd1);
-    md5_II(buf, a, b, c, d,  8,  6, 0x6fa87e4f);
-    md5_II(buf, d, a, b, c, 15, 10, 0xfe2ce6e0);
-    md5_II(buf, c, d, a, b,  6, 15, 0xa3014314);
-    md5_II(buf, b, c, d, a, 13, 21, 0x4e0811a1);
-    md5_II(buf, a, b, c, d,  4,  6, 0xf7537e82);
-    md5_II(buf, d, a, b, c, 11, 10, 0xbd3af235);
-    md5_II(buf, c, d, a, b,  2, 15, 0x2ad7d2bb);
-    md5_II(buf, b, c, d, a,  9, 21, 0xeb86d391);
+    md5_II(reg_cache, a, b, c, d,  0,  6, 0xf4292244);
+    md5_II(reg_cache, d, a, b, c,  7, 10, 0x432aff97);
+    md5_II(reg_cache, c, d, a, b, 14, 15, 0xab9423a7);
+    md5_II(reg_cache, b, c, d, a,  5, 21, 0xfc93a039);
+    md5_II(reg_cache, a, b, c, d, 12,  6, 0x655b59c3);
+    md5_II(reg_cache, d, a, b, c,  3, 10, 0x8f0ccc92);
+    md5_II(reg_cache, c, d, a, b, 10, 15, 0xffeff47d);
+    md5_II(reg_cache, b, c, d, a,  1, 21, 0x85845dd1);
+    md5_II(reg_cache, a, b, c, d,  8,  6, 0x6fa87e4f);
+    md5_II(reg_cache, d, a, b, c, 15, 10, 0xfe2ce6e0);
+    md5_II(reg_cache, c, d, a, b,  6, 15, 0xa3014314);
+    md5_II(reg_cache, b, c, d, a, 13, 21, 0x4e0811a1);
+    md5_II(reg_cache, a, b, c, d,  4,  6, 0xf7537e82);
+    md5_II(reg_cache, d, a, b, c, 11, 10, 0xbd3af235);
+    md5_II(reg_cache, c, d, a, b,  2, 15, 0x2ad7d2bb);
+    md5_II(reg_cache, b, c, d, a,  9, 21, 0xeb86d391);
 
-    // write hash values back in the correct order
-    __ ldrw(rscratch1, Address(state,  0));
-    __ addw(rscratch1, rscratch1, a);
-    __ strw(rscratch1, Address(state,  0));
+    __ addw(a, state_regs[0], a);
+    __ ubfx(rscratch2, state_regs[0], 32, 32);
+    __ addw(b, rscratch2, b);
+    __ addw(c, state_regs[1], c);
+    __ ubfx(rscratch4, state_regs[1], 32, 32);
+    __ addw(d, rscratch4, d);
 
-    __ ldrw(rscratch2, Address(state,  4));
-    __ addw(rscratch2, rscratch2, b);
-    __ strw(rscratch2, Address(state,  4));
-
-    __ ldrw(rscratch3, Address(state,  8));
-    __ addw(rscratch3, rscratch3, c);
-    __ strw(rscratch3, Address(state,  8));
-
-    __ ldrw(rscratch4, Address(state, 12));
-    __ addw(rscratch4, rscratch4, d);
-    __ strw(rscratch4, Address(state, 12));
+    __ orr(state_regs[0], a, b, Assembler::LSL, 32);
+    __ orr(state_regs[1], c, d, Assembler::LSL, 32);
 
     if (multi_block) {
       __ add(buf, buf, 64);
@@ -3529,6 +3557,11 @@ class StubGenerator: public StubCodeGenerator {
       __ br(Assembler::LE, md5_loop);
       __ mov(c_rarg0, ofs); // return ofs
     }
+
+    // write hash values back in the correct order
+    __ stp(state_regs[0], state_regs[1], Address(state));
+
+    __ pop(saved_regs, sp);
 
     __ ret(lr);
 
