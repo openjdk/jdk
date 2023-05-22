@@ -28,6 +28,8 @@ import java.net.spi.InetAddressResolver.LookupPolicy;
 public class NullChar {
     public static void main(String[] args) {
         var name = "foo\u0000bar";
+        System.out.println("file.encoding = " + System.getProperty("file.encoding"));
+        System.out.println("native.encoding = " + System.getProperty("native.encoding"));
 
         // This should throw IAE as it calls the internal impl
         try {
