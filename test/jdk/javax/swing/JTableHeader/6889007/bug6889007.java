@@ -53,7 +53,6 @@ public class bug6889007 {
     public static void main(String[] args) throws Exception {
         try {
             robot = new Robot();
-            robot.setAutoDelay(100);
 
             SwingUtilities.invokeAndWait(() -> {
                 frame = new JFrame();
