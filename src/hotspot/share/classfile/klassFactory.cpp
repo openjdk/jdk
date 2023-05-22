@@ -54,7 +54,7 @@ InstanceKlass* KlassFactory::check_shared_class_file_load_hook(
   assert(ik != nullptr, "sanity");
   assert(ik->is_shared(), "expecting a shared class");
   if (JvmtiExport::should_post_class_file_load_hook()) {
-
+    ResourceMark rm(THREAD);
     // Post the CFLH
     JvmtiCachedClassFileData* cached_class_file = nullptr;
     if (cfs == nullptr) {

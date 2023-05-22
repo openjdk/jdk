@@ -71,7 +71,7 @@ public class TestValueLayouts {
 
     @Test
     public void testLong() {
-        testAligned(JAVA_LONG, long.class, Long.BYTES);
+        testAligned(JAVA_LONG, long.class, Long.BYTES, ADDRESS.byteSize());
     }
 
     @Test
@@ -91,7 +91,7 @@ public class TestValueLayouts {
 
     @Test
     public void testDouble() {
-        testAligned(JAVA_DOUBLE, double.class, Double.BYTES);
+        testAligned(JAVA_DOUBLE, double.class, Double.BYTES, ADDRESS.byteSize());
     }
 
     @Test
@@ -123,6 +123,13 @@ public class TestValueLayouts {
                      Class<?> carrier,
                      long byteSize) {
         test(layout, carrier, byteSize, byteSize);
+    }
+
+    void testAligned(ValueLayout layout,
+                     Class<?> carrier,
+                     long byteSize,
+                     long byteAlignment) {
+        test(layout, carrier, byteSize, byteAlignment);
     }
 
     void testUnaligned(ValueLayout layout,

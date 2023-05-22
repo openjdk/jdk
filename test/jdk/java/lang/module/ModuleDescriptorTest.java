@@ -28,7 +28,6 @@
  *          java.base/jdk.internal.classfile
  *          java.base/jdk.internal.classfile.attribute
  *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.java.lang.constant
  *          java.base/jdk.internal.module
  * @library /test/lib
  * @build jdk.test.lib.util.ModuleInfoWriter
@@ -65,8 +64,8 @@ import jdk.internal.access.JavaLangModuleAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.classfile.Classfile;
 import jdk.internal.classfile.attribute.ModuleAttribute;
-import jdk.internal.classfile.java.lang.constant.PackageDesc;
-import jdk.internal.classfile.java.lang.constant.ModuleDesc;
+import java.lang.constant.PackageDesc;
+import java.lang.constant.ModuleDesc;
 import jdk.test.lib.util.ModuleInfoWriter;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;

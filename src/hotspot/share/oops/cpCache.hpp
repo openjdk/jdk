@@ -452,8 +452,8 @@ class ConstantPoolCache: public MetaspaceObj {
   }
 
   // Assembly code support
-  static int resolved_references_offset_in_bytes() { return offset_of(ConstantPoolCache, _resolved_references); }
-  static ByteSize invokedynamic_entries_offset()   { return byte_offset_of(ConstantPoolCache, _resolved_indy_entries); }
+  static ByteSize resolved_references_offset()   { return byte_offset_of(ConstantPoolCache, _resolved_references); }
+  static ByteSize invokedynamic_entries_offset() { return byte_offset_of(ConstantPoolCache, _resolved_indy_entries); }
 
 #if INCLUDE_CDS
   void remove_unshareable_info();

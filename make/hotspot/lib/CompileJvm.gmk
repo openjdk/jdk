@@ -168,10 +168,14 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJVM, \
     DISABLED_WARNINGS_clang_management.cpp := missing-field-initializers, \
     DISABLED_WARNINGS_clang_notificationThread.cpp := bitwise-instead-of-logical, \
     DISABLED_WARNINGS_clang_os_posix.cpp := mismatched-tags missing-field-initializers, \
+    DISABLED_WARNINGS_clang_aix_os_posix.cpp := format-nonliteral, \
     DISABLED_WARNINGS_clang_postaloc.cpp := tautological-undefined-compare, \
     DISABLED_WARNINGS_clang_serviceThread.cpp := bitwise-instead-of-logical, \
     DISABLED_WARNINGS_clang_vm_version_x86.cpp := missing-field-initializers, \
     DISABLED_WARNINGS_clang_zTracer.cpp := undefined-var-template, \
+    DISABLED_WARNINGS_clang_aix_debug.cpp := format-nonliteral, \
+    DISABLED_WARNINGS_clang_aix_jvm.cpp := format-nonliteral, \
+    DISABLED_WARNINGS_clang_aix_osThread_aix.cpp := tautological-undefined-compare, \
     DISABLED_WARNINGS_xlc := $(DISABLED_WARNINGS_xlc), \
     DISABLED_WARNINGS_microsoft := $(DISABLED_WARNINGS_microsoft), \
     ASFLAGS := $(JVM_ASFLAGS), \

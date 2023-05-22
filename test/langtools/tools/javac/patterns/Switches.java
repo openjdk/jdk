@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -31,7 +30,6 @@ import java.util.function.Function;
  * @test
  * @bug 8262891 8268333 8268896 8269802 8269808 8270151 8269113 8277864 8290709
  * @summary Check behavior of pattern switches.
- * @enablePreview
  */
 public class Switches {
 
@@ -53,10 +51,12 @@ public class Switches {
         runEnumTest(this::testEnumWithGuards2);
         runEnumTest(this::testEnumWithGuards3);
         runEnumTest(this::testEnumWithGuards4);
+        runEnumTest(this::testEnumWithGuards5);
         runEnumTest(this::testEnumWithGuardsExpression1);
         runEnumTest(this::testEnumWithGuardsExpression2);
         runEnumTest(this::testEnumWithGuardsExpression3);
         runEnumTest(this::testEnumWithGuardsExpression4);
+        runEnumTest(this::testEnumWithGuardsExpression5);
         runEnumTest(this::testStringWithGuards1);
         runEnumTest(this::testStringWithGuardsExpression1);
         runEnumTest(this::testIntegerWithGuards1);
@@ -346,6 +346,28 @@ public class Switches {
             case Runnable x when "C".equals(x.toString()) -> "C";
             case E x -> e == E.C ? "broken" : String.valueOf(x);
             case null -> "null";
+        };
+    }
+
+    String testEnumWithGuards5(Object e) {
+        switch (e) {
+            case E.A: return "a";
+            case E.B: return "b";
+            case Runnable x when "C".equals(x.toString()): return "C";
+            case E x: return e == E.C ? "broken" : String.valueOf(x);
+            case null: return "null";
+            default: throw new AssertionError("Unexpected case!");
+        }
+    }
+
+    String testEnumWithGuardsExpression5(Object e) {
+        return switch (e) {
+            case E.A -> "a";
+            case E.B -> "b";
+            case Runnable x when "C".equals(x.toString()) -> "C";
+            case E x -> e == E.C ? "broken" : String.valueOf(x);
+            case null -> "null";
+            default -> throw new AssertionError("Unexpected case!");
         };
     }
 
