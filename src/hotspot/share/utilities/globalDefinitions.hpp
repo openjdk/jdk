@@ -1042,6 +1042,15 @@ enum JavaThreadState {
   _thread_max_state         = 12  // maximum thread state+1 - used for statistics allocation
 };
 
+enum LockingMode {
+  // Use only heavy monitors for locking
+  LM_MONITOR     = 0,
+  // Legacy stack-locking, with monitors as 2nd tier
+  LM_LEGACY      = 1,
+  // New lightweight locking, with monitors as 2nd tier
+  LM_LIGHTWEIGHT = 2
+};
+
 //----------------------------------------------------------------------------------------------------
 // Special constants for debugging
 
@@ -1216,6 +1225,9 @@ JAVA_INTEGER_OP(+, java_add, jlong, julong)
 JAVA_INTEGER_OP(-, java_subtract, jlong, julong)
 JAVA_INTEGER_OP(*, java_multiply, jlong, julong)
 
+inline jint  java_negate(jint  v) { return java_subtract((jint) 0, v); }
+inline jlong java_negate(jlong v) { return java_subtract((jlong)0, v); }
+
 #undef JAVA_INTEGER_OP
 
 // Provide integer shift operations with Java semantics.  No overflow
@@ -1305,7 +1317,7 @@ inline int64_t multiply_high_signed(const int64_t x, const int64_t y) {
   const jlong y1 = java_shift_right((jlong)y, 32);
   const jlong y2 = y & 0xFFFFFFFF;
 
-  const uint64_t z2 = x2 * y2;
+  const uint64_t z2 = (uint64_t)x2 * y2;
   const int64_t t = x1 * y2 + (z2 >> 32u); // Unsigned shift
   int64_t z1 = t & 0xFFFFFFFF;
   const int64_t z0 = java_shift_right((jlong)t, 32);

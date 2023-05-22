@@ -377,6 +377,7 @@ tier1_runtime = \
  -runtime/CompressedOops/UseCompressedOops.java \
  -runtime/ConstantPool/IntfMethod.java \
  -runtime/ErrorHandling/CreateCoredumpOnCrash.java \
+ -runtime/ErrorHandling/ReattemptErrorTest.java \
  -runtime/ErrorHandling/TestHeapDumpOnOutOfMemoryError.java \
  -runtime/ErrorHandling/TimeoutInErrorHandlingTest.java \
  -runtime/InvocationTests \
@@ -692,8 +693,7 @@ vmTestbase_vm_gc_container = \
 
 # Playing with object arrays and various strategies of garbage producing
 vmTestbase_vm_gc_juggle = \
-  vmTestbase/gc/ArrayJuggle/ \
-  vmTestbase/gc/memory/Array/ArrayJuggle
+  vmTestbase/gc/ArrayJuggle/
 
 # GC Locker
 vmTestbase_vm_gc_locker = \

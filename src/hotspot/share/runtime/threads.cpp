@@ -69,6 +69,7 @@
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/jniPeriodicChecker.hpp"
+#include "runtime/lockStack.inline.hpp"
 #include "runtime/monitorDeflationThread.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/nonJavaThread.hpp"
@@ -1177,6 +1178,7 @@ GrowableArray<JavaThread*>* Threads::get_pending_threads(ThreadsList * t_list,
 
 JavaThread *Threads::owning_thread_from_monitor_owner(ThreadsList * t_list,
                                                       address owner) {
+  assert(LockingMode != LM_LIGHTWEIGHT, "Not with new lightweight locking");
   // null owner means not locked so we can skip the search
   if (owner == nullptr) return nullptr;
 
@@ -1188,7 +1190,7 @@ JavaThread *Threads::owning_thread_from_monitor_owner(ThreadsList * t_list,
   // Cannot assert on lack of success here since this function may be
   // used by code that is trying to report useful problem information
   // like deadlock detection.
-  if (UseHeavyMonitors) return nullptr;
+  if (LockingMode == LM_MONITOR) return nullptr;
 
   // If we didn't find a matching Java thread and we didn't force use of
   // heavyweight monitors, then the owner is the stack address of the
@@ -1206,9 +1208,29 @@ JavaThread *Threads::owning_thread_from_monitor_owner(ThreadsList * t_list,
   return the_owner;
 }
 
+JavaThread* Threads::owning_thread_from_object(ThreadsList * t_list, oop obj) {
+  assert(LockingMode == LM_LIGHTWEIGHT, "Only with new lightweight locking");
+  for (JavaThread* q : *t_list) {
+    if (q->lock_stack().contains(obj)) {
+      return q;
+    }
+  }
+  return nullptr;
+}
+
 JavaThread* Threads::owning_thread_from_monitor(ThreadsList* t_list, ObjectMonitor* monitor) {
-  address owner = (address)monitor->owner();
-  return owning_thread_from_monitor_owner(t_list, owner);
+  if (LockingMode == LM_LIGHTWEIGHT) {
+    if (monitor->is_owner_anonymous()) {
+      return owning_thread_from_object(t_list, monitor->object());
+    } else {
+      Thread* owner = reinterpret_cast<Thread*>(monitor->owner());
+      assert(owner == nullptr || owner->is_Java_thread(), "only JavaThreads own monitors");
+      return reinterpret_cast<JavaThread*>(owner);
+    }
+  } else {
+    address owner = (address)monitor->owner();
+    return owning_thread_from_monitor_owner(t_list, owner);
+  }
 }
 
 class PrintOnClosure : public ThreadClosure {
