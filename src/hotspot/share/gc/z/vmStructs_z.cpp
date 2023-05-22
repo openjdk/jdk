@@ -25,8 +25,8 @@
 #include "gc/z/vmStructs_z.hpp"
 #include "gc/z/zAddress.hpp"
 
-ZGlobalsForVMStructs::ZGlobalsForVMStructs() :
-    _ZAddressOffsetMask(&ZAddressOffsetMask),
+ZGlobalsForVMStructs::ZGlobalsForVMStructs()
+  : _ZAddressOffsetMask(&ZAddressOffsetMask),
     _ZPointerLoadGoodMask(&ZPointerLoadGoodMask),
     _ZPointerLoadBadMask(&ZPointerLoadBadMask),
     _ZPointerLoadShift(const_cast<size_t*>(&ZPointerLoadShift)),
@@ -35,8 +35,7 @@ ZGlobalsForVMStructs::ZGlobalsForVMStructs() :
     _ZPointerStoreGoodMask(&ZPointerStoreGoodMask),
     _ZPointerStoreBadMask(&ZPointerStoreBadMask),
     _ZObjectAlignmentSmallShift(&ZObjectAlignmentSmallShift),
-    _ZObjectAlignmentSmall(&ZObjectAlignmentSmall) {
-}
+    _ZObjectAlignmentSmall(&ZObjectAlignmentSmall) {}
 
 ZGlobalsForVMStructs ZGlobalsForVMStructs::_instance;
 ZGlobalsForVMStructs* ZGlobalsForVMStructs::_instance_p = &ZGlobalsForVMStructs::_instance;

@@ -66,7 +66,7 @@ XPage* XPageCache::alloc_small_page() {
 
   // Try NUMA local page cache
   XPage* const l1_page = _small.get(numa_id).remove_first();
-  if (l1_page != NULL) {
+  if (l1_page != nullptr) {
     XStatInc(XCounterPageCacheHitL1);
     return l1_page;
   }
@@ -80,7 +80,7 @@ XPage* XPageCache::alloc_small_page() {
     }
 
     XPage* const l2_page = _small.get(remote_numa_id).remove_first();
-    if (l2_page != NULL) {
+    if (l2_page != nullptr) {
       XStatInc(XCounterPageCacheHitL2);
       return l2_page;
     }
@@ -88,17 +88,17 @@ XPage* XPageCache::alloc_small_page() {
     remote_numa_id++;
   }
 
-  return NULL;
+  return nullptr;
 }
 
 XPage* XPageCache::alloc_medium_page() {
   XPage* const page = _medium.remove_first();
-  if (page != NULL) {
+  if (page != nullptr) {
     XStatInc(XCounterPageCacheHitL1);
     return page;
   }
 
-  return NULL;
+  return nullptr;
 }
 
 XPage* XPageCache::alloc_large_page(size_t size) {
@@ -113,7 +113,7 @@ XPage* XPageCache::alloc_large_page(size_t size) {
     }
   }
 
-  return NULL;
+  return nullptr;
 }
 
 XPage* XPageCache::alloc_oversized_medium_page(size_t size) {
@@ -121,7 +121,7 @@ XPage* XPageCache::alloc_oversized_medium_page(size_t size) {
     return _medium.remove_first();
   }
 
-  return NULL;
+  return nullptr;
 }
 
 XPage* XPageCache::alloc_oversized_large_page(size_t size) {
@@ -135,16 +135,16 @@ XPage* XPageCache::alloc_oversized_large_page(size_t size) {
     }
   }
 
-  return NULL;
+  return nullptr;
 }
 
 XPage* XPageCache::alloc_oversized_page(size_t size) {
   XPage* page = alloc_oversized_large_page(size);
-  if (page == NULL) {
+  if (page == nullptr) {
     page = alloc_oversized_medium_page(size);
   }
 
-  if (page != NULL) {
+  if (page != nullptr) {
     XStatInc(XCounterPageCacheHitL3);
   }
 
@@ -163,10 +163,10 @@ XPage* XPageCache::alloc_page(uint8_t type, size_t size) {
     page = alloc_large_page(size);
   }
 
-  if (page == NULL) {
+  if (page == nullptr) {
     // Try allocate potentially oversized page
     XPage* const oversized = alloc_oversized_page(size);
-    if (oversized != NULL) {
+    if (oversized != nullptr) {
       if (size < oversized->size()) {
         // Split oversized page
         page = oversized->split(type, size);
@@ -180,7 +180,7 @@ XPage* XPageCache::alloc_page(uint8_t type, size_t size) {
     }
   }
 
-  if (page == NULL) {
+  if (page == nullptr) {
     XStatInc(XCounterPageCacheMiss);
   }
 
@@ -200,7 +200,7 @@ void XPageCache::free_page(XPage* page) {
 
 bool XPageCache::flush_list_inner(XPageCacheFlushClosure* cl, XList<XPage>* from, XList<XPage>* to) {
   XPage* const page = from->last();
-  if (page == NULL || !cl->do_page(page)) {
+  if (page == nullptr || !cl->do_page(page)) {
     // Don't flush page
     return false;
   }

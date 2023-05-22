@@ -136,8 +136,8 @@ private:
   const bool _verify_marked_old;
 
 public:
-  ZVerifyColoredRootClosure(bool verify_marked_old) :
-      OopClosure(),
+  ZVerifyColoredRootClosure(bool verify_marked_old)
+    : OopClosure(),
       _verify_marked_old(verify_marked_old) {}
 
   virtual void do_oop(oop* p_) {
@@ -191,8 +191,8 @@ public:
 
 class ZVerifyCodeBlobClosure : public CodeBlobToOopClosure {
 public:
-  ZVerifyCodeBlobClosure(OopClosure* cl) :
-      CodeBlobToOopClosure(cl, false /* fix_relocations */) {}
+  ZVerifyCodeBlobClosure(OopClosure* cl)
+    : CodeBlobToOopClosure(cl, false /* fix_relocations */) {}
 
   virtual void do_code_blob(CodeBlob* cb) {
     CodeBlobToOopClosure::do_code_blob(cb);
@@ -204,8 +204,8 @@ private:
   const bool _verify_weaks;
 
 public:
-  ZVerifyOldOopClosure(bool verify_weaks) :
-      _verify_weaks(verify_weaks) {}
+  ZVerifyOldOopClosure(bool verify_weaks)
+    : _verify_weaks(verify_weaks) {}
 
   virtual void do_oop(oop* p_) {
     zpointer* const p = (zpointer*)p_;
@@ -232,8 +232,8 @@ private:
   const bool _verify_weaks;
 
 public:
-  ZVerifyYoungOopClosure(bool verify_weaks) :
-      _verify_weaks(verify_weaks) {}
+  ZVerifyYoungOopClosure(bool verify_weaks)
+    : _verify_weaks(verify_weaks) {}
 
   virtual void do_oop(oop* p_) {
     zpointer* const p = (zpointer*)p_;
@@ -267,8 +267,8 @@ private:
   OopClosure* const _verify_cl;
 
 public:
-  ZVerifyThreadClosure(OopClosure* verify_cl) :
-      _verify_cl(verify_cl) {}
+  ZVerifyThreadClosure(OopClosure* verify_cl)
+    : _verify_cl(verify_cl) {}
 
   virtual void do_thread(Thread* thread) {
     JavaThread* const jt = JavaThread::cast(thread);
@@ -289,8 +289,8 @@ private:
   BarrierSetNMethod* const _bs_nm;
 
 public:
-  ZVerifyNMethodClosure(OopClosure* cl) :
-      _cl(cl),
+  ZVerifyNMethodClosure(OopClosure* cl)
+    : _cl(cl),
       _bs_nm(BarrierSet::barrier_set()->barrier_set_nmethod()) {}
 
   virtual void do_nmethod(nmethod* nm) {
@@ -346,8 +346,8 @@ private:
   zpointer           _visited_ptr_pre_loaded;
 
 public:
-  ZVerifyObjectClosure(bool verify_weaks) :
-      _verify_weaks(verify_weaks),
+  ZVerifyObjectClosure(bool verify_weaks)
+    : _verify_weaks(verify_weaks),
       _visited_base(),
       _visited_p(),
       _visited_ptr_pre_loaded() {}
@@ -480,8 +480,8 @@ private:
   zaddress_unsafe _from_addr;
 
 public:
-  ZVerifyRemsetBeforeOopClosure(ZForwarding* forwarding) :
-      _forwarding(forwarding),
+  ZVerifyRemsetBeforeOopClosure(ZForwarding* forwarding)
+    : _forwarding(forwarding),
       _from_addr(zaddress_unsafe::null) {}
 
   void set_from_addr(zaddress_unsafe addr) {
@@ -586,8 +586,8 @@ private:
   zaddress           _to_addr;
 
 public:
-  ZVerifyRemsetAfterOopClosure(ZForwarding* forwarding) :
-      _forwarding(forwarding),
+  ZVerifyRemsetAfterOopClosure(ZForwarding* forwarding)
+    : _forwarding(forwarding),
       _from_addr(zaddress_unsafe::null),
       _to_addr(zaddress::null) {}
 

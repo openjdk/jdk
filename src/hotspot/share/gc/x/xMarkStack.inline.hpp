@@ -32,7 +32,7 @@
 template <typename T, size_t S>
 inline XStack<T, S>::XStack() :
     _top(0),
-    _next(NULL) {}
+    _next(nullptr) {}
 
 template <typename T, size_t S>
 inline bool XStack<T, S>::is_empty() const {
@@ -76,13 +76,13 @@ inline XStack<T, S>** XStack<T, S>::next_addr() {
 
 template <typename T>
 inline XStackList<T>::XStackList() :
-    _head(encode_versioned_pointer(NULL, 0)) {}
+    _head(encode_versioned_pointer(nullptr, 0)) {}
 
 template <typename T>
 inline T* XStackList<T>::encode_versioned_pointer(const T* stack, uint32_t version) const {
   uint64_t addr;
 
-  if (stack == NULL) {
+  if (stack == nullptr) {
     addr = (uint32_t)-1;
   } else {
     addr = ((uint64_t)stack - XMarkStackSpaceStart) >> XMarkStackSizeShift;
@@ -96,7 +96,7 @@ inline void XStackList<T>::decode_versioned_pointer(const T* vstack, T** stack, 
   const uint64_t addr = (uint64_t)vstack >> 32;
 
   if (addr == (uint32_t)-1) {
-    *stack = NULL;
+    *stack = nullptr;
   } else {
     *stack = (T*)((addr << XMarkStackSizeShift) + XMarkStackSpaceStart);
   }
@@ -107,11 +107,11 @@ inline void XStackList<T>::decode_versioned_pointer(const T* vstack, T** stack, 
 template <typename T>
 inline bool XStackList<T>::is_empty() const {
   const T* vstack = _head;
-  T* stack = NULL;
+  T* stack = nullptr;
   uint32_t version = 0;
 
   decode_versioned_pointer(vstack, &stack, &version);
-  return stack == NULL;
+  return stack == nullptr;
 }
 
 template <typename T>
@@ -136,13 +136,13 @@ inline void XStackList<T>::push(T* stack) {
 template <typename T>
 inline T* XStackList<T>::pop() {
   T* vstack = _head;
-  T* stack = NULL;
+  T* stack = nullptr;
   uint32_t version = 0;
 
   for (;;) {
     decode_versioned_pointer(vstack, &stack, &version);
-    if (stack == NULL) {
-      return NULL;
+    if (stack == nullptr) {
+      return nullptr;
     }
 
     T* const new_vstack = encode_versioned_pointer(stack->next(), version + 1);
@@ -159,7 +159,7 @@ inline T* XStackList<T>::pop() {
 
 template <typename T>
 inline void XStackList<T>::clear() {
-  _head = encode_versioned_pointer(NULL, 0);
+  _head = encode_versioned_pointer(nullptr, 0);
 }
 
 inline bool XMarkStripe::is_empty() const {
@@ -183,7 +183,7 @@ inline void XMarkStripe::publish_stack(XMarkStack* stack, bool publish) {
 inline XMarkStack* XMarkStripe::steal_stack() {
   // Steal overflowed stacks first, then published stacks
   XMarkStack* const stack = _overflowed.pop();
-  if (stack != NULL) {
+  if (stack != nullptr) {
     return stack;
   }
 
@@ -221,7 +221,7 @@ inline void XMarkThreadLocalStacks::install(XMarkStripeSet* stripes,
                                             XMarkStripe* stripe,
                                             XMarkStack* stack) {
   XMarkStack** const stackp = &_stacks[stripes->stripe_id(stripe)];
-  assert(*stackp == NULL, "Should be empty");
+  assert(*stackp == nullptr, "Should be empty");
   *stackp = stack;
 }
 
@@ -229,8 +229,8 @@ inline XMarkStack* XMarkThreadLocalStacks::steal(XMarkStripeSet* stripes,
                                                  XMarkStripe* stripe) {
   XMarkStack** const stackp = &_stacks[stripes->stripe_id(stripe)];
   XMarkStack* const stack = *stackp;
-  if (stack != NULL) {
-    *stackp = NULL;
+  if (stack != nullptr) {
+    *stackp = nullptr;
   }
 
   return stack;
@@ -243,7 +243,7 @@ inline bool XMarkThreadLocalStacks::push(XMarkStackAllocator* allocator,
                                          bool publish) {
   XMarkStack** const stackp = &_stacks[stripes->stripe_id(stripe)];
   XMarkStack* const stack = *stackp;
-  if (stack != NULL && stack->push(entry)) {
+  if (stack != nullptr && stack->push(entry)) {
     return true;
   }
 
@@ -256,7 +256,7 @@ inline bool XMarkThreadLocalStacks::pop(XMarkStackAllocator* allocator,
                                         XMarkStackEntry& entry) {
   XMarkStack** const stackp = &_stacks[stripes->stripe_id(stripe)];
   XMarkStack* const stack = *stackp;
-  if (stack != NULL && stack->pop(entry)) {
+  if (stack != nullptr && stack->pop(entry)) {
     return true;
   }
 

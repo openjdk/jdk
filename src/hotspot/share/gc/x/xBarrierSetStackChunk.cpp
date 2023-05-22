@@ -38,10 +38,10 @@ void XBarrierSetStackChunk::decode_gc_mode(stackChunkOop chunk, OopIterator* ite
 
 oop XBarrierSetStackChunk::load_oop(stackChunkOop chunk, oop* addr) {
   oop obj = Atomic::load(addr);
-  return XBarrier::load_barrier_on_oop_field_preloaded((volatile oop*)NULL, obj);
+  return XBarrier::load_barrier_on_oop_field_preloaded((volatile oop*)nullptr, obj);
 }
 
 oop XBarrierSetStackChunk::load_oop(stackChunkOop chunk, narrowOop* addr) {
   ShouldNotReachHere();
-  return NULL;
+  return nullptr;
 }

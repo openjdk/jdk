@@ -150,7 +150,7 @@ inline oop XBarrier::barrier(volatile oop* p, oop o) {
   // Slow path
   const uintptr_t good_addr = slow_path(addr);
 
-  if (p != NULL) {
+  if (p != nullptr) {
     self_heal<fast_path>(p, addr, good_addr);
   }
 
@@ -171,7 +171,7 @@ inline oop XBarrier::weak_barrier(volatile oop* p, oop o) {
   // Slow path
   const uintptr_t good_addr = slow_path(addr);
 
-  if (p != NULL) {
+  if (p != nullptr) {
     // The slow path returns a good/marked address or null, but we never mark
     // oops in a weak load barrier so we always heal with the remapped address.
     self_heal<fast_path>(p, addr, XAddress::remapped_or_null(good_addr));
@@ -226,7 +226,7 @@ inline bool XBarrier::during_relocate() {
 // Load barrier
 //
 inline oop XBarrier::load_barrier_on_oop(oop o) {
-  return load_barrier_on_oop_field_preloaded((oop*)NULL, o);
+  return load_barrier_on_oop_field_preloaded((oop*)nullptr, o);
 }
 
 inline oop XBarrier::load_barrier_on_oop_field(volatile oop* p) {
@@ -286,7 +286,7 @@ inline oop XBarrier::weak_load_barrier_on_oop_field_preloaded(volatile oop* p, o
 }
 
 inline oop XBarrier::weak_load_barrier_on_weak_oop(oop o) {
-  return weak_load_barrier_on_weak_oop_field_preloaded((oop*)NULL, o);
+  return weak_load_barrier_on_weak_oop_field_preloaded((oop*)nullptr, o);
 }
 
 inline oop XBarrier::weak_load_barrier_on_weak_oop_field_preloaded(volatile oop* p, oop o) {
@@ -300,7 +300,7 @@ inline oop XBarrier::weak_load_barrier_on_weak_oop_field_preloaded(volatile oop*
 }
 
 inline oop XBarrier::weak_load_barrier_on_phantom_oop(oop o) {
-  return weak_load_barrier_on_phantom_oop_field_preloaded((oop*)NULL, o);
+  return weak_load_barrier_on_phantom_oop_field_preloaded((oop*)nullptr, o);
 }
 
 inline oop XBarrier::weak_load_barrier_on_phantom_oop_field_preloaded(volatile oop* p, oop o) {
@@ -318,14 +318,14 @@ inline bool XBarrier::is_alive_barrier_on_weak_oop(oop o) {
   // Check if oop is logically non-null. This operation
   // is only valid when resurrection is blocked.
   assert(XResurrection::is_blocked(), "Invalid phase");
-  return weak_load_barrier_on_weak_oop(o) != NULL;
+  return weak_load_barrier_on_weak_oop(o) != nullptr;
 }
 
 inline bool XBarrier::is_alive_barrier_on_phantom_oop(oop o) {
   // Check if oop is logically non-null. This operation
   // is only valid when resurrection is blocked.
   assert(XResurrection::is_blocked(), "Invalid phase");
-  return weak_load_barrier_on_phantom_oop(o) != NULL;
+  return weak_load_barrier_on_phantom_oop(o) != nullptr;
 }
 
 //
