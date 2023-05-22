@@ -349,23 +349,19 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * for creating a default object of that type. For example, the
  * {@code NumberFormat} class provides these three convenience methods
  * for creating a default {@code NumberFormat} object:
- * <blockquote>
- * <pre>
- *     NumberFormat.getInstance()
- *     NumberFormat.getCurrencyInstance()
- *     NumberFormat.getPercentInstance()
- * </pre>
- * </blockquote>
+ * {@snippet lang=java :
+ *     NumberFormat.getInstance();
+ *     NumberFormat.getCurrencyInstance();
+ *     NumberFormat.getPercentInstance();
+ * }
  * Each of these methods has two variants; one with an explicit locale
  * and one without; the latter uses the default
  * {@link Locale.Category#FORMAT FORMAT} locale:
- * <blockquote>
- * <pre>
- *     NumberFormat.getInstance(myLocale)
- *     NumberFormat.getCurrencyInstance(myLocale)
- *     NumberFormat.getPercentInstance(myLocale)
- * </pre>
- * </blockquote>
+ * {@snippet lang=java :
+ *     NumberFormat.getInstance(myLocale);
+ *     NumberFormat.getCurrencyInstance(myLocale);
+ *     NumberFormat.getPercentInstance(myLocale);
+ * }
  * A {@code Locale} is the mechanism for identifying the kind of object
  * ({@code NumberFormat}) that you would like to get. The locale is
  * <STRONG>just</STRONG> a mechanism for identifying objects,
@@ -1620,8 +1616,9 @@ public final class Locale implements Cloneable, Serializable {
      * method is well-formed (satisfies the syntax requirements
      * defined by the IETF BCP 47 specification), it is not
      * necessarily a valid BCP 47 language tag.  For example,
-     * <pre>
-     *   Locale.forLanguageTag("xx-YY").toLanguageTag();</pre>
+     * {@snippet lang=java :
+     *   Locale.forLanguageTag("xx-YY").toLanguageTag();
+     * }
      *
      * will return "xx-YY", but the language subtag "xx" and the
      * region subtag "YY" are invalid because they are not registered
@@ -1764,7 +1761,7 @@ public final class Locale implements Cloneable, Serializable {
      * result locale (without case normalization).  If it is then
      * empty, the private use subtag is discarded:
      *
-     * <pre>
+     * {@snippet lang=java :
      *     Locale loc;
      *     loc = Locale.forLanguageTag("en-US-x-lvariant-POSIX");
      *     loc.getVariant(); // returns "POSIX"
@@ -1773,16 +1770,16 @@ public final class Locale implements Cloneable, Serializable {
      *     loc = Locale.forLanguageTag("de-POSIX-x-URP-lvariant-Abc-Def");
      *     loc.getVariant(); // returns "POSIX_Abc_Def"
      *     loc.getExtension('x'); // returns "urp"
-     * </pre>
+     * }
      *
      * <li>When the languageTag argument contains an extlang subtag,
      * the first such subtag is used as the language, and the primary
      * language subtag and other extlang subtags are ignored:
      *
-     * <pre>
+     * {@snippet lang=java :
      *     Locale.forLanguageTag("ar-aao").getLanguage(); // returns "aao"
      *     Locale.forLanguageTag("en-abc-def-us").toString(); // returns "abc_US"
-     * </pre>
+     * }
      *
      * <li>Case is normalized except for variant tags, which are left
      * unchanged.  Language is normalized to lower case, script to
@@ -1793,12 +1790,12 @@ public final class Locale implements Cloneable, Serializable {
      * ja_JP_JP or th_TH_TH with no extensions, the appropriate
      * extensions are added as though the constructor had been called:
      *
-     * <pre>
+     * {@snippet lang=java :
      *    Locale.forLanguageTag("ja-JP-x-lvariant-JP").toLanguageTag();
      *    // returns "ja-JP-u-ca-japanese-x-lvariant-JP"
      *    Locale.forLanguageTag("th-TH-x-lvariant-TH").toLanguageTag();
      *    // returns "th-TH-u-nu-thai-x-lvariant-TH"
-     * </pre></ul>
+     * }</ul>
      *
      * <p id="legacy_tags">This implements the 'Language-Tag' production of BCP47, and
      * so supports legacy (regular and irregular, referred to as

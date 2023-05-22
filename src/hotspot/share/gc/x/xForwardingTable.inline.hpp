@@ -44,7 +44,7 @@ inline void XForwardingTable::insert(XForwarding* forwarding) {
   const uintptr_t offset = forwarding->start();
   const size_t size = forwarding->size();
 
-  assert(_map.get(offset) == NULL, "Invalid entry");
+  assert(_map.get(offset) == nullptr, "Invalid entry");
   _map.put(offset, size, forwarding);
 }
 
@@ -53,7 +53,7 @@ inline void XForwardingTable::remove(XForwarding* forwarding) {
   const size_t size = forwarding->size();
 
   assert(_map.get(offset) == forwarding, "Invalid entry");
-  _map.put(offset, size, NULL);
+  _map.put(offset, size, nullptr);
 }
 
 #endif // SHARE_GC_X_XFORWARDINGTABLE_INLINE_HPP

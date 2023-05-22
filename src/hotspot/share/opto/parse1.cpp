@@ -675,7 +675,7 @@ void Parse::do_all_blocks() {
             // Need correct bci for predicate.
             // It is fine to set it here since do_one_block() will set it anyway.
             set_parse_bci(block->start());
-            add_empty_predicates();
+            add_parse_predicates();
           }
           // Add new region for back branches.
           int edges = block->pred_count() - block->preds_parsed() + 1; // +1 for original region
@@ -1695,9 +1695,9 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
       if (target->is_SEL_head()) {
         DEBUG_ONLY( target->mark_merged_backedge(block()); )
         if (target->start() == 0) {
-          // Add loop predicate for the special case when
+          // Add Parse Predicates for the special case when
           // there are backbranches to the method entry.
-          add_empty_predicates();
+          add_parse_predicates();
         }
       }
       // Add a Region to start the new basic block.  Phis will be added
@@ -2171,7 +2171,7 @@ void Parse::rtm_deopt() {
     // Load the rtm_state from the MethodData.
     const TypePtr* adr_type = TypeMetadataPtr::make(C->method()->method_data());
     Node* mdo = makecon(adr_type);
-    int offset = MethodData::rtm_state_offset_in_bytes();
+    int offset = in_bytes(MethodData::rtm_state_offset());
     Node* adr_node = basic_plus_adr(mdo, mdo, offset);
     Node* rtm_state = make_load(control(), adr_node, TypeInt::INT, T_INT, adr_type, MemNode::unordered);
 

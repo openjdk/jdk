@@ -28,11 +28,11 @@
 #include "gc/z/zLock.inline.hpp"
 #include "utilities/debug.hpp"
 
-ZDriverRequest::ZDriverRequest() :
-    ZDriverRequest(GCCause::_no_gc, 0, 0) {}
+ZDriverRequest::ZDriverRequest()
+  : ZDriverRequest(GCCause::_no_gc, 0, 0) {}
 
-ZDriverRequest::ZDriverRequest(GCCause::Cause cause, uint young_nworkers, uint old_nworkers) :
-    _cause(cause),
+ZDriverRequest::ZDriverRequest(GCCause::Cause cause, uint young_nworkers, uint old_nworkers)
+  : _cause(cause),
     _young_nworkers(young_nworkers),
     _old_nworkers(old_nworkers) {}
 
@@ -62,8 +62,8 @@ private:
   ZListNode<ZDriverPortEntry> _node;
 
 public:
-  ZDriverPortEntry(const ZDriverRequest& message) :
-      _message(message),
+  ZDriverPortEntry(const ZDriverRequest& message)
+    : _message(message),
       _seqnum(0) {}
 
   void set_seqnum(uint64_t seqnum) {
@@ -88,8 +88,8 @@ public:
   }
 };
 
-ZDriverPort::ZDriverPort() :
-    _lock(),
+ZDriverPort::ZDriverPort()
+  : _lock(),
     _has_message(false),
     _seqnum(0),
     _queue() {}

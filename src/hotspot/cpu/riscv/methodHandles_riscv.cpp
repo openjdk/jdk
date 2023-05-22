@@ -200,7 +200,7 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
 
     Label L;
     BLOCK_COMMENT("verify_intrinsic_id {");
-    __ lhu(t0, Address(xmethod, Method::intrinsic_id_offset_in_bytes()));
+    __ lhu(t0, Address(xmethod, Method::intrinsic_id_offset()));
     __ mv(t1, (int) iid);
     __ beq(t0, t1, L);
     if (iid == vmIntrinsics::_linkToVirtual ||

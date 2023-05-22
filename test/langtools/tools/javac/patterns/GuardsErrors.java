@@ -25,7 +25,6 @@
  * @test
  * @bug 8262891
  * @summary Check errors reported for guarded patterns.
- * @enablePreview
  * @compile/fail/ref=GuardsErrors.out -XDrawDiagnostics GuardsErrors.java
  */
 
@@ -41,4 +40,35 @@ public class GuardsErrors {
 
     }
 
+    void variablesInGuards(Object o) {
+        final int i1;
+              int i2 = 0;
+        switch (o) {
+            case Integer v when (i1 = 0) == 0 -> {}
+            case Integer v when i2++ == 0 -> {}
+            case Integer v when ++i2 == 0 -> {}
+            case Integer v when new Predicate() {
+                public boolean test() {
+                    final int i;
+                    i = 2;
+                    return i == 2;
+                }
+            }.test() -> {}
+            case Number v1 when v1 instanceof Integer v2 && (v2 = 0) == 0 -> {}
+            default -> {}
+        }
+    }
+
+    GuardsErrors(Object o) {
+        switch (o) {
+            case Integer v when (f = 0) == 0 -> {}
+            default -> throw new RuntimeException();
+        }
+    }
+
+    final int f;
+
+    interface Predicate {
+        public boolean test();
+    }
 }
