@@ -4159,7 +4159,7 @@ void PhaseIdealLoop::eliminate_useless_zero_trip_guard() {
     Node* opaque = _zero_trip_guard_opaque_nodes.at(i);
     DEBUG_ONLY(CountedLoopNode* loop = ((OpaqueZeroTripGuardNode*) opaque)->guarded_loop());
     if (!useful_zero_trip_guard_opaques_nodes.member(opaque)) {
-      assert(loop == nullptr, "");
+      assert(loop == nullptr || loop->is_in_infinite_subgraph(), "opaque associated with loop only if in an infinite loop");
       this->_igvn.replace_node(opaque, opaque->in(1));
     } else {
       assert(loop != nullptr, "");
