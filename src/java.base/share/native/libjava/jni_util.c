@@ -848,9 +848,8 @@ static const char* getStringBytes(JNIEnv *env, jstring jstr, jboolean strict) {
 
     hab = (*env)->CallObjectMethod(env, jstr, String_getBytes_ID, jnuCharset);
     if (hab != 0) {
-        jint len = 0;
         if (!(*env)->ExceptionCheck(env)) {
-            len = (*env)->GetArrayLength(env, hab);
+            jint len = (*env)->GetArrayLength(env, hab);
             result = MALLOC_MIN4(len);
             if (result == 0) {
                 JNU_ThrowOutOfMemoryError(env, 0);
@@ -859,17 +858,18 @@ static const char* getStringBytes(JNIEnv *env, jstring jstr, jboolean strict) {
             }
             (*env)->GetByteArrayRegion(env, hab, 0, len, (jbyte *)result);
             result[len] = 0; /* NULL-terminate */
-        }
-        if (strict) {
-            for (int i=0; i<len; i++) {
-                if (result[i] == 0) {
-                    JNU_ThrowIllegalArgumentException(env, "NULL character not allowed in native string");
-                    result = 0;
-                    break;
+            if (strict) {
+                for (int i=0; i<len; i++) {
+                    if (result[i] == 0) {
+                        JNU_ThrowIllegalArgumentException(env, 
+                            "NULL character not allowed in native string");
+                        free(result);
+                        result = 0;
+                        break;
+                    }
                 }
             }
-        }
-
+        } 
         (*env)->DeleteLocalRef(env, hab);
     }
     return result;
