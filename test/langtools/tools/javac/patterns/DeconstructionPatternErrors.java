@@ -12,7 +12,6 @@ public class DeconstructionPatternErrors {
     public static void meth() throws Throwable {
         Object p;
         p = new P(42);
-        if (p instanceof P(_));
         if (p instanceof P3(ArrayList<Integer> l));
         if (p instanceof P4(ArrayList<Integer> l));
         if (p instanceof P5(int i));

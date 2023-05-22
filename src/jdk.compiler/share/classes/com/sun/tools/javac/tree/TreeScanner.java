@@ -27,6 +27,7 @@ package com.sun.tools.javac.tree;
 
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.tree.JCTree.*;
+import jdk.internal.javac.PreviewFeature;
 
 /** A subclass of Tree.Visitor, this class defines
  *  a general tree scanner pattern. Translation proceeds recursively in
@@ -320,6 +321,11 @@ public class TreeScanner extends Visitor {
     @Override
     public void visitPatternCaseLabel(JCPatternCaseLabel tree) {
         scan(tree.pat);
+    }
+
+    @Override
+    @PreviewFeature(feature=PreviewFeature.Feature.UNNAMED)
+    public void visitAnyPattern(JCAnyPattern that) {
     }
 
     @Override

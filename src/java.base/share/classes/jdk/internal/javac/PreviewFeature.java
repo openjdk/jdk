@@ -70,6 +70,8 @@ public @interface PreviewFeature {
         FOREIGN,
         @JEP(number=430, title="String Templates", status="First Preview")
         STRING_TEMPLATES,
+        @JEP(number=443, title="Unnamed Patterns and Variables")
+        UNNAMED,
         /**
          * A key for testing.
          */
