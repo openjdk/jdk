@@ -1,0 +1,338 @@
+/*
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+/**
+ * @test
+ * @summary Call popFrames() on an unmounted virtual thread
+ *
+ * @run build TestScaffold VMConnection TargetListener TargetAdapter
+ * @run compile -g PopFramesTest.java
+ * @run driver PopFramesTest SLEEP_NATIVE
+ * @run driver PopFramesTest LOOP_NATIVE
+ * @run driver PopFramesTest SLEEP_PRENATIVE
+ * @run driver PopFramesTest LOOP_PRENATIVE
+ * @run driver PopFramesTest SLEEP_NONATIVE
+ * @run driver PopFramesTest LOOP_NONATIVE
+ */
+import com.sun.jdi.*;
+import com.sun.jdi.event.*;
+import java.util.*;
+
+class PopFramesTestTarg {
+    static TestMode mode;
+
+    static {
+        System.loadLibrary("PopFramesTestTarg");
+    }
+
+    /*
+     * Call stack for each test mode:
+     *  - Note in all cases the popMethod() frame is the frame passed to popFrames()..
+     *  - Note that Thread.sleep() usually results in the native Thread.sleep0() frame
+     *    being at the top of the stack. However, for a mounted virtual thread
+     *    it does not result in any native frames due to how the VM parks virtual threads.
+     * 
+     * SLEEP_NATIVE:
+     *   Thread.sleep() + methods called by Thread.sleep()
+     *   loopOrSleep()
+     *   upcallMethod()
+     *   doUpcall()  <-- native method
+     *   popMethod()
+     *   main()
+     * 
+     * LOOP_NATIVE:
+     *   loopOrSleep()  <-- tight loop
+     *   upcallMethod()
+     *   doUpcall()  <-- native method
+     *   popMethod()
+     *   main()
+     *
+     * SLEEP_PRENATIVE:
+     *   Thread.sleep() + methods called by Thread.sleep()
+     *   loopOrSleep()
+     *   popMethod()
+     *   upcallMethod()
+     *   doUpcall()  <-- native method
+     *   main()
+     *
+     * LOOP_PRENATIVE:
+     *   loopOrSleep()  <-- tight loop
+     *   popMethod()
+     *   upcallMethod()
+     *   doUpcall()  <-- native method
+     *   main()
+     *
+     * SLEEP_NONATIVE:
+     *   Thread.sleep() + methods called by Thread.sleep()
+     *   loopOrSleep()
+     *   popMethod()
+     *   main()
+     *
+     * LOOP_NONATIVE:
+     *   loopOrSleep()  <-- tight loop
+     *   popMethod()
+     *   main()
+     */
+
+    /*
+     * This is the method whose frame will be popped.
+     */
+    public static void popMethod() {
+        System.out.println("    debuggee: in popMethod");
+        if (mode.isCallNative()) {
+            doUpcall();
+        } else {
+            loopOrSleep();
+        }
+    }
+
+    public static void loopOrSleep() {
+        if (mode.isDoLoop()) {
+            while (true);
+        } else {
+            try {
+                Thread.sleep(10000);
+            }  catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        } 
+    }
+
+    public static native void doUpcall(); // native method that will call upcallMethod()
+
+    public static void upcallMethod() {
+        if (mode.isCallPrenative()) {
+            popMethod();
+        } else {
+            loopOrSleep();
+        }
+    }
+
+    public static void main(String[] args) {
+        System.out.println("    debuggee: Howdy!");
+
+        // We expect just one argument, which is the test mode, such as SLEEP_NONATIVE.
+        if (args.length != 1) {
+            throw new RuntimeException("Must pass 1 arguments to PopFramesTestTarg");
+        }
+        System.out.println("    debuggee: args[0]: " + args[0]);
+        mode = Enum.valueOf(TestMode.class, args[0]); // convert test mode string to an enum
+        System.out.println("    debuggee: test mode: " + mode);
+
+        if (mode.isCallNative()) {
+            popMethod(); // call popMethod() directly, and it will call out to native
+        } else if (mode.isCallPrenative()) {
+            doUpcall();  // call native method that will call back into java to call popMethod()
+        } else {
+            popMethod(); // call popMethod() directly
+        }
+
+        System.out.println("    debuggee: Goodbye from PopAndInvokeTarg!");
+    }
+}
+
+/*
+ * The different modes the test can be run in. Each mode will produce a different stack:
+ *  - SLEEP means the debuggee blocks in Thread.sleep()
+ *  - LOOP means the debuggee sits in a tight loop
+ *  - NATIVE means there is a native frame within the set of frames to pop.
+ *  - PRENATIVE means there is a native frame before the set of frame to pop.
+ *  - NONATIVE means there is no native frame (purposefully) present in the stack.
+ */
+enum TestMode {
+    SLEEP_NATIVE,
+    LOOP_NATIVE,
+    SLEEP_PRENATIVE,
+    LOOP_PRENATIVE,
+    SLEEP_NONATIVE,
+    LOOP_NONATIVE;
+
+    boolean isDoLoop() {
+        return this == LOOP_NATIVE || this == LOOP_PRENATIVE || this == LOOP_NONATIVE;
+    }
+
+    boolean isCallNative() {
+        return this == LOOP_NATIVE || this == SLEEP_NATIVE;
+    }
+
+    boolean isCallPrenative() {
+        return this == LOOP_PRENATIVE || this == SLEEP_PRENATIVE;
+    }
+}
+
+/********** test program **********/
+
+public class PopFramesTest extends TestScaffold {
+    private static TestMode mode;
+
+    PopFramesTest(String args[]) {
+        super(args);
+    }
+
+    public static void main(String[] args)      throws Exception {
+        // We should get one argument that indicates the test mode, such as SLEEP_NONATIVE.
+        if (args.length != 1) {
+            throw new RuntimeException("Must pass one argument to PopFramesTestTarg");
+        }
+        mode = Enum.valueOf(TestMode.class, args[0]); // convert test mode string to an enum
+
+        /*
+         * The @run command looks something like:
+         *   @run driver PopFramesTest SLEEP_NONATIVE
+         * We need to pass SLEEP_NONATIVE to the debuggee. We also need to insert
+         * -Djava.library.path so the native method can be accessed if called.
+         */
+        String nativePath = "-Djava.library.path=" + System.getProperty("java.library.path");
+        String[] newArgs = new String[2];
+        newArgs[0] = nativePath;
+        newArgs[1] = args[0]; // pass test mode, such as SLEEP_NONATIVE
+
+        new PopFramesTest(newArgs).startTests();
+    }
+
+    StackFrame frameFor(ThreadReference thread, String methodName) throws Exception {
+        Iterator it = thread.frames().iterator();
+
+        while (it.hasNext()) {
+            StackFrame frame = (StackFrame)it.next();
+            if (frame.location().method().name().equals(methodName)) {
+                return frame;
+            }
+        }
+        failure("FAIL: " + methodName + " not on stack");
+        return null;
+    }
+
+    public void printStack(ThreadReference thread, String msg) throws Exception {
+        System.out.println(msg);
+        List<StackFrame> stack_frames = thread.frames();
+        int i = 0;
+        String sourceName;
+        for (StackFrame f : stack_frames) {
+            try {
+                sourceName = f.location().sourceName();
+            } catch (AbsentInformationException aie) {
+                sourceName = "Unknown source";
+            }
+            System.out.println("frame[" + i++ +"]: " + f.location().method() +
+                               " (bci:"+ f.location().codeIndex() + ")" +
+                               " (" + sourceName + ":"+ f.location().lineNumber() + ")");
+        }
+    }
+
+    /********** test core **********/
+
+    protected void runTests() throws Exception {
+        BreakpointEvent bpe = startTo("PopFramesTestTarg", "popMethod", "()V");
+        ClassType targetClass = (ClassType)bpe.location().declaringType();
+        ThreadReference mainThread  = bpe.thread();
+
+        // Resume main thread until it is in Thread.sleep() or the infinite loop.
+        mainThread.resume();
+        try {
+            Thread.sleep(1000); // give thread chance to get into Thread.sleep() or loop
+        }  catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+        mainThread.suspend(); // Suspend thread while in Thread.sleep() or loop
+        printStack(mainThread, "Debuggee stack before popFrames():");
+
+        /*
+         * Figure out which exception popFrames() should throw.
+         */
+        Class expected_exception;
+        switch(mode) {
+        case SLEEP_NATIVE:
+        case LOOP_NATIVE:
+        case SLEEP_PRENATIVE:
+            /*
+             * For the two NATIVE cases, there is a native frame within the set of frames
+             * to pop. For the SLEEP_PRENATIVE case, there also ends up being a native
+             * frame due to Thread.sleep0() being native. However, see the the SLEEP_NATIVE
+             * comment below. The only reason we end up in Thread.sleep0() for a virtual
+             * thread in the SLEEP_PRENATIVE case is because it is pinned due to the earlier
+             * native method. It is not pinned in the SLEEP_NATIVE case as described below,
+             * which is why it does not end up in Thread.sleep0().
+             */
+            expected_exception = NativeMethodException.class;
+            break;
+        case LOOP_PRENATIVE:
+        case LOOP_NONATIVE:
+            /*
+             * For these two test cases, there are no native frames within the set of
+             * frames to pop, nor in the frame previous to the frame to pop, so no
+             * exception is expected.
+             */
+            expected_exception = null;
+            break;
+        case SLEEP_NONATIVE:
+            /*
+             * Normally a Thread.sleep() results in the Thread.sleep0() native frame
+             * on the stack, so the end result is NativeMethodException. However, for
+             * a virtual thread that is not pinned, you end up with no native methods
+             * on the stack due to how the VM parks virtual threads. So we have an 
+             * unmounted virtual thread with no native frames, which means 
+             * OpaqueFrameException will be thrown.
+             */
+            String mainWrapper = System.getProperty("main.wrapper");
+            if ("Virtual".equals(mainWrapper)) {
+                expected_exception = OpaqueFrameException.class;
+            } else {
+                expected_exception = NativeMethodException.class;
+            }
+            break;
+        default:
+            throw new RuntimeException("Bad test mode: " + mode);
+        }
+
+        /*
+         * Pop all the frames up to and including the popMethod() frame.
+         */
+        try {
+            mainThread.popFrames(frameFor(mainThread, "popMethod"));
+            if (expected_exception != null) {
+                failure("failure: popFrames() did not get expected exception: " + expected_exception);
+            }
+        } catch (Exception ex) {
+            if (expected_exception == ex.getClass()) {
+                System.out.println("success: popFrames() got expected exception: " + ex);
+            } else {
+                failure("failure: popFrames() got unexpected exception: " + ex);
+            }
+        }
+
+        printStack(mainThread, "Debuggee stack after popFrames():");
+
+        /*
+         * Most tests do a listenUntilVMDisconnect() here, but there is no real need for it
+         * with this test, and doing so would require finding a way to get the debuggee
+         * to exit the endless loop it might be in. When we return, TestScaffold will
+         * call TestScaffold.shutdown(), causing the debuggee process to be terminated quickly.
+         */
+
+        if (testFailed) {
+            throw new Exception("PopFramesTest failed");
+        }
+        System.out.println("Passed:");
+    }
+}
