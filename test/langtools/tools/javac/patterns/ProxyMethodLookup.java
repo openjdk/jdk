@@ -25,7 +25,6 @@
  * @test
  * @bug 8288120
  * @summary Verify an appropriate accessor method is looked up.
- * @enablePreview
  */
 public class ProxyMethodLookup {
 

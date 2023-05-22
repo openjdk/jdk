@@ -794,15 +794,15 @@ ciConstant ciEnv::get_constant_by_index(const constantPoolHandle& cpool,
 // Implementation note: the results of field lookups are cached
 // in the accessor klass.
 ciField* ciEnv::get_field_by_index_impl(ciInstanceKlass* accessor,
-                                        int index) {
+                                        int index, Bytecodes::Code bc) {
   ciConstantPoolCache* cache = accessor->field_cache();
   if (cache == nullptr) {
-    ciField* field = new (arena()) ciField(accessor, index);
+    ciField* field = new (arena()) ciField(accessor, index, bc);
     return field;
   } else {
     ciField* field = (ciField*)cache->get(index);
     if (field == nullptr) {
-      field = new (arena()) ciField(accessor, index);
+      field = new (arena()) ciField(accessor, index, bc);
       cache->insert(index, field);
     }
     return field;
@@ -814,8 +814,8 @@ ciField* ciEnv::get_field_by_index_impl(ciInstanceKlass* accessor,
 //
 // Get a field by index from a klass's constant pool.
 ciField* ciEnv::get_field_by_index(ciInstanceKlass* accessor,
-                                   int index) {
-  GUARDED_VM_ENTRY(return get_field_by_index_impl(accessor, index);)
+                                   int index, Bytecodes::Code bc) {
+  GUARDED_VM_ENTRY(return get_field_by_index_impl(accessor, index, bc);)
 }
 
 // ------------------------------------------------------------------
@@ -882,16 +882,16 @@ ciMethod* ciEnv::get_method_by_index_impl(const constantPoolHandle& cpool,
     // Fake a method that is equivalent to a declared method.
     ciInstanceKlass* holder    = get_instance_klass(vmClasses::MethodHandle_klass());
     ciSymbol*        name      = ciSymbols::invokeBasic_name();
-    ciSymbol*        signature = get_symbol(cpool->signature_ref_at(index));
+    ciSymbol*        signature = get_symbol(cpool->signature_ref_at(index, bc));
     return get_unloaded_method(holder, name, signature, accessor);
   } else {
-    const int holder_index = cpool->klass_ref_index_at(index);
+    const int holder_index = cpool->klass_ref_index_at(index, bc);
     bool holder_is_accessible;
     ciKlass* holder = get_klass_by_index_impl(cpool, holder_index, holder_is_accessible, accessor);
 
     // Get the method's name and signature.
-    Symbol* name_sym = cpool->name_ref_at(index);
-    Symbol* sig_sym  = cpool->signature_ref_at(index);
+    Symbol* name_sym = cpool->name_ref_at(index, bc);
+    Symbol* sig_sym  = cpool->signature_ref_at(index, bc);
 
     if (cpool->has_preresolution()
         || ((holder == ciEnv::MethodHandle_klass() || holder == ciEnv::VarHandle_klass()) &&
@@ -917,7 +917,7 @@ ciMethod* ciEnv::get_method_by_index_impl(const constantPoolHandle& cpool,
     }
 
     if (holder_is_accessible) {  // Our declared holder is loaded.
-      constantTag tag = cpool->tag_ref_at(index);
+      constantTag tag = cpool->tag_ref_at(index, bc);
       assert(accessor->get_instanceKlass() == cpool->pool_holder(), "not the pool holder?");
       Method* m = lookup_method(accessor, holder, name_sym, sig_sym, bc, tag);
       if (m != nullptr &&
@@ -1533,12 +1533,12 @@ void ciEnv::process_invokedynamic(const constantPoolHandle &cp, int indy_index, 
 
 // Process an invokehandle call site and record any dynamic locations.
 void ciEnv::process_invokehandle(const constantPoolHandle &cp, int index, JavaThread* thread) {
-  const int holder_index = cp->klass_ref_index_at(index);
+  const int holder_index = cp->klass_ref_index_at(index, Bytecodes::_invokehandle);
   if (!cp->tag_at(holder_index).is_klass()) {
     return;  // not resolved
   }
   Klass* holder = ConstantPool::klass_at_if_loaded(cp, holder_index);
-  Symbol* name = cp->name_ref_at(index);
+  Symbol* name = cp->name_ref_at(index, Bytecodes::_invokehandle);
   if (MethodHandles::is_signature_polymorphic_name(holder, name)) {
     ConstantPoolCacheEntry* cp_cache_entry = cp->cache()->entry_at(cp->decode_cpcache_index(index));
     if (cp_cache_entry->is_resolved(Bytecodes::_invokehandle)) {

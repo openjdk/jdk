@@ -1538,6 +1538,12 @@ void PlatformEvent::park() {       // AKA "down()"
 }
 
 int PlatformEvent::park(jlong millis) {
+  return park_nanos(millis_to_nanos_bounded(millis));
+}
+
+int PlatformEvent::park_nanos(jlong nanos) {
+  assert(nanos > 0, "nanos are positive");
+
   // Transitions for _event:
   //   -1 => -1 : illegal
   //    1 =>  0 : pass - return immediately
@@ -1557,7 +1563,7 @@ int PlatformEvent::park(jlong millis) {
 
   if (v == 0) { // Do this the hard way by blocking ...
     struct timespec abst;
-    to_abstime(&abst, millis_to_nanos_bounded(millis), false, false);
+    to_abstime(&abst, nanos, false, false);
 
     int ret = OS_TIMEOUT;
     int status = pthread_mutex_lock(_mutex);

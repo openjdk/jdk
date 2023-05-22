@@ -217,7 +217,7 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
      * it would appear that a shorter species could serve as a supertype of a
      * longer one which extends it.
      */
-    public abstract class SpeciesData {
+    abstract class SpeciesData {
         // Bootstrapping requires circular relations Class -> SpeciesData -> Class
         // Therefore, we need non-final links in the chain.  Use @Stable fields.
         private final K key;
@@ -454,7 +454,7 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
      * Code generation support for instances.
      * Subclasses can modify the behavior.
      */
-    public class Factory {
+    class Factory {
         /**
          * Constructs a factory.
          */

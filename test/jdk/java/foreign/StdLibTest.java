@@ -24,7 +24,7 @@
 /*
  * @test
  * @enablePreview
- * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64" | os.arch == "riscv64"
+ * @requires jdk.foreign.linker != "UNSUPPORTED"
  * @run testng/othervm --enable-native-access=ALL-UNNAMED StdLibTest
  */
 
@@ -233,7 +233,7 @@ public class StdLibTest extends NativeTestHelper {
                     C_INT.withName("wday"),
                     C_INT.withName("yday"),
                     C_BOOL.withName("isdst"),
-                    MemoryLayout.paddingLayout(24)
+                    MemoryLayout.paddingLayout(3)
             );
 
             Tm(MemorySegment addr) {

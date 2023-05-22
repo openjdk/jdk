@@ -24,7 +24,7 @@
 /*
  * @test
  * @enablePreview
- * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64" | os.arch == "riscv64"
+ * @requires jdk.foreign.linker != "UNSUPPORTED"
  * @modules java.base/jdk.internal.ref
  * @run testng/othervm
  *     --enable-native-access=ALL-UNNAMED
@@ -161,7 +161,7 @@ public class TestNulls {
         addDefaultMapping(ValueLayout.OfFloat.class, ValueLayout.JAVA_FLOAT);
         addDefaultMapping(ValueLayout.OfLong.class, JAVA_LONG);
         addDefaultMapping(ValueLayout.OfDouble.class, ValueLayout.JAVA_DOUBLE);
-        addDefaultMapping(PaddingLayout.class, MemoryLayout.paddingLayout(32));
+        addDefaultMapping(PaddingLayout.class, MemoryLayout.paddingLayout(4));
         addDefaultMapping(GroupLayout.class, MemoryLayout.structLayout(ValueLayout.JAVA_INT));
         addDefaultMapping(StructLayout.class, MemoryLayout.structLayout(ValueLayout.JAVA_INT));
         addDefaultMapping(UnionLayout.class, MemoryLayout.unionLayout(ValueLayout.JAVA_INT));

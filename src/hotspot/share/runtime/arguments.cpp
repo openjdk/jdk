@@ -523,6 +523,7 @@ static SpecialFlag const special_jvm_flags[] = {
   { "G1UsePreventiveGC",            JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::jdk(22) },
   { "G1ConcRSLogCacheSize",         JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::undefined() },
   { "G1ConcRSHotCardLimit",         JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::undefined() },
+  { "RefDiscoveryPolicy",           JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::undefined() },
   { "MetaspaceReclaimPolicy",       JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::undefined() },
 
 #ifdef ASSERT
@@ -1476,44 +1477,15 @@ void Arguments::set_use_compressed_oops() {
     if (UseCompressedOops && !FLAG_IS_DEFAULT(UseCompressedOops)) {
       warning("Max heap size too large for Compressed Oops");
       FLAG_SET_DEFAULT(UseCompressedOops, false);
-      if (COMPRESSED_CLASS_POINTERS_DEPENDS_ON_COMPRESSED_OOPS) {
-        FLAG_SET_DEFAULT(UseCompressedClassPointers, false);
-      }
     }
   }
 #endif // _LP64
 }
 
-
-// NOTE: set_use_compressed_klass_ptrs() must be called after calling
-// set_use_compressed_oops().
 void Arguments::set_use_compressed_klass_ptrs() {
 #ifdef _LP64
-  // On some architectures, the use of UseCompressedClassPointers implies the use of
-  // UseCompressedOops. The reason is that the rheap_base register of said platforms
-  // is reused to perform some optimized spilling, in order to use rheap_base as a
-  // temp register. But by treating it as any other temp register, spilling can typically
-  // be completely avoided instead. So it is better not to perform this trick. And by
-  // not having that reliance, large heaps, or heaps not supporting compressed oops,
-  // can still use compressed class pointers.
-  if (COMPRESSED_CLASS_POINTERS_DEPENDS_ON_COMPRESSED_OOPS && !UseCompressedOops) {
-    if (UseCompressedClassPointers) {
-      warning("UseCompressedClassPointers requires UseCompressedOops");
-    }
-    FLAG_SET_DEFAULT(UseCompressedClassPointers, false);
-  } else {
-    // Turn on UseCompressedClassPointers too
-    if (FLAG_IS_DEFAULT(UseCompressedClassPointers)) {
-      FLAG_SET_ERGO(UseCompressedClassPointers, true);
-    }
-    // Check the CompressedClassSpaceSize to make sure we use compressed klass ptrs.
-    if (UseCompressedClassPointers) {
-      if (CompressedClassSpaceSize > KlassEncodingMetaspaceMax) {
-        warning("CompressedClassSpaceSize is too large for UseCompressedClassPointers");
-        FLAG_SET_DEFAULT(UseCompressedClassPointers, false);
-      }
-    }
-  }
+  assert(!UseCompressedClassPointers || CompressedClassSpaceSize <= KlassEncodingMetaspaceMax,
+         "CompressedClassSpaceSize is too large for UseCompressedClassPointers");
 #endif // _LP64
 }
 
@@ -1535,9 +1507,6 @@ jint Arguments::set_ergonomics_flags() {
 
 #ifdef _LP64
   set_use_compressed_oops();
-
-  // set_use_compressed_klass_ptrs() must be called after calling
-  // set_use_compressed_oops().
   set_use_compressed_klass_ptrs();
 
   // Also checks that certain machines are slower with compressed oops
@@ -1676,9 +1645,6 @@ void Arguments::set_heap_size() {
             "Please check the setting of MaxRAMPercentage %5.2f."
             ,(size_t)reasonable_max, (size_t)max_coop_heap, MaxRAMPercentage);
           FLAG_SET_ERGO(UseCompressedOops, false);
-          if (COMPRESSED_CLASS_POINTERS_DEPENDS_ON_COMPRESSED_OOPS) {
-            FLAG_SET_ERGO(UseCompressedClassPointers, false);
-          }
         } else {
           reasonable_max = MIN2(reasonable_max, max_coop_heap);
         }
@@ -1938,27 +1904,43 @@ bool Arguments::check_vm_args_consistency() {
   }
 #endif
 
-#if !defined(X86) && !defined(AARCH64) && !defined(PPC64) && !defined(RISCV64)
+
+#if !defined(X86) && !defined(AARCH64) && !defined(RISCV64) && !defined(ARM)
+  if (LockingMode == LM_LIGHTWEIGHT) {
+    FLAG_SET_CMDLINE(LockingMode, LM_LEGACY);
+    warning("New lightweight locking not supported on this platform");
+  }
+#endif
+
   if (UseHeavyMonitors) {
+    if (FLAG_IS_CMDLINE(LockingMode) && LockingMode != LM_MONITOR) {
+      jio_fprintf(defaultStream::error_stream(),
+                  "Conflicting -XX:+UseHeavyMonitors and -XX:LockingMode=%d flags", LockingMode);
+      return false;
+    }
+    FLAG_SET_CMDLINE(LockingMode, LM_MONITOR);
+  }
+
+#if !defined(X86) && !defined(AARCH64) && !defined(PPC64) && !defined(RISCV64) && !defined(S390)
+  if (LockingMode == LM_MONITOR) {
     jio_fprintf(defaultStream::error_stream(),
-                "UseHeavyMonitors is not fully implemented on this architecture");
+                "LockingMode == 0 (LM_MONITOR) is not fully implemented on this architecture");
     return false;
   }
 #endif
 #if (defined(X86) || defined(PPC64)) && !defined(ZERO)
-  if (UseHeavyMonitors && UseRTMForStackLocks) {
+  if (LockingMode == LM_MONITOR && UseRTMForStackLocks) {
     jio_fprintf(defaultStream::error_stream(),
-                "-XX:+UseHeavyMonitors and -XX:+UseRTMForStackLocks are mutually exclusive");
+                "LockingMode == 0 (LM_MONITOR) and -XX:+UseRTMForStackLocks are mutually exclusive");
 
     return false;
   }
 #endif
-  if (VerifyHeavyMonitors && !UseHeavyMonitors) {
+  if (VerifyHeavyMonitors && LockingMode != LM_MONITOR) {
     jio_fprintf(defaultStream::error_stream(),
-                "-XX:+VerifyHeavyMonitors requires -XX:+UseHeavyMonitors");
+                "-XX:+VerifyHeavyMonitors requires LockingMode == 0 (LM_MONITOR)");
     return false;
   }
-
   return status;
 }
 
@@ -3048,6 +3030,11 @@ jint Arguments::finalize_vm_init_args(bool patch_mod_javabase) {
     // class metadata instead of modifying them in place. The copy is inaccessible to the compiler.
     // TODO: revisit the following for the static archive case.
     set_mode_flags(_int);
+
+    // String deduplication may cause CDS to iterate the strings in different order from one
+    // run to another which resulting in non-determinstic CDS archives.
+    // Disable UseStringDeduplication while dumping CDS archive.
+    UseStringDeduplication = false;
   }
 
   // RecordDynamicDumpInfo is not compatible with ArchiveClassesAtExit

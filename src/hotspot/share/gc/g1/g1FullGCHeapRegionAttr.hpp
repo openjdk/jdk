@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,8 @@
 // the table specifies whether a Full GC cycle should be compacting or skip
 // compacting a region.
 // Reasons for not compacting a region:
-// (1) the HeapRegion itself has been pinned at the start of Full GC.
+// (1) the HeapRegion itself can not be moved during this phase of the full gc
+//     (e.g. Humongous regions).
 // (2) the occupancy of the region is too high to be considered eligible for compaction.
 class G1FullGCHeapRegionAttr : public G1BiasedMappedArray<uint8_t> {
   static const uint8_t Compacting = 0;       // Region will be compacted.
