@@ -183,5 +183,4 @@ void ContiguousSpace::oop_since_save_marks_iterate(OopClosureType* blk) {
 
   set_saved_mark_word(p);
 }
-
 #endif // SHARE_GC_SHARED_SPACE_INLINE_HPP

@@ -38,8 +38,9 @@ class G1FullGCAdjustTask : public G1FullGCTask {
   G1RootProcessor          _root_processor;
   WeakProcessor::Task      _weak_proc_task;
   HeapRegionClaimer        _hrclaimer;
-  G1AdjustClosure          _adjust;
 
+  template<bool ALT_FWD>
+  void work_impl(uint worker_id);
 public:
   G1FullGCAdjustTask(G1FullCollector* collector);
   void work(uint worker_id);

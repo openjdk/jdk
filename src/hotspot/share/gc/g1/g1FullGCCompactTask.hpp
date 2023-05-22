@@ -41,10 +41,15 @@ class G1FullGCCompactTask : public G1FullGCTask {
   G1CollectedHeap* _g1h;
 
   void compact_region(HeapRegion* hr);
+  template<bool ALT_FWD>
   void compact_humongous_obj(HeapRegion* hr);
   void free_non_overlapping_regions(uint src_start_idx, uint dest_start_idx, uint num_regions);
 
+  template<bool ALT_FWD>
   static void copy_object_to_new_location(oop obj);
+
+  template<bool ALT_FWD>
+  void humongous_compaction_impl();
 
 public:
   G1FullGCCompactTask(G1FullCollector* collector) :
@@ -57,6 +62,7 @@ public:
   void serial_compaction();
   void humongous_compaction();
 
+  template<bool ALT_FWD>
   class G1CompactRegionClosure : public StackObj {
     G1CMBitMap* _bitmap;
     void clear_in_bitmap(oop object);

@@ -35,15 +35,17 @@
 #include "oops/oop.inline.hpp"
 #include "utilities/ticks.hpp"
 
-void G1FullGCCompactTask::G1CompactRegionClosure::clear_in_bitmap(oop obj) {
+template<bool ALT_FWD>
+void G1FullGCCompactTask::G1CompactRegionClosure<ALT_FWD>::clear_in_bitmap(oop obj) {
   assert(_bitmap->is_marked(obj), "Should only compact marked objects");
   _bitmap->clear(obj);
 }
 
-size_t G1FullGCCompactTask::G1CompactRegionClosure::apply(oop obj) {
+template<bool ALT_FWD>
+size_t G1FullGCCompactTask::G1CompactRegionClosure<ALT_FWD>::apply(oop obj) {
   size_t size = obj->size();
   if (SlidingForwarding::is_forwarded(obj)) {
-    G1FullGCCompactTask::copy_object_to_new_location(obj);
+    G1FullGCCompactTask::copy_object_to_new_location<ALT_FWD>(obj);
   }
 
   // Clear the mark for the compacted object to allow reuse of the
@@ -52,14 +54,15 @@ size_t G1FullGCCompactTask::G1CompactRegionClosure::apply(oop obj) {
   return size;
 }
 
+template<bool ALT_FWD>
 void G1FullGCCompactTask::copy_object_to_new_location(oop obj) {
   assert(SlidingForwarding::is_forwarded(obj), "Sanity!");
-  assert(SlidingForwarding::forwardee(obj) != obj, "Object must have a new location");
+  assert(SlidingForwarding::forwardee<ALT_FWD>(obj) != obj, "Object must have a new location");
 
   size_t size = obj->size();
   // Copy object and reinit its mark.
   HeapWord* obj_addr = cast_from_oop<HeapWord*>(obj);
-  HeapWord* destination = cast_from_oop<HeapWord*>(SlidingForwarding::forwardee(obj));
+  HeapWord* destination = cast_from_oop<HeapWord*>(SlidingForwarding::forwardee<ALT_FWD>(obj));
   Copy::aligned_conjoint_words(obj_addr, destination, size);
 
   // There is no need to transform stack chunks - marking already did that.
@@ -78,8 +81,13 @@ void G1FullGCCompactTask::compact_region(HeapRegion* hr) {
     // showed that it was better overall to clear bit by bit, compared
     // to clearing the whole region at the end. This difference was
     // clearly seen for regions with few marks.
-    G1CompactRegionClosure compact(collector()->mark_bitmap());
-    hr->apply_to_marked_objects(collector()->mark_bitmap(), &compact);
+    if (UseAltGCForwarding) {
+      G1CompactRegionClosure<true> compact(collector()->mark_bitmap());
+      hr->apply_to_marked_objects(collector()->mark_bitmap(), &compact);
+    } else {
+      G1CompactRegionClosure<false> compact(collector()->mark_bitmap());
+      hr->apply_to_marked_objects(collector()->mark_bitmap(), &compact);
+    }
   }
 
   hr->reset_compacted_after_full_gc(_collector->compaction_top(hr));
@@ -105,15 +113,24 @@ void G1FullGCCompactTask::serial_compaction() {
   }
 }
 
-void G1FullGCCompactTask::humongous_compaction() {
-  GCTraceTime(Debug, gc, phases) tm("Phase 4: Humonguous Compaction", collector()->scope()->timer());
-
+template<bool ALT_FWD>
+void G1FullGCCompactTask::humongous_compaction_impl() {
   for (HeapRegion* hr : collector()->humongous_compaction_regions()) {
     assert(collector()->is_compaction_target(hr->hrm_index()), "Sanity");
-    compact_humongous_obj(hr);
+    compact_humongous_obj<ALT_FWD>(hr);
   }
 }
 
+void G1FullGCCompactTask::humongous_compaction() {
+  GCTraceTime(Debug, gc, phases) tm("Phase 4: Humonguous Compaction", collector()->scope()->timer());
+  if (UseAltGCForwarding) {
+    humongous_compaction_impl<true>();
+  } else {
+    humongous_compaction_impl<false>();
+  }
+}
+
+template<bool ALT_FWD>
 void G1FullGCCompactTask::compact_humongous_obj(HeapRegion* src_hr) {
   assert(src_hr->is_starts_humongous(), "Should be start region of the humongous object");
 
@@ -121,12 +138,12 @@ void G1FullGCCompactTask::compact_humongous_obj(HeapRegion* src_hr) {
   size_t word_size = obj->size();
 
   uint num_regions = (uint)G1CollectedHeap::humongous_obj_size_in_regions(word_size);
-  HeapWord* destination = cast_from_oop<HeapWord*>(SlidingForwarding::forwardee(obj));
+  HeapWord* destination = cast_from_oop<HeapWord*>(SlidingForwarding::forwardee<ALT_FWD>(obj));
 
   assert(collector()->mark_bitmap()->is_marked(obj), "Should only compact marked objects");
   collector()->mark_bitmap()->clear(obj);
 
-  copy_object_to_new_location(obj);
+  copy_object_to_new_location<ALT_FWD>(obj);
 
   uint dest_start_idx = _g1h->addr_to_region(destination);
   // Update the metadata for the destination regions.
