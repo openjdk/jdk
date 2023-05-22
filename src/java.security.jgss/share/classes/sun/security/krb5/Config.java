@@ -1255,7 +1255,7 @@ public class Config {
             if (defaultKDC != null) {
                 return defaultKDC;
             }
-            KrbException ke = new KrbException("Cannot locate KDC");
+            KrbException ke = new KrbException("Cannot locate KDC for " + realm);
             if (cause != null) {
                 ke.initCause(cause);
             }
