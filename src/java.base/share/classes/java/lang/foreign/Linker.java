@@ -59,7 +59,8 @@ import java.util.stream.Stream;
  * via the generation of {@linkplain #upcallStub(MethodHandle, FunctionDescriptor, Arena, Option...) upcall stubs}.</li>
  * </ul>
  * A linker provides a way to lookup up the <em>canonical layouts</em> associated with the data types used by the ABI.
- * For example, the canonical layout for the C {@code size_t} type is equal to {@link ValueLayout#JAVA_LONG}. The canonical
+ * For example, a linker implementing the C ABI might choose to provide a canonical layout for the C {@code size_t}
+ * type. On 64-bit platforms, this canonical layout might be equal to {@link ValueLayout#JAVA_LONG}. The canonical
  * layouts supported by a linker are exposed via the {@link #canonicalLayouts()} method, which returns a map from
  * ABI type names to canonical layouts.
  * <p>
@@ -469,6 +470,8 @@ public sealed interface Linker permits AbstractLinker {
      * is the combination of OS and processor where the Java runtime is currently executing.
      *
      * @apiNote It is not currently possible to obtain a linker for a different combination of OS and processor.
+     * @implSpec A native linker implementation is guaranteed to provide canonical layouts for
+     * <a href="#describing-c-sigs">basic C types</a>.
      * @implNote The libraries exposed by the {@linkplain #defaultLookup() default lookup} associated with the returned
      * linker are the native libraries loaded in the process where the Java runtime is currently executing. For example,
      * on Linux, these libraries typically include {@code libc}, {@code libm} and {@code libdl}.
@@ -611,7 +614,7 @@ public sealed interface Linker permits AbstractLinker {
     SymbolLookup defaultLookup();
 
     /**
-     * {@return a mapping between the names of data types used by the ABI implemented by this linker and their
+     * {@return an unmodifiable mapping between the names of data types used by the ABI implemented by this linker and their
      * <em>canonical layouts</em>}
      * <p>
      * Each {@link Linker} is responsible for choosing the data types that are widely recognized as useful on the OS
