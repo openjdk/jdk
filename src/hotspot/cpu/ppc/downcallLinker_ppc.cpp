@@ -158,7 +158,9 @@ void DowncallStubGenerator::generate() {
   // This may be a bit more than needed when HFA is used (see CallArranger.java).
   // (native_abi_reg_args is native_abi_minframe plus space for 8 argument register spill slots)
   assert(_abi._shadow_space_bytes == frame::native_abi_minframe_size, "expected space according to ABI");
-  int allocated_frame_size = frame::native_abi_minframe_size + MAX2(_input_registers.length(), 8) * BytesPerWord;
+  // Note: For ABIv2, we only need (_input_registers.length() > 8) ? _input_registers.length() : 0
+  int register_save_area_slots = MAX2(_input_registers.length(), 8);
+  int allocated_frame_size = frame::native_abi_minframe_size + register_save_area_slots * BytesPerWord;
 
   bool should_save_return_value = !_needs_return_buffer && _needs_transition;
   RegSpiller out_reg_spiller(_output_registers);
