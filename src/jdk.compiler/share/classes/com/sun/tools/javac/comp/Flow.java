@@ -742,87 +742,6 @@ public class Flow {
             alive = alive.or(resolveYields(tree, prevPendingExits));
         }
 
-        sealed interface PatternDescription {
-            public static PatternDescription from(Types types, Type selectorType, JCPattern pattern) {
-                if (pattern instanceof JCBindingPattern binding) {
-                    Type type = types.isSubtype(selectorType, binding.type)
-                            ? selectorType : binding.type;
-                    return new BindingPattern(type);
-                } else if (pattern instanceof JCRecordPattern record) {
-                    Type[] componentTypes = ((ClassSymbol) record.type.tsym).getRecordComponents()
-                            .map(r -> types.memberType(record.type, r))
-                            .toArray(s -> new Type[s]);
-                    PatternDescription[] nestedDescriptions =
-                            new PatternDescription[record.nested.size()];
-                    int i = 0;
-                    for (List<JCPattern> it = record.nested;
-                         it.nonEmpty();
-                         it = it.tail, i++) {
-                        nestedDescriptions[i] = PatternDescription.from(types, componentTypes[i], it.head);
-                    }
-                    return new RecordPattern(record.type, componentTypes, nestedDescriptions);
-                } else {
-                    throw Assert.error();
-                }
-            }
-        }
-
-        record BindingPattern(Type type) implements PatternDescription {
-            @Override
-            public int hashCode() {
-                return type.tsym.hashCode();
-            }
-            @Override
-            public boolean equals(Object o) {
-                return o instanceof BindingPattern other &&
-                       type.tsym == other.type.tsym;
-            }
-            @Override
-            public String toString() {
-                return type.tsym + " _";
-            }
-        }
-
-        record RecordPattern(Type recordType, int _hashCode, Type[] fullComponentTypes, PatternDescription... nested) implements PatternDescription {
-
-            public RecordPattern(Type recordType, Type[] fullComponentTypes, PatternDescription[] nested) {
-                this(recordType, hashCode(-1, recordType, nested), fullComponentTypes, nested);
-            }
-
-            @Override
-            public int hashCode() {
-                return _hashCode;
-            }
-
-            @Override
-            public boolean equals(Object o) {
-                return o instanceof RecordPattern other &&
-                       recordType.tsym == other.recordType.tsym &&
-                       Arrays.equals(nested, other.nested);
-            }
-
-            public int hashCode(int excludeComponent) {
-                return hashCode(excludeComponent, recordType, nested);
-            }
-
-            public static int hashCode(int excludeComponent, Type recordType, PatternDescription... nested) {
-                int hash = 5;
-                hash =  41 * hash + recordType.tsym.hashCode();
-                for (int  i = 0; i < nested.length; i++) {
-                    if (i != excludeComponent) {
-                        hash = 41 * hash + nested[i].hashCode();
-                    }
-                }
-                return hash;
-            }
-            @Override
-            public String toString() {
-                return recordType.tsym + "(" + Arrays.stream(nested)
-                                                     .map(pd -> pd.toString())
-                                                     .collect(Collectors.joining(", ")) + ")";
-            }
-        }
-
         private boolean exhausts(JCExpression selector, List<JCCase> cases) {
             Set<PatternDescription> patternSet = new HashSet<>();
             Map<Symbol, Set<Symbol>> enum2Constants = new HashMap<>();
@@ -833,7 +752,7 @@ public class Flow {
                 for (var l : c.labels) {
                     if (l instanceof JCPatternCaseLabel patternLabel) {
                         for (Type component : components(selector.type)) {
-                            patternSet.add(PatternDescription.from(types, component, patternLabel.pat));
+                            patternSet.add(makePatternDescription(component, patternLabel.pat));
                         }
                     } else if (l instanceof JCConstantCaseLabel constantLabel) {
                         Symbol s = TreeInfo.symbol(constantLabel.expr);
@@ -2905,7 +2824,7 @@ public class Flow {
             if (!resourceVarDecls.isEmpty() &&
                     lint.isEnabled(Lint.LintCategory.TRY)) {
                 for (JCVariableDecl resVar : resourceVarDecls) {
-                    if (unrefdResources.includes(resVar.sym)) {
+                    if (unrefdResources.includes(resVar.sym) && !resVar.sym.isUnnamedVariable()) {
                         log.warning(Lint.LintCategory.TRY, resVar.pos(),
                                     Warnings.TryResourceNotReferenced(resVar.sym));
                         unrefdResources.remove(resVar.sym);
@@ -3554,4 +3473,85 @@ public class Flow {
         }
     }
 
+    sealed interface PatternDescription { }
+    public PatternDescription makePatternDescription(Type selectorType, JCPattern pattern) {
+        if (pattern instanceof JCBindingPattern binding) {
+            Type type = types.isSubtype(selectorType, binding.type)
+                    ? selectorType : binding.type;
+            return new BindingPattern(type);
+        } else if (pattern instanceof JCRecordPattern record) {
+            Type[] componentTypes = ((ClassSymbol) record.type.tsym).getRecordComponents()
+                    .map(r -> types.memberType(record.type, r))
+                    .toArray(s -> new Type[s]);
+            PatternDescription[] nestedDescriptions =
+                    new PatternDescription[record.nested.size()];
+            int i = 0;
+            for (List<JCPattern> it = record.nested;
+                 it.nonEmpty();
+                 it = it.tail, i++) {
+                nestedDescriptions[i] = makePatternDescription(types.erasure(componentTypes[i]), it.head);
+            }
+            return new RecordPattern(record.type, componentTypes, nestedDescriptions);
+        } else if (pattern instanceof JCAnyPattern) {
+            Type type = types.isSubtype(selectorType, syms.objectType)
+                    ? selectorType : syms.objectType;
+            return new BindingPattern(type);
+        } else {
+            throw Assert.error();
+        }
+    }
+    record BindingPattern(Type type) implements PatternDescription {
+        @Override
+        public int hashCode() {
+            return type.tsym.hashCode();
+        }
+        @Override
+        public boolean equals(Object o) {
+            return o instanceof BindingPattern other &&
+                    type.tsym == other.type.tsym;
+        }
+        @Override
+        public String toString() {
+            return type.tsym + " _";
+        }
+    }
+    record RecordPattern(Type recordType, int _hashCode, Type[] fullComponentTypes, PatternDescription... nested) implements PatternDescription {
+
+        public RecordPattern(Type recordType, Type[] fullComponentTypes, PatternDescription[] nested) {
+            this(recordType, hashCode(-1, recordType, nested), fullComponentTypes, nested);
+        }
+
+        @Override
+        public int hashCode() {
+            return _hashCode;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            return o instanceof RecordPattern other &&
+                    recordType.tsym == other.recordType.tsym &&
+                    Arrays.equals(nested, other.nested);
+        }
+
+        public int hashCode(int excludeComponent) {
+            return hashCode(excludeComponent, recordType, nested);
+        }
+
+        public static int hashCode(int excludeComponent, Type recordType, PatternDescription... nested) {
+            int hash = 5;
+            hash =  41 * hash + recordType.tsym.hashCode();
+            for (int  i = 0; i < nested.length; i++) {
+                if (i != excludeComponent) {
+                    hash = 41 * hash + nested[i].hashCode();
+                }
+            }
+            return hash;
+        }
+        @Override
+        public String toString() {
+            return recordType.tsym + "(" + Arrays.stream(nested)
+                    .map(pd -> pd.toString())
+                    .collect(Collectors.joining(", ")) + ")";
+        }
+    }
 }
