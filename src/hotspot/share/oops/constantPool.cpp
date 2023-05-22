@@ -675,72 +675,67 @@ bool ConstantPool::has_local_signature_at_if_loaded(const constantPoolHandle& cp
   }
 }
 
-Symbol* ConstantPool::impl_name_ref_at(int which, bool uncached) {
-  int name_index = name_ref_index_at(impl_name_and_type_ref_index_at(which, uncached));
-  return symbol_at(name_index);
-}
-
-
-Symbol* ConstantPool::impl_signature_ref_at(int which, bool uncached) {
-  int signature_index = signature_ref_index_at(impl_name_and_type_ref_index_at(which, uncached));
-  return symbol_at(signature_index);
-}
-
-int ConstantPool::impl_name_and_type_ref_index_at(int which, bool uncached) {
-  int i = which;
-  if (!uncached) {
-    assert(cache() != nullptr, "'which' is a rewritten index so this class must have been rewritten");
-    if (ConstantPool::is_invokedynamic_index(which)) {
-      // Invokedynamic index is index into the resolved indy array in the constant pool cache
-      int pool_index = invokedynamic_bootstrap_ref_index_at(which);
-      pool_index = bootstrap_name_and_type_ref_index_at(pool_index);
-      assert(tag_at(pool_index).is_name_and_type(), "");
-      return pool_index;
-    }
-    // change byte-ordering and go via cache
-    i = remap_instruction_operand_from_cache(which);
-  } else {
-    if (tag_at(which).has_bootstrap()) {
-      int pool_index = bootstrap_name_and_type_ref_index_at(which);
-      assert(tag_at(pool_index).is_name_and_type(), "");
-      return pool_index;
-    }
+// Translate index, which could be CPCache index or Indy index, to a constant pool index
+int ConstantPool::to_cp_index(int index, Bytecodes::Code code) {
+  assert(cache() != nullptr, "'index' is a rewritten index so this class must have been rewritten");
+  switch(code) {
+    case Bytecodes::_invokedynamic:
+      return invokedynamic_bootstrap_ref_index_at(index);
+    case Bytecodes::_getfield:
+    case Bytecodes::_getstatic:
+    case Bytecodes::_putfield:
+    case Bytecodes::_putstatic:
+      // TODO: handle resolved field entries with new structure
+      // i = ....
+    case Bytecodes::_invokeinterface:
+    case Bytecodes::_invokehandle:
+    case Bytecodes::_invokespecial:
+    case Bytecodes::_invokestatic:
+    case Bytecodes::_invokevirtual:
+      // TODO: handle resolved method entries with new structure
+    default:
+      // change byte-ordering and go via cache
+      return remap_instruction_operand_from_cache(index);
   }
-  assert(tag_at(i).is_field_or_method(), "Corrupted constant pool");
-  assert(!tag_at(i).has_bootstrap(), "Must be handled above");
-  jint ref_index = *int_at_addr(i);
+}
+
+int ConstantPool::uncached_name_and_type_ref_index_at(int cp_index)  {
+  if (tag_at(cp_index).has_bootstrap()) {
+    int pool_index = bootstrap_name_and_type_ref_index_at(cp_index);
+    assert(tag_at(pool_index).is_name_and_type(), "");
+    return pool_index;
+  }
+  assert(tag_at(cp_index).is_field_or_method(), "Corrupted constant pool");
+  assert(!tag_at(cp_index).has_bootstrap(), "Must be handled above");
+  jint ref_index = *int_at_addr(cp_index);
   return extract_high_short_from_int(ref_index);
 }
 
-constantTag ConstantPool::impl_tag_ref_at(int which, bool uncached) {
+int ConstantPool::name_and_type_ref_index_at(int index, Bytecodes::Code code) {
+  return uncached_name_and_type_ref_index_at(to_cp_index(index, code));
+}
+
+constantTag ConstantPool::tag_ref_at(int which, Bytecodes::Code code) {
+  // which may be either a Constant Pool index or a rewritten index
   int pool_index = which;
-  if (!uncached) {
-    assert(cache() != nullptr, "'which' is a rewritten index so this class must have been rewritten");
-    if (ConstantPool::is_invokedynamic_index(which)) {
-      // Invokedynamic index is index into resolved_references
-      pool_index = invokedynamic_bootstrap_ref_index_at(which);
-    } else {
-      // change byte-ordering and go via cache
-      pool_index = remap_instruction_operand_from_cache(which);
-    }
-  }
+  assert(cache() != nullptr, "'index' is a rewritten index so this class must have been rewritten");
+  pool_index = to_cp_index(which, code);
   return tag_at(pool_index);
 }
 
-int ConstantPool::impl_klass_ref_index_at(int which, bool uncached) {
-  guarantee(!ConstantPool::is_invokedynamic_index(which),
-            "an invokedynamic instruction does not have a klass");
-  int i = which;
-  if (!uncached) {
-    assert(cache() != nullptr, "'which' is a rewritten index so this class must have been rewritten");
-    // change byte-ordering and go via cache
-    i = remap_instruction_operand_from_cache(which);
-  }
-  assert(tag_at(i).is_field_or_method(), "Corrupted constant pool");
-  jint ref_index = *int_at_addr(i);
+int ConstantPool::uncached_klass_ref_index_at(int cp_index) {
+  assert(tag_at(cp_index).is_field_or_method(), "Corrupted constant pool");
+  jint ref_index = *int_at_addr(cp_index);
   return extract_low_short_from_int(ref_index);
 }
 
+int ConstantPool::klass_ref_index_at(int index, Bytecodes::Code code) {
+  guarantee(!ConstantPool::is_invokedynamic_index(index),
+            "an invokedynamic instruction does not have a klass");
+  assert(code != Bytecodes::_invokedynamic,
+            "an invokedynamic instruction does not have a klass");
+  return uncached_klass_ref_index_at(to_cp_index(index, code));
+}
 
 
 int ConstantPool::remap_instruction_operand_from_cache(int operand) {
@@ -773,16 +768,16 @@ int ConstantPool::signature_ref_index_at(int which_nt) {
 }
 
 
-Klass* ConstantPool::klass_ref_at(int which, TRAPS) {
-  return klass_at(klass_ref_index_at(which), THREAD);
+Klass* ConstantPool::klass_ref_at(int which, Bytecodes::Code code, TRAPS) {
+  return klass_at(klass_ref_index_at(which, code), THREAD);
 }
 
 Symbol* ConstantPool::klass_name_at(int which) const {
   return symbol_at(klass_slot_at(which).name_index());
 }
 
-Symbol* ConstantPool::klass_ref_at_noresolve(int which) {
-  jint ref_index = klass_ref_index_at(which);
+Symbol* ConstantPool::klass_ref_at_noresolve(int which, Bytecodes::Code code) {
+  jint ref_index = klass_ref_index_at(which, code);
   return klass_at_noresolve(ref_index);
 }
 
