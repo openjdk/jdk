@@ -298,7 +298,7 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      *
      * @param byteAlignment the layout alignment constraint, expressed in bytes.
      * @return a memory layout with the same characteristics of this layout, but with the given alignment constraint.
-     * @throws IllegalArgumentException if {@code byteAlignment} is not a power of two, or if it's less than 1.
+     * @throws IllegalArgumentException if {@code byteAlignment} is not a power of two.
      */
     MemoryLayout withByteAlignment(long byteAlignment);
 
