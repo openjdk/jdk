@@ -229,10 +229,9 @@ public abstract class Collator
      * Gets the Collator for the desired locale. If the desired locale
      * has the "{@code ks}" and/or the "{@code kk}"
      * <a href="https://www.unicode.org/reports/tr35/tr35-collation.html#Setting_Options">
-     * Unicode collation settings</a>, the returned {@code Collator} instance
-     * will have the specified strength and/or decomposition respectively. The following
-     * table describes the mappings between recognizable BCP47 values and their corresponding
-     * Collator constants.
+     * Unicode collation settings</a>, this method will call {@linkplain #setStrength(int)}
+     * and/or {@linkplain #setDecomposition(int)} on the created instance, if the specified
+     * Unicode collation settings are recognized based on the following mappings:
      * <table class="striped">
      * <caption style="display:none">Strength/Decomposition mappings</caption>
      * <thead>
