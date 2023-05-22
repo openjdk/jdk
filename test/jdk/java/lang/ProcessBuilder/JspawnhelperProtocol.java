@@ -42,6 +42,7 @@ import jdk.test.lib.process.ProcessTools;
 public class JspawnhelperProtocol {
     // Timout in seconds
     private static final int TIMEOUT = 60;
+    // Base error code to communicate various error states from grandchild to child process
     private static final int ERROR = 10;
     private static final String[] CMD = { "pwd" };
     private static final String ENV_KEY = "JTREG_JSPAWNHELPER_PROTOCOL_TEST";
@@ -56,11 +57,14 @@ public class JspawnhelperProtocol {
             System.exit(ERROR);
         }
         if (!p.waitFor(TIMEOUT, TimeUnit.SECONDS)) {
+            System.out.println("Grandchild process timed out");
             System.exit(ERROR + 1);
         }
         if (p.exitValue() == 0) {
             String pwd = p.inputReader().readLine();
-            if (!Path.of("").toAbsolutePath().toString().equals(pwd)) {
+            String realPwd = Path.of("").toAbsolutePath().toString();
+            if (!realPwd.equals(pwd)) {
+                System.out.println("Grandchild process returned '" + pwd + "' (expected '" + realPwd + "')");
                 System.exit(ERROR + 2);
             }
             System.out.println("  Successfully executed '" + CMD[0] + "'");
@@ -76,14 +80,14 @@ public class JspawnhelperProtocol {
         pb = ProcessTools.createJavaProcessBuilder("-Djdk.lang.Process.launchMechanism=posix_spawn",
                                                    "JspawnhelperProtocol",
                                                    "normalExec");
+        pb.inheritIO();
         Process p = pb.start();
         if (!p.waitFor(TIMEOUT, TimeUnit.SECONDS)) {
-            System.exit(ERROR + 4);
+            throw new Exception("Child process timed out");
         }
         if (p.exitValue() != 0) {
-            throw new Exception("Child exited with " + p.exitValue());
+            throw new Exception("Child process exited with " + p.exitValue());
         }
-        System.out.println(new String(p.getInputStream().readAllBytes()));
     }
 
     private static void simulateCrashInChild(int stage) throws Exception {
@@ -94,21 +98,22 @@ public class JspawnhelperProtocol {
         pb.environment().put(ENV_KEY, Integer.toString(stage));
         Process p = pb.start();
 
-        BufferedReader br = p.inputReader();
-        String line = br.readLine();
         boolean foundCrashInfo = false;
-        while (line != null) {
-            System.out.println(line);
-            if (line.equals("posix_spawn:0")) {
-                foundCrashInfo = true;
+        try (BufferedReader br = p.inputReader()) {
+            String line = br.readLine();
+            while (line != null) {
+                System.out.println(line);
+                if (line.equals("posix_spawn:0")) {
+                    foundCrashInfo = true;
+                }
+                line = br.readLine();
             }
-            line = br.readLine();
         }
         if (!foundCrashInfo) {
             throw new Exception("Wrong output from child process");
         }
         if (!p.waitFor(TIMEOUT, TimeUnit.SECONDS)) {
-            System.exit(ERROR + 5);
+            throw new Exception("Child process timed out");
         }
 
         int ret = p.exitValue();
@@ -126,11 +131,13 @@ public class JspawnhelperProtocol {
         pb.environment().put(ENV_KEY, Integer.toString(stage));
         Process p = pb.start();
 
-        BufferedReader br = p.inputReader();
-        String line = br.readLine();
-        while (line != null && !line.startsWith("posix_spawn:")) {
-            System.out.println(line);
+        String line = null;
+        try (BufferedReader br = p.inputReader()) {
             line = br.readLine();
+            while (line != null && !line.startsWith("posix_spawn:")) {
+                System.out.println(line);
+                line = br.readLine();
+            }
         }
         if (line == null) {
             throw new Exception("Wrong output from child process");
@@ -139,7 +146,7 @@ public class JspawnhelperProtocol {
         long grandChildPid = Integer.parseInt(line.substring(line.indexOf(':') + 1));
 
         if (!p.waitFor(TIMEOUT, TimeUnit.SECONDS)) {
-            System.exit(ERROR + 6);
+            throw new Exception("Child process timed out");
         }
 
         Optional<ProcessHandle> oph = ProcessHandle.of(grandChildPid);

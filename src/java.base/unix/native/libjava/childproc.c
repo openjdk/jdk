@@ -411,7 +411,8 @@ void jtregSimulateCrash(pid_t child, int stage) {
     const char* env = getenv("JTREG_JSPAWNHELPER_PROTOCOL_TEST");
     if (env != NULL && atoi(env) == stage) {
         printf("posix_spawn:%d\n", child);
-        exit(stage);
+        fflush(stdout);
+        _exit(stage);
     }
 }
 #endif
