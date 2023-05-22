@@ -83,7 +83,6 @@ public class ScrollPaneWindowsTest implements AdjustmentListener {
             frame.setAlwaysOnTop(true);
             frame.setVisible(true);
         });
-        robot = new Robot();
     }
 
     public void start() throws Exception {
@@ -93,6 +92,7 @@ public class ScrollPaneWindowsTest implements AdjustmentListener {
                 System.out.println("Insets: right = " + paneInsets.right + " bottom =  " + paneInsets.bottom);
             });
 
+            robot = new Robot();
             robot.waitForIdle();
             robot.delay(100);
 

@@ -43,7 +43,6 @@ import java.awt.event.InputEvent;
 public class ScrollPaneExtraScrollBar {
     ScrollPane sp;
     Frame f;
-    Robot robot;
     volatile Rectangle r;
 
     public static void main(String[] args) throws Exception {
@@ -53,7 +52,6 @@ public class ScrollPaneExtraScrollBar {
     }
 
     public void init() throws Exception {
-        robot = new Robot();
         EventQueue.invokeAndWait(() -> {
             f = new Frame("ScrollPaneExtraScrollBar");
             sp = new ScrollPane(ScrollPane.SCROLLBARS_AS_NEEDED);
@@ -67,6 +65,7 @@ public class ScrollPaneExtraScrollBar {
 
     public void start() throws Exception {
         try {
+            Robot robot = new Robot();
             robot.waitForIdle();
             robot.delay(100);
             EventQueue.invokeAndWait(() -> {
