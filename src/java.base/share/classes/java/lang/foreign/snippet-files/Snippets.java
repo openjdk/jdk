@@ -66,7 +66,7 @@ class Snippets {
     static class ArenaSnippets {
 
         void globalArena() {
-            // @start region="global-allocation"
+            // @start region="global-allocation":
             MemorySegment segment = Arena.global().allocate(100, 1); // @highlight regex='global()'
             // ...
             // segment is never deallocated!
@@ -74,16 +74,16 @@ class Snippets {
         }
 
         void autoArena() {
-            // @start region="auto-allocation"
+            // @start region="auto-allocation":
             MemorySegment segment = Arena.ofAuto().allocate(100, 1); // @highlight regex='ofAuto()'
             // ...
-            segment = null; // the segment region becomes available for deallocation after this points
+            segment = null; // the segment region becomes available for deallocation after this point
             // @end
         }
 
         void confinedArena() {
-            // @start region="confined-allocation"
-            MemorySegment segment;
+            // @start region="confined-allocation":
+            MemorySegment segment = null;
             try (Arena arena = Arena.ofConfined()) { // @highlight regex='ofConfined()'
                 segment = arena.allocate(100);
                 // ...
@@ -92,8 +92,9 @@ class Snippets {
             // @end
         }
 
-
-        static class SlicingArena implements Arena {
+        static
+        // @start region="slicing-arena":
+        class SlicingArena implements Arena {
             final Arena arena = Arena.ofConfined();
             final SegmentAllocator slicingAllocator;
 
@@ -113,25 +114,31 @@ class Snippets {
                 arena.close();
             }
 
-            public static void main(String[] args) {
-                try (Arena slicingArena = new SlicingArena(1000)) {
-                    for (int i = 0; i < 10; i++) {
-                        MemorySegment s = slicingArena.allocateArray(JAVA_INT, 1, 2, 3, 4, 5);
-                        // ...
-                    }
-                } // all memory allocated is released here
-            }
-
         }
+        // @end
 
+        public static void main(String[] args) {
+            // @start region="slicing-arena-main":
+            try (Arena slicingArena = new SlicingArena(1000)) {
+                for (int i = 0; i < 10; i++) {
+                    MemorySegment s = slicingArena.allocateArray(JAVA_INT, 1, 2, 3, 4, 5);
+                    // ...
+                }
+            } // all memory allocated is released here
+            // @end
+        }
 
         void arenaOverlap() {
             try (var arena = Arena.ofConfined()) {
                 var S1 = arena.allocate(16L);
                 var S2 = arena.allocate(16L);
-                // @start region="arena-overlap"
-                var isOverlapping = S1.asOverlappingSlice(S2).isEmpty() == true;
-                // @end
+
+                if (
+                    // @start region="arena-overlap":
+                        S1.asOverlappingSlice(S2).isEmpty() == true
+                    // @end
+                ) {}
+
             }
         }
     }
