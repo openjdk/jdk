@@ -2538,11 +2538,7 @@ bool G1CollectedHeap::do_collection_pause_at_safepoint() {
     return false;
   }
 
-  // FIXME: Rest allocated but not yet used.
-  {
-    log_debug(gc, alloc) ("Reset called at G1CollectedHeap::do_collection_pause_at_safepoint()");
-    reset_allocation_requests();
-  }
+  reset_allocation_requests();
 
   do_collection_pause_at_safepoint_helper();
   return true;
