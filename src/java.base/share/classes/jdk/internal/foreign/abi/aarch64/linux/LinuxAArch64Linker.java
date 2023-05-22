@@ -29,12 +29,9 @@ import jdk.internal.foreign.abi.AbstractLinker;
 import jdk.internal.foreign.abi.LinkerOptions;
 import jdk.internal.foreign.abi.aarch64.CallArranger;
 
-import java.lang.foreign.SegmentScope;
 import java.lang.foreign.FunctionDescriptor;
-import java.lang.foreign.VaList;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
-import java.util.function.Consumer;
 
 /**
  * ABI implementation based on ARM document "Procedure Call Standard for
@@ -60,21 +57,7 @@ public final class LinuxAArch64Linker extends AbstractLinker {
     }
 
     @Override
-    protected UpcallStubFactory arrangeUpcall(MethodType targetType, FunctionDescriptor function) {
-        return CallArranger.LINUX.arrangeUpcall(targetType, function);
-    }
-
-    public static VaList newVaList(Consumer<VaList.Builder> actions, SegmentScope scope) {
-        LinuxAArch64VaList.Builder builder = LinuxAArch64VaList.builder(scope);
-        actions.accept(builder);
-        return builder.build();
-    }
-
-    public static VaList newVaListOfAddress(long address, SegmentScope scope) {
-        return LinuxAArch64VaList.ofAddress(address, scope);
-    }
-
-    public static VaList emptyVaList() {
-        return LinuxAArch64VaList.empty();
+    protected UpcallStubFactory arrangeUpcall(MethodType targetType, FunctionDescriptor function, LinkerOptions options) {
+        return CallArranger.LINUX.arrangeUpcall(targetType, function, options);
     }
 }

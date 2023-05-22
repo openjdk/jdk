@@ -29,8 +29,8 @@
 RECOMMENDED_PANDOC_VERSION=2.19.2
 
 ###############################################################################
-# Setup the most fundamental tools that relies on not much else to set up,
-# but is used by much of the early bootstrap code.
+# Setup the most fundamental tools, used for setting up build platform and
+# path handling.
 AC_DEFUN_ONCE([BASIC_SETUP_FUNDAMENTAL_TOOLS],
 [
   # Bootstrapping: These tools are needed by UTIL_LOOKUP_PROGS
@@ -42,7 +42,28 @@ AC_DEFUN_ONCE([BASIC_SETUP_FUNDAMENTAL_TOOLS],
   UTIL_CHECK_NONEMPTY(FILE)
   AC_PATH_PROGS(LDD, ldd)
 
-  # First are all the fundamental required tools.
+  # Required tools
+  UTIL_REQUIRE_PROGS(ECHO, echo)
+  UTIL_REQUIRE_PROGS(TR, tr)
+  UTIL_REQUIRE_PROGS(UNAME, uname)
+  UTIL_REQUIRE_PROGS(WC, wc)
+
+  # Required tools with some special treatment
+  UTIL_REQUIRE_SPECIAL(GREP, [AC_PROG_GREP])
+  UTIL_REQUIRE_SPECIAL(EGREP, [AC_PROG_EGREP])
+  UTIL_REQUIRE_SPECIAL(SED, [AC_PROG_SED])
+
+  # Tools only needed on some platforms
+  UTIL_LOOKUP_PROGS(PATHTOOL, cygpath wslpath)
+  UTIL_LOOKUP_PROGS(CMD, cmd.exe, $PATH:/cygdrive/c/windows/system32:/mnt/c/windows/system32:/c/windows/system32)
+])
+
+###############################################################################
+# Setup further tools that should be resolved early but after setting up
+# build platform and path handling.
+AC_DEFUN_ONCE([BASIC_SETUP_TOOLS],
+[
+  # Required tools
   UTIL_REQUIRE_PROGS(BASH, bash)
   UTIL_REQUIRE_PROGS(CAT, cat)
   UTIL_REQUIRE_PROGS(CHMOD, chmod)
@@ -50,7 +71,6 @@ AC_DEFUN_ONCE([BASIC_SETUP_FUNDAMENTAL_TOOLS],
   UTIL_REQUIRE_PROGS(CUT, cut)
   UTIL_REQUIRE_PROGS(DATE, date)
   UTIL_REQUIRE_PROGS(DIFF, gdiff diff)
-  UTIL_REQUIRE_PROGS(ECHO, echo)
   UTIL_REQUIRE_PROGS(EXPR, expr)
   UTIL_REQUIRE_PROGS(FIND, find)
   UTIL_REQUIRE_PROGS(GUNZIP, gunzip)
@@ -72,16 +92,10 @@ AC_DEFUN_ONCE([BASIC_SETUP_FUNDAMENTAL_TOOLS],
   UTIL_REQUIRE_PROGS(TAR, gtar tar)
   UTIL_REQUIRE_PROGS(TEE, tee)
   UTIL_REQUIRE_PROGS(TOUCH, touch)
-  UTIL_REQUIRE_PROGS(TR, tr)
-  UTIL_REQUIRE_PROGS(UNAME, uname)
-  UTIL_REQUIRE_PROGS(WC, wc)
   UTIL_REQUIRE_PROGS(XARGS, xargs)
 
-  # Then required tools that require some special treatment.
-  UTIL_REQUIRE_SPECIAL(GREP, [AC_PROG_GREP])
-  UTIL_REQUIRE_SPECIAL(EGREP, [AC_PROG_EGREP])
+  # Required tools with some special treatment
   UTIL_REQUIRE_SPECIAL(FGREP, [AC_PROG_FGREP])
-  UTIL_REQUIRE_SPECIAL(SED, [AC_PROG_SED])
 
   # Optional tools, we can do without them
   UTIL_LOOKUP_PROGS(DF, df)
@@ -90,10 +104,8 @@ AC_DEFUN_ONCE([BASIC_SETUP_FUNDAMENTAL_TOOLS],
   UTIL_LOOKUP_PROGS(READLINK, greadlink readlink)
   UTIL_LOOKUP_PROGS(WHOAMI, whoami)
 
-  # These are only needed on some platforms
-  UTIL_LOOKUP_PROGS(PATHTOOL, cygpath wslpath)
+  # Tools only needed on some platforms
   UTIL_LOOKUP_PROGS(LSB_RELEASE, lsb_release)
-  UTIL_LOOKUP_PROGS(CMD, cmd.exe, $PATH:/cygdrive/c/windows/system32:/mnt/c/windows/system32:/c/windows/system32)
 
   # For compare.sh only
   UTIL_LOOKUP_PROGS(CMP, cmp)

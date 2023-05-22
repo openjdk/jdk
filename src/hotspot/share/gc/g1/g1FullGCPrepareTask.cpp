@@ -48,8 +48,6 @@ bool G1FullGCPrepareTask::G1CalculatePointersClosure::do_heap_region(HeapRegion*
   assert(_collector->is_compaction_target(region_idx), "must be");
 
   assert(!hr->is_pinned(), "must be");
-  assert(!hr->is_closed_archive(), "must be");
-  assert(!hr->is_open_archive(), "must be");
 
   prepare_for_compaction(hr);
 

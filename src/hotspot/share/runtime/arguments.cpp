@@ -85,7 +85,6 @@ char*  Arguments::_java_command                 = nullptr;
 SystemProperty* Arguments::_system_properties   = nullptr;
 size_t Arguments::_conservative_max_heap_alignment = 0;
 Arguments::Mode Arguments::_mode                = _mixed;
-bool   Arguments::_java_compiler                = false;
 bool   Arguments::_xdebug_mode                  = false;
 const char*  Arguments::_java_vendor_url_bug    = nullptr;
 const char*  Arguments::_sun_java_launcher      = DEFAULT_JAVA_LAUNCHER;
@@ -1266,8 +1265,14 @@ bool Arguments::add_property(const char* prop, PropertyWriteable writeable, Prop
 #endif
 
   if (strcmp(key, "java.compiler") == 0) {
-    process_java_compiler_argument(value);
-    // Record value in Arguments, but let it get passed to Java.
+    // we no longer support java.compiler system property, log a warning and let it get
+    // passed to Java, like any other system property
+    if (strlen(value) == 0 || strcasecmp(value, "NONE") == 0) {
+        // for applications using NONE or empty value, log a more informative message
+        warning("The java.compiler system property is obsolete and no longer supported, use -Xint");
+    } else {
+        warning("The java.compiler system property is obsolete and no longer supported.");
+    }
   } else if (strcmp(key, "sun.java.launcher.is_altjvm") == 0) {
     // sun.java.launcher.is_altjvm property is
     // private and is processed in process_sun_java_launcher_properties();
@@ -1372,7 +1377,6 @@ void Arguments::set_mode_flags(Mode mode) {
   // Set up default values for all flags.
   // If you add a flag to any of the branches below,
   // add a default value for it here.
-  set_java_compiler(false);
   _mode                      = mode;
 
   // Ensure Agent_OnLoad has the correct initial values.
@@ -1862,16 +1866,6 @@ jint Arguments::set_aggressive_opts_flags() {
 }
 
 //===========================================================================================================
-// Parsing of java.compiler property
-
-void Arguments::process_java_compiler_argument(const char* arg) {
-  // For backwards compatibility, Djava.compiler=NONE or ""
-  // causes us to switch to -Xint mode UNLESS -Xdebug
-  // is also specified.
-  if (strlen(arg) == 0 || strcasecmp(arg, "NONE") == 0) {
-    set_java_compiler(true);    // "-Djava.compiler[=...]" most recently seen.
-  }
-}
 
 void Arguments::process_java_launcher_argument(const char* launcher, void* extra_info) {
   if (_sun_java_launcher != _default_java_launcher) {
@@ -3002,15 +2996,6 @@ jint Arguments::finalize_vm_init_args(bool patch_mod_javabase) {
     if (result != JNI_OK) {
       return result;
     }
-  }
-
-  // This must be done after all arguments have been processed.
-  // java_compiler() true means set to "NONE" or empty.
-  if (java_compiler() && !xdebug_mode()) {
-    // For backwards compatibility, we switch to interpreted mode if
-    // -Djava.compiler="NONE" or "" is specified AND "-Xdebug" was
-    // not specified.
-    set_mode_flags(_int);
   }
 
   // CompileThresholdScaling == 0.0 is same as -Xint: Disable compilation (enable interpreter-only mode),

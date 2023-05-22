@@ -47,6 +47,11 @@ void MonitorDeflationThread::initialize() {
 }
 
 void MonitorDeflationThread::monitor_deflation_thread_entry(JavaThread* jt, TRAPS) {
+
+  // We wait for GuaranteedSafepointInterval so that is_async_deflation_needed() is checked
+  // at the same interval, unless GuaranteedAsyncDeflationInterval is lower.
+  const intx wait_time = MIN2(GuaranteedSafepointInterval, GuaranteedAsyncDeflationInterval);
+
   while (true) {
     {
       // Need state transition ThreadBlockInVM so that this thread
@@ -58,9 +63,7 @@ void MonitorDeflationThread::monitor_deflation_thread_entry(JavaThread* jt, TRAP
       MonitorLocker ml(MonitorDeflation_lock, Mutex::_no_safepoint_check_flag);
       while (!ObjectSynchronizer::is_async_deflation_needed()) {
         // Wait until notified that there is some work to do.
-        // We wait for GuaranteedSafepointInterval so that
-        // is_async_deflation_needed() is checked at the same interval.
-        ml.wait(GuaranteedSafepointInterval);
+        ml.wait(wait_time);
       }
     }
 

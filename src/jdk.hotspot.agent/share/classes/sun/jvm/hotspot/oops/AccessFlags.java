@@ -64,19 +64,12 @@ public class AccessFlags implements /* imports */ ClassConstants {
   public boolean loopsFlagInit       () { return (flags & JVM_ACC_LOOPS_FLAG_INIT        ) != 0; }
   public boolean queuedForCompilation() { return (flags & JVM_ACC_QUEUED                 ) != 0; }
   public boolean isNotOsrCompilable  () { return (flags & JVM_ACC_NOT_OSR_COMPILABLE     ) != 0; }
-  public boolean hasLineNumberTable  () { return (flags & JVM_ACC_HAS_LINE_NUMBER_TABLE  ) != 0; }
-  public boolean hasCheckedExceptions() { return (flags & JVM_ACC_HAS_CHECKED_EXCEPTIONS ) != 0; }
   public boolean hasJsrs             () { return (flags & JVM_ACC_HAS_JSRS               ) != 0; }
   public boolean isObsolete          () { return (flags & JVM_ACC_IS_OBSOLETE            ) != 0; }
 
   // Klass* flags
-  public boolean hasMirandaMethods    () { return (flags & JVM_ACC_HAS_MIRANDA_METHODS    ) != 0; }
-  public boolean hasVanillaConstructor() { return (flags & JVM_ACC_HAS_VANILLA_CONSTRUCTOR) != 0; }
   public boolean hasFinalizer         () { return (flags & JVM_ACC_HAS_FINALIZER          ) != 0; }
   public boolean isCloneable          () { return (flags & JVM_ACC_IS_CLONEABLE           ) != 0; }
-
-  // Klass* and Method* flags
-  public boolean hasLocalVariableTable() { return (flags & JVM_ACC_HAS_LOCAL_VARIABLE_TABLE ) != 0; }
 
   public void printOn(PrintStream tty) {
     // prints only .class flags and not the hotspot internal flags

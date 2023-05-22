@@ -35,10 +35,14 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.nio.ByteOrder;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 
+import jdk.internal.vm.VMSupport;
 import jdk.vm.ci.common.JVMCIError;
+import jdk.vm.ci.meta.AnnotationData;
 import jdk.vm.ci.meta.Assumptions.AssumptionResult;
 import jdk.vm.ci.meta.Assumptions.ConcreteMethod;
 import jdk.vm.ci.meta.Assumptions.ConcreteSubtype;
@@ -871,18 +875,56 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
         return getConstantPool().getSourceFileName();
     }
 
+    /**
+     * Determines if this type may have annotations. A positive result does not mean this type has
+     * annotations but a negative result guarantees this type has no annotations.
+     *
+     * @param includingInherited if true, expand this query to include superclasses of this type
+     */
+    private boolean mayHaveAnnotations(boolean includingInherited) {
+        if (isArray()) {
+            return false;
+        }
+        HotSpotVMConfig config = config();
+        final long metaspaceAnnotations = UNSAFE.getAddress(getKlassPointer() + config.instanceKlassAnnotationsOffset);
+        if (metaspaceAnnotations != 0) {
+            long classAnnotations = UNSAFE.getAddress(metaspaceAnnotations + config.annotationsClassAnnotationsOffset);
+            if (classAnnotations != 0) {
+                return true;
+            }
+        }
+        if (includingInherited) {
+            HotSpotResolvedObjectTypeImpl superClass = getSuperclass();
+            if (superClass != null) {
+                return superClass.mayHaveAnnotations(true);
+            }
+        }
+        return false;
+    }
+
+    private static final Annotation[] NO_ANNOTATIONS = {};
+
     @Override
     public Annotation[] getAnnotations() {
+        if (!mayHaveAnnotations(true)) {
+            return NO_ANNOTATIONS;
+        }
         return runtime().reflection.getAnnotations(this);
     }
 
     @Override
     public Annotation[] getDeclaredAnnotations() {
+        if (!mayHaveAnnotations(false)) {
+            return NO_ANNOTATIONS;
+        }
         return runtime().reflection.getDeclaredAnnotations(this);
     }
 
     @Override
     public <T extends Annotation> T getAnnotation(Class<T> annotationClass) {
+        if (!mayHaveAnnotations(true)) {
+            return null;
+        }
         return runtime().reflection.getAnnotation(this, annotationClass);
     }
 
@@ -1061,5 +1103,26 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
     @Override
     public boolean isCloneableWithAllocation() {
         return (getAccessFlags() & config().jvmAccIsCloneableFast) != 0;
+    }
+
+    @Override
+    public AnnotationData getAnnotationData(ResolvedJavaType annotationType) {
+        if (!mayHaveAnnotations(true)) {
+            return null;
+        }
+        return getAnnotationData0(annotationType).get(0);
+    }
+
+    @Override
+    public List<AnnotationData> getAnnotationData(ResolvedJavaType type1, ResolvedJavaType type2, ResolvedJavaType... types) {
+        if (!mayHaveAnnotations(true)) {
+            return Collections.emptyList();
+        }
+        return getAnnotationData0(AnnotationDataDecoder.asArray(type1, type2, types));
+    }
+
+    private List<AnnotationData> getAnnotationData0(ResolvedJavaType... filter) {
+        byte[] encoded = compilerToVM().getEncodedClassAnnotationData(this, filter);
+        return VMSupport.decodeAnnotations(encoded, AnnotationDataDecoder.INSTANCE);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -385,7 +385,7 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1GetSlotList
 
     ckpSlotList = (CK_SLOT_ID_PTR) malloc(ckTokenNumber * sizeof(CK_SLOT_ID));
     if (ckpSlotList == NULL) {
-        throwOutOfMemoryError(env, 0);
+        p11ThrowOutOfMemoryError(env, 0);
         return NULL;
     }
 
@@ -686,7 +686,7 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1GetMechanismList
     ckpMechanismList = (CK_MECHANISM_TYPE_PTR)
       malloc(ckMechanismNumber * sizeof(CK_MECHANISM_TYPE));
     if (ckpMechanismList == NULL) {
-        throwOutOfMemoryError(env, 0);
+        p11ThrowOutOfMemoryError(env, 0);
         return NULL;
     }
 

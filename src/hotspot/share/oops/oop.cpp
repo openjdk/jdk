@@ -231,13 +231,6 @@ jdouble oopDesc::double_field_acquire(int offset) const               { return A
 void oopDesc::release_double_field_put(int offset, jdouble value)     { Atomic::release_store(field_addr<jdouble>(offset), value); }
 
 #ifdef ASSERT
-void oopDesc::verify_forwardee(oop forwardee) {
-#if INCLUDE_CDS_JAVA_HEAP
-  assert(!Universe::heap()->is_archived_object(forwardee) && !Universe::heap()->is_archived_object(this),
-         "forwarding archive object");
-#endif
-}
-
 bool oopDesc::size_might_change() {
   // UseParallelGC and UseG1GC can change the length field
   // of an "old copy" of an object array in the young gen so it indicates

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ import jdk.internal.javac.PreviewFeature;
  * A function descriptor models the signature of foreign functions. A function descriptor is made up of zero or more
  * argument layouts and zero or one return layout. A function descriptor is typically used when creating
  * {@linkplain Linker#downcallHandle(MemorySegment, FunctionDescriptor, Linker.Option...) downcall method handles} or
- * {@linkplain Linker#upcallStub(MethodHandle, FunctionDescriptor, SegmentScope) upcall stubs}.
+ * {@linkplain Linker#upcallStub(MethodHandle, FunctionDescriptor, Arena, Linker.Option...) upcall stubs}.
  *
  * @implSpec
  * Implementing classes are immutable, thread-safe and <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.

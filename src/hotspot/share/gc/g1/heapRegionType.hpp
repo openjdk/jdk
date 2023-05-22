@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ private:
   // We encode the value of the heap region type so the generation can be
   // determined quickly. The tag is split into two parts:
   //
-  //   major type (young, old, humongous, archive)           : top N-1 bits
+  //   major type (young, old, humongous)                    : top N-1 bits
   //   minor type (eden / survivor, starts / cont hum, etc.) : bottom 1 bit
   //
   // If there's need to increase the number of minor types in the
@@ -58,10 +58,6 @@ private:
   //
   // 01000 0 [16] Old Mask
   //
-  // 10000 0 [32] Archive Mask
-  // 10100 0 [40] Open Archive
-  // 10100 1 [41] Closed Archive
-  //
   typedef enum {
     FreeTag               = 0,
 
@@ -75,20 +71,7 @@ private:
     ContinuesHumongousTag = HumongousMask | PinnedMask + 1,
 
     OldMask               = 16,
-    OldTag                = OldMask,
-
-    // Archive regions are regions with immutable content (i.e. not reclaimed, and
-    // not allocated into during regular operation). They differ in the kind of references
-    // allowed for the contained objects:
-    // - Closed archive regions form a separate self-contained (closed) object graph
-    // within the set of all of these regions. No references outside of closed
-    // archive regions are allowed.
-    // - Open archive regions have no restrictions on the references of their objects.
-    // Objects within these regions are allowed to have references to objects
-    // contained in any other kind of regions.
-    ArchiveMask           = 32,
-    OpenArchiveTag        = ArchiveMask | PinnedMask,
-    ClosedArchiveTag      = ArchiveMask | PinnedMask + 1
+    OldTag                = OldMask
   } Tag;
 
   volatile Tag _tag;
@@ -134,18 +117,11 @@ public:
   bool is_starts_humongous()    const { return get() == StartsHumongousTag;    }
   bool is_continues_humongous() const { return get() == ContinuesHumongousTag; }
 
-  bool is_archive()        const { return (get() & ArchiveMask) != 0; }
-  bool is_open_archive()   const { return get() == OpenArchiveTag; }
-  bool is_closed_archive() const { return get() == ClosedArchiveTag; }
-
   // is_old regions may or may not also be pinned
   bool is_old() const { return (get() & OldMask) != 0; }
 
   bool is_old_or_humongous() const { return (get() & (OldMask | HumongousMask)) != 0; }
 
-  bool is_old_or_humongous_or_archive() const { return (get() & (OldMask | HumongousMask | ArchiveMask)) != 0; }
-
-  // is_pinned regions may be archive or humongous
   bool is_pinned() const { return (get() & PinnedMask) != 0; }
 
   // Setters
@@ -180,8 +156,6 @@ public:
       return true;
     }
   }
-  void set_open_archive()   { set_from(OpenArchiveTag, FreeTag); }
-  void set_closed_archive() { set_from(ClosedArchiveTag, FreeTag); }
 
   // Misc
 

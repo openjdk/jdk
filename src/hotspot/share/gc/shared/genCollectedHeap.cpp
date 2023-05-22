@@ -117,17 +117,17 @@ jint GenCollectedHeap::initialize() {
 
   initialize_reserved_region(heap_rs);
 
+  ReservedSpace young_rs = heap_rs.first_part(_young_gen_spec->max_size());
+  ReservedSpace old_rs = heap_rs.last_part(_young_gen_spec->max_size());
+
   _rem_set = create_rem_set(heap_rs.region());
-  _rem_set->initialize();
+  _rem_set->initialize(young_rs.base(), old_rs.base());
+
   CardTableBarrierSet *bs = new CardTableBarrierSet(_rem_set);
   bs->initialize();
   BarrierSet::set_barrier_set(bs);
 
-  ReservedSpace young_rs = heap_rs.first_part(_young_gen_spec->max_size());
   _young_gen = _young_gen_spec->init(young_rs, rem_set());
-  ReservedSpace old_rs = heap_rs.last_part(_young_gen_spec->max_size());
-
-  old_rs = old_rs.first_part(_old_gen_spec->max_size());
   _old_gen = _old_gen_spec->init(old_rs, rem_set());
 
   GCInitLogger::print();
@@ -796,9 +796,28 @@ void GenCollectedHeap::collect(GCCause::Cause cause) {
                                       ? YoungGen
                                       : OldGen;
 
-  VM_GenCollectFull op(gc_count_before, full_gc_count_before,
-                       cause, max_generation);
-  VMThread::execute(&op);
+  while (true) {
+    VM_GenCollectFull op(gc_count_before, full_gc_count_before,
+                        cause, max_generation);
+    VMThread::execute(&op);
+
+    if (!GCCause::is_explicit_full_gc(cause)) {
+      return;
+    }
+
+    {
+      MutexLocker ml(Heap_lock);
+      // Read the GC count while holding the Heap_lock
+      if (full_gc_count_before != total_full_collections()) {
+        return;
+      }
+    }
+
+    if (GCLocker::is_active_and_needs_gc()) {
+      // If GCLocker is active, wait until clear before retrying.
+      GCLocker::stall_until_clear();
+    }
+  }
 }
 
 void GenCollectedHeap::do_full_collection(bool clear_all_soft_refs) {

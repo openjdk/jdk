@@ -104,6 +104,7 @@
                                                                                                                                      \
   static_field(Abstract_VM_Version,            _features,                              uint64_t)                                     \
                                                                                                                                      \
+  nonstatic_field(Annotations,                 _class_annotations,                     AnnotationArray*)                             \
   nonstatic_field(Annotations,                 _fields_annotations,                    Array<AnnotationArray*>*)                     \
                                                                                                                                      \
   nonstatic_field(Array<int>,                  _length,                                int)                                          \

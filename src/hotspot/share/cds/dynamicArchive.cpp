@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "cds/archiveBuilder.hpp"
+#include "cds/archiveHeapWriter.hpp"
 #include "cds/archiveUtils.inline.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/classPrelinker.hpp"
@@ -323,7 +324,8 @@ void DynamicArchiveBuilder::write_archive(char* serialized_data) {
   assert(dynamic_info != nullptr, "Sanity");
 
   dynamic_info->open_for_write();
-  ArchiveBuilder::write_archive(dynamic_info, nullptr, nullptr, nullptr, nullptr);
+  ArchiveHeapInfo no_heap_for_dynamic_dump;
+  ArchiveBuilder::write_archive(dynamic_info, &no_heap_for_dynamic_dump);
 
   address base = _requested_dynamic_archive_bottom;
   address top  = _requested_dynamic_archive_top;

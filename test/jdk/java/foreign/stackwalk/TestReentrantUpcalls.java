@@ -69,9 +69,9 @@ public class TestReentrantUpcalls extends NativeTestHelper {
         FunctionDescriptor descriptor = FunctionDescriptor.ofVoid(C_INT, C_POINTER);
         MethodHandle downcallHandle = downcallHandle("do_recurse", descriptor);
 
-        try (Arena arena = Arena.openConfined()) {
+        try (Arena arena = Arena.ofConfined()) {
             MemorySegment stub = LINKER.upcallStub(
-                    MethodHandles.insertArguments(MH_m, 2, downcallHandle), descriptor, arena.scope());
+                    MethodHandles.insertArguments(MH_m, 2, downcallHandle), descriptor, arena);
 
             downcallHandle.invokeExact(0, stub);
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,9 +29,7 @@
  */
 
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.SegmentScope;
 import java.lang.foreign.SymbolLookup;
-import java.lang.foreign.ValueLayout;
 import org.testng.annotations.Test;
 
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
@@ -59,10 +57,7 @@ public class TestClassLoaderFindNative {
 
     @Test
     public void testVariableSymbolLookup() {
-        MemorySegment segment = MemorySegment.ofAddress(
-                SymbolLookup.loaderLookup().find("c").get().address(),
-                ValueLayout.JAVA_INT.byteSize(),
-                SegmentScope.global());
+        MemorySegment segment = SymbolLookup.loaderLookup().find("c").get().reinterpret(1);
         assertEquals(segment.get(JAVA_BYTE, 0), 42);
     }
 }

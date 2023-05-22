@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -148,10 +148,6 @@ inline void G1CollectedHeap::old_set_remove(HeapRegion* hr) {
   _old_set.remove(hr);
 }
 
-inline void G1CollectedHeap::archive_set_add(HeapRegion* hr) {
-  _archive_set.add(hr);
-}
-
 // It dirties the cards that cover the block so that the post
 // write barrier never queues anything when updating objects on this
 // block. It is assumed (and in fact we assert) that the block
@@ -262,7 +258,7 @@ inline bool G1CollectedHeap::is_obj_dead(const oop obj) const {
 }
 
 inline bool G1CollectedHeap::is_obj_dead_full(const oop obj, const HeapRegion* hr) const {
-   return !is_marked(obj) && !hr->is_closed_archive();
+   return !is_marked(obj);
 }
 
 inline bool G1CollectedHeap::is_obj_dead_full(const oop obj) const {

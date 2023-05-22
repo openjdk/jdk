@@ -100,7 +100,6 @@ class G1FullCollector : StackObj {
 
 public:
   G1FullCollector(G1CollectedHeap* heap,
-                  bool explicit_gc,
                   bool clear_soft_refs,
                   bool do_maximal_compaction,
                   G1FullGCTracer* tracer);
@@ -130,7 +129,6 @@ public:
 
   inline bool is_compacting(oop obj) const;
   inline bool is_skip_compacting(uint region_index) const;
-  inline bool is_skip_marking(oop obj) const;
 
   // Are we (potentially) going to compact into this region?
   inline bool is_compaction_target(uint region_index) const;

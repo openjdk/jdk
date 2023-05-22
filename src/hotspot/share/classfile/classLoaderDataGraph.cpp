@@ -45,7 +45,6 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
-#include "utilities/vmError.hpp"
 
 volatile size_t ClassLoaderDataGraph::_num_array_classes = 0;
 volatile size_t ClassLoaderDataGraph::_num_instance_classes = 0;
@@ -476,7 +475,7 @@ bool ClassLoaderDataGraph::contains_loader_data(ClassLoaderData* loader_data) {
 #endif // PRODUCT
 
 bool ClassLoaderDataGraph::is_valid(ClassLoaderData* loader_data) {
-  DEBUG_ONLY( if (!VMError::is_error_reported()) { assert_locked_or_safepoint(ClassLoaderDataGraph_lock); } )
+  assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
   if (loader_data != nullptr) {
     if (loader_data == ClassLoaderData::the_null_class_loader_data()) {
       return true;

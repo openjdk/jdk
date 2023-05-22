@@ -29,10 +29,20 @@
 #define EXPORT
 #endif
 
-EXPORT int func_as_long(long long value) {
-  return 0;
+#include <stddef.h>
+
+EXPORT long long id_long_long(long long value) {
+  return value;
 }
 
-EXPORT int func_as_ptr(void* ptr) {
-  return 0;
+EXPORT long long id_ptr_long(void* ptr) {
+  return (long long)(size_t)ptr;
+}
+
+EXPORT void* id_long_ptr(long long value) {
+  return (void*)(size_t)value;
+}
+
+EXPORT void* id_ptr_ptr(void* ptr) {
+  return ptr;
 }

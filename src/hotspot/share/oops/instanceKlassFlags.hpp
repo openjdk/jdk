@@ -49,7 +49,11 @@ class InstanceKlassFlags {
     flag(is_shared_platform_class           , 1 << 8) /* defining class loader is platform class loader */ \
     flag(is_shared_app_class                , 1 << 9) /* defining class loader is app class loader */ \
     flag(has_contended_annotations          , 1 << 10) /* has @Contended annotation */ \
-    flag(has_localvariable_table            , 1 << 11) /* has localvariable information */
+    flag(has_localvariable_table            , 1 << 11) /* has localvariable information */ \
+    flag(has_miranda_methods                , 1 << 12) /* True if this class has miranda methods in it's vtable */ \
+    flag(has_vanilla_constructor            , 1 << 13) /* True if klass has a vanilla default constructor */ \
+    flag(has_final_method                   , 1 << 14) /* True if klass has final method */ \
+    /* end of list */
 
 #define IK_FLAGS_ENUM_NAME(name, value)    _misc_##name = value,
   enum {
@@ -82,7 +86,7 @@ class InstanceKlassFlags {
 
  public:
 
-  InstanceKlassFlags() : _flags(0) {}
+  InstanceKlassFlags() : _flags(0), _status(0) {}
 
   // Create getters and setters for the flag values.
 #define IK_FLAGS_GET(name, ignore)          \

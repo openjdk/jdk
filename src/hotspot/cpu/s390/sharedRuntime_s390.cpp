@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2019 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -329,7 +329,7 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, RegisterSet reg
   // We have to restore return_pc right away.
   // Nobody else will. Furthermore, return_pc isn't necessarily the default (Z_R14).
   // Nobody else knows which register we saved.
-  __ z_lg(return_pc, _z_abi16(return_pc) + frame_size_in_bytes, Z_SP);
+  __ z_lg(return_pc, _z_common_abi(return_pc) + frame_size_in_bytes, Z_SP);
 
   // Register save area in new frame starts above z_abi_160 area.
   int offset = register_save_offset;
@@ -2478,7 +2478,7 @@ static void push_skeleton_frames(MacroAssembler* masm, bool deopt,
 
   // Make sure that there is at least one entry in the array.
   DEBUG_ONLY(__ z_ltgr(number_of_frames_reg, number_of_frames_reg));
-  __ asm_assert_ne("array_size must be > 0", 0x205);
+  __ asm_assert(Assembler::bcondNotZero, "array_size must be > 0", 0x205);
 
   __ z_bru(loop_entry);
 
@@ -2788,7 +2788,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
   } else {
     __ z_cliy(unpack_kind_byte_offset, unroll_block_reg, Deoptimization::Unpack_uncommon_trap);
   }
-  __ asm_assert_eq("SharedRuntime::generate_deopt_blob: expected Unpack_uncommon_trap", 0);
+  __ asm_assert(Assembler::bcondEqual, "SharedRuntime::generate_deopt_blob: expected Unpack_uncommon_trap", 0);
 #endif
 
   __ zap_from_to(Z_SP, Z_SP, Z_R0_scratch, Z_R1, 500, -1);
@@ -2921,7 +2921,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
   if (!cause_return) {
     Label no_adjust;
      // If our stashed return pc was modified by the runtime we avoid touching it
-    const int offset_of_return_pc = _z_abi16(return_pc) + RegisterSaver::live_reg_frame_size(RegisterSaver::all_registers);
+    const int offset_of_return_pc = _z_common_abi(return_pc) + RegisterSaver::live_reg_frame_size(RegisterSaver::all_registers);
     __ z_cg(Z_R6, offset_of_return_pc, Z_SP);
     __ z_brne(no_adjust);
 

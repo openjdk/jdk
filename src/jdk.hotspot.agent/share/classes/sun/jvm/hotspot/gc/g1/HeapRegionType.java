@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,6 @@ public class HeapRegionType extends VMObject {
     private static int startsHumongousTag;
     private static int continuesHumongousTag;
     private static int pinnedMask;
-    private static int archiveMask;
     private static int oldMask;
     private static CIntegerField tagField;
     private int tag;
@@ -70,7 +69,6 @@ public class HeapRegionType extends VMObject {
         survTag = db.lookupIntConstant("HeapRegionType::SurvTag");
         startsHumongousTag = db.lookupIntConstant("HeapRegionType::StartsHumongousTag");
         continuesHumongousTag = db.lookupIntConstant("HeapRegionType::ContinuesHumongousTag");
-        archiveMask = db.lookupIntConstant("HeapRegionType::ArchiveMask");
         humongousMask = db.lookupIntConstant("HeapRegionType::HumongousMask");
         pinnedMask = db.lookupIntConstant("HeapRegionType::PinnedMask");
         oldMask = db.lookupIntConstant("HeapRegionType::OldMask");
@@ -104,10 +102,6 @@ public class HeapRegionType extends VMObject {
         return tagField.getValue(addr) == continuesHumongousTag;
     }
 
-    public boolean isArchive() {
-        return (tagField.getValue(addr) & archiveMask) != 0;
-    }
-
     public boolean isPinned() {
         return (tagField.getValue(addr) & pinnedMask) != 0;
     }
@@ -135,9 +129,6 @@ public class HeapRegionType extends VMObject {
         }
         if (isContinuesHumongous()) {
             return "ContinuesHumongous";
-        }
-        if (isArchive()) {
-            return "Archive";
         }
         if (isPinned()) {
             return "Pinned";

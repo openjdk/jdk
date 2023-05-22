@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,11 +54,6 @@ inline bool G1CMIsAliveClosure::do_object_b(oop obj) {
     return true;
   }
 
-  // All objects in closed archive regions are live.
-  if (hr->is_closed_archive()) {
-    return true;
-  }
-
   // All objects that are marked are live.
   return _g1h->is_marked(obj);
 }
@@ -72,7 +67,7 @@ inline bool G1CMSubjectToDiscoveryClosure::do_object_b(oop obj) {
     return false;
   }
   assert(_g1h->is_in_reserved(obj), "Trying to discover obj " PTR_FORMAT " not in heap", p2i(obj));
-  return _g1h->heap_region_containing(obj)->is_old_or_humongous_or_archive();
+  return _g1h->heap_region_containing(obj)->is_old_or_humongous();
 }
 
 inline bool G1ConcurrentMark::mark_in_bitmap(uint const worker_id, oop const obj) {

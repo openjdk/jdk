@@ -37,8 +37,6 @@ class G1HeapRegionTraceType : AllStatic {
     StartsHumongous,
     ContinuesHumongous,
     Old,
-    OpenArchive,
-    ClosedArchive,
     G1HeapRegionTypeEndSentinel
   };
 
@@ -50,8 +48,6 @@ class G1HeapRegionTraceType : AllStatic {
       case StartsHumongous:    return "Starts Humongous";
       case ContinuesHumongous: return "Continues Humongous";
       case Old:                return "Old";
-      case OpenArchive:        return "OpenArchive";
-      case ClosedArchive:      return "ClosedArchive";
       default: ShouldNotReachHere(); return NULL;
     }
   }

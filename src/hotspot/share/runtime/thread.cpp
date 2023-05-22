@@ -58,15 +58,6 @@ THREAD_LOCAL Thread* Thread::_thr_current = nullptr;
 #endif
 
 // ======= Thread ========
-void* Thread::allocate(size_t size, bool throw_excpt, MEMFLAGS flags) {
-  return throw_excpt ? AllocateHeap(size, flags, CURRENT_PC)
-                       : AllocateHeap(size, flags, CURRENT_PC, AllocFailStrategy::RETURN_NULL);
-}
-
-void Thread::operator delete(void* p) {
-  FreeHeap(p);
-}
-
 // Base class for all threads: VMThread, WatcherThread, ConcurrentMarkSweepThread,
 // JavaThread
 

@@ -28,11 +28,8 @@
  * @run testng/othervm -Xmx4G -XX:MaxDirectMemorySize=1M --enable-native-access=ALL-UNNAMED TestSegments
  */
 
-import java.lang.foreign.Arena;
-import java.lang.foreign.MemoryLayout;
-import java.lang.foreign.MemorySegment;
-import java.lang.foreign.SegmentScope;
-import java.lang.foreign.ValueLayout;
+import java.lang.foreign.*;
+
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
@@ -50,23 +47,23 @@ public class TestSegments {
 
     @Test(dataProvider = "badSizeAndAlignments", expectedExceptions = IllegalArgumentException.class)
     public void testBadAllocateAlign(long size, long align) {
-        MemorySegment.allocateNative(size, align, SegmentScope.auto());
+        Arena.ofAuto().allocate(size, align);
     }
 
     @Test
     public void testZeroLengthNativeSegment() {
-        try (Arena arena = Arena.openConfined()) {
-            SegmentScope session = arena.scope();
-            var segment = MemorySegment.allocateNative(0, session);
+        try (Arena arena = Arena.ofConfined()) {
+            Arena session = arena;
+            var segment = session.allocate(0, 1);
             assertEquals(segment.byteSize(), 0);
             MemoryLayout seq = MemoryLayout.sequenceLayout(0, JAVA_INT);
-            segment = MemorySegment.allocateNative(seq, session);
+            segment = session.allocate(seq);
             assertEquals(segment.byteSize(), 0);
             assertEquals(segment.address() % seq.byteAlignment(), 0);
-            segment = MemorySegment.allocateNative(0, 4, session);
+            segment = session.allocate(0, 4);
             assertEquals(segment.byteSize(), 0);
             assertEquals(segment.address() % 4, 0);
-            MemorySegment rawAddress = MemorySegment.ofAddress(segment.address(), 0, session);
+            MemorySegment rawAddress = MemorySegment.ofAddress(segment.address());
             assertEquals(rawAddress.byteSize(), 0);
             assertEquals(rawAddress.address() % 4, 0);
         }
@@ -75,19 +72,20 @@ public class TestSegments {
     @Test(expectedExceptions = { OutOfMemoryError.class,
                                  IllegalArgumentException.class })
     public void testAllocateTooBig() {
-        MemorySegment.allocateNative(Long.MAX_VALUE, SegmentScope.auto());
+        Arena.ofAuto().allocate(Long.MAX_VALUE, 1);
     }
 
     @Test(expectedExceptions = OutOfMemoryError.class)
     public void testNativeAllocationTooBig() {
-        MemorySegment segment = MemorySegment.allocateNative(1024L * 1024 * 8 * 2, SegmentScope.auto()); // 2M
+        Arena scope = Arena.ofAuto();
+        MemorySegment segment = scope.allocate(1024L * 1024 * 8 * 2, 1); // 2M
     }
 
     @Test
     public void testNativeSegmentIsZeroed() {
         VarHandle byteHandle = ValueLayout.JAVA_BYTE.arrayElementVarHandle();
-        try (Arena arena = Arena.openConfined()) {
-            MemorySegment segment = MemorySegment.allocateNative(1000, 1, arena.scope());
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment segment = arena.allocate(1000, 1);
             for (long i = 0 ; i < segment.byteSize() ; i++) {
                 assertEquals(0, (byte)byteHandle.get(segment, i));
             }
@@ -97,8 +95,8 @@ public class TestSegments {
     @Test
     public void testSlices() {
         VarHandle byteHandle = ValueLayout.JAVA_BYTE.arrayElementVarHandle();
-        try (Arena arena = Arena.openConfined()) {
-            MemorySegment segment = MemorySegment.allocateNative(10, 1, arena.scope());
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment segment = arena.allocate(10, 1);
             //init
             for (byte i = 0 ; i < segment.byteSize() ; i++) {
                 byteHandle.set(segment, (long)i, i);
@@ -115,16 +113,32 @@ public class TestSegments {
         }
     }
 
+    @Test(dataProvider = "segmentFactories")
+    public void testDerivedScopes(Supplier<MemorySegment> segmentSupplier) {
+        MemorySegment segment = segmentSupplier.get();
+        assertEquals(segment.scope(), segment.scope());
+        // one level
+        assertEquals(segment.asSlice(0).scope(), segment.scope());
+        assertEquals(segment.asReadOnly().scope(), segment.scope());
+        // two levels
+        assertEquals(segment.asSlice(0).asReadOnly().scope(), segment.scope());
+        assertEquals(segment.asReadOnly().asSlice(0).scope(), segment.scope());
+        // check fresh every time
+        MemorySegment another = segmentSupplier.get();
+        assertNotEquals(segment.scope(), another.scope());
+    }
+
     @Test
     public void testEqualsOffHeap() {
-        try (Arena arena = Arena.openConfined()) {
-            MemorySegment segment = MemorySegment.allocateNative(100, arena.scope());
+        try (Arena arena = Arena.ofConfined()) {
+            Arena scope1 = arena;
+            MemorySegment segment = scope1.allocate(100, 1);
             assertEquals(segment, segment.asReadOnly());
             assertEquals(segment, segment.asSlice(0, 100));
             assertNotEquals(segment, segment.asSlice(10, 90));
             assertEquals(segment, segment.asSlice(0, 90));
-            assertEquals(segment, MemorySegment.ofAddress(segment.address(), 100, SegmentScope.global()));
-            MemorySegment segment2 = MemorySegment.allocateNative(100, arena.scope());
+            assertEquals(segment, MemorySegment.ofAddress(segment.address()));
+            MemorySegment segment2 = arena.allocate(100, 1);
             assertNotEquals(segment, segment2);
         }
     }
@@ -142,12 +156,12 @@ public class TestSegments {
 
     @Test
     public void testHashCodeOffHeap() {
-        try (Arena arena = Arena.openConfined()) {
-            MemorySegment segment = MemorySegment.allocateNative(100, arena.scope());
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment segment = arena.allocate(100, 1);
             assertEquals(segment.hashCode(), segment.asReadOnly().hashCode());
             assertEquals(segment.hashCode(), segment.asSlice(0, 100).hashCode());
             assertEquals(segment.hashCode(), segment.asSlice(0, 90).hashCode());
-            assertEquals(segment.hashCode(), MemorySegment.ofAddress(segment.address(), 100, SegmentScope.global()).hashCode());
+            assertEquals(segment.hashCode(), MemorySegment.ofAddress(segment.address()).hashCode());
         }
     }
 
@@ -162,21 +176,23 @@ public class TestSegments {
     @Test(expectedExceptions = IndexOutOfBoundsException.class)
     public void testSmallSegmentMax() {
         long offset = (long)Integer.MAX_VALUE + (long)Integer.MAX_VALUE + 2L + 6L; // overflows to 6 when cast to int
-        MemorySegment memorySegment = MemorySegment.allocateNative(10, SegmentScope.auto());
+        Arena scope = Arena.ofAuto();
+        MemorySegment memorySegment = scope.allocate(10, 1);
         memorySegment.get(JAVA_INT, offset);
     }
 
     @Test(expectedExceptions = IndexOutOfBoundsException.class)
     public void testSmallSegmentMin() {
         long offset = ((long)Integer.MIN_VALUE * 2L) + 6L; // underflows to 6 when cast to int
-        MemorySegment memorySegment = MemorySegment.allocateNative(10L, SegmentScope.auto());
+        Arena scope = Arena.ofAuto();
+        MemorySegment memorySegment = scope.allocate(10L, 1);
         memorySegment.get(JAVA_INT, offset);
     }
 
     @Test
     public void testSegmentOOBMessage() {
         try {
-            var segment = MemorySegment.allocateNative(10, SegmentScope.global());
+            var segment = Arena.global().allocate(10, 1);
             segment.getAtIndex(ValueLayout.JAVA_INT, 2);
         } catch (IndexOutOfBoundsException ex) {
             assertTrue(ex.getMessage().contains("Out of bound access"));
@@ -194,20 +210,18 @@ public class TestSegments {
     @DataProvider(name = "scopes")
     public Object[][] scopes() {
         return new Object[][] {
-                { SegmentScope.auto(), false },
-                { SegmentScope.global(), false },
-                { Arena.openConfined().scope(), true },
-                { Arena.openShared().scope(), false }
+                { Arena.ofAuto(), false },
+                { Arena.global(), false },
+                { Arena.ofConfined(), true },
+                { Arena.ofShared(), false }
         };
     }
 
     @Test(dataProvider = "scopes")
-    public void testIsAccessibleBy(SegmentScope scope, boolean isConfined) {
-        assertTrue(scope.isAccessibleBy(Thread.currentThread()));
-        assertTrue(scope.isAccessibleBy(new Thread()) != isConfined);
-        MemorySegment segment = MemorySegment.ofAddress(0, 0, scope);
-        assertTrue(segment.scope().isAccessibleBy(Thread.currentThread()));
-        assertTrue(segment.scope().isAccessibleBy(new Thread()) != isConfined);
+    public void testIsAccessibleBy(Arena arena, boolean isConfined) {
+        MemorySegment segment = MemorySegment.NULL.reinterpret(arena, null);
+        assertTrue(segment.isAccessibleBy(Thread.currentThread()));
+        assertTrue(segment.isAccessibleBy(new Thread()) != isConfined);
     }
 
     @DataProvider(name = "segmentFactories")
@@ -220,12 +234,12 @@ public class TestSegments {
                 () -> MemorySegment.ofArray(new int[] { 1, 2, 3, 4 }),
                 () -> MemorySegment.ofArray(new long[] { 1l, 2l, 3l, 4l } ),
                 () -> MemorySegment.ofArray(new short[] { 1, 2, 3, 4 } ),
-                () -> MemorySegment.allocateNative(4L, SegmentScope.auto()),
-                () -> MemorySegment.allocateNative(4L, 8, SegmentScope.auto()),
-                () -> MemorySegment.allocateNative(JAVA_INT, SegmentScope.auto()),
-                () -> MemorySegment.allocateNative(4L, SegmentScope.auto()),
-                () -> MemorySegment.allocateNative(4L, 8, SegmentScope.auto()),
-                () -> MemorySegment.allocateNative(JAVA_INT, SegmentScope.auto())
+                () -> Arena.ofAuto().allocate(4L, 1),
+                () -> Arena.ofAuto().allocate(4L, 8),
+                () -> Arena.ofAuto().allocate(JAVA_INT),
+                () -> Arena.ofAuto().allocate(4L, 1),
+                () -> Arena.ofAuto().allocate(4L, 8),
+                () -> Arena.ofAuto().allocate(JAVA_INT)
 
         );
         return l.stream().map(s -> new Object[] { s }).toArray(Object[][]::new);
@@ -257,9 +271,41 @@ public class TestSegments {
     }
 
     @Test(dataProvider = "segmentFactories")
-    public void testNativeSegments(Supplier<MemorySegment> segmentSupplier) {
+    public void testHeapBase(Supplier<MemorySegment> segmentSupplier) {
         MemorySegment segment = segmentSupplier.get();
-        assertEquals(segment.isNative(), !segment.array().isPresent());
+        assertEquals(segment.isNative(), !segment.heapBase().isPresent());
+        segment = segment.asReadOnly();
+        assertTrue(segment.heapBase().isEmpty());
+    }
+
+    @Test
+    public void testScopeConfinedArena() {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment segment = arena.allocate(100);
+            assertEquals(segment.scope(), arena.scope());
+        }
+    }
+
+    @Test
+    public void testScopeSharedArena() {
+        try (Arena arena = Arena.ofShared()) {
+            MemorySegment segment = arena.allocate(100);
+            assertEquals(segment.scope(), arena.scope());
+        }
+    }
+
+    @Test
+    public void testScopeAutoArena() {
+        Arena arena = Arena.ofAuto();
+        MemorySegment segment = arena.allocate(100);
+        assertEquals(segment.scope(), arena.scope());
+    }
+
+    @Test
+    public void testScopeGlobalArena() {
+        Arena arena = Arena.global();
+        MemorySegment segment = arena.allocate(100);
+        assertEquals(segment.scope(), arena.scope());
     }
 
     @Test(dataProvider = "segmentFactories", expectedExceptions = UnsupportedOperationException.class)
@@ -283,7 +329,7 @@ public class TestSegments {
         thread.start();
         thread.join();
 
-        if (!segment.scope().isAccessibleBy(Thread.currentThread())) {
+        if (!segment.isAccessibleBy(Thread.currentThread())) {
             RuntimeException e = exception.get();
             throw e;
         } else {
