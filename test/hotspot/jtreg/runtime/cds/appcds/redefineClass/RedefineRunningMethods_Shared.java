@@ -48,8 +48,7 @@ public class RedefineRunningMethods_Shared {
         "jdk/test/lib/compiler/InMemoryJavaCompiler",
         "jdk/test/lib/compiler/InMemoryJavaCompiler$FileManagerWrapper",
         "jdk/test/lib/compiler/InMemoryJavaCompiler$FileManagerWrapper$1",
-        "jdk/test/lib/compiler/InMemoryJavaCompiler$MemoryJavaFileObject",
-        "jdk/test/lib/compiler/InMemoryJavaCompiler$CloseableCompilationTask"
+        "jdk/test/lib/compiler/InMemoryJavaCompiler$MemoryJavaFileObject"
     };
 
     public static void main(String[] args) throws Exception {
