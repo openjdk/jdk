@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -37,8 +37,13 @@ ifeq ($(call check-jvm-feature, compiler2), true)
   ifeq ($(call isBuildOs, linux), true)
     ADLC_CFLAGS := -fno-exceptions -DLINUX
   else ifeq ($(call isBuildOs, aix), true)
-    ADLC_LDFLAGS += -q64
-    ADLC_CFLAGS := -qnortti -qeh -q64 -DAIX
+    ifeq ($(TOOLCHAIN_TYPE), clang)
+      ADLC_LDFLAGS += -m64
+      ADLC_CFLAGS := -fno-rtti -fexceptions -ffunction-sections -m64 -DAIX -mcpu=pwr8
+    else
+      ADLC_LDFLAGS += -q64
+      ADLC_CFLAGS := -qnortti -qeh -q64 -DAIX
+    endif
   else ifeq ($(call isBuildOs, windows), true)
     ADLC_LDFLAGS += -nologo
     ADLC_CFLAGS := -nologo -EHsc
@@ -167,6 +172,8 @@ ifeq ($(call check-jvm-feature, compiler2), true)
 
   ifeq ($(call check-jvm-feature, zgc), true)
     AD_SRC_FILES += $(call uniq, $(wildcard $(foreach d, $(AD_SRC_ROOTS), \
+        $d/cpu/$(HOTSPOT_TARGET_CPU_ARCH)/gc/x/x_$(HOTSPOT_TARGET_CPU).ad \
+        $d/cpu/$(HOTSPOT_TARGET_CPU_ARCH)/gc/x/x_$(HOTSPOT_TARGET_CPU_ARCH).ad \
         $d/cpu/$(HOTSPOT_TARGET_CPU_ARCH)/gc/z/z_$(HOTSPOT_TARGET_CPU).ad \
         $d/cpu/$(HOTSPOT_TARGET_CPU_ARCH)/gc/z/z_$(HOTSPOT_TARGET_CPU_ARCH).ad \
       )))

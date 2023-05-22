@@ -28,7 +28,7 @@
 #include "gc/g1/g1CardSetMemory.hpp"
 #include "gc/g1/g1CardTableEntryClosure.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
-#include "gc/g1/g1CollectionSetCandidates.hpp"
+#include "gc/g1/g1CollectionSetCandidates.inline.hpp"
 #include "gc/g1/g1ConcurrentMark.inline.hpp"
 #include "gc/g1/g1EvacStats.inline.hpp"
 #include "gc/g1/g1EvacInfo.hpp"
@@ -81,21 +81,14 @@ public:
   }
 
   void do_work(uint worker_id) override {
-
-    class G1SampleCollectionSetCandidatesClosure : public HeapRegionClosure {
-    public:
-      G1MonotonicArenaMemoryStats _total;
-
-      bool do_heap_region(HeapRegion* r) override {
-        _total.add(r->rem_set()->card_set_memory_stats());
-        return false;
-      }
-    } cl;
-
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
-    g1h->collection_set()->candidates()->iterate(&cl);
-    g1h->set_collection_set_candidates_stats(cl._total);
+    G1MonotonicArenaMemoryStats _total;
+    G1CollectionSetCandidates* candidates = g1h->collection_set()->candidates();
+    for (HeapRegion* r : *candidates) {
+      _total.add(r->rem_set()->card_set_memory_stats());
+    }
+    g1h->set_collection_set_candidates_stats(_total);
   }
 };
 
@@ -357,7 +350,6 @@ class G1PostEvacuateCollectionSetCleanupTask2::ClearRetainedRegionBitmaps : publ
   };
 
 public:
-
   ClearRetainedRegionBitmaps(G1EvacFailureRegions* evac_failure_regions) :
     G1AbstractSubTask(G1GCPhaseTimes::ClearRetainedRegionBitmaps),
     _evac_failure_regions(evac_failure_regions),
