@@ -162,6 +162,10 @@ inline HeapWord* HeapRegion::next_live_in_unparsable(const HeapWord* p, HeapWord
   return next_live_in_unparsable(bitmap, p, limit);
 }
 
+inline bool HeapRegion::is_collection_set_candidate() const {
+ return G1CollectedHeap::heap()->is_collection_set_candidate(this);
+}
+
 inline size_t HeapRegion::block_size(const HeapWord* p) const {
   return block_size(p, parsable_bottom());
 }
@@ -290,14 +294,18 @@ inline void HeapRegion::reset_parsable_bottom() {
 }
 
 inline void HeapRegion::note_start_of_marking() {
-  set_top_at_mark_start(top());
-  _gc_efficiency = -1.0;
+  assert(top_at_mark_start() == bottom(), "CA region's TAMS must always be at bottom");
+  if (is_old_or_humongous()) {
+    set_top_at_mark_start(top());
+  }
 }
 
 inline void HeapRegion::note_end_of_marking(size_t marked_bytes) {
   assert_at_safepoint();
 
-  _garbage_bytes = byte_size(bottom(), top_at_mark_start()) - marked_bytes;
+  if (top_at_mark_start() != bottom()) {
+    _garbage_bytes = byte_size(bottom(), top_at_mark_start()) - marked_bytes;
+  }
 
   if (needs_scrubbing()) {
     _parsable_bottom = top_at_mark_start();
@@ -323,6 +331,10 @@ inline void HeapRegion::reset_top_at_mark_start() {
   // - otherwise we reclaim regions only during GC and we do not read tams and the
   // bitmap concurrently.
   set_top_at_mark_start(bottom());
+}
+
+inline bool HeapRegion::needs_scrubbing() const {
+  return is_old();
 }
 
 inline bool HeapRegion::in_collection_set() const {

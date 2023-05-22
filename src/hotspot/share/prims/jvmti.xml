@@ -1892,7 +1892,7 @@ jvmtiEnv *jvmti;
     <function id="StopThread" num="7">
       <synopsis>Stop Thread</synopsis>
       <description>
-        Send the specified asynchronous exception to the specified platform thread.
+        Send the specified asynchronous exception to the specified thread.
       </description>
       <origin>jvmdi</origin>
       <capabilities>
@@ -1903,8 +1903,10 @@ jvmtiEnv *jvmti;
           <jthread impl="noconvert"/>
             <description>
               The thread to stop.
-              The <code>thread</code> may not be a virtual thread. Otherwise, the error code
-              <errorlink id="JVMTI_ERROR_UNSUPPORTED_OPERATION"></errorlink> will be returned.
+              The <functionlink id="StopThread"></functionlink> function may be used to send
+              an asynchronous exception to a virtual thread when it is suspended at an event.
+              An implementation may support sending an asynchronous exception to a suspended
+              virtual thread in other cases.
              </description>
         </param>
         <param id="exception">
@@ -1915,8 +1917,12 @@ jvmtiEnv *jvmti;
         </param>
       </parameters>
       <errors>
-        <error id="JVMTI_ERROR_UNSUPPORTED_OPERATION">
-          <paramlink id="thread"/> is a virtual thread.
+        <error id="JVMTI_ERROR_THREAD_NOT_SUSPENDED">
+          Thread is a virtual thread and was not suspended and was not the current thread.
+        </error>
+        <error id="JVMTI_ERROR_OPAQUE_FRAME">
+          The thread is a suspended virtual thread and the implementation was unable
+          to throw an asynchronous exception from the current frame.
         </error>
       </errors>
     </function>
@@ -11975,7 +11981,8 @@ myInit() {
       There are no Java programming language or JNI stack frames at the specified depth.
     </errorid>
     <errorid id="JVMTI_ERROR_OPAQUE_FRAME" num="32">
-      Information about the frame is not available (e.g. for native frames).
+      Information about the frame is not available (e.g. for native frames),
+      or the function cannot be performed on the thread's current frame.
     </errorid>
     <errorid id="JVMTI_ERROR_DUPLICATE" num="40">
       Item already set.
