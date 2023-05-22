@@ -2951,7 +2951,7 @@ BlockEnd* GraphBuilder::iterate_bytecodes_for_block(int bci) {
       case Bytecodes::_freturn        : method_return(fpop(), ignore_return); break;
       case Bytecodes::_dreturn        : method_return(dpop(), ignore_return); break;
       case Bytecodes::_areturn        : method_return(apop(), ignore_return); break;
-      case Bytecodes::_return         : method_return(nullptr  , ignore_return); break;
+      case Bytecodes::_return         : method_return(nullptr, ignore_return); break;
       case Bytecodes::_getstatic      : // fall through
       case Bytecodes::_putstatic      : // fall through
       case Bytecodes::_getfield       : // fall through
@@ -3418,7 +3418,7 @@ GraphBuilder::GraphBuilder(Compilation* compilation, IRScope* scope)
   CHECK_BAILOUT();
 
 # ifdef ASSERT
-  //All blocks reachable from start_block have _end isn't null
+  // For all blocks reachable from start_block: _end must be non-null
   {
     BlockList processed;
     BlockList to_go;

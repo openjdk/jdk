@@ -510,9 +510,9 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
       if (opBranch->_opr1->is_valid()) do_input(opBranch->_opr1);
       if (opBranch->_opr2->is_valid()) do_input(opBranch->_opr2);
 
-      if (opBranch->_info != nullptr)     do_info(opBranch->_info);
+      if (opBranch->_info != nullptr)  do_info(opBranch->_info);
       assert(opBranch->_result->is_illegal(), "not used");
-      if (opBranch->_stub != nullptr)     opBranch->stub()->visit(this);
+      if (opBranch->_stub != nullptr)  opBranch->stub()->visit(this);
 
       break;
     }
@@ -2071,7 +2071,7 @@ void LIR_OpProfileCall::print_instr(outputStream* out) const {
 // LIR_OpProfileType
 void LIR_OpProfileType::print_instr(outputStream* out) const {
   out->print("exact = ");
-  if  (exact_klass() == nullptr) {
+  if (exact_klass() == nullptr) {
     out->print("unknown");
   } else {
     exact_klass()->print_name_on(out);

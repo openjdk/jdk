@@ -956,8 +956,8 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* current, Runtime1::StubID stub_
   int patch_field_offset = -1;
   Klass* init_klass = nullptr; // klass needed by load_klass_patching code
   Klass* load_klass = nullptr; // klass needed by load_klass_patching code
-  Handle mirror(current, nullptr);                    // oop needed by load_mirror_patching code
-  Handle appendix(current, nullptr);                  // oop needed by appendix_patching code
+  Handle mirror(current, nullptr); // oop needed by load_mirror_patching code
+  Handle appendix(current, nullptr); // oop needed by appendix_patching code
   bool load_klass_or_mirror_patch_id =
     (stub_id == Runtime1::load_klass_patching_id || stub_id == Runtime1::load_mirror_patching_id);
 

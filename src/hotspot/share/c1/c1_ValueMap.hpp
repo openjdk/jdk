@@ -243,7 +243,7 @@ class GlobalValueNumbering: public ValueNumberingVisitor {
   Compilation*  compilation() const              { return _compilation; }
   ValueMap*     current_map()                    { return _current_map; }
   ValueMap*     value_map_of(BlockBegin* block)  { return _value_maps.at(block->linear_scan_number()); }
-  void          set_value_map_of(BlockBegin* block, ValueMap* map)   { assert(value_map_of(block) == nullptr, ""); _value_maps.at_put(block->linear_scan_number(), map); }
+  void          set_value_map_of(BlockBegin* block, ValueMap* map) { assert(value_map_of(block) == nullptr, ""); _value_maps.at_put(block->linear_scan_number(), map); }
 
   bool          is_processed(Value v)            { return _processed_values.contains(v); }
   void          set_processed(Value v)           { _processed_values.put(v); }

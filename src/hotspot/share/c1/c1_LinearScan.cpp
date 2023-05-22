@@ -2980,7 +2980,7 @@ void LinearScan::assign_reg_num(LIR_OpList* instructions, IntervalWalker* iw) {
 
   for (int j = 0; j < num_inst; j++) {
     LIR_Op* op = instructions->at(j);
-    if (op == nullptr) {  // this can happen when spill-moves are removed in eliminate_spill_moves
+    if (op == nullptr) { // this can happen when spill-moves are removed in eliminate_spill_moves
       has_dead = true;
       continue;
     }

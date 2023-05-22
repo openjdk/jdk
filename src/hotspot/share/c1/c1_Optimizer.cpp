@@ -316,7 +316,7 @@ Value CE_Eliminator::make_ifop(Value x, Instruction::Condition cond, Value y, Va
       }
     } else {
       Constant* x_const = x->as_Constant();
-      if (x_const != nullptr) {         // x and y are constants
+      if (x_const != nullptr) { // x and y are constants
         Constant::CompareResult x_compare_res = x_const->compare(cond, y_const);
         // not_comparable here is a valid return in case we're comparing unloaded oop constants
         if (x_compare_res != Constant::not_comparable) {

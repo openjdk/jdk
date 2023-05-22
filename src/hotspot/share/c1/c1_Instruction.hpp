@@ -236,7 +236,7 @@ class InstructionVisitor: public StackObj {
   virtual bool is_equal(Value v) const {              \
     if (!(enabled)  ) return false;                   \
     class_name* _v = v->as_##class_name();            \
-    if (_v == nullptr  ) return false;                \
+    if (_v == nullptr) return false;                  \
     if (f1 != _v->f1) return false;                   \
     return true;                                      \
   }                                                   \
@@ -249,7 +249,7 @@ class InstructionVisitor: public StackObj {
   virtual bool is_equal(Value v) const {              \
     if (!(enabled)  ) return false;                   \
     class_name* _v = v->as_##class_name();            \
-    if (_v == nullptr  ) return false;                \
+    if (_v == nullptr) return false;                  \
     if (f1 != _v->f1) return false;                   \
     if (f2 != _v->f2) return false;                   \
     return true;                                      \
@@ -263,7 +263,7 @@ class InstructionVisitor: public StackObj {
   virtual bool is_equal(Value v) const {              \
     if (!(enabled)  ) return false;                   \
     class_name* _v = v->as_##class_name();            \
-    if (_v == nullptr  ) return false;                \
+    if (_v == nullptr) return false;                  \
     if (f1 != _v->f1) return false;                   \
     if (f2 != _v->f2) return false;                   \
     if (f3 != _v->f3) return false;                   \

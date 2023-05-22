@@ -134,7 +134,7 @@ void RangeCheckEliminator::Visitor::do_Phi(Phi *phi) {
   bool has_upper = true;
   bool has_lower = true;
   assert(phi, "Phi must not be null");
-  Bound *bound = nullptr;
+  Bound* bound = nullptr;
 
   // TODO: support more difficult phis
   for (int i=0; i<op_count; i++) {
@@ -365,7 +365,7 @@ void RangeCheckEliminator::update_bound(IntegerStack &pushed, Value v, Instructi
 bool RangeCheckEliminator::loop_invariant(BlockBegin *loop_header, Instruction *instruction) {
   assert(loop_header, "Loop header must not be null!");
   if (!instruction) return true;
-  for (BlockBegin *d = loop_header->dominator(); d != nullptr; d = d->dominator()) {
+  for (BlockBegin* d = loop_header->dominator(); d != nullptr; d = d->dominator()) {
     if (d == instruction->block()) {
       return true;
     }
@@ -383,7 +383,7 @@ void RangeCheckEliminator::update_bound(IntegerStack &pushed, Value v, Bound *bo
     get_bound(v);
     assert(_bounds.at(v->id()), "Now Stack must exist");
   }
-  Bound *top = nullptr;
+  Bound* top = nullptr;
   if (_bounds.at(v->id())->length() > 0) {
     top = _bounds.at(v->id())->top();
   }
@@ -951,7 +951,7 @@ void RangeCheckEliminator::remove_range_check(AccessIndexed *ai) {
       cur_constant += cur_value->type()->as_IntConstant()->value();
       cur_value = nullptr;
     }
-    Bound *new_index_bound = new Bound(0, nullptr, cur_constant, cur_value);
+    Bound* new_index_bound = new Bound(0, nullptr, cur_constant, cur_value);
     add_assertions(new_index_bound, ai->index(), ai);
   );
 }
@@ -1098,8 +1098,8 @@ void RangeCheckEliminator::Verification::block_do(BlockBegin *block) {
   // Watch out: tsux and fsux can be the same!
   if (block->number_of_sux() > 1) {
     for (int i=0; i<block->number_of_sux(); i++) {
-      BlockBegin *sux = block->sux_at(i);
-      BlockBegin *pred = nullptr;
+      BlockBegin* sux = block->sux_at(i);
+      BlockBegin* pred = nullptr;
       for (int j=0; j<sux->number_of_preds(); j++) {
         BlockBegin *cur = sux->pred_at(j);
         assert(cur != nullptr, "Predecessor must not be null");
@@ -1221,7 +1221,7 @@ bool RangeCheckEliminator::Verification::dominates(BlockBegin *dominator, BlockB
 }
 
 // Try to reach Block end beginning in Block start and not using Block dont_use
-bool RangeCheckEliminator::Verification::can_reach(BlockBegin *start, BlockBegin *end, BlockBegin *dont_use /* = nullptr */) {
+bool RangeCheckEliminator::Verification::can_reach(BlockBegin* start, BlockBegin* end, BlockBegin* dont_use /* = nullptr */) {
   if (start == end) return start != dont_use;
   // Simple BSF from start to end
   //  BlockBeginList _current;
@@ -1518,19 +1518,19 @@ RangeCheckEliminator::Bound *RangeCheckEliminator::Bound::copy() {
 #ifdef ASSERT
 // Add assertion
 void RangeCheckEliminator::Bound::add_assertion(Instruction *instruction, Instruction *position, int i, Value instr, Instruction::Condition cond) {
-  Instruction *result = position;
-  Instruction *compare_with = nullptr;
-  ValueStack *state = position->state_before();
+  Instruction* result = position;
+  Instruction* compare_with = nullptr;
+  ValueStack* state = position->state_before();
   if (position->as_BlockEnd() && !position->as_Goto()) {
     state = position->as_BlockEnd()->state_before();
   }
-  Instruction *instruction_before = position->prev();
+  Instruction* instruction_before = position->prev();
   if (position->as_Return() && Compilation::current()->method()->is_synchronized() && instruction_before->as_MonitorExit()) {
     instruction_before = instruction_before->prev();
   }
   result = instruction_before;
   // Load constant only if needed
-  Constant *constant = nullptr;
+  Constant* constant = nullptr;
   if (i != 0 || !instr) {
     constant = new Constant(new IntConstant(i));
     NOT_PRODUCT(constant->set_printable_bci(position->printable_bci()));
@@ -1554,7 +1554,7 @@ void RangeCheckEliminator::Bound::add_assertion(Instruction *instruction, Instru
     }
     // Add operation only if necessary
     if (constant) {
-      ArithmeticOp *ao = new ArithmeticOp(Bytecodes::_iadd, constant, op, nullptr);
+      ArithmeticOp* ao = new ArithmeticOp(Bytecodes::_iadd, constant, op, nullptr);
       NOT_PRODUCT(ao->set_printable_bci(position->printable_bci()));
       result = result->insert_after(ao);
       compare_with = ao;

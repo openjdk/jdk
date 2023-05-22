@@ -100,7 +100,7 @@ void Instruction::state_values_do(ValueVisitor* f) {
   if (state_before() != nullptr) {
     state_before()->values_do(f);
   }
-  if (exception_state() != nullptr){
+  if (exception_state() != nullptr) {
     exception_state()->values_do(f);
   }
 }
