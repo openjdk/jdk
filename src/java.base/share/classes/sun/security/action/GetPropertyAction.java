@@ -184,18 +184,21 @@ public class GetPropertyAction implements PrivilegedAction<String> {
             def = 0;
         }
 
-        String propVal = privilegedGetProperty(prop, "").trim();
-        if (propVal.length() == 0) {
+        String rawPropVal = privilegedGetProperty(prop, "").trim();
+        if (rawPropVal.length() == 0) {
             return def;
         }
 
-        // Determine if "ms" or just "s" is on the end of the string
+        // Determine if "ms" or just "s" is on the end of the string.
+        // We may do a little surgery on the value so we'll retain
+        // the original value in rawPropVal for debug messages.
         boolean isMillis = false;
-        if (propVal.toLowerCase().endsWith("ms")) {
-            propVal = propVal.substring(0, propVal.length() - 2);
+        String propVal = rawPropVal;
+        if (rawPropVal.toLowerCase().endsWith("ms")) {
+            propVal = rawPropVal.substring(0, rawPropVal.length() - 2);
             isMillis = true;
-        } else if (propVal.toLowerCase().endsWith("s")) {
-            propVal = propVal.substring(0, propVal.length() - 1);
+        } else if (rawPropVal.toLowerCase().endsWith("s")) {
+            propVal = rawPropVal.substring(0, rawPropVal.length() - 1);
         }
 
         // Next check to make sure the string is built only from digits
@@ -206,12 +209,17 @@ public class GetPropertyAction implements PrivilegedAction<String> {
             } catch (NumberFormatException nfe) {
                 if (dbg != null) {
                     dbg.println("Warning: Unexpected " + nfe +
-                            " for timeout value " + propVal +
+                            " for timeout value " + rawPropVal +
                             ". Using default value of " + def + " msec.");
                 }
                 return def;
             }
         } else {
+            if (dbg != null) {
+                dbg.println("Warning: Incorrect syntax for timeout value " +
+                        rawPropVal + ". Using default value of " + def +
+                        " msec.");
+            }
             return def;
         }
     }
