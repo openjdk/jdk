@@ -1273,7 +1273,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IndexOutOfBoundsException if {@code srcOffset > srcSegment.byteSize() - bytes} or if
      * {@code dstOffset > dstSegment.byteSize() - bytes}, or if either {@code srcOffset}, {@code dstOffset}
      * or {@code bytes} are {@code < 0}.
-     * @throws UnsupportedOperationException if the destination segment is {@linkplain #isReadOnly() read-only}.
+     * @throws UnsupportedOperationException if {@code dstSegment} is {@linkplain #isReadOnly() read-only}.
      */
     @ForceInline
     static void copy(MemorySegment srcSegment, long srcOffset,
@@ -1318,11 +1318,11 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * {@linkplain Scope#isAlive() alive}.
      * @throws WrongThreadException if this method is called from a thread {@code T},
      * such that {@code dstSegment().isAccessibleBy(T) == false}.
+     * @throws UnsupportedOperationException if {@code dstSegment} is {@linkplain #isReadOnly() read-only}.
      * @throws IndexOutOfBoundsException if {@code elementCount * srcLayout.byteSize()} or {@code elementCount * dtsLayout.byteSize()} overflows.
      * @throws IndexOutOfBoundsException if {@code elementCount * dstLayout.byteSize()} overflows.
      * @throws IndexOutOfBoundsException if {@code dstOffset > dstSegment.byteSize() - (elementCount * dstLayout.byteSize())}.
      * @throws IndexOutOfBoundsException if either {@code srcOffset}, {@code dstOffset} or {@code elementCount} are {@code < 0}.
-     * @throws UnsupportedOperationException if the destination segment is {@linkplain #isReadOnly() read-only}.
      */
     @ForceInline
     static void copy(MemorySegment srcSegment, ValueLayout srcElementLayout, long srcOffset,
