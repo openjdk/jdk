@@ -697,6 +697,11 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * <p> If this file has an associated channel then the channel is closed
      * as well.
      *
+     * @apiNote
+     * If this stream has an associated channel then this method will close the
+     * channel, which in turn will close this stream. Subclasses that override
+     * this method should be prepared to handle possible reentrant invocation.
+     *
      * @throws     IOException  if an I/O error occurs.
      *
      * @revised 1.4

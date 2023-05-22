@@ -228,6 +228,18 @@ struct hb_sanitize_context_t :
 
   unsigned get_edit_count () { return edit_count; }
 
+
+  bool check_ops(unsigned count)
+  {
+    /* Avoid underflow */
+    if (unlikely (this->max_ops < 0 || count >= (unsigned) this->max_ops))
+    {
+      this->max_ops = -1;
+      return false;
+    }
+    return (this->max_ops -= (int) count) > 0;
+  }
+
   bool check_range (const void *base,
                     unsigned int len) const
   {

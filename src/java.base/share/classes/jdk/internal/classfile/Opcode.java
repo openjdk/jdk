@@ -204,8 +204,8 @@ public enum Opcode {
     IF_ACMPEQ(Classfile.IF_ACMPEQ, 3, Kind.BRANCH, TypeKind.ReferenceType),
     IF_ACMPNE(Classfile.IF_ACMPNE, 3, Kind.BRANCH, TypeKind.ReferenceType),
     GOTO(Classfile.GOTO, 3, Kind.BRANCH, TypeKind.VoidType),
-    JSR(Classfile.JSR, 3, Kind.UNSUPPORTED),
-    RET(Classfile.RET, 2, Kind.UNSUPPORTED),
+    JSR(Classfile.JSR, 3, Kind.DISCONTINUED_JSR),
+    RET(Classfile.RET, 2, Kind.DISCONTINUED_RET),
     TABLESWITCH(Classfile.TABLESWITCH, -1, Kind.TABLE_SWITCH),
     LOOKUPSWITCH(Classfile.LOOKUPSWITCH, -1, Kind.LOOKUP_SWITCH),
     IRETURN(Classfile.IRETURN, 1, Kind.RETURN, TypeKind.IntType),
@@ -236,7 +236,7 @@ public enum Opcode {
     IFNULL(Classfile.IFNULL, 3, Kind.BRANCH, TypeKind.ReferenceType),
     IFNONNULL(Classfile.IFNONNULL, 3, Kind.BRANCH, TypeKind.IntType),
     GOTO_W(Classfile.GOTO_W, 5, Kind.BRANCH, TypeKind.VoidType),
-    JSR_W(Classfile.JSR_W, 5, Kind.UNSUPPORTED),
+    JSR_W(Classfile.JSR_W, 5, Kind.DISCONTINUED_JSR),
     ILOAD_W((Classfile.WIDE << 8) | Classfile.ILOAD, 4, Kind.LOAD, TypeKind.IntType, -1),
     LLOAD_W((Classfile.WIDE << 8) | Classfile.LLOAD, 4, Kind.LOAD, TypeKind.LongType, -1),
     FLOAD_W((Classfile.WIDE << 8) | Classfile.FLOAD, 4, Kind.LOAD, TypeKind.FloatType, -1),
@@ -247,7 +247,7 @@ public enum Opcode {
     FSTORE_W((Classfile.WIDE << 8) | Classfile.FSTORE, 4, Kind.STORE, TypeKind.FloatType, -1),
     DSTORE_W((Classfile.WIDE << 8) | Classfile.DSTORE, 4, Kind.STORE, TypeKind.DoubleType, -1),
     ASTORE_W((Classfile.WIDE << 8) | Classfile.ASTORE, 4, Kind.STORE, TypeKind.ReferenceType, -1),
-    RET_W((Classfile.WIDE << 8) | Classfile.RET, 4, Kind.UNSUPPORTED),
+    RET_W((Classfile.WIDE << 8) | Classfile.RET, 4, Kind.DISCONTINUED_RET),
     IINC_W((Classfile.WIDE << 8) | Classfile.IINC, 6, Kind.INCREMENT, TypeKind.IntType, -1);
 
     /**
@@ -258,7 +258,7 @@ public enum Opcode {
         FIELD_ACCESS, INVOKE, INVOKE_DYNAMIC,
         NEW_OBJECT, NEW_PRIMITIVE_ARRAY, NEW_REF_ARRAY, NEW_MULTI_ARRAY,
         TYPE_CHECK, ARRAY_LOAD, ARRAY_STORE, STACK, CONVERT, OPERATOR, CONSTANT,
-        MONITOR, NOP, UNSUPPORTED;
+        MONITOR, NOP, DISCONTINUED_JSR, DISCONTINUED_RET;
     }
 
     private final int bytecode;

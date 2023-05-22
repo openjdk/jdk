@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8306929
- * @summary Verify clean_previous_versions when run with JFR and CDS
+ * @summary Verify should_clean_previous_versions when run with JFR and CDS
  * @requires vm.jvmti
  * @requires vm.cds
  * @requires vm.hasJFR
@@ -69,19 +69,17 @@ public class RedefineSharedClassJFR {
 
             if (args[0].equals("xshare-off")) {
                 // First case is with -Xshare:off. In this case no classes are shared
-                // and we should be able to clean out the retransformed classes. Verify
-                // that the cleaning is done when the GC is triggered.
+                // and we should be able to clean out the retransformed classes. There
+                // is no guarantee that any classes will be in use, so just verify that
+                // no classes are added due to being shared.
                 List<String> offCommand = new ArrayList<>();
                 offCommand.add("-Xshare:off");
                 offCommand.addAll(baseCommand);
                 ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(offCommand);
                 new OutputAnalyzer(pb.start())
-                    .shouldContain(SHOULD_CLEAN_TRUE)
-                    .shouldNotContain(SHOULD_CLEAN_FALSE)
-                    // We expect at least one of the transformed classes to be in use, if
-                    // not the above check that should_clean_previous should be true will also
-                    // fail. This check is to show what is expected.
-                    .shouldContain(SCRATCH_CLASS_ADDED_ON_STACK)
+                    // We can't expect any of the transformed classes to be in use
+                    // so the only thing we can verify is that no scratch classes
+                    // are added because they are shared.
                     .shouldNotContain(SCRATCH_CLASS_ADDED_SHARED)
                     .shouldHaveExitValue(0);
                 return;
