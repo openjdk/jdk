@@ -56,9 +56,9 @@ import jdk.internal.javac.PreviewFeature;
  * are defined in the {@link ValueLayout} class. A special kind of value layout, namely an {@linkplain AddressLayout address layout},
  * is used to model values that denote the address of a region of memory.
  * <p>
- * More complex layouts can be derived from simpler ones: a <em>sequence layout</em> denotes a homogeneous repetition of
- * zero or more occurrences of an element layout (see {@link SequenceLayout}); a <em>group layout</em> denotes a
- * heterogeneous aggregation of zero or more member layouts (see {@link GroupLayout}). Group layouts come in two
+ * More complex layouts can be derived from simpler ones: a {@linkplain SequenceLayout sequence layout} denotes a
+ * homogeneous repetition of zero or more occurrences of an element layout; a {@linkplain GroupLayout group layout}
+ * denotes a heterogeneous aggregation of zero or more member layouts. Group layouts come in two
  * flavors: {@linkplain StructLayout struct layouts}, where member layouts are laid out one after the other, and
  * {@linkplain UnionLayout union layouts} where member layouts are laid out at the same starting offset.
  * <p>
@@ -86,15 +86,15 @@ import jdk.internal.javac.PreviewFeature;
  * ).withName("TaggedValues");
  * }
  *
- * <h2 id="layout-align">Size, alignment and byte order</h2>
+ * <h2 id="layout-align">Characteristics of memory layouts</h2>
  *
  * All layouts have a <em>size</em> (expressed in bytes), which is defined as follows:
  * <ul>
  *     <li>The size of a value layout is determined by the {@linkplain ValueLayout#carrier()}
  *     associated with the value layout. That is, the constant {@link ValueLayout#JAVA_INT} has carrier {@code int}, and
- *     size of 32 bits;</li>
+ *     size of 4 bytes;</li>
  *     <li>The size of an address layout is platform-dependent. That is, the constant {@link ValueLayout#ADDRESS}
- *     has size of 64 bits on a 64-bit platform;</li>
+ *     has size of 8 bytes on a 64-bit platform;</li>
  *     <li>The size of a padding layout is always provided explicitly, on {@linkplain MemoryLayout#paddingLayout(long) construction};</li>
  *     <li>The size of a sequence layout whose element layout is <em>E</em> and element count is <em>L</em>,
  *     is the size of <em>E</em>, multiplied by <em>L</em>;</li>
@@ -106,9 +106,7 @@ import jdk.internal.javac.PreviewFeature;
  * <p>
  * Furthermore, all layouts have a <em>natural alignment</em> (expressed in bytes) which is defined as follows:
  * <ul>
- *     <li>The natural alignment of a padding layout is 1, regardless of its size; that is, in the absence
- *     of an explicit alignment constraint, a padding layout should not affect the alignment constraint of the group
- *     layout it is nested into;</li>
+ *     <li>The natural alignment of a padding layout is 1;</li>
  *     <li>The natural alignment of a value layout whose size is <em>N</em> is <em>N</em>;</li>
  *     <li>The natural alignment of a sequence layout whose element layout is <em>E</em> is the alignment of <em>E</em>;</li>
  *     <li>The natural alignment of a group layout with member layouts <em>M1</em>, <em>M2</em>, ... <em>Mn</em> whose
@@ -116,14 +114,12 @@ import jdk.internal.javac.PreviewFeature;
  * </ul>
  * A layout's alignment can be overridden if needed (see {@link MemoryLayout#withByteAlignment(long)}), which can be useful to describe
  * layouts with weaker or stronger alignment constraints.
- * <p>
- * All value layouts have an <em>explicit</em> byte order (see {@link java.nio.ByteOrder}).
  *
  * <h2 id="layout-paths">Layout paths</h2>
  *
- * A <em>layout path</em> originates from a <em>root</em> layout (typically a group or a sequence layout) and terminates
- * at a layout nested within the root layout - this is the layout <em>selected</em> by the layout path.
+ * A <em>layout path</em> is used to unambiguously select a layout that is nested in some other layout.
  * Layout paths are typically expressed as a sequence of one or more {@linkplain PathElement path elements}.
+ * (A more formal definition of layout paths is provided <a href="#well-formedness">below</a>).
  * <p>
  * Layout paths can be used to:
  * <ul>
@@ -164,8 +160,8 @@ import jdk.internal.javac.PreviewFeature;
  * <p>
  * Open path elements also affects the creation of
  * {@linkplain #byteOffsetHandle(PathElement...) offset-computing method handles}. Each open path element becomes
- * an additional {@code long} parameter in the obtained method handle. This parameter can be used to specify index of the
- * sequence element whose offset is to be computed:
+ * an additional {@code long} parameter in the obtained method handle. This parameter can be used to specify the index
+ * of the sequence element whose offset is to be computed:
  *
  * {@snippet lang=java :
  * MethodHandle offsetHandle = taggedValues.byteOffsetHandle(PathElement.sequenceElement(),
@@ -193,8 +189,9 @@ import jdk.internal.javac.PreviewFeature;
  * }
  *
  * This layout is a struct layout which describe a rectangle. It contains a single field, namely {@code points},
- * which points to a region of memory containing four point structs, where each point is defined as a pair
- * or {@link ValueLayout#JAVA_INT} coordinates, with names {@code x} and {@code y}, respectively.
+ * an address layout whose {@linkplain AddressLayout#targetLayout() target layout} is a sequence layout of four
+ * struct layouts. Each struct layout describes a two-dimensional point, and is defined as a pair or
+ * {@link ValueLayout#JAVA_INT} coordinates, with names {@code x} and {@code y}, respectively.
  * <p>
  * With dereference path elements, we can obtain a var handle which accesses the {@code y} coordinate of one of the
  * point in the rectangle, as follows:
@@ -208,7 +205,7 @@ import jdk.internal.javac.PreviewFeature;
  * );
  *
  * MemorySegment rect = ...
- * int rect_y_4 = (int) rectPointYs.get(rect, 2); // *(rect.points)[2].y
+ * int rect_y_4 = (int) rectPointYs.get(rect, 2); // rect.points[2]->y
  * }
  *
  * <h3 id="well-formedness">Layout path well-formedness</h3>
@@ -308,11 +305,9 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      *
      * @param elements the layout path elements.
      * @return The offset, in bytes, of the layout selected by the layout path in {@code elements}.
-          * @throws IllegalArgumentException if the layout path is not <a href="#well-formedness">well-formed</a> for this layout.
+     * @throws IllegalArgumentException if the layout path is not <a href="#well-formedness">well-formed</a> for this layout.
      * @throws IllegalArgumentException if the layout path contains one or more <a href=#open-path-elements>open path elements</a>.
      * @throws IllegalArgumentException if the layout path contains one or more <a href=#deref-path-elements>dereference path elements</a>.
-     * @throws NullPointerException if either {@code elements == null}, or if any of the elements
-     * in {@code elements} is {@code null}.
      */
     default long byteOffset(PathElement... elements) {
         return computePathOp(LayoutPath.rootPath(this), LayoutPath::offset,
@@ -349,7 +344,7 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      *
      * @param elements the layout path elements.
      * @return a method handle that computes the offset, in bytes, of the layout selected by the given layout path.
-          * @throws IllegalArgumentException if the layout path is not <a href="#well-formedness">well-formed</a> for this layout.
+     * @throws IllegalArgumentException if the layout path is not <a href="#well-formedness">well-formed</a> for this layout.
      * @throws IllegalArgumentException if the layout path contains one or more <a href=#deref-path-elements>dereference path elements</a>.
      */
     default MethodHandle byteOffsetHandle(PathElement... elements) {
@@ -421,10 +416,8 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      *
      * @param elements the layout path elements.
      * @return a var handle that accesses a memory segment at the offset selected by the given layout path.
-          * @throws IllegalArgumentException if the layout path is not <a href="#well-formedness">well-formed</a> for this layout.
+     * @throws IllegalArgumentException if the layout path is not <a href="#well-formedness">well-formed</a> for this layout.
      * @throws IllegalArgumentException if the layout selected by the provided path is not a {@linkplain ValueLayout value layout}.
-     * @throws IllegalArgumentException if the layout path contains a {@linkplain PathElement#dereferenceElement()
-     * dereference path element} for an address layout that has no {@linkplain AddressLayout#targetLayout() target layout}.
      * @see MethodHandles#memorySegmentViewVarHandle(ValueLayout)
      */
     default VarHandle varHandle(PathElement... elements) {
@@ -471,7 +464,7 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      *
      * @param elements the layout path elements.
      * @return the layout selected by the layout path in {@code elements}.
-          * @throws IllegalArgumentException if the layout path is not <a href="#well-formedness">well-formed</a> for this layout.
+     * @throws IllegalArgumentException if the layout path is not <a href="#well-formedness">well-formed</a> for this layout.
      * @throws IllegalArgumentException if the layout path contains one or more <a href=#deref-path-elements>dereference path elements</a>.
      * @throws IllegalArgumentException if the layout path contains one or more path elements that select one or more
      * sequence element indices, such as {@link PathElement#sequenceElement(long)} and {@link PathElement#sequenceElement(long, long)}).
@@ -621,11 +614,12 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      * conditions must be satisfied:
      * <ul>
      *     <li>two value layouts are considered equal if they have the same {@linkplain ValueLayout#order() order},
-     *     and {@linkplain ValueLayout#carrier() carrier}</li>
+     *     and {@linkplain ValueLayout#carrier() carrier}. Additionally, two address layouts are considered equal if they
+     *     also have the same {@linkplain AddressLayout#targetLayout() target layout};</li>
      *     <li>two sequence layouts are considered equal if they have the same element count (see {@link SequenceLayout#elementCount()}), and
-     *     if their element layouts (see {@link SequenceLayout#elementLayout()}) are also equal</li>
+     *     if their element layouts (see {@link SequenceLayout#elementLayout()}) are also equal;</li>
      *     <li>two group layouts are considered equal if they are of the same type (see {@link StructLayout},
-     *     {@link UnionLayout}) and if their member layouts (see {@link GroupLayout#memberLayouts()}) are also equal</li>
+     *     {@link UnionLayout}) and if their member layouts (see {@link GroupLayout#memberLayouts()}) are also equal.</li>
      * </ul>
      *
      * @param other the object to be compared for equality with this layout.
@@ -645,7 +639,10 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
     String toString();
 
     /**
-     * Creates a padding layout with the given byte size and a byte-alignment of one.
+     * Creates a padding layout with the given byte size. The alignment constraint of the returned layout
+     * is 1. As such, regardless of its size, in the absence of an {@linkplain #withByteAlignment(long) explicit}
+     * alignment constraint, a padding layout does not affect the alignment constraint of the group or sequence layout
+     * it is nested into.
      *
      * @param byteSize the padding size (expressed in bytes).
      * @return the new selector layout.
