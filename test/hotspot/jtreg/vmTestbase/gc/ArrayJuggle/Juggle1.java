@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,20 +21,15 @@
  * questions.
  */
 
-
 /*
- * @test
- * @key stress randomness
- *
- * @summary converted from VM Testbase gc/memory/Array/ArrayJuggle/Juggle2.
+ * summary converted from VM Testbase gc/memory/Array/ArrayJuggle/Juggle1.
  * VM Testbase keywords: [gc, stress, stressopt, nonconcurrent]
- *
- * @library /vmTestbase
- *          /test/lib
- * @run main/othervm -Xlog:gc=debug:gc.log gc.memory.Array.ArrayJuggle.Juggle2.Juggle2
  */
 
-package gc.memory.Array.ArrayJuggle.Juggle2;
+/* @test @key stress randomness @library /vmTestbase /test/lib @run main/othervm -Xlog:gc=debug:gc.log gc.ArrayJuggle.Juggle1 */
+/* @test @key stress randomness @library /vmTestbase /test/lib @run main/othervm -Xlog:gc=debug:gc.log gc.ArrayJuggle.Juggle1 -tg */
+
+package gc.ArrayJuggle;
 
 import nsk.share.test.*;
 import nsk.share.gc.*;
@@ -46,12 +41,12 @@ import nsk.share.gc.*;
  * which modify and copy portions of the array to try to confuse
  * the GC.
  */
-public class Juggle2 extends ThreadedGCTest {
+public class Juggle1 extends ThreadedGCTest {
         private int arraySize = 1000;
         private int objectSize = 1000;
         private int maxLinkLength = 100;
         private int maxCopySize = arraySize / 10;
-        private int threadsCount = 30;
+        private int threadsCount;
         private LinkedMemoryObject mainArray[];
 
         private class MainArrayWalker implements Runnable {
@@ -77,9 +72,6 @@ public class Juggle2 extends ThreadedGCTest {
                                 mainArray[index] = null;
                                 n = 0;
                         }
-                        //for (int i = 0; i < thisChainLength; ++i)
-                        //      mainArray[index] = new LinkedMemoryObject(cellSize, mainArray[index]);
-                        //Memory.makeLinearList(maxLinkLength, objectSize);
                         mainArray[index] = Memory.makeRandomLinearList(maxLinkLength, objectSize);
                 }
 
@@ -94,15 +86,13 @@ public class Juggle2 extends ThreadedGCTest {
 
                 public CopyingThread() {
                         localArray = new LinkedMemoryObject[maxCopySize];
-                        for (int i = 0; i < maxCopySize; ++i)
-                                localArray[i] = new LinkedMemoryObject(0);
                 }
 
                 public void run() {
                         int toCopy = LocalRandom.nextInt(maxCopySize);
                         int mainIndex = LocalRandom.nextInt(arraySize);
                         for (int i = 0; i < toCopy; i++) {
-                                localArray[currentIndex].setNext(mainArray[mainIndex]);
+                                localArray[currentIndex] = mainArray[mainIndex];
                                 currentIndex = (currentIndex + 1) % maxCopySize;
                                 mainIndex = (mainIndex + 1) % arraySize;
                         }
@@ -129,6 +119,7 @@ public class Juggle2 extends ThreadedGCTest {
                 // arraySize * (objectSize + referenceSize) + threadsCount * (referenceSize arraySize/10 * (referenceSize + objectSize)) = memory
                 long referenceSize = Memory.getReferenceSize();
                 long objectExtraSize = Memory.getObjectExtraSize();
+                threadsCount = runParams.getNumberOfThreads();
                 arraySize = Memory.getArrayLength(
                         runParams.getTestMemory(),
                         Memory.getListSize(maxLinkLength, objectSize)
@@ -142,6 +133,6 @@ public class Juggle2 extends ThreadedGCTest {
         }
 
         public static void main(String args[]) {
-                GC.runTest(new Juggle2(), args);
+                GC.runTest(new Juggle1(), args);
         }
 }
