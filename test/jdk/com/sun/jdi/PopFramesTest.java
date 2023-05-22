@@ -310,7 +310,7 @@ public class PopFramesTest extends TestScaffold {
              * For platform threads, Thread.sleep() results in the Thread.sleep0() native
              * frame on the stack, so the end result is NativeMethodException. For virtual
              * threads it is not quite so simple. If the thead is pinned (such as when
-             * there is already a native method on the stack), you end up in 
+             * there is already a native method on the stack), you end up in
              * VirtualThread.parkOnCarrierThread(), which calls Unsafe.park(), which is a
              * native method, so again this results in NativeMethodException. However, for
              * a virtual thread that is not pinned (which is true for this test case), you
