@@ -44,6 +44,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import static java.lang.Thread.State.*;
 import static java.util.concurrent.Future.State.*;
 
 import org.junit.jupiter.api.Test;
@@ -175,8 +176,9 @@ class ThreadPerTaskExecutorTest {
 
             var task = new LongRunningTask<Void>();
             Future<Void> future = executor.submit(task);
-            task.awaitStarted();
             try {
+                task.awaitStarted();
+
                 List<Runnable> tasks = executor.shutdownNow();
                 assertTrue(executor.isShutdown());
                 assertTrue(tasks.isEmpty());
@@ -253,9 +255,10 @@ class ThreadPerTaskExecutorTest {
     void testClose4(ExecutorService executor) throws Exception {
         Future<Void> future;
         try (executor) {
-            Thread mainThread = Thread.currentThread();
-            var task = new LongRunningTask<Void>().onStart(mainThread::interrupt);
+            var task = new LongRunningTask<Void>();
             future = executor.submit(task);
+            task.awaitStarted();
+            scheduleInterruptAt("java.util.concurrent.ThreadPerTaskExecutor.close");
         } finally {
             assertTrue(Thread.interrupted());
         }
@@ -569,15 +572,19 @@ class ThreadPerTaskExecutorTest {
     @MethodSource("executors")
     void testInterruptInvokeAny(ExecutorService executor) throws Exception {
         try (executor) {
-            Thread mainThread = Thread.currentThread();
-            var task = new LongRunningTask<Void>().onStart(mainThread::interrupt);
+            var task = new LongRunningTask<Void>();
             try {
+                scheduleInterruptAt("java.util.concurrent.ThreadPerTaskExecutor.invokeAny");
                 executor.invokeAny(Set.of(task));
                 fail("invokeAny did not throw");
             } catch (InterruptedException expected) {
                 assertFalse(Thread.currentThread().isInterrupted());
-                task.awaitDone();
-                assertTrue(task.isInterrupted());
+
+                // if task started then it should be interrupted
+                if (task.isStarted()) {
+                    task.awaitDone();
+                    assertTrue(task.isInterrupted());
+                }
             } finally {
                 Thread.interrupted(); // clear interrupt
             }
@@ -822,15 +829,19 @@ class ThreadPerTaskExecutorTest {
     @MethodSource("executors")
     void testInvokeAllInterrupt4(ExecutorService executor) throws Exception {
         try (executor) {
-            Thread mainThread = Thread.currentThread();
-            var task = new LongRunningTask<Void>().onStart(mainThread::interrupt);
+            var task = new LongRunningTask<Void>();
             try {
+                scheduleInterruptAt("java.util.concurrent.ThreadPerTaskExecutor.invokeAll");
                 executor.invokeAll(Set.of(task));
                 fail("invokeAll did not throw");
             } catch (InterruptedException expected) {
                 assertFalse(Thread.currentThread().isInterrupted());
-                task.awaitDone();
-                assertTrue(task.isInterrupted());
+
+                // if task started then it should be interrupted
+                if (task.isStarted()) {
+                    task.awaitDone();
+                    assertTrue(task.isInterrupted());
+                }
             } finally {
                 Thread.interrupted(); // clear interrupt
             }
@@ -844,15 +855,19 @@ class ThreadPerTaskExecutorTest {
     @MethodSource("executors")
     void testInvokeAllInterrupt5(ExecutorService executor) throws Exception {
         try (executor) {
-            Thread mainThread = Thread.currentThread();
-            var task = new LongRunningTask<Void>().onStart(mainThread::interrupt);
+            var task = new LongRunningTask<Void>();
             try {
+                scheduleInterruptAt("java.util.concurrent.ThreadPerTaskExecutor.invokeAll");
                 executor.invokeAll(Set.of(task), 1, TimeUnit.DAYS);
                 fail("invokeAll did not throw");
             } catch (InterruptedException expected) {
                 assertFalse(Thread.currentThread().isInterrupted());
-                task.awaitDone();
-                assertTrue(task.isInterrupted());
+
+                // if task started then it should be interrupted
+                if (task.isStarted()) {
+                    task.awaitDone();
+                    assertTrue(task.isInterrupted());
+                }
             } finally {
                 Thread.interrupted(); // clear interrupt
             }
@@ -991,10 +1006,50 @@ class ThreadPerTaskExecutorTest {
     }
 
     /**
-     * Long running task with methods to test if the task has started and finished.
-     * It also allows an action to be scheduled to execute when the task starts.
+     * Schedules the current thread to be interrupted when it waits (timed or untimed)
+     * at the given location "{@code c.m}" where {@code c} is the fully qualified class
+     * name and {@code m} is the method name.
      */
-    static class LongRunningTask<T> implements Callable<T> {
+    private void scheduleInterruptAt(String location) {
+        int index = location.lastIndexOf('.');
+        String className = location.substring(0, index);
+        String methodName = location.substring(index + 1);
+        Thread target = Thread.currentThread();
+        scheduler.submit(() -> {
+            try {
+                boolean found = false;
+                while (!found) {
+                    Thread.State state = target.getState();
+                    assertTrue(state != TERMINATED);
+                    if ((state == WAITING || state == TIMED_WAITING)
+                            && contains(target.getStackTrace(), className, methodName)) {
+                        found = true;
+                    } else {
+                        Thread.sleep(20);
+                    }
+                }
+                target.interrupt();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+    }
+
+    /**
+     * Returns true if the given stack trace contains an element for the given class
+     * and method name.
+     */
+    private boolean contains(StackTraceElement[] stack, String className, String methodName) {
+        return Arrays.stream(stack)
+                .anyMatch(e -> className.equals(e.getClassName())
+                        && methodName.equals(e.getMethodName()));
+    }
+
+    /**
+     * Long running task with methods to test if the task has started, finished,
+     * and interrupted.
+     */
+    private static class LongRunningTask<T> implements Callable<T> {
         final CountDownLatch started = new CountDownLatch(1);
         final CountDownLatch done = new CountDownLatch(1);
         volatile boolean interrupted;
@@ -1011,18 +1066,6 @@ class ThreadPerTaskExecutorTest {
                 done.countDown();
             }
             return null;
-        }
-
-        /**
-         * Invokes the given action when the task starts execution.
-         */
-        LongRunningTask<T> onStart(Runnable action) {
-            scheduler.submit(() -> {
-                started.await();
-                action.run();
-                return null;
-            });
-            return this;
         }
 
         /**
