@@ -503,13 +503,8 @@ void Runtime1::generate_unwind_exception(StubAssembler *sasm) {
   __ protect_return_address();
   __ stp(lr, exception_oop, Address(__ pre(sp, -2 * wordSize)));
 
-  // Insert check if AbortVMOnException flag
-  if (AbortVMOnException) {
-    __ call_VM(noreg, CAST_FROM_FN_PTR(address, Runtime1::check_abort_on_vm_exception), exception_oop);
-  }
-
   // search the exception handler address of the caller (using the return address)
-  __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::exception_handler_for_return_address), rthread, r3);
+  __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::exception_handler_for_return_address), rthread, r3, exception_oop);
   // r0: exception handler address of the caller
 
   // Only R0 is valid at this time; all other registers have been

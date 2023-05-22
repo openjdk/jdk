@@ -556,11 +556,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         __ push_frame_reg_args(0, R0); // dummy frame for C call
         __ mr(Rexception_save, Rexception); // save over C call
         __ ld(Rexception_pc, _abi0(lr), Rcaller_sp); // return pc
-        // Insert check if AbortVMOnException flag
-        if (AbortVMOnException) {
-          __ call_VM(noreg, CAST_FROM_FN_PTR(address, Runtime1::check_abort_on_vm_exception), exception_oop);
-        }
-        __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::exception_handler_for_return_address), R16_thread, Rexception_pc);
+        __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::exception_handler_for_return_address), R16_thread, Rexception_pc, Rexception);
         __ verify_not_null_oop(Rexception_save);
         __ mtctr(R3_RET);
         __ ld(Rexception_pc, _abi0(lr), Rcaller_sp); // return pc

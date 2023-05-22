@@ -259,7 +259,7 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
         break;
       case Deoptimization::Unpack_exception:
         // exception is pending
-        pc = SharedRuntime::raw_exception_handler_for_return_address(thread, pc);
+        pc = SharedRuntime::raw_exception_handler_for_return_address(thread, pc, nullptr);
         // [phh] We're going to end up in some handler or other, so it doesn't
         // matter what mdp we point to.  See exception_handler_for_exception()
         // in interpreterRuntime.cpp.
