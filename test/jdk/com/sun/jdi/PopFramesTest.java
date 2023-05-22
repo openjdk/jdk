@@ -51,7 +51,7 @@ class PopFramesTestTarg {
      *  - Note that Thread.sleep() usually results in the native Thread.sleep0() frame
      *    being at the top of the stack. However, for a mounted virtual thread
      *    it does not result in any native frames due to how the VM parks virtual threads.
-     * 
+     *
      * SLEEP_NATIVE:
      *   Thread.sleep() + methods called by Thread.sleep()
      *   loopOrSleep()
@@ -59,7 +59,7 @@ class PopFramesTestTarg {
      *   doUpcall()  <-- native method
      *   popMethod()
      *   main()
-     * 
+     *
      * LOOP_NATIVE:
      *   loopOrSleep()  <-- tight loop
      *   upcallMethod()
@@ -115,7 +115,7 @@ class PopFramesTestTarg {
             }  catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
-        } 
+        }
     }
 
     public static native void doUpcall(); // native method that will call upcallMethod()
@@ -290,8 +290,8 @@ public class PopFramesTest extends TestScaffold {
              * Normally a Thread.sleep() results in the Thread.sleep0() native frame
              * on the stack, so the end result is NativeMethodException. However, for
              * a virtual thread that is not pinned, you end up with no native methods
-             * on the stack due to how the VM parks virtual threads. So we have an 
-             * unmounted virtual thread with no native frames, which means 
+             * on the stack due to how the VM parks virtual threads. So we have an
+             * unmounted virtual thread with no native frames, which means
              * OpaqueFrameException will be thrown.
              */
             String mainWrapper = System.getProperty("main.wrapper");
