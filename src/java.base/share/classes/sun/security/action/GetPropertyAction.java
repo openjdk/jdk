@@ -28,7 +28,7 @@ package sun.security.action;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Properties;
-import java.util.regex.Pattern;
+import sun.security.util.Debug;
 
 /**
  * A convenience class for retrieving the string value of a system
@@ -170,6 +170,7 @@ public class GetPropertyAction implements PrivilegedAction<String> {
      *
      * @param prop the name of the System property
      * @param def a default value (in milliseconds)
+     * @param dbg a Debug object, if null no debug messages will be sent
      *
      * @return an integer value corresponding to the timeout value in the System
      *      property in milliseconds.  If the property value is empty, negative,
@@ -178,12 +179,12 @@ public class GetPropertyAction implements PrivilegedAction<String> {
      *      the "def" parameter is supplied, zero will be returned if the
      *      property's value does not conform to the allowed syntax.
      */
-    public static int privilegedGetTimeoutProp(String prop, int def) {
+    public static int privilegedGetTimeoutProp(String prop, int def, Debug dbg) {
         if (def < 0) {
             def = 0;
         }
 
-        String propVal = System.getProperty(prop, "").trim();
+        String propVal = privilegedGetProperty(prop, "").trim();
         if (propVal.length() == 0) {
             return def;
         }
@@ -199,8 +200,17 @@ public class GetPropertyAction implements PrivilegedAction<String> {
 
         // Next check to make sure the string is built only from digits
         if (propVal.matches("^\\d+$")) {
-            int timeout = Integer.parseInt(propVal);
-            return isMillis ? timeout : timeout * 1000;
+            try {
+                int timeout = Integer.parseInt(propVal);
+                return isMillis ? timeout : timeout * 1000;
+            } catch (NumberFormatException nfe) {
+                if (dbg != null) {
+                    dbg.println("Warning: Unexpected " + nfe +
+                            " for timeout value " + propVal +
+                            ". Using default value of " + def + " msec.");
+                }
+                return def;
+            }
         } else {
             return def;
         }

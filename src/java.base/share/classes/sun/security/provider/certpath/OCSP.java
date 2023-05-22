@@ -91,7 +91,8 @@ public final class OCSP {
      * value is negative, set the timeout length to the default.
      */
     private static int initializeTimeout(String prop, int def) {
-        int timeoutVal = GetPropertyAction.privilegedGetTimeoutProp(prop, def);
+        int timeoutVal =
+                GetPropertyAction.privilegedGetTimeoutProp(prop, def, debug);
         if (debug != null) {
             debug.println(prop + " set to " + timeoutVal + " milliseconds");
         }

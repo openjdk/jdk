@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -174,7 +174,8 @@ class URICertStore extends CertStoreSpi {
      * value is negative, set the timeout length to the specified default.
      */
     private static int initializeTimeout(String prop, int def) {
-        int timeoutVal = GetPropertyAction.privilegedGetTimeoutProp(prop, def);
+        int timeoutVal =
+                GetPropertyAction.privilegedGetTimeoutProp(prop, def, debug);
         if (debug != null) {
             debug.println(prop + " set to " + timeoutVal + " milliseconds");
         }
