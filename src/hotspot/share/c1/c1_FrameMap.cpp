@@ -289,12 +289,12 @@ ByteSize FrameMap::sp_offset_for_monitor_base(const int index) const {
 
 ByteSize FrameMap::sp_offset_for_monitor_lock(int index) const {
   check_monitor_index(index);
-  return sp_offset_for_monitor_base(index) + in_ByteSize(BasicObjectLock::lock_offset_in_bytes());;
+  return sp_offset_for_monitor_base(index) + BasicObjectLock::lock_offset();
 }
 
 ByteSize FrameMap::sp_offset_for_monitor_object(int index) const {
   check_monitor_index(index);
-  return sp_offset_for_monitor_base(index) + in_ByteSize(BasicObjectLock::obj_offset_in_bytes());
+  return sp_offset_for_monitor_base(index) + BasicObjectLock::obj_offset();
 }
 
 

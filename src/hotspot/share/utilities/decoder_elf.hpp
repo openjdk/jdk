@@ -33,10 +33,8 @@
 class ElfDecoder : public AbstractDecoder {
 
 public:
-  ElfDecoder() {
-    _opened_elf_files = nullptr;
-    _decoder_status = no_error;
-  }
+  ElfDecoder() : AbstractDecoder(no_error), _opened_elf_files(nullptr) {}
+
   virtual ~ElfDecoder();
 
   bool demangle(const char* symbol, char *buf, int buflen);
