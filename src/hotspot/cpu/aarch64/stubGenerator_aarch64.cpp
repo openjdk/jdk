@@ -7013,20 +7013,24 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  // In sun.security.util.math.intpoly.IntegerPolynomial1305, integers
+  // are represented as long[5], with BITS_PER_LIMB = 26.
+  // Pack five 26-bit limbs into three 64-bit registers.
   void pack_26(Register dest0, Register dest1, Register dest2, Register src) {
     __ ldp(dest0, rscratch1, Address(src, 0));     // 26 bits
-    __ orr(dest0, dest0, rscratch1, Assembler::LSL, 26);  // 26 bits
+    __ add(dest0, dest0, rscratch1, Assembler::LSL, 26);  // 26 bits
     __ ldp(rscratch1, rscratch2, Address(src, 2 * sizeof (jlong)));
-    __ orr(dest0, dest0, rscratch1, Assembler::LSL, 52);  // 12 bits
+    __ add(dest0, dest0, rscratch1, Assembler::LSL, 52);  // 12 bits
 
-    __ orr(dest1, zr, rscratch1, Assembler::LSR, 12);     // 14 bits
-    __ orr(dest1, dest1, rscratch2, Assembler::LSL, 14);  // 26 bits
+    __ add(dest1, zr, rscratch1, Assembler::LSR, 12);     // 14 bits
+    __ add(dest1, dest1, rscratch2, Assembler::LSL, 14);  // 26 bits
     __ ldr(rscratch1, Address(src, 4 * sizeof (jlong)));
-    __ orr(dest1, dest1, rscratch1, Assembler::LSL, 40);  // 24 bits
+    __ add(dest1, dest1, rscratch1, Assembler::LSL, 40);  // 24 bits
 
-    __ orr(dest2, zr, rscratch1, Assembler::LSR, 24);     // 2 bits
+    __ add(dest2, zr, rscratch1, Assembler::LSR, 24);     // 2 bits
   }
 
+  // Multiply and multiply-accumulate unsigned 64-bit registers.
   void wide_mul(Register prod_lo, Register prod_hi, Register n, Register m) {
     __ mul(prod_lo, n, m);
     __ umulh(prod_hi, n, m);
@@ -7036,6 +7040,8 @@ class StubGenerator: public StubCodeGenerator {
     __ adds(sum_lo, sum_lo, rscratch1);
     __ adc(sum_hi, sum_hi, rscratch2);
   }
+
+  // Poly1305, RFC 7539
 
   address generate_poly1305_processBlocks() {
     __ align(CodeEntryAlignment);
@@ -7083,6 +7089,11 @@ class StubGenerator: public StubCodeGenerator {
 
       const Register U_0HI = *++regs, U_1HI = *++regs;
 
+      // NB: this logic depends on some of the special properties of
+      // Poly1305 keys. In particular, because we know that the top
+      // four bits of each 32-bit subword of "r" are zero, we can add
+      // together partial products without any risk of needing to
+      // propagate a carry out.
       wide_mul(U_0, U_0HI, S_0, R_0);  wide_madd(U_0, U_0HI, S_1, RR_1); wide_madd(U_0, U_0HI, S_2, RR_0);
       wide_mul(U_1, U_1HI, S_0, R_1);  wide_madd(U_1, U_1HI, S_1, R_0);  wide_madd(U_1, U_1HI, S_2, RR_1);
       __ andr(U_2, R_0, 3);
@@ -7115,7 +7126,7 @@ class StubGenerator: public StubCodeGenerator {
       __ br(~ Assembler::LT, LOOP);
     }
 
-    // Fully reduce modulo 2^130 - 5
+    // Further reduce modulo 2^130 - 5
     __ lsr(rscratch1, U_2, 2);
     __ add(rscratch1, rscratch1, rscratch1, Assembler::LSL, 2); // rscratch1 = U_2 * 5
     __ adds(U_0, U_0, rscratch1); // U_0 += U_2 * 5
@@ -7123,6 +7134,7 @@ class StubGenerator: public StubCodeGenerator {
     __ andr(U_2, U_2, (u1)3);
     __ adc(U_2, U_2, zr);
 
+    // Unpack the sum into five 26-bit limbs and write to memory.
     __ ubfiz(rscratch1, U_0, 0, 26);
     __ ubfx(rscratch2, U_0, 26, 26);
     __ stp(rscratch1, rscratch2, Address(acc_start));
@@ -7131,7 +7143,7 @@ class StubGenerator: public StubCodeGenerator {
     __ ubfx(rscratch2, U_1, 14, 26);
     __ stp(rscratch1, rscratch2, Address(acc_start, 2 * sizeof (jlong)));
     __ ubfx(rscratch1, U_1, 40, 24);
-    __ bfi(rscratch1, U_2, 24, 2);
+    __ bfi(rscratch1, U_2, 24, 3);
     __ str(rscratch1, Address(acc_start, 4 * sizeof (jlong)));
 
     __ bind(DONE);
