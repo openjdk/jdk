@@ -232,7 +232,7 @@ void C2_MacroAssembler::rtm_abort_ratio_calculation(Register tmpReg,
     // set rtm_state to "no rtm" in MDO
     mov_metadata(tmpReg, method_data);
     lock();
-    orl(Address(tmpReg, MethodData::rtm_state_offset_in_bytes()), NoRTM);
+    orl(Address(tmpReg, MethodData::rtm_state_offset()), NoRTM);
   }
   jmpb(L_done);
   bind(L_check_always_rtm1);
@@ -246,7 +246,7 @@ void C2_MacroAssembler::rtm_abort_ratio_calculation(Register tmpReg,
     // set rtm_state to "always rtm" in MDO
     mov_metadata(tmpReg, method_data);
     lock();
-    orl(Address(tmpReg, MethodData::rtm_state_offset_in_bytes()), UseRTM);
+    orl(Address(tmpReg, MethodData::rtm_state_offset()), UseRTM);
   }
   bind(L_done);
 }
