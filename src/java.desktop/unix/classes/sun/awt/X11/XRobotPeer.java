@@ -53,10 +53,17 @@ final class XRobotPeer implements RobotPeer {
                                 "true")
                 ));
 
+        boolean isOnWayland = false;
+
+        if (Toolkit.getDefaultToolkit() instanceof SunToolkit sunToolkit) {
+            isOnWayland = sunToolkit.isRunningOnWayland();
+        }
+
         useScreencast = Boolean.parseBoolean(
                 AccessController.doPrivileged(
                         new GetPropertyAction(
-                                "awt.robot.screencastEnabled", "false"
+                                "awt.robot.screencastEnabled",
+                                String.valueOf(isOnWayland)
                         )));
     }
 
