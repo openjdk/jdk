@@ -1029,7 +1029,7 @@ void Compile::Init(bool aliasing) {
   _trap_can_recompile = false;  // no traps emitted yet
   _major_progress = true; // start out assuming good things will happen
   _run_loop_conditional_propagation = true;
-  _loop_conditional_propagation_rounds = UseLoopConditionalPropagation ? max_jint : 0;
+  _loop_conditional_propagation_rounds = UseLoopConditionalPropagation ? 2 : 0;
   set_has_unsafe_access(false);
   set_max_vector_size(0);
   set_clear_upper_avx(false);  //false as default for clear upper bits of ymm registers

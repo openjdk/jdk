@@ -166,7 +166,7 @@ private:
 
   PhaseIdealLoop* _phase;
   VectorSet _visited;
-  VectorSet _control_dependent_node;
+  VectorSet _control_dependent_node[2];
   VectorSet _known_updates;
   Node_List _rpo_list;
   Node* _current_ctrl;
@@ -180,6 +180,7 @@ private:
   bool _progress;
   int _value_calls;
   GrowableArray<int> _value_calls_graph;
+  int _iterations;
 
 public:
   PhaseConditionalPropagation(PhaseIdealLoop* phase, VectorSet &visited, Node_Stack &nstack, Node_List &rpo_list)
@@ -191,6 +192,7 @@ public:
     _current_ctrl(phase->C->root()),
     _progress(true),
     _value_calls(0),
+    _iterations(0),
     _current_updates(nullptr),
     _dom_updates(nullptr),
     _prev_updates(nullptr) {
@@ -214,7 +216,7 @@ public:
 
   static const int load_factor = 8;
 
-  void one_iteration(int iterations, int rpo, Node* c, bool& progress, bool has_infinite_loop, bool& extra, bool& extra2);
+  bool one_iteration(int rpo, Node* c, bool has_infinite_loop, bool& extra, bool& extra2, bool verify);
 
   void analyze_allocate_array(int rpo, Node* c, const AllocateArrayNode* alloc);
 
@@ -277,6 +279,12 @@ public:
 
   const Type*
   analyze_cmove(const CMoveNode* cmove, const Node* bol, const Node* cmp, Node* c, Unique_Node_List& wq, bool taken);
+
+  void adjust_updates(Node* c, bool verify);
+
+  void mark_if(const IfNode* iff);
+
+  void mark_if_from_cmp(const Node* u);
 };
 
 #endif // SHARE_OPTO_LOOPCONDITIONALPROPAGATION_HPP

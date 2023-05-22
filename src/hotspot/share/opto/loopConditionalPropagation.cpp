@@ -43,13 +43,23 @@ bool PhaseConditionalPropagation::valid_use(Node* u, Node* c) {
     if (u->in(0) ==  c) {
       return true;
     }
-    _control_dependent_node.set(u->in(0)->_idx);
-    _control_dependent_node.set(u->_idx);
+    int iterations = _iterations;
+    if (_visited.test(u->in(0)->_idx)) {
+      _progress = true;
+      iterations = _iterations + 1;
+    }
+    _control_dependent_node[iterations%2].set(u->in(0)->_idx);
+    _control_dependent_node[iterations%2].set(u->_idx);
     return false;
   }
   if (u->is_CMove()) {
     if (_phase->get_ctrl(u) == c) {
       return true;
+    }
+    if (u->in(0) != nullptr && u->in(0)->is_CFG() && _phase->is_dominator(c, u->in(0))) {
+      assert(!_visited.test(u->in(0)->_idx), "");
+      _control_dependent_node[_iterations % 2].set(u->in(0)->_idx);
+      _control_dependent_node[_iterations % 2].set(u->_idx);
     }
     return false;
   }
@@ -58,8 +68,9 @@ bool PhaseConditionalPropagation::valid_use(Node* u, Node* c) {
     return false;
   }
   if (!u->is_CFG() && u->in(0) != nullptr && u->in(0)->is_CFG() && !_phase->is_dominator(u->in(0), c)) {
-    _control_dependent_node.set(u->in(0)->_idx);
-    _control_dependent_node.set(u->_idx);
+    assert(!_visited.test(u->in(0)->_idx), "");
+    _control_dependent_node[_iterations%2].set(u->in(0)->_idx);
+    _control_dependent_node[_iterations%2].set(u->_idx);
     return false;
   }
   return true;
@@ -115,6 +126,15 @@ void PhaseConditionalPropagation::enqueue_uses(const Node* n, Node* c) {
         }
       }
 
+      mark_if_from_cmp(u);
+
+      if (u->Opcode() == Op_ConvL2I) {
+        for (DUIterator_Fast jmax, j = u->fast_outs(jmax); j < jmax; j++) {
+          Node* u2 = u->fast_out(j);
+          mark_if_from_cmp(u2);
+        }
+      }
+
       if (u->is_Region()) {
         for (DUIterator_Fast jmax, j = u->fast_outs(jmax); j < jmax; j++) {
           Node* uu = u->fast_out(j);
@@ -139,6 +159,35 @@ void PhaseConditionalPropagation::enqueue_uses(const Node* n, Node* c) {
 //      }
     }
   }
+}
+
+void PhaseConditionalPropagation::mark_if_from_cmp(const Node* u) {
+  if (u->Opcode() == Op_CmpI || u->Opcode() == Op_CmpL || u->Opcode() == Op_CmpU || u->Opcode() == Op_CmpUL) {
+    for (DUIterator_Fast jmax, j = u->fast_outs(jmax); j < jmax; j++) {
+      Node* u2 = u->fast_out(j);
+      if (u2->is_Bool()) {
+        for (DUIterator_Fast kmax, k = u2->fast_outs(kmax); k < kmax; k++) {
+          Node* u3 = u2->fast_out(k);
+          if (u3->is_If()) {
+            mark_if(u3->as_If());
+          } else if (u3->Opcode() == Op_Opaque4) {
+            for (DUIterator_Fast lmax, l = u3->fast_outs(lmax); l < lmax; l++) {
+              Node* u4 = u3->fast_out(l);
+              if (u4->is_If()) {
+                mark_if(u4->as_If());
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+void PhaseConditionalPropagation::mark_if(const IfNode* iff) {
+  assert(!_visited.test(iff->_idx), "");
+  _control_dependent_node[_iterations % 2].set(iff->proj_out(0)->_idx);
+  _control_dependent_node[_iterations % 2].set(iff->proj_out(1)->_idx);
 }
 
 void PhaseConditionalPropagation::sync(Node* c) {
@@ -180,62 +229,107 @@ void PhaseConditionalPropagation::sync(Node* c) {
 }
 
 void PhaseConditionalPropagation::analyze(int rounds) {
-  for (int i = 0; i < C->cmove_count(); ++i) {
-    CMoveNode* cmove = C->cmove_node(i);
-    const Type* t = cmove->Value(this);
-    if (t != PhaseTransform::type(cmove)) {
-      PhaseTransform::set_type(cmove, t);
-      enqueue_uses(cmove, C->root());
-    }
-  }
-
-  while (_wq.size() > 0) {
-    Node* n = _wq.pop();
-    _value_calls++;
-    _value_calls_graph.at_put(n->Opcode(), _value_calls_graph.at_grow(n->Opcode(), 0) + 1);
-    const Type* t = n->Value(this);
-    const Type* current_type = PhaseTransform::type(n);
-    t = t->filter(current_type);
-    if (t != current_type) {
-#ifdef ASSERT
-      assert(narrows_type(current_type, t), "");
-#endif
-      set_type(n, t, current_type);
-      enqueue_uses(n, C->root());
-    }
-  }
+//  for (int i = 0; i < C->cmove_count(); ++i) {
+//    CMoveNode* cmove = C->cmove_node(i);
+//    const Type* t = cmove->Value(this);
+//    if (t != PhaseTransform::type(cmove)) {
+//      PhaseTransform::set_type(cmove, t);
+//      enqueue_uses(cmove, C->root());
+//    }
+//  }
+//
+//  while (_wq.size() > 0) {
+//    Node* n = _wq.pop();
+//    _value_calls++;
+//    _value_calls_graph.at_put(n->Opcode(), _value_calls_graph.at_grow(n->Opcode(), 0) + 1);
+//    const Type* t = n->Value(this);
+//    const Type* current_type = PhaseTransform::type(n);
+//    t = t->filter(current_type);
+//    if (t != current_type) {
+//#ifdef ASSERT
+//      assert(narrows_type(current_type, t), "");
+//#endif
+//      set_type(n, t, current_type);
+//      enqueue_uses(n, C->root());
+//    }
+//  }
 
 
   bool progress = true;
-  int iterations = 0;
   int extra_rounds = 0;
   int extra_rounds2 = 0;
   bool has_infinite_loop = false;
+  VectorSet updated;
   while (progress || _progress) {
-    iterations++;
-    assert(iterations - extra_rounds - extra_rounds2 >= 0, "");
-    assert(iterations - extra_rounds2 <= 2 || _phase->ltree_root()->_child != nullptr || has_infinite_loop, "");
-    assert(iterations - extra_rounds - extra_rounds2 <= 3 || _phase->_has_irreducible_loops, "");
-    assert(iterations < 100, "");
+    _control_dependent_node[_iterations % 2].clear();
+    _iterations++;
+    assert(_iterations - extra_rounds - extra_rounds2 >= 0, "");
+    assert(_iterations - extra_rounds2 <= 2 || _phase->ltree_root()->_child != nullptr || has_infinite_loop, "");
+    assert(_iterations - extra_rounds - extra_rounds2 <= 3 || _phase->_has_irreducible_loops, "");
+    assert(_iterations < 100, "");
 
     progress = false;
     bool extra = false;
     bool extra2 = false;
     _progress = false;
 
-//      _control_dependent_node.clear();
+    _visited.clear();
 
-    for (int i = _rpo_list.size() - 1; i >= 0; i--) {
-      int rpo = _rpo_list.size() - 1 - i;
-      Node* c = _rpo_list.at(i);
-      has_infinite_loop = has_infinite_loop || (c->in(0)->Opcode() == Op_NeverBranch);
+    if (_iterations == 1) {
+      for (int i = _rpo_list.size() - 1; i >= 0; i--) {
+        int rpo = _rpo_list.size() - 1 - i;
+        Node* c = _rpo_list.at(i);
+        has_infinite_loop = has_infinite_loop || (c->in(0)->Opcode() == Op_NeverBranch);
+        _known_updates.set(c->_idx);
 
-      one_iteration(iterations, rpo, c, progress, has_infinite_loop, extra, extra2);
+        adjust_updates(c, false);
+        _visited.set(c->_idx);
+        one_iteration(rpo, c, has_infinite_loop, extra, extra2, false);
+      }
+    } else {
+      updated.clear();
+      for (int i = _rpo_list.size() - 1; i >= 0; i--) {
+        assert(_wq.size() == 0, "");
+        int rpo = _rpo_list.size() - 1 - i;
+        Node* c = _rpo_list.at(i);
+        _visited.set(c->_idx);
+        Node* dom = known_updates(_phase->idom(c));
+        bool adjust_updates_called = false;
+        if (updated.test(dom->_idx)) {
+          adjust_updates_called = true;
+          adjust_updates(c, false);
+          updated.set(c->_idx);
+        }
+        if (_control_dependent_node[_iterations % 2].test(c->_idx) || _wq.size() > 0) {
+          if (!adjust_updates_called) {
+            adjust_updates(c, false);
+          }
+          if (one_iteration(rpo, c, has_infinite_loop, extra, extra2, false)) {
+            updated.set(c->_idx);
+          }
+        } else {
+          if (c->is_Region()) {
+            uint j;
+            for (j = 1; j < c->req(); ++j) {
+              if (updated.test(c->in(j)->_idx)) {
+                break;
+              }
+            }
+            if (j < c->req()) {
+              if (!adjust_updates_called) {
+                adjust_updates(c, false);
+              }
+              if (one_iteration(rpo, c, has_infinite_loop, extra, extra2, false)) {
+                updated.set(c->_idx);
+              }
+            }
+          }
+        }
+      }
     }
     if (extra) {
       extra_rounds++;
-    }
-    if (extra2) {
+    } else if (extra2) {
       extra_rounds2++;
     }
     rounds--;
@@ -243,6 +337,25 @@ void PhaseConditionalPropagation::analyze(int rounds) {
       break;
     }
   }
+
+#ifdef ASSERT
+  _control_dependent_node[_iterations % 2].clear();
+  _iterations++;
+  bool extra = false;
+  bool extra2 = false;
+  _visited.clear();
+  for (int i = _rpo_list.size() - 1; i >= 0; i--) {
+    int rpo = _rpo_list.size() - 1 - i;
+    Node* c = _rpo_list.at(i);
+
+    adjust_updates(c, true);
+    bool progress = one_iteration(rpo, c, has_infinite_loop, extra, extra2, true);
+    if (extra2) {
+      break;
+    }
+    assert(!progress, "");
+  }
+#endif
 
   if (false) {
     int live_nodes = 0;
@@ -268,73 +381,17 @@ void PhaseConditionalPropagation::analyze(int rounds) {
       extern const char *NodeClassNames[];
       tty->print_cr("XXX %s : %d", NodeClassNames[i], cnt);
     }
-    tty->print_cr("XXX value calls %d %d %d %d", _value_calls, iterations, _rpo_list.size(), live_nodes);
+    tty->print_cr("XXX value calls %d %d %d %d", _value_calls, _iterations, _rpo_list.size(), live_nodes);
     _value_calls_graph.trunc_to(0);
   }
 
   sync(C->root());
 }
 
-void
-PhaseConditionalPropagation::one_iteration(int iterations, int rpo, Node* c, bool& progress, bool has_infinite_loop,
-                                           bool& extra, bool& extra2) {
-  _known_updates.set(c->_idx);
-
+bool
+PhaseConditionalPropagation::one_iteration(int rpo, Node* c, bool has_infinite_loop, bool& extra, bool& extra2,
+                                           bool verify) {
   Node* dom = _phase->idom(c);
-  _current_updates = updates_at(c);
-  _dom_updates = updates_at(dom);
-  _prev_updates = nullptr;
-  if (_current_updates == nullptr) {
-    _current_updates = _dom_updates;
-    if (_current_updates != nullptr) {
-      _updates->put(c, _current_updates);
-      _updates->maybe_grow(load_factor);
-    }
-  } else {
-    assert(iterations > 1, "");
-    if (_current_updates == _dom_updates) {
-//              _updates->put(c, _current_updates);
-    } else if (_current_updates->control() != c) {
-      assert(_dom_updates != nullptr, "");
-      _current_updates = _dom_updates;
-      _updates->put(c, _current_updates);
-      _updates->maybe_grow(load_factor);
-    } else {
-      _prev_updates = _current_updates->copy();
-      sync(dom);
-      for (int j = 0; j < _current_updates->length();) {
-        Node* n = _current_updates->node_at(j);
-        const Type* dom_t = PhaseTransform::type(n);
-        const Type* t = _current_updates->type_at(j);
-        const Type* new_t = t->filter(dom_t);
-/*          BasicType bt = T_ILLEGAL;
-          if (new_t->isa_int()) {
-            bt = T_INT;
-          } else if (new_t->isa_long()) {
-            bt = T_LONG;
-          }
-          if (new_t != t &&
-              bt != T_ILLEGAL &&
-              new_t->is_integer(bt)->lo_as_long() == dom_t->is_integer(bt)->lo_as_long() &&
-              new_t->is_integer(bt)->hi_as_long() == dom_t->is_integer(bt)->hi_as_long()) {
-            _current_updates->remove_at(j);
-          } else */
-        if (new_t == dom_t) {
-          _current_updates->remove_at(j);
-        } else {
-          _current_updates->set_prev_type_at(j, dom_t);
-          if (new_t != t) {
-            _current_updates->set_type_at(j, new_t);
-            enqueue_uses(n, c);
-          }
-//            _wq.push(n);
-          j++;
-        }
-      }
-      assert(_dom_updates == nullptr || !_phase->is_dominator(_current_updates->control(), _dom_updates->control()), "");
-      _current_updates->set_prev(_dom_updates);
-    }
-  }
 
   if (c->is_Region()) {
     uint in_idx = 1;
@@ -378,15 +435,20 @@ PhaseConditionalPropagation::one_iteration(int iterations, int rpo, Node* c, boo
 //          tty->print_cr("XXXXX %d %d %d %d", iterations, c->_idx, n->_idx, c->req());
         if (k == c->req()) {
 //            tty->print_cr("XXXXXX %d %d %d %d", iterations, c->_idx, n->_idx, c->req());
-          const Type* prev_t = t;
           const Type* current_type = find_prev_type_between(n, in, dom);
-          if (iterations > 1) {
+
+          if (_iterations > 1) {
+            t = current_type->filter(t);
+            const Type* prev_t = t;
             const Type* prev_round_t = nullptr;
             if (_prev_updates != nullptr && _prev_updates->control() == c) {
               prev_round_t = _prev_updates->type_if_present(n);
             }
+            if (prev_round_t == nullptr) {
+              prev_round_t = current_type;
+            }
             if (prev_round_t != nullptr) {
-              t = t->filter(prev_round_t);
+              t = prev_round_t->filter(t);
               assert(t == prev_t, "");
               t = saturate(t, prev_round_t, nullptr);
               if (c->is_Loop() && t != prev_round_t) {
@@ -394,7 +456,7 @@ PhaseConditionalPropagation::one_iteration(int iterations, int rpo, Node* c, boo
               }
             }
           }
-          t = t->filter(current_type);
+          t = current_type->filter(t);
 
           if (t != current_type) {
             assert(narrows_type(current_type, t), "");
@@ -444,11 +506,10 @@ PhaseConditionalPropagation::one_iteration(int iterations, int rpo, Node* c, boo
     sync(dom);
     analyze_allocate_array(rpo, c, alloc);
   }
-  const bool always = false;
-  if (_control_dependent_node.test(c->_idx) || always) {
+  if (verify || _control_dependent_node[_iterations%2].test(c->_idx)) {
     for (DUIterator_Fast imax, i = c->fast_outs(imax); i < imax; i++) {
       Node* u = c->fast_out(i);
-      if (!u->is_CFG() && u->in(0) == c && u->Opcode() != Op_CheckCastPP && _phase->has_node(u) && (always || _control_dependent_node.test(u->_idx))) {
+      if (!u->is_CFG() && u->in(0) == c && u->Opcode() != Op_CheckCastPP && _phase->has_node(u) && (verify || _control_dependent_node[_iterations%2].test(u->_idx))) {
         _wq.push(u);
       }
     }
@@ -462,14 +523,15 @@ PhaseConditionalPropagation::one_iteration(int iterations, int rpo, Node* c, boo
     _value_calls_graph.at_put(n->Opcode(), _value_calls_graph.at_grow(n->Opcode(), 0) + 1);
     const Type* t = n->Value(this);
     const Type* current_type = PhaseTransform::type(n);
-    if (n->is_Phi() && iterations > 1) {
+    if (n->is_Phi() && _iterations > 1) {
+      t = current_type->filter(t);
       const Type* prev_type = nullptr;
       if (_prev_updates != nullptr) {
         prev_type = _prev_updates->type_if_present(n);
       }
       if (prev_type != nullptr) {
         const Type* prev_t = t;
-        t = t->filter(prev_type);
+        t = prev_type->filter(t);
         assert(t == prev_t, "");
         if (!(n->in(0)->is_CountedLoop() && n->in(0)->as_CountedLoop()->phi() == n &&
               n->in(0)->as_CountedLoop()->can_be_counted_loop(this))) {
@@ -480,7 +542,7 @@ PhaseConditionalPropagation::one_iteration(int iterations, int rpo, Node* c, boo
         extra = true;
       }
     }
-    t = t->filter(current_type);
+    t = current_type->filter(t);
     if (t != current_type) {
 #ifdef ASSERT
       assert(narrows_type(current_type, t), "");
@@ -490,9 +552,10 @@ PhaseConditionalPropagation::one_iteration(int iterations, int rpo, Node* c, boo
     }
   }
 
+  bool progress = false;
   if (_prev_updates == nullptr) {
     if (_current_updates != nullptr && _current_updates->length() > 0 && _current_updates->control() == c) {
-      _progress = true;
+      progress = true;
 #ifdef ASSERT
       sync(dom);
       for (int i = 0; i < _current_updates->length(); ++i) {
@@ -532,11 +595,14 @@ PhaseConditionalPropagation::one_iteration(int iterations, int rpo, Node* c, boo
                    current_t->is_integer(bt)->lo_as_long() > prev_t->is_integer(bt)->lo_as_long() ||
                    current_t->is_integer(bt)->hi_as_long() < prev_t->is_integer(bt)->hi_as_long(), "");
 #endif
-          _progress = true;
+          progress = true;
         }
         j++;
       } else {
         assert(_prev_updates->find(n) == -1, "");
+        if (current_t != _current_updates->prev_type_at(i)) {
+          progress = true;
+        }
       }
     }
     for (; j < _prev_updates->length(); j++) {
@@ -546,19 +612,81 @@ PhaseConditionalPropagation::one_iteration(int iterations, int rpo, Node* c, boo
 #ifdef ASSERT
   if (_current_updates != nullptr && _current_updates->control() == c) {
     sync(C->root());
-    int last_expected = (_phase->ltree_root()->_child != nullptr || has_infinite_loop) ? 3 : 2;
-    if (iterations == last_expected) {
-      for (int i = 0; i < _current_updates->length(); ++i) {
-        Node* n = _current_updates->node_at(i);
-        if (PhaseTransform::type(n) != n->Value(&_phase->igvn()) &&
-            _current_updates->prev_type_at(i) == PhaseTransform::type(n) &&
-            _current_updates->type_at(i) == n->Value(&_phase->igvn())) {
+    for (int i = 0; i < _current_updates->length(); ++i) {
+      Node* n = _current_updates->node_at(i);
+      if (PhaseTransform::type(n) != n->Value(this) &&
+          _current_updates->prev_type_at(i) == PhaseTransform::type(n)) {
+        if (_current_updates->type_at(i) == PhaseTransform::type(n)->filter(n->Value(this))) {
+          extra2 = true;
+        } else if (n->is_Phi() && c->is_Loop() && _current_updates->find(n->in(LoopNode::LoopBackControl)) != -1) {
+          assert(narrows_type(PhaseTransform::type(n)->filter(n->Value(this)), _current_updates->type_at(i)), "");
           extra2 = true;
         }
       }
     }
   }
 #endif
+  return progress;
+}
+
+void PhaseConditionalPropagation::adjust_updates(Node* c, bool verify) {
+  Node* dom = _phase->idom(c);
+  _current_updates = updates_at(c);
+  _dom_updates = updates_at(dom);
+  _prev_updates = nullptr;
+  if (_current_updates == nullptr) {
+    _current_updates = _dom_updates;
+    if (_current_updates != nullptr) {
+      _updates->put(c, _current_updates);
+      _updates->maybe_grow(load_factor);
+    }
+  } else {
+    assert(_iterations > 1, "");
+    if (_current_updates == _dom_updates) {
+//              _updates->put(c, _current_updates);
+    } else if (_current_updates->control() != c) {
+      assert(_dom_updates != nullptr, "");
+      _current_updates = _dom_updates;
+      _updates->put(c, _current_updates);
+      _updates->maybe_grow(load_factor);
+    } else {
+      _prev_updates = _current_updates->copy();
+      sync(dom);
+      for (int j = 0; j < _current_updates->length();) {
+        Node* n = _current_updates->node_at(j);
+        const Type* dom_t = PhaseTransform::type(n);
+        const Type* t = _current_updates->type_at(j);
+        const Type* new_t = dom_t->filter(t);
+/*          BasicType bt = T_ILLEGAL;
+          if (new_t->isa_int()) {
+            bt = T_INT;
+          } else if (new_t->isa_long()) {
+            bt = T_LONG;
+          }
+          if (new_t != t &&
+              bt != T_ILLEGAL &&
+              new_t->is_integer(bt)->lo_as_long() == dom_t->is_integer(bt)->lo_as_long() &&
+              new_t->is_integer(bt)->hi_as_long() == dom_t->is_integer(bt)->hi_as_long()) {
+            _current_updates->remove_at(j);
+          } else */
+        if (new_t == dom_t) {
+          _current_updates->remove_at(j);
+          enqueue_uses(n, c);
+        } else {
+          _current_updates->set_prev_type_at(j, dom_t);
+          if (new_t != t) {
+            assert(!verify, "");
+            _current_updates->set_type_at(j, new_t);
+            enqueue_uses(n, c);
+          }
+//            _wq.push(n);
+          j++;
+        }
+      }
+      assert(_dom_updates == nullptr || !_phase->is_dominator(_current_updates->control(), _dom_updates->control()), "");
+      _current_updates->set_prev(_dom_updates);
+    }
+  }
 }
 
 void PhaseConditionalPropagation::analyze_allocate_array(int rpo, Node* c, const AllocateArrayNode* alloc) {
@@ -570,7 +698,7 @@ void PhaseConditionalPropagation::analyze_allocate_array(int rpo, Node* c, const
     const TypeInt* length_type = PhaseTransform::type(length)->isa_int();
     if (ary_type->isa_aryptr() && length_type != nullptr) {
       const Type* narrow_length_type = ary_type->is_aryptr()->narrow_size_type(length_type);
-      narrow_length_type = narrow_length_type->filter(length_type);
+      narrow_length_type = length_type->filter(narrow_length_type);
       assert(narrows_type(length_type, narrow_length_type), "");
       if (narrow_length_type != length_type) {
         if (record_update(c, length, length_type, narrow_length_type)) {
@@ -711,11 +839,9 @@ bool PhaseConditionalPropagation::narrows_type(const Type* old_t, const Type* ne
     return false;
   }
 
-//    if (new_int->hi_as_long() == old_int->hi_as_long() &&
-//        new_int->lo_as_long() == old_int->lo_as_long() &&
-//        new_int->widen_limit() < old_int->widen_limit()) {
-//      return false;
-//    }
+//  if (new_int->widen_limit() < old_int->widen_limit()) {
+//    return false;
+//  }
 
   return true;
 }
@@ -1022,6 +1148,9 @@ bool PhaseConditionalPropagation::transform_helper(Node* c) {
 }
 
 const Type* PhaseConditionalPropagation::type(const Node* n, Node* c) const {
+  if (_current_ctrl == C->root()) {
+    return PhaseTransform::type(n);
+  }
   assert(c->is_CFG(), "");
   const Type* res = nullptr;
   assert(_current_ctrl->is_Region() && _current_ctrl->find_edge(c) != -1, "");

@@ -34,7 +34,7 @@ import java.util.Objects;
 
 public class TestLoopConditionalPropagation {
     public static void main(String[] args) {
-        TestFramework.runWithFlags("-XX:-UseLoopPredicate");
+        TestFramework.runWithFlags("-XX:-UseLoopPredicate", "-XX:-LoopUnswitching");
     }
     
     @Test
@@ -406,6 +406,260 @@ public class TestLoopConditionalPropagation {
         test13(array1, 0, c, false); 
         test13(array1, 99, c, false); 
         test13(array2, 0, c, false); 
+    }
+
+    @Test
+    @IR(counts = {IRNode.IF,"4"})
+    @Arguments({Argument.NUMBER_42,Argument.NUMBER_42,Argument.NUMBER_42})
+    @Warmup(10_000)
+    private static void test14(int i, int k, int l) {
+        if (i < 42) {
+            throw new RuntimeException("never taken");
+        }
+        for (int j = 1; j < 4; j *= 2) {
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            // i >= 42
+            if (l < i) {
+                throw new RuntimeException("never taken");
+            }
+            // l >= 42
+            if (l < 10) {
+                throw new RuntimeException("never taken");
+            }
+            if (k < 42) {
+                throw new RuntimeException("never taken");
+            }
+            i = k;
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.IF,"6"})
+    @Arguments({Argument.NUMBER_42,Argument.NUMBER_42,Argument.NUMBER_42,Argument.RANDOM_EACH})
+    @Warmup(10_000)
+    private static void test15(int i, int k, int l, boolean flag) {
+        if (i < 42) {
+            throw new RuntimeException("never taken");
+        }
+        for (int j = 1; j < 4; j *= 2) {
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            volatileField = 42;
+            // i >= 42
+            if (flag) {
+                if (l < i) {
+                    throw new RuntimeException("never taken");
+                }
+            } else {
+                if (l < i) {
+                    throw new RuntimeException("never taken");
+                }
+            }
+            // l >= 42
+            if (l < 10) {
+                throw new RuntimeException("never taken");
+            }
+            if (k < 42) {
+                throw new RuntimeException("never taken");
+            }
+            i = k;
+        }
     }
 
     // @Test

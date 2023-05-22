@@ -778,7 +778,7 @@
   product(bool, UseLoopConditionalPropagation, true,                        \
           "Perform Loop Conditional Propagation pass")                      \
                                                                             \
-  develop(bool, StressLoopConditionalPropagation, false,                    \
+  product(bool, StressLoopConditionalPropagation, false,                    \
           "Stress Loop Conditional Propagation pass")                       \
                                                                             \
 
