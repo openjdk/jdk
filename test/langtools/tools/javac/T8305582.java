@@ -25,8 +25,7 @@
  * @test
  * @bug 8305582
  * @summary Compiler crash when compiling record patterns with var
- * @enablePreview
- * @compile/fail/ref=T8305582.out -XDrawDiagnostics --enable-preview -source ${jdk.version} -XDshould-stop.at=FLOW T8305582.java
+ * @compile/fail/ref=T8305582.out -XDrawDiagnostics -XDshould-stop.at=FLOW T8305582.java
  */
 
 public class T8305582 {
