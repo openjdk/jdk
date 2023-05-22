@@ -24,6 +24,7 @@
 /*
  * @test
  * @enablePreview
+ * @bug 8307205
  * @requires jdk.foreign.linker != "UNSUPPORTED"
  * @run testng/othervm --enable-native-access=ALL-UNNAMED StdLibTest
  */
@@ -40,6 +41,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -49,6 +51,8 @@ import java.lang.foreign.*;
 
 import org.testng.annotations.*;
 
+import static java.lang.foreign.ValueLayout.ADDRESS;
+import static java.lang.foreign.ValueLayout.JAVA_INT;
 import static org.testng.Assert.*;
 
 @Test
@@ -132,6 +136,24 @@ public class StdLibTest extends NativeTestHelper {
 
         int found = stdLibHelper.printf(formatString, args);
         assertEquals(found, expected.length());
+    }
+
+    // 8307205
+    @Test
+    void testVariadic() throws Throwable {
+
+        Optional<MemorySegment> optPrintfMS = abi.defaultLookup().find("printf");
+        MemorySegment printfMS = optPrintfMS.orElseThrow();
+        MethodHandle printf = abi.downcallHandle(printfMS,
+                FunctionDescriptor.of(JAVA_INT, ADDRESS, JAVA_INT),
+                Linker.Option.firstVariadicArg(1));
+
+        int version = Integer.getInteger("java.specification.version");
+        try(Arena offHeap = Arena.ofConfined()) {
+            MemorySegment formatStr = offHeap.allocateUtf8String("Java FFM call to printf %d\n");
+            int rtn = (int) printf.invoke(formatStr, version);
+            assertEquals(27, rtn);
+        }
     }
 
     static class StdLibHelper {
