@@ -108,7 +108,7 @@ import jdk.internal.vm.annotation.ForceInline;
  * <p>
  * Finally, access operations on a memory segment can be subject to additional thread-confinement checks.
  * Heap segments can be accessed from any thread. Conversely, native segments can only be accessed compatibly with the
- * <a href="ScopedArena.html#thread-confinement">confinement characteristics</a> of the arena used to obtain them.
+ * <a href="Arena.html#thread-confinement">confinement characteristics</a> of the arena used to obtain them.
  *
  * <h2 id="segment-deref">Accessing memory segments</h2>
  *
@@ -141,7 +141,7 @@ import jdk.internal.vm.annotation.ForceInline;
  *                                           .findStatic(Math.class, "multiplyExact",
  *                                                                   MethodType.methodType(long.class, long.class, long.class));
  * intHandle = MethodHandles.filterCoordinates(intHandle, 1,
- *                                             MethodHandles.insertArguments(multiplyExact, 0, 4L));
+ *                                             MethodHandles.insertArguments(multiplyExact, 0, ValueLayout.JAVA_INT.byteSize()));
  * intHandle.get(segment, 3L); // get int element at offset 3 * 4 = 12
  * }
  *
