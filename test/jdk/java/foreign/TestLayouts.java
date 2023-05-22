@@ -31,6 +31,7 @@ import java.lang.foreign.*;
 
 import java.lang.invoke.VarHandle;
 import java.nio.ByteOrder;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.LongFunction;
 import java.util.stream.Stream;
@@ -160,7 +161,7 @@ public class TestLayouts {
                 ValueLayout.JAVA_LONG
         );
         assertEquals(struct.byteSize(), 1 + 1 + 2 + 4 + 8);
-        assertEquals(struct.byteAlignment(), 8);
+        assertEquals(struct.byteAlignment(), ADDRESS.byteSize());
     }
 
     @Test(dataProvider="basicLayouts")
@@ -191,7 +192,7 @@ public class TestLayouts {
                 ValueLayout.JAVA_LONG
         );
         assertEquals(struct.byteSize(), 8);
-        assertEquals(struct.byteAlignment(), 8);
+        assertEquals(struct.byteAlignment(), ADDRESS.byteSize());
     }
 
     @Test
@@ -292,9 +293,44 @@ public class TestLayouts {
     }
 
     @Test(dataProvider="layoutsAndAlignments", expectedExceptions = IllegalArgumentException.class)
-    public void testBadSequence(MemoryLayout layout, long bitAlign) {
+    public void testBadSequenceElementAlignmentTooBig(MemoryLayout layout, long bitAlign) {
         layout = layout.withBitAlignment(layout.bitSize() * 2); // hyper-align
         MemoryLayout.sequenceLayout(layout);
+    }
+
+    @Test(dataProvider="layoutsAndAlignments")
+    public void testBadSequenceElementSizeNotMultipleOfAlignment(MemoryLayout layout, long bitAlign) {
+        boolean shouldFail = layout.byteSize() % layout.byteAlignment() != 0;
+        try {
+            MemoryLayout.sequenceLayout(layout);
+            assertFalse(shouldFail);
+        } catch (IllegalArgumentException ex) {
+            assertTrue(shouldFail);
+        }
+    }
+
+    @Test(dataProvider="layoutsAndAlignments")
+    public void testBadSpliteratorElementSizeNotMultipleOfAlignment(MemoryLayout layout, long bitAlign) {
+        boolean shouldFail = layout.byteSize() % layout.byteAlignment() != 0;
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment segment = arena.allocate(layout);
+            segment.spliterator(layout);
+            assertFalse(shouldFail);
+        } catch (IllegalArgumentException ex) {
+            assertTrue(shouldFail);
+        }
+    }
+
+    @Test(dataProvider="layoutsAndAlignments")
+    public void testBadElementsElementSizeNotMultipleOfAlignment(MemoryLayout layout, long bitAlign) {
+        boolean shouldFail = layout.byteSize() % layout.byteAlignment() != 0;
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment segment = arena.allocate(layout);
+            segment.elements(layout);
+            assertFalse(shouldFail);
+        } catch (IllegalArgumentException ex) {
+            assertTrue(shouldFail);
+        }
     }
 
     @Test(dataProvider="layoutsAndAlignments", expectedExceptions = IllegalArgumentException.class)
@@ -392,25 +428,32 @@ public class TestLayouts {
 
     @DataProvider(name = "layoutsAndAlignments")
     public Object[][] layoutsAndAlignments() {
-        Object[][] layoutsAndAlignments = new Object[basicLayouts.length * 4][];
+        List<Object[]> layoutsAndAlignments = new ArrayList<>();
         int i = 0;
         //add basic layouts
-        for (MemoryLayout l : basicLayouts) {
-            layoutsAndAlignments[i++] = new Object[] { l, l.bitAlignment() };
+        for (MemoryLayout l : basicLayoutsNoLongDouble) {
+            layoutsAndAlignments.add(new Object[] { l, l.bitAlignment() });
         }
         //add basic layouts wrapped in a sequence with given size
-        for (MemoryLayout l : basicLayouts) {
-            layoutsAndAlignments[i++] = new Object[] { MemoryLayout.sequenceLayout(4, l), l.bitAlignment() };
+        for (MemoryLayout l : basicLayoutsNoLongDouble) {
+            layoutsAndAlignments.add(new Object[] { MemoryLayout.sequenceLayout(4, l), l.bitAlignment() });
         }
         //add basic layouts wrapped in a struct
-        for (MemoryLayout l : basicLayouts) {
-            layoutsAndAlignments[i++] = new Object[] { MemoryLayout.structLayout(l), l.bitAlignment() };
+        for (MemoryLayout l1 : basicLayoutsNoLongDouble) {
+            for (MemoryLayout l2 : basicLayoutsNoLongDouble) {
+                if (l1.byteSize() % l2.byteAlignment() != 0) continue; // second element is not aligned, skip
+                long align = Math.max(l1.bitAlignment(), l2.bitAlignment());
+                layoutsAndAlignments.add(new Object[]{MemoryLayout.structLayout(l1, l2), align});
+            }
         }
         //add basic layouts wrapped in a union
-        for (MemoryLayout l : basicLayouts) {
-            layoutsAndAlignments[i++] = new Object[] { MemoryLayout.unionLayout(l), l.bitAlignment() };
+        for (MemoryLayout l1 : basicLayoutsNoLongDouble) {
+            for (MemoryLayout l2 : basicLayoutsNoLongDouble) {
+                long align = Math.max(l1.bitAlignment(), l2.bitAlignment());
+                layoutsAndAlignments.add(new Object[]{MemoryLayout.unionLayout(l1, l2), align});
+            }
         }
-        return layoutsAndAlignments;
+        return layoutsAndAlignments.toArray(Object[][]::new);
     }
 
     @DataProvider(name = "groupLayouts")
@@ -446,7 +489,7 @@ public class TestLayouts {
         );
     }
 
-    static MemoryLayout[] basicLayouts = {
+    static ValueLayout[] basicLayouts = {
             ValueLayout.JAVA_BYTE,
             ValueLayout.JAVA_CHAR,
             ValueLayout.JAVA_SHORT,
@@ -455,4 +498,8 @@ public class TestLayouts {
             ValueLayout.JAVA_LONG,
             ValueLayout.JAVA_DOUBLE,
     };
+
+    static MemoryLayout[] basicLayoutsNoLongDouble = Stream.of(basicLayouts)
+            .filter(l -> l.carrier() != long.class && l.carrier() != double.class)
+            .toArray(MemoryLayout[]::new);
 }

@@ -238,7 +238,7 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
      */
     private HotSpotResolvedObjectType getHolder() {
         if (holder == null) {
-            holder = compilerToVM().getResolvedJavaType(this, config().constantPoolHolderOffset, false);
+            holder = compilerToVM().getResolvedJavaType(this, config().constantPoolHolderOffset);
         }
         return holder;
     }
@@ -282,16 +282,6 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
      */
     private static boolean isInvokedynamicIndex(int index) {
         return index < 0;
-    }
-
-    /**
-     * See {@code ConstantPool::decode_invokedynamic_index}.
-     */
-    private static int decodeInvokedynamicIndex(int i) {
-        if (!isInvokedynamicIndex(i)) {
-            throw new IllegalArgumentException("not an invokedynamic index: " + i);
-        }
-        return ~i;
     }
 
     /**
@@ -824,18 +814,16 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
      * @return constant pool index
      */
     public int rawIndexToConstantPoolIndex(int rawIndex, int opcode) {
-        int index;
         if (isInvokedynamicIndex(rawIndex)) {
             if (opcode != Bytecodes.INVOKEDYNAMIC) {
                 throw new IllegalArgumentException("expected INVOKEDYNAMIC at " + rawIndex + ", got " + opcode);
             }
-            return index = decodeInvokedynamicIndex(rawIndex);
-        } else {
-            if (opcode == Bytecodes.INVOKEDYNAMIC) {
-                throw new IllegalArgumentException("unexpected INVOKEDYNAMIC at " + rawIndex);
-            }
-            index = rawIndexToConstantPoolCacheIndex(rawIndex, opcode);
+            return compilerToVM().resolveInvokeDynamicInPool(this, rawIndex);
         }
+        if (opcode == Bytecodes.INVOKEDYNAMIC) {
+            throw new IllegalArgumentException("unexpected INVOKEDYNAMIC at " + rawIndex);
+        }
+        int index = rawIndexToConstantPoolCacheIndex(rawIndex, opcode);
         return compilerToVM().constantPoolRemapInstructionOperandFromCache(this, index);
     }
 

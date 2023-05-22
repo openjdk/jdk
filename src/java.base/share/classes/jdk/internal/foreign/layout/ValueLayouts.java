@@ -295,7 +295,7 @@ public final class ValueLayouts {
         }
 
         public static OfLong of(ByteOrder order) {
-            return new OfLongImpl(order, Long.SIZE, Optional.empty());
+            return new OfLongImpl(order, ADDRESS_SIZE_BITS, Optional.empty());
         }
     }
 
@@ -311,7 +311,7 @@ public final class ValueLayouts {
         }
 
         public static OfDouble of(ByteOrder order) {
-            return new OfDoubleImpl(order, Double.SIZE, Optional.empty());
+            return new OfDoubleImpl(order, ADDRESS_SIZE_BITS, Optional.empty());
         }
 
     }

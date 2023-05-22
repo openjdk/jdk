@@ -247,7 +247,7 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
 
     Label L;
     BLOCK_COMMENT("verify_intrinsic_id {");
-    __ load_sized_value(R30_tmp1, Method::intrinsic_id_offset_in_bytes(), R19_method,
+    __ load_sized_value(R30_tmp1, in_bytes(Method::intrinsic_id_offset()), R19_method,
                         sizeof(u2), /*is_signed*/ false);
     __ cmpwi(CCR1, R30_tmp1, (int) iid);
     __ beq(CCR1, L);

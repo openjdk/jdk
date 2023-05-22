@@ -409,10 +409,7 @@ public:
       assert(hr->containing_set() == _old_set, "Heap region %u is old but not in the old set.", hr->hrm_index());
       _old_count++;
     } else {
-      // There are no other valid region types. Check for one invalid
-      // one we can identify: pinned without old or humongous set.
-      assert(!hr->is_pinned(), "Heap region %u is pinned but not old or humongous.", hr->hrm_index());
-      ShouldNotReachHere();
+      fatal("Invalid region type for region %u (%s)", hr->hrm_index(), hr->get_short_type_str());
     }
     return false;
   }
@@ -436,6 +433,8 @@ void G1HeapVerifier::verify_region_sets() {
   VerifyRegionListsClosure cl(&_g1h->_old_set, &_g1h->_humongous_set, &_g1h->_hrm);
   _g1h->heap_region_iterate(&cl);
   cl.verify_counts(&_g1h->_old_set, &_g1h->_humongous_set, &_g1h->_hrm);
+
+  _g1h->collection_set()->candidates()->verify();
 }
 
 void G1HeapVerifier::prepare_for_verify() {

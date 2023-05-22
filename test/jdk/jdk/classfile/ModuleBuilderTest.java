@@ -38,8 +38,8 @@ import jdk.internal.classfile.attribute.ModulePackagesAttribute;
 import jdk.internal.classfile.attribute.ModuleProvideInfo;
 import jdk.internal.classfile.attribute.ModuleRequireInfo;
 import jdk.internal.classfile.Attributes;
-import jdk.internal.classfile.java.lang.constant.ModuleDesc;
-import jdk.internal.classfile.java.lang.constant.PackageDesc;
+import java.lang.constant.ModuleDesc;
+import java.lang.constant.PackageDesc;
 import org.junit.jupiter.api.Test;
 
 import java.lang.constant.ClassDesc;
@@ -104,7 +104,7 @@ class ModuleBuilderTest {
         var cm = Classfile.parse(modBytes);
 
         var attr =cm.findAttribute(Attributes.MODULE).get();
-        assertEquals(attr.moduleName().name().stringValue(), modName.moduleName());
+        assertEquals(attr.moduleName().name().stringValue(), modName.name());
         assertEquals(attr.moduleFlagsMask(), 0);
         assertEquals(attr.moduleVersion().get().stringValue(), modVsn);
     }
@@ -118,12 +118,12 @@ class ModuleBuilderTest {
     void testVerifyRequires() {
         assertEquals(attr.requires().size(), 2);
         ModuleRequireInfo r = attr.requires().get(0);
-        assertEquals(r.requires().name().stringValue(), require1.moduleName());
+        assertEquals(r.requires().name().stringValue(), require1.name());
         assertEquals(r.requiresVersion().get().stringValue(), vsn1);
         assertEquals(r.requiresFlagsMask(), 77);
 
         r = attr.requires().get(1);
-        assertEquals(r.requires().name().stringValue(), require2.moduleName());
+        assertEquals(r.requires().name().stringValue(), require2.name());
         assertEquals(r.requiresVersion().get().stringValue(), vsn2);
         assertEquals(r.requiresFlagsMask(), 99);
     }
@@ -138,14 +138,14 @@ class ModuleBuilderTest {
         }
         assertEquals(exports.get(0).exportsTo().size(), 2);
         for (int i = 0; i < 2; i++)
-            assertEquals(exports.get(0).exportsTo().get(i).name().stringValue(), et1[i].moduleName());
+            assertEquals(exports.get(0).exportsTo().get(i).name().stringValue(), et1[i].name());
 
         assertEquals(exports.get(1).exportsTo().size(), 1);
-        assertEquals(exports.get(1).exportsTo().get(0).name().stringValue(), et2[0].moduleName());
+        assertEquals(exports.get(1).exportsTo().get(0).name().stringValue(), et2[0].name());
 
         assertEquals(exports.get(2).exportsTo().size(), 3);
         for (int i = 0; i < 3; i++)
-            assertEquals(exports.get(2).exportsTo().get(i).name().stringValue(), et3[i].moduleName());
+            assertEquals(exports.get(2).exportsTo().get(i).name().stringValue(), et3[i].name());
 
         assertEquals(exports.get(3).exportsTo().size(), 0);
         assertEquals(exports.get(4).exportsTo().size(), 0);
@@ -159,7 +159,7 @@ class ModuleBuilderTest {
         assertEquals(opens.get(1).opensTo().size(), 0);
         assertEquals(opens.get(2).opensTo().size(), 2);
         assertEquals(opens.get(2).opensFlagsMask(), 2);
-        assertEquals(opens.get(2).opensTo().get(1).name().stringValue(), ot3[1].moduleName());
+        assertEquals(opens.get(2).opensTo().get(1).name().stringValue(), ot3[1].name());
     }
 
     @Test
@@ -182,7 +182,7 @@ class ModuleBuilderTest {
     @Test
     void verifyPackages() {
         ModulePackagesAttribute a = moduleModel.findAttribute(Attributes.MODULE_PACKAGES).orElseThrow();
-        assertEquals(a.packages().stream().map(pe -> pe.asSymbol().packageName()).toList(), List.of("foo.bar.baz", "quux"));
+        assertEquals(a.packages().stream().map(pe -> pe.asSymbol().name()).toList(), List.of("foo.bar.baz", "quux"));
     }
 
     @Test

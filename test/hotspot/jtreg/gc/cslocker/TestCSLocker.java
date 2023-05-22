@@ -48,10 +48,13 @@ public class TestCSLocker extends Thread
         // start CS locker thread
         CSLocker csLocker = new CSLocker();
         csLocker.start();
+        // After the CSLocker thread has started, any operation such as an allocation,
+        // which could rely on the GC to make progress, will cause a deadlock that will
+        // make the test time out. That includes printing. Please don't use any such
+        // code until unlock() is called below.
 
         // check timeout to success deadlocking
-        while(System.currentTimeMillis() < startTime + timeout) {
-            System.out.println("sleeping...");
+        while (System.currentTimeMillis() < startTime + timeout) {
             sleep(1000);
         }
 

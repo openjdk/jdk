@@ -1312,53 +1312,74 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
     }
 
     private void expect100Continue() throws IOException {
-            // Expect: 100-Continue was set, so check the return code for
-            // Acceptance
-            int oldTimeout = http.getReadTimeout();
-            boolean enforceTimeOut = false;
-            boolean timedOut = false;
-            if (oldTimeout <= 0) {
-                // 5s read timeout in case the server doesn't understand
-                // Expect: 100-Continue
-                http.setReadTimeout(5000);
-                enforceTimeOut = true;
+        // Expect: 100-Continue was set, so check the return code for
+        // Acceptance
+        int oldTimeout = http.getReadTimeout();
+        boolean timedOut = false;
+        boolean tempTimeOutSet = false;
+        if (oldTimeout <= 0 || oldTimeout > 5000) {
+            if (logger.isLoggable(PlatformLogger.Level.FINE)) {
+                logger.fine("Timeout currently set to " +
+                        oldTimeout + " temporarily setting it to 5 seconds");
             }
+            // 5s read timeout in case the server doesn't understand
+            // Expect: 100-Continue
+            http.setReadTimeout(5000);
+            tempTimeOutSet = true;
+        }
 
-            try {
-                http.parseHTTP(responses, this);
-            } catch (SocketTimeoutException se) {
-                if (!enforceTimeOut) {
-                    throw se;
-                }
-                timedOut = true;
-                http.setIgnoreContinue(true);
+        try {
+            http.parseHTTP(responses, this);
+        } catch (SocketTimeoutException se) {
+            if (logger.isLoggable(PlatformLogger.Level.FINE)) {
+                logger.fine("SocketTimeoutException caught," +
+                        " will attempt to send body regardless");
             }
-            if (!timedOut) {
-                // Can't use getResponseCode() yet
-                String resp = responses.getValue(0);
-                // Parse the response which is of the form:
-                // HTTP/1.1 417 Expectation Failed
-                // HTTP/1.1 100 Continue
-                if (resp != null && resp.startsWith("HTTP/")) {
-                    String[] sa = resp.split("\\s+");
-                    responseCode = -1;
-                    try {
-                        // Response code is 2nd token on the line
-                        if (sa.length > 1)
-                            responseCode = Integer.parseInt(sa[1]);
-                    } catch (NumberFormatException numberFormatException) {
+            timedOut = true;
+        }
+
+        if (!timedOut) {
+            // Can't use getResponseCode() yet
+            String resp = responses.getValue(0);
+            // Parse the response which is of the form:
+            // HTTP/1.1 417 Expectation Failed
+            // HTTP/1.1 100 Continue
+            if (resp != null && resp.startsWith("HTTP/")) {
+                String[] sa = resp.split("\\s+");
+                responseCode = -1;
+                try {
+                    // Response code is 2nd token on the line
+                    if (sa.length > 1)
+                        responseCode = Integer.parseInt(sa[1]);
+                    if (logger.isLoggable(PlatformLogger.Level.FINE)) {
+                        logger.fine("response code received " + responseCode);
                     }
-                }
-                if (responseCode != 100) {
-                    throw new ProtocolException("Server rejected operation");
+                } catch (NumberFormatException numberFormatException) {
                 }
             }
+            if (responseCode != 100) {
+                // responseCode will be returned to caller
+                throw new ProtocolException("Server rejected operation");
+            }
+        }
 
+        // If timeout was changed, restore to original value
+        if (tempTimeOutSet) {
+            if (logger.isLoggable(PlatformLogger.Level.FINE)) {
+                logger.fine("Restoring original timeout : " + oldTimeout);
+            }
             http.setReadTimeout(oldTimeout);
+        }
 
-            responseCode = -1;
-            responses.reset();
-            // Proceed
+        // Ignore any future 100 continue messages
+        http.setIgnoreContinue(true);
+        if (logger.isLoggable(PlatformLogger.Level.FINE)) {
+            logger.fine("Set Ignore Continue to true");
+        }
+
+        responseCode = -1;
+        responses.reset();
+        // Proceed
     }
 
     /*
@@ -1427,7 +1448,6 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
             boolean expectContinue = false;
             String expects = requests.findValue("Expect");
             if ("100-Continue".equalsIgnoreCase(expects) && streaming()) {
-                http.setIgnoreContinue(false);
                 expectContinue = true;
             }
 
@@ -1436,6 +1456,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
             }
 
             if (expectContinue) {
+                http.setIgnoreContinue(false);
                 expect100Continue();
             }
             ps = (PrintStream)http.getOutputStream();
@@ -1474,6 +1495,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
         }
     }
 
+    // Streaming returns true if there is a request body to send
     public boolean streaming () {
         return (fixedContentLength != -1) || (fixedContentLengthLong != -1) ||
                (chunkLength != -1);
