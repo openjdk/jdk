@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@ class ContextList {
     }
 
     synchronized HttpContextImpl findContext (String protocol, String path, boolean exact) {
-        protocol = protocol.toLowerCase();
+        protocol = protocol.toLowerCase(Locale.ROOT);
         String longest = "";
         HttpContextImpl lc = null;
         for (HttpContextImpl ctx: list) {

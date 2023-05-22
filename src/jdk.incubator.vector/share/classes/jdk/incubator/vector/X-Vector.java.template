@@ -61,7 +61,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     static final int FORBID_OPCODE_KIND = VO_ONLYFP;
 #end[FP]
 
-    static final ValueLayout.Of$Type$ ELEMENT_LAYOUT = ValueLayout.JAVA_$TYPE$.withBitAlignment(8);
+    static final ValueLayout.Of$Type$ ELEMENT_LAYOUT = ValueLayout.JAVA_$TYPE$.withByteAlignment(1);
 
     @ForceInline
     static int opCode(Operator op) {
@@ -4098,7 +4098,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
      * $type$[] ar = new $type$[species.length()];
      * for (int n = 0; n < ar.length; n++) {
      *     if (m.laneIsSet(n)) {
-     *         ar[n] = slice.getAtIndex(ValuaLayout.JAVA_$TYPE$.withBitAlignment(8), n);
+     *         ar[n] = slice.getAtIndex(ValuaLayout.JAVA_$TYPE$.withByteAlignment(1), n);
      *     }
      * }
      * $abstractvectortype$ r = $abstractvectortype$.fromArray(species, ar, 0);

@@ -1484,11 +1484,7 @@ vmTestbase_vm_gc_quick = \
   vmTestbase/vm/gc/containers/LinkedBlockingDeque_Arrays/TestDescription.java \
   vmTestbase/vm/gc/containers/LinkedHashMap_Arrays/TestDescription.java \
   vmTestbase/vm/gc/containers/Combination05/TestDescription.java \
-  vmTestbase/gc/ArrayJuggle/Juggle01 \
-  vmTestbase/gc/ArrayJuggle/Juggle14 \
-  vmTestbase/gc/ArrayJuggle/Juggle22 \
-  vmTestbase/gc/ArrayJuggle/Juggle29 \
-  vmTestbase/gc/ArrayJuggle/Juggle34 \
+  vmTestbase/gc/ArrayJuggle/Juggle3Quick.java \
   vmTestbase/gc/gctests/LargeObjects/large001/large001.java \
   vmTestbase/gc/gctests/LoadUnloadGC2/LoadUnloadGC2.java \
   vmTestbase/gc/gctests/StringGC/StringGC.java \
