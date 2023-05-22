@@ -56,17 +56,6 @@ public class AccessFlags implements /* imports */ ClassConstants {
 
   public long getValue         () { return flags; }
 
-  // Hotspot internal flags
-  // Method* flags
-  public boolean isMonitorMatching   () { return (flags & JVM_ACC_MONITOR_MATCH          ) != 0; }
-  public boolean hasMonitorBytecodes () { return (flags & JVM_ACC_HAS_MONITOR_BYTECODES  ) != 0; }
-  public boolean hasLoops            () { return (flags & JVM_ACC_HAS_LOOPS              ) != 0; }
-  public boolean loopsFlagInit       () { return (flags & JVM_ACC_LOOPS_FLAG_INIT        ) != 0; }
-  public boolean queuedForCompilation() { return (flags & JVM_ACC_QUEUED                 ) != 0; }
-  public boolean isNotOsrCompilable  () { return (flags & JVM_ACC_NOT_OSR_COMPILABLE     ) != 0; }
-  public boolean hasJsrs             () { return (flags & JVM_ACC_HAS_JSRS               ) != 0; }
-  public boolean isObsolete          () { return (flags & JVM_ACC_IS_OBSOLETE            ) != 0; }
-
   // Klass* flags
   public boolean hasFinalizer         () { return (flags & JVM_ACC_HAS_FINALIZER          ) != 0; }
   public boolean isCloneable          () { return (flags & JVM_ACC_IS_CLONEABLE           ) != 0; }

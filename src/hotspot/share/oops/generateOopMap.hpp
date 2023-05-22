@@ -396,8 +396,8 @@ class GenerateOopMap {
   void  do_ldc                              (int bci);
   void  do_astore                           (int idx);
   void  do_jsr                              (int delta);
-  void  do_field                            (int is_get, int is_static, int idx, int bci);
-  void  do_method                           (int is_static, int is_interface, int idx, int bci);
+  void  do_field                            (int is_get, int is_static, int idx, int bci, Bytecodes::Code bc);
+  void  do_method                           (int is_static, int is_interface, int idx, int bci, Bytecodes::Code bc);
   void  do_multianewarray                   (int dims, int bci);
   void  do_monitorenter                     (int bci);
   void  do_monitorexit                      (int bci);

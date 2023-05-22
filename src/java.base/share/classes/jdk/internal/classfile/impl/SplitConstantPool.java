@@ -103,6 +103,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
         this.parentSize = 0;
         this.parentBsmSize = 0;
         this.options = options;
+        this.doneFullScan = true;
     }
 
     public SplitConstantPool(ClassReader parent) {
@@ -114,6 +115,18 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
         this.bsmSize = parentBsmSize;
         this.myEntries = new PoolEntry[8];
         this.myBsmEntries = new BootstrapMethodEntryImpl[8];
+    }
+
+    //clone constructor for internal purposes
+    SplitConstantPool(SplitConstantPool cloneFrom, Options options) {
+        this.options = options;
+        this.parent = cloneFrom.parent;
+        this.parentSize = cloneFrom.parentSize;
+        this.parentBsmSize = cloneFrom.parentBsmSize;
+        this.size = cloneFrom.size;
+        this.bsmSize = cloneFrom.bsmSize;
+        this.myEntries = Arrays.copyOf(cloneFrom.myEntries, cloneFrom.myEntries.length);
+        this.myBsmEntries = Arrays.copyOf(cloneFrom.myBsmEntries, cloneFrom.myBsmEntries.length);
     }
 
     @Override
@@ -368,8 +381,9 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
 
     @Override
     public AbstractPoolEntry.Utf8EntryImpl utf8Entry(String s) {
-        var ce = tryFindUtf8(AbstractPoolEntry.hashString(s.hashCode()), s);
-        return ce == null ? internalAdd(new AbstractPoolEntry.Utf8EntryImpl(this, size, s)) : ce;
+        int hash = AbstractPoolEntry.hashString(s.hashCode());
+        var ce = tryFindUtf8(hash, s);
+        return ce == null ? internalAdd(new AbstractPoolEntry.Utf8EntryImpl(this, size, s, hash)) : ce;
     }
 
     AbstractPoolEntry.Utf8EntryImpl maybeCloneUtf8Entry(Utf8Entry entry) {
@@ -447,7 +461,9 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
 
     @Override
     public MethodTypeEntry methodTypeEntry(MethodTypeDesc descriptor) {
-        return methodTypeEntry(utf8Entry(descriptor.descriptorString()));
+        var ret = (AbstractPoolEntry.MethodTypeEntryImpl)methodTypeEntry(utf8Entry(descriptor.descriptorString()));
+        ret.sym = descriptor;
+        return ret;
     }
 
     @Override

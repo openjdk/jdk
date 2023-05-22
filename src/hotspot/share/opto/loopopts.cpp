@@ -2622,10 +2622,6 @@ void PhaseIdealLoop::clone_loop_body(const Node_List& body, Node_List &old_new, 
     Node* old = body.at(i);
     Node* nnn = old->clone();
     old_new.map(old->_idx, nnn);
-    if (old->is_reduction()) {
-      // Reduction flag is not copied by default. Copy it here when cloning the entire loop body.
-      nnn->add_flag(Node::Flag_is_reduction);
-    }
     if (C->do_vector_loop() && cm != nullptr) {
       cm->verify_insert_and_clone(old, nnn, cm->clone_idx());
     }
@@ -3291,7 +3287,7 @@ bool PhaseIdealLoop::is_valid_clone_loop_form( IdealLoopTree *loop, Node_List& p
 //                   stmt1
 //                     |
 //                     v
-//               loop predicate
+//                 predicates
 //                     |
 //                     v
 //                   loop<----+
@@ -3326,7 +3322,7 @@ bool PhaseIdealLoop::is_valid_clone_loop_form( IdealLoopTree *loop, Node_List& p
 //                   stmt1
 //                     |
 //                     v
-//               loop predicate
+//                predicates
 //                 /       \
 //        clone   /         \   orig
 //               /           \
@@ -3367,7 +3363,7 @@ bool PhaseIdealLoop::is_valid_clone_loop_form( IdealLoopTree *loop, Node_List& p
 //                  stmt1
 //                     |
 //                     v
-//               loop predicate
+//                predicates
 //                 /
 //        clone   /             orig
 //               /          TOP
@@ -3411,7 +3407,7 @@ bool PhaseIdealLoop::is_valid_clone_loop_form( IdealLoopTree *loop, Node_List& p
 //                  stmt1
 //                    |
 //                    v
-//               loop predicate
+//                predicates
 //                    |
 //                    v
 //                  stmt2 clone
