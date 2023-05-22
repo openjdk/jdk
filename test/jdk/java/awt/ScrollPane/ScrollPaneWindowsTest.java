@@ -44,7 +44,7 @@ import java.awt.event.AdjustmentEvent;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 
-public class ScrollPaneWindowsTest implements AdjustmentListener {
+public class ScrollPaneWindowsTest {
     ScrollPane sp;
     Panel p;
     Robot robot;
@@ -73,6 +73,26 @@ public class ScrollPaneWindowsTest implements AdjustmentListener {
             sp = new ScrollPane(ScrollPane.SCROLLBARS_ALWAYS);
             vScroll = (ScrollPaneAdjustable) sp.getVAdjustable();
             hScroll = (ScrollPaneAdjustable) sp.getHAdjustable();
+            vScroll.addAdjustmentListener(new AdjustmentListener() {
+                @Override
+                public void adjustmentValueChanged(AdjustmentEvent adjustmentEvent) {
+                    synchronized (ScrollPaneWindowsTest.LOCK) {
+                        notifyReceived = true;
+                        ScrollPaneWindowsTest.LOCK.notify();
+                    }
+                    System.out.println("Adjustment Vertical Scroll Event called ");
+                }
+            });
+            hScroll.addAdjustmentListener(new AdjustmentListener() {
+                @Override
+                public void adjustmentValueChanged(AdjustmentEvent adjustmentEvent) {
+                    synchronized (ScrollPaneWindowsTest.LOCK) {
+                        notifyReceived = true;
+                        ScrollPaneWindowsTest.LOCK.notify();
+                    }
+                    System.out.println("Adjustment Horizontal Scroll Event called ");
+                }
+            });
             sp.add(p);
             frame.add(sp);
             frame.pack();
@@ -82,9 +102,6 @@ public class ScrollPaneWindowsTest implements AdjustmentListener {
             frame.setVisible(true);
         });
         robot = new Robot();
-
-        vScroll.addAdjustmentListener(this);
-        hScroll.addAdjustmentListener(this);
     }
 
     public void start() throws Exception {
@@ -131,8 +148,8 @@ public class ScrollPaneWindowsTest implements AdjustmentListener {
         robot.delay(2000);
         robot.waitForIdle();
 
-        notifyReceived = false;
         synchronized (LOCK) {
+            notifyReceived = false;
             for (int i = 0; i < 3; i++) {
                 robot.keyPress(KeyEvent.VK_DOWN);
                 robot.keyRelease(KeyEvent.VK_DOWN);
@@ -151,10 +168,10 @@ public class ScrollPaneWindowsTest implements AdjustmentListener {
             } else {
                 System.out.println("Test stage 1 passed.");
             }
+            notifyReceived = false;
         }
 
         //to top-left
-        notifyReceived = false;
         robot.mousePress(InputEvent.BUTTON3_DOWN_MASK);
         robot.mouseRelease(InputEvent.BUTTON3_DOWN_MASK);
         robot.delay(2000);
@@ -178,13 +195,5 @@ public class ScrollPaneWindowsTest implements AdjustmentListener {
                 System.out.println("Test stage 2 passed.");
             }
         }
-    }
-
-    public void adjustmentValueChanged(AdjustmentEvent e) {
-        synchronized (ScrollPaneWindowsTest.LOCK) {
-            notifyReceived = true;
-            ScrollPaneWindowsTest.LOCK.notify();
-        }
-        System.out.println("Adjustment Event called ");
     }
 }

@@ -44,16 +44,14 @@ import java.awt.event.InputEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseAdapter;
 
-import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 public class ScrollPaneLimitation {
     static final int SCROLL_POS = 50000;
     public static Component child = null;
-    static CountDownLatch go = new CountDownLatch(1);
+    static final CountDownLatch go = new CountDownLatch(1);
     public Frame frame;
-    Robot robot;
     volatile Point point;
     ScrollPane pane;
 
@@ -87,13 +85,13 @@ public class ScrollPaneLimitation {
             frame.setVisible(true);
             pane.doLayout();
         });
-        robot = new Robot();
     }
 
     public void start() throws Exception {
         try {
-            robot.delay(1000);
+            Robot robot = new Robot();
             robot.waitForIdle();
+            robot.delay(1000);
 
             EventQueue.invokeAndWait(() -> {
                 Point p = child.getLocation();
@@ -122,15 +120,13 @@ public class ScrollPaneLimitation {
                     }
                 }
 
-                point = pane.getLocationOnScreen();
+                p = pane.getLocationOnScreen();
                 Dimension d = pane.getSize();
-                point.x += d.width / 2;
-                point.y += d.height / 2;
+                point = new Point(p.x += d.width / 2, p.y += d.height / 2);
             });
             robot.mouseMove(point.x, point.y);
             robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-            robot.waitForIdle();
 
             if (!go.await(3, TimeUnit.SECONDS)) {
                 throw new RuntimeException("mouse was not pressed");

@@ -46,7 +46,6 @@ public class ScrollPaneRemoveAdd {
     Button button;
     ScrollPane pane;
     Frame frame;
-    Robot robot;
     volatile Point buttonLoc;
     volatile Dimension buttonSize;
     volatile CountDownLatch latch;
@@ -74,13 +73,14 @@ public class ScrollPaneRemoveAdd {
             });
             frame.pack();
             frame.setLocationRelativeTo(null);
+            frame.setAlwaysOnTop(true);
             frame.setVisible(true);
         });
-        robot = new Robot();
     }
 
     public void start() throws Exception {
         try {
+            Robot robot = new Robot();
             EventQueue.invokeAndWait(() -> {
                 pane.remove(0);
                 pane.add(button);
@@ -88,8 +88,9 @@ public class ScrollPaneRemoveAdd {
                 buttonSize = button.getSize();
             });
 
-            robot.delay(1000);
             robot.waitForIdle();
+            robot.delay(1000);
+
             robot.mouseMove(buttonLoc.x + buttonSize.width / 2,
                     buttonLoc.y + buttonSize.height / 2);
             robot.delay(50);
@@ -97,7 +98,6 @@ public class ScrollPaneRemoveAdd {
             robot.delay(50);
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
 
-            robot.delay(50);
             if (!latch.await(1, TimeUnit.SECONDS)) {
                 throw new RuntimeException("ScrollPane doesn't handle " +
                         "correctly add after remove");
@@ -108,43 +108,6 @@ public class ScrollPaneRemoveAdd {
                     frame.dispose();
                 }
             });
-        }
-    }
-
-    private static class Semaphore {
-        volatile boolean state = false;
-        final Object lock = new Object();
-        volatile int waiting = 0;
-
-        public Semaphore() {
-        }
-
-        public void doWait(int timeout) throws InterruptedException {
-            synchronized (lock) {
-                if (state) {
-                    return;
-                }
-                waiting++;
-                synchronized (this) {
-                    wait(timeout);
-                }
-                waiting--;
-            }
-        }
-
-        public void raise() {
-            synchronized (lock) {
-                state = true;
-                if (waiting > 0) {
-                    synchronized (this) {
-                        notifyAll();
-                    }
-                }
-            }
-        }
-
-        public synchronized boolean getState() {
-            return state;
         }
     }
 }

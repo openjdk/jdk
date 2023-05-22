@@ -49,26 +49,25 @@ public class ScrollPositionIntact {
         test.init();
         test.start();
     }
+
     public void init() throws Exception {
-        try {
-            EventQueue.invokeAndWait(() -> {
-                pa = new Panel();
-                pa.setSize(600, 50);
-                pa.setPreferredSize(new Dimension(600, 50));
-                pa.setBackground(Color.red);
-                sp = new ScrollPane(ScrollPane.SCROLLBARS_NEVER);
-                sp.setSize(200, 50);
-                pa.setLayout(new GridLayout(1, 3));
-                pa.add("West", new Label("west", Label.LEFT));
-                pa.add("West", new Label());
-                pa.add("East", new Label("East", Label.RIGHT));
-                sp.add(pa);
-                frame = new Frame("ScrollPositionIntact");
-                frame.setSize(200, 100);
-                frame.add(sp);
-                frame.setVisible(true);
-            });
-        }
+        EventQueue.invokeAndWait(() -> {
+            pa = new Panel();
+            pa.setSize(600, 50);
+            pa.setPreferredSize(new Dimension(600, 50));
+            pa.setBackground(Color.red);
+            sp = new ScrollPane(ScrollPane.SCROLLBARS_NEVER);
+            sp.setSize(200, 50);
+            pa.setLayout(new GridLayout(1, 3));
+            pa.add("West", new Label("west", Label.LEFT));
+            pa.add("West", new Label());
+            pa.add("East", new Label("East", Label.RIGHT));
+            sp.add(pa);
+            frame = new Frame("ScrollPositionIntact");
+            frame.setSize(200, 100);
+            frame.add(sp);
+            frame.setVisible(true);
+        });
     }
 
     public void start() throws Exception {
