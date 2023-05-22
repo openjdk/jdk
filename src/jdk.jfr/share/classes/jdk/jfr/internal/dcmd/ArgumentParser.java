@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.StringJoiner;
 
 final class ArgumentParser {
     private final Map<String, Object> options = new HashMap<>();
@@ -41,6 +42,8 @@ final class ArgumentParser {
     private final String valueDelimiter;
     private final Argument[] arguments;
     private int position;
+
+    private final List<String> conflictedOptions = new ArrayList<>();
 
     ArgumentParser(Argument[] arguments, String text, char delimiter) {
         this.text = text;
@@ -64,8 +67,34 @@ final class ArgumentParser {
             addOption(key, value);
             eatDelimiter();
         }
+        checkConflict();
         checkMandatory();
         return options;
+    }
+
+    protected void checkConflict() {
+        if (conflictedOptions.isEmpty()) {
+            return;
+        }
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("Option");
+
+        // If multiple options conflict, the following blocks are executed
+        if (conflictedOptions.size() > 1) {
+            sb.append("s ");
+            StringJoiner sj = new StringJoiner(", ");
+            while (conflictedOptions.size() > 1) {
+                sj.add(conflictedOptions.remove(0));
+            }
+            sb.append(sj);
+            sb.append(" and");
+        }
+
+        sb.append(" ");
+        sb.append(conflictedOptions.remove(0));
+        sb.append(" can only be specified once.");
+        throw new IllegalArgumentException(sb.toString());
     }
 
     private void checkMandatory() {
@@ -94,9 +123,12 @@ final class ArgumentParser {
                     }
                 } else {
                     if (options.containsKey(key)) {
-                        throw new IllegalArgumentException("Duplicates in diagnostic command arguments");
+                        if (!conflictedOptions.contains(key)) {
+                            conflictedOptions.add(key);
+                        }
+                    } else {
+                        options.put(key, v);
                     }
-                    options.put(key, v);
                 }
             }
         }

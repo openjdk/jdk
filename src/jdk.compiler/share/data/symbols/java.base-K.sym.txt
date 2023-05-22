@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -236,7 +236,7 @@ method name firstVariadicArg descriptor (I)Ljava/lang/foreign/Linker$Option; fla
 method name captureCallState descriptor ([Ljava/lang/String;)Ljava/lang/foreign/Linker$Option$CaptureCallState; flags 89
 
 class name java/lang/foreign/Linker$Option$CaptureCallState
-header extends java/lang/Object implements java/lang/foreign/Linker$Option nestHost java/lang/foreign/Linker sealed true flags 601
+header extends java/lang/Object implements java/lang/foreign/Linker$Option nestHost java/lang/foreign/Linker sealed true flags 601 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;FOREIGN;)
 innerclass innerClass java/lang/foreign/Linker$Option outerClass java/lang/foreign/Linker innerClassName Option flags 609
 innerclass innerClass java/lang/foreign/Linker$Option$CaptureCallState outerClass java/lang/foreign/Linker$Option innerClassName CaptureCallState flags 609
 innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19

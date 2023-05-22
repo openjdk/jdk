@@ -34,7 +34,7 @@ public class MethodReference48 {
     static void g4(SAM2 s) { } //ok
     static void g4(SAM3 s) { } //ok
 
-    public static void main(String[] args) {
+    public static void meth() {
         g1(Foo::m);
         g2(Foo::m);
         g3(Foo::m);

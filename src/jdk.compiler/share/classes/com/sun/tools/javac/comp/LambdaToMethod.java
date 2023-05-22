@@ -518,9 +518,6 @@ public class LambdaToMethod extends TreeTranslator {
                 throw new InternalError("Should not have an invalid kind");
         }
 
-        if (init != null) {
-            refSym = (MethodSymbol) types.binaryQualifier(refSym, init.type);
-        }
         List<JCExpression> indy_args = init==null? List.nil() : translate(List.of(init), localContext.prev);
 
 
@@ -706,7 +703,7 @@ public class LambdaToMethod extends TreeTranslator {
             JCBreak br = make.Break(null);
             breaks.add(br);
             List<JCStatement> stmts = entry.getValue().append(br).toList();
-            cases.add(make.Case(JCCase.STATEMENT, List.of(make.ConstantCaseLabel(make.Literal(entry.getKey()))), stmts, null));
+            cases.add(make.Case(JCCase.STATEMENT, List.of(make.ConstantCaseLabel(make.Literal(entry.getKey()))), null, stmts, null));
         }
         JCSwitch sw = make.Switch(deserGetter("getImplMethodName", syms.stringType), cases.toList());
         for (JCBreak br : breaks) {
@@ -2456,7 +2453,12 @@ public class LambdaToMethod extends TreeTranslator {
 
         @Override
         protected void append(byte[] ba) {
-            Name name = names.fromUtf(ba);
+            Name name;
+            try {
+                name = names.fromUtf(ba);
+            } catch (InvalidUtfException e) {
+                throw new AssertionError(e);
+            }
             sb.append(name.toString());
         }
 

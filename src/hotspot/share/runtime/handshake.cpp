@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,7 +90,7 @@ class AsyncHandshakeOperation : public HandshakeOperation {
   jlong _start_time_ns;
  public:
   AsyncHandshakeOperation(AsyncHandshakeClosure* cl, JavaThread* target, jlong start_ns)
-    : HandshakeOperation(cl, target, NULL), _start_time_ns(start_ns) {}
+    : HandshakeOperation(cl, target, nullptr), _start_time_ns(start_ns) {}
   virtual ~AsyncHandshakeOperation() { delete _handshake_cl; }
   jlong start_time() const           { return _start_time_ns; }
 };
@@ -188,7 +188,7 @@ static void handle_timeout(HandshakeOperation* op, JavaThread* target) {
   log_error(handshake)("Handshake timeout: %s(" INTPTR_FORMAT "), pending threads: " INT32_FORMAT,
                        op->name(), p2i(op), op->pending_threads());
 
-  if (target == NULL) {
+  if (target == nullptr) {
     for ( ; JavaThread* thr = jtiwh.next(); ) {
       if (thr->handshake_state()->operation_pending(op)) {
         log_error(handshake)("JavaThread " INTPTR_FORMAT " has not cleared handshake op: " INTPTR_FORMAT, p2i(thr), p2i(op));
@@ -200,7 +200,7 @@ static void handle_timeout(HandshakeOperation* op, JavaThread* target) {
     log_error(handshake)("JavaThread " INTPTR_FORMAT " has not cleared handshake op: " INTPTR_FORMAT, p2i(target), p2i(op));
   }
 
-  if (target != NULL) {
+  if (target != nullptr) {
     if (os::signal_thread(target, SIGILL, "cannot be handshaked")) {
       // Give target a chance to report the error and terminate the VM.
       os::naked_sleep(3000);
@@ -211,7 +211,7 @@ static void handle_timeout(HandshakeOperation* op, JavaThread* target) {
   fatal("Handshake timeout");
 }
 
-static void check_handshake_timeout(jlong start_time, HandshakeOperation* op, JavaThread* target = NULL) {
+static void check_handshake_timeout(jlong start_time, HandshakeOperation* op, JavaThread* target = nullptr) {
   // Check if handshake operation has timed out
   jlong timeout_ns = millis_to_nanos(HandshakeTimeout);
   if (timeout_ns > 0) {
@@ -221,15 +221,15 @@ static void check_handshake_timeout(jlong start_time, HandshakeOperation* op, Ja
   }
 }
 
-static void log_handshake_info(jlong start_time_ns, const char* name, int targets, int emitted_handshakes_executed, const char* extra = NULL) {
+static void log_handshake_info(jlong start_time_ns, const char* name, int targets, int emitted_handshakes_executed, const char* extra = nullptr) {
   if (log_is_enabled(Info, handshake)) {
     jlong completion_time = os::javaTimeNanos() - start_time_ns;
     log_info(handshake)("Handshake \"%s\", Targeted threads: %d, Executed by requesting thread: %d, Total completion time: " JLONG_FORMAT " ns%s%s",
                         name, targets,
                         emitted_handshakes_executed,
                         completion_time,
-                        extra != NULL ? ", " : "",
-                        extra != NULL ? extra : "");
+                        extra != nullptr ? ", " : "",
+                        extra != nullptr ? extra : "");
   }
 }
 
@@ -245,7 +245,7 @@ class VM_HandshakeAllThreads: public VM_Operation {
 
     JavaThreadIteratorWithHandle jtiwh;
     int number_of_threads_issued = 0;
-    for (JavaThread* thr = jtiwh.next(); thr != NULL; thr = jtiwh.next()) {
+    for (JavaThread* thr = jtiwh.next(); thr != nullptr; thr = jtiwh.next()) {
       thr->handshake_state()->add_operation(_op);
       number_of_threads_issued++;
     }
@@ -273,7 +273,7 @@ class VM_HandshakeAllThreads: public VM_Operation {
       // Observing a blocked state may of course be transient but the processing is guarded
       // by mutexes and we optimistically begin by working on the blocked threads
       jtiwh.rewind();
-      for (JavaThread* thr = jtiwh.next(); thr != NULL; thr = jtiwh.next()) {
+      for (JavaThread* thr = jtiwh.next(); thr != nullptr; thr = jtiwh.next()) {
         // A new thread on the ThreadsList will not have an operation,
         // hence it is skipped in handshake_try_process.
         HandshakeState::ProcessResult pr = thr->handshake_state()->try_process(_op);
@@ -306,7 +306,7 @@ void HandshakeOperation::prepare(JavaThread* current_target, Thread* executing_t
     // Only when the target is not executing the handshake itself.
     StackWatermarkSet::start_processing(current_target, StackWatermarkKind::gc);
   }
-  if (_requester != NULL && _requester != executing_thread && _requester->is_Java_thread()) {
+  if (_requester != nullptr && _requester != executing_thread && _requester->is_Java_thread()) {
     // The handshake closure may contain oop Handles from the _requester.
     // We must make sure we can use them.
     StackWatermarkSet::start_processing(JavaThread::cast(_requester), StackWatermarkKind::gc);
@@ -343,7 +343,7 @@ void HandshakeOperation::do_handshake(JavaThread* thread) {
 }
 
 void Handshake::execute(HandshakeClosure* hs_cl) {
-  HandshakeOperation cto(hs_cl, NULL, Thread::current());
+  HandshakeOperation cto(hs_cl, nullptr, Thread::current());
   VM_HandshakeAllThreads handshake(&cto);
   VMThread::execute(&handshake);
 }
@@ -496,13 +496,13 @@ HandshakeOperation* HandshakeState::get_op_for_self(bool allow_suspend, bool che
 
 bool HandshakeState::has_operation(bool allow_suspend, bool check_async_exception) {
   MutexLocker ml(&_lock, Mutex::_no_safepoint_check_flag);
-  return get_op_for_self(allow_suspend, check_async_exception) != NULL;
+  return get_op_for_self(allow_suspend, check_async_exception) != nullptr;
 }
 
 bool HandshakeState::has_async_exception_operation() {
   if (!has_operation()) return false;
-  MutexLocker ml(_lock.owned_by_self() ? NULL :  &_lock, Mutex::_no_safepoint_check_flag);
-  return _queue.peek(async_exception_filter) != NULL;
+  MutexLocker ml(_lock.owned_by_self() ? nullptr :  &_lock, Mutex::_no_safepoint_check_flag);
+  return _queue.peek(async_exception_filter) != nullptr;
 }
 
 void HandshakeState::clean_async_exception_operation() {
@@ -548,8 +548,8 @@ bool HandshakeState::process_by_self(bool allow_suspend, bool check_async_except
     MutexLocker ml(&_lock, Mutex::_no_safepoint_check_flag);
 
     HandshakeOperation* op = get_op_for_self(allow_suspend, check_async_exception);
-    if (op != NULL) {
-      assert(op->_target == NULL || op->_target == Thread::current(), "Wrong thread");
+    if (op != nullptr) {
+      assert(op->_target == nullptr || op->_target == Thread::current(), "Wrong thread");
       bool async = op->is_async();
       log_trace(handshake)("Proc handshake %s " INTPTR_FORMAT " on " INTPTR_FORMAT " by self",
                            async ? "asynchronous" : "synchronous", p2i(op), p2i(_handshakee));
@@ -646,9 +646,9 @@ HandshakeState::ProcessResult HandshakeState::try_process(HandshakeOperation* ma
 
   HandshakeOperation* op = get_op();
 
-  assert(op != NULL, "Must have an op");
+  assert(op != nullptr, "Must have an op");
   assert(SafepointMechanism::local_poll_armed(_handshakee), "Must be");
-  assert(op->_target == NULL || _handshakee == op->_target, "Wrong thread");
+  assert(op->_target == nullptr || _handshakee == op->_target, "Wrong thread");
 
   log_trace(handshake)("Processing handshake " INTPTR_FORMAT " by %s(%s)", p2i(op),
                        op == match_op ? "handshaker" : "cooperative",
@@ -658,7 +658,7 @@ HandshakeState::ProcessResult HandshakeState::try_process(HandshakeOperation* ma
 
   set_active_handshaker(current_thread);
   op->do_handshake(_handshakee); // acquire, op removed after
-  set_active_handshaker(NULL);
+  set_active_handshaker(nullptr);
   remove_op(op);
 
   _lock.unlock();
@@ -703,7 +703,7 @@ class ThreadSelfSuspensionHandshake : public AsyncHandshakeClosure {
 };
 
 bool HandshakeState::suspend_with_handshake() {
-  assert(_handshakee->threadObj() != NULL, "cannot suspend with a NULL threadObj");
+  assert(_handshakee->threadObj() != nullptr, "cannot suspend with a null threadObj");
   if (_handshakee->is_exiting()) {
     log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " exiting", p2i(_handshakee));
     return false;

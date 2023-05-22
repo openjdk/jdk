@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -86,6 +86,8 @@ PLATFORM_SETUP_OPENJDK_BUILD_AND_TARGET
 
 # Continue setting up basic stuff. Most remaining code require fundamental tools.
 BASIC_SETUP_PATHS
+BASIC_SETUP_TOOLS
+BASIC_SETUP_BUILD_ENV
 
 # Check if it's a pure open build or if custom sources are to be used.
 JDKOPT_SETUP_OPEN_OR_CUSTOM
@@ -215,6 +217,16 @@ JDKOPT_SETUP_CODE_COVERAGE
 # AddressSanitizer
 JDKOPT_SETUP_ADDRESS_SANITIZER
 
+# UndefinedBehaviorSanitizer
+JDKOPT_SETUP_UNDEFINED_BEHAVIOR_SANITIZER
+
+# LeakSanitizer
+JDKOPT_SETUP_LEAK_SANITIZER
+
+# Fallback linker
+# This needs to go before 'LIB_DETERMINE_DEPENDENCIES'
+JDKOPT_SETUP_FALLBACK_LINKER
+
 ###############################################################################
 #
 # Check dependencies for external and internal libraries.
@@ -242,6 +254,7 @@ HOTSPOT_SETUP_MISC
 ###############################################################################
 
 LIB_TESTS_ENABLE_DISABLE_FAILURE_HANDLER
+LIB_TESTS_ENABLE_DISABLE_JTREG_TEST_THREAD_FACTORY
 
 JDKOPT_ENABLE_DISABLE_GENERATE_CLASSLIST
 JDKOPT_EXCLUDE_TRANSLATIONS

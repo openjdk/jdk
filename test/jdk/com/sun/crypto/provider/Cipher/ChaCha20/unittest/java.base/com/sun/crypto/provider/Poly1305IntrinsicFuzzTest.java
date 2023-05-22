@@ -103,20 +103,17 @@ public class Poly1305IntrinsicFuzzTest {
                                 authenticator.engineUpdate(message, offset, len);
                                 break;
                         case 1: // ByteArray with backing array
-                                buf = ByteBuffer.wrap(message, offset, len)
-                                                .order(java.nio.ByteOrder.LITTLE_ENDIAN);
+                                buf = ByteBuffer.wrap(message, offset, len);
                                 authenticator.engineUpdate(buf);
                                 break;
                         case 2: // ByteArray with backing array (non-zero position)
                                 buf = ByteBuffer.wrap(message, 0, len+offset)
-                                                .order(java.nio.ByteOrder.LITTLE_ENDIAN)
                                                 .position(offset);
                                 authenticator.engineUpdate(buf);
                                 break;
                         case 3: // ByteArray without backing array (wont be sent to intrinsic)
                                 buf = ByteBuffer.wrap(message, offset, len)
-                                                .asReadOnlyBuffer()
-                                                .order(java.nio.ByteOrder.LITTLE_ENDIAN);
+                                                .asReadOnlyBuffer();
                                 authenticator.engineUpdate(buf);
                                 break;
                 }

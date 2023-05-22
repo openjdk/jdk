@@ -71,6 +71,8 @@ import sun.reflect.misc.ReflectUtil;
  */
 public class ObjectView extends ComponentView  {
 
+    private boolean createComp = true; // default
+
     /**
      * Creates a new ObjectView object.
      *
@@ -80,6 +82,11 @@ public class ObjectView extends ComponentView  {
         super(elem);
     }
 
+    ObjectView(Element elem, boolean createComp) {
+        super(elem);
+        this.createComp = createComp;
+    }
+
     /**
      * Create the component.  The classid is used
      * as a specification of the classname, which
@@ -87,17 +94,22 @@ public class ObjectView extends ComponentView  {
      */
     @SuppressWarnings("deprecation")
     protected Component createComponent() {
+        if (!createComp) {
+            return getUnloadableRepresentation();
+        }
         AttributeSet attr = getElement().getAttributes();
         String classname = (String) attr.getAttribute(HTML.Attribute.CLASSID);
         try {
             ReflectUtil.checkPackageAccess(classname);
-            Class<?> c = Class.forName(classname, true,Thread.currentThread().
+            Class<?> c = Class.forName(classname, false,Thread.currentThread().
                                        getContextClassLoader());
-            Object o = c.newInstance();
-            if (o instanceof Component) {
-                Component comp = (Component) o;
-                setParameters(comp, attr);
-                return comp;
+            if (Component.class.isAssignableFrom(c)) {
+                Object o = c.newInstance();
+                if (o instanceof Component) {
+                    Component comp = (Component) o;
+                    setParameters(comp, attr);
+                    return comp;
+                }
             }
         } catch (Throwable e) {
             // couldn't create a component... fall through to the

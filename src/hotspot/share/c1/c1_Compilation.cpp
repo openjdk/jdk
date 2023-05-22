@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -286,6 +286,11 @@ void Compilation::emit_code_epilog(LIR_Assembler* assembler) {
 
   CodeOffsets* code_offsets = assembler->offsets();
 
+  if (!code()->finalize_stubs()) {
+    bailout("CodeCache is full");
+    return;
+  }
+
   // generate code or slow cases
   assembler->emit_slow_case_stubs();
   CHECK_BAILOUT();
@@ -313,9 +318,6 @@ void Compilation::emit_code_epilog(LIR_Assembler* assembler) {
   // Emit the handler to remove the activation from the stack and
   // dispatch to the caller.
   offsets()->set_value(CodeOffsets::UnwindHandler, assembler->emit_unwind_handler());
-
-  // done
-  masm()->flush();
 }
 
 
@@ -398,7 +400,7 @@ int Compilation::compile_java_method() {
   {
     PhaseTraceTime timeit(_t_emit_lir);
 
-    _frame_map = new FrameMap(method(), hir()->number_of_locks(), MAX2(4, hir()->max_stack()));
+    _frame_map = new FrameMap(method(), hir()->number_of_locks(), hir()->max_stack());
     emit_lir();
   }
   CHECK_BAILOUT_(no_frame_size);

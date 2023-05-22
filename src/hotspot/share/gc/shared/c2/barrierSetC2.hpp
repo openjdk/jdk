@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "memory/allocation.hpp"
 #include "oops/accessDecorators.hpp"
 #include "opto/loopnode.hpp"
+#include "opto/machnode.hpp"
 #include "opto/matcher.hpp"
 #include "opto/memnode.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -116,7 +117,7 @@ public:
     _type(type),
     _base(base),
     _addr(addr),
-    _raw_access(NULL),
+    _raw_access(nullptr),
     _barrier_data(0)
   {}
 
@@ -173,7 +174,7 @@ public:
   C2AtomicParseAccess(GraphKit* kit, DecoratorSet decorators, BasicType type,
                  Node* base, C2AccessValuePtr& addr, uint alias_idx) :
     C2ParseAccess(kit, decorators, type, base, addr),
-    _memory(NULL),
+    _memory(nullptr),
     _alias_idx(alias_idx) {}
 
   // Set the memory node based on the current memory slice.
@@ -242,7 +243,7 @@ public:
                              Node*& fast_oop_ctrl, Node*& fast_oop_rawmem,
                              intx prefetch_lines) const;
 
-  virtual Node* ideal_node(PhaseGVN* phase, Node* n, bool can_reshape) const { return NULL; }
+  virtual Node* ideal_node(PhaseGVN* phase, Node* n, bool can_reshape) const { return nullptr; }
 
   // These are general helper methods used by C2
   enum ArrayCopyPhase {
@@ -264,12 +265,13 @@ public:
   virtual void register_potential_barrier_node(Node* node) const { }
   virtual void unregister_potential_barrier_node(Node* node) const { }
   virtual void eliminate_gc_barrier(PhaseMacroExpand* macro, Node* node) const { }
+  virtual void eliminate_gc_barrier_data(Node* node) const { }
   virtual void enqueue_useful_gc_barrier(PhaseIterGVN* igvn, Node* node) const {}
   virtual void eliminate_useless_gc_barriers(Unique_Node_List &useful, Compile* C) const {}
 
   // Allow barrier sets to have shared state that is preserved across a compilation unit.
   // This could for example comprise macro nodes to be expanded during macro expansion.
-  virtual void* create_barrier_state(Arena* comp_arena) const { return NULL; }
+  virtual void* create_barrier_state(Arena* comp_arena) const { return nullptr; }
   // If the BarrierSetC2 state has barrier nodes in its compilation
   // unit state to be expanded later, then now is the time to do so.
   virtual bool expand_barriers(Compile* C, PhaseIterGVN& igvn) const { return false; }
@@ -301,6 +303,12 @@ public:
   virtual void emit_stubs(CodeBuffer& cb) const { }
 
   static int arraycopy_payload_base_offset(bool is_array);
+
+#ifndef PRODUCT
+  virtual void dump_barrier_data(const MachNode* mach, outputStream* st) const {
+    st->print("%x", mach->barrier_data());
+  };
+#endif
 };
 
 #endif // SHARE_GC_SHARED_C2_BARRIERSETC2_HPP

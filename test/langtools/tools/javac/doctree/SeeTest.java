@@ -151,7 +151,7 @@ DocComment[DOC_COMMENT, pos:1
   block tags: 1
     See[SEE, pos:7
       reference: 2
-        Reference[REFERENCE, pos:12, java.lang.String...#matches(String_regex)]
+        Reference[REFERENCE, pos:12, java.lang.String#matches(String_regex)]
         Text[TEXT, pos:51, text]
     ]
 ]

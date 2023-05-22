@@ -547,6 +547,7 @@ endef
 #   STRIPFLAGS Optionally change the flags given to the strip command
 #   PRECOMPILED_HEADER Header file to use as precompiled header
 #   PRECOMPILED_HEADER_EXCLUDE List of source files that should not use PCH
+#   BUILD_INFO_LOG_MACRO Overrides log level of the build info log message, default LogWarn
 #
 # After being called, some variables are exported from this macro, all prefixed
 # with parameter 1 followed by a '_':
@@ -699,6 +700,19 @@ define SetupNativeCompilationBody
 
   ifeq ($$($1_SRCS), )
     $$(error No sources found for $1 when looking inside the dirs $$($1_SRC))
+  endif
+
+  ifeq ($$($1_TYPE), EXECUTABLE)
+    ifeq ($(UBSAN_ENABLED), true)
+      # We need to set the default options for UBSan. This needs to be included in every executable.
+      # Rather than copy and paste code to everything with a main function, we add an additional
+      # source file to every executable that exports __ubsan_default_options.
+      ifneq ($$(filter %.cpp %.cc, $$($1_SRCS)), )
+        $1_SRCS += $(TOPDIR)/make/data/ubsan/ubsan_default_options.cpp
+      else
+        $1_SRCS += $(TOPDIR)/make/data/ubsan/ubsan_default_options.c
+      endif
+    endif
   endif
 
   # Calculate the expected output from compiling the sources
@@ -918,12 +932,18 @@ define SetupNativeCompilationBody
 
   # Setup rule for printing progress info when compiling source files.
   # This is a rough heuristic and may not always print accurate information.
-  $$($1_BUILD_INFO): $$($1_SRCS) $$($1_COMPILE_VARDEPS_FILE)
+  # The $1_BUILD_INFO and $1_BUILD_INFO_DEPS variables are used in
+  # TestFilesCompilation.gmk.
+  $$(call SetIfEmpty, $1_BUILD_INFO_LOG_MACRO, LogWarn)
+  $1_BUILD_INFO_DEPS := $$($1_SRCS) $$($1_COMPILE_VARDEPS_FILE)
+  $$($1_BUILD_INFO): $$($1_BUILD_INFO_DEPS)
         ifeq ($$(wildcard $$($1_TARGET)), )
-	  $$(call LogWarn, Creating $$(subst $$(OUTPUTDIR)/,,$$($1_TARGET)) from $$(words \
+	  $$(call $$($1_BUILD_INFO_LOG_MACRO), \
+	      Creating $$(subst $$(OUTPUTDIR)/,,$$($1_TARGET)) from $$(words \
 	      $$(filter-out %.vardeps, $$?)) file(s))
         else
-	  $$(call LogWarn, $$(strip Updating $$(subst $$(OUTPUTDIR)/,,$$($1_TARGET)) \
+	  $$(call $$($1_BUILD_INFO_LOG_MACRO), \
+	      $$(strip Updating $$(subst $$(OUTPUTDIR)/,,$$($1_TARGET)) \
 	      $$(if $$(filter-out %.vardeps, $$?), \
 	        due to $$(words $$(filter-out %.vardeps, $$?)) file(s), \
 	      $$(if $$(filter %.vardeps, $$?), due to makefile changes))))
@@ -1042,10 +1062,13 @@ define SetupNativeCompilationBody
           $1_DEBUGINFO_FILES := $$($1_SYMBOLS_DIR)/$$($1_NOSUFFIX).debuginfo
           # Setup the command line creating debuginfo files, to be run after linking.
           # It cannot be run separately since it updates the original target file
+          # Creating the debuglink is done in another command rather than all at once
+          # so we can run it after strip is called, since strip can sometimes mangle the
+          # embedded debuglink, which we want to avoid.
           $1_CREATE_DEBUGINFO_CMDS := \
-              $$($1_OBJCOPY) --only-keep-debug $$($1_TARGET) $$($1_DEBUGINFO_FILES) $$(NEWLINE) \
-              $(CD) $$($1_SYMBOLS_DIR) && \
-                  $$($1_OBJCOPY) --add-gnu-debuglink=$$($1_DEBUGINFO_FILES) $$($1_TARGET)
+              $$($1_OBJCOPY) --only-keep-debug $$($1_TARGET) $$($1_DEBUGINFO_FILES) $$(NEWLINE)
+          $1_CREATE_DEBUGLINK_CMDS := $(CD) $$($1_SYMBOLS_DIR) && \
+              $$($1_OBJCOPY) --add-gnu-debuglink=$$($1_DEBUGINFO_FILES) $$($1_TARGET)
 
         else ifeq ($(call isTargetOs, aix), true)
           # AIX does not provide the equivalent of OBJCOPY to extract debug symbols,
@@ -1174,7 +1197,7 @@ define SetupNativeCompilationBody
     $1_VARDEPS := $$($1_LD) $$($1_SYSROOT_LDFLAGS) $$($1_LDFLAGS) $$($1_EXTRA_LDFLAGS) \
         $$($1_LIBS) $$($1_EXTRA_LIBS) $$($1_MT) \
         $$($1_CREATE_DEBUGINFO_CMDS) $$($1_MANIFEST_VERSION) \
-        $$($1_STRIP_CMD)
+        $$($1_STRIP_CMD) $$($1_CREATE_DEBUGLINK_CMDS)
     $1_VARDEPS_FILE := $$(call DependOnVariable, $1_VARDEPS, \
         $$($1_OBJECT_DIR)/$$($1_NOSUFFIX).vardeps)
 
@@ -1237,6 +1260,7 @@ define SetupNativeCompilationBody
 		          test "$$$$?" = "1" ; \
 		  $$($1_CREATE_DEBUGINFO_CMDS)
 		  $$($1_STRIP_CMD)
+		  $$($1_CREATE_DEBUGLINK_CMDS)
                  ifeq ($(call isBuildOsEnv, windows.wsl2), true)
 		    $$(CHMOD) +x $$($1_TARGET)
                  endif
@@ -1248,6 +1272,7 @@ define SetupNativeCompilationBody
 		          $$($1_LIBS) $$($1_EXTRA_LIBS)) ; \
 		  $$($1_CREATE_DEBUGINFO_CMDS)
 		  $$($1_STRIP_CMD)
+		  $$($1_CREATE_DEBUGLINK_CMDS)
                 endif
                 ifeq ($(call isTargetOs, windows), true)
                   ifneq ($$($1_MANIFEST), )

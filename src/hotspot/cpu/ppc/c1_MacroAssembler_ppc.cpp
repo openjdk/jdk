@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -45,8 +45,7 @@ void C1_MacroAssembler::inline_cache_check(Register receiver, Register iCache) {
   Label Lmiss;
 
   verify_oop(receiver, FILE_AND_LINE);
-  MacroAssembler::null_check(receiver, oopDesc::klass_offset_in_bytes(), &Lmiss);
-  load_klass(temp_reg, receiver);
+  load_klass_check_null(temp_reg, receiver, &Lmiss);
 
   if (TrapBasedICMissChecks && TrapBasedNullChecks) {
     trap_ic_miss_check(temp_reg, iCache);
@@ -106,7 +105,7 @@ void C1_MacroAssembler::lock_object(Register Rmark, Register Roop, Register Rbox
   verify_oop(Roop, FILE_AND_LINE);
 
   // Save object being locked into the BasicObjectLock...
-  std(Roop, BasicObjectLock::obj_offset_in_bytes(), Rbox);
+  std(Roop, in_bytes(BasicObjectLock::obj_offset()), Rbox);
 
   if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(Rscratch, Roop);
@@ -168,7 +167,7 @@ void C1_MacroAssembler::unlock_object(Register Rmark, Register Roop, Register Rb
   beq(CCR0, done);
 
   // Load object.
-  ld(Roop, BasicObjectLock::obj_offset_in_bytes(), Rbox);
+  ld(Roop, in_bytes(BasicObjectLock::obj_offset()), Rbox);
   verify_oop(Roop, FILE_AND_LINE);
 
   // Check if it is still a light weight lock, this is is true if we see
@@ -400,7 +399,7 @@ void C1_MacroAssembler::null_check(Register r, Label* Lnull) {
     trap_null_check(r);
   } else { // explicit
     //const address exception_entry = Runtime1::entry_for(Runtime1::throw_null_pointer_exception_id);
-    assert(Lnull != NULL, "must have Label for explicit check");
+    assert(Lnull != nullptr, "must have Label for explicit check");
     cmpdi(CCR0, r, 0);
     bc_far_optimized(Assembler::bcondCRbiIs1, bi0(CCR0, Assembler::equal), *Lnull);
   }

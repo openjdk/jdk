@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,7 +85,7 @@ public class B6431193 {
                       .toURL();
             InputStream is = url.openConnection(Proxy.NO_PROXY).getInputStream();
             read (is);
-            server.stop (1);
+            server.stop(0);
             if (error) {
                 throw new RuntimeException ("error in test");
             }

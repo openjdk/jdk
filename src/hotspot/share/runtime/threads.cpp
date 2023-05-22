@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -56,6 +56,7 @@
 #include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
+#include "prims/jvmtiAgentList.hpp"
 #include "prims/jvm_misc.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
@@ -68,6 +69,7 @@
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/jniPeriodicChecker.hpp"
+#include "runtime/lockStack.inline.hpp"
 #include "runtime/monitorDeflationThread.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/nonJavaThread.hpp"
@@ -95,7 +97,6 @@
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
-#include "utilities/systemMemoryBarrier.hpp"
 #include "utilities/vmError.hpp"
 #if INCLUDE_JVMCI
 #include "jvmci/jvmci.hpp"
@@ -176,18 +177,18 @@ static void create_initial_thread(Handle thread_group, JavaThread* thread,
 static const char* get_java_version_info(InstanceKlass* ik,
                                          Symbol* field_name) {
   fieldDescriptor fd;
-  bool found = ik != NULL &&
+  bool found = ik != nullptr &&
                ik->find_local_field(field_name,
                                     vmSymbols::string_signature(), &fd);
   if (found) {
     oop name_oop = ik->java_mirror()->obj_field(fd.offset());
-    if (name_oop == NULL) {
-      return NULL;
+    if (name_oop == nullptr) {
+      return nullptr;
     }
     const char* name = java_lang_String::as_utf8_string(name_oop);
     return name;
   } else {
-    return NULL;
+    return nullptr;
   }
 }
 
@@ -217,7 +218,7 @@ bool        Threads::_vm_complete = false;
 // The Java library method itself may be changed independently from the VM.
 static void call_postVMInitHook(TRAPS) {
   Klass* klass = SystemDictionary::resolve_or_null(vmSymbols::jdk_internal_vm_PostVMInitHook(), THREAD);
-  if (klass != NULL) {
+  if (klass != nullptr) {
     JavaValue result(T_VOID);
     JavaCalls::call_static(&result, klass, vmSymbols::run_method_name(),
                            vmSymbols::void_method_signature(),
@@ -254,15 +255,19 @@ void Threads::threads_do(ThreadClosure* tc) {
 }
 
 void Threads::possibly_parallel_threads_do(bool is_par, ThreadClosure* tc) {
+  assert_at_safepoint();
+
   uintx claim_token = Threads::thread_claim_token();
   ALL_JAVA_THREADS(p) {
     if (p->claim_threads_do(is_par, claim_token)) {
       tc->do_thread(p);
     }
   }
-  VMThread* vmt = VMThread::vm_thread();
-  if (vmt->claim_threads_do(is_par, claim_token)) {
-    tc->do_thread(vmt);
+  for (NonJavaThread::Iterator njti; !njti.end(); njti.step()) {
+    Thread* current = njti.current();
+    if (current->claim_threads_do(is_par, claim_token)) {
+      tc->do_thread(current);
+    }
   }
 }
 
@@ -328,10 +333,6 @@ static void call_initPhase3(TRAPS) {
 
 void Threads::initialize_java_lang_classes(JavaThread* main_thread, TRAPS) {
   TraceTime timer("Initialize java.lang classes", TRACETIME_LOG(Info, startuptime));
-
-  if (EagerXrunInit && Arguments::init_libraries_at_startup()) {
-    create_vm_init_libraries();
-  }
 
   initialize_class(vmSymbols::java_lang_String(), CHECK);
 
@@ -496,16 +497,8 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // Initialize output stream logging
   ostream_init_log();
 
-  // Convert -Xrun to -agentlib: if there is no JVM_OnLoad
-  // Must be before create_vm_init_agents()
-  if (Arguments::init_libraries_at_startup()) {
-    convert_vm_init_libraries_to_agents();
-  }
-
   // Launch -agentlib/-agentpath and converted -Xrun agents
-  if (Arguments::init_agents_at_startup()) {
-    create_vm_init_agents();
-  }
+  JvmtiAgentList::load_agents();
 
   // Initialize Threads state
   _number_of_threads = 0;
@@ -519,7 +512,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
     JavaThread::_jvmci_old_thread_counters = NEW_C_HEAP_ARRAY(jlong, JVMCICounterSize, mtJVMCI);
     memset(JavaThread::_jvmci_old_thread_counters, 0, sizeof(jlong) * JVMCICounterSize);
   } else {
-    JavaThread::_jvmci_old_thread_counters = NULL;
+    JavaThread::_jvmci_old_thread_counters = nullptr;
   }
 #endif // INCLUDE_JVMCI
 
@@ -547,14 +540,6 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // Enable guard page *after* os::create_main_thread(), otherwise it would
   // crash Linux VM, see notes in os_linux.cpp.
   main_thread->stack_overflow_state()->create_stack_guard_pages();
-
-  if (UseSystemMemoryBarrier) {
-    if (!SystemMemoryBarrier::initialize()) {
-      vm_shutdown_during_initialization("Failed to initialize the requested system memory barrier synchronization.");
-      return JNI_EINVAL;
-    }
-    log_debug(os)("Using experimental system memory barrier synchronization");
-  }
 
   // Initialize Java-Level synchronization subsystem
   ObjectMonitor::Initialize();
@@ -628,6 +613,11 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // Notify JVMTI agents that VM has started (JNI is up) - nop if no agents.
   JvmtiExport::post_early_vm_start();
 
+  // Launch -Xrun agents early if EagerXrunInit is set
+  if (EagerXrunInit) {
+    JvmtiAgentList::load_xrun_agents();
+  }
+
   initialize_java_lang_classes(main_thread, CHECK_JNI_ERR);
 
   quicken_jni_functions();
@@ -650,6 +640,8 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   Management::record_vm_init_completed();
 #endif // INCLUDE_MANAGEMENT
 
+  log_info(os)("Initialized VM with process ID %d", os::current_process_id());
+
   // Signal Dispatcher needs to be started before VMInit event is posted
   os::initialize_jdk_signal_support(CHECK_JNI_ERR);
 
@@ -661,11 +653,9 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
     }
   }
 
-  // Launch -Xrun agents
-  // Must be done in the JVMTI live phase so that for backward compatibility the JDWP
-  // back-end can launch with -Xdebug -Xrunjdwp.
-  if (!EagerXrunInit && Arguments::init_libraries_at_startup()) {
-    create_vm_init_libraries();
+  // Launch -Xrun agents if EagerXrunInit is not set.
+  if (!EagerXrunInit) {
+    JvmtiAgentList::load_xrun_agents();
   }
 
   Chunk::start_chunk_pool_cleaner_task();
@@ -701,6 +691,11 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
     CompileBroker::compilation_init_phase2();
   }
 #endif
+
+  // Start string deduplication thread if requested.
+  if (StringDedup::is_enabled()) {
+    StringDedup::start();
+  }
 
   // Pre-initialize some JSR292 core classes to avoid deadlock during class loading.
   // It is done after compilers are initialized, because otherwise compilations of
@@ -805,208 +800,6 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   }
 
   return JNI_OK;
-}
-
-// type for the Agent_OnLoad and JVM_OnLoad entry points
-extern "C" {
-  typedef jint (JNICALL *OnLoadEntry_t)(JavaVM *, char *, void *);
-}
-// Find a command line agent library and return its entry point for
-//         -agentlib:  -agentpath:   -Xrun
-// num_symbol_entries must be passed-in since only the caller knows the number of symbols in the array.
-static OnLoadEntry_t lookup_on_load(AgentLibrary* agent,
-                                    const char *on_load_symbols[],
-                                    size_t num_symbol_entries) {
-  OnLoadEntry_t on_load_entry = NULL;
-  void *library = NULL;
-
-  if (!agent->valid()) {
-    char buffer[JVM_MAXPATHLEN];
-    char ebuf[1024] = "";
-    const char *name = agent->name();
-    const char *msg = "Could not find agent library ";
-
-    // First check to see if agent is statically linked into executable
-    if (os::find_builtin_agent(agent, on_load_symbols, num_symbol_entries)) {
-      library = agent->os_lib();
-    } else if (agent->is_absolute_path()) {
-      library = os::dll_load(name, ebuf, sizeof ebuf);
-      if (library == NULL) {
-        const char *sub_msg = " in absolute path, with error: ";
-        size_t len = strlen(msg) + strlen(name) + strlen(sub_msg) + strlen(ebuf) + 1;
-        char *buf = NEW_C_HEAP_ARRAY(char, len, mtThread);
-        jio_snprintf(buf, len, "%s%s%s%s", msg, name, sub_msg, ebuf);
-        // If we can't find the agent, exit.
-        vm_exit_during_initialization(buf, NULL);
-        FREE_C_HEAP_ARRAY(char, buf);
-      }
-    } else {
-      // Try to load the agent from the standard dll directory
-      if (os::dll_locate_lib(buffer, sizeof(buffer), Arguments::get_dll_dir(),
-                             name)) {
-        library = os::dll_load(buffer, ebuf, sizeof ebuf);
-      }
-      if (library == NULL) { // Try the library path directory.
-        if (os::dll_build_name(buffer, sizeof(buffer), name)) {
-          library = os::dll_load(buffer, ebuf, sizeof ebuf);
-        }
-        if (library == NULL) {
-          const char *sub_msg = " on the library path, with error: ";
-          const char *sub_msg2 = "\nModule java.instrument may be missing from runtime image.";
-
-          size_t len = strlen(msg) + strlen(name) + strlen(sub_msg) +
-                       strlen(ebuf) + strlen(sub_msg2) + 1;
-          char *buf = NEW_C_HEAP_ARRAY(char, len, mtThread);
-          if (!agent->is_instrument_lib()) {
-            jio_snprintf(buf, len, "%s%s%s%s", msg, name, sub_msg, ebuf);
-          } else {
-            jio_snprintf(buf, len, "%s%s%s%s%s", msg, name, sub_msg, ebuf, sub_msg2);
-          }
-          // If we can't find the agent, exit.
-          vm_exit_during_initialization(buf, NULL);
-          FREE_C_HEAP_ARRAY(char, buf);
-        }
-      }
-    }
-    agent->set_os_lib(library);
-    agent->set_valid();
-  }
-
-  // Find the OnLoad function.
-  on_load_entry =
-    CAST_TO_FN_PTR(OnLoadEntry_t, os::find_agent_function(agent,
-                                                          false,
-                                                          on_load_symbols,
-                                                          num_symbol_entries));
-  return on_load_entry;
-}
-
-// Find the JVM_OnLoad entry point
-static OnLoadEntry_t lookup_jvm_on_load(AgentLibrary* agent) {
-  const char *on_load_symbols[] = JVM_ONLOAD_SYMBOLS;
-  return lookup_on_load(agent, on_load_symbols, sizeof(on_load_symbols) / sizeof(char*));
-}
-
-// Find the Agent_OnLoad entry point
-static OnLoadEntry_t lookup_agent_on_load(AgentLibrary* agent) {
-  const char *on_load_symbols[] = AGENT_ONLOAD_SYMBOLS;
-  return lookup_on_load(agent, on_load_symbols, sizeof(on_load_symbols) / sizeof(char*));
-}
-
-// For backwards compatibility with -Xrun
-// Convert libraries with no JVM_OnLoad, but which have Agent_OnLoad to be
-// treated like -agentpath:
-// Must be called before agent libraries are created
-void Threads::convert_vm_init_libraries_to_agents() {
-  AgentLibrary* agent;
-  AgentLibrary* next;
-
-  for (agent = Arguments::libraries(); agent != NULL; agent = next) {
-    next = agent->next();  // cache the next agent now as this agent may get moved off this list
-    OnLoadEntry_t on_load_entry = lookup_jvm_on_load(agent);
-
-    // If there is an JVM_OnLoad function it will get called later,
-    // otherwise see if there is an Agent_OnLoad
-    if (on_load_entry == NULL) {
-      on_load_entry = lookup_agent_on_load(agent);
-      if (on_load_entry != NULL) {
-        // switch it to the agent list -- so that Agent_OnLoad will be called,
-        // JVM_OnLoad won't be attempted and Agent_OnUnload will
-        Arguments::convert_library_to_agent(agent);
-      } else {
-        vm_exit_during_initialization("Could not find JVM_OnLoad or Agent_OnLoad function in the library", agent->name());
-      }
-    }
-  }
-}
-
-// Create agents for -agentlib:  -agentpath:  and converted -Xrun
-// Invokes Agent_OnLoad
-// Called very early -- before JavaThreads exist
-void Threads::create_vm_init_agents() {
-  extern struct JavaVM_ main_vm;
-  AgentLibrary* agent;
-
-  JvmtiExport::enter_onload_phase();
-
-  for (agent = Arguments::agents(); agent != NULL; agent = agent->next()) {
-    // CDS dumping does not support native JVMTI agent.
-    // CDS dumping supports Java agent if the AllowArchivingWithJavaAgent diagnostic option is specified.
-    if (Arguments::is_dumping_archive()) {
-      if(!agent->is_instrument_lib()) {
-        vm_exit_during_cds_dumping("CDS dumping does not support native JVMTI agent, name", agent->name());
-      } else if (!AllowArchivingWithJavaAgent) {
-        vm_exit_during_cds_dumping(
-          "Must enable AllowArchivingWithJavaAgent in order to run Java agent during CDS dumping");
-      }
-    }
-
-    OnLoadEntry_t  on_load_entry = lookup_agent_on_load(agent);
-
-    if (on_load_entry != NULL) {
-      // Invoke the Agent_OnLoad function
-      jint err = (*on_load_entry)(&main_vm, agent->options(), NULL);
-      if (err != JNI_OK) {
-        vm_exit_during_initialization("agent library failed to init", agent->name());
-      }
-    } else {
-      vm_exit_during_initialization("Could not find Agent_OnLoad function in the agent library", agent->name());
-    }
-  }
-
-  JvmtiExport::enter_primordial_phase();
-}
-
-extern "C" {
-  typedef void (JNICALL *Agent_OnUnload_t)(JavaVM *);
-}
-
-void Threads::shutdown_vm_agents() {
-  // Send any Agent_OnUnload notifications
-  const char *on_unload_symbols[] = AGENT_ONUNLOAD_SYMBOLS;
-  size_t num_symbol_entries = ARRAY_SIZE(on_unload_symbols);
-  extern struct JavaVM_ main_vm;
-  for (AgentLibrary* agent = Arguments::agents(); agent != NULL; agent = agent->next()) {
-
-    // Find the Agent_OnUnload function.
-    Agent_OnUnload_t unload_entry = CAST_TO_FN_PTR(Agent_OnUnload_t,
-                                                   os::find_agent_function(agent,
-                                                   false,
-                                                   on_unload_symbols,
-                                                   num_symbol_entries));
-
-    // Invoke the Agent_OnUnload function
-    if (unload_entry != NULL) {
-      JavaThread* thread = JavaThread::current();
-      ThreadToNativeFromVM ttn(thread);
-      HandleMark hm(thread);
-      (*unload_entry)(&main_vm);
-    }
-  }
-}
-
-// Called for after the VM is initialized for -Xrun libraries which have not been converted to agent libraries
-// Invokes JVM_OnLoad
-void Threads::create_vm_init_libraries() {
-  extern struct JavaVM_ main_vm;
-  AgentLibrary* agent;
-
-  for (agent = Arguments::libraries(); agent != NULL; agent = agent->next()) {
-    OnLoadEntry_t on_load_entry = lookup_jvm_on_load(agent);
-
-    if (on_load_entry != NULL) {
-      // Invoke the JVM_OnLoad function
-      JavaThread* thread = JavaThread::current();
-      ThreadToNativeFromVM ttn(thread);
-      HandleMark hm(thread);
-      jint err = (*on_load_entry)(&main_vm, agent->options(), NULL);
-      if (err != JNI_OK) {
-        vm_exit_during_initialization("-Xrun library failed to init", agent->name());
-      }
-    } else {
-      vm_exit_during_initialization("Could not find JVM_OnLoad function in -Xrun library", agent->name());
-    }
-  }
 }
 
 // Threads::destroy_vm() is normally called from jni_DestroyJavaVM() when
@@ -1162,6 +955,7 @@ jboolean Threads::is_supported_jni_version(jint version) {
   if (version == JNI_VERSION_10) return JNI_TRUE;
   if (version == JNI_VERSION_19) return JNI_TRUE;
   if (version == JNI_VERSION_20) return JNI_TRUE;
+  if (version == JNI_VERSION_21) return JNI_TRUE;
   return JNI_FALSE;
 }
 
@@ -1305,9 +1099,20 @@ void assert_thread_claimed(const char* kind, Thread* t, uintx expected) {
 
 void Threads::assert_all_threads_claimed() {
   ALL_JAVA_THREADS(p) {
-    assert_thread_claimed("Thread", p, _thread_claim_token);
+    assert_thread_claimed("JavaThread", p, _thread_claim_token);
   }
-  assert_thread_claimed("VMThread", VMThread::vm_thread(), _thread_claim_token);
+
+  struct NJTClaimedVerifierClosure : public ThreadClosure {
+    uintx _thread_claim_token;
+
+    NJTClaimedVerifierClosure(uintx thread_claim_token) : ThreadClosure(), _thread_claim_token(thread_claim_token) { }
+
+    virtual void do_thread(Thread* thread) override {
+      assert_thread_claimed("Non-JavaThread", VMThread::vm_thread(), _thread_claim_token);
+    }
+  } tc(_thread_claim_token);
+
+  non_java_threads_do(&tc);
 }
 #endif // ASSERT
 
@@ -1373,8 +1178,9 @@ GrowableArray<JavaThread*>* Threads::get_pending_threads(ThreadsList * t_list,
 
 JavaThread *Threads::owning_thread_from_monitor_owner(ThreadsList * t_list,
                                                       address owner) {
-  // NULL owner means not locked so we can skip the search
-  if (owner == NULL) return NULL;
+  assert(LockingMode != LM_LIGHTWEIGHT, "Not with new lightweight locking");
+  // null owner means not locked so we can skip the search
+  if (owner == nullptr) return nullptr;
 
   for (JavaThread* p : *t_list) {
     // first, see if owner is the address of a Java thread
@@ -1384,13 +1190,13 @@ JavaThread *Threads::owning_thread_from_monitor_owner(ThreadsList * t_list,
   // Cannot assert on lack of success here since this function may be
   // used by code that is trying to report useful problem information
   // like deadlock detection.
-  if (UseHeavyMonitors) return NULL;
+  if (LockingMode == LM_MONITOR) return nullptr;
 
   // If we didn't find a matching Java thread and we didn't force use of
   // heavyweight monitors, then the owner is the stack address of the
   // Lock Word in the owning Java thread's stack.
   //
-  JavaThread* the_owner = NULL;
+  JavaThread* the_owner = nullptr;
   for (JavaThread* q : *t_list) {
     if (q->is_lock_owned(owner)) {
       the_owner = q;
@@ -1402,9 +1208,29 @@ JavaThread *Threads::owning_thread_from_monitor_owner(ThreadsList * t_list,
   return the_owner;
 }
 
+JavaThread* Threads::owning_thread_from_object(ThreadsList * t_list, oop obj) {
+  assert(LockingMode == LM_LIGHTWEIGHT, "Only with new lightweight locking");
+  for (JavaThread* q : *t_list) {
+    if (q->lock_stack().contains(obj)) {
+      return q;
+    }
+  }
+  return nullptr;
+}
+
 JavaThread* Threads::owning_thread_from_monitor(ThreadsList* t_list, ObjectMonitor* monitor) {
-  address owner = (address)monitor->owner();
-  return owning_thread_from_monitor_owner(t_list, owner);
+  if (LockingMode == LM_LIGHTWEIGHT) {
+    if (monitor->is_owner_anonymous()) {
+      return owning_thread_from_object(t_list, monitor->object());
+    } else {
+      Thread* owner = reinterpret_cast<Thread*>(monitor->owner());
+      assert(owner == nullptr || owner->is_Java_thread(), "only JavaThreads own monitors");
+      return reinterpret_cast<JavaThread*>(owner);
+    }
+  } else {
+    address owner = (address)monitor->owner();
+    return owning_thread_from_monitor_owner(t_list, owner);
+  }
 }
 
 class PrintOnClosure : public ThreadClosure {
@@ -1416,7 +1242,7 @@ public:
       _st(st) {}
 
   virtual void do_thread(Thread* thread) {
-    if (thread != NULL) {
+    if (thread != nullptr) {
       thread->print_on(_st);
       _st->cr();
     }
@@ -1468,9 +1294,6 @@ void Threads::print_on(outputStream* st, bool print_stacks,
   PrintOnClosure cl(st);
   cl.do_thread(VMThread::vm_thread());
   Universe::heap()->gc_threads_do(&cl);
-  if (StringDedup::is_enabled()) {
-    StringDedup::threads_do(&cl);
-  }
   cl.do_thread(WatcherThread::watcher_thread());
   cl.do_thread(AsyncLogWriter::instance());
 
@@ -1479,7 +1302,7 @@ void Threads::print_on(outputStream* st, bool print_stacks,
 
 void Threads::print_on_error(Thread* this_thread, outputStream* st, Thread* current, char* buf,
                              int buflen, bool* found_current) {
-  if (this_thread != NULL) {
+  if (this_thread != nullptr) {
     bool is_current = (current == this_thread);
     *found_current = *found_current || is_current;
     st->print("%s", is_current ? "=>" : "  ");
@@ -1497,14 +1320,19 @@ class PrintOnErrorClosure : public ThreadClosure {
   char* _buf;
   int _buflen;
   bool* _found_current;
+  unsigned _num_printed;
  public:
   PrintOnErrorClosure(outputStream* st, Thread* current, char* buf,
                       int buflen, bool* found_current) :
-   _st(st), _current(current), _buf(buf), _buflen(buflen), _found_current(found_current) {}
+   _st(st), _current(current), _buf(buf), _buflen(buflen), _found_current(found_current),
+   _num_printed(0) {}
 
   virtual void do_thread(Thread* thread) {
+    _num_printed++;
     Threads::print_on_error(thread, _st, _current, _buf, _buflen, _found_current);
   }
+
+  unsigned num_printed() const { return _num_printed; }
 };
 
 // Threads::print_on_error() is called by fatal error handler. It's possible
@@ -1518,55 +1346,63 @@ void Threads::print_on_error(outputStream* st, Thread* current, char* buf,
 
   bool found_current = false;
   st->print_cr("Java Threads: ( => current thread )");
+  unsigned num_java = 0;
   ALL_JAVA_THREADS(thread) {
     print_on_error(thread, st, current, buf, buflen, &found_current);
+    num_java++;
   }
+  st->print_cr("Total: %u", num_java);
   st->cr();
 
   st->print_cr("Other Threads:");
+  unsigned num_other = ((VMThread::vm_thread() != nullptr) ? 1 : 0) +
+      ((WatcherThread::watcher_thread() != nullptr) ? 1 : 0) +
+      ((AsyncLogWriter::instance() != nullptr)  ? 1 : 0);
   print_on_error(VMThread::vm_thread(), st, current, buf, buflen, &found_current);
   print_on_error(WatcherThread::watcher_thread(), st, current, buf, buflen, &found_current);
   print_on_error(AsyncLogWriter::instance(), st, current, buf, buflen, &found_current);
 
-  if (Universe::heap() != NULL) {
+  if (Universe::heap() != nullptr) {
     PrintOnErrorClosure print_closure(st, current, buf, buflen, &found_current);
     Universe::heap()->gc_threads_do(&print_closure);
-  }
-
-  if (StringDedup::is_enabled()) {
-    PrintOnErrorClosure print_closure(st, current, buf, buflen, &found_current);
-    StringDedup::threads_do(&print_closure);
+    num_other += print_closure.num_printed();
   }
 
   if (!found_current) {
     st->cr();
     st->print("=>" PTR_FORMAT " (exited) ", p2i(current));
     current->print_on_error(st, buf, buflen);
+    num_other++;
     st->cr();
   }
+  st->print_cr("Total: %u", num_other);
   st->cr();
 
   st->print_cr("Threads with active compile tasks:");
-  print_threads_compiling(st, buf, buflen);
+  unsigned num = print_threads_compiling(st, buf, buflen);
+  st->print_cr("Total: %u", num);
 }
 
-void Threads::print_threads_compiling(outputStream* st, char* buf, int buflen, bool short_form) {
+unsigned Threads::print_threads_compiling(outputStream* st, char* buf, int buflen, bool short_form) {
+  unsigned num = 0;
   ALL_JAVA_THREADS(thread) {
     if (thread->is_Compiler_thread()) {
       CompilerThread* ct = (CompilerThread*) thread;
 
-      // Keep task in local variable for NULL check.
-      // ct->_task might be set to NULL by concurring compiler thread
+      // Keep task in local variable for null check.
+      // ct->_task might be set to null by concurring compiler thread
       // because it completed the compilation. The task is never freed,
       // though, just returned to a free list.
       CompileTask* task = ct->task();
-      if (task != NULL) {
+      if (task != nullptr) {
         thread->print_name_on_error(st, buf, buflen);
         st->print("  ");
-        task->print(st, NULL, short_form, true);
+        task->print(st, nullptr, short_form, true);
+        num++;
       }
     }
   }
+  return num;
 }
 
 void Threads::verify() {
@@ -1574,5 +1410,5 @@ void Threads::verify() {
     p->verify();
   }
   VMThread* thread = VMThread::vm_thread();
-  if (thread != NULL) thread->verify();
+  if (thread != nullptr) thread->verify();
 }

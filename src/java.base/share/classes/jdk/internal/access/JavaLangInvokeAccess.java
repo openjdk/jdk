@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -166,12 +166,6 @@ public interface JavaLangInvokeAccess {
      * as the given caller class.
      */
     MethodHandle reflectiveInvoker(Class<?> caller);
-
-    /**
-     * Defines a hidden class of the given name and bytes with class data.
-     * The given bytes is trusted.
-     */
-    Lookup defineHiddenClassWithClassData(Lookup caller, String name, byte[] bytes, Object classData, boolean initialize);
 
     /**
      * A best-effort method that tries to find any exceptions thrown by the given method handle.

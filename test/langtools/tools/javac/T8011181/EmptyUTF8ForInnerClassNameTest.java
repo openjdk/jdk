@@ -67,11 +67,10 @@ public class EmptyUTF8ForInnerClassNameTest {
     }
 
     static class EnumPlusSwitch {
-        enum E {E1}
 
-        public int m (E e) {
+        public int m (Thread.State e) {
             switch (e) {
-                case E1:
+                case NEW:
                     return 0;
             }
             return -1;

@@ -66,6 +66,14 @@ public class HtmlTagsTest {
      */
     public void inline_not_allowed() { }
 
+    /**
+     * <ul> &amp; <li> ... </li> </ul>
+     */
+    public void entity_not_allowed() { }
 
+    /**
+     * <ul> *@/ <li> ... </li> </ul>
+     */
+    public void escape_not_allowed() { }
 }
 

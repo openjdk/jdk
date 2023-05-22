@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -142,7 +142,7 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
      * @param content     the content to which the link will be added
      */
     protected void addSummaryLink(TypeElement typeElement, Element member, Content content) {
-        addSummaryLink(HtmlLinkInfo.Kind.MEMBER, typeElement, member, content);
+        addSummaryLink(HtmlLinkInfo.Kind.PLAIN, typeElement, member, content);
     }
 
     /**
@@ -202,8 +202,9 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
             if (list != null && !list.isEmpty()) {
                 Content typeParameters = ((AbstractExecutableMemberWriter) this)
                         .getTypeParameters((ExecutableElement)member);
-                    code.add(typeParameters);
-                //Code to avoid ugly wrapping in member summary table.
+                code.add(typeParameters);
+                // Add explicit line break between method type parameters and
+                // return type in member summary table to avoid random wrapping.
                 if (typeParameters.charCount() > 10) {
                     code.add(new HtmlTree(TagName.BR));
                 } else {
@@ -212,7 +213,8 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
             }
             code.add(
                     writer.getLink(new HtmlLinkInfo(configuration,
-                            HtmlLinkInfo.Kind.SUMMARY_RETURN_TYPE, type)));
+                            HtmlLinkInfo.Kind.LINK_TYPE_PARAMS, type)
+                            .addLineBreakOpportunitiesInTypeParameters(true)));
         }
         target.add(code);
     }
@@ -323,8 +325,8 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
                 typeContent.add(name);
             }
             addSummaryLink(utils.isClass(element) || utils.isPlainInterface(element)
-                    ? HtmlLinkInfo.Kind.CLASS_USE
-                    : HtmlLinkInfo.Kind.MEMBER,
+                    ? HtmlLinkInfo.Kind.SHOW_TYPE_PARAMS_AND_BOUNDS
+                    : HtmlLinkInfo.Kind.PLAIN,
                     te, element, typeContent);
             Content desc = new ContentBuilder();
             writer.addSummaryLinkComment(element, desc);

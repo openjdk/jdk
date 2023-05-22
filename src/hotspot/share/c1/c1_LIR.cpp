@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -563,6 +563,8 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
     case lir_sqrt:
     case lir_abs:
     case lir_neg:
+    case lir_f2hf:
+    case lir_hf2f:
     case lir_logic_and:
     case lir_logic_or:
     case lir_logic_xor:
@@ -1141,8 +1143,14 @@ void LIR_List::set_cmp_oprs(LIR_Op* op) {
       op->as_Op4()->set_in_opr3(_cmp_opr1);
       op->as_Op4()->set_in_opr4(_cmp_opr2);
       break;
+    case lir_cas_long:
+    case lir_cas_obj:
+    case lir_cas_int:
+      _cmp_opr1 = op->as_OpCompareAndSwap()->result_opr();
+      _cmp_opr2 = LIR_OprFact::intConst(0);
+      break;
 #if INCLUDE_ZGC
-    case lir_zloadbarrier_test:
+    case lir_xloadbarrier_test:
       _cmp_opr1 = FrameMap::as_opr(t1);
       _cmp_opr2 = LIR_OprFact::intConst(0);
       break;
@@ -1731,6 +1739,8 @@ const char * LIR_Op::name() const {
      case lir_abs:                   s = "abs";           break;
      case lir_neg:                   s = "neg";           break;
      case lir_sqrt:                  s = "sqrt";          break;
+     case lir_f2hf:                  s = "f2hf";          break;
+     case lir_hf2f:                  s = "hf2f";          break;
      case lir_logic_and:             s = "logic_and";     break;
      case lir_logic_or:              s = "logic_or";      break;
      case lir_logic_xor:             s = "logic_xor";     break;

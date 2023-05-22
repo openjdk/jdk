@@ -326,6 +326,9 @@ hb_language_to_string (hb_language_t language);
 HB_EXTERN hb_language_t
 hb_language_get_default (void);
 
+HB_EXTERN hb_bool_t
+hb_language_matches (hb_language_t language,
+                     hb_language_t specific);
 
 /**
  * hb_script_t:
@@ -492,6 +495,8 @@ hb_language_get_default (void);
  * @HB_SCRIPT_TOTO: `Toto`, Since: 3.0.0
  * @HB_SCRIPT_VITHKUQI: `Vith`, Since: 3.0.0
  * @HB_SCRIPT_MATH: `Zmth`, Since: 3.4.0
+ * @HB_SCRIPT_KAWI: `Kawi`, Since: 5.2.0
+ * @HB_SCRIPT_NAG_MUNDARI: `Nagm`, Since: 5.2.0
  * @HB_SCRIPT_INVALID: No script set
  *
  * Data type for scripts. Each #hb_script_t's value is an #hb_tag_t corresponding
@@ -713,6 +718,12 @@ typedef enum
    */
   HB_SCRIPT_MATH                        = HB_TAG ('Z','m','t','h'),
 
+  /*
+   * Since 5.2.0
+   */
+  HB_SCRIPT_KAWI                        = HB_TAG ('K','a','w','i'), /*15.0*/
+  HB_SCRIPT_NAG_MUNDARI                 = HB_TAG ('N','a','g','m'), /*15.0*/
+
   /* No script set. */
   HB_SCRIPT_INVALID                     = HB_TAG_NONE,
 
@@ -885,6 +896,32 @@ hb_color_get_green (hb_color_t color);
 HB_EXTERN uint8_t
 hb_color_get_blue (hb_color_t color);
 #define hb_color_get_blue(color)        (((color) >> 24) & 0xFF)
+
+/**
+ * hb_glyph_extents_t:
+ * @x_bearing: Distance from the x-origin to the left extremum of the glyph.
+ * @y_bearing: Distance from the top extremum of the glyph to the y-origin.
+ * @width: Distance from the left extremum of the glyph to the right extremum.
+ * @height: Distance from the top extremum of the glyph to the bottom extremum.
+ *
+ * Glyph extent values, measured in font units.
+ *
+ * Note that @height is negative, in coordinate systems that grow up.
+ **/
+typedef struct hb_glyph_extents_t {
+  hb_position_t x_bearing;
+  hb_position_t y_bearing;
+  hb_position_t width;
+  hb_position_t height;
+} hb_glyph_extents_t;
+
+/**
+ * hb_font_t:
+ *
+ * Data type for holding fonts.
+ *
+ */
+typedef struct hb_font_t hb_font_t;
 
 HB_END_DECLS
 

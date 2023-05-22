@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,11 +50,11 @@ void DiscoveredList::set_head(oop o) {
 }
 
 bool DiscoveredList::is_empty() const {
- return head() == NULL;
+ return head() == nullptr;
 }
 
 void DiscoveredList::clear() {
-  set_head(NULL);
+  set_head(nullptr);
   set_length(0);
 }
 
@@ -64,11 +64,11 @@ DiscoveredListIterator::DiscoveredListIterator(DiscoveredList&    refs_list,
                                                EnqueueDiscoveredFieldClosure* enqueue):
   _refs_list(refs_list),
   _prev_discovered_addr(refs_list.adr_head()),
-  _prev_discovered(NULL),
+  _prev_discovered(nullptr),
   _current_discovered(refs_list.head()),
-  _current_discovered_addr(NULL),
-  _next_discovered(NULL),
-  _referent(NULL),
+  _current_discovered_addr(nullptr),
+  _next_discovered(nullptr),
+  _referent(nullptr),
   _keep_alive(keep_alive),
   _is_alive(is_alive),
   _enqueue(enqueue),

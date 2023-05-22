@@ -24,6 +24,7 @@
  */
 
 #include "awt.h"
+#include <strsafe.h>
 #include <math.h>
 #include <windef.h>
 #include <wtypes.h>
@@ -2408,7 +2409,7 @@ static jboolean jFontToWFontW(JNIEnv *env, HDC printDC, jstring fontName,
     size_t nameLen = wcslen(fontNameW);
     if (nameLen < (sizeof(lf.lfFaceName) / sizeof(lf.lfFaceName[0]))) {
 
-        wcscpy(lf.lfFaceName, fontNameW);
+        StringCchCopyW(lf.lfFaceName, LF_FACESIZE, fontNameW);
 
         lf.lfCharSet = DEFAULT_CHARSET;
         lf.lfPitchAndFamily = 0;
@@ -2636,7 +2637,7 @@ JNIEXPORT jint JNICALL Java_sun_awt_windows_WPrinterJob_getGDIAdvance
  */
 JNIEXPORT void JNICALL Java_sun_awt_windows_WPrinterJob_textOut
 (JNIEnv *env, jobject self, jlong printDC, jstring text, jint strLen,
-     boolean glyphCodes, jfloat x, jfloat y, jfloatArray positions)
+     jboolean glyphCodes, jfloat x, jfloat y, jfloatArray positions)
 {
 
     long posX = ROUND_TO_LONG(x);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -39,7 +39,7 @@ void MetachunkList::verify_does_not_contain(const Metachunk* c) const {
 }
 
 bool MetachunkList::contains(const Metachunk* c) const {
-  for (Metachunk* c2 = _first; c2 != NULL; c2 = c2->next()) {
+  for (Metachunk* c2 = _first; c2 != nullptr; c2 = c2->next()) {
     if (c == c2) {
       return true;
     }
@@ -49,8 +49,8 @@ bool MetachunkList::contains(const Metachunk* c) const {
 
 void MetachunkList::verify() const {
   int num = 0;
-  const Metachunk* last_c = NULL;
-  for (const Metachunk* c = _first; c != NULL; c = c->next()) {
+  const Metachunk* last_c = nullptr;
+  for (const Metachunk* c = _first; c != nullptr; c = c->next()) {
     num++;
     assert(c->prev() != c && c->next() != c, "circularity");
     assert(c->prev() == last_c,
@@ -65,12 +65,12 @@ void MetachunkList::verify() const {
 #endif // ASSERT
 
 size_t MetachunkList::calc_committed_word_size() const {
-  if (_first != NULL && _first->is_dead()) {
+  if (_first != nullptr && _first->is_dead()) {
     // list used for chunk header pool; dead chunks have no size.
     return 0;
   }
   size_t s = 0;
-  for (Metachunk* c = _first; c != NULL; c = c->next()) {
+  for (Metachunk* c = _first; c != nullptr; c = c->next()) {
     assert(c->is_dead() == false, "Sanity");
     s += c->committed_words();
   }
@@ -78,12 +78,12 @@ size_t MetachunkList::calc_committed_word_size() const {
 }
 
 size_t MetachunkList::calc_word_size() const {
-  if (_first != NULL && _first->is_dead()) {
+  if (_first != nullptr && _first->is_dead()) {
     // list used for chunk header pool; dead chunks have no size.
     return 0;
   }
   size_t s = 0;
-  for (Metachunk* c = _first; c != NULL; c = c->next()) {
+  for (Metachunk* c = _first; c != nullptr; c = c->next()) {
     assert(c->is_dead() == false, "Sanity");
     s += c->committed_words();
   }
@@ -92,7 +92,7 @@ size_t MetachunkList::calc_word_size() const {
 
 void MetachunkList::print_on(outputStream* st) const {
   if (_num_chunks.get() > 0) {
-    for (const Metachunk* c = _first; c != NULL; c = c->next()) {
+    for (const Metachunk* c = _first; c != nullptr; c = c->next()) {
       st->print(" - <");
       c->print_on(st);
       st->print(">");

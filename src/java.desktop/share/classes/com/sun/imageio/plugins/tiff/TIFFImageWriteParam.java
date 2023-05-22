@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,8 +78,9 @@ import javax.imageio.ImageWriteParam;
  * <tr>
  * <td>Exif JPEG</td>
  * <td>Exif-specific JPEG compression (see note following this table)</td>
- * <td><a href="http://www.exif.org/Exif2-2.PDF">Exif 2.2 Specification</a>
- * (PDF), section 4.5.5, "Basic Structure of Thumbnail Data"</td>
+ * <td><a href="https://www.cipa.jp/std/documents/e/DC-008-2012_E.pdf">
+ * Exif 2.3 Specification</a>
+ * (PDF), section 4.5.8, "Basic Structure of Thumbnail Data"</td>
  * </table>
  *
  * <p>

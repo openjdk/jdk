@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -237,7 +237,7 @@ void UTF8::as_quoted_ascii(const char* utf8_str, int utf8_length, char* buf, int
 // no longer used, but could be useful to test output of UTF8::as_quoted_ascii
 const char* UTF8::from_quoted_ascii(const char* quoted_ascii_str) {
   const char *ptr = quoted_ascii_str;
-  char* result = NULL;
+  char* result = nullptr;
   while (*ptr != '\0') {
     char c = *ptr;
     if (c < 32 || c >= 127) break;
@@ -248,11 +248,11 @@ const char* UTF8::from_quoted_ascii(const char* quoted_ascii_str) {
   }
   // everything up to this point was ok.
   int length = ptr - quoted_ascii_str;
-  char* buffer = NULL;
+  char* buffer = nullptr;
   for (int round = 0; round < 2; round++) {
     while (*ptr != '\0') {
       if (*ptr != '\\') {
-        if (buffer != NULL) {
+        if (buffer != nullptr) {
           buffer[length] = *ptr;
         }
         length++;
@@ -280,7 +280,7 @@ const char* UTF8::from_quoted_ascii(const char* quoted_ascii_str) {
                   ShouldNotReachHere();
               }
             }
-            if (buffer == NULL) {
+            if (buffer == nullptr) {
               char utf8_buffer[4];
               char* next = (char*)utf8_write((u_char*)utf8_buffer, value);
               length += next - utf8_buffer;
@@ -290,10 +290,10 @@ const char* UTF8::from_quoted_ascii(const char* quoted_ascii_str) {
             }
             break;
           }
-          case 't': if (buffer != NULL) buffer[length] = '\t'; ptr += 2; length++; break;
-          case 'n': if (buffer != NULL) buffer[length] = '\n'; ptr += 2; length++; break;
-          case 'r': if (buffer != NULL) buffer[length] = '\r'; ptr += 2; length++; break;
-          case 'f': if (buffer != NULL) buffer[length] = '\f'; ptr += 2; length++; break;
+          case 't': if (buffer != nullptr) buffer[length] = '\t'; ptr += 2; length++; break;
+          case 'n': if (buffer != nullptr) buffer[length] = '\n'; ptr += 2; length++; break;
+          case 'r': if (buffer != nullptr) buffer[length] = '\r'; ptr += 2; length++; break;
+          case 'f': if (buffer != nullptr) buffer[length] = '\f'; ptr += 2; length++; break;
           default:
             ShouldNotReachHere();
         }

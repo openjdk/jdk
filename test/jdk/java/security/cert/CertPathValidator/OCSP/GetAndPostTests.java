@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,16 +60,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import sun.security.testlibrary.SimpleOCSPServer;
-import sun.security.testlibrary.SimpleOCSPServer;
+import java.util.concurrent.TimeUnit;
+
 import sun.security.testlibrary.SimpleOCSPServer;
 import sun.security.util.DerOutputStream;
 import sun.security.util.DerValue;
 import sun.security.util.ObjectIdentifier;
-import sun.security.testlibrary.SimpleOCSPServer;
 
 public class GetAndPostTests {
     private static final String PASS = "passphrase";
+    private static final int SERVER_WAIT_SECS = 60;
     private static CertificateFactory certFac;
 
     public static void main(String args[]) throws Exception {
@@ -112,14 +112,8 @@ public class GetAndPostTests {
                     endEntCert.getSerialNumber(),
                     new SimpleOCSPServer.CertStatusInfo(
                             SimpleOCSPServer.CertStatus.CERT_STATUS_GOOD)));
-            ocspResponder.start();
-            // Wait 5 seconds for server ready
-            for (int i = 0; (i < 100 && !ocspResponder.isServerReady()); i++) {
-                Thread.sleep(50);
-            }
-            if (!ocspResponder.isServerReady()) {
-                throw new RuntimeException("Server not ready yet");
-            }
+
+            startOcspServer(ocspResponder);
 
             int ocspPort = ocspResponder.getPort();
             URI ocspURI = new URI("http://localhost:" + ocspPort);
@@ -166,6 +160,14 @@ public class GetAndPostTests {
                 ocspResponder.stop();
             }
         }
+    }
+
+    private static void startOcspServer(SimpleOCSPServer ocspResponder) throws InterruptedException, IOException {
+            ocspResponder.start();
+            if (!ocspResponder.awaitServerReady(SERVER_WAIT_SECS, TimeUnit.SECONDS)) {
+                throw new RuntimeException("Server not ready after " + SERVER_WAIT_SECS
+                        + " seconds.");
+            }
     }
 
     /**

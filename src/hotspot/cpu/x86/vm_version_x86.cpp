@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "classfile/vmIntrinsics.hpp"
 #include "code/codeBlob.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
 #include "jvm.h"
@@ -62,8 +63,8 @@ extern "C" {
   typedef void (*get_cpu_info_stub_t)(void*);
   typedef void (*detect_virt_stub_t)(uint32_t, uint32_t*);
 }
-static get_cpu_info_stub_t get_cpu_info_stub = NULL;
-static detect_virt_stub_t detect_virt_stub = NULL;
+static get_cpu_info_stub_t get_cpu_info_stub = nullptr;
+static detect_virt_stub_t detect_virt_stub = nullptr;
 
 #ifdef _LP64
 
@@ -401,7 +402,7 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     //
     // Some OSs have a bug when upper 128/256bits of YMM/ZMM
     // registers are not restored after a signal processing.
-    // Generate SEGV here (reference through NULL)
+    // Generate SEGV here (reference through null)
     // and check upper YMM/ZMM bits after it.
     //
     int saved_useavx = UseAVX;
@@ -1140,7 +1141,7 @@ void VM_Version::get_processor_features() {
   }
 
   // Base64 Intrinsics (Check the condition for which the intrinsic will be active)
-  if ((UseAVX > 2) && supports_avx512vl() && supports_avx512bw()) {
+  if (UseAVX >= 2) {
     if (FLAG_IS_DEFAULT(UseBASE64Intrinsics)) {
       UseBASE64Intrinsics = true;
     }
@@ -1310,27 +1311,6 @@ void VM_Version::get_processor_features() {
     // If default, use highest supported configuration
     FLAG_SET_DEFAULT(MaxVectorSize, max_vector_size);
   }
-
-#if defined(COMPILER2)
-  if (FLAG_IS_DEFAULT(SuperWordMaxVectorSize)) {
-    if (FLAG_IS_DEFAULT(UseAVX) && UseAVX > 2 &&
-        is_intel_skylake() && _stepping >= 5) {
-      // Limit auto vectorization to 256 bit (32 byte) by default on Cascade Lake
-      FLAG_SET_DEFAULT(SuperWordMaxVectorSize, MIN2(MaxVectorSize, (intx)32));
-    } else {
-      FLAG_SET_DEFAULT(SuperWordMaxVectorSize, MaxVectorSize);
-    }
-  } else {
-    if (SuperWordMaxVectorSize > MaxVectorSize) {
-      warning("SuperWordMaxVectorSize cannot be greater than MaxVectorSize %i", (int) MaxVectorSize);
-      FLAG_SET_DEFAULT(SuperWordMaxVectorSize, MaxVectorSize);
-    }
-    if (!is_power_of_2(SuperWordMaxVectorSize)) {
-      warning("SuperWordMaxVectorSize must be a power of 2, setting to MaxVectorSize: %i", (int) MaxVectorSize);
-      FLAG_SET_DEFAULT(SuperWordMaxVectorSize, MaxVectorSize);
-    }
-  }
-#endif
 
 #if defined(COMPILER2) && defined(ASSERT)
   if (MaxVectorSize > 0) {
@@ -1695,12 +1675,25 @@ void VM_Version::get_processor_features() {
       warning("vectorizedMismatch intrinsics are not available on this CPU");
     FLAG_SET_DEFAULT(UseVectorizedMismatchIntrinsic, false);
   }
+  if (UseAVX >= 2) {
+    FLAG_SET_DEFAULT(UseVectorizedHashCodeIntrinsic, true);
+  } else if (UseVectorizedHashCodeIntrinsic) {
+    if (!FLAG_IS_DEFAULT(UseVectorizedHashCodeIntrinsic))
+      warning("vectorizedHashCode intrinsics are not available on this CPU");
+    FLAG_SET_DEFAULT(UseVectorizedHashCodeIntrinsic, false);
+  }
 #else
   if (UseVectorizedMismatchIntrinsic) {
     if (!FLAG_IS_DEFAULT(UseVectorizedMismatchIntrinsic)) {
       warning("vectorizedMismatch intrinsic is not available in 32-bit VM");
     }
     FLAG_SET_DEFAULT(UseVectorizedMismatchIntrinsic, false);
+  }
+  if (UseVectorizedHashCodeIntrinsic) {
+    if (!FLAG_IS_DEFAULT(UseVectorizedHashCodeIntrinsic)) {
+      warning("vectorizedHashCode intrinsic is not available in 32-bit VM");
+    }
+    FLAG_SET_DEFAULT(UseVectorizedHashCodeIntrinsic, false);
   }
 #endif // _LP64
 
@@ -2080,6 +2073,20 @@ void VM_Version::check_virtualizations() {
   }
 }
 
+#ifdef COMPILER2
+// Determine if it's running on Cascade Lake using default options.
+bool VM_Version::is_default_intel_cascade_lake() {
+  return FLAG_IS_DEFAULT(UseAVX) &&
+         FLAG_IS_DEFAULT(MaxVectorSize) &&
+         UseAVX > 2 &&
+         is_intel_cascade_lake();
+}
+#endif
+
+bool VM_Version::is_intel_cascade_lake() {
+  return is_intel_skylake() && _stepping >= 5;
+}
+
 // avx3_threshold() sets the threshold at which 64-byte instructions are used
 // for implementing the array copy and clear operations.
 // The Intel platforms that supports the serialize instruction
@@ -2097,7 +2104,7 @@ void VM_Version::initialize() {
   ResourceMark rm;
   // Making this stub must be FIRST use of assembler
   stub_blob = BufferBlob::create("VM_Version stub", stub_size);
-  if (stub_blob == NULL) {
+  if (stub_blob == nullptr) {
     vm_exit_during_initialization("Unable to allocate stub for VM_Version");
   }
   CodeBuffer c(stub_blob);
@@ -2171,7 +2178,7 @@ extern "C" {
   typedef void (*getCPUIDBrandString_stub_t)(void*);
 }
 
-static getCPUIDBrandString_stub_t getCPUIDBrandString_stub = NULL;
+static getCPUIDBrandString_stub_t getCPUIDBrandString_stub = nullptr;
 
 // VM_Version statics
 enum {
@@ -2181,7 +2188,7 @@ enum {
 
 const size_t VENDOR_LENGTH = 13;
 const size_t CPU_EBS_MAX_LENGTH = (3 * 4 * 4 + 1);
-static char* _cpu_brand_string = NULL;
+static char* _cpu_brand_string = nullptr;
 static int64_t _max_qualified_cpu_frequency = 0;
 
 static int _no_of_threads = 0;
@@ -2306,7 +2313,7 @@ const char* const _model_id_pentium_pro[] = {
   "",
   "Haswell",              // 0x45 "4th Generation Intel Core Processor"
   "Haswell",              // 0x46 "4th Generation Intel Core Processor"
-  NULL
+  nullptr
 };
 
 /* Brand ID is for back compatibility
@@ -2321,7 +2328,7 @@ const char* const _brand_id[] = {
   "",
   "",
   "Intel Pentium 4 processor",
-  NULL
+  nullptr
 };
 
 
@@ -2469,7 +2476,7 @@ void VM_Version::initialize_tsc(void) {
   ResourceMark rm;
 
   cpuid_brand_string_stub_blob = BufferBlob::create("getCPUIDBrandString_stub", cpuid_brand_string_stub_size);
-  if (cpuid_brand_string_stub_blob == NULL) {
+  if (cpuid_brand_string_stub_blob == nullptr) {
     vm_exit_during_initialization("Unable to allocate getCPUIDBrandString_stub");
   }
   CodeBuffer c(cpuid_brand_string_stub_blob);
@@ -2481,12 +2488,12 @@ void VM_Version::initialize_tsc(void) {
 const char* VM_Version::cpu_model_description(void) {
   uint32_t cpu_family = extended_cpu_family();
   uint32_t cpu_model = extended_cpu_model();
-  const char* model = NULL;
+  const char* model = nullptr;
 
   if (cpu_family == CPU_FAMILY_PENTIUMPRO) {
     for (uint32_t i = 0; i <= cpu_model; i++) {
       model = _model_id_pentium_pro[i];
-      if (model == NULL) {
+      if (model == nullptr) {
         break;
       }
     }
@@ -2495,27 +2502,27 @@ const char* VM_Version::cpu_model_description(void) {
 }
 
 const char* VM_Version::cpu_brand_string(void) {
-  if (_cpu_brand_string == NULL) {
+  if (_cpu_brand_string == nullptr) {
     _cpu_brand_string = NEW_C_HEAP_ARRAY_RETURN_NULL(char, CPU_EBS_MAX_LENGTH, mtInternal);
-    if (NULL == _cpu_brand_string) {
-      return NULL;
+    if (nullptr == _cpu_brand_string) {
+      return nullptr;
     }
     int ret_val = cpu_extended_brand_string(_cpu_brand_string, CPU_EBS_MAX_LENGTH);
     if (ret_val != OS_OK) {
       FREE_C_HEAP_ARRAY(char, _cpu_brand_string);
-      _cpu_brand_string = NULL;
+      _cpu_brand_string = nullptr;
     }
   }
   return _cpu_brand_string;
 }
 
 const char* VM_Version::cpu_brand(void) {
-  const char*  brand  = NULL;
+  const char*  brand  = nullptr;
 
   if ((_cpuid_info.std_cpuid1_ebx.value & 0xFF) > 0) {
     int brand_num = _cpuid_info.std_cpuid1_ebx.value & 0xFF;
     brand = _brand_id[0];
-    for (int i = 0; brand != NULL && i <= brand_num; i += 1) {
+    for (int i = 0; brand != nullptr && i <= brand_num; i += 1) {
       brand = _brand_id[i];
     }
   }
@@ -2605,11 +2612,11 @@ const char* VM_Version::cpu_family_description(void) {
 }
 
 int VM_Version::cpu_type_description(char* const buf, size_t buf_len) {
-  assert(buf != NULL, "buffer is NULL!");
+  assert(buf != nullptr, "buffer is null!");
   assert(buf_len >= CPU_TYPE_DESC_BUF_SIZE, "buffer len should at least be == CPU_TYPE_DESC_BUF_SIZE!");
 
-  const char* cpu_type = NULL;
-  const char* x64 = NULL;
+  const char* cpu_type = nullptr;
+  const char* x64 = nullptr;
 
   if (is_intel()) {
     cpu_type = "Intel";
@@ -2642,9 +2649,9 @@ int VM_Version::cpu_type_description(char* const buf, size_t buf_len) {
 }
 
 int VM_Version::cpu_extended_brand_string(char* const buf, size_t buf_len) {
-  assert(buf != NULL, "buffer is NULL!");
+  assert(buf != nullptr, "buffer is null!");
   assert(buf_len >= CPU_EBS_MAX_LENGTH, "buffer len should at least be == CPU_EBS_MAX_LENGTH!");
-  assert(getCPUIDBrandString_stub != NULL, "not initialized");
+  assert(getCPUIDBrandString_stub != nullptr, "not initialized");
 
   // invoke newly generated asm code to fetch CPU Brand String
   getCPUIDBrandString_stub(&_cpuid_info);
@@ -2667,7 +2674,7 @@ int VM_Version::cpu_extended_brand_string(char* const buf, size_t buf_len) {
 }
 
 size_t VM_Version::cpu_write_support_string(char* const buf, size_t buf_len) {
-  guarantee(buf != NULL, "buffer is NULL!");
+  guarantee(buf != nullptr, "buffer is null!");
   guarantee(buf_len > 0, "buffer len not enough!");
 
   unsigned int flag = 0;
@@ -2728,31 +2735,31 @@ size_t VM_Version::cpu_write_support_string(char* const buf, size_t buf_len) {
  * feature set.
  */
 int VM_Version::cpu_detailed_description(char* const buf, size_t buf_len) {
-  assert(buf != NULL, "buffer is NULL!");
+  assert(buf != nullptr, "buffer is null!");
   assert(buf_len >= CPU_DETAILED_DESC_BUF_SIZE, "buffer len should at least be == CPU_DETAILED_DESC_BUF_SIZE!");
 
   static const char* unknown = "<unknown>";
   char               vendor_id[VENDOR_LENGTH];
-  const char*        family = NULL;
-  const char*        model = NULL;
-  const char*        brand = NULL;
+  const char*        family = nullptr;
+  const char*        model = nullptr;
+  const char*        brand = nullptr;
   int                outputLen = 0;
 
   family = cpu_family_description();
-  if (family == NULL) {
+  if (family == nullptr) {
     family = unknown;
   }
 
   model = cpu_model_description();
-  if (model == NULL) {
+  if (model == nullptr) {
     model = unknown;
   }
 
   brand = cpu_brand_string();
 
-  if (brand == NULL) {
+  if (brand == nullptr) {
     brand = cpu_brand();
-    if (brand == NULL) {
+    if (brand == nullptr) {
       brand = unknown;
     }
   }
@@ -2821,7 +2828,7 @@ void VM_Version::initialize_cpu_information() {
  */
 int64_t VM_Version::max_qualified_cpu_freq_from_brand_string(void) {
   const char* const brand_string = cpu_brand_string();
-  if (brand_string == NULL) {
+  if (brand_string == nullptr) {
     return 0;
   }
   const int64_t MEGA = 1000000;
@@ -3207,3 +3214,19 @@ intx VM_Version::allocate_prefetch_distance(bool use_watermark_prefetch) {
     }
   }
 }
+
+bool VM_Version::is_intrinsic_supported(vmIntrinsicID id) {
+  assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
+  switch (id) {
+  case vmIntrinsics::_floatToFloat16:
+  case vmIntrinsics::_float16ToFloat:
+    if (!supports_float16()) {
+      return false;
+    }
+    break;
+  default:
+    break;
+  }
+  return true;
+}
+

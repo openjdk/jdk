@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,8 +68,8 @@ public interface ModuleElement extends Element, QualifiedNameable {
 
     /**
      * Returns the fully qualified name of this module.  For an
-     * {@linkplain #isUnnamed() unnamed module}, an <a
-     * href=Name.html#empty_name>empty name</a> is returned.
+     * {@linkplain #isUnnamed() unnamed module}, an {@linkplain
+     * Name##empty_name empty name} is returned.
      *
      * @apiNote If the module name consists of one identifier, then
      * this method returns that identifier, which is deemed to be
@@ -87,8 +87,8 @@ public interface ModuleElement extends Element, QualifiedNameable {
 
     /**
      * Returns the simple name of this module.  For an {@linkplain
-     * #isUnnamed() unnamed module}, an <a
-     * href=Name.html#empty_name>empty name</a> is returned.
+     * #isUnnamed() unnamed module}, an {@linkplain
+     * Name##empty_name empty name} is returned.
      *
      * @apiNote If the module name consists of one identifier, then
      * this method returns that identifier.  If the module name

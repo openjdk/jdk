@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,8 @@
 RECOMMENDED_PANDOC_VERSION=2.19.2
 
 ###############################################################################
-# Setup the most fundamental tools that relies on not much else to set up,
-# but is used by much of the early bootstrap code.
+# Setup the most fundamental tools, used for setting up build platform and
+# path handling.
 AC_DEFUN_ONCE([BASIC_SETUP_FUNDAMENTAL_TOOLS],
 [
   # Bootstrapping: These tools are needed by UTIL_LOOKUP_PROGS
@@ -42,7 +42,28 @@ AC_DEFUN_ONCE([BASIC_SETUP_FUNDAMENTAL_TOOLS],
   UTIL_CHECK_NONEMPTY(FILE)
   AC_PATH_PROGS(LDD, ldd)
 
-  # First are all the fundamental required tools.
+  # Required tools
+  UTIL_REQUIRE_PROGS(ECHO, echo)
+  UTIL_REQUIRE_PROGS(TR, tr)
+  UTIL_REQUIRE_PROGS(UNAME, uname)
+  UTIL_REQUIRE_PROGS(WC, wc)
+
+  # Required tools with some special treatment
+  UTIL_REQUIRE_SPECIAL(GREP, [AC_PROG_GREP])
+  UTIL_REQUIRE_SPECIAL(EGREP, [AC_PROG_EGREP])
+  UTIL_REQUIRE_SPECIAL(SED, [AC_PROG_SED])
+
+  # Tools only needed on some platforms
+  UTIL_LOOKUP_PROGS(PATHTOOL, cygpath wslpath)
+  UTIL_LOOKUP_PROGS(CMD, cmd.exe, $PATH:/cygdrive/c/windows/system32:/mnt/c/windows/system32:/c/windows/system32)
+])
+
+###############################################################################
+# Setup further tools that should be resolved early but after setting up
+# build platform and path handling.
+AC_DEFUN_ONCE([BASIC_SETUP_TOOLS],
+[
+  # Required tools
   UTIL_REQUIRE_PROGS(BASH, bash)
   UTIL_REQUIRE_PROGS(CAT, cat)
   UTIL_REQUIRE_PROGS(CHMOD, chmod)
@@ -50,7 +71,6 @@ AC_DEFUN_ONCE([BASIC_SETUP_FUNDAMENTAL_TOOLS],
   UTIL_REQUIRE_PROGS(CUT, cut)
   UTIL_REQUIRE_PROGS(DATE, date)
   UTIL_REQUIRE_PROGS(DIFF, gdiff diff)
-  UTIL_REQUIRE_PROGS(ECHO, echo)
   UTIL_REQUIRE_PROGS(EXPR, expr)
   UTIL_REQUIRE_PROGS(FIND, find)
   UTIL_REQUIRE_PROGS(GUNZIP, gunzip)
@@ -72,27 +92,20 @@ AC_DEFUN_ONCE([BASIC_SETUP_FUNDAMENTAL_TOOLS],
   UTIL_REQUIRE_PROGS(TAR, gtar tar)
   UTIL_REQUIRE_PROGS(TEE, tee)
   UTIL_REQUIRE_PROGS(TOUCH, touch)
-  UTIL_REQUIRE_PROGS(TR, tr)
-  UTIL_REQUIRE_PROGS(UNAME, uname)
-  UTIL_REQUIRE_PROGS(WC, wc)
   UTIL_REQUIRE_PROGS(XARGS, xargs)
 
-  # Then required tools that require some special treatment.
-  UTIL_REQUIRE_SPECIAL(GREP, [AC_PROG_GREP])
-  UTIL_REQUIRE_SPECIAL(EGREP, [AC_PROG_EGREP])
+  # Required tools with some special treatment
   UTIL_REQUIRE_SPECIAL(FGREP, [AC_PROG_FGREP])
-  UTIL_REQUIRE_SPECIAL(SED, [AC_PROG_SED])
 
   # Optional tools, we can do without them
   UTIL_LOOKUP_PROGS(DF, df)
   UTIL_LOOKUP_PROGS(GIT, git)
   UTIL_LOOKUP_PROGS(NICE, nice)
   UTIL_LOOKUP_PROGS(READLINK, greadlink readlink)
+  UTIL_LOOKUP_PROGS(WHOAMI, whoami)
 
-  # These are only needed on some platforms
-  UTIL_LOOKUP_PROGS(PATHTOOL, cygpath wslpath)
+  # Tools only needed on some platforms
   UTIL_LOOKUP_PROGS(LSB_RELEASE, lsb_release)
-  UTIL_LOOKUP_PROGS(CMD, cmd.exe, $PATH:/cygdrive/c/windows/system32:/mnt/c/windows/system32:/c/windows/system32)
 
   # For compare.sh only
   UTIL_LOOKUP_PROGS(CMP, cmp)
@@ -285,7 +298,7 @@ AC_DEFUN([BASIC_CHECK_TAR],
   if test "x$TAR_TYPE" = "xgnu"; then
     TAR_INCLUDE_PARAM="T"
     TAR_SUPPORTS_TRANSFORM="true"
-  elif test "x$TAR_TYPE" = "aix"; then
+  elif test "x$TAR_TYPE" = "xaix"; then
     # -L InputList of aix tar: name of file listing the files and directories
     # that need to be archived or extracted
     TAR_INCLUDE_PARAM="L"
@@ -433,7 +446,7 @@ AC_DEFUN_ONCE([BASIC_SETUP_PANDOC],
 
   if test "x$PANDOC" != x; then
     AC_MSG_CHECKING([for pandoc version])
-    PANDOC_VERSION=`$PANDOC --version 2>&1 | $HEAD -1 | $CUT -d " " -f 2`
+    PANDOC_VERSION=`$PANDOC --version 2>&1 | $TR -d '\r' | $HEAD -1 | $CUT -d " " -f 2`
     AC_MSG_RESULT([$PANDOC_VERSION])
 
     if test "x$PANDOC_VERSION" != x$RECOMMENDED_PANDOC_VERSION; then
@@ -442,7 +455,7 @@ AC_DEFUN_ONCE([BASIC_SETUP_PANDOC],
 
     PANDOC_MARKDOWN_FLAG="markdown"
     AC_MSG_CHECKING([if the pandoc smart extension needs to be disabled for markdown])
-    if $PANDOC --list-extensions | $GREP -q '\+smart'; then
+    if $PANDOC --list-extensions | $GREP -q '+smart'; then
       AC_MSG_RESULT([yes])
       PANDOC_MARKDOWN_FLAG="markdown-smart"
     else

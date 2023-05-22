@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,7 @@ class JfrStartFlightRecordingDCmd : public JfrDCmd {
     return "Medium: Depending on the settings for a recording, the impact can range from low to high.";
   }
   static const JavaPermission permission() {
-    JavaPermission p = {"java.lang.management.ManagementPermission", "monitor", NULL};
+    JavaPermission p = {"java.lang.management.ManagementPermission", "monitor", nullptr};
     return p;
   }
   virtual const char* javaClass() const {
@@ -84,7 +84,7 @@ class JfrDumpFlightRecordingDCmd : public JfrDCmd {
     return "Low";
   }
   static const JavaPermission permission() {
-    JavaPermission p = {"java.lang.management.ManagementPermission", "monitor", NULL};
+    JavaPermission p = {"java.lang.management.ManagementPermission", "monitor", nullptr};
     return p;
   }
   virtual const char* javaClass() const {
@@ -109,7 +109,7 @@ class JfrCheckFlightRecordingDCmd : public JfrDCmd {
     return "Low";
   }
   static const JavaPermission permission() {
-    JavaPermission p = {"java.lang.management.ManagementPermission", "monitor", NULL};
+    JavaPermission p = {"java.lang.management.ManagementPermission", "monitor", nullptr};
     return p;
   }
   virtual const char* javaClass() const {
@@ -134,7 +134,7 @@ class JfrStopFlightRecordingDCmd : public JfrDCmd {
     return "Low";
   }
   static const JavaPermission permission() {
-    JavaPermission p = {"java.lang.management.ManagementPermission", "monitor", NULL};
+    JavaPermission p = {"java.lang.management.ManagementPermission", "monitor", nullptr};
     return p;
   }
   virtual const char* javaClass() const {
@@ -157,6 +157,7 @@ class JfrConfigureFlightRecorderDCmd : public DCmdWithParser {
   DCmdArgument<MemorySizeArgument> _memory_size;
   DCmdArgument<MemorySizeArgument> _max_chunk_size;
   DCmdArgument<bool>  _sample_threads;
+  DCmdArgument<bool>  _preserve_repository;
   bool _verbose;
 
  public:
@@ -174,10 +175,10 @@ class JfrConfigureFlightRecorderDCmd : public DCmdWithParser {
     return "Low";
   }
   static const JavaPermission permission() {
-    JavaPermission p = {"java.lang.management.ManagementPermission", "monitor", NULL};
+    JavaPermission p = {"java.lang.management.ManagementPermission", "monitor", nullptr};
     return p;
   }
-  static int num_arguments();
+  static int num_arguments() { return 10; }
   virtual void execute(DCmdSource source, TRAPS);
   virtual void print_help(const char* name) const;
 };

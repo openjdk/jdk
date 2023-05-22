@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,6 @@ package java.text;
 import java.lang.ref.SoftReference;
 import java.text.spi.CollatorProvider;
 import java.util.Locale;
-import java.util.ResourceBundle;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import sun.util.locale.provider.LocaleProviderAdapter;
@@ -71,16 +70,15 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * <p>
  * The following example shows how to compare two strings using
  * the {@code Collator} for the default locale.
- * <blockquote>
- * <pre>{@code
+ * {@snippet lang=java :
  * // Compare two strings in the default locale
  * Collator myCollator = Collator.getInstance();
- * if( myCollator.compare("abc", "ABC") < 0 )
+ * if (myCollator.compare("abc", "ABC") < 0) {
  *     System.out.println("abc is less than ABC");
- * else
+ * } else {
  *     System.out.println("abc is greater than or equal to ABC");
- * }</pre>
- * </blockquote>
+ * }
+ * }
  *
  * <p>
  * You can set a {@code Collator}'s <em>strength</em> property
@@ -93,16 +91,14 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * "e" and "E" are tertiary differences and "e" and "e" are identical.
  * The following shows how both case and accents could be ignored for
  * US English.
- * <blockquote>
- * <pre>
- * //Get the Collator for US English and set its strength to PRIMARY
+ * {@snippet lang=java :
+ * // Get the Collator for US English and set its strength to PRIMARY
  * Collator usCollator = Collator.getInstance(Locale.US);
  * usCollator.setStrength(Collator.PRIMARY);
- * if( usCollator.compare("abc", "ABC") == 0 ) {
+ * if (usCollator.compare("abc", "ABC") == 0) {
  *     System.out.println("Strings are equivalent");
  * }
- * </pre>
- * </blockquote>
+ * }
  * <p>
  * For comparing {@code String}s exactly once, the {@code compare}
  * method provides the best performance. When sorting a list of
@@ -113,7 +109,7 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * against other {@code CollationKey}s. A {@code CollationKey} is
  * created by a {@code Collator} object for a given {@code String}.
  * <br>
- * <strong>Note:</strong> {@code CollationKey}s from different
+ * @apiNote {@code CollationKey}s from different
  * {@code Collator}s can not be compared. See the class description
  * for {@link CollationKey}
  * for an example using {@code CollationKey}s.
@@ -191,6 +187,8 @@ public abstract class Collator
      * described in
      * <a href="http://www.unicode.org/reports/tr15/">Unicode
      * Standard Annex #15: Unicode Normalization Forms</a>.
+     *
+     * @spec https://www.unicode.org/reports/tr15 Unicode Normalization Forms
      * @see java.text.Collator#getDecomposition
      * @see java.text.Collator#setDecomposition
      */
@@ -210,6 +208,8 @@ public abstract class Collator
      * described in
      * <a href="http://www.unicode.org/reports/tr15/">Unicode
      * Standard Annex #15: Unicode Normalization Forms</a>.
+     *
+     * @spec https://www.unicode.org/reports/tr15 Unicode Normalization Forms
      * @see java.text.Collator#getDecomposition
      * @see java.text.Collator#setDecomposition
      */
@@ -217,7 +217,7 @@ public abstract class Collator
 
     /**
      * Gets the Collator for the current default locale.
-     * The default locale is determined by java.util.Locale.getDefault.
+     * The default locale is determined by {@link Locale#getDefault()}.
      * @return the Collator for the default locale.(for example, en_US)
      * @see java.util.Locale#getDefault
      */
@@ -227,6 +227,19 @@ public abstract class Collator
 
     /**
      * Gets the Collator for the desired locale.
+     * @apiNote Implementations of {@code Collator} class may produce
+     * different instances based on the "{@code co}"
+     * <a href="https://www.unicode.org/reports/tr35/#UnicodeCollationIdentifier">
+     * Unicode collation identifier</a> in the {@code desiredLocale}.
+     * For example:
+     * {@snippet lang = java:
+     * Collator.getInstance(Locale.forLanguageTag("sv-u-co-trad"));
+     * }
+     * may return a {@code Collator} instance with the Swedish traditional sorting, which
+     * gives 'v' and 'w' the same sorting order, while the {@code Collator} instance
+     * for the Swedish locale without "co" identifier distinguishes 'v' and 'w'.
+     * @spec https://www.unicode.org/reports/tr35/ Unicode Locale Data Markup Language
+     *     (LDML)
      * @param desiredLocale the desired locale.
      * @return the Collator for the desired locale.
      * @see java.util.Locale

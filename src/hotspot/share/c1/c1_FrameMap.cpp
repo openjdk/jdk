@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -162,7 +162,11 @@ FrameMap::FrameMap(ciMethod* method, int monitors, int reserved_argument_area_si
   assert(monitors >= 0, "not set");
   _num_monitors = monitors;
   assert(reserved_argument_area_size >= 0, "not set");
-  _reserved_argument_area_size = MAX2(4, reserved_argument_area_size) * BytesPerWord;
+
+  // reserved_argument_area_size does not include stack space that needs to be occupied in the stub
+  // and the stub will modify the value through update_reserved_argument_area_size(int size) if needed.
+  // see the constructor of class CounterOverflowStub for example.
+  _reserved_argument_area_size = reserved_argument_area_size * BytesPerWord;
 
   _argcount = method->arg_size();
   _argument_locations = new intArray(_argcount, _argcount, -1);
@@ -285,12 +289,12 @@ ByteSize FrameMap::sp_offset_for_monitor_base(const int index) const {
 
 ByteSize FrameMap::sp_offset_for_monitor_lock(int index) const {
   check_monitor_index(index);
-  return sp_offset_for_monitor_base(index) + in_ByteSize(BasicObjectLock::lock_offset_in_bytes());;
+  return sp_offset_for_monitor_base(index) + BasicObjectLock::lock_offset();
 }
 
 ByteSize FrameMap::sp_offset_for_monitor_object(int index) const {
   check_monitor_index(index);
-  return sp_offset_for_monitor_base(index) + in_ByteSize(BasicObjectLock::obj_offset_in_bytes());
+  return sp_offset_for_monitor_base(index) + BasicObjectLock::obj_offset();
 }
 
 

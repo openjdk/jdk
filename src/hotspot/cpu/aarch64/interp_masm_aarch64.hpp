@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2015, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -76,6 +76,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   void restore_locals() {
     ldr(rlocals, Address(rfp, frame::interpreter_frame_locals_offset * wordSize));
+    lea(rlocals, Address(rfp, rlocals, Address::lsl(3)));
   }
 
   void restore_constant_pool_cache() {
@@ -128,12 +129,12 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   void get_constant_pool_cache(Register reg) {
     get_constant_pool(reg);
-    ldr(reg, Address(reg, ConstantPool::cache_offset_in_bytes()));
+    ldr(reg, Address(reg, ConstantPool::cache_offset()));
   }
 
   void get_cpool_and_tags(Register cpool, Register tags) {
     get_constant_pool(cpool);
-    ldr(tags, Address(cpool, ConstantPool::tags_offset_in_bytes()));
+    ldr(tags, Address(cpool, ConstantPool::tags_offset()));
   }
 
   void get_unsigned_2_byte_index_at_bcp(Register reg, int bcp_offset);
@@ -174,7 +175,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   void empty_expression_stack() {
     ldr(esp, Address(rfp, frame::interpreter_frame_monitor_block_top_offset * wordSize));
-    // NULL last_sp until next java call
+    // null last_sp until next java call
     str(zr, Address(rfp, frame::interpreter_frame_last_sp_offset * wordSize));
   }
 
@@ -318,6 +319,8 @@ class InterpreterMacroAssembler: public MacroAssembler {
     set_last_Java_frame(esp, rfp, (address) pc(), rscratch1);
     MacroAssembler::_call_Unimplemented(call_site);
   }
+
+  void load_resolved_indy_entry(Register cache, Register index);
 };
 
 #endif // CPU_AARCH64_INTERP_MASM_AARCH64_HPP

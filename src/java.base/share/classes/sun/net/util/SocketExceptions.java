@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,16 +67,7 @@ public final class SocketExceptions {
     }
 
     private static IOException ofInet(IOException e, InetSocketAddress addr) {
-        int port = addr.getPort();
-        String host = addr.getHostString();
-        StringBuilder sb = new StringBuilder();
-        sb.append(e.getMessage());
-        sb.append(": ");
-        sb.append(host);
-        sb.append(':');
-        sb.append(Integer.toString(port));
-        String enhancedMsg = sb.toString();
-        return create(e, enhancedMsg);
+        return create(e, String.join(": ", e.getMessage(), addr.toString()));
     }
 
     private static IOException ofUnixDomain(IOException e, UnixDomainSocketAddress addr) {

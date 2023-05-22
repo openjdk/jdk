@@ -105,8 +105,8 @@ public:
   static jobject get_module(jclass clazz, TRAPS);
 
   // Return the java.lang.Module object for this class loader and package.
-  // Returns NULL if the package name is empty, if the resulting package
-  // entry is NULL, if the module is not found or is unnamed.
+  // Returns null if the package name is empty, if the resulting package
+  // entry is null, if the module is not found or is unnamed.
   // The package should contain /'s, not .'s, as in java/lang, not java.lang.
   static oop get_named_module(Handle h_loader, const char* package);
 

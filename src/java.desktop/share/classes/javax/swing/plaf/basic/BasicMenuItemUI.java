@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1160,6 +1160,9 @@ public class BasicMenuItemUI extends MenuItemUI
                 // existed, and install a new one if the text installed
                 // into the JLabel is html source.
                 JMenuItem lbl = ((JMenuItem) e.getSource());
+                if (SwingUtilities2.isScaleChanged(e)) {
+                    MenuItemLayoutHelper.clearUsedParentClientProperties(lbl);
+                }
                 String text = lbl.getText();
                 BasicHTML.updateRenderer(lbl, text);
             } else if (name  == "iconTextGap") {

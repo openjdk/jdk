@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -462,6 +462,11 @@ public class DocCommentTester {
                 return null;
             }
 
+            public Void visitEscape(EscapeTree node, Void p) {
+                header(node, node.getBody());
+                return null;
+            }
+
             public Void visitHidden(HiddenTree node, Void p) {
                 header(node);
                 indent(+1);
@@ -804,11 +809,15 @@ public class DocCommentTester {
                 indent += n;
             }
 
+            private static final int BEGIN = 32;
+            private static final String ELLIPSIS = "...";
+            private static final int END = 32;
+
             String compress(String s) {
                 s = s.replace("\n", "|").replace(" ", "_");
-                return (s.length() < 32)
+                return (s.length() < BEGIN + ELLIPSIS.length() + END)
                         ? s
-                        : s.substring(0, 16) + "..." + s.substring(16);
+                        : s.substring(0, BEGIN) + ELLIPSIS + s.substring(s.length() - END);
             }
 
             String quote(String s) {
@@ -895,8 +904,13 @@ public class DocCommentTester {
 
         @Override
         void check(TreePath path, Name name) throws Exception {
+            var annos = (path.getLeaf() instanceof MethodTree m)
+                    ? m.getModifiers().getAnnotations().toString()
+                    : "";
+            boolean normalizeTags = !annos.equals("@NormalizeTags(false)");
+
             String raw = trees.getDocComment(path);
-            String normRaw = normalize(raw);
+            String normRaw = normalize(raw, normalizeTags);
 
             StringWriter out = new StringWriter();
             DocPretty dp = new DocPretty(out);
@@ -913,36 +927,44 @@ public class DocCommentTester {
         }
 
         /**
-         * Normalize white space in places where the tree does not preserve it.
-         * Maintain contents of at-code and at-literal inline tags.
+         * Normalize whitespace in places where the tree does not preserve it.
+         * Maintain contents of inline tags unless {@code normalizeTags} is
+         * {@code false}. This should normally be {@code true}, but should be
+         * set to {@code false} when there is syntactically invalid content
+         * that might resemble an inline tag, but which is not so.
+         *
+         * @param s the comment text to be normalized
+         * @param normalizeTags whether to normalize inline tags
+         * @return the normalized content
          */
-        String normalize(String s) {
-            String s2 = s.trim().replaceFirst("\\.\\s*\\n *@", ".\n@");
+        String normalize(String s, boolean normalizeTags) {
+            String s2 = s.trim().replaceFirst("\\.\\s*\\n *@(?![@*])", ".\n@");
             StringBuilder sb = new StringBuilder();
-            Pattern p = Pattern.compile("\\{@(code|literal)( )?");
+            Pattern p = Pattern.compile("(?i)\\{@([a-z][a-z0-9.:-]*)( )?");
             Matcher m = p.matcher(s2);
             int start = 0;
-            while (m.find(start)) {
-                sb.append(normalizeFragment(s2.substring(start, m.start())));
-                sb.append(m.group().trim());
-                start = copyLiteral(s2, m.end(), sb);
+            if (normalizeTags) {
+                while (m.find(start)) {
+                    sb.append(normalizeFragment(s2.substring(start, m.start())));
+                    sb.append(m.group().trim());
+                    start = copyLiteral(s2, m.end(), sb);
+                }
             }
             sb.append(normalizeFragment(s2.substring(start)));
-            return sb.toString();
+            return sb.toString()
+                    .replaceAll("(?i)\\{@([a-z][a-z0-9.:-]*)\\s+}", "{@$1}")
+                    .replaceAll("(\\{@value\\s+[^}]+)\\s+(})", "$1$2");
         }
 
         String normalizeFragment(String s) {
-            return s.replaceAll("\\{@docRoot\\s+}", "{@docRoot}")
-                    .replaceAll("\\{@inheritDoc\\s+}", "{@inheritDoc}")
-                    .replaceAll("(\\{@value\\s+[^}]+)\\s+(})", "$1$2")
-                    .replaceAll("\n[ \t]+@", "\n@");
+            return s.replaceAll("\n[ \t]+@(?![@*])", "\n@");
         }
 
         int copyLiteral(String s, int start, StringBuilder sb) {
             int depth = 0;
             for (int i = start; i < s.length(); i++) {
                 char ch = s.charAt(i);
-                if (i == start && !Character.isWhitespace(ch)) {
+                if (i == start && !Character.isWhitespace(ch) && ch != '}') {
                     sb.append(' ');
                 }
                 switch (ch) {

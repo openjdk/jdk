@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
 
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.Point;
@@ -138,6 +137,10 @@ public class ScaledLineBorderTest {
                 thickness, img);
     }
 
+    private enum State {
+        BACKGROUND, LEFT, INSIDE, RIGHT
+    }
+
     private static void checkBorder(final int xStart, final int yStart,
                                     final int xStep,  final int yStep,
                                     final int thickness,
@@ -204,10 +207,6 @@ public class ScaledLineBorderTest {
         } while (xStep > 0 && ((x += xStep) < width));
     }
 
-    private enum State {
-        BACKGROUND, LEFT, INSIDE, RIGHT
-    }
-
     private static void throwWrongThickness(int thickness, int borderThickness,
                                             int x, int y) {
         throw new Error(
@@ -243,14 +242,11 @@ public class ScaledLineBorderTest {
                 childSize = childPanel.getPreferredSize();
             }
             childPanel.setBounds(0, childSize.height * i, childSize.width, childSize.height);
+
+            panelLocations.add(childPanel.getLocation());
         }
 
         contentPanel.setSize(childSize.width, childSize.height * 4);
-
-        // Save coordinates of the panels
-        for (Component comp : contentPanel.getComponents()) {
-            panelLocations.add(comp.getLocation());
-        }
 
         return contentPanel;
     }

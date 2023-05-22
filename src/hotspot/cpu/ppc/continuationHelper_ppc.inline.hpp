@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
 template<typename FKind>
 static inline intptr_t** link_address(const frame& f) {
   Unimplemented();
-  return NULL;
+  return nullptr;
 }
 
 inline int ContinuationHelper::frame_align_words(int size) {
@@ -107,7 +107,7 @@ inline void ContinuationHelper::Frame::patch_pc(const frame& f, address pc) {
 }
 
 //                     | Minimal ABI          |
-//                     | (frame::abi_minframe)|
+//                     | (frame::java_abi)    |
 //                     | 4 words              |
 //                     | Caller's SP          |<- FP of f's caller
 //                     |======================|
@@ -124,7 +124,7 @@ inline void ContinuationHelper::Frame::patch_pc(const frame& f, address pc) {
 //                     | SP alignment (opt.)  |
 //                     |----------------------|
 //                     | Minimal ABI          |
-//                     | (frame::abi_minframe)|
+//                     | (frame::java_abi)    |
 //                     | 4 words              |
 //                     | Caller's SP          |<- SP of f's caller / FP of f
 //                     |======================|
@@ -145,7 +145,7 @@ inline void ContinuationHelper::Frame::patch_pc(const frame& f, address pc) {
 //                     | SP alignment (opt.)  |
 //                     |----------------------|
 //                     | Minimal ABI          |
-//                     | (frame::abi_minframe)|
+//                     | (frame::java_abi)    |
 //                     | 4 words              |
 //                     | Caller's SP          |<- SP of f / FP of f's callee
 //                     |======================|
@@ -170,7 +170,7 @@ inline intptr_t* ContinuationHelper::InterpretedFrame::frame_top(const frame& f,
 }
 
 inline intptr_t* ContinuationHelper::InterpretedFrame::frame_bottom(const frame& f) {
-  return (intptr_t*)f.at(ijava_idx(locals)) + 1; // exclusive (will not be copied), so we add 1 word
+  return (intptr_t*)f.at_relative(ijava_idx(locals)) + 1; // exclusive (will not be copied), so we add 1 word
 }
 
 inline intptr_t* ContinuationHelper::InterpretedFrame::frame_top(const frame& f, int callee_argsize_incl_metadata, bool callee_interpreted) {

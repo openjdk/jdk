@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Arm Limited. All rights reserved.
+ * Copyright (c) 2022, 2023, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,8 @@
 
 package compiler.vectorization.runner;
 
+import compiler.lib.ir_framework.*;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -34,6 +36,7 @@ import java.lang.reflect.Modifier;
 
 import java.io.File;
 
+import jdk.test.lib.Platform;
 import jdk.test.lib.Utils;
 
 import jdk.test.whitebox.WhiteBox;
@@ -50,21 +53,17 @@ public class VectorizationTestRunner {
 
     private static final long COMP_THRES_SECONDS = 30;
 
-    @Target(ElementType.METHOD)
-    @Retention(RetentionPolicy.RUNTIME)
-    protected @interface Test {}
-
     protected void run() {
-        // Add extra VM options to enable post loop vectorization
-        WB.setBooleanVMFlag("UnlockExperimentalVMOptions", true);
-        WB.setBooleanVMFlag("PostLoopMultiversioning", true);
-
+        // 1) Vectorization correctness test
         // For each method annotated with @Test in the test method, this test runner
         // invokes it twice - first time in the interpreter and second time compiled
         // by C2. Then this runner compares the two return values. Hence we require
         // each test method returning a primitive value or an array of primitive type.
         // And each test method should not throw any exceptions.
         Class klass = getClass();
+        // Add extra VM options to verify experimental auto-vectorization
+        WB.setBooleanVMFlag("UnlockExperimentalVMOptions", true);
+        WB.setBooleanVMFlag("PostLoopMultiversioning", true);
         for (Method method : klass.getDeclaredMethods()) {
             try {
                 if (method.isAnnotationPresent(Test.class)) {
@@ -76,6 +75,14 @@ public class VectorizationTestRunner {
                         "." + method.getName() + ": " + e.getMessage());
             }
         }
+
+        // 2) Vectorization ability test
+        // To test vectorizability, invoke the IR test framework to check existence of
+        // expected C2 IR node.
+        TestFramework irTest = new TestFramework(klass);
+        // Add extra VM options to enable more auto-vectorization chances
+        irTest.addFlags("-XX:-OptimizeFill");
+        irTest.start();
     }
 
     private void verifyTestMethod(Method method) {
@@ -204,4 +211,3 @@ public class VectorizationTestRunner {
         testObj.run();
     }
 }
-

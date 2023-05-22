@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.file.DirectoryStream;
 import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.FileStore;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystemAlreadyExistsException;
 import java.nio.file.FileSystemException;
@@ -45,6 +46,7 @@ import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributeView;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileAttributeView;
 import java.nio.file.spi.FileSystemProvider;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -73,7 +75,7 @@ import static java.nio.file.StandardCopyOption.*;
  * @test
  * @bug 6990846 7009092 7009085 7015391 7014948 7005986 7017840 7007596
  *      7157656 8002390 7012868 7012856 8015728 8038500 8040059 8069211
- *      8131067 8034802 8210899 8273961 8271079
+ *      8131067 8034802 8210899 8273961 8271079 8299864
  * @summary Test Zip filesystem provider
  * @modules jdk.zipfs
  * @run main ZipFSTester
@@ -92,7 +94,8 @@ public class ZipFSTester {
         try (FileSystem fs = newZipFileSystem(jarFile, Collections.emptyMap())) {
             test0(fs);
             test1(fs);
-            test2(fs);   // more tests
+            test2(fs);
+            testFileStoreNullArgs(fs); // more tests
         }
         testStreamChannel();
         testTime(jarFile);
@@ -100,7 +103,7 @@ public class ZipFSTester {
         test8131067();
     }
 
-    private static Random rdm = new Random();
+    private static final Random RDM = new Random();
 
     static void test0(FileSystem fs)
         throws Exception
@@ -131,7 +134,7 @@ public class ZipFSTester {
         String tmpName = src.toString();
         try (OutputStream os = Files.newOutputStream(src)) {
             byte[] bits = new byte[12345];
-            rdm.nextBytes(bits);
+            RDM.nextBytes(bits);
             os.write(bits);
         }
 
@@ -182,8 +185,8 @@ public class ZipFSTester {
             checkEqual(src, dst);
 
             // copy
-            Path dst2 = getPathWithParents(fs, "/xyz" + rdm.nextInt(100) +
-                                           "/efg" + rdm.nextInt(100) + "/foo.class");
+            Path dst2 = getPathWithParents(fs, "/xyz" + RDM.nextInt(100) +
+                                           "/efg" + RDM.nextInt(100) + "/foo.class");
             Files.copy(dst, dst2);
             //dst.moveTo(dst2);
             checkEqual(src, dst2);
@@ -360,7 +363,7 @@ public class ZipFSTester {
                                 z2zmove(fs2, fs3, path);
                                 itr.remove();
                             }
-                        } catch (FileAlreadyExistsException x){
+                        } catch (FileAlreadyExistsException x) {
                             itr.remove();
                         } catch (Exception x) {
                             x.printStackTrace();
@@ -419,7 +422,7 @@ public class ZipFSTester {
     static final int METHOD_DEFLATED   = 8;
 
     static Object[][] getEntries() {
-        Object[][] entries = new Object[10 + rdm.nextInt(20)][3];
+        Object[][] entries = new Object[10 + RDM.nextInt(20)][3];
         // first entries shall test the corner case of 0 bytes of data
         entries[0][0] = "entries" + 0;
         entries[0][1] = METHOD_STORED;
@@ -430,10 +433,10 @@ public class ZipFSTester {
         // the rest is random data
         for (int i = 2; i < entries.length; i++) {
             entries[i][0] = "entries" + i;
-            entries[i][1] = rdm.nextInt(10) % 2 == 0 ?
-                METHOD_STORED : METHOD_DEFLATED;
-            entries[i][2] = new byte[rdm.nextInt(8192)];
-            rdm.nextBytes((byte[])entries[i][2]);
+            entries[i][1] = RDM.nextInt(10) % 2 == 0 ?
+                    METHOD_STORED : METHOD_DEFLATED;
+            entries[i][2] = new byte[RDM.nextInt(8192)];
+            RDM.nextBytes((byte[]) entries[i][2]);
         }
         return entries;
     }
@@ -494,8 +497,8 @@ public class ZipFSTester {
                 int pos = 0;
                 int len = 0;
                 if (expected.length > 0) {
-                    pos = rdm.nextInt((int) sbc.size());
-                    len = rdm.nextInt(Math.min(buf.length, expected.length - pos));
+                    pos = RDM.nextInt((int) sbc.size());
+                    len = RDM.nextInt(Math.min(buf.length, expected.length - pos));
                 }
                 // System.out.printf("  --> %d, %d%n", pos, len);
                 bb.position(0).limit(len);    // bb.flip().limit(len);
@@ -932,8 +935,8 @@ public class ZipFSTester {
 
             // Check position(x) + read() at the specific pos/len
             for (int i = 0; i < 10; i++) {
-                int pos = rdm.nextInt((int)chSrc.size());
-                int limit = rdm.nextInt(1024);
+                int pos = RDM.nextInt((int) chSrc.size());
+                int limit = RDM.nextInt(1024);
                 if (chSrc.position(pos).position() != chDst.position(pos).position()) {
                     System.out.printf("dst/src.position(pos failed%n");
                 }
@@ -1079,4 +1082,42 @@ public class ZipFSTester {
             mkdirs(parent);
         return path;
     }
+
+    /**
+     * Tests if certain methods throw a NullPointerException if invoked with null
+     * as specified in java.nio.file.package-info.java
+     * @param fs file system containing at least one ZipFileStore
+     *
+     * @see 8299864
+     */
+    static void testFileStoreNullArgs(FileSystem fs)  {
+        FileStore store = fs.getFileStores().iterator().next();
+
+        // Make sure we are testing the right thing
+        if (!"jdk.nio.zipfs.ZipFileStore".equals(store.getClass().getName()))
+            throw new AssertionError(store.getClass().getName());
+
+        assertThrowsNPE(() -> store.supportsFileAttributeView((String) null));
+        assertThrowsNPE(() -> store.supportsFileAttributeView((Class<? extends FileAttributeView>) null));
+        assertThrowsNPE(() -> store.getAttribute(null));
+        assertThrowsNPE(() -> store.getFileStoreAttributeView(null));
+    }
+
+    @FunctionalInterface
+    private interface ThrowingRunnable {
+        void run() throws Exception;
+    }
+
+    static void assertThrowsNPE(ThrowingRunnable r) {
+        try {
+            r.run();
+            // Didn't throw an exception
+            throw new AssertionError();
+        } catch (NullPointerException expected) {
+            // happy path
+        } catch (Exception e) {
+            throw new AssertionError(e);
+        }
+    }
+
 }

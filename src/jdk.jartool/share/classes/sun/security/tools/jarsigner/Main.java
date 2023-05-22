@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -179,8 +179,6 @@ public class Main {
     boolean revocationCheck = false; // Revocation check flag
 
     // read zip entry raw bytes
-    private String altSignerClass = null;
-    private String altSignerClasspath = null;
     private ZipFile zipFile = null;
 
     // Informational warnings
@@ -483,18 +481,6 @@ public class Main {
             } else if (collator.compare(flags, "-tsacert") ==0) {
                 if (++n == args.length) usageNoArg();
                 tsaAlias = args[n];
-            } else if (collator.compare(flags, "-altsigner") ==0) {
-                if (++n == args.length) usageNoArg();
-                altSignerClass = args[n];
-                System.err.println(
-                        rb.getString("This.option.is.forremoval") +
-                                "-altsigner");
-            } else if (collator.compare(flags, "-altsignerpath") ==0) {
-                if (++n == args.length) usageNoArg();
-                altSignerClasspath = args[n];
-                System.err.println(
-                        rb.getString("This.option.is.forremoval") +
-                                "-altsignerpath");
             } else if (collator.compare(flags, "-sectionsonly") ==0) {
                 signManifest = false;
             } else if (collator.compare(flags, "-internalsf") ==0) {
@@ -699,12 +685,6 @@ public class Main {
                 (".tsadigestalg.algorithm.of.digest.data.in.timestamping.request"));
         System.out.println();
         System.out.println(rb.getString
-                (".altsigner.class.class.name.of.an.alternative.signing.mechanism"));
-        System.out.println();
-        System.out.println(rb.getString
-                (".altsignerpath.pathlist.location.of.an.alternative.signing.mechanism"));
-        System.out.println();
-        System.out.println(rb.getString
                 (".internalsf.include.the.SF.file.inside.the.signature.block"));
         System.out.println();
         System.out.println(rb.getString
@@ -835,8 +815,7 @@ public class Main {
                     if (!extraAttrsDetected && JUZFA.getExtraAttributes(je) != -1) {
                         extraAttrsDetected = true;
                     }
-                    hasSignature = hasSignature
-                            || SignatureFileVerifier.isBlockOrSF(name);
+                    hasSignature |= signatureRelated(name) && SignatureFileVerifier.isBlockOrSF(name);
 
                     CodeSigner[] signers = je.getCodeSigners();
                     boolean isSigned = (signers != null);
@@ -1947,18 +1926,6 @@ public class Main {
             if (tSAPolicyID != null) {
                 builder.setProperty("tsaPolicyId", tSAPolicyID);
             }
-        }
-
-        if (altSignerClass != null) {
-            builder.setProperty("altSigner", altSignerClass);
-            if (verbose != null) {
-                System.out.println(
-                        rb.getString("using.an.alternative.signing.mechanism"));
-            }
-        }
-
-        if (altSignerClasspath != null) {
-            builder.setProperty("altSignerPath", altSignerClasspath);
         }
 
         builder.signerName(sigfile);

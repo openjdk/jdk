@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ import javax.crypto.spec.PBEParameterSpec;
 
 /**
  * @test
- * @bug 8041781
+ * @bug 8041781 8288050
  * @summary Test to see if key wrapper works correctly with PBEKey
  * @author Yu-Ching (Valerie) PENG
  * @author Bill Situ
@@ -69,11 +69,15 @@ public class TestCipherKeyWrapperPBEKey {
         "PBEWithHmacSHA256AndAES_128",
         "PBEWithHmacSHA384AndAES_128",
         "PBEWithHmacSHA512AndAES_128",
+        "PBEWithHmacSHA512/224AndAES_128",
+        "PBEWithHmacSHA512/256AndAES_128",
         "PBEWithHmacSHA1AndAES_256",
         "PBEWithHmacSHA224AndAES_256",
         "PBEWithHmacSHA256AndAES_256",
         "PBEWithHmacSHA384AndAES_256",
-        "PBEWithHmacSHA512AndAES_256"
+        "PBEWithHmacSHA512AndAES_256",
+        "PBEWithHmacSHA512/224AndAES_256",
+        "PBEWithHmacSHA512/256AndAES_256",
     };
 
     public static void main(String[] args) {
@@ -116,9 +120,10 @@ public class TestCipherKeyWrapperPBEKey {
         int ITERATION_COUNT = 1000;
         AlgorithmParameters pbeParams = null;
 
-        String baseAlgo
-                = new StringTokenizer(algo, "/").nextToken().toUpperCase();
-        boolean isAES = baseAlgo.contains("AES");
+        String keyAlgo = (algo.endsWith("Padding") ?
+                new StringTokenizer(algo, "/").nextToken().toUpperCase() :
+                algo);
+        boolean isAES = algo.contains("AES");
 
         boolean isUnlimited =
             (Cipher.getMaxAllowedKeyLength(algo) == Integer.MAX_VALUE);
@@ -128,7 +133,7 @@ public class TestCipherKeyWrapperPBEKey {
             new Random().nextBytes(salt);
             AlgorithmParameterSpec aps = new PBEParameterSpec(salt,
                     ITERATION_COUNT);
-            SecretKeyFactory skf = SecretKeyFactory.getInstance(baseAlgo, p);
+            SecretKeyFactory skf = SecretKeyFactory.getInstance(keyAlgo, p);
             SecretKey key = skf.generateSecret(new PBEKeySpec(
                     "Secret Key".toCharArray()));
             Cipher ci = Cipher.getInstance(algo);
@@ -148,8 +153,8 @@ public class TestCipherKeyWrapperPBEKey {
 
             Key unwrappedKey = ci.unwrap(keyWrapper, algo, Cipher.SECRET_KEY);
 
-            if ((baseAlgo.endsWith("TRIPLEDES")
-                    || baseAlgo.endsWith("AES_256")) && !isUnlimited) {
+            if ((keyAlgo.endsWith("TRIPLEDES")
+                    || keyAlgo.endsWith("AES_256")) && !isUnlimited) {
                 out.print(
                         "Expected InvalidKeyException not thrown");
                 return false;
@@ -159,8 +164,8 @@ public class TestCipherKeyWrapperPBEKey {
 
         } catch (InvalidKeyException ex) {
 
-            if ((baseAlgo.endsWith("TRIPLEDES")
-                    || baseAlgo.endsWith("AES_256")) && !isUnlimited) {
+            if ((keyAlgo.endsWith("TRIPLEDES")
+                    || keyAlgo.endsWith("AES_256")) && !isUnlimited) {
                 out.print(
                         "Expected InvalidKeyException thrown");
                 return true;

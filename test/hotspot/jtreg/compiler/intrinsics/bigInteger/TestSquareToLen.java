@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,10 +30,10 @@
  *
  * @run main/othervm/timeout=600 -XX:-TieredCompilation -Xbatch
  *      -XX:CompileCommand=exclude,compiler.intrinsics.bigInteger.TestSquareToLen::main
- *      -XX:CompileCommand=option,compiler.intrinsics.bigInteger.TestSquareToLen::base_multiply,ccstr,DisableIntrinsic,_squareToLen
- *      -XX:CompileCommand=option,java.math.BigInteger::multiply,ccstr,DisableIntrinsic,_squareToLen
- *      -XX:CompileCommand=option,java.math.BigInteger::square,ccstr,DisableIntrinsic,_squareToLen
- *      -XX:CompileCommand=option,java.math.BigInteger::squareToLen,ccstr,DisableIntrinsic,_squareToLen
+ *      -XX:CompileCommand=option,compiler.intrinsics.bigInteger.TestSquareToLen::base_multiply,ccstrlist,DisableIntrinsic,_squareToLen
+ *      -XX:CompileCommand=option,java.math.BigInteger::multiply,ccstrlist,DisableIntrinsic,_squareToLen
+ *      -XX:CompileCommand=option,java.math.BigInteger::square,ccstrlist,DisableIntrinsic,_squareToLen
+ *      -XX:CompileCommand=option,java.math.BigInteger::squareToLen,ccstrlist,DisableIntrinsic,_squareToLen
  *      -XX:CompileCommand=inline,java.math.BigInteger::multiply
  *      -XX:CompileCommand=inline,java.math.BigInteger::square
  *      -XX:CompileCommand=inline,java.math.BigInteger::squareToLen

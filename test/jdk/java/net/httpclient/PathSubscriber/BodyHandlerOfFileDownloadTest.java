@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,18 +26,17 @@
  * @bug 8237470
  * @summary Confirm HttpResponse.BodySubscribers#ofFileDownload(Path)
  *          works only with the default file system
- * @modules java.base/sun.net.www.http
- *          java.net.http/jdk.internal.net.http.common
- *          java.net.http/jdk.internal.net.http.frame
- *          java.net.http/jdk.internal.net.http.hpack
- *          jdk.httpserver
- * @library /test/lib ../http2/server
- * @build Http2TestServer Http2TestServerConnection Http2TestExchange
- *        Http2Handler OutgoingPushPromise Queue
- * @build jdk.test.lib.net.SimpleSSLContext
- * @build jdk.test.lib.Platform
- * @build jdk.test.lib.util.FileUtils
- * @compile ../HttpServerAdapters.java
+ * @library /test/lib /test/jdk/java/net/httpclient/lib
+ * @build jdk.httpclient.test.lib.common.HttpServerAdapters
+ *        jdk.httpclient.test.lib.http2.Http2TestServer
+ *        jdk.httpclient.test.lib.http2.Http2TestServerConnection
+ *        jdk.httpclient.test.lib.http2.Http2TestExchange
+ *        jdk.httpclient.test.lib.http2.Http2Handler
+ *        jdk.httpclient.test.lib.http2.OutgoingPushPromise
+ *        jdk.httpclient.test.lib.http2.Queue
+ *        jdk.test.lib.net.SimpleSSLContext
+ *        jdk.test.lib.Platform
+ *        jdk.test.lib.util.FileUtils
  * @run testng/othervm BodyHandlerOfFileDownloadTest
  * @run testng/othervm/java.security.policy=ofFileDownload.policy BodyHandlerOfFileDownloadTest
  */
@@ -69,9 +68,17 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
-
+import jdk.httpclient.test.lib.common.HttpServerAdapters;
+import jdk.httpclient.test.lib.http2.Http2TestServer;
+import jdk.httpclient.test.lib.http2.Http2TestServerConnection;
+import jdk.httpclient.test.lib.http2.Http2TestExchange;
+import jdk.httpclient.test.lib.http2.Http2Handler;
+import jdk.httpclient.test.lib.http2.OutgoingPushPromise;
+import jdk.httpclient.test.lib.http2.Queue;
 import static java.lang.System.out;
 import static java.net.http.HttpClient.Builder.NO_PROXY;
+import static java.net.http.HttpClient.Version.HTTP_1_1;
+import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.nio.file.StandardOpenOption.CREATE;
 import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
 import static java.nio.file.StandardOpenOption.WRITE;
@@ -192,26 +199,19 @@ public class BodyHandlerOfFileDownloadTest implements HttpServerAdapters {
         zipFs = newZipFs();
         zipFsPath = zipFsDir(zipFs);
 
-        InetSocketAddress sa =
-                new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
-
-        httpTestServer = HttpServerAdapters.HttpTestServer.of(HttpServer.create(sa, 0));
+        httpTestServer = HttpServerAdapters.HttpTestServer.create(HTTP_1_1);
         httpTestServer.addHandler(new HttpEchoHandler(), "/http1/echo");
         httpURI = "http://" + httpTestServer.serverAuthority() + "/http1/echo";
 
-        HttpsServer httpsServer = HttpsServer.create(sa, 0);
-        httpsServer.setHttpsConfigurator(new HttpsConfigurator(sslContext));
-        httpsTestServer = HttpServerAdapters.HttpTestServer.of(httpsServer);
+        httpsTestServer = HttpServerAdapters.HttpTestServer.create(HTTP_1_1, sslContext);
         httpsTestServer.addHandler(new HttpEchoHandler(), "/https1/echo");
         httpsURI = "https://" + httpsTestServer.serverAuthority() + "/https1/echo";
 
-        http2TestServer = HttpServerAdapters.HttpTestServer.of(
-                new Http2TestServer("localhost", false, 0));
+        http2TestServer = HttpServerAdapters.HttpTestServer.create(HTTP_2);
         http2TestServer.addHandler(new HttpEchoHandler(), "/http2/echo");
         http2URI = "http://" + http2TestServer.serverAuthority() + "/http2/echo";
 
-        https2TestServer = HttpServerAdapters.HttpTestServer.of(
-                new Http2TestServer("localhost", true, sslContext));
+        https2TestServer = HttpServerAdapters.HttpTestServer.create(HTTP_2, sslContext);
         https2TestServer.addHandler(new HttpEchoHandler(), "/https2/echo");
         https2URI = "https://" + https2TestServer.serverAuthority() + "/https2/echo";
 

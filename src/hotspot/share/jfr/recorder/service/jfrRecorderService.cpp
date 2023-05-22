@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,7 @@ class JfrRotationLock : public StackObj {
 
   static bool acquire(Thread* thread) {
     if (Atomic::cmpxchg(&_lock, 0, 1) == 0) {
-      assert(_owner_thread == NULL, "invariant");
+      assert(_owner_thread == nullptr, "invariant");
       _owner_thread = thread;
       return true;
     }
@@ -86,7 +86,7 @@ class JfrRotationLock : public StackObj {
 
  public:
   JfrRotationLock() : _thread(Thread::current()), _recursive(false) {
-    assert(_thread != NULL, "invariant");
+    assert(_thread != nullptr, "invariant");
     if (_thread == _owner_thread) {
       // Recursive case is not supported.
       _recursive = true;
@@ -103,7 +103,7 @@ class JfrRotationLock : public StackObj {
     if (_recursive) {
       return;
     }
-    _owner_thread = NULL;
+    _owner_thread = nullptr;
     OrderAccess::storestore();
     _lock = 0;
   }
@@ -117,7 +117,7 @@ class JfrRotationLock : public StackObj {
   }
 };
 
-const Thread* JfrRotationLock::_owner_thread = NULL;
+const Thread* JfrRotationLock::_owner_thread = nullptr;
 const int JfrRotationLock::retry_wait_millis = 10;
 volatile int JfrRotationLock::_lock = 0;
 
@@ -185,8 +185,8 @@ class WriteContent : public StackObj {
     return (u4) _content.elements();
   }
 
-  u4 size() const {
-    return (u4)(end_offset() - start_offset());
+  u8 size() const {
+    return (u8)(end_offset() - start_offset());
   }
 
   void write_elements(int64_t offset) {
@@ -194,7 +194,7 @@ class WriteContent : public StackObj {
   }
 
   void write_size() {
-    _cw.write_padded_at_offset<u4>(size(), start_offset());
+    _cw.write_padded_at_offset<u8>(size(), start_offset());
   }
 
   void set_last_checkpoint() {
@@ -209,7 +209,7 @@ class WriteContent : public StackObj {
 static int64_t write_checkpoint_event_prologue(JfrChunkWriter& cw, u8 type_id) {
   const int64_t last_cp_offset = cw.last_checkpoint_offset();
   const int64_t delta_to_last_checkpoint = 0 == last_cp_offset ? 0 : last_cp_offset - cw.current_offset();
-  cw.reserve(sizeof(u4));
+  cw.reserve(sizeof(u8));
   cw.write<u8>(EVENT_CHECKPOINT);
   cw.write(JfrTicks::now());
   cw.write<u8>(0); // duration
@@ -589,13 +589,13 @@ void JfrRecorderService::post_safepoint_write() {
 }
 
 static JfrBuffer* thread_local_buffer(Thread* t) {
-  assert(t != NULL, "invariant");
+  assert(t != nullptr, "invariant");
   return t->jfr_thread_local()->native_buffer();
 }
 
 static void reset_buffer(JfrBuffer* buffer, Thread* t) {
-  assert(buffer != NULL, "invariant");
-  assert(t != NULL, "invariant");
+  assert(buffer != nullptr, "invariant");
+  assert(t != nullptr, "invariant");
   assert(buffer == thread_local_buffer(t), "invariant");
   buffer->set_pos(const_cast<u1*>(buffer->top()));
 }
@@ -606,7 +606,7 @@ static void reset_thread_local_buffer(Thread* t) {
 
 static void write_thread_local_buffer(JfrChunkWriter& chunkwriter, Thread* t) {
   JfrBuffer * const buffer = thread_local_buffer(t);
-  assert(buffer != NULL, "invariant");
+  assert(buffer != nullptr, "invariant");
   if (!buffer->empty()) {
     chunkwriter.write_unbuffered(buffer->top(), buffer->pos() - buffer->top());
   }

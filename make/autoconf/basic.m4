@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -60,6 +60,7 @@ AC_DEFUN([BASIC_CHECK_LEFTOVER_OVERRIDDEN],
 
 ###############################################################################
 # Setup basic configuration paths, and platform-specific stuff related to PATHs.
+# Make sure to only use tools set up in BASIC_SETUP_FUNDAMENTAL_TOOLS.
 AC_DEFUN_ONCE([BASIC_SETUP_PATHS],
 [
   # Save the current directory this script was started from
@@ -99,6 +100,29 @@ AC_DEFUN_ONCE([BASIC_SETUP_PATHS],
 
   # Locate the directory of this script.
   AUTOCONF_DIR=$TOPDIR/make/autoconf
+])
+
+###############################################################################
+# Setup what kind of build environment type we have (CI or local developer)
+AC_DEFUN_ONCE([BASIC_SETUP_BUILD_ENV],
+[
+  if test "x$CI" = "xtrue"; then
+    DEFAULT_BUILD_ENV="ci"
+    AC_MSG_NOTICE([CI environment variable set to $CI])
+  else
+    DEFAULT_BUILD_ENV="dev"
+  fi
+
+  UTIL_ARG_WITH(NAME: build-env, TYPE: literal,
+      RESULT: BUILD_ENV,
+      VALID_VALUES: [auto dev ci], DEFAULT: auto,
+      CHECKING_MSG: [for build environment type],
+      DESC: [select build environment type (affects certain default values)],
+      IF_AUTO: [
+        RESULT=$DEFAULT_BUILD_ENV
+      ]
+  )
+  AC_SUBST(BUILD_ENV)
 ])
 
 ###############################################################################
@@ -454,7 +478,11 @@ AC_DEFUN([BASIC_CHECK_DIR_ON_LOCAL_DISK],
     # df on AIX does not understand -l. On modern AIXes it understands "-T local" which
     # is the same. On older AIXes we just continue to live with a "not local build" warning.
     if test "x$OPENJDK_TARGET_OS" = xaix; then
-      DF_LOCAL_ONLY_OPTION='-T local'
+      if "$DF -T local > /dev/null 2>&1"; then
+        DF_LOCAL_ONLY_OPTION='-T local'
+      else # AIX may use GNU-utils instead
+        DF_LOCAL_ONLY_OPTION='-l'
+      fi
     elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.wsl1"; then
       # In WSL1, we can only build on a drvfs file system (that is, a mounted real Windows drive)
       DF_LOCAL_ONLY_OPTION='-t drvfs'

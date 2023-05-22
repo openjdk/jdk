@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,58 +25,37 @@
  * @test
  * @bug 8135028
  * @summary Add C2 x86 Superword support for scalar sum reduction optimizations : double sqrt test
- * @requires os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64" | os.arch=="aarch64" | os.arch=="riscv64"
- *
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=250
- *      -XX:CompileThresholdScaling=0.1
- *      -XX:+SuperWordReductions
- *      -XX:LoopMaxUnroll=2
- *      compiler.loopopts.superword.SumRedSqrt_Double
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=250
- *      -XX:CompileThresholdScaling=0.1
- *      -XX:-SuperWordReductions
- *      -XX:LoopMaxUnroll=2
- *      compiler.loopopts.superword.SumRedSqrt_Double
- *
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=250
- *      -XX:CompileThresholdScaling=0.1
- *      -XX:+SuperWordReductions
- *      -XX:LoopMaxUnroll=4
- *      compiler.loopopts.superword.SumRedSqrt_Double
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=250
- *      -XX:CompileThresholdScaling=0.1
- *      -XX:-SuperWordReductions
- *      -XX:LoopMaxUnroll=4
- *      compiler.loopopts.superword.SumRedSqrt_Double
- *
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=250
- *      -XX:CompileThresholdScaling=0.1
- *      -XX:+SuperWordReductions
- *      -XX:LoopMaxUnroll=8
- *      compiler.loopopts.superword.SumRedSqrt_Double
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=250
- *      -XX:CompileThresholdScaling=0.1
- *      -XX:-SuperWordReductions
- *      -XX:LoopMaxUnroll=8
- *      compiler.loopopts.superword.SumRedSqrt_Double
- *
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=250
- *      -XX:CompileThresholdScaling=0.1
- *      -XX:+SuperWordReductions
- *      -XX:LoopMaxUnroll=16
- *      compiler.loopopts.superword.SumRedSqrt_Double
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:LoopUnrollLimit=250
- *      -XX:CompileThresholdScaling=0.1
- *      -XX:-SuperWordReductions
- *      -XX:LoopMaxUnroll=16
- *      compiler.loopopts.superword.SumRedSqrt_Double
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.SumRedSqrt_Double
  */
 
 
 package compiler.loopopts.superword;
 
+import compiler.lib.ir_framework.*;
+
 public class SumRedSqrt_Double {
     public static void main(String[] args) throws Exception {
+        TestFramework framework = new TestFramework();
+        framework.addFlags("-XX:+IgnoreUnrecognizedVMOptions",
+                           "-XX:LoopUnrollLimit=250",
+                           "-XX:CompileThresholdScaling=0.1");
+        int i = 0;
+        Scenario[] scenarios = new Scenario[6];
+        for (String reductionSign : new String[] {"+", "-"}) {
+            for (int maxUnroll : new int[] {4, 8, 16}) {
+                scenarios[i] = new Scenario(i, "-XX:" + reductionSign + "SuperWordReductions",
+                                               "-XX:LoopMaxUnroll=" + maxUnroll);
+                i++;
+            }
+        }
+        framework.addScenarios(scenarios);
+        framework.start();
+    }
+
+    @Run(test = {"sumReductionWithStoreImplement"},
+         mode = RunMode.STANDALONE)
+    public void runTests() throws Exception {
         double[] a = new double[256 * 1024];
         double[] b = new double[256 * 1024];
         double[] c = new double[256 * 1024];
@@ -85,15 +64,9 @@ public class SumRedSqrt_Double {
         double total = 0;
         double valid = 2.06157643776E14;
         for (int j = 0; j < 2000; j++) {
-            total = sumReductionImplement(a, b, c, d, total);
+            total = sumReductionWithStoreImplement(a, b, c, d, total);
         }
-        if (total == valid) {
-            System.out.println("Success");
-        } else {
-            System.out.println("Invalid sum of elements variable in total: " + total);
-            System.out.println("Expected value = " + valid);
-            throw new Exception("Failed");
-        }
+        testCorrectness(total, valid, "sumReductionWithStore");
     }
 
     public static void sumReductionInit(
@@ -109,7 +82,16 @@ public class SumRedSqrt_Double {
         }
     }
 
-    public static double sumReductionImplement(
+    /* Vectorization is expected but not enabled without store.
+       The store could be removed later.
+       Require avx for SQRT_VD. */
+    @Test
+    @IR(applyIf = {"SuperWordReductions", "false"},
+        failOn = {IRNode.ADD_REDUCTION_VD, IRNode.SQRT_V})
+    @IR(applyIfCPUFeature = {"avx", "true"},
+        applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
+        counts = {IRNode.ADD_REDUCTION_VD, ">= 1", IRNode.SQRT_V, ">= 1"})
+    public static double sumReductionWithStoreImplement(
             double[] a,
             double[] b,
             double[] c,
@@ -120,6 +102,17 @@ public class SumRedSqrt_Double {
             total += d[i];
         }
         return total;
+    }
+
+    public static void testCorrectness(
+            double total,
+            double valid,
+            String op) throws Exception {
+        if (total != valid) {
+            throw new Exception(
+                "Invalid total: " + total + " " +
+                "Expected value = " + valid + " " + op + ": Failed");
+        }
     }
 
 }

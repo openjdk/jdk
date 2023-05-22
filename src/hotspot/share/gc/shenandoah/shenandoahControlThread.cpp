@@ -482,10 +482,11 @@ void ShenandoahControlThread::request_gc(GCCause::Cause cause) {
          cause == GCCause::_codecache_GC_aggressive ||
          cause == GCCause::_codecache_GC_threshold ||
          cause == GCCause::_full_gc_alot ||
+         cause == GCCause::_wb_young_gc ||
          cause == GCCause::_wb_full_gc ||
          cause == GCCause::_wb_breakpoint ||
          cause == GCCause::_scavenge_alot,
-         "only requested GCs here");
+         "only requested GCs here: %s", GCCause::to_string(cause));
 
   if (is_explicit_gc(cause)) {
     if (!DisableExplicitGC) {

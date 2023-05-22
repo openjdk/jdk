@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,17 +39,17 @@
 #include "oops/objArrayKlass.inline.hpp"
 #include "oops/oop.inline.hpp"
 
-PSOldGen*               ParCompactionManager::_old_gen = NULL;
-ParCompactionManager**  ParCompactionManager::_manager_array = NULL;
+PSOldGen*               ParCompactionManager::_old_gen = nullptr;
+ParCompactionManager**  ParCompactionManager::_manager_array = nullptr;
 
-ParCompactionManager::OopTaskQueueSet*      ParCompactionManager::_oop_task_queues = NULL;
-ParCompactionManager::ObjArrayTaskQueueSet* ParCompactionManager::_objarray_task_queues = NULL;
-ParCompactionManager::RegionTaskQueueSet*   ParCompactionManager::_region_task_queues = NULL;
+ParCompactionManager::OopTaskQueueSet*      ParCompactionManager::_oop_task_queues = nullptr;
+ParCompactionManager::ObjArrayTaskQueueSet* ParCompactionManager::_objarray_task_queues = nullptr;
+ParCompactionManager::RegionTaskQueueSet*   ParCompactionManager::_region_task_queues = nullptr;
 
-ObjectStartArray*    ParCompactionManager::_start_array = NULL;
-ParMarkBitMap*       ParCompactionManager::_mark_bitmap = NULL;
-GrowableArray<size_t >* ParCompactionManager::_shadow_region_array = NULL;
-Monitor*                ParCompactionManager::_shadow_region_monitor = NULL;
+ObjectStartArray*    ParCompactionManager::_start_array = nullptr;
+ParMarkBitMap*       ParCompactionManager::_mark_bitmap = nullptr;
+GrowableArray<size_t >* ParCompactionManager::_shadow_region_array = nullptr;
+Monitor*                ParCompactionManager::_shadow_region_monitor = nullptr;
 
 ParCompactionManager::ParCompactionManager() {
 
@@ -64,14 +64,14 @@ ParCompactionManager::ParCompactionManager() {
 }
 
 void ParCompactionManager::initialize(ParMarkBitMap* mbm) {
-  assert(ParallelScavengeHeap::heap() != NULL,
+  assert(ParallelScavengeHeap::heap() != nullptr,
     "Needed for initialization");
 
   _mark_bitmap = mbm;
 
   uint parallel_gc_threads = ParallelScavengeHeap::heap()->workers().max_workers();
 
-  assert(_manager_array == NULL, "Attempt to initialize twice");
+  assert(_manager_array == nullptr, "Attempt to initialize twice");
   _manager_array = NEW_C_HEAP_ARRAY(ParCompactionManager*, parallel_gc_threads, mtGC);
 
   _oop_task_queues = new OopTaskQueueSet(parallel_gc_threads);
@@ -81,7 +81,7 @@ void ParCompactionManager::initialize(ParMarkBitMap* mbm) {
   // Create and register the ParCompactionManager(s) for the worker threads.
   for(uint i=0; i<parallel_gc_threads; i++) {
     _manager_array[i] = new ParCompactionManager();
-    oop_task_queues()->register_queue(i, _manager_array[i]->marking_stack());
+    oop_task_queues()->register_queue(i, _manager_array[i]->oop_stack());
     _objarray_task_queues->register_queue(i, &_manager_array[i]->_objarray_stack);
     region_task_queues()->register_queue(i, _manager_array[i]->region_stack());
   }
@@ -111,18 +111,18 @@ void ParCompactionManager::flush_all_string_dedup_requests() {
 ParCompactionManager*
 ParCompactionManager::gc_thread_compaction_manager(uint index) {
   assert(index < ParallelGCThreads, "index out of range");
-  assert(_manager_array != NULL, "Sanity");
+  assert(_manager_array != nullptr, "Sanity");
   return _manager_array[index];
 }
 
 inline void ParCompactionManager::publish_and_drain_oop_tasks() {
   oop obj;
-  while (marking_stack()->pop_overflow(obj)) {
-    if (!marking_stack()->try_push_to_taskqueue(obj)) {
+  while (oop_stack()->pop_overflow(obj)) {
+    if (!oop_stack()->try_push_to_taskqueue(obj)) {
       follow_contents(obj);
     }
   }
-  while (marking_stack()->pop_local(obj)) {
+  while (oop_stack()->pop_local(obj)) {
     follow_contents(obj);
   }
 }
@@ -170,7 +170,7 @@ void ParCompactionManager::drain_region_stacks() {
 void ParCompactionManager::drain_deferred_objects() {
   while (!_deferred_obj_array->is_empty()) {
     HeapWord* addr = _deferred_obj_array->pop();
-    assert(addr != NULL, "expected a deferred object");
+    assert(addr != nullptr, "expected a deferred object");
     PSParallelCompact::update_deferred_object(this, addr);
   }
   _deferred_obj_array->clear_and_deallocate();

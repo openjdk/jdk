@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/serial/cardTableRS.hpp"
 #include "gc/serial/genMarkSweep.hpp"
 #include "gc/serial/serialBlockOffsetTable.inline.hpp"
 #include "gc/serial/tenuredGeneration.inline.hpp"
@@ -32,7 +33,6 @@
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/generationSpec.hpp"
-#include "gc/shared/genOopClosures.inline.hpp"
 #include "gc/shared/space.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
@@ -282,8 +282,7 @@ void TenuredGeneration::younger_refs_iterate(OopIterateClosure* blk) {
   // iterations; objects allocated as a result of applying the closure are
   // not included.
 
-  HeapWord* gen_boundary = reserved().start();
-  _rs->younger_refs_in_space_iterate(space(), gen_boundary, blk);
+  _rs->younger_refs_in_space_iterate(space(), blk);
 }
 
 TenuredGeneration::TenuredGeneration(ReservedSpace rs,
@@ -323,7 +322,6 @@ TenuredGeneration::TenuredGeneration(ReservedSpace rs,
   HeapWord* bottom = (HeapWord*) _virtual_space.low();
   HeapWord* end    = (HeapWord*) _virtual_space.high();
   _the_space  = new TenuredSpace(_bts, MemRegion(bottom, end));
-  _the_space->reset_saved_mark();
   // If we don't shrink the heap in steps, '_shrink_factor' is always 100%.
   _shrink_factor = ShrinkHeapInSteps ? 0 : 100;
   _capacity_at_prologue = 0;
@@ -439,11 +437,6 @@ void TenuredGeneration::collect(bool   full,
                                 bool   is_tlab) {
   GenCollectedHeap* gch = GenCollectedHeap::heap();
 
-  // Temporarily expand the span of our ref processor, so
-  // refs discovery is over the entire heap, not just this generation
-  ReferenceProcessorSpanMutator
-    x(ref_processor(), gch->reserved_region());
-
   STWGCTimer* gc_timer = GenMarkSweep::gc_timer();
   gc_timer->register_gc_start();
 
@@ -452,7 +445,7 @@ void TenuredGeneration::collect(bool   full,
 
   gch->pre_full_gc_dump(gc_timer);
 
-  GenMarkSweep::invoke_at_safepoint(ref_processor(), clear_all_soft_refs);
+  GenMarkSweep::invoke_at_safepoint(clear_all_soft_refs);
 
   gch->post_full_gc_dump(gc_timer);
 
@@ -486,7 +479,7 @@ void TenuredGeneration::object_iterate(ObjectClosure* blk) {
 
 void TenuredGeneration::complete_loaded_archive_space(MemRegion archive_space) {
   // Create the BOT for the archive space.
-  TenuredSpace* space = (TenuredSpace*)_the_space;
+  TenuredSpace* space = _the_space;
   space->initialize_threshold();
   HeapWord* start = archive_space.start();
   while (start < archive_space.end()) {
@@ -498,10 +491,6 @@ void TenuredGeneration::complete_loaded_archive_space(MemRegion archive_space) {
 
 void TenuredGeneration::save_marks() {
   _the_space->set_saved_mark();
-}
-
-void TenuredGeneration::reset_saved_marks() {
-  _the_space->reset_saved_mark();
 }
 
 bool TenuredGeneration::no_allocs_since_save_marks() {

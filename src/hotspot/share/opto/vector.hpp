@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,8 @@ class PhaseVector : public Phase {
   Node* expand_vbox_node_helper(Node* vbox,
                                 Node* vect,
                                 const TypeInstPtr* box_type,
-                                const TypeVect* vect_type);
+                                const TypeVect* vect_type,
+                                VectorSet &visited);
   Node* expand_vbox_alloc_node(VectorBoxAllocateNode* vbox_alloc,
                                Node* value,
                                const TypeInstPtr* box_type,

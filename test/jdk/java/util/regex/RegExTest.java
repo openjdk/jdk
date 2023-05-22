@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@
  * 6345469 6988218 6693451 7006761 8140212 8143282 8158482 8176029 8184706
  * 8194667 8197462 8184692 8221431 8224789 8228352 8230829 8236034 8235812
  * 8216332 8214245 8237599 8241055 8247546 8258259 8037397 8269753 8276694
- * 8280403 8264160 8281315
+ * 8280403 8264160 8281315 8305107
  * @library /test/lib
  * @library /lib/testlibrary/java/lang
  * @build jdk.test.lib.RandomFactory
@@ -3717,7 +3717,6 @@ public class RegExTest {
 
         Matcher lower  = Pattern.compile("\\p{Lower}").matcher("");
         Matcher upper  = Pattern.compile("\\p{Upper}").matcher("");
-        Matcher ASCII  = Pattern.compile("\\p{ASCII}").matcher("");
         Matcher alpha  = Pattern.compile("\\p{Alpha}").matcher("");
         Matcher digit  = Pattern.compile("\\p{Digit}").matcher("");
         Matcher alnum  = Pattern.compile("\\p{Alnum}").matcher("");
@@ -3728,12 +3727,10 @@ public class RegExTest {
         Matcher cntrl  = Pattern.compile("\\p{Cntrl}").matcher("");
         Matcher xdigit = Pattern.compile("\\p{XDigit}").matcher("");
         Matcher space  = Pattern.compile("\\p{Space}").matcher("");
-        Matcher bound  = Pattern.compile("\\b").matcher("");
         Matcher word   = Pattern.compile("\\w++").matcher("");
         // UNICODE_CHARACTER_CLASS
         Matcher lowerU  = Pattern.compile("\\p{Lower}", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
         Matcher upperU  = Pattern.compile("\\p{Upper}", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
-        Matcher ASCIIU  = Pattern.compile("\\p{ASCII}", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
         Matcher alphaU  = Pattern.compile("\\p{Alpha}", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
         Matcher digitU  = Pattern.compile("\\p{Digit}", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
         Matcher alnumU  = Pattern.compile("\\p{Alnum}", Pattern.UNICODE_CHARACTER_CLASS).matcher("");
@@ -3766,6 +3763,13 @@ public class RegExTest {
         Matcher definedP = Pattern.compile("\\p{IsAssigned}").matcher("");
         Matcher nonCCPP = Pattern.compile("\\p{IsNoncharacterCodePoint}").matcher("");
         Matcher joinCrtl = Pattern.compile("\\p{IsJoinControl}").matcher("");
+        // Emoji properties
+        Matcher emojiP   = Pattern.compile("\\p{IsEmoji}").matcher("");
+        Matcher emojiPP  = Pattern.compile("\\p{IsEmoji_Presentation}").matcher("");
+        Matcher emojiMP  = Pattern.compile("\\p{IsEmoji_Modifier}").matcher("");
+        Matcher emojiMBP = Pattern.compile("\\p{IsEmoji_Modifier_Base}").matcher("");
+        Matcher emojiCP  = Pattern.compile("\\p{IsEmoji_Component}").matcher("");
+        Matcher extPP    = Pattern.compile("\\p{IsExtended_Pictographic}").matcher("");
         // javaMethod
         Matcher lowerJ  = Pattern.compile("\\p{javaLowerCase}").matcher("");
         Matcher upperJ  = Pattern.compile("\\p{javaUpperCase}").matcher("");
@@ -3839,6 +3843,13 @@ public class RegExTest {
                 (Character.UNASSIGNED == type) == definedP.reset(str).matches() ||
                 POSIX_Unicode.isNoncharacterCodePoint(cp) != nonCCPP.reset(str).matches() ||
                 POSIX_Unicode.isJoinControl(cp) != joinCrtl.reset(str).matches() ||
+                // Emoji properties
+                Character.isEmoji(cp) != emojiP.reset(str).matches() ||
+                Character.isEmojiPresentation(cp) != emojiPP.reset(str).matches() ||
+                Character.isEmojiModifier(cp) != emojiMP.reset(str).matches() ||
+                Character.isEmojiModifierBase(cp)!= emojiMBP.reset(str).matches() ||
+                Character.isEmojiComponent(cp) != emojiCP.reset(str).matches() ||
+                Character.isExtendedPictographic(cp) != extPP.reset(str).matches() ||
                 // gc_C
                 (Character.CONTROL == type || Character.FORMAT == type ||
                  Character.PRIVATE_USE == type || Character.SURROGATE == type ||

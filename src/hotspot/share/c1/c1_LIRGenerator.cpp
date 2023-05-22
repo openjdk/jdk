@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -621,7 +621,7 @@ void LIRGenerator::monitor_exit(LIR_Opr object, LIR_Opr lock, LIR_Opr new_hdr, L
   // setup registers
   LIR_Opr hdr = lock;
   lock = new_hdr;
-  CodeStub* slow_path = new MonitorExitStub(lock, !UseHeavyMonitors, monitor_no);
+  CodeStub* slow_path = new MonitorExitStub(lock, LockingMode != LM_MONITOR, monitor_no);
   __ load_stack_address_monitor(monitor_no, lock);
   __ unlock_object(hdr, object, lock, scratch, slow_path);
 }
@@ -843,8 +843,8 @@ void LIRGenerator::arraycopy_helper(Intrinsic* x, int* flagsp, ciArrayKlass** ex
     if (expected_type != NULL) {
       BasicType t = expected_type->element_type()->basic_type();
       int element_size = type2aelembytes(t);
-      if (((arrayOopDesc::base_offset_in_bytes(t) + s_offs * element_size) % HeapWordSize == 0) &&
-          ((arrayOopDesc::base_offset_in_bytes(t) + d_offs * element_size) % HeapWordSize == 0)) {
+      if (((arrayOopDesc::base_offset_in_bytes(t) + (uint)s_offs * element_size) % HeapWordSize == 0) &&
+          ((arrayOopDesc::base_offset_in_bytes(t) + (uint)d_offs * element_size) % HeapWordSize == 0)) {
         flags &= ~LIR_OpArrayCopy::unaligned;
       }
     }
@@ -1714,7 +1714,7 @@ void LIRGenerator::do_StoreIndexed(StoreIndexed* x) {
     null_check_info = new CodeEmitInfo(range_check_info);
   }
 
-  if (GenerateRangeChecks && needs_range_check) {
+  if (needs_range_check) {
     if (use_length) {
       __ cmp(lir_cond_belowEqual, length.result(), index.result());
       __ branch(lir_cond_belowEqual, new RangeCheckStub(range_check_info, index.result(), array.result()));
@@ -2003,7 +2003,7 @@ void LIRGenerator::do_LoadIndexed(LoadIndexed* x) {
     }
   }
 
-  if (GenerateRangeChecks && needs_range_check) {
+  if (needs_range_check) {
     if (StressLoopInvariantCodeMotion && range_check_info->deoptimize_on_exception()) {
       __ branch(lir_cond_always, new RangeCheckStub(range_check_info, index.result(), array.result()));
     } else if (use_length) {
@@ -2964,6 +2964,10 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
 
   case vmIntrinsics::_fmaD:           do_FmaIntrinsic(x); break;
   case vmIntrinsics::_fmaF:           do_FmaIntrinsic(x); break;
+
+  // Use java.lang.Math intrinsics code since it works for these intrinsics too.
+  case vmIntrinsics::_floatToFloat16: // fall through
+  case vmIntrinsics::_float16ToFloat: do_MathIntrinsic(x); break;
 
   case vmIntrinsics::_Preconditions_checkIndex:
     do_PreconditionsCheckIndex(x, T_INT);

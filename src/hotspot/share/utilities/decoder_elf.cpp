@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,18 +30,18 @@
 #include "runtime/os.hpp"
 
 ElfDecoder::~ElfDecoder() {
-  if (_opened_elf_files != NULL) {
+  if (_opened_elf_files != nullptr) {
     delete _opened_elf_files;
-    _opened_elf_files = NULL;
+    _opened_elf_files = nullptr;
   }
 }
 
 bool ElfDecoder::decode(address addr, char *buf, int buflen, int* offset, const char* filepath, bool demangle_name) {
   assert(filepath, "null file path");
-  assert(buf != NULL && buflen > 0, "Invalid buffer");
+  assert(buf != nullptr && buflen > 0, "Invalid buffer");
   if (has_error()) return false;
   ElfFile* file = get_elf_file(filepath);
-  if (file == NULL) {
+  if (file == nullptr) {
     return false;
   }
 
@@ -81,7 +81,7 @@ bool ElfDecoder::get_source_info(address pc, char* filename, size_t filename_len
   const uint32_t unsigned_offset_in_library = (uint32_t)offset_in_library;
 
   ElfFile* file = get_elf_file(filepath);
-  if (file == NULL) {
+  if (file == nullptr) {
     return false;
   }
   DWARF_LOG_INFO("##### Find filename and line number for offset " INT32_FORMAT_X_0 " in library %s #####",
@@ -106,7 +106,7 @@ ElfFile* ElfDecoder::get_elf_file(const char* filepath) {
   ElfFile* file;
 
   file = _opened_elf_files;
-  while (file != NULL) {
+  while (file != nullptr) {
     if (file->same_elf_file(filepath)) {
       return file;
     }
@@ -114,8 +114,8 @@ ElfFile* ElfDecoder::get_elf_file(const char* filepath) {
   }
 
   file = new (std::nothrow)ElfFile(filepath);
-  if (file != NULL) {
-    if (_opened_elf_files != NULL) {
+  if (file != nullptr) {
+    if (_opened_elf_files != nullptr) {
       file->set_next(_opened_elf_files);
     }
     _opened_elf_files = file;

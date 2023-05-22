@@ -13,7 +13,7 @@ public class MethodRefIntColonColonNewTest {
 
     static <T> SAM<T> infmethod(SAM<T> t) { return t; }
 
-    public static void main(String argv[]) {
+    public static void meth() {
         SAM<Object> s = infmethod(int::new);
         s.m();
     }

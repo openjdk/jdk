@@ -53,13 +53,13 @@ class UninitializedType extends Type.DelegatedType {
 
     public final int offset; // PC where allocation took place
     private UninitializedType(TypeTag tag, Type qtype, int offset,
-                              TypeMetadata metadata) {
+                              List<TypeMetadata> metadata) {
         super(tag, qtype, metadata);
         this.offset = offset;
     }
 
     @Override
-    public UninitializedType cloneWithMetadata(final TypeMetadata md) {
+    protected UninitializedType cloneWithMetadata(final List<TypeMetadata> md) {
         return new UninitializedType(tag, qtype, offset, md);
     }
 

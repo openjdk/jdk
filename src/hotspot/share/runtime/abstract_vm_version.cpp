@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -309,14 +309,14 @@ void Abstract_VM_Version::insert_features_names(char* buf, size_t buflen, const 
 bool Abstract_VM_Version::print_matching_lines_from_file(const char* filename, outputStream* st, const char* keywords_to_match[]) {
   char line[500];
   FILE* fp = os::fopen(filename, "r");
-  if (fp == NULL) {
+  if (fp == nullptr) {
     return false;
   }
 
   st->print_cr("Virtualization information:");
-  while (fgets(line, sizeof(line), fp) != NULL) {
+  while (fgets(line, sizeof(line), fp) != nullptr) {
     int i = 0;
-    while (keywords_to_match[i] != NULL) {
+    while (keywords_to_match[i] != nullptr) {
       if (strncmp(line, keywords_to_match[i], strlen(keywords_to_match[i])) == 0) {
         st->print("%s", line);
         break;
@@ -354,8 +354,8 @@ int Abstract_VM_Version::number_of_sockets(void) {
 const char* Abstract_VM_Version::cpu_name(void) {
   assert(_initialized, "should be initialized");
   char* tmp = NEW_C_HEAP_ARRAY_RETURN_NULL(char, CPU_TYPE_DESC_BUF_SIZE, mtTracing);
-  if (NULL == tmp) {
-    return NULL;
+  if (nullptr == tmp) {
+    return nullptr;
   }
   strncpy(tmp, _cpu_name, CPU_TYPE_DESC_BUF_SIZE);
   return tmp;
@@ -364,8 +364,8 @@ const char* Abstract_VM_Version::cpu_name(void) {
 const char* Abstract_VM_Version::cpu_description(void) {
   assert(_initialized, "should be initialized");
   char* tmp = NEW_C_HEAP_ARRAY_RETURN_NULL(char, CPU_DETAILED_DESC_BUF_SIZE, mtTracing);
-  if (NULL == tmp) {
-    return NULL;
+  if (nullptr == tmp) {
+    return nullptr;
   }
   strncpy(tmp, _cpu_desc, CPU_DETAILED_DESC_BUF_SIZE);
   return tmp;

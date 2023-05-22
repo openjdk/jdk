@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,7 @@ void ResolutionErrorTable::add_entry(const constantPoolHandle& pool, int cp_inde
                                      Symbol* cause, Symbol* cause_msg)
 {
   assert_locked_or_safepoint(SystemDictionary_lock);
-  assert(!pool.is_null() && error != NULL, "adding NULL obj");
+  assert(!pool.is_null() && error != nullptr, "adding null obj");
 
   ResolutionErrorKey key(pool(), cp_index);
   ResolutionErrorEntry *entry = new ResolutionErrorEntry(error, message, cause, cause_msg);
@@ -76,7 +76,7 @@ void ResolutionErrorTable::add_entry(const constantPoolHandle& pool, int cp_inde
                                      const char* message)
 {
   assert_locked_or_safepoint(SystemDictionary_lock);
-  assert(!pool.is_null() && message != NULL, "adding NULL obj");
+  assert(!pool.is_null() && message != nullptr, "adding null obj");
 
   ResolutionErrorKey key(pool(), cp_index);
   ResolutionErrorEntry *entry = new ResolutionErrorEntry(message);
@@ -112,7 +112,7 @@ ResolutionErrorEntry::~ResolutionErrorEntry() {
   Symbol::maybe_decrement_refcount(_cause);
   Symbol::maybe_decrement_refcount(_cause_msg);
 
-  if (nest_host_error() != NULL) {
+  if (nest_host_error() != nullptr) {
     FREE_C_HEAP_ARRAY(char, nest_host_error());
   }
 }

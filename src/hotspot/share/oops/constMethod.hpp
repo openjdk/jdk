@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #ifndef SHARE_OOPS_CONSTMETHOD_HPP
 #define SHARE_OOPS_CONSTMETHOD_HPP
 
+#include "oops/constMethodFlags.hpp"
 #include "oops/oop.hpp"
 #include "utilities/align.hpp"
 
@@ -173,19 +174,6 @@ public:
   typedef enum { NORMAL, OVERPASS } MethodType;
 
 private:
-  enum {
-    _has_linenumber_table = 0x0001,
-    _has_checked_exceptions = 0x0002,
-    _has_localvariable_table = 0x0004,
-    _has_exception_table = 0x0008,
-    _has_generic_signature = 0x0010,
-    _has_method_parameters = 0x0020,
-    _is_overpass = 0x0040,
-    _has_method_annotations = 0x0080,
-    _has_parameter_annotations = 0x0100,
-    _has_type_annotations = 0x0200,
-    _has_default_annotations = 0x0400
-  };
 
   // Bit vector of signature
   // Callers interpret 0=not initialized yet and
@@ -204,7 +192,7 @@ private:
   Array<u1>*        _stackmap_data;
 
   int               _constMethod_size;
-  u2                _flags;
+  ConstMethodFlags  _flags;                       // for sizing
   u1                _result_type;                 // BasicType of result
 
   // Size of Java bytecodes allocated immediately after Method*.
@@ -236,33 +224,20 @@ public:
   // Inlined tables
   void set_inlined_tables_length(InlineTableSizes* sizes);
 
-  bool has_generic_signature() const
-    { return (_flags & _has_generic_signature) != 0; }
-
-  bool has_linenumber_table() const
-    { return (_flags & _has_linenumber_table) != 0; }
-
-  bool has_checked_exceptions() const
-    { return (_flags & _has_checked_exceptions) != 0; }
-
-  bool has_localvariable_table() const
-    { return (_flags & _has_localvariable_table) != 0; }
-
-  bool has_exception_handler() const
-    { return (_flags & _has_exception_table) != 0; }
-
-  bool has_method_parameters() const
-    { return (_flags & _has_method_parameters) != 0; }
+  // Create getters and setters for the flag values.
+#define CM_FLAGS_GET_SET(name, ignore)          \
+  bool name() const       { return _flags.name(); } \
+  void set_##name()       { _flags.set_##name(); }
+  CM_FLAGS_DO(CM_FLAGS_GET_SET)
+#undef CM_FLAGS_GET_SET
 
   MethodType method_type() const {
-    return ((_flags & _is_overpass) == 0) ? NORMAL : OVERPASS;
+    return (_flags.is_overpass()) ? OVERPASS : NORMAL;
   }
 
   void set_method_type(MethodType mt) {
-    if (mt == NORMAL) {
-      _flags &= ~(_is_overpass);
-    } else {
-      _flags |= _is_overpass;
+    if (mt != NORMAL) {
+      set_is_overpass();
     }
   }
 
@@ -276,7 +251,7 @@ public:
   Array<u1>* stackmap_data() const { return _stackmap_data; }
   void set_stackmap_data(Array<u1>* sd) { _stackmap_data = sd; }
   void copy_stackmap_data(ClassLoaderData* loader_data, u1* sd, int length, TRAPS);
-  bool has_stackmap_table() const { return _stackmap_data != NULL; }
+  bool has_stackmap_table() const { return _stackmap_data != nullptr; }
 
   void init_fingerprint() {
     const uint64_t initval = UCONST64(0x8000000000000000);
@@ -382,23 +357,9 @@ public:
   int method_parameters_length() const;
   MethodParametersElement* method_parameters_start() const;
 
-  // method annotations
-  bool has_method_annotations() const
-    { return (_flags & _has_method_annotations) != 0; }
-
-  bool has_parameter_annotations() const
-    { return (_flags & _has_parameter_annotations) != 0; }
-
-  bool has_type_annotations() const
-    { return (_flags & _has_type_annotations) != 0; }
-
-  bool has_default_annotations() const
-    { return (_flags & _has_default_annotations) != 0; }
-
-
   AnnotationArray** method_annotations_addr() const;
   AnnotationArray* method_annotations() const  {
-    return has_method_annotations() ? *(method_annotations_addr()) : NULL;
+    return has_method_annotations() ? *(method_annotations_addr()) : nullptr;
   }
   void set_method_annotations(AnnotationArray* anno) {
     *(method_annotations_addr()) = anno;
@@ -406,7 +367,7 @@ public:
 
   AnnotationArray** parameter_annotations_addr() const;
   AnnotationArray* parameter_annotations() const {
-    return has_parameter_annotations() ? *(parameter_annotations_addr()) : NULL;
+    return has_parameter_annotations() ? *(parameter_annotations_addr()) : nullptr;
   }
   void set_parameter_annotations(AnnotationArray* anno) {
     *(parameter_annotations_addr()) = anno;
@@ -414,7 +375,7 @@ public:
 
   AnnotationArray** type_annotations_addr() const;
   AnnotationArray* type_annotations() const {
-    return has_type_annotations() ? *(type_annotations_addr()) : NULL;
+    return has_type_annotations() ? *(type_annotations_addr()) : nullptr;
   }
   void set_type_annotations(AnnotationArray* anno) {
     *(type_annotations_addr()) = anno;
@@ -422,7 +383,7 @@ public:
 
   AnnotationArray** default_annotations_addr() const;
   AnnotationArray* default_annotations() const {
-    return has_default_annotations() ? *(default_annotations_addr()) : NULL;
+    return has_default_annotations() ? *(default_annotations_addr()) : nullptr;
   }
   void set_default_annotations(AnnotationArray* anno) {
     *(default_annotations_addr()) = anno;

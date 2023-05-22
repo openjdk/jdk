@@ -104,6 +104,7 @@ public class ModuleFinder {
     }
 
     /** Construct a new module finder. */
+    @SuppressWarnings("this-escape")
     protected ModuleFinder(Context context) {
         context.put(moduleFinderKey, this);
         names = Names.instance(context);

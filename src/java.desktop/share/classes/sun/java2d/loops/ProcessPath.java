@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1469,7 +1469,6 @@ public class ProcessPath {
         float[] coords = new float[8];
         float[] tCoords = new float[8];
         float[] closeCoord = new float[] {0.0f, 0.0f};
-        float[] firstCoord = new float[2];
         int[] pixelInfo = new int[5];
         boolean subpathStarted = false;
         boolean skip = false;

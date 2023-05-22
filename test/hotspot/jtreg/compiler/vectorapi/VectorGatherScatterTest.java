@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Arm Limited. All rights reserved.
+ * Copyright (c) 2022, 2023, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,7 +79,7 @@ public class VectorGatherScatterTest {
             ia[i] = i;
             la[i] = RD.nextLong(25);
             da[i] = RD.nextDouble(25.0);
-            m[i] = RD.nextBoolean();
+            m[i] = i % 2 == 0;
         }
     }
 
@@ -102,6 +102,8 @@ public class VectorGatherScatterTest {
     @IR(counts = { IRNode.LOAD_VECTOR_GATHER_MASKED, ">= 1" })
     public static void testLoadGatherMasked() {
         VectorMask<Long> mask = VectorMask.fromArray(L_SPECIES, m, 0);
+        // "mask" is guaranteed to be not alltrue, in case the masked
+        // gather load is optimized to the non-masked version.
         LongVector av = LongVector.fromArray(L_SPECIES, la, 0, ia, 0, mask);
         av.intoArray(lr, 0);
         IntVector bv = IntVector.fromArray(I_SPECIES, ia, 0);
@@ -132,6 +134,8 @@ public class VectorGatherScatterTest {
     public static void testStoreScatterMasked() {
         VectorMask<Double> mask = VectorMask.fromArray(D_SPECIES, m, 0);
         DoubleVector av = DoubleVector.fromArray(D_SPECIES, da, 0);
+        // "mask" is guaranteed to be not alltrue, in case the masked
+        // scatter store is optimized to the non-masked version.
         av.intoArray(dr, 0, ia, 0, mask);
         IntVector bv = IntVector.fromArray(I_SPECIES, ia, 0);
         bv.add(0).intoArray(ir, 0);

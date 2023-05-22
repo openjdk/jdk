@@ -25,10 +25,10 @@
  * @test
  * @summary StressStackOverflow the recovery path for ScopedValue
  * @modules jdk.incubator.concurrent
- * @compile --enable-preview -source ${jdk.version} StressStackOverflow.java
- * @run main/othervm/timeout=300 -XX:-TieredCompilation --enable-preview StressStackOverflow
- * @run main/othervm/timeout=300 -XX:TieredStopAtLevel=1 --enable-preview StressStackOverflow
- * @run main/othervm/timeout=300 --enable-preview StressStackOverflow
+ * @compile StressStackOverflow.java
+ * @run main/othervm/timeout=300 -XX:-TieredCompilation StressStackOverflow
+ * @run main/othervm/timeout=300 -XX:TieredStopAtLevel=1 StressStackOverflow
+ * @run main/othervm/timeout=300 StressStackOverflow
  */
 
 import java.util.concurrent.Callable;

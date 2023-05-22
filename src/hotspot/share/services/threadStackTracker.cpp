@@ -31,13 +31,13 @@
 #include "services/threadStackTracker.hpp"
 
 volatile size_t ThreadStackTracker::_thread_count = 0;
-SortedLinkedList<SimpleThreadStackSite, ThreadStackTracker::compare_thread_stack_base>* ThreadStackTracker::_simple_thread_stacks = NULL;
+SortedLinkedList<SimpleThreadStackSite, ThreadStackTracker::compare_thread_stack_base>* ThreadStackTracker::_simple_thread_stacks = nullptr;
 
 bool ThreadStackTracker::initialize(NMT_TrackingLevel level) {
   if (level == NMT_detail && !track_as_vm()) {
     _simple_thread_stacks = new (std::nothrow, mtNMT)
       SortedLinkedList<SimpleThreadStackSite, ThreadStackTracker::compare_thread_stack_base>();
-    return (_simple_thread_stacks != NULL);
+    return (_simple_thread_stacks != nullptr);
   }
   return true;
 }
@@ -48,7 +48,7 @@ int ThreadStackTracker::compare_thread_stack_base(const SimpleThreadStackSite& s
 
 void ThreadStackTracker::new_thread_stack(void* base, size_t size, const NativeCallStack& stack) {
   assert(MemTracker::tracking_level() >= NMT_summary, "Must be");
-  assert(base != NULL, "Should have been filtered");
+  assert(base != nullptr, "Should have been filtered");
   if (track_as_vm()) {
     ThreadCritical tc;
     VirtualMemoryTracker::add_reserved_region((address)base, size, stack, mtThreadStack);
@@ -58,7 +58,7 @@ void ThreadStackTracker::new_thread_stack(void* base, size_t size, const NativeC
     MallocMemorySummary::record_malloc(size, mtThreadStack);
     if (MemTracker::tracking_level() == NMT_detail) {
       ThreadCritical tc;
-      assert(_simple_thread_stacks != NULL, "Must be initialized");
+      assert(_simple_thread_stacks != nullptr, "Must be initialized");
       SimpleThreadStackSite site((address)base, size, stack);
       _simple_thread_stacks->add(site);
     }
@@ -67,7 +67,7 @@ void ThreadStackTracker::new_thread_stack(void* base, size_t size, const NativeC
 
 void ThreadStackTracker::delete_thread_stack(void* base, size_t size) {
   assert(MemTracker::tracking_level() >= NMT_summary, "Must be");
-  assert(base != NULL, "Should have been filtered");
+  assert(base != nullptr, "Should have been filtered");
   if(track_as_vm()) {
     ThreadCritical tc;
     VirtualMemoryTracker::remove_released_region((address)base, size);
@@ -77,7 +77,7 @@ void ThreadStackTracker::delete_thread_stack(void* base, size_t size) {
     MallocMemorySummary::record_free(size, mtThreadStack);
     if (MemTracker::tracking_level() == NMT_detail) {
       ThreadCritical tc;
-      assert(_simple_thread_stacks != NULL, "Must be initialized");
+      assert(_simple_thread_stacks != nullptr, "Must be initialized");
       SimpleThreadStackSite site((address)base, size, NativeCallStack::empty_stack()); // Fake object just to serve as compare target for delete
       bool removed = _simple_thread_stacks->remove(site);
       assert(removed, "Must exist");
@@ -90,15 +90,15 @@ bool ThreadStackTracker::walk_simple_thread_stack_site(MallocSiteWalker* walker)
     LinkedListImpl<MallocSite> _sites;
     {
       ThreadCritical tc;
-      assert(_simple_thread_stacks != NULL, "Must be initialized");
+      assert(_simple_thread_stacks != nullptr, "Must be initialized");
       LinkedListIterator<SimpleThreadStackSite> itr(_simple_thread_stacks->head());
       const SimpleThreadStackSite* ts = itr.next();
       // Consolidate sites and convert to MallocSites, so we can piggyback into
       // malloc snapshot
-      while (ts != NULL) {
+      while (ts != nullptr) {
         MallocSite site(*ts->call_stack(), mtThreadStack);
         MallocSite* exist = _sites.find(site);
-        if (exist != NULL) {
+        if (exist != nullptr) {
           exist->allocate(ts->size());
         } else {
           site.allocate(ts->size());
@@ -111,7 +111,7 @@ bool ThreadStackTracker::walk_simple_thread_stack_site(MallocSiteWalker* walker)
     // Piggyback to malloc snapshot
     LinkedListIterator<MallocSite> site_itr(_sites.head());
     const MallocSite* s = site_itr.next();
-    while (s != NULL) {
+    while (s != nullptr) {
       walker->do_malloc_site(s);
       s = site_itr.next();
     }

@@ -102,8 +102,7 @@ public class NoStringToLower {
      * Verify there are no references to String.toLowerCase() in a class file.
      */
     void scan(JavaFileObject fo) throws IOException {
-        InputStream in = fo.openInputStream();
-        try {
+        try (InputStream in = fo.openInputStream()) {
             ClassFile cf = ClassFile.read(in);
             for (ConstantPool.CPInfo cpinfo: cf.constant_pool.entries()) {
                 if (cpinfo.getTag() == ConstantPool.CONSTANT_Methodref) {
@@ -119,8 +118,6 @@ public class NoStringToLower {
                 }
             }
         } catch (ConstantPoolException ignore) {
-        } finally {
-            in.close();
         }
     }
 

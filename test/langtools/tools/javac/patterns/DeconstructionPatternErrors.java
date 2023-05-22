@@ -1,15 +1,15 @@
 /**
  * @test /nodynamiccopyright/
  * @summary Verify error reports for erroneous deconstruction patterns are sensible
- * @enablePreview
  * @compile/fail/ref=DeconstructionPatternErrors.out -XDrawDiagnostics -XDshould-stop.at=FLOW -XDdev DeconstructionPatternErrors.java
  */
+
 import java.util.ArrayList;
 import java.util.List;
 
 public class DeconstructionPatternErrors {
 
-    public static void main(String... args) throws Throwable {
+    public static void meth() throws Throwable {
         Object p;
         p = new P(42);
         if (p instanceof P(_));

@@ -253,16 +253,23 @@ findThread(ThreadList *list, jthread thread)
          * Otherwise the thread should not be on the runningThreads.
          */
         if ( !gdata->jvmtiCallBacksCleared ) {
-            /* The thread better not be on runningThreads if the TLS lookup failed. */
+            /* The thread better not be on either list if the TLS lookup failed. */
             JDI_ASSERT(!nonTlsSearch(getEnv(), &runningThreads, thread));
+            JDI_ASSERT(!nonTlsSearch(getEnv(), &runningVThreads, thread));
         } else {
             /*
-             * Search the runningThreads list. The TLS lookup may have failed because the
-             * thread has terminated, but we never got the THREAD_END event.
+             * Search the runningThreads and runningVThreads lists. The TLS lookup may have
+             * failed because the thread has terminated, but we never got the THREAD_END event.
+             * The big comment above explains why this can happen.
              */
             if ( node == NULL ) {
                 if ( list == NULL || list == &runningThreads ) {
                     node = nonTlsSearch(getEnv(), &runningThreads, thread);
+                }
+                if ( node == NULL ) {
+                    if ( list == NULL || list == &runningVThreads ) {
+                        node = nonTlsSearch(getEnv(), &runningVThreads, thread);
+                    }
                 }
             }
         }

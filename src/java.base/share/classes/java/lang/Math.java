@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2189,6 +2189,135 @@ public final class Math {
             return b;
         }
         return (a <= b) ? a : b;
+    }
+
+    /**
+     * Clamps the value to fit between min and max. If the value is less
+     * than {@code min}, then {@code min} is returned. If the value is greater
+     * than {@code max}, then {@code max} is returned. Otherwise, the original
+     * value is returned.
+     * <p>
+     * While the original value of type long may not fit into the int type,
+     * the bounds have the int type, so the result always fits the int type.
+     * This allows to use method to safely cast long value to int with
+     * saturation.
+     *
+     * @param value value to clamp
+     * @param min minimal allowed value
+     * @param max maximal allowed value
+     * @return a clamped value that fits into {@code min..max} interval
+     * @throws IllegalArgumentException if {@code min > max}
+     *
+     * @since 21
+     */
+    public static int clamp(long value, int min, int max) {
+        if (min > max) {
+            throw new IllegalArgumentException(min + " > " + max);
+        }
+        return (int) Math.min(max, Math.max(value, min));
+    }
+
+    /**
+     * Clamps the value to fit between min and max. If the value is less
+     * than {@code min}, then {@code min} is returned. If the value is greater
+     * than {@code max}, then {@code max} is returned. Otherwise, the original
+     * value is returned.
+     *
+     * @param value value to clamp
+     * @param min minimal allowed value
+     * @param max maximal allowed value
+     * @return a clamped value that fits into {@code min..max} interval
+     * @throws IllegalArgumentException if {@code min > max}
+     *
+     * @since 21
+     */
+    public static long clamp(long value, long min, long max) {
+        if (min > max) {
+            throw new IllegalArgumentException(min + " > " + max);
+        }
+        return Math.min(max, Math.max(value, min));
+    }
+
+    /**
+     * Clamps the value to fit between min and max. If the value is less
+     * than {@code min}, then {@code min} is returned. If the value is greater
+     * than {@code max}, then {@code max} is returned. Otherwise, the original
+     * value is returned. If value is NaN, the result is also NaN.
+     * <p>
+     * Unlike the numerical comparison operators, this method considers
+     * negative zero to be strictly smaller than positive zero.
+     * E.g., {@code clamp(-0.0, 0.0, 1.0)} returns 0.0.
+     *
+     * @param value value to clamp
+     * @param min minimal allowed value
+     * @param max maximal allowed value
+     * @return a clamped value that fits into {@code min..max} interval
+     * @throws IllegalArgumentException if either of {@code min} and {@code max}
+     * arguments is NaN, or {@code min > max}, or {@code min} is +0.0, and
+     * {@code max} is -0.0.
+     *
+     * @since 21
+     */
+    public static double clamp(double value, double min, double max) {
+        // This unusual condition allows keeping only one branch
+        // on common path when min < max and neither of them is NaN.
+        // If min == max, we should additionally check for +0.0/-0.0 case,
+        // so we're still visiting the if statement.
+        if (!(min < max)) { // min greater than, equal to, or unordered with respect to max; NaN values are unordered
+            if (Double.isNaN(min)) {
+                throw new IllegalArgumentException("min is NaN");
+            }
+            if (Double.isNaN(max)) {
+                throw new IllegalArgumentException("max is NaN");
+            }
+            if (Double.compare(min, max) > 0) {
+                throw new IllegalArgumentException(min + " > " + max);
+            }
+            // Fall-through if min and max are exactly equal (or min = -0.0 and max = +0.0)
+            // and none of them is NaN
+        }
+        return Math.min(max, Math.max(value, min));
+    }
+
+    /**
+     * Clamps the value to fit between min and max. If the value is less
+     * than {@code min}, then {@code min} is returned. If the value is greater
+     * than {@code max}, then {@code max} is returned. Otherwise, the original
+     * value is returned. If value is NaN, the result is also NaN.
+     * <p>
+     * Unlike the numerical comparison operators, this method considers
+     * negative zero to be strictly smaller than positive zero.
+     * E.g., {@code clamp(-0.0f, 0.0f, 1.0f)} returns 0.0f.
+     *
+     * @param value value to clamp
+     * @param min minimal allowed value
+     * @param max maximal allowed value
+     * @return a clamped value that fits into {@code min..max} interval
+     * @throws IllegalArgumentException if either of {@code min} and {@code max}
+     * arguments is NaN, or {@code min > max}, or {@code min} is +0.0f, and
+     * {@code max} is -0.0f.
+     *
+     * @since 21
+     */
+    public static float clamp(float value, float min, float max) {
+        // This unusual condition allows keeping only one branch
+        // on common path when min < max and neither of them is NaN.
+        // If min == max, we should additionally check for +0.0/-0.0 case,
+        // so we're still visiting the if statement.
+        if (!(min < max)) { // min greater than, equal to, or unordered with respect to max; NaN values are unordered
+            if (Float.isNaN(min)) {
+                throw new IllegalArgumentException("min is NaN");
+            }
+            if (Float.isNaN(max)) {
+                throw new IllegalArgumentException("max is NaN");
+            }
+            if (Float.compare(min, max) > 0) {
+                throw new IllegalArgumentException(min + " > " + max);
+            }
+            // Fall-through if min and max are exactly equal (or min = -0.0 and max = +0.0)
+            // and none of them is NaN
+        }
+        return Math.min(max, Math.max(value, min));
     }
 
     /**

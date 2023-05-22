@@ -145,7 +145,7 @@ final class ProxyingConsole extends Console {
         return delegate.charset();
     }
 
-    private static class WrappingReader extends Reader {
+    private static final class WrappingReader extends Reader {
         private final Reader r;
         private final Object lock;
 
@@ -168,7 +168,7 @@ final class ProxyingConsole extends Console {
         }
     }
 
-    private static class WrappingWriter extends PrintWriter {
+    private static final class WrappingWriter extends PrintWriter {
         private final PrintWriter pw;
         private final Object lock;
 

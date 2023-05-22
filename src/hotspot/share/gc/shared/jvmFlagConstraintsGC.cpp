@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/shared/cardTableRS.hpp"
+#include "gc/serial/cardTableRS.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gcArguments.hpp"
 #include "gc/shared/gcConfig.hpp"

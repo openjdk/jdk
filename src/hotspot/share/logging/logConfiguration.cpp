@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,10 +40,10 @@
 #include "runtime/semaphore.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-LogOutput** LogConfiguration::_outputs = NULL;
+LogOutput** LogConfiguration::_outputs = nullptr;
 size_t      LogConfiguration::_n_outputs = 0;
 
-LogConfiguration::UpdateListenerFunction* LogConfiguration::_listener_callbacks = NULL;
+LogConfiguration::UpdateListenerFunction* LogConfiguration::_listener_callbacks = nullptr;
 size_t      LogConfiguration::_n_listener_callbacks = 0;
 
 // LogFileOutput is the default type of output, its type prefix should be used if no type was specified
@@ -105,7 +105,7 @@ void LogConfiguration::initialize(jlong vm_start_time) {
   StdoutLog = new LogStdoutOutput();
   StderrLog = new LogStderrOutput();
   LogFileOutput::set_file_name_parameters(vm_start_time);
-  assert(_outputs == NULL, "Should not initialize _outputs before this function, initialize called twice?");
+  assert(_outputs == nullptr, "Should not initialize _outputs before this function, initialize called twice?");
   _outputs = NEW_C_HEAP_ARRAY(LogOutput*, 2, mtLogging);
   _outputs[0] = StdoutLog;
   _outputs[1] = StderrLog;
@@ -114,7 +114,7 @@ void LogConfiguration::initialize(jlong vm_start_time) {
   _outputs[1]->set_config_string("all=off");
 
   // Set the default output to warning and error level for all new tagsets.
-  for (LogTagSet* ts = LogTagSet::first(); ts != NULL; ts = ts->next()) {
+  for (LogTagSet* ts = LogTagSet::first(); ts != nullptr; ts = ts->next()) {
     ts->set_output_level(StdoutLog, LogLevel::Default);
   }
 }
@@ -129,18 +129,18 @@ void LogConfiguration::finalize() {
 static bool normalize_output_name(const char* full_name, char* buffer, size_t len, outputStream* errstream) {
   const char* start_quote = strchr(full_name, '"');
   const char* equals = strchr(full_name, '=');
-  const bool quoted = start_quote != NULL;
+  const bool quoted = start_quote != nullptr;
   const bool is_stdout_or_stderr = (strcmp(full_name, "stdout") == 0 || strcmp(full_name, "stderr") == 0);
 
   // ignore equals sign within quotes
   if (quoted && equals > start_quote) {
-    equals = NULL;
+    equals = nullptr;
   }
 
   const char* prefix = "";
   size_t prefix_len = 0;
   const char* name = full_name;
-  if (equals != NULL) {
+  if (equals != nullptr) {
     // split on equals sign
     name = equals + 1;
     prefix = full_name;
@@ -153,7 +153,7 @@ static bool normalize_output_name(const char* full_name, char* buffer, size_t le
 
   if (quoted) {
     const char* end_quote = strchr(start_quote + 1, '"');
-    if (end_quote == NULL) {
+    if (end_quote == nullptr) {
       errstream->print_cr("Output name has opening quote but is missing a terminating quote.");
       return false;
     }
@@ -190,14 +190,14 @@ LogOutput* LogConfiguration::new_output(const char* name,
     output = new LogFileOutput(name);
   } else {
     errstream->print_cr("Unsupported log output type: %s", name);
-    return NULL;
+    return nullptr;
   }
 
   bool success = output->initialize(options, errstream);
   if (!success) {
     errstream->print_cr("Initialization of output '%s' using options '%s' failed.", name, options);
     delete output;
-    return NULL;
+    return nullptr;
   }
   return output;
 }
@@ -245,7 +245,7 @@ void LogConfiguration::configure_output(size_t idx, const LogSelectionList& sele
   size_t on_level[LogLevel::Count] = {0};
 
   bool enabled = false;
-  for (LogTagSet* ts = LogTagSet::first(); ts != NULL; ts = ts->next()) {
+  for (LogTagSet* ts = LogTagSet::first(); ts != nullptr; ts = ts->next()) {
     LogLevelType level = selections.level_for(*ts);
 
     // Ignore tagsets that do not, and will not log on the output
@@ -285,7 +285,7 @@ void LogConfiguration::configure_output(size_t idx, const LogSelectionList& sele
   output->set_decorators(decorators);
 
   // Update the decorators on all tagsets to get rid of unused decorators
-  for (LogTagSet* ts = LogTagSet::first(); ts != NULL; ts = ts->next()) {
+  for (LogTagSet* ts = LogTagSet::first(); ts != nullptr; ts = ts->next()) {
     ts->update_decorators();
   }
 
@@ -303,7 +303,7 @@ void LogConfiguration::disable_outputs() {
   size_t idx = _n_outputs;
 
   // Remove all outputs from all tagsets.
-  for (LogTagSet* ts = LogTagSet::first(); ts != NULL; ts = ts->next()) {
+  for (LogTagSet* ts = LogTagSet::first(); ts != nullptr; ts = ts->next()) {
     ts->disable_outputs();
   }
 
@@ -328,7 +328,7 @@ void LogConfiguration::disable_logging() {
   ConfigurationLock cl;
   disable_outputs();
   // Update the decorators on all tagsets to get rid of unused decorators
-  for (LogTagSet* ts = LogTagSet::first(); ts != NULL; ts = ts->next()) {
+  for (LogTagSet* ts = LogTagSet::first(); ts != nullptr; ts = ts->next()) {
     ts->update_decorators();
   }
   notify_update_listeners();
@@ -376,15 +376,15 @@ bool LogConfiguration::parse_command_line_arguments(const char* opts) {
 #ifdef _WINDOWS
     // Skip over Windows paths such as "C:\..." and "C:/...".
     // Handles both "C:\..." and "file=C:\...".
-    if (next != NULL && next[0] == ':' && (next[1] == '\\' || next[1] == '/')) {
+    if (next != nullptr && next[0] == ':' && (next[1] == '\\' || next[1] == '/')) {
       if (next == str + 1 || (strncmp(str, "file=", 5) == 0)) {
         next = strpbrk(next + 1, ":\"");
       }
     }
 #endif
-    while (next != NULL && *next == '"') {
+    while (next != nullptr && *next == '"') {
       char* end_quote = strchr(next + 1, '"');
-      if (end_quote == NULL) {
+      if (end_quote == nullptr) {
         log_error(logging)("Missing terminating quote in -Xlog option '%s'", str);
         os::free(copy);
         return false;
@@ -393,16 +393,16 @@ bool LogConfiguration::parse_command_line_arguments(const char* opts) {
       next = strpbrk(end_quote + 1, ":\"");
     }
 
-    if (next != NULL) {
+    if (next != nullptr) {
       *next = '\0';
       str = next + 1;
     } else {
-      str = NULL;
+      str = nullptr;
       break;
     }
   }
 
-  if (str != NULL) {
+  if (str != nullptr) {
     log_warning(logging)("Ignoring excess -Xlog options: \"%s\"", str);
   }
 
@@ -423,13 +423,13 @@ bool LogConfiguration::parse_command_line_arguments(const char* opts) {
   // (parse_log_arguments() will report an error), but we make an exception for
   // both StdoutLog and StderrLog as they're initialized automatically
   // very early in the boot process.
-  if (output == NULL || strlen(output) == 0 ||
+  if (output == nullptr || strlen(output) == 0 ||
       strcmp("stdout", output) == 0 || strcmp("#0", output) == 0) {
     if (!stdout_configured) {
       success = StdoutLog->parse_options(output_options, &ss);
       stdout_configured = true;
       // We no longer need to pass output options to parse_log_arguments().
-      output_options = NULL;
+      output_options = nullptr;
     }
     // else - fall-through to normal option processing which will be rejected
     // with a warning
@@ -438,7 +438,7 @@ bool LogConfiguration::parse_command_line_arguments(const char* opts) {
       success = StderrLog->parse_options(output_options, &ss);
       stderr_configured = true;
       // We no longer need to pass output options to parse_log_arguments().
-      output_options = NULL;
+      output_options = nullptr;
     }
     // else - fall-through to normal option processing which will be rejected
     // with a warning
@@ -456,7 +456,7 @@ bool LogConfiguration::parse_command_line_arguments(const char* opts) {
     Log(logging) log;
     char* start = errbuf;
     char* end = strchr(start, '\n');
-    assert(end != NULL, "line must end with newline '%s'", start);
+    assert(end != nullptr, "line must end with newline '%s'", start);
     do {
       assert(start < errbuf + sizeof(errbuf) &&
              end < errbuf + sizeof(errbuf),
@@ -465,8 +465,8 @@ bool LogConfiguration::parse_command_line_arguments(const char* opts) {
       log.write(level, "%s", start);
       start = end + 1;
       end = strchr(start, '\n');
-      assert(end != NULL || *start == '\0', "line must end with newline '%s'", start);
-    } while (end != NULL);
+      assert(end != nullptr || *start == '\0', "line must end with newline '%s'", start);
+    } while (end != nullptr);
   }
 
   os::free(copy);
@@ -478,8 +478,8 @@ bool LogConfiguration::parse_log_arguments(const char* outputstr,
                                            const char* decoratorstr,
                                            const char* output_options,
                                            outputStream* errstream) {
-  assert(errstream != NULL, "errstream can not be NULL");
-  if (outputstr == NULL || strlen(outputstr) == 0) {
+  assert(errstream != nullptr, "errstream can not be nullptr");
+  if (outputstr == nullptr || strlen(outputstr) == 0) {
     outputstr = "stdout";
   }
 
@@ -514,7 +514,7 @@ bool LogConfiguration::parse_log_arguments(const char* outputstr,
     if (idx == SIZE_MAX) {
       // Attempt to create and add the output
       LogOutput* output = new_output(normalized, output_options, errstream);
-      if (output != NULL) {
+      if (output != nullptr) {
         idx = add_output(output);
         added = true;
       }
@@ -525,7 +525,7 @@ bool LogConfiguration::parse_log_arguments(const char* outputstr,
       return false;
     }
   }
-  if (!added && output_options != NULL && strlen(output_options) > 0) {
+  if (!added && output_options != nullptr && strlen(output_options) > 0) {
     errstream->print_cr("Output options for existing outputs are ignored.");
   }
   configure_output(idx, selections, decorators);
@@ -690,7 +690,7 @@ void LogConfiguration::rotate_all_outputs() {
 }
 
 void LogConfiguration::register_update_listener(UpdateListenerFunction cb) {
-  assert(cb != NULL, "Should not register NULL as listener");
+  assert(cb != nullptr, "Should not register nullptr as listener");
   ConfigurationLock cl;
   size_t idx = _n_listener_callbacks++;
   _listener_callbacks = REALLOC_C_HEAP_ARRAY(UpdateListenerFunction,

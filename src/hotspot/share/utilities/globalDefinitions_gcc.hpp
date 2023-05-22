@@ -101,13 +101,6 @@ typedef unsigned int            uintptr_t;
 
 #endif // !LINUX && !_ALLBSD_SOURCE
 
-// Additional Java basic types
-
-typedef uint8_t  jubyte;
-typedef uint16_t jushort;
-typedef uint32_t juint;
-typedef uint64_t julong;
-
 // checking for nanness
 #if defined(__APPLE__)
 inline int g_isnan(double f) { return isnan(f); }
@@ -147,12 +140,12 @@ inline int g_isfinite(jdouble f)                 { return isfinite(f); }
 // use offsetof() instead, with the invalid-offsetof warning
 // temporarily disabled.
 #define offset_of(klass,field)                          \
-[]() {                                                  \
+([]() {                                                 \
   char space[sizeof (klass)] ATTRIBUTE_ALIGNED(16);     \
   klass* dummyObj = (klass*)space;                      \
   char* c = (char*)(void*)&dummyObj->field;             \
   return (size_t)(c - space);                           \
-}()
+}())
 
 
 #if defined(_LP64) && defined(__APPLE__)

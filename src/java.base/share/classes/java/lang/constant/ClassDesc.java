@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
  */
 package java.lang.constant;
 
+import java.lang.invoke.MethodHandles;
 import java.lang.invoke.TypeDescriptor;
 import java.util.stream.Stream;
 
@@ -99,6 +100,7 @@ public sealed interface ClassDesc
      * @jvms 4.2.1 Binary Class and Interface Names
      * @see ClassDesc#of(String)
      * @see ClassDesc#ofDescriptor(String)
+     * @since 20
      */
     static ClassDesc ofInternalName(String name) {
         ConstantUtils.validateInternalClassName(requireNonNull(name));
@@ -360,6 +362,9 @@ public sealed interface ClassDesc
      * @jvms 4.3.2 Field Descriptors
      */
     String descriptorString();
+
+    @Override
+    Class<?> resolveConstantDesc(MethodHandles.Lookup lookup) throws ReflectiveOperationException;
 
     /**
      * Compare the specified object with this descriptor for equality.  Returns

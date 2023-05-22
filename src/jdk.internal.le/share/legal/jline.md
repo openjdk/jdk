@@ -1,4 +1,4 @@
-## JLine v3.20.0
+## JLine v3.22.0
 
 ### JLine License
 <pre>
@@ -41,10 +41,10 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 
 4th Party Dependency
 =============
-org.fusesource.jansi version 1.17.1
-org.apache.sshd 2.1 to 3
-org.apache.felix.gogo.runtime 1.1.2
-org.apache.felix.gogo.jline 1.1.4
+org.fusesource.jansi version 2.4.0
+org.apache.sshd 2.9.2
+org.apache.felix.gogo.runtime 1.1.6
+org.apache.felix.gogo.jline 1.1.8
 =============
 Apache License
                           Version 2.0, January 2004
@@ -262,7 +262,7 @@ slf4j
 SLF4J source code and binaries are distributed under the MIT license.
 
 
-Copyright (c) 2004-2017 QOS.ch
+Copyright (c) 2004-2023 QOS.ch
 All rights reserved.
 
 Permission is hereby granted, free of charge, to any person obtaining

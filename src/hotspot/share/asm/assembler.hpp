@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -145,7 +145,7 @@ class Label {
    * @param cb         the code buffer being patched
    * @param branch_loc the locator of the branch instruction in the code buffer
    */
-  void add_patch_at(CodeBuffer* cb, int branch_loc, const char* file = NULL, int line = 0);
+  void add_patch_at(CodeBuffer* cb, int branch_loc, const char* file = nullptr, int line = 0);
 
   /**
    * Iterate over the list of patches, resolving the instructions
@@ -156,7 +156,7 @@ class Label {
   void init() {
     _loc = -1;
     _patch_index = 0;
-    _patch_overflow = NULL;
+    _patch_overflow = nullptr;
     _is_near = false;
   }
 
@@ -233,7 +233,7 @@ class AbstractAssembler : public ResourceObj  {
 
    public:
     InstructionMark(AbstractAssembler* assm) : _assm(assm) {
-      assert(assm->inst_mark() == NULL, "overlapping instructions");
+      assert(assm->inst_mark() == nullptr, "overlapping instructions");
       _assm->set_inst_mark();
     }
     ~InstructionMark() {
@@ -241,6 +241,22 @@ class AbstractAssembler : public ResourceObj  {
     }
   };
   friend class InstructionMark;
+
+ public:
+  // count size of instructions which are skipped from inline heuristics
+  class InlineSkippedInstructionsCounter: public StackObj {
+   private:
+    AbstractAssembler* _assm;
+    address _start;
+   public:
+    InlineSkippedInstructionsCounter(AbstractAssembler* assm) : _assm(assm), _start(assm->pc()) {
+    }
+    ~InlineSkippedInstructionsCounter() {
+      _assm->register_skipped(_assm->pc() - _start);
+    }
+  };
+
+ protected:
 #ifdef ASSERT
   // Make it return true on platforms which need to verify
   // instruction boundaries for some operations.
@@ -333,14 +349,17 @@ class AbstractAssembler : public ResourceObj  {
   OopRecorder*  oop_recorder() const   { return _oop_recorder; }
   void      set_oop_recorder(OopRecorder* r) { _oop_recorder = r; }
 
+  void   register_skipped(int size) { code_section()->register_skipped(size); }
+
   address       inst_mark() const { return code_section()->mark();       }
   void      set_inst_mark()       {        code_section()->set_mark();   }
   void    clear_inst_mark()       {        code_section()->clear_mark(); }
 
+
   // Constants in code
   void relocate(RelocationHolder const& rspec, int format = 0) {
     assert(!pd_check_instruction_mark()
-        || inst_mark() == NULL || inst_mark() == code_section()->end(),
+        || inst_mark() == nullptr || inst_mark() == code_section()->end(),
         "call relocate() between instructions");
     code_section()->relocate(code_section()->end(), rspec, format);
   }
@@ -377,7 +396,7 @@ class AbstractAssembler : public ResourceObj  {
   address int_constant(jint c) {
     CodeSection* c1 = _code_section;
     address ptr = start_a_const(sizeof(c), sizeof(c));
-    if (ptr != NULL) {
+    if (ptr != nullptr) {
       emit_int32(c);
       end_a_const(c1);
     }
@@ -386,7 +405,7 @@ class AbstractAssembler : public ResourceObj  {
   address long_constant(jlong c) {
     CodeSection* c1 = _code_section;
     address ptr = start_a_const(sizeof(c), sizeof(c));
-    if (ptr != NULL) {
+    if (ptr != nullptr) {
       emit_int64(c);
       end_a_const(c1);
     }
@@ -395,7 +414,7 @@ class AbstractAssembler : public ResourceObj  {
   address double_constant(jdouble c) {
     CodeSection* c1 = _code_section;
     address ptr = start_a_const(sizeof(c), sizeof(c));
-    if (ptr != NULL) {
+    if (ptr != nullptr) {
       emit_double(c);
       end_a_const(c1);
     }
@@ -404,7 +423,7 @@ class AbstractAssembler : public ResourceObj  {
   address float_constant(jfloat c) {
     CodeSection* c1 = _code_section;
     address ptr = start_a_const(sizeof(c), sizeof(c));
-    if (ptr != NULL) {
+    if (ptr != nullptr) {
       emit_float(c);
       end_a_const(c1);
     }
@@ -413,7 +432,7 @@ class AbstractAssembler : public ResourceObj  {
   address address_constant(address c) {
     CodeSection* c1 = _code_section;
     address ptr = start_a_const(sizeof(c), sizeof(c));
-    if (ptr != NULL) {
+    if (ptr != nullptr) {
       emit_address(c);
       end_a_const(c1);
     }
@@ -422,7 +441,7 @@ class AbstractAssembler : public ResourceObj  {
   address address_constant(address c, RelocationHolder const& rspec) {
     CodeSection* c1 = _code_section;
     address ptr = start_a_const(sizeof(c), sizeof(c));
-    if (ptr != NULL) {
+    if (ptr != nullptr) {
       relocate(rspec);
       emit_address(c);
       end_a_const(c1);
@@ -434,7 +453,7 @@ class AbstractAssembler : public ResourceObj  {
     int len = c->length();
     int size = type2aelembytes(bt) * len;
     address ptr = start_a_const(size, alignment);
-    if (ptr != NULL) {
+    if (ptr != nullptr) {
       for (int i = 0; i < len; i++) {
         jvalue e = c->at(i);
         switch(bt) {

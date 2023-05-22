@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,11 +81,11 @@ frame FreezeBase::new_heap_frame(frame& f, frame& caller) {
   if (FKind::interpreted) {
     assert((intptr_t*)f.at(frame::interpreter_frame_last_sp_offset) == nullptr
       || f.unextended_sp() == (intptr_t*)f.at(frame::interpreter_frame_last_sp_offset), "");
-    int locals = f.interpreter_frame_method()->max_locals();
+    intptr_t locals_offset = *f.addr_at(frame::interpreter_frame_locals_offset);
     // If the caller.is_empty(), i.e. we're freezing into an empty chunk, then we set
     // the chunk's argsize in finalize_freeze and make room for it above the unextended_sp
     bool overlap_caller = caller.is_interpreted_frame() || caller.is_empty();
-    fp = caller.unextended_sp() - (locals + frame::sender_sp_offset) + (overlap_caller ? ContinuationHelper::InterpretedFrame::stack_argsize(f) : 0);
+    fp = caller.unextended_sp() - 1 - locals_offset + (overlap_caller ? ContinuationHelper::InterpretedFrame::stack_argsize(f) : 0);
     sp = fp - (f.fp() - f.unextended_sp());
     assert(sp <= fp, "");
     assert(fp <= caller.unextended_sp(), "");
@@ -94,7 +94,8 @@ frame FreezeBase::new_heap_frame(frame& f, frame& caller) {
     assert(_cont.tail()->is_in_chunk(sp), "");
 
     frame hf(sp, sp, fp, f.pc(), nullptr, nullptr, true /* on_heap */);
-    *hf.addr_at(frame::interpreter_frame_locals_offset) = frame::sender_sp_offset + locals - 1;
+    // copy relativized locals from the stack frame
+    *hf.addr_at(frame::interpreter_frame_locals_offset) = locals_offset;
     return hf;
   } else {
     // We need to re-read fp out of the frame because it may be an oop and we might have
@@ -140,12 +141,11 @@ inline void FreezeBase::relativize_interpreted_frame_metadata(const frame& f, co
     || (f.unextended_sp() == f.sp()), "");
   assert(f.fp() > (intptr_t*)f.at(frame::interpreter_frame_initial_sp_offset), "");
 
-  // We compute the locals as below rather than relativize the value in the frame because then we can use the same
-  // code on AArch64, which has an added complication (see this method in continuation_aarch64.inline.hpp)
-
-  // at(frame::interpreter_frame_last_sp_offset) can be NULL at safepoint preempts
+  // at(frame::interpreter_frame_last_sp_offset) can be null at safepoint preempts
   *hf.addr_at(frame::interpreter_frame_last_sp_offset) = hf.unextended_sp() - hf.fp();
-  *hf.addr_at(frame::interpreter_frame_locals_offset) = frame::sender_sp_offset + f.interpreter_frame_method()->max_locals() - 1;
+
+  // Make sure that locals is already relativized.
+  assert((*hf.addr_at(frame::interpreter_frame_locals_offset) == frame::sender_sp_offset + f.interpreter_frame_method()->max_locals() - 1), "");
 
   relativize_one(vfp, hfp, frame::interpreter_frame_initial_sp_offset); // == block_top == block_bottom
 
@@ -222,12 +222,12 @@ template<typename FKind> frame ThawBase::new_stack_frame(const frame& hf, frame&
     assert(frame_sp == unextended_sp, "");
     caller.set_sp(fp + frame::sender_sp_offset);
     frame f(frame_sp, frame_sp, fp, hf.pc());
-    // it's set again later in set_interpreter_frame_bottom, but we need to set the locals now so that
-    // we could call ContinuationHelper::InterpretedFrame::frame_bottom
-    intptr_t offset = *hf.addr_at(frame::interpreter_frame_locals_offset);
-    assert((int)offset == frame::sender_sp_offset + locals - 1, "");
-    // derelativize locals
-    *(intptr_t**)f.addr_at(frame::interpreter_frame_locals_offset) = fp + offset;
+    // we need to set the locals so that the caller of new_stack_frame() can call
+    // ContinuationHelper::InterpretedFrame::frame_bottom
+    intptr_t locals_offset = *hf.addr_at(frame::interpreter_frame_locals_offset);
+    assert((int)locals_offset == frame::sender_sp_offset + locals - 1, "");
+    // copy relativized locals from the heap frame
+    *f.addr_at(frame::interpreter_frame_locals_offset) = locals_offset;
     return f;
   } else {
     int fsize = FKind::size(hf);
@@ -286,7 +286,4 @@ inline void ThawBase::derelativize_interpreted_frame_metadata(const frame& hf, c
   derelativize_one(vfp, frame::interpreter_frame_initial_sp_offset);
 }
 
-inline void ThawBase::set_interpreter_frame_bottom(const frame& f, intptr_t* bottom) {
-  *(intptr_t**)f.addr_at(frame::interpreter_frame_locals_offset) = bottom - 1;
-}
 #endif // CPU_X86_CONTINUATIONFREEZE_THAW_X86_INLINE_HPP

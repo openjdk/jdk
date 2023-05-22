@@ -46,7 +46,7 @@ public class ArchiveDoesNotExist {
             throw new RuntimeException("Test error: cds file already exists");
 
         CDSOptions opts = (new CDSOptions()).setArchiveName(fileName);
-
+        opts.addPrefix("-Xlog:cds");
         // -Xshare=on
         OutputAnalyzer out = CDSTestUtils.runWithArchive(opts);
         CDSTestUtils.checkMappingFailure(out);

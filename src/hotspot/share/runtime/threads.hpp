@@ -82,6 +82,7 @@ class Threads: AllStatic {
   // Does not include JNI_VERSION_1_1
   static jboolean is_supported_jni_version(jint version);
 
+private:
   // The "thread claim token" provides a way for threads to be claimed
   // by parallel worker tasks.
   //
@@ -98,6 +99,8 @@ class Threads: AllStatic {
   // New threads get their token set to 0 and change_thread_claim_token()
   // never sets the global token to 0.
   static uintx thread_claim_token() { return _thread_claim_token; }
+
+public:
   static void change_thread_claim_token();
   static void assert_all_threads_claimed() NOT_DEBUG_RETURN;
 
@@ -125,7 +128,8 @@ class Threads: AllStatic {
   static void print_on_error(outputStream* st, Thread* current, char* buf, int buflen);
   static void print_on_error(Thread* this_thread, outputStream* st, Thread* current, char* buf,
                              int buflen, bool* found_current);
-  static void print_threads_compiling(outputStream* st, char* buf, int buflen, bool short_form = false);
+  // Print threads busy compiling, and returns the number of printed threads.
+  static unsigned print_threads_compiling(outputStream* st, char* buf, int buflen, bool short_form = false);
 
   // Get Java threads that are waiting to enter a monitor.
   static GrowableArray<JavaThread*>* get_pending_threads(ThreadsList * t_list,
@@ -135,6 +139,7 @@ class Threads: AllStatic {
   static JavaThread *owning_thread_from_monitor_owner(ThreadsList * t_list,
                                                       address owner);
 
+  static JavaThread* owning_thread_from_object(ThreadsList* t_list, oop obj);
   static JavaThread* owning_thread_from_monitor(ThreadsList* t_list, ObjectMonitor* owner);
 
   // Number of threads on the active threads list

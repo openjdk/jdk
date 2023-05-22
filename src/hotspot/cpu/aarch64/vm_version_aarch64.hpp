@@ -63,6 +63,9 @@ protected:
 public:
   // Initialization
   static void initialize();
+  static void check_virtualizations();
+
+  static void print_platform_virtualization_info(outputStream*);
 
   // Asserts
   static void assert_is_initialized() {
@@ -166,6 +169,8 @@ enum Ampere_CPU_Model {
   static const SpinWait& spin_wait_desc() { return _spin_wait; }
 
   static bool supports_on_spin_wait() { return _spin_wait.inst() != SpinWait::NONE; }
+
+  static bool supports_float16() { return true; }
 
 #ifdef __APPLE__
   // Is the CPU running emulated (for example macOS Rosetta running x86_64 code on M1 ARM (aarch64)

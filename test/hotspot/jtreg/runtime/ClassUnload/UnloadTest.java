@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import jdk.test.whitebox.WhiteBox;
 import jdk.test.lib.classloader.ClassUnloadCommon;
 
 import java.lang.reflect.Array;
+import java.lang.ref.Reference;
 
 /**
  * Test that verifies that liveness of classes is correctly tracked.
@@ -48,12 +49,10 @@ import java.lang.reflect.Array;
  *    and verifies the class is unloaded.
  */
 public class UnloadTest {
-    // Using a global static field to keep the object live in -Xcomp mode.
-    private static Object o;
 
     public static void main(String... args) throws Exception {
-       test_unload_instance_klass();
-       test_unload_obj_array_klass();
+        test_unload_instance_klass();
+        test_unload_obj_array_klass();
     }
 
     private static void test_unload_instance_klass() throws Exception {
@@ -63,7 +62,7 @@ public class UnloadTest {
         ClassUnloadCommon.failIf(wb.isClassAlive(className), "is not expected to be alive yet");
 
         ClassLoader cl = ClassUnloadCommon.newClassLoader();
-        o = cl.loadClass(className).newInstance();
+        Object o = cl.loadClass(className).newInstance();
 
         ClassUnloadCommon.failIf(!wb.isClassAlive(className), "should be live here");
 
@@ -76,6 +75,8 @@ public class UnloadTest {
 
         ClassUnloadCommon.failIf(!wb.isClassAlive(className), "should still be live");
 
+        // Don't let `o` get prematurely reclaimed by the GC.
+        Reference.reachabilityFence(o);
         o = null;
         ClassUnloadCommon.triggerUnloading();
 
@@ -91,7 +92,7 @@ public class UnloadTest {
         final WhiteBox wb = WhiteBox.getWhiteBox();
 
         ClassLoader cl = ClassUnloadCommon.newClassLoader();
-        o = Array.newInstance(cl.loadClass("test.Empty"), 1);
+        Object o = Array.newInstance(cl.loadClass("test.Empty"), 1);
         final String className = o.getClass().getName();
 
         ClassUnloadCommon.failIf(!wb.isClassAlive(className), "should be live here");
@@ -104,6 +105,8 @@ public class UnloadTest {
         ClassUnloadCommon.triggerUnloading();
         ClassUnloadCommon.failIf(!wb.isClassAlive(className), "should still be live");
 
+        // Don't let `o` get prematurely reclaimed by the GC.
+        Reference.reachabilityFence(o);
         o = null;
         ClassUnloadCommon.triggerUnloading();
 

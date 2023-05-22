@@ -42,7 +42,7 @@ import java.util.Objects;
 
 public class StringWriter extends Writer {
 
-    private StringBuffer buf;
+    private final StringBuffer buf;
 
     /**
      * Create a new string writer using the default initial string-buffer

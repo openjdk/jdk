@@ -25,7 +25,6 @@
  * @test
  * @bug 8296012
  * @summary jshell crashes on mismatched record pattern
- * @requires vm.continuations
  * @build KullaTesting TestingInputStream
  * @run testng Test8296012
  */

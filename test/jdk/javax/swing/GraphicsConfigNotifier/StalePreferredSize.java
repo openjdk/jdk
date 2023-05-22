@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,22 +56,19 @@ import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.tree.DefaultMutableTreeNode;
 
-import sun.swing.MenuItemLayoutHelper;
-
 import static javax.swing.UIManager.getInstalledLookAndFeels;
 
 /**
  * @test
  * @key headful
- * @bug 8201552 8213843 8213535
+ * @bug 8201552 8213843 8213535 8244400
  * @summary Initial layout of the component should use correct graphics config.
  *          It is checked by SwingUtilities.updateComponentTreeUI(), if layout
  *          was correct the call to updateComponentTreeUI() will be no-op.
- * @modules java.desktop/sun.swing
  * @compile -encoding utf-8 StalePreferredSize.java
- * @run main/othervm/timeout=400 StalePreferredSize
- * @run main/othervm/timeout=400 -Dsun.java2d.uiScale=1 StalePreferredSize
- * @run main/othervm/timeout=400 -Dsun.java2d.uiScale=2.25 StalePreferredSize
+ * @run main/othervm/timeout=600 StalePreferredSize
+ * @run main/othervm/timeout=600 -Dsun.java2d.uiScale=1 StalePreferredSize
+ * @run main/othervm/timeout=600 -Dsun.java2d.uiScale=2.25 StalePreferredSize
  */
 public final class StalePreferredSize {
 
@@ -182,10 +179,6 @@ public final class StalePreferredSize {
                 int y = frame.getY() + 200;
                 PopupFactory factory = PopupFactory.getSharedInstance();
                 popup = factory.getPopup(frame, component, x, y);
-                if (component instanceof JMenuItem) {
-                    // TODO JDK-8244400
-                    MenuItemLayoutHelper.clearUsedParentClientProperties((JMenuItem)component);
-                }
             } else {
                 frame.add(new JScrollPane(component));
             }

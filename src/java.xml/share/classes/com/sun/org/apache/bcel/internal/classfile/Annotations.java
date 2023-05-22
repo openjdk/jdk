@@ -24,40 +24,30 @@ package com.sun.org.apache.bcel.internal.classfile;
 import java.io.DataInput;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.Iterator;
+import java.util.stream.Stream;
+
+import com.sun.org.apache.bcel.internal.Const;
 
 /**
  * base class for annotations
  *
  * @since 6.0
  */
-public abstract class Annotations extends Attribute {
+public abstract class Annotations extends Attribute implements Iterable<AnnotationEntry> {
 
     private AnnotationEntry[] annotationTable;
     private final boolean isRuntimeVisible;
 
     /**
-     * @param annotation_type the subclass type of the annotation
-     * @param name_index Index pointing to the name <em>Code</em>
-     * @param length Content length in bytes
-     * @param input Input stream
-     * @param constant_pool Array of constants
-     */
-    Annotations(final byte annotation_type, final int name_index, final int length, final DataInput input,
-            final ConstantPool constant_pool, final boolean isRuntimeVisible) throws IOException {
-        this(annotation_type, name_index, length, (AnnotationEntry[]) null, constant_pool, isRuntimeVisible);
-        final int annotation_table_length = input.readUnsignedShort();
-        annotationTable = new AnnotationEntry[annotation_table_length];
-        for (int i = 0; i < annotation_table_length; i++) {
-            annotationTable[i] = AnnotationEntry.read(input, constant_pool, isRuntimeVisible);
-        }
-    }
-
-    /**
-     * @param annotationType the subclass type of the annotation
-     * @param nameIndex Index pointing to the name <em>Code</em>
-     * @param length Content length in bytes
-     * @param annotationTable the actual annotations
-     * @param constantPool Array of constants
+     * Constructs an instance.
+     *
+     * @param annotationType   the subclass type of the annotation
+     * @param nameIndex        Index pointing to the name <em>Code</em>
+     * @param length           Content length in bytes
+     * @param annotationTable  the actual annotations
+     * @param constantPool     Array of constants
+     * @param isRuntimeVisible whether this Annotation visible at runtime
      */
     public Annotations(final byte annotationType, final int nameIndex, final int length, final AnnotationEntry[] annotationTable,
             final ConstantPool constantPool, final boolean isRuntimeVisible) {
@@ -67,8 +57,30 @@ public abstract class Annotations extends Attribute {
     }
 
     /**
-     * Called by objects that are traversing the nodes of the tree implicitely defined by the contents of a Java class.
-     * I.e., the hierarchy of methods, fields, attributes, etc. spawns a tree of objects.
+     * Constructs an instance.
+     *
+     * @param annotationType   the subclass type of the annotation
+     * @param nameIndex        Index pointing to the name <em>Code</em>
+     * @param length           Content length in bytes
+     * @param input            Input stream
+     * @param constantPool     Array of constants
+     * @param isRuntimeVisible whether this Annotation visible at runtime
+     * @throws IOException if an I/O error occurs.
+     */
+    Annotations(final byte annotationType, final int nameIndex, final int length, final DataInput input, final ConstantPool constantPool,
+            final boolean isRuntimeVisible) throws IOException {
+        this(annotationType, nameIndex, length, (AnnotationEntry[]) null, constantPool, isRuntimeVisible);
+        final int annotationTableLength = input.readUnsignedShort();
+        annotationTable = new AnnotationEntry[annotationTableLength];
+        for (int i = 0; i < annotationTableLength; i++) {
+            annotationTable[i] = AnnotationEntry.read(input, constantPool, isRuntimeVisible);
+        }
+    }
+
+    /**
+     * Called by objects that are traversing the nodes of the tree implicitly
+     * defined by the contents of a Java class. I.e., the hierarchy of methods,
+     * fields, attributes, etc. spawns a tree of objects.
      *
      * @param v Visitor object
      */
@@ -77,21 +89,22 @@ public abstract class Annotations extends Attribute {
         v.visitAnnotation(this);
     }
 
-    /**
-     * @param annotationTable the entries to set in this annotation
-     */
-    public final void setAnnotationTable(final AnnotationEntry[] annotationTable) {
-        this.annotationTable = annotationTable;
+    @Override
+    public Attribute copy(final ConstantPool constantPool) {
+        // TODO Auto-generated method stub
+        return null;
     }
 
     /**
-     * returns the array of annotation entries in this annotation
+     * Gets the array of annotation entries in this annotation
      */
     public AnnotationEntry[] getAnnotationEntries() {
         return annotationTable;
     }
 
     /**
+     * Gets the number of annotation entries in this annotation.
+     *
      * @return the number of annotation entries in this annotation
      */
     public final int getNumAnnotations() {
@@ -105,6 +118,38 @@ public abstract class Annotations extends Attribute {
         return isRuntimeVisible;
     }
 
+    @Override
+    public Iterator<AnnotationEntry> iterator() {
+        return Stream.of(annotationTable).iterator();
+    }
+
+    /**
+     * Sets the entries to set in this annotation.
+     *
+     * @param annotationTable the entries to set in this annotation
+     */
+    public final void setAnnotationTable(final AnnotationEntry[] annotationTable) {
+        this.annotationTable = annotationTable;
+    }
+
+    /**
+     * Converts to a String representation.
+     *
+     * @return String representation
+     */
+    @Override
+    public final String toString() {
+        final StringBuilder buf = new StringBuilder(Const.getAttributeName(getTag()));
+        buf.append(":\n");
+        for (int i = 0; i < annotationTable.length; i++) {
+            buf.append("  ").append(annotationTable[i]);
+            if (i < annotationTable.length - 1) {
+                buf.append('\n');
+            }
+        }
+        return buf.toString();
+    }
+
     protected void writeAnnotations(final DataOutputStream dos) throws IOException {
         if (annotationTable == null) {
             return;
@@ -114,4 +159,5 @@ public abstract class Annotations extends Attribute {
             element.dump(dos);
         }
     }
+
 }

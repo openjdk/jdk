@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,14 @@ AC_DEFUN([FLAGS_SETUP_SHARED_LIBS],
       SET_SHARED_LIBRARY_ORIGIN="$SET_EXECUTABLE_ORIGIN"
       SET_SHARED_LIBRARY_NAME='-Wl,-install_name,@rpath/[$]1'
       SET_SHARED_LIBRARY_MAPFILE='-Wl,-exported_symbols_list,[$]1'
+
+    elif test "x$OPENJDK_TARGET_OS" = xaix; then
+      # Linking is different on aix
+      SHARED_LIBRARY_FLAGS="-shared -Wl,-bM:SRE -Wl,-bnoentry"
+      SET_EXECUTABLE_ORIGIN=""
+      SET_SHARED_LIBRARY_ORIGIN=''
+      SET_SHARED_LIBRARY_NAME=''
+      SET_SHARED_LIBRARY_MAPFILE=''
 
     else
       # Default works for linux, might work on other platforms as well.
@@ -189,6 +197,10 @@ AC_DEFUN([FLAGS_SETUP_WARNINGS],
       WARNINGS_ENABLE_ALL_CXXFLAGS="$WARNINGS_ENABLE_ALL_CFLAGS $WARNINGS_ENABLE_ADDITIONAL_CXX"
 
       DISABLED_WARNINGS="unused-parameter unused"
+      # gcc10/11 on ppc generate lots of abi warnings about layout of aggregates containing vectors
+      if test "x$OPENJDK_TARGET_CPU_ARCH" = "xppc"; then
+        DISABLED_WARNINGS="$DISABLED_WARNINGS psabi"
+      fi
       ;;
 
     clang)
@@ -202,7 +214,6 @@ AC_DEFUN([FLAGS_SETUP_WARNINGS],
       WARNINGS_ENABLE_ALL="-Wall -Wextra -Wformat=2 $WARNINGS_ENABLE_ADDITIONAL"
 
       DISABLED_WARNINGS="unknown-warning-option unused-parameter unused"
-
       ;;
 
     xlc)
@@ -280,9 +291,15 @@ AC_DEFUN([FLAGS_SETUP_OPTIMIZATION],
       C_O_FLAG_NONE="${C_O_FLAG_NONE} ${DISABLE_FORTIFY_CFLAGS}"
     fi
   elif test "x$TOOLCHAIN_TYPE" = xclang; then
-    C_O_FLAG_HIGHEST_JVM="-O3"
-    C_O_FLAG_HIGHEST="-O3"
-    C_O_FLAG_HI="-O3"
+    if test "x$OPENJDK_TARGET_OS" = xaix; then
+      C_O_FLAG_HIGHEST_JVM="-O3 -finline-functions"
+      C_O_FLAG_HIGHEST="-O3 -finline-functions"
+      C_O_FLAG_HI="-O3 -finline-functions"
+    else
+      C_O_FLAG_HIGHEST_JVM="-O3"
+      C_O_FLAG_HIGHEST="-O3"
+      C_O_FLAG_HI="-O3"
+    fi
     C_O_FLAG_NORM="-O2"
     C_O_FLAG_DEBUG_JVM="-O0"
     C_O_FLAG_SIZE="-Os"
@@ -454,6 +471,9 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
       # so for debug we build with '-qpic=large -bbigtoc'.
       DEBUG_CFLAGS_JVM="-qpic=large"
     fi
+    if test "x$TOOLCHAIN_TYPE" = xclang && test "x$OPENJDK_TARGET_OS" = xaix; then
+      DEBUG_CFLAGS_JVM="-fpic -mcmodel=large"
+    fi
   fi
 
   if test "x$DEBUG_LEVEL" != xrelease; then
@@ -476,8 +496,7 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
     ALWAYS_DEFINES_JDK="-DWIN32_LEAN_AND_MEAN -D_WIN32_WINNT=0x0602 \
         -D_CRT_SECURE_NO_WARNINGS -D_CRT_NONSTDC_NO_DEPRECATE -DWIN32 -DIAL"
     ALWAYS_DEFINES_JVM="-DNOMINMAX -DWIN32_LEAN_AND_MEAN -D_WIN32_WINNT=0x0602 \
-        -D_CRT_SECURE_NO_WARNINGS -D_CRT_NONSTDC_NO_DEPRECATE \
-        -D_WINSOCK_DEPRECATED_NO_WARNINGS"
+        -D_CRT_SECURE_NO_WARNINGS -D_CRT_NONSTDC_NO_DEPRECATE"
   fi
 
   ###############################################################################
@@ -490,8 +509,14 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
         -fvisibility=hidden -fno-strict-aliasing -fno-omit-frame-pointer"
   fi
 
+  if test "x$TOOLCHAIN_TYPE" = xclang && test "x$OPENJDK_TARGET_OS" = xaix; then
+    # clang compiler on aix needs -ffunction-sections
+    TOOLCHAIN_CFLAGS_JVM="$TOOLCHAIN_CFLAGS_JVM -ffunction-sections -ftls-model -fno-math-errno -fstack-protector"
+    TOOLCHAIN_CFLAGS_JDK="-ffunction-sections -fsigned-char -fstack-protector"
+  fi
+
   if test "x$TOOLCHAIN_TYPE" = xgcc; then
-    TOOLCHAIN_CFLAGS_JVM="$TOOLCHAIN_CFLAGS_JVM -fcheck-new -fstack-protector"
+    TOOLCHAIN_CFLAGS_JVM="$TOOLCHAIN_CFLAGS_JVM -fstack-protector"
     TOOLCHAIN_CFLAGS_JDK="-pipe -fstack-protector"
     # reduce lib size on linux in link step, this needs also special compile flags
     # do this on s390x also for libjvm (where serviceability agent is not supported)
@@ -598,6 +623,9 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
   if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang; then
     PICFLAG="-fPIC"
     PIEFLAG="-fPIE"
+  elif test "x$TOOLCHAIN_TYPE" = xclang && test "x$OPENJDK_TARGET_OS" = xaix; then
+    JVM_PICFLAG="-fpic -mcmodel=large -Wl,-bbigtoc
+    JDK_PICFLAG="-fpic
   elif test "x$TOOLCHAIN_TYPE" = xxlc; then
     # '-qpic' defaults to 'qpic=small'. This means that the compiler generates only
     # one instruction for accessing the TOC. If the TOC grows larger than 64K, the linker
@@ -634,7 +662,7 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
   STATIC_LIBS_CFLAGS="-DSTATIC_BUILD=1"
   if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang; then
     STATIC_LIBS_CFLAGS="$STATIC_LIBS_CFLAGS -ffunction-sections -fdata-sections \
-      -DJNIEXPORT='__attribute__((visibility(\"hidden\")))'"
+      -DJNIEXPORT='__attribute__((visibility(\"default\")))'"
   else
     STATIC_LIBS_CFLAGS="$STATIC_LIBS_CFLAGS -DJNIEXPORT="
   fi
@@ -742,6 +770,9 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
         # for all archs except arm and ppc, prevent gcc to omit frame pointer
         $1_CFLAGS_CPU_JDK="${$1_CFLAGS_CPU_JDK} -fno-omit-frame-pointer"
       fi
+    fi
+    if test "x$OPENJDK_TARGET_OS" = xaix; then
+      $1_CFLAGS_CPU="-mcpu=pwr8"
     fi
 
   elif test "x$TOOLCHAIN_TYPE" = xxlc; then

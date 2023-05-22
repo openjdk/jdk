@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ class JniPeriodicCheckerTask : public PeriodicTask {
 //----------------------------------------------------------
 // Implementation of JniPeriodicChecker
 
-JniPeriodicCheckerTask*              JniPeriodicChecker::_task   = NULL;
+JniPeriodicCheckerTask*              JniPeriodicChecker::_task   = nullptr;
 
 /*
  * The engage() method is called at initialization time via

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
 
-LogTagSet*  LogTagSet::_list      = NULL;
+LogTagSet*  LogTagSet::_list      = nullptr;
 size_t      LogTagSet::_ntagsets  = 0;
 
 // This constructor is called only during static initialization.
@@ -181,7 +181,7 @@ static const size_t TagSetBufferSize = 128;
 
 void LogTagSet::describe_tagsets(outputStream* out) {
   out->print_cr("Described tag sets:");
-  for (const LogTagSetDescription* d = tagset_descriptions; d->tagset != NULL; d++) {
+  for (const LogTagSetDescription* d = tagset_descriptions; d->tagset != nullptr; d++) {
     out->sp();
     d->tagset->label(out, "+");
     out->print_cr(": %s", d->descr);
@@ -197,7 +197,7 @@ void LogTagSet::list_all_tagsets(outputStream* out) {
 
   // Generate the list of tagset labels
   size_t idx = 0;
-  for (LogTagSet* ts = first(); ts != NULL; ts = ts->next()) {
+  for (LogTagSet* ts = first(); ts != nullptr; ts = ts->next()) {
     char buf[TagSetBufferSize];
     ts->label(buf, sizeof(buf), "+");
     tagset_labels[idx++] = os::strdup_check_oom(buf, mtLogging);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,11 +27,8 @@
  * @summary Tests that when the idleConnectionTimeoutEvent is configured in HTTP/2,
  *          an HTTP/2 connection will close within the specified interval if there
  *          are no active streams on the connection.
- * @library /test/lib server
- * @modules java.base/sun.net.www.http
- *          java.net.http/jdk.internal.net.http.common
- *          java.net.http/jdk.internal.net.http.frame
- *          java.net.http/jdk.internal.net.http.hpack
+ * @library /test/lib /test/jdk/java/net/httpclient/lib
+ * @build jdk.httpclient.test.lib.http2.Http2TestServer
  *
  * @run testng/othervm -Djdk.httpclient.HttpClient.log=errors -Djdk.httpclient.keepalive.timeout=1
  *                                                             IdleConnectionTimeoutTest
@@ -54,17 +51,27 @@
  *                                                                   IdleConnectionTimeoutTest
  */
 
+import jdk.httpclient.test.lib.http2.BodyOutputStream;
+import jdk.httpclient.test.lib.http2.Http2TestExchangeImpl;
+import jdk.httpclient.test.lib.http2.Http2TestServerConnection;
+import jdk.internal.net.http.common.HttpHeadersBuilder;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintStream;
-import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.http.HttpClient;
+import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.concurrent.CompletableFuture;
+import jdk.httpclient.test.lib.http2.Http2TestServer;
+import jdk.httpclient.test.lib.http2.Http2TestExchange;
+import jdk.httpclient.test.lib.http2.Http2Handler;
+
+import javax.net.ssl.SSLSession;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.net.http.HttpClient.Version.HTTP_2;
@@ -72,7 +79,7 @@ import static org.testng.Assert.assertEquals;
 
 public class IdleConnectionTimeoutTest {
 
-    Http2TestServer http2TestServer;
+    static Http2TestServer http2TestServer;
     URI timeoutUri;
     URI noTimeoutUri;
     final String IDLE_CONN_PROPERTY = "jdk.httpclient.keepalive.timeout.h2";
@@ -86,6 +93,7 @@ public class IdleConnectionTimeoutTest {
         http2TestServer = new Http2TestServer(false, 0);
         http2TestServer.addHandler(new ServerTimeoutHandler(), TIMEOUT_PATH);
         http2TestServer.addHandler(new ServerNoTimeoutHandler(), NO_TIMEOUT_PATH);
+        http2TestServer.setExchangeSupplier(TestExchangeSupplier::new);
 
         http2TestServer.start();
         int port = http2TestServer.getAddress().getPort();
@@ -154,40 +162,66 @@ public class IdleConnectionTimeoutTest {
 
     static class ServerTimeoutHandler implements Http2Handler {
 
-        InetSocketAddress remote;
+        volatile Object firstConnection = null;
 
         @Override
         public void handle(Http2TestExchange exchange) throws IOException {
-            if (remote == null) {
-                remote = exchange.getRemoteAddress();
-                exchange.sendResponseHeaders(200, 0);
-            } else if (!remote.equals(exchange.getRemoteAddress())) {
-                testLog.println("ServerTimeoutHandler: New Connection was used, idleConnectionTimeoutEvent fired."
-                        + " First remote: " + remote + ", Second Remote: " + exchange.getRemoteAddress());
-                exchange.sendResponseHeaders(200, 0);
-            } else {
-                exchange.sendResponseHeaders(400, 0);
+            if (exchange instanceof TestExchangeSupplier exch) {
+                if (firstConnection == null) {
+                    firstConnection = exch.getTestConnection();
+                    exch.sendResponseHeaders(200, 0);
+                } else {
+                    var secondConnection = exch.getTestConnection();
+
+                    if (firstConnection != secondConnection) {
+                        testLog.println("ServerTimeoutHandler: New Connection was used, idleConnectionTimeoutEvent fired."
+                                + " First Connection Hash: " + firstConnection + ", Second Connection Hash: " + secondConnection);
+                        exch.sendResponseHeaders(200, 0);
+                    } else {
+                        testLog.println("ServerTimeoutHandler: Same Connection was used, idleConnectionTimeoutEvent did not fire."
+                                + " First Connection Hash: " + firstConnection + ", Second Connection Hash: " + secondConnection);
+                        exch.sendResponseHeaders(400, 0);
+                    }
+                }
             }
         }
     }
 
     static class ServerNoTimeoutHandler implements Http2Handler {
 
-        InetSocketAddress oldRemote;
+        volatile Object firstConnection = null;
 
         @Override
         public void handle(Http2TestExchange exchange) throws IOException {
-            InetSocketAddress newRemote = exchange.getRemoteAddress();
-            if (oldRemote == null) {
-                oldRemote = newRemote;
-                exchange.sendResponseHeaders(200, 0);
-            } else if (oldRemote.equals(newRemote)) {
-                testLog.println("ServerNoTimeoutHandler: Same Connection was used, idleConnectionTimeoutEvent did not fire."
-                        + " First remote: " + oldRemote + ", Second Remote: " + newRemote);
-                exchange.sendResponseHeaders(200, 0);
-            } else {
-                exchange.sendResponseHeaders(400, 0);
+            if (exchange instanceof TestExchangeSupplier exch) {
+                if (firstConnection == null) {
+                    firstConnection = exch.getTestConnection();
+                    exch.sendResponseHeaders(200, 0);
+                } else {
+                    var secondConnection = exch.getTestConnection();
+
+                    if (firstConnection == secondConnection) {
+                        testLog.println("ServerTimeoutHandler: Same Connection was used, idleConnectionTimeoutEvent did not fire."
+                                + " First Connection Hash: " + firstConnection + ", Second Connection Hash: " + secondConnection);
+                        exch.sendResponseHeaders(200, 0);
+                    } else {
+                        testLog.println("ServerTimeoutHandler: Different Connection was used, idleConnectionTimeoutEvent fired."
+                                + " First Connection Hash: " + firstConnection + ", Second Connection Hash: " + secondConnection);
+                        exch.sendResponseHeaders(400, 0);
+                    }
+                }
             }
+        }
+    }
+
+    static class TestExchangeSupplier extends Http2TestExchangeImpl {
+
+        public TestExchangeSupplier(int streamid, String method, HttpHeaders reqheaders, HttpHeadersBuilder rspheadersBuilder, URI uri, InputStream is, SSLSession sslSession, BodyOutputStream os, Http2TestServerConnection conn, boolean pushAllowed) {
+            super(streamid, method, reqheaders, rspheadersBuilder, uri, is, sslSession, os, conn, pushAllowed);
+        }
+
+        public Http2TestServerConnection getTestConnection() {
+            return this.conn;
         }
     }
 }
