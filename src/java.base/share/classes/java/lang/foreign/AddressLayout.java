@@ -114,8 +114,8 @@ public sealed interface AddressLayout extends ValueLayout permits ValueLayouts.O
     /**
      * Returns an address layout with the same carrier, alignment constraint, name and order as this address layout,
      * but with no target layout
-     * <p>
-     * This can be useful to compare two address layouts that have different target layouts, but are otherwise equal.
+     *
+     * @apiNote This can be useful to compare two address layouts that have different target layouts, but are otherwise equal.
      *
      * @return an address layout with same characteristics as this layout, but with no target layout.
      * @see #targetLayout()
