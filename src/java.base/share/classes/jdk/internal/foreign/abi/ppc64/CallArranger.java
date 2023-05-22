@@ -62,7 +62,7 @@ import static jdk.internal.foreign.abi.ppc64.PPC64Architecture.Regs.*;
  * public constants CallArranger.ABIv1/2.
  */
 public abstract class CallArranger {
-    protected abstract boolean useABIv2();
+    final boolean useABIv2 = (this instanceof ABIv2CallArranger);
 
     private static final int STACK_SLOT_SIZE = 8;
     private static final int MAX_COPY_SIZE = 8;
@@ -79,7 +79,7 @@ public abstract class CallArranger {
         new VMStorage[] { r0, r2, r11, r12 }, // volatile GP (excluding argument registers)
         new VMStorage[] { f0 }, // volatile FP (excluding argument registers)
         16, // Stack is always 16 byte aligned on PPC64
-        useABIv2() ? 32 : 48, // ABI header (excluding argument register spill slots)
+        useABIv2 ? 32 : 48, // ABI header (excluding argument register spill slots)
         r11, // scratch reg
         r12  // target addr reg, otherwise used as scratch reg
     );
@@ -148,7 +148,7 @@ public abstract class CallArranger {
     private boolean isInMemoryReturn(Optional<MemoryLayout> returnLayout) {
         return returnLayout
             .filter(GroupLayout.class::isInstance)
-            .filter(layout -> !TypeClass.isStructHFAorReturnRegisterAggregate(layout, useABIv2()))
+            .filter(layout -> !TypeClass.isStructHFAorReturnRegisterAggregate(layout, useABIv2))
             .isPresent();
     }
 
@@ -198,7 +198,7 @@ public abstract class CallArranger {
         VMStorage nextStorage(int type, boolean is32Bit) {
             VMStorage reg = regAlloc(type);
             VMStorage stack;
-            if (!useABIv2() && is32Bit) {
+            if (!useABIv2 && is32Bit) {
                 stackAlloc(4, STACK_SLOT_SIZE); // Skip first half of stack slot.
                 stack = stackAlloc(4, 4);
             } else {
@@ -214,7 +214,7 @@ public abstract class CallArranger {
         // Regular struct, no HFA.
         VMStorage[] structAlloc(MemoryLayout layout) {
             // TODO: Big Endian can't pass partially used slots correctly in some cases with:
-            // !useABIv2() && layout.byteSize() > 8 && layout.byteSize() % 8 != 0
+            // !useABIv2 && layout.byteSize() > 8 && layout.byteSize() % 8 != 0
 
             // Allocate enough gp slots (regs and stack) such that the struct fits in them.
             int numChunks = (int) Utils.alignUp(layout.byteSize(), MAX_COPY_SIZE) / MAX_COPY_SIZE;
@@ -323,7 +323,7 @@ public abstract class CallArranger {
 
         @Override
         List<Binding> getBindings(Class<?> carrier, MemoryLayout layout) {
-            TypeClass argumentClass = TypeClass.classifyLayout(layout, useABIv2());
+            TypeClass argumentClass = TypeClass.classifyLayout(layout, useABIv2);
             Binding.Builder bindings = Binding.builder();
             switch (argumentClass) {
                 case STRUCT_REGISTER -> {
@@ -400,7 +400,7 @@ public abstract class CallArranger {
 
         @Override
         List<Binding> getBindings(Class<?> carrier, MemoryLayout layout) {
-            TypeClass argumentClass = TypeClass.classifyLayout(layout, useABIv2());
+            TypeClass argumentClass = TypeClass.classifyLayout(layout, useABIv2);
             Binding.Builder bindings = Binding.builder();
             switch (argumentClass) {
                 case STRUCT_REGISTER -> {
