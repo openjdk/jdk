@@ -5877,21 +5877,6 @@ void Assembler::setb(Condition cc, Register dst) {
   emit_int24(0x0F, (unsigned char)0x90 | cc, (0xC0 | encode));
 }
 
-void Assembler::sete(Register dst) {
-  int encode = prefix_and_encode(dst->encoding(), true);
-  emit_int24(0x0F, (unsigned char)0x94, (0xC0 | encode));
-}
-
-void Assembler::setl(Register dst) {
-  int encode = prefix_and_encode(dst->encoding(), true);
-  emit_int24(0x0F, (unsigned char)0x9C, (0xC0 | encode));
-}
-
-void Assembler::setne(Register dst) {
-  int encode = prefix_and_encode(dst->encoding(), true);
-  emit_int24(0x0F, (unsigned char)0x95, (0xC0 | encode));
-}
-
 void Assembler::palignr(XMMRegister dst, XMMRegister src, int imm8) {
   assert(VM_Version::supports_ssse3(), "");
   InstructionAttr attributes(AVX_128bit, /* rex_w */ false, /* legacy_mode */ _legacy_mode_bw, /* no_mask_reg */ true, /* uses_vl */ true);

@@ -2089,10 +2089,6 @@ private:
 
   void setb(Condition cc, Register dst);
 
-  void sete(Register dst);
-  void setl(Register dst);
-  void setne(Register dst);
-
   void palignr(XMMRegister dst, XMMRegister src, int imm8);
   void vpalignr(XMMRegister dst, XMMRegister src1, XMMRegister src2, int imm8, int vector_len);
   void evalignq(XMMRegister dst, XMMRegister nds, XMMRegister src, uint8_t imm8);
