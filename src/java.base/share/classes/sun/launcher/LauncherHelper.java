@@ -908,6 +908,10 @@ public final class LauncherHelper {
         }
 
         if (!isStatic) {
+            if (mainClass.isMemberClass() && !Modifier.isStatic(mainClass.getModifiers())) {
+                abort(null, "java.launcher.cls.error9",
+                        mainMethod.getDeclaringClass().getName());
+            }
             try {
                 Constructor<?> constructor = mainClass.getDeclaredConstructor();
                 if (Modifier.isPrivate(constructor.getModifiers())) {
