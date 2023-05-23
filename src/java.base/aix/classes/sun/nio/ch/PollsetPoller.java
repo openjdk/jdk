@@ -38,12 +38,13 @@ class PollsetPoller extends Poller {
     static { Pollset.init(); /* Dynamically loads pollset C functions */ }
 
     private final int setid;
-    private int setsize;
+    private final long pollBuffer;
+    private static final int POLL_ARRAY_SIZE = 16;
 
     PollsetPoller(boolean read) throws IOException {
         super(read);
-        this.setsize = 0;
         this.setid = Pollset.pollsetCreate();
+        this.pollBuffer = Pollset.allocatePollArray(POLL_ARRAY_SIZE);
     }
 
     @Override
@@ -58,15 +59,12 @@ class PollsetPoller extends Poller {
         if (ret != 0) {
             throw new IOException("Unable to register fd " + fd);
         }
-        setsize++;
     }
 
     @Override
     void implDeregister(int fd) {
-        assert (setsize > 0);
         int ret = Pollset.pollsetCtl(setid, Pollset.PS_DELETE, fd, 0);
         assert ret == 0;
-        setsize--;
     }
 
     /**
@@ -94,17 +92,12 @@ class PollsetPoller extends Poller {
     }
 
     int pollInner(int subInterval) throws IOException {
-        // The poll loop may start polling before any fds have been registered. But, if we use set
-        // size 0 to allocatePollArray, it will return the null address and pollsetPoll will complain.
-        // We avoid that by just passing set size 1, and letting poll block for subInterval.
-        long buffer = Pollset.allocatePollArray(setsize > 0 ? setsize : 1);
         int n = Pollset.pollsetPoll(setid, buffer, setsize, subInterval);
         for (int i=0; i<n; i++) {
-            long eventAddress = Pollset.getEvent(buffer, i);
+            long eventAddress = Pollset.getEvent(pollBuffer, i);
             int fd = Pollset.getDescriptor(eventAddress);
             polled(fd);
         }
-        Pollset.freePollArray(buffer);
         return n;
     }
 }
