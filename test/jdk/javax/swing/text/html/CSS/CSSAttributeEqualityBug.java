@@ -60,7 +60,7 @@ public class CSSAttributeEqualityBug {
 
             "margin-top: 42",
             "margin-top: 42px",
-//            "margin-top: 100%",
+            "margin-top: 100%",
 
             "text-decoration: underline",
 
@@ -83,7 +83,7 @@ public class CSSAttributeEqualityBug {
 
             {"margin-top: 42px", "margin-top: 22px"},
             {"margin-top: 42px", "margin-top: 42pt"},
-//            {"margin-top: 100%", "margin-top: 200%"},
+            {"margin-top: 100%", "margin-top: 200%"},
     };
 
     public static void main(String[] args) {

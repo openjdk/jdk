@@ -2222,13 +2222,10 @@ public class CSS implements Serializable {
         @Override
         public boolean equals(Object val) {
             if (val instanceof CSS.FontSize size) {
-                // If fontsize contains numeric along with units
-                // and does not contain only alphabets like "smaller", "medium" etc
                 if (size.lu != null && !size.svalue.matches("^[a-zA-Z]*$")) {
                     int sz = new Scanner(size.svalue).useDelimiter("\\D").nextInt();
                     int oldsz = new Scanner(svalue).useDelimiter("\\D").nextInt();
-                    return sz == oldsz
-                           && Objects.equals(size.lu.units, lu.units);
+                    return sz == oldsz && Objects.equals(size.lu.units, lu.units);
                 }
                 return value == size.value;
             }
@@ -2687,13 +2684,18 @@ public class CSS implements Serializable {
 
         @Override
         public boolean equals(Object val) {
-            if (percentage) {
-                return false;
-            } else {
-                return val instanceof CSS.LengthValue lu
-                        && span == lu.span
-                        && Objects.equals(lu.units, units);
+            if (val instanceof CSS.LengthValue lu) {
+                if (percentage) {
+                    // Parse the int value from xxx%,yyy% and compare
+                    int sz = new Scanner(lu.svalue).useDelimiter("\\D").nextInt();
+                    int oldsz = new Scanner(svalue).useDelimiter("\\D").nextInt();
+
+                    return sz == oldsz;
+                } else {
+                    return span == lu.span && Objects.equals(lu.units, units);
+                }
             }
+            return false;
         }
 
         /** If true, span is a percentage value, and that to determine
