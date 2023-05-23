@@ -32,8 +32,14 @@
 package compiler.loopopts.superword;
 
 import compiler.lib.ir_framework.*;
+import java.util.Arrays;
+import java.util.Random;
+import jdk.test.lib.Utils;
 
 public class MinMaxRed_Int {
+
+    private static final Random random = Utils.getRandomInstance();
+
     public static void main(String[] args) throws Exception {
         TestFramework framework = new TestFramework();
         framework.addFlags("-XX:+IgnoreUnrecognizedVMOptions",
@@ -52,7 +58,7 @@ public class MinMaxRed_Int {
         for (int j = 0; j < 2000; j++) {
             res = maxReductionImplement(a, b, res);
         }
-        if (res == 0) {
+        if (res == Arrays.stream(a).max().getAsInt()) {
             System.out.println("Success");
         } else {
             throw new AssertionError("Failed");
@@ -69,7 +75,7 @@ public class MinMaxRed_Int {
         for (int j = 0; j < 2000; j++) {
             res = minReductionImplement(a, b, res);
         }
-        if (res == -1023*1023) {
+        if (res == Arrays.stream(a).min().getAsInt()) {
             System.out.println("Success");
         } else {
             throw new AssertionError("Failed");
@@ -78,8 +84,8 @@ public class MinMaxRed_Int {
 
     public static void ReductionInit(int[] a, int[] b) {
         for (int i = 0; i < a.length; i++) {
-            a[i] = -i;
-            b[i] = i;
+            a[i] = random.nextInt();
+            b[i] = 1;
         }
     }
 
