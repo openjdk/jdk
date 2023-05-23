@@ -84,7 +84,7 @@ public class TrayIconScalingTest {
                 .testTimeOut(8)
                 .rows(18)
                 .columns(85)
-                .enableScreenCapture(true)
+                .enableScreenCapture()
                 .build();
 
         createAndShowGUI();
