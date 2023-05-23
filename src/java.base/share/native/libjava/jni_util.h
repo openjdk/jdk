@@ -92,9 +92,10 @@ JNU_ThrowByNameWithMessageAndLastError
 JNIEXPORT void JNICALL
 JNU_ThrowIOExceptionWithLastError(JNIEnv *env, const char *defaultDetail);
 
-/* Convert between Java strings and i18n C strings
- * Deprecated: Use GetStringPlatformCharsStrict
- */
+JNIEXPORT void JNICALL
+JNU_ThrowIOExceptionWithMessageAndLastError(JNIEnv *env, const char *message);
+
+/* Convert between Java strings and i18n C strings */
 JNIEXPORT const char *
 GetStringPlatformChars(JNIEnv *env, jstring jstr, jboolean *isCopy);
 

@@ -1824,7 +1824,16 @@ const char* os::Linux::dll_path(void* lib) {
   return l_path;
 }
 
-static bool _print_ascii_file(const char* filename, outputStream* st, const char* hdr = nullptr) {
+static unsigned count_newlines(const char* s) {
+  unsigned n = 0;
+  for (const char* s2 = strchr(s, '\n');
+       s2 != nullptr; s2 = strchr(s2 + 1, '\n')) {
+    n++;
+  }
+  return n;
+}
+
+static bool _print_ascii_file(const char* filename, outputStream* st, unsigned* num_lines = nullptr, const char* hdr = nullptr) {
   int fd = ::open(filename, O_RDONLY);
   if (fd == -1) {
     return false;
@@ -1837,8 +1846,17 @@ static bool _print_ascii_file(const char* filename, outputStream* st, const char
   char buf[33];
   int bytes;
   buf[32] = '\0';
+  unsigned lines = 0;
   while ((bytes = ::read(fd, buf, sizeof(buf)-1)) > 0) {
     st->print_raw(buf, bytes);
+    // count newlines
+    if (num_lines != nullptr) {
+      lines += count_newlines(buf);
+    }
+  }
+
+  if (num_lines != nullptr) {
+    (*num_lines) = lines;
   }
 
   ::close(fd);
@@ -1860,9 +1878,11 @@ void os::print_dll_info(outputStream *st) {
   pid_t pid = os::Linux::gettid();
 
   jio_snprintf(fname, sizeof(fname), "/proc/%d/maps", pid);
-
-  if (!_print_ascii_file(fname, st)) {
+  unsigned num = 0;
+  if (!_print_ascii_file(fname, st, &num)) {
     st->print_cr("Can not get library information for pid = %d", pid);
+  } else {
+    st->print_cr("Total number of mappings: %u", num);
   }
 }
 
@@ -2210,7 +2230,7 @@ void os::Linux::print_process_memory_info(outputStream* st) {
 }
 
 bool os::Linux::print_ld_preload_file(outputStream* st) {
-  return _print_ascii_file("/etc/ld.so.preload", st, "/etc/ld.so.preload:");
+  return _print_ascii_file("/etc/ld.so.preload", st, nullptr, "/etc/ld.so.preload:");
 }
 
 void os::Linux::print_uptime_info(outputStream* st) {
