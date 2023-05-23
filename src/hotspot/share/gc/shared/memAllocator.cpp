@@ -158,7 +158,7 @@ void MemAllocator::Allocation::check_for_bad_heap_word_value() const {
   MemRegion obj_range = _allocator.obj_memory_range(obj());
   HeapWord* addr = obj_range.start();
   size_t size = obj_range.word_size();
-  if (CheckMemoryInitialization && ZapUnusedHeapArea) {
+  if (ZapUnusedHeapArea) {
     for (size_t slot = 0; slot < size; slot += 1) {
       assert((*(intptr_t*) (addr + slot)) != ((intptr_t) badHeapWordVal),
              "Found badHeapWordValue in post-allocation check");
