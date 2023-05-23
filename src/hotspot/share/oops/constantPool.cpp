@@ -711,7 +711,7 @@ u2 ConstantPool::uncached_name_and_type_ref_index_at(int cp_index)  {
   return extract_high_short_from_int(ref_index);
 }
 
-int ConstantPool::name_and_type_ref_index_at(int index, Bytecodes::Code code) {
+u2 ConstantPool::name_and_type_ref_index_at(int index, Bytecodes::Code code) {
   return uncached_name_and_type_ref_index_at(to_cp_index(index, code));
 }
 
@@ -729,7 +729,7 @@ u2 ConstantPool::uncached_klass_ref_index_at(int cp_index) {
   return extract_low_short_from_int(ref_index);
 }
 
-int ConstantPool::klass_ref_index_at(int index, Bytecodes::Code code) {
+u2 ConstantPool::klass_ref_index_at(int index, Bytecodes::Code code) {
   guarantee(!ConstantPool::is_invokedynamic_index(index),
             "an invokedynamic instruction does not have a klass");
   assert(code != Bytecodes::_invokedynamic,
