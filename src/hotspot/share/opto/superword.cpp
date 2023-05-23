@@ -1973,7 +1973,7 @@ void SuperWord::combine_packs() {
     if (p != nullptr) {
       Node* dependence = find_dependence(p);
       if (dependence != nullptr) {
-#ifdef PRODUCT
+#ifndef PRODUCT
         if (TraceSuperWord) {
           tty->cr();
           tty->print_cr("WARNING: Found dependency at distance greater than 1.");
