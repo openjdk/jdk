@@ -927,6 +927,14 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
   }
   assert(is_aligned(stack_size, os::vm_page_size()), "stack_size not aligned");
 
+  size_t default_large_page_size = os::Linux::scan_default_large_page_size();
+
+  // Add an additional page to the stack size to reduce its chances of getting large page aligned
+  // so that the stack does not get backed by a transparent huge page.
+  if (stack_size >= default_large_page_size && is_aligned(stack_size, default_large_page_size)) {
+    stack_size += os::vm_page_size();
+  }
+
   int status = pthread_attr_setstacksize(&attr, stack_size);
   if (status != 0) {
     // pthread_attr_setstacksize() function can fail
@@ -3619,7 +3627,7 @@ static void set_coredump_filter(CoredumpFilterBit bit) {
 
 static size_t _large_page_size = 0;
 
-static size_t scan_default_large_page_size() {
+size_t os::Linux::scan_default_large_page_size() {
   size_t default_large_page_size = 0;
 
   // large_page_size on Linux is used to round up heap size. x86 uses either
@@ -3765,7 +3773,7 @@ void os::large_page_init() {
   }
 
   // 2) Scan OS info
-  size_t default_large_page_size = scan_default_large_page_size();
+  size_t default_large_page_size = os::Linux::scan_default_large_page_size();
   os::Linux::_default_large_page_size = default_large_page_size;
   if (default_large_page_size == 0) {
     // No large pages configured, return.
