@@ -60,9 +60,9 @@ public class ForceEarlyReturnTest {
     static final int FAILED = 2;
     static final int expValA1 = 111;
     static final int expValA2 = 222;
-    static final String  expValB1 = "B1";
-    static final String  expValB2 = "B2";
-    static final String  expValB3 = "B3";
+    static final String expValB1 = "B1";
+    static final String expValB2 = "B2";
+    static final String expValB3 = "B3";
 
     static void log(String str) { System.out.println(str); }
 
