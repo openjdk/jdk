@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +48,7 @@ public class TestModeUnlock {
         testWith("-XX:ShenandoahGCMode=satb",    Mode.PRODUCT);
         testWith("-XX:ShenandoahGCMode=iu",      Mode.EXPERIMENTAL);
         testWith("-XX:ShenandoahGCMode=passive", Mode.DIAGNOSTIC);
+        testWith("-XX:ShenandoahGCMode=generational", Mode.PRODUCT);
     }
 
     private static void testWith(String h, Mode mode) throws Exception {

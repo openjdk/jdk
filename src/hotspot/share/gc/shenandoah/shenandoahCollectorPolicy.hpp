@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2013, 2021, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +40,10 @@ public:
 class ShenandoahCollectorPolicy : public CHeapObj<mtGC> {
 private:
   size_t _success_concurrent_gcs;
+  size_t _mixed_gcs;
+  size_t _abbreviated_cycles;
+  size_t _success_old_gcs;
+  size_t _interrupted_old_gcs;
   size_t _success_degenerated_gcs;
   size_t _success_full_gcs;
   size_t _alloc_failure_degenerated;
@@ -48,13 +53,11 @@ private:
   size_t _explicit_full;
   size_t _implicit_concurrent;
   size_t _implicit_full;
+  size_t _cycle_counter;
   size_t _degen_points[ShenandoahGC::_DEGENERATED_LIMIT];
 
   ShenandoahSharedFlag _in_shutdown;
-
   ShenandoahTracer* _tracer;
-
-  size_t _cycle_counter;
 
 public:
   ShenandoahCollectorPolicy();
@@ -63,7 +66,11 @@ public:
   // These two encompass the entire cycle.
   void record_cycle_start();
 
+  void record_mixed_cycle();
+  void record_abbreviated_cycle();
   void record_success_concurrent();
+  void record_success_old();
+  void record_interrupted_old();
   void record_success_degenerated();
   void record_success_full();
   void record_alloc_failure_to_degenerated(ShenandoahGC::ShenandoahDegenPoint point);

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +37,6 @@ class ShenandoahAllocationRate : public CHeapObj<mtGC> {
 
   double sample(size_t allocated);
 
-  double instantaneous_rate(size_t allocated) const;
   double upper_bound(double sds) const;
   bool is_spiking(double rate, double threshold) const;
 
@@ -53,7 +53,7 @@ class ShenandoahAllocationRate : public CHeapObj<mtGC> {
 
 class ShenandoahAdaptiveHeuristics : public ShenandoahHeuristics {
 public:
-  ShenandoahAdaptiveHeuristics();
+  ShenandoahAdaptiveHeuristics(ShenandoahGeneration* generation);
 
   virtual ~ShenandoahAdaptiveHeuristics();
 
@@ -62,7 +62,7 @@ public:
                                                      size_t actual_free);
 
   void record_cycle_start();
-  void record_success_concurrent();
+  void record_success_concurrent(bool abbreviated);
   void record_success_degenerated();
   void record_success_full();
 
@@ -85,6 +85,13 @@ public:
   const static double LOWEST_EXPECTED_AVAILABLE_AT_END;
   const static double HIGHEST_EXPECTED_AVAILABLE_AT_END;
 
+  // At least this many cycles must execute before the heuristic will attempt
+  // to resize its generation. This is to prevent the heuristic from rapidly
+  // maxing out the generation size (which only forces the collector for the
+  // other generation to run more frequently, defeating the purpose of improving
+  // MMU).
+  const static uint MINIMUM_RESIZE_INTERVAL;
+
   friend class ShenandoahAllocationRate;
 
   // Used to record the last trigger that signaled to start a GC.
@@ -98,6 +105,8 @@ public:
   void adjust_last_trigger_parameters(double amount);
   void adjust_margin_of_error(double amount);
   void adjust_spike_threshold(double amount);
+
+  bool resize_and_evaluate();
 
   ShenandoahAllocationRate _allocation_rate;
 
@@ -126,6 +135,10 @@ public:
   // establishes what is 'normal' for the application and is used as a
   // source of feedback to adjust trigger parameters.
   TruncatedSeq _available;
+
+  // Do not attempt to resize the generation for this heuristic until this
+  // value is greater than MINIMUM_RESIZE_INTERVAL.
+  uint _cycles_since_last_resize;
 };
 
 #endif // SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHADAPTIVEHEURISTICS_HPP

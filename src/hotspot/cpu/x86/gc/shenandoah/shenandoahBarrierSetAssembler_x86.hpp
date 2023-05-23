@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018, 2021, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,6 +59,12 @@ private:
 
   void iu_barrier_impl(MacroAssembler* masm, Register dst, Register tmp);
 
+  void store_check(MacroAssembler* masm, Register obj);
+
+  void gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators,
+                                        Register addr, Register count,
+                                        Register tmp);
+
 public:
   void iu_barrier(MacroAssembler* masm, Register dst, Register tmp);
 #ifdef COMPILER1
@@ -73,6 +80,8 @@ public:
                    Register res, Address addr, Register oldval, Register newval,
                    bool exchange, Register tmp1, Register tmp2);
   virtual void arraycopy_prologue(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
+                                  Register src, Register dst, Register count);
+  virtual void arraycopy_epilogue(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                                   Register src, Register dst, Register count);
   virtual void load_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                        Register dst, Address src, Register tmp1, Register tmp_thread);

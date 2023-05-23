@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2018, 2021, Red Hat, Inc. All rights reserved.
  * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,6 +105,8 @@ LIR_Opr ShenandoahBarrierSetC1::atomic_cmpxchg_at_resolved(LIRAccess &access, LI
 
       __ append(new LIR_OpShenandoahCompareAndSwap(addr, cmp_value.result(), new_value.result(), t1, t2, result));
 
+      post_barrier(access, access.resolved_addr(), new_value.result());
+
       if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
         __ membar_acquire();
       } else {
@@ -114,7 +117,13 @@ LIR_Opr ShenandoahBarrierSetC1::atomic_cmpxchg_at_resolved(LIRAccess &access, LI
     }
   }
 
-  return BarrierSetC1::atomic_cmpxchg_at_resolved(access, cmp_value, new_value);
+  LIR_Opr result = BarrierSetC1::atomic_cmpxchg_at_resolved(access, cmp_value, new_value);
+
+  if (access.is_oop()) {
+    post_barrier(access, access.resolved_addr(), new_value.result());
+  }
+
+  return result;
 }
 
 LIR_Opr ShenandoahBarrierSetC1::atomic_xchg_at_resolved(LIRAccess &access, LIRItem &value) {
@@ -150,6 +159,8 @@ LIR_Opr ShenandoahBarrierSetC1::atomic_xchg_at_resolved(LIRAccess &access, LIRIt
     if (ShenandoahSATBBarrier) {
       pre_barrier(access.gen(), access.access_emit_info(), access.decorators(), LIR_OprFact::illegalOpr, result);
     }
+
+    post_barrier(access, access.resolved_addr(), result);
   }
 
   if (support_IRIW_for_not_multiple_copy_atomic_cpu) {

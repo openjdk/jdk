@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +27,8 @@
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "gc/shenandoah/shenandoahInitLogger.hpp"
+#include "gc/shenandoah/shenandoahOldGeneration.hpp"
+#include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "logging/log.hpp"
@@ -40,8 +43,26 @@ void ShenandoahInitLogger::print_heap() {
   log_info(gc, init)("Mode: %s",
                      heap->mode()->name());
 
-  log_info(gc, init)("Heuristics: %s",
-                     heap->heuristics()->name());
+  if (!heap->mode()->is_generational()) {
+    log_info(gc, init)("Heuristics: %s", heap->global_generation()->heuristics()->name());
+  } else {
+    log_info(gc, init)("Young Heuristics: %s", heap->young_generation()->heuristics()->name());
+    log_info(gc, init)("Young Generation Initial Size: " SIZE_FORMAT "%s",
+                       byte_size_in_proper_unit(heap->young_generation()->soft_max_capacity()),
+                       proper_unit_for_byte_size(heap->young_generation()->soft_max_capacity()));
+    log_info(gc, init)("Young Generation Max: " SIZE_FORMAT "%s",
+                       byte_size_in_proper_unit(heap->young_generation()->max_capacity()),
+                       proper_unit_for_byte_size(heap->young_generation()->max_capacity()));
+    log_info(gc, init)("Old Heuristics: %s", heap->old_generation()->heuristics()->name());
+    log_info(gc, init)("Old Generation Initial Size: " SIZE_FORMAT "%s",
+                       byte_size_in_proper_unit(heap->old_generation()->soft_max_capacity()),
+                       proper_unit_for_byte_size(heap->old_generation()->soft_max_capacity()));
+    log_info(gc, init)("Old Generation Max: " SIZE_FORMAT "%s",
+                       byte_size_in_proper_unit(heap->old_generation()->max_capacity()),
+                       proper_unit_for_byte_size(heap->old_generation()->max_capacity()));
+  }
+
+
 
   log_info(gc, init)("Heap Region Count: " SIZE_FORMAT,
                      ShenandoahHeapRegion::region_count());

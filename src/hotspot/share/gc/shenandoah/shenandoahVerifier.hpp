@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017, 2020, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,6 +58,24 @@ private:
   ShenandoahHeap* _heap;
   MarkBitMap* _verification_bit_map;
 public:
+  typedef enum {
+    // Disable remembered set verification.
+    _verify_remembered_disable,
+
+    // Old objects should be registered and RS cards within *read-only* RS are dirty for all
+    // inter-generational pointers.
+    _verify_remembered_before_marking,
+
+    // Old objects should be registered and RS cards within *read-write* RS are dirty for all
+    // inter-generational pointers.
+    _verify_remembered_before_updating_references,
+
+    // Old objects should be registered and RS cards within *read-write* RS are dirty for all
+    // inter-generational pointers.
+    // TODO: This differs from the previous mode by update-watermark() vs top() end range?
+    _verify_remembered_after_full_gc
+  } VerifyRememberedSet;
+
   typedef enum {
     // Disable marked objects verification.
     _verify_marked_disable,
@@ -136,7 +155,10 @@ public:
     _verify_gcstate_forwarded,
 
     // Evacuation is in progress, some objects are forwarded
-    _verify_gcstate_evacuation
+    _verify_gcstate_evacuation,
+
+    // Evacuation is done, some objects are forwarded, updating is in progress
+    _verify_gcstate_updating
   } VerifyGCState;
 
   struct VerifyOptions {
@@ -160,7 +182,8 @@ public:
   };
 
 private:
-  void verify_at_safepoint(const char *label,
+  void verify_at_safepoint(const char* label,
+                           VerifyRememberedSet remembered,
                            VerifyForwarded forwarded,
                            VerifyMarked marked,
                            VerifyCollectionSet cset,
@@ -188,6 +211,14 @@ public:
   void verify_roots_in_to_space();
 
   void verify_roots_no_forwarded();
+
+private:
+   void help_verify_region_rem_set(ShenandoahHeapRegion* r, ShenandoahMarkingContext* ctx,
+                                    HeapWord* from, HeapWord* top, HeapWord* update_watermark, const char* message);
+
+  void verify_rem_set_before_mark();
+  void verify_rem_set_before_update_ref();
+  void verify_rem_set_after_full_gc();
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHVERIFIER_HPP

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +33,7 @@
 
 uint ShenandoahWorkerPolicy::_prev_par_marking     = 0;
 uint ShenandoahWorkerPolicy::_prev_conc_marking    = 0;
+uint ShenandoahWorkerPolicy::_prev_conc_rs_scanning = 0;
 uint ShenandoahWorkerPolicy::_prev_conc_evac       = 0;
 uint ShenandoahWorkerPolicy::_prev_conc_root_proc  = 0;
 uint ShenandoahWorkerPolicy::_prev_conc_refs_proc  = 0;
@@ -59,6 +61,15 @@ uint ShenandoahWorkerPolicy::calc_workers_for_conc_marking() {
                                            active_workers,
                                            Threads::number_of_non_daemon_threads());
   return _prev_conc_marking;
+}
+
+uint ShenandoahWorkerPolicy::calc_workers_for_rs_scanning() {
+  uint active_workers = (_prev_conc_rs_scanning == 0) ? ConcGCThreads : _prev_conc_rs_scanning;
+  _prev_conc_rs_scanning =
+    WorkerPolicy::calc_active_conc_workers(ConcGCThreads,
+                                           active_workers,
+                                           Threads::number_of_non_daemon_threads());
+  return _prev_conc_rs_scanning;
 }
 
 // Reuse the calculation result from init marking

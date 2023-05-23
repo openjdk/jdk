@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018, 2021, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -243,6 +244,8 @@ protected:
   virtual LIR_Opr atomic_cmpxchg_at_resolved(LIRAccess& access, LIRItem& cmp_value, LIRItem& new_value);
 
   virtual LIR_Opr atomic_xchg_at_resolved(LIRAccess& access, LIRItem& value);
+
+  void post_barrier(LIRAccess& access, LIR_Opr addr, LIR_Opr new_val);
 
 public:
 

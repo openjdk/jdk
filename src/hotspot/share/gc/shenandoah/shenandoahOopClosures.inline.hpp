@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2015, 2021, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,18 +31,18 @@
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahMark.inline.hpp"
 
-template<class T>
+template<class T, ShenandoahGenerationType GENERATION>
 inline void ShenandoahMarkRefsSuperClosure::work(T* p) {
-  ShenandoahMark::mark_through_ref<T>(p, _queue, _mark_context, _weak);
+  ShenandoahMark::mark_through_ref<T, GENERATION>(p, _queue, _old_queue, _mark_context, _weak);
 }
 
-template<class T>
+template<class T, ShenandoahGenerationType GENERATION>
 inline void ShenandoahMarkUpdateRefsSuperClosure::work(T* p) {
   // Update the location
   _heap->update_with_forwarded(p);
 
   // ...then do the usual thing
-  ShenandoahMarkRefsSuperClosure::work<T>(p);
+  ShenandoahMarkRefsSuperClosure::work<T, GENERATION>(p);
 }
 
 template<class T>
@@ -52,6 +53,18 @@ inline void ShenandoahSTWUpdateRefsClosure::work(T* p) {
 template<class T>
 inline void ShenandoahConcUpdateRefsClosure::work(T* p) {
   _heap->conc_update_with_forwarded(p);
+}
+
+template<class T>
+inline void ShenandoahSetRememberedCardsToDirtyClosure::work(T* p) {
+  T o = RawAccess<>::oop_load(p);
+  if (!CompressedOops::is_null(o)) {
+    oop obj = CompressedOops::decode_not_null(o);
+    if (_heap->is_in_young(obj)) {
+      // Found interesting pointer.  Mark the containing card as dirty.
+      _scanner->mark_card_as_dirty((HeapWord*) p);
+    }
+  }
 }
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHOOPCLOSURES_INLINE_HPP

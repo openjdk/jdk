@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,6 +73,7 @@ public:
   static void assert_heaplocked(const char* file, int line);
   static void assert_not_heaplocked(const char* file, int line);
   static void assert_heaplocked_or_safepoint(const char* file, int line);
+  static void assert_heaplocked_or_fullgc_safepoint(const char* file, int line);
 
 #ifdef ASSERT
 #define shenandoah_assert_in_heap(interior_loc, obj) \
@@ -163,6 +165,14 @@ public:
 
 #define shenandoah_assert_heaplocked_or_safepoint() \
                     ShenandoahAsserts::assert_heaplocked_or_safepoint(__FILE__, __LINE__)
+
+#define shenandoah_assert_heaplocked_or_fullgc_safepoint() \
+                    ShenandoahAsserts::assert_heaplocked_or_fullgc_safepoint(__FILE__, __LINE__)
+#define shenandoah_assert_control_or_vm_thread() \
+                    assert(Thread::current()->is_VM_thread() || Thread::current() == ShenandoahHeap::heap()->control_thread(), "Expected control thread or vm thread")
+
+#define shenandoah_assert_generational() \
+                    assert(ShenandoahHeap::heap()->mode()->is_generational(), "Must be in generational mode here.")
 #else
 #define shenandoah_assert_in_heap(interior_loc, obj)
 #define shenandoah_assert_in_heap_or_null(interior_loc, obj)
@@ -213,6 +223,9 @@ public:
 #define shenandoah_assert_heaplocked()
 #define shenandoah_assert_not_heaplocked()
 #define shenandoah_assert_heaplocked_or_safepoint()
+#define shenandoah_assert_heaplocked_or_fullgc_safepoint()
+#define shenandoah_assert_control_or_vm_thread()
+#define shenandoah_assert_generational()
 
 #endif
 

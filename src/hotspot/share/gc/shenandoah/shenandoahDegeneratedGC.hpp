@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,15 +29,19 @@
 #include "gc/shenandoah/shenandoahGC.hpp"
 
 class VM_ShenandoahDegeneratedGC;
+class ShenandoahGeneration;
 
 class ShenandoahDegenGC : public ShenandoahGC {
   friend class VM_ShenandoahDegeneratedGC;
 private:
   const ShenandoahDegenPoint  _degen_point;
+  ShenandoahGeneration* _generation;
+  bool _upgraded_to_full;
 
 public:
-  ShenandoahDegenGC(ShenandoahDegenPoint degen_point);
+  ShenandoahDegenGC(ShenandoahDegenPoint degen_point, ShenandoahGeneration* generation);
   bool collect(GCCause::Cause cause);
+  bool upgraded_to_full();
 
 private:
   void vmop_degenerated();
@@ -48,6 +53,7 @@ private:
   void op_finish_mark();
   void op_prepare_evacuation();
   void op_cleanup_early();
+  void op_global_coalesce_and_fill();
   void op_evacuate();
   void op_init_updaterefs();
   void op_updaterefs();
@@ -57,6 +63,8 @@ private:
   // Fail handling
   void op_degenerated_futile();
   void op_degenerated_fail();
+
+  void upgrade_to_full();
 
   const char* degen_event_message(ShenandoahDegenPoint point) const;
 };

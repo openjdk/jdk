@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2015, 2022, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,6 +61,10 @@ template <class T, StringDedupMode STRING_DEDUP>
 void ShenandoahMark::do_task(ShenandoahObjToScanQueue* q, T* cl, ShenandoahLiveData* live_data, StringDedup::Requests* const req, ShenandoahMarkTask* task) {
   oop obj = task->obj();
 
+  // TODO: This will push array chunks into the mark queue with no regard for
+  // generations. I don't think it will break anything, but the young generation
+  // scan might end up processing some old generation array chunks.
+
   shenandoah_assert_not_forwarded(nullptr, obj);
   shenandoah_assert_marked(nullptr, obj);
   shenandoah_assert_not_in_cset_except(nullptr, obj, ShenandoahHeap::heap()->cancelled_gc());
@@ -110,6 +115,7 @@ inline void ShenandoahMark::count_liveness(ShenandoahLiveData* live_data, oop ob
 
   if (!region->is_humongous_start()) {
     assert(!region->is_humongous(), "Cannot have continuations here");
+    assert(region->is_affiliated(), "Do not count live data within Free Regular Region " SIZE_FORMAT, region_idx);
     ShenandoahLiveData cur = live_data[region_idx];
     size_t new_val = size + cur;
     if (new_val >= SHENANDOAH_LIVEDATA_MAX) {
@@ -124,9 +130,11 @@ inline void ShenandoahMark::count_liveness(ShenandoahLiveData* live_data, oop ob
     shenandoah_assert_in_correct_region(nullptr, obj);
     size_t num_regions = ShenandoahHeapRegion::required_regions(size * HeapWordSize);
 
+    assert(region->is_affiliated(), "Do not count live data within FREE Humongous Start Region " SIZE_FORMAT, region_idx);
     for (size_t i = region_idx; i < region_idx + num_regions; i++) {
       ShenandoahHeapRegion* chain_reg = heap->get_region(i);
       assert(chain_reg->is_humongous(), "Expecting a humongous region");
+      assert(chain_reg->is_affiliated(), "Do not count live data within FREE Humongous Continuation Region " SIZE_FORMAT, i);
       chain_reg->increase_live_data_gc_words(chain_reg->used() >> LogHeapWordSize);
     }
   }
@@ -229,50 +237,101 @@ inline void ShenandoahMark::do_chunked_array(ShenandoahObjToScanQueue* q, T* cl,
   array->oop_iterate_range(cl, from, to);
 }
 
+template <ShenandoahGenerationType GENERATION>
 class ShenandoahSATBBufferClosure : public SATBBufferClosure {
 private:
   ShenandoahObjToScanQueue* _queue;
+  ShenandoahObjToScanQueue* _old_queue;
   ShenandoahHeap* _heap;
   ShenandoahMarkingContext* const _mark_context;
 public:
-  ShenandoahSATBBufferClosure(ShenandoahObjToScanQueue* q) :
+  ShenandoahSATBBufferClosure(ShenandoahObjToScanQueue* q, ShenandoahObjToScanQueue* old_q) :
     _queue(q),
+    _old_queue(old_q),
     _heap(ShenandoahHeap::heap()),
     _mark_context(_heap->marking_context())
   {
   }
 
   void do_buffer(void **buffer, size_t size) {
-    assert(size == 0 || !_heap->has_forwarded_objects(), "Forwarded objects are not expected here");
+    assert(size == 0 || !_heap->has_forwarded_objects() || _heap->is_concurrent_old_mark_in_progress(), "Forwarded objects are not expected here");
     for (size_t i = 0; i < size; ++i) {
       oop *p = (oop *) &buffer[i];
-      ShenandoahMark::mark_through_ref<oop>(p, _queue, _mark_context, false);
+      ShenandoahMark::mark_through_ref<oop, GENERATION>(p, _queue, _old_queue, _mark_context, false);
     }
   }
 };
 
-template<class T>
-inline void ShenandoahMark::mark_through_ref(T* p, ShenandoahObjToScanQueue* q, ShenandoahMarkingContext* const mark_context, bool weak) {
+template<ShenandoahGenerationType GENERATION>
+bool ShenandoahMark::in_generation(ShenandoahHeap* const heap, oop obj) {
+  // Each in-line expansion of in_generation() resolves GENERATION at compile time.
+  if (GENERATION == YOUNG) {
+    return heap->is_in_young(obj);
+  } else if (GENERATION == OLD) {
+    return heap->is_in_old(obj);
+  } else if (GENERATION == GLOBAL_GEN || GENERATION == GLOBAL_NON_GEN) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+template<class T, ShenandoahGenerationType GENERATION>
+inline void ShenandoahMark::mark_through_ref(T *p, ShenandoahObjToScanQueue* q, ShenandoahObjToScanQueue* old_q, ShenandoahMarkingContext* const mark_context, bool weak) {
+  // Note: This is a very hot code path, so the code should be conditional on GENERATION template
+  // parameter where possible, in order to generate the most efficient code.
+
   T o = RawAccess<>::oop_load(p);
   if (!CompressedOops::is_null(o)) {
     oop obj = CompressedOops::decode_not_null(o);
 
+    ShenandoahHeap* heap = ShenandoahHeap::heap();
     shenandoah_assert_not_forwarded(p, obj);
-    shenandoah_assert_not_in_cset_except(p, obj, ShenandoahHeap::heap()->cancelled_gc());
-
-    bool skip_live = false;
-    bool marked;
-    if (weak) {
-      marked = mark_context->mark_weak(obj);
-    } else {
-      marked = mark_context->mark_strong(obj, /* was_upgraded = */ skip_live);
+    shenandoah_assert_not_in_cset_except(p, obj, heap->cancelled_gc());
+    if (in_generation<GENERATION>(heap, obj)) {
+      mark_ref(q, mark_context, weak, obj);
+      shenandoah_assert_marked(p, obj);
+      // TODO: As implemented herein, GLOBAL_GEN collections reconstruct the card table during GLOBAL_GEN concurrent
+      // marking. Note that the card table is cleaned at init_mark time so it needs to be reconstructed to support
+      // future young-gen collections.  It might be better to reconstruct card table in
+      // ShenandoahHeapRegion::global_oop_iterate_and_fill_dead.  We could either mark all live memory as dirty, or could
+      // use the GLOBAL update-refs scanning of pointers to determine precisely which cards to flag as dirty.
+      if (GENERATION == YOUNG && heap->is_in_old(p)) {
+        // Mark card as dirty because remembered set scanning still finds interesting pointer.
+        heap->mark_card_as_dirty((HeapWord*)p);
+      } else if (GENERATION == GLOBAL_GEN && heap->is_in_old(p) && heap->is_in_young(obj)) {
+        // Mark card as dirty because GLOBAL marking finds interesting pointer.
+        heap->mark_card_as_dirty((HeapWord*)p);
+      }
+    } else if (old_q != nullptr) {
+      // Young mark, bootstrapping old_q or concurrent with old_q marking.
+      mark_ref(old_q, mark_context, weak, obj);
+      shenandoah_assert_marked(p, obj);
+    } else if (GENERATION == OLD) {
+      // Old mark, found a young pointer.
+      // TODO:  Rethink this: may be redundant with dirtying of cards identified during young-gen remembered set scanning
+      // and by mutator write barriers.  Assert
+      if (heap->is_in(p)) {
+        assert(heap->is_in_young(obj), "Expected young object.");
+        heap->mark_card_as_dirty(p);
+      }
     }
-    if (marked) {
-      bool pushed = q->push(ShenandoahMarkTask(obj, skip_live, weak));
-      assert(pushed, "overflow queue should always succeed pushing");
-    }
+  }
+}
 
-    shenandoah_assert_marked(p, obj);
+inline void ShenandoahMark::mark_ref(ShenandoahObjToScanQueue* q,
+                              ShenandoahMarkingContext* const mark_context,
+                              bool weak, oop obj) {
+  bool skip_live = false;
+  bool marked;
+  if (weak) {
+    marked = mark_context->mark_weak(obj);
+  } else {
+    marked = mark_context->mark_strong(obj, /* was_upgraded = */ skip_live);
+  }
+  if (marked) {
+    bool pushed = q->push(ShenandoahMarkTask(obj, skip_live, weak));
+    assert(pushed, "overflow queue should always succeed pushing");
   }
 }
 
@@ -283,4 +342,12 @@ ShenandoahObjToScanQueueSet* ShenandoahMark::task_queues() const {
 ShenandoahObjToScanQueue* ShenandoahMark::get_queue(uint index) const {
   return _task_queues->queue(index);
 }
+
+ShenandoahObjToScanQueue* ShenandoahMark::get_old_queue(uint index) const {
+  if (_old_gen_task_queues != nullptr) {
+    return _old_gen_task_queues->queue(index);
+  }
+  return nullptr;
+}
+
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHMARK_INLINE_HPP

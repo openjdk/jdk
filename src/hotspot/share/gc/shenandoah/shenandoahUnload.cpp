@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019, 2021, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +50,8 @@ private:
 
 public:
   ShenandoahIsUnloadingOopClosure() :
-    _marking_context(ShenandoahHeap::heap()->complete_marking_context()),
+    // TODO: In non-generational mode, this should still be complete_marking_context()
+    _marking_context(ShenandoahHeap::heap()->marking_context()),
     _is_unloading(false) {
   }
 

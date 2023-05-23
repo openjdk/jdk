@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +50,9 @@ public:
   ~HdrSeq();
 
   virtual void add(double val);
+  void add(const HdrSeq& other);
   double percentile(double level) const;
+  void clear();
 };
 
 // Binary magnitude sequence stores the power-of-two histogram.

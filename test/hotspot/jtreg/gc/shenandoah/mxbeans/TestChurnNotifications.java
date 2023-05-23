@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,6 +105,18 @@
  *      TestChurnNotifications
  */
 
+/*
+ * @test id=generational
+ * @summary Check that MX notifications are reported for all cycles
+ * @library /test/lib /
+ * @requires vm.gc.Shenandoah
+ *
+ * @run main/othervm -Xmx128m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
+ *      -Dprecise=false
+ *      TestChurnNotifications
+ */
+
 import java.util.*;
 import java.util.concurrent.atomic.*;
 import javax.management.*;
@@ -128,6 +141,17 @@ public class TestChurnNotifications {
 
     static volatile Object sink;
 
+    private static final String DEFAULT_POOL_NAME = "Shenandoah";
+    private static final String YOUNG_GEN_POOL_NAME = "Shenandoah Young Gen";
+
+    private static MemoryUsage getUsage(Map<String, MemoryUsage> pools) {
+        MemoryUsage usage = pools.get(DEFAULT_POOL_NAME);
+        if (usage == null) {
+            usage = pools.get(YOUNG_GEN_POOL_NAME);
+        }
+        return usage;
+    }
+
     public static void main(String[] args) throws Exception {
         final long startTime = System.currentTimeMillis();
 
@@ -141,8 +165,8 @@ public class TestChurnNotifications {
                     Map<String, MemoryUsage> mapBefore = info.getGcInfo().getMemoryUsageBeforeGc();
                     Map<String, MemoryUsage> mapAfter = info.getGcInfo().getMemoryUsageAfterGc();
 
-                    MemoryUsage before = mapBefore.get("Shenandoah");
-                    MemoryUsage after = mapAfter.get("Shenandoah");
+                    MemoryUsage before = getUsage(mapBefore);
+                    MemoryUsage after = getUsage(mapAfter);
 
                     if ((before != null) && (after != null)) {
                         long diff = before.getUsed() - after.getUsed();
