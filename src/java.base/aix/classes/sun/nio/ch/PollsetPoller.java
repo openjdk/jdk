@@ -39,12 +39,12 @@ class PollsetPoller extends Poller {
 
     private final int setid;
     private final long pollBuffer;
-    private static final int POLL_ARRAY_SIZE = 16;
+    private static final int POLL_BUFFER_SIZE = 16;
 
     PollsetPoller(boolean read) throws IOException {
         super(read);
         this.setid = Pollset.pollsetCreate();
-        this.pollBuffer = Pollset.allocatePollArray(POLL_ARRAY_SIZE);
+        this.pollBuffer = Pollset.allocatePollArray(POLL_BUFFER_SIZE);
     }
 
     @Override
@@ -92,7 +92,7 @@ class PollsetPoller extends Poller {
     }
 
     int pollInner(int subInterval) throws IOException {
-        int n = Pollset.pollsetPoll(setid, buffer, setsize, subInterval);
+        int n = Pollset.pollsetPoll(setid, buffer, POLL_BUFFER_SIZE, subInterval);
         for (int i=0; i<n; i++) {
             long eventAddress = Pollset.getEvent(pollBuffer, i);
             int fd = Pollset.getDescriptor(eventAddress);
