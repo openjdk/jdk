@@ -197,6 +197,9 @@ public abstract class CallArranger {
         // Note: Can return a GP reg for a float!
         VMStorage nextStorage(int type, boolean is32Bit) {
             VMStorage reg = regAlloc(type);
+            // Stack layout computation: We need to count all arguments in order to get the correct
+            // offset for the next argument which will really use the stack.
+            // The reserved space for the Parameter Save Area is determined by the DowncallStubGenerator.
             VMStorage stack;
             if (!useABIv2 && is32Bit) {
                 stackAlloc(4, STACK_SLOT_SIZE); // Skip first half of stack slot.

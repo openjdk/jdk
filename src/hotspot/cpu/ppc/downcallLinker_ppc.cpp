@@ -154,13 +154,14 @@ void DowncallStubGenerator::generate() {
 
   // Stack frame size computation:
   // We use the number of input VMStorage elements because PPC64 requires slots for all arguments
-  // (even if they are passed in registers), at least 8.
-  // This may be a bit more than needed when HFA is used (see CallArranger.java).
+  // (even if they are passed in registers), at least 8 (exception for ABIv2: see below).
+  // This may be a bit more than needed when single precision HFA is used (see CallArranger.java).
   // (native_abi_reg_args is native_abi_minframe plus space for 8 argument register spill slots)
   assert(_abi._shadow_space_bytes == frame::native_abi_minframe_size, "expected space according to ABI");
   // The Parameter Save Area needs to be at least 8 slots for ABIv1.
-  // ABIv2 allows omitting it when all parameters can get passed in registers. We currently don't optimize this.
-  // For ABIv2, we only need (_input_registers.length() > 8) ? _input_registers.length() : 0
+  // ABIv2 allows omitting it if the callee's prototype indicates that all parameters can be passed in registers.
+  // For ABIv2, we typically only need (_input_registers.length() > 8) ? _input_registers.length() : 0,
+  // but this may be wrong for VarArgs. So, we currently don't optimize this.
   int parameter_save_area_slots = MAX2(_input_registers.length(), 8);
   int allocated_frame_size = frame::native_abi_minframe_size + parameter_save_area_slots * BytesPerWord;
 
