@@ -321,6 +321,7 @@ public interface SegmentAllocator {
      * @param elementLayout the array element layout.
      * @param count the array element count.
      * @return a segment for the newly allocated memory block.
+     * @throws IllegalArgumentException if {@code elementLayout.byteSize() * count} overflows.
      * @throws IllegalArgumentException if {@code count < 0}.
      */
     default MemorySegment allocateArray(MemoryLayout elementLayout, long count) {
