@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -267,20 +267,23 @@ public final class OCSP {
                 out.flush();
             }
 
-            // Check the response
-            if (debug != null &&
-                con.getResponseCode() != HttpURLConnection.HTTP_OK) {
-                debug.println("Received HTTP error: " + con.getResponseCode()
-                    + " - " + con.getResponseMessage());
+            // Check the response.  Non-200 codes will generate an exception
+            // but path validation may complete successfully if revocation info
+            // can be obtained elsewhere (e.g. CRL).
+            int respCode = con.getResponseCode();
+            if (respCode != HttpURLConnection.HTTP_OK) {
+                String msg = "Received HTTP error: " + respCode + " - " +
+                        con.getResponseMessage();
+                if (debug != null) {
+                    debug.println(msg);
+                }
+                throw new IOException(msg);
             }
 
             int contentLength = con.getContentLength();
-            if (contentLength == -1) {
-                contentLength = Integer.MAX_VALUE;
-            }
-
-            return IOUtils.readExactlyNBytes(con.getInputStream(),
-                    contentLength);
+            return (contentLength == -1) ? con.getInputStream().readAllBytes() :
+                    IOUtils.readExactlyNBytes(con.getInputStream(),
+                            contentLength);
         } finally {
             if (con != null) {
                 con.disconnect();
