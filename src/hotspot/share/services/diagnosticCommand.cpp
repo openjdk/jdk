@@ -886,7 +886,7 @@ void CompilerDirectivesPrintDCmd::execute(DCmdSource source, TRAPS) {
 
 CompilerDirectivesAddDCmd::CompilerDirectivesAddDCmd(outputStream* output, bool heap) :
                            DCmdWithParser(output, heap),
-  _filename("filename","Name of the directives file", "STRING",true),
+  _filename("filename", "Name of the directives file", "STRING", true),
   _force_deopt("-d", "Force deoptimization of affected methods.", "BOOLEAN", false, "false") {
 
   _dcmdparser.add_dcmd_argument(&_filename);
@@ -904,7 +904,7 @@ void CompilerDirectivesAddDCmd::execute(DCmdSource source, TRAPS) {
 
 CompilerDirectivesReplaceDCmd::CompilerDirectivesReplaceDCmd(outputStream* output, bool heap) :
                            DCmdWithParser(output, heap),
-  _filename("filename","Name of the directives file", "STRING",true),
+  _filename("filename", "Name of the directives file", "STRING", true),
   _force_deopt("-d", "Force deoptimization of affected methods.", "BOOLEAN", false, "false") {
 
   _dcmdparser.add_dcmd_argument(&_filename);
