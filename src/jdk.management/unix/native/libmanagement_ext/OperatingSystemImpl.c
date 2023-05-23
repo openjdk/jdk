@@ -61,6 +61,10 @@
 #include <libperfstat.h>
 #endif
 
+#if defined(__linux__)
+#include <string.h>
+#endif
+
 static jlong page_size = 0;
 
 #if defined(_ALLBSD_SOURCE) || defined(_AIX)
@@ -129,29 +133,13 @@ Java_com_sun_management_internal_OperatingSystemImpl_initialize0
     page_size = sysconf(_SC_PAGESIZE);
 }
 
+// Linux-specific implementation is in UnixOperatingSystem.c 
+#if !defined(__linux__)
 JNIEXPORT jlong JNICALL
 Java_com_sun_management_internal_OperatingSystemImpl_getCommittedVirtualMemorySize0
   (JNIEnv *env, jobject mbean)
 {
-#if defined(__linux__)
-    FILE *fp;
-    unsigned long vsize = 0;
-
-    if ((fp = fopen("/proc/self/stat", "r")) == NULL) {
-        throw_internal_error(env, "Unable to open /proc/self/stat");
-        return -1;
-    }
-
-    // Ignore everything except the vsize entry
-    if (fscanf(fp, "%*d %*s %*c %*d %*d %*d %*d %*d %*u %*u %*u %*u %*u %*d %*d %*d %*d %*d %*d %*u %*u %*d %lu %*[^\n]\n", &vsize) == EOF) {
-        throw_internal_error(env, "Unable to get virtual memory usage");
-        fclose(fp);
-        return -1;
-    }
-
-    fclose(fp);
-    return (jlong)vsize;
-#elif defined(__APPLE__)
+#if defined(__APPLE__)
     struct task_basic_info t_info;
     mach_msg_type_number_t t_info_count = TASK_BASIC_INFO_COUNT;
 
@@ -168,6 +156,7 @@ Java_com_sun_management_internal_OperatingSystemImpl_getCommittedVirtualMemorySi
     return (64 * MB);
 #endif
 }
+#endif
 
 JNIEXPORT jlong JNICALL
 Java_com_sun_management_internal_OperatingSystemImpl_getTotalSwapSpaceSize0

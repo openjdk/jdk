@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,8 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+#include "jni_util.h"
 
 #include <stdio.h>
 #include <stdint.h>
@@ -70,6 +72,13 @@ static int next_line(FILE *f) {
     } while (c != '\n' && c != EOF);
 
     return c;
+}
+
+static void throw_internal_error(JNIEnv* env, const char* msg) {
+    char errmsg[128];
+
+    snprintf(errmsg, sizeof(errmsg), "errno: %d error: %s\n", errno, msg);
+    JNU_ThrowInternalError(env, errmsg);
 }
 
 /**
@@ -329,6 +338,26 @@ double get_process_load() {
         return -1.0;
     }
     return u + s;
+}
+
+static long read_vmem_usage(const char *procfile, unsigned long *vsize) {
+    int n = read_statdata(procfile, "%*c %*d %*d %*d %*d %*d %*u %*u %*u %*u %*u %*d %*d %*d %*d %*d %*d %*u %*u %*d %lu %*[^\n]\n", vsize);
+    if (n != 1) {
+        return -1;
+    } else {
+        return *vsize;
+    }
+}
+
+JNIEXPORT jlong JNICALL
+Java_com_sun_management_internal_OperatingSystemImpl_getCommittedVirtualMemorySize0
+  (JNIEnv *env, jobject mbean)
+{
+   unsigned long vsize;
+    if (read_vmem_usage("/proc/self/stat", &vsize) == -1) {
+        throw_internal_error(env, "Unable to get virtual memory usage");
+    }
+    return (jlong) vsize;
 }
 
 JNIEXPORT jdouble JNICALL
