@@ -45,6 +45,7 @@
 #include "oops/typeArrayOop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
@@ -1225,10 +1226,16 @@ bool JVMCIRuntime::detach_thread(JavaThread* thread, const char* reason, bool ca
   return destroyed_javavm;
 }
 
-JNIEnv* JVMCIRuntime::init_shared_library_javavm() {
+JNIEnv* JVMCIRuntime::init_shared_library_javavm(int* create_JavaVM_err) {
   MutexLocker locker(_lock);
   JavaVM* javaVM = _shared_library_javavm;
   if (javaVM == nullptr) {
+    const char* val = Arguments::PropertyList_get_value(Arguments::system_properties(), "test.jvmci.forceEnomemOnLibjvmciInit");
+    if (val != nullptr && strcmp(val, "true") == 0) {
+      *create_JavaVM_err = JNI_ENOMEM;
+      return nullptr;
+    }
+
     char* sl_path;
     void* sl_handle = JVMCI::get_shared_library(sl_path, true);
 
@@ -1275,7 +1282,7 @@ JNIEnv* JVMCIRuntime::init_shared_library_javavm() {
       JVMCI_event_1("created JavaVM[%ld]@" PTR_FORMAT " for JVMCI runtime %d", javaVM_id, p2i(javaVM), _id);
       return env;
     } else {
-      fatal("JNI_CreateJavaVM failed with return value %d", result);
+      *create_JavaVM_err = result;
     }
   }
   return nullptr;
@@ -1461,6 +1468,7 @@ void JVMCIRuntime::initialize(JVMCI_TRAPS) {
       Handle properties_exception;
       properties = JVMCIENV->get_serialized_saved_properties(properties_len, THREAD);
       if (JVMCIEnv::transfer_pending_exception_to_jni(THREAD, nullptr, JVMCIENV)) {
+        JVMCI_event_1("error initializing system properties for JVMCI runtime %d", _id);
         return;
       }
       JVMCIENV->copy_saved_properties(properties, properties_len, JVMCI_CHECK);
@@ -1548,8 +1556,9 @@ JVM_END
 
 void JVMCIRuntime::shutdown() {
   if (_HotSpotJVMCIRuntime_instance.is_non_null()) {
+    bool jni_enomem_is_fatal = true;
     JVMCI_event_1("shutting down HotSpotJVMCIRuntime for JVMCI runtime %d", _id);
-    JVMCIEnv __stack_jvmci_env__(JavaThread::current(), _HotSpotJVMCIRuntime_instance.is_hotspot(), __FILE__, __LINE__);
+    JVMCIEnv __stack_jvmci_env__(JavaThread::current(), _HotSpotJVMCIRuntime_instance.is_hotspot(), jni_enomem_is_fatal, __FILE__, __LINE__);
     JVMCIEnv* JVMCIENV = &__stack_jvmci_env__;
     JVMCIENV->call_HotSpotJVMCIRuntime_shutdown(_HotSpotJVMCIRuntime_instance);
     if (_num_attached_threads == cannot_be_attached) {
@@ -1977,6 +1986,34 @@ JVMCI::CodeInstallResult JVMCIRuntime::validate_compile_task_dependencies(Depend
   return JVMCI::dependencies_failed;
 }
 
+// Called after an upcall to `function` while compiling `method`.
+// If an exception occurred, it is cleared, the compilation state
+// is updated with the failure and this method returns true.
+// Otherwise, it returns false.
+static bool after_compiler_upcall(JVMCIEnv* JVMCIENV, JVMCICompiler* compiler, const methodHandle& method, const char* function) {
+  if (JVMCIENV->has_pending_exception()) {
+    bool reason_on_C_heap = true;
+    const char* failure_reason = os::strdup(err_msg("uncaught exception in %s", function), mtJVMCI);
+    if (failure_reason == nullptr) {
+      failure_reason = "uncaught exception";
+      reason_on_C_heap = false;
+    }
+    Log(jit, compilation) log;
+    if (log.is_info()) {
+      ResourceMark rm;
+      log.info("%s while compiling %s", failure_reason, method->name_and_sig_as_C_string());
+      JVMCIENV->describe_pending_exception(true);
+    } else {
+      JVMCIENV->clear_pending_exception();
+    }
+    JVMCICompileState* compile_state = JVMCIENV->compile_state();
+    compile_state->set_failure(true, failure_reason, reason_on_C_heap);
+    compiler->on_upcall(failure_reason, compile_state);
+    return true;
+  }
+  return false;
+}
+
 void JVMCIRuntime::compile_method(JVMCIEnv* JVMCIENV, JVMCICompiler* compiler, const methodHandle& method, int entry_bci) {
   JVMCI_EXCEPTION_CONTEXT
 
@@ -2002,53 +2039,36 @@ void JVMCIRuntime::compile_method(JVMCIEnv* JVMCIENV, JVMCICompiler* compiler, c
 
   HandleMark hm(thread);
   JVMCIObject receiver = get_HotSpotJVMCIRuntime(JVMCIENV);
-  if (JVMCIENV->has_pending_exception()) {
-    if (PrintWarnings) {
-      ResourceMark rm(thread);
-      warning("HotSpotJVMCIRuntime initialization failed when compiling %s", method->name_and_sig_as_C_string());
-      JVMCIENV->describe_pending_exception(true);
-    }
-    compile_state->set_failure(false, "exception during HotSpotJVMCIRuntime initialization");
+  if (after_compiler_upcall(JVMCIENV, compiler, method, "get_HotSpotJVMCIRuntime")) {
     return;
   }
   JVMCIObject jvmci_method = JVMCIENV->get_jvmci_method(method, JVMCIENV);
-  if (JVMCIENV->has_pending_exception()) {
-    if (PrintWarnings) {
-      ResourceMark rm(thread);
-      warning("Error creating JVMCI wrapper for %s", method->name_and_sig_as_C_string());
-      JVMCIENV->describe_pending_exception(true);
-    }
-    compile_state->set_failure(false, "exception getting JVMCI wrapper method");
+  if (after_compiler_upcall(JVMCIENV, compiler, method, "get_jvmci_method")) {
     return;
   }
 
   JVMCIObject result_object = JVMCIENV->call_HotSpotJVMCIRuntime_compileMethod(receiver, jvmci_method, entry_bci,
                                                                      (jlong) compile_state, compile_state->task()->compile_id());
-  if (!JVMCIENV->has_pending_exception()) {
-    if (result_object.is_non_null()) {
-      JVMCIObject failure_message = JVMCIENV->get_HotSpotCompilationRequestResult_failureMessage(result_object);
-      if (failure_message.is_non_null()) {
-        // Copy failure reason into resource memory first ...
-        const char* failure_reason = JVMCIENV->as_utf8_string(failure_message);
-        // ... and then into the C heap.
-        failure_reason = os::strdup(failure_reason, mtJVMCI);
-        bool retryable = JVMCIENV->get_HotSpotCompilationRequestResult_retry(result_object) != 0;
-        compile_state->set_failure(retryable, failure_reason, true);
-      } else {
-        if (!compile_state->task()->is_success()) {
-          compile_state->set_failure(true, "no nmethod produced");
-        } else {
-          compile_state->task()->set_num_inlined_bytecodes(JVMCIENV->get_HotSpotCompilationRequestResult_inlinedBytecodes(result_object));
-          compiler->inc_methods_compiled();
-        }
-      }
-    } else {
-      assert(false, "JVMCICompiler.compileMethod should always return non-null");
-    }
+  if (after_compiler_upcall(JVMCIENV, compiler, method, "call_HotSpotJVMCIRuntime_compileMethod")) {
+    return;
+  }
+  compiler->on_upcall(nullptr);
+  guarantee(result_object.is_non_null(), "call_HotSpotJVMCIRuntime_compileMethod returned null");
+  JVMCIObject failure_message = JVMCIENV->get_HotSpotCompilationRequestResult_failureMessage(result_object);
+  if (failure_message.is_non_null()) {
+    // Copy failure reason into resource memory first ...
+    const char* failure_reason = JVMCIENV->as_utf8_string(failure_message);
+    // ... and then into the C heap.
+    failure_reason = os::strdup(failure_reason, mtJVMCI);
+    bool retryable = JVMCIENV->get_HotSpotCompilationRequestResult_retry(result_object) != 0;
+    compile_state->set_failure(retryable, failure_reason, true);
   } else {
-    // An uncaught exception here implies failure during compiler initialization.
-    // The only sensible thing to do here is to exit the VM.
-    fatal_exception(JVMCIENV, "Exception during JVMCI compiler initialization");
+    if (!compile_state->task()->is_success()) {
+      compile_state->set_failure(true, "no nmethod produced");
+    } else {
+      compile_state->task()->set_num_inlined_bytecodes(JVMCIENV->get_HotSpotCompilationRequestResult_inlinedBytecodes(result_object));
+      compiler->inc_methods_compiled();
+    }
   }
   if (compiler->is_bootstrapping()) {
     compiler->set_bootstrap_compilation_request_handled();
