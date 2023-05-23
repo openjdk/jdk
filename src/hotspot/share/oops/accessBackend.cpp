@@ -220,7 +220,8 @@ namespace AccessInternal {
 
     JavaThread* java_thread = JavaThread::cast(thread);
     JavaThreadState state = java_thread->thread_state();
-    assert(state == _thread_in_vm || state == _thread_in_Java || state == _thread_new,
+    assert(state == _thread_in_vm || state == _thread_in_Java || state == _thread_new
+        || Thread::currently_in_async_stack_walking(),
            "Wrong thread state for accesses: %d", (int)state);
   }
 #endif

@@ -731,6 +731,7 @@ JvmtiEnvBase::get_cthread_last_java_vframe(JavaThread* jt, RegisterMap* reg_map_
 
 jint
 JvmtiEnvBase::get_thread_state(oop thread_oop, JavaThread* jt) {
+  // any changes here should be propagated to profile.cpp
   jint state = 0;
 
   if (thread_oop != nullptr) {

@@ -1624,6 +1624,7 @@ oop java_lang_Thread::holder(oop java_thread) {
 bool java_lang_Thread::interrupted(oop java_thread) {
   // Make sure the caller can safely access oops.
   assert(Thread::current()->is_VM_thread() ||
+         Thread::currently_in_async_stack_walking() ||
          (JavaThread::current()->thread_state() != _thread_blocked &&
           JavaThread::current()->thread_state() != _thread_in_native),
          "Unsafe access to oop");

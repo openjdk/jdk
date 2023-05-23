@@ -270,13 +270,27 @@ void asyncGetStackTraceImpl(ASGST_CallTrace *trace, jint depth, void* ucontext, 
     case _thread_in_Java:
     case _thread_new:
       {
-      //trace->state = JvmtiEnvBase::get_thread_state(thread->threadObj(), thread);
+
+      oop thread_oop = JvmtiEnvBase::get_vthread_or_thread_oop(thread);
+      trace->state = JVMTI_THREAD_STATE_ALIVE;
+      if (thread_oop != nullptr) {
+        // Get most state bits.
+        trace->state = (jint)java_lang_Thread::get_thread_status(thread_oop);
+        if (java_lang_Thread::interrupted(thread_oop)) {
+          trace->state |= JVMTI_THREAD_STATE_INTERRUPTED;
+        }
+      }
+      if (thread->is_carrier_thread_suspended() ||
+          ((thread->jvmti_vthread() == nullptr || thread->jvmti_vthread() == thread_oop) && thread->is_suspended())) {
+        // Suspended non-virtual thread.
+        trace->state |= JVMTI_THREAD_STATE_SUSPENDED;
+      }
       break;
       }
     default:
       break;
   }
-  if ((trace->state & state_mask) == 0) {
+  if (check_state && (trace->state & state_mask) == 0) {
     trace->num_frames = ASGST_WRONG_STATE;
     return;
   }
