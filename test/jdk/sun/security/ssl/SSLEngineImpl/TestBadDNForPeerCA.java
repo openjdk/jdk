@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8294985
  * @library /test/lib
  * @summary verify correct exception handling in the event of an unparseable
  *  DN in the peer CA
