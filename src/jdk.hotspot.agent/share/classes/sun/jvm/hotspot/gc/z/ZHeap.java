@@ -38,9 +38,6 @@ import sun.jvm.hotspot.types.TypeDataBase;
 public class ZHeap extends VMObject {
 
     private static long pageAllocatorFieldOffset;
-    private static long pageTableFieldOffset;
-    private static long forwardingTableFieldOffset;
-    private static long relocateFieldOffset;
 
     static {
         VM.registerVMInitializedObserver((o, d) -> initialize(VM.getVM().getTypeDataBase()));
@@ -50,30 +47,14 @@ public class ZHeap extends VMObject {
         Type type = db.lookupType("ZHeap");
 
         pageAllocatorFieldOffset = type.getAddressField("_page_allocator").getOffset();
-        pageTableFieldOffset = type.getAddressField("_page_table").getOffset();
-        forwardingTableFieldOffset = type.getAddressField("_forwarding_table").getOffset();
-        relocateFieldOffset = type.getAddressField("_relocate").getOffset();
     }
 
     public ZHeap(Address addr) {
         super(addr);
     }
-
     private ZPageAllocator pageAllocator() {
         Address pageAllocatorAddr = addr.addOffsetTo(pageAllocatorFieldOffset);
         return VMObjectFactory.newObject(ZPageAllocator.class, pageAllocatorAddr);
-    }
-
-    ZPageTable pageTable() {
-        return VMObjectFactory.newObject(ZPageTable.class, addr.addOffsetTo(pageTableFieldOffset));
-    }
-
-    ZForwardingTable forwardingTable() {
-        return VMObjectFactory.newObject(ZForwardingTable.class, addr.addOffsetTo(forwardingTableFieldOffset));
-    }
-
-    ZRelocate relocate() {
-        return VMObjectFactory.newObject(ZRelocate.class, addr.addOffsetTo(relocateFieldOffset));
     }
 
     public long maxCapacity() {
@@ -86,36 +67,6 @@ public class ZHeap extends VMObject {
 
     public long used() {
         return pageAllocator().used();
-    }
-
-    boolean is_relocating(Address o) {
-        return pageTable().is_relocating(o);
-    }
-
-    Address relocate_object(Address addr) {
-        ZForwarding forwarding = forwardingTable().get(addr);
-        if (forwarding == null) {
-            return ZAddress.good(addr);
-        }
-        return relocate().relocateObject(forwarding, ZAddress.good(addr));
-    }
-
-    public boolean isIn(Address addr) {
-        if (ZAddress.isIn(addr)) {
-            ZPage page = pageTable().get(addr);
-            if (page != null) {
-                return page.isIn(addr);
-            }
-        }
-        return false;
-    }
-
-    public Address remapObject(Address o) {
-        ZForwarding forwarding = forwardingTable().get(addr);
-        if (forwarding == null) {
-            return ZAddress.good(o);
-        }
-        return relocate().forwardObject(forwarding, ZAddress.good(o));
     }
 
     public void printOn(PrintStream tty) {

@@ -56,6 +56,5 @@ public sealed interface PaddingLayout extends MemoryLayout permits PaddingLayout
      * {@inheritDoc}
      * @throws IllegalArgumentException {@inheritDoc}
      */
-    @Override
-    PaddingLayout withBitAlignment(long bitAlignment);
+    PaddingLayout withByteAlignment(long byteAlignment);
 }

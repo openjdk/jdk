@@ -87,6 +87,9 @@
   start_class(HotSpotResolvedJavaMethodImpl, jdk_vm_ci_hotspot_HotSpotResolvedJavaMethodImpl)                 \
     long_field(HotSpotResolvedJavaMethodImpl, methodHandle)                                                   \
   end_class                                                                                                   \
+  start_class(HotSpotMethodData, jdk_vm_ci_hotspot_HotSpotMethodData)                                         \
+    long_field(HotSpotMethodData, methodDataPointer)                                                          \
+  end_class                                                                                                   \
   start_class(InstalledCode, jdk_vm_ci_code_InstalledCode)                                                    \
     long_field(InstalledCode, address)                                                                        \
     long_field(InstalledCode, entryPoint)                                                                     \
@@ -240,6 +243,9 @@
   end_class                                                                                                   \
   start_class(InternalError, java_lang_InternalError)                                                         \
     jvmci_constructor(InternalError, "(Ljava/lang/String;)V")                                                 \
+  end_class                                                                                                   \
+  start_class(OutOfMemoryError, java_lang_OutOfMemoryError)                                                         \
+    jvmci_constructor(OutOfMemoryError, "(Ljava/lang/String;)V")                                                 \
   end_class                                                                                                   \
   start_class(ClassNotFoundException, java_lang_ClassNotFoundException)                                       \
     jvmci_constructor(ClassNotFoundException, "(Ljava/lang/String;)V")                                        \

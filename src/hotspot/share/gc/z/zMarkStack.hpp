@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@
 #include "gc/z/zMarkStackEntry.hpp"
 #include "utilities/globalDefinitions.hpp"
 
+class ZMarkTerminate;
+
 template <typename T, size_t S>
 class ZStack {
 private:
@@ -52,13 +54,14 @@ public:
 template <typename T>
 class ZStackList {
 private:
+  uintptr_t   _base;
   T* volatile _head;
 
   T* encode_versioned_pointer(const T* stack, uint32_t version) const;
   void decode_versioned_pointer(const T* vstack, T** stack, uint32_t* version) const;
 
 public:
-  ZStackList();
+  explicit ZStackList(uintptr_t base);
 
   bool is_empty() const;
 
@@ -82,25 +85,24 @@ private:
   ZCACHE_ALIGNED ZMarkStackList _overflowed;
 
 public:
-  ZMarkStripe();
+  explicit ZMarkStripe(uintptr_t base = 0);
 
   bool is_empty() const;
 
-  void publish_stack(ZMarkStack* stack, bool publish = true);
+  void publish_stack(ZMarkStack* stack, ZMarkTerminate* terminate, bool publish);
   ZMarkStack* steal_stack();
 };
 
 class ZMarkStripeSet {
 private:
-  size_t      _nstripes;
   size_t      _nstripes_mask;
   ZMarkStripe _stripes[ZMarkStripesMax];
 
 public:
-  ZMarkStripeSet();
+  explicit ZMarkStripeSet(uintptr_t base);
 
-  size_t nstripes() const;
   void set_nstripes(size_t nstripes);
+  size_t nstripes() const;
 
   bool is_empty() const;
 
@@ -124,6 +126,7 @@ private:
   bool push_slow(ZMarkStackAllocator* allocator,
                  ZMarkStripe* stripe,
                  ZMarkStack** stackp,
+                 ZMarkTerminate* terminate,
                  ZMarkStackEntry entry,
                  bool publish);
 
@@ -147,6 +150,7 @@ public:
   bool push(ZMarkStackAllocator* allocator,
             ZMarkStripeSet* stripes,
             ZMarkStripe* stripe,
+            ZMarkTerminate* terminate,
             ZMarkStackEntry entry,
             bool publish);
 
@@ -156,7 +160,8 @@ public:
            ZMarkStackEntry& entry);
 
   bool flush(ZMarkStackAllocator* allocator,
-             ZMarkStripeSet* stripes);
+             ZMarkStripeSet* stripes,
+             ZMarkTerminate* terminate);
 
   void free(ZMarkStackAllocator* allocator);
 };

@@ -568,7 +568,7 @@ bool G1CollectedHeap::alloc_archive_regions(MemRegion range) {
   // Mark each G1 region touched by the range as old, add it to
   // the old set, and set top.
   auto set_region_to_old = [&] (HeapRegion* r, bool is_last) {
-    assert(r->is_empty() && !r->is_pinned(), "Region already in use (%u)", r->hrm_index());
+    assert(r->is_empty(), "Region already in use (%u)", r->hrm_index());
 
     HeapWord* top = is_last ? last_address + 1 : r->end();
     r->set_top(top);
@@ -2621,8 +2621,8 @@ void G1CollectedHeap::set_humongous_stats(uint num_humongous_total, uint num_hum
 }
 
 bool G1CollectedHeap::should_sample_collection_set_candidates() const {
-  G1CollectionSetCandidates* candidates = G1CollectedHeap::heap()->collection_set()->candidates();
-  return candidates != nullptr && candidates->num_remaining() > 0;
+  const G1CollectionSetCandidates* candidates = collection_set()->candidates();
+  return !candidates->is_empty();
 }
 
 void G1CollectedHeap::set_collection_set_candidates_stats(G1MonotonicArenaMemoryStats& stats) {

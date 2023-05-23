@@ -122,27 +122,28 @@ void CodeInstaller::pd_relocate_ForeignCall(NativeInstruction* inst, jlong forei
 }
 
 void CodeInstaller::pd_relocate_JavaMethod(CodeBuffer &cbuf, methodHandle& method, jint pc_offset, JVMCI_TRAPS) {
+  NativeCall* call = NULL;
   switch (_next_call_type) {
     case INLINE_INVOKE:
-      break;
+      return;
     case INVOKEVIRTUAL:
     case INVOKEINTERFACE: {
       assert(!method->is_static(), "cannot call static method with invokeinterface");
-      NativeCall* call = nativeCall_at(_instructions->start() + pc_offset);
+      call = nativeCall_at(_instructions->start() + pc_offset);
       _instructions->relocate(call->instruction_address(), virtual_call_Relocation::spec(_invoke_mark_pc));
       call->trampoline_jump(cbuf, SharedRuntime::get_resolve_virtual_call_stub(), JVMCI_CHECK);
       break;
     }
     case INVOKESTATIC: {
       assert(method->is_static(), "cannot call non-static method with invokestatic");
-      NativeCall* call = nativeCall_at(_instructions->start() + pc_offset);
+      call = nativeCall_at(_instructions->start() + pc_offset);
       _instructions->relocate(call->instruction_address(), relocInfo::static_call_type);
       call->trampoline_jump(cbuf, SharedRuntime::get_resolve_static_call_stub(), JVMCI_CHECK);
       break;
     }
     case INVOKESPECIAL: {
       assert(!method->is_static(), "cannot call static method with invokespecial");
-      NativeCall* call = nativeCall_at(_instructions->start() + pc_offset);
+      call = nativeCall_at(_instructions->start() + pc_offset);
       _instructions->relocate(call->instruction_address(), relocInfo::opt_virtual_call_type);
       call->trampoline_jump(cbuf, SharedRuntime::get_resolve_opt_virtual_call_stub(), JVMCI_CHECK);
       break;
@@ -150,6 +151,15 @@ void CodeInstaller::pd_relocate_JavaMethod(CodeBuffer &cbuf, methodHandle& metho
     default:
       JVMCI_ERROR("invalid _next_call_type value");
       break;
+  }
+  if (Continuations::enabled()) {
+    // Check for proper post_call_nop
+    NativePostCallNop* nop = nativePostCallNop_at(call->next_instruction_address());
+    if (nop == NULL) {
+      JVMCI_ERROR("missing post call nop at offset %d", pc_offset);
+    } else {
+      _instructions->relocate(call->next_instruction_address(), relocInfo::post_call_nop_type);
+    }
   }
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,7 @@ static bool is_path_empty() {
 static size_t get_dump_directory() {
   const char* dump_path = JfrEmergencyDump::get_dump_path();
   if (*dump_path == '\0') {
-    if (os::get_current_directory(_path_buffer, sizeof(_path_buffer)) == NULL) {
+    if (os::get_current_directory(_path_buffer, sizeof(_path_buffer)) == nullptr) {
       return 0;
     }
   } else {
@@ -85,7 +85,7 @@ static size_t get_dump_directory() {
 }
 
 static fio_fd open_exclusivly(const char* path) {
-  assert((path != NULL) && (*path != '\0'), "invariant");
+  assert((path != nullptr) && (*path != '\0'), "invariant");
   return os::open(path, O_CREAT | O_RDWR, S_IREAD | S_IWRITE);
 }
 
@@ -94,7 +94,7 @@ static bool is_emergency_dump_file_open() {
 }
 
 static bool open_emergency_dump_fd(const char* path) {
-  if (path == NULL) {
+  if (path == nullptr) {
     return false;
   }
   assert(emergency_fd == invalid_fd, "invariant");
@@ -113,9 +113,9 @@ static const char* create_emergency_dump_path() {
 
   const size_t path_len = get_dump_directory();
   if (path_len == 0) {
-    return NULL;
+    return nullptr;
   }
-  const char* filename_fmt = NULL;
+  const char* filename_fmt = nullptr;
   // fetch specific error cause
   switch (JfrJavaSupport::cause()) {
     case JfrJavaSupport::OUT_OF_MEMORY:
@@ -128,7 +128,7 @@ static const char* create_emergency_dump_path() {
       filename_fmt = vm_error_filename_fmt;
   }
   const bool result = Arguments::copy_expand_pid(filename_fmt, strlen(filename_fmt), _path_buffer + path_len, JVM_MAXPATHLEN - path_len);
-  return result ? _path_buffer : NULL;
+  return result ? _path_buffer : nullptr;
 }
 
 static bool open_emergency_dump_file() {
@@ -149,12 +149,12 @@ static bool open_emergency_dump_file() {
 }
 
 static void report(outputStream* st, bool emergency_file_opened, const char* repository_path) {
-  assert(st != NULL, "invariant");
+  assert(st != nullptr, "invariant");
   if (emergency_file_opened) {
     st->print_raw("# JFR recording file will be written. Location: ");
     st->print_raw_cr(_path_buffer);
     st->print_raw_cr("#");
-  } else if (repository_path != NULL) {
+  } else if (repository_path != nullptr) {
     st->print_raw("# The JFR repository may contain useful JFR files. Location: ");
     st->print_raw_cr(repository_path);
     st->print_raw_cr("#");
@@ -166,7 +166,7 @@ static void report(outputStream* st, bool emergency_file_opened, const char* rep
 }
 
 void JfrEmergencyDump::set_dump_path(const char* path) {
-  if (path == NULL || *path == '\0') {
+  if (path == nullptr || *path == '\0') {
     os::get_current_directory(_dump_path, sizeof(_dump_path));
   } else {
     if (strlen(path) < JVM_MAXPATHLEN) {
@@ -181,24 +181,24 @@ const char* JfrEmergencyDump::get_dump_path() {
 }
 
 void JfrEmergencyDump::on_vm_error_report(outputStream* st, const char* repository_path) {
-  assert(st != NULL, "invariant");
+  assert(st != nullptr, "invariant");
   Thread* thread = Thread::current_or_null_safe();
-  if (thread != NULL) {
+  if (thread != nullptr) {
     report(st, open_emergency_dump_file(), repository_path);
-  } else if (repository_path != NULL) {
+  } else if (repository_path != nullptr) {
     // a non-attached thread will not be able to write anything later
     report(st, false, repository_path);
   }
 }
 
 static int file_sort(const char** const file1, const char** file2) {
-  assert(NULL != *file1 && NULL != *file2, "invariant");
+  assert(nullptr != *file1 && nullptr != *file2, "invariant");
   int cmp = strncmp(*file1, *file2, iso8601_len);
   if (0 == cmp) {
     const char* const dot1 = strchr(*file1, '.');
-    assert(NULL != dot1, "invariant");
+    assert(nullptr != dot1, "invariant");
     const char* const dot2 = strchr(*file2, '.');
-    assert(NULL != dot2, "invariant");
+    assert(nullptr != dot2, "invariant");
     ptrdiff_t file1_len = dot1 - *file1;
     ptrdiff_t file2_len = dot2 - *file2;
     if (file1_len < file2_len) {
@@ -215,7 +215,7 @@ static int file_sort(const char** const file1, const char** file2) {
 }
 
 static void iso8601_to_date_time(char* iso8601_str) {
-  assert(iso8601_str != NULL, "invariant");
+  assert(iso8601_str != nullptr, "invariant");
   assert(strlen(iso8601_str) == iso8601_len, "invariant");
   // "YYYY-MM-DDTHH:MM:SS"
   for (size_t i = 0; i < iso8601_len; ++i) {
@@ -231,7 +231,7 @@ static void iso8601_to_date_time(char* iso8601_str) {
 }
 
 static void date_time(char* buffer, size_t buffer_len) {
-  assert(buffer != NULL, "invariant");
+  assert(buffer != nullptr, "invariant");
   assert(buffer_len >= iso8601_len, "buffer too small");
   os::iso8601_time(buffer, buffer_len);
   assert(strlen(buffer) >= iso8601_len + 1, "invariant");
@@ -264,7 +264,7 @@ class RepositoryIterator : public StackObj {
 
 // append the file_name at the _path_buffer_file_name_offset position
 const char* RepositoryIterator::fully_qualified(const char* file_name) const {
-  assert(NULL != file_name, "invariant");
+  assert(nullptr != file_name, "invariant");
   assert(!is_path_empty(), "invariant");
   assert(_path_buffer_file_name_offset != 0, "invariant");
 
@@ -272,13 +272,13 @@ const char* RepositoryIterator::fully_qualified(const char* file_name) const {
                                   sizeof(_path_buffer) - _path_buffer_file_name_offset,
                                   "%s",
                                   file_name);
-  return result != -1 ? _path_buffer : NULL;
+  return result != -1 ? _path_buffer : nullptr;
 }
 
 // caller responsible for deallocation
 const char* RepositoryIterator::filter(const char* file_name) const {
-  if (file_name == NULL) {
-    return NULL;
+  if (file_name == nullptr) {
+    return nullptr;
   }
   const size_t len = strlen(file_name);
   if ((len < chunk_file_extension_length) ||
@@ -286,36 +286,36 @@ const char* RepositoryIterator::filter(const char* file_name) const {
                chunk_file_jfr_ext,
                chunk_file_extension_length) != 0)) {
     // not a .jfr file
-    return NULL;
+    return nullptr;
   }
   const char* fqn = fully_qualified(file_name);
-  if (fqn == NULL) {
-    return NULL;
+  if (fqn == nullptr) {
+    return nullptr;
   }
   const fio_fd fd = open_exclusivly(fqn);
   if (invalid_fd == fd) {
-    return NULL;
+    return nullptr;
   }
   const int64_t size = file_size(fd);
   ::close(fd);
   if (size <= chunk_file_header_size) {
-    return NULL;
+    return nullptr;
   }
   char* const file_name_copy = (char*)os::malloc(len + 1, mtTracing);
-  if (file_name_copy == NULL) {
+  if (file_name_copy == nullptr) {
     log_error(jfr, system)("Unable to malloc memory during jfr emergency dump");
-    return NULL;
+    return nullptr;
   }
   strncpy(file_name_copy, file_name, len + 1);
   return file_name_copy;
 }
 
 RepositoryIterator::RepositoryIterator(const char* repository_path) :
-  _file_names(NULL),
+  _file_names(nullptr),
   _path_buffer_file_name_offset(0),
   _iterator(0) {
     DIR* dirp = os::opendir(repository_path);
-    if (dirp == NULL) {
+    if (dirp == nullptr) {
       log_error(jfr, system)("Unable to open repository %s", repository_path);
       return;
     }
@@ -329,15 +329,15 @@ RepositoryIterator::RepositoryIterator(const char* repository_path) :
       return;
     }
     _file_names = new (mtTracing) GrowableArray<const char*>(10, mtTracing);
-    if (_file_names == NULL) {
+    if (_file_names == nullptr) {
       log_error(jfr, system)("Unable to malloc memory during jfr emergency dump");
       return;
     }
     // iterate files in the repository and append filtered file names to the files array
     struct dirent* dentry;
-    while ((dentry = os::readdir(dirp)) != NULL) {
+    while ((dentry = os::readdir(dirp)) != nullptr) {
       const char* file_name = filter(dentry->d_name);
-      if (file_name != NULL) {
+      if (file_name != nullptr) {
         _file_names->append(file_name);
       }
     }
@@ -348,7 +348,7 @@ RepositoryIterator::RepositoryIterator(const char* repository_path) :
 }
 
 RepositoryIterator::~RepositoryIterator() {
-  if (_file_names != NULL) {
+  if (_file_names != nullptr) {
     for (int i = 0; i < _file_names->length(); ++i) {
       os::free(const_cast<char*>(_file_names->at(i)));
     }
@@ -357,11 +357,11 @@ RepositoryIterator::~RepositoryIterator() {
 }
 
 bool RepositoryIterator::has_next() const {
-  return _file_names != NULL && _iterator < _file_names->length();
+  return _file_names != nullptr && _iterator < _file_names->length();
 }
 
 const char* RepositoryIterator::next() const {
-  return _iterator >= _file_names->length() ? NULL : fully_qualified(_file_names->at(_iterator++));
+  return _iterator >= _file_names->length() ? nullptr : fully_qualified(_file_names->at(_iterator++));
 }
 
 static void write_repository_files(const RepositoryIterator& iterator, char* const copy_block, size_t block_size) {
@@ -369,7 +369,7 @@ static void write_repository_files(const RepositoryIterator& iterator, char* con
   while (iterator.has_next()) {
     fio_fd current_fd = invalid_fd;
     const char* const fqn = iterator.next();
-    assert(fqn != NULL, "invariant");
+    assert(fqn != nullptr, "invariant");
     current_fd = open_exclusivly(fqn);
     if (current_fd != invalid_fd) {
       const int64_t size = file_size(current_fd);
@@ -396,7 +396,7 @@ static void write_repository_files(const RepositoryIterator& iterator, char* con
 static void write_emergency_dump_file(const RepositoryIterator& iterator) {
   static const size_t block_size = 1 * M; // 1 mb
   char* const copy_block = (char*)os::malloc(block_size, mtTracing);
-  if (copy_block == NULL) {
+  if (copy_block == nullptr) {
     log_error(jfr, system)("Unable to malloc memory during jfr emergency dump");
     log_error(jfr, system)("Unable to write jfr emergency dump file");
   } else {
@@ -406,7 +406,7 @@ static void write_emergency_dump_file(const RepositoryIterator& iterator) {
 }
 
 void JfrEmergencyDump::on_vm_error(const char* repository_path) {
-  assert(repository_path != NULL, "invariant");
+  assert(repository_path != nullptr, "invariant");
   if (open_emergency_dump_file()) {
     RepositoryIterator iterator(repository_path);
     write_emergency_dump_file(iterator);
@@ -426,13 +426,13 @@ static const char* create_emergency_chunk_path(const char* repository_path) {
                                   os::file_separator(),
                                   date_time_buffer,
                                   chunk_file_jfr_ext);
-  return result == -1 ? NULL : _path_buffer;
+  return result == -1 ? nullptr : _path_buffer;
 }
 
 const char* JfrEmergencyDump::chunk_path(const char* repository_path) {
-  if (repository_path == NULL) {
+  if (repository_path == nullptr) {
     if (!open_emergency_dump_file()) {
-      return NULL;
+      return nullptr;
     }
     // We can directly use the emergency dump file name as the chunk.
     // The chunk writer will open its own fd so we close this descriptor.
@@ -454,7 +454,7 @@ const char* JfrEmergencyDump::chunk_path(const char* repository_path) {
 *
 */
 static bool prepare_for_emergency_dump(Thread* thread) {
-  assert(thread != NULL, "invariant");
+  assert(thread != nullptr, "invariant");
   if (thread->is_Watcher_thread()) {
     // need WatcherThread as a safeguard against potential deadlocks
     return false;
@@ -462,7 +462,7 @@ static bool prepare_for_emergency_dump(Thread* thread) {
 
 #ifdef ASSERT
   Mutex* owned_lock = thread->owned_locks();
-  while (owned_lock != NULL) {
+  while (owned_lock != nullptr) {
     Mutex* next = owned_lock->next();
     owned_lock->unlock();
     owned_lock = next;
@@ -531,9 +531,9 @@ class JavaThreadInVMAndNative : public StackObj {
   JavaThreadState _original_state;
  public:
 
-  JavaThreadInVMAndNative(Thread* t) : _jt(t->is_Java_thread() ? JavaThread::cast(t) : NULL),
+  JavaThreadInVMAndNative(Thread* t) : _jt(t->is_Java_thread() ? JavaThread::cast(t) : nullptr),
                                        _original_state(_thread_max_state) {
-    if (_jt != NULL) {
+    if (_jt != nullptr) {
       _original_state = _jt->thread_state();
       if (_original_state != _thread_in_vm) {
         _jt->set_thread_state(_thread_in_vm);
@@ -548,7 +548,7 @@ class JavaThreadInVMAndNative : public StackObj {
   }
 
   void transition_to_native() {
-    if (_jt != NULL) {
+    if (_jt != nullptr) {
       assert(_jt->thread_state() == _thread_in_vm, "invariant");
       _jt->set_thread_state(_thread_in_native);
     }
@@ -575,7 +575,7 @@ void JfrEmergencyDump::on_vm_shutdown(bool exception_handler) {
     return;
   }
   Thread* thread = Thread::current_or_null_safe();
-  if (thread == NULL) {
+  if (thread == nullptr) {
     return;
   }
   // Ensure a JavaThread is _thread_in_vm when we make this call
