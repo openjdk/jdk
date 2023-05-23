@@ -1500,9 +1500,11 @@ JRT_BLOCK_ENTRY(address, SharedRuntime::handle_wrong_method_ic_miss(JavaThread* 
     // Return Method* through TLS
     current->set_vm_result_2(callee_method());
   JRT_BLOCK_END
-  // return compiled code entry point after potential safepoints
-  assert(callee_method->verified_code_entry() != nullptr, " Jump to zero!");
-  return callee_method->verified_code_entry();
+  // Return compiled code entry point after potential safepoints.
+  // In case we are in interpreted only mode return c2i entry instead.
+  address target = current->is_interp_only_mode() ? callee_method->get_c2i_entry() : callee_method->verified_code_entry();
+  assert(target != nullptr, "Jump to zero!");
+  return target;
 JRT_END
 
 
@@ -1554,9 +1556,11 @@ JRT_BLOCK_ENTRY(address, SharedRuntime::handle_wrong_method(JavaThread* current)
     callee_method = SharedRuntime::reresolve_call_site(CHECK_NULL);
     current->set_vm_result_2(callee_method());
   JRT_BLOCK_END
-  // return compiled code entry point after potential safepoints
-  assert(callee_method->verified_code_entry() != nullptr, " Jump to zero!");
-  return callee_method->verified_code_entry();
+  // Return compiled code entry point after potential safepoints.
+  // In case we are in interpreted only mode return c2i entry instead.
+  address target = current->is_interp_only_mode() ? callee_method->get_c2i_entry() : callee_method->verified_code_entry();
+  assert(target != nullptr, "Jump to zero!");
+  return target;
 JRT_END
 
 // Handle abstract method call
@@ -1597,38 +1601,15 @@ JRT_END
 // resolve a static call and patch code
 JRT_BLOCK_ENTRY(address, SharedRuntime::resolve_static_call_C(JavaThread* current ))
   methodHandle callee_method;
-  bool enter_special = false;
   JRT_BLOCK
     callee_method = SharedRuntime::resolve_helper(false, false, CHECK_NULL);
     current->set_vm_result_2(callee_method());
-
-    if (current->is_interp_only_mode()) {
-      RegisterMap reg_map(current,
-                          RegisterMap::UpdateMap::skip,
-                          RegisterMap::ProcessFrames::include,
-                          RegisterMap::WalkContinuation::skip);
-      frame stub_frame = current->last_frame();
-      assert(stub_frame.is_runtime_frame(), "must be a runtimeStub");
-      frame caller = stub_frame.sender(&reg_map);
-      enter_special = caller.cb() != nullptr && caller.cb()->is_compiled()
-        && caller.cb()->as_compiled_method()->method()->is_continuation_enter_intrinsic();
-    }
   JRT_BLOCK_END
-
-  if (current->is_interp_only_mode() && enter_special) {
-    // enterSpecial is compiled and calls this method to resolve the call to Continuation::enter
-    // but in interp_only_mode we need to go to the interpreted entry
-    // The c2i won't patch in this mode -- see fixup_callers_callsite
-    //
-    // This should probably be done in all cases, not just enterSpecial (see JDK-8218403),
-    // but that's part of a larger fix, and the situation is worse for enterSpecial, as it has no
-    // interpreted version.
-    return callee_method->get_c2i_entry();
-  }
-
-  // return compiled code entry point after potential safepoints
-  assert(callee_method->verified_code_entry() != nullptr, " Jump to zero!");
-  return callee_method->verified_code_entry();
+  // Return compiled code entry point after potential safepoints.
+  // In case we are in interpreted only mode return c2i entry instead.
+  address target = current->is_interp_only_mode() ? callee_method->get_c2i_entry() : callee_method->verified_code_entry();
+  assert(target != nullptr, "Jump to zero!");
+  return target;
 JRT_END
 
 
@@ -1639,9 +1620,11 @@ JRT_BLOCK_ENTRY(address, SharedRuntime::resolve_virtual_call_C(JavaThread* curre
     callee_method = SharedRuntime::resolve_helper(true, false, CHECK_NULL);
     current->set_vm_result_2(callee_method());
   JRT_BLOCK_END
-  // return compiled code entry point after potential safepoints
-  assert(callee_method->verified_code_entry() != nullptr, " Jump to zero!");
-  return callee_method->verified_code_entry();
+  // Return compiled code entry point after potential safepoints.
+  // In case we are in interpreted only mode return c2i entry instead.
+  address target = current->is_interp_only_mode() ? callee_method->get_c2i_entry() : callee_method->verified_code_entry();
+  assert(target != nullptr, "Jump to zero!");
+  return target;
 JRT_END
 
 
@@ -1653,9 +1636,11 @@ JRT_BLOCK_ENTRY(address, SharedRuntime::resolve_opt_virtual_call_C(JavaThread* c
     callee_method = SharedRuntime::resolve_helper(true, true, CHECK_NULL);
     current->set_vm_result_2(callee_method());
   JRT_BLOCK_END
-  // return compiled code entry point after potential safepoints
-  assert(callee_method->verified_code_entry() != nullptr, " Jump to zero!");
-  return callee_method->verified_code_entry();
+  // Return compiled code entry point after potential safepoints.
+  // In case we are in interpreted only mode return c2i entry instead.
+  address target = current->is_interp_only_mode() ? callee_method->get_c2i_entry() : callee_method->verified_code_entry();
+  assert(target != nullptr, "Jump to zero!");
+  return target;
 JRT_END
 
 // The handle_ic_miss_helper_internal function returns false if it failed due
