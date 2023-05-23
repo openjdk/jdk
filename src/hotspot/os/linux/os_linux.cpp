@@ -4657,7 +4657,7 @@ jint os::init_2(void) {
   }
 
   // Override the timer slack value if needed. The adjustment for the main
-  // thread would inherit the setting the children threads, which would be
+  // thread will establish the setting for child threads, which would be
   // most threads in JDK/JVM.
   if (TimerSlack > 0) {
     if (prctl(PR_SET_TIMERSLACK, TimerSlack) < 0) {
