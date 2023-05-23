@@ -202,7 +202,7 @@ public class PassFailJFrame {
             if ((leftTime < 0) || failed) {
                 timer.stop();
                 testFailedReason = FAILURE_REASON
-                        + "Timeout User did not perform testing.";
+                                   + "Timeout User did not perform testing.";
                 timeout = true;
                 latch.countDown();
             }
@@ -250,7 +250,7 @@ public class PassFailJFrame {
             public void windowClosing(WindowEvent e) {
                 super.windowClosing(e);
                 testFailedReason = FAILURE_REASON
-                        + "User closed the instruction Frame";
+                                   + "User closed the instruction Frame";
                 failed = true;
                 latch.countDown();
             }
