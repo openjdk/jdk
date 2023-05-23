@@ -4772,15 +4772,17 @@ FILE* os::fdopen(int fd, const char* mode) {
 }
 
 ssize_t os::pd_write(int fd, const void *buf, size_t nBytes) {
+  ssize_t original_len = (ssize_t)nBytes;
   while(nBytes > 0) {
     unsigned int len = nBytes > INT_MAX ? INT_MAX : (unsigned int)nBytes;
     ssize_t written_bytes = ::write(fd, buf, len);
     if (written_bytes < 0) {
-      return written_bytes;
+      return OS_ERR;
     }
     nBytes -= written_bytes;
     buf = (char *)buf + written_bytes;
   }
+  return original_len;
 }
 
 void os::exit(int num) {
