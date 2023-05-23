@@ -311,7 +311,7 @@ void PhaseConditionalPropagation::analyze(int rounds) {
           if (c->is_Region()) {
             uint j;
             for (j = 1; j < c->req(); ++j) {
-              if (updated.test(c->in(j)->_idx)) {
+              if (updated.test(known_updates(c->in(j))->_idx)) {
                 break;
               }
             }
