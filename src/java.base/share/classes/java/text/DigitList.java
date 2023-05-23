@@ -363,7 +363,7 @@ final class DigitList implements Cloneable {
             if (-decimalAt > maximumDigits) {
                 // Handle an underflow to zero when we round something like
                 // 0.0009 to 2 fractional digits.
-                count = 0;
+                underflowToZero(maximumDigits);
                 return;
             } else if (-decimalAt == maximumDigits) {
                 // If we round 0.0009 to 3 fractional digits, then we have to
@@ -391,6 +391,50 @@ final class DigitList implements Cloneable {
               roundedUp, valueExactAsDecimal);
 
      }
+
+    /**
+     * Determine if a number should create a 1 in the least significant location
+     * if truncating the representation to the given number of digits would
+     * violate the current RoundingMode contract
+     * @param maximumDigits The maximum number of digits to be shown.
+     *
+     * Upon return, count will either be one or zero.
+     */
+    private void underflowToZero(int maximumDigits) {
+        switch(roundingMode) {
+            case UP:
+                // RoundingMode.UP can not decrease the magnitude of the value
+                // whether negative or positive.
+                decimalAt = -maximumDigits + 1;
+                digits[0] = '1';
+                count = 1;
+                break;
+            case CEILING:
+                // RoundingMode.CEILING follows RoundingMode.UP behavior when
+                // the value is positive
+                if (!isNegative) {
+                    decimalAt = -maximumDigits + 1;
+                    digits[0] = '1';
+                    count = 1;
+                } else {
+                    count = 0;
+                }
+                break;
+            case FLOOR:
+                // RoundingMode.FLOOR can not increase the value
+                // when negative
+                if (isNegative) {
+                    decimalAt = -maximumDigits + 1;
+                    digits[0] = '1';
+                    count = 1;
+                } else {
+                    count = 0;
+                }
+                break;
+            default:
+                count = 0;
+        }
+    }
 
     /**
      * Round the representation to the given number of digits.
