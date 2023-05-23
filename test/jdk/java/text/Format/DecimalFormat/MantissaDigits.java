@@ -42,14 +42,14 @@ import org.junit.jupiter.params.provider.MethodSource;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class MantissaDigits {
-    private static final double[] numbers = {
+    private static final double[] NUMBERS = {
             1.1, 12.1, 123.1, 1234.1, 12345.1, 123456.1,
             -1.1, -12.1, -123.1, -1234.1, -12345.1, -123456.1,
             1, 12, 123, 1234, 12345, 123456, 1234567,
             -1, -12, -123, -1234, -12345, -123456, -1234567,
             1.1234, 1.1111, 1.412, 222.333, -771.2222
             };
-    private static final DecimalFormatSymbols dfs = new DecimalFormatSymbols(Locale.US);
+    private static final DecimalFormatSymbols DFS = new DecimalFormatSymbols(Locale.US);
     private static final String ERRMSG = "%s formatted with %s gives %s, and " +
             "significant digit count was %s, but the formula provided %s%n";
     // Hard coded as 1, since all test patterns only have 1 exponent digit
@@ -58,13 +58,11 @@ public class MantissaDigits {
     @ParameterizedTest
     @MethodSource("patterns")
     public void testMantissaDefinition(String pattern, int minDigits, int maxDigits) {
-        DecimalFormat df = new DecimalFormat(pattern, dfs);
-        for (double number : numbers) {
+        DecimalFormat df = new DecimalFormat(pattern, DFS);
+        for (double number : NUMBERS) {
             // Count the significant digits in the pre-formatted number
-            int originalNumDigits = String.valueOf(number)
-                    .replace(".", "")
-                    .replace("-", "")
-                    .length();
+            int originalNumDigits = (int) String.valueOf(number).chars()
+                    .filter(Character::isDigit).count();
 
             if (wholeNumber(number)) {
                 // Trailing 0 should not be counted
@@ -74,11 +72,8 @@ public class MantissaDigits {
             // Format the number, then grab the significant
             // digits inside the mantissa
             String formattedNum = df.format(number);
-            int mantissaDigits = formattedNum
-                    .replace(".", "")
-                    .replace("E", "")
-                    .replace("-", "")
-                    .length() - EXPONENTDIGITS;
+            int mantissaDigits = (int) formattedNum.chars()
+                    .filter(Character::isDigit).count() - EXPONENTDIGITS;
 
             // Test the new definition of the Mantissa
             Integer calculatedDigits = Math
