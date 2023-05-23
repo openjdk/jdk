@@ -307,8 +307,6 @@ class SuperWord : public ResourceObj {
   GrowableArray<Node*> _data_entry;      // Nodes with all inputs from outside
   GrowableArray<Node*> _mem_slice_head;  // Memory slice head nodes
   GrowableArray<Node*> _mem_slice_tail;  // Memory slice tail nodes
-  GrowableArray<Node*> _iteration_first; // nodes in the generation that has deps from phi
-  GrowableArray<Node*> _iteration_last;  // nodes in the generation that has deps to   phi
   GrowableArray<SWNodeInfo> _node_info;  // Info needed per node
   CloneMap&            _clone_map;       // map of nodes created in cloning
   CMoveKit             _cmovev_kit;      // support for vectorization of CMov
@@ -367,9 +365,6 @@ class SuperWord : public ResourceObj {
   bool           _do_reserve_copy; // do reserve copy of the graph(loop) before final modification in output
   int            _num_work_vecs;   // Number of non memory vector operations
   int            _num_reductions;  // Number of reduction expressions applied
-  int            _ii_first;        // generation with direct deps from mem phi
-  int            _ii_last;         // generation with direct deps to   mem phi
-  GrowableArray<int> _ii_order;
 #ifndef PRODUCT
   uintx          _vector_loop_debug; // provide more printing in debug mode
 #endif
@@ -555,22 +550,6 @@ private:
   int get_iv_adjustment(MemNode* mem);
   // Can the preloop align the reference to position zero in the vector?
   bool ref_is_alignable(SWPointer& p);
-  // rebuild the graph so all loads in different iterations of cloned loop become dependent on phi node (in _do_vector_loop only)
-  bool hoist_loads_in_graph();
-  // Test whether MemNode::Memory dependency to the same load but in the first iteration of this loop is coming from memory phi
-  // Return false if failed
-  Node* find_phi_for_mem_dep(LoadNode* ld);
-  // Return same node but from the first generation. Return 0, if not found
-  Node* first_node(Node* nd);
-  // Return same node as this but from the last generation. Return 0, if not found
-  Node* last_node(Node* n);
-  // Mark nodes belonging to first and last generation
-  // returns first generation index or -1 if vectorization/simd is impossible
-  int mark_generations();
-  // swapping inputs of commutative instruction (Add or Mul)
-  bool fix_commutative_inputs(Node* gold, Node* fix);
-  // make packs forcefully (in _do_vector_loop only)
-  bool pack_parallel();
   // Construct dependency graph.
   void dependence_graph();
   // Return a memory slice (node list) in predecessor order starting at "start"
@@ -670,8 +649,6 @@ private:
   // Is the use of d1 in u1 at the same operand position as d2 in u2?
   bool opnd_positions_match(Node* d1, Node* u1, Node* d2, Node* u2);
   void init();
-  // clean up some basic structures - used if the ideal graph was rebuilt
-  void restart();
 
   // print methods
   void print_packset();
