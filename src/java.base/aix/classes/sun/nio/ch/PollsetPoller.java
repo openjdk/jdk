@@ -92,7 +92,7 @@ class PollsetPoller extends Poller {
     }
 
     int pollInner(int subInterval) throws IOException {
-        int n = Pollset.pollsetPoll(setid, buffer, POLL_BUFFER_SIZE, subInterval);
+        int n = Pollset.pollsetPoll(setid, pollBuffer, POLL_BUFFER_SIZE, subInterval);
         for (int i=0; i<n; i++) {
             long eventAddress = Pollset.getEvent(pollBuffer, i);
             int fd = Pollset.getDescriptor(eventAddress);
