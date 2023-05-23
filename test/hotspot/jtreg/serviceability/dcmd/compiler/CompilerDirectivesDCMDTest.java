@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,7 +111,7 @@ public class CompilerDirectivesDCMDTest {
             Assert.fail("Expected one directives - found " + count);
         }
 
-       // Test adding some directives from file
+        // Test adding some directives from file
         output = executor.execute("Compiler.directives_add " + filename + fdeo);
         output = executor.execute("Compiler.directives_print");
         count = find(output, "Directive:");
@@ -119,7 +119,7 @@ public class CompilerDirectivesDCMDTest {
             Assert.fail("Expected three directives - found " + count);
         }
 
-       // Test replace directives from file
+        // Test replace directives from file
         output = executor.execute("Compiler.directives_replace " + filename + fdeo);
         output = executor.execute("Compiler.directives_print");
         count = find(output, "Directive:");
