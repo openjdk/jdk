@@ -107,7 +107,7 @@ public class CgroupV1SubsystemController implements CgroupSubsystemController {
     }
 
     public static long convertHierachicalLimitLine(String line) {
-        String[] tokens = line.split("\\s");
+        String[] tokens = line.split(" ");
         if (tokens.length == 2) {
             String strVal = tokens[1];
             return CgroupV1SubsystemController.convertStringToLong(strVal);
