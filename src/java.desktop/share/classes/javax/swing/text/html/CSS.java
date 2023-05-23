@@ -39,7 +39,6 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Objects;
-import java.util.Scanner;
 
 import javax.swing.ImageIcon;
 import javax.swing.SizeRequirements;
@@ -2221,15 +2220,8 @@ public class CSS implements Serializable {
 
         @Override
         public boolean equals(Object val) {
-            if (val instanceof CSS.FontSize size) {
-                if (size.lu != null && !size.svalue.matches("^[a-zA-Z]*$")) {
-                    int sz = new Scanner(size.svalue).useDelimiter("\\D").nextInt();
-                    int oldsz = new Scanner(svalue).useDelimiter("\\D").nextInt();
-                    return sz == oldsz && Objects.equals(size.lu.units, lu.units);
-                }
-                return value == size.value;
-            }
-            return false;
+                return val instanceof CSS.FontSize size
+                       && Objects.equals(size.svalue, svalue);
         }
 
         float value;
@@ -2686,13 +2678,10 @@ public class CSS implements Serializable {
         public boolean equals(Object val) {
             if (val instanceof CSS.LengthValue lu) {
                 if (percentage) {
-                    // Parse the int value from xxx%,yyy% and compare
-                    int sz = new Scanner(lu.svalue).useDelimiter("\\D").nextInt();
-                    int oldsz = new Scanner(svalue).useDelimiter("\\D").nextInt();
-
-                    return sz == oldsz;
+                    return Objects.equals(svalue, lu.svalue);
                 } else {
-                    return span == lu.span && Objects.equals(lu.units, units);
+                    return span == lu.span
+                           && Objects.equals(lu.units, units);
                 }
             }
             return false;
