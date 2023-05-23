@@ -85,6 +85,8 @@ public:
   virtual uint size_of() const {
     return sizeof(*this);
   }
+
+  IfNode* if_node() const;
 };
 
 //------------------------------Opaque3Node------------------------------------

@@ -57,12 +57,7 @@ Node* Opaque3Node::Identity(PhaseGVN* phase) {
 
 #ifdef ASSERT
 CountedLoopNode* OpaqueZeroTripGuardNode::guarded_loop() const {
-  Node* cmp = unique_out();
-  assert(cmp->Opcode() == Op_CmpI, "");
-  Node* bol = cmp->unique_out();
-  assert(bol->Opcode() == Op_Bool, "");
-  Node* iff = bol->unique_out();
-  assert(iff->is_If(), "");
+  Node* iff = if_node();
   ResourceMark rm;
   Unique_Node_List wq;
   wq.push(iff);
@@ -87,6 +82,15 @@ CountedLoopNode* OpaqueZeroTripGuardNode::guarded_loop() const {
   return nullptr;
 }
 #endif
+
+IfNode* OpaqueZeroTripGuardNode::if_node() const {
+  Node* cmp = unique_out();
+  assert(cmp->Opcode() == Op_CmpI, "");
+  Node* bol = cmp->unique_out();
+  assert(bol->Opcode() == Op_Bool, "");
+  Node* iff = bol->unique_out();
+  return iff->as_If();
+}
 
 // Do not allow value-numbering
 uint Opaque3Node::hash() const { return NO_HASH; }

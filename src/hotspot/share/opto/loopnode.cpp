@@ -4156,13 +4156,24 @@ void PhaseIdealLoop::eliminate_useless_zero_trip_guard() {
     }
   }
   for (uint i = 0; i < _zero_trip_guard_opaque_nodes.size(); ++i) {
-    Node* opaque = _zero_trip_guard_opaque_nodes.at(i);
-    DEBUG_ONLY(CountedLoopNode* loop = ((OpaqueZeroTripGuardNode*) opaque)->guarded_loop());
+    OpaqueZeroTripGuardNode* opaque = ((OpaqueZeroTripGuardNode*)_zero_trip_guard_opaque_nodes.at(i));
+    DEBUG_ONLY(CountedLoopNode* guarded_loop = opaque->guarded_loop());
     if (!useful_zero_trip_guard_opaques_nodes.member(opaque)) {
-      assert(loop == nullptr || loop->is_in_infinite_subgraph(), "opaque associated with loop only if in an infinite loop");
-      this->_igvn.replace_node(opaque, opaque->in(1));
+      IfNode* iff = opaque->if_node();
+      IdealLoopTree* loop = get_loop(iff);
+      while (loop != _ltree_root && loop != nullptr) {
+        loop = loop->_parent;
+      }
+      if (loop == nullptr) {
+        // unreachable from _ltree_root: zero trip guard is in a newly discovered infinite loop.
+        // We can't tell if the opaque node is useful or not
+       assert(guarded_loop == nullptr || guarded_loop->is_in_infinite_subgraph(), "");
+      } else {
+        assert(guarded_loop == nullptr, "");
+        this->_igvn.replace_node(opaque, opaque->in(1));
+      }
     } else {
-      assert(loop != nullptr, "");
+      assert(guarded_loop != nullptr, "");
     }
   }
 }
