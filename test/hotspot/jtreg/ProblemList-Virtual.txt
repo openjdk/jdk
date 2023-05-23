@@ -24,7 +24,6 @@
 ####
 # Bugs
 
-compiler/jvmci/compilerToVM/MaterializeVirtualObjectTest.java 8307125 generic-all
 serviceability/AsyncGetCallTrace/MyPackage/ASGCTBaseTest.java 8308026 generic-all
 serviceability/jvmti/GetThreadListStackTraces/OneGetThreadListStackTraces.java 8308027 generic-all
 serviceability/jvmti/Heap/IterateHeapWithEscapeAnalysisEnabled.java 8264699 generic-all
