@@ -52,6 +52,9 @@ bool register_jfr_dcmds() {
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JfrDumpFlightRecordingDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JfrStartFlightRecordingDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JfrStopFlightRecordingDCmd>(full_export, true, false));
+  // JFR.query Uncomment when developing new queries for the JFR.view command
+  // DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JfrQueryFlightRecordingDCmd>(full_export, true, true));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JfrViewFlightRecordingDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JfrConfigureFlightRecorderDCmd>(full_export, true, false));
   return true;
 }
@@ -318,7 +321,7 @@ static DCmdArgumentInfo* create_info(oop argument, TRAPS) {
     read_string_field(argument, "type", THREAD),
     read_string_field(argument, "defaultValue", THREAD),
     read_boolean_field(argument, "mandatory", THREAD),
-    true, // a DcmdFramework "option"
+    read_boolean_field(argument, "option", THREAD),
     read_boolean_field(argument, "allowMultiple", THREAD));
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,9 @@ package jdk.jfr.internal.tool;
 import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Deque;
+
+import jdk.jfr.internal.util.UserDataException;
+import jdk.jfr.internal.util.UserSyntaxException;
 
 /**
  * Launcher class for the JDK_HOME\bin\jfr tool
