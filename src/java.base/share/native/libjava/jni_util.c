@@ -446,7 +446,7 @@ getString8859_1Chars(JNIEnv *env, jstring jstr, jboolean strict)
         if (strict && unicode == 0) {
             (*env)->ReleaseStringCritical(env, jstr, str);
             free(result);
-            JNU_ThrowIllegalArgumentException(env, "NULL character not allowed in native string");
+            JNU_ThrowIllegalArgumentException(env, "NULL character not allowed in platform string");
             return 0;
         }
 
@@ -521,7 +521,7 @@ getString646_USChars(JNIEnv *env, jstring jstr, jboolean strict)
         if (strict && unicode == 0) {
             (*env)->ReleaseStringCritical(env, jstr, str);
             free(result);
-            JNU_ThrowIllegalArgumentException(env, "NULL character not allowed in native string");
+            JNU_ThrowIllegalArgumentException(env, "NULL character not allowed in platform string");
             return 0;
         }
         if (unicode <= 0x007f )
@@ -603,7 +603,7 @@ getStringCp1252Chars(JNIEnv *env, jstring jstr, jboolean strict)
             (*env)->ReleaseStringCritical(env, jstr, str);
             free(result);
             JNU_ThrowIllegalArgumentException(env,
-                   "NULL character not allowed in native string");
+                   "NULL character not allowed in platform string");
             return 0;
         }
         if (c < 256) {
@@ -862,7 +862,7 @@ static const char* getStringBytes(JNIEnv *env, jstring jstr, jboolean strict) {
                 for (int i=0; i<len; i++) {
                     if (result[i] == 0) {
                         JNU_ThrowIllegalArgumentException(env,
-                            "NULL character not allowed in native string");
+                            "NULL character not allowed in platform string");
                         free(result);
                         result = 0;
                         break;
@@ -906,7 +906,7 @@ getStringUTF8(JNIEnv *env, jstring jstr, jboolean strict)
     for (i = 0; i < len; i++) {
         if (strict && str[i] == 0) {
             (*env)->ReleasePrimitiveArrayCritical(env, value, str, 0);
-            JNU_ThrowIllegalArgumentException(env, "NULL character not allowed in native string");
+            JNU_ThrowIllegalArgumentException(env, "NULL character not allowed in platform string");
             return NULL;
         }
         if (str[i] < 0) {
