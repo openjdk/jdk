@@ -316,7 +316,7 @@ void asyncGetStackTraceImpl(ASGST_CallTrace *trace, jint depth, void* ucontext, 
       if (!thread->pd_get_top_frame_for_profiling(&ret_frame, ucontext, true, include_c_frames)) {
         // check without forced ucontext again
         if (!include_c_frames || !thread->pd_get_top_frame_for_profiling(&ret_frame, ucontext, true, false)) {
-          trace->num_frames = (jint)ASGST_UNKNOWN_NOT_JAVA;  // -3 unknown frame
+          trace->num_frames = (jint)ASGST_UNKNOWN_JAVA;
           return;
         }
       }
