@@ -26,7 +26,6 @@
  * @bug 8267610 8269738
  * @summary LambdaToMethod cannot capture pattern variables. So the TransPatterns should
  *          transform the pattern variables and symbols to normal variables and symbols.
- * @enablePreview
  */
 
 import java.util.function.Supplier;

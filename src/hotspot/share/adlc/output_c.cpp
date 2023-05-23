@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -272,20 +272,26 @@ static int pipeline_res_stages_initializer(
   }
 
   // Compute the length needed for the resource list
+  const char* resource;
   int commentlen = 0;
   int max_stage = 0;
-  for (i = 0; i < pipeline->_rescount; i++) {
-    if (res_stages[i] == 0) {
-      if (max_stage < 9)
-        max_stage = 9;
-    }
-    else {
-      int stagelen = (int)strlen(pipeline->_stages.name(res_stages[i]-1));
-      if (max_stage < stagelen)
-        max_stage = stagelen;
-    }
+  i = 0;
+  for (pipeline->_reslist.reset(); (resource = pipeline->_reslist.iter()) != NULL;) {
+    if (pipeline->_resdict[resource]->is_resource()->is_discrete()) {
+      if (res_stages[i] == 0) {
+        if (max_stage < 9) {
+          max_stage = 9;
+        }
+      } else {
+        int stagelen = (int)strlen(pipeline->_stages.name(res_stages[i]-1));
+        if (max_stage < stagelen) {
+          max_stage = stagelen;
+        }
+      }
 
-    commentlen += (int)strlen(pipeline->_reslist.name(i));
+      commentlen += (int)strlen(resource);
+      i++;
+    }
   }
 
   int templen = 1 + commentlen + pipeline->_rescount * (max_stage + 14);
@@ -295,14 +301,16 @@ static int pipeline_res_stages_initializer(
   char * resource_stages = new char [templen];
 
   templen = 0;
-  for (i = 0; i < pipeline->_rescount; i++) {
-    const char * const resname =
-      res_stages[i] == 0 ? "undefined" : pipeline->_stages.name(res_stages[i]-1);
+  i = 0;
+  for (pipeline->_reslist.reset(); (resource = pipeline->_reslist.iter()) != NULL;) {
+    if (pipeline->_resdict[resource]->is_resource()->is_discrete()) {
+      const char* const resname = res_stages[i] == 0 ? "undefined" : pipeline->_stages.name(res_stages[i] - 1);
 
-    templen += snprintf_checked(&resource_stages[templen], resource_stages_size - templen, "  stage_%s%-*s // %s\n",
-      resname, max_stage - (int)strlen(resname) + 1,
-      (i < pipeline->_rescount-1) ? "," : "",
-      pipeline->_reslist.name(i));
+      templen += snprintf_checked(&resource_stages[templen], resource_stages_size - templen,"  stage_%s%-*s // %s\n",
+          resname, max_stage - (int)strlen(resname) + 1,
+          (i < pipeline->_rescount - 1) ? "," : "", resource);
+      i++;
+    }
   }
 
   // See if the same string is in the table
@@ -355,13 +363,22 @@ static int pipeline_res_cycles_initializer(
   int max_cycles = 0;
   char temp[32];
 
-  for (i = 0; i < pipeline->_rescount; i++) {
-    if (max_cycles < res_cycles[i])
-      max_cycles = res_cycles[i];
-    templen = snprintf_checked(temp, sizeof(temp), "%d", res_cycles[i]);
-    if (cyclelen < templen)
-      cyclelen = templen;
-    commentlen += (int)strlen(pipeline->_reslist.name(i));
+  const char* resource;
+  i = 0;
+  for (pipeline->_reslist.reset(); (resource = pipeline->_reslist.iter()) != NULL;) {
+    if (pipeline->_resdict[resource]->is_resource()->is_discrete()) {
+      if (max_cycles < res_cycles[i]) {
+        max_cycles = res_cycles[i];
+      }
+
+      templen = snprintf_checked(temp, sizeof(temp), "%d", res_cycles[i]);
+      if (cyclelen < templen) {
+        cyclelen = templen;
+      }
+
+      commentlen += (int)strlen(resource);
+      i++;
+    }
   }
 
   templen = 1 + commentlen + (cyclelen + 8) * pipeline->_rescount;
@@ -372,9 +389,13 @@ static int pipeline_res_cycles_initializer(
 
   templen = 0;
 
-  for (i = 0; i < pipeline->_rescount; i++) {
-    templen += snprintf_checked(&resource_cycles[templen], resource_cycles_size - templen, "  %*d%c // %s\n",
-      cyclelen, res_cycles[i], (i < pipeline->_rescount-1) ? ',' : ' ', pipeline->_reslist.name(i));
+  i = 0;
+  for (pipeline->_reslist.reset(); (resource = pipeline->_reslist.iter()) != NULL;) {
+    if (pipeline->_resdict[resource]->is_resource()->is_discrete()) {
+      templen += snprintf_checked(&resource_cycles[templen], resource_cycles_size - templen, "  %*d%c // %s\n",
+      cyclelen, res_cycles[i], (i < pipeline->_rescount-1) ? ',' : ' ', resource);
+      i++;
+    }
   }
 
   // See if the same string is in the table
@@ -982,8 +1003,15 @@ void ArchDesc::build_pipe_classes(FILE *fp_cpp) {
   fprintf(fp_cpp, "  };\n\n");
 
   fprintf(fp_cpp, "  static const char *resource_names[%d] = {", _pipeline->_rescount);
-  for (i = 0; i < _pipeline->_rescount; i++)
-    fprintf(fp_cpp, " \"%s\"%c", _pipeline->_reslist.name(i), i < _pipeline->_rescount-1 ? ',' : ' ');
+  // Don't add compound resources to the list of resource names
+  const char* resource;
+  i = 0;
+  for (_pipeline->_reslist.reset(); (resource = _pipeline->_reslist.iter()) != NULL;) {
+    if (_pipeline->_resdict[resource]->is_resource()->is_discrete()) {
+      fprintf(fp_cpp, " \"%s\"%c", resource, i < _pipeline->_rescount - 1 ? ',' : ' ');
+      i++;
+    }
+  }
   fprintf(fp_cpp, "};\n\n");
 
   // See if the same string is in the table

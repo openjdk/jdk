@@ -27,7 +27,7 @@
 #include "utilities/powerOfTwo.hpp"
 
 XMarkCacheEntry::XMarkCacheEntry() :
-    _page(NULL),
+    _page(nullptr),
     _objects(0),
     _bytes(0) {}
 

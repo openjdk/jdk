@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -334,8 +334,7 @@ public class X509Key implements PublicKey, DerEncoder {
     }
 
     /**
-     * Initialize an X509Key object from an input stream.  The data on that
-     * input stream must be encoded using DER, obeying the X.509
+     * Initialize an X509Key object from a DerValue, obeying the X.509
      * <code>SubjectPublicKeyInfo</code> format.  That is, the data is a
      * sequence consisting of an algorithm ID and a bit string which holds
      * the key.  (That bit string is often used to encapsulate another DER
@@ -350,17 +349,11 @@ public class X509Key implements PublicKey, DerEncoder {
      * private keys may override this method, <code>encode</code>, and
      * of course <code>getFormat</code>.
      *
-     * @param in an input stream with a DER-encoded X.509
-     *          SubjectPublicKeyInfo value
+     * @param val a DER-encoded X.509 SubjectPublicKeyInfo value
      * @exception InvalidKeyException on parsing errors.
      */
-    public void decode(InputStream in)
-    throws InvalidKeyException
-    {
-        DerValue        val;
-
+    void decode(DerValue val) throws InvalidKeyException {
         try {
-            val = new DerValue(in);
             if (val.tag != DerValue.tag_Sequence)
                 throw new InvalidKeyException("invalid key format");
 
@@ -371,13 +364,16 @@ public class X509Key implements PublicKey, DerEncoder {
                 throw new InvalidKeyException ("excess key data");
 
         } catch (IOException e) {
-            throw new InvalidKeyException("IOException: " +
-                                          e.getMessage());
+            throw new InvalidKeyException("Unable to decode key", e);
         }
     }
 
     public void decode(byte[] encodedKey) throws InvalidKeyException {
-        decode(new ByteArrayInputStream(encodedKey));
+        try {
+            decode(new DerValue(encodedKey));
+        } catch (IOException e) {
+            throw new InvalidKeyException("Unable to decode key", e);
+        }
     }
 
     /**
@@ -396,11 +392,9 @@ public class X509Key implements PublicKey, DerEncoder {
     @java.io.Serial
     private void readObject(ObjectInputStream stream) throws IOException {
         try {
-            decode(stream);
+            decode(new DerValue(stream));
         } catch (InvalidKeyException e) {
-            e.printStackTrace();
-            throw new IOException("deserialized key is invalid: " +
-                                  e.getMessage());
+            throw new IOException("deserialized key is invalid", e);
         }
     }
 
