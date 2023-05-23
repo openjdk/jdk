@@ -252,7 +252,7 @@ public interface Arena extends SegmentAllocator, AutoCloseable {
      * and that is compatible with the provided alignment constraint. Furthermore, for any two segments
      * {@code S1, S2} returned by this method, the following invariant must hold:
      *
-     * {@snippet file=Snippets.java region=arena-overlap lang = java:
+     * {@snippet lang = java:
      *     S1.asOverlappingSlice(S2).isEmpty() == true
      * }
      *
