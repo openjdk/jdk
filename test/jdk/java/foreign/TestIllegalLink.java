@@ -111,52 +111,52 @@ public class TestIllegalLink extends NativeTestHelper {
         List<Object[]> cases = new ArrayList<>(Arrays.asList(new Object[][]{
             {
                     FunctionDescriptor.of(MemoryLayout.sequenceLayout(2, C_INT)),
-                    "Unsupported layout: [2:i32]"
+                    "Unsupported layout: [2:i4]"
             },
             {
                     FunctionDescriptor.ofVoid(MemoryLayout.sequenceLayout(2, C_INT)),
-                    "Unsupported layout: [2:i32]"
+                    "Unsupported layout: [2:i4]"
             },
             {
-                    FunctionDescriptor.ofVoid(C_INT.withBitAlignment(16)),
-                    "Layout bit alignment must be natural alignment"
+                    FunctionDescriptor.ofVoid(C_INT.withByteAlignment(2)),
+                    "Layout alignment must be natural alignment"
             },
             {
-                    FunctionDescriptor.ofVoid(C_POINTER.withBitAlignment(16)),
-                    "Layout bit alignment must be natural alignment"
+                    FunctionDescriptor.ofVoid(C_POINTER.withByteAlignment(2)),
+                    "Layout alignment must be natural alignment"
             },
             {
-                    FunctionDescriptor.ofVoid(ValueLayout.JAVA_CHAR.withBitAlignment(32)),
-                    "Layout bit alignment must be natural alignment"
+                    FunctionDescriptor.ofVoid(ValueLayout.JAVA_CHAR.withByteAlignment(4)),
+                    "Layout alignment must be natural alignment"
             },
             {
                     FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
-                            C_CHAR.withName("x").withBitAlignment(8),
-                            C_SHORT.withName("y").withBitAlignment(8),
-                            C_INT.withName("z").withBitAlignment(8)
-                            ).withBitAlignment(8)),
-                    "Layout bit alignment must be natural alignment"
+                            C_CHAR.withName("x").withByteAlignment(1),
+                            C_SHORT.withName("y").withByteAlignment(1),
+                            C_INT.withName("z").withByteAlignment(1)
+                            ).withByteAlignment(1)),
+                    "Layout alignment must be natural alignment"
             },
             {
                     FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
                             MemoryLayout.structLayout(
-                                C_CHAR.withName("x").withBitAlignment(8),
-                                C_SHORT.withName("y").withBitAlignment(8),
-                                C_INT.withName("z").withBitAlignment(8)
+                                C_CHAR.withName("x").withByteAlignment(1),
+                                C_SHORT.withName("y").withByteAlignment(1),
+                                C_INT.withName("z").withByteAlignment(1)
                             ))),
-                    "Layout bit alignment must be natural alignment"
+                    "Layout alignment must be natural alignment"
             },
             {
                     FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
                             MemoryLayout.sequenceLayout(
-                                C_INT.withBitAlignment(8)
+                                C_INT.withByteAlignment(1)
                             ))),
-                    "Layout bit alignment must be natural alignment"
+                    "Layout alignment must be natural alignment"
             },
             {
                     FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
                             ValueLayout.JAVA_INT,
-                            MemoryLayout.paddingLayout(32), // no excess padding
+                            MemoryLayout.paddingLayout(4), // no excess padding
                             ValueLayout.JAVA_INT)),
                     "unexpected offset"
             },
@@ -181,7 +181,7 @@ public class TestIllegalLink extends NativeTestHelper {
             {
                     FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
                             ValueLayout.JAVA_INT,
-                            MemoryLayout.paddingLayout(32))), // too much trailing padding
+                            MemoryLayout.paddingLayout(4))), // too much trailing padding
                     "has unexpected size"
             },
         }));

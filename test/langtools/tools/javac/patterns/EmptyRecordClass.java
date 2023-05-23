@@ -23,7 +23,6 @@
 
 /**
  * @test
- * @enablePreview
  * @compile EmptyRecordClass.java
  */
 

@@ -56,5 +56,5 @@ public sealed interface StructLayout extends GroupLayout permits StructLayoutImp
      * @throws IllegalArgumentException {@inheritDoc}
      */
     @Override
-    StructLayout withBitAlignment(long bitAlignment);
+    StructLayout withByteAlignment(long byteAlignment);
 }

@@ -57,7 +57,7 @@ public abstract class LongVector extends AbstractVector<Long> {
 
     static final int FORBID_OPCODE_KIND = VO_ONLYFP;
 
-    static final ValueLayout.OfLong ELEMENT_LAYOUT = ValueLayout.JAVA_LONG.withBitAlignment(8);
+    static final ValueLayout.OfLong ELEMENT_LAYOUT = ValueLayout.JAVA_LONG.withByteAlignment(1);
 
     @ForceInline
     static int opCode(Operator op) {
@@ -3026,7 +3026,7 @@ public abstract class LongVector extends AbstractVector<Long> {
      * long[] ar = new long[species.length()];
      * for (int n = 0; n < ar.length; n++) {
      *     if (m.laneIsSet(n)) {
-     *         ar[n] = slice.getAtIndex(ValuaLayout.JAVA_LONG.withBitAlignment(8), n);
+     *         ar[n] = slice.getAtIndex(ValuaLayout.JAVA_LONG.withByteAlignment(1), n);
      *     }
      * }
      * LongVector r = LongVector.fromArray(species, ar, 0);
