@@ -30,6 +30,8 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 
 import jdk.internal.icu.impl.Punycode;
+import jdk.internal.icu.impl.UTS46;
+import jdk.internal.icu.text.IDNA;
 import jdk.internal.icu.text.StringPrep;
 import jdk.internal.icu.text.UCharacterIterator;
 
@@ -40,33 +42,62 @@ import jdk.internal.icu.text.UCharacterIterator;
  * Unicode, while traditional domain names are restricted to ASCII characters.
  * ACE is an encoding of Unicode strings that uses only ASCII characters and
  * can be used with software (such as the Domain Name System) that only
- * understands traditional domain names.
+ * understands traditional domain names. xn--dmi-0na.fo is an example
+ * of an ACE form (in fact, it even means example).
  *
- * <p>Internationalized domain names are defined in <a href="http://www.ietf.org/rfc/rfc3490.txt">RFC 3490</a>.
- * RFC 3490 defines two operations: ToASCII and ToUnicode. These 2 operations employ
- * <a href="http://www.ietf.org/rfc/rfc3491.txt">Nameprep</a> algorithm, which is a
- * profile of <a href="http://www.ietf.org/rfc/rfc3454.txt">Stringprep</a>, and
- * <a href="http://www.ietf.org/rfc/rfc3492.txt">Punycode</a> algorithm to convert
- * domain name string back and forth.
+ * <p>Internationalized domain names are defined in <a href="https://datatracker.ietf.org/doc/rfc5890/">RFC 5890</a> and <a href="https://datatracker.ietf.org/doc/rfc5891/">RFC 5891</a> which together supersede the earlier definition in RFC 3490.
+ * They defines two main operations: ToASCII and ToUnicode. These two operations employ the
+ * <a href="https://datatracker.ietf.org/doc/rfc3491/">Nameprep</a> algorithm (which is a
+ * profile of <a href="https://datatracker.ietf.org/doc/rfc3454/">Stringprep</a>) and the
+ * <a href="https://datatracker.ietf.org/doc/rfc3492.txt">Punycode</a> algorithm to convert
+ * domain name string back and forth between the human-readable unicode form
+ * and the ACE form.
  *
  * <p>The behavior of aforementioned conversion process can be adjusted by various flags:
  *   <ul>
- *     <li>If the ALLOW_UNASSIGNED flag is used, the domain name string to be converted
- *         can contain code points that are unassigned in Unicode 3.2, which is the
- *         Unicode version on which IDN conversion is based. If the flag is not used,
- *         the presence of such unassigned code points is treated as an error.
- *     <li>If the USE_STD3_ASCII_RULES flag is used, ASCII strings are checked against <a href="http://www.ietf.org/rfc/rfc1122.txt">RFC 1122</a> and <a href="http://www.ietf.org/rfc/rfc1123.txt">RFC 1123</a>.
- *         It is an error if they don't meet the requirements.
+ *     <li>If the USE_STD3_ASCII_RULES flag is used, ASCII strings are
+ *     checked against
+ *     <a href="https://datatracker.ietf.org/doc/rfc1122/">RFC 1122</a>
+ *     and <a href="https://datatracker.ietf.org/doc/rfc1123/">RFC 1123</a>.
+ *     <li>If the CHECK_CONTEXTJ flag is used, some joiner characters
+ *     are checked and rejected if present in an inadmissible context,
+ *     for example the U+200D ZERO WIDTH JOINER.
+ *     <li>If the NONTRANSITIONAL_TO_ASCII flag is used, a few code
+ *     points are treated in a manner incompatible with RFC3490.
+ *     <li>If the NONTRANSITIONAL_TO_UNICODE flag is used, mapping
+ *     from ACE to Unicode works as for NONTRANSITIONAL_TO_ASCII.
  *   </ul>
- * These flags can be logically OR'ed together.
+ * <p>These flags can be logically OR'ed together. The default is to use
+ * {@code NONTRANSITIONAL_TO_ASCII|NONTRANSITIONAL_TO_UNICODE|CHECK_CONTEXTJ},
+ * since that is the closest match for the major web browsers and other
+ * programmering languages as of 2023.
  *
- * <p>The security consideration is important with respect to internationalization
- * domain name support. For example, English domain names may be <i>homographed</i>
- * - maliciously misspelled by substitution of non-Latin letters.
+ * <p>The security consideration is important with respect to
+ * internationalization domain name support. For example, domain names
+ * may be <i>homographed</i> if that is allowed by the registry's
+ * <a href="https://www.icann.org/resources/pages/second-level-lgr-2015-06-21-en">LGR policy.</a>
+ * While top-level domain registries generally use well-considered
+ * LGRs, registry-like services such as blogspot.com or github.com may allow
+ * users to create confusable names, and of course domain owners
+ * themselves can create confusable domain names.
  * <a href="http://www.unicode.org/reports/tr36/">Unicode Technical Report #36</a>
  * discusses security issues of IDN support as well as possible solutions.
- * Applications are responsible for taking adequate security measures when using
- * international domain names.
+ * Applications are responsible for taking adequate security measures.
+ *
+ * <p>Until 2023, Java used IDNA2003, which was based on Unicode 3.2
+ * with almost no extensibility to grow along with Unicode. The lone
+ * bit of extensibility was the {@code ALLOW_UNASSIGNED} flag, which
+ * treated all newer codepoints as letterlike. Starting in 2023, Java uses
+ * <a href="https://unicode.org/reports/tr46/">UTS#46</a>, which
+ * supports all unicode versions up to the one installed on the JVM.
+ * Because domain registries allow a subset of Inicode (the
+ * <a href="https://www.icann.org/resources/pages/msr-2015-06-21-en">maximal starting repertoire</a>,
+ * which contains 35515 code points, out of unicode's 13) and the vetting process for new
+ * code points takes a while, the support remains complete for many
+ * years. By way of example, the oldest version with complete support
+ * for the MSR in 2023 is Java 12, released in 2019. Java 9-11 lacks
+ * one code point (U+A7B9, lower-case u with stroke), which suggests
+ * that one should avoid running a java version older than five years.
  *
  * @spec https://www.rfc-editor.org/info/rfc1122
  *      RFC 1122: Requirements for Internet Hosts - Communication Layers
@@ -74,33 +105,108 @@ import jdk.internal.icu.text.UCharacterIterator;
  *      RFC 1123: Requirements for Internet Hosts - Application and Support
  * @spec https://www.rfc-editor.org/info/rfc3454
  *      RFC 3454: Preparation of Internationalized Strings ("stringprep")
- * @spec https://www.rfc-editor.org/info/rfc3490
- *      RFC 3490: Internationalizing Domain Names in Applications (IDNA)
  * @spec https://www.rfc-editor.org/info/rfc3491
  *      RFC 3491: Nameprep: A Stringprep Profile for Internationalized Domain Names (IDN)
  * @spec https://www.rfc-editor.org/info/rfc3492
  *      RFC 3492: Punycode: A Bootstring encoding of Unicode for Internationalized Domain Names in Applications (IDNA)
+ * @spec https://www.rfc-editor.org/info/rfc5890
+ *      RFC 5890: Internationalized Domain Names for Applications (IDNA): Definitions and Document Framework
+ * @spec https://www.rfc-editor.org/info/rfc5891
+ *      RFC 5890: Internationalized Domain Names for Applications (IDNA): Protocol
  * @spec https://www.unicode.org/reports/tr36
  *      Unicode Security Considerations
+ * @spec https://www.unicode.org/reports/tr46
+ *      Unicode IDNA Compatibility Processing
  * @author Edward Wang
  * @since 1.6
  *
  */
 public final class IDN {
     /**
-     * Flag to allow processing of unassigned code points
+     * Flag to allow processing of code points that weren't assigned
+     * in Unicode 3.2. This is now ignored.
+     *
+     * IDNA2003 (used by Java until 2023) allowed applications to
+     * declare that IDN should support code points that hadn't been
+     * assigned yet as of 2003, or not. The support assumed that new
+     * code points would be essentially letterlike.
+     *
+     * IDNA2008 (used by Java starting in 2023) supports the same
+     * version of Unicode as the {@code Character} class.
+     *
+     * Domain registries use IDNA2008 with extra restrictions.  For
+     * example, the Indian registry allows only Indic and Latin, while
+     * the .org registry allows tens of scripts to suit that domain's
+     * worldwide audience. Both of them have further restrictions to
+     * guard against homograph attacks. This takes time; a new code
+     * point can't be used to register domains as soon as it's been
+     * added to Unicode.
+     *
+     * An application that used {@code ALLOW_UNASSIGNED} should
+     * instead be updated to the latest Java version at least every
+     * five years, to ensure that it supports the entire repertoire
+     * that can be used to register domains.
      */
     public static final int ALLOW_UNASSIGNED = 0x01;
 
     /**
-     * Flag to turn on the check against STD-3 ASCII rules
+     * Flag to turn on the check against STD-3 ASCII rules.
      */
     public static final int USE_STD3_ASCII_RULES = 0x02;
+
+    /**
+     * IDNA option to check for whether the input conforms to the
+     * CONTEXTJ rules. CONTEXTJ covers joining characters that may be
+     * problematic in general, but have to be allowed in some
+     * contexts.
+     */
+    public static final int CHECK_CONTEXTJ = 8;
+
+    /**
+     * IDNA option for nontransitional processing in ToASCII().
+     * Nontransitional processing always follows RFC 5890, transitional instead
+     * follows 3490 where there is a conflict between the two documents.
+     *
+     * <p>With nontranstional processing, IDNA treats the German ess-zet ligature
+     * as distinct from ss, handles the word Sri correctly when written
+     * in sinhala (the script used in Sri Lanka), and there are a few other differences
+     * as well.
+     *
+     * <p>Note that domain registries enforce RFC 5890 compliance for
+     * newly registered domains, and that as of 2023, all three major web
+     * browsers have switched to RFC 5890. Transitional processing is rarely
+     * desirable any more. It is provided for applications that have a
+     * particular need for RFC 3490 compatibility.
+     */
+    public static final int NONTRANSITIONAL_TO_ASCII = 0x10;
+
+    /**
+     * IDNA option for nontransitional processing in ToUnicode(). The same
+     * considerations apply as for NONTRANSITIONAL_TO_ASCII.
+     */
+    public static final int NONTRANSITIONAL_TO_UNICODE = 0x20;
+
+    private static UTS46 singletons[] = new UTS46[0x20];
+
+    private static UTS46 getUTS46(int flag) {
+        flag = (flag & 0x3e) | IDNA.CHECK_BIDI;
+        // ALLOW_UNASSIGNED is not meaningful for IDNA2008/UTS46, so
+        // it is forced to false. The old code always behaved as if
+        // IDNA.CHECK_BIDI==true, so it is forced to true. The other
+        // flags are used as-is. Note that STD3_ASCII_RULES equals
+        // IDNA.USE_STD3_RULES by value.
+        int index = flag / 2;
+        synchronized(singletons) {
+            if (singletons[index] == null)
+                singletons[index] = new UTS46(flag);
+            return singletons[index];
+        }
+    }
 
 
     /**
      * Translates a string from Unicode to ASCII Compatible Encoding (ACE),
-     * as defined by the ToASCII operation of <a href="http://www.ietf.org/rfc/rfc3490.txt">RFC 3490</a>.
+     * as defined by the ToASCII operation of <a href="https://datatracker.ietf.org/doc/rfc3490/">RFC 3490</a>.
      *
      * <p>ToASCII operation can fail. ToASCII fails if any step of it fails.
      * If ToASCII operation fails, an IllegalArgumentException will be thrown.
@@ -120,42 +226,35 @@ public final class IDN {
      *
      * @return          the translated {@code String}
      *
-     * @throws IllegalArgumentException   if the input string doesn't conform to RFC 3490 specification
+     * @throws IllegalArgumentException   if the input string doesn't conform to RFC 5890 specification
      * @spec https://www.rfc-editor.org/info/rfc3490
      *      RFC 3490: Internationalizing Domain Names in Applications (IDNA)
      */
     public static String toASCII(String input, int flag)
     {
-        int p = 0, q = 0;
-        StringBuilder out = new StringBuilder();
-
-        if (isRootLabel(input)) {
-            return ".";
+        StringBuilder result = new StringBuilder();
+        IDNA.Info info = new IDNA.Info();
+        try {
+            UCharacterIterator iter = UCharacterIterator.getInstance(input);
+	    getUTS46(flag).nameToASCII(input, result, info);
+        } catch(Throwable t) {
+            throw new IllegalArgumentException(t);
         }
-
-        while (p < input.length()) {
-            q = searchDots(input, p);
-            out.append(toASCIIInternal(input.substring(p, q),  flag));
-            if (q != (input.length())) {
-               // has more labels, or keep the trailing dot as at present
-               out.append('.');
-            }
-            p = q + 1;
-        }
-
-        return out.toString();
+        return result.toString();
     }
 
 
     /**
      * Translates a string from Unicode to ASCII Compatible Encoding (ACE),
-     * as defined by the ToASCII operation of <a href="http://www.ietf.org/rfc/rfc3490.txt">RFC 3490</a>.
+     * as defined by the ToASCII operation of <a href="https://datatracker.ietf.org/doc/rfc3490/">RFC 3490</a>.
      *
      * <p> This convenience method works as if by invoking the
      * two-argument counterpart as follows:
      * <blockquote>
-     * {@link #toASCII(String, int) toASCII}(input,&nbsp;0);
+     * {@link #toASCII(String, int) toASCII}(input,&nbsp;IDN.CHECK_CONTEXTJ|IDN.USE_STD3_ASCII_RULES|IDN.NONTRANSITIONAL_TO_ASCII);
      * </blockquote>
+     *
+     * <p>This set of flags has been chosen to match the most popular three web browsers.
      *
      * @param input     the string to be processed
      *
@@ -166,13 +265,13 @@ public final class IDN {
      *      RFC 3490: Internationalizing Domain Names in Applications (IDNA)
      */
     public static String toASCII(String input) {
-        return toASCII(input, 0);
+        return toASCII(input, CHECK_CONTEXTJ | USE_STD3_ASCII_RULES | NONTRANSITIONAL_TO_ASCII );
     }
 
 
     /**
      * Translates a string from ASCII Compatible Encoding (ACE) to Unicode,
-     * as defined by the ToUnicode operation of <a href="http://www.ietf.org/rfc/rfc3490.txt">RFC 3490</a>.
+     * as defined by the ToUnicode operation of <a href="https://datatracker.ietf.org/doc/rfc3490/">RFC 3490</a>.
      *
      * <p>ToUnicode never fails. In case of any error, the input string is returned unmodified.
      *
@@ -191,36 +290,28 @@ public final class IDN {
      *      RFC 3490: Internationalizing Domain Names in Applications (IDNA)
      */
     public static String toUnicode(String input, int flag) {
-        int p = 0, q = 0;
-        StringBuilder out = new StringBuilder();
-
-        if (isRootLabel(input)) {
-            return ".";
+        StringBuilder result = new StringBuilder();
+        IDNA.Info info = new IDNA.Info();
+        try {
+            getUTS46(flag).nameToUnicode(input, result, info);
+        } catch(Throwable t) {
+            throw new IllegalArgumentException(t);
         }
-
-        while (p < input.length()) {
-            q = searchDots(input, p);
-            out.append(toUnicodeInternal(input.substring(p, q),  flag));
-            if (q != (input.length())) {
-               // has more labels, or keep the trailing dot as at present
-               out.append('.');
-            }
-            p = q + 1;
-        }
-
-        return out.toString();
+        return result.toString();
     }
 
 
     /**
      * Translates a string from ASCII Compatible Encoding (ACE) to Unicode,
-     * as defined by the ToUnicode operation of <a href="http://www.ietf.org/rfc/rfc3490.txt">RFC 3490</a>.
+     * as defined by the ToUnicode operation of <a href="https://datatracker.ietf.org/doc/rfc3490/">RFC 3490</a>.
      *
      * <p> This convenience method works as if by invoking the
      * two-argument counterpart as follows:
      * <blockquote>
-     * {@link #toUnicode(String, int) toUnicode}(input,&nbsp;0);
+     * {@link #toUnicode(String, int) toUnicode}(input,&nbsp;IDN.CHECK_CONTEXTJ|IDN.USE_STD3_ASCII_RULES|IDN.NONTRANSITIONAL_TO_ASCII);
      * </blockquote>
+     *
+     * <p>This set of flags has been chosen to match the most popular three web browsers.
      *
      * @param input     the string to be processed
      *
@@ -229,38 +320,7 @@ public final class IDN {
      *      RFC 3490: Internationalizing Domain Names in Applications (IDNA)
      */
     public static String toUnicode(String input) {
-        return toUnicode(input, 0);
-    }
-
-
-    /* ---------------- Private members -------------- */
-
-    // ACE Prefix is "xn--"
-    private static final String ACE_PREFIX = "xn--";
-    private static final int ACE_PREFIX_LENGTH = ACE_PREFIX.length();
-
-    private static final int MAX_LABEL_LENGTH   = 63;
-
-    // single instance of nameprep
-    private static StringPrep namePrep = null;
-
-    static {
-        try {
-            final String IDN_PROFILE = "/sun/net/idn/uidna.spp";
-            @SuppressWarnings("removal")
-            InputStream stream = System.getSecurityManager() != null
-                    ? AccessController.doPrivileged(new PrivilegedAction<>() {
-                            public InputStream run() {
-                                return StringPrep.class.getResourceAsStream(IDN_PROFILE);
-                            }})
-                    : StringPrep.class.getResourceAsStream(IDN_PROFILE);
-
-            namePrep = new StringPrep(stream);
-            stream.close();
-        } catch (IOException e) {
-            // should never reach here
-            assert false;
-        }
+        return toUnicode(input, CHECK_CONTEXTJ | USE_STD3_ASCII_RULES | NONTRANSITIONAL_TO_UNICODE );
     }
 
 
@@ -271,247 +331,4 @@ public final class IDN {
     // to suppress the default zero-argument constructor
     //
     private IDN() {}
-
-    //
-    // toASCII operation; should only apply to a single label
-    //
-    private static String toASCIIInternal(String label, int flag)
-    {
-        // step 1
-        // Check if the string contains code points outside the ASCII range 0..0x7c.
-        boolean isASCII  = isAllASCII(label);
-        StringBuffer dest;
-
-        // step 2
-        // perform the nameprep operation; flag ALLOW_UNASSIGNED is used here
-        if (!isASCII) {
-            UCharacterIterator iter = UCharacterIterator.getInstance(label);
-            try {
-                dest = namePrep.prepare(iter, flag);
-            } catch (java.text.ParseException e) {
-                throw new IllegalArgumentException(e);
-            }
-        } else {
-            dest = new StringBuffer(label);
-        }
-
-        // step 8, move forward to check the smallest number of the code points
-        // the length must be inside 1..63
-        if (dest.length() == 0) {
-            throw new IllegalArgumentException(
-                        "Empty label is not a legal name");
-        }
-
-        // step 3
-        // Verify the absence of non-LDH ASCII code points
-        //   0..0x2c, 0x2e..0x2f, 0x3a..0x40, 0x5b..0x60, 0x7b..0x7f
-        // Verify the absence of leading and trailing hyphen
-        boolean useSTD3ASCIIRules = ((flag & USE_STD3_ASCII_RULES) != 0);
-        if (useSTD3ASCIIRules) {
-            for (int i = 0; i < dest.length(); i++) {
-                int c = dest.charAt(i);
-                if (isNonLDHAsciiCodePoint(c)) {
-                    throw new IllegalArgumentException(
-                        "Contains non-LDH ASCII characters");
-                }
-            }
-
-            if (dest.charAt(0) == '-' ||
-                dest.charAt(dest.length() - 1) == '-') {
-
-                throw new IllegalArgumentException(
-                        "Has leading or trailing hyphen");
-            }
-        }
-
-        if (!isASCII) {
-            // step 4
-            // If all code points are inside 0..0x7f, skip to step 8
-            if (!isAllASCII(dest.toString())) {
-                // step 5
-                // verify the sequence does not begin with ACE prefix
-                if(!startsWithACEPrefix(dest)){
-
-                    // step 6
-                    // encode the sequence with punycode
-                    try {
-                        dest = Punycode.encode(dest, null);
-                    } catch (java.text.ParseException e) {
-                        throw new IllegalArgumentException(e);
-                    }
-
-                    dest = toASCIILower(dest);
-
-                    // step 7
-                    // prepend the ACE prefix
-                    dest.insert(0, ACE_PREFIX);
-                } else {
-                    throw new IllegalArgumentException("The input starts with the ACE Prefix");
-                }
-
-            }
-        }
-
-        // step 8
-        // the length must be inside 1..63
-        if (dest.length() > MAX_LABEL_LENGTH) {
-            throw new IllegalArgumentException("The label in the input is too long");
-        }
-
-        return dest.toString();
-    }
-
-    //
-    // toUnicode operation; should only apply to a single label
-    //
-    private static String toUnicodeInternal(String label, int flag) {
-        boolean[] caseFlags = null;
-        StringBuffer dest;
-
-        // step 1
-        // find out if all the codepoints in input are ASCII
-        boolean isASCII = isAllASCII(label);
-
-        if(!isASCII){
-            // step 2
-            // perform the nameprep operation; flag ALLOW_UNASSIGNED is used here
-            try {
-                UCharacterIterator iter = UCharacterIterator.getInstance(label);
-                dest = namePrep.prepare(iter, flag);
-            } catch (Exception e) {
-                // toUnicode never fails; if any step fails, return the input string
-                return label;
-            }
-        } else {
-            dest = new StringBuffer(label);
-        }
-
-        // step 3
-        // verify ACE Prefix
-        if(startsWithACEPrefix(dest)) {
-
-            // step 4
-            // Remove the ACE Prefix
-            String temp = dest.substring(ACE_PREFIX_LENGTH, dest.length());
-
-            try {
-                // step 5
-                // Decode using punycode
-                StringBuffer decodeOut = Punycode.decode(new StringBuffer(temp), null);
-
-                // step 6
-                // Apply toASCII
-                String toASCIIOut = toASCII(decodeOut.toString(), flag);
-
-                // step 7
-                // verify
-                if (toASCIIOut.equalsIgnoreCase(dest.toString())) {
-                    // step 8
-                    // return output of step 5
-                    return decodeOut.toString();
-                }
-            } catch (Exception ignored) {
-                // no-op
-            }
-        }
-
-        // just return the input
-        return label;
-    }
-
-
-    //
-    // LDH stands for "letter/digit/hyphen", with characters restricted to the
-    // 26-letter Latin alphabet <A-Z a-z>, the digits <0-9>, and the hyphen
-    // <->.
-    // Non LDH refers to characters in the ASCII range, but which are not
-    // letters, digits or the hyphen.
-    //
-    // non-LDH = 0..0x2C, 0x2E..0x2F, 0x3A..0x40, 0x5B..0x60, 0x7B..0x7F
-    //
-    private static boolean isNonLDHAsciiCodePoint(int ch){
-        return (0x0000 <= ch && ch <= 0x002C) ||
-               (0x002E <= ch && ch <= 0x002F) ||
-               (0x003A <= ch && ch <= 0x0040) ||
-               (0x005B <= ch && ch <= 0x0060) ||
-               (0x007B <= ch && ch <= 0x007F);
-    }
-
-    //
-    // search dots in a string and return the index of that character;
-    // or if there is no dots, return the length of input string
-    // dots might be: \u002E (full stop), \u3002 (ideographic full stop), \uFF0E (fullwidth full stop),
-    // and \uFF61 (halfwidth ideographic full stop).
-    //
-    private static int searchDots(String s, int start) {
-        int i;
-        for (i = start; i < s.length(); i++) {
-            if (isLabelSeparator(s.charAt(i))) {
-                break;
-            }
-        }
-
-        return i;
-    }
-
-    //
-    // to check if a string is a root label, ".".
-    //
-    private static boolean isRootLabel(String s) {
-        return (s.length() == 1 && isLabelSeparator(s.charAt(0)));
-    }
-
-    //
-    // to check if a character is a label separator, i.e. a dot character.
-    //
-    private static boolean isLabelSeparator(char c) {
-        return (c == '.' || c == '\u3002' || c == '\uFF0E' || c == '\uFF61');
-    }
-
-    //
-    // to check if a string only contains US-ASCII code point
-    //
-    private static boolean isAllASCII(String input) {
-        boolean isASCII = true;
-        for (int i = 0; i < input.length(); i++) {
-            int c = input.charAt(i);
-            if (c > 0x7F) {
-                isASCII = false;
-                break;
-            }
-        }
-        return isASCII;
-    }
-
-    //
-    // to check if a string starts with ACE-prefix
-    //
-    private static boolean startsWithACEPrefix(StringBuffer input){
-        boolean startsWithPrefix = true;
-
-        if(input.length() < ACE_PREFIX_LENGTH){
-            return false;
-        }
-        for(int i = 0; i < ACE_PREFIX_LENGTH; i++){
-            if(toASCIILower(input.charAt(i)) != ACE_PREFIX.charAt(i)){
-                startsWithPrefix = false;
-            }
-        }
-        return startsWithPrefix;
-    }
-
-    private static char toASCIILower(char ch){
-        if('A' <= ch && ch <= 'Z'){
-            return (char)(ch + 'a' - 'A');
-        }
-        return ch;
-    }
-
-    private static StringBuffer toASCIILower(StringBuffer input){
-        StringBuffer dest = new StringBuffer();
-        for(int i = 0; i < input.length();i++){
-            dest.append(toASCIILower(input.charAt(i)));
-        }
-        return dest;
-    }
 }

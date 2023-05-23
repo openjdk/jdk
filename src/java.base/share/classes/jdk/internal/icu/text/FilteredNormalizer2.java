@@ -1,28 +1,5 @@
-/*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
- *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
- *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
- * or visit www.oracle.com if you need additional information or have any
- * questions.
- */
-
+// Copyright 2016 and later: Unicode, Inc. and others.
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
 *******************************************************************************
 *   Copyright (C) 2009-2014, International Business Machines
@@ -32,6 +9,7 @@
 package jdk.internal.icu.text;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 
 /**
  * Normalization filtered by a UnicodeSet.
@@ -44,8 +22,8 @@ import java.io.IOException;
  * @stable ICU 4.4
  * @author Markus W. Scherer
  */
-class FilteredNormalizer2 extends Normalizer2 {
-
+@SuppressWarnings("deprecation")
+public class FilteredNormalizer2 extends Normalizer2 {
     /**
      * Constructs a filtered normalizer wrapping any Normalizer2 instance
      * and a filter set.
@@ -74,7 +52,6 @@ class FilteredNormalizer2 extends Normalizer2 {
         normalize(src, dest, UnicodeSet.SpanCondition.SIMPLE);
         return dest;
     }
-
     /**
      * {@inheritDoc}
      * @stable ICU 4.6
@@ -96,7 +73,6 @@ class FilteredNormalizer2 extends Normalizer2 {
             StringBuilder first, CharSequence second) {
         return normalizeSecondAndAppend(first, second, true);
     }
-
     /**
      * {@inheritDoc}
      * @stable ICU 4.4
@@ -113,6 +89,24 @@ class FilteredNormalizer2 extends Normalizer2 {
     @Override
     public String getDecomposition(int c) {
         return set.contains(c) ? norm2.getDecomposition(c) : null;
+    }
+
+    /**
+     * {@inheritDoc}
+     * @stable ICU 49
+     */
+    @Override
+    public String getRawDecomposition(int c) {
+        return set.contains(c) ? norm2.getRawDecomposition(c) : null;
+    }
+
+    /**
+     * {@inheritDoc}
+     * @stable ICU 49
+     */
+    @Override
+    public int composePair(int a, int b) {
+        return (set.contains(a) && set.contains(b)) ? norm2.composePair(a, b) : -1;
     }
 
     /**
@@ -151,6 +145,32 @@ class FilteredNormalizer2 extends Normalizer2 {
      * @stable ICU 4.4
      */
     @Override
+    public Normalizer.QuickCheckResult quickCheck(CharSequence s) {
+        Normalizer.QuickCheckResult result=Normalizer.YES;
+        UnicodeSet.SpanCondition spanCondition=UnicodeSet.SpanCondition.SIMPLE;
+        for(int prevSpanLimit=0; prevSpanLimit<s.length();) {
+            int spanLimit=set.span(s, prevSpanLimit, spanCondition);
+            if(spanCondition==UnicodeSet.SpanCondition.NOT_CONTAINED) {
+                spanCondition=UnicodeSet.SpanCondition.SIMPLE;
+            } else {
+                Normalizer.QuickCheckResult qcResult=
+                    norm2.quickCheck(s.subSequence(prevSpanLimit, spanLimit));
+                if(qcResult==Normalizer.NO) {
+                    return qcResult;
+                } else if(qcResult==Normalizer.MAYBE) {
+                    result=qcResult;
+                }
+                spanCondition=UnicodeSet.SpanCondition.NOT_CONTAINED;
+            }
+            prevSpanLimit=spanLimit;
+        }
+        return result;
+    }
+    /**
+     * {@inheritDoc}
+     * @stable ICU 4.4
+     */
+    @Override
     public int spanQuickCheckYes(CharSequence s) {
         UnicodeSet.SpanCondition spanCondition=UnicodeSet.SpanCondition.SIMPLE;
         for(int prevSpanLimit=0; prevSpanLimit<s.length();) {
@@ -178,6 +198,24 @@ class FilteredNormalizer2 extends Normalizer2 {
     @Override
     public boolean hasBoundaryBefore(int c) {
         return !set.contains(c) || norm2.hasBoundaryBefore(c);
+    }
+
+    /**
+     * {@inheritDoc}
+     * @stable ICU 4.4
+     */
+    @Override
+    public boolean hasBoundaryAfter(int c) {
+        return !set.contains(c) || norm2.hasBoundaryAfter(c);
+    }
+
+    /**
+     * {@inheritDoc}
+     * @stable ICU 4.4
+     */
+    @Override
+    public boolean isInert(int c) {
+        return !set.contains(c) || norm2.isInert(c);
     }
 
     // Internal: No argument checking, and appends to dest.
@@ -211,7 +249,7 @@ class FilteredNormalizer2 extends Normalizer2 {
                 prevSpanLimit=spanLimit;
             }
         } catch(IOException e) {
-            throw new InternalError(e.toString(), e);
+            throw new UncheckedIOException(e);
         }
         return dest;
     }

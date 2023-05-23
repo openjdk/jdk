@@ -1,32 +1,9 @@
-/*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
- *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
- *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
- * or visit www.oracle.com if you need additional information or have any
- * questions.
- */
-
+// Copyright 2016 and later: Unicode, Inc. and others.
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
  ******************************************************************************
  *
- *   Copyright (C) 2009-2014, International Business Machines
+ *   Copyright (C) 2009-2015, International Business Machines
  *   Corporation and others.  All Rights Reserved.
  *
  ******************************************************************************
@@ -36,7 +13,6 @@ package jdk.internal.icu.impl;
 
 import java.util.ArrayList;
 
-import jdk.internal.icu.text.UTF16;
 import jdk.internal.icu.text.UnicodeSet;
 import jdk.internal.icu.text.UnicodeSet.SpanCondition;
 import jdk.internal.icu.util.OutputInt;
@@ -46,6 +22,7 @@ import jdk.internal.icu.util.OutputInt;
  * Avoid recursion because of its exponential complexity.
  * Instead, try multiple paths at once and track them with an IndexList.
  */
+@SuppressWarnings("deprecation")
 public class UnicodeSetStringSpan {
 
     /*
@@ -71,7 +48,6 @@ public class UnicodeSetStringSpan {
      * All code points in the string are contained in the parent set.
      */
     static final short ALL_CP_CONTAINED = 0xff;
-
     /** The spanLength is >=0xfe. */
     static final short LONG_SPAN = ALL_CP_CONTAINED - 1;
 
@@ -91,7 +67,7 @@ public class UnicodeSetStringSpan {
     private short[] spanLengths;
 
     /** Maximum lengths of relevant strings. */
-    private int maxLength16;
+    private final int maxLength16;
 
     /** Are there strings that are not fully contained in the code point set? */
     private boolean someRelevant;
@@ -133,6 +109,7 @@ public class UnicodeSetStringSpan {
         int stringsLength = strings.size();
 
         int i, spanLength;
+        int maxLength16 = 0;
         someRelevant = false;
         for (i = 0; i < stringsLength;) {
             String string = strings.get(i);
@@ -152,6 +129,7 @@ public class UnicodeSetStringSpan {
             }
             ++i;
         }
+        this.maxLength16 = maxLength16;
         if (!someRelevant && (which & WITH_COUNT) == 0) {
             return;
         }
@@ -234,6 +212,27 @@ public class UnicodeSetStringSpan {
     }
 
     /**
+     * Constructs a copy of an existing UnicodeSetStringSpan.
+     * Assumes which==ALL for a frozen set.
+     */
+    public UnicodeSetStringSpan(final UnicodeSetStringSpan otherStringSpan,
+            final ArrayList<String> newParentSetStrings) {
+        spanSet = otherStringSpan.spanSet;
+        strings = newParentSetStrings;
+        maxLength16 = otherStringSpan.maxLength16;
+        someRelevant = otherStringSpan.someRelevant;
+        all = true;
+        if (Utility.sameObjects(otherStringSpan.spanNotSet, otherStringSpan.spanSet)) {
+            spanNotSet = spanSet;
+        } else {
+            spanNotSet = (UnicodeSet) otherStringSpan.spanNotSet.clone();
+        }
+        offsets = new OffsetList();
+
+        spanLengths = otherStringSpan.spanLengths.clone();
+    }
+
+    /**
      * Do the strings need to be checked in span() etc.?
      *
      * @return true if strings need to be checked (call span() here),
@@ -253,7 +252,7 @@ public class UnicodeSetStringSpan {
      * so that a character span ends before any string.
      */
     private void addToSpanNotSet(int c) {
-        if (spanNotSet == null || spanNotSet == spanSet) {
+        if (Utility.sameObjects(spanNotSet, null) || Utility.sameObjects(spanNotSet, spanSet)) {
             if (spanSet.contains(c)) {
                 return; // Nothing to do.
             }
@@ -732,7 +731,7 @@ public class UnicodeSetStringSpan {
                         // to find the match from the latest end.
                     }
                     if (overlap > spanLength) {
-                      overlap = spanLength;
+                        overlap = spanLength;
                     }
                     int dec = length16 - overlap; // Keep dec+overlap==length16.
                     for (;;) {
@@ -982,8 +981,8 @@ public class UnicodeSetStringSpan {
         char c = s.charAt(start);
         if (c >= 0xd800 && c <= 0xdbff && length >= 2) {
             char c2 = s.charAt(start + 1);
-            if (UTF16.isTrailSurrogate(c2)) {
-                int supplementary = UCharacterProperty.getRawSupplementary(c, c2);
+            if (jdk.internal.icu.text.UTF16.isTrailSurrogate(c2)) {
+                int supplementary = Character.toCodePoint(c, c2);
                 return set.contains(supplementary) ? 2 : -2;
             }
         }
@@ -994,8 +993,8 @@ public class UnicodeSetStringSpan {
         char c = s.charAt(length - 1);
         if (c >= 0xdc00 && c <= 0xdfff && length >= 2) {
             char c2 = s.charAt(length - 2);
-            if (UTF16.isLeadSurrogate(c2)) {
-                int supplementary = UCharacterProperty.getRawSupplementary(c2, c);
+            if (jdk.internal.icu.text.UTF16.isLeadSurrogate(c2)) {
+                int supplementary = Character.toCodePoint(c2, c);
                 return set.contains(supplementary) ? 2 : -2;
             }
         }

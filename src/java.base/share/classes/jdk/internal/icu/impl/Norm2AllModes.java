@@ -1,31 +1,8 @@
-/*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
- *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
- *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
- * or visit www.oracle.com if you need additional information or have any
- * questions.
- */
-
+// Copyright 2016 and later: Unicode, Inc. and others.
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
  *******************************************************************************
- *   Copyright (C) 2009-2014, International Business Machines
+ *   Copyright (C) 2009-2016, International Business Machines
  *   Corporation and others.  All Rights Reserved.
  *******************************************************************************
  */
@@ -33,10 +10,13 @@
 package jdk.internal.icu.impl;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.ByteBuffer;
 
+import jdk.internal.icu.text.Normalizer;
 import jdk.internal.icu.text.Normalizer2;
-import jdk.internal.icu.util.VersionInfo;
 
+@SuppressWarnings("deprecation")
 public final class Norm2AllModes {
     // Public API dispatch via Normalizer2 subclasses -------------------------- ***
 
@@ -51,20 +31,18 @@ public final class Norm2AllModes {
                 throw new IllegalArgumentException();
             }
         }
-
         @Override
         public Appendable normalize(CharSequence src, Appendable dest) {
             if(dest!=src) {
                 try {
                     return dest.append(src);
                 } catch(IOException e) {
-                    throw new InternalError(e.toString(), e);
+                    throw new UncheckedIOException(e);  // Avoid declaring "throws IOException".
                 }
             } else {
                 throw new IllegalArgumentException();
             }
         }
-
         @Override
         public StringBuilder normalizeSecondAndAppend(StringBuilder first, CharSequence second) {
             if(first!=second) {
@@ -73,7 +51,6 @@ public final class Norm2AllModes {
                 throw new IllegalArgumentException();
             }
         }
-
         @Override
         public StringBuilder append(StringBuilder first, CharSequence second) {
             if(first!=second) {
@@ -82,27 +59,29 @@ public final class Norm2AllModes {
                 throw new IllegalArgumentException();
             }
         }
-
         @Override
         public String getDecomposition(int c) {
             return null;
         }
-
         // No need to override the default getRawDecomposition().
         @Override
         public boolean isNormalized(CharSequence s) { return true; }
-
+        @Override
+        public Normalizer.QuickCheckResult quickCheck(CharSequence s) { return Normalizer.YES; }
         @Override
         public int spanQuickCheckYes(CharSequence s) { return s.length(); }
-
         @Override
         public boolean hasBoundaryBefore(int c) { return true; }
+        @Override
+        public boolean hasBoundaryAfter(int c) { return true; }
+        @Override
+        public boolean isInert(int c) { return true; }
     }
 
     // Intermediate class:
-    // Has NormalizerImpl and does boilerplate argument checking and setup.
-    public abstract static class Normalizer2WithImpl extends Normalizer2 {
-        public Normalizer2WithImpl(NormalizerImpl ni) {
+    // Has Normalizer2Impl and does boilerplate argument checking and setup.
+    public static abstract class Normalizer2WithImpl extends Normalizer2 {
+        public Normalizer2WithImpl(Normalizer2Impl ni) {
             impl=ni;
         }
 
@@ -113,35 +92,31 @@ public final class Norm2AllModes {
                 throw new IllegalArgumentException();
             }
             dest.setLength(0);
-            normalize(src, new NormalizerImpl.ReorderingBuffer(impl, dest, src.length()));
+            normalize(src, new Normalizer2Impl.ReorderingBuffer(impl, dest, src.length()));
             return dest;
         }
-
         @Override
         public Appendable normalize(CharSequence src, Appendable dest) {
             if(dest==src) {
                 throw new IllegalArgumentException();
             }
-            NormalizerImpl.ReorderingBuffer buffer=
-                new NormalizerImpl.ReorderingBuffer(impl, dest, src.length());
+            Normalizer2Impl.ReorderingBuffer buffer=
+                new Normalizer2Impl.ReorderingBuffer(impl, dest, src.length());
             normalize(src, buffer);
             buffer.flush();
             return dest;
         }
-
-        protected abstract void normalize(CharSequence src, NormalizerImpl.ReorderingBuffer buffer);
+        protected abstract void normalize(CharSequence src, Normalizer2Impl.ReorderingBuffer buffer);
 
         // normalize and append
         @Override
         public StringBuilder normalizeSecondAndAppend(StringBuilder first, CharSequence second) {
             return normalizeSecondAndAppend(first, second, true);
         }
-
         @Override
         public StringBuilder append(StringBuilder first, CharSequence second) {
             return normalizeSecondAndAppend(first, second, false);
         }
-
         public StringBuilder normalizeSecondAndAppend(
                 StringBuilder first, CharSequence second, boolean doNormalize) {
             if(first==second) {
@@ -149,16 +124,23 @@ public final class Norm2AllModes {
             }
             normalizeAndAppend(
                 second, doNormalize,
-                new NormalizerImpl.ReorderingBuffer(impl, first, first.length()+second.length()));
+                new Normalizer2Impl.ReorderingBuffer(impl, first, first.length()+second.length()));
             return first;
         }
-
         protected abstract void normalizeAndAppend(
-                CharSequence src, boolean doNormalize, NormalizerImpl.ReorderingBuffer buffer);
+                CharSequence src, boolean doNormalize, Normalizer2Impl.ReorderingBuffer buffer);
 
         @Override
         public String getDecomposition(int c) {
             return impl.getDecomposition(c);
+        }
+        @Override
+        public String getRawDecomposition(int c) {
+            return impl.getRawDecomposition(c);
+        }
+        @Override
+        public int composePair(int a, int b) {
+            return impl.composePair(a, b);
         }
 
         @Override
@@ -171,49 +153,59 @@ public final class Norm2AllModes {
         public boolean isNormalized(CharSequence s) {
             return s.length()==spanQuickCheckYes(s);
         }
+        @Override
+        public Normalizer.QuickCheckResult quickCheck(CharSequence s) {
+            return isNormalized(s) ? Normalizer.YES : Normalizer.NO;
+        }
 
-        public final NormalizerImpl impl;
+        public abstract int getQuickCheck(int c);
+
+        public final Normalizer2Impl impl;
     }
 
     public static final class DecomposeNormalizer2 extends Normalizer2WithImpl {
-        public DecomposeNormalizer2(NormalizerImpl ni) {
+        public DecomposeNormalizer2(Normalizer2Impl ni) {
             super(ni);
         }
 
         @Override
-        protected void normalize(CharSequence src, NormalizerImpl.ReorderingBuffer buffer) {
+        protected void normalize(CharSequence src, Normalizer2Impl.ReorderingBuffer buffer) {
             impl.decompose(src, 0, src.length(), buffer);
         }
-
         @Override
         protected void normalizeAndAppend(
-                CharSequence src, boolean doNormalize, NormalizerImpl.ReorderingBuffer buffer) {
+                CharSequence src, boolean doNormalize, Normalizer2Impl.ReorderingBuffer buffer) {
             impl.decomposeAndAppend(src, doNormalize, buffer);
         }
-
         @Override
         public int spanQuickCheckYes(CharSequence s) {
             return impl.decompose(s, 0, s.length(), null);
         }
-
+        @Override
+        public int getQuickCheck(int c) {
+            return impl.isDecompYes(impl.getNorm16(c)) ? 1 : 0;
+        }
         @Override
         public boolean hasBoundaryBefore(int c) { return impl.hasDecompBoundaryBefore(c); }
+        @Override
+        public boolean hasBoundaryAfter(int c) { return impl.hasDecompBoundaryAfter(c); }
+        @Override
+        public boolean isInert(int c) { return impl.isDecompInert(c); }
     }
 
     public static final class ComposeNormalizer2 extends Normalizer2WithImpl {
-        public ComposeNormalizer2(NormalizerImpl ni, boolean fcc) {
+        public ComposeNormalizer2(Normalizer2Impl ni, boolean fcc) {
             super(ni);
             onlyContiguous=fcc;
         }
 
         @Override
-        protected void normalize(CharSequence src, NormalizerImpl.ReorderingBuffer buffer) {
+        protected void normalize(CharSequence src, Normalizer2Impl.ReorderingBuffer buffer) {
             impl.compose(src, 0, src.length(), onlyContiguous, true, buffer);
         }
-
         @Override
         protected void normalizeAndAppend(
-                CharSequence src, boolean doNormalize, NormalizerImpl.ReorderingBuffer buffer) {
+                CharSequence src, boolean doNormalize, Normalizer2Impl.ReorderingBuffer buffer) {
             impl.composeAndAppend(src, doNormalize, onlyContiguous, buffer);
         }
 
@@ -222,31 +214,86 @@ public final class Norm2AllModes {
             // 5: small destCapacity for substring normalization
             return impl.compose(s, 0, s.length(),
                                 onlyContiguous, false,
-                                new NormalizerImpl.ReorderingBuffer(impl, new StringBuilder(), 5));
+                                new Normalizer2Impl.ReorderingBuffer(impl, new StringBuilder(), 5));
         }
-
+        @Override
+        public Normalizer.QuickCheckResult quickCheck(CharSequence s) {
+            int spanLengthAndMaybe=impl.composeQuickCheck(s, 0, s.length(), onlyContiguous, false);
+            if((spanLengthAndMaybe&1)!=0) {
+                return Normalizer.MAYBE;
+            } else if((spanLengthAndMaybe>>>1)==s.length()) {
+                return Normalizer.YES;
+            } else {
+                return Normalizer.NO;
+            }
+        }
         @Override
         public int spanQuickCheckYes(CharSequence s) {
             return impl.composeQuickCheck(s, 0, s.length(), onlyContiguous, true)>>>1;
         }
-
+        @Override
+        public int getQuickCheck(int c) {
+            return impl.getCompQuickCheck(impl.getNorm16(c));
+        }
         @Override
         public boolean hasBoundaryBefore(int c) { return impl.hasCompBoundaryBefore(c); }
+        @Override
+        public boolean hasBoundaryAfter(int c) {
+            return impl.hasCompBoundaryAfter(c, onlyContiguous);
+        }
+        @Override
+        public boolean isInert(int c) {
+            return impl.isCompInert(c, onlyContiguous);
+        }
 
         private final boolean onlyContiguous;
     }
 
+    public static final class FCDNormalizer2 extends Normalizer2WithImpl {
+        public FCDNormalizer2(Normalizer2Impl ni) {
+            super(ni);
+        }
+
+        @Override
+        protected void normalize(CharSequence src, Normalizer2Impl.ReorderingBuffer buffer) {
+            impl.makeFCD(src, 0, src.length(), buffer);
+        }
+        @Override
+        protected void normalizeAndAppend(
+                CharSequence src, boolean doNormalize, Normalizer2Impl.ReorderingBuffer buffer) {
+            impl.makeFCDAndAppend(src, doNormalize, buffer);
+        }
+        @Override
+        public int spanQuickCheckYes(CharSequence s) {
+            return impl.makeFCD(s, 0, s.length(), null);
+        }
+        @Override
+        public int getQuickCheck(int c) {
+            return impl.isDecompYes(impl.getNorm16(c)) ? 1 : 0;
+        }
+        @Override
+        public boolean hasBoundaryBefore(int c) { return impl.hasFCDBoundaryBefore(c); }
+        @Override
+        public boolean hasBoundaryAfter(int c) { return impl.hasFCDBoundaryAfter(c); }
+        @Override
+        public boolean isInert(int c) { return impl.isFCDInert(c); }
+    }
+
     // instance cache ---------------------------------------------------------- ***
 
-    private Norm2AllModes(NormalizerImpl ni) {
+    private Norm2AllModes(Normalizer2Impl ni) {
         impl=ni;
         comp=new ComposeNormalizer2(ni, false);
         decomp=new DecomposeNormalizer2(ni);
+        fcd=new FCDNormalizer2(ni);
+        fcc=new ComposeNormalizer2(ni, true);
     }
 
-    public final NormalizerImpl impl;
+    public final Normalizer2Impl impl;
     public final ComposeNormalizer2 comp;
     public final DecomposeNormalizer2 decomp;
+    public final FCDNormalizer2 fcd;
+    public final ComposeNormalizer2 fcc;
 
     private static Norm2AllModes getInstanceFromSingleton(Norm2AllModesSingleton singleton) {
         if(singleton.exception!=null) {
@@ -254,26 +301,75 @@ public final class Norm2AllModes {
         }
         return singleton.allModes;
     }
-
     public static Norm2AllModes getNFCInstance() {
         return getInstanceFromSingleton(NFCSingleton.INSTANCE);
     }
-
     public static Norm2AllModes getNFKCInstance() {
         return getInstanceFromSingleton(NFKCSingleton.INSTANCE);
     }
+    public static Norm2AllModes getNFKC_CFInstance() {
+        return getInstanceFromSingleton(NFKC_CFSingleton.INSTANCE);
+    }
+    // For use in properties APIs.
+    public static Normalizer2WithImpl getN2WithImpl(int index) {
+        switch(index) {
+        case 0: return getNFCInstance().decomp;  // NFD
+        case 1: return getNFKCInstance().decomp; // NFKD
+        case 2: return getNFCInstance().comp;    // NFC
+        case 3: return getNFKCInstance().comp;   // NFKC
+        default: return null;
+        }
+    }
+    public static Norm2AllModes getInstance(ByteBuffer bytes, String name) {
+        if(bytes==null) {
+            Norm2AllModesSingleton singleton;
+            if(name.equals("nfc")) {
+                singleton=NFCSingleton.INSTANCE;
+            } else if(name.equals("nfkc")) {
+                singleton=NFKCSingleton.INSTANCE;
+            } else if(name.equals("nfkc_cf")) {
+                singleton=NFKC_CFSingleton.INSTANCE;
+            } else {
+                singleton=null;
+            }
+            if(singleton!=null) {
+                if(singleton.exception!=null) {
+                    throw singleton.exception;
+                }
+                return singleton.allModes;
+            }
+        }
+        return cache.getInstance(name, bytes);
+    }
+    private static CacheBase<String, Norm2AllModes, ByteBuffer> cache =
+        new SoftCache<String, Norm2AllModes, ByteBuffer>() {
+            @Override
+            protected Norm2AllModes createInstance(String key, ByteBuffer bytes) {
+                Normalizer2Impl impl;
+                if(bytes==null) {
+                    impl=new Normalizer2Impl().load(key+".nrm");
+                } else {
+                    impl=new Normalizer2Impl().load(bytes);
+                }
+                return new Norm2AllModes(impl);
+            }
+        };
 
     public static final NoopNormalizer2 NOOP_NORMALIZER2=new NoopNormalizer2();
+    /**
+     * Gets the FCD normalizer, with the FCD data initialized.
+     * @return FCD normalizer
+     */
+    public static Normalizer2 getFCDNormalizer2() {
+        return getNFCInstance().fcd;
+    }
 
     private static final class Norm2AllModesSingleton {
         private Norm2AllModesSingleton(String name) {
             try {
-                @SuppressWarnings("deprecation")
-                String DATA_FILE_NAME = "/jdk/internal/icu/impl/data/icudt" +
-                    VersionInfo.ICU_DATA_VERSION_PATH + "/" + name + ".nrm";
-                NormalizerImpl impl=new NormalizerImpl().load(DATA_FILE_NAME);
+                Normalizer2Impl impl=new Normalizer2Impl().load(name+".nrm");
                 allModes=new Norm2AllModes(impl);
-            } catch (RuntimeException e) {
+            } catch(RuntimeException e) {
                 exception=e;
             }
         }
@@ -281,12 +377,13 @@ public final class Norm2AllModes {
         private Norm2AllModes allModes;
         private RuntimeException exception;
     }
-
     private static final class NFCSingleton {
         private static final Norm2AllModesSingleton INSTANCE=new Norm2AllModesSingleton("nfc");
     }
-
     private static final class NFKCSingleton {
         private static final Norm2AllModesSingleton INSTANCE=new Norm2AllModesSingleton("nfkc");
+    }
+    private static final class NFKC_CFSingleton {
+        private static final Norm2AllModesSingleton INSTANCE=new Norm2AllModesSingleton("nfkc_cf");
     }
 }

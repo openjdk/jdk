@@ -1,45 +1,17 @@
-/*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
- *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
- *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
- * or visit www.oracle.com if you need additional information or have any
- * questions.
- */
-
+// Copyright 2016 and later: Unicode, Inc. and others.
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
  *******************************************************************************
- * (C) Copyright IBM Corp. 1996-2005 - All Rights Reserved                     *
- *                                                                             *
- * The original version of this source code and documentation is copyrighted   *
- * and owned by IBM, These materials are provided under terms of a License     *
- * Agreement between IBM and Sun. This technology is protected by multiple     *
- * US and International patents. This notice and attribution to IBM may not    *
- * to removed.                                                                 *
+ * Copyright (C) 1996-2015, International Business Machines Corporation and
+ * others. All Rights Reserved.
  *******************************************************************************
  */
-
 package jdk.internal.icu.impl;
 
 import jdk.internal.icu.text.Replaceable;
 import jdk.internal.icu.text.ReplaceableString;
 import jdk.internal.icu.text.UCharacterIterator;
+import jdk.internal.icu.text.UTF16;
 
 /**
  * DLF docs must define behavior when Replaceable is mutated underneath
@@ -54,6 +26,18 @@ import jdk.internal.icu.text.UCharacterIterator;
 public class ReplaceableUCharacterIterator extends UCharacterIterator {
 
     // public constructor ------------------------------------------------------
+
+    /**
+     * Public constructor
+     * @param replaceable text which the iterator will be based on
+     */
+    public ReplaceableUCharacterIterator(Replaceable replaceable){
+        if(replaceable==null){
+            throw new IllegalArgumentException();
+        }
+        this.replaceable  = replaceable;
+        this.currentIndex = 0;
+    }
 
     /**
      * Public constructor
@@ -86,6 +70,7 @@ public class ReplaceableUCharacterIterator extends UCharacterIterator {
      * <code>Replaceable</code>object
      * @return copy of this iterator
      */
+    @Override
     public Object clone(){
         try {
           return super.clone();
@@ -98,6 +83,7 @@ public class ReplaceableUCharacterIterator extends UCharacterIterator {
      * Returns the current UTF16 character.
      * @return current UTF16 character
      */
+    @Override
     public int current(){
         if (currentIndex < replaceable.length()) {
             return replaceable.charAt(currentIndex);
@@ -106,9 +92,38 @@ public class ReplaceableUCharacterIterator extends UCharacterIterator {
     }
 
     /**
+     * Returns the current codepoint
+     * @return current codepoint
+     */
+    @Override
+    public int currentCodePoint(){
+        // cannot use charAt due to it different
+        // behaviour when index is pointing at a
+        // trail surrogate, check for surrogates
+
+        int ch = current();
+        if(UTF16.isLeadSurrogate(ch)){
+            // advance the index to get the next code point
+            next();
+            // due to post increment semantics current() after next()
+            // actually returns the next char which is what we want
+            int ch2 = current();
+            // current should never change the current index so back off
+            previous();
+
+            if(UTF16.isTrailSurrogate(ch2)){
+                // we found a surrogate pair
+                return Character.toCodePoint((char)ch, (char)ch2);
+            }
+        }
+        return ch;
+    }
+
+    /**
      * Returns the length of the text
      * @return length of the text
      */
+    @Override
     public int getLength(){
         return replaceable.length();
     }
@@ -117,6 +132,7 @@ public class ReplaceableUCharacterIterator extends UCharacterIterator {
      * Gets the current currentIndex in text.
      * @return current currentIndex in text.
      */
+    @Override
     public int getIndex(){
         return currentIndex;
     }
@@ -129,6 +145,7 @@ public class ReplaceableUCharacterIterator extends UCharacterIterator {
      * @return next UTF16 character in text or DONE if the new currentIndex is off the
      *         end of the text range.
      */
+    @Override
     public int next(){
         if (currentIndex < replaceable.length()) {
             return replaceable.charAt(currentIndex++);
@@ -145,6 +162,7 @@ public class ReplaceableUCharacterIterator extends UCharacterIterator {
      * @return next UTF16 character in text or DONE if the new currentIndex is off the
      *         start of the text range.
      */
+    @Override
     public int previous(){
         if (currentIndex > 0) {
             return replaceable.charAt(--currentIndex);
@@ -153,20 +171,24 @@ public class ReplaceableUCharacterIterator extends UCharacterIterator {
     }
 
     /**
-     * Sets the currentIndex to the specified currentIndex in the text and returns that
+     * <p>Sets the currentIndex to the specified currentIndex in the text and returns that
      * single UTF16 character at currentIndex.
-     * This assumes the text is stored as 16-bit code units.
+     * This assumes the text is stored as 16-bit code units.</p>
      * @param currentIndex the currentIndex within the text.
      * @exception IllegalArgumentException is thrown if an invalid currentIndex is
      *            supplied. i.e. currentIndex is out of bounds.
+     * @returns the character at the specified currentIndex or DONE if the specified
+     *         currentIndex is equal to the end of the text.
      */
-    public void setIndex(int currentIndex) {
+    @Override
+    public void setIndex(int currentIndex) throws IndexOutOfBoundsException{
         if (currentIndex < 0 || currentIndex > replaceable.length()) {
-            throw new IllegalArgumentException();
+            throw new IndexOutOfBoundsException();
         }
         this.currentIndex = currentIndex;
     }
 
+    @Override
     public int getText(char[] fillIn, int offset){
         int length = replaceable.length();
         if(offset < 0 || offset + length > fillIn.length){
@@ -179,7 +201,7 @@ public class ReplaceableUCharacterIterator extends UCharacterIterator {
     // private data members ----------------------------------------------------
 
     /**
-     * Replaceable object
+     * Replacable object
      */
     private Replaceable replaceable;
     /**

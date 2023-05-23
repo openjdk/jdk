@@ -1,35 +1,11 @@
-/*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
- *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
- *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
- * or visit www.oracle.com if you need additional information or have any
- * questions.
- */
-
+// Copyright 2016 and later: Unicode, Inc. and others.
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
  *******************************************************************************
- * Copyright (C) 1996-2009, International Business Machines Corporation and    *
+ * Copyright (C) 1996-2016, International Business Machines Corporation and    *
  * others. All Rights Reserved.                                                *
  *******************************************************************************
  */
-
 package jdk.internal.icu.text;
 
 /**
@@ -40,14 +16,11 @@ package jdk.internal.icu.text;
  * intended for general use.  Most clients will need to implement
  * {@link Replaceable} in their text representation class.
  *
- * <p>Copyright &copy; IBM Corporation 1999.  All rights reserved.
- *
  * @see Replaceable
  * @author Alan Liu
  * @stable ICU 2.0
  */
 public class ReplaceableString implements Replaceable {
-
     private StringBuffer buf;
 
     /**
@@ -73,10 +46,37 @@ public class ReplaceableString implements Replaceable {
     }
 
     /**
+     * Construct a new empty object.
+     * @stable ICU 2.0
+     */
+    public ReplaceableString() {
+        buf = new StringBuffer();
+    }
+
+    /**
+     * Return the contents of this object as a <code>String</code>.
+     * @return string contents of this object
+     * @stable ICU 2.0
+     */
+    @Override
+    public String toString() {
+        return buf.toString();
+    }
+
+    /**
+     * Return a substring of the given string.
+     * @stable ICU 2.0
+     */
+    public String substring(int start, int limit) {
+        return buf.substring(start, limit);
+    }
+
+    /**
      * Return the number of characters contained in this object.
      * <code>Replaceable</code> API.
      * @stable ICU 2.0
      */
+    @Override
     public int length() {
         return buf.length();
     }
@@ -88,8 +88,25 @@ public class ReplaceableString implements Replaceable {
      * <code>length()</code> - 1
      * @stable ICU 2.0
      */
+    @Override
     public char charAt(int offset) {
         return buf.charAt(offset);
+    }
+
+    /**
+     * Return the 32-bit code point at the given 16-bit offset into
+     * the text.  This assumes the text is stored as 16-bit code units
+     * with surrogate pairs intermixed.  If the offset of a leading or
+     * trailing code unit of a surrogate pair is given, return the
+     * code point of the surrogate pair.
+     * @param offset an integer between 0 and <code>length()</code>-1
+     * inclusive
+     * @return 32-bit code point of text at given offset
+     * @stable ICU 2.0
+     */
+    @Override
+    public int char32At(int offset) {
+        return UTF16.charAt(buf, offset);
     }
 
     /**
@@ -102,17 +119,88 @@ public class ReplaceableString implements Replaceable {
      * starting at index <code>dstStart</code> and ending at index
      * <code>dstStart + (srcLimit-srcStart) - 1</code>.
      *
-     * @param srcStart the beginning index to copy, inclusive;
-     *        {@code 0 <= start <= limit}.
+     * @param srcStart the beginning index to copy, inclusive; <code>0
+     * &lt;= start &lt;= limit</code>.
      * @param srcLimit the ending index to copy, exclusive;
-     *        {@code start <= limit <= length()}.
+     * <code>start &lt;= limit &lt;= length()</code>.
      * @param dst the destination array.
      * @param dstStart the start offset in the destination array.
      * @stable ICU 2.0
      */
+    @Override
     public void getChars(int srcStart, int srcLimit, char dst[], int dstStart) {
         if (srcStart != srcLimit) {
             buf.getChars(srcStart, srcLimit, dst, dstStart);
         }
+    }
+
+    /**
+     * Replace zero or more characters with new characters.
+     * <code>Replaceable</code> API.
+     * @param start the beginning index, inclusive; <code>0 &lt;= start
+     * &lt;= limit</code>.
+     * @param limit the ending index, exclusive; <code>start &lt;= limit
+     * &lt;= length()</code>.
+     * @param text new text to replace characters <code>start</code> to
+     * <code>limit - 1</code>
+     * @stable ICU 2.0
+     */
+    @Override
+    public void replace(int start, int limit, String text) {
+        buf.replace(start, limit, text);
+    }
+
+    /**
+     * Replace a substring of this object with the given text.
+     * @param start the beginning index, inclusive; <code>0 &lt;= start
+     * &lt;= limit</code>.
+     * @param limit the ending index, exclusive; <code>start &lt;= limit
+     * &lt;= length()</code>.
+     * @param chars the text to replace characters <code>start</code>
+     * to <code>limit - 1</code>
+     * @param charsStart the beginning index into <code>chars</code>,
+     * inclusive; <code>0 &lt;= start &lt;= limit</code>.
+     * @param charsLen the number of characters of <code>chars</code>.
+     * @stable ICU 2.0
+     */
+    @Override
+    public void replace(int start, int limit, char[] chars,
+                        int charsStart, int charsLen) {
+        buf.delete(start, limit);
+        buf.insert(start, chars, charsStart, charsLen);
+    }
+
+    /**
+     * Copy a substring of this object, retaining attribute (out-of-band)
+     * information.  This method is used to duplicate or reorder substrings.
+     * The destination index must not overlap the source range.
+     *
+     * @param start the beginning index, inclusive; <code>0 &lt;= start &lt;=
+     * limit</code>.
+     * @param limit the ending index, exclusive; <code>start &lt;= limit &lt;=
+     * length()</code>.
+     * @param dest the destination index.  The characters from
+     * <code>start..limit-1</code> will be copied to <code>dest</code>.
+     * Implementations of this method may assume that <code>dest &lt;= start ||
+     * dest &gt;= limit</code>.
+     * @stable ICU 2.0
+     */
+    @Override
+    public void copy(int start, int limit, int dest) {
+        if (start == limit && start >= 0 && start <= buf.length()) {
+            return;
+        }
+        char[] text = new char[limit - start];
+        getChars(start, limit, text, 0);
+        replace(dest, dest, text, 0, limit - start);
+    }
+
+    /**
+     * Implements Replaceable
+     * @stable ICU 2.0
+     */
+    @Override
+    public boolean hasMetaData() {
+        return false;
     }
 }

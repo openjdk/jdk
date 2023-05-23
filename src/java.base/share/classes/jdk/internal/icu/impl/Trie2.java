@@ -1,38 +1,17 @@
-/*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
- *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
- *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
- * or visit www.oracle.com if you need additional information or have any
- * questions.
- */
-
+// Copyright 2016 and later: Unicode, Inc. and others.
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
  *******************************************************************************
- * Copyright (C) 2009-2014, International Business Machines Corporation and
+ * Copyright (C) 2009-2015, International Business Machines Corporation and
  * others. All Rights Reserved.
  *******************************************************************************
  */
 
 package jdk.internal.icu.impl;
 
+import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Iterator;
@@ -49,7 +28,8 @@ import java.util.NoSuchElementException;
  * This is the second common version of a Unicode trie (hence the name Trie2).
  *
  */
-abstract class Trie2 implements Iterable<Trie2.Range> {
+public abstract class Trie2 implements Iterable<Trie2.Range> {
+
 
     /**
      * Create a Trie2 from its serialized form.  Inverse of utrie2_serialize().
@@ -139,12 +119,20 @@ abstract class Trie2 implements Iterable<Trie2.Range> {
             header.dataNullOffset   = bytes.getChar();
             header.shiftedHighStart = bytes.getChar();
 
-            if ((header.options & UTRIE2_OPTIONS_VALUE_BITS_MASK) != 0) {
+            // Trie2 data width - 0: 16 bits
+            //                    1: 32 bits
+            if ((header.options & UTRIE2_OPTIONS_VALUE_BITS_MASK) > 1) {
                 throw new IllegalArgumentException("UTrie2 serialized format error.");
             }
-
+            ValueWidth width;
             Trie2 This;
-            This = new Trie2_16();
+            if ((header.options & UTRIE2_OPTIONS_VALUE_BITS_MASK) == 0) {
+                width = ValueWidth.BITS_16;
+                This = new Trie2_16();
+            } else {
+                width = ValueWidth.BITS_32;
+                This = new Trie2_32();
+            }
             This.header = header;
 
             /* get the length values and offsets */
@@ -154,32 +142,44 @@ abstract class Trie2 implements Iterable<Trie2.Range> {
             This.dataNullOffset   = header.dataNullOffset;
             This.highStart        = header.shiftedHighStart << UTRIE2_SHIFT_1;
             This.highValueIndex   = This.dataLength - UTRIE2_DATA_GRANULARITY;
-            This.highValueIndex += This.indexLength;
+            if (width == ValueWidth.BITS_16) {
+                This.highValueIndex += This.indexLength;
+            }
 
             // Allocate the Trie2 index array. If the data width is 16 bits, the array also
             // includes the space for the data.
 
             int indexArraySize = This.indexLength;
-            indexArraySize += This.dataLength;
-            This.index = new char[indexArraySize];
+            if (width == ValueWidth.BITS_16) {
+                indexArraySize += This.dataLength;
+            }
 
             /* Read in the index */
-            int i;
-            for (i=0; i<This.indexLength; i++) {
-                This.index[i] = bytes.getChar();
-            }
+            This.index = ICUBinary.getChars(bytes, indexArraySize, 0);
 
             /* Read in the data. 16 bit data goes in the same array as the index.
              * 32 bit data goes in its own separate data array.
              */
-            This.data16 = This.indexLength;
-            for (i=0; i<This.dataLength; i++) {
-                This.index[This.data16 + i] = bytes.getChar();
+            if (width == ValueWidth.BITS_16) {
+                This.data16 = This.indexLength;
+            } else {
+                This.data32 = ICUBinary.getInts(bytes, This.dataLength, 0);
             }
 
-            This.data32 = null;
-            This.initialValue = This.index[This.dataNullOffset];
-            This.errorValue   = This.index[This.data16+UTRIE2_BAD_UTF8_DATA_OFFSET];
+            switch(width) {
+            case BITS_16:
+                This.data32 = null;
+                This.initialValue = This.index[This.dataNullOffset];
+                This.errorValue   = This.index[This.data16+UTRIE2_BAD_UTF8_DATA_OFFSET];
+                break;
+            case BITS_32:
+                This.data16=0;
+                This.initialValue = This.data32[This.dataNullOffset];
+                This.errorValue   = This.data32[UTRIE2_BAD_UTF8_DATA_OFFSET];
+                break;
+            default:
+                throw new IllegalArgumentException("UTrie2 serialized format error.");
+            }
 
             return This;
         } finally {
@@ -188,12 +188,56 @@ abstract class Trie2 implements Iterable<Trie2.Range> {
     }
 
     /**
+     * Get the UTrie version from an InputStream containing the serialized form
+     * of either a Trie (version 1) or a Trie2 (version 2).
+     *
+     * @param is   an InputStream containing the serialized form
+     *             of a UTrie, version 1 or 2.  The stream must support mark() and reset().
+     *             The position of the input stream will be left unchanged.
+     * @param littleEndianOk If false, only big-endian (Java native) serialized forms are recognized.
+     *                    If true, little-endian serialized forms are recognized as well.
+     * @return     the Trie version of the serialized form, or 0 if it is not
+     *             recognized as a serialized UTrie
+     * @throws     IOException on errors in reading from the input stream.
+     */
+    public static int getVersion(InputStream is, boolean littleEndianOk) throws IOException {
+        if (! is.markSupported()) {
+            throw new IllegalArgumentException("Input stream must support mark().");
+            }
+        is.mark(4);
+        byte sig[] = new byte[4];
+        int read = is.read(sig);
+        is.reset();
+
+        if (read != sig.length) {
+            return 0;
+        }
+
+        if (sig[0]=='T' && sig[1]=='r' && sig[2]=='i' && sig[3]=='e') {
+            return 1;
+        }
+        if (sig[0]=='T' && sig[1]=='r' && sig[2]=='i' && sig[3]=='2') {
+            return 2;
+        }
+        if (littleEndianOk) {
+            if (sig[0]=='e' && sig[1]=='i' && sig[2]=='r' && sig[3]=='T') {
+                return 1;
+            }
+            if (sig[0]=='2' && sig[1]=='i' && sig[2]=='r' && sig[3]=='T') {
+                return 2;
+            }
+        }
+        return 0;
+    }
+
+    /**
      * Get the value for a code point as stored in the Trie2.
      *
      * @param codePoint the code point
      * @return the value
      */
-    public abstract int get(int codePoint);
+    abstract public int get(int codePoint);
+
 
     /**
      * Get the trie value for a UTF-16 code unit.
@@ -230,7 +274,60 @@ abstract class Trie2 implements Iterable<Trie2.Range> {
      * @param c the code point or lead surrogate value.
      * @return the value
      */
-    public abstract int getFromU16SingleLead(char c);
+    abstract public int getFromU16SingleLead(char c);
+
+
+    /**
+     * Equals function.  Two Tries are equal if their contents are equal.
+     * The type need not be the same, so a Trie2Writable will be equal to
+     * (read-only) Trie2_16 or Trie2_32 so long as they are storing the same values.
+     *
+     */
+    @Override
+    public final boolean equals(Object other) {
+        if(!(other instanceof Trie2)) {
+            return false;
+        }
+        Trie2 OtherTrie = (Trie2)other;
+        Range  rangeFromOther;
+
+        Iterator<Trie2.Range> otherIter = OtherTrie.iterator();
+        for (Trie2.Range rangeFromThis: this) {
+            if (otherIter.hasNext() == false) {
+                return false;
+            }
+            rangeFromOther = otherIter.next();
+            if (!rangeFromThis.equals(rangeFromOther)) {
+                return false;
+            }
+        }
+        if (otherIter.hasNext()) {
+            return false;
+        }
+
+        if (errorValue   != OtherTrie.errorValue ||
+            initialValue != OtherTrie.initialValue) {
+            return false;
+        }
+
+        return true;
+    }
+
+
+    @Override
+    public int hashCode() {
+        if (fHash == 0) {
+            int hash = initHash();
+            for (Range r: this) {
+                hash = hashInt(hash, r.hashCode());
+            }
+            if (hash == 0) {
+                hash = 1;
+            }
+            fHash = hash;
+        }
+        return fHash;
+    }
 
     /**
      * When iterating over the contents of a Trie2, Elements of this type are produced.
@@ -246,6 +343,7 @@ abstract class Trie2 implements Iterable<Trie2.Range> {
         public int     value;
         public boolean leadSurrogate;
 
+        @Override
         public boolean equals(Object other) {
             if (other == null || !(other.getClass().equals(getClass()))) {
                 return false;
@@ -257,6 +355,8 @@ abstract class Trie2 implements Iterable<Trie2.Range> {
                    this.leadSurrogate  == tother.leadSurrogate;
         }
 
+
+        @Override
         public int hashCode() {
             int h = initHash();
             h = hashUChar32(h, startCodePoint);
@@ -267,6 +367,7 @@ abstract class Trie2 implements Iterable<Trie2.Range> {
         }
     }
 
+
     /**
      *  Create an iterator over the value ranges in this Trie2.
      *  Values from the Trie2 are not remapped or filtered, but are returned as they
@@ -274,11 +375,13 @@ abstract class Trie2 implements Iterable<Trie2.Range> {
      *
      * @return an Iterator
      */
+    @Override
     public Iterator<Range> iterator() {
         return iterator(defaultValueMapper);
     }
 
     private static ValueMapper defaultValueMapper = new ValueMapper() {
+        @Override
         public int map(int in) {
             return in;
         }
@@ -296,6 +399,41 @@ abstract class Trie2 implements Iterable<Trie2.Range> {
      */
     public Iterator<Range> iterator(ValueMapper mapper) {
         return new Trie2Iterator(mapper);
+    }
+
+
+    /**
+     * Create an iterator over the Trie2 values for the 1024=0x400 code points
+     * corresponding to a given lead surrogate.
+     * For example, for the lead surrogate U+D87E it will enumerate the values
+     * for [U+2F800..U+2FC00[.
+     * Used by data builder code that sets special lead surrogate code unit values
+     * for optimized UTF-16 string processing.
+     *
+     * Do not modify the Trie2 during the iteration.
+     *
+     * Except for the limited code point range, this functions just like Trie2.iterator().
+     *
+     */
+    public Iterator<Range> iteratorForLeadSurrogate(char lead, ValueMapper mapper) {
+        return new Trie2Iterator(lead, mapper);
+    }
+
+    /**
+     * Create an iterator over the Trie2 values for the 1024=0x400 code points
+     * corresponding to a given lead surrogate.
+     * For example, for the lead surrogate U+D87E it will enumerate the values
+     * for [U+2F800..U+2FC00[.
+     * Used by data builder code that sets special lead surrogate code unit values
+     * for optimized UTF-16 string processing.
+     *
+     * Do not modify the Trie2 during the iteration.
+     *
+     * Except for the limited code point range, this functions just like Trie2.iterator().
+     *
+     */
+    public Iterator<Range> iteratorForLeadSurrogate(char lead) {
+        return new Trie2Iterator(lead, defaultValueMapper);
     }
 
     /**
@@ -320,24 +458,181 @@ abstract class Trie2 implements Iterable<Trie2.Range> {
         public int  map(int originalVal);
     }
 
+
+   /**
+     * Serialize a trie2 Header and Index onto an OutputStream.  This is
+     * common code used for  both the Trie2_16 and Trie2_32 serialize functions.
+     * @param dos the stream to which the serialized Trie2 data will be written.
+     * @return the number of bytes written.
+     */
+    protected int serializeHeader(DataOutputStream dos) throws IOException {
+        // Write the header.  It is already set and ready to use, having been
+        //  created when the Trie2 was unserialized or when it was frozen.
+        int  bytesWritten = 0;
+
+        dos.writeInt(header.signature);
+        dos.writeShort(header.options);
+        dos.writeShort(header.indexLength);
+        dos.writeShort(header.shiftedDataLength);
+        dos.writeShort(header.index2NullOffset);
+        dos.writeShort(header.dataNullOffset);
+        dos.writeShort(header.shiftedHighStart);
+        bytesWritten += 16;
+
+        // Write the index
+        int i;
+        for (i=0; i< header.indexLength; i++) {
+            dos.writeChar(index[i]);
+        }
+        bytesWritten += header.indexLength;
+        return bytesWritten;
+    }
+
+
+    /**
+     * Struct-like class for holding the results returned by a UTrie2 CharSequence iterator.
+     * The iteration walks over a CharSequence, and for each Unicode code point therein
+     * returns the character and its associated Trie2 value.
+     */
+    public static class CharSequenceValues {
+        /** string index of the current code point. */
+        public int index;
+        /** The code point at index.  */
+        public int codePoint;
+        /** The Trie2 value for the current code point */
+        public int value;
+    }
+
+
+    /**
+     *  Create an iterator that will produce the values from the Trie2 for
+     *  the sequence of code points in an input text.
+     *
+     * @param text A text string to be iterated over.
+     * @param index The starting iteration position within the input text.
+     * @return the CharSequenceIterator
+     */
+    public CharSequenceIterator charSequenceIterator(CharSequence text, int index) {
+        return new CharSequenceIterator(text, index);
+    }
+
+    // TODO:  Survey usage of the equivalent of CharSequenceIterator in ICU4C
+    //        and if there is none, remove it from here.
+    //        Don't waste time testing and maintaining unused code.
+
+    /**
+     * An iterator that operates over an input CharSequence, and for each Unicode code point
+     * in the input returns the associated value from the Trie2.
+     *
+     * The iterator can move forwards or backwards, and can be reset to an arbitrary index.
+     *
+     * Note that Trie2_16 and Trie2_32 subclass Trie2.CharSequenceIterator.  This is done
+     * only for performance reasons.  It does require that any changes made here be propagated
+     * into the corresponding code in the subclasses.
+     */
+    public class CharSequenceIterator implements Iterator<CharSequenceValues> {
+        /**
+         * Internal constructor.
+         */
+        CharSequenceIterator(CharSequence t, int index) {
+            text = t;
+            textLength = text.length();
+            set(index);
+        }
+
+        private CharSequence text;
+        private int textLength;
+        private int index;
+        private Trie2.CharSequenceValues fResults = new Trie2.CharSequenceValues();
+
+
+        public void set(int i) {
+            if (i < 0 || i > textLength) {
+                throw new IndexOutOfBoundsException();
+            }
+            index = i;
+        }
+
+
+        @Override
+        public final boolean hasNext() {
+            return index<textLength;
+        }
+
+
+        public final boolean hasPrevious() {
+            return index>0;
+        }
+
+
+        @Override
+        public Trie2.CharSequenceValues next() {
+            int c = Character.codePointAt(text, index);
+            int val = get(c);
+
+            fResults.index = index;
+            fResults.codePoint = c;
+            fResults.value = val;
+            index++;
+            if (c >= 0x10000) {
+                index++;
+            }
+            return fResults;
+        }
+
+
+        public Trie2.CharSequenceValues previous() {
+            int c = Character.codePointBefore(text, index);
+            int val = get(c);
+            index--;
+            if (c >= 0x10000) {
+                index--;
+            }
+            fResults.index = index;
+            fResults.codePoint = c;
+            fResults.value = val;
+            return fResults;
+        }
+
+        /**
+         * Iterator.remove() is not supported by Trie2.CharSequenceIterator.
+         * @throws UnsupportedOperationException Always thrown because this operation is not supported
+         * @see java.util.Iterator#remove()
+         */
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException("Trie2.CharSequenceIterator does not support remove().");
+        }
+    }
+
+
     //--------------------------------------------------------------------------------
     //
     // Below this point are internal implementation items.  No further public API.
     //
     //--------------------------------------------------------------------------------
 
+
+    /**
+     * Selectors for the width of a UTrie2 data value.
+     */
+     enum ValueWidth {
+         BITS_16,
+         BITS_32
+     }
+
      /**
-      * Trie2 data structure in serialized form:
-      *
-      * UTrie2Header header;
-      * uint16_t index[header.index2Length];
-      * uint16_t data[header.shiftedDataLength<<2];  -- or uint32_t data[...]
-      *
-      * For Java, this is read from the stream into an instance of UTrie2Header.
-      * (The C version just places a struct over the raw serialized data.)
-      *
-      * @internal
-      */
+     * Trie2 data structure in serialized form:
+     *
+     * UTrie2Header header;
+     * uint16_t index[header.index2Length];
+     * uint16_t data[header.shiftedDataLength<<2];  -- or uint32_t data[...]
+     *
+     * For Java, this is read from the stream into an instance of UTrie2Header.
+     * (The C version just places a struct over the raw serialized data.)
+     *
+     * @internal
+     */
     static class UTrie2Header {
         /** "Tri2" in big-endian US-ASCII (0x54726932) */
         int signature;
@@ -388,6 +683,12 @@ abstract class Trie2 implements Iterable<Trie2.Range> {
 
     int           dataNullOffset;
 
+    int           fHash;              // Zero if not yet computed.
+                                      //  Shared by Trie2Writable, Trie2_16, Trie2_32.
+                                      //  Thread safety:  if two racing threads compute
+                                      //     the same hash on a frozen Trie2, no damage is done.
+
+
     /**
      * Trie2 constants, defining shift widths, index array lengths, etc.
      *
@@ -416,6 +717,9 @@ abstract class Trie2 implements Iterable<Trie2.Range> {
      */
     static final int UTRIE2_OMITTED_BMP_INDEX_1_LENGTH=0x10000>>UTRIE2_SHIFT_1;
 
+    /** Number of code points per index-1 table entry. 2048=0x800 */
+    static final int UTRIE2_CP_PER_INDEX_1_ENTRY=1<<UTRIE2_SHIFT_1;
+
     /** Number of entries in an index-2 block. 64=0x40 */
     static final int UTRIE2_INDEX_2_BLOCK_LENGTH=1<<UTRIE2_SHIFT_1_2;
 
@@ -438,6 +742,14 @@ abstract class Trie2 implements Iterable<Trie2.Range> {
 
     /** The alignment size of a data block. Also the granularity for compaction. */
     static final int UTRIE2_DATA_GRANULARITY=1<<UTRIE2_INDEX_SHIFT;
+
+    /* Fixed layout of the first part of the index array. ------------------- */
+
+    /**
+     * The BMP part of the index-2 table is fixed and linear and starts at offset 0.
+     * Length=2048=0x800=0x10000>>UTRIE2_SHIFT_2.
+     */
+    static final int UTRIE2_INDEX_2_OFFSET=0;
 
     /**
      * The part of the index-2 table for U+D800..U+DBFF stores values for
@@ -471,6 +783,12 @@ abstract class Trie2 implements Iterable<Trie2.Range> {
      * are omitted completely if there is only BMP data.
      */
     static final int UTRIE2_INDEX_1_OFFSET=UTRIE2_UTF8_2B_INDEX_2_OFFSET+UTRIE2_UTF8_2B_INDEX_2_LENGTH;
+    static final int UTRIE2_MAX_INDEX_1_LENGTH=0x100000>>UTRIE2_SHIFT_1;
+
+    /*
+     * Fixed layout of the first part of the data array. -----------------------
+     * Starts with 4 blocks (128=0x80 entries) for ASCII.
+     */
 
     /**
      * The illegal-UTF-8 data block follows the ASCII block, at offset 128=0x80.
@@ -478,6 +796,51 @@ abstract class Trie2 implements Iterable<Trie2.Range> {
      * Length 64=0x40, not UTRIE2_DATA_BLOCK_LENGTH.
      */
     static final int UTRIE2_BAD_UTF8_DATA_OFFSET=0x80;
+
+    /** The start of non-linear-ASCII data blocks, at offset 192=0xc0. */
+    static final int UTRIE2_DATA_START_OFFSET=0xc0;
+
+    /* Building a Trie2 ---------------------------------------------------------- */
+
+    /*
+     * These definitions are mostly needed by utrie2_builder.c, but also by
+     * utrie2_get32() and utrie2_enum().
+     */
+
+    /*
+     * At build time, leave a gap in the index-2 table,
+     * at least as long as the maximum lengths of the 2-byte UTF-8 index-2 table
+     * and the supplementary index-1 table.
+     * Round up to UTRIE2_INDEX_2_BLOCK_LENGTH for proper compacting.
+     */
+    static final int UNEWTRIE2_INDEX_GAP_OFFSET = UTRIE2_INDEX_2_BMP_LENGTH;
+    static final int UNEWTRIE2_INDEX_GAP_LENGTH =
+        ((UTRIE2_UTF8_2B_INDEX_2_LENGTH + UTRIE2_MAX_INDEX_1_LENGTH) + UTRIE2_INDEX_2_MASK) &
+        ~UTRIE2_INDEX_2_MASK;
+
+    /**
+     * Maximum length of the build-time index-2 array.
+     * Maximum number of Unicode code points (0x110000) shifted right by UTRIE2_SHIFT_2,
+     * plus the part of the index-2 table for lead surrogate code points,
+     * plus the build-time index gap,
+     * plus the null index-2 block.
+     */
+    static final int UNEWTRIE2_MAX_INDEX_2_LENGTH=
+        (0x110000>>UTRIE2_SHIFT_2)+
+        UTRIE2_LSCP_INDEX_2_LENGTH+
+        UNEWTRIE2_INDEX_GAP_LENGTH+
+        UTRIE2_INDEX_2_BLOCK_LENGTH;
+
+    static final int UNEWTRIE2_INDEX_1_LENGTH = 0x110000>>UTRIE2_SHIFT_1;
+
+    /**
+     * Maximum length of the build-time data array.
+     * One entry per 0x110000 code points, plus the illegal-UTF-8 block and the null block,
+     * plus values for the 0x400 surrogate code units.
+     */
+    static final int  UNEWTRIE2_MAX_DATA_LENGTH = (0x110000+0x40+0x40+0x400);
+
+
 
     /**
      * Implementation class for an iterator over a Trie2.
@@ -488,7 +851,6 @@ abstract class Trie2 implements Iterable<Trie2.Range> {
      * @internal
      */
     class Trie2Iterator implements Iterator<Range> {
-
         // The normal constructor that configures the iterator to cover the complete
         //   contents of the Trie2
         Trie2Iterator(ValueMapper vm) {
@@ -498,10 +860,24 @@ abstract class Trie2 implements Iterable<Trie2.Range> {
             doLeadSurrogates = true;
         }
 
+        // An alternate constructor that configures the iterator to cover only the
+        //   code points corresponding to a particular Lead Surrogate value.
+        Trie2Iterator(char leadSurrogate, ValueMapper vm) {
+            if (leadSurrogate < 0xd800 || leadSurrogate > 0xdbff) {
+                throw new IllegalArgumentException("Bad lead surrogate value.");
+            }
+            mapper    = vm;
+            nextStart = (leadSurrogate - 0xd7c0) << 10;
+            limitCP   = nextStart + 0x400;
+            doLeadSurrogates = false;   // Do not iterate over lead the special lead surrogate
+                                        //   values after completing iteration over code points.
+        }
+
         /**
          *  The main next() function for Trie2 iterators
          *
          */
+        @Override
         public Range next() {
             if (!hasNext()) {
                 throw new NoSuchElementException();
@@ -562,10 +938,32 @@ abstract class Trie2 implements Iterable<Trie2.Range> {
         /**
          *
          */
+        @Override
         public boolean hasNext() {
             return doingCodePoints && (doLeadSurrogates || nextStart < limitCP) || nextStart < 0xdc00;
         }
 
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
+
+
+        /**
+         * Find the last lead surrogate in a contiguous range  with the
+         * same Trie2 value as the input character.
+         *
+         * Use the alternate Lead Surrogate values from the Trie2,
+         * not the code-point values.
+         *
+         * Note: Trie2_16 and Trie2_32 override this implementation with optimized versions,
+         *       meaning that the implementation here is only being used with
+         *       Trie2Writable.  The code here is logically correct with any type
+         *       of Trie2, however.
+         *
+         * @param c  The character to begin with.
+         * @return   The last contiguous character with the same value.
+         */
         private int rangeEndLS(char startingLS) {
             if (startingLS >= 0xdbff) {
                 return 0xdbff;
@@ -592,7 +990,7 @@ abstract class Trie2 implements Iterable<Trie2.Range> {
         //   may be lower when iterating over the code points for a single lead surrogate.
         private int            limitCP;
 
-        // True while iterating over the Trie2 values for code points.
+        // True while iterating over the the Trie2 values for code points.
         // False while iterating over the alternate values for lead surrogates.
         private boolean        doingCodePoints = true;
 

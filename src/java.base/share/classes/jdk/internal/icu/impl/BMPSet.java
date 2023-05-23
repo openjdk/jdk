@@ -1,32 +1,9 @@
-/*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
- *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
- *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
- * or visit www.oracle.com if you need additional information or have any
- * questions.
- */
-
+// Copyright 2016 and later: Unicode, Inc. and others.
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
  ******************************************************************************
  *
- *   Copyright (C) 2009-2014, International Business Machines
+ *   Copyright (C) 2009-2015, International Business Machines
  *   Corporation and others.  All Rights Reserved.
  *
  ******************************************************************************
@@ -43,9 +20,11 @@ import jdk.internal.icu.util.OutputInt;
  * Latin-1: Look up bytes.
  * 2-byte characters: Bits organized vertically.
  * 3-byte characters: Use zero/one/mixed data per 64-block in U+0000..U+FFFF, with mixed for illegal ranges.
- * Supplementary characters: Call contains() on the parent set.
+ * Supplementary characters: Binary search over
+ * the supplementary part of the parent set's inversion list.
  */
 public final class BMPSet {
+    public static int U16_SURROGATE_OFFSET = ((0xd800 << 10) + 0xdc00 - 0x10000);
 
     /**
      * One boolean ('true' or 'false') per Latin-1 character.
@@ -57,8 +36,7 @@ public final class BMPSet {
      * correspond to the same bit positions in consecutive table words. With code point parts lead=c{10..6}
      * trail=c{5..0} it is set.contains(c)==(table7FF[trail] bit lead)
      *
-     * Bits for 0..7F (non-shortest forms) are set to the result of contains(FFFD) for faster validity checking at
-     * runtime.
+     * Bits for 0..FF are unused (0).
      */
     private int[] table7FF;
 
@@ -69,8 +47,7 @@ public final class BMPSet {
      * indicates if contains(c) for all code points in the 64-block. If the upper bit is 1, then the block is mixed
      * and set.contains(c) must be called.
      *
-     * Bits for 0..7FF (non-shortest forms) and D800..DFFF are set to the result of contains(FFFD) for faster
-     * validity checking at runtime.
+     * Bits for 0..7FF are unused (0).
      */
     private int[] bmpBlockBits;
 
@@ -109,6 +86,15 @@ public final class BMPSet {
         list4kStarts[0x11] = listLength - 1;
 
         initBits();
+    }
+
+    public BMPSet(final BMPSet otherBMPSet, final int[] newParentList, int newParentListLength) {
+        list = newParentList;
+        listLength = newParentListLength;
+        latin1Contains = otherBMPSet.latin1Contains.clone();
+        table7FF = otherBMPSet.table7FF.clone();
+        bmpBlockBits = otherBMPSet.bmpBlockBits.clone();
+        list4kStarts = otherBMPSet.list4kStarts.clone();
     }
 
     public boolean contains(int c) {
@@ -185,7 +171,7 @@ public final class BMPSet {
                     }
                 } else {
                     // surrogate pair
-                    int supplementary = UCharacterProperty.getRawSupplementary(c, c2);
+                    int supplementary = Character.toCodePoint(c, c2);
                     if (!containsSlow(supplementary, list4kStarts[0x10], list4kStarts[0x11])) {
                         break;
                     }
@@ -224,7 +210,7 @@ public final class BMPSet {
                     }
                 } else {
                     // surrogate pair
-                    int supplementary = UCharacterProperty.getRawSupplementary(c, c2);
+                    int supplementary = Character.toCodePoint(c, c2);
                     if (containsSlow(supplementary, list4kStarts[0x10], list4kStarts[0x11])) {
                         break;
                     }
@@ -281,7 +267,7 @@ public final class BMPSet {
                     }
                 } else {
                     // surrogate pair
-                    int supplementary = UCharacterProperty.getRawSupplementary(c2, c);
+                    int supplementary = Character.toCodePoint(c2, c);
                     if (!containsSlow(supplementary, list4kStarts[0x10], list4kStarts[0x11])) {
                         break;
                     }
@@ -321,7 +307,7 @@ public final class BMPSet {
                     }
                 } else {
                     // surrogate pair
-                    int supplementary = UCharacterProperty.getRawSupplementary(c2, c);
+                    int supplementary = Character.toCodePoint(c2, c);
                     if (containsSlow(supplementary, list4kStarts[0x10], list4kStarts[0x11])) {
                         break;
                     }
@@ -452,7 +438,7 @@ public final class BMPSet {
                         // Mixed-value block of 64 code points.
                         limit >>= 6;
                         bmpBlockBits[limit & 0x3f] |= 0x10001 << (limit >> 6);
-                      limit = (limit + 1) << 6; // Round up to the next block boundary.
+                        limit = (limit + 1) << 6; // Round up to the next block boundary.
                         minStart = limit; // Ignore further ranges in this block.
                     }
                 }
@@ -460,7 +446,7 @@ public final class BMPSet {
 
             if (limit == 0x10000) {
                 break;
-          }
+            }
 
             start = list[listIndex++];
             if (listIndex < listLength) {
@@ -470,6 +456,7 @@ public final class BMPSet {
             }
         }
     }
+
 
     /**
      * Same as UnicodeSet.findCodePoint(int c) except that the binary search is restricted for finding code
@@ -524,4 +511,3 @@ public final class BMPSet {
         return (0 != (findCodePoint(c, lo, hi) & 1));
     }
 }
-
