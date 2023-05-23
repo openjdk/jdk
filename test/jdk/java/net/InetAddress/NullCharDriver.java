@@ -26,7 +26,7 @@
  * @bug 8300038
  * @modules java.base/java.net
  * @compile/module=java.base java/net/NullChar.java
- * @summary foo
+ * @summary Make new version of JNU_GetStringPlatformChars which checks for null characters
  * @run main/othervm java.base/java.net.NullChar
  * @run main/othervm -Dfile.encoding=COMPAT java.base/java.net.NullChar
  */
