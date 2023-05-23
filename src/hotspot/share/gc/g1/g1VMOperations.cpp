@@ -52,7 +52,12 @@ void VM_G1CollectFull::doit() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   GCCauseSetter x(g1h, _gc_cause);
 
+  // Any allocation requests that were handled during a previous GC safepoint but
+  // have not been observed by the requesting mutator thread should be reset to
+  // pending. This makes it easier for the current GC to treat the unclaimed memory
+  // as garbage.
   g1h->reset_allocation_requests();
+
   _gc_succeeded = g1h->do_full_collection(false /* clear_all_soft_refs */,
                                           false /* do_maximal_compaction */);
 }
@@ -127,26 +132,21 @@ VM_G1CollectForAllocation::VM_G1CollectForAllocation(size_t         word_size,
 void VM_G1CollectForAllocation::doit() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
-  // Any allocation requests that were handled during a previous GC safepoint but have not been observed
-  // by the requesting mutator thread should be reset to pending. This makes it easier for the current GC to
-  // treat the unclaimed memory as garbage.
-  g1h->reset_allocation_requests();
+  // If any allocation has been requested, try to do that first.
+  bool has_allocation_requests = !g1h->_stalled_allocations.is_empty();
+  if (has_allocation_requests) {
+    bool alloc_succeeded = g1h->handle_allocation_requests(false /* expect_null_mutator_alloc_region*/);
 
-  bool gc_succeeded = false;
-  bool has_pending_allocations = !g1h->_stalled_allocations.is_empty();
-
-  if (has_pending_allocations) {
-    bool success = g1h->handle_allocation_requests(false /* expect_null_mutator_alloc_region*/);
-
-    if (success) {
-    return;
+    if (alloc_succeeded) {
+      return;
     }
-    // Could not handle all pending allocations, so we reset those that were handled
-    // before attempting the collection.
-    g1h->reset_allocation_requests();
   }
 
+  // Reset any satisfied allocation requests before attempting the collection.
+  g1h->reset_allocation_requests();
+
   GCCauseSetter x(g1h, _gc_cause);
+  bool gc_succeeded = false;
   // Try a partial collection of some kind.
   _gc_succeeded = g1h->do_collection_pause_at_safepoint();
 
@@ -154,7 +154,9 @@ void VM_G1CollectForAllocation::doit() {
     return;
   }
 
-  if (has_pending_allocations) {
+  has_allocation_requests = !g1h->_stalled_allocations.is_empty();
+
+  if (has_allocation_requests) {
     g1h->satisfy_failed_allocations(&_gc_succeeded);
   } else if (g1h->should_upgrade_to_full_gc()) {
     // There has been a request to perform a GC to free some space. We have no

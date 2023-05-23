@@ -169,13 +169,27 @@ class G1CollectedHeap : public CollectedHeap {
   // Testing classes.
   friend class G1CheckRegionAttrTableClosure;
 
+  // StalledAllocReq represents a stalled allocation request in a doubly linked list.
+  //
+  // It provides functionality to track and manage an allocation request. The
+  // allocation request encapsulates information such as the size of the allocation,
+  // the NUMA (Non-Uniform Memory Access) node index, the state of the allocation,
+  // and the resulting memory address.
+  //
+  // The state of an allocation request can transition from Pending to Failed or
+  // Success. Failed state is a terminating state, indicating that the allocation
+  // request has failed. However, the Success state may be reset to Pending if an
+  // interfering safepoint observes the successful allocation before the requesting
+  // thread.
   class StalledAllocReq : public DoublyLinkedListNode {
   public:
+
     enum class AllocationState {
       Success,
       Failed,
       Pending,
     };
+
     StalledAllocReq(size_t size, uint numa_node) :
       _size(size),
       _result(nullptr),
@@ -185,26 +199,19 @@ class G1CollectedHeap : public CollectedHeap {
 
     StalledAllocReq() : StalledAllocReq(0, 0) {}
 
-    size_t size() {
-      return _size;
-    }
+    size_t size() { return _size; }
 
-    uint node_index() const {
-      return _node_index;
-    }
+    uint node_index() const { return _node_index; }
 
     void set_state(AllocationState state, HeapWord* result = nullptr) {
       _state = state;
       _result = result;
     }
 
-    AllocationState state() {
-      return _state;
-    }
+    AllocationState state() { return _state; }
 
-    HeapWord* result() {
-      return _result;
-    }
+    HeapWord* result() { return _result; }
+
   private:
     const size_t _size;
     HeapWord* _result;
@@ -213,8 +220,8 @@ class G1CollectedHeap : public CollectedHeap {
   };
 
   Mutex _alloc_request_lock;
-  DoublyLinkedList<StalledAllocReq>  _stalled_allocations;
-  DoublyLinkedList<StalledAllocReq>  _satisfied_allocations;
+  DoublyLinkedList<StalledAllocReq> _stalled_allocations;
+  DoublyLinkedList<StalledAllocReq> _satisfied_allocations;
 
 private:
   G1ServiceThread* _service_thread;
@@ -573,10 +580,9 @@ bool attempt_allocation_after_gc(size_t word_size,
                                              uint node_index,
                                              bool expect_null_mutator_alloc_region);
 
-  // Attempting to expand the heap sufficiently
-  // to support an allocation of the given "word_size".  If
-  // successful, perform the allocation and return the address of the
-  // allocated block, or else null.
+  // Attempts to expand the heap sufficiently to support an allocation of the
+  // given "word_size". If successful, perform the allocation and return the address
+  // of the allocated block, or else null.
   HeapWord* expand_and_allocate(size_t word_size);
   bool expand(size_t word_size);
 

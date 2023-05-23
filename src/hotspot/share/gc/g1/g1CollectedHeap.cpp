@@ -903,7 +903,7 @@ void G1CollectedHeap::do_full_collection(bool clear_all_soft_refs) {
 
 bool G1CollectedHeap::upgrade_to_full_collection() {
   GCCauseSetter compaction(this, GCCause::_g1_compaction_pause);
-  // Reset any allocated but yet claimed allocation requests.
+  // Reset any allocated but unclaimed allocation requests.
   reset_allocation_requests();
 
   log_info(gc, ergo)("Attempting full compaction clearing soft references");
@@ -958,10 +958,10 @@ HeapWord* G1CollectedHeap::satisfy_failed_allocation_helper(size_t word_size,
 bool G1CollectedHeap::satisfy_failed_allocations(bool* gc_succeeded) {
   assert_at_safepoint_on_vm_thread();
 
-  bool success = handle_allocation_requests(false /* expect_null_mutator_alloc_region*/);
+  bool alloc_succeeded = handle_allocation_requests(false /* expect_null_mutator_alloc_region*/);
 
-  if (success) {
-   return success;
+  if (alloc_succeeded) {
+    return alloc_succeeded;
   }
 
   // Attempt to satisfy allocation requests failed; reset the requests, execute a full-gc,
@@ -974,15 +974,14 @@ bool G1CollectedHeap::satisfy_failed_allocations(bool* gc_succeeded) {
     return false;
   }
 
-  success = handle_allocation_requests(true /* expect_null_mutator_alloc_region*/);
+  alloc_succeeded = handle_allocation_requests(true /* expect_null_mutator_alloc_region*/);
 
-  if (success) {
-   return success;
+  if (alloc_succeeded) {
+    return alloc_succeeded;
   }
 
   // Attempt to satisfy allocation requests after full-gc also failed. We reset the allocation requests
   // then execute a maximal compaction full-gc before retrying the allocations
-
   reset_allocation_requests();
 
   *gc_succeeded = do_full_collection(true /* clear_all_soft_refs */, true /* do_maximal_compaction */);;
@@ -991,10 +990,10 @@ bool G1CollectedHeap::satisfy_failed_allocations(bool* gc_succeeded) {
     return false;
   }
 
-  success = handle_allocation_requests(true /* expect_null_mutator_alloc_region*/);
+  alloc_succeeded = handle_allocation_requests(true /* expect_null_mutator_alloc_region*/);
 
-  if (success) {
-   return success;
+  if (alloc_succeeded) {
+    return alloc_succeeded;
   }
 
   // Even after maximal compaction full gc, we failed to satisfy all the pending allocation requests.
@@ -1002,8 +1001,8 @@ bool G1CollectedHeap::satisfy_failed_allocations(bool* gc_succeeded) {
   DoublyLinkedList<StalledAllocReq>::RemoveIterator iter(&_stalled_allocations);
 
   for (StalledAllocReq* alloc_req; iter.next(&alloc_req);) {
-    _satisfied_allocations.insert_last(alloc_req);
     alloc_req->set_state(StalledAllocReq::AllocationState::Failed);
+    _satisfied_allocations.insert_last(alloc_req);
   }
 
   assert(!soft_ref_policy()->should_clear_all_soft_refs(),
@@ -1039,12 +1038,12 @@ bool G1CollectedHeap::handle_allocation_requests(bool expect_null_mutator_alloc_
   assert_at_safepoint_on_vm_thread();
 
   const uint active_numa_nodes = G1NUMA::numa()->num_active_nodes();
-  bool *expect_null_alloc_regions = (bool *)alloca(active_numa_nodes * sizeof(bool));
+  bool *expect_null_alloc_regions = (bool*)alloca(active_numa_nodes * sizeof(bool));
   for (uint i = 0; i < active_numa_nodes; i++) {
     expect_null_alloc_regions[i] = expect_null_mutator_alloc_region;
   }
 
-  while(true) {
+  while (true) {
     StalledAllocReq* alloc_req = _stalled_allocations.first();
     if (alloc_req == nullptr) {
       // No more pending requests, all allocations succeeded
@@ -1054,8 +1053,7 @@ bool G1CollectedHeap::handle_allocation_requests(bool expect_null_mutator_alloc_
     HeapWord* result =
       satisfy_failed_allocation_helper(alloc_req->size(),
                                        alloc_req->node_index(),
-                                       expect_null_alloc_regions[alloc_req->node_index()]
-                                       );
+                                       expect_null_alloc_regions[alloc_req->node_index()]);
 
     if (result == nullptr) {
       // Failed to allocate, give up.
@@ -1064,11 +1062,11 @@ bool G1CollectedHeap::handle_allocation_requests(bool expect_null_mutator_alloc_
 
     expect_null_alloc_regions[alloc_req->node_index()] = false;
 
-    // Allocation succeeded, update the state and result of the allocation request
+    // Allocation succeeded, update the state and result of the allocation request.
     alloc_req->set_state(StalledAllocReq::AllocationState::Success, result);
 
     if (is_humongous(alloc_req->size())) {
-      // Calculate payload size and initialize the humongous object with a fillerArray
+      // Calculate payload size and initialize the humongous object with a fillerArray.
       size_t words = alloc_req->size();
 
       const size_t payload_size = words - CollectedHeap::filler_array_hdr_size();
@@ -1082,11 +1080,11 @@ bool G1CollectedHeap::handle_allocation_requests(bool expect_null_mutator_alloc_
       policy()->old_gen_alloc_tracker()->
           record_collection_pause_humongous_allocation(size_in_regions * HeapRegion::GrainBytes);
     } else {
-      // Fill the allocated memory with filler objects
+      // Fill the allocated memory with filler objects.
       CollectedHeap::fill_with_objects(result, alloc_req->size());
     }
 
-    // Move the allocation request from stalled to satisfied list
+    // Move the allocation request from stalled to satisfied list.
     _stalled_allocations.remove(alloc_req);
     _satisfied_allocations.insert_last(alloc_req);
   }
@@ -1109,10 +1107,6 @@ bool G1CollectedHeap::expand(size_t word_size) {
   return false;
 }
 
-// Attempting to expand the heap sufficiently
-// to support an allocation of the given "word_size". If
-// successful, perform the allocation and return the address of the
-// allocated block, or else null.
 HeapWord* G1CollectedHeap::expand_and_allocate(size_t word_size) {
   assert_at_safepoint_on_vm_thread();
 

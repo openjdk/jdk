@@ -172,7 +172,8 @@
  * @requires vm.gc.G1
  * @library /test/lib
  *
- * @run main/othervm -Xlog:gc -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xmx1g -Xms1g
+ * @run main/othervm -Xlog:gc+region=trace -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xmx1g -Xms1g
+ *      -XX:VerifyGCType=full -XX:+VerifyDuringGC -XX:+VerifyAfterGC
  *      TestAllocHumongousFragment
  */
 
