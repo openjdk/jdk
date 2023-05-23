@@ -36,6 +36,7 @@ import java.lang.ref.WeakReference;
 import sun.java2d.SurfaceData;
 import sun.java2d.pipe.Region;
 import sun.java2d.pipe.SpanIterator;
+import sun.java2d.loops.GraphicsPrimitiveMgr.GeneralPrimitives;
 
 /**
  * Blit
@@ -111,7 +112,7 @@ public class Blit extends GraphicsPrimitive
                             int width, int height);
 
     static {
-        GraphicsPrimitiveMgr.registerGeneral(new Blit(null, null, null));
+        GeneralPrimitives.register(new Blit(null, null, null));
     }
 
     protected GraphicsPrimitive makePrimitive(SurfaceType srctype,

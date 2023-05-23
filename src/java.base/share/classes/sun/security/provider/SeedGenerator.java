@@ -504,6 +504,7 @@ abstract class SeedGenerator {
 
         @SuppressWarnings("removal")
         private void init() throws IOException {
+            @SuppressWarnings("deprecation")
             final URL device = new URL(deviceName);
             try {
                 seedStream = java.security.AccessController.doPrivileged

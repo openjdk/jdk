@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,10 +30,11 @@ import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.interfaces.PBEKey;
 import javax.crypto.spec.PBEKeySpec;
+import javax.crypto.spec.SecretKeySpec;
 
 /**
  * @test
- * @bug 8041781
+ * @bug 8041781 7181214 8288050
  * @summary Verify if the SecretKeyFactory.translateKey() method works
  * @author Alexander Fomin
  * @run main PBKDF2Translate
@@ -46,7 +47,9 @@ public class PBKDF2Translate {
         "PBKDF2WithHmacSHA224",
         "PBKDF2WithHmacSHA256",
         "PBKDF2WithHmacSHA384",
-        "PBKDF2WithHmacSHA512"
+        "PBKDF2WithHmacSHA512",
+        "PBKDF2WithHmacSHA512/224",
+        "PBKDF2WithHmacSHA512/256",
     };
 
     private static final String PASS_PHRASE = "some hidden string";
@@ -68,7 +71,8 @@ public class PBKDF2Translate {
             try {
                 if (!theTest.testMyOwnSecretKey()
                         || !theTest.generateAndTranslateKey()
-                        || !theTest.translateSpoiledKey()) {
+                        || !theTest.translateSpoiledKey()
+                        || !theTest.testGeneralSecretKey()) {
                     // we don't want to set failed to false
                     failed = true;
                 }
@@ -186,6 +190,45 @@ public class PBKDF2Translate {
         }
 
         return false;
+    }
+
+    /**
+     * The test case scenario implemented in the method: - create a general
+     * secret key (does not implement PBEKey) - try calling
+     * translate and getKeySpec methods and see if the expected
+     * InvalidKeyException and InvalidKeySpecException is thrown.
+     *
+     * @return true if the expected Exception occurred; false - otherwise
+     * @throws NoSuchAlgorithmException
+     */
+    public boolean testGeneralSecretKey() throws NoSuchAlgorithmException {
+        SecretKey key = new SecretKeySpec("random#s".getBytes(), algoToTest);
+        SecretKeyFactory skf = SecretKeyFactory.getInstance(algoToTest);
+        try {
+            skf.translateKey(key);
+            System.out.println("Error: expected IKE not thrown");
+            return false;
+        } catch (InvalidKeyException e) {
+            if (e.getMessage().indexOf("PBEKey") == -1) {
+                System.out.println("Error: IKE message should " +
+                        "indicate that PBEKey is required");
+                return false;
+            }
+        }
+
+        try {
+            skf.getKeySpec(key, PBEKeySpec.class);
+            System.out.println("Error: expected IKSE not thrown");
+            return false;
+        } catch (InvalidKeySpecException e) {
+            if (e.getMessage().indexOf("PBEKey") == -1) {
+                System.out.println("Error: IKSE message should " +
+                        "indicate that PBEKey is required");
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**

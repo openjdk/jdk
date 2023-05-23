@@ -336,7 +336,7 @@ public final class NimbusStyle extends SynthStyle {
             //standard synth states. Note that the "v.stateTypes" is not
             //being set here, indicating that at runtime the state selection
             //routines should use standard synth states instead of custom
-            //states. I do need to popuplate this temp list now though, so that
+            //states. I do need to populate this temp list now though, so that
             //the remainder of this method will function as expected.
             states.add(State.Enabled);
             states.add(State.MouseOver);

@@ -1,8 +1,6 @@
 /*
  * @test /nodynamiccopyright/
  * @summary Testing record patterns against the null constant (14.30.2 Pattern Matching)
- * @compile --enable-preview -source ${jdk.version} NullsInDeconstructionPatterns.java
- * @run main/othervm --enable-preview NullsInDeconstructionPatterns
  */
 
 public class NullsInDeconstructionPatterns {

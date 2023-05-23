@@ -137,7 +137,7 @@ AwtChoice* AwtChoice::Create(jobject peer, jobject parent) {
 
             /*
              * In OWNER_DRAW, the size of the edit control part of the
-             * choice must be determinded in its creation, when the parent
+             * choice must be determined in its creation, when the parent
              * cannot get the choice's instance from its handle.  So
              * record the pair of the ID and the instance of the choice.
              */
@@ -511,7 +511,7 @@ MsgRouting AwtChoice::HandleEvent(MSG *msg, BOOL synthetic)
         return mrConsume;
     }
     // To simulate the native behavior, we close the list on WM_LBUTTONUP if
-    // WM_MOUSEMOVE has been dedected on the list since it has been dropped down.
+    // WM_MOUSEMOVE has been detected on the list since it has been dropped down.
     if (msg->message == WM_LBUTTONUP && SendMessage(CB_GETDROPPEDSTATE, 0, 0) &&
         sm_isMouseMoveInList)
     {

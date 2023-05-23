@@ -25,7 +25,10 @@
 package com.sun.hotspot.igv.filter;
 
 import com.sun.hotspot.igv.graph.Diagram;
-import javax.script.*;
+import javax.script.Bindings;
+import javax.script.ScriptContext;
+import javax.script.ScriptEngine;
+import javax.script.ScriptException;
 import org.openide.cookies.OpenCookie;
 import org.openide.util.Exceptions;
 
@@ -37,7 +40,7 @@ public class CustomFilter extends AbstractFilter {
 
     private String code;
     private String name;
-    private ScriptEngine engine;
+    private final ScriptEngine engine;
 
     public CustomFilter(String name, String code, ScriptEngine engine) {
         this.name = name;
@@ -57,31 +60,25 @@ public class CustomFilter extends AbstractFilter {
 
     public void setName(String s) {
         name = s;
-        fireChangedEvent();
     }
 
     public void setCode(String s) {
         code = s;
-        fireChangedEvent();
     }
 
     @Override
     public OpenCookie getEditor() {
-        return new OpenCookie() {
-
-            @Override
-            public void open() {
-                openInEditor();
-            }
-        };
+        return this::openInEditor;
     }
 
     public boolean openInEditor() {
         EditFilterDialog dialog = new EditFilterDialog(CustomFilter.this);
         dialog.setVisible(true);
-        boolean result = dialog.wasAccepted();
-        this.getChangedEvent().fire();
-        return result;
+        boolean accepted = dialog.wasAccepted();
+        if (accepted) {
+            getChangedEvent().fire();
+        }
+        return accepted;
     }
 
     @Override

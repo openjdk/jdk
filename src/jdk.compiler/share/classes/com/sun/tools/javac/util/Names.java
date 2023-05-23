@@ -69,6 +69,7 @@ public class Names {
     public final Name transitive;
     public final Name uses;
     public final Name open;
+    public final Name underscore;
     public final Name when;
     public final Name with;
     public final Name yield;
@@ -92,9 +93,11 @@ public class Names {
     public final Name hasNext;
     public final Name hashCode;
     public final Name init;
+    public final Name invoke;
     public final Name iterator;
     public final Name length;
     public final Name next;
+    public final Name of;
     public final Name ordinal;
     public final Name provider;
     public final Name serialVersionUID;
@@ -221,9 +224,19 @@ public class Names {
     // pattern switches
     public final Name typeSwitch;
     public final Name enumSwitch;
+    public final Name enumConstant;
+
+    // templated string
+    public final Name process;
+    public final Name STR;
+    public final Name RAW;
+    public final Name newStringTemplate;
+    public final Name newLargeStringTemplate;
+    public final Name processStringTemplate;
 
     public final Name.Table table;
 
+    @SuppressWarnings("this-escape")
     public Names(Context context) {
         Options options = Options.instance(context);
         table = createTable(options);
@@ -250,6 +263,7 @@ public class Names {
         transitive = fromString("transitive");
         uses = fromString("uses");
         open = fromString("open");
+        underscore = fromString("_");
         when = fromString("when");
         with = fromString("with");
         yield = fromString("yield");
@@ -273,9 +287,11 @@ public class Names {
         hasNext = fromString("hasNext");
         hashCode = fromString("hashCode");
         init = fromString("<init>");
+        invoke = fromString("invoke");
         iterator = fromString("iterator");
         length = fromString("length");
         next = fromString("next");
+        of = fromString("of");
         ordinal = fromString("ordinal");
         provider = fromString("provider");
         serialVersionUID = fromString("serialVersionUID");
@@ -395,9 +411,18 @@ public class Names {
         permits = fromString("permits");
         sealed = fromString("sealed");
 
+        // templated string
+        process = fromString("process");
+        STR = fromString("STR");
+        RAW = fromString("RAW");
+        newStringTemplate = fromString("newStringTemplate");
+        newLargeStringTemplate = fromString("newLargeStringTemplate");
+        processStringTemplate = fromString("processStringTemplate");
+
         // pattern switches
         typeSwitch = fromString("typeSwitch");
         enumSwitch = fromString("enumSwitch");
+        enumConstant = fromString("enumConstant");
     }
 
     protected Name.Table createTable(Options options) {
@@ -420,11 +445,19 @@ public class Names {
         return table.fromString(s);
     }
 
-    public Name fromUtf(byte[] cs) {
+    public Name fromUtf(byte[] cs) throws InvalidUtfException {
         return table.fromUtf(cs);
     }
 
-    public Name fromUtf(byte[] cs, int start, int len) {
-        return table.fromUtf(cs, start, len);
+    public Name fromUtf(byte[] cs, int start, int len, Convert.Validation validation) throws InvalidUtfException {
+        return table.fromUtf(cs, start, len, validation);
+    }
+
+    public Name fromUtfLax(byte[] cs, int start, int len) {
+        try {
+            return table.fromUtf(cs, start, len, Convert.Validation.NONE);
+        } catch (InvalidUtfException e) {
+            throw new AssertionError(e);
+        }
     }
 }

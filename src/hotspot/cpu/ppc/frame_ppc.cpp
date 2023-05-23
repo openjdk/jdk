@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2022 SAP SE. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,9 @@ void RegisterMap::check_location_valid() {
 #endif // ASSERT
 
 bool frame::safe_for_sender(JavaThread *thread) {
+  if (is_heap_frame()) {
+    return true;
+  }
   address sp = (address)_sp;
   address fp = (address)_fp;
   address unextended_sp = (address)_unextended_sp;
@@ -79,7 +82,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
   // construct the sender and do some validation of it. This goes a long way
   // toward eliminating issues when we get in frame construction code
 
-  if (_cb != NULL ){
+  if (_cb != nullptr) {
 
     // First check if the frame is complete and the test is reliable.
     // Unfortunately we can only check frame completeness for runtime stubs
@@ -108,19 +111,26 @@ bool frame::safe_for_sender(JavaThread *thread) {
     }
 
     // At this point, there still is a chance that fp_safe is false.
-    // In particular, (fp == NULL) might be true. So let's check and
+    // In particular, fp might be null. So let's check and
     // bail out before we actually dereference from fp.
     if (!fp_safe) {
       return false;
     }
 
-    abi_minframe* sender_abi = (abi_minframe*) fp;
+    common_abi* sender_abi = (common_abi*) fp;
     intptr_t* sender_sp = (intptr_t*) fp;
     address   sender_pc = (address) sender_abi->lr;;
 
+    if (Continuation::is_return_barrier_entry(sender_pc)) {
+      // If our sender_pc is the return barrier, then our "real" sender is the continuation entry
+      frame s = Continuation::continuation_bottom_sender(thread, *this, sender_sp);
+      sender_sp = s.sp();
+      sender_pc = s.pc();
+    }
+
     // We must always be able to find a recognizable pc.
     CodeBlob* sender_blob = CodeCache::find_blob(sender_pc);
-    if (sender_blob == NULL) {
+    if (sender_blob == nullptr) {
       return false;
     }
 
@@ -175,12 +185,8 @@ bool frame::safe_for_sender(JavaThread *thread) {
   return true;
 }
 
-bool frame::is_interpreted_frame() const  {
-  return Interpreter::contains(pc());
-}
-
 frame frame::sender_for_entry_frame(RegisterMap *map) const {
-  assert(map != NULL, "map must be set");
+  assert(map != nullptr, "map must be set");
   // Java frame called from C; skip all C frames and return top C
   // frame of that chunk as the sender.
   JavaFrameAnchor* jfa = entry_frame_call_wrapper()->anchor();
@@ -189,7 +195,7 @@ frame frame::sender_for_entry_frame(RegisterMap *map) const {
   map->clear();
   assert(map->include_argument_oops(), "should be set by clear");
 
-  if (jfa->last_Java_pc() != NULL) {
+  if (jfa->last_Java_pc() != nullptr) {
     frame fr(jfa->last_Java_sp(), jfa->last_Java_pc());
     return fr;
   }
@@ -210,8 +216,33 @@ bool frame::upcall_stub_frame_is_first() const {
 }
 
 frame frame::sender_for_interpreter_frame(RegisterMap *map) const {
-  // Pass callers initial_caller_sp as unextended_sp.
-  return frame(sender_sp(), sender_pc(), (intptr_t*)get_ijava_state()->sender_sp);
+  // This is the sp before any possible extension (adapter/locals).
+  intptr_t* unextended_sp = interpreter_frame_sender_sp();
+  address sender_pc = this->sender_pc();
+  if (Continuation::is_return_barrier_entry(sender_pc)) {
+    if (map->walk_cont()) { // about to walk into an h-stack
+      return Continuation::top_frame(*this, map);
+    } else {
+      return Continuation::continuation_bottom_sender(map->thread(), *this, sender_sp());
+    }
+  }
+
+  return frame(sender_sp(), sender_pc, unextended_sp);
+}
+
+// locals
+
+void frame::interpreter_frame_set_locals(intptr_t* locs)  {
+  assert(is_interpreted_frame(), "interpreted frame expected");
+  // set relativized locals
+  *addr_at(ijava_idx(locals)) = (intptr_t) (locs - fp());
+}
+
+// sender_sp
+
+intptr_t* frame::interpreter_frame_sender_sp() const {
+  assert(is_interpreted_frame(), "interpreted frame expected");
+  return (intptr_t*)at(ijava_idx(sender_sp));
 }
 
 void frame::patch_pc(Thread* thread, address pc) {
@@ -231,7 +262,7 @@ void frame::patch_pc(Thread* thread, address pc) {
   own_abi()->lr = (uint64_t)pc;
   _pc = pc; // must be set before call to get_deopt_original_pc
   address original_pc = CompiledMethod::get_deopt_original_pc(this);
-  if (original_pc != NULL) {
+  if (original_pc != nullptr) {
     assert(original_pc == old_pc, "expected original PC to be stored before patching");
     _deopt_state = is_deoptimized;
     _pc = original_pc;
@@ -260,7 +291,7 @@ bool frame::is_interpreted_frame_valid(JavaThread* thread) const {
   if (sp() == 0 || (intptr_t(sp()) & (wordSize-1)) != 0) {
     return false;
   }
-  int min_frame_slots = (abi_minframe_size + ijava_state_size) / sizeof(intptr_t);
+  int min_frame_slots = (parent_ijava_frame_abi_size + ijava_state_size) / sizeof(intptr_t);
   if (fp() - min_frame_slots < sp()) {
     return false;
   }
@@ -301,7 +332,7 @@ bool frame::is_interpreted_frame_valid(JavaThread* thread) const {
 
   // validate locals
 
-  address locals =  (address) *interpreter_frame_locals_addr();
+  address locals =  (address)interpreter_frame_locals();
   return thread->is_in_stack_range_incl(locals, (address)fp());
 }
 
@@ -379,12 +410,23 @@ void frame::describe_pd(FrameValues& values, int frame_no) {
       DESCRIBE_ADDRESS(lresult);
       DESCRIBE_ADDRESS(fresult);
   }
+
+  if (is_java_frame() || Continuation::is_continuation_enterSpecial(*this)) {
+    intptr_t* ret_pc_loc = (intptr_t*)&own_abi()->lr;
+    address ret_pc = *(address*)ret_pc_loc;
+    values.describe(frame_no, ret_pc_loc,
+      Continuation::is_return_barrier_entry(ret_pc) ? "return address (return barrier)" : "return address");
+  }
 }
 #endif
 
 intptr_t *frame::initial_deoptimization_info() {
-  // unused... but returns fp() to minimize changes introduced by 7087445
-  return fp();
+  // `this` is the caller of the deoptee. We want to trim it, if compiled, to
+  // unextended_sp. This is necessary if the deoptee frame is the bottom frame
+  // of a continuation on stack (more frames could be in a StackChunk) as it
+  // will pop its stack args. Otherwise the recursion in
+  // FreezeBase::recurse_freeze_java_frame() would not stop at the bottom frame.
+  return is_compiled_frame() ? unextended_sp() : sp();
 }
 
 #ifndef PRODUCT
@@ -395,7 +437,11 @@ frame::frame(void* sp, void* fp, void* pc) : frame((intptr_t*)sp, (address)pc) {
 
 // Pointer beyond the "oldest/deepest" BasicObjectLock on stack.
 BasicObjectLock* frame::interpreter_frame_monitor_end() const {
-  return (BasicObjectLock*) get_ijava_state()->monitors;
+  BasicObjectLock* result = (BasicObjectLock*) at(ijava_idx(monitors));
+  // make sure the pointer points inside the frame
+  assert(sp() <= (intptr_t*) result, "monitor end should be above the stack pointer");
+  assert((intptr_t*) result < fp(),  "monitor end should be strictly below the frame pointer: result: " INTPTR_FORMAT " fp: " INTPTR_FORMAT, p2i(result), p2i(fp()));
+  return result;
 }
 
 intptr_t* frame::interpreter_frame_tos_at(jint offset) const {

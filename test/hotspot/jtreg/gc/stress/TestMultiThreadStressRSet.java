@@ -270,6 +270,9 @@ public class TestMultiThreadStressRSet {
      */
     private static class Shifter extends Thread {
 
+        // Only one thread at a time can be controlling concurrent GC.
+        static final Object concGCMonitor = new Object();
+        static Shifter concGCController = null;
         final TestMultiThreadStressRSet boss;
         final int sleepTime;
         final int shift;
@@ -292,9 +295,28 @@ public class TestMultiThreadStressRSet {
                             objs[j] = null;
                         }
                     }
-                    if (!WB.g1InConcurrentMark()) {
+                    // If no currently controlling thread and no concurrent GC
+                    // in progress, then claim control.
+                    synchronized (concGCMonitor) {
+                        if ((concGCController == null) && !WB.g1InConcurrentMark()) {
+                            concGCController = this;
+                        }
+                    }
+                    if (concGCController == this) {
+                        // If we've claimed control then take control, start a
+                        // concurrent GC, and release control and the claim,
+                        // letting the GC run to completion while we continue
+                        // doing work.
                         System.out.println("%% start CMC");
-                        WB.g1StartConcMarkCycle();
+                        WB.concurrentGCAcquireControl();
+                        try {
+                            WB.concurrentGCRunTo(WB.AFTER_MARKING_STARTED, false);
+                        } finally {
+                            WB.concurrentGCReleaseControl();
+                            synchronized (concGCMonitor) {
+                                concGCController = null;
+                            }
+                        }
                     } else {
                         System.out.println("%% CMC is already in progress");
                     }

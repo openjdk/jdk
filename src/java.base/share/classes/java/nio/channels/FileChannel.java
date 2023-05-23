@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,8 @@
 package java.nio.channels;
 
 import java.io.IOException;
+import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.spi.AbstractInterruptibleChannel;
@@ -122,7 +122,8 @@ import jdk.internal.javac.PreviewFeature;
  * the originating object, and vice versa. Changing the file's length via the
  * file channel will change the length seen via the originating object, and vice
  * versa.  Changing the file's content by writing bytes will change the content
- * seen by the originating object, and vice versa.
+ * seen by the originating object, and vice versa. Closing the channel will
+ * close the originating object.
  *
  * <a id="open-mode"></a> <p> At various points this class specifies that an
  * instance that is "open for reading," "open for writing," or "open for
@@ -146,7 +147,9 @@ import jdk.internal.javac.PreviewFeature;
  * operation first advances the position to the end of the file and then writes
  * the requested data.  Whether the advancement of the position and the writing
  * of the data are done in a single atomic operation is system-dependent and
- * therefore unspecified.
+ * therefore unspecified.  In this mode the behavior of the method to
+ * {@linkplain #write(ByteBuffer,long) write at a given position} is also
+ * system-dependent.
  *
  * @see java.io.FileInputStream#getChannel()
  * @see java.io.FileOutputStream#getChannel()
@@ -193,7 +196,9 @@ public abstract class FileChannel
      *     the position to the end of the file and then writes the requested
      *     data. Whether the advancement of the position and the writing of the
      *     data are done in a single atomic operation is system-dependent and
-     *     therefore unspecified. This option may not be used in conjunction
+     *     therefore unspecified. The effect of {@linkplain
+     *     #write(ByteBuffer,long) writing at a given position} with this option
+     *     present is unspecified. This option may not be used in conjunction
      *     with the {@code READ} or {@code TRUNCATE_EXISTING} options. </td>
      * </tr>
      * <tr>
@@ -312,9 +317,10 @@ public abstract class FileChannel
      *
      * <p> An invocation of this method behaves in exactly the same way as the
      * invocation
-     * <pre>
-     *     fc.{@link #open(Path,Set,FileAttribute[]) open}(file, opts, new FileAttribute&lt;?&gt;[0]);
-     * </pre>
+     * {@snippet lang=java :
+     *     // @link substring="open" target="#open(Path,Set,FileAttribute[])" :
+     *     fc.open(file, opts, new FileAttribute<?>[0]);
+     * }
      * where {@code opts} is a set of the options specified in the {@code
      * options} array.
      *
@@ -372,6 +378,11 @@ public abstract class FileChannel
      * then the file position is updated with the number of bytes actually
      * read.  Otherwise this method behaves exactly as specified in the {@link
      * ReadableByteChannel} interface. </p>
+     *
+     * @throws  ClosedChannelException      {@inheritDoc}
+     * @throws  AsynchronousCloseException  {@inheritDoc}
+     * @throws  ClosedByInterruptException  {@inheritDoc}
+     * @throws  NonReadableChannelException {@inheritDoc}
      */
     public abstract int read(ByteBuffer dst) throws IOException;
 
@@ -383,6 +394,11 @@ public abstract class FileChannel
      * then the file position is updated with the number of bytes actually
      * read.  Otherwise this method behaves exactly as specified in the {@link
      * ScatteringByteChannel} interface.  </p>
+     *
+     * @throws  ClosedChannelException      {@inheritDoc}
+     * @throws  AsynchronousCloseException  {@inheritDoc}
+     * @throws  ClosedByInterruptException  {@inheritDoc}
+     * @throws  NonReadableChannelException {@inheritDoc}
      */
     public abstract long read(ByteBuffer[] dsts, int offset, int length)
         throws IOException;
@@ -394,6 +410,11 @@ public abstract class FileChannel
      * then the file position is updated with the number of bytes actually
      * read.  Otherwise this method behaves exactly as specified in the {@link
      * ScatteringByteChannel} interface.  </p>
+     *
+     * @throws  ClosedChannelException      {@inheritDoc}
+     * @throws  AsynchronousCloseException  {@inheritDoc}
+     * @throws  ClosedByInterruptException  {@inheritDoc}
+     * @throws  NonReadableChannelException {@inheritDoc}
      */
     public final long read(ByteBuffer[] dsts) throws IOException {
         return read(dsts, 0, dsts.length);
@@ -410,8 +431,10 @@ public abstract class FileChannel
      * behaves exactly as specified by the {@link WritableByteChannel}
      * interface. </p>
      *
-     * @throws  NonWritableChannelException
-     *          If this channel was not opened for writing
+     * @throws  ClosedChannelException      {@inheritDoc}
+     * @throws  AsynchronousCloseException  {@inheritDoc}
+     * @throws  ClosedByInterruptException  {@inheritDoc}
+     * @throws  NonWritableChannelException {@inheritDoc}
      */
     public abstract int write(ByteBuffer src) throws IOException;
 
@@ -427,8 +450,10 @@ public abstract class FileChannel
      * behaves exactly as specified in the {@link GatheringByteChannel}
      * interface.  </p>
      *
-     * @throws  NonWritableChannelException
-     *          If this channel was not opened for writing
+     * @throws  ClosedChannelException      {@inheritDoc}
+     * @throws  AsynchronousCloseException  {@inheritDoc}
+     * @throws  ClosedByInterruptException  {@inheritDoc}
+     * @throws  NonWritableChannelException {@inheritDoc}
      */
     public abstract long write(ByteBuffer[] srcs, int offset, int length)
         throws IOException;
@@ -444,8 +469,10 @@ public abstract class FileChannel
      * behaves exactly as specified in the {@link GatheringByteChannel}
      * interface.  </p>
      *
-     * @throws  NonWritableChannelException
-     *          If this channel was not opened for writing
+     * @throws  ClosedChannelException      {@inheritDoc}
+     * @throws  AsynchronousCloseException  {@inheritDoc}
+     * @throws  ClosedByInterruptException  {@inheritDoc}
+     * @throws  NonWritableChannelException {@inheritDoc}
      */
     public final long write(ByteBuffer[] srcs) throws IOException {
         return write(srcs, 0, srcs.length);
@@ -608,10 +635,10 @@ public abstract class FileChannel
      * bytes free in its output buffer.
      *
      * <p> This method does not modify this channel's position.  If the given
-     * position is greater than the file's current size then no bytes are
-     * transferred.  If the target channel has a position then bytes are
-     * written starting at that position and then the position is incremented
-     * by the number of bytes written.
+     * position is greater than or equal to the file's current size then no
+     * bytes are transferred.  If the target channel has a position then bytes
+     * are written starting at that position and then the position
+     * is incremented by the number of bytes written.
      *
      * <p> This method is potentially much more efficient than a simple loop
      * that reads from this channel and writes to the target channel.  Many
@@ -676,8 +703,10 @@ public abstract class FileChannel
      * source has reached end-of-stream.
      *
      * <p> This method does not modify this channel's position.  If the given
-     * position is greater than the file's current size then no bytes are
-     * transferred.  If the source channel has a position then bytes are read
+     * position is greater than or equal to the file's current size then the
+     * file will be grown to accommodate the new bytes; the values of any bytes
+     * between the previous end-of-file and the newly-written bytes are
+     * unspecified.  If the source channel has a position then bytes are read
      * starting at that position and then the position is incremented by the
      * number of bytes read.
      *
@@ -690,7 +719,7 @@ public abstract class FileChannel
      *         The source channel
      *
      * @param  position
-     *         The position within the file at which the transfer is to begin;
+     *         The file position at which the transfer is to begin;
      *         must be non-negative
      *
      * @param  count
@@ -736,7 +765,8 @@ public abstract class FileChannel
      * #read(ByteBuffer)} method, except that bytes are read starting at the
      * given file position rather than at the channel's current position.  This
      * method does not modify this channel's position.  If the given position
-     * is greater than the file's current size then no bytes are read.  </p>
+     * is greater than or equal to the file's current size then no bytes are
+     * read.  </p>
      *
      * @param  dst
      *         The buffer into which bytes are to be transferred
@@ -781,9 +811,13 @@ public abstract class FileChannel
      * #write(ByteBuffer)} method, except that bytes are written starting at
      * the given file position rather than at the channel's current position.
      * This method does not modify this channel's position.  If the given
-     * position is greater than the file's current size then the file will be
-     * grown to accommodate the new bytes; the values of any bytes between the
-     * previous end-of-file and the newly-written bytes are unspecified.  </p>
+     * position is greater than or equal to the file's current size then the
+     * file will be grown to accommodate the new bytes; the values of any bytes
+     * between the previous end-of-file and the newly-written bytes are
+     * unspecified.  </p>
+     *
+     * <p> If the file is open in <a href="#append-mode">append mode</a>, then
+     * the effect of invoking this method is unspecified.
      *
      * @param  src
      *         The buffer from which bytes are to be transferred
@@ -972,8 +1006,15 @@ public abstract class FileChannel
 
     /**
      * Maps a region of this channel's file into a new mapped memory segment,
-     * with the given offset, size and memory session.
-     *
+     * with the given offset, size and arena.
+     * The {@linkplain MemorySegment#address() address} of the returned memory
+     * segment is the starting address of the mapped off-heap region backing
+     * the segment.
+     * <p>
+     * The lifetime of the returned segment is controlled by the provided arena.
+     * For instance, if the provided arena is a closeable arena,
+     * the returned segment will be unmapped when the provided closeable arena
+     * is {@linkplain Arena#close() closed}.
      * <p> If the specified mapping mode is
      * {@linkplain FileChannel.MapMode#READ_ONLY READ_ONLY}, the resulting
      * segment will be read-only (see {@link MemorySegment#isReadOnly()}).
@@ -1014,8 +1055,8 @@ public abstract class FileChannel
      *          The size (in bytes) of the mapped memory backing the memory
      *          segment.
      *
-     * @param   session
-     *          The segment memory session.
+     * @param   arena
+     *          The segment arena.
      *
      * @return  A new mapped memory segment.
      *
@@ -1024,13 +1065,11 @@ public abstract class FileChannel
      *          {@code offset + size} overflows the range of {@code long}.
      *
      * @throws  IllegalStateException
-     *          If the {@code session} is not
-     *          {@linkplain MemorySession#isAlive() alive}.
+     *          If {@code arena.isAlive() == false}.
      *
      * @throws  WrongThreadException
-     *          If this method is called from a thread other than the thread
-     *          {@linkplain MemorySession#ownerThread() owning} the
-     *          {@code session}.
+     *          If {@code arena} is a confined scoped arena, and this method is called from a
+     *          thread {@code T}, other than the scoped arena's owner thread.
      *
      * @throws  NonReadableChannelException
      *          If the {@code mode} is {@link MapMode#READ_ONLY READ_ONLY} or
@@ -1052,7 +1091,7 @@ public abstract class FileChannel
      * @since   19
      */
     @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
-    public MemorySegment map(MapMode mode, long offset, long size, MemorySession session)
+    public MemorySegment map(MapMode mode, long offset, long size, Arena arena)
         throws IOException
     {
         throw new UnsupportedOperationException();
@@ -1163,8 +1202,10 @@ public abstract class FileChannel
      * <p> An invocation of this method of the form {@code fc.lock()} behaves
      * in exactly the same way as the invocation
      *
-     * <pre>
-     *     fc.{@link #lock(long,long,boolean) lock}(0L, Long.MAX_VALUE, false) </pre>
+     * {@snippet lang=java :
+     *     // @link substring="lock" target="#lock(long,long,boolean)" :
+     *     fc.lock(0L, Long.MAX_VALUE, false)
+     * }
      *
      * @return  A lock object representing the newly-acquired lock
      *
@@ -1287,8 +1328,10 @@ public abstract class FileChannel
      * <p> An invocation of this method of the form {@code fc.tryLock()}
      * behaves in exactly the same way as the invocation
      *
-     * <pre>
-     *     fc.{@link #tryLock(long,long,boolean) tryLock}(0L, Long.MAX_VALUE, false) </pre>
+     * {@snippet lang=java :
+     *     // @link substring="tryLock" target="#tryLock(long,long,boolean)" :
+     *     fc.tryLock(0L, Long.MAX_VALUE, false)
+     * }
      *
      * @return  A lock object representing the newly-acquired lock,
      *          or {@code null} if the lock could not be acquired

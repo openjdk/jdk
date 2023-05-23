@@ -1175,7 +1175,7 @@ MsgRouting AwtFrame::WmMeasureItem(UINT ctrlId, MEASUREITEMSTRUCT& measureInfo)
 MsgRouting AwtFrame::WmGetIcon(WPARAM iconType, LRESULT& retVal)
 {
     //Workaround windows bug:
-    //when reseting from specific icon to class icon
+    //when resetting from specific icon to class icon
     //taskbar is not updated
     if (iconType <= 2 /*ICON_SMALL2*/) {
         retVal = (LRESULT)GetEffectiveIcon(iconType);
@@ -1188,7 +1188,7 @@ MsgRouting AwtFrame::WmGetIcon(WPARAM iconType, LRESULT& retVal)
 void AwtFrame::DoUpdateIcon()
 {
     //Workaround windows bug:
-    //when reseting from specific icon to class icon
+    //when resetting from specific icon to class icon
     //taskbar is not updated
     HICON hIcon = GetEffectiveIcon(ICON_BIG);
     HICON hIconSm = GetEffectiveIcon(ICON_SMALL);
@@ -1783,7 +1783,7 @@ Java_sun_awt_windows_WFramePeer_setMenuBar0(JNIEnv *env, jobject self,
     smbs->menubar = env->NewGlobalRef(mbPeer);
 
     AwtToolkit::GetInstance().SyncCall(AwtFrame::_SetMenuBar, smbs);
-    // global refs ans smbs are deleted in _SetMenuBar()
+    // global refs and smbs are deleted in _SetMenuBar()
 
     CATCH_BAD_ALLOC;
 }

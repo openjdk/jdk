@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,6 +60,11 @@ public interface SeekableByteChannel
      * then the position is updated with the number of bytes actually read.
      * Otherwise this method behaves exactly as specified in the {@link
      * ReadableByteChannel} interface.
+     *
+     * @throws  ClosedChannelException      {@inheritDoc}
+     * @throws  AsynchronousCloseException  {@inheritDoc}
+     * @throws  ClosedByInterruptException  {@inheritDoc}
+     * @throws  NonReadableChannelException {@inheritDoc}
      */
     @Override
     int read(ByteBuffer dst) throws IOException;
@@ -75,6 +80,11 @@ public interface SeekableByteChannel
      * written bytes, and then the position is updated with the number of bytes
      * actually written. Otherwise this method behaves exactly as specified by
      * the {@link WritableByteChannel} interface.
+     *
+     * @throws  ClosedChannelException      {@inheritDoc}
+     * @throws  AsynchronousCloseException  {@inheritDoc}
+     * @throws  ClosedByInterruptException  {@inheritDoc}
+     * @throws  NonWritableChannelException {@inheritDoc}
      */
     @Override
     int write(ByteBuffer src) throws IOException;

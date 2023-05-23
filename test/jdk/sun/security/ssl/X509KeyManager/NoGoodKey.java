@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@ public class NoGoodKey {
         Vector<ObjectIdentifier> xku = new Vector<>(1);
         xku.add(ObjectIdentifier.of(KnownOIDs.KP_TimeStamping));
         var ext = new ExtendedKeyUsageExtension(xku);
-        exts.set(ext.getId(), ext);
+        exts.setExtension(ext.getId(), ext);
 
         KeyStore ks = KeyStore.getInstance("pkcs12");
         char[] pass = "password".toCharArray();

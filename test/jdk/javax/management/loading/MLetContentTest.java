@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ import java.net.*;
 
 import javax.management.loading.*;
 
+@SuppressWarnings("removal")
 public class MLetContentTest {
     public static void main(String[] args) throws Exception {
         System.out.println(">>> General test for the public class MLetContent.");

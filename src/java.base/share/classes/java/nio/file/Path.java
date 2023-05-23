@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.net.URI;
 import java.nio.file.spi.FileSystemProvider;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 
 /**
  * An object that may be used to locate a file in a file system. It will
@@ -72,10 +73,10 @@ import java.util.NoSuchElementException;
  * java.io.BufferedReader} to read text from a file "{@code access.log}". The
  * file is located in a directory "{@code logs}" relative to the current working
  * directory and is UTF-8 encoded.
- * <pre>
+ * {@snippet lang=java :
  *     Path path = FileSystems.getDefault().getPath("logs", "access.log");
  *     BufferedReader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8);
- * </pre>
+ * }
  *
  * <a id="interop"></a><h2>Interoperability</h2>
  * <p> Paths associated with the default {@link
@@ -124,10 +125,10 @@ public interface Path
      * utility of the calling code. Hence it should not be used in library code
      * intended for flexible reuse. A more flexible alternative is to use an
      * existing {@code Path} instance as an anchor, such as:
-     * <pre>{@code
+     * {@snippet lang=java :
      *     Path dir = ...
      *     Path path = dir.resolve("file");
-     * }</pre>
+     * }
      *
      * @param   first
      *          the path string or initial part of the path string
@@ -265,9 +266,9 @@ public interface Path
      *
      * <p> If this path has more than one element, and no root component, then
      * this method is equivalent to evaluating the expression:
-     * <blockquote><pre>
-     * subpath(0,&nbsp;getNameCount()-1);
-     * </pre></blockquote>
+     * {@snippet lang=java :
+     *     subpath(0, getNameCount()-1);
+     * }
      *
      * @return  a path representing the path's parent
      */
@@ -362,9 +363,9 @@ public interface Path
      *
      * @implSpec
      * The default implementation is equivalent for this path to:
-     * <pre>{@code
+     * {@snippet lang=java :
      *     startsWith(getFileSystem().getPath(other));
-     * }</pre>
+     * }
      *
      * @param   other
      *          the given path string
@@ -418,9 +419,9 @@ public interface Path
      *
      * @implSpec
      * The default implementation is equivalent for this path to:
-     * <pre>{@code
+     * {@snippet lang=java :
      *     endsWith(getFileSystem().getPath(other));
-     * }</pre>
+     * }
      *
      * @param   other
      *          the given path string
@@ -497,9 +498,9 @@ public interface Path
      *
      * @implSpec
      * The default implementation is equivalent for this path to:
-     * <pre>{@code
+     * {@snippet lang=java :
      *     resolve(getFileSystem().getPath(other));
-     * }</pre>
+     * }
      *
      * @param   other
      *          the path string to resolve against this path
@@ -529,9 +530,9 @@ public interface Path
      *
      * @implSpec
      * The default implementation is equivalent for this path to:
-     * <pre>{@code
+     * {@snippet lang=java :
      *     (getParent() == null) ? other : getParent().resolve(other);
-     * }</pre>
+     * }
      * unless {@code other == null}, in which case a
      * {@code NullPointerException} is thrown.
      *
@@ -556,9 +557,9 @@ public interface Path
      *
      * @implSpec
      * The default implementation is equivalent for this path to:
-     * <pre>{@code
+     * {@snippet lang=java :
      *     resolveSibling(getFileSystem().getPath(other));
-     * }</pre>
+     * }
      *
      * @param   other
      *          the path string to resolve against this path's parent
@@ -752,9 +753,9 @@ public interface Path
      *
      * @implSpec
      * The default implementation is equivalent for this path to:
-     * <pre>{@code
+     * {@snippet lang=java :
      *     new File(toString());
-     * }</pre>
+     * }
      * if the {@code FileSystem} which created this {@code Path} is the default
      * file system; otherwise an {@code UnsupportedOperationException} is
      * thrown.
@@ -844,25 +845,26 @@ public interface Path
      *
      * <p> An invocation of this method behaves in exactly the same way as the
      * invocation
-     * <pre>
-     *     watchable.{@link #register(WatchService,WatchEvent.Kind[],WatchEvent.Modifier[]) register}(watcher, events, new WatchEvent.Modifier[0]);
-     * </pre>
+     * {@snippet lang=java :
+     *     // @link substring="register" target="Watchable#register" :
+     *     register(watcher, events, new WatchEvent.Modifier[0]);
+     * }
      *
      * <p> <b>Usage Example:</b>
      * Suppose we wish to register a directory for entry create, delete, and modify
      * events:
-     * <pre>
+     * {@snippet lang=java :
      *     Path dir = ...
      *     WatchService watcher = ...
      *
      *     WatchKey key = dir.register(watcher, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);
-     * </pre>
+     * }
      *
      * @implSpec
      * The default implementation is equivalent for this path to:
-     * <pre>{@code
+     * {@snippet lang=java :
      *     register(watcher, events, new WatchEvent.Modifier[0]);
-     * }</pre>
+     * }
      *
      * @param   watcher
      *          The watch service to which this object is to be registered

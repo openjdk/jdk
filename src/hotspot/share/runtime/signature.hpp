@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -96,14 +96,6 @@ class Signature : AllStatic {
 
   // Returns T_ILLEGAL for an illegal signature char.
   static BasicType basic_type(int ch);
-
-  // Assuming it is either a class name or signature,
-  // determine if it in fact cannot be a class name.
-  // This means it either starts with '[' or ends with ';'
-  static bool not_class_name(const Symbol* signature) {
-    return (signature->starts_with(JVM_SIGNATURE_ARRAY) ||
-            signature->ends_with(JVM_SIGNATURE_ENDCLASS));
-  }
 
   // Assuming it is either a class name or signature,
   // determine if it in fact is an array descriptor.
@@ -230,10 +222,6 @@ class SignatureIterator: public ResourceObj {
   template<typename T> inline void do_parameters_on(T* callback); // iterates over parameters only
   BasicType return_type();  // computes the value on the fly if necessary
 
-  static bool fp_is_static(fingerprint_t fingerprint) {
-    assert(fp_is_valid(fingerprint), "invalid fingerprint");
-    return fingerprint & fp_is_static_bit;
-  }
   static BasicType fp_return_type(fingerprint_t fingerprint) {
     assert(fp_is_valid(fingerprint), "invalid fingerprint");
     return (BasicType) ((fingerprint >> fp_static_feature_size) & fp_result_feature_mask);
@@ -371,7 +359,7 @@ class Fingerprinter: public SignatureIterator {
   }
   Fingerprinter(Symbol* signature, bool is_static)
     : SignatureIterator(signature),
-      _method(NULL) {
+      _method(nullptr) {
     compute_fingerprint_and_return_type(is_static);
   }
 };
@@ -509,7 +497,6 @@ class SignatureStream : public StackObj {
 
   bool is_reference() const { return is_reference_type(_type); }
   bool is_array() const     { return _type == T_ARRAY; }
-  bool is_primitive() const { return is_java_primitive(_type); }
   BasicType type() const    { return _type; }
 
   const u1* raw_bytes() const  { return _signature->bytes() + _begin; }
@@ -588,7 +575,7 @@ class ResolvingSignatureStream : public SignatureStream {
 
   void initialize_load_origin(Klass* load_origin) {
     _load_origin = load_origin;
-    _handles_cached = (load_origin == NULL);
+    _handles_cached = (load_origin == nullptr);
   }
   void need_handles() {
     if (!_handles_cached) {
@@ -602,13 +589,7 @@ class ResolvingSignatureStream : public SignatureStream {
   ResolvingSignatureStream(Symbol* signature, Klass* load_origin, bool is_method = true);
   ResolvingSignatureStream(Symbol* signature, Handle class_loader, Handle protection_domain, bool is_method = true);
   ResolvingSignatureStream(const Method* method);
-  ResolvingSignatureStream(fieldDescriptor& field);
 
-  Klass* load_origin()       { return _load_origin; }
-  Handle class_loader()      { need_handles(); return _class_loader; }
-  Handle protection_domain() { need_handles(); return _protection_domain; }
-
-  Klass* as_klass_if_loaded(TRAPS);
   Klass* as_klass(FailureMode failure_mode, TRAPS) {
     need_handles();
     return SignatureStream::as_klass(_class_loader, _protection_domain,

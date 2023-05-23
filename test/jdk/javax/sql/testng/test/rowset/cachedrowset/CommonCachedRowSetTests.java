@@ -1401,7 +1401,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
         rs.updateString(2, coffee);
         rs.updateInt(5, sales);
         // MetaData should match
-        try ( // Get the original original RowSet and validate that the changes
+        try ( // Get the original RowSet and validate that the changes
                 // are only made to the current, not the original
                 ResultSet rs1 = rs.getOriginal()) {
             // MetaData should match
@@ -1444,7 +1444,7 @@ public abstract class CommonCachedRowSetTests extends CommonRowSetTests {
         rs.updateString(2, coffee);
         rs.updateInt(5, sales);
         // MetaData should match
-        try ( // Get the original original row and validate that the changes
+        try ( // Get the original row and validate that the changes
                 // are only made to the current, not the original
                 ResultSet rs1 = rs.getOriginalRow()) {
             // MetaData should match

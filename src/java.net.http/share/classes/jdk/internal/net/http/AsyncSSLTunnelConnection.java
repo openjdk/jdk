@@ -28,7 +28,6 @@ package jdk.internal.net.http;
 import java.net.InetSocketAddress;
 import java.nio.channels.SocketChannel;
 import java.util.concurrent.CompletableFuture;
-import java.net.http.HttpHeaders;
 import java.util.function.Function;
 import jdk.internal.net.http.common.MinimalFuture;
 import jdk.internal.net.http.common.SSLTube;
@@ -106,7 +105,7 @@ class AsyncSSLTunnelConnection extends AbstractAsyncSSLConnection {
 
     @Override
     ConnectionPool.CacheKey cacheKey() {
-        return ConnectionPool.cacheKey(address, plainConnection.proxyAddr);
+        return ConnectionPool.cacheKey(true, address, plainConnection.proxyAddr);
     }
 
     @Override

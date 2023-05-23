@@ -172,7 +172,7 @@ public:
     }
 
     // call a method returning an object checking for exceptions and
-    // the the return value is not null.
+    // the return value is not null.
     jobject callReturnNotNull(jobject arg) {
         jobject robj = env->CallStaticObjectMethod(c, m, arg);
         checkException();

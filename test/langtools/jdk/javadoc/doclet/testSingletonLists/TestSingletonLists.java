@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ import toolbox.ToolBox;
 
 public class TestSingletonLists extends JavadocTester {
     public static void main(String... args) throws Exception {
-        TestSingletonLists tester = new TestSingletonLists();
+        var tester = new TestSingletonLists();
         tester.runTests();
     }
 
@@ -270,7 +270,7 @@ public class TestSingletonLists extends JavadocTester {
             switch (name) {
                 case "ul": case "ol": case "dl":
                     counts.push(new TreeMap<>());
-                    if ("see-list".equals(attrs.get("class"))) {
+                    if ("tag-list".equals(attrs.get("class"))) {
                         inSeeList = true;
                     }
                     break;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -140,7 +140,7 @@ public class ModifyAnonymous {
                     throw new RuntimeException("null class encountered");
                 }
                 final String name = clazz.getName();
-                if (name.contains("$$Lambda$") && name.contains("App")) {
+                if (name.contains("$$Lambda") && name.contains("App")) {
                     if (inst.isModifiableClass(clazz)) {
                         pw.flush();
                         pw.close();
@@ -193,7 +193,7 @@ public class ModifyAnonymous {
         }.start();
 
         // Test that NCDFE is not thrown for anonymous class:
-        // ModifyAnonymous$InstanceMethodCallSiteApp$$Lambda$18
+        // ModifyAnonymous$InstanceMethodCallSiteApp$$Lambda
         try {
             ModifyAnonymous test = new ModifyAnonymous();
             InstanceMethodCallSiteApp.test();

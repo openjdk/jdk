@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -206,7 +206,7 @@ void SATBMarkQueueSet::set_active_all_threads(bool active, bool expected_active)
 
 bool SATBMarkQueueSet::apply_closure_to_completed_buffer(SATBBufferClosure* cl) {
   BufferNode* nd = get_completed_buffer();
-  if (nd != NULL) {
+  if (nd != nullptr) {
     void **buf = BufferNode::make_buffer_from_node(nd);
     size_t index = nd->index();
     size_t size = buffer_size();
@@ -272,7 +272,7 @@ bool SATBMarkQueueSet::should_enqueue_buffer(SATBMarkQueue& queue) {
 // pushing onto the allocator's list.
 
 void SATBMarkQueueSet::enqueue_completed_buffer(BufferNode* node) {
-  assert(node != NULL, "precondition");
+  assert(node != nullptr, "precondition");
   // Increment count and update flag appropriately.  Done before
   // pushing buffer so count is always at least the actual number in
   // the list, and decrement never underflows.
@@ -286,7 +286,7 @@ BufferNode* SATBMarkQueueSet::get_completed_buffer() {
     GlobalCounter::CriticalSection cs(Thread::current());
     node = _list.pop();
   }
-  if (node != NULL) {
+  if (node != nullptr) {
     // Got a buffer so decrement count and update flag appropriately.
     decrement_count(&_count_and_process_flag);
   }
@@ -307,7 +307,7 @@ void SATBMarkQueueSet::print_all(const char* msg) {
 
   BufferNode* nd = _list.top();
   int i = 0;
-  while (nd != NULL) {
+  while (nd != nullptr) {
     void** buf = BufferNode::make_buffer_from_node(nd);
     os::snprintf(buffer, SATB_PRINTER_BUFFER_SIZE, "Enqueued: %d", i);
     print_satb_buffer(buffer, buf, nd->index(), buffer_size());
@@ -337,10 +337,10 @@ void SATBMarkQueueSet::print_all(const char* msg) {
 void SATBMarkQueueSet::abandon_completed_buffers() {
   Atomic::store(&_count_and_process_flag, size_t(0));
   BufferNode* buffers_to_delete = _list.pop_all();
-  while (buffers_to_delete != NULL) {
+  while (buffers_to_delete != nullptr) {
     BufferNode* bn = buffers_to_delete;
     buffers_to_delete = bn->next();
-    bn->set_next(NULL);
+    bn->set_next(nullptr);
     deallocate_buffer(bn);
   }
 }

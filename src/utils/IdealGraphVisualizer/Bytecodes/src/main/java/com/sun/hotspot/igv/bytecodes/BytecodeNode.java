@@ -59,9 +59,7 @@ public class BytecodeNode extends AbstractNode {
         List<InputNode> nodeList = selector.selectMultiple(matcher);
         if (nodeList.size() > 0) {
             nodes = new LinkedHashSet<>();
-            for (InputNode n : nodeList) {
-                nodes.add(n);
-            }
+            nodes.addAll(nodeList);
             displayName += " (" + nodes.size() + " nodes)";
         }
 
@@ -88,12 +86,12 @@ public class BytecodeNode extends AbstractNode {
 
     @Override
     public Action[] getActions(boolean b) {
-        return new Action[]{(Action) SelectBytecodesAction.findObject(SelectBytecodesAction.class, true)};
+        return new Action[]{SelectBytecodesAction.findObject(SelectBytecodesAction.class, true)};
     }
 
     @Override
     public Action getPreferredAction() {
-        return (Action) SelectBytecodesAction.findObject(SelectBytecodesAction.class, true);
+        return SelectBytecodesAction.findObject(SelectBytecodesAction.class, true);
     }
 
     @Override

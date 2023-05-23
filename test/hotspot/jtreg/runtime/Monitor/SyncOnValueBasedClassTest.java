@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ import java.util.stream.*;
  * @requires vm.flagless
  * @requires vm.flavor != "zero"
  * @library /test/lib
- * @run driver/timeout=180000 SyncOnValueBasedClassTest
+ * @run main/othervm/timeout=180000 SyncOnValueBasedClassTest
  */
 
 public class SyncOnValueBasedClassTest {
@@ -96,6 +96,7 @@ public class SyncOnValueBasedClassTest {
             output.shouldHaveExitValue(0);
             checkOutput(output);
         }
+        virtualThreadTests();
     }
 
     private static void checkOutput(OutputAnalyzer output) {
@@ -161,6 +162,38 @@ public class SyncOnValueBasedClassTest {
                     sharedCounter++;
                 }
             }
+        }
+    }
+
+    // Very basic sanity tests to show things work for virtual threads too.
+    private static void virtualThreadTests() throws Exception {
+        final String[] vtTest = { "-XX:+UnlockDiagnosticVMOptions", "-XX:-CreateCoredumpOnCrash",
+                                  "", "SyncOnValueBasedClassTest$VTTest" };
+        // Fatal test
+        vtTest[2] = "-XX:DiagnoseSyncOnValueBasedClasses=1";
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(vtTest);
+        OutputAnalyzer output = ProcessTools.executeProcess(pb);
+        output.shouldContain("fatal error: Synchronizing on object");
+        output.shouldNotContain("synchronization on value based class did not fail");
+        output.shouldNotHaveExitValue(0);
+
+        // Log test
+        vtTest[2] = "-XX:DiagnoseSyncOnValueBasedClasses=2";
+        pb = ProcessTools.createJavaProcessBuilder(vtTest);
+        output = ProcessTools.executeProcess(pb);
+        output.shouldHaveExitValue(0);
+        output.shouldContain("Synchronizing on object");
+        output.shouldContain("synchronization on value based class did not fail");
+    }
+
+    static class VTTest {
+        public static void main(String[] args) throws Exception {
+            var thread = Thread.ofVirtual().start(() -> {
+                    synchronized (Character.valueOf('H')) {
+                        System.out.println("synchronization on value based class did not fail");
+                    }
+                });
+            thread.join();
         }
     }
 }

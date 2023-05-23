@@ -29,7 +29,7 @@
  * However, the following notice accompanied the original version of this
  * file and, per its terms, should not be removed:
  *
- * Copyright (c) 2018 Cosmin Truta
+ * Copyright (c) 2018-2022 Cosmin Truta
  * Copyright (c) 1998-2018 Glenn Randers-Pehrson
  * Copyright (c) 1996-1997 Andreas Dilger
  * Copyright (c) 1995-1996 Guy Eric Schalnat, Group 42, Inc.
@@ -1047,6 +1047,9 @@ png_set_tRNS(png_structrp png_ptr, png_inforp info_ptr,
           info_ptr->trans_alpha = png_voidcast(png_bytep,
               png_malloc(png_ptr, PNG_MAX_PALETTE_LENGTH));
           memcpy(info_ptr->trans_alpha, trans_alpha, (size_t)num_trans);
+
+          info_ptr->valid |= PNG_INFO_tRNS;
+          info_ptr->free_me |= PNG_FREE_TRNS;
        }
        png_ptr->trans_alpha = info_ptr->trans_alpha;
    }
@@ -1354,7 +1357,7 @@ png_set_unknown_chunk_location(png_const_structrp png_ptr, png_inforp info_ptr,
 
 #ifdef PNG_MNG_FEATURES_SUPPORTED
 png_uint_32 PNGAPI
-png_permit_mng_features (png_structrp png_ptr, png_uint_32 mng_features)
+png_permit_mng_features(png_structrp png_ptr, png_uint_32 mng_features)
 {
    png_debug(1, "in png_permit_mng_features");
 
@@ -1661,7 +1664,7 @@ png_set_invalid(png_const_structrp png_ptr, png_inforp info_ptr, int mask)
 #ifdef PNG_SET_USER_LIMITS_SUPPORTED
 /* This function was added to libpng 1.2.6 */
 void PNGAPI
-png_set_user_limits (png_structrp png_ptr, png_uint_32 user_width_max,
+png_set_user_limits(png_structrp png_ptr, png_uint_32 user_width_max,
     png_uint_32 user_height_max)
 {
    /* Images with dimensions larger than these limits will be
@@ -1677,7 +1680,7 @@ png_set_user_limits (png_structrp png_ptr, png_uint_32 user_width_max,
 
 /* This function was added to libpng 1.4.0 */
 void PNGAPI
-png_set_chunk_cache_max (png_structrp png_ptr, png_uint_32 user_chunk_cache_max)
+png_set_chunk_cache_max(png_structrp png_ptr, png_uint_32 user_chunk_cache_max)
 {
    if (png_ptr != NULL)
       png_ptr->user_chunk_cache_max = user_chunk_cache_max;
@@ -1685,7 +1688,7 @@ png_set_chunk_cache_max (png_structrp png_ptr, png_uint_32 user_chunk_cache_max)
 
 /* This function was added to libpng 1.4.1 */
 void PNGAPI
-png_set_chunk_malloc_max (png_structrp png_ptr,
+png_set_chunk_malloc_max(png_structrp png_ptr,
     png_alloc_size_t user_chunk_malloc_max)
 {
    if (png_ptr != NULL)

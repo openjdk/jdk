@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @enablePreview
- * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64"
+ * @requires jdk.foreign.linker != "UNSUPPORTED"
  * @modules java.base/jdk.internal.ref
  * @run testng/othervm
  *     --enable-native-access=ALL-UNNAMED
@@ -32,12 +32,14 @@
  */
 
 import java.lang.foreign.*;
+
 import jdk.internal.ref.CleanerFactory;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.NoInjection;
 import org.testng.annotations.Test;
 
 import java.lang.constant.Constable;
+import java.lang.foreign.Arena;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -54,7 +56,6 @@ import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
@@ -79,8 +80,8 @@ import static org.testng.Assert.fail;
 public class TestNulls {
 
     static final Class<?>[] CLASSES = new Class<?>[] {
+            Arena.class,
             MemorySegment.class,
-            MemoryAddress.class,
             MemoryLayout.class,
             MemoryLayout.PathElement.class,
             SequenceLayout.class,
@@ -93,35 +94,22 @@ public class TestNulls {
             ValueLayout.OfFloat.class,
             ValueLayout.OfLong.class,
             ValueLayout.OfDouble.class,
-            ValueLayout.OfAddress.class,
+            AddressLayout.class,
+            PaddingLayout.class,
             GroupLayout.class,
-            Addressable.class,
+            StructLayout.class,
+            UnionLayout.class,
             Linker.class,
-            VaList.class,
-            VaList.Builder.class,
+            Linker.Option.class,
             FunctionDescriptor.class,
             SegmentAllocator.class,
-            MemorySession.class,
+            MemorySegment.Scope.class,
             SymbolLookup.class
     };
 
     static final Set<String> EXCLUDE_LIST = Set.of(
-            "java.lang.foreign.MemorySession/openConfined(java.lang.ref.Cleaner)/0/0",
-            "java.lang.foreign.MemorySession/openShared(java.lang.ref.Cleaner)/0/0",
-            "java.lang.foreign.MemoryLayout/withAttribute(java.lang.String,java.lang.constant.Constable)/1/0",
-            "java.lang.foreign.SequenceLayout/withAttribute(java.lang.String,java.lang.constant.Constable)/1/0",
-            "java.lang.foreign.ValueLayout/withAttribute(java.lang.String,java.lang.constant.Constable)/1/0",
-            "java.lang.foreign.ValueLayout$OfAddress/withAttribute(java.lang.String,java.lang.constant.Constable)/1/0",
-            "java.lang.foreign.ValueLayout$OfBoolean/withAttribute(java.lang.String,java.lang.constant.Constable)/1/0",
-            "java.lang.foreign.ValueLayout$OfByte/withAttribute(java.lang.String,java.lang.constant.Constable)/1/0",
-            "java.lang.foreign.ValueLayout$OfChar/withAttribute(java.lang.String,java.lang.constant.Constable)/1/0",
-            "java.lang.foreign.ValueLayout$OfShort/withAttribute(java.lang.String,java.lang.constant.Constable)/1/0",
-            "java.lang.foreign.ValueLayout$OfInt/withAttribute(java.lang.String,java.lang.constant.Constable)/1/0",
-            "java.lang.foreign.ValueLayout$OfFloat/withAttribute(java.lang.String,java.lang.constant.Constable)/1/0",
-            "java.lang.foreign.ValueLayout$OfLong/withAttribute(java.lang.String,java.lang.constant.Constable)/1/0",
-            "java.lang.foreign.ValueLayout$OfDouble/withAttribute(java.lang.String,java.lang.constant.Constable)/1/0",
-            "java.lang.foreign.GroupLayout/withAttribute(java.lang.String,java.lang.constant.Constable)/1/0",
-            "java.lang.foreign.FunctionDescriptor/withAttribute(java.lang.String,java.lang.constant.Constable)/1/0"
+            "java.lang.foreign.MemorySegment/reinterpret(java.lang.foreign.Arena,java.util.function.Consumer)/1/0",
+            "java.lang.foreign.MemorySegment/reinterpret(long,java.lang.foreign.Arena,java.util.function.Consumer)/2/0"
     );
 
     static final Set<String> OBJECT_METHODS = Stream.of(Object.class.getMethods())
@@ -162,11 +150,9 @@ public class TestNulls {
         addDefaultMapping(Charset.class, Charset.defaultCharset());
         addDefaultMapping(Consumer.class, x -> {});
         addDefaultMapping(MethodType.class, MethodType.methodType(void.class));
-        addDefaultMapping(MemoryAddress.class, MemoryAddress.ofLong(1));
-        addDefaultMapping(Addressable.class, MemoryAddress.ofLong(1));
         addDefaultMapping(MemoryLayout.class, ValueLayout.JAVA_INT);
         addDefaultMapping(ValueLayout.class, ValueLayout.JAVA_INT);
-        addDefaultMapping(ValueLayout.OfAddress.class, ValueLayout.ADDRESS);
+        addDefaultMapping(AddressLayout.class, ValueLayout.ADDRESS);
         addDefaultMapping(ValueLayout.OfByte.class, ValueLayout.JAVA_BYTE);
         addDefaultMapping(ValueLayout.OfBoolean.class, ValueLayout.JAVA_BOOLEAN);
         addDefaultMapping(ValueLayout.OfChar.class, ValueLayout.JAVA_CHAR);
@@ -175,32 +161,21 @@ public class TestNulls {
         addDefaultMapping(ValueLayout.OfFloat.class, ValueLayout.JAVA_FLOAT);
         addDefaultMapping(ValueLayout.OfLong.class, JAVA_LONG);
         addDefaultMapping(ValueLayout.OfDouble.class, ValueLayout.JAVA_DOUBLE);
+        addDefaultMapping(PaddingLayout.class, MemoryLayout.paddingLayout(4));
         addDefaultMapping(GroupLayout.class, MemoryLayout.structLayout(ValueLayout.JAVA_INT));
+        addDefaultMapping(StructLayout.class, MemoryLayout.structLayout(ValueLayout.JAVA_INT));
+        addDefaultMapping(UnionLayout.class, MemoryLayout.unionLayout(ValueLayout.JAVA_INT));
         addDefaultMapping(SequenceLayout.class, MemoryLayout.sequenceLayout(1, ValueLayout.JAVA_INT));
         addDefaultMapping(SymbolLookup.class, SymbolLookup.loaderLookup());
         addDefaultMapping(MemorySegment.class, MemorySegment.ofArray(new byte[10]));
         addDefaultMapping(FunctionDescriptor.class, FunctionDescriptor.ofVoid());
         addDefaultMapping(Linker.class, Linker.nativeLinker());
-        addDefaultMapping(VaList.class, VaListHelper.vaList);
-        addDefaultMapping(VaList.Builder.class, VaListHelper.vaListBuilder);
-        addDefaultMapping(MemorySession.class, MemorySession.openShared());
+        addDefaultMapping(Arena.class, Arena.ofConfined());
+        addDefaultMapping(MemorySegment.Scope.class, Arena.ofAuto().scope());
         addDefaultMapping(SegmentAllocator.class, SegmentAllocator.prefixAllocator(MemorySegment.ofArray(new byte[10])));
         addDefaultMapping(Supplier.class, () -> null);
         addDefaultMapping(ClassLoader.class, TestNulls.class.getClassLoader());
-    }
-
-    static class VaListHelper {
-        static final VaList vaList;
-        static final VaList.Builder vaListBuilder;
-
-        static {
-            AtomicReference<VaList.Builder> builderRef = new AtomicReference<>();
-            vaList = VaList.make(b -> {
-                builderRef.set(b);
-                b.addVarg(JAVA_LONG, 42L);
-            }, MemorySession.openImplicit());
-            vaListBuilder = builderRef.get();
-        }
+        addDefaultMapping(Thread.UncaughtExceptionHandler.class, (thread, ex) -> {});
     }
 
     static final Map<Class<?>, Object[]> REPLACEMENT_VALUES = new HashMap<>();

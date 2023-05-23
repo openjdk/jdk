@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,15 @@
  */
 package jdk.internal.foreign.abi;
 
-import java.lang.foreign.MemoryAddress;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
+import java.lang.foreign.Arena;
 
 import jdk.internal.foreign.MemorySessionImpl;
 
-public class UpcallStubs {
+public final class UpcallStubs {
+
+    private UpcallStubs() {
+    }
 
     private static void freeUpcallStub(long stubAddress) {
         if (!freeUpcallStub0(stubAddress)) {
@@ -48,13 +50,13 @@ public class UpcallStubs {
         registerNatives();
     }
 
-    static MemorySegment makeUpcall(long entry, MemorySession session) {
-        MemorySessionImpl.toSessionImpl(session).addOrCleanupIfFail(new MemorySessionImpl.ResourceList.ResourceCleanup() {
+    static MemorySegment makeUpcall(long entry, Arena arena) {
+        MemorySessionImpl.toMemorySession(arena).addOrCleanupIfFail(new MemorySessionImpl.ResourceList.ResourceCleanup() {
             @Override
             public void cleanup() {
                 freeUpcallStub(entry);
             }
         });
-        return MemorySegment.ofAddress(MemoryAddress.ofLong(entry), 0, session);
+        return MemorySegment.ofAddress(entry).reinterpret(arena, null);
     }
 }

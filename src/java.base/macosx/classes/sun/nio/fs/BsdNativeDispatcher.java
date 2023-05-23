@@ -104,6 +104,27 @@ class BsdNativeDispatcher extends UnixNativeDispatcher {
                                             long createTime, long options)
         throws UnixException;
 
+    /**
+     * fsetattrlist(int fd, struct attrlist* attrList, void* attrBuf,
+     *              size_t attrBufSize, unsigned long options)
+     */
+    static void fsetattrlist(int fd, int commonattr, long modTime,
+                             long accTime, long createTime, long options)
+        throws UnixException
+    {
+        long comp = Blocker.begin();
+        try {
+            fsetattrlist0(fd, commonattr, modTime, accTime,
+                          createTime, options);
+        } finally {
+            Blocker.end(comp);
+        }
+    }
+    private static native void fsetattrlist0(int fd, int commonattr,
+                                             long modTime, long accTime,
+                                             long createTime, long options)
+        throws UnixException;
+
     // initialize field IDs
     private static native void initIDs();
 

@@ -51,7 +51,7 @@ public class TestSignumVector {
   }
 
   @Test
-  @IR(counts = {"SignumVD" , " > 0 "})
+  @IR(counts = {IRNode.SIGNUM_VD, "> 0"})
   public void test_signum_double(double[] dout, double[] dinp) {
       for (int i = 0; i < dout.length; i+=1) {
           dout[i] = Math.signum(dinp[i]);
@@ -71,7 +71,7 @@ public class TestSignumVector {
   }
 
   @Test
-  @IR(counts = {"SignumVF" , " > 0 "})
+  @IR(counts = {IRNode.SIGNUM_VF, "> 0"})
   public void test_signum_float(float[] fout, float[] finp) {
       for (int i = 0; i < finp.length; i+=1) {
           fout[i] = Math.signum(finp[i]);

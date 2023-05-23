@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,9 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+import javax.tools.JavaCompiler;
+import javax.tools.StandardLocation;
 
 /**
  * Defines the implementation of the
@@ -59,6 +62,78 @@
  * {@code jdk.zipfs} module, must be available if the compiler is to be able
  * to read JAR files.
  *
+ * <h3>Options and Environment Variables</h3>
+ *
+ * The full set of options and environment variables supported by <em>javac</em>
+ * is given in the <a href="../../specs/man/javac.html"><em>javac Tool Guide</em></a>.
+ * However, there are some restrictions when the compiler is invoked through
+ * its API.
+ *
+ * <ul>
+ *     <li><p>The {@code -J} option is not supported.
+ *          Any necessary VM options must be set in the VM used to invoke the API.
+ *          {@code IllegalArgumentException} will be thrown if the option
+ *          is used when invoking the tool through the {@code JavaCompiler} API;
+ *          an error will be reported if the option is used when invoking
+ *          <em>javac</em> through the {@link java.util.spi.ToolProvider ToolProvider}
+ *          or legacy {@link com.sun.tools.javac.Main Main} API.
+ *
+ *     <li><p>The "classpath wildcard" feature is not supported.
+ *          The feature is only supported by the native launcher.
+ *          When invoking the tool through its API, all necessary jar
+ *          files should be included directly in the {@code --class-path}
+ *          option, or the {@code CLASSPATH} environment variable.
+ *          When invoking the tool through its API, all components of the
+ *          class path will be taken literally, and will be ignored if there
+ *          is no matching directory or file. The {@code -Xlint:paths}
+ *          option can be used to generate warnings about missing components.
+ *
+ * </ul>
+ *
+ * The following restrictions apply when invoking the compiler through
+ * the {@link JavaCompiler} interface.
+ *
+ * <ul>
+ *     <li><p>Argument files (so-called @-files) are not supported.
+ *          The content of any such files should be included directly
+ *          in the list of options provided when invoking the tool
+ *          though this API.
+ *          {@code IllegalArgumentException} will be thrown if
+ *          the option is used when invoking the tool through this API.
+ *
+ *     <li><p>The environment variable {@code JDK_JAVAC_OPTIONS} is not supported.
+ *          Any options defined in the environment variable should be included
+ *          directly in the list of options provided when invoking the
+ *          API; any values in the environment variable will be ignored.
+ *
+ *     <li><p>Options that are just used to obtain information (such as
+ *          {@code --help}, {@code --help-extended}, {@code --version} and
+ *          {@code --full-version}) are not supported.
+ *          {@link IllegalArgumentException} will be thrown if any of
+ *          these options are used when invoking the tool through this API.
+ *
+ *      <li>Path-related options depend on the file manager being used
+ *          when calling {@link JavaCompiler#getTask}. The "standard"
+ *          options, such as {@code --class-path}, {@code --module-path},
+ *          and so on are available when using the default file manager,
+ *          or one derived from it. These options may not be available
+ *          and different options may be available, when using a different
+ *          file manager.
+ *          {@link IllegalArgumentException} will be thrown if any option
+ *          that is unknown to the tool or the file manager is used when
+ *          invoking the tool through this API.
+ * </ul>
+ *
+ * Note that the {@code CLASSPATH} environment variable <em>is</em> honored
+ * when invoking the compiler through its API, although such use is discouraged.
+ * An environment variable cannot be unset once a VM has been started,
+ * and so it is recommended to ensure that the environment variable is not set
+ * when starting a VM that will be used to invoke the compiler.
+ * However, if a value has been set, any such value can be overridden by
+ * using the {@code --class-path} option when invoking the compiler,
+ * or setting {@link StandardLocation#CLASS_PATH} in the file manager
+ * when invoking the compiler through the {@link JavaCompiler} interface.
+ *
  * <h3>SuppressWarnings</h3>
  *
  * JLS {@jls 9.6.4.5} specifies a number of strings that can be used to
@@ -87,6 +162,7 @@
  * <tr><th scope="row">{@code fallthrough}          <td>falling through from one case of a {@code switch} statement to
  *                                                      the next
  * <tr><th scope="row">{@code finally}              <td>{@code finally} clauses that do not terminate normally
+ * <tr><th scope="row">{@code lossy-conversions}    <td>possible lossy conversions in compound assignment
  * <tr><th scope="row">{@code missing-explicit-ctor} <td>missing explicit constructors in public and protected classes
  *                                                      in exported packages
  * <tr><th scope="row">{@code module}               <td>module system related issues
@@ -108,6 +184,7 @@
  * <tr><th scope="row">{@code strictfp}             <td>unnecessary use of the {@code strictfp} modifier
  * <tr><th scope="row">{@code synchronization}      <td>synchronization attempts on instances of value-based classes
  * <tr><th scope="row">{@code text-blocks}          <td>inconsistent white space characters in text block indentation
+ * <tr><th scope="row">{@code this-escape}          <td>superclass constructor leaking {@code this} before subclass initialized
  * <tr><th scope="row">{@code try}                  <td>issues relating to use of {@code try} blocks
  *                                                      (that is, try-with-resources)
  * <tr><th scope="row">{@code unchecked}            <td>unchecked operations
@@ -140,6 +217,7 @@
  */
 module jdk.compiler {
     requires transitive java.compiler;
+    requires jdk.internal.opt;
     requires jdk.zipfs;
 
     exports com.sun.source.doctree;

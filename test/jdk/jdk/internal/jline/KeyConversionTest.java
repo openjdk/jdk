@@ -59,7 +59,7 @@ public class KeyConversionTest {
     void checkKeyConversion(KeyEvent event, String expected) throws IOException {
         StringBuilder result = new StringBuilder();
         new AbstractWindowsTerminal(new StringWriter(), "", "windows", Charset.forName("UTF-8"),
-                                    0, true, SignalHandler.SIG_DFL, in -> in) {
+                                    true, SignalHandler.SIG_DFL, in -> in) {
             @Override
             protected int getConsoleMode() {
                 return 0;

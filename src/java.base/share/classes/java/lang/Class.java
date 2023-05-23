@@ -27,6 +27,7 @@ package java.lang;
 
 import java.lang.annotation.Annotation;
 import java.lang.constant.ClassDesc;
+import java.lang.constant.ConstantDescs;
 import java.lang.invoke.TypeDescriptor;
 import java.lang.invoke.MethodHandles;
 import java.lang.module.ModuleReader;
@@ -1296,17 +1297,21 @@ public final class Class<T> implements java.io.Serializable,
      * {@code abstract} and {@code interface}; they should be decoded
      * using the methods of class {@code Modifier}.
      *
-     * <p> If the underlying class is an array class, then its
-     * {@code public}, {@code private} and {@code protected}
-     * modifiers are the same as those of its component type.  If this
-     * {@code Class} object represents a primitive type or void, its
-     * {@code public} modifier is always {@code true}, and its
-     * {@code protected} and {@code private} modifiers are always
-     * {@code false}. If this {@code Class} object represents an array class, a
-     * primitive type or void, then its {@code final} modifier is always
-     * {@code true} and its interface modifier is always
-     * {@code false}. The values of its other modifiers are not determined
-     * by this specification.
+     * <p> If the underlying class is an array class:
+     * <ul>
+     * <li> its {@code public}, {@code private} and {@code protected}
+     *      modifiers are the same as those of its component type
+     * <li> its {@code abstract} and {@code final} modifiers are always
+     *      {@code true}
+     * <li> its interface modifier is always {@code false}, even when
+     *      the component type is an interface
+     * </ul>
+     * If this {@code Class} object represents a primitive type or
+     * void, its {@code public}, {@code abstract}, and {@code final}
+     * modifiers are always {@code true}.
+     * For {@code Class} objects representing void, primitive types, and
+     * arrays, the values of other modifiers are {@code false} other
+     * than as specified above.
      *
      * <p> The modifier encodings are defined in section {@jvms 4.1}
      * of <cite>The Java Virtual Machine Specification</cite>.
@@ -1320,6 +1325,7 @@ public final class Class<T> implements java.io.Serializable,
      * @since 1.1
      * @jls 8.1.1 Class Modifiers
      * @jls 9.1.1. Interface Modifiers
+     * @jvms 4.1 The {@code ClassFile} Structure
      */
     @IntrinsicCandidate
     public native int getModifiers();
@@ -1328,17 +1334,19 @@ public final class Class<T> implements java.io.Serializable,
      * {@return an unmodifiable set of the {@linkplain AccessFlag access
      * flags} for this class, possibly empty}
      *
-     * <p> If the underlying class is an array class, then its
-     * {@code PUBLIC}, {@code PRIVATE} and {@code PROTECTED}
-     * access flags are the same as those of its component type.  If this
-     * {@code Class} object represents a primitive type or void, the
-     * {@code PUBLIC} access flag is present, and the
-     * {@code PROTECTED} and {@code PRIVATE} access flags are always
-     * absent. If this {@code Class} object represents an array class, a
-     * primitive type or void, then the {@code FINAL} access flag is always
-     * present and the interface access flag is always
-     * absent. The values of its other access flags are not determined
-     * by this specification.
+     * <p> If the underlying class is an array class:
+     * <ul>
+     * <li> its {@code PUBLIC}, {@code PRIVATE} and {@code PROTECTED}
+     *      access flags are the same as those of its component type
+     * <li> its {@code ABSTRACT} and {@code FINAL} flags are present
+     * <li> its {@code INTERFACE} flag is absent, even when the
+     *      component type is an interface
+     * </ul>
+     * If this {@code Class} object represents a primitive type or
+     * void, the flags are {@code PUBLIC}, {@code ABSTRACT}, and
+     * {@code FINAL}.
+     * For {@code Class} objects representing void, primitive types, and
+     * arrays, access flags are absent other than as specified above.
      *
      * @see #getModifiers()
      * @jvms 4.1 The ClassFile Structure
@@ -1517,9 +1525,9 @@ public final class Class<T> implements java.io.Serializable,
             return enclosingClass == null || name == null || descriptor == null;
         }
 
-        boolean isConstructor() { return !isPartial() && "<init>".equals(name); }
+        boolean isConstructor() { return !isPartial() && ConstantDescs.INIT_NAME.equals(name); }
 
-        boolean isMethod() { return !isPartial() && !isConstructor() && !"<clinit>".equals(name); }
+        boolean isMethod() { return !isPartial() && !isConstructor() && !ConstantDescs.CLASS_INIT_NAME.equals(name); }
 
         Class<?> getEnclosingClass() { return enclosingClass; }
 
@@ -2033,8 +2041,8 @@ public final class Class<T> implements java.io.Serializable,
      * has length 0. (Note that a {@code Class} object which represents a class
      * always has public methods, inherited from {@code Object}.)
      *
-     * <p> The returned array never contains methods with names "{@code <init>}"
-     * or "{@code <clinit>}".
+     * <p> The returned array never contains methods with names {@value
+     * ConstantDescs#INIT_NAME} or {@value ConstantDescs#CLASS_INIT_NAME}.
      *
      * <p> The elements in the returned array are not sorted and are not in any
      * particular order.
@@ -2227,8 +2235,8 @@ public final class Class<T> implements java.io.Serializable,
      * this interface or any of its superinterfaces, then this method does not
      * find any method.
      *
-     * <p> This method does not find any method with name "{@code <init>}" or
-     * "{@code <clinit>}".
+     * <p> This method does not find any method with name {@value
+     * ConstantDescs#INIT_NAME} or {@value ConstantDescs#CLASS_INIT_NAME}.
      *
      * <p> Generally, the method to be reflected is determined by the 4 step
      * algorithm that follows.
@@ -2286,7 +2294,8 @@ public final class Class<T> implements java.io.Serializable,
      * @return the {@code Method} object that matches the specified
      *         {@code name} and {@code parameterTypes}
      * @throws NoSuchMethodException if a matching method is not found
-     *         or if the name is "&lt;init&gt;"or "&lt;clinit&gt;".
+     *         or if the name is {@value ConstantDescs#INIT_NAME} or
+     *         {@value ConstantDescs#CLASS_INIT_NAME}.
      * @throws NullPointerException if {@code name} is {@code null}
      * @throws SecurityException
      *         If a security manager, <i>s</i>, is present and
@@ -2542,8 +2551,9 @@ public final class Class<T> implements java.io.Serializable,
      * object for each such method.
      *
      * <p> If this {@code Class} object represents a class or interface that
-     * has a class initialization method {@code <clinit>}, then the returned
-     * array does <em>not</em> have a corresponding {@code Method} object.
+     * has a class initialization method {@value ConstantDescs#CLASS_INIT_NAME},
+     * then the returned array does <em>not</em> have a corresponding {@code
+     * Method} object.
      *
      * <p> If this {@code Class} object represents a class or interface with no
      * declared methods, then the returned array has length 0.
@@ -2714,7 +2724,8 @@ public final class Class<T> implements java.io.Serializable,
      * parameter types is declared in a class, and one of these methods has a
      * return type that is more specific than any of the others, that method is
      * returned; otherwise one of the methods is chosen arbitrarily.  If the
-     * name is "&lt;init&gt;"or "&lt;clinit&gt;" a {@code NoSuchMethodException}
+     * name is {@value ConstantDescs#INIT_NAME} or {@value
+     * ConstantDescs#CLASS_INIT_NAME} a {@code NoSuchMethodException}
      * is raised.
      *
      * <p> If this {@code Class} object represents an array type, then this
@@ -3934,7 +3945,8 @@ public final class Class<T> implements java.io.Serializable,
             // These can happen when users concoct enum-like classes
             // that don't comply with the enum spec.
             catch (InvocationTargetException | NoSuchMethodException |
-                   IllegalAccessException ex) { return null; }
+                   IllegalAccessException | NullPointerException |
+                   ClassCastException ex) { return null; }
         }
         return constants;
     }

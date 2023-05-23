@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,9 +35,7 @@ void MetaspaceClosure::Ref::update(address new_loc) const {
 void MetaspaceClosure::push_impl(MetaspaceClosure::Ref* ref) {
   if (_nest_level < MAX_NEST_LEVEL) {
     do_push(ref);
-    if (!ref->keep_after_pushing()) {
-      delete ref;
-    }
+    delete ref;
   } else {
     do_pending_ref(ref);
     ref->set_next(_pending_refs);
@@ -61,7 +59,7 @@ void MetaspaceClosure::do_push(MetaspaceClosure::Ref* ref) {
       read_only = ref->is_read_only_by_default();
     }
     if (_nest_level == 0) {
-      assert(_enclosing_ref == NULL, "must be");
+      assert(_enclosing_ref == nullptr, "must be");
     }
     _nest_level ++;
     if (do_ref(ref, read_only)) { // true means we want to iterate the embedded pointer in <ref>
@@ -76,18 +74,16 @@ void MetaspaceClosure::do_push(MetaspaceClosure::Ref* ref) {
 
 void MetaspaceClosure::finish() {
   assert(_nest_level == 0, "must be");
-  while (_pending_refs != NULL) {
+  while (_pending_refs != nullptr) {
     Ref* ref = _pending_refs;
     _pending_refs = _pending_refs->next();
     do_push(ref);
-    if (!ref->keep_after_pushing()) {
-      delete ref;
-    }
+    delete ref;
   }
 }
 
 MetaspaceClosure::~MetaspaceClosure() {
-  assert(_pending_refs == NULL,
+  assert(_pending_refs == nullptr,
          "you must explicitly call MetaspaceClosure::finish() to process all refs!");
 }
 

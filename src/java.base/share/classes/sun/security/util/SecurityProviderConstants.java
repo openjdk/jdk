@@ -33,6 +33,7 @@ import java.security.InvalidParameterException;
 import java.security.ProviderException;
 import java.security.NoSuchAlgorithmException;
 import javax.crypto.Cipher;
+import javax.crypto.spec.DHParameterSpec;
 import sun.security.action.GetPropertyAction;
 
 /**
@@ -100,6 +101,42 @@ public final class SecurityProviderConstants {
             throw new InvalidParameterException("Invalid DSA Prime Size: " +
                 primeSize);
         }
+    }
+
+    public static final int getDefDHPrivateExpSize(DHParameterSpec spec) {
+
+        int dhGroupSize = spec.getP().bitLength();
+
+        if (spec instanceof SafeDHParameterSpec) {
+            // Known safe primes
+            // use 2*security strength as default private exponent size
+            // as in table 2 of NIST SP 800-57 part 1 rev 5, sec 5.6.1.1
+            // and table 25 of NIST SP 800-56A rev 3, appendix D.
+            if (dhGroupSize >= 15360) {
+                return 512;
+            } else if (dhGroupSize >= 8192) {
+                return 400;
+            } else if (dhGroupSize >= 7680) {
+                return 384;
+            } else if (dhGroupSize >= 6144) {
+                return 352;
+            } else if (dhGroupSize >= 4096) {
+                return 304;
+            } else if (dhGroupSize >= 3072) {
+                return 256;
+            } else if (dhGroupSize >= 2048) {
+                return 224;
+            } else {
+                // min value for legacy key sizes
+                return 160;
+            }
+        } else {
+            // assume the worst and use groupSize/2 as private exp length
+            // up to 1024-bit and use the same minimum 384 as before
+            return Math.max((dhGroupSize >= 2048 ? 1024 : dhGroupSize >> 1),
+                    384);
+        }
+
     }
 
     public static final int getDefAESKeySize() {

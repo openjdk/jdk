@@ -22,14 +22,11 @@
  */
 
 // key: compiler.err.flows.through.to.pattern
-// key: compiler.misc.feature.pattern.switch
-// key: compiler.warn.preview.feature.use.plural
-// options: --enable-preview -source ${jdk.version} -Xlint:preview
 
 class FlowsThroughToPattern {
     private void doSwitch(Object o) {
         switch (o) {
-            case String str:
+            case null:
             case Object obj: break;
         }
     }

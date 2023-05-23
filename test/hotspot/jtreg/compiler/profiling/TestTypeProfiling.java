@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,10 +102,10 @@ public class TestTypeProfiling {
         }
 
         Method method;
-        if (WHITE_BOX.getUintxVMFlag("TypeProfileLevel") == 20) {
+        if (WHITE_BOX.getUintVMFlag("TypeProfileLevel") == 20) {
             method = TestTypeProfiling.class.getMethod("mRetTypeCheck", Object.class);
         } else
-        if (WHITE_BOX.getUintxVMFlag("TypeProfileLevel") == 200) {
+        if (WHITE_BOX.getUintVMFlag("TypeProfileLevel") == 200) {
             method = TestTypeProfiling.class.getMethod("mParamTypeCheck", Object.class);
         } else {
             throw new RuntimeException("please setup method return/params type profilation: -XX:TypeProfileLevel=020/200");

@@ -25,6 +25,8 @@
 
 package com.sun.crypto.provider;
 
+import jdk.internal.access.JavaNioAccess;
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.Unsafe;
 import sun.nio.ch.DirectBuffer;
 import sun.security.jca.JCAUtil;
@@ -91,6 +93,8 @@ abstract class GaloisCounterMode extends CipherSpi {
     private static final int SPLIT_LEN = 1048576;  // 1MB
 
     static final byte[] EMPTY_BUF = new byte[0];
+
+    private static final JavaNioAccess NIO_ACCESS = SharedSecrets.getJavaNioAccess();
 
     private boolean initialized = false;
 
@@ -572,36 +576,58 @@ abstract class GaloisCounterMode extends CipherSpi {
         return j0;
     }
 
-    // Wrapper function around AES-GCM interleaved intrinsic that splits
-    // large chunks of data into 1MB sized chunks. This is to place
-    // an upper limit on the number of blocks encrypted in the intrinsic.
+    /**
+     * Wrapper function around Combined AES-GCM intrinsic method that splits
+     * large chunks of data into 1MB sized chunks. This is to place
+     * an upper limit on the number of blocks encrypted in the intrinsic.
+     *
+     * The combined intrinsic is not used when decrypting in-place heap
+     * bytebuffers because 'ct' will be the same as 'in' and overwritten by
+     * GCTR before GHASH calculates the encrypted tag.
+     */
     private static int implGCMCrypt(byte[] in, int inOfs, int inLen, byte[] ct,
                                     int ctOfs, byte[] out, int outOfs,
                                     GCTR gctr, GHASH ghash) {
 
         int len = 0;
-        if (inLen > SPLIT_LEN) {
+        // Loop if input length is greater than the SPLIT_LEN
+        if (inLen > SPLIT_LEN && ct != null) {
+            int partlen;
             while (inLen >= SPLIT_LEN) {
-                int partlen = implGCMCrypt0(in, inOfs + len, SPLIT_LEN, ct,
+                partlen = implGCMCrypt0(in, inOfs + len, SPLIT_LEN, ct,
                     ctOfs + len, out, outOfs + len, gctr, ghash);
                 len += partlen;
                 inLen -= partlen;
             }
         }
+
+        // Finish any remaining data
         if (inLen > 0) {
-            len += implGCMCrypt0(in, inOfs + len, inLen, ct,
-                   ctOfs + len, out, outOfs + len, gctr, ghash);
+            if (ct == null) {
+                ghash.update(in, inOfs + len, inLen);
+                len += gctr.update(in, inOfs + len, inLen, out, outOfs);
+            } else {
+                len += implGCMCrypt0(in, inOfs + len, inLen, ct,
+                    ctOfs + len, out, outOfs + len, gctr, ghash);
+            }
         }
         return len;
     }
+
     /**
-     * Intrinsic for Vector AES Galois Counter Mode implementation.
-     * AES and GHASH operations are interleaved in the intrinsic implementation.
-     * return - number of processed bytes
+     * Intrinsic for the combined AES Galois Counter Mode implementation.
+     * AES and GHASH operations are combined in the intrinsic implementation.
      *
      * Requires 768 bytes (48 AES blocks) to efficiently use the intrinsic.
      * inLen that is less than 768 size block sizes, before or after this
      * intrinsic is used, will be done by the calling method
+     *
+     * Note:
+     * Only Intel processors with AVX512 that support vaes, vpclmulqdq,
+     * avx512dq, and avx512vl trigger this intrinsic.
+     * Other processors will always use GHASH and GCTR which may have their own
+     * intrinsic support
+     *
      * @param in input buffer
      * @param inOfs input offset
      * @param inLen input length
@@ -610,7 +636,7 @@ abstract class GaloisCounterMode extends CipherSpi {
      * @param out output buffer
      * @param outOfs output offset
      * @param gctr object for the GCTR operation
-     * @param ghash object for the ghash operation
+     * @param ghash object for the GHASH operation
      * @return number of processed bytes
      */
     @IntrinsicCandidate
@@ -665,6 +691,11 @@ abstract class GaloisCounterMode extends CipherSpi {
         ByteBuffer originalDst = null;
         byte[] originalOut = null;
         int originalOutOfs = 0;
+
+        // True if ops is an in-place array decryption with the offset between
+        // input & output the same or the input greater.  This is to
+        // avoid the AVX512 intrinsic.
+        boolean inPlaceArray = false;
 
         GCMEngine(SymmetricCipher blockCipher) {
             blockSize = blockCipher.getBlockSize();
@@ -732,7 +763,8 @@ abstract class GaloisCounterMode extends CipherSpi {
                 ByteBuffer ct = (encryption ? dst : src);
                 len = GaloisCounterMode.implGCMCrypt(src.array(),
                     src.arrayOffset() + src.position(), srcLen,
-                    ct.array(), ct.arrayOffset() + ct.position(),
+                    inPlaceArray ? null : ct.array(),
+                    ct.arrayOffset() + ct.position(),
                     dst.array(), dst.arrayOffset() + dst.position(),
                     gctr, ghash);
                 src.position(src.position() + len);
@@ -909,6 +941,8 @@ abstract class GaloisCounterMode extends CipherSpi {
          */
         ByteBuffer overlapDetection(ByteBuffer src, ByteBuffer dst) {
             if (src.isDirect() && dst.isDirect()) {
+                // The use of DirectBuffer::address below need not be guarded as
+                // no access is made to actual memory.
                 DirectBuffer dsrc = (DirectBuffer) src;
                 DirectBuffer ddst = (DirectBuffer) dst;
 
@@ -942,6 +976,8 @@ abstract class GaloisCounterMode extends CipherSpi {
                 // from the passed object.  That gives up the true offset from
                 // the base address.  As long as the src side is >= the dst
                 // side, we are not in overlap.
+                // NOTE: inPlaceArray does not apply here as direct buffers run
+                // through a byte[] to get to the combined intrinsic
                 if (((DirectBuffer) src).address() - srcaddr + src.position() >=
                     ((DirectBuffer) dst).address() - dstaddr + dst.position()) {
                     return dst;
@@ -959,10 +995,12 @@ abstract class GaloisCounterMode extends CipherSpi {
                     // from the underlying byte[] address.
                     // If during encryption and the input offset is behind or
                     // the same as the output offset, the same buffer can be
-                    // used.  But during decryption always create a new
-                    // buffer in case of a bad auth tag.
-                    if (encryption && src.position() + src.arrayOffset() >=
+                    // used.
+                    // Set 'inPlaceArray' true for decryption operations to
+                    // avoid the AVX512 combined intrinsic
+                    if (src.position() + src.arrayOffset() >=
                         dst.position() + dst.arrayOffset()) {
+                        inPlaceArray = (!encryption);
                         return dst;
                     }
                 }
@@ -984,7 +1022,7 @@ abstract class GaloisCounterMode extends CipherSpi {
         }
 
         /**
-         * This is used for both overlap detection for the data or  decryption
+         * This is used for both overlap detection for the data or decryption
          * during in-place crypto, so to not overwrite the input if the auth tag
          * is invalid.
          *
@@ -992,10 +1030,13 @@ abstract class GaloisCounterMode extends CipherSpi {
          * allocated because for code simplicity.
          */
         byte[] overlapDetection(byte[] in, int inOfs, byte[] out, int outOfs) {
-            if (in == out && (!encryption || inOfs < outOfs)) {
-                originalOut = out;
-                originalOutOfs = outOfs;
-                return new byte[out.length];
+            if (in == out) {
+                if (inOfs < outOfs) {
+                    originalOut = out;
+                    originalOutOfs = outOfs;
+                    return new byte[out.length];
+                }
+                inPlaceArray = (!encryption);
             }
             return out;
         }
@@ -1496,8 +1537,11 @@ abstract class GaloisCounterMode extends CipherSpi {
             }
 
             if (mismatch != 0) {
-                // Clear output data
-                Arrays.fill(out, outOfs, outOfs + len, (byte) 0);
+                // If this is an in-place array, don't zero the input
+                if (!inPlaceArray) {
+                    // Clear output data
+                    Arrays.fill(out, outOfs, outOfs + len, (byte) 0);
+                }
                 throw new AEADBadTagException("Tag mismatch");
             }
 
@@ -1581,12 +1625,22 @@ abstract class GaloisCounterMode extends CipherSpi {
             if (mismatch != 0) {
                 // Clear output data
                 dst.reset();
-                if (dst.hasArray()) {
-                    int ofs = dst.arrayOffset() + dst.position();
-                    Arrays.fill(dst.array(), ofs , ofs + len, (byte)0);
-                } else {
-                    Unsafe.getUnsafe().setMemory(((DirectBuffer)dst).address(),
-                        len + dst.position(), (byte)0);
+                // If this is an in-place array, don't zero the src
+                if (!inPlaceArray) {
+                    if (dst.hasArray()) {
+                        int ofs = dst.arrayOffset() + dst.position();
+                        Arrays.fill(dst.array(), ofs, ofs + len,
+                            (byte) 0);
+                    } else {
+                        NIO_ACCESS.acquireSession(dst);
+                        try {
+                            Unsafe.getUnsafe().setMemory(
+                                ((DirectBuffer)dst).address(),
+                                len + dst.position(), (byte) 0);
+                        } finally {
+                            NIO_ACCESS.releaseSession(dst);
+                        }
+                    }
                 }
                 throw new AEADBadTagException("Tag mismatch");
             }
@@ -1797,8 +1851,11 @@ abstract class GaloisCounterMode extends CipherSpi {
                            int outOfs) {
             int len = 0;
             if (inLen >= PARALLEL_LEN) {
-                len += implGCMCrypt(in, inOfs, inLen, in, inOfs, out, outOfs,
-                    gctr, ghash);
+                // Since GCMDecrypt.inPlaceArray cannot be accessed, check that
+                // 'in' and 'out' are the same.  All other in-place situations
+                // have been resolved by overlapDetection()
+                len += implGCMCrypt(in, inOfs, inLen, (in == out ? null : in),
+                    inOfs, out, outOfs, gctr, ghash);
             }
             ghash.doFinal(in, inOfs + len, inLen - len);
             return len + gctr.doFinal(in, inOfs + len, inLen - len, out,

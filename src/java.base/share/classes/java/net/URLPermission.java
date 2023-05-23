@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.security.Permission;
+import java.util.Locale;
 
 /**
  * Represents permission to access a resource or set of resources defined by a
@@ -147,6 +148,10 @@ import java.security.Permission;
  * from being set by application code, regardless of whether the security policy
  * in force, permits it.
  *
+ * @spec https://www.rfc-editor.org/info/rfc2296
+ *      RFC 2296: HTTP Remote Variant Selection Algorithm -- RVSA/1.0
+ * @spec https://www.rfc-editor.org/info/rfc2732
+ *      RFC 2732: Format for Literal IPv6 Addresses in URL's
  * @since 1.8
  */
 public final class URLPermission extends Permission {
@@ -471,7 +476,7 @@ public final class URLPermission extends Permission {
             throw new IllegalArgumentException(
                 "Invalid URL string: \"" + url + "\"");
         }
-        scheme = url.substring(0, delim).toLowerCase();
+        scheme = url.substring(0, delim).toLowerCase(Locale.ROOT);
         this.ssp = url.substring(delim + 1);
 
         if (!ssp.startsWith("//")) {
@@ -493,7 +498,7 @@ public final class URLPermission extends Permission {
             auth = authpath.substring(0, delim);
             this.path = authpath.substring(delim);
         }
-        this.authority = new Authority(scheme, auth.toLowerCase());
+        this.authority = new Authority(scheme, auth.toLowerCase(Locale.ROOT));
     }
 
     private String actions() {

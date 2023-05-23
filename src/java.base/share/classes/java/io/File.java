@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ import java.nio.file.Path;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
-import sun.security.action.GetPropertyAction;
+import jdk.internal.util.StaticProperty;
 
 /**
  * An abstract representation of file and directory pathnames.
@@ -152,7 +152,7 @@ public class File
     /**
      * The FileSystem object representing the platform's local file system.
      */
-    private static final FileSystem fs = DefaultFileSystem.getFileSystem();
+    private static final FileSystem FS = DefaultFileSystem.getFileSystem();
 
     /**
      * This abstract pathname's normalized pathname string. A normalized
@@ -185,7 +185,7 @@ public class File
     final boolean isInvalid() {
         PathStatus s = status;
         if (s == null) {
-            s = fs.isInvalid(this) ? PathStatus.INVALID : PathStatus.CHECKED;
+            s = FS.isInvalid(this) ? PathStatus.INVALID : PathStatus.CHECKED;
             status = s;
         }
         return s == PathStatus.INVALID;
@@ -213,7 +213,7 @@ public class File
      *
      * @see     java.lang.System#getProperty(java.lang.String)
      */
-    public static final char separatorChar = fs.getSeparator();
+    public static final char separatorChar = FS.getSeparator();
 
     /**
      * The system-dependent default name-separator character, represented as a
@@ -232,7 +232,7 @@ public class File
      *
      * @see     java.lang.System#getProperty(java.lang.String)
      */
-    public static final char pathSeparatorChar = fs.getPathSeparator();
+    public static final char pathSeparatorChar = FS.getPathSeparator();
 
     /**
      * The system-dependent path-separator character, represented as a string
@@ -260,7 +260,7 @@ public class File
     private File(String child, File parent) {
         assert parent.path != null;
         assert (!parent.path.isEmpty());
-        this.path = fs.resolve(parent.path, child);
+        this.path = FS.resolve(parent.path, child);
         this.prefixLength = parent.prefixLength;
     }
 
@@ -277,8 +277,8 @@ public class File
         if (pathname == null) {
             throw new NullPointerException();
         }
-        this.path = fs.normalize(pathname);
-        this.prefixLength = fs.prefixLength(this.path);
+        this.path = FS.normalize(pathname);
+        this.prefixLength = FS.prefixLength(this.path);
     }
 
     /* Note: The two-argument File constructors do not interpret an empty
@@ -319,16 +319,16 @@ public class File
         }
         if (parent != null) {
             if (parent.isEmpty()) {
-                this.path = fs.resolve(fs.getDefaultParent(),
-                                       fs.normalize(child));
+                this.path = FS.resolve(FS.getDefaultParent(),
+                                       FS.normalize(child));
             } else {
-                this.path = fs.resolve(fs.normalize(parent),
-                                       fs.normalize(child));
+                this.path = FS.resolve(FS.normalize(parent),
+                                       FS.normalize(child));
             }
         } else {
-            this.path = fs.normalize(child);
+            this.path = FS.normalize(child);
         }
-        this.prefixLength = fs.prefixLength(this.path);
+        this.prefixLength = FS.prefixLength(this.path);
     }
 
     /**
@@ -362,16 +362,16 @@ public class File
         }
         if (parent != null) {
             if (parent.path.isEmpty()) {
-                this.path = fs.resolve(fs.getDefaultParent(),
-                                       fs.normalize(child));
+                this.path = FS.resolve(FS.getDefaultParent(),
+                                       FS.normalize(child));
             } else {
-                this.path = fs.resolve(parent.path,
-                                       fs.normalize(child));
+                this.path = FS.resolve(parent.path,
+                                       FS.normalize(child));
             }
         } else {
-            this.path = fs.normalize(child);
+            this.path = FS.normalize(child);
         }
-        this.prefixLength = fs.prefixLength(this.path);
+        this.prefixLength = FS.prefixLength(this.path);
     }
 
     /**
@@ -432,11 +432,11 @@ public class File
             throw new IllegalArgumentException("URI path component is empty");
 
         // Okay, now initialize
-        p = fs.fromURIPath(p);
+        p = FS.fromURIPath(p);
         if (File.separatorChar != '/')
             p = p.replace('/', File.separatorChar);
-        this.path = fs.normalize(p);
-        this.prefixLength = fs.prefixLength(this.path);
+        this.path = FS.normalize(p);
+        this.prefixLength = FS.prefixLength(this.path);
     }
 
 
@@ -501,7 +501,7 @@ public class File
         String p = this.getParent();
         if (p == null) return null;
         if (getClass() != File.class) {
-            p = fs.normalize(p);
+            p = FS.normalize(p);
         }
         return new File(p, this.prefixLength);
     }
@@ -531,7 +531,7 @@ public class File
      *          {@code false} otherwise
      */
     public boolean isAbsolute() {
-        return fs.isAbsolute(this);
+        return FS.isAbsolute(this);
     }
 
     /**
@@ -558,7 +558,7 @@ public class File
      * @see     java.io.File#isAbsolute()
      */
     public String getAbsolutePath() {
-        return fs.resolve(this);
+        return FS.resolve(this);
     }
 
     /**
@@ -576,9 +576,9 @@ public class File
     public File getAbsoluteFile() {
         String absPath = getAbsolutePath();
         if (getClass() != File.class) {
-            absPath = fs.normalize(absPath);
+            absPath = FS.normalize(absPath);
         }
-        return new File(absPath, fs.prefixLength(absPath));
+        return new File(absPath, FS.prefixLength(absPath));
     }
 
     /**
@@ -623,7 +623,7 @@ public class File
         if (isInvalid()) {
             throw new IOException("Invalid file path");
         }
-        return fs.canonicalize(fs.resolve(this));
+        return FS.canonicalize(FS.resolve(this));
     }
 
     /**
@@ -650,9 +650,9 @@ public class File
     public File getCanonicalFile() throws IOException {
         String canonPath = getCanonicalPath();
         if (getClass() != File.class) {
-            canonPath = fs.normalize(canonPath);
+            canonPath = FS.normalize(canonPath);
         }
-        return new File(canonPath, fs.prefixLength(canonPath));
+        return new File(canonPath, FS.prefixLength(canonPath));
     }
 
     private static String slashify(String path, boolean isDirectory) {
@@ -694,7 +694,9 @@ public class File
         if (isInvalid()) {
             throw new MalformedURLException("Invalid file path");
         }
-        return new URL("file", "", slashify(getAbsolutePath(), isDirectory()));
+        @SuppressWarnings("deprecation")
+        var result = new URL("file", "", slashify(getAbsolutePath(), isDirectory()));
+        return result;
     }
 
     /**
@@ -757,7 +759,7 @@ public class File
      * Tests whether the application can read the file denoted by this
      * abstract pathname. On some platforms it may be possible to start the
      * Java virtual machine with special privileges that allow it to read
-     * files that are marked as unreadable. Consequently this method may return
+     * files that are marked as unreadable. Consequently, this method may return
      * {@code true} even though the file does not have read permissions.
      *
      * @return  {@code true} if and only if the file specified by this
@@ -778,14 +780,14 @@ public class File
         if (isInvalid()) {
             return false;
         }
-        return fs.checkAccess(this, FileSystem.ACCESS_READ);
+        return FS.checkAccess(this, FileSystem.ACCESS_READ);
     }
 
     /**
      * Tests whether the application can modify the file denoted by this
      * abstract pathname. On some platforms it may be possible to start the
      * Java virtual machine with special privileges that allow it to modify
-     * files that are marked read-only. Consequently this method may return
+     * files that are marked read-only. Consequently, this method may return
      * {@code true} even though the file is marked read-only.
      *
      * @return  {@code true} if and only if the file system actually
@@ -807,7 +809,7 @@ public class File
         if (isInvalid()) {
             return false;
         }
-        return fs.checkAccess(this, FileSystem.ACCESS_WRITE);
+        return FS.checkAccess(this, FileSystem.ACCESS_WRITE);
     }
 
     /**
@@ -831,7 +833,7 @@ public class File
         if (isInvalid()) {
             return false;
         }
-        return fs.hasBooleanAttributes(this, FileSystem.BA_EXISTS);
+        return FS.hasBooleanAttributes(this, FileSystem.BA_EXISTS);
     }
 
     /**
@@ -862,7 +864,7 @@ public class File
         if (isInvalid()) {
             return false;
         }
-        return fs.hasBooleanAttributes(this, FileSystem.BA_DIRECTORY);
+        return FS.hasBooleanAttributes(this, FileSystem.BA_DIRECTORY);
     }
 
     /**
@@ -895,7 +897,7 @@ public class File
         if (isInvalid()) {
             return false;
         }
-        return fs.hasBooleanAttributes(this, FileSystem.BA_REGULAR);
+        return FS.hasBooleanAttributes(this, FileSystem.BA_REGULAR);
     }
 
     /**
@@ -925,7 +927,7 @@ public class File
         if (isInvalid()) {
             return false;
         }
-        return fs.hasBooleanAttributes(this, FileSystem.BA_HIDDEN);
+        return FS.hasBooleanAttributes(this, FileSystem.BA_HIDDEN);
     }
 
     /**
@@ -969,7 +971,7 @@ public class File
         if (isInvalid()) {
             return 0L;
         }
-        return fs.getLastModifiedTime(this);
+        return FS.getLastModifiedTime(this);
     }
 
     /**
@@ -1001,7 +1003,7 @@ public class File
         if (isInvalid()) {
             return 0L;
         }
-        return fs.getLength(this);
+        return FS.getLength(this);
     }
 
 
@@ -1040,7 +1042,7 @@ public class File
         if (isInvalid()) {
             throw new IOException("Invalid file path");
         }
-        return fs.createFileExclusively(path);
+        return FS.createFileExclusively(path);
     }
 
     /**
@@ -1070,7 +1072,7 @@ public class File
         if (isInvalid()) {
             return false;
         }
-        return fs.delete(this);
+        return FS.delete(this);
     }
 
     /**
@@ -1173,11 +1175,11 @@ public class File
         if (isInvalid()) {
             return null;
         }
-        String[] s = fs.list(this);
+        String[] s = FS.list(this);
         if (s != null && getClass() != File.class) {
             String[] normalized = new String[s.length];
             for (int i = 0; i < s.length; i++) {
-                normalized[i] = fs.normalize(s[i]);
+                normalized[i] = FS.normalize(s[i]);
             }
             s = normalized;
         }
@@ -1214,7 +1216,7 @@ public class File
      * @see java.nio.file.Files#newDirectoryStream(Path,String)
      */
     public String[] list(FilenameFilter filter) {
-        String names[] = normalizedList();
+        String[] names = normalizedList();
         if ((names == null) || (filter == null)) {
             return names;
         }
@@ -1307,7 +1309,7 @@ public class File
      * @see java.nio.file.Files#newDirectoryStream(Path,String)
      */
     public File[] listFiles(FilenameFilter filter) {
-        String ss[] = normalizedList();
+        String[] ss = normalizedList();
         if (ss == null) return null;
         ArrayList<File> files = new ArrayList<>();
         for (String s : ss)
@@ -1345,7 +1347,7 @@ public class File
      * @see java.nio.file.Files#newDirectoryStream(Path,java.nio.file.DirectoryStream.Filter)
      */
     public File[] listFiles(FileFilter filter) {
-        String ss[] = normalizedList();
+        String[] ss = normalizedList();
         if (ss == null) return null;
         ArrayList<File> files = new ArrayList<>();
         for (String s : ss) {
@@ -1376,7 +1378,7 @@ public class File
         if (isInvalid()) {
             return false;
         }
-        return fs.createDirectory(this);
+        return FS.createDirectory(this);
     }
 
     /**
@@ -1460,7 +1462,7 @@ public class File
         if (this.isInvalid() || dest.isInvalid()) {
             return false;
         }
-        return fs.rename(this, dest);
+        return FS.rename(this, dest);
     }
 
     /**
@@ -1499,7 +1501,7 @@ public class File
         if (isInvalid()) {
             return false;
         }
-        return fs.setLastModifiedTime(this, time);
+        return FS.setLastModifiedTime(this, time);
     }
 
     /**
@@ -1530,7 +1532,7 @@ public class File
         if (isInvalid()) {
             return false;
         }
-        return fs.setReadOnly(this);
+        return FS.setReadOnly(this);
     }
 
     /**
@@ -1574,7 +1576,7 @@ public class File
         if (isInvalid()) {
             return false;
         }
-        return fs.setPermission(this, FileSystem.ACCESS_WRITE, writable, ownerOnly);
+        return FS.setPermission(this, FileSystem.ACCESS_WRITE, writable, ownerOnly);
     }
 
     /**
@@ -1653,7 +1655,7 @@ public class File
         if (isInvalid()) {
             return false;
         }
-        return fs.setPermission(this, FileSystem.ACCESS_READ, readable, ownerOnly);
+        return FS.setPermission(this, FileSystem.ACCESS_READ, readable, ownerOnly);
     }
 
     /**
@@ -1735,7 +1737,7 @@ public class File
         if (isInvalid()) {
             return false;
         }
-        return fs.setPermission(this, FileSystem.ACCESS_EXECUTE, executable, ownerOnly);
+        return FS.setPermission(this, FileSystem.ACCESS_EXECUTE, executable, ownerOnly);
     }
 
     /**
@@ -1777,7 +1779,7 @@ public class File
      * Tests whether the application can execute the file denoted by this
      * abstract pathname. On some platforms it may be possible to start the
      * Java virtual machine with special privileges that allow it to execute
-     * files that are not marked executable. Consequently this method may return
+     * files that are not marked executable. Consequently, this method may return
      * {@code true} even though the file does not have execute permissions.
      *
      * @return  {@code true} if and only if the abstract pathname exists
@@ -1799,7 +1801,7 @@ public class File
         if (isInvalid()) {
             return false;
         }
-        return fs.checkAccess(this, FileSystem.ACCESS_EXECUTE);
+        return FS.checkAccess(this, FileSystem.ACCESS_EXECUTE);
     }
 
 
@@ -1848,7 +1850,7 @@ public class File
      * @see java.nio.file.FileStore
      */
     public static File[] listRoots() {
-        return fs.listRoots();
+        return FS.listRoots();
     }
 
 
@@ -1883,7 +1885,7 @@ public class File
         if (isInvalid()) {
             return 0L;
         }
-        long space = fs.getSpace(this, FileSystem.SPACE_TOTAL);
+        long space = FS.getSpace(this, FileSystem.SPACE_TOTAL);
         return space >= 0L ? space : Long.MAX_VALUE;
     }
 
@@ -1927,7 +1929,7 @@ public class File
         if (isInvalid()) {
             return 0L;
         }
-        long space = fs.getSpace(this, FileSystem.SPACE_FREE);
+        long space = FS.getSpace(this, FileSystem.SPACE_FREE);
         return space >= 0L ? space : Long.MAX_VALUE;
     }
 
@@ -1974,7 +1976,7 @@ public class File
         if (isInvalid()) {
             return 0L;
         }
-        long space = fs.getSpace(this, FileSystem.SPACE_USABLE);
+        long space = FS.getSpace(this, FileSystem.SPACE_USABLE);
         return space >= 0L ? space : Long.MAX_VALUE;
     }
 
@@ -1984,14 +1986,14 @@ public class File
         private TempDirectory() { }
 
         // temporary directory location
-        private static final File tmpdir = new File(
-                GetPropertyAction.privilegedGetProperty("java.io.tmpdir"));
+        private static final File TMPDIR = new File(StaticProperty.javaIoTmpDir());
+
         static File location() {
-            return tmpdir;
+            return TMPDIR;
         }
 
         // file name generation
-        private static final SecureRandom random = new SecureRandom();
+        private static final SecureRandom RANDOM = new SecureRandom();
         private static int shortenSubName(int subNameLength, int excess,
             int nameMin) {
             int newLength = Math.max(nameMin, subNameLength - excess);
@@ -2004,7 +2006,7 @@ public class File
         static File generateFile(String prefix, String suffix, File dir)
             throws IOException
         {
-            long n = random.nextLong();
+            long n = RANDOM.nextLong();
             String nus = Long.toUnsignedString(n);
 
             // Use only the file name from the supplied prefix
@@ -2015,7 +2017,7 @@ public class File
             int suffixLength = suffix.length();
 
             String name;
-            int nameMax = fs.getNameMax(dir.getPath());
+            int nameMax = FS.getNameMax(dir.getPath());
             int excess = prefixLength + nusLength + suffixLength - nameMax;
             if (excess <= 0) {
                 name = prefix + nus + suffix;
@@ -2053,7 +2055,7 @@ public class File
             }
 
             // Normalize the path component
-            name = fs.normalize(name);
+            name = FS.normalize(name);
 
             File f = new File(dir, name);
             if (!name.equals(f.getName()) || f.isInvalid()) {
@@ -2174,9 +2176,9 @@ public class File
                     throw se;
                 }
             }
-        } while (fs.hasBooleanAttributes(f, FileSystem.BA_EXISTS));
+        } while (FS.hasBooleanAttributes(f, FileSystem.BA_EXISTS));
 
-        if (!fs.createFileExclusively(f.getPath()))
+        if (!FS.createFileExclusively(f.getPath()))
             throw new IOException("Unable to create temporary file");
 
         return f;
@@ -2245,7 +2247,7 @@ public class File
      * @since   1.2
      */
     public int compareTo(File pathname) {
-        return fs.compare(this, pathname);
+        return FS.compare(this, pathname);
     }
 
     /**
@@ -2291,7 +2293,7 @@ public class File
      * @return  A hash code for this abstract pathname
      */
     public int hashCode() {
-        return fs.hashCode(this);
+        return FS.hashCode(this);
     }
 
     /**
@@ -2325,7 +2327,7 @@ public class File
     /**
      * readObject is called to restore this filename.
      * The original separator character is read.  If it is different
-     * than the separator character on this system, then the old separator
+     * from the separator character on this system, then the old separator
      * is replaced by the local separator.
      *
      * @param  s the {@code ObjectInputStream} from which data is read
@@ -2341,9 +2343,9 @@ public class File
         char sep = s.readChar(); // read the previous separator char
         if (sep != separatorChar)
             pathField = pathField.replace(sep, separatorChar);
-        String path = fs.normalize(pathField);
+        String path = FS.normalize(pathField);
         UNSAFE.putReference(this, PATH_OFFSET, path);
-        UNSAFE.putIntVolatile(this, PREFIX_LENGTH_OFFSET, fs.prefixLength(path));
+        UNSAFE.putIntVolatile(this, PREFIX_LENGTH_OFFSET, FS.prefixLength(path));
     }
 
     private static final jdk.internal.misc.Unsafe UNSAFE

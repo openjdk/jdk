@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,12 @@
  */
 
 #include "precompiled.hpp"
-#include "jni.h"
-#include "jvm.h"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/location.hpp"
+#include "jni.h"
+#include "jvm.h"
 #include "oops/klass.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "prims/vectorSupport.hpp"
@@ -38,9 +38,8 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/stackValue.hpp"
-
 #ifdef COMPILER2
-#include "opto/matcher.hpp" // Matcher::max_vector_size(BasicType)
+#include "opto/matcher.hpp"
 #endif // COMPILER2
 
 #ifdef COMPILER2
@@ -74,23 +73,17 @@ bool VectorSupport::is_vector_mask(Klass* klass) {
   return klass->is_subclass_of(vmClasses::vector_VectorMask_klass());
 }
 
-bool VectorSupport::is_vector_shuffle(Klass* klass) {
-  return klass->is_subclass_of(vmClasses::vector_VectorShuffle_klass());
-}
-
 BasicType VectorSupport::klass2bt(InstanceKlass* ik) {
   assert(ik->is_subclass_of(vmClasses::vector_VectorPayload_klass()), "%s not a VectorPayload", ik->name()->as_C_string());
   fieldDescriptor fd; // find_field initializes fd if found
   // static final Class<?> ETYPE;
   Klass* holder = ik->find_field(vmSymbols::ETYPE_name(), vmSymbols::class_signature(), &fd);
 
-  assert(holder != NULL, "sanity");
+  assert(holder != nullptr, "sanity");
   assert(fd.is_static(), "");
   assert(fd.offset() > 0, "");
 
-  if (is_vector_shuffle(ik)) {
-    return T_BYTE;
-  } else if (is_vector_mask(ik)) {
+  if (is_vector_mask(ik)) {
     return T_BOOLEAN;
   } else { // vector and mask
     oop value = ik->java_mirror()->obj_field(fd.offset());
@@ -104,7 +97,7 @@ jint VectorSupport::klass2length(InstanceKlass* ik) {
   // static final int VLENGTH;
   Klass* holder = ik->find_field(vmSymbols::VLENGTH_name(), vmSymbols::int_signature(), &fd);
 
-  assert(holder != NULL, "sanity");
+  assert(holder != nullptr, "sanity");
   assert(fd.is_static(), "");
   assert(fd.offset() > 0, "");
 
@@ -521,8 +514,13 @@ int VectorSupport::vop2ideal(jint id, BasicType bt) {
     }
     case VECTOR_OP_REVERSE_BYTES: {
       switch (bt) {
-        case T_BYTE:
-        case T_SHORT:
+        case T_SHORT: return Op_ReverseBytesS;
+        // Superword requires type consistency between the ReverseBytes*
+        // node and the data. But there's no ReverseBytesB node because
+        // no reverseBytes() method in Java Byte class. T_BYTE can only
+        // appear in VectorAPI calls. We reuse Op_ReverseBytesI for this
+        // to ensure vector intrinsification succeeds.
+        case T_BYTE:  // Intentionally fall-through
         case T_INT:   return Op_ReverseBytesI;
         case T_LONG:  return Op_ReverseBytesL;
         default: fatal("REVERSE_BYTES: %s", type2name(bt));

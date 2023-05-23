@@ -35,7 +35,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.util.Vector;
+import java.util.ArrayList;
 
 import javax.print.CancelablePrintJob;
 import javax.print.Doc;
@@ -75,9 +75,9 @@ import java.awt.print.*;
 
 public class Win32PrintJob implements CancelablePrintJob {
 
-    private transient Vector<PrintJobListener> jobListeners;
-    private transient Vector<PrintJobAttributeListener> attrListeners;
-    private transient Vector<PrintJobAttributeSet> listenedAttributeSets;
+    private transient ArrayList<PrintJobListener> jobListeners;
+    private transient ArrayList<PrintJobAttributeListener> attrListeners;
+    private transient ArrayList<PrintJobAttributeSet> listenedAttributeSets;
 
     private Win32PrintService service;
     private boolean fidelity;
@@ -135,7 +135,7 @@ public class Win32PrintJob implements CancelablePrintJob {
                 return;
             }
             if (jobListeners == null) {
-                jobListeners = new Vector<>();
+                jobListeners = new ArrayList<>();
             }
             jobListeners.add(listener);
         }
@@ -223,7 +223,7 @@ public class Win32PrintJob implements CancelablePrintJob {
                 PrintJobListener listener;
                 PrintJobEvent event = new PrintJobEvent(this, reason);
                 for (int i = 0; i < jobListeners.size(); i++) {
-                    listener = jobListeners.elementAt(i);
+                    listener = jobListeners.get(i);
                     switch (reason) {
 
                         case PrintJobEvent.JOB_COMPLETE :
@@ -262,8 +262,8 @@ public class Win32PrintJob implements CancelablePrintJob {
                 return;
             }
             if (attrListeners == null) {
-                attrListeners = new Vector<>();
-                listenedAttributeSets = new Vector<>();
+                attrListeners = new ArrayList<>();
+                listenedAttributeSets = new ArrayList<>();
             }
             attrListeners.add(listener);
             if (attributes == null) {

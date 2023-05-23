@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ class VirtualSpaceSummary : public StackObj {
   HeapWord* _reserved_end;
 public:
   VirtualSpaceSummary() :
-      _start(NULL), _committed_end(NULL), _reserved_end(NULL) { }
+      _start(nullptr), _committed_end(nullptr), _reserved_end(nullptr) { }
   VirtualSpaceSummary(HeapWord* start, HeapWord* committed_end, HeapWord* reserved_end) :
       _start(start), _committed_end(committed_end), _reserved_end(reserved_end) { }
 
@@ -52,7 +52,7 @@ class SpaceSummary : public StackObj {
   size_t    _used;
 public:
   SpaceSummary() :
-      _start(NULL), _end(NULL), _used(0) { }
+      _start(nullptr), _end(nullptr), _used(0) { }
   SpaceSummary(HeapWord* start, HeapWord* end, size_t used) :
       _start(start), _end(end), _used(used) { }
 
@@ -117,13 +117,15 @@ class G1HeapSummary : public GCHeapSummary {
   size_t  _edenUsed;
   size_t  _edenCapacity;
   size_t  _survivorUsed;
+  size_t  _oldGenUsed;
   uint    _numberOfRegions;
  public:
-   G1HeapSummary(VirtualSpaceSummary& heap_space, size_t heap_used, size_t edenUsed, size_t edenCapacity, size_t survivorUsed, uint numberOfRegions) :
-      GCHeapSummary(heap_space, heap_used), _edenUsed(edenUsed), _edenCapacity(edenCapacity), _survivorUsed(survivorUsed), _numberOfRegions(numberOfRegions) { }
+   G1HeapSummary(VirtualSpaceSummary& heap_space, size_t heap_used, size_t edenUsed, size_t edenCapacity, size_t survivorUsed, size_t oldGenUsed, uint numberOfRegions) :
+      GCHeapSummary(heap_space, heap_used), _edenUsed(edenUsed), _edenCapacity(edenCapacity), _survivorUsed(survivorUsed), _oldGenUsed(oldGenUsed), _numberOfRegions(numberOfRegions) { }
    const size_t edenUsed() const { return _edenUsed; }
    const size_t edenCapacity() const { return _edenCapacity; }
    const size_t survivorUsed() const { return _survivorUsed; }
+   const size_t oldGenUsed() const { return _oldGenUsed; }
    const uint   numberOfRegions() const { return _numberOfRegions; }
 
    virtual void accept(GCHeapSummaryVisitor* visitor) const {

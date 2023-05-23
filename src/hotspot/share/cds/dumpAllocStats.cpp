@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ void DumpAllocStats::print_stats(int ro_all, int rw_all) {
 
   LogMessage(cds) msg;
 
-  msg.debug("Detailed metadata info (excluding heap regions):");
+  msg.debug("Detailed metadata info (excluding heap region):");
   msg.debug("%s", hdr);
   msg.debug("%s", sep);
   for (int type = 0; type < int(_number_of_types); type ++) {
@@ -101,4 +101,9 @@ void DumpAllocStats::print_stats(int ro_all, int rw_all) {
          ro_all, all_ro_bytes, rw_all, all_rw_bytes);
 
 #undef fmt_stats
+
+  msg.debug("Class CP entries = %d, archived = %d (%3.1f%%)",
+            _num_klass_cp_entries, _num_klass_cp_entries_archived,
+            percent_of(_num_klass_cp_entries_archived, _num_klass_cp_entries));
+
 }

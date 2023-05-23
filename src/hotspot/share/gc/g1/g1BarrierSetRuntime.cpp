@@ -46,6 +46,7 @@ void G1BarrierSetRuntime::write_ref_array_post_entry(HeapWord* dst, size_t lengt
 
 // G1 pre write barrier slowpath
 JRT_LEAF(void, G1BarrierSetRuntime::write_ref_field_pre_entry(oopDesc* orig, JavaThread* thread))
+  assert(thread == JavaThread::current(), "pre-condition");
   assert(orig != nullptr, "should be optimized out");
   assert(oopDesc::is_oop(orig, true /* ignore mark word */), "Error");
   // store the original value that was in the field reference
@@ -56,6 +57,7 @@ JRT_END
 // G1 post write barrier slowpath
 JRT_LEAF(void, G1BarrierSetRuntime::write_ref_field_post_entry(volatile G1CardTable::CardValue* card_addr,
                                                                JavaThread* thread))
+  assert(thread == JavaThread::current(), "pre-condition");
   G1DirtyCardQueue& queue = G1ThreadLocalData::dirty_card_queue(thread);
   G1BarrierSet::dirty_card_queue_set().enqueue(queue, card_addr);
 JRT_END

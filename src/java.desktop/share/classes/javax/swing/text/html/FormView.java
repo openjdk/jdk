@@ -276,6 +276,7 @@ public class FormView extends ComponentView implements ActionListener {
             JButton button;
             try {
                 URL base = ((HTMLDocument)getElement().getDocument()).getBase();
+                @SuppressWarnings("deprecation")
                 URL srcURL = new URL(base, srcAtt);
                 Icon icon = new ImageIcon(srcURL);
                 button  = new JButton(icon);
@@ -515,13 +516,15 @@ public class FormView extends ComponentView implements ActionListener {
         String action = (String) attrs.getAttribute(HTML.Attribute.ACTION);
         URL actionURL;
         try {
-            actionURL = (action == null)
+            @SuppressWarnings("deprecation")
+            var _unused = actionURL = (action == null)
                 ? new URL(base.getProtocol(), base.getHost(),
                                         base.getPort(), base.getFile())
                 : new URL(base, action);
             if (!isPostMethod) {
                 String query = data.toString();
-                actionURL = new URL(actionURL + "?" + query);
+                @SuppressWarnings("deprecation")
+                var _unused2 = actionURL = new URL(actionURL + "?" + query);
             }
         } catch (MalformedURLException e) {
             actionURL = null;

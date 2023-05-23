@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,9 +122,7 @@ import sun.rmi.transport.LiveRef;
  * <ul>
  *
  * <li>The proxy's class is defined according to the specifications for the
- * <a href="{@docRoot}/java.base/java/lang/reflect/Proxy.html#membership">
- * {@code Proxy}
- * </a>
+ * {@link java.lang.reflect.Proxy##membership Proxy}
  * class, using the class loader of the remote object's class.
  *
  * <li>The proxy implements all the remote interfaces implemented by the

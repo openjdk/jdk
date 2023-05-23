@@ -83,7 +83,7 @@ void ShenandoahParallelCodeHeapIterator::parallel_blobs_do(CodeBlobClosure* f) {
   int count = 0;
   bool process_block = true;
 
-  for (CodeBlob *cb = CodeCache::first_blob(_heap); cb != NULL; cb = CodeCache::next_blob(_heap, cb)) {
+  for (CodeBlob *cb = CodeCache::first_blob(_heap); cb != nullptr; cb = CodeCache::next_blob(_heap, cb)) {
     int current = count++;
     if ((current & stride_mask) == 0) {
       process_block = (current >= _claimed_idx) &&
@@ -119,7 +119,7 @@ void ShenandoahCodeRoots::unregister_nmethod(nmethod* nm) {
 }
 
 void ShenandoahCodeRoots::arm_nmethods() {
-  assert(BarrierSet::barrier_set()->barrier_set_nmethod() != NULL, "Sanity");
+  assert(BarrierSet::barrier_set()->barrier_set_nmethod() != nullptr, "Sanity");
   BarrierSet::barrier_set()->barrier_set_nmethod()->arm_all_nmethods();
 }
 
@@ -210,7 +210,7 @@ public:
       ShenandoahNMethod::heal_nmethod_metadata(nm_data);
       // Code cache unloading needs to know about on-stack nmethods. Arm the nmethods to get
       // mark_as_maybe_on_stack() callbacks when they are used again.
-      _bs->arm(nm, 0);
+      _bs->set_guard_value(nm, 0);
     }
 
     // Clear compiled ICs and exception caches
@@ -285,7 +285,7 @@ void ShenandoahCodeRoots::purge() {
 
 ShenandoahCodeRootsIterator::ShenandoahCodeRootsIterator() :
         _par_iterator(CodeCache::heaps()),
-        _table_snapshot(NULL) {
+        _table_snapshot(nullptr) {
   assert(SafepointSynchronize::is_at_safepoint(), "Must be at safepoint");
   MutexLocker locker(CodeCache_lock, Mutex::_no_safepoint_check_flag);
   _table_snapshot = ShenandoahCodeRoots::table()->snapshot_for_iteration();
@@ -294,12 +294,12 @@ ShenandoahCodeRootsIterator::ShenandoahCodeRootsIterator() :
 ShenandoahCodeRootsIterator::~ShenandoahCodeRootsIterator() {
   MonitorLocker locker(CodeCache_lock, Mutex::_no_safepoint_check_flag);
   ShenandoahCodeRoots::table()->finish_iteration(_table_snapshot);
-  _table_snapshot = NULL;
+  _table_snapshot = nullptr;
   locker.notify_all();
 }
 
 void ShenandoahCodeRootsIterator::possibly_parallel_blobs_do(CodeBlobClosure *f) {
   assert(SafepointSynchronize::is_at_safepoint(), "Must be at safepoint");
-  assert(_table_snapshot != NULL, "Sanity");
+  assert(_table_snapshot != nullptr, "Sanity");
   _table_snapshot->parallel_blobs_do(f);
 }

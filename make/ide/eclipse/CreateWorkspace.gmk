@@ -1,0 +1,390 @@
+#
+# Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+default: all
+
+include $(SPEC)
+include MakeBase.gmk
+include TextFileProcessing.gmk
+include Utils.gmk
+include Modules.gmk
+
+JVM_VARIANT := $(JVM_VARIANT_MAIN)
+include hotspot/HotspotCommon.gmk
+include hotspot/lib/JvmFeatures.gmk
+include hotspot/lib/JvmOverrideFiles.gmk
+include hotspot/lib/JvmFlags.gmk
+
+# Random number generation, with the amount of specified digits
+# No need to check if the parameter passed is a valid number, the shell will
+# be more than happy to complain if it isn't ;)
+RandomDigits = \
+    $(shell od -An -N8 -d /dev/urandom | sed -e 's| ||g' -e 's|\(.\{$(strip $1)\}\).*|\1|')
+
+# Modified version of utility from JdkNativeCompilation.gmk
+# The full path could be omitted, but it was chosen not to so wildcard
+# can work properly for existing directories. The pathsubst below that
+# this necessitates is a relatively small price to pay.
+FindModuleNativeDirs = \
+    $(call uniq, $(wildcard \
+        $(TOPDIR)/src/$(strip $1)/$(OPENJDK_TARGET_OS)/native \
+        $(TOPDIR)/src/$(strip $1)/$(OPENJDK_TARGET_OS_TYPE)/native \
+        $(TOPDIR)/src/$(strip $1)/share/native))
+
+# Taken from JdkNativeCompilation.gmk
+FindJavaHeaderDir = \
+    $(if $(strip $1),$(wildcard $(SUPPORT_OUTPUTDIR)/headers/$(strip $1)))
+
+JAVA_DIRS := $(strip $(foreach module, $(call FindAllModules), \
+    $(patsubst $(TOPDIR)/%,%,$(filter-out $(OUTPUTDIR)%, \
+    $(call FindModuleSrcDirs, $(module))))))
+
+NATIVE_DIRS := $(strip $(foreach module, $(call FindAllModules), \
+    $(patsubst $(TOPDIR)/%,%,$(call FindModuleNativeDirs, $(module)))))
+
+# Emit the defines extracted from the list of options specified in the first parameter into
+# the language settings file, in Eclipse format.
+EmitExtractedDefines = \
+    $(shell echo $(1) | grep -o "\-D\s\?")
+
+################################################################################
+# Create an Eclipse Workspace with the specified nature
+#
+# Parameter 1 is the name of the rule. This name is used as variable prefix,
+# and the targets generated are listed in a variable by that name.
+#
+# Remaining parameter(s) are named arguments:
+#   NATURE - Which Eclipse Workspace nature to generate for the Workspace. Can
+#       be one of JAVA, HOTSPOT, NATIVE, or MIXED.
+#   SHARED - Workspace will share the same directory as the JDK if true. Can be
+#       either true or false. Defaults to false if not specified.
+SetupEclipseWorkspace = $(NamedParamsMacroTemplate)
+define SetupEclipseWorkspaceBody
+
+  $1_NATURES :=
+  $1_BUILD_MANAGERS :=
+  $1_LINKED_RESOURCES :=
+
+  ifeq ($$($1_NATURE), )
+    $$(error No nature specified for Eclipse Workspace, cannot continue)
+  endif
+
+  ifeq ($$(findstring $$($1_NATURE), JAVA HOTSPOT NATIVE MIXED), )
+    $$(error Unrecognised nature $$($1_NATURE) specified for Eclipse Workspace)
+  endif
+
+  ifeq ($$($1_SHARED), )
+    $$(info Workspace sharing option not given, assuming non-shared Eclipse Workspace)
+    $1_SHARED := false
+  else ifeq ($$(findstring $$($1_SHARED), true false), )
+    $$(error $$($1_NATURE) is not a boolean word)
+  endif
+
+  ifeq ($$($1_SHARED), true)
+    $1_CLASSPATH_FILE := $(TOPDIR)/.classpath
+    $1_WORKSPACE_FILE := $(TOPDIR)/.project
+    $1_NATIVE_FILE := $(TOPDIR)/.cproject
+    $1_SETTINGS_FILE := $(TOPDIR)/.settings/language.settings.xml
+  else
+    $1_IDE_OUTPUTDIR := $(OUTPUTDIR)/ide/eclipse
+    $1_CLASSPATH_FILE := $$($1_IDE_OUTPUTDIR)/.classpath
+    $1_WORKSPACE_FILE := $$($1_IDE_OUTPUTDIR)/.project
+    $1_NATIVE_FILE := $$($1_IDE_OUTPUTDIR)/.cproject
+    $1_SETTINGS_FILE := $$($1_IDE_OUTPUTDIR)/.settings/language.settings.xml
+    $$(call MakeDir, $$($1_IDE_OUTPUTDIR))
+  endif
+
+  ifneq ($$(findstring $$($1_NATURE), HOTSPOT NATIVE MIXED), )
+    ifeq ($$(call isCompiler, microsoft), true)
+      $$(error Visual C++ is not yet supported as an indexer for Native Workspaces!)
+    endif
+  endif
+
+  ifneq ($$(findstring $$($1_NATURE), JAVA MIXED), )
+
+    $1_CLASSPATH :=
+
+    # Eclipse crashes when processing multiple module-info.java files
+    # This is an annoying bug that has not been fixed for some time now
+    $1_CLASSPATH += $$(foreach src,$(JAVA_DIRS), \
+        <classpathentry excluding="module-info.java|module-info.java.extra" kind="src" path="$$(src)"/>$$(NEWLINE))
+
+    $$(eval $$(call SetupTextFileProcessing, $1_CREATE_CLASSPATH_FILE, \
+        SOURCE_FILES := $(TOPDIR)/make/ide/eclipse/classpath.template, \
+        OUTPUT_FILE := $$($1_CLASSPATH_FILE), \
+        REPLACEMENTS := \
+            @@CLASSPATH@@ => $$($1_CLASSPATH), \
+    ))
+
+    TARGETS += $$($1_CREATE_CLASSPATH_FILE)
+
+    $1_NATURES += <nature>org.eclipse.jdt.core.javanature</nature>$$(NEWLINE)
+
+  endif
+
+  ifneq ($$(findstring $$($1_NATURE), HOTSPOT NATIVE MIXED), )
+
+    $1_NATIVE_SRCS :=
+
+    $1_BUILD_MANAGERS += \
+        <buildCommand> \
+            <name>org.eclipse.cdt.managedbuilder.core.genmakebuilder</name> \
+            <triggers>clean$$(COMMA)full$$(COMMA)incremental$$(COMMA)</triggers> \
+            <arguments> \
+            </arguments> \
+        </buildCommand> \
+        <buildCommand> \
+            <name>org.eclipse.cdt.managedbuilder.core.ScannerConfigBuilder</name> \
+            <triggers>full$$(COMMA)incremental$$(COMMA)</triggers> \
+            <arguments> \
+            </arguments> \
+        </buildCommand>$$(NEWLINE)
+
+    $1_NATURES += \
+        <nature>org.eclipse.cdt.core.cnature</nature> \
+        <nature>org.eclipse.cdt.core.ccnature</nature> \
+        <nature>org.eclipse.cdt.managedbuilder.core.managedBuildNature</nature> \
+        <nature>org.eclipse.cdt.managedbuilder.core.ScannerConfigNature</nature>$$(NEWLINE)
+
+    # This is always emitted, no matter which of the 3 natures were selected
+    $1_NATIVE_SRCS += \
+        <entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="src/hotspot"/>$$(NEWLINE)
+
+    ifneq ($$(findstring $$($1_NATURE), NATIVE MIXED), )
+      $1_NATIVE_SRCS += $$(foreach src,$(NATIVE_DIRS), \
+          <entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="$$(strip $$(src))"/>$$(NEWLINE))
+    endif
+
+    $1_WORKSPACE_MAJOR := $$(call RandomDigits, 10)
+    $1_WORKSPACE_MINOR := $$(call RandomDigits, 9)
+
+    # FixPath already removes $(FIXPATH) automatically, but if we rely on FixPath
+    # to do it for us dir won't be able to handle the converted path (if on Windows).
+    # Reversing the order causes dir to mangle the preceeding $(FIXPATH) which breaks
+    # the ability of FixPath to remove it, so it has to be manually removed here.
+    #
+    # Note that the workspace setup system currently does not support Visual C++ when
+    # extracting compiler and/or system headers vital to the build!
+    $1_ENV := $$(call FixPath, $$(dir $$(patsubst $(FIXPATH), , $(CC))))
+
+    # Sidestep annoying issue of WSL path conversion not working properly with true
+    # Unix paths. Eclipse can't run the WSL make by itself anyway, even if we could
+    # properly convert the path.
+    ifeq ($$(call isBuildOsEnv, windows.wsl1 windows.wsl2), true)
+      $1_MAKE := wsl.exe $(MAKE)
+    else
+      $1_MAKE := $$(call FixPath, $(MAKE))
+    endif
+
+    $1_MATCHING_MAKE_TARGETS :=
+    $1_PLAIN_MAKE_TARGETS := update-build-docs docs gensrc gendata \
+        copy java launchers libs hotspot jdk product-images all-images test-image clean
+
+    # make reconfigure omitted since it is sensitive to which make was used
+    ifeq ($$($1_SHARED), true)
+      $1_PLAIN_MAKE_TARGETS += dist-clean
+    endif
+
+    $1_MATCHING_MAKE_TARGETS += $$(foreach name,$$($1_PLAIN_MAKE_TARGETS), \
+      <target name="$$(strip $$(name))" path="" targetID="org.eclipse.cdt.build.MakeTargetBuilder"> \
+          <buildCommand>$$($1_MAKE)</buildCommand> \
+          <buildArguments>-C $$(call FixPath, $(TOPDIR))</buildArguments> \
+          <buildTarget>$$(strip $$(name))</buildTarget> \
+          <stopOnError>true</stopOnError> \
+          <useDefaultCommand>false</useDefaultCommand> \
+          <runAllBuilders>true</runAllBuilders> \
+      </target>$$(NEWLINE))
+
+    $$(eval $$(call SetupTextFileProcessing, $1_CREATE_NATIVE_FILE, \
+        SOURCE_FILES := $(TOPDIR)/make/ide/eclipse/native.template, \
+        OUTPUT_FILE := $$($1_NATIVE_FILE), \
+        REPLACEMENTS := \
+            @@DIR@@ => $$(call FixPath, $(TOPDIR)) ; \
+            @@ENV@@ => $$($1_ENV) ; \
+            @@WORKSPACE@@ => $$($1_WORKSPACE_MAJOR) ; \
+            @@MINOR@@ =>  $$($1_WORKSPACE_MINOR) ; \
+            @@MAKE@@ => $$($1_MAKE) ; \
+            @@SRC@@ => $$($1_NATIVE_SRCS) ; \
+            @@MAKE_TARGETS@@ => $$($1_MATCHING_MAKE_TARGETS), \
+    ))
+
+    TARGETS += $$($1_CREATE_NATIVE_FILE)
+
+    ifeq ($$($1_SHARED), true)
+      $$(call MakeDir, $(TOPDIR)/.settings)
+    else
+      $$(call MakeDir, $$($1_IDE_OUTPUTDIR)/.settings)
+    endif
+
+    $1_CSETTINGS :=
+    $1_CXXSETTINGS :=
+
+    ifneq ($$(findstring $$($1_NATURE), NATIVE MIXED), )
+      $1_CSETTINGS += $$(foreach module, $$(call FindAllModules), $$(if $$(call FindJavaHeaderDir, $$(module)), \
+          $$(foreach dirs, $$(strip $$(patsubst $(TOPDIR)/%,%,$$(call FindModuleNativeDirs, $$(module)))), \
+              <resource project-relative-path="$$(dirs)"> \
+                  <entry flags="LOCAL" kind="includePath" name="$$(call FixPath, $$(call FindJavaHeaderDir, $$(module)))"/> \
+                  $$(if $$(findstring jdk.sctp,$$(module)),    <entry flags="LOCAL" kind="includePath" name="$$(call FixPath, $$(call FindJavaHeaderDir, java.base))"/>) \
+              </resource>$$(NEWLINE))))
+
+      # main.c source file used for generic launchers
+      $1_CSETTINGS += \
+          <resource project-relative-path="src/java.base/share/native/launcher/main.c"> \
+              <entry kind="macro" name="LAUNCHER_NAME" value="&quot;$(LAUNCHER_NAME)&quot;"/> \
+          </resource>$$(NEWLINE)
+    endif
+
+    # HotSpot first
+    $1_CXXSETTINGS += <resource project-relative-path="src/hotspot">$$(NEWLINE)
+
+    # If only the Java Virtual Machine sources were requested, headers from other parts of
+    # the native source that it needs will not be available. Add them as include paths here
+    # instead.
+    ifeq ($$($1_NATURE), HOTSPOT)
+      $1_CXXSETTINGS += $$(foreach src, $$(strip $$(patsubst %,%/include,$$(call FindModuleNativeDirs, java.base))), \
+          $(X)    $(X)<entry flags="LOCAL" kind="includePath" name="$$(call FixPath, $$(src))"/>$$(NEWLINE))
+      $1_CXXSETTINGS += $(X)    $(X)<entry flags="LOCAL" kind="includePath" name="$$(call FixPath, $(TOPDIR)/src/java.base/share/native/libjimage)"/>$$(NEWLINE)
+    endif
+
+    $1_CXXSETTINGS += $(X)    $(X)<entry flags="LOCAL" kind="includePath" name="$$(call FixPath, $(JVM_VARIANT_OUTPUTDIR)/gensrc)"/>$$(NEWLINE)
+
+    ifeq ($$(call check-jvm-feature, compiler2), true)
+      $1_CXXSETTINGS += $(X)    $(X)<entry flags="LOCAL" kind="includePath" name="$$(call FixPath, $(JVM_VARIANT_OUTPUTDIR)/gensrc/adfiles)"/>$$(NEWLINE)
+    endif
+
+    $1_CXXSETTINGS += </resource>$$(NEWLINE)
+
+    $1_CXXSETTINGS += \
+        <resource project-relative-path="src/hotspot/share/runtime/abstract_vm_version.cpp"> \
+            <entry kind="macro" name="HOTSPOT_VERSION_STRING" value="&quot;$(VERSION_STRING)&quot;"/> \
+            <entry kind="macro" name="DEBUG_LEVEL" value="&quot;$(DEBUG_LEVEL)&quot;"/> \
+            <entry kind="macro" name="HOTSPOT_BUILD_USER" value="&quot;$(USERNAME)&quot;"/> \
+            <entry kind="macro" name="HOTSPOT_VM_DISTRO" value="&quot;$(HOTSPOT_VM_DISTRO)&quot;"/> \
+            <entry kind="macro" name="CPU" value="&quot;$(OPENJDK_TARGET_CPU_VM_VERSION)&quot;"/> \
+            <entry kind="macro" name="HOTSPOT_BUILD_TIME" value="&quot;$(if $(HOTSPOT_BUILD_TIME),$(HOTSPOT_BUILD_TIME),$(call EpochToISO8601,$(shell $(DATE) +"%s")))&quot;"/> \
+        </resource> \
+        <resource project-relative-path="src/hotspot/share/runtime/arguments.cpp"> \
+            <entry kind="macro" name="HOTSPOT_VERSION_STRING" value="&quot;$(VERSION_STRING)&quot;"/> \
+            <entry kind="macro" name="DEBUG_LEVEL" value="&quot;$(DEBUG_LEVEL)&quot;"/> \
+            <entry kind="macro" name="HOTSPOT_BUILD_USER" value="&quot;$(USERNAME)&quot;"/> \
+            <entry kind="macro" name="HOTSPOT_VM_DISTRO" value="&quot;$(HOTSPOT_VM_DISTRO)&quot;"/> \
+            <entry kind="macro" name="CPU" value="&quot;$(OPENJDK_TARGET_CPU_VM_VERSION)&quot;"/> \
+            <entry kind="macro" name="HOTSPOT_BUILD_TIME" value="&quot;$(if $(HOTSPOT_BUILD_TIME),$(HOTSPOT_BUILD_TIME),$(call EpochToISO8601,$(shell $(DATE) +"%s")))&quot;"/> \
+        </resource>$$(NEWLINE)
+
+    # Now the rest of the C++ sources in the codebase
+    ifneq ($$(findstring $$($1_NATURE), NATIVE MIXED), )
+      $1_CXXSETTINGS += $$(foreach module, $$(call FindAllModules), $$(if $$(call FindJavaHeaderDir, $$(module)), \
+          $$(foreach dirs, $$(strip $$(patsubst $(TOPDIR)/%,%,$$(call FindModuleNativeDirs, $$(module)))), \
+              <resource project-relative-path="$$(dirs)"> \
+                  <entry flags="LOCAL" kind="includePath" name="$$(call FixPath, $$(call FindJavaHeaderDir, $$(module)))"/> \
+              </resource>$$(NEWLINE))))
+    endif
+
+    $$(eval $$(call SetupTextFileProcessing, $1_CREATE_SETTINGS_FILE, \
+        SOURCE_FILES := $(TOPDIR)/make/ide/eclipse/settings.template, \
+        OUTPUT_FILE := $$($1_SETTINGS_FILE), \
+        REPLACEMENTS := \
+            @@WORKSPACE@@ => $$($1_WORKSPACE_MAJOR) ; \
+            @@CSETTINGS@@ => $$($1_CSETTINGS) ; \
+            @@CXXSETTINGS@@ => $$($1_CXXSETTINGS), \
+    ))
+
+    TARGETS += $$($1_CREATE_SETTINGS_FILE)
+
+  endif
+
+  ifeq ($$($1_SHARED), false)
+    ifneq ($$(findstring $$($1_NATURE), JAVA MIXED), )
+      $1_LINKED_RESOURCES += $$(foreach src,$(JAVA_DIRS), \
+          <link> \
+              <name>$$(strip $$(src))</name> \
+              <type>2</type> \
+              <location>$$(subst \\,/,$$(call FixPath, $(TOPDIR)/$$(src)))</location> \
+          </link>$$(NEWLINE))
+    endif
+
+    ifneq ($$(findstring $$($1_NATURE), HOTSPOT NATIVE MIXED), )
+      # CDT includes a Makefile editor, so if CDT support was indicated there's no harm in
+      # including the make sources as well, since the cost of indexing them is miniscule
+      $1_LINKED_RESOURCES += \
+          <link> \
+              <name>make</name> \
+              <type>2</type> \
+              <location>$$(subst \\,/,$$(call FixPath, $(TOPDIR)/make))</location> \
+          </link> \
+          <link> \
+              <name>src/hotspot</name> \
+              <type>2</type> \
+              <location>$$(subst \\,/,$$(call FixPath, $(TOPDIR)/src/hotspot))</location> \
+          </link>$$(NEWLINE)
+    endif
+
+    ifneq ($$(findstring $$($1_NATURE), NATIVE MIXED), )
+      $1_LINKED_RESOURCES += $$(foreach src,$(NATIVE_DIRS), \
+          <link> \
+              <name>$$(strip $$(src))</name> \
+              <type>2</type> \
+              <location>$$(subst \\,/,$$(call FixPath, $(TOPDIR)/$$(src)))</location> \
+          </link>$$(NEWLINE))
+    endif
+  endif
+
+  $$(eval $$(call SetupTextFileProcessing, $1_CREATE_WORKSPACE_FILE, \
+      SOURCE_FILES := $(TOPDIR)/make/ide/eclipse/workspace.template, \
+      OUTPUT_FILE := $$($1_WORKSPACE_FILE), \
+      REPLACEMENTS := \
+          @@BUILD_MANAGERS@@ => $$($1_BUILD_MANAGERS) ; \
+          @@NATURES@@ => $$($1_NATURES) ; \
+          @@LINKED_RESOURCES@@ => $$($1_LINKED_RESOURCES), \
+  ))
+
+  TARGETS += $$($1_CREATE_WORKSPACE_FILE)
+
+endef
+
+ifeq ($(WORKSPACE), java)
+  $(eval $(call SetupEclipseWorkspace, SETUP_WORKSPACE, \
+      NATURE := JAVA, \
+      SHARED := $(SHARED), \
+  ))
+else ifeq ($(WORKSPACE), hotspot)
+  $(eval $(call SetupEclipseWorkspace, SETUP_WORKSPACE, \
+      NATURE := HOTSPOT, \
+      SHARED := $(SHARED), \
+  ))
+else ifeq ($(WORKSPACE), native)
+  $(eval $(call SetupEclipseWorkspace, SETUP_WORKSPACE, \
+      NATURE := NATIVE, \
+      SHARED := $(SHARED), \
+  ))
+else
+  $(eval $(call SetupEclipseWorkspace, SETUP_WORKSPACE, \
+      NATURE := MIXED, \
+      SHARED := $(SHARED), \
+  ))
+endif
+
+all: $(TARGETS)

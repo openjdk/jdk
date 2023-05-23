@@ -173,46 +173,46 @@ public class NMTInitializationTest {
 
         output.shouldContain("NMT initialized: " + nmtMode.name());
         output.shouldContain("Preinit state:");
-        String regex = ".*entries: (\\d+).*sum bytes: (\\d+).*longest chain length: (\\d+).*";
-        output.shouldMatch(regex);
-        String line = output.firstMatch(regex, 0);
-        if (line == null) {
-            throw new RuntimeException("expected: " + regex);
-        }
-        System.out.println(line);
-        Pattern p = Pattern.compile(regex);
-        Matcher mat = p.matcher(line);
-        mat.matches();
-        int entries = Integer.parseInt(mat.group(1));
-        int sum_bytes = Integer.parseInt(mat.group(2));
-        int longest_chain = Integer.parseInt(mat.group(3));
-        System.out.println("found: " + entries + " - " + sum_bytes + longest_chain + ".");
+        if (nmtMode != NMTMode.off) { // in OFF mode LU table is deleted after VM initialization, nothing to see there
+            String regex = ".*entries: (\\d+).*sum bytes: (\\d+).*longest chain length: (\\d+).*";
+            output.shouldMatch(regex);
+            String line = output.firstMatch(regex, 0);
+            if (line == null) {
+                throw new RuntimeException("expected: " + regex);
+            }
+            System.out.println(line);
+            Pattern p = Pattern.compile(regex);
+            Matcher mat = p.matcher(line);
+            mat.matches();
+            int entries = Integer.parseInt(mat.group(1));
+            int sum_bytes = Integer.parseInt(mat.group(2));
+            int longest_chain = Integer.parseInt(mat.group(3));
+            System.out.println("found: " + entries + " - " + sum_bytes + longest_chain + ".");
 
-        // Now we test the state of the internal lookup table, and through our assumptions about
-        //   early pre-NMT-init allocations:
-        // The normal allocation count of surviving pre-init allocations is around 300-500, with the sum of allocated
-        //   bytes of a few dozen KB. We check these boundaries (with a very generous overhead) to see if the numbers are
-        //   way off. If they are, we may either have a leak or just a lot more allocations than we thought before
-        //   NMT initialization. Both cases should be investigated. Even if the allocations are valid, too many of them
-        //   stretches the limits of the lookup map, and therefore may cause slower lookup. We should then either change
-        //   the coding, reducing the number of allocations. Or enlarge the lookup table.
+            // Now we test the state of the internal lookup table, and through our assumptions about
+            //   early pre-NMT-init allocations:
+            // The normal allocation count of surviving pre-init allocations is around 300-500, with the sum of allocated
+            //   bytes of a few dozen KB. We check these boundaries (with a very generous overhead) to see if the numbers are
+            //   way off. If they are, we may either have a leak or just a lot more allocations than we thought before
+            //   NMT initialization. Both cases should be investigated. Even if the allocations are valid, too many of them
+            //   stretches the limits of the lookup map, and therefore may cause slower lookup. We should then either change
+            //   the coding, reducing the number of allocations. Or enlarge the lookup table.
 
-        // Apply some sensible assumptions
-        if (entries > testMode.num_command_line_args + 2000) { // Note: normal baseline is 400-500
-            throw new RuntimeException("Suspiciously high number of pre-init allocations.");
-        }
-        if (sum_bytes > 128 * 1024 * 1024) { // Note: normal baseline is ~30-40KB
-            throw new RuntimeException("Suspiciously high pre-init memory usage.");
-        }
-        if (longest_chain > testMode.expected_max_chain_len) {
-            // Under normal circumstances, load factor of the map should be about 0.1. With a good hash distribution, we
-            // should rarely see even a chain > 1. Warn if we see exceedingly long bucket chains, since this indicates
-            // either that the hash algorithm is inefficient or we have a bug somewhere.
-            throw new RuntimeException("Suspiciously long bucket chains in lookup table.");
-        }
+            // Apply some sensible assumptions
+            if (entries > testMode.num_command_line_args + 2000) { // Note: normal baseline is 400-500
+                throw new RuntimeException("Suspiciously high number of pre-init allocations.");
+            }
+            if (sum_bytes > 128 * 1024 * 1024) { // Note: normal baseline is ~30-40KB
+                throw new RuntimeException("Suspiciously high pre-init memory usage.");
+            }
+            if (longest_chain > testMode.expected_max_chain_len) {
+                // Under normal circumstances, load factor of the map should be about 0.1. With a good hash distribution, we
+                // should rarely see even a chain > 1. Warn if we see exceedingly long bucket chains, since this indicates
+                // either that the hash algorithm is inefficient or we have a bug somewhere.
+                throw new RuntimeException("Suspiciously long bucket chains in lookup table.");
+            }
 
-        // Finally, check that we see our final NMT report:
-        if (nmtMode != NMTMode.off) {
+            // Finally, check that we see our final NMT report:
             output.shouldContain("Native Memory Tracking:");
             output.shouldMatch("Total: reserved=\\d+, committed=\\d+.*");
         }

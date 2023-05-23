@@ -313,7 +313,7 @@ public class NumberFormatter extends InternationalFormatter {
      */
     boolean isNavigatable(int index) {
         if (!super.isNavigatable(index)) {
-            // Don't skip the decimal, it causes wierd behavior
+            // Don't skip the decimal, it causes weird behavior
             return getBufferedChar(index) == getDecimalSeparator();
         }
         return true;
@@ -350,7 +350,7 @@ public class NumberFormatter extends InternationalFormatter {
     }
 
     /**
-     * Overriden to toggle the value if the positive/minus sign
+     * Overridden to toggle the value if the positive/minus sign
      * is inserted.
      */
     void replace(DocumentFilter.FilterBypass fb, int offset, int length,

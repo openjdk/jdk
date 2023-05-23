@@ -30,6 +30,15 @@
  * @run main/othervm PrintClasses
  */
 
+/*
+ * @test
+ * @bug 8298162
+ * @summary Test jcmd VM.classes with JFR
+ * @requires vm.hasJFR
+ * @library /test/lib
+ * @run main/othervm -XX:StartFlightRecording PrintClasses
+ */
+
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.JDKToolFinder;
 

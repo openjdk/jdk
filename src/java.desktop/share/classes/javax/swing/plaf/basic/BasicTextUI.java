@@ -943,7 +943,7 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
                 rootView.setSize(d.width - i.left - i.right -
                         caretMargin, d.height - i.top - i.bottom);
             } else if (d.width == 0 && d.height == 0) {
-                // Probably haven't been layed out yet, force some sort of
+                // Probably haven't been laid out yet, force some sort of
                 // initial sizing.
                 rootView.setSize(Integer.MAX_VALUE, Integer.MAX_VALUE);
             }
@@ -2480,7 +2480,7 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
          * not mutable, so a transfer operation of COPY only should
          * be advertised in that case.
          *
-         * @param c  The component holding the data to be transfered.  This
+         * @param c  The component holding the data to be transferred.  This
          *  argument is provided to enable sharing of TransferHandlers by
          *  multiple components.
          * @return  This is implemented to return NONE if the component is a JPasswordField
@@ -2500,10 +2500,10 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
         /**
          * Create a Transferable to use as the source for a data transfer.
          *
-         * @param comp  The component holding the data to be transfered.  This
+         * @param comp  The component holding the data to be transferred.  This
          *  argument is provided to enable sharing of TransferHandlers by
          *  multiple components.
-         * @return  The representation of the data to be transfered.
+         * @return  The representation of the data to be transferred.
          *
          */
         protected Transferable createTransferable(JComponent comp) {
@@ -2516,7 +2516,7 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
 
         /**
          * This method is called after data has been exported.  This method should remove
-         * the data that was transfered if the action was MOVE.
+         * the data that was transferred if the action was MOVE.
          *
          * @param source The component that was the source of the data.
          * @param data   The data that was transferred or possibly null

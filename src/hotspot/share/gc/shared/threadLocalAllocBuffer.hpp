@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -159,7 +159,7 @@ public:
   void make_parsable();
 
   // Retire an in-use tlab and optionally collect statistics.
-  void retire(ThreadLocalAllocStats* stats = NULL);
+  void retire(ThreadLocalAllocStats* stats = nullptr);
 
   // Retire in-use tlab before allocation of a new tlab
   void retire_before_allocation();

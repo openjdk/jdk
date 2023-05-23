@@ -32,7 +32,6 @@ import java.security.Security;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.HashMap;
-import java.util.Enumeration;
 import java.util.Iterator;
 import sun.security.jgss.spi.*;
 import sun.security.jgss.wrapper.NativeGSSFactory;
@@ -408,12 +407,9 @@ public final class ProviderList {
         String prop;
         boolean retVal = false;
 
-        // Get all props for this provider
-        Enumeration<Object> props = p.keys();
-
         // See if there are any GSS prop's
-        while (props.hasMoreElements()) {
-            prop = (String) props.nextElement();
+        for (Object o : p.keySet()) {
+            prop = (String) o;
             if (isMechFactoryProperty(prop)) {
                 // Ok! This is a GSS provider!
                 try {
@@ -428,7 +424,7 @@ public final class ProviderList {
                     }
                 }
             } // Processed GSS property
-        } // while loop
+        } // for loop
 
         return retVal;
 

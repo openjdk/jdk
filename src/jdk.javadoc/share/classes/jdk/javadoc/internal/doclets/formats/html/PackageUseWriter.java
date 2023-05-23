@@ -149,7 +149,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
         Content caption = contents.getContent(
                 "doclet.ClassUse_Packages.that.use.0",
                 getPackageLink(packageElement, getLocalizedPackageName(packageElement)));
-        Table table = new Table(HtmlStyle.summaryTable)
+        var table = new Table<Void>(HtmlStyle.summaryTable)
                 .setCaption(caption)
                 .setHeader(getPackageTableHeader())
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast);
@@ -185,7 +185,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
                     "doclet.ClassUse_Classes.in.0.used.by.1",
                     getPackageLink(packageElement, getLocalizedPackageName(packageElement)),
                     getPackageLink(usingPackage, getLocalizedPackageName(usingPackage)));
-            Table table = new Table(HtmlStyle.summaryTable)
+            var table = new Table<Void>(HtmlStyle.summaryTable)
                     .setCaption(caption)
                     .setHeader(classTableHeader)
                     .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast);

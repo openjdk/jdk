@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jni.h"
-#include "jvm.h"
 #include "jfr/jfr.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "jfr/periodic/sampling/jfrThreadSampler.hpp"
@@ -53,6 +51,8 @@
 #include "jfr/writers/jfrJavaEventWriter.hpp"
 #include "jfrfiles/jfrPeriodic.hpp"
 #include "jfrfiles/jfrTypes.hpp"
+#include "jni.h"
+#include "jvm.h"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
@@ -60,9 +60,9 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
 #include "utilities/debug.hpp"
-
 #ifdef LINUX
 #include "osContainer_linux.hpp"
+#include "os_linux.hpp"
 #endif
 
 #define NO_TRANSITION(result_type, header) extern "C" { result_type JNICALL header {
@@ -94,7 +94,7 @@ NO_TRANSITION(jstring, jfr_get_pid(JNIEnv* env, jobject jvm))
   char pid_buf[32] = { 0 };
   jio_snprintf(pid_buf, sizeof(pid_buf), "%d", os::current_process_id());
   jstring pid_string = env->NewStringUTF(pid_buf);
-  return pid_string; // exception pending if NULL
+  return pid_string; // exception pending if null
 NO_TRANSITION_END
 
 NO_TRANSITION(jlong, jfr_elapsed_frequency(JNIEnv* env, jobject jvm))
@@ -183,7 +183,7 @@ NO_TRANSITION(jboolean, jfr_should_rotate_disk(JNIEnv* env, jobject jvm))
 NO_TRANSITION_END
 
 NO_TRANSITION(jlong, jfr_get_type_id_from_string(JNIEnv * env, jobject jvm, jstring type))
-  const char* type_name = env->GetStringUTFChars(type, NULL);
+  const char* type_name = env->GetStringUTFChars(type, nullptr);
   jlong id = JfrType::name_to_id(type_name);
   env->ReleaseStringUTFChars(type, type_name);
   return id;
@@ -238,8 +238,8 @@ JVM_ENTRY_NO_ENV(void, jfr_mark_chunk_final(JNIEnv * env, jobject jvm))
   JfrRepository::mark_chunk_final();
 JVM_END
 
-JVM_ENTRY_NO_ENV(jboolean, jfr_emit_event(JNIEnv* env, jobject jvm, jlong eventTypeId, jlong timeStamp, jlong when))
-  JfrPeriodicEventSet::requestEvent((JfrEventId)eventTypeId);
+JVM_ENTRY_NO_ENV(jboolean, jfr_emit_event(JNIEnv* env, jobject jvm, jlong event_type_id, jlong timestamp, jlong periodic_type))
+  JfrPeriodicEventSet::requestEvent((JfrEventId)event_type_id, timestamp, static_cast<PeriodicType>(periodic_type));
   return thread->has_pending_exception() ? JNI_FALSE : JNI_TRUE;
 JVM_END
 
@@ -277,9 +277,7 @@ JVM_ENTRY_NO_ENV(void, jfr_set_method_sampling_period(JNIEnv* env, jobject jvm, 
   }
   JfrEventId typed_event_id = (JfrEventId)type;
   assert(EventExecutionSample::eventId == typed_event_id || EventNativeMethodSample::eventId == typed_event_id, "invariant");
-  if (periodMillis > 0) {
-    JfrEventSetting::set_enabled(typed_event_id, true); // ensure sampling event is enabled
-  }
+  JfrEventSetting::set_enabled(typed_event_id, periodMillis > 0);
   if (EventExecutionSample::eventId == type) {
     JfrThreadSampling::set_java_sample_period(periodMillis);
   } else {
@@ -317,10 +315,10 @@ JVM_ENTRY_NO_ENV(void, jfr_set_repository_location(JNIEnv* env, jobject repo, js
 JVM_END
 
 NO_TRANSITION(void, jfr_set_dump_path(JNIEnv* env, jobject jvm, jstring dumppath))
-  if (dumppath == NULL) {
-    JfrEmergencyDump::set_dump_path(NULL);
+  if (dumppath == nullptr) {
+    JfrEmergencyDump::set_dump_path(nullptr);
   } else {
-    const char* dump_path = env->GetStringUTFChars(dumppath, NULL);
+    const char* dump_path = env->GetStringUTFChars(dumppath, nullptr);
     JfrEmergencyDump::set_dump_path(dump_path);
     env->ReleaseStringUTFChars(dumppath, dump_path);
   }
@@ -391,5 +389,15 @@ JVM_ENTRY_NO_ENV(jboolean, jfr_is_containerized(JNIEnv* env, jobject jvm))
   return OSContainer::is_containerized();
 #else
   return false;
+#endif
+JVM_END
+
+JVM_ENTRY_NO_ENV(jlong, jfr_host_total_memory(JNIEnv* env, jobject jvm))
+#ifdef LINUX
+  // We want the host memory, not the container limit.
+  // os::physical_memory() would return the container limit.
+  return os::Linux::physical_memory();
+#else
+  return os::physical_memory();
 #endif
 JVM_END

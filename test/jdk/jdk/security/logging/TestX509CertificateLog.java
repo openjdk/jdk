@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
 
 package jdk.security.logging;
 
-import java.security.cert.CertificateFactory;
 import jdk.test.lib.security.TestCertificate;
 
 /*
@@ -31,6 +30,7 @@ import jdk.test.lib.security.TestCertificate;
  * @bug 8148188
  * @summary Enhance the security libraries to record events of interest
  * @library /test/lib /test/jdk
+ * @modules java.base/sun.security.x509 java.base/sun.security.tools.keytool
  * @run main/othervm jdk.security.logging.TestX509CertificateLog LOGGING_ENABLED
  * @run main/othervm jdk.security.logging.TestX509CertificateLog LOGGING_DISABLED
  */

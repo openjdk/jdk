@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Arm Limited. All rights reserved.
+ * Copyright (c) 2022, 2023, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,11 +40,13 @@
 
 package compiler.vectorization.runner;
 
+import compiler.lib.ir_framework.*;
+
 import java.util.Random;
 
 public class LoopControlFlowTest extends VectorizationTestRunner {
 
-    private static final int SIZE = 2345;
+    private static final int SIZE = 543;
 
     private int[] a;
     private int[] b;
@@ -62,6 +64,8 @@ public class LoopControlFlowTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public int[] loopInvariantCondition() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -86,5 +90,16 @@ public class LoopControlFlowTest extends VectorizationTestRunner {
         }
         return res;
     }
-}
 
+    @Test
+    // Note that this loop cannot be vectorized due to early break.
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    public int conditionalBreakReduction() {
+        int sum = 0, i = 0;
+        for (i = 0; i < SIZE; i++) {
+            sum += i;
+            if (invCond) break;
+        }
+        return i;
+    }
+}

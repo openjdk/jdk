@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test StringTest
- * @bug 8028756
+ * @bug 8038756
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @modules java.management/sun.management
@@ -36,14 +36,14 @@
 
 public class StringTest {
     private static final String FLAG_NAME = "CompileOnly";
-    private static final String FLAG_DEBUG_NAME = "SuppressErrorAt";
+    private static final String FLAG_DEBUG_NAME = "ExitOnFullCodeCache";
     private static final String[] TESTS = {"StringTest::*", ""};
 
     public static void main(String[] args) throws Exception {
         VmFlagTest.runTest(FLAG_NAME, TESTS,
             VmFlagTest.WHITE_BOX::setStringVMFlag,
             VmFlagTest.WHITE_BOX::getStringVMFlag);
-        VmFlagTest.runTest(FLAG_DEBUG_NAME, VmFlagTest.WHITE_BOX::getStringVMFlag);
+        VmFlagTest.runTest(FLAG_DEBUG_NAME, VmFlagTest.WHITE_BOX::getBooleanVMFlag);
     }
 }
 

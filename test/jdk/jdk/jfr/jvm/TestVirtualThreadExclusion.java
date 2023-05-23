@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,8 +42,8 @@ import static jdk.test.lib.Asserts.assertTrue;
  * @requires vm.hasJFR & vm.continuations
  * @library /test/lib
  * @modules jdk.jfr/jdk.jfr.internal
- * @compile --enable-preview -source ${jdk.version} TestVirtualThreadExclusion.java LatchedThread.java
- * @run main/othervm --enable-preview jdk.jfr.jvm.TestVirtualThreadExclusion
+ * @compile TestVirtualThreadExclusion.java LatchedThread.java
+ * @run main/othervm jdk.jfr.jvm.TestVirtualThreadExclusion
  */
 
 /**

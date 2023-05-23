@@ -85,13 +85,6 @@ typedef int64_t ssize_t;
 typedef int32_t ssize_t;
 #endif
 
-// Additional Java basic types
-
-typedef uint8_t  jubyte;
-typedef uint16_t jushort;
-typedef uint32_t juint;
-typedef uint64_t julong;
-
 // Non-standard stdlib-like stuff:
 inline int strcasecmp(const char *s1, const char *s2) { return _stricmp(s1,s2); }
 inline int strncasecmp(const char *s1, const char *s2, size_t n) {
@@ -109,7 +102,7 @@ inline int g_isfinite(jfloat  f)                 { return _finite(f); }
 inline int g_isfinite(jdouble f)                 { return _finite(f); }
 
 // Formatting.
-#define FORMAT64_MODIFIER "I64"
+#define FORMAT64_MODIFIER "ll"
 
 #define offset_of(klass,field) offsetof(klass,field)
 
@@ -128,5 +121,15 @@ inline int g_isfinite(jdouble f)                 { return _finite(f); }
 #ifdef _M_ARM64
 #define USE_VECTORED_EXCEPTION_HANDLING
 #endif
+
+#ifndef SSIZE_MAX
+#ifdef _LP64
+#define SSIZE_MIN LLONG_MIN
+#define SSIZE_MAX LLONG_MAX
+#else
+#define SSIZE_MIN INT_MIN
+#define SSIZE_MAX INT_MAX
+#endif
+#endif // SSIZE_MAX missing
 
 #endif // SHARE_UTILITIES_GLOBALDEFINITIONS_VISCPP_HPP

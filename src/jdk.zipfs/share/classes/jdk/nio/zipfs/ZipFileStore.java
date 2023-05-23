@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,11 +35,12 @@ import java.nio.file.attribute.FileAttributeView;
 import java.nio.file.attribute.FileOwnerAttributeView;
 import java.nio.file.attribute.FileStoreAttributeView;
 import java.nio.file.attribute.PosixFileAttributeView;
+import java.util.Objects;
 
 /**
  * @author Xueming Shen, Rajendra Gutupalli, Jaya Hangal
  */
-class ZipFileStore extends FileStore {
+final class ZipFileStore extends FileStore {
 
     private final ZipFileSystem zfs;
 
@@ -64,6 +65,7 @@ class ZipFileStore extends FileStore {
 
     @Override
     public boolean supportsFileAttributeView(Class<? extends FileAttributeView> type) {
+        Objects.requireNonNull(type);
         return (type == BasicFileAttributeView.class ||
                 type == ZipFileAttributeView.class ||
                 ((type == FileOwnerAttributeView.class ||
@@ -72,14 +74,14 @@ class ZipFileStore extends FileStore {
 
     @Override
     public boolean supportsFileAttributeView(String name) {
+        Objects.requireNonNull(name);
         return "basic".equals(name) || "zip".equals(name) ||
                (("owner".equals(name) || "posix".equals(name)) && zfs.supportPosix);
     }
 
     @Override
     public <V extends FileStoreAttributeView> V getFileStoreAttributeView(Class<V> type) {
-        if (type == null)
-            throw new NullPointerException();
+        Objects.requireNonNull(type);
         return null;
     }
 
@@ -100,16 +102,17 @@ class ZipFileStore extends FileStore {
 
     @Override
     public Object getAttribute(String attribute) throws IOException {
+        Objects.requireNonNull(attribute);
          if (attribute.equals("totalSpace"))
                return getTotalSpace();
          if (attribute.equals("usableSpace"))
                return getUsableSpace();
          if (attribute.equals("unallocatedSpace"))
                return getUnallocatedSpace();
-         throw new UnsupportedOperationException("does not support the given attribute");
+        throw new UnsupportedOperationException("does not support the given attribute: " + attribute);
     }
 
-    private static class ZipFileStoreAttributes {
+    private static final class ZipFileStoreAttributes {
         final FileStore fstore;
         final long size;
 

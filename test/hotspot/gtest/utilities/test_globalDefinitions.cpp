@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,9 @@
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
-#include <type_traits>
 #include "unittest.hpp"
+
+#include <type_traits>
 
 static ::testing::AssertionResult testPageAddress(
   const char* expected_addr_expr,
@@ -55,7 +56,7 @@ static ::testing::AssertionResult testPageAddress(
 }
 
 TEST_VM(globalDefinitions, clamp_address_in_page) {
-  const intptr_t page_sizes[] = {os::vm_page_size(), 4096, 8192, 65536, 2 * 1024 * 1024};
+  const intptr_t page_sizes[] = {static_cast<intptr_t>(os::vm_page_size()), 4096, 8192, 65536, 2 * 1024 * 1024};
   const int num_page_sizes = sizeof(page_sizes) / sizeof(page_sizes[0]);
 
   for (int i = 0; i < num_page_sizes; i++) {
@@ -240,10 +241,12 @@ TEST(globalDefinitions, format_specifiers) {
   check_format(UINT16_FORMAT_X_0,      (uint16_t)0x0123u, "0x0123");
 
   check_format(INT32_FORMAT,           123,               "123");
+  check_format(INT32_FORMAT_X,         0x123,             "0x123");
   check_format(INT32_FORMAT_X_0,       0x123,             "0x00000123");
   check_format(INT32_FORMAT_W(5),      123,               "  123");
   check_format(INT32_FORMAT_W(-5),     123,               "123  ");
   check_format(UINT32_FORMAT,          123u,              "123");
+  check_format(UINT32_FORMAT_X,        0x123u,            "0x123");
   check_format(UINT32_FORMAT_X_0,      0x123u,            "0x00000123");
   check_format(UINT32_FORMAT_W(5),     123u,              "  123");
   check_format(UINT32_FORMAT_W(-5),    123u,              "123  ");
@@ -261,6 +264,13 @@ TEST(globalDefinitions, format_specifiers) {
   check_format(UINT64_FORMAT_W(-5),    (uint64_t)123,     "123  ");
 
   check_format(SSIZE_FORMAT,           (ssize_t)123,      "123");
+  check_format(SSIZE_FORMAT,           (ssize_t)-123,     "-123");
+  check_format(SSIZE_FORMAT,           (ssize_t)2147483647, "2147483647");
+  check_format(SSIZE_FORMAT,           (ssize_t)-2147483647, "-2147483647");
+  check_format(SSIZE_PLUS_FORMAT,      (ssize_t)123,      "+123");
+  check_format(SSIZE_PLUS_FORMAT,      (ssize_t)-123,     "-123");
+  check_format(SSIZE_PLUS_FORMAT,      (ssize_t)2147483647, "+2147483647");
+  check_format(SSIZE_PLUS_FORMAT,      (ssize_t)-2147483647, "-2147483647");
   check_format(SSIZE_FORMAT_W(5),      (ssize_t)123,      "  123");
   check_format(SSIZE_FORMAT_W(-5),     (ssize_t)123,      "123  ");
   check_format(SIZE_FORMAT,            (size_t)123u,      "123");

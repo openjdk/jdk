@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,14 +28,14 @@
 #include "gc/shared/oopStorage.hpp"
 
 #include "memory/allocation.hpp"
-#include "metaprogramming/conditional.hpp"
-#include "metaprogramming/isConst.hpp"
 #include "oops/oop.hpp"
 #include "runtime/safepoint.hpp"
 #include "utilities/align.hpp"
 #include "utilities/count_trailing_zeros.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
+
+#include <type_traits>
 
 // Array of all active blocks.  Refcounted for lock-free reclaim of
 // old array when a new array is allocated for expansion.
@@ -184,7 +184,7 @@ public:
   void set_active_index(size_t index);
   static size_t active_index_safe(const Block* block); // Returns 0 if access fails.
 
-  // Returns NULL if ptr is not in a block or not allocated in that block.
+  // Returns null if ptr is not in a block or not allocated in that block.
   static Block* block_for_ptr(const OopStorage* owner, const oop* ptr);
 
   oop* allocate();
@@ -258,11 +258,11 @@ public:
   bool operator()(oop* ptr) const {
     bool result = true;
     oop v = *ptr;
-    if (v != NULL) {
+    if (v != nullptr) {
       if (_is_alive->do_object_b(v)) {
         result = _f(ptr);
       } else {
-        *ptr = NULL;            // Clear dead value.
+        *ptr = nullptr;            // Clear dead value.
       }
     }
     return result;
@@ -285,7 +285,7 @@ public:
 
   template<typename OopPtr>     // [const] oop*
   bool operator()(OopPtr ptr) const {
-    return (*ptr != NULL) ? _f(ptr) : true;
+    return (*ptr != nullptr) ? _f(ptr) : true;
   }
 
 private:
@@ -361,7 +361,7 @@ inline bool OopStorage::iterate_impl(F f, Storage* storage) {
   assert_at_safepoint();
   // Propagate const/non-const iteration to the block layer, by using
   // const or non-const blocks as corresponding to Storage.
-  typedef typename Conditional<IsConst<Storage>::value, const Block*, Block*>::type BlockPtr;
+  using BlockPtr = std::conditional_t<std::is_const<Storage>::value, const Block*, Block*>;
   ActiveArray* blocks = storage->_active_array;
   size_t limit = blocks->block_count();
   for (size_t i = 0; i < limit; ++i) {

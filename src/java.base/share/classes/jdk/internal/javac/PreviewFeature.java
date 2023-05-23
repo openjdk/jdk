@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ import java.lang.annotation.*;
 /**
  * Indicates the API declaration in question is associated with a
  * <em>preview feature</em>. See JEP 12: "Preview Language and VM
- * Features" (http://openjdk.java.net/jeps/12).
+ * Features" (https://openjdk.org/jeps/12).
  *
  * Note this internal annotation is handled specially by the javac compiler.
  * To work properly with {@code --release older-release}, it requires special
@@ -64,14 +64,14 @@ public @interface PreviewFeature {
      * Values should be annotated with the feature's {@code JEP}.
      */
     public enum Feature {
-        @JEP(number=427, title="Pattern Matching for switch", status="Third Preview")
-        SWITCH_PATTERN_MATCHING(),
-        @JEP(number=405, title="Record Patterns")
-        RECORD_PATTERNS,
-        @JEP(number=425, title="Virtual Threads")
+        // not used
         VIRTUAL_THREADS,
-        @JEP(number=424, title="Foreign Function & Memory API")
+        @JEP(number=442, title="Foreign Function & Memory API", status="Third Preview")
         FOREIGN,
+        @JEP(number=430, title="String Templates", status="First Preview")
+        STRING_TEMPLATES,
+        @JEP(number=443, title="Unnamed Patterns and Variables")
+        UNNAMED,
         /**
          * A key for testing.
          */

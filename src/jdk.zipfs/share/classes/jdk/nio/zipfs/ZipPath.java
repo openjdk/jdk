@@ -744,11 +744,9 @@ final class ZipPath implements Path {
 
     InputStream newInputStream(OpenOption... options) throws IOException
     {
-        if (options.length > 0) {
-            for (OpenOption opt : options) {
-                if (opt != READ)
-                    throw new UnsupportedOperationException("'" + opt + "' not allowed");
-            }
+        for (OpenOption opt : options) {
+            if (opt != READ)
+                throw new UnsupportedOperationException("'" + opt + "' not allowed");
         }
         return zfs.newInputStream(getResolvedPath());
     }

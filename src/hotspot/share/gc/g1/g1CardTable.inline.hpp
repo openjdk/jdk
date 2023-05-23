@@ -43,11 +43,9 @@ inline bool G1CardTable::mark_clean_as_dirty(CardValue* card) {
   return false;
 }
 
-inline size_t G1CardTable::mark_range_dirty(size_t start_card_index, size_t num_cards) {
+inline void G1CardTable::mark_range_dirty(size_t start_card_index, size_t num_cards) {
   assert(is_aligned(start_card_index, sizeof(size_t)), "Start card index must be aligned.");
   assert(is_aligned(num_cards, sizeof(size_t)), "Number of cards to change must be evenly divisible.");
-
-  size_t result = 0;
 
   size_t const num_chunks = num_cards / sizeof(size_t);
 
@@ -57,7 +55,6 @@ inline size_t G1CardTable::mark_range_dirty(size_t start_card_index, size_t num_
     size_t value = *cur_word;
     if (value == WordAllClean) {
       *cur_word = WordAllDirty;
-      result += sizeof(value);
     } else if (value == WordAllDirty) {
       // do nothing.
     } else {
@@ -67,25 +64,20 @@ inline size_t G1CardTable::mark_range_dirty(size_t start_card_index, size_t num_
         CardValue value = *cur;
         if (value == clean_card_val()) {
           *cur = dirty_card_val();
-          result++;
         }
         cur++;
       }
     }
     cur_word++;
   }
-
-  return result;
 }
 
-inline void G1CardTable::change_dirty_cards_to(size_t start_card_index, size_t num_cards, CardValue which) {
-  CardValue* start = &_byte_map[start_card_index];
-  CardValue* const end = start + num_cards;
-  while (start < end) {
-    CardValue value = *start;
+inline void G1CardTable::change_dirty_cards_to(CardValue* start_card, CardValue* end_card, CardValue which) {
+  for (CardValue* i_card = start_card; i_card < end_card; ++i_card) {
+    CardValue value = *i_card;
     assert(value == dirty_card_val(),
-           "Must have been dirty %d start " PTR_FORMAT " " PTR_FORMAT, value, p2i(start), p2i(end));
-    *start++ = which;
+           "Must have been dirty %d start " PTR_FORMAT " " PTR_FORMAT, value, p2i(start_card), p2i(end_card));
+    *i_card = which;
   }
 }
 

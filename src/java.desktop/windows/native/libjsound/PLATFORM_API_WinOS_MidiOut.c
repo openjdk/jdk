@@ -139,7 +139,7 @@ INT32 MIDI_OUT_GetDeviceVersion(INT32 deviceID, char *name, UINT32 nameLength) {
 
     memset(&midiOutCaps, 0, sizeof(midiOutCaps));
     if (getMidiOutCaps(deviceID, &midiOutCaps, &err) && nameLength>7) {
-        sprintf(name, "%d.%d", (midiOutCaps.vDriverVersion & 0xFF00) >> 8, midiOutCaps.vDriverVersion & 0xFF);
+        snprintf(name, nameLength + 1, "%d.%d", (midiOutCaps.vDriverVersion & 0xFF00) >> 8, midiOutCaps.vDriverVersion & 0xFF);
         return MIDI_SUCCESS;
     }
     MIDIOUT_CHECK_ERROR;
@@ -297,7 +297,7 @@ INT32 MIDI_OUT_CloseDevice(MidiDeviceHandle* handle) {
 
     // issue a "SUSTAIN OFF" message to each MIDI channel, 0 to 15.
     // "CONTROL CHANGE" is 176, "SUSTAIN CONTROLLER" is 64, and the value is 0.
-    // $$fb 2002-04-04: It is responsability of the application developer to
+    // $$fb 2002-04-04: It is the responsibility of the application developer to
     // leave the device in a consistent state. So I put this in comments
     /*
       for (channel = 0; channel < 16; channel++)

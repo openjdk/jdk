@@ -305,7 +305,7 @@ public class Win32GraphicsConfig extends GraphicsConfiguration
      * a FLIP BufferStrategy has been created, and one could only be created
      * if accelerated pipeline is present but in some rare (and transitional)
      * cases it may happen that the accelerated graphics device may have a
-     * default graphics configuraiton, so this is just a precaution.
+     * default graphics configuration, so this is just a precaution.
      */
     public void flip(WComponentPeer peer,
                      Component target, VolatileImage backBuffer,

@@ -49,7 +49,7 @@ typedef struct {
 
 class D3DContext;
 
-class D3DPIPELINE_API D3DVertexCacher {
+class D3DVertexCacher {
 public:
     HRESULT Init(D3DContext *pCtx);
             ~D3DVertexCacher() { ReleaseDefPoolResources(); }

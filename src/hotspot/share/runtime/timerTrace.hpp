@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ typedef void (*TraceTimerLogPrintFunc)(const char*, ...);
 // We need to explicit take address of LogImpl<>write<> and static cast
 // due to MSVC is not compliant with templates two-phase lookup
 #define TRACETIME_LOG(TT_LEVEL, ...) \
-    log_is_enabled(TT_LEVEL, __VA_ARGS__) ? static_cast<TraceTimerLogPrintFunc>(&LogImpl<LOG_TAGS(__VA_ARGS__)>::write<LogLevel::TT_LEVEL>) : (TraceTimerLogPrintFunc)NULL
+    log_is_enabled(TT_LEVEL, __VA_ARGS__) ? static_cast<TraceTimerLogPrintFunc>(&LogImpl<LOG_TAGS(__VA_ARGS__)>::write<LogLevel::TT_LEVEL>) : (TraceTimerLogPrintFunc)nullptr
 
 class TraceTime: public StackObj {
  private:
@@ -67,14 +67,6 @@ class TraceTime: public StackObj {
             TraceTimerLogPrintFunc ttlpf);
 
   ~TraceTime();
-
-  // Accessors
-  void set_verbose(bool verbose)  { _verbose = verbose; }
-  bool verbose() const            { return _verbose;    }
-
-  // Activation
-  void suspend()  { if (_active) _t.stop();  }
-  void resume()   { if (_active) _t.start(); }
 };
 
 

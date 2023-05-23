@@ -152,6 +152,7 @@ private:
     EXCEPTION_HANDLER_ENTRY,
     DEOPT_HANDLER_ENTRY,
     FRAME_COMPLETE,
+    ENTRY_BARRIER_PATCH,
     INVOKEINTERFACE,
     INVOKEVIRTUAL,
     INVOKESTATIC,
@@ -271,6 +272,7 @@ private:
   jint          _sites_count;
 
   CodeOffsets   _offsets;
+  int           _nmethod_entry_patch_offset;
 
   jint          _code_size;
   jint          _total_frame_size;
@@ -361,7 +363,7 @@ protected:
   GrowableArray<MonitorValue*>* read_monitor_values(HotSpotCompiledCodeStream* stream, u1 frame_flags, JVMCI_TRAPS);
 
   // extract the fields of the HotSpotCompiledCode
-  void initialize_fields(HotSpotCompiledCodeStream* stream, u1 code_flags, methodHandle& method, JVMCI_TRAPS);
+  void initialize_fields(HotSpotCompiledCodeStream* stream, u1 code_flags, methodHandle& method, CodeBuffer& buffer, JVMCI_TRAPS);
   void initialize_dependencies(HotSpotCompiledCodeStream* stream, u1 code_flags, OopRecorder* oop_recorder, JVMCI_TRAPS);
 
   int estimate_stubs_size(HotSpotCompiledCodeStream* stream, JVMCI_TRAPS);

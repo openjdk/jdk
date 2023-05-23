@@ -159,7 +159,7 @@ abstract sealed class DelegatingMethodHandle extends MethodHandle
             targetArgs[0] = names[NEXT_MH];  // overwrite this MH with next MH
             names[REINVOKE] = new LambdaForm.Name(mtype, targetArgs);
         }
-        form = new LambdaForm(ARG_LIMIT, names, forceInline, kind);
+        form = LambdaForm.create(ARG_LIMIT, names, forceInline, kind);
         if (!customized) {
             form = mtype.form().setCachedLambdaForm(whichCache, form);
         }

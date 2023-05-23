@@ -34,7 +34,6 @@ class StackValueCollection : public ResourceObj {
   GrowableArray<StackValue*>* _values;
 
  public:
-  StackValueCollection()            { _values = new GrowableArray<StackValue*>(); }
   StackValueCollection(int length)  { _values = new GrowableArray<StackValue*>(length); }
 
   void add(StackValue *val) const   { _values->push(val); }

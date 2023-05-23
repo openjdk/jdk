@@ -115,7 +115,7 @@ public class Group {
      * @param moduleNameFormList List of the module name formats.
      */
     public boolean checkModuleGroups(String groupname, String moduleNameFormList) {
-        String[] mdlPatterns = moduleNameFormList.split(":");
+        String[] mdlPatterns = moduleNameFormList.split("[,:]");
         if (groupList.contains(groupname)) {
             initMessages();
             messages.warning("doclet.Groupname_already_used", groupname);
@@ -161,7 +161,7 @@ public class Group {
      * @param pkgNameFormList List of the package name formats.
      */
     public boolean checkPackageGroups(String groupname, String pkgNameFormList) {
-        String[] pkgPatterns = pkgNameFormList.split(":");
+        String[] pkgPatterns = pkgNameFormList.split("[,:]");
         if (groupList.contains(groupname)) {
             initMessages();
             messages.warning("doclet.Groupname_already_used", groupname);

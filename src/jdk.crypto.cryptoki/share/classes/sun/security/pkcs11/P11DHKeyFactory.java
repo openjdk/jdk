@@ -51,8 +51,7 @@ final class P11DHKeyFactory extends P11KeyFactory {
 
     PublicKey implTranslatePublicKey(PublicKey key) throws InvalidKeyException {
         try {
-            if (key instanceof DHPublicKey) {
-                DHPublicKey dhKey = (DHPublicKey)key;
+            if (key instanceof DHPublicKey dhKey) {
                 DHParameterSpec params = dhKey.getParams();
                 return generatePublic(
                     dhKey.getY(),
@@ -80,8 +79,7 @@ final class P11DHKeyFactory extends P11KeyFactory {
     PrivateKey implTranslatePrivateKey(PrivateKey key)
             throws InvalidKeyException {
         try {
-            if (key instanceof DHPrivateKey) {
-                DHPrivateKey dhKey = (DHPrivateKey)key;
+            if (key instanceof DHPrivateKey dhKey) {
                 DHParameterSpec params = dhKey.getParams();
                 return generatePrivate(
                     dhKey.getX(),
@@ -120,7 +118,7 @@ final class P11DHKeyFactory extends P11KeyFactory {
                         ("Could not create DH public key", e);
             }
         }
-        if (keySpec instanceof DHPublicKeySpec == false) {
+        if (!(keySpec instanceof DHPublicKeySpec)) {
             throw new InvalidKeySpecException("Only DHPublicKeySpec and "
                 + "X509EncodedKeySpec supported for DH public keys");
         }
@@ -151,7 +149,7 @@ final class P11DHKeyFactory extends P11KeyFactory {
                         ("Could not create DH private key", e);
             }
         }
-        if (keySpec instanceof DHPrivateKeySpec == false) {
+        if (!(keySpec instanceof DHPrivateKeySpec)) {
             throw new InvalidKeySpecException("Only DHPrivateKeySpec and "
                 + "PKCS8EncodedKeySpec supported for DH private keys");
         }

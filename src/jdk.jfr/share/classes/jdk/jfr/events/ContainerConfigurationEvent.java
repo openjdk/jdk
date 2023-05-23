@@ -28,12 +28,8 @@ package jdk.jfr.events;
 import jdk.jfr.Category;
 import jdk.jfr.DataAmount;
 import jdk.jfr.Description;
-import jdk.jfr.Enabled;
 import jdk.jfr.Label;
 import jdk.jfr.Name;
-import jdk.jfr.Period;
-import jdk.jfr.StackTrace;
-import jdk.jfr.Threshold;
 import jdk.jfr.Timespan;
 import jdk.jfr.internal.Type;
 
@@ -79,4 +75,9 @@ public final class ContainerConfigurationEvent extends AbstractJDKEvent {
     @Description("Maximum amount of physical memory and swap space, in bytes, that can be allocated in the container")
     @DataAmount
     public long swapMemoryLimit;
+
+    @Label("Container Host Total Memory")
+    @Description("Total memory of the host running the container")
+    @DataAmount
+    public long hostTotalMemory;
 }

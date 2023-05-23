@@ -38,7 +38,7 @@ import javadoc.tester.JavadocTester;
 public class TestParamTaglet extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestParamTaglet tester = new TestParamTaglet();
+        var tester = new TestParamTaglet();
         tester.runTests();
     }
 

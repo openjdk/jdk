@@ -25,7 +25,6 @@
 
 package java.lang.invoke;
 
-import sun.invoke.util.BytecodeDescriptor;
 import sun.invoke.util.VerifyAccess;
 
 import java.lang.reflect.Constructor;
@@ -33,10 +32,6 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Objects;
 
 import static java.lang.invoke.MethodHandleNatives.Constants.*;
@@ -74,7 +69,7 @@ import static java.lang.invoke.MethodHandleStatics.newInternalError;
 final class ResolvedMethodName {
     //@Injected JVM_Method* vmtarget;
     //@Injected Class<?>    vmholder;
-};
+}
 
 /*non-public*/
 final class MemberName implements Member, Cloneable {
@@ -198,16 +193,6 @@ final class MemberName implements Member, Cloneable {
         return itype;
     }
 
-    /** Utility method producing the parameter types of the method type. */
-    public Class<?>[] getParameterTypes() {
-        return getMethodType().parameterArray();
-    }
-
-    /** Utility method producing the return type of the method type. */
-    public Class<?> getReturnType() {
-        return getMethodType().returnType();
-    }
-
     /** Return the declared type of this member, which
      *  must be a field or type.
      *  If it is a type member, that type itself is returned.
@@ -247,22 +232,6 @@ final class MemberName implements Member, Cloneable {
     /** Utility method to produce either the method type or field type of this member. */
     public Object getType() {
         return (isInvocable() ? getMethodType() : getFieldType());
-    }
-
-    /** Utility method to produce the signature of this member,
-     *  used within the class file format to describe its type.
-     */
-    public String getSignature() {
-        if (type == null) {
-            expandFromVM();
-            if (type == null) {
-                return null;
-            }
-        }
-        if (isInvocable())
-            return BytecodeDescriptor.unparse(getMethodType());
-        else
-            return BytecodeDescriptor.unparse(getFieldType());
     }
 
     /** Return the modifier flags of this member.
@@ -356,20 +325,19 @@ final class MemberName implements Member, Cloneable {
     }
 
     private MemberName changeReferenceKind(byte refKind, byte oldKind) {
-        assert(getReferenceKind() == oldKind);
-        assert(MethodHandleNatives.refKindIsValid(refKind));
+        assert(getReferenceKind() == oldKind && MethodHandleNatives.refKindIsValid(refKind));
         flags += (((int)refKind - oldKind) << MN_REFERENCE_KIND_SHIFT);
         return this;
     }
 
-    private boolean testFlags(int mask, int value) {
-        return (flags & mask) == value;
+    private boolean matchingFlagsSet(int mask, int flags) {
+        return (this.flags & mask) == flags;
     }
-    private boolean testAllFlags(int mask) {
-        return testFlags(mask, mask);
+    private boolean allFlagsSet(int flags) {
+        return (this.flags & flags) == flags;
     }
-    private boolean testAnyFlags(int mask) {
-        return !testFlags(mask, 0);
+    private boolean anyFlagSet(int flags) {
+        return (this.flags & flags) != 0;
     }
 
     /** Utility method to query if this member is a method handle invocation (invoke or invokeExact).
@@ -377,26 +345,21 @@ final class MemberName implements Member, Cloneable {
     public boolean isMethodHandleInvoke() {
         final int bits = MH_INVOKE_MODS &~ Modifier.PUBLIC;
         final int negs = Modifier.STATIC;
-        if (testFlags(bits | negs, bits) &&
-            clazz == MethodHandle.class) {
+        if (matchingFlagsSet(bits | negs, bits) && clazz == MethodHandle.class) {
             return isMethodHandleInvokeName(name);
         }
         return false;
     }
     public static boolean isMethodHandleInvokeName(String name) {
-        switch (name) {
-        case "invoke":
-        case "invokeExact":
-            return true;
-        default:
-            return false;
-        }
+        return switch (name) {
+            case "invoke", "invokeExact" -> true;
+            default -> false;
+        };
     }
     public boolean isVarHandleMethodInvoke() {
         final int bits = MH_INVOKE_MODS &~ Modifier.PUBLIC;
         final int negs = Modifier.STATIC;
-        if (testFlags(bits | negs, bits) &&
-            clazz == VarHandle.class) {
+        if (matchingFlagsSet(bits | negs, bits) && clazz == VarHandle.class) {
             return isVarHandleMethodInvokeName(name);
         }
         return false;
@@ -457,15 +420,15 @@ final class MemberName implements Member, Cloneable {
     static final int ENUM      = 0x00004000;
     /** Utility method to query the modifier flags of this member; returns false if the member is not a method. */
     public boolean isBridge() {
-        return testAllFlags(IS_METHOD | BRIDGE);
+        return allFlagsSet(IS_METHOD | BRIDGE);
     }
     /** Utility method to query the modifier flags of this member; returns false if the member is not a method. */
     public boolean isVarargs() {
-        return testAllFlags(VARARGS) && isInvocable();
+        return allFlagsSet(VARARGS) && isInvocable();
     }
     /** Utility method to query the modifier flags of this member; returns false if the member is not a method. */
     public boolean isSynthetic() {
-        return testAllFlags(SYNTHETIC);
+        return allFlagsSet(SYNTHETIC);
     }
 
     static final String CONSTRUCTOR_NAME = "<init>";  // the ever-popular
@@ -485,49 +448,38 @@ final class MemberName implements Member, Cloneable {
     static final int ALL_ACCESS = Modifier.PUBLIC | Modifier.PRIVATE | Modifier.PROTECTED;
     static final int ALL_KINDS = IS_METHOD | IS_CONSTRUCTOR | IS_FIELD | IS_TYPE;
     static final int IS_INVOCABLE = IS_METHOD | IS_CONSTRUCTOR;
-    static final int IS_FIELD_OR_METHOD = IS_METHOD | IS_FIELD;
-    static final int SEARCH_ALL_SUPERS = MN_SEARCH_SUPERCLASSES | MN_SEARCH_INTERFACES;
 
     /** Utility method to query whether this member is a method or constructor. */
     public boolean isInvocable() {
-        return testAnyFlags(IS_INVOCABLE);
-    }
-    /** Utility method to query whether this member is a method, constructor, or field. */
-    public boolean isFieldOrMethod() {
-        return testAnyFlags(IS_FIELD_OR_METHOD);
+        return anyFlagSet(IS_INVOCABLE);
     }
     /** Query whether this member is a method. */
     public boolean isMethod() {
-        return testAllFlags(IS_METHOD);
+        return allFlagsSet(IS_METHOD);
     }
     /** Query whether this member is a constructor. */
     public boolean isConstructor() {
-        return testAllFlags(IS_CONSTRUCTOR);
+        return allFlagsSet(IS_CONSTRUCTOR);
     }
     /** Query whether this member is a field. */
     public boolean isField() {
-        return testAllFlags(IS_FIELD);
+        return allFlagsSet(IS_FIELD);
     }
     /** Query whether this member is a type. */
     public boolean isType() {
-        return testAllFlags(IS_TYPE);
+        return allFlagsSet(IS_TYPE);
     }
     /** Utility method to query whether this member is neither public, private, nor protected. */
     public boolean isPackage() {
-        return !testAnyFlags(ALL_ACCESS);
+        return !anyFlagSet(ALL_ACCESS);
     }
     /** Query whether this member has a CallerSensitive annotation. */
     public boolean isCallerSensitive() {
-        return testAllFlags(CALLER_SENSITIVE);
+        return allFlagsSet(CALLER_SENSITIVE);
     }
     /** Query whether this member is a trusted final field. */
-    public boolean isTrustedFinalField() { return testAllFlags(TRUSTED_FINAL|IS_FIELD); }
-
-    /** Utility method to query whether this member is accessible from a given lookup class. */
-    public boolean isAccessibleFrom(Class<?> lookupClass) {
-        int mode = (ALL_ACCESS|MethodHandles.Lookup.PACKAGE|MethodHandles.Lookup.MODULE);
-        return VerifyAccess.isMemberAccessible(this.getDeclaringClass(), this.getDeclaringClass(), flags,
-                                               lookupClass, null, mode);
+    public boolean isTrustedFinalField() {
+        return allFlagsSet(TRUSTED_FINAL | IS_FIELD);
     }
 
     /**
@@ -547,8 +499,7 @@ final class MemberName implements Member, Cloneable {
         this.name = name;
         this.type = type;
         this.flags = flags;
-        assert(testAnyFlags(ALL_KINDS));
-        assert(this.resolution == null);  // nobody should have touched this yet
+        assert(anyFlagSet(ALL_KINDS) && this.resolution == null);  // nobody should have touched this yet
         //assert(referenceKindIsConsistent());  // do this after resolution
     }
 
@@ -568,9 +519,9 @@ final class MemberName implements Member, Cloneable {
 
     // Capturing information from the Core Reflection API:
     private static int flagsMods(int flags, int mods, byte refKind) {
-        assert((flags & RECOGNIZED_MODIFIERS) == 0);
-        assert((mods & ~RECOGNIZED_MODIFIERS) == 0);
-        assert((refKind & ~MN_REFERENCE_KIND_MASK) == 0);
+        assert((flags & RECOGNIZED_MODIFIERS) == 0
+                && (mods & ~RECOGNIZED_MODIFIERS) == 0
+                && (refKind & ~MN_REFERENCE_KIND_MASK) == 0);
         return flags | mods | (refKind << MN_REFERENCE_KIND_SHIFT);
     }
     /** Create a name for the given reflected method.  The resulting name will be in a resolved state. */
@@ -607,7 +558,7 @@ final class MemberName implements Member, Cloneable {
             }
             throw new LinkageError(m.toString());
         }
-        assert(isResolved() && this.clazz != null);
+        assert(isResolved());
         this.name = m.getName();
         if (this.type == null)
             this.type = new Object[] { m.getReturnType(), m.getParameterTypes() };
@@ -649,20 +600,16 @@ final class MemberName implements Member, Cloneable {
      *  undoes that change under the assumption that it occurred.)
      */
     public MemberName asNormalOriginal() {
-        byte normalVirtual = clazz.isInterface() ? REF_invokeInterface : REF_invokeVirtual;
         byte refKind = getReferenceKind();
-        byte newRefKind = refKind;
-        MemberName result = this;
-        switch (refKind) {
-        case REF_invokeInterface:
-        case REF_invokeVirtual:
-        case REF_invokeSpecial:
-            newRefKind = normalVirtual;
-            break;
-        }
+        byte newRefKind = switch (refKind) {
+            case REF_invokeInterface,
+                 REF_invokeVirtual,
+                 REF_invokeSpecial -> clazz.isInterface() ? REF_invokeInterface : REF_invokeVirtual;
+            default -> refKind;
+        };
         if (newRefKind == refKind)
             return this;
-        result = clone().changeReferenceKind(newRefKind, refKind);
+        MemberName result = clone().changeReferenceKind(newRefKind, refKind);
         assert(this.referenceKindIsConsistentWith(result.getReferenceKind()));
         return result;
     }
@@ -682,6 +629,10 @@ final class MemberName implements Member, Cloneable {
     public MemberName(Field fld) {
         this(fld, false);
     }
+    static {
+        // the following MemberName constructor relies on these ranges matching up
+        assert((REF_putStatic - REF_getStatic) == (REF_putField - REF_getField));
+    }
     @SuppressWarnings("LeakingThisInConstructor")
     public MemberName(Field fld, boolean makeSetter) {
         Objects.requireNonNull(fld);
@@ -690,7 +641,6 @@ final class MemberName implements Member, Cloneable {
         assert(isResolved() && this.clazz != null);
         this.name = fld.getName();
         this.type = fld.getType();
-        assert((REF_putStatic - REF_getStatic) == (REF_putField - REF_getField));
         byte refKind = this.getReferenceKind();
         assert(refKind == (isStatic() ? REF_getStatic : REF_getField));
         if (makeSetter) {
@@ -703,13 +653,7 @@ final class MemberName implements Member, Cloneable {
     public boolean isSetter() {
         return MethodHandleNatives.refKindIsSetter(getReferenceKind());
     }
-    public MemberName asSetter() {
-        byte refKind = getReferenceKind();
-        assert(MethodHandleNatives.refKindIsGetter(refKind));
-        assert((REF_putStatic - REF_getStatic) == (REF_putField - REF_getField));
-        byte setterRefKind = (byte)(refKind + (REF_putField - REF_getField));
-        return clone().changeReferenceKind(setterRefKind, refKind);
-    }
+
     /** Create a name for the given class.  The resulting name will be in a resolved state. */
     public MemberName(Class<?> type) {
         init(type.getDeclaringClass(), type.getSimpleName(), type,
@@ -844,11 +788,6 @@ final class MemberName implements Member, Cloneable {
         init(defClass, name, type, flagsMods(kindFlags, 0, refKind));
         initResolved(false);
     }
-    /** Query whether this member name is resolved to a non-static, non-final method.
-     */
-    public boolean hasReceiverTypeDispatch() {
-        return MethodHandleNatives.refKindDoesDispatch(getReferenceKind());
-    }
 
     /** Query whether this member name is resolved.
      *  A resolved member name is one for which the JVM has found
@@ -930,7 +869,7 @@ final class MemberName implements Member, Cloneable {
     }
 
     public IllegalAccessException makeAccessException(String message, Object from) {
-        message = message + ": "+ toString();
+        message = message + ": " + this;
         if (from != null)  {
             if (from == MethodHandles.publicLookup()) {
                 message += ", from public Lookup";
@@ -965,7 +904,7 @@ final class MemberName implements Member, Cloneable {
             return "no such field";
     }
     public ReflectiveOperationException makeAccessException() {
-        String message = message() + ": "+ toString();
+        String message = message() + ": " + this;
         ReflectiveOperationException ex;
         if (isResolved() || !(resolution instanceof NoSuchMethodError ||
                               resolution instanceof NoSuchFieldError))
@@ -992,70 +931,8 @@ final class MemberName implements Member, Cloneable {
     /*non-public*/
     static class Factory {
         private Factory() { } // singleton pattern
-        static Factory INSTANCE = new Factory();
+        static final Factory INSTANCE = new Factory();
 
-        private static int ALLOWED_FLAGS = ALL_KINDS;
-
-        /// Queries
-        List<MemberName> getMembers(Class<?> defc,
-                String matchName, Object matchType,
-                int matchFlags, Class<?> lookupClass) {
-            matchFlags &= ALLOWED_FLAGS;
-            String matchSig = null;
-            if (matchType != null) {
-                matchSig = BytecodeDescriptor.unparse(matchType);
-                if (matchSig.startsWith("("))
-                    matchFlags &= ~(ALL_KINDS & ~IS_INVOCABLE);
-                else
-                    matchFlags &= ~(ALL_KINDS & ~IS_FIELD);
-            }
-            final int BUF_MAX = 0x2000;
-            int len1 = matchName == null ? 10 : matchType == null ? 4 : 1;
-            MemberName[] buf = newMemberBuffer(len1);
-            int totalCount = 0;
-            ArrayList<MemberName[]> bufs = null;
-            int bufCount = 0;
-            for (;;) {
-                bufCount = MethodHandleNatives.getMembers(defc,
-                        matchName, matchSig, matchFlags,
-                        lookupClass,
-                        totalCount, buf);
-                if (bufCount <= buf.length) {
-                    if (bufCount < 0)  bufCount = 0;
-                    totalCount += bufCount;
-                    break;
-                }
-                // JVM returned to us with an intentional overflow!
-                totalCount += buf.length;
-                int excess = bufCount - buf.length;
-                if (bufs == null)  bufs = new ArrayList<>(1);
-                bufs.add(buf);
-                int len2 = buf.length;
-                len2 = Math.max(len2, excess);
-                len2 = Math.max(len2, totalCount / 4);
-                buf = newMemberBuffer(Math.min(BUF_MAX, len2));
-            }
-            ArrayList<MemberName> result = new ArrayList<>(totalCount);
-            if (bufs != null) {
-                for (MemberName[] buf0 : bufs) {
-                    Collections.addAll(result, buf0);
-                }
-            }
-            for (int i = 0; i < bufCount; i++) {
-                result.add(buf[i]);
-            }
-            // Signature matching is not the same as type matching, since
-            // one signature might correspond to several types.
-            // So if matchType is a Class or MethodType, refilter the results.
-            if (matchType != null && matchType != matchSig) {
-                for (Iterator<MemberName> it = result.iterator(); it.hasNext();) {
-                    MemberName m = it.next();
-                    if (!matchType.equals(m.getType()))
-                        it.remove();
-                }
-            }
-            return result;
-        }
         /** Produce a resolved version of the given member.
          *  Super types are searched (for inherited members) if {@code searchSupers} is true.
          *  Access checking is performed on behalf of the given {@code lookupClass}.
@@ -1130,70 +1007,6 @@ final class MemberName implements Member, Cloneable {
             if (result != null && result.isResolved())
                 return result;
             return null;
-        }
-        /** Return a list of all methods defined by the given class.
-         *  Super types are searched (for inherited members) if {@code searchSupers} is true.
-         *  Access checking is performed on behalf of the given {@code lookupClass}.
-         *  Inaccessible members are not added to the last.
-         */
-        public List<MemberName> getMethods(Class<?> defc, boolean searchSupers,
-                Class<?> lookupClass) {
-            return getMethods(defc, searchSupers, null, null, lookupClass);
-        }
-        /** Return a list of matching methods defined by the given class.
-         *  Super types are searched (for inherited members) if {@code searchSupers} is true.
-         *  Returned methods will match the name (if not null) and the type (if not null).
-         *  Access checking is performed on behalf of the given {@code lookupClass}.
-         *  Inaccessible members are not added to the last.
-         */
-        public List<MemberName> getMethods(Class<?> defc, boolean searchSupers,
-                String name, MethodType type, Class<?> lookupClass) {
-            int matchFlags = IS_METHOD | (searchSupers ? SEARCH_ALL_SUPERS : 0);
-            return getMembers(defc, name, type, matchFlags, lookupClass);
-        }
-        /** Return a list of all constructors defined by the given class.
-         *  Access checking is performed on behalf of the given {@code lookupClass}.
-         *  Inaccessible members are not added to the last.
-         */
-        public List<MemberName> getConstructors(Class<?> defc, Class<?> lookupClass) {
-            return getMembers(defc, null, null, IS_CONSTRUCTOR, lookupClass);
-        }
-        /** Return a list of all fields defined by the given class.
-         *  Super types are searched (for inherited members) if {@code searchSupers} is true.
-         *  Access checking is performed on behalf of the given {@code lookupClass}.
-         *  Inaccessible members are not added to the last.
-         */
-        public List<MemberName> getFields(Class<?> defc, boolean searchSupers,
-                Class<?> lookupClass) {
-            return getFields(defc, searchSupers, null, null, lookupClass);
-        }
-        /** Return a list of all fields defined by the given class.
-         *  Super types are searched (for inherited members) if {@code searchSupers} is true.
-         *  Returned fields will match the name (if not null) and the type (if not null).
-         *  Access checking is performed on behalf of the given {@code lookupClass}.
-         *  Inaccessible members are not added to the last.
-         */
-        public List<MemberName> getFields(Class<?> defc, boolean searchSupers,
-                String name, Class<?> type, Class<?> lookupClass) {
-            int matchFlags = IS_FIELD | (searchSupers ? SEARCH_ALL_SUPERS : 0);
-            return getMembers(defc, name, type, matchFlags, lookupClass);
-        }
-        /** Return a list of all nested types defined by the given class.
-         *  Super types are searched (for inherited members) if {@code searchSupers} is true.
-         *  Access checking is performed on behalf of the given {@code lookupClass}.
-         *  Inaccessible members are not added to the last.
-         */
-        public List<MemberName> getNestedTypes(Class<?> defc, boolean searchSupers,
-                Class<?> lookupClass) {
-            int matchFlags = IS_TYPE | (searchSupers ? SEARCH_ALL_SUPERS : 0);
-            return getMembers(defc, null, null, matchFlags, lookupClass);
-        }
-        private static MemberName[] newMemberBuffer(int length) {
-            MemberName[] buf = new MemberName[length];
-            // fill the buffer with dummy structs for the JVM to fill in
-            for (int i = 0; i < length; i++)
-                buf[i] = new MemberName();
-            return buf;
         }
     }
 }

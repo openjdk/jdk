@@ -78,7 +78,7 @@ public class TIFFOldJPEGDecompressor extends TIFFJPEGDecompressor {
     public TIFFOldJPEGDecompressor() {}
 
     //
-    // Intialize instance variables according to an analysis of the
+    // Initialize instance variables according to an analysis of the
     // TIFF field content. See bug 4929147 for test image information.
     //
     // Case 1: Image contains a single strip or tile and the offset to
@@ -408,7 +408,7 @@ public class TIFFOldJPEGDecompressor extends TIFFJPEGDecompressor {
 
                     baos.write((byte)i); // Quantization table ID
                 }
-            };
+            }
 
 
             // DRI (optional).
@@ -485,7 +485,7 @@ public class TIFFOldJPEGDecompressor extends TIFFJPEGDecompressor {
 
                     tables[tmpOffset++] = (byte)i; // Quantization table ID
                 }
-            };
+            }
         }
 
         //
@@ -527,7 +527,7 @@ public class TIFFOldJPEGDecompressor extends TIFFJPEGDecompressor {
                     SOSMarker[SOSMarkerIndex++] =
                         (byte)((i << 4) | i); // Huffman table IDs
                 }
-            };
+            }
             SOSMarker[SOSMarkerIndex++] = (byte)0;
             SOSMarker[SOSMarkerIndex++] = (byte)0x3f;
             SOSMarker[SOSMarkerIndex++] = (byte)0;

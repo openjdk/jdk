@@ -39,81 +39,24 @@ public abstract class Constant implements Cloneable, Node {
     private static BCELComparator bcelComparator = new BCELComparator() {
 
         @Override
-        public boolean equals( final Object o1, final Object o2 ) {
+        public boolean equals(final Object o1, final Object o2) {
             final Constant THIS = (Constant) o1;
             final Constant THAT = (Constant) o2;
             return Objects.equals(THIS.toString(), THAT.toString());
         }
 
-
         @Override
-        public int hashCode( final Object o ) {
+        public int hashCode(final Object o) {
             final Constant THIS = (Constant) o;
             return THIS.toString().hashCode();
         }
     };
 
-    /* In fact this tag is redundant since we can distinguish different
-     * `Constant' objects by their type, i.e., via `instanceof'. In some
-     * places we will use the tag for switch()es anyway.
-     *
-     * First, we want match the specification as closely as possible. Second we
-     * need the tag as an index to select the corresponding class name from the
-     * `CONSTANT_NAMES' array.
-     */
-    private byte tag;
-
-    Constant(final byte tag) {
-        this.tag = tag;
-    }
-
     /**
-     * Called by objects that are traversing the nodes of the tree implicitely
-     * defined by the contents of a Java class. I.e., the hierarchy of methods,
-     * fields, attributes, etc. spawns a tree of objects.
-     *
-     * @param v Visitor object
+     * @return Comparison strategy object
      */
-    @Override
-    public abstract void accept( Visitor v );
-
-    public abstract void dump( DataOutputStream file ) throws IOException;
-
-    /**
-     * @return Tag of constant, i.e., its type. No setTag() method to avoid
-     * confusion.
-     */
-    public final byte getTag() {
-        return tag;
-    }
-
-    /**
-     * @return String representation.
-     */
-    @Override
-    public String toString() {
-        return Const.getConstantName(tag) + "[" + tag + "]";
-    }
-
-    /**
-     * @return deep copy of this constant
-     */
-    public Constant copy() {
-        try {
-            return (Constant) super.clone();
-        } catch (final CloneNotSupportedException e) {
-            // TODO should this throw?
-        }
-        return null;
-    }
-
-    @Override
-    public Object clone() {
-        try {
-            return super.clone();
-        } catch (final CloneNotSupportedException e) {
-            throw new Error("Clone Not Supported"); // never happens
-        }
+    public static BCELComparator getComparator() {
+        return bcelComparator;
     }
 
     /**
@@ -168,39 +111,95 @@ public abstract class Constant implements Cloneable, Node {
     }
 
     /**
-     * @return Comparison strategy object
-     */
-    public static BCELComparator getComparator() {
-        return bcelComparator;
-    }
-
-    /**
      * @param comparator Comparison strategy object
      */
-    public static void setComparator( final BCELComparator comparator ) {
+    public static void setComparator(final BCELComparator comparator) {
         bcelComparator = comparator;
     }
 
-    /**
-     * Returns value as defined by given BCELComparator strategy.
-     * By default two Constant objects are said to be equal when
-     * the result of toString() is equal.
+    /*
+     * In fact this tag is redundant since we can distinguish different 'Constant' objects by their type, i.e., via
+     * 'instanceof'. In some places we will use the tag for switch()es anyway.
      *
-     * @see java.lang.Object#equals(java.lang.Object)
+     * First, we want match the specification as closely as possible. Second we need the tag as an index to select the
+     * corresponding class name from the 'CONSTANT_NAMES' array.
+     */
+    /**
+     * @deprecated (since 6.0) will be made private; do not access directly, use getter/setter
+     */
+    @java.lang.Deprecated
+    protected byte tag; // TODO should be private & final
+
+    Constant(final byte tag) {
+        this.tag = tag;
+    }
+
+    /**
+     * Called by objects that are traversing the nodes of the tree implicitly defined by the contents of a Java class.
+     * I.e., the hierarchy of methods, fields, attributes, etc. spawns a tree of objects.
+     *
+     * @param v Visitor object
      */
     @Override
-    public boolean equals( final Object obj ) {
+    public abstract void accept(Visitor v);
+
+    @Override
+    public Object clone() {
+        try {
+            return super.clone();
+        } catch (final CloneNotSupportedException e) {
+            throw new Error("Clone Not Supported"); // never happens
+        }
+    }
+
+    /**
+     * @return deep copy of this constant
+     */
+    public Constant copy() {
+        try {
+            return (Constant) super.clone();
+        } catch (final CloneNotSupportedException e) {
+            // TODO should this throw?
+        }
+        return null;
+    }
+
+    public abstract void dump(DataOutputStream file) throws IOException;
+
+    /**
+     * Returns value as defined by given BCELComparator strategy. By default two Constant objects are said to be equal when
+     * the result of toString() is equal.
+     *
+     * @see Object#equals(Object)
+     */
+    @Override
+    public boolean equals(final Object obj) {
         return bcelComparator.equals(this, obj);
     }
 
     /**
-     * Returns value as defined by given BCELComparator strategy.
-     * By default return the hashcode of the result of toString().
+     * @return Tag of constant, i.e., its type. No setTag() method to avoid confusion.
+     */
+    public final byte getTag() {
+        return tag;
+    }
+
+    /**
+     * Returns value as defined by given BCELComparator strategy. By default return the hashcode of the result of
+     * toString().
      *
-     * @see java.lang.Object#hashCode()
+     * @see Object#hashCode()
      */
     @Override
     public int hashCode() {
         return bcelComparator.hashCode(this);
+    }
+
+    /**
+     * @return String representation.
+     */
+    @Override
+    public String toString() {
+        return Const.getConstantName(tag) + "[" + tag + "]";
     }
 }

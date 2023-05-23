@@ -43,7 +43,7 @@ public class MacOSFlags {
     private static boolean metalEnabled;
     private static boolean metalVerbose;
 
-    private enum PropertyState {ENABLED, DISABLED, UNSPECIFIED};
+    private enum PropertyState {ENABLED, DISABLED, UNSPECIFIED}
 
     static {
         initJavaFlags();

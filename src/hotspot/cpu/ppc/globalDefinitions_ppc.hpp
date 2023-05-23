@@ -37,6 +37,8 @@ const bool CCallingConventionRequiresIntsAsLongs = true;
 
 #define SUPPORTS_NATIVE_CX8
 
+#define SUPPORT_MONITOR_COUNT
+
 // PPC64 is not specified as multi-copy-atomic
 // So we must not #define CPU_MULTI_COPY_ATOMIC
 
@@ -56,7 +58,5 @@ const bool CCallingConventionRequiresIntsAsLongs = true;
 // Otherwise, we fall back to usage of the polling page in nmethods.
 // Define the condition to use this -XX flag.
 #define USE_POLL_BIT_ONLY UseSIGTRAP
-
-#define COMPRESSED_CLASS_POINTERS_DEPENDS_ON_COMPRESSED_OOPS false
 
 #endif // CPU_PPC_GLOBALDEFINITIONS_PPC_HPP

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -24,22 +24,22 @@
 /*
  * @test
  * @enablePreview
- * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64"
+ * @requires jdk.foreign.linker != "UNSUPPORTED"
  * @run testng/othervm --enable-native-access=ALL-UNNAMED SafeFunctionAccessTest
  */
 
-import java.lang.foreign.Addressable;
+import java.lang.foreign.Arena;
 import java.lang.foreign.Linker;
 import java.lang.foreign.FunctionDescriptor;
-import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
+import java.lang.foreign.MemoryLayout;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 
-import java.lang.foreign.VaList;
+import java.util.stream.Stream;
+
 import org.testng.annotations.*;
 
 import static org.testng.Assert.*;
@@ -56,10 +56,10 @@ public class SafeFunctionAccessTest extends NativeTestHelper {
     @Test(expectedExceptions = IllegalStateException.class)
     public void testClosedStruct() throws Throwable {
         MemorySegment segment;
-        try (MemorySession session = MemorySession.openConfined()) {
-            segment = MemorySegment.allocateNative(POINT, session);
+        try (Arena arena = Arena.ofConfined()) {
+            segment = arena.allocate(POINT);
         }
-        assertFalse(segment.session().isAlive());
+        assertFalse(segment.scope().isAlive());
         MethodHandle handle = Linker.nativeLinker().downcallHandle(
                 findNativeOrThrow("struct_func"),
                 FunctionDescriptor.ofVoid(POINT));
@@ -72,80 +72,60 @@ public class SafeFunctionAccessTest extends NativeTestHelper {
         MethodHandle handle = Linker.nativeLinker().downcallHandle(
                 findNativeOrThrow("addr_func_6"),
                 FunctionDescriptor.ofVoid(C_POINTER, C_POINTER, C_POINTER, C_POINTER, C_POINTER, C_POINTER));
+        record Allocation(Arena drop, MemorySegment segment) {
+            static Allocation of(MemoryLayout layout) {
+                Arena arena = Arena.ofShared();
+                return new Allocation(arena, arena.allocate(layout));
+            }
+        }
         for (int i = 0 ; i < 6 ; i++) {
-            MemorySegment[] segments = new MemorySegment[]{
-                    MemorySegment.allocateNative(POINT, MemorySession.openShared()),
-                    MemorySegment.allocateNative(POINT, MemorySession.openShared()),
-                    MemorySegment.allocateNative(POINT, MemorySession.openShared()),
-                    MemorySegment.allocateNative(POINT, MemorySession.openShared()),
-                    MemorySegment.allocateNative(POINT, MemorySession.openShared()),
-                    MemorySegment.allocateNative(POINT, MemorySession.openShared())
+            Allocation[] allocations = new Allocation[]{
+                    Allocation.of(POINT),
+                    Allocation.of(POINT),
+                    Allocation.of(POINT),
+                    Allocation.of(POINT),
+                    Allocation.of(POINT),
+                    Allocation.of(POINT)
             };
             // check liveness
-            segments[i].session().close();
+            allocations[i].drop().close();
             for (int j = 0 ; j < 6 ; j++) {
                 if (i == j) {
-                    assertFalse(segments[j].session().isAlive());
+                    assertFalse(allocations[j].drop().scope().isAlive());
                 } else {
-                    assertTrue(segments[j].session().isAlive());
+                    assertTrue(allocations[j].drop().scope().isAlive());
                 }
             }
             try {
-                handle.invokeWithArguments(segments);
+                handle.invokeWithArguments(Stream.of(allocations).map(Allocation::segment).toArray());
                 fail();
             } catch (IllegalStateException ex) {
                 assertTrue(ex.getMessage().contains("Already closed"));
             }
             for (int j = 0 ; j < 6 ; j++) {
                 if (i != j) {
-                    segments[j].session().close(); // should succeed!
+                    allocations[j].drop().close(); // should succeed!
                 }
             }
         }
     }
 
     @Test(expectedExceptions = IllegalStateException.class)
-    public void testClosedVaList() throws Throwable {
-        VaList list;
-        try (MemorySession session = MemorySession.openConfined()) {
-            list = VaList.make(b -> b.addVarg(C_INT, 42), session);
-        }
-        assertFalse(list.session().isAlive());
-        MethodHandle handle = Linker.nativeLinker().downcallHandle(
-                findNativeOrThrow("addr_func"),
-                FunctionDescriptor.ofVoid(C_POINTER));
-
-        handle.invokeExact((Addressable)list);
-    }
-
-    @Test(expectedExceptions = IllegalStateException.class)
     public void testClosedUpcall() throws Throwable {
         MemorySegment upcall;
-        try (MemorySession session = MemorySession.openConfined()) {
+        try (Arena arena = Arena.ofConfined()) {
             MethodHandle dummy = MethodHandles.lookup().findStatic(SafeFunctionAccessTest.class, "dummy", MethodType.methodType(void.class));
-            upcall = Linker.nativeLinker().upcallStub(dummy, FunctionDescriptor.ofVoid(), session);
+            upcall = Linker.nativeLinker().upcallStub(dummy, FunctionDescriptor.ofVoid(), arena);
         }
-        assertFalse(upcall.session().isAlive());
+        assertFalse(upcall.scope().isAlive());
         MethodHandle handle = Linker.nativeLinker().downcallHandle(
                 findNativeOrThrow("addr_func"),
                 FunctionDescriptor.ofVoid(C_POINTER));
 
-        handle.invokeExact((Addressable)upcall);
+        handle.invokeExact(upcall);
     }
 
     static void dummy() { }
-
-    @Test
-    public void testClosedVaListCallback() throws Throwable {
-        MethodHandle handle = Linker.nativeLinker().downcallHandle(
-                findNativeOrThrow("addr_func_cb"),
-                FunctionDescriptor.ofVoid(C_POINTER, C_POINTER));
-
-        try (MemorySession session = MemorySession.openConfined()) {
-            VaList list = VaList.make(b -> b.addVarg(C_INT, 42), session);
-            handle.invoke(list, sessionChecker(session));
-        }
-    }
 
     @Test
     public void testClosedStructCallback() throws Throwable {
@@ -153,9 +133,9 @@ public class SafeFunctionAccessTest extends NativeTestHelper {
                 findNativeOrThrow("addr_func_cb"),
                 FunctionDescriptor.ofVoid(C_POINTER, C_POINTER));
 
-        try (MemorySession session = MemorySession.openConfined()) {
-            MemorySegment segment = MemorySegment.allocateNative(POINT, session);
-            handle.invoke(segment, sessionChecker(session));
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment segment = arena.allocate(POINT);
+            handle.invokeExact(segment, sessionChecker(arena));
         }
     }
 
@@ -165,27 +145,27 @@ public class SafeFunctionAccessTest extends NativeTestHelper {
                 findNativeOrThrow("addr_func_cb"),
                 FunctionDescriptor.ofVoid(C_POINTER, C_POINTER));
 
-        try (MemorySession session = MemorySession.openConfined()) {
+        try (Arena arena = Arena.ofConfined()) {
             MethodHandle dummy = MethodHandles.lookup().findStatic(SafeFunctionAccessTest.class, "dummy", MethodType.methodType(void.class));
-            MemorySegment upcall = Linker.nativeLinker().upcallStub(dummy, FunctionDescriptor.ofVoid(), session);
-            handle.invoke(upcall, sessionChecker(session));
+            MemorySegment upcall = Linker.nativeLinker().upcallStub(dummy, FunctionDescriptor.ofVoid(), arena);
+            handle.invokeExact(upcall, sessionChecker(arena));
         }
     }
 
-    MemorySegment sessionChecker(MemorySession session) {
+    MemorySegment sessionChecker(Arena arena) {
         try {
             MethodHandle handle = MethodHandles.lookup().findStatic(SafeFunctionAccessTest.class, "checkSession",
-                    MethodType.methodType(void.class, MemorySession.class));
-            handle = handle.bindTo(session);
-            return Linker.nativeLinker().upcallStub(handle, FunctionDescriptor.ofVoid(), MemorySession.openImplicit());
+                    MethodType.methodType(void.class, Arena.class));
+            handle = handle.bindTo(arena);
+            return Linker.nativeLinker().upcallStub(handle, FunctionDescriptor.ofVoid(), Arena.ofAuto());
         } catch (Throwable ex) {
             throw new AssertionError(ex);
         }
     }
 
-    static void checkSession(MemorySession session) {
+    static void checkSession(Arena arena) {
         try {
-            session.close();
+            arena.close();
             fail("Session closed unexpectedly!");
         } catch (IllegalStateException ex) {
             assertTrue(ex.getMessage().contains("acquired")); //if acquired, fine

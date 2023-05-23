@@ -514,7 +514,7 @@ public abstract class X11SurfaceData extends XSurfaceData {
                     // X11.  Despite ambiguity in the X11 spec in how 24 bpp
                     // surfaces are treated, it appears that the best
                     // SurfaceType for these configurations (including
-                    // some Matrox Millenium and ATI Radeon boards) is
+                    // some Matrox Millennium and ATI Radeon boards) is
                     // ThreeByteBgr.
                     sType = transparent ? X11SurfaceData.ThreeByteBgrX11_BM : X11SurfaceData.ThreeByteBgrX11;
                 } else {

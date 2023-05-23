@@ -39,7 +39,7 @@ import javadoc.tester.JavadocTester;
 
 public class TestSerialWithLink extends JavadocTester {
     public static void main(String... args) throws Exception {
-        TestSerialWithLink tester = new TestSerialWithLink();
+        var tester = new TestSerialWithLink();
         tester.runTests();
     }
 

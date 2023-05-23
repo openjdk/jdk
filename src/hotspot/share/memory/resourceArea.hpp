@@ -105,10 +105,6 @@ public:
     assert(_nesting > state._nesting, "rollback to inactive mark");
     assert((_nesting - state._nesting) == 1, "rollback across another mark");
 
-    if (UseMallocOnly) {
-      free_malloced_objects(state._chunk, state._hwm, state._max, _hwm);
-    }
-
     if (state._chunk->next() != nullptr) { // Delete later chunks.
       // Reset size before deleting chunks.  Otherwise, the total
       // size could exceed the total chunk size.

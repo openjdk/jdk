@@ -261,7 +261,7 @@ public class Desktop {
          * @since 9
          */
         MOVE_TO_TRASH
-    };
+    }
 
     private DesktopPeer peer;
 

@@ -31,7 +31,7 @@
 #include "memory/allocation.hpp"
 #include "utilities/ostream.hpp"
 
-class ShenandoahTracer : public GCTracer {
+class ShenandoahTracer : public GCTracer, public CHeapObj<mtGC> {
 public:
   ShenandoahTracer() : GCTracer(Shenandoah) {}
 };

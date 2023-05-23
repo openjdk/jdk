@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,8 @@
 #ifndef SHARE_PRIMS_VECTORSUPPORT_HPP
 #define SHARE_PRIMS_VECTORSUPPORT_HPP
 
-#include "jni.h"
 #include "code/debugInfo.hpp"
+#include "jni.h"
 #include "memory/allStatic.hpp"
 #include "oops/typeArrayOop.hpp"
 #include "runtime/registerMap.hpp"
@@ -147,6 +147,5 @@ class VectorSupport : AllStatic {
 
   static bool is_vector(Klass* klass);
   static bool is_vector_mask(Klass* klass);
-  static bool is_vector_shuffle(Klass* klass);
 };
 #endif // SHARE_PRIMS_VECTORSUPPORT_HPP

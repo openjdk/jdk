@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -152,10 +152,12 @@ public class dispose005a {
                                  logErr("ERROR: unexpected instruction: " + instruction);
                                  exitCode = FAILED;
                              } else {
-                                 log1("checking on: testedThread.isAlive");
+                                 log1("checking on: test_thread.done");
                                  if (!test_thread.done) {
-                                     test_thread.resume();
                                      pipe.println("alive");
+                                     logErr("ERROR test_thread.done is false after vm.dispose()");
+                                     exitCode = FAILED;
+                                     break;
                                  } else {
                                      pipe.println("not_alive");
                                  }

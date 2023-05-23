@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -227,11 +227,13 @@ public final class PKIXCertPathValidator extends CertPathValidatorSpi {
 
         X509ValidationEvent xve = new X509ValidationEvent();
         if (xve.shouldCommit() || EventHelper.isLoggingSecurity()) {
-            int[] certIds = params.certificates().stream()
+            long[] certIds = params.certificates().stream()
                     .mapToInt(Certificate::hashCode)
+                    .mapToLong(Integer::toUnsignedLong)
                     .toArray();
-            int anchorCertId = (anchorCert != null) ?
+            int hash = (anchorCert != null) ?
                 anchorCert.hashCode() : anchor.getCAPublicKey().hashCode();
+            long anchorCertId = Integer.toUnsignedLong(hash);
             if (xve.shouldCommit()) {
                 xve.certificateId = anchorCertId;
                 int certificatePos = 1; // most trusted CA
@@ -239,11 +241,10 @@ public final class PKIXCertPathValidator extends CertPathValidatorSpi {
                 xve.validationCounter = validationCounter.incrementAndGet();
                 xve.commit();
                 // now, iterate through remaining
-                for (int id : certIds) {
+                for (long id : certIds) {
                     xve.certificateId = id;
                     xve.certificatePosition = ++certificatePos;
                     xve.commit();
-
                 }
             }
             if (EventHelper.isLoggingSecurity()) {

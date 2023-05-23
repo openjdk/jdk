@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@
 #include "runtime/orderAccess.hpp"
 
 inline ClassLoaderData *ClassLoaderDataGraph::find_or_create(Handle loader) {
-  guarantee(loader() != NULL && oopDesc::is_oop(loader()), "Loader must be oop");
+  guarantee(loader() != nullptr && oopDesc::is_oop(loader()), "Loader must be oop");
   // Gets the class loader data out of the java/lang/ClassLoader object, if non-null
   // it's already in the loader_data, so no need to add
   ClassLoaderData* loader_data = java_lang_ClassLoader::loader_data_acquire(loader());
@@ -56,7 +56,7 @@ void ClassLoaderDataGraph::inc_instance_classes(size_t count) {
 }
 
 void ClassLoaderDataGraph::dec_instance_classes(size_t count) {
-  size_t old_count = Atomic::fetch_and_add(&_num_instance_classes, -count, memory_order_relaxed);
+  size_t old_count = Atomic::fetch_then_add(&_num_instance_classes, -count, memory_order_relaxed);
   assert(old_count >= count, "Sanity");
 }
 
@@ -65,7 +65,7 @@ void ClassLoaderDataGraph::inc_array_classes(size_t count) {
 }
 
 void ClassLoaderDataGraph::dec_array_classes(size_t count) {
-  size_t old_count = Atomic::fetch_and_add(&_num_array_classes, -count, memory_order_relaxed);
+  size_t old_count = Atomic::fetch_then_add(&_num_array_classes, -count, memory_order_relaxed);
   assert(old_count >= count, "Sanity");
 }
 
@@ -73,7 +73,7 @@ bool ClassLoaderDataGraph::should_clean_metaspaces_and_reset() {
   // Only clean metaspaces after full GC.
   bool do_cleaning = _safepoint_cleanup_needed;
 #if INCLUDE_JVMTI
-  do_cleaning = do_cleaning && (_should_clean_deallocate_lists || InstanceKlass::has_previous_versions());
+  do_cleaning = do_cleaning && (_should_clean_deallocate_lists || InstanceKlass::should_clean_previous_versions());
 #else
   do_cleaning = do_cleaning && _should_clean_deallocate_lists;
 #endif

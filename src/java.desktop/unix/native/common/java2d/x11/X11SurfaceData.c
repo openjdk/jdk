@@ -89,7 +89,7 @@ jint forceSharedPixmaps = JNI_FALSE;
 int mitShmPermissionMask = MITSHM_PERM_OWNER;
 #endif
 
-/* Cached shared image, one for all surface datas. */
+/* Cached shared image, one for all surface data. */
 static XImage * cachedXImage;
 
 #endif /* !HEADLESS */

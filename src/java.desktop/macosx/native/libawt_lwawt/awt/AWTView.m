@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -354,9 +354,9 @@ static BOOL shouldUsePressAndHold() {
     NSEventType type = [event type];
 
     // check synthesized mouse entered/exited events
-    if ((type == NSMouseEntered && mouseIsOver) || (type == NSMouseExited && !mouseIsOver)) {
+    if ((type == NSEventTypeMouseEntered && mouseIsOver) || (type == NSEventTypeMouseExited && !mouseIsOver)) {
         return;
-    }else if ((type == NSMouseEntered && !mouseIsOver) || (type == NSMouseExited && mouseIsOver)) {
+    }else if ((type == NSEventTypeMouseEntered && !mouseIsOver) || (type == NSEventTypeMouseExited && mouseIsOver)) {
         mouseIsOver = !mouseIsOver;
     }
 
@@ -369,17 +369,17 @@ static BOOL shouldUsePressAndHold() {
     NSPoint absP = [NSEvent mouseLocation];
 
     // Convert global numbers between Cocoa's coordinate system and Java.
-    // TODO: need consitent way for doing that both with global as well as with local coordinates.
+    // TODO: need consistent way for doing that both with global as well as with local coordinates.
     // The reason to do it here is one more native method for getting screen dimension otherwise.
 
     NSRect screenRect = [[[NSScreen screens] objectAtIndex:0] frame];
     absP.y = screenRect.size.height - absP.y;
     jint clickCount;
 
-    if (type == NSMouseEntered ||
-        type == NSMouseExited ||
-        type == NSScrollWheel ||
-        type == NSMouseMoved) {
+    if (type == NSEventTypeMouseEntered ||
+        type == NSEventTypeMouseExited  ||
+        type == NSEventTypeScrollWheel  ||
+        type == NSEventTypeMouseMoved)  {
         clickCount = 0;
     } else {
         clickCount = [event clickCount];
@@ -458,7 +458,7 @@ static BOOL shouldUsePressAndHold() {
 
     jstring characters = NULL;
     jstring charactersIgnoringModifiers = NULL;
-    if ([event type] != NSFlagsChanged) {
+    if ([event type] != NSEventTypeFlagsChanged) {
         characters = NSStringToJavaString(env, [event characters]);
         charactersIgnoringModifiers = NSStringToJavaString(env, [event charactersIgnoringModifiers]);
     }
@@ -1050,7 +1050,7 @@ static jclass jc_CInputMethod = NULL;
 
     // NSInputContext already did the analysis of the TSM event and created attributes indicating
     // the underlining and color that should be done to the string.  We need to look at the underline
-    // style and color to determine what kind of Java hilighting needs to be done.
+    // style and color to determine what kind of Java highlighting needs to be done.
     jstring inProcessText = NSStringToJavaString(env, incomingString);
     (*env)->CallVoidMethod(env, fInputMethodLOCKABLE, jm_startIMUpdate, inProcessText);
     CHECK_EXCEPTION();
@@ -1261,7 +1261,7 @@ static jclass jc_CInputMethod = NULL;
     return range;
 }
 
-/* This method returns the first frame of rects for theRange in screen coordindate system.
+/* This method returns the first frame of rects for theRange in screen coordinate system.
  */
 - (NSRect) firstRectForCharacterRange:(NSRange)theRange actualRange:(NSRangePointer)actualRange
 {

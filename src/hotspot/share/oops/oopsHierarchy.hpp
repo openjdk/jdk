@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,10 @@
 #ifndef SHARE_OOPS_OOPSHIERARCHY_HPP
 #define SHARE_OOPS_OOPSHIERARCHY_HPP
 
-#include "metaprogramming/integralConstant.hpp"
 #include "metaprogramming/primitiveConversions.hpp"
 #include "utilities/globalDefinitions.hpp"
+
+#include <type_traits>
 
 // OBJECT hierarchy
 // This hierarchy is a representation hierarchy, i.e. if A is a superclass
@@ -67,7 +68,7 @@ typedef class     typeArrayOopDesc*           typeArrayOop;
 // a conversion to or from an oop to a numerical type is needed,
 // use the inline template methods, cast_*_oop, defined below.
 //
-// Converting NULL to oop to Handle implicit is no longer accepted by the
+// Converting null to oop to Handle implicit is no longer accepted by the
 // compiler because there are too many steps in the conversion.  Use Handle()
 // instead, which generates less code anyway.
 
@@ -76,39 +77,48 @@ class oopDesc;
 
 extern "C" bool CheckUnhandledOops;
 
+// Extra verification when creating and using oops.
+// Used to catch broken oops as soon as possible.
+using CheckOopFunctionPointer = void(*)(oopDesc*);
+extern CheckOopFunctionPointer check_oop_function;
+
 class oop {
   oopDesc* _o;
 
   void register_oop();
   void unregister_oop();
 
-  void register_if_checking() {
-    if (CheckUnhandledOops) register_oop();
-  }
+  // Extra verification of the oop
+  void check_oop() const { if (check_oop_function != nullptr && _o != nullptr) check_oop_function(_o); }
+
+  void on_usage() const  { check_oop(); }
+  void on_construction() { check_oop(); if (CheckUnhandledOops)   register_oop(); }
+  void on_destruction()  {              if (CheckUnhandledOops) unregister_oop(); }
 
 public:
-  oop()             : _o(nullptr) { register_if_checking(); }
-  oop(const oop& o) : _o(o._o)    { register_if_checking(); }
-  oop(oopDesc* o)   : _o(o)       { register_if_checking(); }
+  oop()             : _o(nullptr) { on_construction(); }
+  oop(const oop& o) : _o(o._o)    { on_construction(); }
+  oop(oopDesc* o)   : _o(o)       { on_construction(); }
   ~oop() {
-    if (CheckUnhandledOops) unregister_oop();
+    on_destruction();
   }
 
-  oopDesc* obj() const                 { return _o; }
-  oopDesc* operator->() const          { return _o; }
-  operator oopDesc* () const           { return _o; }
+  oopDesc* obj() const                  { on_usage(); return _o; }
 
-  bool operator==(const oop& o) const  { return _o == o._o; }
-  bool operator!=(const oop& o) const  { return _o != o._o; }
+  oopDesc* operator->() const           { return obj(); }
+  operator oopDesc* () const            { return obj(); }
 
-  bool operator==(std::nullptr_t) const     { return _o == nullptr; }
-  bool operator!=(std::nullptr_t) const     { return _o != nullptr; }
+  bool operator==(const oop& o) const   { return obj() == o.obj(); }
+  bool operator!=(const oop& o) const   { return obj() != o.obj(); }
 
-  oop& operator=(const oop& o)         { _o = o._o; return *this; }
+  bool operator==(std::nullptr_t) const { return obj() == nullptr; }
+  bool operator!=(std::nullptr_t) const { return obj() != nullptr; }
+
+  oop& operator=(const oop& o)          { _o = o.obj(); return *this; }
 };
 
 template<>
-struct PrimitiveConversions::Translate<oop> : public TrueType {
+struct PrimitiveConversions::Translate<oop> : public std::true_type {
   typedef oop Value;
   typedef oopDesc* Decayed;
 
@@ -116,31 +126,31 @@ struct PrimitiveConversions::Translate<oop> : public TrueType {
   static Value recover(Decayed x) { return oop(x); }
 };
 
-#define DEF_OOP(type)                                                      \
-   class type##OopDesc;                                                    \
-   class type##Oop : public oop {                                          \
-     public:                                                               \
-       type##Oop() : oop() {}                                              \
-       type##Oop(const type##Oop& o) : oop(o) {}                           \
-       type##Oop(const oop& o) : oop(o) {}                                 \
-       type##Oop(type##OopDesc* o) : oop((oopDesc*)o) {}                   \
-       operator type##OopDesc* () const { return (type##OopDesc*)obj(); }  \
-       type##OopDesc* operator->() const {                                 \
-            return (type##OopDesc*)obj();                                  \
-       }                                                                   \
-       type##Oop& operator=(const type##Oop& o) {                          \
-            oop::operator=(o);                                             \
-            return *this;                                                  \
-       }                                                                   \
-   };                                                                      \
-                                                                           \
-   template<>                                                              \
-   struct PrimitiveConversions::Translate<type##Oop> : public TrueType {   \
-     typedef type##Oop Value;                                              \
-     typedef type##OopDesc* Decayed;                                       \
-                                                                           \
-     static Decayed decay(Value x) { return (type##OopDesc*)x.obj(); }     \
-     static Value recover(Decayed x) { return type##Oop(x); }              \
+#define DEF_OOP(type)                                                          \
+   class type##OopDesc;                                                        \
+   class type##Oop : public oop {                                              \
+     public:                                                                   \
+       type##Oop() : oop() {}                                                  \
+       type##Oop(const type##Oop& o) : oop(o) {}                               \
+       type##Oop(const oop& o) : oop(o) {}                                     \
+       type##Oop(type##OopDesc* o) : oop((oopDesc*)o) {}                       \
+       operator type##OopDesc* () const { return (type##OopDesc*)obj(); }      \
+       type##OopDesc* operator->() const {                                     \
+            return (type##OopDesc*)obj();                                      \
+       }                                                                       \
+       type##Oop& operator=(const type##Oop& o) {                              \
+            oop::operator=(o);                                                 \
+            return *this;                                                      \
+       }                                                                       \
+   };                                                                          \
+                                                                               \
+   template<>                                                                  \
+   struct PrimitiveConversions::Translate<type##Oop> : public std::true_type { \
+     typedef type##Oop Value;                                                  \
+     typedef type##OopDesc* Decayed;                                           \
+                                                                               \
+     static Decayed decay(Value x) { return (type##OopDesc*)x.obj(); }         \
+     static Value recover(Decayed x) { return type##Oop(x); }                  \
    };
 
 DEF_OOP(instance);
@@ -157,6 +167,10 @@ template <typename T> inline oop cast_to_oop(T value) {
 }
 template <typename T> inline T cast_from_oop(oop o) {
   return (T)(CHECK_UNHANDLED_OOPS_ONLY((oopDesc*))o);
+}
+
+inline intptr_t p2i(narrowOop o) {
+  return static_cast<intptr_t>(o);
 }
 
 // The metadata hierarchy is separate from the oop hierarchy

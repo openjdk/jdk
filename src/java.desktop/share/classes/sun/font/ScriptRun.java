@@ -49,7 +49,7 @@ package sun.font;
  * matching closing punctuation.
  *
  * No attempt is made to combine related scripts into a single run. In
- * particular, Hiragana, Katakana, and Han characters will appear in seperate
+ * particular, Hiragana, Katakana, and Han characters will appear in separate
  * runs.
 
  * Here is an example of how to iterate over script runs:
@@ -89,7 +89,7 @@ public final class ScriptRun
 
     /**
      * Construct a {@code ScriptRun} object which iterates over a subrange
-     * of the given characetrs.
+     * of the given characters.
      *
      * @param chars the array of characters over which to iterate.
      * @param start the index of the first character over which to iterate

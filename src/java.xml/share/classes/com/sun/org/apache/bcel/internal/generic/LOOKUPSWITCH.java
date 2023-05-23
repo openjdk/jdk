@@ -34,75 +34,68 @@ import com.sun.org.apache.bcel.internal.util.ByteSequence;
 public class LOOKUPSWITCH extends Select {
 
     /**
-     * Empty constructor needed for Instruction.readInstruction.
-     * Not to be used otherwise.
+     * Empty constructor needed for Instruction.readInstruction. Not to be used otherwise.
      */
     LOOKUPSWITCH() {
     }
 
-
-    public LOOKUPSWITCH(final int[] match, final InstructionHandle[] targets,
-            final InstructionHandle defaultTarget) {
+    public LOOKUPSWITCH(final int[] match, final InstructionHandle[] targets, final InstructionHandle defaultTarget) {
         super(com.sun.org.apache.bcel.internal.Const.LOOKUPSWITCH, match, targets, defaultTarget);
         /* alignment remainder assumed 0 here, until dump time. */
-        final short _length = (short) (9 + getMatch_length() * 8);
-        super.setLength(_length);
-        setFixed_length(_length);
+        final short length = (short) (9 + getMatchLength() * 8);
+        super.setLength(length);
+        setFixedLength(length);
     }
 
-
     /**
-     * Dump instruction as byte code to stream out.
-     * @param out Output stream
-     */
-    @Override
-    public void dump( final DataOutputStream out ) throws IOException {
-        super.dump(out);
-        final int _match_length = getMatch_length();
-        out.writeInt(_match_length); // npairs
-        for (int i = 0; i < _match_length; i++) {
-            out.writeInt(super.getMatch(i)); // match-offset pairs
-            out.writeInt(setIndices(i, getTargetOffset(super.getTarget(i))));
-        }
-    }
-
-
-    /**
-     * Read needed data (e.g. index) from file.
-     */
-    @Override
-    protected void initFromFile( final ByteSequence bytes, final boolean wide ) throws IOException {
-        super.initFromFile(bytes, wide); // reads padding
-        final int _match_length = bytes.readInt();
-        setMatch_length(_match_length);
-        final short _fixed_length = (short) (9 + _match_length * 8);
-        setFixed_length(_fixed_length);
-        final short _length = (short) (_match_length + super.getPadding());
-        super.setLength(_length);
-        super.setMatches(new int[_match_length]);
-        super.setIndices(new int[_match_length]);
-        super.setTargets(new InstructionHandle[_match_length]);
-        for (int i = 0; i < _match_length; i++) {
-            super.setMatch(i, bytes.readInt());
-            super.setIndices(i, bytes.readInt());
-        }
-    }
-
-
-    /**
-     * Call corresponding visitor method(s). The order is:
-     * Call visitor methods of implemented interfaces first, then
-     * call methods according to the class hierarchy in descending order,
-     * i.e., the most specific visitXXX() call comes last.
+     * Call corresponding visitor method(s). The order is: Call visitor methods of implemented interfaces first, then call
+     * methods according to the class hierarchy in descending order, i.e., the most specific visitXXX() call comes last.
      *
      * @param v Visitor object
      */
     @Override
-    public void accept( final Visitor v ) {
+    public void accept(final Visitor v) {
         v.visitVariableLengthInstruction(this);
         v.visitStackConsumer(this);
         v.visitBranchInstruction(this);
         v.visitSelect(this);
         v.visitLOOKUPSWITCH(this);
+    }
+
+    /**
+     * Dump instruction as byte code to stream out.
+     *
+     * @param out Output stream
+     */
+    @Override
+    public void dump(final DataOutputStream out) throws IOException {
+        super.dump(out);
+        final int matchLength = getMatchLength();
+        out.writeInt(matchLength); // npairs
+        for (int i = 0; i < matchLength; i++) {
+            out.writeInt(super.getMatch(i)); // match-offset pairs
+            out.writeInt(setIndices(i, getTargetOffset(super.getTarget(i))));
+        }
+    }
+
+    /**
+     * Read needed data (e.g. index) from file.
+     */
+    @Override
+    protected void initFromFile(final ByteSequence bytes, final boolean wide) throws IOException {
+        super.initFromFile(bytes, wide); // reads padding
+        final int matchLength = bytes.readInt();
+        setMatchLength(matchLength);
+        final short fixedLength = (short) (9 + matchLength * 8);
+        setFixedLength(fixedLength);
+        final short length = (short) (matchLength + super.getPadding());
+        super.setLength(length);
+        super.setMatches(new int[matchLength]);
+        super.setIndices(new int[matchLength]);
+        super.setTargets(new InstructionHandle[matchLength]);
+        for (int i = 0; i < matchLength; i++) {
+            super.setMatch(i, bytes.readInt());
+            super.setIndices(i, bytes.readInt());
+        }
     }
 }

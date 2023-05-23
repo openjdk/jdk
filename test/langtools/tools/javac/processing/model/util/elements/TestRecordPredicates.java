@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8289249
+ * @bug 8289249 8291914
  * @summary Test Elements.{isCompactConstructor, isCanonicalConstructor}
  * @library /tools/javac/lib
  * @build   JavacTestingAbstractProcessor TestRecordPredicates
@@ -107,7 +107,7 @@ public class TestRecordPredicates extends JavacTestingAbstractProcessor {
         boolean isCanonical() default false;
     }
 
-    @ExpectedPredicates(isCompact=true, isCanonical=true)
+    @ExpectedPredicates(isCompact=false, isCanonical=true)
     record RecordCompactCtor(int foo, double bar) {}
 
     // Example from JLS 8.10.4.2

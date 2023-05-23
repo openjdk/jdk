@@ -30,6 +30,7 @@ package com.sun.tools.javac.tree;
 import com.sun.source.tree.Tree;
 import com.sun.source.util.TreePath;
 import com.sun.tools.javac.code.*;
+import com.sun.tools.javac.code.Symbol.RecordComponent;
 import com.sun.tools.javac.comp.AttrContext;
 import com.sun.tools.javac.comp.Env;
 import com.sun.tools.javac.tree.JCTree.*;
@@ -46,8 +47,10 @@ import static com.sun.tools.javac.tree.JCTree.Tag.*;
 import static com.sun.tools.javac.tree.JCTree.Tag.BLOCK;
 import static com.sun.tools.javac.tree.JCTree.Tag.SYNCHRONIZED;
 
+import javax.lang.model.element.ElementKind;
 import javax.tools.JavaFileObject;
 
+import java.util.function.Predicate;
 import java.util.function.ToIntFunction;
 
 import static com.sun.tools.javac.tree.JCTree.JCOperatorExpression.OperandPos.LEFT;
@@ -327,6 +330,7 @@ public class TreeInfo {
             case PLUS_ASG: case MINUS_ASG:
             case MUL_ASG: case DIV_ASG: case MOD_ASG:
             case APPLY: case NEWCLASS:
+            case STRING_TEMPLATE:
             case ERRONEOUS:
                 return true;
             default:
@@ -542,6 +546,14 @@ public class TreeInfo {
                 JCBindingPattern node = (JCBindingPattern)tree;
                 return getStartPos(node.var);
             }
+            case STRING_TEMPLATE: {
+                JCStringTemplate node = (JCStringTemplate) tree;
+                if (node.processor == null) {
+                    return node.pos;
+                } else {
+                    return getStartPos(node.processor);
+                }
+            }
             case ERRONEOUS: {
                 JCErroneous node = (JCErroneous)tree;
                 if (node.errs != null && node.errs.nonEmpty()) {
@@ -636,10 +648,6 @@ public class TreeInfo {
                 return getEndPos(((JCWhileLoop) tree).body, endPosTable);
             case ANNOTATED_TYPE:
                 return getEndPos(((JCAnnotatedType) tree).underlyingType, endPosTable);
-            case PARENTHESIZEDPATTERN: {
-                JCParenthesizedPattern node = (JCParenthesizedPattern) tree;
-                return getEndPos(node.pattern, endPosTable);
-            }
             case ERRONEOUS: {
                 JCErroneous node = (JCErroneous)tree;
                 if (node.errs != null && node.errs.nonEmpty())
@@ -710,21 +718,26 @@ public class TreeInfo {
     }
 
     public static DiagnosticPosition diagnosticPositionFor(final Symbol sym, final JCTree tree, boolean returnNullIfNotFound) {
+        return diagnosticPositionFor(sym, tree, returnNullIfNotFound, null);
+    }
+
+    public static DiagnosticPosition diagnosticPositionFor(final Symbol sym, final JCTree tree, boolean returnNullIfNotFound,
+            Predicate<? super JCTree> filter) {
         class DiagScanner extends DeclScanner {
-            DiagScanner(Symbol sym) {
-                super(sym);
+            DiagScanner(Symbol sym, Predicate<? super JCTree> filter) {
+                super(sym, filter);
             }
 
             public void visitIdent(JCIdent that) {
-                if (that.sym == sym) result = that;
-                else super.visitIdent(that);
+                if (!checkMatch(that, that.sym))
+                    super.visitIdent(that);
             }
             public void visitSelect(JCFieldAccess that) {
-                if (that.sym == sym) result = that;
-                else super.visitSelect(that);
+                if (!checkMatch(that, that.sym))
+                    super.visitSelect(that);
             }
         }
-        DiagScanner s = new DiagScanner(sym);
+        DiagScanner s = new DiagScanner(sym, filter);
         tree.accept(s);
         JCTree decl = s.result;
         if (decl == null && returnNullIfNotFound) { return null; }
@@ -737,9 +750,14 @@ public class TreeInfo {
 
     private static class DeclScanner extends TreeScanner {
         final Symbol sym;
+        final Predicate<? super JCTree> filter;
 
         DeclScanner(final Symbol sym) {
+            this(sym, null);
+        }
+        DeclScanner(final Symbol sym, Predicate<? super JCTree> filter) {
             this.sym = sym;
+            this.filter = filter;
         }
 
         JCTree result = null;
@@ -748,32 +766,46 @@ public class TreeInfo {
                 tree.accept(this);
         }
         public void visitTopLevel(JCCompilationUnit that) {
-            if (that.packge == sym) result = that;
-            else super.visitTopLevel(that);
+            if (!checkMatch(that, that.packge))
+                super.visitTopLevel(that);
         }
         public void visitModuleDef(JCModuleDecl that) {
-            if (that.sym == sym) result = that;
+            checkMatch(that, that.sym);
             // no need to scan within module declaration
         }
         public void visitPackageDef(JCPackageDecl that) {
-            if (that.packge == sym) result = that;
-            else super.visitPackageDef(that);
+            if (!checkMatch(that, that.packge))
+                super.visitPackageDef(that);
         }
         public void visitClassDef(JCClassDecl that) {
-            if (that.sym == sym) result = that;
-            else super.visitClassDef(that);
+            if (!checkMatch(that, that.sym))
+                super.visitClassDef(that);
         }
         public void visitMethodDef(JCMethodDecl that) {
-            if (that.sym == sym) result = that;
-            else super.visitMethodDef(that);
+            if (!checkMatch(that, that.sym))
+                super.visitMethodDef(that);
         }
         public void visitVarDef(JCVariableDecl that) {
-            if (that.sym == sym) result = that;
-            else super.visitVarDef(that);
+            if (!checkMatch(that, that.sym))
+                super.visitVarDef(that);
         }
         public void visitTypeParameter(JCTypeParameter that) {
-            if (that.type != null && that.type.tsym == sym) result = that;
-            else super.visitTypeParameter(that);
+            if (that.type == null || !checkMatch(that, that.type.tsym))
+                super.visitTypeParameter(that);
+        }
+
+        protected boolean checkMatch(JCTree that, Symbol thatSym) {
+            if (thatSym == this.sym && (filter == null || filter.test(that))) {
+                result = that;
+                return true;
+            }
+            if (this.sym.getKind() == ElementKind.RECORD_COMPONENT) {
+                if (thatSym != null && thatSym.getKind() == ElementKind.FIELD && (thatSym.flags_field & RECORD) != 0) {
+                    RecordComponent rc = thatSym.enclClass().getRecordComponent((VarSymbol)thatSym);
+                    return checkMatch(rc.declarationFor(), rc);
+                }
+            }
+            return false;
         }
     }
 
@@ -937,6 +969,8 @@ public class TreeInfo {
             return symbol(((JCAnnotatedType) tree).underlyingType);
         case REFERENCE:
             return ((JCMemberReference) tree).sym;
+        case CLASSDEF:
+            return ((JCClassDecl) tree).sym;
         default:
             return null;
         }
@@ -1311,8 +1345,8 @@ public class TreeInfo {
     public static Type primaryPatternType(JCTree pat) {
         return switch (pat.getTag()) {
             case BINDINGPATTERN -> pat.type;
-            case PARENTHESIZEDPATTERN -> primaryPatternType(((JCParenthesizedPattern) pat).pattern);
             case RECORDPATTERN -> ((JCRecordPattern) pat).type;
+            case ANYPATTERN -> ((JCAnyPattern) pat).type;
             default -> throw new AssertionError();
         };
     }
@@ -1320,7 +1354,6 @@ public class TreeInfo {
     public static JCTree primaryPatternTypeTree(JCTree pat) {
         return switch (pat.getTag()) {
             case BINDINGPATTERN -> ((JCBindingPattern) pat).var.vartype;
-            case PARENTHESIZEDPATTERN -> primaryPatternTypeTree(((JCParenthesizedPattern) pat).pattern);
             case RECORDPATTERN -> ((JCRecordPattern) pat).deconstructor;
             default -> throw new AssertionError();
         };
@@ -1333,11 +1366,8 @@ public class TreeInfo {
                          .anyMatch(l -> TreeInfo.isNullCaseLabel(l));
     }
 
-    public static boolean unguardedCaseLabel(JCCaseLabel cse) {
-        if (!cse.hasTag(PATTERNCASELABEL)) {
-            return true;
-        }
-        JCExpression guard = ((JCPatternCaseLabel) cse).guard;
+    public static boolean unguardedCase(JCCase cse) {
+        JCExpression guard = cse.guard;
         if (guard == null) {
             return true;
         }

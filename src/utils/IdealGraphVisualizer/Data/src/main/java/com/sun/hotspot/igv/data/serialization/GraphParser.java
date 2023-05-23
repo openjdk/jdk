@@ -28,5 +28,5 @@ import com.sun.hotspot.igv.data.GraphDocument;
 import java.io.IOException;
 
 public interface GraphParser {
-    public GraphDocument parse() throws IOException;
+    GraphDocument parse() throws IOException;
 }

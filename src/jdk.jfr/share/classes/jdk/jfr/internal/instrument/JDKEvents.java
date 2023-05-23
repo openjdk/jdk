@@ -27,7 +27,9 @@ package jdk.jfr.internal.instrument;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 
+import jdk.internal.access.SharedSecrets;
 import jdk.jfr.Event;
 import jdk.jfr.events.ActiveRecordingEvent;
 import jdk.jfr.events.ActiveSettingEvent;
@@ -44,6 +46,7 @@ import jdk.jfr.events.FileForceEvent;
 import jdk.jfr.events.FileReadEvent;
 import jdk.jfr.events.FileWriteEvent;
 import jdk.jfr.events.DeserializationEvent;
+import jdk.jfr.events.InitialSecurityPropertyEvent;
 import jdk.jfr.events.ProcessStartEvent;
 import jdk.jfr.events.SecurityPropertyModificationEvent;
 import jdk.jfr.events.SecurityProviderServiceEvent;
@@ -61,9 +64,8 @@ import jdk.jfr.internal.JVM;
 import jdk.jfr.internal.LogLevel;
 import jdk.jfr.internal.LogTag;
 import jdk.jfr.internal.Logger;
-import jdk.jfr.internal.RequestEngine;
 import jdk.jfr.internal.SecuritySupport;
-
+import jdk.jfr.internal.periodic.PeriodicEvents;
 import jdk.internal.platform.Container;
 import jdk.internal.platform.Metrics;
 
@@ -107,7 +109,8 @@ public final class JDKEvents {
         jdk.internal.event.X509CertificateEvent.class,
         jdk.internal.event.X509ValidationEvent.class,
 
-        DirectBufferStatisticsEvent.class
+        DirectBufferStatisticsEvent.class,
+        InitialSecurityPropertyEvent.class,
     };
 
     // This is a list of the classes with instrumentation code that should be applied.
@@ -130,6 +133,7 @@ public final class JDKEvents {
     private static final Runnable emitContainerCPUThrottling = JDKEvents::emitContainerCPUThrottling;
     private static final Runnable emitContainerMemoryUsage = JDKEvents::emitContainerMemoryUsage;
     private static final Runnable emitContainerIOUsage = JDKEvents::emitContainerIOUsage;
+    private static final Runnable emitInitialSecurityProperties = JDKEvents::emitInitialSecurityProperties;
     private static Metrics containerMetrics = null;
     private static boolean initializationTriggered;
 
@@ -143,9 +147,9 @@ public final class JDKEvents {
                 for (Class<?> eventClass : eventClasses) {
                     SecuritySupport.registerEvent((Class<? extends Event>) eventClass);
                 }
-
-                RequestEngine.addTrustedJDKHook(ExceptionStatisticsEvent.class, emitExceptionStatistics);
-                RequestEngine.addTrustedJDKHook(DirectBufferStatisticsEvent.class, emitDirectBufferStatistics);
+                PeriodicEvents.addJDKEvent(ExceptionStatisticsEvent.class, emitExceptionStatistics);
+                PeriodicEvents.addJDKEvent(DirectBufferStatisticsEvent.class, emitDirectBufferStatistics);
+                PeriodicEvents.addJDKEvent(InitialSecurityPropertyEvent.class, emitInitialSecurityProperties);
 
                 initializeContainerEvents();
                 initializationTriggered = true;
@@ -191,11 +195,11 @@ public final class JDKEvents {
         SecuritySupport.registerEvent(ContainerMemoryUsageEvent.class);
         SecuritySupport.registerEvent(ContainerIOUsageEvent.class);
 
-        RequestEngine.addTrustedJDKHook(ContainerConfigurationEvent.class, emitContainerConfiguration);
-        RequestEngine.addTrustedJDKHook(ContainerCPUUsageEvent.class, emitContainerCPUUsage);
-        RequestEngine.addTrustedJDKHook(ContainerCPUThrottlingEvent.class, emitContainerCPUThrottling);
-        RequestEngine.addTrustedJDKHook(ContainerMemoryUsageEvent.class, emitContainerMemoryUsage);
-        RequestEngine.addTrustedJDKHook(ContainerIOUsageEvent.class, emitContainerIOUsage);
+        PeriodicEvents.addJDKEvent(ContainerConfigurationEvent.class, emitContainerConfiguration);
+        PeriodicEvents.addJDKEvent(ContainerCPUUsageEvent.class, emitContainerCPUUsage);
+        PeriodicEvents.addJDKEvent(ContainerCPUThrottlingEvent.class, emitContainerCPUThrottling);
+        PeriodicEvents.addJDKEvent(ContainerMemoryUsageEvent.class, emitContainerMemoryUsage);
+        PeriodicEvents.addJDKEvent(ContainerIOUsageEvent.class, emitContainerIOUsage);
     }
 
     private static void emitExceptionStatistics() {
@@ -215,6 +219,7 @@ public final class JDKEvents {
             t.memorySoftLimit = containerMetrics.getMemorySoftLimit();
             t.memoryLimit = containerMetrics.getMemoryLimit();
             t.swapMemoryLimit = containerMetrics.getMemoryAndSwapLimit();
+            t.hostTotalMemory = JVM.getJVM().hostTotalMemory();
             t.commit();
         }
     }
@@ -286,18 +291,31 @@ public final class JDKEvents {
     }
 
     public static void remove() {
-        RequestEngine.removeHook(emitExceptionStatistics);
-        RequestEngine.removeHook(emitDirectBufferStatistics);
+        PeriodicEvents.removeEvent(emitExceptionStatistics);
+        PeriodicEvents.removeEvent(emitDirectBufferStatistics);
+        PeriodicEvents.removeEvent(emitInitialSecurityProperties);
 
-        RequestEngine.removeHook(emitContainerConfiguration);
-        RequestEngine.removeHook(emitContainerCPUUsage);
-        RequestEngine.removeHook(emitContainerCPUThrottling);
-        RequestEngine.removeHook(emitContainerMemoryUsage);
-        RequestEngine.removeHook(emitContainerIOUsage);
+        PeriodicEvents.removeEvent(emitContainerConfiguration);
+        PeriodicEvents.removeEvent(emitContainerCPUUsage);
+        PeriodicEvents.removeEvent(emitContainerCPUThrottling);
+        PeriodicEvents.removeEvent(emitContainerMemoryUsage);
+        PeriodicEvents.removeEvent(emitContainerIOUsage);
     }
 
     private static void emitDirectBufferStatistics() {
         DirectBufferStatisticsEvent e = new DirectBufferStatisticsEvent();
         e.commit();
+    }
+
+    private static void emitInitialSecurityProperties() {
+        Properties p = SharedSecrets.getJavaSecurityPropertiesAccess().getInitialProperties();
+        if (p != null) {
+            for (String key : p.stringPropertyNames()) {
+                InitialSecurityPropertyEvent e = new InitialSecurityPropertyEvent();
+                e.key = key;
+                e.value = p.getProperty(key);
+                e.commit();
+            }
+        }
     }
 }

@@ -73,8 +73,8 @@ UINT32 encodeDeviceID(int card, int device, int subdevice);
 void decodeDeviceID(UINT32 deviceID, int* card, int* device, int* subdevice,
                     int isMidi);
 
-void getDeviceStringFromDeviceID(char* buffer, UINT32 deviceID,
-                                 int usePlugHw, int isMidi);
+void getDeviceStringFromDeviceID(char* buffer, size_t bufferSize,
+                                 UINT32 deviceID, int usePlugHw, int isMidi);
 
 void getALSAVersion(char* buffer, int len);
 

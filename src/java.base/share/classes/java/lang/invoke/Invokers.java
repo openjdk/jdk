@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -351,9 +351,9 @@ class Invokers {
         }
         names[LINKER_CALL] = new Name(outCallType, outArgs);
         if (customized) {
-            lform = new LambdaForm(INARG_LIMIT, names);
+            lform = LambdaForm.create(INARG_LIMIT, names);
         } else {
-            lform = new LambdaForm(INARG_LIMIT, names, kind);
+            lform = LambdaForm.create(INARG_LIMIT, names, kind);
         }
         if (isLinker)
             lform.compileToBytecode();  // JVM needs a real methodOop
@@ -415,7 +415,7 @@ class Invokers {
         MethodType outCallType = mtype.insertParameterTypes(0, VarHandle.class)
                 .basicType();
         names[LINKER_CALL] = new Name(outCallType, outArgs);
-        lform = new LambdaForm(ARG_LIMIT + 1, names, VARHANDLE_LINKER);
+        lform = LambdaForm.create(ARG_LIMIT + 1, names, VARHANDLE_LINKER);
         if (LambdaForm.debugNames()) {
             String name = "VarHandle_invoke_MT_" + shortenSignature(basicTypeSignature(mtype));
             LambdaForm.associateWithDebugName(lform, name);
@@ -477,7 +477,7 @@ class Invokers {
                                       .basicType();
         names[LINKER_CALL] = new Name(outCallType, outArgs);
         Kind kind = isExact ? VARHANDLE_EXACT_INVOKER : VARHANDLE_INVOKER;
-        lform = new LambdaForm(ARG_LIMIT, names, kind);
+        lform = LambdaForm.create(ARG_LIMIT, names, kind);
         if (LambdaForm.debugNames()) {
             String name = (isExact ? "VarHandle_exactInvoker_" : "VarHandle_invoker_") + shortenSignature(basicTypeSignature(mtype));
             LambdaForm.associateWithDebugName(lform, name);
@@ -494,8 +494,7 @@ class Invokers {
     @Hidden
     static MethodHandle checkVarHandleGenericType(VarHandle handle, VarHandle.AccessDescriptor ad) {
         if (handle.hasInvokeExactBehavior() && handle.accessModeType(ad.type) != ad.symbolicMethodTypeExact) {
-            throw new WrongMethodTypeException("expected " + handle.accessModeType(ad.type) + " but found "
-                    + ad.symbolicMethodTypeExact);
+            throw newWrongMethodTypeException(handle.accessModeType(ad.type), ad.symbolicMethodTypeExact);
         }
         // Test for exact match on invoker types
         // TODO match with erased types and add cast of return value to lambda form
@@ -518,18 +517,18 @@ class Invokers {
     }
 
     /*non-public*/
-    static WrongMethodTypeException newWrongMethodTypeException(MethodType actual, MethodType expected) {
+    static WrongMethodTypeException newWrongMethodTypeException(MethodType targetType, MethodType callSiteType) {
         // FIXME: merge with JVM logic for throwing WMTE
-        return new WrongMethodTypeException("expected "+expected+" but found "+actual);
+        return new WrongMethodTypeException("handle's method type " + targetType + " but found " + callSiteType);
     }
 
     /** Static definition of MethodHandle.invokeExact checking code. */
     @ForceInline
     /*non-public*/
     static void checkExactType(MethodHandle mh, MethodType expected) {
-        MethodType actual = mh.type();
-        if (actual != expected)
-            throw newWrongMethodTypeException(expected, actual);
+        MethodType targetType = mh.type();
+        if (targetType != expected)
+            throw newWrongMethodTypeException(targetType, expected);
     }
 
     /** Static definition of MethodHandle.invokeGeneric checking code.
@@ -604,7 +603,7 @@ class Invokers {
         System.arraycopy(outArgs, 0, outArgs, PREPEND_COUNT, outArgs.length - PREPEND_COUNT);
         outArgs[PREPEND_MH] = names[CALL_MH];
         names[LINKER_CALL] = new Name(mtype, outArgs);
-        lform = new LambdaForm(INARG_LIMIT, names,
+        lform = LambdaForm.create(INARG_LIMIT, names,
                 (skipCallSite ? LINK_TO_TARGET_METHOD : LINK_TO_CALL_SITE));
         lform.compileToBytecode();  // JVM needs a real methodOop
         lform = mtype.form().setCachedLambdaForm(which, lform);

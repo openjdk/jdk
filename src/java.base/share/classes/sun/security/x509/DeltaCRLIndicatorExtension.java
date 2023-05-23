@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,9 @@
 
 package sun.security.x509;
 
+import sun.security.util.DerOutputStream;
+
 import java.io.IOException;
-import java.io.OutputStream;
 import java.math.BigInteger;
 
 /**
@@ -58,9 +59,6 @@ import java.math.BigInteger;
  */
 public class DeltaCRLIndicatorExtension extends CRLNumberExtension {
 
-    /**
-     * Attribute name.
-     */
     public static final String NAME = "DeltaCRLIndicator";
 
     private static final String LABEL = "Base CRL Number";
@@ -71,7 +69,7 @@ public class DeltaCRLIndicatorExtension extends CRLNumberExtension {
      *
      * @param crlNum the value to be set for the extension.
      */
-    public DeltaCRLIndicatorExtension(int crlNum) throws IOException {
+    public DeltaCRLIndicatorExtension(int crlNum) {
         super(PKIXExtensions.DeltaCRLIndicator_Id, true,
             BigInteger.valueOf(crlNum), NAME, LABEL);
     }
@@ -82,7 +80,7 @@ public class DeltaCRLIndicatorExtension extends CRLNumberExtension {
      *
      * @param crlNum the value to be set for the extension.
      */
-    public DeltaCRLIndicatorExtension(BigInteger crlNum) throws IOException {
+    public DeltaCRLIndicatorExtension(BigInteger crlNum) {
         super(PKIXExtensions.DeltaCRLIndicator_Id, true, crlNum, NAME, LABEL);
     }
 
@@ -104,9 +102,9 @@ public class DeltaCRLIndicatorExtension extends CRLNumberExtension {
      * Writes the extension to the DerOutputStream.
      *
      * @param out the DerOutputStream to write the extension to.
-     * @exception IOException on encoding errors.
      */
-    public void encode(OutputStream out) throws IOException {
+    @Override
+    public void encode(DerOutputStream out) {
         super.encode(out, PKIXExtensions.DeltaCRLIndicator_Id, true);
     }
 }

@@ -22,7 +22,7 @@
 # @test
 # @bug 6291034
 # @run shell DeleteOnExitTest.sh
-# @summary Verify that temporary imageio files files are deleted on VM exit.
+# @summary Verify that temporary imageio files are deleted on VM exit.
 
 if [ -z "${TESTSRC}" ]; then
   echo "TESTSRC undefined: defaulting to ."

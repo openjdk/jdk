@@ -335,16 +335,13 @@ import sun.security.util.DerOutputStream;
 public class X400Address implements GeneralNameInterface {
 
     // Private data members
-    byte[] nameValue;
+    DerValue derValue;
 
     /**
      * Create the X400Address object from the specified byte array
      *
      * @param value value of the name as a byte array
      */
-    public X400Address(byte[] value) {
-        nameValue = value;
-    }
 
     /**
      * Create the X400Address object from the passed encoded Der value.
@@ -353,7 +350,7 @@ public class X400Address implements GeneralNameInterface {
      * @exception IOException on error.
      */
     public X400Address(DerValue derValue) throws IOException {
-        nameValue = derValue.toByteArray();
+        this.derValue = derValue;
     }
 
     /**
@@ -367,10 +364,9 @@ public class X400Address implements GeneralNameInterface {
      * Encode the X400 name into the DerOutputStream.
      *
      * @param out the DER stream to encode the X400Address to.
-     * @exception IOException on encoding errors.
      */
-    public void encode(DerOutputStream out) throws IOException {
-        DerValue derValue = new DerValue(nameValue);
+    @Override
+    public void encode(DerOutputStream out) {
         out.putDerValue(derValue);
     }
 

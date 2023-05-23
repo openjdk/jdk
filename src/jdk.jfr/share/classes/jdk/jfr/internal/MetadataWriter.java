@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,11 +78,11 @@ final class MetadataWriter {
     }
 
     public void writeBinary(DataOutput output) throws IOException {
-        Set<String> stringPool = new HashSet<>(1000);
+        Set<String> stringPool = HashSet.newHashSet(2500);
         // Possible improvement, sort string by how often they occur.
         // and assign low number to the most frequently used.
         buildStringPool(root, stringPool);
-        HashMap<String, Integer> lookup = new LinkedHashMap<>(stringPool.size());
+        HashMap<String, Integer> lookup = LinkedHashMap.newLinkedHashMap(stringPool.size());
         int index = 0;
         int poolSize = stringPool.size();
         writeInt(output, poolSize);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
 jmetadata MetadataHandles::allocate_metadata_handle(Metadata* obj) {
   assert(obj->is_valid() && obj->is_metadata(), "must be");
 
-  if (_head == NULL) {
+  if (_head == nullptr) {
     // This is the first allocation.
     _head = new MetadataHandleBlock();
     _last = _head;
@@ -38,7 +38,7 @@ jmetadata MetadataHandles::allocate_metadata_handle(Metadata* obj) {
 
   HandleRecord* handle = get_handle();
 
-  if (handle != NULL) {
+  if (handle != nullptr) {
     handle->set_value(obj);
 #ifdef METADATA_TRACK_NAMES
     handle->set_name(obj->print_value_string());
@@ -47,7 +47,7 @@ jmetadata MetadataHandles::allocate_metadata_handle(Metadata* obj) {
   }
 
   // Check if an unused block follows last
-  if (_last->_next != NULL) {
+  if (_last->_next != nullptr) {
     // update last and retry
     _last = _last->_next;
     return allocate_metadata_handle(obj);
@@ -71,10 +71,10 @@ void MetadataHandles::rebuild_free_list() {
   assert(_allocate_before_rebuild == 0 && _free_list == 0, "just checking");
   int free = 0;
   int blocks = 0;
-  for (MetadataHandleBlock* current = _head; current != NULL; current = current->_next) {
+  for (MetadataHandleBlock* current = _head; current != nullptr; current = current->_next) {
     for (int index = 0; index < current->_top; index++) {
       HandleRecord* handle = &(current->_handles)[index];
-      if (handle->value() == NULL) {
+      if (handle->value() == nullptr) {
         // this handle was cleared out by a delete call, reuse it
         chain_free_list(handle);
         free++;
@@ -100,8 +100,8 @@ void MetadataHandles::rebuild_free_list() {
 void MetadataHandles::clear() {
   _free_list = 0;
   _last = _head;
-  if (_head != NULL) {
-    for (MetadataHandleBlock* block = _head; block != NULL; block = block->_next) {
+  if (_head != nullptr) {
+    for (MetadataHandleBlock* block = _head; block != nullptr; block = block->_next) {
       block->_top = 0;
     }
   }
@@ -110,13 +110,13 @@ void MetadataHandles::clear() {
 }
 
 void MetadataHandles::metadata_do(void f(Metadata*)) {
-  for (MetadataHandleBlock* current = _head; current != NULL; current = current->_next) {
+  for (MetadataHandleBlock* current = _head; current != nullptr; current = current->_next) {
     for (int index = 0; index < current->_top; index++) {
       HandleRecord* root = &(current->_handles)[index];
       Metadata* value = root->value();
       // traverse heap pointers only, not deleted handles or free list
       // pointers
-      if (value != NULL && ((intptr_t) value & ptr_tag) == 0) {
+      if (value != nullptr && ((intptr_t) value & ptr_tag) == 0) {
         assert(value->is_valid(), "invalid metadata %s", current->get_name(index));
         f(value);
       }
@@ -131,14 +131,14 @@ void MetadataHandles::metadata_do(void f(Metadata*)) {
 // Visit any live metadata handles and clean them up.  Since clearing of these handles is driven by
 // weak references they will be cleared at some point in the future when the reference cleaning logic is run.
 void MetadataHandles::do_unloading() {
-  for (MetadataHandleBlock* current = _head; current != NULL; current = current->_next) {
+  for (MetadataHandleBlock* current = _head; current != nullptr; current = current->_next) {
     for (int index = 0; index < current->_top; index++) {
       HandleRecord* handle = &(current->_handles)[index];
       Metadata* value = handle->value();
       // traverse heap pointers only, not deleted handles or free list
       // pointers
-      if (value != NULL && ((intptr_t) value & ptr_tag) == 0) {
-        Klass* klass = NULL;
+      if (value != nullptr && ((intptr_t) value & ptr_tag) == 0) {
+        Klass* klass = nullptr;
         if (value->is_klass()) {
           klass = (Klass*)value;
         } else if (value->is_method()) {
@@ -153,7 +153,7 @@ void MetadataHandles::do_unloading() {
         if (klass->class_loader_data()->is_unloading()) {
           // This needs to be marked so that it's no longer scanned
           // but can't be put on the free list yet. The
-          // HandleCleaner will set this to NULL and
+          // HandleCleaner will set this to null and
           // put it on the free list.
           jlong old_value = Atomic::cmpxchg((jlong*)handle, (jlong) value, (jlong) (ptr_tag));
           if (old_value == (jlong) value) {

@@ -244,8 +244,6 @@ public class OceanTheme extends DefaultMetalTheme {
 
             "List.focusCellHighlightBorder", focusBorder,
 
-            "MenuBarUI", "javax.swing.plaf.metal.MetalMenuBarUI",
-
             "OptionPane.errorIcon",
                    getIconResource("icons/ocean/error.png"),
             "OptionPane.informationIcon",
@@ -314,7 +312,7 @@ public class OceanTheme extends DefaultMetalTheme {
     }
 
     /**
-     * Overriden to enable picking up the system fonts, if applicable.
+     * Overridden to enable picking up the system fonts, if applicable.
      */
     boolean isSystemTheme() {
         return true;

@@ -118,7 +118,7 @@ public class InternationalFormatter extends DefaultFormatter {
      * the <code>Format</code>. On every edit, assuming
      * allows invalid is false, the <code>Format</code> instance is invoked
      * with <code>formatToCharacterIterator</code>. A <code>BitSet</code> is
-     * also kept upto date with the non-literal characters, that is
+     * also kept up to date with the non-literal characters, that is
      * for every index in the <code>AttributedCharacterIterator</code> an
      * entry in the bit set is updated based on the return value from
      * <code>isLiteral(Map)</code>. <code>isLiteral(int)</code> then uses
@@ -580,7 +580,7 @@ public class InternationalFormatter extends DefaultFormatter {
     }
 
     /**
-     * Overriden to update the mask after invoking supers implementation.
+     * Overridden to update the mask after invoking supers implementation.
      */
     void updateValue(Object value) {
         super.updateValue(value);
@@ -588,7 +588,7 @@ public class InternationalFormatter extends DefaultFormatter {
     }
 
     /**
-     * Overriden to unconditionally allow the replace if
+     * Overridden to unconditionally allow the replace if
      * ignoreDocumentMutate is true.
      */
     void replace(DocumentFilter.FilterBypass fb, int offset,
@@ -622,7 +622,7 @@ public class InternationalFormatter extends DefaultFormatter {
     }
 
     /**
-     * Overriden in an attempt to honor the literals.
+     * Overridden in an attempt to honor the literals.
      * <p>If we do not allow invalid values and are in overwrite mode, this
      * {@code rh.length} is corrected as to preserve trailing literals.
      * If not in overwrite mode, and there is text to insert it is
@@ -776,7 +776,7 @@ public class InternationalFormatter extends DefaultFormatter {
     }
 
     /**
-     * Updates the interal bitset from <code>iterator</code>. This will
+     * Updates the internal bitset from <code>iterator</code>. This will
      * set <code>validMask</code> to true if <code>iterator</code> is
      * non-null.
      */
@@ -949,7 +949,7 @@ public class InternationalFormatter extends DefaultFormatter {
 
 
     /**
-     * Overriden to return an instance of <code>ExtendedReplaceHolder</code>.
+     * Overridden to return an instance of <code>ExtendedReplaceHolder</code>.
      */
     ReplaceHolder getReplaceHolder(DocumentFilter.FilterBypass fb, int offset,
                                    int length, String text,

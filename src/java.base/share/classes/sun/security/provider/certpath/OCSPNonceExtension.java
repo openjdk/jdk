@@ -176,6 +176,7 @@ public final class OCSPNonceExtension extends Extension {
      *
      * @return the name of the extension
      */
+    @Override
     public String getName() {
         return EXTENSION_NAME;
     }
