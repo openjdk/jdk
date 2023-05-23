@@ -28,6 +28,7 @@
  * @compile/module=java.base java/net/NullChar.java
  * @summary foo
  * @run main/othervm java.base/java.net.NullChar
+ * @run main/othervm -Dfile.encoding=COMPAT java.base/java.net.NullChar
  */
 
 public class NullCharDriver { }
