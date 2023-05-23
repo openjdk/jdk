@@ -3197,12 +3197,7 @@ bool SuperWord::output() {
       if (vlen_in_bytes > max_vlen_in_bytes) {
         max_vlen_in_bytes = vlen_in_bytes;
       }
-#ifdef ASSERT
-      if (TraceNewVectors) {
-        tty->print("new Vector node: ");
-        vn->dump();
-      }
-#endif
+      VectorNode::trace_new_vector(vn, "SuperWord");
     }
   }//for (int i = 0; i < _block.length(); i++)
 
@@ -3242,6 +3237,7 @@ bool SuperWord::output() {
   if (do_reserve_copy()) {
     make_reversable.use_new();
   }
+
   NOT_PRODUCT(if(is_trace_loop_reverse()) {tty->print_cr("\n Final loop after SuperWord"); print_loop(true);})
   return true;
 }
@@ -3374,12 +3370,7 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
     assert(VectorNode::is_populate_index_supported(iv_bt), "Should support");
     const TypeVect* vt = TypeVect::make(iv_bt, vlen);
     Node* vn = new PopulateIndexNode(iv(), _igvn.intcon(1), vt);
-#ifdef ASSERT
-    if (TraceNewVectors) {
-      tty->print("new Vector node: ");
-      vn->dump();
-    }
-#endif
+    VectorNode::trace_new_vector(vn, "SuperWord");
     _igvn.register_new_node_with_optimizer(vn);
     _phase->set_ctrl(vn, _phase->get_ctrl(opd));
     return vn;
@@ -3452,12 +3443,7 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
 
     _igvn.register_new_node_with_optimizer(vn);
     _phase->set_ctrl(vn, _phase->get_ctrl(opd));
-#ifdef ASSERT
-    if (TraceNewVectors) {
-      tty->print("new Vector node: ");
-      vn->dump();
-    }
-#endif
+    VectorNode::trace_new_vector(vn, "SuperWord");
     return vn;
   }
 
@@ -3489,12 +3475,7 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
   }
   _igvn.register_new_node_with_optimizer(pk);
   _phase->set_ctrl(pk, _phase->get_ctrl(opd));
-#ifdef ASSERT
-  if (TraceNewVectors) {
-    tty->print("new Vector node: ");
-    pk->dump();
-  }
-#endif
+  VectorNode::trace_new_vector(pk, "SuperWord");
   return pk;
 }
 
