@@ -150,7 +150,7 @@ class WithScopedValue {
                 return null;
             });
             scope.join();
-            assertEquals(Subtask.State.NOT_RUN, subtask.state());
+            assertEquals(Subtask.State.UNAVAILABLE, subtask.state());
             assertFalse(ran.get());
         } finally {
             StructuredTaskScope<Object> scope = box.scope;
