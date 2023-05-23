@@ -25,8 +25,8 @@
  // key: compiler.warn.preview.feature.use
  // options: --enable-preview -source ${jdk.version} -Xlint:preview
 
-class StatementsBeforeSuper {
-    StatementsBeforeSuper() {
+class FeatureStatementsBeforeSuper {
+    FeatureStatementsBeforeSuper() {
         System.out.println();
         super();
     }
