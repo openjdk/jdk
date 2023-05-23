@@ -249,10 +249,10 @@ import java.util.stream.Stream;
  * Now let's create a method handle for the comparator method defined above:
  *
  * {@snippet lang = java:
- * FunctionDescriptor compareDesc = FunctionDescriptor.of(JAVA_INT,
+ * FunctionDescriptor comparDesc = FunctionDescriptor.of(JAVA_INT,
  *                                                       ADDRESS.withTargetLayout(JAVA_INT),
  *                                                       ADDRESS.withTargetLayout(JAVA_INT));
- * MethodHandle compareHandle = MethodHandles.lookup()
+ * MethodHandle comparHandle = MethodHandles.lookup()
  *                                          .findStatic(Qsort.class, "qsortCompare",
  *                                                      compareDesc.toMethodType());
  * }
@@ -267,9 +267,9 @@ import java.util.stream.Stream;
  *
  * {@snippet lang = java:
  * try (Arena arena = Arena.ofConfined()) {
- *     MemorySegment compareFunc = linker.upcallStub(compareHandle, compareDesc, arena);
+ *     MemorySegment comparFunc = linker.upcallStub(comparHandle, comparDesc, arena);
  *     MemorySegment array = arena.allocateArray(JAVA_INT, 0, 9, 3, 4, 6, 5, 1, 8, 2, 7);
- *     qsort.invokeExact(array, 10L, 4L, compareFunc);
+ *     qsort.invokeExact(array, 10L, 4L, comparFunc);
  *     int[] sorted = array.toArray(JAVA_INT); // [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ]
  * }
  * }

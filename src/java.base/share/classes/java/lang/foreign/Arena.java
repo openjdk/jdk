@@ -49,7 +49,7 @@ import java.lang.foreign.MemorySegment.Scope;
  * global arena can be {@linkplain MemorySegment#isAccessibleBy(Thread) accessed} from any thread.
  * {@snippet lang = java:
  * MemorySegment segment = Arena.global().allocate(100, 1); // @highlight regex='global()'
- * // ...
+ * ...
  * // segment is never deallocated!
  * }
  * <p>
@@ -78,7 +78,7 @@ import java.lang.foreign.MemorySegment.Scope;
  * MemorySegment segment = null;
  * try (Arena arena = Arena.ofConfined()) { // @highlight regex='ofConfined()'
  *     segment = arena.allocate(100);
- *     // ...
+ *     ...
  * } // segment region deallocated here
  * segment.get(ValueLayout.JAVA_BYTE, 0); // throws IllegalStateException
  * }
@@ -185,7 +185,7 @@ import java.lang.foreign.MemorySegment.Scope;
  * try (Arena slicingArena = new SlicingArena(1000)) {
  *     for (int i = 0; i < 10; i++) {
  *         MemorySegment s = slicingArena.allocateArray(JAVA_INT, 1, 2, 3, 4, 5);
- *         // ...
+ *         ...
  *     }
  * } // all memory allocated is released here
  * }
