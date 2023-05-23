@@ -106,8 +106,6 @@ public class ClassWriter extends ClassFile {
     /** Type utilities. */
     private Types types;
 
-    private Symtab syms;
-
     private Check check;
 
     /**
@@ -174,7 +172,6 @@ public class ClassWriter extends ClassFile {
         target = Target.instance(context);
         source = Source.instance(context);
         types = Types.instance(context);
-        syms = Symtab.instance(context);
         check = Check.instance(context);
         fileManager = context.get(JavaFileManager.class);
         poolWriter = Gen.instance(context).poolWriter;
@@ -1676,9 +1673,7 @@ public class ClassWriter extends ClassFile {
         acount += writeExtraAttributes(c);
 
         poolbuf.appendInt(JAVA_MAGIC);
-        if (preview.isEnabled() && preview.usesPreview(c.sourcefile)
-                // do not write PREVIEW_MINOR_VERSION for classes participating in preview
-                && !preview.participatesInPreview(syms, c, syms.java_base.unnamedPackage)) {
+        if (preview.isEnabled() && preview.usesPreview(c.sourcefile)) {
             poolbuf.appendChar(ClassFile.PREVIEW_MINOR_VERSION);
         } else {
             poolbuf.appendChar(target.minorVersion);

@@ -660,20 +660,20 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      * padding layout} elements. As such, the following struct layout creation will fail with an exception:
      *
      * {@snippet lang = java:
-     * structLayout(JAVA_SHORT, JAVA_INT)
+     * structLayout(JAVA_SHORT, JAVA_INT);
      * }
      *
      * To avoid the exception, clients can either insert additional padding layout elements:
      *
      * {@snippet lang = java:
-     * structLayout(JAVA_SHORT, MemoryLayout.ofPadding(2), JAVA_INT)
+     * structLayout(JAVA_SHORT, MemoryLayout.paddingLayout(2), JAVA_INT);
      * }
      *
      * Or, alternatively, they can use a member layout which features a smaller alignment constraint. This will result
      * in a <em>packed</em> struct layout:
      *
      * {@snippet lang = java:
-     * structLayout(JAVA_SHORT, JAVA_INT.withByteAlignment(2))
+     * structLayout(JAVA_SHORT, JAVA_INT.withByteAlignment(2));
      * }
      */
     static StructLayout structLayout(MemoryLayout... elements) {

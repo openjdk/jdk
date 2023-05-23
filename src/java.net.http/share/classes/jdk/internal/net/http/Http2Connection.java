@@ -1408,6 +1408,19 @@ class Http2Connection  {
         Stream<?> stream = oh.getAttachment();
         assert stream.streamid == 0;
         int streamid = nextstreamid;
+        Throwable cause = null;
+        synchronized (this) {
+            if (isMarked(closedState, SHUTDOWN_REQUESTED)) {
+                cause = this.cause;
+                if (cause == null) {
+                    cause = new IOException("Connection closed");
+                }
+            }
+        }
+        if (cause != null) {
+            stream.cancelImpl(cause);
+            return null;
+        }
         if (stream.registerStream(streamid, false)) {
             // set outgoing window here. This allows thread sending
             // body to proceed.
@@ -1447,8 +1460,12 @@ class Http2Connection  {
             publisher.signalEnqueued();
         } catch (IOException e) {
             if (!isMarked(closedState, SHUTDOWN_REQUESTED)) {
-                Log.logError(e);
-                shutdown(e);
+                if (!client2.stopping()) {
+                    Log.logError(e);
+                    shutdown(e);
+                } else if (debug.on()) {
+                    debug.log("Failed to send %s while stopping: %s", frame, e);
+                }
             }
         }
     }
@@ -1465,8 +1482,12 @@ class Http2Connection  {
             publisher.signalEnqueued();
         } catch (IOException e) {
             if (!isMarked(closedState, SHUTDOWN_REQUESTED)) {
-                Log.logError(e);
-                shutdown(e);
+                if (!client2.stopping()) {
+                    Log.logError(e);
+                    shutdown(e);
+                } else if (debug.on()) {
+                    debug.log("Failed to send %s while stopping: %s", frame, e);
+                }
             }
         }
     }

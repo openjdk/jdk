@@ -59,8 +59,7 @@ class Http2ClientImpl {
 
     private final HttpClientImpl client;
 
-    // only accessed from within synchronized blocks
-    private boolean stopping;
+    private volatile boolean stopping;
 
     Http2ClientImpl(HttpClientImpl client) {
         this.client = client;
@@ -321,5 +320,9 @@ class Http2ClientImpl {
 
     private void unlock() {
         lock.unlock();
+    }
+
+    public boolean stopping() {
+        return stopping;
     }
 }
