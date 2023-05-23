@@ -698,13 +698,13 @@ void ShenandoahEvacUpdateCleanupOopStorageRootsClosure::do_oop(oop* p) {
   if (!CompressedOops::is_null(obj)) {
     if (!_mark_context->is_marked(obj)) {
       shenandoah_assert_correct(p, obj);
-      Atomic::cmpxchg(p, obj, oop(NULL));
+      ShenandoahHeap::atomic_clear_oop(p, obj);
     } else if (_evac_in_progress && _heap->in_collection_set(obj)) {
       oop resolved = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
       if (resolved == obj) {
         resolved = _heap->evacuate_object(obj, _thread);
       }
-      Atomic::cmpxchg(p, obj, resolved);
+      ShenandoahHeap::atomic_update_oop(resolved, p, obj);
       assert(_heap->cancelled_gc() ||
              _mark_context->is_marked(resolved) && !_heap->in_collection_set(resolved),
              "Sanity");
