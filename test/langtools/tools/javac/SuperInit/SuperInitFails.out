@@ -12,6 +12,7 @@ SuperInitFails.java:119:22: compiler.err.call.must.only.appear.in.ctor: super
 SuperInitFails.java:125:9: compiler.err.cant.ref.before.ctor.called: this
 SuperInitFails.java:133:9: compiler.err.non.canonical.constructor.invoke.another.constructor: SuperInitFails.Record1
 SuperInitFails.java:138:9: compiler.err.non.canonical.constructor.invoke.another.constructor: SuperInitFails.Record2
+SuperInitFails.java:154:9: compiler.err.cant.ref.before.ctor.called: this
 SuperInitFails.java:33:13: compiler.err.call.must.only.appear.in.ctor: this
 SuperInitFails.java:37:14: compiler.err.call.must.only.appear.in.ctor: super
 SuperInitFails.java:41:14: compiler.err.call.must.only.appear.in.ctor: super
@@ -22,4 +23,4 @@ SuperInitFails.java:83:18: compiler.err.calls.not.allowed.here: super
 SuperInitFails.java:89:13: compiler.err.return.before.superclass.initialized: super
 - compiler.note.preview.filename: SuperInitFails.java, DEFAULT
 - compiler.note.preview.recompile
-22 errors
+23 errors

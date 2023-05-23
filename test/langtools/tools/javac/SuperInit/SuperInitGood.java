@@ -407,6 +407,19 @@ public class SuperInitGood {
         }
     }
 
+    // local class declared before super(), but not used until after super()
+    public static class Test20 {
+        public Test20() {
+            class Foo {
+                Foo() {
+                    Test20.this.hashCode();
+                }
+            }
+            super();
+            new Foo();
+        }
+    }
+
     public static void main(String[] args) {
         new Test0();
         new Test1();
@@ -448,5 +461,6 @@ public class SuperInitGood {
             assert false : "unexpected exception: " + e;
         }
         new Test19(123);
+        new Test20();
     }
 }

@@ -144,4 +144,14 @@ public class SuperInitFails extends AtomicReference<Object> implements Iterable<
     public java.util.Iterator<Object> iterator() {
         return null;
     }
+
+    public SuperInitFails(short[][] x) {
+        class Foo {
+            Foo() {
+                SuperInitFails.this.hashCode();
+            }
+        };
+        new Foo();                      // this should FAIL
+        super();
+    }
 }
