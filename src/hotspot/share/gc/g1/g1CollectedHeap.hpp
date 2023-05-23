@@ -250,6 +250,10 @@ private:
   G1BlockOffsetTable* _bot;
 
 public:
+
+  bool has_satisfied_allocations() { return !_satisfied_allocations.is_empty(); }
+  bool is_unclaimed_allocation(HeapWord *obj);
+
   void rebuild_free_region_list();
   // Start a new incremental collection set for the next pause.
   void start_new_collection_set();

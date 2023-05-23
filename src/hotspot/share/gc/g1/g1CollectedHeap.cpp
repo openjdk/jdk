@@ -955,6 +955,20 @@ HeapWord* G1CollectedHeap::satisfy_failed_allocation_helper(size_t word_size,
   return nullptr;
 }
 
+bool G1CollectedHeap::is_unclaimed_allocation(HeapWord *obj) {
+  if (!has_satisfied_allocations()) {
+    return false;
+  }
+
+  for(StalledAllocReq* alloc_req : _satisfied_allocations) {
+    if (alloc_req->state() == StalledAllocReq::AllocationState::Success &&
+        alloc_req->result() == obj) {
+      return true;
+    }
+  }
+  return false;
+}
+
 bool G1CollectedHeap::satisfy_failed_allocations(bool* gc_succeeded) {
   assert_at_safepoint_on_vm_thread();
 
