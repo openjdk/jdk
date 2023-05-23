@@ -1012,7 +1012,9 @@ void compilerOracle_init() {
 }
 
 void CompilerOracle::parse_compile_only(char* line) {
-  if (line[0] == '\0') return;
+  if (line[0] == '\0') {
+    return;
+  }
   ResourceMark rm;
   char error_buf[1024] = {0};
   LineCopy original(line);
