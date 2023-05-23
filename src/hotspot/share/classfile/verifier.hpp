@@ -286,7 +286,7 @@ class ClassVerifier : public StackObj {
   Symbol* _exception_type;
   char* _message;
 
-  method_signatures_table_type* _method_signatures_table;
+  method_signatures_table_type _method_signatures_table;
 
   ErrorContext _error_context;  // contains information about an error
 
@@ -438,12 +438,8 @@ class ClassVerifier : public StackObj {
 
   Klass* load_class(Symbol* name, TRAPS);
 
-  method_signatures_table_type* method_signatures_table() const {
-    return _method_signatures_table;
-  }
-
-  void set_method_signatures_table(method_signatures_table_type* method_signatures_table) {
-    _method_signatures_table = method_signatures_table;
+  method_signatures_table_type* method_signatures_table() {
+    return &_method_signatures_table;
   }
 
   int change_sig_to_verificationType(
