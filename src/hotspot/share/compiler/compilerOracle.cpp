@@ -1020,7 +1020,9 @@ void CompilerOracle::parse_compile_only(char* line) {
   LineCopy original(line);
   char* method_pattern;
   do {
-    if (line[0] == '\0') break;
+    if (line[0] == '\0') {
+      break;
+    }
     method_pattern = strtok_r(line, ",", &line);
     if (method_pattern != nullptr) {
       TypedMethodOptionMatcher* matcher = TypedMethodOptionMatcher::parse_method_pattern(method_pattern, error_buf, sizeof(error_buf));
