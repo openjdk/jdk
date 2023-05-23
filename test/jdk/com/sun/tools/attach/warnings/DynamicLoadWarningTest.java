@@ -80,14 +80,8 @@ class DynamicLoadWarningTest {
         javaAgent = jarfile.toString();
 
         // get absolute path to JVM TI agent
-        String libname;
-        if (Platform.isWindows()) {
-            libname = JVMTI_AGENT_LIB + ".dll";
-        } else if (Platform.isOSX()) {
-            libname = "lib" + JVMTI_AGENT_LIB + ".dylib";
-        } else {
-            libname = "lib" + JVMTI_AGENT_LIB + ".so";
-        }
+        String prefix = Platform.isWindows() ? "" : "lib";
+        String libname = prefix + JVMTI_AGENT_LIB + "." + Platform.sharedLibraryExt();
         jvmtiAgentPath = Path.of(Utils.TEST_NATIVE_PATH, libname)
                 .toAbsolutePath()
                 .toString();
@@ -118,7 +112,7 @@ class DynamicLoadWarningTest {
         // jcmd <pid> JVMTI.agent_load <agent>
         Op op = (pid, vm) -> {
             var jcmd = JDKToolLauncher.createUsingTestJDK("jcmd")
-                    .addToolArg(""+pid)
+                    .addToolArg(Long.toString(pid))
                     .addToolArg("JVMTI.agent_load")
                     .addToolArg(jvmtiAgentPath);
             var pb = new ProcessBuilder(jcmd.getCommand());
@@ -177,7 +171,7 @@ class DynamicLoadWarningTest {
                     long pid = in.readLong();
 
                     // attach and run the action with the vm object
-                    VirtualMachine vm = VirtualMachine.attach(""+pid);
+                    VirtualMachine vm = VirtualMachine.attach(Long.toString(pid));
                     try {
                         action.accept(pid, vm);
                         done.set(true);
@@ -194,7 +188,7 @@ class DynamicLoadWarningTest {
 
             // launch application with the given VM options, waiting for it to terminate
             Stream<String> s1 = Stream.of(vmopts);
-            Stream<String> s2 = Stream.of("Application", ""+listener.getLocalPort());
+            Stream<String> s2 = Stream.of("Application", Integer.toString(listener.getLocalPort()));
             String[] opts = Stream.concat(s1, s2).toArray(String[]::new);
             OutputAnalyzer outputAnalyzer = ProcessTools
                     .executeTestJava(opts)
