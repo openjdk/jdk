@@ -265,7 +265,7 @@ public class PopFramesTest extends TestScaffold {
     /********** test core **********/
 
     protected void runTests() throws Exception {
-        BreakpointEvent bpe = startTo("PopFramesTestTarg", "popMethod", "()V");
+        BreakpointEvent bpe = startTo("PopFramesTestTarg", "loopOrSleep", "()V");
         ClassType targetClass = (ClassType)bpe.location().declaringType();
         ThreadReference mainThread = bpe.thread();
 
