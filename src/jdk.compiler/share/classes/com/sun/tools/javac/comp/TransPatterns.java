@@ -304,7 +304,7 @@ public class TransPatterns extends TreeTranslator {
         BindingSymbol tempBind = new BindingSymbol(Flags.SYNTHETIC,
             names.fromString(target.syntheticNameChar() + "b" + target.syntheticNameChar() + variableIndex++), recordType,
                              currentMethodSym);
-        JCVariableDecl recordBindingVar = make.VarDef(tempBind, null);
+        JCVariableDecl recordBindingVar = make.at(recordPattern.pos()).VarDef(tempBind, null);
 
         VarSymbol recordBinding = recordBindingVar.sym;
         List<? extends RecordComponent> components = recordPattern.record.getRecordComponents();
@@ -341,7 +341,7 @@ public class TransPatterns extends TreeTranslator {
                                             types.boxedTypeOrType(types.erasure(nestedBinding.type)));
             }
             JCMethodInvocation componentAccessor =
-                    make.App(make.Select(convert(make.Ident(recordBinding), recordBinding.type), //TODO - cast needed????
+                    make.at(recordPattern.pos()).App(make.Select(convert(make.Ident(recordBinding), recordBinding.type),
                              component.accessor)).setType(types.erasure(component.accessor.getReturnType()));
             if (deconstructorCalls == null) {
                 deconstructorCalls = Collections.newSetFromMap(new IdentityHashMap<>());

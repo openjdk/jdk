@@ -4634,6 +4634,16 @@ void PhaseIdealLoop::build_and_optimize() {
       }
     }
   }
+
+  // Move UnorderedReduction out of counted loop. Can be introduced by SuperWord.
+  if (C->has_loops() && !C->major_progress()) {
+    for (LoopTreeIterator iter(_ltree_root); !iter.done(); iter.next()) {
+      IdealLoopTree* lpt = iter.current();
+      if (lpt->is_counted() && lpt->is_innermost()) {
+        move_unordered_reduction_out_of_loop(lpt);
+      }
+    }
+  }
 }
 
 #ifndef PRODUCT
@@ -4703,24 +4713,18 @@ bool PhaseIdealLoop::verify_idom(Node* n, const PhaseIdealLoop* phase_verify) co
     return false; // fail
   }
 
-  // Broken part of VerifyLoopOptimizations (C)
-  // Reason:
-  //   Idom not always set correctly, for example BUG in
-  //   PhaseIdealLoop::create_new_if_for_predicate
-  //   at "set_idom(rgn, nrdom, dom_depth(rgn));"
-  /*
-  Node *id = idom_no_update(n);
-  if( id != loop_verify->idom_no_update(n) ) {
-    tty->print("Unequals idoms for: ");
+  Node* id = idom_no_update(n);
+  Node* id_verify = phase_verify->idom_no_update(n);
+  if (id != id_verify) {
+    tty->print("Mismatching idom for node: ");
     n->dump();
-    if( fail++ > 10 ) return;
-    tty->print("We have it as: ");
+    tty->print("  We have idom: ");
     id->dump();
-    tty->print("Verify thinks: ");
-    loop_verify->idom_no_update(n)->dump();
+    tty->print("  Verify has idom: ");
+    id_verify->dump();
     tty->cr();
+    return false; // fail
   }
-  */
   return true; // pass
 }
 
