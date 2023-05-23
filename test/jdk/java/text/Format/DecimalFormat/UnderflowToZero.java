@@ -32,6 +32,9 @@
 
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
@@ -41,11 +44,14 @@ import org.junit.jupiter.params.provider.MethodSource;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class UnderflowToZero {
-    private static final RoundingMode[] MODES = {RoundingMode.DOWN,
-            RoundingMode.HALF_EVEN, RoundingMode.HALF_UP, RoundingMode.HALF_DOWN,
-            RoundingMode.FLOOR, RoundingMode.CEILING, RoundingMode.UP};
+    private static final List<RoundingMode> MODES;
     private static final String ERRMSG = "%f formatted with pattern %s and mode " +
             "%s gives %s but %f formatted with the same pattern and mode gives %s";
+
+    static {
+        MODES = new ArrayList<>(Arrays.asList(RoundingMode.values()));
+        MODES.remove(RoundingMode.UNNECESSARY);
+    }
 
     @ParameterizedTest
     @MethodSource("patternAndNumbers")
