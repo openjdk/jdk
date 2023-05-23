@@ -38,10 +38,11 @@ protected:
 
   static void test_claim_tree_claim_level_end_index() {
     // First level is padded
-    ASSERT_EQ(ZIndexDistributorClaimTree::claim_level_end_index(0), 16);
-    ASSERT_EQ(ZIndexDistributorClaimTree::claim_level_end_index(1), 16 + 16);
-    ASSERT_EQ(ZIndexDistributorClaimTree::claim_level_end_index(2), 16 + 16 + 16 * 16);
-    ASSERT_EQ(ZIndexDistributorClaimTree::claim_level_end_index(3), 16 + 16 + 16 * 16 + 16 * 16 * 16);
+    const int first_level_end = int(ZCacheLineSize / sizeof(int));
+    ASSERT_EQ(ZIndexDistributorClaimTree::claim_level_end_index(0), first_level_end);
+    ASSERT_EQ(ZIndexDistributorClaimTree::claim_level_end_index(1), first_level_end + 16);
+    ASSERT_EQ(ZIndexDistributorClaimTree::claim_level_end_index(2), first_level_end + 16 + 16 * 16);
+    ASSERT_EQ(ZIndexDistributorClaimTree::claim_level_end_index(3), first_level_end + 16 + 16 * 16 + 16 * 16 * 16);
   }
 
   static void test_claim_tree_claim_index() {
@@ -66,7 +67,7 @@ protected:
     // Second level should depend on first claimed index
 
     // Second-level start after first-level padding
-    const int second_level_start = 16;
+    const int second_level_start = int(ZCacheLineSize / sizeof(int));
 
     {
       int indices[4] = {0, 0, 0, 0};
@@ -150,6 +151,14 @@ protected:
     {
       int indices[4] = {1,2,1,0};
       ASSERT_EQ(ZIndexDistributorClaimTree::claim_level_index(indices, 3), 1 * 16 * 16 + 2 * 16 + 1);
+    }
+    {
+      int indices[4] = {1,2,3,0};
+      ASSERT_EQ(ZIndexDistributorClaimTree::claim_level_index(indices, 3), 1 * 16 * 16 + 2 * 16 + 3);
+    }
+    {
+      int indices[4] = {1,2,3,0};
+      ASSERT_EQ(ZIndexDistributorClaimTree::claim_level_index(indices, 2), 1 * 16 + 2);
     }
   }
 };

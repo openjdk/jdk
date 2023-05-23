@@ -33,8 +33,8 @@
 #include "utilities/debug.hpp"
 #include "utilities/growableArray.hpp"
 
-ZPage::ZPage(ZPageType type, const ZVirtualMemory& vmem, const ZPhysicalMemory& pmem) :
-    _type(type),
+ZPage::ZPage(ZPageType type, const ZVirtualMemory& vmem, const ZPhysicalMemory& pmem)
+  : _type(type),
     _generation_id(ZGenerationId::young),
     _age(ZPageAge::eden),
     _numa_id((uint8_t)-1),
@@ -231,8 +231,8 @@ private:
   oop _result;
 
 public:
-  ZFindBaseOopClosure(volatile zpointer* p) :
-      _p(p),
+  ZFindBaseOopClosure(volatile zpointer* p)
+    : _p(p),
       _result(nullptr) {}
 
   virtual void do_object(oop obj) {

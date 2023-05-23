@@ -56,6 +56,7 @@ import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
+import jdk.internal.util.OperatingSystem;
 import jdk.tools.jlink.internal.BasicImageWriter;
 import jdk.tools.jlink.internal.ExecutableImage;
 import jdk.tools.jlink.internal.Platform;
@@ -174,7 +175,11 @@ public final class DefaultImageBuilder implements ImageBuilder {
             if (value == null) {
                 throw new PluginException("ModuleTarget attribute is missing for java.base module");
             }
-            this.platform = Platform.parsePlatform(value);
+            try {
+                this.platform = Platform.parsePlatform(value);
+            } catch (IllegalArgumentException iae) {
+                throw new PluginException("ModuleTarget is malformed: " + iae.getMessage());
+            }
 
             checkResourcePool(files);
 
@@ -490,7 +495,7 @@ public final class DefaultImageBuilder implements ImageBuilder {
     }
 
     private boolean isWindows() {
-        return platform.os() == Platform.OperatingSystem.WINDOWS;
+        return platform.os() == OperatingSystem.WINDOWS;
     }
 
     /**
@@ -561,37 +566,6 @@ public final class DefaultImageBuilder implements ImageBuilder {
                     }
                 });
         }
-    }
-
-    public static ExecutableImage getExecutableImage(Path root) {
-        Path binDir = root.resolve(BIN_DIRNAME);
-        if (Files.exists(binDir.resolve("java")) ||
-            Files.exists(binDir.resolve("java.exe"))) {
-            return new DefaultExecutableImage(root, retrieveModules(root), Platform.UNKNOWN);
-        }
-        return null;
-    }
-
-    private static Set<String> retrieveModules(Path root) {
-        Path releaseFile = root.resolve("release");
-        Set<String> modules = new HashSet<>();
-        if (Files.exists(releaseFile)) {
-            Properties release = new Properties();
-            try (FileInputStream fi = new FileInputStream(releaseFile.toFile())) {
-                release.load(fi);
-            } catch (IOException ex) {
-                System.err.println("Can't read release file " + ex);
-            }
-            String mods = release.getProperty("MODULES");
-            if (mods != null) {
-                String[] arr = mods.substring(1, mods.length() - 1).split(" ");
-                for (String m : arr) {
-                    modules.add(m.trim());
-                }
-
-            }
-        }
-        return modules;
     }
 
     // finds subpaths matching the given criteria (up to 2 levels deep) and applies the given lambda

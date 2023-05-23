@@ -54,8 +54,8 @@ static const ZStatCounter ZCounterOutOfMemory("Memory", "Out Of Memory", ZStatUn
 
 ZHeap* ZHeap::_heap = nullptr;
 
-ZHeap::ZHeap() :
-    _page_allocator(MinHeapSize, InitialHeapSize, SoftMaxHeapSize, MaxHeapSize),
+ZHeap::ZHeap()
+  : _page_allocator(MinHeapSize, InitialHeapSize, SoftMaxHeapSize, MaxHeapSize),
     _page_table(),
     _allocator_eden(),
     _allocator_relocation(),

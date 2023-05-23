@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -825,10 +825,10 @@ void ArchDesc::declare_pipe_classes(FILE *fp_hpp) {
   uint rescount = 0;
   const char *resource;
 
-  for ( _pipeline->_reslist.reset(); (resource = _pipeline->_reslist.iter()) != NULL; ) {
-      int mask = _pipeline->_resdict[resource]->is_resource()->mask();
-      if ((mask & (mask-1)) == 0)
+  for (_pipeline->_reslist.reset(); (resource = _pipeline->_reslist.iter()) != NULL;) {
+      if (_pipeline->_resdict[resource]->is_resource()->is_discrete()) {
         rescount++;
+      }
     }
 
   fprintf(fp_hpp, "// Pipeline_Use_Element Class\n");
@@ -2230,9 +2230,9 @@ void ArchDesc::build_pipeline_enums(FILE *fp_hpp) {
 
     for ( _pipeline->_reslist.reset(); (resource = _pipeline->_reslist.iter()) != NULL; ) {
       const ResourceForm *resform = _pipeline->_resdict[resource]->is_resource();
-      int mask = resform->mask();
-      if ((mask & (mask-1)) == 0)
+      if (resform->is_discrete()) {
         fprintf(fp_hpp, "   resource_%-*s = %d,\n", reslen, resource, rescount++);
+      }
     }
     fprintf(fp_hpp, "\n");
     for ( _pipeline->_reslist.reset(); (resource = _pipeline->_reslist.iter()) != NULL; ) {

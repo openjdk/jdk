@@ -368,7 +368,8 @@ WB_END
 WB_ENTRY(jboolean, WB_IsGCSupportedByJVMCICompiler(JNIEnv* env, jobject o, jint name))
 #if INCLUDE_JVMCI
   if (EnableJVMCI) {
-    JVMCIEnv jvmciEnv(thread, env, __FILE__, __LINE__);
+    // Enter the JVMCI env that will be used by the CompileBroker.
+    JVMCIEnv jvmciEnv(thread, __FILE__, __LINE__);
     return jvmciEnv.runtime()->is_gc_supported(&jvmciEnv, (CollectedHeap::Name)name);
   }
 #endif

@@ -48,7 +48,7 @@ inline void XBarrierSet::AccessBarrier<decorators, BarrierSetT>::verify_decorato
 
 template <DecoratorSet decorators, typename BarrierSetT>
 inline oop* XBarrierSet::AccessBarrier<decorators, BarrierSetT>::field_addr(oop base, ptrdiff_t offset) {
-  assert(base != NULL, "Invalid base");
+  assert(base != nullptr, "Invalid base");
   return reinterpret_cast<oop*>(reinterpret_cast<intptr_t>((void*)base) + offset);
 }
 
@@ -184,7 +184,7 @@ inline bool XBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_arraycopy_i
   if (!HasDecorator<decorators, ARRAYCOPY_CHECKCAST>::value) {
     // No check cast, bulk barrier and bulk copy
     XBarrier::load_barrier_on_oop_array(src, length);
-    return Raw::oop_arraycopy_in_heap(NULL, 0, src, NULL, 0, dst, length);
+    return Raw::oop_arraycopy_in_heap(nullptr, 0, src, NULL, 0, dst, length);
   }
 
   // Check cast and copy each elements

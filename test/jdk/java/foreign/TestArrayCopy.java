@@ -254,13 +254,13 @@ public class TestArrayCopy {
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testHyperAlignedSrc() {
         MemorySegment segment = MemorySegment.ofArray(new byte[] {1, 2, 3, 4});
-        MemorySegment.copy(new byte[] { 1, 2, 3, 4 }, 0, segment, JAVA_BYTE.withBitAlignment(16), 0, 4);
+        MemorySegment.copy(new byte[] { 1, 2, 3, 4 }, 0, segment, JAVA_BYTE.withByteAlignment(2), 0, 4);
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testHyperAlignedDst() {
         MemorySegment segment = MemorySegment.ofArray(new byte[] {1, 2, 3, 4});
-        MemorySegment.copy(segment, JAVA_BYTE.withBitAlignment(16), 0, new byte[] { 1, 2, 3, 4 }, 0, 4);
+        MemorySegment.copy(segment, JAVA_BYTE.withByteAlignment(2), 0, new byte[] { 1, 2, 3, 4 }, 0, 4);
     }
 
     /***** Utilities *****/
@@ -328,7 +328,7 @@ public class TestArrayCopy {
 
         @SuppressWarnings("unchecked")
         public CopyHelper(L elementLayout, Class<X> carrier) {
-            this.elementLayout = (L)elementLayout.withBitAlignment(8);
+            this.elementLayout = (L)elementLayout.withByteAlignment(1);
             this.carrier = carrier;
         }
 

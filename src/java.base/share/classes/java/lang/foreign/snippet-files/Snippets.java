@@ -339,8 +339,8 @@ class Snippets {
                     )
             ).withName("TaggedValues");
 
-            long valueOffset = taggedValues.bitOffset(PathElement.sequenceElement(0),
-                    PathElement.groupElement("value")); // yields 32
+            long valueOffset = taggedValues.byteOffset(PathElement.sequenceElement(0),
+                    PathElement.groupElement("value")); // yields 4
 
             MemoryLayout value = taggedValues.select(PathElement.sequenceElement(),
                     PathElement.groupElement("value"));
@@ -365,7 +365,7 @@ class Snippets {
         void sequenceLayout0() {
             MemoryLayout elementLayout = JAVA_INT;
 
-            sequenceLayout(Long.MAX_VALUE / elementLayout.bitSize(), elementLayout);
+            sequenceLayout(Long.MAX_VALUE / elementLayout.byteSize(), elementLayout);
         }
 
         void structLayout0() {
@@ -373,9 +373,8 @@ class Snippets {
 
             structLayout(JAVA_SHORT, JAVA_INT);
             structLayout(JAVA_SHORT, MemoryLayout.paddingLayout(16), JAVA_INT);
-            structLayout(JAVA_SHORT, JAVA_INT.withBitAlignment(16));
+            structLayout(JAVA_SHORT, JAVA_INT.withByteAlignment(2));
         }
-
 
     }
 
@@ -666,13 +665,13 @@ class Snippets {
         }
 
         void statics() {
-            ADDRESS.withBitAlignment(8);
-            JAVA_CHAR.withBitAlignment(8);
-            JAVA_SHORT.withBitAlignment(8);
-            JAVA_INT.withBitAlignment(8);
-            JAVA_LONG.withBitAlignment(8);
-            JAVA_FLOAT.withBitAlignment(8);
-            JAVA_DOUBLE.withBitAlignment(8);
+            ADDRESS.withByteAlignment(1);
+            JAVA_CHAR.withByteAlignment(1);
+            JAVA_SHORT.withByteAlignment(1);
+            JAVA_INT.withByteAlignment(1);
+            JAVA_LONG.withByteAlignment(1);
+            JAVA_FLOAT.withByteAlignment(1);
+            JAVA_DOUBLE.withByteAlignment(1);
         }
 
     }

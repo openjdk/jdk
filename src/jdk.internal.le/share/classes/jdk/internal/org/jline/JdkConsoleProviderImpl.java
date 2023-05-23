@@ -49,7 +49,17 @@ public class JdkConsoleProviderImpl implements JdkConsoleProvider {
      */
     @Override
     public JdkConsole console(boolean isTTY, Charset charset) {
-        return new JdkConsoleImpl(charset);
+        try {
+            Terminal terminal = TerminalBuilder.builder().encoding(charset)
+                                               .exec(false).build();
+            return new JdkConsoleImpl(terminal);
+        } catch (IllegalStateException ise) {
+            //cannot create a non-dumb, non-exec terminal,
+            //use the standard Console:
+            return null;
+        } catch (IOException ioe) {
+            throw new UncheckedIOException(ioe);
+        }
     }
 
     /**
@@ -119,13 +129,9 @@ public class JdkConsoleProviderImpl implements JdkConsoleProvider {
         private final LineReader jline;
         private final Terminal terminal;
 
-        public JdkConsoleImpl(Charset charset) {
-            try {
-                terminal = TerminalBuilder.builder().encoding(charset).build();
-                jline = LineReaderBuilder.builder().terminal(terminal).build();
-            } catch (IOException ioe) {
-                throw new UncheckedIOException(ioe);
-            }
+        public JdkConsoleImpl(Terminal terminal) {
+            this.terminal = terminal;
+            this.jline = LineReaderBuilder.builder().terminal(terminal).build();
         }
     }
 }

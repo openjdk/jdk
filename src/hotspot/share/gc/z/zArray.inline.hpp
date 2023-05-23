@@ -54,14 +54,14 @@ inline bool ZArrayIteratorImpl<T, Parallel>::next_parallel(size_t* index) {
 }
 
 template <typename T, bool Parallel>
-inline ZArrayIteratorImpl<T, Parallel>::ZArrayIteratorImpl(const T* array, size_t length) :
-    _next(0),
+inline ZArrayIteratorImpl<T, Parallel>::ZArrayIteratorImpl(const T* array, size_t length)
+  : _next(0),
     _end(length),
     _array(array) {}
 
 template <typename T, bool Parallel>
-inline ZArrayIteratorImpl<T, Parallel>::ZArrayIteratorImpl(const ZArray<T>* array) :
-    ZArrayIteratorImpl<T, Parallel>(array->is_empty() ? nullptr : array->adr_at(0), array->length()) {}
+inline ZArrayIteratorImpl<T, Parallel>::ZArrayIteratorImpl(const ZArray<T>* array)
+  : ZArrayIteratorImpl<T, Parallel>(array->is_empty() ? nullptr : array->adr_at(0), array->length()) {}
 
 template <typename T, bool Parallel>
 inline bool ZArrayIteratorImpl<T, Parallel>::next(T* elem) {
@@ -90,8 +90,8 @@ inline T ZArrayIteratorImpl<T, Parallel>::index_to_elem(size_t index) {
 }
 
 template <typename T>
-ZActivatedArray<T>::ZActivatedArray(bool locked) :
-    _lock(locked ? new ZLock() : nullptr),
+ZActivatedArray<T>::ZActivatedArray(bool locked)
+  : _lock(locked ? new ZLock() : nullptr),
     _count(0),
     _array() {}
 
