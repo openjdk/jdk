@@ -51,7 +51,7 @@ import java.lang.foreign.MemorySegment.Scope;
  * MemorySegment segment = Arena.global().allocate(100, 1); // @highlight regex='global()'
  * ...
  * // segment is never deallocated!
- * }
+ *}
  * <p>
  * Alternatively, clients can obtain an {@linkplain Arena#ofAuto() automatic arena}, that is an arena
  * which features a <em>bounded lifetime</em> that is managed, automatically, by the garbage collector. As such, the regions
@@ -60,9 +60,9 @@ import java.lang.foreign.MemorySegment.Scope;
  * <a href="../../../java/lang/ref/package.html#reachability">unreachable</a>, as shown below:
  * {@snippet lang = java:
  * MemorySegment segment = Arena.ofAuto().allocate(100, 1); // @highlight regex='ofAuto()'
- * // ...
+ * ...
  * segment = null; // the segment region becomes available for deallocation after this point
- * }
+ *}
  * Memory segments allocated with an automatic arena can also be {@linkplain MemorySegment#isAccessibleBy(Thread) accessed} from any thread.
  * <p>
  * Rather than leaving deallocation in the hands of the Java runtime, clients will often wish to exercise control over
@@ -81,7 +81,7 @@ import java.lang.foreign.MemorySegment.Scope;
  *     ...
  * } // segment region deallocated here
  * segment.get(ValueLayout.JAVA_BYTE, 0); // throws IllegalStateException
- * }
+ *}
  *
  * Memory segments allocated with a {@linkplain #ofConfined() confined arena} can only be accessed (and closed) by the
  * thread that created the arena. If access to a memory segment from multiple threads is required, clients can allocate

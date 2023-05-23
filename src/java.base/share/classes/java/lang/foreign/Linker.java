@@ -254,7 +254,7 @@ import java.util.stream.Stream;
  *                                                       ADDRESS.withTargetLayout(JAVA_INT));
  * MethodHandle comparHandle = MethodHandles.lookup()
  *                                          .findStatic(Qsort.class, "qsortCompare",
- *                                                      compareDesc.toMethodType());
+ *                                                      comparDesc.toMethodType());
  * }
  *
  * First, we create a function descriptor for the function pointer type. Since we know that the parameters passed to
