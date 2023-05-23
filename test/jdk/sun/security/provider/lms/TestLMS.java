@@ -49,71 +49,18 @@ public class TestLMS {
     static final String OID = "1.2.840.113549.1.9.16.3.17";
 
     public static void main(String[] args) throws Exception {
-        // RFC 8554, Appendix F Test Cases
-        if (!kat01()) {
-            throw new RuntimeException("kat01 failed");
-        }
-        if (!kat02()) {
-            throw new RuntimeException("kat02 failed");
-        }
 
-        // Additional Parameter sets for LMS Hash-Based Signatures (fluhrer)
-        // These should fail because neither SHA256_M24 nor SHAKE are supported.
-        if (katf1()) {
-            throw new RuntimeException("katf1 unexpected pass");
-        }
-        if (katf2()) {
-            throw new RuntimeException("katf2 unexpected pass");
-        }
-        if (katf3()) {
-            throw new RuntimeException("katf3 unexpected pass");
-        }
-
-        // Tests 3-10 were generated with Bouncy Castle using parameter sets
+        // Tests 6-13 were generated with Bouncy Castle using parameter sets
         // mentioned in RFC 8554 section 6.4: two with W=8 and six with W=4.
-        if (!test03_h15_w8()) {
-            throw new RuntimeException("test03_h15_w8 failed");
-        }
-        if (!test04_h20_w8()) {
-            throw new RuntimeException("test04_h20_w8 failed");
-        }
-        if (!test05_h15_w4()) {
-            throw new RuntimeException("test05_h15_w4 failed");
-        }
-        if (!test06_h20_w4()) {
-            throw new RuntimeException("test06_h20_w4 failed");
-        }
-        if (!test07_h15_w4_h10_w4()) {
-            throw new RuntimeException("test07_h15_w4_h10_w4 failed");
-        }
-        if (!test08_h15_w4_h15_w4()) {
-            throw new RuntimeException("test08_h15_w4_h15_w4 failed");
-        }
-        if (!test09_h20_w4_h10_w4()) {
-            throw new RuntimeException("test09_h20_w4_h10_w4 failed");
-        }
-        if (!test10_h20_w4_h15_w4()) {
-            throw new RuntimeException("test10_h20_w4_h15_w4 failed");
+
+        int i = 1;
+        for (TestCase t : TestCases) {
+            if (!kat(t)) {
+                throw new RuntimeException("test case #" +i+ " failed");
+            }
+            i++;
         }
 
-        if (testBadSignature01()) {
-            throw new RuntimeException("testBadSignature01 unexpected pass");
-        }
-        if (testBadSignature02()) {
-            throw new RuntimeException("testBadSignature02 unexpected pass");
-        }
-        if (testBadSignature03()) {
-            throw new RuntimeException("testBadSignature03 unexpected pass");
-        }
-        if (testBadSignature04()) {
-            throw new RuntimeException("testBadSignature04 unexpected pass");
-        }
-        if (testBadSignature05()) {
-            throw new RuntimeException("testBadSignature05 unexpected pass");
-        }
-        if (testBadSignature06()) {
-            throw new RuntimeException("testBadSignature06 unexpected pass");
-        }
         if (!serializeTest()) {
             throw new RuntimeException("serializeTest failed");
         }
@@ -121,22 +68,140 @@ public class TestLMS {
         System.out.println("All tests passed");
     }
 
-    static boolean kat01() throws Exception {
-        // RFC 8554 Test Case 1
+    static boolean kat(TestCase t) throws Exception {
+        if (!t.exception) {
+            if (verify(t.pk, t.sig, t.msg)) {
+                return t.expected;
+            } else {
+                return !t.expected;
+            }
+        } else {
+            // exception is expected and is a pass (true)
+            try {
+                verify(t.pk, t.sig, t.msg);
+                return false;
+            } catch (InvalidKeySpecException | SignatureException ex) {
+                return true;
+            }
+        }
+    }
+
+    static boolean serializeTest() throws Exception {
+        final ObjectIdentifier oid;
         var pk = decode("""
                 00000002
                 00000005
                 00000004
+                61a5d57d37f5e46bfb7520806b07a1b8
+                50650e3b31fe4a773ea29a07f09cf2ea
+                30e579f0df58ef8e298da0434cb2b878
+                """);
+
+        // build x509 public key
+        try {
+            oid = ObjectIdentifier.of(OID);
+        } catch (IOException e) {
+            throw new AssertionError(e);
+        }
+
+        var keyBits = new DerOutputStream().putOctetString(pk).toByteArray();
+        var oidBytes = new DerOutputStream().write(DerValue.tag_Sequence,
+                new DerOutputStream().putOID(oid));
+        var x509encoding = new DerOutputStream().write(DerValue.tag_Sequence,
+                oidBytes
+                .putUnalignedBitString(new BitArray(keyBits.length * 8, keyBits)))
+                .toByteArray();
+
+        var x509KeySpec = new X509EncodedKeySpec(x509encoding);
+        var pk1 = KeyFactory.getInstance(ALG).generatePublic(x509KeySpec);
+
+        PublicKey pk2 = (PublicKey) SerializationUtils
+                .deserialize(SerializationUtils.serialize(pk1));
+        return pk2.equals(pk1);
+    }
+
+    static boolean verify(byte[] pk, byte[] sig, byte[] msg) throws Exception {
+        return verifyRawKey(pk, sig, msg) && verifyX509Key(pk, sig, msg);
+    }
+
+    static boolean verifyX509Key(byte[] pk, byte[] sig, byte[] msg)
+            throws Exception {
+        final ObjectIdentifier oid;
+
+        // build x509 public key
+        try {
+            oid = ObjectIdentifier.of(OID);
+        } catch (IOException e) {
+            throw new AssertionError(e);
+        }
+
+        var keyBits = new DerOutputStream().putOctetString(pk).toByteArray();
+        var oidBytes = new DerOutputStream().write(DerValue.tag_Sequence,
+                new DerOutputStream().putOID(oid));
+        var x509encoding = new DerOutputStream().write(DerValue.tag_Sequence,
+                oidBytes
+                .putUnalignedBitString(new BitArray(keyBits.length * 8, keyBits)))
+                .toByteArray();
+
+        var x509KeySpec = new X509EncodedKeySpec(x509encoding);
+        var pk1 = KeyFactory.getInstance(ALG).generatePublic(x509KeySpec);
+
+        var v = Signature.getInstance(ALG);
+        v.initVerify(pk1);
+        v.update(msg);
+        return v.verify(sig);
+    }
+
+    static boolean verifyRawKey(byte[] pk, byte[] sig, byte[] msg)
+            throws Exception {
+        var  provider = Security.getProvider("SUN");
+        PublicKey pk1;
+
+        // build public key
+        RawKeySpec rks = new RawKeySpec(pk);
+        KeyFactory kf = KeyFactory.getInstance(ALG, provider);
+        pk1 = kf.generatePublic(rks);
+
+        var v = Signature.getInstance(ALG);
+        v.initVerify(pk1);
+        v.update(msg);
+        return v.verify(sig);
+    }
+
+    static byte[] decode(String s) {
+        return HexFormat.of().parseHex(s
+                        .replaceAll("//.*", "")
+                        .replaceAll("\\s", ""));
+    }
+
+    record TestCase(
+            boolean exception,
+            boolean expected,
+            byte[] pk,
+            byte[] msg,
+            byte[] sig) {
+    }
+
+    static TestCase[] TestCases = new TestCase[] {
+        // Test Case #0
+        // RFC 8554 Test Case 1
+        new TestCase(
+            false, // exception expected
+            true,  // expected result
+            decode("""
+                00000002
+                00000005
+                00000004
                 61a5d57d37f5e46bfb7520806b07a1b850650e3b31fe4a773ea29a07f09cf2ea
-                30e579f0df58ef8e298da0434cb2b878""");
-        var msg = decode("""
+                30e579f0df58ef8e298da0434cb2b878"""),
+            decode("""
                 54686520706f77657273206e6f742064656c65676174656420746f2074686520
                 556e69746564205374617465732062792074686520436f6e737469747574696f
                 6e2c206e6f722070726f6869626974656420627920697420746f207468652053
                 74617465732c2061726520726573657276656420746f20746865205374617465
                 7320726573706563746976656c792c206f7220746f207468652070656f706c65
-                2e0a""");
-        var sig = decode("""
+                2e0a"""),
+            decode("""
                 00000001
                 00000005
                 00000004
@@ -228,26 +293,27 @@ public class TestLMS {
                 2335b525f484e9b40d6a4a969394843bdcf6d14c48e8015e08ab92662c05c6e9
                 f90b65a7a6201689999f32bfd368e5e3ec9cb70ac7b8399003f175c40885081a
                 09ab3034911fe125631051df0408b3946b0bde790911e8978ba07dd56c73e7ee
-                """);
+                """)
+        ),
 
-        return verify(pk, sig, msg);
-    }
-
-    static boolean kat02() throws Exception {
+        // Test Case #1
         // RFC 8554 Test Case 2
-        var pk = decode("""
+        new TestCase(
+            false, // exception expected
+            true,  // expected result
+            decode("""
                 00000002
                 00000006
                 00000003
                 d08fabd4a2091ff0a8cb4ed834e7453432a58885cd9ba0431235466bff9651c6
-                c92124404d45fa53cf161c28f1ad5a8e""");
-        var msg = decode("""
+                c92124404d45fa53cf161c28f1ad5a8e"""),
+            decode("""
                 54686520656e756d65726174696f6e20696e2074686520436f6e737469747574
                 696f6e2c206f66206365727461696e207269676874732c207368616c6c206e6f
                 7420626520636f6e73747275656420746f2064656e79206f7220646973706172
                 616765206f74686572732072657461696e6564206279207468652070656f706c
-                652e0a""");
-        var sig = decode("""
+                652e0a"""),
+            decode("""
                 00000001
                 00000003
                 00000003
@@ -377,21 +443,24 @@ public class TestLMS {
                 04d341aa0a337b19fe4bc43c2e79964d4f351089f2e0e41c7c43ae0d49e7f404
                 b0f75be80ea3af098c9752420a8ac0ea2bbb1f4eeba05238aef0d8ce63f0c6e5
                 e4041d95398a6f7f3e0ee97cc1591849d4ed236338b147abde9f51ef9fd4e1c1
-                """);
+                """)
+        ),
 
-        return verify(pk, sig, msg);
-    }
-
-    static boolean katf1() throws Exception {
-        var pk = decode("""
+        // Test Case #3
+        // Additional Parameter sets for LMS Hash-Based Signatures (fluhrer)
+        // This test should fail because SHA256_M24 is supported.
+        new TestCase(
+            true,  // InvalidKeyException
+            false, // expected result
+            decode("""
                 00000001
                 0000000a
                 00000008
                 202122232425262728292a2b2c2d2e2f2c571450aed99cfb4f4ac285da148827
-                96618314508b12d2""");
-        var msg = decode("""
-                54657374206d65737361676520666f72205348413235362d3139320a""");
-        var sig = decode("""
+                96618314508b12d2"""),
+            decode("""
+                54657374206d65737361676520666f72205348413235362d3139320a"""),
+            decode("""
                 00000000
                 00000005
                 00000008
@@ -420,27 +489,25 @@ public class TestLMS {
                 e9ca10eaa811b22ae07fb195e3590a334ea64209942fbae338d19f152182c807
                 d3c40b189d3fcbea942f44682439b191332d33ae0b761a2a8f984b56b2ac2fd4
                 ab08223a69ed1f7719c7aa7e9eee96504b0e60c6bb5c942d695f0493eb25f80a
-                5871cffd131d0e04ffe5065bc7875e82d34b40b69dd9f3c1""");
+                5871cffd131d0e04ffe5065bc7875e82d34b40b69dd9f3c1""")
+        ),
 
-        try {
-            return verify(pk, sig, msg);
-        } catch (InvalidKeySpecException ex) {
-            // SHA256_M24 not supported
-            return false;
-        }
-    }
-
-    static boolean katf2() throws Exception {
-        var pk = decode("""
+        // Test Case #4
+        // Additional Parameter sets for LMS Hash-Based Signatures (fluhrer)
+        // This test should fail because SHAKE is not supported.
+        new TestCase(
+            true,  // exception expected
+            false, // expected result
+            decode("""
                 00000001
                 00000014
                 00000010
                 505152535455565758595a5b5c5d5e5fdb54a4509901051c01e26d9990e55034
-                7986da87924ff0b1""");
-        var msg = decode("""
+                7986da87924ff0b1"""),
+            decode("""
                 54657374206d65737361676520666f72205348414b453235362d3139320a
-                """);
-        var sig = decode("""
+                """),
+            decode("""
                 00000000
                 00000006
                 00000010
@@ -469,26 +536,24 @@ public class TestLMS {
                 dd4bdc8f928fb526f6fb7cdb944a7ebaa7fb05d995b5721a27096a5007d82f79
                 d063acd434a04e97f61552f7f81a9317b4ec7c87a5ed10c881928fc6ebce6dfc
                 e9daae9cc9dba6907ca9a9dd5f9f573704d5e6cf22a43b04e64c1ffc7e1c442e
-                cb495ba265f465c56291a902e62a461f6dfda232457fad14""");
+                cb495ba265f465c56291a902e62a461f6dfda232457fad14""")
+        ),
 
-        try {
-            return verify(pk, sig, msg);
-        } catch (InvalidKeySpecException ex) {
-            // SHAKE_M24 not supported
-            return false;
-        }
-    }
-
-    static boolean katf3() throws Exception {
-        var pk = decode("""
+        // Test Case #5
+        // Additional Parameter sets for LMS Hash-Based Signatures (fluhrer)
+        // This test should fail because SHAKE is not supported.
+        new TestCase(
+            true,  // exception expected
+            false, // expected result
+            decode("""
                 00000001
                 0000000f
                 0000000c
                 808182838485868788898a8b8c8d8e8f9bb7faee411cae806c16a466c3191a8b
-                65d0ac31932bbf0c2d07c7a4a36379fe""");
-        var msg = decode("""
-                54657374206d657361676520666f72205348414b453235362d3235360a""");
-        var sig = decode("""
+                65d0ac31932bbf0c2d07c7a4a36379fe"""),
+            decode("""
+                54657374206d657361676520666f72205348414b453235362d3235360a"""),
+            decode("""
                 00000000
                 00000007
                 0000000c
@@ -533,25 +598,21 @@ public class TestLMS {
                 ae61ba57e5342e9db12caf6f6dbc5253de5268d4b0c4ce4ebe6852f012b162fc
                 1c12b9ffc3bcb1d3ac8589777655e22cd9b99ff1e4346fd0efeaa1da044692e7
                 ad6bfc337db69849e54411df8920c228a2b7762c11e4b1c49efb74486d3931ea
-                """);
+                """)
+        ),
 
-        try {
-            return verify(pk, sig, msg);
-        } catch (InvalidKeySpecException ex) {
-            // SHAKE_M24 not supported
-            return false;
-        }
-    }
-
-    // LMSigParameters.lms_sha256_m32_h15, LMOtsParameters.sha256_n32_w8);
-    static boolean test03_h15_w8() throws Exception {
-        var pk = decode("""
+        // Test Case #6
+        // LMSigParameters.lms_sha256_m32_h15, LMOtsParameters.sha256_n32_w8
+        new TestCase(
+            false, // exception expected
+            true,  // expected result
+            decode("""
                 00000001
                 00000007
                 00000004
                 0dc6e2060bd57f6893d7934b26515ce751360f93dd74a648fa015aa79c862407
-                5ae5daea402617abb48a1f6b9e2c9f28""");
-        var msg = decode("""
+                5ae5daea402617abb48a1f6b9e2c9f28"""),
+            decode("""
                 466f75722073636f726520616e6420736576656e2079656172732061676f206f
                 757220666174686572732062726f7567687420666f727468206f6e2074686973
                 20636f6e74696e656e742061206e6577206e6174696f6e2c20636f6e63656976
@@ -584,8 +645,8 @@ public class TestLMS {
                 6f2074686520756e66696e697368656420776f726b2077686963682074686579
                 2077686f20666f75676874206865726520686176652074687573206661722073
                 6f206e6f626c7920616476616e6365642e204974206973207261746865720a0a
-                """);
-        var sig = decode("""
+                """),
+            decode("""
                 00000000
                 00000000
                 00000004
@@ -640,20 +701,21 @@ public class TestLMS {
                 127968e379d34fa22c03a1ca9f2cd8d2f255e9ee2058a6b018cc464d758d633f
                 f4197291b1ad4257f8f76e1633c19f77fc361767a7a3804d5607931d975d3b19
                 5182fd0867719ce10daf0f0c0d52b16b8088ca9a26a22aa05224a1765fc82961
-                """);
+                """)
+        ),
 
-        return verify(pk, sig, msg);
-    }
-
-    // LMSigParameters.lms_sha256_m32_h20, LMOtsParameters.sha256_n32_w8);
-    static boolean test04_h20_w8() throws Exception {
-        var pk = decode("""
+        // Test Case #7
+        // LMSigParameters.lms_sha256_m32_h20, LMOtsParameters.sha256_n32_w8
+        new TestCase(
+            false, // exception expected
+            true,  // expected result
+            decode("""
                 00000001
                 00000008
                 00000004
                 c8568f619f0d5429eab1e63c80e058d1b8a326640a6ab457d776c52eec545dd9
-                7fedc7e225ab0cce270d961ff9b1615b""");
-        var msg = decode("""
+                7fedc7e225ab0cce270d961ff9b1615b"""),
+            decode("""
                 466f75722073636f726520616e6420736576656e2079656172732061676f206f
                 757220666174686572732062726f7567687420666f727468206f6e2074686973
                 20636f6e74696e656e742061206e6577206e6174696f6e2c20636f6e63656976
@@ -686,8 +748,8 @@ public class TestLMS {
                 6f2074686520756e66696e697368656420776f726b2077686963682074686579
                 2077686f20666f75676874206865726520686176652074687573206661722073
                 6f206e6f626c7920616476616e6365642e204974206973207261746865720a0a
-                """);
-        var sig = decode("""
+                """),
+            decode("""
                 00000000
                 00000000
                 00000004
@@ -747,20 +809,21 @@ public class TestLMS {
                 97b863b78eb60844af1e94d6d3ffbaeead48a974e65fff24776553b3dca6c7b3
                 072a39cfd09a8bf9c7591c605659c1b103288486475f54be0fb80c18717a944f
                 51b6d317fba486e1e0ab5afea205335836e717a185827ea4cd47d557be53cc4e
-                """);
+                """)
+        ),
 
-        return verify(pk, sig, msg);
-    }
-
-    // LMSigParameters.lms_sha256_m32_h15, LMOtsParameters.sha256_n32_w4);
-    static boolean test05_h15_w4() throws Exception {
-        var pk = decode("""
+        // Test Case #8
+        // LMSigParameters.lms_sha256_m32_h15, LMOtsParameters.sha256_n32_w4
+        new TestCase(
+            false, // exception expected
+            true,  // expected result
+            decode("""
                 00000001
                 00000007
                 00000003
                 7bce4db5bd53cb23819d0fa2181e4d441453ff821284c9d83b8ddace22581469
-                593d6dd0aa2c99feddc84f8242f6a002""");
-        var msg = decode("""
+                593d6dd0aa2c99feddc84f8242f6a002"""),
+            decode("""
                 466f75722073636f726520616e6420736576656e2079656172732061676f206f
                 757220666174686572732062726f7567687420666f727468206f6e2074686973
                 20636f6e74696e656e742061206e6577206e6174696f6e2c20636f6e63656976
@@ -793,8 +856,8 @@ public class TestLMS {
                 6f2074686520756e66696e697368656420776f726b2077686963682074686579
                 2077686f20666f75676874206865726520686176652074687573206661722073
                 6f206e6f626c7920616476616e6365642e204974206973207261746865720a0a
-                """);
-        var sig = decode("""
+                """),
+            decode("""
                 00000000
                 00000000
                 00000003
@@ -882,20 +945,21 @@ public class TestLMS {
                 40aa99d98df801f0e241c1607d9e8484c9755f6bbe299a6efe96ec0836e9d53c
                 213db6d352863854781c78c4cac3083210f979d3f7884aca69fa83429c1542a5
                 51b8e95ffad4f89b506bd31ba613fe66a375434114dfbdf11741a8d86a239ded
-                """);
+                """)
+        ),
 
-        return verify(pk, sig, msg);
-    }
-
-    // LMSigParameters.lms_sha256_m32_h20, LMOtsParameters.sha256_n32_w4);
-    static boolean test06_h20_w4() throws Exception {
-        var pk = decode("""
+        // Test Case #9
+        // LMSigParameters.lms_sha256_m32_h20, LMOtsParameters.sha256_n32_w4
+        new TestCase(
+            false, // exception expected
+            true,  // expected result
+            decode("""
                 00000001
                 00000008
                 00000003
                 fe732f6abc16f3b1c0d1b78d9e72fbe118904abe9b33f2e03d0728ff4cf15b3c
-                ebea5149fe955d36f911e528d2aaff42""");
-        var msg = decode("""
+                ebea5149fe955d36f911e528d2aaff42"""),
+            decode("""
                 466f75722073636f726520616e6420736576656e2079656172732061676f206f
                 757220666174686572732062726f7567687420666f727468206f6e2074686973
                 20636f6e74696e656e742061206e6577206e6174696f6e2c20636f6e63656976
@@ -928,8 +992,8 @@ public class TestLMS {
                 6f2074686520756e66696e697368656420776f726b2077686963682074686579
                 2077686f20666f75676874206865726520686176652074687573206661722073
                 6f206e6f626c7920616476616e6365642e204974206973207261746865720a0a
-                """);
-        var sig = decode("""
+                """),
+            decode("""
                 00000000
                 00000000
                 00000003
@@ -1022,21 +1086,22 @@ public class TestLMS {
                 5927418b9fc50048b6ae0f16a9b3e3399d9b08b67c41c84bbc5f8bb9b23f08ca
                 cd742fa9e1225dc8e6cc32b86d6f57a3ac4b6d733a0655cfcc036c4b4c004a61
                 1efd58035b06ba03b4a701a68f5945cd90bd4d69d702fb43f0ff10a5879ab709
-                """);
+                """)
+        ),
 
-        return verify(pk, sig, msg);
-    }
-
-    // LMSigParameters.lms_sha256_m32_h15, LMOtsParameters.sha256_n32_w4);
-    // LMSigParameters.lms_sha256_m32_h10, LMOtsParameters.sha256_n32_w4);
-    static boolean test07_h15_w4_h10_w4() throws Exception {
-        var pk = decode("""
+        // Test Case #10
+        // LMSigParameters.lms_sha256_m32_h15, LMOtsParameters.sha256_n32_w4
+        // LMSigParameters.lms_sha256_m32_h10, LMOtsParameters.sha256_n32_w4
+        new TestCase(
+            false, // exception expected
+            true,  // expected result
+            decode("""
                 00000002
                 00000007
                 00000003
                 c56e39882736881759e92ef7a37a1953322e3e9742a70e3f401e9bd35c973ace
-                e06d7f77bd11b4a6082bbf7a5429dd4b""");
-        var msg = decode("""
+                e06d7f77bd11b4a6082bbf7a5429dd4b"""),
+            decode("""
                 466f75722073636f726520616e6420736576656e2079656172732061676f206f
                 757220666174686572732062726f7567687420666f727468206f6e2074686973
                 20636f6e74696e656e742061206e6577206e6174696f6e2c20636f6e63656976
@@ -1069,8 +1134,8 @@ public class TestLMS {
                 6f2074686520756e66696e697368656420776f726b2077686963682074686579
                 2077686f20666f75676874206865726520686176652074687573206661722073
                 6f206e6f626c7920616476616e6365642e204974206973207261746865720a0a
-                """);
-        var sig = decode("""
+                """),
+            decode("""
                 00000001
                 00000000
                 00000003
@@ -1243,21 +1308,22 @@ public class TestLMS {
                 efcf58231cb7d6112ac2583fc1e52f3062c1cb8b14df921eb4b702eb703082db
                 7ffe104cd0be40b96a04048def98caffea64e25ecfdd3566d3775200c5eb9182
                 e9a45d41023db850048e05f200a4e7ed2e0b48c532e10c1628503d5b7f394cde
-                """);
+                """)
+        ),
 
-        return verify(pk, sig, msg);
-    }
-
-    // LMSigParameters.lms_sha256_m32_h15, LMOtsParameters.sha256_n32_w4);
-    // LMSigParameters.lms_sha256_m32_h15, LMOtsParameters.sha256_n32_w4);
-    static boolean test08_h15_w4_h15_w4() throws Exception {
-        var pk = decode("""
+        // Test Case #11
+        // LMSigParameters.lms_sha256_m32_h15, LMOtsParameters.sha256_n32_w4
+        // LMSigParameters.lms_sha256_m32_h15, LMOtsParameters.sha256_n32_w4
+        new TestCase(
+            false, // exception expected
+            true,  // expected result
+            decode("""
                 00000002
                 00000007
                 00000003
                 31b6c6a3b78feaefaf459a33e2acfa66a208240984abbe18996896c0eda7b999
-                9d9786e59e41179854928ed5c5726bfb""");
-        var msg = decode("""
+                9d9786e59e41179854928ed5c5726bfb"""),
+            decode("""
                 466f75722073636f726520616e6420736576656e2079656172732061676f206f
                 757220666174686572732062726f7567687420666f727468206f6e2074686973
                 20636f6e74696e656e742061206e6577206e6174696f6e2c20636f6e63656976
@@ -1290,8 +1356,8 @@ public class TestLMS {
                 6f2074686520756e66696e697368656420776f726b2077686963682074686579
                 2077686f20666f75676874206865726520686176652074687573206661722073
                 6f206e6f626c7920616476616e6365642e204974206973207261746865720a0a
-                """);
-        var sig = decode("""
+                """),
+            decode("""
                 00000001
                 00000000
                 00000003
@@ -1469,21 +1535,22 @@ public class TestLMS {
                 d9977f46826deab2abf93378819376fdc7b61cf344d2265b9f8cd22a1632f738
                 244569171a23d6d593bd19634758b7ff9c8731720e771023fdb0a6241dda4f61
                 a4385d3b9c5b6f6bb018324528aff429eca9c1264de9ea434a1a90e07f69015e
-                """);
+                """)
+        ),
 
-        return verify(pk, sig, msg);
-    }
-
-    // LMSigParameters.lms_sha256_m32_h20, LMOtsParameters.sha256_n32_w4);
-    // LMSigParameters.lms_sha256_m32_h10, LMOtsParameters.sha256_n32_w4);
-    static boolean test09_h20_w4_h10_w4() throws Exception {
-        var pk = decode("""
+        // Test Case #12
+        // LMSigParameters.lms_sha256_m32_h20, LMOtsParameters.sha256_n32_w4
+        // LMSigParameters.lms_sha256_m32_h10, LMOtsParameters.sha256_n32_w4
+        new TestCase(
+            false, // exception expected
+            true,  // expected result
+            decode("""
                 00000002
                 00000008
                 00000003
                 4f9fbdfc21ece22a13965cd32027f6d4e5706e751440d214da485f202309a24c
-                f90dafc3d8f09f797b1b6cfa3636e18c""");
-        var msg = decode("""
+                f90dafc3d8f09f797b1b6cfa3636e18c"""),
+            decode("""
                 466f75722073636f726520616e6420736576656e2079656172732061676f206f
                 757220666174686572732062726f7567687420666f727468206f6e2074686973
                 20636f6e74696e656e742061206e6577206e6174696f6e2c20636f6e63656976
@@ -1516,8 +1583,8 @@ public class TestLMS {
                 6f2074686520756e66696e697368656420776f726b2077686963682074686579
                 2077686f20666f75676874206865726520686176652074687573206661722073
                 6f206e6f626c7920616476616e6365642e204974206973207261746865720a0a
-                """);
-        var sig = decode("""
+                """),
+            decode("""
                 00000001
                 00000000
                 00000003
@@ -1695,21 +1762,22 @@ public class TestLMS {
                 5c43c911d5577be8fe88fa023a3e36f32f9333e3c6207ca1b0018c0e0f389827
                 a7a4cb92d8b054a206adec09b35ea6615069fc7d49132549bab5548b9e1fe61d
                 2b7a9ba0d6d3e0336f17f3caa18e0ea19d6cf0a9c0e48a83cf325369b6a091ba
-                """);
+                """)
+        ),
 
-        return verify(pk, sig, msg);
-    }
-
-    // LMSigParameters.lms_sha256_m32_h20, LMOtsParameters.sha256_n32_w4);
-    // LMSigParameters.lms_sha256_m32_h15, LMOtsParameters.sha256_n32_w4);
-    static boolean test10_h20_w4_h15_w4() throws Exception {
-        var pk = decode("""
+        // Test Case #13
+        // LMSigParameters.lms_sha256_m32_h20, LMOtsParameters.sha256_n32_w4
+        // LMSigParameters.lms_sha256_m32_h15, LMOtsParameters.sha256_n32_w4
+        new TestCase(
+            false, // exception expected
+            true,  // expected result
+            decode("""
                 00000002
                 00000008
                 00000003
                 cc453a482bbabfad998dbbacf34c0d89151995177fd38cdfa301b645fbad1675
-                ff8083187b30a36242b11bac4bbb7e0c""");
-        var msg = decode("""
+                ff8083187b30a36242b11bac4bbb7e0c"""),
+            decode("""
                 466f75722073636f726520616e6420736576656e2079656172732061676f206f
                 757220666174686572732062726f7567687420666f727468206f6e2074686973
                 20636f6e74696e656e742061206e6577206e6174696f6e2c20636f6e63656976
@@ -1742,8 +1810,8 @@ public class TestLMS {
                 6f2074686520756e66696e697368656420776f726b2077686963682074686579
                 2077686f20666f75676874206865726520686176652074687573206661722073
                 6f206e6f626c7920616476616e6365642e204974206973207261746865720a0a
-                """);
-        var sig = decode("""
+                """),
+            decode("""
                 00000001
                 00000000
                 00000003
@@ -1926,1157 +1994,604 @@ public class TestLMS {
                 720dd43655a9ba1d4bf0a723faa4bb3651ed2ea7e0bd08113e524777e6ec592a
                 ba5cab16b084d208d20bf25ad9a7ae31bceb00b07ef20cab7d1f6883ac331c75
                 a2aefb8230ae97dc34577785b123af406040d01fd072c493228d7583cd023c25
-                """);
+                """)
+        ),
 
-        return verify(pk, sig, msg);
-    }
-
-    static boolean testBadSignature01() throws Exception {
-        var pk = decode("""
+        // Test Case #14
+        // SignatureException
+        // LMS signature length is incorrect
+        new TestCase(
+            true,  // exception expected
+            false, // expected result
+            decode("""
                 00000002
                 00000005
                 00000004
-                61a5d57d37f5e46bfb7520806b07a1b8
-                50650e3b31fe4a773ea29a07f09cf2ea
-                30e579f0df58ef8e298da0434cb2b878
-                """);
-        var msg = decode("""
-                54686520706f77657273206e6f742064
-                656c65676174656420746f2074686520
-                556e6974656420537461746573206279
-                2074686520436f6e737469747574696f
-                6e2c206e6f722070726f686962697465
-                6420627920697420746f207468652053
-                74617465732c20617265207265736572
-                76656420746f20746865205374617465
-                7320726573706563746976656c792c20
-                6f7220746f207468652070656f706c65
-                2e0a""");
-        var sig = decode("""
+                61a5d57d37f5e46bfb7520806b07a1b850650e3b31fe4a773ea29a07f09cf2ea
+                30e579f0df58ef8e298da0434cb2b878"""),
+                decode("""
+                54686520706f77657273206e6f742064656c65676174656420746f2074686520
+                556e69746564205374617465732062792074686520436f6e737469747574696f
+                6e2c206e6f722070726f6869626974656420627920697420746f207468652053
+                74617465732c2061726520726573657276656420746f20746865205374617465
+                7320726573706563746976656c792c206f7220746f207468652070656f706c65
+                2e0a"""),
+            decode("""
                 00000001
                 00000005
                 00000004
-                d32b56671d7eb98833c49b433c272586
-                bc4a1c8a8970528ffa04b966f9426eb9
-                965a25bfd37f196b9073f3d4a232feb6
-                9128ec45146f86292f9dff9610a7bf95
-                a64c7f60f6261a62043f86c70324b770
-                7f5b4a8a6e19c114c7be866d488778a0
-                e05fd5c6509a6e61d559cf1a77a970de
-                927d60c70d3de31a7fa0100994e162a2
-                582e8ff1b10cd99d4e8e413ef469559f
-                7d7ed12c838342f9b9c96b83a4943d16
-                81d84b15357ff48ca579f19f5e71f184
-                66f2bbef4bf660c2518eb20de2f66e3b
-                14784269d7d876f5d35d3fbfc7039a46
-                2c716bb9f6891a7f41ad133e9e1f6d95
-                60b960e7777c52f060492f2d7c660e14
-                71e07e72655562035abc9a701b473ecb
-                c3943c6b9c4f2405a3cb8bf8a691ca51
-                d3f6ad2f428bab6f3a30f55dd9625563
-                f0a75ee390e385e3ae0b906961ecf41a
-                e073a0590c2eb6204f44831c26dd768c
-                35b167b28ce8dc988a3748255230cef9
-                9ebf14e730632f27414489808afab1d1
-                e783ed04516de012498682212b078105
-                79b250365941bcc98142da13609e9768
-                aaf65de7620dabec29eb82a17fde35af
-                15ad238c73f81bdb8dec2fc0e7f93270
-                1099762b37f43c4a3c20010a3d72e2f6
-                06be108d310e639f09ce7286800d9ef8
-                a1a40281cc5a7ea98d2adc7c7400c2fe
-                5a101552df4e3cccfd0cbf2ddf5dc677
-                9cbbc68fee0c3efe4ec22b83a2caa3e4
-                8e0809a0a750b73ccdcf3c79e6580c15
-                4f8a58f7f24335eec5c5eb5e0cf01dcf
-                4439424095fceb077f66ded5bec73b27
-                c5b9f64a2a9af2f07c05e99e5cf80f00
-                252e39db32f6c19674f190c9fbc506d8
-                26857713afd2ca6bb85cd8c107347552
-                f30575a5417816ab4db3f603f2df56fb
-                c413e7d0acd8bdd81352b2471fc1bc4f
-                1ef296fea1220403466b1afe78b94f7e
-                cf7cc62fb92be14f18c2192384ebceaf
-                8801afdf947f698ce9c6ceb696ed70e9
-                e87b0144417e8d7baf25eb5f70f09f01
-                6fc925b4db048ab8d8cb2a661ce3b57a
-                da67571f5dd546fc22cb1f97e0ebd1a6
-                5926b1234fd04f171cf469c76b884cf3
-                115cce6f792cc84e36da58960c5f1d76
-                0f32c12faef477e94c92eb75625b6a37
-                1efc72d60ca5e908b3a7dd69fef02491
-                50e3eebdfed39cbdc3ce9704882a2072
-                c75e13527b7a581a556168783dc1e975
-                45e31865ddc46b3c957835da252bb732
-                8d3ee2062445dfb85ef8c35f8e1f3371
-                af34023cef626e0af1e0bc017351aae2
-                ab8f5c612ead0b729a1d059d02bfe18e
-                fa971b7300e882360a93b025ff97e9e0
-                eec0f3f3f13039a17f88b0cf808f4884
-                31606cb13f9241f40f44e537d302c64a
-                4f1f4ab949b9feefadcb71ab50ef27d6
-                d6ca8510f150c85fb525bf25703df720
-                9b6066f09c37280d59128d2f0f637c7d
-                7d7fad4ed1c1ea04e628d221e3d8db77
-                b7c878c9411cafc5071a34a00f4cf077
-                38912753dfce48f07576f0d4f94f42c6
-                d76f7ce973e9367095ba7e9a3649b7f4
-                61d9f9ac1332a4d1044c96aefee67676
-                401b64457c54d65fef6500c59cdfb69a
-                f7b6dddfcb0f086278dd8ad0686078df
-                b0f3f79cd893d314168648499898fbc0
-                ced5f95b74e8ff14d735cdea968bee74
+                d32b56671d7eb98833c49b433c272586bc4a1c8a8970528ffa04b966f9426eb9
+                965a25bfd37f196b9073f3d4a232feb69128ec45146f86292f9dff9610a7bf95
+                a64c7f60f6261a62043f86c70324b7707f5b4a8a6e19c114c7be866d488778a0
+                e05fd5c6509a6e61d559cf1a77a970de927d60c70d3de31a7fa0100994e162a2
+                582e8ff1b10cd99d4e8e413ef469559f7d7ed12c838342f9b9c96b83a4943d16
+                81d84b15357ff48ca579f19f5e71f18466f2bbef4bf660c2518eb20de2f66e3b
+                14784269d7d876f5d35d3fbfc7039a462c716bb9f6891a7f41ad133e9e1f6d95
+                60b960e7777c52f060492f2d7c660e1471e07e72655562035abc9a701b473ecb
+                c3943c6b9c4f2405a3cb8bf8a691ca51d3f6ad2f428bab6f3a30f55dd9625563
+                f0a75ee390e385e3ae0b906961ecf41ae073a0590c2eb6204f44831c26dd768c
+                35b167b28ce8dc988a3748255230cef99ebf14e730632f27414489808afab1d1
+                e783ed04516de012498682212b07810579b250365941bcc98142da13609e9768
+                aaf65de7620dabec29eb82a17fde35af15ad238c73f81bdb8dec2fc0e7f93270
+                1099762b37f43c4a3c20010a3d72e2f606be108d310e639f09ce7286800d9ef8
+                a1a40281cc5a7ea98d2adc7c7400c2fe5a101552df4e3cccfd0cbf2ddf5dc677
+                9cbbc68fee0c3efe4ec22b83a2caa3e48e0809a0a750b73ccdcf3c79e6580c15
+                4f8a58f7f24335eec5c5eb5e0cf01dcf4439424095fceb077f66ded5bec73b27
+                c5b9f64a2a9af2f07c05e99e5cf80f00252e39db32f6c19674f190c9fbc506d8
+                26857713afd2ca6bb85cd8c107347552f30575a5417816ab4db3f603f2df56fb
+                c413e7d0acd8bdd81352b2471fc1bc4f1ef296fea1220403466b1afe78b94f7e
+                cf7cc62fb92be14f18c2192384ebceaf8801afdf947f698ce9c6ceb696ed70e9
+                e87b0144417e8d7baf25eb5f70f09f016fc925b4db048ab8d8cb2a661ce3b57a
+                da67571f5dd546fc22cb1f97e0ebd1a65926b1234fd04f171cf469c76b884cf3
+                115cce6f792cc84e36da58960c5f1d760f32c12faef477e94c92eb75625b6a37
+                1efc72d60ca5e908b3a7dd69fef0249150e3eebdfed39cbdc3ce9704882a2072
+                c75e13527b7a581a556168783dc1e97545e31865ddc46b3c957835da252bb732
+                8d3ee2062445dfb85ef8c35f8e1f3371af34023cef626e0af1e0bc017351aae2
+                ab8f5c612ead0b729a1d059d02bfe18efa971b7300e882360a93b025ff97e9e0
+                eec0f3f3f13039a17f88b0cf808f488431606cb13f9241f40f44e537d302c64a
+                4f1f4ab949b9feefadcb71ab50ef27d6d6ca8510f150c85fb525bf25703df720
+                9b6066f09c37280d59128d2f0f637c7d7d7fad4ed1c1ea04e628d221e3d8db77
+                b7c878c9411cafc5071a34a00f4cf07738912753dfce48f07576f0d4f94f42c6
+                d76f7ce973e9367095ba7e9a3649b7f461d9f9ac1332a4d1044c96aefee67676
+                401b64457c54d65fef6500c59cdfb69af7b6dddfcb0f086278dd8ad0686078df
+                b0f3f79cd893d314168648499898fbc0ced5f95b74e8ff14d735cdea968bee74
                 00000005
-                d8b8112f9200a5e50c4a262165bd342c
-                d800b8496810bc716277435ac376728d
-                129ac6eda839a6f357b5a04387c5ce97
-                382a78f2a4372917eefcbf93f63bb591
-                12f5dbe400bd49e4501e859f885bf073
-                6e90a509b30a26bfac8c17b5991c157e
-                b5971115aa39efd8d564a6b90282c316
-                8af2d30ef89d51bf14654510a12b8a14
-                4cca1848cf7da59cc2b3d9d0692dd2a2
-                0ba3863480e25b1b85ee860c62bf5136
+                d8b8112f9200a5e50c4a262165bd342cd800b8496810bc716277435ac376728d
+                129ac6eda839a6f357b5a04387c5ce97382a78f2a4372917eefcbf93f63bb591
+                12f5dbe400bd49e4501e859f885bf0736e90a509b30a26bfac8c17b5991c157e
+                b5971115aa39efd8d564a6b90282c3168af2d30ef89d51bf14654510a12b8a14
+                4cca1848cf7da59cc2b3d9d0692dd2a20ba3863480e25b1b85ee860c62bf5136
                 00000005
                 00000004
-                d2f14ff6346af964569f7d6cb880a1b6
-                6c5004917da6eafe4d9ef6c6407b3db0
+                d2f14ff6346af964569f7d6cb880a1b66c5004917da6eafe4d9ef6c6407b3db0
                 e5485b122d9ebe15cda93cfec582d7ab
                 0000000a
                 00000004
-                0703c491e7558b35011ece3592eaa5da
-                4d918786771233e8353bc4f62323185c
-                95cae05b899e35dffd71705470620998
-                8ebfdf6e37960bb5c38d7657e8bffeef
-                9bc042da4b4525650485c66d0ce19b31
-                7587c6ba4bffcc428e25d08931e72dfb
-                6a120c5612344258b85efdb7db1db9e1
-                865a73caf96557eb39ed3e3f426933ac
-                9eeddb03a1d2374af7bf771855774562
-                37f9de2d60113c23f846df26fa942008
-                a698994c0827d90e86d43e0df7f4bfcd
-                b09b86a373b98288b7094ad81a0185ac
-                100e4f2c5fc38c003c1ab6fea479eb2f
-                5ebe48f584d7159b8ada03586e65ad9c
-                969f6aecbfe44cf356888a7b15a3ff07
-                4f771760b26f9c04884ee1faa329fbf4
-                e61af23aee7fa5d4d9a5dfcf43c4c26c
-                e8aea2ce8a2990d7ba7b57108b47dabf
-                beadb2b25b3cacc1ac0cef346cbb90fb
-                044beee4fac2603a442bdf7e507243b7
-                319c9944b1586e899d431c7f91bcccc8
-                690dbf59b28386b2315f3d36ef2eaa3c
-                f30b2b51f48b71b003dfb08249484201
-                043f65f5a3ef6bbd61ddfee81aca9ce6
-                0081262a00000480dcbc9a3da6fbef5c
-                1c0a55e48a0e729f9184fcb1407c3152
-                9db268f6fe50032a363c9801306837fa
-                fabdf957fd97eafc80dbd165e435d0e2
-                dfd836a28b354023924b6fb7e48bc0b3
-                ed95eea64c2d402f4d734c8dc26f3ac5
-                91825daef01eae3c38e3328d00a77dc6
-                57034f287ccb0f0e1c9a7cbdc828f627
-                205e4737b84b58376551d44c12c3c215
-                c812a0970789c83de51d6ad787271963
-                327f0a5fbb6b5907dec02c9a90934af5
-                a1c63b72c82653605d1dcce51596b3c2
-                b45696689f2eb382007497557692caac
-                4d57b5de9f5569bc2ad0137fd47fb47e
-                664fcb6db4971f5b3e07aceda9ac130e
-                9f38182de994cff192ec0e82fd6d4cb7
-                f3fe00812589b7a7ce51544045643301
-                6b84a59bec6619a1c6c0b37dd1450ed4
-                f2d8b584410ceda8025f5d2d8dd0d217
-                6fc1cf2cc06fa8c82bed4d944e71339e
-                ce780fd025bd41ec34ebff9d4270a322
-                4e019fcb444474d482fd2dbe75efb203
-                89cc10cd600abb54c47ede93e08c114e
-                db04117d714dc1d525e11bed8756192f
-                929d15462b939ff3f52f2252da2ed64d
-                8fae88818b1efa2c7b08c8794fb1b214
-                aa233db3162833141ea4383f1a6f120b
-                e1db82ce3630b3429114463157a64e91
-                234d475e2f79cbf05e4db6a9407d72c6
-                bff7d1198b5c4d6aad2831db61274993
-                715a0182c7dc8089e32c8531deed4f74
-                31c07c02195eba2ef91efb5613c37af7
-                ae0c066babc69369700e1dd26eddc0d2
-                16c781d56e4ce47e3303fa73007ff7b9
-                49ef23be2aa4dbf25206fe45c20dd888
-                395b2526391a724996a44156beac8082
-                12858792bf8e74cba49dee5e8812e019
-                da87454bff9e847ed83db07af3137430
-                82f880a278f682c2bd0ad6887cb59f65
-                2e155987d61bbf6a88d36ee93b6072e6
-                656d9ccbaae3d655852e38deb3a2dcf8
-                058dc9fb6f2ab3d3b3539eb77b248a66
-                1091d05eb6e2f297774fe6053598457c
-                c61908318de4b826f0fc86d4bb117d33
-                e865aa805009cc2918d9c2f840c4da43
-                a703ad9f5b5806163d7161696b5a0adc
+                0703c491e7558b35011ece3592eaa5da4d918786771233e8353bc4f62323185c
+                95cae05b899e35dffd717054706209988ebfdf6e37960bb5c38d7657e8bffeef
+                9bc042da4b4525650485c66d0ce19b317587c6ba4bffcc428e25d08931e72dfb
+                6a120c5612344258b85efdb7db1db9e1865a73caf96557eb39ed3e3f426933ac
+                9eeddb03a1d2374af7bf77185577456237f9de2d60113c23f846df26fa942008
+                a698994c0827d90e86d43e0df7f4bfcdb09b86a373b98288b7094ad81a0185ac
+                100e4f2c5fc38c003c1ab6fea479eb2f5ebe48f584d7159b8ada03586e65ad9c
+                969f6aecbfe44cf356888a7b15a3ff074f771760b26f9c04884ee1faa329fbf4
+                e61af23aee7fa5d4d9a5dfcf43c4c26ce8aea2ce8a2990d7ba7b57108b47dabf
+                beadb2b25b3cacc1ac0cef346cbb90fb044beee4fac2603a442bdf7e507243b7
+                319c9944b1586e899d431c7f91bcccc8690dbf59b28386b2315f3d36ef2eaa3c
+                f30b2b51f48b71b003dfb08249484201043f65f5a3ef6bbd61ddfee81aca9ce6
+                0081262a00000480dcbc9a3da6fbef5c1c0a55e48a0e729f9184fcb1407c3152
+                9db268f6fe50032a363c9801306837fafabdf957fd97eafc80dbd165e435d0e2
+                dfd836a28b354023924b6fb7e48bc0b3ed95eea64c2d402f4d734c8dc26f3ac5
+                91825daef01eae3c38e3328d00a77dc657034f287ccb0f0e1c9a7cbdc828f627
+                205e4737b84b58376551d44c12c3c215c812a0970789c83de51d6ad787271963
+                327f0a5fbb6b5907dec02c9a90934af5a1c63b72c82653605d1dcce51596b3c2
+                b45696689f2eb382007497557692caac4d57b5de9f5569bc2ad0137fd47fb47e
+                664fcb6db4971f5b3e07aceda9ac130e9f38182de994cff192ec0e82fd6d4cb7
+                f3fe00812589b7a7ce515440456433016b84a59bec6619a1c6c0b37dd1450ed4
+                f2d8b584410ceda8025f5d2d8dd0d2176fc1cf2cc06fa8c82bed4d944e71339e
+                ce780fd025bd41ec34ebff9d4270a3224e019fcb444474d482fd2dbe75efb203
+                89cc10cd600abb54c47ede93e08c114edb04117d714dc1d525e11bed8756192f
+                929d15462b939ff3f52f2252da2ed64d8fae88818b1efa2c7b08c8794fb1b214
+                aa233db3162833141ea4383f1a6f120be1db82ce3630b3429114463157a64e91
+                234d475e2f79cbf05e4db6a9407d72c6bff7d1198b5c4d6aad2831db61274993
+                715a0182c7dc8089e32c8531deed4f7431c07c02195eba2ef91efb5613c37af7
+                ae0c066babc69369700e1dd26eddc0d216c781d56e4ce47e3303fa73007ff7b9
+                49ef23be2aa4dbf25206fe45c20dd888395b2526391a724996a44156beac8082
+                12858792bf8e74cba49dee5e8812e019da87454bff9e847ed83db07af3137430
+                82f880a278f682c2bd0ad6887cb59f652e155987d61bbf6a88d36ee93b6072e6
+                656d9ccbaae3d655852e38deb3a2dcf8058dc9fb6f2ab3d3b3539eb77b248a66
+                1091d05eb6e2f297774fe6053598457cc61908318de4b826f0fc86d4bb117d33
+                e865aa805009cc2918d9c2f840c4da43a703ad9f5b5806163d7161696b5a0adc
                 00000006 // changed from 5 to 6
-                d5c0d1bebb06048ed6fe2ef2c6cef305
-                b3ed633941ebc8b3bec9738754cddd60
-                e1920ada52f43d055b5031cee6192520
-                d6a5115514851ce7fd448d4a39fae2ab
-                2335b525f484e9b40d6a4a969394843b
-                dcf6d14c48e8015e08ab92662c05c6e9
-                f90b65a7a6201689999f32bfd368e5e3
-                ec9cb70ac7b8399003f175c40885081a
-                09ab3034911fe125631051df0408b394
-                6b0bde790911e8978ba07dd56c73e7ee
-                """);
+                d5c0d1bebb06048ed6fe2ef2c6cef305b3ed633941ebc8b3bec9738754cddd60
+                e1920ada52f43d055b5031cee6192520d6a5115514851ce7fd448d4a39fae2ab
+                2335b525f484e9b40d6a4a969394843bdcf6d14c48e8015e08ab92662c05c6e9
+                f90b65a7a6201689999f32bfd368e5e3ec9cb70ac7b8399003f175c40885081a
+                09ab3034911fe125631051df0408b3946b0bde790911e8978ba07dd56c73e7ee
+                """)
+        ),
 
-        try {
-            verify(pk, sig, msg);
-            return true;
-        } catch (SignatureException ex) {
-            // LMS signature length is incorrect
-            return false;
-        }
-    }
-
-    static boolean testBadSignature02() throws Exception {
-        var pk = decode("""
+        // Test Case #15
+        // SignatureException
+        // HSS signature and public key have different tree heights
+        new TestCase(
+            true,  // exception expected
+            false, // expected result
+            decode("""
                 00000003 // level 2 changed to level 3
                 00000005
                 00000004
-                61a5d57d37f5e46bfb7520806b07a1b8
-                50650e3b31fe4a773ea29a07f09cf2ea
-                30e579f0df58ef8e298da0434cb2b878
-                """);
-        var msg = decode("""
-                54686520706f77657273206e6f742064
-                656c65676174656420746f2074686520
-                556e6974656420537461746573206279
-                2074686520436f6e737469747574696f
-                6e2c206e6f722070726f686962697465
-                6420627920697420746f207468652053
-                74617465732c20617265207265736572
-                76656420746f20746865205374617465
-                7320726573706563746976656c792c20
-                6f7220746f207468652070656f706c65
-                2e0a""");
-        var sig = decode("""
+                61a5d57d37f5e46bfb7520806b07a1b850650e3b31fe4a773ea29a07f09cf2ea
+                30e579f0df58ef8e298da0434cb2b878"""),
+            decode("""
+                54686520706f77657273206e6f742064656c65676174656420746f2074686520
+                556e69746564205374617465732062792074686520436f6e737469747574696f
+                6e2c206e6f722070726f6869626974656420627920697420746f207468652053
+                74617465732c2061726520726573657276656420746f20746865205374617465
+                7320726573706563746976656c792c206f7220746f207468652070656f706c65
+                2e0a"""),
+            decode("""
                 00000001
                 00000005
                 00000004
-                d32b56671d7eb98833c49b433c272586
-                bc4a1c8a8970528ffa04b966f9426eb9
-                965a25bfd37f196b9073f3d4a232feb6
-                9128ec45146f86292f9dff9610a7bf95
-                a64c7f60f6261a62043f86c70324b770
-                7f5b4a8a6e19c114c7be866d488778a0
-                e05fd5c6509a6e61d559cf1a77a970de
-                927d60c70d3de31a7fa0100994e162a2
-                582e8ff1b10cd99d4e8e413ef469559f
-                7d7ed12c838342f9b9c96b83a4943d16
-                81d84b15357ff48ca579f19f5e71f184
-                66f2bbef4bf660c2518eb20de2f66e3b
-                14784269d7d876f5d35d3fbfc7039a46
-                2c716bb9f6891a7f41ad133e9e1f6d95
-                60b960e7777c52f060492f2d7c660e14
-                71e07e72655562035abc9a701b473ecb
-                c3943c6b9c4f2405a3cb8bf8a691ca51
-                d3f6ad2f428bab6f3a30f55dd9625563
-                f0a75ee390e385e3ae0b906961ecf41a
-                e073a0590c2eb6204f44831c26dd768c
-                35b167b28ce8dc988a3748255230cef9
-                9ebf14e730632f27414489808afab1d1
-                e783ed04516de012498682212b078105
-                79b250365941bcc98142da13609e9768
-                aaf65de7620dabec29eb82a17fde35af
-                15ad238c73f81bdb8dec2fc0e7f93270
-                1099762b37f43c4a3c20010a3d72e2f6
-                06be108d310e639f09ce7286800d9ef8
-                a1a40281cc5a7ea98d2adc7c7400c2fe
-                5a101552df4e3cccfd0cbf2ddf5dc677
-                9cbbc68fee0c3efe4ec22b83a2caa3e4
-                8e0809a0a750b73ccdcf3c79e6580c15
-                4f8a58f7f24335eec5c5eb5e0cf01dcf
-                4439424095fceb077f66ded5bec73b27
-                c5b9f64a2a9af2f07c05e99e5cf80f00
-                252e39db32f6c19674f190c9fbc506d8
-                26857713afd2ca6bb85cd8c107347552
-                f30575a5417816ab4db3f603f2df56fb
-                c413e7d0acd8bdd81352b2471fc1bc4f
-                1ef296fea1220403466b1afe78b94f7e
-                cf7cc62fb92be14f18c2192384ebceaf
-                8801afdf947f698ce9c6ceb696ed70e9
-                e87b0144417e8d7baf25eb5f70f09f01
-                6fc925b4db048ab8d8cb2a661ce3b57a
-                da67571f5dd546fc22cb1f97e0ebd1a6
-                5926b1234fd04f171cf469c76b884cf3
-                115cce6f792cc84e36da58960c5f1d76
-                0f32c12faef477e94c92eb75625b6a37
-                1efc72d60ca5e908b3a7dd69fef02491
-                50e3eebdfed39cbdc3ce9704882a2072
-                c75e13527b7a581a556168783dc1e975
-                45e31865ddc46b3c957835da252bb732
-                8d3ee2062445dfb85ef8c35f8e1f3371
-                af34023cef626e0af1e0bc017351aae2
-                ab8f5c612ead0b729a1d059d02bfe18e
-                fa971b7300e882360a93b025ff97e9e0
-                eec0f3f3f13039a17f88b0cf808f4884
-                31606cb13f9241f40f44e537d302c64a
-                4f1f4ab949b9feefadcb71ab50ef27d6
-                d6ca8510f150c85fb525bf25703df720
-                9b6066f09c37280d59128d2f0f637c7d
-                7d7fad4ed1c1ea04e628d221e3d8db77
-                b7c878c9411cafc5071a34a00f4cf077
-                38912753dfce48f07576f0d4f94f42c6
-                d76f7ce973e9367095ba7e9a3649b7f4
-                61d9f9ac1332a4d1044c96aefee67676
-                401b64457c54d65fef6500c59cdfb69a
-                f7b6dddfcb0f086278dd8ad0686078df
-                b0f3f79cd893d314168648499898fbc0
-                ced5f95b74e8ff14d735cdea968bee74
+                d32b56671d7eb98833c49b433c272586bc4a1c8a8970528ffa04b966f9426eb9
+                965a25bfd37f196b9073f3d4a232feb69128ec45146f86292f9dff9610a7bf95
+                a64c7f60f6261a62043f86c70324b7707f5b4a8a6e19c114c7be866d488778a0
+                e05fd5c6509a6e61d559cf1a77a970de927d60c70d3de31a7fa0100994e162a2
+                582e8ff1b10cd99d4e8e413ef469559f7d7ed12c838342f9b9c96b83a4943d16
+                81d84b15357ff48ca579f19f5e71f18466f2bbef4bf660c2518eb20de2f66e3b
+                14784269d7d876f5d35d3fbfc7039a462c716bb9f6891a7f41ad133e9e1f6d95
+                60b960e7777c52f060492f2d7c660e1471e07e72655562035abc9a701b473ecb
+                c3943c6b9c4f2405a3cb8bf8a691ca51d3f6ad2f428bab6f3a30f55dd9625563
+                f0a75ee390e385e3ae0b906961ecf41ae073a0590c2eb6204f44831c26dd768c
+                35b167b28ce8dc988a3748255230cef99ebf14e730632f27414489808afab1d1
+                e783ed04516de012498682212b07810579b250365941bcc98142da13609e9768
+                aaf65de7620dabec29eb82a17fde35af15ad238c73f81bdb8dec2fc0e7f93270
+                1099762b37f43c4a3c20010a3d72e2f606be108d310e639f09ce7286800d9ef8
+                a1a40281cc5a7ea98d2adc7c7400c2fe5a101552df4e3cccfd0cbf2ddf5dc677
+                9cbbc68fee0c3efe4ec22b83a2caa3e48e0809a0a750b73ccdcf3c79e6580c15
+                4f8a58f7f24335eec5c5eb5e0cf01dcf4439424095fceb077f66ded5bec73b27
+                c5b9f64a2a9af2f07c05e99e5cf80f00252e39db32f6c19674f190c9fbc506d8
+                26857713afd2ca6bb85cd8c107347552f30575a5417816ab4db3f603f2df56fb
+                c413e7d0acd8bdd81352b2471fc1bc4f1ef296fea1220403466b1afe78b94f7e
+                cf7cc62fb92be14f18c2192384ebceaf8801afdf947f698ce9c6ceb696ed70e9
+                e87b0144417e8d7baf25eb5f70f09f016fc925b4db048ab8d8cb2a661ce3b57a
+                da67571f5dd546fc22cb1f97e0ebd1a65926b1234fd04f171cf469c76b884cf3
+                115cce6f792cc84e36da58960c5f1d760f32c12faef477e94c92eb75625b6a37
+                1efc72d60ca5e908b3a7dd69fef0249150e3eebdfed39cbdc3ce9704882a2072
+                c75e13527b7a581a556168783dc1e97545e31865ddc46b3c957835da252bb732
+                8d3ee2062445dfb85ef8c35f8e1f3371af34023cef626e0af1e0bc017351aae2
+                ab8f5c612ead0b729a1d059d02bfe18efa971b7300e882360a93b025ff97e9e0
+                eec0f3f3f13039a17f88b0cf808f488431606cb13f9241f40f44e537d302c64a
+                4f1f4ab949b9feefadcb71ab50ef27d6d6ca8510f150c85fb525bf25703df720
+                9b6066f09c37280d59128d2f0f637c7d7d7fad4ed1c1ea04e628d221e3d8db77
+                b7c878c9411cafc5071a34a00f4cf07738912753dfce48f07576f0d4f94f42c6
+                d76f7ce973e9367095ba7e9a3649b7f461d9f9ac1332a4d1044c96aefee67676
+                401b64457c54d65fef6500c59cdfb69af7b6dddfcb0f086278dd8ad0686078df
+                b0f3f79cd893d314168648499898fbc0ced5f95b74e8ff14d735cdea968bee74
                 00000005
-                d8b8112f9200a5e50c4a262165bd342c
-                d800b8496810bc716277435ac376728d
-                129ac6eda839a6f357b5a04387c5ce97
-                382a78f2a4372917eefcbf93f63bb591
-                12f5dbe400bd49e4501e859f885bf073
-                6e90a509b30a26bfac8c17b5991c157e
-                b5971115aa39efd8d564a6b90282c316
-                8af2d30ef89d51bf14654510a12b8a14
-                4cca1848cf7da59cc2b3d9d0692dd2a2
-                0ba3863480e25b1b85ee860c62bf5136
+                d8b8112f9200a5e50c4a262165bd342cd800b8496810bc716277435ac376728d
+                129ac6eda839a6f357b5a04387c5ce97382a78f2a4372917eefcbf93f63bb591
+                12f5dbe400bd49e4501e859f885bf0736e90a509b30a26bfac8c17b5991c157e
+                b5971115aa39efd8d564a6b90282c3168af2d30ef89d51bf14654510a12b8a14
+                4cca1848cf7da59cc2b3d9d0692dd2a20ba3863480e25b1b85ee860c62bf5136
                 00000005
                 00000004
-                d2f14ff6346af964569f7d6cb880a1b6
-                6c5004917da6eafe4d9ef6c6407b3db0
+                d2f14ff6346af964569f7d6cb880a1b66c5004917da6eafe4d9ef6c6407b3db0
                 e5485b122d9ebe15cda93cfec582d7ab
                 0000000a
                 00000004
-                0703c491e7558b35011ece3592eaa5da
-                4d918786771233e8353bc4f62323185c
-                95cae05b899e35dffd71705470620998
-                8ebfdf6e37960bb5c38d7657e8bffeef
-                9bc042da4b4525650485c66d0ce19b31
-                7587c6ba4bffcc428e25d08931e72dfb
-                6a120c5612344258b85efdb7db1db9e1
-                865a73caf96557eb39ed3e3f426933ac
-                9eeddb03a1d2374af7bf771855774562
-                37f9de2d60113c23f846df26fa942008
-                a698994c0827d90e86d43e0df7f4bfcd
-                b09b86a373b98288b7094ad81a0185ac
-                100e4f2c5fc38c003c1ab6fea479eb2f
-                5ebe48f584d7159b8ada03586e65ad9c
-                969f6aecbfe44cf356888a7b15a3ff07
-                4f771760b26f9c04884ee1faa329fbf4
-                e61af23aee7fa5d4d9a5dfcf43c4c26c
-                e8aea2ce8a2990d7ba7b57108b47dabf
-                beadb2b25b3cacc1ac0cef346cbb90fb
-                044beee4fac2603a442bdf7e507243b7
-                319c9944b1586e899d431c7f91bcccc8
-                690dbf59b28386b2315f3d36ef2eaa3c
-                f30b2b51f48b71b003dfb08249484201
-                043f65f5a3ef6bbd61ddfee81aca9ce6
-                0081262a00000480dcbc9a3da6fbef5c
-                1c0a55e48a0e729f9184fcb1407c3152
-                9db268f6fe50032a363c9801306837fa
-                fabdf957fd97eafc80dbd165e435d0e2
-                dfd836a28b354023924b6fb7e48bc0b3
-                ed95eea64c2d402f4d734c8dc26f3ac5
-                91825daef01eae3c38e3328d00a77dc6
-                57034f287ccb0f0e1c9a7cbdc828f627
-                205e4737b84b58376551d44c12c3c215
-                c812a0970789c83de51d6ad787271963
-                327f0a5fbb6b5907dec02c9a90934af5
-                a1c63b72c82653605d1dcce51596b3c2
-                b45696689f2eb382007497557692caac
-                4d57b5de9f5569bc2ad0137fd47fb47e
-                664fcb6db4971f5b3e07aceda9ac130e
-                9f38182de994cff192ec0e82fd6d4cb7
-                f3fe00812589b7a7ce51544045643301
-                6b84a59bec6619a1c6c0b37dd1450ed4
-                f2d8b584410ceda8025f5d2d8dd0d217
-                6fc1cf2cc06fa8c82bed4d944e71339e
-                ce780fd025bd41ec34ebff9d4270a322
-                4e019fcb444474d482fd2dbe75efb203
-                89cc10cd600abb54c47ede93e08c114e
-                db04117d714dc1d525e11bed8756192f
-                929d15462b939ff3f52f2252da2ed64d
-                8fae88818b1efa2c7b08c8794fb1b214
-                aa233db3162833141ea4383f1a6f120b
-                e1db82ce3630b3429114463157a64e91
-                234d475e2f79cbf05e4db6a9407d72c6
-                bff7d1198b5c4d6aad2831db61274993
-                715a0182c7dc8089e32c8531deed4f74
-                31c07c02195eba2ef91efb5613c37af7
-                ae0c066babc69369700e1dd26eddc0d2
-                16c781d56e4ce47e3303fa73007ff7b9
-                49ef23be2aa4dbf25206fe45c20dd888
-                395b2526391a724996a44156beac8082
-                12858792bf8e74cba49dee5e8812e019
-                da87454bff9e847ed83db07af3137430
-                82f880a278f682c2bd0ad6887cb59f65
-                2e155987d61bbf6a88d36ee93b6072e6
-                656d9ccbaae3d655852e38deb3a2dcf8
-                058dc9fb6f2ab3d3b3539eb77b248a66
-                1091d05eb6e2f297774fe6053598457c
-                c61908318de4b826f0fc86d4bb117d33
-                e865aa805009cc2918d9c2f840c4da43
-                a703ad9f5b5806163d7161696b5a0adc
+                0703c491e7558b35011ece3592eaa5da4d918786771233e8353bc4f62323185c
+                95cae05b899e35dffd717054706209988ebfdf6e37960bb5c38d7657e8bffeef
+                9bc042da4b4525650485c66d0ce19b317587c6ba4bffcc428e25d08931e72dfb
+                6a120c5612344258b85efdb7db1db9e1865a73caf96557eb39ed3e3f426933ac
+                9eeddb03a1d2374af7bf77185577456237f9de2d60113c23f846df26fa942008
+                a698994c0827d90e86d43e0df7f4bfcdb09b86a373b98288b7094ad81a0185ac
+                100e4f2c5fc38c003c1ab6fea479eb2f5ebe48f584d7159b8ada03586e65ad9c
+                969f6aecbfe44cf356888a7b15a3ff074f771760b26f9c04884ee1faa329fbf4
+                e61af23aee7fa5d4d9a5dfcf43c4c26ce8aea2ce8a2990d7ba7b57108b47dabf
+                beadb2b25b3cacc1ac0cef346cbb90fb044beee4fac2603a442bdf7e507243b7
+                319c9944b1586e899d431c7f91bcccc8690dbf59b28386b2315f3d36ef2eaa3c
+                f30b2b51f48b71b003dfb08249484201043f65f5a3ef6bbd61ddfee81aca9ce6
+                0081262a00000480dcbc9a3da6fbef5c1c0a55e48a0e729f9184fcb1407c3152
+                9db268f6fe50032a363c9801306837fafabdf957fd97eafc80dbd165e435d0e2
+                dfd836a28b354023924b6fb7e48bc0b3ed95eea64c2d402f4d734c8dc26f3ac5
+                91825daef01eae3c38e3328d00a77dc657034f287ccb0f0e1c9a7cbdc828f627
+                205e4737b84b58376551d44c12c3c215c812a0970789c83de51d6ad787271963
+                327f0a5fbb6b5907dec02c9a90934af5a1c63b72c82653605d1dcce51596b3c2
+                b45696689f2eb382007497557692caac4d57b5de9f5569bc2ad0137fd47fb47e
+                664fcb6db4971f5b3e07aceda9ac130e9f38182de994cff192ec0e82fd6d4cb7
+                f3fe00812589b7a7ce515440456433016b84a59bec6619a1c6c0b37dd1450ed4
+                f2d8b584410ceda8025f5d2d8dd0d2176fc1cf2cc06fa8c82bed4d944e71339e
+                ce780fd025bd41ec34ebff9d4270a3224e019fcb444474d482fd2dbe75efb203
+                89cc10cd600abb54c47ede93e08c114edb04117d714dc1d525e11bed8756192f
+                929d15462b939ff3f52f2252da2ed64d8fae88818b1efa2c7b08c8794fb1b214
+                aa233db3162833141ea4383f1a6f120be1db82ce3630b3429114463157a64e91
+                234d475e2f79cbf05e4db6a9407d72c6bff7d1198b5c4d6aad2831db61274993
+                715a0182c7dc8089e32c8531deed4f7431c07c02195eba2ef91efb5613c37af7
+                ae0c066babc69369700e1dd26eddc0d216c781d56e4ce47e3303fa73007ff7b9
+                49ef23be2aa4dbf25206fe45c20dd888395b2526391a724996a44156beac8082
+                12858792bf8e74cba49dee5e8812e019da87454bff9e847ed83db07af3137430
+                82f880a278f682c2bd0ad6887cb59f652e155987d61bbf6a88d36ee93b6072e6
+                656d9ccbaae3d655852e38deb3a2dcf8058dc9fb6f2ab3d3b3539eb77b248a66
+                1091d05eb6e2f297774fe6053598457cc61908318de4b826f0fc86d4bb117d33
+                e865aa805009cc2918d9c2f840c4da43a703ad9f5b5806163d7161696b5a0adc
                 00000005
-                d5c0d1bebb06048ed6fe2ef2c6cef305
-                b3ed633941ebc8b3bec9738754cddd60
-                e1920ada52f43d055b5031cee6192520
-                d6a5115514851ce7fd448d4a39fae2ab
-                2335b525f484e9b40d6a4a969394843b
-                dcf6d14c48e8015e08ab92662c05c6e9
-                f90b65a7a6201689999f32bfd368e5e3
-                ec9cb70ac7b8399003f175c40885081a
-                09ab3034911fe125631051df0408b394
-                6b0bde790911e8978ba07dd56c73e7ee
-                """);
+                d5c0d1bebb06048ed6fe2ef2c6cef305b3ed633941ebc8b3bec9738754cddd60
+                e1920ada52f43d055b5031cee6192520d6a5115514851ce7fd448d4a39fae2ab
+                2335b525f484e9b40d6a4a969394843bdcf6d14c48e8015e08ab92662c05c6e9
+                f90b65a7a6201689999f32bfd368e5e3ec9cb70ac7b8399003f175c40885081a
+                09ab3034911fe125631051df0408b3946b0bde790911e8978ba07dd56c73e7ee
+                """)
+        ),
 
-        try {
-            verify(pk, sig, msg);
-            return true;
-        } catch (SignatureException ex) {
-            // HSS signature and public key have different tree heights
-            return false;
-        }
-    }
-
-    static boolean testBadSignature03() throws Exception {
-        var pk = decode("""
+        // Test Case #16
+        // bad signature
+        new TestCase(
+            false, // exception expected
+            false, // expected result
+            decode("""
                 00000002
                 00000006 // changed 5 to 6
                 00000004
-                61a5d57d37f5e46bfb7520806b07a1b8
-                50650e3b31fe4a773ea29a07f09cf2ea
-                30e579f0df58ef8e298da0434cb2b878
-                """);
-        var msg = decode("""
-                54686520706f77657273206e6f742064
-                656c65676174656420746f2074686520
-                556e6974656420537461746573206279
-                2074686520436f6e737469747574696f
-                6e2c206e6f722070726f686962697465
-                6420627920697420746f207468652053
-                74617465732c20617265207265736572
-                76656420746f20746865205374617465
-                7320726573706563746976656c792c20
-                6f7220746f207468652070656f706c65
-                2e0a""");
-        var sig = decode("""
+                61a5d57d37f5e46bfb7520806b07a1b850650e3b31fe4a773ea29a07f09cf2ea
+                30e579f0df58ef8e298da0434cb2b878"""),
+            decode("""
+                54686520706f77657273206e6f742064656c65676174656420746f2074686520
+                556e69746564205374617465732062792074686520436f6e737469747574696f
+                6e2c206e6f722070726f6869626974656420627920697420746f207468652053
+                74617465732c2061726520726573657276656420746f20746865205374617465
+                7320726573706563746976656c792c206f7220746f207468652070656f706c65
+                2e0a"""),
+            decode("""
                 00000001
                 00000005
                 00000004
-                d32b56671d7eb98833c49b433c272586
-                bc4a1c8a8970528ffa04b966f9426eb9
-                965a25bfd37f196b9073f3d4a232feb6
-                9128ec45146f86292f9dff9610a7bf95
-                a64c7f60f6261a62043f86c70324b770
-                7f5b4a8a6e19c114c7be866d488778a0
-                e05fd5c6509a6e61d559cf1a77a970de
-                927d60c70d3de31a7fa0100994e162a2
-                582e8ff1b10cd99d4e8e413ef469559f
-                7d7ed12c838342f9b9c96b83a4943d16
-                81d84b15357ff48ca579f19f5e71f184
-                66f2bbef4bf660c2518eb20de2f66e3b
-                14784269d7d876f5d35d3fbfc7039a46
-                2c716bb9f6891a7f41ad133e9e1f6d95
-                60b960e7777c52f060492f2d7c660e14
-                71e07e72655562035abc9a701b473ecb
-                c3943c6b9c4f2405a3cb8bf8a691ca51
-                d3f6ad2f428bab6f3a30f55dd9625563
-                f0a75ee390e385e3ae0b906961ecf41a
-                e073a0590c2eb6204f44831c26dd768c
-                35b167b28ce8dc988a3748255230cef9
-                9ebf14e730632f27414489808afab1d1
-                e783ed04516de012498682212b078105
-                79b250365941bcc98142da13609e9768
-                aaf65de7620dabec29eb82a17fde35af
-                15ad238c73f81bdb8dec2fc0e7f93270
-                1099762b37f43c4a3c20010a3d72e2f6
-                06be108d310e639f09ce7286800d9ef8
-                a1a40281cc5a7ea98d2adc7c7400c2fe
-                5a101552df4e3cccfd0cbf2ddf5dc677
-                9cbbc68fee0c3efe4ec22b83a2caa3e4
-                8e0809a0a750b73ccdcf3c79e6580c15
-                4f8a58f7f24335eec5c5eb5e0cf01dcf
-                4439424095fceb077f66ded5bec73b27
-                c5b9f64a2a9af2f07c05e99e5cf80f00
-                252e39db32f6c19674f190c9fbc506d8
-                26857713afd2ca6bb85cd8c107347552
-                f30575a5417816ab4db3f603f2df56fb
-                c413e7d0acd8bdd81352b2471fc1bc4f
-                1ef296fea1220403466b1afe78b94f7e
-                cf7cc62fb92be14f18c2192384ebceaf
-                8801afdf947f698ce9c6ceb696ed70e9
-                e87b0144417e8d7baf25eb5f70f09f01
-                6fc925b4db048ab8d8cb2a661ce3b57a
-                da67571f5dd546fc22cb1f97e0ebd1a6
-                5926b1234fd04f171cf469c76b884cf3
-                115cce6f792cc84e36da58960c5f1d76
-                0f32c12faef477e94c92eb75625b6a37
-                1efc72d60ca5e908b3a7dd69fef02491
-                50e3eebdfed39cbdc3ce9704882a2072
-                c75e13527b7a581a556168783dc1e975
-                45e31865ddc46b3c957835da252bb732
-                8d3ee2062445dfb85ef8c35f8e1f3371
-                af34023cef626e0af1e0bc017351aae2
-                ab8f5c612ead0b729a1d059d02bfe18e
-                fa971b7300e882360a93b025ff97e9e0
-                eec0f3f3f13039a17f88b0cf808f4884
-                31606cb13f9241f40f44e537d302c64a
-                4f1f4ab949b9feefadcb71ab50ef27d6
-                d6ca8510f150c85fb525bf25703df720
-                9b6066f09c37280d59128d2f0f637c7d
-                7d7fad4ed1c1ea04e628d221e3d8db77
-                b7c878c9411cafc5071a34a00f4cf077
-                38912753dfce48f07576f0d4f94f42c6
-                d76f7ce973e9367095ba7e9a3649b7f4
-                61d9f9ac1332a4d1044c96aefee67676
-                401b64457c54d65fef6500c59cdfb69a
-                f7b6dddfcb0f086278dd8ad0686078df
-                b0f3f79cd893d314168648499898fbc0
-                ced5f95b74e8ff14d735cdea968bee74
+                d32b56671d7eb98833c49b433c272586bc4a1c8a8970528ffa04b966f9426eb9
+                965a25bfd37f196b9073f3d4a232feb69128ec45146f86292f9dff9610a7bf95
+                a64c7f60f6261a62043f86c70324b7707f5b4a8a6e19c114c7be866d488778a0
+                e05fd5c6509a6e61d559cf1a77a970de927d60c70d3de31a7fa0100994e162a2
+                582e8ff1b10cd99d4e8e413ef469559f7d7ed12c838342f9b9c96b83a4943d16
+                81d84b15357ff48ca579f19f5e71f18466f2bbef4bf660c2518eb20de2f66e3b
+                14784269d7d876f5d35d3fbfc7039a462c716bb9f6891a7f41ad133e9e1f6d95
+                60b960e7777c52f060492f2d7c660e1471e07e72655562035abc9a701b473ecb
+                c3943c6b9c4f2405a3cb8bf8a691ca51d3f6ad2f428bab6f3a30f55dd9625563
+                f0a75ee390e385e3ae0b906961ecf41ae073a0590c2eb6204f44831c26dd768c
+                35b167b28ce8dc988a3748255230cef99ebf14e730632f27414489808afab1d1
+                e783ed04516de012498682212b07810579b250365941bcc98142da13609e9768
+                aaf65de7620dabec29eb82a17fde35af15ad238c73f81bdb8dec2fc0e7f93270
+                1099762b37f43c4a3c20010a3d72e2f606be108d310e639f09ce7286800d9ef8
+                a1a40281cc5a7ea98d2adc7c7400c2fe5a101552df4e3cccfd0cbf2ddf5dc677
+                9cbbc68fee0c3efe4ec22b83a2caa3e48e0809a0a750b73ccdcf3c79e6580c15
+                4f8a58f7f24335eec5c5eb5e0cf01dcf4439424095fceb077f66ded5bec73b27
+                c5b9f64a2a9af2f07c05e99e5cf80f00252e39db32f6c19674f190c9fbc506d8
+                26857713afd2ca6bb85cd8c107347552f30575a5417816ab4db3f603f2df56fb
+                c413e7d0acd8bdd81352b2471fc1bc4f1ef296fea1220403466b1afe78b94f7e
+                cf7cc62fb92be14f18c2192384ebceaf8801afdf947f698ce9c6ceb696ed70e9
+                e87b0144417e8d7baf25eb5f70f09f016fc925b4db048ab8d8cb2a661ce3b57a
+                da67571f5dd546fc22cb1f97e0ebd1a65926b1234fd04f171cf469c76b884cf3
+                115cce6f792cc84e36da58960c5f1d760f32c12faef477e94c92eb75625b6a37
+                1efc72d60ca5e908b3a7dd69fef0249150e3eebdfed39cbdc3ce9704882a2072
+                c75e13527b7a581a556168783dc1e97545e31865ddc46b3c957835da252bb732
+                8d3ee2062445dfb85ef8c35f8e1f3371af34023cef626e0af1e0bc017351aae2
+                ab8f5c612ead0b729a1d059d02bfe18efa971b7300e882360a93b025ff97e9e0
+                eec0f3f3f13039a17f88b0cf808f488431606cb13f9241f40f44e537d302c64a
+                4f1f4ab949b9feefadcb71ab50ef27d6d6ca8510f150c85fb525bf25703df720
+                9b6066f09c37280d59128d2f0f637c7d7d7fad4ed1c1ea04e628d221e3d8db77
+                b7c878c9411cafc5071a34a00f4cf07738912753dfce48f07576f0d4f94f42c6
+                d76f7ce973e9367095ba7e9a3649b7f461d9f9ac1332a4d1044c96aefee67676
+                401b64457c54d65fef6500c59cdfb69af7b6dddfcb0f086278dd8ad0686078df
+                b0f3f79cd893d314168648499898fbc0ced5f95b74e8ff14d735cdea968bee74
                 00000005
-                d8b8112f9200a5e50c4a262165bd342c
-                d800b8496810bc716277435ac376728d
-                129ac6eda839a6f357b5a04387c5ce97
-                382a78f2a4372917eefcbf93f63bb591
-                12f5dbe400bd49e4501e859f885bf073
-                6e90a509b30a26bfac8c17b5991c157e
-                b5971115aa39efd8d564a6b90282c316
-                8af2d30ef89d51bf14654510a12b8a14
-                4cca1848cf7da59cc2b3d9d0692dd2a2
-                0ba3863480e25b1b85ee860c62bf5136
+                d8b8112f9200a5e50c4a262165bd342cd800b8496810bc716277435ac376728d
+                129ac6eda839a6f357b5a04387c5ce97382a78f2a4372917eefcbf93f63bb591
+                12f5dbe400bd49e4501e859f885bf0736e90a509b30a26bfac8c17b5991c157e
+                b5971115aa39efd8d564a6b90282c3168af2d30ef89d51bf14654510a12b8a14
+                4cca1848cf7da59cc2b3d9d0692dd2a20ba3863480e25b1b85ee860c62bf5136
                 00000005
                 00000004
-                d2f14ff6346af964569f7d6cb880a1b6
-                6c5004917da6eafe4d9ef6c6407b3db0
+                d2f14ff6346af964569f7d6cb880a1b66c5004917da6eafe4d9ef6c6407b3db0
                 e5485b122d9ebe15cda93cfec582d7ab
                 0000000a
                 00000004
-                0703c491e7558b35011ece3592eaa5da
-                4d918786771233e8353bc4f62323185c
-                95cae05b899e35dffd71705470620998
-                8ebfdf6e37960bb5c38d7657e8bffeef
-                9bc042da4b4525650485c66d0ce19b31
-                7587c6ba4bffcc428e25d08931e72dfb
-                6a120c5612344258b85efdb7db1db9e1
-                865a73caf96557eb39ed3e3f426933ac
-                9eeddb03a1d2374af7bf771855774562
-                37f9de2d60113c23f846df26fa942008
-                a698994c0827d90e86d43e0df7f4bfcd
-                b09b86a373b98288b7094ad81a0185ac
-                100e4f2c5fc38c003c1ab6fea479eb2f
-                5ebe48f584d7159b8ada03586e65ad9c
-                969f6aecbfe44cf356888a7b15a3ff07
-                4f771760b26f9c04884ee1faa329fbf4
-                e61af23aee7fa5d4d9a5dfcf43c4c26c
-                e8aea2ce8a2990d7ba7b57108b47dabf
-                beadb2b25b3cacc1ac0cef346cbb90fb
-                044beee4fac2603a442bdf7e507243b7
-                319c9944b1586e899d431c7f91bcccc8
-                690dbf59b28386b2315f3d36ef2eaa3c
-                f30b2b51f48b71b003dfb08249484201
-                043f65f5a3ef6bbd61ddfee81aca9ce6
-                0081262a00000480dcbc9a3da6fbef5c
-                1c0a55e48a0e729f9184fcb1407c3152
-                9db268f6fe50032a363c9801306837fa
-                fabdf957fd97eafc80dbd165e435d0e2
-                dfd836a28b354023924b6fb7e48bc0b3
-                ed95eea64c2d402f4d734c8dc26f3ac5
-                91825daef01eae3c38e3328d00a77dc6
-                57034f287ccb0f0e1c9a7cbdc828f627
-                205e4737b84b58376551d44c12c3c215
-                c812a0970789c83de51d6ad787271963
-                327f0a5fbb6b5907dec02c9a90934af5
-                a1c63b72c82653605d1dcce51596b3c2
-                b45696689f2eb382007497557692caac
-                4d57b5de9f5569bc2ad0137fd47fb47e
-                664fcb6db4971f5b3e07aceda9ac130e
-                9f38182de994cff192ec0e82fd6d4cb7
-                f3fe00812589b7a7ce51544045643301
-                6b84a59bec6619a1c6c0b37dd1450ed4
-                f2d8b584410ceda8025f5d2d8dd0d217
-                6fc1cf2cc06fa8c82bed4d944e71339e
-                ce780fd025bd41ec34ebff9d4270a322
-                4e019fcb444474d482fd2dbe75efb203
-                89cc10cd600abb54c47ede93e08c114e
-                db04117d714dc1d525e11bed8756192f
-                929d15462b939ff3f52f2252da2ed64d
-                8fae88818b1efa2c7b08c8794fb1b214
-                aa233db3162833141ea4383f1a6f120b
-                e1db82ce3630b3429114463157a64e91
-                234d475e2f79cbf05e4db6a9407d72c6
-                bff7d1198b5c4d6aad2831db61274993
-                715a0182c7dc8089e32c8531deed4f74
-                31c07c02195eba2ef91efb5613c37af7
-                ae0c066babc69369700e1dd26eddc0d2
-                16c781d56e4ce47e3303fa73007ff7b9
-                49ef23be2aa4dbf25206fe45c20dd888
-                395b2526391a724996a44156beac8082
-                12858792bf8e74cba49dee5e8812e019
-                da87454bff9e847ed83db07af3137430
-                82f880a278f682c2bd0ad6887cb59f65
-                2e155987d61bbf6a88d36ee93b6072e6
-                656d9ccbaae3d655852e38deb3a2dcf8
-                058dc9fb6f2ab3d3b3539eb77b248a66
-                1091d05eb6e2f297774fe6053598457c
-                c61908318de4b826f0fc86d4bb117d33
-                e865aa805009cc2918d9c2f840c4da43
-                a703ad9f5b5806163d7161696b5a0adc
+                0703c491e7558b35011ece3592eaa5da4d918786771233e8353bc4f62323185c
+                95cae05b899e35dffd717054706209988ebfdf6e37960bb5c38d7657e8bffeef
+                9bc042da4b4525650485c66d0ce19b317587c6ba4bffcc428e25d08931e72dfb
+                6a120c5612344258b85efdb7db1db9e1865a73caf96557eb39ed3e3f426933ac
+                9eeddb03a1d2374af7bf77185577456237f9de2d60113c23f846df26fa942008
+                a698994c0827d90e86d43e0df7f4bfcdb09b86a373b98288b7094ad81a0185ac
+                100e4f2c5fc38c003c1ab6fea479eb2f5ebe48f584d7159b8ada03586e65ad9c
+                969f6aecbfe44cf356888a7b15a3ff074f771760b26f9c04884ee1faa329fbf4
+                e61af23aee7fa5d4d9a5dfcf43c4c26ce8aea2ce8a2990d7ba7b57108b47dabf
+                beadb2b25b3cacc1ac0cef346cbb90fb044beee4fac2603a442bdf7e507243b7
+                319c9944b1586e899d431c7f91bcccc8690dbf59b28386b2315f3d36ef2eaa3c
+                f30b2b51f48b71b003dfb08249484201043f65f5a3ef6bbd61ddfee81aca9ce6
+                0081262a00000480dcbc9a3da6fbef5c1c0a55e48a0e729f9184fcb1407c3152
+                9db268f6fe50032a363c9801306837fafabdf957fd97eafc80dbd165e435d0e2
+                dfd836a28b354023924b6fb7e48bc0b3ed95eea64c2d402f4d734c8dc26f3ac5
+                91825daef01eae3c38e3328d00a77dc657034f287ccb0f0e1c9a7cbdc828f627
+                205e4737b84b58376551d44c12c3c215c812a0970789c83de51d6ad787271963
+                327f0a5fbb6b5907dec02c9a90934af5a1c63b72c82653605d1dcce51596b3c2
+                b45696689f2eb382007497557692caac4d57b5de9f5569bc2ad0137fd47fb47e
+                664fcb6db4971f5b3e07aceda9ac130e9f38182de994cff192ec0e82fd6d4cb7
+                f3fe00812589b7a7ce515440456433016b84a59bec6619a1c6c0b37dd1450ed4
+                f2d8b584410ceda8025f5d2d8dd0d2176fc1cf2cc06fa8c82bed4d944e71339e
+                ce780fd025bd41ec34ebff9d4270a3224e019fcb444474d482fd2dbe75efb203
+                89cc10cd600abb54c47ede93e08c114edb04117d714dc1d525e11bed8756192f
+                929d15462b939ff3f52f2252da2ed64d8fae88818b1efa2c7b08c8794fb1b214
+                aa233db3162833141ea4383f1a6f120be1db82ce3630b3429114463157a64e91
+                234d475e2f79cbf05e4db6a9407d72c6bff7d1198b5c4d6aad2831db61274993
+                715a0182c7dc8089e32c8531deed4f7431c07c02195eba2ef91efb5613c37af7
+                ae0c066babc69369700e1dd26eddc0d216c781d56e4ce47e3303fa73007ff7b9
+                49ef23be2aa4dbf25206fe45c20dd888395b2526391a724996a44156beac8082
+                12858792bf8e74cba49dee5e8812e019da87454bff9e847ed83db07af3137430
+                82f880a278f682c2bd0ad6887cb59f652e155987d61bbf6a88d36ee93b6072e6
+                656d9ccbaae3d655852e38deb3a2dcf8058dc9fb6f2ab3d3b3539eb77b248a66
+                1091d05eb6e2f297774fe6053598457cc61908318de4b826f0fc86d4bb117d33
+                e865aa805009cc2918d9c2f840c4da43a703ad9f5b5806163d7161696b5a0adc
                 00000005
-                d5c0d1bebb06048ed6fe2ef2c6cef305
-                b3ed633941ebc8b3bec9738754cddd60
-                e1920ada52f43d055b5031cee6192520
-                d6a5115514851ce7fd448d4a39fae2ab
-                2335b525f484e9b40d6a4a969394843b
-                dcf6d14c48e8015e08ab92662c05c6e9
-                f90b65a7a6201689999f32bfd368e5e3
-                ec9cb70ac7b8399003f175c40885081a
-                09ab3034911fe125631051df0408b394
-                6b0bde790911e8978ba07dd56c73e7ee
-                """);
+                d5c0d1bebb06048ed6fe2ef2c6cef305b3ed633941ebc8b3bec9738754cddd60
+                e1920ada52f43d055b5031cee6192520d6a5115514851ce7fd448d4a39fae2ab
+                2335b525f484e9b40d6a4a969394843bdcf6d14c48e8015e08ab92662c05c6e9
+                f90b65a7a6201689999f32bfd368e5e3ec9cb70ac7b8399003f175c40885081a
+                09ab3034911fe125631051df0408b3946b0bde790911e8978ba07dd56c73e7ee
+                """)
+        ),
 
-        try {
-            return verify(pk, sig, msg);
-        } catch (SignatureException ex) {
-            return true;
-        }
-    }
-
-    static boolean testBadSignature04() throws Exception {
-        var pk = decode("""
+        // Test Case #17
+        // SignatureException
+        // Invalid key in HSS signature
+        new TestCase(
+            true,  // exception expected
+            false, // expected result
+            decode("""
                 00000002
                 00000005
                 00000004
-                61a5d57d37f5e46bfb7520806b07a1b8
-                50650e3b31fe4a773ea29a07f09cf2ea
-                30e579f0df58ef8e298da0434cb2b878
-                """);
-        var msg = decode("""
-                54686520706f77657273206e6f742064
-                656c65676174656420746f2074686520
-                556e6974656420537461746573206279
-                2074686520436f6e737469747574696f
-                6e2c206e6f722070726f686962697465
-                6420627920697420746f207468652053
-                74617465732c20617265207265736572
-                76656420746f20746865205374617465
-                7320726573706563746976656c792c20
-                6f7220746f207468652070656f706c65
-                2e0a""");
-        var sig = decode("""
+                61a5d57d37f5e46bfb7520806b07a1b850650e3b31fe4a773ea29a07f09cf2ea
+                30e579f0df58ef8e298da0434cb2b878"""),
+            decode("""
+                54686520706f77657273206e6f742064656c65676174656420746f2074686520
+                556e69746564205374617465732062792074686520436f6e737469747574696f
+                6e2c206e6f722070726f6869626974656420627920697420746f207468652053
+                74617465732c2061726520726573657276656420746f20746865205374617465
+                7320726573706563746976656c792c206f7220746f207468652070656f706c65
+                2e0a"""),
+            decode("""
                 00000001
                 00000005
                 00000004
-                d32b56671d7eb98833c49b433c272586
-                bc4a1c8a8970528ffa04b966f9426eb9
-                965a25bfd37f196b9073f3d4a232feb6
-                9128ec45146f86292f9dff9610a7bf95
-                a64c7f60f6261a62043f86c70324b770
-                7f5b4a8a6e19c114c7be866d488778a0
-                e05fd5c6509a6e61d559cf1a77a970de
-                927d60c70d3de31a7fa0100994e162a2
-                582e8ff1b10cd99d4e8e413ef469559f
-                7d7ed12c838342f9b9c96b83a4943d16
-                81d84b15357ff48ca579f19f5e71f184
-                66f2bbef4bf660c2518eb20de2f66e3b
-                14784269d7d876f5d35d3fbfc7039a46
-                2c716bb9f6891a7f41ad133e9e1f6d95
-                60b960e7777c52f060492f2d7c660e14
-                71e07e72655562035abc9a701b473ecb
-                c3943c6b9c4f2405a3cb8bf8a691ca51
-                d3f6ad2f428bab6f3a30f55dd9625563
-                f0a75ee390e385e3ae0b906961ecf41a
-                e073a0590c2eb6204f44831c26dd768c
-                35b167b28ce8dc988a3748255230cef9
-                9ebf14e730632f27414489808afab1d1
-                e783ed04516de012498682212b078105
-                79b250365941bcc98142da13609e9768
-                aaf65de7620dabec29eb82a17fde35af
-                15ad238c73f81bdb8dec2fc0e7f93270
-                1099762b37f43c4a3c20010a3d72e2f6
-                06be108d310e639f09ce7286800d9ef8
-                a1a40281cc5a7ea98d2adc7c7400c2fe
-                5a101552df4e3cccfd0cbf2ddf5dc677
-                9cbbc68fee0c3efe4ec22b83a2caa3e4
-                8e0809a0a750b73ccdcf3c79e6580c15
-                4f8a58f7f24335eec5c5eb5e0cf01dcf
-                4439424095fceb077f66ded5bec73b27
-                c5b9f64a2a9af2f07c05e99e5cf80f00
-                252e39db32f6c19674f190c9fbc506d8
-                26857713afd2ca6bb85cd8c107347552
-                f30575a5417816ab4db3f603f2df56fb
-                c413e7d0acd8bdd81352b2471fc1bc4f
-                1ef296fea1220403466b1afe78b94f7e
-                cf7cc62fb92be14f18c2192384ebceaf
-                8801afdf947f698ce9c6ceb696ed70e9
-                e87b0144417e8d7baf25eb5f70f09f01
-                6fc925b4db048ab8d8cb2a661ce3b57a
-                da67571f5dd546fc22cb1f97e0ebd1a6
-                5926b1234fd04f171cf469c76b884cf3
-                115cce6f792cc84e36da58960c5f1d76
-                0f32c12faef477e94c92eb75625b6a37
-                1efc72d60ca5e908b3a7dd69fef02491
-                50e3eebdfed39cbdc3ce9704882a2072
-                c75e13527b7a581a556168783dc1e975
-                45e31865ddc46b3c957835da252bb732
-                8d3ee2062445dfb85ef8c35f8e1f3371
-                af34023cef626e0af1e0bc017351aae2
-                ab8f5c612ead0b729a1d059d02bfe18e
-                fa971b7300e882360a93b025ff97e9e0
-                eec0f3f3f13039a17f88b0cf808f4884
-                31606cb13f9241f40f44e537d302c64a
-                4f1f4ab949b9feefadcb71ab50ef27d6
-                d6ca8510f150c85fb525bf25703df720
-                9b6066f09c37280d59128d2f0f637c7d
-                7d7fad4ed1c1ea04e628d221e3d8db77
-                b7c878c9411cafc5071a34a00f4cf077
-                38912753dfce48f07576f0d4f94f42c6
-                d76f7ce973e9367095ba7e9a3649b7f4
-                61d9f9ac1332a4d1044c96aefee67676
-                401b64457c54d65fef6500c59cdfb69a
-                f7b6dddfcb0f086278dd8ad0686078df
-                b0f3f79cd893d314168648499898fbc0
-                ced5f95b74e8ff14d735cdea968bee74
+                d32b56671d7eb98833c49b433c272586bc4a1c8a8970528ffa04b966f9426eb9
+                965a25bfd37f196b9073f3d4a232feb69128ec45146f86292f9dff9610a7bf95
+                a64c7f60f6261a62043f86c70324b7707f5b4a8a6e19c114c7be866d488778a0
+                e05fd5c6509a6e61d559cf1a77a970de927d60c70d3de31a7fa0100994e162a2
+                582e8ff1b10cd99d4e8e413ef469559f7d7ed12c838342f9b9c96b83a4943d16
+                81d84b15357ff48ca579f19f5e71f18466f2bbef4bf660c2518eb20de2f66e3b
+                14784269d7d876f5d35d3fbfc7039a462c716bb9f6891a7f41ad133e9e1f6d95
+                60b960e7777c52f060492f2d7c660e1471e07e72655562035abc9a701b473ecb
+                c3943c6b9c4f2405a3cb8bf8a691ca51d3f6ad2f428bab6f3a30f55dd9625563
+                f0a75ee390e385e3ae0b906961ecf41ae073a0590c2eb6204f44831c26dd768c
+                35b167b28ce8dc988a3748255230cef99ebf14e730632f27414489808afab1d1
+                e783ed04516de012498682212b07810579b250365941bcc98142da13609e9768
+                aaf65de7620dabec29eb82a17fde35af15ad238c73f81bdb8dec2fc0e7f93270
+                1099762b37f43c4a3c20010a3d72e2f606be108d310e639f09ce7286800d9ef8
+                a1a40281cc5a7ea98d2adc7c7400c2fe5a101552df4e3cccfd0cbf2ddf5dc677
+                9cbbc68fee0c3efe4ec22b83a2caa3e48e0809a0a750b73ccdcf3c79e6580c15
+                4f8a58f7f24335eec5c5eb5e0cf01dcf4439424095fceb077f66ded5bec73b27
+                c5b9f64a2a9af2f07c05e99e5cf80f00252e39db32f6c19674f190c9fbc506d8
+                26857713afd2ca6bb85cd8c107347552f30575a5417816ab4db3f603f2df56fb
+                c413e7d0acd8bdd81352b2471fc1bc4f1ef296fea1220403466b1afe78b94f7e
+                cf7cc62fb92be14f18c2192384ebceaf8801afdf947f698ce9c6ceb696ed70e9
+                e87b0144417e8d7baf25eb5f70f09f016fc925b4db048ab8d8cb2a661ce3b57a
+                da67571f5dd546fc22cb1f97e0ebd1a65926b1234fd04f171cf469c76b884cf3
+                115cce6f792cc84e36da58960c5f1d760f32c12faef477e94c92eb75625b6a37
+                1efc72d60ca5e908b3a7dd69fef0249150e3eebdfed39cbdc3ce9704882a2072
+                c75e13527b7a581a556168783dc1e97545e31865ddc46b3c957835da252bb732
+                8d3ee2062445dfb85ef8c35f8e1f3371af34023cef626e0af1e0bc017351aae2
+                ab8f5c612ead0b729a1d059d02bfe18efa971b7300e882360a93b025ff97e9e0
+                eec0f3f3f13039a17f88b0cf808f488431606cb13f9241f40f44e537d302c64a
+                4f1f4ab949b9feefadcb71ab50ef27d6d6ca8510f150c85fb525bf25703df720
+                9b6066f09c37280d59128d2f0f637c7d7d7fad4ed1c1ea04e628d221e3d8db77
+                b7c878c9411cafc5071a34a00f4cf07738912753dfce48f07576f0d4f94f42c6
+                d76f7ce973e9367095ba7e9a3649b7f461d9f9ac1332a4d1044c96aefee67676
+                401b64457c54d65fef6500c59cdfb69af7b6dddfcb0f086278dd8ad0686078df
+                b0f3f79cd893d314168648499898fbc0ced5f95b74e8ff14d735cdea968bee74
                 00000006 // changed 5 to 6
-                d8b8112f9200a5e50c4a262165bd342c
-                d800b8496810bc716277435ac376728d
-                129ac6eda839a6f357b5a04387c5ce97
-                382a78f2a4372917eefcbf93f63bb591
-                12f5dbe400bd49e4501e859f885bf073
-                6e90a509b30a26bfac8c17b5991c157e
-                b5971115aa39efd8d564a6b90282c316
-                8af2d30ef89d51bf14654510a12b8a14
-                4cca1848cf7da59cc2b3d9d0692dd2a2
-                0ba3863480e25b1b85ee860c62bf5136
+                d8b8112f9200a5e50c4a262165bd342cd800b8496810bc716277435ac376728d
+                129ac6eda839a6f357b5a04387c5ce97382a78f2a4372917eefcbf93f63bb591
+                12f5dbe400bd49e4501e859f885bf0736e90a509b30a26bfac8c17b5991c157e
+                b5971115aa39efd8d564a6b90282c3168af2d30ef89d51bf14654510a12b8a14
+                4cca1848cf7da59cc2b3d9d0692dd2a20ba3863480e25b1b85ee860c62bf5136
                 00000005
                 00000004
-                d2f14ff6346af964569f7d6cb880a1b6
-                6c5004917da6eafe4d9ef6c6407b3db0
+                d2f14ff6346af964569f7d6cb880a1b66c5004917da6eafe4d9ef6c6407b3db0
                 e5485b122d9ebe15cda93cfec582d7ab
                 0000000a
                 00000004
-                0703c491e7558b35011ece3592eaa5da
-                4d918786771233e8353bc4f62323185c
-                95cae05b899e35dffd71705470620998
-                8ebfdf6e37960bb5c38d7657e8bffeef
-                9bc042da4b4525650485c66d0ce19b31
-                7587c6ba4bffcc428e25d08931e72dfb
-                6a120c5612344258b85efdb7db1db9e1
-                865a73caf96557eb39ed3e3f426933ac
-                9eeddb03a1d2374af7bf771855774562
-                37f9de2d60113c23f846df26fa942008
-                a698994c0827d90e86d43e0df7f4bfcd
-                b09b86a373b98288b7094ad81a0185ac
-                100e4f2c5fc38c003c1ab6fea479eb2f
-                5ebe48f584d7159b8ada03586e65ad9c
-                969f6aecbfe44cf356888a7b15a3ff07
-                4f771760b26f9c04884ee1faa329fbf4
-                e61af23aee7fa5d4d9a5dfcf43c4c26c
-                e8aea2ce8a2990d7ba7b57108b47dabf
-                beadb2b25b3cacc1ac0cef346cbb90fb
-                044beee4fac2603a442bdf7e507243b7
-                319c9944b1586e899d431c7f91bcccc8
-                690dbf59b28386b2315f3d36ef2eaa3c
-                f30b2b51f48b71b003dfb08249484201
-                043f65f5a3ef6bbd61ddfee81aca9ce6
-                0081262a00000480dcbc9a3da6fbef5c
-                1c0a55e48a0e729f9184fcb1407c3152
-                9db268f6fe50032a363c9801306837fa
-                fabdf957fd97eafc80dbd165e435d0e2
-                dfd836a28b354023924b6fb7e48bc0b3
-                ed95eea64c2d402f4d734c8dc26f3ac5
-                91825daef01eae3c38e3328d00a77dc6
-                57034f287ccb0f0e1c9a7cbdc828f627
-                205e4737b84b58376551d44c12c3c215
-                c812a0970789c83de51d6ad787271963
-                327f0a5fbb6b5907dec02c9a90934af5
-                a1c63b72c82653605d1dcce51596b3c2
-                b45696689f2eb382007497557692caac
-                4d57b5de9f5569bc2ad0137fd47fb47e
-                664fcb6db4971f5b3e07aceda9ac130e
-                9f38182de994cff192ec0e82fd6d4cb7
-                f3fe00812589b7a7ce51544045643301
-                6b84a59bec6619a1c6c0b37dd1450ed4
-                f2d8b584410ceda8025f5d2d8dd0d217
-                6fc1cf2cc06fa8c82bed4d944e71339e
-                ce780fd025bd41ec34ebff9d4270a322
-                4e019fcb444474d482fd2dbe75efb203
-                89cc10cd600abb54c47ede93e08c114e
-                db04117d714dc1d525e11bed8756192f
-                929d15462b939ff3f52f2252da2ed64d
-                8fae88818b1efa2c7b08c8794fb1b214
-                aa233db3162833141ea4383f1a6f120b
-                e1db82ce3630b3429114463157a64e91
-                234d475e2f79cbf05e4db6a9407d72c6
-                bff7d1198b5c4d6aad2831db61274993
-                715a0182c7dc8089e32c8531deed4f74
-                31c07c02195eba2ef91efb5613c37af7
-                ae0c066babc69369700e1dd26eddc0d2
-                16c781d56e4ce47e3303fa73007ff7b9
-                49ef23be2aa4dbf25206fe45c20dd888
-                395b2526391a724996a44156beac8082
-                12858792bf8e74cba49dee5e8812e019
-                da87454bff9e847ed83db07af3137430
-                82f880a278f682c2bd0ad6887cb59f65
-                2e155987d61bbf6a88d36ee93b6072e6
-                656d9ccbaae3d655852e38deb3a2dcf8
-                058dc9fb6f2ab3d3b3539eb77b248a66
-                1091d05eb6e2f297774fe6053598457c
-                c61908318de4b826f0fc86d4bb117d33
-                e865aa805009cc2918d9c2f840c4da43
-                a703ad9f5b5806163d7161696b5a0adc
+                0703c491e7558b35011ece3592eaa5da4d918786771233e8353bc4f62323185c
+                95cae05b899e35dffd717054706209988ebfdf6e37960bb5c38d7657e8bffeef
+                9bc042da4b4525650485c66d0ce19b317587c6ba4bffcc428e25d08931e72dfb
+                6a120c5612344258b85efdb7db1db9e1865a73caf96557eb39ed3e3f426933ac
+                9eeddb03a1d2374af7bf77185577456237f9de2d60113c23f846df26fa942008
+                a698994c0827d90e86d43e0df7f4bfcdb09b86a373b98288b7094ad81a0185ac
+                100e4f2c5fc38c003c1ab6fea479eb2f5ebe48f584d7159b8ada03586e65ad9c
+                969f6aecbfe44cf356888a7b15a3ff074f771760b26f9c04884ee1faa329fbf4
+                e61af23aee7fa5d4d9a5dfcf43c4c26ce8aea2ce8a2990d7ba7b57108b47dabf
+                beadb2b25b3cacc1ac0cef346cbb90fb044beee4fac2603a442bdf7e507243b7
+                319c9944b1586e899d431c7f91bcccc8690dbf59b28386b2315f3d36ef2eaa3c
+                f30b2b51f48b71b003dfb08249484201043f65f5a3ef6bbd61ddfee81aca9ce6
+                0081262a00000480dcbc9a3da6fbef5c1c0a55e48a0e729f9184fcb1407c3152
+                9db268f6fe50032a363c9801306837fafabdf957fd97eafc80dbd165e435d0e2
+                dfd836a28b354023924b6fb7e48bc0b3ed95eea64c2d402f4d734c8dc26f3ac5
+                91825daef01eae3c38e3328d00a77dc657034f287ccb0f0e1c9a7cbdc828f627
+                205e4737b84b58376551d44c12c3c215c812a0970789c83de51d6ad787271963
+                327f0a5fbb6b5907dec02c9a90934af5a1c63b72c82653605d1dcce51596b3c2
+                b45696689f2eb382007497557692caac4d57b5de9f5569bc2ad0137fd47fb47e
+                664fcb6db4971f5b3e07aceda9ac130e9f38182de994cff192ec0e82fd6d4cb7
+                f3fe00812589b7a7ce515440456433016b84a59bec6619a1c6c0b37dd1450ed4
+                f2d8b584410ceda8025f5d2d8dd0d2176fc1cf2cc06fa8c82bed4d944e71339e
+                ce780fd025bd41ec34ebff9d4270a3224e019fcb444474d482fd2dbe75efb203
+                89cc10cd600abb54c47ede93e08c114edb04117d714dc1d525e11bed8756192f
+                929d15462b939ff3f52f2252da2ed64d8fae88818b1efa2c7b08c8794fb1b214
+                aa233db3162833141ea4383f1a6f120be1db82ce3630b3429114463157a64e91
+                234d475e2f79cbf05e4db6a9407d72c6bff7d1198b5c4d6aad2831db61274993
+                715a0182c7dc8089e32c8531deed4f7431c07c02195eba2ef91efb5613c37af7
+                ae0c066babc69369700e1dd26eddc0d216c781d56e4ce47e3303fa73007ff7b9
+                49ef23be2aa4dbf25206fe45c20dd888395b2526391a724996a44156beac8082
+                12858792bf8e74cba49dee5e8812e019da87454bff9e847ed83db07af3137430
+                82f880a278f682c2bd0ad6887cb59f652e155987d61bbf6a88d36ee93b6072e6
+                656d9ccbaae3d655852e38deb3a2dcf8058dc9fb6f2ab3d3b3539eb77b248a66
+                1091d05eb6e2f297774fe6053598457cc61908318de4b826f0fc86d4bb117d33
+                e865aa805009cc2918d9c2f840c4da43a703ad9f5b5806163d7161696b5a0adc
                 00000005
-                d5c0d1bebb06048ed6fe2ef2c6cef305
-                b3ed633941ebc8b3bec9738754cddd60
-                e1920ada52f43d055b5031cee6192520
-                d6a5115514851ce7fd448d4a39fae2ab
-                2335b525f484e9b40d6a4a969394843b
-                dcf6d14c48e8015e08ab92662c05c6e9
-                f90b65a7a6201689999f32bfd368e5e3
-                ec9cb70ac7b8399003f175c40885081a
-                09ab3034911fe125631051df0408b394
-                6b0bde790911e8978ba07dd56c73e7ee
-                """);
+                d5c0d1bebb06048ed6fe2ef2c6cef305b3ed633941ebc8b3bec9738754cddd60
+                e1920ada52f43d055b5031cee6192520d6a5115514851ce7fd448d4a39fae2ab
+                2335b525f484e9b40d6a4a969394843bdcf6d14c48e8015e08ab92662c05c6e9
+                f90b65a7a6201689999f32bfd368e5e3ec9cb70ac7b8399003f175c40885081a
+                09ab3034911fe125631051df0408b3946b0bde790911e8978ba07dd56c73e7ee
+                """)
+        ),
 
-        try {
-            verify(pk, sig, msg);
-            return true;
-        } catch (SignatureException ex) {
-            // Invalid key in HSS signature
-            return false;
-        }
-    }
-
-    static boolean testBadSignature05() throws Exception {
-        var pk = decode("""
+        // Test Case #18
+        // SignatureException
+        // LMS signature is too short
+        new TestCase(
+            true,  // exception expected
+            false, // expected result
+            decode("""
                 00000002
                 00000005
                 00000004
-                61a5d57d37f5e46bfb7520806b07a1b8
-                50650e3b31fe4a773ea29a07f09cf2ea
-                30e579f0df58ef8e298da0434cb2b878
-                """);
-        var msg = decode("""
-                54686520706f77657273206e6f742064
-                656c65676174656420746f2074686520
-                556e6974656420537461746573206279
-                2074686520436f6e737469747574696f
-                6e2c206e6f722070726f686962697465
-                6420627920697420746f207468652053
-                74617465732c20617265207265736572
-                76656420746f20746865205374617465
-                7320726573706563746976656c792c20
-                6f7220746f207468652070656f706c65
-                2e0a""");
-        var sig = decode("""
+                61a5d57d37f5e46bfb7520806b07a1b850650e3b31fe4a773ea29a07f09cf2ea
+                30e579f0df58ef8e298da0434cb2b878"""),
+            decode("""
+                54686520706f77657273206e6f742064656c65676174656420746f2074686520
+                556e69746564205374617465732062792074686520436f6e737469747574696f
+                6e2c206e6f722070726f6869626974656420627920697420746f207468652053
+                74617465732c2061726520726573657276656420746f20746865205374617465
+                7320726573706563746976656c792c206f7220746f207468652070656f706c65
+                2e0a"""),
+            decode("""
                 00000001
                 00000005
                 00000004
-                d32b56671d7eb98833c49b433c272586
-                bc4a1c8a8970528ffa04b966f9426eb9
-                965a25bfd37f196b9073f3d4a232feb6
                 // very short
-                """);
+                d32b56671d7eb98833c49b433c272586bc4a1c8a8970528ffa04b966f9426eb9
+                965a25bfd37f196b9073f3d4a232feb6""")
+        ),
 
-        try {
-            verify(pk, sig, msg);
-            return true;
-        } catch (SignatureException ex) {
-            // LMS signature is too short
-            return false;
-        }
-    }
-
-    static boolean testBadSignature06() throws Exception {
-        var pk = decode("""
+        // Test Case #19
+        // bad signature
+        new TestCase(
+            false, // exception expected
+            false, // expected result
+            decode("""
                 00000002
                 00000005
                 00000004
                 71a5d57d37f5e46bfb7520806b07a1b8 // 61 changed to 71
-                50650e3b31fe4a773ea29a07f09cf2ea
-                30e579f0df58ef8e298da0434cb2b878
-                """);
-        var msg = decode("""
-                54686520706f77657273206e6f742064
-                656c65676174656420746f2074686520
-                556e6974656420537461746573206279
-                2074686520436f6e737469747574696f
-                6e2c206e6f722070726f686962697465
-                6420627920697420746f207468652053
-                74617465732c20617265207265736572
-                76656420746f20746865205374617465
-                7320726573706563746976656c792c20
-                6f7220746f207468652070656f706c65
-                2e0a""");
-        var sig = decode("""
+                50650e3b31fe4a773ea29a07f09cf2ea30e579f0df58ef8e298da0434cb2b878
+                """),
+            decode("""
+                54686520706f77657273206e6f742064656c65676174656420746f2074686520
+                556e69746564205374617465732062792074686520436f6e737469747574696f
+                6e2c206e6f722070726f6869626974656420627920697420746f207468652053
+                74617465732c2061726520726573657276656420746f20746865205374617465
+                7320726573706563746976656c792c206f7220746f207468652070656f706c65
+                2e0a"""),
+            decode("""
                 00000001
                 00000005
                 00000004
-                d32b56671d7eb98833c49b433c272586
-                bc4a1c8a8970528ffa04b966f9426eb9
-                965a25bfd37f196b9073f3d4a232feb6
-                9128ec45146f86292f9dff9610a7bf95
-                a64c7f60f6261a62043f86c70324b770
-                7f5b4a8a6e19c114c7be866d488778a0
-                e05fd5c6509a6e61d559cf1a77a970de
-                927d60c70d3de31a7fa0100994e162a2
-                582e8ff1b10cd99d4e8e413ef469559f
-                7d7ed12c838342f9b9c96b83a4943d16
-                81d84b15357ff48ca579f19f5e71f184
-                66f2bbef4bf660c2518eb20de2f66e3b
-                14784269d7d876f5d35d3fbfc7039a46
-                2c716bb9f6891a7f41ad133e9e1f6d95
-                60b960e7777c52f060492f2d7c660e14
-                71e07e72655562035abc9a701b473ecb
-                c3943c6b9c4f2405a3cb8bf8a691ca51
-                d3f6ad2f428bab6f3a30f55dd9625563
-                f0a75ee390e385e3ae0b906961ecf41a
-                e073a0590c2eb6204f44831c26dd768c
-                35b167b28ce8dc988a3748255230cef9
-                9ebf14e730632f27414489808afab1d1
-                e783ed04516de012498682212b078105
-                79b250365941bcc98142da13609e9768
-                aaf65de7620dabec29eb82a17fde35af
-                15ad238c73f81bdb8dec2fc0e7f93270
-                1099762b37f43c4a3c20010a3d72e2f6
-                06be108d310e639f09ce7286800d9ef8
-                a1a40281cc5a7ea98d2adc7c7400c2fe
-                5a101552df4e3cccfd0cbf2ddf5dc677
-                9cbbc68fee0c3efe4ec22b83a2caa3e4
-                8e0809a0a750b73ccdcf3c79e6580c15
-                4f8a58f7f24335eec5c5eb5e0cf01dcf
-                4439424095fceb077f66ded5bec73b27
-                c5b9f64a2a9af2f07c05e99e5cf80f00
-                252e39db32f6c19674f190c9fbc506d8
-                26857713afd2ca6bb85cd8c107347552
-                f30575a5417816ab4db3f603f2df56fb
-                c413e7d0acd8bdd81352b2471fc1bc4f
-                1ef296fea1220403466b1afe78b94f7e
-                cf7cc62fb92be14f18c2192384ebceaf
-                8801afdf947f698ce9c6ceb696ed70e9
-                e87b0144417e8d7baf25eb5f70f09f01
-                6fc925b4db048ab8d8cb2a661ce3b57a
-                da67571f5dd546fc22cb1f97e0ebd1a6
-                5926b1234fd04f171cf469c76b884cf3
-                115cce6f792cc84e36da58960c5f1d76
-                0f32c12faef477e94c92eb75625b6a37
-                1efc72d60ca5e908b3a7dd69fef02491
-                50e3eebdfed39cbdc3ce9704882a2072
-                c75e13527b7a581a556168783dc1e975
-                45e31865ddc46b3c957835da252bb732
-                8d3ee2062445dfb85ef8c35f8e1f3371
-                af34023cef626e0af1e0bc017351aae2
-                ab8f5c612ead0b729a1d059d02bfe18e
-                fa971b7300e882360a93b025ff97e9e0
-                eec0f3f3f13039a17f88b0cf808f4884
-                31606cb13f9241f40f44e537d302c64a
-                4f1f4ab949b9feefadcb71ab50ef27d6
-                d6ca8510f150c85fb525bf25703df720
-                9b6066f09c37280d59128d2f0f637c7d
-                7d7fad4ed1c1ea04e628d221e3d8db77
-                b7c878c9411cafc5071a34a00f4cf077
-                38912753dfce48f07576f0d4f94f42c6
-                d76f7ce973e9367095ba7e9a3649b7f4
-                61d9f9ac1332a4d1044c96aefee67676
-                401b64457c54d65fef6500c59cdfb69a
-                f7b6dddfcb0f086278dd8ad0686078df
-                b0f3f79cd893d314168648499898fbc0
-                ced5f95b74e8ff14d735cdea968bee74
+                d32b56671d7eb98833c49b433c272586bc4a1c8a8970528ffa04b966f9426eb9
+                965a25bfd37f196b9073f3d4a232feb69128ec45146f86292f9dff9610a7bf95
+                a64c7f60f6261a62043f86c70324b7707f5b4a8a6e19c114c7be866d488778a0
+                e05fd5c6509a6e61d559cf1a77a970de927d60c70d3de31a7fa0100994e162a2
+                582e8ff1b10cd99d4e8e413ef469559f7d7ed12c838342f9b9c96b83a4943d16
+                81d84b15357ff48ca579f19f5e71f18466f2bbef4bf660c2518eb20de2f66e3b
+                14784269d7d876f5d35d3fbfc7039a462c716bb9f6891a7f41ad133e9e1f6d95
+                60b960e7777c52f060492f2d7c660e1471e07e72655562035abc9a701b473ecb
+                c3943c6b9c4f2405a3cb8bf8a691ca51d3f6ad2f428bab6f3a30f55dd9625563
+                f0a75ee390e385e3ae0b906961ecf41ae073a0590c2eb6204f44831c26dd768c
+                35b167b28ce8dc988a3748255230cef99ebf14e730632f27414489808afab1d1
+                e783ed04516de012498682212b07810579b250365941bcc98142da13609e9768
+                aaf65de7620dabec29eb82a17fde35af15ad238c73f81bdb8dec2fc0e7f93270
+                1099762b37f43c4a3c20010a3d72e2f606be108d310e639f09ce7286800d9ef8
+                a1a40281cc5a7ea98d2adc7c7400c2fe5a101552df4e3cccfd0cbf2ddf5dc677
+                9cbbc68fee0c3efe4ec22b83a2caa3e48e0809a0a750b73ccdcf3c79e6580c15
+                4f8a58f7f24335eec5c5eb5e0cf01dcf4439424095fceb077f66ded5bec73b27
+                c5b9f64a2a9af2f07c05e99e5cf80f00252e39db32f6c19674f190c9fbc506d8
+                26857713afd2ca6bb85cd8c107347552f30575a5417816ab4db3f603f2df56fb
+                c413e7d0acd8bdd81352b2471fc1bc4f1ef296fea1220403466b1afe78b94f7e
+                cf7cc62fb92be14f18c2192384ebceaf8801afdf947f698ce9c6ceb696ed70e9
+                e87b0144417e8d7baf25eb5f70f09f016fc925b4db048ab8d8cb2a661ce3b57a
+                da67571f5dd546fc22cb1f97e0ebd1a65926b1234fd04f171cf469c76b884cf3
+                115cce6f792cc84e36da58960c5f1d760f32c12faef477e94c92eb75625b6a37
+                1efc72d60ca5e908b3a7dd69fef0249150e3eebdfed39cbdc3ce9704882a2072
+                c75e13527b7a581a556168783dc1e97545e31865ddc46b3c957835da252bb732
+                8d3ee2062445dfb85ef8c35f8e1f3371af34023cef626e0af1e0bc017351aae2
+                ab8f5c612ead0b729a1d059d02bfe18efa971b7300e882360a93b025ff97e9e0
+                eec0f3f3f13039a17f88b0cf808f488431606cb13f9241f40f44e537d302c64a
+                4f1f4ab949b9feefadcb71ab50ef27d6d6ca8510f150c85fb525bf25703df720
+                9b6066f09c37280d59128d2f0f637c7d7d7fad4ed1c1ea04e628d221e3d8db77
+                b7c878c9411cafc5071a34a00f4cf07738912753dfce48f07576f0d4f94f42c6
+                d76f7ce973e9367095ba7e9a3649b7f461d9f9ac1332a4d1044c96aefee67676
+                401b64457c54d65fef6500c59cdfb69af7b6dddfcb0f086278dd8ad0686078df
+                b0f3f79cd893d314168648499898fbc0ced5f95b74e8ff14d735cdea968bee74
                 00000005
-                d8b8112f9200a5e50c4a262165bd342c
-                d800b8496810bc716277435ac376728d
-                129ac6eda839a6f357b5a04387c5ce97
-                382a78f2a4372917eefcbf93f63bb591
-                12f5dbe400bd49e4501e859f885bf073
-                6e90a509b30a26bfac8c17b5991c157e
-                b5971115aa39efd8d564a6b90282c316
-                8af2d30ef89d51bf14654510a12b8a14
-                4cca1848cf7da59cc2b3d9d0692dd2a2
-                0ba3863480e25b1b85ee860c62bf5136
+                d8b8112f9200a5e50c4a262165bd342cd800b8496810bc716277435ac376728d
+                129ac6eda839a6f357b5a04387c5ce97382a78f2a4372917eefcbf93f63bb591
+                12f5dbe400bd49e4501e859f885bf0736e90a509b30a26bfac8c17b5991c157e
+                b5971115aa39efd8d564a6b90282c3168af2d30ef89d51bf14654510a12b8a14
+                4cca1848cf7da59cc2b3d9d0692dd2a20ba3863480e25b1b85ee860c62bf5136
                 00000005
                 00000004
-                d2f14ff6346af964569f7d6cb880a1b6
-                6c5004917da6eafe4d9ef6c6407b3db0
+                d2f14ff6346af964569f7d6cb880a1b66c5004917da6eafe4d9ef6c6407b3db0
                 e5485b122d9ebe15cda93cfec582d7ab
                 0000000a
                 00000004
-                0703c491e7558b35011ece3592eaa5da
-                4d918786771233e8353bc4f62323185c
-                95cae05b899e35dffd71705470620998
-                8ebfdf6e37960bb5c38d7657e8bffeef
-                9bc042da4b4525650485c66d0ce19b31
-                7587c6ba4bffcc428e25d08931e72dfb
-                6a120c5612344258b85efdb7db1db9e1
-                865a73caf96557eb39ed3e3f426933ac
-                9eeddb03a1d2374af7bf771855774562
-                37f9de2d60113c23f846df26fa942008
-                a698994c0827d90e86d43e0df7f4bfcd
-                b09b86a373b98288b7094ad81a0185ac
-                100e4f2c5fc38c003c1ab6fea479eb2f
-                5ebe48f584d7159b8ada03586e65ad9c
-                969f6aecbfe44cf356888a7b15a3ff07
-                4f771760b26f9c04884ee1faa329fbf4
-                e61af23aee7fa5d4d9a5dfcf43c4c26c
-                e8aea2ce8a2990d7ba7b57108b47dabf
-                beadb2b25b3cacc1ac0cef346cbb90fb
-                044beee4fac2603a442bdf7e507243b7
-                319c9944b1586e899d431c7f91bcccc8
-                690dbf59b28386b2315f3d36ef2eaa3c
-                f30b2b51f48b71b003dfb08249484201
-                043f65f5a3ef6bbd61ddfee81aca9ce6
-                0081262a00000480dcbc9a3da6fbef5c
-                1c0a55e48a0e729f9184fcb1407c3152
-                9db268f6fe50032a363c9801306837fa
-                fabdf957fd97eafc80dbd165e435d0e2
-                dfd836a28b354023924b6fb7e48bc0b3
-                ed95eea64c2d402f4d734c8dc26f3ac5
-                91825daef01eae3c38e3328d00a77dc6
-                57034f287ccb0f0e1c9a7cbdc828f627
-                205e4737b84b58376551d44c12c3c215
-                c812a0970789c83de51d6ad787271963
-                327f0a5fbb6b5907dec02c9a90934af5
-                a1c63b72c82653605d1dcce51596b3c2
-                b45696689f2eb382007497557692caac
-                4d57b5de9f5569bc2ad0137fd47fb47e
-                664fcb6db4971f5b3e07aceda9ac130e
-                9f38182de994cff192ec0e82fd6d4cb7
-                f3fe00812589b7a7ce51544045643301
-                6b84a59bec6619a1c6c0b37dd1450ed4
-                f2d8b584410ceda8025f5d2d8dd0d217
-                6fc1cf2cc06fa8c82bed4d944e71339e
-                ce780fd025bd41ec34ebff9d4270a322
-                4e019fcb444474d482fd2dbe75efb203
-                89cc10cd600abb54c47ede93e08c114e
-                db04117d714dc1d525e11bed8756192f
-                929d15462b939ff3f52f2252da2ed64d
-                8fae88818b1efa2c7b08c8794fb1b214
-                aa233db3162833141ea4383f1a6f120b
-                e1db82ce3630b3429114463157a64e91
-                234d475e2f79cbf05e4db6a9407d72c6
-                bff7d1198b5c4d6aad2831db61274993
-                715a0182c7dc8089e32c8531deed4f74
-                31c07c02195eba2ef91efb5613c37af7
-                ae0c066babc69369700e1dd26eddc0d2
-                16c781d56e4ce47e3303fa73007ff7b9
-                49ef23be2aa4dbf25206fe45c20dd888
-                395b2526391a724996a44156beac8082
-                12858792bf8e74cba49dee5e8812e019
-                da87454bff9e847ed83db07af3137430
-                82f880a278f682c2bd0ad6887cb59f65
-                2e155987d61bbf6a88d36ee93b6072e6
-                656d9ccbaae3d655852e38deb3a2dcf8
-                058dc9fb6f2ab3d3b3539eb77b248a66
-                1091d05eb6e2f297774fe6053598457c
-                c61908318de4b826f0fc86d4bb117d33
-                e865aa805009cc2918d9c2f840c4da43
-                a703ad9f5b5806163d7161696b5a0adc
+                0703c491e7558b35011ece3592eaa5da4d918786771233e8353bc4f62323185c
+                95cae05b899e35dffd717054706209988ebfdf6e37960bb5c38d7657e8bffeef
+                9bc042da4b4525650485c66d0ce19b317587c6ba4bffcc428e25d08931e72dfb
+                6a120c5612344258b85efdb7db1db9e1865a73caf96557eb39ed3e3f426933ac
+                9eeddb03a1d2374af7bf77185577456237f9de2d60113c23f846df26fa942008
+                a698994c0827d90e86d43e0df7f4bfcdb09b86a373b98288b7094ad81a0185ac
+                100e4f2c5fc38c003c1ab6fea479eb2f5ebe48f584d7159b8ada03586e65ad9c
+                969f6aecbfe44cf356888a7b15a3ff074f771760b26f9c04884ee1faa329fbf4
+                e61af23aee7fa5d4d9a5dfcf43c4c26ce8aea2ce8a2990d7ba7b57108b47dabf
+                beadb2b25b3cacc1ac0cef346cbb90fb044beee4fac2603a442bdf7e507243b7
+                319c9944b1586e899d431c7f91bcccc8690dbf59b28386b2315f3d36ef2eaa3c
+                f30b2b51f48b71b003dfb08249484201043f65f5a3ef6bbd61ddfee81aca9ce6
+                0081262a00000480dcbc9a3da6fbef5c1c0a55e48a0e729f9184fcb1407c3152
+                9db268f6fe50032a363c9801306837fafabdf957fd97eafc80dbd165e435d0e2
+                dfd836a28b354023924b6fb7e48bc0b3ed95eea64c2d402f4d734c8dc26f3ac5
+                91825daef01eae3c38e3328d00a77dc657034f287ccb0f0e1c9a7cbdc828f627
+                205e4737b84b58376551d44c12c3c215c812a0970789c83de51d6ad787271963
+                327f0a5fbb6b5907dec02c9a90934af5a1c63b72c82653605d1dcce51596b3c2
+                b45696689f2eb382007497557692caac4d57b5de9f5569bc2ad0137fd47fb47e
+                664fcb6db4971f5b3e07aceda9ac130e9f38182de994cff192ec0e82fd6d4cb7
+                f3fe00812589b7a7ce515440456433016b84a59bec6619a1c6c0b37dd1450ed4
+                f2d8b584410ceda8025f5d2d8dd0d2176fc1cf2cc06fa8c82bed4d944e71339e
+                ce780fd025bd41ec34ebff9d4270a3224e019fcb444474d482fd2dbe75efb203
+                89cc10cd600abb54c47ede93e08c114edb04117d714dc1d525e11bed8756192f
+                929d15462b939ff3f52f2252da2ed64d8fae88818b1efa2c7b08c8794fb1b214
+                aa233db3162833141ea4383f1a6f120be1db82ce3630b3429114463157a64e91
+                234d475e2f79cbf05e4db6a9407d72c6bff7d1198b5c4d6aad2831db61274993
+                715a0182c7dc8089e32c8531deed4f7431c07c02195eba2ef91efb5613c37af7
+                ae0c066babc69369700e1dd26eddc0d216c781d56e4ce47e3303fa73007ff7b9
+                49ef23be2aa4dbf25206fe45c20dd888395b2526391a724996a44156beac8082
+                12858792bf8e74cba49dee5e8812e019da87454bff9e847ed83db07af3137430
+                82f880a278f682c2bd0ad6887cb59f652e155987d61bbf6a88d36ee93b6072e6
+                656d9ccbaae3d655852e38deb3a2dcf8058dc9fb6f2ab3d3b3539eb77b248a66
+                1091d05eb6e2f297774fe6053598457cc61908318de4b826f0fc86d4bb117d33
+                e865aa805009cc2918d9c2f840c4da43a703ad9f5b5806163d7161696b5a0adc
                 00000005
-                d5c0d1bebb06048ed6fe2ef2c6cef305
-                b3ed633941ebc8b3bec9738754cddd60
-                e1920ada52f43d055b5031cee6192520
-                d6a5115514851ce7fd448d4a39fae2ab
-                2335b525f484e9b40d6a4a969394843b
-                dcf6d14c48e8015e08ab92662c05c6e9
-                f90b65a7a6201689999f32bfd368e5e3
-                ec9cb70ac7b8399003f175c40885081a
-                09ab3034911fe125631051df0408b394
-                6b0bde790911e8978ba07dd56c73e7ee
-                """);
-
-        try {
-            return verify(pk, sig, msg);
-        } catch (SignatureException ex) {
-            return true;
-        }
-    }
-
-    static boolean serializeTest() throws Exception {
-        final ObjectIdentifier oid;
-        var pk = decode("""
-                00000002
-                00000005
-                00000004
-                61a5d57d37f5e46bfb7520806b07a1b8
-                50650e3b31fe4a773ea29a07f09cf2ea
-                30e579f0df58ef8e298da0434cb2b878
-                """);
-
-        // build x509 public key
-        try {
-            oid = ObjectIdentifier.of(OID);
-        } catch (IOException e) {
-            throw new AssertionError(e);
-        }
-
-        var keyBits = new DerOutputStream().putOctetString(pk).toByteArray();
-        var oidBytes = new DerOutputStream().write(DerValue.tag_Sequence,
-                new DerOutputStream().putOID(oid));
-        var x509encoding = new DerOutputStream().write(DerValue.tag_Sequence,
-                oidBytes
-                .putUnalignedBitString(new BitArray(keyBits.length * 8, keyBits)))
-                .toByteArray();
-
-        var x509KeySpec = new X509EncodedKeySpec(x509encoding);
-        var pk1 = KeyFactory.getInstance(ALG).generatePublic(x509KeySpec);
-
-        PublicKey pk2 = (PublicKey) SerializationUtils
-                .deserialize(SerializationUtils.serialize(pk1));
-        return pk2.equals(pk1);
-    }
-
-    static boolean verify(byte[] pk, byte[] sig, byte[] msg) throws Exception {
-        return verifyRawKey(pk, sig, msg) && verifyX509Key(pk, sig, msg);
-    }
-
-    static boolean verifyX509Key(byte[] pk, byte[] sig, byte[] msg)
-            throws Exception {
-        final ObjectIdentifier oid;
-
-        // build x509 public key
-        try {
-            oid = ObjectIdentifier.of(OID);
-        } catch (IOException e) {
-            throw new AssertionError(e);
-        }
-
-        var keyBits = new DerOutputStream().putOctetString(pk).toByteArray();
-        var oidBytes = new DerOutputStream().write(DerValue.tag_Sequence,
-                new DerOutputStream().putOID(oid));
-        var x509encoding = new DerOutputStream().write(DerValue.tag_Sequence,
-                oidBytes
-                .putUnalignedBitString(new BitArray(keyBits.length * 8, keyBits)))
-                .toByteArray();
-
-        var x509KeySpec = new X509EncodedKeySpec(x509encoding);
-        var pk1 = KeyFactory.getInstance(ALG).generatePublic(x509KeySpec);
-
-        var v = Signature.getInstance(ALG);
-        v.initVerify(pk1);
-        v.update(msg);
-        return v.verify(sig);
-    }
-
-    static boolean verifyRawKey(byte[] pk, byte[] sig, byte[] msg)
-            throws Exception {
-        var  provider = Security.getProvider("SUN");
-        PublicKey pk1;
-
-        // build public key
-        RawKeySpec rks = new RawKeySpec(pk);
-        KeyFactory kf = KeyFactory.getInstance(ALG, provider);
-        pk1 = kf.generatePublic(rks);
-
-        var v = Signature.getInstance(ALG);
-        v.initVerify(pk1);
-        v.update(msg);
-        return v.verify(sig);
-    }
-
-    static byte[] decode(String s) {
-        return HexFormat.of().parseHex(s
-                        .replaceAll("//.*", "")
-                        .replaceAll("\\s", ""));
-    }
+                d5c0d1bebb06048ed6fe2ef2c6cef305b3ed633941ebc8b3bec9738754cddd60
+                e1920ada52f43d055b5031cee6192520d6a5115514851ce7fd448d4a39fae2ab
+                2335b525f484e9b40d6a4a969394843bdcf6d14c48e8015e08ab92662c05c6e9
+                f90b65a7a6201689999f32bfd368e5e3ec9cb70ac7b8399003f175c40885081a
+                09ab3034911fe125631051df0408b3946b0bde790911e8978ba07dd56c73e7ee
+                """)
+        )
+    };
 }
