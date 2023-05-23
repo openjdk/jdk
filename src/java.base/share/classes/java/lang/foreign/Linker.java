@@ -77,7 +77,7 @@ import java.util.stream.Stream;
  * {@snippet lang = java:
  * Linker linker = Linker.nativeLinker();
  * MethodHandle strlen = linker.downcallHandle(
- *     linker.defaultLookup().find("strlen").get(),
+ *     linker.defaultLookup().find("strlen").orElseThrow(),
  *     FunctionDescriptor.of(JAVA_LONG, ADDRESS)
  * );
  * }
@@ -91,9 +91,9 @@ import java.util.stream.Stream;
  * The obtained downcall method handle is then invoked as follows:
  *
  * {@snippet lang = java:
- * try (Arena arena = Arena.openConfined()) {
+ * try (Arena arena = Arena.ofConfined()) {
  *     MemorySegment str = arena.allocateUtf8String("Hello");
- *     long len          = strlen.invoke(str);  // 5
+ *     long len = (long) strlen.invokeExact(str);  // 5
  * }
  * }
  * <h3 id="describing-c-sigs">Describing C signatures</h3>
@@ -226,7 +226,7 @@ import java.util.stream.Stream;
  * {@snippet lang = java:
  * Linker linker = Linker.nativeLinker();
  * MethodHandle qsort = linker.downcallHandle(
- *     linker.defaultLookup().find("qsort").get(),
+ *     linker.defaultLookup().find("qsort").orElseThrow(),
  *         FunctionDescriptor.ofVoid(ADDRESS, JAVA_LONG, JAVA_LONG, ADDRESS)
  * );
  * }
@@ -240,7 +240,7 @@ import java.util.stream.Stream;
  *
  * {@snippet lang = java:
  * class Qsort {
- *     static int qsortCompare(MemorySegment elem1, MemorySegmet elem2) {
+ *     static int qsortCompare(MemorySegment elem1, MemorySegment elem2) {
  *         return Integer.compare(elem1.get(JAVA_INT, 0), elem2.get(JAVA_INT, 0));
  *     }
  * }
@@ -268,7 +268,7 @@ import java.util.stream.Stream;
  * {@snippet lang = java:
  * try (Arena arena = Arena.ofConfined()) {
  *     MemorySegment comparFunc = linker.upcallStub(comparHandle, comparDesc, arena);
- *     MemorySegment array = session.allocateArray(0, 9, 3, 4, 6, 5, 1, 8, 2, 7);
+ *     MemorySegment array = arena.allocateArray(JAVA_INT, 0, 9, 3, 4, 6, 5, 1, 8, 2, 7);
  *     qsort.invokeExact(array, 10L, 4L, comparFunc);
  *     int[] sorted = array.toArray(JAVA_INT); // [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ]
  * }
@@ -307,12 +307,12 @@ import java.util.stream.Stream;
  * Linker linker = Linker.nativeLinker();
  *
  * MethodHandle malloc = linker.downcallHandle(
- *     linker.defaultLookup().find("malloc").get(),
+ *     linker.defaultLookup().find("malloc").orElseThrow(),
  *     FunctionDescriptor.of(ADDRESS, JAVA_LONG)
  * );
  *
  * MethodHandle free = linker.downcallHandle(
- *     linker.defaultLookup().find("free").get(),
+ *     linker.defaultLookup().find("free").orElseThrow(),
  *     FunctionDescriptor.ofVoid(ADDRESS)
  * );
  * }
@@ -334,9 +334,15 @@ import java.util.stream.Stream;
  * method, as follows:
  *
  * {@snippet lang = java:
- * MemorySegment allocateMemory(long byteSize, Arena arena) {
- *     MemorySegment segment = (MemorySegment)malloc.invokeExact(byteSize);    // size = 0, scope = always alive
- *     return segment.reinterpret(byteSize, arena, s -> free.invokeExact(s));  // size = byteSize, scope = arena.scope()
+ * MemorySegment allocateMemory(long byteSize, Arena arena) throws Throwable {
+ *     MemorySegment segment = (MemorySegment) malloc.invokeExact(byteSize); // size = 0, scope = always alive
+ *     return segment.reinterpret(byteSize, arena, s -> {
+ *         try {
+ *             free.invokeExact(s);
+ *         } catch (Throwable e) {
+ *             throw new RuntimeException(e);
+ *         }
+ *     });  // size = byteSize, scope = arena.scope()
  * }
  * }
  *
@@ -389,7 +395,7 @@ import java.util.stream.Stream;
  * {@snippet lang = java:
  * Linker linker = Linker.nativeLinker();
  * MethodHandle printf = linker.downcallHandle(
- *     linker.defaultLookup().lookup("printf").get(),
+ *     linker.defaultLookup().find("printf").orElseThrow(),
  *         FunctionDescriptor.of(JAVA_INT, ADDRESS, JAVA_INT, JAVA_INT, JAVA_INT),
  *         Linker.Option.firstVariadicArg(1) // first int is variadic
  * );
@@ -616,12 +622,12 @@ public sealed interface Linker permits AbstractLinker {
          * Linker.Option ccs = Linker.Option.captureCallState("errno");
          * MethodHandle handle = Linker.nativeLinker().downcallHandle(targetAddress, FunctionDescriptor.ofVoid(), ccs);
          *
-         * StructLayout capturedStateLayout = Linker.Option.capturedStateLayout();
+         * StructLayout capturedStateLayout = Linker.Option.captureStateLayout();
          * VarHandle errnoHandle = capturedStateLayout.varHandle(PathElement.groupElement("errno"));
          * try (Arena arena = Arena.ofConfined()) {
          *     MemorySegment capturedState = arena.allocate(capturedStateLayout);
          *     handle.invoke(capturedState);
-         *     int errno = errnoHandle.get(capturedState);
+         *     int errno = (int) errnoHandle.get(capturedState);
          *     // use errno
          * }
          * }

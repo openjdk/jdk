@@ -43,8 +43,8 @@ static uint max_nworkers(ZGenerationId id) {
   return id == ZGenerationId::young ? ZYoungGCThreads : ZOldGCThreads;
 }
 
-ZWorkers::ZWorkers(ZGenerationId id, ZStatWorkers* stats) :
-    _workers(workers_name(id),
+ZWorkers::ZWorkers(ZGenerationId id, ZStatWorkers* stats)
+  : _workers(workers_name(id),
              max_nworkers(id)),
     _generation_name(generation_name(id)),
     _resize_lock(),

@@ -29,8 +29,8 @@
 #include "utilities/debug.hpp"
 
 template <typename T>
-inline ZListNode<T>::ZListNode() :
-    _next(this),
+inline ZListNode<T>::ZListNode()
+  : _next(this),
     _prev(this) {}
 
 template <typename T>
@@ -91,8 +91,8 @@ inline T* ZList<T>::cast_to_outer(ZListNode<T>* node) const {
 }
 
 template <typename T>
-inline ZList<T>::ZList() :
-    _head(),
+inline ZList<T>::ZList()
+  : _head(),
     _size(0) {
   verify_head();
 }
@@ -209,8 +209,8 @@ inline T* ZList<T>::remove_last() {
 }
 
 template <typename T, bool Forward>
-inline ZListIteratorImpl<T, Forward>::ZListIteratorImpl(const ZList<T>* list) :
-    _list(list),
+inline ZListIteratorImpl<T, Forward>::ZListIteratorImpl(const ZList<T>* list)
+  : _list(list),
     _next(Forward ? list->first() : list->last()) {}
 
 template <typename T, bool Forward>
@@ -226,8 +226,8 @@ inline bool ZListIteratorImpl<T, Forward>::next(T** elem) {
 }
 
 template <typename T, bool Forward>
-inline ZListRemoveIteratorImpl<T, Forward>::ZListRemoveIteratorImpl(ZList<T>* list) :
-    _list(list) {}
+inline ZListRemoveIteratorImpl<T, Forward>::ZListRemoveIteratorImpl(ZList<T>* list)
+  : _list(list) {}
 
 template <typename T, bool Forward>
 inline bool ZListRemoveIteratorImpl<T, Forward>::next(T** elem) {

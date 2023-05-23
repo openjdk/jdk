@@ -244,6 +244,9 @@
   start_class(InternalError, java_lang_InternalError)                                                         \
     jvmci_constructor(InternalError, "(Ljava/lang/String;)V")                                                 \
   end_class                                                                                                   \
+  start_class(OutOfMemoryError, java_lang_OutOfMemoryError)                                                         \
+    jvmci_constructor(OutOfMemoryError, "(Ljava/lang/String;)V")                                                 \
+  end_class                                                                                                   \
   start_class(ClassNotFoundException, java_lang_ClassNotFoundException)                                       \
     jvmci_constructor(ClassNotFoundException, "(Ljava/lang/String;)V")                                        \
   end_class                                                                                                   \

@@ -1921,7 +1921,7 @@ bool Arguments::check_vm_args_consistency() {
     FLAG_SET_CMDLINE(LockingMode, LM_MONITOR);
   }
 
-#if !defined(X86) && !defined(AARCH64) && !defined(PPC64) && !defined(RISCV64)
+#if !defined(X86) && !defined(AARCH64) && !defined(PPC64) && !defined(RISCV64) && !defined(S390)
   if (LockingMode == LM_MONITOR) {
     jio_fprintf(defaultStream::error_stream(),
                 "LockingMode == 0 (LM_MONITOR) is not fully implemented on this architecture");

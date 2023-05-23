@@ -1052,7 +1052,7 @@ SelectVersion(int argc, char **argv, char **main_class)
 
     argc--;
     argv++;
-    while ((arg = *argv) != 0 && *arg == '-') {
+    while (argc > 0 && *(arg = *argv) == '-') {
         has_arg = IsOptionWithArgument(argc, argv);
         if (JLI_StrCCmp(arg, "-version:") == 0) {
             JLI_ReportErrorMessage(SPC_ERROR1);
@@ -1250,11 +1250,11 @@ ParseArguments(int *pargc, char ***pargv,
     int argc = *pargc;
     char **argv = *pargv;
     int mode = LM_UNKNOWN;
-    char *arg;
+    char *arg = NULL;
 
     *pret = 0;
 
-    while ((arg = *argv) != 0 && *arg == '-') {
+    while (argc > 0 && *(arg = *argv) == '-') {
         char *option = NULL;
         char *value = NULL;
         int kind = GetOpt(&argc, &argv, &option, &value);
