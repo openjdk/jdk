@@ -2936,8 +2936,11 @@ public class Utils {
     }
 
     public PreviewSummary declaredUsingPreviewAPIs(Element el) {
-        List<TypeElement> usedInDeclaration = new ArrayList<>();
-        usedInDeclaration.addAll(annotations2Classes(el));
+        if (el.asType().getKind() == ERROR) {
+            // Can happen with undocumented --ignore-source-errors option
+            return new PreviewSummary(Collections.emptySet(), Collections.emptySet(), Collections.emptySet());
+        }
+        List<TypeElement> usedInDeclaration = new ArrayList<>(annotations2Classes(el));
         switch (el.getKind()) {
             case ANNOTATION_TYPE, CLASS, ENUM, INTERFACE, RECORD -> {
                 TypeElement te = (TypeElement) el;
