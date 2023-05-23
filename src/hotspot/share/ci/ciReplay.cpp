@@ -147,8 +147,8 @@ class CompileReplay : public StackObj {
     _protection_domain = Handle();
     _protection_domain_initialized = false;
 
-    if (!_reader.is_opened()) {
-      fprintf(stderr, "ERROR: Can't open replay file %s\n", filename);
+    if (!_reader.is_open()) {
+      fprintf(stderr, "ERROR: Can't open replay file %s: %s\n", filename, os::strerror(_reader.last_errno()));
     }
 
     _ci_inline_records = nullptr;
@@ -181,7 +181,7 @@ class CompileReplay : public StackObj {
   }
 
   bool can_replay() {
-    return _reader.is_opened() && !had_error();
+    return _reader.is_open() && !had_error();
   }
 
   void report_error(const char* msg) {

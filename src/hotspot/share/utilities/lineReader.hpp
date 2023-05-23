@@ -32,20 +32,27 @@
 // The _buffer is resource-allocated, so LineReader must be used within
 // a ResourceMark.
 class LineReader : public StackObj {
-  const char* _filename;
+  char* _filename;
   FILE* _stream;
+  int _errno;
   size_t _buffer_length;
+  size_t _max_buffer_length;
   char* _buffer;
 public:
-  LineReader(const char* filename);
+  LineReader(const char* filename, size_t initial_length = 160, size_t max_length = (SIZE_MAX / 2) - 1);
   ~LineReader();
 
-  bool is_opened() const {
+  bool is_open() const {
     return _stream != nullptr;
   }
   const char* filename() const { return _filename; }
   char* get_line();
   void close();
+
+  // errno, if any, for the last file I/O operation performed by this LineReader
+  int last_errno() {
+    return _errno;
+  }
 };
 
 #endif // SHARE_UTILITIES_LINEREADER_HPP
