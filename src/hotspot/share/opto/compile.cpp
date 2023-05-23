@@ -387,7 +387,7 @@ void Compile::remove_useless_node(Node* dead) {
     remove_expensive_node(dead);
   }
   if (dead->Opcode() == Op_Opaque4) {
-    remove_skeleton_predicate_opaq(dead);
+    remove_template_assertion_predicate_opaq(dead);
   }
   if (dead->for_post_loop_opts_igvn()) {
     remove_from_post_loop_opts_igvn(dead);
@@ -435,8 +435,8 @@ void Compile::disconnect_useless_nodes(Unique_Node_List &useful, Unique_Node_Lis
   }
 
   remove_useless_nodes(_macro_nodes,        useful); // remove useless macro nodes
-  remove_useless_nodes(_predicate_opaqs,    useful); // remove useless predicate opaque nodes
-  remove_useless_nodes(_skeleton_predicate_opaqs, useful);
+  remove_useless_nodes(_parse_predicate_opaqs, useful); // remove useless Parse Predicate opaque nodes
+  remove_useless_nodes(_template_assertion_predicate_opaqs, useful); // remove useless Assertion Predicate opaque nodes
   remove_useless_nodes(_expensive_nodes,    useful); // remove useless expensive nodes
   remove_useless_nodes(_for_post_loop_igvn, useful); // remove useless node recorded for post loop opts IGVN pass
   remove_useless_unstable_if_traps(useful);          // remove useless unstable_if traps
@@ -578,7 +578,6 @@ void Compile::print_ideal_ir(const char* phase_name) {
 
 // ============================================================================
 //------------------------------Compile standard-------------------------------
-debug_only( int Compile::_debug_idx = 100000; )
 
 // Compile a method.  entry_bci is -1 for normal compilations and indicates
 // the continuation bci for on stack replacement.
@@ -616,8 +615,8 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
                   _failure_reason(nullptr),
                   _intrinsics        (comp_arena(), 0, 0, nullptr),
                   _macro_nodes       (comp_arena(), 8, 0, nullptr),
-                  _predicate_opaqs   (comp_arena(), 8, 0, nullptr),
-                  _skeleton_predicate_opaqs (comp_arena(), 8, 0, nullptr),
+                  _parse_predicate_opaqs (comp_arena(), 8, 0, nullptr),
+                  _template_assertion_predicate_opaqs (comp_arena(), 8, 0, nullptr),
                   _expensive_nodes   (comp_arena(), 8, 0, nullptr),
                   _for_post_loop_igvn(comp_arena(), 8, 0, nullptr),
                   _unstable_if_traps (comp_arena(), 8, 0, nullptr),
@@ -1793,17 +1792,18 @@ bool Compile::can_alias(const TypePtr* adr_type, int alias_idx) {
   return adr_idx == alias_idx;
 }
 
-//---------------------cleanup_loop_predicates-----------------------
-// Remove the opaque nodes that protect the predicates so that all unused
-// checks and uncommon_traps will be eliminated from the ideal graph
-void Compile::cleanup_loop_predicates(PhaseIterGVN &igvn) {
-  if (predicate_count()==0) return;
-  for (int i = predicate_count(); i > 0; i--) {
-    Node * n = predicate_opaque1_node(i-1);
+// Remove the opaque nodes that protect the Parse Predicates so that all unused
+// checks and uncommon_traps will be eliminated from the ideal graph.
+void Compile::cleanup_parse_predicates(PhaseIterGVN& igvn) const {
+  if (parse_predicate_count() == 0) {
+    return;
+  }
+  for (int i = parse_predicate_count(); i > 0; i--) {
+    Node* n = parse_predicate_opaque1_node(i - 1);
     assert(n->Opcode() == Op_Opaque1, "must be");
     igvn.replace_node(n, n->in(1));
   }
-  assert(predicate_count()==0, "should be clean!");
+  assert(parse_predicate_count() == 0, "should be clean!");
 }
 
 void Compile::record_for_post_loop_opts_igvn(Node* n) {

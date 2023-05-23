@@ -32,6 +32,7 @@
 class InstanceKlass;
 class Method;
 class Symbol;
+class outputStream;
 
 class LambdaProxyClassKey {
   InstanceKlass* _caller_ik;
@@ -73,7 +74,6 @@ public:
            _instantiated_method_type == other._instantiated_method_type;
   }
 
-  void mark_pointers();
   unsigned int hash() const;
 
   static unsigned int dumptime_hash(Symbol* sym)  {
@@ -102,13 +102,18 @@ public:
   }
 
   InstanceKlass* caller_ik() const { return _caller_ik; }
+
+  void init_for_archive(LambdaProxyClassKey& dumptime_key);
+
+#ifndef PRODUCT
+  void print_on(outputStream* st) const;
+#endif
 };
 
 class DumpTimeLambdaProxyClassInfo {
 public:
   GrowableArray<InstanceKlass*>* _proxy_klasses;
   DumpTimeLambdaProxyClassInfo() : _proxy_klasses(nullptr) {}
-  DumpTimeLambdaProxyClassInfo(const DumpTimeLambdaProxyClassInfo& src);
   DumpTimeLambdaProxyClassInfo& operator=(const DumpTimeLambdaProxyClassInfo&) = delete;
   ~DumpTimeLambdaProxyClassInfo();
 
@@ -141,12 +146,7 @@ public:
        const RunTimeLambdaProxyClassInfo* value, LambdaProxyClassKey* key, int len_unused) {
     return (value->_key.equals(*key));
   }
-  void init(LambdaProxyClassKey& key, DumpTimeLambdaProxyClassInfo& info) {
-    _key = key;
-    _key.mark_pointers();
-    _proxy_klass_head = info._proxy_klasses->at(0);
-    ArchivePtrMarker::mark_pointer(&_proxy_klass_head);
-  }
+  void init(LambdaProxyClassKey& key, DumpTimeLambdaProxyClassInfo& info);
 
   unsigned int hash() const {
     return _key.hash();
@@ -154,6 +154,9 @@ public:
   LambdaProxyClassKey key() const {
     return _key;
   }
+#ifndef PRODUCT
+  void print_on(outputStream* st) const;
+#endif
 };
 
 class DumpTimeLambdaProxyClassDictionary

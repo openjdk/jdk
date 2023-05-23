@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,13 +85,15 @@ public class ErrorManager {
      * @param ex     an exception (may be null)
      * @param code   an error code defined in ErrorManager
      */
-    public synchronized void error(String msg, Exception ex, int code) {
-        if (reported) {
-            // We only report the first error, to avoid clogging
-            // the screen.
-            return;
+    public void error(String msg, Exception ex, int code) {
+        synchronized (this) {
+            if (reported) {
+                // We only report the first error, to avoid clogging
+                // the screen.
+                return;
+            }
+            reported = true;
         }
-        reported = true;
         String text = "java.util.logging.ErrorManager: " + code;
         if (msg != null) {
             text = text + ": " + msg;

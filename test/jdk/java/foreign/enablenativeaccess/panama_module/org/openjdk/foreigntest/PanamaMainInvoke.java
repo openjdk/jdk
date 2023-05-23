@@ -34,11 +34,12 @@ public class PanamaMainInvoke {
     }
 
     public static void testInvokenativeLinker() throws Throwable {
-        System.out.println("Trying to get Linker");
-        var mh = MethodHandles.lookup().findStatic(Linker.class, "nativeLinker",
-                MethodType.methodType(Linker.class));
-        var linker = (Linker)mh.invokeExact();
-        System.out.println("Got Linker");
+        Linker linker = Linker.nativeLinker();
+        System.out.println("Trying to obtain a downcall handle");
+        var mh = MethodHandles.lookup().findVirtual(Linker.class, "downcallHandle",
+                MethodType.methodType(MethodHandle.class, FunctionDescriptor.class, Linker.Option[].class));
+        var handle = (MethodHandle)mh.invokeExact(linker, FunctionDescriptor.ofVoid(), new Linker.Option[0]);
+        System.out.println("Got downcall handle");
     }
 
     public static void testInvokeMemorySegment() throws Throwable {
