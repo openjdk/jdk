@@ -77,7 +77,7 @@ char* LineReader::get_line() {
   while ((s = fgets(tmp, sizeof(tmp), _stream)) != nullptr) {
     char c;
     has_input = true;
-    // Get up to 127 characters, followed by '\0' (fgets always terminates the line), 
+    // Get up to 127 characters, followed by '\0' (fgets always terminates the line),
     // Iff the last character is not '\n', that means we have read a partial line
     // and should keep going.
     while ((c = *s++) != '\0') {
