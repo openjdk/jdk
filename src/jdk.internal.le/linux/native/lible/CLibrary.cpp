@@ -113,8 +113,16 @@ JNIEXPORT void JNICALL Java_jdk_internal_org_jline_terminal_impl_jna_linux_CLibr
     env->SetIntField(result, c_line, data.c_line);
     jbyteArray c_ccValue = (jbyteArray) env->GetObjectField(result, c_cc);
     env->SetByteArrayRegion(c_ccValue, 0, NCCS, (signed char *) data.c_cc);//TODO: cast?
+#ifdef _HAVE_STRUCT_TERMIOS_C_ISPEED
     env->SetIntField(result, c_ispeed, data.c_ispeed);
+#else
+    env->SetIntField(result, c_ispeed, 0);
+#endif
+#ifdef _HAVE_STRUCT_TERMIOS_C_OSPEED
     env->SetIntField(result, c_ospeed, data.c_ospeed);
+#else
+    env->SetIntField(result, c_ospeed, 0);
+#endif
 }
 
 /*
@@ -133,9 +141,12 @@ JNIEXPORT void JNICALL Java_jdk_internal_org_jline_terminal_impl_jna_linux_CLibr
     data.c_line = env->GetIntField(input, c_line);
     jbyteArray c_ccValue = (jbyteArray) env->GetObjectField(input, c_cc);
     env->GetByteArrayRegion(c_ccValue, 0, NCCS, (jbyte *) data.c_cc);
+#ifdef _HAVE_STRUCT_TERMIOS_C_ISPEED
     data.c_ispeed = env->GetIntField(input, c_ispeed);
+#endif
+#ifdef _HAVE_STRUCT_TERMIOS_C_OSPEED
     data.c_ospeed = env->GetIntField(input, c_ospeed);
-
+#endif
     if (tcsetattr(fd, cmd, &data) != 0) {
         throw_errno(env);
     }
