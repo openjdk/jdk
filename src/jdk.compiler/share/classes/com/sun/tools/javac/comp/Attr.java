@@ -4186,17 +4186,26 @@ public class Attr extends JCTree.Visitor {
 
     @Override
     public void visitRecordPattern(JCRecordPattern tree) {
-        Type type = attribType(tree.deconstructor, env);
-        if (type.isRaw() && type.tsym.getTypeParameters().nonEmpty()) {
-            Type inferred = infer.instantiatePatternType(resultInfo.pt, type.tsym);
-            if (inferred == null) {
-                log.error(tree.pos(), Errors.PatternTypeCannotInfer);
-            } else {
-                type = inferred;
+        Type site;
+
+        if (tree.deconstructor == null) {
+            log.error(tree.pos(), Errors.DeconstructionPatternVarNotAllowed);
+            tree.record = syms.errSymbol;
+            site = tree.type = types.createErrorType(tree.record.type);
+        } else {
+            Type type = attribType(tree.deconstructor, env);
+            if (type.isRaw() && type.tsym.getTypeParameters().nonEmpty()) {
+                Type inferred = infer.instantiatePatternType(resultInfo.pt, type.tsym);
+                if (inferred == null) {
+                    log.error(tree.pos(), Errors.PatternTypeCannotInfer);
+                } else {
+                    type = inferred;
+                }
             }
+            tree.type = tree.deconstructor.type = type;
+            site = types.capture(tree.type);
         }
-        tree.type = tree.deconstructor.type = type;
-        Type site = types.capture(tree.type);
+
         List<Type> expectedRecordTypes;
         if (site.tsym.kind == Kind.TYP && ((ClassSymbol) site.tsym).isRecord()) {
             ClassSymbol record = (ClassSymbol) site.tsym;
