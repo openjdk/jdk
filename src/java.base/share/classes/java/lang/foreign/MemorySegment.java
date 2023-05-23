@@ -1320,7 +1320,6 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * such that {@code dstSegment().isAccessibleBy(T) == false}.
      * @throws UnsupportedOperationException if {@code dstSegment} is {@linkplain #isReadOnly() read-only}.
      * @throws IndexOutOfBoundsException if {@code elementCount * srcLayout.byteSize()} or {@code elementCount * dtsLayout.byteSize()} overflows.
-     * @throws IndexOutOfBoundsException if {@code elementCount * dstLayout.byteSize()} overflows.
      * @throws IndexOutOfBoundsException if {@code dstOffset > dstSegment.byteSize() - (elementCount * dstLayout.byteSize())}.
      * @throws IndexOutOfBoundsException if either {@code srcOffset}, {@code dstOffset} or {@code elementCount} are {@code < 0}.
      */
