@@ -1311,6 +1311,9 @@ enum VectorMask {
   INSN(vsrl_vi,    0b1010111, 0b011, 0b101000);
   INSN(vsll_vi,    0b1010111, 0b011, 0b100101);
 
+  // Vector Slide Instructions
+  INSN(vslidedown_vi, 0b1010111, 0b011, 0b001111);
+
 #undef INSN
 
 #define INSN(NAME, op, funct3, funct6)                                                             \
@@ -1511,6 +1514,9 @@ enum VectorMask {
   INSN(vadd_vx,  0b1010111, 0b100, 0b000000);
   INSN(vrsub_vx, 0b1010111, 0b100, 0b000011);
 
+  // Vector Slide Instructions
+  INSN(vslidedown_vx, 0b1010111, 0b100, 0b001111);
+
 #undef INSN
 
 #define INSN(NAME, op, funct3, vm, funct6)                                                         \
@@ -1520,6 +1526,16 @@ enum VectorMask {
 
   // Vector Integer Merge Instructions
   INSN(vmerge_vxm,  0b1010111, 0b100, 0b0, 0b010111);
+
+#undef INSN
+
+#define INSN(NAME, op, funct3, vm, funct6)                                                         \
+  void NAME(VectorRegister Vd, VectorRegister Vs2, FloatRegister Rs1) {                            \
+    patch_VArith(op, Vd, funct3, Rs1->raw_encoding(), Vs2, vm, funct6);                            \
+  }
+
+  // Vector Floating-Point Merge Instruction
+  INSN(vfmerge_vfm,  0b1010111, 0b101, 0b0, 0b010111);
 
 #undef INSN
 
@@ -1761,16 +1777,11 @@ enum Nf {
   }
 
   // Vector unordered indexed load instructions
-  INSN(vluxei8_v,  0b0000111, 0b000, 0b01, 0b0);
-  INSN(vluxei16_v, 0b0000111, 0b101, 0b01, 0b0);
   INSN(vluxei32_v, 0b0000111, 0b110, 0b01, 0b0);
-  INSN(vluxei64_v, 0b0000111, 0b111, 0b01, 0b0);
 
-  // Vector ordered indexed load instructions
-  INSN(vloxei8_v,  0b0000111, 0b000, 0b11, 0b0);
-  INSN(vloxei16_v, 0b0000111, 0b101, 0b11, 0b0);
-  INSN(vloxei32_v, 0b0000111, 0b110, 0b11, 0b0);
-  INSN(vloxei64_v, 0b0000111, 0b111, 0b11, 0b0);
+  // Vector unordered indexed store instructions
+  INSN(vsuxei32_v, 0b0100111, 0b110, 0b01, 0b0);
+
 #undef INSN
 
 #define INSN(NAME, op, width, mop, mew)                                                                  \

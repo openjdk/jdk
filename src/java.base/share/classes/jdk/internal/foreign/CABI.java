@@ -54,10 +54,10 @@ public enum CABI {
         if (ForeignLinkerSupport.isSupported()) {
             // figure out the ABI based on the platform
             String arch = StaticProperty.osArch();
-            long addressSize = ADDRESS.bitSize();
+            long addressSize = ADDRESS.byteSize();
             // might be running in a 32-bit VM on a 64-bit platform.
             // addressSize will be correctly 32
-            if ((arch.equals("amd64") || arch.equals("x86_64")) && addressSize == 64) {
+            if ((arch.equals("amd64") || arch.equals("x86_64")) && addressSize == 8) {
                 if (OperatingSystem.isWindows()) {
                     return WIN_64;
                 } else {

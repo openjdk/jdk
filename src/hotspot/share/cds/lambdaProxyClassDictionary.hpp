@@ -114,7 +114,6 @@ class DumpTimeLambdaProxyClassInfo {
 public:
   GrowableArray<InstanceKlass*>* _proxy_klasses;
   DumpTimeLambdaProxyClassInfo() : _proxy_klasses(nullptr) {}
-  DumpTimeLambdaProxyClassInfo(const DumpTimeLambdaProxyClassInfo& src);
   DumpTimeLambdaProxyClassInfo& operator=(const DumpTimeLambdaProxyClassInfo&) = delete;
   ~DumpTimeLambdaProxyClassInfo();
 

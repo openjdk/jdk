@@ -30,12 +30,12 @@
 #include "utilities/debug.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-ZMarkStripe::ZMarkStripe(uintptr_t base) :
-    _published(base),
+ZMarkStripe::ZMarkStripe(uintptr_t base)
+  : _published(base),
     _overflowed(base) {}
 
-ZMarkStripeSet::ZMarkStripeSet(uintptr_t base) :
-    _nstripes_mask(0),
+ZMarkStripeSet::ZMarkStripeSet(uintptr_t base)
+  : _nstripes_mask(0),
     _stripes() {
 
   // Re-construct array elements with the correct base
@@ -93,8 +93,8 @@ ZMarkStripe* ZMarkStripeSet::stripe_for_worker(uint nworkers, uint worker_id) {
   return &_stripes[index];
 }
 
-ZMarkThreadLocalStacks::ZMarkThreadLocalStacks() :
-    _magazine(nullptr) {
+ZMarkThreadLocalStacks::ZMarkThreadLocalStacks()
+  : _magazine(nullptr) {
   for (size_t i = 0; i < ZMarkStripesMax; i++) {
     _stacks[i] = nullptr;
   }
