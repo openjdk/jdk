@@ -142,7 +142,7 @@ import jdk.internal.vm.annotation.ForceInline;
  *                                                                   MethodType.methodType(long.class, long.class, long.class));
  * intHandle = MethodHandles.filterCoordinates(intHandle, 1,
  *                                             MethodHandles.insertArguments(multiplyExact, 0, ValueLayout.JAVA_INT.byteSize()));
- * intHandle.get(segment, 3L); // get int element at offset 3 * 4 = 12
+ * int value = (int) intHandle.get(segment, 3L); // get int element at offset 3 * 4 = 12
  * }
  *
  * Alternatively, complex var handles can can be obtained
@@ -152,7 +152,7 @@ import jdk.internal.vm.annotation.ForceInline;
  * {@snippet lang=java :
  * MemorySegment segment = ...
  * VarHandle intHandle = ValueLayout.JAVA_INT.arrayElementVarHandle();
- * intHandle.get(segment, 3L); // get int element at offset 3 * 4 = 12
+ * int value = (int) intHandle.get(segment, 3L); // get int element at offset 3 * 4 = 12
  * }
  *
  * <h2 id="slicing">Slicing memory segments</h2>
@@ -788,7 +788,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * <p>
      * Calling this method is equivalent to the following code:
      * {@snippet lang=java :
-     * MemorySegment.copy(src, 0, this, 0, src.byteSize);
+     * MemorySegment.copy(src, 0, this, 0, src.byteSize());
      * }
      * @param src the source segment.
      * @throws IndexOutOfBoundsException if {@code src.byteSize() > this.byteSize()}.

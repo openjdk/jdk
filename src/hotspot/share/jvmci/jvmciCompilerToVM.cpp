@@ -2399,8 +2399,12 @@ C2V_VMENTRY_NULL(jlongArray, registerNativeMethods, (JNIEnv* env, jobject, jclas
   JVMCIRuntime* runtime;
   {
     // Ensure the JVMCI shared library runtime is initialized.
-    JVMCIEnv __peer_jvmci_env__(thread, false, __FILE__, __LINE__);
+    bool jni_enomem_is_fatal = false;
+    JVMCIEnv __peer_jvmci_env__(thread, false, jni_enomem_is_fatal, __FILE__, __LINE__);
     JVMCIEnv* peerEnv = &__peer_jvmci_env__;
+    if (peerEnv->has_jni_enomem()) {
+      JVMCI_THROW_MSG_0(OutOfMemoryError, "JNI_ENOMEM creating or attaching to libjvmci");
+    }
     HandleMark hm(THREAD);
     runtime = JVMCI::compiler_runtime(thread);
     if (peerEnv->has_pending_exception()) {
@@ -2563,8 +2567,13 @@ C2V_VMENTRY_PREFIX(jboolean, attachCurrentThread, (JNIEnv* env, jobject c2vm, jb
 
     {
       // Ensure the JVMCI shared library runtime is initialized.
-      JVMCIEnv __peer_jvmci_env__(thread, false, __FILE__, __LINE__);
+      bool jni_enomem_is_fatal = false;
+      JVMCIEnv __peer_jvmci_env__(thread, false, jni_enomem_is_fatal, __FILE__, __LINE__);
       JVMCIEnv* peerJVMCIEnv = &__peer_jvmci_env__;
+      if (peerJVMCIEnv->has_jni_enomem()) {
+        JVMCI_THROW_MSG_0(OutOfMemoryError, "JNI_ENOMEM creating or attaching to libjvmci");
+      }
+
       HandleMark hm(thread);
       JVMCIObject receiver = runtime->get_HotSpotJVMCIRuntime(peerJVMCIEnv);
       if (peerJVMCIEnv->has_pending_exception()) {
@@ -2658,9 +2667,13 @@ C2V_VMENTRY_0(jlong, translate, (JNIEnv* env, jobject, jobject obj_handle, jbool
   if (obj_handle == nullptr) {
     return 0L;
   }
-  JVMCIEnv __peer_jvmci_env__(thread, !JVMCIENV->is_hotspot(), __FILE__, __LINE__);
+  bool jni_enomem_is_fatal = false;
+  JVMCIEnv __peer_jvmci_env__(thread, !JVMCIENV->is_hotspot(), jni_enomem_is_fatal, __FILE__, __LINE__);
   JVMCIEnv* peerEnv = &__peer_jvmci_env__;
   JVMCIEnv* thisEnv = JVMCIENV;
+  if (peerEnv->has_jni_enomem()) {
+      JVMCI_THROW_MSG_0(OutOfMemoryError, "JNI_ENOMEM creating or attaching to libjvmci");
+  }
 
   JVMCIObject obj = thisEnv->wrap(obj_handle);
   JVMCIObject result;
