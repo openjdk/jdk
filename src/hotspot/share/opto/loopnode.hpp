@@ -61,23 +61,22 @@ protected:
   uint _loop_flags;
   // Names for flag bitfields
   enum { Normal=0, Pre=1, Main=2, Post=3, PreMainPostFlagsMask=3,
-         MainHasNoPreLoop    = 1<<2,
-         HasExactTripCount   = 1<<3,
-         InnerLoop           = 1<<4,
-         PartialPeelLoop     = 1<<5,
-         PartialPeelFailed   = 1<<6,
-         HasReductions       = 1<<7,
-         WasSlpAnalyzed      = 1<<8,
-         PassedSlpAnalysis   = 1<<9,
-         DoUnrollOnly        = 1<<10,
-         VectorizedLoop      = 1<<11,
-         HasAtomicPostLoop   = 1<<12,
-         IsMultiversioned    = 1<<13,
-         StripMined          = 1<<14,
-         SubwordLoop         = 1<<15,
-         ProfileTripFailed   = 1<<16,
-         LoopNestInnerLoop = 1 << 17,
-         LoopNestLongOuterLoop = 1 << 18};
+         MainHasNoPreLoop      = 1<<2,
+         HasExactTripCount     = 1<<3,
+         InnerLoop             = 1<<4,
+         PartialPeelLoop       = 1<<5,
+         PartialPeelFailed     = 1<<6,
+         WasSlpAnalyzed        = 1<<7,
+         PassedSlpAnalysis     = 1<<8,
+         DoUnrollOnly          = 1<<9,
+         VectorizedLoop        = 1<<10,
+         HasAtomicPostLoop     = 1<<11,
+         IsMultiversioned      = 1<<12,
+         StripMined            = 1<<13,
+         SubwordLoop           = 1<<14,
+         ProfileTripFailed     = 1<<15,
+         LoopNestInnerLoop     = 1<<16,
+         LoopNestLongOuterLoop = 1<<17};
   char _unswitch_count;
   enum { _unswitch_max=3 };
   char _postloop_flags;
@@ -105,7 +104,6 @@ public:
   bool is_loop_nest_outer_loop() const { return _loop_flags & LoopNestLongOuterLoop; }
 
   void mark_partial_peel_failed() { _loop_flags |= PartialPeelFailed; }
-  void mark_has_reductions() { _loop_flags |= HasReductions; }
   void mark_was_slp() { _loop_flags |= WasSlpAnalyzed; }
   void mark_passed_slp() { _loop_flags |= PassedSlpAnalysis; }
   void mark_do_unroll_only() { _loop_flags |= DoUnrollOnly; }
@@ -286,7 +284,6 @@ public:
   bool is_pre_loop      () const { return (_loop_flags&PreMainPostFlagsMask) == Pre;    }
   bool is_main_loop     () const { return (_loop_flags&PreMainPostFlagsMask) == Main;   }
   bool is_post_loop     () const { return (_loop_flags&PreMainPostFlagsMask) == Post;   }
-  bool is_reduction_loop() const { return (_loop_flags&HasReductions) == HasReductions; }
   bool was_slp_analyzed () const { return (_loop_flags&WasSlpAnalyzed) == WasSlpAnalyzed; }
   bool has_passed_slp   () const { return (_loop_flags&PassedSlpAnalysis) == PassedSlpAnalysis; }
   bool is_unroll_only   () const { return (_loop_flags&DoUnrollOnly) == DoUnrollOnly; }
@@ -943,25 +940,33 @@ private:
 #ifdef ASSERT
   void ensure_zero_trip_guard_proj(Node* node, bool is_main_loop);
 #endif
-  void copy_skeleton_predicates_to_main_loop_helper(Node* predicate, Node* init, Node* stride, IdealLoopTree* outer_loop, LoopNode* outer_main_head,
-                                                    uint dd_main_head, const uint idx_before_pre_post, const uint idx_after_post_before_pre,
-                                                    Node* zero_trip_guard_proj_main, Node* zero_trip_guard_proj_post, const Node_List &old_new);
-  void copy_skeleton_predicates_to_main_loop(CountedLoopNode* pre_head, Node* init, Node* stride, IdealLoopTree* outer_loop, LoopNode* outer_main_head,
-                                             uint dd_main_head, const uint idx_before_pre_post, const uint idx_after_post_before_pre,
-                                             Node* zero_trip_guard_proj_main, Node* zero_trip_guard_proj_post, const Node_List &old_new);
-  Node* clone_skeleton_predicate_and_initialize(Node* iff, Node* new_init, Node* new_stride, Node* predicate, Node* uncommon_proj, Node* control,
-                                                IdealLoopTree* outer_loop, Node* input_proj);
-  Node* clone_skeleton_predicate_bool(Node* iff, Node* new_init, Node* new_stride, Node* control);
-  static bool skeleton_predicate_has_opaque(IfNode* iff);
+  void copy_assertion_predicates_to_main_loop_helper(Node* predicate, Node* init, Node* stride, IdealLoopTree* outer_loop,
+                                                     LoopNode* outer_main_head, uint dd_main_head,
+                                                     uint idx_before_pre_post, uint idx_after_post_before_pre,
+                                                     Node* zero_trip_guard_proj_main, Node* zero_trip_guard_proj_post,
+                                                     const Node_List &old_new);
+  void copy_assertion_predicates_to_main_loop(CountedLoopNode* pre_head, Node* init, Node* stride, IdealLoopTree* outer_loop,
+                                              LoopNode* outer_main_head, uint dd_main_head, uint idx_before_pre_post,
+                                              uint idx_after_post_before_pre, Node* zero_trip_guard_proj_main,
+                                              Node* zero_trip_guard_proj_post, const Node_List& old_new);
+  Node* clone_assertion_predicate_and_initialize(Node* iff, Node* new_init, Node* new_stride, Node* predicate,
+                                                 Node* uncommon_proj, Node* control, IdealLoopTree* outer_loop,
+                                                 Node* input_proj);
   static void count_opaque_loop_nodes(Node* n, uint& init, uint& stride);
   static bool subgraph_has_opaque(Node* n);
-  static void get_skeleton_predicates(Node* predicate, Unique_Node_List& list, bool get_opaque = false);
-  void update_main_loop_skeleton_predicates(Node* ctrl, CountedLoopNode* loop_head, Node* init, int stride_con);
-  void copy_skeleton_predicates_to_post_loop(LoopNode* main_loop_head, CountedLoopNode* post_loop_head, Node* init, Node* stride);
-  void initialize_skeleton_predicates_for_peeled_loop(ProjNode* predicate, LoopNode* outer_loop_head, int dd_outer_loop_head,
-                                                      Node* init, Node* stride, IdealLoopTree* outer_loop,
-                                                      const uint idx_before_clone, const Node_List& old_new);
-  void insert_loop_limit_check(ProjNode* limit_check_proj, Node* cmp_limit, Node* bol);
+  Node* create_bool_from_template_assertion_predicate(Node* template_assertion_predicate, Node* new_init, Node* new_stride,
+                                                      Node* control);
+  static bool assertion_predicate_has_loop_opaque_node(IfNode* iff);
+  static void get_assertion_predicates(Node* predicate, Unique_Node_List& list, bool get_opaque = false);
+  void update_main_loop_assertion_predicates(Node* ctrl, CountedLoopNode* loop_head, Node* init, int stride_con);
+  void copy_assertion_predicates_to_post_loop(LoopNode* main_loop_head, CountedLoopNode* post_loop_head, Node* init,
+                                              Node* stride);
+  void initialize_assertion_predicates_for_peeled_loop(IfProjNode* predicate_proj, LoopNode* outer_loop_head,
+                                                       const int dd_outer_loop_head, Node* init, Node* stride,
+                                                       IdealLoopTree* outer_loop, const uint idx_before_clone,
+                                                       const Node_List& old_new);
+  void insert_loop_limit_check_predicate(ParsePredicateSuccessProj* loop_limit_check_parse_proj, Node* cmp_limit,
+                                         Node* bol);
 #ifdef ASSERT
   bool only_has_infinite_loops();
 #endif
@@ -1220,7 +1225,7 @@ public:
 #ifdef ASSERT
   bool convert_to_long_loop(Node* cmp, Node* phi, IdealLoopTree* loop);
 #endif
-  void add_empty_predicate(Deoptimization::DeoptReason reason, Node* inner_head, IdealLoopTree* loop, SafePointNode* sfpt);
+  void add_parse_predicate(Deoptimization::DeoptReason reason, Node* inner_head, IdealLoopTree* loop, SafePointNode* sfpt);
   SafePointNode* find_safepoint(Node* back_control, Node* x, IdealLoopTree* loop);
   IdealLoopTree* insert_outer_loop(IdealLoopTree* loop, LoopNode* outer_l, Node* outer_ift);
   IdealLoopTree* create_outer_strip_mined_loop(BoolNode *test, Node *cmp, Node *init_control,
@@ -1313,9 +1318,6 @@ public:
   // Unroll the loop body one step - make each trip do 2 iterations.
   void do_unroll( IdealLoopTree *loop, Node_List &old_new, bool adjust_min_trip );
 
-  // Mark vector reduction candidates before loop unrolling
-  void mark_reductions( IdealLoopTree *loop );
-
   // Return true if exp is a constant times an induction var
   bool is_scaled_iv(Node* exp, Node* iv, BasicType bt, jlong* p_scale, bool* p_short_scale, int depth = 0);
 
@@ -1341,9 +1343,9 @@ public:
                                       bool* p_short_scale, int depth);
 
   // Create a new if above the uncommon_trap_if_pattern for the predicate to be promoted
-  ProjNode* create_new_if_for_predicate(ProjNode* cont_proj, Node* new_entry, Deoptimization::DeoptReason reason,
-                                        int opcode, bool rewire_uncommon_proj_phi_inputs = false,
-                                        bool if_cont_is_true_proj = true);
+  IfProjNode* create_new_if_for_predicate(IfProjNode* cont_proj, Node* new_entry, Deoptimization::DeoptReason reason,
+                                          int opcode, bool rewire_uncommon_proj_phi_inputs = false,
+                                          bool if_cont_is_true_proj = true);
 
  private:
   // Helper functions for create_new_if_for_predicate()
@@ -1358,47 +1360,46 @@ public:
  public:
   void register_control(Node* n, IdealLoopTree *loop, Node* pred, bool update_body = true);
 
-  static Node* skip_all_loop_predicates(Node* entry);
-  static Node* skip_loop_predicates(Node* entry);
-  static ProjNode* next_predicate(ProjNode* predicate);
+  static Node* skip_all_predicates(Node* entry);
+  static Node* skip_related_predicates(Node* entry);
+  static IfProjNode* next_predicate(IfProjNode* predicate_proj);
 
   // Find a good location to insert a predicate
-  static ProjNode* find_predicate_insertion_point(Node* start_c, Deoptimization::DeoptReason reason);
+  static ParsePredicateSuccessProj* find_predicate_insertion_point(Node* start_c, Deoptimization::DeoptReason reason);
 
-  class Predicates {
-  public:
+  class ParsePredicates {
+   private:
+    ParsePredicateSuccessProj* _loop_predicate = nullptr;
+    ParsePredicateSuccessProj* _profiled_loop_predicate = nullptr;
+    ParsePredicateSuccessProj* _loop_limit_check_predicate = nullptr;
+    Node* _first_predicate = nullptr;
+   public:
     // given loop entry, find all predicates above loop
-    Predicates(Node* entry);
+    ParsePredicates(Node* entry);
 
-    // Proj of empty loop limit check predicate
-    ProjNode* loop_limit_check() {
-      return _loop_limit_check;
+    // Proj of Loop Limit Check Parse Predicate.
+    ParsePredicateSuccessProj* loop_limit_check_predicate() {
+      return _loop_limit_check_predicate;
     }
 
-    // Proj of empty profile predicate
-    ProjNode* profile_predicate() {
-      return _profile_predicate;
+    // Proj of Profile Loop Parse Predicate.
+    ParsePredicateSuccessProj* profiled_loop_predicate() {
+      return _profiled_loop_predicate;
     }
 
-    // Proj of empty predicate
-    ProjNode* predicate() {
-      return _predicate;
+    // Proj of Loop Parse Predicate.
+    ParsePredicateSuccessProj* loop_predicate() {
+      return _loop_predicate;
     }
 
-    // First control node above all predicates
-    Node* skip_all() {
-      return _entry_to_all_predicates;
+    // Proj of first Parse Predicate when walking the graph down from root.
+    Node* get_first_predicate() {
+      return _first_predicate;
     }
-
-  private:
-    ProjNode*_loop_limit_check = nullptr;
-    ProjNode* _profile_predicate = nullptr;
-    ProjNode* _predicate = nullptr;
-    Node* _entry_to_all_predicates = nullptr;
   };
 
   // Find a predicate
-  static Node* find_predicate(Node* entry);
+  static Node* find_parse_predicate(Node* entry);
   // Construct a range check for a predicate if
   BoolNode* rc_predicate(IdealLoopTree *loop, Node* ctrl,
                          int scale, Node* offset,
@@ -1408,23 +1409,18 @@ public:
 
   // Implementation of the loop predication to promote checks outside the loop
   bool loop_predication_impl(IdealLoopTree *loop);
-  bool loop_predication_impl_helper(IdealLoopTree *loop, ProjNode* proj, ProjNode *predicate_proj,
-                                    CountedLoopNode *cl, ConNode* zero, Invariance& invar,
-                                    Deoptimization::DeoptReason reason);
-  bool loop_predication_should_follow_branches(IdealLoopTree *loop, ProjNode *predicate_proj, float& loop_trip_cnt);
+  bool loop_predication_impl_helper(IdealLoopTree* loop, IfProjNode* if_proj,
+                                    ParsePredicateSuccessProj* parse_predicate_proj, CountedLoopNode* cl, ConNode* zero,
+                                    Invariance& invar, Deoptimization::DeoptReason reason);
+  bool loop_predication_should_follow_branches(IdealLoopTree* loop, IfProjNode* predicate_proj, float& loop_trip_cnt);
   void loop_predication_follow_branches(Node *c, IdealLoopTree *loop, float loop_trip_cnt,
                                         PathFrequency& pf, Node_Stack& stack, VectorSet& seen,
                                         Node_List& if_proj_list);
-  ProjNode* insert_initial_skeleton_predicate(IfNode* iff, IdealLoopTree *loop,
-                                              ProjNode* proj, ProjNode *predicate_proj,
-                                              ProjNode* upper_bound_proj,
-                                              int scale, Node* offset,
-                                              Node* init, Node* limit, jint stride,
-                                              Node* rng, bool& overflow,
-                                              Deoptimization::DeoptReason reason);
-  Node* add_range_check_predicate(IdealLoopTree* loop, CountedLoopNode* cl,
-                                  Node* predicate_proj, int scale_con, Node* offset,
-                                  Node* limit, jint stride_con, Node* value);
+  IfProjNode* add_template_assertion_predicate(IfNode* iff, IdealLoopTree* loop, IfProjNode* if_proj, IfProjNode* predicate_proj,
+                                               IfProjNode* upper_bound_proj, int scale, Node* offset, Node* init, Node* limit,
+                                               jint stride, Node* rng, bool& overflow, Deoptimization::DeoptReason reason);
+  Node* add_range_check_elimination_assertion_predicate(IdealLoopTree* loop, Node* predicate_proj, int scale_con,
+                                                        Node* offset, Node* limit, jint stride_con, Node* value);
 
   // Helper function to collect predicate for eliminating the useless ones
   void collect_potentially_useful_predicates(IdealLoopTree *loop, Unique_Node_List &predicate_opaque1);
@@ -1489,6 +1485,9 @@ public:
   // Partially peel loop up through last_peel node.
   bool partial_peel( IdealLoopTree *loop, Node_List &old_new );
   bool duplicate_loop_backedge(IdealLoopTree *loop, Node_List &old_new);
+
+  // Move UnorderedReduction out of loop if possible
+  void move_unordered_reduction_out_of_loop(IdealLoopTree* loop);
 
   // Create a scheduled list of nodes control dependent on ctrl set.
   void scheduled_nodelist( IdealLoopTree *loop, VectorSet& ctrl, Node_List &sched );
@@ -1670,16 +1669,18 @@ private:
     _nodes_required = UINT_MAX;
   }
 
-  // Clone loop predicates to slow and fast loop when unswitching a loop
-  void clone_predicates_to_unswitched_loop(IdealLoopTree* loop, Node_List& old_new, ProjNode*& iffast_pred, ProjNode*& ifslow_pred);
-  ProjNode* clone_predicate_to_unswitched_loop(ProjNode* predicate_proj, Node* new_entry,
-                                               Deoptimization::DeoptReason reason, bool slow_loop);
-  void clone_skeleton_predicates_to_unswitched_loop(IdealLoopTree* loop, const Node_List& old_new, Deoptimization::DeoptReason reason,
-                                                    ProjNode* old_predicate_proj, ProjNode* iffast_pred, ProjNode* ifslow_pred);
-  ProjNode* clone_skeleton_predicate_for_unswitched_loops(Node* iff, ProjNode* predicate,
-                                                          Deoptimization::DeoptReason reason,
-                                                          ProjNode* output_proj);
-  static void check_created_predicate_for_unswitching(const Node* new_entry) PRODUCT_RETURN;
+  // Clone Parse Predicates to slow and fast loop when unswitching a loop
+  void clone_parse_and_assertion_predicates_to_unswitched_loop(IdealLoopTree* loop, Node_List& old_new,
+                                                               IfProjNode*& iffast_pred, IfProjNode*& ifslow_pred);
+  IfProjNode* clone_parse_predicate_to_unswitched_loop(ParsePredicateSuccessProj* predicate_proj, Node* new_entry,
+                                                       Deoptimization::DeoptReason reason, bool slow_loop);
+  void clone_assertion_predicates_to_unswitched_loop(IdealLoopTree* loop, const Node_List& old_new,
+                                                     Deoptimization::DeoptReason reason, IfProjNode* old_predicate_proj,
+                                                     IfProjNode* iffast_pred, IfProjNode* ifslow_pred);
+  IfProjNode* clone_assertion_predicate_for_unswitched_loops(Node* iff, IfProjNode* predicate,
+                                                             Deoptimization::DeoptReason reason,
+                                                             IfProjNode* output_proj);
+  static void check_cloned_parse_predicate_for_unswitching(const Node* new_entry) PRODUCT_RETURN;
 
   bool _created_loop_node;
   DEBUG_ONLY(void dump_idoms(Node* early, Node* wrong_lca);)

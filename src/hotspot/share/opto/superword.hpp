@@ -29,6 +29,7 @@
 #include "opto/phaseX.hpp"
 #include "opto/vectornode.hpp"
 #include "utilities/growableArray.hpp"
+#include "utilities/pair.hpp"
 #include "libadt/dict.hpp"
 
 //
@@ -306,8 +307,6 @@ class SuperWord : public ResourceObj {
   GrowableArray<Node*> _data_entry;      // Nodes with all inputs from outside
   GrowableArray<Node*> _mem_slice_head;  // Memory slice head nodes
   GrowableArray<Node*> _mem_slice_tail;  // Memory slice tail nodes
-  GrowableArray<Node*> _iteration_first; // nodes in the generation that has deps from phi
-  GrowableArray<Node*> _iteration_last;  // nodes in the generation that has deps to   phi
   GrowableArray<SWNodeInfo> _node_info;  // Info needed per node
   CloneMap&            _clone_map;       // map of nodes created in cloning
   CMoveKit             _cmovev_kit;      // support for vectorization of CMov
@@ -357,6 +356,7 @@ class SuperWord : public ResourceObj {
   IdealLoopTree* _lpt;             // Current loop tree node
   CountedLoopNode* _lp;            // Current CountedLoopNode
   CountedLoopEndNode* _pre_loop_end; // Current CountedLoopEndNode of pre loop
+  VectorSet      _loop_reductions; // Reduction nodes in the current loop
   Node*          _bb;              // Current basic block
   PhiNode*       _iv;              // Induction var
   bool           _race_possible;   // In cases where SDMU is true
@@ -365,9 +365,6 @@ class SuperWord : public ResourceObj {
   bool           _do_reserve_copy; // do reserve copy of the graph(loop) before final modification in output
   int            _num_work_vecs;   // Number of non memory vector operations
   int            _num_reductions;  // Number of reduction expressions applied
-  int            _ii_first;        // generation with direct deps from mem phi
-  int            _ii_last;         // generation with direct deps to   mem phi
-  GrowableArray<int> _ii_order;
 #ifndef PRODUCT
   uintx          _vector_loop_debug; // provide more printing in debug mode
 #endif
@@ -456,7 +453,9 @@ class SuperWord : public ResourceObj {
   bool same_memory_slice(MemNode* best_align_to_mem_ref, MemNode* mem_ref) const;
 
   // my_pack
+ public:
   Node_List* my_pack(Node* n)                 { return !in_bb(n) ? nullptr : _node_info.adr_at(bb_idx(n))->_my_pack; }
+ private:
   void set_my_pack(Node* n, Node_List* p)     { int i = bb_idx(n); grow_node_info(i); _node_info.adr_at(i)->_my_pack = p; }
   // is pack good for converting into one vector node replacing bunches of Cmp, Bool, CMov nodes.
   bool is_cmov_pack(Node_List* p);
@@ -471,6 +470,62 @@ class SuperWord : public ResourceObj {
 
   // methods
 
+  typedef const Pair<const Node*, int> PathEnd;
+
+  // Search for a path P = (n_1, n_2, ..., n_k) such that:
+  // - original_input(n_i, input) = n_i+1 for all 1 <= i < k,
+  // - path(n) for all n in P,
+  // - k <= max, and
+  // - there exists a node e such that original_input(n_k, input) = e and end(e).
+  // Return <e, k>, if P is found, or <nullptr, -1> otherwise.
+  // Note that original_input(n, i) has the same behavior as n->in(i) except
+  // that it commutes the inputs of binary nodes whose edges have been swapped.
+  template <typename NodePredicate1, typename NodePredicate2>
+  static PathEnd find_in_path(const Node *n1, uint input, int max,
+                              NodePredicate1 path, NodePredicate2 end) {
+    const PathEnd no_path(nullptr, -1);
+    const Node* current = n1;
+    int k = 0;
+    for (int i = 0; i <= max; i++) {
+      if (current == nullptr) {
+        return no_path;
+      }
+      if (end(current)) {
+        return PathEnd(current, k);
+      }
+      if (!path(current)) {
+        return no_path;
+      }
+      current = original_input(current, input);
+      k++;
+    }
+    return no_path;
+  }
+
+public:
+  // Whether n is a reduction operator and part of a reduction cycle.
+  // This function can be used for individual queries outside the SLP analysis,
+  // e.g. to inform matching in target-specific code. Otherwise, the
+  // almost-equivalent but faster SuperWord::mark_reductions() is preferable.
+  static bool is_reduction(const Node* n);
+  // Whether n is marked as a reduction node.
+  bool is_marked_reduction(Node* n) { return _loop_reductions.test(n->_idx); }
+  // Whether the current loop has any reduction node.
+  bool is_marked_reduction_loop() { return !_loop_reductions.is_empty(); }
+private:
+  // Whether n is a standard reduction operator.
+  static bool is_reduction_operator(const Node* n);
+  // Whether n is part of a reduction cycle via the 'input' edge index. To bound
+  // the search, constrain the size of reduction cycles to LoopMaxUnroll.
+  static bool in_reduction_cycle(const Node* n, uint input);
+  // Reference to the i'th input node of n, commuting the inputs of binary nodes
+  // whose edges have been swapped. Assumes n is a commutative operation.
+  static Node* original_input(const Node* n, uint i);
+  // Find and mark reductions in a loop. Running mark_reductions() is similar to
+  // querying is_reduction(n) for every n in the SuperWord loop, but stricter in
+  // that it assumes counted loops and requires that reduction nodes are not
+  // used within the loop except by their reduction cycle predecessors.
+  void mark_reductions();
   // Extract the superword level parallelism
   bool SLP_extract();
   // Find the adjacent memory references and create pack pairs for them.
@@ -495,22 +550,6 @@ class SuperWord : public ResourceObj {
   int get_iv_adjustment(MemNode* mem);
   // Can the preloop align the reference to position zero in the vector?
   bool ref_is_alignable(SWPointer& p);
-  // rebuild the graph so all loads in different iterations of cloned loop become dependent on phi node (in _do_vector_loop only)
-  bool hoist_loads_in_graph();
-  // Test whether MemNode::Memory dependency to the same load but in the first iteration of this loop is coming from memory phi
-  // Return false if failed
-  Node* find_phi_for_mem_dep(LoadNode* ld);
-  // Return same node but from the first generation. Return 0, if not found
-  Node* first_node(Node* nd);
-  // Return same node as this but from the last generation. Return 0, if not found
-  Node* last_node(Node* n);
-  // Mark nodes belonging to first and last generation
-  // returns first generation index or -1 if vectorization/simd is impossible
-  int mark_generations();
-  // swapping inputs of commutative instruction (Add or Mul)
-  bool fix_commutative_inputs(Node* gold, Node* fix);
-  // make packs forcefully (in _do_vector_loop only)
-  bool pack_parallel();
   // Construct dependency graph.
   void dependence_graph();
   // Return a memory slice (node list) in predecessor order starting at "start"
@@ -560,19 +599,10 @@ class SuperWord : public ResourceObj {
   void merge_packs_to_cmove();
   // Verify that for every pack, all nodes are mutually independent
   DEBUG_ONLY(void verify_packs();)
-  // Remove cycles in packset.
-  void remove_cycles();
   // Adjust the memory graph for the packed operations
   void schedule();
-  // Remove "current" from its current position in the memory graph and insert
-  // it after the appropriate insert points (lip or uip);
-  void remove_and_insert(MemNode *current, MemNode *prev, MemNode *lip, Node *uip, Unique_Node_List &schd_before);
-  // Within a store pack, schedule stores together by moving out the sandwiched memory ops according
-  // to dependence info; and within a load pack, move loads down to the last executed load.
-  void co_locate_pack(Node_List* p);
-  Node* pick_mem_state(Node_List* pk);
-  Node* find_first_mem_state(Node_List* pk);
-  Node* find_last_mem_state(Node_List* pk, Node* first_mem, bool &is_dependent);
+  // Helper function for schedule, that reorders all memops, slice by slice, according to the schedule
+  void schedule_reorder_memops(Node_List &memops_schedule);
 
   // Convert packs into vector node operations
   bool output();
@@ -604,19 +634,11 @@ class SuperWord : public ResourceObj {
   void compute_vector_element_type();
   // Are s1 and s2 in a pack pair and ordered as s1,s2?
   bool in_packset(Node* s1, Node* s2);
-  // Is s in pack p?
-  Node_List* in_pack(Node* s, Node_List* p);
   // Remove the pack at position pos in the packset
   void remove_pack_at(int pos);
-  // Return the node executed first in pack p.
-  Node* executed_first(Node_List* p);
-  // Return the node executed last in pack p.
-  Node* executed_last(Node_List* p);
   static LoadNode::ControlDependency control_dependency(Node_List* p);
   // Alignment within a vector memory reference
   int memory_alignment(MemNode* s, int iv_adjust);
-  // (Start, end] half-open range defining which operands are vector
-  void vector_opd_range(Node* n, uint* start, uint* end);
   // Smallest type containing range of values
   const Type* container_type(Node* n);
   // Adjust pre-loop limit so that in main loop, a load/store reference
@@ -627,15 +649,12 @@ class SuperWord : public ResourceObj {
   // Is the use of d1 in u1 at the same operand position as d2 in u2?
   bool opnd_positions_match(Node* d1, Node* u1, Node* d2, Node* u2);
   void init();
-  // clean up some basic structures - used if the ideal graph was rebuilt
-  void restart();
 
   // print methods
   void print_packset();
   void print_pack(Node_List* p);
   void print_bb();
   void print_stmt(Node* s);
-  char* blank(uint depth);
 
   void packset_sort(int n);
 };

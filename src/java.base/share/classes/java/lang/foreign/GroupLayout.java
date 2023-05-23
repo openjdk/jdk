@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -63,5 +63,14 @@ public sealed interface GroupLayout extends MemoryLayout permits StructLayout, U
      * {@inheritDoc}
      */
     @Override
-    GroupLayout withBitAlignment(long bitAlignment);
+    GroupLayout withoutName();
+
+    /**
+     * {@inheritDoc}
+     * @throws IllegalArgumentException {@inheritDoc}
+     * @throws IllegalArgumentException if {@code byteAlignment} is less than {@code M}, where {@code M} is the maximum alignment
+     * constraint in any of the member layouts associated with this group layout.
+     */
+    @Override
+    GroupLayout withByteAlignment(long byteAlignment);
 }

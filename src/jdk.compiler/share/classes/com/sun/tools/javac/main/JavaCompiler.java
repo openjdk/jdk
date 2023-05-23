@@ -1535,11 +1535,6 @@ public class JavaCompiler {
                 super.visitRecordPattern(that);
             }
             @Override
-            public void visitParenthesizedPattern(JCTree.JCParenthesizedPattern tree) {
-                hasPatterns = true;
-                super.visitParenthesizedPattern(tree);
-            }
-            @Override
             public void visitSwitch(JCSwitch tree) {
                 hasPatterns |= tree.patternSwitch;
                 super.visitSwitch(tree);
@@ -1593,6 +1588,12 @@ public class JavaCompiler {
 
             env.tree = transTypes.translateTopLevelClass(env.tree, localMake);
             compileStates.put(env, CompileState.TRANSTYPES);
+
+            if (shouldStop(CompileState.TRANSLITERALS))
+                return;
+
+            env.tree = TransLiterals.instance(context).translateTopLevelClass(env, env.tree, localMake);
+            compileStates.put(env, CompileState.TRANSLITERALS);
 
             if (shouldStop(CompileState.TRANSPATTERNS))
                 return;

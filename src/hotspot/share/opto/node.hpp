@@ -151,6 +151,7 @@ class Pipeline;
 class PopulateIndexNode;
 class ProjNode;
 class RangeCheckNode;
+class ReductionNode;
 class RegMask;
 class RegionNode;
 class RootNode;
@@ -164,6 +165,7 @@ class SubTypeCheckNode;
 class Type;
 class TypeNode;
 class UnlockNode;
+class UnorderedReductionNode;
 class VectorNode;
 class LoadVectorNode;
 class LoadVectorMaskedNode;
@@ -578,6 +580,12 @@ public:
     _in[i2] = n1;
     // If this node is in the hash table, make sure it doesn't need a rehash.
     assert(check_hash == NO_HASH || check_hash == hash(), "edge swap must preserve hash code");
+    // Flip swapped edges flag.
+    if (has_swapped_edges()) {
+      remove_flag(Node::Flag_has_swapped_edges);
+    } else {
+      add_flag(Node::Flag_has_swapped_edges);
+    }
   }
 
   // Iterators over input Nodes for a Node X are written as:
@@ -712,6 +720,8 @@ public:
         DEFINE_CLASS_ID(CompressV, Vector, 4)
         DEFINE_CLASS_ID(ExpandV, Vector, 5)
         DEFINE_CLASS_ID(CompressM, Vector, 6)
+        DEFINE_CLASS_ID(Reduction, Vector, 7)
+          DEFINE_CLASS_ID(UnorderedReduction, Reduction, 0)
       DEFINE_CLASS_ID(Con, Type, 8)
           DEFINE_CLASS_ID(ConI, Con, 0)
 
@@ -784,7 +794,7 @@ public:
     Flag_avoid_back_to_back_before   = 1 << 8,
     Flag_avoid_back_to_back_after    = 1 << 9,
     Flag_has_call                    = 1 << 10,
-    Flag_is_reduction                = 1 << 11,
+    Flag_has_swapped_edges           = 1 << 11,
     Flag_is_scheduled                = 1 << 12,
     Flag_is_expensive                = 1 << 13,
     Flag_is_predicated_vector        = 1 << 14,
@@ -935,6 +945,7 @@ public:
   DEFINE_CLASS_QUERY(PCTable)
   DEFINE_CLASS_QUERY(Phi)
   DEFINE_CLASS_QUERY(Proj)
+  DEFINE_CLASS_QUERY(Reduction)
   DEFINE_CLASS_QUERY(Region)
   DEFINE_CLASS_QUERY(Root)
   DEFINE_CLASS_QUERY(SafePoint)
@@ -944,6 +955,7 @@ public:
   DEFINE_CLASS_QUERY(Sub)
   DEFINE_CLASS_QUERY(SubTypeCheck)
   DEFINE_CLASS_QUERY(Type)
+  DEFINE_CLASS_QUERY(UnorderedReduction)
   DEFINE_CLASS_QUERY(Vector)
   DEFINE_CLASS_QUERY(VectorMaskCmp)
   DEFINE_CLASS_QUERY(VectorUnbox)
@@ -1001,10 +1013,8 @@ public:
   bool is_macro() const { return (_flags & Flag_is_macro) != 0; }
   // The node is expensive: the best control is set during loop opts
   bool is_expensive() const { return (_flags & Flag_is_expensive) != 0 && in(0) != nullptr; }
-
-  // An arithmetic node which accumulates a data in a loop.
-  // It must have the loop's phi as input and provide a def to the phi.
-  bool is_reduction() const { return (_flags & Flag_is_reduction) != 0; }
+  // The node's original edge position is swapped.
+  bool has_swapped_edges() const { return (_flags & Flag_has_swapped_edges) != 0; }
 
   bool is_predicated_vector() const { return (_flags & Flag_is_predicated_vector) != 0; }
 
@@ -1240,9 +1250,9 @@ public:
   void   set_debug_orig(Node* orig);   // _debug_orig = orig
   void   dump_orig(outputStream *st, bool print_key = true) const;
 
-  int  _debug_idx;                     // Unique value assigned to every node.
-  int   debug_idx() const              { return _debug_idx; }
-  void  set_debug_idx( int debug_idx ) { _debug_idx = debug_idx; }
+  uint64_t _debug_idx;                 // Unique value assigned to every node.
+  uint64_t debug_idx() const           { return _debug_idx; }
+  void set_debug_idx(uint64_t debug_idx) { _debug_idx = debug_idx; }
 
   int        _hash_lock;               // Barrier to modifications of nodes in the hash table
   void  enter_hash_lock() { ++_hash_lock; assert(_hash_lock < 99, "in too many hash tables?"); }
@@ -1548,7 +1558,7 @@ public:
     Copy::zero_to_bytes(_nodes, _max * sizeof(Node*));
   }
 
-  uint Size() const { return _max; }
+  uint max() const { return _max; }
   void dump() const;
 };
 

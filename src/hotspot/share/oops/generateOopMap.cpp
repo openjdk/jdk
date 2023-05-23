@@ -1320,7 +1320,7 @@ void GenerateOopMap::print_current_state(outputStream   *os,
     case Bytecodes::_invokeinterface: {
       int idx = currentBC->has_index_u4() ? currentBC->get_index_u4() : currentBC->get_index_u2_cpcache();
       ConstantPool* cp      = method()->constants();
-      int nameAndTypeIdx    = cp->name_and_type_ref_index_at(idx);
+      int nameAndTypeIdx    = cp->name_and_type_ref_index_at(idx, currentBC->code());
       int signatureIdx      = cp->signature_ref_index_at(nameAndTypeIdx);
       Symbol* signature     = cp->symbol_at(signatureIdx);
       os->print("%s", signature->as_C_string());
@@ -1597,16 +1597,16 @@ void GenerateOopMap::interp1(BytecodeStream *itr) {
     case Bytecodes::_jsr:               do_jsr(itr->dest());         break;
     case Bytecodes::_jsr_w:             do_jsr(itr->dest_w());       break;
 
-    case Bytecodes::_getstatic:         do_field(true,  true,  itr->get_index_u2_cpcache(), itr->bci()); break;
-    case Bytecodes::_putstatic:         do_field(false, true,  itr->get_index_u2_cpcache(), itr->bci()); break;
-    case Bytecodes::_getfield:          do_field(true,  false, itr->get_index_u2_cpcache(), itr->bci()); break;
-    case Bytecodes::_putfield:          do_field(false, false, itr->get_index_u2_cpcache(), itr->bci()); break;
+    case Bytecodes::_getstatic:         do_field(true,  true,  itr->get_index_u2_cpcache(), itr->bci(), itr->code()); break;
+    case Bytecodes::_putstatic:         do_field(false, true,  itr->get_index_u2_cpcache(), itr->bci(), itr->code()); break;
+    case Bytecodes::_getfield:          do_field(true,  false, itr->get_index_u2_cpcache(), itr->bci(), itr->code()); break;
+    case Bytecodes::_putfield:          do_field(false, false, itr->get_index_u2_cpcache(), itr->bci(), itr->code()); break;
 
     case Bytecodes::_invokevirtual:
-    case Bytecodes::_invokespecial:     do_method(false, false, itr->get_index_u2_cpcache(), itr->bci()); break;
-    case Bytecodes::_invokestatic:      do_method(true,  false, itr->get_index_u2_cpcache(), itr->bci()); break;
-    case Bytecodes::_invokedynamic:     do_method(true,  false, itr->get_index_u4(),         itr->bci()); break;
-    case Bytecodes::_invokeinterface:   do_method(false, true,  itr->get_index_u2_cpcache(), itr->bci()); break;
+    case Bytecodes::_invokespecial:     do_method(false, false, itr->get_index_u2_cpcache(), itr->bci(), itr->code()); break;
+    case Bytecodes::_invokestatic:      do_method(true,  false, itr->get_index_u2_cpcache(), itr->bci(), itr->code()); break;
+    case Bytecodes::_invokedynamic:     do_method(true,  false, itr->get_index_u4(),         itr->bci(), itr->code()); break;
+    case Bytecodes::_invokeinterface:   do_method(false, true,  itr->get_index_u2_cpcache(), itr->bci(), itr->code()); break;
     case Bytecodes::_newarray:
     case Bytecodes::_anewarray:         pp_new_ref(vCTS, itr->bci()); break;
     case Bytecodes::_checkcast:         do_checkcast(); break;
@@ -1931,10 +1931,10 @@ int GenerateOopMap::copy_cts(CellTypeState *dst, CellTypeState *src) {
   return idx;
 }
 
-void GenerateOopMap::do_field(int is_get, int is_static, int idx, int bci) {
+void GenerateOopMap::do_field(int is_get, int is_static, int idx, int bci, Bytecodes::Code bc) {
   // Dig up signature for field in constant pool
   ConstantPool* cp     = method()->constants();
-  int nameAndTypeIdx     = cp->name_and_type_ref_index_at(idx);
+  int nameAndTypeIdx     = cp->name_and_type_ref_index_at(idx, bc);
   int signatureIdx       = cp->signature_ref_index_at(nameAndTypeIdx);
   Symbol* signature      = cp->symbol_at(signatureIdx);
 
@@ -1957,10 +1957,10 @@ void GenerateOopMap::do_field(int is_get, int is_static, int idx, int bci) {
   pp(in, out);
 }
 
-void GenerateOopMap::do_method(int is_static, int is_interface, int idx, int bci) {
+void GenerateOopMap::do_method(int is_static, int is_interface, int idx, int bci, Bytecodes::Code bc) {
  // Dig up signature for field in constant pool
   ConstantPool* cp  = _method->constants();
-  Symbol* signature   = cp->signature_ref_at(idx);
+  Symbol* signature   = cp->signature_ref_at(idx, bc);
 
   // Parse method signature
   CellTypeState out[4];

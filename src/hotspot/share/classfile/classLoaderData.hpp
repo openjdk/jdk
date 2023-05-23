@@ -160,7 +160,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   Symbol* _name_and_id;
   JFR_ONLY(DEFINE_TRACE_ID_FIELD;)
 
-  void set_next(ClassLoaderData* next) { _next = next; }
+  void set_next(ClassLoaderData* next) { Atomic::store(&_next, next); }
   ClassLoaderData* next() const        { return Atomic::load(&_next); }
 
   ClassLoaderData(Handle h_class_loader, bool has_class_mirror_holder);
@@ -303,8 +303,8 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   bool modules_defined() { return (_modules != nullptr); }
 
   // Offsets
-  static ByteSize holder_offset()     { return in_ByteSize(offset_of(ClassLoaderData, _holder)); }
-  static ByteSize keep_alive_offset() { return in_ByteSize(offset_of(ClassLoaderData, _keep_alive)); }
+  static ByteSize holder_offset()     { return byte_offset_of(ClassLoaderData, _holder); }
+  static ByteSize keep_alive_offset() { return byte_offset_of(ClassLoaderData, _keep_alive); }
 
   // Loaded class dictionary
   Dictionary* dictionary() const { return _dictionary; }
