@@ -25,7 +25,7 @@
 /*
  * @test
  * @bug 8307990
- * @requires (os.family == "linux" & !vm.musl)
+ * @requires (os.family == "linux")
  * @requires vm.debug
  * @library /test/lib
  * @run main/othervm/timeout=300 JspawnhelperProtocol
@@ -47,7 +47,7 @@ public class JspawnhelperProtocol {
     private static final String[] CMD = { "pwd" };
     private static final String ENV_KEY = "JTREG_JSPAWNHELPER_PROTOCOL_TEST";
 
-    private static void childCode(String arg) throws IOException, InterruptedException {
+    private static void parentCode(String arg) throws IOException, InterruptedException {
         System.out.println("Recursively executing 'JspawnhelperProtocol " + arg + "'");
         Process p = null;
         try {
@@ -57,14 +57,14 @@ public class JspawnhelperProtocol {
             System.exit(ERROR);
         }
         if (!p.waitFor(TIMEOUT, TimeUnit.SECONDS)) {
-            System.out.println("Grandchild process timed out");
+            System.out.println("Child process timed out");
             System.exit(ERROR + 1);
         }
         if (p.exitValue() == 0) {
             String pwd = p.inputReader().readLine();
             String realPwd = Path.of("").toAbsolutePath().toString();
             if (!realPwd.equals(pwd)) {
-                System.out.println("Grandchild process returned '" + pwd + "' (expected '" + realPwd + "')");
+                System.out.println("Child process returned '" + pwd + "' (expected '" + realPwd + "')");
                 System.exit(ERROR + 2);
             }
             System.out.println("  Successfully executed '" + CMD[0] + "'");
@@ -83,10 +83,10 @@ public class JspawnhelperProtocol {
         pb.inheritIO();
         Process p = pb.start();
         if (!p.waitFor(TIMEOUT, TimeUnit.SECONDS)) {
-            throw new Exception("Child process timed out");
+            throw new Exception("Parent process timed out");
         }
         if (p.exitValue() != 0) {
-            throw new Exception("Child process exited with " + p.exitValue());
+            throw new Exception("Parent process exited with " + p.exitValue());
         }
     }
 
@@ -113,14 +113,14 @@ public class JspawnhelperProtocol {
             throw new Exception("Wrong output from child process");
         }
         if (!p.waitFor(TIMEOUT, TimeUnit.SECONDS)) {
-            throw new Exception("Child process timed out");
+            throw new Exception("Parent process timed out");
         }
 
         int ret = p.exitValue();
         if (ret == 0) {
-            throw new Exception("Expected error in child execution");
+            throw new Exception("Expected error during child execution");
         }
-        System.out.println("Child exit code: " + ret);
+        System.out.println("Parent exit code: " + ret);
     }
 
     private static void simulateCrashInParent(int stage) throws Exception {
@@ -140,13 +140,13 @@ public class JspawnhelperProtocol {
             }
         }
         if (line == null) {
-            throw new Exception("Wrong output from child process");
+            throw new Exception("Wrong output from parent process");
         }
         System.out.println(line);
         long grandChildPid = Integer.parseInt(line.substring(line.indexOf(':') + 1));
 
         if (!p.waitFor(TIMEOUT, TimeUnit.SECONDS)) {
-            throw new Exception("Child process timed out");
+            throw new Exception("Parent process timed out");
         }
 
         Optional<ProcessHandle> oph = ProcessHandle.of(grandChildPid);
@@ -161,16 +161,28 @@ public class JspawnhelperProtocol {
         if (ret != stage) {
             throw new Exception("Expected exit code " + stage + " but got " + ret);
         }
-        System.out.println("Child exit code: " + ret);
+        System.out.println("Parent exit code: " + ret);
     }
 
     public static void main(String[] args) throws Exception {
-
+        // This test works as follows:
+        //  - jtreg executes the test class `JspawnhelperProtocol` without arguments.
+        //    This is the initial "grandparent" process.
+        //  - For each sub-test (i.e. `normalExec()`, `simulateCrashInParent()` and
+        //    `simulateCrashInChild()`), a new sub-process (called the "parent") will be
+        //    forked which executes `JspawnhelperProtocol` recursively with a corresponding
+        //    command line argument.
+        //  - The forked `JspawnhelperProtocol` process (i.e. the "parent") runs
+        //    `JspawnhelperProtocol::parentCode()` which forks off yet another sub-process
+        //    (called the "child").
+        //  - The sub-tests in the "grandparent" check that various abnormal program
+        //    terminations in the "parent" or the "child" process are handled gracefully and
+        //    don't lead to deadlocks or zombie processes.
         if (args.length > 0) {
-            // We enter here if we get executed recursively from within this test (see below)
-            childCode(args[0]);
+            // Entry point for recursive execution in the "parent" process
+            parentCode(args[0]);
         } else {
-            // Normal test entry
+            // Main test entry for execution from jtreg
             normalExec();
             simulateCrashInParent(1);
             simulateCrashInParent(2);
