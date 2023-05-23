@@ -38,6 +38,7 @@
 #include "runtime/threadSMR.inline.hpp"
 #include "prims/stackWalker.hpp"
 #include "prims/jvmtiExport.hpp"
+#include "prims/jvmtiEnvBase.hpp"
 
 #define PRINT_C_FRAME_INFO 0
 
@@ -154,6 +155,9 @@ void asyncGetStackTraceImpl(ASGST_CallTrace *trace, jint depth, void* ucontext, 
   bool walk_same_thread = (options & ASGST_WALK_SAME_THREAD) != 0;
   bool check_kind = trace->kind != 0;
   int kind_mask = check_kind ? trace->kind : -1;
+  bool check_state = trace->state != 0;
+  int state_mask = check_state ? trace->state : -1;
+
   Thread* raw_thread;
 
   if (walk_same_thread) {
@@ -174,6 +178,8 @@ void asyncGetStackTraceImpl(ASGST_CallTrace *trace, jint depth, void* ucontext, 
 
   JavaThread* thread;
 
+  trace->state = -1;
+
   if (raw_thread == NULL || !raw_thread->is_Java_thread()) {
     trace->kind = ASGST_CPP_TRACE;
     if ((trace->kind & kind_mask) == 0) {
@@ -192,6 +198,7 @@ void asyncGetStackTraceImpl(ASGST_CallTrace *trace, jint depth, void* ucontext, 
   }
 
   trace->kind = ASGST_JAVA_TRACE; // 0
+
   if ((trace->kind & kind_mask) == 0) {
     trace->num_frames = ASGST_WRONG_KIND;
     return;
@@ -199,6 +206,7 @@ void asyncGetStackTraceImpl(ASGST_CallTrace *trace, jint depth, void* ucontext, 
 
   if ((thread = JavaThread::cast(raw_thread))->is_exiting()) {
     trace->num_frames = (jint)ASGST_THREAD_EXIT; // -8
+    trace->state = JVMTI_THREAD_STATE_TERMINATED;
     return;
   }
 
@@ -240,6 +248,36 @@ void asyncGetStackTraceImpl(ASGST_CallTrace *trace, jint depth, void* ucontext, 
 
   if (!JvmtiExport::should_post_class_load()) {
     trace->num_frames = (jint)ASGST_NO_CLASS_LOAD; // -1
+    return;
+  }
+
+  trace->state = JVMTI_THREAD_STATE_ALIVE;
+
+  if (thread->is_suspended()) {
+    trace->state |= JVMTI_THREAD_STATE_SUSPENDED;
+  }
+
+  switch (thread->thread_state()) {
+    case _thread_in_native:
+    case _thread_in_native_trans:
+      trace->state |= JVMTI_THREAD_STATE_IN_NATIVE;
+      break;
+    case _thread_blocked:
+    case _thread_blocked_trans:
+      trace->state |= JVMTI_THREAD_STATE_BLOCKED_ON_MONITOR_ENTER;
+      break;
+    case _thread_in_vm:
+    case _thread_in_Java:
+    case _thread_new:
+      {
+      //trace->state = JvmtiEnvBase::get_thread_state(thread->threadObj(), thread);
+      break;
+      }
+    default:
+      break;
+  }
+  if ((trace->state & state_mask) == 0) {
+    trace->num_frames = ASGST_WRONG_STATE;
     return;
   }
 

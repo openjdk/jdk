@@ -1725,8 +1725,9 @@ void java_lang_Thread::set_thread_status(oop java_thread, JavaThreadStatus statu
 // Read thread status value from threadStatus field in java.lang.Thread java class.
 JavaThreadStatus java_lang_Thread::get_thread_status(oop java_thread) {
   // Make sure the caller is operating on behalf of the VM or is
-  // running VM code (state == _thread_in_vm).
-  assert(Threads_lock->owned_by_self() || Thread::current()->is_VM_thread() ||
+  // running VM code (state == _thread_in_vm), or is walking the stack
+  // asynchronously
+  assert(Threads_lock->owned_by_self() || Thread::currently_in_async_stack_walking() || Thread::current()->is_VM_thread() ||
          JavaThread::current()->thread_state() == _thread_in_vm,
          "Java Thread is not running in vm");
   GET_FIELDHOLDER_FIELD(java_thread, get_thread_status, JavaThreadStatus::NEW /* not initialized */);

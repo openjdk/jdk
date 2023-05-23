@@ -100,14 +100,16 @@ typedef struct {
   jint num_frames;                // number of frames in this trace,
                                   // (< 0 indicates the frame is not walkable).
   uint8_t kind;                   // kind of the trace, if non zero intialized, it is a bit mask for accepted kinds
-  uint8_t state;
+  jint state;                     // thread state (jvmti->GetThreadState), if non zero initialized,
+                                  // it is a bit mask for accepted states, non Java kind traces are always accepted
+                                  // and get state -1
   ASGST_CallFrame *frames;        // frames that make up this trace. Callee followed by callers.
   void* frame_info;               // more information on frames
 } ASGST_CallTrace;
 
 
 enum ASGST_Options {
- ASGST_INCLUDE_C_FRAMES         = 1, // include C/C++ (this includes Stub frames)
+  ASGST_INCLUDE_C_FRAMES         = 1, // include C/C++ (this includes Stub frames)
   ASGST_INCLUDE_NON_JAVA_THREADS = 2, // walk the stacks of C/C++, GC and deopt threads too
   ASGST_WALK_DURING_UNSAFE_STATES = 4, // walk the stack during potentially unsafe thread states (like safepoints)
   // walk the stack for the same thread (e.g. in a signal handler),
