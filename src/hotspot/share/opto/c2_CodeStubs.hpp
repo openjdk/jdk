@@ -112,6 +112,27 @@ public:
 };
 #endif
 
+//-----------------------------C2GeneralStub-----------------------------------
+// A generalized stub that can be used to implement an arbitrary stub in a
+// type-safe manner. An example:
+//
+// Register dst; XMMRegister src;
+// // The lambda defining how the code is emitted in the stub
+// auto slowpath = [](C2_MacroAssembler& masm, C2GeneralStub<Register, XMMRegister>& stub) {
+//   // Access the saved data in a type safe manner
+//   Register dst = stub.get<0>();
+//   XMMRegister src = stub.get<1>();
+//   masm.bind(stub.entry());
+//   ...
+//   masm.jump(stub.continuation());
+// }
+// // Create a stub with 2 data fields being dst and src, a max size of 4 bytes
+// // and predefined emission function
+// auto stub = C2CodeStub::make<Register, XMMRegister>(dst, src, 4, slowpath);
+// __ jump_conditional(stub->entry());
+// ...
+// __ bind(stub->continuation());
+//
 template <class... Ts>
 class C2GeneralStub : public C2CodeStub {
 private:
