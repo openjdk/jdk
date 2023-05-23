@@ -47,7 +47,7 @@ import java.lang.foreign.MemorySegment.Scope;
  * features an <em>unbounded lifetime</em>. As such, native segments allocated with the global arena are always
  * accessible and their backing regions of memory are never deallocated. Moreover, memory segments allocated with the
  * global arena can be {@linkplain MemorySegment#isAccessibleBy(Thread) accessed} from any thread.
- * {@snippet file=Snippets.java region=global-allocation lang = java:
+ * {@snippet lang = java:
  * MemorySegment segment = Arena.global().allocate(100, 1); // @highlight regex='global()'
  * // ...
  * // segment is never deallocated!
@@ -58,7 +58,7 @@ import java.lang.foreign.MemorySegment.Scope;
  * of memory backing memory segments allocated with the automatic arena are deallocated at some unspecified time
  * <em>after</em> the automatic arena (and all the segments allocated by it) become
  * <a href="../../../java/lang/ref/package.html#reachability">unreachable</a>, as shown below:
- * {@snippet file=Snippets.java region=auto-allocation lang = java:
+ * {@snippet lang = java:
  * MemorySegment segment = Arena.ofAuto().allocate(100, 1); // @highlight regex='ofAuto()'
  * // ...
  * segment = null; // the segment region becomes available for deallocation after this point
@@ -74,7 +74,7 @@ import java.lang.foreign.MemorySegment.Scope;
  * When this happens, all the segments allocated with the confined arena are invalidated, and subsequent access
  * operations on these segments will fail {@link IllegalStateException}:
  *
- * {@snippet file=Snippets.java region=confined-allocation lang = java:
+ * {@snippet lang = java:
  * MemorySegment segment = null;
  * try (Arena arena = Arena.ofConfined()) { // @highlight regex='ofConfined()'
  *     segment = arena.allocate(100);
@@ -154,7 +154,7 @@ import java.lang.foreign.MemorySegment.Scope;
  * allocated with the slicing arena (since the scope of the slicing arena is the same as that of the underlying
  * confined arena):
  *
- * {@snippet  lang = java:
+ * {@snippet lang = java:
  * class SlicingArena implements Arena {
  *     final Arena arena = Arena.ofConfined();
  *     final SegmentAllocator slicingAllocator;
