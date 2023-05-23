@@ -4167,7 +4167,7 @@ void PhaseIdealLoop::eliminate_useless_zero_trip_guard() {
       if (loop == nullptr) {
         // unreachable from _ltree_root: zero trip guard is in a newly discovered infinite loop.
         // We can't tell if the opaque node is useful or not
-       assert(guarded_loop == nullptr || guarded_loop->is_in_infinite_subgraph(), "");
+        assert(guarded_loop == nullptr || guarded_loop->is_in_infinite_subgraph(), "");
       } else {
         assert(guarded_loop == nullptr, "");
         this->_igvn.replace_node(opaque, opaque->in(1));
