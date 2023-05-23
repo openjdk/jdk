@@ -395,7 +395,7 @@ final class DigitList implements Cloneable {
     /**
      * Determine if a number should create a 1 in the least significant location
      * if truncating the representation to the given number of digits would
-     * violate the current RoundingMode contract
+     * violate the current RoundingMode contract.
      * @param maximumDigits The maximum number of digits to be shown.
      *
      * Upon return, count will either be one or zero.
