@@ -35,9 +35,11 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.IntFunction;
 
+import org.testng.SkipException;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
@@ -81,6 +83,17 @@ public class TestSegmentCopy {
         MemorySegment s2 = kind2.makeSegment(TEST_BYTE_SIZE);
         // check failure with read-only dest
         MemorySegment.copy(s1, Type.BYTE.layout, 0, s2.asReadOnly(), Type.BYTE.layout, 0, 0);
+    }
+
+    @Test(expectedExceptions = IndexOutOfBoundsException.class, dataProvider = "types")
+    public void testBadOverflow(Type type) {
+        if (type.layout.byteSize() > 1) {
+            MemorySegment segment = MemorySegment.ofArray(new byte[100]);
+            // check failure with read-only dest
+            MemorySegment.copy(segment, type.layout, 0, segment, type.layout, 0, Long.MAX_VALUE);
+        } else {
+            throw new SkipException("Byte layouts do not overflow");
+        }
     }
 
     @Test(dataProvider = "segmentKindsAndTypes")
@@ -195,6 +208,13 @@ public class TestSegmentCopy {
             }
         }
         return cases.toArray(Object[][]::new);
+    }
+
+    @DataProvider
+    static Object[][] types() {
+        return Arrays.stream(Type.values())
+                .map(t -> new Object[] { t })
+                .toArray(Object[][]::new);
     }
 
     @DataProvider
