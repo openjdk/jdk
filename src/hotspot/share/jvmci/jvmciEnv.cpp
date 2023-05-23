@@ -314,6 +314,7 @@ void JVMCIEnv::init(JavaThread* thread, bool is_hotspot, bool jni_enomem_is_fata
 // Prints a pending exception (if any) and its stack trace to st.
 // Also partially logs the stack trace to the JVMCI event log.
 void JVMCIEnv::describe_pending_exception(outputStream* st) {
+  ResourceMark rm;
   char* stack_trace = nullptr;
   if (pending_exception_as_string(nullptr, (const char**) &stack_trace)) {
     st->print_raw_cr(stack_trace);

@@ -51,6 +51,7 @@ import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class TestUncaughtErrorInCompileMethod extends JVMCIServiceLocator {
 
@@ -76,6 +77,7 @@ public class TestUncaughtErrorInCompileMethod extends JVMCIServiceLocator {
             while (System.currentTimeMillis() - start < 10_000) {
                 total += getTime();
                 if (watch.exists()) {
+                    System.err.println("saw " + watch + " - exiting loop");
                     watch.delete();
                     break;
                 }
@@ -101,7 +103,7 @@ public class TestUncaughtErrorInCompileMethod extends JVMCIServiceLocator {
             TestUncaughtErrorInCompileMethod.class.getName(), "true");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         if (fatalError) {
-            output.shouldContain("fatal error: Fatal exception in JVMCI: testing JVMCI fatal exception handling");
+            output.shouldContain("testing JVMCI fatal exception handling");
             output.shouldNotHaveExitValue(0);
             File hs_err_file = openHsErrFileFromOutput(output);
             Path hsErrPath = hs_err_file.toPath();
@@ -130,7 +132,7 @@ public class TestUncaughtErrorInCompileMethod extends JVMCIServiceLocator {
                 }
             }
         } else {
-            output.shouldContain("COMPILE SKIPPED: uncaught exception in call_HotSpotJVMCIRuntime_compileMethod [compiler.jvmci.TestUncaughtErrorInCompileMethod$CompilerCreationError]");
+            output.shouldContain("COMPILE SKIPPED: uncaught exception in call_HotSpotJVMCIRuntime_compileMethod [compiler.jvmci.TestUncaughtErrorInCompileMethod$CompilerCreationError");
             output.shouldHaveExitValue(0);
         }
     }
@@ -138,12 +140,17 @@ public class TestUncaughtErrorInCompileMethod extends JVMCIServiceLocator {
     public TestUncaughtErrorInCompileMethod() {
     }
 
-    static class CompilerCreationError extends InternalError {}
+    static class CompilerCreationError extends InternalError {
+        CompilerCreationError(int attempt) {
+            super("attempt " + attempt);
+        }
+    }
 
     @Override
     public <S> S getProvider(Class<S> service) {
         if (service == JVMCICompilerFactory.class) {
             return service.cast(new JVMCICompilerFactory() {
+                final AtomicInteger counter = new AtomicInteger();
                 @Override
                 public String getCompilerName() {
                     return "ErrorCompiler";
@@ -151,13 +158,23 @@ public class TestUncaughtErrorInCompileMethod extends JVMCIServiceLocator {
 
                 @Override
                 public JVMCICompiler createCompiler(JVMCIRuntime runtime) {
-                    File watch = new File(tmpFileName);
-                    try {
-                        watch.createNewFile();
-                    } catch (IOException e) {
-                        e.printStackTrace();
+                    int attempt = counter.incrementAndGet();
+                    CompilerCreationError e = new CompilerCreationError(attempt);
+                    e.printStackTrace();
+                    if (attempt == 10) {
+                        // Delay the creation of the file that causes the
+                        // loop in main to exit so that compilation failures
+                        // have time to be reported by -XX:+PrintCompilation.
+                        File watch = new File(tmpFileName);
+                        try {
+                            System.err.println("creating " + watch);
+                            watch.createNewFile();
+                            System.err.println("created " + watch);
+                        } catch (IOException ex) {
+                            ex.printStackTrace();
+                        }
                     }
-                    throw new CompilerCreationError();
+                    throw e;
                 }
             });
         }

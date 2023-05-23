@@ -1639,7 +1639,7 @@ void JVMCIRuntime::fatal_exception(JVMCIEnv* JVMCIENV, const char* message) {
     // Allow error reporting thread time to print the stack trace.
     THREAD->sleep(200);
   }
-  fatal("Fatal exception in JVMCI: %s", message);
+  fatal("Fatal JVMCI exception (see JVMCI Events for stack trace): %s", message);
 }
 
 // ------------------------------------------------------------------
@@ -1988,6 +1988,7 @@ JVMCI::CodeInstallResult JVMCIRuntime::validate_compile_task_dependencies(Depend
 // Otherwise, it returns false.
 static bool after_compiler_upcall(JVMCIEnv* JVMCIENV, JVMCICompiler* compiler, const methodHandle& method, const char* function) {
   if (JVMCIENV->has_pending_exception()) {
+    ResourceMark rm;
     bool reason_on_C_heap = true;
     const char* pending_string = nullptr;
     const char* pending_stack_trace = nullptr;
@@ -2001,7 +2002,6 @@ static bool after_compiler_upcall(JVMCIEnv* JVMCIENV, JVMCICompiler* compiler, c
     JVMCI_event_1("%s", failure_reason);
     Log(jit, compilation) log;
     if (log.is_info()) {
-      ResourceMark rm;
       log.info("%s while compiling %s", failure_reason, method->name_and_sig_as_C_string());
       if (pending_stack_trace != nullptr) {
         LogStream ls(log.info());
