@@ -53,7 +53,7 @@ public class ScreencastHelper {
         SCREENCAST_DEBUG = Boolean.parseBoolean(
                 AccessController.doPrivileged(
                         new GetPropertyAction(
-                                "awt.robot.screencastDebug",
+                                "awt.robot.screenshotDebug",
                                 "false"
                         )
                 ));

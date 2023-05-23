@@ -42,7 +42,9 @@ import sun.security.action.GetPropertyAction;
 final class XRobotPeer implements RobotPeer {
 
     private static final boolean tryGtk;
-    private static final boolean useScreencast;
+    private static final String screenshotMethod;
+    private static final String METHOD_X11 = "x11";
+    private static final String METHOD_SCREENCAST = "dbusScreencast";
 
     static {
         loadNativeLibraries();
@@ -59,16 +61,17 @@ final class XRobotPeer implements RobotPeer {
             isOnWayland = sunToolkit.isRunningOnWayland();
         }
 
-        useScreencast = Boolean.parseBoolean(
-                AccessController.doPrivileged(
-                        new GetPropertyAction(
-                                "awt.robot.screencastEnabled",
-                                String.valueOf(isOnWayland)
-                        )));
+        screenshotMethod = AccessController.doPrivileged(
+                new GetPropertyAction(
+                        "awt.robot.screenshotMethod",
+                        isOnWayland
+                                ? METHOD_SCREENCAST
+                                : METHOD_X11
+                ));
     }
 
     private static volatile boolean useGtk;
-    private final X11GraphicsConfig  xgc;
+    private final X11GraphicsConfig xgc;
 
     XRobotPeer(X11GraphicsDevice gd) {
         xgc = (X11GraphicsConfig) gd.getDefaultConfiguration();
@@ -119,7 +122,8 @@ final class XRobotPeer implements RobotPeer {
     @Override
     public int getRGBPixel(int x, int y) {
         int[] pixelArray = new int[1];
-        if (useScreencast && ScreencastHelper.isAvailable()) {
+        if (screenshotMethod.equals(METHOD_SCREENCAST)
+                && ScreencastHelper.isAvailable()) {
             ScreencastHelper.getRGBPixels(x, y, 1, 1, pixelArray);
         } else {
             getRGBPixelsImpl(xgc, x, y, 1, 1, pixelArray, useGtk);
@@ -130,7 +134,8 @@ final class XRobotPeer implements RobotPeer {
     @Override
     public int [] getRGBPixels(Rectangle bounds) {
         int[] pixelArray = new int[bounds.width * bounds.height];
-        if (useScreencast && ScreencastHelper.isAvailable()) {
+        if (screenshotMethod.equals(METHOD_SCREENCAST)
+                && ScreencastHelper.isAvailable()) {
             ScreencastHelper.getRGBPixels(
                     bounds.x, bounds.y,
                     bounds.width, bounds.height,
