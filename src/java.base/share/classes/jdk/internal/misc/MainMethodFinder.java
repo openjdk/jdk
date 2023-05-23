@@ -40,25 +40,27 @@ public class MainMethodFinder {
     /**
      * Gather all the "main" methods in the class hierarchy.
      *
-     * @param declc  the top level declaring class
-     * @param refc   the declaring class or super class
-     * @param mains  accumulated main methods
+     * @param refc         the main class or super class
+     * @param mains        accumulated main methods
+     * @param isMainClass  the class is the main class and not a super class
      */
-    private static void gatherMains(Class<?> declc, Class<?> refc, List<Method> mains) {
+    private static void gatherMains(Class<?> refc, List<Method> mains, boolean isMainClass) {
         if (refc != null && refc != Object.class) {
             for (Method method : refc.getDeclaredMethods()) {
+                int mods = method.getModifiers();
                 // Must be named "main", public|protected|package-private, not synthetic (bridge) and either
-                // no arguments or one string array argument.
+                // no arguments or one string array argument. Only statics in the Main class are acceptable.
                 if ("main".equals(method.getName()) &&
                         !method.isSynthetic() &&
-                        !Modifier.isPrivate(method.getModifiers()) &&
-                        correctArgs(method))
+                        !Modifier.isPrivate(mods) &&
+                        correctArgs(method) &&
+                        (isMainClass || !Modifier.isStatic(mods)))
                 {
                     mains.add(method);
                 }
             }
 
-            gatherMains(declc, refc.getSuperclass(), mains);
+            gatherMains(refc.getSuperclass(), mains, false);
         }
     }
 
@@ -67,7 +69,6 @@ public class MainMethodFinder {
      * Priority order is;
      * sub-class < super-class.
      * static < non-static,
-     * public < non-public,
      * string arg < no arg and
      *
      * @param a  first method
@@ -98,15 +99,6 @@ public class MainMethodFinder {
             return 1;
         }
 
-        boolean aIsPublic = Modifier.isPublic(aMods);
-        boolean bIsPublic = Modifier.isPublic(bMods);
-
-        if (aIsPublic && !bIsPublic) {
-            return -1;
-        } else if (bIsPublic && !aIsPublic) {
-            return 1;
-        }
-
         int aCount = a.getParameterCount();
         int bCount = b.getParameterCount();
 
@@ -120,6 +112,28 @@ public class MainMethodFinder {
     }
 
     /**
+     * Return the traditional main method or null if not found.
+     *
+     * @param mainClass main class
+     *
+     * @return main method or null
+     */
+    private static Method getTraditionalMain(Class<?> mainClass) {
+        try {
+            Method traditionalMain = mainClass.getMethod("main", String[].class);
+            int mods = traditionalMain.getModifiers();
+
+            if (Modifier.isStatic(mods) && Modifier.isPublic(mods) && traditionalMain.getReturnType() == void.class) {
+                return traditionalMain;
+            }
+        } catch (NoSuchMethodException ex) {
+            // not found
+        }
+
+        return null;
+    }
+
+    /**
      * {@return priority main method if none found}
      *
      * @param mainClass main class
@@ -127,13 +141,13 @@ public class MainMethodFinder {
      * @throws NoSuchMethodException when not preview and no method found
      */
     public static Method findMainMethod(Class<?> mainClass) throws NoSuchMethodException {
-        boolean traditionalMain = !PreviewFeatures.isEnabled();
-        if (traditionalMain) {
+        boolean isTraditionMain = !PreviewFeatures.isEnabled();
+        if (isTraditionMain) {
             return mainClass.getMethod("main", String[].class);
         }
 
         List<Method> mains = new ArrayList<>();
-        gatherMains(mainClass, mainClass, mains);
+        gatherMains(mainClass, mains, true);
 
         if (mains.isEmpty()) {
             throw new NoSuchMethodException("No main method found");
@@ -144,7 +158,12 @@ public class MainMethodFinder {
         }
 
         Method mainMethod = mains.get(0);
+        Method traditionalMain = getTraditionalMain(mainClass);
 
-        return mainMethod;
+        if (traditionalMain != null && !traditionalMain.equals(mainMethod)) {
+            System.err.println("WARNING: \"" + mains.get(0) + "\" chosen over \"" + traditionalMain + "\"");
+        }
+
+        return mains.get(0);
     }
 }
