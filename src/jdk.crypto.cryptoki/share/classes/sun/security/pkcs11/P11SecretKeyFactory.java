@@ -347,7 +347,12 @@ final class P11SecretKeyFactory extends SecretKeyFactorySpi {
                 throw new InvalidKeyException("Encoded format must be RAW");
             }
             byte[] encoded = key.getEncoded();
-            p11Key = createKey(token, encoded, svcAlgo, si.keyType, extraAttrs);
+            try {
+                p11Key = createKey(token, encoded, svcAlgo, si.keyType,
+                        extraAttrs);
+            } finally {
+                Arrays.fill(encoded, (byte) 0);
+            }
         }
         token.secretCache.put(key, p11Key);
         return p11Key;
