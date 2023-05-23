@@ -23,7 +23,7 @@
 
 
 // key: compiler.note.verbose.l2m.deduplicate
-// options: --debug=dumpLambdaToMethodDeduplication
+// options: -g:none --debug=dumpLambdaToMethodDeduplication
 
 import java.util.function.Function;
 
