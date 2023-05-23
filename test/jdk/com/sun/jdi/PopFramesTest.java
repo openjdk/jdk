@@ -51,8 +51,8 @@ import java.util.*;
  *   SLEEP_NONATIVE
  *   LOOP_NONATIVE
  *
- * SLEEP:     the debuggee blocks in Thread.sleep()
- * LOOP:      the debuggee sits in a tight loop
+ * SLEEP:     the debuggee blocks in Thread.sleep().
+ * LOOP:      the debuggee sits in a tight loop.
  * NATIVE:    there is a native frame within the set of frames to pop.
  * PRENATIVE: there is a native frame before the set of frames to pop.
  * NONATIVE:  there is no native frame (purposefully) present in the stack.
@@ -62,7 +62,7 @@ import java.util.*;
  * either pass, or produce OpaqueFrameException or NativeMethodException.
  *
  * Call stacks for each test mode (and expected result):
- *  - Note in all cases the popMethod() frame is the frame passed to popFrames()..
+ *  - Note in all cases the popMethod() frame is the frame passed to popFrames().
  *  - Note that Thread.sleep() usually results in the native Thread.sleep0() frame
  *    being at the top of the stack. However, for a mounted virtual thread
  *    it does not result in any native frames due to how the VM parks virtual threads.
@@ -170,7 +170,7 @@ class PopFramesTestTarg {
             popMethod(); // call popMethod() directly
         }
 
-        System.out.println("    debuggee: Goodbye from PopAndInvokeTarg!");
+        System.out.println("    debuggee: Goodbye from PopFramesTest!");
     }
 }
 
@@ -185,12 +185,12 @@ enum TestMode {
     SLEEP_NONATIVE,
     LOOP_NONATIVE;
 
-    // Returns true if debuggee should block in an infinite loop. Otherwise it calls Thread.sleep()
+    // Returns true if debuggee should block in an infinite loop. Otherwise it calls Thread.sleep().
     boolean isDoLoop() {
         return this == LOOP_NATIVE || this == LOOP_PRENATIVE || this == LOOP_NONATIVE;
     }
 
-    // Returns true if debuggee should introduce a native frame within the set of frames to pop
+    // Returns true if debuggee should introduce a native frame within the set of frames to pop.
     boolean isCallNative() {
         return this == LOOP_NATIVE || this == SLEEP_NATIVE;
     }
