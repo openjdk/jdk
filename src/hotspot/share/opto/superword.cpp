@@ -3718,10 +3718,7 @@ bool SuperWord::construct_bb() {
             // First see if we can map the reduction on the given system we are on, then
             // make a data entry operation for each reduction we see.
             BasicType bt = use->bottom_type()->basic_type();
-            // Matcher::min_vector_size may return 1 in some cases, e.g. double for x86.
-            // For vector reduction implemented check we need atleast two elements.
-            int min_vec_size = MAX2(Matcher::min_vector_size(bt), 2);
-            if (ReductionNode::implemented(use->Opcode(), min_vec_size, bt)) {
+            if (ReductionNode::implemented(use->Opcode(), Matcher::max_vector_size(bt), bt)) {
               reduction_uses++;
             }
           }
