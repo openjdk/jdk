@@ -77,7 +77,7 @@ public class UnderflowToZero {
     // Ensure formatting values less than abs(.1) adheres
     // to contracts of rounding modes. To ensure this, we can compare
     // the fractional portion of the result to the fractional portion
-    // of the same value + 1;
+    // of the same value +- 1;
     private void testFormat(double bigger, double smaller, String pattern,
                             RoundingMode mode, DecimalFormat df) {
         df.setRoundingMode(mode);
