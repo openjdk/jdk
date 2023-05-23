@@ -26,7 +26,7 @@
  * @bug JDK-8298127
  * @summary verify JAR files signed with HSS/LMS
  * @library /test/lib
- * @run testng/othervm VerifyHSSLMSSignedJar
+ * @run main VerifyHSSLMSSignedJar
  */
 
 import jdk.test.lib.SecurityTools;

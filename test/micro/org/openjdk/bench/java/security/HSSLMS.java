@@ -61,7 +61,7 @@ import sun.security.util.RawKeySpec;
 // Tests 3-10 were generated with parameter sets mentioned in
 // RFC 8554 section 6.4; two with W=8 and six with W=4.
 
-public class HssLms {
+public class HSSLMS {
     Provider p;
 
     @Benchmark

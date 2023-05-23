@@ -27,7 +27,7 @@
  * @library /test/lib
  * @summary tests for HSS/LMS provider
  * @modules java.base/sun.security.util
- * @run testng/othervm TestLMS
+ * @run main TestHSSLMS
  */
 
 import java.io.*;
@@ -44,7 +44,7 @@ import sun.security.util.*;
 
 import jdk.test.lib.util.SerializationUtils;
 
-public class TestLMS {
+public class TestHSSLMS {
     static final String ALG = "HSS/LMS";
     static final String OID = "1.2.840.113549.1.9.16.3.17";
 
@@ -56,7 +56,7 @@ public class TestLMS {
         int i = 1;
         for (TestCase t : TestCases) {
             if (!kat(t)) {
-                throw new RuntimeException("test case #" +i+ " failed");
+                throw new RuntimeException("test case #" + i + " failed");
             }
             i++;
         }
