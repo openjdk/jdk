@@ -34,7 +34,7 @@
 class LineReader : public StackObj {
   char* _filename;
   FILE* _stream;
-  int _errno;
+  int _last_errno;
   size_t _buffer_length;
   char* _buffer;
 public:
@@ -50,7 +50,7 @@ public:
 
   // errno, if any, for the last file I/O operation performed by this LineReader
   int last_errno() {
-    return _errno;
+    return _last_errno;
   }
 };
 

@@ -30,20 +30,20 @@
 #include <errno.h>
 
 LineReader::LineReader(const char* filename, size_t initial_length) :
-  _filename(os::strdup(filename)), _stream(nullptr), _errno(0),
+  _filename(os::strdup(filename)), _stream(nullptr), _last_errno(0),
   _buffer_length(initial_length), _buffer(nullptr)
 {
   // Use os::open() because neither fopen() nor os::fopen()
   // can handle long path name on Windows. HMM, is this still valid today???
   int fd = os::open(_filename, O_RDONLY, S_IREAD);
   if (fd == -1) {
-    _errno = errno;
+    _last_errno = errno;
   } else {
     // Obtain a File* from the file descriptor so that getc()
     // can be used in get_line().
     _stream = os::fdopen(fd, "r");
     if (_stream == nullptr) {
-      _errno = errno;
+      _last_errno = errno;
       ::close(fd);
     } else {
       // fd will be closed by fclose(_stream)
@@ -98,7 +98,8 @@ char* LineReader::get_line() {
   _buffer[buffer_pos] = '\0'; // NL or EOF
 
   if (buffer_pos == 0 && c == EOF) {
-    _errno = errno;
+    int n = errno;
+    _last_errno = n;
     close();
     return nullptr;
   } else {
