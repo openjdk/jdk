@@ -357,10 +357,6 @@ void Runtime1::generate_unwind_exception(StubAssembler* sasm) {
   __ mov(c_rarg0, Rthread);
   __ mov(Rexception_pc, LR);
   __ mov(c_rarg1, LR);
-  // Insert check if AbortVMOnException flag
-  if (AbortVMOnException) {
-    __ call_VM(noreg, CAST_FROM_FN_PTR(address, Runtime1::check_abort_on_vm_exception), exception_oop);
-  }
   __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::exception_handler_for_return_address), c_rarg0, c_rarg1);
 
   // Exception oop should be still in Rexception_obj and pc in Rexception_pc
@@ -565,6 +561,16 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
     case unwind_exception_id:
       {
         __ set_info("unwind_exception", dont_gc_arguments);
+
+        if (AbortVMOnException) {
+          StubFrame f(sasm, "check_abort_on_vm_exception", dont_gc_arguments, does_not_return);
+          OopMap* oop_map = save_live_registers(sasm);
+          int call_offset = __ call_RT(noreg, noreg, CAST_FROM_FN_PTR(address, check_abort_on_vm_exception), R0);
+          oop_maps = new OopMapSet();
+          oop_maps->add_gc_map(call_offset, oop_map);
+          restore_live_registers(sasm);
+        }
+
         generate_unwind_exception(sasm);
       }
       break;

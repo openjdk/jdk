@@ -39,8 +39,8 @@ class StubAssembler;
 
 #define RUNTIME1_STUBS(stub, last_entry) \
   stub(dtrace_object_alloc)          \
-  stub(unwind_exception)             \
   stub(forward_exception)            \
+  stub(unwind_exception)             \
   stub(throw_range_check_failed)       /* throws ArrayIndexOutOfBoundsException */ \
   stub(throw_index_exception)          /* throws IndexOutOfBoundsException */ \
   stub(throw_div0_exception)         \

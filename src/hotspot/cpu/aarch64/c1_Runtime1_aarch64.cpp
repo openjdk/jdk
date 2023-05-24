@@ -503,11 +503,6 @@ void Runtime1::generate_unwind_exception(StubAssembler *sasm) {
   __ protect_return_address();
   __ stp(lr, exception_oop, Address(__ pre(sp, -2 * wordSize)));
 
-  // Insert check if AbortVMOnException flag
-  if (AbortVMOnException) {
-    __ call_VM(noreg, CAST_FROM_FN_PTR(address, Runtime1::check_abort_on_vm_exception), exception_oop);
-  }
-
   // search the exception handler address of the caller (using the return address)
   __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::exception_handler_for_return_address), rthread, r3);
   // r0: exception handler address of the caller
@@ -923,6 +918,16 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
 
     case unwind_exception_id:
       { __ set_info("unwind_exception", dont_gc_arguments);
+
+        if (AbortVMOnException) {
+          StubFrame f(sasm, "check_abort_on_vm_exception", dont_gc_arguments, does_not_return);
+          OopMap* oop_map = save_live_registers(sasm);
+          int call_offset = __ call_RT(noreg, noreg, CAST_FROM_FN_PTR(address, check_abort_on_vm_exception), r0);
+          oop_maps = new OopMapSet();
+          oop_maps->add_gc_map(call_offset, oop_map);
+          restore_live_registers(sasm);
+        }
+
         // note: no stubframe since we are about to leave the current
         //       activation and we are calling a leaf VM function only.
         generate_unwind_exception(sasm);

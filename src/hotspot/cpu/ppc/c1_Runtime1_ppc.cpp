@@ -552,14 +552,19 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
                        Rexception_save = R31, Rcaller_sp = R30;
         __ set_info("unwind_exception", dont_gc_arguments);
 
+        if (AbortVMOnException) {
+          StubFrame f(sasm, "check_abort_on_vm_exception", dont_gc_arguments, does_not_return);
+          OopMap* oop_map = save_live_registers(sasm);
+          int call_offset = __ call_RT(noreg, noreg, CAST_FROM_FN_PTR(address, check_abort_on_vm_exception), Rexception);
+          oop_maps = new OopMapSet();
+          oop_maps->add_gc_map(call_offset, oop_map);
+          restore_live_registers(sasm);
+        }
+
         __ ld(Rcaller_sp, 0, R1_SP);
         __ push_frame_reg_args(0, R0); // dummy frame for C call
         __ mr(Rexception_save, Rexception); // save over C call
         __ ld(Rexception_pc, _abi0(lr), Rcaller_sp); // return pc
-        // Insert check if AbortVMOnException flag
-        if (AbortVMOnException) {
-          __ call_VM(noreg, CAST_FROM_FN_PTR(address, Runtime1::check_abort_on_vm_exception), exception_oop);
-        }
         __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::exception_handler_for_return_address), R16_thread, Rexception_pc);
         __ verify_not_null_oop(Rexception_save);
         __ mtctr(R3_RET);
