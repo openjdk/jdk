@@ -263,8 +263,9 @@ public:
 
   // Allocate the regions that contain the address range specified, committing the
   // regions if necessary. Return false if any of the regions is already committed
-  // and not free, and return the number of regions newly committed in commit_count.
-  bool allocate_containing_regions(MemRegion range, size_t* commit_count, WorkerThreads* pretouch_workers);
+  // and not free, and return the number of regions newly committed in commit_count,
+  // allocated in allocate_count.
+  bool allocate_containing_regions(MemRegion range, uint* commit_count, uint* allocate_count, WorkerThreads* pretouch_workers);
 
   // Apply blk->do_heap_region() on all committed regions in address order,
   // terminating the iteration early if do_heap_region() returns true.

@@ -2187,7 +2187,8 @@ bool FileMapInfo::map_heap_region_impl() {
   }
 
   // allocate from java heap
-  if (!G1CollectedHeap::heap()->alloc_archive_regions(_mapped_heap_memregion)) {
+  uint regions_committed;
+  if (!G1CollectedHeap::heap()->alloc_archive_regions(_mapped_heap_memregion, regions_committed)) {
     log_info(cds)("Unable to allocate region, java heap range is already in use.");
     return false;
   }
@@ -2198,8 +2199,8 @@ bool FileMapInfo::map_heap_region_impl() {
   char* base = os::map_memory(_fd, _full_path, r->file_offset(),
                               addr, _mapped_heap_memregion.byte_size(), r->read_only(),
                               r->allow_exec());
-  if (base == nullptr || base != addr) {
-    dealloc_heap_region();
+  if (UseNewCode || base == nullptr || base != addr) {
+    dealloc_heap_region(regions_committed);
     log_info(cds)("UseSharedSpaces: Unable to map at required address in java heap. "
                   INTPTR_FORMAT ", size = " SIZE_FORMAT " bytes",
                   p2i(addr), _mapped_heap_memregion.byte_size());
@@ -2208,7 +2209,7 @@ bool FileMapInfo::map_heap_region_impl() {
 
   r->set_mapped_base(base);
   if (VerifySharedSpaces && !r->check_region_crc()) {
-    dealloc_heap_region();
+    dealloc_heap_region(regions_committed);
     log_info(cds)("mapped heap region is corrupt");
     return false;
   }
@@ -2251,8 +2252,8 @@ void FileMapInfo::fixup_mapped_heap_region() {
 }
 
 // dealloc the archive regions from java heap
-void FileMapInfo::dealloc_heap_region() {
-  G1CollectedHeap::heap()->dealloc_archive_regions(_mapped_heap_memregion);
+void FileMapInfo::dealloc_heap_region(uint regions_committed) {
+  G1CollectedHeap::heap()->dealloc_archive_regions(_mapped_heap_memregion, regions_committed);
 }
 #endif // INCLUDE_CDS_JAVA_HEAP
 

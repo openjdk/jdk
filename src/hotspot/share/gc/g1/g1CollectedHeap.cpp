@@ -532,7 +532,7 @@ void G1CollectedHeap::iterate_regions_in_range(MemRegion range, const Func& func
   }
 }
 
-bool G1CollectedHeap::alloc_archive_regions(MemRegion range) {
+bool G1CollectedHeap::alloc_archive_regions(MemRegion range, uint& regions_committed) {
   assert(!is_init_completed(), "Expect to be called at JVM init time");
   MutexLocker x(Heap_lock);
 
@@ -547,7 +547,6 @@ bool G1CollectedHeap::alloc_archive_regions(MemRegion range) {
   HeapWord* start_address = range.start();
   size_t word_size = range.word_size();
   HeapWord* last_address = range.last();
-  size_t commits = 0;
 
   guarantee(reserved.contains(start_address) && reserved.contains(last_address),
             "MemRegion outside of heap [" PTR_FORMAT ", " PTR_FORMAT "]",
@@ -555,15 +554,16 @@ bool G1CollectedHeap::alloc_archive_regions(MemRegion range) {
 
   // Perform the actual region allocation, exiting if it fails.
   // Then note how much new space we have allocated.
-  if (!_hrm.allocate_containing_regions(range, &commits, workers())) {
+  regions_committed = 0;
+  uint regions_allocated = 0;
+  if (!_hrm.allocate_containing_regions(range, &regions_committed, &regions_allocated, workers())) {
     return false;
   }
   increase_used(word_size * HeapWordSize);
-  if (commits != 0) {
-    log_debug(gc, ergo, heap)("Attempt heap expansion (allocate archive regions). Total size: " SIZE_FORMAT "B",
-                              HeapRegion::GrainWords * HeapWordSize * commits);
 
-  }
+  log_debug(gc, ergo, heap)("Allocate CDS archive regions. Allocated %u Committed %u",
+                            regions_allocated, regions_committed);
+
 
   // Mark each G1 region touched by the range as old, add it to
   // the old set, and set top.
@@ -591,11 +591,11 @@ void G1CollectedHeap::populate_archive_regions_bot_part(MemRegion range) {
                            });
 }
 
-void G1CollectedHeap::dealloc_archive_regions(MemRegion range) {
+void G1CollectedHeap::dealloc_archive_regions(MemRegion range, uint regions_committed) {
   assert(!is_init_completed(), "Expect to be called at JVM init time");
   MemRegion reserved = _hrm.reserved();
   size_t size_used = 0;
-  uint shrink_count = 0;
+  uint regions_freed = 0;
 
   // Free the G1 regions that are within the specified range.
   MutexLocker x(Heap_lock);
@@ -608,20 +608,26 @@ void G1CollectedHeap::dealloc_archive_regions(MemRegion range) {
   size_used += range.byte_size();
 
   // Free, empty and uncommit regions with CDS archive content.
+  uint shrink_count = 0;
   auto dealloc_archive_region = [&] (HeapRegion* r, bool is_last) {
     guarantee(r->is_old(), "Expected old region at index %u", r->hrm_index());
     _old_set.remove(r);
-    r->set_free();
-    r->set_top(r->bottom());
-    _hrm.shrink_at(r->hrm_index(), 1);
-    shrink_count++;
+    free_region(r, nullptr);
+    regions_freed++;
+    if (regions_committed > shrink_count) {
+      _hrm.shrink_at(r->hrm_index(), 1);
+      shrink_count++;
+    } else {
+      _hrm.insert_into_free_list(r);
+      hr_printer()->cleanup(r);
+    }
   };
 
   iterate_regions_in_range(range, dealloc_archive_region);
 
-  if (shrink_count != 0) {
-    log_debug(gc, ergo, heap)("Attempt heap shrinking (CDS archive regions). Total size: " SIZE_FORMAT "B",
-                              HeapRegion::GrainWords * HeapWordSize * shrink_count);
+  log_debug(gc, ergo, heap)("Deallocate CDS archive regions. Freed %u Uncommitted %u regions.",
+                            regions_freed, regions_committed);
+  if (regions_committed != 0) {
     // Explicit uncommit.
     uncommit_regions(shrink_count);
   }

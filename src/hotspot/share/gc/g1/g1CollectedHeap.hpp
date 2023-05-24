@@ -714,7 +714,7 @@ public:
 
   // Commit the appropriate G1 region(s) containing the specified range
   // and mark them as 'old' region(s).
-  bool alloc_archive_regions(MemRegion range);
+  bool alloc_archive_regions(MemRegion range, uint& regions_committed);
 
   // Populate the G1BlockOffsetTablePart for archived regions with the given
   // memory range.
@@ -724,7 +724,7 @@ public:
   // which had been allocated by alloc_archive_regions. This should be called
   // at JVM init time if the archive heap's contents cannot be used (e.g., if
   // CRC check fails).
-  void dealloc_archive_regions(MemRegion range);
+  void dealloc_archive_regions(MemRegion range, uint regions_committed);
 
 private:
 
