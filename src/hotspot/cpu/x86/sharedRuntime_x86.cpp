@@ -87,6 +87,7 @@ void SharedRuntime::inline_check_hashcode_from_object_header(MacroAssembler* mas
 #if defined(TARGET_COMPILER_gcc) && !defined(_WIN64)
 JRT_LEAF(jfloat, SharedRuntime::frem(jfloat x, jfloat y))
   jfloat retval;
+  if (UseAVX < 1) {
   asm ("\
 1:               \n\
 fprem            \n\
@@ -97,11 +98,19 @@ jne    1b        \n\
     :"=t"(retval)
     :"0"(x), "u"(y)
     :"cc", "ax");
+  } else {
+    jdouble (*addr)(jdouble, jdouble) = (double (*)(double, double))StubRoutines::fmod();
+    jdouble dx = (jdouble) x;
+    jdouble dy = (jdouble) y;
+
+    retval = (jfloat) (*addr)(dx, dy);
+  }
   return retval;
 JRT_END
 
 JRT_LEAF(jdouble, SharedRuntime::drem(jdouble x, jdouble y))
   jdouble retval;
+  if (UseAVX < 1) {
   asm ("\
 1:               \n\
 fprem            \n\
@@ -112,6 +121,11 @@ jne    1b        \n\
     :"=t"(retval)
     :"0"(x), "u"(y)
     :"cc", "ax");
+  } else {
+    jdouble (*addr)(jdouble, jdouble) = (double (*)(double, double))StubRoutines::fmod();
+
+    retval = (jfloat) (*addr)(x, y);
+  }
   return retval;
 JRT_END
 #endif // TARGET_COMPILER_gcc && !_WIN64

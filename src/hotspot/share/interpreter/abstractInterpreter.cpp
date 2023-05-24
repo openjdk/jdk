@@ -143,6 +143,7 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(const methodHan
       case vmIntrinsics::_dlog10:            return java_lang_math_log10;
       case vmIntrinsics::_dpow:              return java_lang_math_pow;
       case vmIntrinsics::_dexp:              return java_lang_math_exp;
+      case vmIntrinsics::_fmod:              return java_lang_math_mod;
       case vmIntrinsics::_fmaD:              return java_lang_math_fmaD;
       case vmIntrinsics::_fmaF:              return java_lang_math_fmaF;
       case vmIntrinsics::_dsqrt:             return java_lang_math_sqrt;

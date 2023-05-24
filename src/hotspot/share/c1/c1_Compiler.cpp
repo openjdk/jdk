@@ -168,6 +168,7 @@ bool Compiler::is_intrinsic_supported(const methodHandle& method) {
   case vmIntrinsics::_dlog10:
   case vmIntrinsics::_dexp:
   case vmIntrinsics::_dpow:
+  case vmIntrinsics::_fmod:
   case vmIntrinsics::_fmaD:
   case vmIntrinsics::_fmaF:
   case vmIntrinsics::_getReference:

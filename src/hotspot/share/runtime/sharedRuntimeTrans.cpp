@@ -659,6 +659,11 @@ JRT_LEAF(jdouble, SharedRuntime::dpow(jdouble x, jdouble y))
   return __ieee754_pow(x, y);
 JRT_END
 
+
+JRT_LEAF(jdouble, SharedRuntime::fmod(jdouble x, jdouble y))
+  return drem(x, y);
+JRT_END
+
 #ifdef WIN32
 # pragma optimize ( "", on )
 #endif

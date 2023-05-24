@@ -3327,6 +3327,7 @@ GraphBuilder::GraphBuilder(Compilation* compilation, IRScope* scope)
   case vmIntrinsics::_dlog10        : // fall through
   case vmIntrinsics::_dexp          : // fall through
   case vmIntrinsics::_dpow          : // fall through
+  case vmIntrinsics::_fmod          : // fall through
     {
       // Compiles where the root method is an intrinsic need a special
       // compilation environment because the bytecodes for the method
@@ -3351,6 +3352,9 @@ GraphBuilder::GraphBuilder(Compilation* compilation, IRScope* scope)
       _last  = start_block;
       load_local(doubleType, 0);
       if (scope->method()->intrinsic_id() == vmIntrinsics::_dpow) {
+        load_local(doubleType, 2);
+      }
+      if (scope->method()->intrinsic_id() == vmIntrinsics::_fmod) {
         load_local(doubleType, 2);
       }
 
