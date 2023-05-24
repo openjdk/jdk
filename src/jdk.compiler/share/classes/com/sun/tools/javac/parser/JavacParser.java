@@ -4030,7 +4030,7 @@ public class JavacParser implements Parser {
                 log.error(def.pos(), Errors.UnnamedClassShouldNotHavePackageDeclaration);
             } else if (def.hasTag(Tag.IMPORT)) {
                 topDefs.append(def);
-            } else {
+            } else if (!def.hasTag(Tag.SKIP)) {
                 defs.append(def);
             }
         }
