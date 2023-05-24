@@ -76,8 +76,6 @@ public class IntrinsicCommand extends AbstractTestBase {
         CompileCommand compileCommand = cmdGen.generateCompileCommand(command, isValid,
                 md, type, intrinsic_ids);
 
-        System.out.println("XXXXXXXXXXXXXXXX compileCommand.isValid " + compileCommand.isValid());
-
         builder.add(compileCommand);
         Scenario scenario = builder.build();
         scenario.execute();
