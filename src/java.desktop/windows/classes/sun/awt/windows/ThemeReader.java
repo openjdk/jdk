@@ -103,7 +103,7 @@ public final class ThemeReader {
                 theme = openTheme(widget, dpi);
             }
 
-            dpiAwareWidgetToTheme.computeIfAbsent(dpi, key->new HashMap<>()).put(widget, theme);
+            dpiAwareWidgetToTheme.computeIfAbsent(dpi, key -> new HashMap<>()).put(widget, theme);
 
         }
         return theme;
