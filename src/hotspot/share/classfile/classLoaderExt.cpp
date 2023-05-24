@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "cds/cds_globals.hpp"
+#include "cds/dynamicArchive.hpp"
 #include "cds/filemap.hpp"
 #include "cds/heapShared.hpp"
 #include "classfile/classFileParser.hpp"
@@ -60,6 +61,9 @@ void ClassLoaderExt::append_boot_classpath(ClassPathEntry* new_entry) {
   if (UseSharedSpaces) {
     warning("Sharing is only supported for boot loader classes because bootstrap classpath has been appended");
     FileMapInfo::current_info()->set_has_platform_or_app_classes(false);
+    if (DynamicArchive::is_mapped()) {
+      FileMapInfo::dynamic_info()->set_has_platform_or_app_classes(false);
+    }
   }
   ClassLoader::add_to_boot_append_entries(new_entry);
 }
