@@ -170,7 +170,8 @@ HeapWord* EpsilonHeap::allocate_work(size_t size, bool verbose) {
 
 HeapWord* EpsilonHeap::allocate_new_tlab(size_t min_size,
                                          size_t requested_size,
-                                         size_t* actual_size) {
+                                         size_t* actual_size,
+                                         bool* gc_overhead_limit_was_exceeded) {
   Thread* thread = Thread::current();
 
   // Defaults in case elastic paths are not taken

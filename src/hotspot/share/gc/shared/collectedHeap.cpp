@@ -522,7 +522,8 @@ void CollectedHeap::fill_with_dummy_object(HeapWord* start, HeapWord* end, bool 
 
 HeapWord* CollectedHeap::allocate_new_tlab(size_t min_size,
                                            size_t requested_size,
-                                           size_t* actual_size) {
+                                           size_t* actual_size,
+                                           bool* gc_overhead_limit_was_exceeded) {
   guarantee(false, "thread-local allocation buffers not supported");
   return nullptr;
 }

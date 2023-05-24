@@ -793,7 +793,8 @@ HeapWord* ShenandoahHeap::allocate_from_gclab_slow(Thread* thread, size_t size) 
 
 HeapWord* ShenandoahHeap::allocate_new_tlab(size_t min_size,
                                             size_t requested_size,
-                                            size_t* actual_size) {
+                                            size_t* actual_size,
+                                            bool* gc_overhead_limit_was_exceeded) {
   ShenandoahAllocRequest req = ShenandoahAllocRequest::for_tlab(min_size, requested_size);
   HeapWord* res = allocate_memory(req);
   if (res != nullptr) {

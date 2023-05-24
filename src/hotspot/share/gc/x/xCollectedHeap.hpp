@@ -53,7 +53,8 @@ private:
 
   HeapWord* allocate_new_tlab(size_t min_size,
                               size_t requested_size,
-                              size_t* actual_size) override;
+                              size_t* actual_size,
+                              bool* gc_overhead_limit_was_exceeded) override;
 
 public:
   static XCollectedHeap* heap();

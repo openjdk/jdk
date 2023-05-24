@@ -381,7 +381,8 @@ HeapWord* G1CollectedHeap::humongous_obj_allocate(size_t word_size) {
 
 HeapWord* G1CollectedHeap::allocate_new_tlab(size_t min_size,
                                              size_t requested_size,
-                                             size_t* actual_size) {
+                                             size_t* actual_size,
+                                             bool* gc_overhead_limit_was_exceeded) {
   assert_heap_not_locked_and_not_at_safepoint();
   assert(!is_humongous(requested_size), "we do not allow humongous TLABs");
 

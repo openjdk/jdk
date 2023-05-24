@@ -514,7 +514,8 @@ size_t ParallelScavengeHeap::unsafe_max_tlab_alloc(Thread* thr) const {
   return young_gen()->eden_space()->unsafe_max_tlab_alloc(thr);
 }
 
-HeapWord* ParallelScavengeHeap::allocate_new_tlab(size_t min_size, size_t requested_size, size_t* actual_size) {
+HeapWord* ParallelScavengeHeap::allocate_new_tlab(size_t min_size, size_t requested_size, size_t* actual_size,
+                                                  bool* gc_overhead_limit_was_exceeded) {
   HeapWord* result = young_gen()->allocate(requested_size);
   if (result != nullptr) {
     *actual_size = requested_size;

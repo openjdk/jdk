@@ -146,7 +146,8 @@ bool XCollectedHeap::requires_barriers(stackChunkOop obj) const {
   return false;
 }
 
-HeapWord* XCollectedHeap::allocate_new_tlab(size_t min_size, size_t requested_size, size_t* actual_size) {
+HeapWord* XCollectedHeap::allocate_new_tlab(size_t min_size, size_t requested_size, size_t* actual_size,
+                                            bool* gc_overhead_limit_was_exceeded) {
   const size_t size_in_bytes = XUtils::words_to_bytes(align_object_size(requested_size));
   const uintptr_t addr = _heap.alloc_tlab(size_in_bytes);
 
