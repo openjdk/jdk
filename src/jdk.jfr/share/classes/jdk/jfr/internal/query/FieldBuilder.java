@@ -170,7 +170,7 @@ final class FieldBuilder {
         field.dataType = "jdk.types.Method";
         field.valueGetter = e -> {
             RecordedStackTrace t = e.getStackTrace();
-            return t != null ? t.getFrames().get(0) : null;
+            return t != null ? t.getFrames().getFirst() : null;
         };
         field.lexicalSort = true;
     }
@@ -330,14 +330,14 @@ final class FieldBuilder {
         var stack = new ArrayDeque<WildcardElement>();
         var wildcardElements = new ArrayList<WildcardElement>();
 
-        for (ValueDescriptor field : reversed(type.getFields())) {
+        for (ValueDescriptor field : type.getFields().reversed()) {
             stack.push(new WildcardElement(field.getName(), makeLabel(field, hasDuration(type)), field));
         }
         while (!stack.isEmpty()) {
             var we = stack.pop();
             if (!visited.contains(we.field)) {
                 visited.add(we.field);
-                var subFields = reversed(we.field().getFields());
+                var subFields = we.field().getFields().reversed();
                 if (!subFields.isEmpty() && !KNOWN_TYPES.contains(we.field().getTypeName())) {
                     for (ValueDescriptor subField : subFields) {
                         String n = we.name + "." + subField.getName();
@@ -354,7 +354,7 @@ final class FieldBuilder {
         List<Field> result = new ArrayList<>();
         for (WildcardElement we : wildcardElements) {
             FieldBuilder fb = new FieldBuilder(eventTypes, type, we.name());
-            Field field = fb.build().get(0);
+            Field field = fb.build().getFirst();
             field.label = we.label;
             field.index = result.size();
             field.visible = true;
@@ -366,12 +366,6 @@ final class FieldBuilder {
 
     private static boolean hasDuration(FilteredType type) {
         return type.getField("duration") != null;
-    }
-
-    private static List<ValueDescriptor> reversed(List<ValueDescriptor> elements) {
-        List<ValueDescriptor> result = new ArrayList<>(elements);
-        Collections.reverse(result);
-        return result;
     }
 
     public static void configureAggregator(Field field) {

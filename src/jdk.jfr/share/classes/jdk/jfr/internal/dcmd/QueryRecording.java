@@ -71,7 +71,7 @@ final class QueryRecording implements AutoCloseable {
         if (width != null) {
             configuration.width = (int) Math.min(Integer.MAX_VALUE, width.longValue());
         }
-        Long height = parser.getOption("height");
+        Long height = parser.getOption("cell-height");
         if (height != null) {
             if (height < 1) {
                 throw new DCmdException("Height must be at least 1");
@@ -100,11 +100,16 @@ final class QueryRecording implements AutoCloseable {
     private List<RepositoryChunk> acquireChunks(Instant startTime) {
         synchronized (recorder) {
             List<RepositoryChunk> list = recorder.makeChunkList(startTime, endTime);
+            list.add(currentChunk());
             for (RepositoryChunk r : list) {
                 r.use();
             }
             return list;
         }
+    }
+
+    private RepositoryChunk currentChunk() {
+        return PrivateAccess.getInstance().getPlatformRecorder().getCurrentChunk();
     }
 
     private void releaseChunks() {

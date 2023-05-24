@@ -141,7 +141,7 @@ public final class ValueFormatter {
     public static String formatClass(RecordedClass clazz) {
         String name = clazz.getName();
         if (name.startsWith("[")) {
-            return decodeDescriptors(name, "").get(0);
+            return decodeDescriptors(name, "").getFirst();
         }
         return name;
     }

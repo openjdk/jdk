@@ -42,10 +42,10 @@ final class FormRenderer {
         this.table = table;
         this.out = configuration.output;
         this.configuration = configuration;
-        this.width = determinWidth(configuration);
+        this.width = determineWidth(configuration);
     }
 
-    private static int determinWidth(Configuration configuration) {
+    private static int determineWidth(Configuration configuration) {
         if (configuration.width == 0) {
             return Configuration.PREFERRED_WIDTH;
         } else {
@@ -69,7 +69,7 @@ final class FormRenderer {
         }
         out.println();
         if (maxWidth + 2 > width) {
-            out.println("Columns to wide to fit width " + configuration.width + ".");
+            out.println("Columns are too wide to fit width " + configuration.width + ".");
             return;
         }
         if (configuration.title != null) {
@@ -88,7 +88,7 @@ final class FormRenderer {
     }
 
     private void renderField(Field field) {
-        Row row = table.getRows().get(0);
+        Row row = table.getRows().getFirst();
         String label = field.label + LABEL_SUFFIX;
         Object value = row.getValue(field.index);
         String text = FieldFormatter.format(field, value);

@@ -494,7 +494,7 @@ abstract class Function {
                 return null;
             }
             if (comparables.size() == 1) {
-                return comparables.get(0);
+                return comparables.getFirst();
             }
             comparables.sort(Comparator.naturalOrder());
             if (comparables.size() % 2 == 1) {
@@ -563,22 +563,32 @@ abstract class Function {
                 return null;
             }
             if (numbers.size() == 1) {
-                return numbers.get(0);
+                return numbers.getFirst();
             }
             numbers.sort((n1, n2) -> Double.compare(n1.doubleValue(), n2.doubleValue()));
             int size = numbers.size();
+            // Use size + 1 so range is stretched out for interpolation
+            // For example with percentile 50%
+            // size |  valueIndex |  valueNextindex | fraction
+            //   2         0               1            0.50
+            //   3         1               2             0.0
+            //   4         1               2            0.50
+            //   5         2               3             0.0
+            //   6         2               3            0.50
             double doubleIndex = (size + 1) * percentile;
-            if (doubleIndex < 1) {
-                return numbers.get(0); // first
+            int valueIndex = (int) doubleIndex - 1;
+            int valueNextIndex = (int) doubleIndex;
+            double fraction = doubleIndex - valueIndex;
+
+            if (valueIndex < 0) {
+                return numbers.getFirst();
             }
-            if (doubleIndex >= numbers.size()) {
-                return numbers.get(size - 1); // last
+            if (valueNextIndex >= size) {
+                return numbers.getLast();
             }
-            int index = (int) doubleIndex;
-            double fraction = doubleIndex - index;
-            double current = numbers.get(index).doubleValue();
-            double next = numbers.get(index + 1).doubleValue();
-            return current + fraction * (next - current);
+            double a = numbers.get(valueIndex).doubleValue();
+            double b = numbers.get(valueNextIndex).doubleValue();
+            return a + fraction * (b - a);
         }
     }
 

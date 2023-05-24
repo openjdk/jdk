@@ -72,7 +72,7 @@ public class DCmdView extends AbstractDCmd {
         } catch (UserSyntaxException e) {
             throw new DCmdException(e.getMessage());
         } catch (IOException e) {
-            throw new DCmdException("Could not open repository." + e.getMessage());
+            throw new DCmdException("Could not open repository. " + e.getMessage());
         } catch (IllegalArgumentException e) {
             throw new DCmdException(e.getMessage() + ". See help JFR.view");
         }

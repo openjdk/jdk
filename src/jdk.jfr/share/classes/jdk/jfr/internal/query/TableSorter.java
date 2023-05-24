@@ -118,7 +118,7 @@ final class TableSorter {
     }
 
     private void sortOrderBy() {
-        for (OrderElement orderer : reversed(query.orderBy)) {
+        for (OrderElement orderer : query.orderBy.reversed()) {
             sortPredicate(field -> field.orderer == orderer);
         }
     }
@@ -143,16 +143,10 @@ final class TableSorter {
     }
 
     private void sortLeftMost() {
-        sort(table.getFields().get(0), SortOrder.NONE);
+        sort(table.getFields().getFirst(), SortOrder.NONE);
     }
 
     private void sort(Field field, SortOrder order) {
         table.getRows().sort(new ColumnComparator(field, order));
-    }
-
-    private static List<OrderElement> reversed(List<OrderElement> elements) {
-        List<OrderElement> result = new ArrayList<>(elements);
-        Collections.reverse(result);
-        return result;
     }
 }

@@ -65,7 +65,7 @@ public final class DCmdQuery extends AbstractDCmd {
         } catch (UserSyntaxException e) {
             throw new DCmdException(e.getMessage());
         } catch (IOException e) {
-            throw new DCmdException("Could not open repository." + e.getMessage());
+            throw new DCmdException("Could not open repository. " + e.getMessage());
         } catch (IllegalArgumentException e) {
             throw new DCmdException(e.getMessage() + ". See help JFR.query");
         }
@@ -93,7 +93,7 @@ public final class DCmdQuery extends AbstractDCmd {
     }
 
     private String getExamples() {
-        // 0123456789001234567890012345678900123456789001234567890012345678900123456789001234567890
+              // 0123456789001234567890012345678900123456789001234567890012345678900123456789001234567890
         return """
                  Example usage:
 

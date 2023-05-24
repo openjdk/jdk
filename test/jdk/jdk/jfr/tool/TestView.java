@@ -33,8 +33,11 @@ import jdk.test.lib.process.OutputAnalyzer;
  * @summary Test jfr view
  * @key jfr
  * @requires vm.hasJFR
+ * @requires (vm.gc == "G1" | vm.gc == null)
+ *           & vm.opt.ExplicitGCInvokesConcurrent != false
  * @library /test/lib /test/jdk
- * @run main/othervm jdk.jfr.tool.TestView
+ * @run main/othervm -XX:-ExplicitGCInvokesConcurrent -XX:-DisableExplicitGC
+ *                   -XX:+UseG1GC jdk.jfr.jcmd.TestJcmdView
  */
 public class TestView {
 
@@ -57,7 +60,7 @@ public class TestView {
         FileWriter fw = new FileWriter(file.toFile());
         fw.write('d');
         fw.close();
-        output = ExecuteHelper.jfr("print", "--wrongOption", file.toAbsolutePath().toString());
+        output = ExecuteHelper.jfr("view", "--wrongOption", file.toAbsolutePath().toString());
         output.shouldContain("unknown option");
         Files.delete(file);
     }
@@ -79,7 +82,7 @@ public class TestView {
         // Verify heading
         output.shouldContain("Longest Pause");
         // Verify verbose heading
-        output.shouldContain("(longestPause");
+        output.shouldContain("(longestPause)");
         // Verify row contents
         output.shouldContain("Old Garbage Collection");
         // Verify verbose query

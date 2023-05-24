@@ -82,7 +82,7 @@ public class FieldFormatter {
             return format(field, cl.getType(), compact);
         }
         if (object instanceof RecordedStackTrace st) {
-            return format(field, st.getFrames().get(0), compact);
+            return format(field, st.getFrames().getFirst(), compact);
         }
         if (object instanceof RecordedThreadGroup tg) {
             return tg.getName();

@@ -76,7 +76,7 @@ public final class Columnizer {
                 if (index == column.entries.size()) {
                     return sb.toString();
                 }
-                if (index != 0 && columns.get(0) == column) {
+                if (index != 0 && columns.getFirst() == column) {
                     sb.append(System.lineSeparator());
                 }
                 String text = column.entries.get(index);

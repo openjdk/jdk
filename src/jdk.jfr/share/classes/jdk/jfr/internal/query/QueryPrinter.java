@@ -95,16 +95,16 @@ public final class QueryPrinter {
             Query q = new Query(query);
             QueryExecutor executor = new QueryExecutor(stream, q);
             stopWatch.beginAggregation();
-            QueryRun task = executor.run().get(0);
+            QueryRun task = executor.run().getFirst();
             if (!task.getSyntaxErrors().isEmpty()) {
-                throw new UserSyntaxException(task.getSyntaxErrors().get(0));
+                throw new UserSyntaxException(task.getSyntaxErrors().getFirst());
             }
             if (!task.getMetadataErrors().isEmpty()) {
-                throw new UserDataException(task.getMetadataErrors().get(0));
+                throw new UserDataException(task.getMetadataErrors().getFirst());
             }
             Table table = task.getTable();
             if (configuration.verboseTitle) {
-                FilteredType type = table.getFields().get(0).type;
+                FilteredType type = table.getFields().getFirst().type;
                 configuration.title = type.getLabel();
                 if (type.isExperimental()) {
                     configuration.title += " (Experimental)";

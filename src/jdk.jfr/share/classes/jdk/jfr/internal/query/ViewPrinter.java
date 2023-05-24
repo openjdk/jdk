@@ -115,7 +115,7 @@ public final class ViewPrinter {
             stopWatch.beginFormatting();
             for (QueryRun task : runs) {
                 Table table = task.getTable();
-                FilteredType type = table.getFields().get(0).type;
+                FilteredType type = table.getFields().getFirst().type;
                 configuration.title = type.getLabel();
                 TableRenderer renderer = new TableRenderer(configuration, table , task.getQuery());
                 renderer.render();
@@ -145,7 +145,6 @@ public final class ViewPrinter {
             int index = 0;
             stopWatch.beginAggregation();
             List<QueryRun> runs = executor.run();
-            // printViewTypeRelation(views, executor.getEventTypes());
             stopWatch.beginFormatting();
             for (QueryRun run : runs) {
                 printView(views.get(index++), run);
@@ -165,7 +164,7 @@ public final class ViewPrinter {
                 Query q = new Query(view.query());
                 QueryExecutor executor = new QueryExecutor(stream, q);
                 stopWatch.beginAggregation();
-                QueryRun run = executor.run().get(0);
+                QueryRun run = executor.run().getFirst();
                 stopWatch.beginFormatting();
                 printView(view, run);
                 stopWatch.finish();
@@ -181,7 +180,6 @@ public final class ViewPrinter {
         return false;
     }
 
-    // Use this method to see which event types that lacks a view
     void printViewTypeRelation(List<ViewConfiguration> views, List<EventType> eventTypes) throws ParseException {
         if (!configuration.verbose) {
             return;
@@ -195,7 +193,7 @@ public final class ViewPrinter {
         }
         for (ViewConfiguration view : views) {
             Query query = new Query(view.query());
-            if (query.from.get(0).name().equals("*")) {
+            if (query.from.getFirst().name().equals("*")) {
                 continue;
             }
             QueryResolver resolver = new QueryResolver(query, eventTypes);
@@ -212,35 +210,34 @@ public final class ViewPrinter {
         List<String> names = new ArrayList<>(viewMap.keySet());
         Collections.sort(names);
         for (String name : names) {
-          Set<String> vs = viewMap.get(name);
-           StringJoiner sj = new StringJoiner(", ");
-           vs.stream().forEach(sj::add);
-           out.println(String.format("%-35s %s", name, sj.toString()));
+            Set<String> vs = viewMap.get(name);
+            StringJoiner sj = new StringJoiner(", ");
+            vs.stream().forEach(sj::add);
+            out.println(String.format("%-35s %s", name, sj.toString()));
         }
     }
 
     private void printTimespan() {
         if (configuration.startTime != null) {
-            String s = ValueFormatter.formatTimestamp(configuration.startTime);
-            String e = ValueFormatter.formatTimestamp(configuration.endTime);
+            String start = ValueFormatter.formatTimestamp(configuration.startTime);
+            String end = ValueFormatter.formatTimestamp(configuration.endTime);
             out.println();
-            out.println("Timespan: " + s + " - " + e);
+            out.println("Timespan: " + start + " - " + end);
         }
     }
 
     private void printView(ViewConfiguration section, QueryRun queryRun)
             throws UserDataException, ParseException, UserSyntaxException {
         if (!queryRun.getSyntaxErrors().isEmpty()) {
-            throw new UserSyntaxException(queryRun.getSyntaxErrors().get(0));
+            throw new UserSyntaxException(queryRun.getSyntaxErrors().getFirst());
         }
         if (!queryRun.getMetadataErrors().isEmpty()) {
             // Recording doesn't have the event,
-            out.println(queryRun.getMetadataErrors().get(0));
+            out.println(queryRun.getMetadataErrors().getFirst());
             out.println("Missing event found for " + section.name());
             return;
         }
         Table table = queryRun.getTable();
-
         configuration.title = section.getLabel();
         long width = 0;
         if (section.getForm() != null) {

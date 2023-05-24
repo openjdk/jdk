@@ -230,7 +230,7 @@ final class QueryResolver {
             throw new QueryException(unknownField(name, types));
         }
 
-        Field primary = fields.get(0);
+        Field primary = fields.getFirst();
         boolean mixedTypes = false;
         for (Field f : fields) {
             if (!f.dataType.equals(primary.dataType)) {
@@ -348,7 +348,7 @@ final class QueryResolver {
         if (alternative != null) {
             return message + ".\nDid you mean '" + alternative + "'?";
         } else {
-            return message + ".\nUse 'SHOW FIELDS " + types.get(0).getSimpleName() + "' to list available fields.";
+            return message + ".\nUse 'SHOW FIELDS " + types.getFirst().getSimpleName() + "' to list available fields.";
         }
     }
 
