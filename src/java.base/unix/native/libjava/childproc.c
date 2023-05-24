@@ -36,14 +36,6 @@
 
 const char * const *parentPathv;
 
-ssize_t
-restartableWrite(int fd, const void *buf, size_t count)
-{
-    ssize_t result;
-    RESTARTABLE(write(fd, buf, count), result);
-    return result;
-}
-
 int
 restartableDup2(int fd_from, int fd_to)
 {
@@ -157,6 +149,46 @@ readFully(int fd, void *buf, size_t nbyte)
         } else if (errno == EINTR) {
             /* Strange signals like SIGJVM1 are possible at any time.
              * See http://www.dreamsongs.com/WorseIsBetter.html */
+        } else {
+            return -1;
+        }
+    }
+}
+
+/*
+ * Writes nbyte bytes from buf into file descriptor fd,
+ * The write operation is retried in case of EINTR or partial writes.
+ *
+ * Returns number of bytes written (normally nbyte).
+ * In case of write errors, returns -1 and sets errno.
+ */
+ssize_t
+writeFully(int fd, const void *buf, size_t nbyte)
+{
+#ifdef DEBUG
+/* This code is only used in debug builds for testing truncated writes
+ * during the handshake with the spawn helper for MODE_POSIX_SPAWN.
+ * See: test/jdk/java/lang/ProcessBuilder/JspawnhelperProtocol.java
+ */
+    const char* env = getenv("JTREG_JSPAWNHELPER_PROTOCOL_TEST");
+    if (env != NULL && atoi(env) == 99 && nbyte == sizeof(ChildStuff)) {
+        printf("posix_spawn: truncating write of ChildStuff struct\n");
+        fflush(stdout);
+        nbyte = nbyte / 2;
+    }
+#endif
+    ssize_t remaining = nbyte;
+    for (;;) {
+        ssize_t n = write(fd, buf, remaining);
+        if (n > 0) {
+            remaining -= n;
+            if (remaining <= 0)
+                return nbyte;
+            /* We were interrupted in the middle of writing the bytes.
+             * Unlikely, but possible. */
+            buf = (void *) (((char *)buf) + n);
+        } else if (n == -1 && errno == EINTR) {
+            /* Retry */
         } else {
             return -1;
         }
@@ -321,7 +353,9 @@ childProcess(void *arg)
         /* Child shall signal aliveness to parent at the very first
          * moment. */
         int code = CHILD_IS_ALIVE;
-        restartableWrite(fail_pipe_fd, &code, sizeof(code));
+        if (writeFully(fail_pipe_fd, &code, sizeof(code)) != sizeof(code)) {
+            goto WhyCantJohnnyExec;
+        }
     }
 
 #ifdef DEBUG
@@ -393,7 +427,7 @@ childProcess(void *arg)
      */
     {
         int errnum = errno;
-        restartableWrite(fail_pipe_fd, &errnum, sizeof(errnum));
+        writeFully(fail_pipe_fd, &errnum, sizeof(errnum));
     }
     close(fail_pipe_fd);
     _exit(-1);

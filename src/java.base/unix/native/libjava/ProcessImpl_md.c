@@ -557,13 +557,20 @@ spawnChild(JNIEnv *env, jobject process, ChildStuff *c, const char *helperpath) 
     magic = magicNumber();
 
     /* write the two structs and the data buffer */
-    restartableWrite(c->childenv[1], (char *)&magic, sizeof(magic)); // magic number first
+    if (writeFully(c->childenv[1], (char *)&magic, sizeof(magic)) != sizeof(magic)) { // magic number first
+        return -1;
+    }
 #ifdef DEBUG
     jtregSimulateCrash(resultPid, 2);
 #endif
-    restartableWrite(c->childenv[1], (char *)c, sizeof(*c));
-    restartableWrite(c->childenv[1], (char *)&sp, sizeof(sp));
-    restartableWrite(c->childenv[1], buf, bufsize);
+    if (writeFully(c->childenv[1], (char *)c, sizeof(*c)) != sizeof(*c) ||
+        writeFully(c->childenv[1], (char *)&sp, sizeof(sp)) != sizeof(sp) ||
+        writeFully(c->childenv[1], buf, bufsize) != bufsize) {
+        return -1;
+    }
+    /* We're done. Let jspwanhelper know he can't expect any more data from us. */
+    close(c->childenv[1]);
+    c->childenv[1] = -1;
     free(buf);
 #ifdef DEBUG
     jtregSimulateCrash(resultPid, 3);
@@ -620,6 +627,8 @@ Java_java_lang_ProcessImpl_forkAndExec(JNIEnv *env,
 
     in[0] = in[1] = out[0] = out[1] = err[0] = err[1] = fail[0] = fail[1] = -1;
     childenv[0] = childenv[1] = -1;
+    // Reset errno to protect against bogus error messages
+    errno = 0;
 
     if ((c = NEW(ChildStuff, 1)) == NULL) return -1;
     c->argv = NULL;
@@ -718,11 +727,9 @@ Java_java_lang_ProcessImpl_forkAndExec(JNIEnv *env,
                 goto Catch;
             }
         case sizeof(errnum):
-            assert(errnum == CHILD_IS_ALIVE);
             if (errnum != CHILD_IS_ALIVE) {
-                /* Should never happen since the first thing the spawn
-                 * helper should do is to send an alive ping to the parent,
-                 * before doing any subsequent work. */
+                /* This can happen if the spawn helper encounters an error
+                 * before or during the handshake with the parent. */
                 throwIOException(env, 0, "Bad code from spawn helper "
                                          "(Failed to exec spawn helper)");
                 goto Catch;

@@ -165,6 +165,9 @@ int main(int argc, char *argv[]) {
     // for the case that somebody tries to close it again.
     assert(c.childenv[1] == fdinw);
     c.childenv[1] = -1;
+    // The file descriptor for reporting errors back to our parent we got on the command
+    // line should be the same like the one in the ChildStuff struct we've just read.
+    assert(c.fail[1] == fdout);
 
     childProcess (&c);
     return 0; /* NOT REACHED */

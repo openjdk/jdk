@@ -127,7 +127,7 @@ typedef struct _SpawnInfo {
  */
 extern const char * const *parentPathv;
 
-ssize_t restartableWrite(int fd, const void *buf, size_t count);
+ssize_t writeFully(int fd, const void *buf, size_t count);
 int restartableDup2(int fd_from, int fd_to);
 int closeSafely(int fd);
 int isAsciiDigit(char c);

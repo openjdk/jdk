@@ -36,13 +36,14 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import jdk.test.lib.process.ProcessTools;
 
 public class JspawnhelperProtocol {
     // Timout in seconds
     private static final int TIMEOUT = 60;
-    // Base error code to communicate various error states from grandchild to child process
+    // Base error code to communicate various error states from the parent process to the top-level test
     private static final int ERROR = 10;
     private static final String[] CMD = { "pwd" };
     private static final String ENV_KEY = "JTREG_JSPAWNHELPER_PROTOCOL_TEST";
@@ -53,7 +54,7 @@ public class JspawnhelperProtocol {
         try {
             p = Runtime.getRuntime().exec(CMD);
         } catch (Exception e) {
-            System.out.println(e.toString());
+            e.printStackTrace(System.out);
             System.exit(ERROR);
         }
         if (!p.waitFor(TIMEOUT, TimeUnit.SECONDS)) {
@@ -143,23 +144,63 @@ public class JspawnhelperProtocol {
             throw new Exception("Wrong output from parent process");
         }
         System.out.println(line);
-        long grandChildPid = Integer.parseInt(line.substring(line.indexOf(':') + 1));
+        long childPid = Integer.parseInt(line.substring(line.indexOf(':') + 1));
 
         if (!p.waitFor(TIMEOUT, TimeUnit.SECONDS)) {
             throw new Exception("Parent process timed out");
         }
 
-        Optional<ProcessHandle> oph = ProcessHandle.of(grandChildPid);
+        Optional<ProcessHandle> oph = ProcessHandle.of(childPid);
         if (!oph.isEmpty()) {
             ProcessHandle ph = oph.get();
-            Optional<String> cmd = ph.info().command();
-            if (cmd.isPresent() && cmd.get().endsWith("jspawnhelper")) {
-                throw new Exception("jspawnhelper still alive after parent Java process terminated");
+            try {
+                // Give jspawnhelper a chance to exit gracefully
+                ph.onExit().get(TIMEOUT, TimeUnit.SECONDS);
+            } catch (TimeoutException te) {
+                Optional<String> cmd = ph.info().command();
+                if (cmd.isPresent() && cmd.get().endsWith("jspawnhelper")) {
+                    throw new Exception("jspawnhelper still alive after parent Java process terminated");
+                }
             }
         }
         int ret = p.exitValue();
         if (ret != stage) {
             throw new Exception("Expected exit code " + stage + " but got " + ret);
+        }
+        System.out.println("Parent exit code: " + ret);
+    }
+
+    private static void simulateTruncatedWriteInParent(int stage) throws Exception {
+        ProcessBuilder pb;
+        pb = ProcessTools.createJavaProcessBuilder("-Djdk.lang.Process.launchMechanism=posix_spawn",
+                                                   "JspawnhelperProtocol",
+                                                   "simulateTruncatedWriteInParent" + stage);
+        pb.environment().put(ENV_KEY, Integer.toString(stage));
+        Process p = pb.start();
+
+        BufferedReader br = p.inputReader();
+        String line = br.readLine();
+        while (line != null && !line.startsWith("posix_spawn:")) {
+            System.out.println(line);
+            line = br.readLine();
+        }
+        if (line == null) {
+            throw new Exception("Wrong output from parent process");
+        }
+        System.out.println(line);
+
+        if (!p.waitFor(TIMEOUT, TimeUnit.SECONDS)) {
+            throw new Exception("Parent process timed out");
+        }
+        line = br.readLine();
+        while (line != null) {
+            System.out.println(line);
+            line = br.readLine();
+        }
+
+        int ret = p.exitValue();
+        if (ret != ERROR) {
+            throw new Exception("Expected exit code " + ERROR + " but got " + ret);
         }
         System.out.println("Parent exit code: " + ret);
     }
@@ -190,6 +231,7 @@ public class JspawnhelperProtocol {
             simulateCrashInChild(4);
             simulateCrashInChild(5);
             simulateCrashInChild(6);
+            simulateTruncatedWriteInParent(99);
         }
     }
 }
