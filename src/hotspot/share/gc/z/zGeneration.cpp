@@ -1421,13 +1421,7 @@ public:
       _cl_colored(),
       _cld_cl(&_cl_colored),
       _thread_cl(),
-      _nm_cl() {
-    ClassLoaderDataGraph_lock->lock();
-  }
-
-  ~ZRemapYoungRootsTask() {
-    ClassLoaderDataGraph_lock->unlock();
-  }
+      _nm_cl() {}
 
   virtual void work() {
     {

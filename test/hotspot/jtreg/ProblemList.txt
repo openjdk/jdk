@@ -55,19 +55,21 @@ compiler/rtm/locking/TestRTMAbortRatio.java 8183263 generic-x64,generic-i586
 compiler/rtm/locking/TestRTMAbortThreshold.java 8183263 generic-x64,generic-i586
 compiler/rtm/locking/TestRTMAfterNonRTMDeopt.java 8183263 generic-x64,generic-i586
 compiler/rtm/locking/TestRTMDeoptOnHighAbortRatio.java 8183263 generic-x64,generic-i586
-compiler/rtm/locking/TestRTMDeoptOnLowAbortRatio.java 8183263 generic-x64,generic-i586
+compiler/rtm/locking/TestRTMDeoptOnLowAbortRatio.java 8183263,8307907 generic-x64,generic-i586,aix-ppc64
 compiler/rtm/locking/TestRTMLockingCalculationDelay.java 8183263 generic-x64,generic-i586
-compiler/rtm/locking/TestRTMLockingThreshold.java 8183263 generic-x64,generic-i586
+compiler/rtm/locking/TestRTMLockingThreshold.java 8183263,8307907 generic-x64,generic-i586,aix-ppc64
 compiler/rtm/locking/TestRTMSpinLoopCount.java 8183263 generic-x64,generic-i586
 compiler/rtm/locking/TestUseRTMDeopt.java 8183263 generic-x64,generic-i586
-compiler/rtm/locking/TestUseRTMXendForLockBusy.java 8183263 generic-x64,generic-i586
-compiler/rtm/print/TestPrintPreciseRTMLockingStatistics.java 8183263 generic-x64,generic-i586
+compiler/rtm/locking/TestUseRTMXendForLockBusy.java 8183263,8307907 generic-x64,generic-i586,aix-ppc64
+compiler/rtm/print/TestPrintPreciseRTMLockingStatistics.java 8183263,8307907 generic-x64,generic-i586,aix-ppc64
 
 compiler/c2/Test8004741.java 8235801 generic-all
 
 compiler/codecache/jmx/PoolsIndependenceTest.java 8264632 macosx-all
 
 compiler/vectorapi/VectorLogicalOpIdentityTest.java 8302459 linux-x64,windows-x64
+
+compiler/c2/irTests/TestVectorConditionalMove.java 8306922 generic-all
 
 #############################################################################
 
@@ -104,6 +106,7 @@ runtime/ErrorHandling/TestDwarf.java 8305489 linux-all
 applications/jcstress/copy.java 8229852 linux-all
 
 containers/docker/TestJcmd.java 8278102 linux-all
+containers/docker/TestMemoryAwareness.java 8303470 linux-x64
 
 #############################################################################
 

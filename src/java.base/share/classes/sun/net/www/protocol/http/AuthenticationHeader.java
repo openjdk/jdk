@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package sun.net.www.protocol.http;
 
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.Locale;
 import java.util.HashMap;
 import java.util.Set;
 
@@ -106,7 +107,7 @@ public class AuthenticationHeader {
         // were used later.
 
         if (authPref != null) {
-            authPref = authPref.toLowerCase();
+            authPref = authPref.toLowerCase(Locale.ROOT);
             if(authPref.equals("spnego") || authPref.equals("kerberos")) {
                 authPref = "negotiate";
             }

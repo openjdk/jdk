@@ -705,11 +705,6 @@ reg_class method_reg(
     R31, R31_H
 );
 
-// Class for heapbase register
-reg_class heapbase_reg(
-    R27, R27_H
-);
-
 // Class for java thread register
 reg_class java_thread_reg(
     R23, R23_H
@@ -1077,15 +1072,15 @@ void reg_mask_init() {
   // x27 is not allocatable when compressed oops is on
   if (UseCompressedOops) {
     _NO_SPECIAL_REG32_mask.Remove(OptoReg::as_OptoReg(x27->as_VMReg()));
-    _NO_SPECIAL_REG_mask.SUBTRACT(_HEAPBASE_REG_mask);
-    _NO_SPECIAL_PTR_REG_mask.SUBTRACT(_HEAPBASE_REG_mask);
+    _NO_SPECIAL_REG_mask.Remove(OptoReg::as_OptoReg(x27->as_VMReg()));
+    _NO_SPECIAL_PTR_REG_mask.Remove(OptoReg::as_OptoReg(x27->as_VMReg()));
   }
 
   // x8 is not allocatable when PreserveFramePointer is on
   if (PreserveFramePointer) {
     _NO_SPECIAL_REG32_mask.Remove(OptoReg::as_OptoReg(x8->as_VMReg()));
-    _NO_SPECIAL_REG_mask.SUBTRACT(_FP_REG_mask);
-    _NO_SPECIAL_PTR_REG_mask.SUBTRACT(_FP_REG_mask);
+    _NO_SPECIAL_REG_mask.Remove(OptoReg::as_OptoReg(x8->as_VMReg()));
+    _NO_SPECIAL_PTR_REG_mask.Remove(OptoReg::as_OptoReg(x8->as_VMReg()));
   }
 }
 
@@ -1887,85 +1882,6 @@ const bool Matcher::match_rule_supported(int opcode) {
   return true; // Per default match rules are supported.
 }
 
-const bool Matcher::match_rule_supported_superword(int opcode, int vlen, BasicType bt) {
-  return match_rule_supported_vector(opcode, vlen, bt);
-}
-
-// Identify extra cases that we might want to provide match rules for vector nodes and
-// other intrinsics guarded with vector length (vlen) and element type (bt).
-const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
-  if (!match_rule_supported(opcode) || !vector_size_supported(bt, vlen)) {
-    return false;
-  }
-
-  return op_vec_supported(opcode);
-}
-
-const bool Matcher::match_rule_supported_vector_masked(int opcode, int vlen, BasicType bt) {
-  if (!UseRVV) {
-    return false;
-  }
-  switch (opcode) {
-    case Op_AddVB:
-    case Op_AddVS:
-    case Op_AddVI:
-    case Op_AddVL:
-    case Op_AddVF:
-    case Op_AddVD:
-    case Op_SubVB:
-    case Op_SubVS:
-    case Op_SubVI:
-    case Op_SubVL:
-    case Op_SubVF:
-    case Op_SubVD:
-    case Op_MulVB:
-    case Op_MulVS:
-    case Op_MulVI:
-    case Op_MulVL:
-    case Op_MulVF:
-    case Op_MulVD:
-    case Op_DivVF:
-    case Op_DivVD:
-    case Op_VectorLoadMask:
-    case Op_VectorMaskCmp:
-    case Op_AndVMask:
-    case Op_XorVMask:
-    case Op_OrVMask:
-    case Op_RShiftVB:
-    case Op_RShiftVS:
-    case Op_RShiftVI:
-    case Op_RShiftVL:
-    case Op_LShiftVB:
-    case Op_LShiftVS:
-    case Op_LShiftVI:
-    case Op_LShiftVL:
-    case Op_URShiftVB:
-    case Op_URShiftVS:
-    case Op_URShiftVI:
-    case Op_URShiftVL:
-    case Op_VectorBlend:
-    case Op_VectorReinterpret:
-      break;
-    case Op_LoadVector:
-      opcode = Op_LoadVectorMasked;
-      break;
-    case Op_StoreVector:
-      opcode = Op_StoreVectorMasked;
-      break;
-    default:
-      return false;
-  }
-  return match_rule_supported_vector(opcode, vlen, bt);
-}
-
-const bool Matcher::vector_needs_partial_operations(Node* node, const TypeVect* vt) {
-  return false;
-}
-
-const bool Matcher::vector_needs_load_shuffle(BasicType elem_bt, int vlen) {
-  return false;
-}
-
 const RegMask* Matcher::predicate_reg_mask(void) {
   return &_VMASK_REG_mask;
 }
@@ -2567,7 +2483,7 @@ encode %{
     // otherwise m->owner may contain a thread or a stack address.
     //
     // Try to CAS m->owner from NULL to current thread.
-    __ add(tmp, disp_hdr, (ObjectMonitor::owner_offset_in_bytes() - markWord::monitor_value));
+    __ add(tmp, disp_hdr, (in_bytes(ObjectMonitor::owner_offset()) - markWord::monitor_value));
     __ cmpxchg(/*memory address*/tmp, /*expected value*/zr, /*new value*/xthread, Assembler::int64, Assembler::aq,
              Assembler::rl, /*result*/flag); // cas succeeds if flag == zr(expected)
 
@@ -2586,7 +2502,7 @@ encode %{
 
     // Recursive lock case
     __ mv(flag, zr);
-    __ increment(Address(disp_hdr, ObjectMonitor::recursions_offset_in_bytes() - markWord::monitor_value), 1, t0, tmp);
+    __ increment(Address(disp_hdr, in_bytes(ObjectMonitor::recursions_offset()) - markWord::monitor_value), 1, t0, tmp);
 
     __ bind(cont);
     // zero flag indicates success
@@ -2662,7 +2578,7 @@ encode %{
     if (LockingMode == LM_LIGHTWEIGHT) {
       // If the owner is anonymous, we need to fix it -- in an outline stub.
       Register tmp2 = disp_hdr;
-      __ ld(tmp2, Address(tmp, ObjectMonitor::owner_offset_in_bytes()));
+      __ ld(tmp2, Address(tmp, ObjectMonitor::owner_offset()));
       __ test_bit(t0, tmp2, exact_log2(ObjectMonitor::ANONYMOUS_OWNER));
       C2HandleAnonOMOwnerStub* stub = new (Compile::current()->comp_arena()) C2HandleAnonOMOwnerStub(tmp, tmp2);
       Compile::current()->output()->add_stub(stub);
@@ -2670,24 +2586,24 @@ encode %{
       __ bind(stub->continuation());
     }
 
-    __ ld(disp_hdr, Address(tmp, ObjectMonitor::recursions_offset_in_bytes()));
+    __ ld(disp_hdr, Address(tmp, ObjectMonitor::recursions_offset()));
 
     Label notRecursive;
     __ beqz(disp_hdr, notRecursive); // Will be 0 if not recursive.
 
     // Recursive lock
     __ addi(disp_hdr, disp_hdr, -1);
-    __ sd(disp_hdr, Address(tmp, ObjectMonitor::recursions_offset_in_bytes()));
+    __ sd(disp_hdr, Address(tmp, ObjectMonitor::recursions_offset()));
     __ mv(flag, zr);
     __ j(cont);
 
     __ bind(notRecursive);
-    __ ld(flag, Address(tmp, ObjectMonitor::EntryList_offset_in_bytes()));
-    __ ld(disp_hdr, Address(tmp, ObjectMonitor::cxq_offset_in_bytes()));
+    __ ld(flag, Address(tmp, ObjectMonitor::EntryList_offset()));
+    __ ld(disp_hdr, Address(tmp, ObjectMonitor::cxq_offset()));
     __ orr(flag, flag, disp_hdr); // Will be 0 if both are 0.
     __ bnez(flag, cont);
     // need a release store here
-    __ la(tmp, Address(tmp, ObjectMonitor::owner_offset_in_bytes()));
+    __ la(tmp, Address(tmp, ObjectMonitor::owner_offset()));
     __ membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
     __ sd(zr, Address(tmp)); // set unowned
 
@@ -3581,16 +3497,6 @@ operand iRegNNoSp()
 %{
   constraint(ALLOC_IN_RC(no_special_reg32));
   match(RegN);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-// heap base register -- used for encoding immN0
-operand iRegIHeapbase()
-%{
-  constraint(ALLOC_IN_RC(heapbase_reg));
-  match(RegI);
   op_cost(0);
   format %{ %}
   interface(REG_INTER);
@@ -7668,7 +7574,7 @@ instruct absD_reg(fRegD dst, fRegD src) %{
 %}
 
 instruct sqrtF_reg(fRegF dst, fRegF src) %{
-  match(Set dst (ConvD2F (SqrtD (ConvF2D src))));
+  match(Set dst (SqrtF src));
 
   ins_cost(FSQRT_COST);
   format %{ "fsqrt.s  $dst, $src\t#@sqrtF_reg" %}
