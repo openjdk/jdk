@@ -61,10 +61,6 @@
 #include <libperfstat.h>
 #endif
 
-#if defined(__linux__)
-#include <string.h>
-#endif
-
 static jlong page_size = 0;
 
 #if defined(_ALLBSD_SOURCE) || defined(_AIX)
