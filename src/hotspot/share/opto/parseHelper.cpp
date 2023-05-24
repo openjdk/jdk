@@ -604,6 +604,15 @@ EscapedState* PEAState::materialize(GraphKit* kit, Node* var) {
 #endif
       kit->access_store_at(objx, adr, adr_type, val, field_type, bt, decorators);
     }
+    // if var is associated with MemBarRelease, copy it for objx
+    for (DUIterator_Fast kmax, k = var->fast_outs(kmax); k < kmax; k++) {
+      Node* use = var->fast_out(k);
+
+      if (use->Opcode() == Op_MemBarRelease) {
+        kit->insert_mem_bar(Op_MemBarRelease, objx);
+        break;
+      }
+    }
   } else {
     assert(false, "array not support yet!");
   }
@@ -676,10 +685,10 @@ void PEAState::validate() const {
 }
 #endif
 
+// get the key set from _state. we stop maintaining aliases for the materialized objects.
 int PEAState::objects(Unique_Node_List& nodes) const {
-  _alias.iterate([&](Node* alias, ObjID obj){
-                   nodes.push(obj);
-                   return true;
+  _state.iterate([&](ObjID obj, ObjectState* state) {
+                   nodes.push(obj); return true;
                  });
   return nodes.size();
 }
@@ -745,6 +754,7 @@ void AllocationStateMerger::merge(const PEAState& newin, GraphKit* kit, RegionNo
         const Type* type = obj->oop_type(kit->gvn());
         Node* phi = PhiNode::make(region, m, type);
         phi->set_req(pnum, n);
+        kit->gvn().set_type(phi, type);
         if (os1->is_virtual()) {
           _state.remove_alias(obj, m);
           _state.update(obj, new EscapedState(phi));

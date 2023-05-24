@@ -1005,28 +1005,6 @@ void Parse::throw_to_exit(SafePointNode* ex_map) {
   _exits.add_exception_state(caller_ex_map);
 }
 
-void Parse::emit_trailing_barrier(Node* obj) {
-  assert(DoPartialEscapeAnalysis, "sanity");
-
-  if (obj == nullptr || obj == top())
-    return;
-
-  if (obj->is_Phi()) {
-    for (uint i = 1; i < obj->req(); ++i) {
-      emit_trailing_barrier(obj->in(i));
-    }
-  } else {
-    _exits.insert_mem_bar(Op_MemBarRelease, obj);
-
-    // If Memory barrier is created for final fields write
-    // and allocation node does not escape the initialize method,
-    // then barrier introduced by allocation node can be removed.
-    if (DoEscapeAnalysis && obj != nullptr) {
-      AllocateNode *alloc = AllocateNode::Ideal_allocation(obj, &_gvn);
-      alloc->compute_MemBar_redundancy(method());
-    }
-  }
-}
 //------------------------------do_exits---------------------------------------
 void Parse::do_exits() {
   set_parse_bci(InvocationEntryBci);
@@ -1080,11 +1058,17 @@ void Parse::do_exits() {
         AllocateNode *alloc = AllocateNode::Ideal_allocation(alloc_with_final(), &_gvn);
         alloc->compute_MemBar_redundancy(method());
       }
-    } else if (alloc_with_final() != nullptr) {
-      PEAState& as = jvms()->alloc_state();
+    } else {
       // in PEA, alloc_with_final stores ObjID
-      Node* obj = as.get_cooked_oop((ObjID)alloc_with_final());
-      emit_trailing_barrier(obj);
+      AllocateNode* alloc = (ObjID)alloc_with_final();
+      PEAState& as = _exits.jvms()->alloc_state();
+
+      Node* obj = as.get_cooked_oop(alloc);
+      _exits.insert_mem_bar(Op_MemBarRelease, obj);
+
+      if (DoEscapeAnalysis && alloc != nullptr) {
+        alloc->compute_MemBar_redundancy(method());
+      }
     }
     if (PrintOpto && (Verbose || WizardMode)) {
       method()->print_name();

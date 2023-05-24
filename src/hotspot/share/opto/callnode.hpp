@@ -972,7 +972,7 @@ public:
   // Inovke this method when MemBar at exit of initializer and post-dominate
   // allocation node.
   void compute_MemBar_redundancy(ciMethod* initializer);
-  bool is_allocation_MemBar_redundant() { return _is_allocation_MemBar_redundant; }
+  bool is_allocation_MemBar_redundant() const { return _is_allocation_MemBar_redundant; }
 
   Node* make_ideal_mark(PhaseGVN *phase, Node* obj, Node* control, Node* mem);
 
