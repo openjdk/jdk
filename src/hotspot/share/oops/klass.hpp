@@ -76,7 +76,7 @@ class Klass : public Metadata {
     InstanceStackChunkKlassKind,
     TypeArrayKlassKind,
     ObjArrayKlassKind,
-    Unknown
+    UnknownKlassKind
   };
 
   static const uint KLASS_KIND_COUNT = ObjArrayKlassKind + 1;
@@ -195,7 +195,7 @@ protected:
 
   // Constructor
   Klass(KlassKind kind);
-  Klass() : _kind(Unknown) { assert(DumpSharedSpaces || UseSharedSpaces, "only for cds"); }
+  Klass() : _kind(UnknownKlassKind) { assert(DumpSharedSpaces || UseSharedSpaces, "only for cds"); }
 
   void* operator new(size_t size, ClassLoaderData* loader_data, size_t word_size, TRAPS) throw();
 
