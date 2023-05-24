@@ -78,10 +78,11 @@ public class RobotMoveMultiscreen {
             robot.mouseMove(x_dest+50, y_dest+50);
             robot.delay(1000);
             robot.waitForIdle();
-
-            if (testCondition == false) {
-                throw new RuntimeException("Can't move to another display");
-            }
+            EventQueue.invokeAndWait(() -> {
+                if (testCondition == false) {
+                    throw new RuntimeException("Can't move to another display");
+                }
+            });
 
             System.out.println("Test Pass!!");
         } finally {
