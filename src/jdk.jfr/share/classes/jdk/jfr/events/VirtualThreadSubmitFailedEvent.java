@@ -37,7 +37,6 @@ import jdk.jfr.internal.MirrorEvent;
 @Name("jdk.VirtualThreadSubmitFailed")
 @Description("Submit of task for virtual thread failed")
 @MirrorEvent(className = "jdk.internal.event.VirtualThreadSubmitFailedEvent")
-@Experimental
 public final class VirtualThreadSubmitFailedEvent extends AbstractJDKEvent {
 
     @Label("Thread Id")
