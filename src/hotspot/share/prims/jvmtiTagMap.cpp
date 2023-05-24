@@ -2255,11 +2255,11 @@ public:
   }
 
   bool set_thread(oop o);
-  // sets the thread and reports the reference to it with the specified kind.
+  // Sets the thread and reports the reference to it with the specified kind.
   bool set_thread(jvmtiHeapReferenceKind kind, oop o);
 
   bool do_frame(vframe* vf);
-  // handles frames until vf->sender() is null.
+  // Handles frames until vf->sender() is null.
   bool process_frames(vframe* vf);
 };
 
@@ -2287,7 +2287,6 @@ bool StackRefCollector::report_java_stack_refs(StackValueCollection* values, jme
       if (obj == nullptr) {
         continue;
       }
-
       // stack reference
       if (!CallbackInvoker::report_stack_ref_root(_thread_tag, _tid, _depth, method,
                                                   bci, slot_offset + index, obj)) {
@@ -2309,7 +2308,7 @@ bool StackRefCollector::report_native_stack_refs(jmethodID method) {
     }
   } else {
     if (_last_entry_frame != nullptr) {
-      // JNI locals for the entry frame
+      // JNI locals for the entry frame.
       assert(_last_entry_frame->is_entry_frame(), "checking");
       _last_entry_frame->entry_frame_call_wrapper()->handles()->oops_do(_blk);
       if (_blk->stopped()) {
@@ -2325,7 +2324,6 @@ bool StackRefCollector::do_frame(vframe* vf) {
     // java frame (interpreted, compiled, ...)
     javaVFrame* jvf = javaVFrame::cast(vf);
 
-    // the jmethodID
     jmethodID method = jvf->method()->jmethod_id();
 
     if (!(jvf->method()->is_native())) {
@@ -2338,7 +2336,7 @@ bool StackRefCollector::do_frame(vframe* vf) {
         return false;
       }
 
-      // Follow oops from compiled nmethod
+      // Follow oops from compiled nmethod.
       if (jvf->cb() != nullptr && jvf->cb()->is_nmethod()) {
         _blk->set_context(_thread_tag, _tid, _depth, method);
         jvf->cb()->as_nmethod()->oops_do(_blk);
@@ -2794,7 +2792,7 @@ inline bool VM_HeapWalkOperation::collect_simple_roots() {
 
 // Reports the thread as JVMTI_HEAP_REFERENCE_THREAD,
 // walks the stack of the thread, finds all references (locals
-// and JNI calls) and reports these as stack references
+// and JNI calls) and reports these as stack references.
 inline bool VM_HeapWalkOperation::collect_stack_refs(JavaThread* java_thread,
                                                      JNILocalRootsClosure* blk)
 {
@@ -2826,16 +2824,16 @@ inline bool VM_HeapWalkOperation::collect_stack_refs(JavaThread* java_thread,
                       RegisterMap::ProcessFrames::include,
                       RegisterMap::WalkContinuation::include);
 
-  // first handle mounted vthread (if any).
+  // first handle mounted vthread (if any)
   if (mounted_vt != nullptr) {
     frame f = java_thread->last_frame();
     vframe* vf = vframe::new_vframe(&f, &reg_map, java_thread);
-    // report virtual thread as JVMTI_HEAP_REFERENCE_OTHER.
+    // report virtual thread as JVMTI_HEAP_REFERENCE_OTHER
     if (!stack_collector.set_thread(JVMTI_HEAP_REFERENCE_OTHER, mounted_vt)) {
       return false;
     }
     // split virtual thread and carrier thread stacks by vthread entry ("enterSpecial") frame,
-    // consider vthread entry frame as the last vthread stack frame.
+    // consider vthread entry frame as the last vthread stack frame
     while (vf != nullptr) {
       if (!stack_collector.do_frame(vf)) {
         return false;
@@ -2897,7 +2895,7 @@ inline bool VM_HeapWalkOperation::collect_vthread_stack_refs(oop vt) {
   JNILocalRootsClosure blk;
   // JavaThread is not required for unmounted virtual threads
   StackRefCollector stack_collector(tag_map(), &blk, nullptr);
-  // reference to the vthread is already reported.
+  // reference to the vthread is already reported
   if (!stack_collector.set_thread(vt)) {
     return false;
   }
