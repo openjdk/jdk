@@ -26,15 +26,11 @@
 package java.lang.runtime;
 
 import java.lang.ref.ReferenceQueue;
-import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
 import java.util.Objects;
 
 /**
- * View/wrapper of keys used by the backing {@link ReferencedKeyMap}.
- * There are two style of keys; one for entries in the backing map and
- * one for queries to the backing map. This second style avoids the
- * overhead of a {@link Reference} object.
+ * {@link WeakReference} wrapper key for entries in the backing map.
  *
  * @param <T> key type
  *
@@ -43,15 +39,54 @@ import java.util.Objects;
  * Warning: This class is part of PreviewFeature.Feature.STRING_TEMPLATES.
  *          Do not rely on its availability.
  */
-sealed interface ReferenceKey<T> permits StrongReferenceKey, WeakReferenceKey, SoftReferenceKey {
+final class WeakReferenceKey<T> extends WeakReference<T> implements ReferenceKey<T> {
     /**
-     * {@return the value of the unwrapped key}
+     * Saved hashcode of the key. Used when {@link WeakReference} is
+     * null.
      */
-    T get();
+    private final int hashcode;
 
     /**
-     * Cleanup unused key.
+     * Package-Protected constructor.
+     *
+     * @param key   unwrapped key value
+     * @param queue reference queue
      */
-    void unused();
+    WeakReferenceKey(T key, ReferenceQueue<T> queue) {
+        super(key, queue);
+        this.hashcode = Objects.hashCode(key);
+    }
 
+    /**
+     * Cleanup unused key. No need to enqueue since the key did not make it
+     * into the map.
+     */
+    @Override
+    public void unused() {
+        clear();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        // Necessary when removing a null reference
+        if (obj == this) {
+            return true;
+        }
+        // Necessary when comparing an unwrapped key
+        if (obj instanceof ReferenceKey<?> key) {
+            obj = key.get();
+        }
+        return Objects.equals(get(), obj);
+    }
+
+    @Override
+    public int hashCode() {
+        // Use saved hashcode
+        return hashcode;
+    }
+
+    @Override
+    public String toString() {
+        return this.getClass().getCanonicalName() + "#" + System.identityHashCode(this);
+    }
 }
