@@ -166,8 +166,6 @@ public final class EventDirectoryStream extends AbstractEventStream {
                         processUnordered(disp);
                     }
                     currentParser.resetCache();
-                    currentParser.resetCache();
-                    // same conversion as in RecordingInfo
                     if (currentParser.getLastFlush() > filterEnd) {
                         return;
                     }

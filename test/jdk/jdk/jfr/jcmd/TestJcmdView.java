@@ -87,14 +87,14 @@ public class TestJcmdView {
             systemGC.await();
             gcHeapSummary.await();
             oldCollection.countDown();
-            // Test events in current chunk
+            // Test events that are in the current chunk
             testEventType();
             testFormView();
             testTableView();
             rs.disable("jdk.JVMInformation");
             // Force chunk rotation
             rotate();
-            // Test events that does not being in the current chunk
+            // Test events that are NOT in current chunk
             testEventType();
             testFormView();
             testTableView();
