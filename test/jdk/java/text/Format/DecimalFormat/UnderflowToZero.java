@@ -46,7 +46,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class UnderflowToZero {
     private static final List<RoundingMode> MODES;
     private static final String ERRMSG = "%f formatted with pattern %s and mode " +
-            "%s gives %s but %f formatted with the same pattern and mode gives %s";
+            "%s gives %s";
 
     static {
         MODES = new ArrayList<>(Arrays.asList(RoundingMode.values()));
@@ -54,12 +54,12 @@ public class UnderflowToZero {
     }
 
     @ParameterizedTest
-    @MethodSource("patternAndNumbers")
-    public void testModes(double bigger, double smaller, String pattern) {
+    @MethodSource("numberAndPattern")
+    public void testModes(double num, String pattern) {
         DecimalFormat df = new DecimalFormat();
         df.applyPattern(pattern);
         for (RoundingMode mode : MODES) {
-            testFormat(bigger, smaller, pattern, mode, df);
+            testFormat(num, pattern, mode, df);
         }
     }
 
@@ -75,45 +75,84 @@ public class UnderflowToZero {
     }
 
     // Ensure formatting values less than abs(.1) adheres
-    // to contracts of rounding modes. To ensure this, we can compare
-    // the fractional portion of the result to the fractional portion
-    // of the same value +- 1;
-    private void testFormat(double bigger, double smaller, String pattern,
-                            RoundingMode mode, DecimalFormat df) {
+    // to contracts of certain rounding modes
+    private void testFormat(double smallNum, String pattern, RoundingMode mode,
+                            DecimalFormat df) {
+        validateData(smallNum, pattern);
         df.setRoundingMode(mode);
-        // Compare the fractional part of both numbers
-        // Eg: Compare 1.(0001) to 0.(0001)
-        String biggerFormatted = df.format(bigger).split("\\.")[1];
-        String smallerFormatted = df.format(smaller).split("\\.")[1];
-        assertEquals(biggerFormatted, smallerFormatted, String.format(ERRMSG, bigger, pattern,
-                mode, df.format(bigger), smaller, df.format(smaller)));
+        df.applyPattern(pattern);
+        String formattedNum = df.format(smallNum);
+        long oneCount = formattedNum.chars().filter(ch -> ch == '1').count();
+        String error = String.format(ERRMSG, smallNum, pattern, mode, formattedNum);
+        if (shouldRound(smallNum, mode)) {
+            // Expecting a single occurrence of 1 as the last digit
+            assertEquals("1", formattedNum.substring(
+                    formattedNum.length() - 1), error);
+            assertEquals(1, oneCount, error);
+        } else {
+            // Expecting no occurrences of 1
+            assertEquals("0", formattedNum.substring(
+                    formattedNum.length() - 1), error);
+            assertEquals(0, oneCount, error);
+        }
     }
 
-    private static Stream<Arguments> patternAndNumbers() {
+    private Boolean shouldRound(double smallNum, RoundingMode mode) {
+        if (mode == RoundingMode.UP) {
+            return true;
+        } else if (mode == RoundingMode.CEILING && smallNum > 0) {
+            return true;
+        } else return mode == RoundingMode.FLOOR && smallNum < 0;
+    }
+
+    private void validateData(double number, String pattern) {
+        // Sum 0s in pattern, exclude the integer 0
+        long zeroCount = pattern.split("\\.")[1].length();
+        if (countZeros(number) <= zeroCount) {
+            throw new RuntimeException("Data is not in right format, " +
+                    "see comments above method source");
+        }
+    }
+
+    // Utility function to count the fractional zeros
+    // of a number less than abs(1)
+    private int countZeros(double num) {
+        int zeros = 0;
+        double number = Math.abs(num);
+        while (number < 1) {
+            zeros = zeros + 1;
+            number = number * 10;
+        }
+        return zeros - 1;
+    }
+
+    // For the supplied data, the number must have more zeros between the decimal
+    // and first non-zero digit than digits in the fractional portion of the pattern
+    private static Stream<Arguments> numberAndPattern() {
         return Stream.of(
-                Arguments.of(1.0001, 0.0001, "0.0"),
-                Arguments.of(1.0001, 0.0001, "0.00"),
-                Arguments.of(1.0001, 0.0001, "0.000"),
+                Arguments.of(0.00001, "0.0"),
+                Arguments.of(0.00001, "0.00"),
+                Arguments.of(0.00001, "0.000"),
 
-                Arguments.of(-1.0001, -0.0001, "0.0"),
-                Arguments.of(-1.0001, -0.0001, "0.00"),
-                Arguments.of(-1.0001, -0.0001, "0.000"),
+                Arguments.of(-0.00001, "0.0"),
+                Arguments.of(-0.00001, "0.00"),
+                Arguments.of(-0.00001, "0.000"),
 
-                Arguments.of(1.0009, 0.0009, "0.0"),
-                Arguments.of(1.0009, 0.0009, "0.00"),
-                Arguments.of(1.0009, 0.0009, "0.000"),
+                Arguments.of(0.00009, "0.0"),
+                Arguments.of(0.00009, "0.00"),
+                Arguments.of(0.00009, "0.000"),
 
-                Arguments.of(-1.0009, -0.0009, "0.0"),
-                Arguments.of(-1.0009, -0.0009, "0.00"),
-                Arguments.of(-1.0009, -0.0009, "0.000"),
+                Arguments.of(-0.00009, "0.0"),
+                Arguments.of(-0.00009, "0.00"),
+                Arguments.of(-0.00009, "0.000"),
 
-                Arguments.of(1.0004545, 0.0004545, "0.0"),
-                Arguments.of(1.0004545, 0.0004545, "0.00"),
-                Arguments.of(1.0004545, 0.0004545, "0.000"),
+                Arguments.of(0.00004545, "0.0"),
+                Arguments.of(0.00004545, "0.00"),
+                Arguments.of(0.00004545, "0.000"),
 
-                Arguments.of(-1.0004545, -0.0004545, "0.0"),
-                Arguments.of(-1.0004545, -0.0004545, "0.00"),
-                Arguments.of(-1.0004545, -0.0004545, "0.000")
+                Arguments.of(-0.00004545, "0.0"),
+                Arguments.of(-0.00004545, "0.00"),
+                Arguments.of(-0.00004545, "0.000")
         );
     }
 }
