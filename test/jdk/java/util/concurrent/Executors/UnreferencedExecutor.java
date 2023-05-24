@@ -1,6 +1,5 @@
-
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,27 +21,30 @@
  * questions.
  */
 
-package gc;
-
 /*
- * test TestMemoryInitialization
- * bug 4668531
- * Simple test for -XX:+CheckMemoryInitialization doesn't crash VM
+ * @test
+ * @bug 8308235
+ * @summary Unreference ExecutorService objects returned by the Executors without shutdown
+ *    and termination, this should not leak memory
+ * @run main/othervm -Xmx32m UnreferencedExecutor
  */
 
-public class TestMemoryInitialization {
-    final static int LOOP_LENGTH = 10;
-    final static int CHUNK_SIZE = 1500000;
+import java.time.Duration;
+import java.util.concurrent.Executors;
 
-    public static byte[] buffer;
+public class UnreferencedExecutor {
 
-    public static void main(String args[]) {
+    private static final int DURATION_IN_SECONDS = 5;
 
-        for (int i = 0; i < LOOP_LENGTH; i++) {
-            for (int j = 0; j < LOOP_LENGTH; j++) {
-                buffer = new byte[CHUNK_SIZE];
-                buffer = null;
-            }
+    public static void main(String[] args) throws Exception {
+        int ncores = Runtime.getRuntime().availableProcessors();
+        long durationNanos = Duration.ofSeconds(DURATION_IN_SECONDS).toNanos();
+        long start = System.nanoTime();
+        while (System.nanoTime() - start < durationNanos) {
+            Executors.newFixedThreadPool(ncores);
+            Executors.newCachedThreadPool();
+            Executors.newVirtualThreadPerTaskExecutor();
+            Executors.newWorkStealingPool(ncores);
         }
     }
 }

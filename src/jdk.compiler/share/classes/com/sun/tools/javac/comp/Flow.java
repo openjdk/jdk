@@ -3480,9 +3480,17 @@ public class Flow {
                     ? selectorType : binding.type;
             return new BindingPattern(type);
         } else if (pattern instanceof JCRecordPattern record) {
-            Type[] componentTypes = ((ClassSymbol) record.type.tsym).getRecordComponents()
-                    .map(r -> types.memberType(record.type, r))
-                    .toArray(s -> new Type[s]);
+            Type[] componentTypes;
+
+            if (!record.type.isErroneous()) {
+                componentTypes = ((ClassSymbol) record.type.tsym).getRecordComponents()
+                        .map(r -> types.memberType(record.type, r))
+                        .toArray(s -> new Type[s]);
+            }
+            else {
+                componentTypes = record.nested.map(t -> types.createErrorType(t.type)).toArray(s -> new Type[s]);;
+            }
+
             PatternDescription[] nestedDescriptions =
                     new PatternDescription[record.nested.size()];
             int i = 0;

@@ -705,11 +705,6 @@ reg_class method_reg(
     R31, R31_H
 );
 
-// Class for heapbase register
-reg_class heapbase_reg(
-    R27, R27_H
-);
-
 // Class for java thread register
 reg_class java_thread_reg(
     R23, R23_H
@@ -1077,15 +1072,15 @@ void reg_mask_init() {
   // x27 is not allocatable when compressed oops is on
   if (UseCompressedOops) {
     _NO_SPECIAL_REG32_mask.Remove(OptoReg::as_OptoReg(x27->as_VMReg()));
-    _NO_SPECIAL_REG_mask.SUBTRACT(_HEAPBASE_REG_mask);
-    _NO_SPECIAL_PTR_REG_mask.SUBTRACT(_HEAPBASE_REG_mask);
+    _NO_SPECIAL_REG_mask.Remove(OptoReg::as_OptoReg(x27->as_VMReg()));
+    _NO_SPECIAL_PTR_REG_mask.Remove(OptoReg::as_OptoReg(x27->as_VMReg()));
   }
 
   // x8 is not allocatable when PreserveFramePointer is on
   if (PreserveFramePointer) {
     _NO_SPECIAL_REG32_mask.Remove(OptoReg::as_OptoReg(x8->as_VMReg()));
-    _NO_SPECIAL_REG_mask.SUBTRACT(_FP_REG_mask);
-    _NO_SPECIAL_PTR_REG_mask.SUBTRACT(_FP_REG_mask);
+    _NO_SPECIAL_REG_mask.Remove(OptoReg::as_OptoReg(x8->as_VMReg()));
+    _NO_SPECIAL_PTR_REG_mask.Remove(OptoReg::as_OptoReg(x8->as_VMReg()));
   }
 }
 
@@ -3502,16 +3497,6 @@ operand iRegNNoSp()
 %{
   constraint(ALLOC_IN_RC(no_special_reg32));
   match(RegN);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-// heap base register -- used for encoding immN0
-operand iRegIHeapbase()
-%{
-  constraint(ALLOC_IN_RC(heapbase_reg));
-  match(RegI);
   op_cost(0);
   format %{ %}
   interface(REG_INTER);

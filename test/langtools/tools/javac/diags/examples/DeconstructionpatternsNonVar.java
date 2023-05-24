@@ -1,6 +1,5 @@
-
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,20 +21,15 @@
  * questions.
  */
 
-package gc;
+// key: compiler.err.deconstruction.pattern.var.not.allowed
 
-/*
- * @test TestMemoryInitializationWithSerial
- * @bug 4668531
- * @library /
- * @requires vm.debug & vm.gc.Serial
- * @summary Simple test for -XX:+CheckMemoryInitialization doesn't crash VM
- * @run main/othervm -XX:+UseSerialGC -XX:+CheckMemoryInitialization gc.TestMemoryInitializationWithSerial
- */
+class DeconstructionpatternsNonVar {
+    record Point(int x, int y) {}
+    enum Color {RED, GREEN, BLUE}
+    record ColoredPoint (Point p, Color c) {}
 
-public class TestMemoryInitializationWithSerial {
-
-    public static void main(String args[]) {
-        TestMemoryInitialization.main(args);
+    public static void foo(Object o) {
+        if (o instanceof ColoredPoint(var(var x, var y), var c)) {
+        }
     }
 }
