@@ -36,10 +36,9 @@ class LineReader : public StackObj {
   FILE* _stream;
   int _errno;
   size_t _buffer_length;
-  size_t _max_buffer_length;
   char* _buffer;
 public:
-  LineReader(const char* filename, size_t initial_length = 160, size_t max_length = (SIZE_MAX / 2) - 1);
+  LineReader(const char* filename, size_t initial_length = 160);
   ~LineReader();
 
   bool is_open() const {
