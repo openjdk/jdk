@@ -1,4 +1,4 @@
- /*
+/*
  * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -28,7 +28,7 @@
  * @modules java.base/jdk.internal.org.objectweb.asm
  *          java.base/jdk.internal.misc
  * @compile -XDignore.symbol.file Victim.java
- * @run main/othervm -Xverify:all -Xlog:gc*=debug -Xint Test8003720
+ * @run main/othervm -Xverify:all -Xint Test8003720
  */
 
 // Attempts to make the JVM unload a class while still executing one of its methods.
