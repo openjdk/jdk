@@ -186,18 +186,15 @@ public interface TypeElement extends Element, Parameterizable, QualifiedNameable
      * false} otherwise}
      *
      * @implSpec
-     * The default implementation of this method calls {@code
-     * getSimpleName()} and returns {@code true} if the result is
-     * empty and the nesting kind is {@linkplain NestingKind#TOP_LEVEL
-     * top-level}; returns {@code false} otherwise.
+     * The default implementation of this method returns {@code false}.
      *
      * @jls 7.3 Compilation Units
      * @since 21
      */
-    @PreviewFeature(feature=PreviewFeature.Feature.UNNAMED_CLASSES, reflective = true)
+    @PreviewFeature(feature=PreviewFeature.Feature.UNNAMED_CLASSES,
+                    reflective=true)
     default boolean isUnnamed() {
-        return getNestingKind() == NestingKind.TOP_LEVEL &&
-            getSimpleName().isEmpty();
+        return false;
     }
 
     /**

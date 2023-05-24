@@ -1647,7 +1647,7 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
 
         @Override @DefinedBy(Api.LANGUAGE_MODEL)
         public boolean isUnnamed() {
-            return (flags() & Flags.UNNAMED_CLASS) != 0 ;
+            return (flags_field & Flags.UNNAMED_CLASS) != 0 ;
         }
     }
 
