@@ -265,6 +265,7 @@ public class TestGCLogMessages {
         new LogMessageWithLevel("Restore Preserved Marks", Level.DEBUG),
         new LogMessageWithLevel("Restore Retained Regions", Level.DEBUG),
         new LogMessageWithLevel("Evacuation Failure Regions", Level.DEBUG),
+        new LogMessageWithLevel("Merge Evacuation Failure Liveness", Level.DEBUG),
     };
 
     private void testWithEvacuationFailureLogs() throws Exception {
