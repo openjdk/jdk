@@ -311,9 +311,9 @@ public final class DirectCodeBuilder
                 buf.setLabelContext(DirectCodeBuilder.this);
 
                 int codeLength = curPc();
-                if (codeLength >= 65536) {
+                if (codeLength == 0 || codeLength >= 65536) {
                     throw new IllegalArgumentException(String.format(
-                            "Code is too large %d in %s%s",
+                            "Code length %d is outside the allowed range in %s%s",
                             codeLength,
                             methodInfo.methodName().stringValue(),
                             methodInfo.methodTypeSymbol().displayDescriptor()));

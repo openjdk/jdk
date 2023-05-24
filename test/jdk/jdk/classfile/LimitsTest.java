@@ -65,4 +65,10 @@ class LimitsTest {
                     cob.return_();
                 })));
     }
+
+    @Test
+    void testEmptyCode() {
+        assertThrows(IllegalArgumentException.class, () -> Classfile.build(ClassDesc.of("EmptyClass"), cb -> cb.withMethodBody(
+                "emptyMethod", MethodTypeDesc.of(ConstantDescs.CD_void), 0, cob -> {})));
+    }
 }
