@@ -707,7 +707,7 @@ class XPStyle {
 
             // Get DPI to pass further to ThemeReader.paintBackground()
             Graphics2D g2d = (Graphics2D) g;
-            AffineTransform  at = g2d.getTransform();
+            AffineTransform at = g2d.getTransform();
             int dpi = (int)(at.getScaleX() * 96);
 
             WritableRaster raster = bi.getRaster();
