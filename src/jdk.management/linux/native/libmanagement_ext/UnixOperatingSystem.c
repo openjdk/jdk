@@ -23,8 +23,6 @@
  * questions.
  */
 
-#include "jni_util.h"
-
 #include <stdio.h>
 #include <stdint.h>
 #include <stdarg.h>
@@ -38,6 +36,8 @@
 #include <dlfcn.h>
 #include <pthread.h>
 #include <inttypes.h>
+
+#include "management_ext.h"
 #include "com_sun_management_internal_OperatingSystemImpl.h"
 
 #include <assert.h>
@@ -72,13 +72,6 @@ static int next_line(FILE *f) {
     } while (c != '\n' && c != EOF);
 
     return c;
-}
-
-static void throw_internal_error(JNIEnv* env, const char* msg) {
-    char errmsg[128];
-
-    snprintf(errmsg, sizeof(errmsg), "errno: %d error: %s\n", errno, msg);
-    JNU_ThrowInternalError(env, errmsg);
 }
 
 /**
