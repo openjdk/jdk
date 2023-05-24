@@ -3308,11 +3308,12 @@ public final class URI
                             host = null;
                             port = -1;
                             q = p;
-                        } else
+                        } else {
                             failExpecting("end of authority", q);
-                    } else
+                        }
+                    } else {
                         authority = input.substring(p, n);
-
+                    }
                 } catch (URISyntaxException x) {
                     // Undo results of failed parse
                     userInfo = null;
@@ -3407,7 +3408,7 @@ public final class URI
                     }
                     p = q;
                 }
-            } else if(skipParseException) {
+            } else if( p < n && skipParseException) {
                     return p;
             }
 
