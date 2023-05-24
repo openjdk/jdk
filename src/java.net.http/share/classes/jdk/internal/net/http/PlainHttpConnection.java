@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,12 +52,11 @@ import jdk.internal.net.http.common.Utils;
  */
 class PlainHttpConnection extends HttpConnection {
 
-    private final Object reading = new Object();
     protected final SocketChannel chan;
     private final SocketTube tube; // need SocketTube to call signalClosed().
-    private final PlainHttpPublisher writePublisher = new PlainHttpPublisher(reading);
+    private final PlainHttpPublisher writePublisher = new PlainHttpPublisher();
     private volatile boolean connected;
-    private boolean closed;
+    private volatile boolean closed;
     private volatile ConnectTimerEvent connectTimerEvent;  // may be null
     private volatile int unsuccessfulAttempts;
 
@@ -243,9 +242,9 @@ class PlainHttpConnection extends HttpConnection {
         if (closed) return false;
         synchronized (this) {
             closed = this.closed;
-            if (!closed) {
-                client().connectionOpened(this);
-            }
+        }
+        if (!closed) {
+            client().connectionOpened(this);
         }
         return !closed;
     }

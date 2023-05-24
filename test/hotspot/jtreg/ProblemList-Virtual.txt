@@ -95,32 +95,6 @@ vmTestbase/nsk/jdb/repeat/repeat001/repeat001.java  8300707 generic-all
 vmTestbase/nsk/jdi/ExceptionEvent/catchLocation/location002/TestDescription.java 8278470 generic-all
 
 ####
-## JVMTI PopFrame() is returning OPAQUE_FRAME because vthreads are not supported.
-## Note: vmTestbase/nsk/jdi/ThreadReference/popFrames/popframes001 was converted
-## to support vthreads and expect the OPAQUE_FRAME error. The others were
-## not because they don't add any additional value.
-
-vmTestbase/nsk/jdb/pop_exception/pop_exception001/pop_exception001.java 8285414 generic-all
-
-vmTestbase/nsk/jdi/VirtualMachine/redefineClasses/redefineclasses002/TestDescription.java 8285414 generic-all
-
-vmTestbase/nsk/jdi/Scenarios/invokeMethod/popframes001/TestDescription.java 8285414 generic-all
-vmTestbase/nsk/jdi/BScenarios/hotswap/tc01x002/TestDescription.java 8285414 generic-all
-vmTestbase/nsk/jdi/BScenarios/hotswap/tc02x001/TestDescription.java 8285414 generic-all
-vmTestbase/nsk/jdi/BScenarios/hotswap/tc02x002/TestDescription.java 8285414 generic-all
-vmTestbase/nsk/jdi/BScenarios/hotswap/tc04x001/TestDescription.java 8285414 generic-all
-vmTestbase/nsk/jdi/BScenarios/hotswap/tc04x002/TestDescription.java 8285414 generic-all
-vmTestbase/nsk/jdi/BScenarios/hotswap/tc06x001/TestDescription.java 8285414 generic-all
-vmTestbase/nsk/jdi/BScenarios/hotswap/tc08x001/TestDescription.java 8285414 generic-all
-vmTestbase/nsk/jdi/BScenarios/hotswap/tc10x002/TestDescription.java 8285414 generic-all
-
-vmTestbase/nsk/jdi/ThreadReference/popFrames/popframes002/TestDescription.java 8285414 generic-all
-vmTestbase/nsk/jdi/ThreadReference/popFrames/popframes003/TestDescription.java 8285414 generic-all
-vmTestbase/nsk/jdi/ThreadReference/popFrames/popframes004/TestDescription.java 8285414 generic-all
-
-vmTestbase/nsk/jdi/ThreadReference/popFrames/popframes001/TestDescription.java 8308237 generic-all
-
-####
 ## JVMTI ForceEarlyReturn not supported for vthreads (JVMTI_ERROR_OPAQUE_FRAME)
 ## Note forceEarlyReturn002 was converted to support vthreads. The rest were not
 ## since there is no added value (JVMTI_ERROR_OPAQUE_FRAME is expected).

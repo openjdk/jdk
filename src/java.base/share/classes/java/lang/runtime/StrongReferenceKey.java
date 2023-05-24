@@ -23,39 +23,63 @@
  * questions.
  */
 
-package java.util;
+package java.lang.runtime;
 
-import java.lang.invoke.MethodHandle;
+import java.util.Objects;
 
 /**
- * Digits provides a fast methodology for converting integers and longs to
- * ASCII strings.
+ * Wrapper for querying the backing map. Avoids the overhead of an
+ * {@link java.lang.ref.Reference} object.
+ *
+ * @param <T> key type
  *
  * @since 21
+ *
+ * Warning: This class is part of PreviewFeature.Feature.STRING_TEMPLATES.
+ *          Do not rely on its availability.
  */
-sealed interface Digits permits DecimalDigits, HexDigits, OctalDigits {
-    /**
-     * Insert digits for long value in buffer from high index to low index.
-     *
-     * @param value      value to convert
-     * @param buffer     byte buffer to copy into
-     * @param index      insert point + 1
-     * @param putCharMH  method to put character
-     *
-     * @return the last index used
-     *
-     * @throws Throwable if putCharMH fails (unusual).
-     */
-    int digits(long value, byte[] buffer, int index,
-               MethodHandle putCharMH) throws Throwable;
+final class StrongReferenceKey<T> implements ReferenceKey<T> {
+    T key;
 
     /**
-     * Calculate the number of digits required to represent the long.
+     * Package-Protected constructor.
      *
-     * @param value value to convert
-     *
-     * @return number of digits
+     * @param key unwrapped key value
      */
-    int size(long value);
+    StrongReferenceKey(T key) {
+        this.key = key;
+    }
 
+    /**
+     * {@return the unwrapped key}
+     */
+    @Override
+    public T get() {
+        return key;
+    }
+
+    @Override
+    public void unused() {
+        key = null;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        // Necessary when comparing an unwrapped key
+        if (obj instanceof ReferenceKey<?> key) {
+            obj = key.get();
+        }
+        return Objects.equals(get(), obj);
+    }
+
+    @Override
+    public int hashCode() {
+        // Use unwrapped key hash code
+        return get().hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return this.getClass().getCanonicalName() + "#" + System.identityHashCode(this);
+    }
 }
