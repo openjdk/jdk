@@ -322,7 +322,7 @@ Java_sun_java2d_windows_GDIRenderer_doDrawArc
         return;
     }
 
-    long sx, sy, ex, ey;
+    jint sx, sy, ex, ey;
     if (angleExtent >= 360 || angleExtent <= -360) {
         sx = ex = x + w;
         sy = ey = y + h/2;
@@ -602,7 +602,7 @@ Java_sun_java2d_windows_GDIRenderer_doFillArc
     if (wsdo == NULL) {
         return;
     }
-    long sx, sy, ex, ey;
+    jint sx, sy, ex, ey;
     int angleEnd;
     if (angleExtent < 0) {
         angleEnd = angleStart;

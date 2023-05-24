@@ -40,10 +40,6 @@ class Canonicalizer: InstructionVisitor {
   void set_constant(jlong x)                     { set_canonical(new Constant(new LongConstant(x))); }
   void set_constant(jfloat x)                    { set_canonical(new Constant(new FloatConstant(x))); }
   void set_constant(jdouble x)                   { set_canonical(new Constant(new DoubleConstant(x))); }
-#ifdef _WINDOWS
-  // jint is defined as long in jni_md.h, so convert from int to jint
-  void set_constant(int x)                       { set_constant((jint)x); }
-#endif
   void move_const_to_right(Op2* x);
   void do_Op2(Op2* x);
 

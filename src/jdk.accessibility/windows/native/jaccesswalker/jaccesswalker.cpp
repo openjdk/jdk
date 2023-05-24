@@ -496,7 +496,7 @@ HWND CreateATreeView(HWND hwndParent) {
                           hwndParent,
                           (HMENU) cTreeControl,
                           theInstance,
-                          NULL);
+                          nullptr);
 
     return hwndTV;
 }
@@ -505,7 +505,7 @@ HWND CreateATreeView(HWND hwndParent) {
  * Create (and display) the accessible component nodes of a parent AccessibleContext
  *
  */
-void Jaccesswalker::addComponentNodes(long vmID, AccessibleContext context,
+void Jaccesswalker::addComponentNodes(jint vmID, AccessibleContext context,
                                     AccessibleNode *parent, HWND hwnd,
                                     HTREEITEM treeNodeParent, HWND treeWnd) {
 

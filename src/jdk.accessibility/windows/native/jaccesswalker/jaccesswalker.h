@@ -82,7 +82,7 @@ public:
                              int bufsize );
     void exitjaccesswalker(HWND hWnd);
     void buildAccessibilityTree();
-    void addComponentNodes( long vmID, AccessibleContext context,
+    void addComponentNodes( jint vmID, AccessibleContext context,
                             AccessibleNode *parent, HWND hWnd,
                             HTREEITEM treeNodeParent, HWND treeWnd );
 };
