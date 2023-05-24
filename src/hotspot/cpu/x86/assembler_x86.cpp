@@ -6940,7 +6940,7 @@ void Assembler::vroundpd(XMMRegister dst, Address src, int32_t rmode,  int vecto
 
 void Assembler::vroundsd(XMMRegister dst, XMMRegister src, XMMRegister src2, int32_t rmode) {
   assert(VM_Version::supports_avx(), "");
-  assert(rmode <= 0x03, "rmode ", rmode);
+  assert(rmode <= 0x03, "rmode 0x%x", rmode);
   InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   int encode = vex_prefix_and_encode(dst->encoding(), src->encoding(), src2->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_3A, &attributes);
   emit_int24(0x0B, (0xC0 | encode), (rmode));
