@@ -56,7 +56,7 @@ import javax.tools.JavaFileObject;
  */
 @SuppressWarnings("preview")
 public class TestUnnamedClass  extends JavacTestingAbstractProcessor {
-    
+
     private static int round  = 0;
 
     public boolean process(Set<? extends TypeElement> annotations,
@@ -172,7 +172,7 @@ public class TestUnnamedClass  extends JavacTestingAbstractProcessor {
         if (ctors.size() != 1 ) {
             messager.printError("Did not find exactly one constructor", unnamedClass);
         }
-        
+
         ExecutableElement ctor = ctors.getFirst();
         if (elements.getOrigin(ctor) != Elements.Origin.MANDATED) {
             messager.printError("Constructor was not marked as mandated", ctor);
@@ -194,4 +194,3 @@ public class TestUnnamedClass  extends JavacTestingAbstractProcessor {
         }
     }
 }
-
