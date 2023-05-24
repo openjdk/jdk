@@ -25,6 +25,8 @@
 
 package javax.lang.model.element;
 
+import jdk.internal.javac.PreviewFeature;
+
 import java.util.List;
 import javax.lang.model.type.*;
 import javax.lang.model.util.*;
@@ -169,15 +171,34 @@ public interface TypeElement extends Element, Parameterizable, QualifiedNameable
     /**
      * Returns the simple name of this class or interface element.
      *
-     * For an anonymous class, an {@linkplain Name##empty_name empty
+     * For an anonymous or unnamed class, an {@linkplain Name##empty_name empty
      * name} is returned.
      *
      * @return the simple name of this class or interface,
-     * an empty name for an anonymous class
+     * an empty name for an anonymous or unnamed class
      *
      */
     @Override
     Name getSimpleName();
+
+    /**
+     * {@return {@code true} if this is an unnamed class and {@code
+     * false} otherwise}
+     *
+     * @implSpec
+     * The default implementation of this method calls {@code
+     * getSimpleName()} and returns {@code true} if the result is
+     * empty and the nesting kind is {@linkplain NestingKind#TOP_LEVEL
+     * top-level}; returns {@code false} otherwise.
+     *
+     * @jls 7.3 Compilation Units
+     * @since 21
+     */
+    @PreviewFeature(feature=PreviewFeature.Feature.UNNAMED_CLASSES, reflective = true)
+    default boolean isUnnamed() {
+        return getNestingKind() == NestingKind.TOP_LEVEL &&
+            getSimpleName().isEmpty();
+    }
 
     /**
      * Returns the direct superclass of this class or interface element.
