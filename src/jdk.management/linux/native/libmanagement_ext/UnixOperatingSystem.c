@@ -346,7 +346,7 @@ JNIEXPORT jlong JNICALL
 Java_com_sun_management_internal_OperatingSystemImpl_getCommittedVirtualMemorySize0
   (JNIEnv *env, jobject mbean)
 {
-   unsigned long vsize;
+    unsigned long vsize;
     if (read_vmem_usage("/proc/self/stat", &vsize) == -1) {
         throw_internal_error(env, "Unable to get virtual memory usage");
     }
