@@ -450,18 +450,18 @@ public:
   void compute_from_signature(Symbol* sig, bool is_static);
 
   // max stack
-  int  max_stack() const                         { return _max_stack; }
+  u2   max_stack() const                         { return _max_stack; }
   void set_max_stack(int size)                   { _max_stack = checked_cast<u2>(size); }
 
   // max locals
-  int  max_locals() const                        { return _max_locals; }
+  u2  max_locals() const                         { return _max_locals; }
   void set_max_locals(int size)                  { _max_locals = checked_cast<u2>(size); }
 
   // size of parameters
   u2 size_of_parameters() const                  { return _size_of_parameters; }
 
   // Number of arguments passed on the stack even when compiled
-  int  num_stack_arg_slots() const               { return _num_stack_arg_slots; }
+  u2 num_stack_arg_slots() const                 { return _num_stack_arg_slots; }
 
   // result type (basic type of return value)
   BasicType result_type() const                  { assert(_result_type >= T_BOOLEAN, "Must be set");
