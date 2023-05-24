@@ -26,7 +26,6 @@
 #ifndef CPU_AARCH64_INTERP_MASM_AARCH64_HPP
 #define CPU_AARCH64_INTERP_MASM_AARCH64_HPP
 
-#include "interpreter/invocationCounter.hpp"
 #include "runtime/frame.hpp"
 
 // This file specializes the assembler with interpreter-specific macros

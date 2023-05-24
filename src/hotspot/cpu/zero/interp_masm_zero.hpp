@@ -27,7 +27,6 @@
 #define CPU_ZERO_INTERP_MASM_ZERO_HPP
 
 #include "asm/codeBuffer.hpp"
-#include "interpreter/invocationCounter.hpp"
 
 // This file specializes the assembler with interpreter-specific macros
 

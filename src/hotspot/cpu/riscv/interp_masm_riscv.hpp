@@ -27,7 +27,6 @@
 #ifndef CPU_RISCV_INTERP_MASM_RISCV_HPP
 #define CPU_RISCV_INTERP_MASM_RISCV_HPP
 
-#include "interpreter/invocationCounter.hpp"
 #include "runtime/frame.hpp"
 
 // This file specializes the assembler with interpreter-specific macros
