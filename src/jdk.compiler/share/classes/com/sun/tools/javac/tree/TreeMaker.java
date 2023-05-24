@@ -1161,7 +1161,7 @@ public class TreeMaker implements JCTree.Factory {
                   !it.hasNext();
             }
         }
-        return false;
+        return sym.kind == TYP && (sym.flags_field & Flags.UNNAMED_CLASS) != 0;
     }
 
     /** The name of synthetic parameter number `i'.
