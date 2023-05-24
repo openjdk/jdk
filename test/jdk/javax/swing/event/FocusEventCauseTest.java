@@ -25,7 +25,7 @@
  * @test
  * @key headful
  * @bug 8306119
- * @summary Verifies FocusEvent cause when components requests focus 
+ * @summary Verifies FocusEvent cause when components requests focus
  *          via mouse events
  * @run main FocusEventCauseTest
  */
@@ -47,10 +47,10 @@ public class FocusEventCauseTest {
     static JButton button2;
     static volatile Point pt;
     static volatile Dimension dim;
-    static volatile boolean expected;    
+    static volatile boolean expected;
 
     public static void main(String[] args) throws Exception {
-        try {	    
+        try {
             Robot robot = new Robot();
             robot.setAutoDelay(100);
             SwingUtilities.invokeAndWait(() -> {
@@ -64,7 +64,7 @@ public class FocusEventCauseTest {
                         System.out.println("FocusEvent getCause " + e.getCause());
                         if (e.getCause() == FocusEvent.Cause.MOUSE_EVENT) {
                             expected = true;
-                        }			    
+                        }
                     }
                 });
                 panel.add(button1);
@@ -83,21 +83,20 @@ public class FocusEventCauseTest {
             robot.mouseMove(pt.x + dim.width/2, pt.y + dim.height/2);
             robot.waitForIdle();
             robot.delay(500);
-            robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);	
+            robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-            robot.waitForIdle();	
+            robot.waitForIdle();
             robot.delay(500);
             if (!expected) {
                 throw new RuntimeException("Focus requested without " +
                                            "supplying expected cause");
-            }		
+            }
         } finally {
             SwingUtilities.invokeAndWait(() -> {
                 if (frame != null) {
                     frame.dispose();
                 }
             });
-        }	    
+        }
     }
-}    
-            		
+}
