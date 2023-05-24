@@ -811,8 +811,9 @@ public:
 };
 
 bool CompilerOracle::parse_from_line(char* line) {
-  if (line[0] == '\0') return true;
-  if (line[0] == '#')  return true;
+  if ((line[0] == '\0') || (line[0] == '#')) {
+    return true;
+  }
 
   LineCopy original(line);
   int bytes_read;
