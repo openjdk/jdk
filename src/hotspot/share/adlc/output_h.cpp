@@ -1734,7 +1734,7 @@ void ArchDesc::declareClasses(FILE *fp) {
     } else {
       fprintf(fp,"  %sNode() { ", instr->_ident);
       if( can_cisc_spill() && (instr->cisc_spill_alternate() != nullptr) ) {
-        fprintf(fp,"_cisc_RegMask = null; ");
+        fprintf(fp,"_cisc_RegMask = nullptr; ");
       }
     }
 
