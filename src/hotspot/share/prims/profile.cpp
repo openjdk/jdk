@@ -59,11 +59,7 @@ void fill_call_trace_given_top(JavaThread* thd,
   int count = 0;
   for (; count < depth && !st.at_end(); st.next(), count++) {
     if (st.at_error()) {
-      if (st.at_end()) {
-        trace->num_frames = count;
-        break;
-      }
-      trace->num_frames = ASGST_NOT_WALKABLE_JAVA;
+      trace->num_frames = st.at_error();
       return;
     }
     if (st.is_java_frame()) {
@@ -188,7 +184,7 @@ void asyncGetStackTraceImpl(ASGST_CallTrace *trace, jint depth, void* ucontext, 
   trace->state = -1;
 
   if (raw_thread == NULL || !raw_thread->is_Java_thread()) {
-    trace->kind = ASGST_CPP_TRACE;
+    trace->kind = raw_thread == NULL ? ASGST_UNKNOWN_TRACE : ASGST_CPP_TRACE;
     if ((trace->kind & kind_mask) == 0) {
       trace->num_frames = ASGST_WRONG_KIND;
       return;
