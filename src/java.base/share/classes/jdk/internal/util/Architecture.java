@@ -35,7 +35,11 @@ import java.util.Locale;
  * architecture values.
  */
 public enum Architecture {
-    OTHER(0, null),          // An unknown architecture not specifically named
+    /*
+     * An unknown architecture not specifically named.
+     * The addrSize and ByteOrder values are those of the current architecture.
+     */
+    OTHER(is64bit() ? 64 : 32, ByteOrder.nativeOrder()),
     X64(64, ByteOrder.LITTLE_ENDIAN),  // Represents AMD64 and X86_64
     X86(32, ByteOrder.LITTLE_ENDIAN),
     AARCH64(64, ByteOrder.LITTLE_ENDIAN),
@@ -80,7 +84,7 @@ public enum Architecture {
      * @throws IllegalArgumentException if the name is not an alias or an Architecture name
      */
     public static Architecture lookupByName(String archName) {
-        archName = OperatingSystem.toUpperCase(archName); // normalize to uppercase
+        archName = archName.toUpperCase(Locale.ROOT); // normalize to uppercase
         try {
             return Architecture.valueOf(archName);
         } catch (IllegalArgumentException iae) {
@@ -191,7 +195,7 @@ public enum Architecture {
      */
     private static Architecture initArch(String archName) {
         try {
-            return Architecture.valueOf(OperatingSystem.toUpperCase(archName));
+            return Architecture.valueOf(archName.toUpperCase(Locale.ROOT));
         } catch (IllegalArgumentException ile) {
             return Architecture.OTHER;
         }

@@ -25,6 +25,8 @@ package jdk.internal.util;
 import jdk.internal.util.PlatformProps;
 import jdk.internal.vm.annotation.ForceInline;
 
+import java.util.Locale;
+
 /**
  * Enumeration of operating system types and testing for the current OS.
  * The enumeration can be used to dispatch to OS specific code or values.
@@ -127,25 +129,7 @@ public enum OperatingSystem {
      * Names not recognized throw ExceptionInInitializerError with IllegalArgumentException.
      */
     private static OperatingSystem initOS(String osName) {
-        return OperatingSystem.valueOf(toUpperCase(osName));
-    }
-
-    /**
-     * {@return Simple conversion of ASCII to upper case; used when too early to use Locale conversions}
-     *
-     * @param str a string
-     * @return the string with lower case ascii converted to upper case
-     */
-    /* package-private */
-    static String toUpperCase(String str) {
-        StringBuilder sb = new StringBuilder(str);
-        for (int i = 0; i < str.length(); i++) {
-            char ch = str.charAt(i);
-            if (ch >= 'a' && ch <= 'z') {
-                sb.setCharAt(i, (char)(ch - ('a' - 'A')));  // Map lower case down to uppercase
-            }
-        }
-        return sb.toString();
+        return OperatingSystem.valueOf(osName.toUpperCase(Locale.ROOT));
     }
 
     /**
