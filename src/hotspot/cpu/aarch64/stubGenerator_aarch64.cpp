@@ -7043,6 +7043,10 @@ class StubGenerator: public StubCodeGenerator {
 
   // Poly1305, RFC 7539
 
+  // See https://loup-vaillant.fr/tutorials/poly1305-design for a
+  // description of the tricks used to simplify and accelerate this
+  // computation.
+
   address generate_poly1305_processBlocks() {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", "poly1305_processBlocks");
