@@ -545,8 +545,6 @@ private:
   bool mem_ref_has_no_alignment_violation(MemNode* mem_ref, int iv_adjustment, SWPointer &align_to_ref_p,
                                           MemNode* best_align_to_mem_ref, int best_iv_adjustment,
                                           Node_List &align_to_refs);
-  // Check if alignment of mem_ref is consistent with the other packs of the same memory slice.
-  bool is_mem_ref_aligned_with_same_memory_slice(MemNode* mem_ref, int iv_adjustment, Node_List &align_to_refs);
   // Find a memory reference to align the loop induction variable to.
   MemNode* find_align_to_ref(Node_List &memops, int &idx);
   // Calculate loop's iv adjustment for this memory ops.

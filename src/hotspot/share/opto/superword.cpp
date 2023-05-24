@@ -924,22 +924,6 @@ bool SuperWord::mem_ref_has_no_alignment_violation(MemNode* mem_ref, int iv_adju
   return true;
 }
 
-// Check if alignment of mem_ref is consistent with the other packs of the same memory slice
-bool SuperWord::is_mem_ref_aligned_with_same_memory_slice(MemNode* mem_ref, int iv_adjustment,
-                                                          Node_List &align_to_refs) {
-  for (uint i = 0; i < align_to_refs.size(); i++) {
-    MemNode* mr = align_to_refs.at(i)->as_Mem();
-    if (mr != mem_ref &&
-        same_memory_slice(mr, mem_ref) &&
-        memory_alignment(mr, iv_adjustment) != 0) {
-      // mem_ref is misaligned with mr, another ref of the same memory slice.
-      return false;
-    }
-  }
-  // No misalignment found.
-  return true;
-}
-
 //------------------------------find_align_to_ref---------------------------
 // Find a memory reference to align the loop induction variable to.
 // Looks first at stores then at loads, looking for a memory reference
@@ -1930,6 +1914,13 @@ void SuperWord::combine_packs() {
         // Skip pack which can't be vector.
         // case1: for(...) { a[i] = i; }    elements values are different (i+x)
         // case2: for(...) { a[i] = b[i+1]; }  can't align both, load and store
+#ifndef PRODUCT
+        if (TraceSuperWord) {
+          tty->cr();
+          tty->print_cr("WARNING: Removed pack[%d] with size that is not a power of 2:", i);
+          print_pack(p1);
+        }
+#endif
         _packset.at_put(i, nullptr);
         continue;
       }
@@ -3984,7 +3975,7 @@ int SuperWord::memory_alignment(MemNode* s, int iv_adjust) {
   int off_mod = off_rem >= 0 ? off_rem : off_rem + vw;
 #ifndef PRODUCT
   if ((TraceSuperWord && Verbose) || is_trace_alignment()) {
-    tty->print_cr("SWPointer::memory_alignment: off_rem = %d, off_mod = %d", off_rem, off_mod);
+    tty->print_cr("SWPointer::memory_alignment: off_rem = %d, off_mod = %d (offset = %d)", off_rem, off_mod, offset);
   }
 #endif
   return off_mod;
