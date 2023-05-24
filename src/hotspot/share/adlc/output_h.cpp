@@ -580,7 +580,7 @@ void gen_oper_format(FILE *fp, FormDict &globals, OperandForm &oper, bool for_c_
       // Default formats for base operands (RegI, RegP, ConI, ConP, ...)
       oper.ext_format(fp, globals, 0);
     }
-  } else { // oper._format == null
+  } else { // oper._format is null
     // Provide a few special case formats where the AD writer cannot.
     if ( strcmp(oper._ident,"Universe")==0 ) {
       fprintf(fp, "  st->print(\"$$univ\");\n");
@@ -712,7 +712,7 @@ void gen_inst_format(FILE *fp, FormDict &globals, InstructForm &inst, bool for_c
   }
   else if( inst.is_ideal_mem() ) {
     // Print out the field name if available to improve readability
-    fprintf(fp,  "  if (ra->C->alias_type(adr_type())->field() != null) {\n");
+    fprintf(fp,  "  if (ra->C->alias_type(adr_type())->field() != nullptr) {\n");
     fprintf(fp,  "    ciField* f = ra->C->alias_type(adr_type())->field();\n");
     fprintf(fp,  "    st->print(\" %s Field: \");\n", commentSeperator);
     fprintf(fp,  "    if (f->is_volatile())\n");
@@ -1112,7 +1112,7 @@ void ArchDesc::declare_pipe_classes(FILE *fp_hpp) {
   fprintf(fp_hpp, "};\n\n");
 
 //  const char *classname;
-//  for (_pipeline->_classlist.reset(); (classname = _pipeline->_classlist.iter()) != null; ) {
+//  for (_pipeline->_classlist.reset(); (classname = _pipeline->_classlist.iter()) != nullptr; ) {
 //    PipeClassForm *pipeclass = _pipeline->_classdict[classname]->is_pipeclass();
 //    fprintf(fp_hpp, "// Pipeline Class Instance for \"%s\"\n", classname);
 //  }

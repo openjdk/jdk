@@ -298,7 +298,7 @@ int InstructForm::is_tls_instruction() const {
       opType = _matrule->_rChild->_opType;
     if (strcmp(opType,"ThreadLocal")==0) {
       fprintf(stderr, "Warning: ThreadLocal instruction %s should be named 'tlsLoadP_*'\n",
-              (_ident == nullptr ? "null" : _ident));
+              (_ident == nullptr ? "nullptr" : _ident));
       return 1;
     }
   }
@@ -711,7 +711,7 @@ int InstructForm::memory_operand(FormDict &globals) const {
       } else {
         // // unique def, some uses
         // // must return bottom unless all uses match def
-        // unique = null;
+        // unique = nullptr;
 #ifdef S390
         // This case is important for move instructions on s390x.
         // On other platforms (e.g. x86), all uses always match the def.
@@ -981,7 +981,7 @@ void InstructForm::build_components() {
         }
       } else {
         // This would be a nice warning but it triggers in a few places in a benign way
-        // if (_matrule != null && !expands()) {
+        // if (_matrule != nullptr && !expands()) {
         //   globalAD->syntax_err(_linenum, "%s: %s %s not mentioned in effect or match rule\n",
         //                        _ident, opForm->_ident, name);
         // }
@@ -2944,7 +2944,7 @@ ComponentList::ComponentList() : NameList(), _matchcnt(0) {
 ComponentList::~ComponentList() {
   // // This list may not own its elements if copied via assignment
   // Component *component;
-  // for (reset(); (component = iter()) != null;) {
+  // for (reset(); (component = iter()) != nullptr;) {
   //   delete component;
   // }
 }
@@ -3382,7 +3382,7 @@ const char *MatchNode::reduce_right(FormDict &globals) const {
     rightStr = mnode->_rChild->_internalop ? mnode->_rChild->_internalop
       : mnode->_rChild->_opType;
   }
-  // Else, May be simple chain rule: (Set dst operand_form), rightStr=null;
+  // Else, May be simple chain rule: (Set dst operand_form), rightStr=nullptr;
   return rightStr;
 }
 

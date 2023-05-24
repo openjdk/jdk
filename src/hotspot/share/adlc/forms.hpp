@@ -514,7 +514,7 @@ public:
     Zero     = 0,
     Max      = 0x7fffffff
   };
-  const char *_external_name;  // if !null, then print this instead of _expr
+  const char *_external_name;  // if not null, then print this instead of _expr
   const char *_expr;
   int         _min_value;
   int         _max_value;

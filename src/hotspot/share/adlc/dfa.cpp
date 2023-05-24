@@ -193,7 +193,7 @@ static void child_test(FILE *fp, MatchList &mList, bool is_vector_unary_op) {
     } else if (is_vector_unary_op) {
       // If unpredicated vector unary operation, add one extra check, i.e. right
       // child should be null, to distinguish from the predicated version.
-      fprintf(fp, " && _kids[1] == null");
+      fprintf(fp, " && _kids[1] == nullptr");
     }
   }
   if (mList._rchild) { // If right child, check it
@@ -947,9 +947,9 @@ void Production::initialize() {
 }
 
 void Production::print() {
-  printf("%s", (_result     == null ? "null" : _result ) );
-  printf("%s", (_constraint == null ? "null" : _constraint ) );
-  printf("%s", (_valid      == null ? "null" : _valid ) );
+  printf("%s", (_result     == nullptr ? "nullptr" : _result ) );
+  printf("%s", (_constraint == nullptr ? "nullptr" : _constraint ) );
+  printf("%s", (_valid      == nullptr ? "nullptr" : _valid ) );
   _cost_lb->print();
   _cost_ub->print();
 }

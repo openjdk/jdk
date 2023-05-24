@@ -53,7 +53,7 @@ void  AdlChunk::operator delete(void* p, size_t length) {
 }
 
 AdlChunk::AdlChunk(size_t length) {
-  _next = nullptr;         // Chain on the linked list
+  _next = nullptr;      // Chain on the linked list
   _len  = length;       // Save actual size
 }
 
@@ -164,7 +164,7 @@ void *AdlArena::Arealloc( void *old_ptr, size_t old_size, size_t new_size ) {
 // Reset this AdlArena to empty, and return this AdlArenas guts in a new AdlArena.
 AdlArena *AdlArena::reset(void) {
   AdlArena *a = new AdlArena(this);   // New empty arena
-  _first = _chunk = nullptr;       // Normal, new-arena initialization
+  _first = _chunk = nullptr;    // Normal, new-arena initialization
   _hwm = _max = nullptr;
   return a;                     // Return AdlArena with guts
 }

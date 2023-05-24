@@ -204,7 +204,7 @@ const void *Dict::Insert(const void *key, const void *val) {
   b->_keyvals[b->_cnt+b->_cnt  ] = key;
   b->_keyvals[b->_cnt+b->_cnt+1] = val;
   b->_cnt++;
-  return nullptr;                  // Nothing found prior
+  return nullptr;               // Nothing found prior
 }
 
 //------------------------------Delete---------------------------------------

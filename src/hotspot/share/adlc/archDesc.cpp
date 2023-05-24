@@ -388,10 +388,10 @@ void ArchDesc::check_optype(MatchRule *mrule) {
   //   // Cycle through the list of match rules
   //   while(mrule) {
   //     // Check for a filled in type field
-  //     if (mrule->_opType == null) {
+  //     if (mrule->_opType == nullptr) {
   //     const Form  *form    = operands[_result];
-  //     OpClassForm *opcForm = form ? form->is_opclass() : null;
-  //     assert(opcForm != null, "Match Rule contains invalid operand name.");
+  //     OpClassForm *opcForm = form ? form->is_opclass() : nullptr;
+  //     assert(opcForm != nullptr, "Match Rule contains invalid operand name.");
   //     }
   //     char *opType = opcForm->_ident;
   //   }

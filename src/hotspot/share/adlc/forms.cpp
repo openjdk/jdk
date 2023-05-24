@@ -302,8 +302,8 @@ Form::InterfaceType Form::interface_type(FormDict &globals) const {
 FormList::~FormList()  {
   // // This list may not own its elements
   // Form *cur  = _root;
-  // Form *next = null;
-  // for( ; (cur = next) != null; ) {
+  // Form *next = nullptr;
+  // for( ; (cur = next) != nullptr; ) {
   //   next = (Form *)cur->_next;
   //   delete cur;
   // }

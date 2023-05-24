@@ -774,8 +774,8 @@ void ArchDesc::build_pipe_classes(FILE *fp_cpp) {
 
   // Create the pipeline class description
 
-  fprintf(fp_cpp, "static const Pipeline pipeline_class_Zero_Instructions(0, 0, true, 0, 0, false, false, false, false, null, null, null, Pipeline_Use(0, 0, 0, null));\n\n");
-  fprintf(fp_cpp, "static const Pipeline pipeline_class_Unknown_Instructions(0, 0, true, 0, 0, false, true, true, false, null, null, null, Pipeline_Use(0, 0, 0, null));\n\n");
+  fprintf(fp_cpp, "static const Pipeline pipeline_class_Zero_Instructions(0, 0, true, 0, 0, false, false, false, false, nullptr, nullptr, nullptr, Pipeline_Use(0, 0, 0, nullptr));\n\n");
+  fprintf(fp_cpp, "static const Pipeline pipeline_class_Unknown_Instructions(0, 0, true, 0, 0, false, true, true, false, nullptr, nullptr, nullptr, Pipeline_Use(0, 0, 0, nullptr));\n\n");
 
   fprintf(fp_cpp, "const Pipeline_Use_Element Pipeline_Use::elaborated_elements[%d] = {\n", _pipeline->_rescount);
   for (int i1 = 0; i1 < _pipeline->_rescount; i1++) {
@@ -889,7 +889,7 @@ void ArchDesc::build_pipe_classes(FILE *fp_cpp) {
         pipeline_reads_index+1);
     }
     else
-      fprintf(fp_cpp, " null,");
+      fprintf(fp_cpp, " nullptr,");
     fprintf(fp_cpp, "  (enum machPipelineStages * const) pipeline_res_stages_%03d,\n",
       pipeline_res_stages_index+1);
     fprintf(fp_cpp, "  (uint * const) pipeline_res_cycles_%03d,\n",
@@ -900,7 +900,7 @@ void ArchDesc::build_pipe_classes(FILE *fp_cpp) {
       fprintf(fp_cpp, "&pipeline_res_mask_%03d[0]",
         pipeline_res_mask_index+1);
     else
-      fprintf(fp_cpp, "null");
+      fprintf(fp_cpp, "nullptr");
     fprintf(fp_cpp, "));\n");
   }
 
@@ -1047,13 +1047,13 @@ static void check_peepmatch_instruction_sequence(FILE *fp, PeepMatch *pmatch, Pe
         fprintf(fp, " > 0 ) {\n    Node *n = block->get_node(");
         print_block_index(fp, inst_position);
         fprintf(fp, ");\n    inst%d = (n->is_Mach()) ? ", inst_position);
-        fprintf(fp, "n->as_Mach() : null;\n  }\n");
+        fprintf(fp, "n->as_Mach() : nullptr;\n  }\n");
       }
 
       // When not the root
       // Test we have the correct instruction by comparing the rule.
       if( parent != -1 ) {
-        fprintf(fp, "  matches = matches && (inst%d != null) && (inst%d->rule() == %s_rule);\n",
+        fprintf(fp, "  matches = matches && (inst%d != nullptr) && (inst%d->rule() == %s_rule);\n",
                 inst_position, inst_position, inst_name);
       }
     } else {
@@ -1360,7 +1360,7 @@ static void generate_peepreplace( FILE *fp, FormDict &globals, int peephole_numb
   // Mark the node as removed because peephole does not remove nodes from the graph
   for (int i = 0; i <= max_position; i++) {
     fprintf(fp, "        inst%d->set_removed();\n", i);
-    fprintf(fp, "        cfg_->map_node_to_block(inst%d, null);\n", i);
+    fprintf(fp, "        cfg_->map_node_to_block(inst%d, nullptr);\n", i);
   }
   for (int i = 0; i <= max_position; i++) {
     fprintf(fp, "        block->remove_node(block_index - %d);\n", i);
@@ -1382,9 +1382,9 @@ void ArchDesc::definePeephole(FILE *fp, InstructForm *node) {
   // Identify the maximum instruction position,
   // generate temporaries that hold current instruction
   //
-  //   MachNode  *inst0 = null;
+  //   MachNode  *inst0 = nullptr;
   //   ...
-  //   MachNode  *instMAX = null;
+  //   MachNode  *instMAX = nullptr;
   //
   int max_position = 0;
   Peephole *peep;
@@ -1400,7 +1400,7 @@ void ArchDesc::definePeephole(FILE *fp, InstructForm *node) {
     if( i == 0 ) {
       fprintf(fp, "  MachNode *inst0 = this;\n");
     } else {
-      fprintf(fp, "  MachNode *inst%d = null;\n", i);
+      fprintf(fp, "  MachNode *inst%d = nullptr;\n", i);
     }
   }
 
@@ -1521,7 +1521,7 @@ void ArchDesc::defineExpand(FILE *fp, InstructForm *node) {
         fprintf(fp,"  MachNode *tmp%d = this;\n", i);
       }
       else {
-        fprintf(fp,"  MachNode *tmp%d = null;\n", i);
+        fprintf(fp,"  MachNode *tmp%d = nullptr;\n", i);
       }
     }
     // Build mapping from num_edges to local variables
@@ -1551,7 +1551,7 @@ void ArchDesc::defineExpand(FILE *fp, InstructForm *node) {
     }
 
     // Declare variable to hold root of expansion
-    fprintf(fp,"  MachNode *result = null;\n");
+    fprintf(fp,"  MachNode *result = nullptr;\n");
 
     // Iterate over the instructions 'node' expands into
     ExpandRule  *expand       = node->_exprule;
@@ -1639,7 +1639,7 @@ void ArchDesc::defineExpand(FILE *fp, InstructForm *node) {
             fprintf(fp,"  n%d->set_opnd_array(%d, op%d->clone()); // %s\n",
                     cnt, new_pos, exp_pos-node->num_opnds(), opid);
             // Check for who defines this operand & add edge if needed
-            fprintf(fp,"  if(tmp%d != null)\n", exp_pos);
+            fprintf(fp,"  if(tmp%d != nullptr)\n", exp_pos);
             fprintf(fp,"    n%d->add_req(tmp%d);\n", cnt, exp_pos);
           }
         }
@@ -2859,7 +2859,7 @@ static void defineIn_RegMask(FILE *fp, FormDict &globals, OperandForm &oper) {
       }
       fprintf(fp,"  }\n");
       fprintf(fp,"  ShouldNotReachHere();\n");
-      fprintf(fp,"  return null;\n");
+      fprintf(fp,"  return nullptr;\n");
     }
 
     // Method close
@@ -3344,13 +3344,13 @@ void ArchDesc::defineClasses(FILE *fp) {
 
   // Emit specifically for Node(s)
   fprintf(_CPP_PIPELINE_file._fp, "const Pipeline * %*s::pipeline_class() { return %s; }\n",
-    max_ident_len, "Node", _pipeline ? "(&pipeline_class_Zero_Instructions)" : "null");
+    max_ident_len, "Node", _pipeline ? "(&pipeline_class_Zero_Instructions)" : "nullptr");
   fprintf(_CPP_PIPELINE_file._fp, "const Pipeline * %*s::pipeline() const { return %s; }\n",
-    max_ident_len, "Node", _pipeline ? "(&pipeline_class_Zero_Instructions)" : "null");
+    max_ident_len, "Node", _pipeline ? "(&pipeline_class_Zero_Instructions)" : "nullptr");
   fprintf(_CPP_PIPELINE_file._fp, "\n");
 
   fprintf(_CPP_PIPELINE_file._fp, "const Pipeline * %*s::pipeline_class() { return %s; }\n",
-    max_ident_len, "MachNode", _pipeline ? "(&pipeline_class_Unknown_Instructions)" : "null");
+    max_ident_len, "MachNode", _pipeline ? "(&pipeline_class_Unknown_Instructions)" : "nullptr");
   fprintf(_CPP_PIPELINE_file._fp, "const Pipeline * %*s::pipeline() const { return pipeline_class(); }\n",
     max_ident_len, "MachNode");
   fprintf(_CPP_PIPELINE_file._fp, "\n");
@@ -3900,7 +3900,7 @@ void ArchDesc::buildMachOperGenerator(FILE *fp_cpp) {
     const char *opEnumName = machOperEnum(iopn);
     // Generate the case statement for this opcode
     fprintf(fp_cpp, "  case %s:", opEnumName);
-    fprintf(fp_cpp, "    return null;\n");
+    fprintf(fp_cpp, "    return nullptr;\n");
   };
 
   // Generate the default case for switch(opcode)
@@ -3912,7 +3912,7 @@ void ArchDesc::buildMachOperGenerator(FILE *fp_cpp) {
   fprintf(fp_cpp, "  }\n");
 
   // Generate the closing for method Matcher::MachOperGenerator
-  fprintf(fp_cpp, "  return null;\n");
+  fprintf(fp_cpp, "  return nullptr;\n");
   fprintf(fp_cpp, "};\n");
 }
 
@@ -4171,7 +4171,7 @@ void ArchDesc::buildMachNodeGenerator(FILE *fp_cpp) {
   fprintf(fp_cpp, "  };\n");
 
   // Generate the closing for method Matcher::MachNodeGenerator
-  fprintf(fp_cpp, "  return null;\n");
+  fprintf(fp_cpp, "  return nullptr;\n");
   fprintf(fp_cpp, "}\n");
 }
 

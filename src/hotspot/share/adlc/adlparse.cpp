@@ -867,8 +867,8 @@ void ADLParser::enc_class_parse(void) {
   // Check for optional parameter list
   if (_curchar == '(') {
     do {
-      char *pType = nullptr;        // parameter type
-      char *pName = nullptr;        // parameter name
+      char *pType = nullptr;     // parameter type
+      char *pName = nullptr;     // parameter name
 
       next_char();               // skip open paren & comma characters
       skipws();
@@ -970,7 +970,7 @@ void ADLParser::enc_class_parse_block(EncClass* encoding, char* ec_name) {
 //------------------------------frame_parse-----------------------------------
 void ADLParser::frame_parse(void) {
   FrameForm  *frame;              // Information about stack-frame layout
-  char       *desc = nullptr;        // String representation of frame
+  char       *desc = nullptr;     // String representation of frame
 
   skipws();                       // Skip leading whitespace
 
@@ -1064,7 +1064,7 @@ void ADLParser::frame_parse(void) {
     return;
   }
   // !!!!! !!!!!
-  // if(frame->_interpreter_frame_ptr_reg == null) {
+  // if(frame->_interpreter_frame_ptr_reg == nullptr) {
   //   parse_err(SYNERR, "missing interpreter frame pointer definition in frame section.\n");
   //   return;
   // }
@@ -1216,7 +1216,7 @@ void ADLParser::return_addr_parse(FrameForm *frame, bool native) {
 
 //------------------------------return_value_parse-----------------------------
 char *ADLParser::return_value_parse() {
-  char   *desc = nullptr;          // String representation of return_value
+  char   *desc = nullptr;       // String representation of return_value
 
   skipws();                     // Skip leading whitespace
   if ( (desc = find_cpp_block("return value block")) == nullptr ) {
@@ -2030,7 +2030,7 @@ void ADLParser::pipe_class_parse(PipelineForm &pipeline) {
 //------------------------------peep_parse-------------------------------------
 void ADLParser::peep_parse(void) {
   Peephole  *peep;                // Pointer to current peephole rule form
-  char      *desc = nullptr;         // String representation of rule
+  char      *desc = nullptr;      // String representation of rule
 
   skipws();                       // Skip leading whitespace
 
@@ -3156,7 +3156,7 @@ void ADLParser::ins_encode_parse(InstructForm& inst) {
     // Check for ',' separating parameters
     // if ( _curchar != ',' && _curchar != ')' ) {
     //   parse_err(SYNERR, "expected ',' or ')' after encode method inside ins_encode.\n");
-    //   return null;
+    //   return nullptr;
     // }
 
   } // done parsing ins_encode methods and their parameters
@@ -3834,7 +3834,7 @@ char *ADLParser::interface_field_parse(const char ** format) {
 //------------------------------match_parse------------------------------------
 MatchRule *ADLParser::match_parse(FormDict &operands) {
   MatchRule *match;               // Match Rule class for instruction/operand
-  char      *cnstr = nullptr;        // Code for constructor
+  char      *cnstr = nullptr;     // Code for constructor
   int        depth = 0;           // Counter for matching parentheses
   int        numleaves = 0;       // Counter for number of leaves in rule
 
@@ -3844,13 +3844,13 @@ MatchRule *ADLParser::match_parse(FormDict &operands) {
   // Either there is a block with a constructor, or a ';' here
   skipws();                       // Skip whitespace
   if ( _curchar == ';' ) {        // Semicolon is valid terminator
-    cnstr = nullptr;                 // no constructor for this form
+    cnstr = nullptr;              // no constructor for this form
     next_char();                  // Move past the ';', replaced with '\0'
   }
   else if ((cnstr = find_cpp_block("match constructor")) == nullptr ) {
     parse_err(SYNERR, "invalid construction of match rule\n"
               "Missing ';' or invalid '%%{' and '%%}' constructor\n");
-    return nullptr;                  // No MatchRule to return
+    return nullptr;               // No MatchRule to return
   }
   if (_AD._adl_debug > 1)
     if (cnstr) fprintf(stderr,"Match Constructor: %s\n", cnstr);
@@ -3868,7 +3868,7 @@ FormatRule* ADLParser::format_parse(void) {
   // Without expression form, MUST have a code block;
   skipws();                       // Skip whitespace
   if ( _curchar == ';' ) {        // Semicolon is valid terminator
-    desc  = nullptr;                 // no constructor for this form
+    desc  = nullptr;              // no constructor for this form
     next_char();                  // Move past the ';', replaced with '\0'
   }
   else if ( _curchar == '%' && *(_ptr+1) == '{') {
@@ -4301,7 +4301,7 @@ RewriteRule* ADLParser::rewrite_parse(void) {
 //------------------------------attr_parse-------------------------------------
 Attribute *ADLParser::attr_parse(char* ident) {
   Attribute *attrib;              // Attribute class
-  char      *cost = nullptr;         // String representation of cost attribute
+  char      *cost = nullptr;      // String representation of cost attribute
 
   skipws();                       // Skip leading whitespace
   if ( (cost = get_paren_expr("attribute")) == nullptr ) {
@@ -4359,8 +4359,8 @@ MatchNode *ADLParser::matchNode_parse(FormDict &operands, int &depth, int &numle
 
   // Lookup the root value in the operands dict to perform substitution
   const char  *result    = nullptr;  // Result type will be filled in later
-  const char  *name      = token; // local name associated with this node
-  const char  *operation = token; // remember valid operation for later
+  const char  *name      = token;    // local name associated with this node
+  const char  *operation = token;    // remember valid operation for later
   const Form  *form      = operands[token];
   OpClassForm *opcForm = form ? form->is_opclass() : nullptr;
   if (opcForm != nullptr) {
@@ -4454,7 +4454,7 @@ MatchNode *ADLParser::matchChild_parse(FormDict &operands, int &parens, int &num
 
 char* ADLParser::find_cpp_block(const char* description) {
   char *next;                     // Pointer for finding block delimiters
-  char* cppBlock = nullptr;          // Beginning of C++ code block
+  char* cppBlock = nullptr;       // Beginning of C++ code block
 
   if (_curchar == '%') {          // Encoding is a C++ expression
     next_char();
@@ -4791,7 +4791,7 @@ int ADLParser::get_int(void) {
   char         *end;              // Pointer to end of token
   int           result;           // Storage for integer result
 
-  if( _curline == nullptr )          // Return null at EOF.
+  if( _curline == nullptr )       // Return null at EOF.
     return 0;
 
   skipws();                       // Skip whitespace before identifier
@@ -4824,9 +4824,9 @@ int ADLParser::get_int(void) {
 // invokes a parse_err if the next token is not a relation
 // This routine creates a duplicate of the string in the buffer.
 char *ADLParser::get_relation_dup(void) {
-  char         *result = nullptr;    // relational operator being returned
+  char         *result = nullptr; // relational operator being returned
 
-  if( _curline == nullptr )          // Return null at EOF.
+  if( _curline == nullptr )       // Return null at EOF.
     return  nullptr;
 
   skipws();                       // Skip whitespace before relation
@@ -5185,7 +5185,7 @@ void ADLParser::skipws_common(bool do_preproc) {
       parse_err(SYNERR, "unimplemented: comment token in a funny place");
     }
   }
-  while(_curline != nullptr) {                // Check for end of file
+  while(_curline != nullptr) {             // Check for end of file
     if (*_ptr == '\n') {                   // keep proper track of new lines
       if (!do_preproc)  break;             // let caller handle the newline
       next_line();
@@ -5199,7 +5199,7 @@ void ADLParser::skipws_common(bool do_preproc) {
         _ptr++; next++;
         if (*_ptr == '\n') {               // keep proper track of new lines
           next_line();                     // skip newlines within comments
-          if (_curline == nullptr) {          // check for end of file
+          if (_curline == nullptr) {       // check for end of file
             parse_err(SYNERR, "end-of-file detected inside comment\n");
             break;
           }
@@ -5238,7 +5238,7 @@ void ADLParser::skipws_common(bool do_preproc) {
     }
     else { ++_ptr; ++next; }
   }
-  if( _curline != nullptr )            // at end of file _curchar isn't valid
+  if( _curline != nullptr )         // at end of file _curchar isn't valid
     _curchar = *_ptr;               // reset _curchar to maintain invariant
 }
 
