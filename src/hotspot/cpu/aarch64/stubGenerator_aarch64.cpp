@@ -7027,7 +7027,24 @@ class StubGenerator: public StubCodeGenerator {
     __ ldr(rscratch1, Address(src, 4 * sizeof (jlong)));
     __ add(dest1, dest1, rscratch1, Assembler::LSL, 40);  // 24 bits
 
-    __ add(dest2, zr, rscratch1, Assembler::LSR, 24);     // 2 bits
+    if (dest2->is_valid()) {
+      __ add(dest2, zr, rscratch1, Assembler::LSR, 24);     // 2 bits
+    } else {
+#ifdef ASSERT
+      Label OK;
+      __ cmp(zr, rscratch1, Assembler::LSR, 24);     // 2 bits
+      __ br(__ EQ, OK);
+      __ stop("high bits of Poly1305 integer should be zero");
+      __ should_not_reach_here();
+      __ bind(OK);
+#endif
+    }
+  }
+
+  // As above, but return only a 128-bit integer, packed into two
+  // 64-bit registers.
+  void pack_26(Register dest0, Register dest1, Register src) {
+    pack_26(dest0, dest1, noreg, src);
   }
 
   // Multiply and multiply-accumulate unsigned 64-bit registers.
@@ -7061,9 +7078,11 @@ class StubGenerator: public StubCodeGenerator {
     // Arguments
     const Register input_start = *regs, length = *++regs, acc_start = *++regs, r_start = *++regs;
 
-    // R_n is the randomly-generated key, packed into three registers
-    const Register R_0 = *++regs, R_1 = *++regs, R_2 = *++regs;
-    pack_26(R_0, R_1, R_2, r_start);
+    // R_n is the 128-bit randomly-generated key, packed into two
+    // registers.  The caller passes this key to us as long[5], with
+    // BITS_PER_LIMB = 26.
+    const Register R_0 = *++regs, R_1 = *++regs;
+    pack_26(R_0, R_1, r_start);
 
     // RR_n is (R_n >> 2) * 5
     const Register RR_0 = *++regs, RR_1 = *++regs;
@@ -7095,9 +7114,9 @@ class StubGenerator: public StubCodeGenerator {
 
       // NB: this logic depends on some of the special properties of
       // Poly1305 keys. In particular, because we know that the top
-      // four bits of each 32-bit subword of "r" are zero, we can add
-      // together partial products without any risk of needing to
-      // propagate a carry out.
+      // four bits of R_0 and R_1 are zero, we can add together
+      // partial products without any risk of needing to propagate a
+      // carry out.
       wide_mul(U_0, U_0HI, S_0, R_0);  wide_madd(U_0, U_0HI, S_1, RR_1); wide_madd(U_0, U_0HI, S_2, RR_0);
       wide_mul(U_1, U_1HI, S_0, R_1);  wide_madd(U_1, U_1HI, S_1, R_0);  wide_madd(U_1, U_1HI, S_2, RR_1);
       __ andr(U_2, R_0, 3);
