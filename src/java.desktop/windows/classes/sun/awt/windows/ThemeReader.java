@@ -85,8 +85,10 @@ public final class ThemeReader {
     private static Long getThemeImpl(String widget, int dpi) {
         Long theme = null;
 
-        if(dpiAwareWidgetToTheme.containsKey(dpi)) {
-            theme = dpiAwareWidgetToTheme.get(dpi).get(widget);
+        Map<String, Long> dpiWidgetToTheme = dpiAwareWidgetToTheme.get(dpi);
+
+        if (dpiWidgetToTheme != null) {
+            theme = dpiWidgetToTheme.get(widget);
         }
 
         if (theme == null) {
@@ -101,12 +103,8 @@ public final class ThemeReader {
                 theme = openTheme(widget, dpi);
             }
 
-            if (dpiAwareWidgetToTheme.get(dpi) != null) {
-                dpiAwareWidgetToTheme.get(dpi).put(widget, theme);
-            } else {
-                dpiAwareWidgetToTheme.put(dpi, new HashMap<>());
-                dpiAwareWidgetToTheme.get(dpi).put(widget, theme);
-            }
+            dpiAwareWidgetToTheme.computeIfAbsent(dpi, key->new HashMap<>()).put(widget, theme);
+
         }
         return theme;
     }
