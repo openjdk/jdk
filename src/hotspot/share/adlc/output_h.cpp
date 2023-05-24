@@ -149,7 +149,7 @@ void ArchDesc::buildMachRegisterEncodes(FILE *fp_hpp) {
       reg_def_next = _register->iter_RegDefs();
       fprintf(fp_hpp,"  %s_enc", reg_def->_regname);
       for (size_t i = strlen(reg_def->_regname); i < maxlen; i++) fprintf(fp_hpp, " ");
-      fprintf(fp_hpp," = %3s%s\n", reg_def->register_encode(), reg_def_next == null? "" : "," );
+      fprintf(fp_hpp," = %3s%s\n", reg_def->register_encode(), reg_def_next == nullptr? "" : "," );
     }
     // Finish defining enumeration
     fprintf(fp_hpp, "};\n");
