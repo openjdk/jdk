@@ -43,8 +43,6 @@ import java.util.Arrays;
 import java.util.List;
 
 import static java.lang.foreign.MemoryLayout.*;
-import static java.lang.foreign.ValueLayout.JAVA_CHAR;
-import static java.lang.foreign.ValueLayout.JAVA_SHORT;
 import static org.testng.Assert.*;
 
 public class TestLinker extends NativeTestHelper {
@@ -66,9 +64,7 @@ public class TestLinker extends NativeTestHelper {
     public static Object[][] notSameCases() {
         FunctionDescriptor fd_II_V = FunctionDescriptor.ofVoid(C_INT, C_INT);
         return new Object[][]{
-            {new LinkRequest(fd_II_V), new LinkRequest(fd_II_V, Linker.Option.firstVariadicArg(1))},
-            {new LinkRequest(FunctionDescriptor.ofVoid(JAVA_SHORT)), new LinkRequest(FunctionDescriptor.ofVoid(JAVA_CHAR))},
-            {new LinkRequest(FunctionDescriptor.ofVoid(JAVA_SHORT)), new LinkRequest(FunctionDescriptor.ofVoid(JAVA_CHAR))},
+            {new LinkRequest(fd_II_V), new LinkRequest(fd_II_V, Linker.Option.firstVariadicArg(1))}
         };
     }
 
@@ -152,7 +148,6 @@ public class TestLinker extends NativeTestHelper {
             "bool",
             "char",
             "short",
-            "unsigned short",
             "int",
             "long",
             "long long",

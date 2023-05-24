@@ -257,7 +257,6 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
             Map.entry("bool", ValueLayout.JAVA_BOOLEAN),
             Map.entry("char", ValueLayout.JAVA_BYTE),
             Map.entry("short", ValueLayout.JAVA_SHORT),
-            Map.entry("unsigned short", ValueLayout.JAVA_CHAR),
             Map.entry("int", ValueLayout.JAVA_INT),
             Map.entry("float", ValueLayout.JAVA_FLOAT),
             Map.entry("long", CABI.current() == CABI.WIN_64 ? ValueLayout.JAVA_INT : ValueLayout.JAVA_LONG),

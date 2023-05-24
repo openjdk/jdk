@@ -129,7 +129,6 @@ import java.util.stream.Stream;
  *     <li>{@code bool}</li>
  *     <li>{@code char}</li>
  *     <li>{@code short}</li>
- *     <li>{@code unsigned short}</li>
  *     <li>{@code int}</li>
  *     <li>{@code long}</li>
  *     <li>{@code long long}</li>
@@ -144,7 +143,13 @@ import java.util.stream.Stream;
  * {@code size_t} maps to the layout constant {@link ValueLayout#JAVA_LONG} on 64-bit platforms, but maps to the layout
  * constant {@link ValueLayout#JAVA_INT} on 32-bit platforms.
  * <p>
- * The following table shows some examples of how C types are modelled in Linux/x64:
+ * A native linker typically does not provide canonical layouts for C's unsigned integral types. Instead, they are
+ * modelled using the canonical layouts associated with their corresponding signed integral types. For instance,
+ * the C type {@code unsigned long} maps to the layout constant {@link ValueLayout#JAVA_LONG} on Linux/x64, but maps to
+ * the layout constant {@link ValueLayout#JAVA_INT} on Windows/x64.
+ * <p>
+ * The following table shows some examples of how C types are modelled in Linux/x64 (all the examples provided
+ * here will assume these platform-dependent mappings):
  *
  * <blockquote><table class="plain">
  * <caption style="display:none">Mapping C types</caption>
@@ -159,22 +164,19 @@ import java.util.stream.Stream;
  * <tr><th scope="row" style="font-weight:normal">{@code bool}</th>
  *     <td style="text-align:center;">{@link ValueLayout#JAVA_BOOLEAN}</td>
  *     <td style="text-align:center;">{@code boolean}</td>
- * <tr><th scope="row" style="font-weight:normal">{@code char}</th>
+ * <tr><th scope="row" style="font-weight:normal">{@code char} <br> {@code unsigned char}</th>
  *     <td style="text-align:center;">{@link ValueLayout#JAVA_BYTE}</td>
  *     <td style="text-align:center;">{@code byte}</td>
- * <tr><th scope="row" style="font-weight:normal">{@code short}</th>
+ * <tr><th scope="row" style="font-weight:normal">{@code short} <br> {@code unsigned short}</th>
  *     <td style="text-align:center;">{@link ValueLayout#JAVA_SHORT}</td>
  *     <td style="text-align:center;">{@code short}</td>
- * <tr><th scope="row" style="font-weight:normal">{@code unsigned short}</th>
- *     <td style="text-align:center;">{@link ValueLayout#JAVA_CHAR}</td>
- *     <td style="text-align:center;">{@code char}</td>
- * <tr><th scope="row" style="font-weight:normal">{@code int}</th>
+ * <tr><th scope="row" style="font-weight:normal">{@code int} <br> {@code unsigned int}</th>
  *     <td style="text-align:center;">{@link ValueLayout#JAVA_INT}</td>
  *     <td style="text-align:center;">{@code int}</td>
- * <tr><th scope="row" style="font-weight:normal">{@code long}</th>
+ * <tr><th scope="row" style="font-weight:normal">{@code long} <br> {@code unsigned long}</th>
  *     <td style="text-align:center;">{@link ValueLayout#JAVA_LONG}</td>
  *     <td style="text-align:center;">{@code long}</td>
- * <tr><th scope="row" style="font-weight:normal">{@code long long}</th>
+ * <tr><th scope="row" style="font-weight:normal">{@code long long} <br> {@code unsigned long long}</th>
  *     <td style="text-align:center;">{@link ValueLayout#JAVA_LONG}</td>
  *     <td style="text-align:center;">{@code long}</td>
  * <tr><th scope="row" style="font-weight:normal">{@code float}</th>
@@ -222,29 +224,29 @@ import java.util.stream.Stream;
  * </tbody>
  * </table></blockquote>
  * <p>
- * More formally, all native linker implementations operate on a subset of memory layouts, called <em>supported layouts</em>.
- * A layout {@code L} is supported iff:
+ * All native linker implementations operate on a subset of memory layouts. More formally, a layout {@code L}
+ * is supported by a native linker {@code NL} iff:
  * <ul>
  * <li>{@code L} is a value layout {@code V} and {@code V.withoutName()} is a canonical layout</li>
  * <li>{@code L} is an address layout {@code A} and {@code A.withoutTargetLayout().withoutName()} is a canonical layout</li>
  * <li>{@code L} is a sequence layout {@code S} and all the following conditions hold:
  * <ol>
  * <li>the alignment constraint of {@code S} is set to its <a href="MemoryLayout.html#layout-align">natural alignment</a>, and</li>
- * <li>{@code S.elementLayout()} is a supported layout.</li>
+ * <li>{@code S.elementLayout()} is a layout supported by {@code NL}.</li>
  * </ol>
  * </li>
  * <li>{@code L} is a group layout {@code G} and all the following conditions hold:
  * <ol>
  * <li>the alignment constraint of {@code G} is set to its <a href="MemoryLayout.html#layout-align">natural alignment</a>;</li>
  * <li>the size of {@code G} is a multiple of its alignment constraint;</li>
- * <li>each member layout in {@code G.memberLayouts()} is either a padding layout or a supported layout, and</li>
+ * <li>each member layout in {@code G.memberLayouts()} is either a padding layout or a layout supported by {@code NL}, and</li>
  * <li>{@code G} does not contain padding other than what is strictly required to align its non-padding layout elements, or to satisfy (2).</li>
  * </ol>
  * </li>
  * </ul>
  *
- * Native linkers only support function descriptors whose argument/return layouts are supported layouts and
- * are not sequence layouts.
+ * A native linker only supports function descriptors whose argument/return layouts are layouts supported by that linker
+ * and are not sequence layouts.
  *
  * <h3 id="function-pointers">Function pointers</h3>
  *
