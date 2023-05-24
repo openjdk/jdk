@@ -124,7 +124,6 @@ public final class Scenario {
         } else {
             Asserts.assertNE(mainOutput.getExitValue(), 0, "VM should exit with "
                     + "error for incorrect directives");
-            //if (isJcmdValid) {
             boolean parse_error_found = false;
             for (OutputAnalyzer out : outputList) {
                 if (out.getOutput().contains("Parsing of compiler directives failed")) {
