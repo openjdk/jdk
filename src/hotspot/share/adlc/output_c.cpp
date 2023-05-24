@@ -2357,7 +2357,7 @@ private:
             fprintf(_fp, "%s_enc", first->_regname);
           }
         } else {
-          fprintf(_fp,"->%s(ra_,this", reg_convert != null ? reg_convert : "reg");
+          fprintf(_fp,"->%s(ra_,this", reg_convert != nullptr ? reg_convert : "reg");
           // Add parameter for index position, if not result operand
           if( _operand_idx != 0 ) fprintf(_fp,",idx%d", _operand_idx);
           fprintf(_fp,")");
