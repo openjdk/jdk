@@ -111,77 +111,77 @@ public class TestIllegalLink extends NativeTestHelper {
         List<Object[]> cases = new ArrayList<>(Arrays.asList(new Object[][]{
             {
                     FunctionDescriptor.of(MemoryLayout.sequenceLayout(2, C_INT)),
-                    "Unsupported layout: [2:i32]"
+                    "Unsupported layout: [2:i4]"
             },
             {
                     FunctionDescriptor.ofVoid(MemoryLayout.sequenceLayout(2, C_INT)),
-                    "Unsupported layout: [2:i32]"
+                    "Unsupported layout: [2:i4]"
             },
             {
-                    FunctionDescriptor.ofVoid(C_INT.withBitAlignment(16)),
-                    "Value layout is not a canonical layout: 16%i32"
+                    FunctionDescriptor.ofVoid(C_INT.withByteAlignment(2)),
+                    "Value layout is not a canonical layout: 2%i4"
             },
             {
-                    FunctionDescriptor.ofVoid(C_POINTER.withBitAlignment(16)),
-                    "Value layout is not a canonical layout: 16%a64"
+                    FunctionDescriptor.ofVoid(C_POINTER.withByteAlignment(2)),
+                    "Value layout is not a canonical layout: 2%a8"
             },
             {
-                    FunctionDescriptor.ofVoid(ValueLayout.JAVA_CHAR.withBitAlignment(32)),
-                    "Value layout is not a canonical layout: 32%c16"
+                    FunctionDescriptor.ofVoid(C_SHORT.withByteAlignment(4)),
+                    "Value layout is not a canonical layout: 4%s2"
             },
             {
                     FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
-                            C_CHAR.withName("x").withBitAlignment(8),
-                            C_SHORT.withName("y").withBitAlignment(8),
-                            C_INT.withName("z").withBitAlignment(8)
-                            ).withBitAlignment(8)),
-                    "Value layout is not a canonical layout: 8%s16"
+                            C_CHAR.withName("x").withByteAlignment(1),
+                            C_SHORT.withName("y").withByteAlignment(1),
+                            C_INT.withName("z").withByteAlignment(1)
+                            ).withByteAlignment(1)),
+                    "Value layout is not a canonical layout: 1%s2"
             },
             {
                     FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
                             MemoryLayout.structLayout(
-                                C_CHAR.withName("x").withBitAlignment(8),
-                                C_SHORT.withName("y").withBitAlignment(8),
-                                C_INT.withName("z").withBitAlignment(8)
+                                C_CHAR.withName("x").withByteAlignment(1),
+                                C_SHORT.withName("y").withByteAlignment(1),
+                                C_INT.withName("z").withByteAlignment(1)
                             ))),
-                    "Value layout is not a canonical layout: 8%s16"
+                    "Value layout is not a canonical layout: 1%s2"
             },
             {
                     FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
                             MemoryLayout.sequenceLayout(
-                                C_INT.withBitAlignment(8)
+                                C_INT.withByteAlignment(1)
                             ))),
-                    "Value layout is not a canonical layout: 8%i32"
+                    "Value layout is not a canonical layout: 1%i4"
             },
             {
                     FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
-                            ValueLayout.JAVA_INT,
-                            MemoryLayout.paddingLayout(32), // no excess padding
-                            ValueLayout.JAVA_INT)),
+                            C_INT,
+                            MemoryLayout.paddingLayout(4), // no excess padding
+                            C_INT)),
                     "unexpected offset"
             },
             {
                     FunctionDescriptor.of(C_INT.withOrder(nonNativeOrder())),
-                    "Value layout is not a canonical layout: I32"
+                    "Value layout is not a canonical layout: I4"
             },
             {
                     FunctionDescriptor.of(MemoryLayout.structLayout(C_INT.withOrder(nonNativeOrder()))),
-                    "Value layout is not a canonical layout: I32"
+                    "Value layout is not a canonical layout: I4"
             },
             {
                     FunctionDescriptor.of(MemoryLayout.structLayout(MemoryLayout.sequenceLayout(C_INT.withOrder(nonNativeOrder())))),
-                    "Value layout is not a canonical layout: I32"
+                    "Value layout is not a canonical layout: I4"
             },
             {
                     FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
-                            ValueLayout.JAVA_LONG,
-                            ValueLayout.JAVA_INT)), // missing trailing padding
+                            C_LONG_LONG,
+                            C_INT)), // missing trailing padding
                     "has unexpected size"
             },
             {
                     FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
-                            ValueLayout.JAVA_INT,
-                            MemoryLayout.paddingLayout(32))), // too much trailing padding
+                            C_INT,
+                            MemoryLayout.paddingLayout(4))), // too much trailing padding
                     "has unexpected size"
             },
         }));

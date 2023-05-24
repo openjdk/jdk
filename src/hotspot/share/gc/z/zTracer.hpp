@@ -62,8 +62,8 @@ protected:
   Ticks _start;
 
 public:
-  ZGenerationTracer() :
-      _start() {}
+  ZGenerationTracer()
+    : _start() {}
 
   void report_start(const Ticks& timestamp);
   virtual void report_end(const Ticks& timestamp) = 0;

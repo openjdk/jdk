@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ private:
     void operator delete(void* p) { ShouldNotReachHere(); }
     void operator delete[](void* p) { ShouldNotReachHere(); }
 
-    bool can_reach(BlockBegin *start, BlockBegin *end, BlockBegin *dont_use = NULL);
+    bool can_reach(BlockBegin *start, BlockBegin *end, BlockBegin *dont_use = nullptr);
     bool dominates(BlockBegin *dominator, BlockBegin *block);
     bool is_backbranch_from_xhandler(BlockBegin* block);
 
@@ -115,7 +115,7 @@ public:
   public:
     void set_range_check_eliminator(RangeCheckEliminator *rce) { _rce = rce; }
     Bound *bound() const { return _bound; }
-    void clear_bound() { _bound = NULL; }
+    void clear_bound() { _bound = nullptr; }
 
   protected:
     // visitor functions
