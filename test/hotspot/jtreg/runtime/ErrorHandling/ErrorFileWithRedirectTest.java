@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2019, SAP. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +24,12 @@
 
 /*
  * @test
- * @bug 8220786
- * @summary Test ErrorFileToStderr and ErrorFileToStdout
+ * @bug #######
+ * @summary Test ErrorFileWithStderr and ErrorFileWithStdout
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @requires (vm.debug == true)
- * @run driver ErrorFileRedirectTest
+ * @run driver ErrorFileWithRedirectTest
  */
 
 import jdk.test.lib.process.OutputAnalyzer;
@@ -43,19 +42,19 @@ import java.io.InputStreamReader;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-public class ErrorFileRedirectTest {
+public class ErrorFileWithRedirectTest {
 
-  public static void do_test(boolean errorFileToStdout, boolean errorFileToStderr,
-                             boolean errorFileWithStdout, boolean errorFileWithStderr) throws Exception {
+  public static void do_test(boolean errorFileWithStdout, boolean errorFileWithStderr,
+                             boolean errorFileToStdout, boolean errorFileToStderr) throws Exception {
 
     ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
             "-Xmx64M",
             "-XX:-CreateCoredumpOnCrash",
             "-XX:ErrorHandlerTest=14",
-            "-XX:" + (errorFileWithStdout ? "+" : "-") + "ErrorFileWithStdout",
-            "-XX:" + (errorFileWithStderr ? "+" : "-") + "ErrorFileWithStderr",
             "-XX:" + (errorFileToStdout ? "+" : "-") + "ErrorFileToStdout",
             "-XX:" + (errorFileToStderr ? "+" : "-") + "ErrorFileToStderr",
+            "-XX:" + (errorFileWithStdout ? "+" : "-") + "ErrorFileWithStdout",
+            "-XX:" + (errorFileWithStderr ? "+" : "-") + "ErrorFileWithStderr",
             "-version");
 
     OutputAnalyzer output_detail = new OutputAnalyzer(pb.start());
@@ -64,45 +63,38 @@ public class ErrorFileRedirectTest {
     output_detail.shouldMatch("# A fatal error has been detected by the Java Runtime Environment:.*");
     output_detail.shouldMatch("# +(?:SIGSEGV|SIGBUS|EXCEPTION_ACCESS_VIOLATION).*");
 
-    // If no redirection happened, we should find a mention of the file in the output.
     // Note that last override the prior switch when more than one of the following options are specified:
     // ErrorFileToStdout, ErrorFileToStderr, ErrorFileWithStdout or ErrorFileWithStderr
     String hs_err_file = output_detail.firstMatch("# *(\\S*hs_err_pid\\d+\\.log)", 1);
-    if (errorFileToStdout == false && errorFileToStderr == false) {
-      if (hs_err_file == null) {
-        throw new RuntimeException("Expected hs-err file but none found.");
-      } else {
-        System.out.println("Found hs error file mentioned as expected: " + hs_err_file);
-      }
+    if (hs_err_file == null) {
+      throw new RuntimeException("Expected hs-err file but none found.");
     } else {
-      if (hs_err_file != null) {
-        throw new RuntimeException("Found unexpected mention of hs-err file (we did redirect the output so no file should have been written).");
-      } else {
-        System.out.println("No mention of an hs-err file - ok! ");
-      }
+      System.out.println("Found hs error file mentioned as expected: " + hs_err_file);
     }
 
     // Check the output. Note that since stderr was specified last it has preference if both are set.
-    if (errorFileToStdout == false && errorFileToStderr == false) {
+    if (errorFileWithStdout == false && errorFileWithStderr == false) {
       output_detail.stderrShouldNotMatch("# A fatal error has been detected by the Java Runtime Environment:.*");
       output_detail.stderrShouldNotMatch("# +(?:SIGSEGV|SIGBUS|EXCEPTION_ACCESS_VIOLATION).*");
       output_detail.shouldNotContain("---------------  S U M M A R Y ------------");
       output_detail.stdoutShouldContain("# An error report file with more information is saved as");
       output_detail.stderrShouldNotContain("# An error report file");
       System.out.println("Default behaviour - ok! ");
-    } else if (errorFileToStdout == true && errorFileToStderr == false) {
+    } else if (errorFileWithStdout == true && errorFileWithStderr == false) {
       output_detail.stderrShouldNotMatch("# A fatal error has been detected by the Java Runtime Environment:.*");
       output_detail.stderrShouldNotMatch("# +(?:SIGSEGV|SIGBUS|EXCEPTION_ACCESS_VIOLATION).*");
       output_detail.stdoutShouldContain("---------------  S U M M A R Y ------------");
       output_detail.stderrShouldNotContain("---------------  S U M M A R Y ------------");
-      output_detail.shouldNotContain("# An error report file");
+      output_detail.stdoutShouldContain("# An error report file is saved as");
+      output_detail.stderrShouldNotContain("# An error report file");
       System.out.println("Found report on stdout - ok! ");
-    } else if (errorFileToStderr == true) {
+    } else if (errorFileWithStderr == true) {
       output_detail.stdoutShouldNotMatch("# A fatal error has been detected by the Java Runtime Environment:.*");
       output_detail.stdoutShouldNotMatch("# +(?:SIGSEGV|SIGBUS|EXCEPTION_ACCESS_VIOLATION).*");
       output_detail.stderrShouldContain("---------------  S U M M A R Y ------------");
       output_detail.stdoutShouldNotContain("---------------  S U M M A R Y ------------");
-      output_detail.shouldNotContain("# An error report file");
+      output_detail.stdoutShouldContain("# An error report file is saved as");
+      output_detail.stderrShouldNotContain("# An error report file");
       System.out.println("Found report on stderr - ok! ");
     } else {
       throw new RuntimeException("Should not reach here.");
@@ -117,7 +109,7 @@ public class ErrorFileRedirectTest {
     do_test(false, true, false, false);
     do_test(true, false, false, false);
 
-    // ErrorFileToStdout, ErrorFileToStderr, ErrorFileWithStdout and ErrorFileWithStderr options should be exclusive.
+    // ErrorFileWithStdout, ErrorFileWithStderr, ErrorFileToStdout and ErrorFileToStderr options should be exclusive.
     do_test(true, true, false, false);
     do_test(false, true, true, false);
     do_test(true, false, true, false);

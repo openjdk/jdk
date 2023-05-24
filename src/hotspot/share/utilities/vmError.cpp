@@ -1712,40 +1712,43 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
     }
   }
 
-  // Part 1: print an abbreviated version (the '#' section) to stdout.
+  // Part 1: print to screen
   if (!out_done) {
-    // Suppress this output if we plan to print Part 2 to stdout too.
-    // No need to have the "#" section twice.
-    if (!(ErrorFileToStdout && out.fd() == 1)) {
-      report(&out, false);
+    // print an abbreviated version (the '#' section) to stdout by default.
+    // full error log is printed if the print option to stdout and stderr is specified
+    bool verbose = false;
+    if (ErrorFileToStdout || ErrorFileToStderr || ErrorFileWithStdout || ErrorFileWithStderr) {
+      verbose = true;
+    }
+    if (ErrorFileToStderr || ErrorFileWithStderr) {
+      out.set_fd(2);
     }
 
+    report(&out, verbose);
+
     out_done = true;
+    out.set_fd(fd_out);
 
     _current_step = 0;
     _current_step_info = "";
   }
 
-  // Part 2: print a full error log file (optionally to stdout or stderr).
-  // print to error log file
-  if (!log_done) {
+  // Part 2: print a full error log file
+  if (!log_done && !ErrorFileToStdout && !ErrorFileToStderr) {
     // see if log file is already open
     if (!log.is_open()) {
       // open log file
-      if (ErrorFileToStdout) {
-        fd_log = 1;
-      } else if (ErrorFileToStderr) {
-        fd_log = 2;
-      } else {
-        fd_log = prepare_log_file(ErrorFile, "hs_err_pid%p.log", true,
-                 buffer, sizeof(buffer));
-        if (fd_log != -1) {
-          out.print_raw("# An error report file with more information is saved as:\n# ");
-          out.print_raw_cr(buffer);
-        } else {
-          out.print_raw_cr("# Can not save log file, dump to screen..");
-          fd_log = 1;
+      fd_log = prepare_log_file(ErrorFile, "hs_err_pid%p.log", true, buffer, sizeof(buffer));
+      if (fd_log != -1) {
+        out.print_raw("# An error report file ");
+        if (!ErrorFileWithStdout && !ErrorFileWithStderr) {
+          out.print_raw("with more information ");
         }
+        out.print_raw("is saved as:\n# ");
+        out.print_raw_cr(buffer);
+      } else {
+        out.print_raw_cr("# Can not save log file, dump to screen..");
+        fd_log = 1;
       }
       log.set_fd(fd_log);
     }

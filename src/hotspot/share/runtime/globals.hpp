@@ -1053,6 +1053,12 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, ErrorFileToStdout, false,                                   \
           "If true, error data is printed to stdout instead of a file")     \
                                                                             \
+  product(bool, ErrorFileWithStderr, false,                                 \
+          "If true, error data is printed to stderr and a file")            \
+                                                                            \
+  product(bool, ErrorFileWithStdout, false,                                 \
+          "If true, error data is printed to stdout and a file")            \
+                                                                            \
   develop(bool, UseHeavyMonitors, false,                                    \
           "(Deprecated) Use heavyweight instead of lightweight Java "       \
           "monitors")                                                       \
