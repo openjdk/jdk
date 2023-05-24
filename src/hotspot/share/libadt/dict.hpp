@@ -61,6 +61,8 @@ class Dict : public AnyObj { // Dictionary structure
   Dict(const Dict &base, Arena* arena); // Deep-copy
   ~Dict();
 
+  NONCOPYABLE(Dict);
+  Dict& operator=(Dict&&) = delete;
   // Allow move constructor for && (eg. capture return of function)
   Dict(Dict&&) = default;
 
@@ -78,8 +80,6 @@ class Dict : public AnyObj { // Dictionary structure
 
   // Print out the dictionary contents as key-value pairs
   void print();
-
-  NONCOPYABLE(Dict);
 };
 
 // Hashing functions

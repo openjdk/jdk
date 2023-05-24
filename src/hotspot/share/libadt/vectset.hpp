@@ -55,6 +55,8 @@ public:
   VectorSet(Arena* arena);
   ~VectorSet() {}
 
+  NONCOPYABLE(VectorSet);
+  VectorSet& operator=(VectorSet&&) = delete;
   // Allow move constructor for && (eg. capture return of function)
   VectorSet(VectorSet&&) = default;
 
@@ -113,8 +115,6 @@ public:
     uint32_t mask = 1U << (elem & bit_mask);
     _data[word] |= mask;
   }
-
-  NONCOPYABLE(VectorSet);
 };
 
 #endif // SHARE_LIBADT_VECTSET_HPP

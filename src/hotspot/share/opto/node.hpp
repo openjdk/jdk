@@ -1539,6 +1539,8 @@ public:
   }
   Node_Array() : Node_Array(Thread::current()->resource_area()) {}
 
+  NONCOPYABLE(Node_Array);
+  Node_Array& operator=(Node_Array&&) = delete;
   // Allow move constructor for && (eg. capture return of function)
   Node_Array(Node_Array&&) = default;
 
@@ -1557,8 +1559,6 @@ public:
 
   uint max() const { return _max; }
   void dump() const;
-
-  NONCOPYABLE(Node_Array);
 };
 
 class Node_List : public Node_Array {
@@ -1568,6 +1568,8 @@ public:
   Node_List(uint max = OptoNodeListSize) : Node_Array(Thread::current()->resource_area(), max), _cnt(0) {}
   Node_List(Arena *a, uint max = OptoNodeListSize) : Node_Array(a, max), _cnt(0) {}
 
+  NONCOPYABLE(Node_List);
+  Node_List& operator=(Node_List&&) = delete;
   // Allow move constructor for && (eg. capture return of function)
   Node_List(Node_List&&) = default;
 
@@ -1594,8 +1596,6 @@ public:
   uint size() const { return _cnt; }
   void dump() const;
   void dump_simple() const;
-
-  NONCOPYABLE(Node_List);
 };
 
 //------------------------------Unique_Node_List-------------------------------
@@ -1607,6 +1607,8 @@ public:
   Unique_Node_List() : Node_List(), _clock_index(0) {}
   Unique_Node_List(Arena *a) : Node_List(a), _in_worklist(a), _clock_index(0) {}
 
+  NONCOPYABLE(Unique_Node_List);
+  Unique_Node_List& operator=(Unique_Node_List&&) = delete;
   // Allow move constructor for && (eg. capture return of function)
   Unique_Node_List(Unique_Node_List&&) = default;
 
@@ -1678,7 +1680,6 @@ public:
 #ifndef PRODUCT
   void print_set() const { _in_worklist.print(); }
 #endif
-  NONCOPYABLE(Unique_Node_List);
 };
 
 // Unique_Mixed_Node_List
