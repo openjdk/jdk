@@ -126,7 +126,7 @@ public final class Scenario {
                     + "error for incorrect directives");
             //if (isJcmdValid) {
             boolean parse_error_found = false;
-            for(OutputAnalyzer out : outputList) {
+            for (OutputAnalyzer out : outputList) {
                 if (out.getOutput().contains("Parsing of compiler directives failed")) {
                     parse_error_found = true;
                     break;
