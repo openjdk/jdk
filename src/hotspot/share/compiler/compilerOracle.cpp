@@ -952,7 +952,9 @@ bool CompilerOracle::_quiet = false;
 bool CompilerOracle::parse_from_file() {
   assert(has_command_file(), "command file must be specified");
   FILE* stream = os::fopen(cc_file(), "rt");
-  if (stream == nullptr) return true;
+  if (stream == nullptr) {
+    return true;
+  }
 
   char token[1024];
   int  pos = 0;
