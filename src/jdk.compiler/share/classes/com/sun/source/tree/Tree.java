@@ -230,48 +230,44 @@ public interface Tree {
         /**
          * Used for instances of {@link BindingPatternTree}.
          *
+         * @since 21
+         */
+        @PreviewFeature(feature=PreviewFeature.Feature.UNNAMED)
+        ANY_PATTERN(AnyPatternTree.class),
+
+        /**
+         * Used for instances of {@link BindingPatternTree}.
+         *
          * @since 16
          */
         BINDING_PATTERN(BindingPatternTree.class),
 
         /**
-         * Used for instances of {@link ParenthesizedPatternTree}.
-         *
-         * @since 17
-         */
-        @PreviewFeature(feature=PreviewFeature.Feature.SWITCH_PATTERN_MATCHING, reflective=true)
-        PARENTHESIZED_PATTERN(ParenthesizedPatternTree.class),
-
-        /**
          * Used for instances of {@link DefaultCaseLabelTree}.
          *
-         * @since 17
+         * @since 21
          */
-        @PreviewFeature(feature=PreviewFeature.Feature.SWITCH_PATTERN_MATCHING, reflective=true)
         DEFAULT_CASE_LABEL(DefaultCaseLabelTree.class),
 
         /**
          * Used for instances of {@link ConstantCaseLabelTree}.
          *
-         * @since 19
+         * @since 21
          */
-        @PreviewFeature(feature=PreviewFeature.Feature.SWITCH_PATTERN_MATCHING, reflective=true)
         CONSTANT_CASE_LABEL(ConstantCaseLabelTree.class),
 
         /**
          * Used for instances of {@link PatternCaseLabelTree}.
          *
-         * @since 19
+         * @since 21
          */
-        @PreviewFeature(feature=PreviewFeature.Feature.SWITCH_PATTERN_MATCHING, reflective=true)
         PATTERN_CASE_LABEL(PatternCaseLabelTree.class),
 
         /**
          * Used for instances of {@link DeconstructionPatternTree}.
          *
-         * @since 19
+         * @since 21
          */
-        @PreviewFeature(feature=PreviewFeature.Feature.RECORD_PATTERNS, reflective=true)
         DECONSTRUCTION_PATTERN(DeconstructionPatternTree.class),
 
         /**

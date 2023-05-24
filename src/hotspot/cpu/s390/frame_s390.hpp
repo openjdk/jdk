@@ -96,15 +96,14 @@
 
   // ABI_160:
 
-  // REMARK: This structure should reflect the "minimal" ABI frame
-  // layout, but it doesn't. There is an extra field at the end of the
+  // REMARK: z_abi_160_base structure reflect the "minimal" ABI frame
+  // layout. There is a field in the z_abi_160
   // structure that marks the area where arguments are passed, when
   // the argument registers "overflow". Thus, sizeof(z_abi_160)
-  // doesn't yield the expected (and desired) result. Therefore, as
-  // long as we do not provide extra infrastructure, one should use
-  // either z_abi_160_size, or _z_abi(remaining_cargs) instead of
-  // sizeof(...).
-  struct z_abi_160 : z_native_abi {
+  // doesn't yield the expected (and desired) result.
+  // Therefore, please use sizeof(z_abi_160_base) or
+  // the enum value z_abi_160_size to find out the size of the ABI structure.
+  struct z_abi_160_base : z_native_abi {
     uint64_t carg_1;
     uint64_t carg_2;
     uint64_t carg_3;
@@ -123,12 +122,15 @@
     uint64_t cfarg_2;
     uint64_t cfarg_3;
     uint64_t cfarg_4;
+  };
+
+  struct z_abi_160: z_abi_160_base {
     uint64_t remaining_cargs;
   };
 
   enum {
     z_native_abi_size = sizeof(z_native_abi),
-    z_abi_160_size = 160
+    z_abi_160_size = sizeof(z_abi_160_base)
   };
 
   #define _z_abi(_component) \

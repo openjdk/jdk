@@ -260,6 +260,19 @@
     <Field type="ulong" contentType="bytes" name="heapUsed" label="Heap Used" description="Bytes allocated by objects in the heap" />
   </Event>
 
+  <Event name="GCHeapMemoryUsage" category="Java Virtual Machine, Heap" label="GC Heap Memory Usage" period="everyChunk">
+    <Field type="ulong" contentType="bytes" name="used" label="Heap Used" description="Bytes allocated for storing objects on the heap" />
+    <Field type="ulong" contentType="bytes" name="committed" label="Heap Committed" description="Bytes committed for storing objects on the heap" />
+    <Field type="ulong" contentType="bytes" name="max" label="Heap Max" description="Max size for the heap" />
+  </Event>
+
+  <Event name="GCHeapMemoryPoolUsage" category="Java Virtual Machine, Heap" label="GC Heap Memory Pool Usage" period="everyChunk">
+    <Field type="string" name="name" label="Name" description="GC Heap Memory Pool Name" />
+    <Field type="ulong" contentType="bytes" name="used" label="GC Heap Memory Pool Used" description="Bytes used for storing objects in this memory pool" />
+    <Field type="ulong" contentType="bytes" name="committed" label="GC Heap Memory Pool Committed" description="Bytes committed for storing objects in this memory pool" />
+    <Field type="ulong" contentType="bytes" name="max" label="GC Heap Memory Pool Max" description="Max size for storing objects in this memory pool" />
+  </Event>
+
   <Type name="MetaspaceSizes">
     <Field type="ulong" contentType="bytes" name="committed" label="Committed" description="Committed memory for this space" />
     <Field type="ulong" contentType="bytes" name="used" label="Used" description="Bytes allocated by objects in the space" />

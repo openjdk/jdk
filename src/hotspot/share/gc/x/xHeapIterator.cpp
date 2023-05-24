@@ -255,10 +255,10 @@ static size_t object_index(oop obj) {
 XHeapIteratorBitMap* XHeapIterator::object_bitmap(oop obj) {
   const uintptr_t offset = XAddress::offset(XOop::to_address(obj));
   XHeapIteratorBitMap* bitmap = _bitmaps.get_acquire(offset);
-  if (bitmap == NULL) {
+  if (bitmap == nullptr) {
     XLocker<XLock> locker(&_bitmaps_lock);
     bitmap = _bitmaps.get(offset);
-    if (bitmap == NULL) {
+    if (bitmap == nullptr) {
       // Install new bitmap
       bitmap = new XHeapIteratorBitMap(object_index_max());
       _bitmaps.release_put(offset, bitmap);
@@ -269,7 +269,7 @@ XHeapIteratorBitMap* XHeapIterator::object_bitmap(oop obj) {
 }
 
 bool XHeapIterator::mark_object(oop obj) {
-  if (obj == NULL) {
+  if (obj == nullptr) {
     return false;
   }
 
