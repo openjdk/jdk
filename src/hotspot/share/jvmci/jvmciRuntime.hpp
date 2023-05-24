@@ -469,7 +469,7 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
   // Reports an unexpected exception and exits the VM with a fatal error.
   static void fatal_exception(JVMCIEnv* JVMCIENV, const char* message);
 
-  static void describe_pending_hotspot_exception(JavaThread* THREAD, bool clear);
+  static void describe_pending_hotspot_exception(JavaThread* THREAD);
 
 #define CHECK_EXIT THREAD); \
   if (HAS_PENDING_EXCEPTION) { \

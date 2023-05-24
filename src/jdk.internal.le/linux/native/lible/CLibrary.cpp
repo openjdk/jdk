@@ -113,8 +113,8 @@ JNIEXPORT void JNICALL Java_jdk_internal_org_jline_terminal_impl_jna_linux_CLibr
     env->SetIntField(result, c_line, data.c_line);
     jbyteArray c_ccValue = (jbyteArray) env->GetObjectField(result, c_cc);
     env->SetByteArrayRegion(c_ccValue, 0, NCCS, (signed char *) data.c_cc);//TODO: cast?
-    env->SetIntField(result, c_ispeed, data.c_ispeed);
-    env->SetIntField(result, c_ospeed, data.c_ospeed);
+    env->SetIntField(result, c_ispeed, cfgetispeed(&data));
+    env->SetIntField(result, c_ospeed, cfgetospeed(&data));
 }
 
 /*
@@ -133,8 +133,8 @@ JNIEXPORT void JNICALL Java_jdk_internal_org_jline_terminal_impl_jna_linux_CLibr
     data.c_line = env->GetIntField(input, c_line);
     jbyteArray c_ccValue = (jbyteArray) env->GetObjectField(input, c_cc);
     env->GetByteArrayRegion(c_ccValue, 0, NCCS, (jbyte *) data.c_cc);
-    data.c_ispeed = env->GetIntField(input, c_ispeed);
-    data.c_ospeed = env->GetIntField(input, c_ospeed);
+    cfsetispeed(&data, env->GetIntField(input, c_ispeed));
+    cfsetospeed(&data, env->GetIntField(input, c_ospeed));
 
     if (tcsetattr(fd, cmd, &data) != 0) {
         throw_errno(env);
