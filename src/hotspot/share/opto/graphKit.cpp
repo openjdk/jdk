@@ -3522,7 +3522,7 @@ Node* GraphKit::get_layout_helper(Node* klass_node, jint& constant_value) {
   const TypeKlassPtr* inst_klass = _gvn.type(klass_node)->isa_klassptr();
   if (!StressReflectiveCode && inst_klass != nullptr) {
     bool    xklass = inst_klass->klass_is_exact();
-    if (xklass || inst_klass->isa_aryklassptr()) {
+    if (xklass || (inst_klass->isa_aryklassptr() && inst_klass->is_aryklassptr()->elem() != Type::BOTTOM)) {
       jint lhelper;
       if (inst_klass->isa_aryklassptr()) {
         BasicType elem = inst_klass->as_instance_type()->isa_aryptr()->elem()->array_element_basic_type();
