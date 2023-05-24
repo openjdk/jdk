@@ -57,26 +57,22 @@ import java.nio.charset.Charset;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.NoSuchAlgorithmException;
+import java.security.Provider;
+import java.security.Security;
 import java.text.MessageFormat;
 import java.text.Normalizer;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
 import java.util.Locale.Category;
-import java.util.Optional;
-import java.util.Properties;
-import java.util.ResourceBundle;
-import java.util.Set;
-import java.util.TreeSet;
 import java.util.jar.Attributes;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocket;
 
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.OperatingSystem;
 import jdk.internal.misc.VM;
 import jdk.internal.module.ModuleBootstrap;
@@ -110,6 +106,8 @@ public final class LauncherHelper {
     private static StringBuilder outBuf = new StringBuilder();
 
     private static final String INDENT = "    ";
+    private static final String TWOINDENT = INDENT + INDENT;
+    private static final String THREEINDENT = TWOINDENT + INDENT;
     private static final String VM_SETTINGS     = "VM settings:";
     private static final String PROP_SETTINGS   = "Property settings:";
     private static final String LOCALE_SETTINGS = "Locale settings:";
@@ -169,6 +167,13 @@ public final class LauncherHelper {
             case "locale":
                 printLocale();
                 break;
+            case "security":
+                if (opts.length > 2) {
+                    printSecuritySettings(opts[2].trim());
+                } else {
+                    printSecuritySettings("all");
+                }
+                break;
             case "system":
                 if (OperatingSystem.isLinux()) {
                     printSystemMetrics();
@@ -178,6 +183,7 @@ public final class LauncherHelper {
                 printVmSettings(initialHeapSize, maxHeapSize, stackSize);
                 printProperties();
                 printLocale();
+                printSecuritySettings("all");
                 if (OperatingSystem.isLinux()) {
                     printSystemMetrics();
                 }
@@ -264,7 +270,7 @@ public final class LauncherHelper {
                 ostream.println(s);
                 first = false;
             } else { // following lines prefix with indents
-                ostream.println(INDENT + INDENT + s);
+                ostream.println(TWOINDENT + s);
             }
         }
     }
@@ -312,12 +318,104 @@ public final class LauncherHelper {
             // print columns of 8
             if ((i + 1) % 8 == 0) {
                 ostream.println();
-                ostream.print(INDENT + INDENT);
+                ostream.print(TWOINDENT);
             }
+        }
+        ostream.print("\n");
+    }
+
+    private static void printSecuritySettings(String arg) {
+        if (arg.toLowerCase(Locale.ROOT).equals("properties")) {
+            printSecurityProperties();
+        } else if(arg.toLowerCase(Locale.ROOT).equals("providers")) {
+            printSecurityProviderConfig();
+        } else if(arg.toLowerCase(Locale.ROOT).equals("tls")) {
+            printSecurityTLSConfig();
+        } else {
+            printSecurityProperties();
+            printSecurityProviderConfig();
+            printSecurityTLSConfig();
         }
     }
 
-    public static void printSystemMetrics() {
+    private static void printSecurityProperties() {
+        ostream.println(INDENT + "Security properties:");
+        Properties p = SharedSecrets.getJavaSecurityPropertiesAccess().getInitialProperties();
+        for (String key : p.stringPropertyNames().stream().sorted().toList()) {
+            String val = p.getProperty(key);
+            if (val.contains(",") && val.length() > 60) {
+                // split lines longer than 60 chars which have multiple values
+                ostream.println(TWOINDENT + key + "=");
+                List.of(val.split(",")).forEach(s -> ostream.println(THREEINDENT + s.trim()));
+            } else {
+                ostream.println(TWOINDENT + key + "=" + val);
+            }
+        }
+        ostream.print("\n");
+    }
+
+    private static void printSecurityTLSConfig() {
+        SSLSocket ssls;
+        try {
+            ssls = (SSLSocket)
+                    SSLContext.getDefault().getSocketFactory().createSocket();
+        } catch (IOException | NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        }
+
+        ostream.println(INDENT + "Security TLS configuration:");
+        ostream.println(TWOINDENT + "Enabled Protocols:");
+        for (String s : ssls.getEnabledProtocols()) {
+            System.out.println(THREEINDENT + s);
+        }
+
+        System.out.println("\n" + TWOINDENT + "Enabled Cipher Suites:");
+        for (String s : ssls.getEnabledCipherSuites()) {
+            System.out.println(THREEINDENT + s);
+        }
+        ostream.print("\n");
+    }
+
+    private static void printSecurityProviderConfig() {
+        ostream.println(INDENT + "Security provider static configuration:");
+        for (Provider p : Security.getProviders()) {
+            ostream.println(TWOINDENT + "Provider name: " + p.getName());
+            ostream.println(TWOINDENT + "Provider information: " + wrappedString(p.getInfo(), 80));
+            ostream.println(TWOINDENT + "Provider services: (type : algorithm)");
+            for (Provider.Service ps : p.getServices().stream()
+                    .sorted(Comparator.comparing(Provider.Service::getType)).toList()) {
+                ostream.println(THREEINDENT + ps.getType() + " : " + ps.getAlgorithm());
+            }
+        }
+        ostream.print("\n");
+    }
+
+    // return a string split across multiple lines where aims to limit max width
+    private static String wrappedString(String orig, int limit) {
+        if (orig == null || orig.isEmpty() || limit <= 0) {
+            // bad input
+            return orig;
+        }
+        StringTokenizer st = new StringTokenizer(orig, " ");
+        StringBuilder sb = new StringBuilder();
+        int count = 0;
+        while (st.hasMoreElements()) {
+            String s = st.nextToken();
+            sb.append(s);
+            if (st.hasMoreElements()) {
+                if (count + s.length() > limit) {
+                    sb.append("\n" + THREEINDENT);
+                    count = 0;
+                } else {
+                    sb.append(" ");
+                    count += s.length() + 1;
+                }
+            }
+        }
+        return sb.toString();
+    }
+
+    private static void printSystemMetrics() {
         Metrics c = Container.metrics();
 
         ostream.println("Operating System Metrics:");
