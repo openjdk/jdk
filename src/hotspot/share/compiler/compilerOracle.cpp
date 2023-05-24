@@ -1061,8 +1061,9 @@ bool CompilerOracle::parse_compile_only(char* line) {
 
     if (i > 0) {
       char* newName = NEW_RESOURCE_ARRAY( char, i + 1);
-      if (newName == nullptr)
-        return true;
+      if (newName == nullptr) {
+        return false;
+      }
       strncpy(newName, name, i);
       newName[i] = '\0';
 
