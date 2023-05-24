@@ -122,7 +122,7 @@ public final class ThemeReader {
                 if (!valid) {
                     // Close old themes.
                     if (!dpiAwareWidgetToTheme.isEmpty()) {
-                        for (Map <String, Long> dpiVal: dpiAwareWidgetToTheme.values()) {
+                        for (Map<String, Long> dpiVal : dpiAwareWidgetToTheme.values()) {
                             for (Long value : dpiVal.values()) {
                                 closeTheme(value);
                             }
