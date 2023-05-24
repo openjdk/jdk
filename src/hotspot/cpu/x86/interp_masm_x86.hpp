@@ -25,7 +25,6 @@
 #ifndef CPU_X86_INTERP_MASM_X86_HPP
 #define CPU_X86_INTERP_MASM_X86_HPP
 
-#include "asm/macroAssembler.hpp"
 #include "interpreter/invocationCounter.hpp"
 #include "oops/method.hpp"
 #include "runtime/frame.hpp"

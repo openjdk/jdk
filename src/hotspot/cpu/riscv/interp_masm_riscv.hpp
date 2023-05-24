@@ -27,7 +27,6 @@
 #ifndef CPU_RISCV_INTERP_MASM_RISCV_HPP
 #define CPU_RISCV_INTERP_MASM_RISCV_HPP
 
-#include "asm/macroAssembler.hpp"
 #include "interpreter/invocationCounter.hpp"
 #include "runtime/frame.hpp"
 

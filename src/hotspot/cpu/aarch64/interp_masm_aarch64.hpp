@@ -26,7 +26,6 @@
 #ifndef CPU_AARCH64_INTERP_MASM_AARCH64_HPP
 #define CPU_AARCH64_INTERP_MASM_AARCH64_HPP
 
-#include "asm/macroAssembler.hpp"
 #include "interpreter/invocationCounter.hpp"
 #include "runtime/frame.hpp"
 
@@ -35,7 +34,6 @@
 typedef ByteSize (*OffsetFunction)(uint);
 
 class InterpreterMacroAssembler: public MacroAssembler {
- protected:
 
  protected:
   // Interpreter specific version of call_VM_base

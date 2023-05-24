@@ -26,7 +26,6 @@
 #ifndef CPU_S390_INTERP_MASM_S390_HPP
 #define CPU_S390_INTERP_MASM_S390_HPP
 
-#include "asm/macroAssembler.hpp"
 #include "interpreter/invocationCounter.hpp"
 
 // This file specializes the assembler with interpreter-specific macros.
