@@ -59,9 +59,6 @@ public class Pollset {
 
     public static final int PS_NO_TIMEOUT = -1;
 
-    // maximum number of events to poll at a time
-    public static final int MAX_POLL_EVENTS = 512;
-
     /**
      * Allocates a poll array to handle up to {@code count} events.
      */

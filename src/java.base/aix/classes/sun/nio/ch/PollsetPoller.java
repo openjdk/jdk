@@ -35,7 +35,12 @@ import sun.nio.ch.Pollset;
 
 class PollsetPoller extends Poller {
 
-    static { Pollset.init(); /* Dynamically loads pollset C functions */ }
+    private static final int MAX_EVENTS_TO_POLL;
+
+    static {
+        Pollset.init(); /* Dynamically loads pollset C functions */
+        MAX_EVENTS_TO_POLL = 512;
+    }
 
     private final int setid;
     private final long pollBuffer;
@@ -43,7 +48,7 @@ class PollsetPoller extends Poller {
     PollsetPoller(boolean read) throws IOException {
         super(read);
         this.setid = Pollset.pollsetCreate();
-        this.pollBuffer = Pollset.allocatePollArray(Pollset.MAX_POLL_EVENTS);
+        this.pollBuffer = Pollset.allocatePollArray(MAX_EVENTS_TO_POLL);
     }
 
     @Override
@@ -54,7 +59,7 @@ class PollsetPoller extends Poller {
     @Override
     void implRegister(int fd) throws IOException {
         int ret = Pollset.pollsetCtl(setid, Pollset.PS_MOD, fd,
-        Pollset.PS_POLLPRI | (this.reading() ? Net.POLLIN : Net.POLLOUT));
+                          Pollset.PS_POLLPRI | (this.reading() ? Net.POLLIN : Net.POLLOUT));
         if (ret != 0) {
             throw new IOException("Unable to register fd " + fd);
         }
@@ -91,7 +96,7 @@ class PollsetPoller extends Poller {
     }
 
     int pollInner(int subInterval) throws IOException {
-        int n = Pollset.pollsetPoll(setid, pollBuffer, Pollset.MAX_POLL_EVENTS, subInterval);
+        int n = Pollset.pollsetPoll(setid, pollBuffer, MAX_EVENTS_TO_POLL, subInterval);
         for (int i=0; i<n; i++) {
             long eventAddress = Pollset.getEvent(pollBuffer, i);
             int fd = Pollset.getDescriptor(eventAddress);

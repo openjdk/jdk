@@ -66,6 +66,9 @@ final class AixPollPort
     // address of the poll array passed to pollset_poll
     private final long address;
 
+    // maximum number of events to poll at a time
+    private static final int MAX_EVENTS_TO_POLL = 512;
+
     // encapsulates an event for a channel
     static class Event {
         final PollableChannel channel;
@@ -147,11 +150,11 @@ final class AixPollPort
         this.ctlSp = sv;
 
         // allocate the poll array
-        this.address = Pollset.allocatePollArray(Pollset.MAX_POLL_EVENTS);
+        this.address = Pollset.allocatePollArray(MAX_EVENTS_TO_POLL);
 
         // create the queue and offer the special event to ensure that the first
         // threads polls
-        this.queue = new ArrayBlockingQueue<Event>(Pollset.MAX_POLL_EVENTS);
+        this.queue = new ArrayBlockingQueue<Event>(MAX_EVENTS_TO_POLL);
         this.queue.offer(NEED_TO_POLL);
     }
 
@@ -304,7 +307,7 @@ final class AixPollPort
                     controlLock.lock();
                     try {
                         n = Pollset.pollsetPoll(pollset, address,
-                                     Pollset.MAX_POLL_EVENTS, Pollset.PS_NO_TIMEOUT);
+                                     MAX_EVENTS_TO_POLL, Pollset.PS_NO_TIMEOUT);
                     } finally {
                         controlLock.unlock();
                     }
