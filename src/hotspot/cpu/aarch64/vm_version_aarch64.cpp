@@ -570,9 +570,9 @@ void VM_Version::initialize() {
     AlignVector = AvoidUnalignedAccesses;
   }
 
-    if (FLAG_IS_DEFAULT(UsePoly1305Intrinsics)) {
-      FLAG_SET_DEFAULT(UsePoly1305Intrinsics, true);
-    }
+  if (FLAG_IS_DEFAULT(UsePoly1305Intrinsics)) {
+    FLAG_SET_DEFAULT(UsePoly1305Intrinsics, true);
+  }
 #endif
 
   _spin_wait = get_spin_wait_desc();
