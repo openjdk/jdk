@@ -402,6 +402,13 @@ class ResourceForm : public Form {
 public:
   unsigned mask() const { return _resmask; };
 
+  // A discrete resource is a simple definition of a resource, while compound resources can be composed of multiple resources.
+  // A discrete resource will always have a power of two mask, so this check succeeds in that case.
+  // As compound resources have different masks added together, this check will not succeed there.
+  bool is_discrete() const {
+    return (_resmask & (_resmask - 1)) == 0;
+  }
+
 private:
   // Public Data
   unsigned _resmask;         // Resource Mask (OR of resource specifier bits)

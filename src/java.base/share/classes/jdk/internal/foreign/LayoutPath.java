@@ -97,7 +97,7 @@ public class LayoutPath {
         check(SequenceLayout.class, "attempting to select a sequence element from a non-sequence layout");
         SequenceLayout seq = (SequenceLayout)layout;
         MemoryLayout elem = seq.elementLayout();
-        return LayoutPath.nestedPath(elem, offset, addStride(elem.bitSize()), addBound(seq.elementCount()), derefAdapters, this);
+        return LayoutPath.nestedPath(elem, offset, addStride(elem.byteSize()), addBound(seq.elementCount()), derefAdapters, this);
     }
 
     public LayoutPath sequenceElement(long start, long step) {
@@ -105,7 +105,7 @@ public class LayoutPath {
         SequenceLayout seq = (SequenceLayout)layout;
         checkSequenceBounds(seq, start);
         MemoryLayout elem = seq.elementLayout();
-        long elemSize = elem.bitSize();
+        long elemSize = elem.byteSize();
         long nelems = step > 0 ?
                 seq.elementCount() - start :
                 start + 1;
@@ -118,7 +118,7 @@ public class LayoutPath {
         check(SequenceLayout.class, "attempting to select a sequence element from a non-sequence layout");
         SequenceLayout seq = (SequenceLayout)layout;
         checkSequenceBounds(seq, index);
-        long elemSize = seq.elementLayout().bitSize();
+        long elemSize = seq.elementLayout().byteSize();
         long elemOffset = elemSize * index;
         return LayoutPath.nestedPath(seq.elementLayout(), offset + elemOffset, strides, bounds, derefAdapters,this);
     }
@@ -135,7 +135,7 @@ public class LayoutPath {
                 elem = l;
                 break;
             } else if (g instanceof StructLayout) {
-                offset += l.bitSize();
+                offset += l.byteSize();
             }
         }
         if (elem == null) {
@@ -156,7 +156,7 @@ public class LayoutPath {
             }
             elem = g.memberLayouts().get(i);
             if (g instanceof StructLayout && i < index) {
-                offset += elem.bitSize();
+                offset += elem.byteSize();
             }
         }
         return LayoutPath.nestedPath(elem, this.offset + offset, strides, bounds, derefAdapters, this);
@@ -196,14 +196,14 @@ public class LayoutPath {
         VarHandle handle = Utils.makeSegmentViewVarHandle(valueLayout);
         for (int i = strides.length - 1; i >= 0; i--) {
             MethodHandle collector = MethodHandles.insertArguments(MH_ADD_SCALED_OFFSET, 2,
-                    Utils.bitsToBytes(strides[i]),
+                    strides[i],
                     bounds[i]);
             // (J, ...) -> J to (J, J, ...) -> J
             // i.e. new coord is prefixed. Last coord will correspond to innermost layout
             handle = MethodHandles.collectCoordinates(handle, 1, collector);
         }
         handle = MethodHandles.insertCoordinates(handle, 1,
-                Utils.bitsToBytes(offset));
+                offset);
 
         if (adapt) {
             for (int i = derefAdapters.length; i > 0; i--) {
@@ -232,8 +232,7 @@ public class LayoutPath {
     }
 
     public MethodHandle sliceHandle() {
-        MethodHandle offsetHandle = offsetHandle(); // bit offset
-        offsetHandle = MethodHandles.filterReturnValue(offsetHandle, Utils.BITS_TO_BYTES); // byte offset
+        MethodHandle offsetHandle = offsetHandle(); // byte offset
 
         MethodHandle sliceHandle = MH_SLICE; // (MS, long, long) -> MS
         sliceHandle = MethodHandles.insertArguments(sliceHandle, 2, layout.byteSize()); // (MS, long) -> MS
