@@ -25,7 +25,7 @@ package java.net;
 
 import java.net.spi.InetAddressResolver.LookupPolicy;
 
-public class NullChar {
+public class NullCharInHostname {
     public static void main(String[] args) {
         var name = "foo\u0000bar";
         System.out.println("file.encoding = " + System.getProperty("file.encoding"));
