@@ -26,6 +26,7 @@
 
 #include "profile.h"
 
+#include <algorithm>
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/safefetch.hpp"
@@ -39,6 +40,8 @@
 #include "prims/stackWalker.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiEnvBase.hpp"
+#include <limits>
+#include <profile.h>
 
 #define PRINT_C_FRAME_INFO 0
 
@@ -56,7 +59,11 @@ void fill_call_trace_given_top(JavaThread* thd,
   int count = 0;
   for (; count < depth && !st.at_end(); st.next(), count++) {
     if (st.at_error()) {
-      trace->num_frames = st.state();
+      if (st.at_end()) {
+        trace->num_frames = count;
+        break;
+      }
+      trace->num_frames = ASGST_NOT_WALKABLE_JAVA;
       return;
     }
     if (st.is_java_frame()) {
@@ -68,7 +75,7 @@ void fill_call_trace_given_top(JavaThread* thd,
       }
       trace->frames[count] = {.java_frame = {
           type, (int8_t) st.compilation_level(),
-          st.is_native_frame() ? (uint16_t)-1 : (uint16_t)st.bci(),
+          st.is_native_frame() ? (uint16_t)-1 : (uint16_t)std::min(st.bci(), (int)std::numeric_limits<uint16_t>::max()),
           st.method()->find_jmethod_id_or_null()
         }
       };
@@ -270,7 +277,6 @@ void asyncGetStackTraceImpl(ASGST_CallTrace *trace, jint depth, void* ucontext, 
     case _thread_in_Java:
     case _thread_new:
       {
-
       oop thread_oop = JvmtiEnvBase::get_vthread_or_thread_oop(thread);
       trace->state = JVMTI_THREAD_STATE_ALIVE;
       if (thread_oop != nullptr) {

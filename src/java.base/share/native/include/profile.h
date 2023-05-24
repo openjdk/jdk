@@ -42,6 +42,7 @@ enum ASGST_Error {
   ASGST_UNKNOWN_NOT_JAVA      =  -3,
   ASGST_NOT_WALKABLE_NOT_JAVA =  -4,
   ASGST_UNKNOWN_JAVA          =  -5,
+  ASGST_NOT_WALKABLE_JAVA     =  -6,
   ASGST_UNKNOWN_STATE         =  -7,
   ASGST_THREAD_EXIT           =  -8,
   ASGST_DEOPT                 =  -9,
@@ -62,7 +63,7 @@ enum ASGST_FrameTypeId {
 typedef struct {
   uint8_t type;            // frame type
   int8_t comp_level;      // compilation level, 0 is interpreted, -1 is undefined, > 1 is JIT compiled
-  uint16_t bci;            // 0 < bci < 65536
+  uint16_t bci;            // 0 <= bci < 65536, 65535 (= -1) if the bci is >= 65535 or not available (like in native frames)
   jmethodID method_id;
 } ASGST_JavaFrame;         // used for FRAME_JAVA, FRAME_JAVA_INLINED and FRAME_NATIVE
 
