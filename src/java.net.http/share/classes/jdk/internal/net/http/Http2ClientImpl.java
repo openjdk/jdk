@@ -102,7 +102,7 @@ class Http2ClientImpl {
         InetSocketAddress proxy = req.proxy();
         String key = Http2Connection.keyFor(uri, proxy);
 
-        lock();
+        lock.lock();
         try {
             Http2Connection connection = connections.get(key);
             if (connection != null) {
@@ -130,12 +130,12 @@ class Http2ClientImpl {
                 return MinimalFuture.completedFuture(null);
             }
         } finally {
-            unlock();
+            lock.unlock();
         }
         return Http2Connection
                 .createAsync(req, this, exchange)
                 .whenComplete((conn, t) -> {
-                    lock();
+                    lock.lock();
                     try {
                         if (conn != null) {
                             try {
@@ -150,7 +150,7 @@ class Http2ClientImpl {
                                 failures.add(key);
                         }
                     } finally {
-                        unlock();
+                        lock.unlock();
                     }
                 });
     }
@@ -171,7 +171,7 @@ class Http2ClientImpl {
         }
 
         String key = c.key();
-        lock();
+        lock.lock();
         try {
             if (stopping) {
                 if (debug.on()) debug.log("stopping - closing connection: %s", c);
@@ -194,21 +194,21 @@ class Http2ClientImpl {
                 debug.log("put in the connection pool: %s", c);
             return true;
         } finally {
-            unlock();
+            lock.unlock();
         }
     }
 
     void deleteConnection(Http2Connection c) {
         if (debug.on())
             debug.log("removing from the connection pool: %s", c);
-        lock();
+        lock.lock();
         try {
             if (connections.remove(c.key(), c)) {
                 if (debug.on())
                     debug.log("removed from the connection pool: %s", c);
             }
         } finally {
-            unlock();
+            lock.unlock();
         }
     }
 
@@ -217,11 +217,11 @@ class Http2ClientImpl {
         if (debug.on()) debug.log("stopping");
         STOPPED = new EOFException("HTTP/2 client stopped");
         STOPPED.setStackTrace(new StackTraceElement[0]);
-        lock();
+        lock.lock();
         try {
             stopping = true;
         } finally {
-            unlock();
+            lock.unlock();
         }
         do {
             connections.values().forEach(this::close);
@@ -312,14 +312,6 @@ class Http2ClientImpl {
                 "jdk.httpclient.maxframesize",
                 16 * K, 16 * K * K -1, 16 * K));
         return frame;
-    }
-
-    private void lock() {
-        lock.lock();
-    }
-
-    private void unlock() {
-        lock.unlock();
     }
 
     public boolean stopping() {

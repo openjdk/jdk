@@ -143,7 +143,7 @@ class Http2Connection  {
      *    expire when all its still open streams (which could be many) eventually
      *    complete.
      */
-    private boolean finalStream;
+    private volatile boolean finalStream;
 
     /*
      * ByteBuffer pooling strategy for HTTP/2 protocol.
@@ -487,7 +487,7 @@ class Http2Connection  {
     }
 
     private boolean reserveStream0(boolean clientInitiated) throws IOException {
-        if (finalStream) {
+        if (finalStream()) {
             return false;
         }
         if (clientInitiated && (lastReservedClientStreamid + 2) >= MAX_CLIENT_STREAM_ID) {
@@ -574,12 +574,7 @@ class Http2Connection  {
     }
 
     boolean finalStream() {
-        stateLock.lock();
-        try {
-            return finalStream;
-        } finally {
-            stateLock.unlock();
-        }
+        return finalStream;
     }
 
     /**
@@ -587,12 +582,7 @@ class Http2Connection  {
      * all are complete.
      */
     void setFinalStream() {
-        stateLock.lock();
-        try {
-            finalStream = true;
-        } finally {
-            stateLock.unlock();
-        }
+        finalStream = true;
     }
 
     static String keyFor(HttpConnection connection) {

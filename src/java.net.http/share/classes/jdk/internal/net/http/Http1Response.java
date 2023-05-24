@@ -129,7 +129,7 @@ class Http1Response<T> {
         }
 
         public boolean acquire() {
-            if (STATE.compareAndSet(this, (byte)0, (byte)0x01)) {
+            if (STATE.compareAndSet(this, (byte) 0, (byte) 0x01)) {
                 // increment the reference count on the HttpClientImpl
                 // to prevent the SelectorManager thread from exiting
                 // until our operation is complete.
@@ -147,7 +147,7 @@ class Http1Response<T> {
         }
 
         public void tryRelease() {
-            if (STATE.compareAndSet(this, (byte)0x01, (byte)0x03)) {
+            if (STATE.compareAndSet(this, (byte) 0x01, (byte) 0x03)) {
                 // decrement the reference count on the HttpClientImpl
                 // to allow the SelectorManager thread to exit if no
                 // other operation is pending and the facade is no

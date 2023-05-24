@@ -349,12 +349,7 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
 
                         if (debug.on()) debug.log("requestAction.headers");
                         List<ByteBuffer> data = requestAction.headers();
-                        lock.lock();
-                        try {
-                            state = State.HEADERS;
-                        } finally {
-                            lock.unlock();
-                        }
+                        switchState(State.HEADERS);
                         if (debug.on()) debug.log("setting outgoing with headers");
                         assert outgoing.isEmpty() : "Unexpected outgoing:" + outgoing;
                         appendToOutgoing(data);
