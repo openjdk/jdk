@@ -297,7 +297,7 @@ public class PrintingProcessor extends AbstractProcessor {
             if (kind == ENUM_CONSTANT)
                 writer.print(e.getSimpleName());
             else {
-                writer.print(e.asType().toString() + " " + e.getSimpleName() );
+                writer.print(e.asType().toString() + " " + (e.getSimpleName().isEmpty() ? "_" : e.getSimpleName()));
                 Object constantValue  = e.getConstantValue();
                 if (constantValue != null) {
                     writer.print(" = ");

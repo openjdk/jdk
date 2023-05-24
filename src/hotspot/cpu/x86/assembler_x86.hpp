@@ -213,10 +213,7 @@ class Address {
       _isxmmindex(false){
   }
 
-  // No default displacement otherwise Register can be implicitly
-  // converted to 0(Register) which is quite a different animal.
-
-  Address(Register base, int disp)
+  explicit Address(Register base, int disp = 0)
     : _base(base),
       _index(noreg),
       _xmmindex(xnoreg),
@@ -822,6 +819,7 @@ private:
 
   // These are all easily abused and hence protected
 
+ public:
   // 32BIT ONLY SECTION
 #ifndef _LP64
   // Make these disappear in 64bit mode since they would never be correct
@@ -843,6 +841,7 @@ private:
   void mov_narrow_oop(Address dst, int32_t imm32, RelocationHolder const& rspec);
 #endif // _LP64
 
+ protected:
   // These are unique in that we are ensured by the caller that the 32bit
   // relative in these instructions will always be able to reach the potentially
   // 64bit address described by entry. Since they can take a 64bit address they

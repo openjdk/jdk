@@ -64,7 +64,7 @@ import java.io.Reader;
   @test
   @bug 4746177
   @summary tests that data types exported by Netscape 6.2 are supported
-  @requires(os != "windows")
+  @requires (os.family != "windows")
   @key headful
   @run main MozillaDnDTest
 */
