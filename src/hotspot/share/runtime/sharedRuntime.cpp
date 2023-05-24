@@ -456,7 +456,7 @@ JRT_END
 // The continuation address is the entry point of the exception handler of the
 // previous frame depending on the return address.
 
-address SharedRuntime::raw_exception_handler_for_return_address(JavaThread* current, address return_address, oopDesc* ex) {
+address SharedRuntime::raw_exception_handler_for_return_address(JavaThread* current, address return_address) {
   // Note: This is called when we have unwound the frame of the callee that did
   // throw an exception. So far, no check has been performed by the StackWatermarkSet.
   // Notably, the stack is not walkable at this point, and hence the check must
@@ -465,16 +465,6 @@ address SharedRuntime::raw_exception_handler_for_return_address(JavaThread* curr
   // StackWatermarkSet::after_unwind at a point where the stack is walkable.
   assert(frame::verify_return_pc(return_address), "must be a return address: " INTPTR_FORMAT, p2i(return_address));
   assert(current->frames_to_pop_failed_realloc() == 0 || Interpreter::contains(return_address), "missed frames to pop?");
-
-  // Check exception if AbortVMOnException flag set
-  if (AbortVMOnException) {
-    const char *message = nullptr;
-    oop msg = java_lang_Throwable::message(ex);
-    if (msg != nullptr) {
-      message = java_lang_String::as_utf8_string(msg);
-    }
-    Exceptions::debug_check_abort(ex->klass()->external_name(), message);
-  }
 
   // Reset method handle flag.
   current->set_is_method_handle_return(false);
@@ -552,8 +542,9 @@ address SharedRuntime::raw_exception_handler_for_return_address(JavaThread* curr
   return nullptr;
 }
 
-JRT_LEAF(address, SharedRuntime::exception_handler_for_return_address(JavaThread* current, address return_address, oopDesc* ex))
-  return raw_exception_handler_for_return_address(current, return_address, ex);
+
+JRT_LEAF(address, SharedRuntime::exception_handler_for_return_address(JavaThread* current, address return_address))
+  return raw_exception_handler_for_return_address(current, return_address);
 JRT_END
 
 

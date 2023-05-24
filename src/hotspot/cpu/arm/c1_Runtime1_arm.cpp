@@ -357,7 +357,11 @@ void Runtime1::generate_unwind_exception(StubAssembler* sasm) {
   __ mov(c_rarg0, Rthread);
   __ mov(Rexception_pc, LR);
   __ mov(c_rarg1, LR);
-  __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::exception_handler_for_return_address), c_rarg0, c_rarg1, Rexception_obj);
+  // Insert check if AbortVMOnException flag
+  if (AbortVMOnException) {
+    __ call_VM(noreg, CAST_FROM_FN_PTR(address, Runtime1::check_abort_on_vm_exception), exception_oop);
+  }
+  __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::exception_handler_for_return_address), c_rarg0, c_rarg1);
 
   // Exception oop should be still in Rexception_obj and pc in Rexception_pc
   // Jump to handler
