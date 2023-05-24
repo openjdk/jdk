@@ -1676,7 +1676,7 @@ void ObjectSynchronizer::do_final_audit_and_print_stats() {
       ; // empty
     }
     // The other audit_and_print_stats() call is done at the Debug
-    // level at a safepoint in ObjectSynchronizer::do_safepoint_work().
+    // level at a safepoint in SafepointSynchronize::do_cleanup_tasks.
     ObjectSynchronizer::audit_and_print_stats(true /* on_exit */);
   }
 }

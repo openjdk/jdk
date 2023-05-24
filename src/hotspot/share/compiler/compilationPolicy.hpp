@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -251,7 +251,6 @@ public:
   static bool can_be_osr_compiled(const methodHandle& m, int comp_level = CompLevel_any);
   static bool is_compilation_enabled();
 
-  static void do_safepoint_work() { }
   static CompileTask* select_task_helper(CompileQueue* compile_queue);
   // Return initial compile level to use with Xcomp (depends on compilation mode).
   static void reprofile(ScopeDesc* trap_scope, bool is_osr);
