@@ -699,9 +699,9 @@ public:
   }
 
   // support for code generation
-  static int verified_entry_point_offset()        { return offset_of(nmethod, _verified_entry_point); }
-  static int osr_entry_point_offset()             { return offset_of(nmethod, _osr_entry_point); }
-  static int state_offset()                       { return offset_of(nmethod, _state); }
+  static ByteSize verified_entry_point_offset() { return byte_offset_of(nmethod, _verified_entry_point); }
+  static ByteSize osr_entry_point_offset()      { return byte_offset_of(nmethod, _osr_entry_point); }
+  static ByteSize state_offset()                { return byte_offset_of(nmethod, _state); }
 
   virtual void metadata_do(MetadataClosure* f);
 

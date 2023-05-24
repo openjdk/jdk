@@ -264,16 +264,16 @@ class Deoptimization : AllStatic {
     int caller_actual_parameters() const { return _caller_actual_parameters; }
 
     // Accessors used by the code generator for the unpack stub.
-    static int size_of_deoptimized_frame_offset_in_bytes() { return offset_of(UnrollBlock, _size_of_deoptimized_frame); }
-    static int caller_adjustment_offset_in_bytes()         { return offset_of(UnrollBlock, _caller_adjustment);         }
-    static int number_of_frames_offset_in_bytes()          { return offset_of(UnrollBlock, _number_of_frames);          }
-    static int frame_sizes_offset_in_bytes()               { return offset_of(UnrollBlock, _frame_sizes);               }
-    static int total_frame_sizes_offset_in_bytes()         { return offset_of(UnrollBlock, _total_frame_sizes);         }
-    static int frame_pcs_offset_in_bytes()                 { return offset_of(UnrollBlock, _frame_pcs);                 }
-    static int counter_temp_offset_in_bytes()              { return offset_of(UnrollBlock, _counter_temp);              }
-    static int initial_info_offset_in_bytes()              { return offset_of(UnrollBlock, _initial_info);              }
-    static int unpack_kind_offset_in_bytes()               { return offset_of(UnrollBlock, _unpack_kind);               }
-    static int sender_sp_temp_offset_in_bytes()            { return offset_of(UnrollBlock, _sender_sp_temp);            }
+    static ByteSize size_of_deoptimized_frame_offset() { return byte_offset_of(UnrollBlock, _size_of_deoptimized_frame); }
+    static ByteSize caller_adjustment_offset()         { return byte_offset_of(UnrollBlock, _caller_adjustment);         }
+    static ByteSize number_of_frames_offset()          { return byte_offset_of(UnrollBlock, _number_of_frames);          }
+    static ByteSize frame_sizes_offset()               { return byte_offset_of(UnrollBlock, _frame_sizes);               }
+    static ByteSize total_frame_sizes_offset()         { return byte_offset_of(UnrollBlock, _total_frame_sizes);         }
+    static ByteSize frame_pcs_offset()                 { return byte_offset_of(UnrollBlock, _frame_pcs);                 }
+    static ByteSize counter_temp_offset()              { return byte_offset_of(UnrollBlock, _counter_temp);              }
+    static ByteSize initial_info_offset()              { return byte_offset_of(UnrollBlock, _initial_info);              }
+    static ByteSize unpack_kind_offset()               { return byte_offset_of(UnrollBlock, _unpack_kind);               }
+    static ByteSize sender_sp_temp_offset()            { return byte_offset_of(UnrollBlock, _sender_sp_temp);            }
 
     BasicType return_type() const { return _return_type; }
     void print();
