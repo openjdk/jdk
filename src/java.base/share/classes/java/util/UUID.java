@@ -25,7 +25,12 @@
 
 package java.util;
 
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
+import java.util.concurrent.locks.StampedLock;
 import java.security.*;
+
+import jdk.internal.util.random.RandomSupport;
 
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
@@ -99,9 +104,149 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
     /*
      * The random number generator used by this class to create random
      * based UUIDs. In a holder class to defer initialization until needed.
+     * <p>
+     * The implementation buffers the reads to avoid bashing SecureRandom with
+     * small requests. It also maintains a SecureRandom per buffer to alleviate
+     * scalability bottlenecks when reading from a single (synchronized) SecureRandom.
      */
-    private static class Holder {
-        static final SecureRandom numberGenerator = new SecureRandom();
+    private static final class RandomUUID {
+        // PRNG provider to use
+        static final String PRNG_NAME;
+
+        static final int BUFS_COUNT;
+        static final Buffer[] BUFS;
+
+        public static int nextPowerOfTwo(int x) {
+            x = -1 >>> Integer.numberOfLeadingZeros(x - 1);
+            return x + 1;
+        }
+
+        static {
+            try {
+                PRNG_NAME = System.getProperty("java.util.UUID.prngName", null);
+                BUFS_COUNT = nextPowerOfTwo(Runtime.getRuntime().availableProcessors());
+                BUFS = new Buffer[BUFS_COUNT];
+            } catch (Exception e) {
+                throw new InternalError(e);
+            }
+        }
+
+        static SecureRandom newRandom() {
+            if (PRNG_NAME == null) {
+                return new SecureRandom();
+            } else {
+                try {
+                    return SecureRandom.getInstance(PRNG_NAME);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+
+        public static UUID next() {
+            // We want to hit the same buffer from the same thread, to avoid instantiating
+            // too many buffers when only a few threads ever call for UUIDs, to make sure
+            // the buffers stay hot in the local caches, and to minimize the coherence traffic.
+            // Without recording the buffer index in the thread itself, the good option is to use
+            // the thread ID scrambled with Murmur hash, which results in good bit entropy.
+            long h = RandomSupport.mixMurmur64(Thread.currentThread().threadId());
+            int idx = (int)(h & (BUFS_COUNT - 1));
+            Buffer current = BUFS[idx];
+            if (current == null) {
+                current = new Buffer(newRandom());
+                BUFS[idx] = current;
+            }
+            return current.next();
+        }
+
+        // Buffer random reads. This allows batching the SecureRandom provider requests.
+        // Current implementation targets the 4K buffer size, which balances the initialization
+        // costs, memory footprint and cache pressure.
+        @jdk.internal.vm.annotation.Contended
+        static final class Buffer {
+            static final int UUID_CHUNK = 16;
+            static final int UUID_COUNT = 256;
+            static final int BUF_SIZE = UUID_CHUNK * UUID_COUNT;
+
+            static final VarHandle VH_POS;
+            static {
+                try {
+                    VH_POS = MethodHandles.lookup().findVarHandle(Buffer.class, "pos", int.class);
+                } catch (Exception e) {
+                    throw new InternalError(e);
+                }
+            }
+
+            final SecureRandom random;
+            final StampedLock lock;
+            final byte[] buf;
+            int pos;
+
+            public Buffer(SecureRandom random) {
+                this.random = random;
+                this.lock = new StampedLock();
+                this.buf = new byte[BUF_SIZE];
+                this.pos = BUF_SIZE; // force re-creation
+            }
+
+            public UUID next() {
+                long stamp = lock.tryOptimisticRead();
+                try {
+                    UUID uuid = null;
+
+                    // Optimistic path: optimistic locking succeeded.
+                    // Try to pull the UUID from the current buffer at current position.
+                    if (stamp != 0) {
+                        int p = (int)VH_POS.getAndAdd(this, UUID_CHUNK);
+                        if (p < BUF_SIZE) {
+                            uuid = new UUID(buf, p);
+                            if (lock.validate(stamp)) {
+                                // Success: UUID is valid, and there were no buffer changes.
+                                return uuid;
+                            }
+                        }
+                    }
+
+                    // Semi-pessimistic path: either the buffer was depleted, or optimistic locking
+                    // failed. Either way, we need to take the exclusive lock and try again.
+                    stamp = lock.tryConvertToWriteLock(stamp);
+                    if (stamp == 0L) {
+                        stamp = lock.writeLock();
+                    }
+
+                    // See if some other thread had already replenished the buffer.
+                    // Pull the UUID from there then.
+                    if ((int)VH_POS.get(this) > 0) {
+                        int p = (int)VH_POS.getAndAdd(this, UUID_CHUNK);
+                        if (p < BUF_SIZE) {
+                            return new UUID(buf, p);
+                        }
+                    }
+
+                    // Pessimistic path: buffer requires replenishment. Recreate it from the
+                    // provided random, and initialize all UUIDs at once to avoid further initializations,
+                    // and thus false sharing between reader threads.
+                    random.nextBytes(buf);
+                    for (int c = 0; c < BUF_SIZE; c += UUID_CHUNK) {
+                        buf[c + 6] &= 0x0f;  /* clear version        */
+                        buf[c + 6] |= 0x40;  /* set to version 4     */
+                        buf[c + 8] &= 0x3f;  /* clear variant        */
+                        buf[c + 8] |= (byte) 0x80;  /* set to IETF variant  */
+                    }
+
+                    // Take the UUID from new buffer. We are still under write lock,
+                    // so we know we are the only thread here.
+                    uuid = new UUID(buf, 0);
+                    VH_POS.set(this, UUID_CHUNK);
+
+                    return uuid;
+                } finally {
+                    if (StampedLock.isWriteLockStamp(stamp)) {
+                        lock.unlockWrite(stamp);
+                    }
+                }
+            }
+        }
     }
 
     // Constructors and Factories
@@ -109,14 +254,15 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
     /*
      * Private constructor which uses a byte array to construct the new UUID.
      */
-    private UUID(byte[] data) {
+    private UUID(byte[] data, int start) {
         long msb = 0;
         long lsb = 0;
-        assert data.length == 16 : "data must be 16 bytes in length";
-        for (int i=0; i<8; i++)
+        for (int i = start; i < start + 8; i++) {
             msb = (msb << 8) | (data[i] & 0xff);
-        for (int i=8; i<16; i++)
+        }
+        for (int i = start + 8; i < start + 16; i++) {
             lsb = (lsb << 8) | (data[i] & 0xff);
+        }
         this.mostSigBits = msb;
         this.leastSigBits = lsb;
     }
@@ -147,15 +293,7 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
      * @return  A randomly generated {@code UUID}
      */
     public static UUID randomUUID() {
-        SecureRandom ng = Holder.numberGenerator;
-
-        byte[] randomBytes = new byte[16];
-        ng.nextBytes(randomBytes);
-        randomBytes[6]  &= 0x0f;  /* clear version        */
-        randomBytes[6]  |= 0x40;  /* set to version 4     */
-        randomBytes[8]  &= 0x3f;  /* clear variant        */
-        randomBytes[8]  |= (byte) 0x80;  /* set to IETF variant  */
-        return new UUID(randomBytes);
+        return RandomUUID.next();
     }
 
     /**
@@ -179,7 +317,7 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
         md5Bytes[6]  |= 0x30;  /* set to version 3     */
         md5Bytes[8]  &= 0x3f;  /* clear variant        */
         md5Bytes[8]  |= (byte) 0x80;  /* set to IETF variant  */
-        return new UUID(md5Bytes);
+        return new UUID(md5Bytes, 0);
     }
 
     private static final byte[] NIBBLES;
