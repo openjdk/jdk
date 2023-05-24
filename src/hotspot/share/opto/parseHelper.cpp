@@ -569,7 +569,7 @@ EscapedState* PEAState::materialize(GraphKit* kit, Node* var) {
       Node* val = virt->get_field(i);
 
 #ifndef PRODUCT
-      if (Verbose) {
+      if (PEAVerbose) {
         tty->print("flt#%2d: ", i);
         field->print_name_on(tty);
         tty->cr();
@@ -598,7 +598,7 @@ EscapedState* PEAState::materialize(GraphKit* kit, Node* var) {
       decorators |= field->is_volatile() ? MO_SEQ_CST : MO_UNORDERED;
 
 #ifndef PRODUCT
-      if (Verbose) {
+      if (PEAVerbose) {
         val->dump();
       }
 #endif
@@ -611,7 +611,7 @@ EscapedState* PEAState::materialize(GraphKit* kit, Node* var) {
   update(alloc, escaped);
 
 #ifndef PRODUCT
-  if (Verbose) {
+  if (PEAVerbose) {
     tty->print("new object: ");
     objx->dump();
   }
