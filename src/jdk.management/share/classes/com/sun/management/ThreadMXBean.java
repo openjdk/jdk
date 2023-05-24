@@ -113,7 +113,7 @@ public interface ThreadMXBean extends java.lang.management.ThreadMXBean {
      * delay between the time an object is allocated and the time its size is
      * recorded.
      *
-     * @implSpec The default implementation throws UnsupportedOperationException
+     * @implSpec The default implementation throws {@code UnsupportedOperationException}
      * if the Java virtual machine implementation does not support thread
      * memory allocation measurement, and otherwise acts as though thread
      * memory allocation measurement is disabled.
