@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -22,20 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.internal.org.jline.terminal.impl.jna.linux;
 
-<<<<<<<< HEAD:src/jdk.internal.le/linux/classes/jdk/internal/org/jline/terminal/impl/jna/linux/UtilLibraryImpl.java
-import jdk.internal.org.jline.terminal.impl.jna.LastErrorException;
-import jdk.internal.org.jline.terminal.impl.jna.linux.LinuxNativePty.UtilLibrary;
-
-public final class UtilLibraryImpl implements UtilLibrary {
-
-    @Override
-    public void openpty(int[] master, int[] slave, byte[] name, CLibrary.termios t, CLibrary.winsize s) throws LastErrorException {
-        throw new UnsupportedOperationException();
-    }
-
-========
 /*
  * @test
  * @bug 8305582
@@ -61,5 +46,4 @@ public class T8305582 {
         if (o instanceof ColoredPoint(var(int x, var y), var c)) { }
         if (o instanceof var(Point x, Point y)) { }
     }
->>>>>>>> master:test/langtools/tools/javac/T8305582.java
 }
