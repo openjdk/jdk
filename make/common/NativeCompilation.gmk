@@ -1207,7 +1207,8 @@ define SetupNativeCompilationBody
 	$$(call MakeDir, $$($1_OUTPUT_DIR) $$($1_SYMBOLS_DIR))
         ifneq ($(findstring $(TOOLCHAIN_TYPE), gcc clang), )
 	  $$(call ExecuteWithLog, $$($1_OBJECT_DIR)/$$($1_SAFE_NAME)_partial_link, \
-	     $$($1_LD) $(LDFLAGS_CXX_PARTIAL_LINKING) $$($1_SYSROOT_LDFLAGS) \
+	      $(if $$($1_LINK_OBJS_RELATIVE), $$(CD) $$(OUTPUTDIR) ; ) \
+	      $$($1_LD) $(LDFLAGS_CXX_PARTIAL_LINKING) $$($1_SYSROOT_LDFLAGS) \
 	         $(LD_OUT_OPTION)$$($1_TARGET_RELOCATABLE) \
                  $$($1_LD_OBJ_ARG))
         endif
