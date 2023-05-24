@@ -69,6 +69,8 @@ compiler/codecache/jmx/PoolsIndependenceTest.java 8264632 macosx-all
 
 compiler/vectorapi/VectorLogicalOpIdentityTest.java 8302459 linux-x64,windows-x64
 
+compiler/c2/irTests/TestVectorConditionalMove.java 8306922 generic-all
+
 #############################################################################
 
 # :hotspot_gc
