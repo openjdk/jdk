@@ -3642,7 +3642,7 @@ void VM_RedefineClasses::set_new_constant_pool(
     if (new_index != 0) {
       log_trace(redefine, class, constantpool)
         ("method-generic_signature_index change: %d to %d", method->generic_signature_index(), new_index);
-      method->set_generic_signature_index(new_index);
+      method->constMethod()->set_generic_signature_index(new_index);
     }
 
     // Update constant pool indices in the method's checked exception
