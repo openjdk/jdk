@@ -204,18 +204,65 @@ class StructuredTaskScopeTest {
     }
 
     /**
-     * Test fork after join.
+     * Test fork after join completes.
      */
     @ParameterizedTest
     @MethodSource("factories")
     void testForkAfterJoin(ThreadFactory factory) throws Exception {
         try (var scope = new StructuredTaskScope<String>(null, factory)) {
+            // fork phase 1
+            var subtask1 = scope.fork(() -> "foo");
+            assertThrows(IllegalStateException.class, subtask1::get);
             scope.join();
-            Subtask<String> subtask = scope.fork(() -> "foo");
+            assertEquals("foo", subtask1.get());
+
+            // fork phase 2
+            var subtask2 = scope.fork(() -> "bar");
+            assertEquals("foo", subtask1.get());
+            assertThrows(IllegalStateException.class, subtask2::get);
             scope.join();
-            assertEquals(Subtask.State.SUCCESS, subtask.state());
-            assertEquals("foo", subtask.get());
-            assertThrows(IllegalStateException.class, subtask::exception);
+            assertEquals("foo", subtask1.get());
+            assertEquals("bar", subtask2.get());
+
+            // fork phase 3
+            var subtask3 = scope.fork(() -> "baz");
+            assertEquals("foo", subtask1.get());
+            assertEquals("bar", subtask2.get());
+            assertThrows(IllegalStateException.class, subtask3::get);
+            scope.join();
+            assertEquals("foo", subtask1.get());
+            assertEquals("bar", subtask2.get());
+            assertEquals("baz", subtask3.get());
+        }
+    }
+
+    /**
+     * Test fork after join throws.
+     */
+    @ParameterizedTest
+    @MethodSource("factories")
+    void testForkAfterJoinThrows(ThreadFactory factory) throws Exception {
+        try (var scope = new StructuredTaskScope<String>(null, factory)) {
+            var latch = new CountDownLatch(1);
+            var subtask1 = scope.fork(() -> {
+                latch.await();
+                return "foo";
+            });
+
+            // join throws
+            Thread.currentThread().interrupt();
+            assertThrows(InterruptedException.class, scope::join);
+
+            // allow subtask1 to finish
+            latch.countDown();
+
+            // continue to fork
+            var subtask2 = scope.fork(() -> "bar");
+            assertThrows(IllegalStateException.class, subtask1::get);
+            assertThrows(IllegalStateException.class, subtask2::get);
+            scope.join();
+            assertEquals("foo", subtask1.get());
+            assertEquals("bar", subtask2.get());
         }
     }
 
@@ -264,21 +311,21 @@ class StructuredTaskScopeTest {
     }
 
     /**
-     * Test join with no threads.
+     * Test join with no subtasks.
      */
     @Test
-    void testJoinWithNoThreads() throws Exception {
+    void testJoinWithNoSubtasks() throws Exception {
         try (var scope = new StructuredTaskScope()) {
             scope.join();
         }
     }
 
     /**
-     * Test join with threads running.
+     * Test join with unfinished subtasks.
      */
     @ParameterizedTest
     @MethodSource("factories")
-    void testJoinWithThreads(ThreadFactory factory) throws Exception {
+    void testJoinWithSubtasks(ThreadFactory factory) throws Exception {
         try (var scope = new StructuredTaskScope(null, factory)) {
             Subtask<String> subtask = scope.fork(() -> {
                 Thread.sleep(Duration.ofMillis(50));
@@ -467,7 +514,7 @@ class StructuredTaskScopeTest {
     }
 
     /**
-     * Test joinUntil, threads finish before deadline expires.
+     * Test joinUntil, subtasks finish before deadline expires.
      */
     @ParameterizedTest
     @MethodSource("factories")
@@ -488,7 +535,7 @@ class StructuredTaskScopeTest {
     }
 
     /**
-     * Test joinUntil, deadline expires before threads finish.
+     * Test joinUntil, deadline expires before subtasks finish.
      */
     @ParameterizedTest
     @MethodSource("factories")
@@ -643,7 +690,7 @@ class StructuredTaskScopeTest {
     }
 
     /**
-     * Test that shutdown interrupts unfinished threads.
+     * Test that shutdown interrupts unfinished subtasks.
      */
     @ParameterizedTest
     @MethodSource("factories")
@@ -786,7 +833,7 @@ class StructuredTaskScopeTest {
      * Test isShutdown.
      */
     @Test
-    public void testIsShutdown1() {
+    void testIsShutdown() {
         try (var scope = new StructuredTaskScope<Object>()) {
             assertFalse(scope.isShutdown());   // before shutdown
             scope.shutdown();
@@ -797,7 +844,7 @@ class StructuredTaskScopeTest {
     }
 
     /**
-     * Test close without join, no threads forked.
+     * Test close without join, no subtasks forked.
      */
     @Test
     void testCloseWithoutJoin1() {
@@ -807,7 +854,7 @@ class StructuredTaskScopeTest {
     }
 
     /**
-     * Test close without join, unfinished threads.
+     * Test close without join, unfinished subtasks.
      */
     @ParameterizedTest
     @MethodSource("factories")
@@ -827,7 +874,7 @@ class StructuredTaskScopeTest {
     }
 
     /**
-     * Test close with threads forked after join.
+     * Test close without join, unfinished subtasks forked after join.
      */
     @ParameterizedTest
     @MethodSource("factories")
@@ -846,6 +893,43 @@ class StructuredTaskScopeTest {
             assertEquals(Subtask.State.UNAVAILABLE, subtask.state());
             assertThrows(IllegalStateException.class, subtask::get);
             assertThrows(IllegalStateException.class, subtask::exception);
+        }
+    }
+
+    /**
+     * Test close after join throws. Close should not throw as join attempted.
+     */
+    @ParameterizedTest
+    @MethodSource("factories")
+    void testCloseAfterJoinThrows(ThreadFactory factory) throws Exception {
+        try (var scope = new StructuredTaskScope<Object>()) {
+            var subtask = scope.fork(() -> {
+                Thread.sleep(Duration.ofDays(1));
+                return null;
+            });
+
+            // join throws
+            Thread.currentThread().interrupt();
+            assertThrows(InterruptedException.class, scope::join);
+            assertThrows(IllegalStateException.class, subtask::get);
+        }
+    }
+
+    /**
+     * Test close after joinUntil throws. Close should not throw as join attempted.
+     */
+    @ParameterizedTest
+    @MethodSource("factories")
+    void testCloseAfterJoinUntilThrows(ThreadFactory factory) throws Exception {
+        try (var scope = new StructuredTaskScope<Object>()) {
+            var subtask = scope.fork(() -> {
+                Thread.sleep(Duration.ofDays(1));
+                return null;
+            });
+
+            // joinUntil throws
+            assertThrows(TimeoutException.class, () -> scope.joinUntil(Instant.now()));
+            assertThrows(IllegalStateException.class, subtask::get);
         }
     }
 
@@ -1013,7 +1097,7 @@ class StructuredTaskScopeTest {
             scope.fork(task2);
             scope.join();
 
-            var subtask1  = scope.find(task1);
+            var subtask1 = scope.find(task1);
             assertEquals("foo", subtask1.get());
 
             var subtask2 = scope.find(task2);
@@ -1259,10 +1343,17 @@ class StructuredTaskScopeTest {
             };
             Subtask<Void> subtask = scope.fork(task);
 
-            // join without waiting
-            assertThrows(TimeoutException.class, () -> scope.joinUntil(Instant.now()));
+            // before join
+            assertEquals(task, subtask.task());
+            assertEquals(Subtask.State.UNAVAILABLE, subtask.state());
+            assertThrows(IllegalStateException.class, subtask::get);
+            assertThrows(IllegalStateException.class, subtask::exception);
 
-            // not completed
+            // attempt join, join throws
+            Thread.currentThread().interrupt();
+            assertThrows(InterruptedException.class, scope::join);
+
+            // after join
             assertEquals(task, subtask.task());
             assertEquals(Subtask.State.UNAVAILABLE, subtask.state());
             assertThrows(IllegalStateException.class, subtask::get);
