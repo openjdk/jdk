@@ -168,7 +168,7 @@
 
   // BoolTest mask for vector test intrinsics
   static constexpr BoolTest::mask vectortest_mask(bool is_alltrue, bool is_predicate, int vlen) {
-    return BoolTest::illegal;
+    return is_alltrue ? BoolTest::eq : BoolTest::ne;
   }
 
   // Returns pre-selection estimated size of a vector operation.
