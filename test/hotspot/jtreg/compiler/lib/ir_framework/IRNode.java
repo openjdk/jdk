@@ -304,16 +304,6 @@ public class IRNode {
         beforeMatchingNameRegex(CMOVE_I, "CMoveI");
     }
 
-    public static final String CMOVE_VD = PREFIX + "CMOVE_VD" + POSTFIX;
-    static {
-        superWordNodes(CMOVE_VD, "CMoveVD");
-    }
-
-    public static final String CMOVE_VF = PREFIX + "CMOVE_VF" + POSTFIX;
-    static {
-        superWordNodes(CMOVE_VF, "CMoveVF");
-    }
-
     public static final String CMP_I = PREFIX + "CMP_I" + POSTFIX;
     static {
         beforeMatchingNameRegex(CMP_I, "CmpI");
@@ -1276,6 +1266,11 @@ public class IRNode {
     public static final String VECTOR_BLEND = PREFIX + "VECTOR_BLEND" + POSTFIX;
     static {
         beforeMatchingNameRegex(VECTOR_BLEND, "VectorBlend");
+    }
+
+    public static final String VECTOR_MASK_CMP = PREFIX + "VECTOR_MASK_CMP" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(VECTOR_MASK_CMP, "VectorMaskCmp");
     }
 
     public static final String VECTOR_CAST_B2X = PREFIX + "VECTOR_CAST_B2X" + POSTFIX;
