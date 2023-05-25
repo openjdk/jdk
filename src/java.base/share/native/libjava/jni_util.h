@@ -99,9 +99,28 @@ JNU_ThrowIOExceptionWithMessageAndLastError(JNIEnv *env, const char *message);
 JNIEXPORT const char *
 GetStringPlatformChars(JNIEnv *env, jstring jstr, jboolean *isCopy);
 
+/* Convert between Java strings and i18n C strings
+ * Performs additional sanity checks on converted string
+ * such as presence of null characters which are not allowed.
+ * NULL may be returned with IllegalArgumentException pending
+ */
+JNIEXPORT const char *
+GetStringPlatformCharsStrict(JNIEnv *env, jstring jstr, jboolean *isCopy);
+
 JNIEXPORT jstring JNICALL
 JNU_NewStringPlatform(JNIEnv *env, const char *str);
 
+/* Convert between Java strings and i18n C strings
+ * Performs additional sanity checks on converted string
+ * such as presence of null characters which are not allowed.
+ * NULL may be returned with IllegalArgumentException pending
+ */
+JNIEXPORT const char * JNICALL
+JNU_GetStringPlatformCharsStrict(JNIEnv *env, jstring jstr, jboolean *isCopy);
+
+/* Convert between Java strings and i18n C strings
+ * Deprecated: Use JNU_GetStringPlatformCharsStrict
+ */
 JNIEXPORT const char * JNICALL
 JNU_GetStringPlatformChars(JNIEnv *env, jstring jstr, jboolean *isCopy);
 
