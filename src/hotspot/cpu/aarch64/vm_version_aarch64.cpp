@@ -458,14 +458,14 @@ void VM_Version::initialize() {
     // Enable ROP-protection if
     // 1) this code has been built with branch-protection,
     // 2) the CPU/OS supports it, and
-    // 3) incompatible virtual threads feature isn't enabled.
+    // 3) incompatible VMContinuations isn't enabled.
 #ifdef __ARM_FEATURE_PAC_DEFAULT
     if (!VM_Version::supports_paca()) {
       // Disable PAC to prevent illegal instruction crashes.
       warning("ROP-protection specified, but not supported on this CPU. Disabling ROP-protection.");
     } else if (VMContinuations) {
       // Not currently compatible with continuation freeze/thaw.
-      warning("ROP-protection is incompatible with virtual threads feature. Disabling ROP-protection.");
+      warning("ROP-protection is incompatible with VMContinuations. Disabling ROP-protection.");
     } else {
       _rop_protection = true;
     }
