@@ -4591,7 +4591,7 @@ char *ADLParser::get_ident_common(bool do_preproc) {
   char *start;                    // Pointer to start of token
   char *end;                      // Pointer to end of token
 
-  if(_curline == nullptr) {       // Return null at EOF.
+  if (_curline == nullptr) {       // Return null at EOF.
     return nullptr;
   }
 
