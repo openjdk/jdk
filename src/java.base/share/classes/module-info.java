@@ -202,8 +202,6 @@ module java.base {
         jdk.jdeps,
         jdk.jlink,
         jdk.jshell;
-    exports jdk.internal.classfile.java.lang.constant to
-        jdk.jdeps;
     exports jdk.internal.org.objectweb.asm to
         jdk.jfr;
     exports jdk.internal.org.objectweb.asm.tree to
