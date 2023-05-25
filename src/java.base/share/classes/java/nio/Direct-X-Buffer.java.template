@@ -134,7 +134,14 @@ class Direct$Type$Buffer$RW$$BO$
         } else {
             address = base;
         }
-        cleaner = Cleaner.create(this, new Deallocator(base, size, cap));
+        try {
+            cleaner = Cleaner.create(this, new Deallocator(base, size, cap));
+        } catch (Throwable t) {
+            // Prevent leak if the Deallocator or Cleaner fail for any reason
+            UNSAFE.freeMemory(base);
+            Bits.unreserveMemory(size, cap);
+            throw t;
+        }
         att = null;
 #else[rw]
         super(cap);
