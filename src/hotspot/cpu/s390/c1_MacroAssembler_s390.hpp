@@ -51,6 +51,7 @@
   // hdr     : Used to hold original markWord to be CASed back into obj, contents destroyed.
   // obj     : Must point to the object to lock, contents preserved.
   // disp_hdr: Must point to the displaced header location, contents destroyed.
+  // Z_R0_scratch will be killed as well
   void unlock_object(Register hdr, Register obj, Register lock, Label& slow_case);
 
   void initialize_object(
