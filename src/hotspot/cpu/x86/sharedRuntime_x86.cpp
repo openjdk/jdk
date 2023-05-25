@@ -124,7 +124,7 @@ jne    1b        \n\
   } else {
     jdouble (*addr)(jdouble, jdouble) = (double (*)(double, double))StubRoutines::fmod();
 
-    retval = (jfloat) (*addr)(x, y);
+    retval = (*addr)(x, y);
   }
   return retval;
 JRT_END
