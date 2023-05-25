@@ -366,7 +366,7 @@ $.widget("custom.catcomplete", $.ui.autocomplete, {
             ? item.l
             : getHighlightedText(item.input, item.boundaries, 0, item.input.length);
         var idx = item.indexItem;
-        if (item.category === "searchTags" && idx.h) {
+        if (item.category === "searchTags" && idx && idx.h) {
             if (idx.d) {
                 div.html(label + "<span class='search-tag-holder-result'> (" + idx.h + ")</span><br><span class='search-tag-desc-result'>"
                     + idx.d + "</span><br>");
