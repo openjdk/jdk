@@ -113,14 +113,12 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
         static final String PROP_NAME_PRNG_NAME = "java.util.UUID.prngName";
         static final String PROP_NAME_BUF_COUNT = "java.util.UUID.buffersCount";
 
-        // PRNG provider to use
         static final String PRNG_NAME;
-
         static final int BUFS_COUNT;
         static final Buffer[] BUFS;
 
-        private static final int roundPowerOfTwo(int cap) {
-            int n = -1 >>> Integer.numberOfLeadingZeros(cap - 1);
+        private static final int roundPowerOfTwo(int x) {
+            int n = -1 >>> Integer.numberOfLeadingZeros(x - 1);
             return (n < 0) ? 1 : (n + 1);
         }
 
@@ -156,11 +154,15 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
         }
 
         public static UUID next() {
-            // We want to hit the same buffer from the same thread, to avoid instantiating
-            // too many buffers when only a few threads ever call for UUIDs, to make sure
-            // the buffers stay hot in the local caches, and to minimize the coherence traffic.
+            // We want to hit the same buffer from the same thread for several reasons:
+            //   - in best case, make thread poll from the single random stream;
+            //   - avoid instantiating too many buffers when only a few calling threads;
+            //   - make sure the buffers stay hot in the local caches;
+            //   - minimize coherence traffic for cursor updates
+            //
             // Without recording the buffer index in the thread itself, the good option is to use
             // the thread ID scrambled with Murmur hash, which results in good bit entropy.
+
             long h = RandomSupport.mixMurmur64(Thread.currentThread().threadId());
             int idx = (int)(h & (BUFS_COUNT - 1));
             Buffer current = BUFS[idx];
@@ -205,7 +207,7 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
                 this.random = random;
                 this.lock = new StampedLock();
                 this.buf = new byte[BUF_SIZE];
-                this.pos = BUF_SIZE; // force re-creation
+                this.pos = BUF_SIZE; // trigger re-creation on first use
             }
 
             public UUID next() {
