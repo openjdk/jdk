@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
 #include "classfile/javaClasses.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/orderAccess.hpp"
 
 inline ClassLoaderData *ClassLoaderDataGraph::find_or_create(Handle loader) {
   guarantee(loader() != NULL && oopDesc::is_oop(loader()), "Loader must be oop");
@@ -43,29 +44,29 @@ inline ClassLoaderData *ClassLoaderDataGraph::find_or_create(Handle loader) {
 }
 
 size_t ClassLoaderDataGraph::num_instance_classes() {
-  return _num_instance_classes;
+  return Atomic::load(&_num_instance_classes);
 }
 
 size_t ClassLoaderDataGraph::num_array_classes() {
-  return _num_array_classes;
+  return Atomic::load(&_num_array_classes);
 }
 
 void ClassLoaderDataGraph::inc_instance_classes(size_t count) {
-  Atomic::add(&_num_instance_classes, count);
+  Atomic::add(&_num_instance_classes, count, memory_order_relaxed);
 }
 
 void ClassLoaderDataGraph::dec_instance_classes(size_t count) {
-  assert(count <= _num_instance_classes, "Sanity");
-  Atomic::sub(&_num_instance_classes, count);
+  size_t old_count = Atomic::fetch_and_add(&_num_instance_classes, -count, memory_order_relaxed);
+  assert(old_count >= count, "Sanity");
 }
 
 void ClassLoaderDataGraph::inc_array_classes(size_t count) {
-  Atomic::add(&_num_array_classes, count);
+  Atomic::add(&_num_array_classes, count, memory_order_relaxed);
 }
 
 void ClassLoaderDataGraph::dec_array_classes(size_t count) {
-  assert(count <= _num_array_classes, "Sanity");
-  Atomic::sub(&_num_array_classes, count);
+  size_t old_count = Atomic::fetch_and_add(&_num_array_classes, -count, memory_order_relaxed);
+  assert(old_count >= count, "Sanity");
 }
 
 bool ClassLoaderDataGraph::should_clean_metaspaces_and_reset() {
