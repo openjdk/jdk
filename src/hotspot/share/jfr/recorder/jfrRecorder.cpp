@@ -373,6 +373,13 @@ bool JfrRecorder::create_event_throttler() {
   return JfrEventThrottler::create();
 }
 
+void JfrRecorder::enable_debug_non_safepoints() {
+  if (FLAG_IS_DEFAULT(DebugNonSafepoints)) {
+    DebugNonSafepoints = true;
+    log_debug(jfr)("DebugNonSafepoints enabled");
+  }
+}
+
 void JfrRecorder::destroy_components() {
   JfrJvmtiAgent::destroy();
   if (_post_box != nullptr) {
@@ -431,6 +438,7 @@ void JfrRecorder::on_recorder_thread_exit() {
 }
 
 void JfrRecorder::start_recording() {
+  enable_debug_non_safepoints();
   _post_box->post(MSG_START);
 }
 
