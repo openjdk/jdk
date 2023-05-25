@@ -29,7 +29,7 @@
  * @library /test/lib ..
  * @library ../../../../java/security/testlibrary
  * @key randomness
- * @modules jdk.crypto.cryptoki jdk.crypto.ec/sun.security.ec
+ * @modules jdk.crypto.cryptoki java.base/sun.security.ec
  * @run main/othervm ReadPKCS12
  * @run main/othervm -Djava.security.manager=allow ReadPKCS12 sm policy
  */

@@ -25,7 +25,7 @@
  * @test
  * @bug 8049429
  * @modules java.management
- *          jdk.crypto.ec/sun.security.ec
+ *          java.base/sun.security.ec
  * @summary Test that all cipher suites work in all versions and all client
  *          authentication types. The way this is setup the server is stateless
  *          and all checking is done on the client side.
