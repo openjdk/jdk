@@ -62,7 +62,6 @@ public class ScreencastHelper {
 
         if (!(Toolkit.getDefaultToolkit()
                 instanceof UNIXToolkit tk && tk.loadGTK())
-                || !TokenStorage.initSuccessful()
                 || !loadPipewire(SCREENCAST_DEBUG)) {
 
             System.err.println(
@@ -105,7 +104,7 @@ public class ScreencastHelper {
 
         Rectangle captureArea = new Rectangle(x, y, width, height);
 
-        List<Rectangle> affectedScreenBounds =  getSystemScreensBounds()
+        List<Rectangle> affectedScreenBounds = getSystemScreensBounds()
                 .stream()
                 .filter(captureArea::intersects)
                 .toList();

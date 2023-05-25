@@ -1,46 +1,224 @@
+/*
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
 package sun.awt.screencast;
 
 import java.awt.Dimension;
 import java.awt.Rectangle;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.WatchEvent;
+import java.nio.file.WatchKey;
+import java.nio.file.WatchService;
+import java.nio.file.attribute.PosixFilePermission;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Properties;
 import java.util.Set;
-import java.util.prefs.BackingStoreException;
-import java.util.prefs.Preferences;
 import java.util.stream.Collectors;
 
+import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
+import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
+import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
+import static java.nio.file.StandardWatchEventKinds.OVERFLOW;
 import static sun.awt.screencast.ScreencastHelper.SCREENCAST_DEBUG;
 
 final class TokenStorage {
-    private TokenStorage() {
-    }
 
-    private static final Preferences TOKEN_STORE;
+    private TokenStorage() {}
+
+    private static final String REL_NAME =
+            ".java/.robot/screencast-tokens.properties";
+
+    private static final Properties PROPS = new Properties();
+    private static final Path PROPS_PATH;
+    private static final Path PROP_FILENAME;
+    private static final Object PROPS_LOCK = new Object();
 
     static {
-        Preferences tokenStore;
-        try {
-            tokenStore = Preferences
-                    .userNodeForPackage(ScreencastHelper.class)
-                    .node("tokenStorage");
-        } catch (Exception e) {
-            System.err.println("Failed to initialize token storage");
-            tokenStore = null;
+        PROPS_PATH = setupPath();
+        if (PROPS_PATH != null) {
+            PROP_FILENAME = PROPS_PATH.getFileName();
+            setupWatch();
+        } else {
+            // We can still work with tokens,
+            // but they are not saved between sessions.
+            PROP_FILENAME = null;
         }
-
-        TOKEN_STORE = tokenStore;
     }
 
+    private static Path setupPath() {
+        String userHome = System.getProperty("user.home", null);
+        if (userHome == null) {
+            return null;
+        }
 
-    static boolean initSuccessful() {
-        return TOKEN_STORE != null;
+        Path path = Path.of(userHome, REL_NAME);
+        Path workdir = path.getParent();
+
+        if (!Files.exists(workdir)) {
+            try {
+                Files.createDirectories(workdir);
+            } catch (Exception e) {
+                if (SCREENCAST_DEBUG) {
+                    System.err.printf("Token storage: cannot create" +
+                                    " directory %s %s\n", workdir, e);
+                }
+                return null;
+            }
+        }
+
+        if (!Files.isWritable(workdir)) {
+            if (SCREENCAST_DEBUG) {
+                System.err.printf("Token storage: %s is not writable\n", workdir);
+            }
+            return null;
+        }
+
+        try {
+            Files.setPosixFilePermissions(workdir,
+                    Set.of(
+                            PosixFilePermission.OWNER_READ,
+                            PosixFilePermission.OWNER_WRITE,
+                            PosixFilePermission.OWNER_EXECUTE
+                    ));
+        } catch (IOException e) {
+            if (SCREENCAST_DEBUG) {
+                System.err.printf("Token storage: cannot set permissions " +
+                        "for directory %s %s\n", workdir, e);
+            }
+        }
+
+        if (Files.exists(path)) {
+            if (!setFilePermission(path)) {
+                return null;
+            }
+
+            readTokens(path);
+        }
+
+        return path;
+    }
+
+    private static boolean setFilePermission(Path path) {
+        try {
+            Files.setPosixFilePermissions(
+                    path,
+                    Set.of(PosixFilePermission.OWNER_READ,
+                            PosixFilePermission.OWNER_WRITE)
+            );
+            return true;
+        } catch (IOException e) {
+            if (SCREENCAST_DEBUG) {
+                System.err.printf("Token storage: failed to set " +
+                        "property file permission %s %s\n", path, e);
+            }
+        }
+        return false;
+    }
+
+    private static class WatcherThread extends Thread {
+        private final WatchService watcher;
+
+        public WatcherThread(WatchService watchService) {
+            this.watcher = watchService;
+            setName("ScreencastWatcher");
+            setDaemon(true);
+        }
+
+        @Override
+        public void run() {
+            if (SCREENCAST_DEBUG) {
+                System.out.println("ScreencastWatcher: started");
+            }
+            for (;;) {
+                WatchKey key;
+                try {
+                    key = watcher.take();
+                } catch (InterruptedException e) {
+                    if (SCREENCAST_DEBUG) {
+                        System.err.println("ScreencastWatcher: interrupted");
+                    }
+                    return;
+                }
+
+                for (WatchEvent<?> event: key.pollEvents()) {
+                    WatchEvent.Kind<?> kind = event.kind();
+                    if (kind == OVERFLOW
+                            || !event.context().equals(PROP_FILENAME)) {
+                        continue;
+                    }
+
+                    if (SCREENCAST_DEBUG) {
+                        System.out.printf("ScreencastWatcher: %s %s\n",
+                                kind, event.context());
+                    }
+
+                    if (kind == ENTRY_CREATE) {
+                        setFilePermission(PROPS_PATH);
+                    } else if (kind == ENTRY_MODIFY) {
+                        readTokens(PROPS_PATH);
+                    } else if (kind == ENTRY_DELETE) {
+                        synchronized (PROPS_LOCK) {
+                            PROPS.clear();
+                        }
+                    }
+                }
+
+                key.reset();
+            }
+        }
+    }
+
+    private static void setupWatch() {
+        try {
+            WatchService watchService =
+                    FileSystems.getDefault().newWatchService();
+
+            PROPS_PATH
+                    .getParent()
+                    .register(watchService,
+                            ENTRY_CREATE,
+                            ENTRY_DELETE,
+                            ENTRY_MODIFY);
+
+            new WatcherThread(watchService).start();
+        } catch (Exception e) {
+            if (SCREENCAST_DEBUG) {
+                System.err.printf("Token storage: failed to setup " +
+                        "file watch %s\n", e);
+            }
+        }
     }
 
     // called from native
@@ -56,113 +234,178 @@ final class TokenStorage {
 
         if (allowedScreenBounds == null) return;
 
-        storeToken(new TokenItem(newToken, allowedScreenBounds));
+        TokenItem tokenItem = new TokenItem(newToken, allowedScreenBounds);
 
-        if (oldToken != null && !oldToken.equals(newToken)) {
-            // old token is no longer valid
-            if (SCREENCAST_DEBUG) {
-                System.out.printf(
-                        "// storeTokenFromNative old token |%s| is "
-                        + "no longer valid, removing\n", oldToken);
-            }
-            TOKEN_STORE.remove(oldToken);
-        }
-    }
-
-    private static void storeToken(TokenItem tokenItem) {
         if (SCREENCAST_DEBUG) {
-            System.out.printf("Storing TokenItem:\n%s\n", tokenItem);
+            System.out.printf("// Storing TokenItem:\n%s\n", tokenItem);
         }
 
-        try {
-            ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            ObjectOutputStream out = new ObjectOutputStream(bos);
-            out.writeObject(tokenItem);
-            TOKEN_STORE.putByteArray(tokenItem.token, bos.toByteArray());
-            TOKEN_STORE.flush();
-        } catch (IOException | BackingStoreException e) {
-            if (SCREENCAST_DEBUG) {
-                System.err.println(e);
+        synchronized (PROPS_LOCK) {
+            String oldBoundsRecord = PROPS.getProperty(tokenItem.token, null);
+            String newBoundsRecord = tokenItem.dump();
+
+            boolean changed = false;
+
+            if (oldBoundsRecord == null
+                    || !oldBoundsRecord.equals(newBoundsRecord)) {
+                PROPS.setProperty(tokenItem.token, newBoundsRecord);
+                if (SCREENCAST_DEBUG) {
+                    System.out.printf(
+                            "// Writing new TokenItem:\n%s\n", tokenItem);
+                }
+                changed = true;
+            }
+
+            if (oldToken != null && !oldToken.equals(newToken)) {
+                // old token is no longer valid
+                if (SCREENCAST_DEBUG) {
+                    System.out.printf(
+                            "// storeTokenFromNative old token |%s| is "
+                                    + "no longer valid, removing\n", oldToken);
+                }
+
+                PROPS.remove(oldToken);
+                changed = true;
+            }
+
+            if (changed) {
+                store("save tokens");
             }
         }
     }
 
-    private static TokenItem readToken(String token) {
-        byte[] bytes = TOKEN_STORE.getByteArray(token, null);
-        if (bytes == null) {
-            return null;
-        }
-        try {
-            ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
-            ObjectInputStream in = new ObjectInputStream(bis);
-            Object o = in.readObject();
-            if (o instanceof TokenItem t) {
-                if (SCREENCAST_DEBUG) {
-                    System.out.printf("TokenItem read:\n%s\n", t);
-                }
-                return t;
+    private static boolean readTokens(Path path) {
+        if (path == null) return false;
+
+        try (InputStream input = Files.newInputStream(path)) {
+            synchronized (PROPS_LOCK) {
+                PROPS.clear();
+                PROPS.load(input);
             }
-        } catch (ClassNotFoundException | IOException e) {
+        } catch (IOException e) {
             if (SCREENCAST_DEBUG) {
-                System.err.println(e);
+                System.err.printf("""
+                        Token storage: failed to load property file %s
+                        %s
+                        """, path, e);
             }
+            return false;
         }
-        return null;
+
+        return true;
     }
 
     static Set<TokenItem> getTokens(List<Rectangle> affectedScreenBounds) {
-        // We need an ordered set to store tokens with exact matches at the beginning.
+        // We need an ordered set to store tokens
+        // with exact matches at the beginning.
         LinkedHashSet<TokenItem> result = new LinkedHashSet<>();
-        try {
-            TOKEN_STORE.sync();
 
-            List<TokenItem> allTokenItems =
-                    Arrays.stream(TOKEN_STORE.keys())
-                            .map(TokenStorage::readToken)
-                            .toList();
+        Set<Map.Entry<Object, Object>> entries;
+        synchronized (PROPS_LOCK) {
+            entries = PROPS.entrySet();
+        }
 
+        Set<String> malformed = new LinkedHashSet<>();
 
-            // 1. Try to find exact matches
-            for (TokenItem tokenItem : allTokenItems) {
-                if (tokenItem != null
-                        && tokenItem
-                        .hasAllScreensWithExactMatch(affectedScreenBounds)) {
-                    result.add(tokenItem);
-                }
-            }
+        List<TokenItem> allTokenItems = entries
+                .stream()
+                .map(o -> {
+                    String token = String.valueOf(o.getKey());
+                    TokenItem tokenItem =
+                            TokenItem.parse(token, o.getValue());
+                    if (tokenItem == null) {
+                        malformed.add(token);
+                    }
+                    return tokenItem;
+                })
+                .filter(obj -> !Objects.isNull(obj))
+                .toList();
 
-            if (SCREENCAST_DEBUG) {
-                System.out.println("// getTokens exact matches 1. " + result);
-            }
+        removeMalformedRecords(malformed);
 
-
-            // 2. Try screens of the same size but in different locations,
-            // screens may have been moved while the token is still valid
-            List<Dimension> dimensions = affectedScreenBounds
-                    .stream()
-                    .map(rectangle -> new Dimension(
-                            rectangle.width,
-                            rectangle.height
-                    ))
-                    .collect(Collectors.toCollection(ArrayList::new));
-
-            for (TokenItem tokenItem : allTokenItems) {
-                if (tokenItem != null
-                        && tokenItem.hasAllScreensOfSameSize(dimensions)) {
-                    result.add(tokenItem);
-                }
-            }
-
-            if (SCREENCAST_DEBUG) {
-                System.out.println("// getTokens same sizes 2. " + result);
-            }
-
-            return result;
-        } catch (BackingStoreException e) {
-            if (SCREENCAST_DEBUG) {
-                System.err.println(e);
+        // 1. Try to find exact matches
+        for (TokenItem tokenItem : allTokenItems) {
+            if (tokenItem != null
+                    && tokenItem
+                    .hasAllScreensWithExactMatch(affectedScreenBounds)) {
+                result.add(tokenItem);
             }
         }
-        return Set.of();
+
+        if (SCREENCAST_DEBUG) {
+            System.out.println("// getTokens exact matches 1. " + result);
+        }
+
+        // 2. Try screens of the same size but in different locations,
+        // screens may have been moved while the token is still valid
+        List<Dimension> dimensions = affectedScreenBounds
+                .stream()
+                .map(rectangle -> new Dimension(
+                        rectangle.width,
+                        rectangle.height
+                ))
+                .collect(Collectors.toCollection(ArrayList::new));
+
+        for (TokenItem tokenItem : allTokenItems) {
+            if (tokenItem != null
+                    && tokenItem.hasAllScreensOfSameSize(dimensions)) {
+                result.add(tokenItem);
+            }
+        }
+
+        if (SCREENCAST_DEBUG) {
+            System.out.println("// getTokens same sizes 2. " + result);
+        }
+
+        return result;
+    }
+
+    private static void removeMalformedRecords(Set<String> malformedRecords) {
+        if (!isWritable()
+                || malformedRecords == null
+                || malformedRecords.isEmpty()) {
+            return;
+        }
+
+        synchronized (PROPS_LOCK) {
+            for (String token : malformedRecords) {
+                Object remove = PROPS.remove(token);
+                if (SCREENCAST_DEBUG) {
+                    System.err.println("removing malformed record\n" + remove);
+                }
+            }
+
+            store("remove malformed records");
+        }
+    }
+
+    private static void store(String failMsg) {
+        if (!isWritable()) {
+            return;
+        }
+
+        try (OutputStream output = Files.newOutputStream(PROPS_PATH)) {
+            synchronized (PROPS_LOCK) {
+                PROPS.store(output, null);
+            }
+        } catch (IOException e) {
+            if (SCREENCAST_DEBUG) {
+                System.err.printf(
+                        "Token storage: unable to %s\n%s\n", failMsg, e);
+            }
+        }
+    }
+
+    private static boolean isWritable() {
+        if (PROPS_PATH == null
+                || (Files.exists(PROPS_PATH) && !Files.isWritable(PROPS_PATH))) {
+            if (SCREENCAST_DEBUG) {
+                System.err.printf(
+                        "Token storage: %s is not writable\n", PROPS_PATH);
+            }
+            return false;
+        } else {
+            return true;
+        }
     }
 }
