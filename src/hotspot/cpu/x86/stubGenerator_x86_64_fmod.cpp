@@ -454,7 +454,7 @@ __ jmp(L_exit);
 // 00007FF676C01032  vmovq       xmm5,rcx
 // 00007FF676C01037  vpand       xmm2,xmm2,xmm5
   __ movq(xmm2, xmm0);
-  __ vmovdqu(xmm3, ExternalAddress((address)CONST_NaN));
+  __ vmovdqu(xmm3, ExternalAddress((address)CONST_NaN), rcx);
   __ vpand(xmm4, xmm2, xmm3, Assembler::AVX_128bit);
   __ vpand(xmm3, xmm1, xmm3, Assembler::AVX_128bit);
   __ mov64(rcx, 0x8000000000000000);
@@ -482,7 +482,7 @@ __ jmp(L_exit);
   __ andl(rax, 0x6000);
   __ cmpl(rax, 0x2000);
   __ jcc(Assembler::equal, L_10c1);
-  __ vmulsd(xmm0, xmm3, ExternalAddress((address)CONST_1p260));
+  __ vmulsd(xmm0, xmm3, ExternalAddress((address)CONST_1p260), rax);
   __ ucomisd(xmm0, xmm4);
   __ jcc(Assembler::belowEqual, L_10c1);
 // 	{
@@ -594,7 +594,7 @@ __ jmp(L_exit);
   __ jcc(Assembler::noParity, L_111c);
 
   __ bind(L_10f3);
-  __ movsd(xmm5, ExternalAddress((address)CONST_MAX));
+  __ movsd(xmm5, ExternalAddress((address)CONST_MAX), rax);
   __ ucomisd(xmm5, xmm4);
   __ jcc(Assembler::below, L_111c);
 // 		return res;
@@ -609,7 +609,7 @@ __ jmp(L_exit);
 // 		__asm { ldmxcsr DWORD PTR[mxcsr] }
 // 00007FF676C01113  ldmxcsr     dword ptr [rsp]
 // 00007FF676C01117  jmp         fmod+1BDh (07FF676C011BDh)
-  __ movsd(xmm0, ExternalAddress((address)CONST_INF));
+  __ movsd(xmm0, ExternalAddress((address)CONST_INF), rax);
   __ ucomisd(xmm0, xmm3);
   __ jcc(Assembler::aboveEqual, L_112a);
   __ vaddsd(xmm0, xmm0, xmm1);
@@ -640,7 +640,7 @@ __ jmp(L_exit);
 // 	eq = TRANSFER_HIGH_INT32(q);
 // 00007FF676C0113C  vextractps  eax,xmm0,1
   __ bind(L_112a);
-  __ vmulsd(xmm1, xmm3, ExternalAddress((address)CONST_e307));
+  __ vmulsd(xmm1, xmm3, ExternalAddress((address)CONST_e307), rax);
   __ evdivsd(xmm0, xmm4, xmm1);
   __ vroundsd(xmm0, xmm0, xmm0, 3);
   __ evextractps(rax, xmm0, 1);
@@ -668,7 +668,7 @@ __ jmp(L_exit);
 // 00007FF676C01166  vucomisd    xmm4,xmm0
 // 00007FF676C0116A  jae         fmod+157h (07FF676C01157h)
 // 00007FF676C0116C  jmp         fmod+173h (07FF676C01173h)
-  __ vmulsd(xmm0, xmm1, ExternalAddress((address)CONST_e307));
+  __ vmulsd(xmm0, xmm1, ExternalAddress((address)CONST_e307), rax);
   __ ucomisd(xmm4, xmm0);
   __ jcc(Assembler::below, L_1173);
   __ bind(L_1157);
