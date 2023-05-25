@@ -771,6 +771,9 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
         $1_CFLAGS_CPU_JDK="${$1_CFLAGS_CPU_JDK} -fno-omit-frame-pointer"
       fi
     fi
+    if test "x$OPENJDK_TARGET_OS" = xaix; then
+      $1_CFLAGS_CPU="-mcpu=pwr8"
+    fi
 
   elif test "x$TOOLCHAIN_TYPE" = xxlc; then
     if test "x$FLAGS_CPU" = xppc64; then

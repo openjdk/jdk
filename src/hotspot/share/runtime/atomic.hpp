@@ -105,8 +105,8 @@ public:
 
   // Returns previous value.
   template<typename D, typename I>
-  inline static D fetch_and_add(D volatile* dest, I add_value,
-                                atomic_memory_order order = memory_order_conservative);
+  inline static D fetch_then_add(D volatile* dest, I add_value,
+                                 atomic_memory_order order = memory_order_conservative);
 
   template<typename D, typename I>
   inline static D sub(D volatile* dest, I sub_value,
@@ -168,7 +168,7 @@ public:
   //
   // Requirements:
   // - T is an integral type
-  // - sizeof(T) == sizeof(int) || sizeof(T) == sizeof(void*)
+  // - sizeof(T) == 1 || sizeof(T) == sizeof(int) || sizeof(T) == sizeof(void*)
 
   // Performs atomic bitwise-and of *dest and bits, storing the result in
   // *dest.  Returns the prior value of *dest.  That is, atomically performs
@@ -319,14 +319,14 @@ private:
   // - platform_add is an object of type PlatformAdd<sizeof(D)>.
   //
   // Then both
-  //   platform_add.add_and_fetch(dest, add_value, order)
-  //   platform_add.fetch_and_add(dest, add_value, order)
+  //   platform_add.add_then_fetch(dest, add_value, order)
+  //   platform_add.fetch_then_add(dest, add_value, order)
   // must be valid expressions returning a result convertible to D.
   //
-  // add_and_fetch atomically adds add_value to the value of dest,
+  // add_then_fetch atomically adds add_value to the value of dest,
   // returning the new value.
   //
-  // fetch_and_add atomically adds add_value to the value of dest,
+  // fetch_then_add atomically adds add_value to the value of dest,
   // returning the old value.
   //
   // When the destination type D of the Atomic operation is a pointer type P*,
@@ -338,7 +338,7 @@ private:
   // 1, casting if needed.  It also scales add_value by sizeof(P).  The result
   // of the platform operation is cast back to P*.  This means the platform
   // operation does not need to account for the scaling.  It also makes it
-  // easy for the platform to implement one of add_and_fetch or fetch_and_add
+  // easy for the platform to implement one of add_then_fetch or fetch_then_add
   // in terms of the other (which is a common approach).
   //
   // No definition is provided; all platforms must explicitly define
@@ -866,13 +866,13 @@ inline void Atomic::release_store_fence(volatile D* p, T v) {
 template<typename D, typename I>
 inline D Atomic::add(D volatile* dest, I add_value,
                      atomic_memory_order order) {
-  return AddImpl<D, I>::add_and_fetch(dest, add_value, order);
+  return AddImpl<D, I>::add_then_fetch(dest, add_value, order);
 }
 
 template<typename D, typename I>
-inline D Atomic::fetch_and_add(D volatile* dest, I add_value,
-                               atomic_memory_order order) {
-  return AddImpl<D, I>::fetch_and_add(dest, add_value, order);
+inline D Atomic::fetch_then_add(D volatile* dest, I add_value,
+                                atomic_memory_order order) {
+  return AddImpl<D, I>::fetch_then_add(dest, add_value, order);
 }
 
 template<typename D, typename I>
@@ -883,13 +883,13 @@ struct Atomic::AddImpl<
                     (sizeof(I) <= sizeof(D)) &&
                     (std::is_signed<I>::value == std::is_signed<D>::value)>::type>
 {
-  static D add_and_fetch(D volatile* dest, I add_value, atomic_memory_order order) {
+  static D add_then_fetch(D volatile* dest, I add_value, atomic_memory_order order) {
     D addend = add_value;
-    return PlatformAdd<sizeof(D)>().add_and_fetch(dest, addend, order);
+    return PlatformAdd<sizeof(D)>().add_then_fetch(dest, addend, order);
   }
-  static D fetch_and_add(D volatile* dest, I add_value, atomic_memory_order order) {
+  static D fetch_then_add(D volatile* dest, I add_value, atomic_memory_order order) {
     D addend = add_value;
-    return PlatformAdd<sizeof(D)>().fetch_and_add(dest, addend, order);
+    return PlatformAdd<sizeof(D)>().fetch_then_add(dest, addend, order);
   }
 };
 
@@ -927,14 +927,14 @@ struct Atomic::AddImpl<
     return (P*) result;
   }
 
-  static P* add_and_fetch(P* volatile* dest, I addend, atomic_memory_order order) {
-    return scale_result(PlatformAdd<sizeof(P*)>().add_and_fetch(unscale_dest(dest),
+  static P* add_then_fetch(P* volatile* dest, I addend, atomic_memory_order order) {
+    return scale_result(PlatformAdd<sizeof(P*)>().add_then_fetch(unscale_dest(dest),
                                                                 scale_addend(addend),
                                                                 order));
   }
 
-  static P* fetch_and_add(P* volatile* dest, I addend, atomic_memory_order order) {
-    return scale_result(PlatformAdd<sizeof(P*)>().fetch_and_add(unscale_dest(dest),
+  static P* fetch_then_add(P* volatile* dest, I addend, atomic_memory_order order) {
+    return scale_result(PlatformAdd<sizeof(P*)>().fetch_then_add(unscale_dest(dest),
                                                                 scale_addend(addend),
                                                                 order));
   }

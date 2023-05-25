@@ -81,8 +81,8 @@ static zaddress forwarding_insert(ZForwarding* forwarding, zaddress from_addr, z
   return forwarding_insert(forwarding, ZAddress::offset(from_addr), to_addr, cursor);
 }
 
-ZRelocateQueue::ZRelocateQueue() :
-    _lock(),
+ZRelocateQueue::ZRelocateQueue()
+  : _lock(),
     _queue(),
     _nworkers(0),
     _nsynchronized(0),
@@ -208,8 +208,8 @@ private:
   ZRelocateQueue* const _queue;
 
 public:
-  ZRelocateQueueSynchronizeThread(ZRelocateQueue* queue) :
-      _queue(queue) {
+  ZRelocateQueueSynchronizeThread(ZRelocateQueue* queue)
+    : _queue(queue) {
     _queue->synchronize_thread();
   }
 
@@ -318,8 +318,8 @@ void ZRelocateQueue::desynchronize() {
   _lock.notify_all();
 }
 
-ZRelocate::ZRelocate(ZGeneration* generation) :
-    _generation(generation),
+ZRelocate::ZRelocate(ZGeneration* generation)
+  : _generation(generation),
     _queue() {}
 
 ZWorkers* ZRelocate::workers() const {
@@ -436,8 +436,8 @@ private:
   volatile size_t    _in_place_count;
 
 public:
-  ZRelocateSmallAllocator(ZGeneration* generation) :
-      _generation(generation),
+  ZRelocateSmallAllocator(ZGeneration* generation)
+    : _generation(generation),
       _in_place_count(0) {}
 
   ZPage* alloc_and_retire_target_page(ZForwarding* forwarding, ZPage* target) {
@@ -487,8 +487,8 @@ private:
   volatile size_t    _in_place_count;
 
 public:
-  ZRelocateMediumAllocator(ZGeneration* generation) :
-      _generation(generation),
+  ZRelocateMediumAllocator(ZGeneration* generation)
+    : _generation(generation),
       _lock(),
       _shared(),
       _in_place(false),
@@ -897,8 +897,8 @@ private:
   }
 
 public:
-  ZRelocateWork(Allocator* allocator, ZGeneration* generation) :
-      _allocator(allocator),
+  ZRelocateWork(Allocator* allocator, ZGeneration* generation)
+    : _allocator(allocator),
       _forwarding(nullptr),
       _target(),
       _generation(generation),
@@ -1059,9 +1059,9 @@ private:
   ZJavaThreadsIterator _threads_iter;
 
 public:
-  ZRelocateStoreBufferInstallBasePointersTask(ZGeneration* generation) :
-    ZTask("ZRelocateStoreBufferInstallBasePointersTask"),
-    _threads_iter(generation->id_optional()) {}
+  ZRelocateStoreBufferInstallBasePointersTask(ZGeneration* generation)
+    : ZTask("ZRelocateStoreBufferInstallBasePointersTask"),
+      _threads_iter(generation->id_optional()) {}
 
   virtual void work() {
     ZRelocateStoreBufferInstallBasePointersThreadClosure fix_store_buffer_cl;
@@ -1078,8 +1078,8 @@ private:
   ZRelocateMediumAllocator       _medium_allocator;
 
 public:
-  ZRelocateTask(ZRelocationSet* relocation_set, ZRelocateQueue* queue) :
-      ZRestartableTask("ZRelocateTask"),
+  ZRelocateTask(ZRelocationSet* relocation_set, ZRelocateQueue* queue)
+    : ZRestartableTask("ZRelocateTask"),
       _iter(relocation_set),
       _generation(relocation_set->generation()),
       _queue(queue),
@@ -1193,8 +1193,8 @@ private:
   ZArrayParallelIterator<ZPage*> _iter;
 
 public:
-  ZRelocateAddRemsetForFlipPromoted(ZArray<ZPage*>* pages) :
-      ZRestartableTask("ZRelocateAddRemsetForFlipPromoted"),
+  ZRelocateAddRemsetForFlipPromoted(ZArray<ZPage*>* pages)
+    : ZRestartableTask("ZRelocateAddRemsetForFlipPromoted"),
       _timer(ZSubPhaseConcurrentRelocateRememberedSetFlipPromotedYoung),
       _iter(pages) {}
 
@@ -1254,8 +1254,8 @@ private:
   ZArrayParallelIterator<ZPage*> _iter;
 
 public:
-  ZFlipAgePagesTask(const ZArray<ZPage*>* pages) :
-      ZTask("ZPromotePagesTask"),
+  ZFlipAgePagesTask(const ZArray<ZPage*>* pages)
+    : ZTask("ZPromotePagesTask"),
       _iter(pages) {}
 
   virtual void work() {

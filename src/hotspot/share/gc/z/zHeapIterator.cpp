@@ -45,8 +45,8 @@ private:
   CHeapBitMap _bitmap;
 
 public:
-  ZHeapIteratorBitMap(size_t size_in_bits) :
-      _bitmap(size_in_bits, mtGC) {}
+  ZHeapIteratorBitMap(size_t size_in_bits)
+    : _bitmap(size_in_bits, mtGC) {}
 
   bool try_set_bit(size_t index) {
     return _bitmap.par_set_bit(index);
@@ -63,8 +63,8 @@ private:
   OopFieldClosure*               _field_cl;
 
 public:
-  ZHeapIteratorContext(ZHeapIterator* iter, ObjectClosure* object_cl, OopFieldClosure* field_cl, uint worker_id) :
-      _iter(iter),
+  ZHeapIteratorContext(ZHeapIterator* iter, ObjectClosure* object_cl, OopFieldClosure* field_cl, uint worker_id)
+    : _iter(iter),
       _queue(_iter->_queues.queue(worker_id)),
       _array_queue(_iter->_array_queues.queue(worker_id)),
       _worker_id(worker_id),
@@ -127,8 +127,8 @@ private:
   }
 
 public:
-  ZHeapIteratorColoredRootOopClosure(const ZHeapIteratorContext& context) :
-      _context(context) {}
+  ZHeapIteratorColoredRootOopClosure(const ZHeapIteratorContext& context)
+    : _context(context) {}
 
   virtual void do_oop(oop* p) {
     _context.visit_field(nullptr, p);
@@ -152,8 +152,8 @@ private:
   }
 
 public:
-  ZHeapIteratorUncoloredRootOopClosure(const ZHeapIteratorContext& context) :
-      _context(context) {}
+  ZHeapIteratorUncoloredRootOopClosure(const ZHeapIteratorContext& context)
+    : _context(context) {}
 
   virtual void do_oop(oop* p) {
     _context.visit_field(nullptr, p);
@@ -183,8 +183,8 @@ private:
   }
 
 public:
-  ZHeapIteratorOopClosure(const ZHeapIteratorContext& context, oop base) :
-      OopIterateClosure(),
+  ZHeapIteratorOopClosure(const ZHeapIteratorContext& context, oop base)
+    : OopIterateClosure(),
       _context(context),
       _base(base) {}
 
@@ -217,8 +217,8 @@ public:
       const ZHeapIteratorContext& _context;
 
     public:
-      explicit NativeAccessClosure(const ZHeapIteratorContext& context) :
-          _context(context) {}
+      explicit NativeAccessClosure(const ZHeapIteratorContext& context)
+        : _context(context) {}
 
       virtual void do_oop(oop* p) {
         assert(!ZCollectedHeap::heap()->is_in(p), "Should not be in heap");
@@ -240,8 +240,8 @@ public:
   virtual void do_method(Method* m) {}
 };
 
-ZHeapIterator::ZHeapIterator(uint nworkers, bool visit_weaks) :
-    _visit_weaks(visit_weaks),
+ZHeapIterator::ZHeapIterator(uint nworkers, bool visit_weaks)
+  : _visit_weaks(visit_weaks),
     _bitmaps(ZAddressOffsetMax),
     _bitmaps_lock(),
     _queues(nworkers),
@@ -330,8 +330,8 @@ private:
   BarrierSetNMethod* const _bs_nm;
 
 public:
-  ZHeapIteratorNMethodClosure(OopClosure* cl) :
-      _cl(cl),
+  ZHeapIteratorNMethodClosure(OopClosure* cl)
+    : _cl(cl),
       _bs_nm(BarrierSet::barrier_set()->barrier_set_nmethod()) {}
 
   virtual void do_nmethod(nmethod* nm) {
@@ -351,8 +351,8 @@ private:
   CodeBlobToNMethodClosure _cb_cl;
 
 public:
-  ZHeapIteratorThreadClosure(OopClosure* cl, NMethodClosure* nm_cl) :
-      _cl(cl),
+  ZHeapIteratorThreadClosure(OopClosure* cl, NMethodClosure* nm_cl)
+    : _cl(cl),
       _cb_cl(nm_cl) {}
 
   void do_thread(Thread* thread) {

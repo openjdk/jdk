@@ -433,6 +433,8 @@ void G1HeapVerifier::verify_region_sets() {
   VerifyRegionListsClosure cl(&_g1h->_old_set, &_g1h->_humongous_set, &_g1h->_hrm);
   _g1h->heap_region_iterate(&cl);
   cl.verify_counts(&_g1h->_old_set, &_g1h->_humongous_set, &_g1h->_hrm);
+
+  _g1h->collection_set()->candidates()->verify();
 }
 
 void G1HeapVerifier::prepare_for_verify() {

@@ -125,7 +125,7 @@ const size_t minimumSymbolTableSize = 1024;
           "Use 32-bit object references in 64-bit VM. "                     \
           "lp64_product means flag is always constant in 32 bit VM")        \
                                                                             \
-  product(bool, UseCompressedClassPointers, false,                          \
+  product(bool, UseCompressedClassPointers, true,                           \
           "Use 32-bit class pointers in 64-bit VM. "                        \
           "lp64_product means flag is always constant in 32 bit VM")        \
                                                                             \
@@ -887,10 +887,6 @@ const int ObjectAlignmentInBytes = 8;
   develop(bool, FLSVerifyDictionary, false,                                 \
           "Do lots of (expensive) FLS dictionary verification")             \
                                                                             \
-                                                                            \
-  notproduct(bool, CheckMemoryInitialization, false,                        \
-          "Check memory initialization")                                    \
-                                                                            \
   product(uintx, ProcessDistributionStride, 4,                              \
           "Stride through processors when distributing processes")          \
           range(0, max_juint)                                               \
@@ -952,9 +948,6 @@ const int ObjectAlignmentInBytes = 8;
           "instruction raising SIGTRAP.  This is only used if an access to" \
           "null (+offset) will not raise a SIGSEGV, i.e.,"                  \
           "ImplicitNullChecks don't work (PPC64).")                         \
-                                                                            \
-  product(bool, EnableThreadSMRExtraValidityChecks, true, DIAGNOSTIC,       \
-             "Enable Thread SMR extra validity checks")                     \
                                                                             \
   product(bool, EnableThreadSMRStatistics, trueInDebug, DIAGNOSTIC,         \
              "Enable Thread SMR Statistics")                                \

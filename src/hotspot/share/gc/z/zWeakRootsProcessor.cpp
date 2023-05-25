@@ -46,16 +46,16 @@ public:
   }
 };
 
-ZWeakRootsProcessor::ZWeakRootsProcessor(ZWorkers* workers) :
-    _workers(workers) {}
+ZWeakRootsProcessor::ZWeakRootsProcessor(ZWorkers* workers)
+  : _workers(workers) {}
 
 class ZProcessWeakRootsTask : public ZTask {
 private:
   ZRootsIteratorWeakColored _roots_weak_colored;
 
 public:
-  ZProcessWeakRootsTask() :
-      ZTask("ZProcessWeakRootsTask"),
+  ZProcessWeakRootsTask()
+    : ZTask("ZProcessWeakRootsTask"),
       _roots_weak_colored(ZGenerationIdOptional::old) {}
 
   ~ZProcessWeakRootsTask() {

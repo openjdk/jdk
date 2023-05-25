@@ -285,7 +285,7 @@ public:
     qsort(_data, length() / stride, sizeof(E) * stride, (_sort_Fn)f);
   }
 
-  template <typename K, int compare(const K&, const E&)> int find_sorted(const K& key, bool& found) {
+  template <typename K, int compare(const K&, const E&)> int find_sorted(const K& key, bool& found) const {
     found = false;
     int min = 0;
     int max = length() - 1;
@@ -340,6 +340,14 @@ public:
 
 template<typename E>
 const GrowableArrayView<E> GrowableArrayView<E>::EMPTY(nullptr, 0, 0);
+
+template <typename E>
+class GrowableArrayFromArray : public GrowableArrayView<E> {
+public:
+
+  GrowableArrayFromArray<E>(E* data, int len) :
+    GrowableArrayView<E>(data, len, len) {}
+};
 
 // GrowableArrayWithAllocator extends the "view" with
 // the capability to grow and deallocate the data array.

@@ -29,7 +29,7 @@ typedef struct {
    JavaVM* jvm;
    jobject linker;
    jobject desc;
-   jarray opts;
+   jobject opts;
 } Context;
 
 void call(void* arg) {
@@ -45,12 +45,15 @@ void call(void* arg) {
 
 extern "C" {
     JNIEXPORT void JNICALL
-    Java_org_openjdk_foreigntest_PanamaMainJNI_nativeLinker0(JNIEnv *env, jclass cls, jobject linker, jobject desc, jarray opts) {
+    Java_org_openjdk_foreigntest_PanamaMainJNI_nativeLinker0(JNIEnv *env, jclass cls, jobject linker, jobject desc, jobjectArray opts) {
         Context context;
         env->GetJavaVM(&context.jvm);
-        context.linker = linker;
-        context.desc = desc;
-        context.opts = opts;
+        context.linker = env->NewGlobalRef(linker);
+        context.desc = env->NewGlobalRef(desc);
+        context.opts = env->NewGlobalRef(opts);
         run_in_new_thread_and_join(call, &context);
+        env->DeleteGlobalRef(context.linker);
+        env->DeleteGlobalRef(context.desc);
+        env->DeleteGlobalRef(context.opts);
     }
 }

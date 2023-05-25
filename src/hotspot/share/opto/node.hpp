@@ -139,6 +139,7 @@ class Node_List;
 class Node_Stack;
 class OopMap;
 class ParmNode;
+class ParsePredicateNode;
 class PCTableNode;
 class PhaseCCP;
 class PhaseGVN;
@@ -151,6 +152,7 @@ class Pipeline;
 class PopulateIndexNode;
 class ProjNode;
 class RangeCheckNode;
+class ReductionNode;
 class RegMask;
 class RegionNode;
 class RootNode;
@@ -164,6 +166,7 @@ class SubTypeCheckNode;
 class Type;
 class TypeNode;
 class UnlockNode;
+class UnorderedReductionNode;
 class VectorNode;
 class LoadVectorNode;
 class LoadVectorMaskedNode;
@@ -666,6 +669,7 @@ public:
             DEFINE_CLASS_ID(LongCountedLoopEnd,   BaseCountedLoopEnd, 1)
           DEFINE_CLASS_ID(RangeCheck,             If, 1)
           DEFINE_CLASS_ID(OuterStripMinedLoopEnd, If, 2)
+          DEFINE_CLASS_ID(ParsePredicate,         If, 3)
         DEFINE_CLASS_ID(NeverBranch, MultiBranch, 2)
       DEFINE_CLASS_ID(Start,       Multi, 2)
       DEFINE_CLASS_ID(MemBar,      Multi, 3)
@@ -718,6 +722,8 @@ public:
         DEFINE_CLASS_ID(CompressV, Vector, 4)
         DEFINE_CLASS_ID(ExpandV, Vector, 5)
         DEFINE_CLASS_ID(CompressM, Vector, 6)
+        DEFINE_CLASS_ID(Reduction, Vector, 7)
+          DEFINE_CLASS_ID(UnorderedReduction, Reduction, 0)
       DEFINE_CLASS_ID(Con, Type, 8)
           DEFINE_CLASS_ID(ConI, Con, 0)
 
@@ -938,9 +944,11 @@ public:
   DEFINE_CLASS_QUERY(OuterStripMinedLoop)
   DEFINE_CLASS_QUERY(OuterStripMinedLoopEnd)
   DEFINE_CLASS_QUERY(Parm)
+  DEFINE_CLASS_QUERY(ParsePredicate)
   DEFINE_CLASS_QUERY(PCTable)
   DEFINE_CLASS_QUERY(Phi)
   DEFINE_CLASS_QUERY(Proj)
+  DEFINE_CLASS_QUERY(Reduction)
   DEFINE_CLASS_QUERY(Region)
   DEFINE_CLASS_QUERY(Root)
   DEFINE_CLASS_QUERY(SafePoint)
@@ -950,6 +958,7 @@ public:
   DEFINE_CLASS_QUERY(Sub)
   DEFINE_CLASS_QUERY(SubTypeCheck)
   DEFINE_CLASS_QUERY(Type)
+  DEFINE_CLASS_QUERY(UnorderedReduction)
   DEFINE_CLASS_QUERY(Vector)
   DEFINE_CLASS_QUERY(VectorMaskCmp)
   DEFINE_CLASS_QUERY(VectorUnbox)
@@ -1018,6 +1027,11 @@ public:
   bool is_scheduled() const { return (_flags & Flag_is_scheduled) != 0; }
 
   bool for_post_loop_opts_igvn() const { return (_flags & Flag_for_post_loop_opts_igvn) != 0; }
+
+  // Is 'n' possibly a loop entry (i.e. a Parse Predicate projection)?
+  static bool may_be_loop_entry(Node* n) {
+    return n != nullptr && n->is_IfProj() && n->in(0)->is_ParsePredicate();
+  }
 
 //----------------- Optimization
 

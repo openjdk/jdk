@@ -129,9 +129,7 @@ public class Binder extends DebugeeBinder {
     public Debugee makeLocalDebugee(Process process) {
         LocalLaunchedDebugee debugee = new LocalLaunchedDebugee(process, this);
 
-        Finalizer finalizer = new Finalizer(debugee);
-        finalizer.activate();
-
+        debugee.registerCleanup();
         return debugee;
     }
 
@@ -942,8 +940,7 @@ public class Binder extends DebugeeBinder {
 
         RemoteLaunchedDebugee debugee = new RemoteLaunchedDebugee(this);
 
-        Finalizer finalizer = new Finalizer(debugee);
-        finalizer.activate();
+        debugee.registerCleanup();
 
         return debugee;
     }
@@ -956,8 +953,7 @@ public class Binder extends DebugeeBinder {
         ManualLaunchedDebugee debugee = new ManualLaunchedDebugee(this);
         debugee.launchDebugee(cmd);
 
-        Finalizer finalizer = new Finalizer(debugee);
-        finalizer.activate();
+        debugee.registerCleanup();
 
         return debugee;
     }
