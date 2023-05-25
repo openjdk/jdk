@@ -2199,7 +2199,7 @@ bool FileMapInfo::map_heap_region_impl() {
   char* base = os::map_memory(_fd, _full_path, r->file_offset(),
                               addr, _mapped_heap_memregion.byte_size(), r->read_only(),
                               r->allow_exec());
-  if (UseNewCode || base == nullptr || base != addr) {
+  if (base == nullptr || base != addr) {
     dealloc_heap_region(regions_committed);
     log_info(cds)("UseSharedSpaces: Unable to map at required address in java heap. "
                   INTPTR_FORMAT ", size = " SIZE_FORMAT " bytes",
