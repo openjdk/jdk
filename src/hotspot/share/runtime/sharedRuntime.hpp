@@ -143,7 +143,6 @@ class SharedRuntime: AllStatic {
   static jdouble dlog10(jdouble x);
   static jdouble dexp(jdouble x);
   static jdouble dpow(jdouble x, jdouble y);
-  static jdouble fmod(jdouble x, jdouble y);
 
 #if defined(__SOFTFP__) || defined(E500V2)
   static double dabs(double f);

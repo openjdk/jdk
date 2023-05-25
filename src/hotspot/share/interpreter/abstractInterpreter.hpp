@@ -79,7 +79,6 @@ class AbstractInterpreter: AllStatic {
     java_lang_math_log10,                                       // implementation of java.lang.Math.log10 (x)
     java_lang_math_pow,                                         // implementation of java.lang.Math.pow   (x,y)
     java_lang_math_exp,                                         // implementation of java.lang.Math.exp   (x)
-    java_lang_math_mod,                                         // implementation of java.lang.Math.mod   (x,y)
     java_lang_math_fmaF,                                        // implementation of java.lang.Math.fma   (x, y, z)
     java_lang_math_fmaD,                                        // implementation of java.lang.Math.fma   (x, y, z)
     java_lang_ref_reference_get,                                // implementation of java.lang.ref.Reference.get()
