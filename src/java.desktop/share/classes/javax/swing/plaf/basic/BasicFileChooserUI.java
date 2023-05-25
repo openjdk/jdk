@@ -710,8 +710,7 @@ public class BasicFileChooserUI extends FileChooserUI {
                             && chooser.isTraversable(((File)objects[0]))
                             && (useSetDirectory
                                 || (!fsv.isFileSystem(((File)objects[0]))
-                                    && !(fsv.isLink((File)objects[0])
-                                    && Files.isSymbolicLink(((File)objects[0]).toPath()))))) {
+                                    && !isSymbolicLinkCheck(((File)objects[0]))))) {
                             setDirectorySelected(true);
                             setDirectory(((File)objects[0]));
                         } else {
@@ -722,7 +721,7 @@ public class BasicFileChooserUI extends FileChooserUI {
                                 if ((chooser.isFileSelectionEnabled() && !isDir)
                                     || (chooser.isDirectorySelectionEnabled()
                                         && (fsv.isFileSystem(f)
-                                        || (fsv.isLink(f) && Files.isSymbolicLink(f.toPath())))
+                                        || isSymbolicLinkCheck(f))
                                         && isDir)) {
                                     fList.add(f);
                                 }
@@ -743,8 +742,9 @@ public class BasicFileChooserUI extends FileChooserUI {
 
                         setDirectorySelected(true);
                         setDirectory(file);
+
                         if (usesSingleFilePane) {
-                            if (fsv.isLink(file) && Files.isSymbolicLink(file.toPath())) {
+                            if (isSymbolicLinkCheck(file)) {
                                 chooser.setSelectedFile(file);
                             } else {
                                 chooser.setSelectedFile(null);
@@ -1247,6 +1247,14 @@ public class BasicFileChooserUI extends FileChooserUI {
                 || (File.separatorChar == '/' && (filename.indexOf('*') >= 0
                                                   || filename.indexOf('?') >= 0
                                                   || filename.indexOf('[') >= 0)));
+    }
+
+    private Boolean isSymbolicLinkCheck(File file) {
+        if (!(file instanceof ShellFolder sf)) {
+            return Files.isSymbolicLink(file.toPath());
+        } else {
+            return sf.isFileSystem() && Files.isSymbolicLink(file.toPath());
+        }
     }
 
 
