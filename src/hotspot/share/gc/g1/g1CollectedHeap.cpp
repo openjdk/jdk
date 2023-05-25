@@ -607,7 +607,7 @@ void G1CollectedHeap::dealloc_archive_regions(MemRegion range, uint regions_comm
          p2i(start_address), p2i(last_address));
   size_used += range.byte_size();
 
-  // Free, empty and uncommit regions with CDS archive content.
+  // Free, empty and optionally uncommit regions with CDS archive content.
   uint shrink_count = 0;
   auto dealloc_archive_region = [&] (HeapRegion* r, bool is_last) {
     guarantee(r->is_old(), "Expected old region at index %u", r->hrm_index());
