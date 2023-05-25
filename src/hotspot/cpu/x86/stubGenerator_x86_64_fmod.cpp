@@ -143,19 +143,19 @@ address StubGenerator::generate_libmFmod() {
 // 00007FF605BD10EE  vmovsd      xmm5,xmm18,xmm20
 // 00007FF605BD10F4  vmovq       xmm17,rax
 // 00007FF605BD10FA  vandpd      xmm0,xmm5,xmm17
-  __ vxorpd(xmm18, xmm18, xmm18, Assembler::AVX_128bit);
+  __ vxorpd(xmm18, xmm18, xmm18, Assembler::AVX_512bit);
   __ vmovsd(xmm5, xmm18, xmm20);
   __ movq(xmm17, rax);
-  __ vandpd(xmm0, xmm5, xmm17, Assembler::AVX_128bit);
+  __ vandpd(xmm0, xmm5, xmm17, Assembler::AVX_512bit);
 //     b = DP_AND(y, DP_CONST(7fffffffffffffff));
 // 00007FF605BD1100  vandpd      xmm1,xmm3,xmm17
-  __ vandpd(xmm1, xmm3, xmm17, Assembler::AVX_128bit);
+  __ vandpd(xmm1, xmm3, xmm17, Assembler::AVX_512bit);
 // 	// sign(x)
 // 	sgn_a = DP_XOR(x, a);
 // 00007FF605BD1106  vmovsd      xmm17,xmm18,xmm0
 // 00007FF605BD110C  vxorpd      xmm16,xmm5,xmm17
   __ vmovsd(xmm17, xmm18, xmm0);
-  __ vxorpd(xmm16, xmm5, xmm17, Assembler::AVX_128bit);
+  __ vxorpd(xmm16, xmm5, xmm17, Assembler::AVX_512bit);
 
 // 	q = DP_DIV_RZ(a, b);
 // 00007FF605BD1112  vmovsd      xmm5,xmm18,xmm1
@@ -191,7 +191,7 @@ __ jcc(Assembler::below, L_1280);
 // 	// y==0 or x==Inf?
 // 	if ((b == 0.0) || (!(a <= DP_CONST(7fefffffffffffff))))
 // 00007FF605BD114A  vxorpd      xmm2,xmm2,xmm2
-  __ vxorpd(xmm2, xmm2, xmm2, Assembler::AVX_128bit);
+  __ vxorpd(xmm2, xmm2, xmm2, Assembler::AVX_512bit);
 // 00007FF605BD114E  vucomisd    xmm1,xmm2
   __ ucomisd(xmm1, xmm2);
 // 00007FF605BD1152  jp          FMOD_CONT+10h (07FF605BD115Ah)
@@ -399,7 +399,7 @@ __ jmp(L_exit);
 // 	a = DP_XOR(a, sgn_a);
 // 00007FF605BD12BF  vxorpd      xmm0,xmm0,xmm16
   __ bind(L_12bf);
-  __ vxorpd(xmm0, xmm0, xmm16, Assembler::AVX_128bit);
+  __ vxorpd(xmm0, xmm0, xmm16, Assembler::AVX_512bit);
 
 // 	return a;
 // 00007FF605BD12C5  add         rsp,28h
