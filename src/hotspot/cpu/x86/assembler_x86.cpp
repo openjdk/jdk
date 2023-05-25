@@ -6564,14 +6564,14 @@ void Assembler::evfnmadd213sd(XMMRegister dst, XMMRegister src1, XMMRegister src
 }
 
 void Assembler::vfnmadd213sd(XMMRegister dst, XMMRegister src1, XMMRegister src2) {
-  assert(VM_Version::supports_evex(), "");
+  assert(VM_Version::supports_fma(), "");
   InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   int encode = vex_prefix_and_encode(dst->encoding(), src1->encoding(), src2->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_38, &attributes);
   emit_int16((unsigned char)0xAD, (0xC0 | encode));
 }
 
 void Assembler::vfnmadd231sd(XMMRegister dst, XMMRegister src1, XMMRegister src2) {
-  assert(VM_Version::supports_evex(), "");
+  assert(VM_Version::supports_fma(), "");
   InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   int encode = vex_prefix_and_encode(dst->encoding(), src1->encoding(), src2->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_38, &attributes);
   emit_int16((unsigned char)0xBD, (0xC0 | encode));
