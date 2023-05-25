@@ -34,6 +34,7 @@
 #include "jfr/recorder/storage/jfrStorage.hpp"
 #include "jfr/support/jfrThreadLocal.hpp"
 #include "memory/allocation.inline.hpp"
+#include "memory/arena.hpp"
 #include "runtime/os.hpp"
 #include "runtime/thread.inline.hpp"
 #include "utilities/sizes.hpp"
@@ -46,6 +47,7 @@ JfrThreadLocal::JfrThreadLocal() :
   _load_barrier_buffer_epoch_0(NULL),
   _load_barrier_buffer_epoch_1(NULL),
   _stackframes(NULL),
+  _dcmd_arena(nullptr),
   _trace_id(JfrTraceId::assign_thread_id()),
   _thread(),
   _data_lost(0),
@@ -142,6 +144,10 @@ void JfrThreadLocal::release(Thread* t) {
     _load_barrier_buffer_epoch_1->set_retired();
     _load_barrier_buffer_epoch_1 = NULL;
   }
+  if (_dcmd_arena != nullptr) {
+    delete _dcmd_arena;
+    _dcmd_arena = nullptr;
+  }
 }
 
 void JfrThreadLocal::release(JfrThreadLocal* tl, Thread* t) {
@@ -217,4 +223,16 @@ void JfrThreadLocal::include(Thread* t) {
 
 u4 JfrThreadLocal::stackdepth() const {
   return _stackdepth != 0 ? _stackdepth : (u4)JfrOptionSet::stackdepth();
+}
+
+Arena* JfrThreadLocal::dcmd_arena(JavaThread* jt) {
+  assert(jt != nullptr, "invariant");
+  JfrThreadLocal* tl = jt->jfr_thread_local();
+  Arena* arena = tl->_dcmd_arena;
+  if (arena != nullptr) {
+    return arena;
+  }
+  arena = new (mtTracing) Arena(mtTracing);
+  tl->_dcmd_arena = arena;
+  return arena;
 }

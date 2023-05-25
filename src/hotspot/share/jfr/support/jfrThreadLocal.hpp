@@ -28,6 +28,7 @@
 #include "jfr/utilities/jfrBlob.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
 
+class Arena;
 class JavaThread;
 class JfrBuffer;
 class JfrStackFrame;
@@ -42,6 +43,7 @@ class JfrThreadLocal {
   JfrBuffer* _load_barrier_buffer_epoch_0;
   JfrBuffer* _load_barrier_buffer_epoch_1;
   mutable JfrStackFrame* _stackframes;
+  Arena* _dcmd_arena;
   mutable traceid _trace_id;
   JfrBlobHandle _thread;
   u8 _data_lost;
@@ -218,6 +220,8 @@ class JfrThreadLocal {
   bool is_dead() const {
     return _dead;
   }
+
+  static Arena* dcmd_arena(JavaThread* jt);
 
   bool has_thread_blob() const;
   void set_thread_blob(const JfrBlobHandle& handle);
