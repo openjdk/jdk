@@ -41,8 +41,7 @@ public class XECParameters {
 
     static final XECParameters X25519;
     static final XECParameters X448;
-    
-    static ParametersMap<XECParameters> namedParams = new ParametersMap<>();
+
     private final static ParametersMap<XECParameters> namedParams = new ParametersMap<>();
 
     // Naming/identification parameters
