@@ -28,13 +28,6 @@ package javax.xml;
 /**
  * Defines constants for XML Processing APIs.
  *
- * <h2 id="PropPrec">Property Precedence</h2>
- * Properties such as the external access properties (ACCESS_EXTERNAL_*) and
- * USE_CATALOG, can be specified through multiple configuration sources. Their
- * precedence is described in the section
- * <a href="{@docRoot}/java.xml/module-summary.html#PP">Property Precedence</a>
- * of the module summary.
- *
  * <h2 id="EAP">External Access Properties</h2>
  * The value of the external access properties, including {@link #ACCESS_EXTERNAL_DTD},
  * {@link #ACCESS_EXTERNAL_SCHEMA}, and {@link #ACCESS_EXTERNAL_STYLESHEET},
@@ -76,6 +69,12 @@ package javax.xml;
  * <h3>Granting all access:</h3>
  * The keyword "all" grants permission to all protocols.
  *
+ * <h2 id="PropPrec">Property Precedence</h2>
+ * Properties, including the <a href="#EAP">External Access Properties</a> and
+ * {@link #USE_CATALOG}, can be specified through multiple configuration sources.
+ * They follow the configuration process as defined in the
+ * <a href="{@docRoot}/java.xml/module-summary.html#Conf">Configuration</a> section
+ * of the module summary.
  *
  * @author Jeff Suttor
  * @see <a href="http://www.w3.org/TR/xml11/">Extensible Markup Language (XML) 1.1</a>
@@ -233,6 +232,10 @@ public final class XMLConstants {
          *     ignoring security issues such as limits on XML constructs to avoid conditions such as denial of service attacks.
          *   </li>
          * </ul>
+         *
+         * @implNote
+         * when the Java Security Manager is present, the JDK sets the value of
+         * this feature to true and does not allow it to be turned off.
          */
         public static final String FEATURE_SECURE_PROCESSING = "http://javax.xml.XMLConstants/feature/secure-processing";
 
@@ -247,7 +250,7 @@ public final class XMLConstants {
          * for example, {@link org.xml.sax.SAXException} is thrown.
          *
          * <p>
-         * <b>Value: </b> as defined in <a href="#EAPValue">the class description</a>.
+         * <b>Value: </b> as defined in <a href="#EAP">the class description</a>.
          *
          * <p>
          * <b>System Property:</b> {@code javax.xml.accessExternalDTD}.
@@ -272,7 +275,7 @@ public final class XMLConstants {
          * for example, org.xml.sax.SAXException is thrown.
          *
          * <p>
-         * <b>Value: </b> as defined in <a href="#EAPValue">the class description</a>.
+         * <b>Value: </b> as defined in <a href="#EAP">the class description</a>.
          *
          * <p>
          * <b>System Property:</b> {@code javax.xml.accessExternalSchema}
@@ -299,7 +302,7 @@ public final class XMLConstants {
          * will be thrown by the {@link javax.xml.transform.TransformerFactory}.
          *
          * <p>
-         * <b>Value: </b> as defined in <a href="#EAPValue">the class description</a>.
+         * <b>Value: </b> as defined in <a href="#EAP">the class description</a>.
          *
          * <p>
          * <b>System Property:</b> {@code javax.xml.accessExternalStylesheet}
@@ -323,12 +326,12 @@ public final class XMLConstants {
          * configuration file by using the {@code javax.xml.catalog.files} property
          * defined in {@link javax.xml.catalog.CatalogFeatures}.
          * The following code enables Catalog on SAX parser:
-         * <pre>{@code
+         * {@snippet :
          *      SAXParserFactory spf = SAXParserFactory.newInstance();
          *      spf.setFeature(XMLConstants.USE_CATALOG, true);
          *      SAXParser parser = spf.newSAXParser();
          *      parser.setProperty(CatalogFeatures.Feature.FILES.getPropertyName(), "catalog.xml");
-         * }</pre>
+         * }
          *
          * <p>
          * <b>Value:</b> a boolean. If the value is true, and a catalog is set,

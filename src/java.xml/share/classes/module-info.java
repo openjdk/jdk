@@ -24,92 +24,221 @@
  */
 
 /**
- * Defines the Java API for XML Processing (JAXP) that constitutes the java.xml
- * XML library. Factories and processors in this module are generally referred
- * to as XML factories and processors.
+ * Defines the Java APIs for XML Processing (JAXP).
  *
- * <h2 id="PropertiesAndSP">Properties and System Properties</h2>
- * Properties, defining the behavior and features of XML factories and processors
- * on which they are set, may have defined corresponding System Properties. When
- * they do, the system properties allow them to be set through the System API,
- * on the command line and/or in the
- * <a href="#ConfigurationFile">XML Library (java.xml) Configuration File</a>,
- * without changing code in the later two options.
+ * <ul>
+ * <li><a href="#JAXP">The JAXP APIs</a></li>
+ * <li><a href="#FacPro">Factories and Processors</a></li>
+ * <li><a href="#Conf">Configuration</a>
+ *     <ul>
+ *     <li><a href="#Conf_Properties">JAXP Properties</a></li>
+ *     <li><a href="#Conf_SystemProperties">System Properties</a></li>
+ *     <li><a href="#Conf_CF">Configuration File</a>
+ *         <ul>
+ *         <li><a href="#Conf_CF_Default">{@code jaxp.properties} File</a></li>
+ *         <li><a href="#Conf_CF_SP">User-defined Configuration File</a></li>
+ *         </ul>
+ *     </li>
+ *     <li><a href="#PP">Property Precedence</a></li>
+ *     </ul>
+ * </li>
+ * <li><a href="#LookupMechanism">JAXP Lookup Mechanism</a>
+ *      <ul>
+ *      <li><a href="#LookupProcedure">Lookup Procedure</a></li>
+ *      </ul>
+ * </li>
+ * <li><a href="#implNote">Implementation Note</a></li>
+ * </ul>
+ *
+ * <h2 id="JAXP">The JAXP APIs</h2>
+ * JAXP comprises a set of APIs built upon a number of XML technologies and
+ * standards that are essential for XML processing. These include APIs for:
+ *
+ * <ul>
+ * <li>Parsing: the {@link javax.xml.parsers JAXP Parsing API} based on
+ * {@link org.w3c.dom Document Object Model (DOM)} and
+ * {@link org.xml.sax Simple API for XML Parsing (SAX)}, and
+ * {@link javax.xml.stream Streaming API for XML (StAX)};
+ * </li>
+ * <li>Serializing: StAX and
+ * {@link javax.xml.transform Extensible Stylesheet Language Transformations (XSLT)};
+ * </li>
+ * <li>Validation: the {@link javax.xml.validation JAXP Validation API}
+ * based on the XML Schema Definition Language;</li>
+ * <li>Transformation: the {@link javax.xml.transform JAXP Transformation API}
+ * or XSLT (Extensible Stylesheet Language Transformations);</li>
+ * <li>Querying and traversing XML documents: the
+ * {@link javax.xml.xpath XML XPath Language API (XPath)};</li>
+ * <li>Resolving external resources: the {@link javax.xml.catalog XML Catalog API};</li>
+ * </ul>
+ *
+ * <h2 id="FacPro">Factories and Processors</h2>
+ * Factories are the entry points of each API, providing methods to allow applications
+ * to set <a href="#Conf_Properties">JAXP Properties</a> programmatically, before
+ * creating processors. The <a href="#Conf">Configuration</a> section provides more
+ * details on this. Factories also support the
+ * <a href="#LookupMechanism">JAXP Lookup Mechanism</a>, in which applications can be
+ * deployed with third party implementations to use instead of JDK implementations
  * <p>
- * The {@link javax.xml.catalog.CatalogFeatures CatalogFeatures}' RESOLVE
- * property for example has defined a corresponding System Property
- * {@code javax.xml.catalog.resolve} as listed in the table
- * {@link javax.xml.catalog.CatalogFeatures Catalog Features} that gives it the
- * flexibility to be set through the System API, or without making code changes,
- * be initialized on the command line, or in the XML Library (java.xml)
- * Configuration File as illustrated in the <a href="#PP">Property Precedence</a>
- * section.
  *
- * <h2 id="ConfigurationFile">XML Library (java.xml) Configuration File</h2>
- * JAXP supports the use of a configuration file for the
- * <a href="#LookupMechanism">Factory Lookup Mechanism</a> and
- * setting properties that have defined corresponding system properties.
- *
- * <h3>Format</h3>
- * The configuration file must be in standard {@link java.util.Properties} format.
+ * Processors are aggregates of parsers (or readers), serializers (or writers),
+ * validators, and transformers that control and perform the processing in their
+ * respective areas. They are defined in their relevant packages.
+ * In the {@link javax.xml.parsers parsers} package for example,
+ * are the {@link javax.xml.parsers.DocumentBuilder DocumentBuilder} and
+ * {@link javax.xml.parsers.SAXParser SAXParser}, that represent the DOM and
+ * SAX processors.
  * <p>
- * The keys are the names of the system properties, for example, those listed in
- * column {@code System Property Name} of the table <a href="#Factories">JAXP Factories</a>,
- * or {@code System Property} in the table {@code Catalog Features}
- * of class {@link javax.xml.catalog.CatalogFeatures CatalogFeatures}.
+ * The processors are configured and instantiated through their corresponding factories.
+ * The DocumentBuilder and SAXParser for example are constructed with the
+ * {@link javax.xml.parsers.DocumentBuilderFactory DocumentBuilderFactory}
+ * and {@link javax.xml.parsers.SAXParserFactory SAXParserFactory} respectively.
+ *
+ * <h2 id="Conf">Configuration</h2>
+ * When a JAXP factory is invoked for the first time, it performs a configuration
+ * process to determine the implementation to be used and its subsequent behaviors.
+ * During configuration, the factory examines configuration sources such as the
+ * <a href="#Conf_Properties">JAXP Properties</a>,
+ * <a href="#Conf_SystemProperties">System Properties</a>,
+ * and the <a href="#Conf_CF">JAXP Configuration File</a>, and sets the values
+ * following the <a href="#PP">Property Precedence</a>. The terminologies and
+ * process are defined below.
+ *
+ * <h3 id="Conf_Properties">JAXP Properties</h3>
+ * JAXP properties are configuration settings that are applied to XML processors.
+ * They can be used to control and customize the behavior of a processor.
+ * Depending on the JAXP API that is being used, JAXP properties may be referred
+ * to as <em>Attributes, Properties</em>, or <em>Features</em>.
+ *
+ * <h3 id="Conf_SystemProperties">System Properties</h3>
+ * Select JAXP properties have corresponding System Properties allowing the properties
+ * to be set at runtime, on the command line, or within the
+ * <a href="#Conf_CF">JAXP Configuration File</a>.
+ * For example, the System Property {@code javax.xml.catalog.resolve} may be used
+ * to set the {@link javax.xml.catalog.CatalogFeatures CatalogFeatures}' RESOLVE
+ * property.
+ * <p>
+ * The exact time at which system properties are read is unspecified. In order to
+ * ensure that the desired values are properly applied, applications should ensure
+ * that system properties are set appropriately prior to the creation of the first
+ * JAXP factory and are not modified thereafter.
+ *
+ * <h3 id="Conf_CF">Configuration File</h3>
+ * JAXP supports the use of configuration files for
+ * <a href="#LookupMechanism">specifying the implementation class to load for the JAXP factories</a>
+ * as well as for setting JAXP properties.
+ * <p>
+ * Configuration files are Java {@link java.util.Properties} files that consist
+ * of mappings between system properties and their values defined by various APIs
+ * or processes. The following demonstrates setting the
+ * {@code javax.xml.parsers.DocumentBuilderFactory}
+ * and {@code CatalogFeatures.RESOLVE} properties:
+ *
+ * {@snippet :
+ *    javax.xml.parsers.DocumentBuilderFactory=packagename.DocumentBuilderFactoryImpl
+ *    javax.xml.catalog.resolve=strict
+ * }
+ *
+ * <h4 id="Conf_CF_Default">{@code jaxp.properties} File</h4>
+ * By default, JAXP looks for the configuration file {@code jaxp.properties},
+ * located in the ${java.home}/conf directory; and if the file exists, loads the
+ * specified properties to customize the behavior of the XML factories and processors.
+ * <p>
+ * The {@code jaxp.properties} file will be read only once during the initialization
+ * of the JAXP implementation and cached in memory. If there is an error accessing
+ * or reading the file, the configuration process proceeds as if the file does not exist.
+ *
+ * <h4 id="Conf_CF_SP">User-defined Configuration File</h4>
+ * The system property {@systemProperty java.xml.config.file} can be set on the
+ * command line or at run-time to specify the location of a configuration file.
+ * If the {@code java.xml.config.file} property is included within a configuration
+ * file, it will be ignored.
  *
  * <p>
- * The values are those defined in the specific API or process, for example, the
- * fully qualified name of the implementation class for the
- * <a href="#LookupMechanism">Factory Lookup Mechanism</a>, or {@code value} in
- * table {@code Catalog Features} of class
- * {@link javax.xml.catalog.CatalogFeatures CatalogFeatures}.
- *
+ * When the {@code java.xml.config.file} is specified, the configuration file will be
+ * read and the included properties will override the same properties that were
+ * defined in the {@code jaxp.properties} file. If the {@code java.xml.config.file}
+ * has not been set when the JAXP implementation is initialized, no further attempt
+ * will be made to check for its existence.
  * <p>
- * Below are examples on what can be placed in the configuration file:
- * <pre>
- *     {@code javax.xml.parsers.DocumentBuilderFactory=packagename.DocumentBuilderFactoryImpl}
- *     {@code javax.xml.catalog.resolve=strict}
- * </pre>
+ * The {@code java.xml.config.file} value must contain a valid pathname
+ * to a configuration file. If the pathname is not absolute, it will be considered
+ * relative to the working directory of the JVM.
+ * If there is an error reading the configuration file, the configuration process
+ * proceeds as if the {@code java.xml.config.file} property was not set.
+ * Implementations may optionally issue a warning message.
  *
+ * <h3 id="PP">Property Precedence</h3>
+ * JAXP properties can be set in multiple ways, including by API methods, system
+ * properties, and the <a href="#Conf_CF">JAXP Configuration File</a>. When not
+ * explicitly set, they will be initialized with default values or more restrictive
+ * values when
+ * {@link javax.xml.XMLConstants#FEATURE_SECURE_PROCESSING FEATURE_SECURE_PROCESSING}
+ * (FSP) is enabled. The configuration order of precedence for properties is as
+ * follows, from highest to lowest:
  *
- * <h3 id="CF_Default">{@code jaxp.properties}</h3>
- * By default, the <a href="#Factories">JAXP Factories</a> will look for a
- * configuration file called {@code jaxp.properties} in the ${java.home}/conf
- * directory and use the entries if any to customize the behavior of the XML
- * factories and processors.
+ * <ul>
+ * <li><p>
+ *      Through the APIs for factories or processors
+ * </li>
+ * <li><p>
+ *      System Property
+ * </li>
+ * <li><p>
+ *      User-defined <a href="#Conf_CF">Configuration File</a>
+ * </li>
+ * <li><p>
+ *      The default JAXP Configuration File <a href="#Conf_CF_Default">{@code jaxp.properties}</a>
+ * </li>
+ * <li><p>
+ *      The default values for JAXP Properties. If the
+ * {@link javax.xml.XMLConstants#FEATURE_SECURE_PROCESSING FSP} is true,
+ * the default values will be set to process XML securely.
+ * </li>
+ * </ul>
  *
- * <p>
- * {@code jaxp.properties} will be read only once during the initialization of
- * the JAXP implementation and cached in memory. If the file does not exist when
- * the first attempt is made to read from it, no further attempts are made to check
- * for its existence. It is not possible to change the value of any property after
- * it has been read for the first time.
+ * Using the {@link javax.xml.catalog.CatalogFeatures CatalogFeatures}' RESOLVE
+ * property as an example, the following illustrates how these rules are applied:
+ * <ul>
+ * <li><p>
+ *      Properties specified through factory or processor APIs have the highest
+ * precedence. The following code effectively sets the RESOLVE property to
+ * {@code strict}, regardless of settings in any other configuration sources.
  *
+ * {@snippet :
+ *    DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+ *    dbf.setAttribute(CatalogFeatures.Feature.RESOLVE.getPropertyName(), "strict");
+ * }
  *
- * <h3 id="CF_SP">User-defined Configuration File</h3>
- * A system property {@systemProperty java.xml.config.file} can be set on the
- * command line or through the System API (e.g. System.setProperty method) to
- * specify the location of a configuration file on the file system.
+ * </li>
+ * <li><p>
+ *      If the property is not set on the factory as in the above code, a
+ * system property setting will be in effect.
+ * {@snippet :
+ *     // in the following example, the RESOLVE property is set to 'continue'
+ *     // for the entire application
+ *     java -Djavax.xml.catalog.resolve=continue myApp
+ * }
+ * </li>
+ * <li><p>
+ *      If the property is not set on the factory, or through its system property,
+ * the setting in a configuration file will take effect. The following entry
+ * sets the property to '{@code continue}'.
+ * {@snippet :
+ *     javax.xml.catalog.resolve=continue
+ * }
  *
- * <p>
- * When the system property is specified, the configuration file it points to
- * will be read and the property entries in it used to override those in
- * {@code jaxp.properties}. If the system property does not exist when the JAXP
- * implementation is initialized, no further attempt will be made to check for
- * its existence.
- * <p>
- * The value of the property shall be a valid file path to a configuration file.
- * If the file path is not absolute, it will be considered relative to the working
- * directory.
- * <p>
- * Unlike other system properties, this property can not be placed in a configuration
- * file.
+ * </li>
+ * <li><p>
+ *     If the property is not set anywhere, it will be resolved to its
+ * default value that is '{@code strict}'.
+ * </li>
+ * </ul>
  *
  * <h2 id="LookupMechanism">JAXP Lookup Mechanism</h2>
  * JAXP defines an ordered lookup procedure to determine the implementation class
  * to load for the JAXP factories. Factories that support the mechanism are listed
- * in the table below along with the method, System Property name, and System
+ * in the table below along with the method, System Property, and System
  * Default method to be used in the procedure.
  *
  * <table class="plain" id="Factories">
@@ -118,7 +247,7 @@
  * <tr>
  * <th scope="col">Factory</th>
  * <th scope="col">Method</th>
- * <th scope="col">System Property Name</th>
+ * <th scope="col">System Property</th>
  * <th scope="col">System Default</th>
  * </tr>
  * </thead>
@@ -208,21 +337,20 @@
  * method.
  *
  * <h3 id="LookupProcedure">Lookup Procedure</h3>
- * The <a href="#Factories">JAXP Factories</a> follow the procedure described
- * below in order to locate and load the implementation class:
- *
+ * The order of precedence for locating the implementation class of a
+ * <a href="#Factories">JAXP Factory</a> is as follows, from highest to lowest:
  * <ul>
  * <li>
- * Use the system property as described in column System Property of the table
- * <a href="#Factories">JAXP Factories</a> above;
+ * The system property as listed in the column System Property of the table
+ * <a href="#Factories">JAXP Factories</a> above
  * </li>
  * <li>
  * <p>
- * Use the <a href="#ConfigurationFile">Configuration File</a>;
+ * The <a href="#Conf_CF">Configuration File</a>
  * </li>
  * <li>
  * <p>
- * Use the service-provider loading facility, defined by the
+ * The service-provider loading facility, defined by the
  * {@link java.util.ServiceLoader} class, to attempt to locate and load an
  * implementation of the service using the {@linkplain
  * java.util.ServiceLoader#load(java.lang.Class) default loading mechanism}:
@@ -269,168 +397,34 @@
  * </li>
  * </ul>
  *
- * <h2 id="PP">Property Precedence</h2>
- * Properties in this module can be set in multiple ways, including via the APIs,
- * system properties (on the command line or through the System API), and the
- * <a href="#ConfigurationFile">XML Library (java.xml) Configuration File</a>.
- * When not explicitly set, they will be initialized with the default values or
- * the restrictive values specified by the
- * {@link javax.xml.XMLConstants#FEATURE_SECURE_PROCESSING FEATURE_SECURE_PROCESSING}
- * (hereafter referred to FSP) if it is true.
- * The order of precedence for the configuration sources is defined as follows,
- * with earlier ones overriding the later:
  *
- * <ul>
- * <li><p>
- *      Properties specified through factories or processors API;
- * </li>
- * <li><p>
- *      Properties set via the corresponding System properties on the command line
- * with -Dkey=value or by using the System API (e.g. System.setProperty(key, value));
- * </li>
- * <li><p>
- *      Properties set in a user-defined <a href="#ConfigurationFile">Configuration File</a>
- * pointed to by the system property {@code java.xml.config.file};
- * </li>
- * <li><p>
- *      Properties set in the default XML Library (java.xml) Configuration File
- * <a href="#CF_Default">{@code jaxp.properties}</a>;
- * </li>
- * <li><p>
- *      Properties' default values initialized during factory or processor creation.
- * Security-related properties will be on their restrictive values when the
- * {@link javax.xml.XMLConstants#FEATURE_SECURE_PROCESSING} feature is true.
- * </li>
- * </ul>
- *
- * Using the {@link javax.xml.catalog.CatalogFeatures CatalogFeatures}' RESOLVE
- * property as an example, the followings illustrate how these rules are applied.
- * <ul>
- * <li><p>
- *      Properties specified through factories or processors API have the highest
- * precedence. The following code therefore effectively set the RESOLVE property
- * to {@code strict}, regardless of settings in any other configuration sources.
- * <pre>
- *     {@code
- *     DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
- *     dbf.setAttribute(CatalogFeatures.Feature.RESOLVE.getPropertyName(), "strict");
- *     }
- * </pre>
- *
- * </li>
- * <li><p>
- *      If the property is not set on the factory such as in the above code, a
- * system property setting will be in effect.
- * <pre>
- *     {@code
- *     // in the following example, the RESOLVE property is set to 'continue'
- *     // for the entire application
- *     java -Djavax.xml.catalog.resolve=continue myApp
- *
- *     // in the following code snipet, the property is set to 'ignore' for the
- *     // factory that follows
- *     System.setProperty("javax.xml.catalog.resolve", "ignore");
- *     DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
- *     ...
- *     System.clearProperty("javax.xml.catalog.resolve");
- *     }
- * </pre>
- * </li>
- * <li><p>
- *      If the property is not set on the factory, nor through its system property,
- * the setting in a configuration file will take effect. The following entry
- * sets the property to '{@code continue}'.
- * <pre>
- *     {@code
- *     javax.xml.catalog.resolve=continue
- *     }
- * </pre>
- * </li>
- * <li><p>
- *     If the property is not set anywhere, it will be resolved to its
- * default value that is '{@code strict}'.
- * </li>
- * </ul>
- *
+ * <div id="implNote"></div>
  * @implNote
- * <h2>Implementation Specific Features and Properties</h2>
  *
- * In addition to the standard features and properties described within the public
- * APIs of this module, the JDK implementation supports a further number of
- * implementation specific features and properties. This section describes the
- * naming convention, System Properties, precedence order, and processors for which
- * a property is applies.
+ * <ul>
+ * <li><a href="#IN_ISFP">Implementation Specific Properties</a>
+ *      <ul>
+ *      <li><a href="#Processor">Processor Support</a></li>
+ *      <li><a href="#IN_ISFPtable">List of Implementation Specific Properties</a></li>
+ *      <li><a href="#IN_Legacy">Legacy Property Names (deprecated)</a></li>
+ *      </ul>
+ * </li>
+ * </ul>
+ *
+ * <h2 id="IN_ISFP">Implementation Specific Properties</h2>
+ * In addition to the standard <a href="#Conf_Properties">JAXP Properties</a>,
+ * the JDK implementation supports a number of implementation specific properties
+ * whose name is prefixed by "{@code jdk.xml.}". These properties also follow the
+ * configuration process as defined in the <a href="#Conf">Configuration</a> section.
  * <p>
- * Properties and features currently supported by the JDK implementation are listed
- * in the table <a href="#Properties">Implementation Specific Properties</a>
- * and <a href="#Features">Features</a>.
- *
- * <h3 id="NamingConvention">Naming Convention</h3>
- * The names of the features and properties are fully qualified, composed of a
- * prefix and name.
- *
- * <h4>Prefix</h4>
- * The prefix for JDK features and properties, as well as their corresponding
- * System Properties if any, is defined as:
- * <pre>
- *     {@code jdk.xml.}
- * </pre>
- *
- * <h4>Name</h4>
- * A name may consist of one or multiple words that are case-sensitive.
- * All letters of the first word are in lowercase, while the first letter of
- * each subsequent word is capitalized.
- * <p>
- * An example of a property that indicates whether an XML document is standalone
- * would thus have a format:
- * <pre>
- *     {@code jdk.xml.isStandalone}
- * </pre>
- * and a corresponding System Property:
- * <pre>
- *     {@systemProperty jdk.xml.isStandalone}
- * </pre>
- *
- * <h3>System Properties</h3>
- * A property may have a corresponding System Property with the same name as
- * shown in the table <a href="#Properties">Implementation Specific Properties</a>
- * and <a href="#Features">Features</a>.
- * As described in the <a href="#PropertiesAndSP">Properties and System Properties</a>
- * section, a System Property can be set through the System API, on the command line
- * and/or in the configuration file.
- *
- * <h3>Configuration File</h3>
- * A system property can be specified in the
- * <a href="#ConfigurationFile">XML Library (java.xml) Configuration File</a>
- * to customize the behavior of the XML factories and processors. The format is
- * {@code key=value}, where the key is the system property name as listed in the
- * column {@code Full Name} and value in the column {@code Value} in the table
- * <a href="#Properties">Implementation Specific Properties</a> and
- * <a href="#Features">Features</a>. For example:
- * <pre>
- *     {@code jdk.xml.entityExpansionLimit=2000}
- *     {@code jdk.xml.isStandalone=true}
- * </pre>
- *
- * <h3 id="PropPrec">Property Precedence</h3>
- * The JDK implementation specific features and properties follow the same procedure
- * as described in section <a href="#PP">Property Precedence</a> in retrieving
- * property values.
- * Specific to the initialized values, the restrictive values that are set when
- * {@link javax.xml.XMLConstants#FEATURE_SECURE_PROCESSING FSP} is true are shown
- * in {@code "Value"}'s subcolumn {@code "Enforced"} in the table
- * <a href="#Features">Implementation Specific Features</a> and
- * <a href="#Properties">Properties</a>.
- *
- * <p>
- * Furthermore, when the Java Security Manager is present, the JDK sets
- * {@link javax.xml.XMLConstants#FEATURE_SECURE_PROCESSING FSP} to true and does
- * not allow it to be turned off. The security related properties are therefore
- * set to the {@code "Enforced"} values.
+ * Refer to the <a href="#Properties">Implementation Specific Properties</a> table
+ * for the list of properties supported by the JDK implementation.
  *
  * <h3 id="Processor">Processor Support</h3>
- * Features and properties may be supported by one or more processors. The
- * following table lists the processors by IDs that can be used for reference.
+ * The properties may be supported by one or more processors as listed in the table
+ * below. Depending on the type of the property, they may be set via
+ * Method 1: setAttribute/Parameter/Property or 2: setFeature as illustrated
+ * in the relevant columns.
  *
  * <table class="plain" id="Processors">
  * <caption>Processors</caption>
@@ -438,8 +432,8 @@
  * <tr>
  * <th scope="col">ID</th>
  * <th scope="col">Name</th>
- * <th scope="col">How to set the property</th>
- * <th scope="col">How to set the feature</th>
+ * <th scope="col">Method 1: setAttribute/Parameter/Property</th>
+ * <th scope="col">Method 2: setFeature</th>
  * </tr>
  * </thead>
  *
@@ -540,34 +534,27 @@
  * </tbody>
  * </table>
  *
- * <h3>List of Implementation Specific Features and Properties</h3>
- * The Implementation Specific Features and Properties reflect JDK's choice to
- * manage the limitations on resources while complying with the API specification,
- * or allow applications to alter behaviors beyond those required by the standards.
- * <p>
- * The table below lists the Implementation Specific Properties currently supported
- * by the JDK. More properties may be added in the future if necessary.
- *
+ * <div id="IN_ISFPtable"></div>
  * <table class="striped" id="Properties">
  * <caption>Implementation Specific Properties</caption>
  * <thead>
  * <tr>
- * <th scope="col" rowspan="2">Full Name (<a href="#NamingConvention">prefix + name</a>)
+ * <th scope="col" rowspan="2">Full Name (prefix {@code jdk.xml.})
  * <a href="#Note1">[1]</a></th>
  * <th scope="col" rowspan="2">Description</th>
- * <th scope="col" rowspan="2">API Property <a href="#Note2">[2]</a></th>
- * <th scope="col" rowspan="2">System Property <a href="#Note3">[3]</a></th>
- * <th scope="col" rowspan="2">Configuration File <a href="#Note3">[3]</a></th>
- * <th scope="col" colspan="4" style="text-align:center">Value <a href="#Note4">[4]</a></th>
- * <th scope="col" rowspan="2">Security <a href="#Note5">[5]</a></th>
- * <th scope="col" rowspan="2">Supported Processor <a href="#Note6">[6]</a></th>
- * <th scope="col" rowspan="2">Since <a href="#Note7">[7]</a></th>
+ * <th scope="col" rowspan="2">System Property <a href="#Note2">[2]</a></th>
+ * <th scope="col" colspan="4" style="text-align:center">Value <a href="#Note3">[3]</a></th>
+ * <th scope="col" rowspan="2">Security <a href="#Note4">[4]</a></th>
+ * <th scope="col" colspan="2">Supported Processor <a href="#Note5">[5]</a></th>
+ * <th scope="col" rowspan="2">Since <a href="#Note6">[6]</a></th>
  * </tr>
  * <tr>
  * <th scope="col">Type</th>
  * <th scope="col">Value</th>
  * <th scope="col">Default</th>
  * <th scope="col">Enforced</th>
+ * <th scope="col">ID</th>
+ * <th scope="col">Set Method</th>
  * </tr>
  * </thead>
  *
@@ -577,9 +564,7 @@
  * <td id="EELimit">{@systemProperty jdk.xml.entityExpansionLimit}</td>
  * <td>Limits the number of entity expansions.
  * </td>
- * <td style="text-align:center" rowspan="9">yes</td>
- * <td style="text-align:center" rowspan="9">yes</td>
- * <td style="text-align:center" rowspan="9">yes</td>
+ * <td style="text-align:center" rowspan="11">yes</td>
  * <td style="text-align:center" rowspan="9">Integer</td>
  * <td rowspan="9">
  * A positive integer. A value less than or equal to 0 indicates no limit.
@@ -595,6 +580,7 @@
  *     <a href="#Validation">Validation</a><br>
  *     <a href="#Transform">Transform</a>
  * </td>
+ * <td style="text-align:center" rowspan="16"><a href="#Processor">Method 1</a></td>
  * <td style="text-align:center" rowspan="9">8</td>
  * </tr>
  * <tr>
@@ -667,9 +653,6 @@
  * {@link org.w3c.dom.ls.LSSerializer#getDomConfig() xml-declaration}, this property
  * does not have an effect on whether an XML declaration should be written out.
  * </td>
- * <td style="text-align:center">yes</td>
- * <td style="text-align:center">yes</td>
- * <td style="text-align:center">yes</td>
  * <td style="text-align:center">boolean</td>
  * <td style="text-align:center">true/false</td>
  * <td style="text-align:center">false</td>
@@ -691,9 +674,6 @@
  * except that it is for the <a href="#XSLTCSerializer">XSLTC Serializer</a>
  * and its value is a String.
  * </td>
- * <td style="text-align:center">yes</td>
- * <td style="text-align:center">yes</td>
- * <td style="text-align:center">yes</td>
  * <td style="text-align:center">String</td>
  * <td style="text-align:center">yes/no</td>
  * <td style="text-align:center">no</td>
@@ -710,8 +690,6 @@
  * larger than the specified size to ones that are equal to or smaller than the size.
  * </td>
  * <td style="text-align:center">yes</td>
- * <td style="text-align:center">yes</td>
- * <td style="text-align:center">yes</td>
  * <td style="text-align:center">Integer</td>
  * <td>A positive integer. A value less than
  * or equal to 0 indicates that the property is not specified. If the value is not
@@ -727,8 +705,6 @@
  * <td>Sets a non-null ClassLoader instance to be used for loading XSLTC java
  * extension functions.
  * </td>
- * <td style="text-align:center">yes</td>
- * <td style="text-align:center">no</td>
  * <td style="text-align:center">no</td>
  * <td style="text-align:center">Object</td>
  * <td>A reference to a ClassLoader object. Null if the value is not specified.</td>
@@ -742,11 +718,6 @@
  * <td id="xpathExprGrpLimit">jdk.xml.xpathExprGrpLimit</td>
  * <td>Limits the number of groups an XPath expression can contain.
  * </td>
- * <td style="text-align:center" rowspan="2">
- *     <a href="#Transform">Transform</a>:yes<br>
- *     <a href="#XPATH">XPath</a>:no
- * </td>
- * <td style="text-align:center" rowspan="3">yes</td>
  * <td style="text-align:center" rowspan="3">yes</td>
  * <td style="text-align:center" rowspan="3">Integer</td>
  * <td rowspan="3">A positive integer. A value less than or equal to 0 indicates no limit.
@@ -771,48 +742,16 @@
  * <td id="xpathTotalOpLimit">jdk.xml.xpathTotalOpLimit</td>
  * <td>Limits the total number of XPath operators in an XSL Stylesheet.
  * </td>
- * <td style="text-align:center">yes</td>
  * <td style="text-align:center">10000</td>
  * <td style="text-align:center">10000</td>
  * <td style="text-align:center">
  *     <a href="#Transform">Transform</a><br>
  * </td>
  * </tr>
- * </tbody>
- * </table>
- * <p>
- * The table below lists the Implementation Specific Features currently supported
- * by the JDK. More features may be added in the future if necessary.
- *
- * <table class="striped" id="Features">
- * <caption>Implementation Specific Features</caption>
- * <thead>
- * <tr>
- * <th scope="col" rowspan="2">Full Name (<a href="#NamingConvention">prefix + name</a>)
- * <a href="#Note1">[1]</a></th>
- * <th scope="col" rowspan="2">Description</th>
- * <th scope="col" rowspan="2">API Property <a href="#Note2">[2]</a></th>
- * <th scope="col" rowspan="2">System Property <a href="#Note3">[3]</a></th>
- * <th scope="col" rowspan="2">Configuration File <a href="#Note3">[3]</a></th>
- * <th scope="col" colspan="4" style="text-align:center">Value <a href="#Note4">[4]</a></th>
- * <th scope="col" rowspan="2">Security <a href="#Note5">[5]</a></th>
- * <th scope="col" rowspan="2">Supported Processor <a href="#Note6">[6]</a></th>
- * <th scope="col" rowspan="2">Since <a href="#Note7">[7]</a></th>
- * </tr>
- * <tr>
- * <th scope="col">Type</th>
- * <th scope="col">Value</th>
- * <th scope="col">Default</th>
- * <th scope="col">Enforced</th>
- * </tr>
- * </thead>
- * <tbody>
  * <tr>
  * <td id="ExtFunc">{@systemProperty jdk.xml.enableExtensionFunctions}</td>
  * <td>Determines if XSLT and XPath extension functions are to be allowed.
  * </td>
- * <td style="text-align:center" rowspan="3">yes</td>
- * <td style="text-align:center" rowspan="3">yes</td>
  * <td style="text-align:center" rowspan="3">yes</td>
  * <td style="text-align:center" rowspan="3">Boolean</td>
  * <td>
@@ -825,6 +764,7 @@
  *     <a href="#Transform">Transform</a><br>
  *     <a href="#XPAth">XPath</a>
  * </td>
+ * <td style="text-align:center"><a href="#Processor">Method 2</a></td>
  * <td style="text-align:center">8</td>
  * </tr>
  * <tr>
@@ -846,6 +786,7 @@
  *     <a href="#Validation">Validation</a><br>
  *     <a href="#XPAth">XPath</a>
  * </td>
+ * <td style="text-align:center"><a href="#Processor">Method 2</a></td>
  * <td style="text-align:center">9</td>
  * </tr>
  * <tr>
@@ -864,6 +805,7 @@
  * <td style="text-align:center">
  *     <a href="#SAX">SAX</a>
  * </td>
+ * <td style="text-align:center"><a href="#Processor">Method 2</a></td>
  * <td style="text-align:center">9</td>
  * </tr>
  * </tbody>
@@ -871,14 +813,12 @@
  * <p id="Note1">
  * <b>[1]</b> The full name of a property should be used to set the property.
  * <p id="Note2">
- * <b>[2]</b> A value "yes" indicates that the property can be set through the
- * processor or its factory, "no" otherwise.
- * <p id="Note3">
- * <b>[3]</b> A value "yes" indicates there is a corresponding System Property
- * for the property, "no" otherwise.
+ * <b>[2]</b> A value "yes" indicates there is a corresponding System Property
+ * for the property, "no" otherwise. The name of the System Property is the same
+ * as that of the property.
  *
- * <p id="Note4">
- * <b>[4]</b> The value must be exactly as listed in this table, case-sensitive.
+ * <p id="Note3">
+ * <b>[3]</b> The value must be exactly as listed in this table, case-sensitive.
  * The value of the corresponding System Property is the String representation of
  * the property value. If the type is boolean, the system property is true only
  * if it is "true"; If the type is String, the system property is true only if
@@ -887,19 +827,19 @@
  * is Integer, the value of the System Property is the String representation of
  * the value (e.g. "64000" for {@code entityExpansionLimit}).
  *
- * <p id="Note5">
- * <b>[5]</b> A value "yes" indicates the property is a Security Property. As indicated
- * in the <a href="#PropPrec">Property Precedence</a>, the values listed in the column
+ * <p id="Note4">
+ * <b>[4]</b> A value "yes" indicates the property is a Security Property. As indicated
+ * in the <a href="#PP">Property Precedence</a>, the values listed in the column
  * {@code enforced} will be used to initialize these properties when
  * {@link javax.xml.XMLConstants#FEATURE_SECURE_PROCESSING FSP} is true.
  *
+ * <p id="Note5">
+ * <b>[5]</b> One or more processors that support the property. The IDs and Set Method
+ * are as shown in the table <a href="#Processor">Processors</a>.
  * <p id="Note6">
- * <b>[6]</b> One or more processors that support the property. The values of the
- * field are IDs described in the table <a href="#Processor">Processors</a>.
- * <p id="Note7">
- * <b>[7]</b> Indicates the initial release the property is introduced.
+ * <b>[6]</b> Indicates the initial release the property is introduced.
  *
- * <h3>Legacy Property Names (deprecated)</h3>
+ * <h3 id="IN_Legacy">Legacy Property Names (deprecated)</h3>
  * JDK releases prior to JDK 17 support the use of URI style prefix for properties.
  * These legacy property names are <b>deprecated</b> as of JDK 17 and may be removed
  * in future releases. If both new and legacy properties are set, the new property
