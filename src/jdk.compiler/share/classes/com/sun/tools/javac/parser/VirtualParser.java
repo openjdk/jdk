@@ -48,28 +48,36 @@ import java.util.function.Function;
  */
 public class VirtualParser extends JavacParser {
 
+    private boolean hasErrors;
+
     public VirtualParser(JavacParser parser) {
         super(parser, new VirtualScanner(parser.S));
     }
 
     @Override
     protected JCErroneous syntaxError(int pos, Error errorKey) {
-        throw new AssertionError("Speculative parsing fail");
+        hasErrors = true;
+        return F.Erroneous();
     }
 
     @Override
     protected JCErroneous syntaxError(int pos, List<JCTree> errs, Error errorKey) {
-        throw new AssertionError("Speculative parsing fail");
+        hasErrors = true;
+        return F.Erroneous();
     }
 
     @Override
     protected void reportSyntaxError(int pos, Error errorKey) {
-        throw new AssertionError("Speculative parsing fail");
+        hasErrors = true;
     }
 
     @Override
     protected void reportSyntaxError(DiagnosticPosition diagPos, Error errorKey) {
-        throw new AssertionError("Speculative parsing fail");
+        hasErrors = true;
+    }
+
+    public boolean hasErrors() {
+        return hasErrors;
     }
 
     /**

@@ -3984,9 +3984,13 @@ public class JavacParser implements Parser {
                 // is the same as in the past.
                 if (Feature.UNNAMED_CLASSES.allowedInSource(source) && !isDeclaration()) {
                     final JCModifiers finalMods = mods;
-                    isTopLevelMethodOrField =
-                            VirtualParser.tryParse(this,
-                                    P -> P.topLevelMethodOrFieldDeclaration(finalMods));
+                    JavacParser speculative = new VirtualParser(this);
+                    List<JCTree> speculativeResult =
+                            speculative.topLevelMethodOrFieldDeclaration(finalMods);
+                    if (speculativeResult.head.hasTag(METHODDEF) ||
+                        speculativeResult.head.hasTag(VARDEF)) {
+                        isTopLevelMethodOrField = true;
+                    }
                 }
 
                 if (isTopLevelMethodOrField) {
@@ -4782,7 +4786,7 @@ public class JavacParser implements Parser {
             }
         }
 
-        throw new AssertionError("Not a method or field");
+        return List.of(F.Erroneous());
     }
 
     protected boolean isDeclaration() {
