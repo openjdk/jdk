@@ -56,7 +56,7 @@ const char* HeapRegionType::get_str() const {
     case OldTag:                return "OLD";
     default:
       ShouldNotReachHere();
-      return NULL; // keep some compilers happy
+      return nullptr; // keep some compilers happy
   }
 }
 
@@ -71,7 +71,7 @@ const char* HeapRegionType::get_short_str() const {
     case OldTag:                return "O";
     default:
       ShouldNotReachHere();
-      return NULL; // keep some compilers happy
+      return nullptr; // keep some compilers happy
   }
 }
 

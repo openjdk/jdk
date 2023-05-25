@@ -37,6 +37,7 @@ public enum Architecture {
     X64,        // Represents AMD64 and X86_64
     X86,
     AARCH64,
+    ARM,
     RISCV64,
     S390,
     PPC64,
@@ -83,6 +84,14 @@ public enum Architecture {
     @ForceInline
     public static boolean isPPC64() {
         return PlatformProps.TARGET_ARCH_IS_PPC64;
+    }
+
+    /**
+     * {@return {@code true} if the current architecture is ARM}
+     */
+    @ForceInline
+    public static boolean isARM() {
+        return PlatformProps.TARGET_ARCH_IS_ARM;
     }
 
     /**

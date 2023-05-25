@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ InstanceKlass* KlassFactory::check_shared_class_file_load_hook(
   assert(ik != nullptr, "sanity");
   assert(ik->is_shared(), "expecting a shared class");
   if (JvmtiExport::should_post_class_file_load_hook()) {
-
+    ResourceMark rm(THREAD);
     // Post the CFLH
     JvmtiCachedClassFileData* cached_class_file = nullptr;
     if (cfs == nullptr) {
@@ -74,7 +74,7 @@ InstanceKlass* KlassFactory::check_shared_class_file_load_hook(
       // Set new class file stream using JVMTI agent modified class file data.
       ClassLoaderData* loader_data =
         ClassLoaderData::class_loader_data(class_loader());
-      int path_index = ik->shared_classpath_index();
+      s2 path_index = ik->shared_classpath_index();
       ClassFileStream* stream = new ClassFileStream(ptr,
                                                     end_ptr - ptr,
                                                     cfs->source(),

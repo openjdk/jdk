@@ -55,13 +55,13 @@ void G1RemSetSummary::update() {
 }
 
 void G1RemSetSummary::set_rs_thread_vtime(uint thread, double value) {
-  assert(_rs_threads_vtimes != NULL, "just checking");
+  assert(_rs_threads_vtimes != nullptr, "just checking");
   assert(thread < _num_vtimes, "just checking");
   _rs_threads_vtimes[thread] = value;
 }
 
 double G1RemSetSummary::rs_thread_vtime(uint thread) const {
-  assert(_rs_threads_vtimes != NULL, "just checking");
+  assert(_rs_threads_vtimes != nullptr, "just checking");
   assert(thread < _num_vtimes, "just checking");
   return _rs_threads_vtimes[thread];
 }
@@ -82,14 +82,14 @@ G1RemSetSummary::~G1RemSetSummary() {
 }
 
 void G1RemSetSummary::set(G1RemSetSummary* other) {
-  assert(other != NULL, "just checking");
+  assert(other != nullptr, "just checking");
   assert(_num_vtimes == other->_num_vtimes, "just checking");
 
   memcpy(_rs_threads_vtimes, other->_rs_threads_vtimes, sizeof(double) * _num_vtimes);
 }
 
 void G1RemSetSummary::subtract_from(G1RemSetSummary* other) {
-  assert(other != NULL, "just checking");
+  assert(other != nullptr, "just checking");
   assert(_num_vtimes == other->_num_vtimes, "just checking");
 
   for (uint i = 0; i < _num_vtimes; i++) {
@@ -211,8 +211,8 @@ private:
 public:
   HRRSStatsIter() : _young("Young"), _humongous("Humongous"),
     _free("Free"), _old("Old"), _all("All"),
-    _max_rs_mem_sz(0), _max_rs_mem_sz_region(NULL),
-    _max_code_root_mem_sz(0), _max_code_root_mem_sz_region(NULL)
+    _max_rs_mem_sz(0), _max_rs_mem_sz_region(nullptr),
+    _max_code_root_mem_sz(0), _max_code_root_mem_sz_region(nullptr)
   {}
 
   bool do_heap_region(HeapRegion* r) {
@@ -234,7 +234,7 @@ public:
     }
     size_t code_root_elems = hrrs->code_roots_list_length();
 
-    RegionTypeCounter* current = NULL;
+    RegionTypeCounter* current = nullptr;
     if (r->is_free()) {
       current = &_free;
     } else if (r->is_young()) {
@@ -255,7 +255,7 @@ public:
   }
 
   void print_summary_on(outputStream* out) {
-    RegionTypeCounter* counters[] = { &_young, &_humongous, &_free, &_old, NULL };
+    RegionTypeCounter* counters[] = { &_young, &_humongous, &_free, &_old, nullptr };
 
     out->print_cr(" Current rem set statistics");
     out->print_cr("  Total per region rem sets sizes = " SIZE_FORMAT
@@ -263,13 +263,13 @@ public:
                   total_rs_mem_sz(),
                   max_rs_mem_sz(),
                   total_rs_unused_mem_sz());
-    for (RegionTypeCounter** current = &counters[0]; *current != NULL; current++) {
+    for (RegionTypeCounter** current = &counters[0]; *current != nullptr; current++) {
       (*current)->print_rs_mem_info_on(out, total_rs_mem_sz());
     }
 
     out->print_cr("    " SIZE_FORMAT " occupied cards represented.",
                   total_cards_occupied());
-    for (RegionTypeCounter** current = &counters[0]; *current != NULL; current++) {
+    for (RegionTypeCounter** current = &counters[0]; *current != nullptr; current++) {
       (*current)->print_cards_occupied_info_on(out, total_cards_occupied());
     }
 
@@ -293,13 +293,13 @@ public:
                   proper_unit_for_byte_size(total_code_root_mem_sz()),
                   byte_size_in_proper_unit(max_code_root_rem_set->code_roots_mem_size()),
                   proper_unit_for_byte_size(max_code_root_rem_set->code_roots_mem_size()));
-    for (RegionTypeCounter** current = &counters[0]; *current != NULL; current++) {
+    for (RegionTypeCounter** current = &counters[0]; *current != nullptr; current++) {
       (*current)->print_code_root_mem_info_on(out, total_code_root_mem_sz());
     }
 
     out->print_cr("    " SIZE_FORMAT " code roots represented.",
                   total_code_root_elems());
-    for (RegionTypeCounter** current = &counters[0]; *current != NULL; current++) {
+    for (RegionTypeCounter** current = &counters[0]; *current != nullptr; current++) {
       (*current)->print_code_root_elems_info_on(out, total_code_root_elems());
     }
 
