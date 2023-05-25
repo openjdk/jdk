@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import java.security.*;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.ECGenParameterSpec;
 import java.security.spec.ECParameterSpec;
-import java.security.spec.ECPoint;
 import java.security.spec.InvalidParameterSpecException;
 import java.util.Arrays;
 import java.util.Optional;
@@ -37,7 +36,6 @@ import java.util.Optional;
 import sun.security.jca.JCAUtil;
 import sun.security.util.ECUtil;
 import sun.security.util.math.*;
-import sun.security.ec.point.*;
 import static sun.security.util.SecurityProviderConstants.DEF_EC_KEY_SIZE;
 import static sun.security.ec.ECOperations.IntermediateValueException;
 
