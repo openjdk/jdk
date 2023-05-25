@@ -99,6 +99,7 @@ vmTestbase/nsk/jdi/ExceptionEvent/catchLocation/location002/TestDescription.java
 ## Note forceEarlyReturn002 was converted to support vthreads. The rest were not
 ## since there is no added value (JVMTI_ERROR_OPAQUE_FRAME is expected).
 
+vmTestbase/nsk/jdi/ThreadReference/forceEarlyReturn/forceEarlyReturn002/forceEarlyReturn002.java
 vmTestbase/nsk/jdi/ThreadReference/forceEarlyReturn/forceEarlyReturn014/forceEarlyReturn014.java 8285415 generic-all
 vmTestbase/nsk/jdi/stress/serial/forceEarlyReturn001/TestDescription.java 8285415 generic-all
 vmTestbase/nsk/jdi/stress/serial/forceEarlyReturn002/TestDescription.java 8285415 generic-all
