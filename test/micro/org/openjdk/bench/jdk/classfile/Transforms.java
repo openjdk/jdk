@@ -168,13 +168,13 @@ public class Transforms {
         public final UnaryOperator<byte[]> transform;
         public final boolean shared;
         public final ClassTransform classTransform;
-        public final Classfile.Option[] options;
+        public final Classfile.Context cc;
 
         NoOpTransform(UnaryOperator<byte[]> transform) {
             this.transform = transform;
             classTransform = null;
             shared = false;
-            options = new Classfile.Option[0];
+            cc = Classfile.Context.of();
         }
 
         NoOpTransform(boolean shared,
@@ -182,10 +182,11 @@ public class Transforms {
                       Classfile.Option... options) {
             this.shared = shared;
             this.classTransform = classTransform;
-            this.options = shared
-                           ? options
-                           : Stream.concat(Stream.of(options), Stream.of(Classfile.Option.constantPoolSharing(false))).toArray(Classfile.Option[]::new);
-            this.transform = bytes -> Classfile.parse(bytes, this.options).transform(classTransform);
+            this.cc = Classfile.Context.of(
+                    shared
+                    ? options
+                    : Stream.concat(Stream.of(options), Stream.of(Classfile.Option.constantPoolSharing(false))).toArray(Classfile.Option[]::new));
+            this.transform = bytes -> cc.transform(cc.parse(bytes), classTransform);
         }
     }
 
@@ -198,7 +199,7 @@ public class Transforms {
         }),
         NOP_SHARED(bytes -> {
             ClassModel cm = Classfile.parse(bytes);
-            return cm.transform((cb, ce) -> {
+            return Classfile.transform(cm, (cb, ce) -> {
                 if (ce instanceof MethodModel mm) {
                     cb.transformMethod(mm, (mb, me) -> {
                         if (me instanceof CodeModel xm) {
@@ -238,7 +239,7 @@ public class Transforms {
         }),
         HIGH_SHARED_ADD_FIELD(bytes -> {
             ClassModel cm = Classfile.parse(bytes);
-            return cm.transform(new ClassTransform() {
+            return Classfile.transform(cm, new ClassTransform() {
                 @Override
                 public void accept(ClassBuilder builder, ClassElement element) {
                     builder.with(element);
@@ -274,7 +275,7 @@ public class Transforms {
         }),
         HIGH_SHARED_DEL_METHOD(bytes -> {
             ClassModel cm = Classfile.parse(bytes);
-            return cm.transform((builder, element) -> {
+            return Classfile.transform(cm, (builder, element) -> {
                 if (!(element instanceof MethodModel mm))
                     builder.with(element);
             });

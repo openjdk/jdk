@@ -58,6 +58,6 @@ public class AdHocAdapt extends AbstractCorpusBenchmark {
     @BenchmarkMode(Mode.Throughput)
     public void transform(Blackhole bh) {
         for (byte[] bytes : classes)
-            bh.consume(Classfile.parse(bytes).transform(transform.transform));
+            bh.consume(Classfile.transform(Classfile.parse(bytes), transform.transform));
     }
 }

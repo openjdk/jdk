@@ -41,27 +41,30 @@ public class ParseOptions extends AbstractCorpusBenchmark {
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
     public void transformNoDebug(Blackhole bh) {
+        var cc = Classfile.Context.of(Classfile.Option.processDebug(false));
         for (byte[] aClass : classes) {
-            ClassModel cm = Classfile.parse(aClass, Classfile.Option.processDebug(false));
-            bh.consume(cm.transform(threeLevelNoop));
+            ClassModel cm = cc.parse(aClass);
+            bh.consume(cc.transform(cm, threeLevelNoop));
         }
     }
 
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
     public void transformNoStackmap(Blackhole bh) {
+        var cc = Classfile.Context.of(Classfile.Option.generateStackmap(false));
         for (byte[] aClass : classes) {
-            ClassModel cm = Classfile.parse(aClass, Classfile.Option.generateStackmap(false));
-            bh.consume(cm.transform(threeLevelNoop));
+            ClassModel cm = cc.parse(aClass);
+            bh.consume(cc.transform(cm, threeLevelNoop));
         }
     }
 
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
     public void transformNoLineNumbers(Blackhole bh) {
+        var cc = Classfile.Context.of(Classfile.Option.processLineNumbers(false));
         for (byte[] aClass : classes) {
-            ClassModel cm = Classfile.parse(aClass, Classfile.Option.processLineNumbers(false));
-            bh.consume(cm.transform(threeLevelNoop));
+            ClassModel cm = cc.parse(aClass);
+            bh.consume(cc.transform(cm, threeLevelNoop));
         }
     }
 }
