@@ -167,6 +167,9 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
             int idx = (int)(h & (BUFS_COUNT - 1));
             Buffer current = BUFS[idx];
             if (current == null) {
+                // Create a new buffer and install it.
+                // On initial contention, some buffers may be lost, but this is not
+                // a problem for correctness, or for steady-state performance.
                 current = new Buffer(newRandom());
                 BUFS[idx] = current;
             }
