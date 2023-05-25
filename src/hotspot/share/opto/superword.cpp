@@ -1853,9 +1853,7 @@ void SuperWord::combine_packs() {
       assert(is_power_of_2(max_vlen), "sanity");
       uint psize = p1->size();
       if (!is_power_of_2(psize)) {
-        // Skip pack which can't be vector.
-        // case1: for(...) { a[i] = i; }    elements values are different (i+x)
-        // case2: for(...) { a[i] = b[i+1]; }  can't align both, load and store
+        // We currently only support power-of-2 sizes for vectors.
 #ifndef PRODUCT
         if (TraceSuperWord) {
           tty->cr();
