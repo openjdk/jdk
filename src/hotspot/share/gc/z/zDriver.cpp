@@ -302,6 +302,14 @@ static bool should_preclean_young(GCCause::Cause cause) {
     return true;
   }
 
+  // It is important that when soft references are cleared, we also pre-clean the young
+  // generation, as we might otherwise throw premature OOM. Therefore, all causes that
+  // trigger soft ref cleaning must also trigger pre-cleaning of young gen. If allocations
+  // stalled when checking for soft ref cleaning, then since we hold the driver locker all
+  // the way until we check for young gen pre-cleaning, we can be certain that we should
+  // catch that above and perform young gen pre-cleaning.
+  assert(!should_clear_soft_references(cause), "Clearing soft references without pre-cleaning young gen");
+
   // Preclean young if implied by configuration
   return ScavengeBeforeFullGC;
 }
