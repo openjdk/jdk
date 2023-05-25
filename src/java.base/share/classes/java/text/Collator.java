@@ -261,7 +261,7 @@ public abstract class Collator
      * </table>
      * Asterisk (<sup>*</sup>) denotes the default value.
      * If the specified setting value is not recognized, the strength and/or
-     * decomposition will not be overridden, as if there were no BCP 47 collation
+     * decomposition is not overridden, as if there were no BCP 47 collation
      * options in the desired locale.
      *
      * @apiNote Implementations of {@code Collator} class may produce
