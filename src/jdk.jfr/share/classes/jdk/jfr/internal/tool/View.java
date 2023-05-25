@@ -54,7 +54,7 @@ public final class View extends Command {
 
     @Override
     public String getDescription() {
-        return "Display events in a tabular format. See 'jfr help metadata' for details.";
+        return "Display events in a tabular format. See 'jfr help view' for details.";
     }
 
     @Override
@@ -92,7 +92,7 @@ public final class View extends Command {
         stream.println();
         stream.println(" jfr view jdk.GarbageCollection recording.jfr");
         stream.println();
-        stream.println(" jfr view --cell-height 5 ThreadStart recording.jfr");
+        stream.println(" jfr view --cell-height 10 ThreadStart recording.jfr");
         stream.println();
         stream.println(" jfr view --truncate beginning SystemProcess recording.jfr");
         stream.println();

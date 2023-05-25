@@ -91,7 +91,7 @@ public class FieldFormatter {
             return ValueFormatter.formatMethod(m, compact);
         }
         if (object instanceof RecordedClass clazz) {
-            String text =  ValueFormatter.formatClass(clazz);
+            String text = ValueFormatter.formatClass(clazz);
             if (compact) {
                 return text.substring(text.lastIndexOf(".") + 1);
             }

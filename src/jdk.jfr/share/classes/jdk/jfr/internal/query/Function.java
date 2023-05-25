@@ -35,9 +35,9 @@ import java.util.StringJoiner;
 
 abstract class Function {
 
-    abstract public void add(Object value);
+    public abstract void add(Object value);
 
-    abstract public Object result();
+    public abstract Object result();
 
     public static Function create(Field field) {
         Aggregator aggregator = field.aggregator;

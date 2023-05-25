@@ -56,7 +56,7 @@ public class TestView {
         output = ExecuteHelper.jfr("view", "missing.jfr");
         output.shouldContain("could not open file ");
 
-        Path file = Utils.createTempFile("faked-file",  ".jfr");
+        Path file = Utils.createTempFile("faked-file", ".jfr");
         FileWriter fw = new FileWriter(file.toFile());
         fw.write('d');
         fw.close();

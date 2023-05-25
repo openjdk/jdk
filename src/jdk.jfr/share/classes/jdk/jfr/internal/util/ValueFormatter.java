@@ -59,7 +59,7 @@ public final class ValueFormatter {
         Duration roundedDuration = roundDuration(d);
         if (roundedDuration.equals(Duration.ZERO)) {
             return "0 s";
-        } else if(roundedDuration.isNegative()){
+        } else if (roundedDuration.isNegative()) {
             return "-" + formatPositiveDuration(roundedDuration.abs());
         } else {
             return formatPositiveDuration(roundedDuration);
@@ -70,28 +70,28 @@ public final class ValueFormatter {
         if (d.compareTo(MICRO_SECOND) < 0) {
             // 0.000001 ms - 0.000999 ms
             double outputMs = (double) d.toNanosPart() / 1_000_000;
-            return String.format("%.6f ms",  outputMs);
+            return String.format("%.6f ms", outputMs);
         } else if (d.compareTo(SECOND) < 0) {
             // 0.001 ms - 999 ms
             int valueLength = countLength(d.toNanosPart());
             int outputDigit = NANO_SIGNIFICANT_FIGURES - valueLength;
             double outputMs = (double) d.toNanosPart() / 1_000_000;
-            return String.format("%." + outputDigit + "f ms",  outputMs);
+            return String.format("%." + outputDigit + "f ms", outputMs);
         } else if (d.compareTo(MINUTE) < 0) {
             // 1.00 s - 59.9 s
             int valueLength = countLength(d.toSecondsPart());
             int outputDigit = MILL_SIGNIFICANT_FIGURES - valueLength;
             double outputSecond = d.toSecondsPart() + (double) d.toMillisPart() / 1_000;
-            return String.format("%." + outputDigit + "f s",  outputSecond);
+            return String.format("%." + outputDigit + "f s", outputSecond);
         } else if (d.compareTo(HOUR) < 0) {
             // 1 m 0 s - 59 m 59 s
-            return String.format("%d m %d s",  d.toMinutesPart(), d.toSecondsPart());
+            return String.format("%d m %d s", d.toMinutesPart(), d.toSecondsPart());
         } else if (d.compareTo(DAY) < 0) {
             // 1 h 0 m - 23 h 59 m
-            return String.format("%d h %d m",  d.toHoursPart(), d.toMinutesPart());
+            return String.format("%d h %d m", d.toHoursPart(), d.toMinutesPart());
         } else {
             // 1 d 0 h -
-            return String.format("%d d %d h",  d.toDaysPart(), d.toHoursPart());
+            return String.format("%d d %d h", d.toDaysPart(), d.toHoursPart());
         }
     }
 
@@ -102,7 +102,7 @@ public final class ValueFormatter {
     private static Duration roundDuration(Duration d) {
         if (d.equals(Duration.ZERO)) {
             return d;
-        } else if(d.isNegative()){
+        } else if(d.isNegative()) {
             Duration roundedPositiveDuration = roundPositiveDuration(d.abs());
             return roundedPositiveDuration.negated();
         } else {

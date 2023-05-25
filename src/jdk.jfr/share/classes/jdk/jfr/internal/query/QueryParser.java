@@ -227,7 +227,7 @@ final class QueryParser implements AutoCloseable {
 
     private String text() throws ParseException {
         if (tokenizer.peekChar() != '\'') {
-            throw new ParseException("Expected text to start with a single quote character",  position());
+            throw new ParseException("Expected text to start with a single quote character", position());
         }
         return tokenizer.next();
     }
@@ -267,7 +267,7 @@ final class QueryParser implements AutoCloseable {
 
     private Property property() throws ParseException {
         String text = tokenizer.next();
-        Consumer<Field> style =  switch (text.toLowerCase()) {
+        Consumer<Field> style = switch (text.toLowerCase()) {
             case "none" -> field -> {};
             case "missing:" -> field -> {};
             case "normalized" -> field -> field.normalized = field.percentage = true;
@@ -330,7 +330,7 @@ final class QueryParser implements AutoCloseable {
     }
 
     @Override
-    public void close() throws  ParseException {
+    public void close() throws ParseException {
         tokenizer.close();
     }
 }

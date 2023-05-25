@@ -164,7 +164,7 @@ public final class QueryPrinter {
         out.println("" + type.getName() + ":");
         out.println();
         for (ValueDescriptor f : type.getFields()) {
-            String typeName =  Utils.makeSimpleName(f.getTypeName());
+            String typeName = Utils.makeSimpleName(f.getTypeName());
             out.println(" " + typeName + " " + f.getName());
         }
         List<String> related = new ArrayList<>();

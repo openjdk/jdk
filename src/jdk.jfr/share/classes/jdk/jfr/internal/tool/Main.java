@@ -52,7 +52,7 @@ public final class Main {
             System.out.println();
             System.out.println(" java -XX:StartFlightRecording:filename=recording.jfr,duration=30s ... ");
             System.out.println();
-            System.out.println("A recording can also be started on already running Java Virtual Machine:");
+            System.out.println("A recording can also be started on an already running Java Virtual Machine:");
             System.out.println();
             System.out.println(" jcmd (to list available pids)");
             System.out.println(" jcmd <pid> JFR.start");
@@ -74,11 +74,13 @@ public final class Main {
             System.out.println();
             System.out.println(" jfr print --events " + q + "jdk.*" + q + " --stack-depth 64 recording.jfr");
             System.out.println();
+            System.out.println(" jfr view gc recording.jfr");
+            System.out.println();
+            System.out.println(" jfr view allocation-by-site recording.jfr");
+            System.out.println();
             System.out.println(" jfr summary recording.jfr");
             System.out.println();
-            System.out.println(" jfr metadata recording.jfr");
-            System.out.println();
-            System.out.println(" jfr metadata --categories GC,Detailed");
+            System.out.println(" jfr metadata");
             System.out.println();
             System.out.println("For more information about available commands, use 'jfr help'");
             System.exit(EXIT_OK);
