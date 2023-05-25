@@ -26,7 +26,6 @@
 package jdk.jfr.events;
 
 import jdk.jfr.Category;
-import jdk.jfr.Experimental;
 import jdk.jfr.Label;
 import jdk.jfr.Name;
 import jdk.jfr.internal.MirrorEvent;
