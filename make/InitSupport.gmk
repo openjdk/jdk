@@ -238,7 +238,18 @@ ifeq ($(HAS_SPEC),)
         SPECS := $$(addsuffix /spec.gmk, $$(addprefix $$(build_dir)/, $$(matching_confs)))
       else
         # No CONF or SPEC given, check the available configurations
-        ifneq ($$(words $$(all_spec_files)), 1)
+        GIT := $$(shell command -v git 2>/dev/null)
+        ifneq ($$(GIT),)
+          GIT_CURRENT_BRANCH := $$(shell $$(GIT) rev-parse --abbrev-ref HEAD)
+          GIT_BRANCH_CONF := $$(strip $$(filter $$(GIT_CURRENT_BRANCH), $$(all_confs)))
+        endif
+        ifeq ($$(words $$(all_spec_files)), 1)
+          # We found exactly one configuration, use it
+          SPECS := $$(strip $$(all_spec_files))
+        else ifeq ($$(words $$(GIT_BRANCH_CONF)), 1)
+          # We found exactly one configuration with the name of the checked out Git branch, use it
+          SPECS := $$(build_dir)/$$(GIT_BRANCH_CONF)/spec.gmk
+        else
           $$(info Error: No CONF given, but more than one configuration found.)
           $$(info Available configurations in $$(build_dir):)
           $$(foreach var, $$(all_confs), $$(info * $$(var)))
@@ -246,9 +257,6 @@ ifeq ($(HAS_SPEC),)
           $$(info )
           $$(error Cannot continue)
         endif
-
-        # We found exactly one configuration, use it
-        SPECS := $$(strip $$(all_spec_files))
       endif
     endif
   endef
