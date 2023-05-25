@@ -396,14 +396,15 @@ public sealed class Console implements Flushable permits ProxyingConsole {
             PrivilegedAction<Console> pa = () -> {
                 var consModName = System.getProperty("jdk.console",
                         JdkConsoleProvider.DEFAULT_PROVIDER_MODULE_NAME);
-                return ServiceLoader.load(ModuleLayer.boot(), JdkConsoleProvider.class).stream()
-                        .map(ServiceLoader.Provider::get)
-                        .filter(jcp -> consModName.equals(jcp.getClass().getModule().getName()))
-                        .map(jcp -> jcp.console(istty, CHARSET))
-                        .filter(Objects::nonNull)
-                        .findAny()
-                        .map(jc -> (Console) new ProxyingConsole(jc))
-                        .orElse(null);
+                for (var jcp : ServiceLoader.load(ModuleLayer.boot(), JdkConsoleProvider.class)) {
+                    if (consModName.equals(jcp.getClass().getModule().getName())) {
+                        var jc = jcp.console(istty, CHARSET);
+                        if (jc != null) {
+                            return new ProxyingConsole(jc);
+                        }
+                    }
+                }
+                return null;
             };
             c = AccessController.doPrivileged(pa);
         } catch (ServiceConfigurationError ignore) {
