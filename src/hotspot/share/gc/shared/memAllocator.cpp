@@ -321,7 +321,9 @@ HeapWord* MemAllocator::mem_allocate_inside_tlab_slow(Allocation& allocation) co
   // Allocate a new TLAB requesting new_tlab_size. Any size
   // between minimal and new_tlab_size is accepted.
   size_t min_tlab_size = ThreadLocalAllocBuffer::compute_min_size(_word_size);
-  mem = Universe::heap()->allocate_new_tlab(min_tlab_size, new_tlab_size, &allocation._allocated_tlab_size,
+  mem = Universe::heap()->allocate_new_tlab(min_tlab_size,
+                                            new_tlab_size,
+                                            &allocation._allocated_tlab_size,
                                             &allocation._overhead_limit_exceeded);
   if (mem == nullptr) {
     assert(allocation._allocated_tlab_size == 0,

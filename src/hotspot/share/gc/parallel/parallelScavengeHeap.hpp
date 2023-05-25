@@ -102,7 +102,9 @@ class ParallelScavengeHeap : public CollectedHeap {
   HeapWord* allocate_old_gen_and_record(size_t word_size);
 
  protected:
-  HeapWord* allocate_new_tlab(size_t min_size, size_t requested_size, size_t* actual_size,
+  HeapWord* allocate_new_tlab(size_t min_size,
+                              size_t requested_size,
+                              size_t* actual_size,
                               bool* gc_overhead_limit_was_exceeded) override;
 
   inline bool should_alloc_in_eden(size_t size) const;

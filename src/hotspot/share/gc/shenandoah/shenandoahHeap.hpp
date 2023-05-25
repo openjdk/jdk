@@ -531,7 +531,9 @@ public:
 
   void notify_mutator_alloc_words(size_t words, bool waste);
 
-  HeapWord* allocate_new_tlab(size_t min_size, size_t requested_size, size_t* actual_size,
+  HeapWord* allocate_new_tlab(size_t min_size,
+                              size_t requested_size,
+                              size_t* actual_size,
                               bool* gc_overhead_limit_was_exceeded) override;
   size_t tlab_capacity(Thread *thr) const override;
   size_t unsafe_max_tlab_alloc(Thread *thread) const override;
