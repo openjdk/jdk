@@ -110,21 +110,33 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
      * scalability bottlenecks when reading from a single (synchronized) SecureRandom.
      */
     private static final class RandomUUID {
+        static final String PROP_NAME_PRNG_NAME = "java.util.UUID.prngName";
+        static final String PROP_NAME_BUF_COUNT = "java.util.UUID.buffersCount";
+
         // PRNG provider to use
         static final String PRNG_NAME;
 
         static final int BUFS_COUNT;
         static final Buffer[] BUFS;
 
-        public static int nextPowerOfTwo(int x) {
-            x = -1 >>> Integer.numberOfLeadingZeros(x - 1);
-            return x + 1;
+        private static final int roundPowerOfTwo(int cap) {
+            int n = -1 >>> Integer.numberOfLeadingZeros(cap - 1);
+            return (n < 0) ? 1 : (n + 1);
         }
 
         static {
             try {
-                PRNG_NAME = System.getProperty("java.util.UUID.prngName", null);
-                BUFS_COUNT = nextPowerOfTwo(Runtime.getRuntime().availableProcessors());
+                PRNG_NAME = System.getProperty(PROP_NAME_PRNG_NAME, null);
+                try {
+                    newRandom();
+                } catch (Exception e) {
+                    throw new IllegalArgumentException(PROP_NAME_PRNG_NAME + " is incorrect", e);
+                }
+                int bufCount = Integer.getInteger(PROP_NAME_BUF_COUNT, Runtime.getRuntime().availableProcessors());
+                if (bufCount < 1) {
+                    throw new IllegalArgumentException(PROP_NAME_BUF_COUNT + " is out of range");
+                }
+                BUFS_COUNT = roundPowerOfTwo(bufCount);
                 BUFS = new Buffer[BUFS_COUNT];
             } catch (Exception e) {
                 throw new InternalError(e);
@@ -164,14 +176,21 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
         // costs, memory footprint and cache pressure.
         @jdk.internal.vm.annotation.Contended
         static final class Buffer {
+            static final String PROP_NAME_UUID_COUNT = "java.util.UUID.uuidsPerBuffer";
+
             static final int UUID_CHUNK = 16;
-            static final int UUID_COUNT = 256;
-            static final int BUF_SIZE = UUID_CHUNK * UUID_COUNT;
+            static final int UUID_COUNT;
+            static final int BUF_SIZE;
 
             static final VarHandle VH_POS;
             static {
                 try {
                     VH_POS = MethodHandles.lookup().findVarHandle(Buffer.class, "pos", int.class);
+                    UUID_COUNT = Integer.getInteger(PROP_NAME_UUID_COUNT, 256);
+                    if (UUID_COUNT < 1 || UUID_COUNT > Integer.MAX_VALUE / UUID_CHUNK) {
+                        throw new IllegalArgumentException(PROP_NAME_UUID_COUNT + " is out of range");
+                    }
+                    BUF_SIZE = UUID_CHUNK * UUID_COUNT;
                 } catch (Exception e) {
                     throw new InternalError(e);
                 }
@@ -215,7 +234,8 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
                     }
 
                     // See if some other thread had already replenished the buffer.
-                    // Pull the UUID from there then.
+                    // Pull the UUID from there then. We are still holding the write lock, so
+                    // buffer is guaranteed to not change under our feet.
                     if ((int)VH_POS.get(this) > 0) {
                         int p = (int)VH_POS.getAndAdd(this, UUID_CHUNK);
                         if (p < BUF_SIZE) {
@@ -224,8 +244,8 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
                     }
 
                     // Pessimistic path: buffer requires replenishment. Recreate it from the
-                    // provided random, and initialize all UUIDs at once to avoid further initializations,
-                    // and thus false sharing between reader threads.
+                    // provided random, and initialize all UUIDs at once to avoid further
+                    // initializations, and thus false sharing between reader threads.
                     random.nextBytes(buf);
                     for (int c = 0; c < BUF_SIZE; c += UUID_CHUNK) {
                         buf[c + 6] &= 0x0f;  /* clear version        */
