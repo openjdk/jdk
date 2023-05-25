@@ -244,7 +244,7 @@ void mutex_init() {
     Notification_lock = Service_lock;
   }
 
-  MUTEX_DEFN(JmethodIdCreation_lock          , PaddedMutex  , nosafepoint); // used for creating jmethodIDs.
+  MUTEX_DEFN(JmethodIdCreation_lock          , PaddedMutex  , nosafepoint-1); // used for creating jmethodIDs.
   MUTEX_DEFN(InvokeMethodTypeTable_lock      , PaddedMutex  , safepoint);
   MUTEX_DEFN(InvokeMethodIntrinsicTable_lock , PaddedMonitor, safepoint);
   MUTEX_DEFN(AdapterHandlerLibrary_lock      , PaddedMutex  , safepoint);

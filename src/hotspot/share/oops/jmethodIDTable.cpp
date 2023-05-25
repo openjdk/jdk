@@ -40,6 +40,8 @@
 
 static uint64_t _jmethodID_counter = 0;
 
+static intx method_hash(Method* m) { return m->name()->identity_hash(); }
+
 class JmethodEntry {
  public:
   uint64_t _id;
@@ -60,6 +62,7 @@ class ConfigBase : public AllStatic {
 };
 
 class JmethodIDTableConfig : public ConfigBase {
+ public:
   static uintx get_hash(Value const& value, bool* is_dead) {
     *is_dead = false;
     return value._id;
@@ -67,9 +70,10 @@ class JmethodIDTableConfig : public ConfigBase {
 };
 
 class MethodTableConfig : public ConfigBase {
+ public:
   static uintx get_hash(Value const& value, bool* is_dead) {
     *is_dead = false;
-    return primitive_hash<Method*>(value._method);
+    return method_hash(value._method);
   }
 };
 
@@ -135,7 +139,7 @@ class MethodLookup : StackObj {
  public:
   MethodLookup(Method* method) : _method(method) {}
   uintx get_hash() const {
-    return primitive_hash<Method*>(_method);
+    return method_hash(_method);
   }
   bool equals(JmethodEntry* value, bool* is_dead) {
     *is_dead = false;
@@ -153,7 +157,6 @@ static JmethodEntry* get_method_entry(Method* method) {
   };
   bool needs_rehashing = false;
   _method_table->get(current, lookup, get, &needs_rehashing);
-  assert (!needs_rehashing, "should never need rehashing");
   return result;
 }
 
@@ -163,17 +166,23 @@ jmethodID JmethodIDTable::find_jmethod_id_or_null(Method* m) {
 }
 
 static void new_jmethod_id(Method* m, uint64_t mid) {
-  bool needs_rehashing, clean_hint, created;
+  bool grow_hint, clean_hint, created;
 
   Thread* current = Thread::current();
   JmethodEntry new_entry(mid, m);
   JmethodIDLookup lookup(mid);
-  created = _jmethod_id_table->insert(current, lookup, new_entry, &needs_rehashing, &clean_hint);
+  created = _jmethod_id_table->insert(current, lookup, new_entry, &grow_hint, &clean_hint);
   assert(created, "must be");
 
   MethodLookup lookup2(m);
-  created = _method_table->insert(current, lookup2, new_entry, &needs_rehashing, &clean_hint);
+  created = _method_table->insert(current, lookup2, new_entry, &grow_hint, &clean_hint);
   assert(created, "must be");
+  // Resize both tables if the method_table needs to grow.  The method_table has a worse
+  // distribution
+  if (grow_hint) {
+    _method_table->grow(current);
+    _jmethod_id_table->grow(current);
+  }
 }
 
 // Add a method id to the jmethod_ids
