@@ -51,67 +51,67 @@ public class TestBadDNForPeerCA12 {
 
     private final SSLContext sslc;
 
-    private SSLEngine clientEngine;     // server Engine
-    private ByteBuffer clientIn;        // read side of serverEngine
-    private ByteBuffer clientOut;        // read side of serverEngine
+    protected SSLEngine clientEngine;     // client Engine
+    protected ByteBuffer clientOut;       // write side of clientEngine
+    protected ByteBuffer clientIn;        // read side of clientEngine
 
-    private ByteBuffer sTOc;            // "reliable" transport client->server
+    protected SSLEngine serverEngine;     // server Engine
+    protected ByteBuffer serverOut;       // write side of serverEngine
+    protected ByteBuffer serverIn;        // read side of serverEngine
+
+    private ByteBuffer cTOs;            // "reliable" transport client->server
+    protected ByteBuffer sTOc;          // "reliable" transport server->client
 
     private static final String keyStoreFile =
         System.getProperty("test.src", "./")
             + "/../../../../javax/net/ssl/etc/keystore";
 
+
+    /*private static final byte[] clientPayload = new BigInteger
+    ("16030301b3010001af03037fdfe102696c38ec073b3824c29b1965a3efda0741f681bacf3cf4c96f1e957a20ccdde8df4356c8c6eb31bf8ea491c2201e0b2c7d252a431c4219ca97659bb61e004a130213011303c02cc02bcca9c030cca8c02f009fccaa00a3009e00a2c024c028c023c027006b006a00670040c00ac014c009c0130039003800330032009d009c003d003c0035002f00ff0100011c000500050100000000000a00160014001d001700180019001e01000101010201030104000b00020100001100090007020004000000000017000000230000000d002c002a040305030603080708080804080508060809080a080b0401050106010402030303010302020302010202002b00050403040303002d000201010032002c002a040305030603080708080804080508060809080a080b04010501060104020303030103020203020102020033006b0069001d002086466ee63234d08df8a0515b7d8140377e5ef7b4db4487e34e0fee13f8d48d4300170041049a83cc4ad95603386ba222bfed4e28ca574ad7f5be724360fba99a49de0eaf001326efda71faf55449887391d450de8c4165de77db407cc8994064cb4ee3d77c", 16).toByteArray();*/
     // the following contains a certificate with an invalid/unparseable
     // distinguished name
-    /*private static final byte[] payload = Base64.getDecoder().decode(
-        "FgMDAcsBAAHHAwPbDfeUCIStPzVIfXuGgCu56dSJOJ6xeus1W44frG5tciDEcBfYt"
-            + "/PN/6MFCGojEVcmPw21mVyjYInMo0UozIn4NwBiEwITARMDwCzAK8ypwDDMqMAvA"
-            + "J/MqgCjAJ4AosAkwCjAI8AnAGsAagBnAEDALsAywC3AMcAmCgAFKsApJcDAFMAJw"
-            + "BMAOQA4ADMAMsAFwA/ABMAOAJ0AnAA9ADwANgAvAP8BAAEcAAUABQEAAAAAAAoAF"
-            + "gAUAB0AFwAYABkAHgEAAQEBAgEDAQQACwACAQAAEQAJAAcCAAQAAAAAABcAAAAjA"
-            + "AAADQAsACoEAwUDBgMIBwgICAQIBQgGCAkICggLBAEFAQYBBAIDAwMBAwICAwIBA"
-            + "gIAKwAFBAMEAwMALQACAQEAMgAsACoEAwUDBgMIBwgICAQIBQgGCAkICggLBAEFA"
-            + "QYBBAIDAwMBAwICAwIBAgIALwBrAGkAHQAAAAARACAAZMUAADkwsiaOwcsWAwAAA"
-            + "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
-            + "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
-            + "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
-            + "AAAAAAtAAAAAAAAAAEAADAAAAA=");*/
-
-    private static final byte[] serverResponse = new BigInteger(
-        "1703030456BE252BB8F75EF05F480D763A5301B8E71F8794FAD15A84D5550ABA"
-        + "C8A008596E3C41CC2375E55AF04A1A4BC6B4B323FBA1854D5E1720971D106E51C6E0"
-        + "E7968213352733B56A76814545B582A708D89AFD30549E749E8E7A86A890B240C858"
-        + "7104A929BB09925F638DF3520BF7934546AE124520865FAC28B481F4D6FA1B0AA8A1"
-        + "ED9897F5E2220939971DF346CBCE6DD04E630184A3F9314B9AD2523994BE4B3862A3"
-        + "3ECEC11F7B4079E33DB127F1DD7B1B6839106EB38F74F5FEABFAE3B10171E0E93002"
-        + "F7426622C781F9C598474EA5F5D27BCA1C7D6C62FD1EC1EC3AE947A112AEFD3AB454"
-        + "A62126F236466BCE0A07C437D775371D6F4A8790187649D55CDF9CC397D8F7F71A83"
-        + "5F07C04A1FA211FB458793343EC0E90C80AB5324C76FDB604AB0231ADF56C46DEAD4"
-        + "8EF780FA908EE2D973B15977D14D083B4F8C59CF78D5700880B87A6011BEBAFD7A4E"
-        + "2B3323F04012BC83E1E904B1B68024CE255248FD2BB048C30F20A00E78B2C48986DA"
-        + "A5F244FFCB1285FC843C63A5E92909E332F2D2FAB32FDDDE7358B257773B5A409A96"
-        + "B2AFEF4E257660BBF66D23B48D391A56BE39A40B02BF1288950014130F31BBECE3D1"
-        + "BADC34CCCBAD19ECE3B727DE8FFCDE917286A5B137515C5A3E032F3535634A1A224D"
-        + "8B4E63F63A8B50192349B71B332B8617D958F32FCC03E66E418C62CDA7CBEF058DC7"
-        + "BD65D62D74ACB29FA101ED1EED88FBB543D92D283A3D5B28186E1D21CBE96F396B7B"
-        + "9D1F9CB6B9D7691F1C6D3FFD2EBC195F19420AA4D703AF56FA8AFA7E8863395E69C4"
-        + "9D8CF33EB026D440D0352B693768D02B9CD27581EF10508E773068C98285A5F616D7"
-        + "8DEEF3CD6EB00215D990343CF2C11F1ED78986837EE802EDA3712D871745108EC9D6"
-        + "0D4E28A0F3315BD4B0B603308BF84DFCB00C4621C10CE25549ACF829AB693438BB42"
-        + "E140FAD1AB94AFE271A2058A075EEA094F3BB4EF377A4E984E1810DB4F3B83D9A786"
-        + "08EBC0051245C182FA6D75DF27231826A893E5EDDB314D6FD0CFC07CB000CD45027C"
-        + "C76F0B802429043C8B3E3F7390F0B1471860C84FF946B8C79C86C8055BB455E7C75B"
-        + "66B30D747FD44DA1D55EAC7537C59C992B6A513D32B6D4EE558D4D4FDCC09FEE0F74"
-        + "546A537ADF54CEC64FD73B16C6DD275E87482A098E48556C956AE2121DF3E59E5459"
-        + "055E299EB936FC1A513281E9CB219A43CB6F5668AFB5ACD478509054D94F4BEB5B14"
-        + "238FB2405FC668EC4FB1AC71CBBDDEA2351E066D6A10AAF4A4CCE6F1D80C78AC70D5"
-        + "1DA608F5EA86117EAD9B356BE145E413BD6C14B95561E3607AA765D3950F9F0DD024"
-        + "A98C101CA8BBE6679FC34BC91BAC130637372D7101DA343D6E09DCA27519530FD29A"
-        + "C2D5FE9AEF3ABE2C2F8A335769858031B1109620F78595DF1EC73305CCD3D2CB5E78"
-        + "2944CE3CCE18096362A2B0A9D9280084BBEDED86A7AB54023F3EE0D1FC830D48ABDF"
-        + "FCFD8FB112F3A762F549C030BED7A688EE6761349571535CAE49F4FDCA433A686500"
-        + "DA04C6D68D55204F1EF42BF524CA496CCCFF120BD6493DCD2B5E6ED89B", 16
-        ).toByteArray();
+    private static final byte[] serverHello = new BigInteger(
+        "160303007A020000760303A92EBB3113D0C3369466B3037F721543EC257F366B3"
+        + "0B0096FD45D33AB3A067820791EE477A0429904F7114E13CF622C4B65C42926EE5"
+        + "CA2F4065AB2E0FFE66590130200002E002B0002030400330024001D002047E0CA2"
+        + "E7BDBF7F00A52C100A05397B774F22776604F8DCDCCBF156E09D8820D",
+        16).toByteArray();
+    private static final byte[] serverPayload = new BigInteger(
+        "160303043d0200005503034a587b770a0a19a66fce09ec3cb61cae9e3307fb1d3"
+        + "df27ce90b578a77f3cda420513bdf9f4b654f140ec3a3d04eaff2d49131a11d93f"
+        + "d99e0f44a6f3349c72b3ec02c00000d0017000000230000ff010001000b0002750"
+        + "0027200026f3082026b30820153a003020102020900edbec8f705af2514300d060"
+        + "92a864886f70d01010b0500303b310b3009060355040613025553310d300b06035"
+        + "5040a0c044a617661311d301b060355040b0c1453756e4a5353452054657374205"
+        + "3657269766365301e170d3138303532323037313831365a170d323830353231303"
+        + "7313831365a3055310b3009060355040613025553310d300b060355040a0c044a6"
+        + "17661311d301b060355040b0c1453756e4a5353452054657374205365726976636"
+        + "53118301606035504030c0f52656772657373696f6e20546573743059301306072"
+        + "a8648ce3d020106082a8648ce3d03010703420004e7d30444d4e5559d5e7a9b3c6"
+        + "773ae7b966481074fb43f96204ead8f73db20aa7118f0f1bdf34ff79f40c908c42"
+        + "bf7a159056b08c98da04908cd8f88201801d3a3233021301f0603551d230418301"
+        + "680140ddd93c9fe4bbd35b7e8997890fbdb5a3ddb154c300d06092a864886f70d0"
+        + "1010b050003820101005393544aacef4ca485988876b12c17545a237076acbbf05"
+        + "d9939dae4a5b64dbf6f356f7b0039efb642a31435a4bef29e48ac3df04dd6e558b"
+        + "478ccd55037442fb8f9300aefc76723ba2d6235a81e9e6bbece25e9cfc86ceb294"
+        + "b6f7422536e0d4c4c12b126e70c48c23f80ba4c7fd72ebc84ec82bc704b318d9cd"
+        + "4bb241f530c05b0ee4b5688fa59c6a53a22f8ca1839bc46715e39f2fc6e4fcfb0c"
+        + "15f05929bdd965f0820599e34f46ffb513e9576c44ba09234255a67f94584f81d8"
+        + "182a578deec7eca62cf9d031b876a69fb8401a5f9c5a2b53565c9c53473d11387f"
+        + "c85338b2b835ba8e986b9608ade3edcd0b3a7abcff6100943c561723d27d7904a1"
+        + "c840c00007003001d2052c61be62f27349c4c1b673a4d8e0fe93817ba4846867d8"
+        + "4aad38c08c60fd6150403004830460221009937abaa6c15159db58454669c8008b"
+        + "c227cfebdb601fa75f1cd7a52ec1feb1e022100b79d3d3cde7d1e2536b43977857"
+        + "8db3d15220200121f35d6eb06d61839f221660d0000ef03400102002a040305030"
+        + "603080708080804080508060809080a080b0401050106010402030303010302020"
+        + "30201020200bd003d303b310b3009110355040613025553310d300b060355040a0"
+        + "c044a617661311d301b060355040b0c1453756e4a5353452054657374205365726"
+        + "9766365003d303b310b3009110355040613025553310d300b060355040a0c044a6"
+        + "17661311d301b060355040b0c1453756e4a5353452054657374205365726976636"
+        + "5003d303b310b3009110355040613025553310d300b060355040a0c044a6176613"
+        + "11d301b060355040b0c1453756e4a535345205465737420536572697663650e000"
+        + "000", 16).toByteArray();
 
     /*
      * The following is to set up the keystores.
@@ -129,7 +129,7 @@ public class TestBadDNForPeerCA12 {
         TestBadDNForPeerCA12 test = new TestBadDNForPeerCA12();
 
         try {
-            test.runTest(serverResponse);
+            test.runTest();
             throw new Exception(
                 "TEST FAILED:  Didn't generate any exception");
         } catch (SSLHandshakeException she) {
@@ -165,39 +165,70 @@ public class TestBadDNForPeerCA12 {
     }
 
 
-    private void runTest(byte[] injected) throws Exception {
+    private void runTest() throws Exception {
 
         createSSLEngines();
         createBuffers();
 
-        sTOc = ByteBuffer.wrap(injected);
+        /*System.out.println("injecting client hello");
+        cTOs = ByteBuffer.wrap(clientPayload);*/
+
+        System.out.println("injecting server hello");
+        sTOc = ByteBuffer.wrap(serverHello);
+
+        sTOc.flip();
+
+
+        /*SSLEngineResult serverResult = serverEngine.unwrap(cTOs, serverIn);
+        System.out.println("server unwrap: " + serverResult);
+        runDelegatedTasks(serverResult, serverEngine);*/
+
+        SSLEngineResult clientHelloResult = clientEngine.unwrap(sTOc, clientIn);
+        System.out.println("client unwrap: " + clientHelloResult);
+        runDelegatedTasks(clientHelloResult, clientEngine);
+
+        sTOc.compact();
 
         System.out.println("injecting server response");
+        sTOc = ByteBuffer.wrap(serverPayload);
 
-        for (int i = 0; i < 10; i++) { //retry if survived
-            SSLEngineResult clientResult = clientEngine.unwrap(sTOc, clientIn);
-            System.out.println("client unwrap: " + clientResult);
-            runDelegatedTasks(clientResult, clientEngine);
-        }
+        sTOc.flip();
+
+        SSLEngineResult clientResult = clientEngine.unwrap(sTOc, clientIn);
+        System.out.println("client unwrap: " + clientResult);
+        runDelegatedTasks(clientResult, clientEngine);
     }
 
     private void createSSLEngines() throws Exception {
 
+        serverEngine = sslc.createSSLEngine();
+
+        serverEngine.setEnabledProtocols(new String[] {proto});
+
+        serverEngine.setUseClientMode(false);
+        serverEngine.setNeedClientAuth(true);
+
         clientEngine = sslc.createSSLEngine();
+
         clientEngine.setEnabledProtocols(new String[] {proto});
         clientEngine.setUseClientMode(true);
-        clientEngine.setNeedClientAuth(true);
 
     }
 
 
     private void createBuffers() {
 
+        serverIn = ByteBuffer.allocateDirect(65536);
+
+        serverOut = ByteBuffer.wrap("Hi Client, I'm Server".getBytes());
+
+        cTOs = ByteBuffer.allocateDirect(65536);
+
         clientIn = ByteBuffer.allocateDirect(65536);
 
-        sTOc = ByteBuffer.allocateDirect(65536);
+        clientOut = ByteBuffer.wrap("Hi Server, I'm Client".getBytes());
 
-        clientOut = ByteBuffer.wrap("Hi Client, I'm Server".getBytes());
+        sTOc = ByteBuffer.allocate(65536);
     }
 
     private static void runDelegatedTasks(SSLEngineResult result,
