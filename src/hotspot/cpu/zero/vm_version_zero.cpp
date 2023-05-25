@@ -116,6 +116,11 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseVectorizedMismatchIntrinsic, false);
   }
 
+  if ((LockingMode != LM_LEGACY) && (LockingMode != LM_MONITOR)) {
+    warning("Unsupported locking mode for this CPU.");
+    FLAG_SET_DEFAULT(LockingMode, LM_LEGACY);
+  }
+
   // Enable error context decoding on known platforms
 #if defined(IA32) || defined(AMD64) || defined(ARM) || \
     defined(AARCH64) || defined(PPC) || defined(RISCV) || \

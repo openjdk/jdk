@@ -140,12 +140,12 @@ inline int g_isfinite(jdouble f)                 { return isfinite(f); }
 // use offsetof() instead, with the invalid-offsetof warning
 // temporarily disabled.
 #define offset_of(klass,field)                          \
-[]() {                                                  \
+([]() {                                                 \
   char space[sizeof (klass)] ATTRIBUTE_ALIGNED(16);     \
   klass* dummyObj = (klass*)space;                      \
   char* c = (char*)(void*)&dummyObj->field;             \
   return (size_t)(c - space);                           \
-}()
+}())
 
 
 #if defined(_LP64) && defined(__APPLE__)

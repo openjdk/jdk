@@ -165,7 +165,7 @@ public abstract sealed class AbstractMemorySegmentImpl
         if (elementLayout.byteSize() == 0) {
             throw new IllegalArgumentException("Element layout size cannot be zero");
         }
-        Utils.checkElementAlignment(elementLayout, "Element layout alignment greater than its size");
+        Utils.checkElementAlignment(elementLayout, "Element layout size is not multiple of alignment");
         if (!isAlignedForElement(0, elementLayout)) {
             throw new IllegalArgumentException("Incompatible alignment constraints");
         }

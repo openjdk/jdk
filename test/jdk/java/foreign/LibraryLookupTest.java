@@ -36,7 +36,7 @@ import static org.testng.Assert.*;
 /*
  * @test
  * @enablePreview
- * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64" | os.arch == "riscv64"
+ * @requires jdk.foreign.linker != "UNSUPPORTED"
  * @run testng/othervm --enable-native-access=ALL-UNNAMED LibraryLookupTest
  */
 public class LibraryLookupTest {
@@ -65,6 +65,21 @@ public class LibraryLookupTest {
             addr = loadLibrary(arena);
         }
         callFunc(addr);
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    void testLoadLibraryBadName() {
+        try (Arena arena = Arena.ofConfined()) {
+            SymbolLookup.libraryLookup(LIB_PATH.toString() + "\u0000", arena);
+        }
+    }
+
+    @Test
+    void testLoadLibraryBadLookupName() {
+        try (Arena arena = Arena.ofConfined()) {
+            SymbolLookup lookup = SymbolLookup.libraryLookup(LIB_PATH, arena);
+            assertTrue(lookup.find("inc\u0000foobar").isEmpty());
+        }
     }
 
     private static MemorySegment loadLibrary(Arena session) {

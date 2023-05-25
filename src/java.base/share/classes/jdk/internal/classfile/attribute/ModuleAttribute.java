@@ -39,8 +39,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.lang.reflect.AccessFlag;
-import jdk.internal.classfile.java.lang.constant.ModuleDesc;
-import jdk.internal.classfile.java.lang.constant.PackageDesc;
+import java.lang.constant.ModuleDesc;
+import java.lang.constant.PackageDesc;
 import jdk.internal.classfile.impl.ModuleAttributeBuilderImpl;
 import jdk.internal.classfile.impl.Util;
 
