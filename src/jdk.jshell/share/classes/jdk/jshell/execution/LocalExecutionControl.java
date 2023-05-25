@@ -80,8 +80,8 @@ public class LocalExecutionControl extends DirectExecutionControl {
     private static final MethodTypeDesc MTD_void = MethodTypeDesc.of(ConstantDescs.CD_void);
 
     private static byte[] instrument(byte[] classFile) {
-        return Classfile.parse(classFile)
-                        .transform(ClassTransform.transformingMethodBodies((cob, coe) -> {
+        return Classfile.transform(Classfile.parse(classFile),
+                        ClassTransform.transformingMethodBodies((cob, coe) -> {
                             if (coe instanceof BranchInstruction)
                                 cob.invokestatic(CD_Cancel, "stopCheck", MTD_void);
                             cob.with(coe);

@@ -42,10 +42,11 @@ public final class DirectFieldBuilder
     private int flags;
 
     public DirectFieldBuilder(SplitConstantPool constantPool,
+                              Options options,
                               Utf8Entry name,
                               Utf8Entry type,
                               FieldModel original) {
-        super(constantPool);
+        super(constantPool, options);
         setOriginal(original);
         this.name = name;
         this.desc = type;

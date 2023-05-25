@@ -153,6 +153,7 @@ public final class StackMapGenerator {
                 (dcb.methodInfo.methodFlags() & ACC_STATIC) != 0,
                 dcb.bytecodesBufWriter.asByteBuffer().slice(0, dcb.bytecodesBufWriter.size()),
                 dcb.constantPool,
+                dcb.options,
                 dcb.handlers);
     }
 
@@ -194,6 +195,7 @@ public final class StackMapGenerator {
     private final List<RawExceptionCatch> rawHandlers;
     private final ClassHierarchyImpl classHierarchy;
     private final boolean patchDeadCode;
+    private final boolean filterDeadLabels;
     private List<Frame> frames;
     private final Frame currentFrame;
     private int maxStack, maxLocals;
@@ -221,6 +223,7 @@ public final class StackMapGenerator {
                      boolean isStatic,
                      ByteBuffer bytecode,
                      SplitConstantPool cp,
+                     Options options,
                      List<AbstractPseudoInstruction.ExceptionCatchImpl> handlers) {
         this.thisType = Type.referenceType(thisClass);
         this.methodName = methodName;
@@ -231,8 +234,9 @@ public final class StackMapGenerator {
         this.labelContext = labelContext;
         this.handlers = handlers;
         this.rawHandlers = new ArrayList<>(handlers.size());
-        this.classHierarchy = new ClassHierarchyImpl(cp.options().classHierarchyResolver);
-        this.patchDeadCode = cp.options().patchCode;
+        this.classHierarchy = new ClassHierarchyImpl(options.classHierarchyResolver);
+        this.patchDeadCode = options.patchCode;
+        this.filterDeadLabels = options.filterDeadLabels;
         this.currentFrame = new Frame(classHierarchy);
         generate();
     }
@@ -833,21 +837,22 @@ public final class StackMapGenerator {
         //try to attach debug info about corrupted bytecode to the message
         try {
             //clone SplitConstantPool with alternate Options
-            var newCp = new SplitConstantPool(cp, new Options(List.of(Classfile.Option.generateStackmap(false))));
-            var clb = new DirectClassBuilder(newCp, newCp.classEntry(ClassDesc.of("FakeClass")));
-            clb.withMethod(methodName, methodDesc, isStatic ? ACC_STATIC : 0, mb ->
-                    ((DirectMethodBuilder)mb).writeAttribute(new UnboundAttribute.AdHocAttribute<CodeAttribute>(Attributes.CODE) {
-                        @Override
-                        public void writeBody(BufWriter b) {
-                            b.writeU2(-1);//max stack
-                            b.writeU2(-1);//max locals
-                            b.writeInt(bytecode.limit());
-                            b.writeBytes(bytecode.array(), 0, bytecode.limit());
-                            b.writeU2(0);//exception handlers
-                            b.writeU2(0);//attributes
-                        }
-                    }));
-            ClassPrinter.toYaml(Classfile.parse(clb.build()).methods().get(0).code().get(), ClassPrinter.Verbosity.TRACE_ALL, sb::append);
+            var cc = Classfile.Context.of(Classfile.Option.generateStackmap(false));
+            var newCp = new SplitConstantPool(cp);
+            var clm = cc.parse(cc.build(newCp.classEntry(ClassDesc.of("FakeClass")), newCp, clb ->
+                    clb.withMethod(methodName, methodDesc, isStatic ? ACC_STATIC : 0, mb ->
+                            ((DirectMethodBuilder)mb).writeAttribute(new UnboundAttribute.AdHocAttribute<CodeAttribute>(Attributes.CODE) {
+                                @Override
+                                public void writeBody(BufWriter b) {
+                                    b.writeU2(-1);//max stack
+                                    b.writeU2(-1);//max locals
+                                    b.writeInt(bytecode.limit());
+                                    b.writeBytes(bytecode.array(), 0, bytecode.limit());
+                                    b.writeU2(0);//exception handlers
+                                    b.writeU2(0);//attributes
+                                }
+                    }))));
+            ClassPrinter.toYaml(clm.methods().get(0).code().get(), ClassPrinter.Verbosity.TRACE_ALL, sb::append);
         } catch (Error | Exception suppresed) {
             //fallback to bytecode hex dump
             bytecode.rewind();
@@ -931,7 +936,7 @@ public final class StackMapGenerator {
         for (var exhandler : rawHandlers) try {
              offsets.set(exhandler.handler());
         } catch (IllegalArgumentException iae) {
-            if (!cp.options().filterDeadLabels)
+            if (!filterDeadLabels)
                 generatorError("Detected exception handler out of bytecode range");
         }
         return offsets;

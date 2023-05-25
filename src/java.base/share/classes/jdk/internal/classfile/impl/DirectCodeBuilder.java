@@ -101,14 +101,15 @@ public final class DirectCodeBuilder
     public static Attribute<CodeAttribute> build(MethodInfo methodInfo,
                                                  Consumer<? super CodeBuilder> handler,
                                                  SplitConstantPool constantPool,
+                                                 Options options,
                                                  CodeModel original) {
         DirectCodeBuilder cb;
         try {
-            handler.accept(cb = new DirectCodeBuilder(methodInfo, constantPool, original, false));
+            handler.accept(cb = new DirectCodeBuilder(methodInfo, constantPool, options, original, false));
             cb.buildContent();
         } catch (LabelOverflowException loe) {
-            if (constantPool.options().fixJumps) {
-                handler.accept(cb = new DirectCodeBuilder(methodInfo, constantPool, original, true));
+            if (options.fixJumps) {
+                handler.accept(cb = new DirectCodeBuilder(methodInfo, constantPool, options, original, true));
                 cb.buildContent();
             }
             else
@@ -119,15 +120,16 @@ public final class DirectCodeBuilder
 
     private DirectCodeBuilder(MethodInfo methodInfo,
                               SplitConstantPool constantPool,
+                              Options options,
                               CodeModel original,
                               boolean transformFwdJumps) {
-        super(constantPool);
+        super(constantPool, options);
         setOriginal(original);
         this.methodInfo = methodInfo;
         this.transformFwdJumps = transformFwdJumps;
-        this.transformBackJumps = constantPool.options().fixJumps;
-        bytecodesBufWriter = (original instanceof CodeImpl cai) ? new BufWriterImpl(constantPool, cai.codeLength())
-                                                               : new BufWriterImpl(constantPool);
+        this.transformBackJumps = options.fixJumps;
+        bytecodesBufWriter = (original instanceof CodeImpl cai) ? new BufWriterImpl(constantPool, options, cai.codeLength())
+                                                               : new BufWriterImpl(constantPool, options);
         this.startLabel = new LabelImpl(this, 0);
         this.endLabel = new LabelImpl(this, -1);
         this.topLocal = Util.maxLocals(methodInfo.methodFlags(), methodInfo.methodTypeSymbol());
@@ -196,7 +198,7 @@ public final class DirectCodeBuilder
             int endPc = labelToBci(h.tryEnd());
             int handlerPc = labelToBci(h.handler());
             if (startPc == -1 || endPc == -1 || handlerPc == -1) {
-                if (constantPool.options().filterDeadLabels) {
+                if (options.filterDeadLabels) {
                     handlersSize--;
                 } else {
                     throw new IllegalStateException("Unbound label in exception handler");
@@ -220,7 +222,7 @@ public final class DirectCodeBuilder
         // Backfill branches for which Label didn't have position yet
         processDeferredLabels();
 
-        if (constantPool.options().processDebug) {
+        if (options.processDebug) {
             if (!characterRanges.isEmpty()) {
                 Attribute<?> a = new UnboundAttribute.AdHocAttribute<>(Attributes.CHARACTER_RANGE_TABLE) {
 
@@ -233,7 +235,7 @@ public final class DirectCodeBuilder
                             var start = labelToBci(cr.startScope());
                             var end = labelToBci(cr.endScope());
                             if (start == -1 || end == -1) {
-                                if (constantPool.options().filterDeadLabels) {
+                                if (options.filterDeadLabels) {
                                     crSize--;
                                 } else {
                                     throw new IllegalStateException("Unbound label in character range");
@@ -262,7 +264,7 @@ public final class DirectCodeBuilder
                         b.writeU2(lvSize);
                         for (LocalVariable l : localVariables) {
                             if (!l.writeTo(b)) {
-                                if (constantPool.options().filterDeadLabels) {
+                                if (options.filterDeadLabels) {
                                     lvSize--;
                                 } else {
                                     throw new IllegalStateException("Unbound label in local variable type");
@@ -285,7 +287,7 @@ public final class DirectCodeBuilder
                         b.writeU2(localVariableTypes.size());
                         for (LocalVariableType l : localVariableTypes) {
                             if (!l.writeTo(b)) {
-                                if (constantPool.options().filterDeadLabels) {
+                                if (options.filterDeadLabels) {
                                     lvtSize--;
                                 } else {
                                     throw new IllegalStateException("Unbound label in local variable type");
@@ -322,7 +324,7 @@ public final class DirectCodeBuilder
                 Attribute<? extends StackMapTableAttribute> stackMapAttr;
                 boolean canReuseStackmaps = codeAndExceptionsMatch(codeLength);
 
-                if (!constantPool.options().generateStackmaps) {
+                if (!options.generateStackmaps) {
                     StackCounter cntr = StackCounter.of(DirectCodeBuilder.this, buf);
                     maxStack = cntr.maxStack();
                     maxLocals = cntr.maxLocals();
@@ -377,9 +379,9 @@ public final class DirectCodeBuilder
         private final BufWriterImpl buf;
         private int lastPc, lastLine, writtenLine;
 
-        public DedupLineNumberTableAttribute(ConstantPoolBuilder constantPool) {
+        public DedupLineNumberTableAttribute(ConstantPoolBuilder constantPool, Options options) {
             super(Attributes.LINE_NUMBER_TABLE);
-            buf = new BufWriterImpl(constantPool);
+            buf = new BufWriterImpl(constantPool, options);
             lastPc = -1;
             writtenLine = -1;
         }
@@ -424,7 +426,7 @@ public final class DirectCodeBuilder
             codeAttributesMatch = cai.codeLength == curPc()
                                   && cai.compareCodeBytes(bytecodesBufWriter, 0, codeLength);
             if (codeAttributesMatch) {
-                BufWriter bw = new BufWriterImpl(constantPool);
+                BufWriter bw = new BufWriterImpl(constantPool, options);
                 writeExceptionHandlers(bw);
                 codeAttributesMatch = cai.classReader.compare(bw, 0, cai.exceptionHandlerPos, bw.size());
             }
@@ -682,7 +684,7 @@ public final class DirectCodeBuilder
 
     public void setLineNumber(int lineNo) {
         if (lineNumberWriter == null)
-            lineNumberWriter = new DedupLineNumberTableAttribute(constantPool);
+            lineNumberWriter = new DedupLineNumberTableAttribute(constantPool, options);
         lineNumberWriter.writeLineNumber(curPc(), lineNo);
     }
 

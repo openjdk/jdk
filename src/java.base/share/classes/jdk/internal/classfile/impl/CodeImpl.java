@@ -150,6 +150,7 @@ public final class CodeImpl
                                         }
                                     },
                                     (SplitConstantPool)buf.constantPool(),
+                                    ((BufWriterImpl)buf).options(),
                                     null).writeTo(buf);
         }
     }

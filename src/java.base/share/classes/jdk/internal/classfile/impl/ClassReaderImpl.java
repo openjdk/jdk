@@ -85,10 +85,10 @@ public final class ClassReaderImpl
     private BootstrapMethodsAttribute bootstrapMethodsAttribute;
 
     ClassReaderImpl(byte[] classfileBytes,
-                    Collection<Classfile.Option> options) {
+                    Options options) {
         this.buffer = classfileBytes;
         this.classfileLength = classfileBytes.length;
-        this.options = new Options(options);
+        this.options = options;
         this.attributeMapper = this.options.attributeMapper;
         if (classfileLength < 4 || readInt(0) != 0xCAFEBABE) {
             throw new IllegalStateException("Bad magic number");

@@ -46,6 +46,7 @@ import jdk.internal.classfile.impl.AbstractPoolEntry;
 import jdk.internal.classfile.impl.DirectClassBuilder;
 import jdk.internal.classfile.impl.Options;
 import jdk.internal.classfile.impl.SplitConstantPool;
+import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.classfile.impl.UnboundAttribute;
 import java.lang.reflect.AccessFlag;
 import jdk.internal.classfile.attribute.CharacterRangeInfo;
@@ -59,6 +60,169 @@ import java.lang.constant.PackageDesc;
  */
 public class Classfile {
     private Classfile() {
+    }
+
+    public sealed interface Context permits Options {
+
+        static Context of() {
+            return new Options(List.of());
+        }
+
+        static Context of(Option... options) {
+            return new Options(List.of(options));
+        }
+
+        static Context of(List<Option> options) {
+            return new Options(List.copyOf(options));
+        }
+
+        /**
+         * Parse a classfile into a {@link ClassModel}.
+         * @param bytes the bytes of the classfile
+         * @return the class model
+         */
+        default ClassModel parse(byte[] bytes) {
+            return new ClassImpl(bytes, (Options)this);
+        }
+
+        /**
+         * Parse a classfile into a {@link ClassModel}.
+         * @param path the path to the classfile
+         * @return the class model
+         */
+        default ClassModel parse(Path path) throws IOException {
+            return parse(Files.readAllBytes(path));
+        }
+
+        /**
+         * Build a classfile into a byte array.
+         * @param thisClass the name of the class to build
+         * @param options the desired processing options
+         * @param handler a handler that receives a {@link ClassBuilder}
+         * @return the classfile bytes
+         */
+        default byte[] build(ClassDesc thisClass,
+                             Consumer<? super ClassBuilder> handler) {
+            ConstantPoolBuilder pool = ConstantPoolBuilder.of();
+            return build(pool.classEntry(thisClass), pool, handler);
+        }
+
+        /**
+         * Build a classfile into a byte array using the provided constant pool
+         * builder (which encapsulates classfile processing options.)
+         *
+         * @param thisClassEntry the name of the class to build
+         * @param constantPool the constant pool builder
+         * @param handler a handler that receives a {@link ClassBuilder}
+         * @return the classfile bytes
+         */
+        default byte[] build(ClassEntry thisClassEntry,
+                             ConstantPoolBuilder constantPool,
+                             Consumer<? super ClassBuilder> handler) {
+            thisClassEntry = AbstractPoolEntry.maybeClone(constantPool, thisClassEntry);
+            DirectClassBuilder builder = new DirectClassBuilder((SplitConstantPool)constantPool, (Options)this, thisClassEntry);
+            handler.accept(builder);
+            return builder.build();
+        }
+
+        /**
+         * Build a classfile into a file.
+         * @param path the path to the file to write
+         * @param thisClass the name of the class to build
+         * @param handler a handler that receives a {@link ClassBuilder}
+         */
+        default void buildTo(Path path,
+                             ClassDesc thisClass,
+                             Consumer<ClassBuilder> handler) throws IOException {
+            Files.write(path, build(thisClass, handler));
+        }
+
+        /**
+         * Build a module descriptor into a byte array.
+         * @param moduleAttribute the {@code Module} attribute
+         * @return the classfile bytes
+         */
+        default byte[] buildModule(ModuleAttribute moduleAttribute) {
+            return buildModule(moduleAttribute, clb -> {});
+        }
+
+        /**
+         * Build a module descriptor into a byte array.
+         * @param moduleAttribute the {@code Module} attribute
+         * @param handler a handler that receives a {@link ClassBuilder}
+         * @return the classfile bytes
+         */
+        default byte[] buildModule(ModuleAttribute moduleAttribute,
+                                         Consumer<? super ClassBuilder> handler) {
+            return build(ClassDesc.of("module-info"), clb -> {
+                clb.withFlags(AccessFlag.MODULE);
+                clb.with(moduleAttribute);
+                handler.accept(clb);
+            });
+        }
+
+        /**
+         * Build a module descriptor into a file.
+         * @param path the file to write
+         * @param moduleAttribute the {@code Module} attribute
+         */
+        default void buildModuleTo(Path path,
+                                         ModuleAttribute moduleAttribute) throws IOException {
+            buildModuleTo(path, moduleAttribute, clb -> {});
+        }
+
+        /**
+         * Build a module descriptor into a file.
+         * @param path the file to write
+         * @param moduleAttribute the {@code Module} attribute
+         * @param handler a handler that receives a {@link ClassBuilder}
+         */
+        default void buildModuleTo(Path path,
+                                         ModuleAttribute moduleAttribute,
+                                         Consumer<? super ClassBuilder> handler) throws IOException {
+            Files.write(path, buildModule(moduleAttribute, handler));
+        }
+
+        /**
+         * Transform one classfile into a new classfile with the aid of a
+         * {@link ClassTransform}.  The transform will receive each element of
+         * this class, as well as a {@link ClassBuilder} for building the new class.
+         * The transform is free to preserve, remove, or replace elements as it
+         * sees fit.
+         *
+         * @implNote
+         * <p>This method behaves as if:
+         * {@snippet lang=java :
+         *     Classfile.build(thisClass(), ConstantPoolBuilder.of(this),
+         *                     b -> b.transform(this, transform));
+         * }
+         *
+         * @param model class model to transform
+         * @param transform the transform
+         * @return the bytes of the new class
+         */
+        default byte[] transform(ClassModel model, ClassTransform transform) {
+            return transform(model, model.thisClass(), transform);
+        }
+
+        default byte[] transform(ClassModel model, ClassDesc newClassName, ClassTransform transform) {
+            return transform(model, TemporaryConstantPool.INSTANCE.classEntry(newClassName), transform);
+        }
+
+        default byte[] transform(ClassModel model, ClassEntry newClassName, ClassTransform transform) {
+            ConstantPoolBuilder constantPool = ((Options)this).cpSharing ? ConstantPoolBuilder.of(model)
+                                                                         : ConstantPoolBuilder.of();
+            return build(newClassName, constantPool,
+                    new Consumer<ClassBuilder>() {
+                        @Override
+                        public void accept(ClassBuilder builder) {
+                            ((DirectClassBuilder) builder).setOriginal((ClassImpl)model);
+                            ((DirectClassBuilder) builder).setSizeHint(((ClassImpl)model).classfileLength());
+                            builder.transform((ClassImpl)model, transform);
+                        }
+                    });
+        }
+
     }
 
     /**
@@ -155,24 +319,19 @@ public class Classfile {
     /**
      * Parse a classfile into a {@link ClassModel}.
      * @param bytes the bytes of the classfile
-     * @param options the desired processing options
      * @return the class model
      */
-    public static ClassModel parse(byte[] bytes, Option... options) {
-        Collection<Option> os = (options == null || options.length == 0)
-                                   ? Collections.emptyList()
-                                   : List.of(options);
-        return new ClassImpl(bytes, os);
+    public static ClassModel parse(byte[] bytes) {
+        return Context.of().parse(bytes);
     }
 
     /**
      * Parse a classfile into a {@link ClassModel}.
      * @param path the path to the classfile
-     * @param options the desired processing options
      * @return the class model
      */
-    public static ClassModel parse(Path path, Option... options) throws IOException {
-        return parse(Files.readAllBytes(path), options);
+    public static ClassModel parse(Path path) throws IOException {
+        return Context.of().parse(path);
     }
 
     /**
@@ -183,21 +342,7 @@ public class Classfile {
      */
     public static byte[] build(ClassDesc thisClass,
                                Consumer<ClassBuilder> handler) {
-        return build(thisClass, Collections.emptySet(), handler);
-    }
-
-    /**
-     * Build a classfile into a byte array.
-     * @param thisClass the name of the class to build
-     * @param options the desired processing options
-     * @param handler a handler that receives a {@link ClassBuilder}
-     * @return the classfile bytes
-     */
-    public static byte[] build(ClassDesc thisClass,
-                               Collection<Option> options,
-                               Consumer<? super ClassBuilder> handler) {
-        ConstantPoolBuilder pool = ConstantPoolBuilder.of(options);
-        return build(pool.classEntry(thisClass), pool, handler);
+        return Context.of().build(thisClass, handler);
     }
 
     /**
@@ -212,10 +357,7 @@ public class Classfile {
     public static byte[] build(ClassEntry thisClassEntry,
                                ConstantPoolBuilder constantPool,
                                Consumer<? super ClassBuilder> handler) {
-        thisClassEntry = AbstractPoolEntry.maybeClone(constantPool, thisClassEntry);
-        DirectClassBuilder builder = new DirectClassBuilder((SplitConstantPool)constantPool, thisClassEntry);
-        handler.accept(builder);
-        return builder.build();
+        return Context.of().build(thisClassEntry, constantPool, handler);
     }
 
     /**
@@ -227,21 +369,7 @@ public class Classfile {
     public static void buildTo(Path path,
                                ClassDesc thisClass,
                                Consumer<ClassBuilder> handler) throws IOException {
-        Files.write(path, build(thisClass, Collections.emptySet(), handler));
-    }
-
-    /**
-     * Build a classfile into a file.
-     * @param path the path to the file to write
-     * @param thisClass the name of the class to build
-     * @param options the desired processing options
-     * @param handler a handler that receives a {@link ClassBuilder}
-     */
-    public static void buildTo(Path path,
-                               ClassDesc thisClass,
-                               Collection<Option> options,
-                               Consumer<? super ClassBuilder> handler) throws IOException {
-        Files.write(path, build(thisClass, options, handler));
+        Context.of().buildTo(path, thisClass, handler);
     }
 
     /**
@@ -250,7 +378,7 @@ public class Classfile {
      * @return the classfile bytes
      */
     public static byte[] buildModule(ModuleAttribute moduleAttribute) {
-        return buildModule(moduleAttribute, clb -> {});
+        return Context.of().buildModule(moduleAttribute);
     }
 
     /**
@@ -261,11 +389,7 @@ public class Classfile {
      */
     public static byte[] buildModule(ModuleAttribute moduleAttribute,
                                      Consumer<? super ClassBuilder> handler) {
-        return build(ClassDesc.of("module-info"), clb -> {
-            clb.withFlags(AccessFlag.MODULE);
-            clb.with(moduleAttribute);
-            handler.accept(clb);
-        });
+        return Context.of().buildModule(moduleAttribute, handler);
     }
 
     /**
@@ -275,7 +399,7 @@ public class Classfile {
      */
     public static void buildModuleTo(Path path,
                                      ModuleAttribute moduleAttribute) throws IOException {
-        buildModuleTo(path, moduleAttribute, clb -> {});
+        Context.of().buildModuleTo(path, moduleAttribute);
     }
 
     /**
@@ -287,7 +411,19 @@ public class Classfile {
     public static void buildModuleTo(Path path,
                                      ModuleAttribute moduleAttribute,
                                      Consumer<? super ClassBuilder> handler) throws IOException {
-        Files.write(path, buildModule(moduleAttribute, handler));
+        Context.of().buildModuleTo(path, moduleAttribute, handler);
+    }
+
+    public static byte[] transform(ClassModel model, ClassTransform transform) {
+        return Context.of().transform(model, transform);
+    }
+
+    public static byte[] transform(ClassModel model, ClassDesc newClassName, ClassTransform transform) {
+        return Context.of().transform(model, newClassName, transform);
+    }
+
+    public static byte[] transform(ClassModel model, ClassEntry newClassName, ClassTransform transform) {
+        return Context.of().transform(model, newClassName, transform);
     }
 
     public static final int MAGIC_NUMBER = 0xCAFEBABE;

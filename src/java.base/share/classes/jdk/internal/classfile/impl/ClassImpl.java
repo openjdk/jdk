@@ -63,8 +63,7 @@ public final class ClassImpl
     private List<Attribute<?>> attributes;
     private List<ClassEntry> interfaces;
 
-    public ClassImpl(byte[] cfbytes,
-                     Collection<Classfile.Option> options) {
+    public ClassImpl(byte[] cfbytes, Options options) {
         this.reader = new ClassReaderImpl(cfbytes, options);
         ClassReaderImpl reader = (ClassReaderImpl) this.reader;
         int p = reader.interfacesPos;
@@ -92,6 +91,10 @@ public final class ClassImpl
         this.methods = List.of(methods);
         this.attributesPos = p;
         reader.setContainedClass(this);
+    }
+
+    public int classfileLength() {
+        return reader.classfileLength();
     }
 
     @Override
@@ -167,20 +170,6 @@ public final class ClassImpl
             if (attr instanceof ClassElement e)
                 consumer.accept(e);
         }
-    }
-
-    @Override
-    public byte[] transform(ClassTransform transform) {
-        ConstantPoolBuilder constantPool = ConstantPoolBuilder.of(this);
-        return Classfile.build(thisClass(), constantPool,
-                               new Consumer<ClassBuilder>() {
-                                   @Override
-                                   public void accept(ClassBuilder builder) {
-                                       ((DirectClassBuilder) builder).setOriginal(ClassImpl.this);
-                                       ((DirectClassBuilder) builder).setSizeHint(reader.classfileLength());
-                                       builder.transform(ClassImpl.this, transform);
-                                   }
-                               });
     }
 
     @Override

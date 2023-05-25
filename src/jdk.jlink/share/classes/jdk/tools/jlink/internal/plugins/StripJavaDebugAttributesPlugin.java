@@ -64,15 +64,16 @@ public final class StripJavaDebugAttributesPlugin extends AbstractPlugin {
                     if (path.endsWith("module-info.class")) {
                         // XXX. Do we have debug info?
                     } else {
-                        byte[] content = newClassReader(path, resource,
+                        var clm = newClassReader(path, resource,
                                 Classfile.Option.processDebug(false),
-                                Classfile.Option.processLineNumbers(false)).transform(ClassTransform
+                                Classfile.Option.processLineNumbers(false));
+                        byte[] content = Classfile.transform(clm, ClassTransform
                                         .dropping(cle -> cle instanceof SourceFileAttribute
-                                                      || cle instanceof SourceDebugExtensionAttribute)
-                                        .andThen(ClassTransform.transformingMethods(MethodTransform
-                                                .dropping(me -> me instanceof MethodParametersAttribute)
-                                                .andThen(MethodTransform
-                                                        .transformingCode(CodeTransform.ACCEPT_ALL)))));
+                                                            || cle instanceof SourceDebugExtensionAttribute)
+                                              .andThen(ClassTransform.transformingMethods(MethodTransform
+                                                    .dropping(me -> me instanceof MethodParametersAttribute)
+                                                    .andThen(MethodTransform
+                                                            .transformingCode(CodeTransform.ACCEPT_ALL)))));
                         res = resource.copyWithContent(content);
                     }
                 }

@@ -50,11 +50,12 @@ public final class DirectMethodBuilder
     MethodTypeDesc mDesc;
 
     public DirectMethodBuilder(SplitConstantPool constantPool,
+                               Options options,
                                Utf8Entry nameInfo,
                                Utf8Entry typeInfo,
                                int flags,
                                MethodModel original) {
-        super(constantPool);
+        super(constantPool, options);
         setOriginal(original);
         this.name = nameInfo;
         this.desc = typeInfo;
@@ -105,7 +106,7 @@ public final class DirectMethodBuilder
 
     @Override
     public BufferedCodeBuilder bufferedCodeBuilder(CodeModel original) {
-        return new BufferedCodeBuilder(this, constantPool, original);
+        return new BufferedCodeBuilder(this, constantPool, options, original);
     }
 
     @Override
@@ -116,7 +117,7 @@ public final class DirectMethodBuilder
 
     private MethodBuilder withCode(CodeModel original,
                                   Consumer<? super CodeBuilder> handler) {
-        var cb = DirectCodeBuilder.build(this, handler, constantPool, original);
+        var cb = DirectCodeBuilder.build(this, handler, constantPool, options, original);
         writeAttribute(cb);
         return this;
     }

@@ -39,22 +39,24 @@ import jdk.internal.classfile.constantpool.PoolEntry;
 public final class BufWriterImpl implements BufWriter {
 
     private final ConstantPoolBuilder constantPool;
+    private final Options options;
     private LabelContext labelContext;
     private final ClassEntry thisClass;
     private final int majorVersion;
     byte[] elems;
     int offset = 0;
 
-    public BufWriterImpl(ConstantPoolBuilder constantPool) {
-        this(constantPool, 64, null, 0);
+    public BufWriterImpl(ConstantPoolBuilder constantPool, Options options) {
+        this(constantPool, options, 64, null, 0);
     }
 
-    public BufWriterImpl(ConstantPoolBuilder constantPool, int initialSize) {
-        this(constantPool, initialSize, null, 0);
+    public BufWriterImpl(ConstantPoolBuilder constantPool, Options options, int initialSize) {
+        this(constantPool, options, initialSize, null, 0);
     }
 
-    public BufWriterImpl(ConstantPoolBuilder constantPool, int initialSize, ClassEntry thisClass, int majorVersion) {
+    public BufWriterImpl(ConstantPoolBuilder constantPool, Options options, int initialSize, ClassEntry thisClass, int majorVersion) {
         this.constantPool = constantPool;
+        this.options = options;
         elems = new byte[initialSize];
         this.thisClass = thisClass;
         this.majorVersion = majorVersion;
@@ -83,6 +85,10 @@ public final class BufWriterImpl implements BufWriter {
 
     public int getMajorVersion() {
         return majorVersion;
+    }
+
+    public Options options() {
+        return options;
     }
 
     @Override
