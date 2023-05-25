@@ -454,7 +454,7 @@ __ jmp(L_exit);
 // 00007FF676C01032  vmovq       xmm5,rcx
 // 00007FF676C01037  vpand       xmm2,xmm2,xmm5
   __ movq(xmm2, xmm0);
-  __ evmovdquq(xmm3, ExternalAddress((address)CONST_NaN), Assembler::AVX_128bit, rcx);
+  __ vmovdqu(xmm3, ExternalAddress((address)CONST_NaN));
   __ vpand(xmm4, xmm2, xmm3, Assembler::AVX_128bit);
   __ vpand(xmm3, xmm1, xmm3, Assembler::AVX_128bit);
   __ mov64(rcx, 0x8000000000000000);
