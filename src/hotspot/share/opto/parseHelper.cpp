@@ -685,6 +685,20 @@ void PEAState::validate() const {
 }
 #endif
 
+void PEAState::materialize_all() {
+  Unique_Node_List objs;
+  int sz = objects(objs);
+
+  for (int i = 0; i < sz; ++i) {
+    ObjID id = static_cast<ObjID>(objs.at(i));
+    ObjectState* os = get_object_state(id);
+
+    if (os->is_virtual()) {
+      update(id, new EscapedState(get_cooked_oop(id)));
+    }
+  }
+}
+
 // get the key set from _state. we stop maintaining aliases for the materialized objects.
 int PEAState::objects(Unique_Node_List& nodes) const {
   _state.iterate([&](ObjID obj, ObjectState* state) {
@@ -744,23 +758,26 @@ void AllocationStateMerger::merge(const PEAState& newin, GraphKit* kit, RegionNo
       assert(os1 != nullptr && os2 != nullptr, "sanity check");
       Node* m = _state.get_cooked_oop(obj);
       Node* n = newin.get_cooked_oop(obj);
+      EscapedState* es;
+      if (os1->is_virtual()) {
+        es = new EscapedState(m);
+        _state.update(obj, es);
+      } else {
+        es = static_cast<EscapedState*>(os1);
+      }
+
       if (m->is_Phi() && m->in(0) == region) {
         ensure_phi(m->as_Phi(), pnum);
         // only update the pnum that we have never seen before.
         if (m->in(pnum) == nullptr) {
           m->set_req(pnum, n);
         }
-      } else {
+      } else if (m != n) {
         const Type* type = obj->oop_type(kit->gvn());
         Node* phi = PhiNode::make(region, m, type);
         phi->set_req(pnum, n);
         kit->gvn().set_type(phi, type);
-        if (os1->is_virtual()) {
-          _state.remove_alias(obj, m);
-          _state.update(obj, new EscapedState(phi));
-        } else {
-          static_cast<EscapedState*>(os1)->set_materialized_value(phi);
-        }
+        es->set_materialized_value(phi);
       }
     }
   }

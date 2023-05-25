@@ -183,6 +183,8 @@ class PEAState {
     return nullptr;
   }
 
+  void materialize_all();
+
 #ifndef PRODUCT
   void print_on(outputStream* os) const;
 #endif

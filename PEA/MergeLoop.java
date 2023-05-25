@@ -6,7 +6,7 @@ class MergeLoop {
 
         for (int i = 0; i < val; ++i)  {
             // to prevent phi from being elided, we need to ensure obj is not loop invariant!
-            // the following shuffle just to fool ciTypeFlow
+            // the following shuffle just confuses ciTypeFlow
 
             // swap
             Object t = obj1;
@@ -22,8 +22,8 @@ class MergeLoop {
     }
 
     public static void main(String[] args) {
-        for (int i = 0; i < 2_000_000; ++i) {
-            test(i);
+        for (int i = 0; i < 200_000; ++i) {
+            test(24);
         }
     }
 }

@@ -734,6 +734,11 @@ void Parse::do_all_blocks() {
 
         // Leave behind an undisturbed copy of the map, for future merges.
         set_map(clone_map());
+
+        if (DoPartialEscapeAnalysis && block->is_loop_head()) {
+          PEAState& as = jvms()->alloc_state();
+          as.materialize_all();
+        }
       }
 
       if (control()->is_Region() && !block->is_loop_head() && !has_irreducible && !block->is_handler()) {

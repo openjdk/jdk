@@ -1,0 +1,1 @@
+java -XX:-TieredCompilation -XX:-UseOnStackReplacement -XX:CompileCommand=compileonly,SimpleLoop::toArray -XX:+UnlockExperimentalVMOptions -XX:CompileCommand='dontinline,SimpleLoop$Iterator::next' $* SimpleLoop
