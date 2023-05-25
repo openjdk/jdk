@@ -4591,8 +4591,9 @@ char *ADLParser::get_ident_common(bool do_preproc) {
   char *start;                    // Pointer to start of token
   char *end;                      // Pointer to end of token
 
-  if( _curline == nullptr )       // Return null at EOF.
+  if(_curline == nullptr) {       // Return null at EOF.
     return nullptr;
+  }
 
   skipws_common(do_preproc);      // Skip whitespace before identifier
   start = end = _ptr;             // Start points at first character
@@ -4791,8 +4792,9 @@ int ADLParser::get_int(void) {
   char         *end;              // Pointer to end of token
   int           result;           // Storage for integer result
 
-  if(_curline == nullptr)         // Return null at EOF.
+  if (_curline == nullptr) {       // Return null at EOF.
     return 0;
+  }
 
   skipws();                       // Skip whitespace before identifier
   start = end = _ptr;             // Start points at first character
@@ -4826,8 +4828,9 @@ int ADLParser::get_int(void) {
 char *ADLParser::get_relation_dup(void) {
   char         *result = nullptr; // relational operator being returned
 
-  if(_curline == nullptr)         // Return null at EOF.
+  if (_curline == nullptr) {      // Return null at EOF.
     return  nullptr;
+  }
 
   skipws();                       // Skip whitespace before relation
   char *start = _ptr;             // Store start of relational operator
@@ -5238,8 +5241,9 @@ void ADLParser::skipws_common(bool do_preproc) {
     }
     else { ++_ptr; ++next; }
   }
-  if(_curline != nullptr)           // at end of file _curchar isn't valid
+  if (_curline != nullptr) {        // at end of file _curchar isn't valid
     _curchar = *_ptr;               // reset _curchar to maintain invariant
+  }
 }
 
 //---------------------------cur_char-----------------------------------------
