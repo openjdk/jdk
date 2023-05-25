@@ -255,7 +255,6 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_dtan:
   case vmIntrinsics::_dabs:
   case vmIntrinsics::_fabs:
-  case vmIntrinsics::_fmod:
   case vmIntrinsics::_iabs:
   case vmIntrinsics::_labs:
   case vmIntrinsics::_datan2:
@@ -1845,10 +1844,6 @@ bool LibraryCallKit::inline_math_native(vmIntrinsics::ID id) {
     return StubRoutines::dlog10() != nullptr ?
       runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dlog10(), "dlog10") :
       runtime_math(OptoRuntime::Math_D_D_Type(), CAST_FROM_FN_PTR(address, SharedRuntime::dlog10), "LOG10");
-  case vmIntrinsics::_fmod:
-    return StubRoutines::fmod() != nullptr ?
-      runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::fmod(), "fmod") :
-      runtime_math(OptoRuntime::Math_D_D_Type(), CAST_FROM_FN_PTR(address, SharedRuntime::fmod), "MOD");
 
   case vmIntrinsics::_roundD: return Matcher::match_rule_supported(Op_RoundD) ? inline_double_math(id) : false;
   case vmIntrinsics::_ceil:

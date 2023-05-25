@@ -568,7 +568,6 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method) {
   case vmIntrinsics::_dlog:
   case vmIntrinsics::_dlog10:
   case vmIntrinsics::_dpow:
-  case vmIntrinsics::_fmod:
   case vmIntrinsics::_roundD:
   case vmIntrinsics::_roundF:
   case vmIntrinsics::_min:

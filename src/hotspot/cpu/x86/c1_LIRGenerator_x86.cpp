@@ -802,13 +802,12 @@ void LIRGenerator::do_FmaIntrinsic(Intrinsic* x) {
 
 
 void LIRGenerator::do_MathIntrinsic(Intrinsic* x) {
-  assert(x->number_of_arguments() == 1 || (x->number_of_arguments() == 2 && x->id() == vmIntrinsics::_dpow) ||
-        (x->number_of_arguments() == 2 && x->id() == vmIntrinsics::_fmod), "wrong type");
+  assert(x->number_of_arguments() == 1 || (x->number_of_arguments() == 2 && x->id() == vmIntrinsics::_dpow), "wrong type");
 
   if (x->id() == vmIntrinsics::_dexp || x->id() == vmIntrinsics::_dlog ||
       x->id() == vmIntrinsics::_dpow || x->id() == vmIntrinsics::_dcos ||
       x->id() == vmIntrinsics::_dsin || x->id() == vmIntrinsics::_dtan ||
-      x->id() == vmIntrinsics::_fmod || x->id() == vmIntrinsics::_dlog10) {
+      x->id() == vmIntrinsics::_dlog10) {
     do_LibmIntrinsic(x);
     return;
   }
@@ -871,7 +870,7 @@ void LIRGenerator::do_LibmIntrinsic(Intrinsic* x) {
 
   CallingConvention* cc = nullptr;
 
-  if ((x->id() == vmIntrinsics::_dpow) || (x->id() == vmIntrinsics::_fmod)) {
+  if (x->id() == vmIntrinsics::_dpow) {
     LIRItem value1(x->argument_at(1), this);
 
     value1.set_destroys_register();
@@ -972,12 +971,6 @@ void LIRGenerator::do_LibmIntrinsic(Intrinsic* x) {
         __ call_runtime_leaf(StubRoutines::dpow(), getThreadTemp(), result_reg, cc->args());
       } else {
         __ call_runtime_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::dpow), getThreadTemp(), result_reg, cc->args());
-      }
-    case vmIntrinsics::_fmod:
-       if (StubRoutines::fmod() != nullptr) {
-        __ call_runtime_leaf(StubRoutines::fmod(), getThreadTemp(), result_reg, cc->args());
-      } else {
-        __ call_runtime_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::fmod), getThreadTemp(), result_reg, cc->args());
       }
       break;
     case vmIntrinsics::_dsin:

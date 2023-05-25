@@ -2959,7 +2959,6 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
   case vmIntrinsics::_dsin :          // fall through
   case vmIntrinsics::_dcos :          // fall through
   case vmIntrinsics::_dexp :          // fall through
-  case vmIntrinsics::_fmod:           // fall through
   case vmIntrinsics::_dpow :          do_MathIntrinsic(x); break;
   case vmIntrinsics::_arraycopy:      do_ArrayCopy(x);     break;
 

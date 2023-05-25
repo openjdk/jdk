@@ -158,7 +158,6 @@ class AbstractInterpreter: AllStatic {
       case vmIntrinsics::_dlog  : // fall thru
       case vmIntrinsics::_dlog10: // fall thru
       case vmIntrinsics::_dpow  : // fall thru
-      case vmIntrinsics::_fmod  : // fall thru
       case vmIntrinsics::_dexp  : // fall thru
       case vmIntrinsics::_fmaD  : // fall thru
       case vmIntrinsics::_fmaF  : // fall thru

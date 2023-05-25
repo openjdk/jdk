@@ -92,7 +92,6 @@ bool vmIntrinsics::preserves_state(vmIntrinsics::ID id) {
   case vmIntrinsics::_dlog10:
   case vmIntrinsics::_dexp:
   case vmIntrinsics::_dpow:
-  case vmIntrinsics::_fmod:
   case vmIntrinsics::_Preconditions_checkIndex:
   case vmIntrinsics::_Preconditions_checkLongIndex:
   case vmIntrinsics::_Reference_get:
@@ -144,7 +143,6 @@ bool vmIntrinsics::can_trap(vmIntrinsics::ID id) {
   case vmIntrinsics::_dlog10:
   case vmIntrinsics::_dexp:
   case vmIntrinsics::_dpow:
-  case vmIntrinsics::_fmod:
   case vmIntrinsics::_updateCRC32:
   case vmIntrinsics::_updateBytesCRC32:
   case vmIntrinsics::_updateByteBufferCRC32:
@@ -290,7 +288,6 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
   case vmIntrinsics::_dlog:
   case vmIntrinsics::_dexp:
   case vmIntrinsics::_dpow:
-  case vmIntrinsics::_fmod:
   case vmIntrinsics::_dlog10:
   case vmIntrinsics::_datan2:
   case vmIntrinsics::_floatToIntBits:
