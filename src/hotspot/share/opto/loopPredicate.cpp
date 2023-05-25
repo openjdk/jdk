@@ -853,11 +853,13 @@ bool IdealLoopTree::is_range_check_if(IfNode *iff, PhaseIdealLoop *phase, BasicT
   range = cmp->in(2);
   if (range->Opcode() != Op_LoadRange) {
     const TypeInteger* tinteger = phase->_igvn.type(range)->isa_integer(bt);
-    if (tinteger == nullptr || tinteger->empty() || tinteger->lo_as_long() < 0) {
-      // Allow predication on positive values that aren't LoadRanges.
-      // This allows optimization of loops where the length of the
-      // array is a known value and doesn't need to be loaded back
-      // from the array.
+    if (!iff->is_RangeCheck() || tinteger == nullptr || tinteger->empty() || tinteger->lo_as_long() < 0) {
+      // Allow predication on positive values that aren't LoadRanges. This allows optimization of loops where the
+      // length of the array is a known value and doesn't need to be loaded back from the array.
+      // This only works for actual RangeCheckNodes where we have a guarantee that if the range check of the first loop
+      // iteration (initial value of induction variable) and the last loop iteration (last value of induction variable)
+      // succeed, then, by implication, the range checks for the other loop iterations will also succeed. This is not
+      // a guarantee for a normal IfNode here.
       return false;
     }
   } else {
