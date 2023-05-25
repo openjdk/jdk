@@ -300,6 +300,30 @@ bool ClassLoaderData::try_claim(int claim) {
   }
 }
 
+void ClassLoaderData::demote_strong_roots() {
+  // The oop handle area contains strong roots that the GC traces from. We are about
+  // to demote them to strong roots that the GC does *not* trace from. Conceptually,
+  // we are retiring a normal strong root, and creating a strong non-root handle, which
+  // happens to reuse the same address as the normal strong root had.
+  // The way we would retire a strong root, is by clearing it. Then its address can be
+  // reused for a new handle, that isn't a normal strong root. We do that dance below.
+  class TransitionRootsOopClosure : public OopClosure {
+  public:
+    virtual void do_oop(oop* p) {
+      oop obj = NativeAccess<>::oop_load(p); // Load the strong root
+      NativeAccess<>::oop_store(p, nullptr); // Clear the strong root
+      // No-op free handle
+      // No-op allocate new handle using the same address
+      NativeAccess<>::oop_store(p, obj); // Store the strong non-root
+    }
+
+    virtual void do_oop(narrowOop* p) {
+      ShouldNotReachHere();
+    }
+  } cl;
+  oops_do(&cl, ClassLoaderData::_claim_none, false /* clear_mod_oops */);
+}
+
 // Non-strong hidden classes have their own ClassLoaderData that is marked to keep alive
 // while the class is being parsed, and if the class appears on the module fixup list.
 // Due to the uniqueness that no other class shares the hidden class' name or
@@ -315,6 +339,14 @@ void ClassLoaderData::inc_keep_alive() {
 void ClassLoaderData::dec_keep_alive() {
   if (has_class_mirror_holder()) {
     assert(_keep_alive > 0, "Invalid keep alive decrement count");
+    if (_keep_alive == 1) {
+      // When the keep_alive counter is 1, the oop handle area is a strong root,
+      // acting as input to the GC tracing. Such strong roots are part of the
+      // snapshot-at-the-beginning, and can not just be pulled out from the
+      // system when concurrent marking is running at the same time, without
+      // clearing the oops with GC barriers.
+      demote_strong_roots();
+    }
     _keep_alive--;
   }
 }
