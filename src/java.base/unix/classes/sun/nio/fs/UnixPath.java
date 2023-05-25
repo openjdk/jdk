@@ -782,6 +782,20 @@ class UnixPath implements Path {
         return open(this, flags, 0);
     }
 
+    private static boolean canRead(UnixPath path) {
+        @SuppressWarnings("removal")
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            try {
+                sm.checkRead(path.getPathForPermissionCheck());
+                return true;
+            } catch (SecurityException ignore) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     void checkRead() {
         @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
@@ -879,7 +893,11 @@ class UnixPath implements Path {
         if (!fs.isCaseInsensitiveAndPreserving())
             return result;
 
+        // If SM and no read permission, then fall back to result derived so
+        // far with case possibly not retained
         UnixPath path = fs.rootDirectory();
+        if (!canRead(path))
+            return result;
 
         // Traverse the result obtained above from the root downward, leaving
         // any '..' elements intact, and replacing other elements with the
