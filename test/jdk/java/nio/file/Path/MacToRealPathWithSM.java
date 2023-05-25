@@ -25,6 +25,7 @@
  * @bug 8308678
  * @requires (os.family == "mac")
  * @summary Verify UnixPath::toRealPath falls back if no perms on macOS
+ * @run main/othervm MacToRealPathWithSM
  * @run main/othervm -Djava.security.manager=allow MacToRealPathWithSM MacToRealPath.policy
  */
 import java.nio.file.Files;
@@ -32,14 +33,14 @@ import java.nio.file.LinkOption;
 import java.nio.file.Path;
 
 public class MacToRealPathWithSM {
+    @SuppressWarnings("removal")
     public static void main(String[] args) throws Exception {
-        String policyFile = args[0];
+        String policyFile = args.length > 0 ? args[0] : null;
         String testSrc = System.getProperty("test.src");
         String tmpDir = System.getProperty("java.io.tmpdir");
         if (testSrc == null || tmpDir == null)
             throw new RuntimeException("This test must be run by jtreg");
-        System.out.println("testSrc: " + testSrc);
-        System.out.println("tmpDir: " + tmpDir);
+        System.out.printf("testSrc: %s%ntmpDir:  %s%n", testSrc, tmpDir);
 
         Path src = Path.of(testSrc);
         Path tmp = Path.of(tmpDir);
@@ -52,11 +53,16 @@ public class MacToRealPathWithSM {
         System.out.println(Files.readString(path));
 
         // Install security manager with the given policy file
-        System.setProperty("java.security.policy",
-            src.resolve(policyFile).toString());
-        System.setSecurityManager(new SecurityManager());
+        if (policyFile != null) {
+            System.setProperty("java.security.policy",
+                src.resolve(policyFile).toString());
+            System.setSecurityManager(new SecurityManager());
+        }
 
-        // Derive real path
+        // Derive real path. Without the source change for this issue applied,
+        // if a SecurityManager is used which does not grant read permission
+        // for traversing "path" down from its root, an AccessContolException
+        // is thrown by UnixPath::toRealPath
         System.out.printf("real path: %s%n", path.toRealPath());
         System.out.printf("real path no follow: %s%n",
                           path.toRealPath(LinkOption.NOFOLLOW_LINKS));
