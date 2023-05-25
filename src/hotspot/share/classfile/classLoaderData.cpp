@@ -66,6 +66,7 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
+#include "oops/jmethodIDTable.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
@@ -536,6 +537,23 @@ void ClassLoaderData::remove_class(Klass* scratch_class) {
   ShouldNotReachHere();   // should have found this class!!
 }
 
+void ClassLoaderData::add_jmethod_id(jmethodID mid) {
+  MutexLocker m1(metaspace_lock(), Mutex::_no_safepoint_check_flag);
+  if (_jmethod_ids == nullptr) {
+    _jmethod_ids = new (mtClass) GrowableArray<jmethodID>(32, mtClass);
+  }
+  _jmethod_ids->push(mid);
+}
+
+void ClassLoaderData::clear_jmethod_ids() {
+  MutexLocker ml(JmethodIdCreation_lock, Mutex::_no_safepoint_check_flag);
+  for (int i = 0; i < _jmethod_ids->length(); i++) {
+    jmethodID mid = _jmethod_ids->at(i);
+    JmethodIDTable::remove(mid);
+  }
+  delete _jmethod_ids;
+}
+
 void ClassLoaderData::unload() {
   _unloading = true;
 
@@ -569,7 +587,7 @@ void ClassLoaderData::unload() {
   // from the VM side without knowing when native code is going to stop using
   // them.
   if (_jmethod_ids != nullptr) {
-    Method::clear_jmethod_ids(this);
+    clear_jmethod_ids();
   }
 
   // Clean up global class iterator for compiler
@@ -998,9 +1016,7 @@ void ClassLoaderData::print_on(outputStream* out) const {
     out->print_cr(" - dictionary          " INTPTR_FORMAT, p2i(_dictionary));
   }
   if (_jmethod_ids != nullptr) {
-    out->print   (" - jmethod count       ");
-    Method::print_jmethod_ids_count(this, out);
-    out->print_cr("");
+    out->print_cr(" - jmethod count       %d", _jmethod_ids->length());
   }
   out->print_cr(" - deallocate list     " INTPTR_FORMAT, p2i(_deallocate_list));
   out->print_cr(" - next CLD            " INTPTR_FORMAT, p2i(_next));

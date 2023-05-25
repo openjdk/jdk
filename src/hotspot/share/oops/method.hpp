@@ -747,27 +747,10 @@ public:
   static methodHandle clone_with_new_data(const methodHandle& m, u_char* new_code, int new_code_length,
                                           u_char* new_compressed_linenumber_table, int new_compressed_linenumber_size, TRAPS);
 
-  // jmethodID handling
-  // Because the useful life-span of a jmethodID cannot be determined,
-  // once created they are never reclaimed.  The methods to which they refer,
-  // however, can be GC'ed away if the class is unloaded or if the method is
-  // made obsolete or deleted -- in these cases, the jmethodID
-  // refers to null (as is the case for any weak reference).
-  static jmethodID make_jmethod_id(ClassLoaderData* cld, Method* mh);
-  static void destroy_jmethod_id(ClassLoaderData* cld, jmethodID mid);
-
-  // Ensure there is enough capacity in the internal tracking data
-  // structures to hold the number of jmethodIDs you plan to generate.
-  // This saves substantial time doing allocations.
-  static void ensure_jmethod_ids(ClassLoaderData* cld, int capacity);
-
   // Use resolve_jmethod_id() in situations where the caller is expected
   // to provide a valid jmethodID; the only sanity checks are in asserts;
   // result guaranteed not to be null.
-  inline static Method* resolve_jmethod_id(jmethodID mid) {
-    assert(mid != nullptr, "JNI method id should not be null");
-    return *((Method**)mid);
-  }
+  static Method* resolve_jmethod_id(jmethodID mid);
 
   // Use checked_resolve_jmethod_id() in situations where the caller
   // should provide a valid jmethodID, but might not. Null is returned
@@ -775,11 +758,7 @@ public:
   static Method* checked_resolve_jmethod_id(jmethodID mid);
 
   static void change_method_associated_with_jmethod_id(jmethodID old_jmid_ptr, Method* new_method);
-  static bool is_method_id(jmethodID mid);
-
-  // Clear methods
-  static void clear_jmethod_ids(ClassLoaderData* loader_data);
-  static void print_jmethod_ids_count(const ClassLoaderData* loader_data, outputStream* out) PRODUCT_RETURN;
+  static bool validate_method_id(jmethodID mid);
 
   // Get this method's jmethodID -- allocate if it doesn't exist
   jmethodID jmethod_id();
@@ -789,7 +768,8 @@ public:
   // (see AsyncGetCallTrace support for Forte Analyzer) and this
   // needs to be async-safe. No allocation should be done and
   // so handles are not used to avoid deadlock.
-  jmethodID find_jmethod_id_or_null()               { return method_holder()->jmethod_id_or_null(this); }
+  // jmethodID find_jmethod_id_or_null()               { return method_holder()->jmethod_id_or_null(this); }
+  jmethodID find_jmethod_id_or_null();
 
   // Support for inlining of intrinsic methods
   vmIntrinsicID intrinsic_id() const          { return (vmIntrinsicID) _intrinsic_id;           }

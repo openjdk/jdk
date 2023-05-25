@@ -2967,7 +2967,6 @@ JvmtiEnv::GetClassMethods(oop k_mirror, jint* method_count_ptr, jmethodID** meth
         // If we find an uninitialized value, make sure there is
         // enough space for all the uninitialized values we might
         // find.
-        ik->ensure_space_for_methodids(index);
         jmethodids_found = false;
         id = m->jmethod_id();
       }

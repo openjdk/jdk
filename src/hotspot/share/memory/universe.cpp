@@ -59,6 +59,7 @@
 #include "oops/compressedOops.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/instanceMirrorKlass.hpp"
+#include "oops/jmethodIDTable.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -360,6 +361,8 @@ void Universe::genesis(TRAPS) {
     s = StringTable::intern("-2147483648", CHECK);
     _the_min_jint_string = OopHandle(vm_global(), s);
 
+    // Initialize table for matching jmethodID
+    JmethodIDTable::initialize();
 
 #if INCLUDE_CDS
     if (UseSharedSpaces) {

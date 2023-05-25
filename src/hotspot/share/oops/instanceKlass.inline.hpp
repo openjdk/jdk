@@ -76,14 +76,6 @@ inline void InstanceKlass::release_set_array_klasses(ObjArrayKlass* k) {
   Atomic::release_store(&_array_klasses, k);
 }
 
-inline jmethodID* InstanceKlass::methods_jmethod_ids_acquire() const {
-  return Atomic::load_acquire(&_methods_jmethod_ids);
-}
-
-inline void InstanceKlass::release_set_methods_jmethod_ids(jmethodID* jmeths) {
-  Atomic::release_store(&_methods_jmethod_ids, jmeths);
-}
-
 // The iteration over the oops in objects is a hot path in the GC code.
 // By force inlining the following functions, we get similar GC performance
 // as the previous macro based implementation.
