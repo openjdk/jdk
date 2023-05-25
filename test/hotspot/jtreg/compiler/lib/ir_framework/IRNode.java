@@ -334,6 +334,11 @@ public class IRNode {
         beforeMatchingNameRegex(CMP_UL3, "CmpUL3");
     }
 
+    public static final String CMP_P = PREFIX + "CMP_P" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(CMP_P, "CmpP");
+    }
+
     public static final String COMPRESS_BITS = PREFIX + "COMPRESS_BITS" + POSTFIX;
     static {
         beforeMatchingNameRegex(COMPRESS_BITS, "CompressBits");
@@ -840,6 +845,11 @@ public class IRNode {
         fromAfterCountedLoops(OUTER_STRIP_MINED_LOOP, regex);
     }
 
+    public static final String PARTIAL_SUBTYPE_CHECK = PREFIX + "PARTIAL_SUBTYPE_CHECK" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(PARTIAL_SUBTYPE_CHECK, "PartialSubtypeCheck");
+    }
+
     public static final String PHI = PREFIX + "PHI" + POSTFIX;
     static {
         beforeMatchingNameRegex(PHI, "Phi");
@@ -1186,6 +1196,11 @@ public class IRNode {
     public static final String SUB_V = PREFIX + "SUB_V" + POSTFIX;
     static {
         beforeMatchingNameRegex(SUB_V, "SubV(B|S|I|L|F|D)");
+    }
+
+    public static final String SUBTYPE_CHECK = PREFIX + "SUBTYPE_CHECK" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(SUBTYPE_CHECK, "SubTypeCheck");
     }
 
     public static final String TRAP = PREFIX + "TRAP" + POSTFIX;

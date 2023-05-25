@@ -32,7 +32,8 @@ public:
   enum {
     Control,
     ObjOrSubKlass,
-    SuperKlass
+    SuperKlass,
+    ProfileEntry, // profile data can be attached to the node
   };
 
   SubTypeCheckNode(Compile* C, Node* obj_or_subklass, Node* superklass)

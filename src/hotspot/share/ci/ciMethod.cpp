@@ -434,20 +434,11 @@ const BitMap& ciMethod::bci_block_start() {
 // ciMethod::check_overflow
 //
 // Check whether the profile counter is overflowed and adjust if true.
-// For invoke* it will turn negative values into max_jint,
-// and for checkcast/aastore/instanceof turn positive values into min_jint.
+// It will turn negative values into max_jint,
 int ciMethod::check_overflow(int c, Bytecodes::Code code) {
-  switch (code) {
-    case Bytecodes::_aastore:    // fall-through
-    case Bytecodes::_checkcast:  // fall-through
-    case Bytecodes::_instanceof: {
-      return (c > 0 ? min_jint : c); // always non-positive
-    }
-    default: {
-      assert(Bytecodes::is_invoke(code), "%s", Bytecodes::name(code));
-      return (c < 0 ? max_jint : c); // always non-negative
-    }
-  }
+  assert(Bytecodes::is_invoke(code) || code == Bytecodes::_aastore || code == Bytecodes::_checkcast ||
+         code == Bytecodes::_instanceof, "%s", Bytecodes::name(code));
+  return (c < 0 ? max_jint : c); // always non-negative
 }
 
 

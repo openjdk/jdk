@@ -1228,7 +1228,7 @@ bool PhaseIdealLoop::identical_backtoback_ifs(Node *n) {
 
   Node* region = n->in(0);
   Node* dom = idom(region);
-  if (!dom->is_If() || dom->in(1) != n->in(1)) {
+  if (!dom->is_If() ||  !n->as_If()->same_condition(dom, &_igvn)) {
     return false;
   }
   IfNode* dom_if = dom->as_If();
@@ -1415,15 +1415,16 @@ void PhaseIdealLoop::split_if_with_blocks_post(Node *n) {
     Node *bol = n->in(1);
     uint max = bol->outcnt();
     // Check for same test used more than once?
-    if (max > 1 && bol->is_Bool()) {
+    if (bol->is_Bool() && (max > 1 || bol->in(1)->is_SubTypeCheck())) {
       // Search up IDOMs to see if this IF is dominated.
-      Node *cutoff = get_ctrl(bol);
+      Node* cmp = bol->in(1);
+      Node *cutoff = cmp->is_SubTypeCheck() ? dom_lca(get_ctrl(cmp->in(1)), get_ctrl(cmp->in(2))) : get_ctrl(bol);
 
       // Now search up IDOMs till cutoff, looking for a dominating test
       Node *prevdom = n;
       Node *dom = idom(prevdom);
       while (dom != cutoff) {
-        if (dom->req() > 1 && dom->in(1) == bol && prevdom->in(0) == dom &&
+        if (dom->req() > 1 && n->as_If()->same_condition(dom, &_igvn) && prevdom->in(0) == dom &&
             safe_for_if_replacement(dom)) {
           // It's invalid to move control dependent data nodes in the inner
           // strip-mined loop, because:
@@ -1479,6 +1480,10 @@ bool PhaseIdealLoop::try_merge_identical_ifs(Node* n) {
   if (identical_backtoback_ifs(n) && can_split_if(n->in(0))) {
     Node *n_ctrl = n->in(0);
     IfNode* dom_if = idom(n_ctrl)->as_If();
+    if (n->in(1) != dom_if->in(1)) {
+      assert(n->in(1)->in(1)->is_SubTypeCheck() && (n->in(1)->in(1)->req() > 3 || dom_if->in(1)->in(1)->req() > 3), "only for subtype checks with profile data attached");
+      _igvn.replace_input_of(n, 1, dom_if->in(1));
+    }
     ProjNode* dom_proj_true = dom_if->proj_out(1);
     ProjNode* dom_proj_false = dom_if->proj_out(0);
 
