@@ -927,11 +927,9 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
   }
   assert(is_aligned(stack_size, os::vm_page_size()), "stack_size not aligned");
 
-  size_t default_large_page_size = os::Linux::scan_default_large_page_size();
-
   // Add an additional page to the stack size to reduce its chances of getting large page aligned
   // so that the stack does not get backed by a transparent huge page.
-  if (stack_size >= default_large_page_size && is_aligned(stack_size, default_large_page_size)) {
+  if (stack_size >= os::Linux::_default_large_page_size && is_aligned(stack_size, os::Linux::_default_large_page_size)) {
     stack_size += os::vm_page_size();
   }
 
@@ -3753,6 +3751,10 @@ bool os::Linux::setup_large_page_type(size_t page_size) {
 }
 
 void os::large_page_init() {
+  // Scan default large page size
+  size_t default_large_page_size = os::Linux::scan_default_large_page_size();
+  os::Linux::_default_large_page_size = default_large_page_size;
+
   // 1) Handle the case where we do not want to use huge pages and hence
   //    there is no need to scan the OS for related info
   if (!UseLargePages &&
@@ -3772,9 +3774,7 @@ void os::large_page_init() {
     return;
   }
 
-  // 2) Scan OS info
-  size_t default_large_page_size = os::Linux::scan_default_large_page_size();
-  os::Linux::_default_large_page_size = default_large_page_size;
+  // 2) check if large pages are configured
   if (default_large_page_size == 0) {
     // No large pages configured, return.
     warn_no_large_pages_configured();
