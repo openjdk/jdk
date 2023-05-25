@@ -50,6 +50,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+// This test implements RSA-KEM as described in RFC 5990. In this KEM, the
+// sender configures the encapsulator with an RSAKEMParameterSpec object.
+// This object is encoded as a byte array and included in the Encapsulated
+// output. The receiver is then able to recover the same RSAKEMParameterSpec
+// object from the encoding using an AlgorithmParameters implementation
+// and use the object to configure the decapsulator.
 public class RSA_KEM {
     public static void main(String[] args) throws Exception {
         Provider p = new ProviderImpl();
