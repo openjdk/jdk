@@ -4591,7 +4591,7 @@ char *ADLParser::get_ident_common(bool do_preproc) {
   char *start;                    // Pointer to start of token
   char *end;                      // Pointer to end of token
 
-  if( _curline == nullptr )          // Return null at EOF.
+  if( _curline == nullptr )       // Return null at EOF.
     return nullptr;
 
   skipws_common(do_preproc);      // Skip whitespace before identifier
@@ -4624,7 +4624,7 @@ char *ADLParser::get_ident_common(bool do_preproc) {
   _ptr = end;                     // Reset _ptr to point to next char after token
 
   // Make sure we do not try to use #defined identifiers.  If start is
-  // null an error was already reported.
+  // nullptr an error was already reported.
   if (do_preproc && start != nullptr) {
     const char* def = _AD.get_preproc_def(start);
     if (def != nullptr && strcmp(def, start)) {
@@ -4791,7 +4791,7 @@ int ADLParser::get_int(void) {
   char         *end;              // Pointer to end of token
   int           result;           // Storage for integer result
 
-  if( _curline == nullptr )       // Return null at EOF.
+  if(_curline == nullptr)         // Return null at EOF.
     return 0;
 
   skipws();                       // Skip whitespace before identifier
@@ -4826,7 +4826,7 @@ int ADLParser::get_int(void) {
 char *ADLParser::get_relation_dup(void) {
   char         *result = nullptr; // relational operator being returned
 
-  if( _curline == nullptr )       // Return null at EOF.
+  if(_curline == nullptr)         // Return null at EOF.
     return  nullptr;
 
   skipws();                       // Skip whitespace before relation
@@ -5238,7 +5238,7 @@ void ADLParser::skipws_common(bool do_preproc) {
     }
     else { ++_ptr; ++next; }
   }
-  if( _curline != nullptr )         // at end of file _curchar isn't valid
+  if(_curline != nullptr)           // at end of file _curchar isn't valid
     _curchar = *_ptr;               // reset _curchar to maintain invariant
 }
 
