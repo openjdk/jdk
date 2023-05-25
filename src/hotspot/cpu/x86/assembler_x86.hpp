@@ -2257,7 +2257,7 @@ private:
   void vaddss(XMMRegister dst, XMMRegister nds, XMMRegister src);
   void vdivsd(XMMRegister dst, XMMRegister nds, Address src);
   void vdivsd(XMMRegister dst, XMMRegister nds, XMMRegister src);
-  void evdivsd(XMMRegister dst, XMMRegister nds, XMMRegister src);
+  void evdivsd(XMMRegister dst, XMMRegister nds, XMMRegister src, EvexRoundPrefix rmode);
   void vdivss(XMMRegister dst, XMMRegister nds, Address src);
   void vdivss(XMMRegister dst, XMMRegister nds, XMMRegister src);
   void vfmadd231sd(XMMRegister dst, XMMRegister nds, XMMRegister src);

@@ -9607,9 +9607,9 @@ void Assembler::evdivpd(XMMRegister dst, KRegister mask, XMMRegister nds, Addres
   emit_operand(dst, src, 0);
 }
 
-void Assembler::evdivsd(XMMRegister dst, XMMRegister nds, XMMRegister src) {
+void Assembler::evdivsd(XMMRegister dst, XMMRegister nds, XMMRegister src, EvexRoundPrefix rmode) {
   assert(VM_Version::supports_evex(), "");
-  InstructionAttr attributes(3, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
+  InstructionAttr attributes(rmode, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   attributes.set_extended_context();
   int encode = vex_prefix_and_encode(dst->encoding(), nds->encoding(), src->encoding(), VEX_SIMD_F2, VEX_OPCODE_0F, &attributes);
   emit_int16(0x5E, (0xC0 | encode));

@@ -161,7 +161,7 @@ address StubGenerator::generate_libmFmod() {
 // 00007FF605BD1112  vmovsd      xmm5,xmm18,xmm1
 // 00007FF605BD1118  vdivsd      xmm2,xmm17,xmm5 {rz-sae}
   __ vmovsd(xmm5, xmm18, xmm1);
-  __ evdivsd(xmm2, xmm17, xmm5);
+  __ evdivsd(xmm2, xmm17, xmm5, Assembler::EVEX_RZ);
 // 	q = DP_ROUND_RZ(q);
 // 00007FF605BD111E  vmovsd      xmm4,xmm18,xmm2
 // 00007FF605BD1124  vrndscalesd xmm19,xmm18,xmm4,0Bh
@@ -237,7 +237,7 @@ __ jcc(Assembler::below, L_1280);
 // 00007FF605BD11B5  vmovsd      xmm4,xmm18,xmm2
 // 00007FF605BD11BB  vdivsd      xmm3,xmm17,xmm4 {rz-sae}
   __ vmovsd(xmm4, xmm18, xmm2);
-  __ evdivsd(xmm3, xmm17, xmm4);
+  __ evdivsd(xmm3, xmm17, xmm4, Assembler::EVEX_RZ);
 // 	q = DP_ROUND_RZ(q);
 // 00007FF605BD11C1  vmovsd      xmm19,xmm18,xmm3
 // 00007FF605BD11C7  vrndscalesd xmm20,xmm18,xmm19,0Bh
@@ -273,7 +273,7 @@ __ jcc(Assembler::below, L_1280);
   __ vmovsd(xmm17, xmm18, xmm3);
   __ bind(L_11f4);
   __ vmovsd(xmm22, xmm18, xmm0);
-  __ evdivsd(xmm0, xmm22, xmm17);
+  __ evdivsd(xmm0, xmm22, xmm17, Assembler::EVEX_RZ);
 // 			q = DP_ROUND_RZ(q);
 // 00007FF605BD1200  vmovsd      xmm19,xmm18,xmm0
 // 00007FF605BD1206  vrndscalesd xmm20,xmm18,xmm19,0Bh
@@ -315,7 +315,7 @@ __ jcc(Assembler::below, L_1280);
 // 00007FF605BD123D  vdivsd      xmm0,xmm20,xmm4 {rz-sae}
   __ bind(L_1237);
   __ vmovsd(xmm20, xmm18, xmm0);
-  __ evdivsd(xmm0, xmm20, xmm4);
+  __ evdivsd(xmm0, xmm20, xmm4, Assembler::EVEX_RZ);
 // 		q = DP_ROUND_RZ(q);
 // 00007FF605BD1243  vmovsd      xmm3,xmm18,xmm0
 // 00007FF605BD1249  vrndscalesd xmm17,xmm18,xmm3,0Bh
@@ -374,7 +374,7 @@ __ jmp(L_exit);
 // 00007FF605BD1296  vdivsd      xmm0,xmm17,xmm5 {rz-sae}
   __ bind(L_1290);
   __ vmovsd(xmm17, xmm18, xmm0);
-  __ evdivsd(xmm0, xmm17, xmm5);
+  __ evdivsd(xmm0, xmm17, xmm5, Assembler::EVEX_RZ);
 // 		q = DP_ROUND_RZ(q);
 // 00007FF605BD129C  vmovsd      xmm2,xmm18,xmm0
 // 00007FF605BD12A2  vrndscalesd xmm3,xmm18,xmm2,0Bh
@@ -532,7 +532,7 @@ __ jmp(L_exit);
 // 			a = DP_FNMA(b, q, a);
 // 00007FF676C010BA  vfnmadd231sd xmm0,xmm3,xmm4
 // 00007FF676C010BF  jmp         fmod+90h (07FF676C01090h)
-  __ evdivsd(xmm4, xmm0, xmm3);
+  __ vdivsd(xmm4, xmm0, xmm3);
   __ movapd(xmm5, xmm4);
   __ vfnmadd213sd(xmm5, xmm3, xmm0);
   __ movq(xmm5, xmm5);
@@ -641,7 +641,7 @@ __ jmp(L_exit);
 // 00007FF676C0113C  vextractps  eax,xmm0,1
   __ bind(L_112a);
   __ vmulsd(xmm1, xmm3, ExternalAddress((address)CONST_e307), rax);
-  __ evdivsd(xmm0, xmm4, xmm1);
+  __ vdivsd(xmm0, xmm4, xmm1);
   __ vroundsd(xmm0, xmm0, xmm0, 3);
   __ evextractps(rax, xmm0, 1);
 
@@ -672,7 +672,7 @@ __ jmp(L_exit);
   __ ucomisd(xmm4, xmm0);
   __ jcc(Assembler::below, L_1173);
   __ bind(L_1157);
-  __ evdivsd(xmm5, xmm4, xmm0);
+  __ vdivsd(xmm5, xmm4, xmm0);
   __ vroundsd(xmm5, xmm5, xmm5, 3);
   __ vfnmadd231sd(xmm4, xmm0, xmm5);
   __ ucomisd(xmm4, xmm0);
@@ -704,7 +704,7 @@ __ jmp(L_exit);
 // 		a = DP_FNMA(bs, q, a);
 // 00007FF676C01189  vfnmadd213sd xmm0,xmm1,xmm4
   __ bind(L_117f);
-  __ evdivsd(xmm0, xmm4, xmm1);
+  __ vdivsd(xmm0, xmm4, xmm1);
   __ vroundsd(xmm0, xmm0, xmm0, 3);
   __ vfnmadd213sd(xmm0, xmm1, xmm4);
 
