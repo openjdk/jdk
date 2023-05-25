@@ -466,8 +466,8 @@ public class SSLFlowDelegate {
                                             + len + " bytes non decrypted.");
                                 }
                             }
-                            // request more data and return.
-                            requestMore();
+                            // request more data if needed and return.
+                            requestMoreDataIfNeeded();
                             return;
                         }
                         if (complete && result.status() == Status.CLOSED) {
