@@ -664,11 +664,6 @@ reg_class method_reg(
     R12, R12_H
 );
 
-// Class for heapbase register
-reg_class heapbase_reg(
-    R27, R27_H
-);
-
 // Class for thread register
 reg_class thread_reg(
     R28, R28_H
@@ -1244,15 +1239,15 @@ source %{
     // zero, compressed klass pointers doesn't use r27 after JDK-8234794
     if (UseCompressedOops && (CompressedOops::ptrs_base() != NULL)) {
       _NO_SPECIAL_REG32_mask.Remove(OptoReg::as_OptoReg(r27->as_VMReg()));
-      _NO_SPECIAL_REG_mask.SUBTRACT(_HEAPBASE_REG_mask);
-      _NO_SPECIAL_PTR_REG_mask.SUBTRACT(_HEAPBASE_REG_mask);
+      _NO_SPECIAL_REG_mask.Remove(OptoReg::as_OptoReg(r27->as_VMReg()));
+      _NO_SPECIAL_PTR_REG_mask.Remove(OptoReg::as_OptoReg(r27->as_VMReg()));
     }
 
     // r29 is not allocatable when PreserveFramePointer is on
     if (PreserveFramePointer) {
       _NO_SPECIAL_REG32_mask.Remove(OptoReg::as_OptoReg(r29->as_VMReg()));
-      _NO_SPECIAL_REG_mask.SUBTRACT(_FP_REG_mask);
-      _NO_SPECIAL_PTR_REG_mask.SUBTRACT(_FP_REG_mask);
+      _NO_SPECIAL_REG_mask.Remove(OptoReg::as_OptoReg(r29->as_VMReg()));
+      _NO_SPECIAL_PTR_REG_mask.Remove(OptoReg::as_OptoReg(r29->as_VMReg()));
     }
   }
 
@@ -3884,7 +3879,7 @@ encode %{
     // otherwise m->owner may contain a thread or a stack address.
     //
     // Try to CAS m->owner from NULL to current thread.
-    __ add(tmp, disp_hdr, (ObjectMonitor::owner_offset_in_bytes()-markWord::monitor_value));
+    __ add(tmp, disp_hdr, (in_bytes(ObjectMonitor::owner_offset())-markWord::monitor_value));
     __ cmpxchg(tmp, zr, rthread, Assembler::xword, /*acquire*/ true,
                /*release*/ true, /*weak*/ false, rscratch1); // Sets flags for result
 
@@ -3902,7 +3897,7 @@ encode %{
     __ br(Assembler::NE, cont); // Check for recursive locking
 
     // Recursive lock case
-    __ increment(Address(disp_hdr, ObjectMonitor::recursions_offset_in_bytes() - markWord::monitor_value), 1);
+    __ increment(Address(disp_hdr, in_bytes(ObjectMonitor::recursions_offset()) - markWord::monitor_value), 1);
     // flag == EQ still from the cmp above, checking if this is a reentrant lock
 
     __ bind(cont);
@@ -3968,7 +3963,7 @@ encode %{
     if (LockingMode == LM_LIGHTWEIGHT) {
       // If the owner is anonymous, we need to fix it -- in an outline stub.
       Register tmp2 = disp_hdr;
-      __ ldr(tmp2, Address(tmp, ObjectMonitor::owner_offset_in_bytes()));
+      __ ldr(tmp2, Address(tmp, ObjectMonitor::owner_offset()));
       // We cannot use tbnz here, the target might be too far away and cannot
       // be encoded.
       __ tst(tmp2, (uint64_t)ObjectMonitor::ANONYMOUS_OWNER);
@@ -3978,25 +3973,25 @@ encode %{
       __ bind(stub->continuation());
     }
 
-    __ ldr(disp_hdr, Address(tmp, ObjectMonitor::recursions_offset_in_bytes()));
+    __ ldr(disp_hdr, Address(tmp, ObjectMonitor::recursions_offset()));
 
     Label notRecursive;
     __ cbz(disp_hdr, notRecursive);
 
     // Recursive lock
     __ sub(disp_hdr, disp_hdr, 1u);
-    __ str(disp_hdr, Address(tmp, ObjectMonitor::recursions_offset_in_bytes()));
+    __ str(disp_hdr, Address(tmp, ObjectMonitor::recursions_offset()));
     __ cmp(disp_hdr, disp_hdr); // Sets flags for result
     __ b(cont);
 
     __ bind(notRecursive);
-    __ ldr(rscratch1, Address(tmp, ObjectMonitor::EntryList_offset_in_bytes()));
-    __ ldr(disp_hdr, Address(tmp, ObjectMonitor::cxq_offset_in_bytes()));
+    __ ldr(rscratch1, Address(tmp, ObjectMonitor::EntryList_offset()));
+    __ ldr(disp_hdr, Address(tmp, ObjectMonitor::cxq_offset()));
     __ orr(rscratch1, rscratch1, disp_hdr); // Will be 0 if both are 0.
     __ cmp(rscratch1, zr); // Sets flags for result
     __ cbnz(rscratch1, cont);
     // need a release store here
-    __ lea(tmp, Address(tmp, ObjectMonitor::owner_offset_in_bytes()));
+    __ lea(tmp, Address(tmp, ObjectMonitor::owner_offset()));
     __ stlr(zr, tmp); // set unowned
 
     __ bind(cont);
@@ -5315,17 +5310,6 @@ operand iRegNNoSp()
 %{
   constraint(ALLOC_IN_RC(no_special_reg32));
   match(RegN);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-// heap base register -- used for encoding immN0
-
-operand iRegIHeapbase()
-%{
-  constraint(ALLOC_IN_RC(heapbase_reg));
-  match(RegI);
   op_cost(0);
   format %{ %}
   interface(REG_INTER);

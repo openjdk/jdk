@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,8 @@ import java.util.List;
 import jdk.jfr.FlightRecorder;
 import jdk.jfr.Recording;
 import jdk.jfr.internal.JVM;
+import jdk.jfr.internal.util.Output.LinePrinter;
+import jdk.jfr.internal.util.Output;
 import jdk.jfr.internal.LogLevel;
 import jdk.jfr.internal.LogTag;
 import jdk.jfr.internal.Logger;
@@ -50,9 +52,7 @@ import jdk.jfr.internal.Utils;
  *
  */
 abstract class AbstractDCmd {
-
-    private final StringBuilder currentLine = new StringBuilder(80);
-    private final List<String> lines = new ArrayList<>();
+    private final LinePrinter output = new LinePrinter();
     private String source;
 
     // Called by native
@@ -91,16 +91,19 @@ abstract class AbstractDCmd {
             DCmdException e = new DCmdException(iae.getMessage());
             e.addSuppressed(iae);
             throw e;
-        }
+       }
     }
 
+    protected final Output getOutput() {
+        return output;
+    }
 
     protected final FlightRecorder getFlightRecorder() {
         return FlightRecorder.getFlightRecorder();
     }
 
     protected final String[] getResult() {
-        return lines.toArray(new String[lines.size()]);
+        return output.getLines().toArray(new String[0]);
     }
 
     protected void logWarning(String message) {
@@ -181,21 +184,19 @@ abstract class AbstractDCmd {
     }
 
     protected final void println() {
-        lines.add(currentLine.toString());
-        currentLine.setLength(0);
+        output.println();
     }
 
     protected final void print(String s) {
-        currentLine.append(s);
+        output.print(s);
     }
 
     protected final void print(String s, Object... args) {
-        currentLine.append(args.length > 0 ? String.format(s, args) : s);
+        output.print(s, args);
     }
 
     protected final void println(String s, Object... args) {
-        print(s, args);
-        println();
+        output.println(s, args);
     }
 
     protected final void printBytes(long bytes) {
@@ -215,6 +216,12 @@ abstract class AbstractDCmd {
             printPath(SecuritySupport.getAbsolutePath(path).toPath());
         } catch (IOException ioe) {
             printPath(path.toPath());
+        }
+    }
+
+    protected final void printHelpText() {
+        for (String line : printHelp()) {
+            println(line);
         }
     }
 

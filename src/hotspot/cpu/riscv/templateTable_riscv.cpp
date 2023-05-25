@@ -3758,7 +3758,7 @@ void TemplateTable::monitorenter() {
      __ bind(loop);
      // check if current entry is used
      // if not used then remember entry in c_rarg1
-     __ ld(t0, Address(c_rarg3, BasicObjectLock::obj_offset_in_bytes()));
+     __ ld(t0, Address(c_rarg3, BasicObjectLock::obj_offset()));
      __ bnez(t0, notUsed);
      __ mv(c_rarg1, c_rarg3);
      __ bind(notUsed);
@@ -3815,7 +3815,7 @@ void TemplateTable::monitorenter() {
    __ addi(xbcp, xbcp, 1);
 
    // store object
-   __ sd(x10, Address(c_rarg1, BasicObjectLock::obj_offset_in_bytes()));
+   __ sd(x10, Address(c_rarg1, BasicObjectLock::obj_offset()));
    __ lock_object(c_rarg1);
 
    // check to make sure this monitor doesn't cause stack overflow after locking
@@ -3852,7 +3852,7 @@ void TemplateTable::monitorexit() {
 
     __ bind(loop);
     // check if current entry is for same object
-    __ ld(t0, Address(c_rarg1, BasicObjectLock::obj_offset_in_bytes()));
+    __ ld(t0, Address(c_rarg1, BasicObjectLock::obj_offset()));
     // if same object then stop searching
     __ beq(x10, t0, found);
     // otherwise advance to next entry

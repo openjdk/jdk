@@ -3603,7 +3603,7 @@ encode %{
       __ load_klass(R11_scratch1, R3);
 
       int entry_offset = in_bytes(Klass::vtable_start_offset()) + vtable_index * vtableEntry::size_in_bytes();
-      int v_off = entry_offset + vtableEntry::method_offset_in_bytes();
+      int v_off = entry_offset + in_bytes(vtableEntry::method_offset());
       __ li(R19_method, v_off);
       __ ldx(R19_method/*method*/, R19_method/*method offset*/, R11_scratch1/*class*/);
       // NOTE: for vtable dispatches, the vtable entry will never be
