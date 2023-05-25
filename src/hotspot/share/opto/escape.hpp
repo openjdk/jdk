@@ -619,6 +619,9 @@ private:
 public:
   ConnectionGraph(Compile *C, PhaseIterGVN *igvn, int iteration);
 
+  // Verify that SafePointScalarMerge nodes are correctly connected
+  static void verify_ram_nodes(Compile* C, Node* root);
+
   // Check for non-escaping candidates
   static bool has_candidates(Compile *C);
 

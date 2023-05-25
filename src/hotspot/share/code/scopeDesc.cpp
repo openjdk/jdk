@@ -137,25 +137,22 @@ GrowableArray<ScopeValue*>* ScopeDesc::objects_to_rematerialize(frame& frm, Regi
   GrowableArray<ScopeValue*>* result = new GrowableArray<ScopeValue*>();
   for (int i = 0; i < _objects->length(); i++) {
     assert(_objects->at(i)->is_object(), "invalid debug information");
-    ObjectValue* sv = nullptr;
+    ObjectValue* sv = _objects->at(i)->as_ObjectValue();
 
-    if (_objects->at(i)->is_object_merge()) {
-      ObjectMergeValue* merged = _objects->at(i)->as_ObjectMergeValue();
-      sv = merged->select(frm, map);
+    // If the object is not referenced in current JVM state, then it's only
+    // a candidate in an ObjectMergeValue, we don't need to rematerialize it
+    // unless when/if it's returned by 'select()' below.
+    if (!sv->is_root()) {
+      continue;
+    }
 
+    if (sv->is_object_merge()) {
+      sv = sv->as_ObjectMergeValue()->select(frm, map);
+      // If select() returns nullptr, then the object doesn't need to be
+      // rematerialized.
       if (sv == nullptr) {
         continue;
       }
-    } else if (_objects->at(i)->is_object()) {
-      sv = _objects->at(i)->as_ObjectValue();
-
-      // We skip allocation if the object is only a candidate inside an
-      // ObjectMergeValue or if it already has an allocation.
-      if (sv->is_only_merge_candidate()) {
-        continue;
-      }
-    } else {
-      assert(false, "sanity");
     }
 
     result->append_if_missing(sv);
@@ -274,7 +271,7 @@ void ScopeDesc::print_on(outputStream* st, PcDesc* pd) const {
       ScopeValue* sv = (ScopeValue*) _objects->at(i);
       st->print("    - %d: ", i);
       if (sv->is_object_merge()) {
-        sv->as_ObjectMergeValue()->print_on(st);
+        sv->as_ObjectMergeValue()->print_detailed(st);
         st->cr();
       } else if (sv->is_object()) {
         sv->as_ObjectValue()->print_on(st);

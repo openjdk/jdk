@@ -1463,12 +1463,11 @@ void SafePointNode::disconnect_from_root(PhaseIterGVN *igvn) {
 
 //==============  SafePointScalarObjectNode  ==============
 
-SafePointScalarObjectNode::SafePointScalarObjectNode(const TypeOopPtr* tp, Node* alloc, uint first_index, uint n_fields, bool only_merge_candidate) :
+SafePointScalarObjectNode::SafePointScalarObjectNode(const TypeOopPtr* tp, Node* alloc, uint first_index, uint n_fields) :
   TypeNode(tp, 1), // 1 control input -- seems required.  Get from root.
   _first_index(first_index),
   _n_fields(n_fields),
-  _alloc(alloc),
-  _only_merge_candidate(only_merge_candidate)
+  _alloc(alloc)
 {
 #ifdef ASSERT
   if (!alloc->is_Allocate() && !(alloc->Opcode() == Op_VectorBox)) {
@@ -1517,10 +1516,7 @@ SafePointScalarObjectNode::clone(Dict* sosn_map, bool& new_node) const {
 
 #ifndef PRODUCT
 void SafePointScalarObjectNode::dump_spec(outputStream *st) const {
-  st->print(" # fields@[%d..%d], only_candidate=%d",
-            first_index(),
-            first_index() + n_fields() - 1,
-            _only_merge_candidate);
+  st->print(" # fields@[%d..%d]", first_index(), first_index() + n_fields() - 1);
 }
 #endif
 

@@ -133,21 +133,18 @@ class ObjectValue: public ScopeValue {
   GrowableArray<ScopeValue*> _field_values;
   Handle                     _value;
   bool                       _visited;
-  bool                       _only_merge_candidate;   // Will be true if this object is just representing
-                                                      // a scalar replaced object inside an ObjectMergeValue.
-
-  bool                       _skip_rematerialization; // Will be true if the _value field of this object
-                                                      // actually holds a pointer to a non-scalarized object
-                                                      // that was participating in an allocation merge.
+  bool                       _is_root;   // Will be true if this object is referred to
+                                         // as a local/expression/monitor in the JVMs.
+                                         // Otherwise false, meaning it's just a candidate
+                                         // in an object allocation merge.
  public:
-  ObjectValue(int id, ScopeValue* klass, bool only_merge_candidate = false)
+  ObjectValue(int id, ScopeValue* klass)
      : _id(id)
      , _klass(klass)
      , _field_values()
      , _value()
      , _visited(false)
-     , _only_merge_candidate(only_merge_candidate)
-     , _skip_rematerialization(false) {
+     , _is_root(true) {
     assert(klass->is_constant_oop(), "should be constant java mirror oop");
   }
 
@@ -157,24 +154,23 @@ class ObjectValue: public ScopeValue {
      , _field_values()
      , _value()
      , _visited(false)
-     , _only_merge_candidate(false)
-     , _skip_rematerialization(false) {}
+     , _is_root(true) {}
 
   // Accessors
-  bool                        is_object() const                   { return true; }
-  int                         id() const                          { return _id; }
-  virtual ScopeValue*         klass() const                       { return _klass; }
-  virtual GrowableArray<ScopeValue*>* field_values()              { return &_field_values; }
-  virtual ScopeValue*         field_at(int i) const               { return _field_values.at(i); }
-  virtual int                 field_size()                        { return _field_values.length(); }
-  virtual Handle              value() const                       { return _value; }
-  bool                        is_visited() const                  { return _visited; }
-  bool                        is_only_merge_candidate() const     { return _only_merge_candidate; }
+  bool                        is_object() const           { return true; }
+  int                         id() const                  { return _id; }
+  virtual ScopeValue*         klass() const               { return _klass; }
+  virtual GrowableArray<ScopeValue*>* field_values()      { return &_field_values; }
+  virtual ScopeValue*         field_at(int i) const       { return _field_values.at(i); }
+  virtual int                 field_size()                { return _field_values.length(); }
+  virtual Handle              value() const               { return _value; }
+  bool                        is_visited() const          { return _visited; }
+  bool                        is_root() const             { return _is_root; }
 
-  void                        set_id(int id)                      { _id = id; }
+  void                        set_id(int id)              { _id = id; }
   virtual void                set_value(oop value);
-  void                        set_visited(bool visited)           { _visited = visited; }
-  void                        set_only_merge_candidate(bool cnd)  { _only_merge_candidate = cnd; }
+  void                        set_visited(bool visited)   { _visited = visited; }
+  void                        set_root(bool root)         { _is_root = root; }
 
   // Serialization of debugging information
   void read_object(DebugInfoReadStream* stream);
@@ -190,15 +186,25 @@ class ObjectValue: public ScopeValue {
 // '_selector' is an integer value that will be '-1' if during the execution of
 // the C2 compiled code the path taken was that of the Phi input that was NOT
 // scalar replaced. In that case '_merge_pointer' is a pointer to an already
-// allocated object. If '_selector' is not '-1' then it should be the index
-// of a candidate object in '_possible_objects'. That candidate object is an
-// ObjectValue describing an object that was scalar replaced.
+// allocated object. If '_selector' is not '-1' then it should be the index of
+// an object in '_possible_objects'. That object is an ObjectValue describing an
+// object that was scalar replaced.
 
 class ObjectMergeValue: public ObjectValue {
 protected:
   ScopeValue*                _selector;
   ScopeValue*                _merge_pointer;
   GrowableArray<ScopeValue*> _possible_objects;
+
+  // This holds the ObjectValue that should be used in place of this
+  // ObjectMergeValue. I.e., it's the ScopeValue from _possible_objects that was
+  // selected by 'select()' or is a on-the-fly created ScopeValue representing
+  // the _merge_pointer if _selector is -1.
+  //
+  // We need to keep this reference around because there will be entries in
+  // ScopeDesc that reference this ObjectMergeValue directly. After
+  // rematerialization ObjectMergeValue will be just a wrapper for the
+  // Objectvalue pointed by _selected.
   ObjectValue*               _selected;
 public:
   ObjectMergeValue(int id, ScopeValue* merge_pointer, ScopeValue* selector)
@@ -234,7 +240,8 @@ public:
   void write_on(DebugInfoWriteStream* stream);
 
   // Printing
-  void print_on(outputStream* st) const;
+  void print_on(outputStream* st) const ;
+  void print_detailed(outputStream* st) const;
 };
 
 class AutoBoxObjectValue : public ObjectValue {

@@ -166,7 +166,7 @@ void ObjectValue::set_value(oop value) {
 }
 
 void ObjectValue::read_object(DebugInfoReadStream* stream) {
-  _only_merge_candidate = stream->read_bool();
+  _is_root = stream->read_bool();
   _klass = read_from(stream);
   assert(_klass->is_constant_oop(), "should be constant java mirror oop");
   int length = stream->read_int();
@@ -184,7 +184,7 @@ void ObjectValue::write_on(DebugInfoWriteStream* stream) {
     set_visited(true);
     stream->write_int(is_auto_box() ? AUTO_BOX_OBJECT_CODE : OBJECT_CODE);
     stream->write_int(_id);
-    stream->write_bool(_only_merge_candidate);
+    stream->write_bool(_is_root);
     _klass->write_on(stream);
     int length = _field_values.length();
     stream->write_int(length);
@@ -195,9 +195,9 @@ void ObjectValue::write_on(DebugInfoWriteStream* stream) {
 }
 
 void ObjectValue::print_on(outputStream* st) const {
-  st->print("%s: ID=%d, only_merge_candidate=%d, skip_field_assignment=%d, N.Fields=%d",
+  st->print("%s: ID=%d, is_root=%d, N.Fields=%d",
             is_auto_box() ? "box_obj" : "obj", _id,
-            _only_merge_candidate, _skip_rematerialization, _field_values.length());
+            _is_root, _field_values.length());
   st->print_cr(", klass: %s ", java_lang_Class::as_Klass(_klass->as_ConstantOopReadValue()->value()())->external_name());
   st->print("Fields: ");
   print_fields_on(st);
@@ -247,8 +247,8 @@ ObjectValue* ObjectMergeValue::select(frame& fr, RegisterMap& reg_map) {
     _selected = (ObjectValue*) _possible_objects.at(selector);
 
     // Set it to true so that the object will get rematerialized
-    if (_selected->is_only_merge_candidate()) {
-      _selected->set_only_merge_candidate(false);
+    if (!_selected->is_root()) {
+      _selected->set_root(true);
 
       // We can't assume that 'select(...)' will be called before we check if
       // the candidate needs to be rematerialized or not. Therefore, we need to
@@ -293,12 +293,25 @@ void ObjectMergeValue::write_on(DebugInfoWriteStream* stream) {
 }
 
 void ObjectMergeValue::print_on(outputStream* st) const {
+  st->print("merge: ID=%d", _id);
+}
+
+void ObjectMergeValue::print_detailed(outputStream* st) const {
+  st->print("merge: ID=%d", _id);
+#ifndef PRODUCT
+  st->print(", selector=\"");
+    _selector->print_on(st);
+    st->print("\"");
+  st->print(", merge_pointer=\"");
+    _merge_pointer->print_on(st);
+    st->print("\"");
+#endif
+  st->print(", candidate objs=[%d", _possible_objects.at(0)->as_ObjectValue()->id());
   int ncandidates = _possible_objects.length();
-  st->print("merge: ID=%d, Candidates excluding potential NSR pointer: ", _id);
-  st->print("%d", _possible_objects.at(0)->as_ObjectValue()->id());
   for (int i = 1; i < ncandidates; i++) {
     st->print(", %d", _possible_objects.at(i)->as_ObjectValue()->id());
   }
+  st->print("]");
 }
 
 // ConstantIntValue

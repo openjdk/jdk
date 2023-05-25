@@ -754,8 +754,7 @@ void PhaseOutput::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
       assert(cik->is_instance_klass() ||
             cik->is_array_klass(), "Not supported allocation.");
       sv = new ObjectValue(spobj->_idx,
-                           new ConstantOopWriteValue(cik->java_mirror()->constant_encoding()),
-                           spobj->is_only_merge_candidate());
+                           new ConstantOopWriteValue(cik->java_mirror()->constant_encoding()));
       set_sv_for_object_node(objs, sv);
 
       uint first_ind = spobj->first_index(sfpt->jvms());
@@ -1059,8 +1058,7 @@ void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
           assert(cik->is_instance_klass() ||
                  cik->is_array_klass(), "Not supported allocation.");
           ObjectValue* sv = new ObjectValue(spobj->_idx,
-                                            new ConstantOopWriteValue(cik->java_mirror()->constant_encoding()),
-                                            spobj->is_only_merge_candidate());
+                                            new ConstantOopWriteValue(cik->java_mirror()->constant_encoding()));
           PhaseOutput::set_sv_for_object_node(objs, sv);
 
           uint first_ind = spobj->first_index(youngest_jvms);
@@ -1086,6 +1084,32 @@ void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
       Location basic_lock = Location::new_stk_loc(Location::normal,C->regalloc()->reg2offset(box_reg));
       bool eliminated = (box_node->is_BoxLock() && box_node->as_BoxLock()->is_eliminated());
       monarray->append(new MonitorValue(scval, basic_lock, eliminated));
+    }
+
+    // Mark ObjectValue nodes as root nodes if they are directly
+    // referenced in the JVMS.
+    for (int i = 0; i < objs->length(); i++) {
+      ScopeValue* sv = objs->at(i);
+      if (sv->is_object_merge()) {
+        ObjectMergeValue* merge = sv->as_ObjectMergeValue();
+
+        for (int j = 0; j< merge->possible_objects()->length(); j++) {
+          ObjectValue* ov = merge->possible_objects()->at(j)->as_ObjectValue();
+          bool is_root = locarray->contains(ov) || exparray->contains(ov);
+
+          if (!is_root) {
+            for (int k = 0; k < monarray->length(); k++) {
+              MonitorValue* mv = monarray->at(k);
+              if (mv->owner() == ov) {
+                is_root = true;
+                break;
+              }
+            }
+          }
+
+          ov->set_root(is_root);
+        }
+      }
     }
 
     // We dump the object pool first, since deoptimization reads it in first.

@@ -635,8 +635,6 @@ void ConnectionGraph::reduce_phi_on_safepoints(PhiNode* ophi, Unique_Node_List* 
   // Update the debug information of all safepoints in turn
   for (uint spi = 0; spi < safepoints->size(); spi++) {
     SafePointNode* sfpt = safepoints->at(spi)->as_SafePoint();
-    Node* ctrl          = sfpt->in(TypeFunc::Control);
-    Node* memory        = sfpt->in(TypeFunc::Memory);
     JVMState *jvms      = sfpt->jvms();
     uint merge_idx      = (sfpt->req() - jvms->scloff());
     int debug_start     = jvms->debug_start();
@@ -666,29 +664,21 @@ void ConnectionGraph::reduce_phi_on_safepoints(PhiNode* ophi, Unique_Node_List* 
       AllocateNode* alloc = ptn->ideal_node()->as_Allocate();
       SafePointScalarObjectNode* sobj = mexp.create_scalarized_object_description(alloc, sfpt);
       if (sobj == nullptr) {
-        C2Compiler::retry_no_reduce_allocation_merges();
+        _compile->record_failure(C2Compiler::retry_no_reduce_allocation_merges());
         return;
       }
 
       // Now make a pass over the debug information replacing any references
       // to the allocated object with "sobj"
       Node* ccpp = alloc->result_cast();
-      int debug_end = jvms->debug_end();
-      int reps = sfpt->replace_edges_in_range(ccpp, sobj, debug_start, debug_end, _igvn);
-
-      // If the sfpt was NOT using the scalarized object directly then this SOBJ
-      // is just a candidate for rematerialization.
-      if (reps == 0) {
-        sobj->set_only_merge_candidate(true);
-      }
+      sfpt->replace_edges_in_range(ccpp, sobj, debug_start, jvms->debug_end(), _igvn);
 
       // Register the scalarized object as a candidate for reallocation
       smerge->add_req(sobj);
     }
 
     // Replaces debug information references to "ophi" in "sfpt" with references to "smerge"
-    int debug_end = jvms->debug_end();
-    sfpt->replace_edges_in_range(ophi, smerge, debug_start, debug_end, _igvn);
+    sfpt->replace_edges_in_range(ophi, smerge, debug_start, jvms->debug_end(), _igvn);
 
     // The call to 'replace_edges_in_range' above might have removed the
     // reference to ophi that we need at _merge_pointer_idx. The line below make
@@ -736,6 +726,50 @@ void ConnectionGraph::reduce_phi(PhiNode* ophi) {
 
   if (safepoints.size() > 0) {
     reduce_phi_on_safepoints(ophi, &safepoints);
+  }
+}
+
+void ConnectionGraph::verify_ram_nodes(Compile* C, Node* root) {
+  Unique_Node_List ideal_nodes;
+
+  ideal_nodes.map(C->live_nodes(), nullptr);  // preallocate space
+  ideal_nodes.push(root);
+
+  for (uint next = 0; next < ideal_nodes.size(); ++next) {
+    Node* n = ideal_nodes.at(next);
+
+    if (n->is_SafePointScalarMerge()) {
+      SafePointScalarMergeNode* merge = n->as_SafePointScalarMerge();
+
+      // Validate inputs of merge
+      for (uint i = 1; i < merge->req(); i++) {
+        if (merge->in(i) != nullptr && !merge->in(i)->is_top() && !merge->in(i)->is_SafePointScalarObject()) {
+          assert(false, "SafePointScalarMerge inputs should be null/top or SafePointScalarObject.");
+          C->record_failure(C2Compiler::retry_no_reduce_allocation_merges());
+        }
+      }
+
+      // Validate users of merge
+      for (DUIterator_Fast imax, i = merge->fast_outs(imax); i < imax; i++) {
+        Node* sfpt = merge->fast_out(i);
+        if (sfpt->is_SafePoint()) {
+          int merge_idx = merge->merge_pointer_idx(sfpt->as_SafePoint()->jvms());
+
+          if (sfpt->in(merge_idx) != nullptr && sfpt->in(merge_idx)->is_SafePointScalarMerge()) {
+            assert(false, "SafePointScalarMerge nodes can't be nested.");
+            C->record_failure(C2Compiler::retry_no_reduce_allocation_merges());
+          }
+        } else {
+          assert(false, "Only safepoints can use SafePointScalarMerge nodes.");
+          C->record_failure(C2Compiler::retry_no_reduce_allocation_merges());
+        }
+      }
+    }
+
+    for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
+      Node* m = n->fast_out(i);
+      ideal_nodes.push(m);
+    }
   }
 }
 

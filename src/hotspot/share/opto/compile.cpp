@@ -2327,9 +2327,11 @@ void Compile::Optimize() {
 
         igvn.optimize();
         print_method(PHASE_ITER_GVN_AFTER_ELIMINATION, 2);
-
-        if (failing())  return;
       }
+
+      NOT_PRODUCT(ConnectionGraph::verify_ram_nodes(this, root());)
+      if (failing())  return;
+
       progress = do_iterative_escape_analysis() &&
                  (macro_count() < mcount) &&
                  ConnectionGraph::has_candidates(this);
