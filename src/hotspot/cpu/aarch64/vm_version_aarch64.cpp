@@ -455,15 +455,17 @@ void VM_Version::initialize() {
   } else if (strcmp(UseBranchProtection, "standard") == 0 ||
              strcmp(UseBranchProtection, "pac-ret") == 0) {
     _rop_protection = false;
-    // Enable PAC if this code has been built with branch-protection, the CPU/OS
-    // supports it, and incompatible preview features aren't enabled.
+    // Enable ROP-protection if
+    // 1) this code has been built with branch-protection,
+    // 2) the CPU/OS supports it, and
+    // 3) incompatible virtual threads feature isn't enabled.
 #ifdef __ARM_FEATURE_PAC_DEFAULT
     if (!VM_Version::supports_paca()) {
       // Disable PAC to prevent illegal instruction crashes.
       warning("ROP-protection specified, but not supported on this CPU. Disabling ROP-protection.");
-    } else if (Arguments::enable_preview()) {
+    } else if (VMContinuations) {
       // Not currently compatible with continuation freeze/thaw.
-      warning("ROP-protection is incompatible with virtual threads preview feature. Disabling ROP-protection.");
+      warning("ROP-protection is incompatible with virtual threads feature. Disabling ROP-protection.");
     } else {
       _rop_protection = true;
     }
