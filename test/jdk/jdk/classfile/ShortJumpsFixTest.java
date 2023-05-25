@@ -201,7 +201,7 @@ class ShortJumpsFixTest {
     }
 
     private static byte[] generateFwd(Sample sample, boolean overflow, Classfile.Option... options) {
-        return Classfile.build(ClassDesc.of("WhateverClass"), List.of(options),
+        return Classfile.Context.of(options).build(ClassDesc.of("WhateverClass"),
                         cb -> cb.withMethod("whateverMethod", MethodTypeDesc.of(ConstantDescs.CD_void), 0,
                                 mb -> mb.withCode(cob -> {
                                     for (int i = 0; i < sample.expected.length - 4; i++) //cherry-pick XCONST_ instructions from expected output
@@ -216,7 +216,7 @@ class ShortJumpsFixTest {
     }
 
     private static byte[] generateBack(Sample sample, boolean overflow, Classfile.Option... options) {
-        return Classfile.build(ClassDesc.of("WhateverClass"), List.of(options),
+        return Classfile.Context.of(options).build(ClassDesc.of("WhateverClass"),
                         cb -> cb.withMethod("whateverMethod", MethodTypeDesc.of(ConstantDescs.CD_void), 0,
                                 mb -> mb.withCode(cob -> {
                                     var target = cob.newLabel();

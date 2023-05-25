@@ -60,7 +60,7 @@ public class ClassBuildingTest {
         transform = transform.andThen(ClassTransform.transformingMethods(MethodTransform.dropping(me
                 -> me instanceof SignatureAttribute)));
 
-        MethodHandles.lookup().defineClass(cm.transform(transform));
+        MethodHandles.lookup().defineClass(Classfile.transform(cm, transform));
     }
 }
 

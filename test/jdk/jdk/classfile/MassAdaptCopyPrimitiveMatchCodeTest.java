@@ -100,7 +100,7 @@ class MassAdaptCopyPrimitiveMatchCodeTest {
         Map<String, byte[]> m2b = new HashMap<>();
         Map<String, CodeAttribute> m2c = new HashMap<>();
         byte[] resultBytes =
-                cm.transform((cb, e) -> {
+                Classfile.transform(cm, (cb, e) -> {
                     if (e instanceof MethodModel mm) {
                         Optional<CodeModel> code = mm.code();
                         if (code.isPresent()) {

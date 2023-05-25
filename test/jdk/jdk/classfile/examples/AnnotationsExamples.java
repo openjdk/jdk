@@ -49,7 +49,7 @@ public class AnnotationsExamples {
     public byte[] addAnno(ClassModel m) {
         // @@@ Not correct
         List<Annotation> annos = List.of(Annotation.of(ClassDesc.of("java.lang.FunctionalInterface")));
-        return m.transform(ClassTransform.endHandler(cb -> cb.with(RuntimeVisibleAnnotationsAttribute.of(annos))));
+        return Classfile.transform(m, ClassTransform.endHandler(cb -> cb.with(RuntimeVisibleAnnotationsAttribute.of(annos))));
     }
 
     /**
@@ -75,7 +75,7 @@ public class AnnotationsExamples {
             RuntimeVisibleAnnotationsAttribute a = m.findAttribute(Attributes.RUNTIME_VISIBLE_ANNOTATIONS).get();
             for (Annotation ann : a.annotations()) {
                 if (ann.className().stringValue().equals("Ljava/lang/annotation/Documented;")) {
-                    m2 = Classfile.parse(m.transform(SWAP_ANNO_TRANSFORM));
+                    m2 = Classfile.parse(Classfile.transform(m, SWAP_ANNO_TRANSFORM));
                 }
             }
         }
@@ -118,7 +118,7 @@ public class AnnotationsExamples {
             RuntimeVisibleAnnotationsAttribute a = m.findAttribute(Attributes.RUNTIME_VISIBLE_ANNOTATIONS).get();
             for (Annotation ann : a.annotations()) {
                 if (ann.className().stringValue().equals("Ljava/lang/FunctionalInterface;")) {
-                    m2 = Classfile.parse(m.transform((cb, ce) -> {
+                    m2 = Classfile.parse(Classfile.transform(m, (cb, ce) -> {
                         if (ce instanceof RuntimeVisibleAnnotationsAttribute ra) {
                             var oldAnnos = ra.annotations();
                             List<Annotation> newAnnos = new ArrayList<>(oldAnnos.size() + 1);
@@ -144,7 +144,7 @@ public class AnnotationsExamples {
     }
 
     public byte[] viaEndHandlerClassBuilderEdition(ClassModel m) {
-        return m.transform(ClassTransform.ofStateful(() -> new ClassTransform() {
+        return Classfile.transform(m, ClassTransform.ofStateful(() -> new ClassTransform() {
             boolean found = false;
 
             @Override
@@ -171,7 +171,7 @@ public class AnnotationsExamples {
     }
 
     public byte[] viaEndHandlerClassTransformEdition(ClassModel m) {
-        return m.transform(ClassTransform.ofStateful(() -> new ClassTransform() {
+        return Classfile.transform(m, ClassTransform.ofStateful(() -> new ClassTransform() {
             boolean found = false;
 
             @Override

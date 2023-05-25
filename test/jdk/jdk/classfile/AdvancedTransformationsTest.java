@@ -76,7 +76,7 @@ class AdvancedTransformationsTest {
     void testShiftLocals() throws Exception {
         try (var in = StackMapGenerator.class.getResourceAsStream("StackMapGenerator.class")) {
             var clm = Classfile.parse(in.readAllBytes());
-            var remapped = Classfile.parse(clm.transform((clb, cle) -> {
+            var remapped = Classfile.parse(Classfile.transform(clm, (clb, cle) -> {
                 if (cle instanceof MethodModel mm) {
                     clb.transformMethod(mm, (mb, me) -> {
                         if (me instanceof CodeModel com) {
@@ -297,7 +297,7 @@ class AdvancedTransformationsTest {
         var targetFieldNames = target.fields().stream().map(f -> f.fieldName().stringValue()).collect(Collectors.toSet());
         var targetMethods = target.methods().stream().map(m -> m.methodName().stringValue() + m.methodType().stringValue()).collect(Collectors.toSet());
         var instrumentorClassRemapper = ClassRemapper.of(Map.of(instrumentor.thisClass().asSymbol(), target.thisClass().asSymbol()));
-        return target.transform(
+        return Classfile.transform(target,
                 ClassTransform.transformingMethods(
                         instrumentedMethodsFilter,
                         (mb, me) -> {

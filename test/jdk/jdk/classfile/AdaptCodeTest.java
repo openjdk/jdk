@@ -60,7 +60,7 @@ class AdaptCodeTest {
     void testNullAdaptIterator() throws Exception {
         ClassModel cm = Classfile.parse(testClassPath);
         for (ClassTransform t : Transforms.noops) {
-            byte[] newBytes = cm.transform(t);
+            byte[] newBytes = Classfile.transform(cm, t);
             String result = (String)
                     new ByteArrayClassLoader(AdaptCodeTest.class.getClassLoader(), testClassName, newBytes)
                             .getMethod(testClassName, "many")
@@ -79,7 +79,7 @@ class AdaptCodeTest {
         FileSystem fs = FileSystems.getFileSystem(URI.create("jrt:/"));
         ClassModel cm = Classfile.parse(fs.getPath(path));
         for (ClassTransform t : Transforms.noops) {
-            byte[] newBytes = cm.transform(t);
+            byte[] newBytes = Classfile.transform(cm, t);
         }
     }
 
@@ -100,7 +100,7 @@ class AdaptCodeTest {
             }
         });
 
-        byte[] newBytes = cm.transform(transform);
+        byte[] newBytes = Classfile.transform(cm, transform);
 //        Files.write(Path.of("foo.class"), newBytes);
         String result = (String)
                 new ByteArrayClassLoader(AdaptCodeTest.class.getClassLoader(), testClassName, newBytes)

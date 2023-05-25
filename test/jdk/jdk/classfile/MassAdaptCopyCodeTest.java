@@ -82,7 +82,7 @@ class MassAdaptCopyCodeTest {
     }
 
     public byte[] adaptCopy(ClassModel cm) {
-        return cm.transform((cb, ce) -> {
+        return Classfile.transform(cm, (cb, ce) -> {
             if (ce instanceof MethodModel mm) {
                 cb.transformMethod(mm, (mb, me) -> {
                     if (me instanceof CodeModel xm) {

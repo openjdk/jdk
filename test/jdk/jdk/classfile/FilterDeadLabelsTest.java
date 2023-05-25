@@ -60,7 +60,7 @@ class FilterDeadLabelsTest {
 
     @Test
     void testFilterDeadLabels() {
-        var code = Classfile.parse(Classfile.build(ClassDesc.of("cls"), List.of(Classfile.Option.filterDeadLabels(true)), clb ->
+        var code = Classfile.parse(Classfile.Context.of(Classfile.Option.filterDeadLabels(true)).build(ClassDesc.of("cls"), clb ->
                 clb.withMethodBody("m", MethodTypeDesc.of(ConstantDescs.CD_void), 0, cob -> {
                     cob.return_();
                     deadLabelFragments().forEach(f -> f.accept(cob));
