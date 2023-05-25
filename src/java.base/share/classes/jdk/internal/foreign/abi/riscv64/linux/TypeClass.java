@@ -181,7 +181,7 @@ public enum TypeClass {
     }
 
     private static boolean isRegisterAggregate(MemoryLayout type) {
-        return type.bitSize() <= MAX_AGGREGATE_REGS_SIZE * 64;
+        return type.byteSize() <= MAX_AGGREGATE_REGS_SIZE * 8;
     }
 
     private static TypeClass classifyStructType(GroupLayout layout) {

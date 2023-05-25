@@ -37,7 +37,7 @@ import jdk.internal.javac.PreviewFeature;
  * <em>integral</em> values (either signed or unsigned), <em>floating-point</em> values and
  * <em>address</em> values.
  * <p>
- * Each value layout has a size, an alignment (in bits),
+ * Each value layout has a size, an alignment (both expressed in bytes),
  * a {@linkplain ByteOrder byte order}, and a <em>carrier</em>, that is, the Java type that should be used when
  * {@linkplain MemorySegment#get(OfInt, long) accessing} a region of memory using the value layout.
  * <p>
@@ -117,8 +117,8 @@ public sealed interface ValueLayout extends MemoryLayout permits
      * <p>
      * Consider the following access expressions:
      * {@snippet lang=java :
-     * int value1 = arrayHandle.get(10, 2, 4); // ok, accessed offset = 8176
-     * int value2 = arrayHandle.get(0, 0, 30); // out of bounds value for z
+     * int value1 = (int) arrayHandle.get(10, 2, 4); // ok, accessed offset = 8176
+     * int value2 = (int) arrayHandle.get(0, 0, 30); // out of bounds value for z
      * }
      * In the first case, access is well-formed, as the values for {@code x}, {@code y} and {@code z} conform to
      * the bounds specified above. In the second case, access fails with {@link IndexOutOfBoundsException},
@@ -129,7 +129,7 @@ public sealed interface ValueLayout extends MemoryLayout permits
      * featuring {@code shape.length + 1}
      * {@code long} coordinates.
      * @throws IllegalArgumentException if {@code shape[i] < 0}, for at least one index {@code i}.
-     * @throws UnsupportedOperationException if {@code bitAlignment() > bitSize()}.
+     * @throws UnsupportedOperationException if {@code byteAlignment() > byteSize()}.
      * @see MethodHandles#memorySegmentViewVarHandle
      * @see MemoryLayout#varHandle(PathElement...)
      * @see SequenceLayout
@@ -152,7 +152,7 @@ public sealed interface ValueLayout extends MemoryLayout permits
      * @throws IllegalArgumentException {@inheritDoc}
      */
     @Override
-    ValueLayout withBitAlignment(long bitAlignment);
+    ValueLayout withByteAlignment(long byteAlignment);
 
     /**
      * A value layout whose carrier is {@code boolean.class}.
@@ -180,7 +180,7 @@ public sealed interface ValueLayout extends MemoryLayout permits
          * @throws IllegalArgumentException {@inheritDoc}
          */
         @Override
-        OfBoolean withBitAlignment(long bitAlignment);
+        OfBoolean withByteAlignment(long byteAlignment);
 
         /**
          * {@inheritDoc}
@@ -216,7 +216,7 @@ public sealed interface ValueLayout extends MemoryLayout permits
          * @throws IllegalArgumentException {@inheritDoc}
          */
         @Override
-        OfByte withBitAlignment(long bitAlignment);
+        OfByte withByteAlignment(long byteAlignment);
 
         /**
          * {@inheritDoc}
@@ -253,7 +253,7 @@ public sealed interface ValueLayout extends MemoryLayout permits
          * @throws IllegalArgumentException {@inheritDoc}
          */
         @Override
-        OfChar withBitAlignment(long bitAlignment);
+        OfChar withByteAlignment(long byteAlignment);
 
         /**
          * {@inheritDoc}
@@ -290,7 +290,7 @@ public sealed interface ValueLayout extends MemoryLayout permits
          * @throws IllegalArgumentException {@inheritDoc}
          */
         @Override
-        OfShort withBitAlignment(long bitAlignment);
+        OfShort withByteAlignment(long byteAlignment);
 
         /**
          * {@inheritDoc}
@@ -327,7 +327,7 @@ public sealed interface ValueLayout extends MemoryLayout permits
          * @throws IllegalArgumentException {@inheritDoc}
          */
         @Override
-        OfInt withBitAlignment(long bitAlignment);
+        OfInt withByteAlignment(long byteAlignment);
 
         /**
          * {@inheritDoc}
@@ -363,7 +363,7 @@ public sealed interface ValueLayout extends MemoryLayout permits
          * {@inheritDoc}
          */
         @Override
-        OfFloat withBitAlignment(long bitAlignment);
+        OfFloat withByteAlignment(long byteAlignment);
 
         /**
          * {@inheritDoc}
@@ -400,7 +400,7 @@ public sealed interface ValueLayout extends MemoryLayout permits
          * @throws IllegalArgumentException {@inheritDoc}
          */
         @Override
-        OfLong withBitAlignment(long bitAlignment);
+        OfLong withByteAlignment(long byteAlignment);
 
         /**
          * {@inheritDoc}
@@ -437,7 +437,7 @@ public sealed interface ValueLayout extends MemoryLayout permits
          * @throws IllegalArgumentException {@inheritDoc}
          */
         @Override
-        OfDouble withBitAlignment(long bitAlignment);
+        OfDouble withByteAlignment(long byteAlignment);
 
         /**
          * {@inheritDoc}
@@ -449,55 +449,57 @@ public sealed interface ValueLayout extends MemoryLayout permits
 
     /**
      * A value layout constant whose size is the same as that of a machine address ({@code size_t}),
-     * bit alignment set to {@code sizeof(size_t) * 8}, byte order set to {@link ByteOrder#nativeOrder()}.
+     * byte alignment set to {@code sizeof(size_t)}, byte order set to {@link ByteOrder#nativeOrder()}.
      */
     AddressLayout ADDRESS = ValueLayouts.OfAddressImpl.of(ByteOrder.nativeOrder());
 
     /**
      * A value layout constant whose size is the same as that of a Java {@code byte},
-     * bit alignment set to 8, and byte order set to {@link ByteOrder#nativeOrder()}.
+     * byte alignment set to 1, and byte order set to {@link ByteOrder#nativeOrder()}.
      */
     OfByte JAVA_BYTE = ValueLayouts.OfByteImpl.of(ByteOrder.nativeOrder());
 
     /**
      * A value layout constant whose size is the same as that of a Java {@code boolean},
-     * bit alignment set to 8, and byte order set to {@link ByteOrder#nativeOrder()}.
+     * byte alignment set to 1, and byte order set to {@link ByteOrder#nativeOrder()}.
      */
     OfBoolean JAVA_BOOLEAN = ValueLayouts.OfBooleanImpl.of(ByteOrder.nativeOrder());
 
     /**
      * A value layout constant whose size is the same as that of a Java {@code char},
-     * bit alignment set to 16, and byte order set to {@link ByteOrder#nativeOrder()}.
+     * byte alignment set to 2, and byte order set to {@link ByteOrder#nativeOrder()}.
      */
     OfChar JAVA_CHAR = ValueLayouts.OfCharImpl.of(ByteOrder.nativeOrder());
 
     /**
      * A value layout constant whose size is the same as that of a Java {@code short},
-     * bit alignment set to 16, and byte order set to {@link ByteOrder#nativeOrder()}.
+     * byte alignment set to 2, and byte order set to {@link ByteOrder#nativeOrder()}.
      */
     OfShort JAVA_SHORT = ValueLayouts.OfShortImpl.of(ByteOrder.nativeOrder());
 
     /**
      * A value layout constant whose size is the same as that of a Java {@code int},
-     * bit alignment set to 32, and byte order set to {@link ByteOrder#nativeOrder()}.
+     * byte alignment set to 4, and byte order set to {@link ByteOrder#nativeOrder()}.
      */
     OfInt JAVA_INT = ValueLayouts.OfIntImpl.of(ByteOrder.nativeOrder());
 
     /**
      * A value layout constant whose size is the same as that of a Java {@code long},
-     * bit alignment set to 64, and byte order set to {@link ByteOrder#nativeOrder()}.
+     * (platform-dependent) byte alignment set to {@code ADDRESS.byteSize()},
+     * and byte order set to {@link ByteOrder#nativeOrder()}.
      */
     OfLong JAVA_LONG = ValueLayouts.OfLongImpl.of(ByteOrder.nativeOrder());
 
     /**
      * A value layout constant whose size is the same as that of a Java {@code float},
-     * bit alignment set to 32, and byte order set to {@link ByteOrder#nativeOrder()}.
+     * byte alignment set to 4, and byte order set to {@link ByteOrder#nativeOrder()}.
      */
     OfFloat JAVA_FLOAT = ValueLayouts.OfFloatImpl.of(ByteOrder.nativeOrder());
 
     /**
      * A value layout constant whose size is the same as that of a Java {@code double},
-     * bit alignment set to 64, and byte order set to {@link ByteOrder#nativeOrder()}.
+     * (platform-dependent) byte alignment set to {@code ADDRESS.byteSize()},
+     * and byte order set to {@link ByteOrder#nativeOrder()}.
      */
     OfDouble JAVA_DOUBLE = ValueLayouts.OfDoubleImpl.of(ByteOrder.nativeOrder());
 
@@ -506,83 +508,83 @@ public sealed interface ValueLayout extends MemoryLayout permits
      * and byte order set to {@link ByteOrder#nativeOrder()}.
      * Equivalent to the following code:
      * {@snippet lang=java :
-     * ADDRESS.withBitAlignment(8);
+     * ADDRESS.withByteAlignment(1);
      * }
      * @apiNote Care should be taken when using unaligned value layouts as they may induce
      *          performance and portability issues.
      */
-    AddressLayout ADDRESS_UNALIGNED = ADDRESS.withBitAlignment(8);
+    AddressLayout ADDRESS_UNALIGNED = ADDRESS.withByteAlignment(1);
 
     /**
      * An unaligned value layout constant whose size is the same as that of a Java {@code char}
      * and byte order set to {@link ByteOrder#nativeOrder()}.
      * Equivalent to the following code:
      * {@snippet lang=java :
-     * JAVA_CHAR.withBitAlignment(8);
+     * JAVA_CHAR.withByteAlignment(1);
      * }
      * @apiNote Care should be taken when using unaligned value layouts as they may induce
      *          performance and portability issues.
      */
-    OfChar JAVA_CHAR_UNALIGNED = JAVA_CHAR.withBitAlignment(8);
+    OfChar JAVA_CHAR_UNALIGNED = JAVA_CHAR.withByteAlignment(1);
 
     /**
      * An unaligned value layout constant whose size is the same as that of a Java {@code short}
      * and byte order set to {@link ByteOrder#nativeOrder()}.
      * Equivalent to the following code:
      * {@snippet lang=java :
-     * JAVA_SHORT.withBitAlignment(8);
+     * JAVA_SHORT.withByteAlignment(1);
      * }
      * @apiNote Care should be taken when using unaligned value layouts as they may induce
      *          performance and portability issues.
      */
-    OfShort JAVA_SHORT_UNALIGNED = JAVA_SHORT.withBitAlignment(8);
+    OfShort JAVA_SHORT_UNALIGNED = JAVA_SHORT.withByteAlignment(1);
 
     /**
      * An unaligned value layout constant whose size is the same as that of a Java {@code int}
      * and byte order set to {@link ByteOrder#nativeOrder()}.
      * Equivalent to the following code:
      * {@snippet lang=java :
-     * JAVA_INT.withBitAlignment(8);
+     * JAVA_INT.withByteAlignment(1);
      * }
      * @apiNote Care should be taken when using unaligned value layouts as they may induce
      *          performance and portability issues.
      */
-    OfInt JAVA_INT_UNALIGNED = JAVA_INT.withBitAlignment(8);
+    OfInt JAVA_INT_UNALIGNED = JAVA_INT.withByteAlignment(1);
 
     /**
      * An unaligned value layout constant whose size is the same as that of a Java {@code long}
      * and byte order set to {@link ByteOrder#nativeOrder()}.
      * Equivalent to the following code:
      * {@snippet lang=java :
-     * JAVA_LONG.withBitAlignment(8);
+     * JAVA_LONG.withByteAlignment(1);
      * }
      * @apiNote Care should be taken when using unaligned value layouts as they may induce
      *          performance and portability issues.
      */
-    OfLong JAVA_LONG_UNALIGNED = JAVA_LONG.withBitAlignment(8);
+    OfLong JAVA_LONG_UNALIGNED = JAVA_LONG.withByteAlignment(1);
 
     /**
      * An unaligned value layout constant whose size is the same as that of a Java {@code float}
      * and byte order set to {@link ByteOrder#nativeOrder()}.
      * Equivalent to the following code:
      * {@snippet lang=java :
-     * JAVA_FLOAT.withBitAlignment(8);
+     * JAVA_FLOAT.withByteAlignment(1);
      * }
      * @apiNote Care should be taken when using unaligned value layouts as they may induce
      *          performance and portability issues.
      */
-    OfFloat JAVA_FLOAT_UNALIGNED = JAVA_FLOAT.withBitAlignment(8);
+    OfFloat JAVA_FLOAT_UNALIGNED = JAVA_FLOAT.withByteAlignment(1);
 
     /**
      * An unaligned value layout constant whose size is the same as that of a Java {@code double}
      * and byte order set to {@link ByteOrder#nativeOrder()}.
      * Equivalent to the following code:
      * {@snippet lang=java :
-     * JAVA_DOUBLE.withBitAlignment(8);
+     * JAVA_DOUBLE.withByteAlignment(1);
      * }
      * @apiNote Care should be taken when using unaligned value layouts as they may induce
      *          performance and portability issues.
      */
-    OfDouble JAVA_DOUBLE_UNALIGNED = JAVA_DOUBLE.withBitAlignment(8);
+    OfDouble JAVA_DOUBLE_UNALIGNED = JAVA_DOUBLE.withByteAlignment(1);
 
 }

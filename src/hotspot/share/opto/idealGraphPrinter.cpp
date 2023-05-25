@@ -377,9 +377,6 @@ void IdealGraphPrinter::visit_node(Node *n, bool edges, VectorSet* temp_set) {
     const Type *t = node->bottom_type();
     print_prop("type", t->msg());
     print_prop("idx", node->_idx);
-#ifdef ASSERT
-    print_prop("debug_idx", node->_debug_idx);
-#endif
 
     if (C->cfg() != nullptr) {
       Block* block = C->cfg()->get_block_for_node(node);

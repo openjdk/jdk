@@ -71,7 +71,9 @@ public enum SourceVersion {
      *      record patterns in preview)
      *  20: no changes (pattern matching for switch in fourth preview,
      *      record patterns in second preview)
-     *  21: tbd
+     *  21: pattern matching for switch and record patterns (string
+     *      templates in preview, unnamed patterns and variables in
+     *      preview, unnamed classes and instance main methods in preview)
      */
 
     /**
@@ -384,6 +386,10 @@ public enum SourceVersion {
      * @see <a
      * href="https://docs.oracle.com/javase/specs/jls/se21/html/index.html">
      * <cite>The Java Language Specification, Java SE 21 Edition</cite></a>
+     * @see <a href="https://openjdk.org/jeps/440">
+     * Record Patterns</a>
+     * @see <a href="https://openjdk.org/jeps/441">
+     * Pattern Matching for switch</a>
      */
     RELEASE_21;
 

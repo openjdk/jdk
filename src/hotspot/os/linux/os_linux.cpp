@@ -216,15 +216,8 @@ static bool suppress_primordial_thread_resolution = false;
 
 // utility functions
 
-julong os::available_memory() {
-  return Linux::available_memory();
-}
-
-julong os::Linux::available_memory() {
-  // values in struct sysinfo are "unsigned long"
-  struct sysinfo si;
-  julong avail_mem;
-
+julong os::Linux::available_memory_in_container() {
+  julong avail_mem = static_cast<julong>(-1L);
   if (OSContainer::is_containerized()) {
     jlong mem_limit = OSContainer::memory_limit_in_bytes();
     jlong mem_usage;
@@ -233,15 +226,57 @@ julong os::Linux::available_memory() {
     }
     if (mem_limit > 0 && mem_usage > 0) {
       avail_mem = mem_limit > mem_usage ? (julong)mem_limit - (julong)mem_usage : 0;
-      log_trace(os)("available container memory: " JULONG_FORMAT, avail_mem);
-      return avail_mem;
     }
+  }
+  return avail_mem;
+}
+
+julong os::available_memory() {
+  return Linux::available_memory();
+}
+
+julong os::Linux::available_memory() {
+  julong avail_mem = available_memory_in_container();
+  if (avail_mem != static_cast<julong>(-1L)) {
+    log_trace(os)("available container memory: " JULONG_FORMAT, avail_mem);
+    return avail_mem;
+  }
+
+  FILE *fp = os::fopen("/proc/meminfo", "r");
+  if (fp != nullptr) {
+    char buf[80];
+    do {
+      if (fscanf(fp, "MemAvailable: " JULONG_FORMAT " kB", &avail_mem) == 1) {
+        avail_mem *= K;
+        break;
+      }
+    } while (fgets(buf, sizeof(buf), fp) != nullptr);
+    fclose(fp);
+  }
+  if (avail_mem == static_cast<julong>(-1L)) {
+    avail_mem = free_memory();
+  }
+  log_trace(os)("available memory: " JULONG_FORMAT, avail_mem);
+  return avail_mem;
+}
+
+julong os::free_memory() {
+  return Linux::free_memory();
+}
+
+julong os::Linux::free_memory() {
+  // values in struct sysinfo are "unsigned long"
+  struct sysinfo si;
+  julong free_mem = available_memory_in_container();
+  if (free_mem != static_cast<julong>(-1L)) {
+    log_trace(os)("free container memory: " JULONG_FORMAT, free_mem);
+    return free_mem;
   }
 
   sysinfo(&si);
-  avail_mem = (julong)si.freeram * si.mem_unit;
-  log_trace(os)("available memory: " JULONG_FORMAT, avail_mem);
-  return avail_mem;
+  free_mem = (julong)si.freeram * si.mem_unit;
+  log_trace(os)("free memory: " JULONG_FORMAT, free_mem);
+  return free_mem;
 }
 
 julong os::physical_memory() {
@@ -851,7 +886,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
   assert(thread->osthread() == nullptr, "caller responsible");
 
   // Allocate the OSThread object
-  OSThread* osthread = new OSThread();
+  OSThread* osthread = new (std::nothrow) OSThread();
   if (osthread == nullptr) {
     return false;
   }
@@ -975,7 +1010,7 @@ bool os::create_attached_thread(JavaThread* thread) {
 #endif
 
   // Allocate the OSThread object
-  OSThread* osthread = new OSThread();
+  OSThread* osthread = new (std::nothrow) OSThread();
 
   if (osthread == nullptr) {
     return false;
@@ -1789,7 +1824,16 @@ const char* os::Linux::dll_path(void* lib) {
   return l_path;
 }
 
-static bool _print_ascii_file(const char* filename, outputStream* st, const char* hdr = nullptr) {
+static unsigned count_newlines(const char* s) {
+  unsigned n = 0;
+  for (const char* s2 = strchr(s, '\n');
+       s2 != nullptr; s2 = strchr(s2 + 1, '\n')) {
+    n++;
+  }
+  return n;
+}
+
+static bool _print_ascii_file(const char* filename, outputStream* st, unsigned* num_lines = nullptr, const char* hdr = nullptr) {
   int fd = ::open(filename, O_RDONLY);
   if (fd == -1) {
     return false;
@@ -1802,8 +1846,17 @@ static bool _print_ascii_file(const char* filename, outputStream* st, const char
   char buf[33];
   int bytes;
   buf[32] = '\0';
+  unsigned lines = 0;
   while ((bytes = ::read(fd, buf, sizeof(buf)-1)) > 0) {
     st->print_raw(buf, bytes);
+    // count newlines
+    if (num_lines != nullptr) {
+      lines += count_newlines(buf);
+    }
+  }
+
+  if (num_lines != nullptr) {
+    (*num_lines) = lines;
   }
 
   ::close(fd);
@@ -1825,9 +1878,11 @@ void os::print_dll_info(outputStream *st) {
   pid_t pid = os::Linux::gettid();
 
   jio_snprintf(fname, sizeof(fname), "/proc/%d/maps", pid);
-
-  if (!_print_ascii_file(fname, st)) {
+  unsigned num = 0;
+  if (!_print_ascii_file(fname, st, &num)) {
     st->print_cr("Can not get library information for pid = %d", pid);
+  } else {
+    st->print_cr("Total number of mappings: %u", num);
   }
 }
 
@@ -2175,7 +2230,7 @@ void os::Linux::print_process_memory_info(outputStream* st) {
 }
 
 bool os::Linux::print_ld_preload_file(outputStream* st) {
-  return _print_ascii_file("/etc/ld.so.preload", st, "/etc/ld.so.preload:");
+  return _print_ascii_file("/etc/ld.so.preload", st, nullptr, "/etc/ld.so.preload:");
 }
 
 void os::Linux::print_uptime_info(outputStream* st) {

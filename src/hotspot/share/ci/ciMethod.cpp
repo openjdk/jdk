@@ -1178,9 +1178,9 @@ bool ciMethod::has_unloaded_classes_in_signature() {
 
 // ------------------------------------------------------------------
 // ciMethod::is_klass_loaded
-bool ciMethod::is_klass_loaded(int refinfo_index, bool must_be_resolved) const {
+bool ciMethod::is_klass_loaded(int refinfo_index, Bytecodes::Code bc, bool must_be_resolved) const {
   VM_ENTRY_MARK;
-  return get_Method()->is_klass_loaded(refinfo_index, must_be_resolved);
+  return get_Method()->is_klass_loaded(refinfo_index, bc, must_be_resolved);
 }
 
 // ------------------------------------------------------------------

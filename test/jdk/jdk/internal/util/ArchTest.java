@@ -28,6 +28,7 @@ import jdk.internal.misc.Unsafe;
 
 import static jdk.internal.util.Architecture.OTHER;
 import static jdk.internal.util.Architecture.AARCH64;
+import static jdk.internal.util.Architecture.ARM;
 import static jdk.internal.util.Architecture.PPC64;
 import static jdk.internal.util.Architecture.RISCV64;
 import static jdk.internal.util.Architecture.S390;
@@ -67,6 +68,7 @@ public class ArchTest {
             case "x86_64", "amd64" -> X64;
             case "x86", "i386" -> X86;
             case "aarch64" -> AARCH64;
+            case "arm" -> ARM;
             case "riscv64" -> RISCV64;
             case "s390x", "s390" -> S390;
             case "ppc64", "ppc64le" -> PPC64;
@@ -84,6 +86,7 @@ public class ArchTest {
                 Arguments.of(X64, Architecture.isX64()),
                 Arguments.of(X86, Architecture.isX86()),
                 Arguments.of(AARCH64, Architecture.isAARCH64()),
+                Arguments.of(ARM, Architecture.isARM()),
                 Arguments.of(RISCV64, Architecture.isRISCV64()),
                 Arguments.of(S390, Architecture.isS390()),
                 Arguments.of(PPC64, Architecture.isPPC64())

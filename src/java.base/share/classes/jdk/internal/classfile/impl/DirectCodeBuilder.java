@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -130,7 +130,7 @@ public final class DirectCodeBuilder
                                                                : new BufWriterImpl(constantPool);
         this.startLabel = new LabelImpl(this, 0);
         this.endLabel = new LabelImpl(this, -1);
-        this.topLocal = Util.maxLocals(methodInfo.methodFlags(), methodInfo.methodType().stringValue());
+        this.topLocal = Util.maxLocals(methodInfo.methodFlags(), methodInfo.methodTypeSymbol());
         if (original != null)
             this.topLocal = Math.max(this.topLocal, original.maxLocals());
     }
@@ -311,6 +311,13 @@ public final class DirectCodeBuilder
                 buf.setLabelContext(DirectCodeBuilder.this);
 
                 int codeLength = curPc();
+                if (codeLength == 0 || codeLength >= 65536) {
+                    throw new IllegalArgumentException(String.format(
+                            "Code length %d is outside the allowed range in %s%s",
+                            codeLength,
+                            methodInfo.methodName().stringValue(),
+                            methodInfo.methodTypeSymbol().displayDescriptor()));
+                }
                 int maxStack, maxLocals;
                 Attribute<? extends StackMapTableAttribute> stackMapAttr;
                 boolean canReuseStackmaps = codeAndExceptionsMatch(codeLength);
