@@ -147,11 +147,8 @@ public class EdDSAParameters {
         }
     }
 
-<<<<<<< Updated upstream
     static ParametersMap<EdDSAParameters> namedParams = new ParametersMap<>();
-=======
     private final static ParametersMap<EdDSAParameters> namedParams = new ParametersMap<>();
->>>>>>> Stashed changes
 
     private final String name;
     private final ObjectIdentifier oid;
