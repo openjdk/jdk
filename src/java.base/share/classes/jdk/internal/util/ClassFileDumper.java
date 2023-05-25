@@ -27,16 +27,12 @@ package jdk.internal.util;
 import jdk.internal.misc.VM;
 import sun.security.action.GetPropertyAction;
 
-import java.io.FilePermission;
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.HexFormat;
 import java.util.Objects;
-import java.util.PropertyPermission;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -53,89 +49,55 @@ public final class ClassFileDumper {
             = new ConcurrentHashMap<>();
 
     /**
-     * Returns a ClassFileDumper instance for the given key.  To enable
-     * dumping of the generated classes, set the system property via
-     * -D<key>=<path>.
-     *
-     * The system property is read only once when it is the first time
-     * the dumper instance for the given key is created.
-     *
-     * If not enabled, this method returns ClassFileDumper with null
-     * dump path.
-     */
-    public static ClassFileDumper getInstance(String key) {
-        Objects.requireNonNull(key);
-
-        var dumper = DUMPER_MAP.get(key);
-        if (dumper == null) {
-            String path = GetPropertyAction.privilegedGetProperty(key);
-            Path dir;
-            if (path == null || path.trim().isEmpty()) {
-                dir = null;
-            } else {
-                dir = validateDumpDir(Path.of(path.trim()));
-            }
-            var newDumper = new ClassFileDumper(key, dir);
-            var v = DUMPER_MAP.putIfAbsent(key, newDumper);
-            dumper = v != null ? v : newDumper;
-        }
-        return dumper;
-    }
-
-    /**
      * Returns a ClassFileDumper instance for the given key with a given
      * dump path. To enable dumping of the generated classes
      *     -D<key> or -D<key>=true
      *
      * The system property is read only once when it is the first time
      * the dumper instance for the given key is created.
-     *
-     * If not enabled, this method returns ClassFileDumper with null
-     * dump path.
      */
-    public static ClassFileDumper getInstance(String key, Path path) {
+    public static ClassFileDumper getInstance(String key, String path) {
         Objects.requireNonNull(key);
         Objects.requireNonNull(path);
 
         var dumper = DUMPER_MAP.get(key);
         if (dumper == null) {
-            String value = GetPropertyAction.privilegedGetProperty(key);
-            boolean enabled = value != null && value.isEmpty()
-                                    ? true : Boolean.parseBoolean(value);
-            Path dir = enabled ? validateDumpDir(path) : null;
-            var newDumper = new ClassFileDumper(key, dir);
+            var newDumper = new ClassFileDumper(key, path);
             var v = DUMPER_MAP.putIfAbsent(key, newDumper);
             dumper = v != null ? v : newDumper;
         }
 
-        if (dumper.isEnabled() && !path.equals(dumper.dumpPath())) {
+        if (dumper.isEnabled() && !path.equals(dumper.dumpDir)) {
             throw new IllegalArgumentException("mismatched dump path for " + key);
         }
         return dumper;
     }
 
     private final String key;
-    private final Path dumpDir;
+    private final String dumpDir;
+    private final boolean enabled;
     private final AtomicInteger counter = new AtomicInteger();
 
-    private ClassFileDumper(String key, Path path) {
+    private ClassFileDumper(String key, String path) {
+        String value = GetPropertyAction.privilegedGetProperty(key);
         this.key = key;
+        boolean enabled = value != null && value.isEmpty() ? true : Boolean.parseBoolean(value);
+        if (enabled) {
+            validateDumpDir(path);
+        }
         this.dumpDir = path;
+        this.enabled = enabled;
     }
 
     public String key() {
         return key;
     }
     public boolean isEnabled() {
-        return dumpDir != null;
+        return enabled;
     }
 
-    public Path dumpPath() {
-        return dumpDir;
-    }
-
-    public Path pathname(String internalName) {
-        return dumpDir.resolve(encodeForFilename(internalName) + ".class");
+    private File pathname(String name) {
+        return new File(dumpDir, encodeForFilename(name) + ".class");
     }
 
     /**
@@ -167,48 +129,62 @@ public final class ClassFileDumper {
     }
 
     @SuppressWarnings("removal")
-    private void write(Path path, byte[] bytes) {
+    private void write(File file, byte[] bytes) {
+        // use java.io.File instead of java.nio.file.Path to avoid
+        // recursive initialization during early startup. e.g.
+        // Enum::valueOf causes method handle to be invoked which
+        // may cause classes to be spinned and dumped
         AccessController.doPrivileged(new PrivilegedAction<>() {
-                @Override public Void run() {
-                    try {
-                        Path dir = path.getParent();
-                        Files.createDirectories(dir);
-                        Files.write(path, bytes);
-                    } catch (Exception ex) {
-                        if (VM.isModuleSystemInited()) {
-                            // log only when lambda is ready to use
-                            System.getLogger(ClassFileDumper.class.getName())
-                                  .log(System.Logger.Level.WARNING, "Exception writing to " +
-                                          path.toString() + " " + ex.getMessage());
-                        }
-                        // simply don't care if this operation failed
+            @Override public Void run() {
+                try {
+                    // use absolute file to workaround writing to $CWD/file if
+                    // -Duser.dir is set
+                    File path = file.getAbsoluteFile();
+                    path.getParentFile().mkdirs();
+                    FileOutputStream fos = new FileOutputStream(path);
+                    fos.write(bytes);
+                    fos.close();
+                } catch (Exception ex) {
+                    if (VM.isModuleSystemInited()) {
+                        // log only when lambda is ready to use
+                        System.getLogger(ClassFileDumper.class.getName())
+                              .log(System.Logger.Level.WARNING, "Exception writing to " +
+                                        file + " " + ex.getMessage());
                     }
-                    return null;
-                }},
-                null,
-                new FilePermission("<<ALL FILES>>", "read, write"),
-                // createDirectories may need it
-                new PropertyPermission("user.dir", "read"));
+                    // simply don't care if this operation failed
+                }
+                return null;
+            }});
     }
 
+    /*
+     * Validate if the given dir is a writeable directory if exists.
+     */
     @SuppressWarnings("removal")
-    private static Path validateDumpDir(Path path) {
-            return AccessController.doPrivileged(new PrivilegedAction<>() {
-                @Override
-                public Path run() {
-                    try {
-                        Files.createDirectories(path);
-                    } catch (IOException ex) {
-                        throw new UncheckedIOException("Fail to create " + path, ex);
+    private static File validateDumpDir(String dir) {
+        return AccessController.doPrivileged(new PrivilegedAction<>() {
+            @Override
+            public File run() {
+                // use java.io.File instead of java.nio.file.Path to avoid
+                // recursive initialization during early startup.
+
+                // use absolute file to workaround an issue using the file relative
+                // to CWD if -Duser.dir is set
+                File path = new File(dir).getAbsoluteFile();
+                if (!path.exists()) {
+                    boolean rc = path.mkdirs();
+                    if (!rc) {
+                        throw new IllegalArgumentException("Fail to create " + path);
                     }
-                    if (!Files.isDirectory(path)) {
-                        throw new IllegalArgumentException("Path " + path + " is not a directory");
-                    } else if (!Files.isWritable(path)) {
-                        throw new IllegalArgumentException("Directory " + path + " is not writable");
-                    }
-                    return path;
                 }
-            });
+                if (!path.isDirectory()) {
+                    throw new IllegalArgumentException("Path " + path + " is not a directory");
+                } else if (!path.canWrite()) {
+                    throw new IllegalArgumentException("Directory " + path + " is not writable");
+                }
+                return path;
+            }
+        });
     }
 
     private static final HexFormat HEX = HexFormat.of().withUpperCase();
