@@ -30,6 +30,7 @@ import sun.security.x509.X509Key;
 
 import java.io.*;
 import java.security.*;
+import java.security.SecureRandom;
 import java.security.spec.*;
 import java.util.Arrays;
 
@@ -56,6 +57,12 @@ public final class HSS extends SignatureSpi {
 
     @Override
     protected void engineInitSign(PrivateKey privateKey)
+            throws InvalidKeyException {
+        throw new InvalidKeyException("HSS/LMS signing is not supported");
+    }
+
+    @Override
+    protected void engineInitSign(PrivateKey prk, SecureRandom sr)
             throws InvalidKeyException {
         throw new InvalidKeyException("HSS/LMS signing is not supported");
     }
@@ -153,7 +160,7 @@ public final class HSS extends SignatureSpi {
             int m = lmsParams.m;
             if ((inLen < (24 + m)) || (checkExactLength && (inLen != (24 + m))) ||
                     !lmsParams.hasSameHash(lmotsParams)) {
-                throw new InvalidKeyException("Wrong LMS public Key length");
+                throw new InvalidKeyException("Wrong LMS public key length");
             }
 
             I = Arrays.copyOfRange(keyArray, offset + 8, offset + 8 + 16);
@@ -661,17 +668,16 @@ public final class HSS extends SignatureSpi {
         @Override
         protected PublicKey engineGeneratePublic(KeySpec keySpec)
                 throws InvalidKeySpecException {
-            if (keySpec instanceof X509EncodedKeySpec) {
+            if (keySpec instanceof X509EncodedKeySpec x509Spec) {
                 try {
-                    X509EncodedKeySpec x509Spec = (X509EncodedKeySpec)keySpec;
                     return new HSSPublicKey(
                             x509Spec.getEncoded(), true);
                 } catch (InvalidKeyException e) {
                     throw new InvalidKeySpecException(e);
                 }
-            } else if (keySpec instanceof RawKeySpec x) {
+            } else if (keySpec instanceof RawKeySpec rawSpec) {
                 try {
-                    return new HSSPublicKey(x.getKeyArr(), false);
+                    return new HSSPublicKey(rawSpec.getKeyArr(), false);
                 } catch (InvalidKeyException e) {
                     throw new InvalidKeySpecException(e);
                 }
@@ -697,7 +703,8 @@ public final class HSS extends SignatureSpi {
                 if (keySpec.isAssignableFrom(X509EncodedKeySpec.class)) {
                     return keySpec.cast(new X509EncodedKeySpec(key.getEncoded()));
                 }
-                throw new InvalidKeySpecException("keySpec is not an X509 one");
+                throw new InvalidKeySpecException(
+                        "keySpec is not an X509EncodedKeySpec");
             }
             throw new InvalidKeySpecException("Wrong key format or key algorithm");
         }
@@ -784,11 +791,18 @@ public final class HSS extends SignatureSpi {
         }
 
         @java.io.Serial
-        protected Object writeReplace() throws java.io.ObjectStreamException {
+        private Object writeReplace() throws java.io.ObjectStreamException {
             return new KeyRep(KeyRep.Type.PUBLIC,
                     getAlgorithm(),
                     getFormat(),
                     getEncoded());
+        }
+
+        @java.io.Serial
+        private void readObject(java.io.ObjectInputStream s)
+                throws java.io.ObjectStreamException {
+            throw new InvalidObjectException(
+                    "HSS public keys are not directly deserializable");
         }
     }
 
