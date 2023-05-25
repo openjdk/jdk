@@ -3995,20 +3995,21 @@ void GraphKit::add_parse_predicate(Deoptimization::DeoptReason reason, const int
     return;
   }
 
-  Node* cont    = _gvn.intcon(1);
-  Node* opq     = _gvn.transform(new Opaque1Node(C, cont));
-  Node* bol     = _gvn.transform(new Conv2BNode(opq));
-  IfNode* iff   = create_and_map_if(control(), bol, PROB_MAX, COUNT_UNKNOWN);
-  Node* iffalse = _gvn.transform(new IfFalseNode(iff));
-  C->add_parse_predicate_opaq(opq);
+  Node* cont = _gvn.intcon(1);
+  Node* opaq = _gvn.transform(new Opaque1Node(C, cont));
+  C->add_parse_predicate_opaq(opaq);
+  Node* bol = _gvn.transform(new Conv2BNode(opaq));
+  ParsePredicateNode* parse_predicate = new ParsePredicateNode(control(), bol, reason);
+  _gvn.set_type(parse_predicate, parse_predicate->Value(&_gvn));
+  Node* if_false = _gvn.transform(new IfFalseNode(parse_predicate));
   {
     PreserveJVMState pjvms(this);
-    set_control(iffalse);
+    set_control(if_false);
     inc_sp(nargs);
     uncommon_trap(reason, Deoptimization::Action_maybe_recompile);
   }
-  Node* iftrue = _gvn.transform(new IfTrueNode(iff));
-  set_control(iftrue);
+  Node* if_true = _gvn.transform(new IfTrueNode(parse_predicate));
+  set_control(if_true);
 }
 
 // Add Parse Predicates which serve as placeholders to create new Runtime Predicates above them. All

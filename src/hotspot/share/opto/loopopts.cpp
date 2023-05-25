@@ -262,7 +262,8 @@ void PhaseIdealLoop::dominated_by(IfProjNode* prevdom, IfNode* iff, bool flip, b
   assert(iff->Opcode() == Op_If ||
          iff->Opcode() == Op_CountedLoopEnd ||
          iff->Opcode() == Op_LongCountedLoopEnd ||
-         iff->Opcode() == Op_RangeCheck,
+         iff->Opcode() == Op_RangeCheck ||
+         iff->Opcode() == Op_ParsePredicate,
         "Check this code when new subtype is added");
 
   int pop = prevdom->Opcode();
