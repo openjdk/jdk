@@ -765,8 +765,12 @@ Java_java_lang_ProcessImpl_forkAndExec(JNIEnv *env,
     /* Always clean up fail and childEnv descriptors */
     closeSafely(fail[0]);
     closeSafely(fail[1]);
-    closeSafely(childenv[0]);
-    closeSafely(childenv[1]);
+    /* We use 'c->childenv' here rather than 'childenv' because 'spawnChild()' might have
+     * already closed 'c->childenv[1]' and signaled this by setting 'c->childenv[1]' to '-1'.
+     * Otherwise 'c->childenv' and 'childenv' are the same because we just copied 'childenv'
+     * to 'c->childenv' (with 'copyPipe()') before calling 'startChild()'. */
+    closeSafely(c->childenv[0]);
+    closeSafely(c->childenv[1]);
 
     releaseBytes(env, helperpath, phelperpath);
     releaseBytes(env, prog,       pprog);
