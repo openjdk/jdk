@@ -32,6 +32,7 @@ import java.nio.channels.MulticastChannel;
 import java.util.Objects;
 import java.util.Set;
 import sun.nio.ch.DefaultSelectorProvider;
+import java.net.InetSocketAddress;
 
 /**
  * This class represents a socket for sending and receiving datagram packets.
@@ -1394,6 +1395,10 @@ public class DatagramSocket implements java.io.Closeable {
         boolean multicast = (type == MulticastSocket.class);
         DatagramSocket delegate = null;
         boolean initialized = false;
+        ProtocolFamily family = null;
+        if (bindaddr instanceof InetSocketAddress inetSocketAddress) {
+            family = inetSocketAddress.getAddress() instanceof Inet6Address ? StandardProtocolFamily.INET6 : StandardProtocolFamily.INET;
+        }
         try {
             DatagramSocketImplFactory factory = DatagramSocket.factory;
             if (factory != null) {
@@ -1406,7 +1411,7 @@ public class DatagramSocket implements java.io.Closeable {
             } else {
                 // create NIO adaptor
                 delegate = DefaultSelectorProvider.get()
-                        .openUninterruptibleDatagramChannel()
+                        .openUninterruptibleDatagramChannel(family)
                         .socket();
             }
 
