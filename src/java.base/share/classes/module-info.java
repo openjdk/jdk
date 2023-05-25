@@ -150,7 +150,6 @@ module java.base {
         java.compiler,
         jdk.compiler,
         jdk.incubator.vector, // participates in preview features
-        jdk.jartool, // participates in preview features
         jdk.jshell;
     exports jdk.internal.access to
         java.desktop,
@@ -246,7 +245,8 @@ module java.base {
         jdk.jfr;
     exports jdk.internal.ref to
         java.desktop,
-        java.net.http;
+        java.net.http,
+        jdk.naming.dns;
     exports jdk.internal.reflect to
         java.logging,
         java.sql,
@@ -282,6 +282,7 @@ module java.base {
         java.security.jgss,
         java.smartcardio,
         jdk.charsets,
+        jdk.jlink,
         jdk.net;
     exports sun.net to
         java.net.http,

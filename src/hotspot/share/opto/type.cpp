@@ -1687,7 +1687,7 @@ const Type *TypeInt::widen( const Type *old, const Type* limit ) const {
         // If neither endpoint is extremal yet, push out the endpoint
         // which is closer to its respective limit.
         if (_lo >= 0 ||                 // easy common case
-            (juint)(_lo - min) >= (juint)(max - _hi)) {
+            ((juint)_lo - min) >= ((juint)max - _hi)) {
           // Try to widen to an unsigned range type of 31 bits:
           return make(_lo, max, WidenMax);
         } else {
@@ -1997,8 +1997,8 @@ const Type *TypeLong::narrow( const Type *old ) const {
 
   // The new type narrows the old type, so look for a "death march".
   // See comments on PhaseTransform::saturate.
-  julong nrange = _hi - _lo;
-  julong orange = ohi - olo;
+  julong nrange = (julong)_hi - _lo;
+  julong orange = (julong)ohi - olo;
   if (nrange < max_julong - 1 && nrange > (orange >> 1) + (SMALLINT*2)) {
     // Use the new type only if the range shrinks a lot.
     // We do not want the optimizer computing 2^31 point by point.
@@ -3255,17 +3255,24 @@ const TypeOopPtr *TypeOopPtr::BOTTOM;
 
 TypePtr::InterfaceSet::InterfaceSet()
         : _list(Compile::current()->type_arena(), 0, 0, nullptr),
-          _hash_computed(0), _exact_klass_computed(0), _is_loaded_computed(0) {
+          _hash(0), _exact_klass(nullptr) {
+  DEBUG_ONLY(_initialized = true);
 }
 
 TypePtr::InterfaceSet::InterfaceSet(GrowableArray<ciInstanceKlass*>* interfaces)
         : _list(Compile::current()->type_arena(), interfaces->length(), 0, nullptr),
-          _hash_computed(0), _exact_klass_computed(0), _is_loaded_computed(0) {
+          _hash(0), _exact_klass(nullptr) {
   for (int i = 0; i < interfaces->length(); i++) {
     add(interfaces->at(i));
   }
+  initialize();
 }
 
+void TypePtr::InterfaceSet::initialize() {
+  compute_hash();
+  compute_exact_klass();
+  DEBUG_ONLY(_initialized = true;)
+}
 
 int TypePtr::InterfaceSet::compare(ciKlass* const& k1, ciKlass* const& k2) {
   if ((intptr_t)k1 < (intptr_t)k2) {
@@ -3301,12 +3308,25 @@ bool TypePtr::InterfaceSet::eq(const InterfaceSet& other) const {
   return true;
 }
 
-int TypePtr::InterfaceSet::hash() const {
-  if (_hash_computed) {
-    return _hash;
+bool TypePtr::InterfaceSet::eq(ciInstanceKlass* k) const {
+  assert(k->is_loaded(), "should be loaded");
+  GrowableArray<ciInstanceKlass *>* interfaces = k->as_instance_klass()->transitive_interfaces();
+  if (_list.length() != interfaces->length()) {
+    return false;
   }
-  const_cast<InterfaceSet*>(this)->compute_hash();
-  assert(_hash_computed, "should be computed now");
+  for (int i = 0; i < interfaces->length(); i++) {
+    bool found = false;
+    _list.find_sorted<ciKlass*, compare>(interfaces->at(i), found);
+    if (!found) {
+      return false;
+    }
+  }
+  return true;
+}
+
+
+int TypePtr::InterfaceSet::hash() const {
+  assert(_initialized, "must be");
   return _hash;
 }
 
@@ -3316,7 +3336,6 @@ void TypePtr::InterfaceSet::compute_hash() {
     ciKlass* k = _list.at(i);
     hash += (jint)k->hash();
   }
-  _hash_computed = 1;
   _hash = hash;
 }
 
@@ -3324,7 +3343,7 @@ static int compare_interfaces(ciKlass** k1, ciKlass** k2) {
   return (int)((*k1)->ident() - (*k2)->ident());
 }
 
-void TypePtr::InterfaceSet::dump(outputStream *st) const {
+void TypePtr::InterfaceSet::dump(outputStream* st) const {
   if (_list.length() == 0) {
     return;
   }
@@ -3344,16 +3363,16 @@ void TypePtr::InterfaceSet::dump(outputStream *st) const {
   st->print(")");
 }
 
+#ifdef ASSERT
 void TypePtr::InterfaceSet::verify() const {
-#ifdef DEBUG
   for (int i = 1; i < _list.length(); i++) {
     ciKlass* k1 = _list.at(i-1);
     ciKlass* k2 = _list.at(i);
     assert(compare(k2, k1) > 0, "should be ordered");
     assert(k1 != k2, "no duplicate");
   }
-#endif
 }
+#endif
 
 TypePtr::InterfaceSet TypeOopPtr::InterfaceSet::union_with(const InterfaceSet& other) const {
   InterfaceSet result;
@@ -3380,13 +3399,14 @@ TypePtr::InterfaceSet TypeOopPtr::InterfaceSet::union_with(const InterfaceSet& o
       j++;
     }
   }
+  result.initialize();
+#ifdef ASSERT
   result.verify();
-#ifdef DEBUG
   for (int i = 0; i < _list.length(); i++) {
-    assert(result.contains(_list.at(i)), "missing");
+    assert(result._list.contains(_list.at(i)), "missing");
   }
   for (int i = 0; i < other._list.length(); i++) {
-    assert(result.contains(other._list.at(i)), "missing");
+    assert(result._list.contains(other._list.at(i)), "missing");
   }
   for (int i = 0; i < result._list.length(); i++) {
     assert(_list.contains(result._list.at(i)) || other._list.contains(result._list.at(i)), "missing");
@@ -3418,13 +3438,14 @@ TypePtr::InterfaceSet TypeOopPtr::InterfaceSet::intersection_with(const Interfac
       j++;
     }
   }
+  result.initialize();
+#ifdef ASSERT
   result.verify();
-#ifdef DEBUG
   for (int i = 0; i < _list.length(); i++) {
-    assert(!other._list.contains(_list.at(i)) || result.contains(_list.at(i)), "missing");
+    assert(!other._list.contains(_list.at(i)) || result._list.contains(_list.at(i)), "missing");
   }
   for (int i = 0; i < other._list.length(); i++) {
-    assert(!_list.contains(other._list.at(i)) || result.contains(other._list.at(i)), "missing");
+    assert(!_list.contains(other._list.at(i)) || result._list.contains(other._list.at(i)), "missing");
   }
   for (int i = 0; i < result._list.length(); i++) {
     assert(_list.contains(result._list.at(i)) && other._list.contains(result._list.at(i)), "missing");
@@ -3435,52 +3456,34 @@ TypePtr::InterfaceSet TypeOopPtr::InterfaceSet::intersection_with(const Interfac
 
 // Is there a single ciKlass* that can represent the interface set?
 ciKlass* TypePtr::InterfaceSet::exact_klass() const {
-  if (_exact_klass_computed) {
-    return _exact_klass;
-  }
-  const_cast<InterfaceSet*>(this)->compute_exact_klass();
-  assert(_exact_klass_computed, "should be computed now");
+  assert(_initialized, "must be");
   return _exact_klass;
 }
 
 void TypePtr::InterfaceSet::compute_exact_klass() {
   if (_list.length() == 0) {
-    _exact_klass_computed = 1;
     _exact_klass = nullptr;
     return;
   }
   ciKlass* res = nullptr;
   for (int i = 0; i < _list.length(); i++) {
-    ciKlass* interface = _list.at(i);
-    if (eq(interfaces(interface, false, true, false, trust_interfaces))) {
+    ciInstanceKlass* interface = _list.at(i)->as_instance_klass();
+    if (eq(interface)) {
       assert(res == nullptr, "");
-      res = _list.at(i);
+      res = interface;
     }
   }
-  _exact_klass_computed = 1;
   _exact_klass = res;
 }
 
-bool TypePtr::InterfaceSet::is_loaded() const {
-  if (_is_loaded_computed) {
-    return _is_loaded;
-  }
-  const_cast<InterfaceSet*>(this)->compute_is_loaded();
-  assert(_is_loaded_computed, "should be computed now");
-  return _is_loaded;
-}
-
-void TypePtr::InterfaceSet::compute_is_loaded() {
-  _is_loaded_computed = 1;
+#ifdef ASSERT
+void TypePtr::InterfaceSet::verify_is_loaded() const {
   for (int i = 0; i < _list.length(); i++) {
     ciKlass* interface = _list.at(i);
-    if (!interface->is_loaded()) {
-      _is_loaded = false;
-      return;
-    }
+    assert(interface->is_loaded(), "Interface not loaded");
   }
-  _is_loaded = true;
 }
+#endif
 
 //------------------------------TypeOopPtr-------------------------------------
 TypeOopPtr::TypeOopPtr(TYPES t, PTR ptr, ciKlass* k, const InterfaceSet& interfaces, bool xk, ciObject* o, int offset,
@@ -3493,6 +3496,11 @@ TypeOopPtr::TypeOopPtr(TYPES t, PTR ptr, ciKlass* k, const InterfaceSet& interfa
     _is_ptr_to_narrowklass(false),
     _is_ptr_to_boxed_value(false),
     _instance_id(instance_id) {
+#ifdef ASSERT
+  if (klass() != nullptr && klass()->is_loaded()) {
+    interfaces.verify_is_loaded();
+  }
+#endif
   if (Compile::current()->eliminate_boxing() && (t == InstPtr) &&
       (offset > 0) && xk && (k != 0) && k->is_instance_klass()) {
     _is_ptr_to_boxed_value = k->as_instance_klass()->is_boxed_value_offset(offset);
@@ -3985,9 +3993,7 @@ ciKlass* TypeInstPtr::exact_klass_helper() const {
     return _klass;
   }
   if (_klass != ciEnv::current()->Object_klass()) {
-    ciKlass* k = _klass;
-    const TypePtr::InterfaceSet interfaces = TypePtr::interfaces(k, true, false, false, ignore_interfaces);
-    if (_interfaces.eq(interfaces)) {
+    if (_interfaces.eq(_klass->as_instance_klass())) {
       return _klass;
     }
     return nullptr;
@@ -4049,7 +4055,7 @@ TypePtr::InterfaceSet TypePtr::interfaces(ciKlass*& k, bool klass, bool interfac
         InterfaceSet interfaces;
         return interfaces;
       }
-      GrowableArray<ciInstanceKlass *> *k_interfaces = k->as_instance_klass()->transitive_interfaces();
+      GrowableArray<ciInstanceKlass *>* k_interfaces = k->as_instance_klass()->transitive_interfaces();
       InterfaceSet interfaces(k_interfaces);
       if (k->is_interface()) {
         assert(interface, "no interface expected");
@@ -4393,8 +4399,6 @@ template<class T> TypePtr::MeetResult TypePtr::meet_instptr(PTR& ptr, InterfaceS
   // Check for subtyping:
   const T* subtype = nullptr;
   bool subtype_exact = false;
-  InterfaceSet subtype_interfaces;
-
   if (this_type->is_same_java_type_as(other_type)) {
     subtype = this_type;
     subtype_exact = below_centerline(ptr) ? (this_xk && other_xk) : (this_xk || other_xk);
@@ -4588,11 +4592,8 @@ const TypeKlassPtr* TypeInstPtr::as_klass_type(bool try_for_exact) const {
   bool xk = klass_is_exact();
   ciInstanceKlass* ik = klass()->as_instance_klass();
   if (try_for_exact && !xk && !ik->has_subklass() && !ik->is_final()) {
-    ciKlass* k = ik;
-    TypePtr::InterfaceSet interfaces = TypePtr::interfaces(k, true, false, false, ignore_interfaces);
-    assert(k == ik, "");
-    if (interfaces.eq(_interfaces)) {
-      Compile *C = Compile::current();
+    if (_interfaces.eq(ik)) {
+      Compile* C = Compile::current();
       Dependencies* deps = C->dependencies();
       deps->assert_leaf_type(ik);
       xk = true;
@@ -5599,8 +5600,7 @@ ciKlass* TypeKlassPtr::exact_klass_helper() const {
     return _klass;
   }
   if (_klass != ciEnv::current()->Object_klass()) {
-    ciKlass* k = _klass;
-    if (_interfaces.eq(TypePtr::interfaces(k, true, false, true, ignore_interfaces))) {
+    if (_interfaces.eq(_klass->as_instance_klass())) {
       return _klass;
     }
     return nullptr;
@@ -5797,10 +5797,7 @@ const TypeOopPtr* TypeInstKlassPtr::as_instance_type(bool klass_change) const {
         && deps != nullptr && UseUniqueSubclasses) {
       ciInstanceKlass* sub = ik->unique_concrete_subklass();
       if (sub != nullptr) {
-        ciKlass* sub_k = sub;
-        TypePtr::InterfaceSet sub_interfaces = TypePtr::interfaces(sub_k, true, false, false, ignore_interfaces);
-        assert(sub_k == sub, "");
-        if (sub_interfaces.eq(_interfaces)) {
+        if (_interfaces.eq(sub)) {
           deps->assert_abstract_with_unique_concrete_subtype(ik, sub);
           k = ik = sub;
           xk = sub->is_final();
@@ -6047,10 +6044,7 @@ const TypeKlassPtr* TypeInstKlassPtr::try_improve() const {
         deps != nullptr) {
       ciInstanceKlass* sub = ik->unique_concrete_subklass();
       if (sub != nullptr) {
-        ciKlass *sub_k = sub;
-        TypePtr::InterfaceSet sub_interfaces = TypePtr::interfaces(sub_k, true, false, false, ignore_interfaces);
-        assert(sub_k == sub, "");
-        if (sub_interfaces.eq(_interfaces)) {
+        if (_interfaces.eq(sub)) {
           deps->assert_abstract_with_unique_concrete_subtype(ik, sub);
           k = ik = sub;
           klass_is_exact = sub->is_final();

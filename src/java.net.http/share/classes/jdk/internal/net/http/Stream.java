@@ -44,6 +44,8 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Subscription;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiPredicate;
 import java.net.http.HttpClient;
 import java.net.http.HttpHeaders;
@@ -148,7 +150,8 @@ class Stream<T> extends ExchangeImpl<T> {
     private boolean requestSent, responseReceived;
 
     // send lock: prevent sending DataFrames after reset occurred.
-    private final Object sendLock = new Object();
+    private final Lock sendLock = new ReentrantLock();
+    private final Lock stateLock = new ReentrantLock();
 
     /**
      * A reference to this Stream's connection Send Window controller. The
@@ -391,18 +394,24 @@ class Stream<T> extends ExchangeImpl<T> {
      */
     int  markStream(int code) {
         if (code == 0) return streamState;
-        synchronized (sendLock) {
+        sendLock.lock();
+        try {
             return (int) STREAM_STATE.compareAndExchange(this, 0, code);
+        } finally {
+            sendLock.unlock();
         }
     }
 
     private void sendDataFrame(DataFrame frame) {
-         synchronized (sendLock) {
+        sendLock.lock();
+         try {
              // must not send DataFrame after reset.
              if (streamState == 0) {
                 connection.sendDataFrame(frame);
              }
-        }
+        } finally {
+             sendLock.unlock();
+         }
     }
 
     // pushes entire response body into response subscriber
@@ -585,12 +594,15 @@ class Stream<T> extends ExchangeImpl<T> {
     void handleReset(ResetFrame frame, Flow.Subscriber<?> subscriber) {
         Log.logTrace("Handling RST_STREAM on stream {0}", streamid);
         if (!closed) {
-            synchronized (this) {
+            stateLock.lock();
+            try {
                 if (closed) {
                     if (debug.on()) debug.log("Stream already closed: ignoring RESET");
                     return;
                 }
                 closed = true;
+            } finally {
+                stateLock.lock();
             }
             try {
                 int error = frame.getErrorCode();
@@ -1118,13 +1130,15 @@ class Stream<T> extends ExchangeImpl<T> {
      */
 
     final List<CompletableFuture<Response>> response_cfs = new ArrayList<>(5);
+    final Lock response_cfs_lock = new ReentrantLock();
 
     @Override
     CompletableFuture<Response> getResponseAsync(Executor executor) {
         CompletableFuture<Response> cf;
         // The code below deals with race condition that can be caused when
         // completeResponse() is being called before getResponseAsync()
-        synchronized (response_cfs) {
+        response_cfs_lock.lock();
+        try {
             if (!response_cfs.isEmpty()) {
                 // This CompletableFuture was created by completeResponse().
                 // it will be already completed.
@@ -1139,6 +1153,8 @@ class Stream<T> extends ExchangeImpl<T> {
                 cf = new MinimalFuture<>();
                 response_cfs.add(cf);
             }
+        } finally {
+            response_cfs_lock.unlock();
         }
         if (executor != null && !cf.isDone()) {
             // protect from executing later chain of CompletableFuture operations from SelectorManager thread
@@ -1158,7 +1174,8 @@ class Stream<T> extends ExchangeImpl<T> {
      * uncompleted CF then creates one (completes it) and adds to list
      */
     void completeResponse(Response resp) {
-        synchronized (response_cfs) {
+        response_cfs_lock.lock();
+        try {
             CompletableFuture<Response> cf;
             int cfs_len = response_cfs.size();
             for (int i=0; i<cfs_len; i++) {
@@ -1179,32 +1196,44 @@ class Stream<T> extends ExchangeImpl<T> {
             if (debug.on())
                 debug.log("Adding completed responseCF(0) with response headers");
             response_cfs.add(cf);
+        } finally {
+            response_cfs_lock.unlock();
         }
     }
 
     // methods to update state and remove stream when finished
 
-    synchronized void requestSent() {
-        requestSent = true;
-        if (responseReceived) {
-            if (debug.on()) debug.log("requestSent: streamid=%d", streamid);
-            close();
-        } else {
-            if (debug.on()) {
-                debug.log("requestSent: streamid=%d but response not received", streamid);
+    void requestSent() {
+        stateLock.lock();
+        try {
+            requestSent = true;
+            if (responseReceived) {
+                if (debug.on()) debug.log("requestSent: streamid=%d", streamid);
+                close();
+            } else {
+                if (debug.on()) {
+                    debug.log("requestSent: streamid=%d but response not received", streamid);
+                }
             }
+        } finally {
+            stateLock.unlock();
         }
     }
 
-    synchronized void responseReceived() {
-        responseReceived = true;
-        if (requestSent) {
-            if (debug.on()) debug.log("responseReceived: streamid=%d", streamid);
-            close();
-        } else {
-            if (debug.on()) {
-                debug.log("responseReceived: streamid=%d but request not sent", streamid);
+    void responseReceived() {
+        stateLock.lock();
+        try {
+            responseReceived = true;
+            if (requestSent) {
+                if (debug.on()) debug.log("responseReceived: streamid=%d", streamid);
+                close();
+            } else {
+                if (debug.on()) {
+                    debug.log("responseReceived: streamid=%d but request not sent", streamid);
+                }
             }
+        } finally {
+            stateLock.unlock();
         }
     }
 
@@ -1212,7 +1241,8 @@ class Stream<T> extends ExchangeImpl<T> {
      * same as above but for errors
      */
     void completeResponseExceptionally(Throwable t) {
-        synchronized (response_cfs) {
+        response_cfs_lock.lock();
+        try {
             // use index to avoid ConcurrentModificationException
             // caused by removing the CF from within the loop.
             for (int i = 0; i < response_cfs.size(); i++) {
@@ -1224,6 +1254,8 @@ class Stream<T> extends ExchangeImpl<T> {
                 }
             }
             response_cfs.add(MinimalFuture.failedFuture(t));
+        } finally {
+            response_cfs_lock.unlock();
         }
     }
 
@@ -1308,10 +1340,13 @@ class Stream<T> extends ExchangeImpl<T> {
         }
         boolean closing;
         if (closing = !closed) { // assigning closing to !closed
-            synchronized (this) {
+            stateLock.lock();
+            try {
                 if (closing = !closed) { // assigning closing to !closed
                     closed=true;
                 }
+            } finally {
+                stateLock.unlock();
             }
         }
 
@@ -1368,9 +1403,12 @@ class Stream<T> extends ExchangeImpl<T> {
     // This method doesn't send any frame
     void close() {
         if (closed) return;
-        synchronized(this) {
+        stateLock.lock();
+        try {
             if (closed) return;
             closed = true;
+        } finally {
+            stateLock.unlock();
         }
         if (debug.on()) debug.log("close stream %d", streamid);
         Log.logTrace("Closing stream {0}", streamid);
@@ -1399,7 +1437,7 @@ class Stream<T> extends ExchangeImpl<T> {
         final CompletableFuture<Response> pushCF;
         CompletableFuture<HttpResponse<T>> responseCF;
         final HttpRequestImpl pushReq;
-        HttpResponse.BodyHandler<T> pushHandler;
+        volatile HttpResponse.BodyHandler<T> pushHandler;
         private volatile boolean finalPushResponseCodeReceived;
 
         PushedStream(PushGroup<T> pushGroup,
@@ -1418,11 +1456,11 @@ class Stream<T> extends ExchangeImpl<T> {
             return responseCF;
         }
 
-        synchronized void setPushHandler(HttpResponse.BodyHandler<T> pushHandler) {
+        void setPushHandler(HttpResponse.BodyHandler<T> pushHandler) {
             this.pushHandler = pushHandler;
         }
 
-        synchronized HttpResponse.BodyHandler<T> getPushHandler() {
+        HttpResponse.BodyHandler<T> getPushHandler() {
             // ignored parameters to function can be used as BodyHandler
             return this.pushHandler;
         }
@@ -1487,11 +1525,6 @@ class Stream<T> extends ExchangeImpl<T> {
         void completeResponseExceptionally(Throwable t) {
             pushCF.completeExceptionally(t);
         }
-
-//        @Override
-//        synchronized void responseReceived() {
-//            super.responseReceived();
-//        }
 
         // create and return the PushResponseImpl
         @Override
@@ -1570,7 +1603,7 @@ class Stream<T> extends ExchangeImpl<T> {
      * Returns true if this exchange was canceled.
      * @return true if this exchange was canceled.
      */
-    synchronized boolean isCanceled() {
+     boolean isCanceled() {
         return errorRef.get() != null;
     }
 
@@ -1578,7 +1611,7 @@ class Stream<T> extends ExchangeImpl<T> {
      * Returns the cause for which this exchange was canceled, if available.
      * @return the cause for which this exchange was canceled, if available.
      */
-    synchronized Throwable getCancelCause() {
+    Throwable getCancelCause() {
         return errorRef.get();
     }
 

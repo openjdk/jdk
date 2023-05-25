@@ -69,6 +69,7 @@
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
@@ -1125,7 +1126,8 @@ InstanceKlass* SystemDictionary::load_shared_class(InstanceKlass* ik,
                                                    PackageEntry* pkg_entry,
                                                    TRAPS) {
   assert(ik != nullptr, "sanity");
-  assert(!ik->is_unshareable_info_restored(), "shared class can be loaded only once");
+  assert(!ik->is_unshareable_info_restored(), "shared class can be restored only once");
+  assert(Atomic::add(&ik->_shared_class_load_count, 1) == 1, "shared class loaded more than once");
   Symbol* class_name = ik->name();
 
   if (!is_shared_class_visible(class_name, ik, pkg_entry, class_loader)) {
@@ -1180,7 +1182,7 @@ void SystemDictionary::load_shared_class_misc(InstanceKlass* ik, ClassLoaderData
   // For boot loader, ensure that GetSystemPackage knows that a class in this
   // package was loaded.
   if (loader_data->is_the_null_class_loader_data()) {
-    int path_index = ik->shared_classpath_index();
+    s2 path_index = ik->shared_classpath_index();
     ik->set_classpath_index(path_index);
   }
 

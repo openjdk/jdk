@@ -95,6 +95,7 @@ public final class SystemLookup implements SymbolLookup {
             final SymbolLookup finalLookup = lookup;
             lookup = name -> {
                 Objects.requireNonNull(name);
+                if (Utils.containsNullChars(name)) return Optional.empty();
                 return finalLookup.find(name).or(() -> fallbackLookup.apply(name));
             };
         }
@@ -106,6 +107,7 @@ public final class SystemLookup implements SymbolLookup {
         NativeLibrary lib = loader.apply(RawNativeLibraries.newInstance(MethodHandles.lookup()));
         return name -> {
             Objects.requireNonNull(name);
+            if (Utils.containsNullChars(name)) return Optional.empty();
             try {
                 long addr = lib.lookup(name);
                 return addr == 0 ?

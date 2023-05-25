@@ -303,8 +303,8 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   bool modules_defined() { return (_modules != nullptr); }
 
   // Offsets
-  static ByteSize holder_offset()     { return in_ByteSize(offset_of(ClassLoaderData, _holder)); }
-  static ByteSize keep_alive_offset() { return in_ByteSize(offset_of(ClassLoaderData, _keep_alive)); }
+  static ByteSize holder_offset()     { return byte_offset_of(ClassLoaderData, _holder); }
+  static ByteSize keep_alive_offset() { return byte_offset_of(ClassLoaderData, _keep_alive); }
 
   // Loaded class dictionary
   Dictionary* dictionary() const { return _dictionary; }

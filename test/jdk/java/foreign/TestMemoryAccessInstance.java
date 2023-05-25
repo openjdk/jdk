@@ -95,7 +95,7 @@ public class TestMemoryAccessInstance {
             try (Arena arena = Arena.ofConfined()) {
                 MemorySegment segment = arena.allocate(64, 1);
                 T t = transform.apply(segment);
-                L alignedLayout = (L)layout.withBitAlignment(layout.byteSize() * 8 * 2);
+                L alignedLayout = (L)layout.withByteAlignment(layout.byteSize() * 2);
                 try {
                     segmentSetter.set(t, alignedLayout, 0, value);
                     fail();

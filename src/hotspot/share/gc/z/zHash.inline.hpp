@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,6 +72,10 @@ inline uint32_t ZHash::uint32_to_uint32(uint32_t key) {
 
 inline uint32_t ZHash::address_to_uint32(uintptr_t key) {
   return uint32_to_uint32((uint32_t)(key >> 3));
+}
+
+inline uint32_t ZHash::offset_to_uint32(zoffset key) {
+  return address_to_uint32(untype(key));
 }
 
 #endif // SHARE_GC_Z_ZHASH_INLINE_HPP

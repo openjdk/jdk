@@ -16,6 +16,4 @@ Domination.java:184:18: compiler.err.pattern.dominated
 Domination.java:193:18: compiler.err.pattern.dominated
 Domination.java:202:18: compiler.err.pattern.dominated
 Domination.java:211:18: compiler.err.pattern.dominated
-- compiler.note.preview.filename: Domination.java, DEFAULT
-- compiler.note.preview.recompile
 18 errors

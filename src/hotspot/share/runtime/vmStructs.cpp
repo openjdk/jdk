@@ -702,6 +702,9 @@
   nonstatic_field(ThreadShadow,                _exception_line,                               int)                                   \
   nonstatic_field(Thread,                      _tlab,                                         ThreadLocalAllocBuffer)                \
   nonstatic_field(Thread,                      _allocated_bytes,                              jlong)                                 \
+  nonstatic_field(JavaThread,                  _lock_stack,                                   LockStack)                             \
+  nonstatic_field(LockStack,                   _top,                                          uint32_t)                              \
+  nonstatic_field(LockStack,                   _base[0],                                      oop)                                   \
   nonstatic_field(NamedThread,                 _name,                                         char*)                                 \
   nonstatic_field(NamedThread,                 _processed_thread,                             Thread*)                               \
   nonstatic_field(JavaThread,                  _threadObj,                                    OopHandle)                             \
@@ -1317,6 +1320,7 @@
                                                                           \
   declare_toplevel_type(ThreadsSMRSupport)                                \
   declare_toplevel_type(ThreadsList)                                      \
+  declare_toplevel_type(LockStack)                                        \
                                                                           \
   /***************/                                                       \
   /* Interpreter */                                                       \
@@ -1764,8 +1768,6 @@
   declare_c2_type(NegVDNode, NegVNode)                                    \
   declare_c2_type(FmaVDNode, VectorNode)                                  \
   declare_c2_type(FmaVFNode, VectorNode)                                  \
-  declare_c2_type(CMoveVFNode, VectorNode)                                \
-  declare_c2_type(CMoveVDNode, VectorNode)                                \
   declare_c2_type(CompressVNode, VectorNode)                              \
   declare_c2_type(CompressMNode, VectorNode)                              \
   declare_c2_type(ExpandVNode, VectorNode)                                \
@@ -2413,6 +2415,14 @@
   declare_constant(T_NARROWKLASS_size)                                    \
   declare_constant(T_VOID_size)                                           \
                                                                           \
+  /**********************************************/                        \
+  /* LockingMode enum (globalDefinitions.hpp) */                          \
+  /**********************************************/                        \
+                                                                          \
+  declare_constant(LM_MONITOR)                                            \
+  declare_constant(LM_LEGACY)                                             \
+  declare_constant(LM_LIGHTWEIGHT)                                        \
+                                                                          \
   /*********************/                                                 \
   /* Matcher (C2 only) */                                                 \
   /*********************/                                                 \
@@ -2597,8 +2607,10 @@
                                                                           \
   /* InvocationCounter constants */                                       \
   declare_constant(InvocationCounter::count_increment)                    \
-  declare_constant(InvocationCounter::count_shift)
-
+  declare_constant(InvocationCounter::count_shift)                        \
+                                                                          \
+  /* ObjectMonitor constants */                                           \
+  declare_constant(ObjectMonitor::ANONYMOUS_OWNER)                        \
 
 //--------------------------------------------------------------------------------
 //
