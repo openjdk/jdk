@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8149417
+ * @bug 8297878
  * @summary RSA_KEM example
  * @modules java.base/sun.security.jca
  *          java.base/sun.security.rsa
@@ -335,7 +335,7 @@ public class RSA_KEM {
             if (!(pk instanceof RSAPublicKey rpk)) {
                 throw new InvalidKeyException("Not an RSA key");
             }
-            return new Handler(spec, rpk, null);
+            return Handler.newEncapsulator(spec, rpk, secureRandom);
         }
 
         @Override
@@ -345,22 +345,23 @@ public class RSA_KEM {
             if (!(sk instanceof RSAPrivateCrtKey rsk)) {
                 throw new InvalidKeyException("Not an RSA key");
             }
-            return new Handler(spec, null, rsk);
+            return Handler.newDecapsulator(spec, rsk);
         }
 
         static class Handler implements KEMSpi.EncapsulatorSpi, KEMSpi.DecapsulatorSpi {
 
-            private RSAPublicKey rpk;
-            private RSAPrivateKey rsk;
-            private final RSAKEMParameterSpec kspec;
+            private final RSAPublicKey rpk; // not null for encapsulator
+            private final RSAPrivateKey rsk; // not null for decapsulator
+            private final RSAKEMParameterSpec kspec; // not null
+            private final SecureRandom sr; // not null for encapsulator
 
-            Handler(AlgorithmParameterSpec kspec, RSAPublicKey rpk, RSAPrivateCrtKey rsk)
+            Handler(AlgorithmParameterSpec spec, RSAPublicKey rpk, RSAPrivateCrtKey rsk, SecureRandom sr)
                     throws InvalidAlgorithmParameterException {
                 this.rpk = rpk;
                 this.rsk = rsk;
-                SecureRandom sr = null;
-                if (kspec != null) {
-                    if (kspec instanceof RSAKEMParameterSpec rs) {
+                this.sr = sr;
+                if (spec != null) {
+                    if (spec instanceof RSAKEMParameterSpec rs) {
                         this.kspec = rs;
                     } else {
                         throw new InvalidAlgorithmParameterException();
@@ -369,6 +370,19 @@ public class RSA_KEM {
                     this.kspec = RSAKEMParameterSpec
                             .kdf2("SHA-256", "AES_256/KW/NoPadding");
                 }
+            }
+
+            static Handler newEncapsulator(AlgorithmParameterSpec spec, RSAPublicKey rpk, SecureRandom sr)
+                    throws InvalidAlgorithmParameterException {
+                if (sr == null) {
+                    sr = JCAUtil.getDefSecureRandom();
+                }
+                return new Handler(spec, rpk, null, sr);
+            }
+
+            static Handler newDecapsulator(AlgorithmParameterSpec spec, RSAPrivateCrtKey rsk)
+                    throws InvalidAlgorithmParameterException {
+                return new Handler(spec, null, rsk, null);
             }
 
             @Override
@@ -398,7 +412,7 @@ public class RSA_KEM {
                 BigInteger z;
                 int tried = 0;
                 while (true) {
-                    z = new BigInteger(nLen, JCAUtil.getDefSecureRandom());
+                    z = new BigInteger(nLen, sr);
                     if (z.compareTo(rpk.getModulus()) < 0) {
                         break;
                     }

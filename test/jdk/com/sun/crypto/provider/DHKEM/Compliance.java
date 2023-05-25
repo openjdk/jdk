@@ -59,7 +59,7 @@ public class Compliance {
         }
     }
 
-    // Encapsulated comformance checks
+    // Encapsulated conformance checks
     private static void conform() {
         new KEM.Encapsulated(new SecretKeySpec(new byte[1], "X"), new byte[0], new byte[0]);
         new KEM.Encapsulated(new SecretKeySpec(new byte[1], "X"), new byte[0], null);
