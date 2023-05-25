@@ -205,7 +205,7 @@ final class FieldBuilder {
         configureCustomFrame(frame -> {
             RecordedClass cl = frame.getMethod().getType();
             RecordedClassLoader classLoader = cl.getClassLoader();
-            return classLoader != null && !classLoader.getName().equals("bootstrap");
+            return classLoader != null && !"bootstrap".equals(classLoader.getName());
         });
     }
 

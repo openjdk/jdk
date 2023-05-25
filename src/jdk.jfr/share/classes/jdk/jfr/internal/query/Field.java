@@ -42,7 +42,7 @@ import jdk.jfr.internal.query.Query.OrderElement;
  * <p>
  * Defaults are derived from the metadata available in the event type, for
  * example, numeric fields are right-aligned in the output, but can also
- * be set using query clauses COLUMNS and FORMAT.
+ * be set using query clauses COLUMN and FORMAT.
  * <p>
  * Settings in {@Configuration} overrides any field setting.
  */
