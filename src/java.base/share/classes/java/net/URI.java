@@ -3303,7 +3303,7 @@ public final class URI
                 try {
                     q = parseServer(p, n, skipParseException);
                     if (q < n) {
-                        if(skipParseException) {
+                        if (skipParseException) {
                             userInfo = null;
                             host = null;
                             port = -1;
@@ -3408,8 +3408,8 @@ public final class URI
                     }
                     p = q;
                 }
-            } else if( p < n && skipParseException) {
-                    return p;
+            } else if (p < n && skipParseException) {
+                return p;
             }
 
             if (p < n)
@@ -3540,10 +3540,8 @@ public final class URI
                 p = q;
             } while (p < n);
 
-            if ((p < n) && !at(p, n, ':'))
-            {
-                if(skipParseException)
-                {
+            if ((p < n) && !at(p, n, ':')) {
+                if (skipParseException) {
                     return p;
                 }
                 fail("Illegal character in hostname", p);
