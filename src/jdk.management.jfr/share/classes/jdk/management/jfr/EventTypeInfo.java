@@ -65,7 +65,7 @@ public final class EventTypeInfo {
         if (cd.containsKey("settings")) {
             this.settingDescriptors = createSettingDescriptors(cd.get("settings"));
         } else {
-            this.settingDescriptors = createSettingDescriptors(cd.get("settingDescriptors")); 
+            this.settingDescriptors = createSettingDescriptors(cd.get("settingDescriptors"));
         }
         this.id = (long) cd.get("id");
         this.name = (String) cd.get("name");
