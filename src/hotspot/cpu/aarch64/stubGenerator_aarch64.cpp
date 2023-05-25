@@ -6481,10 +6481,16 @@ class StubGenerator: public StubCodeGenerator {
     __ ret(lr);
   }
 
-  void gen_ldaddal_entry(Assembler::operand_size size) {
+  void gen_ldadd_entry(Assembler::operand_size size, atomic_memory_order order) {
     Register prev = r2, addr = c_rarg0, incr = c_rarg1;
-    __ ldaddal(size, incr, prev, addr);
-    __ membar(Assembler::StoreStore|Assembler::StoreLoad);
+    // If not relaxed, then default to conservative.  Relaxed is the only
+    // case we use enough to be worth specializing.
+    if (order == memory_order_relaxed) {
+      __ ldadd(size, incr, prev, addr);
+    } else {
+      __ ldaddal(size, incr, prev, addr);
+      __ membar(Assembler::StoreStore|Assembler::StoreLoad);
+    }
     if (size == Assembler::xword) {
       __ mov(r0, prev);
     } else {
@@ -6514,12 +6520,21 @@ class StubGenerator: public StubCodeGenerator {
     StubCodeMark mark(this, "StubRoutines", "atomic entry points");
     address first_entry = __ pc();
 
-    // All memory_order_conservative
+    // ADD, memory_order_conservative
     AtomicStubMark mark_fetch_add_4(_masm, &aarch64_atomic_fetch_add_4_impl);
-    gen_ldaddal_entry(Assembler::word);
+    gen_ldadd_entry(Assembler::word, memory_order_conservative);
     AtomicStubMark mark_fetch_add_8(_masm, &aarch64_atomic_fetch_add_8_impl);
-    gen_ldaddal_entry(Assembler::xword);
+    gen_ldadd_entry(Assembler::xword, memory_order_conservative);
 
+    // ADD, memory_order_relaxed
+    AtomicStubMark mark_fetch_add_4_relaxed
+      (_masm, &aarch64_atomic_fetch_add_4_relaxed_impl);
+    gen_ldadd_entry(MacroAssembler::word, memory_order_relaxed);
+    AtomicStubMark mark_fetch_add_8_relaxed
+      (_masm, &aarch64_atomic_fetch_add_8_relaxed_impl);
+    gen_ldadd_entry(MacroAssembler::xword, memory_order_relaxed);
+
+    // XCHG, memory_order_conservative
     AtomicStubMark mark_xchg_4(_masm, &aarch64_atomic_xchg_4_impl);
     gen_swpal_entry(Assembler::word);
     AtomicStubMark mark_xchg_8_impl(_masm, &aarch64_atomic_xchg_8_impl);
@@ -7730,6 +7745,8 @@ void StubGenerator_generate(CodeBuffer* code, bool all) {
 
 DEFAULT_ATOMIC_OP(fetch_add, 4, )
 DEFAULT_ATOMIC_OP(fetch_add, 8, )
+DEFAULT_ATOMIC_OP(fetch_add, 4, _relaxed)
+DEFAULT_ATOMIC_OP(fetch_add, 8, _relaxed)
 DEFAULT_ATOMIC_OP(xchg, 4, )
 DEFAULT_ATOMIC_OP(xchg, 8, )
 DEFAULT_ATOMIC_OP(cmpxchg, 1, )
