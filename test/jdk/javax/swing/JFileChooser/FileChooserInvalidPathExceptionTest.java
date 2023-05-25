@@ -65,7 +65,7 @@ public class FileChooserInvalidPathExceptionTest {
                 1. Navigate to any windows specific folders like My PC/Libraries/
                 Network.
                 2. Select and traverse through those folders.
-                3. On click of the mentioned folder if InvalidPathException 
+                3. On click of the mentioned folder if InvalidPathException
                 occurs does not occur then test is PASS.
                 """;
         frame = new JFrame("JFileChooser IPE test");
