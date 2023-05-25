@@ -244,7 +244,7 @@ public abstract class Collator
      * <tr><th scope="row" style="text-align:left">level2</th>
      *     <td>SECONDARY</td></tr>
      * <tr><th scope="row" style="text-align:left">level3</th>
-     *     <td>TERTIARY</td></tr>
+     *     <td>TERTIARY<sup>*</sup></td></tr>
      * <tr><th scope="row" style="text-align:left">identic</th>
      *     <td>IDENTICAL</td></tr>
      * </tbody>
@@ -256,9 +256,10 @@ public abstract class Collator
      * <tr><th scope="row" style="text-align:left">true</th>
      *     <td>CANONICAL_DECOMPOSITION</td></tr>
      * <tr><th scope="row" style="text-align:left">false</th>
-     *     <td>NO_DECOMPOSITION</td></tr>
+     *     <td>NO_DECOMPOSITION<sup>*</sup></td></tr>
      * </tbody>
      * </table>
+     * Asterisk (<sup>*</sup>) denotes the default value.
      * If the specified setting value is not recognized, the strength and/or
      * decomposition will not be overridden, as if there were no BCP 47 collation
      * options in the desired locale.
