@@ -109,6 +109,10 @@
 #include "jfr/jfr.hpp"
 #endif
 
+#ifdef _AIX
+#include <alloca.h>
+#endif
+
 // Set by os layer.
 size_t      JavaThread::_stack_size_at_create = 0;
 

@@ -125,7 +125,7 @@ Java_GetXSpace_getSpace0
     }
 #else
     struct statfs buf;
-    int result = statfs((const char*)chars, &buf);
+    int result = statfs((char*)chars, &buf);
     (*env)->ReleaseStringChars(env, root, chars);
     if (result < 0) {
         JNU_ThrowByNameWithLastError(env, "java/lang/RuntimeException",

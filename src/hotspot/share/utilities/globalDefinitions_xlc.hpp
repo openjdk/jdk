@@ -38,6 +38,14 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
+// Until IBM modifies its stdlib.h header we repair the critical lines ourself
+// replacing the #define malloc vec_malloc by the modified malloc Function declaration.
+#if (defined(__VEC__) || defined(__AIXVEC)) && defined(AIX) \
+    && defined(__open_xl_version__) && __open_xl_version__ >= 17
+  #undef malloc
+  extern void	*malloc(size_t)  asm("vec_malloc");
+#endif
+
 #include <wchar.h>
 
 #include <math.h>

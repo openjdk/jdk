@@ -30,6 +30,7 @@ include LibCommon.gmk
 $(eval $(call SetupJdkLibrary, BUILD_LIBDT_SOCKET, \
     NAME := dt_socket, \
     OPTIMIZATION := LOW, \
+    DISABLED_WARNINGS_clang_aix := missing-braces, \
     CFLAGS := $(CFLAGS_JDKLIB) $(LIBDT_SOCKET_CPPFLAGS), \
     EXTRA_HEADER_DIRS := \
         include \

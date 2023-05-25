@@ -61,6 +61,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJAVA, \
     jdk_util.c_CFLAGS := $(VERSION_CFLAGS), \
     WARNINGS_AS_ERRORS_xlc := false, \
     DISABLED_WARNINGS_gcc_ProcessImpl_md.c := unused-result, \
+    DISABLED_WARNINGS_clang_aix_ProcessHandleImpl_unix.c := sign-compare, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LDFLAGS_macosx := -L$(SUPPORT_OUTPUTDIR)/native/$(MODULE)/, \
@@ -173,6 +174,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJLI, \
     CFLAGS := $(CFLAGS_JDKLIB) $(LIBJLI_CFLAGS), \
     DISABLED_WARNINGS_gcc := unused-function, \
     DISABLED_WARNINGS_clang := format-nonliteral deprecated-non-prototype, \
+    DISABLED_WARNINGS_clang_aix := gnu-pointer-arith, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS_unix := $(LIBZ_LIBS), \
@@ -198,6 +200,7 @@ ifeq ($(call isTargetOs, aix), true)
       OPTIMIZATION := HIGH, \
       CFLAGS := $(STATIC_LIBRARY_FLAGS) $(CFLAGS_JDKLIB) $(LIBJLI_CFLAGS) \
           $(addprefix -I, $(LIBJLI_SRC_DIRS)), \
+      DISABLED_WARNINGS_clang := gnu-pointer-arith format-nonliteral deprecated-non-prototype, \
       ARFLAGS := $(ARFLAGS), \
       OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjli_static))
 

@@ -240,6 +240,13 @@ ifeq ($(call isTargetOs, windows macosx), false)
         DISABLED_WARNINGS_gcc_XRBackendNative.c := maybe-uninitialized, \
         DISABLED_WARNINGS_gcc_XToolkit.c := unused-result, \
         DISABLED_WARNINGS_gcc_XWindow.c := unused-function, \
+        DISABLED_WARNINGS_clang_aix := format-nonliteral deprecated-non-prototype, \
+        DISABLED_WARNINGS_clang_aix_awt_Taskbar.c := parentheses, \
+        DISABLED_WARNINGS_clang_aix_OGLPaints.c := format-nonliteral, \
+        DISABLED_WARNINGS_clang_aix_gtk2_interface.c := parentheses logical-op-parentheses, \
+        DISABLED_WARNINGS_clang_aix_gtk3_interface.c := parentheses logical-op-parentheses, \
+        DISABLED_WARNINGS_clang_aix_sun_awt_X11_GtkFileDialogPeer.c := parentheses, \
+        DISABLED_WARNINGS_clang_aix_awt_InputMethod.c := sign-compare, \
         LDFLAGS := $(LDFLAGS_JDKLIB) \
             $(call SET_SHARED_LIBRARY_ORIGIN) \
             -L$(INSTALL_LIBRARIES_HERE), \
@@ -446,7 +453,9 @@ else
    # Early re-canonizing has to be disabled to workaround an internal XlC compiler error
    # when building libharfbuzz
    ifeq ($(call isTargetOs, aix), true)
+    ifneq ($(TOOLCHAIN_TYPE), clang)
      HARFBUZZ_CFLAGS += -qdebug=necan
+    endif
    endif
 
    # hb-ft.cc is not presently needed, and requires freetype 2.4.2 or later.
@@ -689,6 +698,15 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
 
   ifeq ($(call isTargetOs, linux), true)
     ifeq ($(call isTargetCpuArch, ppc), true)
+      LIBSPLASHSCREEN_CFLAGS += -DPNG_POWERPC_VSX_OPT=0
+    endif
+  endif
+  # temporarily disable PNG_POWERPC_VSX_OPT which would be set, because
+  # if defined(__PPC64__) && defined(__ALTIVEC__) && defined(__VSX__)
+  # is true, the then needed libpng function .png_init_filter_functions_vsx
+  # is not part of the libpng due the fact that the library was build with old compiler
+  ifeq ($(call isTargetOs, aix), true)
+    ifeq ($(TOOLCHAIN_TYPE), clang)
       LIBSPLASHSCREEN_CFLAGS += -DPNG_POWERPC_VSX_OPT=0
     endif
   endif
