@@ -147,7 +147,7 @@ public class EdDSAParameters {
         }
     }
 
-    private final ParametersMap<EdDSAParameters> namedParams = new ParametersMap<>();
+    static ParametersMap<EdDSAParameters> namedParams = new ParametersMap<>();
 
     private final String name;
     private final ObjectIdentifier oid;
