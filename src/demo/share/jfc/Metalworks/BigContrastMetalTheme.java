@@ -103,7 +103,7 @@ public class BigContrastMetalTheme extends ContrastMetalTheme {
     public void addCustomEntriesToTable(UIDefaults table) {
         super.addCustomEntriesToTable(table);
 
-        final int internalFrameIconSize = 30;
+        final int internalFrameIconSize = 24;
         table.put("InternalFrame.closeIcon", MetalIconFactory.
                 getInternalFrameCloseIcon(internalFrameIconSize));
         table.put("InternalFrame.maximizeIcon", MetalIconFactory.
