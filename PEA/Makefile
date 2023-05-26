@@ -38,3 +38,9 @@ run-ctw: set_jdk ${CTW_DIST}
 run-ctw-no-inline: set_jdk ${CTW_DIST}
 	cd ${CTW_DIST}; \
 	JAVA_OPTIONS="${CTW_JAVA_OPTIONS} -XX:-Inline" ./ctw.sh modules:java.base
+
+bootstrap-version: set_jdk
+	java -Xcomp -XX:-TieredCompilation -XX:CICompilerCount=1 -Xbatch -XX:+UnlockExperimentalVMOptions -XX:+DoPartialEscapeAnalysis -XX:+PrintCompilation -version
+
+hotspot-tier1:
+	cd ..; make test TEST="hotspot:tier1"  CONF=linux-x86_64-server-fastdebug  JTREG="JAVA_OPTIONS=-XX:+UnlockExperimentalVMOptions -XX:+DoPartialEscapeAnalysis"
