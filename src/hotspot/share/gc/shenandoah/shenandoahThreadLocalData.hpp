@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018, 2022, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +31,7 @@
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc/shenandoah/shenandoahCodeRoots.hpp"
+#include "gc/shenandoah/shenandoahEvacTracker.hpp"
 #include "gc/shenandoah/shenandoahSATBMarkQueueSet.hpp"
 #include "runtime/javaThread.hpp"
 #include "utilities/debug.hpp"
@@ -41,10 +43,30 @@ private:
   // Evacuation OOM state
   uint8_t                 _oom_scope_nesting_level;
   bool                    _oom_during_evac;
+
   SATBMarkQueue           _satb_mark_queue;
+
+  // Thread-local allocation buffer for object evacuations.
+  // In generational mode, it is exclusive to the young generation.
   PLAB* _gclab;
   size_t _gclab_size;
+
   double _paced_time;
+
+  // Thread-local allocation buffer only used in generational mode.
+  // Used both by mutator threads and by GC worker threads
+  // for evacuations within the old generation and
+  // for promotions from the young generation into the old generation.
+  PLAB* _plab;
+  size_t _plab_size;
+
+  size_t _plab_evacuated;
+  size_t _plab_promoted;
+  size_t _plab_preallocated_promoted;
+  bool   _plab_allows_promotion; // If false, no more promotion by this thread during this evacuation phase.
+  bool   _plab_retries_enabled;
+
+  ShenandoahEvacuationStats* _evacuation_stats;
 
   ShenandoahThreadLocalData() :
     _gc_state(0),
@@ -53,13 +75,28 @@ private:
     _satb_mark_queue(&ShenandoahBarrierSet::satb_mark_queue_set()),
     _gclab(nullptr),
     _gclab_size(0),
-    _paced_time(0) {
+    _paced_time(0),
+    _plab(nullptr),
+    _plab_size(0),
+    _plab_evacuated(0),
+    _plab_promoted(0),
+    _plab_preallocated_promoted(0),
+    _plab_allows_promotion(true),
+    _plab_retries_enabled(true),
+    _evacuation_stats(new ShenandoahEvacuationStats()) {
   }
 
   ~ShenandoahThreadLocalData() {
     if (_gclab != nullptr) {
       delete _gclab;
     }
+    if (_plab != nullptr) {
+      ShenandoahHeap::heap()->retire_plab(_plab);
+      delete _plab;
+    }
+
+    // TODO: Preserve these stats somewhere for mutator threads.
+    delete _evacuation_stats;
   }
 
   static ShenandoahThreadLocalData* data(Thread* thread) {
@@ -97,6 +134,8 @@ public:
     assert(data(thread)->_gclab == nullptr, "Only initialize once");
     data(thread)->_gclab = new PLAB(PLAB::min_size());
     data(thread)->_gclab_size = 0;
+    data(thread)->_plab = new PLAB(PLAB::min_size());
+    data(thread)->_plab_size = 0;
   }
 
   static PLAB* gclab(Thread* thread) {
@@ -109,6 +148,96 @@ public:
 
   static void set_gclab_size(Thread* thread, size_t v) {
     data(thread)->_gclab_size = v;
+  }
+
+  static void begin_evacuation(Thread* thread, size_t bytes) {
+    data(thread)->_evacuation_stats->begin_evacuation(bytes);
+  }
+
+  static void end_evacuation(Thread* thread, size_t bytes, uint age) {
+    data(thread)->_evacuation_stats->end_evacuation(bytes, age);
+  }
+
+  static ShenandoahEvacuationStats* evacuation_stats(Thread* thread) {
+    return data(thread)->_evacuation_stats;
+  }
+
+  static PLAB* plab(Thread* thread) {
+    return data(thread)->_plab;
+  }
+
+  static size_t plab_size(Thread* thread) {
+    return data(thread)->_plab_size;
+  }
+
+  static void set_plab_size(Thread* thread, size_t v) {
+    data(thread)->_plab_size = v;
+  }
+
+  static void enable_plab_retries(Thread* thread) {
+    data(thread)->_plab_retries_enabled = true;
+  }
+
+  static void disable_plab_retries(Thread* thread) {
+    data(thread)->_plab_retries_enabled = false;
+  }
+
+  static bool plab_retries_enabled(Thread* thread) {
+    return data(thread)->_plab_retries_enabled;
+  }
+
+  static void enable_plab_promotions(Thread* thread) {
+    data(thread)->_plab_allows_promotion = true;
+  }
+
+  static void disable_plab_promotions(Thread* thread) {
+    data(thread)->_plab_allows_promotion = false;
+  }
+
+  static bool allow_plab_promotions(Thread* thread) {
+    return data(thread)->_plab_allows_promotion;
+  }
+
+  static void reset_plab_evacuated(Thread* thread) {
+    data(thread)->_plab_evacuated = 0;
+  }
+
+  static void add_to_plab_evacuated(Thread* thread, size_t increment) {
+    data(thread)->_plab_evacuated += increment;
+  }
+
+  static void subtract_from_plab_evacuated(Thread* thread, size_t increment) {
+    // TODO: Assert underflow
+    data(thread)->_plab_evacuated -= increment;
+  }
+
+  static size_t get_plab_evacuated(Thread* thread) {
+    return data(thread)->_plab_evacuated;
+  }
+
+  static void reset_plab_promoted(Thread* thread) {
+    data(thread)->_plab_promoted = 0;
+  }
+
+  static void add_to_plab_promoted(Thread* thread, size_t increment) {
+    data(thread)->_plab_promoted += increment;
+  }
+
+  static void subtract_from_plab_promoted(Thread* thread, size_t increment) {
+    // TODO: Assert underflow
+    data(thread)->_plab_promoted -= increment;
+  }
+
+  static size_t get_plab_promoted(Thread* thread) {
+    return data(thread)->_plab_promoted;
+  }
+
+  static void set_plab_preallocated_promoted(Thread* thread, size_t value) {
+    data(thread)->_plab_preallocated_promoted = value;
+  }
+
+  static size_t get_plab_preallocated_promoted(Thread* thread) {
+    return data(thread)->_plab_preallocated_promoted;
   }
 
   static void add_paced_time(Thread* thread, double v) {

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,6 +67,20 @@ public class TestThreadFailure {
                     "-Xmx32m",
                     "-XX:+UnlockExperimentalVMOptions",
                     "-XX:+UseShenandoahGC",
+                    TestThreadFailure.class.getName(),
+                    "test");
+
+            OutputAnalyzer analyzer = new OutputAnalyzer(pb.start());
+            analyzer.shouldHaveExitValue(0);
+            analyzer.shouldContain("java.lang.OutOfMemoryError");
+            analyzer.shouldContain("All good");
+        }
+
+        {
+            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+                    "-Xmx32m",
+                    "-XX:+UnlockExperimentalVMOptions",
+                    "-XX:+UseShenandoahGC", "-XX:ShenandoahGCMode=generational",
                     TestThreadFailure.class.getName(),
                     "test");
 

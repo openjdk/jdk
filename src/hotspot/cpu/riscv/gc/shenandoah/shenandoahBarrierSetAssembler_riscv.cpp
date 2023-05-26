@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2018, 2020, Red Hat, Inc. All rights reserved.
  * Copyright (c) 2020, 2021, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +65,7 @@ void ShenandoahBarrierSetAssembler::arraycopy_prologue(MacroAssembler* masm, Dec
         __ test_bit(t0, t0, ShenandoahHeap::HAS_FORWARDED_BITPOS);
         __ beqz(t0, done);
       } else {
-        __ andi(t0, t0, ShenandoahHeap::HAS_FORWARDED | ShenandoahHeap::MARKING);
+        __ andi(t0, t0, ShenandoahHeap::HAS_FORWARDED | ShenandoahHeap::YOUNG_MARKING | ShenandoahHeap::OLD_MARKING);
         __ beqz(t0, done);
       }
 
@@ -642,7 +643,7 @@ void ShenandoahBarrierSetAssembler::generate_c1_pre_barrier_runtime_stub(StubAss
   // Is marking still active?
   Address gc_state(thread, in_bytes(ShenandoahThreadLocalData::gc_state_offset()));
   __ lb(tmp, gc_state);
-  __ test_bit(tmp, tmp, ShenandoahHeap::MARKING_BITPOS);
+  __ andi(tmp, tmp, ShenandoahHeap::YOUNG_MARKING | ShenandoahHeap::OLD_MARKING);
   __ beqz(tmp, done);
 
   // Can we store original value in the thread's buffer?

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017, 2020, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,6 +74,24 @@
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive
  *      -XX:ConcGCThreads=2 -XX:ParallelGCThreads=4
  *      -Dtarget=100
+ *      TestGCThreadGroups
+ */
+
+/**
+ * @test id=generational
+ * @summary Test Shenandoah GC uses concurrent/parallel threads correctly
+ * @requires vm.gc.Shenandoah
+ *
+ * @run main/othervm -Xmx16m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:+UseShenandoahGC
+ *      -XX:ConcGCThreads=2 -XX:ParallelGCThreads=4
+ *      -Dtarget=1000 -XX:ShenandoahGCMode=generational
+ *      TestGCThreadGroups
+ *
+ * @run main/othervm -Xmx16m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:+UseShenandoahGC
+ *      -XX:-UseDynamicNumberOfGCThreads
+ *      -Dtarget=1000 -XX:ShenandoahGCMode=generational
  *      TestGCThreadGroups
  */
 

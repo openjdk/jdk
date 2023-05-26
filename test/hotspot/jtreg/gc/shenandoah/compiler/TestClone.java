@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -205,7 +206,131 @@
  *                   TestClone
  */
 
+/*
+ * @test id=generational
+ * @summary Test clone barriers work correctly
+ * @requires vm.gc.Shenandoah
+ *
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
+ *                   -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
+ *                   TestClone
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
+ *                   -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
+ *                   -Xint
+ *                   TestClone
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
+ *                   -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
+ *                   -XX:-TieredCompilation
+ *                   TestClone
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
+ *                   -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
+ *                   -XX:TieredStopAtLevel=1
+ *                   TestClone
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
+ *                   -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
+ *                   -XX:TieredStopAtLevel=4
+ *                   TestClone
+ */
 
+/*
+ * @test id=generational-verify
+ * @summary Test clone barriers work correctly
+ * @requires vm.gc.Shenandoah
+ *
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
+ *                   -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
+ *                   -XX:+ShenandoahVerify
+ *                   TestClone
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
+ *                   -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
+ *                   -XX:+ShenandoahVerify
+ *                   -Xint
+ *                   TestClone
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
+ *                   -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
+ *                   -XX:+ShenandoahVerify
+ *                   -XX:-TieredCompilation
+ *                   TestClone
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
+ *                   -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
+ *                   -XX:+ShenandoahVerify
+ *                   -XX:TieredStopAtLevel=1
+ *                   TestClone
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
+ *                   -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
+ *                   -XX:+ShenandoahVerify
+ *                   -XX:TieredStopAtLevel=4
+ *                   TestClone
+ */
+
+ /*
+  * @test id=generational-no-coops
+  * @summary Test clone barriers work correctly
+  * @requires vm.gc.Shenandoah
+  * @requires vm.bits == "64"
+  *
+  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
+  *                   -XX:-UseCompressedOops
+  *                   -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
+  *                   TestClone
+  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
+  *                   -XX:-UseCompressedOops
+  *                   -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
+  *                   -Xint
+  *                   TestClone
+  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
+  *                   -XX:-UseCompressedOops
+  *                   -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
+  *                   -XX:-TieredCompilation
+  *                   TestClone
+  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
+  *                   -XX:-UseCompressedOops
+  *                   -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
+  *                   -XX:TieredStopAtLevel=1
+  *                   TestClone
+  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
+  *                   -XX:-UseCompressedOops
+  *                   -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
+  *                   -XX:TieredStopAtLevel=4
+  *                   TestClone
+  */
+
+ /*
+  * @test id=generational-no-coops-verify
+  * @summary Test clone barriers work correctly
+  * @requires vm.gc.Shenandoah
+  * @requires vm.bits == "64"
+  *
+  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
+  *                   -XX:-UseCompressedOops
+  *                   -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
+  *                   -XX:+ShenandoahVerify
+  *                   TestClone
+  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
+  *                   -XX:-UseCompressedOops
+  *                   -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
+  *                   -XX:+ShenandoahVerify
+  *                   -Xint
+  *                   TestClone
+  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
+  *                   -XX:-UseCompressedOops
+  *                   -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
+  *                   -XX:+ShenandoahVerify
+  *                   -XX:-TieredCompilation
+  *                   TestClone
+  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
+  *                   -XX:-UseCompressedOops
+  *                   -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
+  *                   -XX:+ShenandoahVerify
+  *                   -XX:TieredStopAtLevel=1
+  *                   TestClone
+  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xms1g -Xmx1g
+  *                   -XX:-UseCompressedOops
+  *                   -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
+  *                   -XX:+ShenandoahVerify
+  *                   -XX:TieredStopAtLevel=4
+  *                   TestClone
+  */
 public class TestClone {
 
     public static void main(String[] args) throws Exception {

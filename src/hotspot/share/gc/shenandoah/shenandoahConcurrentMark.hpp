@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2013, 2021, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,23 +28,27 @@
 
 #include "gc/shenandoah/shenandoahMark.hpp"
 
+template <ShenandoahGenerationType GENERATION>
 class ShenandoahConcurrentMarkingTask;
+template <ShenandoahGenerationType GENERATION>
 class ShenandoahFinalMarkingTask;
+class ShenandoahGeneration;
 
 class ShenandoahConcurrentMark: public ShenandoahMark {
-  friend class ShenandoahConcurrentMarkingTask;
-  friend class ShenandoahFinalMarkingTask;
+  template <ShenandoahGenerationType GENERATION> friend class ShenandoahConcurrentMarkingTask;
+  template <ShenandoahGenerationType GENERATION> friend class ShenandoahFinalMarkingTask;
 
 public:
-  ShenandoahConcurrentMark();
+  ShenandoahConcurrentMark(ShenandoahGeneration* generation);
+
   // Concurrent mark roots
   void mark_concurrent_roots();
+
   // Concurrent mark
   void concurrent_mark();
+
   // Finish mark at a safepoint
   void finish_mark();
-
-  static void cancel();
 
 private:
   void finish_mark_work();

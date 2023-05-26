@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +51,7 @@ public:
   enum ShenandoahDegenPoint {
     _degenerated_unset,
     _degenerated_outside_cycle,
+    _degenerated_roots,
     _degenerated_mark,
     _degenerated_evac,
     _degenerated_updaterefs,

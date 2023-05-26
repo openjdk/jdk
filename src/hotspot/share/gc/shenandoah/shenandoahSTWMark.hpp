@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +29,7 @@
 #include "gc/shenandoah/shenandoahMark.hpp"
 
 class ShenandoahSTWMarkTask;
+class ShenandoahGeneration;
 
 class ShenandoahSTWMark : public ShenandoahMark {
   friend class ShenandoahSTWMarkTask;
@@ -37,7 +39,7 @@ private:
   TaskTerminator                _terminator;
   bool                          _full_gc;
 public:
- ShenandoahSTWMark(bool full_gc);
+ ShenandoahSTWMark(ShenandoahGeneration* generation, bool full_gc);
  void mark();
 
 private:

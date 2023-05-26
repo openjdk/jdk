@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019, 2021, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +33,7 @@
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahRootVerifier.hpp"
+#include "gc/shenandoah/shenandoahScanRemembered.inline.hpp"
 #include "gc/shenandoah/shenandoahStringDedup.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shared/oopStorage.inline.hpp"
@@ -53,7 +55,7 @@ ShenandoahGCStateResetter::~ShenandoahGCStateResetter() {
   assert(_heap->gc_state() == _gc_state, "Should be restored");
 }
 
-void ShenandoahRootVerifier::roots_do(OopClosure* oops) {
+void ShenandoahRootVerifier::roots_do(OopIterateClosure* oops) {
   ShenandoahGCStateResetter resetter;
   shenandoah_assert_safepoint();
 
@@ -67,13 +69,19 @@ void ShenandoahRootVerifier::roots_do(OopClosure* oops) {
     OopStorageSet::storage(id)->oops_do(oops);
   }
 
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
+  if (heap->mode()->is_generational() && heap->is_gc_generation_young()) {
+    shenandoah_assert_safepoint();
+    heap->card_scan()->roots_do(oops);
+  }
+
   // Do thread roots the last. This allows verification code to find
   // any broken objects from those special roots first, not the accidental
   // dangling reference from the thread root.
   Threads::possibly_parallel_oops_do(true, oops, nullptr);
 }
 
-void ShenandoahRootVerifier::strong_roots_do(OopClosure* oops) {
+void ShenandoahRootVerifier::strong_roots_do(OopIterateClosure* oops) {
   ShenandoahGCStateResetter resetter;
   shenandoah_assert_safepoint();
 
@@ -83,6 +91,12 @@ void ShenandoahRootVerifier::strong_roots_do(OopClosure* oops) {
   for (auto id : EnumRange<OopStorageSet::StrongId>()) {
     OopStorageSet::storage(id)->oops_do(oops);
   }
+
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
+  if (heap->mode()->is_generational() && heap->is_gc_generation_young()) {
+    heap->card_scan()->roots_do(oops);
+  }
+
   // Do thread roots the last. This allows verification code to find
   // any broken objects from those special roots first, not the accidental
   // dangling reference from the thread root.

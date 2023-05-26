@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +31,7 @@
 class ShenandoahPassiveMode : public ShenandoahMode {
 public:
   virtual void initialize_flags() const;
-  virtual ShenandoahHeuristics* initialize_heuristics() const;
-
+  virtual ShenandoahHeuristics* initialize_heuristics(ShenandoahGeneration* generation) const;
   virtual const char* name()     { return "Passive"; }
   virtual bool is_diagnostic()   { return true; }
   virtual bool is_experimental() { return false; }

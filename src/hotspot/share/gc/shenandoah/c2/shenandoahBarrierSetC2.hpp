@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018, 2021, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,6 +75,18 @@ private:
                                     BasicType bt) const;
 
   Node* shenandoah_iu_barrier(GraphKit* kit, Node* obj) const;
+
+  Node* byte_map_base_node(GraphKit* kit) const;
+
+  void post_barrier(GraphKit* kit,
+                    Node* ctl,
+                    Node* store,
+                    Node* obj,
+                    Node* adr,
+                    uint adr_idx,
+                    Node* val,
+                    BasicType bt,
+                    bool use_precise) const;
 
   void insert_pre_barrier(GraphKit* kit, Node* base_oop, Node* offset,
                           Node* pre_val, bool need_mem_bar) const;

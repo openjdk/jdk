@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019, 2021, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +24,7 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/shenandoah/heuristics/shenandoahAdaptiveHeuristics.hpp"
-#include "gc/shenandoah/heuristics/shenandoahAggressiveHeuristics.hpp"
-#include "gc/shenandoah/heuristics/shenandoahCompactHeuristics.hpp"
-#include "gc/shenandoah/heuristics/shenandoahStaticHeuristics.hpp"
+#include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/mode/shenandoahSATBMode.hpp"
 #include "logging/log.hpp"
 #include "logging/logTag.hpp"
@@ -49,21 +47,4 @@ void ShenandoahSATBMode::initialize_flags() const {
   SHENANDOAH_CHECK_FLAG_SET(ShenandoahCloneBarrier);
   SHENANDOAH_CHECK_FLAG_SET(ShenandoahNMethodBarrier);
   SHENANDOAH_CHECK_FLAG_SET(ShenandoahStackWatermarkBarrier);
-}
-
-ShenandoahHeuristics* ShenandoahSATBMode::initialize_heuristics() const {
-  if (ShenandoahGCHeuristics == nullptr) {
-    vm_exit_during_initialization("Unknown -XX:ShenandoahGCHeuristics option (null)");
-  }
-  if (strcmp(ShenandoahGCHeuristics, "aggressive") == 0) {
-    return new ShenandoahAggressiveHeuristics();
-  } else if (strcmp(ShenandoahGCHeuristics, "static") == 0) {
-    return new ShenandoahStaticHeuristics();
-  } else if (strcmp(ShenandoahGCHeuristics, "adaptive") == 0) {
-    return new ShenandoahAdaptiveHeuristics();
-  } else if (strcmp(ShenandoahGCHeuristics, "compact") == 0) {
-    return new ShenandoahCompactHeuristics();
-  }
-  vm_exit_during_initialization("Unknown -XX:ShenandoahGCHeuristics option");
-  return nullptr;
 }

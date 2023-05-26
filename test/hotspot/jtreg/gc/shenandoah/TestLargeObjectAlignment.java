@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2016, 2018, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +24,7 @@
  */
 
 /*
- * @test
+ * @test default
  * @summary Shenandoah crashes with -XX:ObjectAlignmentInBytes=16
  * @key randomness
  * @requires vm.gc.Shenandoah
@@ -34,6 +35,20 @@
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ObjectAlignmentInBytes=16 -XX:-TieredCompilation  TestLargeObjectAlignment
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ObjectAlignmentInBytes=16 -XX:TieredStopAtLevel=1 TestLargeObjectAlignment
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ObjectAlignmentInBytes=16 -XX:TieredStopAtLevel=4 TestLargeObjectAlignment
+ */
+
+/*
+ * @test generational
+ * @summary Shenandoah crashes with -XX:ObjectAlignmentInBytes=16
+ * @key randomness
+ * @requires vm.gc.Shenandoah
+ * @requires vm.bits == "64"
+ * @library /test/lib
+ *
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational -XX:ObjectAlignmentInBytes=16 -Xint                   TestLargeObjectAlignment
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational -XX:ObjectAlignmentInBytes=16 -XX:-TieredCompilation  TestLargeObjectAlignment
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational -XX:ObjectAlignmentInBytes=16 -XX:TieredStopAtLevel=1 TestLargeObjectAlignment
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational -XX:ObjectAlignmentInBytes=16 -XX:TieredStopAtLevel=4 TestLargeObjectAlignment
  */
 
 import java.util.ArrayList;

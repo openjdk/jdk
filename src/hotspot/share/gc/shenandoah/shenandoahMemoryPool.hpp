@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2013, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,14 +33,37 @@
 #endif
 
 class ShenandoahMemoryPool : public CollectedMemoryPool {
-private:
+protected:
    ShenandoahHeap* _heap;
 
 public:
-  ShenandoahMemoryPool(ShenandoahHeap* pool);
-  MemoryUsage get_memory_usage();
-  size_t used_in_bytes()              { return _heap->used(); }
-  size_t max_size() const             { return _heap->max_capacity(); }
+  ShenandoahMemoryPool(ShenandoahHeap* pool,
+                       const char* name = "Shenandoah");
+  virtual MemoryUsage get_memory_usage();
+  virtual size_t used_in_bytes();
+  virtual size_t max_size() const;
+
+protected:
+  ShenandoahMemoryPool(ShenandoahHeap* pool,
+                       const char* name,
+                       size_t initial_capacity,
+                       size_t max_capacity);
+};
+
+class ShenandoahYoungGenMemoryPool : public ShenandoahMemoryPool {
+public:
+  ShenandoahYoungGenMemoryPool(ShenandoahHeap* pool);
+  MemoryUsage get_memory_usage() override;
+  size_t used_in_bytes() override;
+  size_t max_size() const override;
+};
+
+class ShenandoahOldGenMemoryPool : public ShenandoahMemoryPool {
+public:
+  ShenandoahOldGenMemoryPool(ShenandoahHeap* pool);
+  MemoryUsage get_memory_usage() override;
+  size_t used_in_bytes() override;
+  size_t max_size() const override;
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHMEMORYPOOL_HPP

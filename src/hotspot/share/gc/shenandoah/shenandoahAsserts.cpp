@@ -71,6 +71,9 @@ void ShenandoahAsserts::print_obj(ShenandoahMessageBuffer& msg, oop obj) {
   msg.append("    %3s marked strong\n",              ctx->is_marked_strong(obj) ? "" : "not");
   msg.append("    %3s marked weak\n",                ctx->is_marked_weak(obj) ? "" : "not");
   msg.append("    %3s in collection set\n",          heap->in_collection_set(obj) ? "" : "not");
+  if (heap->mode()->is_generational() && !obj->is_forwarded()) {
+    msg.append("  age: %d\n", obj->age());
+  }
   msg.append("  mark:%s\n", mw_ss.freeze());
   msg.append("  region: %s", ss.freeze());
 }
@@ -385,7 +388,7 @@ void ShenandoahAsserts::assert_locked_or_shenandoah_safepoint(Mutex* lock, const
     return;
   }
 
-  ShenandoahMessageBuffer msg("Must ba at a Shenandoah safepoint or held %s lock", lock->name());
+  ShenandoahMessageBuffer msg("Must be at a Shenandoah safepoint or held %s lock", lock->name());
   report_vm_error(file, line, msg.buffer());
 }
 
@@ -419,6 +422,23 @@ void ShenandoahAsserts::assert_heaplocked_or_safepoint(const char* file, int lin
   }
 
   if (ShenandoahSafepoint::is_at_shenandoah_safepoint() && Thread::current()->is_VM_thread()) {
+    return;
+  }
+
+  ShenandoahMessageBuffer msg("Heap lock must be owned by current thread, or be at safepoint");
+  report_vm_error(file, line, msg.buffer());
+}
+
+// Unlike assert_heaplocked_or_safepoint(), this does not require current thread in safepoint to be a VM thread
+// TODO: This should be more aptly named. Nothing in this method checks we are actually in Full GC.
+void ShenandoahAsserts::assert_heaplocked_or_fullgc_safepoint(const char* file, int line) {
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
+
+  if (heap->lock()->owned_by_self()) {
+    return;
+  }
+
+  if (ShenandoahSafepoint::is_at_shenandoah_safepoint()) {
     return;
   }
 

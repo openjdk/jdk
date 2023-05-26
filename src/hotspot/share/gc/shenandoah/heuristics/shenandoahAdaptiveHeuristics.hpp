@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,10 +37,8 @@ class ShenandoahAllocationRate : public CHeapObj<mtGC> {
 
   double sample(size_t allocated);
 
-  double instantaneous_rate(size_t allocated) const;
   double upper_bound(double sds) const;
   bool is_spiking(double rate, double threshold) const;
-
  private:
 
   double instantaneous_rate(double time, size_t allocated) const;
@@ -53,7 +52,7 @@ class ShenandoahAllocationRate : public CHeapObj<mtGC> {
 
 class ShenandoahAdaptiveHeuristics : public ShenandoahHeuristics {
 public:
-  ShenandoahAdaptiveHeuristics();
+  ShenandoahAdaptiveHeuristics(ShenandoahGeneration* generation);
 
   virtual ~ShenandoahAdaptiveHeuristics();
 
@@ -62,7 +61,7 @@ public:
                                                      size_t actual_free);
 
   void record_cycle_start();
-  void record_success_concurrent();
+  void record_success_concurrent(bool abbreviated);
   void record_success_degenerated();
   void record_success_full();
 
@@ -71,6 +70,8 @@ public:
   virtual const char* name()     { return "Adaptive"; }
   virtual bool is_diagnostic()   { return false; }
   virtual bool is_experimental() { return false; }
+
+  virtual size_t bytes_of_allocation_runway_before_gc_trigger(size_t young_regions_to_be_recycled);
 
  private:
   // These are used to adjust the margin of error and the spike threshold

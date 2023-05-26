@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018, 2021, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +34,7 @@
 #include "gc/shenandoah/c2/shenandoahBarrierSetC2.hpp"
 #include "gc/shenandoah/c2/shenandoahSupport.hpp"
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
+#include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "opto/arraycopynode.hpp"
 #include "opto/escape.hpp"
 #include "opto/graphKit.hpp"
@@ -240,7 +242,7 @@ void ShenandoahBarrierSetC2::satb_write_barrier_pre(GraphKit* kit,
   Node* marking;
   Node* gc_state = __ AddP(no_base, tls, __ ConX(in_bytes(ShenandoahThreadLocalData::gc_state_offset())));
   Node* ld = __ load(__ ctrl(), gc_state, TypeInt::BYTE, T_BYTE, Compile::AliasIdxRaw);
-  marking = __ AndI(ld, __ ConI(ShenandoahHeap::MARKING));
+  marking = __ AndI(ld, __ ConI(ShenandoahHeap::YOUNG_MARKING | ShenandoahHeap::OLD_MARKING));
   assert(ShenandoahBarrierC2Support::is_gc_state_load(ld), "Should match the shape");
 
   // if (!marking)
@@ -321,7 +323,7 @@ bool ShenandoahBarrierSetC2::is_shenandoah_marking_if(PhaseTransform *phase, Nod
       cmpx->is_Cmp() && cmpx->in(2) == phase->intcon(0) &&
       is_shenandoah_state_load(cmpx->in(1)->in(1)) &&
       cmpx->in(1)->in(2)->is_Con() &&
-      cmpx->in(1)->in(2) == phase->intcon(ShenandoahHeap::MARKING)) {
+      cmpx->in(1)->in(2) == phase->intcon(ShenandoahHeap::YOUNG_MARKING | ShenandoahHeap::OLD_MARKING)) {
     return true;
   }
 
@@ -450,6 +452,92 @@ void ShenandoahBarrierSetC2::insert_pre_barrier(GraphKit* kit, Node* base_oop, N
   kit->final_sync(ideal);
 }
 
+Node* ShenandoahBarrierSetC2::byte_map_base_node(GraphKit* kit) const {
+  BarrierSet* bs = BarrierSet::barrier_set();
+  ShenandoahBarrierSet* ctbs = barrier_set_cast<ShenandoahBarrierSet>(bs);
+  CardTable::CardValue* card_table_base = ctbs->card_table()->byte_map_base();
+  if (card_table_base != nullptr) {
+    return kit->makecon(TypeRawPtr::make((address)card_table_base));
+  } else {
+    return kit->null();
+  }
+}
+
+void ShenandoahBarrierSetC2::post_barrier(GraphKit* kit,
+                                          Node* ctl,
+                                          Node* oop_store,
+                                          Node* obj,
+                                          Node* adr,
+                                          uint  adr_idx,
+                                          Node* val,
+                                          BasicType bt,
+                                          bool use_precise) const {
+  if (!ShenandoahHeap::heap()->mode()->is_generational()) {
+    return;
+  }
+
+  // No store check needed if we're storing a null.
+  if (val != nullptr && val->is_Con()) {
+    // must be either an oop or NULL
+    const Type* t = val->bottom_type();
+    if (t == TypePtr::NULL_PTR || t == Type::TOP)
+      return;
+  }
+
+  if (ReduceInitialCardMarks && obj == kit->just_allocated_object(kit->control())) {
+    // We can skip marks on a freshly-allocated object in Eden.
+    // Keep this code in sync with new_deferred_store_barrier() in runtime.cpp.
+    // That routine informs GC to take appropriate compensating steps,
+    // upon a slow-path allocation, so as to make this card-mark
+    // elision safe.
+    return;
+  }
+
+  if (!use_precise) {
+    // All card marks for a (non-array) instance are in one place:
+    adr = obj;
+  }
+  // (Else it's an array (or unknown), and we want more precise card marks.)
+  assert(adr != nullptr, "");
+
+  IdealKit ideal(kit, true);
+
+  // Convert the pointer to an int prior to doing math on it
+  Node* cast = __ CastPX(__ ctrl(), adr);
+
+  // Divide by card size
+  Node* card_offset = __ URShiftX( cast, __ ConI(CardTable::card_shift()) );
+
+  // Combine card table base and card offset
+  Node* card_adr = __ AddP(__ top(), byte_map_base_node(kit), card_offset );
+
+  // Get the alias_index for raw card-mark memory
+  int adr_type = Compile::AliasIdxRaw;
+  Node*   zero = __ ConI(0); // Dirty card value
+
+  if (UseCondCardMark) {
+    // The classic GC reference write barrier is typically implemented
+    // as a store into the global card mark table.  Unfortunately
+    // unconditional stores can result in false sharing and excessive
+    // coherence traffic as well as false transactional aborts.
+    // UseCondCardMark enables MP "polite" conditional card mark
+    // stores.  In theory we could relax the load from ctrl() to
+    // no_ctrl, but that doesn't buy much latitude.
+    Node* card_val = __ load( __ ctrl(), card_adr, TypeInt::BYTE, T_BYTE, adr_type);
+    __ if_then(card_val, BoolTest::ne, zero);
+  }
+
+  // Smash zero into card
+  __ store(__ ctrl(), card_adr, zero, T_BYTE, adr_type, MemNode::unordered);
+
+  if (UseCondCardMark) {
+    __ end_if();
+  }
+
+  // Final sync IdealKit and GraphKit.
+  kit->final_sync(ideal);
+}
+
 #undef __
 
 const TypeFunc* ShenandoahBarrierSetC2::write_ref_field_pre_entry_Type() {
@@ -513,6 +601,15 @@ Node* ShenandoahBarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue&
     val.set_node(value);
     shenandoah_write_barrier_pre(kit, true /* do_load */, /*kit->control(),*/ access.base(), adr, adr_idx, val.node(),
                                  static_cast<const TypeOopPtr*>(val.type()), nullptr /* pre_val */, access.type());
+
+    Node* result = BarrierSetC2::store_at_resolved(access, val);
+
+    bool anonymous = (decorators & ON_UNKNOWN_OOP_REF) != 0;
+    bool is_array = (decorators & IS_ARRAY) != 0;
+    bool use_precise = is_array || anonymous;
+    post_barrier(kit, kit->control(), access.raw_access(), access.base(),
+                 adr, adr_idx, val.node(), access.type(), use_precise);
+    return result;
   } else {
     assert(access.is_opt_access(), "only for optimization passes");
     assert(((decorators & C2_TIGHTLY_COUPLED_ALLOC) != 0 || !ShenandoahSATBBarrier) && (decorators & C2_ARRAY_COPY) != 0, "unexpected caller of this code");
@@ -523,8 +620,8 @@ Node* ShenandoahBarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue&
       Node* enqueue = gvn.transform(new ShenandoahIUBarrierNode(val.node()));
       val.set_node(enqueue);
     }
+    return BarrierSetC2::store_at_resolved(access, val);
   }
-  return BarrierSetC2::store_at_resolved(access, val);
 }
 
 Node* ShenandoahBarrierSetC2::load_at_resolved(C2Access& access, const Type* val_type) const {
@@ -595,7 +692,7 @@ Node* ShenandoahBarrierSetC2::load_at_resolved(C2Access& access, const Type* val
 }
 
 Node* ShenandoahBarrierSetC2::atomic_cmpxchg_val_at_resolved(C2AtomicParseAccess& access, Node* expected_val,
-                                                   Node* new_val, const Type* value_type) const {
+                                                             Node* new_val, const Type* value_type) const {
   GraphKit* kit = access.kit();
   if (access.is_oop()) {
     new_val = shenandoah_iu_barrier(kit, new_val);
@@ -637,6 +734,8 @@ Node* ShenandoahBarrierSetC2::atomic_cmpxchg_val_at_resolved(C2AtomicParseAccess
     }
 #endif
     load_store = kit->gvn().transform(new ShenandoahLoadReferenceBarrierNode(nullptr, load_store, access.decorators()));
+    post_barrier(kit, kit->control(), access.raw_access(), access.base(),
+                 access.addr().node(), access.alias_idx(), new_val, T_OBJECT, true);
     return load_store;
   }
   return BarrierSetC2::atomic_cmpxchg_val_at_resolved(access, expected_val, new_val, value_type);
@@ -692,6 +791,8 @@ Node* ShenandoahBarrierSetC2::atomic_cmpxchg_bool_at_resolved(C2AtomicParseAcces
     }
     access.set_raw_access(load_store);
     pin_atomic_op(access);
+    post_barrier(kit, kit->control(), access.raw_access(), access.base(),
+                 access.addr().node(), access.alias_idx(), new_val, T_OBJECT, true);
     return load_store;
   }
   return BarrierSetC2::atomic_cmpxchg_bool_at_resolved(access, expected_val, new_val, value_type);
@@ -708,6 +809,8 @@ Node* ShenandoahBarrierSetC2::atomic_xchg_at_resolved(C2AtomicParseAccess& acces
     shenandoah_write_barrier_pre(kit, false /* do_load */,
                                  nullptr, nullptr, max_juint, nullptr, nullptr,
                                  result /* pre_val */, T_OBJECT);
+    post_barrier(kit, kit->control(), access.raw_access(), access.base(),
+                 access.addr().node(), access.alias_idx(), val, T_OBJECT, true);
   }
   return result;
 }
@@ -838,7 +941,7 @@ void ShenandoahBarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCo
     Node* gc_state    = phase->transform_later(new LoadBNode(ctrl, mem, gc_state_addr, gc_state_adr_type, TypeInt::BYTE, MemNode::unordered));
     int flags = ShenandoahHeap::HAS_FORWARDED;
     if (ShenandoahIUBarrier) {
-      flags |= ShenandoahHeap::MARKING;
+      flags |= ShenandoahHeap::YOUNG_MARKING;
     }
     Node* stable_and  = phase->transform_later(new AndINode(gc_state, phase->igvn().intcon(flags)));
     Node* stable_cmp  = phase->transform_later(new CmpINode(stable_and, phase->igvn().zerocon(T_INT)));
@@ -906,9 +1009,25 @@ void ShenandoahBarrierSetC2::unregister_potential_barrier_node(Node* node) const
   }
 }
 
-void ShenandoahBarrierSetC2::eliminate_gc_barrier(PhaseMacroExpand* macro, Node* n) const {
-  if (is_shenandoah_wb_pre_call(n)) {
-    shenandoah_eliminate_wb_pre(n, &macro->igvn());
+void ShenandoahBarrierSetC2::eliminate_gc_barrier(PhaseMacroExpand* macro, Node* node) const {
+  if (is_shenandoah_wb_pre_call(node)) {
+    shenandoah_eliminate_wb_pre(node, &macro->igvn());
+  }
+  if (node->Opcode() == Op_CastP2X && ShenandoahHeap::heap()->mode()->is_generational()) {
+    Node* shift = node->unique_out();
+    Node* addp = shift->unique_out();
+    for (DUIterator_Last jmin, j = addp->last_outs(jmin); j >= jmin; --j) {
+      Node* mem = addp->last_out(j);
+      if (UseCondCardMark && mem->is_Load()) {
+        assert(mem->Opcode() == Op_LoadB, "unexpected code shape");
+        // The load is checking if the card has been written so
+        // replace it with zero to fold the test.
+        macro->replace_node(mem, macro->intcon(0));
+        continue;
+      }
+      assert(mem->is_Store(), "store required");
+      macro->replace_node(mem, mem->in(MemNode::Memory));
+    }
   }
 }
 
