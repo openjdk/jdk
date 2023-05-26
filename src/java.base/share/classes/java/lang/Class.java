@@ -206,7 +206,7 @@ import sun.reflect.misc.ReflectUtil;
  * {@linkplain #getTypeName type name}, {@linkplain #getSimpleName
  * simple name}, and {@linkplain #getCanonicalName canonical name} and
  * all equal to "{@code HelloWorld}".
- * 
+ *
  * @param <T> the type of the class modeled by this {@code Class}
  * object.  For example, the type of {@code String.class} is {@code
  * Class<String>}.  Use {@code Class<?>} if the class being modeled is
