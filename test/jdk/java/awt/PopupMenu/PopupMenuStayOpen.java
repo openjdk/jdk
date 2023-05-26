@@ -61,7 +61,7 @@ public class PopupMenuStayOpen {
                 pom = new PopupMenu();
                 frame.setTitle(nm);
                 frame.setSize(300, 300);
-                frame.setLocation(20, 300);
+                frame.setLocationRelativeTo(null);
                 frame.setVisible(true);
                 pom.add("A long enough line");
 
@@ -99,11 +99,10 @@ public class PopupMenuStayOpen {
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
             robot.delay(500);
 
-            EventQueue.invokeAndWait(() -> {
-                if (!wasActionFired) {
-                    throw new RuntimeException("Popup not visible or has no focus");
-                }
-            });
+
+            if (!wasActionFired) {
+                throw new RuntimeException("Popup not visible or has no focus");
+            }
             System.out.println("Test Pass!!");
         } finally {
             EventQueue.invokeAndWait(() -> {
