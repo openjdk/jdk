@@ -274,8 +274,8 @@ public class TreeMaker implements JCTree.Factory {
         return tree;
     }
 
-    public JCEnhancedForLoop ForeachLoop(JCTree varOrRecordPattern, JCExpression expr, JCStatement body) {
-        JCEnhancedForLoop tree = new JCEnhancedForLoop(varOrRecordPattern, expr, body);
+    public JCEnhancedForLoop ForeachLoop(JCVariableDecl var, JCExpression expr, JCStatement body) {
+        JCEnhancedForLoop tree = new JCEnhancedForLoop(var, expr, body);
         tree.pos = pos;
         return tree;
     }
@@ -293,8 +293,8 @@ public class TreeMaker implements JCTree.Factory {
     }
 
     public JCCase Case(CaseTree.CaseKind caseKind, List<JCCaseLabel> labels,
-                       List<JCStatement> stats, JCTree body) {
-        JCCase tree = new JCCase(caseKind, labels, stats, body);
+                       JCExpression guard, List<JCStatement> stats, JCTree body) {
+        JCCase tree = new JCCase(caseKind, labels, guard, stats, body);
         tree.pos = pos;
         return tree;
     }
@@ -483,6 +483,12 @@ public class TreeMaker implements JCTree.Factory {
         return tree;
     }
 
+    public JCAnyPattern AnyPattern() {
+        JCAnyPattern tree = new JCAnyPattern();
+        tree.pos = pos;
+        return tree;
+    }
+
     public JCBindingPattern BindingPattern(JCVariableDecl var) {
         JCBindingPattern tree = new JCBindingPattern(var);
         tree.pos = pos;
@@ -501,14 +507,8 @@ public class TreeMaker implements JCTree.Factory {
         return tree;
     }
 
-    public JCPatternCaseLabel PatternCaseLabel(JCPattern pat, JCExpression guard) {
-        JCPatternCaseLabel tree = new JCPatternCaseLabel(pat, guard);
-        tree.pos = pos;
-        return tree;
-    }
-
-    public JCParenthesizedPattern ParenthesizedPattern(JCPattern pattern) {
-        JCParenthesizedPattern tree = new JCParenthesizedPattern(pattern);
+    public JCPatternCaseLabel PatternCaseLabel(JCPattern pat) {
+        JCPatternCaseLabel tree = new JCPatternCaseLabel(pat);
         tree.pos = pos;
         return tree;
     }

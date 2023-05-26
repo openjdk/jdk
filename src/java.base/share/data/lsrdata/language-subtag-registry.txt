@@ -1,4 +1,4 @@
-File-Date: 2023-04-13
+File-Date: 2023-05-11
 %%
 Type: language
 Subtag: aa
@@ -47610,6 +47610,23 @@ Subtag: bauddha
 Description: Buddhist Hybrid Sanskrit
 Added: 2010-07-28
 Prefix: sa
+%%
+Type: variant
+Subtag: bciav
+Description: BCI Blissymbolics AV
+Added: 2023-05-11
+Prefix: zbl
+Comments: Name given to a subset of the variety of Blissymbolics curated
+  by Blissymbolics Communication International, as represented by
+  entries in the BCI Authorized Vocabulary
+%%
+Type: variant
+Subtag: bcizbl
+Description: BCI Blissymbolics
+Added: 2023-05-11
+Prefix: zbl
+Comments: Name given to the variety of Blissymbolics curated by
+  Blissymbolics Communication International
 %%
 Type: variant
 Subtag: biscayan

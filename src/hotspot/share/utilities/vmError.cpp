@@ -190,6 +190,8 @@ static bool stack_has_headroom(size_t headroom) {
 }
 
 #ifdef ASSERT
+PRAGMA_DIAG_PUSH
+PRAGMA_INFINITE_RECURSION_IGNORED
 void VMError::reattempt_test_hit_stack_limit(outputStream* st) {
   if (stack_has_headroom(_reattempt_required_stack_headroom)) {
     // Use all but (_reattempt_required_stack_headroom - K) unguarded stack space.
@@ -220,6 +222,7 @@ void VMError::reattempt_test_hit_stack_limit(outputStream* st) {
   }
   controlled_crash(14);
 }
+PRAGMA_DIAG_POP
 #endif // ASSERT
 
 bool VMError::can_reattempt_step(const char* &stop_reason) {

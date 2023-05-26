@@ -46,8 +46,6 @@ import toolbox.ToolBox;
 
 public class SourceLevelChecks extends TestRunner {
 
-    private static final String JAVA_VERSION = System.getProperty("java.specification.version");
-
     ToolBox tb;
 
     public static void main(String... args) throws Exception {
@@ -76,7 +74,7 @@ public class SourceLevelChecks extends TestRunner {
                    }
                }
                """,
-               "Test.java:5:18: compiler.err.preview.feature.disabled.plural: (compiler.misc.feature.pattern.switch)",
+               "Test.java:5:18: compiler.err.feature.not.supported.in.source.plural: (compiler.misc.feature.pattern.switch), 17, 21",
                "1 error");
     }
 
@@ -92,7 +90,7 @@ public class SourceLevelChecks extends TestRunner {
                    }
                }
                """,
-               "Test.java:4:26: compiler.err.preview.feature.disabled.plural: (compiler.misc.feature.pattern.switch)",
+               "Test.java:4:26: compiler.err.feature.not.supported.in.source.plural: (compiler.misc.feature.pattern.switch), 17, 21",
                "1 error");
     }
 
@@ -109,7 +107,7 @@ public class SourceLevelChecks extends TestRunner {
                    }
                }
                """,
-               "Test.java:5:18: compiler.err.preview.feature.disabled.plural: (compiler.misc.feature.pattern.switch)",
+               "Test.java:5:18: compiler.err.feature.not.supported.in.source.plural: (compiler.misc.feature.pattern.switch), 17, 21",
                "1 error");
     }
 
@@ -121,12 +119,12 @@ public class SourceLevelChecks extends TestRunner {
                public class Test {
                    private void test(Integer i) {
                        switch (i) {
-                           case default:
+                           case null, default:
                        }
                    }
                }
                """,
-               "Test.java:5:18: compiler.err.preview.feature.disabled.plural: (compiler.misc.feature.pattern.switch)",
+               "Test.java:5:24: compiler.err.feature.not.supported.in.source.plural: (compiler.misc.feature.pattern.switch), 17, 21",
                "1 error");
     }
 
@@ -140,8 +138,7 @@ public class SourceLevelChecks extends TestRunner {
 
         var log =
                 new JavacTask(tb)
-                    .options("-source", "11",
-                             "-Xlint:-options",
+                    .options("--release", "17",
                              "-XDrawDiagnostics")
                     .outdir(classes)
                     .files(tb.findJavaFiles(src))

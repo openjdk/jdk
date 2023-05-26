@@ -472,8 +472,6 @@ public:
   }
 
   static void allocate_shared_path_table(TRAPS);
-  static void copy_shared_path_table(ClassLoaderData* loader_data, TRAPS);
-  static void clone_shared_path_table(TRAPS);
   static int add_shared_classpaths(int i, const char* which, ClassPathEntry *cpe, TRAPS);
   static void check_nonempty_dir_in_shared_path_table();
   bool check_module_paths();

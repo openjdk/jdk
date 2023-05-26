@@ -232,7 +232,7 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
                                           bool& is_accessible,
                                           Klass* loading_klass);
   static void   get_field_by_index_impl(InstanceKlass* loading_klass, fieldDescriptor& fd,
-                                        int field_index);
+                                        int field_index, Bytecodes::Code bc);
   static Method*  get_method_by_index_impl(const constantPoolHandle& cpool,
                                            int method_index, Bytecodes::Code bc,
                                            InstanceKlass* loading_klass);
@@ -279,7 +279,9 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
   // Ensures that a JVMCI shared library JavaVM exists for this runtime.
   // If the JavaVM was created by this call, then the thread-local JNI
   // interface pointer for the JavaVM is returned otherwise null is returned.
-  JNIEnv* init_shared_library_javavm();
+  // If this method tried to create the JavaVM but failed, the error code returned
+  // by JNI_CreateJavaVM is returned in create_JavaVM_err.
+  JNIEnv* init_shared_library_javavm(int* create_JavaVM_err);
 
   // Determines if the JVMCI shared library JavaVM exists for this runtime.
   bool has_shared_library_javavm() { return _shared_library_javavm != nullptr; }
@@ -413,7 +415,7 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
                                      bool& is_accessible,
                                      Klass* loading_klass);
   static void   get_field_by_index(InstanceKlass* loading_klass, fieldDescriptor& fd,
-                                   int field_index);
+                                   int field_index, Bytecodes::Code bc);
   static Method*  get_method_by_index(const constantPoolHandle& cpool,
                                       int method_index, Bytecodes::Code bc,
                                       InstanceKlass* loading_klass);
