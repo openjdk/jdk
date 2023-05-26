@@ -218,12 +218,12 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
                 this.pos = BUF_SIZE; // trigger re-creation on first use
             }
 
-            private static UUID fromRandom(long lsb, long msb) {
+            private static UUID fromRandom(long msb, long lsb) {
                 // set version to 3
-                lsb = (lsb & (0xFFFF_FFFF_FFFF_0FFFL)) | 0x0000_0000_0000_4000L;
+                msb = (msb & (0xFFFF_FFFF_FFFF_0FFFL)) | 0x0000_0000_0000_4000L;
                 // set variant to IETF
-                msb = (msb & (0x3FFF_FFFF_FFFF_FFFFL)) | 0x8000_0000_0000_0000L;
-                return new UUID(lsb, msb);
+                lsb = (lsb & (0x3FFF_FFFF_FFFF_FFFFL)) | 0x8000_0000_0000_0000L;
+                return new UUID(msb, lsb);
             }
 
             public UUID next() {
@@ -234,11 +234,11 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
                     if (stamp != 0) {
                         int p = (int)VH_POS.getAndAdd(this, UUID_CHUNK);
                         if (p < BUF_SIZE) {
-                            long lsb = ByteArray.getLong(buf, p);
-                            long msb = ByteArray.getLong(buf, p + 8);
+                            long msb = ByteArray.getLong(buf, p);
+                            long lsb = ByteArray.getLong(buf, p + 8);
                             if (lock.validate(stamp)) {
                                 // Success: there were no buffer changes. Construct the UUID.
-                                return fromRandom(lsb, msb);
+                                return fromRandom(msb, lsb);
                             }
                         }
                     }
@@ -256,9 +256,9 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
                     if ((int)VH_POS.get(this) > 0) {
                         int p = (int)VH_POS.getAndAdd(this, UUID_CHUNK);
                         if (p < BUF_SIZE) {
-                            long lsb = ByteArray.getLong(buf, p);
-                            long msb = ByteArray.getLong(buf, p + 8);
-                            return fromRandom(lsb, msb);
+                            long msb = ByteArray.getLong(buf, p);
+                            long lsb = ByteArray.getLong(buf, p + 8);
+                            return fromRandom(msb, lsb);
                         }
                     }
 
@@ -270,9 +270,9 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
                     // so we know we are the only thread here.
                     VH_POS.set(this, UUID_CHUNK);
 
-                    long lsb = ByteArray.getLong(buf, 0);
-                    long msb = ByteArray.getLong(buf, 8);
-                    return fromRandom(lsb, msb);
+                    long msb = ByteArray.getLong(buf, 0);
+                    long lsb = ByteArray.getLong(buf, 8);
+                    return fromRandom(msb, lsb);
                 } finally {
                     if (StampedLock.isWriteLockStamp(stamp)) {
                         lock.unlockWrite(stamp);
