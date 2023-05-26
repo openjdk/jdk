@@ -37,9 +37,9 @@ import javax.net.ssl.SSLEngineResult.HandshakeStatus;
 import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.TrustManagerFactory;
 import java.io.FileInputStream;
-import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.security.KeyStore;
+import java.util.HexFormat;
 
 
 public class TestBadDNForPeerCA12 {
@@ -54,11 +54,6 @@ public class TestBadDNForPeerCA12 {
     protected SSLEngine clientEngine;     // client Engine
     protected ByteBuffer clientOut;       // write side of clientEngine
     protected ByteBuffer clientIn;        // read side of clientEngine
-
-    protected SSLEngine serverEngine;     // server Engine
-    protected ByteBuffer serverOut;       // write side of serverEngine
-    protected ByteBuffer serverIn;        // read side of serverEngine
-
     private ByteBuffer cTOs;            // "reliable" transport client->server
     protected ByteBuffer sTOc;          // "reliable" transport server->client
 
@@ -66,18 +61,8 @@ public class TestBadDNForPeerCA12 {
         System.getProperty("test.src", "./")
             + "/../../../../javax/net/ssl/etc/keystore";
 
-
-    /*private static final byte[] clientPayload = new BigInteger
-    ("16030301b3010001af03037fdfe102696c38ec073b3824c29b1965a3efda0741f681bacf3cf4c96f1e957a20ccdde8df4356c8c6eb31bf8ea491c2201e0b2c7d252a431c4219ca97659bb61e004a130213011303c02cc02bcca9c030cca8c02f009fccaa00a3009e00a2c024c028c023c027006b006a00670040c00ac014c009c0130039003800330032009d009c003d003c0035002f00ff0100011c000500050100000000000a00160014001d001700180019001e01000101010201030104000b00020100001100090007020004000000000017000000230000000d002c002a040305030603080708080804080508060809080a080b0401050106010402030303010302020302010202002b00050403040303002d000201010032002c002a040305030603080708080804080508060809080a080b04010501060104020303030103020203020102020033006b0069001d002086466ee63234d08df8a0515b7d8140377e5ef7b4db4487e34e0fee13f8d48d4300170041049a83cc4ad95603386ba222bfed4e28ca574ad7f5be724360fba99a49de0eaf001326efda71faf55449887391d450de8c4165de77db407cc8994064cb4ee3d77c", 16).toByteArray();*/
-    // the following contains a certificate with an invalid/unparseable
-    // distinguished name
-    private static final byte[] serverHello = new BigInteger(
-        "160303007A020000760303A92EBB3113D0C3369466B3037F721543EC257F366B3"
-        + "0B0096FD45D33AB3A067820791EE477A0429904F7114E13CF622C4B65C42926EE5"
-        + "CA2F4065AB2E0FFE66590130200002E002B0002030400330024001D002047E0CA2"
-        + "E7BDBF7F00A52C100A05397B774F22776604F8DCDCCBF156E09D8820D",
-        16).toByteArray();
-    private static final byte[] serverPayload = new BigInteger(
+    // this contains a server response with invalid DNs
+    private static final byte[] serverPayload = (HexFormat.of()).parseHex(
         "160303043d0200005503034a587b770a0a19a66fce09ec3cb61cae9e3307fb1d3"
         + "df27ce90b578a77f3cda420513bdf9f4b654f140ec3a3d04eaff2d49131a11d93f"
         + "d99e0f44a6f3349c72b3ec02c00000d0017000000230000ff010001000b0002750"
@@ -111,7 +96,7 @@ public class TestBadDNForPeerCA12 {
         + "17661311d301b060355040b0c1453756e4a5353452054657374205365726976636"
         + "5003d303b310b3009110355040613025553310d300b060355040a0c044a6176613"
         + "11d301b060355040b0c1453756e4a535345205465737420536572697663650e000"
-        + "000", 16).toByteArray();
+        + "000");
 
     /*
      * The following is to set up the keystores.
@@ -170,65 +155,42 @@ public class TestBadDNForPeerCA12 {
         createSSLEngines();
         createBuffers();
 
-        /*System.out.println("injecting client hello");
-        cTOs = ByteBuffer.wrap(clientPayload);*/
+        System.out.println("forcing client hello");
+        //sTOc = ByteBuffer.wrap(serverHello);
+        SSLEngineResult clientResult = clientEngine.wrap(clientOut, cTOs);
+        runDelegatedTasks(clientResult, clientEngine);
 
-        System.out.println("injecting server hello");
-        sTOc = ByteBuffer.wrap(serverHello);
+        cTOs.flip();
 
-        sTOc.flip();
-
-
-        /*SSLEngineResult serverResult = serverEngine.unwrap(cTOs, serverIn);
-        System.out.println("server unwrap: " + serverResult);
-        runDelegatedTasks(serverResult, serverEngine);*/
+        sTOc = ByteBuffer.wrap(serverPayload);
 
         SSLEngineResult clientHelloResult = clientEngine.unwrap(sTOc, clientIn);
         System.out.println("client unwrap: " + clientHelloResult);
         runDelegatedTasks(clientHelloResult, clientEngine);
 
         sTOc.compact();
+        cTOs.compact();
 
-        System.out.println("injecting server response");
-        sTOc = ByteBuffer.wrap(serverPayload);
+        SSLEngineResult clientExGen = clientEngine.wrap(clientOut, cTOs);
+        runDelegatedTasks(clientExGen, clientEngine);
 
-        sTOc.flip();
-
-        SSLEngineResult clientResult = clientEngine.unwrap(sTOc, clientIn);
-        System.out.println("client unwrap: " + clientResult);
-        runDelegatedTasks(clientResult, clientEngine);
     }
 
-    private void createSSLEngines() throws Exception {
-
-        serverEngine = sslc.createSSLEngine();
-
-        serverEngine.setEnabledProtocols(new String[] {proto});
-
-        serverEngine.setUseClientMode(false);
-        serverEngine.setNeedClientAuth(true);
-
+    private void createSSLEngines() {
         clientEngine = sslc.createSSLEngine();
 
         clientEngine.setEnabledProtocols(new String[] {proto});
         clientEngine.setUseClientMode(true);
-
     }
 
-
     private void createBuffers() {
-
-        serverIn = ByteBuffer.allocateDirect(65536);
-
-        serverOut = ByteBuffer.wrap("Hi Client, I'm Server".getBytes());
-
         cTOs = ByteBuffer.allocateDirect(65536);
 
         clientIn = ByteBuffer.allocateDirect(65536);
 
         clientOut = ByteBuffer.wrap("Hi Server, I'm Client".getBytes());
 
-        sTOc = ByteBuffer.allocate(65536);
+        sTOc = ByteBuffer.allocateDirect(65536);
     }
 
     private static void runDelegatedTasks(SSLEngineResult result,
