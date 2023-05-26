@@ -43,7 +43,7 @@ public final class Options implements Classfile.Context {
     public ConstantPoolSharingOption cpSharing = ConstantPoolSharingOption.SHARE_CONSTANT_POOL;
     public ShortJumpsOption fixJumps = ShortJumpsOption.FIX_SHORT_JUMPS;
     public DeadCodeOption patchCode = DeadCodeOption.PATCH_DEAD_CODE;
-    public DeadLabelsOption filterDeadLabels = DeadLabelsOption.FILTER_DEAD_LABELS;
+    public DeadLabelsOption filterDeadLabels = DeadLabelsOption.FAIL_ON_DEAD_LABELS;
     public ClassHierarchyResolverOption classHierarchyResolver = new ClassHierarchyResolverOption(DEFAULT_CLASS_HIERARCHY_RESOLVER);
     public AttributeMapperOption attributeMapper = new AttributeMapperOption(new Function<>() {
         @Override

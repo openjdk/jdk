@@ -54,7 +54,8 @@ import java.lang.reflect.AccessFlag;
 class StackMapsTest {
 
     private byte[] buildDeadCode() {
-        return Classfile.Context.of(Classfile.Option.generateStackmap(false), Classfile.Option.patchDeadCode(false)).build(
+        return Classfile.Context.of(Classfile.StackMapsOption.DO_NOT_GENERATE,
+                                    Classfile.DeadCodeOption.KEEP_DEAD_CODE).build(
                 ClassDesc.of("DeadCodePattern"),
                 clb -> clb.withMethodBody(
                                 "twoReturns",
@@ -96,7 +97,7 @@ class StackMapsTest {
 
     @Test
     void testDeadCodePatternFail() throws Exception {
-        var error = assertThrows(IllegalStateException.class, () -> testTransformedStackMaps(buildDeadCode(), Classfile.Option.patchDeadCode(false)));
+        var error = assertThrows(IllegalStateException.class, () -> testTransformedStackMaps(buildDeadCode(), Classfile.DeadCodeOption.KEEP_DEAD_CODE));
         assertLinesMatch(
             """
             Unable to generate stack map frame for dead code at bytecode offset 1 of method twoReturns()
