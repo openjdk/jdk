@@ -896,7 +896,7 @@ abstract class CKeyStore extends KeyStoreSpi {
      * @param keystoreBlob In memory keystore.
      * @param keystoreBlobSize Size in bytes of in memory keystore
      */
-    private native void loadKeysOrCertificateChainsFromMemory(byte[] keystoreBlob, 
+    private native void loadKeysOrCertificateChainsFromMemory(byte[] keystoreBlob,
             int keystoreBlobSize) throws KeyStoreException;
 
     /**
