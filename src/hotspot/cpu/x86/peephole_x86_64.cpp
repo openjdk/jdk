@@ -23,7 +23,6 @@
  */
 #include "precompiled.hpp"
 
-#define COMPILER2 1
 #ifdef COMPILER2
 
 #include "peephole_x86_64.hpp"
