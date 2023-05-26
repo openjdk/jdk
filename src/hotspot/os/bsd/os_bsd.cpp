@@ -1377,8 +1377,34 @@ void os::print_os_info(outputStream* st) {
   VM_Version::print_platform_virtualization_info(st);
 }
 
+#ifdef __APPLE__
+static void print_sysctl_info_string(const char* sysctlkey, outputStream* st, char* buf, size_t size) {
+  if (sysctlbyname(sysctlkey, buf, &size, NULL, 0) >= 0) {
+    st->print_cr("%s:%s", sysctlkey, buf);
+  }
+}
+
+static void print_sysctl_info_uint64(const char* sysctlkey, outputStream* st) {
+  uint64_t val;
+  size_t size=sizeof(uint64_t);
+  if (sysctlbyname(sysctlkey, &val, &size, NULL, 0) >= 0) {
+    st->print_cr("%s:%llu", sysctlkey, val);
+  }
+}
+#endif
+
 void os::pd_print_cpu_info(outputStream* st, char* buf, size_t buflen) {
-  // Nothing to do for now.
+#ifdef __APPLE__
+  print_sysctl_info_string("machdep.cpu.brand_string", st, buf, buflen);
+  print_sysctl_info_uint64("hw.cpufrequency", st);
+  print_sysctl_info_uint64("hw.cpufrequency_min", st);
+  print_sysctl_info_uint64("hw.cpufrequency_max", st);
+  print_sysctl_info_uint64("hw.cachelinesize", st);
+  print_sysctl_info_uint64("hw.l1icachesize", st);
+  print_sysctl_info_uint64("hw.l1dcachesize", st);
+  print_sysctl_info_uint64("hw.l2cachesize", st);
+  print_sysctl_info_uint64("hw.l3cachesize", st);
+#endif
 }
 
 void os::get_summary_cpu_info(char* buf, size_t buflen) {

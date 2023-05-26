@@ -88,6 +88,7 @@
 #include <shlobj.h>
 
 #include <malloc.h>
+#include <powerbase.h>
 #include <signal.h>
 #include <direct.h>
 #include <errno.h>
@@ -1925,8 +1926,65 @@ void os::win32::print_windows_version(outputStream* st) {
   st->cr();
 }
 
+// Processor Power Information; missing from Windows headers
+typedef struct _PROCESSOR_POWER_INFORMATION {
+    ULONG Number;
+    ULONG MaxMhz;     // max specified clock frequency of the system processor
+    ULONG CurrentMhz; // max specified processor clock frequency mult. by current processor throttle
+    ULONG MhzLimit;   // max specified processor clock frequency mult. by current processor thermal throttle limit
+    ULONG MaxIdleState;
+    ULONG CurrentIdleState;
+} PROCESSOR_POWER_INFORMATION;
+
 void os::pd_print_cpu_info(outputStream* st, char* buf, size_t buflen) {
-  // Nothing to do for now.
+  int proc_count = os::processor_count();
+  // handle potential early cases where processor count is not yet set
+  if (proc_count < 1) {
+    SYSTEM_INFO si;
+    GetSystemInfo(&si);
+    proc_count = si.dwNumberOfProcessors;
+  }
+
+  size_t sz_check = sizeof(PROCESSOR_POWER_INFORMATION) * (size_t)proc_count;
+  NTSTATUS status = ::CallNtPowerInformation(ProcessorInformation, NULL, 0, buf, (ULONG) buflen);
+  int max_mhz = -1, current_mhz = -1, mhz_limit = -1;
+  bool same_vals_for_all_cpus = true;
+
+  if (status == ERROR_SUCCESS) {
+    PROCESSOR_POWER_INFORMATION* pppi = (PROCESSOR_POWER_INFORMATION*) buf;
+    for (int i = 0; i < proc_count; i++) {
+      if (i == 0) {
+        max_mhz = (int) pppi->MaxMhz;
+        current_mhz = (int) pppi->CurrentMhz;
+        mhz_limit = (int) pppi->MhzLimit;
+      } else {
+        if (max_mhz != (int) pppi->MaxMhz ||
+            current_mhz != (int) pppi->CurrentMhz ||
+            mhz_limit != (int) pppi->MhzLimit) {
+          same_vals_for_all_cpus = false;
+          break;
+        }
+      }
+      // avoid iteration in case buf is too small to hold all proc infos
+      if (sz_check > buflen) break;
+      pppi++;
+    }
+
+    if (same_vals_for_all_cpus && max_mhz != -1) {
+      st->print_cr("Processor Information for all %d processors :", proc_count);
+      st->print_cr("  Max Mhz: %d, Current Mhz: %d, Mhz Limit: %d", max_mhz, current_mhz, mhz_limit);
+      return;
+    }
+    // differing values, iterate again
+    pppi = (PROCESSOR_POWER_INFORMATION*) buf;
+    for (int i = 0; i < proc_count; i++) {
+      st->print_cr("Processor Information for processor %d", (int) pppi->Number);
+      st->print_cr("  Max Mhz: %d, Current Mhz: %d, Mhz Limit: %d",
+                     (int) pppi->MaxMhz, (int) pppi->CurrentMhz, (int) pppi->MhzLimit);
+      if (sz_check > buflen) break;
+      pppi++;
+    }
+  }
 }
 
 void os::get_summary_cpu_info(char* buf, size_t buflen) {
