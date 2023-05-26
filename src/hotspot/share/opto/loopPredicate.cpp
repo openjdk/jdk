@@ -845,7 +845,7 @@ bool IdealLoopTree::is_range_check_if(IfProjNode* if_success_proj, PhaseIdealLoo
     return false;
   }
   if (if_success_proj->is_IfFalse()) {
-    assert(!if_success_proj->is_RangeCheck(),
+    assert(!iff->is_RangeCheck(),
            "can only be IfNode because RangeCheckNodes always have trap on false projection");
     // We have a trap on the true projection (let's assume offset = 0 and scale = 1, but it would also apply if not):
     // if (iv <u limit) {
