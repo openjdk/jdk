@@ -27,6 +27,7 @@
  * @library /test/lib
  * @summary verify correct exception handling in the event of an unparseable
  *  DN in the peer CA
+ * @run main/othervm TestBadDNForPeerCA
  */
 
 import javax.net.ssl.KeyManagerFactory;
