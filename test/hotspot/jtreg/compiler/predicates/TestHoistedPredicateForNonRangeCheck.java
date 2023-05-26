@@ -52,6 +52,7 @@ import java.util.Date;
 
 public class TestHoistedPredicateForNonRangeCheck {
     static int iFld, iFld2;
+    static int[] iArr = new int[100];
 
     public static void main(String[] args) {
         if (args.length == 0) {
@@ -61,8 +62,8 @@ public class TestHoistedPredicateForNonRangeCheck {
                 iFld = 0;
                 iFld2 = 0;
                 test();
-                Asserts.assertEQ(iFld, 901, "wrong value");
-                Asserts.assertEQ(iFld2, 100, "wrong value");
+                Asserts.assertEQ(iFld, 3604, "wrong value");
+                Asserts.assertEQ(iFld2, 400, "wrong value");
             }
         } else {
             boolean flag = false;
@@ -74,16 +75,42 @@ public class TestHoistedPredicateForNonRangeCheck {
     }
 
     public static void test() {
-        // (Inverted) Hoisted Predicate checks lower and upper bound: -1 < 0 && 1000 >= 100 -> always true and the predicate is removed
-        // while template assertion predicates are kept. When splitting this loop further, we insert an assertion predicate which
-        // fails for i = 0 and we halt. When not splitting this loop (with LoopMaxUnroll=0), we have a wrong execution due
-        // to never executing iFld2++ (we removed the check and the branch with the trap).
         for (int i = -1; i < 1000; i++) {
-            if (Integer.compareUnsigned(i, 100) < 0) { // Loop Predication creates a Hoisted Range Check Predicate due to trap with Float.isNan().
+            // We hoist this check and insert a Hoisted Predicate for the lower and upper bound:
+            // -1 >=u 100 && 1000 >= u 100 -> always true and the predicates are removed.
+            // Template Assertion Predicates, however, are kept. When splitting this loop further, we insert an Assertion
+            // Predicate which fails for i = 0 and we halt.
+            // When not splitting this loop (with LoopMaxUnroll=0), we have a wrong execution due to never executing
+            // iFld2++ (we remove the check and the branch with the trap when creating the Hoisted Predicates).
+            if (Integer.compareUnsigned(i, 100) < 0) {
                 iFld2++;
                 Float.isNaN(34); // Float class is unloaded with -Xcomp -> inserts trap
             } else {
                 iFld++;
+            }
+
+            // Same but flipped condition and moved trap to other branch - result is the same.
+            if (Integer.compareUnsigned(i, 100) >= 0) { // Loop Predication creates a Hoisted Range Check Predicate due to trap with Float.isNan().
+                iFld++;
+            } else {
+                iFld2++;
+                Float.isNaN(34); // Float class is unloaded with -Xcomp -> inserts trap
+            }
+
+            // Same but with LoadRangeNode.
+            if (Integer.compareUnsigned(i, iArr.length) >= 0) { // Loop Predication creates a Hoisted Range Check Predicate due to trap with Float.isNan().
+                iFld++;
+            } else {
+                iFld2++;
+                Float.isNaN(34); // Float class is unloaded with -Xcomp -> inserts trap
+            }
+
+            // Same but with LoadRangeNode and flipped condition and moved trap to other branch - result is the same.
+            if (Integer.compareUnsigned(i, iArr.length) >= 0) { // Loop Predication creates a Hoisted Range Check Predicate due to trap with Float.isNan().
+                iFld++;
+            } else {
+                iFld2++;
+                Float.isNaN(34); // Float class is unloaded with -Xcomp -> inserts trap
             }
         }
     }
@@ -99,7 +126,6 @@ public class TestHoistedPredicateForNonRangeCheck {
 
     // Reported in JDK-8307978
     static void testCalendar2(boolean flag) {
-
         flag = !flag;
         Calendar timespan = removeTime(new Date(), flag);
         timespan.getTime();

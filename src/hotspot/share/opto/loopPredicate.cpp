@@ -831,8 +831,9 @@ class Invariance : public StackObj {
 // Returns true if the predicate of iff is in "scale*iv + offset u< load_range(ptr)" format
 // Note: this function is particularly designed for loop predication. We require load_range
 //       and offset to be loop invariant computed on the fly by "invar"
-bool IdealLoopTree::is_range_check_if(IfNode *iff, PhaseIdealLoop *phase, BasicType bt, Node *iv, Node *&range,
+bool IdealLoopTree::is_range_check_if(IfProjNode* if_success_proj, PhaseIdealLoop *phase, BasicType bt, Node *iv, Node *&range,
                                       Node *&offset, jlong &scale) const {
+  IfNode* iff = if_success_proj->in(0)->as_If();
   if (!is_loop_exit(iff)) {
     return false;
   }
@@ -841,6 +842,47 @@ bool IdealLoopTree::is_range_check_if(IfNode *iff, PhaseIdealLoop *phase, BasicT
   }
   const BoolNode *bol = iff->in(1)->as_Bool();
   if (bol->_test._test != BoolTest::lt) {
+    return false;
+  }
+  if (if_success_proj->is_IfFalse()) {
+    assert(!if_success_proj->is_RangeCheck(),
+           "can only be IfNode because RangeCheckNodes always have trap on false projection");
+    // We have a trap on the true projection (let's assume offset = 0 and scale = 1, but it would also apply if not):
+    // if (iv <u limit) {
+    //   trap();
+    // }
+    //
+    // This needs to be flipped in order to have the trap on the false projection:
+    // if (iv >=u limit) {
+    //
+    // } else {
+    //   trap();
+    // }
+    //
+    // However, this does not match the range check pattern of a RangeCheckNode:
+    // if (iv <u limit) {
+    //
+    // } else {
+    //   trap();
+    // }
+    //
+    // We therefore cannot treat this IfNode as range check anymore because the Hoisted Range Check Predicate could
+    // succeed at runtime (i.e. true for the value of iv in the first loop iteration and true for the value of iv in the
+    // last loop iteration) while the check to be hoisted could fail in other loop iterations.
+    //
+    // Example:
+    // Loop: "for (int i = -1; i < 1000; i++)"
+    // iv_1 = iv in first loop iteration = -1
+    // iv_last = iv in the last loop iteration = 999
+    // limit = 100
+    //
+    // Hoisted Range Check Predicate is always true:
+    // iv_1 >=u limit && iv_last >=u limit  <=>
+    // -1 >=u 100 && 999 >= u 100
+    //
+    // But for 0 <= x < 100: x >=u 100 is false.
+    // We would wrongly skip the branch with the trap() and possibly miss to execute some other statements inside that
+    // trap() branch.
     return false;
   }
   if (!bol->in(1)->is_Cmp()) {
@@ -853,13 +895,9 @@ bool IdealLoopTree::is_range_check_if(IfNode *iff, PhaseIdealLoop *phase, BasicT
   range = cmp->in(2);
   if (range->Opcode() != Op_LoadRange) {
     const TypeInteger* tinteger = phase->_igvn.type(range)->isa_integer(bt);
-    if (!iff->is_RangeCheck() || tinteger == nullptr || tinteger->empty() || tinteger->lo_as_long() < 0) {
+    if (tinteger == nullptr || tinteger->empty() || tinteger->lo_as_long() < 0) {
       // Allow predication on positive values that aren't LoadRanges. This allows optimization of loops where the
       // length of the array is a known value and doesn't need to be loaded back from the array.
-      // This only works for actual RangeCheckNodes where we have a guarantee that if the range check of the first loop
-      // iteration (initial value of induction variable) and the last loop iteration (last value of induction variable)
-      // succeed, then, by implication, the range checks for the other loop iterations will also succeed. This is not
-      // a guarantee for a normal IfNode here.
       return false;
     }
   } else {
@@ -873,14 +911,14 @@ bool IdealLoopTree::is_range_check_if(IfNode *iff, PhaseIdealLoop *phase, BasicT
   return true;
 }
 
-bool IdealLoopTree::is_range_check_if(IfNode *iff, PhaseIdealLoop *phase, Invariance& invar DEBUG_ONLY(COMMA ProjNode *predicate_proj)) const {
+bool IdealLoopTree::is_range_check_if(IfProjNode* if_success_proj, PhaseIdealLoop *phase, Invariance& invar DEBUG_ONLY(COMMA ProjNode *predicate_proj)) const {
   Node* range = nullptr;
   Node* offset = nullptr;
   jlong scale = 0;
   Node* iv = _head->as_BaseCountedLoop()->phi();
   Compile* C = Compile::current();
   const uint old_unique_idx = C->unique();
-  if (!is_range_check_if(iff, phase, T_INT, iv, range, offset, scale)) {
+  if (!is_range_check_if(if_success_proj, phase, T_INT, iv, range, offset, scale)) {
     return false;
   }
   if (!invar.is_invariant(range)) {
@@ -1325,12 +1363,12 @@ void PhaseIdealLoop::loop_predication_follow_branches(Node *n, IdealLoopTree *lo
   } while (stack.size() > 0);
 }
 
-bool PhaseIdealLoop::loop_predication_impl_helper(IdealLoopTree* loop, IfProjNode* if_proj,
+bool PhaseIdealLoop::loop_predication_impl_helper(IdealLoopTree* loop, IfProjNode* if_success_proj,
                                                   ParsePredicateSuccessProj* parse_predicate_proj, CountedLoopNode* cl,
                                                   ConNode* zero, Invariance& invar, Deoptimization::DeoptReason reason) {
   // Following are changed to nonnull when a predicate can be hoisted
   IfProjNode* new_predicate_proj = nullptr;
-  IfNode*   iff  = if_proj->in(0)->as_If();
+  IfNode*   iff  = if_success_proj->in(0)->as_If();
   Node*     test = iff->in(1);
   if (!test->is_Bool()) { //Conv2B, ...
     return false;
@@ -1346,7 +1384,7 @@ bool PhaseIdealLoop::loop_predication_impl_helper(IdealLoopTree* loop, IfProjNod
 
     // Negate test if necessary (Parse Predicates always have IfTrue as success projection and IfFalse as uncommon trap)
     bool negated = false;
-    if (if_proj->is_IfFalse()) {
+    if (if_success_proj->is_IfFalse()) {
       new_predicate_bol = new BoolNode(new_predicate_bol->in(1), new_predicate_bol->_test.negate());
       register_new_node(new_predicate_bol, ctrl);
       negated = true;
@@ -1363,7 +1401,7 @@ bool PhaseIdealLoop::loop_predication_impl_helper(IdealLoopTree* loop, IfProjNod
       loop->dump_head();
     }
 #endif
-  } else if (cl != nullptr && loop->is_range_check_if(iff, this, invar DEBUG_ONLY(COMMA parse_predicate_proj))) {
+  } else if (cl != nullptr && loop->is_range_check_if(if_success_proj, this, invar DEBUG_ONLY(COMMA parse_predicate_proj))) {
     // Range check for counted loops
     const Node*    cmp    = bol->in(1)->as_Cmp();
     Node*          idx    = cmp->in(1);
@@ -1400,7 +1438,7 @@ bool PhaseIdealLoop::loop_predication_impl_helper(IdealLoopTree* loop, IfProjNod
     // If predicate expressions may overflow in the integer range, longs are used.
     bool overflow = false;
     // Negate test if necessary (Parse Predicates always have IfTrue as success projection and IfFalse as uncommon trap)
-    const bool negate = (if_proj->is_IfFalse());
+    const bool negate = (if_success_proj->is_IfFalse());
 
     // Test the lower bound
     BoolNode* lower_bound_bol = rc_predicate(loop, ctrl, scale, offset, init, limit, stride, rng, false, overflow, negate);
@@ -1425,7 +1463,7 @@ bool PhaseIdealLoop::loop_predication_impl_helper(IdealLoopTree* loop, IfProjNod
     // Fall through into rest of the cleanup code which will move any dependent nodes to the skeleton predicates of the
     // upper bound test. We always need to create skeleton predicates in order to properly remove dead loops when later
     // splitting the predicated loop into (unreachable) sub-loops (i.e. done by unrolling, peeling, pre/main/post etc.).
-    new_predicate_proj = add_template_assertion_predicate(iff, loop, if_proj, parse_predicate_proj, upper_bound_proj, scale,
+    new_predicate_proj = add_template_assertion_predicate(iff, loop, if_success_proj, parse_predicate_proj, upper_bound_proj, scale,
                                                           offset, init, limit, stride, rng, overflow, reason);
 
 #ifndef PRODUCT
@@ -1441,10 +1479,10 @@ bool PhaseIdealLoop::loop_predication_impl_helper(IdealLoopTree* loop, IfProjNod
   }
   assert(new_predicate_proj != nullptr, "sanity");
   // Success - attach condition (new_predicate_bol) to predicate if
-  invar.map_ctrl(if_proj, new_predicate_proj); // so that invariance test can be appropriate
+  invar.map_ctrl(if_success_proj, new_predicate_proj); // so that invariance test can be appropriate
 
   // Eliminate the old If in the loop body
-  dominated_by(new_predicate_proj, iff, if_proj->_con != new_predicate_proj->_con );
+  dominated_by(new_predicate_proj, iff, if_success_proj->_con != new_predicate_proj->_con );
 
   C->set_major_progress();
   return true;

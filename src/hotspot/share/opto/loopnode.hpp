@@ -733,8 +733,8 @@ public:
   bool policy_range_check(PhaseIdealLoop* phase, bool provisional, BasicType bt) const;
 
   // Return TRUE if "iff" is a range check.
-  bool is_range_check_if(IfNode *iff, PhaseIdealLoop *phase, Invariance& invar DEBUG_ONLY(COMMA ProjNode *predicate_proj)) const;
-  bool is_range_check_if(IfNode* iff, PhaseIdealLoop* phase, BasicType bt, Node* iv, Node*& range, Node*& offset,
+  bool is_range_check_if(IfProjNode* if_success_proj, PhaseIdealLoop* phase, Invariance& invar DEBUG_ONLY(COMMA ProjNode* predicate_proj)) const;
+  bool is_range_check_if(IfProjNode* if_success_proj, PhaseIdealLoop* phase, BasicType bt, Node* iv, Node*& range, Node*& offset,
                          jlong& scale) const;
 
   // Estimate the number of nodes required when cloning a loop (body).
@@ -1370,7 +1370,7 @@ public:
 
   // Implementation of the loop predication to promote checks outside the loop
   bool loop_predication_impl(IdealLoopTree *loop);
-  bool loop_predication_impl_helper(IdealLoopTree* loop, IfProjNode* if_proj,
+  bool loop_predication_impl_helper(IdealLoopTree* loop, IfProjNode* if_success_proj,
                                     ParsePredicateSuccessProj* parse_predicate_proj, CountedLoopNode* cl, ConNode* zero,
                                     Invariance& invar, Deoptimization::DeoptReason reason);
   bool loop_predication_should_follow_branches(IdealLoopTree* loop, IfProjNode* predicate_proj, float& loop_trip_cnt);
