@@ -361,8 +361,44 @@ abstract public class TestScaffold extends TargetAdapter {
     }
 
     protected void startUp(String targetName) {
-        List<String> argList = new ArrayList(Arrays.asList(args));
-        argList.add(targetName);
+        /*
+         * args[] contains all VM arguments followed by the app arguments.
+         * We need to insert targetName between the two types of arguments.
+         */
+        boolean expectSecondArg = false;
+        boolean foundFirstAppArg = false;
+        List<String> argList = new ArrayList();
+        for (int i = 0; i < args.length; i++) {
+            String arg = args[i].trim();
+            if (foundFirstAppArg) {
+                argList.add(arg);
+                continue;
+            }
+            if (expectSecondArg) {
+                expectSecondArg = false;
+                argList.add(arg);
+                continue;
+            }
+            if (doubleWordArgs.contains(arg)) {
+                expectSecondArg = true;
+                argList.add(arg);
+                continue;
+            }
+            if (arg.startsWith("-")) {
+                argList.add(arg);
+                continue;
+            }
+            // We reached the first app argument.
+            argList.add(targetName);
+            argList.add(arg);
+            foundFirstAppArg = true;
+        }
+
+        if (!foundFirstAppArg) {
+            // Add the target since we didn't do that in the above loop.
+            argList.add(targetName);
+        }
+
         println("run args: " + argList);
         connect(argList.toArray(args));
         waitForVMStart();
@@ -461,8 +497,11 @@ abstract public class TestScaffold extends TargetAdapter {
         testFailed = true;
     }
 
-    final List<String> doubleWordArgs = List.of("-cp", "-classpath", "--add-opens", "--class-path",
-            "--upgrade-module-path", "--add-modules", "-d", "--add-exports", "--patch-module", "--module-path");
+    final List<String> doubleWordArgs = List.of(
+            "-connect", "-trace",   // special TestScaffold args
+            "-cp", "-classpath", "--add-opens", "--class-path",
+            "--upgrade-module-path", "--add-modules", "-d", "--add-exports",
+            "--patch-module", "--module-path");
 
     private ArgInfo parseArgs(String args[]) {
         ArgInfo argInfo = new ArgInfo();

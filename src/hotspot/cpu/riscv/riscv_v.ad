@@ -3129,13 +3129,14 @@ instruct vstring_compareL(iRegP_R11 str1, iRegI_R12 cnt1, iRegP_R13 str2, iRegI_
 %}
 
 instruct vstring_compareUL(iRegP_R11 str1, iRegI_R12 cnt1, iRegP_R13 str2, iRegI_R14 cnt2,
-                           iRegI_R10 result, vReg_V1 v1, vReg_V2 v2, vReg_V3 v3, vReg_V4 v4, vReg_V5 v5,
+                           iRegI_R10 result, vReg_V1 v1, vReg_V2 v2, vReg_V3 v3, vReg_V4 v4,
+                           vReg_V5 v5, vReg_V6 v6, vReg_V7 v7,
                            vRegMask_V0 v0, iRegP_R28 tmp1, iRegL_R29 tmp2)
 %{
   predicate(UseRVV && ((StrCompNode *)n)->encoding() == StrIntrinsicNode::UL);
   match(Set result(StrComp(Binary str1 cnt1)(Binary str2 cnt2)));
   effect(KILL tmp1, KILL tmp2, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2,
-         TEMP v1, TEMP v2, TEMP v3, TEMP v4, TEMP v5, TEMP v0);
+         TEMP v1, TEMP v2, TEMP v3, TEMP v4, TEMP v5, TEMP v6, TEMP v7, TEMP v0);
 
   format %{"String Compare $str1, $cnt1, $str2, $cnt2 -> $result\t#@string_compareUL" %}
   ins_encode %{
@@ -3147,13 +3148,14 @@ instruct vstring_compareUL(iRegP_R11 str1, iRegI_R12 cnt1, iRegP_R13 str2, iRegI
   ins_pipe(pipe_class_memory);
 %}
 instruct vstring_compareLU(iRegP_R11 str1, iRegI_R12 cnt1, iRegP_R13 str2, iRegI_R14 cnt2,
-                           iRegI_R10 result, vReg_V1 v1, vReg_V2 v2, vReg_V3 v3, vReg_V4 v4, vReg_V5 v5,
+                           iRegI_R10 result, vReg_V1 v1, vReg_V2 v2, vReg_V3 v3, vReg_V4 v4,
+                           vReg_V5 v5, vReg_V6 v6, vReg_V7 v7,
                            vRegMask_V0 v0, iRegP_R28 tmp1, iRegL_R29 tmp2)
 %{
   predicate(UseRVV && ((StrCompNode *)n)->encoding() == StrIntrinsicNode::LU);
   match(Set result(StrComp(Binary str1 cnt1)(Binary str2 cnt2)));
   effect(KILL tmp1, KILL tmp2, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2,
-         TEMP v1, TEMP v2, TEMP v3, TEMP v4, TEMP v5, TEMP v0);
+         TEMP v1, TEMP v2, TEMP v3, TEMP v4, TEMP v5, TEMP v6, TEMP v7, TEMP v0);
 
   format %{ "String Compare $str1, $cnt1, $str2, $cnt2 -> $result\t#@string_compareLU" %}
   ins_encode %{

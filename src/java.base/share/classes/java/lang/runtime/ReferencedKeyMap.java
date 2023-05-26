@@ -95,7 +95,7 @@ final class ReferencedKeyMap<K, V> implements Map<K, V> {
     private final Map<ReferenceKey<K>, V> map;
 
     /**
-     * {@link ReferenceQueue} for cleaning up {@link ReferenceKey.WeakKey EntryKeys}.
+     * {@link ReferenceQueue} for cleaning up {@link WeakReferenceKey EntryKeys}.
      */
     private final ReferenceQueue<K> stale;
 
@@ -153,9 +153,9 @@ final class ReferencedKeyMap<K, V> implements Map<K, V> {
     @SuppressWarnings("unchecked")
     private ReferenceKey<K> entryKey(Object key) {
         if (isSoft) {
-            return new ReferenceKey.SoftKey<>((K)key, stale);
+            return new SoftReferenceKey<>((K)key, stale);
         } else {
-            return new ReferenceKey.WeakKey<>((K)key, stale);
+            return new WeakReferenceKey<>((K)key, stale);
         }
     }
 
@@ -166,7 +166,7 @@ final class ReferencedKeyMap<K, V> implements Map<K, V> {
      */
     @SuppressWarnings("unchecked")
     private ReferenceKey<K> lookupKey(Object key) {
-        return new ReferenceKey.StrongKey<>((K)key);
+        return new StrongReferenceKey<>((K)key);
     }
 
     @Override
@@ -323,7 +323,7 @@ final class ReferencedKeyMap<K, V> implements Map<K, V> {
     @SuppressWarnings("unchecked")
     public void removeStaleReferences() {
         while (true) {
-            ReferenceKey.WeakKey<K> key = (ReferenceKey.WeakKey<K>)stale.poll();
+            WeakReferenceKey<K> key = (WeakReferenceKey<K>)stale.poll();
             if (key == null) {
                 break;
             }

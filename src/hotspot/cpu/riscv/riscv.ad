@@ -904,6 +904,16 @@ reg_class v5_reg(
     V5, V5_H, V5_J, V5_K
 );
 
+// class for vector register v6
+reg_class v6_reg(
+    V6, V6_H, V6_J, V6_K
+);
+
+// class for vector register v7
+reg_class v7_reg(
+    V7, V7_H, V7_J, V7_K
+);
+
 // class for condition codes
 reg_class reg_flags(RFLAGS);
 
@@ -3591,6 +3601,26 @@ operand vReg_V4()
 operand vReg_V5()
 %{
   constraint(ALLOC_IN_RC(v5_reg));
+  match(VecA);
+  match(vReg);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vReg_V6()
+%{
+  constraint(ALLOC_IN_RC(v6_reg));
+  match(VecA);
+  match(vReg);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vReg_V7()
+%{
+  constraint(ALLOC_IN_RC(v7_reg));
   match(VecA);
   match(vReg);
   op_cost(0);
