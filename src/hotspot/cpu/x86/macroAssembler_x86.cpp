@@ -4322,57 +4322,94 @@ void MacroAssembler::lookup_interface_method_stub(Register recv_klass,
 
   int vtable_base = in_bytes(Klass::vtable_start_offset());
   int itentry_off = itableMethodEntry::method_offset_in_bytes();
-  int scan_step   = itableOffsetEntry::size() * wordSize;
-  int vte_size    = vtableEntry::size_in_bytes();
-  int ioffset     = itableOffsetEntry::interface_offset_in_bytes();
-  int ooffset     = itableOffsetEntry::offset_offset_in_bytes();
+  int scan_step = itableOffsetEntry::size() * wordSize;
+  int vte_size = vtableEntry::size_in_bytes();
+  int ioffset = itableOffsetEntry::interface_offset_in_bytes();
+  int ooffset = itableOffsetEntry::offset_offset_in_bytes();
   Address::ScaleFactor times_vte_scale = Address::times_ptr;
   assert(vte_size == wordSize, "adjust times_vte_scale");
 
-  Label loop1, loop1_postloop, loop1_internal, loop2, holder_found, last_load;
-                                               // temp_itbl_klass = recv_klass.itable[0]
-                                               // scan_temp = &recv_klass.itable[0] + step
+  Label L_loop_scan_resolved_entry, L_resolved_found, L_holder_found;
+
+  // temp_itbl_klass = recv_klass.itable[0]
+  // scan_temp = &recv_klass.itable[0] + step
   movl(scan_temp, Address(recv_klass, Klass::vtable_length_offset()));
   movptr(temp_itbl_klass, Address(recv_klass, scan_temp, times_vte_scale, vtable_base + ioffset));
-  lea(scan_temp,          Address(recv_klass, scan_temp, times_vte_scale, vtable_base + ioffset + scan_step));
+  lea(scan_temp, Address(recv_klass, scan_temp, times_vte_scale, vtable_base + ioffset + scan_step));
   xorptr(temp_reg, temp_reg);
 
+  // Initial checks:
+  //   - if (holder_klass != resolved_klass), go to "scan for resolved"
+  //   - if (itable[0] == 0), no such interface
+  //   - if (itable[0] == holder_klass), shortcut to "holder found"
   cmpptr(holder_klass, resolved_klass);
-  jccb(Assembler::notEqual, loop1_internal);   // if (holder_klass != resolved_klass) { goto loop1; }
+  jccb(Assembler::notEqual, L_loop_scan_resolved_entry);
   testptr(temp_itbl_klass, temp_itbl_klass);
-  jccb(Assembler::zero, L_no_such_interface);  // if (itable[0] == 0) goto L_no_such_interface
+  jccb(Assembler::zero, L_no_such_interface);
   cmpptr(holder_klass, temp_itbl_klass);
-  jccb(Assembler::equal, holder_found);        // if (itable[0] == holder_klass) goto holder_found;
+  jccb(Assembler::equal, L_holder_found);
 
-  bind(loop2);                                 // { # loop2: look for holder_klass record in itable
-  movptr(temp_itbl_klass, Address(scan_temp, 0));
-  addptr(scan_temp, scan_step);                //   index += step;
-  cmpptr(holder_klass, temp_itbl_klass);       //
-  jccb(Assembler::equal, holder_found);        //   if (itable[index] == holder_klass) goto holder_found;
-  testptr(temp_itbl_klass, temp_itbl_klass);   //
-  jccb(Assembler::notZero, loop2);             // } while (itable[index] != 0)
-  jmpb(L_no_such_interface);                   //
+  // Loop: Look for holder_klass record in itable
+  //   do {
+  //     tmp = itable[index];
+  //     index += step;
+  //     if (tmp == holder_klass) {
+  //       goto L_holder_found; // Found!
+  //     }
+  //   } while (tmp != 0);
+  //   goto L_no_such_interface // Not found.
+  Label L_scan_holder;
+  bind(L_scan_holder);
+    movptr(temp_itbl_klass, Address(scan_temp, 0));
+    addptr(scan_temp, scan_step);
+    cmpptr(holder_klass, temp_itbl_klass);
+    jccb(Assembler::equal, L_holder_found);
+    testptr(temp_itbl_klass, temp_itbl_klass);
+    jccb(Assembler::notZero, L_scan_holder);
 
-  bind(loop1);                                 // { # loop1: look for resolved_class record in itable
-  movptr(temp_itbl_klass, Address(scan_temp, 0));
-  addptr(scan_temp, scan_step);                //    index += step;
-  bind(loop1_internal);                        //
-  cmpptr(holder_klass, temp_itbl_klass);       //    if (itable[index] == holder_klass) // also check if we have met a holder_klass
-                                               //       temp_reg = itable[index-step-ioffset];
-  cmovl(Assembler::equal, temp_reg, Address(scan_temp, ooffset - ioffset - scan_step));
-  cmpptr(resolved_klass, temp_itbl_klass);     //
-  jccb(Assembler::equal, loop1_postloop);      //    if (itable[index] == resolved_klass) break;
-  testptr(temp_itbl_klass, temp_itbl_klass);   //
-  jccb(Assembler::notZero, loop1);             // } while (itable[index] != 0)
-  jmpb(L_no_such_interface);                   //
-  bind(loop1_postloop);                        // # loop1_postloop:
-  testptr(temp_reg, temp_reg);                 // if (temp_reg == 0) // if we have not met holder_klass yet, do it in loop2
-  jccb(Assembler::zero, loop2);                //   goto loop2;
-  jmpb(last_load);
+  jmpb(L_no_such_interface);
 
-  bind(holder_found);
+  // Loop: Look for resolved_class record in itable
+  //   do {
+  //     tmp = itable[index];
+  //     index += step;
+  //     if (tmp == holder_klass) {
+  //        // Also check if we have met a holder klass
+  //        holder_tmp = itable[index-step-ioffset];
+  //     }
+  //     if (tmp == resolved_klass) {
+  //        goto L_resolved_found;  // Found!
+  //     }
+  //   } while (tmp != 0);
+  //   goto L_no_such_interface // Not found.
+  //
+  Label L_loop_scan_resolved;
+  bind(L_loop_scan_resolved);
+    movptr(temp_itbl_klass, Address(scan_temp, 0));
+    addptr(scan_temp, scan_step);
+    bind(L_loop_scan_resolved_entry);
+    cmpptr(holder_klass, temp_itbl_klass);
+    cmovl(Assembler::equal, temp_reg, Address(scan_temp, ooffset - ioffset - scan_step));
+    cmpptr(resolved_klass, temp_itbl_klass);
+    jccb(Assembler::equal, L_resolved_found);
+    testptr(temp_itbl_klass, temp_itbl_klass);
+    jccb(Assembler::notZero, L_loop_scan_resolved);
+
+  jmpb(L_no_such_interface);
+
+  Label L_ready;
+
+  // See if we already have a holder klass. If not, go and scan for it.
+  bind(L_resolved_found);
+  testptr(temp_reg, temp_reg);
+  jccb(Assembler::zero, L_scan_holder);
+  jmpb(L_ready);
+
+  bind(L_holder_found);
   movl(temp_reg, Address(scan_temp, ooffset - ioffset - scan_step));
-  bind(last_load);                             // temp_reg contains holder_klass vtable offset
+
+  // Finally, temp_reg contains holder_klass vtable offset
+  bind(L_ready);
   assert(itableMethodEntry::size() * wordSize == wordSize, "adjust the scaling in the code below");
   if (temp_reg2 == noreg) { // recv_klass register is clobbered for 32-bit x86 impl
     load_klass(scan_temp, receiver, noreg);
