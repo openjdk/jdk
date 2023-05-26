@@ -409,54 +409,17 @@ JNIEXPORT jbyteArray JNICALL Java_sun_security_mscapi_PRNG_generateSeed
 
 /*
  * Class:     sun_security_mscapi_CKeyStore
- * Method:    loadKeysOrCertificateChains
- * Signature: (Ljava/lang/String;I)V
+ * Method:    internal_loadKeysOrCertificateChains
  */
-JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_loadKeysOrCertificateChains
-  (JNIEnv *env, jobject obj, jstring jCertStoreName, jint jCertStoreLocation)
+void internal_loadKeysOrCertificateChains
+  (JNIEnv *env, jobject obj, HCERTSTORE hCertStore)
 {
-    /**
-     * Certificate in cert store has enhanced key usage extension
-     * property (or EKU property) that is not part of the certificate itself. To determine
-     * if the certificate should be returned, both the enhanced key usage in certificate
-     * extension block and the extension property stored along with the certificate in
-     * certificate store should be examined. Otherwise, we won't be able to determine
-     * the proper key usage from the Java side because the information is not stored as
-     * part of the encoded certificate.
-     */
-
-    const char* pszCertStoreName = NULL;
-    HCERTSTORE hCertStore = NULL;
     PCCERT_CONTEXT pCertContext = NULL;
     wchar_t* pszNameString = NULL; // certificate's friendly name
     DWORD cchNameString = 0;
 
     __try
     {
-        // Open a system certificate store.
-        if ((pszCertStoreName = env->GetStringUTFChars(jCertStoreName, NULL))
-            == NULL) {
-            __leave;
-        }
-
-        if (jCertStoreLocation == KEYSTORE_LOCATION_CURRENTUSER) {
-            hCertStore = ::CertOpenSystemStore(NULL, pszCertStoreName);
-        }
-        else if (jCertStoreLocation == KEYSTORE_LOCATION_LOCALMACHINE) {
-            hCertStore = ::CertOpenStore(CERT_STORE_PROV_SYSTEM_A, 0, NULL,
-                CERT_SYSTEM_STORE_LOCAL_MACHINE, pszCertStoreName);
-        }
-        else {
-            PP("jCertStoreLocation is not a valid value");
-            __leave;
-        }
-
-        if (hCertStore == NULL) {
-
-            ThrowException(env, KEYSTORE_EXCEPTION, GetLastError());
-            __leave;
-        }
-
         // Determine clazz and method ID to generate certificate
         jclass clazzArrayList = env->FindClass("java/util/ArrayList");
         if (clazzArrayList == NULL) {
@@ -728,17 +691,114 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_loadKeysOrCertificateC
     }
     __finally
     {
-        if (hCertStore)
-            ::CertCloseStore(hCertStore, 0);
-
-        if (pszCertStoreName)
-            env->ReleaseStringUTFChars(jCertStoreName, pszCertStoreName);
-
         if (pszNameString)
             delete [] pszNameString;
     }
 }
 
+/*
+ * Class:     sun_security_mscapi_CKeyStore
+ * Method:    loadKeysOrCertificateChains
+ * Signature: (Ljava/lang/String;I)V
+ */
+JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_loadKeysOrCertificateChains
+  (JNIEnv *env, jobject obj, jstring jCertStoreName, jint jCertStoreLocation)
+{
+    /**
+     * Certificate in cert store has enhanced key usage extension
+     * property (or EKU property) that is not part of the certificate itself. To determine
+     * if the certificate should be returned, both the enhanced key usage in certificate
+     * extension block and the extension property stored along with the certificate in
+     * certificate store should be examined. Otherwise, we won't be able to determine
+     * the proper key usage from the Java side because the information is not stored as
+     * part of the encoded certificate.
+     */
+
+    const char* pszCertStoreName = NULL;
+    HCERTSTORE hCertStore = NULL;
+
+    __try
+    {
+        // Open a system certificate store.
+        if ((pszCertStoreName = env->GetStringUTFChars(jCertStoreName, NULL))
+            == NULL) {
+            __leave;
+        }
+
+        if (jCertStoreLocation == KEYSTORE_LOCATION_CURRENTUSER) {
+            hCertStore = ::CertOpenSystemStore(NULL, pszCertStoreName);
+        }
+        else if (jCertStoreLocation == KEYSTORE_LOCATION_LOCALMACHINE) {
+            hCertStore = ::CertOpenStore(CERT_STORE_PROV_SYSTEM_A, 0, NULL,
+                CERT_SYSTEM_STORE_LOCAL_MACHINE, pszCertStoreName);
+        }
+        else {
+            PP("jCertStoreLocation is not a valid value");
+            __leave;
+        }
+
+        if (hCertStore == NULL) {
+
+            ThrowException(env, KEYSTORE_EXCEPTION, GetLastError());
+            __leave;
+        }
+
+        internal_loadKeysOrCertificateChains(env, obj, hCertStore);
+    }
+    __finally
+    {
+        if (hCertStore)
+            ::CertCloseStore(hCertStore, 0);
+
+        if (pszCertStoreName)
+            env->ReleaseStringUTFChars(jCertStoreName, pszCertStoreName);
+    }
+}
+
+/*
+ * Class:     sun_security_mscapi_CKeyStore
+ * Method:    loadKeysOrCertificateChainsFromMemory
+ * Signature: ([BI)V
+ */
+JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_loadKeysOrCertificateChainsFromMemory
+  (JNIEnv *env, jobject obj, jbyteArray jKeyStoreBlob, jint cbKeyStoreBlob)
+{
+    HCERTSTORE hCertStore = NULL;
+    jbyte* pBlobBuffer = NULL;
+
+    __try
+    {
+        // Copy SST blob from Java to native buffer
+        pBlobBuffer = new (env) jbyte[cbKeyStoreBlob];
+        if (pBlobBuffer == NULL) {
+            __leave;
+        }
+        env->GetByteArrayRegion(jKeyStoreBlob, 0, cbKeyStoreBlob, pBlobBuffer);
+
+        CRYPT_DATA_BLOB blob;
+        blob.cbData = cbKeyStoreBlob;
+        blob.pbData = (BYTE*) pBlobBuffer;
+
+        hCertStore = ::CertOpenStore(CERT_STORE_PROV_SERIALIZED, 0, NULL,
+            CERT_STORE_OPEN_EXISTING_FLAG | CERT_STORE_SHARE_CONTEXT_FLAG,
+            &blob);
+
+        if (hCertStore == NULL) {
+            ThrowException(env, KEYSTORE_EXCEPTION, GetLastError());
+            __leave;
+        }
+
+        internal_loadKeysOrCertificateChains(env, obj, hCertStore);
+    }
+    __finally
+    {
+        if (hCertStore)
+            ::CertCloseStore(hCertStore, 0);
+
+        if (pBlobBuffer)
+            delete [] pBlobBuffer;
+    }
+}
 
 /*
  * Class:     sun_security_mscapi_CKey

@@ -56,6 +56,13 @@ abstract class CKeyStore extends KeyStoreSpi {
 
     private static final int LOCATION_CURRENTUSER = 0;
     private static final int LOCATION_LOCALMACHINE = 1;
+    private static final int LOCATION_SST = 2;
+
+    public static final class SST extends CKeyStore {
+        public SST() {
+            super("SST", LOCATION_SST);
+        }
+    }
 
     public static final class MY extends CKeyStore {
         public MY() {
@@ -702,8 +709,12 @@ abstract class CKeyStore extends KeyStoreSpi {
      */
     public void engineLoad(InputStream stream, char[] password)
             throws IOException, NoSuchAlgorithmException, CertificateException {
-        if (stream != null && !keyStoreCompatibilityMode) {
+        if (stream != null && !getRequiresKeyStoreFromStream() && !keyStoreCompatibilityMode) {
             throw new IOException("Keystore input stream must be null");
+        }
+        else if (stream == null && getRequiresKeyStoreFromStream())
+        {
+            throw new IOException("Keystore input stream cannot be null");
         }
 
         if (password != null && !keyStoreCompatibilityMode) {
@@ -725,8 +736,15 @@ abstract class CKeyStore extends KeyStoreSpi {
 
         try {
 
-            // Load keys and/or certificate chains
-            loadKeysOrCertificateChains(getName(), getLocation());
+            if (stream != null && getRequiresKeyStoreFromStream()) {
+                // Load keys and/or certificate chains from input stream
+                byte[] blob = stream.readAllBytes();
+                loadKeysOrCertificateChainsFromMemory(blob, blob.length);
+            }
+            else {
+                // Load keys and/or certificate chains
+                loadKeysOrCertificateChains(getName(), getLocation());
+            }
 
         } catch (KeyStoreException e) {
             throw new IOException(e);
@@ -857,6 +875,13 @@ abstract class CKeyStore extends KeyStoreSpi {
     }
 
     /**
+     * Returns whether the keystore comes from a stream.
+     */
+    private boolean getRequiresKeyStoreFromStream() {
+        return storeLocation == LOCATION_SST;
+    }
+
+    /**
      * Loads keys and/or certificates from keystore into Collection.
      *
      * @param name Name of keystore.
@@ -864,6 +889,15 @@ abstract class CKeyStore extends KeyStoreSpi {
      */
     private native void loadKeysOrCertificateChains(String name,
             int location) throws KeyStoreException;
+
+    /**
+     * Load keys and/or certificates from inmemory keystore into Collection.
+     *
+     * @param keystoreBlob In memory keystore.
+     * @param keystoreBlobSize Size in bytes of in memory keystore
+     */
+    private native void loadKeysOrCertificateChainsFromMemory(byte[] keystoreBlob, 
+            int keystoreBlobSize) throws KeyStoreException;
 
     /**
      * Stores a DER-encoded certificate into the certificate store
