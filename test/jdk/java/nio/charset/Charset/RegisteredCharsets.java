@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,11 @@
 
 /* @test
  * @bug 4473201 4696726 4652234 4482298 4784385 4966197 4267354 5015668
-        6911753 8071447 8186751 8242541
+        6911753 8071447 8186751 8242541 8301119
  * @summary Check that registered charsets are actually registered
  * @modules jdk.charsets
+ * @run main RegisteredCharsets
+ * @run main/othervm -Djdk.charset.GB18030=2000 RegisteredCharsets
  */
 
 import java.io.*;
@@ -254,8 +256,12 @@ public class RegisteredCharsets {
                 });
 
         aliasCheck("GB18030",
+                "2000".equals(System.getProperty("jdk.charset.GB18030")) ?
                 new String[] {
                     "gb18030-2000"
+                } :
+                new String[] {
+                    "gb18030-2022"
                 });
 
         aliasCheck("ISO-2022-KR", new String[] {"csISO2022KR"});

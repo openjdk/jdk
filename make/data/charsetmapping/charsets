@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -477,6 +477,11 @@ charset x-IBM874 IBM874
     alias   ibm-874
     alias   874
 
+# alias for GB18030 is generated at runtime
+charset GB18030 GB18030
+    package sun.nio.cs
+    type    source
+
 ########################################################
 #
 # charsets provided by ExtendedCharsets provider.
@@ -563,11 +568,6 @@ charset GBK GBK                  # Simplified Chinese
     minmax  0x81 0xfe 0x40 0xfe
     alias   windows-936
     alias   CP936
-
-charset GB18030 GB18030
-    package sun.nio.cs.ext
-    type    template
-    alias   gb18030-2000
 
 charset GB2312 EUC_CN
     package sun.nio.cs.ext

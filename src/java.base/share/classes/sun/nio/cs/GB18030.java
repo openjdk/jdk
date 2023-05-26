@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 /*
  */
 
-package $PACKAGE$;
+package sun.nio.cs;
 
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
@@ -34,7 +34,9 @@ import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
+import jdk.internal.misc.VM;
 import sun.nio.cs.Surrogate;
+import sun.security.action.GetPropertyAction;
 
 public class GB18030
     extends Charset
@@ -43,8 +45,14 @@ public class GB18030
     private static final int GB18030_DOUBLE_BYTE = 2;
     private static final int GB18030_FOUR_BYTE = 3;
 
+    // Assumes non-2000 standard if initialized during System.initPhase1(),
+    // as the system property is not ready to be read in that case.
+    static final boolean IS_2000 =
+        VM.initLevel() >= 1 &&
+        "2000".equals(GetPropertyAction.privilegedGetProperty("jdk.charset.GB18030", ""));
+
     public GB18030() {
-        super("GB18030", $ALIASES$);
+        super("GB18030", StandardCharsets.aliases_GB18030());
     }
 
     public boolean contains(Charset cs) {
@@ -1046,7 +1054,8 @@ public class GB18030
         "\u1E26\u1E27\u1E28\u1E29\u1E2A\u1E2B\u1E2C\u1E2D"+
         "\u1E2E\u1E2F\u1E30\u1E31\u1E32\u1E33\u1E34\u1E35"+
         "\u1E36\u1E37\u1E38\u1E39\u1E3A\u1E3B\u1E3C\u1E3D"+
-        "\u1E3E\u1E3F\u1E40\u1E41\u1E42\u1E43\u1E44\u1E45"+
+        (IS_2000 ? "\u1E3E\u1E3F\u1E40\u1E41\u1E42\u1E43\u1E44\u1E45" :
+                   "\u1E3E\uE7C7\u1E40\u1E41\u1E42\u1E43\u1E44\u1E45")+
         "\u1E46\u1E47\u1E48\u1E49\u1E4A\u1E4B\u1E4C\u1E4D"+
         "\u1E4E\u1E4F\u1E50\u1E51\u1E52\u1E53\u1E54\u1E55"+
         "\u1E56\u1E57\u1E58\u1E59\u1E5A\u1E5B\u1E5C\u1E5D"+
@@ -2502,8 +2511,10 @@ public class GB18030
         "\u4DF5\u4DF6\u4DF7\u4DF8\u4DF9\u4DFA\u4DFB\u4DFC"+
         "\u4DFD\u4DFE\u4DFF\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD"+
         "\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD"+
-        "\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD"+
-        "\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD"+
+        (IS_2000 ? "\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD"+
+                   "\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD" :
+                   "\uFFFD\uE81E\uE826\uE82B\uE82C\uE832\uE843\uE854"+
+                   "\uE864\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD")+
         "\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD"+
         "\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD"+
         "\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD"+
@@ -2766,8 +2777,10 @@ public class GB18030
         "\uFDF4\uFDF5\uFDF6\uFDF7\uFDF8\uFDF9\uFDFA\uFDFB"+
         "\uFDFC\uFDFD\uFDFE\uFDFF\uFE00\uFE01\uFE02\uFE03"+
         "\uFE04\uFE05\uFE06\uFE07\uFE08\uFE09\uFE0A\uFE0B"+
-        "\uFE0C\uFE0D\uFE0E\uFE0F\uFE10\uFE11\uFE12\uFE13"+
-        "\uFE14\uFE15\uFE16\uFE17\uFE18\uFE19\uFE1A\uFE1B"+
+        (IS_2000 ? "\uFE0C\uFE0D\uFE0E\uFE0F\uFE10\uFE11\uFE12\uFE13"+
+                   "\uFE14\uFE15\uFE16\uFE17\uFE18\uFE19\uFE1A\uFE1B" :
+                   "\uFE0C\uFE0D\uFE0E\uFE0F\uE78D\uE78F\uE78E\uE790"+
+                   "\uE791\uE792\uE793\uE794\uE795\uE796\uFE1A\uFE1B")+
         "\uFE1C\uFE1D\uFE1E\uFE1F\uFE20\uFE21\uFE22\uFE23"+
         "\uFE24\uFE25\uFE26\uFE27\uFE28\uFE29\uFE2A\uFE2B"+
         "\uFE2C\uFE2D\uFE2E\uFE2F\uFE32\uFE45\uFE46\uFE47"+
@@ -3773,10 +3786,14 @@ public class GB18030
         "\uE78A\uE78B\uE78C\u03B1\u03B2\u03B3\u03B4\u03B5"+
         "\u03B6\u03B7\u03B8\u03B9\u03BA\u03BB\u03BC\u03BD"+
         "\u03BE\u03BF\u03C0\u03C1\u03C3\u03C4\u03C5\u03C6"+
-        "\u03C7\u03C8\u03C9\uE78D\uE78E\uE78F\uE790\uE791"+
-        "\uE792\uE793\uFE35\uFE36\uFE39\uFE3A\uFE3F\uFE40"+
-        "\uFE3D\uFE3E\uFE41\uFE42\uFE43\uFE44\uE794\uE795"+
-        "\uFE3B\uFE3C\uFE37\uFE38\uFE31\uE796\uFE33\uFE34"+
+        (IS_2000 ? "\u03C7\u03C8\u03C9\uE78D\uE78E\uE78F\uE790\uE791"+
+                   "\uE792\uE793\uFE35\uFE36\uFE39\uFE3A\uFE3F\uFE40"+
+                   "\uFE3D\uFE3E\uFE41\uFE42\uFE43\uFE44\uE794\uE795"+
+                   "\uFE3B\uFE3C\uFE37\uFE38\uFE31\uE796\uFE33\uFE34" :
+                   "\u03C7\u03C8\u03C9\uFE10\uFE12\uFE11\uFE13\uFE14"+
+                   "\uFE15\uFE16\uFE35\uFE36\uFE39\uFE3A\uFE3F\uFE40"+
+                   "\uFE3D\uFE3E\uFE41\uFE42\uFE43\uFE44\uFE17\uFE18"+
+                   "\uFE3B\uFE3C\uFE37\uFE38\uFE31\uFE19\uFE33\uFE34")+
         "\uE797\uE798\uE799\uE79A\uE79B\uE79C\uE79D\uE79E"+
         "\uE79F\uE706\uE707\uE708\uE709\uE70A\uE70B\uE70C"+
         "\uE70D\uE70E\uE70F\uE710\uE711\uE712\uE713\uE714"+
@@ -3817,7 +3834,8 @@ public class GB18030
         "\uE7C6\u0101\u00E1\u01CE\u00E0\u0113\u00E9\u011B"+
         "\u00E8\u012B\u00ED\u01D0\u00EC\u014D\u00F3\u01D2"+
         "\u00F2\u016B\u00FA\u01D4\u00F9\u01D6\u01D8\u01DA"+
-        "\u01DC\u00FC\u00EA\u0251\uE7C7\u0144\u0148\u01F9"+
+        (IS_2000 ? "\u01DC\u00FC\u00EA\u0251\uE7C7\u0144\u0148\u01F9" :
+                   "\u01DC\u00FC\u00EA\u0251\u1E3F\u0144\u0148\u01F9")+
         "\u0261\uE7C9\uE7CA\uE7CB\uE7CC\u3105\u3106\u3107"+
         "\u3108\u3109\u310A\u310B\u310C\u310D\u310E\u310F"+
         "\u3110\u3111\u3112\u3113\u3114\u3115\u3116\u3117"+
@@ -5868,16 +5886,22 @@ public class GB18030
         "\uE466\uE467\uFA0C\uFA0D\uFA0E\uFA0F\uFA11\uFA13"+
         "\uFA14\uFA18\uFA1F\uFA20\uFA21\uFA23\uFA24\uFA27"+
         "\uFA28\uFA29\u2E81\uE816\uE817\uE818\u2E84\u3473"+
-        "\u3447\u2E88\u2E8B\uE81E\u359E\u361A\u360E\u2E8C"+
-        "\u2E97\u396E\u3918\uE826\u39CF\u39DF\u3A73\u39D0"+
-        "\uE82B\uE82C\u3B4E\u3C6E\u3CE0\u2EA7\uE831\uE832"+
+        (IS_2000 ? "\u3447\u2E88\u2E8B\uE81E\u359E\u361A\u360E\u2E8C"+
+                   "\u2E97\u396E\u3918\uE826\u39CF\u39DF\u3A73\u39D0"+
+                   "\uE82B\uE82C\u3B4E\u3C6E\u3CE0\u2EA7\uE831\uE832" :
+                   "\u3447\u2E88\u2E8B\u9FB4\u359E\u361A\u360E\u2E8C"+
+                   "\u2E97\u396E\u3918\u9FB5\u39CF\u39DF\u3A73\u39D0"+
+                   "\u9FB6\u9FB7\u3B4E\u3C6E\u3CE0\u2EA7\uE831\u9FB8")+
         "\u2EAA\u4056\u415F\u2EAE\u4337\u2EB3\u2EB6\u2EB7"+
         "\uE83B\u43B1\u43AC\u2EBB\u43DD\u44D6\u4661\u464C"+
-        "\uE843\uFFFD\u4723\u4729\u477C\u478D\u2ECA\u4947"+
+        (IS_2000 ? "\uE843\uFFFD\u4723\u4729\u477C\u478D\u2ECA\u4947" :
+                   "\u9FB9\uFFFD\u4723\u4729\u477C\u478D\u2ECA\u4947")+
         "\u497A\u497D\u4982\u4983\u4985\u4986\u499F\u499B"+
-        "\u49B7\u49B6\uE854\uE855\u4CA3\u4C9F\u4CA0\u4CA1"+
+        (IS_2000 ? "\u49B7\u49B6\uE854\uE855\u4CA3\u4C9F\u4CA0\u4CA1" :
+                   "\u49B7\u49B6\u9FBA\uE855\u4CA3\u4C9F\u4CA0\u4CA1")+
         "\u4C77\u4CA2\u4D13\u4D14\u4D15\u4D16\u4D17\u4D18"+
-        "\u4D19\u4DAE\uE864\uE468\uE469\uE46A\uE46B\uE46C"+
+        (IS_2000 ? "\u4D19\u4DAE\uE864\uE468\uE469\uE46A\uE46B\uE46C" :
+                   "\u4D19\u4DAE\u9FBB\uE468\uE469\uE46A\uE46B\uE46C")+
         "\uE46D\uE46E\uE46F\uE470\uE471\uE472\uE473\uE474"+
         "\uE475\uE476\uE477\uE478\uE479\uE47A\uE47B\uE47C"+
         "\uE47D\uE47E\uE47F\uE480\uE481\uE482\uE483\uE484"+
@@ -6895,7 +6919,8 @@ public class GB18030
         "\u3D02\u3D03\u3D04\u3D05\u3D06\u3D07\u3D08\u3D09"+
         "\u3D0A\u3D0B\u3D0C\u3D0D\u3D0E\u3D0F\u3D10\u3D11"+
         "\u3D12\u3D13\u3D14\u3D15\u3D16\u3D17\u3D18\u3D19"+
-        "\u3D1A\u3D1B\u3D1C\u3D1D\u3D1E\u3D1F\u3D20\u3D21"+
+        (IS_2000 ? "\u3D1A\u3D1B\u3D1C\u3D1D\u3D1E\u3D1F\u3D20\u3D21" :
+                   "\u3D1A\u3D1B\u3D1C\u3D1D\u3D1E\u3D1F\u3D20\uA8BC")+
         "\u3D22\u3D23\u3D24\u3D25\u3D26\u3D27\u3D28\u3D29"+
         "\u3D2A\u3D2B\u3D2C\u3D2D\u3D2E\u3D2F\u3D30\u3D31"+
         "\u3D32\u3D33\u3D34\u3D35\u3D36\u3D37\u3D38\u3D39"+
@@ -11054,8 +11079,10 @@ public class GB18030
         "\uFD93\uC1FA\uB9A8\uEDE8\uFD94\uFD95\uFD96\uB9EA"+
         "\uD9DF\uFD97\uFD98\uFD99\uFD9A\uFD9B\u6A63\u6A64"+
         "\u6A65\u6A66\u6A67\u6A68\u6A69\u6A6A\u6A6B\u6A6C"+
-        "\u6A6D\u6A6E\u6A6F\u6A70\u6A71\u6A72\u6A73\u6A74"+
-        "\u6A75\u6A76\u6A77\u6A78\u6A79\u6A7A\u6A7B\u6A7C"+
+        (IS_2000 ? "\u6A6D\u6A6E\u6A6F\u6A70\u6A71\u6A72\u6A73\u6A74"+
+                   "\u6A75\u6A76\u6A77\u6A78\u6A79\u6A7A\u6A7B\u6A7C" :
+                   "\u6A6D\u6A6E\u6A6F\u6A70\uFE59\uFE61\uFE66\uFE67"+
+                   "\uFE6D\uFE7E\uFE90\uFEA0\u6A79\u6A7A\u6A7B\u6A7C")+
         "\u6A7D\u6A7E\u6A7F\u6A80\u6A81\u6A82\u6A83\u6A84"+
         "\u6A85\u6A86\u6A87\u6A88\u6A89\u6A8A\u6A8B\u6A8C"+
         "\u6A8D\u6A8E\u6A8F\u6A90\u6A91\u6A92\u6A93\u6A94"+
@@ -11467,14 +11494,17 @@ public class GB18030
         "\uA2FD\uA2FE\uA4F4\uA4F5\uA4F6\uA4F7\uA4F8\uA4F9"+
         "\uA4FA\uA4FB\uA4FC\uA4FD\uA4FE\uA5F7\uA5F8\uA5F9"+
         "\uA5FA\uA5FB\uA5FC\uA5FD\uA5FE\uA6B9\uA6BA\uA6BB"+
-        "\uA6BC\uA6BD\uA6BE\uA6BF\uA6C0\uA6D9\uA6DA\uA6DB"+
-        "\uA6DC\uA6DD\uA6DE\uA6DF\uA6EC\uA6ED\uA6F3\uA6F6"+
+        (IS_2000 ? "\uA6BC\uA6BD\uA6BE\uA6BF\uA6C0\uA6D9\uA6DA\uA6DB"+
+                   "\uA6DC\uA6DD\uA6DE\uA6DF\uA6EC\uA6ED\uA6F3\uA6F6" :
+                   "\uA6BC\uA6BD\uA6BE\uA6BF\uA6C0\u35E7\u35E9\u35E8"+
+                   "\u35EA\u35EB\u35EC\u35ED\u35EE\u35EF\u35F0\uA6F6")+
         "\uA6F7\uA6F8\uA6F9\uA6FA\uA6FB\uA6FC\uA6FD\uA6FE"+
         "\uA7C2\uA7C3\uA7C4\uA7C5\uA7C6\uA7C7\uA7C8\uA7C9"+
         "\uA7CA\uA7CB\uA7CC\uA7CD\uA7CE\uA7CF\uA7D0\uA7F2"+
         "\uA7F3\uA7F4\uA7F5\uA7F6\uA7F7\uA7F8\uA7F9\uA7FA"+
         "\uA7FB\uA7FC\uA7FD\uA7FE\uA896\uA897\uA898\uA899"+
-        "\uA89A\uA89B\uA89C\uA89D\uA89E\uA89F\uA8A0\uA8BC"+
+        (IS_2000 ? "\uA89A\uA89B\uA89C\uA89D\uA89E\uA89F\uA8A0\uA8BC" :
+                   "\uA89A\uA89B\uA89C\uA89D\uA89E\uA89F\uA8A0\u3D21")+
         "\u2001\uA8C1\uA8C2\uA8C3\uA8C4\uA8EA\uA8EB\uA8EC"+
         "\uA8ED\uA8EE\uA8EF\uA8F0\uA8F1\uA8F2\uA8F3\uA8F4"+
         "\uA8F5\uA8F6\uA8F7\uA8F8\uA8F9\uA8FA\uA8FB\uA8FC"+
@@ -11485,16 +11515,23 @@ public class GB18030
         "\uA9A3\uA9F0\uA9F1\uA9F2\uA9F3\uA9F4\uA9F5\uA9F6"+
         "\uA9F7\uA9F8\uA9F9\uA9FA\uA9FB\uA9FC\uA9FD\uA9FE"+
         "\uD7FA\uD7FB\uD7FC\uD7FD\uD7FE\u200F\uFE51\uFE52"+
-        "\uFE53\u2010\u2011\u2012\u2013\u2014\uFE59\u2015"+
-        "\u2016\u2017\u2018\u2019\u201A\u201B\uFE61\u201C"+
-        "\u201D\u201E\u201F\uFE66\uFE67\u2020\u2021\u2022"+
-        "\u2023\uFE6C\uFE6D\u2024\u2025\u2026\u2027\u2028"+
+        (IS_2000 ? "\uFE53\u2010\u2011\u2012\u2013\u2014\uFE59\u2015"+
+                    "\u2016\u2017\u2018\u2019\u201A\u201B\uFE61\u201C"+
+                    "\u201D\u201E\u201F\uFE66\uFE67\u2020\u2021\u2022"+
+                    "\u2023\uFE6C\uFE6D\u2024\u2025\u2026\u2027\u2028" :
+                    "\uFE53\u2010\u2011\u2012\u2013\u2014\u6A71\u2015"+
+                    "\u2016\u2017\u2018\u2019\u201A\u201B\u6A72\u201C"+
+                    "\u201D\u201E\u201F\u6A73\u6A74\u2020\u2021\u2022"+
+                    "\u2023\uFE6C\u6A75\u2024\u2025\u2026\u2027\u2028")+
         "\u2029\u202A\u202B\uFE76\u202C\u202D\u202E\u202F"+
-        "\u2030\u2031\u2032\uFE7E\u2033\u2034\u2035\u2036"+
+        (IS_2000 ? "\u2030\u2031\u2032\uFE7E\u2033\u2034\u2035\u2036" :
+                   "\u2030\u2031\u2032\u6A76\u2033\u2034\u2035\u2036")+
         "\u2037\u2038\u2039\u203A\u203B\u203C\u203D\u203E"+
-        "\u203F\u2040\u2041\u2042\uFE90\uFE91\u2043\u2044"+
+        (IS_2000 ? "\u203F\u2040\u2041\u2042\uFE90\uFE91\u2043\u2044" :
+                   "\u203F\u2040\u2041\u2042\u6A77\uFE91\u2043\u2044")+
         "\u2045\u2046\u2047\u2048\u2049\u204A\u204B\u204C"+
-        "\u204D\u204E\u204F\u2050\uFEA0\u2051\u2052\u2053"+
+        (IS_2000 ? "\u204D\u204E\u204F\u2050\uFEA0\u2051\u2052\u2053" :
+                   "\u204D\u204E\u204F\u2050\u6A78\u2051\u2052\u2053")+
         "\u2054\u2055\u2056\u2057\u2058\u2059\u205A\u205B"+
         "\u205C\u205D\u205E\u205F\u2060\u2061\u2062\u2063"+
         "\u2064\u2065\u2066\u2067\u2068\u2069\u206A\u206B"+
@@ -12192,8 +12229,10 @@ public class GB18030
         "\u24E3\u24E4\u24E5\u24E6\u24E7\u24E8\u24E9\u24EA"+
         "\u24EB\u24EC\u24ED\u24EE\u24EF\u24F0\u24F1\u24F2"+
         "\u24F3\u24F4\u24F5\u24F6\u24F7\u24F8\u24F9\u24FA"+
-        "\u24FB\u24FC\u24FD\u24FE\u24FF\u2500\u2501\u2502"+
-        "\u2503\u2504\u2505\u2506\u2507\u2508\u2509\u250A"+
+        (IS_2000 ? "\u24FB\u24FC\u24FD\u24FE\u24FF\u2500\u2501\u2502"+
+                   "\u2503\u2504\u2505\u2506\u2507\u2508\u2509\u250A" :
+                   "\uA6D9\uA6DB\uA6DA\uA6DC\uA6DD\uA6DE\uA6DF\uA6EC"+
+                   "\uA6ED\uA6F3\u2505\u2506\u2507\u2508\u2509\u250A")+
         "\u250B\u250C\u250D\u250E\u250F\u2510\u2511\u2512"+
         "\u2513\u2514\u2515\u2516\u2517\u2518\u2519\u251A"+
         "\uA955\uA6F2\u251B\uA6F4\uA6F5\uA6E0\uA6E1\uA6F0"+
@@ -12406,8 +12445,13 @@ public class GB18030
                         // BMP Ranges
                         if (offset <= 0x4A62)
                             da[dp++] = getChar(offset);
-                        else if (offset > 0x4A62 && offset <= 0x82BC)
-                            da[dp++] = (char)(offset + 0x5543);
+                        else if (offset > 0x4A62 && offset <= 0x82BC) {
+                            if (offset >= 0x4A71 && offset <= 0x4A78 && !IS_2000) {
+                                da[dp++] = getChar(offset);
+                            } else {
+                                da[dp++] = (char)(offset + 0x5543);
+                            }
+                        }
                         else if (offset >= 0x82BD && offset <= 0x830D)
                             da[dp++] = getChar(offset);
                         else if (offset >= 0x830D && offset <= 0x93A8)
@@ -12509,8 +12553,13 @@ public class GB18030
                         // BMP Ranges
                         if (offset <= 0x4A62)
                             dst.put(getChar(offset));
-                        else if (offset > 0x4A62 && offset <= 0x82BC)
-                            dst.put((char)(offset + 0x5543));
+                        else if (offset > 0x4A62 && offset <= 0x82BC) {
+                            if (offset >= 0x4A71 && offset <= 0x4A78 && !IS_2000) {
+                                dst.put(getChar(offset));
+                            } else {
+                                dst.put((char)(offset + 0x5543));
+                            }
+                        }
                         else if (offset >= 0x82BD && offset <= 0x830D)
                             dst.put(getChar(offset));
                         else if (offset >= 0x830D && offset <= 0x93A8)
@@ -12620,15 +12669,24 @@ public class GB18030
 
                         condensedKey = (hiByte - 0x20) * 256 + loByte;
 
-                        if (c >= 0xE000 && c < 0xF900)
+                        if (c >= 0xE000 && c < 0xF900) {
+                            if (IS_2000) {
                                 condensedKey += 0x82BD;
+                            } else {
+                                condensedKey = switch (c) {
+                                    case 0xE7C7, 0xE81E, 0xE826, 0xE82B, 0xE82C, 0xE832,
+                                        0xE843, 0xE854, 0xE864 -> condensedKey;
+                                    default -> condensedKey + 0x82BD;
+                                };
+                            }
+                        }
                         else if (c >= 0xF900)
-                                condensedKey += 0x93A9;
+                            condensedKey += 0x93A9;
 
                         if (hiByte > 0x80)
-                             currentState = GB18030_DOUBLE_BYTE;
+                            currentState = GB18030_DOUBLE_BYTE;
                         else
-                             currentState = GB18030_FOUR_BYTE;
+                            currentState = GB18030_FOUR_BYTE;
                     }
                     else if (c >= 0xA4C7 && c <= 0xD7FF) {
                         condensedKey = c - 0x5543;
@@ -12671,7 +12729,7 @@ public class GB18030
                         }
                     sp += inputSize;
                 }
-            return CoderResult.UNDERFLOW;
+                return CoderResult.UNDERFLOW;
             } finally {
                 src.position(sp - src.arrayOffset());
                 dst.position(dp - dst.arrayOffset());
@@ -12711,15 +12769,24 @@ public class GB18030
 
                         condensedKey = (hiByte - 0x20) * 256 + loByte;
 
-                        if (c >= 0xE000 && c < 0xF900)
+                        if (c >= 0xE000 && c < 0xF900) {
+                            if (IS_2000) {
                                 condensedKey += 0x82BD;
+                            } else {
+                                condensedKey = switch (c) {
+                                    case 0xE7C7, 0xE81E, 0xE826, 0xE82B, 0xE82C, 0xE832,
+                                        0xE843, 0xE854, 0xE864 -> condensedKey;
+                                    default -> condensedKey + 0x82BD;
+                                };
+                            }
+                        }
                         else if (c >= 0xF900)
-                                condensedKey += 0x93A9;
+                            condensedKey += 0x93A9;
 
                         if (hiByte > 0x80)
-                             currentState = GB18030_DOUBLE_BYTE;
+                            currentState = GB18030_DOUBLE_BYTE;
                         else
-                             currentState = GB18030_FOUR_BYTE;
+                            currentState = GB18030_FOUR_BYTE;
                     }
                     else if (c >= 0xA4C7 && c <= 0xD7FF) {
                         condensedKey = c - 0x5543;
