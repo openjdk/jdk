@@ -452,19 +452,22 @@ public class Main {
             throw new Fault(Errors.MainNotVoid);
         }
 
-        Constructor<?> constructor;
-        try {
-            constructor = appClass.getDeclaredConstructor();
-        } catch (NoSuchMethodException e) {
-            throw new Fault(Errors.CantFindConstructor(mainClassName));
-        }
+        Object instance = null;
 
-        Object instance;
-        try {
-            constructor.setAccessible(true);
-            instance = constructor.newInstance();
-        } catch (InstantiationException | IllegalAccessException e) {
-            throw new Fault(Errors.CantAccessConstructor(mainClassName));
+        if (!isStatic) {
+            Constructor<?> constructor;
+            try {
+                constructor = appClass.getDeclaredConstructor();
+            } catch (NoSuchMethodException e) {
+                throw new Fault(Errors.CantFindConstructor(mainClassName));
+            }
+
+            try {
+                constructor.setAccessible(true);
+                instance = constructor.newInstance();
+            } catch (InstantiationException | IllegalAccessException e) {
+                throw new Fault(Errors.CantAccessConstructor(mainClassName));
+            }
         }
 
         try {

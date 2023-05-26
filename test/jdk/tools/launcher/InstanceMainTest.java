@@ -30,9 +30,9 @@ import java.nio.file.Path;
  */
 public class InstanceMainTest extends TestHelper {
 
-    @Test
-    public void testStaticMainArgs() throws Exception {
-        test("""
+    private static final String[] SAMPLES = new String[] {
+            // static dominating with args
+            """
             class MainClass {
                 static void main() {
                     throw new AssertionError();
@@ -40,12 +40,10 @@ public class InstanceMainTest extends TestHelper {
                 static void main(String[] args) {
                 }
             }
-            """);
-    }
+            """,
 
-    @Test
-    public void testStaticMain() throws Exception {
-        test("""
+            // static dominating instance
+            """
             class MainClass {
                 void main(String[] args) {
                     throw new AssertionError();
@@ -53,12 +51,10 @@ public class InstanceMainTest extends TestHelper {
                 static void main() {
                 }
             }
-            """);
-    }
+            """,
 
-    @Test
-    public void testMainArgs() throws Exception {
-        test("""
+            // instance dominating with args
+            """
             class MainClass {
                 void main() {
                     throw new AssertionError();
@@ -66,123 +62,129 @@ public class InstanceMainTest extends TestHelper {
                 void main(String[] args) {
                 }
             }
-            """);
-    }
+            """,
 
-    @Test
-    public void testMain() throws Exception {
-        test("""
+            // instance no args
+            """
             class MainClass {
                 void main() {
                 }
             }
-            """);
-    }
+            """,
 
-    @Test
-    public void testTLAnonStaticMainArgs() throws Exception {
-        test("""
+            // unnamed class static dominating with args
+            """
             static void main() {
                 throw new AssertionError();
             }
             static void main(String[] args) {
             }
-            """);
-    }
+            """,
 
-    @Test
-    public void testTLAnonStaticMain() throws Exception {
-        test("""
+            // unnamed class static dominating instance
+            """
             void main(String[] args) {
                 throw new AssertionError();
             }
             static void main() {
             }
-            """);
-    }
+            """,
 
-    @Test
-    public void testTLAnonMainArgs() throws Exception {
-        test("""
+            // unnamed class instance dominating with args
+            """
             void main() {
                 throw new AssertionError();
             }
             void main(String[] args) {
             }
-            """);
-    }
+            """,
 
-    @Test
-    public void testTLAnonMain() throws Exception {
-        test("""
+            // unnamed class instance main no args
+            """
             void main() {
             }
-            """);
-    }
+            """,
 
-    @Test
-    public void testSuperMain() throws Exception {
-        test("""
-           class MainClass extends SuperClass {
-               void main() {
-               }
-           }
-           class SuperClass {
-               void main(String[] args) {
-                   throw new AssertionError();
-               }
-           }
-           """);
-    }
+            // instance main dominating super static
+            """
+            class MainClass extends SuperClass {
+                void main() {
+                }
+            }
+            class SuperClass {
+                void main(String[] args) {
+                    throw new AssertionError();
+                }
+            }
+            """,
 
-    @Test
-    public void testIgnoreBridgeMain() throws Exception {
-        test("""
+            // super instance main with args dominating
+            """
             public class MainClass extends Super {
             }
-
+    
             class Super {
                 public void main(String... args) {
                 }
-
+    
                 public void main() {
                     throw new AssertionError();
                 }
             }
-            """);
-    }
+            """,
 
-     @Test
-    public void testIgnoreSuperMain() throws Exception {
-        try {
-            test("""
-                public class MainClass extends Super {
-                    public static void main(String... args) {
-                    }
+            // ignore super instance main
+            """
+            public class MainClass extends Super {
+                public static void main(String... args) {
                 }
-
-                class Super {
-                    public static void main(String... args) {
-                    }
+            }
+    
+            class Super {
+                public static void main(String... args) {
+                    throw new AssertionError();
                 }
-                """);
-            throw new AssertionError();
-        } catch (Throwable ex) {
-            // okay
-        }
-    }
+            }
+            """,
 
-    void test(String source) throws Exception {
-        Files.writeString(Path.of("MainClass.java"), source);
-        var version = System.getProperty("java.specification.version");
-        var tr = doExec(javaCmd, "--enable-preview", "--source", version, "MainClass.java");
-        if (!tr.isOK()) {
-            System.out.println(tr);
-            throw new AssertionError();
-        }
-    }
+            // enum main
+            """
+            enum MainClass {
+                A;
+            
+                public static void main() {
+                }
+            }            
+            """,
+
+            // record main
+            """
+            record MainClass() {
+                 static void main() {
+                     System.out.println("Done!");
+                 }
+            }            
+            """,
+            // interface main
+            """
+            interface MainClass {
+                 static void main() {
+                     System.out.println("Done!");
+                 }
+            }            
+            """
+    };
 
     public static void main(String... args) throws Exception {
-        new InstanceMainTest().run(args);
+        for (String source : SAMPLES) {
+            Files.writeString(Path.of("MainClass.java"), source);
+            var version = System.getProperty("java.specification.version");
+            var tr = doExec(javaCmd, "--enable-preview", "--source", version, "MainClass.java");
+            if (!tr.isOK()) {
+                System.err.println(source);
+                System.err.println(tr);
+                throw new AssertionError();
+            }
+        }
     }
 }
