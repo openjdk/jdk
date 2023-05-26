@@ -30,11 +30,13 @@ import java.lang.invoke.VarHandle;
 import java.util.concurrent.locks.StampedLock;
 import java.security.*;
 
+import jdk.internal.access.JavaLangAccess;
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.random.RandomSupport;
 import jdk.internal.util.ByteArray;
 
-import jdk.internal.access.JavaLangAccess;
-import jdk.internal.access.SharedSecrets;
+import sun.security.action.GetPropertyAction;
+import sun.security.action.GetIntegerAction;
 
 /**
  * A class that represents an immutable universally unique identifier (UUID).
@@ -125,13 +127,14 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
 
         static {
             try {
-                PRNG_NAME = System.getProperty(PROP_NAME_PRNG_NAME, null);
+                PRNG_NAME = GetPropertyAction.privilegedGetProperty(PROP_NAME_PRNG_NAME, null);
                 try {
                     newRandom();
                 } catch (Exception e) {
                     throw new IllegalArgumentException(PROP_NAME_PRNG_NAME + " is incorrect", e);
                 }
-                int bufCount = Integer.getInteger(PROP_NAME_BUF_COUNT, Runtime.getRuntime().availableProcessors());
+                int bufCount = GetIntegerAction.privilegedGetProperty(PROP_NAME_BUF_COUNT,
+                                    Runtime.getRuntime().availableProcessors());
                 if (bufCount < 1) {
                     throw new IllegalArgumentException(PROP_NAME_BUF_COUNT + " is out of range");
                 }
@@ -192,7 +195,7 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
             static {
                 try {
                     VH_POS = MethodHandles.lookup().findVarHandle(Buffer.class, "pos", int.class);
-                    UUID_COUNT = Integer.getInteger(PROP_NAME_UUID_COUNT, 256);
+                    UUID_COUNT = GetIntegerAction.privilegedGetProperty(PROP_NAME_UUID_COUNT, 256);
                     if (UUID_COUNT < 1 || UUID_COUNT > Integer.MAX_VALUE / UUID_CHUNK) {
                         throw new IllegalArgumentException(PROP_NAME_UUID_COUNT + " is out of range");
                     }
