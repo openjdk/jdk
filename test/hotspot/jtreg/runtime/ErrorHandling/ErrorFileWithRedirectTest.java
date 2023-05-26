@@ -24,7 +24,7 @@
 
 /*
  * @test
- * @bug #######
+ * @bug 8308751
  * @summary Test ErrorFileWithStderr and ErrorFileWithStdout
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
