@@ -2767,7 +2767,7 @@ void MacroAssembler::compiler_fast_unlock_object(ConditionRegister flag, Registe
                                                  bool use_rtm) {
   assert_different_registers(oop, box, temp, displaced_header, current_header);
   assert(LockingMode != LM_LIGHTWEIGHT || flag == CCR0, "bad condition register");
-  Label success, failure, anonymous, not_anonymous, object_has_monitor, notRecursive;
+  Label success, failure, object_has_monitor, notRecursive;
 
 #if INCLUDE_RTM_OPT
   if (UseRTMForStackLocks && use_rtm) {
@@ -2842,21 +2842,11 @@ void MacroAssembler::compiler_fast_unlock_object(ConditionRegister flag, Registe
   }
 #endif
 
-  if (LockingMode == LM_LIGHTWEIGHT) {
-    // Some other platforms use a C2HandleAnonOMOwnerStub stub.
-    // This doesn't work well here, because we reach here for native wrappers, too.
-    // In addition, the stub may be out of range for conditional branches.
-    // The fixup code is not long, so we do it among other special cases below.
-
-    // If the owner is anonymous, we need to fix it.
-    andi_(R0, temp, ObjectMonitor::ANONYMOUS_OWNER);
-    bne(CCR0, anonymous);
-  }
-
+  // In case of LM_LIGHTWEIGHT, we may reach here with (temp & ObjectMonitor::ANONYMOUS_OWNER) != 0.
+  // This is handled like owner thread mismatches: We take the slow path.
   cmpd(flag, temp, R16_thread);
   bne(flag, failure);
 
-  bind(not_anonymous);
   ld(displaced_header, in_bytes(ObjectMonitor::recursions_offset()), current_header);
 
   addic_(displaced_header, displaced_header, -1);
@@ -2866,22 +2856,6 @@ void MacroAssembler::compiler_fast_unlock_object(ConditionRegister flag, Registe
     crorc(CCR0, Assembler::equal, CCR0, Assembler::equal); // Set CCR0 EQ
   }
   b(success);
-
-  if (LockingMode == LM_LIGHTWEIGHT) {
-    bind(anonymous);
-    // Fix owner to be the current thread.
-    std(R16_thread, in_bytes(ObjectMonitor::owner_offset()), current_header);
-
-    // Pop owner object from lock-stack.
-    lwz(temp, in_bytes(JavaThread::lock_stack_top_offset()), R16_thread);
-    addi(temp, temp, -oopSize);
-#ifdef ASSERT
-    li(R0, 0);
-    stwx(R0, temp, R16_thread);
-#endif
-    stw(temp, in_bytes(JavaThread::lock_stack_top_offset()), R16_thread);
-    b(not_anonymous);
-  }
 
   bind(notRecursive);
   ld(temp,             in_bytes(ObjectMonitor::EntryList_offset()), current_header);
