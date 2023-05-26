@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,17 +34,13 @@ import jdk.internal.io.JdkConsole;
  */
 final class ProxyingConsole extends Console {
     private final JdkConsole delegate;
-    private final Object readLock;
-    private final Object writeLock;
-    private final Reader reader;
-    private final PrintWriter printWriter;
+    private final Object readLock = new Object();
+    private final Object writeLock = new Object();
+    private volatile Reader reader;
+    private volatile PrintWriter printWriter;
 
     ProxyingConsole(JdkConsole delegate) {
         this.delegate = delegate;
-        readLock = new Object();
-        writeLock = new Object();
-        reader = new WrappingReader(delegate.reader(), readLock);
-        printWriter = new WrappingWriter(delegate.writer(), writeLock);
     }
 
     /**
@@ -52,6 +48,16 @@ final class ProxyingConsole extends Console {
      */
     @Override
     public PrintWriter writer() {
+        PrintWriter printWriter = this.printWriter;
+        if (printWriter == null) {
+            synchronized (this) {
+                printWriter = this.printWriter;
+                if (printWriter == null) {
+                    printWriter = new WrappingWriter(delegate.writer(), writeLock);
+                    this.printWriter = printWriter;
+                }
+            }
+        }
         return printWriter;
     }
 
@@ -60,6 +66,16 @@ final class ProxyingConsole extends Console {
      */
     @Override
     public Reader reader() {
+        Reader reader = this.reader;
+        if (reader == null) {
+            synchronized (this) {
+                reader = this.reader;
+                if (reader == null) {
+                    reader = new WrappingReader(delegate.reader(), readLock);
+                    this.reader = reader;
+                }
+            }
+        }
         return reader;
     }
 
