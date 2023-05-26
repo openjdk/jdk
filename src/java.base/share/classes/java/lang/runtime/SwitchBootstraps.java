@@ -31,15 +31,13 @@ import java.lang.invoke.ConstantCallSite;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
+import jdk.internal.access.SharedSecrets;
+import jdk.internal.vm.annotation.Stable;
 
 import static java.util.Objects.requireNonNull;
-import jdk.internal.vm.annotation.Stable;
 
 /**
  * Bootstrap methods for linking {@code invokedynamic} call sites that implement
@@ -62,29 +60,29 @@ public class SwitchBootstraps {
     private static final MethodHandle ENUM_EQ_CHECK;
     private static final MethodHandle NULL_CHECK;
     private static final MethodHandle IS_ZERO;
-    private static final MethodHandle ENUM_LOOKUP;
     private static final MethodHandle CHECK_INDEX;
     private static final MethodHandle MAPPED_ENUM_LOOKUP;
 
     static {
         try {
-            INSTANCEOF_CHECK = LOOKUP.findStatic(SwitchBootstraps.class, "instanceofCheck",
-                                           MethodType.methodType(boolean.class, Object.class, Class.class));
+            INSTANCEOF_CHECK = MethodHandles.permuteArguments(LOOKUP.findVirtual(Class.class, "isInstance",
+                                                                                 MethodType.methodType(boolean.class, Object.class)),
+                                                              MethodType.methodType(boolean.class, Object.class, Class.class), 1, 0);
             INTEGER_EQ_CHECK = LOOKUP.findStatic(SwitchBootstraps.class, "integerEqCheck",
                                            MethodType.methodType(boolean.class, Object.class, Integer.class));
             OBJECT_EQ_CHECK = LOOKUP.findStatic(Objects.class, "equals",
                                            MethodType.methodType(boolean.class, Object.class, Object.class));
             ENUM_EQ_CHECK = LOOKUP.findStatic(SwitchBootstraps.class, "enumEqCheck",
                                            MethodType.methodType(boolean.class, Object.class, EnumDesc.class, MethodHandles.Lookup.class, ResolvedEnumLabel.class));
-            NULL_CHECK = LOOKUP.findStatic(SwitchBootstraps.class, "nullCheck",
+            NULL_CHECK = LOOKUP.findStatic(Objects.class, "isNull",
                                            MethodType.methodType(boolean.class, Object.class));
             IS_ZERO = LOOKUP.findStatic(SwitchBootstraps.class, "isZero",
                                            MethodType.methodType(boolean.class, int.class));
-            ENUM_LOOKUP = LOOKUP.findStatic(SwitchBootstraps.class, "enumLookup",
-                                           MethodType.methodType(int.class, int[].class, Object.class));
             CHECK_INDEX = LOOKUP.findStatic(Objects.class, "checkIndex",
                                            MethodType.methodType(int.class, int.class, int.class));
-            MAPPED_ENUM_LOOKUP = LOOKUP.findStatic(SwitchBootstraps.class, "mappedEnumLookup", MethodType.methodType(int.class, Enum.class, MethodHandles.Lookup.class, Class.class, EnumDesc[].class, EnumMap.class));
+            MAPPED_ENUM_LOOKUP = LOOKUP.findStatic(SwitchBootstraps.class, "mappedEnumLookup",
+                                                   MethodType.methodType(int.class, Enum.class, MethodHandles.Lookup.class,
+                                                                         Class.class, EnumDesc[].class, EnumMap.class));
         }
         catch (ReflectiveOperationException e) {
             throw new ExceptionInInitializerError(e);
@@ -186,9 +184,7 @@ public class SwitchBootstraps {
     private static MethodHandle createRepeatIndexSwitch(MethodHandles.Lookup lookup, Object[] labels) {
         MethodHandle def = MethodHandles.dropArguments(MethodHandles.constant(int.class, labels.length), 0, Object.class);
         MethodHandle[] testChains = new MethodHandle[labels.length];
-        List<Object> labelsList = new ArrayList<>(Arrays.asList(labels));
-
-        Collections.reverse(labelsList);
+        List<Object> labelsList = List.of(labels).reversed();
 
         for (int i = 0; i < labels.length; i++) {
             MethodHandle test = def;
@@ -240,10 +236,6 @@ public class SwitchBootstraps {
         return withIndexCheck(switchImpl, labels.length);
     }
 
-    private static boolean instanceofCheck(Object value, Class<?> label) {
-        return label.isAssignableFrom(value.getClass());
-    }
-
     private static boolean integerEqCheck(Object value, Integer constant) {
         if (value instanceof Number input && constant.intValue() == input.intValue()) {
             return true;
@@ -252,10 +244,6 @@ public class SwitchBootstraps {
         }
 
         return false;
-    }
-
-    private static boolean nullCheck(Object value) {
-        return value == null;
     }
 
     private static boolean isZero(int value) {
@@ -336,16 +324,7 @@ public class SwitchBootstraps {
         labels = Stream.of(labels).map(l -> convertEnumConstants(lookup, enumClass, l)).toArray();
 
         MethodHandle target;
-        boolean constantsOnly = Stream.of(labels).allMatch(l -> l == null || enumClass.isAssignableFrom(EnumDesc.class));
-
-        if (constantsOnly) {
-            long nonNullValues = Stream.of(labels).filter(l -> l != null).count();
-            long distinctNonNullValues = Stream.of(labels).filter(l -> l != null).distinct().count();
-
-            if (nonNullValues != distinctNonNullValues) {
-                constantsOnly = false;
-            }
-        }
+        boolean constantsOnly = Stream.of(labels).allMatch(l -> enumClass.isAssignableFrom(EnumDesc.class));
 
         if (labels.length > 0 && constantsOnly) {
             //If all labels are enum constants, construct an optimized handle for repeat index 0:
@@ -369,10 +348,6 @@ public class SwitchBootstraps {
         return new ConstantCallSite(target);
     }
 
-    private static int enumLookup(int[] map, Object label) {
-        return map[((Enum) label).ordinal()];
-    }
-
     private static <E extends Enum<E>> Object convertEnumConstants(MethodHandles.Lookup lookup, Class<?> enumClassTemplate, Object label) {
         if (label == null) {
             throw new IllegalArgumentException("null label found");
@@ -392,31 +367,13 @@ public class SwitchBootstraps {
         }
     }
 
-    private static int doEnumSwitch(Enum<?> target, int startIndex, Object[] labels) {
-        if (target == null)
-            return -1;
-
-        // Dumbest possible strategy
-        Class<?> targetClass = target.getClass();
-        for (int i = startIndex; i < labels.length; i++) {
-            Object label = labels[i];
-            if (label instanceof Class<?> c) {
-                if (c.isAssignableFrom(targetClass))
-                    return i;
-            } else if (label == target) {
-                return i;
-            }
-        }
-
-        return labels.length;
-    }
-
     private static <T extends Enum<T>> int mappedEnumLookup(T value, MethodHandles.Lookup lookup, Class<T> enumClass, EnumDesc<?>[] labels, EnumMap enumMap) {
         if (enumMap.map == null) {
-            int[] map = new int[enumClass.getEnumConstants().length];
+            T[] constants = SharedSecrets.getJavaLangAccess().getEnumConstantsShared(enumClass);
+            int[] map = new int[constants.length];
             int ordinal = 0;
 
-            for (T constant : enumClass.getEnumConstants()) {
+            for (T constant : constants) {
                 map[ordinal] = labels.length;
 
                 for (int i = 0; i < labels.length; i++) {
