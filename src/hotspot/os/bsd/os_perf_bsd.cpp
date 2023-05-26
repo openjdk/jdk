@@ -169,16 +169,16 @@ int CPUPerformanceInterface::CPUPerformance::cpu_loads_process(double* pjvmUserL
   if (_total_cpu_nanos == 0 || active_processor_count != _active_processor_count) {
     // First call or change in active processor count
     result = OS_ERR;
-  }
+  } else {
+    long delta_nanos = active_processor_count * (total_cpu_nanos - _total_cpu_nanos);
+    if (delta_nanos == 0) {
+      // Avoid division by zero
+      return OS_ERR;
+    }
 
-  long delta_nanos = active_processor_count * (total_cpu_nanos - _total_cpu_nanos);
-  if (delta_nanos == 0) {
-    // Avoid division by zero
-    return OS_ERR;
+    *pjvmUserLoad = normalize((double)(jvm_user_nanos - _jvm_user_nanos)/delta_nanos);
+    *pjvmKernelLoad = normalize((double)(jvm_system_nanos - _jvm_system_nanos)/delta_nanos);
   }
-
-  *pjvmUserLoad = normalize((double)(jvm_user_nanos - _jvm_user_nanos)/delta_nanos);
-  *pjvmKernelLoad = normalize((double)(jvm_system_nanos - _jvm_system_nanos)/delta_nanos);
 
   _active_processor_count = active_processor_count;
   _total_cpu_nanos = total_cpu_nanos;
