@@ -87,8 +87,8 @@ class ClassHierarchyInfoTest {
 
     void transformAndVerify(ClassHierarchyResolver res) throws Exception {
         Path path = FileSystems.getFileSystem(URI.create("jrt:/")).getPath("modules/java.base/java/util/HashMap.class");
-        var classModel = Classfile.Context.of(Classfile.Option.classHierarchyResolver(res)).parse(path);
-        byte[] newBytes = Classfile.transform(classModel,
+        var classModel = Classfile.parse(path);
+        byte[] newBytes = Classfile.Context.of(Classfile.Option.classHierarchyResolver(res)).transform(classModel,
                 (clb, cle) -> {
                     if (cle instanceof MethodModel mm) {
                         clb.transformMethod(mm, (mb, me) -> {

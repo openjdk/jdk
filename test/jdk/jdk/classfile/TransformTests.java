@@ -98,8 +98,8 @@ class TransformTests {
         ClassModel cm = Classfile.parse(bytes);
 
         assertEquals(invoke(bytes), "foo");
-        assertEquals(invoke(cm.transform(transformCode(foo2foo))), "foo");
-        assertEquals(invoke(cm.transform(transformCode(foo2bar))), "bar");
+        assertEquals(invoke(Classfile.transform(cm, transformCode(foo2foo))), "foo");
+        assertEquals(invoke(Classfile.transform(cm, transformCode(foo2bar))), "bar");
     }
 
     @Test
@@ -110,7 +110,7 @@ class TransformTests {
 
         assertEquals(invoke(bytes), "foo");
         ClassTransform transform = transformCode(foo2bar.andThen(bar2baz));
-        assertEquals(invoke(cm.transform(transform)), "baz");
+        assertEquals(invoke(Classfile.transform(cm, transform)), "baz");
     }
 
     @Test
@@ -120,9 +120,9 @@ class TransformTests {
         ClassModel cm = Classfile.parse(bytes);
 
         assertEquals(invoke(bytes), "foo");
-        assertEquals(invoke(cm.transform(transformCode(foo2bar.andThen(bar2baz).andThen(baz2foo)))), "foo");
-        assertEquals(invoke(cm.transform(transformCode(foo2bar.andThen(bar2baz).andThen(baz2quux)))), "quux");
-        assertEquals(invoke(cm.transform(transformCode(foo2foo.andThen(foo2bar).andThen(bar2baz)))), "baz");
+        assertEquals(invoke(Classfile.transform(cm, transformCode(foo2bar.andThen(bar2baz).andThen(baz2foo)))), "foo");
+        assertEquals(invoke(Classfile.transform(cm, transformCode(foo2bar.andThen(bar2baz).andThen(baz2quux)))), "quux");
+        assertEquals(invoke(Classfile.transform(cm, transformCode(foo2foo.andThen(foo2bar).andThen(bar2baz)))), "baz");
     }
 
     public static class TestClass {

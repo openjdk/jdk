@@ -66,7 +66,7 @@ class TestRecordComponent {
             } else
                 cb.with(ce);
         };
-        ClassModel newModel = Classfile.parse(cm.transform(xform));
+        ClassModel newModel = Classfile.parse(Classfile.transform(cm, xform));
         ClassRecord.assertEquals(newModel, cm);
     }
 
@@ -74,7 +74,7 @@ class TestRecordComponent {
     void testPassThrough() throws Exception {
         ClassModel cm = Classfile.parse(Files.readAllBytes(testClassPath));
         ClassTransform xform = (cb, ce) -> cb.with(ce);
-        ClassModel newModel = Classfile.parse(cm.transform(xform));
+        ClassModel newModel = Classfile.parse(Classfile.transform(cm, xform));
         ClassRecord.assertEquals(newModel, cm);
     }
 
@@ -91,7 +91,7 @@ class TestRecordComponent {
             else
                 cb.with(ce);
         };
-        ClassModel newModel = Classfile.parse(cm.transform(xform));
+        ClassModel newModel = Classfile.parse(Classfile.transform(cm, xform));
         RecordAttribute ra = newModel.findAttribute(Attributes.RECORD).orElseThrow();
         assertEquals(ra.components().size(), 2, "Should have two components");
         assertEquals(ra.components().get(0).name().stringValue(), "fooXYZ");

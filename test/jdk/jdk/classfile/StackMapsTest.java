@@ -54,9 +54,8 @@ import java.lang.reflect.AccessFlag;
 class StackMapsTest {
 
     private byte[] buildDeadCode() {
-        return Classfile.build(
+        return Classfile.Context.of(Classfile.Option.generateStackmap(false), Classfile.Option.patchDeadCode(false)).build(
                 ClassDesc.of("DeadCodePattern"),
-                List.of(Classfile.Option.generateStackmap(false), Classfile.Option.patchDeadCode(false)),
                 clb -> clb.withMethodBody(
                                 "twoReturns",
                                 MethodTypeDesc.of(ConstantDescs.CD_void),
@@ -222,13 +221,19 @@ class StackMapsTest {
         var actualVersion = Classfile.parse(StackMapsTest.class.getResourceAsStream("/testdata/Pattern1.class").readAllBytes());
 
         //test transformation to class version 49 with removal of StackMapTable attributes
-        var version49 = Classfile.parse(actualVersion.transform(ClassTransform.transformingMethodBodies(CodeTransform.ACCEPT_ALL)
-                .andThen(ClassTransform.endHandler(clb -> clb.withVersion(49, 0)))));
-        assertFalse(ClassPrinter.toTree(version49, ClassPrinter.Verbosity.CRITICAL_ATTRIBUTES).walk().anyMatch(n -> n.name().equals("stack map frames")));
+        var version49 = Classfile.parse(Classfile.transform(
+                                    actualVersion,
+                                    ClassTransform.transformingMethodBodies(CodeTransform.ACCEPT_ALL)
+                                                  .andThen(ClassTransform.endHandler(clb -> clb.withVersion(49, 0)))));
+        assertFalse(ClassPrinter.toTree(version49, ClassPrinter.Verbosity.CRITICAL_ATTRIBUTES)
+                                .walk().anyMatch(n -> n.name().equals("stack map frames")));
 
         //test transformation to class version 50 with re-generation of StackMapTable attributes
-         assertEmpty(Classfile.parse(version49.transform(ClassTransform.transformingMethodBodies(CodeTransform.ACCEPT_ALL)
-                .andThen(ClassTransform.endHandler(clb -> clb.withVersion(50, 0))))).verify(null));
+         assertEmpty(Classfile.parse(Classfile.transform(
+                                    version49,
+                                    ClassTransform.transformingMethodBodies(CodeTransform.ACCEPT_ALL)
+                                                  .andThen(ClassTransform.endHandler(clb -> clb.withVersion(50, 0)))))
+                              .verify(null));
     }
 
     private static final FileSystem JRT = FileSystems.getFileSystem(URI.create("jrt:/"));
@@ -243,8 +248,9 @@ class StackMapsTest {
 
     private static void testTransformedStackMaps(byte[] originalBytes, Classfile.Option... options) throws Exception {
         //transform the class model
-        var classModel = Classfile.parse(originalBytes, options);
-        var transformedBytes = Classfile.build(classModel.thisClass().asSymbol(), List.of(options),
+        Classfile.Context cc = Classfile.Context.of(options);
+        var classModel = cc.parse(originalBytes);
+        var transformedBytes = cc.build(classModel.thisClass().asSymbol(),
                                                cb -> {
 //                                                   classModel.superclass().ifPresent(cb::withSuperclass);
 //                                                   cb.withInterfaces(classModel.interfaces());
@@ -253,6 +259,6 @@ class StackMapsTest {
                                                });
 
         //then verify transformed bytecode
-        assertEmpty(Classfile.parse(transformedBytes).verify(null));
+        assertEmpty(cc.parse(transformedBytes).verify(null));
     }
 }

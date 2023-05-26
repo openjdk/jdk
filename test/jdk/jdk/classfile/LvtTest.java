@@ -109,7 +109,7 @@ class LvtTest {
         ClassModel c = Classfile.parse(fileBytes);
 
         // Compare transformed model and original with CodeBuilder filter
-        byte[] newClass = c.transform(Transforms.threeLevelNoop);
+        byte[] newClass = Classfile.transform(c, Transforms.threeLevelNoop);
         ClassRecord orig = ClassRecord.ofClassModel(Classfile.parse(fileBytes), ClassRecord.CompatibilityFilter.By_ClassBuilder);
         ClassRecord transformed = ClassRecord.ofClassModel(Classfile.parse(newClass), ClassRecord.CompatibilityFilter.By_ClassBuilder);
         ClassRecord.assertEqualsDeep(transformed, orig);
@@ -301,7 +301,7 @@ class LvtTest {
 
     @Test
     void skipDebugSkipsLVT() {
-        ClassModel c = Classfile.parse(fileBytes, Classfile.Option.processDebug(false));
+        ClassModel c = Classfile.Context.of(Classfile.Option.processDebug(false)).parse(fileBytes);
 
         c.forEachElement(e -> {
             if (e instanceof MethodModel m) {
