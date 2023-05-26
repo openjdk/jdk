@@ -66,6 +66,11 @@ private:
   // spans of time while collection set is being constructed.
   bool*                 _preselected_regions;
 
+  // When a region having memory available to be allocated is added to the collection set, the region's available memory
+  // should be subtracted from what's available.
+  size_t                _young_available_bytes_collected;
+  size_t                _old_available_bytes_collected;
+
   shenandoah_padding(0);
   volatile size_t       _current_index;
   shenandoah_padding(1);
@@ -110,6 +115,10 @@ public:
   inline size_t get_old_bytes_reserved_for_evacuation();
 
   inline size_t get_young_bytes_to_be_promoted();
+
+  size_t get_young_available_bytes_collected() { return _young_available_bytes_collected; }
+
+  size_t get_old_available_bytes_collected() { return _old_available_bytes_collected; }
 
   inline size_t get_old_region_count();
   inline size_t get_young_region_count();

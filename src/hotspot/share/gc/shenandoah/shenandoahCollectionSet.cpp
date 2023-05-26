@@ -90,13 +90,13 @@ void ShenandoahCollectionSet::add_region(ShenandoahHeapRegion* r) {
   assert(!r->is_humongous(), "Only add regular regions to the collection set");
 
   _cset_map[r->index()] = 1;
-
-  size_t live = r->get_live_data_bytes();
+  size_t live    = r->get_live_data_bytes();
   size_t garbage = r->garbage();
-
+  size_t free    = r->free();
   if (r->is_young()) {
     _young_region_count++;
     _young_bytes_to_evacuate += live;
+    _young_available_bytes_collected += free;
     if (r->age() >= InitialTenuringThreshold) {
       _young_bytes_to_promote += live;
     }
@@ -104,6 +104,7 @@ void ShenandoahCollectionSet::add_region(ShenandoahHeapRegion* r) {
     _old_region_count++;
     _old_bytes_to_evacuate += live;
     _old_garbage += garbage;
+    _old_available_bytes_collected += free;
   }
 
   _region_count++;
@@ -117,6 +118,7 @@ void ShenandoahCollectionSet::add_region(ShenandoahHeapRegion* r) {
 
 void ShenandoahCollectionSet::clear() {
   assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Must be at a safepoint");
+
   Copy::zero_to_bytes(_cset_map, _map_size);
 
 #ifdef ASSERT
@@ -139,6 +141,9 @@ void ShenandoahCollectionSet::clear() {
 
   _old_region_count = 0;
   _old_bytes_to_evacuate = 0;
+
+  _young_available_bytes_collected = 0;
+  _old_available_bytes_collected = 0;
 
   _has_old_regions = false;
 }

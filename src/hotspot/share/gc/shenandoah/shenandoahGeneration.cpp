@@ -225,7 +225,6 @@ void ShenandoahGeneration::prepare_gc() {
 void ShenandoahGeneration::compute_evacuation_budgets(ShenandoahHeap* heap, bool* preselected_regions,
                                                       ShenandoahCollectionSet* collection_set,
                                                       size_t &consumed_by_advance_promotion) {
-  assert(heap->mode()->is_generational(), "Only generational mode uses evacuation budgets.");
   size_t region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
   size_t regions_available_to_loan = 0;
   size_t minimum_evacuation_reserve = ShenandoahOldCompactionReserve * region_size_bytes;
@@ -249,160 +248,90 @@ void ShenandoahGeneration::compute_evacuation_budgets(ShenandoahHeap* heap, bool
 
   // Do not fill up old-gen memory with promotions.  Reserve some amount of memory for compaction purposes.
   size_t young_evac_reserve_max = 0;
-  if (heap->doing_mixed_evacuations()) {
-    // Compute old_evacuation_reserve: how much memory are we reserving to hold the results of
-    // evacuating old-gen heap regions?  In order to sustain a consistent pace of young-gen collections,
-    // the goal is to maintain a consistent value for this parameter (when the candidate set is not
-    // empty).  This value is the minimum of:
-    //   1. old_gen->available()
-    //   2. old-gen->capacity() * ShenandoahOldEvacReserve) / 100
-    //       (e.g. old evacuation should be no larger than 5% of old_gen capacity)
-    //   3. ((young_gen->capacity * ShenandoahEvacReserve / 100) * ShenandoahOldEvacRatioPercent) / 100
-    //       (e.g. old evacuation should be no larger than 12% of young-gen evacuation)
-    old_evacuation_reserve = old_generation->available();
-    // This assertion has been disabled because we expect this code to be replaced by 05/2023
-    // assert(old_evacuation_reserve > minimum_evacuation_reserve, "Old-gen available has not been preserved!");
-    size_t old_evac_reserve_max = old_generation->max_capacity() * ShenandoahOldEvacReserve / 100;
-    if (old_evac_reserve_max < old_evacuation_reserve) {
-      old_evacuation_reserve = old_evac_reserve_max;
-    }
-    young_evac_reserve_max =
-      (((young_generation->max_capacity() * ShenandoahEvacReserve) / 100) * ShenandoahOldEvacRatioPercent) / 100;
-    if (young_evac_reserve_max < old_evacuation_reserve) {
-      old_evacuation_reserve = young_evac_reserve_max;
-    }
-  }
 
-  if (minimum_evacuation_reserve > old_generation->available()) {
-    // Due to round-off errors during enforcement of minimum_evacuation_reserve during previous GC passes,
-    // there can be slight discrepancies here.
-    minimum_evacuation_reserve = old_generation->available();
-  }
+  // First priority is to reclaim the easy garbage out of young-gen.
 
-  heap->set_old_evac_reserve(old_evacuation_reserve);
-  heap->reset_old_evac_expended();
-
-  // Compute the young evacuation reserve: This is how much memory is available for evacuating young-gen objects.
-  // We ignore the possible effect of promotions, which reduce demand for young-gen evacuation memory.
-  //
-  // TODO: We could give special treatment to the regions that have reached promotion age, because we know their
-  // live data is entirely eligible for promotion.  This knowledge can feed both into calculations of young-gen
-  // evacuation reserve and promotion reserve.
-  //
-  //  young_evacuation_reserve for young generation: how much memory are we reserving to hold the results
-  //  of evacuating young collection set regions?  This is typically smaller than the total amount
-  //  of available memory, and is also smaller than the total amount of marked live memory within
-  //  young-gen.  This value is the smaller of
-  //
-  //    1. (young_gen->capacity() * ShenandoahEvacReserve) / 100
-  //    2. (young_gen->available() + old_gen_memory_available_to_be_loaned
-  //
-  //  ShenandoahEvacReserve represents the configured target size of the evacuation region.  We can only honor
-  //  this target if there is memory available to hold the evacuations.  Memory is available if it is already
-  //  free within young gen, or if it can be borrowed from old gen.  Since we have not yet chosen the collection
-  //  sets, we do not yet know the exact accounting of how many regions will be freed by this collection pass.
-  //  What we do know is that there will be at least one evacuated young-gen region for each old-gen region that
-  //  is loaned to the evacuation effort (because regions to be collected consume more memory than the compacted
-  //  regions that will replace them).  In summary, if there are old-gen regions that are available to hold the
-  //  results of young-gen evacuations, it is safe to loan them for this purpose.  At this point, we have not yet
-  //  established a promoted_reserve.  We'll do that after we choose the collection set and analyze its impact
-  //  on available memory.
-  //
-  // We do not know the evacuation_supplement until after we have computed the collection set.  It is not always
-  // the case that young-regions inserted into the collection set will result in net decrease of in-use regions
-  // because ShenandoahEvacWaste times multiplied by memory within the region may be larger than the region size.
-  // The problem is especially relevant to regions that have been inserted into the collection set because they have
-  // reached tenure age.  These regions tend to have much higher utilization (e.g. 95%).  These regions also offer
-  // a unique opportunity because we know that every live object contained within the region is elgible to be
-  // promoted.  Thus, the following implementation treats these regions specially:
-  //
-  //  1. Before beginning collection set selection, we tally the total amount of live memory held within regions
-  //     that are known to have reached tenure age.  If this memory times ShenandoahEvacWaste is available within
-  //     old-gen memory, establish an advance promotion reserve to hold all or some percentage of these objects.
-  //     This advance promotion reserve is excluded from memory available for holding old-gen evacuations and cannot
-  //     be "loaned" to young gen.
-  //
-  //  2. Tenure-aged regions are included in the collection set iff their evacuation size * ShenandoahEvacWaste fits
-  //     within the advance promotion reserve.  It is counter productive to evacuate these regions if they cannot be
-  //     evacuated directly into old-gen memory.  So if there is not sufficient memory to hold copies of their
-  //     live data right now, we'll just let these regions remain in young for now, to be evacuated by a subsequent
-  //     evacuation pass.
-  //
-  //  3. Next, we calculate a young-gen evacuation budget, which is the smaller of the two quantities mentioned
-  //     above.  old_gen_memory_available_to_be_loaned is calculated as:
-  //       old_gen->available - (advance-promotion-reserve + old-gen_evacuation_reserve)
-  //
-  //  4. When choosing the collection set, special care is taken to assure that the amount of loaned memory required to
-  //     hold the results of evacuation is smaller than the total memory occupied by the regions added to the collection
-  //     set.  We need to take these precautions because we do not know how much memory will be reclaimed by evacuation
-  //     until after the collection set has been constructed.  The algorithm is as follows:
-  //
-  //     a. We feed into the algorithm (i) young available at the start of evacuation and (ii) the amount of memory
-  //        loaned from old-gen that is available to hold the results of evacuation.
-  //     b. As candidate regions are added into the young-gen collection set, we maintain accumulations of the amount
-  //        of memory spanned by the collection set regions and the amount of memory that must be reserved to hold
-  //        evacuation results (by multiplying live-data size by ShenandoahEvacWaste).  We process candidate regions
-  //        in order of decreasing amounts of garbage.  We skip over (and do not include into the collection set) any
-  //        regions that do not satisfy all of the following conditions:
-  //
-  //          i. The amount of live data within the region as scaled by ShenandoahEvacWaste must fit within the
-  //             relevant evacuation reserve (live data of old-gen regions must fit within the old-evac-reserve, live
-  //             data of young-gen tenure-aged regions must fit within the advance promotion reserve, live data within
-  //             other young-gen regions must fit within the youn-gen evacuation reserve).
-  //         ii. The accumulation of memory consumed by evacuation must not exceed the accumulation of memory reclaimed
-  //             through evacuation by more than young-gen available.
-  //        iii. Other conditions may be enforced as appropriate for specific heuristics.
-  //
-  //       Note that regions are considered for inclusion in the selection set in order of decreasing amounts of garbage.
-  //       It is possible that a region with a larger amount of garbage will be rejected because it also has a larger
-  //       amount of live data and some region that follows this region in candidate order is included in the collection
-  //       set (because it has less live data and thus can fit within the evacuation limits even though it has less
-  //       garbage).
-
-  size_t young_evacuation_reserve = (young_generation->max_capacity() * ShenandoahEvacReserve) / 100;
-  // old evacuation can pack into existing partially used regions.  young evacuation and loans for young allocations
-  // need to target regions that do not already hold any old-gen objects.  Round down.
-  regions_available_to_loan = old_generation->free_unaffiliated_regions();
-
-  size_t required_evacuation_reserve;
-  // Memory evacuated from old-gen on this pass will be available to hold old-gen evacuations in next pass.
-  if (old_evacuation_reserve > minimum_evacuation_reserve) {
-    required_evacuation_reserve = 0;
+  // maximum_young_evacuation_reserve is upper bound on memory to be evacuated out of young
+  size_t maximum_young_evacuation_reserve = (young_generation->max_capacity() * ShenandoahEvacReserve) / 100;
+  size_t young_evacuation_reserve = maximum_young_evacuation_reserve;
+  size_t excess_young;
+  if (young_generation->available() > young_evacuation_reserve) {
+    excess_young = young_generation->available() - young_evacuation_reserve;
   } else {
-    required_evacuation_reserve = minimum_evacuation_reserve - old_evacuation_reserve;
+    young_evacuation_reserve = young_generation->available();
+    excess_young = 0;
+  }
+  size_t unaffiliated_young = young_generation->free_unaffiliated_regions() * region_size_bytes;
+  if (excess_young > unaffiliated_young) {
+    excess_young = unaffiliated_young;
+  } else {
+    // round down to multiple of region size
+    excess_young /= region_size_bytes;
+    excess_young *= region_size_bytes;
+  }
+  // excess_young is available to be transferred to OLD.  Assume that OLD will not request any more than had
+  // already been set aside for its promotion and evacuation needs at the end of previous GC.  No need to
+  // hold back memory for allocation runway.
+
+  ShenandoahOldHeuristics* old_heuristics = heap->old_heuristics();
+
+  // maximum_old_evacuation_reserve is an upper bound on memory evacuated from old and evacuated to old (promoted).
+  size_t maximum_old_evacuation_reserve =
+    maximum_young_evacuation_reserve * ShenandoahOldEvacRatioPercent / (100 - ShenandoahOldEvacRatioPercent);
+  // Here's the algebra:
+  //  TotalEvacuation = OldEvacuation + YoungEvacuation
+  //  OldEvacuation = TotalEvacuation * (ShenandoahOldEvacRatioPercent/100)
+  //  OldEvacuation = YoungEvacuation * (ShenandoahOldEvacRatioPercent/100)/(1 - ShenandoahOldEvacRatioPercent/100)
+  //  OldEvacuation = YoungEvacuation * ShenandoahOldEvacRatioPercent/(100 - ShenandoahOldEvacRatioPercent)
+
+  if (maximum_old_evacuation_reserve > old_generation->available()) {
+    maximum_old_evacuation_reserve = old_generation->available();
   }
 
-  consumed_by_advance_promotion = _heuristics->select_aged_regions(
-    old_generation->available() - old_evacuation_reserve - required_evacuation_reserve, num_regions, preselected_regions);
-  size_t net_available_old_regions =
-    (old_generation->available() - old_evacuation_reserve - consumed_by_advance_promotion) / region_size_bytes;
+  // Second priority is to reclaim garbage out of old-gen if there are old-gen collection candidates.  Third priority
+  // is to promote as much as we have room to promote.  However, if old-gen memory is in short supply, this means young
+  // GC is operating under "duress" and was unable to transfer the memory that we would normally expect.  In this case,
+  // old-gen will refrain from compacting itself in order to allow a quicker young-gen cycle (by avoiding the update-refs
+  // through ALL of old-gen).  If there is some memory available in old-gen, we will use this for promotions as promotions
+  // do not add to the update-refs burden of GC.
 
- if (regions_available_to_loan > net_available_old_regions) {
-    regions_available_to_loan = net_available_old_regions;
+  size_t old_promo_reserve;
+  if (old_heuristics->unprocessed_old_collection_candidates() > 0) {
+    // We reserved all old-gen memory at end of previous GC to hold anticipated evacuations to old-gen.  If this is
+    // mixed evacuation, reserve all of this memory for compaction of old-gen and do not promote.  Prioritize compaction
+    // over promotion in order to defragment OLD so that it will be better prepared to efficiently receive promoted memory.
+    old_evacuation_reserve = maximum_old_evacuation_reserve;
+    old_promo_reserve = 0;
+  } else {
+    // Make all old-evacuation memory for promotion, but if we can't use it all for promotion, we'll allow some evacuation.
+    old_evacuation_reserve = 0;
+    old_promo_reserve = maximum_old_evacuation_reserve;
   }
 
-  // Otherwise, regions_available_to_loan is less than net_available_old_regions because available memory is
-  // scattered between multiple partially used regions.
+  // We see too many old-evacuation failures if we force ourselves to evacuate into regions that are not initially empty.
+  // So we limit the old-evacuation reserve to unfragmented memory.  Even so, old-evacuation is free to fill in nooks and
+  // crannies within existing partially used regions and it generally tries to do so.
+  size_t old_free_regions = old_generation->free_unaffiliated_regions();
+  size_t old_free_unfragmented = old_free_regions * region_size_bytes;
+  if (old_evacuation_reserve > old_free_unfragmented) {
+    size_t delta = old_evacuation_reserve - old_free_unfragmented;
+    old_evacuation_reserve -= delta;
 
-  if (young_evacuation_reserve > young_generation->available()) {
-    size_t short_fall = young_evacuation_reserve - young_generation->available();
-    if (regions_available_to_loan * region_size_bytes >= short_fall) {
-      old_regions_loaned_for_young_evac = (short_fall + region_size_bytes - 1) / region_size_bytes;
-      regions_available_to_loan -= old_regions_loaned_for_young_evac;
-    } else {
-      old_regions_loaned_for_young_evac = regions_available_to_loan;
-      regions_available_to_loan = 0;
-      young_evacuation_reserve = young_generation->available() + old_regions_loaned_for_young_evac * region_size_bytes;
-      // In this case, there's no memory available for new allocations while evacuating and updating, unless we
-      // find more old-gen memory to borrow below.
-    }
+    // Let promo consume fragments of old-gen memory.
+    old_promo_reserve += delta;
   }
-  // In generational mode, we may end up choosing a young collection set that contains so many promotable objects
-  // that there is not sufficient space in old generation to hold the promoted objects.  That is ok because we have
-  // assured there is sufficient space in young generation to hold the rejected promotion candidates.  These rejected
-  // promotion candidates will presumably be promoted in a future evacuation cycle.
-  heap->set_young_evac_reserve(young_evacuation_reserve);
   collection_set->establish_preselected(preselected_regions);
+  consumed_by_advance_promotion = _heuristics->select_aged_regions(old_promo_reserve, num_regions, preselected_regions);
+  assert(consumed_by_advance_promotion <= maximum_old_evacuation_reserve, "Cannot promote more than available old-gen memory");
+  if (consumed_by_advance_promotion < old_promo_reserve) {
+    // If we're in a global collection, this memory can be used for old evacuations
+    old_evacuation_reserve += old_promo_reserve - consumed_by_advance_promotion;
+  }
+  heap->set_young_evac_reserve(young_evacuation_reserve);
+  heap->set_old_evac_reserve(old_evacuation_reserve);
+  heap->set_promoted_reserve(consumed_by_advance_promotion);
+
+  // There is no need to expand OLD because all memory used here was set aside at end of previous GC
 }
 
 // Having chosen the collection set, adjust the budgets for generational mode based on its composition.  Note
@@ -425,356 +354,92 @@ void ShenandoahGeneration::adjust_evacuation_budgets(ShenandoahHeap* heap, Shena
   // available that results from a decrease in memory consumed by old evacuation is not necessarily available to be loaned
   // to young-gen.
 
-  assert(heap->mode()->is_generational(), "Only generational mode uses evacuation budgets.");
-  size_t old_regions_loaned_for_young_evac, regions_available_to_loan;
   size_t region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
   ShenandoahOldGeneration* old_generation = heap->old_generation();
   ShenandoahYoungGeneration* young_generation = heap->young_generation();
-  size_t old_evacuated = collection_set->get_old_bytes_reserved_for_evacuation();
-  size_t old_evacuated_committed = (size_t) (ShenandoahEvacWaste * old_evacuated);
-  size_t old_evacuation_reserve = heap->get_old_evac_reserve();
-  // Immediate garbage found during choose_collection_set() is all young
-  size_t immediate_garbage = collection_set->get_immediate_trash();
-  size_t old_available = old_generation->available();
-  size_t young_available = young_generation->available() + immediate_garbage;
-  size_t loaned_regions = 0;
-  size_t available_loan_remnant = 0; // loaned memory that is not yet dedicated to any particular budget
 
-  // We expect this code to be replaced by 05/01/23.
-  //
-  // assert(((consumed_by_advance_promotion * 33) / 32) >= collection_set->get_young_bytes_to_be_promoted() * ShenandoahEvacWaste,
-  //       "Advance promotion (" SIZE_FORMAT ") should be at least young_bytes_to_be_promoted (" SIZE_FORMAT
-  //       ")* ShenandoahEvacWaste, totalling: " SIZE_FORMAT ", within round-off errors of up to 3.125%%",
-  //       consumed_by_advance_promotion, collection_set->get_young_bytes_to_be_promoted(),
-  //       (size_t) (collection_set->get_young_bytes_to_be_promoted() * ShenandoahEvacWaste));
-
-  // assert(consumed_by_advance_promotion <= (collection_set->get_young_bytes_to_be_promoted() * ShenandoahEvacWaste * 33) / 32,
-  //       "Round-off errors should be less than 3.125%%, consumed by advance: " SIZE_FORMAT ", promoted: " SIZE_FORMAT,
-  //       consumed_by_advance_promotion, (size_t) (collection_set->get_young_bytes_to_be_promoted() * ShenandoahEvacWaste));
-
+  // Preselected regions have been inserted into the collection set, so we no longer need the preselected array.
   collection_set->abandon_preselected();
 
+  size_t old_evacuated = collection_set->get_old_bytes_reserved_for_evacuation();
+  size_t old_evacuated_committed = (size_t) (ShenandoahOldEvacWaste * old_evacuated);
+  size_t old_evacuation_reserve = heap->get_old_evac_reserve();
+
   if (old_evacuated_committed > old_evacuation_reserve) {
-    // This should only happen due to round-off errors when enforcing ShenandoahEvacWaste
+    // This should only happen due to round-off errors when enforcing ShenandoahOldEvacWaste
     assert(old_evacuated_committed <= (33 * old_evacuation_reserve) / 32,
            "Round-off errors should be less than 3.125%%, committed: " SIZE_FORMAT ", reserved: " SIZE_FORMAT,
            old_evacuated_committed, old_evacuation_reserve);
     old_evacuated_committed = old_evacuation_reserve;
+    // Leave old_evac_reserve as previously configured
   } else if (old_evacuated_committed < old_evacuation_reserve) {
-    // This may happen if the old-gen collection consumes less than full budget.
+    // This happens if the old-gen collection consumes less than full budget.
     old_evacuation_reserve = old_evacuated_committed;
     heap->set_old_evac_reserve(old_evacuation_reserve);
   }
 
-  // Recompute old_regions_loaned_for_young_evac because young-gen collection set may not need all the memory
-  // originally reserved.
-  size_t young_promoted = collection_set->get_young_bytes_to_be_promoted();
-  size_t young_promoted_reserve_used = (size_t) (ShenandoahEvacWaste * young_promoted);
+  size_t young_advance_promoted = collection_set->get_young_bytes_to_be_promoted();
+  size_t young_advance_promoted_reserve_used = (size_t) (ShenandoahPromoEvacWaste * young_advance_promoted);
 
   size_t young_evacuated = collection_set->get_young_bytes_reserved_for_evacuation();
   size_t young_evacuated_reserve_used = (size_t) (ShenandoahEvacWaste * young_evacuated);
 
-  // We'll invoke heap->set_young_evac_reserve() further below, after we make additional adjustments to its value
-
-  // Adjust old_regions_loaned_for_young_evac to feed into calculations of promoted_reserve
-  if (young_evacuated_reserve_used > young_available) {
-    size_t short_fall = young_evacuated_reserve_used - young_available;
-
-    // region_size_bytes is a power of 2.  loan an integral number of regions.
-    size_t revised_loan_for_young_evacuation = (short_fall + region_size_bytes - 1) / region_size_bytes;
-
-    // available_loan_remnant represents memory loaned from old-gen but not required for young evacuation.
-    // This is the excess loaned memory that results from rounding the required loan up to an integral number
-    // of heap regions.  This will be dedicated to alloc_supplement below.
-    available_loan_remnant = (revised_loan_for_young_evacuation * region_size_bytes) - short_fall;
-
-    // We previously loaned more than was required by young-gen evacuation.  So claw some of this memory back.
-    old_regions_loaned_for_young_evac = revised_loan_for_young_evacuation;
-    loaned_regions = old_regions_loaned_for_young_evac;
-  } else {
-    // Undo the previous loan, if any.
-    old_regions_loaned_for_young_evac = 0;
-    loaned_regions = 0;
-  }
-
-  size_t old_bytes_loaned_for_young_evac = old_regions_loaned_for_young_evac * region_size_bytes - available_loan_remnant;
-
-  // Recompute regions_available_to_loan based on possible changes to old_regions_loaned_for_young_evac and
-  // old_evacuation_reserve.
-
-  // Any decrease in old_regions_loaned_for_young_evac are immediately available to be loaned
-  // However, a change to old_evacuation_reserve() is not necessarily available to loan, because this memory may
-  // reside within many fragments scattered throughout old-gen.
-
-  regions_available_to_loan = old_generation->free_unaffiliated_regions();
-  size_t working_old_available = old_generation->available();
-
-  assert(regions_available_to_loan * region_size_bytes <= working_old_available,
-         "Regions available to loan  must be less than available memory");
-
-  // fragmented_old_total is the amount of memory in old-gen beyond regions_available_to_loan that is otherwise not
-  // yet dedicated to a particular budget.  This memory can be used for promotion_reserve.
-  size_t fragmented_old_total = working_old_available - regions_available_to_loan * region_size_bytes;
-
-  // fragmented_old_usage is the memory that is dedicated to holding evacuated old-gen objects, which does not need
-  // to be an integral number of regions.
-  size_t fragmented_old_usage = old_evacuated_committed + consumed_by_advance_promotion;
-
-  if (fragmented_old_total >= fragmented_old_usage) {
-    // Seems this will be rare.  In this case, all of the memory required for old-gen evacuations and promotions can be
-    // taken from the existing fragments within old-gen.  Reduce this fragmented total by this amount.
-    fragmented_old_total -= fragmented_old_usage;
-    // And reduce regions_available_to_loan by the regions dedicated to young_evac.
-    regions_available_to_loan -= old_regions_loaned_for_young_evac;
-  } else {
-    // In this case, we need to dedicate some of the regions_available_to_loan to hold the results of old-gen evacuations
-    // and promotions.
-
-    size_t unaffiliated_memory_required_for_old = fragmented_old_usage - fragmented_old_total;
-    size_t unaffiliated_regions_used_by_old = (unaffiliated_memory_required_for_old + region_size_bytes - 1) / region_size_bytes;
-    regions_available_to_loan -= (unaffiliated_regions_used_by_old + old_regions_loaned_for_young_evac);
-
-    size_t memory_for_promotions_and_old_evac = fragmented_old_total + unaffiliated_regions_used_by_old;
-    size_t memory_required_for_promotions_and_old_evac = fragmented_old_usage;
-    size_t excess_fragmented = memory_for_promotions_and_old_evac - memory_required_for_promotions_and_old_evac;
-    fragmented_old_total = excess_fragmented;
-  }
-
-  // Subtract from working_old_available old_evacuated_committed and consumed_by_advance_promotion
-  working_old_available -= fragmented_old_usage;
-  // And also subtract out the regions loaned for young evacuation
-  working_old_available -= old_regions_loaned_for_young_evac * region_size_bytes;
-
-  // Assure that old_evacuated_committed + old_bytes_loaned_for_young_evac >= the minimum evacuation reserve
-  // in order to prevent promotion reserve from violating minimum evacuation reserve.
-  size_t old_regions_reserved_for_alloc_supplement = 0;
-  size_t old_bytes_reserved_for_alloc_supplement = 0;
-  size_t reserved_bytes_for_future_old_evac = 0;
-
-  old_bytes_reserved_for_alloc_supplement = available_loan_remnant;
-  available_loan_remnant = 0;
-
-  // Memory that has been loaned for young evacuations and old-gen regions in the current mixed-evacuation collection
-  // set will be available to hold future old-gen evacuations.  If this memory is less than the desired amount of memory
-  // set aside for old-gen compaction reserve, try to set aside additional memory so that it will be available during
-  // the next mixed evacuation cycle.  Note that memory loaned to young-gen for allocation supplement is excluded from
-  // the old-gen promotion reserve.
-  size_t future_evac_reserve_regions = old_regions_loaned_for_young_evac + collection_set->get_old_region_count();
-  size_t collected_regions = collection_set->get_young_region_count();
-
-  if (future_evac_reserve_regions < ShenandoahOldCompactionReserve) {
-    // Require that we loan more memory for holding young evacuations to assure that we have adequate reserves to receive
-    // old-gen evacuations during subsequent collections.  Loaning this memory for an allocation supplement does not
-    // satisfy our needs because newly allocated objects are not necessarily counter-balanced by reclaimed collection
-    // set regions.
-
-    // Put this memory into reserve by identifying it as old_regions_loaned_for_young_evac
-    size_t additional_regions_to_loan = ShenandoahOldCompactionReserve - future_evac_reserve_regions;
-
-    // We can loan additional regions to be repaid from the anticipated recycling of young collection set regions
-    // provided that these regions are currently available within old-gen memory.
-    size_t collected_regions_to_loan;
-    if (collected_regions >= additional_regions_to_loan) {
-      collected_regions_to_loan = additional_regions_to_loan;
-      additional_regions_to_loan = 0;
-    } else if (collected_regions > 0) {
-      collected_regions_to_loan = collected_regions;
-      additional_regions_to_loan -= collected_regions_to_loan;
-    } else {
-      collected_regions_to_loan = 0;
-    }
-
-    if (collected_regions_to_loan > 0) {
-      // We're evacuating at least this many regions, it's ok to use these regions for allocation supplement since
-      // we'll be able to repay the loan at end of this GC pass, assuming the regions are available.
-      if (collected_regions_to_loan > regions_available_to_loan) {
-        collected_regions_to_loan = regions_available_to_loan;
-      }
-      old_bytes_reserved_for_alloc_supplement += collected_regions_to_loan * region_size_bytes;
-      regions_available_to_loan -= collected_regions_to_loan;
-      loaned_regions += collected_regions_to_loan;
-      working_old_available -= collected_regions_to_loan * region_size_bytes;
-    }
-
-    // If there's still memory that we want to exclude from the current promotion reserve, but we are unable to loan
-    // this memory because fully empty old-gen regions are not available, decrement the working_old_available to make
-    // sure that this memory is not used to hold the results of old-gen evacuation.
-    if (additional_regions_to_loan > regions_available_to_loan) {
-      size_t unloaned_regions = additional_regions_to_loan - regions_available_to_loan;
-      size_t unloaned_bytes = unloaned_regions * region_size_bytes;
-
-      if (working_old_available < unloaned_bytes) {
-        // We're in dire straits.  We won't be able to reserve all the memory that we want to make available for the
-        // next old-gen evacuation.  We'll reserve as much of it as possible.  Setting working_old_available to zero
-        // means there will be no promotion except for the advance promotion.  Note that if some advance promotion fails,
-        // the object will be evacuated to young-gen so we should still end up reclaiming the entire advance promotion
-        // collection set.
-        reserved_bytes_for_future_old_evac = working_old_available;
-        working_old_available = 0;
-      } else {
-        reserved_bytes_for_future_old_evac = unloaned_bytes;
-        working_old_available -= unloaned_bytes;
-      }
-      size_t regions_reserved_for_future_old_evac =
-        (reserved_bytes_for_future_old_evac + region_size_bytes - 1) / region_size_bytes;
-
-      if (regions_reserved_for_future_old_evac < regions_available_to_loan) {
-        regions_available_to_loan -= regions_reserved_for_future_old_evac;
-      } else {
-        regions_available_to_loan = 0;
-      }
-
-      // Since we're in dire straits, zero out fragmented_old_total so this won't be used for promotion;
-      if (working_old_available > fragmented_old_total) {
-        working_old_available -= fragmented_old_total;
-      } else {
-        working_old_available = 0;
-      }
-      fragmented_old_total = 0;
-    }
-  }
-
-  // Establish young_evac_reserve so that this young-gen memory is not used for new allocations, allowing the memory
-  // to be returned to old-gen as soon as the current collection set regions are reclaimed.
+  assert(young_evacuated_reserve_used <= young_generation->available(), "Cannot evacuate more than is available in young");
   heap->set_young_evac_reserve(young_evacuated_reserve_used);
 
-  // Limit promoted_reserve so that we can set aside memory to be loaned from old-gen to young-gen.  This
-  // value is not "critical".  If we underestimate, certain promotions will simply be deferred.  If we put
-  // "all the rest" of old-gen memory into the promotion reserve, we'll have nothing left to loan to young-gen
-  // during the evac and update phases of GC.  So we "limit" the sizes of the promotion budget to be the smaller of:
-  //
-  //  1. old_available
-  //     (old_available is old_gen->available() -
-  //      (old_evacuated_committed + consumed_by_advance_promotion + loaned_for_young_evac + reserved_for_alloc_supplement))
-  //  2. young bytes reserved for evacuation (we can't promote more than young is evacuating)
-  size_t promotion_reserve = working_old_available;
+  size_t old_available = old_generation->available();
+  // Now that we've established the collection set, we know how much memory is really required by old-gen for evacuation
+  // and promotion reserves.  Try shrinking OLD now in case that gives us a bit more runway for mutator allocations during
+  // evac and update phases.
+  size_t old_consumed = old_evacuated_committed + young_advance_promoted_reserve_used;
+  assert(old_available >= old_consumed, "Cannot consume more than is available");
+  size_t excess_old = old_available - old_consumed;
+  size_t unaffiliated_old_regions = old_generation->free_unaffiliated_regions();
+  size_t unaffiliated_old = unaffiliated_old_regions * region_size_bytes;
+  assert(old_available >= unaffiliated_old, "Unaffiliated old is a subset of old available");
 
-  // We experimented with constraining promoted_reserve to be no larger than 4 times the size of previously_promoted,
-  // but this constraint was too limiting, resulting in failure of legitimate promotions.  This was tried before we
-  // had special handling in place for advance promotion.  We should retry now that advance promotion is handled
-  // specially.
-
-  // We had also experimented with constraining promoted_reserve to be no more than young_evacuation_committed
-  // divided by promotion_divisor, where:
-  //  size_t promotion_divisor = (0x02 << InitialTenuringThreshold) - 1;
-  // This also was found to be too limiting, resulting in failure of legitimate promotions.
-  //
-  // Both experiments were conducted in the presence of other bugs which could have been the root cause for
-  // the failures identified above as being "too limiting".  TODO: conduct new experiments with the more limiting
-  // values of young_evacuation_reserved_used.
-
-  // young_evacuation_reserve_used already excludes bytes known to be promoted, which equals consumed_by_advance_promotion
-  if (young_evacuated_reserve_used < promotion_reserve) {
-    // Shrink promotion_reserve if it is larger than the memory to be consumed by evacuating all young objects in
-    // collection set, including anticipated waste.  There's no benefit in using a larger promotion_reserve.
-    // young_evacuation_reserve_used does not include live memory within tenure-aged regions.
-    promotion_reserve = young_evacuated_reserve_used;
-  }
-  assert(working_old_available >= promotion_reserve, "Cannot reserve for promotion more than is available");
-  working_old_available -= promotion_reserve;
-  // Having reserved this memory for promotion, the regions are no longer available to be loaned.
-  size_t regions_consumed_by_promotion_reserve = (promotion_reserve + region_size_bytes - 1) / region_size_bytes;
-  if (regions_consumed_by_promotion_reserve > regions_available_to_loan) {
-    // This can happen if the promotion reserve makes use of memory that is fragmented between many partially available
-    // old-gen regions.
-    regions_available_to_loan = 0;
-  } else {
-    regions_available_to_loan -= regions_consumed_by_promotion_reserve;
-  }
-
-  log_debug(gc)("old_gen->available(): " SIZE_FORMAT " divided between promotion reserve: " SIZE_FORMAT
-                ", old evacuation reserve: " SIZE_FORMAT ", advance promotion reserve supplement: " SIZE_FORMAT
-                ", old loaned for young evacuation: " SIZE_FORMAT ", old reserved for alloc supplement: " SIZE_FORMAT,
-                old_generation->available(), promotion_reserve, old_evacuated_committed, consumed_by_advance_promotion,
-                old_regions_loaned_for_young_evac * region_size_bytes, old_bytes_reserved_for_alloc_supplement);
-
-  promotion_reserve += consumed_by_advance_promotion;
-  heap->set_promoted_reserve(promotion_reserve);
-
-  heap->reset_promoted_expended();
-  if (collection_set->get_old_bytes_reserved_for_evacuation() == 0) {
-    // Setting old evacuation reserve to zero denotes that there is no old-gen evacuation in this pass.
-    heap->set_old_evac_reserve(0);
-  }
-
-  size_t old_gen_usage_base = old_generation->used() - collection_set->get_old_garbage();
-  heap->capture_old_usage(old_gen_usage_base);
-
-  // Compute additional evacuation supplement, which is extra memory borrowed from old-gen that can be allocated
-  // by mutators while GC is working on evacuation and update-refs.  This memory can be temporarily borrowed
-  // from old-gen allotment, then repaid at the end of update-refs from the recycled collection set.  After
-  // we have computed the collection set based on the parameters established above, we can make additional
-  // loans based on our knowledge of the collection set to determine how much allocation we can allow
-  // during the evacuation and update-refs phases of execution.  The total available supplement is the result
-  // of adding old_bytes_reserved_for_alloc_supplement to the smaller of:
-  //
-  //   1. regions_available_to_loan * region_size_bytes
-  //   2. The replenishment budget (number of regions in collection set - the number of regions already
-  //         under lien for the young_evacuation_reserve)
-  //
-
-  // Regardless of how many regions may be available to be loaned, we can loan no more regions than
-  // the total number of young regions to be evacuated.  Call this the regions_for_runway.
-
-  if (regions_available_to_loan > 0 && (collected_regions > loaned_regions)) {
-    assert(regions_available_to_loan * region_size_bytes <= working_old_available,
-           "regions_available_to_loan should not exceed working_old_available");
-
-    size_t additional_regions_to_loan = collected_regions - loaned_regions;
-    if (additional_regions_to_loan > regions_available_to_loan) {
-      additional_regions_to_loan = regions_available_to_loan;
+  // Make sure old_evac_committed is unaffiliated
+  if (old_evacuated_committed > 0) {
+    if (unaffiliated_old > old_evacuated_committed) {
+      size_t giveaway = unaffiliated_old - old_evacuated_committed;
+      size_t giveaway_regions = giveaway / region_size_bytes;  // round down
+      if (giveaway_regions > 0) {
+        excess_old = MIN2(excess_old, giveaway_regions * region_size_bytes);
+      } else {
+        excess_old = 0;
+      }
+    } else {
+      excess_old = 0;
     }
-    loaned_regions += additional_regions_to_loan;
-    old_bytes_reserved_for_alloc_supplement += additional_regions_to_loan * region_size_bytes;
-    working_old_available -= additional_regions_to_loan * region_size_bytes;
   }
-  size_t allocation_supplement = old_bytes_reserved_for_alloc_supplement + old_bytes_loaned_for_young_evac;
-  assert(allocation_supplement % ShenandoahHeapRegion::region_size_bytes() == 0,
-         "allocation_supplement must be multiple of region size");
 
-  heap->set_alloc_supplement_reserve(allocation_supplement);
+  // If we find that OLD has excess regions, give them back to YOUNG now to reduce likelihood we run out of allocation
+  // runway during evacuation and update-refs.
+  size_t regions_to_xfer = 0;
+  if (excess_old > unaffiliated_old) {
+    // we can give back unaffiliated_old (all of unaffiliated is excess)
+    if (unaffiliated_old_regions > 0) {
+      regions_to_xfer = unaffiliated_old_regions;
+    }
+  } else if (unaffiliated_old_regions > 0) {
+    // excess_old < unaffiliated old: we can give back MIN(excess_old/region_size_bytes, unaffiliated_old_regions)
+    size_t excess_regions = excess_old / region_size_bytes;
+    size_t regions_to_xfer = MIN2(excess_regions, unaffiliated_old_regions);
+  }
 
-  // TODO: young_available, which feeds into alloc_budget_evac_and_update is lacking memory available within
-  // existing young-gen regions that were not selected for the collection set.  Add this in and adjust the
-  // log message (where it says "empty-region allocation budget").
+  if (regions_to_xfer > 0) {
+    bool result = heap->generation_sizer()->transfer_to_young(regions_to_xfer);
+    assert(excess_old > regions_to_xfer * region_size_bytes, "Cannot xfer more than excess old");
+    excess_old -= regions_to_xfer * region_size_bytes;
+    log_info(gc, ergo)("%s transferred " SIZE_FORMAT " excess regions to young before start of evacuation",
+                       result? "Successfully": "Unsuccessfully", regions_to_xfer);
+  }
 
-
-  log_debug(gc)("Memory reserved for young evacuation: " SIZE_FORMAT "%s for evacuating " SIZE_FORMAT
-                "%s out of young available: " SIZE_FORMAT "%s",
-                byte_size_in_proper_unit(young_evacuated_reserve_used),
-                proper_unit_for_byte_size(young_evacuated_reserve_used),
-                byte_size_in_proper_unit(young_evacuated), proper_unit_for_byte_size(young_evacuated),
-                byte_size_in_proper_unit(young_available), proper_unit_for_byte_size(young_available));
-
-  log_debug(gc)("Memory reserved for old evacuation: " SIZE_FORMAT "%s for evacuating " SIZE_FORMAT
-                "%s out of old available: " SIZE_FORMAT "%s",
-                byte_size_in_proper_unit(old_evacuated), proper_unit_for_byte_size(old_evacuated),
-                byte_size_in_proper_unit(old_evacuated), proper_unit_for_byte_size(old_evacuated),
-                byte_size_in_proper_unit(old_available), proper_unit_for_byte_size(old_available));
-
-  size_t regular_promotion = promotion_reserve - consumed_by_advance_promotion;
-  size_t excess =
-    old_available - (old_evacuation_reserve + promotion_reserve + old_bytes_loaned_for_young_evac + allocation_supplement);
-  log_info(gc, ergo)("Old available: " SIZE_FORMAT "%s is partitioned into old evacuation budget: " SIZE_FORMAT
-                     "%s, aged region promotion budget: " SIZE_FORMAT
-                     "%s, regular region promotion budget: " SIZE_FORMAT
-                     "%s, loaned for young evacuation: " SIZE_FORMAT
-                     "%s, loaned for young allocations: " SIZE_FORMAT
-                     "%s, excess: " SIZE_FORMAT "%s",
-                     byte_size_in_proper_unit(old_available),
-                     proper_unit_for_byte_size(old_available),
-                     byte_size_in_proper_unit(old_evacuation_reserve),
-                     proper_unit_for_byte_size(old_evacuation_reserve),
-                     byte_size_in_proper_unit(consumed_by_advance_promotion),
-                     proper_unit_for_byte_size(consumed_by_advance_promotion),
-                     byte_size_in_proper_unit(regular_promotion),
-                     proper_unit_for_byte_size(regular_promotion),
-                     byte_size_in_proper_unit(old_bytes_loaned_for_young_evac),
-                     proper_unit_for_byte_size(old_bytes_loaned_for_young_evac),
-                     byte_size_in_proper_unit(allocation_supplement),
-                     proper_unit_for_byte_size(allocation_supplement),
-                     byte_size_in_proper_unit(excess),
-                     proper_unit_for_byte_size(excess));
+  // Add in the excess_old memory to hold unanticipated promotions, if any.  If there are more unanticipated
+  // promotions than fit in reserved memory, they will be deferred until a future GC pass.
+  size_t total_promotion_reserve = young_advance_promoted_reserve_used + excess_old;
+  heap->set_promoted_reserve(total_promotion_reserve);
+  heap->reset_promoted_expended();
 }
 
 void ShenandoahGeneration::prepare_regions_and_collection_set(bool concurrent) {
@@ -822,7 +487,6 @@ void ShenandoahGeneration::prepare_regions_and_collection_set(bool concurrent) {
 
       // Budgeting parameters to compute_evacuation_budgets are passed by reference.
       compute_evacuation_budgets(heap, preselected_regions, collection_set, consumed_by_advance_promotion);
-
       _heuristics->choose_collection_set(collection_set, heap->old_heuristics());
       if (!collection_set->is_empty()) {
         // only make use of evacuation budgets when we are evacuating
@@ -839,7 +503,11 @@ void ShenandoahGeneration::prepare_regions_and_collection_set(bool concurrent) {
     ShenandoahGCPhase phase(concurrent ? ShenandoahPhaseTimings::final_rebuild_freeset :
                             ShenandoahPhaseTimings::degen_gc_final_rebuild_freeset);
     ShenandoahHeapLocker locker(heap->lock());
-    heap->free_set()->rebuild();
+    size_t young_cset_regions, old_cset_regions;
+
+    // We are preparing for evacuation.  At this time, we ignore cset region tallies.
+    heap->free_set()->prepare_to_rebuild(young_cset_regions, old_cset_regions);
+    heap->free_set()->rebuild(young_cset_regions, old_cset_regions);
   }
   heap->set_evacuation_reserve_quantities(false);
 }
@@ -897,7 +565,7 @@ ShenandoahGeneration::ShenandoahGeneration(ShenandoahGenerationType type,
   _collection_thread_time_s(0.0),
   _affiliated_region_count(0), _humongous_waste(0), _used(0), _bytes_allocated_since_gc_start(0),
   _max_capacity(max_capacity), _soft_max_capacity(soft_max_capacity),
-  _adjusted_capacity(max_capacity), _heuristics(nullptr) {
+  _heuristics(nullptr) {
   _is_marking_complete.set();
   assert(max_workers > 0, "At least one queue");
   for (uint i = 0; i < max_workers; ++i) {
@@ -955,6 +623,28 @@ size_t ShenandoahGeneration::decrement_affiliated_region_count() {
   // on read and write of _affiliated_region_count.  At the end of full gc, a single thread overwrites the count with
   // a coherent value.
   _affiliated_region_count--;
+  // TODO: REMOVE IS_GLOBAL() QUALIFIER AFTER WE FIX GLOBAL AFFILIATED REGION ACCOUNTING
+  assert(is_global() || ShenandoahHeap::heap()->is_full_gc_in_progress() ||
+         (_used + _humongous_waste <= _affiliated_region_count * ShenandoahHeapRegion::region_size_bytes()),
+         "used + humongous cannot exceed regions");
+  return _affiliated_region_count;
+}
+
+size_t ShenandoahGeneration::increase_affiliated_region_count(size_t delta) {
+  shenandoah_assert_heaplocked_or_fullgc_safepoint();
+  _affiliated_region_count += delta;
+  return _affiliated_region_count;
+}
+
+size_t ShenandoahGeneration::decrease_affiliated_region_count(size_t delta) {
+  shenandoah_assert_heaplocked_or_fullgc_safepoint();
+  assert(_affiliated_region_count > delta, "Affiliated region count cannot be negative");
+
+  _affiliated_region_count -= delta;
+  // TODO: REMOVE IS_GLOBAL() QUALIFIER AFTER WE FIX GLOBAL AFFILIATED REGION ACCOUNTING
+  assert(is_global() || ShenandoahHeap::heap()->is_full_gc_in_progress() ||
+         (_used + _humongous_waste <= _affiliated_region_count * ShenandoahHeapRegion::region_size_bytes()),
+         "used + humongous cannot exceed regions");
   return _affiliated_region_count;
 }
 
@@ -967,11 +657,11 @@ void ShenandoahGeneration::establish_usage(size_t num_regions, size_t num_bytes,
 
 void ShenandoahGeneration::increase_used(size_t bytes) {
   Atomic::add(&_used, bytes);
-}
-
-void ShenandoahGeneration::decrease_used(size_t bytes) {
-  assert(_used >= bytes, "cannot reduce bytes used by generation below zero");
-  Atomic::sub(&_used, bytes);
+  // This detects arithmetic wraparound on _used.  Non-generational mode does not keep track of _affiliated_region_count
+  // TODO: REMOVE IS_GLOBAL() QUALIFIER AFTER WE FIX GLOBAL AFFILIATED REGION ACCOUNTING
+  assert(is_global() || ShenandoahHeap::heap()->is_full_gc_in_progress() ||
+         (_used + _humongous_waste <= _affiliated_region_count * ShenandoahHeapRegion::region_size_bytes()),
+         "used cannot exceed regions");
 }
 
 void ShenandoahGeneration::increase_humongous_waste(size_t bytes) {
@@ -982,11 +672,23 @@ void ShenandoahGeneration::increase_humongous_waste(size_t bytes) {
 
 void ShenandoahGeneration::decrease_humongous_waste(size_t bytes) {
   if (bytes > 0) {
-    assert(_humongous_waste >= bytes, "Waste cannot be negative");
     assert(ShenandoahHeap::heap()->is_full_gc_in_progress() || (_humongous_waste >= bytes),
            "Waste (" SIZE_FORMAT ") cannot be negative (after subtracting " SIZE_FORMAT ")", _humongous_waste, bytes);
     Atomic::sub(&_humongous_waste, bytes);
   }
+}
+
+void ShenandoahGeneration::decrease_used(size_t bytes) {
+  // TODO: REMOVE IS_GLOBAL() QUALIFIER AFTER WE FIX GLOBAL AFFILIATED REGION ACCOUNTING
+  assert(is_global() || ShenandoahHeap::heap()->is_full_gc_in_progress() ||
+         (_used >= bytes), "cannot reduce bytes used by generation below zero");
+  Atomic::sub(&_used, bytes);
+
+  // Non-generational mode does not maintain affiliated region counts
+  // TODO: REMOVE IS_GLOBAL() QUALIFIER AFTER WE FIX GLOBAL AFFILIATED REGION ACCOUNTING
+  assert(is_global() || ShenandoahHeap::heap()->is_full_gc_in_progress() ||
+         (_affiliated_region_count * ShenandoahHeapRegion::region_size_bytes() >= _used),
+         "Affiliated regions must hold more than what is currently used");
 }
 
 size_t ShenandoahGeneration::used_regions() const {
@@ -996,7 +698,7 @@ size_t ShenandoahGeneration::used_regions() const {
 size_t ShenandoahGeneration::free_unaffiliated_regions() const {
   size_t result = max_capacity() / ShenandoahHeapRegion::region_size_bytes();
   if (_affiliated_region_count > result) {
-    result = 0;                 // If old-gen is loaning regions to young-gen, affiliated regions may exceed capacity temporarily.
+    result = 0;
   } else {
     result -= _affiliated_region_count;
   }
@@ -1019,61 +721,48 @@ size_t ShenandoahGeneration::soft_available() const {
   return in_use > soft_capacity ? 0 : soft_capacity - in_use;
 }
 
-size_t ShenandoahGeneration::adjust_available(intptr_t adjustment) {
-  assert(adjustment % ShenandoahHeapRegion::region_size_bytes() == 0,
-        "Adjustment to generation size must be multiple of region size");
-  _adjusted_capacity = max_capacity() + adjustment;
-  return _adjusted_capacity;
-}
-
-size_t ShenandoahGeneration::unadjust_available() {
-  _adjusted_capacity = max_capacity();
-  return _adjusted_capacity;
-}
-
-size_t ShenandoahGeneration::adjusted_available() const {
-  size_t in_use = used() + get_humongous_waste();
-  size_t capacity = _adjusted_capacity;
-  return in_use > capacity ? 0 : capacity - in_use;
-}
-
-size_t ShenandoahGeneration::adjusted_capacity() const {
-  return _adjusted_capacity;
-}
-
-size_t ShenandoahGeneration::adjusted_unaffiliated_regions() const {
-  // This assertion has been disabled because we expect this code to be replaced by 05/2023
-  // assert(adjusted_capacity() >= used_regions_size(), "adjusted_unaffiliated_regions() cannot return negative");
-  assert((adjusted_capacity() - used_regions_size()) % ShenandoahHeapRegion::region_size_bytes() == 0,
-         "adjusted capacity (" SIZE_FORMAT ") and used regions size (" SIZE_FORMAT ") should be multiples of region_size_bytes",
-         adjusted_capacity(), used_regions_size());
-  return (adjusted_capacity() - used_regions_size()) / ShenandoahHeapRegion::region_size_bytes();
-}
-
 void ShenandoahGeneration::increase_capacity(size_t increment) {
   shenandoah_assert_heaplocked_or_safepoint();
-  assert(_max_capacity + increment <= ShenandoahHeap::heap()->max_size_for(this), "Cannot increase generation capacity beyond maximum.");
-  assert(increment % ShenandoahHeapRegion::region_size_bytes() == 0, "Region-sized changes only");
-  // TODO: ysr: remove this check and warning
-  if (increment % ShenandoahHeapRegion::region_size_bytes() != 0) {
-    log_warning(gc)("Increment (" INTPTR_FORMAT ") should be a multiple of region size (" SIZE_FORMAT ")",
-                    increment, ShenandoahHeapRegion::region_size_bytes());
-  }
+
+  // We do not enforce that new capacity >= heap->max_size_for(this).  The maximum generation size is treated as a rule of thumb
+  // which may be violated during certain transitions, such as when we are forcing transfers for the purpose of promoting regions
+  // in place.
+  // TODO: REMOVE IS_GLOBAL() QUALIFIER AFTER WE FIX GLOBAL AFFILIATED REGION ACCOUNTING
+  assert(is_global() || ShenandoahHeap::heap()->is_full_gc_in_progress() ||
+         (_max_capacity + increment <= ShenandoahHeap::heap()->max_capacity()), "Generation cannot be larger than heap size");
+  assert(increment % ShenandoahHeapRegion::region_size_bytes() == 0, "Generation capacity must be multiple of region size");
   _max_capacity += increment;
-  _adjusted_capacity += increment;
+
+  // This detects arithmetic wraparound on _used
+  // TODO: REMOVE IS_GLOBAL() QUALIFIER AFTER WE FIX GLOBAL AFFILIATED REGION ACCOUNTING
+  assert(is_global() || ShenandoahHeap::heap()->is_full_gc_in_progress() ||
+         (_affiliated_region_count * ShenandoahHeapRegion::region_size_bytes() >= _used),
+         "Affiliated regions must hold more than what is currently used");
 }
 
 void ShenandoahGeneration::decrease_capacity(size_t decrement) {
   shenandoah_assert_heaplocked_or_safepoint();
-  assert(_max_capacity - decrement >= ShenandoahHeap::heap()->min_size_for(this), "Cannot decrease generation capacity beyond minimum.");
-  assert(decrement % ShenandoahHeapRegion::region_size_bytes() == 0, "Region-sized changes only");
-  // TODO: ysr: remove this check and warning
-  if (decrement % ShenandoahHeapRegion::region_size_bytes() != 0) {
-    log_warning(gc)("Decrement (" INTPTR_FORMAT ") should be a multiple of region size (" SIZE_FORMAT ")",
-                    decrement, ShenandoahHeapRegion::region_size_bytes());
-  }
+
+  // We do not enforce that new capacity >= heap->min_size_for(this).  The minimum generation size is treated as a rule of thumb
+  // which may be violated during certain transitions, such as when we are forcing transfers for the purpose of promoting regions
+  // in place.
+  assert(decrement % ShenandoahHeapRegion::region_size_bytes() == 0, "Generation capacity must be multiple of region size");
+  assert(_max_capacity >= decrement, "Generation capacity cannot be negative");
+
   _max_capacity -= decrement;
-  _adjusted_capacity -= decrement;
+
+  // This detects arithmetic wraparound on _used
+  // TODO: REMOVE IS_GLOBAL() QUALIFIER AFTER WE FIX GLOBAL AFFILIATED REGION ACCOUNTING
+  assert(is_global() || ShenandoahHeap::heap()->is_full_gc_in_progress() ||
+         (_affiliated_region_count * ShenandoahHeapRegion::region_size_bytes() >= _used),
+         "Affiliated regions must hold more than what is currently used");
+  // TODO: REMOVE IS_GLOBAL() QUALIFIER AFTER WE FIX GLOBAL AFFILIATED REGION ACCOUNTING
+  assert(is_global() || ShenandoahHeap::heap()->is_full_gc_in_progress() ||
+         (_used <= _max_capacity), "Cannot use more than capacity");
+  // TODO: REMOVE IS_GLOBAL() QUALIFIER AFTER WE FIX GLOBAL AFFILIATED REGION ACCOUNTING
+  assert(is_global() || ShenandoahHeap::heap()->is_full_gc_in_progress() ||
+         (_affiliated_region_count * ShenandoahHeapRegion::region_size_bytes() <= _max_capacity),
+         "Cannot use more than capacity");
 }
 
 void ShenandoahGeneration::record_success_concurrent(bool abbreviated) {

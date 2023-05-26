@@ -57,7 +57,11 @@ bool ShenandoahDegenGC::collect(GCCause::Cause cause) {
   vmop_degenerated();
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   if (heap->mode()->is_generational()) {
-    heap->log_heap_status("At end of Degenerated GC");
+    bool is_bootstrap_gc = heap->is_concurrent_old_mark_in_progress() && _generation->is_young();
+    heap->mmu_tracker()->record_degenerated(_generation, GCId::current(), is_bootstrap_gc,
+                                            !heap->collection_set()->has_old_regions());
+    const char* msg = is_bootstrap_gc? "At end of Degenerated Boostrap Old GC": "At end of Degenerated GC";
+    heap->log_heap_status(msg);
   }
   return true;
 }
@@ -272,27 +276,53 @@ void ShenandoahDegenGC::op_degenerated() {
       }
 
       op_cleanup_complete();
+      // We defer generation resizing actions until after cset regions have been recycled.
+      if (heap->mode()->is_generational()) {
+        size_t old_region_surplus = heap->get_old_region_surplus();
+        size_t old_region_deficit = heap->get_old_region_deficit();
+        bool success;
+        size_t region_xfer;
+        const char* region_destination;
+        if (old_region_surplus) {
+          region_xfer = old_region_surplus;
+          region_destination = "young";
+          success = heap->generation_sizer()->transfer_to_young(old_region_surplus);
+        } else if (old_region_deficit) {
+          region_xfer = old_region_surplus;
+          region_destination = "old";
+          success = heap->generation_sizer()->transfer_to_old(old_region_deficit);
+          if (!success) {
+            ((ShenandoahOldHeuristics *) heap->old_generation()->heuristics())->trigger_cannot_expand();
+          }
+        } else {
+          region_destination = "none";
+          region_xfer = 0;
+          success = true;
+        }
+
+        size_t young_available = heap->young_generation()->available();
+        size_t old_available = heap->old_generation()->available();
+        log_info(gc, ergo)("After cleanup, %s " SIZE_FORMAT " regions to %s to prepare for next gc, old available: "
+                           SIZE_FORMAT "%s, young_available: " SIZE_FORMAT "%s",
+                           success? "successfully transferred": "failed to transfer", region_xfer, region_destination,
+                           byte_size_in_proper_unit(old_available), proper_unit_for_byte_size(old_available),
+                           byte_size_in_proper_unit(young_available), proper_unit_for_byte_size(young_available));
+
+        heap->set_old_region_surplus(0);
+        heap->set_old_region_deficit(0);
+      }
       break;
     default:
       ShouldNotReachHere();
   }
 
   if (heap->mode()->is_generational()) {
-    // In case degeneration interrupted concurrent evacuation or update references,
-    // we need to clean up transient state. Otherwise, these actions have no effect.
-
-    heap->young_generation()->unadjust_available();
-    heap->old_generation()->unadjust_available();
-    // No need to old_gen->increase_used(). That was done when plabs were allocated,
-    // accounting for both old evacs and promotions.
-
-    heap->set_alloc_supplement_reserve(0);
+    // In case degeneration interrupted concurrent evacuation or update references, we need to clean up transient state.
+    // Otherwise, these actions have no effect.
     heap->set_young_evac_reserve(0);
     heap->set_old_evac_reserve(0);
     heap->reset_old_evac_expended();
     heap->set_promoted_reserve(0);
-
-    heap->adjust_generation_sizes();
   }
 
   if (ShenandoahVerify) {
@@ -354,7 +384,16 @@ void ShenandoahDegenGC::op_prepare_evacuation() {
     heap->tlabs_retire(false);
   }
 
-  if (!heap->collection_set()->is_empty()) {
+  size_t humongous_regions_promoted = heap->get_promotable_humongous_regions();
+  size_t regular_regions_promoted_in_place = heap->get_regular_regions_promoted_in_place();
+  if (!heap->collection_set()->is_empty() || (humongous_regions_promoted + regular_regions_promoted_in_place > 0)) {
+    // Even if the collection set is empty, we need to do evacuation if there are regions to be promoted in place.
+    // Degenerated evacuation takes responsibility for registering objects and setting the remembered set cards to dirty.
+
+    if (ShenandoahVerify) {
+      heap->verifier()->verify_before_evacuation();
+    }
+
     heap->set_evacuation_in_progress(true);
     heap->set_has_forwarded_objects(true);
 

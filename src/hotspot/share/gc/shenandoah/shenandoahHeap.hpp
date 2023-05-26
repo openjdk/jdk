@@ -205,6 +205,9 @@ public:
   void prepare_for_verify() override;
   void verify(VerifyOption vo) override;
 
+  bool verify_generation_usage(bool verify_old, size_t old_regions, size_t old_bytes, size_t old_waste,
+                               bool verify_young, size_t young_regions, size_t young_bytes, size_t young_waste);
+
 // WhiteBox testing support.
   bool supports_concurrent_gc_breakpoints() const override {
     return true;
@@ -215,6 +218,14 @@ public:
 private:
            size_t _initial_size;
            size_t _minimum_size;
+           size_t _promotion_potential;
+           size_t _promotion_in_place_potential;
+           size_t _pad_for_promote_in_place;    // bytes of filler
+           size_t _promotable_humongous_regions;
+           size_t _promotable_humongous_usage;
+           size_t _regular_regions_promoted_in_place;
+           size_t _regular_usage_promoted_in_place;
+
   volatile size_t _soft_max_size;
   shenandoah_padding(0);
   volatile size_t _committed;
@@ -284,6 +295,8 @@ public:
   void heap_region_iterate(ShenandoahHeapRegionClosure* blk) const;
   void parallel_heap_region_iterate(ShenandoahHeapRegionClosure* blk) const;
 
+  inline ShenandoahMmuTracker* const mmu_tracker() { return &_mmu_tracker; };
+
 // ---------- GC state machinery
 //
 // GC state describes the important parts of collector state, that may be
@@ -332,31 +345,8 @@ private:
   ShenandoahSharedFlag   _progress_last_gc;
   ShenandoahSharedFlag   _concurrent_strong_root_in_progress;
 
-  // _alloc_supplement_reserve is a supplemental budget for new_memory allocations.  During evacuation and update-references,
-  // mutator allocation requests are "authorized" iff young_gen->available() plus _alloc_supplement_reserve minus
-  // _young_evac_reserve is greater than request size.  The values of _alloc_supplement_reserve and _young_evac_reserve
-  // are zero except during evacuation and update-reference phases of GC.  Both of these values are established at
-  // the start of evacuation, and they remain constant throughout the duration of these two phases of GC.  Since these
-  // two values are constant throughout each GC phases, we introduce a new service into ShenandoahGeneration.  This service
-  // provides adjusted_available() based on an adjusted capacity.  At the start of evacuation, we adjust young capacity by
-  // adding the amount to be borrowed from old-gen and subtracting the _young_evac_reserve, we adjust old capacity by
-  // subtracting the amount to be loaned to young-gen.
-  //
-  // We always use adjusted capacities to determine permission to allocate within young and to promote into old.  Note
-  // that adjusted capacities equal traditional capacities except during evacuation and update refs.
-  //
-  // During evacuation, we assure that _old_evac_expended does not exceed _old_evac_reserve.
-  //
-  // At the end of update references, we perform the following bookkeeping activities:
-  //
-  // 1. Unadjust the capacity within young-gen and old-gen to undo the effects of borrowing memory from old-gen.  Note that
-  //    the entirety of the collection set is now available, so allocation capacity naturally increase at this time.
-  // 2. Clear (reset to zero) _alloc_supplement_reserve, _young_evac_reserve, _old_evac_reserve, and _promoted_reserve
-  //
-  // _young_evac_reserve and _old_evac_reserve are only non-zero during evacuation and update-references.
-  //
-  // Allocation of old GCLABs assures that _old_evac_expended + request-size < _old_evac_reserved.  If the allocation
-  //  is authorized, increment _old_evac_expended by request size.  This allocation ignores old_gen->available().
+  // TODO: Revisit the following comment.  It may not accurately represent the true behavior when evacuations fail due to
+  // difficulty finding memory to hold evacuated objects.
   //
   // Note that the typical total expenditure on evacuation is less than the associated evacuation reserve because we generally
   // reserve ShenandoahEvacWaste (> 1.0) times the anticipated evacuation need.  In the case that there is an excessive amount
@@ -364,9 +354,14 @@ private:
   // effort.  If this happens, the requesting thread blocks until some other thread manages to evacuate the offending object.
   // Only after "all" threads fail to evacuate an object do we consider the evacuation effort to have failed.
 
-  intptr_t _alloc_supplement_reserve;  // Bytes reserved for young allocations during evac and update refs
+  // How many full-gc cycles have been completed?
+  volatile size_t _completed_fullgc_cycles;
+
   size_t _promoted_reserve;            // Bytes reserved within old-gen to hold the results of promotion
   volatile size_t _promoted_expended;  // Bytes of old-gen memory expended on promotions
+
+  // Allocation of old GCLABs (aka PLABs) assures that _old_evac_expended + request-size < _old_evac_reserved.  If the allocation
+  //  is authorized, increment _old_evac_expended by request size.  This allocation ignores old_gen->available().
 
   size_t _old_evac_reserve;            // Bytes reserved within old-gen to hold evacuated objects from old-gen collection set
   volatile size_t _old_evac_expended;  // Bytes of old-gen memory expended on old-gen evacuations
@@ -397,7 +392,6 @@ private:
   void set_gc_state_mask(uint mask, bool value);
 
 public:
-
   char gc_state() const;
   static address gc_state_addr();
 
@@ -414,6 +408,7 @@ public:
   void set_concurrent_weak_root_in_progress(bool cond);
   void set_prepare_for_old_mark_in_progress(bool cond);
   void set_aging_cycle(bool cond);
+
 
   inline bool is_stable() const;
   inline bool is_idle() const;
@@ -441,9 +436,31 @@ public:
   inline void set_previous_promotion(size_t promoted_bytes);
   inline size_t get_previous_promotion() const;
 
+  inline void clear_promotion_potential() { _promotion_potential = 0; };
+  inline void set_promotion_potential(size_t val) { _promotion_potential = val; };
+  inline size_t get_promotion_potential() { return _promotion_potential; };
+
+  inline void clear_promotion_in_place_potential() { _promotion_in_place_potential = 0; };
+  inline void set_promotion_in_place_potential(size_t val) { _promotion_in_place_potential = val; };
+  inline size_t get_promotion_in_place_potential() { return _promotion_in_place_potential; };
+
+  inline void set_pad_for_promote_in_place(size_t pad) { _pad_for_promote_in_place = pad; }
+  inline size_t get_pad_for_promote_in_place() { return _pad_for_promote_in_place; }
+
+  inline void reserve_promotable_humongous_regions(size_t region_count) { _promotable_humongous_regions = region_count; }
+  inline void reserve_promotable_humongous_usage(size_t bytes) { _promotable_humongous_usage = bytes; }
+  inline void reserve_promotable_regular_regions(size_t region_count) { _regular_regions_promoted_in_place = region_count; }
+  inline void reserve_promotable_regular_usage(size_t used_bytes) { _regular_usage_promoted_in_place = used_bytes; }
+
+  inline size_t get_promotable_humongous_regions() { return _promotable_humongous_regions; }
+  inline size_t get_promotable_humongous_usage() { return _promotable_humongous_usage; }
+  inline size_t get_regular_regions_promoted_in_place() { return _regular_regions_promoted_in_place; }
+  inline size_t get_regular_usage_promoted_in_place() { return _regular_usage_promoted_in_place; }
+
   // Returns previous value
   inline size_t set_promoted_reserve(size_t new_val);
   inline size_t get_promoted_reserve() const;
+  inline void augment_promo_reserve(size_t increment);
 
   inline void reset_promoted_expended();
   inline size_t expend_promoted(size_t increment);
@@ -453,6 +470,7 @@ public:
   // Returns previous value
   inline size_t set_old_evac_reserve(size_t new_val);
   inline size_t get_old_evac_reserve() const;
+  inline void augment_old_evac_reserve(size_t increment);
 
   inline void reset_old_evac_expended();
   inline size_t expend_old_evac(size_t increment);
@@ -461,11 +479,6 @@ public:
   // Returns previous value
   inline size_t set_young_evac_reserve(size_t new_val);
   inline size_t get_young_evac_reserve() const;
-
-  // Returns previous value.  This is a signed value because it is the amount borrowed minus the amount reserved for
-  // young-gen evacuation.  In case we cannot borrow much, this value might be negative.
-  inline intptr_t set_alloc_supplement_reserve(intptr_t new_val);
-  inline intptr_t get_alloc_supplement_reserve() const;
 
 private:
   void manage_satb_barrier(bool active);
@@ -517,11 +530,11 @@ private:
   void update_heap_references(bool concurrent);
   // Final update region states
   void update_heap_region_states(bool concurrent);
-  void rebuild_free_set(bool concurrent);
 
   void rendezvous_threads();
   void recycle_trash();
 public:
+  void rebuild_free_set(bool concurrent);
   void notify_gc_progress()    { _progress_last_gc.set();   }
   void notify_gc_no_progress() { _progress_last_gc.unset(); }
 
@@ -698,6 +711,10 @@ public:
 // ---------- Allocation support
 //
 private:
+  // How many bytes to transfer between old and young after we have finished recycling collection set regions?
+  size_t _old_regions_surplus;
+  size_t _old_regions_deficit;
+
   HeapWord* allocate_memory_under_lock(ShenandoahAllocRequest& request, bool& in_new_region, bool is_promotion);
 
   inline HeapWord* allocate_from_gclab(Thread* thread, size_t size);
@@ -730,6 +747,12 @@ public:
   void gclabs_retire(bool resize);
 
   void set_young_lab_region_flags();
+
+  inline void set_old_region_surplus(size_t surplus) { _old_regions_surplus = surplus; };
+  inline void set_old_region_deficit(size_t deficit) { _old_regions_deficit = deficit; };
+
+  inline size_t get_old_region_surplus() { return _old_regions_surplus; };
+  inline size_t get_old_region_deficit() { return _old_regions_deficit; };
 
 // ---------- Marking support
 //
@@ -830,7 +853,7 @@ public:
   void cancel_old_gc();
   bool is_old_gc_active();
   void coalesce_and_fill_old_regions();
-  bool adjust_generation_sizes();
+  void adjust_generation_sizes_for_next_cycle(size_t old_xfer_limit, size_t young_cset_regions, size_t old_cset_regions);
 
 // ---------- Helper functions
 //

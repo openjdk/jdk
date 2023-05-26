@@ -82,6 +82,7 @@ HeapWord* ShenandoahHeapRegion::allocate_aligned(size_t size, ShenandoahAllocReq
   if (size >= req.min_size()) {
     // Even if req.min_size() is not a multiple of card size, we know that size is.
     if (pad_words > 0) {
+      assert(pad_words >= ShenandoahHeap::min_fill_size(), "pad_words expanded above to meet size constraint");
       ShenandoahHeap::fill_with_object(orig_top, pad_words);
       ShenandoahHeap::heap()->card_scan()->register_object(orig_top);
     }
@@ -190,6 +191,17 @@ inline size_t ShenandoahHeapRegion::garbage() const {
   return result;
 }
 
+inline size_t ShenandoahHeapRegion::garbage_before_padded_for_promote() const {
+  size_t used_before_promote = byte_size(bottom(), get_top_before_promote());
+  assert(get_top_before_promote() != nullptr, "top before promote should not equal null");
+  assert(used_before_promote >= get_live_data_bytes(),
+         "Live Data must be a subset of used before promotion live: " SIZE_FORMAT " used: " SIZE_FORMAT,
+         get_live_data_bytes(), used_before_promote);
+  size_t result = used_before_promote - get_live_data_bytes();
+  return result;
+
+}
+
 inline HeapWord* ShenandoahHeapRegion::get_update_watermark() const {
   HeapWord* watermark = Atomic::load_acquire(&_update_watermark);
   assert(bottom() <= watermark && watermark <= top(), "within bounds");
@@ -239,5 +251,18 @@ inline bool ShenandoahHeapRegion::is_old() const {
 inline bool ShenandoahHeapRegion::is_affiliated() const {
   return affiliation() != FREE;
 }
+
+inline void ShenandoahHeapRegion::save_top_before_promote() {
+  _top_before_promoted = _top;
+}
+
+inline void ShenandoahHeapRegion::restore_top_before_promote() {
+  _top = _top_before_promoted;
+#ifdef ASSERT
+  _top_before_promoted = nullptr;
+#endif
+ }
+
+
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHHEAPREGION_INLINE_HPP
