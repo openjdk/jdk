@@ -197,16 +197,39 @@ import java.util.stream.Stream;
  * </tbody>
  * </table></blockquote>
  * <p>
- * All the native linker implementations limit the function descriptors that they support to those that contain
- * only so-called <em>canonical</em> layouts. A canonical layout has the following characteristics:
+ * All native linker implementations operate on a subset of memory layouts. More formally, a layout {@code L}
+ * is supported by a native linker {@code NL} iff:
+ * <ul>
+ * <li>{@code L} is a value layout {@code V} and {@code V.withoutName()} is equal to one of the following layout constants:
+ * <ul>
+ * <li>{@link ValueLayout#JAVA_BOOLEAN}</li>
+ * <li>{@link ValueLayout#JAVA_BYTE}</li>
+ * <li>{@link ValueLayout#JAVA_CHAR}</li>
+ * <li>{@link ValueLayout#JAVA_SHORT}</li>
+ * <li>{@link ValueLayout#JAVA_INT}</li>
+ * <li>{@link ValueLayout#JAVA_LONG}</li>
+ * <li>{@link ValueLayout#JAVA_FLOAT}</li>
+ * <li>{@link ValueLayout#JAVA_DOUBLE}</li>
+ * </ul></li>
+ * <li>{@code L} is an address layout {@code A} and {@code A.withoutTargetLayout().withoutName()} is equal to {@link ValueLayout#ADDRESS}</li>
+ * <li>{@code L} is a sequence layout {@code S} and all the following conditions hold:
  * <ol>
- * <li>Its alignment constraint is set to its <a href="MemoryLayout.html#layout-align">natural alignment</a></li>
- * <li>If it is a {@linkplain ValueLayout value layout}, its {@linkplain ValueLayout#order() byte order} is
- * the {@linkplain ByteOrder#nativeOrder() native byte order}.
- * <li>If it is a {@linkplain GroupLayout group layout}, its size is a multiple of its alignment constraint, and</li>
- * <li>It does not contain padding other than what is strictly required to align its non-padding layout elements,
- * or to satisfy constraint 3</li>
+ * <li>the alignment constraint of {@code S} is set to its <a href="MemoryLayout.html#layout-align">natural alignment</a>, and</li>
+ * <li>{@code S.elementLayout()} is a layout supported by {@code NL}.</li>
  * </ol>
+ * </li>
+ * <li>{@code L} is a group layout {@code G} and all the following conditions hold:
+ * <ol>
+ * <li>the alignment constraint of {@code G} is set to its <a href="MemoryLayout.html#layout-align">natural alignment</a>;</li>
+ * <li>the size of {@code G} is a multiple of its alignment constraint;</li>
+ * <li>each member layout in {@code G.memberLayouts()} is either a padding layout or a layout supported by {@code NL}, and</li>
+ * <li>{@code G} does not contain padding other than what is strictly required to align its non-padding layout elements, or to satisfy (2).</li>
+ * </ol>
+ * </li>
+ * </ul>
+ *
+ * A native linker only supports function descriptors whose argument/return layouts are layouts supported by that linker
+ * and are not sequence layouts.
  *
  * <h3 id="function-pointers">Function pointers</h3>
  *
