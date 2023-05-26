@@ -234,9 +234,9 @@ public final class StackMapGenerator {
         this.labelContext = labelContext;
         this.handlers = handlers;
         this.rawHandlers = new ArrayList<>(handlers.size());
-        this.classHierarchy = new ClassHierarchyImpl(options.classHierarchyResolver);
-        this.patchDeadCode = options.patchCode;
-        this.filterDeadLabels = options.filterDeadLabels;
+        this.classHierarchy = new ClassHierarchyImpl(options.classHierarchyResolver.classHierarchyResolver());
+        this.patchDeadCode = options.patchCode == Classfile.DeadCodeOption.PATCH_DEAD_CODE;
+        this.filterDeadLabels = options.filterDeadLabels == Classfile.DeadLabelsOption.FILTER_DEAD_LABELS;
         this.currentFrame = new Frame(classHierarchy);
         generate();
     }
@@ -837,7 +837,7 @@ public final class StackMapGenerator {
         //try to attach debug info about corrupted bytecode to the message
         try {
             //clone SplitConstantPool with alternate Options
-            var cc = Classfile.Context.of(Classfile.Option.generateStackmap(false));
+            var cc = Classfile.Context.of(Classfile.StackMapsOption.DO_NOT_GENERATE);
             var newCp = new SplitConstantPool(cp);
             var clm = cc.parse(cc.build(newCp.classEntry(ClassDesc.of("FakeClass")), newCp, clb ->
                     clb.withMethod(methodName, methodDesc, isStatic ? ACC_STATIC : 0, mb ->

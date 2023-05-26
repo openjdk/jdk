@@ -108,7 +108,7 @@ public final class DirectCodeBuilder
             handler.accept(cb = new DirectCodeBuilder(methodInfo, constantPool, options, original, false));
             cb.buildContent();
         } catch (LabelOverflowException loe) {
-            if (options.fixJumps) {
+            if (options.fixJumps == Classfile.ShortJumpsOption.FIX_SHORT_JUMPS) {
                 handler.accept(cb = new DirectCodeBuilder(methodInfo, constantPool, options, original, true));
                 cb.buildContent();
             }
@@ -127,7 +127,7 @@ public final class DirectCodeBuilder
         setOriginal(original);
         this.methodInfo = methodInfo;
         this.transformFwdJumps = transformFwdJumps;
-        this.transformBackJumps = options.fixJumps;
+        this.transformBackJumps = options.fixJumps == Classfile.ShortJumpsOption.FIX_SHORT_JUMPS;
         bytecodesBufWriter = (original instanceof CodeImpl cai) ? new BufWriterImpl(constantPool, options, cai.codeLength())
                                                                : new BufWriterImpl(constantPool, options);
         this.startLabel = new LabelImpl(this, 0);
@@ -198,7 +198,7 @@ public final class DirectCodeBuilder
             int endPc = labelToBci(h.tryEnd());
             int handlerPc = labelToBci(h.handler());
             if (startPc == -1 || endPc == -1 || handlerPc == -1) {
-                if (options.filterDeadLabels) {
+                if (options.filterDeadLabels == Classfile.DeadLabelsOption.FILTER_DEAD_LABELS) {
                     handlersSize--;
                 } else {
                     throw new IllegalStateException("Unbound label in exception handler");
@@ -222,7 +222,8 @@ public final class DirectCodeBuilder
         // Backfill branches for which Label didn't have position yet
         processDeferredLabels();
 
-        if (options.processDebug) {
+        if (options.processDebug == Classfile.DebugElementsOption.PROCESS_DEBUG_ELEMENTS ||
+            options.processDebug == Classfile.DebugElementsOption.DROP_DEBUG_ELEMENTS_ON_READ) {
             if (!characterRanges.isEmpty()) {
                 Attribute<?> a = new UnboundAttribute.AdHocAttribute<>(Attributes.CHARACTER_RANGE_TABLE) {
 
@@ -235,7 +236,7 @@ public final class DirectCodeBuilder
                             var start = labelToBci(cr.startScope());
                             var end = labelToBci(cr.endScope());
                             if (start == -1 || end == -1) {
-                                if (options.filterDeadLabels) {
+                                if (options.filterDeadLabels == Classfile.DeadLabelsOption.FILTER_DEAD_LABELS) {
                                     crSize--;
                                 } else {
                                     throw new IllegalStateException("Unbound label in character range");
@@ -264,7 +265,7 @@ public final class DirectCodeBuilder
                         b.writeU2(lvSize);
                         for (LocalVariable l : localVariables) {
                             if (!l.writeTo(b)) {
-                                if (options.filterDeadLabels) {
+                                if (options.filterDeadLabels == Classfile.DeadLabelsOption.FILTER_DEAD_LABELS) {
                                     lvSize--;
                                 } else {
                                     throw new IllegalStateException("Unbound label in local variable type");
@@ -287,7 +288,7 @@ public final class DirectCodeBuilder
                         b.writeU2(localVariableTypes.size());
                         for (LocalVariableType l : localVariableTypes) {
                             if (!l.writeTo(b)) {
-                                if (options.filterDeadLabels) {
+                                if (options.filterDeadLabels == Classfile.DeadLabelsOption.FILTER_DEAD_LABELS) {
                                     lvtSize--;
                                 } else {
                                     throw new IllegalStateException("Unbound label in local variable type");
@@ -324,7 +325,7 @@ public final class DirectCodeBuilder
                 Attribute<? extends StackMapTableAttribute> stackMapAttr;
                 boolean canReuseStackmaps = codeAndExceptionsMatch(codeLength);
 
-                if (!options.generateStackmaps) {
+                if (options.generateStackmaps == Classfile.StackMapsOption.DO_NOT_GENERATE) {
                     StackCounter cntr = StackCounter.of(DirectCodeBuilder.this, buf);
                     maxStack = cntr.maxStack();
                     maxLocals = cntr.maxLocals();
@@ -335,7 +336,8 @@ public final class DirectCodeBuilder
                     maxStack = original.maxStack();
                     stackMapAttr = original.findAttribute(Attributes.STACK_MAP_TABLE).orElse(null);
                 }
-                else if (buf.getMajorVersion() >= Classfile.JAVA_6_VERSION) {
+                else if (buf.getMajorVersion() >= Classfile.JAVA_6_VERSION ||
+                         options.generateStackmaps == Classfile.StackMapsOption.ALWAYS_GENERATE) {
                     try {
                         //new instance of generator immediately calculates maxStack, maxLocals, all frames,
                         // patches dead bytecode blocks and removes them from exception table
@@ -344,7 +346,8 @@ public final class DirectCodeBuilder
                         maxLocals = gen.maxLocals();
                         stackMapAttr = gen.stackMapTableAttribute();
                     } catch (Exception e) {
-                        if (buf.getMajorVersion() == Classfile.JAVA_6_VERSION) {
+                        if (buf.getMajorVersion() == Classfile.JAVA_6_VERSION &&
+                            options.generateStackmaps == Classfile.StackMapsOption.GENERATE_BY_CLASS_VERSION) {
                             //failover following JVMS-4.10
                             StackCounter cntr = StackCounter.of(DirectCodeBuilder.this, buf);
                             maxStack = cntr.maxStack();

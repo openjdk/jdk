@@ -28,54 +28,44 @@ import java.util.Collection;
 import java.util.function.Function;
 
 import jdk.internal.classfile.AttributeMapper;
-import jdk.internal.classfile.ClassHierarchyResolver;
 import jdk.internal.classfile.Classfile;
+import jdk.internal.classfile.Classfile.*;
 import jdk.internal.classfile.constantpool.Utf8Entry;
 
 import static jdk.internal.classfile.ClassHierarchyResolver.DEFAULT_CLASS_HIERARCHY_RESOLVER;
 
 public final class Options implements Classfile.Context {
 
-    public enum Key {
-        GENERATE_STACK_MAPS, PROCESS_DEBUG, PROCESS_LINE_NUMBERS, PROCESS_UNKNOWN_ATTRIBUTES,
-        CP_SHARING, FIX_SHORT_JUMPS, PATCH_DEAD_CODE, HIERARCHY_RESOLVER, ATTRIBUTE_MAPPER,
-        FILTER_DEAD_LABELS;
-    }
-
-    public record OptionValue(Key key, Object value) implements Classfile.Option { }
-
-    public Boolean generateStackmaps = true;
-    public Boolean processDebug = true;
-    public Boolean processLineNumbers = true;
-    public Boolean processUnknownAttributes = true;
-    public Boolean cpSharing = true;
-    public Boolean fixJumps = true;
-    public Boolean patchCode = true;
-    public Boolean filterDeadLabels = false;
-    public ClassHierarchyResolver classHierarchyResolver = DEFAULT_CLASS_HIERARCHY_RESOLVER;
-    public Function<Utf8Entry, AttributeMapper<?>> attributeMapper = new Function<>() {
+    public StackMapsOption generateStackmaps = StackMapsOption.GENERATE_BY_CLASS_VERSION;
+    public DebugElementsOption processDebug = DebugElementsOption.PROCESS_DEBUG_ELEMENTS;
+    public LineNumbersOption processLineNumbers = LineNumbersOption.PROCESS_LINE_NUMBERS;
+    public UnknownAttributesOption processUnknownAttributes = UnknownAttributesOption.PROCESS_UNKNOWN_ATTRIBUTES;
+    public ConstantPoolSharingOption cpSharing = ConstantPoolSharingOption.SHARE_CONSTANT_POOL;
+    public ShortJumpsOption fixJumps = ShortJumpsOption.FIX_SHORT_JUMPS;
+    public DeadCodeOption patchCode = DeadCodeOption.PATCH_DEAD_CODE;
+    public DeadLabelsOption filterDeadLabels = DeadLabelsOption.FILTER_DEAD_LABELS;
+    public ClassHierarchyResolverOption classHierarchyResolver = new ClassHierarchyResolverOption(DEFAULT_CLASS_HIERARCHY_RESOLVER);
+    public AttributeMapperOption attributeMapper = new AttributeMapperOption(new Function<>() {
         @Override
         public AttributeMapper<?> apply(Utf8Entry k) {
             return null;
         }
-    };
+    });
 
     @SuppressWarnings("unchecked")
     public Options(Collection<Classfile.Option> options) {
         for (var o : options) {
-            var ov = ((OptionValue)o);
-            var v = ov.value();
-            switch (ov.key()) {
-                case GENERATE_STACK_MAPS -> generateStackmaps = (Boolean) v;
-                case PROCESS_DEBUG -> processDebug = (Boolean) v;
-                case PROCESS_LINE_NUMBERS -> processLineNumbers = (Boolean) v;
-                case PROCESS_UNKNOWN_ATTRIBUTES -> processUnknownAttributes = (Boolean) v;
-                case CP_SHARING -> cpSharing = (Boolean) v;
-                case FIX_SHORT_JUMPS -> fixJumps = (Boolean) v;
-                case PATCH_DEAD_CODE -> patchCode = (Boolean) v;
-                case HIERARCHY_RESOLVER -> classHierarchyResolver = (ClassHierarchyResolver) v;
-                case ATTRIBUTE_MAPPER -> attributeMapper = (Function<Utf8Entry, AttributeMapper<?>>) v;
-                case FILTER_DEAD_LABELS -> filterDeadLabels = (Boolean) v;
+            switch (o) {
+                case StackMapsOption oo -> generateStackmaps = oo;
+                case DebugElementsOption oo -> processDebug = oo;
+                case LineNumbersOption oo -> processLineNumbers = oo;
+                case UnknownAttributesOption oo -> processUnknownAttributes = oo;
+                case ConstantPoolSharingOption oo -> cpSharing = oo;
+                case ShortJumpsOption oo -> fixJumps = oo;
+                case DeadCodeOption oo -> patchCode = oo;
+                case DeadLabelsOption oo -> filterDeadLabels = oo;
+                case ClassHierarchyResolverOption oo -> classHierarchyResolver = oo;
+                case AttributeMapperOption oo -> attributeMapper = oo;
             }
         }
     }
