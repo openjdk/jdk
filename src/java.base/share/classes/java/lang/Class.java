@@ -158,7 +158,8 @@ import sun.reflect.misc.ReflectUtil;
  * other members are the classes and interfaces whose declarations are
  * enclosed within the top-level class declaration.
  *
- * <p> A class or interface created by the invocation of
+ * <h2><a id=hiddenClasses>Hidden Classes</a></h2>
+ * A class or interface created by the invocation of
  * {@link java.lang.invoke.MethodHandles.Lookup#defineHiddenClass(byte[], boolean, MethodHandles.Lookup.ClassOption...)
  * Lookup::defineHiddenClass} is a {@linkplain Class#isHidden() <em>hidden</em>}
  * class or interface.
@@ -186,6 +187,26 @@ import sun.reflect.misc.ReflectUtil;
  * a class or interface is hidden has no bearing on the characteristics
  * exposed by the methods of class {@code Class}.
  *
+ * <h2><a id=unnamedClasses>Unnamed Classes</a></h2>
+ *
+ * The {@code class} file representing an unnnamed class is generated
+ * by a Java compiler from a source file from an unnamed class. The
+ * {@code Class} object representing an unnamed class is top-level,
+ * {@linkplain #isSynthetic synthetic}, and {@code final}. While an
+ * unnamed class does <em>not</em> have have a name in its Java source
+ * form, the various named-related methods of {@code java.lang.Class}
+ * do return non-empty results for the {@code Class} object
+ * representing an unnamed class. Conventionally, a Java compiler
+ * creates a class file where the class name matches the base name of
+ * the class file; for example, a source file for an unnamed class
+ * {@code HelloWorld.java} results in a class file named {@code
+ * HelloWorld.class} and the class stored in that {@code class} file
+ * is named "{@code HelloWorld}". For the {@code Class} object for
+ * unnamed class {@code HelloWorld}, The {@linkplain #getName name},
+ * {@linkplain #getTypeName type name}, {@linkplain #getSimpleName
+ * simple name}, and {@linkplain #getCanonicalName canonical name} and
+ * all equal to "{@code HelloWorld}".
+ * 
  * @param <T> the type of the class modeled by this {@code Class}
  * object.  For example, the type of {@code String.class} is {@code
  * Class<String>}.  Use {@code Class<?>} if the class being modeled is
