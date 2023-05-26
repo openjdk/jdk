@@ -53,6 +53,9 @@ class name javax/lang/model/element/UnknownElementException
 header extends javax/lang/model/UnknownEntityException flags 21
 innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
 
+class name javax/lang/model/element/VariableElement
+method name isUnnamed descriptor ()Z flags 1 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;UNNAMED;,reflective=Ztrue)
+
 class name javax/lang/model/type/MirroredTypeException
 header extends javax/lang/model/type/MirroredTypesException flags 21
 innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19

@@ -148,6 +148,9 @@ header extends java/lang/Object implements com/sun/source/tree/ExpressionTree fl
 class name com/sun/source/tree/AnnotationTree
 header extends java/lang/Object implements com/sun/source/tree/ExpressionTree flags 601
 
+class name com/sun/source/tree/AnyPatternTree
+header extends java/lang/Object implements com/sun/source/tree/PatternTree flags 601 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;UNNAMED;)
+
 class name com/sun/source/tree/ArrayAccessTree
 header extends java/lang/Object implements com/sun/source/tree/ExpressionTree flags 601
 
@@ -169,6 +172,14 @@ header extends java/lang/Object implements com/sun/source/tree/StatementTree fla
 class name com/sun/source/tree/BreakTree
 header extends java/lang/Object implements com/sun/source/tree/StatementTree flags 601
 
+class name com/sun/source/tree/CaseLabelTree
+header extends java/lang/Object implements com/sun/source/tree/Tree flags 601
+
+class name com/sun/source/tree/CaseTree
+-method name getLabels descriptor ()Ljava/util/List;
+method name getLabels descriptor ()Ljava/util/List; flags 401 signature ()Ljava/util/List<+Lcom/sun/source/tree/CaseLabelTree;>;
+method name getGuard descriptor ()Lcom/sun/source/tree/ExpressionTree; flags 401
+
 class name com/sun/source/tree/CatchTree
 header extends java/lang/Object implements com/sun/source/tree/Tree flags 601
 
@@ -184,8 +195,17 @@ header extends java/lang/Object implements com/sun/source/tree/ExpressionTree fl
 class name com/sun/source/tree/ConditionalExpressionTree
 header extends java/lang/Object implements com/sun/source/tree/ExpressionTree flags 601
 
+class name com/sun/source/tree/ConstantCaseLabelTree
+header extends java/lang/Object implements com/sun/source/tree/CaseLabelTree flags 601
+
 class name com/sun/source/tree/ContinueTree
 header extends java/lang/Object implements com/sun/source/tree/StatementTree flags 601
+
+class name com/sun/source/tree/DeconstructionPatternTree
+header extends java/lang/Object implements com/sun/source/tree/PatternTree flags 601
+
+class name com/sun/source/tree/DefaultCaseLabelTree
+header extends java/lang/Object implements com/sun/source/tree/CaseLabelTree flags 601
 
 class name com/sun/source/tree/DirectiveTree
 header extends java/lang/Object implements com/sun/source/tree/Tree flags 601
@@ -195,6 +215,13 @@ header extends java/lang/Object implements com/sun/source/tree/StatementTree fla
 
 class name com/sun/source/tree/EmptyStatementTree
 header extends java/lang/Object implements com/sun/source/tree/StatementTree flags 601
+
+class name com/sun/source/tree/EnhancedForLoopTree
+header extends java/lang/Object implements com/sun/source/tree/StatementTree flags 601
+-method name getVariableOrRecordPattern descriptor ()Lcom/sun/source/tree/Tree;
+-method name getDeclarationKind descriptor ()Lcom/sun/source/tree/EnhancedForLoopTree$DeclarationKind;
+
+-class name com/sun/source/tree/EnhancedForLoopTree$DeclarationKind
 
 class name com/sun/source/tree/ErroneousTree
 header extends java/lang/Object implements com/sun/source/tree/ExpressionTree flags 601
@@ -219,6 +246,12 @@ header extends java/lang/Object implements com/sun/source/tree/StatementTree fla
 
 class name com/sun/source/tree/ImportTree
 header extends java/lang/Object implements com/sun/source/tree/Tree flags 601
+
+class name com/sun/source/tree/InstanceOfTree
+header extends java/lang/Object implements com/sun/source/tree/ExpressionTree flags 601
+-method name getTestKind descriptor ()Lcom/sun/source/tree/InstanceOfTree$TestKind;
+
+-class name com/sun/source/tree/InstanceOfTree$TestKind
 
 class name com/sun/source/tree/IntersectionTypeTree
 header extends java/lang/Object implements com/sun/source/tree/Tree flags 601
@@ -259,8 +292,14 @@ header extends java/lang/Object implements com/sun/source/tree/Tree flags 601
 class name com/sun/source/tree/ParameterizedTypeTree
 header extends java/lang/Object implements com/sun/source/tree/Tree flags 601
 
+-class name com/sun/source/tree/ParenthesizedPatternTree
+
 class name com/sun/source/tree/ParenthesizedTree
 header extends java/lang/Object implements com/sun/source/tree/ExpressionTree flags 601
+
+class name com/sun/source/tree/PatternCaseLabelTree
+header extends java/lang/Object implements com/sun/source/tree/CaseLabelTree flags 601
+-method name getGuard descriptor ()Lcom/sun/source/tree/ExpressionTree;
 
 class name com/sun/source/tree/PatternTree
 header extends java/lang/Object implements com/sun/source/tree/Tree flags 601
@@ -299,11 +338,31 @@ class name com/sun/source/tree/ThrowTree
 header extends java/lang/Object implements com/sun/source/tree/StatementTree flags 601
 
 class name com/sun/source/tree/Tree$Kind
+-field name PARENTHESIZED_PATTERN descriptor Lcom/sun/source/tree/Tree$Kind;
+-field name DEFAULT_CASE_LABEL descriptor Lcom/sun/source/tree/Tree$Kind;
+-field name DECONSTRUCTION_PATTERN descriptor Lcom/sun/source/tree/Tree$Kind;
+-field name CONSTANT_CASE_LABEL descriptor Lcom/sun/source/tree/Tree$Kind;
+-field name PATTERN_CASE_LABEL descriptor Lcom/sun/source/tree/Tree$Kind;
 field name TEMPLATE descriptor Lcom/sun/source/tree/Tree$Kind; flags 4019 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;STRING_TEMPLATES;,reflective=Ztrue)
+field name ANY_PATTERN descriptor Lcom/sun/source/tree/Tree$Kind; flags 4019 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;UNNAMED;)
+field name DEFAULT_CASE_LABEL descriptor Lcom/sun/source/tree/Tree$Kind; flags 4019
+field name CONSTANT_CASE_LABEL descriptor Lcom/sun/source/tree/Tree$Kind; flags 4019
+field name PATTERN_CASE_LABEL descriptor Lcom/sun/source/tree/Tree$Kind; flags 4019
+field name DECONSTRUCTION_PATTERN descriptor Lcom/sun/source/tree/Tree$Kind; flags 4019
 
 class name com/sun/source/tree/TreeVisitor
 header extends java/lang/Object flags 601 signature <R:Ljava/lang/Object;P:Ljava/lang/Object;>Ljava/lang/Object;
+-method name visitDefaultCaseLabel descriptor (Lcom/sun/source/tree/DefaultCaseLabelTree;Ljava/lang/Object;)Ljava/lang/Object;
+-method name visitParenthesizedPattern descriptor (Lcom/sun/source/tree/ParenthesizedPatternTree;Ljava/lang/Object;)Ljava/lang/Object;
+-method name visitDeconstructionPattern descriptor (Lcom/sun/source/tree/DeconstructionPatternTree;Ljava/lang/Object;)Ljava/lang/Object;
+-method name visitConstantCaseLabel descriptor (Lcom/sun/source/tree/ConstantCaseLabelTree;Ljava/lang/Object;)Ljava/lang/Object;
+-method name visitPatternCaseLabel descriptor (Lcom/sun/source/tree/PatternCaseLabelTree;Ljava/lang/Object;)Ljava/lang/Object;
 method name visitStringTemplate descriptor (Lcom/sun/source/tree/StringTemplateTree;Ljava/lang/Object;)Ljava/lang/Object; flags 401 signature (Lcom/sun/source/tree/StringTemplateTree;TP;)TR; classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;STRING_TEMPLATES;,reflective=Ztrue)
+method name visitAnyPattern descriptor (Lcom/sun/source/tree/AnyPatternTree;Ljava/lang/Object;)Ljava/lang/Object; flags 401 signature (Lcom/sun/source/tree/AnyPatternTree;TP;)TR; classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;UNNAMED;)
+method name visitDefaultCaseLabel descriptor (Lcom/sun/source/tree/DefaultCaseLabelTree;Ljava/lang/Object;)Ljava/lang/Object; flags 401 signature (Lcom/sun/source/tree/DefaultCaseLabelTree;TP;)TR;
+method name visitConstantCaseLabel descriptor (Lcom/sun/source/tree/ConstantCaseLabelTree;Ljava/lang/Object;)Ljava/lang/Object; flags 401 signature (Lcom/sun/source/tree/ConstantCaseLabelTree;TP;)TR;
+method name visitPatternCaseLabel descriptor (Lcom/sun/source/tree/PatternCaseLabelTree;Ljava/lang/Object;)Ljava/lang/Object; flags 401 signature (Lcom/sun/source/tree/PatternCaseLabelTree;TP;)TR;
+method name visitDeconstructionPattern descriptor (Lcom/sun/source/tree/DeconstructionPatternTree;Ljava/lang/Object;)Ljava/lang/Object; flags 401 signature (Lcom/sun/source/tree/DeconstructionPatternTree;TP;)TR;
 
 class name com/sun/source/tree/TryTree
 header extends java/lang/Object implements com/sun/source/tree/StatementTree flags 601
@@ -367,7 +426,17 @@ method name visitEscape descriptor (Lcom/sun/source/doctree/EscapeTree;Ljava/lan
 
 class name com/sun/source/util/SimpleTreeVisitor
 header extends java/lang/Object implements com/sun/source/tree/TreeVisitor flags 21 signature <R:Ljava/lang/Object;P:Ljava/lang/Object;>Ljava/lang/Object;Lcom/sun/source/tree/TreeVisitor<TR;TP;>;
+-method name visitDefaultCaseLabel descriptor (Lcom/sun/source/tree/DefaultCaseLabelTree;Ljava/lang/Object;)Ljava/lang/Object;
+-method name visitParenthesizedPattern descriptor (Lcom/sun/source/tree/ParenthesizedPatternTree;Ljava/lang/Object;)Ljava/lang/Object;
+-method name visitDeconstructionPattern descriptor (Lcom/sun/source/tree/DeconstructionPatternTree;Ljava/lang/Object;)Ljava/lang/Object;
+-method name visitConstantCaseLabel descriptor (Lcom/sun/source/tree/ConstantCaseLabelTree;Ljava/lang/Object;)Ljava/lang/Object;
+-method name visitPatternCaseLabel descriptor (Lcom/sun/source/tree/PatternCaseLabelTree;Ljava/lang/Object;)Ljava/lang/Object;
 method name visitStringTemplate descriptor (Lcom/sun/source/tree/StringTemplateTree;Ljava/lang/Object;)Ljava/lang/Object; flags 1 signature (Lcom/sun/source/tree/StringTemplateTree;TP;)TR; classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;STRING_TEMPLATES;,reflective=Ztrue)
+method name visitAnyPattern descriptor (Lcom/sun/source/tree/AnyPatternTree;Ljava/lang/Object;)Ljava/lang/Object; flags 1 signature (Lcom/sun/source/tree/AnyPatternTree;TP;)TR; classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;UNNAMED;)
+method name visitDefaultCaseLabel descriptor (Lcom/sun/source/tree/DefaultCaseLabelTree;Ljava/lang/Object;)Ljava/lang/Object; flags 1 signature (Lcom/sun/source/tree/DefaultCaseLabelTree;TP;)TR;
+method name visitConstantCaseLabel descriptor (Lcom/sun/source/tree/ConstantCaseLabelTree;Ljava/lang/Object;)Ljava/lang/Object; flags 1 signature (Lcom/sun/source/tree/ConstantCaseLabelTree;TP;)TR;
+method name visitDeconstructionPattern descriptor (Lcom/sun/source/tree/DeconstructionPatternTree;Ljava/lang/Object;)Ljava/lang/Object; flags 1 signature (Lcom/sun/source/tree/DeconstructionPatternTree;TP;)TR;
+method name visitPatternCaseLabel descriptor (Lcom/sun/source/tree/PatternCaseLabelTree;Ljava/lang/Object;)Ljava/lang/Object; flags 1 signature (Lcom/sun/source/tree/PatternCaseLabelTree;TP;)TR;
 
 class name com/sun/source/util/SourcePositions
 header extends java/lang/Object flags 601
@@ -379,7 +448,17 @@ class name com/sun/source/util/TreePathScanner
 header extends com/sun/source/util/TreeScanner flags 21 signature <R:Ljava/lang/Object;P:Ljava/lang/Object;>Lcom/sun/source/util/TreeScanner<TR;TP;>;
 
 class name com/sun/source/util/TreeScanner
+-method name visitDefaultCaseLabel descriptor (Lcom/sun/source/tree/DefaultCaseLabelTree;Ljava/lang/Object;)Ljava/lang/Object;
+-method name visitParenthesizedPattern descriptor (Lcom/sun/source/tree/ParenthesizedPatternTree;Ljava/lang/Object;)Ljava/lang/Object;
+-method name visitDeconstructionPattern descriptor (Lcom/sun/source/tree/DeconstructionPatternTree;Ljava/lang/Object;)Ljava/lang/Object;
+-method name visitConstantCaseLabel descriptor (Lcom/sun/source/tree/ConstantCaseLabelTree;Ljava/lang/Object;)Ljava/lang/Object;
+-method name visitPatternCaseLabel descriptor (Lcom/sun/source/tree/PatternCaseLabelTree;Ljava/lang/Object;)Ljava/lang/Object;
 method name visitStringTemplate descriptor (Lcom/sun/source/tree/StringTemplateTree;Ljava/lang/Object;)Ljava/lang/Object; flags 1 signature (Lcom/sun/source/tree/StringTemplateTree;TP;)TR; classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;STRING_TEMPLATES;,reflective=Ztrue)
+method name visitAnyPattern descriptor (Lcom/sun/source/tree/AnyPatternTree;Ljava/lang/Object;)Ljava/lang/Object; flags 1 signature (Lcom/sun/source/tree/AnyPatternTree;TP;)TR;
+method name visitDefaultCaseLabel descriptor (Lcom/sun/source/tree/DefaultCaseLabelTree;Ljava/lang/Object;)Ljava/lang/Object; flags 1 signature (Lcom/sun/source/tree/DefaultCaseLabelTree;TP;)TR;
+method name visitConstantCaseLabel descriptor (Lcom/sun/source/tree/ConstantCaseLabelTree;Ljava/lang/Object;)Ljava/lang/Object; flags 1 signature (Lcom/sun/source/tree/ConstantCaseLabelTree;TP;)TR;
+method name visitPatternCaseLabel descriptor (Lcom/sun/source/tree/PatternCaseLabelTree;Ljava/lang/Object;)Ljava/lang/Object; flags 1 signature (Lcom/sun/source/tree/PatternCaseLabelTree;TP;)TR;
+method name visitDeconstructionPattern descriptor (Lcom/sun/source/tree/DeconstructionPatternTree;Ljava/lang/Object;)Ljava/lang/Object; flags 1 signature (Lcom/sun/source/tree/DeconstructionPatternTree;TP;)TR;
 
 class name com/sun/source/util/Trees
 header extends java/lang/Object flags 421

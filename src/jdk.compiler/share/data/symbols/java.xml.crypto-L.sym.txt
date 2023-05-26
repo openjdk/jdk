@@ -34,6 +34,10 @@ header extends java/lang/Object implements javax/xml/crypto/XMLCryptoContext fla
 innerclass innerClass java/util/Map$Entry outerClass java/util/Map innerClassName Entry flags 609
 innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
 
+class name javax/xml/crypto/dsig/SignatureMethod
+field name ED25519 descriptor Ljava/lang/String; constantValue http://www.w3.org/2021/04/xmldsig-more#eddsa-ed25519 flags 19
+field name ED448 descriptor Ljava/lang/String; constantValue http://www.w3.org/2021/04/xmldsig-more#eddsa-ed448 flags 19
+
 class name javax/xml/crypto/dsig/XMLSignatureFactory
 header extends java/lang/Object flags 421
 innerclass innerClass java/security/Provider$Service outerClass java/security/Provider innerClassName Service flags 9

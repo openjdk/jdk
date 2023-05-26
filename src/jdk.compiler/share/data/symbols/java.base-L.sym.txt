@@ -28,8 +28,8 @@
 #
 class name java/io/Console
 header extends java/lang/Object implements java/io/Flushable sealed true flags 21
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
 innerclass innerClass java/util/ServiceLoader$Provider outerClass java/util/ServiceLoader innerClassName Provider flags 609
+innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
 
 class name java/io/PrintStream
 header extends java/io/FilterOutputStream implements java/lang/Appendable,java/io/Closeable flags 21
@@ -60,6 +60,9 @@ header extends java/lang/RuntimeException flags 21
 
 class name java/lang/LayerInstantiationException
 header extends java/lang/RuntimeException flags 21
+
+class name java/lang/MatchException
+header extends java/lang/RuntimeException flags 31
 
 class name java/lang/Math
 method name clamp descriptor (JII)I flags 9
@@ -253,6 +256,8 @@ innerclass innerClass java/lang/invoke/TypeDescriptor$OfMethod outerClass java/l
 innerclass innerClass java/lang/invoke/TypeDescriptor$OfField outerClass java/lang/invoke/TypeDescriptor innerClassName OfField flags 609
 method name resolveConstantDesc descriptor (Ljava/lang/invoke/MethodHandles$Lookup;)Ljava/lang/invoke/MethodType; thrownTypes java/lang/ReflectiveOperationException flags 401
 method name resolveConstantDesc descriptor (Ljava/lang/invoke/MethodHandles$Lookup;)Ljava/lang/Object; thrownTypes java/lang/ReflectiveOperationException flags 1041 methodParameters 3e8:null
+method name of descriptor (Ljava/lang/constant/ClassDesc;)Ljava/lang/constant/MethodTypeDesc; flags 9
+method name of descriptor (Ljava/lang/constant/ClassDesc;Ljava/util/List;)Ljava/lang/constant/MethodTypeDesc; flags 9 signature (Ljava/lang/constant/ClassDesc;Ljava/util/List<Ljava/lang/constant/ClassDesc;>;)Ljava/lang/constant/MethodTypeDesc;
 
 class name java/lang/constant/ModuleDesc
 header extends java/lang/Object sealed true flags 601
@@ -272,18 +277,18 @@ class name java/lang/foreign/AddressLayout
 header extends java/lang/Object implements java/lang/foreign/ValueLayout sealed true flags 601 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;FOREIGN;)
 method name withName descriptor (Ljava/lang/String;)Ljava/lang/foreign/AddressLayout; flags 401
 method name withoutName descriptor ()Ljava/lang/foreign/AddressLayout; flags 401
-method name withBitAlignment descriptor (J)Ljava/lang/foreign/AddressLayout; flags 401
 method name withOrder descriptor (Ljava/nio/ByteOrder;)Ljava/lang/foreign/AddressLayout; flags 401
 method name withTargetLayout descriptor (Ljava/lang/foreign/MemoryLayout;)Ljava/lang/foreign/AddressLayout; flags 401 runtimeAnnotations @Ljdk/internal/reflect/CallerSensitive;
 method name withoutTargetLayout descriptor ()Ljava/lang/foreign/AddressLayout; flags 401
 method name targetLayout descriptor ()Ljava/util/Optional; flags 401 signature ()Ljava/util/Optional<Ljava/lang/foreign/MemoryLayout;>;
-method name withBitAlignment descriptor (J)Ljava/lang/foreign/ValueLayout; flags 1041 methodParameters 3e8:null
 method name withName descriptor (Ljava/lang/String;)Ljava/lang/foreign/ValueLayout; flags 1041 methodParameters 3e8:null
 method name withoutName descriptor ()Ljava/lang/foreign/ValueLayout; flags 1041
 method name withOrder descriptor (Ljava/nio/ByteOrder;)Ljava/lang/foreign/ValueLayout; flags 1041 methodParameters 3e8:null
-method name withBitAlignment descriptor (J)Ljava/lang/foreign/MemoryLayout; flags 1041 methodParameters 3e8:null
 method name withoutName descriptor ()Ljava/lang/foreign/MemoryLayout; flags 1041
 method name withName descriptor (Ljava/lang/String;)Ljava/lang/foreign/MemoryLayout; flags 1041 methodParameters 3e8:null
+method name withByteAlignment descriptor (J)Ljava/lang/foreign/AddressLayout; flags 401
+method name withByteAlignment descriptor (J)Ljava/lang/foreign/ValueLayout; flags 1041 methodParameters 1000:null
+method name withByteAlignment descriptor (J)Ljava/lang/foreign/MemoryLayout; flags 1041 methodParameters 1000:null
 
 class name java/lang/foreign/Arena
 header extends java/lang/Object implements java/lang/foreign/SegmentAllocator,java/lang/AutoCloseable flags 601 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;FOREIGN;)
@@ -303,8 +308,12 @@ header extends java/lang/Object sealed true flags 601 classAnnotations @Ljdk/int
 
 class name java/lang/foreign/GroupLayout
 header extends java/lang/Object implements java/lang/foreign/MemoryLayout sealed true flags 601 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;FOREIGN;)
+-method name withBitAlignment descriptor (J)Ljava/lang/foreign/MemoryLayout;
+-method name withBitAlignment descriptor (J)Ljava/lang/foreign/GroupLayout;
 method name withoutName descriptor ()Ljava/lang/foreign/GroupLayout; flags 401
 method name withoutName descriptor ()Ljava/lang/foreign/MemoryLayout; flags 1041
+method name withByteAlignment descriptor (J)Ljava/lang/foreign/GroupLayout; flags 401
+method name withByteAlignment descriptor (J)Ljava/lang/foreign/MemoryLayout; flags 1041 methodParameters 1000:null
 
 class name java/lang/foreign/Linker
 header extends java/lang/Object nestMembers java/lang/foreign/Linker$Option sealed true flags 601 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;FOREIGN;)
@@ -333,10 +342,16 @@ class name java/lang/foreign/MemoryLayout
 header extends java/lang/Object nestMembers java/lang/foreign/MemoryLayout$PathElement sealed true flags 601 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;FOREIGN;)
 innerclass innerClass java/lang/foreign/MemoryLayout$PathElement outerClass java/lang/foreign/MemoryLayout innerClassName PathElement flags 609
 innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
+-method name bitSize descriptor ()J
+-method name bitAlignment descriptor ()J
 -method name byteAlignment descriptor ()J
+-method name withBitAlignment descriptor (J)Ljava/lang/foreign/MemoryLayout;
+-method name bitOffset descriptor ([Ljava/lang/foreign/MemoryLayout$PathElement;)J
+-method name bitOffsetHandle descriptor ([Ljava/lang/foreign/MemoryLayout$PathElement;)Ljava/lang/invoke/MethodHandle;
 -method name valueLayout descriptor (Ljava/lang/Class;Ljava/nio/ByteOrder;)Ljava/lang/foreign/ValueLayout;
 method name withoutName descriptor ()Ljava/lang/foreign/MemoryLayout; flags 401
 method name byteAlignment descriptor ()J flags 401
+method name withByteAlignment descriptor (J)Ljava/lang/foreign/MemoryLayout; flags 401
 
 class name java/lang/foreign/MemoryLayout$PathElement
 header extends java/lang/Object nestHost java/lang/foreign/MemoryLayout sealed true flags 601 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;FOREIGN;)
@@ -396,8 +411,12 @@ method name hashCode descriptor ()I flags 401
 
 class name java/lang/foreign/PaddingLayout
 header extends java/lang/Object implements java/lang/foreign/MemoryLayout sealed true flags 601 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;FOREIGN;)
+-method name withBitAlignment descriptor (J)Ljava/lang/foreign/PaddingLayout;
+-method name withBitAlignment descriptor (J)Ljava/lang/foreign/MemoryLayout;
 method name withoutName descriptor ()Ljava/lang/foreign/PaddingLayout; flags 401
 method name withoutName descriptor ()Ljava/lang/foreign/MemoryLayout; flags 1041
+method name withByteAlignment descriptor (J)Ljava/lang/foreign/PaddingLayout; flags 401
+method name withByteAlignment descriptor (J)Ljava/lang/foreign/MemoryLayout; flags 1041 methodParameters 1000:null
 
 class name java/lang/foreign/SegmentAllocator
 header extends java/lang/Object flags 601 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;FOREIGN;) runtimeAnnotations @Ljava/lang/FunctionalInterface;
@@ -418,25 +437,42 @@ method name allocate descriptor (Ljava/lang/foreign/AddressLayout;Ljava/lang/for
 
 class name java/lang/foreign/SequenceLayout
 header extends java/lang/Object implements java/lang/foreign/MemoryLayout sealed true flags 601 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;FOREIGN;)
+-method name withBitAlignment descriptor (J)Ljava/lang/foreign/MemoryLayout;
+-method name withBitAlignment descriptor (J)Ljava/lang/foreign/SequenceLayout;
 method name withoutName descriptor ()Ljava/lang/foreign/MemoryLayout; flags 401
+method name withByteAlignment descriptor (J)Ljava/lang/foreign/SequenceLayout; flags 401
+method name withByteAlignment descriptor (J)Ljava/lang/foreign/MemoryLayout; flags 1041 methodParameters 1000:null
 
 class name java/lang/foreign/StructLayout
 header extends java/lang/Object implements java/lang/foreign/GroupLayout sealed true flags 601 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;FOREIGN;)
+-method name withBitAlignment descriptor (J)Ljava/lang/foreign/StructLayout;
+-method name withBitAlignment descriptor (J)Ljava/lang/foreign/GroupLayout;
+-method name withBitAlignment descriptor (J)Ljava/lang/foreign/MemoryLayout;
 method name withoutName descriptor ()Ljava/lang/foreign/StructLayout; flags 401
 method name withoutName descriptor ()Ljava/lang/foreign/GroupLayout; flags 1041
 method name withoutName descriptor ()Ljava/lang/foreign/MemoryLayout; flags 1041
+method name withByteAlignment descriptor (J)Ljava/lang/foreign/StructLayout; flags 401
+method name withByteAlignment descriptor (J)Ljava/lang/foreign/GroupLayout; flags 1041 methodParameters 1000:null
+method name withByteAlignment descriptor (J)Ljava/lang/foreign/MemoryLayout; flags 1041 methodParameters 1000:null
 
 class name java/lang/foreign/SymbolLookup
 -method name libraryLookup descriptor (Ljava/lang/String;Ljava/lang/foreign/SegmentScope;)Ljava/lang/foreign/SymbolLookup;
 -method name libraryLookup descriptor (Ljava/nio/file/Path;Ljava/lang/foreign/SegmentScope;)Ljava/lang/foreign/SymbolLookup;
 method name libraryLookup descriptor (Ljava/lang/String;Ljava/lang/foreign/Arena;)Ljava/lang/foreign/SymbolLookup; flags 9 runtimeAnnotations @Ljdk/internal/reflect/CallerSensitive;
 method name libraryLookup descriptor (Ljava/nio/file/Path;Ljava/lang/foreign/Arena;)Ljava/lang/foreign/SymbolLookup; flags 9 runtimeAnnotations @Ljdk/internal/reflect/CallerSensitive;
+method name or descriptor (Ljava/lang/foreign/SymbolLookup;)Ljava/lang/foreign/SymbolLookup; flags 1
 
 class name java/lang/foreign/UnionLayout
 header extends java/lang/Object implements java/lang/foreign/GroupLayout sealed true flags 601 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;FOREIGN;)
+-method name withBitAlignment descriptor (J)Ljava/lang/foreign/UnionLayout;
+-method name withBitAlignment descriptor (J)Ljava/lang/foreign/GroupLayout;
+-method name withBitAlignment descriptor (J)Ljava/lang/foreign/MemoryLayout;
 method name withoutName descriptor ()Ljava/lang/foreign/UnionLayout; flags 401
 method name withoutName descriptor ()Ljava/lang/foreign/GroupLayout; flags 1041
 method name withoutName descriptor ()Ljava/lang/foreign/MemoryLayout; flags 1041
+method name withByteAlignment descriptor (J)Ljava/lang/foreign/UnionLayout; flags 401
+method name withByteAlignment descriptor (J)Ljava/lang/foreign/GroupLayout; flags 1041 methodParameters 1000:null
+method name withByteAlignment descriptor (J)Ljava/lang/foreign/MemoryLayout; flags 1041 methodParameters 1000:null
 
 -class name java/lang/foreign/VaList
 
@@ -454,68 +490,120 @@ innerclass innerClass java/lang/foreign/ValueLayout$OfFloat outerClass java/lang
 innerclass innerClass java/lang/foreign/ValueLayout$OfDouble outerClass java/lang/foreign/ValueLayout innerClassName OfDouble flags 609
 -field name ADDRESS descriptor Ljava/lang/foreign/ValueLayout$OfAddress;
 -field name ADDRESS_UNALIGNED descriptor Ljava/lang/foreign/ValueLayout$OfAddress;
+-method name withBitAlignment descriptor (J)Ljava/lang/foreign/MemoryLayout;
+-method name withBitAlignment descriptor (J)Ljava/lang/foreign/ValueLayout;
 field name ADDRESS descriptor Ljava/lang/foreign/AddressLayout; flags 19
 field name ADDRESS_UNALIGNED descriptor Ljava/lang/foreign/AddressLayout; flags 19
 method name withoutName descriptor ()Ljava/lang/foreign/ValueLayout; flags 401
 method name withoutName descriptor ()Ljava/lang/foreign/MemoryLayout; flags 1041
+method name withByteAlignment descriptor (J)Ljava/lang/foreign/ValueLayout; flags 401
+method name withByteAlignment descriptor (J)Ljava/lang/foreign/MemoryLayout; flags 1041 methodParameters 1000:null
 
 -class name java/lang/foreign/ValueLayout$OfAddress
 
 class name java/lang/foreign/ValueLayout$OfBoolean
 header extends java/lang/Object implements java/lang/foreign/ValueLayout nestHost java/lang/foreign/ValueLayout sealed true flags 601 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;FOREIGN;)
 innerclass innerClass java/lang/foreign/ValueLayout$OfBoolean outerClass java/lang/foreign/ValueLayout innerClassName OfBoolean flags 609
+-method name withBitAlignment descriptor (J)Ljava/lang/foreign/ValueLayout;
+-method name withBitAlignment descriptor (J)Ljava/lang/foreign/MemoryLayout;
+-method name withBitAlignment descriptor (J)Ljava/lang/foreign/ValueLayout$OfBoolean;
 method name withoutName descriptor ()Ljava/lang/foreign/ValueLayout$OfBoolean; flags 401
 method name withoutName descriptor ()Ljava/lang/foreign/ValueLayout; flags 1041
 method name withoutName descriptor ()Ljava/lang/foreign/MemoryLayout; flags 1041
+method name withByteAlignment descriptor (J)Ljava/lang/foreign/ValueLayout$OfBoolean; flags 401
+method name withByteAlignment descriptor (J)Ljava/lang/foreign/ValueLayout; flags 1041 methodParameters 1000:null
+method name withByteAlignment descriptor (J)Ljava/lang/foreign/MemoryLayout; flags 1041 methodParameters 1000:null
 
 class name java/lang/foreign/ValueLayout$OfByte
 header extends java/lang/Object implements java/lang/foreign/ValueLayout nestHost java/lang/foreign/ValueLayout sealed true flags 601 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;FOREIGN;)
 innerclass innerClass java/lang/foreign/ValueLayout$OfByte outerClass java/lang/foreign/ValueLayout innerClassName OfByte flags 609
+-method name withBitAlignment descriptor (J)Ljava/lang/foreign/ValueLayout;
+-method name withBitAlignment descriptor (J)Ljava/lang/foreign/MemoryLayout;
+-method name withBitAlignment descriptor (J)Ljava/lang/foreign/ValueLayout$OfByte;
 method name withoutName descriptor ()Ljava/lang/foreign/ValueLayout$OfByte; flags 401
 method name withoutName descriptor ()Ljava/lang/foreign/ValueLayout; flags 1041
 method name withoutName descriptor ()Ljava/lang/foreign/MemoryLayout; flags 1041
+method name withByteAlignment descriptor (J)Ljava/lang/foreign/ValueLayout$OfByte; flags 401
+method name withByteAlignment descriptor (J)Ljava/lang/foreign/ValueLayout; flags 1041 methodParameters 1000:null
+method name withByteAlignment descriptor (J)Ljava/lang/foreign/MemoryLayout; flags 1041 methodParameters 1000:null
 
 class name java/lang/foreign/ValueLayout$OfChar
 header extends java/lang/Object implements java/lang/foreign/ValueLayout nestHost java/lang/foreign/ValueLayout sealed true flags 601 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;FOREIGN;)
 innerclass innerClass java/lang/foreign/ValueLayout$OfChar outerClass java/lang/foreign/ValueLayout innerClassName OfChar flags 609
+-method name withBitAlignment descriptor (J)Ljava/lang/foreign/ValueLayout;
+-method name withBitAlignment descriptor (J)Ljava/lang/foreign/MemoryLayout;
+-method name withBitAlignment descriptor (J)Ljava/lang/foreign/ValueLayout$OfChar;
 method name withoutName descriptor ()Ljava/lang/foreign/ValueLayout$OfChar; flags 401
 method name withoutName descriptor ()Ljava/lang/foreign/ValueLayout; flags 1041
 method name withoutName descriptor ()Ljava/lang/foreign/MemoryLayout; flags 1041
+method name withByteAlignment descriptor (J)Ljava/lang/foreign/ValueLayout$OfChar; flags 401
+method name withByteAlignment descriptor (J)Ljava/lang/foreign/ValueLayout; flags 1041 methodParameters 1000:null
+method name withByteAlignment descriptor (J)Ljava/lang/foreign/MemoryLayout; flags 1041 methodParameters 1000:null
 
 class name java/lang/foreign/ValueLayout$OfDouble
 header extends java/lang/Object implements java/lang/foreign/ValueLayout nestHost java/lang/foreign/ValueLayout sealed true flags 601 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;FOREIGN;)
 innerclass innerClass java/lang/foreign/ValueLayout$OfDouble outerClass java/lang/foreign/ValueLayout innerClassName OfDouble flags 609
+-method name withBitAlignment descriptor (J)Ljava/lang/foreign/ValueLayout;
+-method name withBitAlignment descriptor (J)Ljava/lang/foreign/MemoryLayout;
+-method name withBitAlignment descriptor (J)Ljava/lang/foreign/ValueLayout$OfDouble;
 method name withoutName descriptor ()Ljava/lang/foreign/ValueLayout$OfDouble; flags 401
 method name withoutName descriptor ()Ljava/lang/foreign/ValueLayout; flags 1041
 method name withoutName descriptor ()Ljava/lang/foreign/MemoryLayout; flags 1041
+method name withByteAlignment descriptor (J)Ljava/lang/foreign/ValueLayout$OfDouble; flags 401
+method name withByteAlignment descriptor (J)Ljava/lang/foreign/ValueLayout; flags 1041 methodParameters 1000:null
+method name withByteAlignment descriptor (J)Ljava/lang/foreign/MemoryLayout; flags 1041 methodParameters 1000:null
 
 class name java/lang/foreign/ValueLayout$OfFloat
 header extends java/lang/Object implements java/lang/foreign/ValueLayout nestHost java/lang/foreign/ValueLayout sealed true flags 601 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;FOREIGN;)
 innerclass innerClass java/lang/foreign/ValueLayout$OfFloat outerClass java/lang/foreign/ValueLayout innerClassName OfFloat flags 609
+-method name withBitAlignment descriptor (J)Ljava/lang/foreign/ValueLayout;
+-method name withBitAlignment descriptor (J)Ljava/lang/foreign/MemoryLayout;
+-method name withBitAlignment descriptor (J)Ljava/lang/foreign/ValueLayout$OfFloat;
 method name withoutName descriptor ()Ljava/lang/foreign/ValueLayout$OfFloat; flags 401
 method name withoutName descriptor ()Ljava/lang/foreign/ValueLayout; flags 1041
 method name withoutName descriptor ()Ljava/lang/foreign/MemoryLayout; flags 1041
+method name withByteAlignment descriptor (J)Ljava/lang/foreign/ValueLayout$OfFloat; flags 401
+method name withByteAlignment descriptor (J)Ljava/lang/foreign/ValueLayout; flags 1041 methodParameters 1000:null
+method name withByteAlignment descriptor (J)Ljava/lang/foreign/MemoryLayout; flags 1041 methodParameters 1000:null
 
 class name java/lang/foreign/ValueLayout$OfInt
 header extends java/lang/Object implements java/lang/foreign/ValueLayout nestHost java/lang/foreign/ValueLayout sealed true flags 601 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;FOREIGN;)
 innerclass innerClass java/lang/foreign/ValueLayout$OfInt outerClass java/lang/foreign/ValueLayout innerClassName OfInt flags 609
+-method name withBitAlignment descriptor (J)Ljava/lang/foreign/ValueLayout;
+-method name withBitAlignment descriptor (J)Ljava/lang/foreign/MemoryLayout;
+-method name withBitAlignment descriptor (J)Ljava/lang/foreign/ValueLayout$OfInt;
 method name withoutName descriptor ()Ljava/lang/foreign/ValueLayout$OfInt; flags 401
 method name withoutName descriptor ()Ljava/lang/foreign/ValueLayout; flags 1041
 method name withoutName descriptor ()Ljava/lang/foreign/MemoryLayout; flags 1041
+method name withByteAlignment descriptor (J)Ljava/lang/foreign/ValueLayout$OfInt; flags 401
+method name withByteAlignment descriptor (J)Ljava/lang/foreign/ValueLayout; flags 1041 methodParameters 1000:null
+method name withByteAlignment descriptor (J)Ljava/lang/foreign/MemoryLayout; flags 1041 methodParameters 1000:null
 
 class name java/lang/foreign/ValueLayout$OfLong
 header extends java/lang/Object implements java/lang/foreign/ValueLayout nestHost java/lang/foreign/ValueLayout sealed true flags 601 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;FOREIGN;)
 innerclass innerClass java/lang/foreign/ValueLayout$OfLong outerClass java/lang/foreign/ValueLayout innerClassName OfLong flags 609
+-method name withBitAlignment descriptor (J)Ljava/lang/foreign/ValueLayout;
+-method name withBitAlignment descriptor (J)Ljava/lang/foreign/MemoryLayout;
+-method name withBitAlignment descriptor (J)Ljava/lang/foreign/ValueLayout$OfLong;
 method name withoutName descriptor ()Ljava/lang/foreign/ValueLayout$OfLong; flags 401
 method name withoutName descriptor ()Ljava/lang/foreign/ValueLayout; flags 1041
 method name withoutName descriptor ()Ljava/lang/foreign/MemoryLayout; flags 1041
+method name withByteAlignment descriptor (J)Ljava/lang/foreign/ValueLayout$OfLong; flags 401
+method name withByteAlignment descriptor (J)Ljava/lang/foreign/ValueLayout; flags 1041 methodParameters 1000:null
+method name withByteAlignment descriptor (J)Ljava/lang/foreign/MemoryLayout; flags 1041 methodParameters 1000:null
 
 class name java/lang/foreign/ValueLayout$OfShort
 header extends java/lang/Object implements java/lang/foreign/ValueLayout nestHost java/lang/foreign/ValueLayout sealed true flags 601 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;FOREIGN;)
 innerclass innerClass java/lang/foreign/ValueLayout$OfShort outerClass java/lang/foreign/ValueLayout innerClassName OfShort flags 609
+-method name withBitAlignment descriptor (J)Ljava/lang/foreign/ValueLayout;
+-method name withBitAlignment descriptor (J)Ljava/lang/foreign/MemoryLayout;
+-method name withBitAlignment descriptor (J)Ljava/lang/foreign/ValueLayout$OfShort;
 method name withoutName descriptor ()Ljava/lang/foreign/ValueLayout$OfShort; flags 401
 method name withoutName descriptor ()Ljava/lang/foreign/ValueLayout; flags 1041
 method name withoutName descriptor ()Ljava/lang/foreign/MemoryLayout; flags 1041
+method name withByteAlignment descriptor (J)Ljava/lang/foreign/ValueLayout$OfShort; flags 401
+method name withByteAlignment descriptor (J)Ljava/lang/foreign/ValueLayout; flags 1041 methodParameters 1000:null
+method name withByteAlignment descriptor (J)Ljava/lang/foreign/MemoryLayout; flags 1041 methodParameters 1000:null
 
 class name java/lang/invoke/CallSite
 header extends java/lang/Object sealed true flags 421
@@ -596,6 +684,11 @@ innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang
 
 class name java/lang/reflect/InaccessibleObjectException
 header extends java/lang/RuntimeException flags 21
+
+class name java/lang/runtime/SwitchBootstraps
+header extends java/lang/Object flags 21
+innerclass innerClass java/lang/Enum$EnumDesc outerClass java/lang/Enum innerClassName EnumDesc flags 19
+innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
 
 class name java/lang/runtime/TemplateRuntime
 header extends java/lang/Object flags 31 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;STRING_TEMPLATES;)
