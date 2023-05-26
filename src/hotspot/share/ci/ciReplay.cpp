@@ -636,7 +636,7 @@ class CompileReplay : public StackObj {
     int c = getc(_stream);
     while(c != EOF) {
       c = get_line(c);
-      process_command(THREAD);
+      process_command(false, THREAD);
       if (had_error()) {
         int pos = _bufptr - _buffer + 1;
         tty->print_cr("Error while parsing line %d at position %d: %s\n", line_no, pos, _error_message);
@@ -652,7 +652,7 @@ class CompileReplay : public StackObj {
     reset();
   }
 
-  void process_command(TRAPS) {
+  void process_command(bool is_replay_inline, TRAPS) {
     char* cmd = parse_string();
     if (cmd == nullptr) {
       return;
@@ -670,20 +670,24 @@ class CompileReplay : public StackObj {
       }
     } else if (strcmp("compile", cmd) == 0) {
       process_compile(CHECK);
-    } else if (strcmp("ciMethod", cmd) == 0) {
-      process_ciMethod(CHECK);
-    } else if (strcmp("ciMethodData", cmd) == 0) {
-      process_ciMethodData(CHECK);
-    } else if (strcmp("staticfield", cmd) == 0) {
-      process_staticfield(CHECK);
-    } else if (strcmp("ciInstanceKlass", cmd) == 0) {
-      process_ciInstanceKlass(CHECK);
-    } else if (strcmp("instanceKlass", cmd) == 0) {
-      process_instanceKlass(CHECK);
+    } else if (!is_replay_inline) {
+      if (strcmp("ciMethod", cmd) == 0) {
+        process_ciMethod(CHECK);
+      } else if (strcmp("ciMethodData", cmd) == 0) {
+        process_ciMethodData(CHECK);
+      } else if (strcmp("staticfield", cmd) == 0) {
+        process_staticfield(CHECK);
+      } else if (strcmp("ciInstanceKlass", cmd) == 0) {
+        process_ciInstanceKlass(CHECK);
+      } else if (strcmp("instanceKlass", cmd) == 0) {
+        process_instanceKlass(CHECK);
 #if INCLUDE_JVMTI
-    } else if (strcmp("JvmtiExport", cmd) == 0) {
-      process_JvmtiExport(CHECK);
+      } else if (strcmp("JvmtiExport", cmd) == 0) {
+        process_JvmtiExport(CHECK);
 #endif // INCLUDE_JVMTI
+      } else {
+        report_error("unknown command");
+      }
     } else {
       report_error("unknown command");
     }
@@ -723,12 +727,7 @@ class CompileReplay : public StackObj {
     int c = getc(_stream);
     while(c != EOF) {
       c = get_line(c);
-      // Expecting only lines with "compile" command in inline replay file.
-      char* cmd = parse_string();
-      if (cmd == nullptr || strcmp("compile", cmd) != 0) {
-        return nullptr;
-      }
-      process_compile(CHECK_NULL);
+      process_command(true, CHECK_NULL);
       if (had_error()) {
         tty->print_cr("Error while parsing line %d: %s\n", line_no, _error_message);
         tty->print_cr("%s", _buffer);

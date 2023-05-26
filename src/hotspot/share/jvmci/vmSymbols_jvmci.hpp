@@ -94,8 +94,8 @@
   template(runtime_signature,                                     "()Ljdk/vm/ci/hotspot/HotSpotJVMCIRuntime;")                            \
   template(getCompiler_name,                                      "getCompiler")                                                          \
   template(getCompiler_signature,                                 "()Ljdk/vm/ci/runtime/JVMCICompiler;")                                  \
-  template(callToString_name,                                     "callToString")                                                         \
-  template(callToString_signature,                                "(Ljava/lang/Object;)Ljava/lang/String;")                               \
+  template(exceptionToString_name,                                "exceptionToString")                                                    \
+  template(exceptionToString_signature,                           "(Ljava/lang/Throwable;ZZ)[Ljava/lang/String;")                         \
   template(postTranslation_name,                                  "postTranslation")                                                      \
   template(getName_name,                                          "getName")                                                              \
   template(bootstrapFinished_name,                                "bootstrapFinished")                                                    \

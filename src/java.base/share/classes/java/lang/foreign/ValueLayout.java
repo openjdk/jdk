@@ -117,8 +117,8 @@ public sealed interface ValueLayout extends MemoryLayout permits
      * <p>
      * Consider the following access expressions:
      * {@snippet lang=java :
-     * int value1 = arrayHandle.get(10, 2, 4); // ok, accessed offset = 8176
-     * int value2 = arrayHandle.get(0, 0, 30); // out of bounds value for z
+     * int value1 = (int) arrayHandle.get(10, 2, 4); // ok, accessed offset = 8176
+     * int value2 = (int) arrayHandle.get(0, 0, 30); // out of bounds value for z
      * }
      * In the first case, access is well-formed, as the values for {@code x}, {@code y} and {@code z} conform to
      * the bounds specified above. In the second case, access fails with {@link IndexOutOfBoundsException},
