@@ -142,6 +142,7 @@ bool Peephole::lea_coalesce_imm(Block* block, int block_index, PhaseCFG* cfg_, P
   return lea_coalesce_helper(block, block_index, cfg_, ra_, new_root, inst0_rule, true);
 }
 
+// This function removes the TEST instruction when it detected shapes likes AND r1, r2; TEST r1, r1
 bool Peephole::test_may_remove(Block* block, int block_index, PhaseCFG* cfg_, PhaseRegAlloc* ra_,
                                  MachNode* (*new_root)(), uint inst0_rule, uint inst1_rule) {
   MachNode* inst0 = block->get_node(block_index)->as_Mach();
@@ -149,14 +150,16 @@ bool Peephole::test_may_remove(Block* block, int block_index, PhaseCFG* cfg_, Ph
 
   Node* inst1 = inst0->in(1);
   // Only remove test if the block order is inst1 -> MachProjNode (cause AND specifies KILL cr) -> inst0
-  if (block_index < 2 || !block->get_node(block_index - 1)->is_MachProj() || block->get_node(block_index - 2) != inst1) {
+  // So inst1 must be at index - 2
+  if (block_index < 2 || block->get_node(block_index - 2) != inst1) {
     return false;
   }
   if (inst1 != nullptr) {
-    if (inst1->is_Mach()) {
-      MachNode* maybeAndNode = inst1->as_Mach();
+    MachNode* maybeAndNode = inst1->isa_Mach();
+    if (maybeAndNode != nullptr) {
       if (maybeAndNode->rule() == inst1_rule) {
-        // Remove the original test node and replace it with the pseudo test node. The and node already sets ZF
+        assert(block->get_node(block_index - 1)->is_MachProj(), "Expected a MachProj node here!");
+        // Remove the original test node and replace it with the pseudo test node. The AND node already sets ZF
         MachNode* root = new_root();
         // Assign register for the newly allocated node
         ra_->set_oop(root, ra_->is_oop(inst0));
