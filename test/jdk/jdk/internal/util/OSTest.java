@@ -89,7 +89,7 @@ public class OSTest {
 
     @Test
     public void checkOsVersion() {
-        Version ver = OperatingSystem.version();
+        Version ver = Version.current();
         String osVersion = StaticProperty.osVersion();
         System.err.printf("os.version: %s, version().toString(): %s%n", osVersion, ver);
         assertTrue(osVersion.startsWith(ver.toString()), "version().toString() is not prefix of vs os.version property");

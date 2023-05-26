@@ -34,7 +34,7 @@ import jdk.internal.util.Version;
 class ClassLoaderHelper {
 
     // SDK 10.15 and earlier always reports 10.16 instead of 11.x.x
-    private static final boolean hasDynamicLoaderCache = OperatingSystem.version()
+    private static final boolean hasDynamicLoaderCache = Version.current()
             .compareTo(new Version(10, 16)) >= 0;
 
     private ClassLoaderHelper() {}

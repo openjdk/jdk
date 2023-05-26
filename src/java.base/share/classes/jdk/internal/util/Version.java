@@ -30,6 +30,9 @@ package jdk.internal.util;
  */
 public record Version(int major, int minor, int micro) implements Comparable<Version> {
 
+    // Parse and save the current OS version
+    private static final Version CURRENT_VERSION = initVersion();
+
     /**
      * {@return a Version for major, minor versions}
      *
@@ -38,6 +41,25 @@ public record Version(int major, int minor, int micro) implements Comparable<Ver
      */
     public Version(int major, int minor) {
         this(major, minor, 0);
+    }
+
+    /*
+     * Initialize the current Version from the os.version system property
+     */
+    private static Version initVersion() {
+        final String osVer = StaticProperty.osVersion();
+        try {
+            return Version.parse(osVer);
+        } catch (IllegalArgumentException iae) {
+            throw new InternalError("os.version malformed: " + osVer, iae);
+        }
+    }
+
+    /**
+     * {@return the current operating system version}
+     */
+    public static Version current() {
+        return CURRENT_VERSION;
     }
 
     /**
@@ -101,7 +123,6 @@ public record Version(int major, int minor, int micro) implements Comparable<Ver
      * {@return The index of the first non-digit from start}
      * @throws IllegalArgumentException if there are no digits
      */
-
     private static int skipDigits(String s, int start) {
         int index = start;
         while (index < s.length() && Character.isDigit(s.charAt(index))) {
