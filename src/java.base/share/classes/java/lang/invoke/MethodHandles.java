@@ -6484,7 +6484,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * <a id="effid"></a>
      * A parameter list {@code A} is defined to be <em>effectively identical</em> to another parameter list {@code B}
      * if {@code A} and {@code B} are identical, or if {@code A} is shorter and is identical with a proper prefix of {@code B}.
-     * When speaking of an unordered set of parameter lists, we say they the set is "effectively identical"
+     * When speaking of an unordered set of parameter lists, we say that the set is "effectively identical"
      * as a whole if the set contains a longest list, and all members of the set are effectively identical to
      * that longest list.
      * For example, any set of type sequences of the form {@code (V*)} is effectively identical,
