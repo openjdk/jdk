@@ -50,16 +50,31 @@ class ShenandoahMmuTask;
  * MMU.
  */
 class ShenandoahMmuTracker {
+private:
+  // These variables hold recent snapshots of cumulative quantities that are used for calculating
+  // CPU time consumed by GC and mutator threads during each GC cycle.
+  double _most_recent_timestamp;
+  double _most_recent_gc_time;
+  double _most_recent_gcu;
+  double _most_recent_mutator_time;
+  double _most_recent_mu;
 
-  double _generational_reference_time_s;
-  double _process_reference_time_s;
-  double _collector_reference_time_s;
+  // These variables hold recent snapshots of cumulative quantities that are used for reporting
+  // periodic consumption of CPU time by GC and mutator threads.
+  double _most_recent_periodic_time_stamp;
+  double _most_recent_periodic_gc_time;
+  double _most_recent_periodic_mutator_time;
+
+  size_t _most_recent_gcid;
+  uint _active_processors;
+
+  bool _most_recent_is_full;
 
   ShenandoahMmuTask* _mmu_periodic_task;
   TruncatedSeq _mmu_average;
 
-  static double gc_thread_time_seconds();
-  static double process_time_seconds();
+  void update_utilization(ShenandoahGeneration* generation, size_t gcid, const char* msg);
+  static void fetch_cpu_times(double &gc_time, double &mutator_time);
 
 public:
   explicit ShenandoahMmuTracker();
@@ -68,22 +83,24 @@ public:
   // This enrolls the periodic task after everything is initialized.
   void initialize();
 
-  // This is called at the start and end of a GC cycle. The GC thread times
-  // will be accumulated in this generation. Note that the bootstrap cycle
-  // for an old collection should be counted against the old generation.
-  // When the collector is idle, it still runs a regulator and a control.
-  // The times for these threads are attributed to the global generation.
-  void record(ShenandoahGeneration* generation);
+  // At completion of each GC cycle (not including interrupted cycles), we invoke one of the following to record the
+  // GC utilization during this cycle.  Incremental efforts spent in an interrupted GC cycle will be accumulated into
+  // the CPU time reports for the subsequent completed [degenerated or full] GC cycle.
+  //
+  // We may redundantly record degen and full in the case that a degen upgrades to full.  When this happens, we will invoke
+  // both record_full() and record_degenerated() with the same value of gcid.  record_full() is called first and the log
+  // reports such a cycle as a FULL cycle.
+  void record_young(ShenandoahGeneration* generation, size_t gcid);
+  void record_bootstrap(ShenandoahGeneration* generation, size_t gcid, bool has_old_candidates);
+  void record_old_marking_increment(ShenandoahGeneration* generation, size_t gcid, bool old_marking_done, bool has_old_candidates);
+  void record_mixed(ShenandoahGeneration* generation, size_t gcid, bool is_mixed_done);
+  void record_full(ShenandoahGeneration* generation, size_t gcid);
+  void record_degenerated(ShenandoahGeneration* generation, size_t gcid, bool is_old_boostrap, bool is_mixed_done);
 
   // This is called by the periodic task timer. The interval is defined by
   // GCPauseIntervalMillis and defaults to 5 seconds. This method computes
   // the MMU over the elapsed interval and records it in a running average.
-  // This method also logs the average MMU.
   void report();
-
-  double average() {
-    return _mmu_average.davg();
-  }
 };
 
 class ShenandoahGenerationSizer {
@@ -114,14 +131,6 @@ private:
   // given the number of heap regions depending on the kind of sizing algorithm.
   void recalculate_min_max_young_length(size_t heap_region_count);
 
-  // These two methods are responsible for enforcing the minimum and maximum
-  // constraints for the size of the generations.
-  size_t adjust_transfer_from_young(ShenandoahGeneration* from, size_t regions_to_transfer) const;
-  size_t adjust_transfer_to_young(ShenandoahGeneration* to, size_t regions_to_transfer) const;
-
-  // This will attempt to transfer capacity from one generation to the other. It
-  // returns true if a transfer is made, false otherwise.
-  bool transfer_capacity(ShenandoahGeneration* from, ShenandoahGeneration* to) const;
 public:
   explicit ShenandoahGenerationSizer(ShenandoahMmuTracker* mmu_tracker);
 
@@ -145,19 +154,11 @@ public:
     return _use_adaptive_sizing;
   }
 
-  // This is invoked at the end of a collection. This happens on a safepoint
-  // to avoid any races with allocators (and to avoid interfering with
-  // allocators by taking the heap lock). The amount of capacity to move
-  // from one generation to another is controlled by YoungGenerationSizeIncrement
-  // and defaults to 20% of the available capacity of the donor generation.
-  // The minimum and maximum sizes of the young generation are controlled by
-  // ShenandoahMinYoungPercentage and ShenandoahMaxYoungPercentage, respectively.
-  // The method returns true when an adjustment is made, false otherwise.
-  bool adjust_generation_sizes() const;
+  bool transfer_to_young(size_t regions) const;
+  bool transfer_to_old(size_t regions) const;
 
-  // This may be invoked by a heuristic (from regulator thread) before it
-  // decides to run a collection.
-  bool transfer_capacity(ShenandoahGeneration* target) const;
+  // force transfer is used when we promote humongous objects.  May violate min/max limits on generation sizes
+  void force_transfer_to_old(size_t regions) const;
 };
 
 #endif //SHARE_GC_SHENANDOAH_SHENANDOAHMMUTRACKER_HPP

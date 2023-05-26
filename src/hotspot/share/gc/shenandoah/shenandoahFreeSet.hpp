@@ -72,7 +72,7 @@ public:
   // Place region idx into free set which_set.  Requires that idx is currently NotFree.
   void make_free(size_t idx, ShenandoahFreeMemoryType which_set, size_t region_capacity);
 
-  // Place region idx into free set new_set.  Requires that idx is currently not NotFRee.
+  // Place region idx into free set new_set.  Requires that idx is currently not NotFree.
   void move_to_set(size_t idx, ShenandoahFreeMemoryType new_set, size_t region_capacity);
 
   // Returns the ShenandoahFreeMemoryType affiliation of region idx, or NotFree if this region is not currently free.  This does
@@ -172,11 +172,20 @@ private:
   void flip_to_gc(ShenandoahHeapRegion* r);
   void flip_to_old_gc(ShenandoahHeapRegion* r);
 
+  void adjust_bounds_for_additional_old_collector_free_region(size_t idx);
+
+  void recompute_bounds();
+  void adjust_bounds();
+  bool touches_bounds(size_t num) const;
+
+  // Used of free set represents the amount of is_mutator_free set that has been consumed since most recent rebuild.
+  void increase_used(size_t amount);
   void clear_internal();
 
   void try_recycle_trashed(ShenandoahHeapRegion *r);
 
   bool can_allocate_from(ShenandoahHeapRegion *r) const;
+  bool can_allocate_from(size_t idx) const;
   bool has_alloc_capacity(size_t idx) const;
   bool has_alloc_capacity(ShenandoahHeapRegion *r) const;
   bool has_no_alloc_capacity(ShenandoahHeapRegion *r) const;
@@ -188,7 +197,11 @@ public:
   size_t alloc_capacity(size_t idx) const;
 
   void clear();
-  void rebuild();
+  void prepare_to_rebuild(size_t &young_cset_regions, size_t &old_cset_regions);
+  void rebuild(size_t young_cset_regions, size_t old_cset_regions);
+  void move_collector_sets_to_mutator(size_t cset_regions);
+
+  void add_old_collector_free_region(ShenandoahHeapRegion* region);
 
   void recycle_trash();
 
@@ -209,7 +222,7 @@ public:
 
   void print_on(outputStream* out) const;
 
-  void find_regions_with_alloc_capacity();
+  void find_regions_with_alloc_capacity(size_t &young_cset_regions, size_t &old_cset_regions);
   void reserve_regions(size_t young_reserve, size_t old_reserve);
 };
 

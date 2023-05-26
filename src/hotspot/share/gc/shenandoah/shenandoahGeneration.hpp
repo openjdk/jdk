@@ -50,8 +50,6 @@ private:
 
   double _collection_thread_time_s;
 
-protected:
-  // Usage
   size_t _affiliated_region_count;
 
   // How much free memory is left in the last region of humongous objects.
@@ -61,12 +59,14 @@ protected:
   // The units are bytes. The value is only changed on a safepoint or under the
   // heap lock.
   size_t _humongous_waste;
+
+protected:
+  // Usage
+
   volatile size_t _used;
   volatile size_t _bytes_allocated_since_gc_start;
   size_t _max_capacity;
   size_t _soft_max_capacity;
-
-  size_t _adjusted_capacity;
 
   ShenandoahHeuristics* _heuristics;
 
@@ -116,22 +116,6 @@ private:
   // to believe it has less memory available than is _really_ available. Lowering the soft
   // max heap size will cause the adaptive heuristic to run more frequent cycles.
   size_t soft_available() const;
-
-  // During evacuation and update-refs, some memory may be shifted between generations.  In particular, memory
-  // may be loaned by old-gen to young-gen based on the promise the loan will be promptly repaid from the memory reclaimed
-  // when the current collection set is recycled.  The capacity adjustment also takes into consideration memory that is
-  // set aside within each generation to hold the results of evacuation, but not promotion, into that region.  Promotions
-  // into old-gen are bounded by adjusted_available() whereas evacuations into old-gen are pre-committed.
-  size_t adjusted_available() const;
-  size_t adjusted_capacity() const;
-
-  // This is the number of FREE regions that are eligible to be affiliated with this generation according to the current
-  // adjusted capacity.
-  size_t adjusted_unaffiliated_regions() const;
-
-  // Both of following return new value of available
-  size_t adjust_available(intptr_t adjustment);
-  size_t unadjust_available();
 
   size_t bytes_allocated_since_gc_start();
   void reset_bytes_allocated_since_gc_start();
@@ -204,6 +188,12 @@ private:
 
   // Return the updated value of affiliated_region_count
   size_t decrement_affiliated_region_count();
+
+  // Return the updated value of affiliated_region_count
+  size_t increase_affiliated_region_count(size_t delta);
+
+  // Return the updated value of affiliated_region_count
+  size_t decrease_affiliated_region_count(size_t delta);
 
   void establish_usage(size_t num_regions, size_t num_bytes, size_t humongous_waste);
 

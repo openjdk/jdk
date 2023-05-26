@@ -403,24 +403,32 @@ class ShenandoahGenerationStatsClosure : public ShenandoahHeapRegionClosure {
                   byte_size_in_proper_unit(stats.used()),       proper_unit_for_byte_size(stats.used()));
   }
 
-  static void validate_usage(const char* label, ShenandoahGeneration* generation, ShenandoahCalculateRegionStatsClosure& stats) {
+  static void validate_usage(const bool adjust_for_padding,
+                             const char* label, ShenandoahGeneration* generation, ShenandoahCalculateRegionStatsClosure& stats) {
+    ShenandoahHeap* heap = ShenandoahHeap::heap();
     size_t generation_used = generation->used();
+    size_t generation_used_regions = generation->used_regions();
+    if (adjust_for_padding && (generation->is_young() || generation->is_global())) {
+      size_t pad = ShenandoahHeap::heap()->get_pad_for_promote_in_place();
+      generation_used += pad;
+    }
+
     guarantee(stats.used() == generation_used,
               "%s: generation (%s) used size must be consistent: generation-used: " SIZE_FORMAT "%s, regions-used: " SIZE_FORMAT "%s",
               label, generation->name(),
               byte_size_in_proper_unit(generation_used), proper_unit_for_byte_size(generation_used),
               byte_size_in_proper_unit(stats.used()),    proper_unit_for_byte_size(stats.used()));
 
-    guarantee(stats.regions() == generation->used_regions(),
+    guarantee(stats.regions() == generation_used_regions,
               "%s: generation (%s) used regions (" SIZE_FORMAT ") must equal regions that are in use (" SIZE_FORMAT ")",
               label, generation->name(), generation->used_regions(), stats.regions());
 
-// This check is disabled because of known issues with this feature. We expect this code to be updated by 05/2023.
-//    size_t capacity = generation->adjusted_capacity();
-//    guarantee(stats.span() <= capacity,
-//              "%s: generation (%s) size spanned by regions (" SIZE_FORMAT ") must not exceed current capacity (" SIZE_FORMAT "%s)",
-//              label, generation->name(), stats.regions(),
-//              byte_size_in_proper_unit(capacity), proper_unit_for_byte_size(capacity));
+    size_t generation_capacity = generation->max_capacity();
+    size_t humongous_regions_promoted = 0;
+    guarantee(stats.span() <= generation_capacity,
+              "%s: generation (%s) size spanned by regions (" SIZE_FORMAT ") must not exceed current capacity (" SIZE_FORMAT "%s)",
+              label, generation->name(), stats.regions(),
+              byte_size_in_proper_unit(generation_capacity), proper_unit_for_byte_size(generation_capacity));
 
     size_t humongous_waste = generation->get_humongous_waste();
     guarantee(stats.waste() == humongous_waste,
@@ -743,6 +751,7 @@ void ShenandoahVerifier::verify_at_safepoint(const char* label,
                                              VerifyForwarded forwarded, VerifyMarked marked,
                                              VerifyCollectionSet cset,
                                              VerifyLiveness liveness, VerifyRegions regions,
+                                             VerifySize sizeness,
                                              VerifyGCState gcstate) {
   guarantee(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "only when nothing else happens");
   guarantee(ShenandoahVerify, "only when enabled, and bitmap is initialized in ShenandoahHeap::initialize");
@@ -795,6 +804,7 @@ void ShenandoahVerifier::verify_at_safepoint(const char* label,
 
     if (enabled) {
       char actual = _heap->gc_state();
+      // Old generation marking is allowed in all states.
       if (!VerifyThreadGCState::verify_gc_state(actual, expected)) {
         fatal("%s: Global gc-state: expected %d, actual %d", label, expected, actual);
       }
@@ -813,13 +823,20 @@ void ShenandoahVerifier::verify_at_safepoint(const char* label,
 
     ShenandoahCalculateRegionStatsClosure cl;
     _heap->heap_region_iterate(&cl);
-    size_t heap_used = _heap->used();
-    guarantee(cl.used() == heap_used,
-              "%s: heap used size must be consistent: heap-used = " SIZE_FORMAT "%s, regions-used = " SIZE_FORMAT "%s",
-              label,
-              byte_size_in_proper_unit(heap_used), proper_unit_for_byte_size(heap_used),
-              byte_size_in_proper_unit(cl.used()), proper_unit_for_byte_size(cl.used()));
-
+    size_t heap_used;
+    if (_heap->mode()->is_generational() && (sizeness == _verify_size_adjusted_for_padding)) {
+      // Prior to evacuation, regular regions that are to be evacuated in place are padded to prevent further allocations
+      heap_used = _heap->used() + _heap->get_pad_for_promote_in_place();
+    } else if (sizeness != _verify_size_disable) {
+      heap_used = _heap->used();
+    }
+    if (sizeness != _verify_size_disable) {
+      guarantee(cl.used() == heap_used,
+                "%s: heap used size must be consistent: heap-used = " SIZE_FORMAT "%s, regions-used = " SIZE_FORMAT "%s",
+                label,
+                byte_size_in_proper_unit(heap_used), proper_unit_for_byte_size(heap_used),
+                byte_size_in_proper_unit(cl.used()), proper_unit_for_byte_size(cl.used()));
+    }
     size_t heap_committed = _heap->committed();
     guarantee(cl.committed() == heap_committed,
               "%s: heap committed size must be consistent: heap-committed = " SIZE_FORMAT "%s, regions-committed = " SIZE_FORMAT "%s",
@@ -868,10 +885,16 @@ void ShenandoahVerifier::verify_at_safepoint(const char* label,
       ShenandoahGenerationStatsClosure::log_usage(_heap->young_generation(),  cl.young);
       ShenandoahGenerationStatsClosure::log_usage(_heap->global_generation(), cl.global);
     }
-
-    ShenandoahGenerationStatsClosure::validate_usage(label, _heap->old_generation(),    cl.old);
-    ShenandoahGenerationStatsClosure::validate_usage(label, _heap->young_generation(),  cl.young);
-    ShenandoahGenerationStatsClosure::validate_usage(label, _heap->global_generation(), cl.global);
+    if (sizeness == _verify_size_adjusted_for_padding) {
+      ShenandoahGenerationStatsClosure::validate_usage(false, label, _heap->old_generation(), cl.old);
+      ShenandoahGenerationStatsClosure::validate_usage(true, label, _heap->young_generation(), cl.young);
+      ShenandoahGenerationStatsClosure::validate_usage(true, label, _heap->global_generation(), cl.global);
+    } else if (sizeness == _verify_size_exact) {
+      ShenandoahGenerationStatsClosure::validate_usage(false, label, _heap->old_generation(), cl.old);
+      ShenandoahGenerationStatsClosure::validate_usage(false, label, _heap->young_generation(), cl.young);
+      ShenandoahGenerationStatsClosure::validate_usage(false, label, _heap->global_generation(), cl.global);
+    }
+    // else: sizeness must equal _verify_size_disable
   }
 
   log_debug(gc)("Safepoint verification finished remembered set verification");
@@ -983,19 +1006,22 @@ void ShenandoahVerifier::verify_generic(VerifyOption vo) {
           _verify_cset_disable,        // cset may be inconsistent
           _verify_liveness_disable,    // no reliable liveness data
           _verify_regions_disable,     // no reliable region data
+          _verify_size_exact,          // expect generation and heap sizes to match exactly
           _verify_gcstate_disable      // no data about gcstate
   );
 }
 
 void ShenandoahVerifier::verify_before_concmark() {
     verify_at_safepoint(
-            "Before Mark",
-            _verify_remembered_before_marking,  // verify read-only remembered set from bottom() to top()
+          "Before Mark",
+          _verify_remembered_before_marking,
+                                       // verify read-only remembered set from bottom() to top()
           _verify_forwarded_none,      // UR should have fixed up
           _verify_marked_disable,      // do not verify marked: lots ot time wasted checking dead allocations
           _verify_cset_none,           // UR should have fixed this
           _verify_liveness_disable,    // no reliable liveness data
           _verify_regions_notrash,     // no trash regions
+          _verify_size_exact,          // expect generation and heap sizes to match exactly
           _verify_gcstate_stable       // there are no forwarded objects
   );
 }
@@ -1005,10 +1031,12 @@ void ShenandoahVerifier::verify_after_concmark() {
           "After Mark",
           _verify_remembered_disable,  // do not verify remembered set
           _verify_forwarded_none,      // no forwarded references
-          _verify_marked_complete_except_references, // bitmaps as precise as we can get, except dangling j.l.r.Refs
+          _verify_marked_complete_except_references,
+                                       // bitmaps as precise as we can get, except dangling j.l.r.Refs
           _verify_cset_none,           // no references to cset anymore
           _verify_liveness_complete,   // liveness data must be complete here
           _verify_regions_disable,     // trash regions not yet recycled
+          _verify_size_exact,          // expect generation and heap sizes to match exactly
           _verify_gcstate_stable_weakroots  // heap is still stable, weakroots are in progress
   );
 }
@@ -1022,6 +1050,8 @@ void ShenandoahVerifier::verify_before_evacuation() {
           _verify_cset_disable,                      // non-forwarded references to cset expected
           _verify_liveness_complete,                 // liveness data must be complete here
           _verify_regions_disable,                   // trash regions not yet recycled
+          _verify_size_adjusted_for_padding,         // expect generation and heap sizes to match after adjustments
+                                                     //  for promote in place padding
           _verify_gcstate_stable_weakroots           // heap is still stable, weakroots are in progress
   );
 }
@@ -1035,6 +1065,7 @@ void ShenandoahVerifier::verify_during_evacuation() {
           _verify_cset_disable,       // some cset references are not forwarded yet
           _verify_liveness_disable,   // liveness data might be already stale after pre-evacs
           _verify_regions_disable,    // trash regions not yet recycled
+          _verify_size_disable,       // we don't know how much of promote-in-place work has been completed
           _verify_gcstate_evacuation  // evacuation is in progress
   );
 }
@@ -1048,6 +1079,7 @@ void ShenandoahVerifier::verify_after_evacuation() {
           _verify_cset_forwarded,      // all cset refs are fully forwarded
           _verify_liveness_disable,    // no reliable liveness data anymore
           _verify_regions_notrash,     // trash regions have been recycled already
+          _verify_size_exact,          // expect generation and heap sizes to match exactly
           _verify_gcstate_forwarded    // evacuation produced some forwarded objects
   );
 }
@@ -1056,15 +1088,17 @@ void ShenandoahVerifier::verify_before_updaterefs() {
   verify_at_safepoint(
           "Before Updating References",
           _verify_remembered_before_updating_references,  // verify read-write remembered set
-          _verify_forwarded_allow,                     // forwarded references allowed
-          _verify_marked_complete,                     // bitmaps might be stale, but alloc-after-mark should be well
-          _verify_cset_forwarded,                      // all cset refs are fully forwarded
-          _verify_liveness_disable,                    // no reliable liveness data anymore
-          _verify_regions_notrash,                     // trash regions have been recycled already
-          _verify_gcstate_updating                     // evacuation should have produced some forwarded objects
+          _verify_forwarded_allow,     // forwarded references allowed
+          _verify_marked_complete,     // bitmaps might be stale, but alloc-after-mark should be well
+          _verify_cset_forwarded,      // all cset refs are fully forwarded
+          _verify_liveness_disable,    // no reliable liveness data anymore
+          _verify_regions_notrash,     // trash regions have been recycled already
+          _verify_size_exact,          // expect generation and heap sizes to match exactly
+          _verify_gcstate_updating     // evacuation should have produced some forwarded objects
   );
 }
 
+// We have not yet cleanup (reclaimed) the collection set
 void ShenandoahVerifier::verify_after_updaterefs() {
   verify_at_safepoint(
           "After Updating References",
@@ -1074,6 +1108,7 @@ void ShenandoahVerifier::verify_after_updaterefs() {
           _verify_cset_none,           // no cset references, all updated
           _verify_liveness_disable,    // no reliable liveness data anymore
           _verify_regions_nocset,      // no cset regions, trash regions have appeared
+          _verify_size_exact,          // expect generation and heap sizes to match exactly
           _verify_gcstate_stable       // update refs had cleaned up forwarded objects
   );
 }
@@ -1087,6 +1122,7 @@ void ShenandoahVerifier::verify_after_degenerated() {
           _verify_cset_none,           // no cset references
           _verify_liveness_disable,    // no reliable liveness data anymore
           _verify_regions_notrash_nocset, // no trash, no cset
+          _verify_size_exact,          // expect generation and heap sizes to match exactly
           _verify_gcstate_stable       // degenerated refs had cleaned up forwarded objects
   );
 }
@@ -1100,6 +1136,7 @@ void ShenandoahVerifier::verify_before_fullgc() {
           _verify_cset_disable,        // cset might be foobared
           _verify_liveness_disable,    // no reliable liveness data anymore
           _verify_regions_disable,     // no reliable region data here
+          _verify_size_disable,        // if we degenerate during evacuation, usage not valid: padding and deferred accounting
           _verify_gcstate_disable      // no reliable gcstate data
   );
 }
@@ -1113,6 +1150,7 @@ void ShenandoahVerifier::verify_after_fullgc() {
           _verify_cset_none,           // no cset references
           _verify_liveness_disable,    // no reliable liveness data anymore
           _verify_regions_notrash_nocset, // no trash, no cset
+          _verify_size_exact,           // expect generation and heap sizes to match exactly
           _verify_gcstate_stable        // full gc cleaned up everything
   );
 }
@@ -1314,7 +1352,7 @@ void ShenandoahVerifier::verify_rem_set_before_mark() {
         }
         // else, this humongous object is not marked so no need to verify its internal pointers
         if (!scanner->verify_registration(obj_addr, ctx)) {
-          ShenandoahAsserts::print_failure(ShenandoahAsserts::_safe_all, obj, obj_addr, nullptr,
+          ShenandoahAsserts::print_failure(ShenandoahAsserts::_safe_all, obj, nullptr, nullptr,
                                            "Verify init-mark remembered set violation", "object not properly registered", __FILE__, __LINE__);
         }
       } else if (!r->is_humongous()) {
@@ -1330,7 +1368,7 @@ void ShenandoahVerifier::verify_rem_set_before_mark() {
             }
             // else, object's start is marked dirty and obj is not an objArray, so any interesting pointers are covered
             if (!scanner->verify_registration(obj_addr, ctx)) {
-              ShenandoahAsserts::print_failure(ShenandoahAsserts::_safe_all, obj, obj_addr, nullptr,
+              ShenandoahAsserts::print_failure(ShenandoahAsserts::_safe_all, obj, nullptr, nullptr,
                                                "Verify init-mark remembered set violation", "object not properly registered", __FILE__, __LINE__);
             }
             obj_addr += obj->size();

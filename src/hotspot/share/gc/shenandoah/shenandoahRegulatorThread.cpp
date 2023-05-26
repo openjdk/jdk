@@ -140,7 +140,8 @@ void ShenandoahRegulatorThread::regulator_sleep() {
 }
 
 bool ShenandoahRegulatorThread::start_old_cycle() {
-  return _old_heuristics->should_start_gc() && _control_thread->request_concurrent_gc(OLD);
+  return !ShenandoahHeap::heap()->doing_mixed_evacuations() && !ShenandoahHeap::heap()->collection_set()->has_old_regions() &&
+    _old_heuristics->should_start_gc() && _control_thread->request_concurrent_gc(OLD);
 }
 
 bool ShenandoahRegulatorThread::start_young_cycle() {

@@ -47,14 +47,14 @@ void ShenandoahInitLogger::print_heap() {
     log_info(gc, init)("Heuristics: %s", heap->global_generation()->heuristics()->name());
   } else {
     log_info(gc, init)("Young Heuristics: %s", heap->young_generation()->heuristics()->name());
-    log_info(gc, init)("Young Generation Initial Size: " SIZE_FORMAT "%s",
+    log_info(gc, init)("Young Generation Soft Size: " SIZE_FORMAT "%s",
                        byte_size_in_proper_unit(heap->young_generation()->soft_max_capacity()),
                        proper_unit_for_byte_size(heap->young_generation()->soft_max_capacity()));
     log_info(gc, init)("Young Generation Max: " SIZE_FORMAT "%s",
                        byte_size_in_proper_unit(heap->young_generation()->max_capacity()),
                        proper_unit_for_byte_size(heap->young_generation()->max_capacity()));
     log_info(gc, init)("Old Heuristics: %s", heap->old_generation()->heuristics()->name());
-    log_info(gc, init)("Old Generation Initial Size: " SIZE_FORMAT "%s",
+    log_info(gc, init)("Old Generation Soft Size: " SIZE_FORMAT "%s",
                        byte_size_in_proper_unit(heap->old_generation()->soft_max_capacity()),
                        proper_unit_for_byte_size(heap->old_generation()->soft_max_capacity()));
     log_info(gc, init)("Old Generation Max: " SIZE_FORMAT "%s",

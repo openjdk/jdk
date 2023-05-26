@@ -90,19 +90,45 @@ public:
 private:
   State _state;
 
+  static const size_t FRACTIONAL_DENOMINATOR = 64536;
+
+  // During initialization of the JVM, we search for the correct old-gen size by initally performing old-gen
+  // collection when old-gen usage is 50% more (INITIAL_GROWTH_BEFORE_COMPACTION) than the initial old-gen size
+  // estimate (3.125% of heap).  The next old-gen trigger occurs when old-gen grows 25% larger than its live
+  // memory at the end of the first old-gen collection.  Then we trigger again when old-gen growns 12.5%
+  // more than its live memory at the end of the previous old-gen collection.  Thereafter, we trigger each time
+  // old-gen grows more than 12.5% following the end of its previous old-gen collection.
+  static const size_t INITIAL_GROWTH_BEFORE_COMPACTION = FRACTIONAL_DENOMINATOR / 2;          //  50.0%
+  static const size_t MINIMUM_GROWTH_BEFORE_COMPACTION = FRACTIONAL_DENOMINATOR / 8;          //  12.5%
+
+  // INITIAL_LIVE_FRACTION represents the initial guess of how large old-gen should be.  We estimate that old-gen
+  // needs to consume 3.125% of the total heap size.  And we "pretend" that we start out with this amount of live
+  // old-gen memory.  The first old-collection trigger will occur when old-gen occupies 50% more than this initial
+  // approximation of the old-gen memory requirement, in other words when old-gen usage is 150% of 3.125%, which
+  // is 4.6875% of the total heap size.
+  static const uint16_t INITIAL_LIVE_FRACTION = FRACTIONAL_DENOMINATOR / 32;                    //   3.125%
+  size_t _live_bytes_after_last_mark;
+  size_t _growth_before_compaction; // How much growth in usage before we trigger old collection, per 65_536
+
+  void validate_transition(State new_state) NOT_DEBUG_RETURN;
+
 public:
   State state() const {
     return _state;
   }
+
+  void transition_to(State new_state);
+
+  size_t get_live_bytes_after_last_mark() const;
+  void set_live_bytes_after_last_mark(size_t new_live);
+
+  size_t usage_trigger_threshold() const;
 
   bool can_start_gc() {
     return _state == IDLE || _state == WAITING_FOR_FILL;
   }
 
   static const char* state_name(State state);
-
-  void transition_to(State new_state);
-  void validate_transition(State new_state) NOT_DEBUG_RETURN;
 };
 
 

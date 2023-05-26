@@ -69,15 +69,24 @@ private:
   // the end of old final mark.
   uint _last_old_region;
 
+  // How much live data must be evacuated from within the unprocessed mixed evacuation candidates?
+  size_t _live_bytes_in_unprocessed_candidates;
+
   // This can be the 'static' or 'adaptive' heuristic.
   ShenandoahHeuristics* _trigger_heuristic;
+
+  // Keep a pointer to our generation that we can use without down casting a protected member from the base class.
+  ShenandoahOldGeneration* _old_generation;
 
   // Flag is set when promotion failure is detected (by gc thread), and cleared when
   // old generation collection begins (by control thread).
   volatile bool _promotion_failed;
 
-  // Keep a pointer to our generation that we can use without down casting a protected member from the base class.
-  ShenandoahOldGeneration* _old_generation;
+  // Flags are set when promotion failure is detected (by gc thread), and cleared when
+  // old generation collection begins (by control thread).  Flags are set and cleared at safepoints.
+  bool _cannot_expand_trigger;
+  bool _fragmentation_trigger;
+  bool _growth_trigger;
 
  protected:
   virtual void choose_collection_set_from_regiondata(ShenandoahCollectionSet* set, RegionData* data, size_t data_size,
@@ -96,6 +105,13 @@ public:
 
   // How many old-collection candidates have not yet been processed?
   uint unprocessed_old_collection_candidates();
+
+  // How much live memory must be evacuated from within old-collection candidates that have not yet been processed?
+  size_t unprocessed_old_collection_candidates_live_memory() const;
+
+  void set_unprocessed_old_collection_candidates_live_memory(size_t initial_live);
+
+  void decrease_unprocessed_old_collection_candidates_live_memory(size_t evacuated_live);
 
   // How many old or hidden collection candidates have not yet been processed?
   uint last_old_collection_candidate_index();
@@ -122,10 +138,16 @@ public:
   // held by this heuristic for supplying mixed collections.
   void abandon_collection_candidates();
 
-  // Notify the heuristic of promotion failures. The promotion attempt will be skipped and the object will
-  // be evacuated into the young generation. The collection should complete normally, but we want to schedule
-  // an old collection as soon as possible.
+  // Promotion failure does not currently trigger old-gen collections.  Often, promotion failures occur because
+  // old-gen is sized too small rather than because it is necessary to collect old gen.  We keep the method
+  // here in case we decide to feed this signal to sizing or triggering heuristics in the future.
   void handle_promotion_failure();
+
+  void trigger_cannot_expand() { _cannot_expand_trigger = true; };
+  void trigger_old_is_fragmented() { _fragmentation_trigger = true; }
+  void trigger_old_has_grown();
+
+  void clear_triggers();
 
   virtual void record_cycle_start() override;
 

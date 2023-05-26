@@ -242,6 +242,8 @@ private:
   HeapWord* _new_top;
   double _empty_time;
 
+  HeapWord* _top_before_promoted;
+
   // Seldom updated fields
   RegionState _state;
   HeapWord* _coalesce_and_fill_boundary; // for old regions not selected as collection set candidates.
@@ -350,6 +352,11 @@ public:
     return _index;
   }
 
+  inline void save_top_before_promote();
+  inline HeapWord* get_top_before_promote() const { return _top_before_promoted; }
+  inline void restore_top_before_promote();
+  inline size_t garbage_before_padded_for_promote() const;
+
   // Allocation (return nullptr if full)
   inline HeapWord* allocate_aligned(size_t word_size, ShenandoahAllocRequest &req, size_t alignment_in_words);
 
@@ -429,6 +436,7 @@ public:
 
   size_t capacity() const       { return byte_size(bottom(), end()); }
   size_t used() const           { return byte_size(bottom(), top()); }
+  size_t used_before_promote() const { return byte_size(bottom(), get_top_before_promote()); }
   size_t free() const           { return byte_size(top(),    end()); }
 
   // Does this region contain this address?
@@ -457,8 +465,9 @@ public:
   void decrement_age() { if (_age-- == 0) { _age = 0; } }
   void reset_age()     { _age = 0; }
 
-  // Sets all remembered set cards to dirty.  Returns the number of regions spanned by the associated humongous object.
-  size_t promote_humongous();
+  // Register all objects.  Set all remembered set cards to dirty.
+  void promote_humongous();
+  void promote_in_place();
 
 private:
   void decrement_humongous_waste() const;

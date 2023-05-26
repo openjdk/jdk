@@ -175,14 +175,21 @@ void ShenandoahFullGC::op_full(GCCause::Cause cause) {
 
   metrics.snap_after();
   if (heap->mode()->is_generational()) {
+    heap->mmu_tracker()->record_full(heap->global_generation(), GCId::current());
     heap->log_heap_status("At end of Full GC");
 
     // Since we allow temporary violation of these constraints during Full GC, we want to enforce that the assertions are
     // made valid by the time Full GC completes.
-    assert(heap->old_generation()->used_regions_size() <= heap->old_generation()->adjusted_capacity(),
+    assert(heap->old_generation()->used_regions_size() <= heap->old_generation()->max_capacity(),
            "Old generation affiliated regions must be less than capacity");
-    assert(heap->young_generation()->used_regions_size() <= heap->young_generation()->adjusted_capacity(),
+    assert(heap->young_generation()->used_regions_size() <= heap->young_generation()->max_capacity(),
            "Young generation affiliated regions must be less than capacity");
+
+    assert((heap->young_generation()->used() + heap->young_generation()->get_humongous_waste())
+           <= heap->young_generation()->used_regions_size(), "Young consumed can be no larger than span of affiliated regions");
+    assert((heap->old_generation()->used() + heap->old_generation()->get_humongous_waste())
+           <= heap->old_generation()->used_regions_size(), "Old consumed can be no larger than span of affiliated regions");
+
   }
   if (metrics.is_good_progress()) {
     ShenandoahHeap::heap()->notify_gc_progress();
@@ -199,11 +206,7 @@ void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
   heap->set_gc_generation(heap->global_generation());
 
   if (heap->mode()->is_generational()) {
-    // Defer unadjust_available() invocations until after Full GC finishes its efforts because Full GC makes use
-    // of young-gen memory that may have been loaned from old-gen.
-
     // No need for old_gen->increase_used() as this was done when plabs were allocated.
-    heap->set_alloc_supplement_reserve(0);
     heap->set_young_evac_reserve(0);
     heap->set_old_evac_reserve(0);
     heap->reset_old_evac_expended();
@@ -342,8 +345,6 @@ void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
   // Resize metaspace
   MetaspaceGC::compute_new_size();
 
-  heap->adjust_generation_sizes();
-
   // Free worker slices
   for (uint i = 0; i < heap->max_workers(); i++) {
     delete worker_slices[i];
@@ -357,10 +358,7 @@ void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
     heap->verifier()->verify_after_fullgc();
   }
 
-  // Having reclaimed all dead memory, it is now safe to restore capacities to original values.
-  heap->young_generation()->unadjust_available();
-  heap->old_generation()->unadjust_available();
-
+  // Humongous regions are promoted on demand and are accounted for by normal Full GC mechanisms.
   if (VerifyAfterGC) {
     Universe::verify();
   }
@@ -1340,7 +1338,6 @@ public:
         account_for_region(r, _young_regions, _young_usage, _young_humongous_waste);
       }
     }
-
     r->set_live_data(live);
     r->reset_alloc_metadata();
   }
@@ -1501,12 +1498,84 @@ void ShenandoahFullGC::phase5_epilog() {
     ShenandoahPostCompactClosure post_compact;
     heap->heap_region_iterate(&post_compact);
     post_compact.update_generation_usage();
-    log_info(gc)("FullGC done: global usage: " SIZE_FORMAT "%s, young usage: " SIZE_FORMAT "%s, old usage: " SIZE_FORMAT "%s",
-                 byte_size_in_proper_unit(heap->global_generation()->used()), proper_unit_for_byte_size(heap->global_generation()->used()),
-                 byte_size_in_proper_unit(heap->young_generation()->used()),  proper_unit_for_byte_size(heap->young_generation()->used()),
-                 byte_size_in_proper_unit(heap->old_generation()->used()),    proper_unit_for_byte_size(heap->old_generation()->used()));
+    if (heap->mode()->is_generational()) {
+      size_t old_usage = heap->old_generation()->used_regions_size();
+      size_t old_capacity = heap->old_generation()->max_capacity();
+
+      assert(old_usage % ShenandoahHeapRegion::region_size_bytes() == 0, "Old usage must aligh with region size");
+      assert(old_capacity % ShenandoahHeapRegion::region_size_bytes() == 0, "Old capacity must aligh with region size");
+
+      if (old_capacity > old_usage) {
+        size_t excess_old_regions = (old_capacity - old_usage) / ShenandoahHeapRegion::region_size_bytes();
+        heap->generation_sizer()->transfer_to_young(excess_old_regions);
+      } else if (old_capacity < old_usage) {
+        size_t old_regions_deficit = (old_usage - old_capacity) / ShenandoahHeapRegion::region_size_bytes();
+        heap->generation_sizer()->transfer_to_old(old_regions_deficit);
+      }
+
+      log_info(gc)("FullGC done: young usage: " SIZE_FORMAT "%s, old usage: " SIZE_FORMAT "%s",
+                   byte_size_in_proper_unit(heap->young_generation()->used()), proper_unit_for_byte_size(heap->young_generation()->used()),
+                   byte_size_in_proper_unit(heap->old_generation()->used()),   proper_unit_for_byte_size(heap->old_generation()->used()));
+    }
     heap->collection_set()->clear();
-    heap->free_set()->rebuild();
+    size_t young_cset_regions, old_cset_regions;
+    heap->free_set()->prepare_to_rebuild(young_cset_regions, old_cset_regions);
+
+    // We also do not expand old generation size following Full GC because we have scrambled age populations and
+    // no longer have objects separated by age into distinct regions.
+
+    // TODO: Do we need to fix FullGC so that it maintains aged segregation of objects into distinct regions?
+    //       A partial solution would be to remember how many objects are of tenure age following Full GC, but
+    //       this is probably suboptimal, because most of these objects will not reside in a region that will be
+    //       selected for the next evacuation phase.
+
+    // In case this Full GC resulted from degeneration, clear the tally on anticipated promotion.
+    heap->clear_promotion_potential();
+    heap->clear_promotion_in_place_potential();
+
+    if (heap->mode()->is_generational()) {
+      // Invoke this in case we are able to transfer memory from OLD to YOUNG.
+      heap->adjust_generation_sizes_for_next_cycle(0, 0, 0);
+    }
+    heap->free_set()->rebuild(young_cset_regions, old_cset_regions);
+
+    // We defer generation resizing actions until after cset regions have been recycled.  We do this even following an
+    // abbreviated cycle.
+    if (heap->mode()->is_generational()) {
+      bool success;
+      size_t region_xfer;
+      const char* region_destination;
+      ShenandoahYoungGeneration* young_gen = heap->young_generation();
+      ShenandoahGeneration* old_gen = heap->old_generation();
+
+      size_t old_region_surplus = heap->get_old_region_surplus();
+      size_t old_region_deficit = heap->get_old_region_deficit();
+      if (old_region_surplus) {
+        success = heap->generation_sizer()->transfer_to_young(old_region_surplus);
+        region_destination = "young";
+        region_xfer = old_region_surplus;
+      } else if (old_region_deficit) {
+        success = heap->generation_sizer()->transfer_to_old(old_region_deficit);
+        region_destination = "old";
+        region_xfer = old_region_deficit;
+        if (!success) {
+          ((ShenandoahOldHeuristics *) old_gen->heuristics())->trigger_cannot_expand();
+        }
+      } else {
+        region_destination = "none";
+        region_xfer = 0;
+        success = true;
+      }
+      heap->set_old_region_surplus(0);
+      heap->set_old_region_deficit(0);
+      size_t young_available = young_gen->available();
+      size_t old_available = old_gen->available();
+      log_info(gc, ergo)("After cleanup, %s " SIZE_FORMAT " regions to %s to prepare for next gc, old available: "
+                         SIZE_FORMAT "%s, young_available: " SIZE_FORMAT "%s",
+                         success? "successfully transferred": "failed to transfer", region_xfer, region_destination,
+                         byte_size_in_proper_unit(old_available), proper_unit_for_byte_size(old_available),
+                         byte_size_in_proper_unit(young_available), proper_unit_for_byte_size(young_available));
+    }
+    heap->clear_cancelled_gc(true /* clear oom handler */);
   }
-  heap->clear_cancelled_gc(true /* clear oom handler */);
 }
