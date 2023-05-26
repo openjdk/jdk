@@ -323,6 +323,9 @@ public class Classfile {
      * @param r the resolver
      */
     public record ClassHierarchyResolverOption(ClassHierarchyResolver classHierarchyResolver) implements Option {
+        public static ClassHierarchyResolverOption of(ClassHierarchyResolver classHierarchyResolver) {
+            return new ClassHierarchyResolverOption(classHierarchyResolver);
+        }
     }
 
     /**
@@ -331,6 +334,9 @@ public class Classfile {
      * @param r a function mapping attribute names to attribute mappers
      */
     public record AttributeMapperOption(Function<Utf8Entry, AttributeMapper<?>> attributeMapper) implements Option {
+        public static AttributeMapperOption of(Function<Utf8Entry, AttributeMapper<?>> attributeMapper) {
+            return new AttributeMapperOption(attributeMapper);
+        }
     }
 
     /**

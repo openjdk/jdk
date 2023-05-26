@@ -54,13 +54,13 @@ public class RebuildMethodBodies {
     @Setup(Level.Trial)
     public void setup() throws IOException {
         shared = Classfile.Context.of(
-                            Classfile.Option.constantPoolSharing(true),
-                            Classfile.Option.processDebug(false),
-                            Classfile.Option.processLineNumbers(false));
+                            Classfile.ConstantPoolSharingOption.SHARE_CONSTANT_POOL,
+                            Classfile.DebugElementsOption.DROP_DEBUG_ELEMENTS,
+                            Classfile.LineNumbersOption.DROP_LINE_NUMBERS);
         unshared = Classfile.Context.of(
-                            Classfile.Option.constantPoolSharing(false),
-                            Classfile.Option.processDebug(false),
-                            Classfile.Option.processLineNumbers(false));
+                            Classfile.ConstantPoolSharingOption.DO_NOT_SHARE_CONSTANT_POOL,
+                            Classfile.DebugElementsOption.DROP_DEBUG_ELEMENTS,
+                            Classfile.LineNumbersOption.DROP_LINE_NUMBERS);
         models = new ArrayList<>();
         Files.walk(FileSystems.getFileSystem(URI.create("jrt:/")).getPath("modules/java.base/java")).forEach(p -> {
             if (Files.isRegularFile(p) && p.toString().endsWith(".class")) try {

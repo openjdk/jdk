@@ -101,10 +101,10 @@ class ShortJumpsFixTest {
     }
 
     static final Classfile.Context
-            CC_Fixed_Jumps = Classfile.Context.of(Classfile.Option.fixShortJumps(true)),
-            CC_Not_Fixed_Jumps = Classfile.Context.of(Classfile.Option.fixShortJumps(false)),
-            CC_No_Stack_No_Patch = Classfile.Context.of(Classfile.Option.generateStackmap(false),
-                                                        Classfile.Option.patchDeadCode(false));
+            CC_Fixed_Jumps = Classfile.Context.of(Classfile.ShortJumpsOption.FIX_SHORT_JUMPS),
+            CC_Not_Fixed_Jumps = Classfile.Context.of(Classfile.ShortJumpsOption.FAIL_ON_SHORT_JUMPS),
+            CC_No_Stack_No_Patch = Classfile.Context.of(Classfile.StackMapsOption.DO_NOT_GENERATE,
+                                                        Classfile.DeadCodeOption.KEEP_DEAD_CODE);
 
     @ParameterizedTest
     @MethodSource("provideFwd")

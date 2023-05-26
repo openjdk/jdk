@@ -126,8 +126,8 @@ public class Transforms {
         UNSHARED_1(false, oneLevelNoop),
         UNSHARED_2(false, twoLevelNoop),
         UNSHARED_3(false, threeLevelNoop),
-        SHARED_3_NO_STACKMAP(true, threeLevelNoop, Classfile.Option.generateStackmap(false)),
-        SHARED_3_NO_DEBUG(true, threeLevelNoop, Classfile.Option.processDebug(false), Classfile.Option.processLineNumbers(false)),
+        SHARED_3_NO_STACKMAP(true, threeLevelNoop, Classfile.StackMapsOption.DO_NOT_GENERATE),
+        SHARED_3_NO_DEBUG(true, threeLevelNoop, Classfile.DebugElementsOption.DROP_DEBUG_ELEMENTS, Classfile.LineNumbersOption.DROP_LINE_NUMBERS),
         ASM_1(bytes -> {
             ClassReader cr = new ClassReader(bytes);
             jdk.internal.org.objectweb.asm.ClassWriter cw = new jdk.internal.org.objectweb.asm.ClassWriter(cr, jdk.internal.org.objectweb.asm.ClassWriter.COMPUTE_FRAMES);
@@ -185,7 +185,7 @@ public class Transforms {
             this.cc = Classfile.Context.of(
                     shared
                     ? options
-                    : Stream.concat(Stream.of(options), Stream.of(Classfile.Option.constantPoolSharing(false))).toArray(Classfile.Option[]::new));
+                    : Stream.concat(Stream.of(options), Stream.of(Classfile.ConstantPoolSharingOption.DO_NOT_SHARE_CONSTANT_POOL)).toArray(Classfile.Option[]::new));
             this.transform = bytes -> cc.transform(cc.parse(bytes), classTransform);
         }
     }
