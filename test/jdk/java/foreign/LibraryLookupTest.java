@@ -67,6 +67,21 @@ public class LibraryLookupTest {
         callFunc(addr);
     }
 
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    void testLoadLibraryBadName() {
+        try (Arena arena = Arena.ofConfined()) {
+            SymbolLookup.libraryLookup(LIB_PATH.toString() + "\u0000", arena);
+        }
+    }
+
+    @Test
+    void testLoadLibraryBadLookupName() {
+        try (Arena arena = Arena.ofConfined()) {
+            SymbolLookup lookup = SymbolLookup.libraryLookup(LIB_PATH, arena);
+            assertTrue(lookup.find("inc\u0000foobar").isEmpty());
+        }
+    }
+
     private static MemorySegment loadLibrary(Arena session) {
         SymbolLookup lib = SymbolLookup.libraryLookup(LIB_PATH, session);
         MemorySegment addr = lib.find("inc").get();

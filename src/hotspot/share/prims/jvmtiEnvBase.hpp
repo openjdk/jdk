@@ -224,6 +224,10 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
   // Check if VirtualThread or BoundVirtualThread is suspended.
   static bool is_vthread_suspended(oop vt_oop, JavaThread* jt);
 
+  // Check for JVMTI_ERROR_NOT_SUSPENDED and JVMTI_ERROR_OPAQUE_FRAME errors.
+  // Used in PopFrame and ForceEarlyReturn implementations.
+  static jvmtiError check_non_suspended_or_opaque_frame(JavaThread* jt, oop thr_obj, bool self);
+
   static JvmtiEnv* JvmtiEnv_from_jvmti_env(jvmtiEnv *env) {
     return (JvmtiEnv*)((intptr_t)env - in_bytes(jvmti_external_offset()));
   };

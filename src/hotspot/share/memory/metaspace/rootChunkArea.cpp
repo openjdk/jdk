@@ -98,7 +98,7 @@ void RootChunkArea::split(chunklevel_t target_level, Metachunk* c, FreeChunkList
   //
 
   DEBUG_ONLY(check_pointer(c->base());)
-  DEBUG_ONLY(c->verify();)
+  SOMETIMES(c->verify();)
   assert(c->is_free(), "Can only split free chunks.");
 
   DEBUG_ONLY(chunklevel::check_valid_level(target_level));
@@ -139,8 +139,8 @@ void RootChunkArea::split(chunklevel_t target_level, Metachunk* c, FreeChunkList
 
   assert(c->level() == target_level, "Sanity");
 
-  DEBUG_ONLY(verify();)
-  DEBUG_ONLY(c->verify();)
+  SOMETIMES(verify();)
+  SOMETIMES(c->verify();)
 }
 
 // Given a chunk, attempt to merge it recursively with its neighboring chunks.
@@ -194,7 +194,7 @@ Metachunk* RootChunkArea::merge(Metachunk* c, FreeChunkListVector* freelists) {
   assert(!c->is_root_chunk(), "Cannot be merged further.");
   assert(c->is_free(), "Can only merge free chunks.");
 
-  DEBUG_ONLY(c->verify();)
+  SOMETIMES(c->verify();)
 
   log_trace(metaspace)("Attempting to merge chunk " METACHUNK_FORMAT ".", METACHUNK_FORMAT_ARGS(c));
 
@@ -208,7 +208,7 @@ Metachunk* RootChunkArea::merge(Metachunk* c, FreeChunkListVector* freelists) {
 
     // Note: this is either our buddy or a splinter of the buddy.
     Metachunk* const buddy = c->is_leader() ? c->next_in_vs() : c->prev_in_vs();
-    DEBUG_ONLY(buddy->verify();)
+    SOMETIMES(buddy->verify();)
 
     // A buddy chunk must be of the same or higher level (so, same size or smaller)
     // never be larger.
@@ -270,14 +270,14 @@ Metachunk* RootChunkArea::merge(Metachunk* c, FreeChunkListVector* freelists) {
       }
 
       result = c = leader;
-      DEBUG_ONLY(leader->verify();)
+      SOMETIMES(leader->verify();)
     }
   } while (!stop);
 
 #ifdef ASSERT
-  verify();
+  SOMETIMES(verify();)
   if (result != nullptr) {
-    result->verify();
+    SOMETIMES(result->verify();)
   }
 #endif // ASSERT
   return result;
@@ -299,7 +299,7 @@ bool RootChunkArea::attempt_enlarge_chunk(Metachunk* c, FreeChunkListVector* fre
   // There is no real reason for this limitation other than it is not
   // needed on free chunks since they should be merged already:
   assert(c->is_in_use(), "Can only enlarge in use chunks.");
-  DEBUG_ONLY(c->verify();)
+  SOMETIMES(c->verify();)
 
   if (!c->is_leader()) {
     return false;
@@ -307,7 +307,7 @@ bool RootChunkArea::attempt_enlarge_chunk(Metachunk* c, FreeChunkListVector* fre
 
   // We are the leader, so the buddy must follow us.
   Metachunk* const buddy = c->next_in_vs();
-  DEBUG_ONLY(buddy->verify();)
+  SOMETIMES(buddy->verify();)
 
   // Of course buddy cannot be larger than us.
   assert(buddy->level() >= c->level(), "Sanity");
@@ -352,7 +352,7 @@ bool RootChunkArea::attempt_enlarge_chunk(Metachunk* c, FreeChunkListVector* fre
 
   log_debug(metaspace)("Enlarged chunk " METACHUNK_FULL_FORMAT ".", METACHUNK_FULL_FORMAT_ARGS(c));
 
-  DEBUG_ONLY(verify());
+  SOMETIMES(verify();)
   return true;
 }
 
