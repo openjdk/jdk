@@ -46,7 +46,6 @@ import jdk.vm.ci.runtime.JVMCICompilerFactory;
 import jdk.vm.ci.runtime.JVMCIRuntime;
 
 import java.io.File;
-import java.io.IOException;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -56,10 +55,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class TestUncaughtErrorInCompileMethod extends JVMCIServiceLocator {
 
-    /**
-     * Name of file whose existence implies that a JVMCICompiler has been created.
-     */
-    static String tmpFileName = "ErrorCompilerCreated." + System.nanoTime();
+    static volatile boolean compilerCreationErrorOccurred;
 
     /**
      * @param args if args.length != 0, then executing in subprocess
@@ -69,9 +65,8 @@ public class TestUncaughtErrorInCompileMethod extends JVMCIServiceLocator {
             testSubprocess(false);
             testSubprocess(true);
         } else {
-            File watch = new File(tmpFileName);
             int total = 0;
-            while (!watch.exists()) {
+            while (!compilerCreationErrorOccurred) {
                 total += getTime();
             }
             System.out.println(total);
@@ -187,18 +182,10 @@ public class TestUncaughtErrorInCompileMethod extends JVMCIServiceLocator {
                     int attempt = counter.incrementAndGet();
                     CompilerCreationError e = new CompilerCreationError(attempt);
                     e.printStackTrace();
-                    if (attempt == 10) {
-                        // Delay the creation of the file that causes the
-                        // loop in main to exit so that compilation failures
+                    if (attempt >= 10) {
+                        // Delay notifying the loop in main so that compilation failures
                         // have time to be reported by -XX:+PrintCompilation.
-                        File watch = new File(tmpFileName);
-                        try {
-                            System.err.println("creating " + watch);
-                            watch.createNewFile();
-                            System.err.println("created " + watch);
-                        } catch (IOException ex) {
-                            ex.printStackTrace();
-                        }
+                        compilerCreationErrorOccurred = true;
                     }
                     throw e;
                 }
