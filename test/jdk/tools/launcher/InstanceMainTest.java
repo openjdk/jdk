@@ -30,7 +30,7 @@ import java.nio.file.Path;
  */
 public class InstanceMainTest extends TestHelper {
 
-    private static final String[] SAMPLES = new String[] {
+    private static final String[] SOURCES = new String[] {
             // static dominating with args
             """
             class MainClass {
@@ -122,11 +122,11 @@ public class InstanceMainTest extends TestHelper {
             """
             public class MainClass extends Super {
             }
-    
+
             class Super {
                 public void main(String... args) {
                 }
-    
+
                 public void main() {
                     throw new AssertionError();
                 }
@@ -139,7 +139,7 @@ public class InstanceMainTest extends TestHelper {
                 public static void main(String... args) {
                 }
             }
-    
+
             class Super {
                 public static void main(String... args) {
                     throw new AssertionError();
@@ -151,10 +151,10 @@ public class InstanceMainTest extends TestHelper {
             """
             enum MainClass {
                 A;
-            
+
                 public static void main() {
                 }
-            }            
+            }
             """,
 
             // record main
@@ -163,7 +163,7 @@ public class InstanceMainTest extends TestHelper {
                  static void main() {
                      System.out.println("Done!");
                  }
-            }            
+            }
             """,
             // interface main
             """
@@ -171,12 +171,12 @@ public class InstanceMainTest extends TestHelper {
                  static void main() {
                      System.out.println("Done!");
                  }
-            }            
+            }
             """
     };
 
     public static void main(String... args) throws Exception {
-        for (String source : SAMPLES) {
+        for (String source : SOURCES) {
             Files.writeString(Path.of("MainClass.java"), source);
             var version = System.getProperty("java.specification.version");
             var tr = doExec(javaCmd, "--enable-preview", "--source", version, "MainClass.java");
