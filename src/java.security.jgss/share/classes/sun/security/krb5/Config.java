@@ -1022,7 +1022,8 @@ public class Config {
                 }
             }
             if (ls.isEmpty()) {
-                throw new KrbException("no supported default etypes for configuration "
+                throw new KrbException("out of " + len +
+                        " default etypes no supported etypes found for configuration "
                         + configName);
             } else {
                 etype = new int[ls.size()];
