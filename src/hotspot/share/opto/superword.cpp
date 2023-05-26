@@ -2664,7 +2664,7 @@ bool SuperWord::output() {
     // Create a vector mask node for post loop, bail out if not created
     vmask = create_post_loop_vmask();
     if (vmask == nullptr) {
-      assert(false, "rce post loop vmask was not created");
+      // create_post_loop_vmask checks many conditions, any of them could fail
       return false; // and reverse to backup IG
     }
   }
