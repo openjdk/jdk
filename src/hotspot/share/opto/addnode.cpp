@@ -888,16 +888,28 @@ Node* XorINode::Ideal(PhaseGVN* phase, bool can_reshape) {
   }
 
   // Propagate xor through constant cmoves. This pattern can occur after expansion of Conv2B nodes.
-  if (in1->Opcode() == Op_CMoveI && in2->is_Con()) {
-    if (in1->in(CMoveNode::IfFalse)->is_Con() && in1->in(CMoveNode::IfTrue)->is_Con() && in1->in(CMoveNode::Condition)->is_Bool()) {
-      int cmp_op = in1->in(CMoveNode::Condition)->in(1)->Opcode();
+  const TypeInt* in2_type = phase->type(in2)->isa_int();
+  if (in1->Opcode() == Op_CMoveI && in2_type != nullptr && in2_type->is_con()) {
+    int in2_val = in2_type->get_con();
 
-      int in2_val = phase->type(in2)->is_int()->get_con();
-      int l_val = phase->type(in1->in(CMoveNode::IfFalse))->is_int()->get_con();
-      int r_val = phase->type(in1->in(CMoveNode::IfTrue))->is_int()->get_con();
+    // Get types of both sides of the CMove
+    const TypeInt* left = phase->type(in1->in(CMoveNode::IfFalse))->isa_int();
+    const TypeInt* right = phase->type(in1->in(CMoveNode::IfTrue))->isa_int();
 
-      if (cmp_op == Op_CmpI || cmp_op == Op_CmpP) {
-        return new CMoveINode(in1->in(CMoveNode::Condition), phase->intcon(l_val ^ in2_val), phase->intcon(r_val ^ in2_val), TypeInt::INT);
+    // Ensure that both sides are int constants
+    if (left != nullptr && right != nullptr && left->is_con() && right->is_con()) {
+      Node* cond = in1->in(CMoveNode::Condition);
+
+      // Check that the comparison is a bool and that the cmp node type is correct
+      if (cond->is_Bool()) {
+        int cmp_op = cond->in(1)->Opcode();
+
+        if (cmp_op == Op_CmpI || cmp_op == Op_CmpP) {
+          int l_val = left->get_con();
+          int r_val = right->get_con();
+
+          return new CMoveINode(cond, phase->intcon(l_val ^ in2_val), phase->intcon(r_val ^ in2_val), TypeInt::INT);
+        }
       }
     }
   }
