@@ -31,6 +31,7 @@ import java.util.concurrent.locks.StampedLock;
 import java.security.*;
 
 import jdk.internal.util.random.RandomSupport;
+import jdk.internal.util.ByteArray;
 
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
@@ -213,20 +214,27 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
                 this.pos = BUF_SIZE; // trigger re-creation on first use
             }
 
+            private static UUID fromRandom(long lsb, long msb) {
+                // set version to 3
+                lsb = (lsb & (0xFFFF_FFFF_FFFF_0FFFL)) | 0x0000_0000_0000_4000L;
+                // set variant to IETF
+                msb = (msb & (0x3FFF_FFFF_FFFF_FFFFL)) | 0x8000_0000_0000_0000L;
+                return new UUID(lsb, msb);
+            }
+
             public UUID next() {
                 long stamp = lock.tryOptimisticRead();
                 try {
-                    UUID uuid = null;
-
                     // Optimistic path: optimistic locking succeeded.
                     // Try to pull the UUID from the current buffer at current position.
                     if (stamp != 0) {
                         int p = (int)VH_POS.getAndAdd(this, UUID_CHUNK);
                         if (p < BUF_SIZE) {
-                            uuid = new UUID(buf, p);
+                            long lsb = ByteArray.getLong(buf, p);
+                            long msb = ByteArray.getLong(buf, p + 8);
                             if (lock.validate(stamp)) {
-                                // Success: UUID is valid, and there were no buffer changes.
-                                return uuid;
+                                // Success: there were no buffer changes. Construct the UUID.
+                                return fromRandom(lsb, msb);
                             }
                         }
                     }
@@ -244,27 +252,23 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
                     if ((int)VH_POS.get(this) > 0) {
                         int p = (int)VH_POS.getAndAdd(this, UUID_CHUNK);
                         if (p < BUF_SIZE) {
-                            return new UUID(buf, p);
+                            long lsb = ByteArray.getLong(buf, p);
+                            long msb = ByteArray.getLong(buf, p + 8);
+                            return fromRandom(lsb, msb);
                         }
                     }
 
-                    // Pessimistic path: buffer requires replenishment. Recreate it from the
-                    // provided random, and initialize all UUIDs at once to avoid further
-                    // initializations, and thus false sharing between reader threads.
+                    // Pessimistic path: buffer requires replenishment.
+                    // Recreate it from the provided random.
                     random.nextBytes(buf);
-                    for (int c = 0; c < BUF_SIZE; c += UUID_CHUNK) {
-                        buf[c + 6] &= 0x0f;  /* clear version        */
-                        buf[c + 6] |= 0x40;  /* set to version 4     */
-                        buf[c + 8] &= 0x3f;  /* clear variant        */
-                        buf[c + 8] |= (byte) 0x80;  /* set to IETF variant  */
-                    }
 
                     // Take the UUID from new buffer. We are still under write lock,
                     // so we know we are the only thread here.
-                    uuid = new UUID(buf, 0);
                     VH_POS.set(this, UUID_CHUNK);
 
-                    return uuid;
+                    long lsb = ByteArray.getLong(buf, 0);
+                    long msb = ByteArray.getLong(buf, 8);
+                    return fromRandom(lsb, msb);
                 } finally {
                     if (StampedLock.isWriteLockStamp(stamp)) {
                         lock.unlockWrite(stamp);
@@ -279,15 +283,14 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
     /*
      * Private constructor which uses a byte array to construct the new UUID.
      */
-    private UUID(byte[] data, int start) {
+    private UUID(byte[] data) {
         long msb = 0;
         long lsb = 0;
-        for (int i = start; i < start + 8; i++) {
+        assert data.length == 16 : "data must be 16 bytes in length";
+        for (int i=0; i<8; i++)
             msb = (msb << 8) | (data[i] & 0xff);
-        }
-        for (int i = start + 8; i < start + 16; i++) {
+        for (int i=8; i<16; i++)
             lsb = (lsb << 8) | (data[i] & 0xff);
-        }
         this.mostSigBits = msb;
         this.leastSigBits = lsb;
     }
@@ -342,7 +345,7 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
         md5Bytes[6]  |= 0x30;  /* set to version 3     */
         md5Bytes[8]  &= 0x3f;  /* clear variant        */
         md5Bytes[8]  |= (byte) 0x80;  /* set to IETF variant  */
-        return new UUID(md5Bytes, 0);
+        return new UUID(md5Bytes);
     }
 
     private static final byte[] NIBBLES;
