@@ -269,6 +269,9 @@ public class IndexItem {
         if (label.isEmpty()) {
             throw new IllegalArgumentException();
         }
+        if (label.contains("\n") || label.contains("\r")) {
+            throw new IllegalArgumentException();
+        }
 
         this.element = element;
         this.label = label;
@@ -578,6 +581,6 @@ public class IndexItem {
     }
 
     private String escapeQuotes(String s) {
-        return s.replace("\"", "\\\"");
+        return s.replace("\\", "\\\\").replace("\"", "\\\"");
     }
  }

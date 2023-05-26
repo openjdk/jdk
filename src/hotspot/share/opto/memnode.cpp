@@ -2360,7 +2360,7 @@ const Type* LoadNode::klass_value_common(PhaseGVN* phase) const {
 
   // Check for loading klass from an array
   const TypeAryPtr *tary = tp->isa_aryptr();
-  if (tary != nullptr && tary->elem() != Type::BOTTOM &&
+  if (tary != nullptr &&
       tary->offset() == oopDesc::klass_offset_in_bytes()) {
     return tary->as_klass_type(true);
   }

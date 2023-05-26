@@ -1796,8 +1796,8 @@ static Node* split_flow_path(PhaseGVN *phase, PhiNode *phi) {
     if( phase->type(n) == Type::TOP ) return nullptr;
     if( phi->in(i) == val ) {
       hit++;
-      if (PhaseIdealLoop::find_parse_predicate(r->in(i)) != nullptr) {
-        return nullptr;            // don't split loop entry path
+      if (Node::may_be_loop_entry(r->in(i))) {
+        return nullptr; // don't split loop entry path
       }
     }
   }
