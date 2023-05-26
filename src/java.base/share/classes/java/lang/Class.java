@@ -190,10 +190,10 @@ import sun.reflect.misc.ReflectUtil;
  * <h2><a id=unnamedClasses>Unnamed Classes</a></h2>
  *
  * The {@code class} file representing an unnnamed class is generated
- * by a Java compiler from a source file from an unnamed class. The
+ * by a Java compiler from a source file for an unnamed class. The
  * {@code Class} object representing an unnamed class is top-level,
  * {@linkplain #isSynthetic synthetic}, and {@code final}. While an
- * unnamed class does <em>not</em> have have a name in its Java source
+ * unnamed class does <em>not</em> have a name in its Java source
  * form, the various named-related methods of {@code java.lang.Class}
  * do return non-empty results for the {@code Class} object
  * representing an unnamed class. Conventionally, a Java compiler
