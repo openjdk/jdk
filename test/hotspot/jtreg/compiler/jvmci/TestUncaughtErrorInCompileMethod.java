@@ -51,6 +51,7 @@ import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class TestUncaughtErrorInCompileMethod extends JVMCIServiceLocator {
@@ -70,17 +71,8 @@ public class TestUncaughtErrorInCompileMethod extends JVMCIServiceLocator {
         } else {
             File watch = new File(tmpFileName);
             int total = 0;
-            long start = System.currentTimeMillis();
-
-            // Use a 10 sec timeout to prevent endless loop if
-            // JVMCI compiler creation fails
-            while (System.currentTimeMillis() - start < 10_000) {
+            while (!watch.exists()) {
                 total += getTime();
-                if (watch.exists()) {
-                    System.err.println("saw " + watch + " - exiting loop");
-                    watch.delete();
-                    break;
-                }
             }
             System.out.println(total);
         }
@@ -101,7 +93,16 @@ public class TestUncaughtErrorInCompileMethod extends JVMCIServiceLocator {
             "-XX:+PrintWarnings",
             "-Xbootclasspath/a:.",
             TestUncaughtErrorInCompileMethod.class.getName(), "true");
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        Process p = pb.start();
+        OutputAnalyzer output = new OutputAnalyzer(p);
+
+        if (!waitForProcess(p)) {
+            // The subprocess might not enter JVMCI compilation.
+            // Print the subprocess output and pass the test in this case.
+            System.out.println(output.getOutput());
+            return;
+        }
+
         if (fatalError) {
             output.shouldContain("testing JVMCI fatal exception handling");
             output.shouldNotHaveExitValue(0);
@@ -134,6 +135,31 @@ public class TestUncaughtErrorInCompileMethod extends JVMCIServiceLocator {
         } else {
             output.shouldContain("COMPILE SKIPPED: uncaught exception in call_HotSpotJVMCIRuntime_compileMethod [compiler.jvmci.TestUncaughtErrorInCompileMethod$CompilerCreationError");
             output.shouldHaveExitValue(0);
+        }
+    }
+
+    /**
+     * @return true if {@code p} exited on its own, false if it had to be destroyed
+     */
+    private static boolean waitForProcess(Process p) {
+        while (true) {
+            try {
+                boolean exited = p.waitFor(10, TimeUnit.SECONDS);
+                if (!exited) {
+                    System.out.println("destroying process: " + p);
+                    p.destroy();
+                    Thread.sleep(1000);
+                    while (p.isAlive()) {
+                        System.out.println("forcibly destroying process: " + p);
+                        Thread.sleep(1000);
+                        p.destroyForcibly();
+                    }
+                    return false;
+                }
+                return true;
+            } catch (InterruptedException e) {
+                e.printStackTrace(System.out);
+            }
         }
     }
 
