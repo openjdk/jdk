@@ -245,6 +245,22 @@ class NegotiateAuthentication extends AuthenticationInfo {
         return negotiator.nextToken(token);
     }
 
+    /**
+     * Releases any system resources and cryptographic information stored in
+     * the context object and invalidates the context.
+     */
+    @Override
+    public void disposeContext() {
+        if (negotiator != null) {
+            try {
+                negotiator.disposeContext();
+            } catch (IOException ioEx) {
+                //do not rethrow IOException
+            }
+            negotiator = null;
+        }
+    }
+
     // MS will send a final WWW-Authenticate even if the status is already
     // 200 OK. The token can be fed into initSecContext() again to determine
     // if the server can be trusted. This is not the same concept as Digest's
