@@ -35,9 +35,6 @@ import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.random.RandomSupport;
 import jdk.internal.util.ByteArray;
 
-import sun.security.action.GetPropertyAction;
-import sun.security.action.GetIntegerAction;
-
 /**
  * A class that represents an immutable universally unique identifier (UUID).
  * A UUID represents a 128-bit value.
@@ -113,10 +110,6 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
      * scalability bottlenecks when reading from a single (synchronized) SecureRandom.
      */
     private static final class RandomUUID {
-        static final String PROP_NAME_PRNG_NAME = "java.util.UUID.prngName";
-        static final String PROP_NAME_BUF_COUNT = "java.util.UUID.buffersCount";
-
-        static final String PRNG_NAME;
         static final int BUFS_COUNT;
         static final Buffer[] BUFS;
 
@@ -127,34 +120,10 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
 
         static {
             try {
-                PRNG_NAME = GetPropertyAction.privilegedGetProperty(PROP_NAME_PRNG_NAME, null);
-                try {
-                    newRandom();
-                } catch (Exception e) {
-                    throw new IllegalArgumentException(PROP_NAME_PRNG_NAME + " is incorrect", e);
-                }
-                int bufCount = GetIntegerAction.privilegedGetProperty(PROP_NAME_BUF_COUNT,
-                                    Runtime.getRuntime().availableProcessors());
-                if (bufCount < 1) {
-                    throw new IllegalArgumentException(PROP_NAME_BUF_COUNT + " is out of range");
-                }
-                BUFS_COUNT = roundPowerOfTwo(bufCount);
+                BUFS_COUNT = roundPowerOfTwo(Runtime.getRuntime().availableProcessors());
                 BUFS = new Buffer[BUFS_COUNT];
             } catch (Exception e) {
                 throw new ExceptionInInitializerError(e);
-            }
-        }
-
-        static SecureRandom newRandom() {
-            if (PRNG_NAME == null) {
-                return new SecureRandom();
-            } else {
-                try {
-                    return SecureRandom.getInstance(PRNG_NAME);
-                } catch (Exception e) {
-                    // Checked in <clinit>, should not happen on other paths.
-                    throw new RuntimeException(e);
-                }
             }
         }
 
@@ -175,7 +144,7 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
                 // Create a new buffer and install it.
                 // On initial contention, some buffers may be lost, but this is not
                 // a problem for correctness, or for steady-state performance.
-                current = new Buffer(newRandom());
+                current = new Buffer();
                 BUFS[idx] = current;
             }
             return current.next();
@@ -186,20 +155,14 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
         // costs, memory footprint and cache pressure.
         @jdk.internal.vm.annotation.Contended
         static final class Buffer {
-            static final String PROP_NAME_UUID_COUNT = "java.util.UUID.uuidsPerBuffer";
-
             static final int UUID_CHUNK = 16;
-            static final int UUID_COUNT;
+            static final int UUID_COUNT = 256;
             static final int BUF_SIZE;
 
             static final VarHandle VH_POS;
             static {
                 try {
                     VH_POS = MethodHandles.lookup().findVarHandle(Buffer.class, "pos", int.class);
-                    UUID_COUNT = GetIntegerAction.privilegedGetProperty(PROP_NAME_UUID_COUNT, 256);
-                    if (UUID_COUNT < 1 || UUID_COUNT > Integer.MAX_VALUE / UUID_CHUNK) {
-                        throw new IllegalArgumentException(PROP_NAME_UUID_COUNT + " is out of range");
-                    }
                     BUF_SIZE = UUID_CHUNK * UUID_COUNT;
                 } catch (Exception e) {
                     throw new InternalError(e);
@@ -211,8 +174,8 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
             final byte[] buf;
             int pos;
 
-            public Buffer(SecureRandom random) {
-                this.random = random;
+            public Buffer() {
+                this.random = new SecureRandom();
                 this.lock = new StampedLock();
                 this.buf = new byte[BUF_SIZE];
                 this.pos = BUF_SIZE; // trigger re-creation on first use
