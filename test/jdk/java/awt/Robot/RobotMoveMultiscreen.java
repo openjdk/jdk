@@ -40,8 +40,8 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
 
 public class RobotMoveMultiscreen {
-    static int x_dest = 20;
-    static int y_dest = 20;
+    static volatile int x_dest = 20;
+    static volatile int y_dest = 20;
     static Frame frame;
     static volatile Boolean testCondition = false;
 
@@ -76,7 +76,6 @@ public class RobotMoveMultiscreen {
             robot.delay(1000);
             robot.waitForIdle();
             robot.mouseMove(x_dest+50, y_dest+50);
-            robot.delay(1000);
             robot.waitForIdle();
             EventQueue.invokeAndWait(() -> {
                 if (testCondition == false) {

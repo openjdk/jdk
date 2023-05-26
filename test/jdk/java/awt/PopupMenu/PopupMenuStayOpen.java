@@ -46,7 +46,7 @@ import java.awt.event.InputEvent;
 
 public class PopupMenuStayOpen {
     public static final int MAX_COUNT = 100;
-    public static boolean wasActionFired = false;
+    public volatile static boolean wasActionFired = false;
     static Frame frame;
     static PopupMenu pom;
     volatile static Point point;
@@ -62,7 +62,6 @@ public class PopupMenuStayOpen {
                 frame.setTitle(nm);
                 frame.setSize(300, 300);
                 frame.setLocation(20, 300);
-                frame.setLocationRelativeTo(null);
                 frame.setVisible(true);
                 pom.add("A long enough line");
 
@@ -85,7 +84,7 @@ public class PopupMenuStayOpen {
             robot.waitForIdle();
 
             EventQueue.invokeAndWait(() -> {
-                point = getLocation(frame);
+                point = frame.getLocationOnScreen();
             });
 
             robot.mouseMove(point.x + 50, point.y + 100);
@@ -104,7 +103,7 @@ public class PopupMenuStayOpen {
                 if (!wasActionFired) {
                     throw new RuntimeException("Popup not visible or has no focus");
                 }
-            }
+            });
             System.out.println("Test Pass!!");
         } finally {
             EventQueue.invokeAndWait(() -> {
@@ -113,24 +112,5 @@ public class PopupMenuStayOpen {
                 }
             });
         }
-    }
-
-    public static Point getLocation(Component co) throws RuntimeException {
-        Point pt = null;
-        boolean bFound = false;
-        int count = 0;
-        while (!bFound) {
-            try {
-                pt = co.getLocationOnScreen();
-                bFound = true;
-            } catch (Exception ex) {
-                bFound = false;
-                count++;
-            }
-            if (!bFound && count > MAX_COUNT) {
-                throw new RuntimeException("don't see a component to get location");
-            }
-        }
-        return pt;
     }
 }

@@ -81,6 +81,9 @@ public class ScrollbarKeyControlTest implements AdjustmentListener, KeyListener 
                 frame.toFront();
             });
             robot = new Robot();
+            robot.delay(1000);
+            robot.waitForIdle();
+
             testOneScrollbar(scrollbarV);
             if (changesTotal != 9) { //one by mouse click and six by keys
                 throw new RuntimeException("Test failed.  Not all adjustment " +
