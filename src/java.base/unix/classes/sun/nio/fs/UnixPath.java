@@ -782,12 +782,12 @@ class UnixPath implements Path {
         return open(this, flags, 0);
     }
 
-    private static boolean canRead(UnixPath path) {
+    private boolean canRead() {
         @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             try {
-                sm.checkRead(path.getPathForPermissionCheck());
+                sm.checkRead(getPathForPermissionCheck());
                 return true;
             } catch (SecurityException ignore) {
                 return false;
@@ -896,7 +896,7 @@ class UnixPath implements Path {
         // If SM and no read permission, then fall back to result derived so
         // far with case possibly not retained
         UnixPath path = fs.rootDirectory();
-        if (!canRead(path))
+        if (!path.canRead())
             return result;
 
         // Traverse the result obtained above from the root downward, leaving
