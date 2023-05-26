@@ -294,6 +294,9 @@ test-prebuilt:
 	    SPEC=$(SPEC) FINDTESTS_STAND_ALONE=true
 	@cd $(TOPDIR) && $(MAKE) $(MAKE_ARGS) -f make/RunTests.gmk run-test \
 	    TEST="$(TEST)"
+	@if test -f $(MAKESUPPORT_OUTPUTDIR)/exit-with-error ; then \
+	  exit 1 ; \
+	fi
 
 all: test-prebuilt
 
