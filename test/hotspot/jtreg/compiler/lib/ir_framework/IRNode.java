@@ -304,16 +304,6 @@ public class IRNode {
         beforeMatchingNameRegex(CMOVE_I, "CMoveI");
     }
 
-    public static final String CMOVE_VD = PREFIX + "CMOVE_VD" + POSTFIX;
-    static {
-        superWordNodes(CMOVE_VD, "CMoveVD");
-    }
-
-    public static final String CMOVE_VF = PREFIX + "CMOVE_VF" + POSTFIX;
-    static {
-        superWordNodes(CMOVE_VF, "CMoveVF");
-    }
-
     public static final String CMP_I = PREFIX + "CMP_I" + POSTFIX;
     static {
         beforeMatchingNameRegex(CMP_I, "CmpI");
@@ -1278,6 +1268,11 @@ public class IRNode {
         beforeMatchingNameRegex(VECTOR_BLEND, "VectorBlend");
     }
 
+    public static final String VECTOR_MASK_CMP = PREFIX + "VECTOR_MASK_CMP" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(VECTOR_MASK_CMP, "VectorMaskCmp");
+    }
+
     public static final String VECTOR_CAST_B2X = PREFIX + "VECTOR_CAST_B2X" + POSTFIX;
     static {
         beforeMatchingNameRegex(VECTOR_CAST_B2X, "VectorCastB2X");
@@ -1516,6 +1511,24 @@ public class IRNode {
     public static final String EXPAND_BITSV = PREFIX + "EXPAND_BITSV" + POSTFIX;
     static {
         beforeMatchingNameRegex(EXPAND_BITSV, "ExpandBitsV");
+    }
+
+    public static final String Z_LOAD_P_WITH_BARRIER_FLAG = COMPOSITE_PREFIX + "Z_LOAD_P_WITH_BARRIER_FLAG" + POSTFIX;
+    static {
+        String regex = START + "zLoadP\\S*" + MID + "barrier\\(\\s*" + IS_REPLACED + "\\s*\\)" + END;
+        machOnly(Z_LOAD_P_WITH_BARRIER_FLAG, regex);
+    }
+
+    public static final String Z_STORE_P_WITH_BARRIER_FLAG = COMPOSITE_PREFIX + "Z_STORE_P_WITH_BARRIER_FLAG" + POSTFIX;
+    static {
+        String regex = START + "zStoreP\\S*" + MID + "barrier\\(\\s*" + IS_REPLACED + "\\s*\\)" + END;
+        machOnly(Z_STORE_P_WITH_BARRIER_FLAG, regex);
+    }
+
+    public static final String Z_GET_AND_SET_P_WITH_BARRIER_FLAG = COMPOSITE_PREFIX + "Z_GET_AND_SET_P_WITH_BARRIER_FLAG" + POSTFIX;
+    static {
+        String regex = START + "(zXChgP)|(zGetAndSetP\\S*)" + MID + "barrier\\(\\s*" + IS_REPLACED + "\\s*\\)" + END;
+        machOnly(Z_GET_AND_SET_P_WITH_BARRIER_FLAG, regex);
     }
 
     /*

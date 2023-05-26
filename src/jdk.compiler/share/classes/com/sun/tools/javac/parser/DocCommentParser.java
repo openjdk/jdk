@@ -284,6 +284,7 @@ public class DocCommentParser {
      * Non-standard tags are represented by {@link UnknownBlockTagTree}.
      */
     protected DCTree blockTag() {
+        newline = false;
         int p = bp;
         try {
             nextChar();
@@ -520,6 +521,7 @@ public class DocCommentParser {
      * It is an error if the beginning of the next tag is detected.
      */
     protected DCText quotedString() {
+        newline = false;
         int pos = bp;
         nextChar();
 

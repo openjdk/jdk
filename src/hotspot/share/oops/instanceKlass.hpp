@@ -253,6 +253,7 @@ class InstanceKlass: public Klass {
 #endif
 
   NOT_PRODUCT(int _verify_count;)  // to avoid redundant verifies
+  NOT_PRODUCT(volatile int _shared_class_load_count;) // ensure a shared class is loaded only once
 
   // Method array.
   Array<Method*>* _methods;
@@ -546,7 +547,7 @@ public:
   u2 this_class_index() const             { return _this_class_index; }
   void set_this_class_index(u2 index)     { _this_class_index = index; }
 
-  static ByteSize reference_type_offset() { return in_ByteSize(offset_of(InstanceKlass, _reference_type)); }
+  static ByteSize reference_type_offset() { return byte_offset_of(InstanceKlass, _reference_type); }
 
   // find local field, returns true if found
   bool find_local_field(Symbol* name, Symbol* sig, fieldDescriptor* fd) const;
@@ -706,6 +707,7 @@ public:
 
   bool has_resolved_methods() const { return _misc_flags.has_resolved_methods(); }
   void set_has_resolved_methods()   { _misc_flags.set_has_resolved_methods(true); }
+  void set_has_resolved_methods(bool value)   { _misc_flags.set_has_resolved_methods(value); }
 
 public:
 #if INCLUDE_JVMTI
@@ -864,9 +866,9 @@ public:
 #endif
 
   // support for stub routines
-  static ByteSize init_state_offset()  { return in_ByteSize(offset_of(InstanceKlass, _init_state)); }
+  static ByteSize init_state_offset()  { return byte_offset_of(InstanceKlass, _init_state); }
   JFR_ONLY(DEFINE_KLASS_TRACE_ID_OFFSET;)
-  static ByteSize init_thread_offset() { return in_ByteSize(offset_of(InstanceKlass, _init_thread)); }
+  static ByteSize init_thread_offset() { return byte_offset_of(InstanceKlass, _init_thread); }
 
   // subclass/subinterface checks
   bool implements_interface(Klass* k) const;
@@ -942,7 +944,6 @@ public:
 
   inline intptr_t* start_of_itable() const;
   inline intptr_t* end_of_itable() const;
-  inline int itable_offset_in_words() const;
   inline oop static_field_base_raw();
 
   inline OopMapBlock* start_of_nonstatic_oop_maps() const;
@@ -1126,6 +1127,7 @@ public:
 #if INCLUDE_CDS
   // CDS support - remove and restore oops from metadata. Oops are not shared.
   virtual void remove_unshareable_info();
+  void remove_unshareable_flags();
   virtual void remove_java_mirror();
   void restore_unshareable_info(ClassLoaderData* loader_data, Handle protection_domain, PackageEntry* pkg_entry, TRAPS);
   void init_shared_package_entry();
