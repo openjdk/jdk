@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,8 @@ class InstanceKlassFlags {
     status(has_resolved_methods              , 1 << 1) /* True if the klass has resolved MethodHandle methods */ \
     status(has_been_redefined                , 1 << 2) /* class has been redefined */ \
     status(is_scratch_class                  , 1 << 3) /* class is the redefined scratch class */ \
-    status(is_marked_dependent               , 1 << 4) /* class is the redefined scratch class */
+    status(is_marked_dependent               , 1 << 4) /* class is the redefined scratch class */ \
+    /* end of list */
 
 #define IK_STATUS_ENUM_NAME(name, value)    _misc_##name = value,
   enum {
@@ -89,18 +90,14 @@ class InstanceKlassFlags {
   InstanceKlassFlags() : _flags(0), _status(0) {}
 
   // Create getters and setters for the flag values.
-#define IK_FLAGS_GET(name, ignore)          \
-  bool name() const { return (_flags & _misc_##name) != 0; }
-  IK_FLAGS_DO(IK_FLAGS_GET)
-#undef IK_FLAGS_GET
-
-#define IK_FLAGS_SET(name, ignore)   \
+#define IK_FLAGS_GET_SET(name, ignore)          \
+  bool name() const { return (_flags & _misc_##name) != 0; } \
   void set_##name(bool b) {         \
     assert_is_safe(name());         \
     if (b) _flags |= _misc_##name; \
   }
-  IK_FLAGS_DO(IK_FLAGS_SET)
-#undef IK_FLAGS_SET
+  IK_FLAGS_DO(IK_FLAGS_GET_SET)
+#undef IK_FLAGS_GET_SET
 
   bool is_shared_unregistered_class() const {
     return (_flags & shared_loader_type_bits()) == 0;
@@ -112,12 +109,8 @@ class InstanceKlassFlags {
   void assert_is_safe(bool set) NOT_DEBUG_RETURN;
 
   // Create getters and setters for the status values.
-#define IK_STATUS_GET(name, ignore)          \
-  bool name() const { return (_status & _misc_##name) != 0; }
-  IK_STATUS_DO(IK_STATUS_GET)
-#undef IK_STATUS_GET
-
-#define IK_STATUS_SET(name, ignore)   \
+#define IK_STATUS_GET_SET(name, ignore)          \
+  bool name() const { return (_status & _misc_##name) != 0; } \
   void set_##name(bool b) {         \
     if (b) { \
       atomic_set_bits(_misc_##name); \
@@ -125,11 +118,12 @@ class InstanceKlassFlags {
       atomic_clear_bits(_misc_##name); \
     } \
   }
-  IK_STATUS_DO(IK_STATUS_SET)
-#undef IK_STATUS_SET
+  IK_STATUS_DO(IK_STATUS_GET_SET)
+#undef IK_STATUS_GET_SET
 
   void atomic_set_bits(u1 bits);
   void atomic_clear_bits(u1 bits);
+  void print_on(outputStream* st) const;
 };
 
 #endif // SHARE_OOPS_INSTANCEKLASSFLAGS_HPP

@@ -109,6 +109,9 @@
 #if INCLUDE_PARALLELGC
 #include "gc/parallel/parallelScavengeHeap.inline.hpp"
 #endif // INCLUDE_PARALLELGC
+#if INCLUDE_ZGC
+#include "gc/z/zAddress.inline.hpp"
+#endif // INCLUDE_ZGC
 #if INCLUDE_JVMCI
 #include "jvmci/jvmciEnv.hpp"
 #include "jvmci/jvmciRuntime.hpp"
@@ -397,7 +400,11 @@ WB_ENTRY(jboolean, WB_isObjectInOldGen(JNIEnv* env, jobject o, jobject obj))
 #endif
 #if INCLUDE_ZGC
   if (UseZGC) {
-    return Universe::heap()->is_in(p);
+    if (ZGenerational) {
+      return ZHeap::heap()->is_old(to_zaddress(p));
+    } else {
+      return Universe::heap()->is_in(p);
+    }
   }
 #endif
 #if INCLUDE_SHENANDOAHGC
@@ -1206,9 +1213,9 @@ WB_ENTRY(void, WB_ClearMethodState(JNIEnv* env, jobject o, jobject method))
     mdo->clean_method_data(/*always_clean*/true);
   }
 
-  mh->clear_not_c1_compilable();
-  mh->clear_not_c2_compilable();
-  mh->clear_not_c2_osr_compilable();
+  mh->clear_is_not_c1_compilable();
+  mh->clear_is_not_c2_compilable();
+  mh->clear_is_not_c2_osr_compilable();
   NOT_PRODUCT(mh->set_compiled_invocation_count(0));
   if (mcs != nullptr) {
     mcs->clear_counters();

@@ -53,7 +53,7 @@ class ReferenceProcessor;
 class G1FullGCSubjectToDiscoveryClosure: public BoolObjectClosure {
 public:
   bool do_object_b(oop p) {
-    assert(p != NULL, "must be");
+    assert(p != nullptr, "must be");
     return true;
   }
 };
@@ -100,7 +100,6 @@ class G1FullCollector : StackObj {
 
 public:
   G1FullCollector(G1CollectedHeap* heap,
-                  bool explicit_gc,
                   bool clear_soft_refs,
                   bool do_maximal_compaction,
                   G1FullGCTracer* tracer);

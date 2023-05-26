@@ -1087,8 +1087,8 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   }
 
   // asm_assert* is a nop in product builds
-  NOT_PRODUCT(__ z_cg(Z_R14, _z_abi16(return_pc), Z_SP));
-  NOT_PRODUCT(__ asm_assert_eq("killed Z_R14", 0));
+  NOT_PRODUCT(__ z_cg(Z_R14, _z_common_abi(return_pc), Z_SP));
+  NOT_PRODUCT(__ asm_assert(Assembler::bcondEqual, "killed Z_R14", 0));
   __ resize_frame_absolute(sp_after_resize, fp, true);
   __ save_return_pc(Z_R14);
 

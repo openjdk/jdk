@@ -149,7 +149,7 @@
 
   // Some microarchitectures have mask registers used on vectors
   static const bool has_predicated_vectors(void) {
-    return false;
+    return UseRVV;
   }
 
   // true means we have fast l2f conversion
