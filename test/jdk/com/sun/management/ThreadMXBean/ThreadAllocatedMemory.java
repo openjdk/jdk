@@ -33,6 +33,7 @@ import java.lang.management.*;
 public class ThreadAllocatedMemory {
     private static com.sun.management.ThreadMXBean mbean =
         (com.sun.management.ThreadMXBean)ManagementFactory.getThreadMXBean();
+    private static boolean testFailed = false;
     private static volatile boolean done = false;
     private static volatile boolean done1 = false;
     private static Object obj = new Object();
@@ -57,6 +58,10 @@ public class ThreadAllocatedMemory {
 
         // Test cumulative Java thread allocation since JVM launch
         testGetTotalThreadAllocatedBytes();
+
+        if (testFailed) {
+            throw new RuntimeException("TEST FAILED");
+        }
 
         System.out.println("Test passed");
     }
@@ -158,8 +163,7 @@ public class ThreadAllocatedMemory {
         try {
             curThread.join();
         } catch (InterruptedException e) {
-            System.out.println("Unexpected exception thrown.");
-            e.printStackTrace(System.out);
+            reportUnexpected(e, "during join");
         }
     }
 
@@ -208,8 +212,7 @@ public class ThreadAllocatedMemory {
             try {
                 threads[i].join();
             } catch (InterruptedException e) {
-                System.out.println("Unexpected exception thrown.");
-                e.printStackTrace(System.out);
+                reportUnexpected(e, "during join");
                 break;
             }
         }
@@ -266,8 +269,7 @@ public class ThreadAllocatedMemory {
             try {
                 threads[i].join();
             } catch (InterruptedException e) {
-                System.out.println("Unexpected exception thrown.");
-                e.printStackTrace(System.out);
+                reportUnexpected(e, "during join");
                 break;
             }
         }
@@ -300,11 +302,16 @@ public class ThreadAllocatedMemory {
         return currSize;
     }
 
+    private static void reportUnexpected(Exception e, String reason) {
+        System.out.println("Unexpected exception thrown " + reason + ".");
+        e.printStackTrace(System.out);
+        testFailed = true;
+    }
+
     private static void goSleep(long ms) throws Exception {
         try {
             Thread.sleep(ms);
         } catch (InterruptedException e) {
-            System.out.println("Unexpected exception thrown.");
             throw e;
         }
     }
@@ -359,8 +366,7 @@ public class ThreadAllocatedMemory {
                     try {
                         obj.wait();
                     } catch (InterruptedException e) {
-                        System.out.println("Unexpected exception thrown while !done.");
-                        e.printStackTrace(System.out);
+                        reportUnexpected(e, "while !done");
                         break;
                     }
                 }
@@ -376,8 +382,7 @@ public class ThreadAllocatedMemory {
                     try {
                         obj.wait();
                     } catch (InterruptedException e) {
-                        System.out.println("Unexpected exception thrown while !done1.");
-                        e.printStackTrace(System.out);
+                        reportUnexpected(e, "while !done1");
                         break;
                     }
                 }

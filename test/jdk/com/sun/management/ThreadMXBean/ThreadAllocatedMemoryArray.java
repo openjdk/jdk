@@ -145,9 +145,7 @@ public class ThreadAllocatedMemoryArray {
             try {
                 threads[i].join();
             } catch (InterruptedException e) {
-                System.out.println("Unexpected exception thrown.");
-                e.printStackTrace(System.out);
-                testFailed = true;
+                reportUnexpected(e, "during join");
                 break;
             }
         }
@@ -174,11 +172,16 @@ public class ThreadAllocatedMemoryArray {
         }
     }
 
+    private static void reportUnexpected(Exception e, String reason) {
+        System.out.println("Unexpected exception thrown " + reason + ".");
+        e.printStackTrace(System.out);
+        testFailed = true;
+    }
+
     private static void goSleep(long ms) throws Exception {
         try {
             Thread.sleep(ms);
         } catch (InterruptedException e) {
-            System.out.println("Unexpected exception thrown.");
             throw e;
         }
     }
@@ -222,9 +225,7 @@ public class ThreadAllocatedMemoryArray {
                     try {
                         obj.wait();
                     } catch (InterruptedException e) {
-                        System.out.println("Unexpected exception thrown.");
-                        e.printStackTrace(System.out);
-                        testFailed = true;
+                        reportUnexpected(e, "while !done");
                         break;
                     }
                 }
@@ -237,9 +238,7 @@ public class ThreadAllocatedMemoryArray {
                     try {
                         obj.wait();
                     } catch (InterruptedException e) {
-                        System.out.println("Unexpected exception thrown.");
-                        e.printStackTrace(System.out);
-                        testFailed = true;
+                        reportUnexpected(e, "while !done");
                         break;
                     }
                 }
