@@ -67,7 +67,9 @@ public class TestUncaughtErrorInCompileMethod extends JVMCIServiceLocator {
         } else {
             int total = 0;
             while (!compilerCreationErrorOccurred) {
+                // Do some random work to trigger compilation
                 total += getTime();
+                total += String.valueOf(total).hashCode();
             }
             System.out.println(total);
         }
