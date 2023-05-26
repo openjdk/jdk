@@ -141,7 +141,7 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
                 BUFS_COUNT = roundPowerOfTwo(bufCount);
                 BUFS = new Buffer[BUFS_COUNT];
             } catch (Exception e) {
-                throw new InternalError(e);
+                throw new ExceptionInInitializerError(e);
             }
         }
 
@@ -152,6 +152,7 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
                 try {
                     return SecureRandom.getInstance(PRNG_NAME);
                 } catch (Exception e) {
+                    // Checked in <clinit>, should not happen on other paths.
                     throw new RuntimeException(e);
                 }
             }
