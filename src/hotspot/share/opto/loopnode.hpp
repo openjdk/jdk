@@ -898,6 +898,7 @@ public:
 private:
   // clear out dead code after build_loop_late
   Node_List _deadlist;
+  Node_List _zero_trip_guard_opaque_nodes;
 
   // Support for faster execution of get_late_ctrl()/dom_lca()
   // when a node has many uses and dominator depth is deep.
@@ -1386,6 +1387,7 @@ public:
   // Helper function to collect predicate for eliminating the useless ones
   void collect_potentially_useful_predicates(IdealLoopTree *loop, Unique_Node_List &predicate_opaque1);
   void eliminate_useless_predicates();
+  void eliminate_useless_zero_trip_guard();
 
   // Change the control input of expensive nodes to allow commoning by
   // IGVN when it is guaranteed to not result in a more frequent

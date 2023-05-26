@@ -4128,6 +4128,45 @@ void PhaseIdealLoop::eliminate_useless_predicates() {
   }
 }
 
+// If a post or main loop is removed due to an assert predicate, the opaque that guards the loop is not needed anymore
+void PhaseIdealLoop::eliminate_useless_zero_trip_guard() {
+  if (_zero_trip_guard_opaque_nodes.size() == 0) {
+    return;
+  }
+  Unique_Node_List useful_zero_trip_guard_opaques_nodes;
+  for (LoopTreeIterator iter(_ltree_root); !iter.done(); iter.next()) {
+    IdealLoopTree* lpt = iter.current();
+    if (lpt->_child == nullptr && lpt->is_counted()) {
+      CountedLoopNode* head = lpt->_head->as_CountedLoop();
+      Node* opaque = head->is_canonical_loop_entry();
+      if (opaque != nullptr) {
+        useful_zero_trip_guard_opaques_nodes.push(opaque);
+      }
+    }
+  }
+  for (uint i = 0; i < _zero_trip_guard_opaque_nodes.size(); ++i) {
+    OpaqueZeroTripGuardNode* opaque = ((OpaqueZeroTripGuardNode*)_zero_trip_guard_opaque_nodes.at(i));
+    DEBUG_ONLY(CountedLoopNode* guarded_loop = opaque->guarded_loop());
+    if (!useful_zero_trip_guard_opaques_nodes.member(opaque)) {
+      IfNode* iff = opaque->if_node();
+      IdealLoopTree* loop = get_loop(iff);
+      while (loop != _ltree_root && loop != nullptr) {
+        loop = loop->_parent;
+      }
+      if (loop == nullptr) {
+        // unreachable from _ltree_root: zero trip guard is in a newly discovered infinite loop.
+        // We can't tell if the opaque node is useful or not
+        assert(guarded_loop == nullptr || guarded_loop->is_in_infinite_subgraph(), "");
+      } else {
+        assert(guarded_loop == nullptr, "");
+        this->_igvn.replace_node(opaque, opaque->in(1));
+      }
+    } else {
+      assert(guarded_loop != nullptr, "");
+    }
+  }
+}
+
 //------------------------process_expensive_nodes-----------------------------
 // Expensive nodes have their control input set to prevent the GVN
 // from commoning them and as a result forcing the resulting node to
@@ -4415,6 +4454,8 @@ void PhaseIdealLoop::build_and_optimize() {
   while (_deadlist.size()) {
     _igvn.remove_globally_dead_node(_deadlist.pop());
   }
+
+  eliminate_useless_zero_trip_guard();
 
   if (stop_early) {
     assert(do_expensive_nodes, "why are we here?");
@@ -6144,6 +6185,11 @@ void PhaseIdealLoop::build_loop_late_post_work(Node *n, bool pinned) {
   IdealLoopTree *chosen_loop = get_loop(least);
   if( !chosen_loop->_child )   // Inner loop?
     chosen_loop->_body.push(n);// Collect inner loops
+
+  if (!_verify_only && n->Opcode() == Op_OpaqueZeroTripGuard) {
+    _zero_trip_guard_opaque_nodes.push(n);
+  }
+
 }
 
 #ifdef ASSERT
