@@ -55,7 +55,7 @@ uint32_t Symbol::pack_hash_and_refcount(short hash, int refcount) {
 
 Symbol::Symbol(const u1* name, int length, int refcount) {
   _hash_and_refcount =  pack_hash_and_refcount((short)os::random(), refcount);
-  _length = length;
+  _length = (u2)length;
   // _body[0..1] are allocated in the header just by coincidence in the current
   // implementation of Symbol. They are read by identity_hash(), so make sure they
   // are initialized.
@@ -215,7 +215,7 @@ const char* Symbol::as_klass_external_name() const {
 static void print_class(outputStream *os, const SignatureStream& ss) {
   int sb = ss.raw_symbol_begin(), se = ss.raw_symbol_end();
   for (int i = sb; i < se; ++i) {
-    int ch = ss.raw_char_at(i);
+    char ch = ss.raw_char_at(i);
     if (ch == JVM_SIGNATURE_SLASH) {
       os->put(JVM_SIGNATURE_DOT);
     } else {
@@ -359,7 +359,7 @@ void Symbol::make_permanent() {
       fatal("refcount underflow");
       return;
     } else {
-      int hash = extract_hash(old_value);
+      short hash = extract_hash(old_value);
       found = Atomic::cmpxchg(&_hash_and_refcount, old_value, pack_hash_and_refcount(hash, PERM_REFCOUNT));
       if (found == old_value) {
         return;  // successfully updated.
