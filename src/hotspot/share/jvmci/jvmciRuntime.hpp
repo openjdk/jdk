@@ -279,7 +279,9 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
   // Ensures that a JVMCI shared library JavaVM exists for this runtime.
   // If the JavaVM was created by this call, then the thread-local JNI
   // interface pointer for the JavaVM is returned otherwise null is returned.
-  JNIEnv* init_shared_library_javavm();
+  // If this method tried to create the JavaVM but failed, the error code returned
+  // by JNI_CreateJavaVM is returned in create_JavaVM_err.
+  JNIEnv* init_shared_library_javavm(int* create_JavaVM_err);
 
   // Determines if the JVMCI shared library JavaVM exists for this runtime.
   bool has_shared_library_javavm() { return _shared_library_javavm != nullptr; }
@@ -467,7 +469,7 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
   // Reports an unexpected exception and exits the VM with a fatal error.
   static void fatal_exception(JVMCIEnv* JVMCIENV, const char* message);
 
-  static void describe_pending_hotspot_exception(JavaThread* THREAD, bool clear);
+  static void describe_pending_hotspot_exception(JavaThread* THREAD);
 
 #define CHECK_EXIT THREAD); \
   if (HAS_PENDING_EXCEPTION) { \

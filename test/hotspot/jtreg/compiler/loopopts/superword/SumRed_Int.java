@@ -91,7 +91,7 @@ public class SumRed_Int {
         failOn = {IRNode.ADD_REDUCTION_VI})
     @IR(applyIfCPUFeature = {"sse4.1", "true"},
         applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
-        counts = {IRNode.ADD_REDUCTION_VI, ">= 1"})
+        counts = {IRNode.ADD_REDUCTION_VI, ">= 1", IRNode.ADD_REDUCTION_VI, "<= 2"}) // one for main-loop, one for vector-post-loop
     public static int sumReductionImplement(
             int[] a,
             int[] b,

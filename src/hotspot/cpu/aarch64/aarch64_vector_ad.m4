@@ -4258,49 +4258,6 @@ instruct vblend_sve(vReg dst, vReg src1, vReg src2, pReg pg) %{
   ins_pipe(pipe_slow);
 %}
 
-// ------------------------- Vector conditional move --------------------------
-
-instruct vcmove_neon(vReg dst, vReg src1, vReg src2, immI cond, cmpOp copnd) %{
-  predicate(UseSVE == 0 ||
-            (VM_Version::use_neon_for_vector(Matcher::vector_length_in_bytes(n)) &&
-             n->in(1)->in(2)->get_int() != BoolTest::ne));
-  match(Set dst (CMoveVF (Binary copnd cond) (Binary src1 src2)));
-  match(Set dst (CMoveVD (Binary copnd cond) (Binary src1 src2)));
-  effect(TEMP_DEF dst);
-  format %{ "vcmove_neon.$copnd $dst, $src1, $src2\t# vector conditional move fp" %}
-  ins_encode %{
-    Assembler::Condition condition = to_assembler_cond((BoolTest::mask)$cond$$constant);
-    BasicType bt = Matcher::vector_element_basic_type(this);
-    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
-    assert(length_in_bytes == 8 || length_in_bytes == 16, "must be");
-    __ neon_compare($dst$$FloatRegister, bt, $src1$$FloatRegister,
-                    $src2$$FloatRegister, condition, /* isQ */ length_in_bytes == 16);
-    __ bsl($dst$$FloatRegister, length_in_bytes == 16 ? __ T16B : __ T8B,
-           $src2$$FloatRegister, $src1$$FloatRegister);
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct vcmove_sve(vReg dst, vReg src1, vReg src2, immI cond, cmpOp copnd, pRegGov pgtmp) %{
-  predicate(!VM_Version::use_neon_for_vector(Matcher::vector_length_in_bytes(n)) ||
-            (UseSVE > 0 && n->in(1)->in(2)->get_int() == BoolTest::ne));
-  match(Set dst (CMoveVF (Binary copnd cond) (Binary src1 src2)));
-  match(Set dst (CMoveVD (Binary copnd cond) (Binary src1 src2)));
-  effect(TEMP pgtmp);
-  format %{ "vcmove_sve.$copnd $dst, $src1, $src2\t# vector conditional move fp. KILL $pgtmp" %}
-  ins_encode %{
-    assert(UseSVE > 0, "must be sve");
-    Assembler::Condition condition = to_assembler_cond((BoolTest::mask)$cond$$constant);
-    BasicType bt = Matcher::vector_element_basic_type(this);
-    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
-    __ sve_compare($pgtmp$$PRegister, bt, ptrue, $src1$$FloatRegister,
-                   $src2$$FloatRegister, condition);
-    __ sve_sel($dst$$FloatRegister, __ elemType_to_regVariant(bt),
-               $pgtmp$$PRegister, $src2$$FloatRegister, $src1$$FloatRegister);
-  %}
-  ins_pipe(pipe_slow);
-%}
-
 // ------------------------------ Vector round ---------------------------------
 
 // vector Math.round
