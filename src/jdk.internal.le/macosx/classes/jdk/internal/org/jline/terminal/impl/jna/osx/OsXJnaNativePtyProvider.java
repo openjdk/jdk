@@ -22,29 +22,32 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.internal.org.jline.terminal.impl.jna;
+package jdk.internal.org.jline.terminal.impl.jna.osx;
 
 import java.io.IOException;
 import jdk.internal.org.jline.terminal.Attributes;
 import jdk.internal.org.jline.terminal.Size;
-import jdk.internal.org.jline.terminal.impl.jna.osx.OsXNativePty;
+import jdk.internal.org.jline.terminal.impl.jna.JnaNativePty;
+import jdk.internal.org.jline.terminal.impl.jna.JnaNativePtyProvider;
 import jdk.internal.org.jline.terminal.spi.TerminalProvider;
 
-class JDKNativePty {
+public class OsXJnaNativePtyProvider implements JnaNativePtyProvider {
 
-    static JnaNativePty current(TerminalProvider.Stream console) throws IOException {
+    public OsXJnaNativePtyProvider() {}
+
+    public JnaNativePty current(TerminalProvider.Stream console) throws IOException {
         return OsXNativePty.current(console);
     }
 
-    static JnaNativePty open(Attributes attr, Size size) throws IOException {
+    public JnaNativePty open(Attributes attr, Size size) throws IOException {
         return OsXNativePty.open(attr, size);
     }
 
-    static int isatty(int fd) {
+    public int isatty(int fd) {
         return OsXNativePty.isatty(fd);
     }
 
-    static String ttyname(int fd) {
+    public String ttyname(int fd) {
         return OsXNativePty.ttyname(fd);
     }
 

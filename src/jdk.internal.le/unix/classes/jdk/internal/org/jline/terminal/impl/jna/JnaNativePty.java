@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Constructor;
+import java.util.ServiceLoader;
 
 //import com.sun.jna.Platform;
 import jdk.internal.org.jline.terminal.Attributes;
@@ -52,7 +53,7 @@ public abstract class JnaNativePty extends AbstractPty implements Pty {
 //        } else {
 //            throw new UnsupportedOperationException();
 //        }
-        return JDKNativePty.current(console);
+        return getProvider().current(console);
     }
 
     public static JnaNativePty open(Attributes attr, Size size) throws IOException {
@@ -67,7 +68,7 @@ public abstract class JnaNativePty extends AbstractPty implements Pty {
 //        } else {
 //            throw new UnsupportedOperationException();
 //        }
-        return JDKNativePty.open(attr, size);
+        return getProvider().open(attr, size);
     }
 
     protected JnaNativePty(int master, FileDescriptor masterFD, int slave, FileDescriptor slaveFD, String name) {
@@ -183,7 +184,7 @@ public abstract class JnaNativePty extends AbstractPty implements Pty {
 //        } else {
 //            return false;
 //        }
-        return JDKNativePty.isatty(fd) == 1;
+        return getProvider().isatty(fd) == 1;
     }
 
     private static String ttyname(int fd) {
@@ -198,7 +199,15 @@ public abstract class JnaNativePty extends AbstractPty implements Pty {
 //        } else {
 //            return null;
 //        }
-        return JDKNativePty.ttyname(fd);
+        return getProvider().ttyname(fd);
     }
 
+    private static JnaNativePtyProvider getProvider() {
+        for (JnaNativePtyProvider p :
+                ServiceLoader.load(JnaNativePtyProvider.class, JnaNativePty.class.getClassLoader())) {
+            return p;
+        }
+
+        throw new UnsupportedOperationException("No JnaNativePtyProvider found!");
+    }
 }
