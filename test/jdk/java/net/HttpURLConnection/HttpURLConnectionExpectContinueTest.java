@@ -73,7 +73,7 @@ public class HttpURLConnectionExpectContinueTest {
 
         control.serverSocket = new ServerSocket();
         control.serverSocket.setReuseAddress(true);
-        control.serverSocket.bind(new InetSocketAddress("127.0.0.1", 54321));
+        control.serverSocket.bind(new InetSocketAddress("127.0.0.1", 0));
         Runnable runnable = () -> {
             while (!control.stop) {
                 try {
