@@ -23,6 +23,7 @@
  */
 #include "precompiled.hpp"
 
+#define COMPILER2 1
 #ifdef COMPILER2
 
 #include "peephole_x86_64.hpp"
@@ -140,6 +141,48 @@ bool Peephole::lea_coalesce_reg(Block* block, int block_index, PhaseCFG* cfg_, P
 bool Peephole::lea_coalesce_imm(Block* block, int block_index, PhaseCFG* cfg_, PhaseRegAlloc* ra_,
                                 MachNode* (*new_root)(), uint inst0_rule) {
   return lea_coalesce_helper(block, block_index, cfg_, ra_, new_root, inst0_rule, true);
+}
+
+bool Peephole::test_may_remove(Block* block, int block_index, PhaseCFG* cfg_, PhaseRegAlloc* ra_,
+                                 MachNode* (*new_root)(), uint inst0_rule, uint inst1_rule) {
+  MachNode* inst0 = block->get_node(block_index)->as_Mach();
+  assert(inst0->rule() == inst0_rule, "sanity");
+
+  Node* inst1 = inst0->in(1);
+  // Only remove test if the block order is inst1 -> MachProjNode (cause AND specifies KILL cr) -> inst0
+  if (block_index < 2 || !block->get_node(block_index - 1)->is_MachProj() || block->get_node(block_index - 2) != inst1) {
+    return false;
+  }
+  if (inst1 != nullptr) {
+    if (inst1->is_Mach()) {
+      MachNode* maybeAndNode = inst1->as_Mach();
+      if (maybeAndNode->rule() == inst1_rule) {
+        // Remove the original test node and replace it with the pseudo test node. The and node already sets ZF
+        MachNode* root = new_root();
+        // Assign register for the newly allocated node
+        ra_->set_oop(root, ra_->is_oop(inst0));
+        ra_->set_pair(root->_idx, ra_->get_reg_second(inst0), ra_->get_reg_first(inst0));
+        // Set input and output for the node
+        root->add_req(inst1);
+        inst0->replace_by(root);
+        // Initialize the operand array
+        root->_opnds[0] = inst0->_opnds[0]->clone();
+        root->_opnds[1] = inst0->_opnds[1]->clone();
+        root->_opnds[2] = inst0->_opnds[2]->clone();
+
+        // Modify the block
+        inst0->set_removed();
+        block->remove_node(block_index);
+        block->insert_node(root, block_index);
+
+        // Modify the control flow
+        cfg_->map_node_to_block(inst0, nullptr);
+        cfg_->map_node_to_block(root, block);
+        return true;
+      }
+    }
+  }
+  return false;
 }
 
 #endif // COMPILER2

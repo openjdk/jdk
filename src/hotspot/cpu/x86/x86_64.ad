@@ -13754,6 +13754,28 @@ instruct leaL_rReg_immI2_peep(rRegL dst, rRegL src, immI2 shift)
   ins_pipe(ialu_reg_reg);
 %}
 
+instruct testI_reg_empty_peep(rFlagsReg cr, rRegI src, immI_0 zero)
+%{
+  predicate(false);
+  match(Set cr (CmpI src zero));
+
+  format %{ "# noop testI - cr set by and" %}
+  ins_encode %{
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+instruct testL_reg_empty_peep(rFlagsReg cr, rRegL src, immL0 zero)
+%{
+  predicate(false);
+  match(Set cr (CmpL src zero));
+
+  format %{ "# noop testL - cr set by and" %}
+  ins_encode %{
+  %}
+  ins_pipe(ialu_reg);
+%}
+
 // These peephole rules replace mov + I pairs (where I is one of {add, inc, dec,
 // sal}) with lea instructions. The {add, sal} rules are beneficial in
 // processors with at least partial ALU support for lea
@@ -13844,6 +13866,79 @@ peephole
   peepprocedure (lea_coalesce_imm);
   peepreplace (leaL_rReg_immI2_peep());
 %}
+
+// These peephole rules matches AND followed by TEST
+// This can occur if the result of the AND is used for a 0-check and another check
+// The solution is simply to remove the TEST, as the AND already sets the ZF
+//int variants
+peephole
+%{
+  peepmatch (testI_reg andI_rReg);
+  peepprocedure (test_may_remove);
+  peepreplace (testI_reg_empty_peep());
+%}
+peephole
+%{
+  peepmatch (testI_reg andI_rReg_imm);
+  peepprocedure (test_may_remove);
+  peepreplace (testI_reg_empty_peep());
+%}
+
+peephole
+%{
+  peepmatch (testI_reg andI_rReg_mem);
+  peepprocedure (test_may_remove);
+  peepreplace (testI_reg_empty_peep());
+%}
+
+peephole
+%{
+  peepmatch (testI_reg andI_mem_rReg);
+  peepprocedure (test_may_remove);
+  peepreplace (testI_reg_empty_peep());
+%}
+
+peephole
+%{
+  peepmatch (testI_reg andI_mem_imm);
+  peepprocedure (test_may_remove);
+  peepreplace (testI_reg_empty_peep());
+%}
+//long variants
+peephole
+%{
+  peepmatch (testL_reg andL_rReg);
+  peepprocedure (test_may_remove);
+  peepreplace (testL_reg_empty_peep());
+%}
+peephole
+%{
+  peepmatch (testL_reg andL_rReg_imm);
+  peepprocedure (test_may_remove);
+  peepreplace (testL_reg_empty_peep());
+%}
+
+peephole
+%{
+  peepmatch (testL_reg andL_rReg_mem);
+  peepprocedure (test_may_remove);
+  peepreplace (testL_reg_empty_peep());
+%}
+
+peephole
+%{
+  peepmatch (testL_reg andL_mem_rReg);
+  peepprocedure (test_may_remove);
+  peepreplace (testL_reg_empty_peep());
+%}
+
+peephole
+%{
+  peepmatch (testL_reg andL_mem_imm);
+  peepprocedure (test_may_remove);
+  peepreplace (testL_reg_empty_peep());
+%}
+
 
 //----------SMARTSPILL RULES---------------------------------------------------
 // These must follow all instruction definitions as they use the names
