@@ -119,12 +119,8 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
         }
 
         static {
-            try {
-                BUFS_COUNT = roundPowerOfTwo(Runtime.getRuntime().availableProcessors());
-                BUFS = new Buffer[BUFS_COUNT];
-            } catch (Exception e) {
-                throw new ExceptionInInitializerError(e);
-            }
+            BUFS_COUNT = roundPowerOfTwo(Runtime.getRuntime().availableProcessors());
+            BUFS = new Buffer[BUFS_COUNT];
         }
 
         public static UUID next() {
