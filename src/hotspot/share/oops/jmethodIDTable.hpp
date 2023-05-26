@@ -37,7 +37,6 @@ class JmethodIDTable : public AllStatic {
   static void initialize();
 
   // Given a Method return a jmethodID
-  static jmethodID find_jmethod_id_or_null(Method* m);
   static jmethodID get_or_make_jmethod_id(ClassLoaderData* cld, Method* m);
 
   // Given a jmethodID, return a Method

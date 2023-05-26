@@ -91,6 +91,10 @@ class Method : public Metadata {
 
   Symbol* _name;
 #endif
+
+  // counter associated with this method.  Used for jmethodID
+  uint64_t          _jni_method_counter;
+
   // Entry point for calling both from and to the interpreter.
   address _i2i_entry;           // All-args-on-stack calling convention
   // Entry point for calling from compiled code, to compiled code if it exists
@@ -746,6 +750,10 @@ public:
   // Rewriting support
   static methodHandle clone_with_new_data(const methodHandle& m, u_char* new_code, int new_code_length,
                                           u_char* new_compressed_linenumber_table, int new_compressed_linenumber_size, TRAPS);
+
+  // Counters used to create jmethodID
+  uint64_t jni_method_counter() const       { return _jni_method_counter; }
+  void set_jni_method_counter(uint64_t val) { _jni_method_counter = val; }
 
   // Use resolve_jmethod_id() in situations where the caller is expected
   // to provide a valid jmethodID; the only sanity checks are in asserts;

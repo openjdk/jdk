@@ -120,6 +120,9 @@ Method::Method(ConstMethod* xconst, AccessFlags access_flags, Symbol* name) {
   NOT_PRODUCT(set_compiled_invocation_count(0);)
   // Name is very useful for debugging.
   NOT_PRODUCT(_name = name;)
+
+  // Not referenced by jmethodID
+  _jni_method_counter = 0;
 }
 
 // Release Method*.  The nmethod will be gone when we get here because
@@ -403,6 +406,7 @@ void Method::metaspace_pointers_do(MetaspaceClosure* it) {
 // entries now in order allow them to be write protected later.
 
 void Method::remove_unshareable_info() {
+  _jni_method_counter = 0;
   unlink_method();
   JFR_ONLY(REMOVE_METHOD_ID(this);)
 }
@@ -2042,8 +2046,14 @@ void BreakpointInfo::clear(Method* method) {
 // wastes no memory but the Method* returned is null
 
 jmethodID Method::jmethod_id() {
-  ClassLoaderData* cld = method_holder()->class_loader_data();
-  return JmethodIDTable::get_or_make_jmethod_id(cld, this);
+  if (jni_method_counter() != 0) {
+    return (jmethodID)jni_method_counter();
+  } else {
+    ClassLoaderData* cld = method_holder()->class_loader_data();
+    jmethodID jmid = JmethodIDTable::get_or_make_jmethod_id(cld, this);
+    assert((uint64_t)jmid == jni_method_counter(), "should be the same");
+    return jmid;
+  }
 }
 
 Method* Method::resolve_jmethod_id(jmethodID mid) {
@@ -2083,7 +2093,7 @@ Method* Method::checked_resolve_jmethod_id(jmethodID mid) {
   return o->method_holder()->is_loader_alive() ? o : nullptr;
 };
 
-jmethodID Method::find_jmethod_id_or_null() { return JmethodIDTable::find_jmethod_id_or_null(this); }
+jmethodID Method::find_jmethod_id_or_null() { return (jmethodID)jni_method_counter(); }
 
 void Method::set_on_stack(const bool value) {
   // Set both the method itself and its constant pool.  The constant pool

@@ -34,13 +34,10 @@
 #include "utilities/concurrentHashTableTasks.inline.hpp"
 #include "utilities/macros.hpp"
 
-// There are two hashtables to implement jmethodID.  One CHT to lookup Method to get a jmethodID
-// and the other CHT is to get the Method from the jmethodID.
+// Save (jmethod, Method*) in a hashtable to lookup Method
 // The CHT is for performance because it is has lock free lookup.
 
 static uint64_t _jmethodID_counter = 0;
-
-static intx method_hash(Method* m) { return m->name()->identity_hash(); }
 
 class JmethodEntry {
  public:
@@ -50,7 +47,7 @@ class JmethodEntry {
   JmethodEntry(uint64_t id, Method* method) : _id(id), _method(method) {}
 };
 
-class ConfigBase : public AllStatic {
+class JmethodIDTableConfig : public AllStatic {
  public:
   typedef JmethodEntry Value;
   static void* allocate_node(void* context, size_t size, Value const& value) {
@@ -59,29 +56,14 @@ class ConfigBase : public AllStatic {
   static void free_node(void* context, void* memory, Value const& value) {
     FreeHeap(memory);
   }
-};
-
-class JmethodIDTableConfig : public ConfigBase {
- public:
   static uintx get_hash(Value const& value, bool* is_dead) {
     *is_dead = false;
     return value._id;
   }
 };
 
-class MethodTableConfig : public ConfigBase {
- public:
-  static uintx get_hash(Value const& value, bool* is_dead) {
-    *is_dead = false;
-    return method_hash(value._method);
-  }
-};
-
 using MethodIdTable = ConcurrentHashTable<JmethodIDTableConfig, mtClass>;
 static MethodIdTable* _jmethod_id_table = nullptr;
-
-using MethodTable = ConcurrentHashTable<MethodTableConfig, mtClass>;
-static MethodTable* _method_table = nullptr;
 
 void JmethodIDTable::initialize() {
   const size_t start_size = 10;
@@ -91,9 +73,6 @@ void JmethodIDTable::initialize() {
   const size_t grow_hint = 32;
 
   _jmethod_id_table  = new MethodIdTable(start_size, end_size, grow_hint);
-
-  // Initialize Method lookup table.
-  _method_table = new MethodTable(start_size, end_size, grow_hint);
 }
 
 class JmethodIDLookup : StackObj {
@@ -132,37 +111,15 @@ Method* JmethodIDTable::resolve_jmethod_id(jmethodID mid) {
   return result == nullptr ? nullptr : result->_method;
 }
 
-class MethodLookup : StackObj {
- private:
-  Method* _method;
+const unsigned _resize_load_trigger = 5;       // load factor that will trigger the resize
 
- public:
-  MethodLookup(Method* method) : _method(method) {}
-  uintx get_hash() const {
-    return method_hash(_method);
-  }
-  bool equals(JmethodEntry* value, bool* is_dead) {
-    *is_dead = false;
-    return _method == value->_method;
-  }
-};
-
-static JmethodEntry* get_method_entry(Method* method) {
-  Thread* current = Thread::current();
-  MethodLookup lookup(method);
-  JmethodEntry* result = nullptr;
-  auto get = [&] (JmethodEntry* value) {
-    // function called if value is found so is never null
-    result = value;
-  };
-  bool needs_rehashing = false;
-  _method_table->get(current, lookup, get, &needs_rehashing);
-  return result;
+static unsigned table_size(Thread* current) {
+  return 1 << _jmethod_id_table->get_size_log2(current);
 }
 
-jmethodID JmethodIDTable::find_jmethod_id_or_null(Method* m) {
-  JmethodEntry* entry = get_method_entry(m);
-  return (entry == nullptr) ? nullptr : (jmethodID)entry->_id;
+static bool needs_resize(Thread* current) {
+  return ((_jmethodID_counter > (_resize_load_trigger * table_size(current))) &&
+         !_jmethod_id_table->is_max_size_reached());
 }
 
 static void new_jmethod_id(Method* m, uint64_t mid) {
@@ -174,14 +131,10 @@ static void new_jmethod_id(Method* m, uint64_t mid) {
   created = _jmethod_id_table->insert(current, lookup, new_entry, &grow_hint, &clean_hint);
   assert(created, "must be");
 
-  MethodLookup lookup2(m);
-  created = _method_table->insert(current, lookup2, new_entry, &grow_hint, &clean_hint);
-  assert(created, "must be");
-  // Resize both tables if the method_table needs to grow.  The method_table has a worse
-  // distribution
-  if (grow_hint) {
-    _method_table->grow(current);
+  // Resize table if it needs to grow.  The _jmethod_id_table has a good distribution
+  if (needs_resize(current)) {
     _jmethod_id_table->grow(current);
+    log_info(jmethod)("Growing table to %d for " UINT64_FORMAT " entries", table_size(current), _jmethodID_counter);
   }
 }
 
@@ -191,16 +144,16 @@ jmethodID JmethodIDTable::get_or_make_jmethod_id(ClassLoaderData* cld, Method* m
   // Also have to add the method to the list safely, which the lock
   // protects as well.
   MutexLocker ml(JmethodIdCreation_lock, Mutex::_no_safepoint_check_flag);
-  JmethodEntry* entry = get_method_entry(m);
-  if (entry == nullptr) {
+  uint64_t counter = m->jni_method_counter();
+  if (counter == 0) {
     new_jmethod_id(m, ++_jmethodID_counter);
+    m->set_jni_method_counter(_jmethodID_counter);
 
     // Add to growable array in CLD
     cld->add_jmethod_id((jmethodID)_jmethodID_counter);
     return (jmethodID)_jmethodID_counter;
   } else {
-    assert(entry->_id != 0, "should be valid");
-    return (jmethodID)entry->_id;
+    return (jmethodID)m->jni_method_counter();
   }
 }
 
@@ -216,16 +169,15 @@ void JmethodIDTable::remove(jmethodID mid) {
   bool removed = _jmethod_id_table->remove(current, lookup, get);
   assert(removed, "should be");
 
-  MethodLookup lookup2(result->_method);
-  removed = _method_table->remove(current, lookup2);
-  assert(removed, "should be");
+  // reset counter in method
+  result->_method->set_jni_method_counter(0);
 }
 
 void JmethodIDTable::change_method_associated_with_jmethod_id(jmethodID jmid, Method* new_method) {
   assert_locked_or_safepoint(JmethodIdCreation_lock);
-  // Remove old method associated with jmid
-  remove(jmid);
-
-  // Add new_method associated with jmid
-  new_jmethod_id(new_method, (uint64_t)jmid);
+  JmethodEntry* result = get_jmethod_entry(jmid);
+  // change to table to point to the new method
+  result->_method = new_method;
+  assert(new_method->jni_method_counter() == 0, "should not be already set");
+  new_method->set_jni_method_counter((uint64_t)jmid);
 }
