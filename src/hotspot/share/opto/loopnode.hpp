@@ -38,6 +38,7 @@ class IdealLoopTree;
 class LoopNode;
 class Node;
 class OuterStripMinedLoopEndNode;
+class ParsePredicates;
 class PathFrequency;
 class PhaseIdealLoop;
 class CountedLoopReserveKit;
@@ -1360,46 +1361,6 @@ public:
  public:
   void register_control(Node* n, IdealLoopTree *loop, Node* pred, bool update_body = true);
 
-  static Node* skip_all_predicates(Node* entry);
-  static Node* skip_related_predicates(Node* entry);
-  static IfProjNode* next_predicate(IfProjNode* predicate_proj);
-
-  // Find a good location to insert a predicate
-  static ParsePredicateSuccessProj* find_predicate_insertion_point(Node* start_c, Deoptimization::DeoptReason reason);
-
-  class ParsePredicates {
-   private:
-    ParsePredicateSuccessProj* _loop_predicate = nullptr;
-    ParsePredicateSuccessProj* _profiled_loop_predicate = nullptr;
-    ParsePredicateSuccessProj* _loop_limit_check_predicate = nullptr;
-    Node* _first_predicate = nullptr;
-   public:
-    // given loop entry, find all predicates above loop
-    ParsePredicates(Node* entry);
-
-    // Proj of Loop Limit Check Parse Predicate.
-    ParsePredicateSuccessProj* loop_limit_check_predicate() {
-      return _loop_limit_check_predicate;
-    }
-
-    // Proj of Profile Loop Parse Predicate.
-    ParsePredicateSuccessProj* profiled_loop_predicate() {
-      return _profiled_loop_predicate;
-    }
-
-    // Proj of Loop Parse Predicate.
-    ParsePredicateSuccessProj* loop_predicate() {
-      return _loop_predicate;
-    }
-
-    // Proj of first Parse Predicate when walking the graph down from root.
-    Node* get_first_predicate() {
-      return _first_predicate;
-    }
-  };
-
-  // Find a predicate
-  static Node* find_parse_predicate(Node* entry);
   // Construct a range check for a predicate if
   BoolNode* rc_predicate(IdealLoopTree *loop, Node* ctrl,
                          int scale, Node* offset,
@@ -1680,7 +1641,7 @@ private:
   IfProjNode* clone_assertion_predicate_for_unswitched_loops(Node* iff, IfProjNode* predicate,
                                                              Deoptimization::DeoptReason reason,
                                                              IfProjNode* output_proj);
-  static void check_cloned_parse_predicate_for_unswitching(const Node* new_entry) PRODUCT_RETURN;
+  static void check_cloned_parse_predicate_for_unswitching(const Node* new_entry, bool is_fast_loop) PRODUCT_RETURN;
 
   bool _created_loop_node;
   DEBUG_ONLY(void dump_idoms(Node* early, Node* wrong_lca);)
@@ -1952,4 +1913,63 @@ public:
   float to(Node* n);
 };
 
+// Utility class to work on predicates.
+class Predicates {
+ public:
+  static Node* skip_all_predicates(Node* node);
+  static Node* skip_all_predicates(ParsePredicates& parse_predicates);
+  static Node* skip_predicates_in_block(ParsePredicateSuccessProj* parse_predicate_success_proj);
+  static IfProjNode* next_predicate_proj_in_block(IfProjNode* proj);
+  static bool has_profiled_loop_predicates(ParsePredicates& parse_predicates);
+};
+
+// Class representing the Parse Predicates that are added during parsing with ParsePredicateNodes.
+class ParsePredicates {
+ private:
+  ParsePredicateSuccessProj* _loop_predicate_proj = nullptr;
+  ParsePredicateSuccessProj* _profiled_loop_predicate_proj = nullptr;
+  ParsePredicateSuccessProj* _loop_limit_check_predicate_proj = nullptr;
+  // The success projection of the Parse Predicate that comes first when starting from root.
+  ParsePredicateSuccessProj* _top_predicate_proj;
+  ParsePredicateSuccessProj* _starting_proj;
+
+  void find_parse_predicate_projections();
+  static bool is_uct_proj(Node* node, Deoptimization::DeoptReason deopt_reason);
+  static ParsePredicateNode* get_parse_predicate_or_null(Node* proj);
+  bool assign_predicate_proj(ParsePredicateSuccessProj* parse_predicate_proj);
+ public:
+  ParsePredicates(Node* starting_proj);
+
+  // Success projection of Loop Parse Predicate.
+  ParsePredicateSuccessProj* loop_predicate_proj() {
+    return _loop_predicate_proj;
+  }
+
+  // Success proj of Profiled Loop Parse Predicate.
+  ParsePredicateSuccessProj* profiled_loop_predicate_proj() {
+    return _profiled_loop_predicate_proj;
+  }
+
+  // Success proj of Loop Limit Check Parse Predicate.
+  ParsePredicateSuccessProj* loop_limit_check_predicate_proj() {
+    return _loop_limit_check_predicate_proj;
+  }
+
+  // Return the success projection of the Parse Predicate that comes first when starting from root.
+  ParsePredicateSuccessProj* get_top_predicate_proj() {
+    return _top_predicate_proj;
+  }
+
+  static bool is_success_proj(Node* node);
+
+  // Are there any Parse Predicates?
+  bool has_any() const {
+    return _top_predicate_proj != nullptr;
+  }
+
+  static bool is_loop_limit_check_predicate_proj(Node* node) {
+    ParsePredicateNode* parse_predicate = get_parse_predicate_or_null(node);
+    return parse_predicate != nullptr && parse_predicate->deopt_reason() == Deoptimization::DeoptReason::Reason_loop_limit_check;
+  }
+};
 #endif // SHARE_OPTO_LOOPNODE_HPP

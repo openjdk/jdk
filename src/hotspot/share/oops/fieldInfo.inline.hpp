@@ -98,23 +98,23 @@ inline FieldInfoReader::FieldInfoReader(const Array<u1>* fi)
 
 inline void FieldInfoReader::read_field_info(FieldInfo& fi) {
   fi._index = _next_index++;
-  fi._name_index = next_uint();
-  fi._signature_index = next_uint();
+  fi._name_index = checked_cast<u2>(next_uint());
+  fi._signature_index = checked_cast<u2>(next_uint());
   fi._offset = next_uint();
   fi._access_flags = AccessFlags(next_uint());
   fi._field_flags = FieldInfo::FieldFlags(next_uint());
   if (fi._field_flags.is_initialized()) {
-    fi._initializer_index = next_uint();
+    fi._initializer_index = checked_cast<u2>(next_uint());
   } else {
     fi._initializer_index = 0;
   }
   if (fi._field_flags.is_generic()) {
-    fi._generic_signature_index = next_uint();
+    fi._generic_signature_index = checked_cast<u2>(next_uint());
   } else {
     fi._generic_signature_index = 0;
   }
   if (fi._field_flags.is_contended()) {
-    fi._contention_group = next_uint();
+    fi._contention_group = checked_cast<u2>(next_uint());
   } else {
     fi._contention_group = 0;
   }
