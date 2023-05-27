@@ -3196,8 +3196,9 @@ void nmethod::print_code_comment_on(outputStream* st, int column, address begin,
   ScopeDesc* sd  = scope_desc_in(begin, end);
   if (sd != nullptr) {
     st->move_to(column, 6, 0);
-    if (sd->bci() == SynchronizationEntryBCI) {
-      st->print(";*synchronization entry");
+    if (sd->bci() == InvocationEntryBci) {
+      assert(SynchronizationEntryBCI == InvocationEntryBci, "should be same");
+      st->print(";* invocation entry (also synchronization entry if synchronized)");
     } else if (sd->bci() == AfterBci) {
       st->print(";* method exit (unlocked if synchronized)");
     } else if (sd->bci() == UnwindBci) {
