@@ -29,6 +29,7 @@
 #include "memory/allocation.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/mutexLocker.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/safepoint.hpp"
@@ -433,7 +434,6 @@ static nullStream tty_preinit_stream;
 outputStream* tty = &tty_preinit_stream;
 
 xmlStream*   xtty;
-extern Mutex* tty_lock;
 
 #define EXTRACHARLEN   32
 #define CURRENTAPPX    ".current"

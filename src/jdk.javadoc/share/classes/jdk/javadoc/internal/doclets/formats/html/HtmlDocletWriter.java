@@ -104,6 +104,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocLink;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
+import jdk.javadoc.internal.doclets.toolkit.util.IndexItem;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils.DeclarationPreviewLanguageFeatures;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils.ElementFlag;
@@ -289,23 +290,30 @@ public class HtmlDocletWriter {
      * @param dl the content to which the method information will be added
      */
     private void addMethodInfo(ExecutableElement method, Content dl) {
-        TypeElement enclosing = utils.getEnclosingTypeElement(method);
-        List<? extends TypeMirror> intfacs = enclosing.getInterfaces();
-        ExecutableElement overriddenMethod = utils.overriddenMethod(method);
-        VisibleMemberTable vmt = configuration.getVisibleMemberTable(enclosing);
-        // Check whether there is any implementation or overridden info to be
-        // printed. If no overridden or implementation info needs to be
-        // printed, do not print this section.
-        if ((!intfacs.isEmpty()
-                && !vmt.getImplementedMethods(method).isEmpty())
-                || overriddenMethod != null) {
-            MethodWriterImpl.addImplementsInfo(this, method, dl);
-            if (overriddenMethod != null) {
-                MethodWriterImpl.addOverridden(this,
-                        utils.overriddenType(method),
-                        overriddenMethod,
-                        dl);
-            }
+        var enclosing = (TypeElement) method.getEnclosingElement();
+        var overrideInfo = utils.overriddenMethod(method);
+        var enclosingVmt = configuration.getVisibleMemberTable(enclosing);
+        var implementedMethods = enclosingVmt.getImplementedMethods(method);
+        if ((!enclosing.getInterfaces().isEmpty()
+                && !implementedMethods.isEmpty())
+                || overrideInfo != null) {
+            // TODO note that if there are any overridden interface methods throughout the
+            //   hierarchy, !enclosingVmt.getImplementedMethods(method).isEmpty(), their information
+            //   will be printed if *any* of the below is true:
+            //     * the enclosing has _directly_ implemented interfaces
+            //     * the overridden method is not null
+            //   If both are false, the information will not be printed: there will be no
+            //   "Specified by" documentation. The examples of that can be seen in documentation
+            //   for these methods:
+            //     * ForkJoinPool.execute(java.lang.Runnable)
+            //  This is a long-standing bug, which must be fixed separately: JDK-8302316
+            MethodWriterImpl.addImplementsInfo(this, method, implementedMethods, dl);
+        }
+        if (overrideInfo != null) {
+            MethodWriterImpl.addOverridden(this,
+                    overrideInfo.overriddenMethodOwner(),
+                    overrideInfo.overriddenMethod(),
+                    dl);
         }
     }
 
@@ -1393,8 +1401,8 @@ public class HtmlDocletWriter {
                 @Override
                 public Boolean visitStartElement(StartElementTree node, Content content) {
                     Content attrs = new ContentBuilder();
-                    if (node.getName().toString().matches("(?i)h[1-6]") && !hasIdAttribute(node)) {
-                        generateHeadingId(node, trees, attrs);
+                    if (node.getName().toString().matches("(?i)h[1-6]")) {
+                        createSectionIdAndIndex(node, trees, attrs, element, context);
                     }
                     for (DocTree dt : node.getAttributes()) {
                         dt.accept(this, attrs);
@@ -1469,14 +1477,20 @@ public class HtmlDocletWriter {
         return name != null && name.toString().equalsIgnoreCase(s);
     }
 
-    private boolean hasIdAttribute(StartElementTree node) {
-        return node.getAttributes().stream().anyMatch(
-                dt -> dt instanceof AttributeTree at && equalsIgnoreCase(at.getName(), "id"));
+    private Optional<String> getIdAttributeValue(StartElementTree node) {
+         return node.getAttributes().stream()
+                 .filter(dt -> dt instanceof AttributeTree at && equalsIgnoreCase(at.getName(), "id"))
+                 .map(dt -> ((AttributeTree)dt).getValue().toString())
+                 .findFirst();
     }
 
-    private void generateHeadingId(StartElementTree node, List<? extends DocTree> trees, Content content) {
+    private void createSectionIdAndIndex(StartElementTree node, List<? extends DocTree> trees, Content attrs,
+                                         Element element, TagletWriterImpl.Context context) {
+        // Use existing id attribute if available
+        String id = getIdAttributeValue(node).orElse(null);
         StringBuilder sb = new StringBuilder();
         String tagName = node.getName().toString().toLowerCase(Locale.ROOT);
+        // Go through heading content to collect content and look for existing id
         for (DocTree docTree : trees.subList(trees.indexOf(node) + 1, trees.size())) {
             if (docTree instanceof TextTree text) {
                 sb.append(text.getBody());
@@ -1485,17 +1499,31 @@ public class HtmlDocletWriter {
             } else if (docTree instanceof LinkTree link) {
                 var label = link.getLabel();
                 sb.append(label.isEmpty() ? link.getReference().getSignature() : label.toString());
+            } else if (id == null && docTree instanceof StartElementTree nested
+                    && equalsIgnoreCase(nested.getName(), "a")) {
+                // Use id of embedded anchor element if present
+                id = getIdAttributeValue(nested).orElse(null);
             } else if (docTree instanceof EndElementTree endElement
                     && equalsIgnoreCase(endElement.getName(), tagName)) {
                 break;
-            } else if (docTree instanceof StartElementTree nested
-                    && equalsIgnoreCase(nested.getName(), "a")
-                    && hasIdAttribute(nested)) {
-                return; // Avoid generating id if embedded <a id=...> is present
             }
         }
-        HtmlId htmlId = htmlIds.forHeading(sb, headingIds);
-        content.add("id=\"").add(htmlId.name()).add("\"");
+        String headingContent = sb.toString().trim();
+        if (id == null) {
+            // Generate id attribute
+            HtmlId htmlId = htmlIds.forHeading(headingContent, headingIds);
+            id = htmlId.name();
+            attrs.add("id=\"").add(htmlId.name()).add("\"");
+        }
+        // Generate index item
+        if (!headingContent.isEmpty() && configuration.mainIndex != null) {
+            String tagText = headingContent.replaceAll("\\s+", " ");
+            IndexItem item = IndexItem.of(element, node, tagText,
+                    getTagletWriterInstance(context).getHolderName(element),
+                    resources.getText("doclet.Section"),
+                    new DocLink(path, id));
+            configuration.mainIndex.add(item);
+        }
     }
 
     /**
@@ -1780,7 +1808,7 @@ public class HtmlDocletWriter {
                                 ContentBuilder annotation,
                                 Map<? extends ExecutableElement, ? extends AnnotationValue> map,
                                 boolean linkBreak) {
-        linkInfo.label = Text.of("@" + annotationDoc.getSimpleName());
+        linkInfo.label("@" + annotationDoc.getSimpleName());
         annotation.add(getLink(linkInfo));
         if (!map.isEmpty()) {
             annotation.add("(");
@@ -1896,7 +1924,7 @@ public class HtmlDocletWriter {
                         String name = utils.isIncluded(t.asElement())
                                 ? t.asElement().getSimpleName().toString()
                                 : utils.getFullyQualifiedName(t.asElement());
-                        linkInfo.label = Text.of(name + utils.getDimension(t) + ".class");
+                        linkInfo.label(name + utils.getDimension(t) + ".class");
                         return getLink(linkInfo);
                     }
                     @Override

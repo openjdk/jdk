@@ -109,6 +109,7 @@ public class DeferredAttr extends JCTree.Visitor {
         return instance;
     }
 
+    @SuppressWarnings("this-escape")
     protected DeferredAttr(Context context) {
         context.put(deferredAttrKey, this);
         annotate = Annotate.instance(context);

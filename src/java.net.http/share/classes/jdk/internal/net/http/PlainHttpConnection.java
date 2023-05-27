@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,12 +52,11 @@ import jdk.internal.net.http.common.Utils;
  */
 class PlainHttpConnection extends HttpConnection {
 
-    private final Object reading = new Object();
     protected final SocketChannel chan;
     private final SocketTube tube; // need SocketTube to call signalClosed().
-    private final PlainHttpPublisher writePublisher = new PlainHttpPublisher(reading);
+    private final PlainHttpPublisher writePublisher = new PlainHttpPublisher();
     private volatile boolean connected;
-    private boolean closed;
+    private volatile boolean closed;
     private volatile ConnectTimerEvent connectTimerEvent;  // may be null
     private volatile int unsuccessfulAttempts;
 
@@ -140,9 +139,10 @@ class PlainHttpConnection extends HttpConnection {
                     debug.log("ConnectEvent: connect finished: %s, cancelled: %s, Local addr: %s",
                               finished, exchange.multi.requestCancelled(), chan.getLocalAddress());
                 assert finished || exchange.multi.requestCancelled() : "Expected channel to be connected";
-                client().connectionOpened(PlainHttpConnection.this);
-                // complete async since the event runs on the SelectorManager thread
-                cf.completeAsync(() -> ConnectState.SUCCESS, client().theExecutor());
+                if (connectionOpened()) {
+                    // complete async since the event runs on the SelectorManager thread
+                    cf.completeAsync(() -> ConnectState.SUCCESS, client().theExecutor());
+                } else throw new ConnectException("Connection closed");
             } catch (Throwable e) {
                 if (canRetryConnect(e)) {
                     unsuccessfulAttempts++;
@@ -213,8 +213,9 @@ class PlainHttpConnection extends HttpConnection {
             }
             if (finished) {
                 if (debug.on()) debug.log("connect finished without blocking");
-                client().connectionOpened(this);
-                cf.complete(ConnectState.SUCCESS);
+                if (connectionOpened()) {
+                    cf.complete(ConnectState.SUCCESS);
+                } else throw new ConnectException("connection closed");
             } else {
                 if (debug.on()) debug.log("registering connect event");
                 client().registerEvent(new ConnectEvent(cf, exchange));
@@ -234,6 +235,18 @@ class PlainHttpConnection extends HttpConnection {
         }
         return cf.handle((r,t) -> checkRetryConnect(r, t,exchange))
                 .thenCompose(Function.identity());
+    }
+
+    boolean connectionOpened() {
+        boolean closed = this.closed;
+        if (closed) return false;
+        synchronized (this) {
+            closed = this.closed;
+        }
+        if (!closed) {
+            client().connectionOpened(this);
+        }
+        return !closed;
     }
 
     /**

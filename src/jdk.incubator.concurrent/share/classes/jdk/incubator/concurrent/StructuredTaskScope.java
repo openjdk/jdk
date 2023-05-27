@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,6 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
-import jdk.internal.misc.PreviewFeatures;
 import jdk.internal.misc.ThreadFlock;
 
 /**
@@ -335,11 +334,8 @@ public class StructuredTaskScope<T> implements AutoCloseable {
      *
      * <p> This constructor is equivalent to invoking the 2-arg constructor with a name
      * of {@code null} and a thread factory that creates virtual threads.
-     *
-     * @throws UnsupportedOperationException if preview features are not enabled
      */
     public StructuredTaskScope() {
-        PreviewFeatures.ensureEnabled();
         this.factory = Thread.ofVirtual().factory();
         this.flock = ThreadFlock.open(null);
     }

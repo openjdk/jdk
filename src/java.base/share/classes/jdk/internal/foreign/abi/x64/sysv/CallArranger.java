@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package jdk.internal.foreign.abi.x64.sysv;
 
 import jdk.internal.foreign.Utils;
 import jdk.internal.foreign.abi.ABIDescriptor;
+import jdk.internal.foreign.abi.AbstractLinker.UpcallStubFactory;
 import jdk.internal.foreign.abi.Binding;
 import jdk.internal.foreign.abi.CallingSequence;
 import jdk.internal.foreign.abi.CallingSequenceBuilder;
@@ -37,18 +38,18 @@ import jdk.internal.foreign.abi.UpcallLinker;
 import jdk.internal.foreign.abi.VMStorage;
 import jdk.internal.foreign.abi.x64.X86_64Architecture;
 
-import java.lang.foreign.SegmentScope;
+import java.lang.foreign.AddressLayout;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.GroupLayout;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.util.List;
 import java.util.Optional;
 
-import static jdk.internal.foreign.PlatformLayouts.SysV;
 import static jdk.internal.foreign.abi.Binding.vmStore;
 import static jdk.internal.foreign.abi.x64.X86_64Architecture.*;
 import static jdk.internal.foreign.abi.x64.X86_64Architecture.Regs.*;
@@ -63,6 +64,11 @@ public class CallArranger {
     private static final int STACK_SLOT_SIZE = 8;
     private static final int MAX_INTEGER_ARGUMENT_REGISTERS = 6;
     private static final int MAX_VECTOR_ARGUMENT_REGISTERS = 8;
+
+    /**
+     * The {@code long} native type.
+     */
+    public static final ValueLayout.OfLong C_LONG = ValueLayout.JAVA_LONG;
 
     private static final ABIDescriptor CSysV = X86_64Architecture.abiFor(
         new VMStorage[] { rdi, rsi, rdx, rcx, r8, r9, rax },
@@ -96,7 +102,7 @@ public class CallArranger {
         boolean returnInMemory = isInMemoryReturn(cDesc.returnLayout());
         if (returnInMemory) {
             Class<?> carrier = MemorySegment.class;
-            MemoryLayout layout = SysV.C_POINTER;
+            MemoryLayout layout = SharedUtils.C_POINTER;
             csb.addArgumentBindings(carrier, layout, argCalc.getBindings(carrier, layout));
         } else if (cDesc.returnLayout().isPresent()) {
             Class<?> carrier = mt.returnType();
@@ -112,7 +118,7 @@ public class CallArranger {
 
         if (!forUpcall) {
             //add extra binding for number of used vector registers (used for variadic calls)
-            csb.addArgumentBindings(long.class, SysV.C_LONG,
+            csb.addArgumentBindings(long.class, C_LONG,
                     List.of(vmStore(rax, long.class)));
         }
 
@@ -132,14 +138,11 @@ public class CallArranger {
         return handle;
     }
 
-    public static MemorySegment arrangeUpcall(MethodHandle target, MethodType mt, FunctionDescriptor cDesc, SegmentScope scope) {
-        Bindings bindings = getBindings(mt, cDesc, true);
-
-        if (bindings.isInMemoryReturn) {
-            target = SharedUtils.adaptUpcallForIMR(target, true /* drop return, since we don't have bindings for it */);
-        }
-
-        return UpcallLinker.make(CSysV, target, bindings.callingSequence, scope);
+    public static UpcallStubFactory arrangeUpcall(MethodType mt, FunctionDescriptor cDesc, LinkerOptions options) {
+        Bindings bindings = getBindings(mt, cDesc, true, options);
+        final boolean dropReturn = true; /* drop return, since we don't have bindings for it */
+        return SharedUtils.arrangeUpcallHelper(mt, bindings.isInMemoryReturn, dropReturn, CSysV,
+                bindings.callingSequence);
     }
 
     private static boolean isInMemoryReturn(Optional<MemoryLayout> returnLayout) {
@@ -316,9 +319,10 @@ public class CallArranger {
                     }
                 }
                 case POINTER -> {
+                    AddressLayout addressLayout = (AddressLayout) layout;
                     VMStorage storage = storageCalculator.nextStorage(StorageType.INTEGER);
                     bindings.vmLoad(storage, long.class)
-                            .boxAddressRaw(Utils.pointeeSize(layout));
+                            .boxAddressRaw(Utils.pointeeByteSize(addressLayout), Utils.pointeeByteAlign(addressLayout));
                 }
                 case INTEGER -> {
                     VMStorage storage = storageCalculator.nextStorage(StorageType.INTEGER);

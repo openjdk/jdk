@@ -37,19 +37,9 @@ import java.security.*;
 import java.nio.*;
 import java.util.Arrays;
 
-public class HandshakeWithInvalidRecordVersion implements SSLContextTemplate {
+public class HandshakeWithInvalidRecordVersion extends SSLContextTemplate {
     private static final boolean DEBUG = Boolean.getBoolean("test.debug");
 
-    private static final String PATH_TO_STORES = "../etc";
-    private static final String KEYSTORE_FILE = "keystore";
-    private static final String TRUSTSTORE_FILE = "truststore";
-
-    private static final String KEYSTORE_PATH =
-            System.getProperty("test.src", "./") + "/" + PATH_TO_STORES +
-                    "/" + KEYSTORE_FILE;
-    private static final String TRUSTSTORE_PATH =
-            System.getProperty("test.src", "./") + "/" + PATH_TO_STORES +
-                    "/" + TRUSTSTORE_FILE;
 
     public static void main(String [] args) throws Exception {
         var runner = new HandshakeWithInvalidRecordVersion();

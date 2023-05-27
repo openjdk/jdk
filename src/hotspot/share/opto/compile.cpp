@@ -387,7 +387,7 @@ void Compile::remove_useless_node(Node* dead) {
     remove_expensive_node(dead);
   }
   if (dead->Opcode() == Op_Opaque4) {
-    remove_skeleton_predicate_opaq(dead);
+    remove_template_assertion_predicate_opaq(dead);
   }
   if (dead->for_post_loop_opts_igvn()) {
     remove_from_post_loop_opts_igvn(dead);
@@ -435,8 +435,8 @@ void Compile::disconnect_useless_nodes(Unique_Node_List &useful, Unique_Node_Lis
   }
 
   remove_useless_nodes(_macro_nodes,        useful); // remove useless macro nodes
-  remove_useless_nodes(_predicate_opaqs,    useful); // remove useless predicate opaque nodes
-  remove_useless_nodes(_skeleton_predicate_opaqs, useful);
+  remove_useless_nodes(_parse_predicate_opaqs, useful); // remove useless Parse Predicate opaque nodes
+  remove_useless_nodes(_template_assertion_predicate_opaqs, useful); // remove useless Assertion Predicate opaque nodes
   remove_useless_nodes(_expensive_nodes,    useful); // remove useless expensive nodes
   remove_useless_nodes(_for_post_loop_igvn, useful); // remove useless node recorded for post loop opts IGVN pass
   remove_useless_unstable_if_traps(useful);          // remove useless unstable_if traps
@@ -578,7 +578,6 @@ void Compile::print_ideal_ir(const char* phase_name) {
 
 // ============================================================================
 //------------------------------Compile standard-------------------------------
-debug_only( int Compile::_debug_idx = 100000; )
 
 // Compile a method.  entry_bci is -1 for normal compilations and indicates
 // the continuation bci for on stack replacement.
@@ -616,8 +615,8 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
                   _failure_reason(nullptr),
                   _intrinsics        (comp_arena(), 0, 0, nullptr),
                   _macro_nodes       (comp_arena(), 8, 0, nullptr),
-                  _predicate_opaqs   (comp_arena(), 8, 0, nullptr),
-                  _skeleton_predicate_opaqs (comp_arena(), 8, 0, nullptr),
+                  _parse_predicate_opaqs (comp_arena(), 8, 0, nullptr),
+                  _template_assertion_predicate_opaqs (comp_arena(), 8, 0, nullptr),
                   _expensive_nodes   (comp_arena(), 8, 0, nullptr),
                   _for_post_loop_igvn(comp_arena(), 8, 0, nullptr),
                   _unstable_if_traps (comp_arena(), 8, 0, nullptr),
@@ -678,11 +677,11 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
 
 #ifndef PRODUCT
   set_parsed_irreducible_loop(false);
+#endif
 
   if (directive->ReplayInlineOption) {
     _replay_inline_data = ciReplay::load_inline_data(method(), entry_bci(), ci_env->comp_level());
   }
-#endif
   set_print_inlining(directive->PrintInliningOption || PrintOptoInlining);
   set_print_intrinsics(directive->PrintIntrinsicsOption);
   set_has_irreducible_loop(true); // conservative until build_loop_tree() reset it
@@ -753,7 +752,11 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
     }
     if (failing())  return;
     if (cg == nullptr) {
-      record_method_not_compilable("cannot parse method");
+      const char* reason = InlineTree::check_can_parse(method());
+      assert(reason != nullptr, "expect reason for parse failure");
+      stringStream ss;
+      ss.print("cannot parse method: %s", reason);
+      record_method_not_compilable(ss.as_string());
       return;
     }
 
@@ -762,7 +765,10 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
     JVMState* jvms = build_start_state(start(), tf());
     if ((jvms = cg->generate(jvms)) == nullptr) {
       if (!failure_reason_is(C2Compiler::retry_class_loading_during_parsing())) {
-        record_method_not_compilable("method parse failed");
+        assert(failure_reason() != nullptr, "expect reason for parse failure");
+        stringStream ss;
+        ss.print("method parse failed: %s", failure_reason());
+        record_method_not_compilable(ss.as_string());
       }
       return;
     }
@@ -1703,7 +1709,7 @@ Compile::AliasType* Compile::find_alias_type(const TypePtr* adr_type, bool no_cr
       assert(field == nullptr ||
              original_field == nullptr ||
              (field->holder() == original_field->holder() &&
-              field->offset() == original_field->offset() &&
+              field->offset_in_bytes() == original_field->offset_in_bytes() &&
               field->is_static() == original_field->is_static()), "wrong field?");
       // Set field() and is_rewritable() attributes.
       if (field != nullptr)  alias_type(idx)->set_field(field);
@@ -1786,17 +1792,18 @@ bool Compile::can_alias(const TypePtr* adr_type, int alias_idx) {
   return adr_idx == alias_idx;
 }
 
-//---------------------cleanup_loop_predicates-----------------------
-// Remove the opaque nodes that protect the predicates so that all unused
-// checks and uncommon_traps will be eliminated from the ideal graph
-void Compile::cleanup_loop_predicates(PhaseIterGVN &igvn) {
-  if (predicate_count()==0) return;
-  for (int i = predicate_count(); i > 0; i--) {
-    Node * n = predicate_opaque1_node(i-1);
+// Remove the opaque nodes that protect the Parse Predicates so that all unused
+// checks and uncommon_traps will be eliminated from the ideal graph.
+void Compile::cleanup_parse_predicates(PhaseIterGVN& igvn) const {
+  if (parse_predicate_count() == 0) {
+    return;
+  }
+  for (int i = parse_predicate_count(); i > 0; i--) {
+    Node* n = parse_predicate_opaque1_node(i - 1);
     assert(n->Opcode() == Op_Opaque1, "must be");
     igvn.replace_node(n, n->in(1));
   }
-  assert(predicate_count()==0, "should be clean!");
+  assert(parse_predicate_count() == 0, "should be clean!");
 }
 
 void Compile::record_for_post_loop_opts_igvn(Node* n) {
@@ -2837,12 +2844,7 @@ void Compile::process_logic_cone_root(PhaseIterGVN &igvn, Node *n, VectorSet &vi
     if (mask == nullptr ||
         Matcher::match_rule_supported_vector_masked(Op_MacroLogicV, vt->length(), vt->element_basic_type())) {
       Node* macro_logic = xform_to_MacroLogicV(igvn, vt, partition, inputs);
-#ifdef ASSERT
-      if (TraceNewVectors) {
-        tty->print("new Vector node: ");
-        macro_logic->dump();
-      }
-#endif
+      VectorNode::trace_new_vector(macro_logic, "MacroLogic");
       igvn.replace_node(n, macro_logic);
     }
   }
@@ -3922,6 +3924,8 @@ bool Compile::final_graph_reshaping() {
   // an infinite loop may have been eliminated by the optimizer,
   // in which case the graph will be empty.
   if (root()->req() == 1) {
+    // Do not compile method that is only a trivial infinite loop,
+    // since the content of the loop may have been eliminated.
     record_method_not_compilable("trivial infinite loop");
     return true;
   }
@@ -3987,8 +3991,11 @@ bool Compile::final_graph_reshaping() {
           }
         }
       }
+
       // Recheck with a better notion of 'required_outcnt'
       if (n->outcnt() != required_outcnt) {
+        DEBUG_ONLY( n->dump_bfs(1, 0, "-"); );
+        assert(false, "malformed control flow");
         record_method_not_compilable("malformed control flow");
         return true;            // Not all targets reachable!
       }

@@ -25,8 +25,8 @@
  * @test
  * @enablePreview
  * @library ../ /test/lib
- * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64" | os.arch == "riscv64"
- * @requires vm.flavor != "zero"
+ * @requires jdk.foreign.linker != "UNSUPPORTED"
+ * @requires jdk.foreign.linker != "FALLBACK"
  * @build NativeTestHelper
  * @run testng/othervm --enable-native-access=ALL-UNNAMED TestNested
  */
@@ -55,7 +55,7 @@ public class TestNested extends NativeTestHelper {
 
     @Test(dataProvider = "nestedLayouts")
     public void testNested(GroupLayout layout) throws Throwable {
-        try (Arena arena = Arena.openConfined()) {
+        try (Arena arena = Arena.ofConfined()) {
             Random random = new Random(0);
             TestValue testValue = genTestValue(random, layout, arena);
 
@@ -88,14 +88,14 @@ public class TestNested extends NativeTestHelper {
             C_LONG_LONG.withName("f1"),
             C_DOUBLE.withName("f2"),
             C_INT.withName("f3"),
-            MemoryLayout.paddingLayout(32)
+            MemoryLayout.paddingLayout(4)
     ).withName("S1");
     static final UnionLayout U1 = MemoryLayout.unionLayout(
             C_SHORT.withName("f0"),
             C_LONG_LONG.withName("f1"),
             C_SHORT.withName("f2"),
             MemoryLayout.sequenceLayout(4, MemoryLayout.sequenceLayout(3, C_CHAR)).withName("f3"),
-            MemoryLayout.paddingLayout(128)
+            MemoryLayout.paddingLayout(16)
     ).withName("U1");
     static final UnionLayout U17 = MemoryLayout.unionLayout(
             C_CHAR.withName("f0"),
@@ -107,7 +107,7 @@ public class TestNested extends NativeTestHelper {
             U17.withName("f0"),
             MemoryLayout.sequenceLayout(4, C_LONG_LONG).withName("f1"),
             C_SHORT.withName("f2"),
-            MemoryLayout.paddingLayout(48)
+            MemoryLayout.paddingLayout(6)
     ).withName("S2");
     static final StructLayout S3 = MemoryLayout.structLayout(
             C_FLOAT.withName("f0"),
@@ -117,12 +117,12 @@ public class TestNested extends NativeTestHelper {
     ).withName("S3");
     static final StructLayout S4 = MemoryLayout.structLayout(
             MemoryLayout.sequenceLayout(2, C_SHORT).withName("f0"),
-            MemoryLayout.paddingLayout(32),
+            MemoryLayout.paddingLayout(4),
             S1.withName("f1")
     ).withName("S4");
     static final StructLayout S5 = MemoryLayout.structLayout(
             C_FLOAT.withName("f0"),
-            MemoryLayout.paddingLayout(32),
+            MemoryLayout.paddingLayout(4),
             C_POINTER.withName("f1"),
             S4.withName("f2")
     ).withName("S5");
@@ -139,7 +139,7 @@ public class TestNested extends NativeTestHelper {
             C_DOUBLE.withName("f0"),
             C_SHORT.withName("f1"),
             C_SHORT.withName("f2"),
-            MemoryLayout.paddingLayout(32),
+            MemoryLayout.paddingLayout(4),
             C_LONG_LONG.withName("f3")
     ).withName("S7");
     static final UnionLayout U3 = MemoryLayout.unionLayout(
@@ -169,16 +169,16 @@ public class TestNested extends NativeTestHelper {
     static final StructLayout S8 = MemoryLayout.structLayout(
             MemoryLayout.sequenceLayout(3, C_DOUBLE).withName("f0"),
             U7.withName("f1"),
-            MemoryLayout.paddingLayout(48),
+            MemoryLayout.paddingLayout(6),
             C_POINTER.withName("f2"),
             C_POINTER.withName("f3")
     ).withName("S8");
     static final StructLayout S9 = MemoryLayout.structLayout(
             C_CHAR.withName("f0"),
-            MemoryLayout.paddingLayout(56),
+            MemoryLayout.paddingLayout(7),
             MemoryLayout.sequenceLayout(2, C_DOUBLE).withName("f1"),
             C_CHAR.withName("f2"),
-            MemoryLayout.paddingLayout(56),
+            MemoryLayout.paddingLayout(7),
             S8.withName("f3")
     ).withName("S9");
     static final UnionLayout U8 = MemoryLayout.unionLayout(
@@ -207,7 +207,7 @@ public class TestNested extends NativeTestHelper {
     static final StructLayout S11 = MemoryLayout.structLayout(
             C_SHORT.withName("f0"),
             C_CHAR.withName("f1"),
-            MemoryLayout.paddingLayout(8)
+            MemoryLayout.paddingLayout(1)
     ).withName("S11");
     static final UnionLayout U12 = MemoryLayout.unionLayout(
             C_FLOAT.withName("f0"),
@@ -237,10 +237,10 @@ public class TestNested extends NativeTestHelper {
     static final StructLayout S13 = MemoryLayout.structLayout(
             C_INT.withName("f0"),
             C_CHAR.withName("f1"),
-            MemoryLayout.paddingLayout(24),
+            MemoryLayout.paddingLayout(3),
             C_POINTER.withName("f2"),
             C_CHAR.withName("f3"),
-            MemoryLayout.paddingLayout(56)
+            MemoryLayout.paddingLayout(7)
     ).withName("S13");
     static final StructLayout S14 = MemoryLayout.structLayout(
             C_LONG_LONG.withName("f0")

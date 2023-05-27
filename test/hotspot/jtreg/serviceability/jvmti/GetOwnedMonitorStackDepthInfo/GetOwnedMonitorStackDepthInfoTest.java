@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,8 @@
  * @bug 8153629
  * @summary Need to cover JVMTI's GetOwnedMonitorStackDepthInfo function
  * @requires vm.jvmti
- * @compile --enable-preview -source ${jdk.version} GetOwnedMonitorStackDepthInfoTest.java
- * @run main/othervm/native --enable-preview -agentlib:GetOwnedMonitorStackDepthInfoTest GetOwnedMonitorStackDepthInfoTest
+ * @compile GetOwnedMonitorStackDepthInfoTest.java
+ * @run main/othervm/native -agentlib:GetOwnedMonitorStackDepthInfoTest GetOwnedMonitorStackDepthInfoTest
  */
 
 

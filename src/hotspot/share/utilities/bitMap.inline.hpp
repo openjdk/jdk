@@ -30,6 +30,7 @@
 #include "runtime/atomic.hpp"
 #include "utilities/align.hpp"
 #include "utilities/count_trailing_zeros.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 inline void BitMap::set_bit(idx_t bit) {
   verify_index(bit);
@@ -165,49 +166,51 @@ inline void BitMap::par_clear_range(idx_t beg, idx_t end, RangeSizeHint hint) {
   }
 }
 
+// General notes regarding find_{first,last}_bit_impl.
+//
+// The first (last) word often contains an interesting bit, either due to
+// density or because of features of the calling algorithm.  So it's important
+// to examine that word with a minimum of fuss, minimizing setup time for
+// additional words that will be wasted if the that word is indeed
+// interesting.
+//
+// The first (last) bit is similarly often interesting.  When it matters
+// (density or features of the calling algorithm make it likely that bit is
+// set), going straight to counting bits compares poorly to examining that bit
+// first; the counting operations can be relatively expensive, plus there is
+// the additional range check (unless aligned).  But when that bit isn't set,
+// the cost of having tested for it is relatively small compared to the rest
+// of the search.
+//
+// The benefit from aligned_right being true is relatively small.  It saves an
+// operation in the setup of the word search loop.  It also eliminates the
+// range check on the final result.  However, callers often have a comparison
+// with end, and inlining may allow the two comparisons to be combined.  It is
+// important when !aligned_right that return paths either return end or a
+// value dominated by a comparison with end.  aligned_right is still helpful
+// when the caller doesn't have a range check because features of the calling
+// algorithm guarantee an interesting bit will be present.
+//
+// The benefit from aligned_left is even smaller, as there is no savings in
+// the setup of the word search loop.
+
 template<BitMap::bm_word_t flip, bool aligned_right>
 inline BitMap::idx_t BitMap::find_first_bit_impl(idx_t beg, idx_t end) const {
   STATIC_ASSERT(flip == find_ones_flip || flip == find_zeros_flip);
   verify_range(beg, end);
   assert(!aligned_right || is_aligned(end, BitsPerWord), "end not aligned");
 
-  // The first word often contains an interesting bit, either due to
-  // density or because of features of the calling algorithm.  So it's
-  // important to examine that first word with a minimum of fuss,
-  // minimizing setup time for later words that will be wasted if the
-  // first word is indeed interesting.
-
-  // The benefit from aligned_right being true is relatively small.
-  // It saves an operation in the setup for the word search loop.
-  // It also eliminates the range check on the final result.
-  // However, callers often have a comparison with end, and
-  // inlining often allows the two comparisons to be combined; it is
-  // important when !aligned_right that return paths either return
-  // end or a value dominated by a comparison with end.
-  // aligned_right is still helpful when the caller doesn't have a
-  // range check because features of the calling algorithm guarantee
-  // an interesting bit will be present.
-
   if (beg < end) {
     // Get the word containing beg, and shift out low bits.
     idx_t word_index = to_words_align_down(beg);
     bm_word_t cword = flipped_word(word_index, flip) >> bit_in_word(beg);
-    if ((cword & 1) != 0) {
-      // The first bit is similarly often interesting. When it matters
-      // (density or features of the calling algorithm make it likely
-      // the first bit is set), going straight to the next clause compares
-      // poorly with doing this check first; count_trailing_zeros can be
-      // relatively expensive, plus there is the additional range check.
-      // But when the first bit isn't set, the cost of having tested for
-      // it is relatively small compared to the rest of the search.
+    if ((cword & 1) != 0) {     // Test the beg bit.
       return beg;
-    } else if (cword != 0) {
-      // Flipped and shifted first word is non-zero.
-      idx_t result = beg + count_trailing_zeros(cword);
-      if (aligned_right || (result < end)) return result;
-      // Result is beyond range bound; return end.
-    } else {
-      // Flipped and shifted first word is zero.  Word search through
+    }
+    // Position of bit0 of cword in the bitmap.  Initially for shifted first word.
+    idx_t cword_pos = beg;
+    if (cword == 0) {           // Test other bits in the first word.
+      // First word had no interesting bits.  Word search through
       // aligned up end for a non-zero flipped word.
       idx_t word_limit = aligned_right
         ? to_words_align_down(end) // Minuscule savings when aligned.
@@ -215,14 +218,61 @@ inline BitMap::idx_t BitMap::find_first_bit_impl(idx_t beg, idx_t end) const {
       while (++word_index < word_limit) {
         cword = flipped_word(word_index, flip);
         if (cword != 0) {
-          idx_t result = bit_index(word_index) + count_trailing_zeros(cword);
-          if (aligned_right || (result < end)) return result;
-          // Result is beyond range bound; return end.
-          assert((word_index + 1) == word_limit, "invariant");
+          // Update for found non-zero word, and join common tail to compute
+          // result from cword_pos and non-zero cword.
+          cword_pos = bit_index(word_index);
           break;
         }
       }
-      // No bits in range; return end.
+    }
+    // For all paths reaching here, (cword != 0) is already known, so we
+    // expect the compiler to not generate any code for it.  Either first word
+    // was non-zero, or found a non-zero word in range, or fully scanned range
+    // (so cword is zero).
+    if (cword != 0) {
+      idx_t result = cword_pos + count_trailing_zeros(cword);
+      if (aligned_right || (result < end)) return result;
+      // Result is beyond range bound; return end.
+    }
+  }
+  return end;
+}
+
+template<BitMap::bm_word_t flip, bool aligned_left>
+inline BitMap::idx_t BitMap::find_last_bit_impl(idx_t beg, idx_t end) const {
+  STATIC_ASSERT(flip == find_ones_flip || flip == find_zeros_flip);
+  verify_range(beg, end);
+  assert(!aligned_left || is_aligned(beg, BitsPerWord), "beg not aligned");
+
+  if (beg < end) {
+    // Get the last partial and flipped word in the range.
+    idx_t last_bit_index = end - 1;
+    idx_t word_index = to_words_align_down(last_bit_index);
+    bm_word_t cword = flipped_word(word_index, flip);
+    // Mask for extracting and testing bits of last word.
+    bm_word_t last_bit_mask = bm_word_t(1) << bit_in_word(last_bit_index);
+    if ((cword & last_bit_mask) != 0) { // Test last bit.
+      return last_bit_index;
+    }
+    // Extract prior bits, clearing those above last_bit_index.
+    cword &= (last_bit_mask - 1);
+    if (cword == 0) {           // Test other bits in the last word.
+      // Last word had no interesting bits.  Word search through
+      // aligned down beg for a non-zero flipped word.
+      idx_t word_limit = to_words_align_down(beg);
+      while (word_index-- > word_limit) {
+        cword = flipped_word(word_index, flip);
+        if (cword != 0) break;
+      }
+    }
+    // For all paths reaching here, (cword != 0) is already known, so we
+    // expect the compiler to not generate any code for it.  Either last word
+    // was non-zero, or found a non-zero word in range, or fully scanned range
+    // (so cword is zero).
+    if (cword != 0) {
+      idx_t result = bit_index(word_index) + log2i(cword);
+      if (aligned_left || (result >= beg)) return result;
+      // Result is below range bound; return end.
     }
   }
   return end;
@@ -241,6 +291,21 @@ BitMap::find_first_clear_bit(idx_t beg, idx_t end) const {
 inline BitMap::idx_t
 BitMap::find_first_set_bit_aligned_right(idx_t beg, idx_t end) const {
   return find_first_bit_impl<find_ones_flip, true>(beg, end);
+}
+
+inline BitMap::idx_t
+BitMap::find_last_set_bit(idx_t beg, idx_t end) const {
+  return find_last_bit_impl<find_ones_flip, false>(beg, end);
+}
+
+inline BitMap::idx_t
+BitMap::find_last_clear_bit(idx_t beg, idx_t end) const {
+  return find_last_bit_impl<find_zeros_flip, false>(beg, end);
+}
+
+inline BitMap::idx_t
+BitMap::find_last_set_bit_aligned_left(idx_t beg, idx_t end) const {
+  return find_last_bit_impl<find_ones_flip, true>(beg, end);
 }
 
 // IterateInvoker supports conditionally stopping iteration early.  The
@@ -284,6 +349,180 @@ template <typename BitMapClosureType>
 inline bool BitMap::iterate(BitMapClosureType* cl, idx_t beg, idx_t end) const {
   auto function = [&](idx_t index) { return cl->do_bit(index); };
   return iterate(function, beg, end);
+}
+
+template <typename Function>
+inline bool BitMap::reverse_iterate(Function function, idx_t beg, idx_t end) const {
+  auto invoke = IterateInvoker<decltype(function(beg))>();
+  for (idx_t index; true; end = index) {
+    index = find_last_set_bit(beg, end);
+    if (index >= end) {
+      return true;
+    } else if (!invoke(function, index)) {
+      return false;
+    }
+  }
+}
+
+template <typename BitMapClosureType>
+inline bool BitMap::reverse_iterate(BitMapClosureType* cl, idx_t beg, idx_t end) const {
+  auto function = [&](idx_t index) { return cl->do_bit(index); };
+  return reverse_iterate(function, beg, end);
+}
+
+/// BitMap::IteratorImpl
+
+inline BitMap::IteratorImpl::IteratorImpl()
+  : _map(nullptr), _cur_beg(0), _cur_end(0)
+{}
+
+inline BitMap::IteratorImpl::IteratorImpl(const BitMap* map, idx_t beg, idx_t end)
+  : _map(map), _cur_beg(beg), _cur_end(end)
+{}
+
+inline bool BitMap::IteratorImpl::is_empty() const {
+  return _cur_beg == _cur_end;
+}
+
+inline BitMap::idx_t BitMap::IteratorImpl::first() const {
+  assert_not_empty();
+  return _cur_beg;
+}
+
+inline BitMap::idx_t BitMap::IteratorImpl::last() const {
+  assert_not_empty();
+  return _cur_end - 1;
+}
+
+inline void BitMap::IteratorImpl::step_first() {
+  assert_not_empty();
+  _cur_beg = _map->find_first_set_bit(_cur_beg + 1, _cur_end);
+}
+
+inline void BitMap::IteratorImpl::step_last() {
+  assert_not_empty();
+  idx_t lastpos = last();
+  idx_t pos = _map->find_last_set_bit(_cur_beg, lastpos);
+  _cur_end = (pos < lastpos) ? (pos + 1) : _cur_beg;
+}
+
+/// BitMap::Iterator
+
+inline BitMap::Iterator::Iterator() : _impl() {}
+
+inline BitMap::Iterator::Iterator(const BitMap& map)
+  : Iterator(map, 0, map.size())
+{}
+
+inline BitMap::Iterator::Iterator(const BitMap& map, idx_t beg, idx_t end)
+  : _impl(&map, map.find_first_set_bit(beg, end), end)
+{}
+
+inline bool BitMap::Iterator::is_empty() const {
+  return _impl.is_empty();
+}
+
+inline BitMap::idx_t BitMap::Iterator::index() const {
+  return _impl.first();
+}
+
+inline void BitMap::Iterator::step() {
+  _impl.step_first();
+}
+
+inline BitMap::RBFIterator BitMap::Iterator::begin() const {
+  return RBFIterator(_impl._map, _impl._cur_beg, _impl._cur_end);
+}
+
+inline BitMap::RBFIterator BitMap::Iterator::end() const {
+  return RBFIterator(_impl._map, _impl._cur_end, _impl._cur_end);
+}
+
+/// BitMap::ReverseIterator
+
+inline BitMap::idx_t BitMap::ReverseIterator::initial_end(const BitMap& map,
+                                                          idx_t beg,
+                                                          idx_t end) {
+  idx_t pos = map.find_last_set_bit(beg, end);
+  return (pos < end) ? (pos + 1) : beg;
+}
+
+inline BitMap::ReverseIterator::ReverseIterator() : _impl() {}
+
+inline BitMap::ReverseIterator::ReverseIterator(const BitMap& map)
+  : ReverseIterator(map, 0, map.size())
+{}
+
+inline BitMap::ReverseIterator::ReverseIterator(const BitMap& map,
+                                                idx_t beg,
+                                                idx_t end)
+  : _impl(&map, beg, initial_end(map, beg, end))
+{}
+
+inline bool BitMap::ReverseIterator::is_empty() const {
+  return _impl.is_empty();
+}
+
+inline BitMap::idx_t BitMap::ReverseIterator::index() const {
+  return _impl.last();
+}
+
+inline void BitMap::ReverseIterator::step() {
+  _impl.step_last();
+}
+
+inline BitMap::ReverseRBFIterator BitMap::ReverseIterator::begin() const {
+  return ReverseRBFIterator(_impl._map, _impl._cur_beg, _impl._cur_end);
+}
+
+inline BitMap::ReverseRBFIterator BitMap::ReverseIterator::end() const {
+  return ReverseRBFIterator(_impl._map, _impl._cur_beg, _impl._cur_beg);
+}
+
+/// BitMap::RBFIterator
+
+inline BitMap::RBFIterator::RBFIterator(const BitMap* map, idx_t beg, idx_t end)
+  : _impl(map, beg, end)
+{}
+
+inline bool BitMap::RBFIterator::operator!=(const RBFIterator& i) const {
+  // Shouldn't be comparing RBF iterators from different contexts.
+  assert(_impl._map == i._impl._map, "mismatched range-based for iterators");
+  assert(_impl._cur_end == i._impl._cur_end, "mismatched range-based for iterators");
+  return _impl._cur_beg != i._impl._cur_beg;
+}
+
+inline BitMap::idx_t BitMap::RBFIterator::operator*() const {
+  return _impl.first();
+}
+
+inline BitMap::RBFIterator& BitMap::RBFIterator::operator++() {
+  _impl.step_first();
+  return *this;
+}
+
+/// BitMap::ReverseRBFIterator
+
+inline BitMap::ReverseRBFIterator::ReverseRBFIterator(const BitMap* map,
+                                                      idx_t beg,
+                                                      idx_t end)
+  : _impl(map, beg, end)
+{}
+
+inline bool BitMap::ReverseRBFIterator::operator!=(const ReverseRBFIterator& i) const {
+  // Shouldn't be comparing RBF iterators from different contexts.
+  assert(_impl._map == i._impl._map, "mismatched range-based for iterators");
+  assert(_impl._cur_beg == i._impl._cur_beg, "mismatched range-based for iterators");
+  return _impl._cur_end != i._impl._cur_end;
+}
+
+inline BitMap::idx_t BitMap::ReverseRBFIterator::operator*() const {
+  return _impl.last();
+}
+
+inline BitMap::ReverseRBFIterator& BitMap::ReverseRBFIterator::operator++() {
+  _impl.step_last();
+  return *this;
 }
 
 // Returns a bit mask for a range of bits [beg, end) within a single word.  Each

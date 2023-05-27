@@ -267,7 +267,7 @@ class PackageSnippets {
                                                 if (!mm.flags().has(AccessFlag.STATIC))
                                                     storeStack.add(StoreInstruction.of(TypeKind.ReferenceType, slot++));
                                                 for (var pt : mm.methodTypeSymbol().parameterList()) {
-                                                    var tk = TypeKind.fromDescriptor(pt.descriptorString());
+                                                    var tk = TypeKind.from(pt);
                                                     storeStack.addFirst(StoreInstruction.of(tk, slot));
                                                     slot += tk.slotSize();
                                                 }

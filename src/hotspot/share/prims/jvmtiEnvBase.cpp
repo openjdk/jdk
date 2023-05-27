@@ -27,6 +27,7 @@
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/symbolTable.hpp"
+#include "classfile/vmSymbols.hpp"
 #include "jvmtifiles/jvmtiEnv.hpp"
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
@@ -56,7 +57,7 @@
 #include "runtime/signature.hpp"
 #include "runtime/stackWatermarkSet.inline.hpp"
 #include "runtime/threads.hpp"
-#include "runtime/threadSMR.hpp"
+#include "runtime/threadSMR.inline.hpp"
 #include "runtime/vframe.inline.hpp"
 #include "runtime/vframe_hp.hpp"
 #include "runtime/vmThread.hpp"
@@ -1318,6 +1319,19 @@ JvmtiEnvBase::is_cthread_with_continuation(JavaThread* jt) {
   return cont_entry != nullptr && is_cthread_with_mounted_vthread(jt);
 }
 
+// Check if VirtualThread or BoundVirtualThread is suspended.
+bool
+JvmtiEnvBase::is_vthread_suspended(oop vt_oop, JavaThread* jt) {
+  bool suspended = false;
+  if (java_lang_VirtualThread::is_instance(vt_oop)) {
+    suspended = JvmtiVTSuspender::is_vthread_suspended(vt_oop);
+  }
+  if (vt_oop->is_a(vmClasses::BoundVirtualThread_klass())) {
+    suspended = jt->is_suspended();
+  }
+  return suspended;
+}
+
 // If (thread == null) then return current thread object.
 // Otherwise return JNIHandles::resolve_external_guard(thread).
 oop
@@ -1363,6 +1377,30 @@ JvmtiEnvBase::get_threadOop_and_JavaThread(ThreadsList* t_list, jthread thread,
   if (java_lang_VirtualThread::is_instance(thread_oop) &&
       !JvmtiEnvBase::is_vthread_alive(thread_oop)) {
     return JVMTI_ERROR_THREAD_NOT_ALIVE;
+  }
+  return JVMTI_ERROR_NONE;
+}
+
+// Check for JVMTI_ERROR_NOT_SUSPENDED and JVMTI_ERROR_OPAQUE_FRAME errors.
+// Used in PopFrame and ForceEarlyReturn implementations.
+jvmtiError
+JvmtiEnvBase::check_non_suspended_or_opaque_frame(JavaThread* jt, oop thr_obj, bool self) {
+  bool is_virtual = thr_obj != nullptr && thr_obj->is_a(vmClasses::BaseVirtualThread_klass());
+
+  if (is_virtual) {
+    if (!is_JavaThread_current(jt, thr_obj)) {
+      if (!is_vthread_suspended(thr_obj, jt)) {
+        return JVMTI_ERROR_THREAD_NOT_SUSPENDED;
+      }
+      if (jt == nullptr) { // unmounted virtual thread
+        return JVMTI_ERROR_OPAQUE_FRAME;
+      }
+    }
+  } else { // platform thread
+    if (!self && !jt->is_suspended() &&
+        !jt->is_carrier_thread_suspended()) {
+      return JVMTI_ERROR_THREAD_NOT_SUSPENDED;
+    }
   }
   return JVMTI_ERROR_NONE;
 }
@@ -1526,6 +1564,104 @@ JvmtiEnvBase::is_in_thread_list(jint count, const jthread* list, oop jt_oop) {
     }
   }
   return false;
+}
+
+class VM_SetNotifyJvmtiEventsMode : public VM_Operation {
+private:
+  static bool _whitebox_used;
+  bool _enable;
+
+  // This function is needed only for testing purposes to support multiple
+  // enable&disable notifyJvmti events. Otherwise, there can be only one call
+  // to enable_virtual_threads_notify_jvmti() for late binding agents. There
+  // have to be no JvmtiThreadState's and need to correct them in such a case.
+  static void correct_jvmti_thread_state(JavaThread* jt) {
+    oop  ct_oop = jt->threadObj();
+    oop  vt_oop = jt->vthread();
+    JvmtiThreadState* jt_state = jt->jvmti_thread_state();
+    JvmtiThreadState* ct_state = java_lang_Thread::jvmti_thread_state(jt->threadObj());
+    JvmtiThreadState* vt_state = vt_oop != nullptr ? java_lang_Thread::jvmti_thread_state(vt_oop) : nullptr;
+    bool virt = vt_oop != nullptr && java_lang_VirtualThread::is_instance(vt_oop);
+
+    // Correct jt->jvmti_thread_state() and jt->jvmti_vthread().
+    // It was not maintained while notifyJvmti was disabled but there can be
+    // a leftover from previous cycle when notification were enabled.
+    if (virt) {
+      jt->set_jvmti_thread_state(nullptr);  // reset jt->jvmti_thread_state()
+      jt->set_jvmti_vthread(vt_oop);        // restore jt->jvmti_vthread()
+    } else {
+      jt->set_jvmti_thread_state(ct_state); // restore jt->jvmti_thread_state()
+      jt->set_jvmti_vthread(ct_oop);        // restore jt->jvmti_vthread()
+    }
+  }
+
+  // This function is called only if _enable == true.
+  // Iterates over all JavaThread's, counts VTMS transitions and restores
+  // jt->jvmti_thread_state() and jt->jvmti_vthread() for VTMS transition protocol.
+  int count_transitions_and_correct_jvmti_thread_states() {
+    int count = 0;
+
+    for (JavaThread* jt : ThreadsListHandle()) {
+      if (jt->is_in_VTMS_transition()) {
+        count++;
+        continue; // no need in JvmtiThreadState correction below if in transition
+      }
+      if (_whitebox_used) {
+        correct_jvmti_thread_state(jt); // needed in testing environment only
+      }
+    }
+    return count;
+  }
+
+public:
+  VMOp_Type type() const { return VMOp_SetNotifyJvmtiEventsMode; }
+  bool allow_nested_vm_operations() const { return false; }
+  VM_SetNotifyJvmtiEventsMode(bool enable) : _enable(enable) {
+    if (!enable) {
+      _whitebox_used = true; // disabling is available via WhiteBox only
+    }
+  }
+
+  void doit() {
+    int count = _enable ? count_transitions_and_correct_jvmti_thread_states() : 0;
+
+    JvmtiVTMSTransitionDisabler::set_VTMS_transition_count(count);
+    JvmtiVTMSTransitionDisabler::set_VTMS_notify_jvmti_events(_enable);
+  }
+};
+
+bool VM_SetNotifyJvmtiEventsMode::_whitebox_used = false;
+
+// This function is to support agents loaded into running VM.
+// Must be called in thread-in-native mode.
+bool
+JvmtiEnvBase::enable_virtual_threads_notify_jvmti() {
+  if (!Continuations::enabled()) {
+    return false;
+  }
+  if (JvmtiVTMSTransitionDisabler::VTMS_notify_jvmti_events()) {
+    return false; // already enabled
+  }
+  VM_SetNotifyJvmtiEventsMode op(true);
+  VMThread::execute(&op);
+  return true;
+}
+
+// This function is used in WhiteBox, only needed to test the function above.
+// It is unsafe to use this function when virtual threads are executed.
+// Must be called in thread-in-native mode.
+bool
+JvmtiEnvBase::disable_virtual_threads_notify_jvmti() {
+  if (!Continuations::enabled()) {
+    return false;
+  }
+  if (!JvmtiVTMSTransitionDisabler::VTMS_notify_jvmti_events()) {
+    return false; // already disabled
+  }
+  JvmtiVTMSTransitionDisabler disabler(true); // ensure there are no other disablers
+  VM_SetNotifyJvmtiEventsMode op(false);
+  VMThread::execute(&op);
+  return true;
 }
 
 // java_thread - protected by ThreadsListHandle
@@ -1924,10 +2060,12 @@ JvmtiEnvBase::force_early_return(jthread thread, jvalue value, TosState tos) {
   oop thread_obj = nullptr;
   jvmtiError err = get_threadOop_and_JavaThread(tlh.list(), thread, &java_thread, &thread_obj);
 
-  if (thread_obj != nullptr && thread_obj->is_a(vmClasses::BaseVirtualThread_klass())) {
-    // No support for virtual threads (yet).
-    return JVMTI_ERROR_OPAQUE_FRAME;
+  if (err != JVMTI_ERROR_NONE) {
+    return err;
   }
+  bool self = java_thread == current_thread;
+
+  err = check_non_suspended_or_opaque_frame(java_thread, thread_obj, self);
   if (err != JVMTI_ERROR_NONE) {
     return err;
   }
@@ -1946,8 +2084,8 @@ JvmtiEnvBase::force_early_return(jthread thread, jvalue value, TosState tos) {
   }
 
   SetForceEarlyReturn op(state, value, tos);
-  if (java_thread == current_thread) {
-    op.doit(java_thread, true /* self */);
+  if (self) {
+    op.doit(java_thread, self);
   } else {
     Handshake::execute(&op, java_thread);
   }
@@ -1962,12 +2100,6 @@ SetForceEarlyReturn::doit(Thread *target, bool self) {
 
   if (java_thread->is_exiting()) {
     return; /* JVMTI_ERROR_THREAD_NOT_ALIVE (default) */
-  }
-  if (!self) {
-    if (!java_thread->is_suspended()) {
-      _result = JVMTI_ERROR_THREAD_NOT_SUSPENDED;
-      return;
-    }
   }
 
   // Check to see if a ForceEarlyReturn was already in progress
@@ -2098,11 +2230,6 @@ UpdateForPopTopFrameClosure::doit(Thread *target, bool self) {
     return; /* JVMTI_ERROR_THREAD_NOT_ALIVE (default) */
   }
   assert(java_thread == _state->get_thread(), "Must be");
-
-  if (!self && !java_thread->is_suspended() && !java_thread->is_carrier_thread_suspended()) {
-    _result = JVMTI_ERROR_THREAD_NOT_SUSPENDED;
-    return;
-  }
 
   // Check to see if a PopFrame was already in progress
   if (java_thread->popframe_condition() != JavaThread::popframe_inactive) {

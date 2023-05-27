@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,10 +38,12 @@
   template(jdk_vm_ci_hotspot_HotSpotNmethod,                      "jdk/vm/ci/hotspot/HotSpotNmethod")                                     \
   template(jdk_vm_ci_hotspot_HotSpotResolvedJavaMethodImpl,       "jdk/vm/ci/hotspot/HotSpotResolvedJavaMethodImpl")                      \
   template(jdk_vm_ci_hotspot_HotSpotResolvedObjectTypeImpl,       "jdk/vm/ci/hotspot/HotSpotResolvedObjectTypeImpl")                      \
+  template(jdk_vm_ci_hotspot_HotSpotResolvedObjectTypeImpl_FieldInfo, "jdk/vm/ci/hotspot/HotSpotResolvedObjectTypeImpl$FieldInfo")        \
   template(jdk_vm_ci_hotspot_HotSpotResolvedPrimitiveType,        "jdk/vm/ci/hotspot/HotSpotResolvedPrimitiveType")                       \
   template(jdk_vm_ci_hotspot_HotSpotResolvedJavaFieldImpl,        "jdk/vm/ci/hotspot/HotSpotResolvedJavaFieldImpl")                       \
   template(jdk_vm_ci_hotspot_HotSpotCompressedNullConstant,       "jdk/vm/ci/hotspot/HotSpotCompressedNullConstant")                      \
   template(jdk_vm_ci_hotspot_HotSpotObjectConstantImpl,           "jdk/vm/ci/hotspot/HotSpotObjectConstantImpl")                          \
+  template(jdk_vm_ci_hotspot_HotSpotMethodData,                   "jdk/vm/ci/hotspot/HotSpotMethodData")                                  \
   template(jdk_vm_ci_hotspot_DirectHotSpotObjectConstantImpl,     "jdk/vm/ci/hotspot/DirectHotSpotObjectConstantImpl")                    \
   template(jdk_vm_ci_hotspot_IndirectHotSpotObjectConstantImpl,   "jdk/vm/ci/hotspot/IndirectHotSpotObjectConstantImpl")                  \
   template(jdk_vm_ci_hotspot_HotSpotStackFrameReference,          "jdk/vm/ci/hotspot/HotSpotStackFrameReference")                         \
@@ -80,7 +82,7 @@
   template(compileMethod_signature,                               "(Ljdk/vm/ci/hotspot/HotSpotResolvedJavaMethod;IJI)Ljdk/vm/ci/hotspot/HotSpotCompilationRequestResult;") \
   template(isGCSupported_name,                                    "isGCSupported")                                                        \
   template(fromMetaspace_name,                                    "fromMetaspace")                                                        \
-  template(method_fromMetaspace_signature,                        "(J)Ljdk/vm/ci/hotspot/HotSpotResolvedJavaMethod;")                     \
+  template(method_fromMetaspace_signature,                        "(JLjdk/vm/ci/hotspot/HotSpotResolvedObjectTypeImpl;)Ljdk/vm/ci/hotspot/HotSpotResolvedJavaMethod;") \
   template(constantPool_fromMetaspace_signature,                  "(J)Ljdk/vm/ci/hotspot/HotSpotConstantPool;")                           \
   template(klass_fromMetaspace_signature,                         "(J)Ljdk/vm/ci/hotspot/HotSpotResolvedObjectTypeImpl;")                 \
   template(primitive_fromMetaspace_signature,                     "(Ljdk/vm/ci/hotspot/HotSpotObjectConstantImpl;C)Ljdk/vm/ci/hotspot/HotSpotResolvedPrimitiveType;") \
@@ -92,8 +94,8 @@
   template(runtime_signature,                                     "()Ljdk/vm/ci/hotspot/HotSpotJVMCIRuntime;")                            \
   template(getCompiler_name,                                      "getCompiler")                                                          \
   template(getCompiler_signature,                                 "()Ljdk/vm/ci/runtime/JVMCICompiler;")                                  \
-  template(callToString_name,                                     "callToString")                                                         \
-  template(callToString_signature,                                "(Ljava/lang/Object;)Ljava/lang/String;")                               \
+  template(exceptionToString_name,                                "exceptionToString")                                                    \
+  template(exceptionToString_signature,                           "(Ljava/lang/Throwable;ZZ)[Ljava/lang/String;")                         \
   template(postTranslation_name,                                  "postTranslation")                                                      \
   template(getName_name,                                          "getName")                                                              \
   template(bootstrapFinished_name,                                "bootstrapFinished")                                                    \

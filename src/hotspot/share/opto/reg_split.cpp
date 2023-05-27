@@ -306,6 +306,7 @@ Node* clone_node(Node* def, Block *b, Compile* C) {
       C->record_failure(C2Compiler::retry_no_subsuming_loads());
     } else {
       // Bailout without retry
+      assert(false, "RA Split failed: attempt to clone node with anti_dependence");
       C->record_method_not_compilable("RA Split failed: attempt to clone node with anti_dependence");
     }
     return 0;

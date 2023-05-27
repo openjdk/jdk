@@ -331,6 +331,11 @@ class ImmutableCollections {
             return indexOf(o) >= 0;
         }
 
+        @Override
+        public List<E> reversed() {
+            return ReverseOrderListView.of(this, false);
+        }
+
         IndexOutOfBoundsException outOfBounds(int index) {
             return new IndexOutOfBoundsException("Index: " + index + " Size: " + size());
         }

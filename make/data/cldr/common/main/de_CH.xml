@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2022 Unicode, Inc.
+<!-- Copyright © 1991-2023 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -216,7 +216,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="volume-gallon-imperial">
 				<unitPattern count="one">{0} gal Imp.</unitPattern>
+				<unitPattern count="one" case="accusative">{0} gal Imp.</unitPattern>
+				<unitPattern count="one" case="dative">{0} gal Imp.</unitPattern>
+				<unitPattern count="one" case="genitive">{0} gal Imp.</unitPattern>
 				<unitPattern count="other">{0} gal Imp.</unitPattern>
+				<unitPattern count="other" case="accusative">{0} gal Imp.</unitPattern>
+				<unitPattern count="other" case="dative">{0} gal Imp.</unitPattern>
+				<unitPattern count="other" case="genitive">{0} gal Imp.</unitPattern>
 				<perUnitPattern>{0}/gal Imp.</perUnitPattern>
 			</unit>
 		</unitLength>
@@ -247,7 +253,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</unitLength>
 		<unitLength type="narrow">
 			<unit type="volume-jigger">
-				<displayName>Jigger</displayName>
+				<unitPattern count="one">Schuss</unitPattern>
+				<unitPattern count="other">{0} Schuss</unitPattern>
 			</unit>
 		</unitLength>
 	</units>
@@ -259,4 +266,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<styleName type="opsz" subtype="72">Plakatgrösse</styleName>
 		<styleName type="opsz" subtype="144">Ferngrösse</styleName>
 	</typographicNames>
+	<personNames>
+		<sampleName item="nativeFull">
+			<nameField type="surname2">Müller</nameField>
+		</sampleName>
+	</personNames>
 </ldml>

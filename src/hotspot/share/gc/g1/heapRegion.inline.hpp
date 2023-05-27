@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1ConcurrentMarkBitMap.inline.hpp"
 #include "gc/g1/g1MonotonicArena.inline.hpp"
+#include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1Predictions.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
@@ -54,7 +55,7 @@ inline HeapWord* HeapRegion::allocate_impl(size_t min_word_size,
     *actual_size = want_to_allocate;
     return obj;
   } else {
-    return NULL;
+    return nullptr;
   }
 }
 
@@ -77,7 +78,7 @@ inline HeapWord* HeapRegion::par_allocate_impl(size_t min_word_size,
         return obj;
       }
     } else {
-      return NULL;
+      return nullptr;
     }
   } while (true);
 }
@@ -142,11 +143,6 @@ inline bool HeapRegion::block_is_obj(const HeapWord* const p, HeapWord* const pb
 inline bool HeapRegion::is_obj_dead(const oop obj, HeapWord* const pb) const {
   assert(is_in_reserved(obj), "Object " PTR_FORMAT " must be in region", p2i(obj));
 
-  // Objects in closed archive regions are always live.
-  if (is_closed_archive()) {
-    return false;
-  }
-
   // From Remark until a region has been concurrently scrubbed, parts of the
   // region is not guaranteed to be parsable. Use the bitmap for liveness.
   if (obj_in_unparsable_area(obj, pb)) {
@@ -166,6 +162,10 @@ inline HeapWord* HeapRegion::next_live_in_unparsable(const HeapWord* p, HeapWord
   return next_live_in_unparsable(bitmap, p, limit);
 }
 
+inline bool HeapRegion::is_collection_set_candidate() const {
+ return G1CollectedHeap::heap()->is_collection_set_candidate(this);
+}
+
 inline size_t HeapRegion::block_size(const HeapWord* p) const {
   return block_size(p, parsable_bottom());
 }
@@ -181,10 +181,8 @@ inline size_t HeapRegion::block_size(const HeapWord* p, HeapWord* const pb) cons
 }
 
 inline void HeapRegion::reset_compacted_after_full_gc(HeapWord* new_top) {
-  assert(!is_pinned(), "must be");
-
   set_top(new_top);
-  // After a compaction the mark bitmap in a non-pinned regions is invalid.
+  // After a compaction the mark bitmap in a movable region is invalid.
   // But all objects are live, we get this by setting TAMS to bottom.
   init_top_at_mark_start();
 
@@ -296,17 +294,18 @@ inline void HeapRegion::reset_parsable_bottom() {
 }
 
 inline void HeapRegion::note_start_of_marking() {
-  assert(!is_closed_archive() || top_at_mark_start() == bottom(), "CA region's TAMS must always be at bottom");
-  if (!is_closed_archive()) {
+  assert(top_at_mark_start() == bottom(), "CA region's TAMS must always be at bottom");
+  if (is_old_or_humongous()) {
     set_top_at_mark_start(top());
   }
-  _gc_efficiency = -1.0;
 }
 
 inline void HeapRegion::note_end_of_marking(size_t marked_bytes) {
   assert_at_safepoint();
 
-  _garbage_bytes = byte_size(bottom(), top_at_mark_start()) - marked_bytes;
+  if (top_at_mark_start() != bottom()) {
+    _garbage_bytes = byte_size(bottom(), top_at_mark_start()) - marked_bytes;
+  }
 
   if (needs_scrubbing()) {
     _parsable_bottom = top_at_mark_start();
@@ -334,6 +333,10 @@ inline void HeapRegion::reset_top_at_mark_start() {
   set_top_at_mark_start(bottom());
 }
 
+inline bool HeapRegion::needs_scrubbing() const {
+  return is_old();
+}
+
 inline bool HeapRegion::in_collection_set() const {
   return G1CollectedHeap::heap()->is_in_cset(this);
 }
@@ -345,14 +348,14 @@ HeapWord* HeapRegion::do_oops_on_memregion_in_humongous(MemRegion mr,
   HeapRegion* sr = humongous_start_region();
   oop obj = cast_to_oop(sr->bottom());
 
-  // If concurrent and klass_or_null is NULL, then space has been
+  // If concurrent and klass_or_null is null, then space has been
   // allocated but the object has not yet been published by setting
   // the klass.  That can only happen if the card is stale.  However,
   // we've already set the card clean, so we must return failure,
   // since the allocating thread could have performed a write to the
   // card that might be missed otherwise.
-  if (!in_gc_pause && (obj->klass_or_null_acquire() == NULL)) {
-    return NULL;
+  if (!in_gc_pause && (obj->klass_or_null_acquire() == nullptr)) {
+    return nullptr;
   }
 
   // We have a well-formed humongous object at the start of sr.
@@ -498,10 +501,10 @@ HeapWord* HeapRegion::oops_on_memregion_seq_iterate_careful(MemRegion mr,
   if (is_humongous()) {
     return do_oops_on_memregion_in_humongous<Closure, in_gc_pause>(mr, cl);
   }
-  assert(is_old() || is_archive(), "Wrongly trying to iterate over region %u type %s", _hrm_index, get_type_str());
+  assert(is_old(), "Wrongly trying to iterate over region %u type %s", _hrm_index, get_type_str());
 
   // Because mr has been trimmed to what's been allocated in this
-  // region, the objects in these parts of the heap have non-NULL
+  // region, the objects in these parts of the heap have non-null
   // klass pointers. There's no need to use klass_or_null to detect
   // in-progress allocation.
   // We might be in the progress of scrubbing this region and in this
@@ -522,7 +525,7 @@ inline bool HeapRegion::has_valid_age_in_surv_rate() const {
 }
 
 inline bool HeapRegion::has_surv_rate_group() const {
-  return _surv_rate_group != NULL;
+  return _surv_rate_group != nullptr;
 }
 
 inline double HeapRegion::surv_rate_prediction(G1Predictions const& predictor) const {
@@ -531,7 +534,7 @@ inline double HeapRegion::surv_rate_prediction(G1Predictions const& predictor) c
 }
 
 inline void HeapRegion::install_surv_rate_group(G1SurvRateGroup* surv_rate_group) {
-  assert(surv_rate_group != NULL, "pre-condition");
+  assert(surv_rate_group != nullptr, "pre-condition");
   assert(!has_surv_rate_group(), "pre-condition");
   assert(is_young(), "pre-condition");
 
@@ -544,7 +547,7 @@ inline void HeapRegion::uninstall_surv_rate_group() {
     assert(has_valid_age_in_surv_rate(), "pre-condition");
     assert(is_young(), "pre-condition");
 
-    _surv_rate_group = NULL;
+    _surv_rate_group = nullptr;
     _age_index = G1SurvRateGroup::InvalidAgeIndex;
   } else {
     assert(!has_valid_age_in_surv_rate(), "pre-condition");
