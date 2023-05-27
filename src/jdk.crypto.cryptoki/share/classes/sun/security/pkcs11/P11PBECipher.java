@@ -39,7 +39,6 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.ShortBufferException;
 import javax.crypto.spec.PBEKeySpec;
-import javax.crypto.spec.PBEParameterSpec;
 
 import sun.security.jca.JCAUtil;
 import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
@@ -107,9 +106,8 @@ final class P11PBECipher extends CipherSpi {
     // see JCE spec
     @Override
     protected AlgorithmParameters engineGetParameters() {
-        return pbes2Params.getAlgorithmParameters(
-                blkSize, pbeAlg, P11Util.getSunJceProvider(),
-                JCAUtil.getSecureRandom());
+        return pbes2Params.getAlgorithmParameters(blkSize, pbeAlg,
+                P11Util.getSunJceProvider(), JCAUtil.getSecureRandom());
     }
 
     // see JCE spec
@@ -134,10 +132,18 @@ final class P11PBECipher extends CipherSpi {
             // because this is a PBE Cipher service. In addition to checking the
             // key, check that params (if passed) are consistent.
             PBEUtil.checkKeyAndParams(key, params, pbeAlg);
-            if (params instanceof PBEParameterSpec pbeParams) {
-                // Reassign params to the underlying service params.
-                params = pbeParams.getParameterSpec();
+            // At this point, we know that the key is a P11PBEKey.
+            P11Key.P11PBEKey p11PBEKey = (P11Key.P11PBEKey) key;
+            // PBE services require a PBE key of the same algorithm and the
+            // underlying service (non-PBE) won't check it.
+            if (!pbeAlg.equals(p11PBEKey.getAlgorithm())) {
+                throw new InvalidKeyException("Cannot use a " +
+                        p11PBEKey.getAlgorithm() + " key for a " + pbeAlg +
+                        " service");
             }
+            pbes2Params.initialize(blkSize, opmode,
+                    p11PBEKey.getIterationCount(), p11PBEKey.getSalt(), params,
+                    random);
         } else {
             // If the key is not a P11Key, a derivation is needed. Data for
             // derivation has to be carried either as part of the key or params.
@@ -158,9 +164,8 @@ final class P11PBECipher extends CipherSpi {
             } finally {
                 pbeSpec.clearPassword();
             }
-            params = pbes2Params.getIvSpec();
         }
-        cipher.engineInit(opmode, key, params, random);
+        cipher.engineInit(opmode, key, pbes2Params.getIvSpec(), random);
     }
 
     // see JCE spec
@@ -209,9 +214,11 @@ final class P11PBECipher extends CipherSpi {
 
     // see JCE spec
     @Override
-    protected int engineGetKeySize(Key key)
-            throws InvalidKeyException {
-        return cipher.engineGetKeySize(key);
+    protected int engineGetKeySize(Key key) {
+        // It's guaranteed that when engineInit succeeds, the key length
+        // for the underlying cipher is equal to the PBE service key length.
+        // Otherwise, initialization fails.
+        return svcPbeKi.keyLen;
     }
 
 }

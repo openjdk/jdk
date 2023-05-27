@@ -500,7 +500,7 @@ abstract class P11Key implements Key, Length {
     static final class P11PBEKey extends P11SecretKey
             implements PBEKey {
         private static final long serialVersionUID = 6847576994253634876L;
-        private final char[] password;
+        private char[] password;
         private final byte[] salt;
         private final int iterationCount;
         P11PBEKey(Session session, long keyID, String algorithm,
@@ -514,6 +514,9 @@ abstract class P11Key implements Key, Length {
 
         @Override
         public char[] getPassword() {
+            if (password == null) {
+                throw new IllegalStateException("password has been cleared");
+            }
             return password.clone();
         }
 
@@ -529,6 +532,7 @@ abstract class P11Key implements Key, Length {
 
         void clearPassword() {
             Arrays.fill(password, '\0');
+            password = null;
         }
     }
 

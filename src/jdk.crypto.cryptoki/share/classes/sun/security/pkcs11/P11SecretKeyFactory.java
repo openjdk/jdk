@@ -579,7 +579,7 @@ final class P11SecretKeyFactory extends SecretKeyFactorySpi {
             }
         } else if (keySpec instanceof PBEKeySpec pbeKeySpec &&
                 svcPbeKi != null) {
-            return (SecretKey) derivePBEKey(token, pbeKeySpec, svcPbeKi);
+            return derivePBEKey(token, pbeKeySpec, svcPbeKi);
         } else if (algorithm.equalsIgnoreCase("DES")) {
             if (keySpec instanceof DESKeySpec desKeySpec) {
                 return generateDESSecret(desKeySpec.getKey(), "DES");

@@ -31,9 +31,7 @@ import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.security.*;
-import java.util.Arrays;
 
-import jdk.internal.access.SharedSecrets;
 import sun.security.pkcs11.wrapper.PKCS11Exception;
 import static sun.security.pkcs11.wrapper.PKCS11Exception.RV.*;
 
@@ -90,6 +88,7 @@ public final class P11Util {
         int i = 0;
         while (passwordBytes.hasRemaining()) {
             encPassword[i] = (char) (passwordBytes.get() & 0xFF);
+            // Erase password bytes as we read during encoding.
             passwordBytes.put(i++, (byte) 0);
         }
         return encPassword;

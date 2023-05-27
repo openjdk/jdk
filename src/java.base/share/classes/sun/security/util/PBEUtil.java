@@ -68,6 +68,51 @@ public final class PBEUtil {
         private IvParameterSpec ivSpec;
 
         /*
+         * Initialize a PBES2Params instance. May generate random salt and
+         * IV if not passed and the operation is encryption. If initialization
+         * fails, values are reset. Used by PBES2Params and P11PBECipher
+         * (SunPKCS11).
+         */
+        public void initialize(int blkSize, int opmode, int iCount, byte[] salt,
+                AlgorithmParameterSpec params, SecureRandom random)
+                throws InvalidAlgorithmParameterException {
+            try {
+                boolean doEncrypt = ((opmode == Cipher.ENCRYPT_MODE) ||
+                        (opmode == Cipher.WRAP_MODE));
+                if (params instanceof PBEParameterSpec pbeParams) {
+                    params = pbeParams.getParameterSpec();
+                }
+                if (params instanceof IvParameterSpec iv) {
+                    this.ivSpec = iv;
+                } else if (params == null && doEncrypt) {
+                    byte[] ivBytes = new byte[blkSize];
+                    random.nextBytes(ivBytes);
+                    this.ivSpec = new IvParameterSpec(ivBytes);
+                } else {
+                    throw new InvalidAlgorithmParameterException("Wrong " +
+                            "parameter type: IvParameterSpec " +
+                            (doEncrypt ? "or null " : "") + "expected");
+                }
+                this.iCount = iCount;
+                if (salt == null) {
+                    if (doEncrypt) {
+                        salt = new byte[DEFAULT_SALT_LENGTH];
+                        random.nextBytes(salt);
+                    } else {
+                        throw new InvalidAlgorithmParameterException("Salt " +
+                                "needed for decryption");
+                    }
+                }
+                this.salt = salt;
+            } catch (InvalidAlgorithmParameterException e) {
+                this.ivSpec = null;
+                this.iCount = 0;
+                this.salt = null;
+                throw e;
+            }
+        }
+
+        /*
          * Obtain an IvParameterSpec for Cipher services. This method returns
          * null when the state is not initialized. Used by PBES2Core (SunJCE)
          * and P11PBECipher (SunPKCS11).
@@ -77,32 +122,23 @@ public final class PBEUtil {
         }
 
         /*
-         * Obtain AlgorithmParameters for Cipher services. If the state is not
-         * initialized, this method will generate new values randomly or assign
-         * from defaults. If the state is initialized, existing values will be
-         * returned. Used by PBES2Core (SunJCE) and P11PBECipher (SunPKCS11).
+         * Obtain AlgorithmParameters for Cipher services. This method will
+         * initialize PBES2Params if needed, generating new values randomly or
+         * assigning from defaults. If PBES2Params is initialized, existing
+         * values will be returned. Used by PBES2Core (SunJCE) and
+         * P11PBECipher (SunPKCS11).
          */
         public AlgorithmParameters getAlgorithmParameters(int blkSize,
                 String pbeAlgo, Provider algParamsProv, SecureRandom random) {
-            AlgorithmParameters params = null;
-            if (salt == null) {
-                // generate random salt and use default iteration count
-                salt = new byte[DEFAULT_SALT_LENGTH];
-                random.nextBytes(salt);
-                iCount = DEFAULT_ITERATIONS;
-            }
-            if (ivSpec == null) {
-                // generate random IV
-                byte[] ivBytes = new byte[blkSize];
-                random.nextBytes(ivBytes);
-                ivSpec = new IvParameterSpec(ivBytes);
-            }
-            PBEParameterSpec pbeSpec = new PBEParameterSpec(
-                    salt, iCount, ivSpec);
+            AlgorithmParameters params;
             try {
+                if (iCount == 0 && salt == null && ivSpec == null) {
+                    initialize(blkSize, Cipher.ENCRYPT_MODE, DEFAULT_ITERATIONS,
+                            null, null, random);
+                }
                 params = AlgorithmParameters.getInstance(pbeAlgo,
                         algParamsProv);
-                params.init(pbeSpec);
+                params.init(new PBEParameterSpec(salt, iCount, ivSpec));
             } catch (NoSuchAlgorithmException nsae) {
                 // should never happen
                 throw new RuntimeException("AlgorithmParameters for "
@@ -110,14 +146,18 @@ public final class PBEUtil {
             } catch (InvalidParameterSpecException ipse) {
                 // should never happen
                 throw new RuntimeException("PBEParameterSpec not supported");
+            } catch (InvalidAlgorithmParameterException iape) {
+                // should never happen
+                throw new RuntimeException("Error initializing PBES2Params");
             }
             return params;
         }
 
         /*
-         * Obtain a PBEKeySpec for Cipher services, after key and parameters
-         * validation, random generation or assignment from defaults. Used by
-         * PBES2Core (SunJCE) and P11PBECipher (SunPKCS11).
+         * Initialize PBES2Params and obtain a PBEKeySpec for Cipher services.
+         * Data from the key, parameters, defaults or random may be used for
+         * initialization. Used by PBES2Core (SunJCE) and P11PBECipher
+         * (SunPKCS11).
          */
         public PBEKeySpec getPBEKeySpec(int blkSize, int keyLength, int opmode,
                 Key key, AlgorithmParameterSpec params, SecureRandom random)
@@ -125,68 +165,41 @@ public final class PBEUtil {
             if (key == null) {
                 throw new InvalidKeyException("Null key");
             }
-
-            char[] passwdChars = null;
-            salt = null;
-            iCount = 0;
-            ivSpec = null;
             PBEKeySpec pbeSpec;
             byte[] passwdBytes;
+            char[] passwdChars = null;
             if (!(key.getAlgorithm().regionMatches(true, 0, "PBE", 0, 3)) ||
                     (passwdBytes = key.getEncoded()) == null) {
                 throw new InvalidKeyException("Missing password");
             }
             try {
-                boolean doEncrypt = ((opmode == Cipher.ENCRYPT_MODE) ||
-                            (opmode == Cipher.WRAP_MODE));
-
+                int iCountInit;
+                byte[] saltInit;
                 // Extract from the supplied PBE params, if present
                 if (params instanceof PBEParameterSpec pbeParams) {
                     // salt should be non-null per PBEParameterSpec
-                    salt = check(pbeParams.getSalt());
-                    iCount = check(pbeParams.getIterationCount());
-                    AlgorithmParameterSpec ivParams =
-                            pbeParams.getParameterSpec();
-                    if (ivParams instanceof IvParameterSpec iv) {
-                        ivSpec = iv;
-                    } else if (ivParams == null && doEncrypt) {
-                        // generate random IV
-                        byte[] ivBytes = new byte[blkSize];
-                        random.nextBytes(ivBytes);
-                        ivSpec = new IvParameterSpec(ivBytes);
-                    } else {
-                        throw new InvalidAlgorithmParameterException(
-                                "Wrong parameter type: IV expected");
-                    }
-                } else if (params == null && doEncrypt) {
+                    iCountInit = check(pbeParams.getIterationCount());
+                    saltInit = check(pbeParams.getSalt());
+                } else if (params == null) {
                     // Try extracting from the key if present. If unspecified,
-                    // PBEKey returns null and 0 respectively.
+                    // PBEKey returns 0 and null respectively.
                     if (key instanceof javax.crypto.interfaces.PBEKey pbeKey) {
-                        salt = check(pbeKey.getSalt());
-                        iCount = check(pbeKey.getIterationCount());
+                        iCountInit = check(pbeKey.getIterationCount());
+                        saltInit = check(pbeKey.getSalt());
+                    } else {
+                        iCountInit = DEFAULT_ITERATIONS;
+                        saltInit = null;
                     }
-                    if (salt == null) {
-                        // generate random salt
-                        salt = new byte[DEFAULT_SALT_LENGTH];
-                        random.nextBytes(salt);
-                    }
-                    if (iCount == 0) {
-                        // use default iteration count
-                        iCount = DEFAULT_ITERATIONS;
-                    }
-                    // generate random IV
-                    byte[] ivBytes = new byte[blkSize];
-                    random.nextBytes(ivBytes);
-                    ivSpec = new IvParameterSpec(ivBytes);
                 } else {
                     throw new InvalidAlgorithmParameterException(
                             "Wrong parameter type: PBE expected");
                 }
+                initialize(blkSize, opmode, iCountInit, saltInit, params,
+                        random);
                 passwdChars = new char[passwdBytes.length];
                 for (int i = 0; i < passwdChars.length; i++) {
                     passwdChars[i] = (char) (passwdBytes[i] & 0x7f);
                 }
-
                 pbeSpec = new PBEKeySpec(passwdChars, salt, iCount, keyLength);
             } finally {
                 // password char[] was cloned in PBEKeySpec constructor,

@@ -65,10 +65,8 @@ final class PBKDF2KeyImpl implements javax.crypto.interfaces.PBEKey {
     private byte[] key;
 
     // The following fields are not Serializable. See writeReplace method.
-    @SuppressWarnings("serial")
-    private Mac prf;
-    @SuppressWarnings("serial")
-    private Cleaner.Cleanable cleaner;
+    private transient Mac prf;
+    private transient Cleaner.Cleanable cleaner;
 
     private static byte[] getPasswordBytes(char[] passwd) {
         CharBuffer cb = CharBuffer.wrap(passwd);
