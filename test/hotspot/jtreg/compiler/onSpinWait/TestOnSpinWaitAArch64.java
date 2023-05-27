@@ -119,7 +119,7 @@ public class TestOnSpinWaitAArch64 {
     // #           [sp+0x20]  (sp of caller)
     // 0x0000ffffa409da80:   nop
     // 0x0000ffffa409da84:   sub sp, sp, #0x20
-    // 0x0000ffffa409da88:   stp x29, x30, [sp, #16]         ;*synchronization entry
+    // 0x0000ffffa409da88:   stp x29, x30, [sp, #16]         ; * invocation entry (also synchronization entry if synchronized)
     //                                                       ; - compiler.onSpinWait.TestOnSpinWaitAArch64$Launcher::test@-1 (line 187)
     // 0x0000ffffa409da8c:   nop
     // 0x0000ffffa409da90:   nop
