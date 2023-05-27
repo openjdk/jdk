@@ -31,6 +31,8 @@ serviceability/dcmd/thread/PrintConcurrentLocksTest.java 8308033 generic-all
 serviceability/dcmd/thread/PrintTest.java 8308033 generic-all
 serviceability/dcmd/thread/ThreadDumpToFileTest.java 8308033 generic-all
 serviceability/tmtools/jstack/DaemonThreadTest.java 8308033 generic-all
+vmTestbase/nsk/jvmti/scenarios/allocation/AP04/ap04t001/TestDescription.java 8308985 generic-all
+vmTestbase/nsk/jvmti/scenarios/allocation/AP04/ap04t002/TestDescription.java 8308985 generic-all
 
 ####
 ## Classes not unloaded as expected (TODO, need to check if FJ keeps a reference)
