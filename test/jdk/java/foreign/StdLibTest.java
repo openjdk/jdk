@@ -134,6 +134,11 @@ public class StdLibTest extends NativeTestHelper {
         assertEquals(found, expected.length());
     }
 
+    @Test
+    void testSystemLibraryBadLookupName() {
+        assertTrue(LINKER.defaultLookup().find("strlen\u0000foobar").isEmpty());
+    }
+
     static class StdLibHelper {
 
         final static MethodHandle strcat = abi.downcallHandle(abi.defaultLookup().find("strcat").get(),

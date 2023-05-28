@@ -1218,11 +1218,10 @@ public:
 class G1ObjectCountIsAliveClosure: public BoolObjectClosure {
   G1CollectedHeap* _g1h;
 public:
-  G1ObjectCountIsAliveClosure(G1CollectedHeap* g1h) : _g1h(g1h) { }
+  G1ObjectCountIsAliveClosure(G1CollectedHeap* g1h) : _g1h(g1h) {}
 
   bool do_object_b(oop obj) {
-    return obj != nullptr &&
-           (!_g1h->is_in_reserved(obj) || !_g1h->is_obj_dead(obj));
+    return !_g1h->is_obj_dead(obj);
   }
 };
 
