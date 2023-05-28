@@ -11020,9 +11020,9 @@ instruct convF2I_reg_reg(rRegI dst, regF src, rFlagsReg cr)
 %{
   match(Set dst (ConvF2I src));
   effect(KILL cr);
-  format %{ "convert_f2i $dst,$src" %}
+  format %{ "convert_f2i $dst, $src" %}
   ins_encode %{
-    __ convert_f2i($dst$$Register, $src$$XMMRegister);
+    __ convertF2I(T_INT, T_FLOAT, $dst$$Register, $src$$XMMRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -11031,9 +11031,9 @@ instruct convF2L_reg_reg(rRegL dst, regF src, rFlagsReg cr)
 %{
   match(Set dst (ConvF2L src));
   effect(KILL cr);
-  format %{ "convert_f2l $dst,$src"%}
+  format %{ "convert_f2l $dst, $src"%}
   ins_encode %{
-    __ convert_f2l($dst$$Register, $src$$XMMRegister);
+    __ convertF2I(T_LONG, T_FLOAT, $dst$$Register, $src$$XMMRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -11042,9 +11042,9 @@ instruct convD2I_reg_reg(rRegI dst, regD src, rFlagsReg cr)
 %{
   match(Set dst (ConvD2I src));
   effect(KILL cr);
-  format %{ "convert_d2i $dst,$src"%}
+  format %{ "convert_d2i $dst, $src"%}
   ins_encode %{
-    __ convert_d2i($dst$$Register, $src$$XMMRegister);
+    __ convertF2I(T_INT, T_DOUBLE, $dst$$Register, $src$$XMMRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -11053,9 +11053,9 @@ instruct convD2L_reg_reg(rRegL dst, regD src, rFlagsReg cr)
 %{
   match(Set dst (ConvD2L src));
   effect(KILL cr);
-  format %{ "convert_d2l $dst,$src"%}
+  format %{ "convert_d2l $dst, $src"%}
   ins_encode %{
-    __ convert_d2l($dst$$Register, $src$$XMMRegister);
+    __ convertF2I(T_LONG, T_DOUBLE, $dst$$Register, $src$$XMMRegister);
   %}
   ins_pipe(pipe_slow);
 %}

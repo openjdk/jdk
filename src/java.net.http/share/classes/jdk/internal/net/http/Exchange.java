@@ -288,7 +288,7 @@ final class Exchange<T> {
         IOException cause = null;
         CompletableFuture<? extends ExchangeImpl<T>> cf = null;
         if (failed != null) {
-            synchronized(this) {
+            synchronized (this) {
                 cause = failed;
                 impl = exchImpl;
                 cf = exchangeCF;
@@ -371,7 +371,7 @@ final class Exchange<T> {
         // instead - as we need CAS semantics.
         synchronized (this) { exchangeCF = cf; };
         res = cf.whenComplete((r,x) -> {
-            synchronized(Exchange.this) {
+            synchronized (Exchange.this) {
                 if (exchangeCF == cf) exchangeCF = null;
             }
         });

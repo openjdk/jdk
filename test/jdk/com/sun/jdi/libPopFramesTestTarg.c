@@ -1,6 +1,5 @@
-
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,20 +21,40 @@
  * questions.
  */
 
-package gc;
+#include <stdio.h>
+#include <stdlib.h>
+
+#include "jni.h"
+
+static jclass test_class;
+static jmethodID mid;
+static jint current_jni_version = JNI_VERSION_19;
+
+
+JNIEXPORT jint JNICALL
+JNI_OnLoad(JavaVM *vm, void *reserved) {
+    JNIEnv *env;
+    jclass cl;
+
+    (*vm)->GetEnv(vm, (void **) &env, current_jni_version);
+
+    cl = (*env)->FindClass(env, "PopFramesTestTarg");
+    test_class = (*env)->NewGlobalRef(env, cl);
+    mid = (*env)->GetStaticMethodID(env, test_class, "upcallMethod", "()V");
+
+    return current_jni_version;
+}
 
 /*
- * @test TestMemoryInitializationWithSerial
- * @bug 4668531
- * @library /
- * @requires vm.debug & vm.gc.Serial
- * @summary Simple test for -XX:+CheckMemoryInitialization doesn't crash VM
- * @run main/othervm -XX:+UseSerialGC -XX:+CheckMemoryInitialization gc.TestMemoryInitializationWithSerial
+ * Class:     NativeMethod
+ * Method:    doUpcall
+ * Signature: ()V
  */
+JNIEXPORT void JNICALL Java_PopFramesTestTarg_doUpcall(JNIEnv *env, jobject obj) {
+    (*env)->CallStaticVoidMethod(env, obj, mid);
 
-public class TestMemoryInitializationWithSerial {
-
-    public static void main(String args[]) {
-        TestMemoryInitialization.main(args);
+    if ((*env)->ExceptionCheck(env)) {
+        (*env)->ExceptionDescribe(env);
+        (*env)->FatalError(env, "Exception thrown");
     }
 }

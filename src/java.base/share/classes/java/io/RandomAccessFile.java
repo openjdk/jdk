@@ -758,9 +758,9 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * If the byte read is {@code b}, where
      * {@code 0 <= b <= 255},
      * then the result is:
-     * <blockquote><pre>
+     * {@snippet lang=java :
      *     (byte)(b)
-     * </pre></blockquote>
+     * }
      * <p>
      * This method blocks until the byte is read, the end of the stream
      * is detected, or an exception is thrown.
@@ -801,9 +801,9 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * {@code b1} and {@code b2}, where each of the two values is
      * between {@code 0} and {@code 255}, inclusive, then the
      * result is equal to:
-     * <blockquote><pre>
-     *     (short)((b1 &lt;&lt; 8) | b2)
-     * </pre></blockquote>
+     * {@snippet lang=java :
+     *     (short)((b1 << 8) | b2)
+     * }
      * <p>
      * This method blocks until the two bytes are read, the end of the
      * stream is detected, or an exception is thrown.
@@ -825,9 +825,9 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * {@code b1} and {@code b2}, where
      * {@code 0 <= b1, b2 <= 255},
      * then the result is equal to:
-     * <blockquote><pre>
-     *     (b1 &lt;&lt; 8) | b2
-     * </pre></blockquote>
+     * {@snippet lang=java :
+     *     (b1 << 8) | b2
+     * }
      * <p>
      * This method blocks until the two bytes are read, the end of the
      * stream is detected, or an exception is thrown.
@@ -851,9 +851,9 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * {@code b1} and {@code b2}, where
      * {@code 0 <= b1, b2 <= 255},
      * then the result is equal to:
-     * <blockquote><pre>
-     *     (char)((b1 &lt;&lt; 8) | b2)
-     * </pre></blockquote>
+     * {@snippet lang=java :
+     *     (char)((b1 << 8) | b2)
+     * }
      * <p>
      * This method blocks until the two bytes are read, the end of the
      * stream is detected, or an exception is thrown.
@@ -875,9 +875,9 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * {@code b2}, {@code b3}, and {@code b4}, where
      * {@code 0 <= b1, b2, b3, b4 <= 255},
      * then the result is equal to:
-     * <blockquote><pre>
-     *     (b1 &lt;&lt; 24) | (b2 &lt;&lt; 16) + (b3 &lt;&lt; 8) + b4
-     * </pre></blockquote>
+     * {@snippet lang=java :
+     *     (b1 << 24) | (b2 << 16) + (b3 << 8) + b4
+     * }
      * <p>
      * This method blocks until the four bytes are read, the end of the
      * stream is detected, or an exception is thrown.
@@ -900,17 +900,17 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * {@code b1}, {@code b2}, {@code b3},
      * {@code b4}, {@code b5}, {@code b6},
      * {@code b7}, and {@code b8,} where:
-     * <blockquote><pre>
-     *     0 &lt;= b1, b2, b3, b4, b5, b6, b7, b8 &lt;=255,
-     * </pre></blockquote>
+     * {@snippet :
+     *     0 <= b1, b2, b3, b4, b5, b6, b7, b8 <= 255
+     * }
      * <p>
      * then the result is equal to:
-     * <blockquote><pre>
-     *     ((long)b1 &lt;&lt; 56) + ((long)b2 &lt;&lt; 48)
-     *     + ((long)b3 &lt;&lt; 40) + ((long)b4 &lt;&lt; 32)
-     *     + ((long)b5 &lt;&lt; 24) + ((long)b6 &lt;&lt; 16)
-     *     + ((long)b7 &lt;&lt; 8) + b8
-     * </pre></blockquote>
+     * {@snippet lang=java :
+     *     ((long)b1 << 56) + ((long)b2 << 48)
+     *         + ((long)b3 << 40) + ((long)b4 << 32)
+     *         + ((long)b5 << 24) + ((long)b6 << 16)
+     *         + ((long)b7 << 8) + b8
+     * }
      * <p>
      * This method blocks until the eight bytes are read, the end of the
      * stream is detected, or an exception is thrown.
