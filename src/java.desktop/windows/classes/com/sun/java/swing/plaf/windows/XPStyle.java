@@ -55,8 +55,8 @@ import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
 import java.awt.image.WritableRaster;
 import java.security.AccessController;
-
 import java.util.HashMap;
+
 import javax.swing.AbstractButton;
 import javax.swing.CellRendererPane;
 import javax.swing.JButton;
