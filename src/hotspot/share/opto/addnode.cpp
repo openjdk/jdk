@@ -33,6 +33,7 @@
 #include "opto/mulnode.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/subnode.hpp"
+#include "utilities/pair.hpp"
 
 // Portions of code courtesy of Clifford Click
 
@@ -1086,20 +1087,25 @@ static bool can_overflow(const TypeInt* t, jint c) {
           (c > 0 && (java_add(t_hi, c) < t_hi)));
 }
 
-// Return:
-// <x, C>,       if n is of the form x + C, where 'C' is a non-TOP constant;
-// <nullptr, _>, if n is of the form x + C, where 'C' is a TOP constant;
-// <n, con>      otherwise.
-static Node* constant_add_input(Node* n, jint* con) {
-  if (n->Opcode() == Op_AddI && n->in(2)->is_Con()) {
-    const Type* t = n->in(2)->bottom_type();
-    if (t == Type::TOP) {
-      return nullptr;
-    }
-    *con = t->is_int()->get_con();
-    n = n->in(1);
+typedef const Pair<Node*, jint> ConstAddOperands;
+
+// If n is an addition of a variable x with a constant C, return either <x, C>
+// if C is non-TOP or <nullptr, 0> if C is TOP. Otherwise, return <n, 0>.
+static ConstAddOperands as_add_with_constant(Node* n) {
+  if (n->Opcode() != Op_AddI) {
+    return ConstAddOperands(n, 0);
   }
-  return n;
+  Node* x = n->in(1);
+  Node* c = n->in(2);
+  if (!c->is_Con()) {
+    return ConstAddOperands(n, 0);
+  }
+  const Type* c_type = c->bottom_type();
+  if (c_type == Type::TOP) {
+    // If C is TOP, return nullptr to stop idealization.
+    return ConstAddOperands(nullptr, 0);
+  }
+  return ConstAddOperands(x, c_type->is_int()->get_con());
 }
 
 // Transform opcode(x + x_off, y + y_off) into x + opcode(x_off, y_off), where
@@ -1118,14 +1124,19 @@ static Node* extract_addition(PhaseGVN* phase, Node* x, jint x_off, Node* y, jin
 
 Node* MaxNode::IdealI(PhaseGVN* phase, bool can_reshape, int opcode) {
   assert(opcode == Op_MinI || opcode == Op_MaxI, "Unexpected opcode");
+
   Node* l = in(1);
-  Node* r = in(2);
-  jint x_off = 0;
-  Node* x = constant_add_input(l, &x_off);
+  ConstAddOperands xC = as_add_with_constant(l);
+  Node* x = xC.first;
   if (x == nullptr) return nullptr;
-  jint y_off = 0;
-  Node* y = constant_add_input(r, &y_off);
+  jint x_off = xC.second;
+
+  Node* r = in(2);
+  ConstAddOperands yC = as_add_with_constant(r);
+  Node* y = yC.first;
   if (y == nullptr) return nullptr;
+  jint y_off = yC.second;
+
   // Try to transform opcode(x + x_off, opcode(y + y_off, z)) (in any of its
   // four possible permutations given by opcode's commutativity) into
   // opcode(x + opcode(x_off, y_off), z), where opcode is either MinI or MaxI,
@@ -1138,15 +1149,19 @@ Node* MaxNode::IdealI(PhaseGVN* phase, bool can_reshape, int opcode) {
     for (uint inner_input = 1; inner_input <= 2; inner_input++) {
       Node* inner_add = n->in(inner_input);      // Addition within inner opcode (y + y_off).
       Node* z = n->in(inner_input == 1 ? 2 : 1); // Opposite operand.
+      ConstAddOperands inner_xyC = as_add_with_constant(inner_add);
+      if (inner_xyC.first == nullptr) {
+        return nullptr;
+      }
       if (outer_input == 1) { // Update x from left inner add.
-        x = constant_add_input(inner_add, &x_off);
-        if (x == nullptr) {
-          return nullptr;
+        x = inner_xyC.first;
+        if (x != inner_add) {
+          x_off = inner_xyC.second;
         }
       } else {                // Update y from right inner add.
-        y = constant_add_input(inner_add, &y_off);
-        if (y == nullptr) {
-          return nullptr;
+        y = inner_xyC.first;
+        if (y != inner_add) {
+          y_off = inner_xyC.second;
         }
       }
       // We have collected x, x_off, y, y_off, and z. Try to extract the inner
