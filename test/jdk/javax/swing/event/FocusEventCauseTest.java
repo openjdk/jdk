@@ -32,7 +32,7 @@
 
 import java.awt.Dimension;
 import java.awt.Point;
-import java.awt.Robot;;
+import java.awt.Robot;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.awt.event.InputEvent;
