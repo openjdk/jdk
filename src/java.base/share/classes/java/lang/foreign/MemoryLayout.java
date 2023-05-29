@@ -223,7 +223,7 @@ import jdk.internal.javac.PreviewFeature;
  * <li>{@code L} is a sequence layout and {@code E} is a sequence path element (one of {@link PathElement#sequenceElement(long)},
  * {@link PathElement#sequenceElement(long, long)} or {@link PathElement#sequenceElement()}). Moreover, if {@code E}
  * contains one or more sequence indices, such indices have to be compatible with the sequence layout's element count;</li>
- * <li>{@code L} is a group layout and {@code E} is a group path element (one of {@link PathElement#groupElement(long)}
+ * <li>{@code L} is a group layout and {@code E} is a group path element (one of {@link PathElement#groupElement(String)}
  * or {@link PathElement#groupElement(long)}). Moreover, the group path element must refer to a valid member layout in
  * {@code L}, either by name, or index;</li>
  * <li>{@code L} is an address layout and {@code E} is a {@linkplain PathElement#dereferenceElement() dereference path element}.
