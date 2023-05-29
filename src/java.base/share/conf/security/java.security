@@ -362,8 +362,9 @@ ssl.TrustManagerFactory.algorithm=PKIX
 #
 # any positive value: the number of seconds to use the stale names
 # zero: do not use stale names
+# negative values are ignored
 #
-# default value is never (NEVER).
+# default value is 0 (NEVER).
 #
 #networkaddress.cache.stale.ttl=0
 
