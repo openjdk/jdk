@@ -240,8 +240,11 @@ ifeq ($(HAS_SPEC),)
         # No CONF or SPEC given, check the available configurations
         GIT := $$(shell command -v git 2>/dev/null)
         ifneq ($$(GIT),)
-          GIT_CURRENT_BRANCH := $$(shell $$(GIT) rev-parse --abbrev-ref HEAD)
-          GIT_BRANCH_CONF := $$(strip $$(filter $$(GIT_CURRENT_BRANCH), $$(all_confs)))
+          GIT_IS_INSIDE_WORK_TREE := $$(shell $$(GIT) rev-parse --is-inside-work-tree 2>/dev/null)
+          ifeq ($$(GIT_IS_INSIDE_WORK_TREE), true)
+            GIT_CURRENT_BRANCH := $$(shell $$(GIT) rev-parse --abbrev-ref HEAD)
+            GIT_BRANCH_CONF := $$(strip $$(filter $$(GIT_CURRENT_BRANCH), $$(all_confs)))
+          endif
         endif
         ifeq ($$(words $$(all_spec_files)), 1)
           # We found exactly one configuration, use it
