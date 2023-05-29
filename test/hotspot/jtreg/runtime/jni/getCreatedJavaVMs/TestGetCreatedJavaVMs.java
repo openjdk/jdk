@@ -24,7 +24,7 @@
 /*
  * @test
  * @library /test/lib
- * @requires os.family == "Linux"
+ * @requires os.family != "Windows"
  * @run driver TestGetCreatedJavaVMs
  */
 import jdk.test.lib.Utils;

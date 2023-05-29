@@ -865,18 +865,16 @@ ifeq ($(call isTargetOs, linux), true)
   BUILD_TEST_exeinvoke_exeinvoke.c_OPTIMIZATION := NONE
   BUILD_HOTSPOT_JTREG_EXECUTABLES_LIBS_exeFPRegs := -ldl
   BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libAsyncGetCallTraceTest := -ldl
-  BUILD_HOTSPOT_JTREG_EXECUTABLES_LIBS_exeGetCreatedJavaVMs := -ljvm -lpthread
 else
   BUILD_HOTSPOT_JTREG_EXCLUDE += libtest-rw.c libtest-rwx.c \
-      exeinvoke.c exestack-gap.c exestack-tls.c libAsyncGetCallTraceTest.cpp \
-      exeGetCreatedJavaVMs.c
+      exeinvoke.c exestack-gap.c exestack-tls.c libAsyncGetCallTraceTest.cpp
 endif
 
 BUILD_HOTSPOT_JTREG_EXECUTABLES_LIBS_exesigtest := -ljvm
 
 ifeq ($(call isTargetOs, windows), true)
   BUILD_HOTSPOT_JTREG_EXECUTABLES_CFLAGS_exeFPRegs := -MT
-  BUILD_HOTSPOT_JTREG_EXCLUDE += exesigtest.c libterminatedThread.c libTestJNI.c libCompleteExit.c libTestPsig.c libnativeStack.c
+  BUILD_HOTSPOT_JTREG_EXCLUDE += exesigtest.c libterminatedThread.c libTestJNI.c libCompleteExit.c libTestPsig.c libnativeStack.c exeGetCreatedJavaVMs.c
   BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libatExit := jvm.lib
   BUILD_HOTSPOT_JTREG_EXECUTABLES_LIBS_exedaemonDestroy := jvm.lib
 else
@@ -1518,6 +1516,7 @@ else
   BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libatExit += -ljvm
   BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libCompleteExit += -lpthread
   BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libnativeStack += -lpthread
+  BUILD_HOTSPOT_JTREG_EXECUTABLES_LIBS_exeGetCreatedJavaVMs := -ljvm -lpthread
 endif
 
 ifeq ($(ASAN_ENABLED), true)
