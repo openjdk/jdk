@@ -33,7 +33,6 @@ import java.lang.foreign.*;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
-import java.lang.foreign.MemorySegment.Scope;
 import java.lang.invoke.VarHandle;
 import java.nio.ByteBuffer;
 import java.util.List;
