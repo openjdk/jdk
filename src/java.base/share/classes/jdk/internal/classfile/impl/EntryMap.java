@@ -174,7 +174,7 @@ public abstract class EntryMap<T> {
     }
 
     public static long nextPowerOfTwo( long x ) {
-        return 1l << -Long.numberOfLeadingZeros(x - 1);
+        return 1L << -Long.numberOfLeadingZeros(x - 1);
     }
 
     public static int arraySize( final int expected, final float f ) {
