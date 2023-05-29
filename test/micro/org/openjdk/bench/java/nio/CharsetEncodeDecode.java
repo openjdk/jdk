@@ -61,7 +61,7 @@ public class CharsetEncodeDecode {
     private CharsetEncoder encoder;
     private CharsetDecoder decoder;
 
-    @Param({"UTF-8", "BIG5", "ISO-8859-15", "ASCII", "UTF-16"})
+    @Param({"UTF-8", "BIG5", "ISO-8859-15", "ISO-8859-1", "ASCII", "UTF-16"})
     private String type;
 
     @Param("16384")
