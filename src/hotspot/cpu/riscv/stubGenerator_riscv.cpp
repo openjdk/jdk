@@ -4016,7 +4016,7 @@ class StubGenerator: public StubCodeGenerator {
 
     StubRoutines::_forward_exception_entry = generate_forward_exception();
 
-    if (UnsafeCopyMemory::_table == NULL) {
+    if (UnsafeCopyMemory::_table == nullptr) {
       UnsafeCopyMemory::create_table(8);
     }
 
@@ -4074,7 +4074,7 @@ class StubGenerator: public StubCodeGenerator {
     generate_arraycopy_stubs();
 
     BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
-    if (bs_nm != NULL) {
+    if (bs_nm != nullptr) {
       StubRoutines::riscv::_method_entry_barrier = generate_method_entry_barrier();
     }
 
