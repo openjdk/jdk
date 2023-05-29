@@ -59,7 +59,7 @@
  * manifest attributes for standalone applications that are packaged as <em>executable
  * JAR files</em>. If an implementation supports a mechanism to start an application as
  * an executable JAR, then the main manifest of the JAR file can include the
- * {@code Launcher-Agent-Class} attribute to specify the binary name of a Java agent
+ * {@code Launcher-Agent-Class} attribute to specify the binary name of the Java agent
  * class that is packaged with the application. If the attribute is present then the
  * JVM starts the agent by loading the agent class and invoking its {@code agentmain}
  * method. The method is invoked before the application {@code main} method is invoked.
@@ -141,7 +141,7 @@
  *
  * <h3>Starting an agent in a running JVM</h3>
  *
- * <p> An implementation may provide a mechanism to start agents in a running VM (meaning
+ * <p> An implementation may provide a mechanism to start agents in a running JVM (meaning
  * after JVM startup). The details as to how this is initiated are implementation specific
  * but typically the application has already started, and its {@code main} method has
  * already been invoked. Where an implementation supports starting an agent in a running
@@ -154,9 +154,12 @@
  *
  *   <li><p> The agent class must define a public static {@code agentmain} method. </p></li>
  *
- *   <li><p> The JVM prints a warning on the standard error stream for each agent that
- *   it attempts to start in a running JVM. Warnings can be disabled by means of an
- *   implementation-specific command line option. </p></li>
+ *   <li><p> The JVM prints a warning on the standard error stream for each agent that it
+ *   attempts to start in a running JVM. If an agent was previously started (at JVM
+ *   startup, or started in a running JVM), then it is implementation specific as to whether
+ *   a warning is printed when attempting to start the same agent a second or subsequent
+ *   time. Warnings can be disabled by means of an implementation-specific command line
+ *   option. </p></li>
  *
  * </ol>
  *

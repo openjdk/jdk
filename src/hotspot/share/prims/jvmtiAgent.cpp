@@ -30,6 +30,7 @@
 #include "jvmtifiles/jvmtiEnv.hpp"
 #include "prims/jvmtiEnvBase.hpp"
 #include "prims/jvmtiExport.hpp"
+#include "prims/jvmtiAgentList.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
@@ -505,16 +506,16 @@ static bool invoke_Agent_OnAttach(JvmtiAgent* agent, outputStream* st) {
     agent->set_os_lib_path(&buffer[0]);
     agent->set_os_lib(library);
     agent->set_loaded();
-
-    // Print warning if EnableDynamicAgentLoading not enabled on the command line
-    assert(EnableDynamicAgentLoading, "Dynamic loading of agents not enabled");
-    if (!FLAG_IS_CMDLINE(EnableDynamicAgentLoading) && !agent->is_instrument_lib()) {
-      jio_fprintf(defaultStream::error_stream(),
-        "WARNING: A JVM TI agent has been dynamically loaded (%s)\n"
-        "WARNING: If a serviceability tool is in use, please run with -XX:+EnableDynamicAgentLoading to hide this warning\n"
-        "WARNING: Dynamic loading of agents will be disallowed by default in a future release\n", agent->name());
-    }
   }
+
+  // Print warning if EnableDynamicAgentLoading not enabled on the command line
+  if (!FLAG_IS_CMDLINE(EnableDynamicAgentLoading) && !agent->is_instrument_lib() && !JvmtiAgentList::is_loaded(library)) {
+    jio_fprintf(defaultStream::error_stream(),
+      "WARNING: A JVM TI agent has been dynamically loaded (%s)\n"
+      "WARNING: If a serviceability tool is in use, please run with -XX:+EnableDynamicAgentLoading to hide this warning\n"
+      "WARNING: Dynamic loading of agents will be disallowed by default in a future release\n", agent->name());
+  }
+
   assert(agent->is_loaded(), "invariant");
   // The library was loaded so we attempt to lookup and invoke the Agent_OnAttach function.
   OnAttachEntry_t on_attach_entry = CAST_TO_FN_PTR(OnAttachEntry_t,

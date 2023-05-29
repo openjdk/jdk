@@ -26,6 +26,13 @@
 /**
  * A no-op JVM TI agent.
  */
+
+JNIEXPORT jint JNICALL
+Agent_OnLoad(JavaVM *vm, char *options, void *reserved) {
+    jvmtiEnv* jvmti;
+    return vm->GetEnv((void**)&jvmti, JVMTI_VERSION);
+}
+
 JNIEXPORT jint JNICALL
 Agent_OnAttach(JavaVM *vm, char *options, void *reserved) {
     jvmtiEnv* jvmti;

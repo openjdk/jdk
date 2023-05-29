@@ -33,15 +33,18 @@
  */
 
 import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.concurrent.atomic.AtomicBoolean;
 import com.sun.tools.attach.VirtualMachine;
@@ -55,20 +58,34 @@ import jdk.test.lib.util.JarUtils;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import static org.junit.jupiter.api.Assertions.*;
 
 class DynamicLoadWarningTest {
+    private static final String JVMTI_AGENT_WARNING = "WARNING: A JVM TI agent has been dynamically loaded";
+    private static final String JAVA_AGENT_WARNING = "WARNING: A Java agent has been loaded dynamically";
 
-    // JVM TI agent
-    private static final String JVMTI_AGENT_LIB = "JvmtiAgent";
-    private static String jvmtiAgentPath;
+    // JVM TI agents
+    private static final String JVMTI_AGENT1_LIB = "JvmtiAgent1";
+    private static final String JVMTI_AGENT2_LIB = "JvmtiAgent2";
+    private static String jvmtiAgentPath1;
+    private static String jvmtiAgentPath2;
 
     // Java agent
     private static final String TEST_CLASSES = System.getProperty("test.classes");
     private static String javaAgent;
 
     @BeforeAll
-    static void createJavaAgent() throws Exception {
+    static void setup() throws Exception {
+        // get absolute path to JVM TI agents
+        String prefix = Platform.isWindows() ? "" : "lib";
+        String libname1 = prefix + JVMTI_AGENT1_LIB + "." + Platform.sharedLibraryExt();
+        String libname2 = prefix + JVMTI_AGENT2_LIB + "." + Platform.sharedLibraryExt();
+        jvmtiAgentPath1 = Path.of(Utils.TEST_NATIVE_PATH, libname1).toAbsolutePath().toString();
+        jvmtiAgentPath2 = Path.of(Utils.TEST_NATIVE_PATH, libname2).toAbsolutePath().toString();
+
         // create JAR file with Java agent
         Manifest man = new Manifest();
         Attributes attrs = man.getMainAttributes();
@@ -78,56 +95,62 @@ class DynamicLoadWarningTest {
         Path classes = Path.of(TEST_CLASSES);
         JarUtils.createJarFile(jarfile, man, classes, Path.of("JavaAgent.class"));
         javaAgent = jarfile.toString();
-
-        // get absolute path to JVM TI agent
-        String prefix = Platform.isWindows() ? "" : "lib";
-        String libname = prefix + JVMTI_AGENT_LIB + "." + Platform.sharedLibraryExt();
-        jvmtiAgentPath = Path.of(Utils.TEST_NATIVE_PATH, libname)
-                .toAbsolutePath()
-                .toString();
     }
 
     /**
-     * Test loading JVM TI agent into a running VM with the Attach API.
+     * Arguments with pairs of actions to load agents into a running VM.
      */
-    @Test
-    void testLoadJvmtiAgent() throws Exception {
-        String message = "WARNING: A JVM TI agent has been dynamically loaded";
-
-        // warning should be printed
-        test((pid, vm) -> vm.loadAgentLibrary(JVMTI_AGENT_LIB)).shouldContain(message);
-
-        // no warning should be printed
-        test((pid, vm) -> vm.loadAgentLibrary(JVMTI_AGENT_LIB), "-XX:+EnableDynamicAgentLoading")
-                .shouldNotContain(message);
-    }
-
-    /**
-     * Test loading JVM TI agent into a running VM with jcmd JVMTI.agent_load command.
-     */
-    @Test
-    void testJCmdJvmtiAgentLoad() throws Exception {
-        String message = "WARNING: A JVM TI agent has been dynamically loaded";
+    private static Stream<Arguments> loadJvmtiAgents() throws Exception {
+        // load agents with the attach API
+        OnAttachAction loadJvmtiAgent1 = (pid, vm) -> vm.loadAgentLibrary(JVMTI_AGENT1_LIB);
+        OnAttachAction loadJvmtiAgent2 = (pid, vm) -> vm.loadAgentLibrary(JVMTI_AGENT2_LIB);
 
         // jcmd <pid> JVMTI.agent_load <agent>
-        Op op = (pid, vm) -> {
-            var jcmd = JDKToolLauncher.createUsingTestJDK("jcmd")
-                    .addToolArg(Long.toString(pid))
-                    .addToolArg("JVMTI.agent_load")
-                    .addToolArg(jvmtiAgentPath);
-            var pb = new ProcessBuilder(jcmd.getCommand());
-            int exitValue = ProcessTools.executeProcess(pb)
-                    .outputTo(System.out)
-                    .errorTo(System.out)
-                    .getExitValue();
-            assertEquals(0, exitValue);
-        };
+        OnAttachAction jcmdAgentLoad1 = jcmdAgentLoad(jvmtiAgentPath1);
+        OnAttachAction jcmdAgentLoad2 = jcmdAgentLoad(jvmtiAgentPath2);
 
-        // warning should be printed
-        test(op).shouldContain(message);
+        return Stream.of(
+                Arguments.of(loadJvmtiAgent1, loadJvmtiAgent2),
+                Arguments.of(jcmdAgentLoad1, jcmdAgentLoad2)
+        );
+    }
 
-        // no warning should be printed
-        test(op, "-XX:+EnableDynamicAgentLoading").shouldNotContain(message);
+    /**
+     * Test loading JVM TI agents into a running VM.
+     */
+    @ParameterizedTest
+    @MethodSource("loadJvmtiAgents")
+    void testLoadJvmtiAgent(OnAttachAction loadJvmtiAgent1,
+                            OnAttachAction loadJvmtiAgent2) throws Exception {
+
+        // agent dynamically loaded
+        test().whenRunning(loadJvmtiAgent1)
+                .stderrShouldContain(JVMTI_AGENT_WARNING);
+
+        // opt-in via command line option to allow dynamic loading of agents
+        test().withOpts("-XX:+EnableDynamicAgentLoading")
+                .whenRunning(loadJvmtiAgent1)
+                .stderrShouldNotContain(JVMTI_AGENT_WARNING);
+
+        // agent started via command line, same agent dynamically loaded
+        test().withOpts("-agentpath:" + jvmtiAgentPath1)
+                .whenRunning(loadJvmtiAgent1)
+                .stderrShouldNotContain(JVMTI_AGENT_WARNING);
+
+        // agent started via command line, different agent dynamically loaded
+        test().withOpts("-agentpath:" + jvmtiAgentPath1)
+                .whenRunning(loadJvmtiAgent2)
+                .stderrShouldContain(JVMTI_AGENT_WARNING);
+
+        // same agent dynamically loaded twice, should be one warning
+        test().whenRunning(loadJvmtiAgent1)
+                .whenRunning(loadJvmtiAgent1)
+                .stderrShouldContain(JVMTI_AGENT_WARNING, 1);
+
+        // two different agents loaded dynamically, should be two warnings
+        test().whenRunning(loadJvmtiAgent1)
+                .whenRunning(loadJvmtiAgent2)
+                .stderrShouldContain(JVMTI_AGENT_WARNING, 2);
     }
 
     /**
@@ -135,70 +158,144 @@ class DynamicLoadWarningTest {
      */
     @Test
     void testLoadJavaAgent() throws Exception {
-        String message = "WARNING: A Java agent has been loaded dynamically";
+        OnAttachAction loadJavaAgent = (pid, vm) -> vm.loadAgent(javaAgent);
 
-        // warning should be printed
-        test((pid, vm) -> vm.loadAgent(javaAgent)).shouldContain(message);
+        // agent dynamically loaded
+        test().whenRunning(loadJavaAgent)
+                .stderrShouldContain(JAVA_AGENT_WARNING);
 
-        // no warning should be printed
-        test((pid, vm) -> vm.loadAgent(javaAgent), "-XX:+EnableDynamicAgentLoading")
-                .shouldNotContain(message);
+        // opt-in via command line option to allow dynamic loading of agents
+        test().withOpts("-XX:+EnableDynamicAgentLoading")
+                .whenRunning(loadJavaAgent)
+                .stderrShouldNotContain(JAVA_AGENT_WARNING);
     }
 
-    private interface Op {
+    /**
+     * Represents an operation that accepts a process identifier and a VirtualMachine
+     * that the current JVM is attached to.
+     */
+    private interface OnAttachAction {
         void accept(long pid, VirtualMachine vm) throws Exception;
     }
 
     /**
-     * Starts a new VM to run an application, attaches to the VM, runs a given action
-     * with the VirtualMachine object, and returns the output (both stdout and stderr)
-     * for analysis.
+     * Returns an operation that invokes "jcmd <pid> JVMTI.agent_load <agentpath>" to
+     * load the given agent library into the JVM that the current JVM is attached to.
      */
-    private OutputAnalyzer test(Op action, String... vmopts) throws Exception {
-        // start a listener socket that the application will connect to
-        try (ServerSocket listener = new ServerSocket()) {
-            InetAddress lh = InetAddress.getLoopbackAddress();
-            listener.bind(new InetSocketAddress(lh, 0));
+    private static OnAttachAction jcmdAgentLoad(String agentPath) throws Exception {
+        return (pid, vm) -> {
+            String[] jcmd = JDKToolLauncher.createUsingTestJDK("jcmd")
+                    .addToolArg(Long.toString(pid))
+                    .addToolArg("JVMTI.agent_load")
+                    .addToolArg(agentPath)
+                    .getCommand();
+            System.out.println(Arrays.stream(jcmd).collect(Collectors.joining(" ")));
+            Process p = new ProcessBuilder(jcmd).inheritIO().start();
+            assertEquals(0, p.waitFor());
+        };
+    }
 
-            var done = new AtomicBoolean();
+    /**
+     * Returns a new app runner.
+     */
+    private static AppRunner test() {
+        return new AppRunner();
+    }
 
-            // start a thread to wait for the application to phone home
-            Thread.ofPlatform().daemon().start(() -> {
-                try (Socket s = listener.accept();
-                     DataInputStream in = new DataInputStream(s.getInputStream())) {
+    /**
+     * Runs an application in its own VM. Once started, it attachs to the VM, runs a set
+     * of actions, then checks that the output contains, or does not contain, a string.
+     */
+    private static class AppRunner {
+        private String[] vmopts = new String[0];
+        private List<OnAttachAction> actions = new ArrayList<>();
 
-                    // read pid
-                    long pid = in.readLong();
+        /**
+         * Specifies VM options to run the application.
+         */
+        AppRunner withOpts(String... vmopts) {
+            this.vmopts = vmopts;
+            return this;
+        }
 
-                    // attach and run the action with the vm object
-                    VirtualMachine vm = VirtualMachine.attach(Long.toString(pid));
-                    try {
-                        action.accept(pid, vm);
+        /**
+         * Specifies an action to run when the attached to the running application.
+         */
+        AppRunner whenRunning(OnAttachAction action) {
+            actions.add(action);
+            return this;
+        }
+
+        OutputAnalyzer run() throws Exception {
+            // start a listener socket that the application will connect to
+            try (ServerSocket listener = new ServerSocket()) {
+                InetAddress lh = InetAddress.getLoopbackAddress();
+                listener.bind(new InetSocketAddress(lh, 0));
+
+                var done = new AtomicBoolean();
+
+                // start a thread to wait for the application to phone home
+                Thread.ofPlatform().daemon().start(() -> {
+                    try (Socket s = listener.accept();
+                         DataInputStream in = new DataInputStream(s.getInputStream())) {
+
+                        // read pid
+                        long pid = in.readLong();
+
+                        // attach and run the actions with the vm object
+                        VirtualMachine vm = VirtualMachine.attach(Long.toString(pid));
+                        try {
+                            for (OnAttachAction action : actions) {
+                                action.accept(pid, vm);
+                            }
+                        } finally {
+                            vm.detach();
+                        }
                         done.set(true);
-                    } finally {
-                        vm.detach();
+
+                        // shutdown
+                        s.getOutputStream().write(0);
+                    } catch (Exception e) {
+                        e.printStackTrace();
                     }
+                });
 
-                    // shutdown
-                    s.getOutputStream().write(0);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            });
+                // launch application with the given VM options, waiting for it to terminate
+                Stream<String> s1 = Stream.of(vmopts);
+                Stream<String> s2 = Stream.of("Application", Integer.toString(listener.getLocalPort()));
+                String[] opts = Stream.concat(s1, s2).toArray(String[]::new);
+                OutputAnalyzer outputAnalyzer = ProcessTools
+                        .executeTestJava(opts)
+                        .outputTo(System.out)
+                        .errorTo(System.out);
+                assertEquals(0, outputAnalyzer.getExitValue());
+                assertTrue(done.get(), "Attach or action failed, see log for details");
+                return outputAnalyzer;
+            }
+        }
 
-            // launch application with the given VM options, waiting for it to terminate
-            Stream<String> s1 = Stream.of(vmopts);
-            Stream<String> s2 = Stream.of("Application", Integer.toString(listener.getLocalPort()));
-            String[] opts = Stream.concat(s1, s2).toArray(String[]::new);
-            OutputAnalyzer outputAnalyzer = ProcessTools
-                    .executeTestJava(opts)
-                    .outputTo(System.out)
-                    .errorTo(System.out);
-            assertEquals(0, outputAnalyzer.getExitValue());
-            assertTrue(done.get(), "Attach or action failed, see log for details");
+        /**
+         * Run the application, checking that standard error contains a string.
+         */
+        void stderrShouldContain(String s) throws Exception {
+            run().stderrShouldContain(s);
+        }
 
-            return outputAnalyzer;
+        /**
+         * Run the application, checking that standard error contains the given number of
+         * occurrences of a string.
+         */
+        void stderrShouldContain(String s, int occurrences) throws Exception {
+            List<String> lines = run().asLines();
+            int count = (int) lines.stream().filter(line -> line.indexOf(s) >= 0).count();
+            assertEquals(occurrences, count);
+        }
+
+        /**
+         * Run the application, checking that standard error does not contain a string.
+         */
+        void stderrShouldNotContain(String s) throws Exception {
+            run().stderrShouldNotContain(s);
         }
     }
 }
-
