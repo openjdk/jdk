@@ -41,7 +41,7 @@ class RebuildingTransformation {
     static private Random pathSwitch = new Random(1234);
 
     static byte[] transform(ClassModel clm) {
-        return Classfile.Context.of(Classfile.StackMapsOption.DO_NOT_GENERATE).build(clm.thisClass().asSymbol(), clb -> {
+        return Classfile.of(Classfile.StackMapsOption.DO_NOT_GENERATE).build(clm.thisClass().asSymbol(), clb -> {
             for (var cle : clm) {
                 switch (cle) {
                     case AccessFlags af -> clb.withFlags(af.flagsMask());

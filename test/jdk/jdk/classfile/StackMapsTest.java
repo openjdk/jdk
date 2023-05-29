@@ -54,7 +54,7 @@ import java.lang.reflect.AccessFlag;
 class StackMapsTest {
 
     private byte[] buildDeadCode() {
-        return Classfile.Context.of(Classfile.StackMapsOption.DO_NOT_GENERATE,
+        return Classfile.of(Classfile.StackMapsOption.DO_NOT_GENERATE,
                                     Classfile.DeadCodeOption.KEEP_DEAD_CODE).build(
                 ClassDesc.of("DeadCodePattern"),
                 clb -> clb.withMethodBody(
@@ -172,9 +172,10 @@ class StackMapsTest {
 
     @Test
     void testFrameOutOfBytecodeRange() {
+        var cc = Classfile.of();
         var error = assertThrows(IllegalStateException.class, () ->
-        Classfile.parse(
-                Classfile.build(ClassDesc.of("TestClass"), clb ->
+        cc.parse(
+                cc.build(ClassDesc.of("TestClass"), clb ->
                         clb.withMethodBody("frameOutOfRangeMethod", MethodTypeDesc.of(ConstantDescs.CD_void), 0, cob -> {
                             var l = cob.newLabel();
                             cob.goto_(l);//jump to the end of method body triggers invalid frame creation
@@ -194,7 +195,7 @@ class StackMapsTest {
     @Test
     void testMethodSwitchFromStatic() {
         assertThrows(IllegalArgumentException.class, () ->
-        Classfile.build(ClassDesc.of("TestClass"), clb ->
+        Classfile.of().build(ClassDesc.of("TestClass"), clb ->
                 clb.withMethod("testMethod", MethodTypeDesc.of(ConstantDescs.CD_Object, ConstantDescs.CD_int),
                                ACC_STATIC,
                                mb -> mb.withCode(cob -> {
@@ -207,7 +208,7 @@ class StackMapsTest {
     @Test
     void testMethodSwitchToStatic() {
         assertThrows(IllegalArgumentException.class, () ->
-        Classfile.build(ClassDesc.of("TestClass"), clb ->
+        Classfile.of().build(ClassDesc.of("TestClass"), clb ->
                 clb.withMethod("testMethod", MethodTypeDesc.of(ConstantDescs.CD_int, ConstantDescs.CD_int),
                                0, mb ->
                                        mb.withCode(cob -> {
@@ -219,10 +220,11 @@ class StackMapsTest {
 
     @Test
     void testClassVersions() throws Exception {
-        var actualVersion = Classfile.parse(StackMapsTest.class.getResourceAsStream("/testdata/Pattern1.class").readAllBytes());
+        var cc = Classfile.of();
+        var actualVersion = cc.parse(StackMapsTest.class.getResourceAsStream("/testdata/Pattern1.class").readAllBytes());
 
         //test transformation to class version 49 with removal of StackMapTable attributes
-        var version49 = Classfile.parse(Classfile.transform(
+        var version49 = cc.parse(cc.transform(
                                     actualVersion,
                                     ClassTransform.transformingMethodBodies(CodeTransform.ACCEPT_ALL)
                                                   .andThen(ClassTransform.endHandler(clb -> clb.withVersion(49, 0)))));
@@ -230,7 +232,7 @@ class StackMapsTest {
                                 .walk().anyMatch(n -> n.name().equals("stack map frames")));
 
         //test transformation to class version 50 with re-generation of StackMapTable attributes
-         assertEmpty(Classfile.parse(Classfile.transform(
+         assertEmpty(cc.parse(cc.transform(
                                     version49,
                                     ClassTransform.transformingMethodBodies(CodeTransform.ACCEPT_ALL)
                                                   .andThen(ClassTransform.endHandler(clb -> clb.withVersion(50, 0)))))
@@ -249,7 +251,7 @@ class StackMapsTest {
 
     private static void testTransformedStackMaps(byte[] originalBytes, Classfile.Option... options) throws Exception {
         //transform the class model
-        Classfile.Context cc = Classfile.Context.of(options);
+        Classfile cc = Classfile.of(options);
         var classModel = cc.parse(originalBytes);
         var transformedBytes = cc.build(classModel.thisClass().asSymbol(),
                                                cb -> {

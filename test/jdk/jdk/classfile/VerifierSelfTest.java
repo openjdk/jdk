@@ -53,7 +53,7 @@ class VerifierSelfTest {
                     .flatMap(p -> p)
                     .filter(p -> Files.isRegularFile(p) && p.toString().endsWith(".class")).forEach(path -> {
                         try {
-                            Classfile.parse(path).verify(null);
+                            Classfile.of().parse(path).verify(null);
                         } catch (IOException e) {
                             throw new AssertionError(e);
                         }
@@ -63,7 +63,7 @@ class VerifierSelfTest {
     @Test
     void testFailedDump() throws IOException {
         Path path = FileSystems.getFileSystem(URI.create("jrt:/")).getPath("modules/java.base/java/util/HashMap.class");
-        var cc = Classfile.Context.of(Classfile.ClassHierarchyResolverOption.of(
+        var cc = Classfile.of(Classfile.ClassHierarchyResolverOption.of(
                 className -> new ClassHierarchyResolver.ClassHierarchyInfo(className, false, null)));
         var classModel = cc.parse(path);
         byte[] brokenClassBytes = cc.transform(classModel,
@@ -81,7 +81,7 @@ class VerifierSelfTest {
                         clb.with(cle);
                 });
         StringBuilder sb = new StringBuilder();
-        if (Classfile.parse(brokenClassBytes).verify(sb::append).isEmpty()) {
+        if (Classfile.of().parse(brokenClassBytes).verify(sb::append).isEmpty()) {
             throw new AssertionError("expected verification failure");
         }
         String output = sb.toString();

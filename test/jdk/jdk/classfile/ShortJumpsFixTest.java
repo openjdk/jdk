@@ -100,10 +100,10 @@ class ShortJumpsFixTest {
         };
     }
 
-    static final Classfile.Context
-            CC_Fixed_Jumps = Classfile.Context.of(Classfile.ShortJumpsOption.FIX_SHORT_JUMPS),
-            CC_Not_Fixed_Jumps = Classfile.Context.of(Classfile.ShortJumpsOption.FAIL_ON_SHORT_JUMPS),
-            CC_No_Stack_No_Patch = Classfile.Context.of(Classfile.StackMapsOption.DO_NOT_GENERATE,
+    static final Classfile
+            CC_Fixed_Jumps = Classfile.of(Classfile.ShortJumpsOption.FIX_SHORT_JUMPS),
+            CC_Not_Fixed_Jumps = Classfile.of(Classfile.ShortJumpsOption.FAIL_ON_SHORT_JUMPS),
+            CC_No_Stack_No_Patch = Classfile.of(Classfile.StackMapsOption.DO_NOT_GENERATE,
                                                         Classfile.DeadCodeOption.KEEP_DEAD_CODE);
 
     @ParameterizedTest
@@ -206,7 +206,7 @@ class ShortJumpsFixTest {
                             ClassTransform.ACCEPT_ALL.andThen(overflow()))); //involve BufferedCodeBuilder here
     }
 
-    private static ClassModel generateFwd(Classfile.Context cc, Sample sample, boolean overflow) {
+    private static ClassModel generateFwd(Classfile cc, Sample sample, boolean overflow) {
         return cc.parse(cc.build(ClassDesc.of("WhateverClass"),
                         cb -> cb.withMethod("whateverMethod", MethodTypeDesc.of(ConstantDescs.CD_void), 0,
                                 mb -> mb.withCode(cob -> {
@@ -221,7 +221,7 @@ class ShortJumpsFixTest {
                                 }))));
     }
 
-    private static ClassModel generateBack(Classfile.Context cc, Sample sample, boolean overflow) {
+    private static ClassModel generateBack(Classfile cc, Sample sample, boolean overflow) {
         return cc.parse(cc.build(ClassDesc.of("WhateverClass"),
                         cb -> cb.withMethod("whateverMethod", MethodTypeDesc.of(ConstantDescs.CD_void), 0,
                                 mb -> mb.withCode(cob -> {
@@ -252,7 +252,7 @@ class ShortJumpsFixTest {
     }
 
     private static void assertFixed(Sample sample, byte[] classFile) {
-        assertFixed(sample, Classfile.parse(classFile));
+        assertFixed(sample, Classfile.of().parse(classFile));
     }
 
     private static void assertFixed(Sample sample, ClassModel clm) {

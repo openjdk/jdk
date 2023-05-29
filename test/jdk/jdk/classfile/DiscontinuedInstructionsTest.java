@@ -47,7 +47,8 @@ class DiscontinuedInstructionsTest {
         var testClass = "JsrAndRetSample";
         var testMethod = "testMethod";
         var cd_list = ArrayList.class.describeConstable().get();
-        var bytes = Classfile.build(ClassDesc.of(testClass), clb -> clb
+        var cc = Classfile.of();
+        var bytes = cc.build(ClassDesc.of(testClass), clb -> clb
                 .withVersion(JAVA_5_VERSION, 0)
                 .withMethodBody(testMethod, MethodTypeDesc.of(CD_void, cd_list), ACC_PUBLIC | ACC_STATIC, cob -> cob
                         .block(bb -> {
@@ -64,7 +65,7 @@ class DiscontinuedInstructionsTest {
                         .pop()
                         .with(DiscontinuedInstruction.RetInstruction.of(355))));
 
-        var c = Classfile.parse(bytes).methods().get(0).code().get();
+        var c = cc.parse(bytes).methods().get(0).code().get();
         assertEquals(356, c.maxLocals());
         assertEquals(6, c.maxStack());
 
@@ -75,22 +76,22 @@ class DiscontinuedInstructionsTest {
                 .invoke(null, list);
         assertEquals(list, List.of("Hello", "World"));
 
-        bytes = Classfile.transform(Classfile.parse(bytes), ClassTransform.transformingMethodBodies(CodeTransform.ACCEPT_ALL));
+        bytes = cc.transform(cc.parse(bytes), ClassTransform.transformingMethodBodies(CodeTransform.ACCEPT_ALL));
 
         new ByteArrayClassLoader(DiscontinuedInstructionsTest.class.getClassLoader(), testClass, bytes)
                 .getMethod(testClass, testMethod)
                 .invoke(null, list);
         assertEquals(list, List.of("Hello", "World", "Hello", "World"));
 
-        var clm = Classfile.parse(bytes);
+        var clm = cc.parse(bytes);
 
         //test failover stack map generation
-        Classfile.transform(clm, ClassTransform.transformingMethodBodies(CodeTransform.ACCEPT_ALL)
+        cc.transform(clm, ClassTransform.transformingMethodBodies(CodeTransform.ACCEPT_ALL)
                  .andThen(ClassTransform.endHandler(clb -> clb.withVersion(JAVA_6_VERSION, 0))));
 
         //test failure of stack map generation
         assertThrows(IllegalStateException.class, () ->
-                Classfile.transform(clm, ClassTransform.transformingMethodBodies(CodeTransform.ACCEPT_ALL)
+                cc.transform(clm, ClassTransform.transformingMethodBodies(CodeTransform.ACCEPT_ALL)
                          .andThen(ClassTransform.endHandler(clb -> clb.withVersion(JAVA_7_VERSION, 0)))));
     }
 }

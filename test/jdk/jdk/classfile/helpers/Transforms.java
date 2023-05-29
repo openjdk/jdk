@@ -115,7 +115,7 @@ public class Transforms {
             return bs;
         }),
         BUILD_FROM_SCRATCH(bytes -> {
-            return RebuildingTransformation.transform(Classfile.parse(bytes));
+            return RebuildingTransformation.transform(Classfile.of().parse(bytes));
         }),
         SHARED_1(true, oneLevelNoop),
         SHARED_2(true, twoLevelNoop),
@@ -164,20 +164,20 @@ public class Transforms {
             return cw.toByteArray();
         }),
         CLASS_REMAPPER(bytes ->
-                ClassRemapper.of(Map.of()).remapClass(Classfile.parse(bytes)));
+                ClassRemapper.of(Map.of()).remapClass(Classfile.of().parse(bytes)));
 
         // Need ASM, LOW_UNSHARED
 
         public final UnaryOperator<byte[]> transform;
         public final boolean shared;
         public final ClassTransform classTransform;
-        public final Classfile.Context cc;
+        public final Classfile cc;
 
         NoOpTransform(UnaryOperator<byte[]> transform) {
             this.transform = transform;
             classTransform = null;
             shared = false;
-            cc = Classfile.Context.of();
+            cc = Classfile.of();
         }
 
         NoOpTransform(boolean shared,
@@ -185,7 +185,7 @@ public class Transforms {
                       Classfile.Option... options) {
             this.shared = shared;
             this.classTransform = classTransform;
-            this.cc = Classfile.Context.of(
+            this.cc = Classfile.of(
                     shared
                     ? options
                     : Stream.concat(Stream.of(options), Stream.of(Classfile.ConstantPoolSharingOption.DO_NOT_SHARE_CONSTANT_POOL)).toArray(Classfile.Option[]::new));
@@ -194,11 +194,11 @@ public class Transforms {
 
         public Optional<ClassRecord> classRecord(byte[] bytes) throws IOException {
             return switch (this) {
-                case ARRAYCOPY -> Optional.of(ClassRecord.ofClassModel(Classfile.parse(bytes)));
+                case ARRAYCOPY -> Optional.of(ClassRecord.ofClassModel(Classfile.of().parse(bytes)));
                 case SHARED_1, SHARED_2, SHARED_3,
                         UNSHARED_1, UNSHARED_2, UNSHARED_3,
                             BUILD_FROM_SCRATCH
-                        -> Optional.of(ClassRecord.ofClassModel(Classfile.parse(bytes), ClassRecord.CompatibilityFilter.By_ClassBuilder));
+                        -> Optional.of(ClassRecord.ofClassModel(Classfile.of().parse(bytes), ClassRecord.CompatibilityFilter.By_ClassBuilder));
                 default -> Optional.empty();
             };
         }
@@ -212,8 +212,9 @@ public class Transforms {
             return cw.toByteArray();
         }),
         NOP_SHARED(bytes -> {
-            ClassModel cm = Classfile.parse(bytes);
-            return Classfile.transform(cm, (cb, ce) -> {
+            var cc = Classfile.of();
+            ClassModel cm = cc.parse(bytes);
+            return cc.transform(cm, (cb, ce) -> {
                 if (ce instanceof MethodModel mm) {
                     cb.transformMethod(mm, (mb, me) -> {
                         if (me instanceof CodeModel xm) {
@@ -252,8 +253,9 @@ public class Transforms {
             return cw.toByteArray();
         }),
         HIGH_SHARED_ADD_FIELD(bytes -> {
-            ClassModel cm = Classfile.parse(bytes);
-            return Classfile.transform(cm, new ClassTransform() {
+            var cc = Classfile.of();
+            ClassModel cm = cc.parse(bytes);
+            return cc.transform(cm, new ClassTransform() {
                 @Override
                 public void accept(ClassBuilder builder, ClassElement element) {
                     builder.with(element);
@@ -266,8 +268,9 @@ public class Transforms {
             });
         }),
         HIGH_UNSHARED_ADD_FIELD(bytes -> {
-            ClassModel cm = Classfile.parse(bytes);
-            return Classfile.build(cm.thisClass().asSymbol(),
+            var cc = Classfile.of();
+            ClassModel cm = cc.parse(bytes);
+            return cc.build(cm.thisClass().asSymbol(),
                                    cb -> {
                                        cm.forEachElement(cb);
                                        cb.withField("argleBargleWoogaWooga", ConstantDescs.CD_int, b -> { });
@@ -288,15 +291,17 @@ public class Transforms {
             return cw.toByteArray();
         }),
         HIGH_SHARED_DEL_METHOD(bytes -> {
-            ClassModel cm = Classfile.parse(bytes);
-            return Classfile.transform(cm, (builder, element) -> {
+            var cc = Classfile.of();
+            ClassModel cm = cc.parse(bytes);
+            return cc.transform(cm, (builder, element) -> {
                 if (!(element instanceof MethodModel mm))
                     builder.with(element);
             });
         }),
         HIGH_UNSHARED_DEL_METHOD(bytes -> {
-            ClassModel cm = Classfile.parse(bytes);
-            return Classfile.build(cm.thisClass().asSymbol(),
+            var cc = Classfile.of();
+            ClassModel cm = cc.parse(bytes);
+            return cc.build(cm.thisClass().asSymbol(),
                                    cb -> {
                                        cm.forEachElement(element -> {
                                            if (element instanceof MethodModel mm
