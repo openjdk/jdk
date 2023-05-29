@@ -302,8 +302,8 @@ public class ThreadAllocatedMemory {
         return currSize;
     }
 
-    private static void reportUnexpected(Exception e, String reason) {
-        System.out.println("Unexpected exception thrown " + reason + ".");
+    private static void reportUnexpected(Exception e, String when) {
+        System.out.println("Unexpected exception thrown " + when + ".");
         e.printStackTrace(System.out);
         testFailed = true;
     }
