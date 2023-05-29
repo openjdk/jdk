@@ -5512,7 +5512,7 @@ instruct vmask_truecount_sve(iRegINoSp dst, pReg src) %{
   ins_pipe(pipe_slow);
 %}
 
-// Combined rule for VectorStoreMask + VectorMaskTrueCount when the vector element type is not T_BYTE.
+// Combined rule for VectorMaskTrueCount (VectorStoreMask) when the vector element type is not T_BYTE.
 
 instruct vstoremask_truecount_neon(iRegINoSp dst, vReg src, immI_gt_1 size, vReg vtmp) %{
   match(Set dst (VectorMaskTrueCount (VectorStoreMask src size)));
