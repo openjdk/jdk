@@ -41,6 +41,7 @@ import jdk.internal.classfile.Classfile;
 import jdk.internal.classfile.CodeBuilder;
 import jdk.internal.classfile.CodeElement;
 import jdk.internal.classfile.CodeModel;
+import jdk.internal.classfile.Instruction;
 import jdk.internal.classfile.Label;
 import jdk.internal.classfile.Opcode;
 import jdk.internal.classfile.TypeKind;
@@ -87,6 +88,7 @@ public final class DirectCodeBuilder
     private Map<CodeAttribute, int[]> parentMap;
     private DedupLineNumberTableAttribute lineNumberWriter;
     private int topLocal;
+    private boolean needsStackMap, ncf;
 
     List<DeferredLabel> deferredLabels;
 
@@ -135,11 +137,21 @@ public final class DirectCodeBuilder
         this.topLocal = Util.maxLocals(methodInfo.methodFlags(), methodInfo.methodTypeSymbol());
         if (original != null)
             this.topLocal = Math.max(this.topLocal, original.maxLocals());
+        this.needsStackMap = false;
+        this.ncf = false;
     }
 
     @Override
     public CodeBuilder with(CodeElement element) {
         ((AbstractElement) element).writeTo(this);
+        if (!needsStackMap && element instanceof Instruction i) {
+            if (ncf) {
+                needsStackMap = true;
+            } else {
+                var kind = i.opcode().kind();
+                ncf = kind == Opcode.Kind.RETURN || kind == Opcode.Kind.THROW_EXCEPTION;
+            }
+        }
         return this;
     }
 
@@ -323,21 +335,18 @@ public final class DirectCodeBuilder
                 }
                 int maxStack, maxLocals;
                 Attribute<? extends StackMapTableAttribute> stackMapAttr;
-                boolean canReuseStackmaps = codeAndExceptionsMatch(codeLength);
 
-                if (options.generateStackmaps == Classfile.StackMapsOption.DO_NOT_GENERATE_STACK_MAPS) {
+                if (!needsStackMap || options.generateStackmaps == Classfile.StackMapsOption.DO_NOT_GENERATE_STACK_MAPS) {
                     StackCounter cntr = StackCounter.of(DirectCodeBuilder.this, buf);
                     maxStack = cntr.maxStack();
                     maxLocals = cntr.maxLocals();
                     stackMapAttr = null;
-                }
-                else if (canReuseStackmaps) {
+                } else if (codeAndExceptionsMatch(codeLength) &&
+                          (stackMapAttr = original.findAttribute(Attributes.STACK_MAP_TABLE).orElse(null)) != null) {
                     maxLocals = original.maxLocals();
                     maxStack = original.maxStack();
-                    stackMapAttr = original.findAttribute(Attributes.STACK_MAP_TABLE).orElse(null);
-                }
-                else if (buf.getMajorVersion() >= Classfile.JAVA_6_VERSION ||
-                         options.generateStackmaps == Classfile.StackMapsOption.ALWAYS_GENERATE_STACK_MAPS) {
+                } else if (buf.getMajorVersion() >= Classfile.JAVA_6_VERSION ||
+                           options.generateStackmaps == Classfile.StackMapsOption.ALWAYS_GENERATE_STACK_MAPS) {
                     try {
                         //new instance of generator immediately calculates maxStack, maxLocals, all frames,
                         // patches dead bytecode blocks and removes them from exception table
@@ -527,6 +536,7 @@ public final class DirectCodeBuilder
             writeBytecode(op);
             writeLabelOffset(op.sizeIfFixed() == 3 ? 2 : 4, instructionPc, target);
         }
+        needsStackMap = true;
     }
 
     public void writeLookupSwitch(Label defaultTarget, List<SwitchCase> cases) {
@@ -548,6 +558,7 @@ public final class DirectCodeBuilder
             bytecodesBufWriter.writeInt(c.caseValue());
             writeLabelOffset(4, instructionPc, c.target());
         }
+        needsStackMap = true;
     }
 
     public void writeTableSwitch(int low, int high, Label defaultTarget, List<SwitchCase> cases) {
@@ -566,6 +577,7 @@ public final class DirectCodeBuilder
         for (long l = low; l<=high; l++) {
             writeLabelOffset(4, instructionPc, caseMap.getOrDefault((int)l, defaultTarget));
         }
+        needsStackMap = true;
     }
 
     public void writeFieldAccess(Opcode opcode, FieldRefEntry ref) {
@@ -741,6 +753,7 @@ public final class DirectCodeBuilder
         if (type != null && !constantPool.canWriteDirect(type.constantPool()))
             el = new AbstractPseudoInstruction.ExceptionCatchImpl(element.handler(), element.tryStart(), element.tryEnd(), AbstractPoolEntry.maybeClone(constantPool, type));
         handlers.add(el);
+        needsStackMap = true;
     }
 
     public void addLocalVariable(LocalVariable element) {
