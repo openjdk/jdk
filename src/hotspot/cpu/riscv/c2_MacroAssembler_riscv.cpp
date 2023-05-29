@@ -1387,7 +1387,7 @@ void C2_MacroAssembler::string_equals_v(Register a1, Register a2, Register resul
 // base: Address of a buffer to be zeroed
 // cnt: Count in HeapWords
 //
-// base, cnt, v0, v1 and t0 are clobbered.
+// base, cnt, v4, v5, v6, v7 and t0 are clobbered.
 void C2_MacroAssembler::clear_array_v(Register base, Register cnt) {
   Label loop;
 
