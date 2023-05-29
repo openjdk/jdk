@@ -36,7 +36,7 @@ import static jdk.internal.classfile.ClassHierarchyResolver.DEFAULT_CLASS_HIERAR
 
 public final class ClassfileImpl implements Classfile {
 
-    public StackMapsOption generateStackmaps = StackMapsOption.GENERATE_BY_CLASS_VERSION;
+    public StackMapsOption generateStackmaps = StackMapsOption.GENERATE_STACK_MAPS_BY_CLASS_VERSION;
     public DebugElementsOption processDebug = DebugElementsOption.PROCESS_DEBUG_ELEMENTS;
     public LineNumbersOption processLineNumbers = LineNumbersOption.PROCESS_LINE_NUMBERS;
     public UnknownAttributesOption processUnknownAttributes = UnknownAttributesOption.PROCESS_UNKNOWN_ATTRIBUTES;

@@ -80,14 +80,62 @@ public sealed interface Classfile
     }
 
     /**
-     * {@return an option describing whether or not to generate stackmaps}
-     * Default is to generate stack maps.
-     * @param b whether to generate stack maps
+     * {@return an option describing attribute mappers for custom attributes}
+     * Default is only to process standard attributes.
+     * @param r a function mapping attribute names to attribute mappers
      */
-    enum StackMapsOption implements Option {
-        GENERATE_BY_CLASS_VERSION,
-        ALWAYS_GENERATE,
-        DO_NOT_GENERATE
+    record AttributeMapperOption(Function<Utf8Entry, AttributeMapper<?>> attributeMapper) implements Option {
+        public static AttributeMapperOption of(Function<Utf8Entry, AttributeMapper<?>> attributeMapper) {
+            return new AttributeMapperOption(attributeMapper);
+        }
+    }
+
+    /**
+     * {@return an option describing the class hierarchy resolver to use when
+     * generating stack maps}
+     * @param r the resolver
+     */
+    record ClassHierarchyResolverOption(ClassHierarchyResolver classHierarchyResolver) implements Option {
+        public static ClassHierarchyResolverOption of(ClassHierarchyResolver classHierarchyResolver) {
+            return new ClassHierarchyResolverOption(classHierarchyResolver);
+        }
+    }
+
+    /**
+     * {@return an option describing whether to preserve the original constant
+     * pool when transforming a classfile}  Reusing the constant pool enables significant
+     * optimizations in processing time and minimizes differences between the
+     * original and transformed classfile, but may result in a bigger classfile
+     * when a classfile is significantly transformed.
+     * Default is to preserve the original constant pool.
+     * @param b whether or not to preserve the original constant pool
+     */
+    enum ConstantPoolSharingOption implements Option {
+        SHARE_CONSTANT_POOL,
+        DO_NOT_SHARE_CONSTANT_POOL
+    }
+
+    /**
+     * {@return an option describing whether or not to patch out unreachable code}
+     * Default is to automatically patch out unreachable code with NOPs.
+     * @param b whether or not to automatically patch out unreachable code
+     */
+    enum DeadCodeOption implements Option {
+        PATCH_DEAD_CODE,
+        KEEP_DEAD_CODE
+    }
+
+    /**
+     * {@return an option describing whether or not to filter unresolved labels}
+     * Default is to throw IllegalStateException when any {@link ExceptionCatch},
+     * {@link LocalVariableInfo}, {@link LocalVariableTypeInfo}, or {@link CharacterRangeInfo}
+     * reference to unresolved {@link Label} during bytecode serialization.
+     * Setting this option to true filters the above elements instead.
+     * @param b whether or not to automatically patch out unreachable code
+     */
+    enum DeadLabelsOption implements Option {
+        FAIL_ON_DEAD_LABELS,
+        FILTER_DEAD_LABELS
     }
 
     /**
@@ -118,32 +166,6 @@ public sealed interface Classfile
     }
 
     /**
-     * {@return an option describing whether to process or discard unrecognized
-     * attributes}
-     * Default is to process unrecognized attributes, and deliver as instances
-     * of {@link UnknownAttribute}.
-     * @param b whether or not to process unrecognized attributes
-     */
-    enum UnknownAttributesOption implements Option {
-        PROCESS_UNKNOWN_ATTRIBUTES,
-        DROP_UNKNOWN_ATTRIBUTES
-    }
-
-    /**
-     * {@return an option describing whether to preserve the original constant
-     * pool when transforming a classfile}  Reusing the constant pool enables significant
-     * optimizations in processing time and minimizes differences between the
-     * original and transformed classfile, but may result in a bigger classfile
-     * when a classfile is significantly transformed.
-     * Default is to preserve the original constant pool.
-     * @param b whether or not to preserve the original constant pool
-     */
-    enum ConstantPoolSharingOption implements Option {
-        SHARE_CONSTANT_POOL,
-        DO_NOT_SHARE_CONSTANT_POOL
-    }
-
-    /**
      * {@return an option describing whether or not to automatically rewrite
      * short jumps to long when necessary}
      * Default is to automatically rewrite jump instructions.
@@ -155,48 +177,26 @@ public sealed interface Classfile
     }
 
     /**
-     * {@return an option describing whether or not to patch out unreachable code}
-     * Default is to automatically patch out unreachable code with NOPs.
-     * @param b whether or not to automatically patch out unreachable code
+     * {@return an option describing whether or not to generate stackmaps}
+     * Default is to generate stack maps.
+     * @param b whether to generate stack maps
      */
-    enum DeadCodeOption implements Option {
-        PATCH_DEAD_CODE,
-        KEEP_DEAD_CODE
+    enum StackMapsOption implements Option {
+        GENERATE_STACK_MAPS_BY_CLASS_VERSION,
+        ALWAYS_GENERATE_STACK_MAPS,
+        DO_NOT_GENERATE_STACK_MAPS
     }
 
     /**
-     * {@return an option describing the class hierarchy resolver to use when
-     * generating stack maps}
-     * @param r the resolver
+     * {@return an option describing whether to process or discard unrecognized
+     * attributes}
+     * Default is to process unrecognized attributes, and deliver as instances
+     * of {@link UnknownAttribute}.
+     * @param b whether or not to process unrecognized attributes
      */
-    record ClassHierarchyResolverOption(ClassHierarchyResolver classHierarchyResolver) implements Option {
-        public static ClassHierarchyResolverOption of(ClassHierarchyResolver classHierarchyResolver) {
-            return new ClassHierarchyResolverOption(classHierarchyResolver);
-        }
-    }
-
-    /**
-     * {@return an option describing attribute mappers for custom attributes}
-     * Default is only to process standard attributes.
-     * @param r a function mapping attribute names to attribute mappers
-     */
-    record AttributeMapperOption(Function<Utf8Entry, AttributeMapper<?>> attributeMapper) implements Option {
-        public static AttributeMapperOption of(Function<Utf8Entry, AttributeMapper<?>> attributeMapper) {
-            return new AttributeMapperOption(attributeMapper);
-        }
-    }
-
-    /**
-     * {@return an option describing whether or not to filter unresolved labels}
-     * Default is to throw IllegalStateException when any {@link ExceptionCatch},
-     * {@link LocalVariableInfo}, {@link LocalVariableTypeInfo}, or {@link CharacterRangeInfo}
-     * reference to unresolved {@link Label} during bytecode serialization.
-     * Setting this option to true filters the above elements instead.
-     * @param b whether or not to automatically patch out unreachable code
-     */
-    enum DeadLabelsOption implements Option {
-        FILTER_DEAD_LABELS,
-        FAIL_ON_DEAD_LABELS
+    enum UnknownAttributesOption implements Option {
+        PROCESS_UNKNOWN_ATTRIBUTES,
+        DROP_UNKNOWN_ATTRIBUTES
     }
 
     /**

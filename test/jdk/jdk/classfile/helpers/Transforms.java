@@ -129,7 +129,7 @@ public class Transforms {
         UNSHARED_1(false, oneLevelNoop),
         UNSHARED_2(false, twoLevelNoop),
         UNSHARED_3(false, threeLevelNoop),
-        SHARED_3_NO_STACKMAP(true, threeLevelNoop, Classfile.StackMapsOption.DO_NOT_GENERATE),
+        SHARED_3_NO_STACKMAP(true, threeLevelNoop, Classfile.StackMapsOption.DO_NOT_GENERATE_STACK_MAPS),
         SHARED_3_NO_DEBUG(true, threeLevelNoop, Classfile.DebugElementsOption.DROP_DEBUG_ELEMENTS, Classfile.LineNumbersOption.DROP_LINE_NUMBERS),
         ASM_1(bytes -> {
             ClassReader cr = new ClassReader(bytes);

@@ -103,7 +103,7 @@ class ShortJumpsFixTest {
     static final Classfile
             CC_Fixed_Jumps = Classfile.of(Classfile.ShortJumpsOption.FIX_SHORT_JUMPS),
             CC_Not_Fixed_Jumps = Classfile.of(Classfile.ShortJumpsOption.FAIL_ON_SHORT_JUMPS),
-            CC_No_Stack_No_Patch = Classfile.of(Classfile.StackMapsOption.DO_NOT_GENERATE,
+            CC_No_Stack_No_Patch = Classfile.of(Classfile.StackMapsOption.DO_NOT_GENERATE_STACK_MAPS,
                                                         Classfile.DeadCodeOption.KEEP_DEAD_CODE);
 
     @ParameterizedTest

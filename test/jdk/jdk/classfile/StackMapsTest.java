@@ -54,7 +54,7 @@ import java.lang.reflect.AccessFlag;
 class StackMapsTest {
 
     private byte[] buildDeadCode() {
-        return Classfile.of(Classfile.StackMapsOption.DO_NOT_GENERATE,
+        return Classfile.of(Classfile.StackMapsOption.DO_NOT_GENERATE_STACK_MAPS,
                                     Classfile.DeadCodeOption.KEEP_DEAD_CODE).build(
                 ClassDesc.of("DeadCodePattern"),
                 clb -> clb.withMethodBody(

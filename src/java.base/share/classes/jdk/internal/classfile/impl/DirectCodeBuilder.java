@@ -325,7 +325,7 @@ public final class DirectCodeBuilder
                 Attribute<? extends StackMapTableAttribute> stackMapAttr;
                 boolean canReuseStackmaps = codeAndExceptionsMatch(codeLength);
 
-                if (options.generateStackmaps == Classfile.StackMapsOption.DO_NOT_GENERATE) {
+                if (options.generateStackmaps == Classfile.StackMapsOption.DO_NOT_GENERATE_STACK_MAPS) {
                     StackCounter cntr = StackCounter.of(DirectCodeBuilder.this, buf);
                     maxStack = cntr.maxStack();
                     maxLocals = cntr.maxLocals();
@@ -337,7 +337,7 @@ public final class DirectCodeBuilder
                     stackMapAttr = original.findAttribute(Attributes.STACK_MAP_TABLE).orElse(null);
                 }
                 else if (buf.getMajorVersion() >= Classfile.JAVA_6_VERSION ||
-                         options.generateStackmaps == Classfile.StackMapsOption.ALWAYS_GENERATE) {
+                         options.generateStackmaps == Classfile.StackMapsOption.ALWAYS_GENERATE_STACK_MAPS) {
                     try {
                         //new instance of generator immediately calculates maxStack, maxLocals, all frames,
                         // patches dead bytecode blocks and removes them from exception table
@@ -347,7 +347,7 @@ public final class DirectCodeBuilder
                         stackMapAttr = gen.stackMapTableAttribute();
                     } catch (Exception e) {
                         if (buf.getMajorVersion() == Classfile.JAVA_6_VERSION &&
-                            options.generateStackmaps == Classfile.StackMapsOption.GENERATE_BY_CLASS_VERSION) {
+                            options.generateStackmaps == Classfile.StackMapsOption.GENERATE_STACK_MAPS_BY_CLASS_VERSION) {
                             //failover following JVMS-4.10
                             StackCounter cntr = StackCounter.of(DirectCodeBuilder.this, buf);
                             maxStack = cntr.maxStack();

@@ -837,7 +837,7 @@ public final class StackMapGenerator {
         //try to attach debug info about corrupted bytecode to the message
         try {
             //clone SplitConstantPool with alternate options
-            var cc = Classfile.of(Classfile.StackMapsOption.DO_NOT_GENERATE);
+            var cc = Classfile.of(Classfile.StackMapsOption.DO_NOT_GENERATE_STACK_MAPS);
             var newCp = new SplitConstantPool(cp);
             var clm = cc.parse(cc.build(newCp.classEntry(ClassDesc.of("FakeClass")), newCp, clb ->
                     clb.withMethod(methodName, methodDesc, isStatic ? ACC_STATIC : 0, mb ->
