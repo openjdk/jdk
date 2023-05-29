@@ -475,7 +475,7 @@ class Stream<T> extends ExchangeImpl<T> {
         if ((frame instanceof HeaderFrame hf)) {
             if (hf.endHeaders()) {
                 Log.logTrace("handling response (streamid={0})", streamid);
-                handleResponse();
+                handleResponse(hf);
             }
             if (hf.getFlag(HeaderFrame.END_STREAM)) {
                 if (debug.on()) debug.log("handling END_STREAM: %d", streamid);
@@ -511,7 +511,7 @@ class Stream<T> extends ExchangeImpl<T> {
         return rspHeadersConsumer::onDecoded;
     }
 
-    protected void handleResponse() throws IOException {
+    protected void handleResponse(HeaderFrame hf) throws IOException {
         HttpHeaders responseHeaders = responseHeadersBuilder.build();
 
         if (!finalResponseCodeReceived) {
@@ -521,6 +521,14 @@ class Stream<T> extends ExchangeImpl<T> {
             // If informational code, response is partially complete
             if (responseCode < 100 || responseCode > 199)
                 this.finalResponseCodeReceived = true;
+            if (responseCode == 100 && hf.getFlag(HeaderFrame.END_STREAM)
+                    && !finalResponseCodeReceived) {
+                if (debug.on()) {
+                    debug.log("Received 100 statusCode, but FIN bit is set");
+                }
+                cancelImpl(new IOException("stream closed after 100, no other response expected"));
+            }
+
 
             response = new Response(
                     request, exchange, responseHeaders, connection(),
@@ -567,8 +575,16 @@ class Stream<T> extends ExchangeImpl<T> {
                 // response to be read before the Reset is handled in the case where the client's
                 // input stream is partially consumed or not consumed at all by the server.
                 if (frame.getErrorCode() != ResetFrame.NO_ERROR) {
+                    if (debug.on()) {
+                        debug.log("completing requestBodyCF exceptionally due to received" +
+                                " RESET(%s) (stream=%s)", frame.getErrorCode(), streamid);
+                    }
                     requestBodyCF.completeExceptionally(new IOException("RST_STREAM received"));
                 } else {
+                    if (debug.on()) {
+                        debug.log("completing requestBodyCF normally due to received" +
+                                " RESET(NO_ERROR) (stream=%s)", streamid);
+                    }
                     requestBodyCF.complete(null);
                 }
             }
@@ -950,6 +966,10 @@ class Stream<T> extends ExchangeImpl<T> {
         private void onNextImpl(ByteBuffer item) {
             // Got some more request body bytes to send.
             if (requestBodyCF.isDone()) {
+                if (debug.on()) {
+                    debug.log("RequestSubscriber: requestBodyCf is done: " +
+                            "cancelling subscription");
+                }
                 // stream already cancelled, probably in timeout
                 sendScheduler.stop();
                 subscription.cancel();
@@ -1528,7 +1548,7 @@ class Stream<T> extends ExchangeImpl<T> {
 
         // create and return the PushResponseImpl
         @Override
-        protected void handleResponse() {
+        protected void handleResponse(HeaderFrame hf) {
             HttpHeaders responseHeaders = responseHeadersBuilder.build();
 
             if (!finalPushResponseCodeReceived) {
