@@ -322,7 +322,7 @@ public class BasicButtonListener implements MouseListener, MouseMotionListener,
                 model.setArmed(true);
                 model.setPressed(true);
                 if(!b.hasFocus()) {
-                    b.requestFocus(FocusEvent.Cause.MOUSE_EVENT);
+                    b.requestFocus();
                 }
             }
             else if (key == RELEASE) {
