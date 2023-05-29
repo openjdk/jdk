@@ -1777,17 +1777,15 @@ class StubGenerator: public StubCodeGenerator {
     __ beqz(src, L_failed);
 
     // if [src_pos < 0] then return -1
-    // i.e. sign bit set
-    __ test_bit(t0, src_pos, 31);
-    __ bnez(t0, L_failed);
+    __ sign_extend(t0, src_pos, 32);
+    __ bltz(t0, L_failed);
 
     // if dst is null then return -1
     __ beqz(dst, L_failed);
 
     // if [dst_pos < 0] then return -1
-    // i.e. sign bit set
-    __ test_bit(t0, dst_pos, 31);
-    __ bnez(t0, L_failed);
+    __ sign_extend(t0, dst_pos, 32);
+    __ bltz(t0, L_failed);
 
     // registers used as temp
     const Register scratch_length    = x28; // elements count to copy
@@ -1795,10 +1793,8 @@ class StubGenerator: public StubCodeGenerator {
     const Register lh                = x30; // layout helper
 
     // if [length < 0] then return -1
-    __ addw(scratch_length, length, zr);    // length (elements count, 32-bits value)
-    // i.e. sign bit set
-    __ test_bit(t0, scratch_length, 31);
-    __ bnez(t0, L_failed);
+    __ sign_extend(scratch_length, length, 32);    // length (elements count, 32-bits value)
+    __ bltz(scratch_length, L_failed);
 
     __ load_klass(scratch_src_klass, src);
 #ifdef ASSERT
@@ -1836,9 +1832,7 @@ class StubGenerator: public StubCodeGenerator {
     __ bne(t1, scratch_src_klass, L_failed);
 
     // if src->is_Array() isn't null then return -1
-    // i.e. (lh >= 0)
-    __ test_bit(t0, lh, 31);
-    __ beqz(t0, L_failed);
+    __ bgez(t0, L_failed);
 
     // At this point, it is known to be a typeArray (array_tag 0x3).
 #ifdef ASSERT
@@ -1894,13 +1888,13 @@ class StubGenerator: public StubCodeGenerator {
     __ bnez(t0, L_copy_shorts);
     __ add(from, src, src_pos); // src_addr
     __ add(to, dst, dst_pos); // dst_addr
-    __ addw(count, scratch_length, zr); // length
+    __ sign_extend(count, scratch_length, 32); // length
     __ j(RuntimeAddress(byte_copy_entry));
 
   __ BIND(L_copy_shorts);
     __ shadd(from, src_pos, src, t0, 1); // src_addr
     __ shadd(to, dst_pos, dst, t0, 1); // dst_addr
-    __ addw(count, scratch_length, zr); // length
+    __ sign_extend(count, scratch_length, 32); // length
     __ j(RuntimeAddress(short_copy_entry));
 
   __ BIND(L_copy_ints);
@@ -1908,7 +1902,7 @@ class StubGenerator: public StubCodeGenerator {
     __ bnez(t0, L_copy_longs);
     __ shadd(from, src_pos, src, t0, 2); // src_addr
     __ shadd(to, dst_pos, dst, t0, 2); // dst_addr
-    __ addw(count, scratch_length, zr); // length
+    __ sign_extend(count, scratch_length, 32); // length
     __ j(RuntimeAddress(int_copy_entry));
 
   __ BIND(L_copy_longs);
@@ -1917,7 +1911,7 @@ class StubGenerator: public StubCodeGenerator {
       BLOCK_COMMENT("assert long copy {");
       Label L;
       __ andi(lh, lh, Klass::_lh_log2_element_size_mask); // lh -> x22_elsize
-      __ addw(lh, lh, zr);
+      __ sign_extend(lh, lh, 32);
       __ mv(t0, LogBytesPerLong);
       __ beq(x22_elsize, t0, L);
       __ stop("must be long copy, but elsize is wrong");
@@ -1927,7 +1921,7 @@ class StubGenerator: public StubCodeGenerator {
 #endif
     __ shadd(from, src_pos, src, t0, 3); // src_addr
     __ shadd(to, dst_pos, dst, t0, 3); // dst_addr
-    __ addw(count, scratch_length, zr); // length
+    __ sign_extend(count, scratch_length, 32); // length
     __ j(RuntimeAddress(long_copy_entry));
 
     // ObjArrayKlass
@@ -1947,7 +1941,7 @@ class StubGenerator: public StubCodeGenerator {
     __ add(from, from, arrayOopDesc::base_offset_in_bytes(T_OBJECT));
     __ shadd(to, dst_pos, dst, t0, LogBytesPerHeapOop);
     __ add(to, to, arrayOopDesc::base_offset_in_bytes(T_OBJECT));
-    __ addw(count, scratch_length, zr); // length
+    __ sign_extend(count, scratch_length, 32); // length
   __ BIND(L_plain_copy);
     __ j(RuntimeAddress(oop_copy_entry));
 
@@ -1970,7 +1964,7 @@ class StubGenerator: public StubCodeGenerator {
       __ add(from, from, arrayOopDesc::base_offset_in_bytes(T_OBJECT));
       __ shadd(to, dst_pos, dst, t0, LogBytesPerHeapOop);
       __ add(to, to, arrayOopDesc::base_offset_in_bytes(T_OBJECT));
-      __ addw(count, length, zr);           // length (reloaded)
+      __ sign_extend(count, length, 32);      // length (reloaded)
       const Register sco_temp = c_rarg3;      // this register is free now
       assert_different_registers(from, to, count, sco_temp,
                                  dst_klass, scratch_src_klass);
@@ -2803,7 +2797,7 @@ class StubGenerator: public StubCodeGenerator {
     __ andi(result, result, haystack_isL ? -8 : -4);
     __ slli(tmp, match_mask, haystack_chr_shift);
     __ sub(haystack, haystack, tmp);
-    __ addw(haystack_len, haystack_len, zr);
+    __ sign_extend(haystack_len, haystack_len, 32);
     __ j(L_LOOP_PROCEED);
 
     __ align(OptoLoopAlignment);
