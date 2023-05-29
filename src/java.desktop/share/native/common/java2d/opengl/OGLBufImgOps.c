@@ -150,15 +150,8 @@ OGLBufImgOps_CreateConvolveProgram(jint flags)
     }
 
     // compose the final source code string from the various pieces
-#if defined(__clang__)
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wformat-nonliteral"
-#endif
     snprintf(finalSource, sizeof(finalSource), convolveShaderSource,
             kernelMax, target, edge, target);
-#if defined(__clang__)
-#pragma clang diagnostic pop
-#endif
 
     convolveProgram = OGLContext_CreateFragmentProgram(finalSource);
     if (convolveProgram == 0) {
@@ -367,15 +360,8 @@ OGLBufImgOps_CreateRescaleProgram(jint flags)
     }
 
     // compose the final source code string from the various pieces
-#if defined(__clang__)
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wformat-nonliteral"
-#endif
     snprintf(finalSource, sizeof(finalSource), rescaleShaderSource,
             target, target, preRescale, postRescale);
-#if defined(__clang__)
-#pragma clang diagnostic pop
-#endif
 
     rescaleProgram = OGLContext_CreateFragmentProgram(finalSource);
     if (rescaleProgram == 0) {
@@ -606,15 +592,8 @@ OGLBufImgOps_CreateLookupProgram(jint flags)
     }
 
     // compose the final source code string from the various pieces
-#if defined(__clang__)
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wformat-nonliteral"
-#endif
     snprintf(finalSource, sizeof(finalSource), lookupShaderSource,
             target, target, preLookup, alpha, postLookup);
-#if defined(__clang__)
-#pragma clang diagnostic pop
-#endif
 
     lookupProgram = OGLContext_CreateFragmentProgram(finalSource);
     if (lookupProgram == 0) {

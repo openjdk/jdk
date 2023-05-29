@@ -61,6 +61,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBSA, \
     OPTIMIZATION := HIGH, \
     DISABLED_WARNINGS_gcc := sign-compare, \
     DISABLED_WARNINGS_gcc_ps_core.c := pointer-arith, \
+    DISABLED_WARNINGS_clang_ps_core.c := pointer-arith, \
     DISABLED_WARNINGS_clang := sign-compare, \
     DISABLED_WARNINGS_clang_libproc_impl.c := format-nonliteral, \
     DISABLED_WARNINGS_clang_sadis.c := format-nonliteral, \
