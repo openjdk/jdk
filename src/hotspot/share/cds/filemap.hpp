@@ -548,7 +548,7 @@ public:
   bool  validate_boot_class_paths() NOT_CDS_RETURN_(false);
   bool  validate_app_class_paths(int shared_app_paths_len) NOT_CDS_RETURN_(false);
   bool  map_heap_region_impl() NOT_CDS_JAVA_HEAP_RETURN_(false);
-  void  dealloc_heap_region() NOT_CDS_JAVA_HEAP_RETURN;
+  void  handle_failed_mapping() NOT_CDS_JAVA_HEAP_RETURN;
   bool  can_use_heap_region();
   bool  load_heap_region() NOT_CDS_JAVA_HEAP_RETURN_(false);
   bool  map_heap_region() NOT_CDS_JAVA_HEAP_RETURN_(false);

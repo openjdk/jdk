@@ -207,6 +207,9 @@ class CollectedHeap : public CHeapObj<mtGC> {
   }
 
  public:
+  MemRegion reserved() const {
+    return _reserved;
+  }
 
   static inline size_t filler_array_max_size() {
     return _filler_array_max_size;
@@ -517,6 +520,20 @@ class CollectedHeap : public CHeapObj<mtGC> {
   virtual bool can_load_archived_objects() const { return false; }
   virtual HeapWord* allocate_loaded_archive_space(size_t size) { return nullptr; }
   virtual void complete_loaded_archive_space(MemRegion archive_space) { }
+
+  // Commit the heap memory for CDS heap archive area according to the requested size.
+  // Preferred address is treated as a hint for the location of the archive area in the heap.
+  // The returned memory range may or may start at the preferred address.
+  // Return MemRegion corresponding to the commited heap memory.
+  virtual HeapWord* alloc_archive_space(size_t word_size, HeapWord* preferred_addr) { return nullptr; }
+
+  // This must be called after alloc_archive_space, and after class loading has occurred.
+  // GC policy can take necessary actions to make the archive space usable,
+  // such as inserting filler objects to make it parseable, or updating block offset table.
+  virtual void fixup_archive_space(MemRegion range) { return; }
+
+  // Handle any failure in loading the CDS archive area.
+  virtual void handle_archive_space_failure(MemRegion range) { return; }
 
   virtual bool is_oop(oop object) const;
   // Non product verification and debugging.

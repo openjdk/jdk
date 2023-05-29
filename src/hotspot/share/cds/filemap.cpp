@@ -69,7 +69,6 @@
 #include "utilities/defaultStream.hpp"
 #include "utilities/ostream.hpp"
 #if INCLUDE_G1GC
-#include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/heapRegion.hpp"
 #endif
 
@@ -211,12 +210,11 @@ void FileMapHeader::populate(FileMapInfo *info, size_t core_region_alignment,
       _heap_begin = CompressedOops::begin();
       _heap_end = CompressedOops::end();
     } else {
-#if INCLUDE_G1GC
-      address start = (address)G1CollectedHeap::heap()->reserved().start();
-      address end = (address)G1CollectedHeap::heap()->reserved().end();
+      assert(UseG1GC, "used by G1 only");
+      address start = (address)Universe::heap()->reserved().start();
+      address end = (address)Universe::heap()->reserved().end();
       _heap_begin = HeapShared::to_requested_address(start);
       _heap_end = HeapShared::to_requested_address(end);
-#endif
     }
   }
   _compressed_oops = UseCompressedOops;
@@ -1569,9 +1567,8 @@ void FileMapInfo::write_region(int region, char* base, size_t size,
       mapping_offset = (size_t)((address)requested_base - CompressedOops::base());
       assert((mapping_offset >> CompressedOops::shift()) << CompressedOops::shift() == mapping_offset, "must be");
     } else {
-#if INCLUDE_G1GC
-      mapping_offset = requested_base - (char*)G1CollectedHeap::heap()->reserved().start();
-#endif
+      assert(UseG1GC, "used by G1 only");
+      mapping_offset = requested_base - (char*)Universe::heap()->reserved().start();
     }
 #endif // INCLUDE_CDS_JAVA_HEAP
   } else {
@@ -2025,17 +2022,17 @@ bool FileMapInfo::can_use_heap_region() {
   log_info(cds)("    heap range = [" PTR_FORMAT " - "  PTR_FORMAT "]",
                 p2i(header()->heap_begin()), p2i(header()->heap_end()));
 
-  log_info(cds)("The current max heap size = " SIZE_FORMAT "M, HeapRegion::GrainBytes = " SIZE_FORMAT,
-                MaxHeapSize/M, HeapRegion::GrainBytes);
+  log_info(cds)("The current max heap size = " SIZE_FORMAT "M", MaxHeapSize/M);
+  if (UseG1GC) {
+    log_info(cds)("HeapRegion::GrainBytes = " SIZE_FORMAT, HeapRegion::GrainBytes);
+  }
   log_info(cds)("    narrow_klass_base = " PTR_FORMAT ", narrow_klass_shift = %d",
                 p2i(CompressedKlassPointers::base()), CompressedKlassPointers::shift());
   log_info(cds)("    narrow_oop_mode = %d, narrow_oop_base = " PTR_FORMAT ", narrow_oop_shift = %d",
                 CompressedOops::mode(), p2i(CompressedOops::base()), CompressedOops::shift());
   log_info(cds)("    heap range = [" PTR_FORMAT " - "  PTR_FORMAT "]",
-                UseCompressedOops ? p2i(CompressedOops::begin()) :
-                                    UseG1GC ? p2i((address)G1CollectedHeap::heap()->reserved().start()) : 0L,
-                UseCompressedOops ? p2i(CompressedOops::end()) :
-                                    UseG1GC ? p2i((address)G1CollectedHeap::heap()->reserved().end()) : 0L);
+                UseCompressedOops ? p2i(CompressedOops::begin()) : p2i((address)Universe::heap()->reserved().start()),
+                UseCompressedOops ? p2i(CompressedOops::end()) : p2i((address)Universe::heap()->reserved().end()));
 
   if (narrow_klass_base() != CompressedKlassPointers::base() ||
       narrow_klass_shift() != CompressedKlassPointers::shift()) {
@@ -2094,14 +2091,15 @@ bool FileMapInfo::map_heap_region() {
 
     // Make sure we map at the very top of the heap - see comments in
     // init_heap_region_relocation().
-    MemRegion heap_range = G1CollectedHeap::heap()->reserved();
+    MemRegion heap_range = Universe::heap()->reserved();
     assert(heap_range.contains(_mapped_heap_memregion), "must be");
 
-    address heap_end = (address)heap_range.end();
-    address mapped_heap_region_end = (address)_mapped_heap_memregion.end();
-    assert(heap_end >= mapped_heap_region_end, "must be");
-    assert(heap_end - mapped_heap_region_end < (intx)(HeapRegion::GrainBytes),
-           "must be at the top of the heap to avoid fragmentation");
+    if (UseG1GC) {
+      address heap_end = (address)heap_range.end();
+      address mapped_heap_region_end = (address)_mapped_heap_memregion.end();
+      assert(heap_end - mapped_heap_region_end < (intx)(HeapRegion::GrainBytes),
+             "must be at the top of the heap to avoid fragmentation");
+    }
 #endif
 
     ArchiveHeapLoader::set_mapped();
@@ -2112,7 +2110,7 @@ bool FileMapInfo::map_heap_region() {
 }
 
 bool FileMapInfo::map_heap_region_impl() {
-  assert(UseG1GC, "the following code assumes G1");
+  assert(UseG1GC, "used by G1 only");
 
   FileMapRegion* r = region_at(MetaspaceShared::hp);
   size_t size = r->used();
@@ -2126,7 +2124,7 @@ bool FileMapInfo::map_heap_region_impl() {
   log_info(cds)("Preferred address to map heap data (to avoid relocation) is " INTPTR_FORMAT, p2i(requested_start));
 
   // allocate from java heap
-  HeapWord* start = G1CollectedHeap::heap()->alloc_archive_region(word_size, (HeapWord*)requested_start);
+  HeapWord* start = Universe::heap()->alloc_archive_space(word_size, (HeapWord*)requested_start);
   if (start == nullptr) {
     log_info(cds)("UseSharedSpaces: Unable to allocate java heap region for archive heap.");
     return false;
@@ -2141,7 +2139,7 @@ bool FileMapInfo::map_heap_region_impl() {
                               addr, _mapped_heap_memregion.byte_size(), r->read_only(),
                               r->allow_exec());
   if (base == nullptr || base != addr) {
-    dealloc_heap_region();
+    handle_failed_mapping();
     log_info(cds)("UseSharedSpaces: Unable to map at required address in java heap. "
                   INTPTR_FORMAT ", size = " SIZE_FORMAT " bytes",
                   p2i(addr), _mapped_heap_memregion.byte_size());
@@ -2150,7 +2148,7 @@ bool FileMapInfo::map_heap_region_impl() {
 
   r->set_mapped_base(base);
   if (VerifySharedSpaces && !r->check_region_crc()) {
-    dealloc_heap_region();
+    handle_failed_mapping();
     log_info(cds)("UseSharedSpaces: mapped heap region is corrupt");
     return false;
   }
@@ -2173,7 +2171,7 @@ bool FileMapInfo::map_heap_region_impl() {
     char* bitmap_base = map_bitmap_region();
     if (bitmap_base == NULL) {
       log_info(cds)("CDS heap cannot be used because bitmap region cannot be mapped");
-      dealloc_heap_region();
+      handle_failed_mapping();
       unmap_region(MetaspaceShared::hp);
       _heap_pointers_need_patching = false;
       return false;
@@ -2210,18 +2208,13 @@ void FileMapInfo::patch_heap_embedded_pointers() {
 void FileMapInfo::fixup_mapped_heap_region() {
   if (ArchiveHeapLoader::is_mapped()) {
     assert(!_mapped_heap_memregion.is_empty(), "sanity");
-
-    // Populate the archive regions' G1BlockOffsetTableParts. That ensures
-    // fast G1BlockOffsetTablePart::block_start operations for any given address
-    // within the archive regions when trying to find start of an object
-    // (e.g. during card table scanning).
-    G1CollectedHeap::heap()->populate_archive_regions_bot_part(_mapped_heap_memregion);
+    Universe::heap()->fixup_archive_space(_mapped_heap_memregion);
   }
 }
 
 // dealloc the archive regions from java heap
-void FileMapInfo::dealloc_heap_region() {
-  G1CollectedHeap::heap()->dealloc_archive_regions(_mapped_heap_memregion);
+void FileMapInfo::handle_failed_mapping() {
+  Universe::heap()->handle_archive_space_failure(_mapped_heap_memregion);
 }
 #endif // INCLUDE_CDS_JAVA_HEAP
 
