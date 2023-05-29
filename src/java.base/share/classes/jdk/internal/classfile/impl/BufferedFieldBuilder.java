@@ -36,7 +36,7 @@ import jdk.internal.classfile.constantpool.Utf8Entry;
 public final class BufferedFieldBuilder
         implements TerminalFieldBuilder {
     private final SplitConstantPool constantPool;
-    private final Options options;
+    private final ClassfileImpl options;
     private final Utf8Entry name;
     private final Utf8Entry desc;
     private final List<FieldElement> elements = new ArrayList<>();
@@ -44,7 +44,7 @@ public final class BufferedFieldBuilder
     private final FieldModel original;
 
     public BufferedFieldBuilder(SplitConstantPool constantPool,
-                                Options options,
+                                ClassfileImpl options,
                                 Utf8Entry name,
                                 Utf8Entry type,
                                 FieldModel original) {

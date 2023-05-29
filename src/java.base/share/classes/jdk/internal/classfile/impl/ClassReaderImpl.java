@@ -76,7 +76,7 @@ public final class ClassReaderImpl
     private final int constantPoolCount;
     private final int[] cpOffset;
 
-    final Options options;
+    final ClassfileImpl options;
     final int interfacesPos;
     final PoolEntry[] cp;
 
@@ -85,7 +85,7 @@ public final class ClassReaderImpl
     private BootstrapMethodsAttribute bootstrapMethodsAttribute;
 
     ClassReaderImpl(byte[] classfileBytes,
-                    Options options) {
+                    ClassfileImpl options) {
         this.buffer = classfileBytes;
         this.classfileLength = classfileBytes.length;
         this.options = options;
@@ -133,7 +133,7 @@ public final class ClassReaderImpl
         this.interfacesPos = p;
     }
 
-    public Options options() {
+    public ClassfileImpl options() {
         return options;
     }
 

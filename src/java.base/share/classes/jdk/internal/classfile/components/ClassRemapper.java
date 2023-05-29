@@ -100,7 +100,7 @@ public sealed interface ClassRemapper extends ClassTransform permits ClassRemapp
      * @return re-mapped class file bytes
      */
     default byte[] remapClass(ClassModel clm) {
-        return Classfile.build(map(clm.thisClass().asSymbol()),
+        return Classfile.of().build(map(clm.thisClass().asSymbol()),
                 clb -> clm.forEachElement(resolve(clb).consumer()));
     }
 }

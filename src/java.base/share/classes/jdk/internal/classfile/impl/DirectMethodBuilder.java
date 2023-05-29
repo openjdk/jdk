@@ -50,7 +50,7 @@ public final class DirectMethodBuilder
     MethodTypeDesc mDesc;
 
     public DirectMethodBuilder(SplitConstantPool constantPool,
-                               Options options,
+                               ClassfileImpl options,
                                Utf8Entry nameInfo,
                                Utf8Entry typeInfo,
                                int flags,

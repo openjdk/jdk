@@ -223,7 +223,7 @@ public final class StackMapGenerator {
                      boolean isStatic,
                      ByteBuffer bytecode,
                      SplitConstantPool cp,
-                     Options options,
+                     ClassfileImpl options,
                      List<AbstractPseudoInstruction.ExceptionCatchImpl> handlers) {
         this.thisType = Type.referenceType(thisClass);
         this.methodName = methodName;
@@ -836,8 +836,8 @@ public final class StackMapGenerator {
                 methodDesc.parameterList().stream().map(ClassDesc::displayName).collect(Collectors.joining(","))));
         //try to attach debug info about corrupted bytecode to the message
         try {
-            //clone SplitConstantPool with alternate Options
-            var cc = Classfile.Context.of(Classfile.StackMapsOption.DO_NOT_GENERATE);
+            //clone SplitConstantPool with alternate options
+            var cc = Classfile.of(Classfile.StackMapsOption.DO_NOT_GENERATE);
             var newCp = new SplitConstantPool(cp);
             var clm = cc.parse(cc.build(newCp.classEntry(ClassDesc.of("FakeClass")), newCp, clb ->
                     clb.withMethod(methodName, methodDesc, isStatic ? ACC_STATIC : 0, mb ->

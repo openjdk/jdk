@@ -101,7 +101,7 @@ public final class DirectCodeBuilder
     public static Attribute<CodeAttribute> build(MethodInfo methodInfo,
                                                  Consumer<? super CodeBuilder> handler,
                                                  SplitConstantPool constantPool,
-                                                 Options options,
+                                                 ClassfileImpl options,
                                                  CodeModel original) {
         DirectCodeBuilder cb;
         try {
@@ -120,7 +120,7 @@ public final class DirectCodeBuilder
 
     private DirectCodeBuilder(MethodInfo methodInfo,
                               SplitConstantPool constantPool,
-                              Options options,
+                              ClassfileImpl options,
                               CodeModel original,
                               boolean transformFwdJumps) {
         super(constantPool, options);
@@ -382,7 +382,7 @@ public final class DirectCodeBuilder
         private final BufWriterImpl buf;
         private int lastPc, lastLine, writtenLine;
 
-        public DedupLineNumberTableAttribute(ConstantPoolBuilder constantPool, Options options) {
+        public DedupLineNumberTableAttribute(ConstantPoolBuilder constantPool, ClassfileImpl options) {
             super(Attributes.LINE_NUMBER_TABLE);
             buf = new BufWriterImpl(constantPool, options);
             lastPc = -1;

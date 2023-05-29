@@ -42,7 +42,7 @@ public final class DirectFieldBuilder
     private int flags;
 
     public DirectFieldBuilder(SplitConstantPool constantPool,
-                              Options options,
+                              ClassfileImpl options,
                               Utf8Entry name,
                               Utf8Entry type,
                               FieldModel original) {

@@ -100,7 +100,7 @@ abstract class VersionPropsPlugin extends AbstractPlugin {
 
     @SuppressWarnings("deprecation")
     private byte[] redefine(String path, byte[] classFile) {
-        return Classfile.transform(newClassReader(path, classFile),
+        return Classfile.of().transform(newClassReader(path, classFile),
             ClassTransform.transformingMethodBodies(
                 mm -> mm.methodName().equalsString("<clinit>"),
                 new CodeTransform() {

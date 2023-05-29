@@ -61,7 +61,7 @@ public final class DirectClassBuilder
     private int sizeHint;
 
     public DirectClassBuilder(SplitConstantPool constantPool,
-                              Options options,
+                              ClassfileImpl options,
                               ClassEntry thisClass) {
         super(constantPool, options);
         this.thisClassEntry = AbstractPoolEntry.maybeClone(constantPool, thisClass);

@@ -39,7 +39,7 @@ import jdk.internal.classfile.ClassBuilder;
 import jdk.internal.classfile.ClassModel;
 import jdk.internal.classfile.Classfile;
 import jdk.internal.classfile.impl.ClassReaderImpl;
-import jdk.internal.classfile.impl.Options;
+import jdk.internal.classfile.impl.ClassfileImpl;
 import java.lang.constant.ModuleDesc;
 import java.lang.constant.PackageDesc;
 import jdk.internal.classfile.WritableElement;

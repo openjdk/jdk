@@ -47,17 +47,17 @@ import org.openjdk.jmh.annotations.*;
 @Measurement(iterations = 4)
 public class RebuildMethodBodies {
 
-    Classfile.Context shared, unshared;
+    Classfile shared, unshared;
     List<ClassModel> models;
     Iterator<ClassModel> it;
 
     @Setup(Level.Trial)
     public void setup() throws IOException {
-        shared = Classfile.Context.of(
+        shared = Classfile.of(
                             Classfile.ConstantPoolSharingOption.SHARE_CONSTANT_POOL,
                             Classfile.DebugElementsOption.DROP_DEBUG_ELEMENTS,
                             Classfile.LineNumbersOption.DROP_LINE_NUMBERS);
-        unshared = Classfile.Context.of(
+        unshared = Classfile.of(
                             Classfile.ConstantPoolSharingOption.DO_NOT_SHARE_CONSTANT_POOL,
                             Classfile.DebugElementsOption.DROP_DEBUG_ELEMENTS,
                             Classfile.LineNumbersOption.DROP_LINE_NUMBERS);
@@ -91,7 +91,7 @@ public class RebuildMethodBodies {
         transform(unshared, it.next());
     }
 
-    private static void transform(Classfile.Context cc, ClassModel clm) {
+    private static void transform(Classfile cc, ClassModel clm) {
         cc.transform(clm, ClassTransform.transformingMethodBodies((cob, coe) -> {
             switch (coe) {
                 case FieldInstruction i ->

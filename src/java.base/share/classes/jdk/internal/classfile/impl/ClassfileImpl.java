@@ -34,7 +34,7 @@ import jdk.internal.classfile.constantpool.Utf8Entry;
 
 import static jdk.internal.classfile.ClassHierarchyResolver.DEFAULT_CLASS_HIERARCHY_RESOLVER;
 
-public final class Options implements Classfile.Context {
+public final class ClassfileImpl implements Classfile {
 
     public StackMapsOption generateStackmaps = StackMapsOption.GENERATE_BY_CLASS_VERSION;
     public DebugElementsOption processDebug = DebugElementsOption.PROCESS_DEBUG_ELEMENTS;
@@ -53,7 +53,7 @@ public final class Options implements Classfile.Context {
     });
 
     @SuppressWarnings("unchecked")
-    public Options(Collection<Classfile.Option> options) {
+    public ClassfileImpl(Collection<Classfile.Option> options) {
         for (var o : options) {
             switch (o) {
                 case StackMapsOption oo -> generateStackmaps = oo;
