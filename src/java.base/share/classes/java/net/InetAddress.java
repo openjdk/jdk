@@ -222,7 +222,7 @@ import static java.net.spi.InetAddressResolver.LookupPolicy.IPV6_FIRST;
  * 30 seconds.
  * <p>
  * A value of 0 (zero) or if the property is not set means do not use stale
- * names, the negative value is ignored.
+ * names. Negative values are ignored.
  * </dd>
  * <dt><b>networkaddress.cache.negative.ttl</b> (default: 10)</dt>
  * <dd>Indicates the caching policy for un-successful name lookups
