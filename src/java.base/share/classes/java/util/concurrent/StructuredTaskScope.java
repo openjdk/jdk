@@ -315,9 +315,9 @@ public class StructuredTaskScope<T> implements AutoCloseable {
     // Counters to support checking that the task scope owner joins before processing
     // results and attempts join before closing the task scope. These counters are
     // accessed only by the owner thread.
-    private int forkPhase;         // incremented when the first subtask is forked after join
-    private int lastJoinInvoked;   // set to the current fork phase when join is invoked
-    private int lastJoinCompleted; // set to the current fork phase when join completes
+    private int forkRound;         // incremented when the first subtask is forked after join
+    private int lastJoinAttempted; // set to the current fork round when join is attempted
+    private int lastJoinCompleted; // set to the current fork round when join completes
 
     /**
      * Represents a subtask forked with {@link #fork(Callable)}.
@@ -369,6 +369,11 @@ public class StructuredTaskScope<T> implements AutoCloseable {
 
         /**
          * Returns the result of the subtask.
+         *
+         * <p> To ensure correct usage, if the scope owner {@linkplain #fork(Callable) forks}
+         * a subtask, then it must join (with {@link #join() join} or {@link #joinUntil(Instant)
+         * joinUntil}) before it can obtain the result of the subtask.
+         *
          * @return the possibly-null result
          * @throws IllegalStateException if the subtask has not completed, did not complete
          * successfully, or the current thread is the task scope owner and did not join
@@ -379,6 +384,11 @@ public class StructuredTaskScope<T> implements AutoCloseable {
 
         /**
          * {@return the exception thrown by the subtask}
+         *
+         * <p> To ensure correct usage, if the scope owner {@linkplain #fork(Callable) forks}
+         * a subtask, then it must join (with {@link #join() join} or {@link #joinUntil(Instant)
+         * joinUntil}) before it can obtain the exception thrown by the subtask.
+         *
          * @throws IllegalStateException if the subtask has not completed, completed with
          * a result, or the current thread is the task scope owner and did not join after
          * forking
@@ -460,17 +470,17 @@ public class StructuredTaskScope<T> implements AutoCloseable {
 
     /**
      * Throws IllegalStateException if the current thread is the owner, and the owner did
-     * not join after forking a subtask in the given fork phase.
+     * not join after forking a subtask in the given fork round.
      */
-    private void ensureJoinedIfOwner(int phase) {
-        if (Thread.currentThread() == flock.owner() && (phase > lastJoinCompleted)) {
+    private void ensureJoinedIfOwner(int round) {
+        if (Thread.currentThread() == flock.owner() && (round > lastJoinCompleted)) {
             throw newIllegalStateExceptionNoJoin();
         }
     }
 
     /**
      * Ensures that the current thread is the owner of this task scope and that it joined
-     * (with {@link #join()} or {@link #joinUntil(Instant)} after {@linkplain #fork(Callable)
+     * (with {@link #join()} or {@link #joinUntil(Instant)}) after {@linkplain #fork(Callable)
      * forking} subtasks.
      *
      * @apiNote This method can be used by subclasses that define methods to make available
@@ -482,7 +492,7 @@ public class StructuredTaskScope<T> implements AutoCloseable {
      */
     protected final void ensureOwnerAndJoined() {
         ensureOwner();
-        if (forkPhase > lastJoinCompleted) {
+        if (forkRound > lastJoinCompleted) {
             throw newIllegalStateExceptionNoJoin();
         }
     }
@@ -518,7 +528,7 @@ public class StructuredTaskScope<T> implements AutoCloseable {
      * {@linkplain ScopedValue scoped value} bindings. The bindings must match the bindings
      * captured when the task scope was created.
      *
-     * <p> This method returns a {@link Subtask Subtask}to represent the <em>forked
+     * <p> This method returns a {@link Subtask Subtask} to represent the <em>forked
      * subtask</em>. The {@code Subtask} object can be used to obtain the result when
      * the subtask completes successfully, or the exception when the subtask fails. To
      * ensure correct usage, the {@link Subtask#get() get()} and {@link Subtask#exception()
@@ -555,17 +565,17 @@ public class StructuredTaskScope<T> implements AutoCloseable {
         Objects.requireNonNull(task, "'task' is null");
         int s = ensureOpen();   // throws ISE if closed
 
-        // when forked by the owner, the subtask is forked in the current or next phase
-        int phase = -1;
+        // when forked by the owner, the subtask is forked in the current or next round
+        int round = -1;
         if (Thread.currentThread() == flock.owner()) {
-            phase = forkPhase;
-            if (forkPhase == lastJoinCompleted) {
-                // new phase if first fork after join
-                phase++;
+            round = forkRound;
+            if (forkRound == lastJoinCompleted) {
+                // new round if first fork after join
+                round++;
             }
         }
 
-        SubtaskImpl<U> subtask = new SubtaskImpl<>(this, task, phase);
+        SubtaskImpl<U> subtask = new SubtaskImpl<>(this, task, round);
         boolean started = false;
 
         if (s < SHUTDOWN) {
@@ -586,8 +596,8 @@ public class StructuredTaskScope<T> implements AutoCloseable {
         }
 
         // force owner to join if thread started
-        if (started && Thread.currentThread() == flock.owner() && phase > forkPhase) {
-            forkPhase = phase;
+        if (started && Thread.currentThread() == flock.owner() && round > forkRound) {
+            forkRound = round;
         }
 
         // return forked subtask or a subtask that did not run
@@ -601,7 +611,7 @@ public class StructuredTaskScope<T> implements AutoCloseable {
         throws InterruptedException, TimeoutException
     {
         ensureOwner();
-        lastJoinInvoked = forkPhase;
+        lastJoinAttempted = forkRound;
         int s = ensureOpen();  // throws ISE if closed
         if (s == OPEN) {
             // wait for all threads, wakeup, interrupt, or timeout
@@ -611,7 +621,7 @@ public class StructuredTaskScope<T> implements AutoCloseable {
                 flock.awaitAll();
             }
         }
-        lastJoinCompleted = forkPhase;
+        lastJoinCompleted = forkRound;
     }
 
     /**
@@ -769,7 +779,7 @@ public class StructuredTaskScope<T> implements AutoCloseable {
      * {@return true if this task scope is shutdown, otherwise false}
      * @see #shutdown()
      */
-    public boolean isShutdown() {
+    public final boolean isShutdown() {
         return state >= SHUTDOWN;
     }
 
@@ -823,8 +833,8 @@ public class StructuredTaskScope<T> implements AutoCloseable {
         }
 
         // throw ISE if the owner didn't attempt to join after forking
-        if (forkPhase > lastJoinInvoked) {
-            lastJoinCompleted = forkPhase;
+        if (forkRound > lastJoinAttempted) {
+            lastJoinCompleted = forkRound;
             throw newIllegalStateExceptionNoJoin();
         }
     }
@@ -854,15 +864,15 @@ public class StructuredTaskScope<T> implements AutoCloseable {
 
         private final StructuredTaskScope<? super T> scope;
         private final Callable<? extends T> task;
-        private final int phase;
+        private final int round;
         private volatile Object result;
 
         SubtaskImpl(StructuredTaskScope<? super T> scope,
                     Callable<? extends T> task,
-                    int phase) {
+                    int round) {
             this.scope = scope;
             this.task = task;
-            this.phase = phase;
+            this.round = round;
         }
 
         @Override
@@ -908,7 +918,7 @@ public class StructuredTaskScope<T> implements AutoCloseable {
 
         @Override
         public T get() {
-            scope.ensureJoinedIfOwner(phase);
+            scope.ensureJoinedIfOwner(round);
             Object result = this.result;
             if (result instanceof AltResult) {
                 if (result == RESULT_NULL) return null;
@@ -922,7 +932,7 @@ public class StructuredTaskScope<T> implements AutoCloseable {
 
         @Override
         public Throwable exception() {
-            scope.ensureJoinedIfOwner(phase);
+            scope.ensureJoinedIfOwner(round);
             Object result = this.result;
             if (result instanceof AltResult alt && alt.state() == State.FAILED) {
                 return alt.exception();

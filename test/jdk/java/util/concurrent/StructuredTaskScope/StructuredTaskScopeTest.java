@@ -210,13 +210,13 @@ class StructuredTaskScopeTest {
     @MethodSource("factories")
     void testForkAfterJoin(ThreadFactory factory) throws Exception {
         try (var scope = new StructuredTaskScope<String>(null, factory)) {
-            // fork phase 1
+            // round 1
             var subtask1 = scope.fork(() -> "foo");
             assertThrows(IllegalStateException.class, subtask1::get);
             scope.join();
             assertEquals("foo", subtask1.get());
 
-            // fork phase 2
+            // round 2
             var subtask2 = scope.fork(() -> "bar");
             assertEquals("foo", subtask1.get());
             assertThrows(IllegalStateException.class, subtask2::get);
@@ -224,7 +224,7 @@ class StructuredTaskScopeTest {
             assertEquals("foo", subtask1.get());
             assertEquals("bar", subtask2.get());
 
-            // fork phase 3
+            // round 3
             var subtask3 = scope.fork(() -> "baz");
             assertEquals("foo", subtask1.get());
             assertEquals("bar", subtask2.get());

@@ -42,93 +42,123 @@ import jdk.internal.vm.ScopedValueContainer;
 import sun.security.action.GetPropertyAction;
 
 /**
- * A value that is set once and is then available for reading for a bounded period of
- * execution by a thread. A {@code ScopedValue} allows for safely and efficiently sharing
- * data for a bounded period of execution without passing the data as method arguments.
+ * A value that may be safely and efficiently shared to methods without using method
+ * parameters.
  *
- * <p> {@code ScopedValue} defines the {@link #runWhere(ScopedValue, Object, Runnable)}
- * method to set the value of a {@code ScopedValue} for the bounded period of execution by
- * a thread of the runnable's {@link Runnable#run() run} method. The unfolding execution of
- * the methods executed by {@code run} defines a <b><em>dynamic scope</em></b>. The scoped
- * value is {@linkplain #isBound() bound} while executing in the dynamic scope, it reverts
- * to being <em>unbound</em> when the {@code run} method completes (normally or with an
- * exception). Code executing in the dynamic scope uses the {@code ScopedValue} {@link
- * #get() get} method to read its value.
+ * <p> In the Java programming language, data is usually passed to a method by means of a
+ * method parameter. The data may need to be passed through a sequence of many methods to
+ * get to the method that makes use of the data. Every method in the sequence of calls
+ * needs to declare the parameter and every method has access to the data.
+ * {@code ScopedValue} provides a means to pass data to a faraway method (typically a
+ * <em>callback</em>) without using method parameters. In effect, a {@code ScopedValue}
+ * is an <em>implicit method parameter</em>. It is "as if" every method in a sequence of
+ * calls has an additional parameter. None of the methods declare the parameter and only
+ * the methods that have access to the {@code ScopedValue} object can access its value
+ * (the data). {@code ScopedValue} makes it possible to securely pass data from a
+ * <em>caller</em> to a faraway <em>callee</em> through a sequence of intermediate methods
+ * that do not declare a parameter for the data and have no access to the data.
  *
- * <p> Like a {@linkplain ThreadLocal thread-local variable}, a scoped value has multiple
- * incarnations, one per thread. The particular incarnation that is used depends on which
- * thread calls its methods.
+ * <p> The {@code ScopedValue} API works by executing a method with a {@code ScopedValue}
+ * object <em>bound</em> to some value for the bounded period of execution of a method.
+ * The method may invoke another method, which in turn may invoke another. The unfolding
+ * execution of the methods define a <em>dynamic scope</em>. Code in these methods with
+ * access to the {@code ScopedValue} object may read its value. The {@code ScopedValue}
+ * object reverts to being <em>unbound</em> when the original method completes normally or
+ * with an exception. The {@code ScopedValue} API supports executing a {@link Runnable#run()
+ * Runnable.run}, {@link Callable#call() Callable.call}, or {@link Supplier#get() Supplier.get}
+ * method with a {@code ScopedValue} bound to a value.
  *
- * <p> Consider the following example with a scoped value {@code USERNAME} that is
- * <em>bound</em> to the value "{@code duke}" for the execution, by a thread, of a run
- * method that invokes {@code doSomething()}.
+ * <p> Consider the following example with a scoped value "{@code NAME}" bound to the value
+ * "{@code duke}" for the execution of a {@code run} method. The {@code run} method, in
+ * turn, invokes {@code doSomething}.
  * {@snippet lang=java :
  *     // @link substring="newInstance" target="#newInstance" :
- *     private static final ScopedValue<String> USERNAME = ScopedValue.newInstance();
+ *     private static final ScopedValue<String> NAME = ScopedValue.newInstance();
  *
- *     ScopedValue.runWhere(USERNAME, "duke", () -> doSomething());
+ *     // @link substring="runWhere" target="#runWhere" :
+ *     ScopedValue.runWhere(NAME, "duke", () -> doSomething());
  * }
- * Code executed directly or indirectly by {@code doSomething()} that invokes {@code
- * USERNAME.get()} will read the value "{@code duke}". The scoped value is bound while
- * executing {@code doSomething()} and becomes unbound when {@code doSomething()}
- * completes (normally or with an exception). If one thread were to call {@code
- * doSomething()} with {@code USERNAME} bound to "{@code duke1}", and another thread
- * were to call the method with {@code USERNAME} bound to "{@code duke2}", then
- * {@code USERNAME.get()} would read the value "{@code duke1}" or "{@code duke2}",
- * depending on which thread is executing.
+ * Code executed directly or indirectly by {@code doSomething}, with access to the field
+ * {@code NAME}, can invoke {@code NAME.get()} to read the value "{@code duke}". {@code
+ * NAME} is bound while executing the {@code run} method. It reverts to being unbound when
+ * the {@code run} method completes.
  *
- * <p> In addition to the {@code runWhere} method that executes a {@code run} method, {@code
- * ScopedValue} defines the {@link #callWhere(ScopedValue, Object, Callable)} and
- * {@link #getWhere(ScopedValue, Object, Supplier)} methods to execute
- * methods that returns results. It also defines the {@link #where(ScopedValue, Object)}
- * method for cases where it is useful to accumulate mappings of multiple {@code ScopedValue}s to
- * bound values.
+ * <p> The example using {@code runWhere} invokes a method that does not return a result.
+ * The {@link #callWhere(ScopedValue, Object, Callable) callWhere} and {@link
+ * #getWhere(ScopedValue, Object, Supplier) getWhere} can be used to invoke a method that
+ * returns a result.
+ * In addition, {@code ScopedValue} defines the {@link #where(ScopedValue, Object)} method
+ * for cases where multiple mappings of ({@code ScopedValue} to value) are accumulated
+ * in advance of calling a method with all {@code ScopedValue}s bound to their value.
  *
- * <p> A {@code ScopedValue} will typically be declared in a {@code final} and {@code
- * static} field. The accessibility of the field will determine which components can
- * bind or read its value.
+ * <h2>Bindings are per-thread</h2>
  *
- * <p> Unless otherwise specified, passing a {@code null} argument to a method in this
- * class will cause a {@link NullPointerException} to be thrown.
+ * A {@code ScopedValue} binding to a value is per-thread. Invoking {@code xxxWhere}
+ * executes a method with a {@code ScopedValue} bound to a value for the current thread.
+ * The {@link #get() get} method returns the value bound for the current thread.
+ *
+ * <p> In the example, if code executed by one thread invokes this:
+ * {@snippet lang=java :
+ *     ScopedValue.runWhere(NAME, "duke1", () -> doSomething());
+ * }
+ * and code executed by another thread invokes:
+ * {@snippet lang=java :
+ *     ScopedValue.runWhere(NAME, "duke2", () -> doSomething());
+ * }
+ * then code in {@code doSomething} (or any method that it calls) invoking {@code NAME.get()}
+ * will read the value "{@code duke1}" or "{@code duke2}", depending on which thread is
+ * executing.
+ *
+ * <h2>Scoped values as capabilities</h2>
+ *
+ * A {@code ScopedValue} object should be treated as a <em>capability</em> or a key to
+ * access its value when the {@code ScopedValue} is bound. Secure usage depends on access
+ * control (see <cite>The Java Virtual Machine Specification</cite>, Section {@jvms 5.4.4})
+ * and taking care to not share the {@code ScopedValue} object. In many cases, a {@code
+ * ScopedValue} will be declared in a {@code final} and {@code static} field so that it
+ * is only accessible to code in a single class (or nest).
  *
  * <h2><a id="rebind">Rebinding</a></h2>
  *
  * The {@code ScopedValue} API allows a new binding to be established for <em>nested
  * dynamic scopes</em>. This is known as <em>rebinding</em>. A {@code ScopedValue} that
- * is bound to some value may be bound to a new value for the bounded execution of some
+ * is bound to a value may be bound to a new value for the bounded execution of a new
  * method. The unfolding execution of code executed by that method defines the nested
- * dynamic scope. When the method completes (normally or with an exception), the value of
- * the {@code ScopedValue} reverts to its previous value.
+ * dynamic scope. When the method completes, the value of the {@code ScopedValue} reverts
+ * to its previous value.
  *
- * <p> In the above example, suppose that code executed by {@code doSomething()} binds
- * {@code USERNAME} to a new value with:
+ * <p> In the above example, suppose that code executed by {@code doSomething} binds
+ * {@code NAME} to a new value with:
  * {@snippet lang=java :
- *     ScopedValue.runWhere(USERNAME, "duchess", () -> doMore());
+ *     ScopedValue.runWhere(NAME, "duchess", () -> doMore());
  * }
  * Code executed directly or indirectly by {@code doMore()} that invokes {@code
- * USERNAME.get()} will read the value "{@code duchess}". When {@code doMore()} completes
- * (normally or with an exception), the value of {@code USERNAME} reverts to
- * "{@code duke}".
+ * NAME.get()} will read the value "{@code duchess}". When {@code doMore()} completes
+ * then the value of {@code NAME} reverts to "{@code duke}".
  *
  * <h2><a id="inheritance">Inheritance</a></h2>
  *
- * {@code ScopedValue} supports sharing data across threads. This sharing is limited to
+ * {@code ScopedValue} supports sharing across threads. This sharing is limited to
  * structured cases where child threads are started and terminate within the bounded
- * period of execution by a parent thread. More specifically, when using a {@link
- * StructuredTaskScope}, scoped value bindings are <em>captured</em> when creating a
- * {@code StructuredTaskScope} and inherited by all threads started in that scope with
- * the {@link StructuredTaskScope#fork(Callable) fork} method.
+ * period of execution by a parent thread. When using a {@link StructuredTaskScope},
+ * scoped value bindings are <em>captured</em> when creating a {@code StructuredTaskScope}
+ * and inherited by all threads started in that task scope with the
+ * {@link StructuredTaskScope#fork(Callable) fork} method.
  *
- * <p> In the following example, the {@code ScopedValue} {@code USERNAME} is bound to the
+ * <p> A {@code ScopedValue} that is shared across threads requires that the value be an
+ * immutable object or for all access to the value to be appropriately synchronized.
+ *
+ * <p> In the following example, the {@code ScopedValue} {@code NAME} is bound to the
  * value "{@code duke}" for the execution of a runnable operation. The code in the {@code
- * run} method creates a {@code StructuredTaskScope} and forks three child threads. Code
- * executed directly or indirectly by these threads running {@code childTask1()},
- * {@code childTask2()}, and {@code childTask3()} will read the value "{@code duke}".
+ * run} method creates a {@code StructuredTaskScope} that forks three tasks. Code executed
+ * directly or indirectly by these threads running {@code childTask1()}, {@code childTask2()},
+ * and {@code childTask3()} that invokes {@code NAME.get()} will read the value
+ * "{@code duke}".
  *
  * {@snippet lang=java :
- *     private static final ScopedValue<String> USERNAME = ScopedValue.newInstance();
+ *     private static final ScopedValue<String> NAME = ScopedValue.newInstance();
 
- *     ScopedValue.runWhere(USERNAME, "duke", () -> {
+ *     ScopedValue.runWhere(NAME, "duke", () -> {
  *         try (var scope = new StructuredTaskScope<String>()) {
  *
  *             scope.fork(() -> childTask1());
@@ -139,6 +169,23 @@ import sun.security.action.GetPropertyAction;
  *          }
  *     });
  * }
+ *
+ * <p> Unless otherwise specified, passing a {@code null} argument to a method in this
+ * class will cause a {@link NullPointerException} to be thrown.
+ *
+ * @apiNote
+ * A {@code ScopedValue} should be preferred over a {@link ThreadLocal} for cases where
+ * the goal is "one-way transmission" of data without using method parameters.  While a
+ * {@code ThreadLocal} can be used to pass data to a method without using method parameters,
+ * it does suffer from a number of issues:
+ * <ol>
+ *   <li> {@code ThreadLocal} does not prevent code in a faraway callee from {@linkplain
+ *   ThreadLocal#set(Object) setting} a new value.
+ *   <li> A {@code ThreadLocal} has an unbounded lifetime and thus continues to have a value
+ *   after a method completes, unless explicitly {@linkplain ThreadLocal#remove() removed}.
+ *   <li> {@linkplain InheritableThreadLocal Inheritance} is expensive - the map of
+ *   thread-locals to values must be copied when creating each child thread.
+ * </ol>
  *
  * @implNote
  * Scoped values are designed to be used in fairly small
@@ -186,7 +233,7 @@ import sun.security.action.GetPropertyAction;
  * memory saving, but each virtual thread's scoped-value cache would
  * have to be regenerated after a blocking operation.
  *
- * @param <T> the type of the object bound to this {@code ScopedValue}
+ * @param <T> the type of the value
  * @since 21
  */
 @PreviewFeature(feature = PreviewFeature.Feature.SCOPED_VALUES)
@@ -404,7 +451,7 @@ public final class ScopedValue<T> {
         // Carrier#call() in this thread because it needs neither
         // runtime bytecode generation nor any release fencing.
         private static final class CallableAdapter<V> implements Callable<V> {
-            private Supplier<? extends V> s;
+            private /*non-final*/ Supplier<? extends V> s;
             CallableAdapter(Supplier<? extends V> s) {
                 this.s = s;
             }

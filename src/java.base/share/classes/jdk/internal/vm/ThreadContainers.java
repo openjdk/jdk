@@ -33,6 +33,7 @@ import java.util.concurrent.atomic.LongAdder;
 import java.util.stream.Stream;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
+import sun.nio.ch.Poller;
 import sun.security.action.GetPropertyAction;
 
 /**
@@ -287,7 +288,11 @@ public class ThreadContainers {
             }
             @Override
             public Stream<Thread> threads() {
-                return platformThreads();
+                // virtual threads in this container that are those blocked on I/O.
+                Stream<Thread> blockedVirtualThreads = Poller.blockedThreads()
+                        .filter(t -> t.isVirtual()
+                                && JLA.threadContainer(t) == this);
+                return Stream.concat(platformThreads(), blockedVirtualThreads);
             }
         }
     }
