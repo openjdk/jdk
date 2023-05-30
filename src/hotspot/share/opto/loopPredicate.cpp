@@ -1343,11 +1343,13 @@ bool PhaseIdealLoop::loop_predication_impl_helper(IdealLoopTree *loop, ProjNode*
     upper_bound_iff->set_req(1, upper_bound_bol);
     if (TraceLoopPredicate) tty->print_cr("upper bound check if: %s %d ", negate ? " negated" : "", lower_bound_iff->_idx);
 
-    // Fall through into rest of the cleanup code which will move any dependent nodes to the skeleton predicates of the
-    // upper bound test. We always need to create skeleton predicates in order to properly remove dead loops when later
-    // splitting the predicated loop into (unreachable) sub-loops (i.e. done by unrolling, peeling, pre/main/post etc.).
-    new_predicate_proj = insert_initial_skeleton_predicate(iff, loop, proj, predicate_proj, upper_bound_proj, scale,
-                                                           offset, init, limit, stride, rng, overflow, reason);
+    // Fall through into rest of the clean up code which will move
+    // any dependent nodes onto the upper bound test.
+    new_predicate_proj = upper_bound_proj;
+
+    if (iff->is_RangeCheck()) {
+      new_predicate_proj = insert_initial_skeleton_predicate(iff, loop, proj, predicate_proj, upper_bound_proj, scale, offset, init, limit, stride, rng, overflow, reason);
+    }
 
 #ifndef PRODUCT
     if (TraceLoopOpts && !TraceLoopPredicate) {
