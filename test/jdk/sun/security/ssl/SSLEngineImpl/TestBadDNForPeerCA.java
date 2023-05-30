@@ -25,8 +25,7 @@
  * @test
  * @bug 8294985
  * @library /test/lib
- * @summary verify correct exception handling in the event of an unparseable
- *  DN in the peer CA
+ * @summary SSLEngine throws IAE during parsing of X500Principal
  * @run main/othervm TestBadDNForPeerCA
  */
 
@@ -45,8 +44,7 @@ import java.util.Base64;
 
 public class TestBadDNForPeerCA {
 
-    // Test was originally written for TLSv1.2
-    private static final String proto = "TLSv1.2";
+    private static final String proto = "TLSv1.3";
 
     private static final boolean debug = false;
 
@@ -62,8 +60,8 @@ public class TestBadDNForPeerCA {
         System.getProperty("test.src", "./")
             + "/../../../../javax/net/ssl/etc/keystore";
 
-    // the following contains a certificate with an invalid/unparseable
-    // distinguished name
+    // the following ClientHello contains a certificate with an
+    // invalid/unparseable distinguished name
     private static final byte[] payload = Base64.getDecoder().decode(
         "FgMDAcsBAAHHAwPbDfeUCIStPzVIfXuGgCu56dSJOJ6xeus1W44frG5tciDEcBfYt"
             + "/PN/6MFCGojEVcmPw21mVyjYInMo0UozIn4NwBiEwITARMDwCzAK8ypwDDMqMAvA"
