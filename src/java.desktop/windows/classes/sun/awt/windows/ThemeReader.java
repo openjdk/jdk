@@ -126,8 +126,8 @@ public final class ThemeReader {
                             for (Long value : dpiVal.values()) {
                                 closeTheme(value);
                             }
+                            dpiVal.clear();
                         }
-                        dpiAwareWidgetToTheme.get(dpi).clear();
                         dpiAwareWidgetToTheme.clear();
                         valid = true;
                     }
