@@ -917,7 +917,6 @@ class UnixPath implements Path {
             // Obtain the stream of entries in the directory corresponding
             // to the path constructed thus far, and extract the entry whose
             // key is equal to the key of the current element
-            FileSystemProvider provider = getFileSystem().provider();
             DirectoryStream.Filter<Path> filter = (p) -> { return true; };
             try (DirectoryStream<Path> entries = new UnixDirectoryStream(path, dp, filter)) {
                 boolean found = false;
