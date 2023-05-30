@@ -37,7 +37,6 @@ import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Hashtable;
@@ -709,8 +708,7 @@ public class BasicFileChooserUI extends FileChooserUI {
                             && ((File)objects[0]).isDirectory()
                             && chooser.isTraversable(((File)objects[0]))
                             && (useSetDirectory
-                                || (!fsv.isFileSystem(((File)objects[0]))
-                                    && !isSymbolicLinkCheck(((File)objects[0]))))) {
+                                || (!fsv.isFileSystem((File)objects[0])))) {
                             setDirectorySelected(true);
                             setDirectory(((File)objects[0]));
                         } else {
@@ -720,8 +718,7 @@ public class BasicFileChooserUI extends FileChooserUI {
                                 boolean isDir = f.isDirectory();
                                 if ((chooser.isFileSelectionEnabled() && !isDir)
                                     || (chooser.isDirectorySelectionEnabled()
-                                        && (fsv.isFileSystem(f)
-                                        || isSymbolicLinkCheck(f))
+                                        && fsv.isFileSystem(f)
                                         && isDir)) {
                                     fList.add(f);
                                 }
@@ -744,11 +741,7 @@ public class BasicFileChooserUI extends FileChooserUI {
                         setDirectory(file);
 
                         if (usesSingleFilePane) {
-                            if (isSymbolicLinkCheck(file)) {
-                                chooser.setSelectedFile(file);
-                            } else {
-                                chooser.setSelectedFile(null);
-                            }
+                            chooser.setSelectedFile(null);
                         }
                     } else {
                         setDirectorySelected(false);
@@ -1248,15 +1241,6 @@ public class BasicFileChooserUI extends FileChooserUI {
                                                   || filename.indexOf('?') >= 0
                                                   || filename.indexOf('[') >= 0)));
     }
-
-    private Boolean isSymbolicLinkCheck(File file) {
-        if (!(file instanceof ShellFolder sf)) {
-            return Files.isSymbolicLink(file.toPath());
-        } else {
-            return sf.isFileSystem() && Files.isSymbolicLink(file.toPath());
-        }
-    }
-
 
     /* A file filter which accepts file patterns containing
      * the special wildcards *? on Windows and *?[] on Unix.
