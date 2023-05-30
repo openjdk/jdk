@@ -58,6 +58,7 @@ class JfrThreadLocal {
   u8 _data_lost;
   traceid _stack_trace_id;
   traceid _parent_trace_id;
+  int64_t _last_allocated_bytes;
   jlong _user_time;
   jlong _cpu_time;
   jlong _wallclock_time;
@@ -147,6 +148,18 @@ class JfrThreadLocal {
 
   void set_stackdepth(u4 depth) {
     _stackdepth = depth;
+  }
+
+  int64_t last_allocated_bytes() const {
+    return _last_allocated_bytes;
+  }
+
+  void set_last_allocated_bytes(int64_t allocated_bytes) {
+    _last_allocated_bytes = allocated_bytes;
+  }
+
+  void clear_last_allocated_bytes() {
+    set_last_allocated_bytes(0);
   }
 
   // Contextually defined thread id that is volatile,

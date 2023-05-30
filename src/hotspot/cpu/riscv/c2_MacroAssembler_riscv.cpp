@@ -1377,7 +1377,7 @@ void C2_MacroAssembler::string_equals_v(Register a1, Register a2, Register resul
     srli(cnt, cnt, 1);
   }
 
-  element_compare(a1, a2, result, cnt, tmp1, tmp2, v0, v2, v0, elem_size == 1, DONE);
+  element_compare(a1, a2, result, cnt, tmp1, tmp2, v2, v4, v2, elem_size == 1, DONE);
 
   bind(DONE);
   BLOCK_COMMENT("} string_equals_v");
@@ -1387,17 +1387,17 @@ void C2_MacroAssembler::string_equals_v(Register a1, Register a2, Register resul
 // base: Address of a buffer to be zeroed
 // cnt: Count in HeapWords
 //
-// base, cnt, v0, v1 and t0 are clobbered.
+// base, cnt, v4, v5, v6, v7 and t0 are clobbered.
 void C2_MacroAssembler::clear_array_v(Register base, Register cnt) {
   Label loop;
 
   // making zero words
   vsetvli(t0, cnt, Assembler::e64, Assembler::m4);
-  vxor_vv(v0, v0, v0);
+  vxor_vv(v4, v4, v4);
 
   bind(loop);
   vsetvli(t0, cnt, Assembler::e64, Assembler::m4);
-  vse64_v(v0, base);
+  vse64_v(v4, base);
   sub(cnt, cnt, t0);
   shadd(base, t0, base, t0, 3);
   bnez(cnt, loop);
@@ -1430,7 +1430,7 @@ void C2_MacroAssembler::arrays_equals_v(Register a1, Register a2, Register resul
   la(a1, Address(a1, base_offset));
   la(a2, Address(a2, base_offset));
 
-  element_compare(a1, a2, result, cnt1, tmp1, tmp2, v0, v2, v0, elem_size == 1, DONE);
+  element_compare(a1, a2, result, cnt1, tmp1, tmp2, v2, v4, v2, elem_size == 1, DONE);
 
   bind(DONE);
 
@@ -1466,13 +1466,13 @@ void C2_MacroAssembler::string_compare_v(Register str1, Register str2, Register 
   bind(L);
 
   if (str1_isL == str2_isL) { // LL or UU
-    element_compare(str1, str2, zr, cnt2, tmp1, tmp2, v2, v4, v1, encLL, DIFFERENCE);
+    element_compare(str1, str2, zr, cnt2, tmp1, tmp2, v2, v4, v2, encLL, DIFFERENCE);
     j(DONE);
   } else { // LU or UL
     Register strL = encLU ? str1 : str2;
     Register strU = encLU ? str2 : str1;
-    VectorRegister vstr1 = encLU ? v4 : v0;
-    VectorRegister vstr2 = encLU ? v0 : v4;
+    VectorRegister vstr1 = encLU ? v8 : v4;
+    VectorRegister vstr2 = encLU ? v4 : v8;
 
     bind(loop);
     vsetvli(tmp1, cnt2, Assembler::e8, Assembler::m2);
@@ -1480,8 +1480,8 @@ void C2_MacroAssembler::string_compare_v(Register str1, Register str2, Register 
     vsetvli(tmp1, cnt2, Assembler::e16, Assembler::m4);
     vzext_vf2(vstr2, vstr1);
     vle16_v(vstr1, strU);
-    vmsne_vv(v0, vstr2, vstr1);
-    vfirst_m(tmp2, v0);
+    vmsne_vv(v4, vstr2, vstr1);
+    vfirst_m(tmp2, v4);
     bgez(tmp2, DIFFERENCE);
     sub(cnt2, cnt2, tmp1);
     add(strL, strL, tmp1);
@@ -1489,6 +1489,7 @@ void C2_MacroAssembler::string_compare_v(Register str1, Register str2, Register 
     bnez(cnt2, loop);
     j(DONE);
   }
+
   bind(DIFFERENCE);
   slli(tmp1, tmp2, 1);
   add(str1, str1, str1_isL ? tmp2 : tmp1);
@@ -1507,10 +1508,10 @@ void C2_MacroAssembler::byte_array_inflate_v(Register src, Register dst, Registe
   BLOCK_COMMENT("byte_array_inflate_v {");
   bind(loop);
   vsetvli(tmp, len, Assembler::e8, Assembler::m2);
-  vle8_v(v2, src);
+  vle8_v(v6, src);
   vsetvli(t0, len, Assembler::e16, Assembler::m4);
-  vzext_vf2(v0, v2);
-  vse16_v(v0, dst);
+  vzext_vf2(v4, v6);
+  vse16_v(v4, dst);
   sub(len, len, tmp);
   add(src, src, tmp);
   shadd(dst, tmp, dst, tmp, 1);
@@ -1573,9 +1574,9 @@ void C2_MacroAssembler::count_positives_v(Register ary, Register len, Register r
 
   bind(LOOP);
   vsetvli(t0, len, Assembler::e8, Assembler::m4);
-  vle8_v(v0, ary);
-  vmslt_vx(v0, v0, zr);
-  vfirst_m(tmp, v0);
+  vle8_v(v4, ary);
+  vmslt_vx(v4, v4, zr);
+  vfirst_m(tmp, v4);
   bgez(tmp, SET_RESULT);
   // if tmp == -1, all bytes are positive
   add(result, result, t0);
@@ -1603,9 +1604,9 @@ void C2_MacroAssembler::string_indexof_char_v(Register str1, Register cnt1,
   Assembler::SEW sew = isL ? Assembler::e8 : Assembler::e16;
   bind(loop);
   vsetvli(tmp1, cnt1, sew, Assembler::m4);
-  vlex_v(v0, str1, sew);
-  vmseq_vx(v0, v0, ch);
-  vfirst_m(tmp2, v0);
+  vlex_v(v4, str1, sew);
+  vmseq_vx(v4, v4, ch);
+  vfirst_m(tmp2, v4);
   bgez(tmp2, MATCH); // if equal, return index
 
   add(result, result, tmp1);
