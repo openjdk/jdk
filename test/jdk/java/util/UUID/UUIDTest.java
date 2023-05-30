@@ -25,19 +25,22 @@
  * @bug 4173528 5068772 8148936 8196334 8308803
  * @summary Unit tests for java.util.UUID
  * @key randomness
+ * @library /test/lib
+ * @build jdk.test.lib.RandomFactory
  * @run main/othervm -Xmx1g -XX:+CompactStrings UUIDTest
  * @run main/othervm -Xmx1g -XX:-CompactStrings UUIDTest
  */
 
 import java.util.*;
 import java.util.stream.IntStream;
+import jdk.test.lib.RandomFactory;
 
 public class UUIDTest {
 
     // Single UUID instance is ~32 bytes, 1M instances take ~256M in the set
     private static final int COUNT = 1_000_000;
 
-    static final Random generator = new Random();
+    static final Random generator = RandomFactory.getRandom();
 
     public static void main(String[] args) throws Exception {
         negativeTest();
@@ -313,7 +316,8 @@ public class UUIDTest {
             UUID u1 = UUID.randomUUID();
             UUID u2 = UUID.fromString(u1.toString());
             if (u1.hashCode() != u2.hashCode()) {
-                throw new Exception("Equal UUIDs with different hash codes: " + u1 + " and " + u2);
+                throw new Exception("Equal UUIDs with different hash codes: " + u1 + "(" + u1.hashCode() + ") " +
+                                    "and " + u2 + "(" + u2.hashCode() + ")");
             }
         }
 
