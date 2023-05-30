@@ -925,6 +925,8 @@ class java_lang_ref_Reference: AllStatic {
   static bool is_referent_field(oop obj, ptrdiff_t offset);
   static inline bool is_final(oop ref);
   static inline bool is_phantom(oop ref);
+  static inline bool is_weak(oop ref);
+  static inline bool is_soft(oop ref);
 
   static int referent_offset()    { CHECK_INIT(_referent_offset); }
   static int queue_offset()       { CHECK_INIT(_queue_offset); }

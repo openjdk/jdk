@@ -27,6 +27,7 @@
 
 #include "classfile/javaClasses.hpp"
 
+#include "memory/referenceType.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
@@ -130,10 +131,12 @@ bool java_lang_String::is_instance_inlined(oop obj) {
 // Accessors
 
 oop java_lang_ref_Reference::weak_referent_no_keepalive(oop ref) {
+  assert(java_lang_ref_Reference::is_weak(ref) || java_lang_ref_Reference::is_soft(ref), "must be Weak or Soft Reference");
   return ref->obj_field_access<ON_WEAK_OOP_REF | AS_NO_KEEPALIVE>(_referent_offset);
 }
 
 oop java_lang_ref_Reference::phantom_referent_no_keepalive(oop ref) {
+  assert(java_lang_ref_Reference::is_phantom(ref), "must be Phantom Reference");
   return ref->obj_field_access<ON_PHANTOM_OOP_REF | AS_NO_KEEPALIVE>(_referent_offset);
 }
 
@@ -187,6 +190,14 @@ bool java_lang_ref_Reference::is_final(oop ref) {
 
 bool java_lang_ref_Reference::is_phantom(oop ref) {
   return InstanceKlass::cast(ref->klass())->reference_type() == REF_PHANTOM;
+}
+
+bool java_lang_ref_Reference::is_weak(oop ref) {
+  return InstanceKlass::cast(ref->klass())->reference_type() == REF_WEAK;
+}
+
+bool java_lang_ref_Reference::is_soft(oop ref) {
+  return InstanceKlass::cast(ref->klass())->reference_type() == REF_SOFT;
 }
 
 inline void java_lang_invoke_CallSite::set_target_volatile(oop site, oop target) {
