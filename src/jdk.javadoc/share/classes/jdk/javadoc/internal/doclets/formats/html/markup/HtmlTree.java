@@ -1073,7 +1073,7 @@ public class HtmlTree extends Content {
             out.write(key.toString());
             if (!value.isEmpty()) {
                 out.write("=\"");
-                out.write(value);
+                out.write(value.replace("\"", "&quot;"));
                 out.write("\"");
             }
         }

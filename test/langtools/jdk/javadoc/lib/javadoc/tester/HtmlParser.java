@@ -341,7 +341,8 @@ public abstract class HtmlParser {
                     value = sb.toString() // hack to replace common entities
                             .replace("&lt;", "<")
                             .replace("&gt;", ">")
-                            .replace("&amp;", "&");
+                            .replace("&amp;", "&")
+                            .replace("&quot;", "\"");
                     nextChar();
                 } else {
                     StringBuilder sb = new StringBuilder();
