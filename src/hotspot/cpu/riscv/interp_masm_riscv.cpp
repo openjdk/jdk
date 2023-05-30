@@ -79,7 +79,6 @@ void InterpreterMacroAssembler::narrow(Register result) {
   bind(notChar);
   sign_extend(result, result, 16);
 
-  // Nothing to do for T_INT
   bind(done);
   sign_extend(result, result, 32);
 }

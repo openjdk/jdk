@@ -152,7 +152,6 @@ instruct vloadmask_masked(vRegMask dst, vReg src, vRegMask_V0 v0) %{
 
 instruct vstoremask(vReg dst, vRegMask_V0 v0, immI size) %{
   match(Set dst (VectorStoreMask v0 size));
-  format %{ "vstoremask $dst, V0" %}
   format %{ "vstoremask $dst, V0 # elem size is $size byte[s]" %}
   ins_encode %{
     __ vsetvli_helper(T_BOOLEAN, Matcher::vector_length(this));
