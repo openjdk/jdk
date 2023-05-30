@@ -47,7 +47,7 @@ public class StoreMaskTrueCount {
     }
 
     @Benchmark
-    public static int testShort() {
+    public int testShort() {
         int res = 0;
         for (int i = 0; i < LENGTH; i += S_SPECIES.length()) {
             VectorMask<Short> m = VectorMask.fromArray(S_SPECIES, ba, i);
@@ -58,7 +58,7 @@ public class StoreMaskTrueCount {
     }
 
     @Benchmark
-    public static int testInt() {
+    public int testInt() {
         int res = 0;
         for (int i = 0; i < LENGTH; i += I_SPECIES.length()) {
             VectorMask<Integer> m = VectorMask.fromArray(I_SPECIES, ba, i);
@@ -69,7 +69,7 @@ public class StoreMaskTrueCount {
     }
 
     @Benchmark
-    public static int testLong() {
+    public int testLong() {
         int res = 0;
         for (int i = 0; i < LENGTH; i += L_SPECIES.length()) {
             VectorMask<Long> m = VectorMask.fromArray(L_SPECIES, ba, i);
