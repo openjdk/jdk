@@ -491,7 +491,7 @@ class TypeF : public Type {
   TypeF( float f ) : Type(FloatCon), _f(f) {};
 public:
   virtual bool eq( const Type *t ) const;
-  virtual uint  hash() const;            // Type specific hashing
+  virtual uint hash() const;             // Type specific hashing
   virtual bool singleton(void) const;    // TRUE if type is a singleton
   virtual bool empty(void) const;        // TRUE if type is vacuous
 public:
@@ -522,7 +522,7 @@ class TypeD : public Type {
   TypeD( double d ) : Type(DoubleCon), _d(d) {};
 public:
   virtual bool eq( const Type *t ) const;
-  virtual uint  hash() const;            // Type specific hashing
+  virtual uint hash() const;             // Type specific hashing
   virtual bool singleton(void) const;    // TRUE if type is a singleton
   virtual bool empty(void) const;        // TRUE if type is vacuous
 public:
@@ -581,7 +581,7 @@ protected:
 public:
   typedef jint NativeType;
   virtual bool eq( const Type *t ) const;
-  virtual uint  hash() const;            // Type specific hashing
+  virtual uint hash() const;             // Type specific hashing
   virtual bool singleton(void) const;    // TRUE if type is a singleton
   virtual bool empty(void) const;        // TRUE if type is vacuous
   const jint _lo, _hi;          // Lower bound, upper bound
@@ -647,7 +647,7 @@ protected:
 public:
   typedef jlong NativeType;
   virtual bool eq( const Type *t ) const;
-  virtual uint  hash() const;            // Type specific hashing
+  virtual uint hash() const;             // Type specific hashing
   virtual bool singleton(void) const;    // TRUE if type is a singleton
   virtual bool empty(void) const;        // TRUE if type is vacuous
 public:
@@ -706,7 +706,7 @@ class TypeTuple : public Type {
 
 public:
   virtual bool eq( const Type *t ) const;
-  virtual uint  hash() const;            // Type specific hashing
+  virtual uint hash() const;             // Type specific hashing
   virtual bool singleton(void) const;    // TRUE if type is a singleton
   virtual bool empty(void) const;        // TRUE if type is vacuous
 
@@ -756,7 +756,7 @@ class TypeAry : public Type {
       _elem(elem), _size(size), _stable(stable) {}
 public:
   virtual bool eq( const Type *t ) const;
-  virtual uint  hash() const;            // Type specific hashing
+  virtual uint hash() const;             // Type specific hashing
   virtual bool singleton(void) const;    // TRUE if type is a singleton
   virtual bool empty(void) const;        // TRUE if type is vacuous
 
@@ -798,7 +798,7 @@ public:
   }
 
   virtual bool eq(const Type *t) const;
-  virtual uint  hash() const;            // Type specific hashing
+  virtual uint hash() const;             // Type specific hashing
   virtual bool singleton(void) const;    // TRUE if type is a singleton
   virtual bool empty(void) const;        // TRUE if type is vacuous
 
@@ -1015,7 +1015,7 @@ public:
   virtual const TypePtr* add_offset(intptr_t offset) const;
   virtual const TypePtr* with_offset(intptr_t offset) const;
   virtual bool eq(const Type *t) const;
-  virtual uint  hash() const;            // Type specific hashing
+  virtual uint hash() const;             // Type specific hashing
 
   virtual bool singleton(void) const;    // TRUE if type is a singleton
   virtual bool empty(void) const;        // TRUE if type is vacuous
