@@ -1832,7 +1832,8 @@ class StubGenerator: public StubCodeGenerator {
     __ bne(t1, scratch_src_klass, L_failed);
 
     // if src->is_Array() isn't null then return -1
-    __ bgez(t0, L_failed);
+    // i.e. (lh >= 0)
+    __ bgez(lh, L_failed);
 
     // At this point, it is known to be a typeArray (array_tag 0x3).
 #ifdef ASSERT
