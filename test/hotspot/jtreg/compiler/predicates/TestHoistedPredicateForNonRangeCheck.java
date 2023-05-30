@@ -28,9 +28,9 @@
  * @library /test/lib /
  * @requires vm.compiler2.enabled
  * @summary Tests that IfNode is not wrongly chosen as range check by Loop Predication leading to crashes and wrong executions.
- * @run main/othervm -Xcomp -XX:CompileCommand=compileonly,compiler.predicates.TestHoistedPredicateForNonRangeCheck::test
+ * @run main/othervm -Xcomp -XX:CompileCommand=compileonly,compiler.predicates.TestHoistedPredicateForNonRangeCheck::test*
  *                   compiler.predicates.TestHoistedPredicateForNonRangeCheck
- * @run main/othervm -Xcomp -XX:CompileCommand=compileonly,compiler.predicates.TestHoistedPredicateForNonRangeCheck::test
+ * @run main/othervm -Xcomp -XX:CompileCommand=compileonly,compiler.predicates.TestHoistedPredicateForNonRangeCheck::test*
  *                   -XX:LoopMaxUnroll=0 compiler.predicates.TestHoistedPredicateForNonRangeCheck
  */
 
@@ -65,6 +65,15 @@ public class TestHoistedPredicateForNonRangeCheck {
                 Asserts.assertEQ(iFld, 3604, "wrong value");
                 Asserts.assertEQ(iFld2, 400, "wrong value");
             }
+
+            for (int i = 0; i < 2000; i++) {
+                iFld = -100;
+                testRangeCheckNode();
+            }
+            iFld = -1;
+            iFld2 = 0;
+            testRangeCheckNode();
+            Asserts.assertEQ(iFld2, 36, "wrong value");
         } else {
             boolean flag = false;
             for (int i = 0; i < 10000; i++) {
@@ -111,6 +120,28 @@ public class TestHoistedPredicateForNonRangeCheck {
             } else {
                 iFld2++;
                 Float.isNaN(34); // Float class is unloaded with -Xcomp -> inserts trap
+            }
+        }
+    }
+
+    static void testRangeCheckNode() {
+        int array[] = new int[34];
+        // Hoisted Range Check Predicate with flipped bool because trap is on success proj and no trap on false proj due
+        // to catching exception:
+        // iFld >=u 34 && iFld+36 >=u 34
+        // This is always false for first 2000 iterations where, initially, iFld = -100
+        // It is still true in the last iteration where, initially, iFld = -1. But suddenly, in the second iteration,
+        // where iFld = 0, we would take the true projection for the first time - but we removed that branch when
+        // creating the Hoisted Range Check Predicate. We therefore run into the same problem as with test(): We either
+        // halt due to Assertion Predicates catching this case or we have a wrong execution (iFld2 never updated).
+        for (int i = 0; i < 37; i++) {
+            try {
+                array[iFld] = 34; // Normal RangeCheckNode
+                iFld2++;
+                Math.ceil(34); // Never taken and unloaded -> trap
+            } catch (Exception e) {
+                // False Proj of RangeCheckNod
+                iFld++;
             }
         }
     }

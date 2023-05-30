@@ -1362,11 +1362,8 @@ public:
   void register_control(Node* n, IdealLoopTree *loop, Node* pred, bool update_body = true);
 
   // Construct a range check for a predicate if
-  BoolNode* rc_predicate(IdealLoopTree *loop, Node* ctrl,
-                         int scale, Node* offset,
-                         Node* init, Node* limit, jint stride,
-                         Node* range, bool upper, bool &overflow,
-                         bool negate);
+  BoolNode* rc_predicate(IdealLoopTree* loop, Node* ctrl, int scale, Node* offset, Node* init, Node* limit,
+                         jint stride, Node* range, bool upper, bool& overflow);
 
   // Implementation of the loop predication to promote checks outside the loop
   bool loop_predication_impl(IdealLoopTree *loop);
