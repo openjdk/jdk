@@ -127,18 +127,17 @@ import sun.reflect.misc.ReflectUtil;
  * class name of an object:
  *
  * {@snippet lang="java" :
- *     void printClassName(Object obj) {
- *         System.out.println("The class of " + obj +
- *                            " is " + obj.getClass().getName());
- *     }
- * }
+ * void printClassName(Object obj) {
+ *     System.out.println("The class of " + obj +
+ *                        " is " + obj.getClass().getName());
+ * }}
  *
  * It is also possible to get the {@code Class} object for a named
  * class or interface (or for {@code void}) using a <i>class literal</i>.
  * For example:
  *
  * {@snippet lang="java" :
- *     System.out.println("The name of class Foo is: "+Foo.class.getName());
+ * System.out.println("The name of class Foo is: "+Foo.class.getName());
  * }
  *
  * <p> Some methods of class {@code Class} expose whether the declaration of
@@ -342,7 +341,7 @@ public final class Class<T> implements java.io.Serializable,
      * equivalent to:
      *
      * {@snippet lang="java" :
-     *  Class.forName(className, true, currentLoader)
+     * Class.forName(className, true, currentLoader)
      * }
      *
      * where {@code currentLoader} denotes the defining class loader of
@@ -353,7 +352,7 @@ public final class Class<T> implements java.io.Serializable,
      * {@code java.lang.Thread}:
      *
      * {@snippet lang="java" :
-     *   Class<?> t = Class.forName("java.lang.Thread")
+     * Class<?> t = Class.forName("java.lang.Thread");
      * }
      * <p>
      * A call to {@code forName("X")} causes the class named
@@ -416,13 +415,13 @@ public final class Class<T> implements java.io.Serializable,
      * <p> For example, in an instance method the expression:
      *
      * {@snippet lang="java" :
-     *  Class.forName("Foo")
+     * Class.forName("Foo")
      * }
      *
      * is equivalent to:
      *
      * {@snippet lang="java" :
-     *  Class.forName("Foo", true, this.getClass().getClassLoader())
+     * Class.forName("Foo", true, this.getClass().getClassLoader())
      * }
      *
      * Note that this method throws errors related to loading, linking
