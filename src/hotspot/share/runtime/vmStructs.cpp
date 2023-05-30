@@ -1734,12 +1734,7 @@
   declare_c2_type(MinVNode, VectorNode)                                   \
   declare_c2_type(LoadVectorNode, LoadNode)                               \
   declare_c2_type(StoreVectorNode, StoreNode)                             \
-  declare_c2_type(ReplicateBNode, VectorNode)                             \
-  declare_c2_type(ReplicateSNode, VectorNode)                             \
-  declare_c2_type(ReplicateINode, VectorNode)                             \
-  declare_c2_type(ReplicateLNode, VectorNode)                             \
-  declare_c2_type(ReplicateFNode, VectorNode)                             \
-  declare_c2_type(ReplicateDNode, VectorNode)                             \
+  declare_c2_type(ReplicateNode, VectorNode)                              \
   declare_c2_type(PopulateIndexNode, VectorNode)                          \
   declare_c2_type(PackNode, VectorNode)                                   \
   declare_c2_type(PackBNode, PackNode)                                    \

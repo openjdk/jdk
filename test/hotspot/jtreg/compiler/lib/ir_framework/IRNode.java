@@ -893,52 +893,12 @@ public class IRNode {
         trapNodes(RANGE_CHECK_TRAP,"range_check");
     }
 
-    public static final String REPLICATE_B = PREFIX + "REPLICATE_B" + POSTFIX;
+    public static final String REPLICATE = PREFIX + "REPLICATE" + POSTFIX;
     static {
-        String regex = START + "ReplicateB" + MID + END;
-        IR_NODE_MAPPINGS.put(REPLICATE_B, new SinglePhaseRangeEntry(CompilePhase.PRINT_IDEAL, regex,
-                                                                    CompilePhase.AFTER_CLOOPS,
-                                                                    CompilePhase.BEFORE_MATCHING));
-    }
-
-    public static final String REPLICATE_S = PREFIX + "REPLICATE_S" + POSTFIX;
-    static {
-        String regex = START + "ReplicateS" + MID + END;
-        IR_NODE_MAPPINGS.put(REPLICATE_S, new SinglePhaseRangeEntry(CompilePhase.PRINT_IDEAL, regex,
-                                                                    CompilePhase.AFTER_CLOOPS,
-                                                                    CompilePhase.BEFORE_MATCHING));
-    }
-
-    public static final String REPLICATE_I = PREFIX + "REPLICATE_I" + POSTFIX;
-    static {
-        String regex = START + "ReplicateI" + MID + END;
-        IR_NODE_MAPPINGS.put(REPLICATE_I, new SinglePhaseRangeEntry(CompilePhase.PRINT_IDEAL, regex,
-                                                                    CompilePhase.AFTER_CLOOPS,
-                                                                    CompilePhase.BEFORE_MATCHING));
-    }
-
-    public static final String REPLICATE_L = PREFIX + "REPLICATE_L" + POSTFIX;
-    static {
-        String regex = START + "ReplicateL" + MID + END;
-        IR_NODE_MAPPINGS.put(REPLICATE_L, new SinglePhaseRangeEntry(CompilePhase.PRINT_IDEAL, regex,
-                                                                    CompilePhase.AFTER_CLOOPS,
-                                                                    CompilePhase.BEFORE_MATCHING));
-    }
-
-    public static final String REPLICATE_F = PREFIX + "REPLICATE_F" + POSTFIX;
-    static {
-        String regex = START + "ReplicateF" + MID + END;
-        IR_NODE_MAPPINGS.put(REPLICATE_F, new SinglePhaseRangeEntry(CompilePhase.PRINT_IDEAL, regex,
-                                                                    CompilePhase.AFTER_CLOOPS,
-                                                                    CompilePhase.BEFORE_MATCHING));
-    }
-
-    public static final String REPLICATE_D = PREFIX + "REPLICATE_D" + POSTFIX;
-    static {
-        String regex = START + "ReplicateD" + MID + END;
-        IR_NODE_MAPPINGS.put(REPLICATE_D, new SinglePhaseRangeEntry(CompilePhase.PRINT_IDEAL, regex,
-                                                                    CompilePhase.AFTER_CLOOPS,
-                                                                    CompilePhase.BEFORE_MATCHING));
+        String regex = START + "Replicate" + MID + END;
+        IR_NODE_MAPPINGS.put(REPLICATE, new SinglePhaseRangeEntry(CompilePhase.PRINT_IDEAL, regex,
+                                                                  CompilePhase.AFTER_CLOOPS,
+                                                                  CompilePhase.BEFORE_MATCHING));
     }
 
     public static final String REVERSE_BYTES_V = PREFIX + "REVERSE_BYTES_V" + POSTFIX;
@@ -1431,26 +1391,6 @@ public class IRNode {
     public static final String VMASK_CMP_ZERO_D_NEON = PREFIX + "VMASK_CMP_ZERO_D_NEON" + POSTFIX;
     static {
         machOnlyNameRegex(VMASK_CMP_ZERO_D_NEON, "vmaskcmp_zeroD_neon");
-    }
-
-    public static final String VMASK_CMP_IMM_B_SVE = PREFIX + "VMASK_CMP_IMM_B_SVE" + POSTFIX;
-    static {
-        machOnlyNameRegex(VMASK_CMP_IMM_B_SVE, "vmaskcmp_immB_sve");
-    }
-
-    public static final String VMASK_CMPU_IMM_B_SVE = PREFIX + "VMASK_CMPU_IMM_B_SVE" + POSTFIX;
-    static {
-        machOnlyNameRegex(VMASK_CMPU_IMM_B_SVE, "vmaskcmpU_immB_sve");
-    }
-
-    public static final String VMASK_CMP_IMM_S_SVE = PREFIX + "VMASK_CMP_IMM_S_SVE" + POSTFIX;
-    static {
-        machOnlyNameRegex(VMASK_CMP_IMM_S_SVE, "vmaskcmp_immS_sve");
-    }
-
-    public static final String VMASK_CMPU_IMM_S_SVE = PREFIX + "VMASK_CMPU_IMM_S_SVE" + POSTFIX;
-    static {
-        machOnlyNameRegex(VMASK_CMPU_IMM_S_SVE, "vmaskcmpU_immS_sve");
     }
 
     public static final String VMASK_CMP_IMM_I_SVE = PREFIX + "VMASK_CMP_IMM_I_SVE" + POSTFIX;

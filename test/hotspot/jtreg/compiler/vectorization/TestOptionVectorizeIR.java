@@ -231,7 +231,7 @@ public class TestOptionVectorizeIR {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.REPLICATE_I, "> 0", IRNode.ADD_VI, "> 0", IRNode.MUL_VI, "> 0", IRNode.STORE_VECTOR, "> 0"},
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0", IRNode.REPLICATE, "> 0", IRNode.ADD_VI, "> 0", IRNode.MUL_VI, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIf = {"AlignVector", "false"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static void test3(int[] data, int A, int B) {
