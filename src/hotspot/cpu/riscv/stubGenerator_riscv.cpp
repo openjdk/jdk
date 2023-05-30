@@ -1858,7 +1858,7 @@ class StubGenerator: public StubCodeGenerator {
     //
 
     const Register t0_offset = t0;    // array offset
-    const Register x22_elsize = lh;   // element size
+    const Register x30_elsize = lh;   // element size
 
     // Get array_header_in_bytes()
     int lh_header_size_width = exact_log2(Klass::_lh_header_size_mask + 1);
@@ -1883,9 +1883,9 @@ class StubGenerator: public StubCodeGenerator {
     // The possible values of elsize are 0-3, i.e. exact_log2(element
     // size in bytes).  We do a simple bitwise binary search.
   __ BIND(L_copy_bytes);
-    __ test_bit(t0, x22_elsize, 1);
+    __ test_bit(t0, x30_elsize, 1);
     __ bnez(t0, L_copy_ints);
-    __ test_bit(t0, x22_elsize, 0);
+    __ test_bit(t0, x30_elsize, 0);
     __ bnez(t0, L_copy_shorts);
     __ add(from, src, src_pos); // src_addr
     __ add(to, dst, dst_pos); // dst_addr
@@ -1899,7 +1899,7 @@ class StubGenerator: public StubCodeGenerator {
     __ j(RuntimeAddress(short_copy_entry));
 
   __ BIND(L_copy_ints);
-    __ test_bit(t0, x22_elsize, 0);
+    __ test_bit(t0, x30_elsize, 0);
     __ bnez(t0, L_copy_longs);
     __ shadd(from, src_pos, src, t0, 2); // src_addr
     __ shadd(to, dst_pos, dst, t0, 2); // dst_addr
@@ -1911,10 +1911,10 @@ class StubGenerator: public StubCodeGenerator {
     {
       BLOCK_COMMENT("assert long copy {");
       Label L;
-      __ andi(lh, lh, Klass::_lh_log2_element_size_mask); // lh -> x22_elsize
+      __ andi(lh, lh, Klass::_lh_log2_element_size_mask); // lh -> x30_elsize
       __ sign_extend(lh, lh, 32);
       __ mv(t0, LogBytesPerLong);
-      __ beq(x22_elsize, t0, L);
+      __ beq(x30_elsize, t0, L);
       __ stop("must be long copy, but elsize is wrong");
       __ bind(L);
       BLOCK_COMMENT("} assert long copy done");
