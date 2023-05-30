@@ -74,6 +74,10 @@ import static sun.security.util.SecurityProviderConstants.*;
  *
  * - HMAC-MD5, HMAC-SHA1, HMAC with SHA2 family and SHA3 family of digests
  *
+ * - JCEKS KeyStore
+ *
+ * - DHKEM
+ *
  */
 
 public final class SunJCE extends Provider {
