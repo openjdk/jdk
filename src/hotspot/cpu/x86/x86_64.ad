@@ -8093,7 +8093,7 @@ instruct compareAndSwapP(rRegI res,
   ins_encode %{
     __ lock();
     __ cmpxchgq($newval$$Register, $mem_ptr$$Address);
-    __ sete($res$$Register);
+    __ setb(Assembler::equal, $res$$Register);
     __ movzbl($res$$Register, $res$$Register);
   %}
   ins_pipe( pipe_cmpxchg );
@@ -8116,7 +8116,7 @@ instruct compareAndSwapL(rRegI res,
   ins_encode %{
     __ lock();
     __ cmpxchgq($newval$$Register, $mem_ptr$$Address);
-    __ sete($res$$Register);
+    __ setb(Assembler::equal, $res$$Register);
     __ movzbl($res$$Register, $res$$Register);
   %}
   ins_pipe( pipe_cmpxchg );
@@ -8138,7 +8138,7 @@ instruct compareAndSwapI(rRegI res,
   ins_encode %{
     __ lock();
     __ cmpxchgl($newval$$Register, $mem_ptr$$Address);
-    __ sete($res$$Register);
+    __ setb(Assembler::equal, $res$$Register);
     __ movzbl($res$$Register, $res$$Register);
   %}
   ins_pipe( pipe_cmpxchg );
@@ -8160,7 +8160,7 @@ instruct compareAndSwapB(rRegI res,
   ins_encode %{
     __ lock();
     __ cmpxchgb($newval$$Register, $mem_ptr$$Address);
-    __ sete($res$$Register);
+    __ setb(Assembler::equal, $res$$Register);
     __ movzbl($res$$Register, $res$$Register);
   %}
   ins_pipe( pipe_cmpxchg );
@@ -8182,7 +8182,7 @@ instruct compareAndSwapS(rRegI res,
   ins_encode %{
     __ lock();
     __ cmpxchgw($newval$$Register, $mem_ptr$$Address);
-    __ sete($res$$Register);
+    __ setb(Assembler::equal, $res$$Register);
     __ movzbl($res$$Register, $res$$Register);
   %}
   ins_pipe( pipe_cmpxchg );
@@ -8203,7 +8203,7 @@ instruct compareAndSwapN(rRegI res,
   ins_encode %{
     __ lock();
     __ cmpxchgl($newval$$Register, $mem_ptr$$Address);
-    __ sete($res$$Register);
+    __ setb(Assembler::equal, $res$$Register);
     __ movzbl($res$$Register, $res$$Register);
   %}
   ins_pipe( pipe_cmpxchg );
@@ -10626,40 +10626,6 @@ instruct xorL_mem_imm(memory dst, immL32 src, rFlagsReg cr)
   ins_pipe(ialu_mem_imm);
 %}
 
-// Convert Int to Boolean
-instruct convI2B(rRegI dst, rRegI src, rFlagsReg cr)
-%{
-  match(Set dst (Conv2B src));
-  effect(KILL cr);
-
-  format %{ "testl   $src, $src\t# ci2b\n\t"
-            "setnz   $dst\n\t"
-            "movzbl  $dst, $dst" %}
-  ins_encode %{
-    __ testl($src$$Register, $src$$Register);
-    __ set_byte_if_not_zero($dst$$Register);
-    __ movzbl($dst$$Register, $dst$$Register);
-  %}
-  ins_pipe(pipe_slow); // XXX
-%}
-
-// Convert Pointer to Boolean
-instruct convP2B(rRegI dst, rRegP src, rFlagsReg cr)
-%{
-  match(Set dst (Conv2B src));
-  effect(KILL cr);
-
-  format %{ "testq   $src, $src\t# cp2b\n\t"
-            "setnz   $dst\n\t"
-            "movzbl  $dst, $dst" %}
-  ins_encode %{
-    __ testq($src$$Register, $src$$Register);
-    __ set_byte_if_not_zero($dst$$Register);
-    __ movzbl($dst$$Register, $dst$$Register);
-  %}
-  ins_pipe(pipe_slow); // XXX
-%}
-
 instruct cmpLTMask(rRegI dst, rRegI p, rRegI q, rFlagsReg cr)
 %{
   match(Set dst (CmpLTMask p q));
@@ -10672,7 +10638,7 @@ instruct cmpLTMask(rRegI dst, rRegI p, rRegI q, rFlagsReg cr)
             "negl    $dst" %}
   ins_encode %{
     __ cmpl($p$$Register, $q$$Register);
-    __ setl($dst$$Register);
+    __ setb(Assembler::less, $dst$$Register);
     __ movzbl($dst$$Register, $dst$$Register);
     __ negl($dst$$Register);
   %}
@@ -12828,7 +12794,7 @@ instruct cmpU3_reg_reg(rRegI dst, rRegI src1, rRegI src2, rFlagsReg flags)
     __ cmpl($src1$$Register, $src2$$Register);
     __ movl($dst$$Register, -1);
     __ jccb(Assembler::below, done);
-    __ setne($dst$$Register);
+    __ setb(Assembler::notZero, $dst$$Register);
     __ movzbl($dst$$Register, $dst$$Register);
     __ bind(done);
   %}
@@ -12854,7 +12820,7 @@ instruct cmpL3_reg_reg(rRegI dst, rRegL src1, rRegL src2, rFlagsReg flags)
     __ cmpq($src1$$Register, $src2$$Register);
     __ movl($dst$$Register, -1);
     __ jccb(Assembler::less, done);
-    __ setne($dst$$Register);
+    __ setb(Assembler::notZero, $dst$$Register);
     __ movzbl($dst$$Register, $dst$$Register);
     __ bind(done);
   %}
@@ -12880,7 +12846,7 @@ instruct cmpUL3_reg_reg(rRegI dst, rRegL src1, rRegL src2, rFlagsReg flags)
     __ cmpq($src1$$Register, $src2$$Register);
     __ movl($dst$$Register, -1);
     __ jccb(Assembler::below, done);
-    __ setne($dst$$Register);
+    __ setb(Assembler::notZero, $dst$$Register);
     __ movzbl($dst$$Register, $dst$$Register);
     __ bind(done);
   %}

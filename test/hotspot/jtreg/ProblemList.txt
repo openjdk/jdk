@@ -71,6 +71,8 @@ compiler/vectorapi/VectorLogicalOpIdentityTest.java 8302459 linux-x64,windows-x6
 
 compiler/c2/irTests/TestVectorConditionalMove.java 8306922 generic-all
 
+compiler/jvmci/TestUncaughtErrorInCompileMethod.java 8309073 generic-all
+
 #############################################################################
 
 # :hotspot_gc

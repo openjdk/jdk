@@ -28,7 +28,10 @@ package jdk.internal.util;
  * @param minor minor version
  * @param micro micro version
  */
-public record Version(int major, int minor, int micro) implements Comparable<Version> {
+public record OSVersion(int major, int minor, int micro) implements Comparable<OSVersion> {
+
+    // Parse and save the current OS version
+    private static final OSVersion CURRENT_OSVERSION = initVersion();
 
     /**
      * {@return a Version for major, minor versions}
@@ -36,8 +39,27 @@ public record Version(int major, int minor, int micro) implements Comparable<Ver
      * @param major major version
      * @param minor minor version
      */
-    public Version(int major, int minor) {
+    public OSVersion(int major, int minor) {
         this(major, minor, 0);
+    }
+
+    /*
+     * Initialize the current Version from the os.version system property
+     */
+    private static OSVersion initVersion() {
+        final String osVer = StaticProperty.osVersion();
+        try {
+            return parse(osVer);
+        } catch (IllegalArgumentException iae) {
+            throw new InternalError("os.version malformed: " + osVer, iae);
+        }
+    }
+
+    /**
+     * {@return the current operating system version}
+     */
+    public static OSVersion current() {
+        return CURRENT_OSVERSION;
     }
 
     /**
@@ -46,7 +68,7 @@ public record Version(int major, int minor, int micro) implements Comparable<Ver
      * @param other the object to be compared
      */
     @Override
-    public int compareTo(Version other) {
+    public int compareTo(OSVersion other) {
         int result = Integer.compare(major, other.major);
         if (result == 0) {
             result = Integer.compare(minor, other.minor);
@@ -76,7 +98,7 @@ public record Version(int major, int minor, int micro) implements Comparable<Ver
      * @throws IllegalArgumentException if the string does not start with digits
      *          or digits do not follow '.'
      */
-    public static Version parse(String str) throws IllegalArgumentException {
+    public static OSVersion parse(String str) throws IllegalArgumentException {
         int len = str.length();
         int majorStart = 0;
         int majorEnd = skipDigits(str, majorStart);
@@ -94,14 +116,13 @@ public record Version(int major, int minor, int micro) implements Comparable<Ver
                 micro = Integer.parseInt(str.substring(microStart, microEnd));
             }
         }
-        return new Version(major, minor, micro);
+        return new OSVersion(major, minor, micro);
     }
 
     /**
      * {@return The index of the first non-digit from start}
      * @throws IllegalArgumentException if there are no digits
      */
-
     private static int skipDigits(String s, int start) {
         int index = start;
         while (index < s.length() && Character.isDigit(s.charAt(index))) {
