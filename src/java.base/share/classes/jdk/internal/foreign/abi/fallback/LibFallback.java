@@ -119,7 +119,7 @@ final class LibFallback {
      * @throws IllegalStateException if the call to {@code ffi_prep_cif} returns a non-zero status code
      */
     static MemorySegment prepCifVar(MemorySegment returnType, int numFixedArgs, int numTotalArgs, MemorySegment paramTypes, FFIABI abi,
-                                 Arena scope) throws IllegalStateException {
+                                    Arena scope) throws IllegalStateException {
         MemorySegment cif = scope.allocate(NativeConstants.SIZEOF_CIF);
         checkStatus(ffi_prep_cif_var(cif.address(), abi.value(), numFixedArgs, numTotalArgs, returnType.address(), paramTypes.address()));
         return cif;
