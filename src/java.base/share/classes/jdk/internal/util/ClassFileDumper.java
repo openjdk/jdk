@@ -134,8 +134,6 @@ public final class ClassFileDumper {
         AccessController.doPrivileged(new PrivilegedAction<>() {
             @Override public Void run() {
                 try {
-                    // use absolute file to workaround writing to $CWD/file if
-                    // -Duser.dir is set
                     Files.createDirectories(path.getParent());
                     Files.write(path, bytes);
                 } catch (Exception ex) {
@@ -163,8 +161,8 @@ public final class ClassFileDumper {
                 if (Files.notExists(path)) {
                     try {
                         Files.createDirectories(path);
-                    } catch (IOException e) {
-                        throw new IllegalArgumentException("Fail to create " + path, e);
+                    } catch (IOException ex) {
+                        throw new IllegalArgumentException("Fail to create " + path, ex);
                     }
                 }
                 if (!Files.isDirectory(path)) {
