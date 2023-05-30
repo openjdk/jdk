@@ -26,6 +26,7 @@
 package jdk.javadoc.internal.doclets.formats.html;
 
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
@@ -231,40 +232,38 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
     }
 
     /**
-     * Adds "overrides" or "specified by" information about a method (if appropriate)
+     * Adds "Overrides" or "Specified by" information about a method (if appropriate)
      * into a definition list.
      *
-     * @param writer         the writer for the element
-     * @param overriddenType the superclass
-     * @param method         the method
-     * @param dl             the list in which to add the information.
+     * @param writer  the writer for the element
+     * @param s       the override
+     * @param dl      the list in which to add the information.
      */
     protected static void addOverridden(HtmlDocletWriter writer,
-                                        TypeMirror overriddenType,
-                                        ExecutableElement method,
+                                        VisibleMemberTable.OverrideSequence s,
                                         Content dl) {
         if (writer.options.noComment()) {
             return;
         }
         Utils utils = writer.utils;
-        TypeElement holder = utils.getEnclosingTypeElement(method);
+        TypeElement holder = utils.getEnclosingTypeElement(s.getMethod());
         if (!(utils.isPublic(holder) || utils.isLinkable(holder))) {
             //This is an implementation detail that should not be documented.
             return;
         }
-        if (utils.isIncluded(holder) && !utils.isIncluded(method)) {
+        if (utils.isIncluded(holder) && !utils.isIncluded(s.getMethod())) {
             //The class is included but the method is not.  That means that it
             //is not visible so don't document this.
             return;
         }
-        if (utils.hasHiddenTag(holder) || utils.hasHiddenTag(method)) {
+        if (utils.hasHiddenTag(holder) || utils.hasHiddenTag(s.getMethod())) {
             return;
         }
 
         Contents contents = writer.contents;
         Content label;
         HtmlLinkInfo.Kind context;
-        if (utils.isAbstract(holder) && utils.isAbstract(method)) {
+        if (utils.isAbstract(holder) && utils.isAbstract(s.getMethod())) {
             //Abstract method is implemented from abstract class,
             //not overridden
             label = contents.specifiedByLabel;
@@ -275,12 +274,12 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
         }
         dl.add(HtmlTree.DT(label));
         Content overriddenTypeLink =
-                writer.getLink(new HtmlLinkInfo(writer.configuration, context, overriddenType));
+                writer.getLink(new HtmlLinkInfo(writer.configuration, context, s.getEnclosingType()));
         var codeOverriddenTypeLink = HtmlTree.CODE(overriddenTypeLink);
         Content methlink = writer.getLink(
                 new HtmlLinkInfo(writer.configuration, HtmlLinkInfo.Kind.PLAIN, holder)
-                        .fragment(writer.htmlIds.forMember(method).name())
-                        .label(method.getSimpleName()));
+                        .fragment(writer.htmlIds.forMember(s.getMethod()).name())
+                        .label(s.getMethod().getSimpleName()));
         var codeMethLink = HtmlTree.CODE(methlink);
         var dd = HtmlTree.DD(codeMethLink);
         dd.add(Entity.NO_BREAK_SPACE);
@@ -295,34 +294,28 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
      * into a definition list.
      *
      * @param writer  the writer for the method
-     * @param method  the method
-     * @param methods implemented methods
+     * @param methods the implementations
      * @param dl      the definition list
      */
     protected static void addImplementsInfo(HtmlDocletWriter writer,
-                                            ExecutableElement method,
-                                            Collection<ExecutableElement> methods,
+                                            Collection<VisibleMemberTable.OverrideSequence> methods,
                                             Content dl) {
         Utils utils = writer.utils;
         if (writer.options.noComment()) {
             return;
         }
         Contents contents = writer.contents;
-        var enclosing = (TypeElement) method.getEnclosingElement();
-        VisibleMemberTable vmt = writer.configuration.getVisibleMemberTable(enclosing);
-        SortedSet<ExecutableElement> implementedMethods =
-                new TreeSet<>(utils.comparators.makeOverrideUseComparator());
+        SortedSet<VisibleMemberTable.OverrideSequence> implementedMethods =
+                new TreeSet<>(Comparator.comparing(VisibleMemberTable.OverrideSequence::getMethod,
+                        utils.comparators.makeOverrideUseComparator()));
         implementedMethods.addAll(methods);
-        for (ExecutableElement implementedMeth : implementedMethods) {
-            TypeMirror intfac = vmt.getImplementedMethodHolder(method, implementedMeth);
-            intfac = utils.getDeclaredType(enclosing, intfac);
+        for (VisibleMemberTable.OverrideSequence s : implementedMethods) {
             Content intfaclink = writer.getLink(new HtmlLinkInfo(
-                    writer.configuration, HtmlLinkInfo.Kind.LINK_TYPE_PARAMS_AND_BOUNDS, intfac));
+                    writer.configuration, HtmlLinkInfo.Kind.LINK_TYPE_PARAMS_AND_BOUNDS, s.getEnclosingType()));
             var codeIntfacLink = HtmlTree.CODE(intfaclink);
             dl.add(HtmlTree.DT(contents.specifiedByLabel));
-            Content methlink = writer.getDocLink(
-                    HtmlLinkInfo.Kind.PLAIN, implementedMeth,
-                    implementedMeth.getSimpleName());
+            Content methlink = writer.getDocLink(HtmlLinkInfo.Kind.PLAIN, s.getMethod(),
+                    s.getMethod().getSimpleName());
             var codeMethLink = HtmlTree.CODE(methlink);
             var dd = HtmlTree.DD(codeMethLink);
             dd.add(Entity.NO_BREAK_SPACE);

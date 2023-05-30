@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,7 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
     }
 
     @Override
-    public Output inherit(Element owner, DocTree tag, boolean isFirstSentence, BaseConfiguration configuration) {
+    public Output inherit(TypeElement site, Element owner, DocTree tag, boolean isFirstSentence, BaseConfiguration configuration) {
         assert owner.getKind() == ElementKind.METHOD;
         assert tag.getKind() == DocTree.Kind.PARAM;
         var method = (ExecutableElement) owner;
@@ -85,7 +85,7 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
         // try to inherit description of the respective parameter in an overridden method
         try {
             var docFinder = configuration.utils.docFinder();
-            var r = docFinder.trySearch(method,
+            var r = docFinder.trySearch(site, method,
                             m -> Result.fromOptional(extract(configuration.utils, m, position, param.isTypeParameter())))
                     .toOptional();
             return r.map(result -> new Output(result.paramTree, result.method, result.paramTree.getDescription(), true))
@@ -198,7 +198,7 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
                 result.add(convertParam(e, kind, writer, tag,
                         ch.getParameterName(tag), result.isEmpty()));
             } else if (writer.configuration().utils.isMethod(e)) {
-                result.add(getInheritedTagletOutput(kind, e, writer,
+                result.add(getInheritedTagletOutput(writer.getCurrentPageElement(), kind, e, writer,
                         parameters.get(i), i, result.isEmpty()));
             }
         }
@@ -219,7 +219,8 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
      * Tries to inherit documentation for a specific parameter (element).
      * If unsuccessful, the returned content is empty.
      */
-    private Content getInheritedTagletOutput(ParamKind kind,
+    private Content getInheritedTagletOutput(TypeElement site,
+                                             ParamKind kind,
                                              Element holder,
                                              TagletWriter writer,
                                              Element param,
@@ -227,7 +228,7 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
                                              boolean isFirst) {
         Utils utils = writer.configuration().utils;
         Content result = writer.getOutputInstance();
-        var r = utils.docFinder().search((ExecutableElement) holder,
+        var r = utils.docFinder().search(site, (ExecutableElement) holder,
                         m -> Result.fromOptional(extract(utils, m, position, kind == ParamKind.TYPE_PARAMETER)))
                 .toOptional();
         if (r.isPresent()) {

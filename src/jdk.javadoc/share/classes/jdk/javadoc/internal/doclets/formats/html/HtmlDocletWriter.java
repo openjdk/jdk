@@ -109,7 +109,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils.DeclarationPreviewLanguageFeatures;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils.ElementFlag;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils.PreviewSummary;
-import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
 import jdk.javadoc.internal.doclint.HtmlTag;
 
 import static com.sun.source.doctree.DocTree.Kind.CODE;
@@ -290,30 +289,44 @@ public class HtmlDocletWriter {
      * @param dl the content to which the method information will be added
      */
     private void addMethodInfo(ExecutableElement method, Content dl) {
-        var enclosing = (TypeElement) method.getEnclosingElement();
-        var overrideInfo = utils.overriddenMethod(method);
-        var enclosingVmt = configuration.getVisibleMemberTable(enclosing);
-        var implementedMethods = enclosingVmt.getImplementedMethods(method);
-        if ((!enclosing.getInterfaces().isEmpty()
+        assert getCurrentPageElement() != null;
+        var site = getCurrentPageElement();
+        var siteVmt = configuration.getVisibleMemberTable(site);
+        // separating "overrides" from "implements" can also be accomplished
+        // using Collectors.partitioningBy, but it has non-obvious ordering
+        // semantics and require too much ceremony
+        var mixed = siteVmt.overrideAt(method).descending()
+                .skip(1) // skip the method itself
+                .filter(i -> !i.isSimpleOverride()
+                        && !utils.isUndocumentedEnclosure((TypeElement) i.getMethod().getEnclosingElement())
+                        && (utils.isPublic(i.getMethod()) || utils.isLinkable((TypeElement) i.getMethod().getEnclosingElement())))
+                .toList();
+        var implementedMethods = mixed.stream()
+                .filter(i -> {
+                    var k = i.getEnclosingType().asElement().getKind();
+                    assert k.isClass() || k.isInterface() : k;
+                    return k.isInterface();
+                }).toList();
+        var overriddenMethod = mixed.stream()
+                .filter(i -> i.getEnclosingType().asElement().getKind().isClass())
+                .findFirst();
+        if ((!site.getInterfaces().isEmpty()
                 && !implementedMethods.isEmpty())
-                || overrideInfo != null) {
+                || overriddenMethod.isPresent()) {
             // TODO note that if there are any overridden interface methods throughout the
-            //   hierarchy, !enclosingVmt.getImplementedMethods(method).isEmpty(), their information
+            //   hierarchy, !siteVmt.getImplementedMethods(method).isEmpty(), their information
             //   will be printed if *any* of the below is true:
-            //     * the enclosing has _directly_ implemented interfaces
-            //     * the overridden method is not null
+            //     * the contextual type element has _directly_ implemented interfaces
+            //     * the overridden method is present
             //   If both are false, the information will not be printed: there will be no
             //   "Specified by" documentation. The examples of that can be seen in documentation
             //   for these methods:
             //     * ForkJoinPool.execute(java.lang.Runnable)
             //  This is a long-standing bug, which must be fixed separately: JDK-8302316
-            MethodWriterImpl.addImplementsInfo(this, method, implementedMethods, dl);
+            MethodWriterImpl.addImplementsInfo(this, implementedMethods, dl);
         }
-        if (overrideInfo != null) {
-            MethodWriterImpl.addOverridden(this,
-                    overrideInfo.overriddenMethodOwner(),
-                    overrideInfo.overriddenMethod(),
-                    dl);
+        if (overriddenMethod.isPresent()) {
+            MethodWriterImpl.addOverridden(this, overriddenMethod.get(), dl);
         }
     }
 

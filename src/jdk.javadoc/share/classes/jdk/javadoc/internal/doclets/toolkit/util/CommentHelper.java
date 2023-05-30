@@ -504,7 +504,7 @@ public class CommentHelper {
     private DocTreePath getInheritedDocTreePath(DocTree dtree, ExecutableElement ee) {
         Utils utils = configuration.utils;
         var docFinder = utils.docFinder();
-        Optional<ExecutableElement> inheritedDoc = docFinder.search(ee,
+        Optional<ExecutableElement> inheritedDoc = docFinder.search(null, ee,
                 (m -> {
                     Optional<ExecutableElement> optional = utils.getFullBody(m).isEmpty() ? Optional.empty() : Optional.of(m);
                     return Result.fromOptional(optional);

@@ -31,6 +31,7 @@ import java.util.Optional;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.TypeElement;
 
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.SeeTree;
@@ -51,7 +52,7 @@ public class SeeTaglet extends BaseTaglet implements InheritableTaglet {
     }
 
     @Override
-    public Output inherit(Element owner, DocTree tag, boolean isFirstSentence, BaseConfiguration configuration) {
+    public Output inherit(TypeElement site, Element owner, DocTree tag, boolean isFirstSentence, BaseConfiguration configuration) {
         CommentHelper ch = configuration.utils.getCommentHelper(owner);
         var path = ch.getDocTreePath(tag);
         configuration.getMessages().warning(path, "doclet.inheritDocWithinInappropriateTag");
@@ -65,7 +66,7 @@ public class SeeTaglet extends BaseTaglet implements InheritableTaglet {
         Element e = holder;
         if (utils.isMethod(holder)) {
             var docFinder = utils.docFinder();
-            Optional<Documentation> result = docFinder.search((ExecutableElement) holder,
+            Optional<Documentation> result = docFinder.search(writer.getCurrentPageElement(), (ExecutableElement) holder,
                     m -> Result.fromOptional(extract(utils, m))).toOptional();
             if (result.isPresent()) {
                 ExecutableElement m = result.get().method();

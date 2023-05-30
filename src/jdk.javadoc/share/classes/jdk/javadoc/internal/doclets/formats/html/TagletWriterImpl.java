@@ -560,15 +560,42 @@ public class TagletWriterImpl extends TagletWriter {
             // refMem is not null, so this @see tag must be referencing a valid member.
             TypeElement containing = utils.getEnclosingTypeElement(refMem);
 
-            // Find the enclosing type where the method is actually visible
-            // in the inheritance hierarchy.
-            ExecutableElement overriddenMethod = null;
+            var overriddenMethod = Optional.<VisibleMemberTable.OverrideSequence>empty();
             if (refMem.getKind() == ElementKind.METHOD) {
                 VisibleMemberTable vmt = configuration.getVisibleMemberTable(containing);
-                overriddenMethod = vmt.getOverriddenMethod((ExecutableElement)refMem);
+                // Find the type whose page documents the method in the
+                // "Method Details" section, to build the link to the method.
+                var sequence = vmt.overrideAt((ExecutableElement) refMem);
+                // 1. Let's find the most specific non-simple override: this is
+                //    the type element whose comment text is going to be used on
+                //    in "Method Details" for the method.
+                //
+                //    For that, while override is simple, decrease the specificity.
+                while (sequence.isSimpleOverride()
+                        && sequence.hasLessSpecific()) {
+                    sequence = sequence.lessSpecific();
+                }
+                // there's always a non-simple override in a sequence: the least
+                // specific method, which could also be the most specific, if
+                // the sequence is trivial
+                assert !sequence.isSimpleOverride() : sequence;
+                // 2. The method we've just found might not be documentable in its
+                //    enclosing type element, so we need to find the first MORE specific
+                //    method which is going to "inherit" that found method documentation
+                //    and host/display it on its enclosing type element page.
+                //
+                //    For that, go back: while override is non-documentable,
+                //    increase the specificity.
+                while (utils.isUndocumentedEnclosure((TypeElement) sequence.getEnclosingType().asElement())
+                        && sequence.hasMoreSpecific()) {
+                    sequence = sequence.moreSpecific();
+                }
+                // 3. Have we been able to find such a method?
+                if (!utils.isUndocumentedEnclosure((TypeElement) sequence.getEnclosingType().asElement()))
+                    overriddenMethod = Optional.of(sequence);
 
-                if (overriddenMethod != null) {
-                    containing = utils.getEnclosingTypeElement(overriddenMethod);
+                if (overriddenMethod.isPresent()) {
+                    containing = utils.getEnclosingTypeElement(overriddenMethod.get().getMethod());
                 }
             }
             if (refSignature.trim().startsWith("#") &&
@@ -599,9 +626,9 @@ public class TagletWriterImpl extends TagletWriter {
                 if (refMemName.indexOf('(') < 0) {
                     refMemName += utils.makeSignature((ExecutableElement) refMem, null, true);
                 }
-                if (overriddenMethod != null) {
+                if (overriddenMethod.isPresent()) {
                     // The method to actually link.
-                    refMem = overriddenMethod;
+                    refMem = overriddenMethod.get().getMethod();
                 }
             }
 

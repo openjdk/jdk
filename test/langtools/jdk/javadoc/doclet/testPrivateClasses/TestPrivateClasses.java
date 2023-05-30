@@ -131,8 +131,8 @@ public class TestPrivateClasses extends JavadocTester {
                 "PrivateInterface",
                 "All Superinterfaces");
 
-        checkOutput("pkg2/C.html", false,
-                //Generic interface method test.
+        checkOutput("pkg2/C.html", true,
+                //Inherit a comment.
                 "This comment should get copied to the implementing class");
 
         checkOutput("pkg2/C.html", false,

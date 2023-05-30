@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -165,7 +165,7 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
     private final Utils utils;
 
     @Override
-    public Output inherit(Element owner, DocTree tag, boolean isFirstSentence, BaseConfiguration configuration) {
+    public Output inherit(TypeElement site, Element owner, DocTree tag, boolean isFirstSentence, BaseConfiguration configuration) {
         // This method shouldn't be called because {@inheritDoc} tags inside
         // exception tags aren't dealt with individually. {@inheritDoc} tags
         // inside exception tags are collectively dealt with in
@@ -253,7 +253,7 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
                 Element exceptionElement = utils.typeUtils.asElement(exceptionType);
                 Map<ThrowsTree, ExecutableElement> r;
                 try {
-                    r = expandShallowly(exceptionElement, executable);
+                    r = expandShallowly(writer.getCurrentPageElement(), exceptionElement, executable);
                 } catch (Failure | DocFinder.NoOverriddenMethodsFound e) {
                     // Ignore errors here because unlike @throws tags, the `throws` clause is implicit
                     // documentation inheritance. It triggers a best-effort attempt to inherit
@@ -370,7 +370,7 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
             }
             Map<ThrowsTree, ExecutableElement> tags;
             try {
-                tags = expandShallowly(originalExceptionElement, holder);
+                tags = expandShallowly(writer.getCurrentPageElement(), originalExceptionElement, holder);
             } catch (Failure.UnsupportedTypeParameter e) {
                 // repack to fill in missing tag information
                 throw new Failure.UnsupportedTypeParameter(e.element, tag, holder);
@@ -525,7 +525,8 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
      * have defined iteration order of entries, whose keys and values
      * are non-null.
      */
-    private Map<ThrowsTree, ExecutableElement> expandShallowly(Element exceptionType,
+    private Map<ThrowsTree, ExecutableElement> expandShallowly(TypeElement site,
+                                                               Element exceptionType,
                                                                ExecutableElement holder)
             throws Failure.ExceptionTypeNotFound,
                    Failure.NotExceptionType,
@@ -562,7 +563,7 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
         }
         Result<Map<ThrowsTree, ExecutableElement>> result;
         try {
-            result = utils.docFinder().trySearch(holder, criterion);
+            result = utils.docFinder().trySearch(site, holder, criterion);
         } catch (Failure.NotExceptionType
                  | Failure.ExceptionTypeNotFound
                  | Failure.UnsupportedTypeParameter x) {

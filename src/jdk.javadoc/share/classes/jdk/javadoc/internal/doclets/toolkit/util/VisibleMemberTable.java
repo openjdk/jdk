@@ -31,7 +31,9 @@ import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.Name;
+import javax.lang.model.element.QualifiedNameable;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.TypeParameterElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.DeclaredType;
@@ -39,9 +41,10 @@ import javax.lang.model.type.ExecutableType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.WildcardType;
+import javax.lang.model.util.ElementFilter;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.SimpleTypeVisitor14;
-import java.lang.ref.SoftReference;
+import javax.lang.model.util.Types;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -49,19 +52,24 @@ import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.RandomAccess;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import com.sun.source.doctree.DocTree;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.BaseOptions;
 import jdk.javadoc.internal.doclets.toolkit.PropertyUtils;
+
+import static javax.lang.model.element.ElementKind.ANNOTATION_TYPE;
 
 /**
  * This class computes the main data structure for the doclet's
@@ -179,18 +187,14 @@ public class VisibleMemberTable {
     private Map<Kind, List<Element>> visibleMembers;
     private final Map<ExecutableElement, PropertyMembers> propertyMap = new HashMap<>();
 
-    //  FIXME: Figure out why it is one-one and not one-to-many.
-    /**
-     * Maps a method m declared in {@code te} to a visible method m' in a
-     * {@code te}'s supertype such that m overrides m'.
-     */
-    private final Map<ExecutableElement, OverrideInfo> overriddenMethodTable
-            = new LinkedHashMap<>();
+    private final Map<ExecutableElement, OverrideSequence> overriddenMethods = new HashMap<>();
+    private Set<ExecutableElement> methodMembers;
 
     protected VisibleMemberTable(TypeElement typeElement, BaseConfiguration configuration,
                                  VisibleMemberCache mcache) {
         config = configuration;
         utils = configuration.utils;
+        JAVA_LANG_OBJECT = utils.elementUtils.getTypeElement("java.lang.Object");
         options = configuration.getOptions();
         te = typeElement;
         parent = (TypeElement) utils.typeUtils.asElement(te.getSuperclass());
@@ -286,45 +290,712 @@ public class VisibleMemberTable {
         return getVisibleMembers(kind, onlyLocallyDeclaredMembers);
     }
 
-    /**
-     * Returns the method overridden by the provided method, or {@code null}.
+    /*
+     * Returns an override sequence element that corresponds to the given method.
      *
-     * Sometimes it's not possible to link to a method that a link, linkplain,
-     * or see tag mentions. This is because the method is a "simple override"
-     * and, thus, has no useful documentation, or because the method is
-     * declared in a type that has package access and, thus, has no visible
-     * documentation.
+     * An override sequence is an ordered set of one or more methods, each of
+     * which, starting from the second, are overridden by the first, from this
+     * class or interface. The order of methods in the sequence is the
+     * following order of members discovery in supertypes: depth-first,
+     * preferring classes to interfaces.
      *
-     * Call this method to determine if any of the above is the case. If the
-     * call returns a method element, link to that method element instead of
-     * the provided method.
+     * The assumption is that there's a unique override sequence for each
+     * method. If a method does not override anything, the sequence trivially
+     * consists of just that method.
      *
-     * @param e the method to check
-     * @return the method found or {@code null}
+     * Example 1
+     * =========
+     *
+     *     public class A implements X { }
+     *     public class B extends A implements Y { }
+     *
+     * Example 2
+     * =========
+     *
+     *     public interface X { }
+     *     public interface Y extends X { }
+     *
+     * API
+     * ===
+     *
+     *   - If the method is not a member of this class or interface, an empty
+     *     sequence is returned (this saves us from using an optional or
+     *     throwing an exception, yet allows to conveniently check if a method
+     *     participates in an override sequence).
+     *
+     *   - The overrider method (that is, the first method) is a part of the
+     *     sequence because it's sometimes useful to view all the methods of
+     *     the subsequence uniformly. The cursor is positioned at the given
+     *     method for the same reason.
      */
-    public ExecutableElement getOverriddenMethod(ExecutableElement e) {
-        // TODO: consider possible ambiguities: multiple overridden methods
-        ensureInitialized();
-        assert !overriddenMethodTable.containsKey(null);
-        OverrideInfo found = overriddenMethodTable.get(e);
-        if (found != null
-                && (found.simpleOverride || utils.isUndocumentedEnclosure(utils.getEnclosingTypeElement(e)))) {
-            return found.overriddenMethod;
+    public OverrideSequence overrideAt(ExecutableElement method) {
+        if (method.getKind() != ElementKind.METHOD)
+            throw new IllegalArgumentException(diagnosticDescriptionOf(method));
+        var result = overriddenMethods.get(method);
+        if (result != null)
+            return result;
+        for (ExecutableElement m : getMethodMembers()) {
+            // Is `method` a member of this class or interface or is `method`
+            // overridden by a member of this class or interface?
+            if (method.equals(m) || utils.elementUtils.overrides(m, method, te)) {
+                sequence(m); // sequence overrides starting from that member
+                return overriddenMethods.get(method);
+            }
+        }
+        return new OverrideSequence();
+    }
+
+    /*
+     * An element that provides access to its adjacent elements and describes
+     * the override.
+     *
+     * API
+     * ===
+     *
+     *  - OverrideData is not leaked to the client of this class for robustness:
+     *    parts of data (e.g. isSimpleOverride) is sensitive to the order of
+     *    elements, which if accessed through the element is fixed.
+     *
+     *  - Both type mirror and executable element are required to accurately
+     *    and fully preserve information:
+     *
+     *     - the _type_ of a class or interface that declares the method is
+     *       not available from method.getEnclosingElement()
+     *
+     *     - javax.lang.model.type.ExecutableType cannot be translated to
+     *       ExecutableElement: javax.lang.model.util.Types.asElement()
+     *       returns null if passed such a type
+     *
+     *  - Compared to alternatives, such as general-purpose java.util.ListIterator
+     *    or a pair consisting of a list and an index in that list, this class
+     *    has some benefits; for example:
+     *
+     *     - it has methods with domain-specific names (no need to remember the
+     *       order in a list)
+     *
+     *     - it does not have useless methods
+     *
+     *     - its objects are immutable (moreover, the class behaves as if it
+     *       were annotated with @jdk.internal.ValueBased), which allows them,
+     *       for example, to be used as keys in maps
+     *
+     *  - Sadly, cannot call this Override, as it will clash with
+     *    java.lang.Override.
+     */
+    public static final class OverrideSequence {
+
+        private final List<OverrideData> seq;
+        private final int idx;
+
+        private OverrideSequence(List<OverrideData> seq, int idx) {
+            this.seq = List.copyOf(seq);
+            // Unmodifiable lists are random-access: the lists and their
+            // subList views implement the RandomAccess interface.
+            //
+            // If that weren't guaranteed we would need to make a local
+            // reference to the respective list element, as sometimes
+            // we access it
+            assert this.isEmpty() || this.seq instanceof RandomAccess;
+            this.idx = Objects.checkIndex(idx, seq.size());
+        }
+
+        // Creates an empty sequence
+        private OverrideSequence() {
+            this.seq = List.of();
+            this.idx = 0;
+        }
+
+        public boolean isEmpty() {
+            return seq.isEmpty();
+        }
+
+        public boolean hasMoreSpecific() {
+            return idx > 0;
+        }
+
+        public OverrideSequence moreSpecific() {
+            if (!hasMoreSpecific())
+                throw new NoSuchElementException();
+            return new OverrideSequence(seq, idx - 1);
+        }
+
+        public boolean hasLessSpecific() {
+            return idx < seq.size() - 1;
+        }
+
+        public OverrideSequence lessSpecific() {
+            if (!hasLessSpecific())
+                throw new NoSuchElementException();
+            return new OverrideSequence(seq, idx + 1);
+        }
+
+        /*
+         * Elements are streamed starting from this (inclusive) towards the
+         * least specific, i.e. "order by specificity desc". Returns an empty
+         * stream if called on an empty element.
+         */
+        public Stream<OverrideSequence> descending() {
+            return IntStream.range(idx, seq.size())
+                    .mapToObj(i -> new OverrideSequence(seq, i));
+            // Outside this class, the same is achievable through:
+            //
+            // return Stream.iterate(this, OverrideSequence::hasLessSpecific,
+            //        OverrideSequence::lessSpecific);
+        }
+
+        private OverrideData data() {
+            if (isEmpty())
+                throw new NoSuchElementException();
+            return seq.get(idx);
+        }
+
+        public boolean isSimpleOverride() {
+            return data().simpleOverride;
+        }
+
+        public DeclaredType getEnclosingType() {
+            return data().enclosing;
+        }
+
+        public ExecutableElement getMethod() {
+            return data().method;
+        }
+
+        @Override
+        public int hashCode() {
+            return isEmpty() ? 0 : Objects.hash(idx, seq);
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj == this)
+                return true;
+            if (!(obj instanceof OverrideSequence that))
+                return false;
+            if (this.isEmpty()) {
+                return that.isEmpty();
+            } else {
+                return !that.isEmpty() && ( this.idx == that.idx && this.seq.equals(that.seq) );
+            }
+        }
+
+        /*
+         * For debugging purposes.
+         */
+        @Override
+        public String toString() {
+            if (seq.isEmpty())
+                return "(empty)";
+            var res = new StringBuilder();
+            // list elements in the order of decreasing specificity:
+            // leftmost is the most specific while the rightmost
+            // is the least specific
+            var iterator = seq.listIterator();
+            while (iterator.hasNext()) {
+                // mark this element by enclosing it in square brackets
+                var thisElement = idx == iterator.nextIndex();
+                if (thisElement)
+                    res.append("[");
+                res.append(toString(iterator.next().method()));
+                if (thisElement)
+                    res.append("]");
+                if (iterator.hasNext()) {
+                    res.append("  ");
+                }
+            }
+            return res.toString();
+        }
+
+        private String toString(ExecutableElement m) {
+            // parameterization can change mid sequence, which might be
+            // important to spot: add type parameters to description
+            List<? extends TypeParameterElement> tp = m.getTypeParameters();
+            // sadly, Collectors.joining adds prefix and suffix regardless of
+            // whether or not the stream is empty: work around it by using
+            // emptiness pre-check
+            var typeParametersDesc = tp.isEmpty() ? "" : tp.stream()
+                    .map(p -> p.asType().toString())
+                    .collect(Collectors.joining(",", "<", ">"));
+            return m.getEnclosingElement().getSimpleName() + "."
+                    + typeParametersDesc + m.getSimpleName()
+                    + "(" + m.getParameters().stream()
+                    .map(p -> p.asType().toString())
+                    .collect(Collectors.joining(",")) + ")";
+        }
+    }
+
+    /*
+     * Computes all method members of this class or interface.
+     */
+    private Set<ExecutableElement> getMethodMembers() {
+        if (methodMembers == null) {
+            // Elements.getAllMembers has bugs which preclude us from using it.
+            // Once they have been fixed, consider using it instead of ad-hoc
+            // computation of a set of method members:
+            //
+            // methodMembers = new LinkedHashSet<>(
+            //        ElementFilter.methodsIn(elements().getAllMembers(te)));
+            methodMembers = getMethodMembers0(te);
+        }
+        return methodMembers;
+    }
+
+    /*
+     * This algorithm of computation of method members is jdk.javadoc's
+     * interpretation of "The Java Language Specification, Java SE 20 Edition".
+     *
+     * Corresponds to 8. Classes, 8.2. Class Members, and 9.2. Interface Members.
+     *
+     * 8. Classes
+     *
+     *     The body of a class declares members (fields, methods, classes, and
+     *     interfaces)...
+     *
+     * 8.2. Class Members:
+     *
+     *     The members of a class are all of the following:
+     *
+     *       - Members inherited from its direct superclass type (8.1.4),
+     *         except in the class Object, which has no direct superclass type
+     *
+     *       - Members inherited from any direct superinterface types (8.1.5)
+     *
+     *       - Members declared in the body of the class (8.1.7)
+     *
+     *      Members of a class that are declared private are not inherited by
+     *      subclasses of that class.
+     *
+     *      Only members of a class that are declared protected or public are
+     *      inherited by subclasses declared in a package other than the one
+     *      in which the class is declared.
+     *
+     * 9.2. Interface Members:
+     *
+     *     The members of an interface are:
+     *
+     *       - Members declared in the body of the interface declaration (9.1.5).
+     *
+     *       - Members inherited from any direct superinterface types (9.1.3).
+     *
+     *       - If an interface has no direct superinterface types, then the
+     *         interface implicitly declares a public abstract member method m
+     *         with signature s, return type r, and throws clause t
+     *         corresponding to each public instance method m with signature s,
+     *         return type r, and throws clause t declared in Object (4.3.2),
+     *         unless an abstract method with the same signature, same return
+     *         type, and a compatible throws clause is explicitly declared by
+     *         the interface.
+     */
+    private Set<ExecutableElement> getMethodMembers0(TypeElement t) {
+        var declaredMethods = Collections.unmodifiableList(ElementFilter.methodsIn(t.getEnclosedElements()));
+        var result = new ArrayList<ExecutableElement>();
+        result.addAll(declaredMethods);
+        if (t.getKind().isClass()) {
+            var concreteSuperclassMethods = new ArrayList<ExecutableElement>();
+            classInheritConcreteMethods(t, declaredMethods, concreteSuperclassMethods, result);
+            classInheritAbstractAndDefaultMethods(t, declaredMethods, concreteSuperclassMethods, result);
+        } else if (t.getKind().isInterface()) {
+            interfaceInheritMethods(t, declaredMethods, result);
+        } else {
+            throw new AssertionError(diagnosticDescriptionOf(t));
+        }
+        return new LinkedHashSet<>(result); // return a set, but preserve the order
+    }
+
+    /*
+     * Corresponds to 8.4.8 Inheritance, Overriding, and Hiding:
+     *
+     *     A class C inherits from its direct superclass type D all concrete
+     *     methods m (both static and instance) for which all of the following
+     *     are true:
+     *
+     *       - m is a member of D.
+     *
+     *       - m is public, protected, or declared with package access in
+     *         the same package as C.
+     *
+     *       - No method declared in C has a signature that is a subsignature
+     *         (8.4.2) of the signature of m as a member of D.
+     */
+    private void classInheritConcreteMethods(TypeElement t,
+                                             Iterable<? extends ExecutableElement> declaredMethods,
+                                             Collection<? super ExecutableElement> concreteSuperclassMethods,
+                                             Collection<? super ExecutableElement> result) {
+        var superclassType = t.getSuperclass();
+        if (superclassType.getKind() == TypeKind.NONE) {
+            // comment out because it interferes with the IgnoreSourceErrors test:
+            // assert JAVA_LANG_OBJECT.equals(t) : diagnosticDescriptionOf(t);
+        } else {
+            var superclassMethods = mcache.getVisibleMemberTable(asTypeElement(superclassType)).getMethodMembers();
+            for (var sm : superclassMethods) {
+                var m = sm.getModifiers();
+                if (m.contains(Modifier.ABSTRACT))
+                    continue;
+                if (m.contains(Modifier.PRIVATE))
+                    continue;
+                if (!m.contains(Modifier.PUBLIC) && !m.contains(Modifier.PROTECTED)
+                        && isInTheSamePackage(sm, t))
+                    continue;
+                if (isSubsignatured(declaredMethods, (DeclaredType) t.asType(), (DeclaredType) superclassType, sm))
+                    continue;
+                concreteSuperclassMethods.add(sm);
+                result.add(sm);
+            }
+        }
+    }
+
+    private final TypeElement JAVA_LANG_OBJECT;
+
+    /*
+     * Corresponds to 8.4.8 Inheritance, Overriding, and Hiding:
+     *
+     *     A class C inherits from its direct superclass type and direct
+     *     superinterface types all abstract and default (9.4) methods m
+     *     for which all of the following are true:
+     *
+     *       - m is a member of the direct superclass type or a direct
+     *         superinterface type of C, known in either case as D.
+     *
+     *       - m is public, protected, or declared with package access
+     *         in the same package as C.
+     *
+     *       - No method declared in C has a signature that is a subsignature
+     *         (8.4.2) of the signature of m as a member of D.
+     *
+     *       - No concrete method inherited by C from its direct superclass
+     *         type has a signature that is a subsignature of the signature
+     *         of m as a member of D.
+     *
+     *       - There exists no method m' that is a member of the direct
+     *         superclass type or a direct superinterface type of C, D'
+     *         (m distinct from m', D distinct from D'), such that m'
+     *         overrides from the class or interface of D' the declaration
+     *         of the method m (8.4.8.1, 9.4.1.1).
+     */
+    private void classInheritAbstractAndDefaultMethods(TypeElement t,
+                                                       Iterable<? extends ExecutableElement> declaredMethods,
+                                                       Iterable<? extends ExecutableElement> concreteSuperclassMethods,
+                                                       Collection<? super ExecutableElement> inheritedMethods) {
+        var directSupertypes = directSupertypes(t.asType());
+        for (var s : directSupertypes) {
+            var supertypeElement = asTypeElement(s);
+            // FIXME: parameterization information is lost:
+            var supertypeMethods = mcache.getVisibleMemberTable(supertypeElement).getMethodMembers();
+            for (var sm : supertypeMethods) {
+                var m = sm.getModifiers();
+                if (!m.contains(Modifier.ABSTRACT) && !m.contains(Modifier.DEFAULT))
+                    continue;
+                if (m.contains(Modifier.PRIVATE))
+                    continue;
+                if (!m.contains(Modifier.PUBLIC) && !m.contains(Modifier.PROTECTED)
+                        && !isInTheSamePackage(sm, t))
+                    continue;
+                if (isSubsignatured(declaredMethods, (DeclaredType) t.asType(), s, sm))
+                    continue;
+                if (isSubsignatured(concreteSuperclassMethods, (DeclaredType) t.asType(), s, sm))
+                    continue;
+                if (isOverridden(sm, directSupertypes))
+                    continue;
+                // while 8.4.8 mentions such methods explicitly, by now
+                // they should have been already filtered out
+                assert !(supertypeElement.getKind().isInterface()
+                        && (m.contains(Modifier.PRIVATE) || m.contains(Modifier.STATIC)));
+                inheritedMethods.add(sm);
+            }
+        }
+    }
+
+    /*
+     * Corresponds to 9.4.1 Inheritance and Overriding:
+     *
+     *     An interface I inherits from its direct superinterface types all
+     *     abstract and default methods m for which all of the following
+     *     are true:
+     *
+     *       - m is a member of a direct superinterface type of I, J.
+     *
+     *       - No method declared in I has a signature that is a subsignature
+     *         (8.4.2) of the signature of m as a member of J.
+     *
+     *       - There exists no method m' that is a member of a direct
+     *         superinterface of I, J' (m distinct from m', J distinct from J'),
+     *         such that m' overrides from the interface of J' the declaration
+     *         of the method m (9.4.1.1).
+     *
+     *      An interface does not inherit private or static methods from
+     *      its superinterfaces.
+     */
+    private void interfaceInheritMethods(TypeElement i,
+                                         Iterable<? extends ExecutableElement> declaredMethods,
+                                         Collection<? super ExecutableElement> inheritedMethods) {
+        var directSuperinterfaces = i.getInterfaces();
+        for (var j : directSuperinterfaces) {
+            var superinterfaceMethods = mcache.getVisibleMemberTable(asTypeElement(j)).getMethodMembers();
+            for (var m : superinterfaceMethods) {
+                var access = m.getModifiers();
+                if (!access.contains(Modifier.ABSTRACT) && !access.contains(Modifier.DEFAULT))
+                    continue;
+                // don't need to check for static because of 8.4.3. Method Modifiers:
+                //
+                //     It is a compile-time error if a method declaration that
+                //     contains the keyword abstract also contains any one of
+                //     the keywords private, static, final, native, strictfp,
+                //     or synchronized.
+                assert !access.contains(Modifier.STATIC) : diagnosticDescriptionOf(m);
+                if (access.contains(Modifier.PRIVATE))
+                    continue;
+                if (isSubsignatured(declaredMethods, (DeclaredType) i.asType(), (DeclaredType) j, m))
+                    continue;
+                if (isOverridden(m, directSuperinterfaces))
+                    continue;
+                inheritedMethods.add(m);
+            }
+        }
+        if (!directSuperinterfaces.isEmpty())
+            return;
+        // comment out because our model does not currently require it:
+        // that is, the Object-like methods are not tracked as members of
+        // interfaces (getMethodMembers), they are only tracked as overrides
+        // (overrideAt):
+        // interfaceProvideObjectLikeMethods(declaredMethods, (DeclaredType) i.asType(), inheritedMethods);
+    }
+
+    /*
+     * Corresponds to 9.2. Interface Members:
+     *
+     *     If an interface has no direct superinterface types, then the
+     *     interface implicitly declares a public abstract member method m with
+     *     signature s, return type r, and throws clause t corresponding to
+     *     each public instance method m with signature s, return type r, and
+     *     throws clause t declared in Object (4.3.2), unless an abstract
+     *     method with the same signature, same return type, and a compatible
+     *     throws clause is explicitly declared by the interface.
+     */
+    private void interfaceProvideObjectLikeMethods(Iterable<? extends ExecutableElement> declaredMethods,
+                                                   DeclaredType type,
+                                                   Collection<? super ExecutableElement> inheritedMethods) {
+        // We currently inherit from Object similarly to how javax.lang.model.element.Elements.getAllMembers FIXME reword
+        // does it. Later, we might revisit to consider re-declaring abstract
+        // methods as per 9.2. Interface Members
+        for (var m : mcache.getVisibleMemberTable(JAVA_LANG_OBJECT).getMethodMembers()) {
+            var access = m.getModifiers();
+            if (access.contains(Modifier.STATIC))
+                continue;
+            if (!access.contains(Modifier.PUBLIC))
+                continue;
+            if (isSubsignatured(declaredMethods, type, (DeclaredType) JAVA_LANG_OBJECT.asType(), m))
+                continue; // actually, it should be the _same_ signature (not a subsignature)
+            inheritedMethods.add(m);
+        }
+    }
+
+    private boolean isSubsignatured(Iterable<? extends ExecutableElement> candidateSubsignatures,
+                                    DeclaredType candidateSubsignaturesType,
+                                    DeclaredType s,
+                                    ExecutableElement sm) {
+        var mAsMemberOfS = (ExecutableType) types().asMemberOf(s, sm);
+        for (var c : candidateSubsignatures) {
+            if (sm.getSimpleName().equals(c.getSimpleName())
+                    && types().isSubsignature((ExecutableType) types().asMemberOf(candidateSubsignaturesType, c), mAsMemberOfS))
+                return true;
+        }
+        return false;
+    }
+
+    private boolean isInTheSamePackage(ExecutableElement m, TypeElement t) {
+        return !Objects.equals(elements().getPackageOf(m), elements().getPackageOf(t));
+    }
+
+    /*
+     * This method is equivalent to javax.lang.model.util.Types.directSupertypes(t)
+     * except when t is an interface type that has (direct) superinterface types:
+     * in that case, the returned collection does not contain java.lang.Object.
+     *
+     * The behavior of this method is better aligned with 4.10.2. Subtyping among
+     * Class and Interface Types:
+     *
+     *     Given ... interface C, the direct supertypes of the type of C
+     *     are all of the following:
+     *
+     *         ...
+     *
+     *       - The type Object, if C is an interface with no direct
+     *         superinterface types (9.1.3).
+     *
+     * This method could be revisited once JDK-8299917 has been resolved.
+     */
+    @SuppressWarnings("unchecked")
+    private List<DeclaredType> directSupertypes(TypeMirror t) {
+        Collection<? extends TypeMirror> result;
+        var e = asTypeElement(t);
+        if (e.getKind().isInterface() && !e.getInterfaces().isEmpty()) {
+            result = types().directSupertypes(t).stream()
+//                    .dropWhile(m -> types().asElement(m).equals(JAVA_LANG_OBJECT))
+                    .toList();
+//            assert result.stream()
+//                    .allMatch(i -> types().asElement(i).getKind().isInterface());
+        } else {
+            result = types().directSupertypes(t);
+        }
+        // comment out because it interferes with the IgnoreSourceErrors test:
+        // assert result.stream().allMatch(r -> r.getKind() == TypeKind.DECLARED) : diagnosticDescriptionOf(t);
+        return List.copyOf((Collection<DeclaredType>) result);
+    }
+
+    /*
+     * Is m overridden from any of the classes or interfaces (which correspond
+     * to provided types)?
+     */
+    private boolean isOverridden(ExecutableElement m, Iterable<? extends TypeMirror> from) {
+        var r1 = isOverridden1(m, from);
+        // cross-check the main implementation an alternative one
+        assert r1 == isOverridden2(m, from) : diagnosticDescriptionOf(m)
+                + "; " + diagnosticDescriptionOf(te);
+        return r1;
+    }
+
+    private boolean isOverridden1(ExecutableElement m, Iterable<? extends TypeMirror> from) {
+        for (var s : from) {
+            // piggyback on override sequences in the hope of better performance
+            var r = mcache.getVisibleMemberTable(asTypeElement(s))
+                    .overrideAt(m).hasMoreSpecific();
+            if (r)
+                return true;
+        }
+        return false;
+    }
+
+    private boolean isOverridden2(ExecutableElement m, Iterable<? extends TypeMirror> from) {
+        for (var s : from)
+            for (var m_ : mcache.getVisibleMemberTable(asTypeElement(s)).getMethodMembers())
+                if (elements().overrides(m_, m, asTypeElement(s)))
+                    return true;
+        return false;
+    }
+
+    private TypeElement asTypeElement(TypeMirror m) {
+        return (TypeElement) types().asElement(m);
+    }
+
+    private static String diagnosticDescriptionOf(Element e) {
+        if (e == null) // shouldn't NPE if passed null
+            return "null";
+        return e + ", " + (e instanceof QualifiedNameable q ? q.getQualifiedName() : e.getSimpleName())
+                + ", " + e.getKind() + ", " + Objects.toIdentityString(e);
+    }
+
+    private Elements elements() { return utils.elementUtils; }
+
+    private Types types() { return utils.typeUtils; }
+
+    private void sequence(ExecutableElement m) {
+        var rawSequence = findOverriddenBy(m);
+        // Prepend the member from which the exploration started, unconditionally
+        rawSequence = rawSequence.prepend(new OverrideData(
+                (DeclaredType) m.getEnclosingElement().asType(), m, false /* this flag's value is immaterial */));
+
+//        // impose an order
+//        var order = createSupertypeOrderMap(te);
+//        var copyList = new ArrayList<>(rawSequence);
+//        copyList.sort(Comparator.comparingInt(o -> order.get(o.enclosing.asElement())));
+//        rawSequence = com.sun.tools.javac.util.List.from(copyList);
+
+        // Fix the sequence by computing isSimpleOverride for all the sequence
+        // members and hashing those members.
+        //
+        // Start from the least specific member, which by convention is not
+        // a simple override (even if it has no documentation), and work our
+        // way _backwards_ to the most specific
+        // member. Enter each member into a hash map as an entry point for
+        // a subsequence starring from that member.
+        // FIXME: what if we have initial method enclosed in an undocumented class or interface?
+        //  i.e. what if we cannot guarantee that at least one member is not a simple override?
+        var fixedSequence = com.sun.tools.javac.util.List.<OverrideData>nil();
+        rawSequence = rawSequence.reverse();
+        boolean simpleOverride = false;
+        while (!rawSequence.isEmpty()) {
+            var f = new OverrideData(rawSequence.head.enclosing, rawSequence.head.method(), simpleOverride);
+            fixedSequence = fixedSequence.prepend(f);
+            rawSequence = rawSequence.tail;
+            if (!rawSequence.isEmpty()) {
+                // Even with --override-methods=summary we want to include details of
+                // overriding method if something noteworthy has been added or changed
+                // in the local overriding method
+                var enclosing = (TypeElement) rawSequence.head.method.getEnclosingElement();
+                simpleOverride = isSimpleOverride(rawSequence.head.method)
+                        && !utils.isUndocumentedEnclosure(enclosing)
+                        && !overridingSignatureChanged(rawSequence.head.method, f.method);
+            }
+        }
+        // hash sequences as entry points
+        var t = new OverrideSequence(fixedSequence, 0);
+        while (true) {
+            overriddenMethods.put(t.getMethod(), t);
+            if (!t.hasLessSpecific()) {
+                break;
+            } else {
+                t = t.lessSpecific();
+            }
+        }
+    }
+
+    private com.sun.tools.javac.util.List<OverrideData> findOverriddenBy(ExecutableElement m) {
+        return findOverriddenBy(m, (DeclaredType) te.asType(), com.sun.tools.javac.util.List.nil(), new HashSet<>());
+    }
+
+    private com.sun.tools.javac.util.List<OverrideData> findOverriddenBy(ExecutableElement m,
+                                                                         DeclaredType declaredType,
+                                                                         com.sun.tools.javac.util.List<OverrideData> result,
+                                                                         Set<ExecutableElement> foundOverriddenSoFar) {
+        for (var s : directSupertypes(declaredType)) {
+            var supertypeElement = (TypeElement) s.asElement();
+            for (var m1 : mcache.getVisibleMemberTable(supertypeElement).getMethodMembers())
+                if (utils.elementUtils.overrides(m, m1, te) && foundOverriddenSoFar.add(m1)) {
+                    // use any value for `simpleOverride` for now: the actual value
+                    // will be computed once the complete sequence is available
+                    var simpleOverride = false;
+                    result = result.append(new OverrideData(toDeclaringType(s,
+                            (TypeElement) m1.getEnclosingElement()), m1, simpleOverride));
+                }
+            result = findOverriddenBy(m, s, result, foundOverriddenSoFar);
+        }
+        return result;
+    }
+
+    /*
+     * Translates the provided class or interface to a type given its subtype.
+     *
+     * The correctness relies of no more than 1 parameterization from JLS. (TODO link the correct section)
+     *
+     * There's probably a better way of doing it using javax.lang.model.util.Types.getDeclaredType(),
+     * but for now this will do.
+     */
+    private DeclaredType toDeclaringType(DeclaredType subtype, TypeElement element) {
+        var r = toDeclaringType0(subtype, element);
+        if (r == null)
+            throw new IllegalArgumentException(); // not a subtype
+        return r;
+    }
+
+    private DeclaredType toDeclaringType0(DeclaredType subtype, TypeElement element) {
+        if (subtype.asElement().equals(element))
+            return subtype;
+        for (var s : utils.typeUtils.directSupertypes(subtype)) {
+            var r = toDeclaringType0((DeclaredType) s, element);
+            if (r != null)
+                return r;
         }
         return null;
     }
 
-    /**
-     * {@return true if the specified method is NOT a simple override of some
-     * other method, otherwise false}
-     *
-     * @param e the method to check
-     */
-    private boolean isNotSimpleOverride(ExecutableElement e) {
-        ensureInitialized();
-
-        var info = overriddenMethodTable.get(e);
-        return info == null || !info.simpleOverride;
+    private record OverrideData(DeclaredType enclosing,
+                                ExecutableElement method,
+                                boolean simpleOverride) {
+        private OverrideData {
+            if (!enclosing.asElement().equals(method.getEnclosingElement())) {
+                throw new IllegalArgumentException();
+            }
+        }
     }
 
     /**
@@ -565,192 +1236,48 @@ public class VisibleMemberTable {
     //  structures, such as overriddenMethodTable, javax.lang.model can
     //  help us get all method members of a class or an interface t by calling
     //  ElementFilter.methodsIn(Elements.getAllMembers(t)).
-    private void computeVisibleMethods(LocalMemberTable lmt) {
-        // parentMethods is a union of visible methods from all parents.
-        // It is used to figure out which methods this type should inherit.
-        // Inherited methods are those parent methods that remain after all
-        // methods that cannot be inherited are eliminated.
-        Set<Element> parentMethods = new LinkedHashSet<>();
-        for (var p : parents) {
-            // Lists of visible methods from different parents may share some
-            // methods. These are the methods that the parents inherited from
-            // their common ancestor.
-            //
-            // Such methods won't result in duplicates in parentMethods as we
-            // purposefully don't track duplicates.
-            // FIXME: add a test to assert the order (LinkedHashSet)
-            parentMethods.addAll(p.getAllVisibleMembers(Kind.METHODS));
-        }
-
-        // overriddenByTable maps an ancestor (grandparent and above) method
-        // to parent methods that override it:
-        //
-        // key
-        // : a method overridden by one or more parent methods
-        // value
-        // : a list of parent methods that override the key
-        Map<ExecutableElement, List<ExecutableElement>> overriddenByTable = new HashMap<>();
-        for (var p : parents) {
-            // Merge the lineage overrides into local table
-            p.overriddenMethodTable.forEach((method, methodInfo) -> {
-                if (!methodInfo.simpleOverride) { // consider only real overrides
-                    var list = overriddenByTable.computeIfAbsent(methodInfo.overriddenMethod,
-                            k -> new ArrayList<>());
-                    list.add(method);
-                }
-            });
-        }
-
-        // filter out methods that aren't inherited
-        //
-        // nb. This statement has side effects that can initialize
-        // members of the overriddenMethodTable field, so it must be
-        // evaluated eagerly with toList().
-        List<Element> inheritedMethods = parentMethods.stream()
-                .filter(e -> allowInheritedMethod((ExecutableElement) e, overriddenByTable, lmt))
-                .toList();
-
-        // filter out "simple overrides" from local methods
-        Predicate<ExecutableElement> nonSimpleOverride = m -> {
-            OverrideInfo i = overriddenMethodTable.get(m);
-            return i == null || !i.simpleOverride;
-        };
-
-        Stream<ExecutableElement> localStream = lmt.getOrderedMembers(Kind.METHODS)
-                .stream()
-                .map(m -> (ExecutableElement)m)
-                .filter(nonSimpleOverride);
-
-        // Merge the above list and stream, making sure the local methods precede the others
-        // Final filtration of elements
-        // FIXME add a test to assert the order or remove that part of the comment above ^
-        List<Element> list = Stream.concat(localStream, inheritedMethods.stream())
+    private void computeVisibleMethods(LocalMemberTable ignored) {
+        // dark tunnel (consisting of undocumented enclosures):
+        //   for every candidate method let's find the most specific non-simple
+        //   override included
+        List<Element> list = getMethodMembers().stream()
+                .filter(m -> te.getKind() != ANNOTATION_TYPE) // if te is annotation, ignore its methods altogether
+                .filter(m -> !options.noDeprecated() || !utils.isDeprecated(m)) // exclude deprecated if requested
+                .flatMap(m -> overrideAt(m).descending() // find the most specific non-simple override
+                        .dropWhile(OverrideSequence::isSimpleOverride)
+                        .map(OverrideSequence::getMethod)
+                        .findFirst()
+                        .stream())
                 .filter(this::mustDocument)
+                .map(m -> (Element) m)
                 .toList();
 
         visibleMembers.put(Kind.METHODS, list);
-
-        // copy over overridden tables from the lineage
-        for (VisibleMemberTable pvmt : parents) {
-            // a key in overriddenMethodTable is a method _declared_ in the respective parent;
-            // no two _different_ parents can share a declared method, by definition;
-            // if parents in the list are different (i.e. the list of parents doesn't contain duplicates),
-            //   then no keys are equal and thus no replace happens
-            // if the list of parents contains duplicates, values for the equal keys are equal,
-            //   so no harm if they are replaced in the map
-            assert putAllIsNonReplacing(overriddenMethodTable, pvmt.overriddenMethodTable);
-            overriddenMethodTable.putAll(pvmt.overriddenMethodTable);
-        }
     }
 
-    private static <K, V> boolean putAllIsNonReplacing(Map<K, V> dst, Map<K, V> src) {
-        for (var e : src.entrySet()) {
-            if (dst.containsKey(e.getKey())
-                    && !Objects.equals(dst.get(e.getKey()), e.getValue())) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    private boolean allowInheritedMethod(ExecutableElement inheritedMethod,
-                                         Map<ExecutableElement, List<ExecutableElement>> overriddenByTable,
-                                         LocalMemberTable lmt) {
-        // JLS 8.4.8: A class does not inherit private or static methods from
-        // its superinterface types.
-        //
-        // JLS 9.4.1: An interface does not inherit private or static methods
-        // from its superinterfaces.
-        //
-        // JLS 8.4.8: m is public, protected, or declared with package access
-        // in the same package as C
-        //
-        // JLS 9.4: A method in the body of an interface declaration may be
-        // declared public or private. If no access modifier is given, the
-        // method is implicitly public.
-        if (!isAccessible(inheritedMethod))
-            return false;
-
-        final boolean haveStatic = utils.isStatic(inheritedMethod);
-        final boolean inInterface = isDeclaredInInterface(inheritedMethod);
-
-        // Static interface methods are never inherited (JLS 8.4.8 and 9.1.3)
-        if (haveStatic && inInterface) {
+    /*
+     * Returns true if the passed method does not change the specification it
+     * inherited.
+     *
+     * If the passed method is not deprecated and has either no comment or a
+     * comment consisting of single {@inheritDoc} tag, the inherited
+     * specification is deemed unchanged and this method returns true;
+     * otherwise this method returns false.
+     */
+    private boolean isSimpleOverride(ExecutableElement m) {
+        if (!options.summarizeOverriddenMethods() || !utils.isIncluded(m)) {
             return false;
         }
 
-        // Multiple-Inheritance: remove the interface method that may have
-        // been overridden by another interface method in the hierarchy
-        //
-        // Note: The following approach is very simplistic and is compatible
-        // with old VMM. A future enhancement, may include a contention breaker,
-        // to correctly eliminate those methods that are merely definitions
-        // in favor of concrete overriding methods, for instance those that have
-        // API documentation and are not abstract OR default methods.
-        if (inInterface) {
-            List<ExecutableElement> list = overriddenByTable.get(inheritedMethod);
-            if (list != null) {
-                boolean found = list.stream()
-                        .anyMatch(this::isDeclaredInInterface);
-                if (found)
-                    return false;
-            }
-        }
+        if (!utils.getBlockTags(m).isEmpty() || utils.isDeprecated(m))
+            return false;
 
-        Elements elementUtils = config.docEnv.getElementUtils();
-
-        // Check the local methods in this type.
-        // List contains overloads and probably something else, but one match is enough, hence short-circuiting
-        List<Element> lMethods = lmt.getMembers(inheritedMethod.getSimpleName(), Kind.METHODS);
-        for (Element le : lMethods) {
-            ExecutableElement lMethod = (ExecutableElement) le;
-            // Ignore private methods or those methods marked with
-            // a "hidden" tag. // FIXME I cannot see where @hidden is ignored
-            if (utils.isPrivate(lMethod))
-                continue;
-
-            // Remove methods that are "hidden", in JLS terms.
-            if (haveStatic && utils.isStatic(lMethod) &&
-                    elementUtils.hides(lMethod, inheritedMethod)) {
-                return false;
-            }
-
-            // Check for overriding methods.
-            if (elementUtils.overrides(lMethod, inheritedMethod,
-                    utils.getEnclosingTypeElement(lMethod))) {
-
-                assert utils.getEnclosingTypeElement(lMethod).equals(te);
-
-                // Disallow package-private super methods to leak in
-                TypeElement encl = utils.getEnclosingTypeElement(inheritedMethod);
-                if (utils.isUndocumentedEnclosure(encl)) {
-                    // FIXME
-                    //  is simpleOverride=false here to force to be used because
-                    //  it cannot be linked to, because package-private?
-                    overriddenMethodTable.computeIfAbsent(lMethod,
-                            l -> new OverrideInfo(inheritedMethod, false));
-                    return false;
-                }
-
-                // Even with --override-methods=summary we want to include details of
-                // overriding method if something noteworthy has been added or changed
-                // either in the local overriding method or an in-between overriding method
-                // (as evidenced by an entry in overriddenByTable).
-                boolean simpleOverride = utils.isSimpleOverride(lMethod)
-                        && !overridingSignatureChanged(lMethod, inheritedMethod)
-                        && !overriddenByTable.containsKey(inheritedMethod);
-                overriddenMethodTable.computeIfAbsent(lMethod,
-                        l -> new OverrideInfo(inheritedMethod, simpleOverride));
-                return simpleOverride;
-            }
-        }
-        return true;
+        List<? extends DocTree> fullBody = utils.getFullBody(m);
+        return fullBody.isEmpty() ||
+                (fullBody.size() == 1 && fullBody.get(0).getKind().equals(DocTree.Kind.INHERIT_DOC));
     }
 
-    private boolean isDeclaredInInterface(ExecutableElement e) {
-        return e.getEnclosingElement().getKind() == ElementKind.INTERFACE;
-    }
-
+    // fixme: consider comparing type parameters?
     // Check whether the signature of an overriding method has any changes worth
     // being documented compared to the overridden method.
     private boolean overridingSignatureChanged(ExecutableElement method, ExecutableElement overriddenMethod) {
@@ -763,6 +1290,8 @@ public class VisibleMemberTable {
                 && utils.typeUtils.isSubtype(methodReturn, overriddenMethodReturn)) {
             return true;
         }
+        // TODO: should we consider changes to synchronized as a significant change
+        //  (e.g. consider StringBuffer.length(), which is otherwise a simple override)?
         // Modifiers changed from protected to public, non-final to final, or change in abstractness
         Set<Modifier> modifiers = method.getModifiers();
         Set<Modifier> overriddenModifiers = overriddenMethod.getModifiers();
@@ -775,8 +1304,15 @@ public class VisibleMemberTable {
         if (!method.getThrownTypes().equals(overriddenMethod.getThrownTypes())) {
             return true;
         }
-        // Documented annotations added anywhere in the method signature
-        return !getDocumentedAnnotations(method).equals(getDocumentedAnnotations(overriddenMethod));
+        // Documented annotations, other than java.lang.Override, added anywhere in the method signature
+        var JAVA_LANG_OVERRIDE = elements().getTypeElement("java.lang.Override");
+        var overriderAnnotations = getDocumentedAnnotations(method).stream()
+                .filter(am -> !am.getAnnotationType().asElement().equals(JAVA_LANG_OVERRIDE))
+                .collect(Collectors.toSet());
+        var overriddenAnnotations = getDocumentedAnnotations(overriddenMethod).stream()
+                .filter(am -> !am.getAnnotationType().asElement().equals(JAVA_LANG_OVERRIDE))
+                .collect(Collectors.toSet());
+        return !overriderAnnotations.equals(overriddenAnnotations);
     }
 
     private Set<AnnotationMirror> getDocumentedAnnotations(ExecutableElement element) {
@@ -1025,109 +1561,6 @@ public class VisibleMemberTable {
         }
     }
 
-
-    // Future cleanups
-
-    private final Map<ExecutableElement, SoftReference<ImplementedMethods>>
-            implementMethodsFinders = new HashMap<>();
-
-    private ImplementedMethods getImplementedMethodsFinder(ExecutableElement method) {
-        SoftReference<ImplementedMethods> ref = implementMethodsFinders.get(method);
-        ImplementedMethods imf = ref == null ? null : ref.get();
-        // imf does not exist or was gc'ed away?
-        if (imf == null) {
-            imf = new ImplementedMethods(method);
-            implementMethodsFinders.put(method, new SoftReference<>(imf));
-        }
-        return imf;
-    }
-
-    public List<ExecutableElement> getImplementedMethods(ExecutableElement method) {
-        ImplementedMethods imf = getImplementedMethodsFinder(method);
-        return imf.getImplementedMethods().stream()
-                .filter(this::isNotSimpleOverride)
-                .toList();
-    }
-
-    public TypeMirror getImplementedMethodHolder(ExecutableElement method,
-                                                 ExecutableElement implementedMethod) {
-        ImplementedMethods imf = getImplementedMethodsFinder(method);
-        return imf.getMethodHolder(implementedMethod);
-    }
-
-    private class ImplementedMethods {
-
-        private final Map<ExecutableElement, TypeMirror> interfaces = new LinkedHashMap<>();
-
-        public ImplementedMethods(ExecutableElement implementer) {
-            var typeElement = (TypeElement) implementer.getEnclosingElement();
-            for (TypeMirror i : utils.getAllInterfaces(typeElement)) {
-                TypeElement dst = utils.asTypeElement(i); // a type element to look an implemented method in
-                ExecutableElement implemented = findImplementedMethod(dst, implementer);
-                if (implemented == null) {
-                    continue;
-                }
-                var prev = interfaces.put(implemented, i);
-                // no two type elements declare the same method
-                assert prev == null;
-                // dst can be generic, while i might be parameterized; but they
-                // must the same type element. For example, if dst is Set<T>,
-                // then i is Set<String>
-                assert Objects.equals(((DeclaredType) i).asElement(), dst);
-            }
-        }
-
-        private ExecutableElement findImplementedMethod(TypeElement te, ExecutableElement implementer) {
-            var typeElement = (TypeElement) implementer.getEnclosingElement();
-            for (var m : utils.getMethods(te)) {
-                if (utils.elementUtils.overrides(implementer, m, typeElement)) {
-                    return m;
-                }
-            }
-            return null;
-        }
-
-        /**
-         * Returns a collection of interface methods which the method passed in the
-         * constructor is implementing. The search/build order is as follows:
-         * <pre>
-         * 1. Search in all the immediate interfaces which this method's class is
-         *    implementing. Do it recursively for the superinterfaces as well.
-         * 2. Traverse all the superclasses and search recursively in the
-         *    interfaces which those superclasses implement.
-         * </pre>
-         *
-         * @return a collection of implemented methods
-         */
-        Collection<ExecutableElement> getImplementedMethods() {
-            return interfaces.keySet();
-        }
-
-        TypeMirror getMethodHolder(ExecutableElement ee) {
-            return interfaces.get(ee);
-        }
-    }
-
-    /*
-     * (Here "override" used as a noun, not a verb, for a short and descriptive
-     * name. Sadly, we cannot use "Override" as a complete name because a clash
-     * with @java.lang.Override would make it inconvenient.)
-     *
-     * Used to provide additional attributes to the otherwise boolean
-     * "overrides(a, b)" relationship.
-     *
-     * Overriding method could be a key in a map and an instance of this
-     * record could be the value.
-     */
-    private record OverrideInfo(ExecutableElement overriddenMethod,
-                                boolean simpleOverride) {
-        @Override // for debugging
-        public String toString() {
-            return overriddenMethod.getEnclosingElement()
-                    + "::" + overriddenMethod + ", simple=" + simpleOverride;
-        }
-    }
-
     @Override
     public int hashCode() {
         return te.hashCode();
@@ -1138,5 +1571,12 @@ public class VisibleMemberTable {
         if (!(obj instanceof VisibleMemberTable other))
             return false;
         return te.equals(other.te);
+    }
+
+    @Override
+    public String toString() {
+        // output the simple name, not the fully qualified name, which is needlessly long
+        return getClass().getSimpleName() + "@" + Integer.toHexString(super.hashCode())
+                + "[" + te.getQualifiedName().toString() + "]";
     }
 }

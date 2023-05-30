@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -168,7 +168,7 @@ public class MethodBuilder extends AbstractMemberBuilder {
         if (!options.noComment()) {
             assert utils.isMethod(currentMethod); // not all executables are methods
             var docFinder = utils.docFinder();
-            Optional<ExecutableElement> r = docFinder.search(currentMethod,
+            Optional<ExecutableElement> r = docFinder.search(typeElement, currentMethod,
                     m -> Result.fromOptional(utils.getFullBody(m).isEmpty() ? Optional.empty() : Optional.of(m))).toOptional();
             ExecutableElement method = r.orElse(currentMethod);
             TypeMirror containingType = method.getEnclosingElement().asType();

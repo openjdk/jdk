@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8025091 8198890
+ * @bug 8025091 8198890 8304135
  * @summary Verify the presence visible members in the case of
  *          member hiding and overriding.
  * @library /tools/lib ../../lib
@@ -309,8 +309,8 @@ public class TestVisibleMembers extends JavadocTester {
 
         checkOrder("p/C.html",
                 "METHOD DETAIL",
-                "public", "void", "method", "See Also:", "sub()", "sub1()",
-                "public", "void", "m", "Method in C. See", "I.length()"
+                "public", "void", "method", "See Also:", "href=\"#sub()", "href=\"#sub1()",
+                "public", "void", "m", "Method in C. See", "href=\"#length()"
                 );
 
         checkOrder("p/ILong.html",
@@ -418,9 +418,11 @@ public class TestVisibleMembers extends JavadocTester {
                 "public", "void", "p", "Method p in p.B",
                 "END OF CLASS DATA");
 
-        checkOutput("p/C.html", false,
-                "Overrides",
-                "Methods declared in class p");
+        checkOutput("p/C.html", false, """
+                <dl class="notes">
+                <dt>Overrides:</dt>
+                <dd><code><a href="B.html""", """
+                Methods declared in class p""");
 
         checkOrder("p/D.html",
                 "METHOD SUMMARY",
@@ -431,9 +433,12 @@ public class TestVisibleMembers extends JavadocTester {
                 "CONSTRUCTOR DETAIL");
 
         checkOutput("p/D.html", false,
-                "Description copied from class:",
-                "Overrides",
-                "Methods declared in class p");
+                """
+                Description copied from class:""", """
+                <dl class="notes">
+                <dt>Overrides:</dt>
+                <dd><code><a href="B.html""", """
+                Methods declared in class p""");
 
         checkOrder("p/E.html",
                 "METHOD SUMMARY",
@@ -444,9 +449,12 @@ public class TestVisibleMembers extends JavadocTester {
                 "CONSTRUCTOR DETAIL");
 
         checkOutput("p/E.html", false,
-                "Description copied from class:",
-                "Overrides",
-                "Methods declared in class p");
+                """
+                Description copied from class:""", """
+                <dl class="notes">
+                <dt>Overrides:</dt>
+                <dd><code><a href="B.html""", """
+                Methods declared in class p""");
     }
 
     @Test
@@ -478,9 +486,11 @@ public class TestVisibleMembers extends JavadocTester {
                 "public", "void", "p", "Method p in p.B",
                 "END OF CLASS DATA");
 
-        checkOutput("p/C.html", false,
-                "Overrides",
-                "Methods declared in class p");
+        checkOutput("p/C.html", false, """
+                <dl class="notes">
+                <dt>Overrides:</dt>
+                <dd><code><a href="B.html""", """
+                Methods declared in class p""");
 
         checkOrder("p/D.html",
                 "METHOD SUMMARY",
@@ -490,10 +500,12 @@ public class TestVisibleMembers extends JavadocTester {
                 "void", "p", "Method p in p.D",
                 "CONSTRUCTOR DETAIL");
 
-        checkOutput("p/D.html", false,
-                "Description copied from class:",
-                "Overrides",
-                "Methods declared in class p");
+        checkOutput("p/D.html", false, """
+                Description copied from class:""", """
+                <dl class="notes">
+                <dt>Overrides:</dt>
+                <dd><code><a href="B.html""", """
+                Methods declared in class p""");
 
         checkOrder("p/E.html",
                 "METHOD SUMMARY",
@@ -503,10 +515,13 @@ public class TestVisibleMembers extends JavadocTester {
                 "void", "p", "Method p in p.B",
                 "CONSTRUCTOR DETAIL");
 
-        checkOutput("p/E.html", false,
-                "Description copied from class:",
-                "Overrides",
-                "Methods declared in class p");
+        checkOutput("p/E.html", false, """
+                <span class="description-from-type-label">Description copied from class:&nbsp;\
+                <code><a href="B.html""", """
+                <dl class="notes">
+                <dt>Overrides:</dt>
+                <dd><code><a href="B.html""", """
+                Methods declared in class p""");
 
     }
 

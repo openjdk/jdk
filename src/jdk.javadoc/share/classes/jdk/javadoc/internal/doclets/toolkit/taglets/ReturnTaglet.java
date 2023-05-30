@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import java.util.stream.Stream;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
 
 import com.sun.source.doctree.DocTree;
@@ -60,10 +61,10 @@ public class ReturnTaglet extends BaseTaglet implements InheritableTaglet {
     }
 
     @Override
-    public Output inherit(Element owner, DocTree tag, boolean isFirstSentence, BaseConfiguration configuration) {
+    public Output inherit(TypeElement site, Element owner, DocTree tag, boolean isFirstSentence, BaseConfiguration configuration) {
         try {
             var docFinder = configuration.utils.docFinder();
-            var r = docFinder.trySearch((ExecutableElement) owner, m -> Result.fromOptional(extract(configuration.utils, m))).toOptional();
+            var r = docFinder.trySearch(site, (ExecutableElement) owner, m -> Result.fromOptional(extract(configuration.utils, m))).toOptional();
             return r.map(result -> new Output(result.returnTree, result.method, result.returnTree.getDescription(), true))
                     .orElseGet(() -> new Output(null, null, List.of(), true));
         } catch (DocFinder.NoOverriddenMethodsFound e) {
@@ -98,7 +99,7 @@ public class ReturnTaglet extends BaseTaglet implements InheritableTaglet {
         // above for a case where @return is used for void
 
         var docFinder = utils.docFinder();
-        return docFinder.search(method, m -> Result.fromOptional(extract(utils, m))).toOptional()
+        return docFinder.search(writer.getCurrentPageElement(), method, m -> Result.fromOptional(extract(utils, m))).toOptional()
                 .map(r -> writer.returnTagOutput(r.method, r.returnTree, false))
                 .orElse(null);
     }

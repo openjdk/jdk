@@ -264,7 +264,7 @@ public abstract class MemberSummaryBuilder extends AbstractMemberBuilder {
                 }
                 if (utils.isMethod(member)) {
                     var docFinder = utils.docFinder();
-                    Optional<List<? extends DocTree>> r = docFinder.search((ExecutableElement) member, (m -> {
+                    Optional<List<? extends DocTree>> r = docFinder.search(typeElement, (ExecutableElement) member, (m -> {
                         var firstSentenceTrees = utils.getFirstSentenceTrees(m);
                         Optional<List<? extends DocTree>> optional = firstSentenceTrees.isEmpty() ? Optional.empty() : Optional.of(firstSentenceTrees);
                         return Result.fromOptional(optional);

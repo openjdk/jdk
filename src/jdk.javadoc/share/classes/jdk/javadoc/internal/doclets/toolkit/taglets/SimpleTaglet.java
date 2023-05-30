@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import java.util.Set;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.TypeElement;
 
 import com.sun.source.doctree.DocTree;
 import jdk.javadoc.doclet.Taglet.Location;
@@ -163,12 +164,12 @@ public class SimpleTaglet extends BaseTaglet implements InheritableTaglet {
     }
 
     @Override
-    public Output inherit(Element owner, DocTree tag, boolean isFirstSentence, BaseConfiguration configuration) {
+    public Output inherit(TypeElement site, Element owner, DocTree tag, boolean isFirstSentence, BaseConfiguration configuration) {
         assert owner.getKind() == ElementKind.METHOD;
         assert !isFirstSentence;
         try {
             var docFinder = configuration.utils.docFinder();
-            var r = docFinder.trySearch((ExecutableElement) owner,
+            var r = docFinder.trySearch(site, (ExecutableElement) owner,
                     m -> Result.fromOptional(extractFirst(m, configuration.utils))).toOptional();
             return r.map(result -> new Output(result.tag, result.method, result.description, true))
                     .orElseGet(()->new Output(null, null, List.of(), true));

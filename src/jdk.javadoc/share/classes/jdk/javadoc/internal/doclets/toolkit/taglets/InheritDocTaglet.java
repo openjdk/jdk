@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,7 +82,7 @@ public class InheritDocTaglet extends BaseTaglet {
         if (holderTag.getKind() == DocTree.Kind.DOC_COMMENT) {
             try {
                 var docFinder = utils.docFinder();
-                Optional<Documentation> r = docFinder.trySearch(method,
+                Optional<Documentation> r = docFinder.trySearch(writer.getCurrentPageElement(), method,
                         m -> Result.fromOptional(extractMainDescription(m, isFirstSentence, utils))).toOptional();
                 if (r.isPresent()) {
                     replacement = writer.commentTagsToOutput(r.get().method, null,
@@ -103,7 +103,7 @@ public class InheritDocTaglet extends BaseTaglet {
             return replacement;
         }
 
-        InheritableTaglet.Output inheritedDoc = ((InheritableTaglet) taglet).inherit(method, holderTag, isFirstSentence, configuration);
+        InheritableTaglet.Output inheritedDoc = ((InheritableTaglet) taglet).inherit(writer.getCurrentPageElement(), method, holderTag, isFirstSentence, configuration);
         if (inheritedDoc.isValidInheritDocTag()) {
             if (!inheritedDoc.inlineTags().isEmpty()) {
                 replacement = writer.commentTagsToOutput(inheritedDoc.holder(), inheritedDoc.holderTag(),

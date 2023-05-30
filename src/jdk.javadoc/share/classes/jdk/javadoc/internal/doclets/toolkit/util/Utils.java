@@ -92,7 +92,6 @@ import com.sun.source.doctree.BlockTagTree;
 import com.sun.source.doctree.DeprecatedTree;
 import com.sun.source.doctree.DocCommentTree;
 import com.sun.source.doctree.DocTree;
-import com.sun.source.doctree.DocTree.Kind;
 import com.sun.source.doctree.EndElementTree;
 import com.sun.source.doctree.ParamTree;
 import com.sun.source.doctree.ProvidesTree;
@@ -118,7 +117,6 @@ import jdk.javadoc.internal.doclets.toolkit.CommentUtils.DocCommentInfo;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.taglets.BaseTaglet;
 import jdk.javadoc.internal.doclets.toolkit.taglets.Taglet;
-import jdk.javadoc.internal.tool.DocEnvImpl;
 
 import static javax.lang.model.element.ElementKind.*;
 import static javax.lang.model.type.TypeKind.*;
@@ -609,52 +607,6 @@ public class Utils {
                !((DeclaredType)e.getEnclosingElement().asType()).getTypeArguments().isEmpty();
     }
 
-    /*
-     * The record is used to pass the method along with the type where that method is visible.
-     * Passing the type explicitly allows to preserve a complete type information, including
-     * parameterization.
-     */
-    public record OverrideInfo(ExecutableElement overriddenMethod,
-                               DeclaredType overriddenMethodOwner) { }
-
-    /*
-     * Returns the closest superclass (not the superinterface) that contains
-     * a method that is both:
-     *
-     *   - overridden by the specified method, and
-     *   - is not itself a *simple* override
-     *
-     * If no such class can be found, returns null.
-     *
-     * If the specified method belongs to an interface, the only considered
-     * superclass is java.lang.Object no matter how many other interfaces
-     * that interface extends.
-     */
-    public OverrideInfo overriddenMethod(ExecutableElement method) {
-        var t = method.getEnclosingElement().asType();
-        // in this context, consider java.lang.Object to be the superclass of an interface
-        while (true) {
-            var supertypes = typeUtils.directSupertypes(t);
-            if (supertypes.isEmpty()) {
-                // reached the top of the hierarchy
-                assert typeUtils.isSameType(getObjectType(), t);
-                return null;
-            }
-            t = supertypes.get(0);
-            // if non-empty, the first element is always the superclass
-            var te = (TypeElement) ((DeclaredType) t).asElement();
-            assert te.getKind().isClass();
-            VisibleMemberTable vmt = configuration.getVisibleMemberTable(te);
-            for (Element e : vmt.getMembers(VisibleMemberTable.Kind.METHODS)) {
-                var ee = (ExecutableElement) e;
-                if (elementUtils.overrides(method, ee, (TypeElement) method.getEnclosingElement()) &&
-                        !isSimpleOverride(ee)) {
-                    return new OverrideInfo(ee, (DeclaredType) t);
-                }
-            }
-        }
-    }
-
     public SortedSet<TypeElement> getTypeElementsAsSortedSet(Iterable<TypeElement> typeElements) {
         SortedSet<TypeElement> set = new TreeSet<>(comparators.makeGeneralPurposeComparator());
         typeElements.forEach(set::add);
@@ -667,57 +619,6 @@ public class Utils {
 
     public FileObject getFileObject(TypeElement te) {
         return docTrees.getPath(te).getCompilationUnit().getSourceFile();
-    }
-
-    public TypeMirror getDeclaredType(TypeElement enclosing, TypeMirror target) {
-        return getDeclaredType(List.of(), enclosing, target);
-    }
-
-    /**
-     * Finds the declaration of the enclosing's type parameter.
-     *
-     * @param values
-     * @param enclosing a TypeElement whose type arguments  we desire
-     * @param target the TypeMirror of the type as described by the enclosing
-     * @return
-     */
-    public TypeMirror getDeclaredType(Collection<TypeMirror> values,
-                                      TypeElement enclosing, TypeMirror target) {
-        TypeElement targetElement = asTypeElement(target);
-        List<? extends TypeParameterElement> targetTypeArgs = targetElement.getTypeParameters();
-        if (targetTypeArgs.isEmpty()) {
-            return target;
-        }
-
-        List<? extends TypeParameterElement> enclosingTypeArgs = enclosing.getTypeParameters();
-        List<TypeMirror> targetTypeArgTypes = new ArrayList<>(targetTypeArgs.size());
-
-        if (enclosingTypeArgs.isEmpty()) {
-            for (TypeMirror te : values) {
-                List<? extends TypeMirror> typeArguments = ((DeclaredType)te).getTypeArguments();
-                if (typeArguments.size() >= targetTypeArgs.size()) {
-                    for (int i = 0 ; i < targetTypeArgs.size(); i++) {
-                        targetTypeArgTypes.add(typeArguments.get(i));
-                    }
-                    break;
-                }
-            }
-            // we found no matches in the hierarchy
-            if (targetTypeArgTypes.isEmpty()) {
-                return target;
-            }
-        } else {
-            if (targetTypeArgs.size() > enclosingTypeArgs.size()) {
-                return target;
-            }
-            for (int i = 0; i < targetTypeArgs.size(); i++) {
-                TypeParameterElement tpe = enclosingTypeArgs.get(i);
-                targetTypeArgTypes.add(tpe.asType());
-            }
-        }
-        TypeMirror dt = typeUtils.getDeclaredType(targetElement,
-                targetTypeArgTypes.toArray(new TypeMirror[targetTypeArgTypes.size()]));
-        return dt;
     }
 
     /**
@@ -1277,28 +1178,6 @@ public class Utils {
             return true;
         }
         return hasBlockTag(e, DocTree.Kind.HIDDEN);
-    }
-
-    /*
-     * Returns true if the passed method does not change the specification it
-     * inherited.
-     *
-     * If the passed method is not deprecated and has either no comment or a
-     * comment consisting of single {@inheritDoc} tag, the inherited
-     * specification is deemed unchanged and this method returns true;
-     * otherwise this method returns false.
-     */
-    public boolean isSimpleOverride(ExecutableElement m) {
-        if (!options.summarizeOverriddenMethods() || !isIncluded(m)) {
-            return false;
-        }
-
-        if (!getBlockTags(m).isEmpty() || isDeprecated(m))
-            return false;
-
-        List<? extends DocTree> fullBody = getFullBody(m);
-        return fullBody.isEmpty() ||
-                (fullBody.size() == 1 && fullBody.get(0).getKind().equals(Kind.INHERIT_DOC));
     }
 
     /**
@@ -2742,14 +2621,10 @@ public class Utils {
     }
 
     private DocFinder newDocFinder() {
-        return new DocFinder(e -> {
-            var i = overriddenMethod(e);
-            return i == null ? null : i.overriddenMethod();
-        }, this::implementedMethods);
-    }
-
-    private Iterable<ExecutableElement> implementedMethods(ExecutableElement originalMethod, ExecutableElement m) {
-        var type = configuration.utils.getEnclosingTypeElement(m);
-        return configuration.getVisibleMemberTable(type).getImplementedMethods(originalMethod);
+        return new DocFinder((t, e) -> configuration.getVisibleMemberTable(t).overrideAt(e).descending()
+                .skip(1) // skip the first element (i.e. passed method)
+                .filter(i -> !i.isSimpleOverride())
+                .map(VisibleMemberTable.OverrideSequence::getMethod)
+                .iterator());
     }
 }
