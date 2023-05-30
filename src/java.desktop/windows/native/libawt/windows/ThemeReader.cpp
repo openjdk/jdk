@@ -428,8 +428,8 @@ JNIEXPORT void JNICALL Java_sun_awt_windows_ThemeReader_paintBackground
 
     rect.left = 0;
     rect.top = 0;
-    rect.bottom = rectBottom ;
-    rect.right  = rectRight;
+    rect.bottom = rectBottom;
+    rect.right = rectRight;
 
 
     ZeroMemory(pSrcBits,(BITS_PER_PIXEL>>3)*w*h);
