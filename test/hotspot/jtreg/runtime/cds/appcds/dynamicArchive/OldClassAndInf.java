@@ -80,7 +80,7 @@ public class OldClassAndInf extends DynamicArchiveTestBase {
                      "-Xlog:cds",
                      "-Xlog:cds+dynamic=debug",
                      "-cp", appJar,
-                     mainAppClass, loadeesJar, inArchive, "keep-alive"),
+                     mainAppClass, loadeesJar, inArchive),
              loadees))
              .assertNormalExit(output -> {
                  output.shouldContain("Written dynamic archive 0x")

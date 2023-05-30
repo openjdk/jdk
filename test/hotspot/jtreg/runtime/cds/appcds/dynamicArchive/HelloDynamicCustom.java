@@ -64,7 +64,7 @@ public class HelloDynamicCustom extends DynamicArchiveTestBase {
             "-Xlog:cds",
             "-Xlog:cds+dynamic=debug",
             "-cp", appJar,
-            mainAppClass, customJarPath, "false", "false", "keep-alive")
+            mainAppClass, customJarPath, "false", "false")
             .assertNormalExit(output -> {
                 output.shouldContain("Written dynamic archive 0x")
                       .shouldNotContain("klasses.*=.*CustomLoadee")
