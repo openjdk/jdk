@@ -668,7 +668,7 @@ const Type* AddPNode::Value(PhaseGVN* phase) const {
 // Split an oop pointer into a base and offset.
 // (The offset might be Type::OffsetBot in the case of an array.)
 // Return the base, or null if failure.
-Node* AddPNode::Ideal_base_and_offset(Node* ptr, PhaseTransform* phase,
+Node* AddPNode::Ideal_base_and_offset(Node* ptr, PhaseValues* phase,
                                       // second return value:
                                       intptr_t& offset) {
   if (ptr->is_AddP()) {
