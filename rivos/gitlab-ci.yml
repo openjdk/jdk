@@ -183,7 +183,7 @@ build-linux-riscv64-release:
 
 .run-gtests:
   stage: test
-  # image set in jobs that extend this
+  image: ubuntu:20.04
   variables:
     CONF_NAME: linux-${PKG_ARCH}-${DEBUG_LEVEL}
   script:
@@ -199,8 +199,10 @@ build-linux-riscv64-release:
     # jtreg is not needed to run the gtests but make-prebuilt requires JT_HOME to point to a dir.
     # We'll just point it to an empty dir, it's not worth checking out jtreg for this.
     - mkdir $(pwd)/jtreg
+    # QEMU_LD_PREFIX is only needed for risc v but it's easier to just set it for all configurations
     - make test-prebuilt \
         CONF=${CONF_NAME} \
+        QEMU_LD_PREFIX=$(pwd)/sysroot-${UBUNTU_CODENAME}-${PKG_ARCH} \
         BOOT_JDK=/usr/lib/jvm/temurin-${BUILD_JDK_VERSION} \
         JDK_IMAGE_DIR=$(pwd)/build/${CONF_NAME}/images/jdk \
         TEST_IMAGE_DIR=$(pwd)/build/${CONF_NAME}/images/test \
@@ -209,57 +211,61 @@ build-linux-riscv64-release:
 
 run-gtests-amd64-fastdebug:
   extends: .run-gtests
-  image: ubuntu:20.04
   dependencies:
-    - build-linux-amd64-fastdebug
+    - prepare-version
     - create-sysroot-amd64
+    - build-linux-amd64-fastdebug
   needs:
-    - build-linux-amd64-fastdebug
+    - prepare-version
     - create-sysroot-amd64
+    - build-linux-amd64-fastdebug
   variables:
     PKG_ARCH: amd64
     DEBUG_LEVEL: fastdebug
 
-# the riscv64 gtests jobs are disabled until we figure out how to run them with a more recent qemu
-# run-gtests-riscv64-fastdebug:
-#   extends: .run-gtests
-#   image: gitlab.ba.rivosinc.com:5050/rv/it/int/rivos-sdk:22.04-riscv64
-#   dependencies:
-#     - build-linux-riscv64-fastdebug
-#     - create-sysroot-riscv64
-#   needs:
-#     - build-linux-riscv64-fastdebug
-#     - create-sysroot-riscv64
-#   variables:
-#     PKG_ARCH: riscv64
-#     DEBUG_LEVEL: fastdebug
+run-gtests-riscv64-fastdebug:
+  extends: .run-gtests
+  tags: ["22.04"]
+  dependencies:
+    - prepare-version
+    - create-sysroot-riscv64
+    - build-linux-riscv64-fastdebug
+  needs:
+    - prepare-version
+    - create-sysroot-riscv64
+    - build-linux-riscv64-fastdebug
+  variables:
+    PKG_ARCH: riscv64
+    DEBUG_LEVEL: fastdebug
 
 run-gtests-amd64-release:
   extends: .run-gtests
-  image: ubuntu:20.04
   dependencies:
-    - build-linux-amd64-release
+    - prepare-version
     - create-sysroot-amd64
+    - build-linux-amd64-release
   needs:
-    - build-linux-amd64-release
+    - prepare-version
     - create-sysroot-amd64
+    - build-linux-amd64-release
   variables:
     PKG_ARCH: amd64
     DEBUG_LEVEL: release
 
-# the riscv64 gtests jobs are disabled until we figure out how to run them with a more recent qemu
-# run-gtests-riscv64-release:
-#   extends: .run-gtests
-#   image: gitlab.ba.rivosinc.com:5050/rv/it/int/rivos-sdk:22.04-riscv64
-#   dependencies:
-#     - build-linux-riscv64-release
-#     - create-sysroot-riscv64
-#   needs:
-#     - build-linux-riscv64-release
-#     - create-sysroot-riscv64
-#   variables:
-#     PKG_ARCH: riscv64
-#     DEBUG_LEVEL: release
+run-gtests-riscv64-release:
+  extends: .run-gtests
+  tags: ["22.04"]
+  dependencies:
+    - prepare-version
+    - create-sysroot-riscv64
+    - build-linux-riscv64-release
+  needs:
+    - prepare-version
+    - create-sysroot-riscv64
+    - build-linux-riscv64-release
+  variables:
+    PKG_ARCH: riscv64
+    DEBUG_LEVEL: release
 
 package-tar:
   stage: deploy
