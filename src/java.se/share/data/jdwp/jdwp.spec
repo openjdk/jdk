@@ -2641,7 +2641,7 @@ JDWP "Java(tm) Debug Wire Protocol"
         "<p>"
         "If the thread is a virtual thread then this command can be used to set "
         "the value of local variables in the top-most frame when the thread is "
-        "suspended at a breakpoint or single step event. The target VM may support "
+        "suspended at an event. The target VM may support "
         "setting local variables in other cases."
         (Out
             (threadObject thread "The frame's thread. ")
@@ -2659,7 +2659,7 @@ JDWP "Java(tm) Debug Wire Protocol"
             (Error INVALID_THREAD)
             (Error INVALID_OBJECT)
             (Error INVALID_FRAMEID)
-            (Error OPAQUE_FRAME      "The thread is a virtual thread and the target VM "
+            (Error OPAQUE_FRAME      "The thread is a suspended virtual thread and the target VM "
                                      "does not support setting the value of local "
                                      "variables in the frame.")
             (Error VM_DEAD)
