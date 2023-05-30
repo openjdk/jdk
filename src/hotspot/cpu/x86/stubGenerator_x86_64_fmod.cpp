@@ -396,7 +396,7 @@ __ jmp(L_exit);
   __ vroundsd(xmm0, xmm0, xmm0, 3);
 
 //   eq = TRANSFER_HIGH_INT32(q);
-  __ evextractps(rax, xmm0, 1);
+  __ extractps(rax, xmm0, 1);
 
 //   if (__builtin_expect((eq >= 0x7fefffffu), (0==1))) goto SPECIAL_FMOD;
   __ cmpl(rax, 0x7feffffe);
@@ -453,7 +453,7 @@ __ jmp(L_exit);
   __ vroundsd(xmm0, xmm0, xmm0, 3);
 
 //   eq = TRANSFER_HIGH_INT32(q);
-  __ evextractps(rax, xmm0, 1);
+  __ extractps(rax, xmm0, 1);
 
 //   if (eq >= 0x7fefffffu)
   __ cmpl(rax, 0x7fefffff);

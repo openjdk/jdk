@@ -3556,10 +3556,9 @@ void Assembler::movsd(Address dst, XMMRegister src) {
 }
 
 void Assembler::vmovsd(XMMRegister dst, XMMRegister src, XMMRegister src2) {
-  assert(VM_Version::supports_evex(), "");
+  assert(UseAVX > 0, "Requires some form ov AVX");
   InstructionMark im(this);
   InstructionAttr attributes(AVX_128bit, /* rex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
-  attributes.set_is_evex_instruction();
   int encode = vex_prefix_and_encode(src2->encoding(), src->encoding(), dst->encoding(), VEX_SIMD_F2, VEX_OPCODE_0F, &attributes);
   emit_int16(0x11, (0xC0 | encode));
 }
@@ -8919,12 +8918,11 @@ void Assembler::vextractf64x4(Address dst, XMMRegister src, uint8_t imm8) {
   emit_int8(imm8 & 0x01);
 }
 
-void Assembler::evextractps(Register dst, XMMRegister src, uint8_t imm8) {
-  assert(VM_Version::supports_avx(), "");
+void Assembler::extractps(Register dst, XMMRegister src, uint8_t imm8) {
+  assert(VM_Version::supports_sse4_1(), "");
   assert(imm8 <= 0x03, "imm8: %u", imm8);
-  InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
-  attributes.set_is_evex_instruction();
-  int encode = vex_prefix_and_encode(src->encoding(), 0, dst->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_3A, &attributes);
+  InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
+  int encode = simd_prefix_and_encode(src, xnoreg, as_XMMRegister(dst->encoding()), VEX_SIMD_66, VEX_OPCODE_0F_3A, &attributes);
   // imm8:
   // 0x00 - extract from bits 31:0
   // 0x01 - extract from bits 63:32
@@ -9611,6 +9609,7 @@ void Assembler::evdivsd(XMMRegister dst, XMMRegister nds, XMMRegister src, EvexR
   assert(VM_Version::supports_evex(), "");
   InstructionAttr attributes(rmode, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   attributes.set_extended_context();
+  attributes.set_is_evex_instruction();
   int encode = vex_prefix_and_encode(dst->encoding(), nds->encoding(), src->encoding(), VEX_SIMD_F2, VEX_OPCODE_0F, &attributes);
   emit_int16(0x5E, (0xC0 | encode));
 }

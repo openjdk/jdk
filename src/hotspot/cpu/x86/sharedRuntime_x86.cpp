@@ -87,7 +87,8 @@ void SharedRuntime::inline_check_hashcode_from_object_header(MacroAssembler* mas
 #if defined(TARGET_COMPILER_gcc) && !defined(_WIN64)
 JRT_LEAF(jfloat, SharedRuntime::frem(jfloat x, jfloat y))
   jfloat retval;
-  if (UseAVX < 1 || !UseFMA) {
+  const bool is_LP64 = LP64_ONLY(true) NOT_LP64(false);
+  if (!is_LP64 || UseAVX < 1 || !UseFMA) {
   asm ("\
 1:               \n\
 fprem            \n\
@@ -111,7 +112,8 @@ JRT_END
 
 JRT_LEAF(jdouble, SharedRuntime::drem(jdouble x, jdouble y))
   jdouble retval;
-  if (UseAVX < 1 || !UseFMA) {
+  const bool is_LP64 = LP64_ONLY(true) NOT_LP64(false);
+  if (!is_LP64 || UseAVX < 1 || !UseFMA) {
   asm ("\
 1:               \n\
 fprem            \n\

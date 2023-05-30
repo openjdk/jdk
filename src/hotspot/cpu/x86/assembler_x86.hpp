@@ -2741,7 +2741,7 @@ private:
   void vextractf64x4(XMMRegister dst, XMMRegister src, uint8_t imm8);
   void vextractf64x4(Address dst, XMMRegister src, uint8_t imm8);
 
-  void evextractps(Register dst, XMMRegister src, uint8_t imm8);
+  void extractps(Register dst, XMMRegister src, uint8_t imm8);
 
   // xmm/mem sourced byte/word/dword/qword replicate
   void vpbroadcastb(XMMRegister dst, XMMRegister src, int vector_len);
