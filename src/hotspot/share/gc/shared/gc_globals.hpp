@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@
 #include "gc/shenandoah/shenandoah_globals.hpp"
 #endif
 #if INCLUDE_ZGC
-#include "gc/z/z_globals.hpp"
+#include "gc/z/shared/z_shared_globals.hpp"
 #endif
 
 #define GC_FLAGS(develop,                                                   \
@@ -99,7 +99,7 @@
     range,                                                                  \
     constraint))                                                            \
                                                                             \
-  ZGC_ONLY(GC_Z_FLAGS(                                                      \
+  ZGC_ONLY(GC_Z_SHARED_FLAGS(                                               \
     develop,                                                                \
     develop_pd,                                                             \
     product,                                                                \
@@ -124,6 +124,9 @@
                                                                             \
   product(bool, UseZGC, false,                                              \
           "Use the Z garbage collector")                                    \
+                                                                            \
+  product(bool, ZGenerational, false,                                       \
+          "Use the generational version of ZGC")                            \
                                                                             \
   product(bool, UseShenandoahGC, false,                                     \
           "Use the Shenandoah garbage collector")                           \
@@ -215,12 +218,6 @@
           "Size of marking stack")                                          \
           constraint(MarkStackSizeConstraintFunc,AfterErgo)                 \
           range(1, (max_jint - 1))                                          \
-                                                                            \
-  product(intx, RefDiscoveryPolicy, 0,                                      \
-          "Select type of reference discovery policy: "                     \
-          "reference-based(0) or referent-based(1)")                        \
-          range(ReferenceProcessor::DiscoveryPolicyMin,                     \
-                ReferenceProcessor::DiscoveryPolicyMax)                     \
                                                                             \
   product(bool, ParallelRefProcEnabled, false,                              \
           "Enable parallel reference processing whenever possible")         \

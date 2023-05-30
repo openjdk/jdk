@@ -479,6 +479,9 @@ address SharedRuntime::raw_exception_handler_for_return_address(JavaThread* curr
     return StubRoutines::cont_returnBarrierExc();
   }
 
+  // write lock needed because we might update the pc desc cache via PcDescCache::add_pc_desc
+  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, current));
+
   // The fastest case first
   CodeBlob* blob = CodeCache::find_blob(return_address);
   CompiledMethod* nm = (blob != nullptr) ? blob->as_compiled_method_or_null() : nullptr;
@@ -628,35 +631,29 @@ void SharedRuntime::throw_and_post_jvmti_exception(JavaThread* current, Symbol* 
 }
 
 #if INCLUDE_JVMTI
-JRT_ENTRY(void, SharedRuntime::notify_jvmti_object_alloc(oopDesc* o, JavaThread* current))
-  Handle h = Handle(current, o);
-  if (JvmtiExport::should_post_vm_object_alloc()) {
-    JvmtiExport::post_vm_object_alloc(current, o);
-  }
-  current->set_vm_result(h());
-JRT_END
-
-JRT_ENTRY(void, SharedRuntime::notify_jvmti_mount(oopDesc* vt, jboolean hide, jboolean first_mount, JavaThread* current))
+JRT_ENTRY(void, SharedRuntime::notify_jvmti_vthread_start(oopDesc* vt, jboolean hide, JavaThread* current))
+  assert(hide == JNI_FALSE, "must be VTMS transition finish");
   jobject vthread = JNIHandles::make_local(const_cast<oopDesc*>(vt));
-
-  if (hide) {
-    JvmtiVTMSTransitionDisabler::VTMS_mount_begin(vthread, first_mount);
-  } else {
-    JvmtiVTMSTransitionDisabler::VTMS_mount_end(vthread, first_mount);
-  }
-
+  JvmtiVTMSTransitionDisabler::VTMS_vthread_start(vthread);
   JNIHandles::destroy_local(vthread);
 JRT_END
 
-JRT_ENTRY(void, SharedRuntime::notify_jvmti_unmount(oopDesc* vt, jboolean hide, jboolean last_unmount, JavaThread* current))
+JRT_ENTRY(void, SharedRuntime::notify_jvmti_vthread_end(oopDesc* vt, jboolean hide, JavaThread* current))
+  assert(hide == JNI_TRUE, "must be VTMS transition start");
   jobject vthread = JNIHandles::make_local(const_cast<oopDesc*>(vt));
+  JvmtiVTMSTransitionDisabler::VTMS_vthread_end(vthread);
+  JNIHandles::destroy_local(vthread);
+JRT_END
 
-  if (hide) {
-    JvmtiVTMSTransitionDisabler::VTMS_unmount_begin(vthread, last_unmount);
-  } else {
-    JvmtiVTMSTransitionDisabler::VTMS_unmount_end(vthread, last_unmount);
-  }
+JRT_ENTRY(void, SharedRuntime::notify_jvmti_vthread_mount(oopDesc* vt, jboolean hide, JavaThread* current))
+  jobject vthread = JNIHandles::make_local(const_cast<oopDesc*>(vt));
+  JvmtiVTMSTransitionDisabler::VTMS_vthread_mount(vthread, hide);
+  JNIHandles::destroy_local(vthread);
+JRT_END
 
+JRT_ENTRY(void, SharedRuntime::notify_jvmti_vthread_unmount(oopDesc* vt, jboolean hide, JavaThread* current))
+  jobject vthread = JNIHandles::make_local(const_cast<oopDesc*>(vt));
+  JvmtiVTMSTransitionDisabler::VTMS_vthread_unmount(vthread, hide);
   JNIHandles::destroy_local(vthread);
 JRT_END
 #endif // INCLUDE_JVMTI
@@ -1228,7 +1225,7 @@ Handle SharedRuntime::find_callee_info_helper(vframeStream& vfst, Bytecodes::Cod
     } else {
       // Klass is already loaded.
       constantPoolHandle constants(current, caller->constants());
-      rk = constants->klass_ref_at(bytecode_index, CHECK_NH);
+      rk = constants->klass_ref_at(bytecode_index, bc, CHECK_NH);
     }
     Klass* static_receiver_klass = rk;
     assert(receiver_klass->is_subtype_of(static_receiver_klass),
@@ -2063,6 +2060,9 @@ JRT_LEAF(void, SharedRuntime::fixup_callers_callsite(Method* method, address cal
   if (callee == nullptr) {
     return;
   }
+
+  // write lock needed because we might update the pc desc cache via PcDescCache::add_pc_desc
+  MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, JavaThread::current()));
 
   CodeBlob* cb = CodeCache::find_blob(caller_pc);
   if (cb == nullptr || !cb->is_compiled() || callee->is_unloading()) {

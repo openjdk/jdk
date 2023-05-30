@@ -113,7 +113,6 @@ public class TestMetaspaceAllocationMT1 {
             System.out.println("#### seconds: " + seconds);
             System.out.println("#### commitLimit: " + commitLimit);
             System.out.println("#### reserveLimit: " + reserveLimit);
-            System.out.println("#### ReclaimPolicy: " + Settings.settings().reclaimPolicy);
             System.out.println("#### guards: " + Settings.settings().usesAllocationGuards);
 
             MetaspaceTestContext context = new MetaspaceTestContext(commitLimit, reserveLimit);

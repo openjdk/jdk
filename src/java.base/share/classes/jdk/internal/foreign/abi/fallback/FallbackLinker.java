@@ -43,6 +43,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.ref.Reference;
+import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
@@ -115,6 +116,11 @@ public final class FallbackLinker extends AbstractLinker {
             target = MethodHandles.insertArguments(doUpcallMH, 0, target);
             return LibFallback.createClosure(cif, target, scope);
         };
+    }
+
+    @Override
+    protected ByteOrder linkerByteOrder() {
+        return ByteOrder.nativeOrder();
     }
 
     private static MemorySegment makeCif(MethodType methodType, FunctionDescriptor function, FFIABI abi, Arena scope) {
@@ -238,7 +244,7 @@ public final class FallbackLinker extends AbstractLinker {
             acquireCallback.accept(addrArg);
             argSeg.set(al, 0, addrArg);
         } else if (layout instanceof GroupLayout) {
-            argSeg.copyFrom((MemorySegment) arg); // by-value struct
+            MemorySegment.copy((MemorySegment) arg, 0, argSeg, 0, argSeg.byteSize()); // by-value struct
         } else {
             assert layout == null;
         }

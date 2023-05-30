@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8200337 8306578
+ * @bug 8200337 8307377 8306578
  * @summary Generalize see and link tags for user-defined anchors
  * @library /tools/lib ../../lib
  * @modules
@@ -180,7 +180,7 @@ public class TestSeeLinkAnchor extends JavadocTester {
         checkOutput("inv/Class1.html", true, """
                      Invalid link to\s
                      <details class="invalid-tag">
-                     <summary>invalid @link</summary>
+                     <summary>invalid reference</summary>
                      <pre><code>main heading</code></pre>
                      </details>""");
     }

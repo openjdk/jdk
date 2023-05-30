@@ -28,4 +28,3 @@
 #############################################################################
 
 java/lang/invoke/MethodHandles/CatchExceptionTest.java 8146623 generic-all
-java/lang/Thread/virtual/HoldsLock.java 8305919 generic-all
