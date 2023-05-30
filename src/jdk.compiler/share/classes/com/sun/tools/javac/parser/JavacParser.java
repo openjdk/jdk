@@ -624,6 +624,9 @@ public class JavacParser implements Parser {
                 log.warning(token.pos, Warnings.UnderscoreAsIdentifier);
             } else if (asVariable) {
                 checkSourceLevel(Feature.UNNAMED_VARIABLES);
+                if (peekToken(LBRACKET)) {
+                    log.error(DiagnosticFlag.SYNTAX, token.pos, Errors.UseOfUnderscoreNotAllowedWithBrackets);
+                }
             } else {
                 if (preview.isEnabled() && Feature.UNNAMED_VARIABLES.allowedInSource(source)) {
                     log.error(DiagnosticFlag.SYNTAX, token.pos, Errors.UseOfUnderscoreNotAllowed);
