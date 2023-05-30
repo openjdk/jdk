@@ -244,7 +244,7 @@ public final class FallbackLinker extends AbstractLinker {
             acquireCallback.accept(addrArg);
             argSeg.set(al, 0, addrArg);
         } else if (layout instanceof GroupLayout) {
-            argSeg.copyFrom((MemorySegment) arg); // by-value struct
+            MemorySegment.copy((MemorySegment) arg, 0, argSeg, 0, argSeg.byteSize()); // by-value struct
         } else {
             assert layout == null;
         }

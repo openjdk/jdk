@@ -3822,6 +3822,30 @@ instruct vmask_truecount_sve(iRegINoSp dst, pReg src) %{
   ins_pipe(pipe_slow);
 %}
 
+// Combined rule for VectorMaskTrueCount (VectorStoreMask) when the vector element type is not T_BYTE.
+
+instruct vstoremask_truecount_neon(iRegINoSp dst, vReg src, immI_gt_1 size, vReg vtmp) %{
+  match(Set dst (VectorMaskTrueCount (VectorStoreMask src size)));
+  effect(TEMP vtmp);
+  format %{ "vstoremask_truecount_neon $dst, $src\t# KILL $vtmp" %}
+  ins_encode %{
+    // Input "src" is a vector mask represented as lanes with
+    // 0/-1 as element values.
+    uint esize = (uint)$size$$constant;
+    if (esize == 8) {
+      __ addpd($vtmp$$FloatRegister, $src$$FloatRegister);
+    } else {
+      uint length_in_bytes = Matcher::vector_length_in_bytes(this, $src);
+      Assembler::SIMD_Arrangement arrangement = Assembler::esize2arrangement(esize,
+                                                                             /* isQ */ length_in_bytes == 16);
+      __ addv($vtmp$$FloatRegister, arrangement, $src$$FloatRegister);
+    }
+    __ smov($dst$$Register, $vtmp$$FloatRegister, __ B, 0);
+    __ neg($dst$$Register, $dst$$Register);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 // first true
 
 instruct vmask_firsttrue_lt8e(iRegINoSp dst, vReg src, rFlagsReg cr) %{
