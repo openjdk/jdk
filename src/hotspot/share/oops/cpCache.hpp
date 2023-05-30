@@ -159,7 +159,7 @@ class ConstantPoolCacheEntry {
     assert(is_vfinal(), "flags must be set");
     set_f2((intx)f2);
   }
-  int make_flags(TosState state, int option_bits, int field_index_or_method_params);
+  intx make_flags(TosState state, int option_bits, int field_index_or_method_params);
   void set_flags(intx flags)                     { _flags = flags; }
   void set_field_flags(TosState field_type, int option_bits, int field_index) {
     assert((field_index & field_index_mask) == field_index, "field_index in range");
@@ -308,8 +308,8 @@ class ConstantPoolCacheEntry {
   bool is_resolved(Bytecodes::Code code) const;
 
   // Accessors
-  int indices() const                            { return _indices; }
-  int indices_ord() const;
+  intx indices() const                           { return _indices; }
+  intx indices_ord() const;
   int constant_pool_index() const                { return (indices() & cp_index_mask); }
   Bytecodes::Code bytecode_1() const;
   Bytecodes::Code bytecode_2() const;
@@ -452,8 +452,8 @@ class ConstantPoolCache: public MetaspaceObj {
   }
 
   // Assembly code support
-  static int resolved_references_offset_in_bytes() { return offset_of(ConstantPoolCache, _resolved_references); }
-  static ByteSize invokedynamic_entries_offset()   { return byte_offset_of(ConstantPoolCache, _resolved_indy_entries); }
+  static ByteSize resolved_references_offset()   { return byte_offset_of(ConstantPoolCache, _resolved_references); }
+  static ByteSize invokedynamic_entries_offset() { return byte_offset_of(ConstantPoolCache, _resolved_indy_entries); }
 
 #if INCLUDE_CDS
   void remove_unshareable_info();

@@ -54,8 +54,8 @@ static const ZStatCounter       ZCounterPageCacheFlush("Memory", "Page Cache Flu
 static const ZStatCounter       ZCounterDefragment("Memory", "Defragment", ZStatUnitOpsPerSecond);
 static const ZStatCriticalPhase ZCriticalPhaseAllocationStall("Allocation Stall");
 
-ZSafePageRecycle::ZSafePageRecycle(ZPageAllocator* page_allocator) :
-    _page_allocator(page_allocator),
+ZSafePageRecycle::ZSafePageRecycle(ZPageAllocator* page_allocator)
+  : _page_allocator(page_allocator),
     _unsafe_to_recycle() {}
 
 void ZSafePageRecycle::activate() {
@@ -112,8 +112,8 @@ private:
   ZFuture<bool>              _stall_result;
 
 public:
-  ZPageAllocation(ZPageType type, size_t size, ZAllocationFlags flags) :
-      _type(type),
+  ZPageAllocation(ZPageType type, size_t size, ZAllocationFlags flags)
+    : _type(type),
       _size(size),
       _flags(flags),
       _young_seqnum(ZGeneration::young()->seqnum()),
@@ -180,8 +180,8 @@ public:
 ZPageAllocator::ZPageAllocator(size_t min_capacity,
                                size_t initial_capacity,
                                size_t soft_max_capacity,
-                               size_t max_capacity) :
-    _lock(),
+                               size_t max_capacity)
+  : _lock(),
     _cache(),
     _virtual(max_capacity),
     _physical(max_capacity),
@@ -237,8 +237,8 @@ private:
   const zoffset_end                   _end;
 
 public:
-  ZPreTouchTask(const ZPhysicalMemoryManager* physical, zoffset start, zoffset_end end) :
-      ZTask("ZPreTouchTask"),
+  ZPreTouchTask(const ZPhysicalMemoryManager* physical, zoffset start, zoffset_end end)
+    : ZTask("ZPreTouchTask"),
       _physical(physical),
       _start(start),
       _end(end) {}
@@ -985,9 +985,11 @@ void ZPageAllocator::handle_alloc_stalling_for_young() {
   restart_gc();
 }
 
-void ZPageAllocator::handle_alloc_stalling_for_old() {
+void ZPageAllocator::handle_alloc_stalling_for_old(bool cleared_soft_refs) {
   ZLocker<ZLock> locker(&_lock);
-  notify_out_of_memory();
+  if (cleared_soft_refs) {
+    notify_out_of_memory();
+  }
   restart_gc();
 }
 

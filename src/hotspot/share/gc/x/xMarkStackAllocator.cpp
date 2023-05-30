@@ -198,14 +198,14 @@ XMarkStackMagazine* XMarkStackAllocator::create_magazine_from_space(uintptr_t ad
 XMarkStackMagazine* XMarkStackAllocator::alloc_magazine() {
   // Try allocating from the free list first
   XMarkStackMagazine* const magazine = _freelist.pop();
-  if (magazine != NULL) {
+  if (magazine != nullptr) {
     return magazine;
   }
 
   // Allocate new magazine
   const uintptr_t addr = _space.alloc(XMarkStackMagazineSize);
   if (addr == 0) {
-    return NULL;
+    return nullptr;
   }
 
   return create_magazine_from_space(addr, XMarkStackMagazineSize);

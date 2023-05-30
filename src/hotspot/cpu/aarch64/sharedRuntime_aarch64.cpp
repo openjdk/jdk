@@ -1989,7 +1989,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   // reset handle block
   __ ldr(r2, Address(rthread, JavaThread::active_handles_offset()));
-  __ str(zr, Address(r2, JNIHandleBlock::top_offset_in_bytes()));
+  __ str(zr, Address(r2, JNIHandleBlock::top_offset()));
 
   __ leave();
 
@@ -2389,7 +2389,7 @@ void SharedRuntime::generate_deopt_blob() {
   // Load UnrollBlock* into r5
   __ mov(r5, r0);
 
-  __ ldrw(rcpool, Address(r5, Deoptimization::UnrollBlock::unpack_kind_offset_in_bytes()));
+  __ ldrw(rcpool, Address(r5, Deoptimization::UnrollBlock::unpack_kind_offset()));
    Label noException;
   __ cmpw(rcpool, Deoptimization::Unpack_exception);   // Was exception pending?
   __ br(Assembler::NE, noException);
@@ -2435,7 +2435,7 @@ void SharedRuntime::generate_deopt_blob() {
   // when we are done the return to frame 3 will still be on the stack.
 
   // Pop deoptimized frame
-  __ ldrw(r2, Address(r5, Deoptimization::UnrollBlock::size_of_deoptimized_frame_offset_in_bytes()));
+  __ ldrw(r2, Address(r5, Deoptimization::UnrollBlock::size_of_deoptimized_frame_offset()));
   __ sub(r2, r2, 2 * wordSize);
   __ add(sp, sp, r2);
   __ ldp(rfp, lr, __ post(sp, 2 * wordSize));
@@ -2446,20 +2446,20 @@ void SharedRuntime::generate_deopt_blob() {
   // Compilers generate code that bang the stack by as much as the
   // interpreter would need. So this stack banging should never
   // trigger a fault. Verify that it does not on non product builds.
-  __ ldrw(r19, Address(r5, Deoptimization::UnrollBlock::total_frame_sizes_offset_in_bytes()));
+  __ ldrw(r19, Address(r5, Deoptimization::UnrollBlock::total_frame_sizes_offset()));
   __ bang_stack_size(r19, r2);
 #endif
   // Load address of array of frame pcs into r2
-  __ ldr(r2, Address(r5, Deoptimization::UnrollBlock::frame_pcs_offset_in_bytes()));
+  __ ldr(r2, Address(r5, Deoptimization::UnrollBlock::frame_pcs_offset()));
 
   // Trash the old pc
   // __ addptr(sp, wordSize);  FIXME ????
 
   // Load address of array of frame sizes into r4
-  __ ldr(r4, Address(r5, Deoptimization::UnrollBlock::frame_sizes_offset_in_bytes()));
+  __ ldr(r4, Address(r5, Deoptimization::UnrollBlock::frame_sizes_offset()));
 
   // Load counter into r3
-  __ ldrw(r3, Address(r5, Deoptimization::UnrollBlock::number_of_frames_offset_in_bytes()));
+  __ ldrw(r3, Address(r5, Deoptimization::UnrollBlock::number_of_frames_offset()));
 
   // Now adjust the caller's stack to make up for the extra locals
   // but record the original sp so that we can save it in the skeletal interpreter
@@ -2471,7 +2471,7 @@ void SharedRuntime::generate_deopt_blob() {
   __ mov(sender_sp, sp);
   __ ldrw(r19, Address(r5,
                        Deoptimization::UnrollBlock::
-                       caller_adjustment_offset_in_bytes()));
+                       caller_adjustment_offset()));
   __ sub(sp, sp, r19);
 
   // Push interpreter frames in a loop
@@ -2631,7 +2631,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
 
 #ifdef ASSERT
   { Label L;
-    __ ldrw(rscratch1, Address(r4, Deoptimization::UnrollBlock::unpack_kind_offset_in_bytes()));
+    __ ldrw(rscratch1, Address(r4, Deoptimization::UnrollBlock::unpack_kind_offset()));
     __ cmpw(rscratch1, (unsigned)Deoptimization::Unpack_uncommon_trap);
     __ br(Assembler::EQ, L);
     __ stop("SharedRuntime::generate_uncommon_trap_blob: expected Unpack_uncommon_trap");
@@ -2652,7 +2652,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
   // Pop deoptimized frame (int)
   __ ldrw(r2, Address(r4,
                       Deoptimization::UnrollBlock::
-                      size_of_deoptimized_frame_offset_in_bytes()));
+                      size_of_deoptimized_frame_offset()));
   __ sub(r2, r2, 2 * wordSize);
   __ add(sp, sp, r2);
   __ ldp(rfp, lr, __ post(sp, 2 * wordSize));
@@ -2665,23 +2665,23 @@ void SharedRuntime::generate_uncommon_trap_blob() {
   // trigger a fault. Verify that it does not on non product builds.
   __ ldrw(r1, Address(r4,
                       Deoptimization::UnrollBlock::
-                      total_frame_sizes_offset_in_bytes()));
+                      total_frame_sizes_offset()));
   __ bang_stack_size(r1, r2);
 #endif
 
   // Load address of array of frame pcs into r2 (address*)
   __ ldr(r2, Address(r4,
-                     Deoptimization::UnrollBlock::frame_pcs_offset_in_bytes()));
+                     Deoptimization::UnrollBlock::frame_pcs_offset()));
 
   // Load address of array of frame sizes into r5 (intptr_t*)
   __ ldr(r5, Address(r4,
                      Deoptimization::UnrollBlock::
-                     frame_sizes_offset_in_bytes()));
+                     frame_sizes_offset()));
 
   // Counter
   __ ldrw(r3, Address(r4,
                       Deoptimization::UnrollBlock::
-                      number_of_frames_offset_in_bytes())); // (int)
+                      number_of_frames_offset())); // (int)
 
   // Now adjust the caller's stack to make up for the extra locals but
   // record the original sp so that we can save it in the skeletal
@@ -2693,7 +2693,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
   __ mov(sender_sp, sp);
   __ ldrw(r1, Address(r4,
                       Deoptimization::UnrollBlock::
-                      caller_adjustment_offset_in_bytes())); // (int)
+                      caller_adjustment_offset())); // (int)
   __ sub(sp, sp, r1);
 
   // Push interpreter frames in a loop

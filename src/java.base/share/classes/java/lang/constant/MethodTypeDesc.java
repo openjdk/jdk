@@ -56,6 +56,34 @@ public sealed interface MethodTypeDesc
     }
 
     /**
+     * {@return a {@linkplain MethodTypeDesc} with the given return type and no
+     * parameter types}
+     *
+     * @param returnDesc a {@linkplain ClassDesc} describing the return type
+     * @throws NullPointerException if {@code returnDesc} is {@code null}
+     * @since 21
+     */
+    static MethodTypeDesc of(ClassDesc returnDesc) {
+        return new MethodTypeDescImpl(returnDesc, ConstantUtils.EMPTY_CLASSDESC);
+    }
+
+    /**
+     * {@return a {@linkplain MethodTypeDesc} given the return type and a list of
+     * parameter types}
+     *
+     * @param returnDesc a {@linkplain ClassDesc} describing the return type
+     * @param paramDescs a {@linkplain List} of {@linkplain ClassDesc}s
+     * describing the parameter types
+     * @throws NullPointerException if any argument or its contents are {@code null}
+     * @throws IllegalArgumentException if any element of {@code paramDescs} is a
+     * {@link ClassDesc} for {@code void}
+     * @since 21
+     */
+    static MethodTypeDesc of(ClassDesc returnDesc, List<ClassDesc> paramDescs) {
+        return of(returnDesc, paramDescs.toArray(ConstantUtils.EMPTY_CLASSDESC));
+    }
+
+    /**
      * Returns a {@linkplain MethodTypeDesc} given the return type and parameter
      * types.
      *

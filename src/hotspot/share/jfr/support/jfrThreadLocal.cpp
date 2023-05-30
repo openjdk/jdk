@@ -64,6 +64,7 @@ JfrThreadLocal::JfrThreadLocal() :
   _data_lost(0),
   _stack_trace_id(max_julong),
   _parent_trace_id(0),
+  _last_allocated_bytes(0),
   _user_time(0),
   _cpu_time(0),
   _wallclock_time(os::javaTimeNanos()),
@@ -243,23 +244,23 @@ JfrStackFrame* JfrThreadLocal::install_stackframes() const {
 }
 
 ByteSize JfrThreadLocal::java_event_writer_offset() {
-  return in_ByteSize(offset_of(JfrThreadLocal, _java_event_writer));
+  return byte_offset_of(JfrThreadLocal, _java_event_writer);
 }
 
 ByteSize JfrThreadLocal::vthread_id_offset() {
-  return in_ByteSize(offset_of(JfrThreadLocal, _vthread_id));
+  return byte_offset_of(JfrThreadLocal, _vthread_id);
 }
 
 ByteSize JfrThreadLocal::vthread_offset() {
-  return in_ByteSize(offset_of(JfrThreadLocal, _vthread));
+  return byte_offset_of(JfrThreadLocal, _vthread);
 }
 
 ByteSize JfrThreadLocal::vthread_epoch_offset() {
-  return in_ByteSize(offset_of(JfrThreadLocal, _vthread_epoch));
+  return byte_offset_of(JfrThreadLocal, _vthread_epoch);
 }
 
 ByteSize JfrThreadLocal::vthread_excluded_offset() {
-  return in_ByteSize(offset_of(JfrThreadLocal, _vthread_excluded));
+  return byte_offset_of(JfrThreadLocal, _vthread_excluded);
 }
 
 void JfrThreadLocal::set(bool* exclusion_field, bool state) {
