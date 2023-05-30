@@ -154,6 +154,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
 
   // Support for walking class loader data objects
   ClassLoaderData* _next; /// Next loader_datas created
+  ClassLoaderData* _unloading_next;
 
   Klass*  _class_loader_klass;
   Symbol* _name;
@@ -162,6 +163,9 @@ class ClassLoaderData : public CHeapObj<mtClass> {
 
   void set_next(ClassLoaderData* next) { Atomic::store(&_next, next); }
   ClassLoaderData* next() const        { return Atomic::load(&_next); }
+
+  void set_unloading_next(ClassLoaderData* unloading_next) { _unloading_next = unloading_next; }
+  ClassLoaderData* unloading_next() const                  { return _unloading_next; }
 
   ClassLoaderData(Handle h_class_loader, bool has_class_mirror_holder);
   ~ClassLoaderData();

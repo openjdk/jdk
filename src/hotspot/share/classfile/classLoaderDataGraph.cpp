@@ -268,14 +268,6 @@ inline void assert_is_safepoint_or_gc() {
          "Must be called by safepoint or GC");
 }
 
-void ClassLoaderDataGraph::cld_unloading_do(CLDClosure* cl) {
-  assert_is_safepoint_or_gc();
-  for (ClassLoaderData* cld = _unloading; cld != nullptr; cld = cld->next()) {
-    assert(cld->is_unloading(), "invariant");
-    cl->do_cld(cld);
-  }
-}
-
 // These are functions called by the GC, which require all of the CLDs, including the
 // unloading ones.
 void ClassLoaderDataGraph::cld_do(CLDClosure* cl) {
@@ -430,7 +422,7 @@ void ClassLoaderDataGraph::loaded_classes_do(KlassClosure* klass_closure) {
 
 void ClassLoaderDataGraph::classes_unloading_do(void f(Klass* const)) {
   assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
-  for (ClassLoaderData* cld = _unloading; cld != nullptr; cld = cld->next()) {
+  for (ClassLoaderData* cld = _unloading; cld != nullptr; cld = cld->unloading_next()) {
     assert(cld->is_unloading(), "invariant");
     cld->classes_do(f);
   }
@@ -530,7 +522,7 @@ bool ClassLoaderDataGraph::do_unloading() {
       // The GC might be walking this concurrently
       Atomic::store(&_head, data);
     }
-    dead->set_next(_unloading);
+    dead->set_unloading_next(_unloading);
     _unloading = dead;
   }
 
@@ -569,7 +561,7 @@ void ClassLoaderDataGraph::purge(bool at_safepoint) {
   bool classes_unloaded = false;
   while (next != nullptr) {
     ClassLoaderData* purge_me = next;
-    next = purge_me->next();
+    next = purge_me->unloading_next();
     delete purge_me;
     classes_unloaded = true;
   }
