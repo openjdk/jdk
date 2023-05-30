@@ -986,6 +986,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
                     // let's return into the normal states first
                     // the zoom call toggles between the normal and the max states
                     unmaximize();
+                    peer.displayChanged();
                 }
                 execute(CWrapper.NSWindow::miniaturize);
                 break;
@@ -993,6 +994,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
                 if (prevWindowState == Frame.ICONIFIED) {
                     // let's return into the normal states first
                     execute(CWrapper.NSWindow::deminiaturize);
+                    peer.displayChanged();
                 }
                 maximize();
                 break;
