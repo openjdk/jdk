@@ -25,6 +25,7 @@
 
 package jdk.jfr.internal;
 
+import static jdk.jfr.internal.LogLevel.ERROR;
 import static jdk.jfr.internal.LogLevel.DEBUG;
 import static jdk.jfr.internal.LogLevel.WARN;
 import static jdk.jfr.internal.LogTag.JFR;
@@ -54,6 +55,7 @@ import jdk.jfr.Configuration;
 import jdk.jfr.FlightRecorderListener;
 import jdk.jfr.Recording;
 import jdk.jfr.RecordingState;
+import jdk.jfr.events.ErrorThrownEvent;
 import jdk.jfr.internal.SecuritySupport.SafePath;
 
 public final class PlatformRecording implements AutoCloseable {
@@ -717,16 +719,35 @@ public final class PlatformRecording implements AutoCloseable {
     public void dumpStopped(WriteableUserPath userPath) throws IOException {
         synchronized (recorder) {
                 userPath.doPrivilegedIO(() -> {
-                    try (ChunksChannel cc = new ChunksChannel(chunks); FileChannel fc = FileChannel.open(userPath.getReal(), StandardOpenOption.WRITE, StandardOpenOption.APPEND)) {
-                        long bytes = cc.transferTo(fc);
-                        Logger.log(LogTag.JFR, LogLevel.INFO, "Transferred " + bytes + " bytes from the disk repository");
-                        // No need to force if no data was transferred, which avoids IOException when device is /dev/null
-                        if (bytes != 0) {
-                            fc.force(true);
-                        }
+                    try {
+                        transferChunks(userPath);
+//                    try (ChunksChannel cc = new ChunksChannel(chunks); FileChannel fc = FileChannel.open(userPath.getReal(), StandardOpenOption.WRITE, StandardOpenOption.APPEND)) {
+//                        long bytes = cc.transferTo(fc);
+//                        Logger.log(LogTag.JFR, LogLevel.INFO, "Transferred " + bytes + " bytes from the disk repository");
+//                        // No need to force if no data was transferred, which avoids IOException when device is /dev/null
+//                        if (bytes != 0) {
+//                            fc.force(true);
+//                        }
+                    } catch (java.nio.file.NoSuchFileException nsfe) {
+                        Logger.log(LogTag.JFR, LogLevel.ERROR, "Chunkfile was missing when dumping recording: " + nsfe.getMessage() + ".");
+                        // if one chunkfile was missing, its likely more are missing
+                        removeNonExistantPaths();
+                        // and try the transfer again
+                        transferChunks(userPath);
                     }
                     return null;
                 });
+        }
+    }
+
+    private void transferChunks(WriteableUserPath userPath) throws IOException {
+        try (ChunksChannel cc = new ChunksChannel(chunks); FileChannel fc = FileChannel.open(userPath.getReal(), StandardOpenOption.WRITE, StandardOpenOption.APPEND)) {
+            long bytes = cc.transferTo(fc);
+            Logger.log(LogTag.JFR, LogLevel.INFO, "Transferred " + bytes + " bytes from the disk repository");
+            // No need to force if no data was transferred, which avoids IOException when device is /dev/null
+            if (bytes != 0) {
+                fc.force(true);
+            }
         }
     }
 
@@ -874,6 +895,27 @@ public final class PlatformRecording implements AutoCloseable {
                     it.remove();
                     removed(c);
                     return;
+                }
+            }
+        }
+    }
+
+    void removeNonExistantPaths() {
+        synchronized (recorder) {
+            Iterator<RepositoryChunk> it = chunks.iterator();
+            Logger.log(JFR, ERROR, "Checking for missing chunkfiles for recording \"" + name + "\" (" + id + ")");
+            while (it.hasNext()) {
+                RepositoryChunk c = it.next();
+                try {
+                    if (!SecuritySupport.exists(c.getFile())) {
+                        // pretend an error was thrown, and add event to next recording
+                        ErrorThrownEvent.commit(0L, 0L, "Chunkfile: \""+c.toString()+"\" is missing.", ChunkfileMissingError.class);
+                        Logger.log(JFR, ERROR, "Chunkfile: \""+c.toString()+"\" is missing.");
+                        it.remove();
+                        removed(c);
+                    }
+                } catch (IOException e) {
+                    // ignore
                 }
             }
         }

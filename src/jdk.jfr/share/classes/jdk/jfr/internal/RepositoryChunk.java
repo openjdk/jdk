@@ -55,10 +55,17 @@ final class RepositoryChunk {
         this.unFinishedRAF = SecuritySupport.createRandomAccessFile(chunkFile);
     }
 
-    void finish(Instant endTime) {
+    void finish(Instant endTime) throws ChunkfileMissingError {
         try {
             finishWithException(endTime);
         } catch (IOException e) {
+            try {
+                if (!SecuritySupport.exists(chunkFile)) {
+                    throw new ChunkfileMissingError("Chunkfile \""+ chunkFile.toString() + "\" is missing.");
+                }
+            } catch (IOException ioe) {
+                // ignore
+            }
             Logger.log(LogTag.JFR, LogLevel.ERROR, "Could not finish chunk. " + e.getClass() + " "+ e.getMessage());
         }
     }
@@ -103,16 +110,14 @@ final class RepositoryChunk {
     }
 
     private void destroy() {
-        if (!isFinished()) {
-            finish(Instant.MIN);
-        }
-         delete(chunkFile);
         try {
             unFinishedRAF.close();
         } catch (IOException e) {
             if (Logger.shouldLog(LogTag.JFR, LogLevel.ERROR)) {
                 Logger.log(LogTag.JFR, LogLevel.ERROR, "Could not close random access file: " + chunkFile.toString() + ". File will not be deleted due to: " + e.getMessage());
             }
+        } finally {
+            delete(chunkFile);
         }
     }
 

@@ -25,6 +25,7 @@
 
 package jdk.jfr.internal;
 
+import static jdk.jfr.internal.LogLevel.ERROR;
 import static jdk.jfr.internal.LogLevel.INFO;
 import static jdk.jfr.internal.LogLevel.TRACE;
 import static jdk.jfr.internal.LogLevel.WARN;
@@ -448,10 +449,19 @@ public final class PlatformRecorder {
     }
 
     private void finishChunk(RepositoryChunk chunk, Instant time, PlatformRecording ignoreMe) {
-        chunk.finish(time);
-        for (PlatformRecording r : getRecordings()) {
-            if (r != ignoreMe && r.getState() == RecordingState.RUNNING) {
-                r.appendChunk(chunk);
+        try {
+            chunk.finish(time);
+            for (PlatformRecording r : getRecordings()) {
+                if (r != ignoreMe && r.getState() == RecordingState.RUNNING) {
+                    r.appendChunk(chunk);
+                }
+            }
+        } catch (ChunkfileMissingError e) {
+            Logger.log(LogTag.JFR, LogLevel.ERROR, "Finishing chunk failed: " + e.getClass().getName() + ", " + e.getMessage());
+            // with one chunkfile missing, iterate throguh recording to find anymore missing,
+            // and remove them. This will emit more errors that can be seen in subsequent recordings.
+            for (PlatformRecording r : getRecordings()) {
+                r.removeNonExistantPaths();
             }
         }
         FilePurger.purge();
@@ -498,7 +508,12 @@ public final class PlatformRecorder {
         while (true) {
             synchronized (this) {
                 if (jvm.shouldRotateDisk()) {
-                    rotateDisk();
+                    try {
+                        rotateDisk();
+                    } catch(Error error) {
+                        // log and be mad
+                        Logger.log(JFR_SYSTEM, ERROR, "Error in Periodic task: " + error.getMessage());
+                    }
                 }
                 if (isToDisk()) {
                     EventLog.update();
