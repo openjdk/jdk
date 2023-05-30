@@ -85,19 +85,28 @@ public enum Architecture {
      */
     public static Architecture lookupByName(String archName) {
         archName = archName.toUpperCase(Locale.ROOT); // normalize to uppercase
+        return switch (archName) {
+            case "X86_64", "AMD64" -> X64;
+            case "I386" -> X86;
+            case "S390X" -> S390;
+            default -> Architecture.valueOf(archName);
+        };
+    }
+
+    /**
+     * Returns the Architecture of the built architecture.
+     * Build time names are mapped to respective uppercase enum values.
+     * Names not recognized are mapped to Architecture.OTHER.
+     */
+    private static Architecture initArch(String archName) {
         try {
-            return Architecture.valueOf(archName);
-        } catch (IllegalArgumentException iae) {
-            // Map well known aliases (UPPER case)
-            return switch (archName) {
-                case "X86_64", "AMD64" -> X64;
-                case "I386" -> X86;
-                case "S390X" -> S390;
-                default -> throw iae;
-            };
+            return lookupByName(archName);
+        } catch (IllegalArgumentException ile) {
+            return Architecture.OTHER;
         }
     }
 
+    // Initialize the architecture by mapping aliases and names to the enum values.
     private static Architecture CURRENT_ARCH = initArch(PlatformProps.CURRENT_ARCH_STRING);
 
     /**
@@ -185,19 +194,5 @@ public enum Architecture {
     @ForceInline
     public static boolean isLittleEndian() {
         return PlatformProps.TARGET_ARCH_LITTLE_ENDIAN;
-    }
-
-
-    /**
-     * Returns the Architecture of the built architecture.
-     * Build time names are mapped to respective uppercase enum values.
-     * Aliases and Names not recognized are mapped to Architecture.OTHER.
-     */
-    private static Architecture initArch(String archName) {
-        try {
-            return Architecture.valueOf(archName.toUpperCase(Locale.ROOT));
-        } catch (IllegalArgumentException ile) {
-            return Architecture.OTHER;
-        }
     }
 }
