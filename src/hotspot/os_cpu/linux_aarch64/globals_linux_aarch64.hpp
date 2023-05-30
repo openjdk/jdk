@@ -31,11 +31,13 @@
 
 define_pd_global(bool, DontYieldALot,            false);
 
-// set default stack sizes < 2MB so as to prevent stacks from getting
+// Set default stack sizes < 2MB so as to prevent stacks from getting
 // large-page aligned and backed by THPs on systems where 2MB is the
-// default huge page size. For non-JavaThreads, glibc adds an additional
+// default huge page size. For non-JavaThreads, glibc may add an additional
 // guard page to the total stack size, so to keep the default sizes same
-// for all the following flags, we set them to 2 pages less than 2MB.
+// for all the following flags, we set them to 2 pages less than 2MB. On
+// systems where 2MB is the default large page size, 4KB is most commonly
+// the regular page size.
 define_pd_global(intx, ThreadStackSize,          2040); // 0 => use system default
 define_pd_global(intx, VMThreadStackSize,        2040);
 

@@ -929,8 +929,11 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
 
   // Add an additional page to the stack size to reduce its chances of getting large page aligned
   // so that the stack does not get backed by a transparent huge page.
-  if (stack_size >= os::Linux::default_large_page_size() && is_aligned(stack_size, os::Linux::default_large_page_size())) {
-    stack_size += os::vm_page_size();
+  size_t default_large_page_size = os::Linux::default_large_page_size();
+  if (default_large_page_size != 0) {
+    if (stack_size >= default_large_page_size && is_aligned(stack_size, default_large_page_size)) {
+      stack_size += os::vm_page_size();
+    }
   }
 
   int status = pthread_attr_setstacksize(&attr, stack_size);
@@ -3751,12 +3754,11 @@ bool os::Linux::setup_large_page_type(size_t page_size) {
 }
 
 void os::large_page_init() {
-  // Scan default large page size
+  // Always initialize the default large page size even if large pages are not being used.
   size_t default_large_page_size = scan_default_large_page_size();
   os::Linux::_default_large_page_size = default_large_page_size;
 
-  // 1) Handle the case where we do not want to use huge pages and hence
-  //    there is no need to scan the OS for related info
+  // 1) Handle the case where we do not want to use huge pages
   if (!UseLargePages &&
       !UseTransparentHugePages &&
       !UseHugeTLBFS &&
