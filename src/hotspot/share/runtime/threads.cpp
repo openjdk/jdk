@@ -556,7 +556,8 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // Add main_thread to threads list to finish barrier setup with
   // on_thread_attach.  Should be before starting to build Java objects in
   // init_globals2, which invokes barriers.
-  { MutexLocker mu(Threads_lock);
+  {
+    MutexLocker mu(Threads_lock);
     Threads::add(main_thread);
   }
 
