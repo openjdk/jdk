@@ -90,6 +90,7 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
         checkLayouts(function);
         function = stripNames(function);
         LinkerOptions optionSet = LinkerOptions.forDowncall(function, options);
+        validateVariadicLayouts(function, optionSet);
 
         return DOWNCALL_CACHE.get(new LinkRequest(function, optionSet), linkRequest ->  {
             FunctionDescriptor fd = linkRequest.descriptor();
@@ -133,6 +134,26 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
 
     /** {@return byte order used by this linker} */
     protected abstract ByteOrder linkerByteOrder();
+
+    // C spec mandates that variadic arguments smaller than int are promoted to int,
+    // and float is promoted to double
+    // See: https://en.cppreference.com/w/c/language/conversion#Default_argument_promotions
+    private void validateVariadicLayouts(FunctionDescriptor function, LinkerOptions optionSet) {
+        if (optionSet.isVariadicFunction()) {
+            List<MemoryLayout> argumentLayouts = function.argumentLayouts();
+            List<MemoryLayout> variadicLayouts = argumentLayouts.subList(optionSet.firstVariadicArgIndex(), argumentLayouts.size());
+
+            for (MemoryLayout variadicLayout : variadicLayouts) {
+                if (variadicLayout instanceof ValueLayout vl
+                        && (vl.carrier() != long.class
+                            && vl.carrier() != int.class
+                            && vl.carrier() != double.class
+                            && vl.carrier() != MemorySegment.class)) {
+                    throw new IllegalArgumentException("Invalid variadic layout: " + variadicLayout);
+                }
+            }
+        }
+    }
 
     private void checkLayouts(FunctionDescriptor descriptor) {
         descriptor.returnLayout().ifPresent(this::checkLayout);

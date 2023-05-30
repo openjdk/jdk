@@ -409,6 +409,12 @@ import java.util.stream.Stream;
  * }
  * }
  *
+ * <p>
+ * It should be noted that values passed as variadic arguments undergo default argument promotion in C. Each value of
+ * type {@code float} is converted to {@code double}, and each integral type smaller than {@code int} is converted to
+ * {@code int}. As such, the native linker will reject attempts to link a function with variadic parameters which have
+ * a carrier of type {@code float}, or an integral type smaller than {@code int} (including {@code boolean} and {@code char}).
+ *
  * <h2 id="safety">Safety considerations</h2>
  *
  * Creating a downcall method handle is intrinsically unsafe. A symbol in a foreign library does not, in general,
