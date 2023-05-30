@@ -608,7 +608,7 @@ Node* IfNode::up_one_dom(Node *curr, bool linear_only) {
 
 //------------------------------filtered_int_type--------------------------------
 // Return a possibly more restrictive type for val based on condition control flow for an if
-const Type* IfNode::filtered_int_type(PhaseTransform* phase, Node* val, Node* if_proj, BasicType bt) {
+const Type* IfNode::filtered_int_type(PhaseValues* phase, Node* val, Node* if_proj, BasicType bt) {
   assert(if_proj &&
          (if_proj->Opcode() == Op_IfTrue || if_proj->Opcode() == Op_IfFalse), "expecting an if projection");
   if (if_proj->in(0) && if_proj->in(0)->is_If()) {

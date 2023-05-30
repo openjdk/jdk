@@ -1867,7 +1867,7 @@ bool BoolNode::is_counted_loop_exit_test() {
   return false;
 }
 
-const Type* BoolNode::filtered_int_type(const PhaseTransform* phase, const Node* val, BasicType bt, bool taken) const {
+const Type* BoolNode::filtered_int_type(const PhaseValues* phase, const Node* val, BasicType bt, bool taken) const {
   if (in(1) && in(1)->is_Cmp()) {
     const CmpNode* cmp = in(1)->as_Cmp();
     if (cmp->in(1) == val || cmp->in(2) == val) {

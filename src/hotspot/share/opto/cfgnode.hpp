@@ -431,7 +431,7 @@ public:
   // Takes the type of val and filters it through the test represented
   // by if_proj and returns a more refined type if one is produced.
   // Returns null is it couldn't improve the type.
-  static const Type* filtered_int_type(PhaseTransform* phase, Node* val, Node* if_proj, BasicType bt);
+  static const Type* filtered_int_type(PhaseValues* phase, Node* val, Node* if_proj, BasicType bt);
 
   virtual bool safe_for_optimizations() const { return true; }
 

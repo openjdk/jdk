@@ -157,7 +157,7 @@ private:
 
   void set_type(const Node* n, const Type* t, const Type* old_t) {
     set_type(_current_ctrl, n, old_t, t);
-    PhaseTransform::set_type(n, t);
+    PhaseValues::set_type(n, t);
   }
 
   GrowableArray<TypeUpdate*> _stack;
@@ -165,10 +165,10 @@ private:
   void sync(Node* c);
 
   PhaseIdealLoop* _phase;
-  VectorSet _visited;
+  VectorSet& _visited;
   VectorSet _control_dependent_node[2];
   VectorSet _known_updates;
-  Node_List _rpo_list;
+  Node_List& _rpo_list;
   Node* _current_ctrl;
 #ifdef ASSERT
   VectorSet _conditions;
