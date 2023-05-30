@@ -782,20 +782,6 @@ class UnixPath implements Path {
         return open(this, flags, 0);
     }
 
-    private boolean canRead() {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            try {
-                sm.checkRead(getPathForPermissionCheck());
-                return true;
-            } catch (SecurityException ignore) {
-                return false;
-            }
-        }
-        return true;
-    }
-
     void checkRead() {
         @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
@@ -893,11 +879,7 @@ class UnixPath implements Path {
         if (!fs.isCaseInsensitiveAndPreserving())
             return result;
 
-        // If SM and no read permission, then fall back to result derived so
-        // far with case possibly not retained
         UnixPath path = fs.rootDirectory();
-        if (!path.canRead())
-            return result;
 
         // Traverse the result obtained above from the root downward, leaving
         // any '..' elements intact, and replacing other elements with the
@@ -923,12 +905,21 @@ class UnixPath implements Path {
             }
             final UnixFileKey elementKey = attrs.fileKey();
 
+            // Obtain the directory stream pointer. It will be closed by
+            // UnixDirectoryStream::closeImpl.
+            long dp = -1;
+            try {
+                dp = opendir(path);
+            } catch (UnixException x) {
+                x.rethrowAsIOException(path);
+            }
+
             // Obtain the stream of entries in the directory corresponding
             // to the path constructed thus far, and extract the entry whose
             // key is equal to the key of the current element
             FileSystemProvider provider = getFileSystem().provider();
             DirectoryStream.Filter<Path> filter = (p) -> { return true; };
-            try (DirectoryStream<Path> entries = provider.newDirectoryStream(path, filter)) {
+            try (DirectoryStream<Path> entries = new UnixDirectoryStream(path, dp, filter)) {
                 boolean found = false;
                 for (Path entry : entries) {
                     UnixPath p = path.resolve(entry.getFileName());
