@@ -1,11 +1,12 @@
-
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -22,27 +23,23 @@
  * questions.
  */
 
-package gc;
+package jdk.jfr.internal.util;
 
-/*
- * test TestMemoryInitialization
- * bug 4668531
- * Simple test for -XX:+CheckMemoryInitialization doesn't crash VM
+/**
+ * Exception that is thrown if options don't follow the syntax of the command.
  */
+public final class UserSyntaxException extends Exception {
+    private static final long serialVersionUID = 3437009454344160933L;
 
-public class TestMemoryInitialization {
-    final static int LOOP_LENGTH = 10;
-    final static int CHUNK_SIZE = 1500000;
-
-    public static byte[] buffer;
-
-    public static void main(String args[]) {
-
-        for (int i = 0; i < LOOP_LENGTH; i++) {
-            for (int j = 0; j < LOOP_LENGTH; j++) {
-                buffer = new byte[CHUNK_SIZE];
-                buffer = null;
-            }
-        }
+    /**
+     * The error message.
+     *
+     * The first letter should not be capitalized, so a context can be printed prior
+     * to the error message.
+     *
+     * @param errorMessage message
+     */
+    public UserSyntaxException(String errorMessage) {
+        super(errorMessage);
     }
 }

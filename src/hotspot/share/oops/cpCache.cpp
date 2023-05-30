@@ -64,11 +64,11 @@ void ConstantPoolCacheEntry::initialize_entry(int index) {
   assert(constant_pool_index() == index, "");
 }
 
-int ConstantPoolCacheEntry::make_flags(TosState state,
+intx ConstantPoolCacheEntry::make_flags(TosState state,
                                        int option_bits,
                                        int field_index_or_method_params) {
   assert(state < number_of_states, "Invalid state in make_flags");
-  int f = ((int)state << tos_state_shift) | option_bits | field_index_or_method_params;
+  intx f = ((int)state << tos_state_shift) | option_bits | field_index_or_method_params;
   // Preserve existing flag bit values
   // The low bits are a field offset, or else the method parameter size.
 #ifdef ASSERT
