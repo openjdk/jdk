@@ -243,15 +243,16 @@ ifeq ($(HAS_SPEC),)
           GIT_IS_INSIDE_WORK_TREE := $$(shell $$(GIT) rev-parse --is-inside-work-tree 2>/dev/null)
           ifeq ($$(GIT_IS_INSIDE_WORK_TREE), true)
             GIT_CURRENT_BRANCH := $$(shell $$(GIT) rev-parse --abbrev-ref HEAD)
-            GIT_BRANCH_CONF := $$(strip $$(filter $$(GIT_CURRENT_BRANCH), $$(all_confs)))
+            GIT_BRANCH_CONFS := $$(strip $$(foreach var, $$(all_confs), \
+                $$(if $$(findstring $$(GIT_CURRENT_BRANCH), $$(var)), $$(var))))
           endif
         endif
         ifeq ($$(words $$(all_spec_files)), 1)
           # We found exactly one configuration, use it
           SPECS := $$(strip $$(all_spec_files))
-        else ifeq ($$(words $$(GIT_BRANCH_CONF)), 1)
-          # We found exactly one configuration with the name of the checked out Git branch, use it
-          SPECS := $$(build_dir)/$$(GIT_BRANCH_CONF)/spec.gmk
+        else ifeq ($$(words $$(GIT_BRANCH_CONFS)), 1)
+          # We found exactly one configuration containing the name of the checked out Git branch, use it
+          SPECS := $$(build_dir)/$$(GIT_BRANCH_CONFS)/spec.gmk
         else
           $$(info Error: No CONF given, but more than one configuration found.)
           $$(info Available configurations in $$(build_dir):)
