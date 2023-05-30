@@ -244,7 +244,7 @@ ifeq ($(call isTargetOs, linux)+$(call isTargetCpu, x86_64)+$(INCLUDE_COMPILER2)
       LDFLAGS_linux := -Wl$(COMMA)--no-as-needed, \
       LDFLAGS_windows := -defaultlib:msvcrt, \
       LIBS := $(LIBCXX), \
-      LIBS_linux := -lc -lm -ldl -lstdc++, \
+      LIBS_linux := -lc -lm -ldl, \
   ))
 
   TARGETS += $(BUILD_LIBAVX512_X86_64)
