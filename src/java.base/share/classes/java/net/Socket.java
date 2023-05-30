@@ -25,6 +25,7 @@
 
 package java.net;
 
+import jdk.internal.event.SocketReadEvent;
 import sun.security.util.SecurityConstants;
 
 import java.io.InputStream;
@@ -38,6 +39,8 @@ import java.nio.channels.SocketChannel;
 import java.util.Objects;
 import java.util.Set;
 import java.util.Collections;
+
+import jdk.internal.event.SocketWriteEvent;
 
 /**
  * This class implements client sockets (also called just
@@ -1095,6 +1098,20 @@ public class Socket implements java.io.Closeable {
         }
         @Override
         public int read(byte[] b, int off, int len) throws IOException {
+            if (! SocketReadEvent.enabled()) {
+                return readMeasured(b, off, len);
+            }
+            int nbytes = 0;
+            long start = SocketReadEvent.timestamp();
+            try {
+                nbytes = readMeasured(b, off, len);
+            } finally {
+                SocketReadEvent.checkForCommit(start, nbytes, parent.getRemoteSocketAddress(), parent.getSoTimeout());
+            }
+            return nbytes;
+        }
+
+        private int readMeasured(byte[] b, int off, int len) throws IOException {
             try {
                 return in.read(b, off, len);
             } catch (SocketTimeoutException e) {
@@ -1191,6 +1208,22 @@ public class Socket implements java.io.Closeable {
         }
         @Override
         public void write(byte[] b, int off, int len) throws IOException {
+            if (!SocketWriteEvent.enabled()) {
+                writeMeasured(b, off, len);
+                return;
+            }
+            int bytesWritten = 0;
+            long start = 0;
+            try {
+                start = SocketWriteEvent.timestamp();
+                writeMeasured(b, off, len);
+                bytesWritten = len;
+            } finally {
+                SocketWriteEvent.checkForCommit(start, len, parent.getRemoteSocketAddress());
+            }
+        }
+
+        public void writeMeasured(byte[] b, int off, int len) throws IOException {
             try {
                 out.write(b, off, len);
             } catch (InterruptedIOException e) {
