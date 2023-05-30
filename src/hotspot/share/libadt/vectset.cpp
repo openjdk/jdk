@@ -76,26 +76,6 @@ bool VectorSet::is_empty() const {
   return true;
 }
 
-VectorSet& VectorSet::operator &=(const VectorSet& vs) {
-  if (vs._size > _size) {
-    grow(vs._size);
-
-    for (uint i = 0; i < vs._size; ++i) {
-      _data[i] &= vs._data[i];
-    }
-  } else {
-    for (uint i = 0; i < vs._size; ++i) {
-      _data[i] &= vs._data[i];
-    }
-
-    for (uint i = vs._size; i < _size; ++i) {
-      _data[i] = 0;
-    }
-  }
-
-  return *this;
-}
-
 #ifndef PRODUCT
 void VectorSet::print_on(outputStream* st) const {
   st->print("VectorSet(" PTR_FORMAT ")", p2i(this));
@@ -118,3 +98,19 @@ void VectorSet::print_on(outputStream* st) const {
   st->print_cr("]");
 }
 #endif
+
+VectorSet intersect(const VectorSet& lhs, const VectorSet& rhs) {
+  VectorSet result;
+  uint min;
+  if (lhs._size > rhs._size) {
+    result.grow(lhs._size);
+    min = rhs._size;
+  } else {
+    result.grow(rhs._size);
+    min = lhs._size;
+  }
+  for (uint i = 0; i < min; ++i) {
+    result._data[i] = lhs._data[i] & rhs._data[i];
+  }
+  return result;
+}

@@ -744,8 +744,7 @@ void AllocationStateMerger::merge(const PEAState& newin, GraphKit* kit, RegionNo
   _state.objects(set1);
   newin.objects(set2);
 
-  VectorSet intersection = set1.member_set();
-  intersection &= set2.member_set();
+  VectorSet intersection = intersect(set1.member_set(), set2.member_set());
   set1.remove_useless_nodes(intersection);
 
   for (uint i = 0; i < set1.size(); ++i) {

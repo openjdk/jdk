@@ -35,6 +35,8 @@
 
 //------------------------------VectorSet--------------------------------------
 class VectorSet : public AnyObj {
+  friend VectorSet intersect(const VectorSet&, const VectorSet&);
+
 private:
 
   static const uint word_bits = 5;
@@ -67,8 +69,6 @@ public:
   void clear() {
     reset();
   }
-
-  VectorSet& operator &=(const VectorSet& vs);
 
   // Fast inlined "test and set".  Replaces the idiom:
   //     if (visited.test(idx)) return;
@@ -122,4 +122,5 @@ public:
 #endif // PRODUCT
 };
 
+VectorSet intersect(const VectorSet& lhs, const VectorSet& rhs);
 #endif // SHARE_LIBADT_VECTSET_HPP

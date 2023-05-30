@@ -1583,7 +1583,7 @@ Node *AllocateNode::make_ideal_mark(PhaseGVN *phase, Node* obj, Node* control, N
 // This is a precise notnull oop of the klass.
 // (Actually, it need not be precise if this is a reflective allocation.)
 // It's what we cast the result to.
-const TypeOopPtr* AllocateNode::oop_type(const PhaseTransform& phase) const {
+const TypeOopPtr* AllocateNode::oop_type(const PhaseValues& phase) const {
   Node* klass_node = in(KlassNode);
   const TypeKlassPtr* tklass = phase.type(klass_node)->isa_klassptr();
   if (!tklass) tklass = TypeInstKlassPtr::OBJECT;
