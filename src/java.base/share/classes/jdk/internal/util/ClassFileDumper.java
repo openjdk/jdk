@@ -27,8 +27,9 @@ package jdk.internal.util;
 import jdk.internal.misc.VM;
 import sun.security.action.GetPropertyAction;
 
-import java.io.File;
-import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.HexFormat;
@@ -96,8 +97,8 @@ public final class ClassFileDumper {
         return enabled;
     }
 
-    private File pathname(String name) {
-        return new File(dumpDir, encodeForFilename(name) + ".class");
+    private Path pathname(String name) {
+        return Path.of(dumpDir, encodeForFilename(name) + ".class");
     }
 
     /**
@@ -129,27 +130,20 @@ public final class ClassFileDumper {
     }
 
     @SuppressWarnings("removal")
-    private void write(File file, byte[] bytes) {
-        // use java.io.File instead of java.nio.file.Path to avoid
-        // recursive initialization during early startup. e.g.
-        // Enum::valueOf causes method handle to be invoked which
-        // may cause classes to be spinned and dumped
+    private void write(Path path, byte[] bytes) {
         AccessController.doPrivileged(new PrivilegedAction<>() {
             @Override public Void run() {
                 try {
                     // use absolute file to workaround writing to $CWD/file if
                     // -Duser.dir is set
-                    File path = file.getAbsoluteFile();
-                    path.getParentFile().mkdirs();
-                    FileOutputStream fos = new FileOutputStream(path);
-                    fos.write(bytes);
-                    fos.close();
+                    Files.createDirectories(path.getParent());
+                    Files.write(path, bytes);
                 } catch (Exception ex) {
                     if (VM.isModuleSystemInited()) {
                         // log only when lambda is ready to use
                         System.getLogger(ClassFileDumper.class.getName())
                               .log(System.Logger.Level.WARNING, "Exception writing to " +
-                                        file + " " + ex.getMessage());
+                                        path + " " + ex.getMessage());
                     }
                     // simply don't care if this operation failed
                 }
@@ -161,25 +155,21 @@ public final class ClassFileDumper {
      * Validate if the given dir is a writeable directory if exists.
      */
     @SuppressWarnings("removal")
-    private static File validateDumpDir(String dir) {
+    private static Path validateDumpDir(String dir) {
         return AccessController.doPrivileged(new PrivilegedAction<>() {
             @Override
-            public File run() {
-                // use java.io.File instead of java.nio.file.Path to avoid
-                // recursive initialization during early startup.
-
-                // use absolute file to workaround an issue using the file relative
-                // to CWD if -Duser.dir is set
-                File path = new File(dir).getAbsoluteFile();
-                if (!path.exists()) {
-                    boolean rc = path.mkdirs();
-                    if (!rc) {
-                        throw new IllegalArgumentException("Fail to create " + path);
+            public Path run() {
+                Path path = Path.of(dir);
+                if (Files.notExists(path)) {
+                    try {
+                        Files.createDirectories(path);
+                    } catch (IOException e) {
+                        throw new IllegalArgumentException("Fail to create " + path, e);
                     }
                 }
-                if (!path.isDirectory()) {
+                if (!Files.isDirectory(path)) {
                     throw new IllegalArgumentException("Path " + path + " is not a directory");
-                } else if (!path.canWrite()) {
+                } else if (!Files.isWritable(path)) {
                     throw new IllegalArgumentException("Directory " + path + " is not writable");
                 }
                 return path;
