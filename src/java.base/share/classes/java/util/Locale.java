@@ -1872,6 +1872,9 @@ public final class Locale implements Cloneable, Serializable {
         InternalLocaleBuilder bldr = new InternalLocaleBuilder();
         bldr.setLanguageTag(tag);
         BaseLocale base = bldr.getBaseLocale();
+        if (base == null) {
+            return null;
+        }
         LocaleExtensions exts = bldr.getLocaleExtensions();
         if (exts == null && !base.getVariant().isEmpty()) {
             exts = getCompatibilityExtensions(base.getLanguage(), base.getScript(),
