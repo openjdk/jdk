@@ -29,6 +29,7 @@ import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
+import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
@@ -61,26 +62,72 @@ import sun.security.util.RawKeySpec;
 // Tests 3-10 were generated with parameter sets mentioned in
 // RFC 8554 section 6.4; two with W=8 and six with W=4.
 
-public class HSSLMS {
+public class HSS {
     Provider p;
+    static byte[] pk;
+    static byte[] msg;
+    static byte[] sig;
+    static Signature v;
+
+    @Param({"noop"})
+    private String test;
+
+    static byte[] decode(String s) {
+        return HexFormat.of().parseHex(s
+                        .replaceAll("//.*", "")
+                        .replaceAll("\\s", ""));
+    }
+
+    @Setup
+    public void setup() throws Exception {
+        p = Security.getProvider("SUN");
+        if (p == null) {
+            throw new Exception ("Can't load \"Sun\" provider");
+        }
+    }
+
+    public Signature getVerifier(byte[] pk) throws Exception {
+        var kf = KeyFactory.getInstance("HSS/LMS", Security.getProvider("SUN"));
+        var pk1 = kf.generatePublic(new RawKeySpec(pk));
+
+        var vv = Signature.getInstance("HSS/LMS");
+        vv.initVerify(pk1);
+        return vv;
+    }
 
     @Benchmark
-    public void test01_RFC_8554() throws Exception {
-        // RFC 8554 Test Case 1
-        var pk = decode("""
+    public void verify() throws Exception {
+        if (v == null) {
+            return;
+        }
+        v.update(msg);
+        if (!v.verify(sig)) {
+            throw new RuntimeException();
+        }
+    }
+
+    // RFC 8554 Test Case 1
+    public static class test01 extends HSS {
+
+        @Param({"RFC 8554 1"})
+        private String test;
+
+        @Setup
+        public void setup() throws Exception {
+            pk = decode("""
                 00000002
                 00000005
                 00000004
                 61a5d57d37f5e46bfb7520806b07a1b850650e3b31fe4a773ea29a07f09cf2ea
                 30e579f0df58ef8e298da0434cb2b878""");
-        var msg = decode("""
+            msg = decode("""
                 54686520706f77657273206e6f742064656c65676174656420746f2074686520
                 556e69746564205374617465732062792074686520436f6e737469747574696f
                 6e2c206e6f722070726f6869626974656420627920697420746f207468652053
                 74617465732c2061726520726573657276656420746f20746865205374617465
                 7320726573706563746976656c792c206f7220746f207468652070656f706c65
                 2e0a""");
-        var sig = decode("""
+            sig = decode("""
                 00000001
                 00000005
                 00000004
@@ -173,25 +220,32 @@ public class HSSLMS {
                 f90b65a7a6201689999f32bfd368e5e3ec9cb70ac7b8399003f175c40885081a
                 09ab3034911fe125631051df0408b3946b0bde790911e8978ba07dd56c73e7ee
                 """);
-        verify(pk, sig, msg);
+
+            v = getVerifier(pk);
+        }
     }
 
-    @Benchmark
-    public void test02_RFC_8554() throws Exception {
-        // RFC 8554 Test Case 2
-        var pk = decode("""
+    // RFC 8554 Test Case 2
+    public static class test02 extends HSS {
+
+        @Param({"RFC 8554 2"})
+        private String test;
+
+        @Setup
+        public void setup() throws Exception {
+            pk = decode("""
                 00000002
                 00000006
                 00000003
                 d08fabd4a2091ff0a8cb4ed834e7453432a58885cd9ba0431235466bff9651c6
                 c92124404d45fa53cf161c28f1ad5a8e""");
-        var msg = decode("""
+            msg = decode("""
                 54686520656e756d65726174696f6e20696e2074686520436f6e737469747574
                 696f6e2c206f66206365727461696e207269676874732c207368616c6c206e6f
                 7420626520636f6e73747275656420746f2064656e79206f7220646973706172
                 616765206f74686572732072657461696e6564206279207468652070656f706c
                 652e0a""");
-        var sig = decode("""
+            sig = decode("""
                 00000001
                 00000003
                 00000003
@@ -323,19 +377,25 @@ public class HSSLMS {
                 e4041d95398a6f7f3e0ee97cc1591849d4ed236338b147abde9f51ef9fd4e1c1
                 """);
 
-        verify(pk, sig, msg);
+            v = getVerifier(pk);
+        }
     }
 
     // LMSigParameters.lms_sha256_m32_h15, LMOtsParameters.sha256_n32_w8);
-    @Benchmark
-    public void test03_h15_w8() throws Exception {
-        var pk = decode("""
+    public static class test03 extends HSS {
+
+        @Param({"       h15_w8"})
+        private String test;
+
+        @Setup
+        public void setup() throws Exception {
+            pk = decode("""
                 00000001
                 00000007
                 00000004
                 0dc6e2060bd57f6893d7934b26515ce751360f93dd74a648fa015aa79c862407
                 5ae5daea402617abb48a1f6b9e2c9f28""");
-        var msg = decode("""
+            msg = decode("""
                 466f75722073636f726520616e6420736576656e2079656172732061676f206f
                 757220666174686572732062726f7567687420666f727468206f6e2074686973
                 20636f6e74696e656e742061206e6577206e6174696f6e2c20636f6e63656976
@@ -369,7 +429,7 @@ public class HSSLMS {
                 2077686f20666f75676874206865726520686176652074687573206661722073
                 6f206e6f626c7920616476616e6365642e204974206973207261746865720a0a
                 """);
-        var sig = decode("""
+            sig = decode("""
                 00000000
                 00000000
                 00000004
@@ -426,19 +486,25 @@ public class HSSLMS {
                 5182fd0867719ce10daf0f0c0d52b16b8088ca9a26a22aa05224a1765fc82961
                 """);
 
-        verify(pk, sig, msg);
+            v = getVerifier(pk);
+        }
     }
 
     // LMSigParameters.lms_sha256_m32_h20, LMOtsParameters.sha256_n32_w8);
-    @Benchmark
-    public void test04_h20_w8() throws Exception {
-        var pk = decode("""
+    public static class test04 extends HSS {
+
+        @Param({"       h20_w8"})
+        private String test;
+
+        @Setup
+        public void setup() throws Exception {
+            pk = decode("""
                 00000001
                 00000008
                 00000004
                 c8568f619f0d5429eab1e63c80e058d1b8a326640a6ab457d776c52eec545dd9
                 7fedc7e225ab0cce270d961ff9b1615b""");
-        var msg = decode("""
+            msg = decode("""
                 466f75722073636f726520616e6420736576656e2079656172732061676f206f
                 757220666174686572732062726f7567687420666f727468206f6e2074686973
                 20636f6e74696e656e742061206e6577206e6174696f6e2c20636f6e63656976
@@ -472,7 +538,7 @@ public class HSSLMS {
                 2077686f20666f75676874206865726520686176652074687573206661722073
                 6f206e6f626c7920616476616e6365642e204974206973207261746865720a0a
                 """);
-        var sig = decode("""
+            sig = decode("""
                 00000000
                 00000000
                 00000004
@@ -534,19 +600,25 @@ public class HSSLMS {
                 51b6d317fba486e1e0ab5afea205335836e717a185827ea4cd47d557be53cc4e
                 """);
 
-        verify(pk, sig, msg);
+            v = getVerifier(pk);
+        }
     }
 
     // LMSigParameters.lms_sha256_m32_h15, LMOtsParameters.sha256_n32_w4);
-    @Benchmark
-    public void test05_h15_w4() throws Exception {
-        var pk = decode("""
+    public static class test05 extends HSS {
+
+        @Param({"       h15_w4"})
+        private String test;
+
+        @Setup
+        public void setup() throws Exception {
+            pk = decode("""
                 00000001
                 00000007
                 00000003
                 7bce4db5bd53cb23819d0fa2181e4d441453ff821284c9d83b8ddace22581469
                 593d6dd0aa2c99feddc84f8242f6a002""");
-        var msg = decode("""
+            msg = decode("""
                 466f75722073636f726520616e6420736576656e2079656172732061676f206f
                 757220666174686572732062726f7567687420666f727468206f6e2074686973
                 20636f6e74696e656e742061206e6577206e6174696f6e2c20636f6e63656976
@@ -580,7 +652,7 @@ public class HSSLMS {
                 2077686f20666f75676874206865726520686176652074687573206661722073
                 6f206e6f626c7920616476616e6365642e204974206973207261746865720a0a
                 """);
-        var sig = decode("""
+            sig = decode("""
                 00000000
                 00000000
                 00000003
@@ -670,19 +742,25 @@ public class HSSLMS {
                 51b8e95ffad4f89b506bd31ba613fe66a375434114dfbdf11741a8d86a239ded
                 """);
 
-        verify(pk, sig, msg);
+            v = getVerifier(pk);
+        }
     }
 
     // LMSigParameters.lms_sha256_m32_h20, LMOtsParameters.sha256_n32_w4);
-    @Benchmark
-    public void test06_h20_w4() throws Exception {
-        var pk = decode("""
+    public static class test06 extends HSS {
+
+        @Param({"       h20_w4"})
+        private String test;
+
+        @Setup
+        public void setup() throws Exception {
+            pk = decode("""
                 00000001
                 00000008
                 00000003
                 fe732f6abc16f3b1c0d1b78d9e72fbe118904abe9b33f2e03d0728ff4cf15b3c
                 ebea5149fe955d36f911e528d2aaff42""");
-        var msg = decode("""
+            msg = decode("""
                 466f75722073636f726520616e6420736576656e2079656172732061676f206f
                 757220666174686572732062726f7567687420666f727468206f6e2074686973
                 20636f6e74696e656e742061206e6577206e6174696f6e2c20636f6e63656976
@@ -716,7 +794,7 @@ public class HSSLMS {
                 2077686f20666f75676874206865726520686176652074687573206661722073
                 6f206e6f626c7920616476616e6365642e204974206973207261746865720a0a
                 """);
-        var sig = decode("""
+            sig = decode("""
                 00000000
                 00000000
                 00000003
@@ -811,20 +889,26 @@ public class HSSLMS {
                 1efd58035b06ba03b4a701a68f5945cd90bd4d69d702fb43f0ff10a5879ab709
                 """);
 
-        verify(pk, sig, msg);
+            v = getVerifier(pk);
+        }
     }
 
     // LMSigParameters.lms_sha256_m32_h15, LMOtsParameters.sha256_n32_w4);
     // LMSigParameters.lms_sha256_m32_h10, LMOtsParameters.sha256_n32_w4);
-    @Benchmark
-    public void test07_h15_w4_h10_w4() throws Exception {
-        var pk = decode("""
+    public static class test07 extends HSS {
+
+        @Param({"h15_w4_h10_w4"})
+        private String test;
+
+        @Setup
+        public void setup() throws Exception {
+            pk = decode("""
                 00000002
                 00000007
                 00000003
                 c56e39882736881759e92ef7a37a1953322e3e9742a70e3f401e9bd35c973ace
                 e06d7f77bd11b4a6082bbf7a5429dd4b""");
-        var msg = decode("""
+            msg = decode("""
                 466f75722073636f726520616e6420736576656e2079656172732061676f206f
                 757220666174686572732062726f7567687420666f727468206f6e2074686973
                 20636f6e74696e656e742061206e6577206e6174696f6e2c20636f6e63656976
@@ -858,7 +942,7 @@ public class HSSLMS {
                 2077686f20666f75676874206865726520686176652074687573206661722073
                 6f206e6f626c7920616476616e6365642e204974206973207261746865720a0a
                 """);
-        var sig = decode("""
+            sig = decode("""
                 00000001
                 00000000
                 00000003
@@ -1033,20 +1117,26 @@ public class HSSLMS {
                 e9a45d41023db850048e05f200a4e7ed2e0b48c532e10c1628503d5b7f394cde
                 """);
 
-        verify(pk, sig, msg);
+            v = getVerifier(pk);
+        }
     }
 
     // LMSigParameters.lms_sha256_m32_h15, LMOtsParameters.sha256_n32_w4);
     // LMSigParameters.lms_sha256_m32_h15, LMOtsParameters.sha256_n32_w4);
-    @Benchmark
-    public void test08_h15_w4_h15_w4() throws Exception {
-        var pk = decode("""
+    public static class test08 extends HSS {
+
+        @Param({"h15_w4_h15_w4"})
+        private String test;
+
+        @Setup
+        public void setup() throws Exception {
+            pk = decode("""
                 00000002
                 00000007
                 00000003
                 31b6c6a3b78feaefaf459a33e2acfa66a208240984abbe18996896c0eda7b999
                 9d9786e59e41179854928ed5c5726bfb""");
-        var msg = decode("""
+            msg = decode("""
                 466f75722073636f726520616e6420736576656e2079656172732061676f206f
                 757220666174686572732062726f7567687420666f727468206f6e2074686973
                 20636f6e74696e656e742061206e6577206e6174696f6e2c20636f6e63656976
@@ -1080,7 +1170,7 @@ public class HSSLMS {
                 2077686f20666f75676874206865726520686176652074687573206661722073
                 6f206e6f626c7920616476616e6365642e204974206973207261746865720a0a
                 """);
-        var sig = decode("""
+            sig = decode("""
                 00000001
                 00000000
                 00000003
@@ -1260,20 +1350,26 @@ public class HSSLMS {
                 a4385d3b9c5b6f6bb018324528aff429eca9c1264de9ea434a1a90e07f69015e
                 """);
 
-        verify(pk, sig, msg);
+            v = getVerifier(pk);
+        }
     }
 
     // LMSigParameters.lms_sha256_m32_h20, LMOtsParameters.sha256_n32_w4);
     // LMSigParameters.lms_sha256_m32_h10, LMOtsParameters.sha256_n32_w4);
-    @Benchmark
-    public void test09_h20_w4_h10_w4() throws Exception {
-        var pk = decode("""
+    public static class test09 extends HSS {
+
+        @Param({"h20_w4_h10_w4"})
+        private String test;
+
+        @Setup
+        public void setup() throws Exception {
+            pk = decode("""
                 00000002
                 00000008
                 00000003
                 4f9fbdfc21ece22a13965cd32027f6d4e5706e751440d214da485f202309a24c
                 f90dafc3d8f09f797b1b6cfa3636e18c""");
-        var msg = decode("""
+            msg = decode("""
                 466f75722073636f726520616e6420736576656e2079656172732061676f206f
                 757220666174686572732062726f7567687420666f727468206f6e2074686973
                 20636f6e74696e656e742061206e6577206e6174696f6e2c20636f6e63656976
@@ -1307,7 +1403,7 @@ public class HSSLMS {
                 2077686f20666f75676874206865726520686176652074687573206661722073
                 6f206e6f626c7920616476616e6365642e204974206973207261746865720a0a
                 """);
-        var sig = decode("""
+            sig = decode("""
                 00000001
                 00000000
                 00000003
@@ -1487,20 +1583,26 @@ public class HSSLMS {
                 2b7a9ba0d6d3e0336f17f3caa18e0ea19d6cf0a9c0e48a83cf325369b6a091ba
                 """);
 
-        verify(pk, sig, msg);
+            v = getVerifier(pk);
+        }
     }
 
     // LMSigParameters.lms_sha256_m32_h20, LMOtsParameters.sha256_n32_w4);
     // LMSigParameters.lms_sha256_m32_h15, LMOtsParameters.sha256_n32_w4);
-    @Benchmark
-    public void test10_h20_w4_h15_w4() throws Exception {
-        var pk = decode("""
+    public static class test10 extends HSS {
+
+        @Param({"h20_w4_h15_w4"})
+        private String test;
+
+        @Setup
+        public void setup() throws Exception {
+            pk = decode("""
                 00000002
                 00000008
                 00000003
                 cc453a482bbabfad998dbbacf34c0d89151995177fd38cdfa301b645fbad1675
                 ff8083187b30a36242b11bac4bbb7e0c""");
-        var msg = decode("""
+            msg = decode("""
                 466f75722073636f726520616e6420736576656e2079656172732061676f206f
                 757220666174686572732062726f7567687420666f727468206f6e2074686973
                 20636f6e74696e656e742061206e6577206e6174696f6e2c20636f6e63656976
@@ -1534,7 +1636,7 @@ public class HSSLMS {
                 2077686f20666f75676874206865726520686176652074687573206661722073
                 6f206e6f626c7920616476616e6365642e204974206973207261746865720a0a
                 """);
-        var sig = decode("""
+            sig = decode("""
                 00000001
                 00000000
                 00000003
@@ -1719,35 +1821,7 @@ public class HSSLMS {
                 a2aefb8230ae97dc34577785b123af406040d01fd072c493228d7583cd023c25
                 """);
 
-        verify(pk, sig, msg);
-    }
-
-    @Setup
-    public void setup() throws Exception {
-        p = Security.getProvider("SUN");
-        if (p == null) {
-            throw new Exception ("Can't load \"Sun\" provider");
+            v = getVerifier(pk);
         }
-    }
-
-    public void verify(byte[] pk, byte[] sig, byte[] msg) throws Exception {
-
-        // build public key
-        RawKeySpec rks = new RawKeySpec(pk);
-        KeyFactory kf = KeyFactory.getInstance("HSS/LMS", p);
-        PublicKey pk1 = kf.generatePublic(rks);
-
-        var v = Signature.getInstance("HSS/LMS");
-        v.initVerify(pk1);
-        v.update(msg);
-        if (!v.verify(sig)) {
-            throw new RuntimeException();
-        }
-    }
-
-    static byte[] decode(String s) {
-        return HexFormat.of().parseHex(s
-                        .replaceAll("//.*", "")
-                        .replaceAll("\\s", ""));
     }
 }

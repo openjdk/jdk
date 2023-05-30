@@ -26,7 +26,7 @@
  * @bug JDK-8298127
  * @summary verify JAR files signed with HSS/LMS
  * @library /test/lib
- * @run main VerifyHSSLMSSignedJar
+ * @run main VerifyHSSSignedJar
  */
 
 import jdk.test.lib.SecurityTools;
@@ -36,7 +36,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Base64;
 
-public class VerifyHSSLMSSignedJar {
+public class VerifyHSSSignedJar {
 
     public static void main(String[] args) throws Exception {
 

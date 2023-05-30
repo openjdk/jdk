@@ -23,11 +23,11 @@
 
 /*
  * @test
- * @bug JDK-8298127
+ * @bug 8298127
  * @library /test/lib
  * @summary tests for HSS/LMS provider
  * @modules java.base/sun.security.util
- * @run main TestHSSLMS
+ * @run main TestHSS
  */
 
 import java.io.*;
@@ -44,7 +44,7 @@ import sun.security.util.*;
 
 import jdk.test.lib.util.SerializationUtils;
 
-public class TestHSSLMS {
+public class TestHSS {
     static final String ALG = "HSS/LMS";
     static final String OID = "1.2.840.113549.1.9.16.3.17";
 
@@ -69,19 +69,21 @@ public class TestHSSLMS {
     }
 
     static boolean kat(TestCase t) throws Exception {
-        if (!t.exception) {
+        if (t.e == null) {
             if (verify(t.pk, t.sig, t.msg)) {
                 return t.expected;
             } else {
                 return !t.expected;
             }
         } else {
-            // exception is expected and is a pass (true)
+            // exception is expected
             try {
                 verify(t.pk, t.sig, t.msg);
                 return false;
-            } catch (InvalidKeySpecException | SignatureException ex) {
-                return true;
+            } catch (InvalidKeySpecException ex) {
+                return t.e instanceof InvalidKeySpecException;
+            } catch (SignatureException ex) {
+                return t.e instanceof SignatureException;
             }
         }
     }
@@ -175,7 +177,7 @@ public class TestHSSLMS {
     }
 
     record TestCase(
-            boolean exception,
+            Exception e,
             boolean expected,
             byte[] pk,
             byte[] msg,
@@ -183,11 +185,11 @@ public class TestHSSLMS {
     }
 
     static TestCase[] TestCases = new TestCase[] {
-        // Test Case #0
+        // Test Case #1
         // RFC 8554 Test Case 1
         new TestCase(
-            false, // exception expected
-            true,  // expected result
+            null, // exception
+            true, // expected result
             decode("""
                 00000002
                 00000005
@@ -296,11 +298,11 @@ public class TestHSSLMS {
                 """)
         ),
 
-        // Test Case #1
+        // Test Case #2
         // RFC 8554 Test Case 2
         new TestCase(
-            false, // exception expected
-            true,  // expected result
+            null, // exception
+            true, // expected result
             decode("""
                 00000002
                 00000006
@@ -450,7 +452,7 @@ public class TestHSSLMS {
         // Additional Parameter sets for LMS Hash-Based Signatures (fluhrer)
         // This test should fail because SHA256_M24 is supported.
         new TestCase(
-            true,  // InvalidKeyException
+            new InvalidKeySpecException(),
             false, // expected result
             decode("""
                 00000001
@@ -496,7 +498,7 @@ public class TestHSSLMS {
         // Additional Parameter sets for LMS Hash-Based Signatures (fluhrer)
         // This test should fail because SHAKE is not supported.
         new TestCase(
-            true,  // exception expected
+            new InvalidKeySpecException(),
             false, // expected result
             decode("""
                 00000001
@@ -543,7 +545,7 @@ public class TestHSSLMS {
         // Additional Parameter sets for LMS Hash-Based Signatures (fluhrer)
         // This test should fail because SHAKE is not supported.
         new TestCase(
-            true,  // exception expected
+            new InvalidKeySpecException(),
             false, // expected result
             decode("""
                 00000001
@@ -604,8 +606,8 @@ public class TestHSSLMS {
         // Test Case #6
         // LMSigParameters.lms_sha256_m32_h15, LMOtsParameters.sha256_n32_w8
         new TestCase(
-            false, // exception expected
-            true,  // expected result
+            null, // exception
+            true, // expected result
             decode("""
                 00000001
                 00000007
@@ -707,8 +709,8 @@ public class TestHSSLMS {
         // Test Case #7
         // LMSigParameters.lms_sha256_m32_h20, LMOtsParameters.sha256_n32_w8
         new TestCase(
-            false, // exception expected
-            true,  // expected result
+            null, // exception
+            true, // expected result
             decode("""
                 00000001
                 00000008
@@ -815,8 +817,8 @@ public class TestHSSLMS {
         // Test Case #8
         // LMSigParameters.lms_sha256_m32_h15, LMOtsParameters.sha256_n32_w4
         new TestCase(
-            false, // exception expected
-            true,  // expected result
+            null, // exception
+            true, // expected result
             decode("""
                 00000001
                 00000007
@@ -951,8 +953,8 @@ public class TestHSSLMS {
         // Test Case #9
         // LMSigParameters.lms_sha256_m32_h20, LMOtsParameters.sha256_n32_w4
         new TestCase(
-            false, // exception expected
-            true,  // expected result
+            null, // exception
+            true, // expected result
             decode("""
                 00000001
                 00000008
@@ -1093,8 +1095,8 @@ public class TestHSSLMS {
         // LMSigParameters.lms_sha256_m32_h15, LMOtsParameters.sha256_n32_w4
         // LMSigParameters.lms_sha256_m32_h10, LMOtsParameters.sha256_n32_w4
         new TestCase(
-            false, // exception expected
-            true,  // expected result
+            null, // exception
+            true, // expected result
             decode("""
                 00000002
                 00000007
@@ -1315,8 +1317,8 @@ public class TestHSSLMS {
         // LMSigParameters.lms_sha256_m32_h15, LMOtsParameters.sha256_n32_w4
         // LMSigParameters.lms_sha256_m32_h15, LMOtsParameters.sha256_n32_w4
         new TestCase(
-            false, // exception expected
-            true,  // expected result
+            null, // exception
+            true, // expected result
             decode("""
                 00000002
                 00000007
@@ -1542,8 +1544,8 @@ public class TestHSSLMS {
         // LMSigParameters.lms_sha256_m32_h20, LMOtsParameters.sha256_n32_w4
         // LMSigParameters.lms_sha256_m32_h10, LMOtsParameters.sha256_n32_w4
         new TestCase(
-            false, // exception expected
-            true,  // expected result
+            null, // exception
+            true, // expected result
             decode("""
                 00000002
                 00000008
@@ -1769,8 +1771,8 @@ public class TestHSSLMS {
         // LMSigParameters.lms_sha256_m32_h20, LMOtsParameters.sha256_n32_w4
         // LMSigParameters.lms_sha256_m32_h15, LMOtsParameters.sha256_n32_w4
         new TestCase(
-            false, // exception expected
-            true,  // expected result
+            null, // exception
+            true, // expected result
             decode("""
                 00000002
                 00000008
@@ -1998,10 +2000,9 @@ public class TestHSSLMS {
         ),
 
         // Test Case #14
-        // SignatureException
         // LMS signature length is incorrect
         new TestCase(
-            true,  // exception expected
+            new SignatureException(),
             false, // expected result
             decode("""
                 00000002
@@ -2112,10 +2113,9 @@ public class TestHSSLMS {
         ),
 
         // Test Case #15
-        // SignatureException
         // HSS signature and public key have different tree heights
         new TestCase(
-            true,  // exception expected
+            new SignatureException(),
             false, // expected result
             decode("""
                 00000003 // level 2 changed to level 3
@@ -2228,7 +2228,7 @@ public class TestHSSLMS {
         // Test Case #16
         // bad signature
         new TestCase(
-            false, // exception expected
+            null,  // exception
             false, // expected result
             decode("""
                 00000002
@@ -2339,10 +2339,9 @@ public class TestHSSLMS {
         ),
 
         // Test Case #17
-        // SignatureException
         // Invalid key in HSS signature
         new TestCase(
-            true,  // exception expected
+            new SignatureException(),
             false, // expected result
             decode("""
                 00000002
@@ -2453,10 +2452,9 @@ public class TestHSSLMS {
         ),
 
         // Test Case #18
-        // SignatureException
         // LMS signature is too short
         new TestCase(
-            true,  // exception expected
+            new SignatureException(),
             false, // expected result
             decode("""
                 00000002
@@ -2483,7 +2481,7 @@ public class TestHSSLMS {
         // Test Case #19
         // bad signature
         new TestCase(
-            false, // exception expected
+            null,  // exception
             false, // expected result
             decode("""
                 00000002
