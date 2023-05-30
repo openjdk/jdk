@@ -422,6 +422,10 @@ public class ThreadLocalRandom extends Random {
         public long nextLong() {
             return ThreadLocalRandom.current().nextLong();
         }
+
+        public double nextDouble() {
+            return ThreadLocalRandom.current().nextDouble();
+        }
     }
 
     /**
