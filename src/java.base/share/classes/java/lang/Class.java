@@ -209,7 +209,7 @@ import sun.reflect.misc.ReflectUtil;
  * HelloWorld}, the methods to get the {@linkplain #getName name},
  * {@linkplain #getTypeName type name}, {@linkplain #getSimpleName
  * simple name}, and {@linkplain #getCanonicalName canonical name} all
- * return results equal to "{@code HelloWorld}".
+ * return results equal to {@code "HelloWorld"}.
  *
  * @param <T> the type of the class modeled by this {@code Class}
  * object.  For example, the type of {@code String.class} is {@code
