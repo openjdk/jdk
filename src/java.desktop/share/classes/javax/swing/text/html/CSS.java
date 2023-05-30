@@ -2220,8 +2220,8 @@ public class CSS implements Serializable {
 
         @Override
         public boolean equals(Object val) {
-                return val instanceof CSS.FontSize size
-                       && Objects.equals(size.svalue, svalue);
+            return val instanceof CSS.FontSize size
+                   && Objects.equals(size.svalue, svalue);
         }
 
         float value;
@@ -2676,15 +2676,8 @@ public class CSS implements Serializable {
 
         @Override
         public boolean equals(Object val) {
-            if (val instanceof CSS.LengthValue lu) {
-                if (percentage) {
-                    return Objects.equals(svalue, lu.svalue);
-                } else {
-                    return span == lu.span
-                           && Objects.equals(lu.units, units);
-                }
-            }
-            return false;
+            return val instanceof CSS.LengthValue lu
+                   && Objects.equals(svalue, lu.svalue);
         }
 
         /** If true, span is a percentage value, and that to determine
