@@ -592,7 +592,7 @@ class Stream<T> extends ExchangeImpl<T> {
                     requestBodyCF.complete(null);
                 }
             }
-            if (response == null && subscriber == null) {
+            if ((response == null || !finalResponseCodeReceived) && subscriber == null) {
                 // we haven't received the headers yet, and won't receive any!
                 // handle reset now.
                 handleReset(frame, null);
