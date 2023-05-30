@@ -90,11 +90,12 @@ typedef union {
 };*/
 
 enum ASGST_TRACE_KIND {
-  ASGST_JAVA_TRACE     =  1,
-  ASGST_CPP_TRACE      =  2,
-  ASGST_GC_TRACE       =  4,
-  ASGST_DEOPT_TRACE    =  8,
-  ASGST_UNKNOWN_TRACE  = 16,
+  ASGST_JAVA_TRACE       =  1,
+  ASGST_CPP_TRACE        =  2,
+  ASGST_GC_TRACE         =  4,
+  ASGST_DEOPT_TRACE      =  8,
+  ASGST_NEW_THREAD_TRACE = 16,
+  ASGST_UNKNOWN_TRACE    = 32,
 };
 
 typedef struct {

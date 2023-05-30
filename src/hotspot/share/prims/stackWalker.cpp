@@ -107,7 +107,8 @@ void compiledFrameStream::cf_next() {
 // Determine if 'fr' is a decipherable compiled frame. We are already
 // assured that fr is for a java compiled method.
 // Might change the compiled frame
-static bool is_decipherable_first_compiled_frame(JavaThread* thread, frame* fr, CompiledMethod* nm) {
+static void make_first_compiled_frame_more_precise(JavaThread* thread, frame* fr, CompiledMethod* nm) {
+       if (std::getenv("ASGST_SIG") != nullptr && *std::getenv("ASGST_SIG") == '1') {
   assert(nm->is_java_method(), "invariant");
 
   if (thread->has_last_Java_frame() && thread->last_Java_pc() == fr->pc()) {
@@ -118,7 +119,7 @@ static bool is_decipherable_first_compiled_frame(JavaThread* thread, frame* fr, 
     // Did we find a useful PcDesc?
     if (pc_desc != nullptr &&
         pc_desc->scope_decode_offset() != DebugInformationRecorder::serialized_null) {
-      return true;
+      return;
     }
   }
 
@@ -153,13 +154,12 @@ static bool is_decipherable_first_compiled_frame(JavaThread* thread, frame* fr, 
     // in found_bad_method_frame() will be triggered. If asserts are disabled,
     // the vframeStreamCommon object will be filled afterwards as if the
     // interpreter were at the point of entering into the method.
-    return false;
+    return;
   }
 
   // This PcDesc is useful however we must adjust the frame's pc
   // so that the vframeStream lookups will use this same pc
   fr->set_pc(pc_desc->real_pc(nm));
-  return true;
 }
 
 
@@ -475,9 +475,8 @@ void StackWalker::process_normal(bool potentially_first_java_frame) {
       return;
     } else if (_frame.is_compiled_frame()) {
       CompiledMethod* nm = _frame.cb()->as_compiled_method();
-      if (!nm->is_native_method() && potentially_first_java_frame && !is_decipherable_first_compiled_frame(_thread, &_frame, nm)){
-        set_state(STACKWALKER_INDECIPHERABLE_FRAME);
-        return;
+      if (!nm->is_native_method() && potentially_first_java_frame){
+        make_first_compiled_frame_more_precise(_thread, &_frame, nm);
       }
       if (nm->is_native_method()) {
         _method = nm->method();

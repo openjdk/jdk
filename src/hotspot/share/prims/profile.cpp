@@ -59,7 +59,6 @@ void fill_call_trace_given_top(JavaThread* thd,
   int count = 0;
   for (; count < depth && !st.at_end(); st.next(), count++) {
     if (st.at_error()) {
-      trace->num_frames = st.at_error();
       return;
     }
     if (st.is_java_frame()) {
@@ -89,7 +88,9 @@ void fill_call_trace_given_top(JavaThread* thd,
       #endif
     }
   }
-  trace->num_frames = count;
+  if (count > 0) {
+    trace->num_frames = count;
+  }
 }
 
 // thd cannot be null, as we use assertions that require it
@@ -303,7 +304,16 @@ void asyncGetStackTraceImpl(ASGST_CallTrace *trace, jint depth, void* ucontext, 
   case _thread_new_trans:
     // We found the thread on the threads list above, but it is too
     // young to be useful so return that there are no Java frames.
-    trace->num_frames = 0;
+    if (walk_during_unsafe_states && include_c_frames) {
+      trace->kind == ASGST_NEW_THREAD_TRACE;
+      if ((trace->kind & kind_mask) == 0) {
+        trace->num_frames = ASGST_WRONG_KIND;
+        return;
+      }
+      fill_call_trace_for_non_java_thread(trace, depth, ucontext, include_c_frames);
+    } else {
+      trace->num_frames = 0;
+    }
     break;
   case _thread_in_native:
   case _thread_in_native_trans:
@@ -311,6 +321,28 @@ void asyncGetStackTraceImpl(ASGST_CallTrace *trace, jint depth, void* ucontext, 
   case _thread_blocked_trans:
   case _thread_in_vm:
   case _thread_in_vm_trans:
+    {
+      frame ret_frame;
+      // param isInJava == false - indicate we aren't in Java code
+      if (!thread->pd_get_top_frame_for_signal_handler(&ret_frame, ucontext, false)) {
+        if (!include_c_frames || !thread->pd_get_top_frame_for_profiling(&ret_frame, ucontext, false, true)) {
+          trace->num_frames = (jint)ASGST_UNKNOWN_NOT_JAVA; // -3
+          return;
+        }
+      } else {
+        if (!thread->has_last_Java_frame()) {
+          if (!include_c_frames) {
+            trace->num_frames = (jint)ASGST_NO_JAVA_FRAME; // 0
+            return;
+          }
+        } else {
+          trace->num_frames = ASGST_NOT_WALKABLE_NOT_JAVA;    // -4 non walkable frame by default
+        }
+      }
+      fill_call_trace_given_top_with_thread(thread, trace, depth, ret_frame,
+          !include_c_frames);
+    }
+    break;
   case _thread_in_Java:
   case _thread_in_Java_trans:
     {
@@ -318,10 +350,11 @@ void asyncGetStackTraceImpl(ASGST_CallTrace *trace, jint depth, void* ucontext, 
       if (!thread->pd_get_top_frame_for_profiling(&ret_frame, ucontext, true, include_c_frames)) {
         // check without forced ucontext again
         if (!include_c_frames || !thread->pd_get_top_frame_for_profiling(&ret_frame, ucontext, true, false)) {
-          trace->num_frames = (jint)ASGST_UNKNOWN_JAVA;
+          trace->num_frames = (jint)ASGST_UNKNOWN_JAVA; // -5
           return;
         }
       }
+      trace->num_frames = ASGST_NOT_WALKABLE_JAVA; // -6
       fill_call_trace_given_top_with_thread(thread, trace, depth, ret_frame,
         !include_c_frames);
     }

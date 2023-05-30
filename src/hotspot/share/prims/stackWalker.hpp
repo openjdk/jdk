@@ -156,6 +156,8 @@ public:
 
   bool at_error() const { return _state <= 0; }
 
+  int error() const { return at_error() ? _state : 1;}
+
   // not at and and not at error
   bool has_frame() const { return !at_end() && !at_error(); }
 
