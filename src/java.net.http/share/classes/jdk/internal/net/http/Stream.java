@@ -519,16 +519,20 @@ class Stream<T> extends ExchangeImpl<T> {
                     .firstValueAsLong(":status")
                     .orElseThrow(() -> new IOException("no statuscode in response"));
             // If informational code, response is partially complete
-            if (responseCode < 100 || responseCode > 199)
+            if (responseCode < 100 || responseCode > 199) {
                 this.finalResponseCodeReceived = true;
-            if (responseCode == 100 && hf.getFlag(HeaderFrame.END_STREAM)
-                    && !finalResponseCodeReceived) {
+            } else if (hf.getFlag(HeaderFrame.END_STREAM)) {
+                // see RFC 9113 section 8.1:
+                // A HEADERS frame with the END_STREAM flag set that carries an
+                // informational status code is malformed
+                String msg = ("Stream %s PROTOCOL_ERROR: " +
+                        "HEADERS frame with status %s has END_STREAM flag set")
+                        .formatted(streamid, responseCode);
                 if (debug.on()) {
-                    debug.log("Received 100 statusCode, but FIN bit is set");
+                    debug.log(msg);
                 }
-                cancelImpl(new IOException("stream closed after 100, no other response expected"));
+                cancelImpl(new IOException(msg), ResetFrame.PROTOCOL_ERROR);
             }
-
 
             response = new Response(
                     request, exchange, responseHeaders, connection(),
