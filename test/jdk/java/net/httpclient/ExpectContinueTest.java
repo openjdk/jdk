@@ -31,11 +31,9 @@
  * @bug 8286171
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters
- * @run testng/othervm ExpectContinueTest
+ * @run testng/othervm -Djdk.internal.httpclient.debug=err ExpectContinueTest
  */
 
-
-import com.sun.net.httpserver.HttpServer;
 
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
@@ -63,7 +61,6 @@ import java.net.http.HttpResponse;
 import java.util.StringTokenizer;
 import java.util.concurrent.CompletableFuture;
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
-import jdk.httpclient.test.lib.http2.Http2TestServer;
 
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;

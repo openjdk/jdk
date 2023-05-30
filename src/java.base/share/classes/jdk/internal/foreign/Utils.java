@@ -63,7 +63,6 @@ public final class Utils {
     private static final MethodHandle BOOL_TO_BYTE;
     private static final MethodHandle ADDRESS_TO_LONG;
     private static final MethodHandle LONG_TO_ADDRESS;
-    public static final MethodHandle BITS_TO_BYTES;
 
     static {
         try {
@@ -76,8 +75,6 @@ public final class Utils {
                     MethodType.methodType(long.class, MemorySegment.class));
             LONG_TO_ADDRESS = lookup.findStatic(Utils.class, "longToAddress",
                     MethodType.methodType(MemorySegment.class, long.class, long.class, long.class));
-            BITS_TO_BYTES = lookup.findStatic(Utils.class, "bitsToBytes",
-                    MethodType.methodType(long.class, long.class));
         } catch (Throwable ex) {
             throw new ExceptionInInitializerError(ex);
         }
@@ -90,11 +87,6 @@ public final class Utils {
     public static MemorySegment alignUp(MemorySegment ms, long alignment) {
         long offset = ms.address();
         return ms.asSlice(alignUp(offset, alignment) - offset);
-    }
-
-    public static long bitsToBytes(long bits) {
-        assert Utils.isAligned(bits, 8);
-        return bits / Byte.SIZE;
     }
 
     public static VarHandle makeSegmentViewVarHandle(ValueLayout layout) {
@@ -177,7 +169,7 @@ public final class Utils {
     public static void checkElementAlignment(ValueLayout layout, String msg) {
         // Fast-path: if both size and alignment are powers of two, we can just
         // check if one is greater than the other.
-        assert isPowerOfTwo(layout.bitSize());
+        assert isPowerOfTwo(layout.byteSize());
         if (layout.byteAlignment() > layout.byteSize()) {
             throw new IllegalArgumentException(msg);
         }
@@ -236,14 +228,14 @@ public final class Utils {
         List<MemoryLayout> layouts = new ArrayList<>();
         long align = 0;
         for (MemoryLayout l : elements) {
-            long padding = computePadding(offset, l.bitAlignment());
+            long padding = computePadding(offset, l.byteAlignment());
             if (padding != 0) {
                 layouts.add(MemoryLayout.paddingLayout(padding));
                 offset += padding;
             }
             layouts.add(l);
-            align = Math.max(align, l.bitAlignment());
-            offset += l.bitSize();
+            align = Math.max(align, l.byteAlignment());
+            offset += l.byteSize();
         }
         long padding = computePadding(offset, align);
         if (padding != 0) {
@@ -258,5 +250,9 @@ public final class Utils {
 
     public static boolean isPowerOfTwo(long value) {
         return (value & (value - 1)) == 0L;
+    }
+
+    public static boolean containsNullChars(String s) {
+        return s.indexOf('\u0000') >= 0;
     }
 }

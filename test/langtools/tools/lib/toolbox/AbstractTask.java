@@ -25,13 +25,13 @@ package toolbox;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.nio.file.Path;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Map;
@@ -168,9 +168,9 @@ abstract class AbstractTask<T extends AbstractTask<T>> implements Task {
             throw new IllegalStateException();
         ProcessBuilder pb = new ProcessBuilder();
         if (redirects.get(OutputKind.STDOUT) != null)
-            pb.redirectOutput(new File(redirects.get(OutputKind.STDOUT)));
+            pb.redirectOutput(Path.of(redirects.get(OutputKind.STDOUT)).toFile());
         if (redirects.get(OutputKind.STDERR) != null)
-            pb.redirectError(new File(redirects.get(OutputKind.STDERR)));
+            pb.redirectError(Path.of(redirects.get(OutputKind.STDERR)).toFile());
         pb.environment().putAll(envVars);
         return pb;
     }
