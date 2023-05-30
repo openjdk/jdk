@@ -903,7 +903,7 @@ void G1CollectedHeap::do_full_collection(bool clear_all_soft_refs) {
 
 bool G1CollectedHeap::upgrade_to_full_collection() {
   GCCauseSetter compaction(this, GCCause::_g1_compaction_pause);
-  // Reset any allocated but unclaimed allocation requests.
+
   reset_allocation_requests();
 
   log_info(gc, ergo)("Attempting full compaction clearing soft references");
@@ -978,8 +978,8 @@ bool G1CollectedHeap::satisfy_failed_allocations(bool* gc_succeeded) {
     return alloc_succeeded;
   }
 
-  // Attempt to satisfy allocation requests failed; reset the requests, execute a full-gc,
-  // then try again
+  // Attempt to satisfy allocation requests failed; reset the requests, execute a full gc,
+  // then try again.
   reset_allocation_requests();
 
   *gc_succeeded = do_full_collection(false /* clear_all_soft_refs */, false /* do_maximal_compaction */);
@@ -994,11 +994,11 @@ bool G1CollectedHeap::satisfy_failed_allocations(bool* gc_succeeded) {
     return alloc_succeeded;
   }
 
-  // Attempt to satisfy allocation requests after full-gc also failed. We reset the allocation requests
-  // then execute a maximal compaction full-gc before retrying the allocations
+  // Attempt to satisfy allocation requests after full gc also failed. We reset the allocation requests
+  // then execute a maximal compaction full gc before retrying the allocations.
   reset_allocation_requests();
 
-  *gc_succeeded = do_full_collection(true /* clear_all_soft_refs */, true /* do_maximal_compaction */);;
+  *gc_succeeded = do_full_collection(true /* clear_all_soft_refs */, true /* do_maximal_compaction */);
 
   if (!*gc_succeeded) {
     return false;
@@ -1060,7 +1060,7 @@ bool G1CollectedHeap::handle_allocation_requests(bool expect_null_mutator_alloc_
   while (true) {
     StalledAllocReq* alloc_req = _stalled_allocations.first();
     if (alloc_req == nullptr) {
-      // No more pending requests, all allocations succeeded
+      // No more pending requests, all allocations succeeded.
       return true;
     }
 

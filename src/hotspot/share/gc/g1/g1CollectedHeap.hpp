@@ -518,11 +518,11 @@ private:
   // potentially schedule a GC pause.
   HeapWord* attempt_allocation_humongous(size_t word_size);
 
-bool attempt_allocation_after_gc(size_t word_size,
-                                 uint gc_count_before,
-                                 bool should_try_gc,
-                                 HeapWord** result,
-                                 GCCause::Cause gc_cause);
+  bool attempt_allocation_after_gc(size_t word_size,
+                                  uint gc_count_before,
+                                  bool should_try_gc,
+                                  HeapWord** result,
+                                  GCCause::Cause gc_cause);
 
   // Allocation attempt that should be called during safepoints (e.g.,
   // at the end of a successful GC). expect_null_mutator_alloc_region
@@ -568,6 +568,8 @@ bool attempt_allocation_after_gc(size_t word_size,
   // failed allocation request (including collection, expansion, etc.)
   bool satisfy_failed_allocations(bool* gc_succeeded);
   bool handle_allocation_requests(bool expect_null_mutator_alloc_region);
+
+  // Reset any allocated but unclaimed allocation requests.
   void reset_allocation_requests();
   // Internal helpers used during full GC to split it up to
   // increase readability.

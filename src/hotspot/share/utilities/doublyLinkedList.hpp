@@ -30,7 +30,7 @@
 template <typename T>
 class DoublyLinkedList;
 
-// Element in a doubly linked list
+// Element in a doubly linked list.
 
 class DoublyLinkedListNode {
   template<typename T>
