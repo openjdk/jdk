@@ -109,115 +109,118 @@ public class TestIllegalLink extends NativeTestHelper {
 
     @DataProvider
     public static Object[][] types() {
-        List<Object[]> casesList = new ArrayList<>();
-        interface TestAdder {
-            void add(FunctionDescriptor desc, Linker.Option[] options, String message);
-            default void add(FunctionDescriptor desc, String message) {
-                add(desc, new Linker.Option[0], message);
-            }
-        }
-        TestAdder cases = (desc, options, message) -> casesList.add(new Object[]{desc, options, message});
-
-        cases.add(
-            FunctionDescriptor.of(MemoryLayout.sequenceLayout(2, C_INT)),
-            "Unsupported layout: [2:i4]"
-        );
-        cases.add(
-             FunctionDescriptor.ofVoid(MemoryLayout.sequenceLayout(2, C_INT)),
-             "Unsupported layout: [2:i4]"
-        );
-        cases.add(
-            FunctionDescriptor.ofVoid(C_INT.withByteAlignment(2)),
-            "Layout alignment must be natural alignment"
-        );
-        cases.add(
-            FunctionDescriptor.ofVoid(C_POINTER.withByteAlignment(2)),
-            "Layout alignment must be natural alignment"
-        );
-        cases.add(
-            FunctionDescriptor.ofVoid(ValueLayout.JAVA_CHAR.withByteAlignment(4)),
-            "Layout alignment must be natural alignment"
-        );
-        cases.add(
-            FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
-                    C_CHAR.withName("x").withByteAlignment(1),
-                    C_SHORT.withName("y").withByteAlignment(1),
-                    C_INT.withName("z").withByteAlignment(1)
-                    ).withByteAlignment(1)),
-            "Layout alignment must be natural alignment"
-        );
-        cases.add(
-            FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
-                    MemoryLayout.structLayout(
-                        C_CHAR.withName("x").withByteAlignment(1),
-                        C_SHORT.withName("y").withByteAlignment(1),
-                        C_INT.withName("z").withByteAlignment(1)
-                    ))),
-            "Layout alignment must be natural alignment"
-        );
-        cases.add(
-            FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
-                    MemoryLayout.sequenceLayout(
-                        C_INT.withByteAlignment(1)
-                    ))),
-            "Layout alignment must be natural alignment"
-        );
-        cases.add(
-            FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
-                    ValueLayout.JAVA_INT,
-                    MemoryLayout.paddingLayout(4), // no excess padding
-                    ValueLayout.JAVA_INT)),
-            "unexpected offset"
-        );
-        cases.add(
-            FunctionDescriptor.of(C_INT.withOrder(nonNativeOrder())),
-            "Layout does not have the right byte order"
-        );
-        cases.add(
-            FunctionDescriptor.of(MemoryLayout.structLayout(C_INT.withOrder(nonNativeOrder()))),
-            "Layout does not have the right byte order"
-        );
-        cases.add(
-            FunctionDescriptor.of(MemoryLayout.structLayout(MemoryLayout.sequenceLayout(C_INT.withOrder(nonNativeOrder())))),
-            "Layout does not have the right byte order"
-        );
-        cases.add(
-            FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
-                    ValueLayout.JAVA_LONG,
-                    ValueLayout.JAVA_INT)), // missing trailing padding
-            "has unexpected size"
-        );
-        cases.add(
-            FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
-                    ValueLayout.JAVA_INT,
-                    MemoryLayout.paddingLayout(4))), // too much trailing padding
-            "has unexpected size"
-        );
-        cases.add(
-            FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
-                    ValueLayout.JAVA_INT,
-                    MemoryLayout.paddingLayout(4))), // too much trailing padding
-            "has unexpected size"
-        );
+        Linker.Option[] NO_OPTIONS = new Linker.Option[0];
+        List<Object[]> cases = new ArrayList<>(Arrays.asList(new Object[][]{
+            {
+                    FunctionDescriptor.of(MemoryLayout.sequenceLayout(2, C_INT)),
+                    NO_OPTIONS,
+                    "Unsupported layout: [2:i4]"
+            },
+            {
+                    FunctionDescriptor.ofVoid(MemoryLayout.sequenceLayout(2, C_INT)),
+                    NO_OPTIONS,
+                    "Unsupported layout: [2:i4]"
+            },
+            {
+                    FunctionDescriptor.ofVoid(C_INT.withByteAlignment(2)),
+                    NO_OPTIONS,
+                    "Layout alignment must be natural alignment"
+            },
+            {
+                    FunctionDescriptor.ofVoid(C_POINTER.withByteAlignment(2)),
+                    NO_OPTIONS,
+                    "Layout alignment must be natural alignment"
+            },
+            {
+                    FunctionDescriptor.ofVoid(ValueLayout.JAVA_CHAR.withByteAlignment(4)),
+                    NO_OPTIONS,
+                    "Layout alignment must be natural alignment"
+            },
+            {
+                    FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
+                            C_CHAR.withName("x").withByteAlignment(1),
+                            C_SHORT.withName("y").withByteAlignment(1),
+                            C_INT.withName("z").withByteAlignment(1)
+                            ).withByteAlignment(1)),
+                    NO_OPTIONS,
+                    "Layout alignment must be natural alignment"
+            },
+            {
+                    FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
+                            MemoryLayout.structLayout(
+                                C_CHAR.withName("x").withByteAlignment(1),
+                                C_SHORT.withName("y").withByteAlignment(1),
+                                C_INT.withName("z").withByteAlignment(1)
+                            ))),
+                    NO_OPTIONS,
+                    "Layout alignment must be natural alignment"
+            },
+            {
+                    FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
+                            MemoryLayout.sequenceLayout(
+                                C_INT.withByteAlignment(1)
+                            ))),
+                    NO_OPTIONS,
+                    "Layout alignment must be natural alignment"
+            },
+            {
+                    FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
+                            ValueLayout.JAVA_INT,
+                            MemoryLayout.paddingLayout(4), // no excess padding
+                            ValueLayout.JAVA_INT)),
+                    NO_OPTIONS,
+                    "unexpected offset"
+            },
+            {
+                    FunctionDescriptor.of(C_INT.withOrder(nonNativeOrder())),
+                    NO_OPTIONS,
+                    "Layout does not have the right byte order"
+            },
+            {
+                    FunctionDescriptor.of(MemoryLayout.structLayout(C_INT.withOrder(nonNativeOrder()))),
+                    NO_OPTIONS,
+                    "Layout does not have the right byte order"
+            },
+            {
+                    FunctionDescriptor.of(MemoryLayout.structLayout(MemoryLayout.sequenceLayout(C_INT.withOrder(nonNativeOrder())))),
+                    NO_OPTIONS,
+                    "Layout does not have the right byte order"
+            },
+            {
+                    FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
+                            ValueLayout.JAVA_LONG,
+                            ValueLayout.JAVA_INT)), // missing trailing padding
+                    NO_OPTIONS,
+                    "has unexpected size"
+            },
+            {
+                    FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
+                            ValueLayout.JAVA_INT,
+                            MemoryLayout.paddingLayout(4))), // too much trailing padding
+                    NO_OPTIONS,
+                    "has unexpected size"
+            },
+        }));
 
         for (ValueLayout illegalLayout : List.of(C_CHAR, ValueLayout.JAVA_CHAR, C_BOOL, C_SHORT, C_FLOAT)) {
-            cases.add(
+            cases.add(new Object[]{
                 FunctionDescriptor.ofVoid(C_INT, illegalLayout),
-                new Linker.Option[] {Linker.Option.firstVariadicArg(1)},
+                new Linker.Option[]{Linker.Option.firstVariadicArg(1)},
                 "Invalid variadic layout"
-            );
+            });
         }
 
         if (IS_SYSV) {
-            cases.add(
-                FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
-                        MemoryLayout.sequenceLayout(
-                            C_INT
-                        ))),
-                "GroupLayout is too large"
-            );
+            cases.add(new Object[] {
+                    FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
+                            MemoryLayout.sequenceLayout(
+                                C_INT
+                            ))),
+                    NO_OPTIONS,
+                    "GroupLayout is too large"
+            });
         }
-        return casesList.toArray(Object[][]::new);
+        return cases.toArray(Object[][]::new);
     }
 
     private static ByteOrder nonNativeOrder() {
