@@ -1115,6 +1115,10 @@ static ConstAddOperands as_add_with_constant(Node* n) {
 Node* MaxNode::IdealI(PhaseGVN* phase, bool can_reshape) {
   int opcode = Opcode();
   assert(opcode == Op_MinI || opcode == Op_MaxI, "Unexpected opcode");
+  // Defer handling of op(x, x) to constant/identity propagation.
+  if (in(1) == in(2)) {
+    return nullptr;
+  }
   // Try to transform the following pattern, in any of its four possible
   // permutations induced by op's commutativity:
   //     op(op(add(inner, inner_off), inner_other), add(outer, outer_off))
