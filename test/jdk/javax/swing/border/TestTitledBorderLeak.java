@@ -21,45 +21,32 @@
  * questions.
  */
 
+import java.lang.ref.Reference;
+import java.lang.ref.WeakReference;
+
 import javax.swing.border.TitledBorder;
 
-/*
+/**
  * @test
  * @bug 8204963
  * @summary Verifies TitledBorder's memory leak
- * @run main/othervm -Xmx10M TestTitledBorderLeak
+ * @library /javax/swing/regtesthelpers
+ * @build Util
+ * @run main/timeout=60/othervm -mx32m TestTitledBorderLeak
  */
-public class TestTitledBorderLeak {
-    public static void main(String[] args) throws Exception {
-        int max = 100000;
-        long initialFreeMemory = 0L;
-        long currentFreeMemory;
-        try {
-            for (int i = 1; i <= max; i++) {
-                new TitledBorder("");
-                if ((i % 1000) == 0) {
-                    System.gc();
-                    currentFreeMemory = dumpMemoryStatus("After " + i);
-                    if(initialFreeMemory == 0L) {
-                        initialFreeMemory = currentFreeMemory;
-                    } else if( currentFreeMemory < initialFreeMemory/2) {
-                        throw new RuntimeException("Memory halved: there's a leak");
-                    }
+public final class TestTitledBorderLeak {
 
-                }
-            }
-        }catch(OutOfMemoryError e) {
-            // Don't think it would work; should not happen
-            System.gc();
-            throw new RuntimeException("There was OOM");
+    public static void main(String[] args) throws Exception {
+        Reference<TitledBorder> border = getTitleBorder();
+        int attempt = 0;
+        while (border.get() != null) {
+            Util.generateOOME();
+            System.out.println("Not freed, attempt: " + attempt++);
         }
-        System.out.println("Passed");
     }
-    private static long dumpMemoryStatus(String msg) {
-        Runtime rt = Runtime.getRuntime();
-        long freeMem = rt.freeMemory();
-        System.out.println(msg + ": " + freeMem + " free");
-        return freeMem;
+
+    private static Reference<TitledBorder> getTitleBorder() {
+        TitledBorder tb = new TitledBorder("");
+        return new WeakReference<>(tb);
     }
 }
-
