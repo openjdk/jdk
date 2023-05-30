@@ -629,7 +629,7 @@ const int ObjectAlignmentInBytes = 8;
           "Exercise compiled exception handlers")                           \
                                                                             \
   develop(bool, InterceptOSException, false,                                \
-          "Start debugger when an implicit OS (e.g. null pointer) "                 \
+          "Start debugger when an implicit OS (e.g. null pointer) "         \
           "exception happens")                                              \
                                                                             \
   product(bool, PrintCodeCache, false,                                      \
