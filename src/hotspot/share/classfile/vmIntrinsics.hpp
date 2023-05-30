@@ -341,6 +341,16 @@ class methodHandle;
    do_name(     copyOf_name,                                     "copyOf")                                              \
    do_signature(copyOf_signature,             "([Ljava/lang/Object;ILjava/lang/Class;)[Ljava/lang/Object;")             \
                                                                                                                         \
+  do_intrinsic(_arraySortI,                 java_util_Arrays,     arraySort_name, arraySortI_signature,          F_S)   \
+   do_name(     arraySort_name,                                   "arraySort")                                          \
+   do_signature(arraySortI_signature,                             "([III)V")                                            \
+  do_intrinsic(_arraySortL,                 java_util_Arrays,     arraySort_name, arraySortL_signature,          F_S)   \
+   do_signature(arraySortL_signature,                             "([JII)V")                                            \
+  do_intrinsic(_arraySortF,                 java_util_Arrays,     arraySort_name, arraySortF_signature,          F_S)   \
+   do_signature(arraySortF_signature,                             "([FII)V")                                            \
+  do_intrinsic(_arraySortD,                 java_util_Arrays,     arraySort_name, arraySortD_signature,          F_S)   \
+   do_signature(arraySortD_signature,                             "([DII)V")                                            \
+                                                                                                                        \
   do_intrinsic(_copyOfRange,              java_util_Arrays,       copyOfRange_name, copyOfRange_signature,       F_S)   \
    do_name(     copyOfRange_name,                                "copyOfRange")                                         \
    do_signature(copyOfRange_signature,        "([Ljava/lang/Object;IILjava/lang/Class;)[Ljava/lang/Object;")            \

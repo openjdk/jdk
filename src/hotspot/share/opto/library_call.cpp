@@ -292,6 +292,11 @@ bool LibraryCallKit::try_to_inline(int predicate) {
 
   case vmIntrinsics::_arraycopy:                return inline_arraycopy();
 
+  case vmIntrinsics::_arraySortI:
+  case vmIntrinsics::_arraySortL:
+  case vmIntrinsics::_arraySortF:
+  case vmIntrinsics::_arraySortD:               return inline_arraysort(intrinsic_id());
+
   case vmIntrinsics::_compareToL:               return inline_string_compareTo(StrIntrinsicNode::LL);
   case vmIntrinsics::_compareToU:               return inline_string_compareTo(StrIntrinsicNode::UU);
   case vmIntrinsics::_compareToLU:              return inline_string_compareTo(StrIntrinsicNode::LU);
@@ -5191,6 +5196,60 @@ void LibraryCallKit::create_new_uncommon_trap(CallStaticJavaNode* uncommon_trap_
   _gvn.hash_delete(uncommon_trap_call);
   uncommon_trap_call->set_req(0, top()); // not used anymore, kill it
 }
+
+//------------------------------inline_arraysort-----------------------
+bool LibraryCallKit::inline_arraysort(vmIntrinsics::ID id) {
+
+  address stubAddr = nullptr;
+  const char *stubName;
+  stubName = "arraysort_stub";
+  BasicType bt;
+
+  switch(id) {
+    case vmIntrinsics::_arraySortI:
+      bt = T_INT;
+      break;
+    case vmIntrinsics::_arraySortL:
+      bt = T_LONG;
+      break;
+    case vmIntrinsics::_arraySortF:
+      bt = T_FLOAT;
+      break;
+    case vmIntrinsics::_arraySortD:
+      bt = T_DOUBLE;
+      break;
+    default:
+      break;
+  }
+
+  stubAddr = StubRoutines::select_arraysort_function(bt);
+  if (stubAddr == nullptr) return false;
+
+  Node* array           = argument(0);
+  Node* fromIndex       = argument(1);
+  Node* toIndex         = argument(2);
+
+  array = must_be_not_null(array, true);
+
+  const TypeAryPtr* array_type = array->Value(&_gvn)->isa_aryptr();
+  assert(array_type != nullptr &&  array_type->elem() != Type::BOTTOM, "args are strange");
+
+  // for the quick and dirty code we will skip all the checks.
+  // we are just trying to get the call to be generated.
+  Node* array_fromIndex  = array;
+  if (fromIndex != nullptr || toIndex != nullptr) {
+    assert(fromIndex != nullptr && toIndex != nullptr, "");
+    array_fromIndex = array_element_address(array, fromIndex, bt);
+  }
+
+  // Call the stub.
+  make_runtime_call(RC_LEAF|RC_NO_FP, OptoRuntime::array_sort_Type(),
+                    stubAddr, stubName, TypePtr::BOTTOM,
+                    array_fromIndex, fromIndex, toIndex);
+
+  return true;
+}
+
 
 //------------------------------inline_arraycopy-----------------------
 // public static native void java.lang.System.arraycopy(Object src,  int  srcPos,

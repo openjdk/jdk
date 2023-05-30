@@ -78,6 +78,26 @@ public final class Arrays {
     // Suppresses default constructor, ensuring non-instantiability.
     private Arrays() {}
 
+    @IntrinsicCandidate
+    private static void arraySort(int[] array, int fromIndex, int toIndex) {
+        DualPivotQuicksort.sort(array, 0, fromIndex, toIndex);
+    }
+
+    @IntrinsicCandidate
+    private static void arraySort(long[] array, int fromIndex, int toIndex) {
+        DualPivotQuicksort.sort(array, 0, fromIndex, toIndex);
+    }
+
+    @IntrinsicCandidate
+    private static void arraySort(float[] array, int fromIndex, int toIndex) {
+        DualPivotQuicksort.sort(array, 0, fromIndex, toIndex);
+    }
+
+    @IntrinsicCandidate
+    private static void arraySort(double[] array, int fromIndex, int toIndex) {
+        DualPivotQuicksort.sort(array, 0, fromIndex, toIndex);
+    }
+
     /*
      * Sorting methods. Note that all public "sort" methods take the
      * same form: performing argument checks if necessary, and then
@@ -97,7 +117,7 @@ public final class Arrays {
      * @param a the array to be sorted
      */
     public static void sort(int[] a) {
-        DualPivotQuicksort.sort(a, 0, 0, a.length);
+        arraySort(a, 0, a.length);
     }
 
     /**
@@ -121,7 +141,7 @@ public final class Arrays {
      */
     public static void sort(int[] a, int fromIndex, int toIndex) {
         rangeCheck(a.length, fromIndex, toIndex);
-        DualPivotQuicksort.sort(a, 0, fromIndex, toIndex);
+        arraySort(a, fromIndex, toIndex);
     }
 
     /**
@@ -135,7 +155,7 @@ public final class Arrays {
      * @param a the array to be sorted
      */
     public static void sort(long[] a) {
-        DualPivotQuicksort.sort(a, 0, 0, a.length);
+        arraySort(a, 0, a.length);
     }
 
     /**
@@ -159,7 +179,7 @@ public final class Arrays {
      */
     public static void sort(long[] a, int fromIndex, int toIndex) {
         rangeCheck(a.length, fromIndex, toIndex);
-        DualPivotQuicksort.sort(a, 0, fromIndex, toIndex);
+        arraySort(a, fromIndex, toIndex);
     }
 
     /**
@@ -295,7 +315,7 @@ public final class Arrays {
      * @param a the array to be sorted
      */
     public static void sort(float[] a) {
-        DualPivotQuicksort.sort(a, 0, 0, a.length);
+        arraySort(a, 0, a.length);
     }
 
     /**
@@ -327,7 +347,7 @@ public final class Arrays {
      */
     public static void sort(float[] a, int fromIndex, int toIndex) {
         rangeCheck(a.length, fromIndex, toIndex);
-        DualPivotQuicksort.sort(a, 0, fromIndex, toIndex);
+        arraySort(a, fromIndex, toIndex);
     }
 
     /**
@@ -349,7 +369,7 @@ public final class Arrays {
      * @param a the array to be sorted
      */
     public static void sort(double[] a) {
-        DualPivotQuicksort.sort(a, 0, 0, a.length);
+        arraySort(a, 0, a.length);
     }
 
     /**
@@ -381,7 +401,7 @@ public final class Arrays {
      */
     public static void sort(double[] a, int fromIndex, int toIndex) {
         rangeCheck(a.length, fromIndex, toIndex);
-        DualPivotQuicksort.sort(a, 0, fromIndex, toIndex);
+        arraySort(a, fromIndex, toIndex);
     }
 
     /**

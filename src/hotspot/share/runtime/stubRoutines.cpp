@@ -175,6 +175,11 @@ address StubRoutines::_hf2f = nullptr;
 address StubRoutines::_vector_f_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_SVML_OP] = {{nullptr}, {nullptr}};
 address StubRoutines::_vector_d_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_SVML_OP] = {{nullptr}, {nullptr}};
 
+address StubRoutines::_arraysort_int        = nullptr;
+address StubRoutines::_arraysort_long       = nullptr;
+address StubRoutines::_arraysort_float      = nullptr;
+address StubRoutines::_arraysort_double     = nullptr;
+
 address StubRoutines::_cont_thaw          = nullptr;
 address StubRoutines::_cont_returnBarrier = nullptr;
 address StubRoutines::_cont_returnBarrierExc = nullptr;
@@ -645,5 +650,17 @@ UnsafeCopyMemoryMark::~UnsafeCopyMemoryMark() {
     if (_ucm_entry->error_exit_pc() == nullptr) {
       _ucm_entry->set_error_exit_pc(_cgen->assembler()->pc());
     }
+  }
+}
+
+address StubRoutines::select_arraysort_function(BasicType t) {
+  switch(t) {
+    case T_INT:    return _arraysort_int;
+    case T_LONG:   return _arraysort_long;
+    case T_FLOAT:  return _arraysort_float;
+    case T_DOUBLE: return _arraysort_double;
+  default:
+    ShouldNotReachHere();
+    return nullptr;
   }
 }
