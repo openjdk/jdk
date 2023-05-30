@@ -40,18 +40,19 @@ package compiler.jvmci;
 
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.JDKToolFinder;
 import jdk.vm.ci.services.JVMCIServiceLocator;
 import jdk.vm.ci.runtime.JVMCICompiler;
 import jdk.vm.ci.runtime.JVMCICompilerFactory;
 import jdk.vm.ci.runtime.JVMCIRuntime;
 
 import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class TestUncaughtErrorInCompileMethod extends JVMCIServiceLocator {
 
@@ -68,31 +69,41 @@ public class TestUncaughtErrorInCompileMethod extends JVMCIServiceLocator {
             int total = 0;
             while (!compilerCreationErrorOccurred) {
                 // Do some random work to trigger compilation
-                total += getTime();
+                total += busyWork();
                 total += String.valueOf(total).hashCode();
+            }
+            try {
+                // Allow time for -XX:+PrintCompilation output
+                // to be flushed by compiler threads
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace(System.out);
             }
             System.out.println(total);
         }
     }
 
-    private static long getTime() {
+    private static long busyWork() {
         return System.currentTimeMillis();
     }
 
     static void testSubprocess(boolean fatalError) throws Exception {
+        String cwd = System.getProperty("user.dir");
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
             "-XX:+UnlockExperimentalVMOptions",
             "-XX:+UseJVMCICompiler", "-Djvmci.Compiler=ErrorCompiler",
             "-XX:-TieredCompilation",
             "-XX:+PrintCompilation",
+            "-XX:JVMCITraceLevel=1",
             "--add-exports=jdk.internal.vm.ci/jdk.vm.ci.services=ALL-UNNAMED",
             "-Dtest.jvmci.compileMethodExceptionIsFatal=" + (fatalError ? "true" : "false"),
             "-XX:+PrintWarnings",
-            "-Xbootclasspath/a:.",
+            "-Xbootclasspath/a:" + cwd,
             TestUncaughtErrorInCompileMethod.class.getName(), "true");
         Process p = pb.start();
         OutputAnalyzer output = new OutputAnalyzer(p);
 
+        System.out.println("testSubprocess: fatalError=" + fatalError);
         if (!waitForProcess(p)) {
             // The subprocess might not enter JVMCI compilation.
             // Print the subprocess output and pass the test in this case.
@@ -135,6 +146,21 @@ public class TestUncaughtErrorInCompileMethod extends JVMCIServiceLocator {
         }
     }
 
+    static void jstack(Process p) {
+        System.out.println("BEGIN: jstack " + p);
+        try {
+            ProcessBuilder pb = new ProcessBuilder(
+                    JDKToolFinder.getJDKTool("jstack"),
+                    String.valueOf(p.pid()));
+            String jstackOutput = new OutputAnalyzer(pb.start()).getOutput();
+            System.out.println(jstackOutput);
+        } catch (IOException e) {
+            System.out.print("Error executing jstack: ");
+            e.printStackTrace(System.out);
+        }
+        System.out.println("END: jstack " + p);
+    }
+
     /**
      * @return true if {@code p} exited on its own, false if it had to be destroyed
      */
@@ -147,12 +173,16 @@ public class TestUncaughtErrorInCompileMethod extends JVMCIServiceLocator {
                     p.destroy();
                     Thread.sleep(1000);
                     while (p.isAlive()) {
+                        System.out.println("dumping threads of process about to be forcibly destroyed: " + p);
+                        jstack(p);
                         System.out.println("forcibly destroying process: " + p);
                         Thread.sleep(1000);
                         p.destroyForcibly();
                     }
+                    System.out.println("destroyed process: " + p);
                     return false;
                 }
+                System.out.println("exited process: " + p);
                 return true;
             } catch (InterruptedException e) {
                 e.printStackTrace(System.out);
@@ -164,16 +194,12 @@ public class TestUncaughtErrorInCompileMethod extends JVMCIServiceLocator {
     }
 
     static class CompilerCreationError extends InternalError {
-        CompilerCreationError(int attempt) {
-            super("attempt " + attempt);
-        }
     }
 
     @Override
     public <S> S getProvider(Class<S> service) {
         if (service == JVMCICompilerFactory.class) {
             return service.cast(new JVMCICompilerFactory() {
-                final AtomicInteger counter = new AtomicInteger();
                 @Override
                 public String getCompilerName() {
                     return "ErrorCompiler";
@@ -181,14 +207,9 @@ public class TestUncaughtErrorInCompileMethod extends JVMCIServiceLocator {
 
                 @Override
                 public JVMCICompiler createCompiler(JVMCIRuntime runtime) {
-                    int attempt = counter.incrementAndGet();
-                    CompilerCreationError e = new CompilerCreationError(attempt);
+                    CompilerCreationError e = new CompilerCreationError();
                     e.printStackTrace();
-                    if (attempt >= 10) {
-                        // Delay notifying the loop in main so that compilation failures
-                        // have time to be reported by -XX:+PrintCompilation.
-                        compilerCreationErrorOccurred = true;
-                    }
+                    compilerCreationErrorOccurred = true;
                     throw e;
                 }
             });
