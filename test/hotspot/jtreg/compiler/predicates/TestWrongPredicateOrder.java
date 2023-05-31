@@ -78,12 +78,12 @@ public class TestWrongPredicateOrder {
             // Data dependency on Loop Predicate for "iArr2[0] = 1", we need to hoist this (invariant) check with a Profiled Loop Predicate
             iArr2[1] = 5;
 
-            // Profiled Range Check predicate -> hit too much -> no Profiled Parse Predicate is added in re-compilation anymore
+            // Profiled Loop Predicate for range check hit too much -> no Profiled Parse Predicate is added in re-compilation anymore
             iArr[i + iFld] = 34;
 
 
             if (iFld2 == 5555) {
-                i++; // UCT -> ensures to emit parse predicates twice with an If in between that is folded after parsing
+                i++; // UCT -> ensures to emit Parse Predicates twice with an If in between that is folded after parsing
             }
         }
     }
