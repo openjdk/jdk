@@ -31,18 +31,6 @@ serviceability/dcmd/thread/PrintConcurrentLocksTest.java 8308033 generic-all
 serviceability/dcmd/thread/PrintTest.java 8308033 generic-all
 serviceability/dcmd/thread/ThreadDumpToFileTest.java 8308033 generic-all
 serviceability/tmtools/jstack/DaemonThreadTest.java 8308033 generic-all
-vmTestbase/nsk/jdi/ObjectReference/referringObjects/referringObjects001/referringObjects001.java 8308978 generic-all
-vmTestbase/nsk/jdi/ReferenceType/instances/instances001/instances001.java 8308978 generic-all
-vmTestbase/nsk/jdi/ReferenceType/instances/instances003/instances003.java 8308978 generic-all
-vmTestbase/nsk/jdi/ReferenceType/instances/instances004/TestDescription.java 8308978 generic-all
-vmTestbase/nsk/jdi/MonitorWaitedRequest/addThreadFilter/TestDescription.java 8308978 generic-all
-vmTestbase/nsk/jdi/VirtualMachine/instanceCounts/instancecounts002/TestDescription.java 8308978 generic-all
-vmTestbase/nsk/jdi/stress/serial/monitorEvents002/TestDescription.java 8308978 generic-all
-vmTestbase/nsk/jdi/stress/serial/heapwalking001/TestDescription.java 8308978 generic-all
-vmTestbase/nsk/jdi/stress/serial/heapwalking002/TestDescription.java 8308978 generic-all
-vmTestbase/nsk/jdi/stress/serial/mixed001/TestDescription.java 8308978 generic-all
-vmTestbase/nsk/jvmti/scenarios/allocation/AP04/ap04t001/TestDescription.java 8308978 generic-all
-vmTestbase/nsk/jvmti/scenarios/allocation/AP04/ap04t002/TestDescription.java 8308978 generic-all
 
 ####
 ## Classes not unloaded as expected (TODO, need to check if FJ keeps a reference)
