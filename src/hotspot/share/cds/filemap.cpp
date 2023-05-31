@@ -2085,14 +2085,6 @@ address FileMapInfo::heap_region_requested_address() {
   }
 }
 
-// The address where this shared heap region is actually mapped at runtime. This function
-// can be called only after we have determined the value for ArchiveHeapLoader::mapped_heap_delta().
-address FileMapInfo::heap_region_mapped_address() {
-  assert(UseSharedSpaces, "runtime only");
-  assert(ArchiveHeapLoader::can_map(), "cannot be used by ArchiveHeapLoader::can_load() mode");
-  return heap_region_requested_address() + ArchiveHeapLoader::mapped_heap_delta();
-}
-
 bool FileMapInfo::map_heap_region() {
   if (map_heap_region_impl()) {
 #ifdef ASSERT
