@@ -42,8 +42,9 @@ import jdk.test.lib.Utils;
  * @run main/othervm -XX:-EnableDynamicAgentLoading TestJcmdNoAgentLoad
  */
 public class TestJcmdNoAgentLoad {
-
-    private static final String[] CMD = new String[] { "JVMTI.agent_load", "Agent" };
+    // The Agent.jar does not exist. Error with the PTRN message
+    // is expected before an attempt to load the Agent.jar.
+    private static final String[] CMD = new String[] { "JVMTI.agent_load", "Agent.jar" };
     private static final String PTRN = "Dynamic agent loading is not enabled";
 
     public static void main(String[] args) throws Exception {
