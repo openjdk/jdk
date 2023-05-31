@@ -58,9 +58,9 @@ import static java.lang.foreign.ValueLayout.JAVA_SHORT;
  * } ffi_type;
  */
 class FFIType {
-    private static final ValueLayout SIZE_T = switch ((int) ADDRESS.bitSize()) {
-            case 64 -> JAVA_LONG;
-            case 32 -> JAVA_INT;
+    private static final ValueLayout SIZE_T = switch ((int) ADDRESS.byteSize()) {
+            case 8 -> JAVA_LONG;
+            case 4 -> JAVA_INT;
             default -> throw new IllegalStateException("Address size not supported: " + ADDRESS.byteSize());
         };
     private static final ValueLayout UNSIGNED_SHORT = JAVA_SHORT;

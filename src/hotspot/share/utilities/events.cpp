@@ -36,6 +36,7 @@
 EventLog* Events::_logs = nullptr;
 StringEventLog* Events::_messages = nullptr;
 StringEventLog* Events::_vm_operations = nullptr;
+StringEventLog* Events::_zgc_phase_switch = nullptr;
 ExceptionsEventLog* Events::_exceptions = nullptr;
 StringEventLog* Events::_redefinitions = nullptr;
 UnloadingEventLog* Events::_class_unloading = nullptr;
@@ -95,6 +96,7 @@ void Events::init() {
   if (LogEvents) {
     _messages = new StringEventLog("Events", "events");
     _vm_operations = new StringEventLog("VM Operations", "vmops");
+    _zgc_phase_switch = new StringEventLog("ZGC Phase Switch", "zgcps");
     _exceptions = new ExceptionsEventLog("Internal exceptions", "exc");
     _redefinitions = new StringEventLog("Classes redefined", "redef");
     _class_unloading = new UnloadingEventLog("Classes unloaded", "unload");

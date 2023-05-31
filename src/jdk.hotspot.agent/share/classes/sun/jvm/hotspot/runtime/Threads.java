@@ -211,6 +211,7 @@ public class Threads {
 
     // refer to Threads::owning_thread_from_monitor_owner
     public JavaThread owningThreadFromMonitor(Address o) {
+        assert(VM.getVM().getCommandLineFlag("LockingMode").getInt() != LockingMode.getLightweight());
         if (o == null) return null;
         for (int i = 0; i < getNumberOfThreads(); i++) {
             JavaThread thread = getJavaThreadAt(i);
@@ -228,7 +229,24 @@ public class Threads {
     }
 
     public JavaThread owningThreadFromMonitor(ObjectMonitor monitor) {
-        return owningThreadFromMonitor(monitor.owner());
+        if (VM.getVM().getCommandLineFlag("LockingMode").getInt() == LockingMode.getLightweight()) {
+            if (monitor.isOwnedAnonymous()) {
+                OopHandle object = monitor.object();
+                for (int i = 0; i < getNumberOfThreads(); i++) {
+                    JavaThread thread = getJavaThreadAt(i);
+                    if (thread.isLockOwned(object)) {
+                        return thread;
+                     }
+                }
+                throw new InternalError("We should have found a thread that owns the anonymous lock");
+            }
+            // Owner can only be threads at this point.
+            Address o = monitor.owner();
+            if (o == null) return null;
+            return new JavaThread(o);
+        } else {
+            return owningThreadFromMonitor(monitor.owner());
+        }
     }
 
     // refer to Threads::get_pending_threads

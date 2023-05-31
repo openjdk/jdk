@@ -56,7 +56,6 @@ import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.nio.ByteOrder;
-import java.nio.file.Path;
 import java.security.ProtectionDomain;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -2252,7 +2251,7 @@ public class MethodHandles {
         }
 
         private static final ClassFileDumper DEFAULT_DUMPER = ClassFileDumper.getInstance(
-                "jdk.invoke.MethodHandle.dumpClassFiles", Path.of("DUMP_CLASS_FILES"));
+                "jdk.invoke.MethodHandle.dumpClassFiles", "DUMP_CLASS_FILES");
 
         static class ClassFile {
             final String name;  // internal name
@@ -7972,7 +7971,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * <p>As an example, consider the memory layout expressed by a {@link GroupLayout} instance constructed as follows:
      * {@snippet lang="java" :
      *     GroupLayout seq = java.lang.foreign.MemoryLayout.structLayout(
-     *             MemoryLayout.paddingLayout(32),
+     *             MemoryLayout.paddingLayout(4),
      *             ValueLayout.JAVA_INT.withOrder(ByteOrder.BIG_ENDIAN).withName("value")
      *     );
      * }

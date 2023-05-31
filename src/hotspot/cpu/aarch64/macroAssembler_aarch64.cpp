@@ -1143,7 +1143,7 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
 
   // Compute start of first itableOffsetEntry (which is at the end of the vtable)
   int vtable_base = in_bytes(Klass::vtable_start_offset());
-  int itentry_off = itableMethodEntry::method_offset_in_bytes();
+  int itentry_off = in_bytes(itableMethodEntry::method_offset());
   int scan_step   = itableOffsetEntry::size() * wordSize;
   int vte_size    = vtableEntry::size_in_bytes();
   assert(vte_size == wordSize, "else adjust times_vte_scale");
@@ -1171,7 +1171,7 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
   // }
   Label search, found_method;
 
-  ldr(method_result, Address(scan_temp, itableOffsetEntry::interface_offset_in_bytes()));
+  ldr(method_result, Address(scan_temp, itableOffsetEntry::interface_offset()));
   cmp(intf_klass, method_result);
   br(Assembler::EQ, found_method);
   bind(search);
@@ -1179,9 +1179,9 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
   // the receiver class doesn't implement the interface, and wasn't the
   // same as when the caller was compiled.
   cbz(method_result, L_no_such_interface);
-  if (itableOffsetEntry::interface_offset_in_bytes() != 0) {
+  if (itableOffsetEntry::interface_offset() != 0) {
     add(scan_temp, scan_temp, scan_step);
-    ldr(method_result, Address(scan_temp, itableOffsetEntry::interface_offset_in_bytes()));
+    ldr(method_result, Address(scan_temp, itableOffsetEntry::interface_offset()));
   } else {
     ldr(method_result, Address(pre(scan_temp, scan_step)));
   }
@@ -1192,7 +1192,7 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
 
   // Got a hit.
   if (return_method) {
-    ldrw(scan_temp, Address(scan_temp, itableOffsetEntry::offset_offset_in_bytes()));
+    ldrw(scan_temp, Address(scan_temp, itableOffsetEntry::offset_offset()));
     ldr(method_result, Address(recv_klass, scan_temp, Address::uxtw(0)));
   }
 }
@@ -1201,10 +1201,9 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
 void MacroAssembler::lookup_virtual_method(Register recv_klass,
                                            RegisterOrConstant vtable_index,
                                            Register method_result) {
-  const int base = in_bytes(Klass::vtable_start_offset());
   assert(vtableEntry::size() * wordSize == 8,
          "adjust the scaling in the code below");
-  int vtable_offset_in_bytes = base + vtableEntry::method_offset_in_bytes();
+  int64_t vtable_offset_in_bytes = in_bytes(Klass::vtable_start_offset() + vtableEntry::method_offset());
 
   if (vtable_index.is_register()) {
     lea(method_result, Address(recv_klass,
@@ -4311,7 +4310,7 @@ void MacroAssembler::load_method_holder_cld(Register rresult, Register rmethod) 
 void MacroAssembler::load_method_holder(Register holder, Register method) {
   ldr(holder, Address(method, Method::const_offset()));                      // ConstMethod*
   ldr(holder, Address(holder, ConstMethod::constants_offset()));             // ConstantPool*
-  ldr(holder, Address(holder, ConstantPool::pool_holder_offset_in_bytes())); // InstanceKlass*
+  ldr(holder, Address(holder, ConstantPool::pool_holder_offset()));          // InstanceKlass*
 }
 
 void MacroAssembler::load_klass(Register dst, Register src) {
@@ -4348,7 +4347,7 @@ void MacroAssembler::load_mirror(Register dst, Register method, Register tmp1, R
   const int mirror_offset = in_bytes(Klass::java_mirror_offset());
   ldr(dst, Address(rmethod, Method::const_offset()));
   ldr(dst, Address(dst, ConstMethod::constants_offset()));
-  ldr(dst, Address(dst, ConstantPool::pool_holder_offset_in_bytes()));
+  ldr(dst, Address(dst, ConstantPool::pool_holder_offset()));
   ldr(dst, Address(dst, mirror_offset));
   resolve_oop_handle(dst, tmp1, tmp2);
 }
@@ -5008,6 +5007,8 @@ address MacroAssembler::count_positives(Register ary1, Register len, Register re
   return pc();
 }
 
+// Clobbers: rscratch1, rscratch2, rflags
+// May also clobber v0-v7 when (!UseSimpleArrayEquals && UseSIMDForArrayEquals)
 address MacroAssembler::arrays_equals(Register a1, Register a2, Register tmp3,
                                       Register tmp4, Register tmp5, Register result,
                                       Register cnt1, int elem_size) {
@@ -5557,10 +5558,12 @@ void MacroAssembler::fill_words(Register base, Register cnt, Register value)
 //       Using 'umaxv' in the ASCII-case comes with a small penalty but does
 //       avoid additional bloat.
 //
+// Clobbers: src, dst, res, rscratch1, rscratch2, rflags
 void MacroAssembler::encode_iso_array(Register src, Register dst,
                                       Register len, Register res, bool ascii,
                                       FloatRegister vtmp0, FloatRegister vtmp1,
-                                      FloatRegister vtmp2, FloatRegister vtmp3)
+                                      FloatRegister vtmp2, FloatRegister vtmp3,
+                                      FloatRegister vtmp4, FloatRegister vtmp5)
 {
   Register cnt = res;
   Register max = rscratch1;
@@ -5579,8 +5582,8 @@ void MacroAssembler::encode_iso_array(Register src, Register dst,
     br(LT, DONE_32);
     ld1(vtmp0, vtmp1, vtmp2, vtmp3, T8H, Address(post(src, 64)));
     // Extract lower bytes.
-    FloatRegister vlo0 = v4;
-    FloatRegister vlo1 = v5;
+    FloatRegister vlo0 = vtmp4;
+    FloatRegister vlo1 = vtmp5;
     uzp1(vlo0, T16B, vtmp0, vtmp1);
     uzp1(vlo1, T16B, vtmp2, vtmp3);
     // Merge bits...
@@ -5653,6 +5656,7 @@ void MacroAssembler::encode_iso_array(Register src, Register dst,
 }
 
 // Inflate byte[] array to char[].
+// Clobbers: src, dst, len, rflags, rscratch1, v0-v6
 address MacroAssembler::byte_array_inflate(Register src, Register dst, Register len,
                                            FloatRegister vtmp1, FloatRegister vtmp2,
                                            FloatRegister vtmp3, Register tmp4) {
@@ -5761,8 +5765,9 @@ address MacroAssembler::byte_array_inflate(Register src, Register dst, Register 
 void MacroAssembler::char_array_compress(Register src, Register dst, Register len,
                                          Register res,
                                          FloatRegister tmp0, FloatRegister tmp1,
-                                         FloatRegister tmp2, FloatRegister tmp3) {
-  encode_iso_array(src, dst, len, res, false, tmp0, tmp1, tmp2, tmp3);
+                                         FloatRegister tmp2, FloatRegister tmp3,
+                                         FloatRegister tmp4, FloatRegister tmp5) {
+  encode_iso_array(src, dst, len, res, false, tmp0, tmp1, tmp2, tmp3, tmp4, tmp5);
   // Adjust result: res == len ? len : 0
   cmp(len, res);
   csel(res, res, zr, EQ);
@@ -6205,4 +6210,98 @@ void MacroAssembler::double_move(VMRegPair src, VMRegPair dst, Register tmp) {
     else
       strd(src.first()->as_FloatRegister(), Address(sp, reg2offset_out(dst.first())));
   }
+}
+
+// Implements fast-locking.
+// Branches to slow upon failure to lock the object, with ZF cleared.
+// Falls through upon success with ZF set.
+//
+//  - obj: the object to be locked
+//  - hdr: the header, already loaded from obj, will be destroyed
+//  - t1, t2: temporary registers, will be destroyed
+void MacroAssembler::fast_lock(Register obj, Register hdr, Register t1, Register t2, Label& slow) {
+  assert(LockingMode == LM_LIGHTWEIGHT, "only used with new lightweight locking");
+  assert_different_registers(obj, hdr, t1, t2);
+
+  // Check if we would have space on lock-stack for the object.
+  ldrw(t1, Address(rthread, JavaThread::lock_stack_top_offset()));
+  cmpw(t1, (unsigned)LockStack::end_offset() - 1);
+  br(Assembler::GT, slow);
+
+  // Load (object->mark() | 1) into hdr
+  orr(hdr, hdr, markWord::unlocked_value);
+  // Clear lock-bits, into t2
+  eor(t2, hdr, markWord::unlocked_value);
+  // Try to swing header from unlocked to locked
+  cmpxchg(/*addr*/ obj, /*expected*/ hdr, /*new*/ t2, Assembler::xword,
+          /*acquire*/ true, /*release*/ true, /*weak*/ false, t1);
+  br(Assembler::NE, slow);
+
+  // After successful lock, push object on lock-stack
+  ldrw(t1, Address(rthread, JavaThread::lock_stack_top_offset()));
+  str(obj, Address(rthread, t1));
+  addw(t1, t1, oopSize);
+  strw(t1, Address(rthread, JavaThread::lock_stack_top_offset()));
+}
+
+// Implements fast-unlocking.
+// Branches to slow upon failure, with ZF cleared.
+// Falls through upon success, with ZF set.
+//
+// - obj: the object to be unlocked
+// - hdr: the (pre-loaded) header of the object
+// - t1, t2: temporary registers
+void MacroAssembler::fast_unlock(Register obj, Register hdr, Register t1, Register t2, Label& slow) {
+  assert(LockingMode == LM_LIGHTWEIGHT, "only used with new lightweight locking");
+  assert_different_registers(obj, hdr, t1, t2);
+
+#ifdef ASSERT
+  {
+    // The following checks rely on the fact that LockStack is only ever modified by
+    // its owning thread, even if the lock got inflated concurrently; removal of LockStack
+    // entries after inflation will happen delayed in that case.
+
+    // Check for lock-stack underflow.
+    Label stack_ok;
+    ldrw(t1, Address(rthread, JavaThread::lock_stack_top_offset()));
+    cmpw(t1, (unsigned)LockStack::start_offset());
+    br(Assembler::GT, stack_ok);
+    STOP("Lock-stack underflow");
+    bind(stack_ok);
+  }
+  {
+    // Check if the top of the lock-stack matches the unlocked object.
+    Label tos_ok;
+    subw(t1, t1, oopSize);
+    ldr(t1, Address(rthread, t1));
+    cmpoop(t1, obj);
+    br(Assembler::EQ, tos_ok);
+    STOP("Top of lock-stack does not match the unlocked object");
+    bind(tos_ok);
+  }
+  {
+    // Check that hdr is fast-locked.
+    Label hdr_ok;
+    tst(hdr, markWord::lock_mask_in_place);
+    br(Assembler::EQ, hdr_ok);
+    STOP("Header is not fast-locked");
+    bind(hdr_ok);
+  }
+#endif
+
+  // Load the new header (unlocked) into t1
+  orr(t1, hdr, markWord::unlocked_value);
+
+  // Try to swing header from locked to unlocked
+  cmpxchg(obj, hdr, t1, Assembler::xword,
+          /*acquire*/ true, /*release*/ true, /*weak*/ false, t2);
+  br(Assembler::NE, slow);
+
+  // After successful unlock, pop object from lock-stack
+  ldrw(t1, Address(rthread, JavaThread::lock_stack_top_offset()));
+  subw(t1, t1, oopSize);
+#ifdef ASSERT
+  str(zr, Address(rthread, t1));
+#endif
+  strw(t1, Address(rthread, JavaThread::lock_stack_top_offset()));
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,23 +31,23 @@
 
 
 // predefined types
-VoidType*       voidType     = NULL;
-IntType*        intType      = NULL;
-LongType*       longType     = NULL;
-FloatType*      floatType    = NULL;
-DoubleType*     doubleType   = NULL;
-ObjectType*     objectType   = NULL;
-ArrayType*      arrayType    = NULL;
-InstanceType*   instanceType = NULL;
-ClassType*      classType    = NULL;
-AddressType*    addressType  = NULL;
-IllegalType*    illegalType  = NULL;
+VoidType*       voidType     = nullptr;
+IntType*        intType      = nullptr;
+LongType*       longType     = nullptr;
+FloatType*      floatType    = nullptr;
+DoubleType*     doubleType   = nullptr;
+ObjectType*     objectType   = nullptr;
+ArrayType*      arrayType    = nullptr;
+InstanceType*   instanceType = nullptr;
+ClassType*      classType    = nullptr;
+AddressType*    addressType  = nullptr;
+IllegalType*    illegalType  = nullptr;
 
 
 // predefined constants
-IntConstant*    intZero      = NULL;
-IntConstant*    intOne       = NULL;
-ObjectConstant* objectNull   = NULL;
+IntConstant*    intZero      = nullptr;
+IntConstant*    intOne       = nullptr;
+ObjectConstant* objectNull   = nullptr;
 
 
 void ValueType::initialize() {
@@ -89,15 +89,15 @@ ValueType* ValueType::meet(ValueType* y) const {
 
 ciType* ObjectConstant::exact_type() const {
   ciObject* c = constant_value();
-  return (c != NULL && !c->is_null_object()) ? c->klass() : NULL;
+  return (c != nullptr && !c->is_null_object()) ? c->klass() : nullptr;
 }
 ciType* ArrayConstant::exact_type() const {
   ciObject* c = constant_value();
-  return (c != NULL && !c->is_null_object()) ? c->klass() : NULL;
+  return (c != nullptr && !c->is_null_object()) ? c->klass() : nullptr;
 }
 ciType* InstanceConstant::exact_type() const {
   ciObject* c = constant_value();
-  return (c != NULL && !c->is_null_object()) ? c->klass() : NULL;
+  return (c != nullptr && !c->is_null_object()) ? c->klass() : nullptr;
 }
 ciType* ClassConstant::exact_type() const {
   return Compilation::current()->env()->Class_klass();

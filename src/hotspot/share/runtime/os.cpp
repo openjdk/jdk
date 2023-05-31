@@ -1009,6 +1009,11 @@ void os::print_environment_variables(outputStream* st, const char** env_list) {
   }
 }
 
+void os::print_register_info(outputStream* st, const void* context) {
+  int continuation = 0;
+  print_register_info(st, context, continuation);
+}
+
 void os::print_cpu_info(outputStream* st, char* buf, size_t buflen) {
   // cpu
   st->print("CPU:");
@@ -1377,6 +1382,22 @@ bool os::file_exists(const char* filename) {
   }
   return os::stat(filename, &statbuf) == 0;
 }
+
+bool os::write(int fd, const void *buf, size_t nBytes) {
+  ssize_t res;
+
+  while (nBytes > 0) {
+    res = pd_write(fd, buf, nBytes);
+    if (res == OS_ERR) {
+      return false;
+    }
+    buf = (void *)((char *)buf + nBytes);
+    nBytes -= res;
+  }
+
+  return true;
+}
+
 
 // Splits a path, based on its separator, the number of
 // elements is returned back in "elements".
