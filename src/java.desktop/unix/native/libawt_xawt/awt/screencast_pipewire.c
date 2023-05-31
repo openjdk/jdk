@@ -39,9 +39,8 @@
 
 int DEBUG_SCREENCAST_ENABLED = FALSE;
 
-#define EXCEPTION_CHECK_DESCRIBE_CLEAR() if ((*env)->ExceptionCheck(env)) { \
+#define EXCEPTION_CHECK_DESCRIBE() if ((*env)->ExceptionCheck(env)) { \
                                             (*env)->ExceptionDescribe(env); \
-                                            (*env)->ExceptionClear(env);    \
                                          }
 
 struct ScreenSpace screenSpace = {0};
@@ -655,13 +654,13 @@ void storeRestoreToken(const gchar* oldToken, const gchar* newToken) {
         jstring jOldToken = NULL;
         if (oldToken) {
             jOldToken = (*env)->NewStringUTF(env, oldToken);
-            EXCEPTION_CHECK_DESCRIBE_CLEAR();
+            EXCEPTION_CHECK_DESCRIBE();
             if (!jOldToken) {
                 return;
             }
         }
         jstring jNewToken = (*env)->NewStringUTF(env, newToken);
-        EXCEPTION_CHECK_DESCRIBE_CLEAR();
+        EXCEPTION_CHECK_DESCRIBE();
         if (!jNewToken) {
             (*env)->DeleteLocalRef(env, jOldToken);
             return;
@@ -670,13 +669,13 @@ void storeRestoreToken(const gchar* oldToken, const gchar* newToken) {
         jintArray allowedBounds = NULL;
         if (screenSpace.screenCount > 0) {
             allowedBounds = (*env)->NewIntArray(env, screenSpace.screenCount*4);
-            EXCEPTION_CHECK_DESCRIBE_CLEAR();
+            EXCEPTION_CHECK_DESCRIBE();
             if (!allowedBounds) {
                 (*env)->ExceptionClear(env);
                 return;
             }
             jint* elements = (*env)->GetIntArrayElements(env, allowedBounds, NULL);
-            EXCEPTION_CHECK_DESCRIBE_CLEAR();
+            EXCEPTION_CHECK_DESCRIBE();
             if (!elements) {
                 return;
             }
@@ -699,14 +698,14 @@ void storeRestoreToken(const gchar* oldToken, const gchar* newToken) {
             }
 
             (*env)->ReleaseIntArrayElements(env, allowedBounds, elements, 0);
-            EXCEPTION_CHECK_DESCRIBE_CLEAR();
+            EXCEPTION_CHECK_DESCRIBE();
 
             if (!failed) {
                 (*env)->CallStaticVoidMethod(env, tokenStorageClass,
                                              storeTokenMethodID,
                                              jOldToken, jNewToken,
                                              allowedBounds);
-                EXCEPTION_CHECK_DESCRIBE_CLEAR();
+                EXCEPTION_CHECK_DESCRIBE();
             }
         }
         (*env)->DeleteLocalRef(env, jOldToken);
@@ -774,7 +773,7 @@ static void arrayToRectangles(JNIEnv *env,
     }
 
     jint * body = (*env)->GetIntArrayElements(env, boundsArray, 0);
-    EXCEPTION_CHECK_DESCRIBE_CLEAR();
+    EXCEPTION_CHECK_DESCRIBE();
     if (!body) {
         return;
     }
@@ -810,7 +809,7 @@ JNIEXPORT jint JNICALL Java_sun_awt_screencast_ScreencastHelper_getRGBPixelsImpl
     gint affectedBoundsLength = 0;
     if (affectedScreensBoundsArray) {
         boundsLen = (*env)->GetArrayLength(env, affectedScreensBoundsArray);
-        EXCEPTION_CHECK_DESCRIBE_CLEAR();
+        EXCEPTION_CHECK_DESCRIBE();
         if (boundsLen % 4 != 0) {
             DEBUG_SCREENCAST("%s:%i incorrect array length\n", __FUNCTION__, __LINE__);
             return -1;
