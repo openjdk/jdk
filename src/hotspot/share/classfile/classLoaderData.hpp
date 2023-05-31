@@ -159,9 +159,8 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   // The first list [_head, _next] is where new CLDs are registered. The CLDs
   // are only inserted at the _head, and the _next pointers are only rewritten
   // from unlink_next() which unlinks one unloading CLD by setting _next to
-  // _next->_next.
-  // This allows GCs to concurrently walk the list while the CLDs are being
-  // concurrently unlinked.
+  // _next->_next. This allows GCs to concurrently walk the list while the CLDs
+  // are being concurrently unlinked.
   //
   // The second list [_unloading_head, _unloading_next] is where dead CLDs get
   // moved to during class unloading. See: ClassLoaderDataGraph::do_unloading().
