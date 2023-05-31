@@ -159,7 +159,11 @@
  *   startup, or started in a running JVM), then it is implementation specific as to whether
  *   a warning is printed when attempting to start the same agent a second or subsequent
  *   time. Warnings can be disabled by means of an implementation-specific command line
- *   option. </p></li>
+ *   option.
+ *   <p><b>Implementation Note:</b> For the HotSpot VM, the JVM option
+ *   {@code -XX:+EnableDynamicAgentLoading} is used to opt-in to allow dynamic loading of
+ *   agents into a running JVM. This option suppresses the warning to standard error when
+ *   starting an agent in a running JVM. </p></li>
  *
  * </ol>
  *

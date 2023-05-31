@@ -646,6 +646,11 @@ Agent_OnLoad_L(JavaVM *vm, char *options, void *reserved)</example>
     warning is printed when attempting to start the same agent a second or subsequent time.
     Warnings can be disabled by means of an implementation-specific command line option.
     <p/>
+    <b>Implementation Note:</b> For the HotSpot VM, the VM option
+    <code>-XX:+EnableDynamicAgentLoading</code> is used to opt-in to allow dynamic loading
+    of agents in the live phase. This option suppresses the warning to standard error when
+    starting an agent in the live phase.
+    <p/>
     If an agent is started during the live phase then its agent library
     must export a start-up function
     with the following prototype:
