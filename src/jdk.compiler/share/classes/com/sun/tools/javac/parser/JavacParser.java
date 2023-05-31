@@ -4051,7 +4051,7 @@ public class JavacParser implements Parser {
 
         Name name = names.fromString(simplename);
         JCModifiers anonMods = F.at(primaryPos)
-                .Modifiers(Flags.FINAL|Flags.MANDATED|Flags.SYNTHETIC|Flags.UNNAMED_CLASS, List.nil());
+                .Modifiers(Flags.FINAL|Flags.SYNTHETIC|Flags.UNNAMED_CLASS, List.nil());
         JCClassDecl anon = F.at(primaryPos).ClassDef(
                 anonMods, name, List.nil(), null, List.nil(), List.nil(),
                 defs.toList());
