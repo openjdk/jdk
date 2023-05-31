@@ -522,6 +522,7 @@ void Runtime1::generate_unwind_exception(StubAssembler *sasm) {
   __ addi(sp, sp, -2 * wordSize);
   __ sd(exception_oop, Address(sp, wordSize));
   __ sd(ra, Address(sp));
+
   // search the exception handler address of the caller (using the return address)
   __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::exception_handler_for_return_address), xthread, ra);
   // x10: exception handler address of the caller

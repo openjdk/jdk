@@ -247,6 +247,7 @@ void Runtime1::generate_unwind_exception(StubAssembler *sasm) {
   __ lgr_if_needed(exception_pc_callee_saved, Z_EXC_PC);
 
   __ push_frame_abi160(0); // Runtime code needs the z_abi_160.
+
   // Search the exception handler address of the caller (using the return address).
   __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::exception_handler_for_return_address), Z_thread, Z_EXC_PC);
   // Z_RET(Z_R2): exception handler address of the caller.
