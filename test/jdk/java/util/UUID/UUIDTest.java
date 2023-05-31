@@ -66,6 +66,8 @@ public class UUIDTest {
     }
 
     private static void randomUUIDTest() throws Exception {
+        List<UUID> collisions = new ArrayList<>();
+
         Set<UUID> set = new HashSet<>();
         for (int i = 0; i < COUNT; i++) {
             UUID u = UUID.randomUUID();
@@ -76,8 +78,15 @@ public class UUIDTest {
                 throw new Exception("Bad variant: " + u);
             }
             if (!set.add(u)) {
-                throw new Exception("UUID collision: " + u);
+                collisions.add(u);
             }
+        }
+
+        if (!collisions.isEmpty()) {
+           // This is extremely unlikely to happen. If you see this failure,
+           // this highly likely points to the implementation bug, rather than
+           // the odd chance.
+           throw new Exception("UUID collisions detected: " + collisions);
         }
     }
 
@@ -85,6 +94,8 @@ public class UUIDTest {
         List<UUID> uuids = IntStream.range(0, COUNT).parallel()
                                     .mapToObj(i -> UUID.randomUUID())
                                     .toList();
+
+        List<UUID> collisions = new ArrayList<>();
 
         Set<UUID> set = new HashSet<>();
         for (UUID u : uuids) {
@@ -95,13 +106,22 @@ public class UUIDTest {
                 throw new Exception("Bad variant: " + u);
             }
             if (!set.add(u)) {
-                throw new Exception("UUID collision: " + u);
+                collisions.add(u);
             }
+        }
+
+        if (!collisions.isEmpty()) {
+           // This is extremely unlikely to happen. If you see this failure,
+           // this highly likely points to the implementation bug, rather than
+           // the odd chance.
+           throw new Exception("UUID collisions detected: " + collisions);
         }
     }
 
 
     private static void nameUUIDFromBytesTest() throws Exception {
+        List<UUID> collisions = new ArrayList<>();
+
         byte[] someBytes = new byte[12];
         Set<UUID> set = new HashSet<>();
         for (int i = 0; i < COUNT; i++) {
@@ -114,8 +134,15 @@ public class UUIDTest {
                 throw new Exception("Bad variant: " + u);
             }
             if (!set.add(u)) {
-                throw new Exception("UUID collision: " + u);
+                collisions.add(u);
             }
+        }
+
+        if (!collisions.isEmpty()) {
+           // This is extremely unlikely to happen. If you see this failure,
+           // this highly likely points to the implementation bug, rather than
+           // the odd chance.
+           throw new Exception("UUID collisions detected: " + collisions);
         }
     }
 
