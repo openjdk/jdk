@@ -2838,7 +2838,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
       if (use_graal_jit) {
         const char* jvmci_compiler = get_property("jvmci.Compiler");
         if (jvmci_compiler != nullptr) {
-          if (strcmp(jvmci_compiler, "graal") != 0) {
+          if (strncmp(jvmci_compiler, "graal", strlen("graal")) != 0) {
             jio_fprintf(defaultStream::error_stream(),
               "Value of jvmci.Compiler incompatible with +UseGraalJIT: %s", jvmci_compiler);
             return JNI_ERR;
