@@ -489,7 +489,8 @@ uint IdealLoopTree::estimate_peeling(PhaseIdealLoop *phase) {
       assert(test->Opcode() == Op_If ||
              test->Opcode() == Op_CountedLoopEnd ||
              test->Opcode() == Op_LongCountedLoopEnd ||
-             test->Opcode() == Op_RangeCheck,
+             test->Opcode() == Op_RangeCheck ||
+             test->Opcode() == Op_ParsePredicate,
              "Check this code when new subtype is added");
       // Condition is not a member of this loop?
       if (!is_member(phase->get_loop(ctrl)) && is_loop_exit(test)) {
@@ -778,11 +779,11 @@ void PhaseIdealLoop::do_peeling(IdealLoopTree *loop, Node_List &old_new) {
     Node* stride = cl_head->stride();
     IdealLoopTree* outer_loop = get_loop(outer_loop_head);
     ParsePredicates parse_predicates(new_head->in(LoopNode::EntryControl));
-    initialize_assertion_predicates_for_peeled_loop(parse_predicates.loop_predicate(),
+    initialize_assertion_predicates_for_peeled_loop(parse_predicates.loop_predicate_proj(),
                                                     outer_loop_head, dd_outer_loop_head,
                                                     init, stride, outer_loop,
                                                     idx_before_clone, old_new);
-    initialize_assertion_predicates_for_peeled_loop(parse_predicates.profiled_loop_predicate(),
+    initialize_assertion_predicates_for_peeled_loop(parse_predicates.profiled_loop_predicate_proj(),
                                                     outer_loop_head, dd_outer_loop_head,
                                                     init, stride, outer_loop,
                                                     idx_before_clone, old_new);
@@ -1590,24 +1591,14 @@ void PhaseIdealLoop::copy_assertion_predicates_to_main_loop(CountedLoopNode* pre
                                                             const Node_List &old_new) {
   if (UseLoopPredicate) {
     Node* entry = pre_head->in(LoopNode::EntryControl);
-    Node* predicate = nullptr;
-    predicate = find_predicate_insertion_point(entry, Deoptimization::Reason_loop_limit_check);
-    if (predicate != nullptr) {
-      entry = skip_related_predicates(entry);
-    }
-    Node* profile_predicate = nullptr;
-    if (UseProfiledLoopPredicate) {
-      profile_predicate = find_predicate_insertion_point(entry, Deoptimization::Reason_profile_predicate);
-      if (profile_predicate != nullptr) {
-        entry = skip_related_predicates(entry);
-      }
-    }
-    predicate = find_predicate_insertion_point(entry, Deoptimization::Reason_predicate);
-    copy_assertion_predicates_to_main_loop_helper(predicate, init, stride, outer_loop, outer_main_head, dd_main_head,
-                                                  idx_before_pre_post, idx_after_post_before_pre, zero_trip_guard_proj_main,
+    ParsePredicates parse_predicates(entry);
+    copy_assertion_predicates_to_main_loop_helper(parse_predicates.loop_predicate_proj(), init, stride, outer_loop,
+                                                  outer_main_head, dd_main_head, idx_before_pre_post,
+                                                  idx_after_post_before_pre, zero_trip_guard_proj_main,
                                                   zero_trip_guard_proj_post, old_new);
-    copy_assertion_predicates_to_main_loop_helper(profile_predicate, init, stride, outer_loop, outer_main_head, dd_main_head,
-                                                  idx_before_pre_post, idx_after_post_before_pre, zero_trip_guard_proj_main,
+    copy_assertion_predicates_to_main_loop_helper(parse_predicates.profiled_loop_predicate_proj(), init, stride,
+                                                  outer_loop, outer_main_head, dd_main_head, idx_before_pre_post,
+                                                  idx_after_post_before_pre, zero_trip_guard_proj_main,
                                                   zero_trip_guard_proj_post, old_new);
   }
 }
@@ -2140,7 +2131,7 @@ void PhaseIdealLoop::initialize_assertion_predicates_for_peeled_loop(IfProjNode*
   Node* control = outer_loop_head->in(LoopNode::EntryControl);
   Node* input_proj = control;
 
-  predicate_proj = next_predicate(predicate_proj);
+  predicate_proj = Predicates::next_predicate_proj_in_block(predicate_proj);
   while (predicate_proj != nullptr) {
     IfNode* iff = predicate_proj->in(0)->as_If();
     if (iff->in(1)->Opcode() == Op_Opaque4) {
@@ -2166,7 +2157,7 @@ void PhaseIdealLoop::initialize_assertion_predicates_for_peeled_loop(IfProjNode*
         }
       }
     }
-    predicate_proj = next_predicate(predicate_proj);
+    predicate_proj = Predicates::next_predicate_proj_in_block(predicate_proj);
   }
 
   _igvn.replace_input_of(outer_loop_head, LoopNode::EntryControl, input_proj);
@@ -3534,7 +3525,7 @@ bool IdealLoopTree::do_remove_empty_loop(PhaseIdealLoop *phase) {
   }
   if (needs_guard) {
     // Check for an obvious zero trip guard.
-    Node* in_ctrl = PhaseIdealLoop::skip_all_predicates(cl->skip_predicates());
+    Node* in_ctrl = Predicates::skip_all_predicates(cl->skip_predicates());
     if (in_ctrl->Opcode() == Op_IfTrue || in_ctrl->Opcode() == Op_IfFalse) {
       bool maybe_swapped = (in_ctrl->Opcode() == Op_IfFalse);
       // The test should look like just the backedge of a CountedLoop

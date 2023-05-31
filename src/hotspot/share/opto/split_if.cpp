@@ -628,7 +628,7 @@ void PhaseIdealLoop::do_split_if(Node* iff, RegionNode** new_false_region, Regio
       for (j = n->outs(); n->has_out(j); j++) {
         Node* m = n->out(j);
         // If m is dead, throw it away, and declare progress
-        if (_nodes[m->_idx] == nullptr) {
+        if (_loop_or_ctrl[m->_idx] == nullptr) {
           _igvn.remove_dead_node(m);
           // fall through
         }

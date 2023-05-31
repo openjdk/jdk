@@ -2408,7 +2408,7 @@ C2V_VMENTRY_NULL(jlongArray, registerNativeMethods, (JNIEnv* env, jobject, jclas
     HandleMark hm(THREAD);
     runtime = JVMCI::compiler_runtime(thread);
     if (peerEnv->has_pending_exception()) {
-      peerEnv->describe_pending_exception(true);
+      peerEnv->describe_pending_exception(tty);
     }
     sl_handle = JVMCI::get_shared_library(sl_path, false);
     if (sl_handle == nullptr) {
@@ -2577,7 +2577,7 @@ C2V_VMENTRY_PREFIX(jboolean, attachCurrentThread, (JNIEnv* env, jobject c2vm, jb
       HandleMark hm(thread);
       JVMCIObject receiver = runtime->get_HotSpotJVMCIRuntime(peerJVMCIEnv);
       if (peerJVMCIEnv->has_pending_exception()) {
-        peerJVMCIEnv->describe_pending_exception(true);
+        peerJVMCIEnv->describe_pending_exception(tty);
       }
       char* sl_path;
       if (JVMCI::get_shared_library(sl_path, false) == nullptr) {

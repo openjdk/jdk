@@ -111,7 +111,7 @@ public:
   bool is_alloc_stalling() const;
   bool is_alloc_stalling_for_old() const;
   void handle_alloc_stalling_for_young();
-  void handle_alloc_stalling_for_old();
+  void handle_alloc_stalling_for_old(bool cleared_soft_refs);
 
   // Continuations
   bool is_allocating(zaddress addr) const;
