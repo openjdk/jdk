@@ -118,7 +118,7 @@ public class TestSysVCallArranger extends CallArrangerTestBase {
     public void testNestedUnion() {
         MemoryLayout POINT = MemoryLayout.structLayout(
                 C_INT,
-                MemoryLayout.paddingLayout(32),
+                MemoryLayout.paddingLayout(4),
                 MemoryLayout.unionLayout(
                         MemoryLayout.structLayout(C_INT, C_INT),
                         C_LONG

@@ -77,7 +77,7 @@ Node* SubNode::Identity(PhaseGVN* phase) {
 
 //------------------------------Value------------------------------------------
 // A subtract node differences it's two inputs.
-const Type* SubNode::Value_common(PhaseTransform *phase) const {
+const Type* SubNode::Value_common(PhaseValues* phase) const {
   const Node* in1 = in(1);
   const Node* in2 = in(2);
   // Either input is TOP ==> the result is TOP
