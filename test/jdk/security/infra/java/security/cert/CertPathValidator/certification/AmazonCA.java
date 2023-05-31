@@ -41,8 +41,6 @@
  * @run main/othervm -Djava.security.debug=certpath AmazonCA CRL
  */
 
-import java.security.cert.CertificateEncodingException;
-
 /*
  * Obtain TLS test artifacts for Amazon CAs from:
  *

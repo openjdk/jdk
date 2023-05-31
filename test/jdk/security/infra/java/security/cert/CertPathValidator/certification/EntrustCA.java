@@ -41,7 +41,6 @@
  * @run main/othervm -Djava.security.debug=certpath EntrustCA CRL
  */
 
-import java.security.cert.CertificateEncodingException;
 public class EntrustCA {
 
     public static void main(String[] args) throws Exception {
