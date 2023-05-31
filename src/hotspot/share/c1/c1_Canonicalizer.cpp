@@ -123,9 +123,9 @@ void Canonicalizer::do_Op2(Op2* x) {
         { jlong a = x->x()->type()->as_LongConstant()->value();
           jlong b = x->y()->type()->as_LongConstant()->value();
           switch (x->op()) {
-            case Bytecodes::_ladd: set_constant(a + b); return;
-            case Bytecodes::_lsub: set_constant(a - b); return;
-            case Bytecodes::_lmul: set_constant(a * b); return;
+            case Bytecodes::_ladd: set_constant(java_add(a, b)); return;
+            case Bytecodes::_lsub: set_constant(java_subtract(a, b)); return;
+            case Bytecodes::_lmul: set_constant(java_multiply(a, b)); return;
             case Bytecodes::_ldiv:
               if (b != 0) {
                 set_constant(SharedRuntime::ldiv(b, a));
