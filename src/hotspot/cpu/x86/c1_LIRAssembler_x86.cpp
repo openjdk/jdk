@@ -2834,7 +2834,7 @@ void LIR_Assembler::comp_fl2i(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Op
     __ cmpptr(left->as_register_lo(), right->as_register_lo());
     __ movl(dest, -1);
     __ jccb(Assembler::less, done);
-    __ set_byte_if_not_zero(dest);
+    __ setb(Assembler::notZero, dest);
     __ movzbl(dest, dest);
     __ bind(done);
 #else
