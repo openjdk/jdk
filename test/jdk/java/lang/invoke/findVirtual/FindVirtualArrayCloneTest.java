@@ -66,8 +66,9 @@ public class FindVirtualArrayCloneTest {
         var array = new String[] {"apple", "pear", "banana"};
         var regularClone = array.clone();
         var cloneMh = MethodHandles.lookup()
-                .findVirtual(String[].class, "clone", MethodType.methodType(Object.class));
-        var mhClone = (String[]) (Object) cloneMh.invokeExact((String[]) array);
+                .findVirtual(String[].class, "clone", MethodType.methodType(Object.class))
+                .asType(MethodType.methodType(String[].class, String[].class));
+        var mhClone = (String[]) cloneMh.invokeExact((String[]) array);
         assertArrayEquals(array, mhClone);
         assertArrayEquals(regularClone, mhClone);
     }
