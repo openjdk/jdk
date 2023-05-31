@@ -1126,21 +1126,22 @@ Node* MaxNode::extract_add(PhaseGVN* phase, ConstAddOperands x_operands, ConstAd
   return nullptr;
 }
 
-// If n is an integer addition of x with a non-TOP constant C, return <x, C>.
-// Otherwise, return <nullptr, 0>.
+// Try to cast n as an integer addition with a constant. Return:
+//   <x, C>,       if n == add(x, C), where 'C' is a non-TOP constant;
+//   <nullptr, 0>, if n == add(x, C), where 'C' is a TOP constant; or
+//   <n, 0>,       otherwise.
 static ConstAddOperands as_add_with_constant(Node* n) {
-  ConstAddOperands null(nullptr, 0);
   if (n->Opcode() != Op_AddI) {
-    return null;
+    return ConstAddOperands(n, 0);
   }
   Node* x = n->in(1);
   Node* c = n->in(2);
   if (!c->is_Con()) {
-    return null;
+    return ConstAddOperands(n, 0);
   }
   const Type* c_type = c->bottom_type();
   if (c_type == Type::TOP) {
-    return null;
+    return ConstAddOperands(nullptr, 0);
   }
   return ConstAddOperands(x, c_type->is_int()->get_con());
 }
@@ -1148,10 +1149,6 @@ static ConstAddOperands as_add_with_constant(Node* n) {
 Node* MaxNode::IdealI(PhaseGVN* phase, bool can_reshape) {
   int opcode = Opcode();
   assert(opcode == Op_MinI || opcode == Op_MaxI, "Unexpected opcode");
-  // Defer handling of op(x, x) to constant/identity propagation.
-  if (in(1) == in(2)) {
-    return nullptr;
-  }
   // Try to transform the following pattern, in any of its four possible
   // permutations induced by op's commutativity:
   //     op(op(add(inner, inner_off), inner_other), add(outer, outer_off))
@@ -1203,21 +1200,9 @@ Node* MaxNode::IdealI(PhaseGVN* phase, bool can_reshape) {
   return extract_add(phase, xC, yC);
 }
 
-Node* MaxNode::IdentityI(PhaseGVN* phase) {
-  assert(Opcode() == Op_MinI || Opcode() == Op_MaxI, "Unexpected opcode");
-  if (in(1) == in(2)) {
-    return in(1);
-  }
-  return MaxNode::Identity(phase);
-}
-
 // Ideal transformations for MaxINode
 Node* MaxINode::Ideal(PhaseGVN* phase, bool can_reshape) {
   return IdealI(phase, can_reshape);
-}
-
-Node* MaxINode::Identity(PhaseGVN* phase) {
-  return IdentityI(phase);
 }
 
 //=============================================================================
@@ -1237,10 +1222,6 @@ const Type *MaxINode::add_ring( const Type *t0, const Type *t1 ) const {
 // "MIN2(x+c0,MIN2(y,x+c1))".  Pick the smaller constant: "MIN2(x+c0,y)"
 Node* MinINode::Ideal(PhaseGVN* phase, bool can_reshape) {
   return IdealI(phase, can_reshape);
-}
-
-Node* MinINode::Identity(PhaseGVN* phase) {
-  return IdentityI(phase);
 }
 
 //------------------------------add_ring---------------------------------------
