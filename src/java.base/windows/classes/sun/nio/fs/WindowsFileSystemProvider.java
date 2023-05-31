@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import java.net.URI;
 import java.util.concurrent.ExecutorService;
 import java.io.*;
 import java.util.*;
+import jdk.internal.util.StaticProperty;
 import sun.nio.ch.ThreadPool;
 import sun.security.util.SecurityConstants;
 
@@ -48,7 +49,7 @@ class WindowsFileSystemProvider
     private final WindowsFileSystem theFileSystem;
 
     public WindowsFileSystemProvider() {
-        theFileSystem = new WindowsFileSystem(this);
+        theFileSystem = new WindowsFileSystem(this, StaticProperty.userDir());
     }
 
     WindowsFileSystem theFileSystem() {

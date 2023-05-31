@@ -223,6 +223,10 @@ inline void JavaThread::set_terminated(TerminatedTypes t) {
   Atomic::release_store(&_terminated, t);
 }
 
+inline bool JavaThread::is_active_Java_thread() const {
+  return on_thread_list() && !is_terminated();
+}
+
 // Allow tracking of class initialization monitor use
 inline void JavaThread::set_class_to_be_initialized(InstanceKlass* k) {
   assert((k == nullptr && _class_to_be_initialized != nullptr) ||

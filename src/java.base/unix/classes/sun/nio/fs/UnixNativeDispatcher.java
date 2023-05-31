@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,11 @@ class UnixNativeDispatcher {
         buffer.setOwner(path);
         return buffer;
     }
+
+    /**
+     * char *getcwd(char *buf, size_t size);
+     */
+    static native byte[] getcwd();
 
     /**
      * int dup(int filedes)

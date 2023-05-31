@@ -1042,6 +1042,15 @@ enum JavaThreadState {
   _thread_max_state         = 12  // maximum thread state+1 - used for statistics allocation
 };
 
+enum LockingMode {
+  // Use only heavy monitors for locking
+  LM_MONITOR     = 0,
+  // Legacy stack-locking, with monitors as 2nd tier
+  LM_LEGACY      = 1,
+  // New lightweight locking, with monitors as 2nd tier
+  LM_LIGHTWEIGHT = 2
+};
+
 //----------------------------------------------------------------------------------------------------
 // Special constants for debugging
 
@@ -1167,15 +1176,15 @@ inline intx byte_size(void* from, void* to) {
 
 // Pack and extract shorts to/from ints:
 
-inline int extract_low_short_from_int(jint x) {
-  return x & 0xffff;
+inline u2 extract_low_short_from_int(u4 x) {
+  return u2(x & 0xffff);
 }
 
-inline int extract_high_short_from_int(jint x) {
-  return (x >> 16) & 0xffff;
+inline u2 extract_high_short_from_int(u4 x) {
+  return u2((x >> 16) & 0xffff);
 }
 
-inline int build_int_from_shorts( jushort low, jushort high ) {
+inline int build_int_from_shorts( u2 low, u2 high ) {
   return ((int)((unsigned int)high << 16) | (unsigned int)low);
 }
 
@@ -1215,6 +1224,9 @@ JAVA_INTEGER_OP(*, java_multiply, jint, juint)
 JAVA_INTEGER_OP(+, java_add, jlong, julong)
 JAVA_INTEGER_OP(-, java_subtract, jlong, julong)
 JAVA_INTEGER_OP(*, java_multiply, jlong, julong)
+
+inline jint  java_negate(jint  v) { return java_subtract((jint) 0, v); }
+inline jlong java_negate(jlong v) { return java_subtract((jlong)0, v); }
 
 #undef JAVA_INTEGER_OP
 
@@ -1305,7 +1317,7 @@ inline int64_t multiply_high_signed(const int64_t x, const int64_t y) {
   const jlong y1 = java_shift_right((jlong)y, 32);
   const jlong y2 = y & 0xFFFFFFFF;
 
-  const uint64_t z2 = x2 * y2;
+  const uint64_t z2 = (uint64_t)x2 * y2;
   const int64_t t = x1 * y2 + (z2 >> 32u); // Unsigned shift
   int64_t z1 = t & 0xFFFFFFFF;
   const int64_t z0 = java_shift_right((jlong)t, 32);

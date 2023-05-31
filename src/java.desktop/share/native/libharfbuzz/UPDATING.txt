@@ -81,6 +81,7 @@ STEP 5: REPLACE TABS & REMOVE TRAILING SPACES
   To clean up the extra spaces and tabs run the following script at
   each folder level within libharfbuzz.
 
+  shopt -s nullglob
   for f in *.c *.h *.cc *.hh;
       do
           # replace tabs with spaces

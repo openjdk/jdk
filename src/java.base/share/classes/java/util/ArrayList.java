@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -429,6 +429,35 @@ public class ArrayList<E> extends AbstractList<E>
     }
 
     /**
+     * {@inheritDoc}
+     *
+     * @throws NoSuchElementException {@inheritDoc}
+     * @since 21
+     */
+    public E getFirst() {
+        if (size == 0) {
+            throw new NoSuchElementException();
+        } else {
+            return elementData(0);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @throws NoSuchElementException {@inheritDoc}
+     * @since 21
+     */
+    public E getLast() {
+        int last = size - 1;
+        if (last < 0) {
+            throw new NoSuchElementException();
+        } else {
+            return elementData(last);
+        }
+    }
+
+    /**
      * Replaces the element at the specified position in this list with
      * the specified element.
      *
@@ -492,6 +521,24 @@ public class ArrayList<E> extends AbstractList<E>
     }
 
     /**
+     * {@inheritDoc}
+     *
+     * @since 21
+     */
+    public void addFirst(E element) {
+        add(0, element);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @since 21
+     */
+    public void addLast(E element) {
+        add(element);
+    }
+
+    /**
      * Removes the element at the specified position in this list.
      * Shifts any subsequent elements to the left (subtracts one from their
      * indices).
@@ -508,6 +555,41 @@ public class ArrayList<E> extends AbstractList<E>
         fastRemove(es, index);
 
         return oldValue;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @throws NoSuchElementException {@inheritDoc}
+     * @since 21
+     */
+    public E removeFirst() {
+        if (size == 0) {
+            throw new NoSuchElementException();
+        } else {
+            Object[] es = elementData;
+            @SuppressWarnings("unchecked") E oldValue = (E) es[0];
+            fastRemove(es, 0);
+            return oldValue;
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @throws NoSuchElementException {@inheritDoc}
+     * @since 21
+     */
+    public E removeLast() {
+        int last = size - 1;
+        if (last < 0) {
+            throw new NoSuchElementException();
+        } else {
+            Object[] es = elementData;
+            @SuppressWarnings("unchecked") E oldValue = (E) es[last];
+            fastRemove(es, last);
+            return oldValue;
+        }
     }
 
     /**

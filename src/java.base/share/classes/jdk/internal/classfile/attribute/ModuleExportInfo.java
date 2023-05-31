@@ -30,8 +30,8 @@ import java.util.Set;
 
 import jdk.internal.classfile.constantpool.ModuleEntry;
 import jdk.internal.classfile.constantpool.PackageEntry;
-import jdk.internal.classfile.java.lang.constant.ModuleDesc;
-import jdk.internal.classfile.java.lang.constant.PackageDesc;
+import java.lang.constant.ModuleDesc;
+import java.lang.constant.PackageDesc;
 import java.lang.reflect.AccessFlag;
 
 import jdk.internal.classfile.Classfile;
@@ -133,7 +133,7 @@ public sealed interface ModuleExportInfo
      */
     static ModuleExportInfo of(PackageDesc exports, int exportFlags,
                                List<ModuleDesc> exportsTo) {
-        return of(TemporaryConstantPool.INSTANCE.packageEntry(TemporaryConstantPool.INSTANCE.utf8Entry(exports.packageInternalName())),
+        return of(TemporaryConstantPool.INSTANCE.packageEntry(TemporaryConstantPool.INSTANCE.utf8Entry(exports.internalName())),
                 exportFlags,
                 Util.moduleEntryList(exportsTo));
     }

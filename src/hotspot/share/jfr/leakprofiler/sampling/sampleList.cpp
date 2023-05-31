@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
 SampleList::SampleList(size_t limit, size_t cache_size) :
   _free_list(),
   _in_use_list(),
-  _last_resolved(NULL),
+  _last_resolved(nullptr),
   _allocated(0),
   _limit(limit),
   _cache_size(cache_size) {
@@ -59,12 +59,12 @@ void SampleList::set_last_resolved(const ObjectSample* sample) {
 }
 
 void SampleList::link(ObjectSample* sample) {
-  assert(sample != NULL, "invariant");
+  assert(sample != nullptr, "invariant");
   _in_use_list.prepend(sample);
 }
 
 void SampleList::unlink(ObjectSample* sample) {
-  assert(sample != NULL, "invariant");
+  assert(sample != nullptr, "invariant");
   if (_last_resolved == sample) {
     _last_resolved = sample->next();
   }
@@ -72,7 +72,7 @@ void SampleList::unlink(ObjectSample* sample) {
 }
 
 ObjectSample* SampleList::reuse(ObjectSample* sample) {
-  assert(sample != NULL, "invariant");
+  assert(sample != nullptr, "invariant");
   unlink(sample);
   link(sample);
   return sample;
@@ -83,7 +83,7 @@ void SampleList::populate_cache() {
     const size_t cache_delta = _cache_size - _free_list.count();
     for (size_t i = 0; i < cache_delta; ++i) {
       ObjectSample* sample = newSample();
-      if (sample != NULL) {
+      if (sample != nullptr) {
         _free_list.append(sample);
       }
     }
@@ -92,7 +92,7 @@ void SampleList::populate_cache() {
 
 ObjectSample* SampleList::newSample() const {
   if (_limit == _allocated) {
-    return NULL;
+    return nullptr;
   }
   ++_allocated;
   return new ObjectSample();
@@ -100,22 +100,22 @@ ObjectSample* SampleList::newSample() const {
 
 ObjectSample* SampleList::get() {
   ObjectSample* sample = _free_list.head();
-  if (sample != NULL) {
+  if (sample != nullptr) {
     link(_free_list.remove(sample));
   } else {
     sample = newSample();
-    if (sample != NULL) {
+    if (sample != nullptr) {
       _in_use_list.prepend(sample);
     }
   }
-  if (_cache_size > 0 && sample != NULL) {
+  if (_cache_size > 0 && sample != nullptr) {
     populate_cache();
   }
   return sample;
 }
 
 void SampleList::release(ObjectSample* sample) {
-  assert(sample != NULL, "invariant");
+  assert(sample != nullptr, "invariant");
   unlink(sample);
   _free_list.append(sample);
 }
@@ -123,7 +123,7 @@ void SampleList::release(ObjectSample* sample) {
 void SampleList::deallocate_samples(List& list) {
   if (list.count() > 0) {
     ObjectSample* sample = list.head();
-    while (sample != NULL) {
+    while (sample != nullptr) {
       list.remove(sample);
       delete sample;
       sample = list.head();
@@ -133,7 +133,7 @@ void SampleList::deallocate_samples(List& list) {
 }
 
 void SampleList::reset(ObjectSample* sample) {
-  assert(sample != NULL, "invariant");
+  assert(sample != nullptr, "invariant");
   sample->reset();
 }
 

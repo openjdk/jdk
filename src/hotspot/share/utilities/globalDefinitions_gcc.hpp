@@ -132,7 +132,7 @@ inline int g_isfinite(jdouble f)                 { return isfinite(f); }
 #endif // _LP64
 
 // gcc warns about applying offsetof() to non-POD object or calculating
-// offset directly when base address is NULL. The -Wno-invalid-offsetof
+// offset directly when base address is null. The -Wno-invalid-offsetof
 // option could be used to suppress this warning, but we instead just
 // avoid the use of offsetof().
 //
@@ -140,12 +140,12 @@ inline int g_isfinite(jdouble f)                 { return isfinite(f); }
 // use offsetof() instead, with the invalid-offsetof warning
 // temporarily disabled.
 #define offset_of(klass,field)                          \
-[]() {                                                  \
+([]() {                                                 \
   char space[sizeof (klass)] ATTRIBUTE_ALIGNED(16);     \
   klass* dummyObj = (klass*)space;                      \
   char* c = (char*)(void*)&dummyObj->field;             \
   return (size_t)(c - space);                           \
-}()
+}())
 
 
 #if defined(_LP64) && defined(__APPLE__)
