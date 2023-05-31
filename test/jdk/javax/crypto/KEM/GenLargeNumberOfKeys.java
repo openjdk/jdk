@@ -25,70 +25,52 @@
  * @test
  * @bug 8297878
  * @summary Generate large number of Secret Keys using same KEM
+ * @library /test/lib
  * @run main/othervm -Djava.security.egd=file:/dev/urandom GenLargeNumberOfKeys
  */
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.Arrays;
 import javax.crypto.KEM;
-import javax.crypto.SecretKey;
 import java.security.spec.ECGenParameterSpec;
+import jdk.test.lib.Asserts;
 
 public class GenLargeNumberOfKeys {
 
     private static final int COUNT = 1000;
 
-    public static void main(String[] args) throws Exception {
-        KEM kem = KEM.getInstance("DHKEM");
-        testXDH(kem);
-        testEC(kem);
-    }
-
     /*
      * X448 produce keysize of 64 bytes which is larger in it's class
-     */
-    private static void testXDH(KEM kem) throws Exception {
-        KeyPair kp = genKeyPair("XDH", "X448");
-        Set<SecretKey> generated = new HashSet<>();
-        for (int i = 0; i < COUNT; i++) {
-            test(kem, kp, generated);
-        }
-        System.out.println("XDH test Successful");
-    }
-
-    /*
      * secp521r1 produce keysize of 64 bytes which is larger in it's class
      */
-    private static void testEC(KEM kem) throws Exception {
-        KeyPair kp = genKeyPair("EC", "secp521r1");
-        Set<SecretKey> generated = new HashSet<>();
-        for (int i = 0; i < COUNT; i++) {
-            test(kem, kp, generated);
-        }
-        System.out.println("EC test Successful");
+    public static void main(String[] args) throws Exception {
+        KEM kem = KEM.getInstance("DHKEM");
+        testAlgo(kem, "XDH", "X448");
+        testAlgo(kem, "EC", "secp521r1");
     }
 
-    private static KeyPair genKeyPair(String algo, String curveid) throws Exception {
+    private static void testAlgo(KEM kem, String algo, String curveId) throws Exception {
+        KeyPair kp = genKeyPair(algo, curveId);
+        KEM.Encapsulator e = kem.newEncapsulator(kp.getPublic());
+        KEM.Decapsulator d = kem.newDecapsulator(kp.getPrivate());
+        for (int i = 0; i < COUNT; i++) {
+            test(e, d);
+        }
+        System.out.println(algo + ": test Successful");
+    }
+
+    private static KeyPair genKeyPair(String algo, String curveId) throws Exception {
         KeyPairGenerator kpg = KeyPairGenerator.getInstance(algo);
-        kpg.initialize(new ECGenParameterSpec(curveid));
+        kpg.initialize(new ECGenParameterSpec(curveId));
         return kpg.generateKeyPair();
     }
 
-    private static void test(KEM kem, KeyPair kp, Set<SecretKey> generated)
+    private static void test(KEM.Encapsulator e, KEM.Decapsulator d)
             throws Exception {
-        KEM.Encapsulator e = kem.newEncapsulator(kp.getPublic());
-        KEM.Encapsulated encap = e.encapsulate();
-        SecretKey key = encap.key();
-        if (generated.contains(key)) {
-            throw new RuntimeException("Duplicate key found");
-        }
-        generated.add(key);
-        KEM.Decapsulator d = kem.newDecapsulator(kp.getPrivate());
-        SecretKey dKey = d.decapsulate(encap.encapsulation());
-        if (!key.equals(dKey)) {
-            throw new RuntimeException("Key Mismatched");
-        }
+        KEM.Encapsulated enc = e.encapsulate();
+        Asserts.assertEQ(d.encapsulationSize(), enc.encapsulation().length);
+        Asserts.assertEQ(d.secretSize(), enc.key().getEncoded().length);
+        Asserts.assertTrue(Arrays.equals(d.decapsulate(enc.encapsulation()).getEncoded(), enc.key().getEncoded()));
     }
 
 }

@@ -44,6 +44,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import javax.crypto.KEM;
 import javax.crypto.SecretKey;
+import javax.crypto.DecapsulateException;
 import jdk.test.lib.Asserts;
 
 public class KemTest {
@@ -107,15 +108,12 @@ public class KemTest {
                 Asserts.assertEQ(enc.key().getEncoded().length, nSecret);
                 Asserts.assertEQ(enc.encapsulation().length, nEnc);
 
-                Asserts.assertEQ(enc.key(), enc.key());
                 Asserts.assertTrue(Arrays.equals(enc.key().getEncoded(), enc.key().getEncoded()));
                 Asserts.assertTrue(Arrays.equals(enc.encapsulation(), enc.encapsulation()));
 
-                Asserts.assertNE(enc.key(), enc1.key());
                 Asserts.assertFalse(Arrays.equals(enc.key().getEncoded(), enc1.key().getEncoded()));
                 Asserts.assertFalse(Arrays.equals(enc.encapsulation(), enc1.encapsulation()));
 
-                Asserts.assertNE(enc.key(), enc2.key());
                 Asserts.assertFalse(Arrays.equals(enc.key().getEncoded(), enc2.key().getEncoded()));
                 Asserts.assertFalse(Arrays.equals(enc.encapsulation(), enc2.encapsulation()));
 
@@ -123,17 +121,26 @@ public class KemTest {
                 KEM.Decapsulator decT = kem.newDecapsulator(kp.getPrivate());
                 SecretKey dsk = decT.decapsulate(enc.encapsulation());
                 Asserts.assertEQ(decT.providerName(), PROVIDER);
-                Asserts.assertEQ(sk, dsk);
                 Asserts.assertTrue(Arrays.equals(sk.getEncoded(), dsk.getEncoded()));
+
+                Asserts.assertEQ(encT.encapsulationSize(), enc.encapsulation().length);
                 Asserts.assertEQ(encT.encapsulationSize(), decT.encapsulationSize());
+                Asserts.assertEQ(encT.secretSize(), enc.key().getEncoded().length);
                 Asserts.assertEQ(encT.secretSize(), decT.secretSize());
 
                 KEM.Encapsulated enc3 = encT.encapsulate(0, encT.secretSize(), "AES");
                 KEM.Decapsulator decT1 = kem.newDecapsulator(kp.getPrivate());
                 SecretKey dsk1 = decT1.decapsulate(
                         enc3.encapsulation(), 0, decT1.secretSize(), "AES");
-                Asserts.assertEQ(dsk1, enc3.key());
                 Asserts.assertTrue(Arrays.equals(dsk1.getEncoded(), enc3.key().getEncoded()));
+
+                try {
+                    decT.decapsulate(new byte[enc.encapsulation().length]);
+                    throw new RuntimeException("Shouldn't reach here");
+                } catch (DecapsulateException de) {
+                    //de.printStackTrace();
+                    System.out.println("Expected Failure: mismatched encapsulation");
+                }
 
                 System.out.println("KEM Secret length:" + algo + ":" + curveId
                         + ":nSecret:" + nSecret + ":nEnc:" + nEnc);
@@ -192,7 +199,8 @@ public class KemTest {
             KEM.Decapsulator decT = kem.newDecapsulator(kp.getPrivate());
             for (Future<KEM.Encapsulator> future : futures) {
                 KEM.Encapsulated enc = future.get().encapsulate();
-                Asserts.assertEQ(decT.decapsulate(enc.encapsulation()), enc.key());
+                Asserts.assertTrue(Arrays.equals(decT.decapsulate(enc.encapsulation()).getEncoded(),
+                        enc.key().getEncoded()));
             }
         } finally {
             if (executor != null) {
@@ -225,8 +233,8 @@ public class KemTest {
             }
             KEM.Decapsulator decT = kem.newDecapsulator(kp.getPrivate());
             for (Future<KEM.Encapsulated> future : futures) {
-                Asserts.assertEQ(decT.decapsulate(future.get().encapsulation()),
-                        future.get().key());
+                Asserts.assertTrue(Arrays.equals(decT.decapsulate(future.get().encapsulation()).getEncoded(),
+                        future.get().key().getEncoded()));
             }
         } finally {
             if (executor != null) {
@@ -259,7 +267,8 @@ public class KemTest {
 
             KEM.Encapsulated enc = kem.newEncapsulator(kp.getPublic()).encapsulate();
             for (Future<KEM.Decapsulator> decT : futures) {
-                Asserts.assertEQ(decT.get().decapsulate(enc.encapsulation()), enc.key());
+                Asserts.assertTrue(Arrays.equals(decT.get().decapsulate(enc.encapsulation()).getEncoded(),
+                        enc.key().getEncoded()));
             }
         } finally {
             if (executor != null) {
@@ -294,7 +303,8 @@ public class KemTest {
                 futures.add(cs.submit(task));
             }
             for (Future<SecretKey> future : futures) {
-                Asserts.assertEQ(future.get(), enc.key());
+                Asserts.assertTrue(Arrays.equals(future.get().getEncoded(),
+                        enc.key().getEncoded()));
             }
         } finally {
             if (executor != null) {

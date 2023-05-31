@@ -74,29 +74,27 @@ public class KemInterop extends PKCS11Test {
                 KEM.Encapsulated enc1 = encT.encapsulate();
                 KEM.Encapsulated enc2 = encT1.encapsulate();
 
-                Asserts.assertEQ(enc.key(), enc.key());
                 Asserts.assertTrue(Arrays.equals(enc.key().getEncoded(), enc.key().getEncoded()));
                 Asserts.assertTrue(Arrays.equals(enc.encapsulation(), enc.encapsulation()));
 
-                Asserts.assertNE(enc.key(), enc1.key());
                 Asserts.assertFalse(Arrays.equals(enc.key().getEncoded(), enc1.key().getEncoded()));
                 Asserts.assertFalse(Arrays.equals(enc.encapsulation(), enc1.encapsulation()));
 
-                Asserts.assertNE(enc.key(), enc2.key());
                 Asserts.assertFalse(Arrays.equals(enc.key().getEncoded(), enc2.key().getEncoded()));
                 Asserts.assertFalse(Arrays.equals(enc.encapsulation(), enc2.encapsulation()));
 
                 KEM.Decapsulator decT = kem.newDecapsulator(kpr.getPrivate());
                 SecretKey dsk = decT.decapsulate(enc.encapsulation());
-                Asserts.assertEQ(dsk, enc.key());
                 Asserts.assertTrue(Arrays.equals(dsk.getEncoded(), enc.key().getEncoded()));
+
+                Asserts.assertEQ(encT.encapsulationSize(), enc.encapsulation().length);
                 Asserts.assertEQ(encT.encapsulationSize(), decT.encapsulationSize());
+                Asserts.assertEQ(encT.secretSize(), enc.key().getEncoded().length);
                 Asserts.assertEQ(encT.secretSize(), decT.secretSize());
 
                 KEM.Encapsulated enc3 = encT.encapsulate(0, encT.secretSize(), "AES");
                 KEM.Decapsulator decT1 = kem.newDecapsulator(kpr.getPrivate());
                 SecretKey dsk1 = decT1.decapsulate(enc3.encapsulation(), 0, decT1.secretSize(), "AES");
-                Asserts.assertEQ(dsk1, enc3.key());
                 Asserts.assertTrue(Arrays.equals(dsk1.getEncoded(), enc3.key().getEncoded()));
             } catch (Exception e) {
                 throw new RuntimeException(e);
