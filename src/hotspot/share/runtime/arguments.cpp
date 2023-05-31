@@ -2834,7 +2834,8 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
         return JNI_EINVAL;
       }
     } else if (match_option(option, "-XX:+EnableJVMCIProduct") || match_option(option, "-XX:+UseGraalJIT")) {
-      if (match_option(option, "-XX:+UseGraalJIT")) {
+      bool use_graal_jit = match_option(option, "-XX:+UseGraalJIT");
+      if (use_graal_jit) {
         const char* jvmci_compiler = get_property("jvmci.Compiler");
         if (jvmci_compiler != nullptr) {
           if (strcmp(jvmci_compiler, "graal") != 0) {
@@ -2854,7 +2855,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
       JVMFlag *jvmciFlag = JVMFlag::find_flag("EnableJVMCIProduct");
       // Allow this flag if it has been unlocked.
       if (jvmciFlag != nullptr && jvmciFlag->is_unlocked()) {
-        if (!JVMCIGlobals::enable_jvmci_product_mode(origin)) {
+        if (!JVMCIGlobals::enable_jvmci_product_mode(origin, use_graal_jit)) {
           jio_fprintf(defaultStream::error_stream(),
             "Unable to enable JVMCI in product mode");
           return JNI_ERR;

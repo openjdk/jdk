@@ -165,7 +165,7 @@ bool JVMCIGlobals::check_jvmci_flags_are_consistent() {
 }
 
 // Convert JVMCI flags from experimental to product
-bool JVMCIGlobals::enable_jvmci_product_mode(JVMFlagOrigin origin) {
+bool JVMCIGlobals::enable_jvmci_product_mode(JVMFlagOrigin origin, bool use_graal_jit) {
   const char *JVMCIFlags[] = {
     "EnableJVMCI",
     "EnableJVMCIProduct",
@@ -201,6 +201,12 @@ bool JVMCIGlobals::enable_jvmci_product_mode(JVMFlagOrigin origin) {
   JVMFlag *jvmciEnableFlag = JVMFlag::find_flag("EnableJVMCIProduct");
   if (JVMFlagAccess::set_bool(jvmciEnableFlag, &value, origin) != JVMFlag::SUCCESS) {
     return false;
+  }
+  if (use_graal_jit) {
+    JVMFlag *useGraalJITFlag = JVMFlag::find_flag("UseGraalJIT");
+    if (JVMFlagAccess::set_bool(useGraalJITFlag, &value, origin) != JVMFlag::SUCCESS) {
+      return false;
+    }
   }
 
   // Effect of EnableJVMCIProduct on changing defaults of EnableJVMCI
