@@ -2276,7 +2276,7 @@ uint TypeTuple::hash(void) const {
   uintptr_t sum = _cnt;
   for( uint i=0; i<_cnt; i++ )
     sum += (uintptr_t)_fields[i];     // Hash on pointers directly
-  return sum;
+  return (uint)sum;
 }
 
 //------------------------------dump2------------------------------------------
