@@ -157,18 +157,20 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   // The ClassLoaderDataGraph maintains two lists to keep track of CLDs.
   //
   // The first list [_head, _next] is where new CLDs are registered. The CLDs
-  // are only inserted at the _head, and the _next pointers are never rewritten.
+  // are only inserted at the _head, and the _next pointers are only rewritten
+  // from unlink_next() which unlinks one unloading CLD by setting _next to
+  // _next->_next.
   // This allows GCs to concurrently walk the list while the CLDs are being
   // concurrently unlinked.
   //
   // The second list [_unloading_head, _unloading_next] is where dead CLDs get
   // moved to during class unloading. See: ClassLoaderDataGraph::do_unloading().
-  // This list is never modified while other threads are iterating over it. 
+  // This list is never modified while other threads are iterating over it.
   //
   // After all dead CLDs have been moved to the unloading list, there's a
   // synchronziation point (handshake) to ensure that all threads reading these
   // CLDs finish their work. This ensures that we don't have a user-after-free
-  // when we later delete the CLDs. 
+  // when we later delete the CLDs.
   //
   // And finally, when no threads are using the unloading CLDs anymore, we
   // remove them from the class unloading list and delete them. See:
