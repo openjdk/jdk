@@ -13,13 +13,21 @@
             <attr name="enabled" boolvalue="true"/>
             <attr name="after" stringvalue="Color by execution frequency"/>
         </file>
-        <file name="Simplify graph.js" url="filters/structural.filter">
+        <file name="Show custom node info.js" url="filters/customNodeInfo.filter">
+            <attr name="enabled" boolvalue="true"/>
+            <attr name="after" stringvalue="Color by execution frequency"/>
+        </file>
+        <file name="Simplify graph.js" url="filters/simplifyGraph.filter">
             <attr name="enabled" boolvalue="false"/>
-            <attr name="after" stringvalue="Show node warnings"/>
+            <attr name="after" stringvalue="Show custom node info"/>
+        </file>
+        <file name="Condense graph.js" url="filters/condenseGraph.filter">
+            <attr name="enabled" boolvalue="false"/>
+            <attr name="after" stringvalue="Simplify graph"/>
         </file>
         <file name="Hide data subgraph.js" url="filters/hideData.filter">
             <attr name="enabled" boolvalue="false"/>
-            <attr name="after" stringvalue="Simplify graph"/>
+            <attr name="after" stringvalue="Condense graph"/>
         </file>
         <file name="Hide memory subgraph.js" url="filters/hideMemory.filter">
             <attr name="enabled" boolvalue="false"/>

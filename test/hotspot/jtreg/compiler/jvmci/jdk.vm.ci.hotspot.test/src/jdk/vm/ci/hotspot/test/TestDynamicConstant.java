@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -194,7 +194,7 @@ public class TestDynamicConstant implements Opcodes {
             String sig = "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;";
             Handle handle = new Handle(H_INVOKESTATIC, Type.getInternalName(StringConcatFactory.class), "makeConcatWithConstants", sig, false);
             String recipe = "var arg=\u0001, const arg=\u0002";
-            Object[] bsmArgs = {recipe};
+            Object[] bsmArgs = {recipe, condy};
             concat.visitLdcInsn(condy);
             concat.visitInvokeDynamicInsn("do_concat", "(" + desc + ")Ljava/lang/String;", handle, bsmArgs);
             concat.visitInsn(ARETURN);
@@ -316,6 +316,25 @@ public class TestDynamicConstant implements Opcodes {
                 Assert.assertNull(bsmi, String.valueOf(bsmi));
             }
         }
+
+        testLoadReferencedType(concat);
+    }
+
+    private static int beS4(byte[] data, int bci) {
+        return (data[bci] << 24) | ((data[bci + 1] & 0xff) << 16) | ((data[bci + 2] & 0xff) << 8) | (data[bci + 3] & 0xff);
+    }
+
+    private static final int LDC2_W = 20;
+    private static void testLoadReferencedType(ResolvedJavaMethod method) {
+        // Make sure that loadReferencedType for an invokedynamic call site works.
+        byte[] code = method.getCode();
+        Assert.assertTrue(code[0] == LDC || code[0] == LDC2_W, "unexpected ldc sequence");
+        int bci = code[0] == LDC ? 2 : 3;
+        Assert.assertTrue((code[bci] & 0xff) == INVOKEDYNAMIC, "unexpected bytecode");
+        int cpi = beS4(code, bci + 1);
+        method.getConstantPool().loadReferencedType(cpi, INVOKEDYNAMIC, false);
+        BootstrapMethodInvocation bmi = method.getConstantPool().lookupBootstrapMethodInvocation(cpi, INVOKEDYNAMIC);
+        Assert.assertEquals(bmi.getName(), "do_concat");
     }
 
     // @formatter:off

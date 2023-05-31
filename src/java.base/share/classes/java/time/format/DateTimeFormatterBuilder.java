@@ -1525,6 +1525,8 @@ public final class DateTimeFormatterBuilder {
      * @param requestedTemplate the requested template to use, not null
      * @return this, for chaining, not null
      * @throws IllegalArgumentException if {@code requestedTemplate} is invalid
+     *
+     * @spec https://www.unicode.org/reports/tr35 Unicode Locale Data Markup Language (LDML)
      * @see #appendPattern(String)
      * @since 19
      */
@@ -1608,6 +1610,8 @@ public final class DateTimeFormatterBuilder {
      *
      * @param style the text style to use, not null
      * @return this, for chaining, not null
+     *
+     * @spec https://www.unicode.org/reports/tr35 Unicode Locale Data Markup Language (LDML)
      * @since 16
      */
     public DateTimeFormatterBuilder appendDayPeriodText(TextStyle style) {
@@ -2608,9 +2612,15 @@ public final class DateTimeFormatterBuilder {
                 throw new DateTimeException(
                     "Cannot print as output of " + len + " characters exceeds pad width of " + padWidth);
             }
-            for (int i = 0; i < padWidth - len; i++) {
-                buf.insert(preLen, padChar);
+            var count = padWidth - len;
+            if (count == 0) {
+                return true;
             }
+            if (count == 1) {
+                buf.insert(preLen, padChar);
+                return true;
+            }
+            buf.insert(preLen, String.valueOf(padChar).repeat(count));
             return true;
         }
 

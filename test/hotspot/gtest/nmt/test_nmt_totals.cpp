@@ -30,8 +30,8 @@
 #include "unittest.hpp"
 
 // convenience log. switch on if debugging tests. Don't use tty, plain stdio only.
-#define LOG(...) { printf(__VA_ARGS__); printf("\n"); fflush(stdout); }
-//#define LOG(...)
+//#define LOG(...) { printf(__VA_ARGS__); printf("\n"); fflush(stdout); }
+#define LOG(...)
 
 static size_t get_total_malloc_invocs() {
   return MallocMemorySummary::as_snapshot()->total_count();

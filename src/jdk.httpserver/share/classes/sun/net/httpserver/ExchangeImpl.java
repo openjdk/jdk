@@ -377,7 +377,11 @@ class ExchangeImpl {
         if (attributes == null) {
             attributes = getHttpContext().getAttributes();
         }
-        attributes.put (name, value);
+        if (value != null) {
+            attributes.put (name, value);
+        } else {
+            attributes.remove (name);
+        }
     }
 
     public void setStreams (InputStream i, OutputStream o) {

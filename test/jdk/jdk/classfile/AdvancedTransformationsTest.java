@@ -61,7 +61,7 @@ import jdk.internal.classfile.instruction.ReturnInstruction;
 import jdk.internal.classfile.instruction.StoreInstruction;
 import java.lang.reflect.AccessFlag;
 import jdk.internal.classfile.components.CodeRelabeler;
-import jdk.internal.classfile.java.lang.constant.ModuleDesc;
+import java.lang.constant.ModuleDesc;
 import jdk.internal.classfile.components.ClassPrinter;
 import static java.lang.annotation.ElementType.*;
 import java.lang.annotation.Retention;
@@ -211,6 +211,7 @@ class AdvancedTransformationsTest {
                 "INVOKESTATIC, owner: AdvancedTransformationsTest$Bar, method name: fooMethod, method type: (LAdvancedTransformationsTest$Bar;)LAdvancedTransformationsTest$Bar",
                 "method type: ()LAdvancedTransformationsTest$Bar;",
                 "GETFIELD, owner: AdvancedTransformationsTest$Rec, field name: foo, field type: LAdvancedTransformationsTest$Bar;");
+        assertFalse(out.contains("bootstrap method arguments indexes: []"), "bootstrap arguments lost");
     }
 
     private static void assertContains(String actual, String... expected) {

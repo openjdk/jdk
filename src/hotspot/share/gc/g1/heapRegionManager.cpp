@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,12 +62,12 @@ public:
 };
 
 HeapRegionManager::HeapRegionManager() :
-  _bot_mapper(NULL),
-  _cardtable_mapper(NULL),
+  _bot_mapper(nullptr),
+  _cardtable_mapper(nullptr),
   _committed_map(),
   _allocated_heapregions_length(0),
-  _regions(), _heap_mapper(NULL),
-  _bitmap_mapper(NULL),
+  _regions(), _heap_mapper(nullptr),
+  _bitmap_mapper(nullptr),
   _free_list("Free list", new MasterFreeRegionListChecker())
 { }
 
@@ -90,7 +90,7 @@ void HeapRegionManager::initialize(G1RegionToSpaceMapper* heap_storage,
 }
 
 HeapRegion* HeapRegionManager::allocate_free_region(HeapRegionType type, uint requested_node_index) {
-  HeapRegion* hr = NULL;
+  HeapRegion* hr = nullptr;
   bool from_head = !type.is_young();
   G1NUMA* numa = G1NUMA::numa();
 
@@ -99,14 +99,14 @@ HeapRegion* HeapRegionManager::allocate_free_region(HeapRegionType type, uint re
     hr = _free_list.remove_region_with_node_index(from_head, requested_node_index);
   }
 
-  if (hr == NULL) {
+  if (hr == nullptr) {
     // If there's a single active node or we did not get a region from our requested node,
     // try without requested node index.
     hr = _free_list.remove_region(from_head);
   }
 
-  if (hr != NULL) {
-    assert(hr->next() == NULL, "Single region should not have next");
+  if (hr != nullptr) {
+    assert(hr->next() == nullptr, "Single region should not have next");
     assert(is_available(hr->hrm_index()), "Must be committed");
 
     if (numa->is_enabled() && hr->node_index() < numa->num_active_nodes()) {
@@ -120,7 +120,7 @@ HeapRegion* HeapRegionManager::allocate_free_region(HeapRegionType type, uint re
 HeapRegion* HeapRegionManager::allocate_humongous_from_free_list(uint num_regions) {
   uint candidate = find_contiguous_in_free_list(num_regions);
   if (candidate == G1_NO_HRM_INDEX) {
-    return NULL;
+    return nullptr;
   }
   return allocate_free_regions_starting_at(candidate, num_regions);
 }
@@ -128,7 +128,7 @@ HeapRegion* HeapRegionManager::allocate_humongous_from_free_list(uint num_region
 HeapRegion* HeapRegionManager::allocate_humongous_allow_expand(uint num_regions) {
   uint candidate = find_contiguous_allow_expand(num_regions);
   if (candidate == G1_NO_HRM_INDEX) {
-    return NULL;
+    return nullptr;
   }
   expand_exact(candidate, num_regions, G1CollectedHeap::heap()->workers());
   return allocate_free_regions_starting_at(candidate, num_regions);
@@ -164,7 +164,7 @@ void HeapRegionManager::expand(uint start, uint num_regions, WorkerThreads* pret
   commit_regions(start, num_regions, pretouch_workers);
   for (uint i = start; i < start + num_regions; i++) {
     HeapRegion* hr = _regions.get_by_index(i);
-    if (hr == NULL) {
+    if (hr == nullptr) {
       hr = new_heap_region(i);
       OrderAccess::storestore();
       _regions.set_by_index(i, hr);
@@ -198,7 +198,7 @@ void HeapRegionManager::uncommit_regions(uint start, uint num_regions) {
     for (uint i = start; i < end; i++) {
       // Can't use at() here since region is no longer marked available.
       HeapRegion* hr = _regions.get_by_index(i);
-      assert(hr != NULL, "Region should still be present");
+      assert(hr != nullptr, "Region should still be present");
       printer->uncommit(hr);
     }
   }
@@ -416,7 +416,7 @@ uint HeapRegionManager::expand_on_preferred_node(uint preferred_index) {
     return 0;
   }
 
-  expand_exact(expand_candidate, 1, NULL);
+  expand_exact(expand_candidate, 1, nullptr);
   return 1;
 }
 
@@ -487,7 +487,7 @@ uint HeapRegionManager::find_contiguous_allow_expand(uint num_regions) {
 }
 
 HeapRegion* HeapRegionManager::next_region_in_heap(const HeapRegion* r) const {
-  guarantee(r != NULL, "Start region must be a valid region");
+  guarantee(r != nullptr, "Start region must be a valid region");
   guarantee(is_available(r->hrm_index()), "Trying to iterate starting from region %u which is not in the heap", r->hrm_index());
   for (uint i = r->hrm_index() + 1; i < _allocated_heapregions_length; i++) {
     HeapRegion* hr = _regions.get_by_index(i);
@@ -495,7 +495,7 @@ HeapRegion* HeapRegionManager::next_region_in_heap(const HeapRegion* r) const {
       return hr;
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 void HeapRegionManager::iterate(HeapRegionClosure* blk) const {
@@ -505,7 +505,7 @@ void HeapRegionManager::iterate(HeapRegionClosure* blk) const {
     if (!is_available(i)) {
       continue;
     }
-    guarantee(at(i) != NULL, "Tried to access region %u that has a NULL HeapRegion*", i);
+    guarantee(at(i) != nullptr, "Tried to access region %u that has a null HeapRegion*", i);
     bool res = blk->do_heap_region(at(i));
     if (res) {
       blk->set_incomplete();
@@ -535,9 +535,9 @@ uint HeapRegionManager::find_highest_free(bool* expanded) {
   // committed, expand at that index.
   for (uint curr = reserved_length(); curr-- > 0;) {
     HeapRegion *hr = _regions.get_by_index(curr);
-    if (hr == NULL || !is_available(curr)) {
+    if (hr == nullptr || !is_available(curr)) {
       // Found uncommitted and free region, expand to make it available for use.
-      expand_exact(curr, 1, NULL);
+      expand_exact(curr, 1, nullptr);
       assert(at(curr)->is_free(), "Region (%u) must be available and free after expand", curr);
 
       *expanded = true;
@@ -647,7 +647,7 @@ void HeapRegionManager::shrink_at(uint index, size_t num_regions) {
 
 uint HeapRegionManager::find_empty_from_idx_reverse(uint start_idx, uint* res_idx) const {
   guarantee(start_idx < _allocated_heapregions_length, "checking");
-  guarantee(res_idx != NULL, "checking");
+  guarantee(res_idx != nullptr, "checking");
 
   uint num_regions_found = 0;
 
@@ -695,7 +695,7 @@ void HeapRegionManager::verify() {
     }
     num_committed++;
     HeapRegion* hr = _regions.get_by_index(i);
-    guarantee(hr != NULL, "invariant: i: %u", i);
+    guarantee(hr != nullptr, "invariant: i: %u", i);
     guarantee(!prev_committed || hr->bottom() == prev_end,
               "invariant i: %u " HR_FORMAT " prev_end: " PTR_FORMAT,
               i, HR_FORMAT_PARAMS(hr), p2i(prev_end));
@@ -711,7 +711,7 @@ void HeapRegionManager::verify() {
     prev_end = hr->end();
   }
   for (uint i = _allocated_heapregions_length; i < reserved_length(); i++) {
-    guarantee(_regions.get_by_index(i) == NULL, "invariant i: %u", i);
+    guarantee(_regions.get_by_index(i) == nullptr, "invariant i: %u", i);
   }
 
   guarantee(num_committed == length(), "Found %u committed regions, but should be %u", num_committed, length());
@@ -725,7 +725,7 @@ void HeapRegionManager::verify_optional() {
 #endif // PRODUCT
 
 HeapRegionClaimer::HeapRegionClaimer(uint n_workers) :
-    _n_workers(n_workers), _n_regions(G1CollectedHeap::heap()->_hrm._allocated_heapregions_length), _claims(NULL) {
+    _n_workers(n_workers), _n_regions(G1CollectedHeap::heap()->_hrm._allocated_heapregions_length), _claims(nullptr) {
   uint* new_claims = NEW_C_HEAP_ARRAY(uint, _n_regions, mtGC);
   memset(new_claims, Unclaimed, sizeof(*_claims) * _n_regions);
   _claims = new_claims;
@@ -798,7 +798,7 @@ public:
     FreeRegionList *free_list = worker_freelist(worker_id);
     for (uint i = start; i < end; i++) {
       HeapRegion *region = _hrm->at_or_null(i);
-      if (region != NULL && region->is_free()) {
+      if (region != nullptr && region->is_free()) {
         // Need to clear old links to allow to be added to new freelist.
         region->unlink_from_list();
         free_list->add_to_tail(region);

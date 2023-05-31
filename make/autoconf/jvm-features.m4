@@ -251,6 +251,9 @@ AC_DEFUN_ONCE([JVM_FEATURES_CHECK_DTRACE],
     if test "x$OPENJDK_TARGET_CPU_ARCH" = "xppc"; then
       AC_MSG_RESULT([no, $OPENJDK_TARGET_CPU_ARCH])
       AVAILABLE=false
+    elif test "x$OPENJDK_TARGET_CPU_ARCH" = "xs390"; then
+      AC_MSG_RESULT([no, $OPENJDK_TARGET_CPU_ARCH])
+      AVAILABLE=false
     elif test "x$DTRACE" != "x" && test -x "$DTRACE"; then
       AC_MSG_RESULT([$DTRACE])
     else

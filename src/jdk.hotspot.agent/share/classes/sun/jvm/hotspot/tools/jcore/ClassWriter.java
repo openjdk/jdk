@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -438,8 +438,8 @@ public class ClassWriter implements /* imports */ ClassConstants
         ArrayList<Method> valid_methods = new ArrayList<Method>();
         for (int i = 0; i < methods.length(); i++) {
             Method m = methods.at(i);
-            long accessFlags = m.getAccessFlags();
-            // overpass method
+            long accessFlags = m.getAccessFlags() & JVM_RECOGNIZED_METHOD_MODIFIERS;
+            // skip overpass methods
             if (accessFlags == (JVM_ACC_PUBLIC | JVM_ACC_SYNTHETIC | JVM_ACC_BRIDGE)) {
                 continue;
             }

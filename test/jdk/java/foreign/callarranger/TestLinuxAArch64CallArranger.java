@@ -26,6 +26,7 @@
  * @test
  * @enablePreview
  * @requires sun.arch.data.model == "64"
+ * @compile platform/PlatformLayouts.java
  * @modules java.base/jdk.internal.foreign
  *          java.base/jdk.internal.foreign.abi
  *          java.base/jdk.internal.foreign.abi.aarch64
@@ -50,10 +51,10 @@ import java.lang.invoke.MethodType;
 
 import static java.lang.foreign.Linker.Option.firstVariadicArg;
 import static java.lang.foreign.ValueLayout.ADDRESS;
-import static jdk.internal.foreign.PlatformLayouts.AArch64.*;
 import static jdk.internal.foreign.abi.Binding.*;
 import static jdk.internal.foreign.abi.aarch64.AArch64Architecture.*;
 import static jdk.internal.foreign.abi.aarch64.AArch64Architecture.Regs.*;
+import static platform.PlatformLayouts.AArch64.*;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
@@ -186,7 +187,7 @@ public class TestLinuxAArch64CallArranger extends CallArrangerTestBase {
                     bufferLoad(8, long.class), vmStore(r1, long.class),
             }},
             // struct s { float a; /* padding */ double b };
-            { MemoryLayout.structLayout(C_FLOAT, MemoryLayout.paddingLayout(32), C_DOUBLE),
+            { MemoryLayout.structLayout(C_FLOAT, MemoryLayout.paddingLayout(4), C_DOUBLE),
               new Binding[] {
                 dup(),
                 // s.a
