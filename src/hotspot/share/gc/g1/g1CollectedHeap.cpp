@@ -442,8 +442,7 @@ bool G1CollectedHeap::attempt_allocation_after_gc(size_t word_size,
     assert(request.state() == StalledAllocReq::AllocationState::Failed, "Sanity check!");
     // VM successfully scheduled a collection which failed to allocate. No
     // point in trying to allocate further. We'll just return null.
-    log_debug(gc, alloc)("%s: Failed to allocate "
-                         SIZE_FORMAT " words", Thread::current()->name(), word_size);
+    log_debug(gc, alloc)("%s: Failed to allocate %zu words", Thread::current()->name(), word_size);
     *result = nullptr;
   }
   return true;
@@ -739,13 +738,6 @@ HeapWord* G1CollectedHeap::attempt_allocation_at_safepoint(size_t word_size,
   ShouldNotReachHere();
 }
 
-HeapWord* G1CollectedHeap::attempt_allocation_at_safepoint(size_t word_size,
-                                                           bool expect_null_mutator_alloc_region) {
-  assert_at_safepoint_on_vm_thread();
-  uint node_index = _allocator->current_node_index();
-  return attempt_allocation_at_safepoint(word_size, expect_null_mutator_alloc_region, node_index);
-}
-
 class PostCompactionPrinterClosure: public HeapRegionClosure {
 private:
   G1HRPrinter* _hr_printer;
@@ -978,8 +970,8 @@ bool G1CollectedHeap::satisfy_failed_allocations(bool* gc_succeeded) {
     return alloc_succeeded;
   }
 
-  // Attempt to satisfy allocation requests failed; reset the requests, execute a full gc,
-  // then try again.
+  // Attempt to satisfy allocation requests failed; reset the satisfied requests,
+  // execute a full gc, then try again.
   reset_allocation_requests();
 
   *gc_succeeded = do_full_collection(false /* clear_all_soft_refs */, false /* do_maximal_compaction */);
@@ -1085,7 +1077,7 @@ bool G1CollectedHeap::handle_allocation_requests(bool expect_null_mutator_alloc_
 
       const size_t payload_size = words - CollectedHeap::filler_array_hdr_size();
       const size_t len = payload_size * HeapWordSize / sizeof(jint);
-      assert((int)len >= 0, "size too large " SIZE_FORMAT " becomes %d", words, (int)len);
+      assert((int)len >= 0, "size too large %zu becomes %d", words, (int)len);
 
       ObjArrayAllocator allocator(Universe::fillerArrayKlassObj(), words, (int)len, /* do_zero */ false);
       allocator.initialize(result);
@@ -1110,8 +1102,7 @@ bool G1CollectedHeap::expand(size_t word_size) {
   _verifier->verify_region_sets_optional();
 
   size_t expand_bytes = MAX2(word_size * HeapWordSize, MinHeapDeltaBytes);
-  log_debug(gc, ergo, heap)("Attempt heap expansion (allocation request failed). Allocation request: " SIZE_FORMAT "B",
-                            word_size * HeapWordSize);
+  log_debug(gc, ergo, heap)("Attempt heap expansion. Expansion request: %zuB", expand_bytes);
 
   if (expand(expand_bytes, _workers)) {
     _hrm.verify_optional();
@@ -1119,16 +1110,6 @@ bool G1CollectedHeap::expand(size_t word_size) {
     return true;
   }
   return false;
-}
-
-HeapWord* G1CollectedHeap::expand_and_allocate(size_t word_size) {
-  assert_at_safepoint_on_vm_thread();
-
-  if (expand(word_size)) {
-    return attempt_allocation_at_safepoint(word_size,
-                                           false /* expect_null_mutator_alloc_region */);
-  }
-  return nullptr;
 }
 
 bool G1CollectedHeap::expand(size_t expand_bytes, WorkerThreads* pretouch_workers, double* expand_time_ms) {

@@ -99,7 +99,6 @@ public:
 
 #ifdef ASSERT
   // Do we currently have an active mutator region to allocate into?
-  bool has_mutator_alloc_region();
   bool has_mutator_alloc_region(uint node_index);
 #endif
 

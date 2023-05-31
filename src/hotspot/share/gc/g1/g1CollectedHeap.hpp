@@ -197,7 +197,7 @@ class G1CollectedHeap : public CollectedHeap {
       _state(AllocationState::Pending)
     { }
 
-    StalledAllocReq() : StalledAllocReq(0, 0) {}
+    StalledAllocReq() : StalledAllocReq(0, 0) { }
 
     size_t size() { return _size; }
 
@@ -519,18 +519,15 @@ private:
   HeapWord* attempt_allocation_humongous(size_t word_size);
 
   bool attempt_allocation_after_gc(size_t word_size,
-                                  uint gc_count_before,
-                                  bool should_try_gc,
-                                  HeapWord** result,
-                                  GCCause::Cause gc_cause);
+                                   uint gc_count_before,
+                                   bool should_try_gc,
+                                   HeapWord** result,
+                                   GCCause::Cause gc_cause);
 
   // Allocation attempt that should be called during safepoints (e.g.,
-  // at the end of a successful GC). expect_null_mutator_alloc_region
-  // specifies whether the mutator alloc region is expected to be null
-  // or not.
-  HeapWord* attempt_allocation_at_safepoint(size_t word_size,
-                                            bool expect_null_mutator_alloc_region);
-
+  // at the end of a successful GC). node_index speficies the memory node
+  // to use for allocation. expect_null_mutator_alloc_region specifies
+  // whether the mutator alloc region is expected to be null or not.
   HeapWord* attempt_allocation_at_safepoint(size_t word_size,
                                             uint node_index,
                                             bool expect_null_mutator_alloc_region);
@@ -571,6 +568,7 @@ private:
 
   // Reset any allocated but unclaimed allocation requests.
   void reset_allocation_requests();
+
   // Internal helpers used during full GC to split it up to
   // increase readability.
   bool abort_concurrent_cycle();
@@ -581,15 +579,12 @@ private:
   void verify_after_full_collection();
   void print_heap_after_full_collection();
 
-  // Helper method for satisfy_failed_allocation()
+  // Helper method for handle_allocation_requests()
   HeapWord* satisfy_failed_allocation_helper(size_t word_size,
                                              uint node_index,
                                              bool expect_null_mutator_alloc_region);
 
-  // Attempts to expand the heap sufficiently to support an allocation of the
-  // given "word_size". If successful, perform the allocation and return the address
-  // of the allocated block, or else null.
-  HeapWord* expand_and_allocate(size_t word_size);
+  // Attempts to expand the heap by "word_size" words.
   bool expand(size_t word_size);
 
   void verify_numa_regions(const char* desc);

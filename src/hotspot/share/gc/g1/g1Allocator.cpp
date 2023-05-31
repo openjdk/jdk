@@ -68,11 +68,6 @@ G1Allocator::~G1Allocator() {
 }
 
 #ifdef ASSERT
-bool G1Allocator::has_mutator_alloc_region() {
-  uint node_index = current_node_index();
-  return has_mutator_alloc_region(node_index);
-}
-
 bool G1Allocator::has_mutator_alloc_region(uint node_index) {
   return mutator_alloc_region(node_index)->get() != nullptr;
 }
