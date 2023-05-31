@@ -50,7 +50,7 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
 import jdk.internal.util.OperatingSystem;
-import jdk.internal.util.Version;
+import jdk.internal.util.OSVersion;
 import static jdk.jpackage.internal.MacAppBundler.BUNDLE_ID_SIGNING_PREFIX;
 import static jdk.jpackage.internal.MacAppBundler.DEVELOPER_ID_APP_SIGNING_KEY;
 import static jdk.jpackage.internal.MacBaseInstallerBundler.SIGNING_KEYCHAIN;
@@ -610,7 +610,7 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
 
     public static void addNewKeychain(Map<String, ? super Object> params)
                                     throws IOException, InterruptedException {
-        if (OperatingSystem.version().compareTo(new Version(10, 12)) < 0) {
+        if (OSVersion.current().compareTo(new OSVersion(10, 12)) < 0) {
             // we need this for OS X 10.12+
             return;
         }
@@ -662,7 +662,7 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
 
     public static void restoreKeychainList(Map<String, ? super Object> params)
             throws IOException{
-        if (OperatingSystem.version().compareTo(new Version(10, 12)) < 0) {
+        if (OSVersion.current().compareTo(new OSVersion(10, 12)) < 0) {
             // we need this for OS X 10.12+
             return;
         }

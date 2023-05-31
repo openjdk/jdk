@@ -26,8 +26,7 @@
 package jdk.jpackage.internal;
 
 import jdk.internal.util.Architecture;
-import jdk.internal.util.OperatingSystem;
-import jdk.internal.util.Version;
+import jdk.internal.util.OSVersion;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -601,7 +600,7 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
             // maybe sign
             if (Optional.ofNullable(
                     SIGN_BUNDLE.fetchFrom(params)).orElse(Boolean.TRUE)) {
-                if (OperatingSystem.version().compareTo(new Version(10, 12)) >= 0) {
+                if (OSVersion.current().compareTo(new OSVersion(10, 12)) >= 0) {
                     // we need this for OS X 10.12+
                     Log.verbose(I18N.getString("message.signing.pkg"));
                 }
