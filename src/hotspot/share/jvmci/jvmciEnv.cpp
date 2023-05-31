@@ -363,7 +363,7 @@ bool JVMCIEnv::pending_exception_as_string(const char** to_string, const char** 
   if (!is_hotspot()) {
     JNIAccessMark jni(this, THREAD);
     jthrowable ex = jni()->ExceptionOccurred();
-    if (ex != NULL) {
+    if (ex != nullptr) {
       jni()->ExceptionClear();
       jobjectArray pair = (jobjectArray) jni()->CallStaticObjectMethod(
         JNIJVMCI::HotSpotJVMCIRuntime::clazz(),

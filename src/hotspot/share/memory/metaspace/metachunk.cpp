@@ -277,7 +277,7 @@ void Metachunk::verify() const {
          word_size(), committed_words());
 
   // Test base pointer
-  assert(base() != nullptr, "Base pointer nullptr");
+  assert(base() != nullptr, "Base pointer null");
   assert(vsnode() != nullptr, "No space");
   vsnode()->check_pointer(base());
 

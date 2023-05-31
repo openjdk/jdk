@@ -324,7 +324,7 @@ class UNSIGNED5 : AllStatic {
   public:
     Writer(const ARR& array)
       : _array(const_cast<ARR&>(array)), _limit_ptr(nullptr), _position(0) {
-      // Note: if _limit_ptr is nullptr, the ARR& is never reassigned,
+      // Note: if _limit_ptr is null, the ARR& is never reassigned,
       // because has_limit is false.  So the const_cast here is safe.
       assert(!has_limit(), "this writer cannot be growable");
     }
