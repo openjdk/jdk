@@ -127,7 +127,7 @@ static gboolean initScreencast(const gchar *token,
                                gint affectedBoundsLength) {
     fp_pw_init(NULL, NULL);
 
-    pw.pwFd = -1;
+    pw.pwFd = RESULT_ERROR;
 
     if (!initScreenSpace()
         || !initXdgDesktopPortal()
@@ -812,7 +812,7 @@ JNIEXPORT jint JNICALL Java_sun_awt_screencast_ScreencastHelper_getRGBPixelsImpl
         EXCEPTION_CHECK_DESCRIBE();
         if (boundsLen % 4 != 0) {
             DEBUG_SCREENCAST("%s:%i incorrect array length\n", __FUNCTION__, __LINE__);
-            return -1;
+            return RESULT_ERROR;
         }
         affectedBoundsLength = boundsLen / 4;
     }
@@ -836,16 +836,12 @@ JNIEXPORT jint JNICALL Java_sun_awt_screencast_ScreencastHelper_getRGBPixelsImpl
 
     if (!initScreencast(token, affectedScreenBounds, affectedBoundsLength)) {
         releaseToken(env, jtoken, token);
-        if (pw.pwFd == START_DENIED) {
-            return START_DENIED;
-        } else {
-            return -1;
-        }
+        return pw.pwFd;
     }
 
     if (!doLoop(requestedArea)) {
         releaseToken(env, jtoken, token);
-        return -1;
+        return RESULT_ERROR;
     }
 
     while (!isAllDataReady()) {

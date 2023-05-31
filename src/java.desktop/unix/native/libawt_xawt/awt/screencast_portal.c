@@ -589,7 +589,7 @@ static void callbackScreenCastStart(
     if (status != 0) {
         // Cancel pressed on the system dialog
         DEBUG_SCREENCAST("Failed to start screencast: %u\n", status);
-        startHelper->result = START_DENIED;
+        startHelper->result = RESULT_DENIED;
         helper->isDone = TRUE;
         return;
     }
@@ -611,12 +611,12 @@ static void callbackScreenCastStart(
     DEBUG_SCREENCAST("available screen count %i\n", count);
 
     startHelper->result = (rebuildScreenData(&iter, count == 1))
-                   ? START_OK
-                   : -1;
+                   ? RESULT_OK
+                   : RESULT_ERROR;
 
     DEBUG_SCREENCAST("rebuildScreenData result |%i|\n", startHelper->result);
 
-    if (startHelper->result == START_OK) {
+    if (startHelper->result == RESULT_OK) {
         GVariant *restoreTokenVar = gtk->g_variant_lookup_value(
                 result,
                 "restore_token",
@@ -642,7 +642,7 @@ static void callbackScreenCastStart(
     }
 }
 
-ScreenCastStartResult portalScreenCastStart(const gchar *token) {
+ScreenCastResult portalScreenCastStart(const gchar *token) {
     GError *err = NULL;
 
     gchar *requestPath = NULL;
@@ -706,7 +706,7 @@ ScreenCastStartResult portalScreenCastStart(const gchar *token) {
     free(requestPath);
     free(requestToken);
 
-    DEBUG_SCREENCAST("ScreenCastStartResult |%i|\n", startHelper.result);
+    DEBUG_SCREENCAST("ScreenCastResult |%i|\n", startHelper.result);
 
     return startHelper.result;
 }
@@ -737,7 +737,7 @@ int portalScreenCastOpenPipewireRemote() {
         DEBUG_SCREENCAST("Failed to call OpenPipeWireRemote on session: %s\n",
                          err->message);
         ERR_HANDLE(err);
-        return -1;
+        return RESULT_ERROR;
     }
 
     gint32 index;
@@ -754,7 +754,7 @@ int portalScreenCastOpenPipewireRemote() {
         DEBUG_SCREENCAST("Failed to get pipewire fd index: %s\n",
                          err->message);
         ERR_HANDLE(err);
-        return -1;
+        return RESULT_ERROR;
     }
 
     int fd = gtk->g_unix_fd_list_get(
@@ -770,7 +770,7 @@ int portalScreenCastOpenPipewireRemote() {
     if (err) {
         DEBUG_SCREENCAST("Failed to get pipewire fd: %s\n", err->message);
         ERR_HANDLE(err);
-        return -1;
+        return RESULT_ERROR;
     }
 
     return fd;
@@ -865,26 +865,22 @@ gboolean checkCanCaptureAllRequiredScreens(GdkRectangle *affectedBounds,
 }
 
 
-/**
- * @return negative values on error,
- * -1 for generic error, or enum value of ScreenCastStartResult for specific failure
- */
 int getPipewireFd(const gchar *token,
                   GdkRectangle *affectedBounds,
                   gint affectedBoundsLength) {
     if (!portalScreenCastCreateSession())  {
         DEBUG_SCREENCAST("Failed to create ScreenCast session\n", NULL);
-        return -1;
+        return RESULT_ERROR;
     }
 
     if (!portalScreenCastSelectSources(token)) {
         DEBUG_SCREENCAST("Failed to select sources\n", NULL);
-        return -1;
+        return RESULT_ERROR;
     }
 
-    ScreenCastStartResult startResult = portalScreenCastStart(token);
+    ScreenCastResult startResult = portalScreenCastStart(token);
     DEBUG_SCREENCAST("portalScreenCastStart result |%i|\n", startResult);
-    if (startResult != START_OK) {
+    if (startResult != RESULT_OK) {
         DEBUG_SCREENCAST("Failed to start\n", NULL);
         return startResult;
     } else {
@@ -893,7 +889,7 @@ int getPipewireFd(const gchar *token,
             DEBUG_SCREENCAST("The location of the screens has changed, "
                              "the capture area is outside the allowed "
                              "area.\n", NULL)
-            return START_DENIED;
+            return RESULT_OUT_OF_BOUNDS;
         }
     }
 

@@ -62,13 +62,15 @@ struct DBusCallbackHelper {
 };
 
 typedef enum {
-    START_OK = 0,
-    START_DENIED = -11,
-} ScreenCastStartResult;
+    RESULT_OK = 0,
+    RESULT_ERROR = -1,
+    RESULT_DENIED = -11,
+    RESULT_OUT_OF_BOUNDS = -12,
+} ScreenCastResult;
 
 struct StartHelper {
     const gchar *token;
-    ScreenCastStartResult result;
+    ScreenCastResult result;
 };
 
 #endif //_SCREENCAST_PORTAL_H

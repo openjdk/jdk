@@ -44,7 +44,9 @@ public class ScreencastHelper {
     private static final boolean IS_NATIVE_LOADED;
 
 
+    private static final int ERROR = -1;
     private static final int DENIED = -11;
+    private static final int OUT_OF_BOUNDS = -12;
 
     private ScreencastHelper() {
     }
@@ -110,8 +112,8 @@ public class ScreencastHelper {
                 .toList();
 
         if (SCREENCAST_DEBUG) {
-            System.out.println("// getRGBPixels affectedScreenBounds "
-                    + affectedScreenBounds);
+            System.out.printf("// getRGBPixels in %s, affectedScreenBounds %s\n",
+                    captureArea, affectedScreenBounds);
         }
 
         if (affectedScreenBounds.isEmpty()) {
@@ -145,7 +147,9 @@ public class ScreencastHelper {
 
             if (retVal >= 0) { // we have received a screen data
                 return;
-            }
+            } else if (!checkReturnValue(retVal)) {
+                return;
+            } // else, try other tokens
         }
 
         // we do not have a saved token or it did not work,
@@ -157,10 +161,25 @@ public class ScreencastHelper {
                 null
         );
 
+        checkReturnValue(retVal);
+    }
+
+    private static boolean checkReturnValue(int retVal) {
         if (retVal == DENIED) {
+            // user explicitly denied the capture, no more tries.
             throw new SecurityException(
                     "Screen Capture in the selected area was not allowed"
             );
+        } else if (retVal == ERROR) {
+            if (SCREENCAST_DEBUG) {
+                System.err.println("Screen capture failed.");
+            }
+        } else if (retVal == OUT_OF_BOUNDS) {
+            if (SCREENCAST_DEBUG) {
+                System.err.println(
+                        "Token does not provide access to requested area.");
+            }
         }
+        return retVal != ERROR;
     }
 }
