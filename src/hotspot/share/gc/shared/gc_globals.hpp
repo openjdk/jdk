@@ -166,7 +166,7 @@
           "A System.gc() request invokes a concurrent collection; "         \
           "(effective only when using concurrent collectors)")              \
                                                                             \
-  product(uintx, GCLockerEdenExpansionPercent, 5,                           \
+  product(uint, GCLockerEdenExpansionPercent, 5,                           \
           "How much the GC can expand the eden by while the GC locker "     \
           "is active (as a percentage)")                                    \
           range(0, 100)                                                     \
@@ -176,16 +176,16 @@
           "blocked by the GC locker")                                       \
           range(0, max_uintx)                                               \
                                                                             \
-  product(uintx, ParallelGCBufferWastePct, 10,                              \
+  product(uint, ParallelGCBufferWastePct, 10,                              \
           "Wasted fraction of parallel allocation buffer")                  \
           range(0, 100)                                                     \
                                                                             \
-  product(uintx, TargetPLABWastePct, 10,                                    \
+  product(uint, TargetPLABWastePct, 10,                                    \
           "Target wasted space in last buffer as percent of overall "       \
           "allocation")                                                     \
           range(1, 100)                                                     \
                                                                             \
-  product(uintx, PLABWeight, 75,                                            \
+  product(uint, PLABWeight, 75,                                            \
           "Percentage (0-100) used to weight the current sample when "      \
           "computing exponentially decaying average for ResizePLAB")        \
           range(0, 100)                                                     \
@@ -231,7 +231,7 @@
                "ParallelRefProcEnabled is true. Specify 0 to disable and "  \
                "use all threads.")                                          \
                                                                             \
-  product(uintx, InitiatingHeapOccupancyPercent, 45,                        \
+  product(uint, InitiatingHeapOccupancyPercent, 45,                        \
           "The percent occupancy (IHOP) of the current old generation "     \
           "capacity above which a concurrent mark cycle will be initiated " \
           "Its value may change over time if adaptive IHOP is enabled, "    \
@@ -364,7 +364,7 @@
           "Resize the virtual spaces of the young or old generations")      \
           range(-1, 1)                                                      \
                                                                             \
-  product(uintx, AdaptiveSizeThroughPutPolicy, 0,                           \
+  product(uint, AdaptiveSizeThroughPutPolicy, 0,                           \
           "Policy for changing generation size for throughput goals")       \
           range(0, 1)                                                       \
                                                                             \
@@ -382,11 +382,11 @@
   product(bool, UseAdaptiveSizePolicyFootprintGoal, true,                   \
           "Use adaptive minimum footprint as a goal")                       \
                                                                             \
-  product(uintx, AdaptiveSizePolicyWeight, 10,                              \
+  product(uint, AdaptiveSizePolicyWeight, 10,                              \
           "Weight given to exponential resizing, between 0 and 100")        \
           range(0, 100)                                                     \
                                                                             \
-  product(uintx, AdaptiveTimeWeight,       25,                              \
+  product(uint, AdaptiveTimeWeight,       25,                              \
           "Weight given to time in adaptive policy, between 0 and 100")     \
           range(0, 100)                                                     \
                                                                             \
@@ -402,20 +402,20 @@
           "How much buffer to keep for survivor overflow")                  \
           range(0, max_juint)                                               \
                                                                             \
-  product(uintx, ThresholdTolerance, 10,                                    \
+  product(uint, ThresholdTolerance, 10,                                    \
           "Allowed collection cost difference between generations")         \
           range(0, 100)                                                     \
                                                                             \
-  product(uintx, AdaptiveSizePolicyCollectionCostMargin, 50,                \
+  product(uint, AdaptiveSizePolicyCollectionCostMargin, 50,                \
           "If collection costs are within margin, reduce both by full "     \
           "delta")                                                          \
           range(0, 100)                                                     \
                                                                             \
-  product(uintx, YoungGenerationSizeIncrement, 20,                          \
+  product(uint, YoungGenerationSizeIncrement, 20,                          \
           "Adaptive size percentage change in young generation")            \
           range(0, 100)                                                     \
                                                                             \
-  product(uintx, YoungGenerationSizeSupplement, 80,                         \
+  product(uint, YoungGenerationSizeSupplement, 80,                         \
           "Supplement to YoungedGenerationSizeIncrement used at startup")   \
           range(0, 100)                                                     \
                                                                             \
@@ -423,11 +423,11 @@
           "Decay factor to YoungedGenerationSizeSupplement")                \
           range(1, max_uintx)                                               \
                                                                             \
-  product(uintx, TenuredGenerationSizeIncrement, 20,                        \
+  product(uint, TenuredGenerationSizeIncrement, 20,                        \
           "Adaptive size percentage change in tenured generation")          \
           range(0, 100)                                                     \
                                                                             \
-  product(uintx, TenuredGenerationSizeSupplement, 80,                       \
+  product(uint, TenuredGenerationSizeSupplement, 80,                       \
           "Supplement to TenuredGenerationSizeIncrement used at startup")   \
           range(0, 100)                                                     \
                                                                             \
@@ -481,12 +481,12 @@
           "Use policy to limit of proportion of time spent in GC "          \
           "before an OutOfMemory error is thrown")                          \
                                                                             \
-  product(uintx, GCTimeLimit, 98,                                           \
+  product(uint, GCTimeLimit, 98,                                           \
           "Limit of the proportion of time spent in GC before "             \
           "an OutOfMemoryError is thrown (used with GCHeapFreeLimit)")      \
           range(0, 100)                                                     \
                                                                             \
-  product(uintx, GCHeapFreeLimit, 2,                                        \
+  product(uint, GCHeapFreeLimit, 2,                                        \
           "Minimum percentage of free space after a full GC before an "     \
           "OutOfMemoryError is thrown (used with GCTimeLimit)")             \
           range(0, 100)                                                     \
@@ -656,11 +656,11 @@
           range(0, markWord::max_age + 1)                                   \
           constraint(InitialTenuringThresholdConstraintFunc,AfterErgo)      \
                                                                             \
-  product(uintx, TargetSurvivorRatio,    50,                                \
+  product(uint, TargetSurvivorRatio,    50,                                \
           "Desired percentage of survivor space used after scavenge")       \
           range(0, 100)                                                     \
                                                                             \
-  product(uintx, MarkSweepDeadRatio,     5,                                 \
+  product(uint, MarkSweepDeadRatio,     5,                                 \
           "Percentage (0-100) of the old gen allowed as dead wood. "        \
           "Serial mark sweep treats this as both the minimum and maximum "  \
           "value. "                                                         \
