@@ -48,6 +48,7 @@ import javax.lang.model.util.Types;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -295,25 +296,12 @@ public class VisibleMemberTable {
      *
      * An override sequence is an ordered set of one or more methods, each of
      * which, starting from the second, are overridden by the first, from this
-     * class or interface. The order of methods in the sequence is the
-     * following order of members discovery in supertypes: depth-first,
-     * preferring classes to interfaces.
+     * class or interface. The order of methods in the sequence is that of
+     * the comment search algorithm.
      *
      * The assumption is that there's a unique override sequence for each
      * method. If a method does not override anything, the sequence trivially
      * consists of just that method.
-     *
-     * Example 1
-     * =========
-     *
-     *     public class A implements X { }
-     *     public class B extends A implements Y { }
-     *
-     * Example 2
-     * =========
-     *
-     *     public interface X { }
-     *     public interface Y extends X { }
      *
      * API
      * ===
@@ -890,15 +878,21 @@ public class VisibleMemberTable {
 
     private void sequence(ExecutableElement m) {
         var rawSequence = findOverriddenBy(m);
+
+        // impose an order
+        var order = createSupertypeOrderMap(te);
+        var copyList = new ArrayList<>(rawSequence);
+        copyList.sort(Comparator.comparingInt(o -> {
+            assert order.containsKey(o.enclosing.asElement()) :
+                    diagnosticDescriptionOf(o.enclosing.asElement()) + "in: "
+                            + order.keySet().stream().map(VisibleMemberTable::diagnosticDescriptionOf);
+            return order.get(o.enclosing.asElement());
+        }));
+        rawSequence = com.sun.tools.javac.util.List.from(copyList);
         // Prepend the member from which the exploration started, unconditionally
         rawSequence = rawSequence.prepend(new OverrideData(
                 (DeclaredType) m.getEnclosingElement().asType(), m, false /* this flag's value is immaterial */));
 
-//        // impose an order
-//        var order = createSupertypeOrderMap(te);
-//        var copyList = new ArrayList<>(rawSequence);
-//        copyList.sort(Comparator.comparingInt(o -> order.get(o.enclosing.asElement())));
-//        rawSequence = com.sun.tools.javac.util.List.from(copyList);
 
         // Fix the sequence by computing isSimpleOverride for all the sequence
         // members and hashing those members.
@@ -938,6 +932,70 @@ public class VisibleMemberTable {
             }
         }
     }
+
+    private Map<TypeElement, Integer> createSupertypeOrderMap(TypeElement e) {
+        // replicate legacy order
+        var m = new HashMap<TypeElement, Integer>();
+        if (e.getKind().isClass()) {
+            // ascend by superclasses
+            var c = e;
+            while (true) {
+                m.put(c, m.size());
+                if (c.getSuperclass().getKind() == TypeKind.NONE)
+                    break;
+                c = (TypeElement) ((DeclaredType) c.getSuperclass()).asElement();
+            }
+        }
+        if (e.getKind().isInterface()) {
+            m.put(e, m.size());
+        }
+        var superinterfaces = getAllInterfaces(e);
+        for (var s : superinterfaces) {
+            TypeElement e1 = (TypeElement) ((DeclaredType) s).asElement();
+            assert !m.containsKey(e1);
+            m.put(e1, m.size());
+        }
+        // patch for interfaces
+        if (e.getKind().isInterface()) {
+            // java.lang.Object is the last supertype in a graph of supertypes
+            // for an interface
+            var prev = m.put(elements().getTypeElement("java.lang.Object"), m.size());
+            assert prev == null;
+        }
+        return m;
+    }
+
+    public Set<TypeMirror> getAllInterfaces(TypeElement te) {
+        Set<TypeMirror> results = new LinkedHashSet<>();
+        addSuperInterfaces(te.asType(), results, new HashSet<>());
+        return results;
+    }
+
+    private void addSuperInterfaces(TypeMirror type, Set<TypeMirror> results, Set<Element> visited) {
+        TypeMirror superType = null;
+        for (TypeMirror t : types().directSupertypes(type)) {
+            if (types().isSameType(t, utils.getObjectType()))
+                continue;
+            TypeElement e = asTypeElement(t);
+            if (utils.isPlainInterface(e)) {
+                if (!visited.add(e)) {
+                    continue; // seen it before
+                }
+                results.add(t);
+                addSuperInterfaces(t, results, visited);
+            } else {
+                // there can be at most one superclass and it is not null
+                assert superType == null && t != null : superType;
+                // Save the supertype for later.
+                superType = t;
+            }
+        }
+        // Collect the super-interfaces of the supertype.
+        if (superType != null)
+            addSuperInterfaces(superType, results, visited);
+    }
+
+
 
     private com.sun.tools.javac.util.List<OverrideData> findOverriddenBy(ExecutableElement m) {
         return findOverriddenBy(m, (DeclaredType) te.asType(), com.sun.tools.javac.util.List.nil(), new HashSet<>());
