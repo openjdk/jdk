@@ -1004,8 +1004,7 @@ public class Main {
                             String digestAlg = digestMap.get(s);
                             String sigAlg = SignerInfo.makeSigAlg(
                                     si.getDigestAlgorithmId(),
-                                    si.getDigestEncryptionAlgorithmId(),
-                                    si.getAuthenticatedAttributes() == null);
+                                    si.getDigestEncryptionAlgorithmId());
                             AlgorithmId encAlgId = si.getDigestEncryptionAlgorithmId();
                             AlgorithmParameters sigAlgParams = encAlgId.getParameters();
                             PublicKey key = signer.getPublicKey();
@@ -1020,8 +1019,7 @@ public class Main {
                                 String tsDigestAlg = tsTokenInfo.getHashAlgorithm().getName();
                                 String tsSigAlg = SignerInfo.makeSigAlg(
                                         tsSi.getDigestAlgorithmId(),
-                                        tsSi.getDigestEncryptionAlgorithmId(),
-                                        tsSi.getAuthenticatedAttributes() == null);
+                                        tsSi.getDigestEncryptionAlgorithmId());
                                 AlgorithmId tsEncAlgId = tsSi.getDigestEncryptionAlgorithmId();
                                 AlgorithmParameters tsSigAlgParams = tsEncAlgId.getParameters();
                                 Calendar c = Calendar.getInstance(
