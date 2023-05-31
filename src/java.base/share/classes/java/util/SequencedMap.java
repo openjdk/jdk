@@ -260,7 +260,7 @@ public interface SequencedMap<K, V> extends Map<K, V> {
      * Returns a {@code SequencedSet} view of this map's {@link #keySet keySet}.
      *
      * @implSpec
-     * The implementation in this interface returns a {@code SequencedSet} implementation
+     * The implementation in this interface returns a {@code SequencedSet} instance
      * that behaves as follows. Its {@link SequencedSet#add add} and {@link
      * SequencedSet#addAll addAll} methods throw {@link UnsupportedOperationException}.
      * Its {@link SequencedSet#reversed reversed} method returns the {@link
@@ -292,7 +292,7 @@ public interface SequencedMap<K, V> extends Map<K, V> {
      * Returns a {@code SequencedCollection} view of this map's {@link #values values} collection.
      *
      * @implSpec
-     * The implementation in this interface returns a {@code SequencedCollection} implementation
+     * The implementation in this interface returns a {@code SequencedCollection} instance
      * that behaves as follows. Its {@link SequencedCollection#add add} and {@link
      * SequencedCollection#addAll addAll} methods throw {@link UnsupportedOperationException}.
      * Its {@link SequencedCollection#reversed reversed} method returns the {@link
@@ -319,7 +319,7 @@ public interface SequencedMap<K, V> extends Map<K, V> {
      * Returns a {@code SequencedSet} view of this map's {@link #entrySet entrySet}.
      *
      * @implSpec
-     * The implementation in this interface returns a {@code SequencedSet} implementation
+     * The implementation in this interface returns a {@code SequencedSet} instance
      * that behaves as follows. Its {@link SequencedSet#add add} and {@link
      * SequencedSet#addAll addAll} methods throw {@link UnsupportedOperationException}.
      * Its {@link SequencedSet#reversed reversed} method returns the {@link
