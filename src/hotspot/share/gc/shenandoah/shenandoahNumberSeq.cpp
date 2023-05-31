@@ -56,7 +56,7 @@ void HdrSeq::add(double val) {
   int mag;
   if (v > 0) {
     mag = 0;
-    while (v > 1) {
+    while (v >= 1) {
       mag++;
       v /= 10;
     }
@@ -71,7 +71,7 @@ void HdrSeq::add(double val) {
   int bucket = -MagMinimum + mag;
   int sub_bucket = (int) (v * ValBuckets);
 
-  // Defensively saturate for product bits:
+  // Defensively saturate for product bits
   if (bucket < 0) {
     assert (false, "bucket index (%d) underflow for value (%8.2f)", bucket, val);
     bucket = 0;
