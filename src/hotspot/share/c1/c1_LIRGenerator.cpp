@@ -2245,10 +2245,11 @@ SwitchRangeArray* LIRGenerator::create_lookup_ranges(TableSwitch* x) {
   int len = x->length();
   if (len > 0) {
     BlockBegin* sux = x->sux_at(0);
-    int key = x->lo_key();
+    int low = x->lo_key();
     BlockBegin* default_sux = x->default_sux();
-    C1SwitchRange* range = new C1SwitchRange(key, sux);
-    for (int i = 0; i < len; i++, key++) {
+    C1SwitchRange* range = new C1SwitchRange(low, sux);
+    for (int i = 0; i < len; i++) {
+      int key = low + i;
       BlockBegin* new_sux = x->sux_at(i);
       if (sux == new_sux) {
         // still in same range
