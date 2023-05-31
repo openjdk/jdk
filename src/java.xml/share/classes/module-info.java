@@ -89,7 +89,7 @@
  * {@link javax.xml.parsers.SAXParser SAXParser}, that represent the DOM and
  * SAX processors.
  * <p>
- * The processors are configured and instantiated through their corresponding factories.
+ * The processors are configured and instantiated with their corresponding factories.
  * The DocumentBuilder and SAXParser for example are constructed with the
  * {@link javax.xml.parsers.DocumentBuilderFactory DocumentBuilderFactory}
  * and {@link javax.xml.parsers.SAXParserFactory SAXParserFactory} respectively.
@@ -130,7 +130,7 @@
  * <p>
  * Configuration files are Java {@link java.util.Properties} files that consist
  * of mappings between system properties and their values defined by various APIs
- * or processes. The following demonstrates setting the
+ * or processes. The following configuration file entries demonstrate setting the
  * {@code javax.xml.parsers.DocumentBuilderFactory}
  * and {@code CatalogFeatures.RESOLVE} properties:
  *
@@ -149,10 +149,10 @@
  * or reading the file, the configuration process proceeds as if the file does not exist.
  *
  * <h4 id="Conf_CF_SP">User-defined Configuration File</h4>
- * The system property {@systemProperty java.xml.config.file} can be set on the
- * command line or at run-time to specify the location of a configuration file.
- * If the {@code java.xml.config.file} property is included within a configuration
- * file, it will be ignored.
+ * In addition to the {@code jaxp.properties} file, the system property
+ * {@systemProperty java.xml.config.file} can be set on the command line or at run-time
+ * to specify the location of a configuration file. If the {@code java.xml.config.file}
+ * property is included within a configuration file, it will be ignored.
  *
  * <p>
  * When the {@code java.xml.config.file} is specified, the configuration file will be
@@ -179,7 +179,7 @@
  *
  * <ul>
  * <li><p>
- *      Through the APIs for factories or processors
+ *      With the APIs for factories or processors
  * </li>
  * <li><p>
  *      System Property
@@ -201,7 +201,7 @@
  * property as an example, the following illustrates how these rules are applied:
  * <ul>
  * <li><p>
- *      Properties specified through factory or processor APIs have the highest
+ *      Properties specified with factory or processor APIs have the highest
  * precedence. The following code effectively sets the RESOLVE property to
  * {@code strict}, regardless of settings in any other configuration sources.
  *
@@ -221,7 +221,7 @@
  * }
  * </li>
  * <li><p>
- *      If the property is not set on the factory, or through its system property,
+ *      If the property is not set on the factory, or with its system property,
  * the setting in a configuration file will take effect. The following entry
  * sets the property to '{@code continue}'.
  * {@snippet :
