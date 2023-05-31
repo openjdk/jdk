@@ -351,8 +351,8 @@ public interface RandomGenerator {
              * Thus, kl is computed exactly.
              *
              * Mathematically,
-             *      kr = ceil(right / delta),           if isRightIncluded
-             *      kr = floor(right / delta) + 1,      if !isRightIncluded
+             *      kr = ceil(right / delta),           if !isRightIncluded
+             *      kr = floor(right / delta) + 1,      if isRightIncluded
              * The double division rd = right / delta never overflows and is
              * exact, except in the presence of underflows. But even underflows
              * do not affect the outcomes of ceil() and floor(), except,
