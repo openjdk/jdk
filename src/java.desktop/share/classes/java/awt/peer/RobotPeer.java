@@ -127,5 +127,4 @@ public interface RobotPeer
     default boolean useAbsoluteCoordinates() {
         return false;
     }
-
 }

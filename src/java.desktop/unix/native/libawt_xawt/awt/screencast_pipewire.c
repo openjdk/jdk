@@ -252,7 +252,7 @@ static void onStreamProcess(void *userdata) {
 
     if (!data->stream
         || (pwBuffer = fp_pw_stream_dequeue_buffer(data->stream)) == NULL) {
-        DEBUG_SCREEN_PREFIX(screen, "⚠ out of buffers\n", NULL);
+        DEBUG_SCREEN_PREFIX(screen, "!!! out of buffers\n", NULL);
         return;
     }
 
@@ -260,7 +260,7 @@ static void onStreamProcess(void *userdata) {
     if (!spaBuffer
         || spaBuffer->n_datas < 1
         || spaBuffer->datas[0].data == NULL) {
-        DEBUG_SCREEN_PREFIX(screen, "⚠ no data, n_datas %d\n",
+        DEBUG_SCREEN_PREFIX(screen, "!!! no data, n_datas %d\n",
                             spaBuffer->n_datas);
         return;
     }
@@ -371,7 +371,7 @@ static bool startStream(
 static gboolean connectStream(int index) {
     DEBUG_SCREENCAST("@@@ using screen %i\n", index);
     if (index >= screenSpace.screenCount) {
-        DEBUG_SCREENCAST("⚠ Wrong index for screen\n", NULL);
+        DEBUG_SCREENCAST("!!! Wrong index for screen\n", NULL);
         return FALSE;
     }
 
@@ -395,7 +395,7 @@ static gboolean connectStream(int index) {
 
     if (!data->stream) {
         DEBUG_SCREEN_PREFIX(data->screenProps,
-                            "⚠ Could not create a pipewire stream\n", NULL);
+                            "!!! Could not create a pipewire stream\n", NULL);
         fp_pw_thread_loop_unlock(pw.loop);
         return FALSE;
     }
@@ -411,7 +411,7 @@ static gboolean connectStream(int index) {
 
     if (!startStream(data->stream, screenSpace.screens[index].id)){
         DEBUG_SCREEN_PREFIX(data->screenProps,
-                            "⚠ Could not start a pipewire stream\n", NULL);
+                            "!!! Could not start a pipewire stream\n", NULL);
         fp_pw_thread_loop_unlock(pw.loop);
         return FALSE;
     }
@@ -435,7 +435,7 @@ static gboolean connectStream(int index) {
  */
 static gboolean checkScreen(int index, GdkRectangle requestedArea) {
     if (index >= screenSpace.screenCount) {
-        DEBUG_SCREENCAST("⚠ Wrong index for screen %i >= %i\n",
+        DEBUG_SCREENCAST("!!! Wrong index for screen %i >= %i\n",
                          index, screenSpace.screenCount);
         return FALSE;
     }
@@ -481,7 +481,7 @@ static void onCoreError(
         const char *message
 ) {
     DEBUG_SCREENCAST(
-            "⚠ pipewire error: id %u, seq: %d, res: %d (%s): %s\n",
+            "!!! pipewire error: id %u, seq: %d, res: %d (%s): %s\n",
             id, seq, res, strerror(res), message
     );
     fp_pw_thread_loop_unlock(pw.loop);
@@ -501,7 +501,7 @@ static gboolean doLoop(GdkRectangle requestedArea) {
     pw.loop = fp_pw_thread_loop_new("AWT Pipewire Thread", NULL);
 
     if (!pw.loop) {
-        DEBUG_SCREENCAST("⚠ Could not create a loop\n", NULL);
+        DEBUG_SCREENCAST("!!! Could not create a loop\n", NULL);
         doCleanup();
         return FALSE;
     }
@@ -513,13 +513,13 @@ static gboolean doLoop(GdkRectangle requestedArea) {
     );
 
     if (!pw.context) {
-        DEBUG_SCREENCAST("⚠ Could not create a pipewire context\n", NULL);
+        DEBUG_SCREENCAST("!!! Could not create a pipewire context\n", NULL);
         doCleanup();
         return FALSE;
     }
 
     if (fp_pw_thread_loop_start(pw.loop) != 0) {
-        DEBUG_SCREENCAST("⚠ Could not start pipewire thread loop\n", NULL);
+        DEBUG_SCREENCAST("!!! Could not start pipewire thread loop\n", NULL);
         doCleanup();
         return FALSE;
     }
@@ -534,7 +534,7 @@ static gboolean doLoop(GdkRectangle requestedArea) {
     );
 
     if (!pw.core) {
-        DEBUG_SCREENCAST("⚠ Could not create pipewire core\n", NULL);
+        DEBUG_SCREENCAST("!!! Could not create pipewire core\n", NULL);
         goto fail;
     }
 
@@ -593,7 +593,7 @@ extern gboolean glib_version_2_68;
 #define LOAD_SYMBOL(fp_name, name) do {                             \
     (fp_name) = dlsym(pipewire_libhandle, name);                    \
     if (!(fp_name)) {                                               \
-       debug_screencast("⚠ %s:%i error loading dl_symbol %s\n",     \
+       debug_screencast("!!! %s:%i error loading dl_symbol %s\n",   \
                         __func__, __LINE__, name);                  \
        goto fail;                                                   \
     }                                                               \
@@ -711,7 +711,7 @@ void storeRestoreToken(const gchar* oldToken, const gchar* newToken) {
         (*env)->DeleteLocalRef(env, jOldToken);
         (*env)->DeleteLocalRef(env, jNewToken);
     } else {
-        DEBUG_SCREENCAST("⚠ Could not get env\n", NULL);
+        DEBUG_SCREENCAST("!!! Could not get env\n", NULL);
     }
 }
 
@@ -747,7 +747,7 @@ JNIEXPORT jboolean JNICALL Java_sun_awt_screencast_ScreencastHelper_loadPipewire
             return JNI_FALSE;
         }
     } else {
-        DEBUG_SCREENCAST("⚠ @@@ tokenStorageClass %p\n",
+        DEBUG_SCREENCAST("!!! @@@ tokenStorageClass %p\n",
                          tokenStorageClass);
         return JNI_FALSE;
     }

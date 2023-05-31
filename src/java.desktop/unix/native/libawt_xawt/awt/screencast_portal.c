@@ -43,7 +43,7 @@ void errHandle(
         int lineNum
 ) {
     if (error) {
-        fprintf(stderr, "⚠ %s:%i Error: domain %i code %i message: \"%s\"\n",
+        fprintf(stderr, "!!! %s:%i Error: domain %i code %i message: \"%s\"\n",
                 functionName, lineNum,
                 error->domain, error->code, error->message);
     }
@@ -60,7 +60,7 @@ gboolean validateToken(const gchar *token) {
 
     gboolean isValid = gtk->g_uuid_string_is_valid(token);
     if (!isValid) {
-        DEBUG_SCREENCAST("⚠ restore token "
+        DEBUG_SCREENCAST("!!! restore token "
                          "is not a valid UUID string:\n\"%s\"\n",
                          token);
     }
@@ -163,7 +163,7 @@ gboolean checkVersion() {
         );
 
         if (!retVersion) { //no backend on system
-            DEBUG_SCREENCAST("⚠ could not detect the screencast version\n",
+            DEBUG_SCREENCAST("!!! could not detect the screencast version\n",
                              NULL);
             return FALSE;
         }
@@ -175,7 +175,7 @@ gboolean checkVersion() {
 
         if (!varVersion){
             gtk->g_variant_unref(retVersion);
-            DEBUG_SCREENCAST("⚠ could not get the screencast version\n",
+            DEBUG_SCREENCAST("!!! could not get the screencast version\n",
                              NULL);
             return FALSE;
         }
@@ -189,7 +189,7 @@ gboolean checkVersion() {
 
     DEBUG_SCREENCAST("ScreenCast protocol version %d\n", version);
     if (version < 4) {
-        DEBUG_SCREENCAST("⚠ ScreenCast protocol version %d < 4,"
+        DEBUG_SCREENCAST("!!! ScreenCast protocol version %d < 4,"
                          " session restore is not available\n",
                          version);
     }
@@ -901,7 +901,7 @@ int getPipewireFd(const gchar *token,
 
     int pipewireFd = portalScreenCastOpenPipewireRemote();
     if (pipewireFd < 0) {
-        DEBUG_SCREENCAST("⚠ Failed to get pipewire fd\n", NULL);
+        DEBUG_SCREENCAST("!!! Failed to get pipewire fd\n", NULL);
     }
 
     DEBUG_SCREENCAST("pwFd %i\n", pipewireFd);
