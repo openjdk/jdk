@@ -25,38 +25,21 @@
 
 package sun.invoke;
 
-import sun.invoke.empty.Empty;
-
-import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 
 /**
  * Private API used inside of java.lang.invoke.MethodHandles.
- * Interface implemented by every object which is produced by
- * {@link java.lang.invoke.MethodHandleProxies#asInterfaceInstance
- * MethodHandleProxies.asInterfaceInstance}.
- * The methods of this interface allow a caller to recover the parameters
- * to {@code asInstance}.
- * This allows applications to repeatedly convert between method handles
- * and SAM objects, without the risk of creating unbounded delegation chains.
- * The methods have an empty parameter to avoid accidental clashes with
- * the implemented SAM methods.
+ * Includes utility methods for implementation of MethodHandle proxies.
  */
-public interface WrapperInstance {
+public final class WrapperInstance {
     /**
      * Called by proxies implementation to ensure the constructor is called by proper callers.
      */
-    static void ensureOriginalLookup(MethodHandles.Lookup lookup, Class<?> lookupClass) throws IllegalAccessException {
+    public static void ensureOriginalLookup(MethodHandles.Lookup lookup, Class<?> lookupClass) throws IllegalAccessException {
         if (lookup.lookupClass() != lookupClass || (lookup.lookupModes() & MethodHandles.Lookup.ORIGINAL) == 0) {
             throw new IllegalAccessException("Illegal caller to " + lookupClass + ": " + lookup);
         }
     }
 
-    /** Produce or recover a target method handle which is behaviorally
-     *  equivalent to the SAM method of this object.
-     */
-    MethodHandle getWrapperInstanceTarget(Empty empty);
-    /** Recover the SAM type for which this object was created.
-     */
-    Class<?> getWrapperInstanceType(Empty empty);
+    private WrapperInstance() {}
 }

@@ -142,7 +142,6 @@ public class BasicTest {
         assertFalse(m1.isExported(pn));
         assertTrue(m1.isExported(pn, MethodHandleProxies.class.getModule()));
         assertTrue(Object.class.getModule().isExported("sun.invoke", m1));
-        assertTrue(Object.class.getModule().isExported("sun.invoke.empty", m1));
         assertTrue(m1.isNamed());
         assertTrue(m1.getName().startsWith("jdk.MHProxy"));
     }
