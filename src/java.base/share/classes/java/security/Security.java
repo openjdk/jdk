@@ -26,10 +26,13 @@
 package java.security;
 
 import java.net.MalformedURLException;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Stream;
 import java.io.*;
-import java.net.URL;
 
 import jdk.internal.access.JavaSecurityPropertiesAccess;
 import jdk.internal.event.EventHelper;
@@ -96,6 +99,7 @@ public final class Security {
     private static void initialize() {
         props = new Properties();
         boolean overrideAll = false;
+        String extraPropDir, extraPropFile = null;
 
         // first load the system properties file
         // to determine the value of security.overridePropertiesFile
@@ -104,16 +108,50 @@ public final class Security {
         if (!success) {
             throw new InternalError("Error loading java.security file");
         }
+        extraPropDir = props.getProperty("security.propertiesDir");
 
         if ("true".equalsIgnoreCase(props.getProperty
                 ("security.overridePropertiesFile"))) {
 
-            String extraPropFile = System.getProperty
-                    ("java.security.properties");
+            String propDir = System.getProperty("java.security.propertiesDir");
+            // Command-line property directories take precedence over
+            // those in java.security. This can also be used to disable
+            // the property directory if set to the empty string.
+            if (propDir != null) {
+                extraPropDir = propDir;
+            }
+
+            extraPropFile = System.getProperty("java.security.properties");
             if (extraPropFile != null && extraPropFile.startsWith("=")) {
                 overrideAll = true;
                 extraPropFile = extraPropFile.substring(1);
             }
+        }
+
+        if (extraPropDir != null && !extraPropDir.isBlank()) {
+            if (sdebug != null ) {
+                sdebug.println("searching for property files in " + extraPropDir);
+            }
+            Stream<Path> stream = null;
+            try {
+                extraPropDir = PropertyExpander.expand(extraPropDir);
+                stream = Files.find(Path.of(extraPropDir), Integer.MAX_VALUE,
+                                    ((path, attrs) -> attrs.isRegularFile()));
+                stream.forEach((file) -> loadProps(null, file.toString(), false));
+            } catch (IOException | PropertyExpander.ExpandException e) {
+                if (sdebug != null) {
+                    sdebug.println("unable to load security properties from " +
+                                   extraPropDir);
+                    e.printStackTrace();
+                }
+            } finally {
+                if (stream != null) {
+                    stream.close();
+                }
+            }
+        }
+
+        if (extraPropFile != null) {
             loadProps(null, extraPropFile, overrideAll);
         }
         initialSecurityProperties = (Properties) props.clone();

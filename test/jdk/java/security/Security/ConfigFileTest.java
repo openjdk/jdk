@@ -35,8 +35,8 @@ import java.util.Optional;
 
 /*
  * @test
- * @summary Throw error if default java.security file is missing
- * @bug 8155246 8292297 8292177
+ * @summary Exercise use, absence and extension of java.security
+ * @bug 8155246 8292297 8292177 8309330
  * @library /test/lib
  * @run main ConfigFileTest
  */
@@ -52,23 +52,37 @@ public class ConfigFileTest {
 
     public static void main(String[] args) throws Exception {
         Path copyJdkDir = Path.of("./jdk-8155246-tmpdir");
+        Path secPropDir = Path.of("./jdk-8309330-tmpdir");
         Path copiedJava = Optional.of(
                         Path.of(copyJdkDir.toString(), "bin", "java"))
                 .orElseThrow(() -> new RuntimeException("Unable to locate new JDK")
                 );
+        Path javaSecurity = Path.of(copyJdkDir.toString(), "conf",
+                                    "security","java.security");
 
         if (args.length == 1) {
             // set up is complete. Run code to exercise loading of java.security
             Provider[] provs = Security.getProviders();
             Security.setProperty("postInitTest", "shouldNotRecord");
             System.out.println(Arrays.toString(provs) + "NumProviders: " + provs.length);
+            if ("propDir".equals(args[0])) {
+                System.out.println("testProp3=" + Security.getProperty("testProp3"));
+            }
+            if ("propDirDisabled".equals(args[0])) {
+                // In this configuration, the directory properties should not be present
+                if (Security.getProperty("testProp3") != null) {
+                    System.exit(1);
+                }
+            }
         } else {
             Files.createDirectory(copyJdkDir);
+            Files.createDirectory(secPropDir);
             Path jdkTestDir = Path.of(Optional.of(System.getProperty("test.jdk"))
                             .orElseThrow(() -> new RuntimeException("Couldn't load JDK Test Dir"))
             );
 
             copyJDK(jdkTestDir, copyJdkDir);
+            populateSecPropDir(secPropDir);
             String extraPropsFile = Path.of(System.getProperty("test.src"), "override.props").toString();
 
             // exercise some debug flags while we're here
@@ -92,9 +106,47 @@ public class ConfigFileTest {
                     "-Djava.security.properties==file:///" + extraPropsFile,
                     "ConfigFileTest", "runner");
 
+            // test JDK launch with customized properties dir on the command line
+            exerciseSecurity(0, "testProp3=cherry",
+                    copiedJava.toString(), "-cp", System.getProperty("test.classes"),
+                    "-Djava.security.debug=all", "-Djavax.net.debug=all",
+                    "-Djava.security.propertiesDir=" + secPropDir.toString(),
+                    "ConfigFileTest", "propDir");
+
+            // enable properties directory in java.security
+            Files.writeString(javaSecurity,
+                              "security.propertiesDir=" + secPropDir.toAbsolutePath().toString(),
+                              StandardOpenOption.APPEND);
+
+            // test JDK launch with customized properties dir in java.security
+            exerciseSecurity(0, "testProp3=cherry",
+                    copiedJava.toString(), "-cp", System.getProperty("test.classes"),
+                    "-Djava.security.debug=all", "-Djavax.net.debug=all",
+                    "ConfigFileTest", "propDir");
+
+            // test JDK launch with customized properties dir in java.security disabled
+            exerciseSecurity(0, "SUN version",
+                    copiedJava.toString(), "-cp", System.getProperty("test.classes"),
+                    "-Djava.security.debug=all", "-Djavax.net.debug=all",
+                    "-Djava.security.propertiesDir=",
+                    "ConfigFileTest", "propDirDisabled");
+
+            // test JDK launch with customized properties file overriding properties dir
+            exerciseSecurity(0, "NumProviders: 6",
+                    copiedJava.toString(), "-cp", System.getProperty("test.classes"),
+                    "-Djava.security.debug=all", "-Djavax.net.debug=all",
+                    "-Djava.security.properties==file:///" + extraPropsFile,
+                    "ConfigFileTest", "propDirDisabled");
+
+            // test JDK launch with customized properties file appended to properties dir
+            exerciseSecurity(0, "testProp3=cherry",
+                    copiedJava.toString(), "-cp", System.getProperty("test.classes"),
+                    "-Djava.security.debug=all", "-Djavax.net.debug=all",
+                    "-Djava.security.properties=file:///" + extraPropsFile,
+                    "ConfigFileTest", "propDir");
+
             // delete the master conf file
-            Files.delete(Path.of(copyJdkDir.toString(), "conf",
-                    "security","java.security"));
+            Files.delete(javaSecurity);
 
             // launch JDK without java.security file being present or specified
             exerciseSecurity(1, "Error loading java.security file",
@@ -146,5 +198,13 @@ public class ConfigFileTest {
                     throw new UncheckedIOException(ioe);
                 }
             });
+    }
+
+    private static void populateSecPropDir(Path dir) throws Exception {
+        Files.writeString(dir.resolve("testFile1"), "testProp1=apple");
+        Files.writeString(dir.resolve("testFile2"), "testProp2=banana");
+        Path extraDir = dir.resolve("extra");
+        Files.createDirectory(extraDir);
+        Files.writeString(extraDir.resolve("testFile3"), "testProp3=cherry");
     }
 }

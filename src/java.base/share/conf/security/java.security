@@ -11,14 +11,31 @@
 # from the command-line properties file is selected, as it is the last
 # one loaded.
 #
+# A directory tree of such property files may also be specified from
+# the command line via the system property
+#
+#    -Djava.security.propertiesDir=<PATH>
+#
+# Each file found within this tree is appended, as with the single file
+# above. If both properties are specified, all properties found in
+# the directory, plus those in the single file, will be appended. The
+# overall effect is thus as if the single file was present in the
+# directory.
+#
+# A directory may also be specified permanently in this file using
+# the security.propertiesDir property. Any directory specified on
+# the command line takes precedence over the directory listed in this
+# file. Using an empty value on the command line allows a directory
+# specified in this file to be disabled.
+#
 # Also, if you specify
 #
 #    -Djava.security.properties==<URL> (2 equals),
 #
 # then that properties file completely overrides the master security
-# properties file.
+# properties file and any properties in a specified directory.
 #
-# To disable the ability to specify an additional properties file from
+# To disable the ability to specify additional properties from
 # the command line, set the key security.overridePropertiesFile
 # to false in the master security properties file. It is set to true
 # by default.
@@ -331,6 +348,12 @@ package.definition=sun.misc.,\
 # or overridden on the command line via -Djava.security.properties
 #
 security.overridePropertiesFile=true
+
+#
+# Determines whether this properties file will be supplemented
+# by additional property files found in the given directory
+#
+security.propertiesDir=
 
 #
 # Determines the default key and trust manager factory algorithms for
