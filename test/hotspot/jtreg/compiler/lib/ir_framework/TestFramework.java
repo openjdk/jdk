@@ -138,6 +138,7 @@ public class TestFramework {
                     "server",
                     "UseAVX",
                     "UseSSE",
+                    "UseKNLSetting",
                     "UseSVE",
                     "UseZbb",
                     "UseRVV",
