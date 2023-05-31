@@ -122,8 +122,7 @@ public class SocketReadEvent extends Event {
             if (remote instanceof InetSocketAddress isa) {
                 InetAddress a = isa.getAddress();
                 commit(start, duration, a.getHostName(), a.getHostAddress(), isa.getPort(), timeout, nbytes, eof);
-            } else if (remote instanceof UnixDomainSocketAddress) {
-                UnixDomainSocketAddress udsa = (UnixDomainSocketAddress) remote;
+            } else if (remote instanceof UnixDomainSocketAddress udsa) {
                 String path = "[" + udsa.getPath().toString() + "]";
                 commit(start, duration, "Unix domain socket", path, 0, timeout, nbytes, eof);
             }
