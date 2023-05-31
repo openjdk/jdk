@@ -27,9 +27,9 @@ package sun.awt.screencast;
 
 import java.awt.Dimension;
 import java.awt.Rectangle;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -58,12 +58,11 @@ final class TokenStorage {
     private TokenStorage() {}
 
     private static final String REL_NAME =
-            ".java/.robot/screencast-tokens.properties";
+            ".java/robot/screencast-tokens.properties";
 
     private static final Properties PROPS = new Properties();
     private static final Path PROPS_PATH;
     private static final Path PROP_FILENAME;
-    private static final Object PROPS_LOCK = new Object();
 
     static {
         PROPS_PATH = setupPath();
@@ -189,7 +188,7 @@ final class TokenStorage {
                     } else if (kind == ENTRY_MODIFY) {
                         readTokens(PROPS_PATH);
                     } else if (kind == ENTRY_DELETE) {
-                        synchronized (PROPS_LOCK) {
+                        synchronized (PROPS) {
                             PROPS.clear();
                         }
                     }
@@ -240,7 +239,7 @@ final class TokenStorage {
             System.out.printf("// Storing TokenItem:\n%s\n", tokenItem);
         }
 
-        synchronized (PROPS_LOCK) {
+        synchronized (PROPS) {
             String oldBoundsRecord = PROPS.getProperty(tokenItem.token, null);
             String newBoundsRecord = tokenItem.dump();
 
@@ -277,10 +276,10 @@ final class TokenStorage {
     private static boolean readTokens(Path path) {
         if (path == null) return false;
 
-        try (InputStream input = Files.newInputStream(path)) {
-            synchronized (PROPS_LOCK) {
+        try (BufferedReader reader = Files.newBufferedReader(path)) {
+            synchronized (PROPS) {
                 PROPS.clear();
-                PROPS.load(input);
+                PROPS.load(reader);
             }
         } catch (IOException e) {
             if (SCREENCAST_DEBUG) {
@@ -301,7 +300,7 @@ final class TokenStorage {
         LinkedHashSet<TokenItem> result = new LinkedHashSet<>();
 
         Set<Map.Entry<Object, Object>> entries;
-        synchronized (PROPS_LOCK) {
+        synchronized (PROPS) {
             entries = PROPS.entrySet();
         }
 
@@ -367,7 +366,7 @@ final class TokenStorage {
             return;
         }
 
-        synchronized (PROPS_LOCK) {
+        synchronized (PROPS) {
             for (String token : malformedRecords) {
                 Object remove = PROPS.remove(token);
                 if (SCREENCAST_DEBUG) {
@@ -384,14 +383,14 @@ final class TokenStorage {
             return;
         }
 
-        try (OutputStream output = Files.newOutputStream(PROPS_PATH)) {
-            synchronized (PROPS_LOCK) {
-                PROPS.store(output, null);
-            }
-        } catch (IOException e) {
-            if (SCREENCAST_DEBUG) {
-                System.err.printf(
-                        "Token storage: unable to %s\n%s\n", failMsg, e);
+        synchronized (PROPS) {
+            try (BufferedWriter writer = Files.newBufferedWriter(PROPS_PATH)) {
+                PROPS.store(writer, null);
+            } catch (IOException e) {
+                if (SCREENCAST_DEBUG) {
+                    System.err.printf(
+                            "Token storage: unable to %s\n%s\n", failMsg, e);
+                }
             }
         }
     }

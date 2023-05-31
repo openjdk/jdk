@@ -85,7 +85,7 @@ final class TokenItem {
     private static final int MIN_SIZE = 1;
 
     public boolean hasValidBounds() {
-        //This check is very formal, in order to filter out abnormal values
+        //This check is very rough, in order to filter out abnormal values
         for (Rectangle bounds : allowedScreensBounds) {
             if (bounds.x < -MAX_SIZE || bounds.x > MAX_SIZE
                     || bounds.y < -MAX_SIZE || bounds.y > MAX_SIZE
