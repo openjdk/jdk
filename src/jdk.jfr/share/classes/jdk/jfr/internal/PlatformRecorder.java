@@ -506,22 +506,24 @@ public final class PlatformRecorder {
             return;
         }
         while (true) {
-            synchronized (this) {
-                if (jvm.shouldRotateDisk()) {
-                    try {
+            long wait = Options.getWaitInterval();
+            try {
+                synchronized (this) {
+                    if (jvm.shouldRotateDisk()) {
                         rotateDisk();
-                    } catch(Error error) {
-                        // log and be mad
-                        Logger.log(JFR_SYSTEM, ERROR, "Error in Periodic task: " + error.getMessage());
+                    }
+                    if (isToDisk()) {
+                        EventLog.update();
                     }
                 }
-                if (isToDisk()) {
-                    EventLog.update();
-                }
+                long minDelta = PeriodicEvents.doPeriodic();
+                wait = Math.min(minDelta, Options.getWaitInterval());
+            } catch(Throwable t) {
+                // Catch everything and log, but don't allow it to end the periodic task
+                Logger.log(JFR_SYSTEM, ERROR, "Error in Periodic task: " + t.getClass().getName() + ", " + t.getMessage());
+            } finally {
+                takeNap(wait);
             }
-            long minDelta = PeriodicEvents.doPeriodic();
-            long wait = Math.min(minDelta, Options.getWaitInterval());
-            takeNap(wait);
         }
     }
 

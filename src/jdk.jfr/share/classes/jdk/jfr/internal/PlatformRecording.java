@@ -721,13 +721,6 @@ public final class PlatformRecording implements AutoCloseable {
                 userPath.doPrivilegedIO(() -> {
                     try {
                         transferChunks(userPath);
-//                    try (ChunksChannel cc = new ChunksChannel(chunks); FileChannel fc = FileChannel.open(userPath.getReal(), StandardOpenOption.WRITE, StandardOpenOption.APPEND)) {
-//                        long bytes = cc.transferTo(fc);
-//                        Logger.log(LogTag.JFR, LogLevel.INFO, "Transferred " + bytes + " bytes from the disk repository");
-//                        // No need to force if no data was transferred, which avoids IOException when device is /dev/null
-//                        if (bytes != 0) {
-//                            fc.force(true);
-//                        }
                     } catch (java.nio.file.NoSuchFileException nsfe) {
                         Logger.log(LogTag.JFR, LogLevel.ERROR, "Chunkfile was missing when dumping recording: " + nsfe.getMessage() + ".");
                         // if one chunkfile was missing, its likely more are missing
@@ -903,12 +896,12 @@ public final class PlatformRecording implements AutoCloseable {
     void removeNonExistantPaths() {
         synchronized (recorder) {
             Iterator<RepositoryChunk> it = chunks.iterator();
-            Logger.log(JFR, ERROR, "Checking for missing chunkfiles for recording \"" + name + "\" (" + id + ")");
+            Logger.log(JFR, INFO, "Checking for missing chunkfiles for recording \"" + name + "\" (" + id + ")");
             while (it.hasNext()) {
                 RepositoryChunk c = it.next();
                 try {
                     if (!SecuritySupport.exists(c.getFile())) {
-                        // pretend an error was thrown, and add event to next recording
+                        // add an Error event to the next recording to explain the possible data loss.
                         ErrorThrownEvent.commit(0L, 0L, "Chunkfile: \""+c.toString()+"\" is missing.", ChunkfileMissingError.class);
                         Logger.log(JFR, ERROR, "Chunkfile: \""+c.toString()+"\" is missing.");
                         it.remove();
