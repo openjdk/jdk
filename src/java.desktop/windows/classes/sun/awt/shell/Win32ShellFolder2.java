@@ -856,16 +856,18 @@ final class Win32ShellFolder2 extends ShellFolder {
 
     /**
      * @return Whether this shell folder is a link
-     * @implNote Checks only if it is .lnk shortcut link. Other two links
-     * namely Symbolic and Junctions returns false, so that the
-     * absolute path can be resolved.
+     * @implNote Returns {@code true} for {@code .lnk} shortcuts only.
+     * For <i>symbolic links</i> and <i>junctions</i>, it returns
+     * {@code false} even though {@code IShellFolder} returns
+     * {@code true} now. It is a workaround for easier handling of
+     * symbolic links and junctions.
      */
 
     public boolean isLink() {
         if (cachedIsLink == null) {
             cachedIsLink = hasAttribute(ATTRIB_LINK)
-                            && (!isFileSystem()
-                                || getPath().toLowerCase().endsWith(".lnk"));
+                           && (!isFileSystem()
+                               || getPath().toLowerCase().endsWith(".lnk"));
         }
         return cachedIsLink;
     }
