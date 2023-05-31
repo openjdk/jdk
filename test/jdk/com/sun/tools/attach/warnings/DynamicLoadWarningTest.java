@@ -59,7 +59,6 @@ import jdk.test.lib.util.JarUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -98,59 +97,67 @@ class DynamicLoadWarningTest {
     }
 
     /**
-     * Arguments with pairs of actions to load agents into a running VM.
+     * Actions to load JvmtiAgent1 into a running VM.
      */
-    private static Stream<Arguments> loadJvmtiAgents() throws Exception {
-        // load agents with the attach API
-        OnAttachAction loadJvmtiAgent1 = (pid, vm) -> vm.loadAgentLibrary(JVMTI_AGENT1_LIB);
-        OnAttachAction loadJvmtiAgent2 = (pid, vm) -> vm.loadAgentLibrary(JVMTI_AGENT2_LIB);
+    private static Stream<OnAttachAction> loadJvmtiAgent1() {
+        // load agent with the attach API
+        OnAttachAction loadJvmtiAgent = (pid, vm) -> vm.loadAgentLibrary(JVMTI_AGENT1_LIB);
 
         // jcmd <pid> JVMTI.agent_load <agent>
-        OnAttachAction jcmdAgentLoad1 = jcmdAgentLoad(jvmtiAgentPath1);
-        OnAttachAction jcmdAgentLoad2 = jcmdAgentLoad(jvmtiAgentPath2);
+        OnAttachAction jcmdAgentLoad = jcmdAgentLoad(jvmtiAgentPath1);
 
-        return Stream.of(
-                Arguments.of(loadJvmtiAgent1, loadJvmtiAgent2),
-                Arguments.of(jcmdAgentLoad1, jcmdAgentLoad2)
-        );
+        return Stream.of(loadJvmtiAgent, jcmdAgentLoad);
     }
 
     /**
-     * Test loading JVM TI agents into a running VM.
+     * Test loading JvmtiAgent1 into a running VM.
      */
     @ParameterizedTest
-    @MethodSource("loadJvmtiAgents")
-    void testLoadJvmtiAgent(OnAttachAction loadJvmtiAgent1,
-                            OnAttachAction loadJvmtiAgent2) throws Exception {
-
-        // agent dynamically loaded
+    @MethodSource("loadJvmtiAgent1")
+    void testLoadOneJvmtiAgent(OnAttachAction loadJvmtiAgent1) throws Exception {
+        // dynamically load loadJvmtiAgent1
         test().whenRunning(loadJvmtiAgent1)
                 .stderrShouldContain(JVMTI_AGENT_WARNING);
+
+        // dynamically load loadJvmtiAgent1 twice, should be one warning
+        test().whenRunning(loadJvmtiAgent1)
+                .whenRunning(loadJvmtiAgent1)
+                .stderrShouldContain(JVMTI_AGENT_WARNING, 1);
 
         // opt-in via command line option to allow dynamic loading of agents
         test().withOpts("-XX:+EnableDynamicAgentLoading")
                 .whenRunning(loadJvmtiAgent1)
                 .stderrShouldNotContain(JVMTI_AGENT_WARNING);
 
-        // agent started via command line, same agent dynamically loaded
+        // start loadJvmtiAgent1 via the command line, then dynamically load loadJvmtiAgent1
         test().withOpts("-agentpath:" + jvmtiAgentPath1)
                 .whenRunning(loadJvmtiAgent1)
                 .stderrShouldNotContain(JVMTI_AGENT_WARNING);
+    }
 
-        // agent started via command line, different agent dynamically loaded
-        test().withOpts("-agentpath:" + jvmtiAgentPath1)
-                .whenRunning(loadJvmtiAgent2)
-                .stderrShouldContain(JVMTI_AGENT_WARNING);
+    /**
+     * Test loading JvmtiAgent1 and JvmtiAgent2 into a running VM.
+     */
+    @ParameterizedTest
+    @MethodSource("loadJvmtiAgent1")
+    void testLoadTwoJvmtiAgents(OnAttachAction loadJvmtiAgent1) throws Exception {
+        OnAttachAction loadJvmtiAgent2 = (pid, vm) -> vm.loadAgentLibrary(JVMTI_AGENT2_LIB);
+        OnAttachAction jcmdAgentLoad2 = jcmdAgentLoad(jvmtiAgentPath2);
 
-        // same agent dynamically loaded twice, should be one warning
-        test().whenRunning(loadJvmtiAgent1)
-                .whenRunning(loadJvmtiAgent1)
-                .stderrShouldContain(JVMTI_AGENT_WARNING, 1);
-
-        // two different agents loaded dynamically, should be two warnings
+        // dynamically load loadJvmtiAgent1, then dynamically load loadJvmtiAgent2 with attach API
         test().whenRunning(loadJvmtiAgent1)
                 .whenRunning(loadJvmtiAgent2)
                 .stderrShouldContain(JVMTI_AGENT_WARNING, 2);
+
+        // dynamically load loadJvmtiAgent1, then dynamically load loadJvmtiAgent2 with jcmd
+        test().whenRunning(loadJvmtiAgent1)
+                .whenRunning(jcmdAgentLoad2)
+                .stderrShouldContain(JVMTI_AGENT_WARNING, 2);
+
+        // start loadJvmtiAgent2 via the command line, then dynamically load loadJvmtiAgent1
+        test().withOpts("-agentpath:" + jvmtiAgentPath2)
+                .whenRunning(loadJvmtiAgent1)
+                .stderrShouldContain(JVMTI_AGENT_WARNING);
     }
 
     /**
@@ -182,7 +189,7 @@ class DynamicLoadWarningTest {
      * Returns an operation that invokes "jcmd <pid> JVMTI.agent_load <agentpath>" to
      * load the given agent library into the JVM that the current JVM is attached to.
      */
-    private static OnAttachAction jcmdAgentLoad(String agentPath) throws Exception {
+    private static OnAttachAction jcmdAgentLoad(String agentPath) {
         return (pid, vm) -> {
             String[] jcmd = JDKToolLauncher.createUsingTestJDK("jcmd")
                     .addToolArg(Long.toString(pid))

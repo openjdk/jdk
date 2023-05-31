@@ -226,9 +226,9 @@ bool JvmtiAgentList::is_loaded(void* os_lib) {
   while (it.has_next()) {
     JvmtiAgent* const agent = it.next();
     if (os_lib == nullptr) {
-       if (agent->is_static_lib() && agent->is_loaded()) {
-         return true;
-       }
+      if (agent->is_static_lib() && agent->is_loaded()) {
+        return true;
+      }
     } else if (agent->os_lib() == os_lib) {
       return true;
     }
