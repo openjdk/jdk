@@ -685,7 +685,7 @@ public:
 
   virtual ~FreeCollectionSetTask() {
     Ticks serial_time = Ticks::now();
-    
+
     G1GCPhaseTimes* p = _g1h->phase_times();
     bool has_new_retained_regions =
       p->sum_thread_work_items(G1GCPhaseTimes::RestoreRetainedRegions, G1GCPhaseTimes::RestoreRetainedRegionsRetainedNum) != 0;
