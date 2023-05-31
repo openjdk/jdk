@@ -869,6 +869,7 @@ final class Win32ShellFolder2 extends ShellFolder {
                            && (!isFileSystem()
                                || getPath().toLowerCase().endsWith(".lnk"));
         }
+
         return cachedIsLink;
     }
 
