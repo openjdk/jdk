@@ -906,7 +906,7 @@ class UnixPath implements Path {
             final UnixFileKey elementKey = attrs.fileKey();
 
             // Obtain the directory stream pointer. It will be closed by
-            // UnixDirectoryStream::closeImpl.
+            // UnixDirectoryStream::close.
             long dp = -1;
             try {
                 dp = opendir(path);
