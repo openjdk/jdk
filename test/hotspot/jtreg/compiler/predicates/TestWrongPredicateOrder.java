@@ -69,7 +69,6 @@ public class TestWrongPredicateOrder {
             i += 3;
             iArr2[0] = 1; // Invariant check hoisted as Loop Predicate
 
-
             if (flag) {
                 // Early exit -> enables Profiled Loop Predicate creation below
                 return;
@@ -80,7 +79,6 @@ public class TestWrongPredicateOrder {
 
             // Profiled Loop Predicate for range check hit too much -> no Profiled Parse Predicate is added in re-compilation anymore
             iArr[i + iFld] = 34;
-
 
             if (iFld2 == 5555) {
                 i++; // UCT -> ensures to emit Parse Predicates twice with an If in between that is folded after parsing
