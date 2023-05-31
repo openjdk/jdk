@@ -27,6 +27,7 @@ package jdk.jpackage.internal;
 
 import java.util.List;
 import jdk.internal.util.OperatingSystem;
+import jdk.internal.util.OSVersion;
 
 final class WindowsDefender {
 
