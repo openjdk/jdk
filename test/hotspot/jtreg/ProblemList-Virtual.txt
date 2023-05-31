@@ -36,6 +36,7 @@ vmTestbase/nsk/jdi/ReferenceType/instances/instances001/instances001.java 830897
 vmTestbase/nsk/jdi/ReferenceType/instances/instances003/instances003.java 8308978 generic-all
 vmTestbase/nsk/jdi/ReferenceType/instances/instances004/TestDescription.java 8308978 generic-all
 vmTestbase/nsk/jdi/MonitorWaitedRequest/addThreadFilter/TestDescription.java 8308978 generic-all
+vmTestbase/nsk/jdi/VirtualMachine/instanceCounts/instancecounts002/TestDescription.java 8308978 generic-all
 vmTestbase/nsk/jdi/stress/serial/monitorEvents002/TestDescription.java 8308978 generic-all
 vmTestbase/nsk/jdi/stress/serial/heapwalking001/TestDescription.java 8308978 generic-all
 vmTestbase/nsk/jdi/stress/serial/heapwalking002/TestDescription.java 8308978 generic-all
