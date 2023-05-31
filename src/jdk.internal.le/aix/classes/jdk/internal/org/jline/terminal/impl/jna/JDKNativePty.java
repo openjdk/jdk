@@ -27,7 +27,6 @@ package jdk.internal.org.jline.terminal.impl.jna;
 import java.io.IOException;
 import jdk.internal.org.jline.terminal.Attributes;
 import jdk.internal.org.jline.terminal.Size;
-import jdk.internal.org.jline.terminal.impl.jna.linux.LinuxNativePty;
 import jdk.internal.org.jline.terminal.spi.TerminalProvider;
 
 class JDKNativePty {
