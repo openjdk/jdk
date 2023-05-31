@@ -41,7 +41,9 @@ public class MaxMinINodeIdealizationTests {
     }
 
     @Run(test = {"testMax1LL", "testMax1LR", "testMax1RL", "testMax1RR",
+                 "testMax1LLNoInnerAdd", "testMax1LLNoInnerAdd2",
                  "testMax2L", "testMax2R",
+                 "testMax2LNoLeftAdd",
                  "testMax3",
                  "testMin1",
                  "testMin2",
@@ -63,8 +65,11 @@ public class MaxMinINodeIdealizationTests {
         Asserts.assertEQ(testMax1LL(a)                                              , testMax1LR(a));
         Asserts.assertEQ(testMax1LL(a)                                              , testMax1RL(a));
         Asserts.assertEQ(testMax1LL(a)                                              , testMax1RR(a));
+        Asserts.assertEQ(Math.max(Math.max((a >> 1), 200), (a >> 1) + 100)          , testMax1LLNoInnerAdd(a));
+        Asserts.assertEQ(Math.max(Math.max((a >> 1), (a << 1)), (a >> 1) + 100)     , testMax1LLNoInnerAdd2(a));
         Asserts.assertEQ(Math.max(((a >> 1) + 10), ((a >> 1) + 11))                 , testMax2L(a));
         Asserts.assertEQ(testMax2L(a)                                               , testMax2R(a));
+        Asserts.assertEQ(Math.max(a >> 1, ((a >> 1) + 11))                          , testMax2LNoLeftAdd(a));
         Asserts.assertEQ(Math.max(a, a)                                             , testMax3(a));
 
         Asserts.assertEQ(Math.min(((a >> 1) + 100), Math.min(((a >> 1) + 150), 200)), testMin1(a));
@@ -110,6 +115,22 @@ public class MaxMinINodeIdealizationTests {
         return Math.max(((i >> 1) + 100), Math.max(200, ((i >> 1) + 150)));
     }
 
+    @Test
+    @IR(counts = {IRNode.MAX_I, "1",
+                  IRNode.ADD  , "1",
+                 })
+    public int testMax1LLNoInnerAdd(int i) {
+        return Math.max(Math.max((i >> 1), 200), (i >> 1) + 100);
+    }
+
+    @Test
+    @IR(counts = {IRNode.MAX_I, "1",
+                  IRNode.ADD  , "1",
+                 })
+    public int testMax1LLNoInnerAdd2(int i) {
+        return Math.max(Math.max((i >> 1), (i << 1)), (i >> 1) + 100);
+    }
+
     // Similarly, transform min(x + c0, min(y + c1, z)) to min(add(x, c2), z) if x == y, where c2 = MIN2(c0, c1).
     @Test
     @IR(counts = {IRNode.MIN_I, "1",
@@ -134,6 +155,13 @@ public class MaxMinINodeIdealizationTests {
     @IR(counts = {IRNode.ADD, "1"})
     public int testMax2R(int i) {
         return Math.max((i >> 1) + 11, (i >> 1) + 10);
+    }
+
+    @Test
+    @IR(failOn = {IRNode.MAX_I})
+    @IR(counts = {IRNode.ADD, "1"})
+    public int testMax2LNoLeftAdd(int i) {
+        return Math.max(i >> 1, (i >> 1) + 11);
     }
 
     // Similarly, transform min(x + c0, y + c1) to add(x, c2) if x == y, where c2 = MIN2(c0, c1).
