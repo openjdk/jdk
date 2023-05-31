@@ -91,7 +91,11 @@ int main (int argc, char* argv[]) {
   pthread_t threads[NUM_THREADS];
   for (int i = 0; i < NUM_THREADS; i++ ) {
     printf("[*] Creating thread %d\n", i);
-    int status = pthread_create(&threads[i], NULL, thread_runner, (void *)(intptr_t)i);
+    pthread_attr_t attr;
+    pthread_attr_init(&attr);
+    size_t stack_size = 0x100000;
+    pthread_attr_setstacksize(&attr, stack_size);
+    int status = pthread_create(&threads[i], &attr, thread_runner, (void *)(intptr_t)i);
     if (status != 0) {
       printf("[*] Error creating thread %d - %d\n", i, status);
       exit(-1);
