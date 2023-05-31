@@ -150,9 +150,9 @@
  *
  * <h4 id="Conf_CF_SP">User-defined Configuration File</h4>
  * In addition to the {@code jaxp.properties} file, the system property
- * {@systemProperty java.xml.config.file} can be set on the command line or at run-time
- * to specify the location of a configuration file. If the {@code java.xml.config.file}
- * property is included within a configuration file, it will be ignored.
+ * {@systemProperty java.xml.config.file} can be set to specify the location of
+ * a configuration file. If the {@code java.xml.config.file} property is included
+ * within a configuration file, it will be ignored.
  *
  * <p>
  * When the {@code java.xml.config.file} is specified, the configuration file will be
@@ -179,7 +179,7 @@
  *
  * <ul>
  * <li><p>
- *      With the APIs for factories or processors
+ *      The APIs for factories or processors
  * </li>
  * <li><p>
  *      System Property
@@ -221,7 +221,7 @@
  * }
  * </li>
  * <li><p>
- *      If the property is not set on the factory, or with its system property,
+ *      If the property is not set on the factory, or using a system property,
  * the setting in a configuration file will take effect. The following entry
  * sets the property to '{@code continue}'.
  * {@snippet :
