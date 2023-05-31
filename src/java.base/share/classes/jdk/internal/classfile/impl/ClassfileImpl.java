@@ -24,7 +24,7 @@
  */
 package jdk.internal.classfile.impl;
 
-import java.util.Collection;
+import java.util.List;
 import java.util.function.Function;
 
 import jdk.internal.classfile.AttributeMapper;
@@ -34,39 +34,62 @@ import jdk.internal.classfile.constantpool.Utf8Entry;
 
 import static jdk.internal.classfile.ClassHierarchyResolver.DEFAULT_CLASS_HIERARCHY_RESOLVER;
 
-public final class ClassfileImpl implements Classfile {
+public record ClassfileImpl(StackMapsOption stackMapsOption,
+                            DebugElementsOption debugElementsOption,
+                            LineNumbersOption lineNumbersOption,
+                            UnknownAttributesOption unknownAttributesOption,
+                            ConstantPoolSharingOption constantPoolSharingOption,
+                            ShortJumpsOption shortJumpsOption,
+                            DeadCodeOption deadCodeOption,
+                            DeadLabelsOption deadLabelsOption,
+                            ClassHierarchyResolverOption classHierarchyResolverOption,
+                            AttributeMapperOption attributeMapperOption) implements Classfile {
 
-    public StackMapsOption generateStackmaps = StackMapsOption.GENERATE_STACK_MAPS_BY_CLASS_VERSION;
-    public DebugElementsOption processDebug = DebugElementsOption.PROCESS_DEBUG_ELEMENTS;
-    public LineNumbersOption processLineNumbers = LineNumbersOption.PROCESS_LINE_NUMBERS;
-    public UnknownAttributesOption processUnknownAttributes = UnknownAttributesOption.PROCESS_UNKNOWN_ATTRIBUTES;
-    public ConstantPoolSharingOption cpSharing = ConstantPoolSharingOption.SHARE_CONSTANT_POOL;
-    public ShortJumpsOption fixJumps = ShortJumpsOption.FIX_SHORT_JUMPS;
-    public DeadCodeOption patchCode = DeadCodeOption.PATCH_DEAD_CODE;
-    public DeadLabelsOption filterDeadLabels = DeadLabelsOption.FAIL_ON_DEAD_LABELS;
-    public ClassHierarchyResolverOption classHierarchyResolver = new ClassHierarchyResolverOption(DEFAULT_CLASS_HIERARCHY_RESOLVER);
-    public AttributeMapperOption attributeMapper = new AttributeMapperOption(new Function<>() {
-        @Override
-        public AttributeMapper<?> apply(Utf8Entry k) {
-            return null;
-        }
-    });
+    public ClassfileImpl() {
+        this(StackMapsOption.GENERATE_STACK_MAPS_BY_CLASS_VERSION,
+             DebugElementsOption.PROCESS_DEBUG_ELEMENTS,
+             LineNumbersOption.PROCESS_LINE_NUMBERS,
+             UnknownAttributesOption.PROCESS_UNKNOWN_ATTRIBUTES,
+             ConstantPoolSharingOption.SHARE_CONSTANT_POOL,
+             ShortJumpsOption.FIX_SHORT_JUMPS,
+             DeadCodeOption.PATCH_DEAD_CODE,
+             DeadLabelsOption.FAIL_ON_DEAD_LABELS,
+             new ClassHierarchyResolverOption(DEFAULT_CLASS_HIERARCHY_RESOLVER),
+             new AttributeMapperOption(new Function<>() {
+                 @Override
+                 public AttributeMapper<?> apply(Utf8Entry k) {
+                     return null;
+                 }
+             }));
+    }
 
     @SuppressWarnings("unchecked")
-    public ClassfileImpl(Collection<Classfile.Option> options) {
+    @Override
+    public ClassfileImpl withOptions(Option... options) {
+        var smo = stackMapsOption;
+        var deo = debugElementsOption;
+        var lno = lineNumbersOption;
+        var uao = unknownAttributesOption;
+        var cpso = constantPoolSharingOption;
+        var sjo = shortJumpsOption;
+        var dco = deadCodeOption;
+        var dlo = deadLabelsOption;
+        var chro = classHierarchyResolverOption;
+        var amo = attributeMapperOption;
         for (var o : options) {
             switch (o) {
-                case StackMapsOption oo -> generateStackmaps = oo;
-                case DebugElementsOption oo -> processDebug = oo;
-                case LineNumbersOption oo -> processLineNumbers = oo;
-                case UnknownAttributesOption oo -> processUnknownAttributes = oo;
-                case ConstantPoolSharingOption oo -> cpSharing = oo;
-                case ShortJumpsOption oo -> fixJumps = oo;
-                case DeadCodeOption oo -> patchCode = oo;
-                case DeadLabelsOption oo -> filterDeadLabels = oo;
-                case ClassHierarchyResolverOption oo -> classHierarchyResolver = oo;
-                case AttributeMapperOption oo -> attributeMapper = oo;
+                case StackMapsOption oo -> smo = oo;
+                case DebugElementsOption oo -> deo = oo;
+                case LineNumbersOption oo -> lno = oo;
+                case UnknownAttributesOption oo -> uao = oo;
+                case ConstantPoolSharingOption oo -> cpso = oo;
+                case ShortJumpsOption oo -> sjo = oo;
+                case DeadCodeOption oo -> dco = oo;
+                case DeadLabelsOption oo -> dlo = oo;
+                case ClassHierarchyResolverOption oo -> chro = oo;
+                case AttributeMapperOption oo -> amo = oo;
             }
         }
+        return new ClassfileImpl(smo, deo, lno, uao, cpso, sjo, dco, dlo, chro, amo);
     }
 }

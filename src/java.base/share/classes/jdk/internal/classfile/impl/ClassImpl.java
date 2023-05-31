@@ -63,8 +63,8 @@ public final class ClassImpl
     private List<Attribute<?>> attributes;
     private List<ClassEntry> interfaces;
 
-    public ClassImpl(byte[] cfbytes, ClassfileImpl options) {
-        this.reader = new ClassReaderImpl(cfbytes, options);
+    public ClassImpl(byte[] cfbytes, ClassfileImpl context) {
+        this.reader = new ClassReaderImpl(cfbytes, context);
         ClassReaderImpl reader = (ClassReaderImpl) this.reader;
         int p = reader.interfacesPos;
         int icnt = reader.readU2(p);

@@ -36,7 +36,7 @@ import jdk.internal.classfile.constantpool.Utf8Entry;
 public final class BufferedFieldBuilder
         implements TerminalFieldBuilder {
     private final SplitConstantPool constantPool;
-    private final ClassfileImpl options;
+    private final ClassfileImpl context;
     private final Utf8Entry name;
     private final Utf8Entry desc;
     private final List<FieldElement> elements = new ArrayList<>();
@@ -44,12 +44,12 @@ public final class BufferedFieldBuilder
     private final FieldModel original;
 
     public BufferedFieldBuilder(SplitConstantPool constantPool,
-                                ClassfileImpl options,
+                                ClassfileImpl context,
                                 Utf8Entry name,
                                 Utf8Entry type,
                                 FieldModel original) {
         this.constantPool = constantPool;
-        this.options = options;
+        this.context = context;
         this.name = name;
         this.desc = type;
         this.flags = AccessFlags.ofField();
@@ -122,7 +122,7 @@ public final class BufferedFieldBuilder
 
         @Override
         public void writeTo(BufWriter buf) {
-            DirectFieldBuilder fb = new DirectFieldBuilder(constantPool, options, name, desc, null);
+            DirectFieldBuilder fb = new DirectFieldBuilder(constantPool, context, name, desc, null);
             elements.forEach(fb);
             fb.writeTo(buf);
         }

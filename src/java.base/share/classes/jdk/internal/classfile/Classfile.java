@@ -62,16 +62,14 @@ public sealed interface Classfile
         permits ClassfileImpl {
 
     static Classfile of() {
-        return new ClassfileImpl(List.of());
+        return new ClassfileImpl();
     }
 
     static Classfile of(Option... options) {
-        return new ClassfileImpl(List.of(options));
+        return of().withOptions(options);
     }
 
-    static Classfile of(List<Option> options) {
-        return new ClassfileImpl(List.copyOf(options));
-    }
+    Classfile withOptions(Option... options);
 
     /**
      * An option that affects the writing of classfiles.
@@ -333,7 +331,7 @@ public sealed interface Classfile
     }
 
     default byte[] transform(ClassModel model, ClassEntry newClassName, ClassTransform transform) {
-        ConstantPoolBuilder constantPool = ((ClassfileImpl)this).cpSharing == ConstantPoolSharingOption.SHARE_CONSTANT_POOL
+        ConstantPoolBuilder constantPool = ((ClassfileImpl)this).constantPoolSharingOption() == ConstantPoolSharingOption.SHARE_CONSTANT_POOL
                                                                      ? ConstantPoolBuilder.of(model)
                                                                      : ConstantPoolBuilder.of();
         return build(newClassName, constantPool,

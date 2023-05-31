@@ -153,7 +153,7 @@ public final class StackMapGenerator {
                 (dcb.methodInfo.methodFlags() & ACC_STATIC) != 0,
                 dcb.bytecodesBufWriter.asByteBuffer().slice(0, dcb.bytecodesBufWriter.size()),
                 dcb.constantPool,
-                dcb.options,
+                dcb.context,
                 dcb.handlers);
     }
 
@@ -223,7 +223,7 @@ public final class StackMapGenerator {
                      boolean isStatic,
                      ByteBuffer bytecode,
                      SplitConstantPool cp,
-                     ClassfileImpl options,
+                     ClassfileImpl context,
                      List<AbstractPseudoInstruction.ExceptionCatchImpl> handlers) {
         this.thisType = Type.referenceType(thisClass);
         this.methodName = methodName;
@@ -234,9 +234,9 @@ public final class StackMapGenerator {
         this.labelContext = labelContext;
         this.handlers = handlers;
         this.rawHandlers = new ArrayList<>(handlers.size());
-        this.classHierarchy = new ClassHierarchyImpl(options.classHierarchyResolver.classHierarchyResolver());
-        this.patchDeadCode = options.patchCode == Classfile.DeadCodeOption.PATCH_DEAD_CODE;
-        this.filterDeadLabels = options.filterDeadLabels == Classfile.DeadLabelsOption.FILTER_DEAD_LABELS;
+        this.classHierarchy = new ClassHierarchyImpl(context.classHierarchyResolverOption().classHierarchyResolver());
+        this.patchDeadCode = context.deadCodeOption() == Classfile.DeadCodeOption.PATCH_DEAD_CODE;
+        this.filterDeadLabels = context.deadLabelsOption() == Classfile.DeadLabelsOption.FILTER_DEAD_LABELS;
         this.currentFrame = new Frame(classHierarchy);
         generate();
     }
@@ -836,7 +836,7 @@ public final class StackMapGenerator {
                 methodDesc.parameterList().stream().map(ClassDesc::displayName).collect(Collectors.joining(","))));
         //try to attach debug info about corrupted bytecode to the message
         try {
-            //clone SplitConstantPool with alternate options
+            //clone SplitConstantPool with alternate context
             var cc = Classfile.of(Classfile.StackMapsOption.DO_NOT_GENERATE_STACK_MAPS);
             var newCp = new SplitConstantPool(cp);
             var clm = cc.parse(cc.build(newCp.classEntry(ClassDesc.of("FakeClass")), newCp, clb ->
