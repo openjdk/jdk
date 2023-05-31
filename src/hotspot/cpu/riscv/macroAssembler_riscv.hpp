@@ -1337,7 +1337,7 @@ public:
         sign_extend(Rt, Rt, 16);
         break;
       case T_INT    :
-        addw(Rt, Rt, zr);
+        sign_extend(Rt, Rt, 32);
         break;
       case T_LONG   : /* nothing to do */        break;
       case T_VOID   : /* nothing to do */        break;
