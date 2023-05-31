@@ -153,7 +153,27 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   GrowableArray<Metadata*>*      _deallocate_list;
 
   // Support for walking class loader data objects
-  ClassLoaderData* _next; /// Next loader_datas created
+  // The ClassLoaderDataGraph maintains two lists of CLDs, one list which
+  // contains the created CLDs, and another which contains the unloading
+  // CLDs. To enable the lock free concurrent iteration of the created
+  // CLDs list used by the GC for root scanning, it is important that unlinking
+  // CLDs from the created list upholds the invariant that all unlinked CLDs are
+  // is_unloading() and that the new tail list inserted is the same as the tail
+  // list before unlinking.
+  // That is given a list A -> B -> C -> D -> E where B and C are is_unloading()
+  // the only valid calls to set_next(ClassLoaderData*) are:
+  //   A.set_next(B),A.set_next(C),A.set_next(D)
+  //   B.set_next(C),B.set_next(D)
+  //   C.set_next(D)
+  //   D.set_next(E)
+  //   E.set_next(nullptr)
+  // Any insertions to the created CLDs list is done at the head and keeps
+  // the list tail invariant.
+  // CLDs are unlinked in ClassLoaderDataGraph::do_unloading() and released in
+  // ClassLoaderDataGraph::purge(), so some syncronization is required between
+  // the two to ensure that no unlinked CLD remains in the system leading
+  // to a use after free.
+  ClassLoaderData* _next;
   ClassLoaderData* _unloading_next;
 
   Klass*  _class_loader_klass;
