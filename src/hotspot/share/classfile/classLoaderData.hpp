@@ -153,18 +153,26 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   GrowableArray<Metadata*>*      _deallocate_list;
 
   // Support for walking class loader data objects
-  // The ClassLoaderDataGraph maintains two lists of CLDs, one list which
-  // contains the created CLDs, and another which contains the unloading
-  // CLDs. To enable the lock free concurrent iteration of the created
-  // CLDs list used by the GC for root scanning, it is important that unlinking
-  // CLDs from the created list upholds the invariant that all unlinked CLDs are
-  // is_unloading().
-  // Any insertions to the created CLDs list is done at the head and keeps
-  // the list tail invariant.
-  // CLDs are unlinked in ClassLoaderDataGraph::do_unloading() and released in
-  // ClassLoaderDataGraph::purge(), so some syncronization is required between
-  // the two to ensure that no unlinked CLD remains in the system leading
-  // to a use after free.
+  //
+  // The ClassLoaderDataGraph maintains two lists to keep track of CLDs.
+  //
+  // The first list [_head, _next] is where new CLDs are registered. The CLDs
+  // are only inserted at the _head, and the _next pointers are never rewritten.
+  // This allows GCs to concurrently walk the list while the CLDs are being
+  // concurrently unlinked.
+  //
+  // The second list [_unloading_head, _unloading_next] is where dead CLDs get
+  // moved to during class unloading. See: ClassLoaderDataGraph::do_unloading().
+  // This list is never modified while other threads are iterating over it. 
+  //
+  // After all dead CLDs have been moved to the unloading list, there's a
+  // synchronziation point (handshake) to ensure that all threads reading these
+  // CLDs finish their work. This ensures that we don't have a user-after-free
+  // when we later delete the CLDs. 
+  //
+  // And finally, when no threads are using the unloading CLDs anymore, we
+  // remove them from the class unloading list and delete them. See:
+  // ClassLoaderDataGraph::purge();
   ClassLoaderData* _next;
   ClassLoaderData* _unloading_next;
 
