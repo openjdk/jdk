@@ -292,6 +292,11 @@ void JVMTIAgentLoadDCmd::execute(DCmdSource source, TRAPS) {
     output()->print_cr("JVMTI.agent_load dcmd needs library path.");
     return;
   }
+  if (!EnableDynamicAgentLoading) {
+    output()->print_cr("Dynamic agent loading is not enabled. "
+                       "Use -XX:+EnableDynamicAgentLoading to launch target VM.");
+    return;
+  }
 
   char *suffix = strrchr(_libpath.value(), '.');
   bool is_java_agent = (suffix != nullptr) && (strncmp(".jar", suffix, 4) == 0);
