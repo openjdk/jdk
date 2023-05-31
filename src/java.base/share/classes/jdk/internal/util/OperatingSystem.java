@@ -26,8 +26,6 @@ import java.util.Locale;
 import jdk.internal.util.PlatformProps;
 import jdk.internal.vm.annotation.ForceInline;
 
-import java.util.Locale;
-
 /**
  * Enumeration of operating system types and testing for the current OS.
  * The enumeration can be used to dispatch to OS specific code or values.
