@@ -739,7 +739,6 @@ public class BasicFileChooserUI extends FileChooserUI {
 
                         setDirectorySelected(true);
                         setDirectory(file);
-
                         if (usesSingleFilePane) {
                             chooser.setSelectedFile(null);
                         }
@@ -1241,6 +1240,7 @@ public class BasicFileChooserUI extends FileChooserUI {
                                                   || filename.indexOf('?') >= 0
                                                   || filename.indexOf('[') >= 0)));
     }
+
 
     /* A file filter which accepts file patterns containing
      * the special wildcards *? on Windows and *?[] on Unix.
