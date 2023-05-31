@@ -26,10 +26,17 @@ package jdk.internal.classfile.impl;
 
 import java.util.List;
 import java.util.function.Function;
+import java.util.function.Consumer;
 
 import jdk.internal.classfile.AttributeMapper;
 import jdk.internal.classfile.Classfile;
 import jdk.internal.classfile.Classfile.*;
+import jdk.internal.classfile.ClassBuilder;
+import jdk.internal.classfile.ClassHierarchyResolver;
+import jdk.internal.classfile.ClassModel;
+import jdk.internal.classfile.ClassTransform;
+import jdk.internal.classfile.constantpool.ClassEntry;
+import jdk.internal.classfile.constantpool.ConstantPoolBuilder;
 import jdk.internal.classfile.constantpool.Utf8Entry;
 
 import static jdk.internal.classfile.ClassHierarchyResolver.DEFAULT_CLASS_HIERARCHY_RESOLVER;
@@ -54,8 +61,8 @@ public record ClassfileImpl(StackMapsOption stackMapsOption,
              ShortJumpsOption.FIX_SHORT_JUMPS,
              DeadCodeOption.PATCH_DEAD_CODE,
              DeadLabelsOption.FAIL_ON_DEAD_LABELS,
-             new ClassHierarchyResolverOption(DEFAULT_CLASS_HIERARCHY_RESOLVER),
-             new AttributeMapperOption(new Function<>() {
+             new ClassHierarchyResolverOptionImpl(DEFAULT_CLASS_HIERARCHY_RESOLVER),
+             new AttributeMapperOptionImpl(new Function<>() {
                  @Override
                  public AttributeMapper<?> apply(Utf8Entry k) {
                      return null;
@@ -91,5 +98,43 @@ public record ClassfileImpl(StackMapsOption stackMapsOption,
             }
         }
         return new ClassfileImpl(smo, deo, lno, uao, cpso, sjo, dco, dlo, chro, amo);
+    }
+
+    @Override
+    public ClassModel parse(byte[] bytes) {
+        return new ClassImpl(bytes, this);
+    }
+
+    @Override
+    public byte[] build(ClassEntry thisClassEntry,
+                         ConstantPoolBuilder constantPool,
+                         Consumer<? super ClassBuilder> handler) {
+        thisClassEntry = AbstractPoolEntry.maybeClone(constantPool, thisClassEntry);
+        DirectClassBuilder builder = new DirectClassBuilder((SplitConstantPool)constantPool, this, thisClassEntry);
+        handler.accept(builder);
+        return builder.build();
+    }
+
+    @Override
+    public byte[] transform(ClassModel model, ClassEntry newClassName, ClassTransform transform) {
+        ConstantPoolBuilder constantPool = constantPoolSharingOption() == ConstantPoolSharingOption.SHARE_CONSTANT_POOL
+                                                                     ? ConstantPoolBuilder.of(model)
+                                                                     : ConstantPoolBuilder.of();
+        return build(newClassName, constantPool,
+                new Consumer<ClassBuilder>() {
+                    @Override
+                    public void accept(ClassBuilder builder) {
+                        ((DirectClassBuilder) builder).setOriginal((ClassImpl)model);
+                        ((DirectClassBuilder) builder).setSizeHint(((ClassImpl)model).classfileLength());
+                        builder.transform((ClassImpl)model, transform);
+                    }
+                });
+    }
+    public record AttributeMapperOptionImpl(Function<Utf8Entry, AttributeMapper<?>> attributeMapper)
+            implements AttributeMapperOption {
+    }
+
+    public record ClassHierarchyResolverOptionImpl(ClassHierarchyResolver classHierarchyResolver)
+            implements ClassHierarchyResolverOption {
     }
 }

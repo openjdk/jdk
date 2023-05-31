@@ -28,10 +28,6 @@ import java.io.IOException;
 import java.lang.constant.ClassDesc;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -39,21 +35,15 @@ import jdk.internal.classfile.attribute.ModuleAttribute;
 import jdk.internal.classfile.attribute.UnknownAttribute;
 import jdk.internal.classfile.constantpool.ClassEntry;
 import jdk.internal.classfile.constantpool.ConstantPoolBuilder;
-import jdk.internal.classfile.constantpool.PackageEntry;
 import jdk.internal.classfile.constantpool.Utf8Entry;
-import jdk.internal.classfile.impl.ClassImpl;
 import jdk.internal.classfile.impl.AbstractPoolEntry;
-import jdk.internal.classfile.impl.DirectClassBuilder;
 import jdk.internal.classfile.impl.ClassfileImpl;
-import jdk.internal.classfile.impl.SplitConstantPool;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
-import jdk.internal.classfile.impl.UnboundAttribute;
 import java.lang.reflect.AccessFlag;
 import jdk.internal.classfile.attribute.CharacterRangeInfo;
 import jdk.internal.classfile.attribute.LocalVariableInfo;
 import jdk.internal.classfile.attribute.LocalVariableTypeInfo;
 import jdk.internal.classfile.instruction.ExceptionCatch;
-import java.lang.constant.PackageDesc;
 
 /**
  * Main entry points for parsing, transforming, and generating classfiles.
@@ -82,10 +72,14 @@ public sealed interface Classfile
      * Default is only to process standard attributes.
      * @param r a function mapping attribute names to attribute mappers
      */
-    record AttributeMapperOption(Function<Utf8Entry, AttributeMapper<?>> attributeMapper) implements Option {
-        public static AttributeMapperOption of(Function<Utf8Entry, AttributeMapper<?>> attributeMapper) {
-            return new AttributeMapperOption(attributeMapper);
+    sealed interface AttributeMapperOption extends Option
+            permits ClassfileImpl.AttributeMapperOptionImpl {
+
+        static AttributeMapperOption of(Function<Utf8Entry, AttributeMapper<?>> attributeMapper) {
+            return new ClassfileImpl.AttributeMapperOptionImpl(attributeMapper);
         }
+
+        Function<Utf8Entry, AttributeMapper<?>> attributeMapper();
     }
 
     /**
@@ -93,10 +87,14 @@ public sealed interface Classfile
      * generating stack maps}
      * @param r the resolver
      */
-    record ClassHierarchyResolverOption(ClassHierarchyResolver classHierarchyResolver) implements Option {
-        public static ClassHierarchyResolverOption of(ClassHierarchyResolver classHierarchyResolver) {
-            return new ClassHierarchyResolverOption(classHierarchyResolver);
+    sealed interface ClassHierarchyResolverOption extends Option
+            permits ClassfileImpl.ClassHierarchyResolverOptionImpl {
+
+        static ClassHierarchyResolverOption of(ClassHierarchyResolver classHierarchyResolver) {
+            return new ClassfileImpl.ClassHierarchyResolverOptionImpl(classHierarchyResolver);
         }
+
+        ClassHierarchyResolver classHierarchyResolver();
     }
 
     /**
@@ -202,9 +200,7 @@ public sealed interface Classfile
      * @param bytes the bytes of the classfile
      * @return the class model
      */
-    default ClassModel parse(byte[] bytes) {
-        return new ClassImpl(bytes, (ClassfileImpl)this);
-    }
+    ClassModel parse(byte[] bytes);
 
     /**
      * Parse a classfile into a {@link ClassModel}.
@@ -237,14 +233,9 @@ public sealed interface Classfile
      * @param handler a handler that receives a {@link ClassBuilder}
      * @return the classfile bytes
      */
-    default byte[] build(ClassEntry thisClassEntry,
-                         ConstantPoolBuilder constantPool,
-                         Consumer<? super ClassBuilder> handler) {
-        thisClassEntry = AbstractPoolEntry.maybeClone(constantPool, thisClassEntry);
-        DirectClassBuilder builder = new DirectClassBuilder((SplitConstantPool)constantPool, (ClassfileImpl)this, thisClassEntry);
-        handler.accept(builder);
-        return builder.build();
-    }
+    byte[] build(ClassEntry thisClassEntry,
+                 ConstantPoolBuilder constantPool,
+                 Consumer<? super ClassBuilder> handler);
 
     /**
      * Build a classfile into a file.
@@ -346,20 +337,7 @@ public sealed interface Classfile
         return transform(model, TemporaryConstantPool.INSTANCE.classEntry(newClassName), transform);
     }
 
-    default byte[] transform(ClassModel model, ClassEntry newClassName, ClassTransform transform) {
-        ConstantPoolBuilder constantPool = ((ClassfileImpl)this).constantPoolSharingOption() == ConstantPoolSharingOption.SHARE_CONSTANT_POOL
-                                                                     ? ConstantPoolBuilder.of(model)
-                                                                     : ConstantPoolBuilder.of();
-        return build(newClassName, constantPool,
-                new Consumer<ClassBuilder>() {
-                    @Override
-                    public void accept(ClassBuilder builder) {
-                        ((DirectClassBuilder) builder).setOriginal((ClassImpl)model);
-                        ((DirectClassBuilder) builder).setSizeHint(((ClassImpl)model).classfileLength());
-                        builder.transform((ClassImpl)model, transform);
-                    }
-                });
-    }
+    byte[] transform(ClassModel model, ClassEntry newClassName, ClassTransform transform);
 
     int MAGIC_NUMBER = 0xCAFEBABE;
 
