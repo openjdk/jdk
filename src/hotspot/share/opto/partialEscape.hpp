@@ -170,6 +170,9 @@ class PEAState {
   EscapedState* materialize(GraphKit* kit, Node* var);
 
   int objects(Unique_Node_List& nodes) const;
+  int size() const {
+    return _state.number_of_entries();
+  }
 
   VirtualState* as_virtual(Node* var) const {
     ObjID id = is_alias(var);

@@ -577,7 +577,9 @@ EscapedState* PEAState::materialize(GraphKit* kit, Node* var) {
 #endif
       // no initial value or is captured by InitializeNode
       if (val == nullptr) continue;
-
+      if (val == var) {
+        val = objx;
+      }
       int offset = field->offset_in_bytes();
       Node* adr = kit->basic_plus_adr(objx, objx, offset);
       const TypePtr* adr_type = C->alias_type(field)->adr_type();
@@ -639,7 +641,9 @@ EscapedState* PEAState::materialize(GraphKit* kit, Node* var) {
 
 #ifndef PRODUCT
 void PEAState::print_on(outputStream* os) const {
-  os->print_cr("PEAState:");
+  if (size() > 0) {
+    os->print_cr("PEAState:");
+  }
 
   _state.iterate([&](ObjID obj, ObjectState* state) {
     bool is_virt = state->is_virtual();
