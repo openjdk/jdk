@@ -2221,7 +2221,11 @@ public class CSS implements Serializable {
         @Override
         public boolean equals(Object val) {
             return val instanceof CSS.FontSize size
-                   && Objects.equals(size.svalue, svalue);
+                   && value == size.value
+                   && index == size.index
+                   && ((lu == null && size.lu == null)
+                      || (lu != null && size.lu != null
+                      && Objects.equals(lu, size.lu)));
         }
 
         float value;
@@ -3071,6 +3075,19 @@ public class CSS implements Serializable {
 
         public String toString() {
             return type + " " + value;
+        }
+
+        @Override
+        public int hashCode() {
+            return Float.hashCode(value);
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            return obj instanceof LengthUnit lu
+                   && type == lu.type
+                   && value == lu.value
+                   && Objects.equals(units, lu.units);
         }
 
         // 0 - value indicates real value
