@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8289332
+ * @bug 8289332 8286470
  * @summary Auto-generate ids for user-defined headings
  * @library /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -79,6 +79,10 @@ public class TestAutoHeaderId extends JavadocTester {
                          *
                          * <h4></h4>
                          *
+                         * <h2>  Multi-line
+                         *       heading   with extra
+                         *                 whitespace</h2>
+                         *
                          * Last sentence.
                          */
                         public class C {
@@ -121,6 +125,32 @@ public class TestAutoHeaderId extends JavadocTester {
                     """,
                 """
                     <h4 id="-heading"></h4>
-                    """);
+                    """,
+                """
+                    <h2 id="multi-line-heading-with-extra-whitespace-heading">  Multi-line
+                           heading   with extra
+                                     whitespace</h2>""");
+        checkOutput("tag-search-index.js", true,
+                """
+                    {"l":"Duplicate Text","h":"class p.C","d":"Section","u":"p/C.html#duplicate-text-heading"}""",
+                """
+                    {"l":"Duplicate Text","h":"class p.C","d":"Section","u":"p/C.html#duplicate-text-heading1"}""",
+                """
+                    {"l":"Embedded A-Tag with ID","h":"class p.C","d":"Section","u":"p/C.html#fixed-id-2"}""",
+                """
+                    {"l":"Embedded Code Tag","h":"class p.C","d":"Section","u":"p/C.html#embedded-code-tag-heading"}""",
+                """
+                    {"l":"Embedded Link Tag","h":"class p.C","d":"Section","u":"p/C.html#embedded-link-tag-heading"}""",
+                """
+                    {"l":"Extra (#*!. chars","h":"class p.C","d":"Section","u":"p/C.html#extra-chars-heading"}""",
+                """
+                    {"l":"First Header","h":"class p.C","d":"Section","u":"p/C.html#first-header-heading"}""",
+                """
+                    {"l":"Header with ID","h":"class p.C","d":"Section","u":"p/C.html#fixed-id-1"}""",
+                """
+                    {"l":"Multi-line heading with extra whitespace","h":"class p.C","d":"Section","u":"p/C.html\
+                    #multi-line-heading-with-extra-whitespace-heading"}""",
+                """
+                    {"l":"Other attributes","h":"class p.C","d":"Section","u":"p/C.html#other-attributes-heading"}""");
     }
 }
