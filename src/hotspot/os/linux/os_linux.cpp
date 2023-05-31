@@ -930,10 +930,10 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
   // Add an additional page to the stack size to reduce its chances of getting large page aligned
   // so that the stack does not get backed by a transparent huge page.
   size_t default_large_page_size = os::Linux::default_large_page_size();
-  if (default_large_page_size != 0) {
-    if (stack_size >= default_large_page_size && is_aligned(stack_size, default_large_page_size)) {
-      stack_size += os::vm_page_size();
-    }
+  if (default_large_page_size != 0 &&
+      stack_size >= default_large_page_size &&
+      is_aligned(stack_size, default_large_page_size)) {
+    stack_size += os::vm_page_size();
   }
 
   int status = pthread_attr_setstacksize(&attr, stack_size);
