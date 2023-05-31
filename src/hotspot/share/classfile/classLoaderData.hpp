@@ -161,7 +161,22 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   Symbol* _name_and_id;
   JFR_ONLY(DEFINE_TRACE_ID_FIELD;)
 
-  void set_next(ClassLoaderData* next) { Atomic::store(&_next, next); }
+  void set_next(ClassLoaderData* next) {
+#ifdef ASSERT
+  if (this->next() != nullptr) {
+    ClassLoaderData* cld = this->next();
+    for (;;) {
+      // Next must be in the tail of the list
+      if (cld == next) {
+        break;
+      }
+      assert(cld->is_unloading(), "only remove unloading clds");
+      cld = cld->next();
+    }
+  }
+#endif
+    Atomic::store(&_next, next);
+  }
   ClassLoaderData* next() const        { return Atomic::load(&_next); }
 
   void set_unloading_next(ClassLoaderData* unloading_next) { _unloading_next = unloading_next; }
