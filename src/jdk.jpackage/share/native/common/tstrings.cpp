@@ -57,7 +57,7 @@ tstring unsafe_format(tstring::const_pointer format, ...) {
 #pragma GCC diagnostic ignored "-Wformat-nonliteral"
 #endif
         // With g++ this compiles only with '-std=gnu++0x' option
-                ret = vsnprintf(&*fmtout.begin(), fmtout.size(), format, args);
+        ret = vsnprintf(&*fmtout.begin(), fmtout.size(), format, args);
 #if defined(__GNUC__) && __GNUC__ >= 5
 #pragma GCC diagnostic pop
 #endif

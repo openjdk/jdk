@@ -652,14 +652,14 @@ static bool read_shared_lib_info(struct ps_prochandle* ph) {
       // address mentioned in shared object and the actual virtual base where runtime
       // linker loaded it. We use "base diff" in read_lib_segments call below.
 
-                    if (ps_pdread(ph, (psaddr_t) link_map_addr + LINK_MAP_ADDR_OFFSET,
+      if (ps_pdread(ph, (psaddr_t) link_map_addr + LINK_MAP_ADDR_OFFSET,
                    &lib_base_diff, sizeof(uintptr_t)) != PS_OK) {
          print_debug("can't read shared object base address diff\n");
          return false;
       }
 
       // read address of the name
-                      if (ps_pdread(ph, (psaddr_t) link_map_addr + LINK_MAP_NAME_OFFSET,
+      if (ps_pdread(ph, (psaddr_t) link_map_addr + LINK_MAP_NAME_OFFSET,
                     &lib_name_addr, sizeof(uintptr_t)) != PS_OK) {
          print_debug("can't read address of shared object name\n");
          return false;
@@ -714,7 +714,7 @@ static bool read_shared_lib_info(struct ps_prochandle* ph) {
       }
 
     // read next link_map address
-                    if (ps_pdread(ph, (psaddr_t) link_map_addr + LINK_MAP_NEXT_OFFSET,
+    if (ps_pdread(ph, (psaddr_t) link_map_addr + LINK_MAP_NEXT_OFFSET,
                    &link_map_addr, sizeof(uintptr_t)) != PS_OK) {
       print_debug("can't read next link in link_map\n");
       return false;
