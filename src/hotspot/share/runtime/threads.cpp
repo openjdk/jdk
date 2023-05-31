@@ -547,7 +547,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   // Initialize global modules
   jint status = init_globals();
-  if (status != JNI_OK ) {
+  if (status != JNI_OK) {
     // Don't delete main_thread here as we may need to report exceptions.
     *canTryAgain = false; // don't let caller call JNI_CreateJavaVM again
     return status;
