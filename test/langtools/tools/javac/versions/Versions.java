@@ -90,7 +90,8 @@ public class Versions {
         NINETEEN(false,  "63.0", "19", Versions::checksrc19),
         TWENTY(false,    "64.0", "20", Versions::checksrc20),
         TWENTY_ONE(false,"65.0", "21", Versions::checksrc21),
-        TWENTY_TWO(false,"66.0", "22", Versions::checksrc21);
+        TWENTY_TWO(false,"66.0", "22", Versions::checksrc22),
+        ; // Reduce code churn when appending new constants
 
         private final boolean dotOne;
         private final String classFileVer;
@@ -342,6 +343,15 @@ public class Versions {
                                   "New21.java"));
        // Add expectedFail after new language features added in a later release.
     }
+
+   protected void checksrc22(List<String> args) {
+       printargs("checksrc22", args);
+       expectedPass(args, List.of("New7.java", "New8.java", "New10.java", "New11.java",
+                                  "New14.java", "New15.java", "New16.java", "New17.java",
+                                  "New21.java"));
+       // Add expectedFail after new language features added in a later release.
+    }
+
 
     protected void expected(List<String> args, List<String> fileNames,
                             Consumer<List<String>> passOrFail) {

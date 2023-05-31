@@ -404,7 +404,8 @@ public enum SourceVersion {
      * href="https://docs.oracle.com/javase/specs/jls/se22/html/index.html">
      * <cite>The Java Language Specification, Java SE 22 Edition</cite></a>
      */
-    RELEASE_22;
+    RELEASE_22,
+    ; // Reduce code churn when appending new constants
 
     // Note that when adding constants for newer releases, the
     // behavior of latest() and latestSupported() must be updated too.

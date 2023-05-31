@@ -286,7 +286,8 @@ public enum ClassFileFormatVersion {
      * href="https://docs.oracle.com/javase/specs/jvms/se22/html/index.html">
      * <cite>The Java Virtual Machine Specification, Java SE 22 Edition</cite></a>
      */
-    RELEASE_22(66);
+    RELEASE_22(66),
+    ; // Reduce code churn when appending new constants
 
     // Note to maintainers: when adding constants for newer releases,
     // the implementation of latest() must be updated too.

@@ -137,7 +137,8 @@ public enum Source {
     /**
       * 22, tbd
       */
-    JDK22("22");
+    JDK22("22"),
+    ; // Reduce code churn when appending new constants
 
     private static final Context.Key<Source> sourceKey = new Context.Key<>();
 
