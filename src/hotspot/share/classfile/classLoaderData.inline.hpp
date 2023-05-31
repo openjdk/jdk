@@ -34,27 +34,21 @@
 #include "oops/weakHandle.inline.hpp"
 
 inline void ClassLoaderData::set_next(ClassLoaderData* next) {
-#ifdef ASSERT
-  if (this->next() != nullptr) {
-    ClassLoaderData* cld = this->next();
-    for (;;) {
-      // Next must be in the tail of the list
-      if (cld == next) {
-        break;
-      }
-      assert(cld->is_unloading(), "only remove unloading clds");
-      cld = cld->next();
-    }
-  }
-#endif
-    Atomic::store(&_next, next);
-  }
+  assert(this->next() == nullptr, "only link once");
+  Atomic::store(&_next, next);
+}
 
 inline ClassLoaderData* ClassLoaderData::next() const {
   return Atomic::load(&_next);
 }
 
+inline void ClassLoaderData::unlink_next() {
+  assert(next()->is_unloading(), "only remove unloading clds");
+  Atomic::store(&_next, _next->_next);
+}
+
 inline void ClassLoaderData::set_unloading_next(ClassLoaderData* unloading_next) {
+  assert(this->unloading_next() == nullptr, "only link once");
   _unloading_next = unloading_next;
 }
 

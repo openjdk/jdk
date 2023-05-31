@@ -203,7 +203,7 @@ void ClassLoaderDataGraph::walk_metadata_and_clean_metaspaces() {
 
 // GC root of class loader data created.
 ClassLoaderData* volatile ClassLoaderDataGraph::_head = nullptr;
-ClassLoaderData* ClassLoaderDataGraph::_unloading = nullptr;
+ClassLoaderData* ClassLoaderDataGraph::_unloading_head = nullptr;
 
 bool ClassLoaderDataGraph::_should_clean_deallocate_lists = false;
 bool ClassLoaderDataGraph::_safepoint_cleanup_needed = false;
@@ -423,7 +423,7 @@ void ClassLoaderDataGraph::loaded_classes_do(KlassClosure* klass_closure) {
 
 void ClassLoaderDataGraph::classes_unloading_do(void f(Klass* const)) {
   assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
-  for (ClassLoaderData* cld = _unloading; cld != nullptr; cld = cld->unloading_next()) {
+  for (ClassLoaderData* cld = _unloading_head; cld != nullptr; cld = cld->unloading_next()) {
     assert(cld->is_unloading(), "invariant");
     cld->classes_do(f);
   }
@@ -494,37 +494,34 @@ bool ClassLoaderDataGraph::is_valid(ClassLoaderData* loader_data) {
 bool ClassLoaderDataGraph::do_unloading() {
   assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
 
-  ClassLoaderData* data = _head;
   ClassLoaderData* prev = nullptr;
   bool seen_dead_loader = false;
   uint loaders_processed = 0;
   uint loaders_removed = 0;
 
-  data = _head;
-  while (data != nullptr) {
+  for (ClassLoaderData* data = _head; data != nullptr; data = data->next()) {
     if (data->is_alive()) {
       prev = data;
-      data = data->next();
       loaders_processed++;
       continue;
     }
-    seen_dead_loader = true;
+
+    // Found dead CLD.
     loaders_removed++;
-    ClassLoaderData* dead = data;
-    dead->unload();
-    data = data->next();
-    // Remove from loader list.
-    // This class loader data will no longer be found
-    // in the ClassLoaderDataGraph.
+    seen_dead_loader = true;
+    data->unload();
+
+    // Move dead CLD to unloading list.
     if (prev != nullptr) {
-      prev->set_next(data);
+      prev->unlink_next();
     } else {
-      assert(dead == _head, "sanity check");
+      assert(data == _head, "sanity check");
       // The GC might be walking this concurrently
-      Atomic::store(&_head, data);
+      Atomic::store(&_head, data->next());
     }
-    dead->set_unloading_next(_unloading);
-    _unloading = dead;
+    data->set_unloading_next(_unloading_head);
+    _unloading_head = data;
+
   }
 
   log_debug(class, loader, data)("do_unloading: loaders processed %u, loaders removed %u", loaders_processed, loaders_removed);
@@ -556,8 +553,8 @@ void ClassLoaderDataGraph::clean_module_and_package_info() {
 }
 
 void ClassLoaderDataGraph::purge(bool at_safepoint) {
-  ClassLoaderData* list = _unloading;
-  _unloading = nullptr;
+  ClassLoaderData* list = _unloading_head;
+  _unloading_head = nullptr;
   ClassLoaderData* next = list;
   bool classes_unloaded = false;
   while (next != nullptr) {
