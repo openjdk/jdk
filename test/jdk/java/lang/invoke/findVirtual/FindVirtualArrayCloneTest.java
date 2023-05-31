@@ -25,7 +25,7 @@
  * @test
  * @bug 8299505
  * @run junit FindVirtualArrayCloneTest
- * @summary Ensures Arrays' clone doesn't have incorrect receiver type bound
+ * @summary Test invocation of Object.clone for arrays
  */
 
 import org.junit.jupiter.api.Test;
@@ -36,6 +36,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 
 public class FindVirtualArrayCloneTest {
 
@@ -58,5 +59,16 @@ public class FindVirtualArrayCloneTest {
         var lookup = MethodHandles.lookup();
         var cloneMh = lookup.findVirtual(Object.class, "clone", MethodType.methodType(Object.class));
         assertSame(lookup.lookupClass(), cloneMh.type().parameterType(0));
+    }
+
+    @Test
+    public void checkArrayClone() throws Throwable {
+        var array = new String[] {"apple", "pear", "banana"};
+        var regularClone = array.clone();
+        var cloneMh = MethodHandles.lookup()
+                .findVirtual(String[].class, "clone", MethodType.methodType(Object.class));
+        var mhClone = (String[]) (Object) cloneMh.invokeExact((String[]) array);
+        assertArrayEquals(array, mhClone);
+        assertArrayEquals(regularClone, mhClone);
     }
 }
