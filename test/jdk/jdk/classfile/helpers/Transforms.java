@@ -164,7 +164,7 @@ public class Transforms {
             return cw.toByteArray();
         }),
         CLASS_REMAPPER(bytes ->
-                ClassRemapper.of(Map.of()).remapClass(Classfile.of().parse(bytes)));
+                ClassRemapper.of(Map.of()).remapClass(Classfile.of(), Classfile.of().parse(bytes)));
 
         // Need ASM, LOW_UNSHARED
 

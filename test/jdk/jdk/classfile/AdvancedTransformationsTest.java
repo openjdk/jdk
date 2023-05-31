@@ -116,7 +116,7 @@ class AdvancedTransformationsTest {
         try (var in = StackMapGenerator.class.getResourceAsStream("StackMapGenerator.class")) {
             var cc = Classfile.of();
             var clm = cc.parse(in.readAllBytes());
-            var remapped = cc.parse(ClassRemapper.of(map).remapClass(clm));
+            var remapped = cc.parse(ClassRemapper.of(map).remapClass(cc, clm));
             assertEmpty(remapped.verify(
                     ClassHierarchyResolver.of(Set.of(ClassDesc.of("remapped.List")), Map.of(
                             ClassDesc.of("remapped.RemappedBytecode"), ConstantDescs.CD_Object,
@@ -172,6 +172,7 @@ class AdvancedTransformationsTest {
         var cc = Classfile.of();
         var ma = cc.parse(
                 ClassRemapper.of(Map.of(foo, bar)).remapClass(
+                        cc,
                         cc.parse(
                                 cc.buildModule(
                                         ModuleAttribute.of(ModuleDesc.of("MyModule"), mab ->
@@ -192,6 +193,7 @@ class AdvancedTransformationsTest {
         var cc = Classfile.of();
         var remapped = cc.parse(
                 ClassRemapper.of(Map.of(foo, bar, fooAnno, barAnno)).remapClass(
+                        cc,
                         cc.parse(
                                 Rec.class.getResourceAsStream(Rec.class.getName() + ".class")
                                         .readAllBytes())));
