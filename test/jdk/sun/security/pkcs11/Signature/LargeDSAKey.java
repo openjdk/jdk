@@ -36,10 +36,10 @@ import java.security.spec.DSAParameterSpec;
 
 /*
  * @test
- * @bug 8271566
+ * @bug 8271566 8297885
  * @library /test/lib ..
  * @modules jdk.crypto.cryptoki
- * @run main/othervm/timeout=30 LargeDSAKey
+ * @run main/othervm/timeout=90 LargeDSAKey
  */
 
 public final class LargeDSAKey extends PKCS11Test {

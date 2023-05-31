@@ -206,7 +206,7 @@
     jvmci_method(CallNonvirtualVoidMethod, GetMethodID, call_special, void, HotSpotJVMCIRuntime, shutdown, void_method_signature, (JVMCIObject runtime)) \
     jvmci_method(CallStaticObjectMethod, GetStaticMethodID, call_static, JVMCIObject, HotSpotJVMCIRuntime, runtime, runtime_signature, (JVMCI_TRAPS)) \
     jvmci_method(CallObjectMethod, GetMethodID, call_virtual, JVMCIObject, HotSpotJVMCIRuntime, getCompiler, getCompiler_signature, (JVMCIObject runtime, JVMCI_TRAPS)) \
-    jvmci_method(CallStaticObjectMethod, GetStaticMethodID, call_static, JVMCIObject, HotSpotJVMCIRuntime, callToString, callToString_signature, (JVMCIObject object, JVMCI_TRAPS)) \
+    jvmci_method(CallStaticObjectMethod, GetStaticMethodID, call_static, JVMCIObject, HotSpotJVMCIRuntime, exceptionToString, exceptionToString_signature, (JVMCIObject object, bool toString, bool stackTrace, JVMCI_TRAPS)) \
     jvmci_method(CallStaticVoidMethod, GetStaticMethodID, call_static, void, HotSpotJVMCIRuntime, postTranslation, object_void_signature, (JVMCIObject object, JVMCI_TRAPS)) \
   end_class                                                                                                   \
   start_class(JVMCIError, jdk_vm_ci_common_JVMCIError)                                                        \

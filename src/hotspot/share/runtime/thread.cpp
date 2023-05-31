@@ -266,7 +266,7 @@ Thread::~Thread() {
   delete handle_area();
   delete metadata_handles();
 
-  // osthread() can be nullptr, if creation of thread failed.
+  // osthread() can be null, if creation of thread failed.
   if (osthread() != nullptr) os::free_thread(osthread());
 
   // Clear Thread::current if thread is deleting itself and it has not

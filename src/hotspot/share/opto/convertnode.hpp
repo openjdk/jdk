@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,10 +33,11 @@
 // Convert int/pointer to a Boolean.  Map zero to zero, all else to 1.
 class Conv2BNode : public Node {
   public:
-  Conv2BNode( Node *i ) : Node(0,i) {}
+  Conv2BNode(Node* i) : Node(nullptr, i) {}
   virtual int Opcode() const;
   virtual const Type *bottom_type() const { return TypeInt::BOOL; }
   virtual Node* Identity(PhaseGVN* phase);
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual uint  ideal_reg() const { return Op_RegI; }
 };

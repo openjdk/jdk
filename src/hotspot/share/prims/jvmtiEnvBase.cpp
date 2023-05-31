@@ -1381,6 +1381,30 @@ JvmtiEnvBase::get_threadOop_and_JavaThread(ThreadsList* t_list, jthread thread,
   return JVMTI_ERROR_NONE;
 }
 
+// Check for JVMTI_ERROR_NOT_SUSPENDED and JVMTI_ERROR_OPAQUE_FRAME errors.
+// Used in PopFrame and ForceEarlyReturn implementations.
+jvmtiError
+JvmtiEnvBase::check_non_suspended_or_opaque_frame(JavaThread* jt, oop thr_obj, bool self) {
+  bool is_virtual = thr_obj != nullptr && thr_obj->is_a(vmClasses::BaseVirtualThread_klass());
+
+  if (is_virtual) {
+    if (!is_JavaThread_current(jt, thr_obj)) {
+      if (!is_vthread_suspended(thr_obj, jt)) {
+        return JVMTI_ERROR_THREAD_NOT_SUSPENDED;
+      }
+      if (jt == nullptr) { // unmounted virtual thread
+        return JVMTI_ERROR_OPAQUE_FRAME;
+      }
+    }
+  } else { // platform thread
+    if (!self && !jt->is_suspended() &&
+        !jt->is_carrier_thread_suspended()) {
+      return JVMTI_ERROR_THREAD_NOT_SUSPENDED;
+    }
+  }
+  return JVMTI_ERROR_NONE;
+}
+
 jvmtiError
 JvmtiEnvBase::get_object_monitor_usage(JavaThread* calling_thread, jobject object, jvmtiMonitorUsage* info_ptr) {
   assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint");
@@ -2036,10 +2060,12 @@ JvmtiEnvBase::force_early_return(jthread thread, jvalue value, TosState tos) {
   oop thread_obj = nullptr;
   jvmtiError err = get_threadOop_and_JavaThread(tlh.list(), thread, &java_thread, &thread_obj);
 
-  if (thread_obj != nullptr && thread_obj->is_a(vmClasses::BaseVirtualThread_klass())) {
-    // No support for virtual threads (yet).
-    return JVMTI_ERROR_OPAQUE_FRAME;
+  if (err != JVMTI_ERROR_NONE) {
+    return err;
   }
+  bool self = java_thread == current_thread;
+
+  err = check_non_suspended_or_opaque_frame(java_thread, thread_obj, self);
   if (err != JVMTI_ERROR_NONE) {
     return err;
   }
@@ -2058,8 +2084,8 @@ JvmtiEnvBase::force_early_return(jthread thread, jvalue value, TosState tos) {
   }
 
   SetForceEarlyReturn op(state, value, tos);
-  if (java_thread == current_thread) {
-    op.doit(java_thread, true /* self */);
+  if (self) {
+    op.doit(java_thread, self);
   } else {
     Handshake::execute(&op, java_thread);
   }
@@ -2074,12 +2100,6 @@ SetForceEarlyReturn::doit(Thread *target, bool self) {
 
   if (java_thread->is_exiting()) {
     return; /* JVMTI_ERROR_THREAD_NOT_ALIVE (default) */
-  }
-  if (!self) {
-    if (!java_thread->is_suspended()) {
-      _result = JVMTI_ERROR_THREAD_NOT_SUSPENDED;
-      return;
-    }
   }
 
   // Check to see if a ForceEarlyReturn was already in progress

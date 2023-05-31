@@ -2888,6 +2888,7 @@ Node* GraphKit::type_check_receiver(Node* receiver, ciKlass* klass,
       // recv_xtype, since now we know what the type will be.
       Node* cast = new CheckCastPPNode(control(), receiver, recvx_type);
       (*casted_receiver) = _gvn.transform(cast);
+      assert(!(*casted_receiver)->is_top(), "that path should be unreachable");
       // (User must make the replace_in_map call.)
     }
   }
@@ -3519,19 +3520,19 @@ void GraphKit::shared_unlock(Node* box, Node* obj) {
 // This two-faced routine is useful because allocation sites
 // almost always feature constant types.
 Node* GraphKit::get_layout_helper(Node* klass_node, jint& constant_value) {
-  const TypeKlassPtr* inst_klass = _gvn.type(klass_node)->isa_klassptr();
-  if (!StressReflectiveCode && inst_klass != nullptr) {
-    bool    xklass = inst_klass->klass_is_exact();
-    if (xklass || inst_klass->isa_aryklassptr()) {
+  const TypeKlassPtr* klass_t = _gvn.type(klass_node)->isa_klassptr();
+  if (!StressReflectiveCode && klass_t != nullptr) {
+    bool xklass = klass_t->klass_is_exact();
+    if (xklass || (klass_t->isa_aryklassptr() && klass_t->is_aryklassptr()->elem() != Type::BOTTOM)) {
       jint lhelper;
-      if (inst_klass->isa_aryklassptr()) {
-        BasicType elem = inst_klass->as_instance_type()->isa_aryptr()->elem()->array_element_basic_type();
+      if (klass_t->isa_aryklassptr()) {
+        BasicType elem = klass_t->as_instance_type()->isa_aryptr()->elem()->array_element_basic_type();
         if (is_reference_type(elem, true)) {
           elem = T_OBJECT;
         }
         lhelper = Klass::array_layout_helper(elem);
       } else {
-        lhelper = inst_klass->is_instklassptr()->exact_klass()->layout_helper();
+        lhelper = klass_t->is_instklassptr()->exact_klass()->layout_helper();
       }
       if (lhelper != Klass::_lh_neutral_value) {
         constant_value = lhelper;
@@ -3917,7 +3918,7 @@ Node* GraphKit::new_array(Node* klass_node,     // array klass (maybe variable)
 
 //---------------------------Ideal_allocation----------------------------------
 // Given an oop pointer or raw pointer, see if it feeds from an AllocateNode.
-AllocateNode* AllocateNode::Ideal_allocation(Node* ptr, PhaseTransform* phase) {
+AllocateNode* AllocateNode::Ideal_allocation(Node* ptr, PhaseValues* phase) {
   if (ptr == nullptr) {     // reduce dumb test in callers
     return nullptr;
   }
@@ -3944,7 +3945,7 @@ AllocateNode* AllocateNode::Ideal_allocation(Node* ptr, PhaseTransform* phase) {
 }
 
 // Fancy version which also strips off an offset (and reports it to caller).
-AllocateNode* AllocateNode::Ideal_allocation(Node* ptr, PhaseTransform* phase,
+AllocateNode* AllocateNode::Ideal_allocation(Node* ptr, PhaseValues* phase,
                                              intptr_t& offset) {
   Node* base = AddPNode::Ideal_base_and_offset(ptr, phase, offset);
   if (base == nullptr)  return nullptr;
@@ -3995,20 +3996,21 @@ void GraphKit::add_parse_predicate(Deoptimization::DeoptReason reason, const int
     return;
   }
 
-  Node* cont    = _gvn.intcon(1);
-  Node* opq     = _gvn.transform(new Opaque1Node(C, cont));
-  Node* bol     = _gvn.transform(new Conv2BNode(opq));
-  IfNode* iff   = create_and_map_if(control(), bol, PROB_MAX, COUNT_UNKNOWN);
-  Node* iffalse = _gvn.transform(new IfFalseNode(iff));
-  C->add_parse_predicate_opaq(opq);
+  Node* cont = _gvn.intcon(1);
+  Node* opaq = _gvn.transform(new Opaque1Node(C, cont));
+  C->add_parse_predicate_opaq(opaq);
+  Node* bol = _gvn.transform(new Conv2BNode(opaq));
+  ParsePredicateNode* parse_predicate = new ParsePredicateNode(control(), bol, reason);
+  _gvn.set_type(parse_predicate, parse_predicate->Value(&_gvn));
+  Node* if_false = _gvn.transform(new IfFalseNode(parse_predicate));
   {
     PreserveJVMState pjvms(this);
-    set_control(iffalse);
+    set_control(if_false);
     inc_sp(nargs);
     uncommon_trap(reason, Deoptimization::Action_maybe_recompile);
   }
-  Node* iftrue = _gvn.transform(new IfTrueNode(iff));
-  set_control(iftrue);
+  Node* if_true = _gvn.transform(new IfTrueNode(parse_predicate));
+  set_control(if_true);
 }
 
 // Add Parse Predicates which serve as placeholders to create new Runtime Predicates above them. All

@@ -3071,8 +3071,12 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
 
   <category id="ForceEarlyReturn" label="Force Early Return">
     <intro>
-      These functions allow an agent to force a method
-      to return at any point during its execution.
+      These functions allow an agent to force a return from the current frame.
+      The specified thread must be suspended or must be the current thread.
+      These functions may be used to force a return from the current frame
+      of a virtual thread when it is suspended at an event.
+      An implementation may support forcing a return from the current frame
+      of a suspended virtual thread in other cases.
       The method which will return early is referred to as the <i>called method</i>.
       The called method is the current method
       (as defined by
@@ -3080,7 +3084,6 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
       for the specified thread at
       the time the function is called.
       <p/>
-      The specified thread must be suspended or must be the current thread.
       The return occurs when execution of Java programming
       language code is resumed on this thread.
       Between calling one of these functions and resumption
@@ -3136,7 +3139,7 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
         <error id="JVMTI_ERROR_OPAQUE_FRAME">
           Attempted to return early from a frame
           corresponding to a native method.
-          The thread is a virtual thread and the implementation is
+          The thread is a suspended virtual thread and the implementation was
           unable to force its current frame to return.
           Or the implementation is unable to provide
           this functionality on this frame.
@@ -3188,7 +3191,7 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
         <error id="JVMTI_ERROR_OPAQUE_FRAME">
           Attempted to return early from a frame
           corresponding to a native method.
-          The thread is a virtual thread and the implementation is
+          The thread is a suspended virtual thread and the implementation was
           unable to force its current frame to return.
           Or the implementation is unable to provide
           this functionality on this frame.
@@ -3236,7 +3239,7 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
         <error id="JVMTI_ERROR_OPAQUE_FRAME">
           Attempted to return early from a frame
           corresponding to a native method.
-          The thread is a virtual thread and the implementation is
+          The thread is a suspended virtual thread and the implementation was
           unable to force its current frame to return.
           Or the implementation is unable to provide
           this functionality on this frame.
@@ -3281,7 +3284,7 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
         <error id="JVMTI_ERROR_OPAQUE_FRAME">
           Attempted to return early from a frame
           corresponding to a native method.
-          The thread is a virtual thread and the implementation is
+          The thread is a suspended virtual thread and the implementation was
           unable to force its current frame to return.
           Or the implementation is unable to provide
           this functionality on this frame.
@@ -3326,7 +3329,7 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
         <error id="JVMTI_ERROR_OPAQUE_FRAME">
           Attempted to return early from a frame
           corresponding to a native method.
-          The thread is a virtual thread and the implementation is
+          The thread is a suspended virtual thread and the implementation was
           unable to force its current frame to return.
           Or the implementation is unable to provide
           this functionality on this frame.
@@ -3365,7 +3368,7 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
         <error id="JVMTI_ERROR_OPAQUE_FRAME">
           Attempted to return early from a frame
           corresponding to a native method.
-          The thread is a virtual thread and the implementation is
+          The thread is a suspended virtual thread and the implementation was
           unable to force its current frame to return.
           Or the implementation is unable to provide
           this functionality on this frame.
@@ -5823,9 +5826,8 @@ class C2 extends C1 implements I2 {
       The <code>GetLocalXXX</code> functions may be used to retrieve the value of
       a local variable contained in the frame of a virtual thread.
       The <code>SetLocalXXX</code> functions may be used to set the value of a
-      local variable in the topmost frame of a virtual thread suspended at a
-      breakpoint or single step event. An implementation may support setting locals
-      in other cases.
+      local variable in the topmost frame of a virtual thread suspended at an event.
+      An implementation may support setting locals in other cases.
     </intro>
 
     <function id="GetLocalObject" num="21">
@@ -6202,7 +6204,7 @@ class C2 extends C1 implements I2 {
           Not a visible frame
         </error>
         <error id="JVMTI_ERROR_OPAQUE_FRAME">
-          The thread is a virtual thread and the implementation does not support
+          The thread is a suspended virtual thread and the implementation does not support
           setting the value of locals in the frame of the given depth.
           See <internallink id="local">Local Variables</internallink>.
         </error>
@@ -6266,7 +6268,7 @@ class C2 extends C1 implements I2 {
           Not a visible frame
         </error>
         <error id="JVMTI_ERROR_OPAQUE_FRAME">
-          The thread is a virtual thread and the implementation does not support
+          The thread is a suspended virtual thread and the implementation does not support
           setting the value of locals in the frame of the given depth.
           See <internallink id="local">Local Variables</internallink>.
         </error>
@@ -6325,7 +6327,7 @@ class C2 extends C1 implements I2 {
           Not a visible frame
         </error>
         <error id="JVMTI_ERROR_OPAQUE_FRAME">
-          The thread is a virtual thread and the implementation does not support
+          The thread is a suspended virtual thread and the implementation does not support
           setting the value of locals in the frame of the given depth.
           See <internallink id="local">Local Variables</internallink>.
         </error>
@@ -6384,7 +6386,7 @@ class C2 extends C1 implements I2 {
           Not a visible frame
         </error>
         <error id="JVMTI_ERROR_OPAQUE_FRAME">
-          The thread is a virtual thread and the implementation does not support
+          The thread is a suspended virtual thread and the implementation does not support
           setting the value of locals in the frame of the given depth.
           See <internallink id="local">Local Variables</internallink>.
         </error>
@@ -6443,7 +6445,7 @@ class C2 extends C1 implements I2 {
           Not a visible frame
         </error>
         <error id="JVMTI_ERROR_OPAQUE_FRAME">
-          The thread is a virtual thread and the implementation does not support
+          The thread is a suspended virtual thread and the implementation does not support
           setting the value of locals in the frame of the given depth.
           See <internallink id="local">Local Variables</internallink>.
         </error>
