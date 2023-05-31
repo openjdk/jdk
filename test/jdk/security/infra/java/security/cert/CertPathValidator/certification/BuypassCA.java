@@ -41,22 +41,19 @@
  * @run main/othervm/timeout=180 -Djava.security.debug=certpath BuypassCA CRL
  */
 
-import java.security.cert.CertificateEncodingException;
 public class BuypassCA {
 
     public static void main(String[] args) throws Exception {
 
-        ValidatePathWithURL pathValidator = new ValidatePathWithURL();
-
         if (args.length >= 1 && "CRL".equalsIgnoreCase(args[0])) {
-            pathValidator.enableCRLOnly();
+            ValidatePathWithURL.enableCRLOnly();
         } else {
             // OCSP check by default
-            pathValidator.enableOCSPOnly();
+            ValidatePathWithURL.enableOCSPOnly();
         }
 
-        new BuypassClass2().runTest(pathValidator);
-        new BuypassClass3().runTest(pathValidator);
+        new BuypassClass2().runTest();
+        new BuypassClass3().runTest();
     }
 }
 
@@ -65,15 +62,16 @@ class BuypassClass2 {
     private static final String REVOKED_BUSINESS = "https://revoked.business.ca22.ssl.buypass.no";
     private static final String VALID_DOMAIN = "https://valid.domain.ca22.ssl.buypass.no";
     private static final String REVOKED_DOMAIN = "https://revoked.domain.ca22.ssl.buypass.no";
-    private static final String CA_FINGERPRINT =
-            "9A:11:40:25:19:7C:5B:B9:5D:94:E6:3D:55:CD:43:79:08:47:B6:46:B2:3C:DF:11:AD:A4:A0:0E:FF:15:FB:48";
+    private static final String CA_ALIAS = "buypassclass2ca [jdk]";
 
-    public void runTest(ValidatePathWithURL pathValidator) throws CertificateEncodingException {
-        pathValidator.validateDomain(VALID_BUSINESS, false, CA_FINGERPRINT);
-        pathValidator.validateDomain(REVOKED_BUSINESS, true, CA_FINGERPRINT);
+    public void runTest() throws Exception {
+        ValidatePathWithURL validatePathWithURL = new ValidatePathWithURL(CA_ALIAS);
 
-        pathValidator.validateDomain(VALID_DOMAIN, false, CA_FINGERPRINT);
-        pathValidator.validateDomain(REVOKED_DOMAIN, true, CA_FINGERPRINT);
+        validatePathWithURL.validateDomain(VALID_BUSINESS, false);
+        validatePathWithURL.validateDomain(REVOKED_BUSINESS, true);
+
+        validatePathWithURL.validateDomain(VALID_DOMAIN, false);
+        validatePathWithURL.validateDomain(REVOKED_DOMAIN, true);
     }
 }
 
@@ -84,17 +82,18 @@ class BuypassClass3 {
     private static final String REVOKED_EVIDENT = "https://revoked.evident.ca23.ssl.buypass.no";
     private static final String VALID_BUSINESSPLUS = "https://valid.businessplus.ca23.ssl.buypass.no";
     private static final String REVOKED_BUSINESSPLUS = "https://revoked.businessplus.ca23.ssl.buypass.no";
-    private static final String CA_FINGERPRINT =
-            "ED:F7:EB:BC:A2:7A:2A:38:4D:38:7B:7D:40:10:C6:66:E2:ED:B4:84:3E:4C:29:B4:AE:1D:5B:93:32:E6:B2:4D";
+    private static final String CA_ALIAS = "buypassclass3ca [jdk]";
 
-    public void runTest(ValidatePathWithURL pathValidator) throws CertificateEncodingException {
-        pathValidator.validateDomain(VALID_QC, false, CA_FINGERPRINT);
-        pathValidator.validateDomain(REVOKED_QC, true, CA_FINGERPRINT);
+    public void runTest() throws Exception {
+        ValidatePathWithURL validatePathWithURL = new ValidatePathWithURL(CA_ALIAS);
 
-        pathValidator.validateDomain(VALID_EVIDENT, false, CA_FINGERPRINT);
-        pathValidator.validateDomain(REVOKED_EVIDENT, true, CA_FINGERPRINT);
+        validatePathWithURL.validateDomain(VALID_QC, false);
+        validatePathWithURL.validateDomain(REVOKED_QC, true);
 
-        pathValidator.validateDomain(VALID_BUSINESSPLUS, false, CA_FINGERPRINT);
-        pathValidator.validateDomain(REVOKED_BUSINESSPLUS, true, CA_FINGERPRINT);
+        validatePathWithURL.validateDomain(VALID_EVIDENT, false);
+        validatePathWithURL.validateDomain(REVOKED_EVIDENT, true);
+
+        validatePathWithURL.validateDomain(VALID_BUSINESSPLUS, false);
+        validatePathWithURL.validateDomain(REVOKED_BUSINESSPLUS, true);
     }
 }

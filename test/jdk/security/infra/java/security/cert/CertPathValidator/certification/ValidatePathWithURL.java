@@ -24,57 +24,69 @@
 import jtreg.SkippedException;
 
 import javax.net.ssl.*;
+import javax.security.auth.x500.X500Principal;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.URL;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.Security;
+import java.security.*;
 import java.security.cert.*;
-import java.util.HexFormat;
+import java.security.cert.Certificate;
 
 public class ValidatePathWithURL {
-    private static MessageDigest md;
-    private static final HexFormat HEX = HexFormat.ofDelimiter(":").withUpperCase();
 
-    public ValidatePathWithURL() throws NoSuchAlgorithmException {
+    private final X509Certificate rootCertificate;
+    private final X500Principal rootPrincipal;
+
+    public ValidatePathWithURL(String caAlias) throws Exception {
         System.setProperty("com.sun.net.ssl.checkRevocation", "true");
         Security.setProperty("ssl.TrustManagerFactory.algorithm", "SunPKIX");
 
         // some test sites don't have correct hostname specified in test certificate
         HttpsURLConnection.setDefaultHostnameVerifier(new CustomHostnameVerifier());
 
-        md = MessageDigest.getInstance("SHA-256");
+        String FS = System.getProperty("file.separator");
+        String CACERTS_STORE =
+                System.getProperty("test.jdk") + FS + "lib" + FS + "security" + FS + "cacerts";
+
+        KeyStore cacerts = KeyStore.getInstance("PKCS12");
+        try (FileInputStream fis = new FileInputStream(CACERTS_STORE)) {
+            cacerts.load(fis, null);
+        }
+
+        rootCertificate = (X509Certificate) cacerts.getCertificate(caAlias);
+        rootPrincipal = rootCertificate.getSubjectX500Principal();
     }
 
-    public void enableOCSPOnly() {
+    public static void enableOCSPOnly() {
         System.setProperty("com.sun.security.enableCRLDP", "false");
         Security.setProperty("ocsp.enable", "true");
     }
 
-    public void enableCRLOnly() {
+    public static void enableCRLOnly() {
         System.setProperty("com.sun.security.enableCRLDP", "true");
     }
 
-    public void enableOCSPAndCRL() {
+    public static void enableOCSPAndCRL() {
         System.setProperty("com.sun.security.enableCRLDP", "true");
         Security.setProperty("ocsp.enable", "true");
     }
 
     public void validateDomain(final String testURL,
-                               final boolean revokedCert,
-                               final String fingerPrint) throws CertificateEncodingException {
+                               final boolean revokedCert)
+            throws CertificateException, NoSuchAlgorithmException, SignatureException,
+                    InvalidKeyException, NoSuchProviderException {
         System.out.println();
         System.out.println("===== Validate " + testURL + "=====");
-        if (!validateDomainCertChain(testURL, revokedCert, fingerPrint)) {
+        if (!validateDomainCertChain(testURL, revokedCert)) {
             throw new RuntimeException("Failed to validate " + testURL);
         }
         System.out.println("======> SUCCESS");
     }
 
     private boolean validateDomainCertChain(final String testURL,
-                                            final boolean revokedCert,
-                                            final String fingerPrint)
-            throws CertificateEncodingException {
+                                            final boolean revokedCert)
+            throws CertificateException, NoSuchAlgorithmException, SignatureException,
+                    InvalidKeyException, NoSuchProviderException {
         HttpsURLConnection httpsURLConnection = null;
         try {
             URL url = new URL(testURL);
@@ -84,43 +96,34 @@ public class ValidatePathWithURL {
 
             // certain that test certificate anchors to trusted CA for VALID certificate
             // if the connection is successful
-            /*Certificate[] chain =
-                    httpsURLConnection.getSSLSession().get().getPeerCertificates();
+            Certificate[] chain = httpsURLConnection.getServerCertificates();
             httpsURLConnection.disconnect();
-            X509Certificate rootCert = null;
+            X509Certificate interCert = null;
 
-            // fail if there is no intermediate CA
-            if (chain.length < 3) {
+            // fail if there is no intermediate CA or self-signed
+            if (chain.length < 2) {
                 throw new RuntimeException("Cert chain too short " + chain.length);
             } else {
-                System.out.println("Finding root certificate..." + chain.length);
+                System.out.println("Finding intermediate certificate issued by CA");
                 for (Certificate cert: chain){
-                    if(cert instanceof X509Certificate) {
-                        X509Certificate certificate = (X509Certificate) cert;
+                    if(cert instanceof X509Certificate certificate) {
                         System.out.println("Checking: " + certificate.getSubjectX500Principal());
-                        System.out.println("Checking2: " + certificate.getIssuerX500Principal());
-                        if (certificate.getSubjectX500Principal().equals(certificate.getIssuerX500Principal())) {
-                            rootCert = certificate;
+                        if (certificate.getIssuerX500Principal().equals(rootPrincipal)){
+                            interCert = certificate;
                             break;
                         }
-                    } else {
-                        throw new RuntimeException("Certificate not X509");
                     }
                 }
             }
 
-            if (rootCert == null){
-                throw new RuntimeException("Root CA not found in the chain");
+            if (interCert == null){
+                throw new RuntimeException("Intermediate Root CA not found in the chain");
             }
 
-            // validate root CA serial number
-            System.out.println("Found root CA: " + rootCert.getSubjectX500Principal());
-            byte[] digest = md.digest(rootCert.getEncoded());
-            if(!fingerPrint.equals(HEX.formatHex(digest))) {
-                System.out.println("Expected fingerprint: " + fingerPrint);
-                System.out.println("Actual fingerprint: " + HEX.formatHex(digest));
-                throw new RuntimeException("Root CA serial doesn't match");
-            }*/
+            // validate intermediate CA signed by root CA under test
+            System.out.println("Found intermediate root CA: " + interCert.getSubjectX500Principal());
+            interCert.verify(rootCertificate.getPublicKey());
+            System.out.println("Verified: Intermediate CA signed by test root CA");
         } catch (SSLHandshakeException e) {
             System.out.println("SSLHandshakeException: " + e.getMessage());
             Throwable cause = e.getCause();
@@ -143,7 +146,7 @@ public class ValidatePathWithURL {
                 cause = cause.getCause();
             }
 
-            throw new RuntimeException("Unknown exception", e);
+            throw new RuntimeException("Unhandled exception", e);
         } catch (SSLException e) {
             // thrown if root CA is not included in cacerts
             throw new RuntimeException(e);
@@ -158,7 +161,7 @@ public class ValidatePathWithURL {
         return !revokedCert;
     }
 
-    private class CustomHostnameVerifier implements HostnameVerifier {
+    private static class CustomHostnameVerifier implements HostnameVerifier {
         @Override
         public boolean verify(String hostname, SSLSession session) {
             // Allow any hostname

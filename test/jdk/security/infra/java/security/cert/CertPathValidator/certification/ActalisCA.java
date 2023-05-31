@@ -41,34 +41,23 @@
  * @run main/othervm/timeout=180 -Djava.security.debug=certpath ActalisCA CRL
  */
 
- /*
- * Obtain test artifacts for Actalis CA from:
- *
- * Test website with *active* TLS Server certificate:
- * https://ssltest-active.actalis.it/
- *
- * Test website with *revoked* TLS Server certificate:
- * https://ssltest-revoked.actalis.it/
- */
 public class ActalisCA {
-
      private static final String VALID = "https://ssltest-active.actalis.it/";
      private static final String REVOKED = "https://ssltest-revoked.actalis.it/";
-     private static final String CA_FINGERPRINT =
-             "55:92:60:84:EC:96:3A:64:B9:6E:2A:BE:01:CE:0B:A8:6A:64:FB:FE:BC:C7:AA:B5:AF:C1:55:B3:7F:D7:60:66";
+     private static final String CA_ALIAS = "actalisauthenticationrootca [jdk]";
 
      public static void main(String[] args) throws Exception {
 
-         ValidatePathWithURL validatePathWithURL = new ValidatePathWithURL();
-
          if (args.length >= 1 && "CRL".equalsIgnoreCase(args[0])) {
-             validatePathWithURL.enableCRLOnly();
+             ValidatePathWithURL.enableCRLOnly();
          } else {
              // OCSP check by default
-             validatePathWithURL.enableOCSPOnly();
+             ValidatePathWithURL.enableOCSPOnly();
          }
 
-         validatePathWithURL.validateDomain(VALID, false, CA_FINGERPRINT);
-         validatePathWithURL.validateDomain(REVOKED, true, CA_FINGERPRINT);
+         ValidatePathWithURL validatePathWithURL = new ValidatePathWithURL(CA_ALIAS);
+
+         validatePathWithURL.validateDomain(VALID, false);
+         validatePathWithURL.validateDomain(REVOKED, true);
      }
 }
