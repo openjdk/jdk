@@ -366,10 +366,18 @@ import java.util.stream.Stream;
  * <h3 id="variadic-funcs">Variadic functions</h3>
  *
  * Variadic functions (e.g. a C function declared with a trailing ellipses {@code ...} at the end of the formal parameter
- * list or with an empty formal parameter list) are not supported directly by the native linker. However, it is still possible
- * to link a variadic function by using a <em>specialized</em> function descriptor, together with a
- * {@linkplain Linker.Option#firstVariadicArg(int) a linker option} which indicates the position of the first variadic argument
- * in that specialized descriptor.
+ * list or with an empty formal parameter list, the latter also being called <em>prototype-less</em>) are not supported
+ * directly by the native linker. However, it is still possible to link a variadic function by using a <em>specialized</em>
+ * function descriptor, together with {@linkplain Linker.Option#firstVariadicArg(int) a linker option} which indicates the
+ * position of the first variadic argument in that specialized descriptor. The corresponding argument layout, and all following
+ * argument layouts in the descriptor, are considered to be <em>variadic argument layouts</em>. These layouts correspond
+ * to the arguments passed in place of the ellipsis {@code ...}, or to the arguments passed to a prototype-less function.
+ * <p>
+ * It should be noted that values passed as variadic arguments undergo default argument promotion in C. Each value of
+ * type {@code float} is converted to {@code double}, and each integral type smaller than {@code int} is converted to
+ * {@code int}. As such, the native linker will reject attempts to link function descriptors with certain variadic argument
+ * layouts. Namely, {@linkplain ValueLayout value layouts} that have a carrier type of {@code boolean}, {@code byte},
+ * {@code char}, {@code short}, or {@code float}, are not allowed to be used as variadic argument layouts.
  * <p>
  * A well-known variadic function is the {@code printf} function, defined in the C standard library:
  *
@@ -408,12 +416,6 @@ import java.util.stream.Stream;
  *     int res = (int)printf.invokeExact(arena.allocateUtf8String("%d plus %d equals %d"), 2, 2, 4); //prints "2 plus 2 equals 4"
  * }
  * }
- *
- * <p>
- * It should be noted that values passed as variadic arguments undergo default argument promotion in C. Each value of
- * type {@code float} is converted to {@code double}, and each integral type smaller than {@code int} is converted to
- * {@code int}. As such, the native linker will reject attempts to link a function with variadic parameters which have
- * a carrier type of {@code float}, or an integral type smaller than {@code int} (including {@code boolean} and {@code char}).
  *
  * <h2 id="safety">Safety considerations</h2>
  *
