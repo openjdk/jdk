@@ -43,7 +43,7 @@ import jdk.test.lib.Utils;
  */
 public class TestJcmdNoAgentLoad {
 
-    private static final String[] CMD = new String[] {"JVMTI.agent_load", "Agent"};
+    private static final String[] CMD = new String[] { "JVMTI.agent_load", "Agent" };
     private static final String PTRN = "Dynamic agent loading is not enabled";
 
     public static void main(String[] args) throws Exception {
@@ -54,10 +54,10 @@ public class TestJcmdNoAgentLoad {
         OutputAnalyzer output = JcmdBase.jcmd(jcmdArgs);
 
         assertEquals(output.getExitValue(), 0);
-        verifyOutputAgainstFile(output);
+        verifyOutput(output);
     }
 
-    private static void verifyOutputAgainstFile(OutputAnalyzer output) throws IOException {
+    private static void verifyOutput(OutputAnalyzer output) throws IOException {
         boolean seenPattern = false;
         List<String> lines = output.asLines();
         for (String line: lines) {
