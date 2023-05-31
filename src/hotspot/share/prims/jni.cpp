@@ -3991,7 +3991,7 @@ jint JNICALL jni_AttachCurrentThreadAsDaemon(JavaVM *vm, void **penv, void *_arg
   HOTSPOT_JNI_ATTACHCURRENTTHREADASDAEMON_ENTRY(vm, penv, _args);
   if (vm_created == NOT_CREATED) {
     // Not sure how we could possibly get here.
-  HOTSPOT_JNI_ATTACHCURRENTTHREADASDAEMON_RETURN((uint32_t) JNI_ERR);
+    HOTSPOT_JNI_ATTACHCURRENTTHREADASDAEMON_RETURN((uint32_t) JNI_ERR);
     return JNI_ERR;
   }
 
