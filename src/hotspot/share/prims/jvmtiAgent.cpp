@@ -372,7 +372,7 @@ static bool invoke_JVM_OnLoad(JvmtiAgent* agent) {
   ThreadToNativeFromVM ttn(thread);
   HandleMark hm(thread);
   extern struct JavaVM_ main_vm;
-  const jint err = (*on_load_entry)(&main_vm, const_cast<char*>(agent->options()), NULL);
+  const jint err = (*on_load_entry)(&main_vm, const_cast<char*>(agent->options()), nullptr);
   if (err != JNI_OK) {
     vm_exit_during_initialization("-Xrun library failed to init", agent->name());
   }
