@@ -90,7 +90,7 @@ abstract class DSA extends SignatureSpi {
     private BigInteger presetX;
 
     /* The RNG used to output a seed for generating k */
-    private SecureRandom signingRandom = getSigningRandom();
+    private SecureRandom signingRandom;
 
     /* The message digest object used */
     private final MessageDigest md;
