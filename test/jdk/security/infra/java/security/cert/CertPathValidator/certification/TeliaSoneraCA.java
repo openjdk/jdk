@@ -45,21 +45,20 @@ public class TeliaSoneraCA {
 
     private static final String VALID = "https://juolukka.cover.sonera.net:10443/";
     private static final String REVOKED = "https://juolukka.cover.sonera.net:10444/";
-    private static final String CA_FINGERPRINT =
-            "DD:69:36:FE:21:F8:F0:77:C1:23:A1:A5:21:C1:22:24:F7:22:55:B7:3E:03:A7:26:06:93:E8:A2:4B:0F:A3:89";
+    private static final String CA_ALIAS = "teliasonerarootcav1 [jdk]";
 
     public static void main(String[] args) throws Exception {
 
-        ValidatePathWithURL validatePathWithURL = new ValidatePathWithURL();
-
         if (args.length >= 1 && "CRL".equalsIgnoreCase(args[0])) {
-            validatePathWithURL.enableCRLOnly();
+            ValidatePathWithURL.enableCRLOnly();
         } else {
             // OCSP check by default
-            validatePathWithURL.enableOCSPOnly();
+            ValidatePathWithURL.enableOCSPOnly();
         }
 
-        validatePathWithURL.validateDomain(VALID, false, CA_FINGERPRINT);
-        validatePathWithURL.validateDomain(REVOKED, true, CA_FINGERPRINT);
+        ValidatePathWithURL validatePathWithURL = new ValidatePathWithURL(CA_ALIAS);
+
+        validatePathWithURL.validateDomain(VALID, false);
+        validatePathWithURL.validateDomain(REVOKED, true);
     }
 }

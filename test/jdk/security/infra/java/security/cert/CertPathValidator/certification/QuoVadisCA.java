@@ -41,8 +41,6 @@
  * @run main/othervm -Djava.security.debug=certpath QuoVadisCA CRL
  */
 
-import java.security.cert.CertificateEncodingException;
-
 /*
  * Obtain TLS test artifacts for QuoVadis CAs from:
  *
@@ -52,53 +50,54 @@ import java.security.cert.CertificateEncodingException;
 public class QuoVadisCA {
     public static void main(String[] args) throws Exception {
 
-        ValidatePathWithURL pathValidator = new ValidatePathWithURL();
-
         if (args.length >= 1 && "CRL".equalsIgnoreCase(args[0])) {
-            pathValidator.enableCRLOnly();
+            ValidatePathWithURL.enableCRLOnly();
         } else {
             // OCSP check by default
-            pathValidator.enableOCSPOnly();
+            ValidatePathWithURL.enableOCSPOnly();
         }
 
-        new RootCA1G3().runTest(pathValidator);
-        new RootCA2G3().runTest(pathValidator);
-        new RootCA3G3().runTest(pathValidator);
+        new RootCA1G3().runTest();
+        new RootCA2G3().runTest();
+        new RootCA3G3().runTest();
     }
 }
 
 class RootCA1G3 {
     private static final String VALID = "https://quovadis-root-ca-1-g3.chain-demos.digicert.com/";
     private static final String REVOKED = "https://quovadis-root-ca-1-g3-revoked.chain-demos.digicert.com/";
-    private static final String CA_FINGERPRINT =
-            "8A:86:6F:D1:B2:76:B5:7E:57:8E:92:1C:65:82:8A:2B:ED:58:E9:F2:F2:88:05:41:34:B7:F1:F4:BF:C9:CC:74";
+    private static final String CA_ALIAS = "quovadisrootca1g3 [jdk]";
 
-    public void runTest(ValidatePathWithURL pathValidator) throws CertificateEncodingException {
-        pathValidator.validateDomain(VALID, false, CA_FINGERPRINT);
-        pathValidator.validateDomain(REVOKED, true, CA_FINGERPRINT);
+    public void runTest() throws Exception {
+        ValidatePathWithURL validatePathWithURL = new ValidatePathWithURL(CA_ALIAS);
+
+        validatePathWithURL.validateDomain(VALID, false);
+        validatePathWithURL.validateDomain(REVOKED, true);
     }
 }
 
 class RootCA2G3 {
     private static final String VALID = "https://quovadis-root-ca-2-g3.chain-demos.digicert.com";
     private static final String REVOKED = "https://quovadis-root-ca-2-g3-revoked.chain-demos.digicert.com";
-    private static final String CA_FINGERPRINT =
-            "8F:E4:FB:0A:F9:3A:4D:0D:67:DB:0B:EB:B2:3E:37:C7:1B:F3:25:DC:BC:DD:24:0E:A0:4D:AF:58:B4:7E:18:40";
+    private static final String CA_ALIAS = "quovadisrootca2g3 [jdk]";
 
-    public void runTest(ValidatePathWithURL pathValidator) throws CertificateEncodingException {
-        pathValidator.validateDomain(VALID, false, CA_FINGERPRINT);
-        pathValidator.validateDomain(REVOKED, true, CA_FINGERPRINT);
+    public void runTest() throws Exception {
+        ValidatePathWithURL validatePathWithURL = new ValidatePathWithURL(CA_ALIAS);
+
+        validatePathWithURL.validateDomain(VALID, false);
+        validatePathWithURL.validateDomain(REVOKED, true);
     }
 }
 
 class RootCA3G3 {
     private static final String VALID = "https://quovadis-root-ca-3-g3.chain-demos.digicert.com";
     private static final String REVOKED = "https://quovadis-root-ca-3-g3-revoked.chain-demos.digicert.com";
-    private static final String CA_FINGERPRINT =
-            "88:EF:81:DE:20:2E:B0:18:45:2E:43:F8:64:72:5C:EA:5F:BD:1F:C2:D9:D2:05:73:07:09:C5:D8:B8:69:0F:46";
+    private static final String CA_ALIAS = "quovadisrootca3g3 [jdk]";
 
-    public void runTest(ValidatePathWithURL pathValidator) throws CertificateEncodingException {
-        pathValidator.validateDomain(VALID, false, CA_FINGERPRINT);
-        pathValidator.validateDomain(REVOKED, true, CA_FINGERPRINT);
+    public void runTest() throws Exception {
+        ValidatePathWithURL validatePathWithURL = new ValidatePathWithURL(CA_ALIAS);
+
+        validatePathWithURL.validateDomain(VALID, false);
+        validatePathWithURL.validateDomain(REVOKED, true);
     }
 }

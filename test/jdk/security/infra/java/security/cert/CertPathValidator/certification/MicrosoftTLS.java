@@ -41,45 +41,44 @@
  * @run main/othervm -Djava.security.debug=certpath MicrosoftTLS CRL
  */
 
-import java.security.cert.CertificateEncodingException;
 public class MicrosoftTLS {
 
     public static void main(String[] args) throws Exception {
 
-        ValidatePathWithURL pathValidator = new ValidatePathWithURL();
-
         if (args.length >= 1 && "CRL".equalsIgnoreCase(args[0])) {
-            pathValidator.enableCRLOnly();
+            ValidatePathWithURL.enableCRLOnly();
         } else {
             // OCSP check by default
-            pathValidator.enableOCSPOnly();
+            ValidatePathWithURL.enableOCSPOnly();
         }
 
-        new MicrosoftECCTLS().runTest(pathValidator);
-        new MicrosoftRSATLS().runTest(pathValidator);
+        new MicrosoftECCTLS().runTest();
+        new MicrosoftRSATLS().runTest();
     }
 }
 
 class MicrosoftECCTLS {
     private static final String VALID = "https://acteccroot2017.pki.microsoft.com/";
     private static final String REVOKED = "https://rvkeccroot2017.pki.microsoft.com/";
-    private static final String CA_FINGERPRINT =
-            "35:8D:F3:9D:76:4A:F9:E1:B7:66:E9:C9:72:DF:35:2E:E1:5C:FA:C2:27:AF:6A:D1:D7:0E:8E:4A:6E:DC:BA:02";
+    private static final String CA_ALIAS = "microsoftecc2017 [jdk]";
 
-    public void runTest(ValidatePathWithURL pathValidator) throws CertificateEncodingException {
-        pathValidator.validateDomain(VALID, false, CA_FINGERPRINT);
-        pathValidator.validateDomain(REVOKED, true, CA_FINGERPRINT);
+    public void runTest() throws Exception {
+        ValidatePathWithURL validatePathWithURL = new ValidatePathWithURL(CA_ALIAS);
+
+        validatePathWithURL.validateDomain(VALID, false);
+        validatePathWithURL.validateDomain(REVOKED, true);
     }
 }
 
 class MicrosoftRSATLS {
     private static final String VALID = "https://actrsaroot2017.pki.microsoft.com/";
     private static final String REVOKED = "https://rvkrsaroot2017.pki.microsoft.com/";
-    private static final String CA_FINGERPRINT =
-            "C7:41:F7:0F:4B:2A:8D:88:BF:2E:71:C1:41:22:EF:53:EF:10:EB:A0:CF:A5:E6:4C:FA:20:F4:18:85:30:73:E0";
+    private static final String CA_ALIAS = "microsoftrsa2017 [jdk]";
 
-    public void runTest(ValidatePathWithURL pathValidator) throws CertificateEncodingException {
-        pathValidator.validateDomain(VALID, false, CA_FINGERPRINT);
-        pathValidator.validateDomain(REVOKED, true, CA_FINGERPRINT);
+    public void runTest() throws Exception {
+        ValidatePathWithURL validatePathWithURL = new ValidatePathWithURL(CA_ALIAS);
+
+        validatePathWithURL.validateDomain(VALID, false);
+        validatePathWithURL.validateDomain(REVOKED, true);
     }
 }

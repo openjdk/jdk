@@ -46,40 +46,40 @@ public class EntrustCA {
 
     public static void main(String[] args) throws Exception {
 
-            ValidatePathWithURL pathValidator = new ValidatePathWithURL();
+        if (args.length >= 1 && "CRL".equalsIgnoreCase(args[0])) {
+            ValidatePathWithURL.enableCRLOnly();
+        } else {
+            // OCSP check by default
+            ValidatePathWithURL.enableOCSPOnly();
+        }
 
-            if (args.length >= 1 && "CRL".equalsIgnoreCase(args[0])) {
-                pathValidator.enableCRLOnly();
-            } else {
-                // OCSP check by default
-                pathValidator.enableOCSPOnly();
-            }
-
-        new Entrust_ECCA().runTest(pathValidator);
-        new Entrust_G4().runTest(pathValidator);
+        new Entrust_ECCA().runTest();
+        new Entrust_G4().runTest();
     }
 }
 
 class Entrust_ECCA {
     private static final String VALID = "https://validec.entrust.net";
     private static final String REVOKED = "https://revokedec.entrust.net";
-    private static final String CA_FINGERPRINT =
-            "E7:93:C9:B0:2F:D8:AA:13:E2:1C:31:22:8A:CC:B0:81:19:64:3B:74:9C:89:89:64:B1:74:6D:46:C3:D4:CB:D2";
+    private static final String CA_ALIAS = "entrustrootcaec1 [jdk]";
 
-    public void runTest(ValidatePathWithURL pathValidator) throws CertificateEncodingException {
-        pathValidator.validateDomain(VALID, false, CA_FINGERPRINT);
-        pathValidator.validateDomain(REVOKED, true, CA_FINGERPRINT);
+    public void runTest() throws Exception {
+        ValidatePathWithURL validatePathWithURL = new ValidatePathWithURL(CA_ALIAS);
+
+        validatePathWithURL.validateDomain(VALID, false);
+        validatePathWithURL.validateDomain(REVOKED, true);
     }
 }
 
 class Entrust_G4 {
     private static final String VALID = "https://validg4.entrust.net";
     private static final String REVOKED = "https://revokedg4.entrust.net";
-    private static final String CA_FINGERPRINT =
-            "DB:35:17:D1:F6:73:2A:2D:5A:B9:7C:53:3E:C7:07:79:EE:32:70:A6:2F:B4:AC:42:38:37:24:60:E6:F0:1E:88";
+    private static final String CA_ALIAS = "entrustrootcag4 [jdk]";
 
-    public void runTest(ValidatePathWithURL pathValidator) throws CertificateEncodingException {
-        pathValidator.validateDomain(VALID, false, CA_FINGERPRINT);
-        pathValidator.validateDomain(REVOKED, true, CA_FINGERPRINT);
+    public void runTest() throws Exception {
+        ValidatePathWithURL validatePathWithURL = new ValidatePathWithURL(CA_ALIAS);
+
+        validatePathWithURL.validateDomain(VALID, false);
+        validatePathWithURL.validateDomain(REVOKED, true);
     }
 }

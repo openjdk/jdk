@@ -44,22 +44,21 @@ public class GlobalSignR6CA {
 
      private static final String VALID = "https://valid.r6.roots.globalsign.com/";
      private static final String REVOKED = "https://revoked.r6.roots.globalsign.com/";
-     private static final String CA_FINGERPRINT =
-             "2C:AB:EA:FE:37:D0:6C:A2:2A:BA:73:91:C0:03:3D:25:98:29:52:C4:53:64:73:49:76:3A:3A:B5:AD:6C:CF:69";
+    private static final String CA_ALIAS = "globalsignrootcar6 [jdk]";
 
-     public static void main(String[] args) throws Exception {
+    public static void main(String[] args) throws Exception {
 
-         ValidatePathWithURL validatePathWithURL = new ValidatePathWithURL();
+        if (args.length >= 1 && "CRL".equalsIgnoreCase(args[0])) {
+            ValidatePathWithURL.enableCRLOnly();
+        } else {
+            // OCSP check by default
+            ValidatePathWithURL.enableOCSPOnly();
+        }
 
-         if (args.length >= 1 && "CRL".equalsIgnoreCase(args[0])) {
-             validatePathWithURL.enableCRLOnly();
-         } else {
-             // OCSP check by default
-             validatePathWithURL.enableOCSPOnly();
-         }
+        ValidatePathWithURL validatePathWithURL = new ValidatePathWithURL(CA_ALIAS);
 
-         validatePathWithURL.validateDomain(VALID, false, CA_FINGERPRINT);
-         validatePathWithURL.validateDomain(REVOKED, true, CA_FINGERPRINT);
-     }
+        validatePathWithURL.validateDomain(VALID, false);
+        validatePathWithURL.validateDomain(REVOKED, true);
+    }
 }
 

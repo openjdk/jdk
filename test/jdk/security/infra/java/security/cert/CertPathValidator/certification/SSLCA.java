@@ -41,61 +41,58 @@
  * @run main/othervm -Djava.security.debug=certpath SSLCA CRL
  */
 
-import java.security.cert.CertificateEncodingException;
-
 public class SSLCA {
 
     public static void main(String[] args) throws Exception {
 
-        System.setProperty("jdk.security.certpath.ocspNonce", "true");
-
-        ValidatePathWithURL pathValidator = new ValidatePathWithURL();
-
         if (args.length >= 1 && "CRL".equalsIgnoreCase(args[0])) {
-            pathValidator.enableCRLOnly();
+            ValidatePathWithURL.enableCRLOnly();
         } else {
             // OCSP check by default
-            pathValidator.enableOCSPOnly();
+            ValidatePathWithURL.enableOCSPOnly();
         }
 
-        new SSLCA_RSA().runTest(pathValidator);
-        new SSLCA_EV_RSA().runTest(pathValidator);
-        new SSLCA_ECC().runTest(pathValidator);
+        new SSLCA_RSA().runTest();
+        new SSLCA_EV_RSA().runTest();
+        new SSLCA_ECC().runTest();
     }
 }
 
 class SSLCA_RSA {
     private static final String VALID = "https://test-dv-rsa.ssl.com";
     private static final String REVOKED = "https://revoked-rsa-dv.ssl.com";
-    private static final String CA_FINGERPRINT =
-            "85:66:6A:56:2E:E0:BE:5C:E9:25:C1:D8:89:0A:6F:76:A8:7E:C1:6D:4D:7D:5F:29:EA:74:19:CF:20:12:3B:69";
+    private static final String CA_ALIAS = "sslrootrsaca [jdk]";
 
-    public void runTest(ValidatePathWithURL pathValidator) throws CertificateEncodingException {
-        pathValidator.validateDomain(VALID, false, CA_FINGERPRINT);
-        pathValidator.validateDomain(REVOKED, true, CA_FINGERPRINT);
+    public void runTest() throws Exception {
+        ValidatePathWithURL validatePathWithURL = new ValidatePathWithURL(CA_ALIAS);
+
+        validatePathWithURL.validateDomain(VALID, false);
+        validatePathWithURL.validateDomain(REVOKED, true);
     }
 }
 
 class SSLCA_EV_RSA {
     private static final String VALID = "https://test-ev-rsa.ssl.com";
     private static final String REVOKED = "https://revoked-rsa-ev.ssl.com";
-    private static final String CA_FINGERPRINT =
-            "2E:7B:F1:6C:C2:24:85:A7:BB:E2:AA:86:96:75:07:61:B0:AE:39:BE:3B:2F:E9:D0:CC:6D:4E:F7:34:91:42:5C";
+    private static final String CA_ALIAS = "sslrootevrsaca [jdk]";
 
-    public void runTest(ValidatePathWithURL pathValidator) throws CertificateEncodingException {
-        pathValidator.validateDomain(VALID, false, CA_FINGERPRINT);
-        pathValidator.validateDomain(REVOKED, true, CA_FINGERPRINT);
+    public void runTest() throws Exception {
+        ValidatePathWithURL validatePathWithURL = new ValidatePathWithURL(CA_ALIAS);
+
+        validatePathWithURL.validateDomain(VALID, false);
+        validatePathWithURL.validateDomain(REVOKED, true);
     }
 }
 
 class SSLCA_ECC {
     private static final String VALID = "https://test-dv-ecc.ssl.com";
     private static final String REVOKED = "https://revoked-ecc-dv.ssl.com";
-    private static final String CA_FINGERPRINT =
-            "34:17:BB:06:CC:60:07:DA:1B:96:1C:92:0B:8A:B4:CE:3F:AD:82:0E:4A:A3:0B:9A:CB:C4:A7:4E:BD:CE:BC:65";
+    private static final String CA_ALIAS = "sslrooteccca [jdk]";
 
-    public void runTest(ValidatePathWithURL pathValidator) throws CertificateEncodingException {
-        pathValidator.validateDomain(VALID, false, CA_FINGERPRINT);
-        pathValidator.validateDomain(REVOKED, true, CA_FINGERPRINT);
+    public void runTest() throws Exception {
+        ValidatePathWithURL validatePathWithURL = new ValidatePathWithURL(CA_ALIAS);
+
+        validatePathWithURL.validateDomain(VALID, false);
+        validatePathWithURL.validateDomain(REVOKED, true);
     }
 }

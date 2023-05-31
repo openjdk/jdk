@@ -108,6 +108,7 @@ public class ValidatePathWithURL {
                 for (Certificate cert: chain){
                     if(cert instanceof X509Certificate certificate) {
                         System.out.println("Checking: " + certificate.getSubjectX500Principal());
+                        System.out.println("Issuer: " + certificate.getIssuerX500Principal());
                         if (certificate.getIssuerX500Principal().equals(rootPrincipal)){
                             interCert = certificate;
                             break;
@@ -122,6 +123,7 @@ public class ValidatePathWithURL {
 
             // validate intermediate CA signed by root CA under test
             System.out.println("Found intermediate root CA: " + interCert.getSubjectX500Principal());
+            System.out.println("intermediate CA Issuer: " + interCert.getIssuerX500Principal());
             interCert.verify(rootCertificate.getPublicKey());
             System.out.println("Verified: Intermediate CA signed by test root CA");
         } catch (SSLHandshakeException e) {

@@ -40,61 +40,45 @@
  * @build ValidatePathWithURL
  * @run main/othervm -Djava.security.debug=certpath GoDaddyCA CRL
  */
-
-import java.security.cert.CertificateEncodingException;
-
-/*
- * Obtain test artifacts for GoDaddy/Starfield CAs from:
- *
- * Go Daddy Root Certificate Authority - G2:
- *    valid:
- *    expired: https://expired.gdig2.catest.godaddy.com/
- *    revoked:
- *
- * Starfield Root Certificate Authority - G2:
- *    valid:
- *    expired: https://expired.sfig2.catest.starfieldtech.com/
- *    revoked:
- */
 public class GoDaddyCA {
 
     public static void main(String[] args) throws Exception {
 
-        ValidatePathWithURL pathValidator = new ValidatePathWithURL();
-
         if (args.length >= 1 && "CRL".equalsIgnoreCase(args[0])) {
-            pathValidator.enableCRLOnly();
+            ValidatePathWithURL.enableCRLOnly();
         } else {
             // OCSP check by default
-            pathValidator.enableOCSPOnly();
+            ValidatePathWithURL.enableOCSPOnly();
         }
 
-        new GoDaddyGdig2().runTest(pathValidator);
-        new GoDaddySfig2().runTest(pathValidator);
+        new GoDaddyGdig2().runTest();
+        new GoDaddySfig2().runTest();
     }
 }
 
 class GoDaddyGdig2 {
     private static final String VALID = "https://valid.gdig2.catest.godaddy.com/";
     private static final String REVOKED = "https://revoked.gdig2.catest.godaddy.com/";
-    private static final String CA_FINGERPRINT =
-            "45:14:0B:32:47:EB:9C:C8:C5:B4:F0:D7:B5:30:91:F7:32:92:08:9E:6E:5A:63:E2:74:9D:D3:AC:A9:19:8E:DA";
+    private static final String CA_ALIAS = "godaddyrootg2ca [jdk]";
 
-    public void runTest(ValidatePathWithURL pathValidator) throws CertificateEncodingException {
-        pathValidator.validateDomain(VALID, false, CA_FINGERPRINT);
-        pathValidator.validateDomain(REVOKED, true, CA_FINGERPRINT);
+    public void runTest() throws Exception {
+        ValidatePathWithURL validatePathWithURL = new ValidatePathWithURL(CA_ALIAS);
+
+        validatePathWithURL.validateDomain(VALID, false);
+        validatePathWithURL.validateDomain(REVOKED, true);
     }
 }
 
 class GoDaddySfig2 {
     private static final String VALID = "https://valid.sfig2.catest.starfieldtech.com/";
     private static final String REVOKED = "https://revoked.sfig2.catest.starfieldtech.com/";
-    private static final String CA_FINGERPRINT =
-            "2C:E1:CB:0B:F9:D2:F9:E1:02:99:3F:BE:21:51:52:C3:B2:DD:0C:AB:DE:1C:68:E5:31:9B:83:91:54:DB:B7:F5";
+    private static final String CA_ALIAS = "starfieldrootg2ca [jdk]";
 
-    public void runTest(ValidatePathWithURL pathValidator) throws CertificateEncodingException {
-        pathValidator.validateDomain(VALID, false, CA_FINGERPRINT);
-        pathValidator.validateDomain(REVOKED, true, CA_FINGERPRINT);
+    public void runTest() throws Exception {
+        ValidatePathWithURL validatePathWithURL = new ValidatePathWithURL(CA_ALIAS);
+
+        validatePathWithURL.validateDomain(VALID, false);
+        validatePathWithURL.validateDomain(REVOKED, true);
     }
 }
 

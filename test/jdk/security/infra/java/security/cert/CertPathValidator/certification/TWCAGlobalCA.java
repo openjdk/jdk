@@ -41,34 +41,24 @@
  * @run main/othervm -Djava.security.debug=certpath TWCAGlobalCA CRL
  */
 
-/*
- * Obtain TLS test artifacts for TWCA Global Root CA from:
- *
- * Valid TLS Certificates:
- * https://evssldemo6.twca.com.tw
- *
- * Revoked TLS Certificates:
- * https://evssldemo7.twca.com.tw
- */
 public class TWCAGlobalCA {
 
     private static final String VALID = "https://evssldemo6.twca.com.tw";
     private static final String REVOKED = "https://evssldemo7.twca.com.tw";
-    private static final String CA_FINGERPRINT =
-            "59:76:90:07:F7:68:5D:0F:CD:50:87:2F:9F:95:D5:75:5A:5B:2B:45:7D:81:F3:69:2B:61:0A:98:67:2F:0E:1B";
+    private static final String CA_ALIAS = "twcaglobalrootca [jdk]";
 
     public static void main(String[] args) throws Exception {
 
-        ValidatePathWithURL validatePathWithURL = new ValidatePathWithURL();
-
         if (args.length >= 1 && "CRL".equalsIgnoreCase(args[0])) {
-            validatePathWithURL.enableCRLOnly();
+            ValidatePathWithURL.enableCRLOnly();
         } else {
             // OCSP check by default
-            validatePathWithURL.enableOCSPOnly();
+            ValidatePathWithURL.enableOCSPOnly();
         }
 
-        validatePathWithURL.validateDomain(VALID, false, CA_FINGERPRINT);
-        validatePathWithURL.validateDomain(REVOKED, true, CA_FINGERPRINT);
+        ValidatePathWithURL validatePathWithURL = new ValidatePathWithURL(CA_ALIAS);
+
+        validatePathWithURL.validateDomain(VALID, false);
+        validatePathWithURL.validateDomain(REVOKED, true);
     }
 }

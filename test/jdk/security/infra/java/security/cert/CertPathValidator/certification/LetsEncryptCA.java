@@ -21,8 +21,6 @@
  * questions.
  */
 
-import java.security.Security;
-
 /*
  * @test
  * @bug 8189131
@@ -36,23 +34,22 @@ public class LetsEncryptCA {
 
      private static final String VALID = "https://valid-isrgrootx1.letsencrypt.org/";
      private static final String REVOKED = "https://revoked-isrgrootx1.letsencrypt.org/";
-     private static final String CA_FINGERPRINT =
-             "96:BC:EC:06:26:49:76:F3:74:60:77:9A:CF:28:C5:A7:CF:E8:A3:C0:AA:E1:1A:8F:FC:EE:05:C0:BD:DF:08:C6";
+    private static final String CA_ALIAS = "letsencryptisrgx1 [jdk]";
 
      public static void main(String[] args) throws Exception {
 
-         ValidatePathWithURL validatePathWithURL = new ValidatePathWithURL();
-
          if (args.length >= 1 && "CRL".equalsIgnoreCase(args[0])) {
-             validatePathWithURL.enableCRLOnly();
+             ValidatePathWithURL.enableCRLOnly();
          } if (args.length >= 1 && "OCSP".equalsIgnoreCase(args[0])){
-             validatePathWithURL.enableOCSPOnly();
+             ValidatePathWithURL.enableOCSPOnly();
          } else {
              // EE certs don't have CRLs, intermediate cert doesn't specify OCSP responder
-             validatePathWithURL.enableOCSPAndCRL();
+             ValidatePathWithURL.enableOCSPAndCRL();
          }
 
-         validatePathWithURL.validateDomain(VALID, false, CA_FINGERPRINT);
-         validatePathWithURL.validateDomain(REVOKED, true, CA_FINGERPRINT);
+         ValidatePathWithURL validatePathWithURL = new ValidatePathWithURL(CA_ALIAS);
+
+         validatePathWithURL.validateDomain(VALID, false);
+         validatePathWithURL.validateDomain(REVOKED, true);
      }
 }
