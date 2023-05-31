@@ -61,7 +61,7 @@ java/lang/instrument/NativeMethodPrefixAgent.java 8307169 generic-all
 ##########
 ## Tests incompatible with virtual test thread factory.
 ## There is no goal to run all test with virtual test thread factory.
-## So any test might be added as incompatible, the bug is not required.
+## So any test might be added as incompatible, the bug id is not required.
 
 # Incorrect stack/threadgroup/exception expectations for main thread
 java/lang/StackWalker/DumpStackTest.java 0000000 generic-all
