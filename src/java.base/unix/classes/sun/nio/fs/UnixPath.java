@@ -905,12 +905,20 @@ class UnixPath implements Path {
             }
             final UnixFileKey elementKey = attrs.fileKey();
 
+            // Obtain the directory stream pointer. It will be closed by
+            // UnixDirectoryStream::close.
+            long dp = -1;
+            try {
+                dp = opendir(path);
+            } catch (UnixException x) {
+                x.rethrowAsIOException(path);
+            }
+
             // Obtain the stream of entries in the directory corresponding
             // to the path constructed thus far, and extract the entry whose
             // key is equal to the key of the current element
-            FileSystemProvider provider = getFileSystem().provider();
             DirectoryStream.Filter<Path> filter = (p) -> { return true; };
-            try (DirectoryStream<Path> entries = provider.newDirectoryStream(path, filter)) {
+            try (DirectoryStream<Path> entries = new UnixDirectoryStream(path, dp, filter)) {
                 boolean found = false;
                 for (Path entry : entries) {
                     UnixPath p = path.resolve(entry.getFileName());

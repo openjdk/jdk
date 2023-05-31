@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,18 +21,22 @@
  * questions.
  */
 
-
 /*
  * @test
- * @key stress randomness
- *
- * @summary converted from VM Testbase gc/lock/malloc/malloclock01.
- * VM Testbase keywords: [gc, stress, stressopt, nonconcurrent]
- *
- * @library /vmTestbase
- *          /test/lib
- * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm/native -Xbootclasspath/a:. -Xlog:gc=debug:gc.log -XX:+HeapDumpOnOutOfMemoryError -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI gc.lock.LockerTest -lockers malloc -t 1
+ * @library /test/lib
+ * @requires os.family != "Windows"
+ * @run driver TestGetCreatedJavaVMs
  */
+import jdk.test.lib.Utils;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
 
+
+public class TestGetCreatedJavaVMs {
+    public static void main(String args[]) throws Exception {
+        ProcessBuilder pb = ProcessTools.createNativeTestProcessBuilder("GetCreatedJavaVMs");
+        OutputAnalyzer output = ProcessTools.executeProcess(pb);
+        output.shouldHaveExitValue(0);
+        output.reportDiagnosticSummary();
+    }
+}

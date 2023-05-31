@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,32 +20,18 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-#include <jni.h>
-#include <time.h>
-#include <stdlib.h>
-#include "jni_tools.h"
 
-extern "C" {
+#include <stdio.h>
+#include <stdlib.h>
+
+#include "jni.h"
 
 /*
- * Class:     nsk_share_gc_lock_malloc_MallocLocker
- * Method:    mallocSection
- * Signature: (JJ)V
+ * Class:     NativeMethod
+ * Method:    nativeMethod
+ * Signature: ()V
  */
-JNIEXPORT void JNICALL Java_nsk_share_gc_lock_malloc_MallocLocker_mallocSection
-(JNIEnv *env, jobject o, jlong enterTime, jlong sleepTime) {
-        void *ptr;
-        time_t current_time, old_time;
-        old_time = time(NULL);
-        enterTime /= 1000;
-        current_time = 0;
-        while (current_time - old_time < enterTime) {
-                ptr = malloc(1);
-                mssleep((long) sleepTime);
-                free(ptr);
-                mssleep((long) sleepTime);
-                current_time = time(NULL);
-        }
-}
-
+JNIEXPORT void JNICALL Java_ForceEarlyReturnTestTarg_nativeMethod(JNIEnv *env, jobject obj) {
+    /* Just spin. We don't need to ever return from here. */
+    while(JNI_TRUE);
 }
