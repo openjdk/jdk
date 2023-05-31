@@ -167,7 +167,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   // This list is never modified while other threads are iterating over it.
   //
   // After all dead CLDs have been moved to the unloading list, there's a
-  // synchronziation point (handshake) to ensure that all threads reading these
+  // synchronization point (handshake) to ensure that all threads reading these
   // CLDs finish their work. This ensures that we don't have a user-after-free
   // when we later delete the CLDs.
   //
