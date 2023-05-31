@@ -28,10 +28,12 @@
 #include "opto/node.hpp"
 #include "opto/opcodes.hpp"
 #include "opto/type.hpp"
+#include "utilities/pair.hpp"
 
 // Portions of code courtesy of Clifford Click
 
 class PhaseTransform;
+typedef const Pair<Node*, jint> ConstAddOperands;
 
 //------------------------------AddNode----------------------------------------
 // Classic Add functionality.  This covers all the usual 'add' behaviors for
@@ -250,9 +252,10 @@ public:
 // 2 equal inputs to be equal.
 class MaxNode : public AddNode {
 private:
+  static Node* build_min_max_int(Node* a, Node* b, bool is_max);
   static Node* build_min_max(Node* a, Node* b, bool is_max, bool is_unsigned, const Type* t, PhaseGVN& gvn);
   static Node* build_min_max_diff_with_zero(Node* a, Node* b, bool is_max, const Type* t, PhaseGVN& gvn);
-  Node* extract_add(PhaseGVN* phase, Node* x, jint x_off, Node* y, jint y_off);
+  Node* extract_add(PhaseGVN* phase, ConstAddOperands x_operands, ConstAddOperands y_operands);
 
 public:
   MaxNode( Node *in1, Node *in2 ) : AddNode(in1,in2) {}

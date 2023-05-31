@@ -33,7 +33,6 @@
 #include "opto/mulnode.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/subnode.hpp"
-#include "utilities/pair.hpp"
 
 // Portions of code courtesy of Clifford Click
 
@@ -1031,6 +1030,14 @@ const Type* XorLNode::Value(PhaseGVN* phase) const {
   return AddNode::Value(phase);
 }
 
+Node* MaxNode::build_min_max_int(Node* a, Node* b, bool is_max) {
+  if (is_max) {
+    return new MaxINode(a, b);
+  } else {
+    return new MinINode(a, b);
+  }
+}
+
 Node* MaxNode::build_min_max(Node* a, Node* b, bool is_max, bool is_unsigned, const Type* t, PhaseGVN& gvn) {
   bool is_int = gvn.type(a)->isa_int();
   assert(is_int || gvn.type(a)->isa_long(), "int or long inputs");
@@ -1045,13 +1052,8 @@ Node* MaxNode::build_min_max(Node* a, Node* b, bool is_max, bool is_unsigned, co
   }
   Node* res = nullptr;
   if (is_int && !is_unsigned) {
-    if (is_max) {
-      res =  gvn.transform(new MaxINode(a, b));
-      assert(gvn.type(res)->is_int()->_lo >= t->is_int()->_lo && gvn.type(res)->is_int()->_hi <= t->is_int()->_hi, "type doesn't match");
-    } else {
-      Node* res =  gvn.transform(new MinINode(a, b));
-      assert(gvn.type(res)->is_int()->_lo >= t->is_int()->_lo && gvn.type(res)->is_int()->_hi <= t->is_int()->_hi, "type doesn't match");
-    }
+    res = gvn.transform(build_min_max_int(a, b, is_max));
+    assert(gvn.type(res)->is_int()->_lo >= t->is_int()->_lo && gvn.type(res)->is_int()->_hi <= t->is_int()->_hi, "type doesn't match");
   } else {
     Node* cmp = nullptr;
     if (is_max) {
@@ -1104,12 +1106,17 @@ static bool can_overflow(const TypeInt* t, jint c) {
           (c > 0 && (java_add(t_hi, c) < t_hi)));
 }
 
+// Let <x, x_off> = x_operands and <y, y_off> = y_operands.
 // If x == y and neither add(x, x_off) nor add(y, y_off) overflow, return
 // add(x, op(x_off, y_off)). Otherwise, return nullptr.
-Node* MaxNode::extract_add(PhaseGVN* phase, Node* x, jint x_off, Node* y, jint y_off) {
+Node* MaxNode::extract_add(PhaseGVN* phase, ConstAddOperands x_operands, ConstAddOperands y_operands) {
+  Node* x = x_operands.first;
+  Node* y = y_operands.first;
   int opcode = Opcode();
   assert(opcode == Op_MaxI || opcode == Op_MinI, "Unexpected opcode");
   const TypeInt* tx = phase->type(x)->isa_int();
+  jint x_off = x_operands.second;
+  jint y_off = y_operands.second;
   if (x == y && tx != nullptr &&
       !can_overflow(tx, x_off) &&
       !can_overflow(tx, y_off)) {
@@ -1118,8 +1125,6 @@ Node* MaxNode::extract_add(PhaseGVN* phase, Node* x, jint x_off, Node* y, jint y
   }
   return nullptr;
 }
-
-typedef const Pair<Node*, jint> ConstAddOperands;
 
 // If n is an integer addition of x with a non-TOP constant C, return <x, C>.
 // Otherwise, return <nullptr, 0>.
@@ -1165,8 +1170,6 @@ Node* MaxNode::IdealI(PhaseGVN* phase, bool can_reshape) {
     if (outer_add_operands.first == nullptr) {
       continue;
     }
-    Node* outer = outer_add_operands.first;
-    jint outer_off = outer_add_operands.second;
     // One operand is a MinI/MaxI and the other is an integer addition with
     // constant. Test the operands of the inner MinI/MaxI.
     for (uint inner_add_index = 1; inner_add_index <= 2; inner_add_index++) {
@@ -1176,20 +1179,14 @@ Node* MaxNode::IdealI(PhaseGVN* phase, bool can_reshape) {
       if (inner_add_operands.first == nullptr) {
         continue;
       }
-      Node* inner = inner_add_operands.first;
-      jint inner_off = inner_add_operands.second;
       // Try to extract the inner add.
-      Node* add_extracted = extract_add(phase, inner, inner_off, outer, outer_off);
+      Node* add_extracted = extract_add(phase, inner_add_operands, outer_add_operands);
       if (add_extracted == nullptr) {
         continue;
       }
       Node* add_transformed = phase->transform(add_extracted);
       Node* inner_other = inner_op->in(inner_add_index == 1 ? 2 : 1);
-      if (opcode == Op_MinI) {
-        return new MinINode(add_transformed, inner_other);
-      } else {
-        return new MaxINode(add_transformed, inner_other);
-      }
+      return build_min_max_int(add_transformed, inner_other, opcode == Op_MaxI);
     }
   }
   // Try to transform
@@ -1203,7 +1200,7 @@ Node* MaxNode::IdealI(PhaseGVN* phase, bool can_reshape) {
   ConstAddOperands xC = as_add_with_constant(in(1));
   ConstAddOperands yC = as_add_with_constant(in(2));
   if (xC.first == nullptr || yC.first == nullptr) return nullptr;
-  return extract_add(phase, xC.first, xC.second, yC.first, yC.second);
+  return extract_add(phase, xC, yC);
 }
 
 Node* MaxNode::IdentityI(PhaseGVN* phase) {
