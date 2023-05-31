@@ -259,6 +259,22 @@ public sealed interface Classfile
     }
 
     /**
+     * Build a classfile into a file using the provided constant pool
+     * builder (which encapsulates classfile processing options.)
+     *
+     * @param path the path to the file to write
+     * @param thisClassEntry the name of the class to build
+     * @param constantPool the constant pool builder
+     * @param handler a handler that receives a {@link ClassBuilder}
+     */
+    default void buildTo(Path path,
+                         ClassEntry thisClassEntry,
+                         ConstantPoolBuilder constantPool,
+                         Consumer<? super ClassBuilder> handler) throws IOException {
+        Files.write(path, build(thisClassEntry, constantPool, handler));
+    }
+
+    /**
      * Build a module descriptor into a byte array.
      * @param moduleAttribute the {@code Module} attribute
      * @return the classfile bytes
