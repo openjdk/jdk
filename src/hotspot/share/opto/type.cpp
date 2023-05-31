@@ -413,7 +413,7 @@ const Type* Type::maybe_remove_speculative(bool include_speculative) const {
 
 //------------------------------hash-------------------------------------------
 int Type::uhash( const Type *const t ) {
-  return t->hash();
+  return (int)t->hash();
 }
 
 #define SMALLINT ((juint)3)  // a value too insignificant to consider widening
@@ -770,7 +770,7 @@ bool Type::eq( const Type * ) const {
 
 //------------------------------hash-------------------------------------------
 // Type-specific hashing function.
-int Type::hash(void) const {
+uint Type::hash(void) const {
   return _base;
 }
 
@@ -1360,8 +1360,8 @@ bool TypeF::eq(const Type *t) const {
 
 //------------------------------hash-------------------------------------------
 // Type-specific hashing function.
-int TypeF::hash(void) const {
-  return *(int*)(&_f);
+uint TypeF::hash(void) const {
+  return *(uint*)(&_f);
 }
 
 //------------------------------is_finite--------------------------------------
@@ -1470,8 +1470,8 @@ bool TypeD::eq(const Type *t) const {
 
 //------------------------------hash-------------------------------------------
 // Type-specific hashing function.
-int TypeD::hash(void) const {
-  return *(int*)(&_d);
+uint TypeD::hash(void) const {
+  return *(uint*)(&_d);
 }
 
 //------------------------------is_finite--------------------------------------
@@ -1764,8 +1764,8 @@ bool TypeInt::eq( const Type *t ) const {
 
 //------------------------------hash-------------------------------------------
 // Type-specific hashing function.
-int TypeInt::hash(void) const {
-  return java_add(java_add(_lo, _hi), java_add((jint)_widen, (jint)Type::Int));
+uint TypeInt::hash(void) const {
+  return (uint)_lo + (uint)_hi + (uint)_widen + (uint)Type::Int;
 }
 
 //------------------------------is_finite--------------------------------------
@@ -2030,8 +2030,8 @@ bool TypeLong::eq( const Type *t ) const {
 
 //------------------------------hash-------------------------------------------
 // Type-specific hashing function.
-int TypeLong::hash(void) const {
-  return (int)(_lo+_hi+_widen+(int)Type::Long);
+uint TypeLong::hash(void) const {
+  return (uint)_lo + (uint)_hi + (uint)_widen + (uint)Type::Long;
 }
 
 //------------------------------is_finite--------------------------------------
@@ -2272,11 +2272,11 @@ bool TypeTuple::eq( const Type *t ) const {
 
 //------------------------------hash-------------------------------------------
 // Type-specific hashing function.
-int TypeTuple::hash(void) const {
-  intptr_t sum = _cnt;
+uint TypeTuple::hash(void) const {
+  uintptr_t sum = _cnt;
   for( uint i=0; i<_cnt; i++ )
-    sum += (intptr_t)_fields[i];     // Hash on pointers directly
-  return sum;
+    sum += (uintptr_t)_fields[i];     // Hash on pointers directly
+  return (uint)sum;
 }
 
 //------------------------------dump2------------------------------------------
@@ -2387,8 +2387,8 @@ bool TypeAry::eq( const Type *t ) const {
 
 //------------------------------hash-------------------------------------------
 // Type-specific hashing function.
-int TypeAry::hash(void) const {
-  return (intptr_t)_elem + (intptr_t)_size + (_stable ? 43 : 0);
+uint TypeAry::hash(void) const {
+  return (uint)(uintptr_t)_elem + (uint)(uintptr_t)_size + (uint)(_stable ? 43 : 0);
 }
 
 /**
@@ -2575,8 +2575,8 @@ bool TypeVect::eq(const Type *t) const {
 
 //------------------------------hash-------------------------------------------
 // Type-specific hashing function.
-int TypeVect::hash(void) const {
-  return (intptr_t)_elem + (intptr_t)_length;
+uint TypeVect::hash(void) const {
+  return (uint)(uintptr_t)_elem + (uint)(uintptr_t)_length;
 }
 
 //------------------------------singleton--------------------------------------
@@ -2801,9 +2801,8 @@ bool TypePtr::eq( const Type *t ) const {
 
 //------------------------------hash-------------------------------------------
 // Type-specific hashing function.
-int TypePtr::hash(void) const {
-  return java_add(java_add((jint)_ptr, (jint)_offset), java_add((jint)hash_speculative(), (jint)_inline_depth));
-;
+uint TypePtr::hash(void) const {
+  return (uint)_ptr + (uint)_offset + (uint)hash_speculative() + (uint)_inline_depth;
 }
 
 /**
@@ -3235,8 +3234,8 @@ bool TypeRawPtr::eq( const Type *t ) const {
 
 //------------------------------hash-------------------------------------------
 // Type-specific hashing function.
-int TypeRawPtr::hash(void) const {
-  return (intptr_t)_bits + TypePtr::hash();
+uint TypeRawPtr::hash(void) const {
+  return (uint)(uintptr_t)_bits + (uint)TypePtr::hash();
 }
 
 //------------------------------dump2------------------------------------------
@@ -3325,16 +3324,16 @@ bool TypePtr::InterfaceSet::eq(ciInstanceKlass* k) const {
 }
 
 
-int TypePtr::InterfaceSet::hash() const {
+uint TypePtr::InterfaceSet::hash() const {
   assert(_initialized, "must be");
   return _hash;
 }
 
 void TypePtr::InterfaceSet::compute_hash() {
-  int hash = 0;
+  uint hash = 0;
   for (int i = 0; i < _list.length(); i++) {
     ciKlass* k = _list.at(i);
-    hash += (jint)k->hash();
+    hash += k->hash();
   }
   _hash = hash;
 }
@@ -3846,10 +3845,11 @@ bool TypeOopPtr::eq( const Type *t ) const {
 
 //------------------------------hash-------------------------------------------
 // Type-specific hashing function.
-int TypeOopPtr::hash(void) const {
+uint TypeOopPtr::hash(void) const {
   return
-    java_add(java_add((jint)(const_oop() ? const_oop()->hash() : 0), (jint)_klass_is_exact),
-             java_add((jint)_instance_id, (jint)TypePtr::hash()));
+    (uint)(const_oop() ? const_oop()->hash() : 0) +
+    (uint)_klass_is_exact +
+    (uint)_instance_id + TypePtr::hash();
 }
 
 //------------------------------dump2------------------------------------------
@@ -4483,9 +4483,8 @@ bool TypeInstPtr::eq( const Type *t ) const {
 
 //------------------------------hash-------------------------------------------
 // Type-specific hashing function.
-int TypeInstPtr::hash(void) const {
-  int hash = java_add(java_add((jint)klass()->hash(), (jint)TypeOopPtr::hash()), _interfaces.hash());
-  return hash;
+uint TypeInstPtr::hash(void) const {
+  return klass()->hash() + TypeOopPtr::hash() + _interfaces.hash();
 }
 
 bool TypeInstPtr::is_java_subtype_of_helper(const TypeOopPtr* other, bool this_exact, bool other_exact) const {
@@ -4834,8 +4833,8 @@ bool TypeAryPtr::eq( const Type *t ) const {
 
 //------------------------------hash-------------------------------------------
 // Type-specific hashing function.
-int TypeAryPtr::hash(void) const {
-  return (intptr_t)_ary + TypeOopPtr::hash();
+uint TypeAryPtr::hash(void) const {
+  return (uint)(uintptr_t)_ary + TypeOopPtr::hash();
 }
 
 bool TypeAryPtr::is_java_subtype_of_helper(const TypeOopPtr* other, bool this_exact, bool other_exact) const {
@@ -5219,7 +5218,7 @@ const TypePtr* TypeAryPtr::with_instance_id(int instance_id) const {
 
 //------------------------------hash-------------------------------------------
 // Type-specific hashing function.
-int TypeNarrowPtr::hash(void) const {
+uint TypeNarrowPtr::hash(void) const {
   return _ptrtype->hash() + 7;
 }
 
@@ -5379,7 +5378,7 @@ bool TypeMetadataPtr::eq( const Type *t ) const {
 
 //------------------------------hash-------------------------------------------
 // Type-specific hashing function.
-int TypeMetadataPtr::hash(void) const {
+uint TypeMetadataPtr::hash(void) const {
   return
     (metadata() ? metadata()->hash() : 0) +
     TypePtr::hash();
@@ -5619,8 +5618,8 @@ bool TypeKlassPtr::eq(const Type *t) const {
 
 //------------------------------hash-------------------------------------------
 // Type-specific hashing function.
-int TypeKlassPtr::hash(void) const {
-  return java_add((jint)TypePtr::hash(), _interfaces.hash());
+uint TypeKlassPtr::hash(void) const {
+  return TypePtr::hash() + _interfaces.hash();
 }
 
 //------------------------------singleton--------------------------------------
@@ -5732,8 +5731,8 @@ bool TypeInstKlassPtr::eq(const Type *t) const {
     TypeKlassPtr::eq(p);
 }
 
-int TypeInstKlassPtr::hash(void) const {
-  return java_add((jint)klass()->hash(), TypeKlassPtr::hash());
+uint TypeInstKlassPtr::hash(void) const {
+  return klass()->hash() + TypeKlassPtr::hash();
 }
 
 const TypeInstKlassPtr *TypeInstKlassPtr::make(PTR ptr, ciKlass* k, const InterfaceSet& interfaces, int offset) {
@@ -6092,8 +6091,8 @@ bool TypeAryKlassPtr::eq(const Type *t) const {
 
 //------------------------------hash-------------------------------------------
 // Type-specific hashing function.
-int TypeAryKlassPtr::hash(void) const {
-  return (intptr_t)_elem + TypeKlassPtr::hash();
+uint TypeAryKlassPtr::hash(void) const {
+  return (uint)(uintptr_t)_elem + TypeKlassPtr::hash();
 }
 
 //----------------------compute_klass------------------------------------------
@@ -6640,8 +6639,8 @@ bool TypeFunc::eq( const Type *t ) const {
 
 //------------------------------hash-------------------------------------------
 // Type-specific hashing function.
-int TypeFunc::hash(void) const {
-  return (intptr_t)_domain + (intptr_t)_range;
+uint TypeFunc::hash(void) const {
+  return (uint)(uintptr_t)_domain + (uint)(uintptr_t)_range;
 }
 
 //------------------------------dump2------------------------------------------
