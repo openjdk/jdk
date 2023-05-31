@@ -1,6 +1,6 @@
 //
-// Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
-// Copyright (c) 2020, Arm Limited. All rights reserved.
+// Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2020, 2023, Arm Limited. All rights reserved.
 // Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
@@ -746,9 +746,8 @@ instruct vminD_masked(vReg dst_src1, vReg src2, vRegMask vmask, vReg tmp1, vReg 
 
 // vector fmla
 
-// dst_src1 = dst_src1 + src2 * src3
+// dst_src1 = src2 * src3 + dst_src1
 instruct vfmla(vReg dst_src1, vReg src2, vReg src3) %{
-  predicate(UseFMA);
   match(Set dst_src1 (FmaVF dst_src1 (Binary src2 src3)));
   match(Set dst_src1 (FmaVD dst_src1 (Binary src2 src3)));
   ins_cost(VEC_COST);
@@ -766,7 +765,6 @@ instruct vfmla(vReg dst_src1, vReg src2, vReg src3) %{
 // dst_src1 = dst_src1 * src2 + src3
 
 instruct vfmadd_masked(vReg dst_src1, vReg src2, vReg src3, vRegMask_V0 v0) %{
-  predicate(UseFMA);
   match(Set dst_src1 (FmaVF (Binary dst_src1 src2) (Binary src3 v0)));
   match(Set dst_src1 (FmaVD (Binary dst_src1 src2) (Binary src3 v0)));
   format %{ "vfmadd_masked $dst_src1, $dst_src1, $src2, $src3, $v0" %}
@@ -781,11 +779,9 @@ instruct vfmadd_masked(vReg dst_src1, vReg src2, vReg src3, vRegMask_V0 v0) %{
 
 // vector fmls
 
-// dst_src1 = dst_src1 + -src2 * src3
-// dst_src1 = dst_src1 + src2 * -src3
+// dst_src1 = src2 * (-src3) + dst_src1
+// "(-src2) * src3 + dst_src1" has been idealized to "src3 * (-src2) + dst_src1"
 instruct vfmlsF(vReg dst_src1, vReg src2, vReg src3) %{
-  predicate(UseFMA);
-  match(Set dst_src1 (FmaVF dst_src1 (Binary (NegVF src2) src3)));
   match(Set dst_src1 (FmaVF dst_src1 (Binary src2 (NegVF src3))));
   ins_cost(VEC_COST);
   format %{ "vfmlsF $dst_src1, $dst_src1, $src2, $src3" %}
@@ -797,11 +793,9 @@ instruct vfmlsF(vReg dst_src1, vReg src2, vReg src3) %{
   ins_pipe(pipe_slow);
 %}
 
-// dst_src1 = dst_src1 + -src2 * src3
-// dst_src1 = dst_src1 + src2 * -src3
+// dst_src1 = src2 * (-src3) + dst_src1
+// "(-src2) * src3 + dst_src1" has been idealized to "src3 * (-src2) + dst_src1"
 instruct vfmlsD(vReg dst_src1, vReg src2, vReg src3) %{
-  predicate(UseFMA);
-  match(Set dst_src1 (FmaVD dst_src1 (Binary (NegVD src2) src3)));
   match(Set dst_src1 (FmaVD dst_src1 (Binary src2 (NegVD src3))));
   ins_cost(VEC_COST);
   format %{ "vfmlsD $dst_src1, $dst_src1, $src2, $src3" %}
@@ -815,9 +809,8 @@ instruct vfmlsD(vReg dst_src1, vReg src2, vReg src3) %{
 
 // vector fnmsub - predicated
 
-// dst_src1 = dst_src1 * -src2 + src3
+// dst_src1 = dst_src1 * (-src2) + src3
 instruct vfnmsub_masked(vReg dst_src1, vReg src2, vReg src3, vRegMask_V0 v0) %{
-  predicate(UseFMA);
   match(Set dst_src1 (FmaVF (Binary dst_src1 (NegVF src2)) (Binary src3 v0)));
   match(Set dst_src1 (FmaVD (Binary dst_src1 (NegVD src2)) (Binary src3 v0)));
   format %{ "vfnmsub_masked $dst_src1, $dst_src1, $src2, $src3, $v0" %}
@@ -832,11 +825,9 @@ instruct vfnmsub_masked(vReg dst_src1, vReg src2, vReg src3, vRegMask_V0 v0) %{
 
 // vector fnmla
 
-// dst_src1 = -dst_src1 + -src2 * src3
-// dst_src1 = -dst_src1 + src2 * -src3
+// dst_src1 = src2 * (-src3) - dst_src1
+// "(-src2) * src3 - dst_src1" has been idealized to "src3 * (-src2) - dst_src1"
 instruct vfnmlaF(vReg dst_src1, vReg src2, vReg src3) %{
-  predicate(UseFMA);
-  match(Set dst_src1 (FmaVF (NegVF dst_src1) (Binary (NegVF src2) src3)));
   match(Set dst_src1 (FmaVF (NegVF dst_src1) (Binary src2 (NegVF src3))));
   ins_cost(VEC_COST);
   format %{ "vfnmlaF $dst_src1, $dst_src1, $src2, $src3" %}
@@ -848,11 +839,9 @@ instruct vfnmlaF(vReg dst_src1, vReg src2, vReg src3) %{
   ins_pipe(pipe_slow);
 %}
 
-// dst_src1 = -dst_src1 + -src2 * src3
-// dst_src1 = -dst_src1 + src2 * -src3
+// dst_src1 = src2 * (-src3) - dst_src1
+// "(-src2) * src3 - dst_src1" has been idealized to "src3 * (-src2) - dst_src1"
 instruct vfnmlaD(vReg dst_src1, vReg src2, vReg src3) %{
-  predicate(UseFMA);
-  match(Set dst_src1 (FmaVD (NegVD dst_src1) (Binary (NegVD src2) src3)));
   match(Set dst_src1 (FmaVD (NegVD dst_src1) (Binary src2 (NegVD src3))));
   ins_cost(VEC_COST);
   format %{ "vfnmlaD $dst_src1, $dst_src1, $src2, $src3" %}
@@ -866,9 +855,8 @@ instruct vfnmlaD(vReg dst_src1, vReg src2, vReg src3) %{
 
 // vector fnmadd - predicated
 
-// dst_src1 = -src3 + dst_src1 * -src2
+// dst_src1 = dst_src1 * (-src2) - src3
 instruct vfnmadd_masked(vReg dst_src1, vReg src2, vReg src3, vRegMask_V0 v0) %{
-  predicate(UseFMA);
   match(Set dst_src1 (FmaVF (Binary dst_src1 (NegVF src2)) (Binary (NegVF src3) v0)));
   match(Set dst_src1 (FmaVD (Binary dst_src1 (NegVD src2)) (Binary (NegVD src3) v0)));
   format %{ "vfnmadd_masked $dst_src1, $dst_src1, $src2, $src3, $v0" %}
@@ -883,9 +871,8 @@ instruct vfnmadd_masked(vReg dst_src1, vReg src2, vReg src3, vRegMask_V0 v0) %{
 
 // vector fnmls
 
-// dst_src1 = -dst_src1 + src2 * src3
+// dst_src1 = src2 * src3 - dst_src1
 instruct vfnmlsF(vReg dst_src1, vReg src2, vReg src3) %{
-  predicate(UseFMA);
   match(Set dst_src1 (FmaVF (NegVF dst_src1) (Binary src2 src3)));
   ins_cost(VEC_COST);
   format %{ "vfnmlsF $dst_src1, $dst_src1, $src2, $src3" %}
@@ -899,7 +886,6 @@ instruct vfnmlsF(vReg dst_src1, vReg src2, vReg src3) %{
 
 // dst_src1 = -dst_src1 + src2 * src3
 instruct vfnmlsD(vReg dst_src1, vReg src2, vReg src3) %{
-  predicate(UseFMA);
   match(Set dst_src1 (FmaVD (NegVD dst_src1) (Binary src2 src3)));
   ins_cost(VEC_COST);
   format %{ "vfnmlsD $dst_src1, $dst_src1, $src2, $src3" %}
@@ -913,9 +899,8 @@ instruct vfnmlsD(vReg dst_src1, vReg src2, vReg src3) %{
 
 // vector vfmsub - predicated
 
-// dst_src1 = -src3 + dst_src1 * src2
+// dst_src1 = dst_src1 * src2 - src3
 instruct vfmsub_masked(vReg dst_src1, vReg src2, vReg src3, vRegMask_V0 v0) %{
-  predicate(UseFMA);
   match(Set dst_src1 (FmaVF (Binary dst_src1 src2) (Binary (NegVF src3) v0)));
   match(Set dst_src1 (FmaVD (Binary dst_src1 src2) (Binary (NegVD src3) v0)));
   format %{ "vfmsub_masked $dst_src1, $dst_src1, $src2, $src3, $v0" %}

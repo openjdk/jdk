@@ -1869,6 +1869,17 @@ Node* VectorLongToMaskNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   return nullptr;
 }
 
+Node* FmaVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  // We canonicalize the node by converting "(-a)*b+c" into "b*(-a)+c"
+  // except vectorapi masked nodes, since the inactive lanes should
+  // save the first input of the masked node.
+  if (!is_predicated_vector() && in(1)->is_NegV() && !in(2)->is_NegV()) {
+    swap_edges(1, 2);
+    return this;
+  }
+  return nullptr;
+}
+
 // Generate other vector nodes to implement the masked/non-masked vector negation.
 Node* NegVNode::degenerate_integral_negate(PhaseGVN* phase, bool is_predicated) {
   const TypeVect* vt = vect_type();

@@ -9673,9 +9673,9 @@ instruct maddD_reg_reg(regD dst, regD src1, regD src2, regD src3) %{
   ins_pipe(pipe_class_default);
 %}
 
-// -src1 * src2 + src3 = -(src1*src2-src3)
+// src1 * (-src2) + src3 = -(src1*src2-src3)
+// "(-src1) * src2 + src3" has been idealized to "src2 * (-src1) + src3"
 instruct mnsubF_reg_reg(regF dst, regF src1, regF src2, regF src3) %{
-  match(Set dst (FmaF src3 (Binary (NegF src1) src2)));
   match(Set dst (FmaF src3 (Binary src1 (NegF src2))));
 
   format %{ "FNMSUBS $dst, $src1, $src2, $src3" %}
@@ -9686,9 +9686,9 @@ instruct mnsubF_reg_reg(regF dst, regF src1, regF src2, regF src3) %{
   ins_pipe(pipe_class_default);
 %}
 
-// -src1 * src2 + src3 = -(src1*src2-src3)
+// src1 * (-src2) + src3 = -(src1*src2-src3)
+// "(-src1) * src2 + src3" has been idealized to "src2 * (-src1) + src3"
 instruct mnsubD_reg_reg(regD dst, regD src1, regD src2, regD src3) %{
-  match(Set dst (FmaD src3 (Binary (NegD src1) src2)));
   match(Set dst (FmaD src3 (Binary src1 (NegD src2))));
 
   format %{ "FNMSUB  $dst, $src1, $src2, $src3" %}
@@ -9699,9 +9699,9 @@ instruct mnsubD_reg_reg(regD dst, regD src1, regD src2, regD src3) %{
   ins_pipe(pipe_class_default);
 %}
 
-// -src1 * src2 - src3 = -(src1*src2+src3)
+// src1 * (-src2) - src3 = -(src1*src2+src3)
+// "(-src1) * src2 - src3" has been idealized to "src2 * (-src1) - src3"
 instruct mnaddF_reg_reg(regF dst, regF src1, regF src2, regF src3) %{
-  match(Set dst (FmaF (NegF src3) (Binary (NegF src1) src2)));
   match(Set dst (FmaF (NegF src3) (Binary src1 (NegF src2))));
 
   format %{ "FNMADDS $dst, $src1, $src2, $src3" %}
@@ -9712,9 +9712,9 @@ instruct mnaddF_reg_reg(regF dst, regF src1, regF src2, regF src3) %{
   ins_pipe(pipe_class_default);
 %}
 
-// -src1 * src2 - src3 = -(src1*src2+src3)
+// src1 * (-src2) - src3 = -(src1*src2+src3)
+// "(-src1) * src2 - src3" has been idealized to "src2 * (-src1) - src3"
 instruct mnaddD_reg_reg(regD dst, regD src1, regD src2, regD src3) %{
-  match(Set dst (FmaD (NegD src3) (Binary (NegD src1) src2)));
   match(Set dst (FmaD (NegD src3) (Binary src1 (NegD src2))));
 
   format %{ "FNMADD  $dst, $src1, $src2, $src3" %}
@@ -14061,7 +14061,7 @@ instruct vpopcnt_reg(vecX dst, vecX src) %{
 %}
 
 // --------------------------------- FMA --------------------------------------
-// dst + src1 * src2
+// src1 * src2 + dst
 instruct vfma4F(vecX dst, vecX src1, vecX src2) %{
   match(Set dst (FmaVF dst (Binary src1 src2)));
   predicate(n->as_Vector()->length() == 4);
@@ -14075,9 +14075,9 @@ instruct vfma4F(vecX dst, vecX src1, vecX src2) %{
   ins_pipe(pipe_class_default);
 %}
 
-// dst - src1 * src2
+// src1 * (-src2) + dst
+// "(-src1) * src2 + dst" has been idealized to "src2 * (-src1) + dst"
 instruct vfma4F_neg1(vecX dst, vecX src1, vecX src2) %{
-  match(Set dst (FmaVF dst (Binary (NegVF src1) src2)));
   match(Set dst (FmaVF dst (Binary src1 (NegVF src2))));
   predicate(n->as_Vector()->length() == 4);
 
@@ -14090,7 +14090,7 @@ instruct vfma4F_neg1(vecX dst, vecX src1, vecX src2) %{
   ins_pipe(pipe_class_default);
 %}
 
-// - dst + src1 * src2
+// src1 * src2 - dst
 instruct vfma4F_neg2(vecX dst, vecX src1, vecX src2) %{
   match(Set dst (FmaVF (NegVF dst) (Binary src1 src2)));
   predicate(n->as_Vector()->length() == 4);
@@ -14104,7 +14104,7 @@ instruct vfma4F_neg2(vecX dst, vecX src1, vecX src2) %{
   ins_pipe(pipe_class_default);
 %}
 
-// dst + src1 * src2
+// src1 * src2 + dst
 instruct vfma2D(vecX dst, vecX src1, vecX src2) %{
   match(Set dst (FmaVD  dst (Binary src1 src2)));
   predicate(n->as_Vector()->length() == 2);
@@ -14118,9 +14118,9 @@ instruct vfma2D(vecX dst, vecX src1, vecX src2) %{
   ins_pipe(pipe_class_default);
 %}
 
-// dst - src1 * src2
+// src1 * (-src2) + dst
+// "(-src1) * src2 + dst" has been idealized to "src2 * (-src1) + dst"
 instruct vfma2D_neg1(vecX dst, vecX src1, vecX src2) %{
-  match(Set dst (FmaVD  dst (Binary (NegVD src1) src2)));
   match(Set dst (FmaVD  dst (Binary src1 (NegVD src2))));
   predicate(n->as_Vector()->length() == 2);
 
@@ -14133,7 +14133,7 @@ instruct vfma2D_neg1(vecX dst, vecX src1, vecX src2) %{
   ins_pipe(pipe_class_default);
 %}
 
-// - dst + src1 * src2
+// src1 * src2 - dst
 instruct vfma2D_neg2(vecX dst, vecX src1, vecX src2) %{
   match(Set dst (FmaVD (NegVD dst) (Binary src1 src2)));
   predicate(n->as_Vector()->length() == 2);

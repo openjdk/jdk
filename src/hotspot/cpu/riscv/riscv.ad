@@ -7271,7 +7271,6 @@ instruct mulD_reg_reg(fRegD dst, fRegD src1, fRegD src2) %{
 
 // src1 * src2 + src3
 instruct maddF_reg_reg(fRegF dst, fRegF src1, fRegF src2, fRegF src3) %{
-  predicate(UseFMA);
   match(Set dst (FmaF src3 (Binary src1 src2)));
 
   ins_cost(FMUL_SINGLE_COST);
@@ -7289,7 +7288,6 @@ instruct maddF_reg_reg(fRegF dst, fRegF src1, fRegF src2, fRegF src3) %{
 
 // src1 * src2 + src3
 instruct maddD_reg_reg(fRegD dst, fRegD src1, fRegD src2, fRegD src3) %{
-  predicate(UseFMA);
   match(Set dst (FmaD src3 (Binary src1 src2)));
 
   ins_cost(FMUL_DOUBLE_COST);
@@ -7307,7 +7305,6 @@ instruct maddD_reg_reg(fRegD dst, fRegD src1, fRegD src2, fRegD src3) %{
 
 // src1 * src2 - src3
 instruct msubF_reg_reg(fRegF dst, fRegF src1, fRegF src2, fRegF src3) %{
-  predicate(UseFMA);
   match(Set dst (FmaF (NegF src3) (Binary src1 src2)));
 
   ins_cost(FMUL_SINGLE_COST);
@@ -7325,7 +7322,6 @@ instruct msubF_reg_reg(fRegF dst, fRegF src1, fRegF src2, fRegF src3) %{
 
 // src1 * src2 - src3
 instruct msubD_reg_reg(fRegD dst, fRegD src1, fRegD src2, fRegD src3) %{
-  predicate(UseFMA);
   match(Set dst (FmaD (NegD src3) (Binary src1 src2)));
 
   ins_cost(FMUL_DOUBLE_COST);
@@ -7341,10 +7337,9 @@ instruct msubD_reg_reg(fRegD dst, fRegD src1, fRegD src2, fRegD src3) %{
   ins_pipe(pipe_class_default);
 %}
 
-// -src1 * src2 + src3
+// src1 * (-src2) + src3
+// "(-src1) * src2 + src3" has been idealized to "src2 * (-src1) + src3"
 instruct nmsubF_reg_reg(fRegF dst, fRegF src1, fRegF src2, fRegF src3) %{
-  predicate(UseFMA);
-  match(Set dst (FmaF src3 (Binary (NegF src1) src2)));
   match(Set dst (FmaF src3 (Binary src1 (NegF src2))));
 
   ins_cost(FMUL_SINGLE_COST);
@@ -7360,10 +7355,9 @@ instruct nmsubF_reg_reg(fRegF dst, fRegF src1, fRegF src2, fRegF src3) %{
   ins_pipe(pipe_class_default);
 %}
 
-// -src1 * src2 + src3
+// src1 * (-src2) + src3
+// "(-src1) * src2 + src3" has been idealized to "src2 * (-src1) + src3"
 instruct nmsubD_reg_reg(fRegD dst, fRegD src1, fRegD src2, fRegD src3) %{
-  predicate(UseFMA);
-  match(Set dst (FmaD src3 (Binary (NegD src1) src2)));
   match(Set dst (FmaD src3 (Binary src1 (NegD src2))));
 
   ins_cost(FMUL_DOUBLE_COST);
@@ -7379,10 +7373,9 @@ instruct nmsubD_reg_reg(fRegD dst, fRegD src1, fRegD src2, fRegD src3) %{
   ins_pipe(pipe_class_default);
 %}
 
-// -src1 * src2 - src3
+// src1 * (-src2) - src3
+// "(-src1) * src2 - src3" has been idealized to "src2 * (-src1) - src3"
 instruct nmaddF_reg_reg(fRegF dst, fRegF src1, fRegF src2, fRegF src3) %{
-  predicate(UseFMA);
-  match(Set dst (FmaF (NegF src3) (Binary (NegF src1) src2)));
   match(Set dst (FmaF (NegF src3) (Binary src1 (NegF src2))));
 
   ins_cost(FMUL_SINGLE_COST);
@@ -7398,10 +7391,9 @@ instruct nmaddF_reg_reg(fRegF dst, fRegF src1, fRegF src2, fRegF src3) %{
   ins_pipe(pipe_class_default);
 %}
 
-// -src1 * src2 - src3
+// src1 * (-src2) - src3
+// "(-src1) * src2 - src3" has been idealized to "src2 * (-src1) - src3"
 instruct nmaddD_reg_reg(fRegD dst, fRegD src1, fRegD src2, fRegD src3) %{
-  predicate(UseFMA);
-  match(Set dst (FmaD (NegD src3) (Binary (NegD src1) src2)));
   match(Set dst (FmaD (NegD src3) (Binary src1 (NegD src2))));
 
   ins_cost(FMUL_DOUBLE_COST);
