@@ -116,7 +116,7 @@ BufferPtr JfrStringPool::flush(BufferPtr old, size_t used, size_t requested, Thr
     migrate_outstanding_writes(old, new_buffer, used, requested);
   }
   release(old, thread);
-  return new_buffer; // might be nullptr
+  return new_buffer; // might be null
 }
 
 static const size_t lease_retry = 10;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,18 +21,17 @@
  * questions.
  */
 
+#include <stdio.h>
+#include <stdlib.h>
+
+#include "jni.h"
 
 /*
- * @test
- * @key stress randomness
- *
- * @summary converted from VM Testbase gc/lock/malloc/malloclock01.
- * VM Testbase keywords: [gc, stress, stressopt, nonconcurrent]
- *
- * @library /vmTestbase
- *          /test/lib
- * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm/native -Xbootclasspath/a:. -Xlog:gc=debug:gc.log -XX:+HeapDumpOnOutOfMemoryError -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI gc.lock.LockerTest -lockers malloc -t 1
+ * Class:     NativeMethod
+ * Method:    nativeMethod
+ * Signature: ()V
  */
-
+JNIEXPORT void JNICALL Java_ForceEarlyReturnTestTarg_nativeMethod(JNIEnv *env, jobject obj) {
+    /* Just spin. We don't need to ever return from here. */
+    while(JNI_TRUE);
+}
