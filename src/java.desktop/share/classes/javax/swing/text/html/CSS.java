@@ -2223,9 +2223,7 @@ public class CSS implements Serializable {
             return val instanceof CSS.FontSize size
                    && value == size.value
                    && index == size.index
-                   && ((lu == null && size.lu == null)
-                      || (lu != null && size.lu != null
-                      && Objects.equals(lu, size.lu)));
+                   && Objects.equals(lu, size.lu);
         }
 
         float value;
