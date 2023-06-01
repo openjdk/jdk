@@ -537,7 +537,7 @@ void Jaccesswalker::addComponentNodes(long vmID, AccessibleContext context,
         HTREEITEM treeNodeItem = TreeView_InsertItem(treeWnd, &tvis);
 
         for (int i = 0; i < info.childrenCount; i++) {
-            addComponentNodes(static_cast<long>(vmID), GetAccessibleChildFromContext(vmID, context, i),
+            addComponentNodes(vmID, GetAccessibleChildFromContext(vmID, context, i),
                               newNode, hwnd, treeNodeItem, treeWnd);
         }
     } else {
