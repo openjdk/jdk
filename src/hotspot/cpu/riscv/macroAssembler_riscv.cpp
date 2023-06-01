@@ -758,8 +758,8 @@ void MacroAssembler::la(Register Rd, Label &label) {
   wrap_label(Rd, label, &MacroAssembler::la);
 }
 
-void MacroAssembler::li16u(Register Rd, int32_t imm) {
-  lui(Rd, imm << 12);
+void MacroAssembler::li16u(Register Rd, uint16_t imm) {
+  lui(Rd, (uint32_t)imm << 12);
   srli(Rd, Rd, 12);
 }
 
@@ -1412,8 +1412,8 @@ static int patch_imm_in_li64(address branch, address target) {
   return LI64_INSTRUCTIONS_NUM * NativeInstruction::instruction_size;
 }
 
-static int patch_imm_in_li16u(address branch, int32_t target) {
-  Assembler::patch(branch, 31, 12, target & 0xfffff); // patch lui only
+static int patch_imm_in_li16u(address branch, uint16_t target) {
+  Assembler::patch(branch, 31, 12, target); // patch lui only
   return NativeInstruction::instruction_size;
 }
 
@@ -1508,7 +1508,7 @@ int MacroAssembler::pd_patch_instruction_size(address branch, address target) {
     return patch_imm_in_li32(branch, (int32_t)imm);
   } else if (NativeInstruction::is_li16u_at(branch)) {
     int64_t imm = (intptr_t)target;
-    return patch_imm_in_li16u(branch, (int32_t)imm);
+    return patch_imm_in_li16u(branch, (uint16_t)imm);
   } else {
 #ifdef ASSERT
     tty->print_cr("pd_patch_instruction_size: instruction 0x%x at " INTPTR_FORMAT " could not be patched!\n",
