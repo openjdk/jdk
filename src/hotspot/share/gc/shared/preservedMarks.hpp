@@ -34,20 +34,22 @@ class WorkerTask;
 class PreservedMarksSet;
 class WorkerThreads;
 
+class OopAndMarkWord {
+ private:
+  oop _o;
+  markWord _m;
+
+ public:
+  OopAndMarkWord(oop obj, markWord m) : _o(obj), _m(m) { }
+
+  oop get_oop() { return _o; }
+  oop* get_oop_pointer() {return &_o; }
+  inline void set_mark() const;
+  void set_oop(oop obj) { _o = obj; }
+};
+
 class PreservedMarks {
 private:
-  class OopAndMarkWord {
-  private:
-    oop _o;
-    markWord _m;
-
-  public:
-    OopAndMarkWord(oop obj, markWord m) : _o(obj), _m(m) { }
-
-    oop get_oop() { return _o; }
-    inline void set_mark() const;
-    void set_oop(oop obj) { _o = obj; }
-  };
   typedef Stack<OopAndMarkWord, mtGC> OopAndMarkWordStack;
 
   OopAndMarkWordStack _stack;
@@ -55,6 +57,7 @@ private:
   inline bool should_preserve_mark(oop obj, markWord m) const;
 
 public:
+  OopAndMarkWordStack& get_stack() { return _stack; }
   size_t size() const { return _stack.size(); }
   inline void push_if_necessary(oop obj, markWord m);
   inline void push_always(oop obj, markWord m);

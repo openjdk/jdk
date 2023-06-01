@@ -48,6 +48,7 @@
 #include "gc/shared/space.hpp"
 #include "gc/shared/strongRootsScope.hpp"
 #include "gc/shared/weakProcessor.hpp"
+#include "gc/shared/preservedMarks.inline.hpp"
 #include "memory/universe.hpp"
 #include "oops/instanceRefKlass.hpp"
 #include "oops/oop.inline.hpp"
@@ -133,13 +134,15 @@ void GenMarkSweep::allocate_stacks() {
   // revert to malloc.
   if (scratch != nullptr) {
     _preserved_count_max =
-      scratch->num_words * HeapWordSize / sizeof(PreservedMark);
+      scratch->num_words * HeapWordSize / sizeof(OopAndMarkWord);
   } else {
     _preserved_count_max = 0;
   }
 
-  _preserved_marks = (PreservedMark*)scratch;
+  _preserved_marks = (OopAndMarkWord*)scratch;
   _preserved_count = 0;
+
+  _preserved_overflow_stack_set.init(1);
 }
 
 
@@ -147,7 +150,7 @@ void GenMarkSweep::deallocate_stacks() {
   GenCollectedHeap* gch = GenCollectedHeap::heap();
   gch->release_scratch();
 
-  _preserved_overflow_stack.clear(true);
+  _preserved_overflow_stack_set.reclaim();
   _marking_stack.clear();
   _objarray_stack.clear(true);
 }

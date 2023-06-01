@@ -56,7 +56,7 @@ inline PreservedMarks::PreservedMarks()
              // cache size to 0.
              0 /* max_cache_size */) { }
 
-void PreservedMarks::OopAndMarkWord::set_mark() const {
+void OopAndMarkWord::set_mark() const {
   _o->set_mark(_m);
 }
 
