@@ -964,7 +964,7 @@ void Parse::throw_to_exit(SafePointNode* ex_map) {
 
 //------------------------------do_exits---------------------------------------
 void Parse::do_exits() {
-  set_parse_bci(InvocationEntryBci);
+  set_parse_bci(UnwindBci);
 
   // Now peephole on the return bits
   Node* region = _exits.control();

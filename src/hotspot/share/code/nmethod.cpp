@@ -3197,8 +3197,11 @@ void nmethod::print_code_comment_on(outputStream* st, int column, address begin,
   if (sd != nullptr) {
     st->move_to(column, 6, 0);
     if (sd->bci() == InvocationEntryBci) {
-      assert(SynchronizationEntryBCI == InvocationEntryBci, "should be same");
-      st->print(";* invocation entry (also synchronization entry if synchronized)");
+      if (method()->is_synchronized()) {
+        st->print(";* synchronization entry");
+      } else {
+        st->print(";* invocation entry");
+      }
     } else if (sd->bci() == AfterBci) {
       st->print(";* method exit (unlocked if synchronized)");
     } else if (sd->bci() == UnwindBci) {

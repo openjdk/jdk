@@ -328,7 +328,7 @@ void DebugInformationRecorder::describe_scope(int         pc_offset,
   assert(method == nullptr ||
          (method->is_native() && bci == 0) ||
          (!method->is_native() && 0 <= bci && bci < method->code_size()) ||
-         bci == -1, "illegal bci");
+         bci == InvocationEntryBci || bci == UnwindBci, "illegal bci");
 
   // serialize the locals/expressions/monitors
   stream()->write_int((intptr_t) locals);
