@@ -32,6 +32,8 @@ import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.util.Arrays;
 import javax.crypto.KEM;
+import javax.crypto.SecretKey;
+
 import java.security.spec.ECGenParameterSpec;
 import jdk.test.lib.Asserts;
 
@@ -39,13 +41,9 @@ public class GenLargeNumberOfKeys {
 
     private static final int COUNT = 1000;
 
-    /*
-     * X448 produce keysize of 64 bytes which is larger in it's class
-     * secp521r1 produce keysize of 64 bytes which is larger in it's class
-     */
     public static void main(String[] args) throws Exception {
         KEM kem = KEM.getInstance("DHKEM");
-        testAlgo(kem, "XDH", "X448");
+        testAlgo(kem, "X448", null);
         testAlgo(kem, "EC", "secp521r1");
     }
 
@@ -61,16 +59,24 @@ public class GenLargeNumberOfKeys {
 
     private static KeyPair genKeyPair(String algo, String curveId) throws Exception {
         KeyPairGenerator kpg = KeyPairGenerator.getInstance(algo);
-        kpg.initialize(new ECGenParameterSpec(curveId));
+        if (curveId != null) {
+            kpg.initialize(new ECGenParameterSpec(curveId));
+        }
         return kpg.generateKeyPair();
     }
 
     private static void test(KEM.Encapsulator e, KEM.Decapsulator d)
             throws Exception {
         KEM.Encapsulated enc = e.encapsulate();
+        SecretKey sk = enc.key();
         Asserts.assertEQ(d.encapsulationSize(), enc.encapsulation().length);
         Asserts.assertEQ(d.secretSize(), enc.key().getEncoded().length);
-        Asserts.assertTrue(Arrays.equals(d.decapsulate(enc.encapsulation()).getEncoded(), enc.key().getEncoded()));
+        Asserts.assertTrue(Arrays.equals(d.decapsulate(enc.encapsulation()).getEncoded(),
+                sk.getEncoded()));
+        Asserts.assertTrue(Arrays.equals(d.decapsulate(enc.encapsulation()).getEncoded(),
+                sk.getEncoded()));
+        Asserts.assertTrue(Arrays.equals(d.decapsulate(enc.encapsulation()).getEncoded(),
+                enc.key().getEncoded()));
     }
 
 }

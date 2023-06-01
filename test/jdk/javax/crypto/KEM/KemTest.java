@@ -122,11 +122,20 @@ public class KemTest {
                 SecretKey dsk = decT.decapsulate(enc.encapsulation());
                 Asserts.assertEQ(decT.providerName(), PROVIDER);
                 Asserts.assertTrue(Arrays.equals(sk.getEncoded(), dsk.getEncoded()));
+                Asserts.assertTrue(Arrays.equals(sk.getEncoded(),
+                        decT.decapsulate(enc.encapsulation()).getEncoded()));
+                Asserts.assertTrue(Arrays.equals(enc.key().getEncoded(),
+                        decT.decapsulate(enc.encapsulation()).getEncoded()));
 
                 Asserts.assertEQ(encT.encapsulationSize(), enc.encapsulation().length);
                 Asserts.assertEQ(encT.encapsulationSize(), decT.encapsulationSize());
                 Asserts.assertEQ(encT.secretSize(), enc.key().getEncoded().length);
                 Asserts.assertEQ(encT.secretSize(), decT.secretSize());
+                Asserts.assertEQ(decT.secretSize(), dsk.getEncoded().length);
+                Asserts.assertEQ(decT.secretSize(),
+                        decT.decapsulate(enc.encapsulation()).getEncoded().length);
+                Asserts.assertEQ(decT.decapsulate(enc.encapsulation()).getEncoded().length,
+                        enc.key().getEncoded().length);
 
                 KEM.Encapsulated enc3 = encT.encapsulate(0, encT.secretSize(), "AES");
                 KEM.Decapsulator decT1 = kem.newDecapsulator(kp.getPrivate());
@@ -155,8 +164,6 @@ public class KemTest {
         secretLen.test("X25519", null, 32, 32);
         secretLen.test("X448", null, 64, 56);
         secretLen.test("XDH", null, 32, 32);
-        secretLen.test("XDH", "X25519", 32, 32);
-        secretLen.test("XDH", "X448", 64, 56);
         try {
             secretLen.test("Ed25519", null, 32, 32);
         } catch (Exception e) {
@@ -190,16 +197,15 @@ public class KemTest {
             List<Future<KEM.Encapsulator>> futures = new ArrayList<>();
 
             for (int i = 0; i < THREAD_COUNT; i++) {
-                Callable<KEM.Encapsulator> task = () -> {
-                    return kem.newEncapsulator(kp.getPublic());
-                };
+                Callable<KEM.Encapsulator> task = () -> kem.newEncapsulator(kp.getPublic());
                 futures.add(cs.submit(task));
             }
 
             KEM.Decapsulator decT = kem.newDecapsulator(kp.getPrivate());
             for (Future<KEM.Encapsulator> future : futures) {
                 KEM.Encapsulated enc = future.get().encapsulate();
-                Asserts.assertTrue(Arrays.equals(decT.decapsulate(enc.encapsulation()).getEncoded(),
+                Asserts.assertTrue(Arrays.equals(
+                        decT.decapsulate(enc.encapsulation()).getEncoded(),
                         enc.key().getEncoded()));
             }
         } finally {
@@ -226,14 +232,13 @@ public class KemTest {
             List<Future<KEM.Encapsulated>> futures = new ArrayList<>();
             KEM.Encapsulator encT = kem.newEncapsulator(kp.getPublic());
             for (int i = 0; i < THREAD_COUNT; i++) {
-                Callable<KEM.Encapsulated> task = () -> {
-                    return encT.encapsulate();
-                };
+                Callable<KEM.Encapsulated> task = () -> encT.encapsulate();
                 futures.add(cs.submit(task));
             }
             KEM.Decapsulator decT = kem.newDecapsulator(kp.getPrivate());
             for (Future<KEM.Encapsulated> future : futures) {
-                Asserts.assertTrue(Arrays.equals(decT.decapsulate(future.get().encapsulation()).getEncoded(),
+                Asserts.assertTrue(Arrays.equals(
+                        decT.decapsulate(future.get().encapsulation()).getEncoded(),
                         future.get().key().getEncoded()));
             }
         } finally {
@@ -259,15 +264,14 @@ public class KemTest {
             CompletionService<KEM.Decapsulator> cs = new ExecutorCompletionService<>(executor);
             List<Future<KEM.Decapsulator>> futures = new ArrayList<>();
             for (int i = 0; i < THREAD_COUNT; i++) {
-                Callable<KEM.Decapsulator> task = () -> {
-                    return kem.newDecapsulator(kp.getPrivate());
-                };
+                Callable<KEM.Decapsulator> task = () -> kem.newDecapsulator(kp.getPrivate());
                 futures.add(cs.submit(task));
             }
 
             KEM.Encapsulated enc = kem.newEncapsulator(kp.getPublic()).encapsulate();
             for (Future<KEM.Decapsulator> decT : futures) {
-                Asserts.assertTrue(Arrays.equals(decT.get().decapsulate(enc.encapsulation()).getEncoded(),
+                Asserts.assertTrue(Arrays.equals(
+                        decT.get().decapsulate(enc.encapsulation()).getEncoded(),
                         enc.key().getEncoded()));
             }
         } finally {
@@ -297,9 +301,7 @@ public class KemTest {
             KEM.Decapsulator decT = kem.newDecapsulator(kp.getPrivate());
             List<Future<SecretKey>> futures = new ArrayList<>();
             for (int i = 0; i < THREAD_COUNT; i++) {
-                Callable<SecretKey> task = () -> {
-                    return decT.decapsulate(enc.encapsulation());
-                };
+                Callable<SecretKey> task = () -> decT.decapsulate(enc.encapsulation());
                 futures.add(cs.submit(task));
             }
             for (Future<SecretKey> future : futures) {

@@ -53,8 +53,6 @@ public class KemInterop extends PKCS11Test {
         test("X25519", null, p);
         test("X448", null, p);
         test("XDH", null, p);
-        test("XDH", "X25519", p);
-        test("XDH", "X448", p);
     }
 
     private static void test(String algo, String curveId, Provider p) throws Exception {
@@ -91,6 +89,11 @@ public class KemInterop extends PKCS11Test {
                 Asserts.assertEQ(encT.encapsulationSize(), decT.encapsulationSize());
                 Asserts.assertEQ(encT.secretSize(), enc.key().getEncoded().length);
                 Asserts.assertEQ(encT.secretSize(), decT.secretSize());
+                Asserts.assertEQ(decT.secretSize(), dsk.getEncoded().length);
+                Asserts.assertEQ(decT.secretSize(),
+                        decT.decapsulate(enc.encapsulation()).getEncoded().length);
+                Asserts.assertEQ(decT.decapsulate(enc.encapsulation()).getEncoded().length,
+                        enc.key().getEncoded().length);
 
                 KEM.Encapsulated enc3 = encT.encapsulate(0, encT.secretSize(), "AES");
                 KEM.Decapsulator decT1 = kem.newDecapsulator(kpr.getPrivate());
