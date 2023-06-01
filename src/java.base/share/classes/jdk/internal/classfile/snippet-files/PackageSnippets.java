@@ -29,10 +29,12 @@ import java.util.HashSet;
 import java.util.Set;
 
 import java.lang.reflect.AccessFlag;
+import java.util.ArrayDeque;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import jdk.internal.classfile.ClassElement;
 import jdk.internal.classfile.ClassModel;
 import jdk.internal.classfile.ClassTransform;
@@ -107,7 +109,7 @@ class PackageSnippets {
         ClassModel cm = Classfile.of().parse(bytes);
         Set<ClassDesc> dependencies =
               cm.elementStream()
-                .flatMap(ce -> ce instanceof MethodMethod mm ? mm.elementStream() : Stream.empty())
+                .flatMap(ce -> ce instanceof MethodModel mm ? mm.elementStream() : Stream.empty())
                 .flatMap(me -> me instanceof CodeModel com ? com.elementStream() : Stream.empty())
                 .<ClassDesc>mapMulti((xe, c) -> {
                     switch (xe) {
@@ -241,11 +243,11 @@ class PackageSnippets {
     byte[] classInstrumentation(ClassModel target, ClassModel instrumentor, Predicate<MethodModel> instrumentedMethodsFilter) {
         var instrumentorCodeMap = instrumentor.methods().stream()
                                               .filter(instrumentedMethodsFilter)
-                                              .collect(Collectors.toMap(mm -> mm.methodName().stringValue() + mm.methodType().stringValue(), mm -> mm.code().orElse(null)));
+                                              .collect(Collectors.toMap(mm -> mm.methodName().stringValue() + mm.methodType().stringValue(), mm -> mm.code().orElseThrow()));
         var targetFieldNames = target.fields().stream().map(f -> f.fieldName().stringValue()).collect(Collectors.toSet());
         var targetMethods = target.methods().stream().map(m -> m.methodName().stringValue() + m.methodType().stringValue()).collect(Collectors.toSet());
         var instrumentorClassRemapper = ClassRemapper.of(Map.of(instrumentor.thisClass().asSymbol(), target.thisClass().asSymbol()));
-        return target.transform(
+        return Classfile.of().transform(target,
                 ClassTransform.transformingMethods(
                         instrumentedMethodsFilter,
                         (mb, me) -> {
@@ -263,13 +265,13 @@ class PackageSnippets {
                                                 && mm.methodType().stringValue().equals(inv.type().stringValue())) {
 
                                                 //store stacked method parameters into locals
-                                                var storeStack = new LinkedList<StoreInstruction>();
+                                                var storeStack = new ArrayDeque<StoreInstruction>();
                                                 int slot = 0;
                                                 if (!mm.flags().has(AccessFlag.STATIC))
-                                                    storeStack.add(StoreInstruction.of(TypeKind.ReferenceType, slot++));
+                                                    storeStack.push(StoreInstruction.of(TypeKind.ReferenceType, slot++));
                                                 for (var pt : mm.methodTypeSymbol().parameterList()) {
                                                     var tk = TypeKind.from(pt);
-                                                    storeStack.addFirst(StoreInstruction.of(tk, slot));
+                                                    storeStack.push(StoreInstruction.of(tk, slot));
                                                     slot += tk.slotSize();
                                                 }
                                                 storeStack.forEach(codeBuilder::with);
