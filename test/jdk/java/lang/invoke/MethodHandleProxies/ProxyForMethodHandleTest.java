@@ -27,6 +27,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Arrays;
 
 import org.junit.jupiter.api.Test;
 
@@ -34,7 +35,7 @@ import org.junit.jupiter.api.Test;
  * @test
  * @summary test MethodHandleProxies that adds qualified export of sun.invoke
  * from java.base to a dynamic module
- * @run junit ProxyForMethodHandle
+ * @run junit ProxyForMethodHandleTest
  */
 public class ProxyForMethodHandleTest {
     /**
@@ -68,7 +69,8 @@ public class ProxyForMethodHandleTest {
         }
 
         try {
-            Constructor<?> cons = proxyClass.getConstructor(MethodHandles.Lookup.class, MethodHandle.class, MethodHandle.class);
+            Constructor<?> cons = proxyClass.getDeclaredConstructor(MethodHandles.Lookup.class,
+                    MethodHandle.class, MethodHandle.class);
             cons.newInstance(MethodHandles.lookup(), MethodHandles.zero(int.class), MethodHandles.zero(int.class));
             throw new RuntimeException("Expected IllegalAccessException: " + proxyClass);
         } catch (IllegalAccessException e) {

@@ -1660,6 +1660,11 @@ abstract class MethodHandleImpl {
             public Class<?>[] exceptionTypes(MethodHandle handle) {
                 return VarHandles.exceptionTypes(handle);
             }
+
+            @Override
+            public boolean isMethodHandleProxiesClass(Class<?> cls) {
+                return MethodHandleProxies.isWrapperClass(cls);
+            }
         });
     }
 

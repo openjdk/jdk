@@ -33,7 +33,6 @@ import java.lang.ref.SoftReference;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.UndeclaredThrowableException;
-import java.nio.file.Path;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
@@ -239,10 +238,11 @@ public class MethodHandleProxies {
 
     private record LocalMethodInfo(MethodTypeDesc desc, List<ClassDesc> thrown, String fieldName) {}
 
-    private record ProxyClassInfo(MethodHandle constructor, Lookup originalLookup) {}
+    private record ProxyClassInfo(MethodHandle constructor, Lookup originalLookup,
+                                  MethodHandle targetGetter) {}
 
     private static final ClassFileDumper DUMPER = ClassFileDumper.getInstance(
-            "jdk.invoke.MethodHandleProxies.dumpClassFiles", Path.of("DUMP_MH_PROXY_CLASSFILES"));
+            "jdk.invoke.MethodHandleProxies.dumpClassFiles", "DUMP_MH_PROXY_CLASSFILES");
 
     /*
      * A map from a given interface to the ProxyClassDefiner.
@@ -276,7 +276,7 @@ public class MethodHandleProxies {
 
             // generate a class file in the package of the dynamic module
             String pn = targetModule.getName();
-            String n = intfc.getName() + "$MHProxy";
+            String n = intfc.getName();
             int i = n.lastIndexOf('.');
             String cn = i > 0 ? pn + "." + n.substring(i+1) : pn + "." + n;
             ClassDesc proxyDesc = ClassDesc.of(cn);
@@ -295,13 +295,16 @@ public class MethodHandleProxies {
             }
 
             MethodHandle constructor;
+            MethodHandle targetGetter;
             try {
                 constructor = lookup.findConstructor(lookup.lookupClass(), MT_void_Lookup_MethodHandle_MethodHandle)
                         .asType(MT_Object_Lookup_MethodHandle_MethodHandle);
+                targetGetter = lookup.findGetter(lookup.lookupClass(), ORIGINAL_TARGET_NAME, MethodHandle.class)
+                        .asType(MT_MethodHandle_Object);
             } catch (Throwable ex) {
                 throw uncaughtException(ex);
             }
-            return new SoftReference<>(new ProxyClassInfo(constructor, lookup));
+            return new SoftReference<>(new ProxyClassInfo(constructor, lookup, targetGetter));
         }
     };
 
@@ -322,6 +325,7 @@ public class MethodHandleProxies {
     private static final MethodTypeDesc MTD_void_Throwable = MethodTypeDesc.of(CD_void, CD_Throwable);
     private static final MethodType MT_void_Lookup_MethodHandle_MethodHandle = methodType(void.class, Lookup.class, MethodHandle.class, MethodHandle.class);
     private static final MethodType MT_Object_Lookup_MethodHandle_MethodHandle = MT_void_Lookup_MethodHandle_MethodHandle.changeReturnType(Object.class);
+    private static final MethodType MT_MethodHandle_Object = methodType(MethodHandle.class, Object.class);
     private static final MethodTypeDesc MTD_void_Lookup_MethodHandle_MethodHandle = desc(MT_void_Lookup_MethodHandle_MethodHandle);
     private static final MethodTypeDesc MTD_void_Lookup_Class = MethodTypeDesc.of(CD_void, CD_MethodHandles_Lookup, CD_Class);
     private static final MethodTypeDesc MTD_MethodHandle_MethodType = MethodTypeDesc.of(CD_MethodHandle, CD_MethodType);
@@ -365,7 +369,7 @@ public class MethodHandleProxies {
                 // WrapperInstance.ensureOriginalLookup
                 cob.aload(1);
                 cob.constantInstruction(proxyDesc);
-                cob.invokestatic(CD_WrapperInstance, "ensureOriginalLookup", MTD_void_Lookup_Class, true);
+                cob.invokestatic(CD_WrapperInstance, "ensureOriginalLookup", MTD_void_Lookup_Class);
 
                 // keep original target
                 // this.originalTarget = originalHandle;
@@ -426,19 +430,20 @@ public class MethodHandleProxies {
      * @return true if the reference is not null and points to an object produced by {@code asInterfaceInstance}
      */
     public static boolean isWrapperInstance(Object x) {
+        return isWrapperClass(x.getClass());
+    }
+
+    static boolean isWrapperClass(Class<?> cls) {
         try {
-            return WRAPPER_INFOS.get(x.getClass()) != null;
+            return WRAPPER_TYPES.get(cls) != null;
         } catch (IllegalArgumentException ex) {
             return false;
         }
     }
 
-    record WrapperInfo(Class<?> iface, MethodHandle originalTargetMh) {
-    }
-
-    private static final ClassValue<WrapperInfo> WRAPPER_INFOS = new ClassValue<>() {
+    private static final ClassValue<Class<?>> WRAPPER_TYPES = new ClassValue<>() {
         @Override
-        protected WrapperInfo computeValue(Class<?> type) {
+        protected Class<?> computeValue(Class<?> type) {
             MethodHandle originalTypeField;
             try {
                 originalTypeField = new Lookup(type).findStaticGetter(type, ORIGINAL_TYPE_NAME, Class.class);
@@ -456,33 +461,15 @@ public class MethodHandleProxies {
             if (originalType == null)
                 return null;
 
-            ProxyClassInfo info;
             try {
-                info = getProxyClassInfo(originalType); // throws IAE
+                getProxyClassInfo(originalType); // throws IAE
             } catch (IllegalArgumentException ex) {
                 return null;
             }
 
-            if (info.originalLookup.lookupClass() != type)
-                return null;
-
-            MethodHandle originalTarget;
-            try {
-                originalTarget = info.originalLookup.findGetter(originalType, ORIGINAL_TARGET_NAME, MethodHandle.class);
-            } catch (NoSuchFieldException | IllegalAccessException e) {
-                return null;
-            }
-
-            return new WrapperInfo(originalType, originalTarget);
+            return originalType;
         }
     };
-
-    private static WrapperInfo asWrapperInfo(Object x) {
-        var t = WRAPPER_INFOS.get(x.getClass()); // throws IllegalArgumentException
-        if (t == null)
-            throw new IllegalArgumentException("not a wrapper instance: " + x);
-        return t;
-    }
 
     /**
      * Produces or recovers a target method handle which is behaviorally
@@ -494,7 +481,16 @@ public class MethodHandleProxies {
      * @throws IllegalArgumentException if the reference x is not to a wrapper instance
      */
     public static MethodHandle wrapperInstanceTarget(Object x) {
-        return asWrapperInfo(x).originalTargetMh;
+        if (!isWrapperInstance(x))
+            throw new IllegalArgumentException("not a wrapper instance: " + x);
+
+        var getter = getProxyClassInfo(WRAPPER_TYPES.get(x.getClass())).targetGetter;
+
+        try {
+            return (MethodHandle) getter.invokeExact(x);
+        } catch (Throwable ex) {
+            throw uncaughtException(ex);
+        }
     }
 
     /**
@@ -506,7 +502,10 @@ public class MethodHandleProxies {
      * @throws IllegalArgumentException if the reference x is not to a wrapper instance
      */
     public static Class<?> wrapperInstanceType(Object x) {
-        return asWrapperInfo(x).iface;
+        if (!isWrapperInstance(x))
+            throw new IllegalArgumentException("not a wrapper instance: " + x);
+
+        return WRAPPER_TYPES.get(x.getClass());
     }
 
     private static ClassDesc desc(Class<?> cl) {

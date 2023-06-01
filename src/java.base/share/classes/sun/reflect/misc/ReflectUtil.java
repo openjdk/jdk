@@ -26,10 +26,14 @@
 
 package sun.reflect.misc;
 
+import java.lang.invoke.MethodHandleProxies;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
+
+import jdk.internal.access.JavaLangInvokeAccess;
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.reflect.Reflection;
 import sun.invoke.WrapperInstance;
 import sun.security.util.SecurityConstants;
@@ -268,13 +272,15 @@ public final class ReflectUtil {
         return !Modifier.isPublic(cls.getModifiers());
     }
 
+    public static final JavaLangInvokeAccess JLIA = SharedSecrets.getJavaLangInvokeAccess();
+
     /**
      * Test if the given class is a method handle proxy class.
      * Such proxy classes may access certain java.base internal
      * packages exported to its dynamic module.
      */
     public static boolean isMethodHandleProxiesClass(Class<?> cls) {
-        return WrapperInstance.class.isAssignableFrom(cls);
+        return JLIA.isMethodHandleProxiesClass(cls);
     }
 
     /**
