@@ -54,17 +54,17 @@ public class SimpleResolverProviderImpl extends InetAddressResolverProvider {
             public Stream<InetAddress> lookupByName(String host, LookupPolicy lookupPolicy) throws UnknownHostException {
                 LOGGER.info("Looking-up addresses for '" + host + "'. Lookup characteristics:" +
                         Integer.toString(lookupPolicy.characteristics(), 2));
-                LOOKUP_HISTORY.add(lookupPolicy);
-                LAST_LOOKUP_TIMESTAMP = System.nanoTime();
-                if (unreachableServer) {
-                    throw new UnknownHostException("unreachableServer");
-                }
                 if (blocker != null) {
                     try {
                         blocker.await();
                     } catch (InterruptedException e) {
                         throw new RuntimeException(e);
                     }
+                }
+                LOOKUP_HISTORY.add(lookupPolicy);
+                LAST_LOOKUP_TIMESTAMP = System.nanoTime();
+                if (unreachableServer) {
+                    throw new UnknownHostException("unreachableServer");
                 }
                 return registry.lookupHost(host, lookupPolicy);
             }
