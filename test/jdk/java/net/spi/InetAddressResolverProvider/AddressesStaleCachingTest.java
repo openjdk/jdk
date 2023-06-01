@@ -88,7 +88,7 @@ public class AddressesStaleCachingTest {
     @Test
     public void testOnlyOneThreadIsBlockedDuringRefresh() throws Exception {
         long timeout = System.nanoTime() + TimeUnit.SECONDS.toNanos(12);
-        doLookup(false, Long.MAX_VALUE);
+        doLookup(false, timeout);
         Thread.sleep(9000);
 
         CountDownLatch blockServer = new CountDownLatch(1);
