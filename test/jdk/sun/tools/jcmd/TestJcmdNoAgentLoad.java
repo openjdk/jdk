@@ -55,20 +55,6 @@ public class TestJcmdNoAgentLoad {
         OutputAnalyzer output = JcmdBase.jcmd(jcmdArgs);
 
         assertEquals(output.getExitValue(), 0);
-        verifyOutput(output);
-    }
-
-    private static void verifyOutput(OutputAnalyzer output) throws IOException {
-        boolean seenPattern = false;
-        List<String> lines = output.asLines();
-        for (String line: lines) {
-            if (line.startsWith(PTRN)) {
-                seenPattern = true;
-                System.out.println("Found output line with the expected error message:\n" + line);
-            }
-        }
-        if (!seenPattern) {
-            throw new RuntimeException("Not found expected error message in output");
-        }
+        output.shouldContain(PTRN);
     }
 }
