@@ -2844,7 +2844,7 @@ instruct vencode_iso_array(iRegP_R12 src, iRegP_R11 dst, iRegI_R13 len, iRegI_R1
   effect(TEMP_DEF result, USE_KILL src, USE_KILL dst, USE_KILL len,
          TEMP v0, TEMP v1, TEMP v2, TEMP v3, TEMP tmp);
 
-  format %{ "Encode ISO array $src, $dst, $len -> $result # KILL $src, $dst, $len, $tmp, V0-V3"%}
+  format %{ "Encode ISO array $src, $dst, $len -> $result # KILL $src, $dst, $len, $tmp, V0-V3" %}
   ins_encode %{
     __ encode_iso_array_v($src$$Register, $dst$$Register, $len$$Register,
                           $result$$Register, $tmp$$Register, false /* ascii */);
@@ -2860,7 +2860,7 @@ instruct vencode_ascii_array(iRegP_R12 src, iRegP_R11 dst, iRegI_R13 len, iRegI_
   effect(TEMP_DEF result, USE_KILL src, USE_KILL dst, USE_KILL len,
          TEMP v0, TEMP v1, TEMP v2, TEMP v3, TEMP tmp);
 
-  format %{ "Encode ASCII array $src, $dst, $len -> $result # KILL $src, $dst, $len, $tmp, V0-V3"%}
+  format %{ "Encode ASCII array $src, $dst, $len -> $result # KILL $src, $dst, $len, $tmp, V0-V3" %}
   ins_encode %{
     __ encode_iso_array_v($src$$Register, $dst$$Register, $len$$Register,
                           $result$$Register, $tmp$$Register, true /* ascii */);
