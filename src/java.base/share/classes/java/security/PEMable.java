@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,35 +26,7 @@
 package java.security;
 
 /**
- * <p>A public key. This interface contains no methods or constants.
- * It merely serves to group (and provide type safety for) all public key
- * interfaces.
- *
- * Note: The specialized public key interfaces extend this interface.
- * See, for example, the DSAPublicKey interface in
- * {@code java.security.interfaces}.
- *
- * @since 1.1
- * @see Key
- * @see PrivateKey
- * @see java.security.cert.Certificate
- * @see Signature#initVerify
- * @see java.security.interfaces.DSAPublicKey
- * @see java.security.interfaces.RSAPublicKey
- *
+ * This interface identifies security classes that can be returned by PEM
  */
-
-public interface PublicKey extends Key, PEMable {
-    // Declare serialVersionUID to be compatible with JDK1.1
-    /**
-     * The class fingerprint that is set to indicate serialization
-     * compatibility with a previous version of the class.
-     *
-     * @deprecated A {@code serialVersionUID} field in an interface is
-     * ineffectual. Do not use; no replacement.
-     */
-    @Deprecated
-    @SuppressWarnings("serial")
-    @java.io.Serial
-    long serialVersionUID = 7187392471159151072L;
+public interface PEMable {
 }

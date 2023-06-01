@@ -34,7 +34,6 @@ import java.io.IOException;
 import java.security.*;
 import java.security.spec.*;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.List;
 
 /**
@@ -83,7 +82,7 @@ import java.util.List;
  *
  */
 
-public class EncryptedPrivateKeyInfo {
+public class EncryptedPrivateKeyInfo implements PEMable {
 
     // The "encryptionAlgorithm" is stored in either the algid or
     // the params field. Precisely, if this object is created by
@@ -415,7 +414,6 @@ public class EncryptedPrivateKeyInfo {
     public PrivateKey getKey(char[] password) throws IOException {
         return getKey(password, null);
     }
-
     /**
      * Return a PrivateKey from the encrypted data with a KeyFactory from the
      * given Provider.

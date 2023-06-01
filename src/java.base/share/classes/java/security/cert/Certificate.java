@@ -25,14 +25,8 @@
 
 package java.security.cert;
 
+import java.security.*;
 import java.util.Arrays;
-
-import java.security.Provider;
-import java.security.PublicKey;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.InvalidKeyException;
-import java.security.SignatureException;
 
 import sun.security.x509.X509CertImpl;
 
@@ -60,7 +54,7 @@ import sun.security.x509.X509CertImpl;
  * @since 1.2
  */
 
-public abstract class Certificate implements java.io.Serializable {
+public abstract class Certificate implements java.io.Serializable, PEMable {
 
     @java.io.Serial
     private static final long serialVersionUID = -3585440601605666277L;

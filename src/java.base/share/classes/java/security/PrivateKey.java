@@ -57,7 +57,7 @@ package java.security;
  * @since 1.1
  */
 
-public interface PrivateKey extends Key, javax.security.auth.Destroyable {
+public interface PrivateKey extends Key, javax.security.auth.Destroyable, PEMable {
 
     // Declare serialVersionUID to be compatible with JDK1.1
     /**

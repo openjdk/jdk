@@ -25,6 +25,8 @@
 
 package java.security.cert;
 
+import java.security.PEMable;
+
 /**
  * This class is an abstraction of certificate revocation lists (CRLs) that
  * have different formats but important common uses. For example, all CRLs
@@ -43,7 +45,7 @@ package java.security.cert;
  * @since 1.2
  */
 
-public abstract class CRL {
+public abstract class CRL implements PEMable {
 
     // the CRL type
     private final String type;

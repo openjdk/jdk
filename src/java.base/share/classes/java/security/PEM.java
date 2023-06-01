@@ -525,7 +525,7 @@ public class PEM {
          * @return an Object that is contained in the PEM data
          * @throws IOException the io exception
          */
-        public Object decode(String str) throws IOException {
+        public PEMable decode(String str) throws IOException {
             return decode(new StringReader(str));
         }
 
@@ -536,7 +536,7 @@ public class PEM {
          * @return an Object that is contained in the PEM data
          * @throws IOException the io exception
          */
-        public Object decode(Reader reader) throws IOException {
+        public PEMable decode(Reader reader) throws IOException {
             BufferedReader br = new BufferedReader(reader);
             StringBuilder sb = new StringBuilder(64);
             char c;
@@ -614,7 +614,7 @@ public class PEM {
          * @return the object
          * @throws IOException the io exception
          */
-        protected Object decode(String data, String header, String footer) throws IOException {
+        protected PEMable decode(String data, String header, String footer) throws IOException {
             KeyType keyType;
 
             if (header.equalsIgnoreCase(Pem.PUBHEADER) ||
@@ -640,7 +640,7 @@ public class PEM {
          * @return the t
          * @throws IOException the io exception
          */
-        public <T> T decode(String str, Class <T> tClass) throws IOException {
+        public <T extends PEMable> T decode(String str, Class <T> tClass) throws IOException {
             return tClass.cast(decode(new StringReader(str)));
         }
 
@@ -653,7 +653,7 @@ public class PEM {
          * @return the t
          * @throws IOException the io exception
          */
-        public <T> T decode(Reader reader, Class <T> tClass) throws IOException {
+        public <T extends PEMable> T decode(Reader reader, Class <T> tClass) throws IOException {
             return tClass.cast(decode(reader));
         }
 
@@ -689,7 +689,7 @@ public class PEM {
         private OpenSSLDecoder() {super();}
 
         @Override
-        protected Object decode(String data, String header, String footer) throws IOException {
+        protected PEMable decode(String data, String header, String footer) throws IOException {
             KeyType keyType;
             KeyFactory kf;
             if (header.startsWith(Pem.PKCS1HEADER) && footer.equalsIgnoreCase(Pem.PKCS1FOOTER)) {
@@ -728,7 +728,7 @@ public class PEM {
             password = withPassword;
         }
 
-        protected Object decode(String data, String header, String footer) throws IOException {
+        protected PEMable decode(String data, String header, String footer) throws IOException {
             KeyType keyType;
 
             if (header.equalsIgnoreCase(Pem.PUBHEADER) && footer.equalsIgnoreCase(Pem.PUBFOOTER)) {
