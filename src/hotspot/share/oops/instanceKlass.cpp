@@ -2511,7 +2511,9 @@ void InstanceKlass::metaspace_pointers_do(MetaspaceClosure* it) {
   if (itable_length() > 0) {
     itableOffsetEntry* ioe = (itableOffsetEntry*)start_of_itable();
     int method_table_offset_in_words = ioe->offset()/wordSize;
-    int nof_interfaces = (method_table_offset_in_words - itable_offset_in_words())
+    int itable_offset_in_words = (int)(start_of_itable() - (intptr_t*)this);
+
+    int nof_interfaces = (method_table_offset_in_words - itable_offset_in_words)
                          / itableOffsetEntry::size();
 
     for (int i = 0; i < nof_interfaces; i ++, ioe ++) {
@@ -2592,6 +2594,18 @@ void InstanceKlass::remove_unshareable_info() {
   init_shared_package_entry();
   _dep_context_last_cleaned = 0;
   _init_monitor = nullptr;
+
+  remove_unshareable_flags();
+}
+
+void InstanceKlass::remove_unshareable_flags() {
+  // clear all the flags/stats that shouldn't be in the archived version
+  assert(!is_scratch_class(), "must be");
+  assert(!has_been_redefined(), "must be");
+#if INCLUDE_JVMTI
+  set_is_being_redefined(false);
+#endif
+  set_has_resolved_methods(false);
 }
 
 void InstanceKlass::remove_java_mirror() {

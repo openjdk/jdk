@@ -27,7 +27,6 @@ import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
@@ -458,13 +457,17 @@ public abstract class CanonicalizerBase extends CanonicalizerSpi {
         } while(true);
     }
 
-    protected int isVisibleDO(Node currentNode, int level) {
+    protected int isVisibleDO(Node currentNode, int level)
+            throws CanonicalizationException {
         if (nodeFilter != null) {
-            Iterator<NodeFilter> it = nodeFilter.iterator();
-            while (it.hasNext()) {
-                int i = it.next().isNodeIncludeDO(currentNode, level);
-                if (i != 1) {
-                    return i;
+            for (NodeFilter filter : nodeFilter) {
+                try {
+                    int i = filter.isNodeIncludeDO(currentNode, level);
+                    if (i != 1) {
+                        return i;
+                    }
+                } catch (Exception e) {
+                    throw new CanonicalizationException(e);
                 }
             }
         }
@@ -474,13 +477,17 @@ public abstract class CanonicalizerBase extends CanonicalizerSpi {
         return 1;
     }
 
-    protected int isVisibleInt(Node currentNode) {
+    protected int isVisibleInt(Node currentNode)
+            throws CanonicalizationException {
         if (nodeFilter != null) {
-            Iterator<NodeFilter> it = nodeFilter.iterator();
-            while (it.hasNext()) {
-                int i = it.next().isNodeInclude(currentNode);
-                if (i != 1) {
-                    return i;
+            for (NodeFilter filter : nodeFilter) {
+                try {
+                    int i = filter.isNodeInclude(currentNode);
+                    if (i != 1) {
+                        return i;
+                    }
+                } catch (Exception e) {
+                    throw new CanonicalizationException(e);
                 }
             }
         }
@@ -490,12 +497,15 @@ public abstract class CanonicalizerBase extends CanonicalizerSpi {
         return 1;
     }
 
-    protected boolean isVisible(Node currentNode) {
+    protected boolean isVisible(Node currentNode) throws CanonicalizationException {
         if (nodeFilter != null) {
-            Iterator<NodeFilter> it = nodeFilter.iterator();
-            while (it.hasNext()) {
-                if (it.next().isNodeInclude(currentNode) != 1) {
-                    return false;
+            for (NodeFilter filter : nodeFilter) {
+                try {
+                    if (filter.isNodeInclude(currentNode) != 1) {
+                        return false;
+                    }
+                } catch (Exception e) {
+                    throw new CanonicalizationException(e);
                 }
             }
         }

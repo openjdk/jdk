@@ -30,6 +30,7 @@
 #include "memory/metadataFactory.hpp"
 #include "oops/constantPool.hpp"
 #include "oops/symbol.hpp"
+#include "runtime/atomic.hpp"
 
 inline Symbol* FieldInfo::name(ConstantPool* cp) const {
   int index = _name_index;
@@ -97,23 +98,23 @@ inline FieldInfoReader::FieldInfoReader(const Array<u1>* fi)
 
 inline void FieldInfoReader::read_field_info(FieldInfo& fi) {
   fi._index = _next_index++;
-  fi._name_index = next_uint();
-  fi._signature_index = next_uint();
+  fi._name_index = checked_cast<u2>(next_uint());
+  fi._signature_index = checked_cast<u2>(next_uint());
   fi._offset = next_uint();
   fi._access_flags = AccessFlags(next_uint());
   fi._field_flags = FieldInfo::FieldFlags(next_uint());
   if (fi._field_flags.is_initialized()) {
-    fi._initializer_index = next_uint();
+    fi._initializer_index = checked_cast<u2>(next_uint());
   } else {
     fi._initializer_index = 0;
   }
   if (fi._field_flags.is_generic()) {
-    fi._generic_signature_index = next_uint();
+    fi._generic_signature_index = checked_cast<u2>(next_uint());
   } else {
     fi._generic_signature_index = 0;
   }
   if (fi._field_flags.is_contended()) {
-    fi._contention_group = next_uint();
+    fi._contention_group = checked_cast<u2>(next_uint());
   } else {
     fi._contention_group = 0;
   }
@@ -151,23 +152,11 @@ inline FieldInfoReader& FieldInfoReader::set_position_and_next_index(int positio
 }
 
 inline void FieldStatus::atomic_set_bits(u1& flags, u1 mask) {
-  // Atomically update the flags with the bits given
-  u1 old_flags, new_flags, witness;
-  do {
-    old_flags = flags;
-    new_flags = old_flags | mask;
-    witness = Atomic::cmpxchg(&flags, old_flags, new_flags);
-  } while (witness != old_flags);
+  Atomic::fetch_then_or(&flags, mask);
 }
 
 inline void FieldStatus::atomic_clear_bits(u1& flags, u1 mask) {
-  // Atomically update the flags with the bits given
-  u1 old_flags, new_flags, witness;
-  do {
-    old_flags = flags;
-    new_flags = old_flags & ~mask;
-    witness = Atomic::cmpxchg(&flags, old_flags, new_flags);
-  } while (witness != old_flags);
+  Atomic::fetch_then_and(&flags, (u1)(~mask));
 }
 
 inline void FieldStatus::update_flag(FieldStatusBitPosition pos, bool z) {

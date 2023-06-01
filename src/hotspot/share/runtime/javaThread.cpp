@@ -70,6 +70,7 @@
 #include "runtime/javaCalls.hpp"
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
+#include "runtime/lockStack.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/osThread.hpp"
@@ -490,8 +491,9 @@ JavaThread::JavaThread() :
 
   _class_to_be_initialized(nullptr),
 
-  _SleepEvent(ParkEvent::Allocate(this))
-{
+  _SleepEvent(ParkEvent::Allocate(this)),
+
+  _lock_stack(this) {
   set_jni_functions(jni_functions());
 
 #if INCLUDE_JVMCI
@@ -741,8 +743,7 @@ static void ensure_join(JavaThread* thread) {
   // Clear the native thread instance - this makes isAlive return false and allows the join()
   // to complete once we've done the notify_all below. Needs a release() to obey Java Memory Model
   // requirements.
-  OrderAccess::release();
-  java_lang_Thread::set_thread(threadObj(), nullptr);
+  java_lang_Thread::release_set_thread(threadObj(), nullptr);
   lock.notify_all(thread);
   // Ignore pending exception, since we are exiting anyway
   thread->clear_pending_exception();
@@ -994,6 +995,7 @@ JavaThread* JavaThread::active() {
 }
 
 bool JavaThread::is_lock_owned(address adr) const {
+  assert(LockingMode != LM_LIGHTWEIGHT, "should not be called with new lightweight locking");
   if (Thread::is_lock_owned(adr)) return true;
 
   for (MonitorChunk* chunk = monitor_chunks(); chunk != nullptr; chunk = chunk->next()) {
@@ -1097,9 +1099,12 @@ void JavaThread::install_async_exception(AsyncExceptionHandshake* aeh) {
   // for AbortVMOnException flag
   Exceptions::debug_check_abort(exception->klass()->external_name());
 
-  // Interrupt thread so it will wake up from a potential wait()/sleep()/park()
-  java_lang_Thread::set_interrupted(threadObj(), true);
-  this->interrupt();
+  oop vt_oop = vthread();
+  if (vt_oop == nullptr || !vt_oop->is_a(vmClasses::BaseVirtualThread_klass())) {
+    // Interrupt thread so it will wake up from a potential wait()/sleep()/park()
+    java_lang_Thread::set_interrupted(threadObj(), true);
+    this->interrupt();
+  }
 }
 
 class InstallAsyncExceptionHandshake : public HandshakeClosure {
@@ -1387,6 +1392,10 @@ void JavaThread::oops_do_no_frames(OopClosure* f, CodeBlobClosure* cf) {
     f->do_oop((oop*)entry->chunk_addr());
     entry = entry->parent();
   }
+
+  if (LockingMode == LM_LIGHTWEIGHT) {
+    lock_stack().oops_do(f);
+  }
 }
 
 void JavaThread::oops_do_frames(OopClosure* f, CodeBlobClosure* cf) {
@@ -1658,7 +1667,6 @@ void JavaThread::prepare(jobject jni_thread, ThreadPriority prio) {
   assert(InstanceKlass::cast(thread_oop->klass())->is_linked(),
          "must be initialized");
   set_threadOopHandles(thread_oop());
-  java_lang_Thread::set_thread(thread_oop(), this);
 
   if (prio == NoPriority) {
     prio = java_lang_Thread::priority(thread_oop());
@@ -1674,6 +1682,11 @@ void JavaThread::prepare(jobject jni_thread, ThreadPriority prio) {
   // added to the Threads list for if a GC happens, then the java_thread oop
   // will not be visited by GC.
   Threads::add(this);
+  // Publish the JavaThread* in java.lang.Thread after the JavaThread* is
+  // on a ThreadsList. We don't want to wait for the release when the
+  // Theads_lock is dropped somewhere in the caller since the JavaThread*
+  // is already visible to JVM/TI via the ThreadsList.
+  java_lang_Thread::release_set_thread(thread_oop(), this);
 }
 
 oop JavaThread::current_park_blocker() {
@@ -2111,9 +2124,6 @@ void JavaThread::start_internal_daemon(JavaThread* current, JavaThread* target,
   MutexLocker mu(current, Threads_lock);
 
   // Initialize the fields of the thread_oop first.
-
-  java_lang_Thread::set_thread(thread_oop(), target); // isAlive == true now
-
   if (prio != NoPriority) {
     java_lang_Thread::set_priority(thread_oop(), prio);
     // Note: we don't call os::set_priority here. Possibly we should,
@@ -2126,6 +2136,11 @@ void JavaThread::start_internal_daemon(JavaThread* current, JavaThread* target,
   target->set_threadOopHandles(thread_oop());
 
   Threads::add(target); // target is now visible for safepoint/handshake
+  // Publish the JavaThread* in java.lang.Thread after the JavaThread* is
+  // on a ThreadsList. We don't want to wait for the release when the
+  // Theads_lock is dropped when the 'mu' destructor is run since the
+  // JavaThread* is already visible to JVM/TI via the ThreadsList.
+  java_lang_Thread::release_set_thread(thread_oop(), target); // isAlive == true now
   Thread::start(target);
 }
 

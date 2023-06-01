@@ -187,7 +187,7 @@ public class TestLinuxAArch64CallArranger extends CallArrangerTestBase {
                     bufferLoad(8, long.class), vmStore(r1, long.class),
             }},
             // struct s { float a; /* padding */ double b };
-            { MemoryLayout.structLayout(C_FLOAT, MemoryLayout.paddingLayout(32), C_DOUBLE),
+            { MemoryLayout.structLayout(C_FLOAT, MemoryLayout.paddingLayout(4), C_DOUBLE),
               new Binding[] {
                 dup(),
                 // s.a

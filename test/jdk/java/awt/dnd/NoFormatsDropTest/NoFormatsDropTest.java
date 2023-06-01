@@ -65,8 +65,8 @@ import java.lang.reflect.InvocationTargetException;
 public class NoFormatsDropTest implements AWTEventListener {
 
     Frame frame;
-    DragSourcePanel dragSourcePanel;
-    DropTargetPanel dropTargetPanel;
+    volatile DragSourcePanel dragSourcePanel;
+    volatile DropTargetPanel dropTargetPanel;
 
     static final int FRAME_ACTIVATION_TIMEOUT = 1000;
     static final int DROP_COMPLETION_TIMEOUT = 1000;
@@ -103,7 +103,6 @@ public class NoFormatsDropTest implements AWTEventListener {
             InvocationTargetException {
         try {
             Robot robot = new Robot();
-            robot.setAutoWaitForIdle(true);
             robot.delay(FRAME_ACTIVATION_TIMEOUT);
 
             final Point srcPoint = dragSourcePanel.getLocationOnScreen();
@@ -134,6 +133,7 @@ public class NoFormatsDropTest implements AWTEventListener {
                 robot.mouseMove(curPoint.x, curPoint.y);
                 robot.delay(100);
             }
+            robot.waitForIdle();
             robot.keyRelease(KeyEvent.VK_CONTROL);
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
 
@@ -244,7 +244,7 @@ class TestTransferable implements Transferable {
 class DropTargetPanel extends Panel implements DropTargetListener {
 
     final Dimension preferredDimension = new Dimension(200, 100);
-    boolean passed = false;
+    volatile boolean passed = false;
 
     public DropTargetPanel() {
         setDropTarget(new DropTarget(this, this));
