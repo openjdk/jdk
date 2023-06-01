@@ -37,48 +37,48 @@ public class TestWrongPredicateOrder {
     static int iFld = 0;
     static int iFld2 = 34;
     static int iArr[] = new int[1005];
-    static int iArr2[] = new int[100000];
+    static int iArr2[] = new int[2];
 
 
     public static void main(String[] strArr) {
-        // Warmup without hitting Profiled Loop Predicate for range check
+        // We will keep hitting the Profiled Loop Predicate for RC1 (Integer.MAX_VALUE - 1 - 3 > 1005) such that we will
+        // not emit the Profile Loop Parse Predicate anymore. After that, we will also keep hitting the Loop Limit Check
+        // Predicate (Interger.MAX_VALUE - 1 > Integer.MAX_VALUE - 2) such that we will also not emit the Loop Limit Check
+        // Parse Predicate anymore. As a result, we'll only emit the Loop Parse Predicate in the next re-compilation.
+        // In the next re-compilation, we'll hoist IC1 as Loop Predicate and IC2 as Profiled Loop Predicate.
+        // They have a data dependency between them but this is normally okay because Profiled Loop Predicates are below
+        // Loop Predicates in the graph. But due to the flipped order of Parse Predicates in this bug, we create the
+        // Hoisted Predicates in the wrong order and we end up with a bad graph and assert.
         for (int i = 0; i < 10000; i++) {
             flag = !flag;
-            iFld = 0;
             test();
-        }
-
-        // Constantly hitting Profiled Loop Predicate for range check -> re-compilation without
-        for (int i = 0; i < 10000; i++) {
-            try {
-                iFld = 1000; // Ensures out of bounds access to hit Profiled Loop Predicate
-                flag = !flag;
-                test();
-            } catch (Exception e) {
-                // Expected
-            }
         }
     }
 
     public static void test() {
-        // Ensure to emit Loop Limit Check Predicate which is hit too often -> no Loop Limit Check Parse Predicate is added in re-compilation anymore
+        // Ensure to emit Loop Limit Check Predicate which is hit too often
+        // -> no Loop Limit Check Parse Predicate is added in re-compilation anymore
         int limit = flag ? Integer.MAX_VALUE - 1 : 1000;
 
         int i = 0;
+        // Loop Limit Check Predicate: limit <= Integer.MAX_VALUE - stride + 1 = Integer.MAX_VALUE - 2
         while (i < limit) {
             i += 3;
-            iArr2[0] = 1; // Invariant check hoisted as Loop Predicate
+            // Invariant check hoisted as Loop Predicate
+            iArr2[iFld] = 1; // (IC1)
 
             if (flag) {
                 // Early exit -> enables Profiled Loop Predicate creation below
                 return;
             }
 
-            // Data dependency on Loop Predicate for "iArr2[0] = 1", we need to hoist this (invariant) check with a Profiled Loop Predicate
-            iArr2[1] = 5;
+            // Invariant check hoisted as Profiled Loop Predicate
+            // Data dependency on Loop Predicate for "iArr2[0] = 1"
+            iArr2[1] = 5; // (IC2)
 
-            // Profiled Loop Predicate for range check hit too much -> no Profiled Parse Predicate is added in re-compilation anymore
-            iArr[i + iFld] = 34;
+            // Profiled Loop Predicate for range check hit too much -> no Profiled Loop Parse Predicate is added in
+            // re-compilation anymore
+            iArr[i] = 34; // (RC1)
 
             if (iFld2 == 5555) {
                 i++; // UCT -> ensures to emit Parse Predicates twice with an If in between that is folded after parsing
