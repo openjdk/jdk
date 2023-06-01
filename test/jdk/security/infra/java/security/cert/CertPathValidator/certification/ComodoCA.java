@@ -21,7 +21,7 @@
  * questions.
  */
 
- /*
+/*
  * @test id=OCSP
  * @bug 8189131
  * @summary Interoperability tests with Comodo RSA, ECC, userTrust RSA, and

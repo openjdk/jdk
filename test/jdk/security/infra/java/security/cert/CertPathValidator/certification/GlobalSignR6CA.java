@@ -21,7 +21,7 @@
  * questions.
  */
 
- /*
+/*
  * @test id=OCSP
  * @bug 8216577 8249176
  * @summary Interoperability tests with GlobalSign R6 CA

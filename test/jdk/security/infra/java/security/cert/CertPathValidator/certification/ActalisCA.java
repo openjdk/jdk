@@ -45,7 +45,7 @@ public class ActalisCA {
 
         // CN=Actalis Authentication Root CA, O=Actalis S.p.A./03358520967, L=Milan, C=IT
         caInterop.validate("actalisauthenticationrootca [jdk]",
-                "https://ssltest-active.actalis.it/",
-                "https://ssltest-revoked.actalis.it/");
+                "https://ssltest-active.actalis.it",
+                "https://ssltest-revoked.actalis.it");
     }
 }

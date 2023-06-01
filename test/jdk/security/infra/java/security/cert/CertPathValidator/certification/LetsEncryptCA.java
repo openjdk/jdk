@@ -31,13 +31,13 @@
  */
 public class LetsEncryptCA {
 
-     public static void main(String[] args) throws Exception {
+    public static void main(String[] args) throws Exception {
 
-         CAInterop caInterop = new CAInterop(args[0]);
+        CAInterop caInterop = new CAInterop(args[0]);
 
-         // CN=ISRG Root X1, O=Internet Security Research Group, C=US
-         caInterop.validate("letsencryptisrgx1 [jdk]",
-                 "https://valid-isrgrootx1.letsencrypt.org",
-                 "https://revoked-isrgrootx1.letsencrypt.org");
-     }
+        // CN=ISRG Root X1, O=Internet Security Research Group, C=US
+        caInterop.validate("letsencryptisrgx1 [jdk]",
+                "https://valid-isrgrootx1.letsencrypt.org",
+                "https://revoked-isrgrootx1.letsencrypt.org");
+    }
 }

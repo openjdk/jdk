@@ -51,22 +51,22 @@ public class AmazonCA {
 
         // CN=Amazon Root CA 1, O=Amazon, C=US
         caInterop.validate("amazonrootca1 [jdk]",
-                "https://valid.rootca1.demo.amazontrust.com/",
-                "https://revoked.rootca1.demo.amazontrust.com/");
+                "https://valid.rootca1.demo.amazontrust.com",
+                "https://revoked.rootca1.demo.amazontrust.com");
 
         // CN=Amazon Root CA 2, O=Amazon, C=US
         caInterop.validate("amazonrootca2 [jdk]",
-                "https://valid.rootca2.demo.amazontrust.com/",
-                "https://revoked.rootca2.demo.amazontrust.com/");
+                "https://valid.rootca2.demo.amazontrust.com",
+                "https://revoked.rootca2.demo.amazontrust.com");
 
         // CN=Amazon Root CA 3, O=Amazon, C=US
         caInterop.validate("amazonrootca3 [jdk]",
-                "https://valid.rootca3.demo.amazontrust.com/",
-                "https://revoked.rootca3.demo.amazontrust.com/");
+                "https://valid.rootca3.demo.amazontrust.com",
+                "https://revoked.rootca3.demo.amazontrust.com");
 
         // CN=Amazon Root CA 4, O=Amazon, C=US
         caInterop.validate("amazonrootca4 [jdk]",
-                "https://valid.rootca4.demo.amazontrust.com/",
-                "https://revoked.rootca4.demo.amazontrust.com/");
+                "https://valid.rootca4.demo.amazontrust.com",
+                "https://revoked.rootca4.demo.amazontrust.com");
     }
 }

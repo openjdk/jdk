@@ -21,7 +21,7 @@
  * questions.
  */
 
- /*
+/*
  * @test id=OCSP
  * @bug 8189131
  * @summary Interoperability tests with Buypass Class 2 and Class 3 CA
@@ -64,7 +64,7 @@ public class BuypassCA {
                 "https://revoked.evident.ca23.ssl.buypass.no");
 
         caInterop.validate("buypassclass3ca [jdk]",
-                "https://valid.businessplus.ca23.ssl.buypass.n",
+                "https://valid.businessplus.ca23.ssl.buypass.no",
                 "https://revoked.businessplus.ca23.ssl.buypass.no");
     }
 }

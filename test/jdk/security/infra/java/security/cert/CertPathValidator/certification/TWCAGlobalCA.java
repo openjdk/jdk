@@ -46,7 +46,7 @@ public class TWCAGlobalCA {
 
         // CN=TWCA Global Root CA, OU=Root CA, O=TAIWAN-CA, C=TW
         caInterop.validate("twcaglobalrootca [jdk]",
-                "hhttps://evssldemo6.twca.com.tw",
+                "https://evssldemo6.twca.com.tw",
                 "https://evssldemo7.twca.com.tw");
     }
 }
