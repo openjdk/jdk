@@ -43,7 +43,8 @@ import jdk.test.lib.Utils;
 
 public class TestVectorMaskTrueCount {
     private static final VectorSpecies<Float> SPECIES_F = FloatVector.SPECIES_64;
-    private static final VectorSpecies<Integer> SPECIES_I = IntVector.SPECIES_PREFERRED;
+    private static final VectorSpecies<Double> SPECIES_D = DoubleVector.SPECIES_128;
+    private static final VectorSpecies<Integer> SPECIES_I = IntVector.SPECIES_128;
     private static final int LENGTH = 1024;
     private static final Random RD = new Random();
     private static boolean[] ba;
@@ -58,26 +59,11 @@ public class TestVectorMaskTrueCount {
         }
     }
 
-    static int maskAndTrueCountFloat(boolean[] a, boolean[] b, int idx) {
+    static int maskAndTrueCount(boolean[] a, boolean[] b, int idx, int SPECIES_length) {
         int trueCount = 0;
-        boolean[] c = new boolean[SPECIES_F.length()];
+        boolean[] c = new boolean[SPECIES_length];
 
-        for (int i = idx; i < idx + SPECIES_F.length(); i++) {
-            c[i - idx] = a[i] & b[i];
-        }
-
-        for (int i = 0; i < c.length; i++) {
-            trueCount += c[i] ? 1 : 0;
-        }
-
-        return trueCount;
-    }
-
-    static int maskAndTrueCountInteger(boolean[] a, boolean[] b, int idx) {
-        int trueCount = 0;
-        boolean[] c = new boolean[SPECIES_I.length()];
-
-        for (int i = idx; i < idx + SPECIES_I.length(); i++) {
+        for (int i = idx; i < idx + SPECIES_length; i++) {
             c[i - idx] = a[i] & b[i];
         }
 
@@ -90,13 +76,19 @@ public class TestVectorMaskTrueCount {
 
     static void assertArrayEqualsFloat(int[] r, boolean[] a, boolean[] b) {
         for (int i = 0; i < a.length; i += SPECIES_F.length()) {
-            Asserts.assertEquals(r[i], maskAndTrueCountFloat(a, b, i));
+            Asserts.assertEquals(r[i], maskAndTrueCount(a, b, i, SPECIES_F.length()));
+        }
+    }
+
+    static void assertArrayEqualsDouble(int[] r, boolean[] a, boolean[] b) {
+        for (int i = 0; i < a.length; i += SPECIES_D.length()) {
+            Asserts.assertEquals(r[i], maskAndTrueCount(a, b, i, SPECIES_D.length()));
         }
     }
 
     static void assertArrayEqualsInteger(int[] r, boolean[] a, boolean[] b) {
         for (int i = 0; i < a.length; i += SPECIES_I.length()) {
-            Asserts.assertEquals(r[i], maskAndTrueCountInteger(a, b, i));
+            Asserts.assertEquals(r[i], maskAndTrueCount(a, b, i, SPECIES_I.length()));
         }
     }
 
@@ -111,6 +103,19 @@ public class TestVectorMaskTrueCount {
         }
 
         assertArrayEqualsFloat(r, ba, bb);
+    }
+
+    @Test
+    @IR(counts = { IRNode.VSTOREMASK_TRUECOUNT, ">= 1" })
+    public static void testDouble() {
+        int[] r = new int[LENGTH];
+        for (int i = 0; i < LENGTH; i += SPECIES_D.length()) {
+            VectorMask<Double> ma = VectorMask.fromArray(SPECIES_D, ba, i);
+            VectorMask<Double> mb = VectorMask.fromArray(SPECIES_D, bb, i);
+            r[i] = ma.and(mb).trueCount();
+        }
+
+        assertArrayEqualsDouble(r, ba, bb);
     }
 
     @Test
