@@ -2407,7 +2407,8 @@ public class CSS implements Serializable {
 
         @Override
         public boolean equals(Object val) {
-            return val instanceof CSS.FontWeight fontWeight && weight == fontWeight.weight;
+            return val instanceof CSS.FontWeight fontWeight
+                   && weight == fontWeight.weight;
         }
 
         int weight;
@@ -2907,6 +2908,7 @@ public class CSS implements Serializable {
         public int hashCode() {
             int hashCode = Float.hashCode(horizontalPosition);
             hashCode |= Float.hashCode(verticalPosition);
+            hashCode |= Short.hashCode(relative);
             return hashCode;
         }
 
@@ -2914,7 +2916,8 @@ public class CSS implements Serializable {
         public boolean equals(Object val) {
             return val instanceof CSS.BackgroundPosition bp
                     && horizontalPosition == bp.horizontalPosition
-                    && verticalPosition == bp.verticalPosition;
+                    && verticalPosition == bp.verticalPosition
+                    && relative == bp.relative;
         }
     }
 
