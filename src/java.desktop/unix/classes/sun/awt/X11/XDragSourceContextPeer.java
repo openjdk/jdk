@@ -405,8 +405,9 @@ public final class XDragSourceContextPeer
      * @return true if window has XdndAware property when running under Wayland
      */
     private static boolean isXWaylandDndAwareWindow(long window) {
-        if (Toolkit.getDefaultToolkit() instanceof SunToolkit sunToolkit
-                && !sunToolkit.isRunningOnWayland()) {
+        Toolkit toolkit = Toolkit.getDefaultToolkit();
+        if (!(toolkit instanceof SunToolkit)
+                || !((SunToolkit) toolkit).isRunningOnWayland()) {
             return false;
         }
 
