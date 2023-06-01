@@ -87,7 +87,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.IndexItem;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils.PreviewFlagProvider;
-import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
 
 import static com.sun.source.doctree.DocTree.Kind.LINK_PLAIN;
 
@@ -560,42 +559,11 @@ public class TagletWriterImpl extends TagletWriter {
             // refMem is not null, so this @see tag must be referencing a valid member.
             TypeElement containing = utils.getEnclosingTypeElement(refMem);
 
-            var overriddenMethod = Optional.<VisibleMemberTable.OverrideSequence>empty();
+            var overriddenMethod = Optional.<ExecutableElement>empty();
             if (refMem.getKind() == ElementKind.METHOD) {
-                VisibleMemberTable vmt = configuration.getVisibleMemberTable(containing);
-                // Find the type whose page documents the method in the
-                // "Method Details" section, to build the link to the method.
-                var sequence = vmt.overrideAt((ExecutableElement) refMem);
-                // 1. Let's find the most specific non-simple override: this is
-                //    the type element whose comment text is going to be used on
-                //    in "Method Details" for the method.
-                //
-                //    For that, while override is simple, decrease the specificity.
-                while (sequence.isSimpleOverride()
-                        && sequence.hasLessSpecific()) {
-                    sequence = sequence.lessSpecific();
-                }
-                // there's always a non-simple override in a sequence: the least
-                // specific method, which could also be the most specific, if
-                // the sequence is trivial
-                assert !sequence.isSimpleOverride() : sequence;
-                // 2. The method we've just found might not be documentable in its
-                //    enclosing type element, so we need to find the first MORE specific
-                //    method which is going to "inherit" that found method documentation
-                //    and host/display it on its enclosing type element page.
-                //
-                //    For that, go back: while override is non-documentable,
-                //    increase the specificity.
-                while (utils.isUndocumentedEnclosure((TypeElement) sequence.getEnclosingType().asElement())
-                        && sequence.hasMoreSpecific()) {
-                    sequence = sequence.moreSpecific();
-                }
-                // 3. Have we been able to find such a method?
-                if (!utils.isUndocumentedEnclosure((TypeElement) sequence.getEnclosingType().asElement()))
-                    overriddenMethod = Optional.of(sequence);
-
+                overriddenMethod = getActualMethod((ExecutableElement) refMem);
                 if (overriddenMethod.isPresent()) {
-                    containing = utils.getEnclosingTypeElement(overriddenMethod.get().getMethod());
+                    containing = utils.getEnclosingTypeElement(overriddenMethod.get());
                 }
             }
             if (refSignature.trim().startsWith("#") &&
@@ -628,7 +596,7 @@ public class TagletWriterImpl extends TagletWriter {
                 }
                 if (overriddenMethod.isPresent()) {
                     // The method to actually link.
-                    refMem = overriddenMethod.get().getMethod();
+                    refMem = overriddenMethod.get();
                 }
             }
 
@@ -637,6 +605,53 @@ public class TagletWriterImpl extends TagletWriter {
                             ? plainOrCode(isLinkPlain, Text.of(refMemName))
                             : labelContent), null, false);
         }
+    }
+
+    /*
+     * Given a method, returns the actual method to hyperlink to; might return
+     * the same method if that method can be hyperlinked to directly or an
+     * empty optional if that method is not documented anywhere and thus cannot
+     * be hyperlinked to.
+     *
+     * Why is this needed? Depending on configuration, a declared method does
+     * not always result in a corresponding "Method Details" entry, which we
+     * could link to. To not produce broken links (i.e. links that lead
+     * nowhere), we need to find the method that is a substitute for the
+     * given method.
+     */
+    public Optional<ExecutableElement> getActualMethod(ExecutableElement method) {
+        if (method.getKind() != ElementKind.METHOD)
+            throw new IllegalArgumentException(String.valueOf(method.getKind()));
+
+        var sequence = configuration.getVisibleMemberTable((TypeElement) method.getEnclosingElement())
+                .overrideAt(method);
+        // 1. Let's find the most specific non-simple override: this is
+        //    the type element whose comment text is going to be used on
+        //    in "Method Details" for the method.
+        //
+        //    For that, while override is simple, decrease the specificity.
+        while (sequence.isSimpleOverride()
+                && sequence.hasLessSpecific()) {
+            sequence = sequence.lessSpecific();
+        }
+        // Note: there's always a non-simple override in a sequence: the least
+        // specific method (which could also be the most specific, if the
+        // sequence trivially consists of a single method).
+        assert !sequence.isSimpleOverride() : sequence;
+        // 2. The method we've just found might not be documentable in its
+        //    enclosing type element, so we need to find the first MORE specific
+        //    method which is going to "inherit" that found method documentation
+        //    and host/display it on its enclosing type element page.
+        //
+        //    For that, go back: while override is non-documentable,
+        //    increase the specificity.
+        while (utils.isUndocumentedEnclosure((TypeElement) sequence.getEnclosingType().asElement())
+                && sequence.hasMoreSpecific()) {
+            sequence = sequence.moreSpecific();
+        }
+        // 3. Have we been able to find such a method?
+        return utils.isUndocumentedEnclosure((TypeElement) sequence.getEnclosingType().asElement())
+                ? Optional.empty() : Optional.of(sequence.getMethod());
     }
 
     private Content plainOrCode(boolean plain, Content body) {
