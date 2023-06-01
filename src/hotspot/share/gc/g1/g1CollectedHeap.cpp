@@ -427,19 +427,16 @@ bool G1CollectedHeap::attempt_allocation_after_gc(size_t word_size,
 
   {
     MutexLocker ml(&_alloc_request_lock, Mutex::_no_safepoint_check_flag);
-    if (request.state() == StalledAllocReq::AllocationState::Pending) {
-      // GC Safepoint did not handle our allocation request. We should retry.
-      _stalled_allocations.remove(&request);
-      return false;
-    } else {
-      _satisfied_allocations.remove(&request);
-    }
+    _stalled_allocations.remove(&request);
   }
 
-  if (request.state() == StalledAllocReq::AllocationState::Success) {
+  if (request.pending()) {
+    // GC Safepoint did not handle our allocation request. We should retry.
+    return false;
+  } else if (request.succeeded()) {
     *result = request.result();
   } else {
-    assert(request.state() == StalledAllocReq::AllocationState::Failed, "Sanity check!");
+    assert(request.failed(), "Sanity check!");
     // VM successfully scheduled a collection which failed to allocate. No
     // point in trying to allocate further. We'll just return null.
     log_debug(gc, alloc)("%s: Failed to allocate %zu words", Thread::current()->name(), word_size);
@@ -948,13 +945,12 @@ HeapWord* G1CollectedHeap::satisfy_failed_allocation_helper(size_t word_size,
 }
 
 bool G1CollectedHeap::is_unclaimed_allocation(HeapWord *obj) {
-  if (!has_satisfied_allocations()) {
+  if (!has_stalled_allocations()) {
     return false;
   }
 
-  for(StalledAllocReq* alloc_req : _satisfied_allocations) {
-    if (alloc_req->state() == StalledAllocReq::AllocationState::Success &&
-        alloc_req->result() == obj) {
+  for(StalledAllocReq* alloc_req : _stalled_allocations) {
+    if (alloc_req->succeeded() && alloc_req->result() == obj) {
       return true;
     }
   }
@@ -1004,11 +1000,10 @@ bool G1CollectedHeap::satisfy_failed_allocations(bool* gc_succeeded) {
 
   // Even after maximal compaction full gc, we failed to satisfy all the pending allocation requests.
   // We can declare the pending requests as failed.
-  DoublyLinkedList<StalledAllocReq>::RemoveIterator iter(&_stalled_allocations);
-
-  for (StalledAllocReq* alloc_req; iter.next(&alloc_req);) {
-    alloc_req->set_state(StalledAllocReq::AllocationState::Failed);
-    _satisfied_allocations.insert_last(alloc_req);
+  for (StalledAllocReq* alloc_req : _stalled_allocations) {
+    if (alloc_req->pending()) {
+      alloc_req->set_state(StalledAllocReq::AllocationState::Failed);
+    }
   }
 
   assert(!soft_ref_policy()->should_clear_all_soft_refs(),
@@ -1019,23 +1014,9 @@ bool G1CollectedHeap::satisfy_failed_allocations(bool* gc_succeeded) {
 void G1CollectedHeap::reset_allocation_requests() {
   assert_at_safepoint_on_vm_thread();
 
-  DoublyLinkedList<StalledAllocReq> prev_allocations;
-
-  prev_allocations.swap(_satisfied_allocations);
-
-  assert(_satisfied_allocations.is_empty(), "Sanity check!");
-
-  DoublyLinkedList<StalledAllocReq>::RemoveIterator iter(&prev_allocations);
-
-  for (StalledAllocReq* alloc_req; iter.next(&alloc_req);) {
-    if (alloc_req->state() == StalledAllocReq::AllocationState::Failed) {
-      // If an allocation request was declared failed, we maintain the failed state.
-      // This prevents requests from flip-floping between Pending->Failed->Pending states.
-      // Once any allocation attempt declares a request as failed, that request will not be re-attempted.
-      _satisfied_allocations.insert_first(alloc_req);
-    } else {
+  for (StalledAllocReq* alloc_req : _stalled_allocations) {
+    if (alloc_req->succeeded()) {
       alloc_req->set_state(StalledAllocReq::AllocationState::Pending);
-      _stalled_allocations.insert_first(alloc_req);
     }
   }
 }
@@ -1049,12 +1030,13 @@ bool G1CollectedHeap::handle_allocation_requests(bool expect_null_mutator_alloc_
     expect_null_alloc_regions[i] = expect_null_mutator_alloc_region;
   }
 
-  while (true) {
-    StalledAllocReq* alloc_req = _stalled_allocations.first();
-    if (alloc_req == nullptr) {
-      // No more pending requests, all allocations succeeded.
-      return true;
-    }
+  for (StalledAllocReq* alloc_req : _stalled_allocations) {
+    if (alloc_req->failed()) {
+      // If an allocation request was declared failed, we maintain the failed state.
+      // This prevents requests from flip-floping between Pending->Failed->Pending states.
+      // Once any allocation attempt declares a request as failed, that request will not be re-attempted.
+      continue;
+     }
 
     HeapWord* result =
       satisfy_failed_allocation_helper(alloc_req->size(),
@@ -1089,11 +1071,8 @@ bool G1CollectedHeap::handle_allocation_requests(bool expect_null_mutator_alloc_
       // Fill the allocated memory with filler objects.
       CollectedHeap::fill_with_objects(result, alloc_req->size());
     }
-
-    // Move the allocation request from stalled to satisfied list.
-    _stalled_allocations.remove(alloc_req);
-    _satisfied_allocations.insert_last(alloc_req);
   }
+  return true;
 }
 
 bool G1CollectedHeap::expand(size_t word_size) {
@@ -1251,7 +1230,6 @@ G1CollectedHeap::G1CollectedHeap() :
   CollectedHeap(),
   _alloc_request_lock(Mutex::nosafepoint, "G1 Stalled Allocation List"),
   _stalled_allocations(),
-  _satisfied_allocations(),
   _service_thread(nullptr),
   _periodic_gc_task(nullptr),
   _free_arena_memory_task(nullptr),

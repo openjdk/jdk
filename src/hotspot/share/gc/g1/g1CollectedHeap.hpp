@@ -209,6 +209,9 @@ class G1CollectedHeap : public CollectedHeap {
     }
 
     AllocationState state() { return _state; }
+    bool failed() { return _state == AllocationState::Failed; }
+    bool succeeded() { return _state == AllocationState::Success; }
+    bool pending() { return _state == AllocationState::Pending; }
 
     HeapWord* result() { return _result; }
 
@@ -221,7 +224,6 @@ class G1CollectedHeap : public CollectedHeap {
 
   Mutex _alloc_request_lock;
   DoublyLinkedList<StalledAllocReq> _stalled_allocations;
-  DoublyLinkedList<StalledAllocReq> _satisfied_allocations;
 
 private:
   G1ServiceThread* _service_thread;
@@ -251,7 +253,7 @@ private:
 
 public:
 
-  bool has_satisfied_allocations() { return !_satisfied_allocations.is_empty(); }
+  bool has_stalled_allocations() { return !_stalled_allocations.is_empty(); }
   bool is_unclaimed_allocation(HeapWord *obj);
 
   void rebuild_free_region_list();
