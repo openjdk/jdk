@@ -3556,7 +3556,7 @@ void Assembler::movsd(Address dst, XMMRegister src) {
 }
 
 void Assembler::vmovsd(XMMRegister dst, XMMRegister src, XMMRegister src2) {
-  assert(UseAVX > 0, "Requires some form ov AVX");
+  assert(UseAVX > 0, "Requires some form of AVX");
   InstructionMark im(this);
   InstructionAttr attributes(AVX_128bit, /* rex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   int encode = vex_prefix_and_encode(src2->encoding(), src->encoding(), dst->encoding(), VEX_SIMD_F2, VEX_OPCODE_0F, &attributes);
@@ -6558,6 +6558,7 @@ void Assembler::evfnmadd213sd(XMMRegister dst, XMMRegister src1, XMMRegister src
   assert(VM_Version::supports_evex(), "");
   InstructionAttr attributes(rmode, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   attributes.set_extended_context();
+  attributes.set_is_evex_instruction();
   int encode = vex_prefix_and_encode(dst->encoding(), src1->encoding(), src2->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_38, &attributes);
   emit_int16((unsigned char)0xAD, (0xC0 | encode));
 }
@@ -6939,7 +6940,7 @@ void Assembler::vroundpd(XMMRegister dst, Address src, int32_t rmode,  int vecto
 
 void Assembler::vroundsd(XMMRegister dst, XMMRegister src, XMMRegister src2, int32_t rmode) {
   assert(VM_Version::supports_avx(), "");
-  assert(rmode <= 0x03, "rmode 0x%x", rmode);
+  assert(rmode <= 0x0f, "rmode 0x%x", rmode);
   InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   int encode = vex_prefix_and_encode(dst->encoding(), src->encoding(), src2->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_3A, &attributes);
   emit_int24(0x0B, (0xC0 | encode), (rmode));
