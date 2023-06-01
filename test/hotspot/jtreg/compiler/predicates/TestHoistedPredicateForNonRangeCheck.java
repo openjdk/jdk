@@ -140,7 +140,7 @@ public class TestHoistedPredicateForNonRangeCheck {
                 iFld2++;
                 Math.ceil(34); // Never taken and unloaded -> trap
             } catch (Exception e) {
-                // False Proj of RangeCheckNod
+                // False Proj of RangeCheckNode
                 iFld++;
             }
         }
