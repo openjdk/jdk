@@ -206,7 +206,7 @@ public class TestIllegalLink extends NativeTestHelper {
             cases.add(new Object[]{
                 FunctionDescriptor.ofVoid(C_INT, illegalLayout),
                 new Linker.Option[]{Linker.Option.firstVariadicArg(1)},
-                "Invalid variadic layout"
+                "Invalid variadic argument layout"
             });
         }
 

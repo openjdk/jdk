@@ -145,11 +145,12 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
 
             for (MemoryLayout variadicLayout : variadicLayouts) {
                 if (variadicLayout instanceof ValueLayout vl
-                        && (vl.carrier() != long.class
-                            && vl.carrier() != int.class
-                            && vl.carrier() != double.class
-                            && vl.carrier() != MemorySegment.class)) {
-                    throw new IllegalArgumentException("Invalid variadic layout: " + variadicLayout);
+                        && (vl.carrier() == boolean.class
+                            || vl.carrier() == byte.class
+                            || vl.carrier() == char.class
+                            || vl.carrier() == short.class
+                            || vl.carrier() == float.class)) {
+                    throw new IllegalArgumentException("Invalid variadic argument layout: " + variadicLayout);
                 }
             }
         }

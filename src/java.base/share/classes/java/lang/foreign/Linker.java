@@ -365,13 +365,22 @@ import java.util.stream.Stream;
  *
  * <h3 id="variadic-funcs">Variadic functions</h3>
  *
- * Variadic functions (e.g. a C function declared with a trailing ellipses {@code ...} at the end of the formal parameter
- * list or with an empty formal parameter list, the latter also being called <em>prototype-less</em>) are not supported
- * directly by the native linker. However, it is still possible to link a variadic function by using a <em>specialized</em>
- * function descriptor, together with {@linkplain Linker.Option#firstVariadicArg(int) a linker option} which indicates the
- * position of the first variadic argument in that specialized descriptor. The corresponding argument layout, and all following
- * argument layouts in the descriptor, are considered to be <em>variadic argument layouts</em>. These layouts correspond
- * to the arguments passed in place of the ellipsis {@code ...}, or to the arguments passed to a prototype-less function.
+ * Variadic functions are C functions which can accept a variable number and type of arguments. They are declared:
+ * <ol>
+ * <li>With a trailing ellipsis ({@code ...}) at the end of the formal parameter list, such as: {@code void foo(int x, ...);}</li>
+ * <li>With an empty formal parameter list, such as: {@code void foo();}</li>
+ * </ol>
+ * The latter is often called a <em>prototype-less</em> function as well. The arguments passed in place of the ellipsis,
+ * or the arguments passed to a prototype-less function are called <em>variadic arguments</em>.
+ * <p>
+ * The native linker does not support linking variadic functions in a way where it is possible to pass an arbitrary set
+ * of variadic arguments to the resulting method handle, since the linker needs to know the memory layouts of all the arguments
+ * up front in order to complete the linking process. However, it is still possible to link a variadic function by using
+ * a <em>specialized</em> function descriptor. A specialized function descriptor describes a variadic function with a fixed
+ * number and type(s) of variadic arguments. The index of the first variadic argument in the argument list should be indicated
+ * using the {@link Linker.Option#firstVariadicArg(int)} linker option. The corresponding argument layout, and all following
+ * argument layouts in the specialized function descriptor, are called <em>variadic argument layouts</em>. For a
+ * prototype-less function, the index passed to {@link Linker.Option#firstVariadicArg(int)} should always be {@code 0}.
  * <p>
  * It should be noted that values passed as variadic arguments undergo default argument promotion in C. Each value of
  * type {@code float} is converted to {@code double}, and each integral type smaller than {@code int} is converted to
