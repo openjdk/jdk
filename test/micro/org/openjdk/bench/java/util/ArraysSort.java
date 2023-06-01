@@ -56,7 +56,7 @@ import java.lang.reflect.Method;
 public class ArraysSort {
 
 
-    @Param({"100", "1000", "10000", "100000"})
+    @Param({"10","25","50","75","100", "1000", "10000", "100000"})
     private int size;
 
     private int[] ints_unsorted;
