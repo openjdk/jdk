@@ -60,8 +60,8 @@ Java_GetXSpace_getSpace0
 {
     jboolean totalSpaceIsEstimated = JNI_FALSE;
     jlong array[4];
-    const jchar* chars = (*env)->GetStringChars(env, root, NULL);
-    if (chars == NULL) {
+    const jchar* strchars = (*env)->GetStringChars(env, root, NULL);
+    if (strchars == NULL) {
         JNU_ThrowByNameWithLastError(env, "java/lang/RuntimeException",
                                      "GetStringChars");
         return JNI_FALSE;
@@ -77,17 +77,19 @@ Java_GetXSpace_getSpace0
         }
     }
 
-    LPCWSTR path = (LPCWSTR)chars;
+    LPCWSTR path = (LPCWSTR)strchars;
 
     if (pfnGetDiskSpaceInformation != NULL) {
         // use GetDiskSpaceInformationW
         DISK_SPACE_INFORMATION diskSpaceInfo;
         BOOL hres = pfnGetDiskSpaceInformation(path, &diskSpaceInfo);
         if (FAILED(hres)) {
+            (*env)->ReleaseStringChars(env, root, strchars);
             JNU_ThrowByNameWithLastError(env, "java/lang/RuntimeException",
                                          "GetDiskSpaceInformationW");
             return totalSpaceIsEstimated;
         }
+        (*env)->ReleaseStringChars(env, root, strchars);
 
         ULONGLONG bytesPerAllocationUnit =
             diskSpaceInfo.SectorsPerAllocationUnit*diskSpaceInfo.BytesPerSector;
@@ -110,10 +112,12 @@ Java_GetXSpace_getSpace0
 
         if (GetDiskFreeSpaceExW(path, &freeBytesAvailable, &totalNumberOfBytes,
             &totalNumberOfFreeBytes) == 0) {
+            (*env)->ReleaseStringChars(env, root, strchars);
             JNU_ThrowByNameWithLastError(env, "java/lang/RuntimeException",
                                          "GetDiskFreeSpaceExW");
             return totalSpaceIsEstimated;
         }
+        (*env)->ReleaseStringChars(env, root, strchars);
 
         // If quotas are in effect, it is impossible to obtain the volume size,
         // so estimate it as free + used = free + (visible - available)
@@ -124,9 +128,24 @@ Java_GetXSpace_getSpace0
         array[3] = (jlong)freeBytesAvailable.QuadPart;
     }
 #else
+    int len = (int)(*env)->GetStringLength(env, root);
+    char* chars = (char*)malloc(len*sizeof(char) + 1);
+    if (chars == NULL) {
+        (*env)->ReleaseStringChars(env, root, strchars);
+        JNU_ThrowByNameWithLastError(env, "java/lang/RuntimeException",
+                                     "malloc");
+        return JNI_FALSE;
+    }
+
+    for (int i = 0; i < len; i++) {
+        chars[i] = (char)strchars[i];
+    }
+    chars[len] = '\0';
+    (*env)->ReleaseStringChars(env, root, strchars);
+
     struct statfs buf;
     int result = statfs((const char*)chars, &buf);
-    (*env)->ReleaseStringChars(env, root, chars);
+    free(chars);
     if (result < 0) {
         JNU_ThrowByNameWithLastError(env, "java/lang/RuntimeException",
                                      strerror(errno));
