@@ -543,8 +543,8 @@ void Jaccesswalker::addComponentNodes(long vmID, AccessibleContext context,
     } else {
         char s[LINE_BUFSIZE];
         snprintf( s, sizeof(s),
-            "ERROR calling GetAccessibleContextInfo; vmID = %X, context = %p",
-            vmID, (void*)context );
+            "ERROR calling GetAccessibleContextInfo; vmID = %lX, context = %p",
+            static_cast<unsigned long>(vmID), (void*)context );
 
         TVITEM tvi;
         tvi.mask = TVIF_PARAM | TVIF_TEXT;  // text and lParam are only valid parts
