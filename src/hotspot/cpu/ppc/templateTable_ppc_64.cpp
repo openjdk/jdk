@@ -2294,7 +2294,7 @@ void TemplateTable::load_invokedynamic_entry(Register method) {
   __ load_resolved_indy_entry(cache, index);
   __ ld_ptr(method, array_base_offset + in_bytes(ResolvedIndyEntry::method_offset()), cache);
 
-  // The invokedynamic is unresolved iff method is NULL
+  // The invokedynamic is unresolved iff method is null
   __ cmpdi(CCR0, method, 0);
   __ bne(CCR0, resolved);
 

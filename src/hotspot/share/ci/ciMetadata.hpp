@@ -105,7 +105,7 @@ class ciMetadata: public ciBaseObject {
 
   bool equals(ciMetadata* obj) const { return (this == obj); }
 
-  int hash() { return ident() * 31; } // ???
+  uint hash() { return ident() * 31; } // ???
 
   void print(outputStream* st);
   virtual void print_impl(outputStream* st) {}
