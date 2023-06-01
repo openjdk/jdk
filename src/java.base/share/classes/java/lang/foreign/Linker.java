@@ -368,10 +368,10 @@ import java.util.stream.Stream;
  * Variadic functions are C functions which can accept a variable number and type of arguments. They are declared:
  * <ol>
  * <li>With a trailing ellipsis ({@code ...}) at the end of the formal parameter list, such as: {@code void foo(int x, ...);}</li>
- * <li>With an empty formal parameter list, such as: {@code void foo();}</li>
+ * <li>With an empty formal parameter list, called a prototype-less function, such as: {@code void foo();}</li>
  * </ol>
- * The latter is often called a <em>prototype-less</em> function as well. The arguments passed in place of the ellipsis,
- * or the arguments passed to a prototype-less function are called <em>variadic arguments</em>.
+ * The arguments passed in place of the ellipsis, or the arguments passed to a prototype-less function are called
+ * <em>variadic arguments</em>.
  * <p>
  * The native linker does not support linking variadic functions in a way where it is possible to pass an arbitrary set
  * of variadic arguments to the resulting method handle, since the linker needs to know the memory layouts of all the arguments
