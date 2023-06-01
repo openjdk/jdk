@@ -1015,12 +1015,6 @@ public class StructuredTaskScope<T> implements AutoCloseable {
             this(null, Thread.ofVirtual().factory());
         }
 
-        /**
-         * Shut down this task scope when invoked for the first time with a subtask that
-         * completed {@linkplain Subtask.State#SUCCESS successfully}.
-         *
-         * @throws IllegalArgumentException {@inheritDoc}
-         */
         @Override
         protected void handleComplete(Subtask<? extends T> subtask) {
             super.handleComplete(subtask);
@@ -1185,12 +1179,6 @@ public class StructuredTaskScope<T> implements AutoCloseable {
             this(null, Thread.ofVirtual().factory());
         }
 
-        /**
-         * Shut down this task scope when invoked for the first time with a subtask that
-         * {@linkplain Subtask.State#FAILED failed}.
-         *
-         * @throws IllegalArgumentException {@inheritDoc}
-         */
         @Override
         protected void handleComplete(Subtask<?> subtask) {
             super.handleComplete(subtask);
