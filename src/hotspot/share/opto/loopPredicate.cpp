@@ -867,7 +867,7 @@ bool IdealLoopTree::is_range_check_if(IfProjNode* if_success_proj, PhaseIdealLoo
     //
     // Example:
     // Loop: "for (int i = -1; i < 1000; i++)"
-    // init = "scale*iv + offset" in first loop iteration = 1*-1 + 0 = -1
+    // init = "scale*iv + offset" in the first loop iteration = 1*-1 + 0 = -1
     // last = "scale*iv + offset" in the last loop iteration = 1*999 + 0 = 999
     // limit = 100
     //
