@@ -49,7 +49,7 @@ public class Links {
      */
     static void testSymLinks(Path dir) throws IOException {
         // Check for FileAlreadyExistsException. This must be done
-        // before the check of whether symlinks are supported. 
+        // before the check of whether symlinks are supported.
         Path pathLink = Files.createTempFile("link", null);
         Path pathTarget = Files.createTempFile("target", null);
         try {
