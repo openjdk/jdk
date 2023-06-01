@@ -41,7 +41,7 @@ public class MaxMinINodeIdealizationTests {
     }
 
     @Run(test = {"testMax1LL", "testMax1LR", "testMax1RL", "testMax1RR",
-                 "testMax1LLNoInnerAdd", "testMax1LLNoInnerAdd2",
+                 "testMax1LLNoInnerAdd", "testMax1LLNoInnerAdd2", "testMax1LLNoOuterAdd", "testMax1LLNoAdd",
                  "testMax2L", "testMax2R",
                  "testMax2LNoLeftAdd",
                  "testMax3",
@@ -67,6 +67,8 @@ public class MaxMinINodeIdealizationTests {
         Asserts.assertEQ(testMax1LL(a)                                              , testMax1RR(a));
         Asserts.assertEQ(Math.max(Math.max((a >> 1), 200), (a >> 1) + 100)          , testMax1LLNoInnerAdd(a));
         Asserts.assertEQ(Math.max(Math.max((a >> 1), (a << 1)), (a >> 1) + 100)     , testMax1LLNoInnerAdd2(a));
+        Asserts.assertEQ(Math.max(Math.max(((a >> 1) + 150), 200), a >> 1)          , testMax1LLNoOuterAdd(a));
+        Asserts.assertEQ(Math.max(Math.max((a >> 1), 200), a >> 1)                  , testMax1LLNoAdd(a));
         Asserts.assertEQ(Math.max(((a >> 1) + 10), ((a >> 1) + 11))                 , testMax2L(a));
         Asserts.assertEQ(testMax2L(a)                                               , testMax2R(a));
         Asserts.assertEQ(Math.max(a >> 1, ((a >> 1) + 11))                          , testMax2LNoLeftAdd(a));
@@ -129,6 +131,21 @@ public class MaxMinINodeIdealizationTests {
                  })
     public int testMax1LLNoInnerAdd2(int i) {
         return Math.max(Math.max((i >> 1), (i << 1)), (i >> 1) + 100);
+    }
+
+    @Test
+    @IR(counts = {IRNode.MAX_I, "1",
+                  IRNode.ADD  , "1",
+                 })
+    public int testMax1LLNoOuterAdd(int i) {
+        return Math.max(Math.max(((i >> 1) + 150), 200), i >> 1);
+    }
+
+    @Test
+    @IR(failOn = {IRNode.ADD})
+    @IR(counts = {IRNode.MAX_I, "1"})
+    public int testMax1LLNoAdd(int i) {
+        return Math.max(Math.max((i >> 1), 200), i >> 1);
     }
 
     // Similarly, transform min(x + c0, min(y + c1, z)) to min(add(x, c2), z) if x == y, where c2 = MIN2(c0, c1).
