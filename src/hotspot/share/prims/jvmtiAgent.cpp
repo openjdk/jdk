@@ -486,6 +486,7 @@ extern "C" {
 }
 
 // Loading the agent by invoking Agent_OnAttach.
+// This function is called before the agent is added to JvmtiAgentList.
 static bool invoke_Agent_OnAttach(JvmtiAgent* agent, outputStream* st) {
   DEBUG_ONLY(assert_preload(agent);)
   assert(agent->is_dynamic(), "invariant");
