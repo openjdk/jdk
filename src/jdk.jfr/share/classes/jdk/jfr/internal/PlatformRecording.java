@@ -25,8 +25,9 @@
 
 package jdk.jfr.internal;
 
-import static jdk.jfr.internal.LogLevel.ERROR;
 import static jdk.jfr.internal.LogLevel.DEBUG;
+import static jdk.jfr.internal.LogLevel.ERROR;
+import static jdk.jfr.internal.LogLevel.INFO;
 import static jdk.jfr.internal.LogLevel.WARN;
 import static jdk.jfr.internal.LogTag.JFR;
 
@@ -899,17 +900,13 @@ public final class PlatformRecording implements AutoCloseable {
             Logger.log(JFR, INFO, "Checking for missing chunkfiles for recording \"" + name + "\" (" + id + ")");
             while (it.hasNext()) {
                 RepositoryChunk c = it.next();
-                try {
-                    if (!SecuritySupport.exists(c.getFile())) {
-                        // add an Error event to the next recording to explain the possible data loss.
-                        ErrorThrownEvent.commit(0L, 0L, "Chunkfile: \""+c.toString()+"\" is missing.", ChunkfileMissingError.class);
-                        Logger.log(JFR, ERROR, "Chunkfile: \""+c.toString()+"\" is missing.");
-                        it.remove();
-                        removed(c);
-                    }
-                } catch (IOException e) {
-                    // ignore
-                }
+                c.chunkFileMissingMessage().ifPresent((message) -> {
+                    // add an Error event to the next recording to explain the possible data loss.
+                    ErrorThrownEvent.commit(0L, 0L, message, MissingChunkFileError.class);
+                    Logger.log(JFR, ERROR, "Chunkfile: \""+c.toString()+"\" is missing.");
+                    it.remove();
+                    removed(c);
+                });
             }
         }
     }

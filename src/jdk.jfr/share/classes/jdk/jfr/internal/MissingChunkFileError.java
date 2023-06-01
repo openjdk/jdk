@@ -30,17 +30,14 @@ package jdk.jfr.internal;
  * order to catch it by JFR, and clearly show the repository has been
  * tampered with to explain any missing data.
  */
-class ChunkfileMissingError extends Error {
+class MissingChunkFileError extends Error {
     private static final long serialVersionUID = 1L;
     /**
      * The error message.
      *
-     * The first letter should not be capitalized, so a context can be printed prior
-     * to the error message.
-     *
      * @param errorMessage
      */
-    public ChunkfileMissingError(String errorMessage) {
+    public MissingChunkFileError(String errorMessage) {
         super(errorMessage);
     }
 }

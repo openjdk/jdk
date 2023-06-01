@@ -456,7 +456,7 @@ public final class PlatformRecorder {
                     r.appendChunk(chunk);
                 }
             }
-        } catch (ChunkfileMissingError e) {
+        } catch (MissingChunkFileError e) {
             Logger.log(LogTag.JFR, LogLevel.ERROR, "Finishing chunk failed: " + e.getClass().getName() + ", " + e.getMessage());
             // with one chunkfile missing, iterate throguh recording to find anymore missing,
             // and remove them. This will emit more errors that can be seen in subsequent recordings.

@@ -30,7 +30,9 @@ import java.io.RandomAccessFile;
 import java.nio.channels.ReadableByteChannel;
 import java.time.Instant;
 import java.util.Comparator;
+import java.util.Optional;
 
+import jdk.jfr.internal.MissingChunkFileError;
 import jdk.jfr.internal.SecuritySupport.SafePath;
 
 final class RepositoryChunk {
@@ -55,17 +57,11 @@ final class RepositoryChunk {
         this.unFinishedRAF = SecuritySupport.createRandomAccessFile(chunkFile);
     }
 
-    void finish(Instant endTime) throws ChunkfileMissingError {
+    void finish(Instant endTime) throws MissingChunkFileError {
         try {
             finishWithException(endTime);
         } catch (IOException e) {
-            try {
-                if (!SecuritySupport.exists(chunkFile)) {
-                    throw new ChunkfileMissingError("Chunkfile \""+ chunkFile.toString() + "\" is missing.");
-                }
-            } catch (IOException ioe) {
-                // ignore
-            }
+            chunkFileMissingMessage().ifPresent((message) -> { throw new MissingChunkFileError(message); });
             Logger.log(LogTag.JFR, LogLevel.ERROR, "Could not finish chunk. " + e.getClass() + " "+ e.getMessage());
         }
     }
@@ -170,5 +166,23 @@ final class RepositoryChunk {
 
     public SafePath getFile() {
         return chunkFile;
+    }
+
+    /**
+     * If the optional is present, the chunkFile for this chunk is missing. The
+     * likely reason for missing chunkFiles is that the repository has been cleaned
+     * by an external process (not the JVM).
+     * @return a failure message if the chunkFile is missing.
+     */
+    Optional<String> chunkFileMissingMessage() {
+        try {
+            if (!SecuritySupport.exists(chunkFile)) {
+                String message = "Chunkfile \""+ chunkFile.toString() + "\" is missing. Data loss might occur from " + this.startTime.toString() + (endTime != null ? " to " + endTime.toString() : "");
+                return Optional.of(message);
+            }
+        } catch (IOException ioe) {
+            // ignore
+        }
+        return Optional.empty();
     }
 }
