@@ -505,10 +505,12 @@ public class SignerInfo implements DerEncoder {
                 if (!AlgorithmId.get(spec.getDigestAlgorithm()).equals(digAlgId)) {
                     throw new NoSuchAlgorithmException("Incompatible digest algorithm");
                 }
+                break;
             case "Ed25519":
                 if (!digAlgId.equals(SignatureUtil.EdDSADigestAlgHolder.sha512)) {
                     throw new NoSuchAlgorithmException("Incompatible digest algorithm");
                 }
+                break;
             case "Ed448":
                 if (directSign) {
                     if (!digAlgId.equals(SignatureUtil.EdDSADigestAlgHolder.shake256)) {
@@ -519,12 +521,14 @@ public class SignerInfo implements DerEncoder {
                         throw new NoSuchAlgorithmException("Incompatible digest algorithm");
                     }
                 }
+                break;
             case "HSS/LMS":
                 // RFC 8708 requires the same hash algorithm used as in the HSS/LMS algorithm
                 // Currently RFC 8554 only supports SHA-256.
                 if (!digAlgId.equals(AlgorithmId.get(KeyUtil.hashAlgFromHSS(key)))) {
                     throw new NoSuchAlgorithmException("Incompatible digest algorithm");
                 }
+                break;
         }
     }
 
