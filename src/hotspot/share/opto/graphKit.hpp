@@ -913,6 +913,7 @@ class GraphKit : public Phase {
   Node* box_vector(Node* in, const TypeInstPtr* vbox_type, BasicType elem_bt, int num_elem, bool deoptimize_on_exception = false);
   Node* unbox_vector(Node* in, const TypeInstPtr* vbox_type, BasicType elem_bt, int num_elem);
   Node* vector_shift_count(Node* cnt, int shift_op, BasicType bt, int num_elem);
+  void replace_on_the_fly(SafePointNode* map, uint begin, uint end, PEAState& as);
 };
 
 // Helper class to support building of control flow branches. Upon

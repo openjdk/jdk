@@ -1028,6 +1028,8 @@ void GraphKit::add_safepoint_edges(SafePointNode* call, bool must_throw) {
     in_jvms  = in_jvms->caller();
   }
 
+  PEAState& as = youngest_jvms->alloc_state();
+  replace_on_the_fly(call, TypeFunc::Parms, call->req(), as);
   assert(debug_ptr == non_debug_edges, "debug info must fit exactly");
 
   // Test the correctness of JVMState::debug_xxx accessors:
@@ -4254,4 +4256,22 @@ Node* GraphKit::make_constant_from_field(ciField* field, Node* obj) {
     return makecon(con_type);
   }
   return nullptr;
+}
+
+void GraphKit::replace_on_the_fly(SafePointNode* map, uint begin, uint end, PEAState& as){
+  for (uint i = begin; i < end; ++i) {
+    Node* t = map->in(i);
+
+    if (t != nullptr && t->is_CheckCastPP()) {
+      AllocateNode* alloc = AllocateNode::Ideal_allocation(t, &_gvn);
+
+      if (as.contains(alloc)) {
+        ObjectState* os = as.get_object_state(alloc);
+        Node* neww = os->get_materialized_value();
+        if (neww != nullptr && neww != t) {
+          map->set_req(i, neww);
+        }
+      }
+    }
+  }
 }

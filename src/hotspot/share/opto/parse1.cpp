@@ -1185,6 +1185,13 @@ void Parse::do_exits() {
   }
 
   _exits.map()->apply_replaced_nodes(_new_idx);
+  // don't trust replace list. return_current() may mess it up.
+  // use AllocationState to update it.
+  if (DoPartialEscapeAnalysis) {
+    PEAState& as = _exits.jvms()->alloc_state();
+    SafePointNode* map = _exits.map();
+    replace_on_the_fly(map, TypeFunc::Parms, map->req(), as);
+  }
 }
 
 //-----------------------------create_entry_map-------------------------------
