@@ -39,6 +39,7 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.ShortBufferException;
 import javax.crypto.spec.PBEKeySpec;
+import javax.crypto.spec.PBEParameterSpec;
 
 import sun.security.jca.JCAUtil;
 import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
@@ -140,6 +141,9 @@ final class P11PBECipher extends CipherSpi {
                 throw new InvalidKeyException("Cannot use a " +
                         p11PBEKey.getAlgorithm() + " key for a " + pbeAlg +
                         " service");
+            }
+            if (params instanceof PBEParameterSpec pbeParams) {
+                params = pbeParams.getParameterSpec();
             }
             pbes2Params.initialize(blkSize, opmode,
                     p11PBEKey.getIterationCount(), p11PBEKey.getSalt(), params,

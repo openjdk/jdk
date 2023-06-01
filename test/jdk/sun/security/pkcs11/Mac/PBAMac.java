@@ -23,6 +23,7 @@
  */
 
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.Provider;
 import java.security.Security;
@@ -44,7 +45,8 @@ import javax.crypto.spec.PBEParameterSpec;
 
 public final class PBAMac extends PKCS11Test {
     private static final char[] password = "123456".toCharArray();
-    private static final byte[] salt = "abcdefgh".getBytes();
+    private static final byte[] salt = "abcdefgh".getBytes(
+            StandardCharsets.UTF_8);
     private static final int iterations = 1000;
     private static final String plainText = "This is a known plain text!";
     private static final String sep = "======================================" +
@@ -164,7 +166,8 @@ public final class PBAMac extends PKCS11Test {
                 mac.init(key);
             }
         }
-        return new BigInteger(1, mac.doFinal(plainText.getBytes()));
+        return new BigInteger(1, mac.doFinal(
+                plainText.getBytes(StandardCharsets.UTF_8)));
     }
 
     private static SecretKey getPasswordOnlyPBEKey()

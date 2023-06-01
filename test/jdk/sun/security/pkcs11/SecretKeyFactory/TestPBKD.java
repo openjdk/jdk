@@ -26,6 +26,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.ReflectiveOperationException;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
@@ -140,7 +141,8 @@ public final class TestPBKD extends PKCS11Test {
 
     private static final char[] pwd = "123456\uA4F7".toCharArray();
     private static final char[] emptyPwd = new char[0];
-    private static final byte[] salt = "abcdefgh".getBytes();
+    private static final byte[] salt = "abcdefgh".getBytes(
+            StandardCharsets.UTF_8);
     private static final int iterations = 1000;
 
     // Generated with SunJCE. Keep a reference to some

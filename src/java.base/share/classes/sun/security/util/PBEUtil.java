@@ -74,17 +74,14 @@ public final class PBEUtil {
          * (SunPKCS11).
          */
         public void initialize(int blkSize, int opmode, int iCount, byte[] salt,
-                AlgorithmParameterSpec params, SecureRandom random)
+                AlgorithmParameterSpec ivSpec, SecureRandom random)
                 throws InvalidAlgorithmParameterException {
             try {
-                boolean doEncrypt = ((opmode == Cipher.ENCRYPT_MODE) ||
-                        (opmode == Cipher.WRAP_MODE));
-                if (params instanceof PBEParameterSpec pbeParams) {
-                    params = pbeParams.getParameterSpec();
-                }
-                if (params instanceof IvParameterSpec iv) {
+                boolean doEncrypt = opmode == Cipher.ENCRYPT_MODE ||
+                        opmode == Cipher.WRAP_MODE;
+                if (ivSpec instanceof IvParameterSpec iv) {
                     this.ivSpec = iv;
-                } else if (params == null && doEncrypt) {
+                } else if (ivSpec == null && doEncrypt) {
                     byte[] ivBytes = new byte[blkSize];
                     random.nextBytes(ivBytes);
                     this.ivSpec = new IvParameterSpec(ivBytes);
@@ -93,7 +90,7 @@ public final class PBEUtil {
                             "parameter type: IvParameterSpec " +
                             (doEncrypt ? "or null " : "") + "expected");
                 }
-                this.iCount = iCount;
+                this.iCount = iCount == 0 ? DEFAULT_ITERATIONS : iCount;
                 if (salt == null) {
                     if (doEncrypt) {
                         salt = new byte[DEFAULT_SALT_LENGTH];
@@ -133,8 +130,8 @@ public final class PBEUtil {
             AlgorithmParameters params;
             try {
                 if (iCount == 0 && salt == null && ivSpec == null) {
-                    initialize(blkSize, Cipher.ENCRYPT_MODE, DEFAULT_ITERATIONS,
-                            null, null, random);
+                    initialize(blkSize, Cipher.ENCRYPT_MODE, 0, null, null,
+                            random);
                 }
                 params = AlgorithmParameters.getInstance(pbeAlgo,
                         algParamsProv);
@@ -165,7 +162,6 @@ public final class PBEUtil {
             if (key == null) {
                 throw new InvalidKeyException("Null key");
             }
-            PBEKeySpec pbeSpec;
             byte[] passwdBytes;
             char[] passwdChars = null;
             if (!(key.getAlgorithm().regionMatches(true, 0, "PBE", 0, 3)) ||
@@ -175,11 +171,13 @@ public final class PBEUtil {
             try {
                 int iCountInit;
                 byte[] saltInit;
+                AlgorithmParameterSpec ivSpecInit;
                 // Extract from the supplied PBE params, if present
                 if (params instanceof PBEParameterSpec pbeParams) {
                     // salt should be non-null per PBEParameterSpec
                     iCountInit = check(pbeParams.getIterationCount());
                     saltInit = check(pbeParams.getSalt());
+                    ivSpecInit = pbeParams.getParameterSpec();
                 } else if (params == null) {
                     // Try extracting from the key if present. If unspecified,
                     // PBEKey returns 0 and null respectively.
@@ -187,27 +185,27 @@ public final class PBEUtil {
                         iCountInit = check(pbeKey.getIterationCount());
                         saltInit = check(pbeKey.getSalt());
                     } else {
-                        iCountInit = DEFAULT_ITERATIONS;
+                        iCountInit = 0;
                         saltInit = null;
                     }
+                    ivSpecInit = null;
                 } else {
                     throw new InvalidAlgorithmParameterException(
                             "Wrong parameter type: PBE expected");
                 }
-                initialize(blkSize, opmode, iCountInit, saltInit, params,
+                initialize(blkSize, opmode, iCountInit, saltInit, ivSpecInit,
                         random);
                 passwdChars = new char[passwdBytes.length];
                 for (int i = 0; i < passwdChars.length; i++) {
                     passwdChars[i] = (char) (passwdBytes[i] & 0x7f);
                 }
-                pbeSpec = new PBEKeySpec(passwdChars, salt, iCount, keyLength);
+                return new PBEKeySpec(passwdChars, salt, iCount, keyLength);
             } finally {
                 // password char[] was cloned in PBEKeySpec constructor,
                 // so we can zero it out here
                 if (passwdChars != null) Arrays.fill(passwdChars, '\0');
                 if (passwdBytes != null) Arrays.fill(passwdBytes, (byte)0x00);
             }
-            return pbeSpec;
         }
 
         /*
@@ -245,7 +243,7 @@ public final class PBEUtil {
                 throw new InvalidAlgorithmParameterException(
                         "Iteration count must be a positive number");
             }
-            return iCount == 0 ? DEFAULT_ITERATIONS : iCount;
+            return iCount;
         }
     }
 

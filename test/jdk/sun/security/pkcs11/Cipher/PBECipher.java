@@ -23,6 +23,7 @@
  */
 
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.security.AlgorithmParameters;
 import java.security.GeneralSecurityException;
 import java.security.Provider;
@@ -47,7 +48,8 @@ import javax.crypto.spec.PBEParameterSpec;
 
 public final class PBECipher extends PKCS11Test {
     private static final char[] password = "123456".toCharArray();
-    private static final byte[] salt = "abcdefgh".getBytes();
+    private static final byte[] salt = "abcdefgh".getBytes(
+            StandardCharsets.UTF_8);
     private static final int iterations = 1000;
     private static final int AES_BLOCK_SIZE = 16;
     private static final PBEParameterSpec pbeSpec = new PBEParameterSpec(salt,
@@ -209,7 +211,8 @@ public final class PBECipher extends PKCS11Test {
                 cipher.init(Cipher.ENCRYPT_MODE, key, new NoRandom());
             }
         }
-        return new BigInteger(1, cipher.doFinal(plainText.getBytes()));
+        return new BigInteger(1, cipher.doFinal(
+                plainText.getBytes(StandardCharsets.UTF_8)));
     }
 
     private static SecretKey getPasswordOnlyPBEKey()

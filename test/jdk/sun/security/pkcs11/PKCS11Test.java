@@ -867,7 +867,7 @@ public abstract class PKCS11Test {
             }
             @Override
             public byte[] getEncoded() {
-                return new byte[0];
+                throw new RuntimeException("Should not be called");
             }
             @Override
             public char[] getPassword() {
