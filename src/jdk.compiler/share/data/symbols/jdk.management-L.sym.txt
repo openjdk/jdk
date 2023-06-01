@@ -48,6 +48,7 @@ header extends java/lang/Object implements java/lang/management/OperatingSystemM
 
 class name com/sun/management/ThreadMXBean
 header extends java/lang/Object implements java/lang/management/ThreadMXBean flags 601
+method name getTotalThreadAllocatedBytes descriptor ()J flags 1
 
 class name com/sun/management/UnixOperatingSystemMXBean
 header extends java/lang/Object implements com/sun/management/OperatingSystemMXBean flags 601

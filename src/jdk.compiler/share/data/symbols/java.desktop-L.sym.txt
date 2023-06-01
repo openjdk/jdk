@@ -671,14 +671,50 @@ class name javax/swing/plaf/basic/BasicArrowButton
 header extends javax/swing/JButton implements javax/swing/SwingConstants flags 21
 innerclass innerClass java/awt/geom/Path2D$Double outerClass java/awt/geom/Path2D innerClassName Double flags 9
 
+class name javax/swing/plaf/basic/BasicButtonListener
+header extends java/lang/Object implements java/awt/event/MouseListener,java/awt/event/MouseMotionListener,java/awt/event/FocusListener,javax/swing/event/ChangeListener,java/beans/PropertyChangeListener flags 21
+innerclass innerClass java/awt/event/FocusEvent$Cause outerClass java/awt/event/FocusEvent innerClassName Cause flags 4019
+innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
+
 class name javax/swing/plaf/basic/BasicButtonUI
 header extends javax/swing/plaf/ButtonUI flags 21
 innerclass innerClass java/awt/Component$BaselineResizeBehavior outerClass java/awt/Component innerClassName BaselineResizeBehavior flags 4019
 innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
 
+class name javax/swing/plaf/basic/BasicComboPopup
+header extends javax/swing/JPopupMenu implements javax/swing/plaf/basic/ComboPopup nestMembers javax/swing/plaf/basic/BasicComboPopup$PropertyChangeHandler,javax/swing/plaf/basic/BasicComboPopup$ItemHandler,javax/swing/plaf/basic/BasicComboPopup$ListMouseMotionHandler,javax/swing/plaf/basic/BasicComboPopup$ListMouseHandler,javax/swing/plaf/basic/BasicComboPopup$ListDataHandler,javax/swing/plaf/basic/BasicComboPopup$ListSelectionHandler,javax/swing/plaf/basic/BasicComboPopup$InvocationKeyHandler,javax/swing/plaf/basic/BasicComboPopup$InvocationMouseMotionHandler,javax/swing/plaf/basic/BasicComboPopup$InvocationMouseHandler flags 21
+innerclass innerClass java/awt/event/FocusEvent$Cause outerClass java/awt/event/FocusEvent innerClassName Cause flags 4019
+innerclass innerClass javax/swing/plaf/basic/BasicComboPopup$PropertyChangeHandler outerClass javax/swing/plaf/basic/BasicComboPopup innerClassName PropertyChangeHandler flags 4
+innerclass innerClass javax/swing/plaf/basic/BasicComboPopup$ItemHandler outerClass javax/swing/plaf/basic/BasicComboPopup innerClassName ItemHandler flags 4
+innerclass innerClass javax/swing/plaf/basic/BasicComboPopup$ListMouseMotionHandler outerClass javax/swing/plaf/basic/BasicComboPopup innerClassName ListMouseMotionHandler flags 4
+innerclass innerClass javax/swing/plaf/basic/BasicComboPopup$ListMouseHandler outerClass javax/swing/plaf/basic/BasicComboPopup innerClassName ListMouseHandler flags 4
+innerclass innerClass javax/swing/plaf/basic/BasicComboPopup$ListDataHandler outerClass javax/swing/plaf/basic/BasicComboPopup innerClassName ListDataHandler flags 1
+innerclass innerClass javax/swing/plaf/basic/BasicComboPopup$ListSelectionHandler outerClass javax/swing/plaf/basic/BasicComboPopup innerClassName ListSelectionHandler flags 4
+innerclass innerClass javax/swing/plaf/basic/BasicComboPopup$InvocationKeyHandler outerClass javax/swing/plaf/basic/BasicComboPopup innerClassName InvocationKeyHandler flags 1
+innerclass innerClass javax/swing/plaf/basic/BasicComboPopup$InvocationMouseMotionHandler outerClass javax/swing/plaf/basic/BasicComboPopup innerClassName InvocationMouseMotionHandler flags 4
+innerclass innerClass javax/swing/plaf/basic/BasicComboPopup$InvocationMouseHandler outerClass javax/swing/plaf/basic/BasicComboPopup innerClassName InvocationMouseHandler flags 4
+
 class name javax/swing/plaf/basic/BasicPasswordFieldUI
 header extends javax/swing/plaf/basic/BasicTextFieldUI flags 21
 innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
+
+class name javax/swing/plaf/basic/BasicScrollBarUI$ArrowButtonListener
+header extends java/awt/event/MouseAdapter nestHost javax/swing/plaf/basic/BasicScrollBarUI flags 21
+innerclass innerClass javax/swing/plaf/basic/BasicScrollBarUI$ArrowButtonListener outerClass javax/swing/plaf/basic/BasicScrollBarUI innerClassName ArrowButtonListener flags 4
+innerclass innerClass javax/swing/plaf/basic/BasicScrollBarUI$ScrollListener outerClass javax/swing/plaf/basic/BasicScrollBarUI innerClassName ScrollListener flags 4
+innerclass innerClass java/awt/event/FocusEvent$Cause outerClass java/awt/event/FocusEvent innerClassName Cause flags 4019
+
+class name javax/swing/plaf/basic/BasicScrollBarUI$TrackListener
+header extends java/awt/event/MouseAdapter implements java/awt/event/MouseMotionListener nestHost javax/swing/plaf/basic/BasicScrollBarUI flags 21
+innerclass innerClass javax/swing/plaf/basic/BasicScrollBarUI$TrackListener outerClass javax/swing/plaf/basic/BasicScrollBarUI innerClassName TrackListener flags 4
+innerclass innerClass java/awt/event/FocusEvent$Cause outerClass java/awt/event/FocusEvent innerClassName Cause flags 4019
+innerclass innerClass javax/swing/plaf/basic/BasicScrollBarUI$ScrollListener outerClass javax/swing/plaf/basic/BasicScrollBarUI innerClassName ScrollListener flags 4
+
+class name javax/swing/plaf/basic/BasicSliderUI$TrackListener
+header extends javax/swing/event/MouseInputAdapter nestHost javax/swing/plaf/basic/BasicSliderUI flags 21
+innerclass innerClass javax/swing/plaf/basic/BasicSliderUI$TrackListener outerClass javax/swing/plaf/basic/BasicSliderUI innerClassName TrackListener flags 1
+innerclass innerClass java/awt/event/FocusEvent$Cause outerClass java/awt/event/FocusEvent innerClassName Cause flags 4019
+innerclass innerClass javax/swing/plaf/basic/BasicSliderUI$ScrollListener outerClass javax/swing/plaf/basic/BasicSliderUI innerClassName ScrollListener flags 1
 
 class name javax/swing/plaf/basic/BasicSplitPaneUI$BasicHorizontalLayoutManager
 header extends java/lang/Object implements java/awt/LayoutManager2 nestHost javax/swing/plaf/basic/BasicSplitPaneUI sealed true flags 21

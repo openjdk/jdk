@@ -1228,6 +1228,11 @@ header extends java/io/FilterOutputStream flags 21
 class name javax/crypto/CipherSpi
 header extends java/lang/Object flags 421
 
+class name javax/crypto/DecapsulateException
+header extends java/security/GeneralSecurityException flags 21
+method name <init> descriptor (Ljava/lang/String;)V flags 1
+method name <init> descriptor (Ljava/lang/String;Ljava/lang/Throwable;)V flags 1
+
 class name javax/crypto/EncryptedPrivateKeyInfo
 header extends java/lang/Object flags 21
 
@@ -1242,6 +1247,75 @@ header extends java/lang/Object flags 421
 
 class name javax/crypto/IllegalBlockSizeException
 header extends java/security/GeneralSecurityException flags 21
+
+class name javax/crypto/KEM
+header extends java/lang/Object nestMembers javax/crypto/KEM$Decapsulator,javax/crypto/KEM$Encapsulator,javax/crypto/KEM$Encapsulated flags 31
+innerclass innerClass java/security/Provider$Service outerClass java/security/Provider innerClassName Service flags 9
+innerclass innerClass javax/crypto/KEM$Encapsulator outerClass javax/crypto/KEM innerClassName Encapsulator flags 19
+innerclass innerClass javax/crypto/KEMSpi$EncapsulatorSpi outerClass javax/crypto/KEMSpi innerClassName EncapsulatorSpi flags 609
+innerclass innerClass javax/crypto/KEM$Decapsulator outerClass javax/crypto/KEM innerClassName Decapsulator flags 19
+innerclass innerClass javax/crypto/KEMSpi$DecapsulatorSpi outerClass javax/crypto/KEMSpi innerClassName DecapsulatorSpi flags 609
+innerclass innerClass javax/crypto/KEM$Encapsulated outerClass javax/crypto/KEM innerClassName Encapsulated flags 19
+method name getInstance descriptor (Ljava/lang/String;)Ljavax/crypto/KEM; thrownTypes java/security/NoSuchAlgorithmException flags 9
+method name getInstance descriptor (Ljava/lang/String;Ljava/security/Provider;)Ljavax/crypto/KEM; thrownTypes java/security/NoSuchAlgorithmException flags 9
+method name getInstance descriptor (Ljava/lang/String;Ljava/lang/String;)Ljavax/crypto/KEM; thrownTypes java/security/NoSuchAlgorithmException,java/security/NoSuchProviderException flags 9
+method name newEncapsulator descriptor (Ljava/security/PublicKey;)Ljavax/crypto/KEM$Encapsulator; thrownTypes java/security/InvalidKeyException flags 1
+method name newEncapsulator descriptor (Ljava/security/PublicKey;Ljava/security/SecureRandom;)Ljavax/crypto/KEM$Encapsulator; thrownTypes java/security/InvalidKeyException flags 1
+method name newEncapsulator descriptor (Ljava/security/PublicKey;Ljava/security/spec/AlgorithmParameterSpec;Ljava/security/SecureRandom;)Ljavax/crypto/KEM$Encapsulator; thrownTypes java/security/InvalidAlgorithmParameterException,java/security/InvalidKeyException flags 1
+method name newDecapsulator descriptor (Ljava/security/PrivateKey;)Ljavax/crypto/KEM$Decapsulator; thrownTypes java/security/InvalidKeyException flags 1
+method name newDecapsulator descriptor (Ljava/security/PrivateKey;Ljava/security/spec/AlgorithmParameterSpec;)Ljavax/crypto/KEM$Decapsulator; thrownTypes java/security/InvalidAlgorithmParameterException,java/security/InvalidKeyException flags 1
+method name getAlgorithm descriptor ()Ljava/lang/String; flags 1
+
+class name javax/crypto/KEM$Decapsulator
+header extends java/lang/Object nestHost javax/crypto/KEM flags 31
+innerclass innerClass javax/crypto/KEM$Decapsulator outerClass javax/crypto/KEM innerClassName Decapsulator flags 19
+innerclass innerClass javax/crypto/KEMSpi$DecapsulatorSpi outerClass javax/crypto/KEMSpi innerClassName DecapsulatorSpi flags 609
+method name providerName descriptor ()Ljava/lang/String; flags 1
+method name decapsulate descriptor ([B)Ljavax/crypto/SecretKey; thrownTypes javax/crypto/DecapsulateException flags 1
+method name decapsulate descriptor ([BIILjava/lang/String;)Ljavax/crypto/SecretKey; thrownTypes javax/crypto/DecapsulateException flags 1
+method name secretSize descriptor ()I flags 1
+method name encapsulationSize descriptor ()I flags 1
+
+class name javax/crypto/KEM$Encapsulated
+header extends java/lang/Object nestHost javax/crypto/KEM flags 31
+innerclass innerClass javax/crypto/KEM$Encapsulated outerClass javax/crypto/KEM innerClassName Encapsulated flags 19
+method name <init> descriptor (Ljavax/crypto/SecretKey;[B[B)V flags 1
+method name key descriptor ()Ljavax/crypto/SecretKey; flags 1
+method name encapsulation descriptor ()[B flags 1
+method name params descriptor ()[B flags 1
+
+class name javax/crypto/KEM$Encapsulator
+header extends java/lang/Object nestHost javax/crypto/KEM flags 31
+innerclass innerClass javax/crypto/KEM$Encapsulator outerClass javax/crypto/KEM innerClassName Encapsulator flags 19
+innerclass innerClass javax/crypto/KEMSpi$EncapsulatorSpi outerClass javax/crypto/KEMSpi innerClassName EncapsulatorSpi flags 609
+innerclass innerClass javax/crypto/KEM$Encapsulated outerClass javax/crypto/KEM innerClassName Encapsulated flags 19
+method name providerName descriptor ()Ljava/lang/String; flags 1
+method name encapsulate descriptor ()Ljavax/crypto/KEM$Encapsulated; flags 1
+method name encapsulate descriptor (IILjava/lang/String;)Ljavax/crypto/KEM$Encapsulated; flags 1
+method name secretSize descriptor ()I flags 1
+method name encapsulationSize descriptor ()I flags 1
+
+class name javax/crypto/KEMSpi
+header extends java/lang/Object nestMembers javax/crypto/KEMSpi$DecapsulatorSpi,javax/crypto/KEMSpi$EncapsulatorSpi flags 601
+innerclass innerClass javax/crypto/KEMSpi$DecapsulatorSpi outerClass javax/crypto/KEMSpi innerClassName DecapsulatorSpi flags 609
+innerclass innerClass javax/crypto/KEMSpi$EncapsulatorSpi outerClass javax/crypto/KEMSpi innerClassName EncapsulatorSpi flags 609
+method name engineNewEncapsulator descriptor (Ljava/security/PublicKey;Ljava/security/spec/AlgorithmParameterSpec;Ljava/security/SecureRandom;)Ljavax/crypto/KEMSpi$EncapsulatorSpi; thrownTypes java/security/InvalidAlgorithmParameterException,java/security/InvalidKeyException flags 401
+method name engineNewDecapsulator descriptor (Ljava/security/PrivateKey;Ljava/security/spec/AlgorithmParameterSpec;)Ljavax/crypto/KEMSpi$DecapsulatorSpi; thrownTypes java/security/InvalidAlgorithmParameterException,java/security/InvalidKeyException flags 401
+
+class name javax/crypto/KEMSpi$DecapsulatorSpi
+header extends java/lang/Object nestHost javax/crypto/KEMSpi flags 601
+innerclass innerClass javax/crypto/KEMSpi$DecapsulatorSpi outerClass javax/crypto/KEMSpi innerClassName DecapsulatorSpi flags 609
+method name engineDecapsulate descriptor ([BIILjava/lang/String;)Ljavax/crypto/SecretKey; thrownTypes javax/crypto/DecapsulateException flags 401
+method name engineSecretSize descriptor ()I flags 401
+method name engineEncapsulationSize descriptor ()I flags 401
+
+class name javax/crypto/KEMSpi$EncapsulatorSpi
+header extends java/lang/Object nestHost javax/crypto/KEMSpi flags 601
+innerclass innerClass javax/crypto/KEMSpi$EncapsulatorSpi outerClass javax/crypto/KEMSpi innerClassName EncapsulatorSpi flags 609
+innerclass innerClass javax/crypto/KEM$Encapsulated outerClass javax/crypto/KEM innerClassName Encapsulated flags 19
+method name engineEncapsulate descriptor (IILjava/lang/String;)Ljavax/crypto/KEM$Encapsulated; flags 401
+method name engineSecretSize descriptor ()I flags 401
+method name engineEncapsulationSize descriptor ()I flags 401
 
 class name javax/crypto/KeyAgreement
 header extends java/lang/Object flags 21
