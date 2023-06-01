@@ -3475,7 +3475,7 @@ bool SuperWord::construct_bb() {
             // First see if we can map the reduction on the given system we are on, then
             // make a data entry operation for each reduction we see.
             BasicType bt = use->bottom_type()->basic_type();
-            if (ReductionNode::implemented(use->Opcode(), Matcher::min_vector_size(bt), bt)) {
+            if (ReductionNode::implemented(use->Opcode(), Matcher::superword_max_vector_size(bt), bt)) {
               reduction_uses++;
             }
           }
