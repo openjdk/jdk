@@ -35,9 +35,20 @@ import java.util.stream.IntStream;
 
 import static sun.awt.screencast.ScreencastHelper.SCREENCAST_DEBUG;
 
+/**
+ * Helper class used by {@link TokenStorage} as restore token record
+ * with its associated screen boundaries.
+ *
+ * It helps in serialization/deserialization of screen boundaries
+ * to/from string format.
+ *
+ * The screen boundary is represented as {@code _x_y_width_height}
+ * and can be repeated several times.
+ */
 final class TokenItem {
-    String token;
-    List<Rectangle> allowedScreensBounds;
+
+    final String token;
+    final List<Rectangle> allowedScreensBounds;
 
     public TokenItem(String token, int[] allowedScreenBounds) {
         if (token == null || token.isBlank()) {

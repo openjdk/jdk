@@ -37,6 +37,12 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.IntStream;
 
+/**
+ * Helper class for grabbing pixels from the screen using the
+ * <a href="https://flatpak.github.io/xdg-desktop-portal/#gdbus-org.freedesktop.portal.ScreenCast">
+ * org.freedesktop.portal.ScreenCast API</a>
+ */
+
 @SuppressWarnings("removal")
 public class ScreencastHelper {
 

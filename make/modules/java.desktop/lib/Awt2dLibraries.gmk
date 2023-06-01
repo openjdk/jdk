@@ -192,7 +192,7 @@ ifeq ($(call isTargetOs, windows macosx), false)
     LIBAWT_XAWT_EXCLUDES := medialib debug
 
     LIBPIPEWIRE_HEADER_DIRS := \
-    	$(TOPDIR)/src/$(MODULE)/unix/native/libpipewire/include
+        $(TOPDIR)/src/$(MODULE)/unix/native/libpipewire/include
 
     LIBAWT_XAWT_EXTRA_HEADER_DIRS := \
         $(LIBAWT_DEFAULT_HEADER_DIRS) \

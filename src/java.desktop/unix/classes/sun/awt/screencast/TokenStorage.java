@@ -37,15 +37,13 @@ import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
 import java.nio.file.attribute.PosixFilePermission;
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
@@ -53,6 +51,13 @@ import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 import static java.nio.file.StandardWatchEventKinds.OVERFLOW;
 import static sun.awt.screencast.ScreencastHelper.SCREENCAST_DEBUG;
 
+/**
+ * Helper class for persistent storage of ScreenCast restore tokens
+ * and associated screen boundaries.
+ *
+ * The restore token allows the ScreenCast session to be restored
+ * with previously granted screen access permissions.
+ */
 final class TokenStorage {
 
     private TokenStorage() {}
@@ -299,26 +304,24 @@ final class TokenStorage {
         // with exact matches at the beginning.
         LinkedHashSet<TokenItem> result = new LinkedHashSet<>();
 
-        Set<Map.Entry<Object, Object>> entries;
+        Set<String> malformed = new HashSet<>();
+        List<TokenItem> allTokenItems;
+
         synchronized (PROPS) {
-            entries = PROPS.entrySet();
+            allTokenItems = PROPS.entrySet()
+                    .stream()
+                    .map(o -> {
+                        String token = String.valueOf(o.getKey());
+                        TokenItem tokenItem =
+                                TokenItem.parse(token, o.getValue());
+                        if (tokenItem == null) {
+                            malformed.add(token);
+                        }
+                        return tokenItem;
+                    })
+                    .filter(Objects::nonNull)
+                    .toList();
         }
-
-        Set<String> malformed = new LinkedHashSet<>();
-
-        List<TokenItem> allTokenItems = entries
-                .stream()
-                .map(o -> {
-                    String token = String.valueOf(o.getKey());
-                    TokenItem tokenItem =
-                            TokenItem.parse(token, o.getValue());
-                    if (tokenItem == null) {
-                        malformed.add(token);
-                    }
-                    return tokenItem;
-                })
-                .filter(obj -> !Objects.isNull(obj))
-                .toList();
 
         removeMalformedRecords(malformed);
 
@@ -343,7 +346,7 @@ final class TokenStorage {
                         rectangle.width,
                         rectangle.height
                 ))
-                .collect(Collectors.toCollection(ArrayList::new));
+                .toList();
 
         for (TokenItem tokenItem : allTokenItems) {
             if (tokenItem != null
