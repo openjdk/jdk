@@ -40,22 +40,22 @@ public final class CAInterop {
      * Validates provided URLs using <code>HttpsURLConnection</code> making sure they
      * anchor to the root CA found in <code>cacerts</code> using provided alias.
      * @param caAlias CA alis from <code>cacerts</code> file
-     * @param validCert valid test URL
-     * @param revokedCert revoked test URL
+     * @param validCertURL valid test URL
+     * @param revokedCertURL revoked test URL
      * @throws Exception thrown when certificate can't be validated as valid or revoked
      */
     public void validate(String caAlias,
-                                String validCert,
-                                String revokedCert) throws Exception {
+                                String validCertURL,
+                                String revokedCertURL) throws Exception {
 
         ValidatePathWithURL validatePathWithURL = new ValidatePathWithURL(caAlias);
 
-        if (validCert != null) {
-            validatePathWithURL.validateDomain(validCert, false);
+        if (validCertURL != null) {
+            validatePathWithURL.validateDomain(validCertURL, false);
         }
 
-        if (revokedCert != null) {
-            validatePathWithURL.validateDomain(revokedCert, true);
+        if (revokedCertURL != null) {
+            validatePathWithURL.validateDomain(revokedCertURL, true);
         }
     }
 }
