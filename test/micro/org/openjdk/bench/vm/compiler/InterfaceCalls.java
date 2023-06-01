@@ -54,11 +54,11 @@ public class InterfaceCalls {
     }
 
     interface FirstInterfaceExt extends FirstInterface {
-        default int getIntFirst() {return 44;}
+        default int getIntFirst() { return 44; }
     }
 
     interface FirstInterfaceExtExt extends FirstInterfaceExt {
-        default int getIntFirst() {return 45;}
+        default int getIntFirst() { return 45; }
     }
 
     class FirstClass implements FirstInterface, SecondInterface {
@@ -183,8 +183,8 @@ public class InterfaceCalls {
 
     final int asLength = 5;
     public FirstInterface[] as = new FirstInterface[asLength];
-    public FirstInterface[] noninlined = new FirstInterface[5];
-    public FirstInterfaceExtExt[] noninlinedextext = new FirstInterfaceExtExt[5];
+    public FirstInterface[] noninlined = new FirstInterface[asLength];
+    public FirstInterfaceExtExt[] noninlinedextext = new FirstInterfaceExtExt[asLength];
 
 
     @Setup
@@ -200,6 +200,7 @@ public class InterfaceCalls {
         noninlined[2] = new ThirdClassDontInline();
         noninlined[3] = new FourthClassDontInline();
         noninlined[4] = new FifthClassDontInline();
+
         noninlinedextext[0] = new FirstClassDontInlineExtExt();
         noninlinedextext[1] = new SecondClassDontInlineExtExt();
         noninlinedextext[2] = new ThirdClassDontInlineExtExt();
