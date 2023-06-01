@@ -7128,18 +7128,19 @@ class StubGenerator: public StubCodeGenerator {
       // Partial reduction mod 2**130 - 5
       __ adds(U_1, U_0HI, U_1);
       __ adc(U_2, U_1HI, U_2);
-      // Sum now in U_2:U_1, U_0.
+      // Sum now in U_2:U_1:U_0.
       // Dead: U_0HI, U_1HI.
       regs = (regs.remaining() + U_0HI + U_1HI).begin();
 
-      // U_2:U_1:U_0 += (U_1HI >> 2)
+      // U_2:U_1:U_0 += (U_2 >> 2) * 5 in two steps
+
+      // First, U_2:U_1:U_0 += (U_2 >> 2)
       __ lsr(rscratch1, U_2, 2);
       __ andr(U_2, U_2, (u8)3);
       __ adds(U_0, U_0, rscratch1);
       __ adcs(U_1, U_1, zr);
       __ adc(U_2, U_2, zr);
-
-      // U_1HI:U_0HI, U_0 += (U_1HI >> 2) << 2
+      // Second, U_2:U_1:U_0 += (U_2 >> 2) << 2
       __ adds(U_0, U_0, rscratch1, Assembler::LSL, 2);
       __ adcs(U_1, U_1, zr);
       __ adc(U_2, U_2, zr);
