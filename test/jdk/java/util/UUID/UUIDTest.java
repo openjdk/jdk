@@ -25,19 +25,32 @@
  * @bug 4173528 5068772 8148936 8196334 8308803
  * @summary Unit tests for java.util.UUID
  * @key randomness
+<<<<<<< HEAD
+=======
+ * @library /test/lib
+ * @build jdk.test.lib.RandomFactory
+>>>>>>> master
  * @run main/othervm -Xmx1g -XX:+CompactStrings UUIDTest
  * @run main/othervm -Xmx1g -XX:-CompactStrings UUIDTest
  */
 
 import java.util.*;
 import java.util.stream.IntStream;
+<<<<<<< HEAD
+=======
+import jdk.test.lib.RandomFactory;
+>>>>>>> master
 
 public class UUIDTest {
 
     // Single UUID instance is ~32 bytes, 1M instances take ~256M in the set
     private static final int COUNT = 1_000_000;
 
+<<<<<<< HEAD
     static final Random generator = new Random();
+=======
+    static final Random generator = RandomFactory.getRandom();
+>>>>>>> master
 
     public static void main(String[] args) throws Exception {
         negativeTest();
@@ -63,6 +76,11 @@ public class UUIDTest {
     }
 
     private static void randomUUIDTest() throws Exception {
+<<<<<<< HEAD
+=======
+        List<UUID> collisions = new ArrayList<>();
+
+>>>>>>> master
         Set<UUID> set = new HashSet<>();
         for (int i = 0; i < COUNT; i++) {
             UUID u = UUID.randomUUID();
@@ -73,9 +91,22 @@ public class UUIDTest {
                 throw new Exception("Bad variant: " + u);
             }
             if (!set.add(u)) {
+<<<<<<< HEAD
                 throw new Exception("UUID collision: " + u);
             }
         }
+=======
+                collisions.add(u);
+            }
+        }
+
+        if (!collisions.isEmpty()) {
+           // This is extremely unlikely to happen. If you see this failure,
+           // this highly likely points to the implementation bug, rather than
+           // the odd chance.
+           throw new Exception("UUID collisions detected: " + collisions);
+        }
+>>>>>>> master
     }
 
     private static void randomUUIDTest_Multi() throws Exception {
@@ -83,6 +114,11 @@ public class UUIDTest {
                                     .mapToObj(i -> UUID.randomUUID())
                                     .toList();
 
+<<<<<<< HEAD
+=======
+        List<UUID> collisions = new ArrayList<>();
+
+>>>>>>> master
         Set<UUID> set = new HashSet<>();
         for (UUID u : uuids) {
             if (u.version() != 4) {
@@ -92,13 +128,31 @@ public class UUIDTest {
                 throw new Exception("Bad variant: " + u);
             }
             if (!set.add(u)) {
+<<<<<<< HEAD
                 throw new Exception("UUID collision: " + u);
             }
         }
+=======
+                collisions.add(u);
+            }
+        }
+
+        if (!collisions.isEmpty()) {
+           // This is extremely unlikely to happen. If you see this failure,
+           // this highly likely points to the implementation bug, rather than
+           // the odd chance.
+           throw new Exception("UUID collisions detected: " + collisions);
+        }
+>>>>>>> master
     }
 
 
     private static void nameUUIDFromBytesTest() throws Exception {
+<<<<<<< HEAD
+=======
+        List<UUID> collisions = new ArrayList<>();
+
+>>>>>>> master
         byte[] someBytes = new byte[12];
         Set<UUID> set = new HashSet<>();
         for (int i = 0; i < COUNT; i++) {
@@ -109,10 +163,24 @@ public class UUIDTest {
             }
             if (u.variant() != 2) {
                 throw new Exception("Bad variant: " + u);
+<<<<<<< HEAD
             }
             if (!set.add(u)) {
                 throw new Exception("UUID collision: " + u);
             }
+=======
+            }
+            if (!set.add(u)) {
+                collisions.add(u);
+            }
+        }
+
+        if (!collisions.isEmpty()) {
+           // This is extremely unlikely to happen. If you see this failure,
+           // this highly likely points to the implementation bug, rather than
+           // the odd chance.
+           throw new Exception("UUID collisions detected: " + collisions);
+>>>>>>> master
         }
     }
 
@@ -313,7 +381,12 @@ public class UUIDTest {
             UUID u1 = UUID.randomUUID();
             UUID u2 = UUID.fromString(u1.toString());
             if (u1.hashCode() != u2.hashCode()) {
+<<<<<<< HEAD
                 throw new Exception("Equal UUIDs with different hash codes: " + u1 + " and " + u2);
+=======
+                throw new Exception("Equal UUIDs with different hash codes: " + u1 + "(" + u1.hashCode() + ") " +
+                                    "and " + u2 + "(" + u2.hashCode() + ")");
+>>>>>>> master
             }
         }
 

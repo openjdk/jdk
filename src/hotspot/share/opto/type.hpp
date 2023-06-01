@@ -353,7 +353,7 @@ public:
 
   // Return a hash for this type.  The hash function is public so ConNode
   // (constants) can hash on their constant, which is represented by a Type.
-  virtual int hash() const;
+  virtual uint hash() const;
 
   // Map ideal registers (machine types) to ideal types
   static const Type *mreg2type[];
@@ -491,7 +491,7 @@ class TypeF : public Type {
   TypeF( float f ) : Type(FloatCon), _f(f) {};
 public:
   virtual bool eq( const Type *t ) const;
-  virtual int  hash() const;             // Type specific hashing
+  virtual uint hash() const;             // Type specific hashing
   virtual bool singleton(void) const;    // TRUE if type is a singleton
   virtual bool empty(void) const;        // TRUE if type is vacuous
 public:
@@ -522,7 +522,7 @@ class TypeD : public Type {
   TypeD( double d ) : Type(DoubleCon), _d(d) {};
 public:
   virtual bool eq( const Type *t ) const;
-  virtual int  hash() const;             // Type specific hashing
+  virtual uint hash() const;             // Type specific hashing
   virtual bool singleton(void) const;    // TRUE if type is a singleton
   virtual bool empty(void) const;        // TRUE if type is vacuous
 public:
@@ -581,7 +581,7 @@ protected:
 public:
   typedef jint NativeType;
   virtual bool eq( const Type *t ) const;
-  virtual int  hash() const;             // Type specific hashing
+  virtual uint hash() const;             // Type specific hashing
   virtual bool singleton(void) const;    // TRUE if type is a singleton
   virtual bool empty(void) const;        // TRUE if type is vacuous
   const jint _lo, _hi;          // Lower bound, upper bound
@@ -647,7 +647,7 @@ protected:
 public:
   typedef jlong NativeType;
   virtual bool eq( const Type *t ) const;
-  virtual int  hash() const;             // Type specific hashing
+  virtual uint hash() const;             // Type specific hashing
   virtual bool singleton(void) const;    // TRUE if type is a singleton
   virtual bool empty(void) const;        // TRUE if type is vacuous
 public:
@@ -706,7 +706,7 @@ class TypeTuple : public Type {
 
 public:
   virtual bool eq( const Type *t ) const;
-  virtual int  hash() const;             // Type specific hashing
+  virtual uint hash() const;             // Type specific hashing
   virtual bool singleton(void) const;    // TRUE if type is a singleton
   virtual bool empty(void) const;        // TRUE if type is vacuous
 
@@ -756,7 +756,7 @@ class TypeAry : public Type {
       _elem(elem), _size(size), _stable(stable) {}
 public:
   virtual bool eq( const Type *t ) const;
-  virtual int  hash() const;             // Type specific hashing
+  virtual uint hash() const;             // Type specific hashing
   virtual bool singleton(void) const;    // TRUE if type is a singleton
   virtual bool empty(void) const;        // TRUE if type is vacuous
 
@@ -798,7 +798,7 @@ public:
   }
 
   virtual bool eq(const Type *t) const;
-  virtual int  hash() const;             // Type specific hashing
+  virtual uint hash() const;             // Type specific hashing
   virtual bool singleton(void) const;    // TRUE if type is a singleton
   virtual bool empty(void) const;        // TRUE if type is vacuous
 
@@ -884,7 +884,7 @@ protected:
   class InterfaceSet {
   private:
     GrowableArray<ciKlass*> _list;
-    int _hash;
+    uint _hash;
     ciKlass* _exact_klass;
     DEBUG_ONLY(bool _initialized;)
 
@@ -899,7 +899,7 @@ protected:
     InterfaceSet(GrowableArray<ciInstanceKlass*>* interfaces);
     bool eq(const InterfaceSet& other) const;
     bool eq(ciInstanceKlass* k) const;
-    int hash() const;
+    uint hash() const;
     void dump(outputStream* st) const;
     InterfaceSet union_with(const InterfaceSet& other) const;
     InterfaceSet intersection_with(const InterfaceSet& other) const;
@@ -1015,7 +1015,7 @@ public:
   virtual const TypePtr* add_offset(intptr_t offset) const;
   virtual const TypePtr* with_offset(intptr_t offset) const;
   virtual bool eq(const Type *t) const;
-  virtual int  hash() const;             // Type specific hashing
+  virtual uint hash() const;             // Type specific hashing
 
   virtual bool singleton(void) const;    // TRUE if type is a singleton
   virtual bool empty(void) const;        // TRUE if type is vacuous
@@ -1070,7 +1070,7 @@ protected:
   TypeRawPtr( PTR ptr, address bits ) : TypePtr(RawPtr,ptr,0), _bits(bits){}
 public:
   virtual bool eq( const Type *t ) const;
-  virtual int  hash() const;     // Type specific hashing
+  virtual uint hash() const;    // Type specific hashing
 
   const address _bits;          // Constant value, if applicable
 
@@ -1107,7 +1107,7 @@ protected:
              const TypePtr* speculative, int inline_depth);
 public:
   virtual bool eq( const Type *t ) const;
-  virtual int  hash() const;             // Type specific hashing
+  virtual uint hash() const;             // Type specific hashing
   virtual bool singleton(void) const;    // TRUE if type is a singleton
   enum {
    InstanceTop = -1,   // undefined instance
@@ -1276,7 +1276,7 @@ class TypeInstPtr : public TypeOopPtr {
   TypeInstPtr(PTR ptr, ciKlass* k, const InterfaceSet& interfaces, bool xk, ciObject* o, int offset, int instance_id,
               const TypePtr* speculative, int inline_depth);
   virtual bool eq( const Type *t ) const;
-  virtual int  hash() const;             // Type specific hashing
+  virtual uint hash() const;             // Type specific hashing
 
   ciKlass* exact_klass_helper() const;
 
@@ -1405,7 +1405,7 @@ class TypeAryPtr : public TypeOopPtr {
 
   }
   virtual bool eq( const Type *t ) const;
-  virtual int hash() const;     // Type specific hashing
+  virtual uint hash() const;    // Type specific hashing
   const TypeAry *_ary;          // Array we point into
   const bool     _is_autobox_cache;
 
@@ -1513,7 +1513,7 @@ protected:
   virtual const Type *filter_helper(const Type *kills, bool include_speculative) const;
 public:
   virtual bool eq( const Type *t ) const;
-  virtual int  hash() const;             // Type specific hashing
+  virtual uint hash() const;             // Type specific hashing
   virtual bool singleton(void) const;    // TRUE if type is a singleton
 
 private:
@@ -1557,7 +1557,7 @@ protected:
 
 public:
   virtual bool eq( const Type *t ) const;
-  virtual int hash() const;
+  virtual uint hash() const;
   virtual bool singleton(void) const;    // TRUE if type is a singleton
 
 protected:
@@ -1678,7 +1678,7 @@ public:
 
   // corresponding pointer to instance, for a given class
   virtual const TypeOopPtr* as_instance_type(bool klass_change = true) const;
-  virtual int hash() const;
+  virtual uint hash() const;
   virtual bool eq(const Type *t) const;
 
   virtual const TypePtr *add_offset( intptr_t offset ) const;
@@ -1734,7 +1734,7 @@ public:
   const Type *elem() const { return _elem; }
 
   virtual bool eq(const Type *t) const;
-  virtual int hash() const;             // Type specific hashing
+  virtual uint hash() const;             // Type specific hashing
 
   virtual const TypeAryKlassPtr* cast_to_ptr_type(PTR ptr) const;
 
@@ -1779,7 +1779,7 @@ protected:
   virtual const Type *filter_helper(const Type *kills, bool include_speculative) const;
 public:
   virtual bool eq( const Type *t ) const;
-  virtual int  hash() const;             // Type specific hashing
+  virtual uint hash() const;             // Type specific hashing
   virtual bool singleton(void) const;    // TRUE if type is a singleton
 
   virtual const Type *xmeet( const Type *t ) const;
@@ -1890,7 +1890,7 @@ public:
 class TypeFunc : public Type {
   TypeFunc( const TypeTuple *domain, const TypeTuple *range ) : Type(Function),  _domain(domain), _range(range) {}
   virtual bool eq( const Type *t ) const;
-  virtual int  hash() const;             // Type specific hashing
+  virtual uint hash() const;             // Type specific hashing
   virtual bool singleton(void) const;    // TRUE if type is a singleton
   virtual bool empty(void) const;        // TRUE if type is vacuous
 

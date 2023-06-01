@@ -657,6 +657,22 @@ AC_DEFUN_ONCE([PLATFORM_SETUP_OPENJDK_BUILD_AND_TARGET],
   PLATFORM_SET_MODULE_TARGET_OS_VALUES
   PLATFORM_SET_RELEASE_FILE_OS_VALUES
   PLATFORM_SETUP_LEGACY_VARS
+  PLATFORM_CHECK_DEPRECATION
+])
+
+AC_DEFUN_ONCE([PLATFORM_CHECK_DEPRECATION],
+[
+  AC_ARG_ENABLE(deprecated-ports, [AS_HELP_STRING([--enable-deprecated-ports@<:@=yes/no@:>@],
+       [Suppress the error when configuring for a deprecated port @<:@no@:>@])])
+  AC_REQUIRE([PLATFORM_EXTRACT_TARGET_AND_BUILD])
+  if test "x$OPENJDK_TARGET_OS" = xwindows && test "x$OPENJDK_TARGET_CPU" = xx86; then
+    if test "x$enable_deprecated_ports" = "xyes"; then
+      AC_MSG_WARN([The Windows 32-bit x86 port is deprecated and may be removed in a future release.])
+    else
+      AC_MSG_ERROR(m4_normalize([The Windows 32-bit x86 port is deprecated and may be removed in a future release.
+        Use --enable-deprecated-ports=yes to suppress this error.]))
+    fi
+  fi
 ])
 
 AC_DEFUN_ONCE([PLATFORM_SETUP_OPENJDK_BUILD_OS_VERSION],

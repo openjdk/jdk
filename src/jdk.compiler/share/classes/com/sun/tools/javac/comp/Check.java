@@ -4572,8 +4572,11 @@ public class Check {
                         }
                     }
                 }
-            } else {
-                if (c.labels.tail.nonEmpty()) {
+            } else if (c.labels.tail.nonEmpty()) {
+                var patterCaseLabels = c.labels.stream().filter(ll -> ll instanceof JCPatternCaseLabel).map(cl -> (JCPatternCaseLabel)cl);
+                var allUnderscore = patterCaseLabels.allMatch(pcl -> !hasBindings(pcl.getPattern()));
+
+                if (!allUnderscore) {
                     log.error(c.labels.tail.head.pos(), Errors.FlowsThroughFromPattern);
                 }
             }
@@ -4608,7 +4611,7 @@ public class Check {
         new TreeScanner() {
             @Override
             public void visitBindingPattern(JCBindingPattern tree) {
-                bindings[0] = true;
+                bindings[0] = !tree.var.sym.isUnnamedVariable();
                 super.visitBindingPattern(tree);
             }
         }.scan(p);

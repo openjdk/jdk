@@ -230,6 +230,14 @@ public interface Tree {
         /**
          * Used for instances of {@link BindingPatternTree}.
          *
+         * @since 21
+         */
+        @PreviewFeature(feature=PreviewFeature.Feature.UNNAMED)
+        ANY_PATTERN(AnyPatternTree.class),
+
+        /**
+         * Used for instances of {@link BindingPatternTree}.
+         *
          * @since 16
          */
         BINDING_PATTERN(BindingPatternTree.class),
