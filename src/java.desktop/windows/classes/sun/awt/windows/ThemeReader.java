@@ -81,32 +81,25 @@ public final class ThemeReader {
         return xpStyleEnabled;
     }
 
+    private static Long openThemeImpl(String widget, int dpi) {
+       Long theme;
+       int i = widget.indexOf("::");
+       if (i > 0) {
+           // We're using the syntax "subAppName::controlName" here, as used by msstyles.
+           // See documentation for SetWindowTheme on MSDN.
+           setWindowTheme(widget.substring(0, i));
+           theme = openTheme(widget.substring(i + 2), dpi);
+           setWindowTheme(null);
+       } else {
+           theme = openTheme(widget, dpi);
+       }
+       return theme;
+    }
+
     // this should be called only with writeLock held
     private static Long getThemeImpl(String widget, int dpi) {
-        Long theme = null;
-
-        Map<String, Long> dpiWidgetToTheme = dpiAwareWidgetToTheme.get(dpi);
-
-        if (dpiWidgetToTheme != null) {
-            theme = dpiWidgetToTheme.get(widget);
-        }
-
-        if (theme == null) {
-            int i = widget.indexOf("::");
-            if (i > 0) {
-                // We're using the syntax "subAppName::controlName" here, as used by msstyles.
-                // See documentation for SetWindowTheme on MSDN.
-                setWindowTheme(widget.substring(0, i));
-                theme = openTheme(widget.substring(i + 2), dpi);
-                setWindowTheme(null);
-            } else {
-                theme = openTheme(widget, dpi);
-            }
-
-            dpiAwareWidgetToTheme.computeIfAbsent(dpi, key -> new HashMap<>()).put(widget, theme);
-
-        }
-        return theme;
+       return dpiAwareWidgetToTheme.computeIfAbsent(dpi, key -> new HashMap<>())
+                .computeIfAbsent(widget, w -> openThemeImpl(widget, dpi));
     }
 
     // returns theme value
@@ -121,16 +114,13 @@ public final class ThemeReader {
             try {
                 if (!valid) {
                     // Close old themes.
-                    if (!dpiAwareWidgetToTheme.isEmpty()) {
-                        for (Map<String, Long> dpiVal : dpiAwareWidgetToTheme.values()) {
-                            for (Long value : dpiVal.values()) {
-                                closeTheme(value);
-                            }
-                            dpiVal.clear();
+                    for (Map<String, Long> dpiVal : dpiAwareWidgetToTheme.values()) {
+                        for (Long value : dpiVal.values()) {
+                            closeTheme(value);
                         }
-                        dpiAwareWidgetToTheme.clear();
-                        valid = true;
                     }
+                    dpiAwareWidgetToTheme.clear();
+                    valid = true;
                 }
             } finally {
                 readLock.lock();
@@ -141,10 +131,12 @@ public final class ThemeReader {
         // mostly copied from the javadoc for ReentrantReadWriteLock
         Long theme = null;
 
-        if (dpiAwareWidgetToTheme.get(dpi) != null)
-        {
-            theme = dpiAwareWidgetToTheme.get(dpi).get(widget);
+        Map<String, Long> dpiWidgetToTheme = dpiAwareWidgetToTheme.get(dpi);
+
+        if (dpiWidgetToTheme != null) {
+            theme = dpiWidgetToTheme.get(widget);
         }
+
         if (theme == null) {
             readLock.unlock();
             writeLock.lock();
@@ -166,7 +158,6 @@ public final class ThemeReader {
            int part, int state, int x, int y, int w, int h, int stride, int dpi) {
         readLock.lock();
         try {
-
             /* We get the part size based on the theme for current screen DPI
             and pass it to paintBackground */
             Dimension d = getPartSize(getTheme(widget, dpi), part, state);
