@@ -220,16 +220,24 @@ void JvmtiAgentList::unload_agents() {
   }
 }
 
-// Return true if a library is a loaded agent library
-bool JvmtiAgentList::is_loaded(void* os_lib) {
+// Return true if a statically linked agent is on the list
+bool JvmtiAgentList::is_static_lib_loaded(const char* name) {
   JvmtiAgentList::Iterator it = JvmtiAgentList::agents();
   while (it.has_next()) {
     JvmtiAgent* const agent = it.next();
-    if (os_lib == nullptr) {
-      if (agent->is_static_lib() && agent->is_loaded()) {
-        return true;
-      }
-    } else if (agent->os_lib() == os_lib) {
+    if (agent->is_static_lib() && strcmp(agent->name(), name) == 0) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// Return true if a agent library on the list
+bool JvmtiAgentList::is_dynamic_lib_loaded(void* os_lib) {
+  JvmtiAgentList::Iterator it = JvmtiAgentList::agents();
+  while (it.has_next()) {
+    JvmtiAgent* const agent = it.next();
+    if (!agent->is_static_lib() && agent->os_lib() == os_lib) {
       return true;
     }
   }

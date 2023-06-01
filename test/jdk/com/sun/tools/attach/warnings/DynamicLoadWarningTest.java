@@ -63,8 +63,8 @@ import org.junit.jupiter.params.provider.MethodSource;
 import static org.junit.jupiter.api.Assertions.*;
 
 class DynamicLoadWarningTest {
-    private static final String JVMTI_AGENT_WARNING = "WARNING: A JVM TI agent has been dynamically loaded";
-    private static final String JAVA_AGENT_WARNING = "WARNING: A Java agent has been loaded dynamically";
+    private static final String JVMTI_AGENT_WARNING = "WARNING: A JVM TI agent has been loaded dynamically";
+    private static final String JAVA_AGENT_WARNING  = "WARNING: A Java agent has been loaded dynamically";
 
     // JVM TI agents
     private static final String JVMTI_AGENT1_LIB = "JvmtiAgent1";
