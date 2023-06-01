@@ -99,6 +99,17 @@ void Parse::array_store(BasicType bt) {
   if (elemtype == TypeInt::BOOL) {
     bt = T_BOOLEAN;
   }
+
+  if (DoPartialEscapeAnalysis && bt == T_OBJECT) {
+    PEAState& as = jvms()->alloc_state();
+    VirtualState* obj_vs = as.as_virtual(val);    // obj is tracked and Virtual
+    VirtualState* ary_vs = as.as_virtual(array);  // array is not-tracked or Escaped
+
+    if (ary_vs == nullptr && obj_vs != nullptr) {
+      EscapedState* escaped = as.materialize(this, val);
+      val = escaped->get_materialized_value();
+    }
+  }
   const TypeAryPtr* adr_type = TypeAryPtr::get_array_body_type(bt);
 
   access_store_at(array, adr, adr_type, val, elemtype, bt, MO_UNORDERED | IN_HEAP | IS_ARRAY);
