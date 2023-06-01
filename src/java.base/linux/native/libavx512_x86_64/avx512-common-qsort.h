@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2023 Intel Corporation. All rights reserved.
+ * Copyright (c) 2021, 2023, Intel Corporation. All rights reserved.
+ * Copyright (c) 2021 Serge Sans Paille. All rights reserved.
  * Intel x86-simd-sort source code.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -23,6 +24,8 @@
  * questions.
  *
  */
+
+// This implementation is based on x86-simd-sort(https://github.com/intel/x86-simd-sort)
 
 #ifndef AVX512_QSORT_COMMON
 #define AVX512_QSORT_COMMON
