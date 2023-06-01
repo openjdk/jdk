@@ -164,7 +164,8 @@ final class Exchange<T> {
             HttpConnection connection;
             Throwable cause;
             synchronized (this) {
-                if ((cause = this.cause) == null) {
+                cause = this.cause;
+                if (cause == null) {
                     cause = this.cause = error;
                 }
                 connection = this.connection;
