@@ -1162,7 +1162,7 @@ Node* MaxNode::IdealI(PhaseGVN* phase, bool can_reshape) {
     Node* outer_add = in(inner_op_index == 1 ? 2 : 1);
     ConstAddOperands outer_add_operands = as_add_with_constant(outer_add);
     if (outer_add_operands.first == nullptr) {
-      continue;
+      return nullptr; // outer_add has a TOP input, no need to continue.
     }
     // One operand is a MinI/MaxI and the other is an integer addition with
     // constant. Test the operands of the inner MinI/MaxI.
@@ -1171,7 +1171,7 @@ Node* MaxNode::IdealI(PhaseGVN* phase, bool can_reshape) {
       Node* inner_add = inner_op->in(inner_add_index);
       ConstAddOperands inner_add_operands = as_add_with_constant(inner_add);
       if (inner_add_operands.first == nullptr) {
-        continue;
+        return nullptr; // inner_add has a TOP input, no need to continue.
       }
       // Try to extract the inner add.
       Node* add_extracted = extract_add(phase, inner_add_operands, outer_add_operands);
