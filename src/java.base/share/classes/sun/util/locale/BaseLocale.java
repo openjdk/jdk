@@ -272,6 +272,13 @@ public final class BaseLocale {
             this.hash = hashCode(locale);
         }
 
+        private Key(BaseLocale locale) {
+            this.normalized = true;
+            this.holderRef = new SoftReference<>(locale);
+            this.holder = null;
+            this.hash = hashCode(locale);
+        }
+
         public int hashCode() {
             return hash;
         }
@@ -352,7 +359,14 @@ public final class BaseLocale {
 
         @Override
         protected BaseLocale createObject(Key key) {
-            return Key.normalize(key).getBaseLocale();
+            if (key.normalized) {
+                return key.getBaseLocale();
+            }
+
+            assert (key.holder != null && key.holderRef == null);
+            BaseLocale l = key.holder;
+            BaseLocale locale = new BaseLocale(l.getLanguage(), l.getScript(), l.getRegion(), l.getVariant(), true);
+            return (new Key(locale)).getBaseLocale();
         }
     }
 }
