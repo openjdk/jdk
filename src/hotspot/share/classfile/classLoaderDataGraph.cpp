@@ -503,25 +503,23 @@ bool ClassLoaderDataGraph::do_unloading() {
     if (data->is_alive()) {
       prev = data;
       loaders_processed++;
-      continue;
-    }
-
-    // Found dead CLD.
-    loaders_removed++;
-    seen_dead_loader = true;
-    data->unload();
-
-    // Move dead CLD to unloading list.
-    if (prev != nullptr) {
-      prev->unlink_next();
     } else {
-      assert(data == _head, "sanity check");
-      // The GC might be walking this concurrently
-      Atomic::store(&_head, data->next());
-    }
-    data->set_unloading_next(_unloading_head);
-    _unloading_head = data;
+      // Found dead CLD.
+      loaders_removed++;
+      seen_dead_loader = true;
+      data->unload();
 
+      // Move dead CLD to unloading list.
+      if (prev != nullptr) {
+        prev->unlink_next();
+      } else {
+        assert(data == _head, "sanity check");
+        // The GC might be walking this concurrently
+        Atomic::store(&_head, data->next());
+      }
+      data->set_unloading_next(_unloading_head);
+      _unloading_head = data;
+    }
   }
 
   log_debug(class, loader, data)("do_unloading: loaders processed %u, loaders removed %u", loaders_processed, loaders_removed);
