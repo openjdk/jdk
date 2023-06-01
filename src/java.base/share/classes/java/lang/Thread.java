@@ -2012,22 +2012,6 @@ public class Thread implements Runnable {
     }
 
     /**
-     * Throws {@code UnsupportedOperationException}.
-     *
-     * @return     nothing
-     *
-     * @deprecated This method was originally designed to count the number of
-     *             stack frames but the results were never well-defined and it
-     *             depended on thread-suspension.
-     *             This method is subject to removal in a future version of Java SE.
-     * @see        StackWalker
-     */
-    @Deprecated(since="1.2", forRemoval=true)
-    public int countStackFrames() {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
      * Waits at most {@code millis} milliseconds for this thread to terminate.
      * A timeout of {@code 0} means to wait forever.
      * This method returns immediately, without waiting, if the thread has not
