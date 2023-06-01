@@ -307,7 +307,7 @@ BOOL CALLBACK EnumWndProc(HWND hwnd, LPARAM lParam) {
         long vmID;
         AccessibleContext ac;
         if (GetAccessibleContextFromHWND(hwnd, &vmID, &ac) == TRUE) {
-            theJaccesswalker->addComponentNodes(vmID, ac, (AccessibleNode *) NULL,
+            theJaccesswalker->addComponentNodes(vmID, ac, nullptr,
                                          hwnd, TVI_ROOT, theTreeControlWindow);
         }
         topLevelWindow = hwnd;
@@ -316,7 +316,7 @@ BOOL CALLBACK EnumWndProc(HWND hwnd, LPARAM lParam) {
         ::GetClassNameA(hwnd, szClass, sizeof(szClass) - 1);
         if ( ( 0 == ::strcmp(szClass, "IEFrame") )
              || ( 0 == ::strcmp(szClass, "MozillaUIWindowClass") ) ) {
-            EnumChildWindows(hwnd, (WNDENUMPROC) EnumChildProc, NULL);
+            EnumChildWindows(hwnd, (WNDENUMPROC) EnumChildProc, nullptr);
         }
     }
     return TRUE;
@@ -467,12 +467,12 @@ BOOL CALLBACK EnumChildProc(HWND hwnd, LPARAM lParam)
         AccessibleContext ac ( 0 );
         if ( TRUE == GetAccessibleContextFromHWND(hwnd, &vmID, &ac) ) {
             theJaccesswalker->addComponentNodes(
-                vmID, ac, (AccessibleNode *) NULL,
+                vmID, ac, nullptr,
                 hwnd, TVI_ROOT, theTreeControlWindow);
         }
         topLevelWindow = hwnd;
     } else {
-        EnumChildWindows(hwnd, (WNDENUMPROC) EnumChildProc, NULL);
+        EnumChildWindows(hwnd, (WNDENUMPROC) EnumChildProc, nullptr);
     }
     return TRUE;
 }
@@ -505,7 +505,7 @@ HWND CreateATreeView(HWND hwndParent) {
  * Create (and display) the accessible component nodes of a parent AccessibleContext
  *
  */
-void Jaccesswalker::addComponentNodes(jint vmID, AccessibleContext context,
+void Jaccesswalker::addComponentNodes(long vmID, AccessibleContext context,
                                     AccessibleNode *parent, HWND hwnd,
                                     HTREEITEM treeNodeParent, HWND treeWnd) {
 
@@ -537,7 +537,7 @@ void Jaccesswalker::addComponentNodes(jint vmID, AccessibleContext context,
         HTREEITEM treeNodeItem = TreeView_InsertItem(treeWnd, &tvis);
 
         for (int i = 0; i < info.childrenCount; i++) {
-            addComponentNodes(vmID, GetAccessibleChildFromContext(vmID, context, i),
+            addComponentNodes(static_cast<long>(vmID), GetAccessibleChildFromContext(vmID, context, i),
                               newNode, hwnd, treeNodeItem, treeWnd);
         }
     } else {
