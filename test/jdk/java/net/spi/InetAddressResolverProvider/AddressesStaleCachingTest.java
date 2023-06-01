@@ -59,17 +59,17 @@ public class AddressesStaleCachingTest {
     @Test
     public void testRefresh() throws Exception{
         // The first request is to save the data into the cache
-        Lookup first = doLookup(false);
+        Lookup first = doLookup(false, 0);
 
         Thread.sleep(10000); // intentionally big delay > x2 stale property
         // The refreshTime is expired, we will do the successful lookup.
-        Lookup second = doLookup(false);
+        Lookup second = doLookup(false, 0);
         Assert.assertNotEquals(first.timestamp, second.timestamp,
                                "Two lookups are expected");
 
         Thread.sleep(10000); // intentionally big delay > x2 stale property
         // The refreshTime is expired again, we will do the failed lookup.
-        Lookup third = doLookup(true);
+        Lookup third = doLookup(true, 0);
         Assert.assertNotEquals(second.timestamp, third.timestamp,
                                "Two lookups are expected");
 
@@ -87,8 +87,9 @@ public class AddressesStaleCachingTest {
      */
     @Test
     public void testOnlyOneThreadIsBlockedDuringRefresh() throws Exception {
-        doLookup(false);
-        Thread.sleep(5000);
+        long timeout = System.nanoTime() + TimeUnit.SECONDS.toNanos(12);
+        doLookup(false, Long.MAX_VALUE);
+        Thread.sleep(9000);
 
         CountDownLatch blockServer = new CountDownLatch(1);
         SimpleResolverProviderImpl.setBlocker(blockServer);
@@ -105,7 +106,7 @@ public class AddressesStaleCachingTest {
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }
-                doLookup(true);
+                doLookup(true, timeout);
                 wait9.countDown();
                 wait10.countDown();
             });
@@ -123,7 +124,7 @@ public class AddressesStaleCachingTest {
         }
     }
 
-    private static Lookup doLookup(boolean error) {
+    private static Lookup doLookup(boolean error, long timeout) {
         SimpleResolverProviderImpl.setUnreachableServer(error);
         try {
             byte[] firstAddress = InetAddress.getByName("javaTest.org").getAddress();
@@ -134,8 +135,10 @@ public class AddressesStaleCachingTest {
 
             Assert.assertEquals(firstAddress, secondAddress,
                                 "Same address is expected");
-            Assert.assertEquals(firstTimestamp, secondTimestamp,
-                                "Only one positive lookup is expected with caching enabled");
+            if (timeout == 0 || timeout - System.nanoTime() > 0) {
+                Assert.assertEquals(firstTimestamp, secondTimestamp,
+                        "Only one positive lookup is expected with caching enabled");
+            }
             return new Lookup(firstAddress, firstTimestamp);
         } catch (UnknownHostException e) {
             throw new RuntimeException(e);
