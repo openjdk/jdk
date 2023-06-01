@@ -1429,8 +1429,6 @@ ObjectMonitor* ObjectSynchronizer::inflate(Thread* current, oop object,
 
       markWord cmp = object->cas_set_mark(markWord::INFLATING(), mark);
       if (cmp != mark) {
-        // Release object's oop storage since we don't need this ObjectMonitor:
-        m->release_object();
         delete m;
         continue;       // Interference -- just retry
       }
@@ -1523,8 +1521,6 @@ ObjectMonitor* ObjectSynchronizer::inflate(Thread* current, oop object,
     m->set_header(mark);
 
     if (object->cas_set_mark(markWord::encode(m), mark) != mark) {
-      // Release object's oop storage since we don't need this ObjectMonitor:
-      m->release_object();
       delete m;
       m = nullptr;
       continue;

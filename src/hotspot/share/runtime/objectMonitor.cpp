@@ -276,6 +276,10 @@ ObjectMonitor::ObjectMonitor(oop object) :
 { }
 
 ObjectMonitor::~ObjectMonitor() {
+  if (!_object.is_null()) {
+    // Release object's oop storage if it hasn't already been done.
+    release_object();
+  }
 }
 
 oop ObjectMonitor::object() const {
