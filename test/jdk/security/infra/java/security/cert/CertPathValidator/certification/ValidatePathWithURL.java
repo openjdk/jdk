@@ -40,6 +40,7 @@ public class ValidatePathWithURL {
     /**
      * Enables the certificate revocation checking and loads the certificate from
      * <code>cacerts</code> file for give caAlias
+     *
      * @param caAlias CA alias for CA certificate in <code>cacerts</code> file
      * @throws Exception when fails to get CA certificate from <code>cacerts</code> file
      */
@@ -90,7 +91,8 @@ public class ValidatePathWithURL {
      * Validates end entity certificate used in provided test URL using
      * <code>HttpsURLConnection</code>. Validation is skipped on network error or if
      * the certificate is expired.
-     * @param testURL URL to validate
+     *
+     * @param testURL     URL to validate
      * @param revokedCert if <code>true</code> then validate is REVOKED certificate
      * @throws Exception on failure to validate certificate
      */
@@ -129,6 +131,11 @@ public class ValidatePathWithURL {
                     if (cpve.getReason() == CertPathValidatorException.BasicReason.REVOKED
                             || cpve.getCause() instanceof CertificateRevokedException) {
                         System.out.println("Certificate is revoked");
+
+                        // We can validate anchor for revoked certificates as well
+                        Certificate[] chain = cpve.getCertPath().getCertificates().toArray(new Certificate[0]);
+                        validateAnchor(chain);
+
                         if (revokedCert) {
                             return true;
                         }
@@ -149,7 +156,7 @@ public class ValidatePathWithURL {
         } catch (IOException e) {
             throw new SkippedException("Network setup issue, skip this test", e);
         } finally {
-            if(httpsURLConnection != null) {
+            if (httpsURLConnection != null) {
                 httpsURLConnection.disconnect();
             }
         }
@@ -165,11 +172,11 @@ public class ValidatePathWithURL {
             throw new RuntimeException("Cert chain too short " + chain.length);
         } else {
             System.out.println("Finding intermediate certificate issued by CA");
-            for (Certificate cert: chain){
-                if(cert instanceof X509Certificate certificate) {
+            for (Certificate cert : chain) {
+                if (cert instanceof X509Certificate certificate) {
                     System.out.println("Checking: " + certificate.getSubjectX500Principal());
                     System.out.println("Issuer: " + certificate.getIssuerX500Principal());
-                    if (certificate.getIssuerX500Principal().equals(rootPrincipal)){
+                    if (certificate.getIssuerX500Principal().equals(rootPrincipal)) {
                         interCert = certificate;
                         break;
                     }
@@ -177,7 +184,7 @@ public class ValidatePathWithURL {
             }
         }
 
-        if (interCert == null){
+        if (interCert == null) {
             throw new RuntimeException("Intermediate Root CA not found in the chain");
         }
 

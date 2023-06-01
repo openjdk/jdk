@@ -26,8 +26,7 @@
  * @bug 8210432
  * @summary Interoperability tests with TeliaSonera Root CA v1 using OCSP
  * @library /test/lib
- * @build jtreg.SkippedException
- * @build ValidatePathWithURL
+ * @build jtreg.SkippedException ValidatePathWithURL CAInterop
  * @run main/othervm TeliaSoneraCA OCSP
  */
 
@@ -36,8 +35,7 @@
  * @bug 8210432
  * @summary Interoperability tests with TeliaSonera Root CA v1 using CRL
  * @library /test/lib
- * @build jtreg.SkippedException
- * @build ValidatePathWithURL
+ * @build jtreg.SkippedException ValidatePathWithURL CAInterop
  * @run main/othervm TeliaSoneraCA CRL
  */
 

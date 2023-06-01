@@ -26,8 +26,7 @@
  * @bug 8216577 8249176
  * @summary Interoperability tests with GlobalSign R6 CA
  * @library /test/lib
- * @build jtreg.SkippedException
- * @build ValidatePathWithURL
+ * @build jtreg.SkippedException ValidatePathWithURL CAInterop
  * @run main/othervm -Djava.security.debug=certpath GlobalSignR6CA OCSP
  */
 
@@ -36,8 +35,7 @@
  * @bug 8216577 8249176
  * @summary Interoperability tests with GlobalSign R6 CA
  * @library /test/lib
- * @build jtreg.SkippedException
- * @build ValidatePathWithURL
+ * @build jtreg.SkippedException ValidatePathWithURL CAInterop
  * @run main/othervm -Djava.security.debug=certpath GlobalSignR6CA CRL
  */
 public class GlobalSignR6CA {

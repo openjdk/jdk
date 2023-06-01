@@ -26,8 +26,7 @@
  * @bug 8189131
  * @summary Interoperability tests with QuoVadis Root CA1, CA2, and CA3 G3 CAs using OCSP
  * @library /test/lib
- * @build jtreg.SkippedException
- * @build ValidatePathWithURL
+ * @build jtreg.SkippedException ValidatePathWithURL CAInterop
  * @run main/othervm -Djava.security.debug=certpath QuoVadisCA OCSP
  */
 
@@ -36,8 +35,7 @@
  * @bug 8189131
  * @summary Interoperability tests with QuoVadis Root CA1, CA2, and CA3 G3 CAs using CRL
  * @library /test/lib
- * @build jtreg.SkippedException
- * @build ValidatePathWithURL
+ * @build jtreg.SkippedException ValidatePathWithURL CAInterop
  * @run main/othervm -Djava.security.debug=certpath QuoVadisCA CRL
  */
 

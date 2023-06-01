@@ -27,8 +27,7 @@
  * @summary Interoperability tests with Comodo RSA, ECC, userTrust RSA, and
  *          userTrust ECC CAs
  * @library /test/lib
- * @build jtreg.SkippedException
- * @build ValidatePathWithURL
+ * @build jtreg.SkippedException ValidatePathWithURL CAInterop
  * @run main/othervm -Djava.security.debug=certpath ComodoCA OCSP
  */
 
@@ -38,8 +37,7 @@
  * @summary Interoperability tests with Comodo RSA, ECC, userTrust RSA, and
  *          userTrust ECC CAs
  * @library /test/lib
- * @build jtreg.SkippedException
- * @build ValidatePathWithURL
+ * @build jtreg.SkippedException ValidatePathWithURL CAInterop
  * @run main/othervm -Djava.security.debug=certpath ComodoCA CRL
  */
 

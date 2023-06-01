@@ -26,8 +26,7 @@
  * @bug 8189131
  * @summary Interoperability tests with Buypass Class 2 and Class 3 CA
  * @library /test/lib
- * @build jtreg.SkippedException
- * @build ValidatePathWithURL
+ * @build jtreg.SkippedException ValidatePathWithURL CAInterop
  * @run main/othervm/timeout=180 -Djava.security.debug=certpath BuypassCA OCSP
  */
 
@@ -36,8 +35,7 @@
  * @bug 8189131
  * @summary Interoperability tests with Buypass Class 2 and Class 3 CA
  * @library /test/lib
- * @build jtreg.SkippedException
- * @build ValidatePathWithURL
+ * @build jtreg.SkippedException ValidatePathWithURL CAInterop
  * @run main/othervm/timeout=180 -Djava.security.debug=certpath BuypassCA CRL
  */
 

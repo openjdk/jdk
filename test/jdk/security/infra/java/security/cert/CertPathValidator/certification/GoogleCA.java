@@ -26,8 +26,7 @@
  * @bug 8307134
  * @summary Interoperability tests with Google's GlobalSign R4 and GTS Root certificates
  * @library /test/lib
- * @build jtreg.SkippedException
- * @build ValidatePathWithURL
+ * @build jtreg.SkippedException ValidatePathWithURL CAInterop
  * @run main/othervm -Djava.security.debug=certpath GoogleCA OCSP
  */
 
@@ -36,8 +35,7 @@
  * @bug 8307134
  * @summary Interoperability tests with Google's GlobalSign R4 and GTS Root certificates
  * @library /test/lib
- * @build jtreg.SkippedException
- * @build ValidatePathWithURL
+ * @build jtreg.SkippedException ValidatePathWithURL CAInterop
  * @run main/othervm -Djava.security.debug=certpath GoogleCA CRL
  */
 

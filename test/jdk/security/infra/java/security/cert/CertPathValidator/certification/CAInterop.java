@@ -23,14 +23,16 @@
 public final class CAInterop {
     /**
      * Constructor for interoperability test with third party CA.
+     *
      * @param revocationMode revocation checking mode to use
      */
-    public CAInterop(String revocationMode){
+    public CAInterop(String revocationMode) {
         if ("CRL".equalsIgnoreCase(revocationMode)) {
             ValidatePathWithURL.enableCRLOnly();
-        } if ("OCSP".equalsIgnoreCase(revocationMode)) {
+        }
+        if ("OCSP".equalsIgnoreCase(revocationMode)) {
             ValidatePathWithURL.enableOCSPOnly();
-        }else {
+        } else {
             // OCSP and CRL check by default
             ValidatePathWithURL.enableOCSPAndCRL();
         }
@@ -39,14 +41,15 @@ public final class CAInterop {
     /**
      * Validates provided URLs using <code>HttpsURLConnection</code> making sure they
      * anchor to the root CA found in <code>cacerts</code> using provided alias.
-     * @param caAlias CA alis from <code>cacerts</code> file
-     * @param validCertURL valid test URL
+     *
+     * @param caAlias        CA alis from <code>cacerts</code> file
+     * @param validCertURL   valid test URL
      * @param revokedCertURL revoked test URL
      * @throws Exception thrown when certificate can't be validated as valid or revoked
      */
     public void validate(String caAlias,
-                                String validCertURL,
-                                String revokedCertURL) throws Exception {
+                         String validCertURL,
+                         String revokedCertURL) throws Exception {
 
         ValidatePathWithURL validatePathWithURL = new ValidatePathWithURL(caAlias);
 

@@ -21,13 +21,12 @@
  * questions.
  */
 
- /*
+/*
  * @test id=OCSP
  * @bug 8189131
  * @summary Interoperability tests with Actalis CA
  * @library /test/lib
- * @build jtreg.SkippedException
- * @build ValidatePathWithURL
+ * @build jtreg.SkippedException ValidatePathWithURL CAInterop
  * @run main/othervm/timeout=180 -Djava.security.debug=certpath ActalisCA OCSP
  */
 
@@ -36,8 +35,7 @@
  * @bug 8189131
  * @summary Interoperability tests with Actalis CA
  * @library /test/lib
- * @build jtreg.SkippedException
- * @build ValidatePathWithURL
+ * @build jtreg.SkippedException ValidatePathWithURL CAInterop
  * @run main/othervm/timeout=180 -Djava.security.debug=certpath ActalisCA CRL
  */
 

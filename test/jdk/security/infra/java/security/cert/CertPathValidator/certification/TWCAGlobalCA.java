@@ -26,8 +26,7 @@
  * @bug 8305975
  * @summary Interoperability tests with TWCA Global Root CA from TAIWAN-CA
  * @library /test/lib
- * @build jtreg.SkippedException
- * @build ValidatePathWithURL
+ * @build jtreg.SkippedException ValidatePathWithURL CAInterop
  * @run main/othervm -Djava.security.debug=certpath TWCAGlobalCA OCSP
  */
 
@@ -36,8 +35,7 @@
  * @bug 8305975
  * @summary Interoperability tests with TWCA Global Root CA from TAIWAN-CA
  * @library /test/lib
- * @build jtreg.SkippedException
- * @build ValidatePathWithURL
+ * @build jtreg.SkippedException ValidatePathWithURL CAInterop
  * @run main/othervm -Djava.security.debug=certpath TWCAGlobalCA CRL
  */
 

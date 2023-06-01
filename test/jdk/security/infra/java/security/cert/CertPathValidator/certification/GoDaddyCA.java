@@ -26,8 +26,7 @@
  * @bug 8196141
  * @summary Interoperability tests with GoDaddy/Starfield CA
  * @library /test/lib
- * @build jtreg.SkippedException
- * @build ValidatePathWithURL
+ * @build jtreg.SkippedException ValidatePathWithURL CAInterop
  * @run main/othervm -Djava.security.debug=certpath GoDaddyCA OCSP
  */
 
@@ -36,8 +35,7 @@
  * @bug 8196141
  * @summary Interoperability tests with GoDaddy/Starfield CA
  * @library /test/lib
- * @build jtreg.SkippedException
- * @build ValidatePathWithURL
+ * @build jtreg.SkippedException ValidatePathWithURL CAInterop
  * @run main/othervm -Djava.security.debug=certpath GoDaddyCA CRL
  */
 public class GoDaddyCA {

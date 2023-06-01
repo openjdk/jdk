@@ -26,8 +26,7 @@
  * @bug 8195774 8243321
  * @summary Interoperability tests with Entrust CAs
  * @library /test/lib
- * @build jtreg.SkippedException
- * @build ValidatePathWithURL
+ * @build jtreg.SkippedException ValidatePathWithURL CAInterop
  * @run main/othervm -Djava.security.debug=certpath EntrustCA OCSP
  */
 
@@ -36,8 +35,7 @@
  * @bug 8195774 8243321
  * @summary Interoperability tests with Entrust CAs
  * @library /test/lib
- * @build jtreg.SkippedException
- * @build ValidatePathWithURL
+ * @build jtreg.SkippedException ValidatePathWithURL CAInterop
  * @run main/othervm -Djava.security.debug=certpath EntrustCA CRL
  */
 

@@ -26,8 +26,7 @@
  * @bug 8304760
  * @summary Interoperability tests with Microsoft TLS root CAs
  * @library /test/lib
- * @build jtreg.SkippedException
- * @build ValidatePathWithURL
+ * @build jtreg.SkippedException ValidatePathWithURL CAInterop
  * @run main/othervm -Djava.security.debug=certpath MicrosoftTLS OCSP
  */
 
@@ -36,8 +35,7 @@
  * @bug 8304760
  * @summary Interoperability tests with Microsoft TLS root CAs
  * @library /test/lib
- * @build jtreg.SkippedException
- * @build ValidatePathWithURL
+ * @build jtreg.SkippedException ValidatePathWithURL CAInterop
  * @run main/othervm -Djava.security.debug=certpath MicrosoftTLS CRL
  */
 
