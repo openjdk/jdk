@@ -98,7 +98,7 @@ import java.lang.*;
  * @see     java.io.StreamTokenizer
  * @since   1.0
  */
-public class StringTokenizer implements Enumeration<Object> {
+public class StringTokenizer implements Enumeration<String> {
     private int currentPosition;
     private int newPosition;
     private int maxPosition;
@@ -387,15 +387,13 @@ public class StringTokenizer implements Enumeration<Object> {
      * @see     java.util.Enumeration
      * @see     java.util.StringTokenizer#hasMoreTokens()
      */
-    public boolean hasMoreElements() {
+    public final boolean hasMoreElements() {
         return hasMoreTokens();
     }
 
     /**
-     * Returns the same value as the {@code nextToken} method,
-     * except that its declared return value is {@code Object} rather than
-     * {@code String}. It exists so that this class can implement the
-     * {@code Enumeration} interface.
+     * Returns the same value as the {@code nextToken} method. It exists so
+     * that this class can implement the {@code Enumeration} interface.
      *
      * @return     the next token in the string.
      * @throws     NoSuchElementException  if there are no more tokens in this
@@ -403,7 +401,7 @@ public class StringTokenizer implements Enumeration<Object> {
      * @see        java.util.Enumeration
      * @see        java.util.StringTokenizer#nextToken()
      */
-    public Object nextElement() {
+    public final String nextElement() {
         return nextToken();
     }
 
