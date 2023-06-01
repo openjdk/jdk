@@ -242,7 +242,7 @@ instruct vabs(vReg dst, vReg src, vReg tmp) %{
   match(Set dst (AbsVL src));
   ins_cost(VEC_COST);
   effect(TEMP tmp);
-  format %{ "vrsub.vi $tmp, 0, $src\t#@vabs\n\t"
+  format %{ "vrsub.vi $tmp, $src, 0\t#@vabs\n\t"
             "vmax.vv $dst, $tmp, $src" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
