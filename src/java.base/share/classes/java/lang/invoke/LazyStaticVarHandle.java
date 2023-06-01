@@ -123,7 +123,7 @@ final class LazyStaticVarHandle extends VarHandle {
     public VarHandle withInvokeExactBehavior() {
         var delegate = this.delegate;
         return delegate == null ? (hasInvokeExactBehavior() ? this
-                : new LazyStaticVarHandle(refc, field, writeAllowedOnFinalFields, false))
+                : new LazyStaticVarHandle(refc, field, writeAllowedOnFinalFields, true))
                 : delegate.withInvokeExactBehavior();
     }
 
@@ -131,7 +131,7 @@ final class LazyStaticVarHandle extends VarHandle {
     public VarHandle withInvokeBehavior() {
         var delegate = this.delegate;
         return delegate == null ? (!hasInvokeExactBehavior() ? this
-                : new LazyStaticVarHandle(refc, field, writeAllowedOnFinalFields, true))
+                : new LazyStaticVarHandle(refc, field, writeAllowedOnFinalFields, false))
                 : delegate.withInvokeBehavior();
     }
 
