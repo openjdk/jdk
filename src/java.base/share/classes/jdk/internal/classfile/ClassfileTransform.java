@@ -32,7 +32,7 @@ import jdk.internal.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
 /**
  * A transformation on streams of elements. Transforms are used during
  * transformation of classfile entities; a transform is provided to a method like
- * {@link ClassModel#transform(ClassTransform)}, and the elements of the class,
+ * {@link Classfile#transform(ClassModel, ClassTransform)}, and the elements of the class,
  * along with a builder, are presented to the transform.
  *
  * <p>The subtypes of {@linkplain

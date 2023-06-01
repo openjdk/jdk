@@ -68,13 +68,16 @@ public sealed interface Classfile
     }
 
     /**
-     * {@return an option describing attribute mappers for custom attributes}
+     * Option describing attribute mappers for custom attributes.
      * Default is only to process standard attributes.
-     * @param r a function mapping attribute names to attribute mappers
      */
     sealed interface AttributeMapperOption extends Option
             permits ClassfileImpl.AttributeMapperOptionImpl {
 
+        /**
+         * {@return an option describing attribute mappers for custom attributes}
+         * @param attributeMapper a function mapping attribute names to attribute mappers
+         */
         static AttributeMapperOption of(Function<Utf8Entry, AttributeMapper<?>> attributeMapper) {
             return new ClassfileImpl.AttributeMapperOptionImpl(attributeMapper);
         }
@@ -83,13 +86,17 @@ public sealed interface Classfile
     }
 
     /**
-     * {@return an option describing the class hierarchy resolver to use when
-     * generating stack maps}
-     * @param r the resolver
+     * Option describing the class hierarchy resolver to use when generating
+     * stack maps.
      */
     sealed interface ClassHierarchyResolverOption extends Option
             permits ClassfileImpl.ClassHierarchyResolverOptionImpl {
 
+        /**
+         * {@return an option describing the class hierarchy resolver to use when
+         * generating stack maps}
+         * @param classHierarchyResolver the resolver
+         */
         static ClassHierarchyResolverOption of(ClassHierarchyResolver classHierarchyResolver) {
             return new ClassfileImpl.ClassHierarchyResolverOptionImpl(classHierarchyResolver);
         }
@@ -98,13 +105,13 @@ public sealed interface Classfile
     }
 
     /**
-     * {@return an option describing whether to preserve the original constant
-     * pool when transforming a classfile}  Reusing the constant pool enables significant
+     * Option describing whether to preserve the original constant pool when
+     * transforming a classfile.  Reusing the constant pool enables significant
      * optimizations in processing time and minimizes differences between the
      * original and transformed classfile, but may result in a bigger classfile
      * when a classfile is significantly transformed.
-     * Default is to preserve the original constant pool.
-     * @param b whether or not to preserve the original constant pool
+     * Default is {@code SHARE_CONSTANT_POOL} to preserve the original constant
+     * pool.
      */
     enum ConstantPoolSharingOption implements Option {
         SHARE_CONSTANT_POOL,
@@ -112,9 +119,9 @@ public sealed interface Classfile
     }
 
     /**
-     * {@return an option describing whether or not to patch out unreachable code}
-     * Default is to automatically patch out unreachable code with NOPs.
-     * @param b whether or not to automatically patch out unreachable code
+     * Option describing whether or not to patch out unreachable code.
+     * Default is {@code PATCH_DEAD_CODE} to automatically patch out unreachable
+     * code with NOPs.
      */
     enum DeadCodeOption implements Option {
         PATCH_DEAD_CODE,
@@ -122,12 +129,13 @@ public sealed interface Classfile
     }
 
     /**
-     * {@return an option describing whether or not to filter unresolved labels}
-     * Default is to throw IllegalStateException when any {@link ExceptionCatch},
-     * {@link LocalVariableInfo}, {@link LocalVariableTypeInfo}, or {@link CharacterRangeInfo}
+     * Option describing whether or not to filter unresolved labels.
+     * Default is {@code FAIL_ON_DEAD_LABELS} to throw IllegalStateException
+     * when any {@link ExceptionCatch}, {@link LocalVariableInfo},
+     * {@link LocalVariableTypeInfo}, or {@link CharacterRangeInfo}
      * reference to unresolved {@link Label} during bytecode serialization.
-     * Setting this option to true filters the above elements instead.
-     * @param b whether or not to automatically patch out unreachable code
+     * Setting this option to {@code FILTER_DEAD_LABELS} filters the above
+     * elements instead.
      */
     enum DeadLabelsOption implements Option {
         FAIL_ON_DEAD_LABELS,
@@ -135,12 +143,11 @@ public sealed interface Classfile
     }
 
     /**
-     * {@return an option describing whether to process or discard debug elements}
+     * Option describing whether to process or discard debug elements.
      * Debug elements include the local variable table, local variable type
      * table, and character range table.  Discarding debug elements may
      * reduce the overhead of parsing or transforming classfiles.
-     * Default is to process debug elements.
-     * @param b whether or not to process debug elements
+     * Default is {@code PROCESS_DEBUG_ELEMENTS} to process debug elements.
      */
     enum DebugElementsOption implements Option {
         PROCESS_DEBUG_ELEMENTS,
@@ -150,11 +157,10 @@ public sealed interface Classfile
     }
 
     /**
-     * {@return an option describing whether to process or discard line numbers}
+     * Option describing whether to process or discard line numbers.
      * Discarding line numbers may reduce the overhead of parsing or transforming
      * classfiles.
-     * Default is to process line numbers.
-     * @param b whether or not to process line numbers
+     * Default is {@code PROCESS_LINE_NUMBERS} to process line numbers.
      */
     enum LineNumbersOption implements Option {
         PROCESS_LINE_NUMBERS,
@@ -162,10 +168,10 @@ public sealed interface Classfile
     }
 
     /**
-     * {@return an option describing whether or not to automatically rewrite
-     * short jumps to long when necessary}
-     * Default is to automatically rewrite jump instructions.
-     * @param b whether or not to automatically rewrite short jumps to long when necessary
+     * Option describing whether or not to automatically rewrite short jumps to
+     * long when necessary.
+     * Default is {@code FIX_SHORT_JUMPS} to automatically rewrite jump
+     * instructions.
      */
     enum ShortJumpsOption implements Option {
         FIX_SHORT_JUMPS,
@@ -173,9 +179,11 @@ public sealed interface Classfile
     }
 
     /**
-     * {@return an option describing whether or not to generate stackmaps}
-     * Default is to generate stack maps.
-     * @param b whether to generate stack maps
+     * Option describing whether or not to generate stackmaps.
+     * Default is {@code GENERATE_STACK_MAPS_BY_CLASS_VERSION} to generate stack
+     * maps for {@link #JAVA_6_VERSION} or above, where specifically for
+     * {@link #JAVA_6_VERSION} the stack maps may not be generated.
+     * @jvms 4.10.1 Verification by Type Checking
      */
     enum StackMapsOption implements Option {
         GENERATE_STACK_MAPS_BY_CLASS_VERSION,
@@ -184,11 +192,9 @@ public sealed interface Classfile
     }
 
     /**
-     * {@return an option describing whether to process or discard unrecognized
-     * attributes}
-     * Default is to process unrecognized attributes, and deliver as instances
-     * of {@link UnknownAttribute}.
-     * @param b whether or not to process unrecognized attributes
+     * Option describing whether to process or discard unrecognized attributes.
+     * Default is {@code PROCESS_UNKNOWN_ATTRIBUTES} to process unrecognized
+     * attributes, and deliver as instances of {@link UnknownAttribute}.
      */
     enum UnknownAttributesOption implements Option {
         PROCESS_UNKNOWN_ATTRIBUTES,
@@ -214,7 +220,6 @@ public sealed interface Classfile
     /**
      * Build a classfile into a byte array.
      * @param thisClass the name of the class to build
-     * @param options the desired processing options
      * @param handler a handler that receives a {@link ClassBuilder}
      * @return the classfile bytes
      */
