@@ -170,7 +170,7 @@ public abstract class Collator
     /**
      * Decomposition mode value. With NO_DECOMPOSITION
      * set, accented characters will not be decomposed for collation. This
-     * is the default setting and provides the fastest collation but
+     * setting provides the fastest collation but
      * will only produce correct results for languages that do not use accents.
      * @see java.text.Collator#getDecomposition
      * @see java.text.Collator#setDecomposition
@@ -226,7 +226,44 @@ public abstract class Collator
     }
 
     /**
-     * Gets the Collator for the desired locale.
+     * Gets the Collator for the desired locale. If the desired locale
+     * has the "{@code ks}" and/or the "{@code kk}"
+     * <a href="https://www.unicode.org/reports/tr35/tr35-collation.html#Setting_Options">
+     * Unicode collation settings</a>, this method will call {@linkplain #setStrength(int)}
+     * and/or {@linkplain #setDecomposition(int)} on the created instance, if the specified
+     * Unicode collation settings are recognized based on the following mappings:
+     * <table class="striped">
+     * <caption style="display:none">Strength/Decomposition mappings</caption>
+     * <thead>
+     * <tr><th scope="col">BCP 47 values for strength (ks)</th>
+     *     <th scope="col">Collator constants for strength</th></tr>
+     * </thead>
+     * <tbody>
+     * <tr><th scope="row" style="text-align:left">level1</th>
+     *     <td>PRIMARY</td></tr>
+     * <tr><th scope="row" style="text-align:left">level2</th>
+     *     <td>SECONDARY</td></tr>
+     * <tr><th scope="row" style="text-align:left">level3</th>
+     *     <td>TERTIARY<sup>*</sup></td></tr>
+     * <tr><th scope="row" style="text-align:left">identic</th>
+     *     <td>IDENTICAL</td></tr>
+     * </tbody>
+     * <thead>
+     * <tr><th scope="col">BCP 47 values for normalization (kk)</th>
+     *     <th scope="col">Collator constants for decomposition</th></tr>
+     * </thead>
+     * <tbody>
+     * <tr><th scope="row" style="text-align:left">true</th>
+     *     <td>CANONICAL_DECOMPOSITION</td></tr>
+     * <tr><th scope="row" style="text-align:left">false</th>
+     *     <td>NO_DECOMPOSITION<sup>*</sup></td></tr>
+     * </tbody>
+     * </table>
+     * Asterisk (<sup>*</sup>) denotes the default value.
+     * If the specified setting value is not recognized, the strength and/or
+     * decomposition is not overridden, as if there were no BCP 47 collation
+     * options in the desired locale.
+     *
      * @apiNote Implementations of {@code Collator} class may produce
      * different instances based on the "{@code co}"
      * <a href="https://www.unicode.org/reports/tr35/#UnicodeCollationIdentifier">
@@ -258,6 +295,27 @@ public abstract class Collator
                 result = LocaleProviderAdapter.forJRE()
                              .getCollatorProvider().getInstance(desiredLocale);
             }
+
+            // Override strength and decomposition with `desiredLocale`, if any
+            var strength = desiredLocale.getUnicodeLocaleType("ks");
+            if (strength != null) {
+                strength = strength.toLowerCase(Locale.ROOT);
+                switch (strength) {
+                    case "level1" -> result.setStrength(PRIMARY);
+                    case "level2" -> result.setStrength(SECONDARY);
+                    case "level3" -> result.setStrength(TERTIARY);
+                    case "identic" -> result.setStrength(IDENTICAL);
+                }
+            }
+            var norm = desiredLocale.getUnicodeLocaleType("kk");
+            if (norm != null) {
+                norm = norm.toLowerCase(Locale.ROOT);
+                switch (norm) {
+                    case "true" -> result.setDecomposition(CANONICAL_DECOMPOSITION);
+                    case "false" -> result.setDecomposition(NO_DECOMPOSITION);
+                }
+            }
+
             while (true) {
                 if (ref != null) {
                     // Remove the empty SoftReference if any

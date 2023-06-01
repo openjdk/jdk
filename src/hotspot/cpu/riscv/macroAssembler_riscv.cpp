@@ -758,8 +758,8 @@ void MacroAssembler::la(Register Rd, Label &label) {
   wrap_label(Rd, label, &MacroAssembler::la);
 }
 
-void MacroAssembler::li16u(Register Rd, int32_t imm) {
-  lui(Rd, imm << 12);
+void MacroAssembler::li16u(Register Rd, uint16_t imm) {
+  lui(Rd, (uint32_t)imm << 12);
   srli(Rd, Rd, 12);
 }
 
@@ -1412,8 +1412,8 @@ static int patch_imm_in_li64(address branch, address target) {
   return LI64_INSTRUCTIONS_NUM * NativeInstruction::instruction_size;
 }
 
-static int patch_imm_in_li16u(address branch, int32_t target) {
-  Assembler::patch(branch, 31, 12, target & 0xfffff); // patch lui only
+static int patch_imm_in_li16u(address branch, uint16_t target) {
+  Assembler::patch(branch, 31, 12, target); // patch lui only
   return NativeInstruction::instruction_size;
 }
 
@@ -1508,7 +1508,7 @@ int MacroAssembler::pd_patch_instruction_size(address branch, address target) {
     return patch_imm_in_li32(branch, (int32_t)imm);
   } else if (NativeInstruction::is_li16u_at(branch)) {
     int64_t imm = (intptr_t)target;
-    return patch_imm_in_li16u(branch, (int32_t)imm);
+    return patch_imm_in_li16u(branch, (uint16_t)imm);
   } else {
 #ifdef ASSERT
     tty->print_cr("pd_patch_instruction_size: instruction 0x%x at " INTPTR_FORMAT " could not be patched!\n",
@@ -1642,23 +1642,17 @@ void MacroAssembler::subw(Register Rd, Register Rn, int32_t decrement, Register 
 
 void MacroAssembler::andrw(Register Rd, Register Rs1, Register Rs2) {
   andr(Rd, Rs1, Rs2);
-  // addw: The result is clipped to 32 bits, then the sign bit is extended,
-  // and the result is stored in Rd
-  addw(Rd, Rd, zr);
+  sign_extend(Rd, Rd, 32);
 }
 
 void MacroAssembler::orrw(Register Rd, Register Rs1, Register Rs2) {
   orr(Rd, Rs1, Rs2);
-  // addw: The result is clipped to 32 bits, then the sign bit is extended,
-  // and the result is stored in Rd
-  addw(Rd, Rd, zr);
+  sign_extend(Rd, Rd, 32);
 }
 
 void MacroAssembler::xorrw(Register Rd, Register Rs1, Register Rs2) {
   xorr(Rd, Rs1, Rs2);
-  // addw: The result is clipped to 32 bits, then the sign bit is extended,
-  // and the result is stored in Rd
-  addw(Rd, Rd, zr);
+  sign_extend(Rd, Rd, 32);
 }
 
 // Note: load_unsigned_short used to be called load_unsigned_word.
@@ -2085,7 +2079,7 @@ void MacroAssembler::load_mirror(Register dst, Register method, Register tmp1, R
   const int mirror_offset = in_bytes(Klass::java_mirror_offset());
   ld(dst, Address(xmethod, Method::const_offset()));
   ld(dst, Address(dst, ConstMethod::constants_offset()));
-  ld(dst, Address(dst, ConstantPool::pool_holder_offset_in_bytes()));
+  ld(dst, Address(dst, ConstantPool::pool_holder_offset()));
   ld(dst, Address(dst, mirror_offset));
   resolve_oop_handle(dst, tmp1, tmp2);
 }
@@ -2400,7 +2394,7 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
 
   // Compute start of first itableOffsetEntry (which is at the end of the vtable).
   int vtable_base = in_bytes(Klass::vtable_start_offset());
-  int itentry_off = itableMethodEntry::method_offset_in_bytes();
+  int itentry_off = in_bytes(itableMethodEntry::method_offset());
   int scan_step   = itableOffsetEntry::size() * wordSize;
   int vte_size    = vtableEntry::size_in_bytes();
   assert(vte_size == wordSize, "else adjust times_vte_scale");
@@ -2427,7 +2421,7 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
 
   Label search, found_method;
 
-  ld(method_result, Address(scan_tmp, itableOffsetEntry::interface_offset_in_bytes()));
+  ld(method_result, Address(scan_tmp, itableOffsetEntry::interface_offset()));
   beq(intf_klass, method_result, found_method);
   bind(search);
   // Check that the previous entry is non-null. A null entry means that
@@ -2435,14 +2429,14 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
   // same as when the caller was compiled.
   beqz(method_result, L_no_such_interface, /* is_far */ true);
   addi(scan_tmp, scan_tmp, scan_step);
-  ld(method_result, Address(scan_tmp, itableOffsetEntry::interface_offset_in_bytes()));
+  ld(method_result, Address(scan_tmp, itableOffsetEntry::interface_offset()));
   bne(intf_klass, method_result, search);
 
   bind(found_method);
 
   // Got a hit.
   if (return_method) {
-    lwu(scan_tmp, Address(scan_tmp, itableOffsetEntry::offset_offset_in_bytes()));
+    lwu(scan_tmp, Address(scan_tmp, itableOffsetEntry::offset_offset()));
     add(method_result, recv_klass, scan_tmp);
     ld(method_result, Address(method_result));
   }
@@ -2452,10 +2446,10 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
 void MacroAssembler::lookup_virtual_method(Register recv_klass,
                                            RegisterOrConstant vtable_index,
                                            Register method_result) {
-  const int base = in_bytes(Klass::vtable_start_offset());
+  const ByteSize base = Klass::vtable_start_offset();
   assert(vtableEntry::size() * wordSize == 8,
          "adjust the scaling in the code below");
-  int vtable_offset_in_bytes = base + vtableEntry::method_offset_in_bytes();
+  int vtable_offset_in_bytes = in_bytes(base + vtableEntry::method_offset());
 
   if (vtable_index.is_register()) {
     shadd(method_result, vtable_index.as_register(), recv_klass, method_result, LogBytesPerWord);
@@ -3383,7 +3377,7 @@ void MacroAssembler::load_method_holder_cld(Register result, Register method) {
 void MacroAssembler::load_method_holder(Register holder, Register method) {
   ld(holder, Address(method, Method::const_offset()));                      // ConstMethod*
   ld(holder, Address(holder, ConstMethod::constants_offset()));             // ConstantPool*
-  ld(holder, Address(holder, ConstantPool::pool_holder_offset_in_bytes())); // InstanceKlass*
+  ld(holder, Address(holder, ConstantPool::pool_holder_offset()));          // InstanceKlass*
 }
 
 // string indexof
@@ -4419,8 +4413,7 @@ void MacroAssembler::move32_64(VMRegPair src, VMRegPair dst, Register tmp) {
     sd(src.first()->as_Register(), Address(sp, reg2offset_out(dst.first())));
   } else {
     if (dst.first() != src.first()) {
-      // 32bits extend sign
-      addw(dst.first()->as_Register(), src.first()->as_Register(), zr);
+      sign_extend(dst.first()->as_Register(), src.first()->as_Register(), 32);
     }
   }
 }

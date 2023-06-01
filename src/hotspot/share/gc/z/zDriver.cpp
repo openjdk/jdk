@@ -302,6 +302,14 @@ static bool should_preclean_young(GCCause::Cause cause) {
     return true;
   }
 
+  // It is important that when soft references are cleared, we also pre-clean the young
+  // generation, as we might otherwise throw premature OOM. Therefore, all causes that
+  // trigger soft ref cleaning must also trigger pre-cleaning of young gen. If allocations
+  // stalled when checking for soft ref cleaning, then since we hold the driver locker all
+  // the way until we check for young gen pre-cleaning, we can be certain that we should
+  // catch that above and perform young gen pre-cleaning.
+  assert(!should_clear_soft_references(cause), "Clearing soft references without pre-cleaning young gen");
+
   // Preclean young if implied by configuration
   return ScavengeBeforeFullGC;
 }
@@ -385,10 +393,6 @@ public:
       _gc_cause_setter(ZDriver::major(), _gc_cause),
       _stat_timer(ZPhaseCollectionMajor, gc_timer),
       _tracer(false /* minor */) {
-    // Set up soft reference policy
-    const bool clear = should_clear_soft_references(request.cause());
-    ZGeneration::old()->set_soft_reference_policy(clear);
-
     // Select number of worker threads to use
     ZGeneration::young()->set_active_workers(request.young_nworkers());
     ZGeneration::old()->set_active_workers(request.old_nworkers());
@@ -441,12 +445,12 @@ void ZDriverMajor::gc(const ZDriverRequest& request) {
   collect_old();
 }
 
-static void handle_alloc_stalling_for_old() {
-  ZHeap::heap()->handle_alloc_stalling_for_old();
+static void handle_alloc_stalling_for_old(bool cleared_soft_refs) {
+  ZHeap::heap()->handle_alloc_stalling_for_old(cleared_soft_refs);
 }
 
-void ZDriverMajor::handle_alloc_stalls() const {
-  handle_alloc_stalling_for_old();
+void ZDriverMajor::handle_alloc_stalls(bool cleared_soft_refs) const {
+  handle_alloc_stalling_for_old(cleared_soft_refs);
 }
 
 void ZDriverMajor::run_thread() {
@@ -461,6 +465,10 @@ void ZDriverMajor::run_thread() {
 
     abortpoint();
 
+    // Set up soft reference policy
+    const bool clear_soft_refs = should_clear_soft_references(request.cause());
+    ZGeneration::old()->set_soft_reference_policy(clear_soft_refs);
+
     // Run GC
     gc(request);
 
@@ -470,7 +478,7 @@ void ZDriverMajor::run_thread() {
     _port.ack();
 
     // Handle allocation stalls
-    handle_alloc_stalls();
+    handle_alloc_stalls(clear_soft_refs);
 
     ZBreakpoint::at_after_gc();
   }
