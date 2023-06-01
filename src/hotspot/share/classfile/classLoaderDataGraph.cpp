@@ -201,7 +201,7 @@ void ClassLoaderDataGraph::walk_metadata_and_clean_metaspaces() {
   clean_deallocate_lists(walk_all_metadata);
 }
 
-// GC root of class loader data created.
+// List head of all class loader data.
 ClassLoaderData* volatile ClassLoaderDataGraph::_head = nullptr;
 ClassLoaderData* ClassLoaderDataGraph::_unloading_head = nullptr;
 
@@ -269,8 +269,7 @@ inline void assert_is_safepoint_or_gc() {
          "Must be called by safepoint or GC");
 }
 
-// These are functions called by the GC, which require all of the CLDs, including the
-// unloading ones.
+// These are functions called by the GC, which require all of the CLDs, including not yet unlinked CLDs.
 void ClassLoaderDataGraph::cld_do(CLDClosure* cl) {
   assert_is_safepoint_or_gc();
   for (ClassLoaderData* cld = Atomic::load_acquire(&_head);  cld != nullptr; cld = cld->next()) {
