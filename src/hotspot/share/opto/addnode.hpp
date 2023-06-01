@@ -252,7 +252,6 @@ public:
 // 2 equal inputs to be equal.
 class MaxNode : public AddNode {
 private:
-  static Node* build_min_max_int(Node* a, Node* b, bool is_max);
   static Node* build_min_max(Node* a, Node* b, bool is_max, bool is_unsigned, const Type* t, PhaseGVN& gvn);
   static Node* build_min_max_diff_with_zero(Node* a, Node* b, bool is_max, const Type* t, PhaseGVN& gvn);
   Node* extract_add(PhaseGVN* phase, ConstAddOperands x_operands, ConstAddOperands y_operands);

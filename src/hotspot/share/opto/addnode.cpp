@@ -1030,14 +1030,6 @@ const Type* XorLNode::Value(PhaseGVN* phase) const {
   return AddNode::Value(phase);
 }
 
-Node* MaxNode::build_min_max_int(Node* a, Node* b, bool is_max) {
-  if (is_max) {
-    return new MaxINode(a, b);
-  } else {
-    return new MinINode(a, b);
-  }
-}
-
 Node* MaxNode::build_min_max(Node* a, Node* b, bool is_max, bool is_unsigned, const Type* t, PhaseGVN& gvn) {
   bool is_int = gvn.type(a)->isa_int();
   assert(is_int || gvn.type(a)->isa_long(), "int or long inputs");
@@ -1052,8 +1044,13 @@ Node* MaxNode::build_min_max(Node* a, Node* b, bool is_max, bool is_unsigned, co
   }
   Node* res = nullptr;
   if (is_int && !is_unsigned) {
-    res = gvn.transform(build_min_max_int(a, b, is_max));
-    assert(gvn.type(res)->is_int()->_lo >= t->is_int()->_lo && gvn.type(res)->is_int()->_hi <= t->is_int()->_hi, "type doesn't match");
+    if (is_max) {
+      res =  gvn.transform(new MaxINode(a, b));
+      assert(gvn.type(res)->is_int()->_lo >= t->is_int()->_lo && gvn.type(res)->is_int()->_hi <= t->is_int()->_hi, "type doesn't match");
+    } else {
+      Node* res =  gvn.transform(new MinINode(a, b));
+      assert(gvn.type(res)->is_int()->_lo >= t->is_int()->_lo && gvn.type(res)->is_int()->_hi <= t->is_int()->_hi, "type doesn't match");
+    }
   } else {
     Node* cmp = nullptr;
     if (is_max) {
@@ -1183,7 +1180,11 @@ Node* MaxNode::IdealI(PhaseGVN* phase, bool can_reshape) {
       }
       Node* add_transformed = phase->transform(add_extracted);
       Node* inner_other = inner_op->in(inner_add_index == 1 ? 2 : 1);
-      return build_min_max_int(add_transformed, inner_other, opcode == Op_MaxI);
+      if (opcode == Op_MinI) {
+        return new MinINode(add_transformed, inner_other);
+      } else {
+        return new MaxINode(add_transformed, inner_other);
+      }
     }
   }
   // Try to transform
