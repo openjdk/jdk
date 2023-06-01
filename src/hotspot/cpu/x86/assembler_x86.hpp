@@ -2087,10 +2087,6 @@ private:
 
   void setb(Condition cc, Register dst);
 
-  void sete(Register dst);
-  void setl(Register dst);
-  void setne(Register dst);
-
   void palignr(XMMRegister dst, XMMRegister src, int imm8);
   void vpalignr(XMMRegister dst, XMMRegister src1, XMMRegister src2, int imm8, int vector_len);
   void evalignq(XMMRegister dst, XMMRegister nds, XMMRegister src, uint8_t imm8);
@@ -2237,8 +2233,6 @@ private:
   void xorq(Register dst, Register src);
   void xorq(Register dst, int32_t imm32);
   void xorq(Address dst, Register src);
-
-  void set_byte_if_not_zero(Register dst); // sets reg to 1 if not zero, otherwise 0
 
   // AVX 3-operands scalar instructions (encoded with VEX prefix)
 

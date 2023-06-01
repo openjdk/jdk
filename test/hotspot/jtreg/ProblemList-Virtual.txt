@@ -24,7 +24,6 @@
 ####
 # Bugs
 
-compiler/jvmci/compilerToVM/MaterializeVirtualObjectTest.java 8307125 generic-all
 serviceability/AsyncGetCallTrace/MyPackage/ASGCTBaseTest.java 8308026 generic-all
 serviceability/jvmti/GetThreadListStackTraces/OneGetThreadListStackTraces.java 8308027 generic-all
 serviceability/jvmti/Heap/IterateHeapWithEscapeAnalysisEnabled.java 8264699 generic-all
@@ -32,6 +31,18 @@ serviceability/dcmd/thread/PrintConcurrentLocksTest.java 8308033 generic-all
 serviceability/dcmd/thread/PrintTest.java 8308033 generic-all
 serviceability/dcmd/thread/ThreadDumpToFileTest.java 8308033 generic-all
 serviceability/tmtools/jstack/DaemonThreadTest.java 8308033 generic-all
+vmTestbase/nsk/jdi/ObjectReference/referringObjects/referringObjects001/referringObjects001.java 8308978 generic-all
+vmTestbase/nsk/jdi/ReferenceType/instances/instances001/instances001.java 8308978 generic-all
+vmTestbase/nsk/jdi/ReferenceType/instances/instances003/instances003.java 8308978 generic-all
+vmTestbase/nsk/jdi/ReferenceType/instances/instances004/TestDescription.java 8308978 generic-all
+vmTestbase/nsk/jdi/MonitorWaitedRequest/addThreadFilter/TestDescription.java 8308978 generic-all
+vmTestbase/nsk/jdi/VirtualMachine/instanceCounts/instancecounts002/TestDescription.java 8308978 generic-all
+vmTestbase/nsk/jdi/stress/serial/monitorEvents002/TestDescription.java 8308978 generic-all
+vmTestbase/nsk/jdi/stress/serial/heapwalking001/TestDescription.java 8308978 generic-all
+vmTestbase/nsk/jdi/stress/serial/heapwalking002/TestDescription.java 8308978 generic-all
+vmTestbase/nsk/jdi/stress/serial/mixed001/TestDescription.java 8308978 generic-all
+vmTestbase/nsk/jvmti/scenarios/allocation/AP04/ap04t001/TestDescription.java 8308978 generic-all
+vmTestbase/nsk/jvmti/scenarios/allocation/AP04/ap04t002/TestDescription.java 8308978 generic-all
 
 ####
 ## Classes not unloaded as expected (TODO, need to check if FJ keeps a reference)
@@ -93,15 +104,6 @@ vmTestbase/nsk/jdb/repeat/repeat001/repeat001.java  8300707 generic-all
 ## introduces exception handlers.
 
 vmTestbase/nsk/jdi/ExceptionEvent/catchLocation/location002/TestDescription.java 8278470 generic-all
-
-####
-## JVMTI ForceEarlyReturn not supported for vthreads (JVMTI_ERROR_OPAQUE_FRAME)
-## Note forceEarlyReturn002 was converted to support vthreads. The rest were not
-## since there is no added value (JVMTI_ERROR_OPAQUE_FRAME is expected).
-
-vmTestbase/nsk/jdi/ThreadReference/forceEarlyReturn/forceEarlyReturn014/forceEarlyReturn014.java 8285415 generic-all
-vmTestbase/nsk/jdi/stress/serial/forceEarlyReturn001/TestDescription.java 8285415 generic-all
-vmTestbase/nsk/jdi/stress/serial/forceEarlyReturn002/TestDescription.java 8285415 generic-all
 
 ###
 # This test always times out on windows. This is due to the test forcing OOME in the

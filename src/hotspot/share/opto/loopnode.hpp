@@ -38,6 +38,7 @@ class IdealLoopTree;
 class LoopNode;
 class Node;
 class OuterStripMinedLoopEndNode;
+class ParsePredicates;
 class PathFrequency;
 class PhaseIdealLoop;
 class CountedLoopReserveKit;
@@ -141,7 +142,7 @@ public:
 
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual int Opcode() const;
-  bool can_be_counted_loop(PhaseTransform* phase) const {
+  bool can_be_counted_loop(PhaseValues* phase) const {
     return req() == 3 && in(0) != nullptr &&
       in(1) != nullptr && phase->type(in(1)) != Type::TOP &&
       in(2) != nullptr && phase->type(in(2)) != Type::TOP;
@@ -831,6 +832,9 @@ class PhaseIdealLoop : public PhaseTransform {
   friend class ShenandoahBarrierC2Support;
   friend class AutoNodeBudget;
 
+  // Map loop membership for CFG nodes, and ctrl for non-CFG nodes.
+  Node_List _loop_or_ctrl;
+
   // Pre-computed def-use info
   PhaseIterGVN &_igvn;
 
@@ -892,11 +896,12 @@ class PhaseIdealLoop : public PhaseTransform {
 public:
   // Set/get control node out.  Set lower bit to distinguish from IdealLoopTree
   // Returns true if "n" is a data node, false if it's a control node.
-  bool has_ctrl(const Node* n) const { return ((intptr_t)_nodes[n->_idx]) & 1; }
+  bool has_ctrl(const Node* n) const { return ((intptr_t)_loop_or_ctrl[n->_idx]) & 1; }
 
 private:
   // clear out dead code after build_loop_late
   Node_List _deadlist;
+  Node_List _zero_trip_guard_opaque_nodes;
 
   // Support for faster execution of get_late_ctrl()/dom_lca()
   // when a node has many uses and dominator depth is deep.
@@ -979,7 +984,7 @@ public:
 
   bool has_node(const Node* n) const {
     guarantee(n != nullptr, "No Node.");
-    return _nodes[n->_idx] != nullptr;
+    return _loop_or_ctrl[n->_idx] != nullptr;
   }
   // check if transform created new nodes that need _ctrl recorded
   Node *get_late_ctrl( Node *n, Node *early );
@@ -991,7 +996,7 @@ public:
     assert( !has_node(n) || has_ctrl(n), "" );
     assert( ctrl->in(0), "cannot set dead control node" );
     assert( ctrl == find_non_split_ctrl(ctrl), "must set legal crtl" );
-    _nodes.map( n->_idx, (Node*)((intptr_t)ctrl + 1) );
+    _loop_or_ctrl.map(n->_idx, (Node*)((intptr_t)ctrl + 1));
   }
   // Set control and update loop membership
   void set_ctrl_and_loop(Node* n, Node* ctrl) {
@@ -1011,7 +1016,7 @@ public:
   Node* get_ctrl(const Node* i) {
     assert(has_node(i), "");
     Node *n = get_ctrl_no_update(i);
-    _nodes.map( i->_idx, (Node*)((intptr_t)n + 1) );
+    _loop_or_ctrl.map(i->_idx, (Node*)((intptr_t)n + 1));
     assert(has_node(i) && has_ctrl(i), "");
     assert(n == find_non_split_ctrl(n), "must return legal ctrl" );
     return n;
@@ -1030,7 +1035,7 @@ public:
 
   Node* get_ctrl_no_update_helper(const Node* i) const {
     assert(has_ctrl(i), "should be control, not loop");
-    return (Node*)(((intptr_t)_nodes[i->_idx]) & ~1);
+    return (Node*)(((intptr_t)_loop_or_ctrl[i->_idx]) & ~1);
   }
 
   Node* get_ctrl_no_update(const Node* i) const {
@@ -1054,7 +1059,7 @@ public:
   }
   // Set loop
   void set_loop( Node *n, IdealLoopTree *loop ) {
-    _nodes.map(n->_idx, (Node*)loop);
+    _loop_or_ctrl.map(n->_idx, (Node*)loop);
   }
   // Lazy-dazy update of 'get_ctrl' and 'idom_at' mechanisms.  Replace
   // the 'old_node' with 'new_node'.  Kill old-node.  Add a reference
@@ -1064,7 +1069,7 @@ public:
     assert(old_node != new_node, "no cycles please");
     // Re-use the side array slot for this node to provide the
     // forwarding pointer.
-    _nodes.map(old_node->_idx, (Node*)((intptr_t)new_node + 1));
+    _loop_or_ctrl.map(old_node->_idx, (Node*)((intptr_t)new_node + 1));
   }
   void lazy_replace(Node *old_node, Node *new_node) {
     _igvn.replace_node(old_node, new_node);
@@ -1143,7 +1148,7 @@ public:
     Node* n = _idom[didx];
     assert(n != nullptr,"Bad immediate dominator info.");
     while (n->in(0) == nullptr) { // Skip dead CFG nodes
-      n = (Node*)(((intptr_t)_nodes[n->_idx]) & ~1);
+      n = (Node*)(((intptr_t)_loop_or_ctrl[n->_idx]) & ~1);
       assert(n != nullptr,"Bad immediate dominator info.");
     }
     return n;
@@ -1239,7 +1244,7 @@ public:
     // Dead nodes have no loop, so return the top level loop instead
     if (!has_node(n))  return _ltree_root;
     assert(!has_ctrl(n), "");
-    return (IdealLoopTree*)_nodes[n->_idx];
+    return (IdealLoopTree*)_loop_or_ctrl[n->_idx];
   }
 
   IdealLoopTree* ltree_root() const { return _ltree_root; }
@@ -1360,46 +1365,6 @@ public:
  public:
   void register_control(Node* n, IdealLoopTree *loop, Node* pred, bool update_body = true);
 
-  static Node* skip_all_predicates(Node* entry);
-  static Node* skip_related_predicates(Node* entry);
-  static IfProjNode* next_predicate(IfProjNode* predicate_proj);
-
-  // Find a good location to insert a predicate
-  static ParsePredicateSuccessProj* find_predicate_insertion_point(Node* start_c, Deoptimization::DeoptReason reason);
-
-  class ParsePredicates {
-   private:
-    ParsePredicateSuccessProj* _loop_predicate = nullptr;
-    ParsePredicateSuccessProj* _profiled_loop_predicate = nullptr;
-    ParsePredicateSuccessProj* _loop_limit_check_predicate = nullptr;
-    Node* _first_predicate = nullptr;
-   public:
-    // given loop entry, find all predicates above loop
-    ParsePredicates(Node* entry);
-
-    // Proj of Loop Limit Check Parse Predicate.
-    ParsePredicateSuccessProj* loop_limit_check_predicate() {
-      return _loop_limit_check_predicate;
-    }
-
-    // Proj of Profile Loop Parse Predicate.
-    ParsePredicateSuccessProj* profiled_loop_predicate() {
-      return _profiled_loop_predicate;
-    }
-
-    // Proj of Loop Parse Predicate.
-    ParsePredicateSuccessProj* loop_predicate() {
-      return _loop_predicate;
-    }
-
-    // Proj of first Parse Predicate when walking the graph down from root.
-    Node* get_first_predicate() {
-      return _first_predicate;
-    }
-  };
-
-  // Find a predicate
-  static Node* find_parse_predicate(Node* entry);
   // Construct a range check for a predicate if
   BoolNode* rc_predicate(IdealLoopTree *loop, Node* ctrl,
                          int scale, Node* offset,
@@ -1425,6 +1390,7 @@ public:
   // Helper function to collect predicate for eliminating the useless ones
   void collect_potentially_useful_predicates(IdealLoopTree *loop, Unique_Node_List &predicate_opaque1);
   void eliminate_useless_predicates();
+  void eliminate_useless_zero_trip_guard();
 
   // Change the control input of expensive nodes to allow commoning by
   // IGVN when it is guaranteed to not result in a more frequent
@@ -1680,7 +1646,7 @@ private:
   IfProjNode* clone_assertion_predicate_for_unswitched_loops(Node* iff, IfProjNode* predicate,
                                                              Deoptimization::DeoptReason reason,
                                                              IfProjNode* output_proj);
-  static void check_cloned_parse_predicate_for_unswitching(const Node* new_entry) PRODUCT_RETURN;
+  static void check_cloned_parse_predicate_for_unswitching(const Node* new_entry, bool is_fast_loop) PRODUCT_RETURN;
 
   bool _created_loop_node;
   DEBUG_ONLY(void dump_idoms(Node* early, Node* wrong_lca);)
@@ -1703,7 +1669,7 @@ public:
   void dump(IdealLoopTree* loop, uint rpo_idx, Node_List &rpo_list) const;
   IdealLoopTree* get_loop_idx(Node* n) const {
     // Dead nodes have no loop, so return the top level loop instead
-    return _nodes[n->_idx] ? (IdealLoopTree*)_nodes[n->_idx] : _ltree_root;
+    return _loop_or_ctrl[n->_idx] ? (IdealLoopTree*)_loop_or_ctrl[n->_idx] : _ltree_root;
   }
   // Print some stats
   static void print_statistics();
@@ -1718,7 +1684,7 @@ public:
   void verify() const;
   bool verify_idom_and_nodes(Node* root, const PhaseIdealLoop* phase_verify) const;
   bool verify_idom(Node* n, const PhaseIdealLoop* phase_verify) const;
-  bool verify_nodes(Node* n, const PhaseIdealLoop* phase_verify) const;
+  bool verify_loop_ctrl(Node* n, const PhaseIdealLoop* phase_verify) const;
 #endif
 
   void rpo(Node* start, Node_Stack &stk, VectorSet &visited, Node_List &rpo_list) const;
@@ -1952,4 +1918,63 @@ public:
   float to(Node* n);
 };
 
+// Utility class to work on predicates.
+class Predicates {
+ public:
+  static Node* skip_all_predicates(Node* node);
+  static Node* skip_all_predicates(ParsePredicates& parse_predicates);
+  static Node* skip_predicates_in_block(ParsePredicateSuccessProj* parse_predicate_success_proj);
+  static IfProjNode* next_predicate_proj_in_block(IfProjNode* proj);
+  static bool has_profiled_loop_predicates(ParsePredicates& parse_predicates);
+};
+
+// Class representing the Parse Predicates that are added during parsing with ParsePredicateNodes.
+class ParsePredicates {
+ private:
+  ParsePredicateSuccessProj* _loop_predicate_proj = nullptr;
+  ParsePredicateSuccessProj* _profiled_loop_predicate_proj = nullptr;
+  ParsePredicateSuccessProj* _loop_limit_check_predicate_proj = nullptr;
+  // The success projection of the Parse Predicate that comes first when starting from root.
+  ParsePredicateSuccessProj* _top_predicate_proj;
+  ParsePredicateSuccessProj* _starting_proj;
+
+  void find_parse_predicate_projections();
+  static bool is_uct_proj(Node* node, Deoptimization::DeoptReason deopt_reason);
+  static ParsePredicateNode* get_parse_predicate_or_null(Node* proj);
+  bool assign_predicate_proj(ParsePredicateSuccessProj* parse_predicate_proj);
+ public:
+  ParsePredicates(Node* starting_proj);
+
+  // Success projection of Loop Parse Predicate.
+  ParsePredicateSuccessProj* loop_predicate_proj() {
+    return _loop_predicate_proj;
+  }
+
+  // Success proj of Profiled Loop Parse Predicate.
+  ParsePredicateSuccessProj* profiled_loop_predicate_proj() {
+    return _profiled_loop_predicate_proj;
+  }
+
+  // Success proj of Loop Limit Check Parse Predicate.
+  ParsePredicateSuccessProj* loop_limit_check_predicate_proj() {
+    return _loop_limit_check_predicate_proj;
+  }
+
+  // Return the success projection of the Parse Predicate that comes first when starting from root.
+  ParsePredicateSuccessProj* get_top_predicate_proj() {
+    return _top_predicate_proj;
+  }
+
+  static bool is_success_proj(Node* node);
+
+  // Are there any Parse Predicates?
+  bool has_any() const {
+    return _top_predicate_proj != nullptr;
+  }
+
+  static bool is_loop_limit_check_predicate_proj(Node* node) {
+    ParsePredicateNode* parse_predicate = get_parse_predicate_or_null(node);
+    return parse_predicate != nullptr && parse_predicate->deopt_reason() == Deoptimization::DeoptReason::Reason_loop_limit_check;
+  }
+};
 #endif // SHARE_OPTO_LOOPNODE_HPP
