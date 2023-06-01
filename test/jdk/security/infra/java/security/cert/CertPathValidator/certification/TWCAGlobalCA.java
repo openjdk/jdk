@@ -42,23 +42,13 @@
  */
 
 public class TWCAGlobalCA {
-
-    private static final String VALID = "https://evssldemo6.twca.com.tw";
-    private static final String REVOKED = "https://evssldemo7.twca.com.tw";
-    private static final String CA_ALIAS = "twcaglobalrootca [jdk]";
-
     public static void main(String[] args) throws Exception {
 
-        if (args.length >= 1 && "CRL".equalsIgnoreCase(args[0])) {
-            ValidatePathWithURL.enableCRLOnly();
-        } else {
-            // OCSP check by default
-            ValidatePathWithURL.enableOCSPOnly();
-        }
+        CAInterop caInterop = new CAInterop(args[0]);
 
-        ValidatePathWithURL validatePathWithURL = new ValidatePathWithURL(CA_ALIAS);
-
-        validatePathWithURL.validateDomain(VALID, false);
-        validatePathWithURL.validateDomain(REVOKED, true);
+        // CN=TWCA Global Root CA, OU=Root CA, O=TAIWAN-CA, C=TW
+        caInterop.validate("twcaglobalrootca [jdk]",
+                "hhttps://evssldemo6.twca.com.tw",
+                "https://evssldemo7.twca.com.tw");
     }
 }

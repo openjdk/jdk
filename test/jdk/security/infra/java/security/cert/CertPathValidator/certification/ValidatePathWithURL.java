@@ -37,6 +37,12 @@ public class ValidatePathWithURL {
     private final X509Certificate rootCertificate;
     private final X500Principal rootPrincipal;
 
+    /**
+     * Enables the certificate revocation checking and loads the certificate from
+     * <code>cacerts</code> file for give caAlias
+     * @param caAlias CA alias for CA certificate in <code>cacerts</code> file
+     * @throws Exception when fails to get CA certificate from <code>cacerts</code> file
+     */
     public ValidatePathWithURL(String caAlias) throws Exception {
         System.setProperty("com.sun.net.ssl.checkRevocation", "true");
         Security.setProperty("ssl.TrustManagerFactory.algorithm", "SunPKIX");
@@ -57,24 +63,40 @@ public class ValidatePathWithURL {
         rootPrincipal = rootCertificate.getSubjectX500Principal();
     }
 
+    /**
+     * Enable revocation checking using OCSP and disables CRL check
+     */
     public static void enableOCSPOnly() {
         System.setProperty("com.sun.security.enableCRLDP", "false");
         Security.setProperty("ocsp.enable", "true");
     }
 
+    /**
+     * Enable revocation checking using CRL
+     */
     public static void enableCRLOnly() {
         System.setProperty("com.sun.security.enableCRLDP", "true");
     }
 
+    /**
+     * Enable revocation checking using OCSP or CRL
+     */
     public static void enableOCSPAndCRL() {
         System.setProperty("com.sun.security.enableCRLDP", "true");
         Security.setProperty("ocsp.enable", "true");
     }
 
+    /**
+     * Validates end entity certificate used in provided test URL using
+     * <code>HttpsURLConnection</code>. Validation is skipped on network error or if
+     * the certificate is expired.
+     * @param testURL URL to validate
+     * @param revokedCert if <code>true</code> then validate is REVOKED certificate
+     * @throws Exception on failure to validate certificate
+     */
     public void validateDomain(final String testURL,
                                final boolean revokedCert)
-            throws CertificateException, NoSuchAlgorithmException, SignatureException,
-                    InvalidKeyException, NoSuchProviderException {
+            throws Exception {
         System.out.println();
         System.out.println("===== Validate " + testURL + "=====");
         if (!validateDomainCertChain(testURL, revokedCert)) {
@@ -85,8 +107,7 @@ public class ValidatePathWithURL {
 
     private boolean validateDomainCertChain(final String testURL,
                                             final boolean revokedCert)
-            throws CertificateException, NoSuchAlgorithmException, SignatureException,
-                    InvalidKeyException, NoSuchProviderException {
+            throws Exception {
         HttpsURLConnection httpsURLConnection = null;
         try {
             URL url = new URL(testURL);
@@ -98,34 +119,7 @@ public class ValidatePathWithURL {
             // if the connection is successful
             Certificate[] chain = httpsURLConnection.getServerCertificates();
             httpsURLConnection.disconnect();
-            X509Certificate interCert = null;
-
-            // fail if there is no intermediate CA or self-signed
-            if (chain.length < 2) {
-                throw new RuntimeException("Cert chain too short " + chain.length);
-            } else {
-                System.out.println("Finding intermediate certificate issued by CA");
-                for (Certificate cert: chain){
-                    if(cert instanceof X509Certificate certificate) {
-                        System.out.println("Checking: " + certificate.getSubjectX500Principal());
-                        System.out.println("Issuer: " + certificate.getIssuerX500Principal());
-                        if (certificate.getIssuerX500Principal().equals(rootPrincipal)){
-                            interCert = certificate;
-                            break;
-                        }
-                    }
-                }
-            }
-
-            if (interCert == null){
-                throw new RuntimeException("Intermediate Root CA not found in the chain");
-            }
-
-            // validate intermediate CA signed by root CA under test
-            System.out.println("Found intermediate root CA: " + interCert.getSubjectX500Principal());
-            System.out.println("intermediate CA Issuer: " + interCert.getIssuerX500Principal());
-            interCert.verify(rootCertificate.getPublicKey());
-            System.out.println("Verified: Intermediate CA signed by test root CA");
+            validateAnchor(chain);
         } catch (SSLHandshakeException e) {
             System.out.println("SSLHandshakeException: " + e.getMessage());
             Throwable cause = e.getCause();
@@ -161,6 +155,37 @@ public class ValidatePathWithURL {
         }
 
         return !revokedCert;
+    }
+
+    private void validateAnchor(Certificate[] chain) throws Exception {
+        X509Certificate interCert = null;
+
+        // fail if there is no intermediate CA or self-signed
+        if (chain.length < 2) {
+            throw new RuntimeException("Cert chain too short " + chain.length);
+        } else {
+            System.out.println("Finding intermediate certificate issued by CA");
+            for (Certificate cert: chain){
+                if(cert instanceof X509Certificate certificate) {
+                    System.out.println("Checking: " + certificate.getSubjectX500Principal());
+                    System.out.println("Issuer: " + certificate.getIssuerX500Principal());
+                    if (certificate.getIssuerX500Principal().equals(rootPrincipal)){
+                        interCert = certificate;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (interCert == null){
+            throw new RuntimeException("Intermediate Root CA not found in the chain");
+        }
+
+        // validate intermediate CA signed by root CA under test
+        System.out.println("Found intermediate root CA: " + interCert.getSubjectX500Principal());
+        System.out.println("intermediate CA Issuer: " + interCert.getIssuerX500Principal());
+        interCert.verify(rootCertificate.getPublicKey());
+        System.out.println("Verified: Intermediate CA signed by test root CA");
     }
 
     private static class CustomHostnameVerifier implements HostnameVerifier {

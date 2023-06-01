@@ -50,82 +50,31 @@ public class GoogleCA {
 
     public static void main(String[] args) throws Exception {
 
-        if (args.length >= 1 && "CRL".equalsIgnoreCase(args[0])) {
-            ValidatePathWithURL.enableCRLOnly();
-        } else {
-            // OCSP check by default
-            ValidatePathWithURL.enableOCSPOnly();
-        }
+        CAInterop caInterop = new CAInterop(args[0]);
 
-        new GoogleGSR4().runTest();
-        new GoogleGTSR1().runTest();
-        new GoogleGTSR2().runTest();
-        new GoogleGTSR3().runTest();
-        new GoogleGTSR4().runTest();
-    }
-}
+        // CN=GlobalSign, O=GlobalSign, OU=GlobalSign ECC Root CA - R4
+        caInterop.validate("globalsigneccrootcar4 [jdk]",
+                "https://good.gsr4.demo.pki.goog",
+                "https://revoked.gsr4.demo.pki.goog");
 
-class GoogleGSR4 {
-    private static final String VALID = "https://good.gsr4.demo.pki.goog/";
-    private static final String REVOKED = "https://revoked.gsr4.demo.pki.goog/";
-    private static final String CA_ALIAS = "globalsigneccrootcar4 [jdk]";
+        // CN=GTS Root R1, O=Google Trust Services LLC, C=US
+        caInterop.validate("gtsrootcar1 [jdk]",
+                "https://good.gtsr1.demo.pki.goog",
+                "https://revoked.gtsr1.demo.pki.goog");
 
-    public void runTest() throws Exception {
-        ValidatePathWithURL validatePathWithURL = new ValidatePathWithURL(CA_ALIAS);
+        // CN=GTS Root R2, O=Google Trust Services LLC, C=US
+        caInterop.validate("gtsrootcar2 [jdk]",
+                "https://good.gtsr2.demo.pki.goog",
+                "https://revoked.gtsr2.demo.pki.goog");
 
-        validatePathWithURL.validateDomain(VALID, false);
-        validatePathWithURL.validateDomain(REVOKED, true);
-    }
-}
+        // CN=GTS Root R3, O=Google Trust Services LLC, C=US
+        caInterop.validate("gtsrootecccar3 [jdk]",
+                "https://good.gtsr3.demo.pki.goog",
+                "https://revoked.gtsr3.demo.pki.goog");
 
-class GoogleGTSR1 {
-    private static final String VALID = "https://good.gtsr1.demo.pki.goog/";
-    private static final String REVOKED = "https://revoked.gtsr1.demo.pki.goog/";
-    private static final String CA_ALIAS = "gtsrootcar1 [jdk]";
-
-    public void runTest() throws Exception {
-        ValidatePathWithURL validatePathWithURL = new ValidatePathWithURL(CA_ALIAS);
-
-        validatePathWithURL.validateDomain(VALID, false);
-        validatePathWithURL.validateDomain(REVOKED, true);
-    }
-}
-
-class GoogleGTSR2 {
-    private static final String VALID = "https://good.gtsr2.demo.pki.goog/";
-    private static final String REVOKED = "https://revoked.gtsr2.demo.pki.goog/";
-    private static final String CA_ALIAS = "gtsrootcar2 [jdk]";
-
-    public void runTest() throws Exception {
-        ValidatePathWithURL validatePathWithURL = new ValidatePathWithURL(CA_ALIAS);
-
-        validatePathWithURL.validateDomain(VALID, false);
-        validatePathWithURL.validateDomain(REVOKED, true);
-    }
-}
-
-class GoogleGTSR3 {
-    private static final String VALID = "https://good.gtsr3.demo.pki.goog/";
-    private static final String REVOKED = "https://revoked.gtsr3.demo.pki.goog/";
-    private static final String CA_ALIAS = "gtsrootecccar3 [jdk]";
-
-    public void runTest() throws Exception {
-        ValidatePathWithURL validatePathWithURL = new ValidatePathWithURL(CA_ALIAS);
-
-        validatePathWithURL.validateDomain(VALID, false);
-        validatePathWithURL.validateDomain(REVOKED, true);
-    }
-}
-
-class GoogleGTSR4 {
-    private static final String VALID = "https://good.gtsr4.demo.pki.goog/";
-    private static final String REVOKED = "https://revoked.gtsr4.demo.pki.goog/";
-    private static final String CA_ALIAS = "gtsrootecccar4 [jdk]";
-
-    public void runTest() throws Exception {
-        ValidatePathWithURL validatePathWithURL = new ValidatePathWithURL(CA_ALIAS);
-
-        validatePathWithURL.validateDomain(VALID, false);
-        validatePathWithURL.validateDomain(REVOKED, true);
+        // CN=GTS Root R4, O=Google Trust Services LLC, C=US
+        caInterop.validate("gtsrootecccar4 [jdk]",
+                "https://good.gtsr4.demo.pki.goog",
+                "https://revoked.gtsr4.demo.pki.goog");
     }
 }

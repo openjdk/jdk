@@ -47,68 +47,26 @@ public class ComodoCA {
 
     public static void main(String[] args) throws Exception {
 
-        if (args.length >= 1 && "CRL".equalsIgnoreCase(args[0])) {
-            ValidatePathWithURL.enableCRLOnly();
-        } else {
-            // OCSP check by default
-            ValidatePathWithURL.enableOCSPOnly();
-        }
+        CAInterop caInterop = new CAInterop(args[0]);
 
-        new ComodoRSA().runTest();
-        new ComodoECC().runTest();
-        new ComodoUserTrustRSA().runTest();
-        new ComodoUserTrustECC().runTest();
-    }
-}
+        // CN=COMODO RSA Certification Authority, O=COMODO CA Limited, L=Salford, ST=Greater Manchester, C=GB
+        caInterop.validate("comodorsaca [jdk]",
+                "https://comodorsacertificationauthority-ev.comodoca.com",
+                "https://comodorsacertificationauthority-ev.comodoca.com:444");
 
-class ComodoRSA {
-    private static final String VALID = "https://comodorsacertificationauthority-ev.comodoca.com";
-    private static final String REVOKED = "https://comodorsacertificationauthority-ev.comodoca.com:444";
-    private static final String CA_ALIAS = "comodorsaca [jdk]";
+        // CN=COMODO ECC Certification Authority, O=COMODO CA Limited, L=Salford, ST=Greater Manchester, C=GB
+        caInterop.validate("comodoeccca [jdk]",
+                "https://comodoecccertificationauthority-ev.comodoca.com",
+                "https://comodoecccertificationauthority-ev.comodoca.com:444");
 
-    public void runTest() throws Exception {
-        ValidatePathWithURL validatePathWithURL = new ValidatePathWithURL(CA_ALIAS);
+        // CN=USERTrust RSA Certification Authority, O=The USERTRUST Network, L=Jersey City, ST=New Jersey, C=US
+        caInterop.validate("usertrustrsaca [jdk]",
+                "https://usertrustrsacertificationauthority-ev.comodoca.com",
+                "https://usertrustrsacertificationauthority-ev.comodoca.com:444");
 
-        validatePathWithURL.validateDomain(VALID, false);
-        validatePathWithURL.validateDomain(REVOKED, true);
-    }
-}
-
-class ComodoECC {
-    private static final String VALID = "https://comodoecccertificationauthority-ev.comodoca.com";
-    private static final String REVOKED = "https://comodoecccertificationauthority-ev.comodoca.com:444";
-    private static final String CA_ALIAS = "comodoeccca [jdk]";
-
-    public void runTest() throws Exception {
-        ValidatePathWithURL validatePathWithURL = new ValidatePathWithURL(CA_ALIAS);
-
-        validatePathWithURL.validateDomain(VALID, false);
-        validatePathWithURL.validateDomain(REVOKED, true);
-    }
-}
-
-class ComodoUserTrustRSA {
-    private static final String VALID = "https://usertrustrsacertificationauthority-ev.comodoca.com";
-    private static final String REVOKED = "https://usertrustrsacertificationauthority-ev.comodoca.com:444";
-    private static final String CA_ALIAS = "usertrustrsaca [jdk]";
-
-    public void runTest() throws Exception {
-        ValidatePathWithURL validatePathWithURL = new ValidatePathWithURL(CA_ALIAS);
-
-        validatePathWithURL.validateDomain(VALID, false);
-        validatePathWithURL.validateDomain(REVOKED, true);
-    }
-}
-
-class ComodoUserTrustECC {
-    private static final String VALID = "https://usertrustecccertificationauthority-ev.comodoca.com";
-    private static final String REVOKED = "https://usertrustecccertificationauthority-ev.comodoca.com:444";
-    private static final String CA_ALIAS = "usertrusteccca [jdk]";
-
-    public void runTest() throws Exception {
-        ValidatePathWithURL validatePathWithURL = new ValidatePathWithURL(CA_ALIAS);
-
-        validatePathWithURL.validateDomain(VALID, false);
-        validatePathWithURL.validateDomain(REVOKED, true);
+        // CN=USERTrust ECC Certification Authority, O=The USERTRUST Network, L=Jersey City, ST=New Jersey, C=US
+        caInterop.validate("usertrusteccca [jdk]",
+                "https://usertrustecccertificationauthority-ev.comodoca.com",
+                "https://usertrustecccertificationauthority-ev.comodoca.com:444");
     }
 }

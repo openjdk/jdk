@@ -41,24 +41,13 @@
  * @run main/othervm -Djava.security.debug=certpath GlobalSignR6CA CRL
  */
 public class GlobalSignR6CA {
-
-     private static final String VALID = "https://valid.r6.roots.globalsign.com/";
-     private static final String REVOKED = "https://revoked.r6.roots.globalsign.com/";
-    private static final String CA_ALIAS = "globalsignrootcar6 [jdk]";
-
     public static void main(String[] args) throws Exception {
 
-        if (args.length >= 1 && "CRL".equalsIgnoreCase(args[0])) {
-            ValidatePathWithURL.enableCRLOnly();
-        } else {
-            // OCSP check by default
-            ValidatePathWithURL.enableOCSPOnly();
-        }
+        CAInterop caInterop = new CAInterop(args[0]);
 
-        ValidatePathWithURL validatePathWithURL = new ValidatePathWithURL(CA_ALIAS);
-
-        validatePathWithURL.validateDomain(VALID, false);
-        validatePathWithURL.validateDomain(REVOKED, true);
+        // CN=GlobalSign, O=GlobalSign, OU=GlobalSign Root CA - R6
+        caInterop.validate("globalsignrootcar6 [jdk]",
+                "https://valid.r6.roots.globalsign.com",
+                "https://revoked.r6.roots.globalsign.com");
     }
 }
-

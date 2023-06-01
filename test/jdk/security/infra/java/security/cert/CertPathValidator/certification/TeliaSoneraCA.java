@@ -42,23 +42,13 @@
  */
 
 public class TeliaSoneraCA {
-
-    private static final String VALID = "https://juolukka.cover.sonera.net:10443/";
-    private static final String REVOKED = "https://juolukka.cover.sonera.net:10444/";
-    private static final String CA_ALIAS = "teliasonerarootcav1 [jdk]";
-
     public static void main(String[] args) throws Exception {
 
-        if (args.length >= 1 && "CRL".equalsIgnoreCase(args[0])) {
-            ValidatePathWithURL.enableCRLOnly();
-        } else {
-            // OCSP check by default
-            ValidatePathWithURL.enableOCSPOnly();
-        }
+        CAInterop caInterop = new CAInterop(args[0]);
 
-        ValidatePathWithURL validatePathWithURL = new ValidatePathWithURL(CA_ALIAS);
-
-        validatePathWithURL.validateDomain(VALID, false);
-        validatePathWithURL.validateDomain(REVOKED, true);
+        // CN=TeliaSonera Root CA v1, O=TeliaSonera
+        caInterop.validate("teliasonerarootcav1 [jdk]",
+                "https://juolukka.cover.sonera.net:10443",
+                "https://juolukka.cover.sonera.net:10444");
     }
 }

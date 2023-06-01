@@ -50,54 +50,21 @@
 public class QuoVadisCA {
     public static void main(String[] args) throws Exception {
 
-        if (args.length >= 1 && "CRL".equalsIgnoreCase(args[0])) {
-            ValidatePathWithURL.enableCRLOnly();
-        } else {
-            // OCSP check by default
-            ValidatePathWithURL.enableOCSPOnly();
-        }
+        CAInterop caInterop = new CAInterop(args[0]);
 
-        new RootCA1G3().runTest();
-        new RootCA2G3().runTest();
-        new RootCA3G3().runTest();
-    }
-}
+        // CN=QuoVadis Root CA 1 G3, O=QuoVadis Limited, C=BM
+        caInterop.validate("quovadisrootca1g3 [jdk]",
+                "https://quovadis-root-ca-1-g3.chain-demos.digicert.com",
+                "https://quovadis-root-ca-1-g3-revoked.chain-demos.digicert.com");
 
-class RootCA1G3 {
-    private static final String VALID = "https://quovadis-root-ca-1-g3.chain-demos.digicert.com/";
-    private static final String REVOKED = "https://quovadis-root-ca-1-g3-revoked.chain-demos.digicert.com/";
-    private static final String CA_ALIAS = "quovadisrootca1g3 [jdk]";
+        // CN=QuoVadis Root CA 2 G3, O=QuoVadis Limited, C=BM
+        caInterop.validate("quovadisrootca2g3 [jdk]",
+                "https://quovadis-root-ca-2-g3.chain-demos.digicert.com",
+                "https://quovadis-root-ca-2-g3-revoked.chain-demos.digicert.com");
 
-    public void runTest() throws Exception {
-        ValidatePathWithURL validatePathWithURL = new ValidatePathWithURL(CA_ALIAS);
-
-        validatePathWithURL.validateDomain(VALID, false);
-        validatePathWithURL.validateDomain(REVOKED, true);
-    }
-}
-
-class RootCA2G3 {
-    private static final String VALID = "https://quovadis-root-ca-2-g3.chain-demos.digicert.com";
-    private static final String REVOKED = "https://quovadis-root-ca-2-g3-revoked.chain-demos.digicert.com";
-    private static final String CA_ALIAS = "quovadisrootca2g3 [jdk]";
-
-    public void runTest() throws Exception {
-        ValidatePathWithURL validatePathWithURL = new ValidatePathWithURL(CA_ALIAS);
-
-        validatePathWithURL.validateDomain(VALID, false);
-        validatePathWithURL.validateDomain(REVOKED, true);
-    }
-}
-
-class RootCA3G3 {
-    private static final String VALID = "https://quovadis-root-ca-3-g3.chain-demos.digicert.com";
-    private static final String REVOKED = "https://quovadis-root-ca-3-g3-revoked.chain-demos.digicert.com";
-    private static final String CA_ALIAS = "quovadisrootca3g3 [jdk]";
-
-    public void runTest() throws Exception {
-        ValidatePathWithURL validatePathWithURL = new ValidatePathWithURL(CA_ALIAS);
-
-        validatePathWithURL.validateDomain(VALID, false);
-        validatePathWithURL.validateDomain(REVOKED, true);
+        // CN=QuoVadis Root CA 3 G3, O=QuoVadis Limited, C=BM
+        caInterop.validate("quovadisrootca3g3 [jdk]",
+                "https://quovadis-root-ca-3-g3.chain-demos.digicert.com",
+                "https://quovadis-root-ca-3-g3-revoked.chain-demos.digicert.com");
     }
 }

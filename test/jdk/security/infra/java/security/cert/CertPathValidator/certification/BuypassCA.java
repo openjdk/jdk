@@ -45,55 +45,28 @@ public class BuypassCA {
 
     public static void main(String[] args) throws Exception {
 
-        if (args.length >= 1 && "CRL".equalsIgnoreCase(args[0])) {
-            ValidatePathWithURL.enableCRLOnly();
-        } else {
-            // OCSP check by default
-            ValidatePathWithURL.enableOCSPOnly();
-        }
+        CAInterop caInterop = new CAInterop(args[0]);
 
-        new BuypassClass2().runTest();
-        new BuypassClass3().runTest();
-    }
-}
+        // CN=Buypass Class 2 Root CA, O=Buypass AS-983163327, C=NO
+        caInterop.validate("buypassclass2ca [jdk]",
+                "https://valid.business.ca22.ssl.buypass.no",
+                "https://revoked.business.ca22.ssl.buypass.no");
 
-class BuypassClass2 {
-    private static final String VALID_BUSINESS = "https://valid.business.ca22.ssl.buypass.no";
-    private static final String REVOKED_BUSINESS = "https://revoked.business.ca22.ssl.buypass.no";
-    private static final String VALID_DOMAIN = "https://valid.domain.ca22.ssl.buypass.no";
-    private static final String REVOKED_DOMAIN = "https://revoked.domain.ca22.ssl.buypass.no";
-    private static final String CA_ALIAS = "buypassclass2ca [jdk]";
+        caInterop.validate("buypassclass2ca [jdk]",
+                "https://valid.domain.ca22.ssl.buypass.no",
+                "https://revoked.domain.ca22.ssl.buypass.no");
 
-    public void runTest() throws Exception {
-        ValidatePathWithURL validatePathWithURL = new ValidatePathWithURL(CA_ALIAS);
+        // CN=Buypass Class 3 Root CA, O=Buypass AS-983163327, C=NO
+        caInterop.validate("buypassclass3ca [jdk]",
+                "https://valid.qcevident.ca23.ssl.buypass.no",
+                "https://revoked.qcevident.ca23.ssl.buypass.no");
 
-        validatePathWithURL.validateDomain(VALID_BUSINESS, false);
-        validatePathWithURL.validateDomain(REVOKED_BUSINESS, true);
+        caInterop.validate("buypassclass3ca [jdk]",
+                "https://valid.evident.ca23.ssl.buypass.no",
+                "https://revoked.evident.ca23.ssl.buypass.no");
 
-        validatePathWithURL.validateDomain(VALID_DOMAIN, false);
-        validatePathWithURL.validateDomain(REVOKED_DOMAIN, true);
-    }
-}
-
-class BuypassClass3 {
-    private static final String VALID_QC = "https://valid.qcevident.ca23.ssl.buypass.no";
-    private static final String REVOKED_QC = "https://revoked.qcevident.ca23.ssl.buypass.no";
-    private static final String VALID_EVIDENT = "https://valid.evident.ca23.ssl.buypass.no";
-    private static final String REVOKED_EVIDENT = "https://revoked.evident.ca23.ssl.buypass.no";
-    private static final String VALID_BUSINESSPLUS = "https://valid.businessplus.ca23.ssl.buypass.no";
-    private static final String REVOKED_BUSINESSPLUS = "https://revoked.businessplus.ca23.ssl.buypass.no";
-    private static final String CA_ALIAS = "buypassclass3ca [jdk]";
-
-    public void runTest() throws Exception {
-        ValidatePathWithURL validatePathWithURL = new ValidatePathWithURL(CA_ALIAS);
-
-        validatePathWithURL.validateDomain(VALID_QC, false);
-        validatePathWithURL.validateDomain(REVOKED_QC, true);
-
-        validatePathWithURL.validateDomain(VALID_EVIDENT, false);
-        validatePathWithURL.validateDomain(REVOKED_EVIDENT, true);
-
-        validatePathWithURL.validateDomain(VALID_BUSINESSPLUS, false);
-        validatePathWithURL.validateDomain(REVOKED_BUSINESSPLUS, true);
+        caInterop.validate("buypassclass3ca [jdk]",
+                "https://valid.businessplus.ca23.ssl.buypass.n",
+                "https://revoked.businessplus.ca23.ssl.buypass.no");
     }
 }

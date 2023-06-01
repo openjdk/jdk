@@ -42,22 +42,12 @@
  */
 
 public class ActalisCA {
-     private static final String VALID = "https://ssltest-active.actalis.it/";
-     private static final String REVOKED = "https://ssltest-revoked.actalis.it/";
-     private static final String CA_ALIAS = "actalisauthenticationrootca [jdk]";
+    public static void main(String[] args) throws Exception {
+        CAInterop caInterop = new CAInterop(args[0]);
 
-     public static void main(String[] args) throws Exception {
-
-         if (args.length >= 1 && "CRL".equalsIgnoreCase(args[0])) {
-             ValidatePathWithURL.enableCRLOnly();
-         } else {
-             // OCSP check by default
-             ValidatePathWithURL.enableOCSPOnly();
-         }
-
-         ValidatePathWithURL validatePathWithURL = new ValidatePathWithURL(CA_ALIAS);
-
-         validatePathWithURL.validateDomain(VALID, false);
-         validatePathWithURL.validateDomain(REVOKED, true);
-     }
+        // CN=Actalis Authentication Root CA, O=Actalis S.p.A./03358520967, L=Milan, C=IT
+        caInterop.validate("actalisauthenticationrootca [jdk]",
+                "https://ssltest-active.actalis.it/",
+                "https://ssltest-revoked.actalis.it/");
+    }
 }

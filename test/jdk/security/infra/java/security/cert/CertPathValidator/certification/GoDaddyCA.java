@@ -44,41 +44,18 @@ public class GoDaddyCA {
 
     public static void main(String[] args) throws Exception {
 
-        if (args.length >= 1 && "CRL".equalsIgnoreCase(args[0])) {
-            ValidatePathWithURL.enableCRLOnly();
-        } else {
-            // OCSP check by default
-            ValidatePathWithURL.enableOCSPOnly();
-        }
+        CAInterop caInterop = new CAInterop(args[0]);
 
-        new GoDaddyGdig2().runTest();
-        new GoDaddySfig2().runTest();
+        // CN=Go Daddy Root Certificate Authority - G2, O="GoDaddy.com, Inc.",
+        // L=Scottsdale, ST=Arizona, C=US
+        caInterop.validate("godaddyrootg2ca [jdk]",
+                "https://valid.gdig2.catest.godaddy.com",
+                "https://revoked.gdig2.catest.godaddy.com");
+
+        // CN=Starfield Root Certificate Authority - G2, O="Starfield Technologies, Inc.",
+        // L=Scottsdale, ST=Arizona, C=US
+        caInterop.validate("starfieldrootg2ca [jdk]",
+                "https://valid.sfig2.catest.starfieldtech.com",
+                "https://revoked.sfig2.catest.starfieldtech.com");
     }
 }
-
-class GoDaddyGdig2 {
-    private static final String VALID = "https://valid.gdig2.catest.godaddy.com/";
-    private static final String REVOKED = "https://revoked.gdig2.catest.godaddy.com/";
-    private static final String CA_ALIAS = "godaddyrootg2ca [jdk]";
-
-    public void runTest() throws Exception {
-        ValidatePathWithURL validatePathWithURL = new ValidatePathWithURL(CA_ALIAS);
-
-        validatePathWithURL.validateDomain(VALID, false);
-        validatePathWithURL.validateDomain(REVOKED, true);
-    }
-}
-
-class GoDaddySfig2 {
-    private static final String VALID = "https://valid.sfig2.catest.starfieldtech.com/";
-    private static final String REVOKED = "https://revoked.sfig2.catest.starfieldtech.com/";
-    private static final String CA_ALIAS = "starfieldrootg2ca [jdk]";
-
-    public void runTest() throws Exception {
-        ValidatePathWithURL validatePathWithURL = new ValidatePathWithURL(CA_ALIAS);
-
-        validatePathWithURL.validateDomain(VALID, false);
-        validatePathWithURL.validateDomain(REVOKED, true);
-    }
-}
-

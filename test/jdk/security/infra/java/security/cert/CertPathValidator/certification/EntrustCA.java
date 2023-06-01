@@ -45,40 +45,20 @@ public class EntrustCA {
 
     public static void main(String[] args) throws Exception {
 
-        if (args.length >= 1 && "CRL".equalsIgnoreCase(args[0])) {
-            ValidatePathWithURL.enableCRLOnly();
-        } else {
-            // OCSP check by default
-            ValidatePathWithURL.enableOCSPOnly();
-        }
+        CAInterop caInterop = new CAInterop(args[0]);
 
-        new Entrust_ECCA().runTest();
-        new Entrust_G4().runTest();
-    }
-}
+        // CN=Entrust Root Certification Authority - EC1,
+        // OU="(c) 2012 Entrust, Inc. - for authorized use only",
+        // OU=See www.entrust.net/legal-terms, O="Entrust, Inc.", C=US
+        caInterop.validate("entrustrootcaec1 [jdk]",
+                "https://validec.entrust.net",
+                "https://revokedec.entrust.net");
 
-class Entrust_ECCA {
-    private static final String VALID = "https://validec.entrust.net";
-    private static final String REVOKED = "https://revokedec.entrust.net";
-    private static final String CA_ALIAS = "entrustrootcaec1 [jdk]";
-
-    public void runTest() throws Exception {
-        ValidatePathWithURL validatePathWithURL = new ValidatePathWithURL(CA_ALIAS);
-
-        validatePathWithURL.validateDomain(VALID, false);
-        validatePathWithURL.validateDomain(REVOKED, true);
-    }
-}
-
-class Entrust_G4 {
-    private static final String VALID = "https://validg4.entrust.net";
-    private static final String REVOKED = "https://revokedg4.entrust.net";
-    private static final String CA_ALIAS = "entrustrootcag4 [jdk]";
-
-    public void runTest() throws Exception {
-        ValidatePathWithURL validatePathWithURL = new ValidatePathWithURL(CA_ALIAS);
-
-        validatePathWithURL.validateDomain(VALID, false);
-        validatePathWithURL.validateDomain(REVOKED, true);
+        // CN=Entrust Root Certification Authority - G4,
+        // OU="(c) 2015 Entrust, Inc. - for authorized use only",
+        // OU=See www.entrust.net/legal-terms, O="Entrust, Inc.", C=US
+        caInterop.validate("entrustrootcag4 [jdk]",
+                "https://validg4.entrust.net",
+                "https://revokedg4.entrust.net");
     }
 }

@@ -32,24 +32,13 @@
  */
 public class LetsEncryptCA {
 
-     private static final String VALID = "https://valid-isrgrootx1.letsencrypt.org/";
-     private static final String REVOKED = "https://revoked-isrgrootx1.letsencrypt.org/";
-    private static final String CA_ALIAS = "letsencryptisrgx1 [jdk]";
-
      public static void main(String[] args) throws Exception {
 
-         if (args.length >= 1 && "CRL".equalsIgnoreCase(args[0])) {
-             ValidatePathWithURL.enableCRLOnly();
-         } if (args.length >= 1 && "OCSP".equalsIgnoreCase(args[0])){
-             ValidatePathWithURL.enableOCSPOnly();
-         } else {
-             // EE certs don't have CRLs, intermediate cert doesn't specify OCSP responder
-             ValidatePathWithURL.enableOCSPAndCRL();
-         }
+         CAInterop caInterop = new CAInterop(args[0]);
 
-         ValidatePathWithURL validatePathWithURL = new ValidatePathWithURL(CA_ALIAS);
-
-         validatePathWithURL.validateDomain(VALID, false);
-         validatePathWithURL.validateDomain(REVOKED, true);
+         // CN=ISRG Root X1, O=Internet Security Research Group, C=US
+         caInterop.validate("letsencryptisrgx1 [jdk]",
+                 "https://valid-isrgrootx1.letsencrypt.org",
+                 "https://revoked-isrgrootx1.letsencrypt.org");
      }
 }

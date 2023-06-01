@@ -45,54 +45,21 @@ public class SSLCA {
 
     public static void main(String[] args) throws Exception {
 
-        if (args.length >= 1 && "CRL".equalsIgnoreCase(args[0])) {
-            ValidatePathWithURL.enableCRLOnly();
-        } else {
-            // OCSP check by default
-            ValidatePathWithURL.enableOCSPOnly();
-        }
+        CAInterop caInterop = new CAInterop(args[0]);
 
-        new SSLCA_RSA().runTest();
-        new SSLCA_EV_RSA().runTest();
-        new SSLCA_ECC().runTest();
-    }
-}
+        // CN=SSL.com Root Certification Authority RSA, O=SSL Corporation, L=Houston, ST=Texas, C=US
+        caInterop.validate("sslrootrsaca [jdk]",
+                "https://test-dv-rsa.ssl.com",
+                "https://revoked-rsa-dv.ssl.com");
 
-class SSLCA_RSA {
-    private static final String VALID = "https://test-dv-rsa.ssl.com";
-    private static final String REVOKED = "https://revoked-rsa-dv.ssl.com";
-    private static final String CA_ALIAS = "sslrootrsaca [jdk]";
+        // CN=SSL.com EV Root Certification Authority RSA R2, O=SSL Corporation, L=Houston, ST=Texas, C=US
+        caInterop.validate("sslrootevrsaca [jdk]",
+                "https://test-ev-rsa.ssl.com",
+                "https://revoked-rsa-ev.ssl.com");
 
-    public void runTest() throws Exception {
-        ValidatePathWithURL validatePathWithURL = new ValidatePathWithURL(CA_ALIAS);
-
-        validatePathWithURL.validateDomain(VALID, false);
-        validatePathWithURL.validateDomain(REVOKED, true);
-    }
-}
-
-class SSLCA_EV_RSA {
-    private static final String VALID = "https://test-ev-rsa.ssl.com";
-    private static final String REVOKED = "https://revoked-rsa-ev.ssl.com";
-    private static final String CA_ALIAS = "sslrootevrsaca [jdk]";
-
-    public void runTest() throws Exception {
-        ValidatePathWithURL validatePathWithURL = new ValidatePathWithURL(CA_ALIAS);
-
-        validatePathWithURL.validateDomain(VALID, false);
-        validatePathWithURL.validateDomain(REVOKED, true);
-    }
-}
-
-class SSLCA_ECC {
-    private static final String VALID = "https://test-dv-ecc.ssl.com";
-    private static final String REVOKED = "https://revoked-ecc-dv.ssl.com";
-    private static final String CA_ALIAS = "sslrooteccca [jdk]";
-
-    public void runTest() throws Exception {
-        ValidatePathWithURL validatePathWithURL = new ValidatePathWithURL(CA_ALIAS);
-
-        validatePathWithURL.validateDomain(VALID, false);
-        validatePathWithURL.validateDomain(REVOKED, true);
+        // CN=SSL.com Root Certification Authority ECC, O=SSL Corporation, L=Houston, ST=Texas, C=US
+        caInterop.validate("sslrooteccca [jdk]",
+                "https://test-dv-ecc.ssl.com",
+                "https://revoked-ecc-dv.ssl.com");
     }
 }

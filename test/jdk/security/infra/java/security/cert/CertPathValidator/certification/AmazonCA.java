@@ -47,71 +47,28 @@
  * https://www.amazontrust.com/repository/
  */
 public class AmazonCA {
-
     public static void main(String[] args) throws Exception {
 
-        if (args.length >= 1 && "CRL".equalsIgnoreCase(args[0])) {
-            ValidatePathWithURL.enableCRLOnly();
-        } else {
-            // OCSP check by default
-            ValidatePathWithURL.enableOCSPOnly();
-        }
+        CAInterop caInterop = new CAInterop(args[0]);
 
-        new AmazonCA_1().runTest();
-        new AmazonCA_2().runTest();
-        new AmazonCA_3().runTest();
-        new AmazonCA_4().runTest();
-    }
-}
+        // CN=Amazon Root CA 1, O=Amazon, C=US
+        caInterop.validate("amazonrootca1 [jdk]",
+                "https://valid.rootca1.demo.amazontrust.com/",
+                "https://revoked.rootca1.demo.amazontrust.com/");
 
-class AmazonCA_1 {
-    private static final String VALID = "https://valid.rootca1.demo.amazontrust.com/";
-    private static final String REVOKED = "https://revoked.rootca1.demo.amazontrust.com/";
-    private static final String CA_ALIAS = "amazonrootca1 [jdk]";
+        // CN=Amazon Root CA 2, O=Amazon, C=US
+        caInterop.validate("amazonrootca2 [jdk]",
+                "https://valid.rootca2.demo.amazontrust.com/",
+                "https://revoked.rootca2.demo.amazontrust.com/");
 
-    public void runTest() throws Exception {
-        ValidatePathWithURL validatePathWithURL = new ValidatePathWithURL(CA_ALIAS);
+        // CN=Amazon Root CA 3, O=Amazon, C=US
+        caInterop.validate("amazonrootca3 [jdk]",
+                "https://valid.rootca3.demo.amazontrust.com/",
+                "https://revoked.rootca3.demo.amazontrust.com/");
 
-        validatePathWithURL.validateDomain(VALID, false);
-        validatePathWithURL.validateDomain(REVOKED, true);
-    }
-}
-
-class AmazonCA_2 {
-    private static final String VALID = "https://valid.rootca2.demo.amazontrust.com/";
-    private static final String REVOKED = "https://revoked.rootca2.demo.amazontrust.com/";
-    private static final String CA_ALIAS = "amazonrootca2 [jdk]";
-
-    public void runTest() throws Exception {
-        ValidatePathWithURL validatePathWithURL = new ValidatePathWithURL(CA_ALIAS);
-
-        validatePathWithURL.validateDomain(VALID, false);
-        validatePathWithURL.validateDomain(REVOKED, true);
-    }
-}
-
-class AmazonCA_3 {
-    private static final String VALID = "https://valid.rootca3.demo.amazontrust.com/";
-    private static final String REVOKED = "https://revoked.rootca3.demo.amazontrust.com/";
-    private static final String CA_ALIAS = "amazonrootca3 [jdk]";
-
-    public void runTest() throws Exception {
-        ValidatePathWithURL validatePathWithURL = new ValidatePathWithURL(CA_ALIAS);
-
-        validatePathWithURL.validateDomain(VALID, false);
-        validatePathWithURL.validateDomain(REVOKED, true);
-    }
-}
-
-class AmazonCA_4 {
-    private static final String VALID = "https://valid.rootca4.demo.amazontrust.com/";
-    private static final String REVOKED = "https://revoked.rootca4.demo.amazontrust.com/";
-    private static final String CA_ALIAS = "amazonrootca4 [jdk]";
-
-    public void runTest() throws Exception {
-        ValidatePathWithURL validatePathWithURL = new ValidatePathWithURL(CA_ALIAS);
-
-        validatePathWithURL.validateDomain(VALID, false);
-        validatePathWithURL.validateDomain(REVOKED, true);
+        // CN=Amazon Root CA 4, O=Amazon, C=US
+        caInterop.validate("amazonrootca4 [jdk]",
+                "https://valid.rootca4.demo.amazontrust.com/",
+                "https://revoked.rootca4.demo.amazontrust.com/");
     }
 }

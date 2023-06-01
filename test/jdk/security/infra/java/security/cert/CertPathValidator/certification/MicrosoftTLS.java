@@ -45,40 +45,16 @@ public class MicrosoftTLS {
 
     public static void main(String[] args) throws Exception {
 
-        if (args.length >= 1 && "CRL".equalsIgnoreCase(args[0])) {
-            ValidatePathWithURL.enableCRLOnly();
-        } else {
-            // OCSP check by default
-            ValidatePathWithURL.enableOCSPOnly();
-        }
+        CAInterop caInterop = new CAInterop(args[0]);
 
-        new MicrosoftECCTLS().runTest();
-        new MicrosoftRSATLS().runTest();
-    }
-}
+        // CN=Microsoft ECC Root Certificate Authority 2017, O=Microsoft Corporation, C=US
+        caInterop.validate("microsoftecc2017 [jdk]",
+                "https://acteccroot2017.pki.microsoft.com",
+                "https://rvkeccroot2017.pki.microsoft.com");
 
-class MicrosoftECCTLS {
-    private static final String VALID = "https://acteccroot2017.pki.microsoft.com/";
-    private static final String REVOKED = "https://rvkeccroot2017.pki.microsoft.com/";
-    private static final String CA_ALIAS = "microsoftecc2017 [jdk]";
-
-    public void runTest() throws Exception {
-        ValidatePathWithURL validatePathWithURL = new ValidatePathWithURL(CA_ALIAS);
-
-        validatePathWithURL.validateDomain(VALID, false);
-        validatePathWithURL.validateDomain(REVOKED, true);
-    }
-}
-
-class MicrosoftRSATLS {
-    private static final String VALID = "https://actrsaroot2017.pki.microsoft.com/";
-    private static final String REVOKED = "https://rvkrsaroot2017.pki.microsoft.com/";
-    private static final String CA_ALIAS = "microsoftrsa2017 [jdk]";
-
-    public void runTest() throws Exception {
-        ValidatePathWithURL validatePathWithURL = new ValidatePathWithURL(CA_ALIAS);
-
-        validatePathWithURL.validateDomain(VALID, false);
-        validatePathWithURL.validateDomain(REVOKED, true);
+        // CN=Microsoft RSA Root Certificate Authority 2017, O=Microsoft Corporation, C=US
+        caInterop.validate("microsoftrsa2017 [jdk]",
+                "https://actrsaroot2017.pki.microsoft.com",
+                "https://rvkrsaroot2017.pki.microsoft.com");
     }
 }
