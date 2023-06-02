@@ -51,7 +51,7 @@ import jdk.internal.javac.PreviewFeature;
  * <p>
  * There are two leaves in the layout hierarchy, {@linkplain ValueLayout value layouts}, which are used to represent values of given size and kind (see
  * and {@linkplain PaddingLayout padding layouts} which are used, as the name suggests, to represent a portion of a memory
- * segment whose contents should be ignored, and which are primarily present for alignment reasons (see {@link MemoryLayout#paddingLayout(long)}).
+ * segment whose contents should be ignored, and which are primarily present for alignment reasons.
  * Some common value layout constants, such as {@link ValueLayout#JAVA_INT} and {@link ValueLayout#JAVA_FLOAT_UNALIGNED}
  * are defined in the {@link ValueLayout} class. A special kind of value layout, namely an {@linkplain AddressLayout address layout},
  * is used to model values that denote the address of a region of memory.
