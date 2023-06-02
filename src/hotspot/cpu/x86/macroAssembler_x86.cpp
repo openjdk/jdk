@@ -4321,11 +4321,11 @@ void MacroAssembler::lookup_interface_method_stub(Register recv_klass,
   Register temp_reg = (temp_reg2 == noreg ? recv_klass : temp_reg2); // reuse recv_klass register on 32-bit x86 impl
 
   int vtable_base = in_bytes(Klass::vtable_start_offset());
-  int itentry_off = itableMethodEntry::method_offset_in_bytes();
+  int itentry_off = in_bytes(itableMethodEntry::method_offset());
   int scan_step = itableOffsetEntry::size() * wordSize;
   int vte_size = vtableEntry::size_in_bytes();
-  int ioffset = itableOffsetEntry::interface_offset_in_bytes();
-  int ooffset = itableOffsetEntry::offset_offset_in_bytes();
+  int ioffset = in_bytes(itableOffsetEntry::interface_offset());
+  int ooffset = in_bytes(itableOffsetEntry::offset_offset());
   Address::ScaleFactor times_vte_scale = Address::times_ptr;
   assert(vte_size == wordSize, "adjust times_vte_scale");
 
