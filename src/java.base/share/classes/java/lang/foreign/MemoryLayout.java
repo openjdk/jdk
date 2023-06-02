@@ -253,22 +253,17 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
     Optional<String> name();
 
     /**
-     * Returns a memory layout of the same type with the same size and alignment constraint as this layout,
-     * but with the specified name.
+     * {@return a memory layout with the same characteristics as this layout, but with the given name}
      *
      * @param name the layout name.
-     * @return a memory layout with the same characteristics as this layout, but with the given name.
      * @see MemoryLayout#name()
      */
     MemoryLayout withName(String name);
 
     /**
-     * Returns a memory layout of the same type with the same size and alignment constraint as this layout,
-     * but without a name.
+     * {@return a memory layout with the same characteristics as this layout, but with no name}
      *
      * @apiNote This can be useful to compare two layouts that have different names, but are otherwise equal.
-     *
-     * @return a memory layout with the same characteristics as this layout, but with no name.
      * @see MemoryLayout#name()
      */
     MemoryLayout withoutName();
@@ -290,11 +285,10 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
     long byteAlignment();
 
     /**
-     * Returns a memory layout of the same type with the same size and name as this layout,
-     * but with the specified alignment constraint (in bytes).
+     * {@return a memory layout with the same characteristics as this layout, but with the given
+     * alignment constraint (in bytes)}
      *
      * @param byteAlignment the layout alignment constraint, expressed in bytes.
-     * @return a memory layout with the same characteristics of this layout, but with the given alignment constraint.
      * @throws IllegalArgumentException if {@code byteAlignment} is not a power of two.
      */
     MemoryLayout withByteAlignment(long byteAlignment);

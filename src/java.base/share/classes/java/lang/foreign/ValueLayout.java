@@ -64,11 +64,9 @@ public sealed interface ValueLayout extends MemoryLayout permits
     ByteOrder order();
 
     /**
-     * Returns a value layout with the same carrier, alignment constraint and name as this value layout,
-     * but with the specified byte order.
+     * {@return a value layout with the same characteristics as this layout, but with the given byte order}
      *
      * @param order the desired byte order.
-     * @return a value layout with the same characteristics as this layout, but with the given byte order.
      */
     ValueLayout withOrder(ByteOrder order);
 
