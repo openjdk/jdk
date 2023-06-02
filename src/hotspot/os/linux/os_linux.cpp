@@ -77,7 +77,7 @@
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/vmError.hpp"
-#ifdef INCLUDE_JFR
+#if INCLUDE_JFR
 #include "jfr/jfrEvents.hpp"
 #endif
 
@@ -2464,7 +2464,7 @@ void os::pd_print_cpu_info(outputStream* st, char* buf, size_t buflen) {
   print_sys_devices_cpu_info(st);
 }
 
-#ifdef INCLUDE_JFR
+#if INCLUDE_JFR
 
 void os::jfr_report_memory_info() {
   os::Linux::meminfo_t info;

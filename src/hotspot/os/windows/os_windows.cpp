@@ -78,7 +78,7 @@
 #include "utilities/macros.hpp"
 #include "utilities/vmError.hpp"
 #include "windbghelp.hpp"
-#ifdef INCLUDE_JFR
+#if INCLUDE_JFR
 #include "jfr/jfrEvents.hpp"
 #endif
 
@@ -6025,7 +6025,7 @@ void os::print_memory_mappings(char* addr, size_t bytes, outputStream* st) {
   }
 }
 
-#ifdef INCLUDE_JFR
+#if INCLUDE_JFR
 
 void os::jfr_report_memory_info() {
   PROCESS_MEMORY_COUNTERS_EX pmex;
