@@ -320,10 +320,27 @@ class LoopInvariantCodeMotion : public StackObj  {
 
   bool is_invariant(Value v) const     { return _gvn->is_processed(v); }
 
+  bool has_lower_dom(Value v) const    { return v->dominator_depth() <= _insertion_point->dominator_depth(); }
+
   void process_block(BlockBegin* block);
 
  public:
   LoopInvariantCodeMotion(ShortLoopOptimizer *slo, GlobalValueNumbering* gvn, BlockBegin* loop_header, BlockList* loop_blocks);
+};
+
+class VerifyDomVisitor: public ValueVisitor {
+  private:
+   Value _instr;
+   bool _valid = true;
+
+  void visit(Value* vp) {
+    if (_instr->dominator_depth() < (*vp)->dominator_depth()) {_valid = false; }
+  }
+
+  public:
+   bool is_valid() {return _valid; }
+   VerifyDomVisitor(Value instr)
+     { _instr = instr; } 
 };
 
 LoopInvariantCodeMotion::LoopInvariantCodeMotion(ShortLoopOptimizer *slo, GlobalValueNumbering* gvn, BlockBegin* loop_header, BlockList* loop_blocks)
@@ -375,23 +392,23 @@ void LoopInvariantCodeMotion::process_block(BlockBegin* block) {
     } else if (cur->as_ArithmeticOp() != nullptr || cur->as_LogicOp() != nullptr || cur->as_ShiftOp() != nullptr) {
       assert(cur->as_Op2() != nullptr, "must be Op2");
       Op2* op2 = (Op2*)cur;
-      cur_invariant = !op2->can_trap() && is_invariant(op2->x()) && is_invariant(op2->y());
+      cur_invariant = !op2->can_trap() && is_invariant(op2->x()) && is_invariant(op2->y()) && has_lower_dom(op2->x()) && has_lower_dom(op2->y());
     } else if (cur->as_LoadField() != nullptr) {
       LoadField* lf = (LoadField*)cur;
       // deoptimizes on NullPointerException
       cur_invariant = !lf->needs_patching() && !lf->field()->is_volatile() && !_short_loop_optimizer->has_field_store(lf->field()->type()->basic_type()) && is_invariant(lf->obj()) && _insert_is_pred;
     } else if (cur->as_ArrayLength() != nullptr) {
       ArrayLength *length = cur->as_ArrayLength();
-      cur_invariant = is_invariant(length->array());
+      cur_invariant = is_invariant(length->array()) && has_lower_dom(length->array());
     } else if (cur->as_LoadIndexed() != nullptr) {
       LoadIndexed *li = (LoadIndexed *)cur->as_LoadIndexed();
       cur_invariant = !_short_loop_optimizer->has_indexed_store(as_BasicType(cur->type())) && is_invariant(li->array()) && is_invariant(li->index()) && _insert_is_pred;
     } else if (cur->as_NegateOp() != nullptr) {
       NegateOp* neg = (NegateOp*)cur->as_NegateOp();
-      cur_invariant = is_invariant(neg->x());
+      cur_invariant = is_invariant(neg->x()) && has_lower_dom(neg->x());
     } else if (cur->as_Convert() != nullptr) {
       Convert* cvt = (Convert*)cur->as_Convert();
-      cur_invariant = is_invariant(cvt->value());
+      cur_invariant = is_invariant(cvt->value()) && has_lower_dom(cvt->value());
     }
 
     if (cur_invariant) {
@@ -402,6 +419,12 @@ void LoopInvariantCodeMotion::process_block(BlockBegin* block) {
         // ensure that code for non-constant instructions is always generated
         cur->pin();
       }
+
+#ifdef ASSERT
+      VerifyDomVisitor v(cur);
+      cur->input_values_do(&v);
+      assert(v.is_valid(), "hoisted instruction now has wrong depth");
+#endif
 
       // remove cur instruction from loop block and append it to block before loop
       Instruction* next = cur->next();
