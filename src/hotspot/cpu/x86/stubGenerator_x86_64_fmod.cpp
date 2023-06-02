@@ -427,7 +427,7 @@ address StubGenerator::generate_libmFmod() {
   __ ucomisd(xmm0, xmm3);
   __ jcc(Assembler::aboveEqual, L_112a);
 //     res = y + y;
-  __ vaddsd(xmm0, xmm0, xmm1);
+  __ vaddsd(xmm0, xmm1, xmm1);
 //     __asm { ldmxcsr DWORD PTR[mxcsr] }
   __ ldmxcsr(Address(rsp, 0));
   __ jmp(L_11bd);
