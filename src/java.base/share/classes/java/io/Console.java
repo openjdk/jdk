@@ -344,16 +344,26 @@ public sealed class Console implements Flushable permits ProxyingConsole {
         throw newUnsupportedOperationException();
     }
 
+    /**
+     * {@return whether the `Console` is attached to underlying platform's
+     * input/output devices}
+     *
+     * @since 22
+     */
+    public static boolean isPlatformConsole() {
+        return istty;
+    }
+
     private static UnsupportedOperationException newUnsupportedOperationException() {
         return new UnsupportedOperationException(
                 "Console class itself does not provide implementation");
     }
 
     private static native String encoding();
+    private static final boolean istty = istty();
     static final Charset CHARSET;
     static {
         Charset cs = null;
-        boolean istty = istty();
 
         if (istty) {
             String csname = encoding();
