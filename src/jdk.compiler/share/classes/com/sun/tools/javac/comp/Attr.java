@@ -1732,10 +1732,10 @@ public class Attr extends JCTree.Visitor {
                             if (!pattype.hasTag(ERROR)) {
                                 if (pattype.constValue() == null) {
                                     Symbol s = TreeInfo.symbol(expr);
-                                    if (s != null && s.kind == TYP && allowPatternSwitch) {
+                                    if (s != null && s.kind == TYP) {
                                         log.error(expr.pos(),
                                                   Errors.PatternExpected);
-                                    } else if (s == null || !s.isEnum() || !allowPatternSwitch) {
+                                    } else if (s == null || !s.isEnum()) {
                                         log.error(expr.pos(),
                                                   (stringSwitch ? Errors.StringConstReq
                                                                 : intSwitch ? Errors.ConstExprReq
