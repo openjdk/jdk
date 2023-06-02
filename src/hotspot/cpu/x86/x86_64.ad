@@ -13870,6 +13870,7 @@ peephole
 // These peephole rules matches AND followed by TEST
 // This can occur if the result of the AND is used for a 0-check and another check
 // The solution is simply to remove the TEST, as the AND already sets the ZF
+// NOTE: the test_may_remove_X peepprocedures are meant to be read like (test rule [list of nodes to check for]) instead of the usual chain
 //int variants
 peephole
 %{
