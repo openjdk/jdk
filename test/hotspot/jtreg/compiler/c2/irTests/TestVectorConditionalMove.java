@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022, Arm Limited. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -871,8 +872,7 @@ public class TestVectorConditionalMove {
             Asserts.assertEquals(rD[i], cmoveDGTforD(aD[i], bD[i], cD[i], dD[i]));
         }
 
-
-        // Use some constaints in the comparison
+        // Use some constants/invariants in the comparison
         testCMoveFGTforFCmpCon1(aF[0], bF, cF, dF, rF, rF);
         for (int i = 0; i < SIZE; i++) {
             Asserts.assertEquals(rF[i], cmoveFGTforF(aF[0], bF[i], cF[i], dF[i]));
