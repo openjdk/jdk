@@ -201,9 +201,7 @@ public class DockerTestUtils {
      * @throws Exception
      */
     public static List<String> buildJavaCommand(DockerRunOptions opts) throws Exception {
-        List<String> cmd = new ArrayList<>();
-
-        cmd.add(Container.ENGINE_COMMAND);
+        List<String> cmd = buildContainerCommand();
         cmd.add("run");
         if (opts.tty)
             cmd.add("--tty=true");
@@ -223,6 +221,12 @@ public class DockerTestUtils {
         cmd.add(opts.classToRun);
         cmd.addAll(opts.classParams);
 
+        return cmd;
+    }
+
+    public static List<String> buildContainerCommand() {
+        List<String> cmd = new ArrayList<>();
+        cmd.add(Container.ENGINE_COMMAND);
         return cmd;
     }
 

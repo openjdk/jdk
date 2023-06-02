@@ -27,7 +27,6 @@ com/sun/jdi/EATests.java#id0                                    8264699 generic-
 ## Tests failing when main() is executed in additional vthread or in vthread instead of thread
 #
 
-com/sun/jdi/DeferredStepTest.java 8285422 generic-all
 com/sun/jdi/ExceptionEvents.java 8285422 generic-all
 com/sun/jdi/JdbMethodExitTest.java 8285422 generic-all
 com/sun/jdi/JdbStepTest.java 8285422 generic-all

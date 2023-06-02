@@ -640,6 +640,17 @@ Agent_OnLoad_L(JavaVM *vm, char *options, void *reserved)</example>
     or implementation specific API, to attach to the running VM, and request it start a given
     agent.
     <p/>
+    The VM prints a warning on the standard error stream for each agent that it attempts
+    to start in the live phase. If an agent was previously started (in the <code>OnLoad</code>
+    phase or in the live phase), then it is implementation specific as to whether a
+    warning is printed when attempting to start the same agent a second or subsequent time.
+    Warnings can be disabled by means of an implementation-specific command line option.
+    <p/>
+    <b>Implementation Note:</b> For the HotSpot VM, the VM option
+    <code>-XX:+EnableDynamicAgentLoading</code> is used to opt-in to allow dynamic loading
+    of agents in the live phase. This option suppresses the warning to standard error when
+    starting an agent in the live phase.
+    <p/>
     If an agent is started during the live phase then its agent library
     must export a start-up function
     with the following prototype:

@@ -149,7 +149,7 @@ final class SocketTube implements FlowTube {
     //                           Events                                      //
     // ======================================================================//
 
-    void signalClosed() {
+    void signalClosed(Throwable cause) {
         // Ensures that the subscriber will be terminated and that future
         // subscribers will be notified when the connection is closed.
         if (Log.channel()) {
@@ -157,7 +157,7 @@ final class SocketTube implements FlowTube {
                     channelDescr());
         }
         readPublisher.subscriptionImpl.signalError(
-                new IOException("connection closed locally"));
+                new IOException("connection closed locally", cause));
     }
 
     /**
