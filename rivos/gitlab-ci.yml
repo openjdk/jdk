@@ -199,10 +199,11 @@ build-linux-riscv64-release:
     # jtreg is not needed to run the gtests but make-prebuilt requires JT_HOME to point to a dir.
     # We'll just point it to an empty dir, it's not worth checking out jtreg for this.
     - mkdir $(pwd)/jtreg
-    # QEMU_LD_PREFIX is only needed for risc v but it's easier to just set it for all configurations
+    # QEMU_LD_PREFIX and QEMU_CPU are only needed for risc v but it's easier to just set it for all configurations
     - make test-prebuilt \
         CONF=${CONF_NAME} \
         QEMU_LD_PREFIX=$(pwd)/sysroot-${UBUNTU_CODENAME}-${PKG_ARCH} \
+        QEMU_CPU="rivos-sentinel,m5ops=true" \
         BOOT_JDK=/usr/lib/jvm/temurin-${BUILD_JDK_VERSION} \
         JDK_IMAGE_DIR=$(pwd)/build/${CONF_NAME}/images/jdk \
         TEST_IMAGE_DIR=$(pwd)/build/${CONF_NAME}/images/test \
