@@ -788,8 +788,8 @@ public:
                                     u2 method_index);
 
   // jmethodID support
-  jmethodID get_jmethod_id(const methodHandle& method_h);
-  void ensure_space_for_methodids(int start_offset = 0);
+  jmethodID get_jmethod_id(Method* method);
+  void make_methods_jmethod_ids();
   jmethodID jmethod_id_or_null(Method* method);
   void update_methods_jmethod_cache();
 

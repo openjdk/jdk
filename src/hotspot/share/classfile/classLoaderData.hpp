@@ -53,7 +53,6 @@
 // and provides iterators for root tracing and other GC operations.
 
 class ClassLoaderDataGraph;
-class JNIMethodBlock;
 class ModuleEntry;
 class PackageEntry;
 class ModuleEntryTable;
@@ -143,10 +142,9 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   ModuleEntry* _unnamed_module;          // This class loader's unnamed module.
   Dictionary*  _dictionary;              // The loaded InstanceKlasses, including initiated by this class loader
 
-  // These method IDs are created for the class loader and set to null when the
-  // class loader is unloaded.  They are rarely freed, only for redefine classes
-  // and if they lose a data race in InstanceKlass.
-  JNIMethodBlock*                  _jmethod_ids;
+  // These method IDs are created for the class loader and removed when the
+  // class loader is unloaded.
+  GrowableArray<jmethodID>*        _jmethod_ids;
 
   // Metadata to be deallocated when it's safe at class unloading, when
   // this class loader isn't unloaded itself.
@@ -309,8 +307,9 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   void classes_do(KlassClosure* klass_closure);
   Klass* klasses() { return _klasses; }
 
-  JNIMethodBlock* jmethod_ids() const              { return _jmethod_ids; }
-  void set_jmethod_ids(JNIMethodBlock* new_block)  { _jmethod_ids = new_block; }
+  void add_jmethod_id(jmethodID id);
+  void clear_jmethod_ids();
+  GrowableArray<jmethodID>* jmethod_ids() { return _jmethod_ids; }
 
   void print() const;
   void print_on(outputStream* out) const PRODUCT_RETURN;

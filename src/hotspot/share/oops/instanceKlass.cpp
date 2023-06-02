@@ -2193,13 +2193,18 @@ void InstanceKlass::set_enclosing_method_indices(u2 class_index,
 }
 
 // Lookup or create a jmethodID.
-// This code is called by the VMThread and JavaThreads so the
-// locking has to be done very carefully to avoid deadlocks
-// and/or other cache consistency problems.
-//
-jmethodID InstanceKlass::get_jmethod_id(const methodHandle& method_h) {
-  Method* method = method_h();
-  int idnum = method_h->method_idnum();
+
+static jmethodID* create_jmethod_id_cache(int size) {
+  jmethodID* jmeths = NEW_C_HEAP_ARRAY(jmethodID, size+1, mtClass);
+  memset(jmeths, 0, (size+1)*sizeof(jmethodID));
+  // cache size is stored in element[0], other elements offset by one
+  jmeths[0] = (jmethodID)(size_t)size;
+  return jmeths;
+}
+
+
+jmethodID InstanceKlass::get_jmethod_id(Method* method) {
+  int idnum = method->method_idnum();
   jmethodID* jmeths = methods_jmethod_ids_acquire();
 
   // We use a double-check locking idiom here because this cache is
@@ -2224,10 +2229,7 @@ jmethodID InstanceKlass::get_jmethod_id(const methodHandle& method_h) {
     if (jmeths == nullptr) {
       size_t size = idnum_allocated_count();
       assert(size > (size_t)idnum, "should already have space");
-      jmeths = NEW_C_HEAP_ARRAY(jmethodID, size+1, mtClass);
-      memset(jmeths, 0, (size+1)*sizeof(jmethodID));
-      // cache size is stored in element[0], other elements offset by one
-      jmeths[0] = (jmethodID)size;
+      jmeths = create_jmethod_id_cache(size);
 
       // method_with_idnum
       if (method->is_old() && !method->is_obsolete()) {
@@ -2272,10 +2274,7 @@ void InstanceKlass::update_methods_jmethod_cache() {
     if (old_size < size+1) {
       // allocate a larger one and copy entries to the new one.
       // They've already been updated to point to new methods where applicable (ie. not obsolete)
-      jmethodID* new_cache = NEW_C_HEAP_ARRAY(jmethodID, size+1, mtClass);
-      memset(new_cache, 0, (size+1)*sizeof(jmethodID));
-      // cache size is stored in element[0], other elements offset by one
-      new_cache[0] = (jmethodID)size;
+      jmethodID* new_cache = create_jmethod_id_cache(size);
 
       for (int i = 1; i <= (int)old_size; i++) {
         new_cache[i] = cache[i];
@@ -2286,23 +2285,29 @@ void InstanceKlass::update_methods_jmethod_cache() {
   }
 }
 
-// Figure out how many jmethodIDs haven't been allocated, and make
-// sure space for them is pre-allocated.  This makes getting all
-// method ids much, much faster with classes with more than 8
+// Make a jmethodID for all methods in this class.
+// This makes getting all method ids much, much faster with classes with more than 8
 // methods, and has a *substantial* effect on performance with jvmti
 // code that loads all jmethodIDs for all classes.
-void InstanceKlass::ensure_space_for_methodids(int start_offset) {
-  int new_jmeths = 0;
-  int length = methods()->length();
-  for (int index = start_offset; index < length; index++) {
-    Method* m = methods()->at(index);
-    jmethodID id = m->find_jmethod_id_or_null();
-    if (id == nullptr) {
-      new_jmeths++;
-    }
+void InstanceKlass::make_methods_jmethod_ids() {
+  MutexLocker ml(JmethodIdCreation_lock, Mutex::_no_safepoint_check_flag);
+  jmethodID* jmeths = methods_jmethod_ids_acquire();
+  if (jmeths == nullptr) {
+    jmeths = create_jmethod_id_cache(idnum_allocated_count());
+    release_set_methods_jmethod_ids(jmeths);
   }
-  if (new_jmeths != 0) {
-    Method::ensure_jmethod_ids(class_loader_data(), new_jmeths);
+
+  int length = methods()->length();
+  for (int index = 0; index < length; index++) {
+    Method* m = methods()->at(index);
+    int idnum = m->method_idnum();
+    assert(!m->is_old(), "should not have old methods or I'm confused");
+    jmethodID id = Atomic::load_acquire(&jmeths[idnum+1]);
+    if (!m->is_overpass() &&  // skip overpasses
+        id == nullptr) {
+      id = Method::make_jmethod_id(class_loader_data(), m);
+      Atomic::release_store(&jmeths[idnum+1], id);
+    }
   }
 }
 
