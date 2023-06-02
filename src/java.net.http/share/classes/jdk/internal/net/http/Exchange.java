@@ -166,11 +166,12 @@ final class Exchange<T> {
             synchronized (this) {
                 cause = this.cause;
                 if (cause == null) {
-                    cause = this.cause = error;
+                    cause = error;
                 }
                 connection = this.connection;
                 if (connection == null) {
                     closeRequested = true;
+                    this.cause = cause;
                 } else {
                     this.connection = null;
                     this.cause = null;
