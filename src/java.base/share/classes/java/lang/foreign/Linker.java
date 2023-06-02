@@ -383,10 +383,14 @@ import java.util.stream.Stream;
  * prototype-less function, the index passed to {@link Linker.Option#firstVariadicArg(int)} should always be {@code 0}.
  * <p>
  * It should be noted that values passed as variadic arguments undergo default argument promotion in C. Each value of
- * type {@code float} is converted to {@code double}, and each integral type smaller than {@code int} is converted to
- * {@code int}. As such, the native linker will reject attempts to link function descriptors with certain variadic argument
- * layouts. Namely, {@linkplain ValueLayout value layouts} that have a carrier type of {@code boolean}, {@code byte},
- * {@code char}, {@code short}, or {@code float}, are not allowed to be used as variadic argument layouts.
+ * type {@code float} is converted to {@code double}, and each value of an integral type undergoes integer promotion (which
+ * is discussed in detail in the C specification). The native linker will automatically apply argument conversions when needed.
+ * Exactly which variadic arguments the conversions are applied to is platform-dependent. As an example, on Linux/x64 the
+ * following conversions are applied:
+ * <ul>
+ * <li>arguments with a Java type of {@code boolean}, {@code byte}, {@code char}, or {@code short}, are converted to {@code int}</li>
+ * <li>arguments with a Java type of {@code float}, are converted to {@code double}</li>
+ * </ul>
  * <p>
  * A well-known variadic function is the {@code printf} function, defined in the C standard library:
  *
