@@ -493,13 +493,7 @@ public abstract class OverlappingTestBase {
         Util.waitForIdle(robot);
 
         // wait for graphic effects on systems like Win7
-        Toolkit.getDefaultToolkit().sync();
-        try {
-            Thread.sleep(500);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        Util.waitForIdle(robot);
+        robot.delay(500);
 
         if (!instance.performTest()) {
             fail(failMessage);
