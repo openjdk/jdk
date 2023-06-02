@@ -27,7 +27,7 @@
  * @summary Interoperability tests with GlobalSign R6 CA
  * @library /test/lib
  * @build jtreg.SkippedException ValidatePathWithURL CAInterop
- * @run main/othervm -Djava.security.debug=certpath GlobalSignR6CA OCSP
+ * @run main/othervm -Djava.security.debug=certpath,ocsp GlobalSignR6CA OCSP
  */
 
 /*

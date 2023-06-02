@@ -27,7 +27,7 @@
  * @summary Interoperability tests with TWCA Global Root CA from TAIWAN-CA
  * @library /test/lib
  * @build jtreg.SkippedException ValidatePathWithURL CAInterop
- * @run main/othervm -Djava.security.debug=certpath TWCAGlobalCA OCSP
+ * @run main/othervm -Djava.security.debug=certpath,ocsp TWCAGlobalCA OCSP
  */
 
 /*

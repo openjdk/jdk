@@ -27,7 +27,7 @@
  * @summary Interoperability tests with Entrust CAs
  * @library /test/lib
  * @build jtreg.SkippedException ValidatePathWithURL CAInterop
- * @run main/othervm -Djava.security.debug=certpath EntrustCA OCSP
+ * @run main/othervm -Djava.security.debug=certpath,ocsp EntrustCA OCSP
  */
 
 /*

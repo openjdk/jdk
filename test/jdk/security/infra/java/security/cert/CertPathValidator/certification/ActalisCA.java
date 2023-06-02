@@ -27,7 +27,7 @@
  * @summary Interoperability tests with Actalis CA
  * @library /test/lib
  * @build jtreg.SkippedException ValidatePathWithURL CAInterop
- * @run main/othervm/timeout=180 -Djava.security.debug=certpath ActalisCA OCSP
+ * @run main/othervm/timeout=180 -Djava.security.debug=certpath,ocsp ActalisCA OCSP
  */
 
 /*

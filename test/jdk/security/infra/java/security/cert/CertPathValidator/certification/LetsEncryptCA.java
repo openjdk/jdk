@@ -27,7 +27,7 @@
  * @summary Interoperability tests with Let's Encrypt CA using OCSP and CRL
  * @library /test/lib
  * @build jtreg.SkippedException ValidatePathWithURL CAInterop
- * @run main/othervm -Djava.security.debug=certpath LetsEncryptCA DEFAULT
+ * @run main/othervm -Djava.security.debug=certpath,ocsp LetsEncryptCA DEFAULT
  */
 public class LetsEncryptCA {
 

@@ -28,7 +28,7 @@
  *          userTrust ECC CAs
  * @library /test/lib
  * @build jtreg.SkippedException ValidatePathWithURL CAInterop
- * @run main/othervm -Djava.security.debug=certpath ComodoCA OCSP
+ * @run main/othervm -Djava.security.debug=certpath,ocsp ComodoCA OCSP
  */
 
 /*

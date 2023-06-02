@@ -27,7 +27,7 @@
  * @summary Interoperability tests with GoDaddy/Starfield CA
  * @library /test/lib
  * @build jtreg.SkippedException ValidatePathWithURL CAInterop
- * @run main/othervm -Djava.security.debug=certpath GoDaddyCA OCSP
+ * @run main/othervm -Djava.security.debug=certpath,ocsp GoDaddyCA OCSP
  */
 
 /*

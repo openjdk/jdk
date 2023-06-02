@@ -27,7 +27,7 @@
  * @summary Interoperability tests with Amazon's CA1, CA2, CA3, and CA4
  * @library /test/lib
  * @build jtreg.SkippedException ValidatePathWithURL CAInterop
- * @run main/othervm -Djava.security.debug=certpath AmazonCA OCSP
+ * @run main/othervm -Djava.security.debug=certpath,ocsp AmazonCA OCSP
  */
 
 /*

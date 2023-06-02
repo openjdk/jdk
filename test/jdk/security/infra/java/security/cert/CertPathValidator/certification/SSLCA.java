@@ -27,7 +27,7 @@
  * @summary Interoperability tests with SSL.com's RSA, EV RSA, and ECC CA
  * @library /test/lib
  * @build jtreg.SkippedException ValidatePathWithURL CAInterop
- * @run main/othervm -Djava.security.debug=certpath SSLCA OCSP
+ * @run main/othervm -Djava.security.debug=certpath,ocsp SSLCA OCSP
  */
 
 /*
