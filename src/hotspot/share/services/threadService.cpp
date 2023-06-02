@@ -1074,7 +1074,7 @@ void DeadlockCycle::print_on_with(ThreadsList * t_list, outputStream* st) const 
              "Must be an AbstractOwnableSynchronizer");
       oop ownerObj = java_util_concurrent_locks_AbstractOwnableSynchronizer::get_owner_threadObj(waitingToLockBlocker);
       currentThread = java_lang_Thread::thread(ownerObj);
-      assert(currentThread != nullptr, "AbstractOwnableSynchronizer owning thread is unexpectedly nullptr");
+      assert(currentThread != nullptr, "AbstractOwnableSynchronizer owning thread is unexpectedly null");
     }
     st->print_cr("%s \"%s\"", owner_desc, currentThread->name());
   }

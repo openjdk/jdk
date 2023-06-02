@@ -360,7 +360,7 @@ Node *SubLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // Convert "x-c0" into "x+ -c0".
   if( i &&                      // Might be bottom or top...
       i->is_con() )
-    return new AddLNode(in1, phase->longcon(-i->get_con()));
+    return new AddLNode(in1, phase->longcon(java_negate(i->get_con())));
 
   // Convert "(x+c0) - y" into (x-y) + c0"
   // Do not collapse (x+c0)-y if "+" is a loop increment or
