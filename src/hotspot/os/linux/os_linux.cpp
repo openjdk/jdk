@@ -2465,19 +2465,25 @@ void os::pd_print_cpu_info(outputStream* st, char* buf, size_t buflen) {
 }
 
 #ifdef INCLUDE_JFR
-void os::Linux::jfr_process_memory_info() {
-  log_info(gc)("JFR:ing process memory info");
 
-  meminfo_t info;
-  if (query_process_memory_info(&info)) {
+void os::jfr_report_memory_info() {
+  os::Linux::meminfo_t info;
+  if (os::Linux::query_process_memory_info(&info)) {
+    // Send the RSS JFR event
     EventResidentSetSize event;
     event.set_size(info.vmrss * K);
     event.set_peak(info.vmhwm * K);
     event.commit();
   } else {
-    log_info(gc)("JFR:ing - Could not open /proc/self/status to get process memory related information");
+    // Log a warning
+    static bool first_warning = true;
+    if (first_warning) {
+      log_warning(jfr)("Error fetching RSS values: query_process_memory_info failed");
+      first_warning = false;
+    }
   }
 }
+
 #endif // INCLUDE_JFR
 
 #if defined(AMD64) || defined(IA32) || defined(X32)

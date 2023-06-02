@@ -9,7 +9,7 @@
 
     <event name="jdk.ResidentSetSize">
       <setting name="enabled">true</setting>
-      <setting name="period">1 s</setting>
+      <setting name="period">1000 ms</setting>
     </event>
 
     <event name="jdk.ThreadAllocationStatistics">
