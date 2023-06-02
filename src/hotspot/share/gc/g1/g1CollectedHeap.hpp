@@ -706,8 +706,10 @@ public:
   void iterate_regions_in_range(MemRegion range, const Func& func);
 
   // Commit the required number of G1 region(s) according to the size requested
-  // and mark them as 'old' region(s).
-  HeapWord* alloc_archive_regions(size_t word_size);
+  // and mark them as 'old' region(s). Preferred address is treated as a hint for
+  // the location of the archive space in the heap. The returned address may or may
+  // not be same as the preferred address.
+  HeapWord* alloc_archive_region(size_t word_size, HeapWord* preferred_addr);
 
   // Populate the G1BlockOffsetTablePart for archived regions with the given
   // memory range.
