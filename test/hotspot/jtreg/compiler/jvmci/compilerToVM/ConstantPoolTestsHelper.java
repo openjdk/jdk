@@ -32,6 +32,7 @@ import jdk.internal.access.SharedSecrets;
 import jdk.internal.org.objectweb.asm.Opcodes;
 import jdk.internal.reflect.ConstantPool;
 import jdk.internal.reflect.ConstantPool.Tag;
+import jdk.vm.ci.hotspot.HotSpotConstantPool.Bytecodes;
 import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
@@ -97,6 +98,29 @@ public class ConstantPoolTestsHelper {
         }
     }
 
+    /**
+     *
+     * @param cpType Constant type from the Constant pool
+     * @return a bytecode that's suitable for passing to the following functions for the given cpType:
+     *     - CompilerToVMHelper.lookupNameAndTypeRefIndexInPool()
+     *     - CompilerToVMHelper.lookupNameInPool()
+     *     - CompilerToVMHelper.lookupSignatureInPool()
+     *     - CompilerToVMHelper.lookupKlassRefIndexInPool()
+     */
+    public static int getDummyOpcode(ConstantTypes cpType) {
+        switch (cpType) {
+            case CONSTANT_FIELDREF:
+              return Bytecodes.GETFIELD;
+          case CONSTANT_METHODREF:
+              return Bytecodes.INVOKEVIRTUAL;
+          case CONSTANT_INTERFACEMETHODREF:
+              return Bytecodes.INVOKEINTERFACE;
+          case CONSTANT_INVOKEDYNAMIC:
+              return Bytecodes.INVOKEDYNAMIC;
+          default:
+              throw new IllegalArgumentException("Unexpected constant pool entry type");
+        }
+    }
     /**
      * Obtain a resolved Java method declared by a given type.
      *

@@ -98,13 +98,13 @@ abstract class HttpConnection implements Closeable {
         private final Map<CompletionStage<?>, Boolean> operations =
                 new IdentityHashMap<>();
         void add(CompletionStage<?> cf) {
-            synchronized(operations) {
+            synchronized (operations) {
                 operations.put(cf, Boolean.TRUE);
                 cf.whenComplete((r,t)-> remove(cf));
             }
         }
         boolean remove(CompletionStage<?> cf) {
-            synchronized(operations) {
+            synchronized (operations) {
                 return operations.remove(cf);
             }
         }

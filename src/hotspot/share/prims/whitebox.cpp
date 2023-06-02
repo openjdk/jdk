@@ -109,6 +109,9 @@
 #if INCLUDE_PARALLELGC
 #include "gc/parallel/parallelScavengeHeap.inline.hpp"
 #endif // INCLUDE_PARALLELGC
+#if INCLUDE_ZGC
+#include "gc/z/zAddress.inline.hpp"
+#endif // INCLUDE_ZGC
 #if INCLUDE_JVMCI
 #include "jvmci/jvmciEnv.hpp"
 #include "jvmci/jvmciRuntime.hpp"
@@ -365,7 +368,8 @@ WB_END
 WB_ENTRY(jboolean, WB_IsGCSupportedByJVMCICompiler(JNIEnv* env, jobject o, jint name))
 #if INCLUDE_JVMCI
   if (EnableJVMCI) {
-    JVMCIEnv jvmciEnv(thread, env, __FILE__, __LINE__);
+    // Enter the JVMCI env that will be used by the CompileBroker.
+    JVMCIEnv jvmciEnv(thread, __FILE__, __LINE__);
     return jvmciEnv.runtime()->is_gc_supported(&jvmciEnv, (CollectedHeap::Name)name);
   }
 #endif
@@ -397,7 +401,11 @@ WB_ENTRY(jboolean, WB_isObjectInOldGen(JNIEnv* env, jobject o, jobject obj))
 #endif
 #if INCLUDE_ZGC
   if (UseZGC) {
-    return Universe::heap()->is_in(p);
+    if (ZGenerational) {
+      return ZHeap::heap()->is_old(to_zaddress(p));
+    } else {
+      return Universe::heap()->is_in(p);
+    }
   }
 #endif
 #if INCLUDE_SHENANDOAHGC
@@ -1874,7 +1882,7 @@ WB_END
 WB_ENTRY(jint, WB_getIndyInfoLength(JNIEnv* env, jobject wb, jclass klass))
   InstanceKlass* ik = InstanceKlass::cast(java_lang_Class::as_Klass(JNIHandles::resolve(klass)));
   ConstantPool* cp = ik->constants();
-  if (cp->cache() == NULL) {
+  if (cp->cache() == nullptr) {
       return -1;
   }
   return cp->resolved_indy_entries_length();
@@ -1883,7 +1891,7 @@ WB_END
 WB_ENTRY(jint, WB_getIndyCPIndex(JNIEnv* env, jobject wb, jclass klass, jint index))
   InstanceKlass* ik = InstanceKlass::cast(java_lang_Class::as_Klass(JNIHandles::resolve(klass)));
   ConstantPool* cp = ik->constants();
-  if (cp->cache() == NULL) {
+  if (cp->cache() == nullptr) {
       return -1;
   }
   return cp->resolved_indy_entry_at(index)->constant_pool_index();

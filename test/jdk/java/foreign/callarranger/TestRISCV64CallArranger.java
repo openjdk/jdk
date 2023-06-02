@@ -205,7 +205,7 @@ public class TestRISCV64CallArranger extends CallArrangerTestBase {
                 }
             },
             // struct s { float a; /* padding */ double b };
-            { MemoryLayout.structLayout(C_FLOAT, MemoryLayout.paddingLayout(32), C_DOUBLE),
+            { MemoryLayout.structLayout(C_FLOAT, MemoryLayout.paddingLayout(4), C_DOUBLE),
                 new Binding[]{
                     dup(),
                     // s.a
@@ -257,7 +257,7 @@ public class TestRISCV64CallArranger extends CallArrangerTestBase {
 
     @Test
     public void testStructFA2() {
-        MemoryLayout fa = MemoryLayout.structLayout(C_FLOAT, MemoryLayout.paddingLayout(32), C_DOUBLE);
+        MemoryLayout fa = MemoryLayout.structLayout(C_FLOAT, MemoryLayout.paddingLayout(4), C_DOUBLE);
 
         MethodType mt = MethodType.methodType(MemorySegment.class, float.class, int.class, MemorySegment.class);
         FunctionDescriptor fd = FunctionDescriptor.of(fa, C_FLOAT, C_INT, fa);

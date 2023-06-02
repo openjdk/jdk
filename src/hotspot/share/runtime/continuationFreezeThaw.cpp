@@ -66,6 +66,9 @@
 #include "utilities/debug.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"
+#if INCLUDE_ZGC
+#include "gc/z/zStackChunkGCData.inline.hpp"
+#endif
 
 #include <type_traits>
 
@@ -245,6 +248,8 @@ static JRT_LEAF(intptr_t*, thaw(JavaThread* thread, int kind))
   // JRT_ENTRY instead?
   ResetNoHandleMark rnhm;
 
+  // we might modify the code cache via BarrierSetNMethod::nmethod_entry_barrier
+  MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, thread));
   return ConfigT::thaw(thread, (Continuation::thaw_kind)kind);
 JRT_END
 
@@ -1390,14 +1395,16 @@ stackChunkOop Freeze<ConfigT>::allocate_chunk(size_t stack_size) {
   chunk->set_cont_access<IS_DEST_UNINITIALIZED>(_cont.continuation());
 
 #if INCLUDE_ZGC
- if (UseZGC) {
+  if (UseZGC) {
+    if (ZGenerational) {
+      ZStackChunkGCData::initialize(chunk);
+    }
     assert(!chunk->requires_barriers(), "ZGC always allocates in the young generation");
     _barriers = false;
   } else
 #endif
 #if INCLUDE_SHENANDOAHGC
-if (UseShenandoahGC) {
-
+  if (UseShenandoahGC) {
     _barriers = chunk->requires_barriers();
   } else
 #endif
