@@ -553,6 +553,7 @@ abstract public class TestScaffold extends TargetAdapter {
         String mainWrapper = System.getProperty("main.wrapper");
         if (mainWrapper != null && !argInfo.targetAppCommandLine.isEmpty()) {
             argInfo.targetVMArgs += "-Dmain.wrapper=" + mainWrapper;
+            argInfo.targetVMArgs += " -Djdk.trackAllThreads" ;
             argInfo.targetAppCommandLine = TestScaffold.class.getName() + ' '
                     + mainWrapper + ' ' + argInfo.targetAppCommandLine;
         } else if ("true".equals(System.getProperty("test.enable.preview"))) {
