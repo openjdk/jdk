@@ -693,7 +693,7 @@ public:
   void la(Register Rd, const address dest);
   void la(Register Rd, const Address &adr);
 
-  void li16u(Register Rd, int32_t imm);
+  void li16u(Register Rd, uint16_t imm);
   void li32(Register Rd, int32_t imm);
   void li64(Register Rd, int64_t imm);
   void li  (Register Rd, int64_t imm);  // optimized load immediate
@@ -1273,12 +1273,12 @@ public:
     vnsrl_wx(vd, vs, x0, vm);
   }
 
-  inline void vneg_v(VectorRegister vd, VectorRegister vs) {
-    vrsub_vx(vd, vs, x0);
+  inline void vneg_v(VectorRegister vd, VectorRegister vs, VectorMask vm = unmasked) {
+    vrsub_vx(vd, vs, x0, vm);
   }
 
-  inline void vfneg_v(VectorRegister vd, VectorRegister vs) {
-    vfsgnjn_vv(vd, vs, vs);
+  inline void vfneg_v(VectorRegister vd, VectorRegister vs, VectorMask vm = unmasked) {
+    vfsgnjn_vv(vd, vs, vs, vm);
   }
 
   inline void vmsgt_vv(VectorRegister vd, VectorRegister vs2, VectorRegister vs1, VectorMask vm = unmasked) {
@@ -1337,7 +1337,7 @@ public:
         sign_extend(Rt, Rt, 16);
         break;
       case T_INT    :
-        addw(Rt, Rt, zr);
+        sign_extend(Rt, Rt, 32);
         break;
       case T_LONG   : /* nothing to do */        break;
       case T_VOID   : /* nothing to do */        break;

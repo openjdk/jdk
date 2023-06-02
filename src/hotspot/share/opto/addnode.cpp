@@ -668,7 +668,7 @@ const Type* AddPNode::Value(PhaseGVN* phase) const {
 // Split an oop pointer into a base and offset.
 // (The offset might be Type::OffsetBot in the case of an array.)
 // Return the base, or null if failure.
-Node* AddPNode::Ideal_base_and_offset(Node* ptr, PhaseTransform* phase,
+Node* AddPNode::Ideal_base_and_offset(Node* ptr, PhaseValues* phase,
                                       // second return value:
                                       intptr_t& offset) {
   if (ptr->is_AddP()) {
@@ -886,6 +886,34 @@ Node* XorINode::Ideal(PhaseGVN* phase, bool can_reshape) {
       phase->record_for_igvn(this);
     }
   }
+
+  // Propagate xor through constant cmoves. This pattern can occur after expansion of Conv2B nodes.
+  const TypeInt* in2_type = phase->type(in2)->isa_int();
+  if (in1->Opcode() == Op_CMoveI && in2_type != nullptr && in2_type->is_con()) {
+    int in2_val = in2_type->get_con();
+
+    // Get types of both sides of the CMove
+    const TypeInt* left = phase->type(in1->in(CMoveNode::IfFalse))->isa_int();
+    const TypeInt* right = phase->type(in1->in(CMoveNode::IfTrue))->isa_int();
+
+    // Ensure that both sides are int constants
+    if (left != nullptr && right != nullptr && left->is_con() && right->is_con()) {
+      Node* cond = in1->in(CMoveNode::Condition);
+
+      // Check that the comparison is a bool and that the cmp node type is correct
+      if (cond->is_Bool()) {
+        int cmp_op = cond->in(1)->Opcode();
+
+        if (cmp_op == Op_CmpI || cmp_op == Op_CmpP) {
+          int l_val = left->get_con();
+          int r_val = right->get_con();
+
+          return new CMoveINode(cond, phase->intcon(l_val ^ in2_val), phase->intcon(r_val ^ in2_val), TypeInt::INT);
+        }
+      }
+    }
+  }
+
   return AddNode::Ideal(phase, can_reshape);
 }
 

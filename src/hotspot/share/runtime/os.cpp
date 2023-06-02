@@ -1128,7 +1128,7 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
   address addr = (address)x;
   // Handle null first, so later checks don't need to protect against it.
   if (addr == nullptr) {
-    st->print_cr("0x0 is nullptr");
+    st->print_cr("0x0 is null");
     return;
   }
 
@@ -1382,6 +1382,22 @@ bool os::file_exists(const char* filename) {
   }
   return os::stat(filename, &statbuf) == 0;
 }
+
+bool os::write(int fd, const void *buf, size_t nBytes) {
+  ssize_t res;
+
+  while (nBytes > 0) {
+    res = pd_write(fd, buf, nBytes);
+    if (res == OS_ERR) {
+      return false;
+    }
+    buf = (void *)((char *)buf + nBytes);
+    nBytes -= res;
+  }
+
+  return true;
+}
+
 
 // Splits a path, based on its separator, the number of
 // elements is returned back in "elements".

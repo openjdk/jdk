@@ -786,7 +786,7 @@ uint CallNode::match_edge(uint idx) const {
 // Determine whether the call could modify the field of the specified
 // instance at the specified offset.
 //
-bool CallNode::may_modify(const TypeOopPtr *t_oop, PhaseTransform *phase) {
+bool CallNode::may_modify(const TypeOopPtr* t_oop, PhaseValues* phase) {
   assert((t_oop != nullptr), "sanity");
   if (is_call_to_arraycopystub() && strcmp(_name, "unsafe_arraycopy") != 0) {
     const TypeTuple* args = _tf->domain();
@@ -1581,7 +1581,7 @@ Node *AllocateNode::make_ideal_mark(PhaseGVN *phase, Node* obj, Node* control, N
 // Retrieve the length from the AllocateArrayNode. Narrow the type with a
 // CastII, if appropriate.  If we are not allowed to create new nodes, and
 // a CastII is appropriate, return null.
-Node *AllocateArrayNode::make_ideal_length(const TypeOopPtr* oop_type, PhaseTransform *phase, bool allow_new_nodes) {
+Node *AllocateArrayNode::make_ideal_length(const TypeOopPtr* oop_type, PhaseValues* phase, bool allow_new_nodes) {
   Node *length = in(AllocateNode::ALength);
   assert(length != nullptr, "length is not null");
 
@@ -2195,7 +2195,7 @@ void AbstractLockNode::log_lock_optimization(Compile *C, const char * tag, Node*
   }
 }
 
-bool CallNode::may_modify_arraycopy_helper(const TypeOopPtr* dest_t, const TypeOopPtr *t_oop, PhaseTransform *phase) {
+bool CallNode::may_modify_arraycopy_helper(const TypeOopPtr* dest_t, const TypeOopPtr* t_oop, PhaseValues* phase) {
   if (dest_t->is_known_instance() && t_oop->is_known_instance()) {
     return dest_t->instance_id() == t_oop->instance_id();
   }
