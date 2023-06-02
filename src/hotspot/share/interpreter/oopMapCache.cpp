@@ -536,6 +536,7 @@ void OopMapCache::lookup(const methodHandle& method,
     // at this time. We give the caller of lookup() a copy of the
     // interesting info via parameter entry_for, but we don't add it to
     // the cache. See the gory details in Method*.cpp.
+    tmp->flush();
     FREE_C_HEAP_OBJ(tmp);
     return;
   }
@@ -606,5 +607,6 @@ void OopMapCache::compute_one_oop_map(const methodHandle& method, int bci, Inter
   tmp->initialize();
   tmp->fill(method, bci);
   entry->resource_copy(tmp);
+  tmp->flush();
   FREE_C_HEAP_OBJ(tmp);
 }
