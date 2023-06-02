@@ -130,7 +130,7 @@ public final class DirectCodeBuilder
                                                                : new BufWriterImpl(constantPool);
         this.startLabel = new LabelImpl(this, 0);
         this.endLabel = new LabelImpl(this, -1);
-        this.topLocal = Util.maxLocals(methodInfo.methodFlags(), methodInfo.methodType().stringValue());
+        this.topLocal = Util.maxLocals(methodInfo.methodFlags(), methodInfo.methodTypeSymbol());
         if (original != null)
             this.topLocal = Math.max(this.topLocal, original.maxLocals());
     }

@@ -1646,8 +1646,7 @@ size_t FileMapInfo::write_heap_region(ArchiveHeapInfo* heap_info) {
 
 void FileMapInfo::write_bytes(const void* buffer, size_t nbytes) {
   assert(_file_open, "must be");
-  ssize_t n = os::write(_fd, buffer, (unsigned int)nbytes);
-  if (n < 0 || (size_t)n != nbytes) {
+  if (!os::write(_fd, buffer, nbytes)) {
     // If the shared archive is corrupted, close it and remove it.
     close();
     remove(_full_path);

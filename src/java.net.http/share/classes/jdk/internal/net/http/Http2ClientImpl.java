@@ -57,8 +57,7 @@ class Http2ClientImpl {
 
     private final HttpClientImpl client;
 
-    // only accessed from within synchronized blocks
-    private boolean stopping;
+    private volatile boolean stopping;
 
     Http2ClientImpl(HttpClientImpl client) {
         this.client = client;
@@ -292,5 +291,9 @@ class Http2ClientImpl {
                 "jdk.httpclient.maxframesize",
                 16 * K, 16 * K * K -1, 16 * K));
         return frame;
+    }
+
+    public boolean stopping() {
+        return stopping;
     }
 }

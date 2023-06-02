@@ -142,7 +142,7 @@ import jdk.internal.vm.annotation.ForceInline;
  *                                                                   MethodType.methodType(long.class, long.class, long.class));
  * intHandle = MethodHandles.filterCoordinates(intHandle, 1,
  *                                             MethodHandles.insertArguments(multiplyExact, 0, 4L));
- * intHandle.get(segment, 3L); // get int element at offset 3 * 4 = 12
+ * int value = (int) intHandle.get(segment, 3L); // get int element at offset 3 * 4 = 12
  * }
  *
  * Alternatively, complex var handles can can be obtained
@@ -152,7 +152,7 @@ import jdk.internal.vm.annotation.ForceInline;
  * {@snippet lang=java :
  * MemorySegment segment = ...
  * VarHandle intHandle = ValueLayout.JAVA_INT.arrayElementVarHandle();
- * intHandle.get(segment, 3L); // get int element at offset 3 * 4 = 12
+ * int value = (int) intHandle.get(segment, 3L); // get int element at offset 3 * 4 = 12
  * }
  *
  * <h2 id="slicing">Slicing memory segments</h2>
@@ -264,12 +264,6 @@ import jdk.internal.vm.annotation.ForceInline;
  * collection. Access operations rely on this invariant to determine if the specified offset in a heap segment refers
  * to an aligned address in physical memory. For example:
  * <ul>
- * <li>The starting physical address of a {@code long[]} array will be 8-byte aligned (e.g. 1000), so that successive long elements
- * occur at 8-byte aligned addresses (e.g., 1000, 1008, 1016, 1024, etc.) A heap segment backed by a {@code long[]} array
- * can be accessed at offsets 0, 8, 16, 24, etc under an 8-byte alignment constraint. In addition, the segment can be
- * accessed at offsets 0, 4, 8, 12, etc under a 4-byte alignment constraint, because the target addresses
- * (1000, 1004, 1008, 1012) are 4-byte aligned. And, the segment can be accessed at offsets 0, 2, 4, 6, etc under a
- * 2-byte alignment constraint, because the target addresses (e.g. 1000, 1002, 1004, 1006) are 2-byte aligned.</li>
  * <li>The starting physical address of a {@code short[]} array will be 2-byte aligned (e.g. 1006) so that successive
  * short elements occur at 2-byte aligned addresses (e.g. 1006, 1008, 1010, 1012, etc). A heap segment backed by a
  * {@code short[]} array can be accessed at offsets 0, 2, 4, 6, etc under a 2-byte alignment constraint. The segment cannot
@@ -278,10 +272,22 @@ import jdk.internal.vm.annotation.ForceInline;
  * to physical address 1007. Similarly, the segment cannot be accessed at any offset under an 8-byte alignment constraint,
  * because because there is no guarantee that the target address would be 8-byte aligned, e.g., offset 2 would correspond
  * to physical address 1008 but offset 4 would correspond to physical address 1010.</li>
+ * <li>The starting physical address of a {@code long[]} array will be 8-byte aligned (e.g. 1000) on 64-bit platforms,
+ * so that successive long elements occur at 8-byte aligned addresses (e.g., 1000, 1008, 1016, 1024, etc.) On 64-bit platforms,
+ * a heap segment backed by a {@code long[]} array can be accessed at offsets 0, 8, 16, 24, etc under an 8-byte alignment
+ * constraint. In addition, the segment can be accessed at offsets 0, 4, 8, 12, etc under a 4-byte alignment constraint,
+ * because the target addresses (1000, 1004, 1008, 1012) are 4-byte aligned. And, the segment can be accessed at offsets
+ * 0, 2, 4, 6, etc under a 2-byte alignment constraint, because the target addresses (e.g. 1000, 1002, 1004, 1006) are 2-byte aligned.</li>
+ * <li>The starting physical address of a {@code long[]} array will be 4-byte aligned (e.g. 1000) on 32-bit platforms,
+ * so that successive long elements occur at 4-byte aligned addresses (e.g., 1004, 1008, 1012, 1016, etc.) On 32-bit
+ * platforms, a heap segment backed by a {@code long[]} array can be accessed at offsets 0, 4, 8, 12, etc under a 4-byte
+ * alignment constraint, because the target addresses (1000, 1004, 1008, 1012) are 4-byte aligned. And, the segment
+ * can be accessed at offsets 0, 2, 4, 6, etc under a 2-byte alignment constraint, because the target addresses
+ * (e.g. 1000, 1002, 1004, 1006) are 2-byte aligned.</li>
  * </ul>
  * <p>
- * In other words, heap segments feature a <em>maximum</em> alignment which is derived from the size of the elements of
- * the Java array backing the segment, as shown in the following table:
+ * In other words, heap segments feature a (platform-dependent) <em>maximum</em> alignment which is derived from the
+ * size of the elements of the Java array backing the segment, as shown in the following table:
  *
  * <blockquote><table class="plain">
  * <caption style="display:none">Maximum alignment of heap segments</caption>
@@ -293,21 +299,21 @@ import jdk.internal.vm.annotation.ForceInline;
  * </thead>
  * <tbody>
  * <tr><th scope="row" style="font-weight:normal">{@code boolean[]}</th>
- *     <td style="text-align:center;">{@code 1}</td></tr>
+ *     <td style="text-align:center;">{@code ValueLayout.JAVA_BOOLEAN.byteAlignment()}</td></tr>
  * <tr><th scope="row" style="font-weight:normal">{@code byte[]}</th>
- *     <td style="text-align:center;">{@code 1}</td></tr>
+ *     <td style="text-align:center;">{@code ValueLayout.JAVA_BYTE.byteAlignment()}</td></tr>
  * <tr><th scope="row" style="font-weight:normal">{@code char[]}</th>
- *     <td style="text-align:center;">{@code 2}</td></tr>
+ *     <td style="text-align:center;">{@code ValueLayout.JAVA_CHAR.byteAlignment()}</td></tr>
  * <tr><th scope="row" style="font-weight:normal">{@code short[]}</th>
- *     <td style="text-align:center;">{@code 2}</td></tr>
+ *     <td style="text-align:center;">{@code ValueLayout.JAVA_SHORT.byteAlignment()}</td></tr>
  * <tr><th scope="row" style="font-weight:normal">{@code int[]}</th>
- *     <td style="text-align:center;">{@code 4}</td></tr>
+ *     <td style="text-align:center;">{@code ValueLayout.JAVA_INT.byteAlignment()}</td></tr>
  * <tr><th scope="row" style="font-weight:normal">{@code float[]}</th>
- *     <td style="text-align:center;">{@code 4}</td></tr>
+ *     <td style="text-align:center;">{@code ValueLayout.JAVA_FLOAT.byteAlignment()}</td></tr>
  * <tr><th scope="row" style="font-weight:normal">{@code long[]}</th>
- *     <td style="text-align:center;">{@code 8}</td></tr>
+ *     <td style="text-align:center;">{@code ValueLayout.JAVA_LONG.byteAlignment()}</td></tr>
  * <tr><th scope="row" style="font-weight:normal">{@code double[]}</th>
- *     <td style="text-align:center;">{@code 8}</td></tr>
+ *     <td style="text-align:center;">{@code ValueLayout.JAVA_DOUBLE.byteAlignment()}</td></tr>
  * </tbody>
  * </table></blockquote>
  *
@@ -318,22 +324,25 @@ import jdk.internal.vm.annotation.ForceInline;
  *
  * {@snippet lang=java :
  * MemorySegment byteSegment = MemorySegment.ofArray(new byte[10]);
- * byteSegment.get(ValueLayout.JAVA_INT, 0); // fails: layout alignment is 4, segment max alignment is 1
+ * byteSegment.get(ValueLayout.JAVA_INT, 0); // fails: ValueLayout.JAVA_INT.byteAlignment() > ValueLayout.JAVA_BYTE.byteAlignment()
  * }
  *
  * In such circumstances, clients have two options. They can use a heap segment backed by a different array
- * type (e.g. {@code long[]}), capable of supporting greater maximum alignment:
+ * type (e.g. {@code long[]}), capable of supporting greater maximum alignment. More specifically, the maximum alignment
+ * associated with {@code long[]} is set to {@code ValueLayout.JAVA_LONG.byteAlignment()} which is a platform-dependent
+ * value (set to {@code ValueLayout.ADDRESS.byteSize()}). That is, {@code long[]}) is guaranteed to provide at least
+ * 8-byte alignment in 64-bit platforms, but only 4-byte alignment in 32-bit platforms:
  *
  * {@snippet lang=java :
  * MemorySegment longSegment = MemorySegment.ofArray(new long[10]);
- * longSegment.get(ValueLayout.JAVA_INT, 0); // ok: layout alignment is 4, segment max alignment is 8
+ * longSegment.get(ValueLayout.JAVA_INT, 0); // ok: ValueLayout.JAVA_INT.byteAlignment() <= ValueLayout.JAVA_LONG.byteAlignment()
  * }
  *
  * Alternatively, they can invoke the access operation with an <em>unaligned layout</em>.
  * All unaligned layout constants (e.g. {@link ValueLayout#JAVA_INT_UNALIGNED}) have their alignment constraint set to 1:
  * {@snippet lang=java :
  * MemorySegment byteSegment = MemorySegment.ofArray(new byte[10]);
- * byteSegment.get(ValueLayout.JAVA_INT_UNALIGNED, 0); // ok: layout alignment is 1, segment max alignment is 1
+ * byteSegment.get(ValueLayout.JAVA_INT_UNALIGNED, 0); // ok: ValueLayout.JAVA_INT_UNALIGNED.byteAlignment() == ValueLayout.JAVA_BYTE.byteAlignment()
  * }
  *
  * <h2 id="wrapping-addresses">Zero-length memory segments</h2>
@@ -370,7 +379,7 @@ import jdk.internal.vm.annotation.ForceInline;
  * to read a pointer from some memory segment. This can be done via the
  * {@linkplain MemorySegment#get(AddressLayout, long)} access method. This method accepts an
  * {@linkplain AddressLayout address layout} (e.g. {@link ValueLayout#ADDRESS}), the layout of the pointer
- * to be read. For instance on a 64-bit platform, the size of an address layout is 64 bits. The access operation
+ * to be read. For instance on a 64-bit platform, the size of an address layout is 8 bytes. The access operation
  * also accepts an offset, expressed in bytes, which indicates the position (relative to the start of the memory segment)
  * at which the pointer is stored. The access operation returns a zero-length native memory segment, backed by a region
  * of memory whose starting address is the 64-bit value read at the specified offset.
@@ -461,7 +470,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @return the element spliterator for this segment
      * @throws IllegalArgumentException if {@code elementLayout.byteSize() == 0}.
      * @throws IllegalArgumentException if {@code byteSize() % elementLayout.byteSize() != 0}.
-     * @throws IllegalArgumentException if {@code elementLayout.bitSize() % elementLayout.bitAlignment() != 0}.
+     * @throws IllegalArgumentException if {@code elementLayout.byteSize() % elementLayout.byteAlignment() != 0}.
      * @throws IllegalArgumentException if this segment is <a href="MemorySegment.html#segment-alignment">incompatible
      * with the alignment constraint</a> in the provided layout.
      */
@@ -478,7 +487,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @return a sequential {@code Stream} over disjoint slices in this segment.
      * @throws IllegalArgumentException if {@code elementLayout.byteSize() == 0}.
      * @throws IllegalArgumentException if {@code byteSize() % elementLayout.byteSize() != 0}.
-     * @throws IllegalArgumentException if {@code elementLayout.bitSize() % elementLayout.bitAlignment() != 0}.
+     * @throws IllegalArgumentException if {@code elementLayout.byteSize() % elementLayout.byteAlignment() != 0}.
      * @throws IllegalArgumentException if this segment is <a href="MemorySegment.html#segment-alignment">incompatible
      * with the alignment constraint</a> in the provided layout.
      */
@@ -747,8 +756,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * segment. Equivalent to (but likely more efficient than) the following code:
      *
      * {@snippet lang=java :
-     * byteHandle = MemoryLayout.ofSequence(ValueLayout.JAVA_BYTE)
-     *         .varHandle(byte.class, MemoryLayout.PathElement.sequenceElement());
+     * var byteHandle = MemoryLayout.sequenceLayout(ValueLayout.JAVA_BYTE)
+     *         .varHandle(MemoryLayout.PathElement.sequenceElement());
      * for (long l = 0; l < segment.byteSize(); l++) {
      *     byteHandle.set(segment.address(), l, value);
      * }
@@ -776,7 +785,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * <p>
      * Calling this method is equivalent to the following code:
      * {@snippet lang=java :
-     * MemorySegment.copy(src, 0, this, 0, src.byteSize);
+     * MemorySegment.copy(src, 0, this, 0, src.byteSize());
      * }
      * @param src the source segment.
      * @throws IndexOutOfBoundsException if {@code src.byteSize() > this.byteSize()}.

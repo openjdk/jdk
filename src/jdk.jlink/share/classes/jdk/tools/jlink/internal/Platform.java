@@ -53,6 +53,7 @@ public record Platform(OperatingSystem os, Architecture arch) {
         // Alias architecture names, if needed
         archName = archName.replace("amd64", "X64");
         archName = archName.replace("ppc64le", "PPC64");
+        archName = archName.replace("s390x", "S390");
         Architecture arch = Architecture.valueOf(archName.toUpperCase(Locale.ROOT));
 
         return new Platform(os, arch);
