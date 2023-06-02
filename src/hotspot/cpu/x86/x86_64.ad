@@ -13873,69 +13873,15 @@ peephole
 //int variants
 peephole
 %{
-  peepmatch (testI_reg andI_rReg);
-  peepprocedure (test_may_remove);
-  peepreplace (testI_reg_empty_peep());
-%}
-peephole
-%{
-  peepmatch (testI_reg andI_rReg_imm);
-  peepprocedure (test_may_remove);
-  peepreplace (testI_reg_empty_peep());
-%}
-
-peephole
-%{
-  peepmatch (testI_reg andI_rReg_mem);
-  peepprocedure (test_may_remove);
-  peepreplace (testI_reg_empty_peep());
-%}
-
-peephole
-%{
-  peepmatch (testI_reg andI_mem_rReg);
-  peepprocedure (test_may_remove);
-  peepreplace (testI_reg_empty_peep());
-%}
-
-peephole
-%{
-  peepmatch (testI_reg andI_mem_imm);
-  peepprocedure (test_may_remove);
+  peepmatch (testI_reg andI_rReg andI_rReg_imm andI_rReg_mem andI_mem_rReg andI_mem_imm);
+  peepprocedure (test_may_remove_5);
   peepreplace (testI_reg_empty_peep());
 %}
 //long variants
 peephole
 %{
-  peepmatch (testL_reg andL_rReg);
-  peepprocedure (test_may_remove);
-  peepreplace (testL_reg_empty_peep());
-%}
-peephole
-%{
-  peepmatch (testL_reg andL_rReg_imm);
-  peepprocedure (test_may_remove);
-  peepreplace (testL_reg_empty_peep());
-%}
-
-peephole
-%{
-  peepmatch (testL_reg andL_rReg_mem);
-  peepprocedure (test_may_remove);
-  peepreplace (testL_reg_empty_peep());
-%}
-
-peephole
-%{
-  peepmatch (testL_reg andL_mem_rReg);
-  peepprocedure (test_may_remove);
-  peepreplace (testL_reg_empty_peep());
-%}
-
-peephole
-%{
-  peepmatch (testL_reg andL_mem_imm);
-  peepprocedure (test_may_remove);
+  peepmatch (testL_reg andL_rReg andL_rReg_imm andL_rReg_mem andL_mem_rReg andL_mem_imm);
+  peepprocedure (test_may_remove_5);
   peepreplace (testL_reg_empty_peep());
 %}
 

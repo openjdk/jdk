@@ -132,19 +132,9 @@ bool lea_coalesce_helper(Block* block, int block_index, PhaseCFG* cfg_, PhaseReg
   return true;
 }
 
-bool Peephole::lea_coalesce_reg(Block* block, int block_index, PhaseCFG* cfg_, PhaseRegAlloc* ra_,
-                                MachNode* (*new_root)(), uint inst0_rule) {
-  return lea_coalesce_helper(block, block_index, cfg_, ra_, new_root, inst0_rule, false);
-}
-
-bool Peephole::lea_coalesce_imm(Block* block, int block_index, PhaseCFG* cfg_, PhaseRegAlloc* ra_,
-                                MachNode* (*new_root)(), uint inst0_rule) {
-  return lea_coalesce_helper(block, block_index, cfg_, ra_, new_root, inst0_rule, true);
-}
-
 // This function removes the TEST instruction when it detected shapes likes AND r1, r2; TEST r1, r1
-bool Peephole::test_may_remove(Block* block, int block_index, PhaseCFG* cfg_, PhaseRegAlloc* ra_,
-                                 MachNode* (*new_root)(), uint inst0_rule, uint inst1_rule) {
+bool test_may_remove_helper(Block* block, int block_index, PhaseCFG* cfg_, PhaseRegAlloc* ra_,
+                               MachNode* (*new_root)(), uint inst0_rule, std::initializer_list<uint> rules_to_match) {
   MachNode* inst0 = block->get_node(block_index)->as_Mach();
   assert(inst0->rule() == inst0_rule, "sanity");
 
@@ -157,23 +147,42 @@ bool Peephole::test_may_remove(Block* block, int block_index, PhaseCFG* cfg_, Ph
   if (inst1 != nullptr) {
     MachNode* maybeAndNode = inst1->isa_Mach();
     if (maybeAndNode != nullptr) {
-      if (maybeAndNode->rule() == inst1_rule) {
-        MachProjNode* machProjNode = block->get_node(block_index - 1)->isa_MachProj();
-        assert(machProjNode != nullptr, "Expected a MachProj node here!");
-        // Remove the original test node and replace it with the pseudo test node. The AND node already sets ZF
-        inst0->replace_by(machProjNode);
+      for (const uint rule : rules_to_match) {
+        if (maybeAndNode->rule() == rule) {
+          MachProjNode* machProjNode = block->get_node(block_index - 1)->isa_MachProj();
+          assert(machProjNode != nullptr, "Expected a MachProj node here!");
+          // Remove the original test node and replace it with the pseudo test node. The AND node already sets ZF
+          inst0->replace_by(machProjNode);
 
-        // Modify the block
-        inst0->set_removed();
-        block->remove_node(block_index);
+          // Modify the block
+          inst0->set_removed();
+          block->remove_node(block_index);
 
-        // Modify the control flow
-        cfg_->map_node_to_block(inst0, nullptr);
-        return true;
+          // Modify the control flow
+          cfg_->map_node_to_block(inst0, nullptr);
+          return true;
+        }
       }
     }
   }
   return false;
+}
+
+bool Peephole::lea_coalesce_reg(Block* block, int block_index, PhaseCFG* cfg_, PhaseRegAlloc* ra_,
+                                MachNode* (*new_root)(), uint inst0_rule) {
+  return lea_coalesce_helper(block, block_index, cfg_, ra_, new_root, inst0_rule, false);
+}
+
+bool Peephole::lea_coalesce_imm(Block* block, int block_index, PhaseCFG* cfg_, PhaseRegAlloc* ra_,
+                                MachNode* (*new_root)(), uint inst0_rule) {
+  return lea_coalesce_helper(block, block_index, cfg_, ra_, new_root, inst0_rule, true);
+}
+
+bool Peephole::test_may_remove_5(Block* block, int block_index, PhaseCFG* cfg_, PhaseRegAlloc* ra_,
+                                 MachNode* (*new_root)(), uint inst0_rule, uint inst1_rule, uint inst2_rule,
+                                 uint inst3_rule, uint inst4_rule, uint inst5_rule) {
+  std::initializer_list<uint> rules = {inst1_rule, inst2_rule, inst3_rule, inst4_rule, inst5_rule};
+  return test_may_remove_helper(block, block_index, cfg_, ra_, new_root, inst0_rule, rules);
 }
 
 #endif // COMPILER2
