@@ -30,15 +30,15 @@ import java.lang.invoke.MethodHandles;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
 import jdk.internal.classfile.impl.ClassHierarchyImpl;
 import jdk.internal.classfile.impl.ClassHierarchyImpl.ClassLoadingClassHierarchyResolver;
 import jdk.internal.classfile.impl.ClassHierarchyImpl.StaticClassHierarchyResolver;
-import jdk.internal.classfile.impl.ClassHierarchyImpl.ResourceParsingClassHierarchyResolver;
 import jdk.internal.classfile.impl.Util;
+
+import static java.lang.constant.ConstantDescs.CD_Object;
 
 /**
  * Provides class hierarchy information for generating correct stack maps
@@ -48,19 +48,14 @@ import jdk.internal.classfile.impl.Util;
 public interface ClassHierarchyResolver {
 
     /**
-     * Default singleton instance of {@linkplain ClassHierarchyResolver}
-     * using {@link ClassLoader#getSystemResourceAsStream(String)}
-     * as the {@code ClassStreamResolver}
+     * Returns a default instance of {@linkplain ClassHierarchyResolver}
+     * that reads from system class loader with
+     * {@link ClassLoader#getSystemResourceAsStream(String)} and falls
+     * back to reflection if a class is not found.
      */
-    ClassHierarchyResolver DEFAULT_CLASS_HIERARCHY_RESOLVER
-            = ofCached(ofResourceParsing(ResourceParsingClassHierarchyResolver.SYSTEM_STREAM_PROVIDER)
-                    .orElse(new ClassLoadingClassHierarchyResolver(ClassLoadingClassHierarchyResolver.SYSTEM_CLASS_PROVIDER)),
-            new Supplier<>() {
-                @Override
-                public Map<ClassDesc, ClassHierarchyInfo> get() {
-                    return new ConcurrentHashMap<>();
-                }
-            });
+    static ClassHierarchyResolver defaultResolver() {
+        return ClassHierarchyImpl.DEFAULT_RESOLVER;
+    }
 
     /**
      * {@return the {@link ClassHierarchyInfo} for a given class name, or null
@@ -68,6 +63,30 @@ public interface ClassHierarchyResolver {
      * @param classDesc descriptor of the class
      */
     ClassHierarchyInfo getClassInfo(ClassDesc classDesc);
+
+    /**
+     * Information about a resolved class.
+     */
+    sealed interface ClassHierarchyInfo permits ClassHierarchyImpl.ClassHierarchyInfoImpl {
+
+        /**
+         * Indicates that a class is a declared class, with the specific given super class.
+         * @param superClass descriptor of the super class
+         * @return the info indicating the super class
+         */
+        static ClassHierarchyInfo ofClass(ClassDesc superClass) {
+            return new ClassHierarchyImpl.ClassHierarchyInfoImpl(superClass, false);
+        }
+
+        /**
+         * Indicates that a class is an interface.
+         *
+         * @return the info indicating an interface
+         */
+        static ClassHierarchyInfo ofInterface() {
+            return new ClassHierarchyImpl.ClassHierarchyInfoImpl(CD_Object, true);
+        }
+    }
 
     /**
      * Chains this {@linkplain ClassHierarchyResolver} with another to be
@@ -82,32 +101,36 @@ public interface ClassHierarchyResolver {
             public ClassHierarchyInfo getClassInfo(ClassDesc classDesc) {
                 var chi = ClassHierarchyResolver.this.getClassInfo(classDesc);
                 if (chi == null)
-                    chi = other.getClassInfo(classDesc);
+                    return other.getClassInfo(classDesc);
                 return chi;
             }
         };
     }
 
     /**
-     * Information about a resolved class.
-     * @param thisClass descriptor of this class
-     * @param isInterface whether this class is an interface
-     * @param superClass descriptor of the superclass (not relevant for interfaces)
+     * Returns a ClassHierarchyResolver that caches class hierarchy information from this
+     * resolver. The returned resolver will not update if delegate resolver returns differently.
+     * The thread safety of the returned resolver depends on the thread safety of the map
+     * returned by the {@code cacheFactory}.
+     *
+     * @param cacheFactory the factory for the cache
+     * @return the ClassHierarchyResolver with caching
      */
-    record ClassHierarchyInfo(ClassDesc thisClass, boolean isInterface, ClassDesc superClass) {
+    default ClassHierarchyResolver cached(Supplier<Map<ClassDesc, ClassHierarchyInfo>> cacheFactory) {
+        return new ClassHierarchyImpl.CachedClassHierarchyResolver(this, cacheFactory.get());
     }
 
     /**
-     * Returns a ClassHierarchyResolver that caches class hierarchy information from another
+     * Returns a ClassHierarchyResolver that caches class hierarchy information from this
      * resolver. The returned resolver will not update if delegate resolver returns differently.
      * The returned resolver is not thread-safe.
      * {@snippet file="PackageSnippets.java" region="lookup-class-hierarchy-resolver"}
      *
-     * @param delegate the resolver to pull information from
      * @return the ClassHierarchyResolver
      */
-    static ClassHierarchyResolver ofCached(ClassHierarchyResolver delegate) {
-        class Factory implements Supplier<Map<ClassDesc, ClassHierarchyInfo>> {
+    default ClassHierarchyResolver cached() {
+        record Factory() implements Supplier<Map<ClassDesc, ClassHierarchyInfo>> {
+            // uses a record as we cannot declare a local class static
             static final Factory INSTANCE = new Factory();
 
             @Override
@@ -115,22 +138,7 @@ public interface ClassHierarchyResolver {
                 return new HashMap<>();
             }
         }
-        return ofCached(delegate, Factory.INSTANCE);
-    }
-
-    /**
-     * Returns a ClassHierarchyResolver that caches class hierarchy information from another
-     * resolver. The returned resolver will not update if delegate resolver returns differently.
-     * The thread safety of the returned resolver depends on the thread safety of the map
-     * returned by the {@code cacheFactory}.
-     *
-     * @param delegate the resolver to pull information from
-     * @param cacheFactory the factory for the cache
-     * @return the ClassHierarchyResolver
-     */
-    static ClassHierarchyResolver ofCached(ClassHierarchyResolver delegate,
-                                           Supplier<Map<ClassDesc, ClassHierarchyInfo>> cacheFactory) {
-        return new ClassHierarchyImpl.CachedClassHierarchyResolver(delegate, cacheFactory.get());
+        return cached(Factory.INSTANCE);
     }
 
     /**

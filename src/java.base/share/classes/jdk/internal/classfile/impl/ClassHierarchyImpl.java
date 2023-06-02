@@ -29,11 +29,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.lang.constant.ClassDesc;
-import java.lang.constant.ConstantDescs;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -41,6 +36,7 @@ import java.util.function.Function;
 
 import jdk.internal.classfile.ClassHierarchyResolver;
 
+import static java.lang.constant.ConstantDescs.CD_Object;
 import static jdk.internal.classfile.Classfile.*;
 
 /**
@@ -49,6 +45,15 @@ import static jdk.internal.classfile.Classfile.*;
  *
  */
 public final class ClassHierarchyImpl {
+
+    public record ClassHierarchyInfoImpl(ClassDesc superClass, boolean isInterface) implements ClassHierarchyResolver.ClassHierarchyInfo {
+        static final ClassHierarchyResolver.ClassHierarchyInfo OBJECT_INFO = new ClassHierarchyInfoImpl(null, false);
+    }
+
+    public static final ClassHierarchyResolver DEFAULT_RESOLVER = ClassHierarchyResolver
+            .ofResourceParsing(ResourceParsingClassHierarchyResolver.SYSTEM_STREAM_PROVIDER)
+            .orElse(new ClassLoadingClassHierarchyResolver(ClassLoadingClassHierarchyResolver.SYSTEM_CLASS_PROVIDER))
+            .cached();
 
     private final ClassHierarchyResolver resolver;
 
@@ -60,9 +65,9 @@ public final class ClassHierarchyImpl {
         this.resolver = classHierarchyResolver;
     }
 
-    private ClassHierarchyResolver.ClassHierarchyInfo resolve(ClassDesc classDesc) {
+    private ClassHierarchyInfoImpl resolve(ClassDesc classDesc) {
         var res = resolver.getClassInfo(classDesc);
-        if (res != null) return res;
+        if (res != null) return (ClassHierarchyInfoImpl) res;
         throw new IllegalArgumentException("Could not resolve class " + classDesc.displayName());
     }
 
@@ -86,7 +91,7 @@ public final class ClassHierarchyImpl {
         //calculation of common ancestor is a robust (yet fast) way to decide about assignability in incompletely resolved class hierarchy
         //exact order of symbol loops is critical for performance of the above isAssignableFrom method, so standard situations are resolved in linear time
         //this method returns null if common ancestor could not be identified
-        if (isInterface(symbol1) || isInterface(symbol2)) return ConstantDescs.CD_Object;
+        if (isInterface(symbol1) || isInterface(symbol2)) return CD_Object;
         for (var s1 = symbol1; s1 != null; s1 = resolve(s1).superClass()) {
             for (var s2 = symbol2; s2 != null; s2 = resolve(s2).superClass()) {
                 if (s1.equals(s2)) return s1;
@@ -110,7 +115,7 @@ public final class ClassHierarchyImpl {
     public static final class CachedClassHierarchyResolver implements ClassHierarchyResolver {
         //this instance should leak out, appears only in cache in order to utilize Map.computeIfAbsent
         private static final ClassHierarchyResolver.ClassHierarchyInfo NOPE =
-                new ClassHierarchyResolver.ClassHierarchyInfo(null, false, null);
+                new ClassHierarchyInfoImpl(null, true);
 
         private final ClassHierarchyResolver delegate;
         private final Map<ClassDesc, ClassHierarchyInfo> resolvedCache;
@@ -135,18 +140,8 @@ public final class ClassHierarchyImpl {
 
     public static final class ResourceParsingClassHierarchyResolver implements ClassHierarchyResolver {
         public static final Function<ClassDesc, InputStream> SYSTEM_STREAM_PROVIDER = new Function<>() {
-            @SuppressWarnings("removal")
             @Override
             public InputStream apply(ClassDesc cd) {
-                var sm = System.getSecurityManager();
-                if (sm != null) {
-                    return AccessController.doPrivileged(new PrivilegedAction<>() {
-                        @Override
-                        public InputStream run() {
-                            return ClassLoader.getSystemClassLoader().getResourceAsStream(Util.toInternalName(cd) + ".class");
-                        }
-                    });
-                }
                 return ClassLoader.getSystemClassLoader().getResourceAsStream(Util.toInternalName(cd) + ".class");
             }
         };
@@ -188,7 +183,7 @@ public final class ClassHierarchyImpl {
                 in.skipBytes(2);
                 int superIndex = in.readUnsignedShort();
                 var superClass = superIndex > 0 ? ClassDesc.ofInternalName(cpStrings[cpClasses[superIndex]]) : null;
-                return new ClassHierarchyInfo(classDesc, isInterface, superClass);
+                return new ClassHierarchyInfoImpl(superClass, isInterface);
             } catch (IOException ioe) {
                 throw new UncheckedIOException(ioe);
             }
@@ -197,18 +192,15 @@ public final class ClassHierarchyImpl {
 
     public static final class StaticClassHierarchyResolver implements ClassHierarchyResolver {
 
-        private static final ClassHierarchyInfo CHI_Object =
-                new ClassHierarchyInfo(ConstantDescs.CD_Object, false, null);
-
         private final Map<ClassDesc, ClassHierarchyInfo> map;
 
         public StaticClassHierarchyResolver(Collection<ClassDesc> interfaceNames, Map<ClassDesc, ClassDesc> classToSuperClass) {
             map = HashMap.newHashMap(interfaceNames.size() + classToSuperClass.size() + 1);
-            map.put(ConstantDescs.CD_Object, CHI_Object);
+            map.put(CD_Object, ClassHierarchyInfoImpl.OBJECT_INFO);
             for (var e : classToSuperClass.entrySet())
-                map.put(e.getKey(), new ClassHierarchyInfo(e.getKey(), false, e.getValue()));
+                map.put(e.getKey(), ClassHierarchyInfo.ofClass(e.getValue()));
             for (var i : interfaceNames)
-                map.put(i, new ClassHierarchyInfo(i, true, null));
+                map.put(i, ClassHierarchyInfo.ofInterface());
         }
 
         @Override
@@ -220,26 +212,11 @@ public final class ClassHierarchyImpl {
     public static final class ClassLoadingClassHierarchyResolver implements ClassHierarchyResolver {
         public static final Function<ClassDesc, Class<?>> SYSTEM_CLASS_PROVIDER = new Function<>() {
             @Override
-            @SuppressWarnings("removal")
             public Class<?> apply(ClassDesc cd) {
-                var sm = System.getSecurityManager();
-                if (sm != null) {
-                    try {
-                        return AccessController.doPrivileged(new PrivilegedExceptionAction<>() {
-                            @Override
-                            public Class<?> run() throws ClassNotFoundException {
-                                return Class.forName(Util.toBinaryName(cd.descriptorString()), false, ClassLoader.getSystemClassLoader());
-                            }
-                        });
-                    } catch (PrivilegedActionException ex) {
-                        return null;
-                    }
-                } else {
-                    try {
-                        return Class.forName(Util.toBinaryName(cd.descriptorString()), false, ClassLoader.getSystemClassLoader());
-                    } catch (ClassNotFoundException ex) {
-                        return null;
-                    }
+                try {
+                    return Class.forName(Util.toBinaryName(cd.descriptorString()), false, ClassLoader.getSystemClassLoader());
+                } catch (ClassNotFoundException ex) {
+                    return null;
                 }
             }
         };
@@ -257,9 +234,9 @@ public final class ClassHierarchyImpl {
             if (cl == null) {
                 return null;
             }
-            var sup = cl.getSuperclass();
-            return new ClassHierarchyInfo(cd, cl.isInterface(),
-                    sup == null ? null : ClassDesc.of(sup.getName()));
+
+            return cl.isInterface() ? ClassHierarchyInfo.ofInterface()
+                    : ClassHierarchyInfo.ofClass(cl.getSuperclass().describeConstable().orElseThrow());
         }
     }
 }

@@ -311,7 +311,7 @@ class PackageSnippets {
     void resolverExample() {
         // @start region="lookup-class-hierarchy-resolver"
         MethodHandles.Lookup lookup = MethodHandles.lookup(); // @replace regex="MethodHandles\.lookup\(\)" replacement="..."
-        ClassHierarchyResolver resolver = ClassHierarchyResolver.ofCached(ClassHierarchyResolver.ofClassLoading(lookup));
+        ClassHierarchyResolver resolver = ClassHierarchyResolver.ofClassLoading(lookup).cached();
         // @end
     }
 }
