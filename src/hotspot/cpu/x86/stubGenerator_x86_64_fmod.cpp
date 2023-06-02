@@ -78,459 +78,433 @@ address StubGenerator::generate_libmFmod() {
 
   if (VM_Version::supports_avx512vlbwdq()) {     // AVX512 version
 
-// Source used to generate the AVX512 fmod assembly below:
-//
-// #include <ia32intrin.h>
-// #include <emmintrin.h>
-// #pragma float_control(precise, on)
-//
-// #define UINT32 unsigned int
-// #define SINT32 int
-// #define UINT64 unsigned __int64
-// #define SINT64 __int64
-//
-// #define DP_FMA(a, b, c)    __fence(_mm_cvtsd_f64(_mm_fmadd_sd(_mm_set_sd(a), _mm_set_sd(b), _mm_set_sd(c))))
-// #define DP_FMA_RN(a, b, c)    _mm_cvtsd_f64(_mm_fmadd_round_sd(_mm_set_sd(a), _mm_set_sd(b), _mm_set_sd(c), (_MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC)))
-// #define DP_FMA_RZ(a, b, c) __fence(_mm_cvtsd_f64(_mm_fmadd_round_sd(_mm_set_sd(a), _mm_set_sd(b), _mm_set_sd(c), (_MM_FROUND_TO_ZERO | _MM_FROUND_NO_EXC))))
-//
-// #define DP_ROUND_RZ(a)   _mm_cvtsd_f64(_mm_roundscale_sd(_mm_setzero_pd(), _mm_set_sd(a), (_MM_FROUND_TO_ZERO | _MM_FROUND_NO_EXC)))
-//
-// #define DP_CONST(C)    _castu64_f64(0x##C##ull)
-// #define DP_AND(X, Y)   _mm_cvtsd_f64(_mm_and_pd(_mm_set_sd(X), _mm_set_sd(Y)))
-// #define DP_XOR(X, Y)   _mm_cvtsd_f64(_mm_xor_pd(_mm_set_sd(X), _mm_set_sd(Y)))
-// #define DP_OR(X, Y)    _mm_cvtsd_f64(_mm_or_pd(_mm_set_sd(X), _mm_set_sd(Y)))
-// #define DP_DIV_RZ(a, b) __fence(_mm_cvtsd_f64(_mm_div_round_sd(_mm_set_sd(a), _mm_set_sd(b), (_MM_FROUND_TO_ZERO | _MM_FROUND_NO_EXC))))
-// #define DP_FNMA(a, b, c)    __fence(_mm_cvtsd_f64(_mm_fnmadd_sd(_mm_set_sd(a), _mm_set_sd(b), _mm_set_sd(c))))
-// #define DP_FNMA_RZ(a, b, c) __fence(_mm_cvtsd_f64(_mm_fnmadd_round_sd(_mm_set_sd(a), _mm_set_sd(b), _mm_set_sd(c), (_MM_FROUND_TO_ZERO | _MM_FROUND_NO_EXC))))
-//
-// #define D2L(x)  _mm_castpd_si128(x)
-// // transfer highest 32 bits (of low 64b) to GPR
-// #define TRANSFER_HIGH_INT32(X)   _mm_extract_epi32(D2L(_mm_set_sd(X)), 1)
-//
-// double fmod(double x, double y)
-// {
-// double a, b, sgn_a, q, bs, bs2;
-// unsigned eq;
-//
-//     // |x|, |y|
-//     a = DP_AND(x, DP_CONST(7fffffffffffffff));
-//     b = DP_AND(y, DP_CONST(7fffffffffffffff));
-//     // sign(x)
-//     sgn_a = DP_XOR(x, a);
-//     q = DP_DIV_RZ(a, b);
-//     q = DP_ROUND_RZ(q);
-//     eq = TRANSFER_HIGH_INT32(q);
-//     if (!eq)  return x + sgn_a;
-//     if (eq >= 0x7fefffffu) goto SPECIAL_FMOD;
-//     a = DP_FNMA_RZ(b, q, a);
-//
-// FMOD_CONT:
-//     while (b <= a)
-//     {
-//         q = DP_DIV_RZ(a, b);
-//         q = DP_ROUND_RZ(q);
-//         a = DP_FNMA_RZ(b, q, a);
-//     }
-//
-//     a = DP_XOR(a, sgn_a);
-//     return a;
-//
-// SPECIAL_FMOD:
-//
-//     // y==0 or x==Inf?
-//     if ((b == 0.0) || (!(a <= DP_CONST(7fefffffffffffff))))
-//         return DP_FNMA(b, q, a);    // NaN
-//     // y is NaN?
-//     if (!(b <= DP_CONST(7ff0000000000000))) return y + y;
-//     // b* 2*1023
-//     bs = b * DP_CONST(7fe0000000000000);
-//     q = DP_DIV_RZ(a, bs);
-//     q = DP_ROUND_RZ(q);
-//     eq = TRANSFER_HIGH_INT32(q);
-//     if (eq >= 0x7fefffffu)
-//     {
-//         // b* 2*1023 * 2^1023
-//         bs2 = bs * DP_CONST(7fe0000000000000);
-//         while (bs2 <= a)
-//         {
-//             q = DP_DIV_RZ(a, bs2);
-//             q = DP_ROUND_RZ(q);
-//             a = DP_FNMA_RZ(bs2, q, a);
-//         }
-//     }
-//     else
-//     a = DP_FNMA_RZ(bs, q, a);
-//
-//     while (bs <= a)
-//     {
-//         q = DP_DIV_RZ(a, bs);
-//         q = DP_ROUND_RZ(q);
-//         a = DP_FNMA_RZ(bs, q, a);
-//     }
-//
-//     goto FMOD_CONT;
-// }
+    // Source used to generate the AVX512 fmod assembly below:
+    //
+    // #include <ia32intrin.h>
+    // #include <emmintrin.h>
+    // #pragma float_control(precise, on)
+    //
+    // #define UINT32 unsigned int
+    // #define SINT32 int
+    // #define UINT64 unsigned __int64
+    // #define SINT64 __int64
+    //
+    // #define DP_FMA(a, b, c)    __fence(_mm_cvtsd_f64(_mm_fmadd_sd(_mm_set_sd(a), _mm_set_sd(b), _mm_set_sd(c))))
+    // #define DP_FMA_RN(a, b, c)    _mm_cvtsd_f64(_mm_fmadd_round_sd(_mm_set_sd(a), _mm_set_sd(b), _mm_set_sd(c), (_MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC)))
+    // #define DP_FMA_RZ(a, b, c) __fence(_mm_cvtsd_f64(_mm_fmadd_round_sd(_mm_set_sd(a), _mm_set_sd(b), _mm_set_sd(c), (_MM_FROUND_TO_ZERO | _MM_FROUND_NO_EXC))))
+    //
+    // #define DP_ROUND_RZ(a)   _mm_cvtsd_f64(_mm_roundscale_sd(_mm_setzero_pd(), _mm_set_sd(a), (_MM_FROUND_TO_ZERO | _MM_FROUND_NO_EXC)))
+    //
+    // #define DP_CONST(C)    _castu64_f64(0x##C##ull)
+    // #define DP_AND(X, Y)   _mm_cvtsd_f64(_mm_and_pd(_mm_set_sd(X), _mm_set_sd(Y)))
+    // #define DP_XOR(X, Y)   _mm_cvtsd_f64(_mm_xor_pd(_mm_set_sd(X), _mm_set_sd(Y)))
+    // #define DP_OR(X, Y)    _mm_cvtsd_f64(_mm_or_pd(_mm_set_sd(X), _mm_set_sd(Y)))
+    // #define DP_DIV_RZ(a, b) __fence(_mm_cvtsd_f64(_mm_div_round_sd(_mm_set_sd(a), _mm_set_sd(b), (_MM_FROUND_TO_ZERO | _MM_FROUND_NO_EXC))))
+    // #define DP_FNMA(a, b, c)    __fence(_mm_cvtsd_f64(_mm_fnmadd_sd(_mm_set_sd(a), _mm_set_sd(b), _mm_set_sd(c))))
+    // #define DP_FNMA_RZ(a, b, c) __fence(_mm_cvtsd_f64(_mm_fnmadd_round_sd(_mm_set_sd(a), _mm_set_sd(b), _mm_set_sd(c), (_MM_FROUND_TO_ZERO | _MM_FROUND_NO_EXC))))
+    //
+    // #define D2L(x)  _mm_castpd_si128(x)
+    // // transfer highest 32 bits (of low 64b) to GPR
+    // #define TRANSFER_HIGH_INT32(X)   _mm_extract_epi32(D2L(_mm_set_sd(X)), 1)
+    //
+    // double fmod(double x, double y)
+    // {
+    // double a, b, sgn_a, q, bs, bs2;
+    // unsigned eq;
 
+    Label L_5280, L_52a0, L_5256, L_5300, L_5320, L_52c0, L_52d0, L_5360, L_5380, L_53b0, L_5390;
+    Label L_53c0, L_52a6, L_53d0, L_exit;
 
-  Label L_5280, L_52a0, L_5256, L_5300, L_5320, L_52c0, L_52d0, L_5360, L_5380, L_53b0, L_5390;
-  Label L_53c0, L_52a6, L_53d0, L_exit;
+    __ movdqa(xmm2, xmm0);
+    //     // |x|, |y|
+    //     a = DP_AND(x, DP_CONST(7fffffffffffffff));
+    __ movq(xmm0, xmm0);
+    __ mov64(rax, 0x7FFFFFFFFFFFFFFF);
+    __ evpbroadcastq(xmm3, rax, Assembler::AVX_128bit);
+    __ vpand(xmm6, xmm0, xmm3, Assembler::AVX_128bit);
+    //     b = DP_AND(y, DP_CONST(7fffffffffffffff));
+    __ vpand(xmm4, xmm1, xmm3, Assembler::AVX_128bit);
+    //     // sign(x)
+    //     sgn_a = DP_XOR(x, a);
+    __ vpxor(xmm3, xmm6, xmm0, Assembler::AVX_128bit);
+    //     q = DP_DIV_RZ(a, b);
+    __ movq(xmm5, xmm4);
+    __ evdivsd(xmm0, xmm6, xmm5, Assembler::EVEX_RZ);
+    //     q = DP_ROUND_RZ(q);
+    __ movq(xmm0, xmm0);
+    //     a = DP_AND(x, DP_CONST(7fffffffffffffff));
+    __ vxorpd(xmm7, xmm7, xmm7, Assembler::AVX_128bit);
+    //     q = DP_ROUND_RZ(q);
+    __ vroundsd(xmm0, xmm7, xmm0, 0xb);
+    //     eq = TRANSFER_HIGH_INT32(q);
+    __ extractps(rax, xmm0, 1);
+    //     if (!eq)  return x + sgn_a;
+    __ testl(rax, rax);
+    __ jcc(Assembler::equal, L_5280);
+    //     if (eq >= 0x7fefffffu) goto SPECIAL_FMOD;
+    __ cmpl(rax, 0x7feffffe);
+    __ jcc(Assembler::belowEqual, L_52a0);
+    __ vpxor(xmm2, xmm2, xmm2, Assembler::AVX_128bit);
+    // SPECIAL_FMOD:
+    //
+    //     // y==0 or x==Inf?
+    //     if ((b == 0.0) || (!(a <= DP_CONST(7fefffffffffffff))))
+    __ ucomisd(xmm4, xmm2);
+    __ jcc(Assembler::notEqual, L_5256);
+    __ jcc(Assembler::noParity, L_5300);
+    __ bind(L_5256);
+    __ movsd(xmm2, ExternalAddress((address)CONST_MAX), rax);
+    __ ucomisd(xmm2, xmm6);
+    __ jcc(Assembler::below, L_5300);
+    __ movsd(xmm0, ExternalAddress((address)CONST_INF), rax);
+    //         return DP_FNMA(b, q, a);    // NaN
+    //     // y is NaN?
+    //     if (!(b <= DP_CONST(7ff0000000000000))) return y + y;
+    __ ucomisd(xmm0, xmm4);
+    __ jcc(Assembler::aboveEqual, L_5320);
+    __ vaddsd(xmm0, xmm1, xmm1);
+    __ jmp(L_exit);
+    //     if (!eq)  return x + sgn_a;
+    __ align32();
+    __ bind(L_5280);
+    __ vaddsd(xmm0, xmm3, xmm2);
+    __ jmp(L_exit);
+    //     a = DP_FNMA_RZ(b, q, a);
+    __ align(8);
+    __ bind(L_52a0);
+    __ evfnmadd213sd(xmm0, xmm4, xmm6, Assembler::EVEX_RZ);
+    //     while (b <= a)
+    __ bind(L_52a6);
+    __ ucomisd(xmm0, xmm4);
+    __ jcc(Assembler::aboveEqual, L_52c0);
+    //     a = DP_XOR(a, sgn_a);
+    __ vpxor(xmm0, xmm3, xmm0, Assembler::AVX_128bit);
+    __ jmp(L_exit);
+    __ bind(L_52c0);
+    __ movq(xmm6, xmm0);
+    //         q = DP_ROUND_RZ(q);
+    __ vpxor(xmm1, xmm1, xmm1, Assembler::AVX_128bit);
+    __ align32();
+    __ bind(L_52d0);
+    //         q = DP_DIV_RZ(a, b);
+    __ evdivsd(xmm2, xmm6, xmm5, Assembler::EVEX_RZ);
+    //         q = DP_ROUND_RZ(q);
+    __ movq(xmm2, xmm2);
+    __ vroundsd(xmm2, xmm1, xmm2, 0xb);
+    //     a = DP_FNMA_RZ(b, q, a);
+    __ evfnmadd213sd(xmm2, xmm4, xmm0, Assembler::EVEX_RZ);
+    //     while (b <= a)
+    __ ucomisd(xmm2, xmm4);
+    __ movq(xmm6, xmm2);
+    __ movapd(xmm0, xmm2);
+    __ jcc(Assembler::aboveEqual, L_52d0);
+    //     a = DP_XOR(a, sgn_a);
+    __ vpxor(xmm0, xmm3, xmm2, Assembler::AVX_128bit);
+    __ jmp(L_exit);
+    //         return DP_FNMA(b, q, a);    // NaN
+    __ bind(L_5300);
+    __ vfnmadd213sd(xmm0, xmm4, xmm6);
+    __ jmp(L_exit);
+    //     bs = b * DP_CONST(7fe0000000000000);
+    __ bind(L_5320);
+    __ vmulsd(xmm1, xmm4, ExternalAddress((address)CONST_e307), rax);
+    //     q = DP_DIV_RZ(a, bs);
+    __ movq(xmm2, xmm1);
+    __ evdivsd(xmm0, xmm6, xmm2, Assembler::EVEX_RZ);
+    //     q = DP_ROUND_RZ(q);
+    __ movq(xmm0, xmm0);
+    __ vroundsd(xmm7, xmm7, xmm0, 0xb);
+    //     eq = TRANSFER_HIGH_INT32(q);
+    __ extractps(rax, xmm7, 1);
+    //     if (eq >= 0x7fefffffu)
+    __ cmpl(rax, 0x7fefffff);
+    __ jcc(Assembler::below, L_5360);
+    //         // b* 2*1023 * 2^1023
+    //         bs2 = bs * DP_CONST(7fe0000000000000);
+    __ vmulsd(xmm0, xmm1, ExternalAddress((address)CONST_e307), rax);
+    //         while (bs2 <= a)
+    __ ucomisd(xmm6, xmm0);
+    __ jcc(Assembler::aboveEqual, L_5380);
+    __ movapd(xmm7, xmm6);
+    __ jmp(L_53b0);
+    //         a = DP_FNMA_RZ(b, q, a);
+    __ bind(L_5360);
+    __ evfnmadd213sd(xmm7, xmm1, xmm6, Assembler::EVEX_RZ);
+    __ jmp(L_53b0);
+    //             q = DP_ROUND_RZ(q);
+    __ bind(L_5380);
+    __ vxorpd(xmm8, xmm8, xmm8, Assembler::AVX_128bit);
+    //             q = DP_DIV_RZ(qa, bs2);
+    __ align32();
+    __ bind(L_5390);
+    __ evdivsd(xmm7, xmm6, xmm0, Assembler::EVEX_RZ);
+    //             q = DP_ROUND_RZ(q);
+    __ movq(xmm7, xmm7);
+    __ vroundsd(xmm7, xmm8, xmm7, 0xb);
+    //             a = DP_FNMA_RZ(bs2, q, a);
+    __ evfnmadd213sd(xmm7, xmm0, xmm6, Assembler::EVEX_RZ);
+    //         while (bs2 <= a)
+    __ ucomisd(xmm7, xmm0);
+    __ movapd(xmm6, xmm7);
+    __ jcc(Assembler::aboveEqual, L_5390);
+    //     while (bs <= a)
+    __ bind(L_53b0);
+    __ ucomisd(xmm7, xmm1);
+    __ jcc(Assembler::aboveEqual, L_53c0);
+    __ movapd(xmm0, xmm7);
+    __ jmp(L_52a6);
+    //         q = DP_ROUND_RZ(q);
+    __ bind(L_53c0);
+    __ vxorpd(xmm6, xmm6, xmm6, Assembler::AVX_128bit);
+    //         q = DP_DIV_RZ(a, bs);
+    __ align32();
+    __ bind(L_53d0);
+    __ evdivsd(xmm0, xmm7, xmm2, Assembler::EVEX_RZ);
+    //         q = DP_ROUND_RZ(q);
+    __ movq(xmm0, xmm0);
+    __ vroundsd(xmm0, xmm6, xmm0, 0xb);
+    //         a = DP_FNMA_RZ(bs, q, a);
+    __ evfnmadd213sd(xmm0, xmm1, xmm7, Assembler::EVEX_RZ);
+    //     while (bs <= a)
+    __ ucomisd(xmm0, xmm1);
+    __ movapd(xmm7, xmm0);
+    __ jcc(Assembler::aboveEqual, L_53d0);
+    __ jmp(L_52a6);
 
-  __ movdqa(xmm2, xmm0);
-  __ movq(xmm0, xmm0);
-  __ mov64(rax, 0x7FFFFFFFFFFFFFFF);
-  __ evpbroadcastq(xmm3, rax, Assembler::AVX_128bit);
-
-  __ vpand(xmm6, xmm0, xmm3, Assembler::AVX_128bit);
-  __ vpand(xmm4, xmm1, xmm3, Assembler::AVX_128bit);
-  __ vpxor(xmm3, xmm6, xmm0, Assembler::AVX_128bit);
-  __ movq(xmm5, xmm4);
-  __ evdivsd(xmm0, xmm6, xmm5, Assembler::EVEX_RZ);
-  __ movq(xmm0, xmm0);
-  __ vxorpd(xmm7, xmm7, xmm7, Assembler::AVX_128bit);
-  __ vroundsd(xmm0, xmm7, xmm0, 0xb);
-  __ extractps(rax, xmm0, 1);
-  __ testl(rax, rax);
-  __ jcc(Assembler::equal, L_5280);
-
-  __ cmpl(rax, 0x7feffffe);
-  __ jcc(Assembler::belowEqual, L_52a0);
-  __ vpxor(xmm2, xmm2, xmm2, Assembler::AVX_128bit);
-  __ ucomisd(xmm4, xmm2);
-  __ jcc(Assembler::notEqual, L_5256);
-  __ jcc(Assembler::noParity, L_5300);
-
-  __ bind(L_5256);
-  __ movsd(xmm2, ExternalAddress((address)CONST_MAX), rax);
-  __ ucomisd(xmm2, xmm6);
-  __ jcc(Assembler::below, L_5300);
-  __ movsd(xmm0, ExternalAddress((address)CONST_INF), rax);
-  __ ucomisd(xmm0, xmm4);
-  __ jcc(Assembler::aboveEqual, L_5320);
-
-  __ vaddsd(xmm0, xmm1, xmm1);
-  __ jmp(L_exit);
-
-  __ align32();
-  __ bind(L_5280);
-  __ vaddsd(xmm0, xmm3, xmm2);
-  __ jmp(L_exit);
-
-  __ align(8);
-  __ bind(L_52a0);
-  __ evfnmadd213sd(xmm0, xmm4, xmm6, Assembler::EVEX_RZ);
-  __ bind(L_52a6);
-  __ ucomisd(xmm0, xmm4);
-  __ jcc(Assembler::aboveEqual, L_52c0);
-  __ vpxor(xmm0, xmm3, xmm0, Assembler::AVX_128bit);
-  __ jmp(L_exit);
-
-  __ bind(L_52c0);
-
-  __ movq(xmm6, xmm0);
-  __ vpxor(xmm1, xmm1, xmm1, Assembler::AVX_128bit);
-  __ align32();
-  __ bind(L_52d0);
-
-  __ evdivsd(xmm2, xmm6, xmm5, Assembler::EVEX_RZ);
-  __ movq(xmm2, xmm2);
-  __ vroundsd(xmm2, xmm1, xmm2, 0xb);
-  __ evfnmadd213sd(xmm2, xmm4, xmm0, Assembler::EVEX_RZ);
-  __ ucomisd(xmm2, xmm4);
-  __ movq(xmm6, xmm2);
-  __ movapd(xmm0, xmm2);
-  __ jcc(Assembler::aboveEqual, L_52d0);
-
-  __ vpxor(xmm0, xmm3, xmm2, Assembler::AVX_128bit);
-  __ jmp(L_exit);
-
-  __ bind(L_5300);
-  __ vfnmadd213sd(xmm0, xmm4, xmm6);
-  __ jmp(L_exit);
-
-  __ bind(L_5320);
-  __ vmulsd(xmm1, xmm4, ExternalAddress((address)CONST_e307), rax);
-  __ movq(xmm2, xmm1);
-  __ evdivsd(xmm0, xmm6, xmm2, Assembler::EVEX_RZ);
-  __ movq(xmm0, xmm0);
-  __ vroundsd(xmm7, xmm7, xmm0, 0xb);
-  __ extractps(rax, xmm7, 1);
-  __ cmpl(rax, 0x7fefffff);
-  __ jcc(Assembler::below, L_5360);
-  __ vmulsd(xmm0, xmm1, ExternalAddress((address)CONST_e307), rax);
-  __ ucomisd(xmm6, xmm0);
-  __ jcc(Assembler::aboveEqual, L_5380);
-  __ movapd(xmm7, xmm6);
-  __ jmp(L_53b0);
-
-  __ bind(L_5360);
-  __ evfnmadd213sd(xmm7, xmm1, xmm6, Assembler::EVEX_RZ);
-  __ jmp(L_53b0);
-
-  __ bind(L_5380);
-  __ vxorpd(xmm8, xmm8, xmm8, Assembler::AVX_128bit);
-
-  __ align32();
-  __ bind(L_5390);
-  __ evdivsd(xmm7, xmm6, xmm0, Assembler::EVEX_RZ);
-  __ movq(xmm7, xmm7);
-  __ vroundsd(xmm7, xmm8, xmm7, 0xb);
-  __ evfnmadd213sd(xmm7, xmm0, xmm6, Assembler::EVEX_RZ);
-  __ ucomisd(xmm7, xmm0);
-  __ movapd(xmm6, xmm7);
-  __ jcc(Assembler::aboveEqual, L_5390);
-  __ bind(L_53b0);
-  __ ucomisd(xmm7, xmm1);
-  __ jcc(Assembler::aboveEqual, L_53c0);
-  __ movapd(xmm0, xmm7);
-  __ jmp(L_52a6);
-
-  __ bind(L_53c0);
-  __ vxorpd(xmm6, xmm6, xmm6, Assembler::AVX_128bit);
-  __ align32();
-  __ bind(L_53d0);
-  __ evdivsd(xmm0, xmm7, xmm2, Assembler::EVEX_RZ);
-  __ movq(xmm0, xmm0);
-  __ vroundsd(xmm0, xmm6, xmm0, 0xb);
-  __ evfnmadd213sd(xmm0, xmm1, xmm7, Assembler::EVEX_RZ);
-  __ ucomisd(xmm0, xmm1);
-  __ movapd(xmm7, xmm0);
-  __ jcc(Assembler::aboveEqual, L_53d0);
-  __ jmp(L_52a6);
-
-  __ bind(L_exit);
+    __ bind(L_exit);
 
   } else if (VM_Version::supports_fma()) {       // AVX2 version
 
     Label L_104a, L_11bd, L_10c1, L_1090, L_11b9, L_10e7, L_11af, L_111c, L_10f3, L_116e, L_112a;
     Label L_1173, L_1157, L_117f, L_11a0;
 
-//   double fmod(double x, double y)
-// {
-// double a, b, sgn_a, q, bs, bs2, corr, res;
-// unsigned eq;
-// unsigned mxcsr, mxcsr_rz;
+    //   double fmod(double x, double y)
+    // {
+    // double a, b, sgn_a, q, bs, bs2, corr, res;
+    // unsigned eq;
+    // unsigned mxcsr, mxcsr_rz;
 
-//   __asm { stmxcsr DWORD PTR[mxcsr] }
-//   mxcsr_rz = 0x7f80 | mxcsr;
-  __ push(rax);
-  __ stmxcsr(Address(rsp, 0));
-  __ movl(rax, Address(rsp, 0));
-  __ movl(rcx, rax);
-  __ orl(rcx, 0x7f80);
-  __ movl(Address(rsp, 0x04), rcx);
+    //   __asm { stmxcsr DWORD PTR[mxcsr] }
+    //   mxcsr_rz = 0x7f80 | mxcsr;
+    __ push(rax);
+    __ stmxcsr(Address(rsp, 0));
+    __ movl(rax, Address(rsp, 0));
+    __ movl(rcx, rax);
+    __ orl(rcx, 0x7f80);
+    __ movl(Address(rsp, 0x04), rcx);
 
-//     // |x|, |y|
-//     a = DP_AND(x, DP_CONST(7fffffffffffffff));
-  __ movq(xmm2, xmm0);
-  __ vmovdqu(xmm3, ExternalAddress((address)CONST_NaN), rcx);
-  __ vpand(xmm4, xmm2, xmm3, Assembler::AVX_128bit);
-//     b = DP_AND(y, DP_CONST(7fffffffffffffff));
-  __ vpand(xmm3, xmm1, xmm3, Assembler::AVX_128bit);
-//   // sign(x)
-//   sgn_a = DP_XOR(x, a);
-  __ mov64(rcx, 0x8000000000000000);
-  __ movq(xmm5, rcx);
-  __ vpand(xmm2, xmm2, xmm5, Assembler::AVX_128bit);
+    //     // |x|, |y|
+    //     a = DP_AND(x, DP_CONST(7fffffffffffffff));
+    __ movq(xmm2, xmm0);
+    __ vmovdqu(xmm3, ExternalAddress((address)CONST_NaN), rcx);
+    __ vpand(xmm4, xmm2, xmm3, Assembler::AVX_128bit);
+    //     b = DP_AND(y, DP_CONST(7fffffffffffffff));
+    __ vpand(xmm3, xmm1, xmm3, Assembler::AVX_128bit);
+    //   // sign(x)
+    //   sgn_a = DP_XOR(x, a);
+    __ mov64(rcx, 0x8000000000000000);
+    __ movq(xmm5, rcx);
+    __ vpand(xmm2, xmm2, xmm5, Assembler::AVX_128bit);
 
-//   if (a < b)  return x + sgn_a;
-  __ ucomisd(xmm3, xmm4);
-  __ jcc(Assembler::belowEqual, L_104a);
-  __ vaddsd(xmm0, xmm2, xmm0);
-  __ jmp(L_11bd);
+    //   if (a < b)  return x + sgn_a;
+    __ ucomisd(xmm3, xmm4);
+    __ jcc(Assembler::belowEqual, L_104a);
+    __ vaddsd(xmm0, xmm2, xmm0);
+    __ jmp(L_11bd);
 
-//   if (((mxcsr & 0x6000)!=0x2000) && (a < b * 0x1p+260))
-  __ bind(L_104a);
-  __ andl(rax, 0x6000);
-  __ cmpl(rax, 0x2000);
-  __ jcc(Assembler::equal, L_10c1);
-  __ vmulsd(xmm0, xmm3, ExternalAddress((address)CONST_1p260), rax);
-  __ ucomisd(xmm0, xmm4);
-  __ jcc(Assembler::belowEqual, L_10c1);
-//   {
-//     q = DP_DIV(a, b);
-  __ vdivpd(xmm0, xmm4, xmm3, Assembler::AVX_128bit);
-//     corr = DP_SHR(DP_FNMA(b, q, a), 63);
-  __ movapd(xmm1, xmm0);
-  __ vfnmadd213sd(xmm1, xmm3, xmm4);
-  __ movq(xmm5, xmm1);
-  __ vpxor(xmm1, xmm1, xmm1, Assembler::AVX_128bit);
-  __ vpcmpgtq(xmm5, xmm1, xmm5, Assembler::AVX_128bit);
-//     q = DP_PSUBQ(q, corr);
-  __ vpaddq(xmm0, xmm5, xmm0, Assembler::AVX_128bit);
-//     q = DP_TRUNC(q);
-  __ vroundsd(xmm0, xmm0, xmm0, 3);
-//     a = DP_FNMA(b, q, a);
-  __ vfnmadd213sd(xmm0, xmm3, xmm4);
-  __ align32();
-//     while (b <= a)
-  __ bind(L_1090);
-  __ ucomisd(xmm0, xmm3);
-  __ jcc(Assembler::below, L_11b9);
-//     {
-//       q = DP_DIV(a, b);
-  __ vdivsd(xmm4, xmm0, xmm3);
-//       corr = DP_SHR(DP_FNMA(b, q, a), 63);
-  __ movapd(xmm5, xmm4);
-  __ vfnmadd213sd(xmm5, xmm3, xmm0);
-  __ movq(xmm5, xmm5);
-  __ vpcmpgtq(xmm5, xmm1, xmm5, Assembler::AVX_128bit);
-//       q = DP_PSUBQ(q, corr);
-  __ vpaddq(xmm4, xmm5, xmm4, Assembler::AVX_128bit);
-//       q = DP_TRUNC(q);
-  __ vroundsd(xmm4, xmm4, xmm4, 3);
-//       a = DP_FNMA(b, q, a);
-  __ vfnmadd231sd(xmm0, xmm3, xmm4);
-  __ jmp(L_1090);
-//     }
-//     return DP_XOR(a, sgn_a);
-//   }
+    //   if (((mxcsr & 0x6000)!=0x2000) && (a < b * 0x1p+260))
+    __ bind(L_104a);
+    __ andl(rax, 0x6000);
+    __ cmpl(rax, 0x2000);
+    __ jcc(Assembler::equal, L_10c1);
+    __ vmulsd(xmm0, xmm3, ExternalAddress((address)CONST_1p260), rax);
+    __ ucomisd(xmm0, xmm4);
+    __ jcc(Assembler::belowEqual, L_10c1);
+    //   {
+    //     q = DP_DIV(a, b);
+    __ vdivpd(xmm0, xmm4, xmm3, Assembler::AVX_128bit);
+    //     corr = DP_SHR(DP_FNMA(b, q, a), 63);
+    __ movapd(xmm1, xmm0);
+    __ vfnmadd213sd(xmm1, xmm3, xmm4);
+    __ movq(xmm5, xmm1);
+    __ vpxor(xmm1, xmm1, xmm1, Assembler::AVX_128bit);
+    __ vpcmpgtq(xmm5, xmm1, xmm5, Assembler::AVX_128bit);
+    //     q = DP_PSUBQ(q, corr);
+    __ vpaddq(xmm0, xmm5, xmm0, Assembler::AVX_128bit);
+    //     q = DP_TRUNC(q);
+    __ vroundsd(xmm0, xmm0, xmm0, 3);
+    //     a = DP_FNMA(b, q, a);
+    __ vfnmadd213sd(xmm0, xmm3, xmm4);
+    __ align32();
+    //     while (b <= a)
+    __ bind(L_1090);
+    __ ucomisd(xmm0, xmm3);
+    __ jcc(Assembler::below, L_11b9);
+    //     {
+    //       q = DP_DIV(a, b);
+    __ vdivsd(xmm4, xmm0, xmm3);
+    //       corr = DP_SHR(DP_FNMA(b, q, a), 63);
+    __ movapd(xmm5, xmm4);
+    __ vfnmadd213sd(xmm5, xmm3, xmm0);
+    __ movq(xmm5, xmm5);
+    __ vpcmpgtq(xmm5, xmm1, xmm5, Assembler::AVX_128bit);
+    //       q = DP_PSUBQ(q, corr);
+    __ vpaddq(xmm4, xmm5, xmm4, Assembler::AVX_128bit);
+    //       q = DP_TRUNC(q);
+    __ vroundsd(xmm4, xmm4, xmm4, 3);
+    //       a = DP_FNMA(b, q, a);
+    __ vfnmadd231sd(xmm0, xmm3, xmm4);
+    __ jmp(L_1090);
+    //     }
+    //     return DP_XOR(a, sgn_a);
+    //   }
 
-//   __asm { ldmxcsr DWORD PTR [mxcsr_rz] }
-  __ bind(L_10c1);
-  __ ldmxcsr(Address(rsp, 0x04));
+    //   __asm { ldmxcsr DWORD PTR [mxcsr_rz] }
+    __ bind(L_10c1);
+    __ ldmxcsr(Address(rsp, 0x04));
 
-//   q = DP_DIV(a, b);
-  __ vdivpd(xmm0, xmm4, xmm3, Assembler::AVX_128bit);
-//   q = DP_TRUNC(q);
-  __ vroundsd(xmm0, xmm0, xmm0, 3);
+    //   q = DP_DIV(a, b);
+    __ vdivpd(xmm0, xmm4, xmm3, Assembler::AVX_128bit);
+    //   q = DP_TRUNC(q);
+    __ vroundsd(xmm0, xmm0, xmm0, 3);
 
-//   eq = TRANSFER_HIGH_INT32(q);
-  __ extractps(rax, xmm0, 1);
+    //   eq = TRANSFER_HIGH_INT32(q);
+    __ extractps(rax, xmm0, 1);
 
-//   if (__builtin_expect((eq >= 0x7fefffffu), (0==1))) goto SPECIAL_FMOD;
-  __ cmpl(rax, 0x7feffffe);
-  __ jcc(Assembler::above, L_10e7);
+    //   if (__builtin_expect((eq >= 0x7fefffffu), (0==1))) goto SPECIAL_FMOD;
+    __ cmpl(rax, 0x7feffffe);
+    __ jcc(Assembler::above, L_10e7);
 
-//   a = DP_FNMA(b, q, a);
-  __ vfnmadd213sd(xmm0, xmm3, xmm4);
-  __ jmp(L_11af);
+    //   a = DP_FNMA(b, q, a);
+    __ vfnmadd213sd(xmm0, xmm3, xmm4);
+    __ jmp(L_11af);
 
-// SPECIAL_FMOD:
+    // SPECIAL_FMOD:
 
-//   // y==0 or x==Inf?
-//   if ((b == 0.0) || (!(a <= DP_CONST(7fefffffffffffff))))
-  __ bind(L_10e7);
-  __ vpxor(xmm5, xmm5, xmm5, Assembler::AVX_128bit);
-  __ ucomisd(xmm3, xmm5);
-  __ jcc(Assembler::notEqual, L_10f3);
-  __ jcc(Assembler::noParity, L_111c);
+    //   // y==0 or x==Inf?
+    //   if ((b == 0.0) || (!(a <= DP_CONST(7fefffffffffffff))))
+    __ bind(L_10e7);
+    __ vpxor(xmm5, xmm5, xmm5, Assembler::AVX_128bit);
+    __ ucomisd(xmm3, xmm5);
+    __ jcc(Assembler::notEqual, L_10f3);
+    __ jcc(Assembler::noParity, L_111c);
 
-  __ bind(L_10f3);
-  __ movsd(xmm5, ExternalAddress((address)CONST_MAX), rax);
-  __ ucomisd(xmm5, xmm4);
-  __ jcc(Assembler::below, L_111c);
-//     return res;
-//   }
-//   // y is NaN?
-//   if (!(b <= DP_CONST(7ff0000000000000))) {
-  __ movsd(xmm0, ExternalAddress((address)CONST_INF), rax);
-  __ ucomisd(xmm0, xmm3);
-  __ jcc(Assembler::aboveEqual, L_112a);
-//     res = y + y;
-  __ vaddsd(xmm0, xmm1, xmm1);
-//     __asm { ldmxcsr DWORD PTR[mxcsr] }
-  __ ldmxcsr(Address(rsp, 0));
-  __ jmp(L_11bd);
-//   {
-//     res = DP_FNMA(b, q, a);    // NaN
-  __ bind(L_111c);
-  __ vfnmadd213sd(xmm0, xmm3, xmm4);
-//     __asm { ldmxcsr DWORD PTR[mxcsr] }
-  __ ldmxcsr(Address(rsp, 0));
-  __ jmp(L_11bd);
-//     return res;
-//   }
+    __ bind(L_10f3);
+    __ movsd(xmm5, ExternalAddress((address)CONST_MAX), rax);
+    __ ucomisd(xmm5, xmm4);
+    __ jcc(Assembler::below, L_111c);
+    //     return res;
+    //   }
+    //   // y is NaN?
+    //   if (!(b <= DP_CONST(7ff0000000000000))) {
+    __ movsd(xmm0, ExternalAddress((address)CONST_INF), rax);
+    __ ucomisd(xmm0, xmm3);
+    __ jcc(Assembler::aboveEqual, L_112a);
+    //     res = y + y;
+    __ vaddsd(xmm0, xmm1, xmm1);
+    //     __asm { ldmxcsr DWORD PTR[mxcsr] }
+    __ ldmxcsr(Address(rsp, 0));
+    __ jmp(L_11bd);
+    //   {
+    //     res = DP_FNMA(b, q, a);    // NaN
+    __ bind(L_111c);
+    __ vfnmadd213sd(xmm0, xmm3, xmm4);
+    //     __asm { ldmxcsr DWORD PTR[mxcsr] }
+    __ ldmxcsr(Address(rsp, 0));
+    __ jmp(L_11bd);
+    //     return res;
+    //   }
 
-//   // b* 2*1023
-//   bs = b * DP_CONST(7fe0000000000000);
-  __ bind(L_112a);
-  __ vmulsd(xmm1, xmm3, ExternalAddress((address)CONST_e307), rax);
+    //   // b* 2*1023
+    //   bs = b * DP_CONST(7fe0000000000000);
+    __ bind(L_112a);
+    __ vmulsd(xmm1, xmm3, ExternalAddress((address)CONST_e307), rax);
 
-//   q = DP_DIV(a, bs);
-  __ vdivsd(xmm0, xmm4, xmm1);
-//   q = DP_TRUNC(q);
-  __ vroundsd(xmm0, xmm0, xmm0, 3);
+    //   q = DP_DIV(a, bs);
+    __ vdivsd(xmm0, xmm4, xmm1);
+    //   q = DP_TRUNC(q);
+    __ vroundsd(xmm0, xmm0, xmm0, 3);
 
-//   eq = TRANSFER_HIGH_INT32(q);
-  __ extractps(rax, xmm0, 1);
+    //   eq = TRANSFER_HIGH_INT32(q);
+    __ extractps(rax, xmm0, 1);
 
-//   if (eq >= 0x7fefffffu)
-  __ cmpl(rax, 0x7fefffff);
-  __ jcc(Assembler::below, L_116e);
-//   {
-//     // b* 2*1023 * 2^1023
-//     bs2 = bs * DP_CONST(7fe0000000000000);
-  __ vmulsd(xmm0, xmm1, ExternalAddress((address)CONST_e307), rax);
-//     while (bs2 <= a)
-  __ ucomisd(xmm4, xmm0);
-  __ jcc(Assembler::below, L_1173);
-//     {
-//       q = DP_DIV(a, bs2);
-  __ bind(L_1157);
-  __ vdivsd(xmm5, xmm4, xmm0);
-//       q = DP_TRUNC(q);
-  __ vroundsd(xmm5, xmm5, xmm5, 3);
-//       a = DP_FNMA(bs2, q, a);
-  __ vfnmadd231sd(xmm4, xmm0, xmm5);
-//     while (bs2 <= a)
-  __ ucomisd(xmm4, xmm0);
-  __ jcc(Assembler::aboveEqual, L_1157);
-  __ jmp(L_1173);
-//     }
-//   }
-//   else
-//   a = DP_FNMA(bs, q, a);
-  __ bind(L_116e);
-  __ vfnmadd231sd(xmm4, xmm1, xmm0);
+    //   if (eq >= 0x7fefffffu)
+    __ cmpl(rax, 0x7fefffff);
+    __ jcc(Assembler::below, L_116e);
+    //   {
+    //     // b* 2*1023 * 2^1023
+    //     bs2 = bs * DP_CONST(7fe0000000000000);
+    __ vmulsd(xmm0, xmm1, ExternalAddress((address)CONST_e307), rax);
+    //     while (bs2 <= a)
+    __ ucomisd(xmm4, xmm0);
+    __ jcc(Assembler::below, L_1173);
+    //     {
+    //       q = DP_DIV(a, bs2);
+    __ bind(L_1157);
+    __ vdivsd(xmm5, xmm4, xmm0);
+    //       q = DP_TRUNC(q);
+    __ vroundsd(xmm5, xmm5, xmm5, 3);
+    //       a = DP_FNMA(bs2, q, a);
+    __ vfnmadd231sd(xmm4, xmm0, xmm5);
+    //     while (bs2 <= a)
+    __ ucomisd(xmm4, xmm0);
+    __ jcc(Assembler::aboveEqual, L_1157);
+    __ jmp(L_1173);
+    //     }
+    //   }
+    //   else
+    //   a = DP_FNMA(bs, q, a);
+    __ bind(L_116e);
+    __ vfnmadd231sd(xmm4, xmm1, xmm0);
 
-//   while (bs <= a)
-  __ bind(L_1173);
-  __ ucomisd(xmm4, xmm1);
-  __ jcc(Assembler::aboveEqual, L_117f);
-  __ movapd(xmm0, xmm4);
-  __ jmp(L_11af);
-//   {
-//     q = DP_DIV(a, bs);
-  __ bind(L_117f);
-  __ vdivsd(xmm0, xmm4, xmm1);
-//     q = DP_TRUNC(q);
-  __ vroundsd(xmm0, xmm0, xmm0, 3);
-//     a = DP_FNMA(bs, q, a);
-  __ vfnmadd213sd(xmm0, xmm1, xmm4);
+    //   while (bs <= a)
+    __ bind(L_1173);
+    __ ucomisd(xmm4, xmm1);
+    __ jcc(Assembler::aboveEqual, L_117f);
+    __ movapd(xmm0, xmm4);
+    __ jmp(L_11af);
+    //   {
+    //     q = DP_DIV(a, bs);
+    __ bind(L_117f);
+    __ vdivsd(xmm0, xmm4, xmm1);
+    //     q = DP_TRUNC(q);
+    __ vroundsd(xmm0, xmm0, xmm0, 3);
+    //     a = DP_FNMA(bs, q, a);
+    __ vfnmadd213sd(xmm0, xmm1, xmm4);
 
-//   while (bs <= a)
-  __ ucomisd(xmm0, xmm1);
-  __ movapd(xmm4, xmm0);
-  __ jcc(Assembler::aboveEqual, L_117f);
-  __ jmp(L_11af);
-  __ align32();
-//   {
-//     q = DP_DIV(a, b);
-  __ bind(L_11a0);
-  __ vdivsd(xmm1, xmm0, xmm3);
-//     q = DP_TRUNC(q);
-  __ vroundsd(xmm1, xmm1, xmm1, 3);
-//     a = DP_FNMA(b, q, a);
-  __ vfnmadd231sd(xmm0, xmm3, xmm1);
+    //   while (bs <= a)
+    __ ucomisd(xmm0, xmm1);
+    __ movapd(xmm4, xmm0);
+    __ jcc(Assembler::aboveEqual, L_117f);
+    __ jmp(L_11af);
+    __ align32();
+    //   {
+    //     q = DP_DIV(a, b);
+    __ bind(L_11a0);
+    __ vdivsd(xmm1, xmm0, xmm3);
+    //     q = DP_TRUNC(q);
+    __ vroundsd(xmm1, xmm1, xmm1, 3);
+    //     a = DP_FNMA(b, q, a);
+    __ vfnmadd231sd(xmm0, xmm3, xmm1);
 
-// FMOD_CONT:
-//   while (b <= a)
-  __ bind(L_11af);
-  __ ucomisd(xmm0, xmm3);
-  __ jcc(Assembler::aboveEqual, L_11a0);
-//   }
+    // FMOD_CONT:
+    //   while (b <= a)
+    __ bind(L_11af);
+    __ ucomisd(xmm0, xmm3);
+    __ jcc(Assembler::aboveEqual, L_11a0);
+    //   }
 
-//   __asm { ldmxcsr DWORD PTR[mxcsr] }
-  __ ldmxcsr(Address(rsp, 0));
-  __ bind(L_11b9);
-  __ vpxor(xmm0, xmm2, xmm0, Assembler::AVX_128bit);
-//   }
+    //   __asm { ldmxcsr DWORD PTR[mxcsr] }
+    __ ldmxcsr(Address(rsp, 0));
+    __ bind(L_11b9);
+    __ vpxor(xmm0, xmm2, xmm0, Assembler::AVX_128bit);
+    //   }
 
-//   goto FMOD_CONT;
+    //   goto FMOD_CONT;
 
-// }
-  __ bind(L_11bd);
-  __ pop(rax);
+    // }
+    __ bind(L_11bd);
+    __ pop(rax);
 
   } else {                                       // SSE version
     assert(false, "SSE not implemented");
