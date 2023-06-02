@@ -239,7 +239,10 @@ address VtableStubs::find_stub(bool is_vtable_stub, int vtable_index) {
       // all locks. Only post this event if a new state is not required. Creating a new state would
       // cause a safepoint and the caller of this code has a NoSafepointVerifier.
       if (JvmtiExport::should_post_dynamic_code_generated()) {
-        JvmtiExport::post_dynamic_code_generated_while_holding_locks(is_vtable_stub? "vtable stub": "itable stub",
+        char buffer[32];
+        jio_snprintf(buffer, sizeof(buffer), "%s stub #%d",
+                     is_vtable_stub ? "vtable" : "itable", vtable_index);
+        JvmtiExport::post_dynamic_code_generated_while_holding_locks(buffer,
                                                                      s->code_begin(), s->code_end());
       }
     }
