@@ -74,14 +74,14 @@ class DeferredStepTestTarg {
 
         jj1 obj1 = new jj1();
         jj2 obj2 = new jj2();
-        Thread jj1 = TestScaffold.newThread(obj1, "jj1");
-        Thread jj2 = TestScaffold.newThread(obj2, "jj2");
-        jj1.start();
-        jj2.start();
+        Thread thread1 = TestScaffold.newThread(obj1, "jj1");
+        Thread thread2 = TestScaffold.newThread(obj2, "jj2");
+        thread1.start();
+        thread2.start();
         // Threads might be deamon threads, so wait here for them to complete.
         try {
-            jj1.join();
-            jj2.join();
+            thread1.join();
+            thread2.join();
         } catch (InterruptedException ie) {
             throw new RuntimeException(ie);
         }
