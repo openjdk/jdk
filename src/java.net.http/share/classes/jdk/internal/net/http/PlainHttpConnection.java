@@ -401,11 +401,13 @@ class PlainHttpConnection extends HttpConnection {
         return "PlainHttpConnection: " + super.toString();
     }
 
-    /**
-     * Closes this connection
-     */
     @Override
     public void close() {
+        close(null);
+    }
+
+    @Override
+    void close(Throwable cause) {
         var closed = this.closed;
         if (closed) return;
         stateLock.lock();
@@ -423,7 +425,7 @@ class PlainHttpConnection extends HttpConnection {
             }
             try {
                 chan.close();
-                tube.signalClosed();
+                tube.signalClosed(cause);
             } finally {
                 client().connectionClosed(this);
             }
