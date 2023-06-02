@@ -416,8 +416,7 @@ bool G1CollectedHeap::attempt_allocation_after_gc(size_t word_size,
   }
 
   if (should_try_gc) {
-    bool succeeded = false;
-    do_collection_pause(word_size, gc_count_before, &succeeded, gc_cause);
+    do_collection_pause(word_size, gc_count_before, gc_cause);
   } else {
     log_trace(gc, alloc)("%s: Stall until clear", Thread::current()->name());
     // The GCLocker is either active or the GCLocker initiated
@@ -716,11 +715,8 @@ HeapWord* G1CollectedHeap::attempt_allocation_humongous(size_t word_size) {
 }
 
 HeapWord* G1CollectedHeap::attempt_allocation_at_safepoint(size_t word_size,
-                                                           uint node_index,
-                                                           bool expect_null_mutator_alloc_region) {
+                                                           uint node_index) {
   assert_at_safepoint_on_vm_thread();
-  assert(!_allocator->has_mutator_alloc_region(node_index) || !expect_null_mutator_alloc_region,
-         "the current alloc region was unexpectedly found to be non-null");
 
   if (!is_humongous(word_size)) {
     return _allocator->attempt_allocation_locked(word_size, node_index);
@@ -920,13 +916,11 @@ void G1CollectedHeap::resize_heap_if_necessary() {
 }
 
 HeapWord* G1CollectedHeap::satisfy_failed_allocation_helper(size_t word_size,
-                                                            uint node_index,
-                                                            bool expect_null_mutator_alloc_region) {
+                                                            uint node_index) {
   // Let's attempt the allocation first.
   HeapWord* result =
     attempt_allocation_at_safepoint(word_size,
-                                    node_index,
-                                    expect_null_mutator_alloc_region);
+                                    node_index);
   if (result != nullptr) {
     return result;
   }
@@ -937,8 +931,7 @@ HeapWord* G1CollectedHeap::satisfy_failed_allocation_helper(size_t word_size,
   // do something smarter than full collection to satisfy a failed alloc.)
   if (expand(word_size)) {
     return attempt_allocation_at_safepoint(word_size,
-                                           node_index,
-                                           expect_null_mutator_alloc_region);
+                                           node_index);
 
   }
   return nullptr;
@@ -1024,12 +1017,6 @@ void G1CollectedHeap::reset_allocation_requests() {
 bool G1CollectedHeap::handle_allocation_requests(bool expect_null_mutator_alloc_region) {
   assert_at_safepoint_on_vm_thread();
 
-  const uint active_numa_nodes = G1NUMA::numa()->num_active_nodes();
-  bool *expect_null_alloc_regions = (bool*)alloca(active_numa_nodes * sizeof(bool));
-  for (uint i = 0; i < active_numa_nodes; i++) {
-    expect_null_alloc_regions[i] = expect_null_mutator_alloc_region;
-  }
-
   for (StalledAllocReq* alloc_req : _stalled_allocations) {
     if (alloc_req->failed()) {
       // If an allocation request was declared failed, we maintain the failed state.
@@ -1040,19 +1027,19 @@ bool G1CollectedHeap::handle_allocation_requests(bool expect_null_mutator_alloc_
 
     HeapWord* result =
       satisfy_failed_allocation_helper(alloc_req->size(),
-                                       alloc_req->node_index(),
-                                       expect_null_alloc_regions[alloc_req->node_index()]);
+                                       alloc_req->node_index());
 
     if (result == nullptr) {
       // Failed to allocate, give up.
       return false;
     }
 
-    expect_null_alloc_regions[alloc_req->node_index()] = false;
-
     // Allocation succeeded, update the state and result of the allocation request.
     alloc_req->set_state(StalledAllocReq::AllocationState::Success, result);
 
+    // Initialize memory locations with filler objects such that the heap is passable
+    // even when there is a delay between the allocation and object initialization
+    // by the requesting mutator thread.
     if (is_humongous(alloc_req->size())) {
       // Calculate payload size and initialize the humongous object with a fillerArray.
       size_t words = alloc_req->size();
@@ -1068,7 +1055,6 @@ bool G1CollectedHeap::handle_allocation_requests(bool expect_null_mutator_alloc_
       policy()->old_gen_alloc_tracker()->
           record_collection_pause_humongous_allocation(size_in_regions * HeapRegion::GrainBytes);
     } else {
-      // Fill the allocated memory with filler objects.
       CollectedHeap::fill_with_objects(result, alloc_req->size());
     }
   }
@@ -2376,7 +2362,6 @@ void G1CollectedHeap::verify_numa_regions(const char* desc) {
 
 HeapWord* G1CollectedHeap::do_collection_pause(size_t word_size,
                                                uint gc_count_before,
-                                               bool* succeeded,
                                                GCCause::Cause gc_cause) {
   assert_heap_not_locked_and_not_at_safepoint();
   VM_G1CollectForAllocation op(word_size, gc_count_before, gc_cause);
@@ -2386,7 +2371,6 @@ HeapWord* G1CollectedHeap::do_collection_pause(size_t word_size,
   bool ret_succeeded = op.prologue_succeeded() && op.gc_succeeded();
   assert(result == nullptr || ret_succeeded,
          "the result should be null if the VM did not succeed");
-  *succeeded = ret_succeeded;
 
   assert_heap_not_locked();
   return result;

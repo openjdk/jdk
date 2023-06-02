@@ -67,11 +67,6 @@ G1Allocator::~G1Allocator() {
   FREE_C_HEAP_ARRAY(SurvivorGCAllocRegion, _survivor_gc_alloc_regions);
 }
 
-#ifdef ASSERT
-bool G1Allocator::has_mutator_alloc_region(uint node_index) {
-  return mutator_alloc_region(node_index)->get() != nullptr;
-}
-#endif
 
 void G1Allocator::init_mutator_alloc_regions() {
   for (uint i = 0; i < _num_alloc_regions; i++) {

@@ -97,11 +97,6 @@ public:
   // Node index of current thread.
   inline uint current_node_index() const;
 
-#ifdef ASSERT
-  // Do we currently have an active mutator region to allocate into?
-  bool has_mutator_alloc_region(uint node_index);
-#endif
-
   void init_mutator_alloc_regions();
   void release_mutator_alloc_regions();
 

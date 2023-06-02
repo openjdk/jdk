@@ -528,11 +528,9 @@ private:
 
   // Allocation attempt that should be called during safepoints (e.g.,
   // at the end of a successful GC). node_index speficies the memory node
-  // to use for allocation. expect_null_mutator_alloc_region specifies
-  // whether the mutator alloc region is expected to be null or not.
+  // to use for allocation.
   HeapWord* attempt_allocation_at_safepoint(size_t word_size,
-                                            uint node_index,
-                                            bool expect_null_mutator_alloc_region);
+                                            uint node_index);
 
   // These methods are the "callbacks" from the G1AllocRegion class.
 
@@ -583,8 +581,7 @@ private:
 
   // Helper method for handle_allocation_requests()
   HeapWord* satisfy_failed_allocation_helper(size_t word_size,
-                                             uint node_index,
-                                             bool expect_null_mutator_alloc_region);
+                                             uint node_index);
 
   // Attempts to expand the heap by "word_size" words.
   bool expand(size_t word_size);
@@ -801,18 +798,14 @@ private:
   void shrink_helper(size_t expand_bytes);
 
   // Schedule the VM operation that will do an evacuation pause to
-  // satisfy an allocation request of word_size. *succeeded will
-  // return whether the VM operation was successful (it did do an
-  // evacuation pause) or not (another thread beat us to it or the GC
-  // locker was active). Given that we should not be holding the
-  // Heap_lock when we enter this method, we will pass the
-  // gc_count_before (i.e., total_collections()) as a parameter since
+  // satisfy any pending allocation requests. Given that we should
+  // not be holding the Heap_lock when we enter this method, we will pass
+  // the gc_count_before (i.e., total_collections()) as a parameter since
   // it has to be read while holding the Heap_lock. Currently, both
   // methods that call do_collection_pause() release the Heap_lock
   // before the call, so it's easy to read gc_count_before just before.
   HeapWord* do_collection_pause(size_t         word_size,
                                 uint           gc_count_before,
-                                bool*          succeeded,
                                 GCCause::Cause gc_cause);
 
   // Perform an incremental collection at a safepoint, possibly
