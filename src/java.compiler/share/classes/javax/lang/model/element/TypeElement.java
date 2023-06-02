@@ -149,7 +149,7 @@ public interface TypeElement extends Element, Parameterizable, QualifiedNameable
     /**
      * Returns the fully qualified name of this class or interface
      * element.  More precisely, it returns the <i>canonical</i> name.
-     * For local and anonymous classes, which do not have canonical
+     * For local, anonymous, and {@linkplain #isUnnamed() unnamed} classes, which do not have canonical
      * names, an {@linkplain Name##empty_name empty name} is
      * returned.
      *
@@ -165,17 +165,22 @@ public interface TypeElement extends Element, Parameterizable, QualifiedNameable
      *
      * @see Elements#getBinaryName
      * @jls 6.7 Fully Qualified Names and Canonical Names
+     * @jls 7.3 Compilation Units
      */
     Name getQualifiedName();
 
     /**
      * Returns the simple name of this class or interface element.
      *
-     * For an anonymous or unnamed class, an {@linkplain Name##empty_name empty
+     * For an anonymous class, an {@linkplain Name##empty_name empty
      * name} is returned.
      *
+     * For an {@linkplain #isUnnamed() unnamed} class, a name matching
+     * the base name of the hosting file, minus any extension, is
+     * returned.
+     *
      * @return the simple name of this class or interface,
-     * an empty name for an anonymous or unnamed class
+     * an empty name for an anonymous class
      *
      */
     @Override
