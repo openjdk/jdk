@@ -125,8 +125,14 @@ test-prebuilt:
 	    $(MAKE) --no-print-directory -r -R -I make/common/ -f make/RunTestsPrebuilt.gmk \
 	    test-prebuilt CUSTOM_MAKE_DIR=$(CUSTOM_MAKE_DIR) TEST="$(TEST)" )
 
+test-prebuilt-with-exit-code:
+	@( cd $(topdir) && \
+	    $(MAKE) --no-print-directory -r -R -I make/common/ -f make/RunTestsPrebuilt.gmk \
+	    test-prebuilt-with-exit-code CUSTOM_MAKE_DIR=$(CUSTOM_MAKE_DIR) TEST="$(TEST)" )
+
 # Alias for backwards compatibility
 run-test-prebuilt: test-prebuilt
+run-test-prebuilt-with-exit-code: test-prebuilt-with-exit-code
 
 ALL_GLOBAL_TARGETS := help print-configurations test-prebuilt run-test-prebuilt
 
