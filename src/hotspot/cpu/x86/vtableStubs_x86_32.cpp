@@ -201,13 +201,16 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
 
   start_pc = __ pc();
   __ push(temp_reg);
-  __ lookup_interface_method_stub(recv_klass_reg,
-                                  holder_klass_reg,
-                                  resolved_klass_reg,
-                                  method,
+
+  // Receiver subtype check against REFC.
+  // Get selected method from declaring class and itable index
+  __ lookup_interface_method_stub(recv_klass_reg, // input
+                                  holder_klass_reg, // input
+                                  resolved_klass_reg, // input
+                                  method, // output
                                   temp_reg,
                                   noreg,
-                                  receiver,
+                                  receiver, // input (x86_32 only: to restore recv_klass value)
                                   itable_index,
                                   L_no_such_interface);
   const ptrdiff_t  lookupSize = __ pc() - start_pc;

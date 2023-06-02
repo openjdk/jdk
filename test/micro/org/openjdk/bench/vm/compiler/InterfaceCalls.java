@@ -217,23 +217,23 @@ public class InterfaceCalls {
         return as[0].getIntFirst();
     }
 
+    int l = 0;
+
     /** Tests single base interface method call */
     @Benchmark
-    public void testIfaceCall(Blackhole bh) {
-        for (int i = 0; i < noninlined.length; i++) {
-            bh.consume(noninlined[i].getIntFirst());
-        }
+    public int testIfaceCall(Blackhole bh) {
+        FirstInterface ai = noninlined[l];
+        l = ++ l % asLength;
+        return ai.getIntFirst();
     }
 
     /** Tests extended interface method call */
     @Benchmark
-    public void testIfaceExtCall(Blackhole bh) {
-        for (int i = 0; i < noninlinedextext.length; i++) {
-            bh.consume(noninlinedextext[i].getIntFirst());
-        }
+    public int testIfaceExtCall(Blackhole bh) {
+        FirstInterfaceExtExt ai = noninlinedextext[l];
+        l = ++ l % asLength;
+        return ai.getIntFirst();
     }
-
-    int l = 0;
 
     /**
      * Interface call address computation within loop but the receiver preexists

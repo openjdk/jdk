@@ -180,7 +180,6 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   const Register temp_reg2          = r13;
   const Register method             = rbx;
   const Register icholder_reg       = rax;
-  const Register receiver           = j_rarg0;
 
   __ movptr(resolved_klass_reg, Address(icholder_reg, CompiledICHolder::holder_klass_offset()));
   __ movptr(holder_klass_reg,   Address(icholder_reg, CompiledICHolder::holder_metadata_offset()));
@@ -194,13 +193,15 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
 
   start_pc = __ pc();
 
-  __ lookup_interface_method_stub(recv_klass_reg,
-                                  holder_klass_reg,
-                                  resolved_klass_reg,
-                                  method,
+  // Receiver subtype check against REFC.
+  // Get selected method from declaring class and itable index
+  __ lookup_interface_method_stub(recv_klass_reg, // input
+                                  holder_klass_reg, // input
+                                  resolved_klass_reg, // input
+                                  method, // output
                                   temp_reg,
                                   temp_reg2,
-                                  receiver,
+                                  noreg,
                                   itable_index,
                                   L_no_such_interface);
 
