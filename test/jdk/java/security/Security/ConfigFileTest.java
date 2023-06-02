@@ -74,6 +74,12 @@ public class ConfigFileTest {
                     System.exit(1);
                 }
             }
+            if ("propDirNoHidden".equals(args[0])) {
+                // Properties listed in hidden files should not be registered
+                if (Security.getProperty("testProp4") != null) {
+                    System.exit(1);
+                }
+            }
         } else {
             Files.createDirectory(copyJdkDir);
             Files.createDirectory(secPropDir);
@@ -145,6 +151,23 @@ public class ConfigFileTest {
                     "-Djava.security.properties=file:///" + extraPropsFile,
                     "ConfigFileTest", "propDir");
 
+            // test that hidden property files are ignored
+            addHiddenFile(secPropDir);
+            exerciseSecurity(0, "testProp3=cherry",
+                    copiedJava.toString(), "-cp", System.getProperty("test.classes"),
+                    "-Djava.security.debug=all", "-Djavax.net.debug=all",
+                    "-Djava.security.properties=file:///" + extraPropsFile,
+                    "ConfigFileTest", "propDirNoHidden");
+
+            // test that property files that occur lexicographically later
+            // override properties in earlier files
+            addOverrideFile(secPropDir);
+            exerciseSecurity(0, "testProp3=cabbage",
+                    copiedJava.toString(), "-cp", System.getProperty("test.classes"),
+                    "-Djava.security.debug=all", "-Djavax.net.debug=all",
+                    "-Djava.security.properties=file:///" + extraPropsFile,
+                    "ConfigFileTest", "propDir");
+
             // delete the master conf file
             Files.delete(javaSecurity);
 
@@ -201,10 +224,18 @@ public class ConfigFileTest {
     }
 
     private static void populateSecPropDir(Path dir) throws Exception {
-        Files.writeString(dir.resolve("testFile1"), "testProp1=apple");
-        Files.writeString(dir.resolve("testFile2"), "testProp2=banana");
-        Path extraDir = dir.resolve("extra");
+        Files.writeString(dir.resolve("01-testFile"), "testProp1=apple");
+        Files.writeString(dir.resolve("02-testFile"), "testProp2=banana");
+        Path extraDir = dir.resolve("03-testDir");
         Files.createDirectory(extraDir);
-        Files.writeString(extraDir.resolve("testFile3"), "testProp3=cherry");
+        Files.writeString(extraDir.resolve("extra"), "testProp3=cherry");
+    }
+
+    private static void addHiddenFile(Path dir) throws Exception {
+        Files.writeString(dir.resolve(".04-testFile"), "testProp4=diamond");
+    }
+
+    private static void addOverrideFile(Path dir) throws Exception {
+        Files.writeString(dir.resolve("05-testFile"), "testProp3=cabbage");
     }
 }

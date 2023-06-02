@@ -17,10 +17,18 @@
 #    -Djava.security.propertiesDir=<PATH>
 #
 # Each file found within this tree is appended, as with the single file
-# above. If both properties are specified, all properties found in
-# the directory, plus those in the single file, will be appended. The
-# overall effect is thus as if the single file was present in the
-# directory.
+# above, in lexicographic order of the file paths. Only regular non-hidden
+# files are considered. If the same property occurs in a file later in the
+# ordering, it will override the previous value of that property. For example,
+# a property 'x' defined in both '01-props' and '02-props' will assume
+# the value used in '02-props'.
+#
+# If both system properties are specified, all properties found in the
+# directory, followed by those in the single file, will be appended.
+# The overall effect is thus as if the single file occurred last
+# lexicographically in the directory and so any properties specified
+# in that single file will override definitions from the files in
+# the directory.
 #
 # A directory may also be specified permanently in this file using
 # the security.propertiesDir property. Any directory specified on

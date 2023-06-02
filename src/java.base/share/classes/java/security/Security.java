@@ -136,8 +136,9 @@ public final class Security {
             try {
                 extraPropDir = PropertyExpander.expand(extraPropDir);
                 stream = Files.find(Path.of(extraPropDir), Integer.MAX_VALUE,
-                                    ((path, attrs) -> attrs.isRegularFile()));
-                stream.forEach((file) -> loadProps(null, file.toString(), false));
+                                    ((path, attrs) -> attrs.isRegularFile() &&
+                                                      !path.toFile().isHidden()));
+                stream.sorted().forEach((file) -> loadProps(null, file.toString(), false));
             } catch (IOException | PropertyExpander.ExpandException e) {
                 if (sdebug != null) {
                     sdebug.println("unable to load security properties from " +
