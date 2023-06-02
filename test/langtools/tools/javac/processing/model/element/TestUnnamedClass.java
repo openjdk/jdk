@@ -137,8 +137,12 @@ public class TestUnnamedClass  extends JavacTestingAbstractProcessor {
             messager.printError("Unnamed class is _not_ indicated as such.", unnamedClass);
         }
 
-        if (!unnamedClass.getSimpleName().isEmpty()) {
-            messager.printError("Unnamed class does _not_ have an empty simple name.", unnamedClass);
+        if (unnamedClass.getSimpleName().isEmpty()) {
+            messager.printError("Unnamed class does have an empty simple name.", unnamedClass);
+        }
+
+        if (!unnamedClass.getQualifiedName().isEmpty()) {
+            messager.printError("Unnamed class does _not_ have an empty qualified name.", unnamedClass);
         }
 
         if (unnamedClass.getModifiers().contains(Modifier.ABSTRACT)) {
