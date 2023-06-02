@@ -27,7 +27,7 @@
  * @summary Interoperability tests with TeliaSonera Root CA v1 using OCSP
  * @library /test/lib
  * @build jtreg.SkippedException ValidatePathWithURL CAInterop
- * @run main/othervm Djava.security.debug=certpath,ocsp TeliaSoneraCA OCSP
+ * @run main/othervm -Djava.security.debug=certpath,ocsp TeliaSoneraCA OCSP
  */
 
 /*
@@ -36,7 +36,7 @@
  * @summary Interoperability tests with TeliaSonera Root CA v1 using CRL
  * @library /test/lib
  * @build jtreg.SkippedException ValidatePathWithURL CAInterop
- * @run main/othervm Djava.security.debug=certpath TeliaSoneraCA CRL
+ * @run main/othervm -Djava.security.debug=certpath TeliaSoneraCA CRL
  */
 
 public class TeliaSoneraCA {
