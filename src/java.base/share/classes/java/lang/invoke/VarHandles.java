@@ -107,15 +107,15 @@ final class VarHandles {
             }
         }
         else {
-            var vh = makeStaticFieldVarHandle(f, isWriteAllowedOnFinalFields);
-            return maybeAdapt(UNSAFE.shouldBeInitialized(refc)
-                    ? new LazyInitializingVarHandle(vh, refc)
+            Class<?> decl = f.getDeclaringClass();
+            var vh = makeStaticFieldVarHandle(decl, f, isWriteAllowedOnFinalFields);
+            return maybeAdapt(UNSAFE.shouldBeInitialized(decl)
+                    ? new LazyInitializingVarHandle(vh, decl)
                     : vh);
         }
     }
 
-    static VarHandle makeStaticFieldVarHandle(MemberName f, boolean isWriteAllowedOnFinalFields) {
-        Class<?> decl = f.getDeclaringClass();
+    static VarHandle makeStaticFieldVarHandle(Class<?> decl, MemberName f, boolean isWriteAllowedOnFinalFields) {
         Object base = MethodHandleNatives.staticFieldBase(f);
         long foffset = MethodHandleNatives.staticFieldOffset(f);
         Class<?> type = f.getFieldType();

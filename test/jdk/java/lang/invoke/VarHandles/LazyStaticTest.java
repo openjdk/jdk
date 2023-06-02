@@ -24,8 +24,8 @@
 /*
  * @test
  * @bug 8291065
- * @summary Ensures creation of static field VarHandle does not trigger
- *          class initialization.
+ * @summary Checks interaction of static field VarHandle with class
+ *          initialization mechanism..
  * @run main LazyStaticTest
  */
 
@@ -36,26 +36,59 @@ import java.util.concurrent.ConcurrentHashMap;
 public class LazyStaticTest {
     static Set<Class<?>> initialized = ConcurrentHashMap.newKeySet();
 
+    static class SimpleSample {
+        static int apple;
+
+        static {
+            initialized.add(SimpleSample.class);
+            apple = 5;
+        }
+    }
+
+    static class ParentSample {
+        static int pear;
+
+        static {
+            initialized.add(ParentSample.class);
+            pear = 3;
+        }
+    }
+
+    static class ChildSample extends ParentSample {
+        static {
+            initialized.add(ChildSample.class);
+            pear = 6;
+        }
+    }
+
     public static void main(String... args) throws Throwable {
         assert initialized.isEmpty() : "Incorrect initial state";
 
-        class Sample1 {
-            static int apple;
-
-            static {
-                initialized.add(Sample1.class);
-                apple = 5;
-            }
-        }
-
         var lookup = MethodHandles.lookup();
-        var sample1AppleVh = lookup.findStaticVarHandle(Sample1.class, "apple", int.class);
 
-        assert !initialized.contains(Sample1.class) : "Sample1 class initialized on VarHandle creation";
+        // SimpleSample: a regular test case
+        var simpleSampleAppleVh = lookup.findStaticVarHandle(SimpleSample.class, "apple", int.class);
 
-        sample1AppleVh.set(42);
+        assert !initialized.contains(SimpleSample.class) : "SimpleSample class initialized on VH creation";
 
-        assert initialized.contains(Sample1.class) : "Sample1 class initialized after VarHandle use";
-        assert Sample1.apple == 42 : "The value is not set correctly to Sample1.apple";
+        assert (int) simpleSampleAppleVh.get() == 5 : "VarHandle incorrectly reads before initialization";
+
+        assert initialized.contains(SimpleSample.class) : "SimpleSample class not initialized after VH use";
+
+        simpleSampleAppleVh.set(42);
+        assert SimpleSample.apple == 42 : "The value is not set correctly to SimpleSample.apple";
+        assert (int) simpleSampleAppleVh.getAcquire() == 42
+                : "The SimpleSample.apple value is not read correctly from the VH after a few uses";
+
+        // ChildSample: ensure only ParentSample (field declarer) is initialized
+        var childSamplePearVh = lookup.findStaticVarHandle(ChildSample.class, "pear", int.class);
+
+        assert !initialized.contains(ParentSample.class) : "ParentSample class initialized on VH creation";
+        assert !initialized.contains(ChildSample.class) : "ChildSample class initialized on VH creation";
+
+        assert (int) childSamplePearVh.get() == 3 : "ParentSample not correctly initialized before first VH use";
+
+        assert initialized.contains(ParentSample.class) : "ParentSample class not initialized after VH use";
+        assert !initialized.contains(ChildSample.class) : "ChildSample class initialized after unrelated VH use";
     }
 }

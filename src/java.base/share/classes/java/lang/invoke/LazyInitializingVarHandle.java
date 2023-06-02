@@ -71,14 +71,18 @@ final class LazyInitializingVarHandle extends VarHandle {
 
     @Override
     public VarHandle withInvokeExactBehavior() {
+        if (!initialized && hasInvokeExactBehavior())
+            return this;
         var updatedDelegate = target.withInvokeExactBehavior();
-        return initialized ? new LazyInitializingVarHandle(updatedDelegate, refc) : updatedDelegate;
+        return initialized ? updatedDelegate : new LazyInitializingVarHandle(updatedDelegate, refc);
     }
 
     @Override
     public VarHandle withInvokeBehavior() {
+        if (!initialized && !hasInvokeExactBehavior())
+            return this;
         var updatedDelegate = target.withInvokeBehavior();
-        return initialized ? new LazyInitializingVarHandle(updatedDelegate, refc) : updatedDelegate;
+        return initialized ? updatedDelegate : new LazyInitializingVarHandle(updatedDelegate, refc);
     }
 
     @Override
