@@ -54,7 +54,7 @@ public class TestJcmdNoAgentLoad {
     private static void testNoAgentLoad(String... jcmdArgs) throws Exception {
         OutputAnalyzer output = JcmdBase.jcmd(jcmdArgs);
 
-        assertEquals(output.getExitValue(), 0);
+        output.shouldHaveExitValue(0);
         output.shouldContain(PTRN);
     }
 }
