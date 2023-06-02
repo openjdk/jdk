@@ -3639,8 +3639,7 @@ static jint JNI_CreateJavaVM_inner(JavaVM **vm, void **penv, void *args) {
     }
     // else - we can get here if init_globals encountered an error for which
     //        an exception could not be generated. There is nothing special
-    //        we need to do here as can_try_again will be false. We could
-    //        delete the main thread if it exists, but there is no reason to.
+    //        we need to do here as can_try_again will be false.
 
     if (can_try_again) {
       // reset safe_to_recreate_vm to 1 so that retrial would be possible
