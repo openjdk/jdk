@@ -472,7 +472,7 @@ import static java.lang.invoke.MethodHandleStatics.UNSAFE;
  * @since 9
  */
 public abstract sealed class VarHandle implements Constable
-     permits IndirectVarHandle, LazyStaticVarHandle,
+     permits IndirectVarHandle, LazyInitializingVarHandle,
              VarHandleSegmentViewBase,
              VarHandleByteArrayAsChars.ByteArrayViewVarHandle,
              VarHandleByteArrayAsDoubles.ByteArrayViewVarHandle,
@@ -517,10 +517,6 @@ public abstract sealed class VarHandle implements Constable
     VarHandle(VarForm vform, boolean exact) {
         this.vform = vform;
         this.exact = exact;
-    }
-
-    RuntimeException unsupported() {
-        return new UnsupportedOperationException();
     }
 
     /**
@@ -2181,13 +2177,8 @@ public abstract sealed class VarHandle implements Constable
     @Stable
     MethodHandle[] methodHandleTable;
 
-    /**
-     * Returns a method handle that can invoke the {@linkplain #asDirect() direct}
-     * var handle of this var handle with the given access mode. Argument or
-     * return value filtering should be done by the returned method handle.
-     */
     @ForceInline
-    MethodHandle getMethodHandle(int mode) {
+    final MethodHandle getMethodHandle(int mode) {
         MethodHandle[] mhTable = methodHandleTable;
         if (mhTable == null) {
             mhTable = methodHandleTable = new MethodHandle[AccessMode.COUNT];
@@ -2199,7 +2190,15 @@ public abstract sealed class VarHandle implements Constable
         return mh;
     }
 
-    private final MethodHandle getMethodHandleUncached(int mode) {
+    /**
+     * Computes a method handle that can be passed the {@linkplain #asDirect() direct}
+     * var handle of this var handle with the given access mode. Pre/postprocessing
+     * such as argument or return value filtering should be done by the returned
+     * method handle.
+     *
+     * @throws UnsupportedOperationException if the access mode is not supported
+     */
+    MethodHandle getMethodHandleUncached(int mode) {
         MethodType mt = accessModeType(AccessMode.values()[mode]).
                 insertParameterTypes(0, VarHandle.class);
         MemberName mn = vform.getMemberName(mode);

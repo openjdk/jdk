@@ -27,7 +27,6 @@
 package java.lang.invoke;
 
 import jdk.internal.vm.annotation.ForceInline;
-import jdk.internal.vm.annotation.Stable;
 
 import java.util.function.BiFunction;
 
@@ -43,9 +42,7 @@ import java.util.function.BiFunction;
  */
 /* package */ final class IndirectVarHandle extends VarHandle {
 
-    @Stable
-    private final MethodHandle[] handleMap = new MethodHandle[AccessMode.COUNT];
-    private @Stable VarHandle directTarget; // cache, for performance reasons
+    private final VarHandle directTarget; // cache, for performance reasons
     private final VarHandle target;
     private final BiFunction<AccessMode, MethodHandle, MethodHandle> handleFactory;
     private final Class<?> value;
@@ -60,6 +57,7 @@ import java.util.function.BiFunction;
         super(form, exact);
         this.handleFactory = handleFactory;
         this.target = target;
+        this.directTarget = target.asDirect();
         this.value = value;
         this.coordinates = coordinates;
     }
@@ -71,20 +69,20 @@ import java.util.function.BiFunction;
 
     @Override
     public boolean isAccessModeSupported(AccessMode accessMode) {
-        var directTarget = this.directTarget;
-        if (directTarget != null)
-            return directTarget.isAccessModeSupported(accessMode);
-
-        return target.isAccessModeSupported(accessMode);
+        return directTarget.isAccessModeSupported(accessMode);
     }
 
     @Override
     VarHandle asDirect() {
-        var directTarget = this.directTarget;
-        if (directTarget != null)
-            return directTarget;
+        return this.directTarget;
+    }
 
-        return this.directTarget = target.asDirect(); // may be a lazy method
+    @Override
+    @ForceInline
+    boolean checkAccessModeThenIsDirect(VarHandle.AccessDescriptor ad) {
+        super.checkAccessModeThenIsDirect(ad);
+        // return false to indicate this is an IndirectVarHandle
+        return false;
     }
 
     @Override
@@ -92,13 +90,6 @@ import java.util.function.BiFunction;
         return hasInvokeExactBehavior()
             ? this
             : new IndirectVarHandle(target, value, coordinates, handleFactory, vform, true);
-    }
-
-    @ForceInline
-    boolean checkAccessModeThenIsDirect(VarHandle.AccessDescriptor ad) {
-        super.checkAccessModeThenIsDirect(ad);
-        // return false to indicate this is an IndirectVarHandle
-        return false;
     }
 
     @Override
@@ -109,13 +100,8 @@ import java.util.function.BiFunction;
     }
 
     @Override
-    @ForceInline
-    MethodHandle getMethodHandle(int mode) {
-        MethodHandle handle = handleMap[mode];
-        if (handle == null) {
-            MethodHandle targetHandle = target.getMethodHandle(mode); // might throw UOE of access mode is not supported, which is ok
-            handle = handleMap[mode] = handleFactory.apply(AccessMode.values()[mode], targetHandle);
-        }
-        return handle;
+    MethodHandle getMethodHandleUncached(int mode) {
+        MethodHandle targetHandle = target.getMethodHandle(mode); // might throw UOE of access mode is not supported, which is ok
+        return handleFactory.apply(AccessMode.values()[mode], targetHandle);
     }
 }
