@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,18 +21,28 @@
  * questions.
  */
 
+import java.io.DataOutputStream;
+import java.net.InetAddress;
+import java.net.Socket;
 
-/*
- * @test
- * @key stress randomness
+/**
+ * The "application" launched by DyamicLoadWarningTest.
  *
- * @summary converted from VM Testbase gc/lock/malloc/malloclock01.
- * VM Testbase keywords: [gc, stress, stressopt, nonconcurrent]
- *
- * @library /vmTestbase
- *          /test/lib
- * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm/native -Xbootclasspath/a:. -Xlog:gc=debug:gc.log -XX:+HeapDumpOnOutOfMemoryError -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI gc.lock.LockerTest -lockers malloc -t 1
+ * The application phones home, sends its pid to the test, waits for a reply, then exits.
  */
+public class Application {
+    public static void main(String[] args) throws Exception {
+        InetAddress lh = InetAddress.getLoopbackAddress();
+        int port = Integer.parseInt(args[0]);
+        try (Socket s = new Socket(lh, port);
+             DataOutputStream out = new DataOutputStream(s.getOutputStream())) {
 
+            // send pid
+            long pid = ProcessHandle.current().pid();
+            out.writeLong(pid);
+
+            // wait for shutdown
+            s.getInputStream().read();
+        }
+    }
+}

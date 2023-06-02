@@ -385,7 +385,7 @@ CompileTask* CompileQueue::get(CompilerThread* thread) {
   methodHandle save_hot_method;
 
   MonitorLocker locker(MethodCompileQueue_lock);
-  // If _first is nullptr we have no more compile jobs. There are two reasons for
+  // If _first is null we have no more compile jobs. There are two reasons for
   // having no compile jobs: First, we compiled everything we wanted. Second,
   // we ran out of code cache so compilation has been disabled. In the latter
   // case we perform code cache sweeps to free memory such that we can re-enable

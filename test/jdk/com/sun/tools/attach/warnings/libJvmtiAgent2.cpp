@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,14 +21,20 @@
  * questions.
  */
 
-package nsk.share.gc.lock.malloc;
+#include "jvmti.h"
 
-import nsk.share.TestBug;
-import nsk.share.gc.lock.Lockers;
-import nsk.share.gc.lock.Locker;
+/**
+ * A no-op JVM TI agent.
+ */
 
-public class MallocLockers implements Lockers {
-        public Locker createLocker(Object obj) {
-                return new MallocLocker();
-        }
+JNIEXPORT jint JNICALL
+Agent_OnLoad(JavaVM *vm, char *options, void *reserved) {
+    jvmtiEnv* jvmti;
+    return vm->GetEnv((void**)&jvmti, JVMTI_VERSION);
+}
+
+JNIEXPORT jint JNICALL
+Agent_OnAttach(JavaVM *vm, char *options, void *reserved) {
+    jvmtiEnv* jvmti;
+    return vm->GetEnv((void**)&jvmti, JVMTI_VERSION);
 }
