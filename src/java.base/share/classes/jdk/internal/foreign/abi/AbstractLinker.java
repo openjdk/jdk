@@ -189,7 +189,6 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
     }
 
     // check for trailing padding
-
     private static void checkGroupSize(GroupLayout gl, long maxUnpaddedOffset) {
         long expectedSize = Utils.alignUp(maxUnpaddedOffset, gl.byteAlignment());
         if (gl.byteSize() != expectedSize) {
@@ -197,9 +196,9 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
                     + gl.byteSize() + " != " + expectedSize);
         }
     }
+
     // checks both that there is no excess padding between 'memberLayout' and
     // the previous layout
-
     private static void checkMemberOffset(StructLayout parent, MemoryLayout memberLayout,
                                           long lastUnpaddedOffset, long offset) {
         long expectedOffset = Utils.alignUp(lastUnpaddedOffset, memberLayout.byteAlignment());
@@ -208,6 +207,7 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
                     " found at unexpected offset: " + offset + " != " + expectedOffset);
         }
     }
+
     private static void checkHasNaturalAlignment(MemoryLayout layout) {
         if (!((AbstractLayout<?>) layout).hasNaturalAlignment()) {
             throw new IllegalArgumentException("Layout alignment must be natural alignment: " + layout);
