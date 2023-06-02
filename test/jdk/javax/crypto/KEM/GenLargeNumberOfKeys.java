@@ -73,6 +73,7 @@ public class GenLargeNumberOfKeys {
         Asserts.assertEQ(d.secretSize(), enc.key().getEncoded().length);
         Asserts.assertTrue(Arrays.equals(d.decapsulate(enc.encapsulation()).getEncoded(),
                 sk.getEncoded()));
+        // Repeated calls to encapsulation() on Encapsulated object don't change anything
         Asserts.assertTrue(Arrays.equals(d.decapsulate(enc.encapsulation()).getEncoded(),
                 sk.getEncoded()));
         Asserts.assertTrue(Arrays.equals(d.decapsulate(enc.encapsulation()).getEncoded(),
