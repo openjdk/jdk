@@ -1071,7 +1071,7 @@ instruct vneg(vReg dst, vReg src) %{
   match(Set dst (NegVI src));
   match(Set dst (NegVL src));
   ins_cost(VEC_COST);
-  format %{ "vneg $dst, $src, $src" %}
+  format %{ "vneg $dst, $src" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ vsetvli_helper(bt, Matcher::vector_length(this));
@@ -1102,7 +1102,7 @@ instruct vfneg(vReg dst, vReg src) %{
   match(Set dst (NegVF src));
   match(Set dst (NegVD src));
   ins_cost(VEC_COST);
-  format %{ "vfneg $dst, $src, $src" %}
+  format %{ "vfneg $dst, $src" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ vsetvli_helper(bt, Matcher::vector_length(this));
