@@ -975,26 +975,6 @@ class WindowsNativeDispatcher {
         try {
             CreateSymbolicLink0(linkBuffer.address(), targetBuffer.address(),
                                 flags);
-        } catch (WindowsException x) {
-            // Retry if the privilege to create symbolic links is not held
-            if (x.lastError() == ERROR_PRIVILEGE_NOT_HELD) {
-                flags |= SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE;
-                try {
-                    CreateSymbolicLink0(linkBuffer.address(),
-                                        targetBuffer.address(), flags);
-                    return;
-                } catch (WindowsException y) {
-                    // Throw an exception if and only if it is not due to symbolic link creation
-                    // privilege not being held (ERROR_PRIVILEGE_NOT_HELD) nor the
-                    // SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE flag not being recognized
-                    // (ERROR_INVALID_PARAMETER). The latter will occur for Windows builds
-                    // older than 14972.
-                    int lastError = y.lastError();
-                    if (lastError != ERROR_PRIVILEGE_NOT_HELD && lastError != ERROR_INVALID_PARAMETER)
-                        throw y;
-                }
-            }
-            throw x;
         } finally {
             targetBuffer.release();
             linkBuffer.release();
