@@ -529,8 +529,7 @@ private:
   // Allocation attempt that should be called during safepoints (e.g.,
   // at the end of a successful GC). node_index speficies the memory node
   // to use for allocation.
-  HeapWord* attempt_allocation_at_safepoint(size_t word_size,
-                                            uint node_index);
+  HeapWord* attempt_allocation_at_safepoint(size_t word_size, uint node_index);
 
   // These methods are the "callbacks" from the G1AllocRegion class.
 
@@ -580,8 +579,7 @@ private:
   void print_heap_after_full_collection();
 
   // Helper method for handle_allocation_requests()
-  HeapWord* satisfy_failed_allocation_helper(size_t word_size,
-                                             uint node_index);
+  HeapWord* satisfy_failed_allocation_helper(size_t word_size, uint node_index);
 
   // Attempts to expand the heap by "word_size" words.
   bool expand(size_t word_size);

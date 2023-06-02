@@ -919,8 +919,7 @@ HeapWord* G1CollectedHeap::satisfy_failed_allocation_helper(size_t word_size,
                                                             uint node_index) {
   // Let's attempt the allocation first.
   HeapWord* result =
-    attempt_allocation_at_safepoint(word_size,
-                                    node_index);
+    attempt_allocation_at_safepoint(word_size, node_index);
   if (result != nullptr) {
     return result;
   }
@@ -930,8 +929,7 @@ HeapWord* G1CollectedHeap::satisfy_failed_allocation_helper(size_t word_size,
   // expansion over collection.  (This might change in the future if we can
   // do something smarter than full collection to satisfy a failed alloc.)
   if (expand(word_size)) {
-    return attempt_allocation_at_safepoint(word_size,
-                                           node_index);
+    return attempt_allocation_at_safepoint(word_size, node_index);
 
   }
   return nullptr;
@@ -1026,8 +1024,7 @@ bool G1CollectedHeap::handle_allocation_requests(bool expect_null_mutator_alloc_
      }
 
     HeapWord* result =
-      satisfy_failed_allocation_helper(alloc_req->size(),
-                                       alloc_req->node_index());
+      satisfy_failed_allocation_helper(alloc_req->size(), alloc_req->node_index());
 
     if (result == nullptr) {
       // Failed to allocate, give up.
