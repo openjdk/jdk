@@ -813,7 +813,7 @@ static void trace_method_resolution(const char* prefix,
   }
   st->print("%s%s, compile-time-class:%s, method:%s, method_holder:%s, access_flags: ",
             prefix,
-            (klass == nullptr ? "<nullptr>" : klass->internal_name()),
+            (klass == nullptr ? "<null>" : klass->internal_name()),
             resolved_klass->internal_name(),
             Method::name_and_sig_as_C_string(resolved_klass,
                                              method->name(),

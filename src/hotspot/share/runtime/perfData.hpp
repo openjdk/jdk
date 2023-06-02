@@ -406,9 +406,6 @@ class PerfLongVariant : public PerfLong {
     }
 
     PerfLongVariant(CounterNS ns, const char* namep, Units u, Variability v,
-                    jlong* sampled);
-
-    PerfLongVariant(CounterNS ns, const char* namep, Units u, Variability v,
                     PerfLongSampleHelper* sample_helper);
 
     void sample();
@@ -439,9 +436,6 @@ class PerfLongCounter : public PerfLongVariant {
                    : PerfLongVariant(ns, namep, u, V_Monotonic,
                                      initial_value) { }
 
-    PerfLongCounter(CounterNS ns, const char* namep, Units u, jlong* sampled)
-                  : PerfLongVariant(ns, namep, u, V_Monotonic, sampled) { }
-
     PerfLongCounter(CounterNS ns, const char* namep, Units u,
                     PerfLongSampleHelper* sample_helper)
                    : PerfLongVariant(ns, namep, u, V_Monotonic,
@@ -463,9 +457,6 @@ class PerfLongVariable : public PerfLongVariant {
                      jlong initial_value=0)
                     : PerfLongVariant(ns, namep, u, V_Variable,
                                       initial_value) { }
-
-    PerfLongVariable(CounterNS ns, const char* namep, Units u, jlong* sampled)
-                    : PerfLongVariant(ns, namep, u, V_Variable, sampled) { }
 
     PerfLongVariable(CounterNS ns, const char* namep, Units u,
                      PerfLongSampleHelper* sample_helper)

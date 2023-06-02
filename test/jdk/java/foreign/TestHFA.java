@@ -50,7 +50,7 @@ public class TestHFA {
     final static Linker abi = Linker.nativeLinker();
     final static SymbolLookup lookup = SymbolLookup.loaderLookup();
 
-    static final OfFloat FLOAT = JAVA_FLOAT.withBitAlignment(32);
+    static final OfFloat FLOAT = JAVA_FLOAT.withByteAlignment(4);
 
     final static GroupLayout S_FFLayout = MemoryLayout.structLayout(
         FLOAT.withName("p0"),

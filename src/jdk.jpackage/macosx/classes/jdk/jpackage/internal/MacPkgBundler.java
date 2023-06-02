@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,9 @@
  */
 
 package jdk.jpackage.internal;
+
+import jdk.internal.util.Architecture;
+import jdk.internal.util.OSVersion;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -318,7 +321,7 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
             xml.writeAttribute("customize", "never");
             xml.writeAttribute("require-scripts", "false");
             xml.writeAttribute("hostArchitectures",
-                    Platform.isArmMac() ? "arm64" : "x86_64");
+                    Architecture.isAARCH64() ? "arm64" : "x86_64");
             xml.writeEndElement(); // </options>
             xml.writeStartElement("choices-outline");
             xml.writeStartElement("line");
@@ -597,9 +600,7 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
             // maybe sign
             if (Optional.ofNullable(
                     SIGN_BUNDLE.fetchFrom(params)).orElse(Boolean.TRUE)) {
-                if (Platform.getMajorVersion() > 10 ||
-                    (Platform.getMajorVersion() == 10 &&
-                    Platform.getMinorVersion() >= 12)) {
+                if (OSVersion.current().compareTo(new OSVersion(10, 12)) >= 0) {
                     // we need this for OS X 10.12+
                     Log.verbose(I18N.getString("message.signing.pkg"));
                 }
