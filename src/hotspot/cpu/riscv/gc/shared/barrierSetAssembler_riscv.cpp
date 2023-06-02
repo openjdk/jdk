@@ -371,5 +371,5 @@ void BarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Register
 
   // Make sure klass is 'reasonable', which is not zero.
   __ load_klass(obj, obj, tmp1); // get klass
-  __ beqz(obj, error);           // if klass is NULL it is broken
+  __ beqz(obj, error);           // if klass is null it is broken
 }

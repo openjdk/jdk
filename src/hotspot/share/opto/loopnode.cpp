@@ -1089,13 +1089,13 @@ int PhaseIdealLoop::extract_long_range_checks(const IdealLoopTree* loop, jlong s
   for (uint i = 0; i < loop->_body.size(); i++) {
     Node* c = loop->_body.at(i);
     if (c->is_IfProj() && c->in(0)->is_RangeCheck()) {
-      CallStaticJavaNode* call = c->as_IfProj()->is_uncommon_trap_if_pattern(Deoptimization::Reason_none);
+      IfProjNode* if_proj = c->as_IfProj();
+      CallStaticJavaNode* call = if_proj->is_uncommon_trap_if_pattern(Deoptimization::Reason_none);
       if (call != nullptr) {
         Node* range = nullptr;
         Node* offset = nullptr;
         jlong scale = 0;
-        RangeCheckNode* rc = c->in(0)->as_RangeCheck();
-        if (loop->is_range_check_if(rc, this, T_LONG, phi, range, offset, scale) &&
+        if (loop->is_range_check_if(if_proj, this, T_LONG, phi, range, offset, scale) &&
             loop->is_invariant(range) && loop->is_invariant(offset) &&
             original_iters_limit / ABS(scale * stride_con) >= min_iters) {
           reduced_iters_limit = MIN2(reduced_iters_limit, original_iters_limit/ABS(scale));

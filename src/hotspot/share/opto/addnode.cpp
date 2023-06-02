@@ -1044,13 +1044,14 @@ Node* MaxNode::build_min_max(Node* a, Node* b, bool is_max, bool is_unsigned, co
   }
   Node* res = nullptr;
   if (is_int && !is_unsigned) {
+    Node* res_new = nullptr;
     if (is_max) {
-      res =  gvn.transform(new MaxINode(a, b));
-      assert(gvn.type(res)->is_int()->_lo >= t->is_int()->_lo && gvn.type(res)->is_int()->_hi <= t->is_int()->_hi, "type doesn't match");
+      res_new = new MaxINode(a, b);
     } else {
-      Node* res =  gvn.transform(new MinINode(a, b));
-      assert(gvn.type(res)->is_int()->_lo >= t->is_int()->_lo && gvn.type(res)->is_int()->_hi <= t->is_int()->_hi, "type doesn't match");
+      res_new = new MinINode(a, b);
     }
+    res = gvn.transform(res_new);
+    assert(gvn.type(res)->is_int()->_lo >= t->is_int()->_lo && gvn.type(res)->is_int()->_hi <= t->is_int()->_hi, "type doesn't match");
   } else {
     Node* cmp = nullptr;
     if (is_max) {
