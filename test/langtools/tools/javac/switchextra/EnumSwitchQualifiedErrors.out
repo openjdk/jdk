@@ -5,4 +5,7 @@ EnumSwitchQualifiedErrors.java:50:20: compiler.err.prob.found.req: (compiler.mis
 EnumSwitchQualifiedErrors.java:56:18: compiler.err.enum.label.must.be.enum.constant
 EnumSwitchQualifiedErrors.java:57:18: compiler.err.enum.label.must.be.enum.constant
 EnumSwitchQualifiedErrors.java:58:18: compiler.err.enum.label.must.be.enum.constant
-7 errors
+EnumSwitchQualifiedErrors.java:65:18: compiler.err.pattern.or.enum.req
+EnumSwitchQualifiedErrors.java:66:18: compiler.err.pattern.or.enum.req
+EnumSwitchQualifiedErrors.java:67:18: compiler.err.pattern.expected
+10 errors

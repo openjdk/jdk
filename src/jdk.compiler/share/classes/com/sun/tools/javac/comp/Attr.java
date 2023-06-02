@@ -1657,9 +1657,9 @@ public class Attr extends JCTree.Visitor {
             boolean enumSwitch = (seltype.tsym.flags() & Flags.ENUM) != 0;
             boolean stringSwitch = types.isSameType(seltype, syms.stringType);
             boolean errorEnumSwitch = TreeInfo.isErrorEnumSwitch(selector, cases);
+            boolean intSwitch = types.isAssignable(seltype, syms.intType);
             boolean patternSwitch;
-            if (!enumSwitch && !stringSwitch && !errorEnumSwitch &&
-                !types.isAssignable(seltype, syms.intType)) {
+            if (!enumSwitch && !stringSwitch && !errorEnumSwitch && !intSwitch) {
                 preview.checkSourceLevel(selector.pos(), Feature.PATTERN_SWITCH);
                 patternSwitch = true;
             } else {
@@ -1735,11 +1735,13 @@ public class Attr extends JCTree.Visitor {
                                     if (s != null && s.kind == TYP && allowPatternSwitch) {
                                         log.error(expr.pos(),
                                                   Errors.PatternExpected);
-                                    } else if ((s != null && !s.isEnum()) || !allowPatternSwitch) {
+                                    } else if (s == null || !s.isEnum() || !allowPatternSwitch) {
                                         log.error(expr.pos(),
-                                                  (stringSwitch ? Errors.StringConstReq : Errors.ConstExprReq));
+                                                  (stringSwitch ? Errors.StringConstReq
+                                                                : intSwitch ? Errors.ConstExprReq
+                                                                            : Errors.PatternOrEnumReq));
                                     }
-                                } else if (!stringSwitch && !types.isAssignable(seltype, syms.intType)) {
+                                } else if (!stringSwitch && !intSwitch) {
                                     log.error(label.pos(), Errors.ConstantLabelNotCompatible(pattype, seltype));
                                 } else if (!constants.add(pattype.constValue())) {
                                     log.error(c.pos(), Errors.DuplicateCaseLabel);

@@ -60,6 +60,15 @@ public class EnumSwitchQualifiedErrors {
         };
     }
 
+    int testPatternMatchingSwitch5(Object e) {
+        return switch(e) {
+            case E1A -> 1;
+            case (E1) null -> 1;
+            case E1 -> 1;
+            default -> {}
+        };
+    }
+
     sealed interface I {}
     enum E1 implements I { A; }
     enum E2 { A; }
