@@ -836,10 +836,8 @@ public final class StackMapGenerator {
                 methodDesc.parameterList().stream().map(ClassDesc::displayName).collect(Collectors.joining(","))));
         //try to attach debug info about corrupted bytecode to the message
         try {
-            //clone SplitConstantPool with alternate context
-            var cc = Classfile.of(Classfile.StackMapsOption.DO_NOT_GENERATE_STACK_MAPS);
-            var newCp = new SplitConstantPool(cp);
-            var clm = cc.parse(cc.build(newCp.classEntry(ClassDesc.of("FakeClass")), newCp, clb ->
+            var cc = Classfile.of();
+            var clm = cc.parse(cc.build(cp.classEntry(thisType.sym()), cp, clb ->
                     clb.withMethod(methodName, methodDesc, isStatic ? ACC_STATIC : 0, mb ->
                             ((DirectMethodBuilder)mb).writeAttribute(new UnboundAttribute.AdHocAttribute<CodeAttribute>(Attributes.CODE) {
                                 @Override

@@ -109,17 +109,6 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
         this.myBsmEntries = new BootstrapMethodEntryImpl[8];
     }
 
-    //clone constructor for internal purposes
-    SplitConstantPool(SplitConstantPool cloneFrom) {
-        this.parent = cloneFrom.parent;
-        this.parentSize = cloneFrom.parentSize;
-        this.parentBsmSize = cloneFrom.parentBsmSize;
-        this.size = cloneFrom.size;
-        this.bsmSize = cloneFrom.bsmSize;
-        this.myEntries = Arrays.copyOf(cloneFrom.myEntries, cloneFrom.myEntries.length);
-        this.myBsmEntries = Arrays.copyOf(cloneFrom.myBsmEntries, cloneFrom.myBsmEntries.length);
-    }
-
     @Override
     public int entryCount() {
         return size;
