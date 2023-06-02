@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,13 @@
  * questions.
  */
 
-#include "MallocLocker.cpp"
-#include "jni_tools.cpp"
-#include "nsk_tools.cpp"
+// key: compiler.err.use.of.underscore.not.allowed.with.brackets
+// key: compiler.misc.feature.unnamed.variables
+// key: compiler.warn.preview.feature.use.plural
+// options: --enable-preview -source ${jdk.version} -Xlint:preview
+
+class UseOfUnderscoreNotAllowedWithBrackets {
+    void test() {
+        int[] _[] = new int[][]{new int[]{1}, new int[]{2}};
+    }
+}

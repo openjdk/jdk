@@ -332,7 +332,7 @@ void VM_ThreadDump::doit() {
       if (jt == nullptr || /* thread not alive */
           jt->is_exiting() ||
           jt->is_hidden_from_external_view())  {
-        // add a nullptr snapshot if skipped
+        // add a null snapshot if skipped
         _result->add_thread_snapshot();
         continue;
       }

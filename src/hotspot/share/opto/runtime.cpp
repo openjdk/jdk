@@ -488,7 +488,7 @@ const TypeFunc *OptoRuntime::notify_jvmti_vthread_Type() {
 
   // no result type needed
   fields = TypeTuple::fields(1);
-  fields[TypeFunc::Parms+0] = NULL; // void
+  fields[TypeFunc::Parms+0] = nullptr; // void
   const TypeTuple* range = TypeTuple::make(TypeFunc::Parms, fields);
 
   return TypeFunc::make(domain,range);
