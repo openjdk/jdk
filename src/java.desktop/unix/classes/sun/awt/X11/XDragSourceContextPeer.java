@@ -412,18 +412,16 @@ public final class XDragSourceContextPeer
         }
 
         WindowPropertyGetter wpg =
-                new WindowPropertyGetter(window,
-                        XDnDConstants.XA_XdndAware,
-                        0, 1, false,
-                        XConstants.AnyPropertyType);
+            new WindowPropertyGetter(window, XDnDConstants.XA_XdndAware, 0, 1,
+                    false, XConstants.AnyPropertyType);
 
         try {
-            int status = wpg.execute(XErrorHandler
-                    .IgnoreBadWindowHandler.getInstance());
+            int status =
+                wpg.execute(XErrorHandler.IgnoreBadWindowHandler.getInstance());
 
             return status == XConstants.Success
-                    && wpg.getData() != 0
-                    && wpg.getActualType() == XAtom.XA_ATOM;
+                   && wpg.getData() != 0
+                   && wpg.getActualType() == XAtom.XA_ATOM;
         } finally {
             wpg.dispose();
         }
