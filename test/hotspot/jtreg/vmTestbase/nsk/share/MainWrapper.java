@@ -46,7 +46,8 @@ public final class MainWrapper {
         Finalizer finalizer = new Finalizer(new FinalizableObject());
         finalizer.activate();
 
-
+        // Some tests use this property to understand if virtual threads are used
+        System.setProperty("main.wrapper", wrapperName);
 
         Runnable task = () -> {
             try {

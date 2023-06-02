@@ -88,9 +88,9 @@ public:
 
 G1MonitoringSupport::G1MonitoringSupport(G1CollectedHeap* g1h) :
   _g1h(g1h),
-  _young_gc_memory_manager("G1 Young Generation", "end of minor GC"),
-  _full_gc_memory_manager("G1 Old Generation", "end of major GC"),
-  _conc_gc_memory_manager("G1 Concurrent GC", "end of concurrent GC pause"),
+  _young_gc_memory_manager("G1 Young Generation"),
+  _full_gc_memory_manager("G1 Old Generation"),
+  _conc_gc_memory_manager("G1 Concurrent GC"),
   _eden_space_pool(nullptr),
   _survivor_space_pool(nullptr),
   _old_gen_pool(nullptr),
@@ -351,11 +351,14 @@ MemoryUsage G1MonitoringSupport::old_gen_memory_usage(size_t initial_size, size_
 G1MonitoringScope::G1MonitoringScope(G1MonitoringSupport* monitoring_support,
                                      CollectorCounters* collection_counters,
                                      GCMemoryManager* gc_memory_manager,
+                                     const char* end_message,
                                      bool all_memory_pools_affected) :
   _monitoring_support(monitoring_support),
   _tcs(collection_counters),
   _tms(gc_memory_manager,
-       G1CollectedHeap::heap()->gc_cause(), all_memory_pools_affected) {
+       G1CollectedHeap::heap()->gc_cause(),
+       end_message,
+       all_memory_pools_affected) {
 }
 
 G1MonitoringScope::~G1MonitoringScope() {
@@ -369,17 +372,20 @@ G1YoungGCMonitoringScope::G1YoungGCMonitoringScope(G1MonitoringSupport* monitori
   G1MonitoringScope(monitoring_support,
                     monitoring_support->_young_collection_counters,
                     &monitoring_support->_young_gc_memory_manager,
+                    "end of minor GC",
                     all_memory_pools_affected) {
 }
 
 G1FullGCMonitoringScope::G1FullGCMonitoringScope(G1MonitoringSupport* monitoring_support) :
   G1MonitoringScope(monitoring_support,
                     monitoring_support->_full_collection_counters,
-                    &monitoring_support->_full_gc_memory_manager) {
+                    &monitoring_support->_full_gc_memory_manager,
+                    "end of major GC") {
 }
 
 G1ConcGCMonitoringScope::G1ConcGCMonitoringScope(G1MonitoringSupport* monitoring_support) :
   G1MonitoringScope(monitoring_support,
                     monitoring_support->_conc_collection_counters,
-                    &monitoring_support->_conc_gc_memory_manager) {
+                    &monitoring_support->_conc_gc_memory_manager,
+                    "end of concurrent GC pause") {
 }

@@ -24,6 +24,7 @@
 #ifndef SHARE_JVMCI_JVMCICOMPILERTOVM_HPP
 #define SHARE_JVMCI_JVMCICOMPILERTOVM_HPP
 
+#include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "jvmci/jvmciExceptions.hpp"
 #include "runtime/javaCalls.hpp"
@@ -48,6 +49,26 @@ class CompilerToVM {
     static address SharedRuntime_deopt_blob_unpack;
     static address SharedRuntime_deopt_blob_unpack_with_exception_in_tls;
     static address SharedRuntime_deopt_blob_uncommon_trap;
+    static address SharedRuntime_polling_page_return_handler;
+
+    static address nmethod_entry_barrier;
+    static int thread_disarmed_guard_value_offset;
+    static int thread_address_bad_mask_offset;
+#ifdef AARCH64
+    static int BarrierSetAssembler_nmethod_patching_type;
+    static address BarrierSetAssembler_patching_epoch_addr;
+#endif
+
+    static address ZBarrierSetRuntime_load_barrier_on_oop_field_preloaded;
+    static address ZBarrierSetRuntime_load_barrier_on_weak_oop_field_preloaded;
+    static address ZBarrierSetRuntime_load_barrier_on_phantom_oop_field_preloaded;
+    static address ZBarrierSetRuntime_weak_load_barrier_on_oop_field_preloaded;
+    static address ZBarrierSetRuntime_weak_load_barrier_on_weak_oop_field_preloaded;
+    static address ZBarrierSetRuntime_weak_load_barrier_on_phantom_oop_field_preloaded;
+    static address ZBarrierSetRuntime_load_barrier_on_oop_array;
+    static address ZBarrierSetRuntime_clone;
+
+    static bool continuations_enabled;
 
     static size_t ThreadLocalAllocBuffer_alignment_reserve;
 
@@ -129,55 +150,4 @@ class CompilerToVM {
   static int methods_count();
 
 };
-
-
-class JavaArgumentUnboxer : public SignatureIterator {
- protected:
-  JavaCallArguments*  _jca;
-  arrayOop _args;
-  int _index;
-
-  Handle next_arg(BasicType expectedType);
-
- public:
-  JavaArgumentUnboxer(Symbol* signature,
-                      JavaCallArguments* jca,
-                      arrayOop args,
-                      bool is_static)
-    : SignatureIterator(signature)
-  {
-    this->_return_type = T_ILLEGAL;
-    _jca = jca;
-    _index = 0;
-    _args = args;
-    if (!is_static) {
-      _jca->push_oop(next_arg(T_OBJECT));
-    }
-    do_parameters_on(this);
-    assert(_index == args->length(), "arg count mismatch with signature");
-  }
-
- private:
-  friend class SignatureIterator;  // so do_parameters_on can call do_type
-  void do_type(BasicType type) {
-    if (is_reference_type(type)) {
-      _jca->push_oop(next_arg(T_OBJECT));
-      return;
-    }
-    Handle arg = next_arg(type);
-    int box_offset = java_lang_boxing_object::value_offset(type);
-    switch (type) {
-    case T_BOOLEAN:     _jca->push_int(arg->bool_field(box_offset));    break;
-    case T_CHAR:        _jca->push_int(arg->char_field(box_offset));    break;
-    case T_SHORT:       _jca->push_int(arg->short_field(box_offset));   break;
-    case T_BYTE:        _jca->push_int(arg->byte_field(box_offset));    break;
-    case T_INT:         _jca->push_int(arg->int_field(box_offset));     break;
-    case T_LONG:        _jca->push_long(arg->long_field(box_offset));   break;
-    case T_FLOAT:       _jca->push_float(arg->float_field(box_offset));    break;
-    case T_DOUBLE:      _jca->push_double(arg->double_field(box_offset));  break;
-    default:            ShouldNotReachHere();
-    }
-  }
-};
-
 #endif // SHARE_JVMCI_JVMCICOMPILERTOVM_HPP

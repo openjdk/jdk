@@ -54,7 +54,7 @@ public:
 
   // Determine whether to add the given region to the collection set candidates or
   // not. Currently, we skip regions that we will never move during young gc, and
-  // regions which liveness is below the occupancy threshold.
+  // regions which liveness is over the occupancy threshold.
   // Regions also need a complete remembered set to be a candidate.
   static bool should_add(HeapRegion* hr);
 

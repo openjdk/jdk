@@ -167,7 +167,16 @@ void VM_GC_HeapInspection::doit() {
     }
   }
   HeapInspection inspect;
-  inspect.heap_inspection(_out, _parallel_thread_num);
+  WorkerThreads* workers = Universe::heap()->safepoint_workers();
+  if (workers != nullptr) {
+    // The GC provided a WorkerThreads to be used during a safepoint.
+    // Can't run with more threads than provided by the WorkerThreads.
+    const uint capped_parallel_thread_num = MIN2(_parallel_thread_num, workers->max_workers());
+    WithActiveWorkers with_active_workers(workers, capped_parallel_thread_num);
+    inspect.heap_inspection(_out, workers);
+  } else {
+    inspect.heap_inspection(_out, nullptr);
+  }
 }
 
 

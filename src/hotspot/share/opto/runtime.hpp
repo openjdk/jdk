@@ -136,7 +136,6 @@ class OptoRuntime : public AllStatic {
   static address _slow_arraycopy_Java;
   static address _register_finalizer_Java;
 #if INCLUDE_JVMTI
-  static address _notify_jvmti_object_alloc;
   static address _notify_jvmti_vthread_start;
   static address _notify_jvmti_vthread_end;
   static address _notify_jvmti_vthread_mount;
@@ -216,7 +215,6 @@ private:
   static address slow_arraycopy_Java()                   { return _slow_arraycopy_Java; }
   static address register_finalizer_Java()               { return _register_finalizer_Java; }
 #if INCLUDE_JVMTI
-  static address notify_jvmti_object_alloc()             { return _notify_jvmti_object_alloc; }
   static address notify_jvmti_vthread_start()            { return _notify_jvmti_vthread_start; }
   static address notify_jvmti_vthread_end()              { return _notify_jvmti_vthread_end; }
   static address notify_jvmti_vthread_mount()            { return _notify_jvmti_vthread_mount; }
@@ -309,7 +307,6 @@ private:
 
   JFR_ONLY(static const TypeFunc* class_id_load_barrier_Type();)
 #if INCLUDE_JVMTI
-  static const TypeFunc* notify_jvmti_object_alloc_Type();
   static const TypeFunc* notify_jvmti_vthread_Type();
 #endif
 
