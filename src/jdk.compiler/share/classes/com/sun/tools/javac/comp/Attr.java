@@ -1706,6 +1706,10 @@ public class Attr extends JCTree.Visitor {
                             if (sym == null) {
                                 if (allowPatternSwitch) {
                                     attribTree(expr, switchEnv, caseLabelResultInfo(seltype));
+                                    Symbol enumSym = TreeInfo.symbol(expr);
+                                    if (enumSym == null || !enumSym.isEnum() || enumSym.kind != VAR) {
+                                        log.error(expr.pos(), Errors.EnumLabelMustBeEnumConstant);
+                                    }
                                 } else {
                                     log.error(expr.pos(), Errors.EnumLabelMustBeUnqualifiedEnum);
                                 }
