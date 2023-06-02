@@ -258,6 +258,16 @@ public class BasicMap {
         return cases.iterator();
     }
 
+    @DataProvider(name="nullableEntries")
+    public Iterator<Object[]> nullableEntries() {
+        return Arrays.asList(
+            new Object[] { "firstEntry" },
+            new Object[] { "lastEntry" },
+            new Object[] { "pollFirstEntry" },
+            new Object[] { "pollLastEntry" }
+        ).iterator();
+    }
+
     // ========== Assertions ==========
 
     /**
@@ -517,6 +527,11 @@ public class BasicMap {
         assertThrows(CCE, () -> { objMap.reversed().put("x", new Object()); });
         assertThrows(CCE, () -> { objMap.reversed().sequencedEntrySet().getFirst().setValue(new Object()); });
         assertThrows(CCE, () -> { objMap.reversed().sequencedEntrySet().reversed().getFirst().setValue(new Object()); });
+    }
+
+    public void checkEntry(Map.Entry<String, Integer> entry, String key, Integer value) {
+        assertEquals(entry.getKey(), key);
+        assertEquals(entry.getValue(), value);
     }
 
     // ========== Tests ==========
@@ -888,5 +903,22 @@ public class BasicMap {
         else
             assertThrows(UOE, () -> entrySet.addFirst(Map.entry("x", 99)));
         checkContents(map, baseref);
+    }
+
+    @Test(dataProvider="nullableEntries")
+    public void testNullableKeyValue(String mode) {
+        // TODO this relies on LHM to inherit SequencedMap default
+        // methods which are actually being tested here.
+        SequencedMap<String, Integer> map = new LinkedHashMap<>();
+        map.put(null, 1);
+        map.put("two", null);
+
+        switch (mode) {
+            case "firstEntry"     -> checkEntry(map.firstEntry(), null, 1);
+            case "lastEntry"      -> checkEntry(map.lastEntry(), "two", null);
+            case "pollFirstEntry" -> checkEntry(map.pollFirstEntry(), null, 1);
+            case "pollLastEntry"  -> checkEntry(map.pollLastEntry(), "two", null);
+            default               -> throw new AssertionError("illegal mode " + mode);
+        }
     }
 }
