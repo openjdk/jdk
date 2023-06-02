@@ -236,9 +236,9 @@ public final class ECKeyFactory extends KeyFactorySpi {
     // internal implementation of generatePrivate. See JCA doc
     private PrivateKey implGeneratePrivate(KeySpec keySpec)
             throws GeneralSecurityException {
-        if (keySpec instanceof PKCS8EncodedKeySpec) {
-            PKCS8EncodedKeySpec pkcsSpec = (PKCS8EncodedKeySpec)keySpec;
-            byte[] encoded = pkcsSpec.getEncoded();
+        if (keySpec instanceof PKCS8EncodedKeySpec ||
+                keySpec instanceof PEMEncodedKeySpec) {
+            byte[] encoded = ((EncodedKeySpec) keySpec).getEncoded();
             try {
                 return new ECPrivateKeyImpl(encoded);
             } finally {
@@ -249,7 +249,7 @@ public final class ECKeyFactory extends KeyFactorySpi {
             return new ECPrivateKeyImpl(ecSpec.getS(), ecSpec.getParams());
         } else {
             throw new InvalidKeySpecException("Only ECPrivateKeySpec "
-                + "and PKCS8EncodedKeySpec supported for EC private keys");
+                + "and PKCS8EncodedKeySpec supported for EC private keys. " + keySpec.getClass().getName() + " provided.");
         }
     }
 

@@ -25,15 +25,18 @@
 
 package java.security;
 
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.security.spec.*;
 import java.util.*;
 
 import java.security.Provider.Service;
-import java.security.spec.KeySpec;
-import java.security.spec.InvalidKeySpecException;
 
-import sun.security.util.Debug;
+import sun.nio.cs.ISO_8859_1;
+import sun.security.util.*;
 import sun.security.jca.*;
 import sun.security.jca.GetInstance.Instance;
+import sun.security.x509.AlgorithmId;
 
 /**
  * Key factories are used to convert <I>keys</I> (opaque
@@ -490,4 +493,119 @@ public class KeyFactory {
                 ("Could not translate key", failure);
     }
 
+    /**
+     * Encode pem string.
+     *
+     * @param <T>     the type parameter
+     * @param key     the key
+     * @param keySpec the key spec
+     * @return the string
+     * @throws IOException the io exception
+     */
+    public static <T extends EncodedKeySpec> T encode(Key key, Class<T> keySpec) throws IOException {
+        if (!EncodedKeySpec.class.isAssignableFrom(keySpec)) {
+            return null;
+        }
+        EncodedKeySpec eks;
+        try {
+            eks = keySpec.getDeclaredConstructor(byte[].class).newInstance(key.getEncoded());
+        } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
+            throw new IOException(e);
+        }
+        return keySpec.cast(eks.encode());
+    }
+
+    /**
+     * Decode pem into an EncodedKeySpec.
+     *
+     * @param <T>      the type parameter
+     * @param encoding the encoding
+     * @param keySpec  the key spec
+     * @return the encoded key spec
+     * @throws IOException the io exception
+     */
+    /*
+    public static <T extends EncodedKeySpec> T decode(byte[] encoding, Class<T> keySpec) throws IOException {
+        if (!EncodedKeySpec.class.isAssignableFrom(keySpec)) {
+            return null;
+        }
+        EncodedKeySpec eks;
+        try {
+            eks = keySpec.getDeclaredConstructor(byte[].class).newInstance(encoding);
+        } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
+            throw new IOException(e);
+        }
+        return keySpec.cast(eks.decode());
+    }
+
+     */
+
+    /**
+     * Decode key.
+     *
+     * @param <T>      the type parameter
+     * @param encoding the encoding
+     * @param keySpec  the key spec
+     * @return the key
+     * @throws IOException the io exception
+     */
+    /*
+    public static <T extends EncodedKeySpec> Key decode(byte[] encoding, Class<T> keySpec) throws IOException {
+        if (!EncodedKeySpec.class.isAssignableFrom(keySpec)) {
+            return null;
+        }
+        EncodedKeySpec eks;
+        try {
+            eks = keySpec.getDeclaredConstructor(byte[].class).newInstance(encoding);
+        } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
+            throw new IOException(e);
+        }
+        try {
+            byte[] data = eks.decode().getEncoded();
+            KeyFactory kf = KeyUtil.getAlgorithm(data);
+            return kf.generatePrivate(new PKCS8EncodedKeySpec(data));
+        } catch (InvalidKeySpecException e) {
+            throw new IOException(e);
+        }
+        //return eks.decode();
+    }
+
+    /**
+     * Get a KeyFactory from a given EncodedKeySpec
+     *
+     * @param spec the spec
+     * @return the key factory
+     *
+    //XXX Could rename this getKeyFactory to avoid getInstance
+    public static KeyFactory getInstance(EncodedKeySpec spec) {
+        return null;
+    }
+
+    /**
+     * Gets instance.
+     *
+     * @param spec     the spec
+     * @param provider the provider
+     * @return the instance
+     *
+    //XXX Could rename this getKeyFactory to avoid getInstance
+    public static KeyFactory getInstance(EncodedKeySpec spec, Provider provider) {
+        return null;
+
+    }
+
+    /**
+     * Return the Key from the keyfactory
+     *
+     * @return the key
+     *
+    public Key getKey() {
+        return null;
+
+    }
+    */
+
 }
+
+
+//RSAPrivateKey key = (RSAPrivateKey) KeyFactory.getInstance(KeyFactory.decodePEM(encoding)).getKey();

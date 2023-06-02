@@ -25,21 +25,28 @@
 
 package sun.security.util;
 
-import java.math.BigInteger;
-import java.security.AlgorithmParameters;
-import java.security.InvalidKeyException;
-import java.security.Key;
-import java.security.SecureRandom;
-import java.security.interfaces.*;
+import java.io.IOException;
+import java.security.*;
+import java.security.interfaces.ECKey;
+import java.security.interfaces.EdECKey;
+import java.security.interfaces.EdECPublicKey;
+import java.security.interfaces.RSAKey;
+import java.security.interfaces.DSAKey;
+import java.security.interfaces.DSAParams;
+import java.security.interfaces.XECKey;
 import java.security.spec.*;
-import java.util.Arrays;
 import javax.crypto.SecretKey;
 import javax.crypto.interfaces.DHKey;
 import javax.crypto.interfaces.DHPublicKey;
 import javax.crypto.spec.DHParameterSpec;
 import javax.crypto.spec.DHPublicKeySpec;
+import java.math.BigInteger;
+import java.util.Arrays;
+import java.util.Base64;
 
+import sun.nio.cs.ISO_8859_1;
 import sun.security.jca.JCAUtil;
+import sun.security.x509.AlgorithmId;
 
 /**
  * A utility class to get key length, validate keys, etc.
@@ -402,6 +409,174 @@ public final class KeyUtil {
         System.arraycopy(b, i, t, 0, t.length);
         return t;
     }
+
+
+    private static final byte[] DASHES = "-----".getBytes(ISO_8859_1.INSTANCE);
+    private static final byte[] STARTHEADER = "-----BEGIN ".getBytes(ISO_8859_1.INSTANCE);
+    private static final byte[] PUBHEADER = "-----BEGIN PUBLIC KEY-----".getBytes(ISO_8859_1.INSTANCE);
+    private static final byte[] PUBFOOTER = "-----END PUBLIC KEY-----".getBytes(ISO_8859_1.INSTANCE);
+    private static final byte[] PKCS8HEADER = "-----BEGIN PRIVATE KEY-----".getBytes(ISO_8859_1.INSTANCE);
+    private static final byte[] PKCS8FOOTER = "-----END PRIVATE KEY-----".getBytes(ISO_8859_1.INSTANCE);
+    private static final byte[] PKCS8ENCHEADER = "-----BEGIN ENCRYPTED PRIVATE KEY-----".getBytes(ISO_8859_1.INSTANCE);
+    private static final byte[] PKCS8ENCFOOTER = "-----END ENCRYPTED PRIVATE KEY-----".getBytes(ISO_8859_1.INSTANCE);
+    private static final byte[] PKCS8ECHEADER = "-----BEGIN EC PRIVATE KEY-----".getBytes(ISO_8859_1.INSTANCE);
+    private static final byte[] PKCS8ECFOOTER = "-----END EC PRIVATE KEY-----".getBytes(ISO_8859_1.INSTANCE);
+
+    private static Base64.Decoder decoder = null;
+    private boolean isX509 = false;
+    private boolean isENCRYPTED = false;
+    private boolean isEC = false;
+    private boolean isPublic = false;
+
+    private EncodedKeySpec parseDER(byte[] data) {
+        return parseDER(data, 0, data.length);
+    }
+    private EncodedKeySpec parseDER(byte[] data, int offset, int length) {
+        return null;
+
+    }
+
+    /**
+     * Decode encoded key spec.
+     *
+     * @param data the data
+     * @return the encoded key spec
+     * @throws IOException the io exception
+     */
+    public EncodedKeySpec decode(byte[] data) throws IOException {
+
+        if (decoder == null) {
+            synchronized (decoder) {
+                if (decoder == null) {
+                    decoder = Base64.getDecoder();
+                }
+            }
+        }
+        int endHeader = find(data, STARTHEADER.length, DASHES);
+        int startFooter = findReverse(data, data.length - 6, DASHES);
+        if (endHeader == -1 || startFooter == -1) {
+            throw new IOException("Invalid PEM format");
+        }
+
+        if (Arrays.compare(data, 0, endHeader,
+                PKCS8HEADER, 0, PKCS8HEADER.length) == 0 &&
+                Arrays.compare(data, startFooter, data.length,
+                        PKCS8FOOTER, 0, PKCS8FOOTER.length) == 0) {
+            return new PKCS8EncodedKeySpec(decoder.decode(Arrays.copyOfRange(data, endHeader, startFooter - endHeader)));
+        } else if (Arrays.compare(data, 0, endHeader,
+                PKCS8ENCHEADER, 0, PKCS8ENCHEADER.length) == 0 &&
+                Arrays.compare(data, startFooter, data.length,
+                        PKCS8ENCFOOTER, 0, PKCS8ENCFOOTER.length) == 0) {
+            isENCRYPTED = true;
+            return new PKCS8EncodedKeySpec(decoder.decode(Arrays.copyOfRange(data, endHeader, startFooter - endHeader)));
+        } else if (Arrays.compare(data, 0, endHeader,
+                PKCS8ECHEADER, 0, PKCS8ECHEADER.length) == 0 &&
+                Arrays.compare(data, startFooter, data.length,
+                        PKCS8ECFOOTER, 0, PKCS8ECFOOTER.length) == 0) {
+            isEC = true;
+            return new PKCS8EncodedKeySpec(decoder.decode(Arrays.copyOfRange(data, endHeader, startFooter - endHeader)));
+        } else if (Arrays.compare(data, 0, endHeader,
+                PUBHEADER, 0, PUBHEADER.length) == 0 &&
+                Arrays.compare(data, startFooter, data.length,
+                        PUBFOOTER, 0, PUBFOOTER.length) == 0) {
+            isPublic = true;
+            return new X509EncodedKeySpec(decoder.decode(Arrays.copyOfRange(data, endHeader, startFooter - endHeader)));
+        } else {
+            throw new IOException("No supported format found");
+        }
+        //ByteBuffer b = ByteBuffer.wrap(data, endHeader, startFooter - endHeader);
+        // Base64.Decoder returns a byte[] ByteBuffer
+        //return decoder(decoder.decode(b).array());
+    }
+
+    /**
+     * Find the occurrence of 'd' in 'a'
+     *
+     * @param a      the a
+     * @param offset the offset
+     * @param d      the d
+     * @return the array index following the end of 'd'
+     */
+    private static int find(byte[] a, int offset, byte[] d) {
+        int index = offset;
+        int dindex = 0;
+        while (index < a.length) {
+            while (a[index] == d[dindex]) {
+                index++;
+                if (dindex == d.length - 1) {
+                    return index;
+                }
+                dindex++;
+            }
+            dindex = 0;
+            index++;
+        }
+        return -1;
+    }
+
+    /**
+     * Find reverse int.
+     *
+     * @param a      the a
+     * @param offset the offset
+     * @param d      the d
+     * @return the int
+     */
+    private static int findReverse(byte[] a, int offset, byte[] d) {
+        int index = offset;
+        int dindex = d.length - 1;
+        while (index > 0) {
+            while (a[index] == d[dindex]) {
+                if (dindex == 0) {
+                    return index;
+                }
+                index--;
+                dindex--;
+            }
+            dindex = d.length - 1;
+            index--;
+        }
+        return -1;
+    }
+    // Max comment: move this into EncodedKeySpec?
+    public static AlgorithmId getAlgorithm(byte[] encoded) throws IOException {
+        DerInputStream is = new DerInputStream(encoded);
+        DerValue value = is.getDerValue();
+        if (value.tag != DerValue.tag_Sequence) {
+            throw new IOException("Unknown DER Format:  Value 1 not a Sequence");
+        }
+
+        is = value.data;
+        value = is.getDerValue();
+        // This route is for:  RSAPublic, Encrypted RSAPrivate, EC/EDPublic,
+        // Encrypted EC/EDPrivate,
+        if (value.tag == DerValue.tag_Sequence) {
+            return AlgorithmId.parse(value);
+        } else if (value.tag == DerValue.tag_Integer) {
+            // RSAPrivate, ECPrivate,
+            int version = value.getInteger();
+            value = is.getDerValue();
+            if (value.tag == DerValue.tag_OctetString) {
+                value = is.getDerValue();
+                if (value.tag == DerValue.tag_Sequence) {
+                    return AlgorithmId.parse(value);
+                } else {
+                    // OpenSSL/X.62 (0xA0)
+                    ObjectIdentifier oid = value.data.getOID();
+                    AlgorithmId algo = new AlgorithmId(oid, (AlgorithmParameters) null);
+                    if (CurveDB.lookup(algo.getName()) != null) {
+                        return new AlgorithmId(AlgorithmId.EC_oid);
+                    }
+
+                }
+            } else if (value.tag == DerValue.tag_Sequence) {
+                return AlgorithmId.parse(value);
+            }
+
+        }
+        throw new IOException("No algorithm detected");
+    }
+
 
 }
 

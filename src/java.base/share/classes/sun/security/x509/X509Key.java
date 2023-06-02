@@ -358,7 +358,7 @@ public class X509Key implements PublicKey, DerEncoder {
      * @param val a DER-encoded X.509 SubjectPublicKeyInfo value
      * @exception InvalidKeyException on parsing errors.
      */
-    void decode(DerValue val) throws InvalidKeyException {
+    public void decode(DerValue val) throws InvalidKeyException {
         try {
             if (val.tag != DerValue.tag_Sequence)
                 throw new InvalidKeyException("invalid key format");
@@ -388,16 +388,20 @@ public class X509Key implements PublicKey, DerEncoder {
      * @return fjdaskl
      * @throws InvalidKeyException jfkdlsa
      */
-    public static PublicKey parseKey(byte[] encoded) throws InvalidKeyException {
+    public static PublicKey parseKey(byte[] encoded) throws IOException {
         X509Key key = new X509Key();
-        key.decode(encoded);
+        try {
+            key.decode(encoded);
+        } catch (InvalidKeyException e) {
+            throw new IOException("corrupt public key", e);
+        }
         PublicKey pubKey;
         try {
             pubKey = KeyFactory.getInstance(key.algid.getName())
                         .generatePublic(new X509EncodedKeySpec(encoded));
         } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
             // Ignore and return raw key
-            throw new InvalidKeyException("error with encoding");
+            throw new IOException("error with encoding");
         }
         return pubKey;
     }
