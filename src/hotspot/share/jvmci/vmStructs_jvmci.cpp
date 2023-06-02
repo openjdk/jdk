@@ -739,6 +739,7 @@
   declare_constant(markWord::hash_shift)                                  \
   declare_constant(markWord::monitor_value)                               \
                                                                           \
+  declare_constant(markWord::lock_mask_in_place)                          \
   declare_constant(markWord::age_mask_in_place)                           \
   declare_constant(markWord::hash_mask)                                   \
   declare_constant(markWord::hash_mask_in_place)                          \

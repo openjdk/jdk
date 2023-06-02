@@ -241,7 +241,7 @@ private:
   bool is_dumping_full_module_graph();
   FollowMode get_follow_mode(MetaspaceClosure::Ref *ref);
 
-  void iterate_sorted_roots(MetaspaceClosure* it, bool is_relocating_pointers);
+  void iterate_sorted_roots(MetaspaceClosure* it);
   void sort_symbols_and_fix_hash();
   void sort_klasses();
   static int compare_symbols_by_address(Symbol** a, Symbol** b);
@@ -256,7 +256,7 @@ private:
   void clean_up_src_obj_table();
 
 protected:
-  virtual void iterate_roots(MetaspaceClosure* it, bool is_relocating_pointers) = 0;
+  virtual void iterate_roots(MetaspaceClosure* it) = 0;
 
   // Conservative estimate for number of bytes needed for:
   size_t _estimated_metaspaceobj_bytes;   // all archived MetaspaceObj's.
@@ -303,6 +303,11 @@ public:
     return current()->buffer_to_requested_delta();
   }
 
+  inline static u4 to_offset_u4(uintx offset) {
+    guarantee(offset <= MAX_SHARED_DELTA, "must be 32-bit offset " INTPTR_FORMAT, offset);
+    return (u4)offset;
+  }
+
 public:
   static const uintx MAX_SHARED_DELTA = 0x7FFFFFFF;
 
@@ -317,15 +322,13 @@ public:
   template <typename T>
   u4 buffer_to_offset_u4(T p) const {
     uintx offset = buffer_to_offset((address)p);
-    guarantee(offset <= MAX_SHARED_DELTA, "must be 32-bit offset " INTPTR_FORMAT, offset);
-    return (u4)offset;
+    return to_offset_u4(offset);
   }
 
   template <typename T>
   u4 any_to_offset_u4(T p) const {
     uintx offset = any_to_offset((address)p);
-    guarantee(offset <= MAX_SHARED_DELTA, "must be 32-bit offset " INTPTR_FORMAT, offset);
-    return (u4)offset;
+    return to_offset_u4(offset);
   }
 
   static void assert_is_vm_thread() PRODUCT_RETURN;
@@ -338,7 +341,7 @@ public:
   void gather_source_objs();
   bool gather_klass_and_symbol(MetaspaceClosure::Ref* ref, bool read_only);
   bool gather_one_source_obj(MetaspaceClosure::Ref* enclosing_ref, MetaspaceClosure::Ref* ref, bool read_only);
-  void remember_embedded_pointer_in_copied_obj(MetaspaceClosure::Ref* enclosing_ref, MetaspaceClosure::Ref* ref);
+  void remember_embedded_pointer_in_gathered_obj(MetaspaceClosure::Ref* enclosing_ref, MetaspaceClosure::Ref* ref);
 
   DumpRegion* rw_region() { return &_rw_region; }
   DumpRegion* ro_region() { return &_ro_region; }
@@ -375,15 +378,22 @@ public:
   void dump_rw_metadata();
   void dump_ro_metadata();
   void relocate_metaspaceobj_embedded_pointers();
-  void relocate_roots();
-  void relocate_vm_classes();
   void make_klasses_shareable();
   void relocate_to_requested();
   void write_archive(FileMapInfo* mapinfo, ArchiveHeapInfo* heap_info);
   void write_region(FileMapInfo* mapinfo, int region_idx, DumpRegion* dump_region,
                     bool read_only,  bool allow_exec);
 
+  void write_pointer_in_buffer(address* ptr_location, address src_addr);
+  template <typename T> void write_pointer_in_buffer(T* ptr_location, T src_addr) {
+    write_pointer_in_buffer((address*)ptr_location, (address)src_addr);
+  }
+
   address get_buffered_addr(address src_addr) const;
+  template <typename T> T get_buffered_addr(T src_addr) const {
+    return (T)get_buffered_addr((address)src_addr);
+  }
+
   address get_source_addr(address buffered_addr) const;
   template <typename T> T get_source_addr(T buffered_addr) const {
     return (T)get_source_addr((address)buffered_addr);

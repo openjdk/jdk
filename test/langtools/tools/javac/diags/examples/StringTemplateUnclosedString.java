@@ -25,7 +25,7 @@
  // key: compiler.note.preview.recompile
  // key: compiler.err.unclosed.str.lit
  // key: compiler.err.string.template.is.not.well.formed
- // options: --enable-preview -source 21
+ // options: --enable-preview -source ${jdk.version}
 
 import java.lang.*;
 

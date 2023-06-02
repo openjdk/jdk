@@ -99,7 +99,6 @@ runtime/os/TestTracePageSizes.java#Serial 8267460 linux-aarch64
 runtime/ErrorHandling/CreateCoredumpOnCrash.java 8267433 macosx-x64
 runtime/CompressedOops/CompressedClassPointers.java 8305765 generic-all
 runtime/StackGuardPages/TestStackGuardPagesNative.java 8303612 linux-all
-runtime/Thread/TestAlwaysPreTouchStacks.java 8305416 generic-all
 runtime/ErrorHandling/TestDwarf.java 8305489 linux-all
 
 applications/jcstress/copy.java 8229852 linux-all
@@ -133,15 +132,14 @@ serviceability/attach/ConcAttachTest.java 8290043 linux-all
 
 #############################################################################
 
-gtest/NMTGtests.java 8306561 aix-ppc64
+gtest/NMTGtests.java#nmt-detail 8306561 aix-ppc64
+gtest/NMTGtests.java#nmt-summary 8306561 aix-ppc64
 
 #############################################################################
 
 # :vmTestbase_*
 
 #############################################################################
-
-vmTestbase/nsk/jdi/ThreadReference/stop/stop001/TestDescription.java 7034630 generic-all
 
 vmTestbase/metaspace/gc/firstGC_10m/TestDescription.java 8208250 generic-all
 vmTestbase/metaspace/gc/firstGC_50m/TestDescription.java 8208250 generic-all

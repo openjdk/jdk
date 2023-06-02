@@ -40,8 +40,8 @@ import jdk.internal.classfile.ClassModel;
 import jdk.internal.classfile.Classfile;
 import jdk.internal.classfile.impl.ClassReaderImpl;
 import jdk.internal.classfile.impl.Options;
-import jdk.internal.classfile.java.lang.constant.ModuleDesc;
-import jdk.internal.classfile.java.lang.constant.PackageDesc;
+import java.lang.constant.ModuleDesc;
+import java.lang.constant.PackageDesc;
 import jdk.internal.classfile.WritableElement;
 import jdk.internal.classfile.impl.SplitConstantPool;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
@@ -185,7 +185,7 @@ public sealed interface ConstantPoolBuilder
      * @param packageDesc the symbolic descriptor for the class
      */
     default PackageEntry packageEntry(PackageDesc packageDesc) {
-        return packageEntry(utf8Entry(packageDesc.packageInternalName()));
+        return packageEntry(utf8Entry(packageDesc.internalName()));
     }
 
     /**
@@ -209,7 +209,7 @@ public sealed interface ConstantPoolBuilder
      * @param moduleDesc the symbolic descriptor for the class
      */
     default ModuleEntry moduleEntry(ModuleDesc moduleDesc) {
-        return moduleEntry(utf8Entry(moduleDesc.moduleName()));
+        return moduleEntry(utf8Entry(moduleDesc.name()));
     }
 
     /**
