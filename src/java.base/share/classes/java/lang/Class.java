@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -126,20 +126,19 @@ import sun.reflect.misc.ReflectUtil;
  * <p> The following example uses a {@code Class} object to print the
  * class name of an object:
  *
- * <blockquote><pre>
- *     void printClassName(Object obj) {
- *         System.out.println("The class of " + obj +
- *                            " is " + obj.getClass().getName());
- *     }
- * </pre></blockquote>
+ * {@snippet lang="java" :
+ * void printClassName(Object obj) {
+ *     System.out.println("The class of " + obj +
+ *                        " is " + obj.getClass().getName());
+ * }}
  *
  * It is also possible to get the {@code Class} object for a named
  * class or interface (or for {@code void}) using a <i>class literal</i>.
  * For example:
  *
- * <blockquote>
- *     {@code System.out.println("The name of class Foo is: "+Foo.class.getName());}
- * </blockquote>
+ * {@snippet lang="java" :
+ * System.out.println("The name of class Foo is: "+Foo.class.getName());
+ * }
  *
  * <p> Some methods of class {@code Class} expose whether the declaration of
  * a class or interface in Java source code was <em>enclosed</em> within
@@ -341,9 +340,9 @@ public final class Class<T> implements java.io.Serializable,
      * interface with the given string name.  Invoking this method is
      * equivalent to:
      *
-     * <blockquote>
-     *  {@code Class.forName(className, true, currentLoader)}
-     * </blockquote>
+     * {@snippet lang="java" :
+     * Class.forName(className, true, currentLoader)
+     * }
      *
      * where {@code currentLoader} denotes the defining class loader of
      * the current class.
@@ -352,9 +351,9 @@ public final class Class<T> implements java.io.Serializable,
      * runtime {@code Class} descriptor for the class named
      * {@code java.lang.Thread}:
      *
-     * <blockquote>
-     *   {@code Class t = Class.forName("java.lang.Thread")}
-     * </blockquote>
+     * {@snippet lang="java" :
+     * Class<?> t = Class.forName("java.lang.Thread");
+     * }
      * <p>
      * A call to {@code forName("X")} causes the class named
      * {@code X} to be initialized.
@@ -415,15 +414,15 @@ public final class Class<T> implements java.io.Serializable,
      *
      * <p> For example, in an instance method the expression:
      *
-     * <blockquote>
-     *  {@code Class.forName("Foo")}
-     * </blockquote>
+     * {@snippet lang="java" :
+     * Class.forName("Foo")
+     * }
      *
      * is equivalent to:
      *
-     * <blockquote>
-     *  {@code Class.forName("Foo", true, this.getClass().getClassLoader())}
-     * </blockquote>
+     * {@snippet lang="java" :
+     * Class.forName("Foo", true, this.getClass().getClassLoader())
+     * }
      *
      * Note that this method throws errors related to loading, linking
      * or initializing as specified in Sections {@jls 12.2}, {@jls
@@ -607,15 +606,15 @@ public final class Class<T> implements java.io.Serializable,
      *
      * <p>The call
      *
-     * <pre>{@code
+     * {@snippet lang="java" :
      * clazz.newInstance()
-     * }</pre>
+     * }
      *
      * can be replaced by
      *
-     * <pre>{@code
+     * {@snippet lang="java" :
      * clazz.getDeclaredConstructor().newInstance()
-     * }</pre>
+     * }
      *
      * The latter sequence of calls is inferred to be able to throw
      * the additional exception types {@link
@@ -2485,7 +2484,7 @@ public final class Class<T> implements java.io.Serializable,
      * @apiNote
      * <p> The following method can be used to find the record canonical constructor:
      *
-     * <pre>{@code
+     * {@snippet lang="java" :
      * static <T extends Record> Constructor<T> getCanonicalConstructor(Class<T> cls)
      *     throws NoSuchMethodException {
      *   Class<?>[] paramTypes =
@@ -2493,7 +2492,7 @@ public final class Class<T> implements java.io.Serializable,
      *           .map(RecordComponent::getType)
      *           .toArray(Class<?>[]::new);
      *   return cls.getDeclaredConstructor(paramTypes);
-     * }}</pre>
+     * }}
      *
      * @return  An array of {@code RecordComponent} objects representing all the
      *          record components of this record class, or {@code null} if this

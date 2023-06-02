@@ -380,7 +380,7 @@ bool ZHeap::print_location(outputStream* st, zaddress addr) const {
   st->print(PTR_FORMAT " is a zaddress: ", untype(addr));
 
   if (addr == zaddress::null) {
-    st->print_raw_cr("NULL");
+    st->print_raw_cr("null");
     return true;
   }
 
@@ -435,7 +435,7 @@ bool ZHeap::print_location(outputStream* st, zpointer ptr) const {
   const zaddress addr =  ZPointer::uncolor(ptr);
 
   if (addr == zaddress::null) {
-    st->print_raw_cr("NULL");
+    st->print_raw_cr("null");
     return true;
   }
 

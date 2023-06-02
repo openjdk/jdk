@@ -135,14 +135,14 @@ bool Exceptions::special_exception(JavaThread* thread, const char* file, int lin
 // This method should only be called from generated code,
 // therefore the exception oop should be in the oopmap.
 void Exceptions::_throw_oop(JavaThread* thread, const char* file, int line, oop exception) {
-  assert(exception != nullptr, "exception should not be nullptr");
+  assert(exception != nullptr, "exception should not be null");
   Handle h_exception(thread, exception);
   _throw(thread, file, line, h_exception);
 }
 
 void Exceptions::_throw(JavaThread* thread, const char* file, int line, Handle h_exception, const char* message) {
   ResourceMark rm(thread);
-  assert(h_exception() != nullptr, "exception should not be nullptr");
+  assert(h_exception() != nullptr, "exception should not be null");
 
   // tracing (do this up front - so it works during boot strapping)
   // Note, the print_value_string() argument is not called unless logging is enabled!
