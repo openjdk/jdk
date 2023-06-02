@@ -158,28 +158,17 @@ bool Peephole::test_may_remove(Block* block, int block_index, PhaseCFG* cfg_, Ph
     MachNode* maybeAndNode = inst1->isa_Mach();
     if (maybeAndNode != nullptr) {
       if (maybeAndNode->rule() == inst1_rule) {
-        assert(block->get_node(block_index - 1)->is_MachProj(), "Expected a MachProj node here!");
+        MachProjNode* machProjNode = block->get_node(block_index - 1)->isa_MachProj();
+        assert(machProjNode != nullptr, "Expected a MachProj node here!");
         // Remove the original test node and replace it with the pseudo test node. The AND node already sets ZF
-        MachNode* root = new_root();
-        // Assign register for the newly allocated node
-        ra_->set_oop(root, ra_->is_oop(inst0));
-        ra_->set_pair(root->_idx, ra_->get_reg_second(inst0), ra_->get_reg_first(inst0));
-        // Set input and output for the node
-        root->add_req(inst1);
-        inst0->replace_by(root);
-        // Initialize the operand array
-        root->_opnds[0] = inst0->_opnds[0]->clone();
-        root->_opnds[1] = inst0->_opnds[1]->clone();
-        root->_opnds[2] = inst0->_opnds[2]->clone();
+        inst0->replace_by(machProjNode);
 
         // Modify the block
         inst0->set_removed();
         block->remove_node(block_index);
-        block->insert_node(root, block_index);
 
         // Modify the control flow
         cfg_->map_node_to_block(inst0, nullptr);
-        cfg_->map_node_to_block(root, block);
         return true;
       }
     }
