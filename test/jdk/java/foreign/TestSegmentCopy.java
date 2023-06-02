@@ -89,7 +89,6 @@ public class TestSegmentCopy {
     public void testBadOverflow(Type type) {
         if (type.layout.byteSize() > 1) {
             MemorySegment segment = MemorySegment.ofArray(new byte[100]);
-            // check failure with read-only dest
             MemorySegment.copy(segment, type.layout, 0, segment, type.layout, 0, Long.MAX_VALUE);
         } else {
             throw new SkipException("Byte layouts do not overflow");

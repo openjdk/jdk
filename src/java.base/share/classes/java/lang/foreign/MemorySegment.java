@@ -933,14 +933,16 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
 
     /**
      * Wraps this segment in a {@link ByteBuffer}. Some properties of the returned buffer are linked to
-     * the properties of this segment. For instance, if this segment is a {@linkplain #isReadOnly() read-only segment},
-     * then the resulting buffer is also {@linkplain ByteBuffer#isReadOnly() read-only}. Additionally, if this is a native
-     * segment, the resulting buffer is a {@linkplain ByteBuffer#isDirect() direct buffer}.
-     * <p>
-     * The returned buffer's {@linkplain ByteBuffer#position() position} is set to zero, while
-     * the returned buffer's {@linkplain ByteBuffer#capacity() capacity} and {@linkplain ByteBuffer#limit() limit}
-     * are both set to this segment' {@linkplain MemorySegment#byteSize() size}. For this reason, a byte buffer cannot be
-     * returned if this segment' size is greater than {@link Integer#MAX_VALUE}.
+     * the properties of this segment. More specifically, the resulting buffer has the following characteristics:
+     * <ul>
+     * <li>It is {@linkplain ByteBuffer#isReadOnly() read-only}, if this segment is a
+     * {@linkplain #isReadOnly() read-only segment};</li>
+     * <li>Its {@linkplain ByteBuffer#position() position} is set to zero;
+     * <li>Its {@linkplain ByteBuffer#capacity() capacity} and {@linkplain ByteBuffer#limit() limit}
+     * are both set to this segment' {@linkplain MemorySegment#byteSize() size}. For this reason, a byte buffer
+     * cannot be returned if this segment's size is greater than {@link Integer#MAX_VALUE};</li>
+     * <li>It is a {@linkplain ByteBuffer#isDirect() direct buffer}, if this is a native segment.</li>
+     * </ul>
      * <p>
      * The life-cycle of the returned buffer is tied to that of this segment. That is, accessing the returned buffer
      * after the scope associated with this segment is no longer {@linkplain Scope#isAlive() alive}, will
@@ -948,7 +950,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * such that {@code isAccessible(T) == false} will throw a {@link WrongThreadException}.
      * <p>
      * If this segment is {@linkplain #isAccessibleBy(Thread) accessible} from a single thread, calling read/write I/O
-     * operations on the resulting buffer might result in an unspecified exceptions being thrown. Examples of such problematic operations are
+     * operations on the resulting buffer might result in unspecified exceptions being thrown. Examples of such problematic operations are
      * {@link java.nio.channels.AsynchronousSocketChannel#read(ByteBuffer)} and
      * {@link java.nio.channels.AsynchronousSocketChannel#write(ByteBuffer)}.
      * <p>
@@ -2193,7 +2195,6 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IllegalArgumentException if {@code offset} is <a href="MemorySegment.html#segment-alignment">incompatible
      * with the alignment constraint</a> in the source element layout.
      * @throws IllegalArgumentException if {@code srcLayout.byteAlignment() > srcLayout.byteSize()}.
-     * @throws UnsupportedOperationException if {@code srcSegment} is {@linkplain #isReadOnly() read-only}.
      * @throws IndexOutOfBoundsException if {@code elementCount * srcLayout.byteSize()} overflows.
      * @throws IndexOutOfBoundsException if {@code srcOffset > srcSegment.byteSize() - (elementCount * srcLayout.byteSize())}.
      * @throws IndexOutOfBoundsException if {@code dstIndex > dstArray.length - elementCount}.

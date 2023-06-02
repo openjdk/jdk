@@ -265,7 +265,7 @@ public interface Arena extends SegmentAllocator, AutoCloseable {
      * @throws IllegalArgumentException if {@code bytesSize < 0}, {@code byteAlignment <= 0}, or if {@code byteAlignment}
      * is not a power of 2.
      * @throws IllegalStateException if this arena has already been {@linkplain #close() closed}.
-     * @throws WrongThreadException if this arena is confined, and this method is called from a thread {@code T}
+     * @throws WrongThreadException if this arena is confined, and this method is called from a thread
      * other than the arena's owner thread.
      */
     @Override
@@ -296,8 +296,8 @@ public interface Arena extends SegmentAllocator, AutoCloseable {
      * @throws IllegalStateException if the arena has already been closed.
      * @throws IllegalStateException if a segment associated with this arena is being accessed concurrently, e.g.
      * by a {@linkplain Linker#downcallHandle(FunctionDescriptor, Linker.Option...) downcall method handle}.
-     * @throws WrongThreadException if this arena is confined, and this method is called from a thread {@code T}
-     * other than the arena owner thread.
+     * @throws WrongThreadException if this arena is confined, and this method is called from a thread
+     * other than the arena's owner thread.
      * @throws UnsupportedOperationException if this arena cannot be closed explicitly.
      */
     @Override

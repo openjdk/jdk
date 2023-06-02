@@ -146,7 +146,7 @@ import jdk.internal.javac.PreviewFeature;
  *
  * Some layout path elements, said <em>open path elements</em>, can select multiple layouts at once. For instance,
  * the open path elements {@link PathElement#sequenceElement()}, {@link PathElement#sequenceElement(long, long)} select
- * an unspecified element in a sequence layout. A var handles derived from a layout path containing one or more
+ * an unspecified element in a sequence layout. A var handle derived from a layout path containing one or more
  * open path element features additional coordinates of type {@code long}, which can be used by clients to <em>bind</em>
  * the open elements in the path:
  *
@@ -183,7 +183,7 @@ import jdk.internal.javac.PreviewFeature;
  *                                 ValueLayout.JAVA_INT.withName("x"),
  *                                 ValueLayout.JAVA_INT.withName("y")
  *                         ).withName("point")
-*                   )
+*                  )
 *          ).withName("points")
  * );
  * }
@@ -213,10 +213,10 @@ import jdk.internal.javac.PreviewFeature;
  * A layout path is applied to a layout {@code C_0}, also called the <em>initial layout</em>. Each path element in a
  * layout path can be thought of as a function which updates the current layout {@code C_i-1} to some other layout
  * {@code C_i}. That is, for each path element {@code E1, E2, ... En}, in a layout path {@code P}, we compute
- * {@code C_i = f_i(C_i-1)}, where {@code f_i} is the selection function expressed the path element under consideration,
+ * {@code C_i = f_i(C_i-1)}, where {@code f_i} is the selection function associated with the path element under consideration,
  * denoted as {@code E_i}. The final layout {@code C_i} is also called the <em>selected layout</em>.
  * <p>
- * A layout path P is considered well-formed for an initial layout {@code C_0} if all its path elements
+ * A layout path {@code P} is considered well-formed for an initial layout {@code C_0} if all its path elements
  * {@code E1, E2, ... En} are well-formed for their corresponding input layouts {@code C_0, C_1, ... C_n-1}.
  * A path element {@code E} is considered well-formed for a layout {@code L} if any of the following is true:
  * <ul>
@@ -321,9 +321,7 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      * The returned method handle has the following characteristics:
      * <ul>
      *     <li>its return type is {@code long};</li>
-     *     <li>it has a leading parameter of type {@code MemorySegment}, corresponding to the memory segment
-     *     to be accessed;</li>
-     *     <li>it has as many parameters of type {@code long}, one for each <a href=#open-path-elements>open path elements</a>
+     *     <li>it has as zero or more parameters of type {@code long}, one for each <a href=#open-path-elements>open path element</a>
      *     in the provided layout path. The order of these parameters corresponds to the order in which the open path
      *     elements occur in the provided layout path.
      * </ul>
@@ -360,8 +358,8 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      * <ul>
      *     <li>its type is derived from the {@linkplain ValueLayout#carrier() carrier} of the
      *     selected value layout;</li>
-     *     <li>it has as many access coordinates of type {@code long}, one for each
-     *     <a href=#open-path-elements>open path elements</a> in the provided layout path. The order of these access
+     *     <li>it has as zero or more access coordinates of type {@code long}, one for each
+     *     <a href=#open-path-elements>open path element</a> in the provided layout path. The order of these access
      *     coordinates corresponds to the order in which the open path elements occur in the provided
      *     layout path.
      * </ul>
@@ -389,9 +387,9 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      * Additionally, the provided dynamic values must conform to bounds which are derived from the layout path, that is,
      * {@code 0 <= x_i < b_i}, where {@code 1 <= i <= n}, or {@link IndexOutOfBoundsException} is thrown.
      * <p>
-     * Multiple paths can be chained, by using <a href=#deref-path-elements>dereference path elements</a>.
-     * A dereference path element allows to obtain a native memory segment whose base address is the address value
-     * obtained by accessing a memory segment at the offset determined by the layout path elements immediately preceding
+     * Multiple paths can be chained, with <a href=#deref-path-elements>dereference path elements</a>.
+     * A dereference path element constructs a fresh native memory segment whose base address is the address value
+     * read obtained by accessing a memory segment at the offset determined by the layout path elements immediately preceding
      * the dereference path element. In other words, if a layout path contains one or more dereference path elements,
      * the final address accessed by the returned var handle can be computed as follows:
      *
@@ -433,8 +431,8 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      * <ul>
      *     <li>its return type is {@code MemorySegment};</li>
      *     <li>it has a leading parameter of type {@code MemorySegment}, corresponding to the memory segment
-     *     to be accessed;</li>
-     *     <li>it has as many parameters of type {@code long}, one for each <a href=#open-path-elements>open path elements</a>
+     *     to be sliced;</li>
+     *     <li>it has as zero or more parameters of type {@code long}, one for each <a href=#open-path-elements>open path element</a>
      *     in the provided layout path. The order of these parameters corresponds to the order in which the open path
      *     elements occur in the provided layout path.
      * </ul>
@@ -496,7 +494,7 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      *     <li><em>dereference path elements</em>, used to <a href="MemoryLayout.html#deref-path-elements">dereference</a>
      *     an address layout as its target layout.</li>
      * </ul>
-     * Sequence path elements selecting more than a sequence element layout are called
+     * Sequence path elements selecting more than one sequence element layout are called
      * <a href="MemoryLayout.html#open-path-elements">open path elements</a>.
      *
      * @implSpec
@@ -641,7 +639,7 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
     /**
      * Creates a padding layout with the given byte size. The alignment constraint of the returned layout
      * is 1. As such, regardless of its size, in the absence of an {@linkplain #withByteAlignment(long) explicit}
-     * alignment constraint, a padding layout does not affect the alignment constraint of the group or sequence layout
+     * alignment constraint, a padding layout does not affect the natural alignment of the group or sequence layout
      * it is nested into.
      *
      * @param byteSize the padding size (expressed in bytes).

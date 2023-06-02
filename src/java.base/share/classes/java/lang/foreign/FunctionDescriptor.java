@@ -35,7 +35,7 @@ import jdk.internal.javac.PreviewFeature;
 
 /**
  * A function descriptor models the signature of a foreign function. A function descriptor is made up of zero or more
- * argument layouts and zero or one return layout. A function descriptor is used to create
+ * argument layouts, and zero or one return layout. A function descriptor is used to create
  * {@linkplain Linker#downcallHandle(MemorySegment, FunctionDescriptor, Linker.Option...) downcall method handles} and
  * {@linkplain Linker#upcallStub(MethodHandle, FunctionDescriptor, Arena, Linker.Option...) upcall stubs}.
  *
@@ -54,7 +54,7 @@ public sealed interface FunctionDescriptor permits FunctionDescriptorImpl {
     Optional<MemoryLayout> returnLayout();
 
     /**
-     * {@return the argument layouts of this function descriptor (as an immutable list)}.
+     * {@return the argument layouts of this function descriptor (as an unmodifiable list)}.
      */
     List<MemoryLayout> argumentLayouts();
 
@@ -87,8 +87,7 @@ public sealed interface FunctionDescriptor permits FunctionDescriptorImpl {
     FunctionDescriptor changeReturnLayout(MemoryLayout newReturn);
 
     /**
-     * Returns a function descriptor with no return layout.
-     * @return a new function descriptor, with no return layout.
+     * {@return a new function descriptor, with no return layout}
      */
     FunctionDescriptor dropReturnLayout();
 
@@ -124,7 +123,7 @@ public sealed interface FunctionDescriptor permits FunctionDescriptorImpl {
 
     /**
      * Creates a function descriptor with the given argument layouts and no return layout.  This is useful to model functions
-     * which return no values.
+     * that return no values.
      * @param argLayouts the argument layouts.
      * @throws IllegalArgumentException if one of the layouts in {@code argLayouts} is a padding layout.
      * @return a new function descriptor with the provided argument layouts.

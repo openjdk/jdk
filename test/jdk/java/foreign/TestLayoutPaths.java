@@ -122,6 +122,7 @@ public class TestLayoutPaths {
         seq.varHandle(sequenceElement());
     }
 
+    @Test
     public void testByteOffsetHandleRange() {
         SequenceLayout seq = MemoryLayout.sequenceLayout(5, MemoryLayout.structLayout(JAVA_INT));
         seq.byteOffsetHandle(sequenceElement(0, 1));

@@ -198,9 +198,10 @@ import java.util.stream.Stream;
  * </table></blockquote>
  * <p>
  * All native linker implementations operate on a subset of memory layouts. More formally, a layout {@code L}
- * is supported by a native linker {@code NL} iff:
+ * is supported by a native linker {@code NL} if:
  * <ul>
- * <li>{@code L} is a value layout {@code V} and {@code V.withoutName()} is equal to one of the following layout constants:
+ * <li>{@code L} is a value layout {@code V} and {@code V.withoutName()} is {@linkplain MemoryLayout#equals(Object) equal}
+ * to one of the following layout constants:
  * <ul>
  * <li>{@link ValueLayout#JAVA_BOOLEAN}</li>
  * <li>{@link ValueLayout#JAVA_BYTE}</li>
@@ -211,7 +212,8 @@ import java.util.stream.Stream;
  * <li>{@link ValueLayout#JAVA_FLOAT}</li>
  * <li>{@link ValueLayout#JAVA_DOUBLE}</li>
  * </ul></li>
- * <li>{@code L} is an address layout {@code A} and {@code A.withoutTargetLayout().withoutName()} is equal to {@link ValueLayout#ADDRESS}</li>
+ * <li>{@code L} is an address layout {@code A} and {@code A.withoutTargetLayout().withoutName()} is
+ * {@linkplain MemoryLayout#equals(Object) equal} to {@link ValueLayout#ADDRESS}</li>
  * <li>{@code L} is a sequence layout {@code S} and all the following conditions hold:
  * <ol>
  * <li>the alignment constraint of {@code S} is set to its <a href="MemoryLayout.html#layout-align">natural alignment</a>, and</li>
@@ -353,7 +355,7 @@ import java.util.stream.Stream;
  * unsafely, resize the segment to the desired size (100, in this case). It might also be desirable to
  * attach the segment to some existing {@linkplain Arena arena}, so that the lifetime of the region of memory
  * backing the segment can be managed automatically, as for any other native segment created directly from Java code.
- * Both these operations are accomplished using the restricted method {@link MemorySegment#reinterpret(long, Arena, Consumer)},
+ * Both of these operations are accomplished using the restricted method {@link MemorySegment#reinterpret(long, Arena, Consumer)},
  * as follows:
  *
  * {@snippet lang = java:
@@ -441,7 +443,8 @@ import java.util.stream.Stream;
  * the result of such interaction is unspecified and can lead to JVM crashes.
  * <p>
  * When an upcall stub is passed to a foreign function, a JVM crash might occur, if the foreign code casts the function pointer
- * associated with the upcall stub to a type that is incompatible with the type of the upcall stub. Moreover, if the method
+ * associated with the upcall stub to a type that is incompatible with the type of the upcall stub, and then attempts to
+ * invoke the function through the resulting function pointer. Moreover, if the method
  * handle associated with an upcall stub returns a {@linkplain MemorySegment memory segment}, clients must ensure
  * that this address cannot become invalid after the upcall completes. This can lead to unspecified behavior,
  * and even JVM crashes, since an upcall is typically executed in the context of a downcall method handle invocation.
@@ -470,7 +473,7 @@ public sealed interface Linker permits AbstractLinker {
     }
 
     /**
-     * Creates a method handle which is used to call a foreign function with the given signature and symbol.
+     * Creates a method handle which is used to call a foreign function with the given signature and address.
      * <p>
      * Calling this method is equivalent to the following code:
      * {@snippet lang=java :
@@ -482,17 +485,20 @@ public sealed interface Linker permits AbstractLinker {
      * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
      * restricted methods, and use safe and supported functionalities, where possible.
      *
-     * @param symbol   the symbol of the target foreign function.
+     * @param address  the native memory segment whose {@linkplain MemorySegment#address() base address} is the
+     *                 address of the target foreign function.
      * @param function the function descriptor of the target foreign function.
      * @param options  the linker options associated with this linkage request.
      * @return a downcall method handle.
      * @throws IllegalArgumentException if the provided function descriptor is not supported by this linker.
-     *                                  or if the symbol is {@link MemorySegment#NULL}
+     * @throws IllegalArgumentException if {@code !address.isNative()}, or if {@code address.equals(MemorySegment.NULL)}.
      * @throws IllegalArgumentException if an invalid combination of linker options is given.
      * @throws IllegalCallerException If the caller is in a module that does not have native access enabled.
+     *
+     * @see SymbolLookup
      */
     @CallerSensitive
-    MethodHandle downcallHandle(MemorySegment symbol, FunctionDescriptor function, Option... options);
+    MethodHandle downcallHandle(MemorySegment address, FunctionDescriptor function, Option... options);
 
     /**
      * Creates a method handle which is used to call a foreign function with the given signature.

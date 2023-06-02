@@ -62,10 +62,13 @@ import jdk.internal.javac.PreviewFeature;
  * {@link SegmentAllocator} parameter if the underlying foreign function is known to return a struct by-value. Effectively,
  * the allocator parameter tells the linker where to store the return value of the foreign function.
  *
- * @apiNote A segment allocator does not impose any constraint on the lifetime of the segments returned by its
- * {@link #allocate(long, long)} method. Clients requiring allocation of multiple segments featuring the same
- * lifetime should use an {@linkplain Arena arena} instead, which, in addition to allocation, also provides
- * <em>timely deallocation</em>.
+ * @apiNote Unless otherwise specified, the {@link #allocate(long, long)} method is not thread-safe.
+ * Furthermore, memory segments allocated by a segment allocator can be associated with different
+ * lifetimes, and can even be backed by overlapping regions of memory. For these reasons, clients should generally
+ * only interact with a segment allocator they own.
+ * <p>
+ * Clients should consider using an {@linkplain Arena arena} instead, which, provides strong thread-safety,
+ * lifetime and non-overlapping guarantees.
  */
 @FunctionalInterface
 @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
