@@ -3474,7 +3474,8 @@ extern const struct JNIInvokeInterface_ jni_InvokeInterface;
 // Global invocation API vars
 enum VM_Creation_State {
   NOT_CREATED = 0,
-  IN_PROGRESS,
+  IN_PROGRESS,  // Most JNI operations are permitted during this phase to
+                // allow for initialization actions by libraries and agents.
   COMPLETE
 };
 
@@ -3694,7 +3695,7 @@ static jint JNICALL jni_DestroyJavaVM_inner(JavaVM *vm) {
   jint res = JNI_ERR;
   DT_RETURN_MARK(DestroyJavaVM, jint, (const jint&)res);
 
-  if (vm_created != COMPLETE) {
+  if (vm_created == NOT_CREATED) {
     res = JNI_ERR;
     return res;
   }
@@ -3859,7 +3860,7 @@ static jint attach_current_thread(JavaVM *vm, void **penv, void *_args, bool dae
 
 jint JNICALL jni_AttachCurrentThread(JavaVM *vm, void **penv, void *_args) {
   HOTSPOT_JNI_ATTACHCURRENTTHREAD_ENTRY(vm, penv, _args);
-  if (vm_created != COMPLETE) {
+  if (vm_created == NOT_CREATED) {
     // Not sure how we could possibly get here.
     HOTSPOT_JNI_ATTACHCURRENTTHREAD_RETURN((uint32_t) JNI_ERR);
     return JNI_ERR;
@@ -3873,7 +3874,7 @@ jint JNICALL jni_AttachCurrentThread(JavaVM *vm, void **penv, void *_args) {
 
 jint JNICALL jni_DetachCurrentThread(JavaVM *vm)  {
   HOTSPOT_JNI_DETACHCURRENTTHREAD_ENTRY(vm);
-  if (vm_created != COMPLETE) {
+  if (vm_created == NOT_CREATED) {
     // Not sure how we could possibly get here.
     HOTSPOT_JNI_DETACHCURRENTTHREAD_RETURN(JNI_ERR);
     return JNI_ERR;
@@ -3937,9 +3938,6 @@ jint JNICALL jni_GetEnv(JavaVM *vm, void **penv, jint version) {
   jint ret = JNI_ERR;
   DT_RETURN_MARK(GetEnv, jint, (const jint&)ret);
 
-  // We can be called by native libraries in the JDK during VM
-  // initialization, so only bail-out if something seems very wrong.
-  // Though how would we get here in that case?
   if (vm_created == NOT_CREATED) {
     *penv = nullptr;
     ret = JNI_EDETACHED;
@@ -3991,9 +3989,9 @@ jint JNICALL jni_GetEnv(JavaVM *vm, void **penv, jint version) {
 
 jint JNICALL jni_AttachCurrentThreadAsDaemon(JavaVM *vm, void **penv, void *_args) {
   HOTSPOT_JNI_ATTACHCURRENTTHREADASDAEMON_ENTRY(vm, penv, _args);
-  if (vm_created != COMPLETE) {
+  if (vm_created == NOT_CREATED) {
     // Not sure how we could possibly get here.
-  HOTSPOT_JNI_ATTACHCURRENTTHREADASDAEMON_RETURN((uint32_t) JNI_ERR);
+    HOTSPOT_JNI_ATTACHCURRENTTHREADASDAEMON_RETURN((uint32_t) JNI_ERR);
     return JNI_ERR;
   }
 

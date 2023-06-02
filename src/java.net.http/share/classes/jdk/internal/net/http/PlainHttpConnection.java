@@ -38,6 +38,7 @@ import java.security.PrivilegedExceptionAction;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 
 import jdk.internal.net.http.common.FlowTube;
@@ -59,6 +60,7 @@ class PlainHttpConnection extends HttpConnection {
     private volatile boolean closed;
     private volatile ConnectTimerEvent connectTimerEvent;  // may be null
     private volatile int unsuccessfulAttempts;
+    private final ReentrantLock stateLock = new ReentrantLock();
 
     // Indicates whether a connection attempt has succeeded or should be retried.
     // If the attempt failed, and shouldn't be retried, there will be an exception
@@ -240,11 +242,17 @@ class PlainHttpConnection extends HttpConnection {
     boolean connectionOpened() {
         boolean closed = this.closed;
         if (closed) return false;
-        synchronized (this) {
+        stateLock.lock();
+        try {
             closed = this.closed;
-        }
-        if (!closed) {
-            client().connectionOpened(this);
+            if (!closed) {
+                client().connectionOpened(this);
+            }
+            // connectionOpened might call close() if the client
+            // is shutting down.
+            closed = this.closed;
+        } finally {
+            stateLock.unlock();
         }
         return !closed;
     }
@@ -398,16 +406,16 @@ class PlainHttpConnection extends HttpConnection {
      */
     @Override
     public void close() {
-        synchronized (this) {
-            if (closed) {
-                return;
-            }
-            closed = true;
-        }
+        var closed = this.closed;
+        if (closed) return;
+        stateLock.lock();
         try {
+            if (closed = this.closed) return;
+            closed = this.closed = true;
             Log.logTrace("Closing: " + toString());
             if (debug.on())
                 debug.log("Closing channel: " + client().debugInterestOps(chan));
+            var connectTimerEvent = this.connectTimerEvent;
             if (connectTimerEvent != null)
                 client().cancelTimer(connectTimerEvent);
             if (Log.channel()) {
@@ -420,7 +428,10 @@ class PlainHttpConnection extends HttpConnection {
                 client().connectionClosed(this);
             }
         } catch (IOException e) {
+            debug.log("Closing resulted in " + e);
             Log.logTrace("Closing resulted in " + e);
+        } finally {
+            stateLock.unlock();
         }
     }
 
@@ -431,7 +442,7 @@ class PlainHttpConnection extends HttpConnection {
     }
 
     @Override
-    synchronized boolean connected() {
+    boolean connected() {
         return connected;
     }
 

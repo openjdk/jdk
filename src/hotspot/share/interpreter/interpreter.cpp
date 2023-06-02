@@ -114,6 +114,11 @@ CodeletMark::~CodeletMark() {
     NOT_PRODUCT(_clet->use_strings((*_masm)->code()->dbg_strings()));
 
     AbstractInterpreter::code()->commit(committed_code_size);
+  } else {
+    // InterpreterCodelet is not being commited and may be re-used. We need to free the storage for
+    // remarks and strings.
+    NOT_PRODUCT(_clet->clear_remarks());
+    NOT_PRODUCT(_clet->clear_strings());
   }
   // Make sure nobody can use _masm outside a CodeletMark lifespan.
   *_masm = nullptr;
