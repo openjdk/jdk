@@ -47,6 +47,8 @@ import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jdk.internal.foreign.CABI;
+
 import jdk.test.whitebox.code.Compiler;
 import jdk.test.whitebox.cpuinfo.CPUInfo;
 import jdk.test.whitebox.gc.GC;
@@ -126,6 +128,7 @@ public class VMProps implements Callable<Map<String, String>> {
         map.put("release.implementor", this::implementor);
         map.put("jdk.containerized", this::jdkContainerized);
         map.put("vm.flagless", this::isFlagless);
+        map.put("jdk.foreign.linker", this::jdkForeignLinker);
         vmGC(map); // vm.gc.X = true/false
         vmGCforCDS(map); // may set vm.gc
         vmOptFinalFlags(map);
@@ -346,11 +349,13 @@ public class VMProps implements Callable<Map<String, String>> {
     protected void vmOptFinalFlags(SafeMap map) {
         vmOptFinalFlag(map, "ClassUnloading");
         vmOptFinalFlag(map, "ClassUnloadingWithConcurrentMark");
-        vmOptFinalFlag(map, "UseCompressedOops");
-        vmOptFinalFlag(map, "UseVectorizedMismatchIntrinsic");
+        vmOptFinalFlag(map, "CriticalJNINatives");
         vmOptFinalFlag(map, "EnableJVMCI");
         vmOptFinalFlag(map, "EliminateAllocations");
+        vmOptFinalFlag(map, "UseCompressedOops");
+        vmOptFinalFlag(map, "UseVectorizedMismatchIntrinsic");
         vmOptFinalFlag(map, "UseVtableBasedCHA");
+        vmOptFinalFlag(map, "ZGenerational");
     }
 
     /**
@@ -472,7 +477,7 @@ public class VMProps implements Callable<Map<String, String>> {
         return "" + Compiler.isC2Enabled();
     }
 
-   /**
+    /**
      * A simple check for docker support
      *
      * @return true if docker is supported in a given environment
@@ -650,6 +655,17 @@ public class VMProps implements Callable<Map<String, String>> {
                           .isEmpty();
 
         return "" + result;
+    }
+
+    /*
+     * A string indicating the foreign linker that is currently being used. See jdk.internal.foreign.CABI
+     * for valid values.
+     *
+     * "FALLBACK" and "UNSUPPORTED" are special values. The former indicates the fallback linker is
+     * being used. The latter indicates an unsupported platform.
+     */
+    private String jdkForeignLinker() {
+        return String.valueOf(CABI.current());
     }
 
     /**

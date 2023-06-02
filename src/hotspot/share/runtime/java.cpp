@@ -479,11 +479,6 @@ void before_exit(JavaThread* thread, bool halt) {
   StatSampler::disengage();
   StatSampler::destroy();
 
-  // Shut down string deduplication if running.
-  if (StringDedup::is_enabled()) {
-    StringDedup::stop();
-  }
-
   // Stop concurrent GC threads
   Universe::heap()->stop();
 

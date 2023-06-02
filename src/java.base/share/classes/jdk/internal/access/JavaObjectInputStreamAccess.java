@@ -25,7 +25,7 @@
 
 package jdk.internal.access;
 
-import java.io.InvalidClassException;
+import java.io.ObjectStreamException;
 import java.io.ObjectInputStream;
 
 /**
@@ -34,5 +34,5 @@ import java.io.ObjectInputStream;
 @FunctionalInterface
 public interface JavaObjectInputStreamAccess {
     void checkArray(ObjectInputStream ois, Class<?> arrayType, int arrayLength)
-        throws InvalidClassException;
+        throws ObjectStreamException;
 }

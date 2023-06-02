@@ -25,12 +25,7 @@
 
 package org.openjdk.bench.java.lang.foreign;
 
-import java.lang.foreign.Arena;
-import java.lang.foreign.Linker;
-import java.lang.foreign.FunctionDescriptor;
-import java.lang.foreign.MemorySegment;
-import java.lang.foreign.SegmentScope;
-import java.lang.foreign.SegmentAllocator;
+import java.lang.foreign.*;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -44,6 +39,7 @@ import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 
+import java.lang.foreign.MemorySegment.Scope;
 import java.lang.invoke.MethodHandle;
 import java.util.concurrent.TimeUnit;
 
@@ -57,10 +53,11 @@ import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 @Fork(value = 3, jvmArgsAppend = { "--enable-native-access=ALL-UNNAMED", "--enable-preview" })
 public class StrLenTest extends CLayouts {
 
-    Arena arena = Arena.openConfined();
+    Arena arena = Arena.ofConfined();
 
     SegmentAllocator segmentAllocator;
-    SegmentAllocator arenaAllocator = new RingAllocator(arena.scope());
+    SegmentAllocator arenaAllocator = new RingAllocator(arena);
+    SlicingPool pool = new SlicingPool();
 
     @Param({"5", "20", "100"})
     public int size;
@@ -81,7 +78,7 @@ public class StrLenTest extends CLayouts {
     @Setup
     public void setup() {
         str = makeString(size);
-        segmentAllocator = SegmentAllocator.prefixAllocator(MemorySegment.allocateNative(size + 1, arena.scope()));
+        segmentAllocator = SegmentAllocator.prefixAllocator(arena.allocate(size + 1, 1));
     }
 
     @TearDown
@@ -96,7 +93,7 @@ public class StrLenTest extends CLayouts {
 
     @Benchmark
     public int panama_strlen() throws Throwable {
-        try (Arena arena = Arena.openConfined()) {
+        try (Arena arena = Arena.ofConfined()) {
             MemorySegment segment = arena.allocateUtf8String(str);
             return (int)STRLEN.invokeExact(segment);
         }
@@ -105,6 +102,14 @@ public class StrLenTest extends CLayouts {
     @Benchmark
     public int panama_strlen_ring() throws Throwable {
         return (int)STRLEN.invokeExact(arenaAllocator.allocateUtf8String(str));
+    }
+
+    @Benchmark
+    public int panama_strlen_pool() throws Throwable {
+        Arena arena = pool.acquire();
+        int l = (int) STRLEN.invokeExact(arena.allocateUtf8String(str));
+        arena.close();
+        return l;
     }
 
     @Benchmark
@@ -148,8 +153,8 @@ public class StrLenTest extends CLayouts {
         SegmentAllocator current;
         long rem;
 
-        public RingAllocator(SegmentScope session) {
-            this.segment = MemorySegment.allocateNative(1024, session);
+        public RingAllocator(Arena session) {
+            this.segment = session.allocate(1024, 1);
             reset();
         }
 
@@ -167,6 +172,40 @@ public class StrLenTest extends CLayouts {
         void reset() {
             current = SegmentAllocator.slicingAllocator(segment);
             rem = segment.byteSize();
+        }
+    }
+
+    static class SlicingPool {
+        final MemorySegment pool = Arena.ofAuto().allocate(1024);
+        boolean isAcquired = false;
+
+        public Arena acquire() {
+            if (isAcquired) {
+                throw new IllegalStateException("An allocator is already in use");
+            }
+            isAcquired = true;
+            return new SlicingPoolAllocator();
+        }
+
+        class SlicingPoolAllocator implements Arena {
+
+            final Arena arena = Arena.ofConfined();
+            final SegmentAllocator slicing = SegmentAllocator.slicingAllocator(pool);
+
+            public MemorySegment allocate(long byteSize, long byteAlignment) {
+                return slicing.allocate(byteSize, byteAlignment)
+                        .reinterpret(arena, null);
+            }
+
+            @Override
+            public Scope scope() {
+                return arena.scope();
+            }
+
+            public void close() {
+                isAcquired = false;
+                arena.close();
+            }
         }
     }
 }

@@ -60,7 +60,7 @@ public final class BufferedCodeBuilder
         this.endLabel = new LabelImpl(this, -1);
         this.original = original;
         this.methodInfo = methodInfo;
-        this.maxLocals = Util.maxLocals(methodInfo.methodFlags(), methodInfo.methodType().stringValue());
+        this.maxLocals = Util.maxLocals(methodInfo.methodFlags(), methodInfo.methodTypeSymbol());
         if (original != null)
             this.maxLocals = Math.max(this.maxLocals, original.maxLocals());
 

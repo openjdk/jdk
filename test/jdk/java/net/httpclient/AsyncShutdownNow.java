@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8267140
+ * @bug 8267140 8309120
  * @summary Test HttpClient::shutdownNow. Any running operation will
  *          be aborted and the client should eventually exit.
  *          This test tests shutdownNow, awaitTermination, and
@@ -139,6 +139,8 @@ public class AsyncShutdownNow implements HttpServerAdapters {
         if (message.equals("closed")) return true;
         // exception from selmgr.abort
         if (message.equals("shutdownNow")) return true;
+        // exception from cancelling an HTTP/2 stream
+        if (message.matches("Stream [0-9]+ cancelled")) return true;
         return false;
     }
 

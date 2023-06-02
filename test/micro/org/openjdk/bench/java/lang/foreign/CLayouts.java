@@ -23,8 +23,10 @@
 
 package org.openjdk.bench.java.lang.foreign;
 
+import java.lang.foreign.AddressLayout;
 import java.lang.foreign.Linker;
 import java.lang.foreign.FunctionDescriptor;
+import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 
@@ -66,15 +68,16 @@ public class CLayouts {
     /**
      * The {@code T*} native type.
      */
-    public static final ValueLayout.OfAddress C_POINTER = ValueLayout.ADDRESS.asUnbounded();
+    public static final AddressLayout C_POINTER = ValueLayout.ADDRESS
+            .withTargetLayout(MemoryLayout.sequenceLayout(C_CHAR));
 
     private static Linker LINKER = Linker.nativeLinker();
 
     private static final MethodHandle FREE = LINKER.downcallHandle(
-            LINKER.defaultLookup().find("free").get(), FunctionDescriptor.ofVoid(ValueLayout.ADDRESS));
+            LINKER.defaultLookup().find("free").get(), FunctionDescriptor.ofVoid(C_POINTER));
 
     private static final MethodHandle MALLOC = LINKER.downcallHandle(
-            LINKER.defaultLookup().find("malloc").get(), FunctionDescriptor.of(ValueLayout.ADDRESS.asUnbounded(), ValueLayout.JAVA_LONG));
+            LINKER.defaultLookup().find("malloc").get(), FunctionDescriptor.of(C_POINTER, ValueLayout.JAVA_LONG));
 
     public static void freeMemory(MemorySegment address) {
         try {

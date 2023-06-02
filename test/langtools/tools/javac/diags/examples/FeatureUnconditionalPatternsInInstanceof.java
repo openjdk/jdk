@@ -21,11 +21,9 @@
  * questions.
  */
 
+// key:  compiler.err.feature.not.supported.in.source.plural
 // key: compiler.misc.feature.unconditional.patterns.in.instanceof
-// key: compiler.warn.preview.feature.use.plural
-// options: --enable-preview -source ${jdk.version} -Xlint:-options,preview
-
-import java.util.*;
+// options: -source 20 -Xlint:-options
 
 class FeatureUnconditionalTypesInstanceof {
     String s;

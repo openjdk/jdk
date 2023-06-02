@@ -509,7 +509,7 @@ bool InlineTree::pass_initial_checks(ciMethod* caller_method, int caller_bci, ci
     // An invokedynamic instruction does not have a klass.
     if (call_bc != Bytecodes::_invokedynamic) {
       int index = iter.get_index_u2_cpcache();
-      if (!caller_method->is_klass_loaded(index, true)) {
+      if (!caller_method->is_klass_loaded(index, call_bc, true)) {
         return false;
       }
       // Try to do constant pool resolution if running Xcomp

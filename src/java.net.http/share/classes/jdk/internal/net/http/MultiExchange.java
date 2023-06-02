@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -211,12 +211,16 @@ class MultiExchange<T> implements Cancelable {
         return vers;
     }
 
-    private synchronized void setExchange(Exchange<T> exchange) {
-        if (this.exchange != null && exchange != this.exchange) {
-            this.exchange.released();
-            if (cancelled) exchange.cancel();
+    private void setExchange(Exchange<T> exchange) {
+        Exchange<T> previousExchange;
+        synchronized (this) {
+            previousExchange = this.exchange;
+            this.exchange = exchange;
         }
-        this.exchange = exchange;
+        if (previousExchange != null && exchange != previousExchange) {
+            previousExchange.released();
+        }
+        if (cancelled) exchange.cancel();
     }
 
     public Optional<Duration> remainingConnectTimeout() {
