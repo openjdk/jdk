@@ -129,7 +129,7 @@ Java_GetXSpace_getSpace0
     }
 #else
     int len = (int)(*env)->GetStringLength(env, root);
-    char* chars = (char*)malloc(len*sizeof(char) + 1);
+    char* chars = (char*)malloc((len + 1)*sizeof(char));
     if (chars == NULL) {
         (*env)->ReleaseStringChars(env, root, strchars);
         JNU_ThrowByNameWithLastError(env, "java/lang/RuntimeException",
