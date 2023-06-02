@@ -268,7 +268,7 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
                 if (variadicLayout instanceof ValueLayout vl) {
                     if (requiresVariadicIntPromotion(vl)) {
                         promotedLayouts[i] = JAVA_INT;
-                    } else if (requiresVariadicFloatPromotion(vl)) {
+                    } else if (requiresVariadicDoublePromotion(vl)) {
                         promotedLayouts[i] = JAVA_DOUBLE;
                     }
                 }
@@ -324,11 +324,11 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
                     || vl.carrier() == char.class || vl.carrier() == short.class;
     }
 
-    private static boolean requiresVariadicFloatPromotion(ValueLayout vl) {
+    private static boolean requiresVariadicDoublePromotion(ValueLayout vl) {
         return vl.carrier() == float.class;
     }
 
     private static boolean requiresVariadicPromotion(ValueLayout vl) {
-        return requiresVariadicIntPromotion(vl) || requiresVariadicFloatPromotion(vl);
+        return requiresVariadicIntPromotion(vl) || requiresVariadicDoublePromotion(vl);
     }
 }
