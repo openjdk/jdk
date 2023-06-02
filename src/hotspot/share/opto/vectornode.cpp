@@ -82,9 +82,11 @@ int VectorNode::opcode(int sopc, BasicType bt) {
   case Op_FmaF:
     return (bt == T_FLOAT ? Op_FmaVF : 0);
   case Op_CMoveF:
-    return (bt == T_FLOAT ? Op_CMoveVF : 0);
+    return (bt == T_FLOAT ? Op_VectorBlend : 0);
   case Op_CMoveD:
-    return (bt == T_DOUBLE ? Op_CMoveVD : 0);
+    return (bt == T_DOUBLE ? Op_VectorBlend : 0);
+  case Op_Bool:
+    return Op_VectorMaskCmp;
   case Op_DivF:
     return (bt == T_FLOAT ? Op_DivVF : 0);
   case Op_DivD:
@@ -682,10 +684,6 @@ void VectorNode::vector_operands(Node* n, uint* start, uint* end) {
   case Op_MulAddS2I:
     *start = 1;
     *end   = 3; // 2 vector operands
-    break;
-  case Op_CMoveI:  case Op_CMoveL:  case Op_CMoveF:  case Op_CMoveD:
-    *start = 2;
-    *end   = n->req();
     break;
   case Op_FmaD:
   case Op_FmaF:

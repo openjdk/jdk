@@ -41,6 +41,7 @@
 #include "jfr/recorder/storage/jfrStorageControl.hpp"
 #include "jfr/recorder/stringpool/jfrStringPool.hpp"
 #include "jfr/utilities/jfrAllocation.hpp"
+#include "jfr/utilities/jfrThreadIterator.hpp"
 #include "jfr/utilities/jfrTime.hpp"
 #include "jfr/writers/jfrJavaEventWriter.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
@@ -120,6 +121,30 @@ class JfrRotationLock : public StackObj {
 const Thread* JfrRotationLock::_owner_thread = nullptr;
 const int JfrRotationLock::retry_wait_millis = 10;
 volatile int JfrRotationLock::_lock = 0;
+
+// Reset thread local state used for object allocation sampling.
+class ClearObjectAllocationSampling : public ThreadClosure {
+ public:
+  void do_thread(Thread* t) {
+    assert(t != nullptr, "invariant");
+    t->jfr_thread_local()->clear_last_allocated_bytes();
+  }
+};
+
+template <typename Iterator>
+static inline void iterate(Iterator& it, ClearObjectAllocationSampling& coas) {
+  while (it.has_next()) {
+    coas.do_thread(it.next());
+  }
+}
+
+static void clear_object_allocation_sampling() {
+  ClearObjectAllocationSampling coas;
+  JfrJavaThreadIterator jit;
+  iterate(jit, coas);
+  JfrNonJavaThreadIterator njit;
+  iterate(njit, coas);
+}
 
 template <typename Instance, size_t(Instance::*func)()>
 class Content {
@@ -435,6 +460,7 @@ void JfrRecorderService::clear() {
 }
 
 void JfrRecorderService::pre_safepoint_clear() {
+  clear_object_allocation_sampling();
   _string_pool.clear();
   _storage.clear();
   JfrStackTraceRepository::clear();

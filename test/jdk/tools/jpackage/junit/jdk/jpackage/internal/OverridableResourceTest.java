@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+
+import jdk.internal.util.OperatingSystem;
 import jdk.jpackage.internal.resources.ResourceLocator;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
@@ -198,17 +200,17 @@ public class OverridableResourceTest {
     private final static String DEFAULT_NAME;
     private final static Map<String, String> SUBSTITUTION_DATA;
     static {
-        if (Platform.isWindows()) {
+        if (OperatingSystem.isWindows()) {
             DEFAULT_NAME = "WinLauncher.template";
             SUBSTITUTION_DATA = Map.of("COMPANY_NAME", "Foo9090345");
-        } else if (Platform.isLinux()) {
+        } else if (OperatingSystem.isLinux()) {
             DEFAULT_NAME = "template.control";
             SUBSTITUTION_DATA = Map.of("APPLICATION_PACKAGE", "Package1967");
-        } else if (Platform.isMac()) {
+        } else if (OperatingSystem.isMacOS()) {
             DEFAULT_NAME = "Info-lite.plist.template";
             SUBSTITUTION_DATA = Map.of("DEPLOY_BUNDLE_IDENTIFIER", "12345");
         } else {
-            throw Platform.throwUnknownPlatformError();
+            throw new IllegalArgumentException("Unknown platform: " + OperatingSystem.current());
         }
     }
 

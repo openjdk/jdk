@@ -28,6 +28,7 @@
  * @run testng/othervm --enable-native-access=ALL-UNNAMED TestClassLoaderFindNative
  */
 
+import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SymbolLookup;
 import org.testng.annotations.Test;
@@ -59,5 +60,10 @@ public class TestClassLoaderFindNative {
     public void testVariableSymbolLookup() {
         MemorySegment segment = SymbolLookup.loaderLookup().find("c").get().reinterpret(1);
         assertEquals(segment.get(JAVA_BYTE, 0), 42);
+    }
+
+    @Test
+    void testLoadLibraryBadLookupName() {
+        assertTrue(SymbolLookup.loaderLookup().find("f\u0000foobar").isEmpty());
     }
 }

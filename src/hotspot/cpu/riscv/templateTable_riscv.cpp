@@ -704,7 +704,7 @@ void TemplateTable::index_check(Register array, Register index) {
     __ mv(x11, index);
   }
   Label ok;
-  __ addw(index, index, zr);
+  __ sign_extend(index, index, 32);
   __ bltu(index, length, ok);
   __ mv(x13, array);
   __ mv(t0, Interpreter::_throw_ArrayIndexOutOfBoundsException_entry);
@@ -722,7 +722,7 @@ void TemplateTable::iaload() {
   __ add(x11, x11, arrayOopDesc::base_offset_in_bytes(T_INT) >> 2);
   __ shadd(x10, x11, x10, t0, 2);
   __ access_load_at(T_INT, IN_HEAP | IS_ARRAY, x10, Address(x10), noreg, noreg);
-  __ addw(x10, x10, zr); // signed extended
+  __ sign_extend(x10, x10, 32);
 }
 
 void TemplateTable::laload() {
@@ -1543,7 +1543,7 @@ void TemplateTable::convert() {
       __ sign_extend(x10, x10, 16);
       break;
     case Bytecodes::_l2i:
-      __ addw(x10, x10, zr);
+      __ sign_extend(x10, x10, 32);
       break;
     case Bytecodes::_l2f:
       __ fcvt_s_l(f10, x10);
@@ -1767,7 +1767,7 @@ void TemplateTable::if_0cmp(Condition cc) {
   // assume branch is more often taken than not (loops use backward branches)
   Label not_taken;
 
-  __ addw(x10, x10, zr);
+  __ sign_extend(x10, x10, 32);
   switch (cc) {
     case equal:
       __ bnez(x10, not_taken);
@@ -1801,7 +1801,7 @@ void TemplateTable::if_icmp(Condition cc) {
   // assume branch is more often taken than not (loops use backward branches)
   Label not_taken;
   __ pop_i(x11);
-  __ addw(x10, x10, zr);
+  __ sign_extend(x10, x10, 32);
   switch (cc) {
     case equal:
       __ bne(x11, x10, not_taken);
@@ -2443,7 +2443,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   __ bnez(t0, notInt);
   // itos
   __ access_load_at(T_INT, IN_HEAP, x10, field, noreg, noreg);
-  __ addw(x10, x10, zr); // signed extended
+  __ sign_extend(x10, x10, 32);
   __ push(itos);
   // Rewrite bytecode to be faster
   if (rc == may_rewrite) {
@@ -3043,7 +3043,7 @@ void TemplateTable::fast_accessfield(TosState state) {
       break;
     case Bytecodes::_fast_igetfield:
       __ access_load_at(T_INT, IN_HEAP, x10, field, noreg, noreg);
-      __ addw(x10, x10, zr); // signed extended
+      __ sign_extend(x10, x10, 32);
       break;
     case Bytecodes::_fast_bgetfield:
       __ access_load_at(T_BYTE, IN_HEAP, x10, field, noreg, noreg);
@@ -3090,7 +3090,7 @@ void TemplateTable::fast_xaccess(TosState state) {
     case itos:
       __ add(x10, x10, x11);
       __ access_load_at(T_INT, IN_HEAP, x10, Address(x10, 0), noreg, noreg);
-      __ addw(x10, x10, zr); // signed extended
+      __ sign_extend(x10, x10, 32);
       break;
     case atos:
       __ add(x10, x10, x11);
