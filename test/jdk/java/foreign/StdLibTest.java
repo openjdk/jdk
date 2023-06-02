@@ -134,6 +134,11 @@ public class StdLibTest extends NativeTestHelper {
         assertEquals(found, expected.length());
     }
 
+    @Test
+    void testSystemLibraryBadLookupName() {
+        assertTrue(LINKER.defaultLookup().find("strlen\u0000foobar").isEmpty());
+    }
+
     static class StdLibHelper {
 
         final static MethodHandle strcat = abi.downcallHandle(abi.defaultLookup().find("strcat").get(),
@@ -233,7 +238,7 @@ public class StdLibTest extends NativeTestHelper {
                     C_INT.withName("wday"),
                     C_INT.withName("yday"),
                     C_BOOL.withName("isdst"),
-                    MemoryLayout.paddingLayout(24)
+                    MemoryLayout.paddingLayout(3)
             );
 
             Tm(MemorySegment addr) {

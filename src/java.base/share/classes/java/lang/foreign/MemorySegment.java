@@ -142,7 +142,7 @@ import jdk.internal.vm.annotation.ForceInline;
  *                                                                   MethodType.methodType(long.class, long.class, long.class));
  * intHandle = MethodHandles.filterCoordinates(intHandle, 1,
  *                                             MethodHandles.insertArguments(multiplyExact, 0, 4L));
- * intHandle.get(segment, 3L); // get int element at offset 3 * 4 = 12
+ * int value = (int) intHandle.get(segment, 3L); // get int element at offset 3 * 4 = 12
  * }
  *
  * Alternatively, complex var handles can can be obtained
@@ -152,7 +152,7 @@ import jdk.internal.vm.annotation.ForceInline;
  * {@snippet lang=java :
  * MemorySegment segment = ...
  * VarHandle intHandle = ValueLayout.JAVA_INT.arrayElementVarHandle();
- * intHandle.get(segment, 3L); // get int element at offset 3 * 4 = 12
+ * int value = (int) intHandle.get(segment, 3L); // get int element at offset 3 * 4 = 12
  * }
  *
  * <h2 id="slicing">Slicing memory segments</h2>
@@ -379,7 +379,7 @@ import jdk.internal.vm.annotation.ForceInline;
  * to read a pointer from some memory segment. This can be done via the
  * {@linkplain MemorySegment#get(AddressLayout, long)} access method. This method accepts an
  * {@linkplain AddressLayout address layout} (e.g. {@link ValueLayout#ADDRESS}), the layout of the pointer
- * to be read. For instance on a 64-bit platform, the size of an address layout is 64 bits. The access operation
+ * to be read. For instance on a 64-bit platform, the size of an address layout is 8 bytes. The access operation
  * also accepts an offset, expressed in bytes, which indicates the position (relative to the start of the memory segment)
  * at which the pointer is stored. The access operation returns a zero-length native memory segment, backed by a region
  * of memory whose starting address is the 64-bit value read at the specified offset.
@@ -470,7 +470,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @return the element spliterator for this segment
      * @throws IllegalArgumentException if {@code elementLayout.byteSize() == 0}.
      * @throws IllegalArgumentException if {@code byteSize() % elementLayout.byteSize() != 0}.
-     * @throws IllegalArgumentException if {@code elementLayout.bitSize() % elementLayout.bitAlignment() != 0}.
+     * @throws IllegalArgumentException if {@code elementLayout.byteSize() % elementLayout.byteAlignment() != 0}.
      * @throws IllegalArgumentException if this segment is <a href="MemorySegment.html#segment-alignment">incompatible
      * with the alignment constraint</a> in the provided layout.
      */
@@ -487,7 +487,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @return a sequential {@code Stream} over disjoint slices in this segment.
      * @throws IllegalArgumentException if {@code elementLayout.byteSize() == 0}.
      * @throws IllegalArgumentException if {@code byteSize() % elementLayout.byteSize() != 0}.
-     * @throws IllegalArgumentException if {@code elementLayout.bitSize() % elementLayout.bitAlignment() != 0}.
+     * @throws IllegalArgumentException if {@code elementLayout.byteSize() % elementLayout.byteAlignment() != 0}.
      * @throws IllegalArgumentException if this segment is <a href="MemorySegment.html#segment-alignment">incompatible
      * with the alignment constraint</a> in the provided layout.
      */
@@ -756,8 +756,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * segment. Equivalent to (but likely more efficient than) the following code:
      *
      * {@snippet lang=java :
-     * byteHandle = MemoryLayout.ofSequence(ValueLayout.JAVA_BYTE)
-     *         .varHandle(byte.class, MemoryLayout.PathElement.sequenceElement());
+     * var byteHandle = MemoryLayout.sequenceLayout(ValueLayout.JAVA_BYTE)
+     *         .varHandle(MemoryLayout.PathElement.sequenceElement());
      * for (long l = 0; l < segment.byteSize(); l++) {
      *     byteHandle.set(segment.address(), l, value);
      * }
@@ -785,7 +785,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * <p>
      * Calling this method is equivalent to the following code:
      * {@snippet lang=java :
-     * MemorySegment.copy(src, 0, this, 0, src.byteSize);
+     * MemorySegment.copy(src, 0, this, 0, src.byteSize());
      * }
      * @param src the source segment.
      * @throws IndexOutOfBoundsException if {@code src.byteSize() > this.byteSize()}.

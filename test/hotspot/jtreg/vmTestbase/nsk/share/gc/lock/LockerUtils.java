@@ -25,7 +25,6 @@ package nsk.share.gc.lock;
 
 import nsk.share.TestBug;
 import nsk.share.gc.lock.jni.JNILockers;
-import nsk.share.gc.lock.malloc.MallocLockers;
 import nsk.share.gc.lock.jvmti.JVMTIAllocLockers;
 import nsk.share.gc.lock.jniref.*;
 
@@ -52,8 +51,6 @@ public class LockerUtils {
                         return new JNIRefLockers();
                 else if (id.equals("jniWeakGlobalRef"))
                         return new JNIWeakGlobalRefLockers();
-                else if (id.equals("malloc"))
-                        return new MallocLockers();
                 else if (id.equals("jvmtiAlloc"))
                         return new JVMTIAllocLockers();
                 else

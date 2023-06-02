@@ -1504,12 +1504,6 @@ const bool Matcher::match_rule_supported(int opcode) {
         return false;
       }
       break;
-    case Op_CMoveVF:
-    case Op_CMoveVD:
-      if (UseAVX < 1) { // enabled for AVX only
-        return false;
-      }
-      break;
     case Op_StrIndexOf:
       if (!UseSSE42Intrinsics) {
         return false;
@@ -1740,11 +1734,6 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
         return false; // 512bit vpmullq, vandpd and vxorpd are not available
       }
       break;
-    case Op_CMoveVF:
-      if (vlen != 8) {
-        return false; // implementation limitation (only vcmov8F_reg is present)
-      }
-      break;
     case Op_RotateRightV:
     case Op_RotateLeftV:
       if (bt != T_INT && bt != T_LONG) {
@@ -1770,11 +1759,6 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
     case Op_StoreVectorMasked:
       if (!VM_Version::supports_avx512bw() && (is_subword_type(bt) || UseAVX < 1)) {
         return false;
-      }
-      break;
-    case Op_CMoveVD:
-      if (vlen != 4) {
-        return false; // implementation limitation (only vcmov4D_reg is present)
       }
       break;
     case Op_MaxV:
@@ -2946,29 +2930,6 @@ operand legVecZ() %{
   format %{ %}
   interface(REG_INTER);
 %}
-
-// Comparison Code for FP conditional move
-operand cmpOp_vcmppd() %{
-  match(Bool);
-
-  predicate(n->as_Bool()->_test._test != BoolTest::overflow &&
-            n->as_Bool()->_test._test != BoolTest::no_overflow);
-  format %{ "" %}
-  interface(COND_INTER) %{
-    equal        (0x0, "eq");
-    less         (0x1, "lt");
-    less_equal   (0x2, "le");
-    not_equal    (0xC, "ne");
-    greater_equal(0xD, "ge");
-    greater      (0xE, "gt");
-    //TODO cannot compile (adlc breaks) without two next lines with error:
-    // x86_64.ad(13987) Syntax Error: :In operand cmpOp_vcmppd: Do not support this encode constant: ' %{
-    // equal' for overflow.
-    overflow     (0x20, "o");  // not really supported by the instruction
-    no_overflow  (0x21, "no"); // not really supported by the instruction
-  %}
-%}
-
 
 // INSTRUCTIONS -- Platform independent definitions (same for 32- and 64-bit)
 
@@ -5979,42 +5940,6 @@ instruct vmulD_mem(vec dst, vec src, memory mem) %{
   ins_encode %{
     int vlen_enc = vector_length_encoding(this);
     __ vmulpd($dst$$XMMRegister, $src$$XMMRegister, $mem$$Address, vlen_enc);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct vcmov8F_reg(legVec dst, legVec src1, legVec src2, immI8 cop, cmpOp_vcmppd copnd) %{
-  predicate(Matcher::vector_length(n) == 8);
-  match(Set dst (CMoveVF (Binary copnd cop) (Binary src1 src2)));
-  effect(TEMP dst, USE src1, USE src2);
-  format %{ "cmpps.$copnd  $dst, $src1, $src2  ! vcmovevf, cond=$cop\n\t"
-            "blendvps $dst,$src1,$src2,$dst ! vcmovevf\n\t"
-         %}
-  ins_encode %{
-    assert(UseAVX > 0, "required");
-
-    int vlen_enc = Assembler::AVX_256bit;
-    int cond = (Assembler::Condition)($copnd$$cmpcode);
-    __ vcmpps($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, cond, vlen_enc);
-    __ vblendvps($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, $dst$$XMMRegister, vlen_enc);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct vcmov4D_reg(legVec dst, legVec src1, legVec src2, immI8 cop, cmpOp_vcmppd copnd) %{
-  predicate(Matcher::vector_length(n) == 4);
-  match(Set dst (CMoveVD (Binary copnd cop) (Binary src1 src2)));
-  effect(TEMP dst, USE src1, USE src2);
-  format %{ "cmppd.$copnd  $dst, $src1, $src2  ! vcmovevd, cond=$cop\n\t"
-            "vblendvpd $dst,$src1,$src2,$dst ! vcmovevd\n\t"
-         %}
-  ins_encode %{
-    assert(UseAVX > 0, "required");
-
-    int vlen_enc = Assembler::AVX_256bit;
-    int cond = (Assembler::Condition)($copnd$$cmpcode);
-    __ vcmppd($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, cond, vlen_enc);
-    __ vblendvpd($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, $dst$$XMMRegister, vlen_enc);
   %}
   ins_pipe( pipe_slow );
 %}
