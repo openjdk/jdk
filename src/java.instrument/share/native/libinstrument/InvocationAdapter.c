@@ -147,23 +147,23 @@ DEF_Agent_OnLoad(JavaVM *vm, char *tail, void * reserved) {
     JPLISInitializationError initerror  = JPLIS_INIT_ERROR_NONE;
     jint                     result     = JNI_OK;
     JPLISAgent *             agent      = NULL;
+    char *                   jarfile    = NULL;
+    char *                   options    = NULL;
 
-    initerror = createNewJPLISAgent(vm, &agent);
+    /*
+     * Parse <jarfile>[=options] into jarfile and options
+     */
+    if (parseArgumentTail(tail, &jarfile, &options) != 0) {
+        fprintf(stderr, "-javaagent: memory allocation failure.\n");
+        return JNI_ERR;
+    }
+
+    initerror = createNewJPLISAgent(vm, &agent, jarfile, JNI_FALSE);
     if ( initerror == JPLIS_INIT_ERROR_NONE ) {
         int             oldLen, newLen;
-        char *          jarfile;
-        char *          options;
         jarAttribute*   attributes;
         char *          premainClass;
         char *          bootClassPath;
-
-        /*
-         * Parse <jarfile>[=options] into jarfile and options
-         */
-        if (parseArgumentTail(tail, &jarfile, &options) != 0) {
-            fprintf(stderr, "-javaagent: memory allocation failure.\n");
-            return JNI_ERR;
-        }
 
         /*
          * Agent_OnLoad is specified to provide the agent options
@@ -191,9 +191,6 @@ DEF_Agent_OnLoad(JavaVM *vm, char *tail, void * reserved) {
             freeAttributes(attributes);
             return JNI_ERR;
         }
-
-        /* Save the jarfile name */
-        agent->mJarfile = jarfile;
 
         /*
          * The value of the Premain-Class attribute becomes the agent
@@ -254,10 +251,14 @@ DEF_Agent_OnLoad(JavaVM *vm, char *tail, void * reserved) {
         /*
          * Clean-up
          */
-        if (options != NULL) free(options);
         freeAttributes(attributes);
         free(premainClass);
     }
+
+    if (initerror != JPLIS_INIT_ERROR_NONE) {
+        free(jarfile);
+    }
+    if (options != NULL) free(options);
 
     switch (initerror) {
     case JPLIS_INIT_ERROR_NONE:
@@ -307,6 +308,8 @@ DEF_Agent_OnAttach(JavaVM* vm, char *args, void * reserved) {
     jint                     result     = JNI_OK;
     JPLISAgent *             agent      = NULL;
     JNIEnv *                 jni_env    = NULL;
+    char *                   jarfile    = NULL;
+    char *                   options    = NULL;
 
     /*
      * Need JNIEnv - guaranteed to be called from thread that is already
@@ -315,22 +318,21 @@ DEF_Agent_OnAttach(JavaVM* vm, char *args, void * reserved) {
     result = (*vm)->GetEnv(vm, (void**)&jni_env, JNI_VERSION_1_2);
     jplis_assert(result==JNI_OK);
 
-    initerror = createNewJPLISAgent(vm, &agent);
+    /*
+     * Parse <jarfile>[=options] into jarfile and options
+     */
+    if (parseArgumentTail(args, &jarfile, &options) != 0) {
+        return JNI_ENOMEM;
+    }
+
+    jboolean print_warning = JVM_PrintWarningAtDynamicAgentLoad();
+    initerror = createNewJPLISAgent(vm, &agent, jarfile, print_warning);
     if ( initerror == JPLIS_INIT_ERROR_NONE ) {
         int             oldLen, newLen;
-        char *          jarfile;
-        char *          options;
         jarAttribute*   attributes;
         char *          agentClass;
         char *          bootClassPath;
         jboolean        success;
-
-        /*
-         * Parse <jarfile>[=options] into jarfile and options
-         */
-        if (parseArgumentTail(args, &jarfile, &options) != 0) {
-            return JNI_ENOMEM;
-        }
 
         /*
          * Open the JAR file and parse the manifest
@@ -450,11 +452,14 @@ DEF_Agent_OnAttach(JavaVM* vm, char *args, void * reserved) {
         /*
          * Clean-up
          */
-        free(jarfile);
-        if (options != NULL) free(options);
         free(agentClass);
         freeAttributes(attributes);
     }
+
+    if (initerror != JPLIS_INIT_ERROR_NONE || result != JNI_OK) {
+        free(jarfile);
+    }
+    if (options != NULL) free(options);
 
     return result;
 }
@@ -486,14 +491,15 @@ jint loadAgent(JNIEnv* env, jstring path) {
         return JNI_ERR;
     }
 
-    // create JPLISAgent with JVMTI environment
-    if (createNewJPLISAgent(vm, &agent) != JPLIS_INIT_ERROR_NONE) {
-        return JNI_ERR;
-    }
-
     // get path to JAR file as UTF-8 string
     jarfile = (*env)->GetStringUTFChars(env, path, NULL);
     if (jarfile == NULL) {
+        return JNI_ERR;
+    }
+
+    // create JPLISAgent with JVMTI environment
+    if (createNewJPLISAgent(vm, &agent, jarfile, JNI_FALSE) != JPLIS_INIT_ERROR_NONE) {
+        (*env)->ReleaseStringUTFChars(env, path, jarfile);
         return JNI_ERR;
     }
 
@@ -570,7 +576,7 @@ releaseAndReturn:
     if (attributes != NULL) {
         freeAttributes(attributes);
     }
-    if (jarfile != NULL) {
+    if (result != JNI_OK && jarfile != NULL) {
         (*env)->ReleaseStringUTFChars(env, path, jarfile);
     }
 
@@ -612,8 +618,6 @@ eventHandlerVMInit( jvmtiEnv *      jvmtienv,
         free((void *)agent->mJarfile);
         abortJVM(jnienv, JPLIS_ERRORMESSAGE_CANNOTSTART ", appending to system class path failed");
     }
-    free((void *)agent->mJarfile);
-    agent->mJarfile = NULL;
 
     outstandingException = preserveThrowable(jnienv);
     success = processJavaStart( environment->mAgent, jnienv);
