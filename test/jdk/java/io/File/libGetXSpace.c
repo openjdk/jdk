@@ -83,13 +83,12 @@ Java_GetXSpace_getSpace0
         // use GetDiskSpaceInformationW
         DISK_SPACE_INFORMATION diskSpaceInfo;
         BOOL hres = pfnGetDiskSpaceInformation(path, &diskSpaceInfo);
+        (*env)->ReleaseStringChars(env, root, strchars);
         if (FAILED(hres)) {
-            (*env)->ReleaseStringChars(env, root, strchars);
             JNU_ThrowByNameWithLastError(env, "java/lang/RuntimeException",
                                          "GetDiskSpaceInformationW");
             return totalSpaceIsEstimated;
         }
-        (*env)->ReleaseStringChars(env, root, strchars);
 
         ULONGLONG bytesPerAllocationUnit =
             diskSpaceInfo.SectorsPerAllocationUnit*diskSpaceInfo.BytesPerSector;
@@ -110,14 +109,14 @@ Java_GetXSpace_getSpace0
         ULARGE_INTEGER totalNumberOfBytes;
         ULARGE_INTEGER totalNumberOfFreeBytes;
 
-        if (GetDiskFreeSpaceExW(path, &freeBytesAvailable, &totalNumberOfBytes,
-            &totalNumberOfFreeBytes) == 0) {
-            (*env)->ReleaseStringChars(env, root, strchars);
+        BOOL hres = GetDiskFreeSpaceExW(path, &freeBytesAvailable,
+            &totalNumberOfBytes, &totalNumberOfFreeBytes);
+        (*env)->ReleaseStringChars(env, root, strchars);
+        if (FAILED(hres)) {
             JNU_ThrowByNameWithLastError(env, "java/lang/RuntimeException",
                                          "GetDiskFreeSpaceExW");
             return totalSpaceIsEstimated;
         }
-        (*env)->ReleaseStringChars(env, root, strchars);
 
         // If quotas are in effect, it is impossible to obtain the volume size,
         // so estimate it as free + used = free + (visible - available)
