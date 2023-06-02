@@ -137,6 +137,10 @@ class VM_GC_Operation: public VM_GC_Sync_Operation {
   }
   ~VM_GC_Operation();
 
+  virtual const char* cause() const {
+    return GCCause::to_string(_gc_cause);
+  }
+
   // Acquire the Heap_lock and determine if this VM operation should be executed
   // (i.e. not skipped). Return this result, and also store it in _prologue_succeeded.
   virtual bool doit_prologue();
