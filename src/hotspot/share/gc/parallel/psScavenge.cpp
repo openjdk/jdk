@@ -87,17 +87,9 @@ static void scavenge_roots_work(ParallelRootType::Value root_type, uint worker_i
   assert(ParallelScavengeHeap::heap()->is_gc_active(), "called outside gc");
 
   PSPromotionManager* pm = PSPromotionManager::gc_thread_promotion_manager(worker_id);
-  PSScavengeRootsClosure roots_closure(pm);
   PSPromoteRootsClosure  roots_to_old_closure(pm);
 
   switch (root_type) {
-    case ParallelRootType::class_loader_data:
-      {
-        PSScavengeCLDClosure cld_closure(pm);
-        ClassLoaderDataGraph::cld_do(&cld_closure);
-      }
-      break;
-
     case ParallelRootType::code_cache:
       {
         MarkingCodeBlobClosure code_closure(&roots_to_old_closure, CodeBlobToOopClosure::FixRelocations, false /* keepalive nmethods */);
@@ -330,6 +322,14 @@ public:
       scavenge_roots_work(static_cast<ParallelRootType::Value>(root_type), worker_id);
     }
 
+    {
+      PSPromotionManager* pm = PSPromotionManager::gc_thread_promotion_manager(worker_id);
+      PSScavengeCLDClosure cld_closure(pm);
+      ClassLoaderDataGraph::cld_do(&cld_closure);
+      // Do the real work
+      pm->drain_stacks(false);
+    }
+
     PSThreadRootsTaskClosure closure(worker_id);
     Threads::possibly_parallel_threads_do(true /* is_par */, &closure);
 
@@ -485,6 +485,9 @@ bool PSScavenge::invoke_no_policy() {
 
     // Verify that usage of root_closure didn't copy any objects.
     assert(promotion_manager->stacks_empty(),"stacks should be empty at this point");
+
+    // Need to clear claim bits for the next GC.
+    ClassLoaderDataGraph::clear_claimed_marks();
 
     // Finally, flush the promotion_manager's labs, and deallocate its stacks.
     promotion_failure_occurred = PSPromotionManager::post_scavenge(_gc_tracer);
