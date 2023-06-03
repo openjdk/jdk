@@ -341,7 +341,7 @@ instruct vadd_masked(vReg dst_src1, vReg src2, vRegMask_V0 v0) %{
   match(Set dst_src1 (AddVI (Binary dst_src1 src2) v0));
   match(Set dst_src1 (AddVL (Binary dst_src1 src2) v0));
   ins_cost(VEC_COST);
-  format %{ "vadd_masked $dst_src1, $src2, $v0" %}
+  format %{ "vadd_masked $dst_src1, $dst_src1, $src2, $v0" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ vsetvli_helper(bt, Matcher::vector_length(this));
@@ -356,7 +356,7 @@ instruct vadd_fp_masked(vReg dst_src1, vReg src2, vRegMask_V0 v0) %{
   match(Set dst_src1 (AddVF (Binary dst_src1 src2) v0));
   match(Set dst_src1 (AddVD (Binary dst_src1 src2) v0));
   ins_cost(VEC_COST);
-  format %{ "vadd_fp_masked $dst_src1, $src2, $v0" %}
+  format %{ "vadd_fp_masked $dst_src1, $dst_src1, $src2, $v0" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ vsetvli_helper(bt, Matcher::vector_length(this));
@@ -407,7 +407,7 @@ instruct vsub_masked(vReg dst_src1, vReg src2, vRegMask_V0 v0) %{
   match(Set dst_src1 (SubVI (Binary dst_src1 src2) v0));
   match(Set dst_src1 (SubVL (Binary dst_src1 src2) v0));
   ins_cost(VEC_COST);
-  format %{ "vsub_masked $dst_src1, $src2, $v0" %}
+  format %{ "vsub_masked $dst_src1, $dst_src1, $src2, $v0" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ vsetvli_helper(bt, Matcher::vector_length(this));
@@ -421,7 +421,7 @@ instruct vsub_fp_masked(vReg dst_src1, vReg src2, vRegMask_V0 v0) %{
   match(Set dst_src1 (SubVF (Binary dst_src1 src2) v0));
   match(Set dst_src1 (SubVD (Binary dst_src1 src2) v0));
   ins_cost(VEC_COST);
-  format %{ "vsub_fp_masked $dst_src1, $src2, $v0" %}
+  format %{ "vsub_fp_masked $dst_src1, $dst_src1, $src2, $v0" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ vsetvli_helper(bt, Matcher::vector_length(this));
@@ -452,7 +452,7 @@ instruct vand(vReg dst, vReg src1, vReg src2) %{
 instruct vand_masked(vReg dst_src1, vReg src2, vRegMask_V0 v0) %{
   match(Set dst_src1 (AndV (Binary dst_src1 src2) v0));
   ins_cost(VEC_COST);
-  format %{ "vand_masked $dst_src1, $src2, $v0" %}
+  format %{ "vand_masked $dst_src1, $dst_src1, $src2, $v0" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ vsetvli_helper(bt, Matcher::vector_length(this));
@@ -484,7 +484,7 @@ instruct vor(vReg dst, vReg src1, vReg src2) %{
 instruct vor_masked(vReg dst_src1, vReg src2, vRegMask_V0 v0) %{
   match(Set dst_src1 (OrV (Binary dst_src1 src2) v0));
   ins_cost(VEC_COST);
-  format %{ "vor_masked $dst_src1, $src2, $v0" %}
+  format %{ "vor_masked $dst_src1, $dst_src1, $src2, $v0" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ vsetvli_helper(bt, Matcher::vector_length(this));
@@ -516,7 +516,7 @@ instruct vxor(vReg dst, vReg src1, vReg src2) %{
 instruct vxor_masked(vReg dst_src1, vReg src2, vRegMask_V0 v0) %{
   match(Set dst_src1 (XorV (Binary dst_src1 src2) v0));
   ins_cost(VEC_COST);
-  format %{ "vxor_masked $dst_src1, $src2, $v0" %}
+  format %{ "vxor_masked $dst_src1, $dst_src1, $src2, $v0" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ vsetvli_helper(bt, Matcher::vector_length(this));
@@ -550,7 +550,7 @@ instruct vdiv_fp_masked(vReg dst_src1, vReg src2, vRegMask_V0 v0) %{
   match(Set dst_src1 (DivVF (Binary dst_src1 src2) v0));
   match(Set dst_src1 (DivVD (Binary dst_src1 src2) v0));
   ins_cost(VEC_COST);
-  format %{ "vdiv_fp_masked $dst_src1, $src2, $v0" %}
+  format %{ "vdiv_fp_masked $dst_src1, $dst_src1, $src2, $v0" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ vsetvli_helper(bt, Matcher::vector_length(this));
@@ -753,7 +753,7 @@ instruct vfmla(vReg dst_src1, vReg src2, vReg src3) %{
   match(Set dst_src1 (FmaVF dst_src1 (Binary src2 src3)));
   match(Set dst_src1 (FmaVD dst_src1 (Binary src2 src3)));
   ins_cost(VEC_COST);
-  format %{ "vfmla $dst_src1, $src2, $src3" %}
+  format %{ "vfmla $dst_src1, $dst_src1, $src2, $src3" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ vsetvli_helper(bt, Matcher::vector_length(this));
@@ -770,7 +770,7 @@ instruct vfmadd_masked(vReg dst_src1, vReg src2, vReg src3, vRegMask_V0 v0) %{
   predicate(UseFMA);
   match(Set dst_src1 (FmaVF (Binary dst_src1 src2) (Binary src3 v0)));
   match(Set dst_src1 (FmaVD (Binary dst_src1 src2) (Binary src3 v0)));
-  format %{ "vfmadd_masked $dst_src1, $src2, $src3, $v0" %}
+  format %{ "vfmadd_masked $dst_src1, $dst_src1, $src2, $src3, $v0" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ vsetvli_helper(bt, Matcher::vector_length(this));
@@ -789,7 +789,7 @@ instruct vfmlsF(vReg dst_src1, vReg src2, vReg src3) %{
   match(Set dst_src1 (FmaVF dst_src1 (Binary (NegVF src2) src3)));
   match(Set dst_src1 (FmaVF dst_src1 (Binary src2 (NegVF src3))));
   ins_cost(VEC_COST);
-  format %{ "vfmlsF $dst_src1, $src2, $src3" %}
+  format %{ "vfmlsF $dst_src1, $dst_src1, $src2, $src3" %}
   ins_encode %{
     __ vsetvli_helper(T_FLOAT, Matcher::vector_length(this));
     __ vfnmsac_vv(as_VectorRegister($dst_src1$$reg),
@@ -805,7 +805,7 @@ instruct vfmlsD(vReg dst_src1, vReg src2, vReg src3) %{
   match(Set dst_src1 (FmaVD dst_src1 (Binary (NegVD src2) src3)));
   match(Set dst_src1 (FmaVD dst_src1 (Binary src2 (NegVD src3))));
   ins_cost(VEC_COST);
-  format %{ "vfmlsD $dst_src1, $src2, $src3" %}
+  format %{ "vfmlsD $dst_src1, $dst_src1, $src2, $src3" %}
   ins_encode %{
     __ vsetvli_helper(T_DOUBLE, Matcher::vector_length(this));
     __ vfnmsac_vv(as_VectorRegister($dst_src1$$reg),
@@ -821,7 +821,7 @@ instruct vfnmsub_masked(vReg dst_src1, vReg src2, vReg src3, vRegMask_V0 v0) %{
   predicate(UseFMA);
   match(Set dst_src1 (FmaVF (Binary dst_src1 (NegVF src2)) (Binary src3 v0)));
   match(Set dst_src1 (FmaVD (Binary dst_src1 (NegVD src2)) (Binary src3 v0)));
-  format %{ "vfnmsub_masked $dst_src1, $src2, $src3, $v0" %}
+  format %{ "vfnmsub_masked $dst_src1, $dst_src1, $src2, $src3, $v0" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ vsetvli_helper(bt, Matcher::vector_length(this));
@@ -840,7 +840,7 @@ instruct vfnmlaF(vReg dst_src1, vReg src2, vReg src3) %{
   match(Set dst_src1 (FmaVF (NegVF dst_src1) (Binary (NegVF src2) src3)));
   match(Set dst_src1 (FmaVF (NegVF dst_src1) (Binary src2 (NegVF src3))));
   ins_cost(VEC_COST);
-  format %{ "vfnmlaF $dst_src1, $src2, $src3" %}
+  format %{ "vfnmlaF $dst_src1, $dst_src1, $src2, $src3" %}
   ins_encode %{
     __ vsetvli_helper(T_FLOAT, Matcher::vector_length(this));
     __ vfnmacc_vv(as_VectorRegister($dst_src1$$reg),
@@ -856,7 +856,7 @@ instruct vfnmlaD(vReg dst_src1, vReg src2, vReg src3) %{
   match(Set dst_src1 (FmaVD (NegVD dst_src1) (Binary (NegVD src2) src3)));
   match(Set dst_src1 (FmaVD (NegVD dst_src1) (Binary src2 (NegVD src3))));
   ins_cost(VEC_COST);
-  format %{ "vfnmlaD $dst_src1, $src2, $src3" %}
+  format %{ "vfnmlaD $dst_src1, $dst_src1, $src2, $src3" %}
   ins_encode %{
     __ vsetvli_helper(T_DOUBLE, Matcher::vector_length(this));
     __ vfnmacc_vv(as_VectorRegister($dst_src1$$reg),
@@ -872,7 +872,7 @@ instruct vfnmadd_masked(vReg dst_src1, vReg src2, vReg src3, vRegMask_V0 v0) %{
   predicate(UseFMA);
   match(Set dst_src1 (FmaVF (Binary dst_src1 (NegVF src2)) (Binary (NegVF src3) v0)));
   match(Set dst_src1 (FmaVD (Binary dst_src1 (NegVD src2)) (Binary (NegVD src3) v0)));
-  format %{ "vfnmadd_masked $dst_src1, $src2, $src3, $v0" %}
+  format %{ "vfnmadd_masked $dst_src1, $dst_src1, $src2, $src3, $v0" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ vsetvli_helper(bt, Matcher::vector_length(this));
@@ -889,7 +889,7 @@ instruct vfnmlsF(vReg dst_src1, vReg src2, vReg src3) %{
   predicate(UseFMA);
   match(Set dst_src1 (FmaVF (NegVF dst_src1) (Binary src2 src3)));
   ins_cost(VEC_COST);
-  format %{ "vfnmlsF $dst_src1, $src2, $src3" %}
+  format %{ "vfnmlsF $dst_src1, $dst_src1, $src2, $src3" %}
   ins_encode %{
     __ vsetvli_helper(T_FLOAT, Matcher::vector_length(this));
     __ vfmsac_vv(as_VectorRegister($dst_src1$$reg),
@@ -903,7 +903,7 @@ instruct vfnmlsD(vReg dst_src1, vReg src2, vReg src3) %{
   predicate(UseFMA);
   match(Set dst_src1 (FmaVD (NegVD dst_src1) (Binary src2 src3)));
   ins_cost(VEC_COST);
-  format %{ "vfnmlsD $dst_src1, $src2, $src3" %}
+  format %{ "vfnmlsD $dst_src1, $dst_src1, $src2, $src3" %}
   ins_encode %{
     __ vsetvli_helper(T_DOUBLE, Matcher::vector_length(this));
     __ vfmsac_vv(as_VectorRegister($dst_src1$$reg),
@@ -919,7 +919,7 @@ instruct vfmsub_masked(vReg dst_src1, vReg src2, vReg src3, vRegMask_V0 v0) %{
   predicate(UseFMA);
   match(Set dst_src1 (FmaVF (Binary dst_src1 src2) (Binary (NegVF src3) v0)));
   match(Set dst_src1 (FmaVD (Binary dst_src1 src2) (Binary (NegVD src3) v0)));
-  format %{ "vfmsub_masked $dst_src1, $src2, $src3, $v0" %}
+  format %{ "vfmsub_masked $dst_src1, $dst_src1, $src2, $src3, $v0" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ vsetvli_helper(bt, Matcher::vector_length(this));
@@ -938,7 +938,7 @@ instruct vmla(vReg dst_src1, vReg src2, vReg src3) %{
   match(Set dst_src1 (AddVI dst_src1 (MulVI src2 src3)));
   match(Set dst_src1 (AddVL dst_src1 (MulVL src2 src3)));
   ins_cost(VEC_COST);
-  format %{ "vmla $dst_src1, src2, src3" %}
+  format %{ "vmla $dst_src1, $dst_src1, src2, src3" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ vsetvli_helper(bt, Matcher::vector_length(this));
@@ -955,7 +955,7 @@ instruct vmla_masked(vReg dst_src1, vReg src2, vReg src3, vRegMask_V0 v0) %{
   match(Set dst_src1 (AddVS (Binary dst_src1 (MulVS src2 src3)) v0));
   match(Set dst_src1 (AddVI (Binary dst_src1 (MulVI src2 src3)) v0));
   match(Set dst_src1 (AddVL (Binary dst_src1 (MulVL src2 src3)) v0));
-  format %{ "vmla_masked $dst_src1, $src2, $src3, $v0" %}
+  format %{ "vmla_masked $dst_src1, $dst_src1, $src2, $src3, $v0" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ vsetvli_helper(bt, Matcher::vector_length(this));
@@ -974,7 +974,7 @@ instruct vmls(vReg dst_src1, vReg src2, vReg src3) %{
   match(Set dst_src1 (SubVI dst_src1 (MulVI src2 src3)));
   match(Set dst_src1 (SubVL dst_src1 (MulVL src2 src3)));
   ins_cost(VEC_COST);
-  format %{ "vmls $dst_src1, src2, src3" %}
+  format %{ "vmls $dst_src1, $dst_src1, src2, src3" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ vsetvli_helper(bt, Matcher::vector_length(this));
@@ -991,7 +991,7 @@ instruct vmls_masked(vReg dst_src1, vReg src2, vReg src3, vRegMask_V0 v0) %{
   match(Set dst_src1 (SubVS (Binary dst_src1 (MulVS src2 src3)) v0));
   match(Set dst_src1 (SubVI (Binary dst_src1 (MulVI src2 src3)) v0));
   match(Set dst_src1 (SubVL (Binary dst_src1 (MulVL src2 src3)) v0));
-  format %{ "vmls_masked $dst_src1, $src2, $src3, $v0" %}
+  format %{ "vmls_masked $dst_src1, $dst_src1, $src2, $src3, $v0" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ vsetvli_helper(bt, Matcher::vector_length(this));
@@ -1041,7 +1041,7 @@ instruct vmul_masked(vReg dst_src1, vReg src2, vRegMask_V0 v0) %{
   match(Set dst_src1 (MulVI (Binary dst_src1 src2) v0));
   match(Set dst_src1 (MulVL (Binary dst_src1 src2) v0));
   ins_cost(VEC_COST);
-  format %{ "vmul_masked $dst_src1, $src2, $v0" %}
+  format %{ "vmul_masked $dst_src1, $dst_src1, $src2, $v0" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ vsetvli_helper(bt, Matcher::vector_length(this));
@@ -1055,7 +1055,7 @@ instruct vmul_fp_masked(vReg dst_src1, vReg src2, vRegMask_V0 v0) %{
   match(Set dst_src1 (MulVF (Binary dst_src1 src2) v0));
   match(Set dst_src1 (MulVD (Binary dst_src1 src2) v0));
   ins_cost(VEC_COST);
-  format %{ "vmul_fp_masked $dst_src1, $src2, $v0" %}
+  format %{ "vmul_fp_masked $dst_src1, $dst_src1, $src2, $v0" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ vsetvli_helper(bt, Matcher::vector_length(this));
@@ -1375,7 +1375,7 @@ instruct reduce_addF(fRegF src1_dst, vReg src2, vReg tmp) %{
   match(Set src1_dst (AddReductionVF src1_dst src2));
   effect(TEMP tmp);
   ins_cost(VEC_COST);
-  format %{ "reduce_addF $src1_dst, $src2\t# KILL $tmp" %}
+  format %{ "reduce_addF $src1_dst, $src1_dst, $src2\t# KILL $tmp" %}
   ins_encode %{
     __ vsetvli_helper(T_FLOAT, Matcher::vector_length(this, $src2));
     __ vfmv_s_f(as_VectorRegister($tmp$$reg), $src1_dst$$FloatRegister);
@@ -1390,7 +1390,7 @@ instruct reduce_addD(fRegD src1_dst, vReg src2, vReg tmp) %{
   match(Set src1_dst (AddReductionVD src1_dst src2));
   effect(TEMP tmp);
   ins_cost(VEC_COST);
-  format %{ "reduce_addD $src1_dst, $src2\t# KILL $tmp" %}
+  format %{ "reduce_addD $src1_dst, $src1_dst, $src2\t# KILL $tmp" %}
   ins_encode %{
     __ vsetvli_helper(T_DOUBLE, Matcher::vector_length(this, $src2));
     __ vfmv_s_f(as_VectorRegister($tmp$$reg), $src1_dst$$FloatRegister);
@@ -1441,7 +1441,7 @@ instruct reduce_addF_masked(fRegF src1_dst, vReg src2, vRegMask_V0 v0, vReg tmp)
   match(Set src1_dst (AddReductionVF (Binary src1_dst src2) v0));
   effect(TEMP tmp);
   ins_cost(VEC_COST);
-  format %{ "reduce_addF_masked $src1_dst, $src2, $v0\t# KILL $tmp" %}
+  format %{ "reduce_addF_masked $src1_dst, $src1_dst, $src2, $v0\t# KILL $tmp" %}
   ins_encode %{
     __ vsetvli_helper(T_FLOAT, Matcher::vector_length(this, $src2));
     __ vfmv_s_f(as_VectorRegister($tmp$$reg), $src1_dst$$FloatRegister);
@@ -1456,7 +1456,7 @@ instruct reduce_addD_masked(fRegD src1_dst, vReg src2, vRegMask_V0 v0, vReg tmp)
   match(Set src1_dst (AddReductionVD (Binary src1_dst src2) v0));
   effect(TEMP tmp);
   ins_cost(VEC_COST);
-  format %{ "reduce_addD_masked $src1_dst, $src2, $v0\t# KILL $tmp" %}
+  format %{ "reduce_addD_masked $src1_dst, $src1_dst, $src2, $v0\t# KILL $tmp" %}
   ins_encode %{
     __ vsetvli_helper(T_DOUBLE, Matcher::vector_length(this, $src2));
     __ vfmv_s_f(as_VectorRegister($tmp$$reg), $src1_dst$$FloatRegister);
@@ -2648,7 +2648,7 @@ instruct vsqrt_fp_masked(vReg dst_src, vRegMask_V0 v0) %{
   match(Set dst_src (SqrtVF dst_src v0));
   match(Set dst_src (SqrtVD dst_src v0));
   ins_cost(VEC_COST);
-  format %{ "vsqrt_fp_masked $dst_src, $v0" %}
+  format %{ "vsqrt_fp_masked $dst_src, $dst_src, $v0" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ vsetvli_helper(bt, Matcher::vector_length(this));
@@ -3100,7 +3100,7 @@ instruct vmask_xor(vRegMask dst, vRegMask src1, vRegMask src2) %{
 instruct vmaskcast(vRegMask dst_src) %{
   match(Set dst_src (VectorMaskCast dst_src));
   ins_cost(0);
-  format %{ "vmaskcast $dst_src\t# do nothing" %}
+  format %{ "vmaskcast $dst_src, $dst_src\t# do nothing" %}
   ins_encode(/* empty encoding */);
   ins_pipe(pipe_class_empty);
 %}
@@ -3411,7 +3411,7 @@ instruct reinterpret(vReg dst_src) %{
   predicate(Matcher::vector_length_in_bytes(n) == Matcher::vector_length_in_bytes(n->in(1)));
   match(Set dst_src (VectorReinterpret dst_src));
   ins_cost(0);
-  format %{ "# reinterpret $dst_src\t# do nothing" %}
+  format %{ "# reinterpret $dst_src, $dst_src\t# do nothing" %}
   ins_encode %{
     // empty
   %}
@@ -3446,7 +3446,7 @@ instruct vmask_reinterpret_same_esize(vRegMask dst_src) %{
             Matcher::vector_length_in_bytes(n) == Matcher::vector_length_in_bytes(n->in(1)));
   match(Set dst_src (VectorReinterpret dst_src));
   ins_cost(0);
-  format %{ "vmask_reinterpret_same_esize $dst_src\t# do nothing" %}
+  format %{ "vmask_reinterpret_same_esize $dst_src, $dst_src\t# do nothing" %}
   ins_encode(/* empty encoding */);
   ins_pipe(pipe_class_empty);
 %}
