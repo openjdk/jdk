@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -139,7 +139,7 @@ public class ToolOptions {
     private boolean verbose;
 
     /**
-     * Argument for command-line option {@code -xclasses}.
+     * Argument for command-line option {@code -Xclasses}.
      * If true, names on the command line that would normally be
      * treated as package names are treated as class names instead.
      */
@@ -793,7 +793,7 @@ public class ToolOptions {
     }
 
     /**
-     * Argument for command-line option {@code -xclasses}.
+     * Argument for command-line option {@code -Xclasses}.
      * If true, names on the command line that would normally be
      * treated as package names are treated as class names instead.
      */

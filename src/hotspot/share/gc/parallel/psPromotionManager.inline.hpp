@@ -317,7 +317,7 @@ inline void PSPromotionManager::copy_and_push_safe_barrier(T* p) {
 
   if (!PSScavenge::is_obj_in_young((HeapWord*)p) &&
        PSScavenge::is_obj_in_young(new_obj)) {
-    PSScavenge::card_table()->inline_write_ref_field_gc(p, new_obj);
+    PSScavenge::card_table()->inline_write_ref_field_gc(p);
   }
 }
 

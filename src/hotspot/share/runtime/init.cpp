@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "code/icBuffer.hpp"
 #include "compiler/compiler_globals.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "gc/shared/gcHeapSummary.hpp"
 #include "interpreter/bytecodes.hpp"
 #include "logging/logAsyncWriter.hpp"
 #include "memory/universe.hpp"
@@ -43,6 +44,7 @@
 #include "runtime/init.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "sanitizers/leak.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_JVMCI
@@ -64,16 +66,18 @@ void classLoader_init1();
 void compilationPolicy_init();
 void codeCache_init();
 void VM_Version_init();
-void stubRoutines_init1();
-void stubRoutines_initContinuationStubs();
-jint universe_init();          // depends on codeCache_init and stubRoutines_init
+void initial_stubs_init();
+
+jint universe_init();           // depends on codeCache_init and initial_stubs_init
 // depends on universe_init, must be before interpreter_init (currently only on SPARC)
 void gc_barrier_stubs_init();
-void interpreter_init_stub();  // before any methods loaded
-void interpreter_init_code();  // after methods loaded, but before they are linked
+void continuations_init();      // depends on flags (UseCompressedOops) and barrier sets
+void continuation_stubs_init(); // depend on continuations_init
+void interpreter_init_stub();   // before any methods loaded
+void interpreter_init_code();   // after methods loaded, but before they are linked
 void accessFlags_init();
 void InterfaceSupport_init();
-void universe2_init();  // dependent on codeCache_init and stubRoutines_init, loads primordial classes
+void universe2_init();  // dependent on codeCache_init and initial_stubs_init, loads primordial classes
 void referenceProcessor_init();
 void jni_handles_init();
 void vmStructs_init() NOT_DEBUG_RETURN;
@@ -87,10 +91,9 @@ void dependencies_init();
 
 // Initialization after compiler initialization
 bool universe_post_init();  // must happen after compiler_init
-void javaClasses_init();  // must happen after vtable initialization
-void stubRoutines_init2(); // note: StubRoutines need 2-phase init
-
-void continuations_init(); // depends on flags (UseCompressedOops) and barrier sets
+void javaClasses_init();    // must happen after vtable initialization
+void compiler_stubs_init(bool in_compiler_thread); // compiler's StubRoutines stubs
+void final_stubs_init();    // final StubRoutines stubs
 
 // Do not disable thread-local-storage, as it is important for some
 // JNI/JVM/JVMTI functions and signal handlers to work properly
@@ -117,24 +120,36 @@ jint init_globals() {
   compilationPolicy_init();
   codeCache_init();
   VM_Version_init();              // depends on codeCache_init for emitting code
-  stubRoutines_init1();
+  initial_stubs_init();
   jint status = universe_init();  // dependent on codeCache_init and
-                                  // stubRoutines_init1 and metaspace_init.
+                                  // initial_stubs_init and metaspace_init.
   if (status != JNI_OK)
     return status;
 
+#ifdef LEAK_SANITIZER
+  {
+    // Register the Java heap with LSan.
+    VirtualSpaceSummary summary = Universe::heap()->create_heap_space_summary();
+    LSAN_REGISTER_ROOT_REGION(summary.start(), summary.reserved_size());
+  }
+#endif // LEAK_SANITIZER
+
   AsyncLogWriter::initialize();
-  gc_barrier_stubs_init();  // depends on universe_init, must be before interpreter_init
-  continuations_init(); // must precede continuation stub generation
-  stubRoutines_initContinuationStubs(); // depends on continuations_init
-  interpreter_init_stub();  // before methods get loaded
+  gc_barrier_stubs_init();   // depends on universe_init, must be before interpreter_init
+  continuations_init();      // must precede continuation stub generation
+  continuation_stubs_init(); // depends on continuations_init
+  interpreter_init_stub();   // before methods get loaded
   accessFlags_init();
   InterfaceSupport_init();
-  VMRegImpl::set_regName(); // need this before generate_stubs (for printing oop maps).
+  VMRegImpl::set_regName();  // need this before generate_stubs (for printing oop maps).
   SharedRuntime::generate_stubs();
-  universe2_init();  // dependent on codeCache_init and stubRoutines_init1
-  javaClasses_init();// must happen after vtable initialization, before referenceProcessor_init
-  interpreter_init_code();  // after javaClasses_init and before any method gets linked
+  return JNI_OK;
+}
+
+jint init_globals2() {
+  universe2_init();          // dependent on codeCache_init and initial_stubs_init
+  javaClasses_init();        // must happen after vtable initialization, before referenceProcessor_init
+  interpreter_init_code();   // after javaClasses_init and before any method gets linked
   referenceProcessor_init();
   jni_handles_init();
 #if INCLUDE_VM_STRUCTS
@@ -159,7 +174,8 @@ jint init_globals() {
   if (!universe_post_init()) {
     return JNI_ERR;
   }
-  stubRoutines_init2(); // note: StubRoutines need 2-phase init
+  compiler_stubs_init(false /* in_compiler_thread */); // compiler's intrinsics stubs
+  final_stubs_init();    // final StubRoutines stubs
   MethodHandles::generate_adapters();
 
   // All the flags that get adjusted by VM_Version_init and os::init_2
@@ -183,6 +199,13 @@ void exit_globals() {
       StringTable::dump(tty);
     }
     ostream_exit();
+#ifdef LEAK_SANITIZER
+    {
+      // Unregister the Java heap with LSan.
+      VirtualSpaceSummary summary = Universe::heap()->create_heap_space_summary();
+      LSAN_UNREGISTER_ROOT_REGION(summary.start(), summary.reserved_size());
+    }
+#endif // LEAK_SANITIZER
   }
 }
 

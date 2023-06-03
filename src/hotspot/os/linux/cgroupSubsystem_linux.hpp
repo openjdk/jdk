@@ -159,8 +159,10 @@ template <typename T> int subsystem_file_line_contents(CgroupController* c,
 }
 PRAGMA_DIAG_POP
 
+// log_fmt can be different than scan_fmt. For example
+// cpu_period() for cgv2 uses log_fmt='%d' and scan_fmt='%*s %d'
 #define GET_CONTAINER_INFO(return_type, subsystem, filename,              \
-                           logstring, scan_fmt, variable)                 \
+                           logstring, log_fmt, scan_fmt, variable)        \
   return_type variable;                                                   \
 {                                                                         \
   int err;                                                                \
@@ -170,11 +172,11 @@ PRAGMA_DIAG_POP
                                      scan_fmt,                            \
                                      &variable);                          \
   if (err != 0) {                                                         \
-    log_trace(os, container)(logstring, (return_type) OSCONTAINER_ERROR); \
+    log_trace(os, container)(logstring "%d", OSCONTAINER_ERROR);          \
     return (return_type) OSCONTAINER_ERROR;                               \
   }                                                                       \
                                                                           \
-  log_trace(os, container)(logstring, variable);                          \
+  log_trace(os, container)(logstring log_fmt, variable);                  \
 }
 
 #define GET_CONTAINER_INFO_CPTR(return_type, subsystem, filename,         \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -139,8 +139,8 @@ static Assembler::Condition j_not(TemplateTable::Condition cc) {
 
 
 // Miscellaneous helper routines
-// Store an oop (or NULL) at the Address described by obj.
-// If val == noreg this means store a NULL
+// Store an oop (or null) at the Address described by obj.
+// If val == noreg this means store a null
 static void do_oop_store(InterpreterMacroAssembler* _masm,
                          Address dst,
                          Register val,
@@ -414,7 +414,7 @@ void TemplateTable::fast_aldc(LdcType type)
     __ resolve_oop_handle(tmp, r5, rscratch2);
     __ cmpoop(result, tmp);
     __ br(Assembler::NE, notNull);
-    __ mov(result, 0);  // NULL object reference
+    __ mov(result, 0);  // null object reference
     __ bind(notNull);
   }
 
@@ -730,8 +730,6 @@ void TemplateTable::wide_aload()
 void TemplateTable::index_check(Register array, Register index)
 {
   // destroys r1, rscratch1
-  // check array
-  __ null_check(array, arrayOopDesc::length_offset_in_bytes());
   // sign extend index for use by indexed load
   // __ movl2ptr(index, index);
   // check index
@@ -1111,7 +1109,7 @@ void TemplateTable::aastore() {
   index_check(r3, r2);     // kills r1
   __ add(r4, r2, arrayOopDesc::base_offset_in_bytes(T_OBJECT) >> LogBytesPerHeapOop);
 
-  // do array store check - check for NULL value first
+  // do array store check - check for null value first
   __ cbz(r0, is_null);
 
   // Move subklass into r1
@@ -1139,11 +1137,11 @@ void TemplateTable::aastore() {
   do_oop_store(_masm, element_address, r0, IS_ARRAY);
   __ b(done);
 
-  // Have a NULL in r0, r3=array, r2=index.  Store NULL at ary[idx]
+  // Have a null in r0, r3=array, r2=index.  Store null at ary[idx]
   __ bind(is_null);
   __ profile_null_seen(r2);
 
-  // Store a NULL
+  // Store a null
   do_oop_store(_masm, element_address, noreg, IS_ARRAY);
 
   // Pop stack arguments
@@ -1749,12 +1747,6 @@ void TemplateTable::float_cmp(bool is_float, int unordered_result)
 
 void TemplateTable::branch(bool is_jsr, bool is_wide)
 {
-  // We might be moving to a safepoint.  The thread which calls
-  // Interpreter::notice_safepoints() will effectively flush its cache
-  // when it makes a system call, but we need to do something to
-  // ensure that we see the changed dispatch table.
-  __ membar(MacroAssembler::LoadLoad);
-
   __ profile_taken_branch(r0, r1);
   const ByteSize be_offset = MethodCounters::backedge_counter_offset() +
                              InvocationCounter::counter_offset();
@@ -1872,7 +1864,7 @@ void TemplateTable::branch(bool is_jsr, bool is_wide)
                r2);
     __ load_unsigned_byte(r1, Address(rbcp, 0));  // restore target bytecode
 
-    // r0: osr nmethod (osr ok) or NULL (osr not possible)
+    // r0: osr nmethod (osr ok) or null (osr not possible)
     // w1: target bytecode
     // r2: scratch
     __ cbz(r0, dispatch);     // test result -- no osr if null
@@ -1970,12 +1962,6 @@ void TemplateTable::if_acmp(Condition cc)
 
 void TemplateTable::ret() {
   transition(vtos, vtos);
-  // We might be moving to a safepoint.  The thread which calls
-  // Interpreter::notice_safepoints() will effectively flush its cache
-  // when it makes a system call, but we need to do something to
-  // ensure that we see the changed dispatch table.
-  __ membar(MacroAssembler::LoadLoad);
-
   locals_index(r1);
   __ ldr(r1, aaddress(r1)); // get return bci, compute return bcp
   __ profile_ret(r1, r2);
@@ -2288,7 +2274,7 @@ void TemplateTable::resolve_cache_and_index(int byte_no,
   if (VM_Version::supports_fast_class_init_checks() && bytecode() == Bytecodes::_invokestatic) {
     __ load_resolved_method_at_index(byte_no, temp, Rcache);
     __ load_method_holder(temp, temp);
-    __ clinit_barrier(temp, rscratch1, NULL, &clinit_barrier_slow);
+    __ clinit_barrier(temp, rscratch1, nullptr, &clinit_barrier_slow);
   }
 }
 
@@ -2320,13 +2306,82 @@ void TemplateTable::load_field_cp_cache_entry(Register obj,
   }
 }
 
+// The rmethod register is input and overwritten to be the adapter method for the
+// indy call. Link Register (lr) is set to the return address for the adapter and
+// an appendix may be pushed to the stack. Registers r0-r3 are clobbered
+void TemplateTable::load_invokedynamic_entry(Register method) {
+  // setup registers
+  const Register appendix = r0;
+  const Register cache = r2;
+  const Register index = r3;
+  assert_different_registers(method, appendix, cache, index, rcpool);
+
+  __ save_bcp();
+
+  Label resolved;
+
+  __ load_resolved_indy_entry(cache, index);
+  // Load-acquire the adapter method to match store-release in ResolvedIndyEntry::fill_in()
+  __ lea(method, Address(cache, in_bytes(ResolvedIndyEntry::method_offset())));
+  __ ldar(method, method);
+
+  // Compare the method to zero
+  __ cbnz(method, resolved);
+
+  Bytecodes::Code code = bytecode();
+
+  // Call to the interpreter runtime to resolve invokedynamic
+  address entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_from_cache);
+  __ mov(method, code); // this is essentially Bytecodes::_invokedynamic
+  __ call_VM(noreg, entry, method);
+  // Update registers with resolved info
+  __ load_resolved_indy_entry(cache, index);
+  // Load-acquire the adapter method to match store-release in ResolvedIndyEntry::fill_in()
+  __ lea(method, Address(cache, in_bytes(ResolvedIndyEntry::method_offset())));
+  __ ldar(method, method);
+
+#ifdef ASSERT
+  __ cbnz(method, resolved);
+  __ stop("Should be resolved by now");
+#endif // ASSERT
+  __ bind(resolved);
+
+  Label L_no_push;
+  // Check if there is an appendix
+  __ load_unsigned_byte(index, Address(cache, in_bytes(ResolvedIndyEntry::flags_offset())));
+  __ tbz(index, ResolvedIndyEntry::has_appendix_shift, L_no_push);
+
+  // Get appendix
+  __ load_unsigned_short(index, Address(cache, in_bytes(ResolvedIndyEntry::resolved_references_index_offset())));
+  // Push the appendix as a trailing parameter
+  // since the parameter_size includes it.
+  __ push(method);
+  __ mov(method, index);
+  __ load_resolved_reference_at_index(appendix, method);
+  __ verify_oop(appendix);
+  __ pop(method);
+  __ push(appendix);  // push appendix (MethodType, CallSite, etc.)
+  __ bind(L_no_push);
+
+  // compute return type
+  __ load_unsigned_byte(index, Address(cache, in_bytes(ResolvedIndyEntry::result_type_offset())));
+  // load return address
+  // Return address is loaded into link register(lr) and not pushed to the stack
+  // like x86
+  {
+    const address table_addr = (address) Interpreter::invoke_return_entry_table_for(code);
+    __ mov(rscratch1, table_addr);
+    __ ldr(lr, Address(rscratch1, index, Address::lsl(3)));
+  }
+}
+
 void TemplateTable::load_invoke_cp_cache_entry(int byte_no,
                                                Register method,
                                                Register itable_index,
                                                Register flags,
                                                bool is_invokevirtual,
                                                bool is_invokevfinal, /*unused*/
-                                               bool is_invokedynamic) {
+                                               bool is_invokedynamic /*unused*/) {
   // setup registers
   const Register cache = rscratch2;
   const Register index = r4;
@@ -2347,7 +2402,7 @@ void TemplateTable::load_invoke_cp_cache_entry(int byte_no,
   const int index_offset = in_bytes(ConstantPoolCache::base_offset() +
                                     ConstantPoolCacheEntry::f2_offset());
 
-  size_t index_size = (is_invokedynamic ? sizeof(u4) : sizeof(u2));
+  size_t index_size = sizeof(u2);
   resolve_cache_and_index(byte_no, cache, index, index_size);
   __ ldr(method, Address(cache, method_offset));
 
@@ -2378,12 +2433,12 @@ void TemplateTable::jvmti_post_field_access(Register cache, Register index,
     __ lea(c_rarg2, Address(c_rarg2, in_bytes(ConstantPoolCache::base_offset())));
 
     if (is_static) {
-      __ mov(c_rarg1, zr); // NULL object reference
+      __ mov(c_rarg1, zr); // null object reference
     } else {
       __ ldr(c_rarg1, at_tos()); // get object pointer without popping it
       __ verify_oop(c_rarg1);
     }
-    // c_rarg1: object pointer or NULL
+    // c_rarg1: object pointer or null
     // c_rarg2: cache entry pointer
     // c_rarg3: jvalue object on the stack
     __ call_VM(noreg, CAST_FROM_FN_PTR(address,
@@ -2631,7 +2686,7 @@ void TemplateTable::jvmti_post_field_mod(Register cache, Register index, bool is
     __ add(c_rarg2, c_rarg2, in_bytes(cp_base_offset));
     // object (tos)
     __ mov(c_rarg3, esp);
-    // c_rarg1: object pointer set up above (NULL if static)
+    // c_rarg1: object pointer set up above (null if static)
     // c_rarg2: cache entry pointer
     // c_rarg3: jvalue object on the stack
     __ call_VM(noreg,
@@ -3167,7 +3222,7 @@ void TemplateTable::prepare_invoke(int byte_no,
   load_invoke_cp_cache_entry(byte_no, method, index, flags, is_invokevirtual, false, is_invokedynamic);
 
   // maybe push appendix to arguments (just before return address)
-  if (is_invokedynamic || is_invokehandle) {
+  if (is_invokehandle) {
     Label L_no_push;
     __ tbz(flags, ConstantPoolCacheEntry::has_appendix_shift, L_no_push);
     // Push the appendix as a trailing parameter.
@@ -3236,7 +3291,6 @@ void TemplateTable::invokevirtual_helper(Register index,
   __ bind(notFinal);
 
   // get receiver klass
-  __ null_check(recv, oopDesc::klass_offset_in_bytes());
   __ load_klass(r0, recv);
 
   // profile this call
@@ -3325,8 +3379,7 @@ void TemplateTable::invokeinterface(int byte_no) {
   Label notVFinal;
   __ tbz(r3, ConstantPoolCacheEntry::is_vfinal_shift, notVFinal);
 
-  // Get receiver klass into r3 - also a null check
-  __ null_check(r2, oopDesc::klass_offset_in_bytes());
+  // Get receiver klass into r3
   __ load_klass(r3, r2);
 
   Label subtype;
@@ -3341,9 +3394,8 @@ void TemplateTable::invokeinterface(int byte_no) {
 
   __ bind(notVFinal);
 
-  // Get receiver klass into r3 - also a null check
+  // Get receiver klass into r3
   __ restore_locals();
-  __ null_check(r2, oopDesc::klass_offset_in_bytes());
   __ load_klass(r3, r2);
 
   Label no_such_method;
@@ -3441,7 +3493,7 @@ void TemplateTable::invokedynamic(int byte_no) {
   transition(vtos, vtos);
   assert(byte_no == f1_byte, "use this argument");
 
-  prepare_invoke(byte_no, rmethod, r0);
+  load_invokedynamic_entry(rmethod);
 
   // r0: CallSite object (from cpool->resolved_references[])
   // rmethod: MH.linkToCallSite method (from f2)
@@ -3584,7 +3636,6 @@ void TemplateTable::anewarray() {
 
 void TemplateTable::arraylength() {
   transition(atos, itos);
-  __ null_check(r0, arrayOopDesc::length_offset_in_bytes());
   __ ldrw(r0, Address(r0, arrayOopDesc::length_offset_in_bytes()));
 }
 
@@ -3632,7 +3683,7 @@ void TemplateTable::checkcast()
   __ bind(ok_is_subtype);
   __ mov(r0, r3); // Restore object in r3
 
-  // Collect counts on whether this test sees NULLs a lot or not.
+  // Collect counts on whether this test sees nulls a lot or not.
   if (ProfileInterpreter) {
     __ b(done);
     __ bind(is_null);
@@ -3685,7 +3736,7 @@ void TemplateTable::instanceof() {
   __ bind(ok_is_subtype);
   __ mov(r0, 1);
 
-  // Collect counts on whether this test sees NULLs a lot or not.
+  // Collect counts on whether this test sees nulls a lot or not.
   if (ProfileInterpreter) {
     __ b(done);
     __ bind(is_null);
@@ -3694,8 +3745,8 @@ void TemplateTable::instanceof() {
     __ bind(is_null);   // same as 'done'
   }
   __ bind(done);
-  // r0 = 0: obj == NULL or  obj is not an instanceof the specified klass
-  // r0 = 1: obj != NULL and obj is     an instanceof the specified klass
+  // r0 = 0: obj == nullptr or  obj is not an instanceof the specified klass
+  // r0 = 1: obj != nullptr and obj is     an instanceof the specified klass
 }
 
 //-----------------------------------------------------------------------------
@@ -3755,7 +3806,7 @@ void TemplateTable::monitorenter()
 {
   transition(atos, vtos);
 
-  // check for NULL object
+  // check for null object
   __ null_check(r0);
 
   const Address monitor_block_top(
@@ -3767,7 +3818,7 @@ void TemplateTable::monitorenter()
   Label allocated;
 
   // initialize entry pointer
-  __ mov(c_rarg1, zr); // points to free slot or NULL
+  __ mov(c_rarg1, zr); // points to free slot or null
 
   // find a free slot in the monitor block (result in c_rarg1)
   {
@@ -3781,7 +3832,7 @@ void TemplateTable::monitorenter()
     __ bind(loop);
     // check if current entry is used
     // if not used then remember entry in c_rarg1
-    __ ldr(rscratch1, Address(c_rarg3, BasicObjectLock::obj_offset_in_bytes()));
+    __ ldr(rscratch1, Address(c_rarg3, BasicObjectLock::obj_offset()));
     __ cmp(zr, rscratch1);
     __ csel(c_rarg1, c_rarg3, c_rarg1, Assembler::EQ);
     // check if current entry is for same object
@@ -3841,7 +3892,7 @@ void TemplateTable::monitorenter()
   __ increment(rbcp);
 
   // store object
-  __ str(r0, Address(c_rarg1, BasicObjectLock::obj_offset_in_bytes()));
+  __ str(r0, Address(c_rarg1, BasicObjectLock::obj_offset()));
   __ lock_object(c_rarg1);
 
   // check to make sure this monitor doesn't cause stack overflow after locking
@@ -3858,7 +3909,7 @@ void TemplateTable::monitorexit()
 {
   transition(atos, vtos);
 
-  // check for NULL object
+  // check for null object
   __ null_check(r0);
 
   const Address monitor_block_top(
@@ -3880,7 +3931,7 @@ void TemplateTable::monitorexit()
 
     __ bind(loop);
     // check if current entry is for same object
-    __ ldr(rscratch1, Address(c_rarg1, BasicObjectLock::obj_offset_in_bytes()));
+    __ ldr(rscratch1, Address(c_rarg1, BasicObjectLock::obj_offset()));
     __ cmp(r0, rscratch1);
     // if same object then stop searching
     __ br(Assembler::EQ, found);

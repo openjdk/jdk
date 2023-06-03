@@ -33,7 +33,7 @@
 #include "memory/metaspace/metaspaceSettings.hpp"
 #include "memory/metaspace/virtualSpaceNode.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "sanitizers/address.h"
+#include "sanitizers/address.hpp"
 #include "utilities/debug.hpp"
 //#define LOG_PLEASE
 #include "metaspaceGtestCommon.hpp"
@@ -538,6 +538,10 @@ TEST_VM(metaspace, virtual_space_node_test_basics) {
   ASSERT_EQ(node->committed_words(), (size_t)0);
   ASSERT_EQ(node->committed_words(), scomm.get());
   DEBUG_ONLY(node->verify_locked();)
+
+  delete node;
+  ASSERT_EQ(scomm.get(), (size_t)0);
+  ASSERT_EQ(sres.get(), (size_t)0);
 }
 
 // Note: we unfortunately need TEST_VM even though the system tested

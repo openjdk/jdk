@@ -462,6 +462,11 @@ public class DocCommentTester {
                 return null;
             }
 
+            public Void visitEscape(EscapeTree node, Void p) {
+                header(node, node.getBody());
+                return null;
+            }
+
             public Void visitHidden(HiddenTree node, Void p) {
                 header(node);
                 indent(+1);
@@ -804,11 +809,15 @@ public class DocCommentTester {
                 indent += n;
             }
 
+            private static final int BEGIN = 32;
+            private static final String ELLIPSIS = "...";
+            private static final int END = 32;
+
             String compress(String s) {
                 s = s.replace("\n", "|").replace(" ", "_");
-                return (s.length() < 32)
+                return (s.length() < BEGIN + ELLIPSIS.length() + END)
                         ? s
-                        : s.substring(0, 16) + "..." + s.substring(16);
+                        : s.substring(0, BEGIN) + ELLIPSIS + s.substring(s.length() - END);
             }
 
             String quote(String s) {
@@ -898,7 +907,10 @@ public class DocCommentTester {
             var annos = (path.getLeaf() instanceof MethodTree m)
                     ? m.getModifiers().getAnnotations().toString()
                     : "";
-            boolean normalizeTags = !annos.equals("@NormalizeTags(false)");
+            if (annos.contains("@PrettyCheck(false)")) {
+                return;
+            }
+            boolean normalizeTags = !annos.contains("@NormalizeTags(false)");
 
             String raw = trees.getDocComment(path);
             String normRaw = normalize(raw, normalizeTags);
@@ -929,7 +941,7 @@ public class DocCommentTester {
          * @return the normalized content
          */
         String normalize(String s, boolean normalizeTags) {
-            String s2 = s.trim().replaceFirst("\\.\\s*\\n *@", ".\n@");
+            String s2 = s.trim().replaceFirst("\\.\\s*\\n *@(?![@*])", ".\n@");
             StringBuilder sb = new StringBuilder();
             Pattern p = Pattern.compile("(?i)\\{@([a-z][a-z0-9.:-]*)( )?");
             Matcher m = p.matcher(s2);
@@ -948,7 +960,7 @@ public class DocCommentTester {
         }
 
         String normalizeFragment(String s) {
-            return s.replaceAll("\n[ \t]+@", "\n@");
+            return s.replaceAll("\n[ \t]+@(?![@*])", "\n@");
         }
 
         int copyLiteral(String s, int start, StringBuilder sb) {

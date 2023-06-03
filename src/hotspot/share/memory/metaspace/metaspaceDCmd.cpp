@@ -58,17 +58,6 @@ MetaspaceDCmd::MetaspaceDCmd(outputStream* output, bool heap) :
   _dcmdparser.add_dcmd_option(&_scale);
 }
 
-int MetaspaceDCmd::num_arguments() {
-  ResourceMark rm;
-  MetaspaceDCmd* dcmd = new MetaspaceDCmd(nullptr, false);
-  if (dcmd != nullptr) {
-    DCmdMark mark(dcmd);
-    return dcmd->_dcmdparser.num_arguments();
-  } else {
-    return 0;
-  }
-}
-
 void MetaspaceDCmd::execute(DCmdSource source, TRAPS) {
   // Parse scale value.
   const char* scale_value = _scale.value();

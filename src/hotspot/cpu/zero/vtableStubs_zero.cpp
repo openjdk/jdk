@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -29,12 +29,12 @@
 
 VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
   ShouldNotCallThis();
-  return NULL;
+  return nullptr;
 }
 
 VtableStub* VtableStubs::create_itable_stub(int vtable_index) {
   ShouldNotCallThis();
-  return NULL;
+  return nullptr;
 }
 
 int VtableStub::pd_code_alignment() {

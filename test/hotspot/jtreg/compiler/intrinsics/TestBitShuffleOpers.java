@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,13 +27,14 @@
  * @key randomness
  * @summary To test various transforms added for bit COMPRESS_BITS and EXPAND_BITS operations
  * @requires vm.compiler2.enabled
- * @requires vm.cpu.features ~= ".*bmi2.*"
- * @requires vm.cpu.features ~= ".*bmi1.*"
- * @requires vm.cpu.features ~= ".*sse2.*"
+ * @requires (((os.arch=="x86" | os.arch=="amd64" | os.arch=="x86_64") &
+ *            (vm.cpu.features ~= ".*bmi2.*" & vm.cpu.features ~= ".*bmi1.*" &
+ *             vm.cpu.features ~= ".*sse2.*")) |
+ *            ((vm.opt.UseSVE == "null" | vm.opt.UseSVE > 1) &
+ *             os.arch=="aarch64" & vm.cpu.features ~= ".*svebitperm.*"))
  * @library /test/lib /
  * @run driver compiler.intrinsics.TestBitShuffleOpers
  */
-
 package compiler.intrinsics;
 
 import java.util.concurrent.Callable;

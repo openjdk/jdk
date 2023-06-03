@@ -43,5 +43,11 @@ HtmlTagsTest.java:60: error: text not allowed in <ul> element
 HtmlTagsTest.java:65: error: tag not allowed here: <b>
      * <ul> <b>text</b> <li> ... </li> </ul>
             ^
-13 errors
+HtmlTagsTest.java:70: error: text not allowed in <ul> element
+     * <ul> &amp; <li> ... </li> </ul>
+            ^
+HtmlTagsTest.java:75: error: text not allowed in <ul> element
+     * <ul> *@/ <li> ... </li> </ul>
+           ^
+15 errors
 2 warnings

@@ -45,6 +45,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.stream.Stream;
 
+import jdk.internal.javac.PreviewFeature;
 import jdk.internal.misc.CarrierThreadLocal;
 import jdk.internal.module.ServicesCatalog;
 import jdk.internal.reflect.ConstantPool;
@@ -420,6 +421,24 @@ public interface JavaLangAccess {
      */
     long stringConcatMix(long lengthCoder, String constant);
 
+   /**
+    * Get the coder for the supplied character.
+    */
+   @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
+   long stringConcatCoder(char value);
+
+   /**
+    * Update lengthCoder for StringBuilder.
+    */
+   @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
+   long stringBuilderConcatMix(long lengthCoder, StringBuilder sb);
+
+    /**
+     * Prepend StringBuilder content.
+     */
+    @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
+   long stringBuilderConcatPrepend(long lengthCoder, byte[] buf, StringBuilder sb);
+
     /**
      * Join strings
      */
@@ -564,4 +583,9 @@ public interface JavaLangAccess {
     StackWalker newStackWalkerInstance(Set<StackWalker.Option> options,
                                        ContinuationScope contScope,
                                        Continuation continuation);
+    /**
+     * Returns '<loader-name>' @<id> if classloader has a name
+     * explicitly set otherwise <qualified-class-name> @<id>
+     */
+    String getLoaderNameID(ClassLoader loader);
 }

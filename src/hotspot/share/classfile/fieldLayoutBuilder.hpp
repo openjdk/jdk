@@ -141,8 +141,8 @@ class FieldGroup : public ResourceObj {
   int contended_group() const { return _contended_group; }
   int oop_count() const { return _oop_count; }
 
-  void add_primitive_field(AllFieldStream fs, BasicType type);
-  void add_oop_field(AllFieldStream fs);
+  void add_primitive_field(int idx, BasicType type);
+  void add_oop_field(int idx);
   void sort_by_size();
 };
 
@@ -164,14 +164,14 @@ class FieldGroup : public ResourceObj {
 //
 class FieldLayout : public ResourceObj {
  private:
-  Array<u2>* _fields;
+  GrowableArray<FieldInfo>* _field_info;
   ConstantPool* _cp;
   LayoutRawBlock* _blocks;  // the layout being computed
   LayoutRawBlock* _start;   // points to the first block where a field can be inserted
   LayoutRawBlock* _last;    // points to the last block of the layout (big empty block)
 
  public:
-  FieldLayout(Array<u2>* fields, ConstantPool* cp);
+  FieldLayout(GrowableArray<FieldInfo>* field_info, ConstantPool* cp);
   void initialize_static_layout();
   void initialize_instance_layout(const InstanceKlass* ik);
 
@@ -230,7 +230,7 @@ class FieldLayoutBuilder : public ResourceObj {
   const Symbol* _classname;
   const InstanceKlass* _super_klass;
   ConstantPool* _constant_pool;
-  Array<u2>* _fields;
+  GrowableArray<FieldInfo>* _field_info;
   FieldLayoutInfo* _info;
   FieldGroup* _root_group;
   GrowableArray<FieldGroup*> _contended_groups;
@@ -244,7 +244,7 @@ class FieldLayoutBuilder : public ResourceObj {
 
  public:
   FieldLayoutBuilder(const Symbol* classname, const InstanceKlass* super_klass, ConstantPool* constant_pool,
-                     Array<u2>* fields, bool is_contended, FieldLayoutInfo* info);
+                     GrowableArray<FieldInfo>* field_info, bool is_contended, FieldLayoutInfo* info);
 
   int get_alignment() {
     assert(_alignment != -1, "Uninitialized");

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2022 Unicode, Inc.
+<!-- Copyright © 1991-2023 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -847,6 +847,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ZW">සිම්බාබ්වේ</territory>
 			<territory type="ZZ">හඳුනා නොගත් කළාපය</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">එංගලන්තය</subdivision>
+			<subdivision type="gbsct">ස්කොට්ලන්තය</subdivision>
+			<subdivision type="gbwls">වේල්සය</subdivision>
+		</subdivisions>
 		<keys>
 			<key type="calendar">දින දර්ශනය</key>
 			<key type="cf">මුදල් ආකෘති</key>
@@ -2030,6 +2035,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</field>
 			<field type="day-short">
 				<displayName>දිනය</displayName>
+				<relative type="-1">ඊයේ</relative>
+				<relative type="0">අද</relative>
+				<relative type="1">හෙට</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">දින {0}න්</relativeTimePattern>
 					<relativeTimePattern count="other">දින {0}න්</relativeTimePattern>
@@ -2041,6 +2049,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</field>
 			<field type="day-narrow">
 				<displayName>දිනය</displayName>
+				<relative type="-1">ඊයේ</relative>
+				<relative type="0">අද</relative>
+				<relative type="1">හෙට</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">දින {0}න්</relativeTimePattern>
 					<relativeTimePattern count="other">දින {0}න්</relativeTimePattern>
@@ -3272,6 +3283,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="America/Hermosillo">
 				<exemplarCity>හෙමොසිලෝ</exemplarCity>
+			</zone>
+			<zone type="America/Ciudad_Juarez">
+				<exemplarCity>සියුඩාඩ් ජුවාරෙස්</exemplarCity>
 			</zone>
 			<zone type="America/Mazatlan">
 				<exemplarCity>මසට්ලාන්</exemplarCity>
@@ -4676,8 +4690,167 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<native>latn</native>
 		</otherNumberingSystems>
 		<minimumGroupingDigits>1</minimumGroupingDigits>
+		<symbols numberSystem="adlm">
+			<decimal draft="contributed">.</decimal>
+			<group draft="contributed">,</group>
+			<list>;</list>
+			<percentSign>%</percentSign>
+			<plusSign draft="contributed">+</plusSign>
+			<minusSign draft="contributed">-</minusSign>
+			<approximatelySign>~</approximatelySign>
+			<exponential>E</exponential>
+			<superscriptingExponent>×</superscriptingExponent>
+			<perMille>‰</perMille>
+			<infinity>∞</infinity>
+			<nan>NaN</nan>
+			<timeSeparator draft="contributed">.</timeSeparator>
+		</symbols>
 		<symbols numberSystem="arab">
 			<timeSeparator draft="contributed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="bali">
+			<decimal draft="contributed">.</decimal>
+			<group draft="contributed">,</group>
+			<list>;</list>
+			<percentSign>%</percentSign>
+			<plusSign draft="contributed">+</plusSign>
+			<minusSign draft="contributed">-</minusSign>
+			<approximatelySign>~</approximatelySign>
+			<exponential>E</exponential>
+			<superscriptingExponent>×</superscriptingExponent>
+			<perMille>‰</perMille>
+			<infinity>∞</infinity>
+			<nan>NaN</nan>
+			<timeSeparator draft="contributed">.</timeSeparator>
+		</symbols>
+		<symbols numberSystem="beng">
+			<decimal draft="contributed">.</decimal>
+			<group draft="contributed">,</group>
+			<list>;</list>
+			<percentSign>%</percentSign>
+			<plusSign draft="contributed">+</plusSign>
+			<minusSign draft="contributed">-</minusSign>
+			<approximatelySign>~</approximatelySign>
+			<exponential>E</exponential>
+			<superscriptingExponent>×</superscriptingExponent>
+			<perMille>‰</perMille>
+			<infinity>∞</infinity>
+			<nan>NaN</nan>
+			<timeSeparator draft="contributed">.</timeSeparator>
+		</symbols>
+		<symbols numberSystem="brah">
+			<decimal draft="contributed">.</decimal>
+			<group draft="contributed">,</group>
+			<list>;</list>
+			<percentSign>%</percentSign>
+			<plusSign draft="contributed">+</plusSign>
+			<minusSign draft="contributed">-</minusSign>
+			<approximatelySign>~</approximatelySign>
+			<exponential>E</exponential>
+			<superscriptingExponent>×</superscriptingExponent>
+			<perMille>‰</perMille>
+			<infinity>∞</infinity>
+			<nan>NaN</nan>
+			<timeSeparator draft="contributed">.</timeSeparator>
+		</symbols>
+		<symbols numberSystem="cakm">
+			<decimal draft="contributed">.</decimal>
+			<group draft="contributed">,</group>
+			<list>;</list>
+			<percentSign>%</percentSign>
+			<plusSign draft="contributed">+</plusSign>
+			<minusSign draft="contributed">-</minusSign>
+			<approximatelySign>~</approximatelySign>
+			<exponential>E</exponential>
+			<superscriptingExponent>×</superscriptingExponent>
+			<perMille>‰</perMille>
+			<infinity>∞</infinity>
+			<nan>NaN</nan>
+			<timeSeparator draft="contributed">.</timeSeparator>
+		</symbols>
+		<symbols numberSystem="cham">
+			<decimal draft="contributed">.</decimal>
+			<group draft="contributed">,</group>
+			<list>;</list>
+			<percentSign>%</percentSign>
+			<plusSign draft="contributed">+</plusSign>
+			<minusSign draft="contributed">-</minusSign>
+			<approximatelySign>~</approximatelySign>
+			<exponential>E</exponential>
+			<superscriptingExponent>×</superscriptingExponent>
+			<perMille>‰</perMille>
+			<infinity>∞</infinity>
+			<nan>NaN</nan>
+			<timeSeparator draft="contributed">.</timeSeparator>
+		</symbols>
+		<symbols numberSystem="deva">
+			<decimal draft="contributed">.</decimal>
+			<group draft="contributed">,</group>
+			<list>;</list>
+			<percentSign>%</percentSign>
+			<plusSign draft="contributed">+</plusSign>
+			<minusSign draft="contributed">-</minusSign>
+			<approximatelySign>~</approximatelySign>
+			<exponential>E</exponential>
+			<superscriptingExponent>×</superscriptingExponent>
+			<perMille>‰</perMille>
+			<infinity>∞</infinity>
+			<nan>NaN</nan>
+			<timeSeparator draft="contributed">.</timeSeparator>
+		</symbols>
+		<symbols numberSystem="fullwide">
+			<timeSeparator draft="contributed">.</timeSeparator>
+		</symbols>
+		<symbols numberSystem="gong">
+			<timeSeparator draft="contributed">.</timeSeparator>
+		</symbols>
+		<symbols numberSystem="gonm">
+			<timeSeparator draft="contributed">.</timeSeparator>
+		</symbols>
+		<symbols numberSystem="gujr">
+			<timeSeparator draft="contributed">.</timeSeparator>
+		</symbols>
+		<symbols numberSystem="guru">
+			<timeSeparator draft="contributed">.</timeSeparator>
+		</symbols>
+		<symbols numberSystem="hanidec">
+			<decimal draft="contributed">.</decimal>
+			<group draft="contributed">,</group>
+			<list>;</list>
+			<percentSign>%</percentSign>
+			<plusSign draft="contributed">+</plusSign>
+			<minusSign draft="contributed">-</minusSign>
+			<approximatelySign>~</approximatelySign>
+			<exponential>E</exponential>
+			<superscriptingExponent>×</superscriptingExponent>
+			<perMille>‰</perMille>
+			<infinity>∞</infinity>
+			<nan>NaN</nan>
+			<timeSeparator draft="contributed">.</timeSeparator>
+		</symbols>
+		<symbols numberSystem="hmnp">
+			<timeSeparator draft="contributed">.</timeSeparator>
+		</symbols>
+		<symbols numberSystem="java">
+			<timeSeparator draft="contributed">.</timeSeparator>
+		</symbols>
+		<symbols numberSystem="kali">
+			<timeSeparator draft="contributed">.</timeSeparator>
+		</symbols>
+		<symbols numberSystem="khmr">
+			<timeSeparator draft="contributed">.</timeSeparator>
+		</symbols>
+		<symbols numberSystem="knda">
+			<timeSeparator draft="contributed">.</timeSeparator>
+		</symbols>
+		<symbols numberSystem="lana">
+			<timeSeparator draft="contributed">.</timeSeparator>
+		</symbols>
+		<symbols numberSystem="lanatham">
+			<timeSeparator draft="contributed">.</timeSeparator>
+		</symbols>
+		<symbols numberSystem="laoo">
+			<timeSeparator draft="contributed">.</timeSeparator>
 		</symbols>
 		<symbols numberSystem="latn">
 			<decimal>.</decimal>
@@ -4692,6 +4865,75 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<infinity>∞</infinity>
 			<nan>NaN</nan>
 			<timeSeparator>.</timeSeparator>
+		</symbols>
+		<symbols numberSystem="lepc">
+			<timeSeparator draft="contributed">.</timeSeparator>
+		</symbols>
+		<symbols numberSystem="limb">
+			<timeSeparator draft="contributed">.</timeSeparator>
+		</symbols>
+		<symbols numberSystem="mlym">
+			<timeSeparator draft="contributed">.</timeSeparator>
+		</symbols>
+		<symbols numberSystem="mong">
+			<timeSeparator draft="contributed">.</timeSeparator>
+		</symbols>
+		<symbols numberSystem="mtei">
+			<timeSeparator draft="contributed">.</timeSeparator>
+		</symbols>
+		<symbols numberSystem="mymr">
+			<timeSeparator draft="contributed">.</timeSeparator>
+		</symbols>
+		<symbols numberSystem="mymrshan">
+			<timeSeparator draft="contributed">.</timeSeparator>
+		</symbols>
+		<symbols numberSystem="nkoo">
+			<timeSeparator draft="contributed">.</timeSeparator>
+		</symbols>
+		<symbols numberSystem="olck">
+			<timeSeparator draft="contributed">.</timeSeparator>
+		</symbols>
+		<symbols numberSystem="orya">
+			<timeSeparator draft="contributed">.</timeSeparator>
+		</symbols>
+		<symbols numberSystem="osma">
+			<timeSeparator draft="contributed">.</timeSeparator>
+		</symbols>
+		<symbols numberSystem="rohg">
+			<timeSeparator draft="contributed">.</timeSeparator>
+		</symbols>
+		<symbols numberSystem="saur">
+			<timeSeparator draft="contributed">.</timeSeparator>
+		</symbols>
+		<symbols numberSystem="shrd">
+			<timeSeparator draft="contributed">.</timeSeparator>
+		</symbols>
+		<symbols numberSystem="sora">
+			<timeSeparator draft="contributed">.</timeSeparator>
+		</symbols>
+		<symbols numberSystem="sund">
+			<timeSeparator draft="contributed">.</timeSeparator>
+		</symbols>
+		<symbols numberSystem="takr">
+			<timeSeparator draft="contributed">.</timeSeparator>
+		</symbols>
+		<symbols numberSystem="talu">
+			<timeSeparator draft="contributed">.</timeSeparator>
+		</symbols>
+		<symbols numberSystem="tamldec">
+			<timeSeparator draft="contributed">.</timeSeparator>
+		</symbols>
+		<symbols numberSystem="telu">
+			<timeSeparator draft="contributed">.</timeSeparator>
+		</symbols>
+		<symbols numberSystem="thai">
+			<timeSeparator draft="contributed">.</timeSeparator>
+		</symbols>
+		<symbols numberSystem="tibt">
+			<timeSeparator draft="contributed">.</timeSeparator>
+		</symbols>
+		<symbols numberSystem="vaii">
+			<timeSeparator draft="contributed">.</timeSeparator>
 		</symbols>
 		<decimalFormats numberSystem="latn">
 			<decimalFormatLength>
@@ -6029,6 +6271,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<compoundUnitPattern1 count="one">ඝන {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other">ඝන {0}</compoundUnitPattern1>
 			</compoundUnit>
+			<compoundUnit type="times">
+				<compoundUnitPattern>{0}⋅{1}</compoundUnitPattern>
+			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<displayName>g-බලය</displayName>
 				<unitPattern count="one">g-බලය {0}</unitPattern>
@@ -6414,6 +6659,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="graphics-em">
 				<displayName>යතුරු ලියන එම්</displayName>
+				<unitPattern count="one">{0} em</unitPattern>
+				<unitPattern count="other">{0} em</unitPattern>
 			</unit>
 			<unit type="graphics-pixel">
 				<displayName>පික්සල්</displayName>
@@ -7067,9 +7314,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</compoundUnit>
 			<compoundUnit type="power2">
 				<compoundUnitPattern1>{0}²</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one">{0}²</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0}²</compoundUnitPattern1>
 			</compoundUnit>
 			<compoundUnit type="power3">
 				<compoundUnitPattern1>{0}³</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one">{0}³</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0}³</compoundUnitPattern1>
 			</compoundUnit>
 			<compoundUnit type="times">
 				<compoundUnitPattern>{0}⋅{1}</compoundUnitPattern>
@@ -8114,18 +8365,39 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</compoundUnit>
 			<compoundUnit type="power2">
 				<compoundUnitPattern1>{0}²</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one">{0}²</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0}²</compoundUnitPattern1>
 			</compoundUnit>
 			<compoundUnit type="power3">
 				<compoundUnitPattern1>{0}³</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one">{0}³</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0}³</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="times">
+				<compoundUnitPattern>{0}⋅{1}</compoundUnitPattern>
 			</compoundUnit>
 			<unit type="acceleration-g-force">
+				<displayName>g-බලය</displayName>
 				<unitPattern count="one">{0} G</unitPattern>
 				<unitPattern count="other">{0} G</unitPattern>
 			</unit>
 			<unit type="acceleration-meter-per-square-second">
 				<displayName>මී/තව</displayName>
+				<unitPattern count="one">මී/තව {0}</unitPattern>
+				<unitPattern count="other">මී/තව {0}</unitPattern>
+			</unit>
+			<unit type="angle-revolution">
+				<displayName>පරිභ්‍ර</displayName>
+				<unitPattern count="one">පරිභ්‍ර {0}</unitPattern>
+				<unitPattern count="other">පරිභ්‍ර {0}</unitPattern>
+			</unit>
+			<unit type="angle-radian">
+				<displayName>රේඩියන්</displayName>
+				<unitPattern count="one">රේඩි {0}</unitPattern>
+				<unitPattern count="other">රේඩි {0}</unitPattern>
 			</unit>
 			<unit type="angle-degree">
+				<displayName>අංශක</displayName>
 				<unitPattern count="one">{0}°</unitPattern>
 				<unitPattern count="other">{0}°</unitPattern>
 			</unit>
@@ -8140,17 +8412,27 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}″</unitPattern>
 			</unit>
 			<unit type="area-square-kilometer">
+				<displayName>ව.කී</displayName>
 				<unitPattern count="one">{0} km²</unitPattern>
 				<unitPattern count="other">{0} km²</unitPattern>
 				<perUnitPattern>{0}/ව.කී</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
+				<displayName>හෙක්ටයාර්</displayName>
 				<unitPattern count="one">හෙක් {0}</unitPattern>
 				<unitPattern count="other">{0} ha</unitPattern>
 			</unit>
+			<unit type="area-square-meter">
+				<displayName>වර්ග මීටර්</displayName>
+				<unitPattern count="one">ව.මී {0}</unitPattern>
+				<unitPattern count="other">ව.මී {0}</unitPattern>
+				<perUnitPattern>{0}/ව.මී</perUnitPattern>
+			</unit>
 			<unit type="area-square-centimeter">
+				<displayName>වසෙ</displayName>
 				<unitPattern count="one">වසෙ{0}</unitPattern>
 				<unitPattern count="other">වසෙ{0}</unitPattern>
+				<perUnitPattern>{0}/වසෙ</perUnitPattern>
 			</unit>
 			<unit type="area-square-mile">
 				<displayName>ව.සැ</displayName>
@@ -8159,11 +8441,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<perUnitPattern>{0}/ව.සැ</perUnitPattern>
 			</unit>
 			<unit type="area-acre">
+				<displayName>අක්කර</displayName>
 				<unitPattern count="one">අක්කර {0}</unitPattern>
 				<unitPattern count="other">අක්කර {0}</unitPattern>
 			</unit>
 			<unit type="area-square-yard">
 				<displayName>වයා</displayName>
+				<unitPattern count="one">වයා {0}</unitPattern>
+				<unitPattern count="other">වයා {0}</unitPattern>
 			</unit>
 			<unit type="area-square-foot">
 				<displayName>වඅ²</displayName>
@@ -8176,6 +8461,26 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}වඅඟ²</unitPattern>
 				<perUnitPattern>{0}/වඅඟ²</perUnitPattern>
 			</unit>
+			<unit type="area-dunam">
+				<displayName>ඩනම්ස්</displayName>
+				<unitPattern count="one">{0} ඩනම්ස්</unitPattern>
+				<unitPattern count="other">{0} ඩනම්ස්</unitPattern>
+			</unit>
+			<unit type="concentr-karat">
+				<displayName>ක්‍රාත්</displayName>
+				<unitPattern count="one">ක්‍රාත් {0}</unitPattern>
+				<unitPattern count="other">ක්‍රාත් {0}</unitPattern>
+			</unit>
+			<unit type="concentr-milligram-ofglucose-per-deciliter">
+				<displayName>මිග්‍රෑ/ඩෙලි</displayName>
+				<unitPattern count="one">{0} මිග්‍රෑ/ඩෙලි</unitPattern>
+				<unitPattern count="other">{0} මිග්‍රෑ/ඩෙලි</unitPattern>
+			</unit>
+			<unit type="concentr-millimole-per-liter">
+				<displayName>මිලිමෝල්/ලීටර්</displayName>
+				<unitPattern count="one">{0} මිමෝල්/ලී</unitPattern>
+				<unitPattern count="other">{0} මිමෝල්/ලී</unitPattern>
+			</unit>
 			<unit type="concentr-item">
 				<displayName>අයිතමය</displayName>
 				<unitPattern count="one">{0} අයිතමයක්</unitPattern>
@@ -8183,14 +8488,33 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="concentr-permillion">
 				<displayName>මිලිකො</displayName>
+				<unitPattern count="one">{0} මිලිකො</unitPattern>
+				<unitPattern count="other">{0} මිලිකො</unitPattern>
 			</unit>
 			<unit type="concentr-percent">
 				<displayName>%</displayName>
 				<unitPattern count="one">{0}%</unitPattern>
 				<unitPattern count="other">{0}%</unitPattern>
 			</unit>
+			<unit type="concentr-permille">
+				<displayName>‰</displayName>
+				<unitPattern count="one">{0}‰</unitPattern>
+				<unitPattern count="other">{0}‰</unitPattern>
+			</unit>
 			<unit type="concentr-permyriad">
 				<displayName>‱</displayName>
+				<unitPattern count="one">{0}‱</unitPattern>
+				<unitPattern count="other">{0}‱</unitPattern>
+			</unit>
+			<unit type="concentr-mole">
+				<displayName>මවුල</displayName>
+				<unitPattern count="one">{0} මවුල</unitPattern>
+				<unitPattern count="other">{0} මවුල</unitPattern>
+			</unit>
+			<unit type="consumption-liter-per-kilometer">
+				<displayName>ලීටරය/කිමී</displayName>
+				<unitPattern count="one">ලී/කිමී {0}</unitPattern>
+				<unitPattern count="other">ලී/කිමී {0}</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>ලී/කිමී100</displayName>
@@ -8199,16 +8523,84 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="consumption-mile-per-gallon">
 				<displayName>හැගැ</displayName>
+				<unitPattern count="one">හැගැ {0}</unitPattern>
+				<unitPattern count="other">හැගැ {0}</unitPattern>
 			</unit>
 			<unit type="consumption-mile-per-gallon-imperial">
 				<displayName>ගැහැ එ.රා.</displayName>
 				<unitPattern count="one">{0} ගැහැ එ.රා.</unitPattern>
 				<unitPattern count="other">{0} ගැහැ එ.රා.</unitPattern>
 			</unit>
+			<unit type="digital-petabyte">
+				<displayName>පෙබයිට්</displayName>
+				<unitPattern count="one">පෙබ {0}</unitPattern>
+				<unitPattern count="other">පෙබ {0}</unitPattern>
+			</unit>
+			<unit type="digital-terabyte">
+				<displayName>ටෙබයිට්</displayName>
+				<unitPattern count="one">ටෙබ {0}</unitPattern>
+				<unitPattern count="other">ටෙබ {0}</unitPattern>
+			</unit>
+			<unit type="digital-terabit">
+				<displayName>ටෙබිට්</displayName>
+				<unitPattern count="one">ටේබි {0}</unitPattern>
+				<unitPattern count="other">ටේබි {0}</unitPattern>
+			</unit>
+			<unit type="digital-gigabyte">
+				<displayName>ගිබයිට්‌</displayName>
+				<unitPattern count="one">ගිබ {0}</unitPattern>
+				<unitPattern count="other">ගිබ {0}</unitPattern>
+			</unit>
+			<unit type="digital-gigabit">
+				<displayName>ගිබීට්</displayName>
+				<unitPattern count="one">ගිබී {0}</unitPattern>
+				<unitPattern count="other">ගිබී {0}</unitPattern>
+			</unit>
+			<unit type="digital-megabyte">
+				<displayName>මෙබයිට්</displayName>
+				<unitPattern count="one">මෙබ {0}</unitPattern>
+				<unitPattern count="other">මෙබ {0}</unitPattern>
+			</unit>
+			<unit type="digital-megabit">
+				<displayName>මෙබීට්</displayName>
+				<unitPattern count="one">මෙබි {0}</unitPattern>
+				<unitPattern count="other">මෙබි {0}</unitPattern>
+			</unit>
+			<unit type="digital-kilobyte">
+				<displayName>කිබයිට්</displayName>
+				<unitPattern count="one">කිබ {0}</unitPattern>
+				<unitPattern count="other">කිබ {0}</unitPattern>
+			</unit>
+			<unit type="digital-kilobit">
+				<displayName>කිබීට්</displayName>
+				<unitPattern count="one">කිබී {0}</unitPattern>
+				<unitPattern count="other">කිබී {0}</unitPattern>
+			</unit>
+			<unit type="digital-byte">
+				<displayName>බයිට්</displayName>
+				<unitPattern count="one">බයිට් {0}</unitPattern>
+				<unitPattern count="other">බයිට් {0}</unitPattern>
+			</unit>
+			<unit type="digital-bit">
+				<displayName>බීට්</displayName>
+				<unitPattern count="one">බීට් {0}</unitPattern>
+				<unitPattern count="other">බීට් {0}</unitPattern>
+			</unit>
+			<unit type="duration-century">
+				<displayName>සි</displayName>
+				<unitPattern count="one">සි {0}</unitPattern>
+				<unitPattern count="other">සි {0}</unitPattern>
+			</unit>
+			<unit type="duration-decade">
+				<displayName>දශක</displayName>
+				<unitPattern count="one">දශක {0}</unitPattern>
+				<unitPattern count="other">දශක {0}</unitPattern>
+			</unit>
 			<unit type="duration-year">
 				<displayName>වසර</displayName>
 				<unitPattern count="one">ව {0}</unitPattern>
 				<unitPattern count="other">ව {0}</unitPattern>
+				<perUnitPattern>{0}/ව</perUnitPattern>
 			</unit>
 			<unit type="duration-quarter">
 				<displayName>කාල</displayName>
@@ -8220,48 +8612,112 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>මාස</displayName>
 				<unitPattern count="one">මා {0}</unitPattern>
 				<unitPattern count="other">මා {0}</unitPattern>
+				<perUnitPattern>{0}/මා</perUnitPattern>
 			</unit>
 			<unit type="duration-week">
 				<displayName>සති</displayName>
 				<unitPattern count="one">ස {0}</unitPattern>
 				<unitPattern count="other">ස {0}</unitPattern>
+				<perUnitPattern>{0}/ස</perUnitPattern>
 			</unit>
 			<unit type="duration-day">
 				<displayName>දින</displayName>
 				<unitPattern count="one">දි {0}</unitPattern>
 				<unitPattern count="other">දි {0}</unitPattern>
+				<perUnitPattern>{0}/දි</perUnitPattern>
 			</unit>
 			<unit type="duration-hour">
 				<displayName>පැය</displayName>
 				<unitPattern count="one">පැය {0}</unitPattern>
 				<unitPattern count="other">පැය {0}</unitPattern>
+				<perUnitPattern>පැයට {0}</perUnitPattern>
 			</unit>
 			<unit type="duration-minute">
 				<displayName>මිනි</displayName>
 				<unitPattern count="one">මි {0}</unitPattern>
 				<unitPattern count="other">මි {0}</unitPattern>
+				<perUnitPattern>{0}/මිනි</perUnitPattern>
 			</unit>
 			<unit type="duration-second">
 				<displayName>තත්</displayName>
 				<unitPattern count="one">ත {0}</unitPattern>
 				<unitPattern count="other">ත {0}</unitPattern>
+				<perUnitPattern>තත්පරයට {0}</perUnitPattern>
 			</unit>
 			<unit type="duration-millisecond">
 				<displayName>මිලිතත්</displayName>
 				<unitPattern count="one">මිලිතත් {0}</unitPattern>
 				<unitPattern count="other">මිලිතත් {0}</unitPattern>
 			</unit>
+			<unit type="duration-microsecond">
+				<displayName>මයික්‍රොතත්</displayName>
+				<unitPattern count="one">මයික්‍රොතත් {0}</unitPattern>
+				<unitPattern count="other">මයික්‍රොතත් {0}</unitPattern>
+			</unit>
+			<unit type="duration-nanosecond">
+				<displayName>නැනෝතත්</displayName>
+				<unitPattern count="one">නැත {0}</unitPattern>
+				<unitPattern count="other">නැත {0}</unitPattern>
+			</unit>
 			<unit type="electric-ampere">
 				<displayName>ඇ</displayName>
+				<unitPattern count="one">ඇ {0}</unitPattern>
+				<unitPattern count="other">ඇ {0}</unitPattern>
 			</unit>
 			<unit type="electric-milliampere">
 				<displayName>මිඇ</displayName>
+				<unitPattern count="one">මිඇ {0}</unitPattern>
+				<unitPattern count="other">මිඇ {0}</unitPattern>
+			</unit>
+			<unit type="electric-ohm">
+				<displayName>ඕම්</displayName>
+				<unitPattern count="one">{0} Ω</unitPattern>
+				<unitPattern count="other">{0} Ω</unitPattern>
+			</unit>
+			<unit type="electric-volt">
+				<displayName>වෝල්ට්</displayName>
+				<unitPattern count="one">වෝ {0}</unitPattern>
+				<unitPattern count="other">වෝ {0}</unitPattern>
+			</unit>
+			<unit type="energy-kilocalorie">
+				<displayName>කිකැලරි</displayName>
+				<unitPattern count="one">කිකැලරි {0}</unitPattern>
+				<unitPattern count="other">කිකැලරි {0}</unitPattern>
+			</unit>
+			<unit type="energy-calorie">
+				<displayName>කැල</displayName>
+				<unitPattern count="one">කැල {0}</unitPattern>
+				<unitPattern count="other">කැල {0}</unitPattern>
+			</unit>
+			<unit type="energy-foodcalorie">
+				<displayName>කැල</displayName>
+				<unitPattern count="one">කැල {0}</unitPattern>
+				<unitPattern count="other">කැල {0}</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>කිජු</displayName>
+				<unitPattern count="one">කිජු {0}</unitPattern>
+				<unitPattern count="other">කිජු {0}</unitPattern>
+			</unit>
+			<unit type="energy-joule">
+				<displayName>ජුල්</displayName>
+				<unitPattern count="one">ජු {0}</unitPattern>
+				<unitPattern count="other">ජු {0}</unitPattern>
+			</unit>
+			<unit type="energy-kilowatt-hour">
+				<displayName>කිවො-පැය</displayName>
+				<unitPattern count="one">කිවො-පැය {0}</unitPattern>
+				<unitPattern count="other">කිවො-පැය {0}</unitPattern>
 			</unit>
 			<unit type="energy-electronvolt">
 				<displayName>ඉවෝ</displayName>
+				<unitPattern count="one">{0} ඉවෝ</unitPattern>
+				<unitPattern count="other">{0} ඉවෝ</unitPattern>
+			</unit>
+			<unit type="energy-british-thermal-unit">
+				<displayName>බ්‍රිතාඒ</displayName>
+				<unitPattern count="one">{0} බ්‍රිතාඒ</unitPattern>
+				<unitPattern count="other">{0} බ්‍රිතාඒ</unitPattern>
 			</unit>
 			<unit type="energy-therm-us">
 				<displayName>එජ තාප ඒකක</displayName>
@@ -8270,34 +8726,121 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="force-pound-force">
 				<displayName>බරා</displayName>
+				<unitPattern count="one">{0} බරා</unitPattern>
+				<unitPattern count="other">{0} බරා</unitPattern>
 			</unit>
 			<unit type="force-newton">
 				<displayName>නි</displayName>
+				<unitPattern count="one">{0} නි</unitPattern>
+				<unitPattern count="other">{0} නි</unitPattern>
 			</unit>
 			<unit type="force-kilowatt-hour-per-100-kilometer">
 				<displayName>කිවොපැ/100කිමී</displayName>
 				<unitPattern count="one">{0}කිවොපැ/100කිමී</unitPattern>
 				<unitPattern count="other">{0} කිවොපැ/100කිමී</unitPattern>
 			</unit>
+			<unit type="frequency-gigahertz">
+				<displayName>ගිහස්</displayName>
+				<unitPattern count="one">ගිහස් {0}</unitPattern>
+				<unitPattern count="other">ගිහස් {0}</unitPattern>
+			</unit>
+			<unit type="frequency-megahertz">
+				<displayName>මෙග</displayName>
+				<unitPattern count="one">මෙහ {0}</unitPattern>
+				<unitPattern count="other">මෙහ {0}</unitPattern>
+			</unit>
+			<unit type="frequency-kilohertz">
+				<displayName>කිහස්</displayName>
+				<unitPattern count="one">කිහස් {0}</unitPattern>
+				<unitPattern count="other">කිහස් {0}</unitPattern>
+			</unit>
+			<unit type="frequency-hertz">
+				<displayName>හස්</displayName>
+				<unitPattern count="one">හස් {0}</unitPattern>
+				<unitPattern count="other">හස් {0}</unitPattern>
+			</unit>
+			<unit type="graphics-em">
+				<displayName>em</displayName>
+				<unitPattern count="one">{0} em</unitPattern>
+				<unitPattern count="other">{0} em</unitPattern>
+			</unit>
+			<unit type="graphics-pixel">
+				<displayName>පික්සල්</displayName>
+				<unitPattern count="one">{0} px</unitPattern>
+				<unitPattern count="other">{0} px</unitPattern>
+			</unit>
+			<unit type="graphics-megapixel">
+				<displayName>මෙගාපික්සල්</displayName>
+				<unitPattern count="one">{0} MP</unitPattern>
+				<unitPattern count="other">{0} MP</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-centimeter">
+				<displayName>ppcm</displayName>
+				<unitPattern count="one">{0} ppcm</unitPattern>
+				<unitPattern count="other">{0} ppcm</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-inch">
+				<displayName>ppi</displayName>
+				<unitPattern count="one">{0} ppi</unitPattern>
+				<unitPattern count="other">{0} ppi</unitPattern>
+			</unit>
+			<unit type="graphics-dot-per-centimeter">
+				<displayName>dpcm</displayName>
+				<unitPattern count="one">{0} ppcm</unitPattern>
+				<unitPattern count="other">{0} dpcm</unitPattern>
+			</unit>
+			<unit type="graphics-dot-per-inch">
+				<displayName>dpi</displayName>
+				<unitPattern count="one">{0} ppi</unitPattern>
+				<unitPattern count="other">{0} dpi</unitPattern>
+			</unit>
+			<unit type="graphics-dot">
+				<displayName>තිත</displayName>
+				<unitPattern count="one">{0} තිත</unitPattern>
+				<unitPattern count="other">තිත් {0}</unitPattern>
+			</unit>
+			<unit type="length-earth-radius">
+				<displayName>R⊕</displayName>
+				<unitPattern count="one">{0} R⊕</unitPattern>
+				<unitPattern count="other">{0} R⊕</unitPattern>
+			</unit>
 			<unit type="length-kilometer">
 				<displayName>කි.මී</displayName>
 				<unitPattern count="one">කි.මී {0}</unitPattern>
 				<unitPattern count="other">කි.මී {0}</unitPattern>
+				<perUnitPattern>{0}/කි.මී</perUnitPattern>
 			</unit>
 			<unit type="length-meter">
 				<displayName>මීටර්</displayName>
 				<unitPattern count="one">මී {0}</unitPattern>
 				<unitPattern count="other">මී {0}</unitPattern>
+				<perUnitPattern>{0}/මී</perUnitPattern>
+			</unit>
+			<unit type="length-decimeter">
+				<displayName>ඩෙමී</displayName>
+				<unitPattern count="one">ඩෙමී {0}</unitPattern>
+				<unitPattern count="other">ඩෙමී {0}</unitPattern>
 			</unit>
 			<unit type="length-centimeter">
 				<displayName>සෙ.මී</displayName>
 				<unitPattern count="one">සෙ.මී {0}</unitPattern>
 				<unitPattern count="other">සෙ.මී {0}</unitPattern>
+				<perUnitPattern>{0}/සෙ.මී</perUnitPattern>
 			</unit>
 			<unit type="length-millimeter">
 				<displayName>මිමී</displayName>
 				<unitPattern count="one">මිමී {0}</unitPattern>
 				<unitPattern count="other">මිමී {0}</unitPattern>
+			</unit>
+			<unit type="length-micrometer">
+				<displayName>මමීටර</displayName>
+				<unitPattern count="one">මමී {0}</unitPattern>
+				<unitPattern count="other">මමී {0}</unitPattern>
+			</unit>
+			<unit type="length-nanometer">
+				<displayName>නැමී</displayName>
+				<unitPattern count="one">නැමී {0}</unitPattern>
+				<unitPattern count="other">නැමී {0}</unitPattern>
 			</unit>
 			<unit type="length-picometer">
 				<displayName>පිමී</displayName>
@@ -8305,28 +8848,96 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">පිමී {0}</unitPattern>
 			</unit>
 			<unit type="length-mile">
+				<displayName>සැතපුම්</displayName>
 				<unitPattern count="one">සැත {0}</unitPattern>
 				<unitPattern count="other">සැත {0}</unitPattern>
 			</unit>
 			<unit type="length-yard">
+				<displayName>යාර</displayName>
 				<unitPattern count="one">යාර {0}</unitPattern>
 				<unitPattern count="other">යාර {0}</unitPattern>
 			</unit>
 			<unit type="length-foot">
+				<displayName>අඩි</displayName>
 				<unitPattern count="one">{0}'</unitPattern>
 				<unitPattern count="other">{0}'</unitPattern>
+				<perUnitPattern>{0}/අඩි</perUnitPattern>
 			</unit>
 			<unit type="length-inch">
+				<displayName>අඟල්</displayName>
 				<unitPattern count="one">{0}″</unitPattern>
 				<unitPattern count="other">{0}″</unitPattern>
+				<perUnitPattern>{0}/අඟල්</perUnitPattern>
+			</unit>
+			<unit type="length-parsec">
+				<displayName>පාර්සෙක්</displayName>
+				<unitPattern count="one">පාසෙ {0}</unitPattern>
+				<unitPattern count="other">පාසෙ {0}</unitPattern>
 			</unit>
 			<unit type="length-light-year">
 				<displayName>ආ.ව</displayName>
 				<unitPattern count="one">ආ.ව {0}</unitPattern>
 				<unitPattern count="other">ආ.ව {0}</unitPattern>
 			</unit>
+			<unit type="length-astronomical-unit">
+				<displayName>නඒ</displayName>
+				<unitPattern count="one">නඒ {0}</unitPattern>
+				<unitPattern count="other">නඒ {0}</unitPattern>
+			</unit>
+			<unit type="length-furlong">
+				<displayName>පර්ලොම</displayName>
+				<unitPattern count="one">පර්ලොම {0}</unitPattern>
+				<unitPattern count="other">පර්ලොම {0}</unitPattern>
+			</unit>
+			<unit type="length-fathom">
+				<displayName>බඹය</displayName>
+				<unitPattern count="one">බඹ {0}</unitPattern>
+				<unitPattern count="other">බඹ {0}</unitPattern>
+			</unit>
+			<unit type="length-nautical-mile">
+				<displayName>නාසැත</displayName>
+				<unitPattern count="one">නාසැත {0}</unitPattern>
+				<unitPattern count="other">නාසැත {0}</unitPattern>
+			</unit>
+			<unit type="length-mile-scandinavian">
+				<displayName>ස්කැන්සැත</displayName>
+				<unitPattern count="one">ස්කැසැත {0}</unitPattern>
+				<unitPattern count="other">ස්කැසැත {0}</unitPattern>
+			</unit>
+			<unit type="length-point">
+				<displayName>පොයින්ට්</displayName>
+				<unitPattern count="one">පො {0}</unitPattern>
+				<unitPattern count="other">පො {0}</unitPattern>
+			</unit>
 			<unit type="length-solar-radius">
 				<displayName>අ☉</displayName>
+				<unitPattern count="one">{0} අ☉</unitPattern>
+				<unitPattern count="other">{0} අ☉</unitPattern>
+			</unit>
+			<unit type="light-lux">
+				<displayName>ලක්ස්</displayName>
+				<unitPattern count="one">ලක් {0}</unitPattern>
+				<unitPattern count="other">ලක් {0}</unitPattern>
+			</unit>
+			<unit type="light-candela">
+				<displayName>කැන්ඩෙලා</displayName>
+				<unitPattern count="one">කැන්ඩෙලා {0}</unitPattern>
+				<unitPattern count="other">කැන්ඩෙලා {0}</unitPattern>
+			</unit>
+			<unit type="light-lumen">
+				<displayName>ලූමනය</displayName>
+				<unitPattern count="one">ලූමන {0}</unitPattern>
+				<unitPattern count="other">ලූමන {0}</unitPattern>
+			</unit>
+			<unit type="light-solar-luminosity">
+				<displayName>සූර්ය දීප්ති</displayName>
+				<unitPattern count="one">{0} දි☉</unitPattern>
+				<unitPattern count="other">{0} දි☉</unitPattern>
+			</unit>
+			<unit type="mass-tonne">
+				<displayName>ටො</displayName>
+				<unitPattern count="one">ටො {0}</unitPattern>
+				<unitPattern count="other">ටො {0}</unitPattern>
 			</unit>
 			<unit type="mass-kilogram">
 				<displayName>කි.ග්‍රෑ.</displayName>
@@ -8340,10 +8951,31 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">ග්‍රෑ. {0}</unitPattern>
 				<perUnitPattern>{0}/ග්‍රෑ</perUnitPattern>
 			</unit>
+			<unit type="mass-milligram">
+				<displayName>මිග්‍රෑ</displayName>
+				<unitPattern count="one">මිග්‍රෑ {0}</unitPattern>
+				<unitPattern count="other">මිග්‍රෑ {0}</unitPattern>
+			</unit>
+			<unit type="mass-microgram">
+				<displayName>මග්‍රෑ</displayName>
+				<unitPattern count="one">මග්‍රෑ {0}</unitPattern>
+				<unitPattern count="other">මග්‍රෑ {0}</unitPattern>
+			</unit>
+			<unit type="mass-ton">
+				<displayName>ටොන්</displayName>
+				<unitPattern count="one">ටොන් {0}</unitPattern>
+				<unitPattern count="other">ටොන් {0}</unitPattern>
+			</unit>
+			<unit type="mass-stone">
+				<displayName>ගල්</displayName>
+				<unitPattern count="one">ගල් {0}</unitPattern>
+				<unitPattern count="other">ගල් {0}</unitPattern>
+			</unit>
 			<unit type="mass-pound">
 				<displayName>රා</displayName>
 				<unitPattern count="one">රා{0}</unitPattern>
 				<unitPattern count="other">රා{0}</unitPattern>
+				<perUnitPattern>{0}/රා</perUnitPattern>
 			</unit>
 			<unit type="mass-ounce">
 				<displayName>අවුස</displayName>
@@ -8351,32 +8983,115 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">අවුස{0}</unitPattern>
 				<perUnitPattern>{0}/අවුස</perUnitPattern>
 			</unit>
+			<unit type="mass-ounce-troy">
+				<displayName>අවුස ට්‍රෝයි</displayName>
+				<unitPattern count="one">අවුස ට්‍රෝ {0}</unitPattern>
+				<unitPattern count="other">අවුස ට්‍රෝ {0}</unitPattern>
+			</unit>
+			<unit type="mass-carat">
+				<displayName>කැරට්</displayName>
+				<unitPattern count="one">කැට් {0}</unitPattern>
+				<unitPattern count="other">කැට් {0}</unitPattern>
+			</unit>
 			<unit type="mass-dalton">
 				<displayName>ඩෝ</displayName>
+				<unitPattern count="one">{0} ඩෝ</unitPattern>
+				<unitPattern count="other">{0} ඩෝ</unitPattern>
 			</unit>
 			<unit type="mass-earth-mass">
 				<displayName>ස්⊕</displayName>
+				<unitPattern count="one">{0} ස්⊕</unitPattern>
+				<unitPattern count="other">{0} ස්⊕</unitPattern>
 			</unit>
 			<unit type="mass-solar-mass">
 				<displayName>ස්☉</displayName>
+				<unitPattern count="one">{0} ස්☉</unitPattern>
+				<unitPattern count="other">{0} ස්☉</unitPattern>
 			</unit>
 			<unit type="mass-grain">
 				<displayName>ඇ</displayName>
 				<unitPattern count="one">ඇ {0}</unitPattern>
 				<unitPattern count="other">ඇ {0}</unitPattern>
 			</unit>
+			<unit type="power-gigawatt">
+				<displayName>ගිවො</displayName>
+				<unitPattern count="one">ගිවො {0}</unitPattern>
+				<unitPattern count="other">ගිවො {0}</unitPattern>
+			</unit>
+			<unit type="power-megawatt">
+				<displayName>මෙවො</displayName>
+				<unitPattern count="one">මෙවො {0}</unitPattern>
+				<unitPattern count="other">මෙවො {0}</unitPattern>
+			</unit>
+			<unit type="power-kilowatt">
+				<displayName>කිවො</displayName>
+				<unitPattern count="one">කිවො {0}</unitPattern>
+				<unitPattern count="other">කිවො {0}</unitPattern>
+			</unit>
+			<unit type="power-watt">
+				<displayName>වොට්</displayName>
+				<unitPattern count="one">වොට් {0}</unitPattern>
+				<unitPattern count="other">වොට් {0}</unitPattern>
+			</unit>
+			<unit type="power-milliwatt">
+				<displayName>මිවො</displayName>
+				<unitPattern count="one">මිවො {0}</unitPattern>
+				<unitPattern count="other">මිවො {0}</unitPattern>
+			</unit>
+			<unit type="power-horsepower">
+				<displayName>අබ</displayName>
+				<unitPattern count="one">අබ {0}</unitPattern>
+				<unitPattern count="other">අබ {0}</unitPattern>
+			</unit>
+			<unit type="pressure-millimeter-ofhg">
+				<displayName>ර මිමී</displayName>
+				<unitPattern count="one">ර මිමී {0}</unitPattern>
+				<unitPattern count="other">ර මිමී {0}</unitPattern>
+			</unit>
+			<unit type="pressure-pound-force-per-square-inch">
+				<displayName>වඅරා</displayName>
+				<unitPattern count="one">වඅරා {0}</unitPattern>
+				<unitPattern count="other">වඅරා {0}</unitPattern>
+			</unit>
 			<unit type="pressure-inch-ofhg">
 				<displayName>&quot; ර</displayName>
 				<unitPattern count="one">ර {0}&quot;</unitPattern>
 				<unitPattern count="other">ර {0}&quot;</unitPattern>
 			</unit>
+			<unit type="pressure-bar">
+				<displayName>බාර්</displayName>
+				<unitPattern count="one">බාර් {0}</unitPattern>
+				<unitPattern count="other">බාර් {0}</unitPattern>
+			</unit>
 			<unit type="pressure-millibar">
+				<displayName>මිලිබාර්</displayName>
 				<unitPattern count="one">මි.බා. {0}</unitPattern>
 				<unitPattern count="other">මි.බා. {0}</unitPattern>
 			</unit>
+			<unit type="pressure-atmosphere">
+				<displayName>වායුගෝ</displayName>
+				<unitPattern count="one">වායුගෝ {0}</unitPattern>
+				<unitPattern count="other">වායුගෝ {0}</unitPattern>
+			</unit>
+			<unit type="pressure-pascal">
+				<displayName>පැස්</displayName>
+				<unitPattern count="one">පැස් {0}</unitPattern>
+				<unitPattern count="other">පැස් {0}</unitPattern>
+			</unit>
 			<unit type="pressure-hectopascal">
+				<displayName>හෙක්ටොපැස්කල්</displayName>
 				<unitPattern count="one">{0} hPa</unitPattern>
 				<unitPattern count="other">{0} hPa</unitPattern>
+			</unit>
+			<unit type="pressure-kilopascal">
+				<displayName>කිපැස්</displayName>
+				<unitPattern count="one">{0} කිපැස්</unitPattern>
+				<unitPattern count="other">{0} කිපැස්</unitPattern>
+			</unit>
+			<unit type="pressure-megapascal">
+				<displayName>මෙපැස්</displayName>
+				<unitPattern count="one">{0} මෙපැස්</unitPattern>
+				<unitPattern count="other">{0} මෙපැස්</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName>පැයට කිලෝමීටර්</displayName>
@@ -8393,12 +9108,23 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">පැසැ {0}</unitPattern>
 				<unitPattern count="other">පැසැ {0}</unitPattern>
 			</unit>
+			<unit type="speed-knot">
+				<displayName>නාසැ</displayName>
+				<unitPattern count="one">නාසැ {0}</unitPattern>
+				<unitPattern count="other">නාසැ {0}</unitPattern>
+			</unit>
+			<unit type="temperature-generic">
+				<displayName>°</displayName>
+				<unitPattern count="one">{0}°</unitPattern>
+				<unitPattern count="other">{0}°</unitPattern>
+			</unit>
 			<unit type="temperature-celsius">
 				<displayName>සෙල්සියස් අංශක</displayName>
 				<unitPattern count="one">{0}°</unitPattern>
 				<unitPattern count="other">{0}°</unitPattern>
 			</unit>
 			<unit type="temperature-fahrenheit">
+				<displayName>ෆැර. අ</displayName>
 				<unitPattern count="one">ෆැර. {0}°</unitPattern>
 				<unitPattern count="other">ෆැර. {0}°</unitPattern>
 			</unit>
@@ -8407,20 +9133,190 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">කෙ {0}</unitPattern>
 				<unitPattern count="other">කෙ {0}</unitPattern>
 			</unit>
+			<unit type="torque-pound-force-foot">
+				<displayName>රාත්-පාද</displayName>
+				<unitPattern count="one">{0} රාත්-පාද</unitPattern>
+				<unitPattern count="other">{0} රාත්-පාද</unitPattern>
+			</unit>
+			<unit type="torque-newton-meter">
+				<displayName>නි-මී</displayName>
+				<unitPattern count="one">{0} නි-මී</unitPattern>
+				<unitPattern count="other">{0} නි-මී</unitPattern>
+			</unit>
 			<unit type="volume-cubic-kilometer">
+				<displayName>කිමී³</displayName>
 				<unitPattern count="one">කිමී³ {0}</unitPattern>
 				<unitPattern count="other">{0} km³</unitPattern>
 			</unit>
+			<unit type="volume-cubic-meter">
+				<displayName>මී³</displayName>
+				<unitPattern count="one">මී³ {0}</unitPattern>
+				<unitPattern count="other">මී³ {0}</unitPattern>
+				<perUnitPattern>{0}/මී³</perUnitPattern>
+			</unit>
+			<unit type="volume-cubic-centimeter">
+				<displayName>සෙමී³</displayName>
+				<unitPattern count="one">ඝසෙ {0}</unitPattern>
+				<unitPattern count="other">ඝසෙ {0}</unitPattern>
+				<perUnitPattern>{0}/ඝසෙ</perUnitPattern>
+			</unit>
+			<unit type="volume-cubic-mile">
+				<displayName>සැත³</displayName>
+				<unitPattern count="one">සැත³ {0}</unitPattern>
+				<unitPattern count="other">සැත³ {0}</unitPattern>
+			</unit>
+			<unit type="volume-cubic-yard">
+				<displayName>යාර³</displayName>
+				<unitPattern count="one">යාර³ {0}</unitPattern>
+				<unitPattern count="other">යාර³ {0}</unitPattern>
+			</unit>
+			<unit type="volume-cubic-foot">
+				<displayName>අඩි³</displayName>
+				<unitPattern count="one">අඩි³ {0}</unitPattern>
+				<unitPattern count="other">අඩි³ {0}</unitPattern>
+			</unit>
 			<unit type="volume-cubic-inch">
 				<displayName>අල්³</displayName>
+				<unitPattern count="one">අල්³ {0}</unitPattern>
+				<unitPattern count="other">අල්³ {0}</unitPattern>
+			</unit>
+			<unit type="volume-megaliter">
+				<displayName>මෙලී</displayName>
+				<unitPattern count="one">මෙලී {0}</unitPattern>
+				<unitPattern count="other">මෙලී {0}</unitPattern>
+			</unit>
+			<unit type="volume-hectoliter">
+				<displayName>හෙලී</displayName>
+				<unitPattern count="one">හෙලී {0}</unitPattern>
+				<unitPattern count="other">හෙලී {0}</unitPattern>
 			</unit>
 			<unit type="volume-liter">
 				<displayName>ලීටර්</displayName>
 				<unitPattern count="one">ලී {0}</unitPattern>
 				<unitPattern count="other">ලී {0}</unitPattern>
+				<perUnitPattern>{0}/ලී</perUnitPattern>
+			</unit>
+			<unit type="volume-deciliter">
+				<displayName>ඩෙලී</displayName>
+				<unitPattern count="one">ඩෙලී {0}</unitPattern>
+				<unitPattern count="other">ඩෙලී {0}</unitPattern>
+			</unit>
+			<unit type="volume-centiliter">
+				<displayName>සෙලී</displayName>
+				<unitPattern count="one">සෙලී {0}</unitPattern>
+				<unitPattern count="other">සෙලී {0}</unitPattern>
+			</unit>
+			<unit type="volume-milliliter">
+				<displayName>මිලී</displayName>
+				<unitPattern count="one">මිලී {0}</unitPattern>
+				<unitPattern count="other">මිලී {0}</unitPattern>
+			</unit>
+			<unit type="volume-pint-metric">
+				<displayName>මෙපට්</displayName>
+				<unitPattern count="one">මෙපට් {0}</unitPattern>
+				<unitPattern count="other">මෙපට් {0}</unitPattern>
+			</unit>
+			<unit type="volume-cup-metric">
+				<displayName>මෙකෝප්ප</displayName>
+				<unitPattern count="one">මෙකෝ {0}</unitPattern>
+				<unitPattern count="other">මෙකෝ {0}</unitPattern>
+			</unit>
+			<unit type="volume-acre-foot">
+				<displayName>අක්කර-අඩි</displayName>
+				<unitPattern count="one">අක්-අඩි {0}</unitPattern>
+				<unitPattern count="other">අක්-අඩි {0}</unitPattern>
+			</unit>
+			<unit type="volume-bushel">
+				<displayName>බුසල්</displayName>
+				<unitPattern count="one">බුසල් {0}</unitPattern>
+				<unitPattern count="other">බුසල් {0}</unitPattern>
+			</unit>
+			<unit type="volume-gallon">
+				<displayName>ගැලු</displayName>
+				<unitPattern count="one">ගැලු {0}</unitPattern>
+				<unitPattern count="other">ගැලු {0}</unitPattern>
+				<perUnitPattern>{0}/ගැලු</perUnitPattern>
+			</unit>
+			<unit type="volume-gallon-imperial">
+				<displayName>ඉම්පී. ගැ</displayName>
+				<unitPattern count="one">{0} ගැ ඉම්පී.</unitPattern>
+				<unitPattern count="other">{0} ගැ ඉම්පී.</unitPattern>
+				<perUnitPattern>{0}/ ගැ ඉම්පී.</perUnitPattern>
+			</unit>
+			<unit type="volume-quart">
+				<displayName>ක්වාට්</displayName>
+				<unitPattern count="one">ක්ට් {0}</unitPattern>
+				<unitPattern count="other">ක්ට් {0}</unitPattern>
+			</unit>
+			<unit type="volume-pint">
+				<displayName>පයින්ට්</displayName>
+				<unitPattern count="one">පට් {0}</unitPattern>
+				<unitPattern count="other">පට් {0}</unitPattern>
+			</unit>
+			<unit type="volume-cup">
+				<displayName>කෝප්ප</displayName>
+				<unitPattern count="one">කෝ {0}</unitPattern>
+				<unitPattern count="other">කෝ {0}</unitPattern>
+			</unit>
+			<unit type="volume-fluid-ounce">
+				<displayName>ද්‍රව අවු</displayName>
+				<unitPattern count="one">ද්‍රව අවු {0}</unitPattern>
+				<unitPattern count="other">ද්‍රව අවු {0}</unitPattern>
+			</unit>
+			<unit type="volume-fluid-ounce-imperial">
+				<displayName>අධිරා. තර අවු</displayName>
+				<unitPattern count="one">{0} තර අවු අධිරා.</unitPattern>
+				<unitPattern count="other">{0} තර අවු අධිරා.</unitPattern>
+			</unit>
+			<unit type="volume-tablespoon">
+				<displayName>මේසහැදී</displayName>
+				<unitPattern count="one">මේසහැදී {0}</unitPattern>
+				<unitPattern count="other">මේසහැදී {0}</unitPattern>
+			</unit>
+			<unit type="volume-teaspoon">
+				<displayName>තේහැදී</displayName>
+				<unitPattern count="one">තේහැදී {0}</unitPattern>
+				<unitPattern count="other">තේහැදී {0}</unitPattern>
+			</unit>
+			<unit type="volume-barrel">
+				<displayName>බැරල්</displayName>
+				<unitPattern count="one">{0} බැරල්</unitPattern>
+				<unitPattern count="other">{0} බැරල්</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName>අතුරුපස හැන්ද</displayName>
+				<unitPattern count="one">අතුරුපස හැඳි {0}</unitPattern>
+				<unitPattern count="other">අතුරුපස හැඳි {0}</unitPattern>
 			</unit>
 			<unit type="volume-dessert-spoon-imperial">
 				<displayName>ඉම්පී. අතුරුපස හැඳි</displayName>
+				<unitPattern count="one">ඉම්පී. අතුරුපස හැඳි {0}</unitPattern>
+				<unitPattern count="other">ඉම්පී. අතුරුපස හැඳි {0}</unitPattern>
+			</unit>
+			<unit type="volume-drop">
+				<displayName>බින්දුව</displayName>
+				<unitPattern count="one">බින්දු {0}</unitPattern>
+				<unitPattern count="other">බින්දු {0}</unitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<displayName>ඩ්‍රූම තරල</displayName>
+				<unitPattern count="one">ඩ්‍රූම තරල {0}</unitPattern>
+				<unitPattern count="other">ඩ්‍රූම තරල {0}</unitPattern>
+			</unit>
+			<unit type="volume-jigger">
+				<displayName>තැටි වාහකය</displayName>
+				<unitPattern count="one">තැටි වාහක {0}</unitPattern>
+				<unitPattern count="other">තැටි වාහක {0}</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<displayName>ඩිංග</displayName>
+				<unitPattern count="one">ඩිංග {0}</unitPattern>
+				<unitPattern count="other">ඩිංග {0}</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName>ඉම්පීරියල් නැළිය</displayName>
+				<unitPattern count="one">ඉම්පීරියල් නැළි {0}</unitPattern>
+				<unitPattern count="other">ඉම්පීරියල් නැළි {0}</unitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>දිශාව</displayName>
@@ -8452,6 +9348,24 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<listPatternPart type="middle">{0}, {1}</listPatternPart>
 			<listPatternPart type="end">{0}, හෝ {1}</listPatternPart>
 			<listPatternPart type="2">{0} හෝ {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="or-narrow">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0}, හෝ {1}</listPatternPart>
+			<listPatternPart type="2">{0} හෝ {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="or-short">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0}, හෝ {1}</listPatternPart>
+			<listPatternPart type="2">{0} හෝ {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="standard-narrow">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0}, සහ {1}</listPatternPart>
+			<listPatternPart type="2">{0} සහ {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="standard-short">
 			<listPatternPart type="start">{0}, {1}</listPatternPart>
@@ -8656,19 +9570,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<featureName type="zero">කපහරු බිංදු</featureName>
 	</typographicNames>
 	<personNames>
-		<nameOrderLocales order="givenFirst">und</nameOrderLocales>
 		<nameOrderLocales order="surnameFirst">ko si ta te vi yue zh</nameOrderLocales>
 		<foreignSpaceReplacement xml:space="preserve"> </foreignSpaceReplacement>
 		<initialPattern type="initial">{0}.</initialPattern>
 		<initialPattern type="initialSequence">{0} {1}</initialPattern>
-		<personName order="givenFirst" length="long" usage="referring" formality="formal">
-			<namePattern>{given} {given2} {surname} {surname2} {suffix}</namePattern>
-		</personName>
 		<personName order="givenFirst" length="long" usage="referring" formality="informal">
 			<namePattern>{given-informal} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="long" usage="addressing" formality="formal">
-			<namePattern>{prefix} {given} {surname}</namePattern>
+			<namePattern>{title} {given} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="long" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
@@ -8677,34 +9587,34 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<namePattern>{given-monogram-allCaps}{given2-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="long" usage="monogram" formality="informal">
-			<namePattern>{given-informal-monogram-allCaps}{given2-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+			<namePattern>{given-informal-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="referring" formality="formal">
-			<namePattern>{given} {given2-initial} {surname} {suffix}</namePattern>
+			<namePattern>{given} {given2-initial} {surname} {generation}, {credentials}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="referring" formality="informal">
 			<namePattern>{given-informal} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="addressing" formality="formal">
-			<namePattern>{prefix} {given-initial} {surname}</namePattern>
+			<namePattern>{title} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="monogram" formality="formal">
-			<namePattern>{given-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+			<namePattern>{surname-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="monogram" formality="informal">
-			<namePattern>{given-informal-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+			<namePattern>{given-informal-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="referring" formality="formal">
 			<namePattern>{given-initial} {given2-initial} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="referring" formality="informal">
-			<namePattern>{given-informal}</namePattern>
+			<namePattern>{given-informal} {surname-initial}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="addressing" formality="formal">
-			<namePattern>{prefix} {surname}</namePattern>
+			<namePattern>{title} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
@@ -8716,13 +9626,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<namePattern>{given-informal-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="referring" formality="formal">
-			<namePattern>{prefix} {surname} {given} {given2} {suffix}</namePattern>
+			<namePattern>{surname} {title} {given} {given2} {generation}, {credentials}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="referring" formality="informal">
 			<namePattern>{surname} {given-informal}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="addressing" formality="formal">
-			<namePattern>{prefix} {surname-initial} {given}</namePattern>
+			<namePattern>{title} {surname}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
@@ -8734,37 +9644,37 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<namePattern>{surname-monogram-allCaps}{given-informal-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="referring" formality="formal">
-			<namePattern>{surname-initial} {given} {given2} {suffix}</namePattern>
+			<namePattern>{surname} {given} {given2-initial} {generation}, {credentials}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="referring" formality="informal">
-			<namePattern>{surname-initial} {given-informal}</namePattern>
+			<namePattern>{surname} {given-informal}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="addressing" formality="formal">
-			<namePattern>{prefix} {surname-initial} {given}</namePattern>
+			<namePattern>{title} {surname}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="monogram" formality="formal">
-			<namePattern>{surname-monogram-allCaps}{given-monogram-allCaps}</namePattern>
+			<namePattern>{surname-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="monogram" formality="informal">
 			<namePattern>{given-informal-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="referring" formality="formal">
-			<namePattern>{surname-initial} {given}</namePattern>
+			<namePattern>{surname} {given-initial} {given2-initial}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="referring" formality="informal">
-			<namePattern>{given-informal}</namePattern>
+			<namePattern>{surname} {given-initial}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="addressing" formality="formal">
-			<namePattern>{prefix} {given}</namePattern>
+			<namePattern>{title} {surname}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="monogram" formality="formal">
-			<namePattern>{given-monogram-allCaps}</namePattern>
+			<namePattern>{surname-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="monogram" formality="informal">
 			<namePattern>{given-informal-monogram-allCaps}</namePattern>
@@ -8773,41 +9683,65 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<namePattern>{given} {given2}, {surname}</namePattern>
 		</personName>
 		<personName order="sorting" length="long" usage="referring" formality="informal">
-			<namePattern>{given-informal} {given2}, {surname}</namePattern>
+			<namePattern>{given-informal} {surname}</namePattern>
 		</personName>
 		<personName order="sorting" length="medium" usage="referring" formality="formal">
-			<namePattern>{given} {given2}, {surname-initial}</namePattern>
+			<namePattern>{given} {given2-initial} {surname}</namePattern>
 		</personName>
 		<personName order="sorting" length="medium" usage="referring" formality="informal">
-			<namePattern>{given-informal} {given2}, {surname-initial}</namePattern>
+			<namePattern>{given-informal}, {surname}</namePattern>
 		</personName>
 		<personName order="sorting" length="short" usage="referring" formality="formal">
-			<namePattern>{given} {given2-initial}, {surname-initial}</namePattern>
+			<namePattern>{given-initial} {given2-initial}, {surname}</namePattern>
 		</personName>
 		<personName order="sorting" length="short" usage="referring" formality="informal">
-			<namePattern>{given-informal} {given2-initial}, {surname-initial}</namePattern>
+			<namePattern>{given-informal}, {surname}</namePattern>
 		</personName>
-		<sampleName item="givenOnly">
-			<nameField type="given">සින්බෑඩ්</nameField>
+		<sampleName item="nativeG">
+			<nameField type="given">සෙන්ඩයා</nameField>
 		</sampleName>
-		<sampleName item="givenSurnameOnly">
+		<sampleName item="nativeGS">
 			<nameField type="given">අයිරින්</nameField>
 			<nameField type="surname">ඇඩ්ලර්</nameField>
 		</sampleName>
-		<sampleName item="given12Surname">
-			<nameField type="given">ජෝන්</nameField>
+		<sampleName item="nativeGGS">
+			<nameField type="given">මේරි සූ</nameField>
 			<nameField type="given2">හමිෂ්</nameField>
 			<nameField type="surname">වොට්සන්</nameField>
 		</sampleName>
-		<sampleName item="full">
-			<nameField type="prefix">මහාචාර්ය. ආචාර්ය.</nameField>
+		<sampleName item="nativeFull">
+			<nameField type="title">මහතා</nameField>
+			<nameField type="given">බර්ට්‍රම් විල්බර්ෆෝස්</nameField>
+			<nameField type="given-informal">බර්ටි</nameField>
+			<nameField type="given2">හෙන්රි රොබට්</nameField>
+			<nameField type="surname-prefix">∅∅∅</nameField>
+			<nameField type="surname-core">වූස්ටර්</nameField>
+			<nameField type="surname2">∅∅∅</nameField>
+			<nameField type="generation">බාල</nameField>
+			<nameField type="credentials">පා.ම.</nameField>
+		</sampleName>
+		<sampleName item="foreignG">
+			<nameField type="given">සින්බෑඩ්</nameField>
+		</sampleName>
+		<sampleName item="foreignGS">
+			<nameField type="given">කේතේ</nameField>
+			<nameField type="surname">මුලර්</nameField>
+		</sampleName>
+		<sampleName item="foreignGGS">
+			<nameField type="given">සාසිලියා</nameField>
+			<nameField type="given2">හමිෂ්</nameField>
+			<nameField type="surname">ස්ටෝබර්</nameField>
+		</sampleName>
+		<sampleName item="foreignFull">
+			<nameField type="title">මහාචාර්ය. ආචාර්ය.</nameField>
 			<nameField type="given">ඇඩා කොර්නේලියා</nameField>
 			<nameField type="given-informal">නීලේ</nameField>
-			<nameField type="given2">ඊවා සොෆියා</nameField>
-			<nameField type="surname-prefix">වෑන් ඩෙන්</nameField>
-			<nameField type="surname-core">වුල්ෆ්</nameField>
-			<nameField type="surname2">බෙකර් ෂ්මිට්</nameField>
-			<nameField type="suffix">එම්.ඩී. පී.එච්.ඩී.</nameField>
+			<nameField type="given2">සීසර් මාටින්</nameField>
+			<nameField type="surname-prefix">වොන්</nameField>
+			<nameField type="surname-core">බෲල්</nameField>
+			<nameField type="surname2">ගොන්සාලෙස් ඩොමින්ගෝ</nameField>
+			<nameField type="generation">බාල</nameField>
+			<nameField type="credentials">එම්.ඩී. පී.එච්.ඩී.</nameField>
 		</sampleName>
 	</personNames>
 </ldml>

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -125,6 +125,13 @@ tier1_loom_serviceability = \
 hotspot_loom = \
   :tier1_loom
 
+serviceability_ttf_virtual = \
+  serviceability/ \
+  -serviceability/jvmti/vthread \
+  -serviceability/jvmti/thread  \
+  -serviceability/jvmti/events  \
+  -serviceability/jvmti/negative
+
 tier1_common = \
   sanity/BasicVMTest.java \
   gtest/GTestWrapper.java \
@@ -147,6 +154,8 @@ hotspot_slow_compiler = \
   compiler/codegen/aes \
   compiler/codecache/stress \
   compiler/gcbarriers/PreserveFPRegistersTest.java \
+  compiler/memoryinitialization/ZeroTLABTest.java \
+  compiler/classUnloading/methodUnloading/TestOverloadCompileQueues.java \
   resourcehogs/compiler \
   :hotspot_compiler_arraycopy
 
@@ -274,7 +283,6 @@ ctw_3 = \
 tier1_gc = \
   :tier1_gc_1 \
   :tier1_gc_2 \
-  :tier1_gc_gcold \
   :tier1_gc_gcbasher \
   :tier1_gc_epsilon \
   :tier1_gc_shenandoah
@@ -305,7 +313,7 @@ tier1_gc_epsilon = \
 
 tier2_gc_epsilon =
 
-tier1_gc_gcold = \
+tier3_gc_gcold = \
   gc/stress/gcold/TestGCOldWithG1.java \
   gc/stress/gcold/TestGCOldWithSerial.java \
   gc/stress/gcold/TestGCOldWithParallel.java
@@ -369,6 +377,7 @@ tier1_runtime = \
  -runtime/CompressedOops/UseCompressedOops.java \
  -runtime/ConstantPool/IntfMethod.java \
  -runtime/ErrorHandling/CreateCoredumpOnCrash.java \
+ -runtime/ErrorHandling/ReattemptErrorTest.java \
  -runtime/ErrorHandling/TestHeapDumpOnOutOfMemoryError.java \
  -runtime/ErrorHandling/TimeoutInErrorHandlingTest.java \
  -runtime/InvocationTests \
@@ -418,7 +427,6 @@ hotspot_appcds_dynamic = \
  -runtime/cds/appcds/javaldr/ArrayTest.java \
  -runtime/cds/appcds/javaldr/ExceptionDuringDumpAtObjectsInitPhase.java \
  -runtime/cds/appcds/javaldr/GCSharedStringsDuringDump.java \
- -runtime/cds/appcds/javaldr/HumongousDuringDump.java \
  -runtime/cds/appcds/javaldr/LockDuringDump.java \
  -runtime/cds/appcds/jcmd/JCmdTestStaticDump.java \
  -runtime/cds/appcds/jcmd/JCmdTestDynamicDump.java \
@@ -559,6 +567,7 @@ tier2 = \
 tier3 = \
   :hotspot_tier3_runtime \
   :tier3_compiler \
+  :tier3_gc_gcold \
   :tier3_gc_shenandoah
 
 # Everything that is not in other tiers, but not apps
@@ -684,8 +693,7 @@ vmTestbase_vm_gc_container = \
 
 # Playing with object arrays and various strategies of garbage producing
 vmTestbase_vm_gc_juggle = \
-  vmTestbase/gc/ArrayJuggle/ \
-  vmTestbase/gc/memory/Array/ArrayJuggle
+  vmTestbase/gc/ArrayJuggle/
 
 # GC Locker
 vmTestbase_vm_gc_locker = \

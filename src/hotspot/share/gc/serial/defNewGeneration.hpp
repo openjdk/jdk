@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,8 +39,8 @@
 
 class ContiguousSpace;
 class CSpaceCounters;
-class DefNewYoungerGenClosure;
-class DefNewScanClosure;
+class OldGenScanClosure;
+class YoungGenScanClosure;
 class DefNewTracer;
 class ScanWeakRefClosure;
 class SerialHeap;
@@ -52,12 +52,15 @@ class STWGCTimer;
 class DefNewGeneration: public Generation {
   friend class VMStructs;
 
-protected:
   Generation* _old_gen;
   uint        _tenuring_threshold;   // Tenuring threshold for next collection.
   AgeTable    _age_table;
   // Size of object to pretenure in words; command line provides bytes
   size_t      _pretenure_size_threshold_words;
+
+  // ("Weak") Reference processing support
+  SpanSubjectToDiscoveryClosure _span_based_discoverer;
+  ReferenceProcessor* _ref_processor;
 
   AgeTable*   age_table() { return &_age_table; }
 
@@ -99,12 +102,6 @@ protected:
 
   // Preserved marks
   PreservedMarksSet _preserved_marks_set;
-
-  // Promotion failure handling
-  OopIterateClosure *_promo_failure_scan_stack_closure;
-  void set_promo_failure_scan_stack_closure(OopIterateClosure *scan_stack_closure) {
-    _promo_failure_scan_stack_closure = scan_stack_closure;
-  }
 
   Stack<oop, mtGC> _promo_failure_scan_stack;
   void drain_promo_failure_scan_stack(void);
@@ -159,36 +156,6 @@ protected:
     return n > alignment ? align_down(n, alignment) : alignment;
   }
 
- public:  // was "protected" but caused compile error on win32
-  class IsAliveClosure: public BoolObjectClosure {
-    Generation* _young_gen;
-  public:
-    IsAliveClosure(Generation* young_gen);
-    bool do_object_b(oop p);
-  };
-
-  class FastKeepAliveClosure: public OopClosure {
-    ScanWeakRefClosure* _cl;
-    CardTableRS* _rs;
-    HeapWord* _boundary;
-    template <class T> void do_oop_work(T* p);
-  public:
-    FastKeepAliveClosure(DefNewGeneration* g, ScanWeakRefClosure* cl);
-    virtual void do_oop(oop* p);
-    virtual void do_oop(narrowOop* p);
-  };
-
-  class FastEvacuateFollowersClosure: public VoidClosure {
-    SerialHeap* _heap;
-    DefNewScanClosure* _scan_cur_or_nonheap;
-    DefNewYoungerGenClosure* _scan_older;
-  public:
-    FastEvacuateFollowersClosure(SerialHeap* heap,
-                                 DefNewScanClosure* cur,
-                                 DefNewYoungerGenClosure* older);
-    void do_void();
-  };
-
  public:
   DefNewGeneration(ReservedSpace rs,
                    size_t initial_byte_size,
@@ -198,12 +165,16 @@ protected:
 
   virtual Generation::Name kind() { return Generation::DefNew; }
 
+  // allocate and initialize ("weak") refs processing support
+  void ref_processor_init();
+  ReferenceProcessor* const ref_processor() { return _ref_processor; }
+
   // Accessing spaces
   ContiguousSpace* eden() const           { return _eden_space; }
   ContiguousSpace* from() const           { return _from_space; }
   ContiguousSpace* to()   const           { return _to_space;   }
 
-  virtual CompactibleSpace* first_compaction_space() const;
+  virtual ContiguousSpace* first_compaction_space() const;
 
   // Space enquiries
   size_t capacity() const;

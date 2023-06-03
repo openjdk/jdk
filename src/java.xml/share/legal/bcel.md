@@ -1,10 +1,10 @@
-## Apache Commons Byte Code Engineering Library (BCEL) Version 6.5.0
+## Apache Commons Byte Code Engineering Library (BCEL) Version 6.7.0
 
 ### Apache Commons BCEL Notice
 <pre>
 
     Apache Commons BCEL
-    Copyright 2004-2020 The Apache Software Foundation
+    Copyright 2004-2022 The Apache Software Foundation
 
     This product includes software developed at
     The Apache Software Foundation (https://www.apache.org/).

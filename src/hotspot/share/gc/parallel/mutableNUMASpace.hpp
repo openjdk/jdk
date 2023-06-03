@@ -67,7 +67,6 @@ class MutableNUMASpace : public MutableSpace {
   class LGRPSpace : public CHeapObj<mtGC> {
     int _lgrp_id;
     MutableSpace* _space;
-    MemRegion _invalid_region;
     AdaptiveWeightedAverage *_alloc_rate;
     bool _allocation_failed;
 
@@ -97,15 +96,6 @@ class MutableNUMASpace : public MutableSpace {
       delete _alloc_rate;
     }
 
-    void add_invalid_region(MemRegion r) {
-      if (!_invalid_region.is_empty()) {
-      _invalid_region.set_start(MIN2(_invalid_region.start(), r.start()));
-      _invalid_region.set_end(MAX2(_invalid_region.end(), r.end()));
-      } else {
-      _invalid_region = r;
-      }
-    }
-
     static bool equals(void* lgrp_id_value, LGRPSpace* p) {
       return *(int*)lgrp_id_value == p->lgrp_id();
     }
@@ -127,8 +117,6 @@ class MutableNUMASpace : public MutableSpace {
       alloc_rate()->sample(alloc_rate_sample);
     }
 
-    MemRegion invalid_region() const                { return _invalid_region;      }
-    void set_invalid_region(MemRegion r)            { _invalid_region = r;         }
     int lgrp_id() const                             { return _lgrp_id;             }
     MutableSpace* space() const                     { return _space;               }
     AdaptiveWeightedAverage* alloc_rate() const     { return _alloc_rate;          }
@@ -161,8 +149,7 @@ class MutableNUMASpace : public MutableSpace {
 
   // Bias region towards the lgrp.
   void bias_region(MemRegion mr, int lgrp_id);
-  // Free pages in a given region.
-  void free_region(MemRegion mr);
+
   // Get current chunk size.
   size_t current_chunk_size(int i);
   // Get default chunk size (equally divide the space).
@@ -176,17 +163,8 @@ class MutableNUMASpace : public MutableSpace {
   // |----bottom_region--|---intersection---|------top_region------|
   void select_tails(MemRegion new_region, MemRegion intersection,
                     MemRegion* bottom_region, MemRegion *top_region);
-  // Try to merge the invalid region with the bottom or top region by decreasing
-  // the intersection area. Return the invalid_region aligned to the page_size()
-  // boundary if it's inside the intersection. Return non-empty invalid_region
-  // if it lies inside the intersection (also page-aligned).
-  // |------------------new_region---------------------------------|
-  // |----------------|-------invalid---|--------------------------|
-  // |----bottom_region--|---intersection---|------top_region------|
-  void merge_regions(MemRegion new_region, MemRegion* intersection,
-                     MemRegion *invalid_region);
 
- public:
+public:
   GrowableArray<LGRPSpace*>* lgrp_spaces() const     { return _lgrp_spaces;       }
   MutableNUMASpace(size_t alignment);
   virtual ~MutableNUMASpace();

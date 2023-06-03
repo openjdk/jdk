@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package java.lang;
 
 import java.lang.annotation.Annotation;
 import java.lang.constant.ClassDesc;
+import java.lang.constant.ConstantDescs;
 import java.lang.invoke.TypeDescriptor;
 import java.lang.invoke.MethodHandles;
 import java.lang.module.ModuleReader;
@@ -125,20 +126,19 @@ import sun.reflect.misc.ReflectUtil;
  * <p> The following example uses a {@code Class} object to print the
  * class name of an object:
  *
- * <blockquote><pre>
- *     void printClassName(Object obj) {
- *         System.out.println("The class of " + obj +
- *                            " is " + obj.getClass().getName());
- *     }
- * </pre></blockquote>
+ * {@snippet lang="java" :
+ * void printClassName(Object obj) {
+ *     System.out.println("The class of " + obj +
+ *                        " is " + obj.getClass().getName());
+ * }}
  *
  * It is also possible to get the {@code Class} object for a named
  * class or interface (or for {@code void}) using a <i>class literal</i>.
  * For example:
  *
- * <blockquote>
- *     {@code System.out.println("The name of class Foo is: "+Foo.class.getName());}
- * </blockquote>
+ * {@snippet lang="java" :
+ * System.out.println("The name of class Foo is: "+Foo.class.getName());
+ * }
  *
  * <p> Some methods of class {@code Class} expose whether the declaration of
  * a class or interface in Java source code was <em>enclosed</em> within
@@ -340,9 +340,9 @@ public final class Class<T> implements java.io.Serializable,
      * interface with the given string name.  Invoking this method is
      * equivalent to:
      *
-     * <blockquote>
-     *  {@code Class.forName(className, true, currentLoader)}
-     * </blockquote>
+     * {@snippet lang="java" :
+     * Class.forName(className, true, currentLoader)
+     * }
      *
      * where {@code currentLoader} denotes the defining class loader of
      * the current class.
@@ -351,9 +351,9 @@ public final class Class<T> implements java.io.Serializable,
      * runtime {@code Class} descriptor for the class named
      * {@code java.lang.Thread}:
      *
-     * <blockquote>
-     *   {@code Class t = Class.forName("java.lang.Thread")}
-     * </blockquote>
+     * {@snippet lang="java" :
+     * Class<?> t = Class.forName("java.lang.Thread");
+     * }
      * <p>
      * A call to {@code forName("X")} causes the class named
      * {@code X} to be initialized.
@@ -414,15 +414,15 @@ public final class Class<T> implements java.io.Serializable,
      *
      * <p> For example, in an instance method the expression:
      *
-     * <blockquote>
-     *  {@code Class.forName("Foo")}
-     * </blockquote>
+     * {@snippet lang="java" :
+     * Class.forName("Foo")
+     * }
      *
      * is equivalent to:
      *
-     * <blockquote>
-     *  {@code Class.forName("Foo", true, this.getClass().getClassLoader())}
-     * </blockquote>
+     * {@snippet lang="java" :
+     * Class.forName("Foo", true, this.getClass().getClassLoader())
+     * }
      *
      * Note that this method throws errors related to loading, linking
      * or initializing as specified in Sections {@jls 12.2}, {@jls
@@ -606,15 +606,15 @@ public final class Class<T> implements java.io.Serializable,
      *
      * <p>The call
      *
-     * <pre>{@code
+     * {@snippet lang="java" :
      * clazz.newInstance()
-     * }</pre>
+     * }
      *
      * can be replaced by
      *
-     * <pre>{@code
+     * {@snippet lang="java" :
      * clazz.getDeclaredConstructor().newInstance()
-     * }</pre>
+     * }
      *
      * The latter sequence of calls is inferred to be able to throw
      * the additional exception types {@link
@@ -1524,9 +1524,9 @@ public final class Class<T> implements java.io.Serializable,
             return enclosingClass == null || name == null || descriptor == null;
         }
 
-        boolean isConstructor() { return !isPartial() && "<init>".equals(name); }
+        boolean isConstructor() { return !isPartial() && ConstantDescs.INIT_NAME.equals(name); }
 
-        boolean isMethod() { return !isPartial() && !isConstructor() && !"<clinit>".equals(name); }
+        boolean isMethod() { return !isPartial() && !isConstructor() && !ConstantDescs.CLASS_INIT_NAME.equals(name); }
 
         Class<?> getEnclosingClass() { return enclosingClass; }
 
@@ -2040,8 +2040,8 @@ public final class Class<T> implements java.io.Serializable,
      * has length 0. (Note that a {@code Class} object which represents a class
      * always has public methods, inherited from {@code Object}.)
      *
-     * <p> The returned array never contains methods with names "{@code <init>}"
-     * or "{@code <clinit>}".
+     * <p> The returned array never contains methods with names {@value
+     * ConstantDescs#INIT_NAME} or {@value ConstantDescs#CLASS_INIT_NAME}.
      *
      * <p> The elements in the returned array are not sorted and are not in any
      * particular order.
@@ -2234,8 +2234,8 @@ public final class Class<T> implements java.io.Serializable,
      * this interface or any of its superinterfaces, then this method does not
      * find any method.
      *
-     * <p> This method does not find any method with name "{@code <init>}" or
-     * "{@code <clinit>}".
+     * <p> This method does not find any method with name {@value
+     * ConstantDescs#INIT_NAME} or {@value ConstantDescs#CLASS_INIT_NAME}.
      *
      * <p> Generally, the method to be reflected is determined by the 4 step
      * algorithm that follows.
@@ -2293,7 +2293,8 @@ public final class Class<T> implements java.io.Serializable,
      * @return the {@code Method} object that matches the specified
      *         {@code name} and {@code parameterTypes}
      * @throws NoSuchMethodException if a matching method is not found
-     *         or if the name is "&lt;init&gt;"or "&lt;clinit&gt;".
+     *         or if the name is {@value ConstantDescs#INIT_NAME} or
+     *         {@value ConstantDescs#CLASS_INIT_NAME}.
      * @throws NullPointerException if {@code name} is {@code null}
      * @throws SecurityException
      *         If a security manager, <i>s</i>, is present and
@@ -2483,7 +2484,7 @@ public final class Class<T> implements java.io.Serializable,
      * @apiNote
      * <p> The following method can be used to find the record canonical constructor:
      *
-     * <pre>{@code
+     * {@snippet lang="java" :
      * static <T extends Record> Constructor<T> getCanonicalConstructor(Class<T> cls)
      *     throws NoSuchMethodException {
      *   Class<?>[] paramTypes =
@@ -2491,7 +2492,7 @@ public final class Class<T> implements java.io.Serializable,
      *           .map(RecordComponent::getType)
      *           .toArray(Class<?>[]::new);
      *   return cls.getDeclaredConstructor(paramTypes);
-     * }}</pre>
+     * }}
      *
      * @return  An array of {@code RecordComponent} objects representing all the
      *          record components of this record class, or {@code null} if this
@@ -2549,8 +2550,9 @@ public final class Class<T> implements java.io.Serializable,
      * object for each such method.
      *
      * <p> If this {@code Class} object represents a class or interface that
-     * has a class initialization method {@code <clinit>}, then the returned
-     * array does <em>not</em> have a corresponding {@code Method} object.
+     * has a class initialization method {@value ConstantDescs#CLASS_INIT_NAME},
+     * then the returned array does <em>not</em> have a corresponding {@code
+     * Method} object.
      *
      * <p> If this {@code Class} object represents a class or interface with no
      * declared methods, then the returned array has length 0.
@@ -2721,7 +2723,8 @@ public final class Class<T> implements java.io.Serializable,
      * parameter types is declared in a class, and one of these methods has a
      * return type that is more specific than any of the others, that method is
      * returned; otherwise one of the methods is chosen arbitrarily.  If the
-     * name is "&lt;init&gt;"or "&lt;clinit&gt;" a {@code NoSuchMethodException}
+     * name is {@value ConstantDescs#INIT_NAME} or {@value
+     * ConstantDescs#CLASS_INIT_NAME} a {@code NoSuchMethodException}
      * is raised.
      *
      * <p> If this {@code Class} object represents an array type, then this

@@ -292,7 +292,7 @@ public class Http2TestServerConnection {
 
     private static void handshake(String name, SSLSocket sock) throws IOException {
         if (name == null) {
-            sock.getSession(); // awaits handshake completion
+            sock.startHandshake(); // blocks until handshake done
             return;
         } else if (name.equals("localhost")) {
             name = "localhost";
@@ -314,7 +314,7 @@ public class Http2TestServerConnection {
         List<SNIMatcher> list = List.of(matcher);
         params.setSNIMatchers(list);
         sock.setSSLParameters(params);
-        sock.getSession(); // blocks until handshake done
+        sock.startHandshake(); // blocks until handshake done
     }
 
     void closeIncoming() {
@@ -718,6 +718,11 @@ public class Http2TestServerConnection {
 
             // give to user
             Http2Handler handler = server.getHandlerFor(uri.getPath());
+
+            // Need to pass the BodyInputStream reference to the BodyOutputStream, so it can determine if the stream
+            // must be reset due to the BodyInputStream not being consumed by the handler when invoked.
+            if (bis instanceof BodyInputStream bodyInputStream) bos.bis = bodyInputStream;
+
             try {
                 handler.handle(exchange);
             } catch (IOException closed) {
@@ -828,7 +833,10 @@ public class Http2TestServerConnection {
                                 throw new IOException("Unexpected frame");
                             }
                         } else {
-                            q.put(frame);
+                            if (!q.putIfOpen(frame)) {
+                                System.err.printf("Stream %s is closed: dropping %s%n",
+                                        stream, frame);
+                            }
                         }
                     }
                 }
@@ -960,13 +968,25 @@ public class Http2TestServerConnection {
         final BodyOutputStream oo = new BodyOutputStream(
                 promisedStreamid,
                 clientSettings.getParameter(
-                        SettingsFrame.INITIAL_WINDOW_SIZE), this);
+                        SettingsFrame.INITIAL_WINDOW_SIZE), this) {
+
+            @Override
+            public void sendEndStream() throws IOException {
+                if (properties.getProperty("sendTrailingHeadersAfterPushPromise", "0").equals("1")) {
+                    conn.outputQ.put(getTrailingHeadersFrame(promisedStreamid, List.of()));
+                } else {
+                    super.sendEndStream();
+                }
+            }
+        };
+
         outStreams.put(promisedStreamid, oo);
         oo.goodToGo();
         exec.submit(() -> {
             try {
                 ResponseHeaders oh = getPushResponse(promisedStreamid);
                 outputQ.put(oh);
+
                 ii.transferTo(oo);
             } catch (Throwable ex) {
                 System.err.printf("TestServer: pushing response error: %s\n",
@@ -977,6 +997,11 @@ public class Http2TestServerConnection {
             }
         });
 
+    }
+
+    private HeadersFrame getTrailingHeadersFrame(int promisedStreamid, List<ByteBuffer> headerBlocks) {
+        // TODO: see if there is a safe way to encode headers without interrupting connection thread
+        return new HeadersFrame(promisedStreamid, (HeaderFrame.END_HEADERS | HeaderFrame.END_STREAM), headerBlocks);
     }
 
     // returns a minimal response with status 200

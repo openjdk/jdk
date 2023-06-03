@@ -154,7 +154,7 @@ public class Inflater {
      * @see Inflater#needsInput
      */
     public void setInput(byte[] input, int off, int len) {
-        Preconditions.checkFromIndexSize(len, off, input.length, Preconditions.AIOOBE_FORMATTER);
+        Preconditions.checkFromIndexSize(off, len, input.length, Preconditions.AIOOBE_FORMATTER);
         synchronized (zsRef) {
             this.input = null;
             this.inputArray = input;
@@ -219,7 +219,7 @@ public class Inflater {
      * @see Inflater#getAdler
      */
     public void setDictionary(byte[] dictionary, int off, int len) {
-        Preconditions.checkFromIndexSize(len, off, dictionary.length, Preconditions.AIOOBE_FORMATTER);
+        Preconditions.checkFromIndexSize(off, len, dictionary.length, Preconditions.AIOOBE_FORMATTER);
         synchronized (zsRef) {
             ensureOpen();
             setDictionary(zsRef.address(), dictionary, off, len);
@@ -363,7 +363,7 @@ public class Inflater {
     public int inflate(byte[] output, int off, int len)
         throws DataFormatException
     {
-        Preconditions.checkFromIndexSize(len, off, output.length, Preconditions.AIOOBE_FORMATTER);
+        Preconditions.checkFromIndexSize(off, len, output.length, Preconditions.AIOOBE_FORMATTER);
         synchronized (zsRef) {
             ensureOpen();
             ByteBuffer input = this.input;

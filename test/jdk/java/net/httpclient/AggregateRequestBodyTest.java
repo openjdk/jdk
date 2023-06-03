@@ -86,6 +86,8 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import static java.lang.System.out;
+import static java.net.http.HttpClient.Version.HTTP_1_1;
+import static java.net.http.HttpClient.Version.HTTP_2;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
@@ -817,25 +819,20 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
             throw new AssertionError("Unexpected null sslContext");
 
         HttpTestHandler handler = new HttpTestEchoHandler();
-        InetSocketAddress loopback = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
-
-        HttpServer http1 = HttpServer.create(loopback, 0);
-        http1TestServer = HttpTestServer.of(http1);
+        http1TestServer = HttpTestServer.create(HTTP_1_1);
         http1TestServer.addHandler(handler, "/http1/echo/");
         http1URI = "http://" + http1TestServer.serverAuthority() + "/http1/echo/x";
 
-        HttpsServer https1 = HttpsServer.create(loopback, 0);
-        https1.setHttpsConfigurator(new HttpsConfigurator(sslContext));
-        https1TestServer = HttpTestServer.of(https1);
+        https1TestServer = HttpTestServer.create(HTTP_1_1, sslContext);
         https1TestServer.addHandler(handler, "/https1/echo/");
         https1URI = "https://" + https1TestServer.serverAuthority() + "/https1/echo/x";
 
         // HTTP/2
-        http2TestServer = HttpTestServer.of(new Http2TestServer("localhost", false, 0));
+        http2TestServer = HttpTestServer.create(HTTP_2);
         http2TestServer.addHandler(handler, "/http2/echo/");
         http2URI = "http://" + http2TestServer.serverAuthority() + "/http2/echo/x";
 
-        https2TestServer = HttpTestServer.of(new Http2TestServer("localhost", true, sslContext));
+        https2TestServer = HttpTestServer.create(HTTP_2, sslContext);
         https2TestServer.addHandler(handler, "/https2/echo/");
         https2URI = "https://" + https2TestServer.serverAuthority() + "/https2/echo/x";
 

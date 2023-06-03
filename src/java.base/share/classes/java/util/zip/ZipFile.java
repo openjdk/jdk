@@ -63,7 +63,7 @@ import java.util.stream.StreamSupport;
 import jdk.internal.access.JavaUtilZipFileAccess;
 import jdk.internal.access.JavaUtilJarAccess;
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.misc.VM;
+import jdk.internal.util.OperatingSystem;
 import jdk.internal.perf.PerfCounter;
 import jdk.internal.ref.CleanerFactory;
 import jdk.internal.vm.annotation.Stable;
@@ -1085,8 +1085,6 @@ public class ZipFile implements ZipConstants, Closeable {
         }
     }
 
-    private static boolean isWindows;
-
     static {
         SharedSecrets.setJavaUtilZipFileAccess(
             new JavaUtilZipFileAccess() {
@@ -1133,7 +1131,6 @@ public class ZipFile implements ZipConstants, Closeable {
 
              }
         );
-        isWindows = VM.getSavedProperty("os.name").contains("Windows");
     }
 
     private static class Source {
@@ -1321,7 +1318,7 @@ public class ZipFile implements ZipConstants, Closeable {
             this.zc = zc;
             this.key = key;
             if (toDelete) {
-                if (isWindows) {
+                if (OperatingSystem.isWindows()) {
                     this.zfile = SharedSecrets.getJavaIORandomAccessFileAccess()
                                               .openAndDelete(key.file, "r");
                 } else {
@@ -1633,40 +1630,41 @@ public class ZipFile implements ZipConstants, Closeable {
             int hsh = ZipCoder.hash(name);
             int idx = table[(hsh & 0x7fffffff) % tablelen];
 
+            int dirPos = -1; // Position of secondary match "name/"
+
             // Search down the target hash chain for a entry whose
             // 32 bit hash matches the hashed name.
             while (idx != ZIP_ENDCHAIN) {
                 if (getEntryHash(idx) == hsh) {
-                    // The CEN name must match the specified one
+
                     int pos = getEntryPos(idx);
+                    int noff = pos + CENHDR;
+                    int nlen = CENNAM(cen, pos);
 
-                    try {
-                        ZipCoder zc = zipCoderForPos(pos);
-                        String entry = zc.toString(cen, pos + CENHDR, CENNAM(cen, pos));
+                    ZipCoder zc = zipCoderForPos(pos);
 
-                        // If addSlash is true we'll test for name+/ in addition to
-                        // name, unless name is the empty string or already ends with a
-                        // slash
-                        int entryLen = entry.length();
-                        int nameLen = name.length();
-                        if (entryLen == nameLen && entry.equals(name)) {
-                            // Found our match
+                    // Compare the lookup name with the name encoded in the CEN
+                    switch (zc.compare(name, cen, noff, nlen, addSlash)) {
+                        case EXACT_MATCH:
+                            // We found an exact match for "name"
                             return pos;
-                        }
-                        // If addSlash is true we'll now test for name+/ providing
-                        if (addSlash && nameLen + 1 == entryLen
-                                && entry.startsWith(name) &&
-                                entry.charAt(entryLen - 1) == '/') {
-                            // Found the entry "name+/", now find the CEN entry pos
-                            int exactPos = getEntryPos(name, false);
-                            return exactPos == -1 ? pos : exactPos;
-                        }
-                    } catch (IllegalArgumentException iae) {
-                        // Ignore
+                        case DIRECTORY_MATCH:
+                            // We found the directory "name/"
+                            // Track its position, then continue the search for "name"
+                            dirPos = pos;
+                            break;
+                        case NO_MATCH:
+                            // Hash collision, continue searching
                     }
                 }
                 idx = getEntryNext(idx);
             }
+            // Reaching this point means we did not find "name".
+            // Return the position of "name/" if we found it
+            if (dirPos != -1) {
+                return dirPos;
+            }
+            // No entry found
             return -1;
         }
 

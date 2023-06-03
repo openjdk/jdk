@@ -102,7 +102,7 @@ inline int g_isfinite(jfloat  f)                 { return _finite(f); }
 inline int g_isfinite(jdouble f)                 { return _finite(f); }
 
 // Formatting.
-#define FORMAT64_MODIFIER "I64"
+#define FORMAT64_MODIFIER "ll"
 
 #define offset_of(klass,field) offsetof(klass,field)
 

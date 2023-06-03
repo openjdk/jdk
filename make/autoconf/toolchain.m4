@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ VALID_TOOLCHAINS_all="gcc clang xlc microsoft"
 # These toolchains are valid on different platforms
 VALID_TOOLCHAINS_linux="gcc clang"
 VALID_TOOLCHAINS_macosx="clang"
-VALID_TOOLCHAINS_aix="xlc"
+VALID_TOOLCHAINS_aix="xlc clang"
 VALID_TOOLCHAINS_windows="microsoft"
 
 # Toolchain descriptions
@@ -53,7 +53,7 @@ TOOLCHAIN_DESCRIPTION_xlc="IBM XL C/C++"
 TOOLCHAIN_MINIMUM_VERSION_clang="3.5"
 TOOLCHAIN_MINIMUM_VERSION_gcc="6.0"
 TOOLCHAIN_MINIMUM_VERSION_microsoft="19.28.0.0" # VS2019 16.8, aka MSVC 14.28
-TOOLCHAIN_MINIMUM_VERSION_xlc=""
+TOOLCHAIN_MINIMUM_VERSION_xlc="16.1.0.0011"
 
 # Minimum supported linker versions, empty means unspecified
 TOOLCHAIN_MINIMUM_LD_VERSION_gcc="2.18"
@@ -234,6 +234,25 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETERMINE_TOOLCHAIN_TYPE],
   # First toolchain type in the list is the default
   DEFAULT_TOOLCHAIN=${VALID_TOOLCHAINS%% *}
 
+  # On AIX the default toolchain depends on the installed (found) compiler
+  #   xlclang++     -> xlc toolchain
+  #   ibm-clang++_r -> clang toolchain
+  # The compiler is searched on the PATH and TOOLCHAIN_PATH
+  # xlclang++ has precedence over ibm-clang++_r if both are installed
+  if test "x$OPENJDK_TARGET_OS" = xaix; then
+    DEFAULT_TOOLCHAIN="clang"
+    if test "x$TOOLCHAIN_PATH" != x; then
+      if test -e ${TOOLCHAIN_PATH}/xlclang++; then
+        DEFAULT_TOOLCHAIN="xlc"
+      fi
+    else
+      UTIL_LOOKUP_PROGS(XLCLANG_TEST_PATH, xlclang++)
+      if test "x$XLCLANG_TEST_PATH" != x; then
+        DEFAULT_TOOLCHAIN="xlc"
+      fi
+    fi
+  fi
+
   if test "x$with_toolchain_type" = xlist; then
     # List all toolchains
     AC_MSG_NOTICE([The following toolchains are valid on this platform:])
@@ -263,22 +282,40 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETERMINE_TOOLCHAIN_TYPE],
     if test "x$TOOLCHAIN_PATH" != x; then
       XLC_TEST_PATH=${TOOLCHAIN_PATH}/
     fi
-
-    XLCLANG_VERSION_OUTPUT=`${XLC_TEST_PATH}xlclang++ -qversion 2>&1 | $HEAD -n 1`
-    $ECHO "$XLCLANG_VERSION_OUTPUT" | $GREP "IBM XL C/C++ for AIX" > /dev/null
-    if test $? -eq 0; then
-      AC_MSG_NOTICE([xlclang++ output: $XLCLANG_VERSION_OUTPUT])
+    if test "x$TOOLCHAIN_TYPE" = xclang; then
+      TOOLCHAIN_DESCRIPTION_clang="IBM Open XL C/C++"
+      XLCLANG_VERSION_OUTPUT=`${XLC_TEST_PATH}ibm-clang++_r --version 2>&1 | $HEAD -n 1`
+      $ECHO "$XLCLANG_VERSION_OUTPUT" | $GREP "IBM Open XL C/C++ for AIX" > /dev/null
+      if test $? -eq 0; then
+        AC_MSG_NOTICE([ibm-clang++_r output: $XLCLANG_VERSION_OUTPUT])
+      else
+        AC_MSG_ERROR([ibm-clang++_r version output check failed, output: $XLCLANG_VERSION_OUTPUT])
+      fi
     else
-      AC_MSG_ERROR([xlclang++ version output check failed, output: $XLCLANG_VERSION_OUTPUT])
+      XLCLANG_VERSION_OUTPUT=`${XLC_TEST_PATH}xlclang++ -qversion 2>&1 | $HEAD -n 1`
+      $ECHO "$XLCLANG_VERSION_OUTPUT" | $GREP "IBM XL C/C++ for AIX" > /dev/null
+      if test $? -eq 0; then
+        AC_MSG_NOTICE([xlclang++ output: $XLCLANG_VERSION_OUTPUT])
+      else
+        AC_MSG_ERROR([xlclang++ version output check failed, output: $XLCLANG_VERSION_OUTPUT])
+      fi
     fi
   fi
 
-  TOOLCHAIN_CC_BINARY_clang="clang"
+  if test "x$OPENJDK_TARGET_OS" = xaix; then
+    TOOLCHAIN_CC_BINARY_clang="ibm-clang_r"
+  else
+    TOOLCHAIN_CC_BINARY_clang="clang"
+  fi
   TOOLCHAIN_CC_BINARY_gcc="gcc"
   TOOLCHAIN_CC_BINARY_microsoft="cl"
   TOOLCHAIN_CC_BINARY_xlc="xlclang"
 
-  TOOLCHAIN_CXX_BINARY_clang="clang++"
+  if test "x$OPENJDK_TARGET_OS" = xaix; then
+    TOOLCHAIN_CXX_BINARY_clang="ibm-clang++_r"
+  else
+    TOOLCHAIN_CXX_BINARY_clang="clang++"
+  fi
   TOOLCHAIN_CXX_BINARY_gcc="g++"
   TOOLCHAIN_CXX_BINARY_microsoft="cl"
   TOOLCHAIN_CXX_BINARY_xlc="xlclang++"
@@ -384,7 +421,7 @@ AC_DEFUN([TOOLCHAIN_EXTRACT_COMPILER_VERSION],
     # Collapse compiler output into a single line
     COMPILER_VERSION_STRING=`$ECHO $COMPILER_VERSION_OUTPUT`
     COMPILER_VERSION_NUMBER=`$ECHO $COMPILER_VERSION_OUTPUT | \
-        $SED -e 's/^.*, V\(@<:@1-9@:>@@<:@0-9.@:>@*\).*$/\1/'`
+        $SED -e 's/^.*Version: \(@<:@1-9@:>@@<:@0-9.@:>@*\).*$/\1/'`
   elif test  "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     # There is no specific version flag, but all output starts with a version string.
     # First line typically looks something like:
@@ -632,7 +669,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_CORE],
   if test "x$TOOLCHAIN_MINIMUM_VERSION" != x; then
     TOOLCHAIN_CHECK_COMPILER_VERSION(VERSION: $TOOLCHAIN_MINIMUM_VERSION,
         IF_OLDER_THAN: [
-          AC_MSG_WARN([You are using $TOOLCHAIN_TYPE older than $TOOLCHAIN_MINIMUM_VERSION. This is not a supported configuration.])
+          AC_MSG_WARN([You are using $TOOLCHAIN_TYPE $CC_VERSION_NUMBER which is older than $TOOLCHAIN_MINIMUM_VERSION. This is not a supported configuration.])
         ]
     )
   fi
@@ -966,7 +1003,11 @@ AC_DEFUN_ONCE([TOOLCHAIN_MISC_CHECKS],
   # Setup hotspot lecagy names for toolchains
   HOTSPOT_TOOLCHAIN_TYPE=$TOOLCHAIN_TYPE
   if test "x$TOOLCHAIN_TYPE" = xclang; then
-    HOTSPOT_TOOLCHAIN_TYPE=gcc
+    if test "x$OPENJDK_TARGET_OS" = xaix; then
+      HOTSPOT_TOOLCHAIN_TYPE=xlc
+    else
+      HOTSPOT_TOOLCHAIN_TYPE=gcc
+    fi
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     HOTSPOT_TOOLCHAIN_TYPE=visCPP
   fi

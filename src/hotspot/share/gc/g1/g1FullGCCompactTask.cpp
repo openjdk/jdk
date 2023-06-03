@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,43 +34,6 @@
 #include "oops/oop.inline.hpp"
 #include "utilities/ticks.hpp"
 
-// Do work for all skip-compacting regions.
-class G1ResetSkipCompactingClosure : public HeapRegionClosure {
-  G1FullCollector* _collector;
-
-public:
-  G1ResetSkipCompactingClosure(G1FullCollector* collector) : _collector(collector) { }
-
-  bool do_heap_region(HeapRegion* r) {
-    uint region_index = r->hrm_index();
-    // Only for skip-compaction regions; early return otherwise.
-    if (!_collector->is_skip_compacting(region_index)) {
-      return false;
-    }
-#ifdef ASSERT
-    if (r->is_humongous()) {
-      oop obj = cast_to_oop(r->humongous_start_region()->bottom());
-      assert(_collector->mark_bitmap()->is_marked(obj), "must be live");
-    } else if (r->is_open_archive()) {
-      bool is_empty = (_collector->live_words(r->hrm_index()) == 0);
-      assert(!is_empty, "should contain at least one live obj");
-    } else if (r->is_closed_archive()) {
-      // should early-return above
-      ShouldNotReachHere();
-    } else {
-      assert(_collector->live_words(region_index) > _collector->scope()->region_compaction_threshold(),
-             "should be quite full");
-    }
-#endif
-    assert(_collector->compaction_top(r) == nullptr,
-           "region %u compaction_top " PTR_FORMAT " must not be different from bottom " PTR_FORMAT,
-           r->hrm_index(), p2i(_collector->compaction_top(r)), p2i(r->bottom()));
-
-    r->reset_skip_compacting_after_full_gc();
-    return false;
-  }
-};
-
 void G1FullGCCompactTask::G1CompactRegionClosure::clear_in_bitmap(oop obj) {
   assert(_bitmap->is_marked(obj), "Should only compact marked objects");
   _bitmap->clear(obj);
@@ -79,16 +42,7 @@ void G1FullGCCompactTask::G1CompactRegionClosure::clear_in_bitmap(oop obj) {
 size_t G1FullGCCompactTask::G1CompactRegionClosure::apply(oop obj) {
   size_t size = obj->size();
   if (obj->is_forwarded()) {
-    HeapWord* destination = cast_from_oop<HeapWord*>(obj->forwardee());
-
-    // copy object and reinit its mark
-    HeapWord* obj_addr = cast_from_oop<HeapWord*>(obj);
-    assert(obj_addr != destination, "everything in this pass should be moving");
-    Copy::aligned_conjoint_words(obj_addr, destination, size);
-
-    // There is no need to transform stack chunks - marking already did that.
-    cast_to_oop(destination)->init_mark();
-    assert(cast_to_oop(destination)->klass() != NULL, "should have a class");
+    G1FullGCCompactTask::copy_object_to_new_location(obj);
   }
 
   // Clear the mark for the compacted object to allow reuse of the
@@ -97,8 +51,22 @@ size_t G1FullGCCompactTask::G1CompactRegionClosure::apply(oop obj) {
   return size;
 }
 
+void G1FullGCCompactTask::copy_object_to_new_location(oop obj) {
+  assert(obj->is_forwarded(), "Sanity!");
+  assert(obj->forwardee() != obj, "Object must have a new location");
+
+  size_t size = obj->size();
+  // Copy object and reinit its mark.
+  HeapWord* obj_addr = cast_from_oop<HeapWord*>(obj);
+  HeapWord* destination = cast_from_oop<HeapWord*>(obj->forwardee());
+  Copy::aligned_conjoint_words(obj_addr, destination, size);
+
+  // There is no need to transform stack chunks - marking already did that.
+  cast_to_oop(destination)->init_mark();
+  assert(cast_to_oop(destination)->klass() != nullptr, "should have a class");
+}
+
 void G1FullGCCompactTask::compact_region(HeapRegion* hr) {
-  assert(!hr->is_pinned(), "Should be no pinned region in compaction queue");
   assert(!hr->is_humongous(), "Should be no humongous regions in compaction queue");
 
   if (!collector()->is_free(hr->hrm_index())) {
@@ -124,10 +92,6 @@ void G1FullGCCompactTask::work(uint worker_id) {
        ++it) {
     compact_region(*it);
   }
-
-  G1ResetSkipCompactingClosure hc(collector());
-  G1CollectedHeap::heap()->heap_region_par_iterate_from_worker_offset(&hc, &_claimer, worker_id);
-  log_task("Compaction task", worker_id, start);
 }
 
 void G1FullGCCompactTask::serial_compaction() {
@@ -137,5 +101,51 @@ void G1FullGCCompactTask::serial_compaction() {
        it != compaction_queue->end();
        ++it) {
     compact_region(*it);
+  }
+}
+
+void G1FullGCCompactTask::humongous_compaction() {
+  GCTraceTime(Debug, gc, phases) tm("Phase 4: Humonguous Compaction", collector()->scope()->timer());
+
+  for (HeapRegion* hr : collector()->humongous_compaction_regions()) {
+    assert(collector()->is_compaction_target(hr->hrm_index()), "Sanity");
+    compact_humongous_obj(hr);
+  }
+}
+
+void G1FullGCCompactTask::compact_humongous_obj(HeapRegion* src_hr) {
+  assert(src_hr->is_starts_humongous(), "Should be start region of the humongous object");
+
+  oop obj = cast_to_oop(src_hr->bottom());
+  size_t word_size = obj->size();
+
+  uint num_regions = (uint)G1CollectedHeap::humongous_obj_size_in_regions(word_size);
+  HeapWord* destination = cast_from_oop<HeapWord*>(obj->forwardee());
+
+  assert(collector()->mark_bitmap()->is_marked(obj), "Should only compact marked objects");
+  collector()->mark_bitmap()->clear(obj);
+
+  copy_object_to_new_location(obj);
+
+  uint dest_start_idx = _g1h->addr_to_region(destination);
+  // Update the metadata for the destination regions.
+  _g1h->set_humongous_metadata(_g1h->region_at(dest_start_idx), num_regions, word_size, false);
+
+  // Free the source regions that do not overlap with the destination regions.
+  uint src_start_idx = src_hr->hrm_index();
+  free_non_overlapping_regions(src_start_idx, dest_start_idx, num_regions);
+}
+
+void G1FullGCCompactTask::free_non_overlapping_regions(uint src_start_idx, uint dest_start_idx, uint num_regions) {
+  uint dest_end_idx = dest_start_idx + num_regions -1;
+  uint src_end_idx  = src_start_idx + num_regions - 1;
+
+  uint non_overlapping_start = dest_end_idx < src_start_idx ?
+                               src_start_idx :
+                               dest_end_idx + 1;
+
+  for (uint i = non_overlapping_start; i <= src_end_idx; ++i) {
+    HeapRegion* hr = _g1h->region_at(i);
+    _g1h->free_humongous_region(hr, nullptr);
   }
 }

@@ -91,9 +91,9 @@ class MacroAssembler: public Assembler {
   Address as_Address(AddressLiteral adr);
   Address as_Address(ArrayAddress adr, Register rscratch);
 
-  // Support for NULL-checks
+  // Support for null-checks
   //
-  // Generates code that causes a NULL OS exception if the content of reg is NULL.
+  // Generates code that causes a null OS exception if the content of reg is null.
   // If the accessed location is M[reg + offset] and the offset is known, provide the
   // offset. No explicit code generation is needed if the offset is within a certain
   // range (0 <= offset <= page_size).
@@ -119,7 +119,7 @@ class MacroAssembler: public Assembler {
       char* disp = (char*) &branch[1];
       int imm8 = target - (address) &disp[1];
       guarantee(this->is8bit(imm8), "Short forward jump exceeds 8-bit offset at %s:%d",
-                file == NULL ? "<NULL>" : file, line);
+                file == nullptr ? "<null>" : file, line);
       *disp = imm8;
     } else {
       int* disp = (int*) &branch[(op == 0x0F || op == 0xC7)? 2: 1];
@@ -149,6 +149,8 @@ class MacroAssembler: public Assembler {
 
   void increment(Register reg, int value = 1) { LP64_ONLY(incrementq(reg, value)) NOT_LP64(incrementl(reg, value)) ; }
   void decrement(Register reg, int value = 1) { LP64_ONLY(decrementq(reg, value)) NOT_LP64(decrementl(reg, value)) ; }
+  void increment(Address dst, int value = 1)  { LP64_ONLY(incrementq(dst, value)) NOT_LP64(incrementl(dst, value)) ; }
+  void decrement(Address dst, int value = 1)  { LP64_ONLY(decrementq(dst, value)) NOT_LP64(decrementl(dst, value)) ; }
 
   void decrementl(Address dst, int value = 1);
   void decrementl(Register reg, int value = 1);
@@ -161,6 +163,11 @@ class MacroAssembler: public Assembler {
 
   void incrementq(Register reg, int value = 1);
   void incrementq(Address dst, int value = 1);
+
+  void incrementl(AddressLiteral dst, Register rscratch = noreg);
+  void incrementl(ArrayAddress   dst, Register rscratch);
+
+  void incrementq(AddressLiteral dst, Register rscratch = noreg);
 
   // Support optimal SSE move instructions.
   void movflt(XMMRegister dst, XMMRegister src) {
@@ -189,10 +196,18 @@ class MacroAssembler: public Assembler {
   }
   void movdbl(Address dst, XMMRegister src) { movsd(dst, src); }
 
-  void incrementl(AddressLiteral dst, Register rscratch = noreg);
-  void incrementl(ArrayAddress   dst, Register rscratch);
+  void flt_to_flt16(Register dst, XMMRegister src, XMMRegister tmp) {
+    // Use separate tmp XMM register because caller may
+    // requires src XMM register to be unchanged (as in x86.ad).
+    vcvtps2ph(tmp, src, 0x04, Assembler::AVX_128bit);
+    movdl(dst, tmp);
+    movswl(dst, dst);
+  }
 
-  void incrementq(AddressLiteral dst, Register rscratch = noreg);
+  void flt16_to_flt(XMMRegister dst, Register src) {
+    movdl(dst, src);
+    vcvtph2ps(dst, dst, Assembler::AVX_128bit);
+  }
 
   // Alignment
   void align32();
@@ -363,7 +378,7 @@ class MacroAssembler: public Assembler {
   void store_heap_oop(Address dst, Register val, Register tmp1 = noreg,
                       Register tmp2 = noreg, Register tmp3 = noreg, DecoratorSet decorators = 0);
 
-  // Used for storing NULL. All other oop constants should be
+  // Used for storing null. All other oop constants should be
   // stored using routines that take a jobject.
   void store_heap_oop_null(Address dst);
 
@@ -371,7 +386,7 @@ class MacroAssembler: public Assembler {
   void store_klass_gap(Register dst, Register src);
 
   // This dummy is to prevent a call to store_heap_oop from
-  // converting a zero (like NULL) into a Register by giving
+  // converting a zero (like null) into a Register by giving
   // the compiler two choices it can't resolve
 
   void store_heap_oop(Address dst, void* dummy);
@@ -596,7 +611,7 @@ public:
   // Test sub_klass against super_klass, with fast and slow paths.
 
   // The fast path produces a tri-state answer: yes / no / maybe-slow.
-  // One of the three labels can be NULL, meaning take the fall-through.
+  // One of the three labels can be null, meaning take the fall-through.
   // If super_check_offset is -1, the value is loaded up from super_klass.
   // No registers are killed, except temp_reg.
   void check_klass_subtype_fast_path(Register sub_klass,
@@ -629,8 +644,8 @@ public:
 
   void clinit_barrier(Register klass,
                       Register thread,
-                      Label* L_fast_path = NULL,
-                      Label* L_slow_path = NULL);
+                      Label* L_fast_path = nullptr,
+                      Label* L_slow_path = nullptr);
 
   // method handles (JSR 292)
   Address argument_address(RegisterOrConstant arg_slot, int extra_slot_offset = 0);
@@ -1994,6 +2009,8 @@ public:
 
   void check_stack_alignment(Register sp, const char* msg, unsigned bias = 0, Register tmp = noreg);
 
+  void fast_lock_impl(Register obj, Register hdr, Register thread, Register tmp, Label& slow);
+  void fast_unlock_impl(Register obj, Register hdr, Register tmp, Label& slow);
 };
 
 /**

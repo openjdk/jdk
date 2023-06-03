@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,9 +43,6 @@ class PhaseStringOpts : public Phase {
   // Memory slices needed for code gen
   int byte_adr_idx;
 
-  // Integer.sizeTable - used for int to String conversion
-  ciField* size_table_field;
-
   // A set for use by various stages
   VectorSet _visited;
 
@@ -58,9 +55,6 @@ class PhaseStringOpts : public Phase {
 
   // Replace all the SB calls in concat with an optimization String allocation
   void replace_string_concat(StringConcat* concat);
-
-  // Load the value of a static field, performing any constant folding.
-  Node* fetch_static_field(GraphKit& kit, ciField* field);
 
   // Compute the number of characters required to represent the int value
   Node* int_stringSize(GraphKit& kit, Node* value);

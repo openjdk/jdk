@@ -61,8 +61,7 @@ public class Generator extends JavacTestingAbstractProcessor {
     void createFile(TypeElement e) {
         try {
             JavaFileObject fo = filer.createSourceFile(e.getSimpleName());
-            Writer out = fo.openWriter();
-            try {
+            try (Writer out = fo.openWriter()) {
                 switch (e.getKind()) {
                     case CLASS:
                         out.write("import java.util.*;\n");
@@ -83,8 +82,6 @@ public class Generator extends JavacTestingAbstractProcessor {
                         out.write("}\n");
                         break;
                 }
-            } finally {
-                out.close();
             }
         } catch (IOException ex) {
             messager.printError("problem writing file: " + ex);

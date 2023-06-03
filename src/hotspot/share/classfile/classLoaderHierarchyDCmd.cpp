@@ -45,18 +45,6 @@ ClassLoaderHierarchyDCmd::ClassLoaderHierarchyDCmd(outputStream* output, bool he
   _dcmdparser.add_dcmd_option(&_fold);
 }
 
-
-int ClassLoaderHierarchyDCmd::num_arguments() {
-  ResourceMark rm;
-  ClassLoaderHierarchyDCmd* dcmd = new ClassLoaderHierarchyDCmd(nullptr, false);
-  if (dcmd != nullptr) {
-    DCmdMark mark(dcmd);
-    return dcmd->_dcmdparser.num_arguments();
-  } else {
-    return 0;
-  }
-}
-
 // Helper class for drawing the branches to the left of a node.
 class BranchTracker : public StackObj {
   //       "<x>"

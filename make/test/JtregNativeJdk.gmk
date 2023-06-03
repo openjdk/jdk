@@ -79,10 +79,12 @@ ifeq ($(call isTargetOs, windows), true)
 
   BUILD_JDK_JTREG_LIBRARIES_LIBS_libTracePinnedThreads := jvm.lib
   BUILD_JDK_JTREG_LIBRARIES_LIBS_libNewDirectByteBuffer := $(WIN_LIB_JAVA)
+  BUILD_JDK_JTREG_LIBRARIES_LIBS_libGetXSpace := $(WIN_LIB_JAVA)
 else
   BUILD_JDK_JTREG_LIBRARIES_LIBS_libstringPlatformChars := -ljava
   BUILD_JDK_JTREG_LIBRARIES_LIBS_libDirectIO := -ljava
   BUILD_JDK_JTREG_LIBRARIES_LIBS_libNewDirectByteBuffer := -ljava
+  BUILD_JDK_JTREG_LIBRARIES_LIBS_libGetXSpace := -ljava
   BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libNativeThread := -pthread
 
   # java.lang.foreign tests
@@ -135,7 +137,13 @@ endif
 ifeq ($(ASAN_ENABLED), true)
   # Any executable which launches the JVM and uses a custom launcher needs to explicitly link in the
   # default ASan options.
-  BUILD_JDK_JTREG_EXTRA_FILES := $(TOPDIR)/make/data/asan/asan_default_options.c
+  BUILD_JDK_JTREG_EXTRA_FILES += $(TOPDIR)/make/data/asan/asan_default_options.c
+endif
+
+ifeq ($(LSAN_ENABLED), true)
+  # Any executable which launches the JVM and uses a custom launcher needs to explicitly link in the
+  # default LSan options.
+  BUILD_JDK_JTREG_EXTRA_FILES += $(TOPDIR)/make/data/lsan/lsan_default_options.c
 endif
 
 # This evaluation is expensive and should only be done if this target was

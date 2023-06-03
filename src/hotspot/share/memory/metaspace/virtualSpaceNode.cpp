@@ -42,7 +42,8 @@
 #include "runtime/globals.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
-#include "sanitizers/address.h"
+#include "sanitizers/address.hpp"
+#include "sanitizers/leak.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
@@ -239,6 +240,10 @@ VirtualSpaceNode::VirtualSpaceNode(ReservedSpace rs, bool owns_rs, CommitLimiter
   // Poison the memory region. It will be unpoisoned later on a per-chunk base for chunks that are
   // handed to arenas.
   ASAN_POISON_MEMORY_REGION(rs.base(), rs.size());
+
+  // Register memory region related to Metaspace. The Metaspace contains lots of pointers to malloc
+  // memory.
+  LSAN_REGISTER_ROOT_REGION(rs.base(), rs.size());
 }
 
 // Create a node of a given size (it will create its own space).
@@ -270,11 +275,15 @@ VirtualSpaceNode* VirtualSpaceNode::create_node(ReservedSpace rs, CommitLimiter*
 VirtualSpaceNode::~VirtualSpaceNode() {
   DEBUG_ONLY(verify_locked();)
 
+  // Unregister memory region related to Metaspace.
+  LSAN_UNREGISTER_ROOT_REGION(_rs.base(), _rs.size());
+
   // Undo the poisoning before potentially unmapping memory. This ensures that future mappings at
   // the same address do not unexpectedly fail with use-after-poison.
   ASAN_UNPOISON_MEMORY_REGION(_rs.base(), _rs.size());
 
   UL(debug, ": dies.");
+
   if (_owns_rs) {
     _rs.release();
   }
@@ -313,7 +322,7 @@ Metachunk* VirtualSpaceNode::allocate_root_chunk() {
     Metachunk* c = rca->alloc_root_chunk_header(this);
     assert(c->base() == loc && c->vsnode() == this &&
            c->is_free(), "Sanity");
-    DEBUG_ONLY(c->verify();)
+    SOMETIMES(c->verify();)
 
     UL2(debug, "new root chunk " METACHUNK_FORMAT ".", METACHUNK_FORMAT_ARGS(c));
     return c;
@@ -329,7 +338,7 @@ void VirtualSpaceNode::split(chunklevel_t target_level, Metachunk* c, FreeChunkL
   assert_lock_strong(Metaspace_lock);
   // Get the area associated with this chunk and let it handle the splitting
   RootChunkArea* rca = _root_chunk_area_lut.get_area_by_address(c->base());
-  DEBUG_ONLY(rca->verify_area_is_ideally_merged();)
+  SOMETIMES(rca->verify_area_is_ideally_merged();)
   rca->split(target_level, c, freelists);
 }
 
@@ -349,7 +358,7 @@ Metachunk* VirtualSpaceNode::merge(Metachunk* c, FreeChunkListVector* freelists)
   // Get the rca associated with this chunk and let it handle the merging
   RootChunkArea* rca = _root_chunk_area_lut.get_area_by_address(c->base());
   Metachunk* c2 = rca->merge(c, freelists);
-  DEBUG_ONLY(rca->verify_area_is_ideally_merged();)
+  SOMETIMES(rca->verify_area_is_ideally_merged();)
   return c2;
 }
 
@@ -370,7 +379,7 @@ bool VirtualSpaceNode::attempt_enlarge_chunk(Metachunk* c, FreeChunkListVector* 
   RootChunkArea* rca = _root_chunk_area_lut.get_area_by_address(c->base());
 
   bool rc = rca->attempt_enlarge_chunk(c, freelists);
-  DEBUG_ONLY(rca->verify_area_is_ideally_merged();)
+  SOMETIMES(rca->verify_area_is_ideally_merged();)
   if (rc) {
     InternalStats::inc_num_chunks_enlarged();
   }
@@ -406,7 +415,7 @@ void VirtualSpaceNode::verify() const {
   verify_locked();
 }
 
-volatile int test_access = 0;
+volatile uint test_access = 0;
 
 // Verify counters and basic structure. Slow mode: verify all chunks in depth
 void VirtualSpaceNode::verify_locked() const {
@@ -427,7 +436,7 @@ void VirtualSpaceNode::verify_locked() const {
   SOMETIMES(
     for (MetaWord* p = base(); p < base() + used_words(); p += os::vm_page_size()) {
       if (_commit_mask.is_committed_address(p)) {
-        test_access += *(int*)p;
+        test_access += *(uint*)p;
       }
     }
   )

@@ -32,6 +32,7 @@
 #include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"
 #include "compiler/oopMap.hpp"
+#include "gc/serial/cardTableRS.hpp"
 #include "gc/serial/genMarkSweep.hpp"
 #include "gc/serial/serialGcRefProcProxyTask.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
@@ -41,7 +42,6 @@
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/generation.hpp"
-#include "gc/shared/genOopClosures.inline.hpp"
 #include "gc/shared/modRefBarrierSet.hpp"
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/referenceProcessorPhaseTimes.hpp"
@@ -63,7 +63,7 @@
 #include "jvmci/jvmci.hpp"
 #endif
 
-void GenMarkSweep::invoke_at_safepoint(ReferenceProcessor* rp, bool clear_all_softrefs) {
+void GenMarkSweep::invoke_at_safepoint(bool clear_all_softrefs) {
   assert(SafepointSynchronize::is_at_safepoint(), "must be at a safepoint");
 
   GenCollectedHeap* gch = GenCollectedHeap::heap();
@@ -72,11 +72,6 @@ void GenMarkSweep::invoke_at_safepoint(ReferenceProcessor* rp, bool clear_all_so
     assert(clear_all_softrefs, "Policy should have been checked earlier");
   }
 #endif
-
-  // hook up weak ref data so it can be used during Mark-Sweep
-  assert(ref_processor() == nullptr, "no stomping");
-  assert(rp != nullptr, "should be non-null");
-  set_ref_processor(rp);
 
   gch->trace_heap_before_gc(_gc_tracer);
 
@@ -114,27 +109,10 @@ void GenMarkSweep::invoke_at_safepoint(ReferenceProcessor* rp, bool clear_all_so
 
   MarkSweep::_string_dedup_requests->flush();
 
-  // If compaction completely evacuated the young generation then we
-  // can clear the card table.  Otherwise, we must invalidate
-  // it (consider all cards dirty).  In the future, we might consider doing
-  // compaction within generations only, and doing card-table sliding.
-  CardTableRS* rs = gch->rem_set();
-  Generation* old_gen = gch->old_gen();
-
-  // Clear/invalidate below make use of the "prev_used_regions" saved earlier.
-  if (gch->young_gen()->used() == 0) {
-    // We've evacuated the young generation.
-    rs->clear_into_younger(old_gen);
-  } else {
-    // Invalidate the cards corresponding to the currently used
-    // region and clear those corresponding to the evacuated region.
-    rs->invalidate_or_clear(old_gen);
-  }
+  bool is_young_gen_empty = (gch->young_gen()->used() == 0);
+  gch->rem_set()->maintain_old_to_young_invariant(gch->old_gen(), is_young_gen_empty);
 
   gch->prune_scavengable_nmethods();
-
-  // refs processing: clean slate
-  set_ref_processor(nullptr);
 
   // Update heap occupancy information which is used as
   // input to soft ref clearing policy at the next gc.
@@ -181,6 +159,8 @@ void GenMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
   GenCollectedHeap* gch = GenCollectedHeap::heap();
 
   ClassLoaderDataGraph::verify_claimed_marks_cleared(ClassLoaderData::_claim_stw_fullgc_mark);
+
+  ref_processor()->start_discovery(clear_all_softrefs);
 
   {
     StrongRootsScope srs(0);
@@ -230,7 +210,10 @@ void GenMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
     JVMCI_ONLY(JVMCI::do_unloading(purged_class));
   }
 
-  gc_tracer()->report_object_count_after_gc(&is_alive);
+  {
+    GCTraceTime(Debug, gc, phases) tm_m("Report Object Count", gc_timer());
+    gc_tracer()->report_object_count_after_gc(&is_alive, nullptr);
+  }
 }
 
 

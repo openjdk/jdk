@@ -32,7 +32,7 @@
 
 #define __ _masm->
 
-ATTRIBUTE_ALIGNED(16) uint64_t GHASH_SHUFFLE_MASK[] = {
+ATTRIBUTE_ALIGNED(16) static const uint64_t GHASH_SHUFFLE_MASK[] = {
     0x0F0F0F0F0F0F0F0FUL, 0x0F0F0F0F0F0F0F0FUL,
 };
 static address ghash_shuffle_mask_addr() {
@@ -40,7 +40,7 @@ static address ghash_shuffle_mask_addr() {
 }
 
 // byte swap x86 long
-ATTRIBUTE_ALIGNED(16) uint64_t GHASH_LONG_SWAP_MASK[] = {
+ATTRIBUTE_ALIGNED(16) static const uint64_t GHASH_LONG_SWAP_MASK[] = {
     0x0F0E0D0C0B0A0908UL, 0x0706050403020100UL,
 };
 address StubGenerator::ghash_long_swap_mask_addr() {
@@ -48,7 +48,7 @@ address StubGenerator::ghash_long_swap_mask_addr() {
 }
 
 // byte swap x86 byte array
-ATTRIBUTE_ALIGNED(16) uint64_t GHASH_BYTE_SWAP_MASK[] = {
+ATTRIBUTE_ALIGNED(16) static const uint64_t GHASH_BYTE_SWAP_MASK[] = {
   0x08090A0B0C0D0E0FUL, 0x0001020304050607UL,
 };
 address StubGenerator::ghash_byte_swap_mask_addr() {
@@ -56,7 +56,7 @@ address StubGenerator::ghash_byte_swap_mask_addr() {
 }
 
 // Polynomial x^128+x^127+x^126+x^121+1
-ATTRIBUTE_ALIGNED(16) uint64_t GHASH_POLYNOMIAL[] = {
+ATTRIBUTE_ALIGNED(16) static const uint64_t GHASH_POLYNOMIAL[] = {
     0x0000000000000001UL, 0xC200000000000000UL,
 };
 address StubGenerator::ghash_polynomial_addr() {

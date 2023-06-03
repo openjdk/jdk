@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,11 +27,11 @@
 #include "runtime/frame.inline.hpp"
 #include "runtime/stubRoutines.hpp"
 
-address StubRoutines::Arm::_idiv_irem_entry = NULL;
+address StubRoutines::Arm::_idiv_irem_entry = nullptr;
 
-address StubRoutines::Arm::_partial_subtype_check = NULL;
+address StubRoutines::Arm::_partial_subtype_check = nullptr;
 
-address StubRoutines::_atomic_load_long_entry = NULL;
-address StubRoutines::_atomic_store_long_entry = NULL;
+address StubRoutines::_atomic_load_long_entry = nullptr;
+address StubRoutines::_atomic_store_long_entry = nullptr;
 
-address StubRoutines::Arm::_method_entry_barrier = NULL;
+address StubRoutines::Arm::_method_entry_barrier = nullptr;

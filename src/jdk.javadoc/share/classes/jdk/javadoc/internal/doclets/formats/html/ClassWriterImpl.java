@@ -115,9 +115,8 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
             div.add(pkgNameDiv);
         }
         HtmlLinkInfo linkInfo = new HtmlLinkInfo(configuration,
-                HtmlLinkInfo.Kind.SHOW_TYPE_PARAMS_AND_BOUNDS, typeElement);
-        //Let's not link to ourselves in the header.
-        linkInfo.linkToSelf = false;
+                HtmlLinkInfo.Kind.SHOW_TYPE_PARAMS_AND_BOUNDS, typeElement)
+                .linkToSelf(false);  // Let's not link to ourselves in the header
         var heading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
                 HtmlStyle.title, Text.of(header));
         heading.add(getTypeParameterLinks(linkInfo));

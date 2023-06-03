@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2020 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "classfile/javaClasses.hpp"
+#include "compiler/disassembler.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "interpreter/abstractInterpreter.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
@@ -60,9 +61,9 @@ int TemplateInterpreter::InterpreterCodeSize = 320*K;
 
 #undef  __
 #ifdef PRODUCT
-  #define __ _masm->
+  #define __ Disassembler::hook<InterpreterMacroAssembler>(__FILE__, __LINE__, _masm)->
 #else
-  #define __ _masm->
+  #define __ Disassembler::hook<InterpreterMacroAssembler>(__FILE__, __LINE__, _masm)->
 //  #define __ (Verbose ? (_masm->block_comment(FILE_AND_LINE),_masm):_masm)->
 #endif
 
@@ -280,7 +281,7 @@ address TemplateInterpreterGenerator::generate_slow_signature_handler() {
   // don't dereference it as in case of ints, floats, etc..
 
   // UNBOX argument
-  // Load reference and check for NULL.
+  // Load reference and check for null.
   Label  do_int_Entry4Boxed;
   __ bind(do_boxed);
   {
@@ -588,7 +589,7 @@ address TemplateInterpreterGenerator::generate_ClassCastException_handler() {
 }
 
 address TemplateInterpreterGenerator::generate_exception_handler_common(const char* name, const char* message, bool pass_oop) {
-  assert(!pass_oop || message == NULL, "either oop or message but not both");
+  assert(!pass_oop || message == nullptr, "either oop or message but not both");
   address entry = __ pc();
 
   BLOCK_COMMENT("exception_handler_common {");
@@ -596,7 +597,7 @@ address TemplateInterpreterGenerator::generate_exception_handler_common(const ch
   // Expression stack must be empty before entering the VM if an
   // exception happened.
   __ empty_expression_stack();
-  if (name != NULL) {
+  if (name != nullptr) {
     __ load_absolute_address(Z_ARG2, (address)name);
   } else {
     __ clear_reg(Z_ARG2, true, false);
@@ -607,7 +608,7 @@ address TemplateInterpreterGenerator::generate_exception_handler_common(const ch
                CAST_FROM_FN_PTR(address, InterpreterRuntime::create_klass_exception),
                Z_ARG2, Z_tos /*object (see TT::aastore())*/);
   } else {
-    if (message != NULL) {
+    if (message != nullptr) {
       __ load_absolute_address(Z_ARG3, (address)message);
     } else {
       __ clear_reg(Z_ARG3, true, false);
@@ -637,7 +638,7 @@ address TemplateInterpreterGenerator::generate_return_entry_for (TosState state,
   __ resize_frame_absolute(sp_before_i2c_extension, Z_locals/*tmp*/, true/*load_fp*/);
 
   // TODO(ZASM): necessary??
-  //  // and NULL it as marker that esp is now tos until next java call
+  //  // and null it as marker that esp is now tos until next java call
   //  __ movptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), (int32_t)NULL_WORD);
 
   __ restore_bcp();
@@ -649,14 +650,19 @@ address TemplateInterpreterGenerator::generate_return_entry_for (TosState state,
   }
 
   Register cache  = Z_tmp_1;
-  Register size   = Z_tmp_1;
-  Register offset = Z_tmp_2;
-  const int flags_offset = in_bytes(ConstantPoolCache::base_offset() +
-                                    ConstantPoolCacheEntry::flags_offset());
-  __ get_cache_and_index_at_bcp(cache, offset, 1, index_size);
+  Register size   = Z_tmp_2;
+  Register index  = Z_tmp_2;
+  if (index_size == sizeof(u4)) {
+    __ load_resolved_indy_entry(cache, index);
+    __ z_llgh(size, in_bytes(ResolvedIndyEntry::num_parameters_offset()), cache);
+  } else {
+    const int flags_offset = in_bytes(ConstantPoolCache::base_offset() +
+                                      ConstantPoolCacheEntry::flags_offset());
+    __ get_cache_and_index_at_bcp(cache, index, 1, index_size);
 
-  // #args is in rightmost byte of the _flags field.
-  __ z_llgc(size, Address(cache, offset, flags_offset+(sizeof(size_t)-1)));
+    // #args is in rightmost byte of the _flags field.
+    __ z_llgc(size, Address(cache, index, flags_offset + (sizeof(size_t) - 1)));
+  }
   __ z_sllg(size, size, Interpreter::logStackElementSize); // Each argument size in bytes.
   __ z_agr(Z_esp, size);                                   // Pop arguments.
 
@@ -677,7 +683,7 @@ address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state,
 
   BLOCK_COMMENT("deopt_entry {");
 
-  // TODO(ZASM): necessary? NULL last_sp until next java call
+  // TODO(ZASM): necessary? null last_sp until next java call
   // __ movptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), (int32_t)NULL_WORD);
   __ z_lg(Z_fp, _z_abi(callers_sp), Z_SP); // Restore frame pointer.
   __ restore_bcp();
@@ -695,7 +701,7 @@ address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state,
     __ should_not_reach_here();
     __ bind(L);
   }
-  if (continuation == NULL) {
+  if (continuation == nullptr) {
     __ dispatch_next(state, step);
   } else {
     __ jump_to_entry(continuation, Z_R1_scratch);
@@ -774,8 +780,8 @@ void TemplateInterpreterGenerator::generate_counter_overflow(Label& do_continue)
   // InterpreterRuntime::frequency_counter_overflow takes two
   // arguments, the first (thread) is passed by call_VM, the second
   // indicates if the counter overflow occurs at a backwards branch
-  // (NULL bcp). We pass zero for it. The call returns the address
-  // of the verified entry point for the method or NULL if the
+  // (null bcp). We pass zero for it. The call returns the address
+  // of the verified entry point for the method or null if the
   // compilation did not complete (either went background or bailed
   // out).
   __ clear_reg(Z_ARG2);
@@ -787,7 +793,7 @@ void TemplateInterpreterGenerator::generate_counter_overflow(Label& do_continue)
 
 void TemplateInterpreterGenerator::generate_stack_overflow_check(Register frame_size, Register tmp1) {
   Register tmp2 = Z_R1_scratch;
-  const int page_size = os::vm_page_size();
+  const int page_size = (int)os::vm_page_size();
   NearLabel after_frame_check;
 
   BLOCK_COMMENT("stack_overflow_check {");
@@ -806,7 +812,7 @@ void TemplateInterpreterGenerator::generate_stack_overflow_check(Register frame_
   // Get the stack base, and in debug, verify it is non-zero.
   __ z_lg(tmp1, thread_(stack_base));
 #ifdef ASSERT
-  address reentry = NULL;
+  address reentry = nullptr;
   NearLabel base_not_zero;
   __ compareU64_and_branch(tmp1, (intptr_t)0L, Assembler::bcondNotEqual, base_not_zero);
   reentry = __ stop_chain_static(reentry, "stack base is zero in generate_stack_overflow_check");
@@ -844,7 +850,7 @@ void TemplateInterpreterGenerator::generate_stack_overflow_check(Register frame_
 
   // Note also that the restored frame is not necessarily interpreted.
   // Use the shared runtime version of the StackOverflowError.
-  assert(StubRoutines::throw_StackOverflowError_entry() != NULL, "stub not yet generated");
+  assert(StubRoutines::throw_StackOverflowError_entry() != nullptr, "stub not yet generated");
   AddressLiteral stub(StubRoutines::throw_StackOverflowError_entry());
   __ load_absolute_address(tmp1, StubRoutines::throw_StackOverflowError_entry());
   __ z_br(tmp1);
@@ -869,7 +875,7 @@ void TemplateInterpreterGenerator::lock_method(void) {
   __ get_method(method);
 
 #ifdef ASSERT
-  address reentry = NULL;
+  address reentry = nullptr;
   {
     Label L;
     __ testbit(method2_(method, access_flags), JVM_ACC_SYNCHRONIZED_BIT);
@@ -903,7 +909,7 @@ void TemplateInterpreterGenerator::lock_method(void) {
     {
       NearLabel L;
       __ compare64_and_branch(object, (intptr_t) 0, Assembler::bcondNotEqual, L);
-      reentry = __ stop_chain_static(reentry, "synchronization object is NULL");
+      reentry = __ stop_chain_static(reentry, "synchronization object is null");
       __ bind(L);
     }
 #endif // ASSERT
@@ -914,7 +920,7 @@ void TemplateInterpreterGenerator::lock_method(void) {
   __ add_monitor_to_stack(true, Z_ARG3, Z_ARG4, Z_ARG5); // Allocate monitor elem.
   // Store object and lock it.
   __ get_monitors(Z_tmp_1);
-  __ reg2mem_opt(object, Address(Z_tmp_1, BasicObjectLock::obj_offset_in_bytes()));
+  __ reg2mem_opt(object, Address(Z_tmp_1, BasicObjectLock::obj_offset()));
   __ lock_object(Z_tmp_1, object);
 
   BLOCK_COMMENT("} lock_method");
@@ -1080,8 +1086,9 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
     generate_stack_overflow_check(frame_size, fp/*tmp1*/);
   }
 
-  DEBUG_ONLY(__ z_cg(Z_R14, _z_abi16(return_pc), Z_SP));
-  __ asm_assert_eq("killed Z_R14", 0);
+  // asm_assert* is a nop in product builds
+  NOT_PRODUCT(__ z_cg(Z_R14, _z_common_abi(return_pc), Z_SP));
+  NOT_PRODUCT(__ asm_assert(Assembler::bcondEqual, "killed Z_R14", 0));
   __ resize_frame_absolute(sp_after_resize, fp, true);
   __ save_return_pc(Z_R14);
 
@@ -1111,7 +1118,7 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
 
   // Load cp cache and save it at the end of this block.
   __ z_lg(Z_R1_scratch, Address(const_method, ConstMethod::constants_offset()));
-  __ z_lg(Z_R1_scratch, Address(Z_R1_scratch, ConstantPool::cache_offset_in_bytes()));
+  __ z_lg(Z_R1_scratch, Address(Z_R1_scratch, ConstantPool::cache_offset()));
 
   // z_ijava_state->method = method;
   __ z_stg(Z_method, _z_ijava_state_neg(method), fp);
@@ -1125,12 +1132,12 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   // z_ijava_state->locals = Z_esp + parameter_count bytes
   __ z_stg(Z_locals, _z_ijava_state_neg(locals), fp);
 
-  // z_ijava_state->oop_temp = NULL;
+  // z_ijava_state->oop_temp = nullptr;
   __ store_const(Address(fp, oop_tmp_offset), 0);
 
   // Initialize z_ijava_state->mdx.
   Register Rmdp = Z_bcp;
-  // native_call: assert that mdo == NULL
+  // native_call: assert that mdo is null
   const bool check_for_mdo = !native_call DEBUG_ONLY(|| native_call);
   if (ProfileInterpreter && check_for_mdo) {
     Label get_continue;
@@ -1200,7 +1207,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
 
   // Decide what to do: Use same platform specific instructions and runtime calls as compilers.
   bool use_instruction = false;
-  address runtime_entry = NULL;
+  address runtime_entry = nullptr;
   int num_args = 1;
   bool double_precision = true;
 
@@ -1229,7 +1236,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
   }
 
   // Use normal entry if neither instruction nor runtime call is used.
-  if (!use_instruction && runtime_entry == NULL) return NULL;
+  if (!use_instruction && runtime_entry == nullptr) return nullptr;
 
   address entry = __ pc();
 
@@ -1336,7 +1343,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
   // Make sure method is native and not abstract.
 #ifdef ASSERT
-  address reentry = NULL;
+  address reentry = nullptr;
   { Label L;
     __ testbit(method_(access_flags), JVM_ACC_NATIVE_BIT);
     __ z_btrue(L);
@@ -1351,10 +1358,8 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   }
 #endif // ASSERT
 
-#ifdef ASSERT
   // Save the return PC into the callers frame for assertion in generate_fixed_frame.
-  __ save_return_pc(Z_R14);
-#endif
+  NOT_PRODUCT(__ save_return_pc(Z_R14));
 
   // Generate the code to allocate the interpreter stack frame.
   generate_fixed_frame(true);
@@ -1520,7 +1525,9 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // synchronization is progress, and escapes.
 
   __ set_thread_state(_thread_in_native_trans);
-  __ z_fence();
+  if (!UseSystemMemoryBarrier) {
+    __ z_fence();
+  }
 
   // Now before we return to java we must look for a current safepoint
   // (a new safepoint can not start since we entered native_trans).
@@ -1594,7 +1601,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
   // Reset handle block.
   __ z_lg(Z_R1/*active_handles*/, thread_(active_handles));
-  __ clear_mem(Address(Z_R1, JNIHandleBlock::top_offset_in_bytes()), 4);
+  __ clear_mem(Address(Z_R1, JNIHandleBlock::top_offset()), 4);
 
   // Handle exceptions (exception handling will handle unlocking!).
   {
@@ -1704,7 +1711,7 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
   // Make sure method is not native and not abstract.
   // Rethink these assertions - they can be simplified and shared.
 #ifdef ASSERT
-  address reentry = NULL;
+  address reentry = nullptr;
   { Label L;
     __ testbit(method_(access_flags), JVM_ACC_NATIVE_BIT);
     __ z_bfalse(L);
@@ -1719,10 +1726,8 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
   }
 #endif // ASSERT
 
-#ifdef ASSERT
   // Save the return PC into the callers frame for assertion in generate_fixed_frame.
-  __ save_return_pc(Z_R14);
-#endif
+  NOT_PRODUCT(__ save_return_pc(Z_R14));
 
   // Generate the code to allocate the interpreter stack frame.
   generate_fixed_frame(false);
@@ -1776,8 +1781,6 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
 
 #ifdef ASSERT
   __ verify_esp(Z_esp, Z_R1_scratch);
-
-  __ verify_thread();
 #endif
 
   // jvmti support
@@ -1806,50 +1809,46 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
  *   int java.util.zip.CRC32.update(int crc, int b)
  */
 address TemplateInterpreterGenerator::generate_CRC32_update_entry() {
+  assert(UseCRC32Intrinsics, "this intrinsic is not supported");
+  uint64_t entry_off = __ offset();
+  Label    slow_path;
 
-  if (UseCRC32Intrinsics) {
-    uint64_t entry_off = __ offset();
-    Label    slow_path;
+  // If we need a safepoint check, generate full interpreter entry.
+  __ safepoint_poll(slow_path, Z_R1);
 
-    // If we need a safepoint check, generate full interpreter entry.
-    __ safepoint_poll(slow_path, Z_R1);
+  BLOCK_COMMENT("CRC32_update {");
 
-    BLOCK_COMMENT("CRC32_update {");
+  // We don't generate local frame and don't align stack because
+  // we not even call stub code (we generate the code inline)
+  // and there is no safepoint on this path.
 
-    // We don't generate local frame and don't align stack because
-    // we not even call stub code (we generate the code inline)
-    // and there is no safepoint on this path.
+  // Load java parameters.
+  // Z_esp is callers operand stack pointer, i.e. it points to the parameters.
+  const Register argP    = Z_esp;
+  const Register crc     = Z_ARG1;  // crc value
+  const Register data    = Z_ARG2;  // address of java byte value (kernel_crc32 needs address)
+  const Register dataLen = Z_ARG3;  // source data len (1 byte). Not used because calling the single-byte emitter.
+  const Register table   = Z_ARG4;  // address of crc32 table
 
-    // Load java parameters.
-    // Z_esp is callers operand stack pointer, i.e. it points to the parameters.
-    const Register argP    = Z_esp;
-    const Register crc     = Z_ARG1;  // crc value
-    const Register data    = Z_ARG2;  // address of java byte value (kernel_crc32 needs address)
-    const Register dataLen = Z_ARG3;  // source data len (1 byte). Not used because calling the single-byte emitter.
-    const Register table   = Z_ARG4;  // address of crc32 table
-
-    // Arguments are reversed on java expression stack.
-    __ z_la(data, 3+1*wordSize, argP);  // byte value (stack address).
+  // Arguments are reversed on java expression stack.
+  __ z_la(data, 3+1*wordSize, argP);  // byte value (stack address).
                                         // Being passed as an int, the single byte is at offset +3.
-    __ z_llgf(crc, 2 * wordSize, argP); // Current crc state, zero extend to 64 bit to have a clean register.
+  __ z_llgf(crc, 2 * wordSize, argP); // Current crc state, zero extend to 64 bit to have a clean register.
 
-    StubRoutines::zarch::generate_load_crc_table_addr(_masm, table);
-    __ kernel_crc32_singleByte(crc, data, dataLen, table, Z_R1, true);
+  StubRoutines::zarch::generate_load_crc_table_addr(_masm, table);
+  __ kernel_crc32_singleByte(crc, data, dataLen, table, Z_R1, true);
 
-    // Restore caller sp for c2i case.
-    __ resize_frame_absolute(Z_R10, Z_R0, true); // Cut the stack back to where the caller started.
+  // Restore caller sp for c2i case.
+  __ resize_frame_absolute(Z_R10, Z_R0, true); // Cut the stack back to where the caller started.
 
-    __ z_br(Z_R14);
+  __ z_br(Z_R14);
 
-    BLOCK_COMMENT("} CRC32_update");
+  BLOCK_COMMENT("} CRC32_update");
 
-    // Use a previously generated vanilla native entry as the slow path.
-    BIND(slow_path);
-    __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::native), Z_R1);
-    return __ addr_at(entry_off);
-  }
-
-  return NULL;
+  // Use a previously generated vanilla native entry as the slow path.
+  BIND(slow_path);
+  __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::native), Z_R1);
+  return __ addr_at(entry_off);
 }
 
 
@@ -1859,77 +1858,73 @@ address TemplateInterpreterGenerator::generate_CRC32_update_entry() {
  *   int java.util.zip.CRC32.updateByteBuffer(int crc, long* buf, int off, int len)
  */
 address TemplateInterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractInterpreter::MethodKind kind) {
+  assert(UseCRC32Intrinsics, "this intrinsic is not supported");
+  uint64_t entry_off = __ offset();
+  Label    slow_path;
 
-  if (UseCRC32Intrinsics) {
-    uint64_t entry_off = __ offset();
-    Label    slow_path;
+  // If we need a safepoint check, generate full interpreter entry.
+  __ safepoint_poll(slow_path, Z_R1);
 
-    // If we need a safepoint check, generate full interpreter entry.
-    __ safepoint_poll(slow_path, Z_R1);
+  // We don't generate local frame and don't align stack because
+  // we call stub code and there is no safepoint on this path.
 
-    // We don't generate local frame and don't align stack because
-    // we call stub code and there is no safepoint on this path.
+  // Load parameters.
+  // Z_esp is callers operand stack pointer, i.e. it points to the parameters.
+  const Register argP    = Z_esp;
+  const Register crc     = Z_ARG1;  // crc value
+  const Register data    = Z_ARG2;  // address of java byte array
+  const Register dataLen = Z_ARG3;  // source data len
+  const Register table   = Z_ARG4;  // address of crc32 table
+  const Register t0      = Z_R10;   // work reg for kernel* emitters
+  const Register t1      = Z_R11;   // work reg for kernel* emitters
+  const Register t2      = Z_R12;   // work reg for kernel* emitters
+  const Register t3      = Z_R13;   // work reg for kernel* emitters
 
-    // Load parameters.
-    // Z_esp is callers operand stack pointer, i.e. it points to the parameters.
-    const Register argP    = Z_esp;
-    const Register crc     = Z_ARG1;  // crc value
-    const Register data    = Z_ARG2;  // address of java byte array
-    const Register dataLen = Z_ARG3;  // source data len
-    const Register table   = Z_ARG4;  // address of crc32 table
-    const Register t0      = Z_R10;   // work reg for kernel* emitters
-    const Register t1      = Z_R11;   // work reg for kernel* emitters
-    const Register t2      = Z_R12;   // work reg for kernel* emitters
-    const Register t3      = Z_R13;   // work reg for kernel* emitters
-
-    // Arguments are reversed on java expression stack.
-    // Calculate address of start element.
-    if (kind == Interpreter::java_util_zip_CRC32_updateByteBuffer) { // Used for "updateByteBuffer direct".
-      // crc     @ (SP + 5W) (32bit)
-      // buf     @ (SP + 3W) (64bit ptr to long array)
-      // off     @ (SP + 2W) (32bit)
-      // dataLen @ (SP + 1W) (32bit)
-      // data = buf + off
-      BLOCK_COMMENT("CRC32_updateByteBuffer {");
-      __ z_llgf(crc,    5*wordSize, argP);  // current crc state
-      __ z_lg(data,     3*wordSize, argP);  // start of byte buffer
-      __ z_agf(data,    2*wordSize, argP);  // Add byte buffer offset.
-      __ z_lgf(dataLen, 1*wordSize, argP);  // #bytes to process
-    } else {                                                         // Used for "updateBytes update".
-      // crc     @ (SP + 4W) (32bit)
-      // buf     @ (SP + 3W) (64bit ptr to byte array)
-      // off     @ (SP + 2W) (32bit)
-      // dataLen @ (SP + 1W) (32bit)
-      // data = buf + off + base_offset
-      BLOCK_COMMENT("CRC32_updateBytes {");
-      __ z_llgf(crc,    4*wordSize, argP);  // current crc state
-      __ z_lg(data,     3*wordSize, argP);  // start of byte buffer
-      __ z_agf(data,    2*wordSize, argP);  // Add byte buffer offset.
-      __ z_lgf(dataLen, 1*wordSize, argP);  // #bytes to process
-      __ z_aghi(data, arrayOopDesc::base_offset_in_bytes(T_BYTE));
-    }
-
-    StubRoutines::zarch::generate_load_crc_table_addr(_masm, table);
-
-    __ resize_frame(-(6*8), Z_R0, true); // Resize frame to provide add'l space to spill 5 registers.
-    __ z_stmg(t0, t3, 1*8, Z_SP);        // Spill regs 10..13 to make them available as work registers.
-    __ kernel_crc32_1word(crc, data, dataLen, table, t0, t1, t2, t3, true);
-    __ z_lmg(t0, t3, 1*8, Z_SP);         // Spill regs 10..13 back from stack.
-
-    // Restore caller sp for c2i case.
-    __ resize_frame_absolute(Z_R10, Z_R0, true); // Cut the stack back to where the caller started.
-
-    __ z_br(Z_R14);
-
-    BLOCK_COMMENT("} CRC32_update{Bytes|ByteBuffer}");
-
-    // Use a previously generated vanilla native entry as the slow path.
-    BIND(slow_path);
-    __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::native), Z_R1);
-    return __ addr_at(entry_off);
+  // Arguments are reversed on java expression stack.
+  // Calculate address of start element.
+  if (kind == Interpreter::java_util_zip_CRC32_updateByteBuffer) { // Used for "updateByteBuffer direct".
+    // crc     @ (SP + 5W) (32bit)
+    // buf     @ (SP + 3W) (64bit ptr to long array)
+    // off     @ (SP + 2W) (32bit)
+    // dataLen @ (SP + 1W) (32bit)
+    // data = buf + off
+    BLOCK_COMMENT("CRC32_updateByteBuffer {");
+    __ z_llgf(crc,    5*wordSize, argP);  // current crc state
+    __ z_lg(data,     3*wordSize, argP);  // start of byte buffer
+    __ z_agf(data,    2*wordSize, argP);  // Add byte buffer offset.
+    __ z_lgf(dataLen, 1*wordSize, argP);  // #bytes to process
+  } else {                                                         // Used for "updateBytes update".
+    // crc     @ (SP + 4W) (32bit)
+    // buf     @ (SP + 3W) (64bit ptr to byte array)
+    // off     @ (SP + 2W) (32bit)
+    // dataLen @ (SP + 1W) (32bit)
+    // data = buf + off + base_offset
+    BLOCK_COMMENT("CRC32_updateBytes {");
+    __ z_llgf(crc,    4*wordSize, argP);  // current crc state
+    __ z_lg(data,     3*wordSize, argP);  // start of byte buffer
+    __ z_agf(data,    2*wordSize, argP);  // Add byte buffer offset.
+    __ z_lgf(dataLen, 1*wordSize, argP);  // #bytes to process
+    __ z_aghi(data, arrayOopDesc::base_offset_in_bytes(T_BYTE));
   }
 
-  return NULL;
+  StubRoutines::zarch::generate_load_crc_table_addr(_masm, table);
+
+  __ resize_frame(-(6*8), Z_R0, true); // Resize frame to provide add'l space to spill 5 registers.
+  __ z_stmg(t0, t3, 1*8, Z_SP);        // Spill regs 10..13 to make them available as work registers.
+  __ kernel_crc32_1word(crc, data, dataLen, table, t0, t1, t2, t3, true);
+  __ z_lmg(t0, t3, 1*8, Z_SP);         // Spill regs 10..13 back from stack.
+
+  // Restore caller sp for c2i case.
+  __ resize_frame_absolute(Z_R10, Z_R0, true); // Cut the stack back to where the caller started.
+
+  __ z_br(Z_R14);
+
+  BLOCK_COMMENT("} CRC32_update{Bytes|ByteBuffer}");
+
+  // Use a previously generated vanilla native entry as the slow path.
+  BIND(slow_path);
+  __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::native), Z_R1);
+  return __ addr_at(entry_off);
 }
 
 
@@ -1941,72 +1936,77 @@ address TemplateInterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractI
  * CRC32C also uses an "end" variable instead of the length variable CRC32 uses
  */
 address TemplateInterpreterGenerator::generate_CRC32C_updateBytes_entry(AbstractInterpreter::MethodKind kind) {
+  assert(UseCRC32CIntrinsics, "this intrinsic is not supported");
+  uint64_t entry_off = __ offset();
 
-  if (UseCRC32CIntrinsics) {
-    uint64_t entry_off = __ offset();
+  // We don't generate local frame and don't align stack because
+  // we call stub code and there is no safepoint on this path.
 
-    // We don't generate local frame and don't align stack because
-    // we call stub code and there is no safepoint on this path.
+  // Load parameters.
+  // Z_esp is callers operand stack pointer, i.e. it points to the parameters.
+  const Register argP    = Z_esp;
+  const Register crc     = Z_ARG1;  // crc value
+  const Register data    = Z_ARG2;  // address of java byte array
+  const Register dataLen = Z_ARG3;  // source data len
+  const Register table   = Z_ARG4;  // address of crc32 table
+  const Register t0      = Z_R10;   // work reg for kernel* emitters
+  const Register t1      = Z_R11;   // work reg for kernel* emitters
+  const Register t2      = Z_R12;   // work reg for kernel* emitters
+  const Register t3      = Z_R13;   // work reg for kernel* emitters
 
-    // Load parameters.
-    // Z_esp is callers operand stack pointer, i.e. it points to the parameters.
-    const Register argP    = Z_esp;
-    const Register crc     = Z_ARG1;  // crc value
-    const Register data    = Z_ARG2;  // address of java byte array
-    const Register dataLen = Z_ARG3;  // source data len
-    const Register table   = Z_ARG4;  // address of crc32 table
-    const Register t0      = Z_R10;   // work reg for kernel* emitters
-    const Register t1      = Z_R11;   // work reg for kernel* emitters
-    const Register t2      = Z_R12;   // work reg for kernel* emitters
-    const Register t3      = Z_R13;   // work reg for kernel* emitters
-
-    // Arguments are reversed on java expression stack.
-    // Calculate address of start element.
-    if (kind == Interpreter::java_util_zip_CRC32C_updateDirectByteBuffer) { // Used for "updateByteBuffer direct".
-      // crc     @ (SP + 5W) (32bit)
-      // buf     @ (SP + 3W) (64bit ptr to long array)
-      // off     @ (SP + 2W) (32bit)
-      // dataLen @ (SP + 1W) (32bit)
-      // data = buf + off
-      BLOCK_COMMENT("CRC32C_updateDirectByteBuffer {");
-      __ z_llgf(crc,    5*wordSize, argP);  // current crc state
-      __ z_lg(data,     3*wordSize, argP);  // start of byte buffer
-      __ z_agf(data,    2*wordSize, argP);  // Add byte buffer offset.
-      __ z_lgf(dataLen, 1*wordSize, argP);  // #bytes to process, calculated as
-      __ z_sgf(dataLen, Address(argP, 2*wordSize));  // (end_index - offset)
-    } else {                                                                // Used for "updateBytes update".
-      // crc     @ (SP + 4W) (32bit)
-      // buf     @ (SP + 3W) (64bit ptr to byte array)
-      // off     @ (SP + 2W) (32bit)
-      // dataLen @ (SP + 1W) (32bit)
-      // data = buf + off + base_offset
-      BLOCK_COMMENT("CRC32C_updateBytes {");
-      __ z_llgf(crc,    4*wordSize, argP);  // current crc state
-      __ z_lg(data,     3*wordSize, argP);  // start of byte buffer
-      __ z_agf(data,    2*wordSize, argP);  // Add byte buffer offset.
-      __ z_lgf(dataLen, 1*wordSize, argP);  // #bytes to process, calculated as
-      __ z_sgf(dataLen, Address(argP, 2*wordSize));  // (end_index - offset)
-      __ z_aghi(data, arrayOopDesc::base_offset_in_bytes(T_BYTE));
-    }
-
-    StubRoutines::zarch::generate_load_crc32c_table_addr(_masm, table);
-
-    __ resize_frame(-(6*8), Z_R0, true); // Resize frame to provide add'l space to spill 5 registers.
-    __ z_stmg(t0, t3, 1*8, Z_SP);        // Spill regs 10..13 to make them available as work registers.
-    __ kernel_crc32_1word(crc, data, dataLen, table, t0, t1, t2, t3, false);
-    __ z_lmg(t0, t3, 1*8, Z_SP);         // Spill regs 10..13 back from stack.
-
-    // Restore caller sp for c2i case.
-    __ resize_frame_absolute(Z_R10, Z_R0, true); // Cut the stack back to where the caller started.
-
-    __ z_br(Z_R14);
-
-    BLOCK_COMMENT("} CRC32C_update{Bytes|DirectByteBuffer}");
-    return __ addr_at(entry_off);
+  // Arguments are reversed on java expression stack.
+  // Calculate address of start element.
+  if (kind == Interpreter::java_util_zip_CRC32C_updateDirectByteBuffer) { // Used for "updateByteBuffer direct".
+    // crc     @ (SP + 5W) (32bit)
+    // buf     @ (SP + 3W) (64bit ptr to long array)
+    // off     @ (SP + 2W) (32bit)
+    // dataLen @ (SP + 1W) (32bit)
+    // data = buf + off
+    BLOCK_COMMENT("CRC32C_updateDirectByteBuffer {");
+    __ z_llgf(crc,    5*wordSize, argP);  // current crc state
+    __ z_lg(data,     3*wordSize, argP);  // start of byte buffer
+    __ z_agf(data,    2*wordSize, argP);  // Add byte buffer offset.
+    __ z_lgf(dataLen, 1*wordSize, argP);  // #bytes to process, calculated as
+    __ z_sgf(dataLen, Address(argP, 2*wordSize));  // (end_index - offset)
+  } else {                                                                // Used for "updateBytes update".
+    // crc     @ (SP + 4W) (32bit)
+    // buf     @ (SP + 3W) (64bit ptr to byte array)
+    // off     @ (SP + 2W) (32bit)
+    // dataLen @ (SP + 1W) (32bit)
+    // data = buf + off + base_offset
+    BLOCK_COMMENT("CRC32C_updateBytes {");
+    __ z_llgf(crc,    4*wordSize, argP);  // current crc state
+    __ z_lg(data,     3*wordSize, argP);  // start of byte buffer
+    __ z_agf(data,    2*wordSize, argP);  // Add byte buffer offset.
+    __ z_lgf(dataLen, 1*wordSize, argP);  // #bytes to process, calculated as
+    __ z_sgf(dataLen, Address(argP, 2*wordSize));  // (end_index - offset)
+    __ z_aghi(data, arrayOopDesc::base_offset_in_bytes(T_BYTE));
   }
 
-  return NULL;
+  StubRoutines::zarch::generate_load_crc32c_table_addr(_masm, table);
+
+  __ resize_frame(-(6*8), Z_R0, true); // Resize frame to provide add'l space to spill 5 registers.
+  __ z_stmg(t0, t3, 1*8, Z_SP);        // Spill regs 10..13 to make them available as work registers.
+  __ kernel_crc32_1word(crc, data, dataLen, table, t0, t1, t2, t3, false);
+  __ z_lmg(t0, t3, 1*8, Z_SP);         // Spill regs 10..13 back from stack.
+
+  // Restore caller sp for c2i case.
+  __ resize_frame_absolute(Z_R10, Z_R0, true); // Cut the stack back to where the caller started.
+
+  __ z_br(Z_R14);
+
+  BLOCK_COMMENT("} CRC32C_update{Bytes|DirectByteBuffer}");
+  return __ addr_at(entry_off);
 }
+
+// Not supported
+address TemplateInterpreterGenerator::generate_currentThread() { return nullptr; }
+address TemplateInterpreterGenerator::generate_Float_intBitsToFloat_entry() { return nullptr; }
+address TemplateInterpreterGenerator::generate_Float_floatToRawIntBits_entry() { return nullptr; }
+address TemplateInterpreterGenerator::generate_Double_longBitsToDouble_entry() { return nullptr; }
+address TemplateInterpreterGenerator::generate_Double_doubleToRawLongBits_entry() { return nullptr; }
+address TemplateInterpreterGenerator::generate_Float_float16ToFloat_entry() { return nullptr; }
+address TemplateInterpreterGenerator::generate_Float_floatToFloat16_entry() { return nullptr; }
 
 void TemplateInterpreterGenerator::bang_stack_shadow_pages(bool native_call) {
   // Quick & dirty stack overflow checking: bang the stack & handle trap.
@@ -2020,7 +2020,7 @@ void TemplateInterpreterGenerator::bang_stack_shadow_pages(bool native_call) {
   // Bang each page in the shadow zone. We can't assume it's been done for
   // an interpreter frame with greater than a page of locals, so each page
   // needs to be checked. Only true for non-native. For native, we only bang the last page.
-  const int page_size      = os::vm_page_size();
+  const size_t page_size      = os::vm_page_size();
   const int n_shadow_pages = (int)(StackOverflow::stack_shadow_zone_size()/page_size);
   const int start_page_num = native_call ? n_shadow_pages : 1;
   for (int pages = start_page_num; pages <= n_shadow_pages; pages++) {
@@ -2165,7 +2165,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
     // The member name argument must be restored if _invokestatic is
     // re-executed after a PopFrame call.  Detect such a case in the
     // InterpreterRuntime function and return the member name
-    // argument, or NULL.
+    // argument, or null.
     __ z_lg(Z_ARG2, Address(Z_locals));
     __ get_method(Z_ARG3);
     __ call_VM(Z_tmp_1,
@@ -2378,7 +2378,7 @@ void TemplateInterpreterGenerator::trace_bytecode(Template* t) {
   // The run-time runtime saves the right registers, depending on
   // the tosca in-state for the given template.
   address entry = Interpreter::trace_code(t->tos_in());
-  guarantee(entry != NULL, "entry must have been generated");
+  guarantee(entry != nullptr, "entry must have been generated");
   __ call_stub(entry);
 }
 

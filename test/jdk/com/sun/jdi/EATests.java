@@ -843,21 +843,18 @@ abstract class EATestCaseBaseTarget extends EATestCaseBaseShared implements Runn
     public static void staticSetUp() {
         inflatedLock = new XYVal(1, 1);
         synchronized (inflatedLock) {
-            inflatorThread = new Thread("Lock Inflator (test thread)") {
-                @Override
-                public void run() {
-                    synchronized (inflatedLock) {
-                        inflatedLockIsPermanentlyInflated = true;
-                        inflatedLock.notify(); // main thread
-                        while (true) {
-                            try {
-                                // calling wait() on a monitor will cause inflation into a heavy monitor
-                                inflatedLock.wait();
-                            } catch (InterruptedException e) { /* ignored */ }
-                        }
+            inflatorThread = TestScaffold.newThread(() -> {
+                synchronized (inflatedLock) {
+                    inflatedLockIsPermanentlyInflated = true;
+                    inflatedLock.notify(); // main thread
+                    while (true) {
+                        try {
+                            // calling wait() on a monitor will cause inflation into a heavy monitor
+                            inflatedLock.wait();
+                        } catch (InterruptedException e) { /* ignored */ }
                     }
                 }
-            };
+                }, "Lock Inflator (test thread)");
             inflatorThread.setDaemon(true);
             inflatorThread.start();
 

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2022 SAP SE. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -135,12 +135,10 @@ void MethodHandles::jump_from_method_handle(MacroAssembler* _masm, Register meth
     // JVMTI events, such as single-stepping, are implemented partly by avoiding running
     // compiled code in threads for which the event is enabled.  Check here for
     // interp_only_mode if these events CAN be enabled.
-    __ verify_thread();
     __ lwz(temp, in_bytes(JavaThread::interp_only_mode_offset()), R16_thread);
     __ cmplwi(CCR0, temp, 0);
     __ beq(CCR0, run_compiled_code);
-    // Null method test is replicated below in compiled case,
-    // it might be able to address across the verify_thread()
+    // Null method test is replicated below in compiled case.
     __ cmplwi(CCR0, R19_method, 0);
     __ beq(CCR0, L_no_such_method);
     __ ld(target, in_bytes(Method::interpreter_entry_offset()), R19_method);
@@ -160,7 +158,7 @@ void MethodHandles::jump_from_method_handle(MacroAssembler* _masm, Register meth
   __ bctr();
 
   __ bind(L_no_such_method);
-  assert(StubRoutines::throw_AbstractMethodError_entry() != NULL, "not yet generated!");
+  assert(StubRoutines::throw_AbstractMethodError_entry() != nullptr, "not yet generated!");
   __ load_const_optimized(target, StubRoutines::throw_AbstractMethodError_entry());
   __ mtctr(target);
   __ bctr();
@@ -226,14 +224,14 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
     // They are linked to Java-generated adapters via MethodHandleNatives.linkMethod.
     // They all allow an appendix argument.
     __ stop("Should not reach here");           // empty stubs make SG sick
-    return NULL;
+    return nullptr;
   }
 
   // No need in interpreter entry for linkToNative for now.
   // Interpreter calls compiled entry through i2c.
   if (iid == vmIntrinsics::_linkToNative) {
     __ stop("Should not reach here");           // empty stubs make SG sick
-    return NULL;
+    return nullptr;
   }
 
   Register R15_argbase   = R15_esp; // parameter (preserved)
@@ -249,7 +247,7 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
 
     Label L;
     BLOCK_COMMENT("verify_intrinsic_id {");
-    __ load_sized_value(R30_tmp1, Method::intrinsic_id_offset_in_bytes(), R19_method,
+    __ load_sized_value(R30_tmp1, in_bytes(Method::intrinsic_id_offset()), R19_method,
                         sizeof(u2), /*is_signed*/ false);
     __ cmpwi(CCR1, R30_tmp1, (int) iid);
     __ beq(CCR1, L);
@@ -310,7 +308,14 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
 
 void MethodHandles::jump_to_native_invoker(MacroAssembler* _masm, Register nep_reg, Register temp_target) {
   BLOCK_COMMENT("jump_to_native_invoker {");
-  __ stop("Should not reach here");
+  assert_different_registers(nep_reg, temp_target);
+  assert(nep_reg != noreg, "required register");
+
+  // Load the invoker, as NEP -> .invoker
+  __ verify_oop(nep_reg);
+  __ ld(temp_target, NONZERO(jdk_internal_foreign_abi_NativeEntryPoint::downcall_stub_address_offset_in_bytes()), nep_reg);
+  __ mtctr(temp_target);
+  __ bctr();
   BLOCK_COMMENT("} jump_to_native_invoker");
 }
 
@@ -497,8 +502,8 @@ void trace_method_handle_stub(const char* adaptername,
                               intptr_t* entry_sp,
                               intptr_t* saved_regs) {
 
-  bool has_mh = (strstr(adaptername, "/static") == NULL &&
-                 strstr(adaptername, "linkTo") == NULL);    // static linkers don't have MH
+  bool has_mh = (strstr(adaptername, "/static") == nullptr &&
+                 strstr(adaptername, "linkTo") == nullptr);    // static linkers don't have MH
   const char* mh_reg_name = has_mh ? "R23_method_handle" : "G23";
   log_info(methodhandles)("MH %s %s=" INTPTR_FORMAT " sp=" INTPTR_FORMAT,
                 adaptername, mh_reg_name, p2i(mh), p2i(entry_sp));
@@ -508,11 +513,11 @@ void trace_method_handle_stub(const char* adaptername,
     ResourceMark rm;
     LogStream ls(lt);
     ls.print_cr("Registers:");
-    const int abi_offset = frame::abi_reg_args_size / 8;
+    const int abi_offset = frame::native_abi_reg_args_size / 8;
     for (int i = R3->encoding(); i <= R12->encoding(); i++) {
       Register r = as_Register(i);
       int count = i - R3->encoding();
-      // The registers are stored in reverse order on the stack (by save_volatile_gprs(R1_SP, abi_reg_args_size)).
+      // The registers are stored in reverse order on the stack (by save_volatile_gprs(R1_SP, native_abi_reg_args_size)).
       ls.print("%3s=" PTR_FORMAT, r->name(), saved_regs[abi_offset + count]);
       if ((count + 1) % 4 == 0) {
         ls.cr();

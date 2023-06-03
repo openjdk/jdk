@@ -1624,7 +1624,8 @@ void ciTypeFlow::Block::df_init() {
   _pre_order = -1; assert(!has_pre_order(), "");
   _post_order = -1; assert(!has_post_order(), "");
   _loop = nullptr;
-  _irreducible_entry = false;
+  _irreducible_loop_head = false;
+  _irreducible_loop_secondary_entry = false;
   _rpo_next = nullptr;
 }
 
@@ -1842,6 +1843,40 @@ void ciTypeFlow::Block::set_backedge_copy(bool z) {
   _backedge_copy = z;
 }
 
+// Analogous to PhaseIdealLoop::is_in_irreducible_loop
+bool ciTypeFlow::Block::is_in_irreducible_loop() const {
+  if (!outer()->has_irreducible_entry()) {
+    return false; // No irreducible loop in method.
+  }
+  Loop* lp = loop(); // Innermost loop containing block.
+  if (lp == nullptr) {
+    assert(!is_post_visited(), "must have enclosing loop once post-visited");
+    return false; // Not yet processed, so we do not know, yet.
+  }
+  // Walk all the way up the loop-tree, search for an irreducible loop.
+  do {
+    if (lp->is_irreducible()) {
+      return true; // We are in irreducible loop.
+    }
+    if (lp->head()->pre_order() == 0) {
+      return false; // Found root loop, terminate.
+    }
+    lp = lp->parent();
+  } while (lp != nullptr);
+  // We have "lp->parent() == nullptr", which happens only for infinite loops,
+  // where no parent is attached to the loop. We did not find any irreducible
+  // loop from this block out to lp. Thus lp only has one entry, and no exit
+  // (it is infinite and reducible). We can always rewrite an infinite loop
+  // that is nested inside other loops:
+  // while(condition) { infinite_loop; }
+  // with an equivalent program where the infinite loop is an outermost loop
+  // that is not nested in any loop:
+  // while(condition) { break; } infinite_loop;
+  // Thus, we can understand lp as an outermost loop, and can terminate and
+  // conclude: this block is in no irreducible loop.
+  return false;
+}
+
 // ------------------------------------------------------------------
 // ciTypeFlow::Block::is_clonable_exit
 //
@@ -1886,7 +1921,9 @@ void ciTypeFlow::Block::print_value_on(outputStream* st) const {
   if (has_rpo())       st->print("rpo#%-2d ", rpo());
   st->print("[%d - %d)", start(), limit());
   if (is_loop_head()) st->print(" lphd");
-  if (is_irreducible_entry()) st->print(" irred");
+  if (is_in_irreducible_loop()) st->print(" in_irred");
+  if (is_irreducible_loop_head()) st->print(" irred_head");
+  if (is_irreducible_loop_secondary_entry()) st->print(" irred_entry");
   if (_jsrs->size() > 0) { st->print("/");  _jsrs->print_on(st); }
   if (is_backedge_copy())  st->print("/backedge_copy");
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,9 +49,9 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
   // Read "A word on VtableStub sizing" in share/code/vtableStubs.hpp for details on stub sizing.
   const int stub_code_length = code_size_limit(true);
   VtableStub* s = new(stub_code_length) VtableStub(true, vtable_index);
-  // Can be NULL if there is no free space in the code cache.
-  if (s == NULL) {
-    return NULL;
+  // Can be null if there is no free space in the code cache.
+  if (s == nullptr) {
+    return nullptr;
   }
 
   // Count unused bytes in instruction sequences of variable size.
@@ -120,7 +120,7 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
     __ jcc(Assembler::equal, L);
     __ cmpptr(Address(method, Method::from_compiled_offset()), NULL_WORD);
     __ jcc(Assembler::notZero, L);
-    __ stop("Vtable entry is NULL");
+    __ stop("Vtable entry is null");
     __ bind(L);
   }
 #endif // PRODUCT
@@ -143,9 +143,9 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   // Read "A word on VtableStub sizing" in share/code/vtableStubs.hpp for details on stub sizing.
   const int stub_code_length = code_size_limit(false);
   VtableStub* s = new(stub_code_length) VtableStub(false, itable_index);
-  // Can be NULL if there is no free space in the code cache.
-  if (s == NULL) {
-    return NULL;
+  // Can be null if there is no free space in the code cache.
+  if (s == nullptr) {
+    return nullptr;
   }
 
   // Count unused bytes in instruction sequences of variable size.

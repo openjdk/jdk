@@ -177,54 +177,54 @@
 /******************************************************************************/
 
 // The 32 bit code is at most SSE2 compliant
-ATTRIBUTE_ALIGNED(8) juint _zero_none[] =
+ATTRIBUTE_ALIGNED(8) static const juint _zero_none[] =
 {
     0x00000000UL, 0x00000000UL, 0x00000000UL, 0xbff00000UL
 };
 
-ATTRIBUTE_ALIGNED(4) juint __4onpi_d[] =
+ATTRIBUTE_ALIGNED(4) static const juint __4onpi_d[] =
 {
     0x6dc9c883UL, 0x3ff45f30UL
 };
 
-ATTRIBUTE_ALIGNED(4) juint _TWO_32H[] =
+ATTRIBUTE_ALIGNED(4) static const juint _TWO_32H[] =
 {
     0x00000000UL, 0x41f80000UL
 };
 
-ATTRIBUTE_ALIGNED(4) juint _pi04_3d[] =
+ATTRIBUTE_ALIGNED(4) static const juint _pi04_3d[] =
 {
     0x54442d00UL, 0x3fe921fbUL, 0x98cc5180UL, 0x3ce84698UL, 0xcbb5bf6cUL,
     0xb9dfc8f8UL
 };
 
-ATTRIBUTE_ALIGNED(4) juint _pi04_5d[] =
+ATTRIBUTE_ALIGNED(4) static const juint _pi04_5d[] =
 {
     0x54400000UL, 0x3fe921fbUL, 0x1a600000UL, 0x3dc0b461UL, 0x2e000000UL,
     0x3b93198aUL, 0x25200000UL, 0x396b839aUL, 0x533e63a0UL, 0x37027044UL
 };
 
-ATTRIBUTE_ALIGNED(4) juint _SCALE[] =
+ATTRIBUTE_ALIGNED(4) static const juint _SCALE[] =
 {
     0x00000000UL, 0x32600000UL
 };
 
-ATTRIBUTE_ALIGNED(4) juint _zeros[] =
+ATTRIBUTE_ALIGNED(4) static const juint _zeros[] =
 {
     0x00000000UL, 0x00000000UL, 0x00000000UL, 0x80000000UL
 };
 
-ATTRIBUTE_ALIGNED(4) juint _pi04_2d[] =
+ATTRIBUTE_ALIGNED(4) static const juint _pi04_2d[] =
 {
     0x54400000UL, 0x3fe921fbUL, 0x1a626331UL, 0x3dc0b461UL
 };
 
-ATTRIBUTE_ALIGNED(4) juint _TWO_12H[] =
+ATTRIBUTE_ALIGNED(4) static const juint _TWO_12H[] =
 {
     0x00000000UL, 0x40b80000UL
 };
 
-ATTRIBUTE_ALIGNED(2) jushort __4onpi_31l[] =
+ATTRIBUTE_ALIGNED(2) static const jushort __4onpi_31l[] =
 {
     0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x836e, 0xa2f9,
     0x40d8, 0x0000, 0x0000, 0x0000, 0x2a50, 0x9c88, 0x40b7, 0x0000, 0x0000, 0x0000,
@@ -954,7 +954,7 @@ void MacroAssembler::libm_reduce_pi04l(Register eax, Register ecx, Register edx,
 }
 
 
-ATTRIBUTE_ALIGNED(16) jushort _SP[] =
+ATTRIBUTE_ALIGNED(16) static const jushort _SP[] =
 {
     0xaaab, 0xaaaa, 0xaaaa, 0xaaaa, 0xbffc, 0x0000, 0x8887, 0x8888, 0x8888, 0x8888,
     0x3ff8, 0x0000, 0xc527, 0x0d00, 0x00d0, 0xd00d, 0xbff2, 0x0000, 0x45f6, 0xb616,
@@ -963,7 +963,7 @@ ATTRIBUTE_ALIGNED(16) jushort _SP[] =
     0xbfd6, 0x0000, 0x8610, 0x307f, 0x62a1, 0xc921, 0x3fce, 0x0000
 };
 
-ATTRIBUTE_ALIGNED(16) jushort _CP[] =
+ATTRIBUTE_ALIGNED(16) static const jushort _CP[] =
 {
     0x0000, 0x0000, 0x0000, 0x8000, 0xbffe, 0x0000, 0xaaa5, 0xaaaa, 0xaaaa, 0xaaaa,
     0x3ffa, 0x0000, 0x9c2f, 0x0b60, 0x60b6, 0xb60b, 0xbff5, 0x0000, 0xf024, 0x0cac,
@@ -1490,7 +1490,7 @@ void MacroAssembler::libm_sincos_huge(XMMRegister xmm0, XMMRegister xmm1, Regist
   jmp(B1_15);
 }
 
-ATTRIBUTE_ALIGNED(16) juint _static_const_table_sin[] =
+ATTRIBUTE_ALIGNED(16) static const juint _static_const_table_sin[] =
 {
     0x00000000UL, 0x00000000UL, 0x00000000UL, 0x00000000UL, 0x00000000UL,
     0x00000000UL, 0x00000000UL, 0x3ff00000UL, 0x176d6d31UL, 0xbf73b92eUL,

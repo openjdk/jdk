@@ -55,7 +55,7 @@ class AddressLiteral {
   // creation
   AddressLiteral()
     : _is_lval(false),
-      _target(NULL)
+      _target(nullptr)
   {}
 
   public:
@@ -285,7 +285,7 @@ public:
   // Test sub_klass against super_klass, with fast and slow paths.
 
   // The fast path produces a tri-state answer: yes / no / maybe-slow.
-  // One of the three labels can be NULL, meaning take the fall-through.
+  // One of the three labels can be null, meaning take the fall-through.
   // No registers are killed, except temp_regs.
   void check_klass_subtype_fast_path(Register sub_klass,
                                      Register super_klass,
@@ -1008,6 +1008,24 @@ public:
 
   void cas_for_lock_acquire(Register oldval, Register newval, Register base, Register tmp, Label &slow_case, bool allow_fallthrough_on_failure = false, bool one_shot = false);
   void cas_for_lock_release(Register oldval, Register newval, Register base, Register tmp, Label &slow_case, bool allow_fallthrough_on_failure = false, bool one_shot = false);
+
+  // Attempt to fast-lock an object
+  // Registers:
+  //  - obj: the object to be locked
+  //  - t1, t2, t3: temp registers. If corresponding bit in savemask is set, they get saved, otherwise blown.
+  // Result:
+  //  - Success: fallthrough
+  //  - Error:   break to slow, Z cleared.
+  void fast_lock_2(Register obj, Register t1, Register t2, Register t3, unsigned savemask, Label& slow);
+
+  // Attempt to fast-unlock an object
+  // Registers:
+  //  - obj: the object to be unlocked
+  //  - t1, t2, t3: temp registers. If corresponding bit in savemask is set, they get saved, otherwise blown.
+  // Result:
+  //  - Success: fallthrough
+  //  - Error:   break to slow, Z cleared.
+  void fast_unlock_2(Register obj, Register t1, Register t2, Register t3, unsigned savemask, Label& slow);
 
 #ifndef PRODUCT
   // Preserves flags and all registers.

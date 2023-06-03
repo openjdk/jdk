@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -234,7 +234,7 @@ public class DynamicCallSiteDesc {
      */
     public CallSite resolveCallSiteDesc(MethodHandles.Lookup lookup) throws Throwable {
         assert bootstrapMethod.invocationType().parameterType(1).equals(CD_String);
-        MethodHandle bsm = (MethodHandle) bootstrapMethod.resolveConstantDesc(lookup);
+        MethodHandle bsm = bootstrapMethod.resolveConstantDesc(lookup);
         Object[] args = new Object[bootstrapArgs.length + 3];
         args[0] = lookup;
         args[1] = invocationName;
