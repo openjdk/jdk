@@ -491,7 +491,7 @@ void C2_MacroAssembler::string_indexof(Register haystack, Register needle,
   }
   bne(tmp3, skipch, BMSKIP); // if not equal, skipch is bad char
   add(result, haystack, isLL ? nlen_tmp : ch2);
-  ld(ch2, Address(result)); // load 8 bytes from source string
+  load_long_misaligned(ch2, Address(result), ch1); // can use ch1 as tmpreg here as it will be trashed on next mv command anyway
   mv(ch1, tmp6);
   if (isLL) {
     j(BMLOOPSTR1_AFTER_LOAD);
@@ -703,7 +703,14 @@ void C2_MacroAssembler::string_indexof_linearscan(Register haystack, Register ne
 
     bind(CH1_LOOP);
     add(tmp3, haystack, hlen_neg);
-    (this->*load_2chr)(ch2, Address(tmp3), noreg);
+    if (AvoidUnalignedAccesses) {
+      (this->*haystack_load_1chr)(ch2, Address(tmp3), noreg);
+      (this->*haystack_load_1chr)(tmp3, Address(tmp3, isLL ? 1 : 2), noreg);
+      slli(tmp3, tmp3, isLL ? 8 : 16);
+      add(ch2, ch2, tmp3);
+    } else {
+      (this->*load_2chr)(ch2, Address(tmp3), noreg);
+    }
     beq(ch1, ch2, MATCH);
     add(hlen_neg, hlen_neg, haystack_chr_size);
     blez(hlen_neg, CH1_LOOP);
@@ -727,7 +734,14 @@ void C2_MacroAssembler::string_indexof_linearscan(Register haystack, Register ne
 
     bind(FIRST_LOOP);
     add(ch2, haystack, hlen_neg);
-    (this->*load_2chr)(ch2, Address(ch2), noreg);
+    if (AvoidUnalignedAccesses) {
+      (this->*haystack_load_1chr)(tmp2, Address(ch2, isLL ? 1 : 2), noreg); // we need a temp register, we can safely use hlen_tmp here, which is a synonym for tmp2
+      (this->*haystack_load_1chr)(ch2, Address(ch2), noreg);
+      slli(tmp2, tmp2, isLL ? 8 : 16);
+      add(ch2, ch2, tmp2);
+    } else {
+      (this->*load_2chr)(ch2, Address(ch2), noreg);
+    }
     beq(first, ch2, STR1_LOOP);
 
     bind(STR2_NEXT);
