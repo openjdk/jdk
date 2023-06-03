@@ -896,7 +896,7 @@ public final class ProcessTools {
             // MainThreadGroup used just as a container for exceptions
             // when main is executed in virtual thread
             MainThreadGroup tg = new MainThreadGroup();
-            Thread vthread = createVirtualThread(() -> {
+            Thread vthread = Thread.ofVirtual().unstarted(() -> {
                     try {
                         mainMethod.invoke(null, new Object[] { classArgs });
                     } catch (InvocationTargetException e) {
@@ -943,18 +943,5 @@ public final class ProcessTools {
             uncaughtThrowable = e;
         }
         Throwable uncaughtThrowable = null;
-    }
-
-    static Thread createVirtualThread(Runnable task) {
-        try {
-            Object builder = Thread.class.getMethod("ofVirtual").invoke(null);
-            Class<?> clazz = Class.forName("java.lang.Thread$Builder");
-            Method unstarted = clazz.getMethod("unstarted", Runnable.class);
-            return (Thread) unstarted.invoke(builder, task);
-        } catch (RuntimeException | Error e) {
-            throw e;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
     }
 }
