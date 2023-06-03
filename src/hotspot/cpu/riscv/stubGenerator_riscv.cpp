@@ -917,7 +917,7 @@ class StubGenerator: public StubCodeGenerator {
     __ sub(cnt, cnt, vl);
     if (sew != Assembler::e8) {
       // when sew == e8 (e.g., elem size is 1 byte), slli R, R, 0 is a nop and unnecessary
-      __ slli(vl, vl, (int)sew);
+      __ slli(vl, vl, sew);
     }
     __ add(src, src, vl);
 
