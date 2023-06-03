@@ -42,9 +42,19 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
  */
 final class LazyInitializingVarHandle extends VarHandle {
 
+    private static final MethodHandle MH_ensureInitialized;
     private final VarHandle target;
     private final Class<?> refc;
     private @Stable boolean initialized;
+
+    static {
+        try {
+            MH_ensureInitialized = IMPL_LOOKUP.findVirtual(LazyInitializingVarHandle.class, "ensureInitialized",
+                    MethodType.methodType(void.class));
+        } catch (Throwable ex) {
+            throw uncaughtException(ex);
+        }
+    }
 
     LazyInitializingVarHandle(VarHandle target, Class<?> refc) {
         super(target.vform, target.exact);
@@ -101,20 +111,7 @@ final class LazyInitializingVarHandle extends VarHandle {
         if (initialized)
             return callTarget;
 
-        final class Holder {
-            static final MethodHandle MH_ensureInitialized;
-
-            static {
-                try {
-                    MH_ensureInitialized = IMPL_LOOKUP.findVirtual(LazyInitializingVarHandle.class, "ensureInitialized",
-                            MethodType.methodType(void.class));
-                } catch (Throwable ex) {
-                    throw uncaughtException(ex);
-                }
-            }
-        }
-
-        return MethodHandles.collectArguments(callTarget, 0, Holder.MH_ensureInitialized)
+        return MethodHandles.collectArguments(callTarget, 0, MH_ensureInitialized)
                 .bindTo(this);
     }
 }
