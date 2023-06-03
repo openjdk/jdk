@@ -132,7 +132,6 @@ test-prebuilt-with-exit-code:
 
 # Alias for backwards compatibility
 run-test-prebuilt: test-prebuilt
-run-test-prebuilt-with-exit-code: test-prebuilt-with-exit-code
 
 ALL_GLOBAL_TARGETS := help print-configurations test-prebuilt run-test-prebuilt
 
