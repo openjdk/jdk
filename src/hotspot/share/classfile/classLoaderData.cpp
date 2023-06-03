@@ -148,6 +148,7 @@ ClassLoaderData::ClassLoaderData(Handle h_class_loader, bool has_class_mirror_ho
   _jmethod_ids(nullptr),
   _deallocate_list(nullptr),
   _next(nullptr),
+  _unloading_next(nullptr),
   _class_loader_klass(nullptr), _name(nullptr), _name_and_id(nullptr) {
 
   if (!h_class_loader.is_null()) {
