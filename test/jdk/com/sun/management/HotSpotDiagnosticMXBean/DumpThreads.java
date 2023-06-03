@@ -25,6 +25,8 @@
  * @test
  * @bug 8284161 8287008 8309406
  * @summary Basic test for com.sun.management.HotSpotDiagnosticMXBean.dumpThreads
+ * @requires vm.continuations
+ * @modules jdk.management
  * @library /test/lib
  * @run junit/othervm DumpThreads
  * @run junit/othervm -Djdk.trackAllThreads DumpThreads
