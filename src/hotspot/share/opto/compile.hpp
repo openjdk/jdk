@@ -66,6 +66,7 @@ class Node;
 class Node_Array;
 class Node_List;
 class Node_Notes;
+class NodeHash;
 class NodeCloneInfo;
 class OptoReg;
 class PhaseCFG;
@@ -87,6 +88,7 @@ class TypePtr;
 class TypeOopPtr;
 class TypeFunc;
 class TypeVect;
+class Type_Array;
 class Unique_Node_List;
 class UnstableIfTrap;
 class nmethod;
@@ -414,7 +416,16 @@ class Compile : public Phase {
 
   // Parsing, optimization
   PhaseGVN*             _initial_gvn;           // Results of parse-time PhaseGVN
-  Unique_Node_List*     _for_igvn;              // Initial work-list for next round of Iterative GVN
+
+  // Shared worklist for all IGVN rounds. Nodes can be pushed to it at any time.
+  // If pushed outside IGVN, the Node is processed in the next IGVN round.
+  Unique_Node_List*     _igvn_worklist;
+
+  // Shared type array for GVN, IGVN and CCP. It maps node idx -> Type*.
+  Type_Array*           _types;
+
+  // Shared node hash table for GVN, IGVN and CCP.
+  NodeHash*             _node_hash;
 
   GrowableArray<CallGenerator*> _late_inlines;        // List of CallGenerators to be revisited after main parsing has finished.
   GrowableArray<CallGenerator*> _string_late_inlines; // same but for string operations
@@ -937,11 +948,21 @@ class Compile : public Phase {
 
   // Parsing, optimization
   PhaseGVN*         initial_gvn()               { return _initial_gvn; }
-  Unique_Node_List* for_igvn()                  { return _for_igvn; }
+  Unique_Node_List* igvn_worklist() {
+    assert(_igvn_worklist != nullptr, "must be created in Compile::Compile");
+    return _igvn_worklist;
+  }
+  Type_Array* types() {
+    assert(_types != nullptr, "must be created in Compile::Compile");
+    return _types;
+  }
+  NodeHash* node_hash() {
+    assert(_node_hash != nullptr, "must be created in Compile::Compile");
+    return _node_hash;
+  }
   inline void       record_for_igvn(Node* n);   // Body is after class Unique_Node_List in node.hpp.
   inline void       remove_for_igvn(Node* n);   // Body is after class Unique_Node_List in node.hpp.
   void          set_initial_gvn(PhaseGVN *gvn)           { _initial_gvn = gvn; }
-  void          set_for_igvn(Unique_Node_List *for_igvn) { _for_igvn = for_igvn; }
 
   // Replace n by nn using initial_gvn, calling hash_delete and
   // record_for_igvn as needed.
@@ -950,7 +971,7 @@ class Compile : public Phase {
 
   void              identify_useful_nodes(Unique_Node_List &useful);
   void              update_dead_node_list(Unique_Node_List &useful);
-  void              disconnect_useless_nodes(Unique_Node_List &useful, Unique_Node_List* worklist);
+  void              disconnect_useless_nodes(Unique_Node_List& useful, Unique_Node_List& worklist);
 
   void              remove_useless_node(Node* dead);
 

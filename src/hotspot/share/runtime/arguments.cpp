@@ -1905,7 +1905,7 @@ bool Arguments::check_vm_args_consistency() {
 #endif
 
 
-#if !defined(X86) && !defined(AARCH64) && !defined(RISCV64) && !defined(ARM)
+#if !defined(X86) && !defined(AARCH64) && !defined(RISCV64) && !defined(ARM) && !defined(PPC64)
   if (LockingMode == LM_LIGHTWEIGHT) {
     FLAG_SET_CMDLINE(LockingMode, LM_LEGACY);
     warning("New lightweight locking not supported on this platform");

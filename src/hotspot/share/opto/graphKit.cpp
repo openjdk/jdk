@@ -2888,6 +2888,7 @@ Node* GraphKit::type_check_receiver(Node* receiver, ciKlass* klass,
       // recv_xtype, since now we know what the type will be.
       Node* cast = new CheckCastPPNode(control(), receiver, recvx_type);
       (*casted_receiver) = _gvn.transform(cast);
+      assert(!(*casted_receiver)->is_top(), "that path should be unreachable");
       // (User must make the replace_in_map call.)
     }
   }
@@ -3519,19 +3520,19 @@ void GraphKit::shared_unlock(Node* box, Node* obj) {
 // This two-faced routine is useful because allocation sites
 // almost always feature constant types.
 Node* GraphKit::get_layout_helper(Node* klass_node, jint& constant_value) {
-  const TypeKlassPtr* inst_klass = _gvn.type(klass_node)->isa_klassptr();
-  if (!StressReflectiveCode && inst_klass != nullptr) {
-    bool    xklass = inst_klass->klass_is_exact();
-    if (xklass || inst_klass->isa_aryklassptr()) {
+  const TypeKlassPtr* klass_t = _gvn.type(klass_node)->isa_klassptr();
+  if (!StressReflectiveCode && klass_t != nullptr) {
+    bool xklass = klass_t->klass_is_exact();
+    if (xklass || (klass_t->isa_aryklassptr() && klass_t->is_aryklassptr()->elem() != Type::BOTTOM)) {
       jint lhelper;
-      if (inst_klass->isa_aryklassptr()) {
-        BasicType elem = inst_klass->as_instance_type()->isa_aryptr()->elem()->array_element_basic_type();
+      if (klass_t->isa_aryklassptr()) {
+        BasicType elem = klass_t->as_instance_type()->isa_aryptr()->elem()->array_element_basic_type();
         if (is_reference_type(elem, true)) {
           elem = T_OBJECT;
         }
         lhelper = Klass::array_layout_helper(elem);
       } else {
-        lhelper = inst_klass->is_instklassptr()->exact_klass()->layout_helper();
+        lhelper = klass_t->is_instklassptr()->exact_klass()->layout_helper();
       }
       if (lhelper != Klass::_lh_neutral_value) {
         constant_value = lhelper;
@@ -3917,7 +3918,7 @@ Node* GraphKit::new_array(Node* klass_node,     // array klass (maybe variable)
 
 //---------------------------Ideal_allocation----------------------------------
 // Given an oop pointer or raw pointer, see if it feeds from an AllocateNode.
-AllocateNode* AllocateNode::Ideal_allocation(Node* ptr, PhaseTransform* phase) {
+AllocateNode* AllocateNode::Ideal_allocation(Node* ptr, PhaseValues* phase) {
   if (ptr == nullptr) {     // reduce dumb test in callers
     return nullptr;
   }
@@ -3944,7 +3945,7 @@ AllocateNode* AllocateNode::Ideal_allocation(Node* ptr, PhaseTransform* phase) {
 }
 
 // Fancy version which also strips off an offset (and reports it to caller).
-AllocateNode* AllocateNode::Ideal_allocation(Node* ptr, PhaseTransform* phase,
+AllocateNode* AllocateNode::Ideal_allocation(Node* ptr, PhaseValues* phase,
                                              intptr_t& offset) {
   Node* base = AddPNode::Ideal_base_and_offset(ptr, phase, offset);
   if (base == nullptr)  return nullptr;
