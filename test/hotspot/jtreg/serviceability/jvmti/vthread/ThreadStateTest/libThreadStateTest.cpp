@@ -29,6 +29,9 @@
 
 // set by Agent_OnLoad
 static jvmtiEnv* jvmti = nullptr;
+static const jint EXP_VT_STATE = JVMTI_THREAD_STATE_ALIVE | JVMTI_THREAD_STATE_RUNNABLE;
+static const jint EXP_CT_STATE = EXP_VT_STATE | JVMTI_THREAD_STATE_WAITING | JVMTI_THREAD_STATE_WAITING_INDEFINITELY;
+static const jint MAX_FRAME_COUNT = 32;
 
 extern "C" {
 
@@ -38,8 +41,21 @@ SingleStep(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread,
 }
 
 static void JNICALL
-MonitorContended(jvmtiEnv* jvmti, JNIEnv* jni_env, jthread thread,
+MonitorContended(jvmtiEnv* jvmti, JNIEnv* jni, jthread thread,
                  jobject object) {
+}
+
+static void JNICALL
+check_thread_state(jvmtiEnv* jvmti, JNIEnv* jni, jthread thread, jint state, jint exp_state, const char* msg) {
+  if (state != exp_state) {
+    const char* tname = get_thread_name(jvmti, jni, thread);
+
+    LOG("FAILED: %p: %s: thread state: %x expected state: %x\n",
+        (void*)thread, tname, state, exp_state);
+
+    deallocate(jvmti, jni, (void*)tname);
+    jni->FatalError(msg);
+  }
 }
 
 JNIEXPORT void JNICALL
@@ -52,6 +68,33 @@ JNIEXPORT void JNICALL
 Java_ThreadStateTest_setMonitorContendedMode(JNIEnv* jni, jclass klass, jboolean enable) {
   jvmtiError err = jvmti->SetEventNotificationMode(enable ? JVMTI_ENABLE : JVMTI_DISABLE, JVMTI_EVENT_MONITOR_CONTENDED_ENTER, nullptr);
   check_jvmti_status(jni, err, "event handler: error in JVMTI SetEventNotificationMode for event JVMTI_EVENT_MONITOR_CONTENDED_ENTER");
+}
+
+JNIEXPORT void JNICALL
+Java_ThreadStateTest_testGetThreadState(JNIEnv* jni, jclass klass, jthread vthread) {
+  jthread cthread = get_carrier_thread(jvmti, jni, vthread);
+  jint ct_state = get_thread_state(jvmti, jni, cthread);
+  jint vt_state = get_thread_state(jvmti, jni, vthread);
+
+  check_thread_state(jvmti, jni, cthread, ct_state, EXP_CT_STATE,
+                     "Failed: unexpected carrier thread state from JVMTI GetThreadState");
+  check_thread_state(jvmti, jni, vthread, vt_state, EXP_VT_STATE,
+                     "Failed: unexpected virtual thread state from JVMTI GetThreadState");
+}
+
+JNIEXPORT void JNICALL
+Java_ThreadStateTest_testGetThreadListStackTraces(JNIEnv* jni, jclass klass, jthread vthread) {
+  jthread cthread = get_carrier_thread(jvmti, jni, vthread);
+  jthread threads[2] = { cthread, vthread };
+  jvmtiStackInfo* stackInfo = NULL;
+
+  jvmtiError err = jvmti->GetThreadListStackTraces(2, threads, MAX_FRAME_COUNT, &stackInfo);
+  check_jvmti_status(jni, err, "testGetThreadState: error in JVMTI GetThreadListStackTraces");
+  
+  check_thread_state(jvmti, jni, cthread, stackInfo[0].state, EXP_CT_STATE,
+                     "Failed: unexpected carrier thread state from JVMTI GetThreadListStackTraces");
+  check_thread_state(jvmti, jni, vthread, stackInfo[1].state, EXP_VT_STATE,
+                     "Failed: unexpected virtual thread state from JVMTI GetThreadListStackTraces");
 }
 
 JNIEXPORT jint JNICALL Agent_OnLoad(JavaVM* jvm, char* options, void* reserved) {

@@ -730,7 +730,7 @@ JvmtiEnvBase::get_cthread_last_java_vframe(JavaThread* jt, RegisterMap* reg_map_
 }
 
 jint
-JvmtiEnvBase::get_thread_state(oop thread_oop, JavaThread* jt) {
+JvmtiEnvBase::get_thread_state_base(oop thread_oop, JavaThread* jt) {
   jint state = 0;
 
   if (thread_oop != nullptr) {
@@ -757,6 +757,16 @@ JvmtiEnvBase::get_thread_state(oop thread_oop, JavaThread* jt) {
 }
 
 jint
+JvmtiEnvBase::get_thread_state(oop thread_oop, JavaThread* jt) {
+  jint state = get_thread_state_base(thread_oop, jt);
+
+  if (is_passive_carrier_thread(jt, thread_oop)) {
+    state |= (JVMTI_THREAD_STATE_WAITING | JVMTI_THREAD_STATE_WAITING_INDEFINITELY);
+  }
+  return state;
+}
+
+jint
 JvmtiEnvBase::get_vthread_state(oop thread_oop, JavaThread* java_thread) {
   jint state = 0;
   bool ext_suspended = JvmtiVTSuspender::is_vthread_suspended(thread_oop);
@@ -770,7 +780,7 @@ JvmtiEnvBase::get_vthread_state(oop thread_oop, JavaThread* java_thread) {
     jint filtered_bits = JVMTI_THREAD_STATE_SUSPENDED | JVMTI_THREAD_STATE_INTERRUPTED;
 
     // This call can trigger a safepoint, so thread_oop must not be used after it.
-    state = get_thread_state(ct_oop, java_thread) & ~filtered_bits;
+    state = get_thread_state_base(ct_oop, java_thread) & ~filtered_bits;
   } else {
     jshort vt_state = java_lang_VirtualThread::state(thread_oop);
     state = (jint)java_lang_VirtualThread::map_state_to_thread_status(vt_state);

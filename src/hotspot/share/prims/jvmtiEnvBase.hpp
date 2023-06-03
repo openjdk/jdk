@@ -382,7 +382,8 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
   // get carrier thread last java vframe
   static javaVFrame* get_cthread_last_java_vframe(JavaThread* jt, RegisterMap* reg_map);
 
-  // get ordinary thread thread state
+  // get platform thread state
+  static jint get_thread_state_base(oop thread_oop, JavaThread* jt);
   static jint get_thread_state(oop thread_oop, JavaThread* jt);
 
   // get virtual thread thread state
