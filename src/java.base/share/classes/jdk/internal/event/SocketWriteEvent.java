@@ -113,8 +113,7 @@ public class SocketWriteEvent extends Event {
         if (shouldCommit(duration)) {
             long bytes = bytesWritten < 0 ? 0 : bytesWritten;
             if (remote instanceof InetSocketAddress isa) {
-                InetAddress a = isa.getAddress();
-                commit(start, duration, a.getHostName(), a.getHostAddress(), isa.getPort(), bytes);
+                commit(start, duration, isa.getHostString(), isa.getAddress().getHostAddress(), isa.getPort(), bytes);
             } else if (remote instanceof UnixDomainSocketAddress udsa) {
                 String path = "[" + udsa.getPath().toString() + "]";
                 commit(start, duration, "Unix domain socket", path, 0, bytes);

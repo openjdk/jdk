@@ -406,19 +406,19 @@ class SocketChannelImpl
     @Override
     public int read(ByteBuffer buf) throws IOException {
         if (!SocketReadEvent.enabled()) {
-            return readMeasured(buf);
+            return read0(buf);
         }
         int nbytes = 0;
         long start = SocketReadEvent.timestamp();
         try {
-            nbytes = readMeasured(buf);
+            nbytes = read0(buf);
         } finally {
             SocketReadEvent.checkForCommit(start, nbytes, getRemoteAddress(), 0);
         }
         return nbytes;
     }
 
-    private int readMeasured(ByteBuffer buf) throws IOException {
+    private int read0(ByteBuffer buf) throws IOException {
         Objects.requireNonNull(buf);
 
         readLock.lock();
@@ -464,19 +464,19 @@ class SocketChannelImpl
         throws IOException
     {
         if (! SocketReadEvent.enabled()) {
-            return readMeasured(dsts, offset, length);
+            return read0(dsts, offset, length);
         }
         long nbytes = 0;
         long start = SocketReadEvent.timestamp();
         try {
-            nbytes = readMeasured(dsts, offset, length);
+            nbytes = read0(dsts, offset, length);
         } finally {
             SocketReadEvent.checkForCommit(start, nbytes, getRemoteAddress(), 0);
         }
         return nbytes;
     }
 
-    private long readMeasured(ByteBuffer[] dsts, int offset, int length)
+    private long read0(ByteBuffer[] dsts, int offset, int length)
         throws IOException
     {
         Objects.checkFromIndexSize(offset, length, dsts.length);
@@ -563,19 +563,19 @@ class SocketChannelImpl
     @Override
     public int write(ByteBuffer buf) throws IOException {
         if (! SocketWriteEvent.enabled()) {
-            return writeMeasured(buf);
+            return write0(buf);
         }
         int nbytes = 0;
         long start = SocketWriteEvent.timestamp();
         try {
-            nbytes = writeMeasured(buf);
+            nbytes = write0(buf);
         } finally {
             SocketWriteEvent.checkForCommit(start, nbytes, getRemoteAddress());
         }
         return nbytes;
     }
 
-    private int writeMeasured(ByteBuffer buf) throws IOException {
+    private int write0(ByteBuffer buf) throws IOException {
         Objects.requireNonNull(buf);
         writeLock.lock();
         try {
@@ -608,19 +608,19 @@ class SocketChannelImpl
         throws IOException
     {
         if (! SocketWriteEvent.enabled()) {
-            return writeMeasured(srcs, offset, length);
+            return write0(srcs, offset, length);
         }
         long nbytes = 0;
         long start = SocketWriteEvent.timestamp();
         try {
-            nbytes = writeMeasured(srcs, offset, length);
+            nbytes = write0(srcs, offset, length);
         } finally {
             SocketWriteEvent.checkForCommit(start, nbytes, getRemoteAddress());
         }
         return nbytes;
     }
 
-    private long writeMeasured(ByteBuffer[] srcs, int offset, int length)
+    private long write0(ByteBuffer[] srcs, int offset, int length)
         throws IOException
     {
         Objects.checkFromIndexSize(offset, length, srcs.length);
