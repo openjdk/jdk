@@ -172,8 +172,9 @@ class PackageSnippets {
                                                 int slot = 0;
                                                 if (!mm.flags().has(AccessFlag.STATIC))
                                                     storeStack.push(StoreInstruction.of(TypeKind.ReferenceType, slot++));
-                                                for (var pt : mm.methodTypeSymbol().parameterList()) {
-                                                    var tk = TypeKind.from(pt);
+                                                var mtd = mm.methodTypeSymbol();
+                                                for (int i = 0; i < mtd.parameterCount(); i++) {
+                                                    var tk = TypeKind.from(mtd.parameterType(i));
                                                     storeStack.push(StoreInstruction.of(tk, slot));
                                                     slot += tk.slotSize();
                                                 }

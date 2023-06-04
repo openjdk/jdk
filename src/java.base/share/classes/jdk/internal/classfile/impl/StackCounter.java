@@ -105,8 +105,8 @@ public final class StackCounter {
         maxStack = stack = rets = 0;
         for (var h : handlers) map.put(labelContext.labelToBci(h.handler), 1);
         maxLocals = isStatic ? 0 : 1;
-        for (var cd : methodDesc.parameterList()) {
-            maxLocals += Util.slotSize(cd);
+        for (int i = 0; i < methodDesc.parameterCount(); i++) {
+            maxLocals += Util.slotSize(methodDesc.parameterType(i));
         }
         bcs = new RawBytecodeHelper(bytecode);
         visited = new BitSet(bcs.endBci);
@@ -305,9 +305,9 @@ public final class StackCounter {
                     case INVOKEVIRTUAL, INVOKESPECIAL, INVOKESTATIC, INVOKEINTERFACE, INVOKEDYNAMIC -> {
                         var cpe = cp.entryByIndex(bcs.getIndexU2());
                         var nameAndType = opcode == INVOKEDYNAMIC ? ((DynamicConstantPoolEntry)cpe).nameAndType() : ((MemberRefEntry)cpe).nameAndType();
-                        var mDesc = MethodTypeDesc.ofDescriptor(nameAndType.type().stringValue());
-                        for (var arg : mDesc.parameterList()) {
-                            addStackSlot(-TypeKind.from(arg).slotSize());
+                        var mDesc = Util.methodTypeSymbol(nameAndType);
+                        for (int i = 0; i < mDesc.parameterCount(); i++) {
+                            addStackSlot(-TypeKind.from(mDesc.parameterType(i)).slotSize());
                         }
                         if (opcode != INVOKESTATIC && opcode != INVOKEDYNAMIC) {
                             addStackSlot(-1);
