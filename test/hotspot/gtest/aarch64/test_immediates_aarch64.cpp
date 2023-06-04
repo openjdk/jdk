@@ -23,13 +23,13 @@
 
 #include "precompiled.hpp"
 
+#ifdef AARCH64
+
 #include "imm13table_aarch64.hpp"
 #include "immediate_aarch64.hpp"
 #include "memory/allocation.hpp"
 
 #include "unittest.hpp"
-
-#ifdef AARCH64
 
 // Note: "_VM" not necessary, this should always work
 TEST(AArch64, imm13table) {
