@@ -26,6 +26,7 @@
 #define _IMMEDIATE_H
 
 #include <sys/types.h>
+#include "imm13table_aarch64.hpp"
 
 /*
  * functions to map backwards and forwards between logical or floating
@@ -50,5 +51,8 @@ uint64_t logical_immediate_for_encoding(uint32_t encoding);
 uint32_t encoding_for_logical_immediate(uint64_t immediate);
 uint64_t fp_immediate_for_encoding(uint32_t imm8, int is_dp);
 uint32_t encoding_for_fp_immediate(float immediate);
+
+// For testing purposes
+void generateLITables(uint64_t litable[LI_TABLE_SIZE], struct li_pair reverse_litable[LI_TABLE_SIZE], unsigned* reverse_table_size);
 
 #endif // _IMMEDIATE_H

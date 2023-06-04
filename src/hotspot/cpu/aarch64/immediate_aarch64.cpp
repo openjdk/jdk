@@ -27,30 +27,10 @@
 #include <stdint.h>
 
 #include "precompiled.hpp"
+#include "imm13table_aarch64.hpp"
 #include "immediate_aarch64.hpp"
 #include "metaprogramming/primitiveConversions.hpp"
 #include "utilities/globalDefinitions.hpp"
-
-// there are at most 2^13 possible logical immediate encodings
-// however, some combinations of immr and imms are invalid
-static const unsigned  LI_TABLE_SIZE = (1 << 13);
-
-static int li_table_entry_count;
-
-// for forward lookup we just use a direct array lookup
-// and assume that the cient has supplied a valid encoding
-// table[encoding] = immediate
-static uint64_t LITable[LI_TABLE_SIZE];
-
-// for reverse lookup we need a sparse map so we store a table of
-// immediate and encoding pairs sorted by immediate value
-
-struct li_pair {
-  uint64_t immediate;
-  uint32_t encoding;
-};
-
-static struct li_pair InverseLITable[LI_TABLE_SIZE];
 
 // comparator to sort entries in the inverse table
 int compare_immediate_pair(const void *i1, const void *i2)
@@ -332,28 +312,25 @@ int expandLogicalImmediate(uint32_t immN, uint32_t immr,
   return 1;
 }
 
-// constructor to initialise the lookup tables
-
-static void initLITables();
-// Use an empty struct with a constructor as MSVC doesn't support `__attribute__ ((constructor))`
-// See https://stackoverflow.com/questions/1113409/attribute-constructor-equivalent-in-vc
-static struct initLITables_t { initLITables_t(void) { initLITables(); } } _initLITables;
-static void initLITables()
+extern void generateLITables(uint64_t litable[LI_TABLE_SIZE], struct li_pair reverse_litable[LI_TABLE_SIZE], unsigned* reverse_table_size)
 {
-  li_table_entry_count = 0;
+  unsigned li_table_entry_count = 0;
   for (unsigned index = 0; index < LI_TABLE_SIZE; index++) {
     uint32_t N = uimm(index, 12, 12);
     uint32_t immr = uimm(index, 11, 6);
     uint32_t imms = uimm(index, 5, 0);
-    if (expandLogicalImmediate(N, immr, imms, LITable[index])) {
-      InverseLITable[li_table_entry_count].immediate = LITable[index];
-      InverseLITable[li_table_entry_count].encoding = index;
+    if (expandLogicalImmediate(N, immr, imms, litable[index])) {
+      reverse_litable[li_table_entry_count].immediate = litable[index];
+      reverse_litable[li_table_entry_count].encoding = index;
       li_table_entry_count++;
     }
   }
   // now sort the inverse table
-  qsort(InverseLITable, li_table_entry_count,
-        sizeof(InverseLITable[0]), compare_immediate_pair);
+  qsort(reverse_litable, li_table_entry_count,
+        sizeof(reverse_litable[0]), compare_immediate_pair);
+
+  (*reverse_table_size) = li_table_entry_count;
+
 }
 
 // public APIs provided for logical immediate lookup and reverse lookup
@@ -371,7 +348,7 @@ uint32_t encoding_for_logical_immediate(uint64_t immediate)
   pair.immediate = immediate;
 
   result = (struct li_pair *)
-    bsearch(&pair, InverseLITable, li_table_entry_count,
+    bsearch(&pair, InverseLITable, REVERSE_TABLE_COUNT,
             sizeof(InverseLITable[0]), compare_immediate_pair);
 
   if (result) {
