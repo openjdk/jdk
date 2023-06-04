@@ -30,60 +30,75 @@ import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
+import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
+import org.openjdk.jmh.infra.Blackhole;
 
 import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import static java.lang.constant.ConstantDescs.*;
-
 /**
- * Performance of different MethodTypeDesc factory methods
+ * Performance of conversion from and to method type descriptor symbols with
+ * descriptor strings and class descriptor symbols
  */
-@BenchmarkMode(Mode.Throughput)
-@OutputTimeUnit(TimeUnit.MILLISECONDS)
+@BenchmarkMode(Mode.AverageTime)
+@OutputTimeUnit(TimeUnit.NANOSECONDS)
 @Warmup(iterations = 3, time = 2)
 @Measurement(iterations = 6, time = 1)
 @Fork(1)
 @State(Scope.Benchmark)
-public class MethodTypeDescConstruct {
-    public enum Kind {
-        GENERIC(CD_Object, CD_Object, CD_Object),
-        VOID(CD_void),
-        NO_PARAM(CD_Class.arrayType()),
-        ARBITRARY(CD_int, CD_String, CD_String.arrayType(), CD_double.arrayType());
+public class MethodTypeDescFactories {
 
-        final String desc;
-        final ClassDesc ret;
-        final ClassDesc[] args;
-        final List<ClassDesc> argsList;
+    private static final ClassDesc DUMMY_CD = ClassDesc.of("Dummy_invalid");
 
-        Kind(ClassDesc ret, ClassDesc... args) {
-            this.desc = MethodTypeDesc.of(ret, args).descriptorString();
-            this.ret = ret;
-            this.args = args;
-            this.argsList = List.of(args);
-        }
-    }
+    @Param({
+            "(Ljava/lang/Object;Ljava/lang/String;)I",
+            "()V",
+            "([IJLjava/lang/String;Z)Ljava/util/List;",
+            "()[Ljava/lang/String;"
+    })
+    public String descString;
+    public MethodTypeDesc desc;
+    public ClassDesc ret;
+    public ClassDesc[] args;
+    public List<ClassDesc> argsList;
 
-    @Param
-    public Kind kind;
-
-    @Benchmark
-    public MethodTypeDesc ofDescriptorBench() {
-        return MethodTypeDesc.ofDescriptor(kind.desc);
+    @Setup
+    public void setup() {
+        desc = MethodTypeDesc.ofDescriptor(descString);
+        ret = desc.returnType();
+        args = desc.parameterArray();
+        argsList = desc.parameterList();
     }
 
     @Benchmark
-    public MethodTypeDesc ofArrayBench() {
-        return MethodTypeDesc.of(kind.ret, kind.args);
+    public String descriptorString(Blackhole blackhole) {
+        // swaps return types with dummy classdesc;
+        // this shares parameter arrays and avoids revalidation
+        // while it drops the descriptor string cache
+        var mtd = desc.changeReturnType(DUMMY_CD);
+        blackhole.consume(mtd);
+        mtd = mtd.changeReturnType(desc.returnType());
+        blackhole.consume(mtd);
+
+        return mtd.descriptorString();
     }
 
     @Benchmark
-    public MethodTypeDesc ofListBench() {
-        return MethodTypeDesc.of(kind.ret, kind.argsList);
+    public MethodTypeDesc ofDescriptor() {
+        return MethodTypeDesc.ofDescriptor(descString);
+    }
+
+    @Benchmark
+    public MethodTypeDesc ofArray() {
+        return MethodTypeDesc.of(ret, args);
+    }
+
+    @Benchmark
+    public MethodTypeDesc ofList() {
+        return MethodTypeDesc.of(ret, argsList);
     }
 }

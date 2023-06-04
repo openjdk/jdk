@@ -96,6 +96,8 @@ public sealed interface MethodTypeDesc
      * {@link ClassDesc} for {@code void}
      */
     static MethodTypeDesc of(ClassDesc returnDesc, ClassDesc... paramDescs) {
+        if (paramDescs.length == 0)
+            return of(returnDesc);
         var params = paramDescs.clone();
         for (ClassDesc cr : params)
             MethodTypeDescImpl.validateParameter(cr);
