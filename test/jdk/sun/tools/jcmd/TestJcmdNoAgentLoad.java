@@ -24,28 +24,54 @@
 import static jdk.test.lib.Asserts.*;
 
 import java.io.IOException;
+import java.lang.management.ManagementFactory;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
+import com.sun.management.HotSpotDiagnosticMXBean;
+import com.sun.management.VMOption;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.Utils;
 
 /*
- * @test
+ * @test id=default
  * @bug 8304438
- * @summary JVMTI.agent_load should obey EnableDynamicAgentLoading
- *
+ * @summary JVMTI.agent_load should obey EnableDynamicAgentLoading (by default)
  * @library /test/lib
- *
+ * @run main/othervm TestJcmdNoAgentLoad
+ */
+
+/*
+ * @test id=disabled
+ * @bug 8304438
+ * @summary JVMTI.agent_load should obey EnableDynamicAgentLoading (disabled)
+ * @library /test/lib
  * @run main/othervm -XX:-EnableDynamicAgentLoading TestJcmdNoAgentLoad
  */
+
+/*
+ * @test id=enabled
+ * @bug 8304438
+ * @summary JVMTI.agent_load should obey EnableDynamicAgentLoading (enabled)
+ * @library /test/lib
+ * @run main/othervm -XX:+EnableDynamicAgentLoading TestJcmdNoAgentLoad
+ */
+
+
 public class TestJcmdNoAgentLoad {
     // The Agent.jar does not exist. Error with the PTRN message
     // is expected before an attempt to load the Agent.jar.
     private static final String[] CMD = new String[] { "JVMTI.agent_load", "Agent.jar" };
     private static final String PTRN = "Dynamic agent loading is not enabled";
+    private static boolean enableDynLoad = true;
+
+    static {
+        HotSpotDiagnosticMXBean bean = ManagementFactory.getPlatformMXBean(HotSpotDiagnosticMXBean.class);
+        VMOption enableDynLoadOpt = bean.getVMOption("EnableDynamicAgentLoading");
+        enableDynLoad = enableDynLoadOpt.getValue().equals("true");
+    }
 
     public static void main(String[] args) throws Exception {
         testNoAgentLoad(CMD);
@@ -55,6 +81,10 @@ public class TestJcmdNoAgentLoad {
         OutputAnalyzer output = JcmdBase.jcmd(jcmdArgs);
 
         output.shouldHaveExitValue(0);
-        output.shouldContain(PTRN);
+        if (enableDynLoad) {
+            output.shouldNotContain(PTRN);
+        } else {
+            output.shouldContain(PTRN);
+        }
     }
 }
