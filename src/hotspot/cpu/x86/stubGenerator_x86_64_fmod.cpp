@@ -119,7 +119,7 @@ address StubGenerator::generate_libmFmod() {
     //     // |x|, |y|
     //     a = DP_AND(x, DP_CONST(7fffffffffffffff));
     __ movq(xmm0, xmm0);
-    __ mov64(rax, 0x7FFFFFFFFFFFFFFF);
+    __ mov64(rax, 0x7FFFFFFFFFFFFFFFULL);
     __ evpbroadcastq(xmm3, rax, Assembler::AVX_128bit);
     __ vpand(xmm6, xmm0, xmm3, Assembler::AVX_128bit);
     //     b = DP_AND(y, DP_CONST(7fffffffffffffff));
@@ -302,7 +302,7 @@ address StubGenerator::generate_libmFmod() {
     __ vpand(xmm3, xmm1, xmm3, Assembler::AVX_128bit);
     //   // sign(x)
     //   sgn_a = DP_XOR(x, a);
-    __ mov64(rcx, 0x8000000000000000);
+    __ mov64(rcx, 0x8000000000000000ULL);
     __ movq(xmm5, rcx);
     __ vpand(xmm2, xmm2, xmm5, Assembler::AVX_128bit);
 
