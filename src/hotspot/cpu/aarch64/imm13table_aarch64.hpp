@@ -38,8 +38,6 @@ struct li_pair {
 };
 
 constexpr unsigned REVERSE_TABLE_COUNT = 5334;
-
-extern const uint64_t LITable[LI_TABLE_SIZE];
 extern const struct li_pair InverseLITable[REVERSE_TABLE_COUNT];
 
 #endif // #define CPU_AARCH64_IMM13TABLE_AARCH64_HPP

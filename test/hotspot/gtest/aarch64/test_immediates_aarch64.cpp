@@ -33,26 +33,15 @@
 
 // Note: "_VM" not necessary, this should always work
 TEST(AArch64, imm13table) {
-
-  // Table contains all valid logical immediates by encoding.
-  // table[encoding] = immediate
-  uint64_t* my_LITable = NEW_C_HEAP_ARRAY(uint64_t, LI_TABLE_SIZE, mtTest);
-  struct li_pair* my_InverseLITable = NEW_C_HEAP_ARRAY(struct li_pair, REVERSE_TABLE_COUNT, mtTest);
+  struct li_pair* my_InverseLITable = NEW_C_HEAP_ARRAY(struct li_pair, LI_TABLE_SIZE, mtTest);
   unsigned reverse_entry_count = 0;
-
-  generateLITables(my_LITable, my_InverseLITable, &reverse_entry_count);
-
-  for (unsigned i = 0; i < LI_TABLE_SIZE; i++) {
-    ASSERT_EQ(LITable[i], my_LITable[i]) << "immediate table differs at pos " << i;
-  }
-
+  generateReverseLITable(my_InverseLITable, &reverse_entry_count);
   ASSERT_EQ(reverse_entry_count, REVERSE_TABLE_COUNT);
-
   for (unsigned i = 0; i < REVERSE_TABLE_COUNT; i++) {
     ASSERT_EQ(my_InverseLITable[i].immediate, my_InverseLITable[i].immediate) << "reverse immediate table (immediate) differs at pos " << i;
     ASSERT_EQ(my_InverseLITable[i].encoding, my_InverseLITable[i].encoding) << "reverse immediate table (encoding) differs at pos " << i;
   }
-
+  FREE_C_HEAP_ARRAY(struct li_pair, my_InverseLITable);
 }
 
 #endif

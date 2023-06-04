@@ -312,8 +312,9 @@ int expandLogicalImmediate(uint32_t immN, uint32_t immr,
   return 1;
 }
 
-extern void generateLITables(uint64_t litable[LI_TABLE_SIZE], struct li_pair reverse_litable[LI_TABLE_SIZE], unsigned* reverse_table_size)
+extern void generateReverseLITable(struct li_pair reverse_litable[LI_TABLE_SIZE], unsigned* reverse_table_size)
 {
+  uint64_t litable[LI_TABLE_SIZE] = { 0 }; // zero out
   unsigned li_table_entry_count = 0;
   for (unsigned index = 0; index < LI_TABLE_SIZE; index++) {
     uint32_t N = uimm(index, 12, 12);
@@ -330,15 +331,9 @@ extern void generateLITables(uint64_t litable[LI_TABLE_SIZE], struct li_pair rev
         sizeof(reverse_litable[0]), compare_immediate_pair);
 
   (*reverse_table_size) = li_table_entry_count;
-
 }
 
 // public APIs provided for logical immediate lookup and reverse lookup
-
-uint64_t logical_immediate_for_encoding(uint32_t encoding)
-{
-  return LITable[encoding];
-}
 
 uint32_t encoding_for_logical_immediate(uint64_t immediate)
 {
