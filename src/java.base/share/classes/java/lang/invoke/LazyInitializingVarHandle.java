@@ -30,6 +30,7 @@ import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 
 import java.util.Optional;
+import java.util.function.Function;
 
 import static java.lang.invoke.MethodHandleStatics.UNSAFE;
 import static java.lang.invoke.MethodHandleStatics.uncaughtException;
@@ -101,8 +102,27 @@ final class LazyInitializingVarHandle extends VarHandle {
     }
 
     private void ensureInitialized() {
+        if (this.initialized)
+            return;
+
         UNSAFE.ensureClassInitialized(refc);
         this.initialized = true;
+
+        var cache = this.methodHandleTable;
+        int len = cache.length;
+        for (int i = 0; i < len; i++) {
+            var mh = cache[i];
+            if (mh != null) {
+                var callTarget = target.getMethodHandle(i);
+                mh.updateForm(new Function<>() {
+                    @Override
+                    public LambdaForm apply(LambdaForm lambdaForm) {
+                        return callTarget.form;
+                    }
+                });
+                cache[i] = callTarget;
+            }
+        }
     }
 
     @Override
