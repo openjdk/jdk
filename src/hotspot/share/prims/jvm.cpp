@@ -3044,7 +3044,7 @@ JVM_LEAF(void, JVM_Yield(JNIEnv *env, jclass threadClass))
   os::naked_yield();
 JVM_END
 
-JVM_ENTRY(void, JVM_Sleep(JNIEnv* env, jclass threadClass, jlong nanos))
+JVM_ENTRY(void, JVM_SleepNanos(JNIEnv* env, jclass threadClass, jlong nanos))
   if (nanos < 0) {
     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), "nanosecond timeout value out of range");
   }
