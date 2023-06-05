@@ -382,31 +382,31 @@
   product(bool, UseAdaptiveSizePolicyFootprintGoal, true,                   \
           "Use adaptive minimum footprint as a goal")                       \
                                                                             \
-  product(uint, AdaptiveSizePolicyWeight, 10,                              \
+  product(uint, AdaptiveSizePolicyWeight, 10,                               \
           "Weight given to exponential resizing, between 0 and 100")        \
           range(0, 100)                                                     \
                                                                             \
-  product(uint, AdaptiveTimeWeight,       25,                              \
+  product(uint, AdaptiveTimeWeight,       25,                               \
           "Weight given to time in adaptive policy, between 0 and 100")     \
           range(0, 100)                                                     \
                                                                             \
-  product(uintx, PausePadding, 1,                                           \
+  product(uint, PausePadding, 1,                                            \
           "How much buffer to keep for pause time")                         \
-          range(0, max_juint)                                               \
+          range(0, max_uint)                                                \
                                                                             \
-  product(uintx, PromotedPadding, 3,                                        \
+  product(uint, PromotedPadding, 3,                                         \
           "How much buffer to keep for promotion failure")                  \
-          range(0, max_juint)                                               \
+          range(0, max_uint)                                                \
                                                                             \
-  product(uintx, SurvivorPadding, 3,                                        \
+  product(uint, SurvivorPadding, 3,                                         \
           "How much buffer to keep for survivor overflow")                  \
-          range(0, max_juint)                                               \
+          range(0, max_uint)                                                \
                                                                             \
-  product(uint, ThresholdTolerance, 10,                                    \
+  product(uint, ThresholdTolerance, 10,                                     \
           "Allowed collection cost difference between generations")         \
           range(0, 100)                                                     \
                                                                             \
-  product(uint, AdaptiveSizePolicyCollectionCostMargin, 50,                \
+  product(uint, AdaptiveSizePolicyCollectionCostMargin, 50,                 \
           "If collection costs are within margin, reduce both by full "     \
           "delta")                                                          \
           range(0, 100)                                                     \
@@ -450,9 +450,9 @@
           "in millisecond")                                                 \
           range(0, max_uintx)                                               \
                                                                             \
-  product(uintx, GCTimeRatio, 99,                                           \
+  product(uint, GCTimeRatio, 99,                                            \
           "Adaptive size policy application time to GC time ratio")         \
-          range(0, max_juint)                                               \
+          range(0, max_uint)                                                \
                                                                             \
   product(uintx, AdaptiveSizeDecrementScaleFactor, 4,                       \
           "Adaptive size scale down factor for shrinking")                  \
@@ -656,11 +656,11 @@
           range(0, markWord::max_age + 1)                                   \
           constraint(InitialTenuringThresholdConstraintFunc,AfterErgo)      \
                                                                             \
-  product(uint, TargetSurvivorRatio,    50,                                \
+  product(uint, TargetSurvivorRatio,    50,                                 \
           "Desired percentage of survivor space used after scavenge")       \
           range(0, 100)                                                     \
                                                                             \
-  product(uint, MarkSweepDeadRatio,     5,                                 \
+  product(uint, MarkSweepDeadRatio,     5,                                  \
           "Percentage (0-100) of the old gen allowed as dead wood. "        \
           "Serial mark sweep treats this as both the minimum and maximum "  \
           "value. "                                                         \
@@ -677,7 +677,7 @@
   product(uint, MarkSweepAlwaysCompactCount,     4,                         \
           "How often should we fully compact the heap (ignoring the dead "  \
           "space parameters)")                                              \
-          range(1, max_juint)                                               \
+          range(1, max_uint)                                                \
                                                                             \
   develop(uintx, GCExpandToAllocateDelayMillis, 0,                          \
           "Delay between expansion and allocation (in milliseconds)")       \
@@ -685,7 +685,7 @@
   product(uintx, GCDrainStackTargetSize, 64,                                \
           "Number of entries we will try to leave on the stack "            \
           "during parallel gc")                                             \
-          range(0, max_juint)                                               \
+          range(0, max_uint)                                                \
                                                                             \
   product(uint, GCCardSizeInBytes, 512,                                     \
           "Card table entry size (in bytes) for card based collectors")     \
