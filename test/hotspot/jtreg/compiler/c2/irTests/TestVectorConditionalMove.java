@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022, Arm Limited. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -590,6 +591,32 @@ public class TestVectorConditionalMove {
         }
     }
 
+    // Use some constants in the comparison
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR, ">0", IRNode.VECTOR_MASK_CMP, ">0", IRNode.VECTOR_BLEND, ">0", IRNode.STORE_VECTOR, ">0"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+    private static void testCMoveFGTforFCmpCon1(float a, float[] b, float[] c, float[] d, float[] r, float[] r2) {
+        for (int i = 0; i < b.length; i++) {
+            float cc = c[i];
+            float dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = (a > b[i]) ? cc : dd;
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR, ">0", IRNode.VECTOR_MASK_CMP, ">0", IRNode.VECTOR_BLEND, ">0", IRNode.STORE_VECTOR, ">0"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+    private static void testCMoveFGTforFCmpCon2(float[] a, float b, float[] c, float[] d, float[] r, float[] r2) {
+        for (int i = 0; i < a.length; i++) {
+            float cc = c[i];
+            float dd = d[i];
+            r2[i] = cc + dd;
+            r[i] = (a[i] > b) ? cc : dd;
+        }
+    }
+
+    // A case that is currently not supported and is not expected to vectorize
     @Test
     @IR(failOn = {IRNode.VECTOR_MASK_CMP, IRNode.VECTOR_BLEND})
     private static void testCMoveVDUnsupported() {
@@ -723,7 +750,9 @@ public class TestVectorConditionalMove {
                  "testCMoveDGTforI",
                  "testCMoveDGTforL",
                  "testCMoveDGTforF",
-                 "testCMoveDGTforD"})
+                 "testCMoveDGTforD",
+                 "testCMoveFGTforFCmpCon1",
+                 "testCMoveFGTforFCmpCon2"})
     private void testCMove_runner_two() {
         int[] aI = new int[SIZE];
         int[] bI = new int[SIZE];
@@ -841,6 +870,17 @@ public class TestVectorConditionalMove {
         testCMoveDGTforD(aD, bD, cD, dD, rD, rD);
         for (int i = 0; i < SIZE; i++) {
             Asserts.assertEquals(rD[i], cmoveDGTforD(aD[i], bD[i], cD[i], dD[i]));
+        }
+
+        // Use some constants/invariants in the comparison
+        testCMoveFGTforFCmpCon1(aF[0], bF, cF, dF, rF, rF);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rF[i], cmoveFGTforF(aF[0], bF[i], cF[i], dF[i]));
+        }
+
+        testCMoveFGTforFCmpCon2(aF, bF[0], cF, dF, rF, rF);
+        for (int i = 0; i < SIZE; i++) {
+            Asserts.assertEquals(rF[i], cmoveFGTforF(aF[i], bF[0], cF[i], dF[i]));
         }
     }
 
