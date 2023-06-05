@@ -406,7 +406,9 @@ public class Main {
         if (l.mainClass == null) {
             throw new Fault(Errors.NoClass);
         }
-        String mainClassName = l.mainClass.getQualifiedName().toString();
+        TypeElement mainClass = l.mainClass;
+        String mainClassName = (mainClass.isUnnamed() ? mainClass.getSimpleName()
+                                                      : mainClass.getQualifiedName()).toString();
         return mainClassName;
     }
 
