@@ -55,41 +55,41 @@ public class TestAutoHeaderId extends JavadocTester {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src,
                 """
-                package p;
-                /**
-                 * First sentence.
-                 *
-                 * <h2>First Header</h2>
-                 *
-                 * <h3 id="fixed-id-1">Header with ID</h3>
-                 *
-                 * <h4><a id="fixed-id-2">Embedded A-Tag with ID</a></h4>
-                 *
-                 * <h5>{@code Embedded Code Tag}</h5>
-                 *
-                 * <h6>{@linkplain C Embedded Link Tag}</h6>
-                 *
-                 * <h3>Duplicate Text</h3>
-                 *
-                 * <h4>Duplicate Text</h4>
-                 *
-                 * <h2>Extra (#*!. chars</h2>
-                 *
-                 * <h3 style="color: red;" class="some-class">Other attributes</h3>
-                 *
-                 * <h4></h4>
-                 *
-                 * <h2>  Multi-line
-                 *       heading   with extra
-                 *                 whitespace</h2>
-                 *
-                 * Last sentence.
-                 */
-                public class C {
-                    /** Comment. */
-                    C() { }
-                }
-                """);
+                        package p;
+                        /**
+                         * First sentence.
+                         *
+                         * <h2>First Header</h2>
+                         *
+                         * <h3 id="fixed-id-1">Header with ID</h3>
+                         *
+                         * <h4><a id="fixed-id-2">Embedded A-Tag with ID</a></h4>
+                         *
+                         * <h5>{@code Embedded Code Tag}</h5>
+                         *
+                         * <h6>{@linkplain C Embedded Link Tag}</h6>
+                         *
+                         * <h3>Duplicate Text</h3>
+                         *
+                         * <h4>Duplicate Text</h4>
+                         *
+                         * <h2>Extra (#*!. chars</h2>
+                         *
+                         * <h3 style="color: red;" class="some-class">Other attributes</h3>
+                         *
+                         * <h4></h4>
+                         *
+                         * <h2>  Multi-line
+                         *       heading   with extra
+                         *                 whitespace</h2>
+                         *
+                         * Last sentence.
+                         */
+                        public class C {
+                            /** Comment. */
+                            C() { }
+                        }
+                        """);
 
         javadoc("-d", base.resolve("api").toString(),
                 "-sourcepath", src.toString(),
@@ -102,39 +102,39 @@ public class TestAutoHeaderId extends JavadocTester {
     private void checkIds() {
         checkOutput("p/C.html", true,
                 """
-                <h2 id="first-header-heading">First Header</h2>
-                """,
+                    <h2 id="first-header-heading">First Header</h2>
+                    """,
                 """
-                <h3 id="fixed-id-1">Header with ID</h3>
-                """,
+                    <h3 id="fixed-id-1">Header with ID</h3>
+                    """,
                 """
-                <h4><a id="fixed-id-2">Embedded A-Tag with ID</a></h4>
-                """,
+                    <h4><a id="fixed-id-2">Embedded A-Tag with ID</a></h4>
+                    """,
                 """
-                <h5 id="embedded-code-tag-heading"><code>Embedded Code Tag</code></h5>
-                """,
+                    <h5 id="embedded-code-tag-heading"><code>Embedded Code Tag</code></h5>
+                    """,
                 """
-                <h6 id="embedded-link-tag-heading"><a href="C.html" title="class in p">Embedded Link Tag</a></h6>
-                """,
+                    <h6 id="embedded-link-tag-heading"><a href="C.html" title="class in p">Embedded Link Tag</a></h6>
+                    """,
                 """
-                <h3 id="duplicate-text-heading">Duplicate Text</h3>
-                """,
+                    <h3 id="duplicate-text-heading">Duplicate Text</h3>
+                    """,
                 """
-                <h4 id="duplicate-text-heading1">Duplicate Text</h4>
-                """,
+                    <h4 id="duplicate-text-heading1">Duplicate Text</h4>
+                    """,
                 """
-                <h2 id="extra-chars-heading">Extra (#*!. chars</h2>
-                """,
+                    <h2 id="extra-chars-heading">Extra (#*!. chars</h2>
+                    """,
                 """
-                <h3 id="other-attributes-heading" style="color: red;" class="some-class">Other attributes</h3>
-                """,
+                    <h3 id="other-attributes-heading" style="color: red;" class="some-class">Other attributes</h3>
+                    """,
                 """
-                <h4 id="-heading"></h4>
-                """,
+                    <h4 id="-heading"></h4>
+                    """,
                 """
-                <h2 id="multi-line-heading-with-extra-whitespace-heading">  Multi-line
-                       heading   with extra
-                                 whitespace</h2>""");
+                    <h2 id="multi-line-heading-with-extra-whitespace-heading">  Multi-line
+                           heading   with extra
+                                     whitespace</h2>""");
     }
 
     private void checkSearchIndex() {
