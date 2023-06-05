@@ -413,7 +413,7 @@ public final class XDragSourceContextPeer
 
         WindowPropertyGetter wpg =
             new WindowPropertyGetter(window, XDnDConstants.XA_XdndAware, 0, 1,
-                    false, XConstants.AnyPropertyType);
+                                     false, XConstants.AnyPropertyType);
 
         try {
             int status =
@@ -435,16 +435,16 @@ public final class XDragSourceContextPeer
             return window;
         }
 
+        if (isXWaylandDndAwareWindow(window)) {
+            return window;
+        }
+
         Set<Long> children = XlibUtil.getChildWindows(window);
         for (Long child : children) {
             long win = findClientWindow(child);
             if (win != 0) {
                 return win;
             }
-        }
-
-        if (isXWaylandDndAwareWindow(window)) {
-            return window;
         }
 
         return 0;
