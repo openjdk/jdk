@@ -4024,3 +4024,10 @@ JVM_END
 JVM_ENTRY(void, JVM_EnsureMaterializedForStackWalk_func(JNIEnv* env, jobject vthread, jobject value))
   JVM_EnsureMaterializedForStackWalk(env, value);
 JVM_END
+
+/*
+ * Return JNI_TRUE if warnings are printed when agents are dynamically loaded.
+ */
+JVM_LEAF(jboolean, JVM_PrintWarningAtDynamicAgentLoad(void))
+  return (EnableDynamicAgentLoading && !FLAG_IS_CMDLINE(EnableDynamicAgentLoading)) ? JNI_TRUE : JNI_FALSE;
+JVM_END

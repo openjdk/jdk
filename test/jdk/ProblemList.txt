@@ -744,7 +744,6 @@ javax/rmi/ssl/SSLSocketParametersTest.sh                        8162906 generic-
 
 jdk/incubator/vector/ShortMaxVectorTests.java                   8306592 generic-i586
 jdk/incubator/vector/LoadJsvmlTest.java                         8305390 windows-x64
-jdk/incubator/vector/Float64VectorTests.java                    8309129 generic-aarch64
 
 ############################################################################
 
