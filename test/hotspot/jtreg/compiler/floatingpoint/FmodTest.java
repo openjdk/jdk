@@ -88,20 +88,34 @@
         Float.NaN,
       },
    };
-
    public static void main(String[] args) throws Exception {
      float f1, f2, f3;
      boolean failure = false;
+     boolean print_failure = false;
      for (int i = 0; i < 100_000; i++) {
        for (int j = 0; j < op1.length; j++) {
          for (int k = 0; k < op2.length; k++) {
            f1 = op1[j];
            f2 = op2[k];
            f3 = f1 % f2;
-           if (f3 != res[j][k] && Float.isNaN(f3) != Float.isNaN(res[j][k])) {
+
+           if (Float.isNaN(res[j][k])) {
+             if (!Float.isNaN(f3)) {
+               failure = true;
+               print_failure = true;
+             }
+           } else if (Float.isNaN(f3)) {
+             failure = true;
+             print_failure = true;
+           } else if (f3 != res[j][k]) {
+             failure = true;
+             print_failure = true;
+           }
+
+           if (print_failure) {
              System.out.println( "Actual   " + f1 + " % " + f2 + " = " + f3);
              System.out.println( "Expected " + f1 + " % " + f2 + " = " + res[j][k]);
-             failure = true;
+             print_failure = false;
            }
          }
        }

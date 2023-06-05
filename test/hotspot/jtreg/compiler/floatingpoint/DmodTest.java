@@ -91,20 +91,35 @@
    public static void main(String[] args) throws Exception {
      double f1, f2, f3;
      boolean failure = false;
+     boolean print_failure = false;
      for (int i = 0; i < 100_000; i++) {
        for (int j = 0; j < op1.length; j++) {
          for (int k = 0; k < op2.length; k++) {
            f1 = op1[j];
            f2 = op2[k];
            f3 = f1 % f2;
-           if (f3 != res[j][k] && Double.isNaN(f3) != Double.isNaN(res[j][k])) {
-            System.out.println( "Actual   " + f1 + " % " + f2 + " = " + f3);
-            System.out.println( "Expected " + f1 + " % " + f2 + " = " + res[j][k]);
-            failure = true;
-          }
-        }
-      }
-    }
+
+           if (Double.isNaN(res[j][k])) {
+             if (!Double.isNaN(f3)) {
+               failure = true;
+               print_failure = true;
+             }
+           } else if (Double.isNaN(f3)) {
+             failure = true;
+             print_failure = true;
+           } else if (f3 != res[j][k]) {
+             failure = true;
+             print_failure = true;
+           }
+
+           if (print_failure) {
+             System.out.println( "Actual   " + f1 + " % " + f2 + " = " + f3);
+             System.out.println( "Expected " + f1 + " % " + f2 + " = " + res[j][k]);
+             print_failure = false;
+           }
+         }
+       }
+     }
 
     if (failure) {
       throw new RuntimeException("Test Failed");
