@@ -61,7 +61,6 @@ import java.nio.file.Path;
 import java.text.MessageFormat;
 import java.text.Normalizer;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -880,11 +879,11 @@ public final class LauncherHelper {
         } catch (Throwable e) {
             if (mainClass.getModule().isNamed()) {
                 abort(e, "java.launcher.module.error5",
-                        mainClass.getName(), mainClass.getModule().getName(),
-                        e.getClass().getName(), e.getLocalizedMessage());
+                      mainClass.getName(), mainClass.getModule().getName(),
+                      e.getClass().getName(), e.getLocalizedMessage());
             } else {
                 abort(e, "java.launcher.cls.error7", mainClass.getName(),
-                        e.getClass().getName(), e.getLocalizedMessage());
+                      e.getClass().getName(), e.getLocalizedMessage());
             }
         }
 
