@@ -256,13 +256,14 @@ public class ProxyTest {
                 public void run() {
                     try {
                         try {
-                            int c;
-                            while ((c = is.read()) != -1) {
-                                os.write(c);
+                            int len;
+                            byte[] buf = new byte[16 * 1024];
+                            while ((len = is.read(buf)) != -1) {
+                                os.write(buf, 0, len);
                                 os.flush();
                                 // if DEBUG prints a + or a - for each transferred
                                 // character.
-                                if (DEBUG) System.out.print(tag);
+                                if (DEBUG) System.out.print(String.valueOf(tag).repeat(len));
                             }
                             is.close();
                         } finally {
