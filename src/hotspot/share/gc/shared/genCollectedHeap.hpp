@@ -376,8 +376,7 @@ private:
   HeapWord* expand_heap_and_allocate(size_t size, bool is_tlab);
 
   HeapWord* mem_allocate_work(size_t size,
-                              bool is_tlab,
-                              bool* gc_overhead_limit_was_exceeded);
+                              bool is_tlab);
 
 #if INCLUDE_SERIALGC
   // For use by mark-sweep.  As implemented, mark-sweep-compact is global
