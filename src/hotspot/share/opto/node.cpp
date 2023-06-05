@@ -2472,13 +2472,6 @@ void Node::dump_orig(outputStream *st, bool print_key) const {
 
 void Node::set_debug_orig(Node* orig) {
   _debug_orig = orig;
-  if (not_a_node(orig))  orig = nullptr;
-  int trip = 10;
-  while (orig != nullptr) {
-    orig = orig->debug_orig();
-    if (not_a_node(orig))  orig = nullptr;
-    if (trip-- <= 0)  break;
-  }
 }
 #endif //ASSERT
 
