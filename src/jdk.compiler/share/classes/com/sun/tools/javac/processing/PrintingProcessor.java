@@ -213,7 +213,7 @@ public class PrintingProcessor extends AbstractProcessor {
                 }
                 writer.print(")");
             } else if (e.isUnnamed()) {
-                writer.println("// Unnamed class in file whose name starts with " + e.getQualifiedName());
+                writer.println("// Unnamed class in file whose name starts with " + e.getSimpleName());
 
                 for(Element element : e.getEnclosedElements()) {
                     this.visit(element);
