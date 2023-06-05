@@ -59,11 +59,11 @@ public class TestVectorMaskTrueCount {
         }
     }
 
-    static int maskAndTrueCount(boolean[] a, boolean[] b, int idx, int SPECIES_length) {
+    static int maskAndTrueCount(boolean[] a, boolean[] b, int idx, int count) {
         int trueCount = 0;
-        boolean[] c = new boolean[SPECIES_length];
+        boolean[] c = new boolean[count];
 
-        for (int i = idx; i < idx + SPECIES_length; i++) {
+        for (int i = idx; i < idx + count; i++) {
             c[i - idx] = a[i] & b[i];
         }
 
