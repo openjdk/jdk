@@ -693,35 +693,13 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
                     if (intAmt == area) {
                         // Completely on this screen - done!
                         newScreenNum = i;
-                        newGC = gds[i].getDefaultConfiguration();
-                        if (target != null
-                                && target.getBackground() != SystemColor.window
-                                && !newGC.isTranslucencyCapable()) {
-                            GraphicsConfiguration[] configs = gds[i].getConfigurations();
-                            for (int j = 0; j < configs.length; ++j) {
-                                if (configs[j].isTranslucencyCapable()) {
-                                    newGC = configs[j];
-                                    break;
-                                }
-                            }
-                        }
+                        newGC = getAppropriateGraphicsConfiguration(gds[i].getDefaultConfiguration());
                         break;
                     }
                     if (intAmt > largestAmt) {
                         largestAmt = intAmt;
                         newScreenNum = i;
-                        newGC = gds[i].getDefaultConfiguration();
-                        if (target != null
-                                && target.getBackground() != SystemColor.window
-                                && !newGC.isTranslucencyCapable()) {
-                            GraphicsConfiguration[] configs = gds[i].getConfigurations();
-                            for (int j = 0; j < configs.length; ++j) {
-                                if (configs[j].isTranslucencyCapable()) {
-                                    newGC = configs[j];
-                                    break;
-                                }
-                            }
-                        }
+                        newGC = getAppropriateGraphicsConfiguration(gds[i].getDefaultConfiguration());
                     }
                 }
             }

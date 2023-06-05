@@ -58,8 +58,7 @@ public class MultiscreenTransparencyTest {
         GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
         GraphicsDevice[] gds = ge.getScreenDevices();
 
-        if (gds.length != 2)
-        {
+        if (gds.length != 2) {
             System.out.println("Returning without testing." +
                     "2 Display screens are required for the test!");
             return;
@@ -126,7 +125,6 @@ public class MultiscreenTransparencyTest {
 
             @Override
             public void mouseMoved(MouseEvent e) {
-
             }
         });
     }
