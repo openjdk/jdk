@@ -29,9 +29,9 @@
  * @modules java.compiler
  *          jdk.compiler
  * @build   JavacTestingAbstractProcessor TestUnnamedClass
- * @compile -processor TestUnnamedClass -proc:only --enable-preview --release ${jdk.version} Anonymous.java
+ * @compile         -processor TestUnnamedClass -proc:only --enable-preview --release ${jdk.version}             Anonymous.java
+ * @compile/process -processor TestUnnamedClass -proc:only --enable-preview --release ${jdk.version} -AclassOnly Anonymous
  */
-
 
 import java.lang.annotation.*;
 import java.io.Writer;
@@ -43,31 +43,29 @@ import javax.lang.model.util.Elements;
 import static javax.lang.model.util.ElementFilter.*;
 import javax.tools.JavaFileObject;
 
-/*
- * Ideally, this processor would test both the compile-time
- * representation of an unnamed class starting from a source file as
- * well as the representation starting from a class file. Currently,
- * only the source file based view will be tested.
- *
- * For future work to test the class file based view, an additional jtreg directive like the following could
- * be used:
- *
- * @compile/process -processor TestUnnamedClass -proc:only Anonymous Nameless
+/**
+ * Test annotation processing representation of unnamed classes
+ * constructed from either a source file or a class file.
  */
 @SuppressWarnings("preview")
+@SupportedOptions("classOnly")
 public class TestUnnamedClass  extends JavacTestingAbstractProcessor {
 
     private static int round  = 0;
 
     public boolean process(Set<? extends TypeElement> annotations,
                            RoundEnvironment roundEnv) {
-        if (round == 0) { // Check file from comamnd line
-            checkRoots(roundEnv);
-            generateUnnamed();
-        }
+        if (round == 0) {
+            checkRoots(roundEnv); // Check any files from the comamnd line
 
-        if (!roundEnv.processingOver()) { // Test generated file(s)
-            checkRoots(roundEnv);
+            // Don't generate a file if testing already generated class
+            if (!options.containsKey("classOnly")) {
+                generateUnnamed();
+            }
+        } else {
+            if (!roundEnv.processingOver()) { // Test generated file(s)
+                checkRoots(roundEnv);
+            }
         }
 
         round++;
@@ -77,7 +75,6 @@ public class TestUnnamedClass  extends JavacTestingAbstractProcessor {
     private void checkRoots(RoundEnvironment roundEnv) {
         int checks = 0;
         for (TypeElement type : typesIn(roundEnv.getRootElements())) {
-            System.out.println("Checking " + type.getQualifiedName());
             checks++;
             checkUnnamedClassProperties(type);
         }
@@ -129,6 +126,10 @@ public class TestUnnamedClass  extends JavacTestingAbstractProcessor {
      * It is a compile-time error if this class does not declare a candidate main method (12.1.4).
      */
     void checkUnnamedClassProperties(TypeElement unnamedClass) {
+        Name expectedName = unnamedClass.getSimpleName();
+
+        System.out.println("Checking " + expectedName);
+
         if (unnamedClass.getNestingKind() != NestingKind.TOP_LEVEL) {
             messager.printError("Unnamed class is not top-level.", unnamedClass);
         }
@@ -143,6 +144,11 @@ public class TestUnnamedClass  extends JavacTestingAbstractProcessor {
 
         if (!unnamedClass.getQualifiedName().isEmpty()) {
             messager.printError("Unnamed class does _not_ have an empty qualified name.", unnamedClass);
+        }
+
+        Name binaryName = elements.getBinaryName(unnamedClass);
+        if (!expectedName.equals(binaryName)) {
+            messager.printError("Unnamed has unexpected binary name" + binaryName + ".", unnamedClass);
         }
 
         if (unnamedClass.getModifiers().contains(Modifier.ABSTRACT)) {
