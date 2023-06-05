@@ -25,10 +25,7 @@ package jdk.jfr.event.runtime;
 
 import static jdk.test.lib.Asserts.assertGreaterThan;
 import static jdk.test.lib.Asserts.assertLessThanOrEqual;
-import static jdk.test.lib.Asserts.assertTrue;
-import static jdk.test.lib.Asserts.assertEquals;
 
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
