@@ -72,17 +72,16 @@ import jdk.test.lib.util.JarUtils;
 public class TestJcmdNoAgentLoad {
     // The Agent.jar does not exist. Error with the PTRN message
     // is expected before an attempt to load the Agent.jar.
-    private static final String[] CMD = new String[] { "JVMTI.agent_load", "Agent.jar" };
     private static final String PTRN = "Dynamic agent loading is not enabled";
-    private static boolean dynamicLoadongEnabled = true;
+    private static boolean dynamicLoadingEnabled = true;
     private static final String TEST_CLASSES = System.getProperty("test.classes");
     private static String javaAgent;
 
     static {
         // get VM option EnableDynamicAgentLoading value
         HotSpotDiagnosticMXBean bean = ManagementFactory.getPlatformMXBean(HotSpotDiagnosticMXBean.class);
-        VMOption dynamicLoadongEnabledOpt = bean.getVMOption("EnableDynamicAgentLoading");
-        dynamicLoadongEnabled = dynamicLoadongEnabledOpt.getValue().equals("true");
+        VMOption dynamicLoadingEnabledOpt = bean.getVMOption("EnableDynamicAgentLoading");
+        dynamicLoadingEnabled = dynamicLoadingEnabledOpt.getValue().equals("true");
     }
 
     public static void main(String[] args) throws Exception {
@@ -106,7 +105,7 @@ public class TestJcmdNoAgentLoad {
         OutputAnalyzer output = JcmdBase.jcmd(jcmdArgs);
 
         output.shouldHaveExitValue(0);
-        if (dynamicLoadongEnabled) {
+        if (dynamicLoadingEnabled) {
             output.shouldNotContain(PTRN);
         } else {
             output.shouldContain(PTRN);
