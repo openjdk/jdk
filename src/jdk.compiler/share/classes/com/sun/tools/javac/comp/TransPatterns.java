@@ -34,7 +34,11 @@ import static com.sun.tools.javac.code.Flags.PUBLIC;
 import static com.sun.tools.javac.code.Flags.STATIC;
 import com.sun.tools.javac.code.Kinds;
 import com.sun.tools.javac.code.Kinds.Kind;
+
+import static com.sun.tools.javac.code.Kinds.Kind.MTH;
 import static com.sun.tools.javac.code.Kinds.Kind.VAR;
+import static com.sun.tools.javac.code.TypeTag.*;
+
 import com.sun.tools.javac.code.Preview;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.BindingSymbol;
@@ -68,29 +72,12 @@ import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Name;
 import com.sun.tools.javac.util.Names;
 
-import java.util.Collections;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.HashMap;
-import java.util.IdentityHashMap;
-import java.util.LinkedHashMap;
-import java.util.Set;
 
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Symbol.RecordComponent;
 import com.sun.tools.javac.code.Type;
-import static com.sun.tools.javac.code.TypeTag.ARRAY;
-import static com.sun.tools.javac.code.TypeTag.BOOLEAN;
-import static com.sun.tools.javac.code.TypeTag.BOT;
-import static com.sun.tools.javac.code.TypeTag.BYTE;
-import static com.sun.tools.javac.code.TypeTag.CHAR;
-import static com.sun.tools.javac.code.TypeTag.CLASS;
-import static com.sun.tools.javac.code.TypeTag.DOUBLE;
-import static com.sun.tools.javac.code.TypeTag.FLOAT;
-import static com.sun.tools.javac.code.TypeTag.INT;
-import static com.sun.tools.javac.code.TypeTag.LONG;
-import static com.sun.tools.javac.code.TypeTag.SHORT;
-import static com.sun.tools.javac.code.TypeTag.VOID;
 import com.sun.tools.javac.jvm.PoolConstant.LoadableConstant;
 import com.sun.tools.javac.jvm.Target;
 import com.sun.tools.javac.tree.JCTree;
@@ -1155,9 +1142,48 @@ public class TransPatterns extends TreeTranslator {
             currentMethodSym = tree.sym;
             variableIndex = 0;
             deconstructorCalls = null;
-//            if (tree.sym.isDeconstructor()) {
-//                tree.params = List.nil();
-//            }
+            if (tree.sym.isDeconstructor()) {
+                List<JCStatement> stats = tree.body.stats;
+
+                // this is not needed since DA will ensure that a matcher method with bindings will need to gen carriers for all every time
+                boolean genCarrier = false;
+                for (int i = 0; i < stats.size(); i++) {
+                    var statement = stats.get(i);
+                    if (statement instanceof JCExpressionStatement eStat &&
+                            eStat.expr instanceof JCAssign assignment &&
+                            assignment.lhs.hasTag(Tag.IDENT) &&
+                            ((JCIdent) assignment.lhs).sym.owner.isDeconstructor()) {
+                        genCarrier = true;
+                    }
+                }
+
+                if (genCarrier) {
+                    // Generate (without the bindings)
+                    //     1. generate call to obtain the methodType for Carriers factory (e.g., MethodType returnType = MethodType.methodType(Object.class, Collection.class);)
+                    //     2. generate factory code on carrier for the types we want (e.g., Object carrier = Carriers.factory(returnType);)
+                    //     3. generate invoke call to pass the bindings (e.g, return carrier.invoke(is);)
+
+                    List<JCExpression> params = List.of(classOfType(syms.objectType, tree.pos()));
+                    List<JCExpression> invokeMethodParam = List.nil();
+
+                    for (int i = 0; i < tree.params.length(); i++) {
+                        params = params.append(classOfType(types.erasure(tree.params.get(i).type), tree.pos()));
+                        invokeMethodParam = invokeMethodParam.append(make.Ident(tree.params.get(i)));
+                    }
+
+                    MethodSymbol methodTypeCallSym = rs.resolveInternalMethod(tree.pos(), env, syms.methodTypeType, names.fromString("methodType"), List.of(syms.classType, types.makeArrayType(types.erasure(syms.classType))), List.nil());
+                    JCMethodInvocation methodTypeCall = make.App(make.QualIdent(methodTypeCallSym), params).setType(syms.methodTypeType);
+                    methodTypeCall.varargsElement = types.erasure(syms.classType);
+
+                    MethodSymbol factoryMethodSym = rs.resolveInternalMethod(tree.pos(), env, syms.carriersType, names.fromString("factory"), List.of(syms.methodTypeType), List.nil());
+                    List<JCExpression> factoryMethodParams = List.of(methodTypeCall);
+                    JCMethodInvocation factoryMethodCall = make.App(make.QualIdent(factoryMethodSym), factoryMethodParams).setType(syms.methodHandleType);
+
+                    JCMethodInvocation invokeMethodCall = makeApply(factoryMethodCall, names.fromString("invoke"), invokeMethodParam);
+
+                    tree.body.stats = tree.body.stats.append(make.Return(invokeMethodCall));
+                }
+            }
             super.visitMethodDef(tree);
             preparePatternMatchingCatchIfNeeded(tree.body);
         } finally {

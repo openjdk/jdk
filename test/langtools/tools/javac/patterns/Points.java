@@ -26,11 +26,8 @@ public record Points(Collection<Integer> is) {
         return List.of(-1);
     }
 
-    public __matcher Points(@Foo Collection<Integer> is) throws Throwable {
-        // is = this.is;
-
-        MethodType returnType = MethodType.methodType(Object.class, Collection.class);
-        return Carriers.factory(returnType).invoke(this.is);
+    public __matcher Points(@Foo Collection<Integer> is) {
+        is = this.is;
     }
 
     @Target(ElementType.PARAMETER)

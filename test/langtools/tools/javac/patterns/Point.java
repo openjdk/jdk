@@ -13,30 +13,23 @@ import java.lang.template.Carriers;
 import java.util.Objects;
 
 public record Point(Integer x, Integer y) {
-    /*
-        TODO
-        ask about exceptions on matchers
-        ask about deprecated for matcher bindings -- makes sense at all?
-        generating the matcher body
-        separate compilation: Matcher attribute (ClassWriter, ClassReader)
-        reflection: JVM and javax.lang.Model support
-        clean TransPatterns.java
-        flags in Matcher attribute
-        overloading selection
-
-        OK
-        clean translation to not use SwitchBootstraps
-        test switch with the record Matcher
-    */
-
     public static void main(String... args) {
-        assertEquals(1, test(new Point(1, 2)));
+        assertEquals(1, testX(new Point(1, 2)));
+        assertEquals(2, testY(new Point(1, 2)));
         assertEquals(2, test2(new Point(42, 4)));
+        assertEquals(3, test2(new Point(4, 42)));
     }
 
-    public static Integer test(Object o) {
+    public static Integer testX(Object o) {
         if (o instanceof Point(Integer x, Integer y)) {
             return x;
+        }
+        return -1;
+    }
+
+    public static Integer testY(Object o) {
+        if (o instanceof Point(Integer x, Integer y)) {
+            return y;
         }
         return -1;
     }
@@ -44,18 +37,15 @@ public record Point(Integer x, Integer y) {
     public static int test2(Point o) {
         return switch (o) {
             case Point(Integer x, Integer y) when x == 42 -> 2;
-            case Point mm -> 3;
+            case Point(Integer x, Integer y) when y == 42 -> 3;
+            case Point mm -> -1;
         };
     }
 
-    //original code:
     @MyCustomAnnotation(annotField = 42)
-    public __matcher Point(Integer x, Integer y) throws Throwable { //XXX: exceptions?
-        // s = this.s;
-        // i = this.i;
-
-        MethodType returnType = MethodType.methodType(Object.class, Integer.class, Integer.class); //TODO: return type of the Carrier constructor?
-        return Carriers.factory(returnType).invoke(this.x, this.y);
+    public __matcher Point(Integer x, Integer y) {
+         x = this.x;
+         y = this.y;
     }
 
     @Target(ElementType.METHOD) // TODO: element type must target matchers
