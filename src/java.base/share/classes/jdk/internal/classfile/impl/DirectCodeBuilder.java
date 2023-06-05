@@ -210,7 +210,7 @@ public final class DirectCodeBuilder
             int endPc = labelToBci(h.tryEnd());
             int handlerPc = labelToBci(h.handler());
             if (startPc == -1 || endPc == -1 || handlerPc == -1) {
-                if (context.deadLabelsOption() == Classfile.DeadLabelsOption.FILTER_DEAD_LABELS) {
+                if (context.deadLabelsOption() == Classfile.DeadLabelsOption.DROP_DEAD_LABELS) {
                     handlersSize--;
                 } else {
                     throw new IllegalStateException("Unbound label in exception handler");
@@ -234,8 +234,7 @@ public final class DirectCodeBuilder
         // Backfill branches for which Label didn't have position yet
         processDeferredLabels();
 
-        if (context.debugElementsOption() == Classfile.DebugElementsOption.PROCESS_DEBUG_ELEMENTS ||
-            context.debugElementsOption() == Classfile.DebugElementsOption.DROP_DEBUG_ELEMENTS_ON_READ) {
+        if (context.debugElementsOption() == Classfile.DebugElementsOption.PASS_DEBUG) {
             if (!characterRanges.isEmpty()) {
                 Attribute<?> a = new UnboundAttribute.AdHocAttribute<>(Attributes.CHARACTER_RANGE_TABLE) {
 
@@ -248,7 +247,7 @@ public final class DirectCodeBuilder
                             var start = labelToBci(cr.startScope());
                             var end = labelToBci(cr.endScope());
                             if (start == -1 || end == -1) {
-                                if (context.deadLabelsOption() == Classfile.DeadLabelsOption.FILTER_DEAD_LABELS) {
+                                if (context.deadLabelsOption() == Classfile.DeadLabelsOption.DROP_DEAD_LABELS) {
                                     crSize--;
                                 } else {
                                     throw new IllegalStateException("Unbound label in character range");
@@ -277,7 +276,7 @@ public final class DirectCodeBuilder
                         b.writeU2(lvSize);
                         for (LocalVariable l : localVariables) {
                             if (!l.writeTo(b)) {
-                                if (context.deadLabelsOption() == Classfile.DeadLabelsOption.FILTER_DEAD_LABELS) {
+                                if (context.deadLabelsOption() == Classfile.DeadLabelsOption.DROP_DEAD_LABELS) {
                                     lvSize--;
                                 } else {
                                     throw new IllegalStateException("Unbound label in local variable type");
@@ -300,7 +299,7 @@ public final class DirectCodeBuilder
                         b.writeU2(localVariableTypes.size());
                         for (LocalVariableType l : localVariableTypes) {
                             if (!l.writeTo(b)) {
-                                if (context.deadLabelsOption() == Classfile.DeadLabelsOption.FILTER_DEAD_LABELS) {
+                                if (context.deadLabelsOption() == Classfile.DeadLabelsOption.DROP_DEAD_LABELS) {
                                     lvtSize--;
                                 } else {
                                     throw new IllegalStateException("Unbound label in local variable type");
@@ -336,7 +335,7 @@ public final class DirectCodeBuilder
                 int maxStack, maxLocals;
                 Attribute<? extends StackMapTableAttribute> stackMapAttr;
 
-                if (!needsStackMap || context.stackMapsOption() == Classfile.StackMapsOption.DO_NOT_GENERATE_STACK_MAPS) {
+                if (!needsStackMap || context.stackMapsOption() == Classfile.StackMapsOption.STACK_MAPS_NEVER) {
                     StackCounter cntr = StackCounter.of(DirectCodeBuilder.this, buf);
                     maxStack = cntr.maxStack();
                     maxLocals = cntr.maxLocals();
@@ -346,7 +345,7 @@ public final class DirectCodeBuilder
                     maxLocals = original.maxLocals();
                     maxStack = original.maxStack();
                 } else if (buf.getMajorVersion() >= Classfile.JAVA_6_VERSION ||
-                           context.stackMapsOption() == Classfile.StackMapsOption.ALWAYS_GENERATE_STACK_MAPS) {
+                           context.stackMapsOption() == Classfile.StackMapsOption.STACK_MAPS_ALWAYS) {
                     try {
                         //new instance of generator immediately calculates maxStack, maxLocals, all frames,
                         // patches dead bytecode blocks and removes them from exception table
@@ -356,7 +355,7 @@ public final class DirectCodeBuilder
                         stackMapAttr = gen.stackMapTableAttribute();
                     } catch (Exception e) {
                         if (buf.getMajorVersion() == Classfile.JAVA_6_VERSION &&
-                            context.stackMapsOption() == Classfile.StackMapsOption.GENERATE_STACK_MAPS_BY_CLASS_VERSION) {
+                            context.stackMapsOption() == Classfile.StackMapsOption.STACK_MAPS_WHEN_REQUIRED) {
                             //failover following JVMS-4.10
                             StackCounter cntr = StackCounter.of(DirectCodeBuilder.this, buf);
                             maxStack = cntr.maxStack();

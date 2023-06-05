@@ -60,7 +60,7 @@ class FilterDeadLabelsTest {
 
     @Test
     void testFilterDeadLabels() {
-        var cc = Classfile.of(Classfile.DeadLabelsOption.FILTER_DEAD_LABELS);
+        var cc = Classfile.of(Classfile.DeadLabelsOption.DROP_DEAD_LABELS);
         var code = cc.parse(cc.build(ClassDesc.of("cls"), clb ->
                 clb.withMethodBody("m", MethodTypeDesc.of(ConstantDescs.CD_void), 0, cob -> {
                     cob.return_();

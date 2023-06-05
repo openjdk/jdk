@@ -304,7 +304,7 @@ class LvtTest {
 
     @Test
     void skipDebugSkipsLVT() {
-        ClassModel c = Classfile.of(Classfile.DebugElementsOption.DROP_DEBUG_ELEMENTS).parse(fileBytes);
+        ClassModel c = Classfile.of(Classfile.DebugElementsOption.DROP_DEBUG).parse(fileBytes);
 
         c.forEachElement(e -> {
             if (e instanceof MethodModel m) {

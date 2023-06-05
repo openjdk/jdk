@@ -41,7 +41,7 @@ public class ParseOptions extends AbstractCorpusBenchmark {
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
     public void transformNoDebug(Blackhole bh) {
-        var cc = Classfile.of(Classfile.DebugElementsOption.DROP_DEBUG_ELEMENTS);
+        var cc = Classfile.of(Classfile.DebugElementsOption.DROP_DEBUG);
         for (byte[] aClass : classes) {
             ClassModel cm = cc.parse(aClass);
             bh.consume(cc.transform(cm, threeLevelNoop));
@@ -51,7 +51,7 @@ public class ParseOptions extends AbstractCorpusBenchmark {
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
     public void transformNoStackmap(Blackhole bh) {
-        var cc = Classfile.of(Classfile.StackMapsOption.DO_NOT_GENERATE_STACK_MAPS);
+        var cc = Classfile.of(Classfile.StackMapsOption.STACK_MAPS_NEVER);
         for (byte[] aClass : classes) {
             ClassModel cm = cc.parse(aClass);
             bh.consume(cc.transform(cm, threeLevelNoop));

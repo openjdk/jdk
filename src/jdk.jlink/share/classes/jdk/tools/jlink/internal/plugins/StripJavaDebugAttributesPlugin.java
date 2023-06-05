@@ -65,7 +65,7 @@ public final class StripJavaDebugAttributesPlugin extends AbstractPlugin {
                         // XXX. Do we have debug info?
                     } else {
                         var clm = newClassReader(path, resource,
-                                Classfile.DebugElementsOption.DROP_DEBUG_ELEMENTS,
+                                Classfile.DebugElementsOption.DROP_DEBUG,
                                 Classfile.LineNumbersOption.DROP_LINE_NUMBERS);
                         byte[] content = Classfile.of().transform(clm, ClassTransform
                                         .dropping(cle -> cle instanceof SourceFileAttribute

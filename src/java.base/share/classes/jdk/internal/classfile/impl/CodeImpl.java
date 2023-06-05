@@ -118,7 +118,7 @@ public final class CodeImpl
         if (!inflated) {
             if (labels == null)
                 labels = new LabelImpl[codeLength + 1];
-            if (((ClassReaderImpl)classReader).context().lineNumbersOption() == Classfile.LineNumbersOption.PROCESS_LINE_NUMBERS)
+            if (((ClassReaderImpl)classReader).context().lineNumbersOption() == Classfile.LineNumbersOption.PASS_LINE_NUMBERS)
                 inflateLineNumbers();
             inflateJumpTargets();
             inflateTypeAnnotations();
@@ -167,9 +167,7 @@ public final class CodeImpl
         inflateMetadata();
         boolean doLineNumbers = (lineNumbers != null);
         generateCatchTargets(consumer);
-        var debugElementsOption = ((ClassReaderImpl)classReader).context().debugElementsOption();
-        if (debugElementsOption == Classfile.DebugElementsOption.PROCESS_DEBUG_ELEMENTS ||
-            debugElementsOption == Classfile.DebugElementsOption.DROP_DEBUG_ELEMENTS_ON_WRITE)
+        if (((ClassReaderImpl)classReader).context().debugElementsOption() == Classfile.DebugElementsOption.PASS_DEBUG)
             generateDebugElements(consumer);
         for (int pos=codeStart; pos<codeEnd; ) {
             if (labels[pos - codeStart] != null)

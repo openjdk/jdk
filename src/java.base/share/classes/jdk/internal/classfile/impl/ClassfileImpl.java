@@ -54,11 +54,11 @@ public record ClassfileImpl(StackMapsOption stackMapsOption,
                             AttributeMapperOption attributeMapperOption) implements Classfile {
 
     public ClassfileImpl() {
-        this(StackMapsOption.GENERATE_STACK_MAPS_BY_CLASS_VERSION,
-             DebugElementsOption.PROCESS_DEBUG_ELEMENTS,
-             LineNumbersOption.PROCESS_LINE_NUMBERS,
-             UnknownAttributesOption.PROCESS_UNKNOWN_ATTRIBUTES,
-             ConstantPoolSharingOption.SHARE_CONSTANT_POOL,
+        this(StackMapsOption.STACK_MAPS_WHEN_REQUIRED,
+             DebugElementsOption.PASS_DEBUG,
+             LineNumbersOption.PASS_LINE_NUMBERS,
+             UnknownAttributesOption.PASS_UNKNOWN_ATTRIBUTES,
+             ConstantPoolSharingOption.SHARED_POOL,
              ShortJumpsOption.FIX_SHORT_JUMPS,
              DeadCodeOption.PATCH_DEAD_CODE,
              DeadLabelsOption.FAIL_ON_DEAD_LABELS,
@@ -118,7 +118,7 @@ public record ClassfileImpl(StackMapsOption stackMapsOption,
 
     @Override
     public byte[] transform(ClassModel model, ClassEntry newClassName, ClassTransform transform) {
-        ConstantPoolBuilder constantPool = constantPoolSharingOption() == ConstantPoolSharingOption.SHARE_CONSTANT_POOL
+        ConstantPoolBuilder constantPool = constantPoolSharingOption() == ConstantPoolSharingOption.SHARED_POOL
                                                                      ? ConstantPoolBuilder.of(model)
                                                                      : ConstantPoolBuilder.of();
         return build(newClassName, constantPool,

@@ -236,7 +236,7 @@ public final class StackMapGenerator {
         this.rawHandlers = new ArrayList<>(handlers.size());
         this.classHierarchy = new ClassHierarchyImpl(context.classHierarchyResolverOption().classHierarchyResolver());
         this.patchDeadCode = context.deadCodeOption() == Classfile.DeadCodeOption.PATCH_DEAD_CODE;
-        this.filterDeadLabels = context.deadLabelsOption() == Classfile.DeadLabelsOption.FILTER_DEAD_LABELS;
+        this.filterDeadLabels = context.deadLabelsOption() == Classfile.DeadLabelsOption.DROP_DEAD_LABELS;
         this.currentFrame = new Frame(classHierarchy);
         generate();
     }

@@ -176,15 +176,15 @@
  * including:
  * <ul>
  *   <li>{@link jdk.internal.classfile.Classfile.StackMapsOption}
- * -- generate stackmaps (default is {@code GENERATE_STACK_MAPS_BY_CLASS_VERSION})</li>
+ * -- generate stackmaps (default is {@code STACK_MAPS_WHEN_REQUIRED})</li>
  *   <li>{@link jdk.internal.classfile.Classfile.DebugElementsOption}
- * -- processing of debug information, such as local variable metadata (default is {@code PROCESS_DEBUG_ELEMENTS}) </li>
+ * -- processing of debug information, such as local variable metadata (default is {@code PASS_DEBUG}) </li>
  *   <li>{@link jdk.internal.classfile.Classfile.LineNumbersOption}
- * -- processing of line numbers (default is {@code PROCESS_LINE_NUMBERS}) </li>
+ * -- processing of line numbers (default is {@code PASS_LINE_NUMBERS}) </li>
  *   <li>{@link jdk.internal.classfile.Classfile.UnknownAttributesOption}
- * -- processing of unrecognized attributes (default is {@code PROCESS_UNKNOWN_ATTRIBUTES})</li>
+ * -- processing of unrecognized attributes (default is {@code PASS_UNKNOWN_ATTRIBUTES})</li>
  *   <li>{@link jdk.internal.classfile.Classfile.ConstantPoolSharingOption}}
- * -- share constant pool when transforming (default is {@code SHARE_CONSTANT_POOL})</li>
+ * -- share constant pool when transforming (default is {@code SHARED_POOL})</li>
  *   <li>{@link jdk.internal.classfile.Classfile.ClassHierarchyResolverOption#of(jdk.internal.classfile.ClassHierarchyResolver)}
  * -- specify a custom class hierarchy resolver used by stack map generation</li>
  *   <li>{@link jdk.internal.classfile.Classfile.AttributeMapperOption#of(java.util.function.Function)}

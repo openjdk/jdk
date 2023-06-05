@@ -110,12 +110,12 @@ public sealed interface Classfile
      * optimizations in processing time and minimizes differences between the
      * original and transformed classfile, but may result in a bigger classfile
      * when a classfile is significantly transformed.
-     * Default is {@code SHARE_CONSTANT_POOL} to preserve the original constant
+     * Default is {@code SHARED_POOL} to preserve the original constant
      * pool.
      */
     enum ConstantPoolSharingOption implements Option {
-        SHARE_CONSTANT_POOL,
-        DO_NOT_SHARE_CONSTANT_POOL
+        SHARED_POOL,
+        NEW_POOL
     }
 
     /**
@@ -134,12 +134,12 @@ public sealed interface Classfile
      * when any {@link ExceptionCatch}, {@link LocalVariableInfo},
      * {@link LocalVariableTypeInfo}, or {@link CharacterRangeInfo}
      * reference to unresolved {@link Label} during bytecode serialization.
-     * Setting this option to {@code FILTER_DEAD_LABELS} filters the above
+     * Setting this option to {@code DROP_DEAD_LABELS} filters the above
      * elements instead.
      */
     enum DeadLabelsOption implements Option {
         FAIL_ON_DEAD_LABELS,
-        FILTER_DEAD_LABELS
+        DROP_DEAD_LABELS
     }
 
     /**
@@ -147,23 +147,21 @@ public sealed interface Classfile
      * Debug elements include the local variable table, local variable type
      * table, and character range table.  Discarding debug elements may
      * reduce the overhead of parsing or transforming classfiles.
-     * Default is {@code PROCESS_DEBUG_ELEMENTS} to process debug elements.
+     * Default is {@code PASS_DEBUG} to process debug elements.
      */
     enum DebugElementsOption implements Option {
-        PROCESS_DEBUG_ELEMENTS,
-        DROP_DEBUG_ELEMENTS,
-        DROP_DEBUG_ELEMENTS_ON_READ,
-        DROP_DEBUG_ELEMENTS_ON_WRITE
+        PASS_DEBUG,
+        DROP_DEBUG
     }
 
     /**
      * Option describing whether to process or discard line numbers.
      * Discarding line numbers may reduce the overhead of parsing or transforming
      * classfiles.
-     * Default is {@code PROCESS_LINE_NUMBERS} to process line numbers.
+     * Default is {@code PASS_LINE_NUMBERS} to process line numbers.
      */
     enum LineNumbersOption implements Option {
-        PROCESS_LINE_NUMBERS,
+        PASS_LINE_NUMBERS,
         DROP_LINE_NUMBERS;
     }
 
@@ -180,24 +178,24 @@ public sealed interface Classfile
 
     /**
      * Option describing whether or not to generate stackmaps.
-     * Default is {@code GENERATE_STACK_MAPS_BY_CLASS_VERSION} to generate stack
+     * Default is {@code STACK_MAPS_WHEN_REQUIRED} to generate stack
      * maps for {@link #JAVA_6_VERSION} or above, where specifically for
      * {@link #JAVA_6_VERSION} the stack maps may not be generated.
      * @jvms 4.10.1 Verification by Type Checking
      */
     enum StackMapsOption implements Option {
-        GENERATE_STACK_MAPS_BY_CLASS_VERSION,
-        ALWAYS_GENERATE_STACK_MAPS,
-        DO_NOT_GENERATE_STACK_MAPS
+        STACK_MAPS_WHEN_REQUIRED,
+        STACK_MAPS_ALWAYS,
+        STACK_MAPS_NEVER
     }
 
     /**
      * Option describing whether to process or discard unrecognized attributes.
-     * Default is {@code PROCESS_UNKNOWN_ATTRIBUTES} to process unrecognized
+     * Default is {@code PASS_UNKNOWN_ATTRIBUTES} to process unrecognized
      * attributes, and deliver as instances of {@link UnknownAttribute}.
      */
     enum UnknownAttributesOption implements Option {
-        PROCESS_UNKNOWN_ATTRIBUTES,
+        PASS_UNKNOWN_ATTRIBUTES,
         DROP_UNKNOWN_ATTRIBUTES
     }
 
