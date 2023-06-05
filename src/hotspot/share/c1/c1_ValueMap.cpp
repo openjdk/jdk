@@ -331,16 +331,41 @@ class LoopInvariantCodeMotion : public StackObj  {
 class VerifyDomVisitor: public ValueVisitor {
   private:
    Value _instr;
+   Value _insert;
+   bool _strong = false;
    bool _valid = true;
 
+  bool quick_check(Value use) {
+    return (_insert->dominator_depth() >= use->dominator_depth());
+  }
+
+  bool strong_check(Value use) {
+     if (_insert->block() == use->block()) {return true; }
+     BlockBegin *cur = _insert->block()->dominator();
+
+     while (cur && cur != use->block()) {
+       cur = cur->dominator();
+     }
+     return cur == use->block();
+  }
+
   void visit(Value* vp) {
-    if (_instr->dominator_depth() < (*vp)->dominator_depth()) {_valid = false; }
+    if (_strong) {
+      if (!strong_check(*vp)) {
+        _valid = false;
+      }
+    }
+    else if (!quick_check(*vp)) {
+      _valid = false;
+    }
   }
 
   public:
    bool is_valid() {return _valid; }
-   VerifyDomVisitor(Value instr)
-     { _instr = instr; } 
+   VerifyDomVisitor(Value instr, Value insert, bool strong = false)
+     { _instr = instr;
+       _insert = insert;
+       _strong = strong; } 
 };
 
 LoopInvariantCodeMotion::LoopInvariantCodeMotion(ShortLoopOptimizer *slo, GlobalValueNumbering* gvn, BlockBegin* loop_header, BlockList* loop_blocks)
@@ -379,6 +404,10 @@ LoopInvariantCodeMotion::LoopInvariantCodeMotion(ShortLoopOptimizer *slo, Global
 void LoopInvariantCodeMotion::process_block(BlockBegin* block) {
   TRACE_VALUE_NUMBERING(tty->print_cr("processing block B%d", block->block_id()));
 
+  if (CrashInLoopInvariantCodeMotion) {
+    guarantee(false, "in loop invariant code motion");
+  }
+
   Instruction* prev = block;
   Instruction* cur = block->next();
 
@@ -392,26 +421,44 @@ void LoopInvariantCodeMotion::process_block(BlockBegin* block) {
     } else if (cur->as_ArithmeticOp() != nullptr || cur->as_LogicOp() != nullptr || cur->as_ShiftOp() != nullptr) {
       assert(cur->as_Op2() != nullptr, "must be Op2");
       Op2* op2 = (Op2*)cur;
-      cur_invariant = !op2->can_trap() && is_invariant(op2->x()) && is_invariant(op2->y()) && has_lower_dom(op2->x()) && has_lower_dom(op2->y());
+      cur_invariant = !op2->can_trap() && is_invariant(op2->x()) && is_invariant(op2->y());
     } else if (cur->as_LoadField() != nullptr) {
       LoadField* lf = (LoadField*)cur;
       // deoptimizes on NullPointerException
       cur_invariant = !lf->needs_patching() && !lf->field()->is_volatile() && !_short_loop_optimizer->has_field_store(lf->field()->type()->basic_type()) && is_invariant(lf->obj()) && _insert_is_pred;
     } else if (cur->as_ArrayLength() != nullptr) {
       ArrayLength *length = cur->as_ArrayLength();
-      cur_invariant = is_invariant(length->array()) && has_lower_dom(length->array());
+      cur_invariant = is_invariant(length->array());
     } else if (cur->as_LoadIndexed() != nullptr) {
       LoadIndexed *li = (LoadIndexed *)cur->as_LoadIndexed();
       cur_invariant = !_short_loop_optimizer->has_indexed_store(as_BasicType(cur->type())) && is_invariant(li->array()) && is_invariant(li->index()) && _insert_is_pred;
     } else if (cur->as_NegateOp() != nullptr) {
       NegateOp* neg = (NegateOp*)cur->as_NegateOp();
-      cur_invariant = is_invariant(neg->x()) && has_lower_dom(neg->x());
+      cur_invariant = is_invariant(neg->x());
     } else if (cur->as_Convert() != nullptr) {
       Convert* cvt = (Convert*)cur->as_Convert();
-      cur_invariant = is_invariant(cvt->value()) && has_lower_dom(cvt->value());
+      cur_invariant = is_invariant(cvt->value());
     }
 
+
     if (cur_invariant) {
+      VerifyDomVisitor v1(cur, _insertion_point, false);
+      cur->input_values_do(&v1);
+      VerifyDomVisitor v2(cur, _insertion_point, true);
+      cur->input_values_do(&v2);
+#ifdef ASSERT
+      assert((v1.is_valid() == v2.is_valid()), "weak and strong check don't agree!");
+      assert(v1.is_valid(), "tried to hoist instruction which would have wrong depth (weak check)");
+#endif
+
+#ifdef ASSERT
+      assert(v2.is_valid(), "tried to hoist instruction which would have wrong depth (strong check)");
+#endif
+    }
+
+    VerifyDomVisitor v_intermediate(cur, _insertion_point, false);
+    cur->input_values_do(&v_intermediate);
+    if (cur_invariant && v_intermediate.is_valid()) {
       // perform value numbering and mark instruction as loop-invariant
       _gvn->substitute(cur);
 
@@ -421,9 +468,15 @@ void LoopInvariantCodeMotion::process_block(BlockBegin* block) {
       }
 
 #ifdef ASSERT
-      VerifyDomVisitor v(cur);
-      cur->input_values_do(&v);
-      assert(v.is_valid(), "hoisted instruction now has wrong depth");
+      VerifyDomVisitor v3(cur, _insertion_point, false);
+      cur->input_values_do(&v3);
+      VerifyDomVisitor v4(cur, _insertion_point, true);
+      cur->input_values_do(&v4);
+
+      assert((v3.is_valid() == v4.is_valid()), "weak and strong check don't agree!");
+      assert(v3.is_valid(), "hoisted instruction now has wrong depth (weak check).");
+
+      assert(v4.is_valid(), "hoisted instruction now has wrong depth (strong check)");
 #endif
 
       // remove cur instruction from loop block and append it to block before loop
