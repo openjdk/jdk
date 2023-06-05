@@ -345,12 +345,17 @@ public sealed class Console implements Flushable permits ProxyingConsole {
     }
 
     /**
-     * {@return whether the `Console` is attached to underlying platform's
-     * input/output devices}
+     * {@return if the `Console` instance is a terminal}
+     * <p>
+     * If it is {@code true}, the `Console` instance is attached to a terminal
+     * provided by the underlying platform, typically its input and output
+     * character devices are available to the `Console`. Otherwise it could
+     * mean that the implementation of the `Console` may simulate those
+     * devices within.
      *
      * @since 22
      */
-    public static boolean isPlatformConsole() {
+    public boolean isTerminal() {
         return istty;
     }
 
