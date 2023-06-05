@@ -46,23 +46,36 @@ import jdk.internal.classfile.attribute.LocalVariableTypeInfo;
 import jdk.internal.classfile.instruction.ExceptionCatch;
 
 /**
- * Main entry points for parsing, transforming, and generating classfiles.
+ * Represents a context for parsing, transforming, and generating classfiles.
+ * A {@code Classfile} has a set of options that condition how parsing and
+ * generation is done.
  */
 public sealed interface Classfile
         permits ClassfileImpl {
 
+    /**
+     * {@return a new context with default options}
+     */
     static Classfile of() {
         return new ClassfileImpl();
     }
 
+    /**
+     * {@return a new context with options altered from the default}
+     * @param options the desired processing options
+     * /
     static Classfile of(Option... options) {
         return of().withOptions(options);
     }
 
+    /**
+     * {@return a copy of the context with altered options}
+     * @param options the desired processing options
+     * /
     Classfile withOptions(Option... options);
 
     /**
-     * An option that affects the writing of classfiles.
+     * An option that affects the parsing and writing of classfiles.
      */
     sealed interface Option {
     }
