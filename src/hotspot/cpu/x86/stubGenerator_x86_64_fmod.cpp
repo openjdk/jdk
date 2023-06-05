@@ -76,7 +76,7 @@ address StubGenerator::generate_libmFmod() {
   address start = __ pc();
   __ enter(); // required for proper stackwalking of RuntimeStub frame
 
-  if (VM_Version::supports_avx512vlbwdq()) {     // AVX512 version
+  if (VM_Version::supports_evex()) {     // AVX512 version
 
     // Source used to generate the AVX512 fmod assembly below:
     //
@@ -273,6 +273,11 @@ address StubGenerator::generate_libmFmod() {
 
     __ bind(L_exit);
 
+////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
+//                         AVX2 code
+////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
   } else if (VM_Version::supports_fma()) {       // AVX2 version
 
     Label L_104a, L_11bd, L_10c1, L_1090, L_11b9, L_10e7, L_11af, L_111c, L_10f3, L_116e, L_112a;
