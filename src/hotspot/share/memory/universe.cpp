@@ -466,7 +466,7 @@ void Universe::initialize_basic_type_mirrors(TRAPS) {
       for (int i = T_BOOLEAN; i < T_VOID+1; i++) {
         if (!is_reference_type((BasicType)i)) {
           oop m = _basic_type_mirrors[i].resolve();
-          assert(m != nullptr, "archived mirrors should not be nullptr");
+          assert(m != nullptr, "archived mirrors should not be null");
         }
       }
     } else

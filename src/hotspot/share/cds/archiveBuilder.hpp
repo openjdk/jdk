@@ -123,20 +123,17 @@ public:
 
 private:
   class SourceObjInfo {
-    MetaspaceClosure::Ref* _ref; // The object that's copied into the buffer
     uintx _ptrmap_start;     // The bit-offset of the start of this object (inclusive)
     uintx _ptrmap_end;       // The bit-offset of the end   of this object (exclusive)
     bool _read_only;
     FollowMode _follow_mode;
     int _size_in_bytes;
     MetaspaceObj::Type _msotype;
-    address _source_addr;    // The value of the source object (_ref->obj()) when this
-                             // SourceObjInfo was created. Note that _ref->obj() may change
-                             // later if _ref is relocated.
-    address _buffered_addr;  // The copy of _ref->obj() insider the buffer.
+    address _source_addr;    // The source object to be copied.
+    address _buffered_addr;  // The copy of this object insider the buffer.
   public:
     SourceObjInfo(MetaspaceClosure::Ref* ref, bool read_only, FollowMode follow_mode) :
-      _ref(ref), _ptrmap_start(0), _ptrmap_end(0), _read_only(read_only), _follow_mode(follow_mode),
+      _ptrmap_start(0), _ptrmap_end(0), _read_only(read_only), _follow_mode(follow_mode),
       _size_in_bytes(ref->size() * BytesPerWord), _msotype(ref->msotype()),
       _source_addr(ref->obj()) {
       if (follow_mode == point_to_it) {
@@ -147,7 +144,6 @@ private:
     }
 
     bool should_copy() const { return _follow_mode == make_a_copy; }
-    MetaspaceClosure::Ref* ref() const { return  _ref; }
     void set_buffered_addr(address addr)  {
       assert(should_copy(), "must be");
       assert(_buffered_addr == nullptr, "cannot be copied twice");
@@ -161,11 +157,13 @@ private:
     bool read_only()      const    { return _read_only;    }
     int size_in_bytes()   const    { return _size_in_bytes; }
     address source_addr() const    { return _source_addr; }
-    address buffered_addr() const  { return _buffered_addr; }
+    address buffered_addr() const  {
+      if (_follow_mode != set_to_null) {
+        assert(_buffered_addr != nullptr, "must be initialized");
+      }
+      return _buffered_addr;
+    }
     MetaspaceObj::Type msotype() const { return _msotype; }
-
-    // convenience accessor
-    address obj() const { return ref()->obj(); }
   };
 
   class SourceObjList {
@@ -185,14 +183,6 @@ private:
 
     // convenience accessor
     SourceObjInfo* at(int i) const { return objs()->at(i); }
-  };
-
-  class SrcObjTableCleaner {
-  public:
-    bool do_entry(address key, const SourceObjInfo& value) {
-      delete value.ref();
-      return true;
-    }
   };
 
   class CDSMapLogger;

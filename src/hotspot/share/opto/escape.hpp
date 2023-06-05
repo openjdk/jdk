@@ -426,7 +426,7 @@ private:
   int find_field_value(FieldNode* field);
 
   // Find fields initializing values for allocations.
-  int find_init_values_null   (JavaObjectNode* ptn, PhaseTransform* phase);
+  int find_init_values_null   (JavaObjectNode* ptn, PhaseValues* phase);
   int find_init_values_phantom(JavaObjectNode* ptn);
 
   // Set the escape state of an object and its fields.
@@ -526,7 +526,7 @@ private:
   bool   is_oop_field(Node* n, int offset, bool* unsafe);
   static Node* find_second_addp(Node* addp, Node* n);
   // offset of a field reference
-  int address_offset(Node* adr, PhaseTransform *phase);
+  int address_offset(Node* adr, PhaseValues* phase);
 
   bool is_captured_store_address(Node* addp);
 

@@ -603,7 +603,7 @@ public class AquaSpinnerUI extends SpinnerUI {
             final Component child = ftp.getComponentAfter(root, spinner);
 
             if (child != null && SwingUtilities.isDescendingFrom(child, spinner)) {
-                child.requestFocus();
+                child.requestFocus(FocusEvent.Cause.MOUSE_EVENT);
             }
         }
 
