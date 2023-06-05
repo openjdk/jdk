@@ -214,7 +214,7 @@ void G1CollectionSetCandidates::add_retained_region_unsorted(HeapRegion* r) {
 }
 
 void G1CollectionSetCandidates::remove(G1CollectionCandidateRegionList* other) {
-  // During removal we exploit the fact that elements in the marking_regions,
+  // During removal, we exploit the fact that elements in the marking_regions,
   // retained_regions and other list are sorted by gc_efficiency. Furthermore,
   // all regions in the passed other list are in one of the two other lists.
   //

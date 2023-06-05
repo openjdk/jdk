@@ -144,8 +144,6 @@ public class TestVerifyGCType {
         output = testWithVerificationType(new String[] {"old"});
         output.shouldHaveExitValue(0);
 
-System.out.println(output.getStdout());
-
         output.shouldMatch("VerifyGCType: '.*' is unknown. Available types are: young-normal, young-evac-fail, concurrent-start, mixed, remark, cleanup and full");
         verifyCollection("Pause Young (Normal)", true, false, true, output.getStdout());
         verifyCollection("Pause Young (Concurrent Start)", true, false, true, output.getStdout());

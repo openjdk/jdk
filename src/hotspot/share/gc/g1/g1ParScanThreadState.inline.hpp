@@ -114,7 +114,7 @@ template <class T> void G1ParScanThreadState::enqueue_card_into_evac_fail_region
   assert(_g1h->heap_region_containing(obj)->in_collection_set(), "Only for enqeueing reference into collection set region");
 
   if (enqueue_if_new(p)) {
-    _evac_failure_enqeued_cards++;
+    _evac_failure_enqueued_cards++;
   }
 }
 

@@ -1541,7 +1541,6 @@ void G1Policy::select_candidates_from_retained(G1CollectionCandidateList* retain
   uint num_initial_regions_selected = 0;
   uint num_optional_regions_selected = 0;
   uint num_expensive_regions_selected = 0;
-  uint num_unreclaimable_regions = 0;
 
   double predicted_initial_time_ms = 0.0;
   double predicted_optional_time_ms = 0.0;
@@ -1582,7 +1581,7 @@ void G1Policy::select_candidates_from_retained(G1CollectionCandidateList* retain
     optional_time_remaining_ms = MAX2(0.0, optional_time_remaining_ms - predicted_time_ms);
   }
 
-  uint num_regions_selected = num_initial_regions_selected + num_optional_regions_selected + num_unreclaimable_regions;
+  uint num_regions_selected = num_initial_regions_selected + num_optional_regions_selected;
   if (num_regions_selected == retained_list->length()) {
     log_debug(gc, ergo, cset)("Retained candidates exhausted.");
   }
@@ -1591,10 +1590,10 @@ void G1Policy::select_candidates_from_retained(G1CollectionCandidateList* retain
                               num_expensive_regions_selected);
   }
 
-  log_debug(gc, ergo, cset)("Finish adding retained candidates to collection set. Initial: %u, optional: %u, unreclaimable %u, "
+  log_debug(gc, ergo, cset)("Finish adding retained candidates to collection set. Initial: %u, optional: %u, "
                             "predicted initial time: %1.2fms, predicted optional time: %1.2fms, "
                             "time remaining: %1.2fms optional time remaining %1.2fms",
-                            num_initial_regions_selected, num_optional_regions_selected, num_unreclaimable_regions,
+                            num_initial_regions_selected, num_optional_regions_selected,
                             predicted_initial_time_ms, predicted_optional_time_ms, time_remaining_ms, optional_time_remaining_ms);
 }
 

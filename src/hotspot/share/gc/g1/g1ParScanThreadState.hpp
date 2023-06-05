@@ -112,7 +112,7 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
   // Number of additional cards into evacuation failed regions enqueued into
   // the local DCQS. This is an approximation, as cards that would be added later
   // outside of evacuation failure will not be subtracted again.
-  size_t _evac_failure_enqeued_cards;
+  size_t _evac_failure_enqueued_cards;
 
   // Enqueue the card if not already in the set; this is a best-effort attempt on
   // detecting duplicates.

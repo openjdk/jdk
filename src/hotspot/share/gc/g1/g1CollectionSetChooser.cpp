@@ -32,7 +32,7 @@
 #include "utilities/quickSort.hpp"
 
 // Determine collection set candidates (from marking): For all regions determine
-// whether they should be a collection set candidates, calculate their efficiency,
+// whether they should be a collection set candidate, calculate their efficiency,
 // sort and put them into the candidates.
 // Threads calculate the GC efficiency of the regions they get to process, and
 // put them into some work area without sorting. At the end that array is sorted and
@@ -151,8 +151,8 @@ class G1BuildCandidateRegionsTask : public WorkerTask {
       // alloc region (we should not consider those for collection
       // before we fill them up).
       if (should_add(r) && !G1CollectedHeap::heap()->is_old_gc_alloc_region(r)) {
-        add_region(r);
         assert(r->rem_set()->is_complete(), "must be %u", r->hrm_index());
+        add_region(r);
       } else if (r->is_old() && !r->is_collection_set_candidate()) {
         // Keep remembered sets for humongous regions and collection set candidates,
         // otherwise clean them out.

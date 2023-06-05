@@ -89,7 +89,7 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
     _preserved_marks(preserved_marks),
     _evacuation_failed_info(),
     _evac_failure_regions(evac_failure_regions),
-    _evac_failure_enqeued_cards(0)
+    _evac_failure_enqueued_cards(0)
 {
   // We allocate number of young gen regions in the collection set plus one
   // entries, since entry 0 keeps track of surviving bytes for non-young regions.
@@ -149,7 +149,7 @@ size_t G1ParScanThreadState::lab_undo_waste_words() const {
 }
 
 size_t G1ParScanThreadState::evac_failure_enqueued_cards() const {
-  return _evac_failure_enqeued_cards;
+  return _evac_failure_enqueued_cards;
 }
 
 #ifdef ASSERT
