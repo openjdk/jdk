@@ -77,10 +77,6 @@ void Node::verify_construction() {
     // Only check assert during parsing and optimization phase. Skip it while generating code.
     assert(C->live_nodes() <= C->max_node_limit(), "Live Node limit exceeded limit");
   }
-  if (BreakAtNode != 0 && (_debug_idx == BreakAtNode || (uint64_t)_idx == BreakAtNode)) {
-    tty->print_cr("BreakAtNode: _idx=%d _debug_idx=" UINT64_FORMAT, _idx, _debug_idx);
-    BREAKPOINT;
-  }
 #if OPTO_DU_ITERATOR_ASSERT
   _last_del = nullptr;
   _del_tick = 0;
@@ -2476,15 +2472,9 @@ void Node::dump_orig(outputStream *st, bool print_key) const {
 
 void Node::set_debug_orig(Node* orig) {
   _debug_orig = orig;
-  if (BreakAtNode == 0)  return;
   if (not_a_node(orig))  orig = nullptr;
   int trip = 10;
   while (orig != nullptr) {
-    if (orig->debug_idx() == BreakAtNode || (uintx)orig->_idx == BreakAtNode) {
-      tty->print_cr("BreakAtNode: _idx=%d _debug_idx=" UINT64_FORMAT " orig._idx=%d orig._debug_idx=" UINT64_FORMAT,
-                    this->_idx, this->debug_idx(), orig->_idx, orig->debug_idx());
-      BREAKPOINT;
-    }
     orig = orig->debug_orig();
     if (not_a_node(orig))  orig = nullptr;
     if (trip-- <= 0)  break;

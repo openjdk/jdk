@@ -133,9 +133,6 @@
   notproduct(bool, OptoBreakpointOSR, false,                                \
           "insert breakpoint at osr method entry")                          \
                                                                             \
-  notproduct(uint64_t, BreakAtNode, 0,                                      \
-          "Break at construction of this Node (either _idx or _debug_idx)") \
-                                                                            \
   notproduct(bool, OptoBreakpointC2R, false,                                \
           "insert breakpoint at runtime stub entry")                        \
                                                                             \
