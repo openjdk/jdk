@@ -200,7 +200,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   __ load_klass(recv_klass_reg, rcx, noreg);
 
   start_pc = __ pc();
-  __ push(temp_reg);
+  __ push(rdx); // temp_reg
 
   // Receiver subtype check against REFC.
   // Get selected method from declaring class and itable index
@@ -239,7 +239,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   }
 #endif // ASSERT
 
-  __ pop(temp_reg);
+  __ pop(rdx);
   address ame_addr = __ pc();
   __ jmp(Address(method, Method::from_compiled_offset()));
 
@@ -249,7 +249,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   // We force resolving of the call site by jumping to the "handle
   // wrong method" stub, and so let the interpreter runtime do all the
   // dirty work.
-  __ pop(temp_reg);
+  __ pop(rdx);
   __ jump(RuntimeAddress(SharedRuntime::get_handle_wrong_method_stub()));
 
   masm->flush();
