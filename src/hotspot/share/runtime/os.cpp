@@ -1128,7 +1128,7 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
   address addr = (address)x;
   // Handle null first, so later checks don't need to protect against it.
   if (addr == nullptr) {
-    st->print_cr("0x0 is nullptr");
+    st->print_cr("0x0 is null");
     return;
   }
 

@@ -251,4 +251,8 @@ public final class Utils {
     public static boolean isPowerOfTwo(long value) {
         return (value & (value - 1)) == 0L;
     }
+
+    public static boolean containsNullChars(String s) {
+        return s.indexOf('\u0000') >= 0;
+    }
 }

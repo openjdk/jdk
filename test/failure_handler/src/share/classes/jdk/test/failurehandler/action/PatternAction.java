@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,6 +61,11 @@ public class PatternAction implements Action {
         }
         for (int i = 0, n = args.length; i < n; ++i) {
             args[i] = args[i].replace("%java", helper.findApp("java").getAbsolutePath());
+        }
+        // replace occurrences of the pattern in the "successArtifacts" param
+        String successArtifacts = action.getParameters().successArtifacts;
+        if (successArtifacts != null) {
+            action.getParameters().successArtifacts = successArtifacts.replaceAll(pattern, value);
         }
         return action.prepareProcess(section.getWriter(), helper);
     }
