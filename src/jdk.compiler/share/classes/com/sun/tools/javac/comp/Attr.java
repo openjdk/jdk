@@ -1657,9 +1657,9 @@ public class Attr extends JCTree.Visitor {
             boolean enumSwitch = (seltype.tsym.flags() & Flags.ENUM) != 0;
             boolean stringSwitch = types.isSameType(seltype, syms.stringType);
             boolean errorEnumSwitch = TreeInfo.isErrorEnumSwitch(selector, cases);
+            boolean intSwitch = types.isAssignable(seltype, syms.intType);
             boolean patternSwitch;
-            if (!enumSwitch && !stringSwitch && !errorEnumSwitch &&
-                !types.isAssignable(seltype, syms.intType)) {
+            if (!enumSwitch && !stringSwitch && !errorEnumSwitch && !intSwitch) {
                 preview.checkSourceLevel(selector.pos(), Feature.PATTERN_SWITCH);
                 patternSwitch = true;
             } else {
@@ -1706,6 +1706,10 @@ public class Attr extends JCTree.Visitor {
                             if (sym == null) {
                                 if (allowPatternSwitch) {
                                     attribTree(expr, switchEnv, caseLabelResultInfo(seltype));
+                                    Symbol enumSym = TreeInfo.symbol(expr);
+                                    if (enumSym == null || !enumSym.isEnum() || enumSym.kind != VAR) {
+                                        log.error(expr.pos(), Errors.EnumLabelMustBeEnumConstant);
+                                    }
                                 } else {
                                     log.error(expr.pos(), Errors.EnumLabelMustBeUnqualifiedEnum);
                                 }
@@ -1728,14 +1732,16 @@ public class Attr extends JCTree.Visitor {
                             if (!pattype.hasTag(ERROR)) {
                                 if (pattype.constValue() == null) {
                                     Symbol s = TreeInfo.symbol(expr);
-                                    if (s != null && s.kind == TYP && allowPatternSwitch) {
+                                    if (s != null && s.kind == TYP) {
                                         log.error(expr.pos(),
                                                   Errors.PatternExpected);
-                                    } else if ((s != null && !s.isEnum()) || !allowPatternSwitch) {
+                                    } else if (s == null || !s.isEnum()) {
                                         log.error(expr.pos(),
-                                                  (stringSwitch ? Errors.StringConstReq : Errors.ConstExprReq));
+                                                  (stringSwitch ? Errors.StringConstReq
+                                                                : intSwitch ? Errors.ConstExprReq
+                                                                            : Errors.PatternOrEnumReq));
                                     }
-                                } else if (!stringSwitch && !types.isAssignable(seltype, syms.intType)) {
+                                } else if (!stringSwitch && !intSwitch) {
                                     log.error(label.pos(), Errors.ConstantLabelNotCompatible(pattype, seltype));
                                 } else if (!constants.add(pattype.constValue())) {
                                     log.error(c.pos(), Errors.DuplicateCaseLabel);
@@ -5505,6 +5511,10 @@ public class Attr extends JCTree.Visitor {
                 chk.checkClassOverrideEqualsAndHashIfNeeded(env.tree.pos(), c);
                 chk.checkFunctionalInterface((JCClassDecl) env.tree, c);
                 chk.checkLeaksNotAccessible(env, (JCClassDecl) env.tree);
+
+                if ((c.flags_field & Flags.UNNAMED_CLASS) != 0) {
+                    chk.checkHasMain(env.tree.pos(), c);
+                }
             } finally {
                 env.info.returnResult = prevReturnRes;
                 log.useSource(prev);
