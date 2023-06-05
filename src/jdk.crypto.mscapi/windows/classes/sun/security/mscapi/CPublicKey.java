@@ -93,7 +93,10 @@ public abstract class CPublicKey extends CKey implements PublicKey {
                     // ignore
                 }
             }
-            return encoding;
+
+            byte[] safeEncoding = new byte[encoding.length];
+            System.arraycopy(encoding, 0, safeEncoding, 0, encoding.length);
+            return safeEncoding;
         }
 
         @Override
