@@ -429,7 +429,9 @@ typedef uintptr_t uintx;
 
 const intx  min_intx  = (intx)1 << (sizeof(intx)*BitsPerByte-1);
 const intx  max_intx  = (uintx)min_intx - 1;
+const uint  max_uint  = (uint)-1;
 const uintx max_uintx = (uintx)-1;
+
 
 // Table of values:
 //      sizeof intx         4               8
