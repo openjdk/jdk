@@ -31,6 +31,8 @@
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+import java.util.Objects;
+
 import static java.lang.invoke.MethodType.*;
 import static jdk.test.lib.Asserts.*;
 
@@ -53,22 +55,25 @@ public class FindSpecialObjectMethod {
             MethodHandle mh = lookup.findSpecial(Object.class, "toString", methodType(String.class), I.class);
             return mh.invoke(o);
         }
-    }
 
-    static class D implements I {
-        public String toString() {
-            return "D";
+        static void noAccess() throws Throwable {
+            try {
+                MethodHandles.Lookup lookup = MethodHandles.lookup();
+                MethodHandle mh = lookup.findSpecial(String.class, "hashCode", methodType(int.class), I.class);
+                throw new RuntimeException("IllegalAccessException not thrown");
+            } catch (IllegalAccessException ex) {}
         }
     }
 
     public static void main(String... args) throws Throwable {
+        // Object.toString can be called from invokespecial from within
+        // a special caller class C or interface I
         C c = new C();
-        D d = new D();
-        assertEquals(C.test(c), objectToString(c));
-        assertEquals(I.test(d), objectToString(d));
-    }
+        I i = new I() {};
+        assertEquals(C.test(c), Objects.toIdentityString(c));
+        assertEquals(I.test(i), Objects.toIdentityString(i));
 
-    static String objectToString(Object o) {
-        return o.getClass().getName() + "@" + Integer.toHexString(o.hashCode());
+        // I has no access to methods in other class besides Object
+        I.noAccess();
     }
 }
