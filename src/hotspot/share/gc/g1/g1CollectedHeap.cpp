@@ -916,11 +916,11 @@ void G1CollectedHeap::resize_heap_if_necessary() {
 }
 
 HeapWord* G1CollectedHeap::satisfy_failed_allocation_helper(size_t word_size,
-                                                            uint node_index) {
+                                                            uint node_index,
+                                                            bool expand_heap) {
   // Let's attempt the allocation first.
-  HeapWord* result =
-    attempt_allocation_at_safepoint(word_size, node_index);
-  if (result != nullptr) {
+  HeapWord* result = attempt_allocation_at_safepoint(word_size, node_index);
+  if (result != nullptr || !expand_heap) {
     return result;
   }
 
@@ -930,7 +930,6 @@ HeapWord* G1CollectedHeap::satisfy_failed_allocation_helper(size_t word_size,
   // do something smarter than full collection to satisfy a failed alloc.)
   if (expand(word_size)) {
     return attempt_allocation_at_safepoint(word_size, node_index);
-
   }
   return nullptr;
 }
@@ -951,7 +950,7 @@ bool G1CollectedHeap::is_unclaimed_allocation(HeapWord *obj) {
 bool G1CollectedHeap::satisfy_failed_allocations(bool* gc_succeeded) {
   assert_at_safepoint_on_vm_thread();
 
-  bool alloc_succeeded = handle_allocation_requests(false /* expect_null_mutator_alloc_region*/);
+  bool alloc_succeeded = handle_allocation_requests(true /* expand_heap */ );
 
   if (alloc_succeeded) {
     return alloc_succeeded;
@@ -967,7 +966,7 @@ bool G1CollectedHeap::satisfy_failed_allocations(bool* gc_succeeded) {
     return false;
   }
 
-  alloc_succeeded = handle_allocation_requests(true /* expect_null_mutator_alloc_region*/);
+  alloc_succeeded = handle_allocation_requests(true /* expand_heap */);
 
   if (alloc_succeeded) {
     return alloc_succeeded;
@@ -983,7 +982,7 @@ bool G1CollectedHeap::satisfy_failed_allocations(bool* gc_succeeded) {
     return false;
   }
 
-  alloc_succeeded = handle_allocation_requests(true /* expect_null_mutator_alloc_region*/);
+  alloc_succeeded = handle_allocation_requests(true /* expand_heap */);
 
   if (alloc_succeeded) {
     return alloc_succeeded;
@@ -1012,7 +1011,7 @@ void G1CollectedHeap::reset_allocation_requests() {
   }
 }
 
-bool G1CollectedHeap::handle_allocation_requests(bool expect_null_mutator_alloc_region) {
+bool G1CollectedHeap::handle_allocation_requests(bool expand_heap) {
   assert_at_safepoint_on_vm_thread();
 
   for (StalledAllocReq* alloc_req : _stalled_allocations) {
@@ -1023,8 +1022,9 @@ bool G1CollectedHeap::handle_allocation_requests(bool expect_null_mutator_alloc_
       continue;
      }
 
-    HeapWord* result =
-      satisfy_failed_allocation_helper(alloc_req->size(), alloc_req->node_index());
+    HeapWord* result = satisfy_failed_allocation_helper(alloc_req->size(),
+                                                        alloc_req->node_index(),
+                                                        expand_heap);
 
     if (result == nullptr) {
       // Failed to allocate, give up.

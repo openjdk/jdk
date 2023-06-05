@@ -135,7 +135,7 @@ void VM_G1CollectForAllocation::doit() {
   // If any allocation has been requested, try to do that first.
   bool has_allocation_requests = !g1h->_stalled_allocations.is_empty();
   if (has_allocation_requests) {
-    bool alloc_succeeded = g1h->handle_allocation_requests(false /* expect_null_mutator_alloc_region*/);
+    bool alloc_succeeded = g1h->handle_allocation_requests(false /* expand_heap */);
 
     if (alloc_succeeded) {
       return;

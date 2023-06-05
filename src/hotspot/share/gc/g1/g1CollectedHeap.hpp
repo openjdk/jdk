@@ -185,9 +185,9 @@ class G1CollectedHeap : public CollectedHeap {
   public:
 
     enum class AllocationState {
+      Pending,
       Success,
       Failed,
-      Pending,
     };
 
     StalledAllocReq(size_t size, uint numa_node) :
@@ -563,7 +563,7 @@ private:
   // This function does everything necessary/possible to satisfy a
   // failed allocation request (including collection, expansion, etc.)
   bool satisfy_failed_allocations(bool* gc_succeeded);
-  bool handle_allocation_requests(bool expect_null_mutator_alloc_region);
+  bool handle_allocation_requests(bool expand_heap);
 
   // Reset any allocated but unclaimed allocation requests.
   void reset_allocation_requests();
@@ -579,7 +579,9 @@ private:
   void print_heap_after_full_collection();
 
   // Helper method for handle_allocation_requests()
-  HeapWord* satisfy_failed_allocation_helper(size_t word_size, uint node_index);
+  HeapWord* satisfy_failed_allocation_helper(size_t word_size,
+                                             uint node_index,
+                                             bool expand_heap);
 
   // Attempts to expand the heap by "word_size" words.
   bool expand(size_t word_size);
