@@ -658,6 +658,8 @@ class SleepingThread extends BaseThread {
         expectedMethods.add(Thread.class.getName() + ".sleep");
         expectedMethods.add(Thread.class.getName() + ".sleepNanos");
         expectedMethods.add(Thread.class.getName() + ".sleepNanos0");
+        expectedMethods.add(Thread.class.getName() + ".beforeSleep");
+        expectedMethods.add(Thread.class.getName() + ".afterSleep");
         expectedMethods.add(Thread.class.getName() + ".currentCarrierThread");
         expectedMethods.add(Thread.class.getName() + ".currentThread");
         // jdk.internal.event.ThreadSleepEvent not accessible
