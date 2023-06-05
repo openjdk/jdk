@@ -163,7 +163,7 @@ public:
 //                    They are guaranteed to be evacuated and cleared out during
 //                    the mixed phase.
 //
-// * retained regions: set of regions selected for evacuation during evacuation
+// * retained_regions: set of regions selected for evacuation during evacuation
 //                     failure.
 //                     Any young collection will try to evacuate them.
 //
@@ -173,12 +173,12 @@ class G1CollectionSetCandidates : public CHeapObj<mtGC> {
   enum class CandidateOrigin : uint8_t {
     Invalid,
     Marking,                   // This region has been determined as candidate by concurrent marking.
-    Retained,                  // This region has been added because it had to be retained after evacuation.
+    Retained,                  // This region has been added because it has been retained after evacuation.
     Verify                     // Special value for verification.
   };
 
-  G1CollectionCandidateList _marking_regions;
-  G1CollectionCandidateList _retained_regions;
+  G1CollectionCandidateList _marking_regions;  // Set of regions selected by concurrent marking.
+  G1CollectionCandidateList _retained_regions; // Set of regions selected from evacuation failed regions.
 
   CandidateOrigin* _contains_map;
   uint _max_regions;
