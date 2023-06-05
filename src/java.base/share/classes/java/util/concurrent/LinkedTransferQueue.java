@@ -309,12 +309,24 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      * 2. Await match or cancellation (method awaitMatch)
      *
      *    Wait for another thread to match node; instead cancelling if
-     *    the current thread was interrupted or the wait timed out. To
-     *    improve performance in common single-source / single-sink
-     *    usages when there are more tasks that cores, an initial
-     *    Thread.yield is tried when there is apparently only one
-     *    waiter.  In other cases, waiters may help with some
-     *    bookkeeping, then park/unpark.
+     *    the current thread was interrupted or the wait timed out.
+     *    If the caller is a VirtualThread, the most likely next step
+     *    is for another to take the item, so an immediate (virtual)
+     *    park/unpark is used.  Otherwise (for non-Virtual threads),
+     *    we use front-of-queue spinning: If a node appears to be the
+     *    first unmatched node in the queue, it spins a bit before
+     *    blocking. In either case, before blocking it tries to
+     *    unsplice any nodes between the current "head" and the first
+     *    unmatched node.
+     *
+     *    Front-of-queue spinning vastly improves performance of
+     *    heavily contended queues. And so long as it is relatively
+     *    brief and "quiet", spinning does not much impact performance
+     *    of less-contended queues. We also use smaller (1/2) spins
+     *    for nodes that are not known to be front but whose
+     *    predecessors have not blocked -- these "chained" spins avoid
+     *    artifacts of front-of-queue rules which otherwise lead to
+     *    alternating nodes spinning vs blocking.
      *
      * ** Unlinking removed interior nodes **
      *
@@ -350,14 +362,28 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      *
      * When these cases arise, rather than always retraversing the
      * entire list to find an actual predecessor to unlink (which
-     * won't help for case (1) anyway), we record the need to sweep the
-     * next time any thread would otherwise block in awaitMatch. Also,
-     * because traversal operations on the linked list of nodes are a
-     * natural opportunity to sweep dead nodes, we generally do so,
-     * including all the operations that might remove elements as they
-     * traverse, such as removeIf and Iterator.remove.  This largely
-     * eliminates long chains of dead interior nodes, except from
-     * cancelled or timed out blocking operations.
+     * won't help for case (1) anyway), we record a conservative
+     * estimate of possible unsplice failures (in "sweepVotes").
+     * We trigger a full sweep when the estimate exceeds a threshold
+     * ("SWEEP_THRESHOLD") indicating the maximum number of estimated
+     * removal failures to tolerate before sweeping through, unlinking
+     * cancelled nodes that were not unlinked upon initial removal.
+     * We perform sweeps by the thread hitting threshold (rather than
+     * background threads or by spreading work to other threads)
+     * because in the main contexts in which removal occurs, the
+     * caller is timed-out or cancelled, which are not time-critical
+     * enough to warrant the overhead that alternatives would impose
+     * on other threads.
+     *
+     * Because the sweepVotes estimate is conservative, and because
+     * nodes become unlinked "naturally" as they fall off the head of
+     * the queue, and because we allow votes to accumulate even while
+     * sweeps are in progress, there are typically significantly fewer
+     * such nodes than estimated.  Choice of a threshold value
+     * balances the likelihood of wasted effort and contention, versus
+     * providing a worst-case bound on retention of interior nodes in
+     * quiescent queues. The value defined below was chosen
+     * empirically to balance these under various timeout scenarios.
      *
      * Note that we cannot self-link unlinked interior nodes during
      * sweeps. However, the associated garbage chains terminate when
@@ -371,6 +397,15 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      * Using a power of two minus one simplifies some comparisons.
      */
     static final long SPIN_FOR_TIMEOUT_THRESHOLD = 1023L;
+
+    /**
+     * The number of times to spin for a non-virtual thread before
+     * blocking when a node is apparently the first waiter in the
+     * queue.  See above for explanation. Must be a power of two. The
+     * value is empirically derived -- it works pretty well across a
+     * variety of processors, numbers of CPUs, and OSes.
+     */
+    private static final int FRONT_SPINS   = 1 << 7;
 
     /**
      * The maximum number of estimated removal failures (sweepVotes)
@@ -503,7 +538,7 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
     private transient volatile Node tail;
 
     /** The number of apparent failures to unsplice cancelled nodes */
-    private transient volatile boolean needSweep;
+    private transient volatile int sweepVotes;
 
     private boolean casTail(Node cmp, Node val) {
         // assert cmp != null;
@@ -513,6 +548,11 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
 
     private boolean casHead(Node cmp, Node val) {
         return HEAD.compareAndSet(this, cmp, val);
+    }
+
+    /** Atomic version of ++sweepVotes. */
+    private int incSweepVotes() {
+        return (int) SWEEPVOTES.getAndAdd(this, 1) + 1;
     }
 
     /**
@@ -632,55 +672,55 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      * @param nanos timeout in nanosecs, used only if timed is true
      * @return matched item, or e if unmatched on interrupt or timeout
      */
-    @SuppressWarnings("unchecked")
     private E awaitMatch(Node s, Node pred, E e, boolean timed, long nanos) {
-        final boolean isData = s.isData;
-        final long deadline = timed ? System.nanoTime() + nanos : 0L;
-        final Thread w = Thread.currentThread();
-        int stat = -1;                   // -1: may yield, +1: park, else 0
-        Object item;
-        while ((item = s.item) == e) {
-            if (needSweep)               // help clean
-                sweep();
-            else if ((timed && nanos <= 0L) || w.isInterrupted()) {
-                if (s.casItem(e, (e == null) ? s : null)) {
-                    unsplice(pred, s);   // cancelled
+        boolean isData = s.isData, parking = false;
+        int spins = -1;                         // establish after initial checks
+        long deadline = timed ? System.nanoTime() + nanos : 0L;
+        Thread w = Thread.currentThread();
+        for (;;) {
+            Object item;
+            if ((item = s.item) != e) {         // matched
+                if (!isData)
+                    ITEM.set(s, s);             // self-link to avoid garbage
+                if (parking)
+                    WAITER.set(s, null);
+                @SuppressWarnings("unchecked") E itemE = (E) item;
+                return itemE;
+            } else if (spins > 0) {
+                --spins;
+                Thread.onSpinWait();
+            } else if (w.isInterrupted() || (timed && nanos <= 0L)) {
+                if (s.casItem(e, s.isData ? null : s)) {
+                    unsplice(pred, s);          // cancel and unlink
                     return e;
+                }                               // else retry
+            } else if (spins < 0) {             // initialize spins
+                if (w.isVirtual() || pred == null)
+                    spins = 0;                  // don't spin
+                else if (pred.isData != isData || pred.isMatched())
+                    spins =  FRONT_SPINS;
+                else if (pred.waiter == null)   // pred spinning
+                    spins = FRONT_SPINS >>> 1;
+                else                            // pred already parked
+                    spins = 0;
+            } else if (!parking) {              // request unpark then recheck
+                parking = true;
+                s.waiter = w;
+            } else if (timed) {
+                if ((nanos = deadline - System.nanoTime()) > 0L) {
+                    if (nanos <= SPIN_FOR_TIMEOUT_THRESHOLD)
+                        spins = FRONT_SPINS;
+                    else
+                        LockSupport.parkNanos(this, nanos);
                 }
-            }
-            else if (stat <= 0) {
-                if (pred != null && pred.next == s) {
-                    if (stat < 0 &&
-                        (pred.isData != isData || pred.isMatched())) {
-                        stat = 0;        // yield once if first
-                        Thread.yield();
-                    }
-                    else {
-                        stat = 1;
-                        s.waiter = w;    // enable unpark
-                    }
-                }                        // else signal in progress
-            }
-            else if ((item = s.item) != e)
-                break;                   // recheck
-            else if (!timed) {
+            } else {
                 LockSupport.setCurrentBlocker(this);
                 try {
                     ForkJoinPool.managedBlock(s);
                 } catch (InterruptedException cannotHappen) { }
                 LockSupport.setCurrentBlocker(null);
             }
-            else {
-                nanos = deadline - System.nanoTime();
-                if (nanos > SPIN_FOR_TIMEOUT_THRESHOLD)
-                    LockSupport.parkNanos(this, nanos);
-            }
         }
-        if (stat == 1)
-            WAITER.set(s, null);
-        if (!isData)
-            ITEM.set(s, s);              // self-link to avoid garbage
-        return (E) item;
     }
 
     /* -------------- Traversal methods -------------- */
@@ -1103,7 +1143,8 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
          * See above for rationale. Briefly: if pred still points to
          * s, try to unlink s.  If s cannot be unlinked, because it is
          * trailing node or pred might be unlinked, and neither pred
-         * nor s are head or offlist, set needSweep;
+         * nor s are head or offlist, add to sweepVotes, and if enough
+         * votes have accumulated, sweep.
          */
         if (pred != null && pred.next == s) {
             Node n = s.next;
@@ -1121,8 +1162,10 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
                     if (hn != h && casHead(h, hn))
                         h.selfLink();  // advance head
                 }
-                if (pred.next != pred && s.next != s)
-                    needSweep = true;
+                // sweep every SWEEP_THRESHOLD votes
+                if (pred.next != pred && s.next != s // recheck if offlist
+                    && (incSweepVotes() & (SWEEP_THRESHOLD - 1)) == 0)
+                    sweep();
             }
         }
     }
@@ -1132,7 +1175,6 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      * traversal from head.
      */
     private void sweep() {
-        needSweep = false;
         for (Node p = head, s, n; p != null && (s = p.next) != null; ) {
             if (!s.isMatched())
                 // Unmatched nodes are never self-linked
@@ -1642,6 +1684,7 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
     // VarHandle mechanics
     private static final VarHandle HEAD;
     private static final VarHandle TAIL;
+    private static final VarHandle SWEEPVOTES;
     static final VarHandle ITEM;
     static final VarHandle NEXT;
     static final VarHandle WAITER;
@@ -1652,6 +1695,8 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
                                    Node.class);
             TAIL = l.findVarHandle(LinkedTransferQueue.class, "tail",
                                    Node.class);
+            SWEEPVOTES = l.findVarHandle(LinkedTransferQueue.class, "sweepVotes",
+                                         int.class);
             ITEM = l.findVarHandle(Node.class, "item", Object.class);
             NEXT = l.findVarHandle(Node.class, "next", Node.class);
             WAITER = l.findVarHandle(Node.class, "waiter", Thread.class);
