@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4313887 6838333 6863864 8307887
+ * @bug 4313887 6838333 6863864
  * @summary Unit test for java.nio.file.Files createSymbolicLink,
  *     readSymbolicLink, and createLink methods
  * @library ..
@@ -48,19 +48,6 @@ public class Links {
      * Exercise createSymbolicLink and readLink methods
      */
     static void testSymLinks(Path dir) throws IOException {
-        // Check for FileAlreadyExistsException. This must be done
-        // before the check of whether symlinks are supported.
-        Path pathLink = Files.createTempFile("link", null);
-        Path pathTarget = Files.createTempFile("target", null);
-        try {
-            Files.createSymbolicLink(pathLink, pathTarget);
-            throw new RuntimeException("Symbolic link created");
-        } catch (FileAlreadyExistsException expected) {
-        } finally {
-            Files.deleteIfExists(pathLink);
-            Files.deleteIfExists(pathTarget);
-        }
-
         final Path link = dir.resolve("link");
 
         // Check if sym links are supported
