@@ -567,7 +567,10 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   status = init_globals2();
   if (status != JNI_OK) {
     Threads::remove(main_thread, false);
-    main_thread->smr_delete();
+    if (!main_thread->has_pending_exception()) {
+      main_thread->smr_delete();
+    }
+    // Else don't delete main_thread as we need to report exceptions in the caller.
     *canTryAgain = false; // don't let caller call JNI_CreateJavaVM again
     return status;
   }
