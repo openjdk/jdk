@@ -72,6 +72,8 @@ public @interface PreviewFeature {
         STRING_TEMPLATES,
         @JEP(number=443, title="Unnamed Patterns and Variables")
         UNNAMED,
+        @JEP(number=445, title="Unnamed Classes and Instance Main Methods")
+        UNNAMED_CLASSES,
         /**
          * A key for testing.
          */
