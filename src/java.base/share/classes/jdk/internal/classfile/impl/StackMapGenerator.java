@@ -864,7 +864,7 @@ public final class StackMapGenerator {
             err.addSuppressed(suppresed);
             throw err;
         }
-        throw new IllegalStateException(sb.toString());
+        throw new IllegalArgumentException(sb.toString());
     }
 
     /**

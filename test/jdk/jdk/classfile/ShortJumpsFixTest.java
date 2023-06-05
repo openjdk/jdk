@@ -123,14 +123,14 @@ class ShortJumpsFixTest {
     @ParameterizedTest
     @MethodSource("provideFwd")
     void testFailFwdJumpsDirectGen(Sample sample) throws Exception {
-        assertThrows(IllegalStateException.class, () ->
+        assertThrows(IllegalArgumentException.class, () ->
                      generateFwd(CC_Not_Fixed_Jumps, sample, true));
     }
 
     @ParameterizedTest
     @MethodSource("provideBack")
     void testFailBackJumpsDirectGen(Sample sample) throws Exception {
-        assertThrows(IllegalStateException.class, () ->
+        assertThrows(IllegalArgumentException.class, () ->
                      generateBack(CC_Not_Fixed_Jumps, sample, true));
     }
 
@@ -155,7 +155,7 @@ class ShortJumpsFixTest {
     @ParameterizedTest
     @MethodSource("provideFwd")
     void testFailFwdJumpsTransform(Sample sample) throws Exception {
-        assertThrows(IllegalStateException.class, () ->
+        assertThrows(IllegalArgumentException.class, () ->
                      CC_Not_Fixed_Jumps.transform(
                             generateFwd(CC_No_Stack_No_Patch, sample, false),
                             overflow()));
@@ -164,7 +164,7 @@ class ShortJumpsFixTest {
     @ParameterizedTest
     @MethodSource("provideBack")
     void testFailBackJumpsTransform(Sample sample) throws Exception {
-        assertThrows(IllegalStateException.class, () ->
+        assertThrows(IllegalArgumentException.class, () ->
                      CC_Not_Fixed_Jumps.transform(
                             generateBack(CC_No_Stack_No_Patch, sample, false),
                             overflow()));
@@ -191,7 +191,7 @@ class ShortJumpsFixTest {
     @ParameterizedTest
     @MethodSource("provideFwd")
     void testFailFwdJumpsChainedTransform(Sample sample) throws Exception {
-        assertThrows(IllegalStateException.class, () ->
+        assertThrows(IllegalArgumentException.class, () ->
                      CC_Not_Fixed_Jumps.transform(
                             generateFwd(CC_No_Stack_No_Patch, sample, false),
                             ClassTransform.ACCEPT_ALL.andThen(overflow()))); //involve BufferedCodeBuilder here
@@ -200,7 +200,7 @@ class ShortJumpsFixTest {
     @ParameterizedTest
     @MethodSource("provideBack")
     void testFailBackJumpsChainedTransform(Sample sample) throws Exception {
-        assertThrows(IllegalStateException.class, () ->
+        assertThrows(IllegalArgumentException.class, () ->
                      CC_Not_Fixed_Jumps.transform(
                             generateBack(CC_No_Stack_No_Patch, sample, false),
                             ClassTransform.ACCEPT_ALL.andThen(overflow()))); //involve BufferedCodeBuilder here

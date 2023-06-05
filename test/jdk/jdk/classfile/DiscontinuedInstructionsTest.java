@@ -90,12 +90,12 @@ class DiscontinuedInstructionsTest {
                  .andThen(ClassTransform.endHandler(clb -> clb.withVersion(JAVA_6_VERSION, 0))));
 
         //test failure of stack map generation for Java 7
-        assertThrows(IllegalStateException.class, () ->
+        assertThrows(IllegalArgumentException.class, () ->
                 cc.transform(clm, ClassTransform.transformingMethodBodies(CodeTransform.ACCEPT_ALL)
                          .andThen(ClassTransform.endHandler(clb -> clb.withVersion(JAVA_7_VERSION, 0)))));
 
         //test failure of stack map generation when enforced to generate
-        assertThrows(IllegalStateException.class, () ->
+        assertThrows(IllegalArgumentException.class, () ->
                 Classfile.of(Classfile.StackMapsOption.STACK_MAPS_ALWAYS)
                          .transform(clm, ClassTransform.transformingMethodBodies(CodeTransform.ACCEPT_ALL)));
     }

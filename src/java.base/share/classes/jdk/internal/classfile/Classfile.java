@@ -63,7 +63,7 @@ public sealed interface Classfile
     /**
      * {@return a new context with options altered from the default}
      * @param options the desired processing options
-     * /
+     */
     static Classfile of(Option... options) {
         return of().withOptions(options);
     }
@@ -71,7 +71,7 @@ public sealed interface Classfile
     /**
      * {@return a copy of the context with altered options}
      * @param options the desired processing options
-     * /
+     */
     Classfile withOptions(Option... options);
 
     /**
