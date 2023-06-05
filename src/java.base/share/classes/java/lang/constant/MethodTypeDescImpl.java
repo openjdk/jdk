@@ -33,6 +33,7 @@ import java.security.PrivilegedAction;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.StringJoiner;
 
 import static java.util.Objects.requireNonNull;
 
@@ -46,22 +47,35 @@ final class MethodTypeDescImpl implements MethodTypeDesc {
     private final @Stable ClassDesc[] argTypes;
     private @Stable String cachedDescriptorString;
 
-    static ClassDesc validateParameter(ClassDesc parameterType) {
-        if (parameterType.isPrimitive() && parameterType.descriptorString().equals("V"))
-            throw new IllegalArgumentException("Void parameters not permitted");
-        return parameterType;
+    /**
+     * Constructs a {@linkplain MethodTypeDesc} with the specified return type
+     * and a trusted and already-validated parameter types array.
+     *
+     * @param returnType a {@link ClassDesc} describing the return type
+     * @param validatedArgTypes {@link ClassDesc}s describing the trusted and validated parameter types
+     */
+    MethodTypeDescImpl(ClassDesc returnType, ClassDesc[] validatedArgTypes) {
+        this.returnType = requireNonNull(returnType);
+        this.argTypes = requireNonNull(validatedArgTypes);
     }
 
     /**
      * Constructs a {@linkplain MethodTypeDesc} with the specified return type
-     * and a trusted and validated parameter types array
+     * and a trusted parameter types array, which will be validated.
      *
      * @param returnType a {@link ClassDesc} describing the return type
-     * @param trustedArgTypes {@link ClassDesc}s describing the trusted and validated parameter types
+     * @param trustedArgTypes {@link ClassDesc}s describing the trusted parameter types
      */
-    MethodTypeDescImpl(ClassDesc returnType, ClassDesc[] trustedArgTypes) {
-        this.returnType = requireNonNull(returnType);
-        this.argTypes = requireNonNull(trustedArgTypes);
+    static MethodTypeDescImpl ofTrusted(ClassDesc returnType, ClassDesc[] trustedArgTypes) {
+        Objects.requireNonNull(returnType);
+        if (trustedArgTypes.length == 0) // implicit null check
+            return new MethodTypeDescImpl(returnType, ConstantUtils.EMPTY_CLASSDESC);
+
+        for (ClassDesc cd : trustedArgTypes)
+            if (cd.isPrimitive() && cd.descriptorString().charAt(0) == 'V') // implicit null check
+                throw new IllegalArgumentException("Void parameters not permitted");
+
+        return new MethodTypeDescImpl(returnType, trustedArgTypes);
     }
 
     /**
@@ -75,21 +89,24 @@ final class MethodTypeDescImpl implements MethodTypeDesc {
      */
     static MethodTypeDescImpl ofDescriptor(String descriptor) {
         requireNonNull(descriptor);
+
         List<String> types = ConstantUtils.parseMethodDescriptor(descriptor);
-        ClassDesc[] paramTypes;
+        ClassDesc returnType = ClassDesc.ofDescriptor(types.getFirst());
+        MethodTypeDescImpl result;
+
         int paramCount = types.size() - 1;
         if (paramCount > 0) {
-            paramTypes = new ClassDesc[paramCount];
+            var paramTypes = new ClassDesc[paramCount];
             for (int i = 0; i < paramCount; i++) {
-                paramTypes[i] = validateParameter(ClassDesc.ofDescriptor(types.get(i + 1)));
+                paramTypes[i] = ClassDesc.ofDescriptor(types.get(i + 1));
             }
+            result = ofTrusted(returnType, paramTypes);
         } else {
-            paramTypes = ConstantUtils.EMPTY_CLASSDESC;
+            result = new MethodTypeDescImpl(returnType, ConstantUtils.EMPTY_CLASSDESC);
         }
 
-        var ret = new MethodTypeDescImpl(ClassDesc.ofDescriptor(types.getFirst()), paramTypes);
-        ret.cachedDescriptorString = descriptor;
-        return ret;
+        result.cachedDescriptorString = descriptor;
+        return result;
     }
 
     @Override
@@ -124,11 +141,9 @@ final class MethodTypeDescImpl implements MethodTypeDesc {
 
     @Override
     public MethodTypeDesc changeParameterType(int index, ClassDesc paramType) {
-        validateParameter(paramType);
-
         ClassDesc[] newArgs = argTypes.clone();
         newArgs[index] = paramType;
-        return new MethodTypeDescImpl(returnType, newArgs);
+        return ofTrusted(returnType, newArgs);
     }
 
     @Override
@@ -139,7 +154,7 @@ final class MethodTypeDescImpl implements MethodTypeDesc {
         ClassDesc[] newArgs = new ClassDesc[argTypes.length - (end - start)];
         System.arraycopy(argTypes, 0, newArgs, 0, start);
         System.arraycopy(argTypes, end, newArgs, start, argTypes.length - end);
-        return new MethodTypeDescImpl(returnType, newArgs);
+        return ofTrusted(returnType, newArgs);
     }
 
     @Override
@@ -152,11 +167,7 @@ final class MethodTypeDescImpl implements MethodTypeDesc {
         System.arraycopy(paramTypes, 0, newArgs, pos, paramTypes.length);
         System.arraycopy(argTypes, pos, newArgs, pos+paramTypes.length, argTypes.length - pos);
 
-        for (int i = pos, end = pos + paramTypes.length; i < end; i++) {
-            validateParameter(newArgs[i]);
-        }
-
-        return new MethodTypeDescImpl(returnType, newArgs);
+        return ofTrusted(returnType, newArgs);
     }
 
     @Override
@@ -165,7 +176,11 @@ final class MethodTypeDescImpl implements MethodTypeDesc {
         if (desc != null)
             return desc;
 
-        return cachedDescriptorString = MethodTypeDesc.super.descriptorString();
+        var sj = new StringJoiner("", "(", ")" + returnType().descriptorString());
+        for (int i = 0; i < parameterCount(); i++) {
+            sj.add(parameterType(i).descriptorString());
+        }
+        return cachedDescriptorString = sj.toString();
     }
 
     @Override

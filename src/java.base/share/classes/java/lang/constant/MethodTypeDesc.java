@@ -28,7 +28,6 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.TypeDescriptor;
 import java.util.List;
-import java.util.StringJoiner;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -96,12 +95,7 @@ public sealed interface MethodTypeDesc
      * {@link ClassDesc} for {@code void}
      */
     static MethodTypeDesc of(ClassDesc returnDesc, ClassDesc... paramDescs) {
-        if (paramDescs.length == 0)
-            return of(returnDesc);
-        var params = paramDescs.clone();
-        for (ClassDesc cr : params)
-            MethodTypeDescImpl.validateParameter(cr);
-        return new MethodTypeDescImpl(returnDesc, params);
+        return MethodTypeDescImpl.ofTrusted(returnDesc, paramDescs.clone());
     }
 
     /**
@@ -201,13 +195,7 @@ public sealed interface MethodTypeDesc
      * @return the method type descriptor string
      * @jvms 4.3.3 Method Descriptors
      */
-    default String descriptorString() {
-        var sj = new StringJoiner("", "(", ")" + returnType().descriptorString());
-        for (int i = 0; i < parameterCount(); i++) {
-            sj.add(parameterType(i).descriptorString());
-        }
-        return sj.toString();
-    }
+    String descriptorString();
 
     /**
      * Returns a human-readable descriptor for this method type, using the

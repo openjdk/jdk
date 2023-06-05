@@ -61,14 +61,14 @@ public class MethodTypeDescTest extends SymbolicDescTest {
         assertEquals(r, MethodTypeDesc.of(r.returnType(), r.parameterList().toArray(new ClassDesc[0])));
         assertEquals(r, MethodTypeDesc.of(r.returnType(), r.parameterList().stream().toArray(ClassDesc[]::new)));
         assertEquals(r, MethodTypeDesc.of(r.returnType(), IntStream.range(0, r.parameterCount())
-                .mapToObj(r::parameterType)
-                .toArray(ClassDesc[]::new)));
+                                                                   .mapToObj(r::parameterType)
+                                                                   .toArray(ClassDesc[]::new)));
         assertEquals(r, MethodTypeDesc.of(r.returnType(), r.parameterList()));
         assertEquals(r, MethodTypeDesc.of(r.returnType(), List.copyOf(r.parameterList())));
         assertEquals(r, MethodTypeDesc.of(r.returnType(), r.parameterList().stream().toList()));
         assertEquals(r, MethodTypeDesc.of(r.returnType(), IntStream.range(0, r.parameterCount())
-                .mapToObj(r::parameterType)
-                .toList()));
+                                                                   .mapToObj(r::parameterType)
+                                                                   .toList()));
     }
 
     private void testMethodTypeDesc(MethodTypeDesc r, MethodType mt) throws ReflectiveOperationException {
@@ -89,7 +89,7 @@ public class MethodTypeDescTest extends SymbolicDescTest {
     private void assertMethodType(ClassDesc returnType,
                                   ClassDesc... paramTypes) throws ReflectiveOperationException {
         String descriptor = Stream.of(paramTypes).map(ClassDesc::descriptorString).collect(joining("", "(", ")"))
-                + returnType.descriptorString();
+                            + returnType.descriptorString();
         MethodTypeDesc mtDesc = MethodTypeDesc.of(returnType, paramTypes);
 
         // MTDesc accessors
@@ -134,9 +134,9 @@ public class MethodTypeDescTest extends SymbolicDescTest {
         for (int i=0; i<paramTypes.length; i++) {
             int k = i;
             ClassDesc[] ps = IntStream.range(0, paramTypes.length)
-                    .filter(j -> j != k)
-                    .mapToObj(j -> paramTypes[j])
-                    .toArray(ClassDesc[]::new);
+                                      .filter(j -> j != k)
+                                      .mapToObj(j -> paramTypes[j])
+                                      .toArray(ClassDesc[]::new);
             MethodTypeDesc newDesc = mtDesc.dropParameterTypes(i, i + 1);
             assertEquals(newDesc, MethodTypeDesc.of(returnType, ps));
             testMethodTypeDesc(newDesc, mt.dropParameterTypes(i, i+1));
@@ -158,8 +158,8 @@ public class MethodTypeDescTest extends SymbolicDescTest {
             for (ClassDesc p : paramTypes) {
                 int k = i;
                 ClassDesc[] ps = IntStream.range(0, paramTypes.length + 1)
-                        .mapToObj(j -> (j < k) ? paramTypes[j] : (j == k) ? p : paramTypes[j-1])
-                        .toArray(ClassDesc[]::new);
+                                          .mapToObj(j -> (j < k) ? paramTypes[j] : (j == k) ? p : paramTypes[j-1])
+                                          .toArray(ClassDesc[]::new);
                 MethodTypeDesc newDesc = mtDesc.insertParameterTypes(i, p);
                 assertEquals(newDesc, MethodTypeDesc.of(returnType, ps));
                 testMethodTypeDesc(newDesc, mt.insertParameterTypes(i, p.resolveConstantDesc(LOOKUP)));
@@ -259,8 +259,8 @@ public class MethodTypeDescTest extends SymbolicDescTest {
     public void testBadMethodTypeRefs() {
         // ofDescriptor
         List<String> badDescriptors = List.of("()II", "()I;", "(I;)", "(I)", "()L", "(V)V",
-                "(java.lang.String)V", "()[]", "(Ljava/lang/String)V",
-                "(Ljava.lang.String;)V", "(java/lang/String)V");
+                                              "(java.lang.String)V", "()[]", "(Ljava/lang/String)V",
+                                              "(Ljava.lang.String;)V", "(java/lang/String)V");
 
         for (String d : badDescriptors) {
             assertThrows(IllegalArgumentException.class, () -> MethodTypeDesc.ofDescriptor(d));
