@@ -137,7 +137,7 @@ class VM_GC_Operation: public VM_GC_Sync_Operation {
   }
   ~VM_GC_Operation();
 
-  virtual const char* cause() const {
+  const char* cause() const override {
     return GCCause::to_string(_gc_cause);
   }
 
