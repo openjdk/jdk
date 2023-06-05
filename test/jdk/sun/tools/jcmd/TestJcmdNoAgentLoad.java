@@ -70,8 +70,6 @@ import jdk.test.lib.util.JarUtils;
 
 
 public class TestJcmdNoAgentLoad {
-    // The Agent.jar does not exist. Error with the PTRN message
-    // is expected before an attempt to load the Agent.jar.
     private static final String PTRN = "Dynamic agent loading is not enabled";
     private static boolean dynamicLoadingEnabled = true;
     private static final String TEST_CLASSES = System.getProperty("test.classes");
