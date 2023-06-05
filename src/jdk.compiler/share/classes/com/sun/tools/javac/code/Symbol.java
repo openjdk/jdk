@@ -1371,12 +1371,10 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
          @Override @DefinedBy(Api.LANGUAGE_MODEL)
          public Name getQualifiedName() {
              return isUnnamed() ? fullname.subName(0, 0) /* empty name */ : fullname;
-             // return fullname;
          }
 
          @Override @DefinedBy(Api.LANGUAGE_MODEL)
          public Name getSimpleName() {
-             // return isUnnamed() ? name.subName(0, 0) /* empty name */ : name;
              return name;
          }
 
