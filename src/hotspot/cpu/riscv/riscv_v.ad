@@ -259,7 +259,7 @@ instruct vabs_fp(vReg dst, vReg src) %{
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ vsetvli_helper(bt, Matcher::vector_length(this));
-    __ vfsgnjx_vv(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg), as_VectorRegister($src$$reg));
+    __ vfabs_v(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg));
   %}
   ins_pipe(pipe_slow);
 %}
@@ -293,8 +293,7 @@ instruct vabs_fp_masked(vReg dst_src, vRegMask_V0 v0) %{
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ vsetvli_helper(bt, Matcher::vector_length(this));
-    __ vfsgnjx_vv(as_VectorRegister($dst_src$$reg), as_VectorRegister($dst_src$$reg),
-                  as_VectorRegister($dst_src$$reg), Assembler::v0_t);
+    __ vfabs_v(as_VectorRegister($dst_src$$reg), as_VectorRegister($dst_src$$reg), Assembler::v0_t);
   %}
   ins_pipe(pipe_slow);
 %}
