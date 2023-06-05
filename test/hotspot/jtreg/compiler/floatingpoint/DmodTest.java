@@ -36,31 +36,31 @@
  import java.lang.Double;
 
  public class DmodTest {
-   static double [] op1 = { 1.2345f, 0.0f, -0.0f, 1.0f/0.0f, -1.0f/0.0f, 0.0f/0.0f };
-   static double [] op2 = { 1.2345f, 0.0f, -0.0f, 1.0f/0.0f, -1.0f/0.0f, 0.0f/0.0f };
+   static double [] op1 = { 1.2345d, 0.0d, -0.0d, 1.0d/0.0d, -1.0d/0.0d, 0.0d/0.0d };
+   static double [] op2 = { 1.2345d, 0.0d, -0.0d, 1.0d/0.0d, -1.0d/0.0d, 0.0d/0.0d };
    static double [][] res = {
       {
-        0.0f,
+        0.0d,
         Double.NaN,
         Double.NaN,
-        1.2345f,
-        1.2345f,
-        Double.NaN,
-      },
-      {
-        0.0f,
-        Double.NaN,
-        Double.NaN,
-        0.0f,
-        0.0f,
+        1.2345d,
+        1.2345d,
         Double.NaN,
       },
       {
-        -0.0f,
+        0.0d,
         Double.NaN,
         Double.NaN,
-        -0.0f,
-        -0.0f,
+        0.0d,
+        0.0d,
+        Double.NaN,
+      },
+      {
+        -0.0d,
+        Double.NaN,
+        Double.NaN,
+        -0.0d,
+        -0.0d,
         Double.NaN,
       },
       {
@@ -100,6 +100,7 @@
            if (f3 != res[j][k] && Double.isNaN(f3) != Double.isNaN(res[j][k])) {
             System.out.println( "Actual   " + f1 + " % " + f2 + " = " + f3);
             System.out.println( "Expected " + f1 + " % " + f2 + " = " + res[j][k]);
+            failure = true;
           }
         }
       }
