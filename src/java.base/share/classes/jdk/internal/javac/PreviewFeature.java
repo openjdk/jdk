@@ -68,7 +68,7 @@ public @interface PreviewFeature {
         VIRTUAL_THREADS,
         @JEP(number=442, title="Foreign Function & Memory API", status="Third Preview")
         FOREIGN,
-        @JEP(number=430, title="String Templates", status="First Preview")
+        @JEP(number=430, title="String Templates")
         STRING_TEMPLATES,
         @JEP(number=443, title="Unnamed Patterns and Variables")
         UNNAMED,
