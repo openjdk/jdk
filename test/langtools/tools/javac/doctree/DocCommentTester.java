@@ -495,7 +495,12 @@ public class DocCommentTester {
             }
 
             public Void visitInheritDoc(InheritDocTree node, Void p) {
-                header(node, "");
+                header(node);
+                indent(+1);
+                print("supertype", node.getSupertype());
+                indent(-1);
+                indent();
+                out.println("]");
                 return null;
             }
 

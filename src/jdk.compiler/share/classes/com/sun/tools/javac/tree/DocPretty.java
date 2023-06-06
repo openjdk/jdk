@@ -310,6 +310,10 @@ public class DocPretty implements DocTreeVisitor<Void,Void> {
         try {
             print('{');
             printTagName(node);
+            if (node.getSupertype() != null) {
+                print(" ");
+                print(node.getSupertype());
+            }
             print('}');
         } catch (IOException e) {
             throw new UncheckedIOException(e);
