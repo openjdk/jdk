@@ -32,7 +32,8 @@ static const jint MAX_FRAME_COUNT = 32;
 
 extern "C" {
 
-JNIEXPORT jint JNICALL Java_ThreadListStackTracesTest_getStateSingle(JNIEnv* jni, jclass clazz, jthread vthread) {
+JNIEXPORT jint JNICALL
+Java_ThreadListStackTracesTest_getStateSingle(JNIEnv* jni, jclass clazz, jthread vthread) {
   jvmtiStackInfo* info = NULL;
 
   jvmtiError err = jvmti->GetThreadListStackTraces(1, &vthread, MAX_FRAME_COUNT, &info);

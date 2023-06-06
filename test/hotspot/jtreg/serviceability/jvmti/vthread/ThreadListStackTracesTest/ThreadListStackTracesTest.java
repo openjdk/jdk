@@ -58,9 +58,7 @@ class TestTask implements Runnable {
         }
     }
 
-    public void run() {
-        log("TestTask.run()");
-    }
+    public abstract void run();
 }
 
 class ReentrantLockTestTask extends TestTask {
@@ -103,7 +101,7 @@ public class ThreadListStackTracesTest {
     private static void checkReentrantLock() throws InterruptedException {
         final Thread.State expState = Thread.State.WAITING;
         reentrantLock.lock();
-        String name = "ObjectMonitorTestTask";
+        String name = "ReentrantLockTestTask";
         TestTask task = new ReentrantLockTestTask();
         Thread vt = Thread.ofVirtual().name(name).start(task);
         task.ensureReady(vt, expState);
