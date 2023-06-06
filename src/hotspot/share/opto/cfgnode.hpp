@@ -58,6 +58,10 @@ class       JumpProjNode;
 class     SCMemProjNode;
 class PhaseIdealLoop;
 
+// The success projection of a Parse Predicate is always an IfTrueNode and the uncommon projection an IfFalseNode
+typedef IfTrueNode ParsePredicateSuccessProj;
+typedef IfFalseNode ParsePredicateUncommonProj;
+
 //------------------------------RegionNode-------------------------------------
 // The class of RegionNodes, which can be mapped to basic blocks in the
 // program.  Their inputs point to Control sources.  PhiNodes (described
@@ -215,8 +219,8 @@ public:
 
   // Determine a unique non-trivial input, if any.
   // Ignore casts if it helps.  Return null on failure.
-  Node* unique_input(PhaseTransform *phase, bool uncast);
-  Node* unique_input(PhaseTransform *phase) {
+  Node* unique_input(PhaseValues* phase, bool uncast);
+  Node* unique_input(PhaseValues* phase) {
     Node* uin = unique_input(phase, false);
     if (uin == nullptr) {
       uin = unique_input(phase, true);
@@ -446,6 +450,26 @@ public:
 
   virtual int Opcode() const;
   virtual Node* Ideal(PhaseGVN *phase, bool can_reshape);
+};
+
+// Special node that denotes a Parse Predicate added during parsing. A Parse Predicate serves as placeholder to later
+// create Runtime Predicates above it. They all share the same uncommon trap. The Parse Predicate will follow the
+// Runtime Predicates. Together they form a Regular Predicate Block. There are three kinds of Parse Predicates:
+// Loop Parse Predicate, Profiled Loop Parse Predicate (both used by Loop Predication), and Loop Limit Check Parse
+// Predicate (used for integer overflow checks when creating a counted loop).
+// More information about predicates can be found in loopPredicate.cpp.
+class ParsePredicateNode : public IfNode {
+  Deoptimization::DeoptReason _deopt_reason;
+ public:
+  ParsePredicateNode(Node* control, Node* bol, Deoptimization::DeoptReason deopt_reason);
+  virtual int Opcode() const;
+  virtual uint size_of() const { return sizeof(*this); }
+
+  Deoptimization::DeoptReason deopt_reason() const {
+    return _deopt_reason;
+  }
+
+  NOT_PRODUCT(void dump_spec(outputStream* st) const;)
 };
 
 class IfProjNode : public CProjNode {

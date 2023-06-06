@@ -1,0 +1,7 @@
+T8309054.java:12:24: compiler.err.expected2: :, ->
+T8309054.java:16:26: compiler.err.expected2: :, ->
+T8309054.java:19:35: compiler.err.expected: ')'
+T8309054.java:13:13: compiler.err.switch.mixing.case.types
+T8309054.java:17:13: compiler.err.switch.mixing.case.types
+T8309054.java:21:17: compiler.err.unexpected.type: kindname.variable, kindname.value
+6 errors

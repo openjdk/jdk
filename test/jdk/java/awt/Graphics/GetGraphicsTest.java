@@ -23,6 +23,7 @@
 /*
  * @test
  * @bug 4746122
+ * @key headful
  * @summary Checks getGraphics doesn't throw NullPointerExcepton for invalid colors and font.
  * @run main GetGraphicsTest
 */

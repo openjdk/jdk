@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,10 +58,10 @@ typedef const Symbol* SymbolPtr;
 typedef const JfrSymbolTable::SymbolEntry* SymbolEntryPtr;
 typedef const JfrSymbolTable::StringEntry* StringEntryPtr;
 
-static JfrCheckpointWriter* _writer = NULL;
-static JfrCheckpointWriter* _leakp_writer = NULL;
-static JfrArtifactSet* _artifacts = NULL;
-static JfrArtifactClosure* _subsystem_callback = NULL;
+static JfrCheckpointWriter* _writer = nullptr;
+static JfrCheckpointWriter* _leakp_writer = nullptr;
+static JfrArtifactSet* _artifacts = nullptr;
+static JfrArtifactClosure* _subsystem_callback = nullptr;
 static bool _class_unload = false;
 static bool _flushpoint = false;
 static bool _initial_type_set = true;
@@ -83,11 +83,11 @@ static bool is_complete() {
 }
 
 static traceid mark_symbol(KlassPtr klass, bool leakp) {
-  return klass != NULL ? _artifacts->mark(klass, leakp) : 0;
+  return klass != nullptr ? _artifacts->mark(klass, leakp) : 0;
 }
 
 static traceid mark_symbol(Symbol* symbol, bool leakp) {
-  return symbol != NULL ? _artifacts->mark(symbol, leakp) : 0;
+  return symbol != nullptr ? _artifacts->mark(symbol, leakp) : 0;
 }
 
 static traceid get_bootstrap_name(bool leakp) {
@@ -106,33 +106,33 @@ static const char* primitive_name(KlassPtr type_array_klass) {
     case JVM_SIGNATURE_DOUBLE: return "double";
   }
   assert(false, "invalid type array klass");
-  return NULL;
+  return nullptr;
 }
 
 static Symbol* primitive_symbol(KlassPtr type_array_klass) {
-  if (type_array_klass == NULL) {
+  if (type_array_klass == nullptr) {
     // void.class
     static Symbol* const void_class_name = SymbolTable::probe("void", 4);
-    assert(void_class_name != NULL, "invariant");
+    assert(void_class_name != nullptr, "invariant");
     return void_class_name;
   }
   const char* const primitive_type_str = primitive_name(type_array_klass);
-  assert(primitive_type_str != NULL, "invariant");
+  assert(primitive_type_str != nullptr, "invariant");
   Symbol* const primitive_type_sym = SymbolTable::probe(primitive_type_str, (int)strlen(primitive_type_str));
-  assert(primitive_type_sym != NULL, "invariant");
+  assert(primitive_type_sym != nullptr, "invariant");
   return primitive_type_sym;
 }
 
 template <typename T>
 static traceid artifact_id(const T* ptr) {
-  assert(ptr != NULL, "invariant");
+  assert(ptr != nullptr, "invariant");
   return JfrTraceId::load_raw(ptr);
 }
 
 static traceid package_id(KlassPtr klass, bool leakp) {
-  assert(klass != NULL, "invariant");
+  assert(klass != nullptr, "invariant");
   PkgPtr pkg_entry = klass->package();
-  if (pkg_entry == NULL) {
+  if (pkg_entry == nullptr) {
     return 0;
   }
   if (leakp) {
@@ -143,9 +143,9 @@ static traceid package_id(KlassPtr klass, bool leakp) {
 }
 
 static traceid module_id(PkgPtr pkg, bool leakp) {
-  assert(pkg != NULL, "invariant");
+  assert(pkg != nullptr, "invariant");
   ModPtr module_entry = pkg->module();
-  if (module_entry == NULL) {
+  if (module_entry == nullptr) {
     return 0;
   }
   if (leakp) {
@@ -157,13 +157,13 @@ static traceid module_id(PkgPtr pkg, bool leakp) {
 }
 
 static traceid method_id(KlassPtr klass, MethodPtr method) {
-  assert(klass != NULL, "invariant");
-  assert(method != NULL, "invariant");
+  assert(klass != nullptr, "invariant");
+  assert(method != nullptr, "invariant");
   return METHOD_ID(klass, method);
 }
 
 static traceid cld_id(CldPtr cld, bool leakp) {
-  assert(cld != NULL, "invariant");
+  assert(cld != nullptr, "invariant");
   if (leakp) {
     SET_LEAKP(cld);
   } else {
@@ -174,7 +174,7 @@ static traceid cld_id(CldPtr cld, bool leakp) {
 
 template <typename T>
 static s4 get_flags(const T* ptr) {
-  assert(ptr != NULL, "invariant");
+  assert(ptr != nullptr, "invariant");
   return ptr->access_flags().get_flags();
 }
 
@@ -184,17 +184,17 @@ static u4 get_primitive_flags() {
 }
 
 static ClassLoaderData* get_cld(const Klass* klass) {
-  assert(klass != NULL, "invariant");
+  assert(klass != nullptr, "invariant");
   if (klass->is_objArray_klass()) {
     klass = ObjArrayKlass::cast(klass)->bottom_klass();
   }
-  if (klass->is_non_strong_hidden()) return NULL;
+  if (klass->is_non_strong_hidden()) return nullptr;
   return klass->class_loader_data();
 }
 
 template <typename T>
 static void set_serialized(const T* ptr) {
-  assert(ptr != NULL, "invariant");
+  assert(ptr != nullptr, "invariant");
   SET_SERIALIZED(ptr);
   assert(IS_SERIALIZED(ptr), "invariant");
   if (current_epoch()) {
@@ -211,12 +211,12 @@ static void set_serialized(const T* ptr) {
  */
 
 static int write_klass(JfrCheckpointWriter* writer, KlassPtr klass, bool leakp) {
-  assert(writer != NULL, "invariant");
-  assert(_artifacts != NULL, "invariant");
-  assert(klass != NULL, "invariant");
+  assert(writer != nullptr, "invariant");
+  assert(_artifacts != nullptr, "invariant");
+  assert(klass != nullptr, "invariant");
   writer->write(artifact_id(klass));
   ClassLoaderData* cld = get_cld(klass);
-  writer->write(cld != NULL ? cld_id(cld, leakp) : 0);
+  writer->write(cld != nullptr ? cld_id(cld, leakp) : 0);
   writer->write(mark_symbol(klass, leakp));
   writer->write(package_id(klass, leakp));
   writer->write(get_flags(klass));
@@ -225,34 +225,34 @@ static int write_klass(JfrCheckpointWriter* writer, KlassPtr klass, bool leakp) 
 }
 
 int write__klass(JfrCheckpointWriter* writer, const void* k) {
-  assert(k != NULL, "invariant");
+  assert(k != nullptr, "invariant");
   KlassPtr klass = (KlassPtr)k;
   set_serialized(klass);
   return write_klass(writer, klass, false);
 }
 
 int write__klass__leakp(JfrCheckpointWriter* writer, const void* k) {
-  assert(k != NULL, "invariant");
+  assert(k != nullptr, "invariant");
   KlassPtr klass = (KlassPtr)k;
   CLEAR_LEAKP(klass);
   return write_klass(writer, klass, true);
 }
 
 static bool is_implied(const Klass* klass) {
-  assert(klass != NULL, "invariant");
+  assert(klass != nullptr, "invariant");
   return klass->is_subclass_of(vmClasses::ClassLoader_klass()) || klass == vmClasses::Object_klass();
 }
 
 static void do_klass(Klass* klass) {
-  assert(klass != NULL, "invariant");
+  assert(klass != nullptr, "invariant");
   assert(_flushpoint ? USED_THIS_EPOCH(klass) : USED_PREVIOUS_EPOCH(klass), "invariant");
-  assert(_subsystem_callback != NULL, "invariant");
+  assert(_subsystem_callback != nullptr, "invariant");
   _subsystem_callback->do_artifact(klass);
 }
 
 
 static traceid primitive_id(KlassPtr array_klass) {
-  if (array_klass == NULL) {
+  if (array_klass == nullptr) {
     // The first klass id is reserved for the void.class.
     return LAST_TYPE_ID + 1;
   }
@@ -261,8 +261,8 @@ static traceid primitive_id(KlassPtr array_klass) {
 }
 
 static void write_primitive(JfrCheckpointWriter* writer, KlassPtr type_array_klass) {
-  assert(writer != NULL, "invariant");
-  assert(_artifacts != NULL, "invariant");
+  assert(writer != nullptr, "invariant");
+  assert(_artifacts != nullptr, "invariant");
   writer->write(primitive_id(type_array_klass));
   writer->write(cld_id(get_cld(Universe::boolArrayKlassObj()), false));
   writer->write(mark_symbol(primitive_symbol(type_array_klass), false));
@@ -272,8 +272,8 @@ static void write_primitive(JfrCheckpointWriter* writer, KlassPtr type_array_kla
 }
 
 static void do_loader_klass(const Klass* klass) {
-  if (klass != NULL && _artifacts->should_do_loader_klass(klass)) {
-    if (_leakp_writer != NULL) {
+  if (klass != nullptr && _artifacts->should_do_loader_klass(klass)) {
+    if (_leakp_writer != nullptr) {
       SET_LEAKP(klass);
     }
     SET_TRANSIENT(klass);
@@ -282,7 +282,7 @@ static void do_loader_klass(const Klass* klass) {
 }
 
 static bool register_klass_unload(Klass* klass) {
-  assert(klass != NULL, "invariant");
+  assert(klass != nullptr, "invariant");
   return JfrKlassUnloading::on_unload(klass);
 }
 
@@ -296,8 +296,8 @@ static size_t register_unloading_klasses() {
 }
 
 static void do_unloading_klass(Klass* klass) {
-  assert(klass != NULL, "invariant");
-  assert(_subsystem_callback != NULL, "invariant");
+  assert(klass != nullptr, "invariant");
+  assert(_subsystem_callback != nullptr, "invariant");
   if (register_klass_unload(klass)) {
     _subsystem_callback->do_artifact(klass);
     do_loader_klass(klass->class_loader_data()->class_loader_klass());
@@ -311,7 +311,7 @@ static void do_unloading_klass(Klass* klass) {
  * trigger initialization.
  */
 static bool is_classloader_klass_allowed(const Klass* k) {
-  assert(k != NULL, "invariant");
+  assert(k != nullptr, "invariant");
   return !(k->is_abstract() || k->should_be_initialized());
 }
 
@@ -342,7 +342,7 @@ static void do_primitives() {
     write_primitive(_writer, Universe::longArrayKlassObj());
     write_primitive(_writer, Universe::floatArrayKlassObj());
     write_primitive(_writer, Universe::doubleArrayKlassObj());
-    write_primitive(_writer, NULL); // void.class
+    write_primitive(_writer, nullptr); // void.class
   }
 }
 
@@ -373,7 +373,7 @@ class LeakPredicate<const Klass*> {
 public:
   LeakPredicate(bool class_unload) {}
   bool operator()(const Klass* klass) {
-    assert(klass != NULL, "invariant");
+    assert(klass != nullptr, "invariant");
     return IS_LEAKP(klass) || is_implied(klass);
   }
 };
@@ -388,11 +388,11 @@ typedef JfrArtifactCallbackHost<KlassPtr, CompositeKlassWriterRegistration> Comp
 
 static bool write_klasses() {
   assert(!_artifacts->has_klass_entries(), "invariant");
-  assert(_writer != NULL, "invariant");
+  assert(_writer != nullptr, "invariant");
   KlassArtifactRegistrator reg(_artifacts);
   KlassWriter kw(_writer, _class_unload);
   KlassWriterRegistration kwr(&kw, &reg);
-  if (_leakp_writer == NULL) {
+  if (_leakp_writer == nullptr) {
     KlassCallback callback(&_subsystem_callback, &kwr);
     do_klasses();
   } else {
@@ -416,8 +416,8 @@ static bool write_klasses() {
 
 template <typename T>
 static void do_previous_epoch_artifact(JfrArtifactClosure* callback, T* value) {
-  assert(callback != NULL, "invariant");
-  assert(value != NULL, "invariant");
+  assert(callback != nullptr, "invariant");
+  assert(value != nullptr, "invariant");
   if (USED_PREVIOUS_EPOCH(value)) {
     callback->do_artifact(value);
   }
@@ -430,8 +430,8 @@ static void do_previous_epoch_artifact(JfrArtifactClosure* callback, T* value) {
 typedef JfrArtifactCallbackHost<KlassPtr, KlassArtifactRegistrator> RegisterKlassCallback;
 
 static void register_klass(Klass* klass) {
-  assert(klass != NULL, "invariant");
-  assert(_subsystem_callback != NULL, "invariant");
+  assert(klass != nullptr, "invariant");
+  assert(_subsystem_callback != nullptr, "invariant");
   do_previous_epoch_artifact(_subsystem_callback, klass);
 }
 
@@ -443,9 +443,9 @@ static void register_klasses() {
 }
 
 static int write_package(JfrCheckpointWriter* writer, PkgPtr pkg, bool leakp) {
-  assert(writer != NULL, "invariant");
-  assert(_artifacts != NULL, "invariant");
-  assert(pkg != NULL, "invariant");
+  assert(writer != nullptr, "invariant");
+  assert(_artifacts != nullptr, "invariant");
+  assert(pkg != nullptr, "invariant");
   writer->write(artifact_id(pkg));
   writer->write(mark_symbol(pkg->name(), leakp));
   writer->write(module_id(pkg, leakp));
@@ -454,14 +454,14 @@ static int write_package(JfrCheckpointWriter* writer, PkgPtr pkg, bool leakp) {
 }
 
 int write__package(JfrCheckpointWriter* writer, const void* p) {
-  assert(p != NULL, "invariant");
+  assert(p != nullptr, "invariant");
   PkgPtr pkg = (PkgPtr)p;
   set_serialized(pkg);
   return write_package(writer, pkg, false);
 }
 
 int write__package__leakp(JfrCheckpointWriter* writer, const void* p) {
-  assert(p != NULL, "invariant");
+  assert(p != nullptr, "invariant");
   PkgPtr pkg = (PkgPtr)p;
   CLEAR_LEAKP(pkg);
   return write_package(writer, pkg, true);
@@ -479,7 +479,7 @@ class PackageFieldSelector {
  public:
   typedef PkgPtr TypePtr;
   static TypePtr select(KlassPtr klass) {
-    assert(klass != NULL, "invariant");
+    assert(klass != nullptr, "invariant");
     return klass->package();
   }
 };
@@ -502,7 +502,7 @@ typedef CompositeFunctor<PkgPtr, CompositePackageWriter, ClearArtifact<PkgPtr> >
 typedef JfrArtifactCallbackHost<PkgPtr, CompositePackageWriterWithClear> CompositePackageCallback;
 
 static void write_packages() {
-  assert(_writer != NULL, "invariant");
+  assert(_writer != nullptr, "invariant");
   PackageWriter pw(_writer, _class_unload);
   KlassPackageWriter kpw(&pw);
   if (current_epoch()) {
@@ -511,7 +511,7 @@ static void write_packages() {
     return;
   }
   assert(previous_epoch(), "invariant");
-  if (_leakp_writer == NULL) {
+  if (_leakp_writer == nullptr) {
     _artifacts->iterate_klasses(kpw);
     ClearArtifact<PkgPtr> clear;
     PackageWriterWithClear pwwc(&pw, &clear);
@@ -539,8 +539,8 @@ static void clear_packages() {
 }
 
 static int write_module(JfrCheckpointWriter* writer, ModPtr mod, bool leakp) {
-  assert(mod != NULL, "invariant");
-  assert(_artifacts != NULL, "invariant");
+  assert(mod != nullptr, "invariant");
+  assert(_artifacts != nullptr, "invariant");
   writer->write(artifact_id(mod));
   writer->write(mark_symbol(mod->name(), leakp));
   writer->write(mark_symbol(mod->version(), leakp));
@@ -550,14 +550,14 @@ static int write_module(JfrCheckpointWriter* writer, ModPtr mod, bool leakp) {
 }
 
 int write__module(JfrCheckpointWriter* writer, const void* m) {
-  assert(m != NULL, "invariant");
+  assert(m != nullptr, "invariant");
   ModPtr mod = (ModPtr)m;
   set_serialized(mod);
   return write_module(writer, mod, false);
 }
 
 int write__module__leakp(JfrCheckpointWriter* writer, const void* m) {
-  assert(m != NULL, "invariant");
+  assert(m != nullptr, "invariant");
   ModPtr mod = (ModPtr)m;
   CLEAR_LEAKP(mod);
   return write_module(writer, mod, true);
@@ -575,9 +575,9 @@ class ModuleFieldSelector {
  public:
   typedef ModPtr TypePtr;
   static TypePtr select(KlassPtr klass) {
-    assert(klass != NULL, "invariant");
+    assert(klass != nullptr, "invariant");
     PkgPtr pkg = klass->package();
-    return pkg != NULL ? pkg->module() : NULL;
+    return pkg != nullptr ? pkg->module() : nullptr;
   }
 };
 
@@ -598,7 +598,7 @@ typedef CompositeFunctor<ModPtr, CompositeModuleWriter, ClearArtifact<ModPtr> > 
 typedef JfrArtifactCallbackHost<ModPtr, CompositeModuleWriterWithClear> CompositeModuleCallback;
 
 static void write_modules() {
-  assert(_writer != NULL, "invariant");
+  assert(_writer != nullptr, "invariant");
   ModuleWriter mw(_writer, _class_unload);
   KlassModuleWriter kmw(&mw);
   if (current_epoch()) {
@@ -607,7 +607,7 @@ static void write_modules() {
     return;
   }
   assert(previous_epoch(), "invariant");
-  if (_leakp_writer == NULL) {
+  if (_leakp_writer == nullptr) {
     _artifacts->iterate_klasses(kmw);
     ClearArtifact<ModPtr> clear;
     ModuleWriterWithClear mwwc(&mw, &clear);
@@ -635,10 +635,10 @@ static void clear_modules() {
 }
 
 static int write_classloader(JfrCheckpointWriter* writer, CldPtr cld, bool leakp) {
-  assert(cld != NULL, "invariant");
+  assert(cld != nullptr, "invariant");
   // class loader type
   const Klass* class_loader_klass = cld->class_loader_klass();
-  if (class_loader_klass == NULL) {
+  if (class_loader_klass == nullptr) {
     // (primordial) boot class loader
     writer->write(artifact_id(cld)); // class loader instance id
     writer->write((traceid)0);  // class loader type id (absence of)
@@ -653,14 +653,14 @@ static int write_classloader(JfrCheckpointWriter* writer, CldPtr cld, bool leakp
 }
 
 int write__classloader(JfrCheckpointWriter* writer, const void* c) {
-  assert(c != NULL, "invariant");
+  assert(c != nullptr, "invariant");
   CldPtr cld = (CldPtr)c;
   set_serialized(cld);
   return write_classloader(writer, cld, false);
 }
 
 int write__classloader__leakp(JfrCheckpointWriter* writer, const void* c) {
-  assert(c != NULL, "invariant");
+  assert(c != nullptr, "invariant");
   CldPtr cld = (CldPtr)c;
   CLEAR_LEAKP(cld);
   return write_classloader(writer, cld, true);
@@ -674,7 +674,7 @@ class KlassCldFieldSelector {
  public:
   typedef CldPtr TypePtr;
   static TypePtr select(KlassPtr klass) {
-    assert(klass != NULL, "invariant");
+    assert(klass != nullptr, "invariant");
     return get_cld(klass);
   }
 };
@@ -683,9 +683,9 @@ class ModuleCldFieldSelector {
 public:
   typedef CldPtr TypePtr;
   static TypePtr select(KlassPtr klass) {
-    assert(klass != NULL, "invariant");
+    assert(klass != nullptr, "invariant");
     ModPtr mod = ModuleFieldSelector::select(klass);
-    return mod != NULL ? mod->loader_data() : NULL;
+    return mod != nullptr ? mod->loader_data() : nullptr;
   }
 };
 
@@ -693,7 +693,7 @@ class CLDCallback : public CLDClosure {
  public:
   CLDCallback() {}
   void do_cld(ClassLoaderData* cld) {
-    assert(cld != NULL, "invariant");
+    assert(cld != nullptr, "invariant");
     if (cld->has_class_mirror_holder()) {
       return;
     }
@@ -727,7 +727,7 @@ typedef CompositeFunctor<CldPtr, CompositeCldWriter, ClearArtifact<CldPtr> > Com
 typedef JfrArtifactCallbackHost<CldPtr, CompositeCldWriterWithClear> CompositeCldCallback;
 
 static void write_classloaders() {
-  assert(_writer != NULL, "invariant");
+  assert(_writer != nullptr, "invariant");
   CldWriter cldw(_writer, _class_unload);
   KlassCldWriter kcw(&cldw);
   ModuleCldWriter mcw(&cldw);
@@ -738,7 +738,7 @@ static void write_classloaders() {
     return;
   }
   assert(previous_epoch(), "invariant");
-  if (_leakp_writer == NULL) {
+  if (_leakp_writer == nullptr) {
     _artifacts->iterate_klasses(kmcw);
     ClearArtifact<CldPtr> clear;
     CldWriterWithClear cldwwc(&cldw, &clear);
@@ -768,13 +768,13 @@ static void clear_classloaders() {
 }
 
 static u1 get_visibility(MethodPtr method) {
-  assert(method != NULL, "invariant");
+  assert(method != nullptr, "invariant");
   return const_cast<Method*>(method)->is_hidden() ? (u1)1 : (u1)0;
 }
 
 template <>
 void set_serialized<Method>(MethodPtr method) {
-  assert(method != NULL, "invariant");
+  assert(method != nullptr, "invariant");
   SET_METHOD_SERIALIZED(method);
   assert(IS_METHOD_SERIALIZED(method), "invariant");
   if (current_epoch()) {
@@ -783,11 +783,11 @@ void set_serialized<Method>(MethodPtr method) {
 }
 
 static int write_method(JfrCheckpointWriter* writer, MethodPtr method, bool leakp) {
-  assert(writer != NULL, "invariant");
-  assert(method != NULL, "invariant");
-  assert(_artifacts != NULL, "invariant");
+  assert(writer != nullptr, "invariant");
+  assert(method != nullptr, "invariant");
+  assert(_artifacts != nullptr, "invariant");
   KlassPtr klass = method->method_holder();
-  assert(klass != NULL, "invariant");
+  assert(klass != nullptr, "invariant");
   writer->write(method_id(klass, method));
   writer->write(artifact_id(klass));
   writer->write(mark_symbol(method->name(), leakp));
@@ -798,14 +798,14 @@ static int write_method(JfrCheckpointWriter* writer, MethodPtr method, bool leak
 }
 
 int write__method(JfrCheckpointWriter* writer, const void* m) {
-  assert(m != NULL, "invariant");
+  assert(m != nullptr, "invariant");
   MethodPtr method = (MethodPtr)m;
   set_serialized(method);
   return write_method(writer, method, false);
 }
 
 int write__method__leakp(JfrCheckpointWriter* writer, const void* m) {
-  assert(m != NULL, "invariant");
+  assert(m != nullptr, "invariant");
   MethodPtr method = (MethodPtr)m;
   CLEAR_LEAKP_METHOD(method);
   return write_method(writer, method, true);
@@ -855,7 +855,7 @@ class MethodIteratorHost {
   bool operator()(KlassPtr klass) {
     if (_method_used_predicate(klass)) {
       const InstanceKlass* ik = InstanceKlass::cast(klass);
-      while (ik != NULL) {
+      while (ik != nullptr) {
         const int len = ik->methods()->length();
         for (int i = 0; i < len; ++i) {
           MethodPtr method = ik->methods()->at(i);
@@ -905,9 +905,9 @@ typedef MethodIteratorHost<LeakMethodWriterImpl, KlassCallbackStub, BitMapFilter
 typedef CompositeFunctor<KlassPtr, LeakMethodWriter, MethodWriter> CompositeMethodWriter;
 
 static void write_methods() {
-  assert(_writer != NULL, "invariant");
+  assert(_writer != nullptr, "invariant");
   MethodWriter mw(_writer, current_epoch(), _class_unload);
-  if (_leakp_writer == NULL) {
+  if (_leakp_writer == nullptr) {
     _artifacts->iterate_klasses(mw);
   } else {
     LeakMethodWriter lpmw(_leakp_writer, current_epoch(), _class_unload);
@@ -919,21 +919,21 @@ static void write_methods() {
 
 template <>
 void set_serialized<JfrSymbolTable::SymbolEntry>(SymbolEntryPtr ptr) {
-  assert(ptr != NULL, "invariant");
+  assert(ptr != nullptr, "invariant");
   ptr->set_serialized();
   assert(ptr->is_serialized(), "invariant");
 }
 
 template <>
 void set_serialized<JfrSymbolTable::StringEntry>(StringEntryPtr ptr) {
-  assert(ptr != NULL, "invariant");
+  assert(ptr != nullptr, "invariant");
   ptr->set_serialized();
   assert(ptr->is_serialized(), "invariant");
 }
 
 static int write_symbol(JfrCheckpointWriter* writer, SymbolEntryPtr entry, bool leakp) {
-  assert(writer != NULL, "invariant");
-  assert(entry != NULL, "invariant");
+  assert(writer != nullptr, "invariant");
+  assert(entry != nullptr, "invariant");
   ResourceMark rm;
   writer->write(entry->id());
   writer->write(entry->value()->as_C_string());
@@ -941,35 +941,35 @@ static int write_symbol(JfrCheckpointWriter* writer, SymbolEntryPtr entry, bool 
 }
 
 int write__symbol(JfrCheckpointWriter* writer, const void* e) {
-  assert(e != NULL, "invariant");
+  assert(e != nullptr, "invariant");
   SymbolEntryPtr entry = (SymbolEntryPtr)e;
   set_serialized(entry);
   return write_symbol(writer, entry, false);
 }
 
 int write__symbol__leakp(JfrCheckpointWriter* writer, const void* e) {
-  assert(e != NULL, "invariant");
+  assert(e != nullptr, "invariant");
   SymbolEntryPtr entry = (SymbolEntryPtr)e;
   return write_symbol(writer, entry, true);
 }
 
 static int write_string(JfrCheckpointWriter* writer, StringEntryPtr entry, bool leakp) {
-  assert(writer != NULL, "invariant");
-  assert(entry != NULL, "invariant");
+  assert(writer != nullptr, "invariant");
+  assert(entry != nullptr, "invariant");
   writer->write(entry->id());
   writer->write(entry->value());
   return 1;
 }
 
 int write__string(JfrCheckpointWriter* writer, const void* e) {
-  assert(e != NULL, "invariant");
+  assert(e != nullptr, "invariant");
   StringEntryPtr entry = (StringEntryPtr)e;
   set_serialized(entry);
   return write_string(writer, entry, false);
 }
 
 int write__string__leakp(JfrCheckpointWriter* writer, const void* e) {
-  assert(e != NULL, "invariant");
+  assert(e != nullptr, "invariant");
   StringEntryPtr entry = (StringEntryPtr)e;
   return write_string(writer, entry, true);
 }
@@ -991,7 +991,7 @@ typedef JfrTypeWriterHost<LeakStringEntryWriterImpl, TYPE_SYMBOL> LeakStringEntr
 typedef CompositeFunctor<StringEntryPtr, LeakStringEntryWriter, StringEntryWriter> CompositeStringWriter;
 
 static void write_symbols_with_leakp() {
-  assert(_leakp_writer != NULL, "invariant");
+  assert(_leakp_writer != nullptr, "invariant");
   SymbolEntryWriter sw(_writer, _class_unload);
   LeakSymbolEntryWriter lsw(_leakp_writer, _class_unload);
   CompositeSymbolWriter csw(&lsw, &sw);
@@ -1006,8 +1006,8 @@ static void write_symbols_with_leakp() {
 }
 
 static void write_symbols() {
-  assert(_writer != NULL, "invariant");
-  if (_leakp_writer != NULL) {
+  assert(_writer != nullptr, "invariant");
+  if (_leakp_writer != nullptr) {
     write_symbols_with_leakp();
     return;
   }
@@ -1029,7 +1029,7 @@ static void clear_klasses_and_methods() {
 }
 
 static size_t teardown() {
-  assert(_artifacts != NULL, "invariant");
+  assert(_artifacts != nullptr, "invariant");
   const size_t total_count = _artifacts->total_count();
   if (previous_epoch()) {
     clear_klasses_and_methods();
@@ -1047,7 +1047,7 @@ static void setup(JfrCheckpointWriter* writer, JfrCheckpointWriter* leakp_writer
   _leakp_writer = leakp_writer;
   _class_unload = class_unload;
   _flushpoint = flushpoint;
-  if (_artifacts == NULL) {
+  if (_artifacts == nullptr) {
     _artifacts = new JfrArtifactSet(class_unload);
   } else {
     _artifacts->initialize(class_unload);
@@ -1055,7 +1055,7 @@ static void setup(JfrCheckpointWriter* writer, JfrCheckpointWriter* leakp_writer
   if (!_class_unload) {
     JfrKlassUnloading::sort(previous_epoch());
   }
-  assert(_artifacts != NULL, "invariant");
+  assert(_artifacts != nullptr, "invariant");
   assert(!_artifacts->has_klass_entries(), "invariant");
 }
 
@@ -1063,7 +1063,7 @@ static void setup(JfrCheckpointWriter* writer, JfrCheckpointWriter* leakp_writer
  * Write all "tagged" (in-use) constant artifacts and their dependencies.
  */
 size_t JfrTypeSet::serialize(JfrCheckpointWriter* writer, JfrCheckpointWriter* leakp_writer, bool class_unload, bool flushpoint) {
-  assert(writer != NULL, "invariant");
+  assert(writer != nullptr, "invariant");
   ResourceMark rm;
   setup(writer, leakp_writer, class_unload, flushpoint);
   // write order is important because an individual write step
@@ -1085,10 +1085,10 @@ size_t JfrTypeSet::serialize(JfrCheckpointWriter* writer, JfrCheckpointWriter* l
 void JfrTypeSet::clear() {
   ResourceMark rm;
   JfrKlassUnloading::clear();
-  if (_artifacts != NULL) {
+  if (_artifacts != nullptr) {
     _artifacts->clear();
   }
-  setup(NULL, NULL, false, false);
+  setup(nullptr, nullptr, false, false);
   register_klasses();
   clear_packages();
   clear_modules();
@@ -1102,7 +1102,7 @@ size_t JfrTypeSet::on_unloading_classes(JfrCheckpointWriter* writer) {
   // happen in arbitrary threads, we invoke it explicitly.
   JfrTraceIdEpoch::has_changed_tag_state_no_reset();
   if (JfrRecorder::is_recording()) {
-    return serialize(writer, NULL, true, false);
+    return serialize(writer, nullptr, true, false);
   }
   return register_unloading_klasses();
 }

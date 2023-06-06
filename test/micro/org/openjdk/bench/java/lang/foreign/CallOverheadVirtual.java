@@ -55,6 +55,11 @@ public class CallOverheadVirtual {
     }
 
     @Benchmark
+    public void panama_blank_trivial() throws Throwable {
+        func_trivial_v.invokeExact(func_addr);
+    }
+
+    @Benchmark
     public int jni_identity() throws Throwable {
         return identity(10);
     }
@@ -101,6 +106,11 @@ public class CallOverheadVirtual {
     @Benchmark
     public int panama_identity() throws Throwable {
         return (int) identity_v.invokeExact(identity_addr, 10);
+    }
+
+    @Benchmark
+    public int panama_identity_trivial() throws Throwable {
+        return (int) identity_trivial_v.invokeExact(identity_addr, 10);
     }
 
     @Benchmark
