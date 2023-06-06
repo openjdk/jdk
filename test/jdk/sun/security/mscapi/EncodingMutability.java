@@ -1,12 +1,12 @@
-import jdk.test.lib.Asserts;
-import jdk.test.lib.SecurityTools;
+/*
+ * @test
+ * @bug 8308808
+ * @requires os.family == "windows"
+ * @modules jdk.crypto.mscapi/sun.security.mscapi
+ * @run main EncodingMutability
+ */
 
-import java.security.KeyPairGenerator;
-import java.security.PublicKey;
-import java.util.Arrays;
-import javax.crypto.Cipher;
-import javax.crypto.KeyGenerator;
-import java.security.KeyStore;
+import java.security.*;
 
 public class EncodingMutability {
 
@@ -16,8 +16,6 @@ public class EncodingMutability {
         byte initialByte = publicKey.getEncoded()[0];
         publicKey.getEncoded()[0] = 0;
         byte mutatedByte = publicKey.getEncoded()[0];
-
-        System.out.println(initialByte + " " + mutatedByte);
 
         if (initialByte != mutatedByte) {
             System.out.println("Was able to mutate first byte of pubkey from " + initialByte + "to " + mutatedByte);
