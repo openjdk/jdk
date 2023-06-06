@@ -566,7 +566,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
     Threads::remove(main_thread, false);
     // It is possible that we managed to fully initialize Universe but have then
     // failed by throwing an exception. In that case our caller JNI_CreateJavaVM
-    // we will want to report it, so we can't delete the main thread.
+    // will want to report it, so we can't delete the main thread.
     if (!main_thread->has_pending_exception()) {
       main_thread->smr_delete();
     }
