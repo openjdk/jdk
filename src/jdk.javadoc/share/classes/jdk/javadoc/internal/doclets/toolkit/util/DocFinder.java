@@ -25,13 +25,10 @@
 
 package jdk.javadoc.internal.doclets.toolkit.util;
 
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.BiFunction;
 import java.util.function.Function;
-
 import javax.lang.model.element.ExecutableElement;
 
 public class DocFinder {
@@ -47,13 +44,10 @@ public class DocFinder {
         Result<T> apply(ExecutableElement method) throws X;
     }
 
-    private final Function<ExecutableElement, ExecutableElement> overriddenMethodLookup;
-    private final BiFunction<ExecutableElement, ExecutableElement, Iterable<ExecutableElement>> implementedMethodsLookup;
+    private final Function<ExecutableElement, Iterable<? extends ExecutableElement>> overriddenMethodLookup;
 
-    DocFinder(Function<ExecutableElement, ExecutableElement> overriddenMethodLookup,
-              BiFunction<ExecutableElement, ExecutableElement, Iterable<ExecutableElement>> implementedMethodsLookup) {
+    DocFinder(Function<ExecutableElement, Iterable<? extends ExecutableElement>> overriddenMethodLookup) {
         this.overriddenMethodLookup = overriddenMethodLookup;
-        this.implementedMethodsLookup = implementedMethodsLookup;
     }
 
     @SuppressWarnings("serial")
@@ -110,7 +104,7 @@ public class DocFinder {
     {
         // if the "overrides" check is requested and does not pass, throw the exception
         // first so that it trumps the result that the search would otherwise had
-        Iterator<ExecutableElement> methods = methodsOverriddenBy(method);
+        Iterator<? extends ExecutableElement> methods = overriddenMethodLookup.apply(method).iterator();
         if (throwExceptionIfDoesNotOverride && !methods.hasNext() ) {
             throw new NoOverriddenMethodFound();
         }
@@ -120,25 +114,12 @@ public class DocFinder {
         }
         while (methods.hasNext()) {
             ExecutableElement m = methods.next();
-            r = search0(m, true, false /* don't check for overrides */, criterion);
+            r = criterion.apply(m);
             if (r instanceof Result.Conclude<T>) {
                 return r;
             }
         }
         return r;
-    }
-
-    // We see both overridden and implemented methods as overridden
-    // (see JLS 8.4.8.1. Overriding (by Instance Methods))
-    private Iterator<ExecutableElement> methodsOverriddenBy(ExecutableElement method) {
-        // TODO: create a lazy iterator if required
-        var list = new ArrayList<ExecutableElement>();
-        ExecutableElement overridden = overriddenMethodLookup.apply(method);
-        if (overridden != null) {
-            list.add(overridden);
-        }
-        implementedMethodsLookup.apply(method, method).forEach(list::add);
-        return list.iterator();
     }
 
     private static final Result<?> SKIP = new Skipped<>();
