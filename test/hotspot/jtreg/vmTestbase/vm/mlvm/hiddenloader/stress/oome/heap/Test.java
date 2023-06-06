@@ -37,7 +37,7 @@
  * @build vm.mlvm.hiddenloader.stress.oome.heap.Test
  * @run driver vm.mlvm.share.IndifiedClassesBuilder
  *
- * @run main/othervm -XX:-UseGCOverheadLimit -Xlog:gc,gc+marking=trace -Xmx128m vm.mlvm.hiddenloader.stress.oome.heap.Test
+ * @run main/othervm -XX:-UseGCOverheadLimit -Xlog:gc -Xmx128m vm.mlvm.hiddenloader.stress.oome.heap.Test
  */
 
 package vm.mlvm.hiddenloader.stress.oome.heap;
