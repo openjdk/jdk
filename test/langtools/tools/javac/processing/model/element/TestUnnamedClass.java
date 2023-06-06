@@ -52,6 +52,7 @@ import javax.tools.JavaFileObject;
 public class TestUnnamedClass  extends JavacTestingAbstractProcessor {
 
     private static int round  = 0;
+    private static int checkedClassesCount = 0;
 
     public boolean process(Set<? extends TypeElement> annotations,
                            RoundEnvironment roundEnv) {
@@ -65,6 +66,10 @@ public class TestUnnamedClass  extends JavacTestingAbstractProcessor {
         } else {
             if (!roundEnv.processingOver()) { // Test generated file(s)
                 checkRoots(roundEnv);
+            } else { // Should have checked at least one class before processing is over
+                if (checkedClassesCount == 0) {
+                    messager.printError("No unnamed classes checked.");
+                }
             }
         }
 
@@ -126,6 +131,7 @@ public class TestUnnamedClass  extends JavacTestingAbstractProcessor {
      * It is a compile-time error if this class does not declare a candidate main method (12.1.4).
      */
     void checkUnnamedClassProperties(TypeElement unnamedClass) {
+        checkedClassesCount++;
         Name expectedName = unnamedClass.getSimpleName();
 
         System.out.println("Checking " + expectedName);
