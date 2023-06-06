@@ -62,6 +62,8 @@ public class TestLatePackageDiscovery extends JavadocTester {
                 "--module-source-path", src.toString(),
                 "--module", "test.foo",
                 "-nodeprecated");
+
+        setAutomaticCheckNoStacktrace(true); // no exceptions!
         checkExit(Exit.OK);
     }
 }
