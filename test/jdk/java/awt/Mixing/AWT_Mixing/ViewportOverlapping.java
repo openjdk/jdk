@@ -132,13 +132,13 @@ public class ViewportOverlapping extends OverlappingTestBase {
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
         robot.waitForIdle();
-        captureScreen("Img_1.png");
+        captureScreen("Img_1.png", "png");
 
         robot.mouseMove(vLoc.x, vLoc.y);
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
         robot.waitForIdle();
-        captureScreen("Img_2.png");
+        captureScreen("Img_2.png", "png");
 
         clickAndBlink(robot, testLoc, false);
         robot.mouseMove(resizeLoc.x, resizeLoc.y);
@@ -146,10 +146,10 @@ public class ViewportOverlapping extends OverlappingTestBase {
         robot.mouseMove(resizeLoc.x + 5, resizeLoc.y + 5);
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
         robot.waitForIdle();
-        captureScreen("Img_3.png");
+        captureScreen("Img_3.png", "png");
 
         clickAndBlink(robot, testLoc, false);
-        captureScreen("Img_4.png");
+        captureScreen("Img_4.png", "png");
         return (frameClicked == 2);
     }
 
@@ -160,15 +160,15 @@ public class ViewportOverlapping extends OverlappingTestBase {
 
         instance = new ViewportOverlapping();
         OverlappingTestBase.doMain(args);
-        captureScreen("Img_5.png");
+        captureScreen("Img_5.png", "png");
     }
 
-    private static void captureScreen(String filename) {
+    private static void captureScreen(String filename, String format) {
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
         try {
             ImageIO.write(
                     robot.createScreenCapture(new Rectangle(0, 0, screenSize.width, screenSize.height)),
-                    "png",
+                    format,
                     new File(filename)
             );
         } catch (IOException ignored) {
