@@ -29,9 +29,16 @@
  * @modules java.compiler
  *          jdk.compiler
  * @build   JavacTestingAbstractProcessor TestUnnamedClass
- * @compile         -processor TestUnnamedClass -proc:only --enable-preview --release ${jdk.version}             Anonymous.java
- * @compile/process -processor TestUnnamedClass -proc:only --enable-preview --release ${jdk.version} -AclassOnly Anonymous
+ * @compile         -processor TestUnnamedClass            --enable-preview --release ${jdk.version}                            Anonymous.java
+ * @compile/process -processor TestUnnamedClass -proc:only --enable-preview --release ${jdk.version} -Xprefer:newer -AclassOnly Anonymous Nameless
  */
+
+// The first @compile line processes Anonymous.java and a
+// Nameless.java class generated using the Filer. Both of those
+// unnamed classes are then compiled down to class files.  The second
+// @compile line, as directed by -Xprefer:newer builds and checks the
+// language model objects constructed off of those class file,
+// bypassing the source files.
 
 import java.lang.annotation.*;
 import java.io.Writer;
