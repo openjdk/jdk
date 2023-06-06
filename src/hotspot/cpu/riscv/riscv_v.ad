@@ -259,7 +259,7 @@ instruct vabs_fp(vReg dst, vReg src) %{
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ vsetvli_helper(bt, Matcher::vector_length(this));
-    __ vfsgnjx_vv(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg), as_VectorRegister($src$$reg));
+    __ vfabs_v(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg));
   %}
   ins_pipe(pipe_slow);
 %}
@@ -293,8 +293,7 @@ instruct vabs_fp_masked(vReg dst_src, vRegMask_V0 v0) %{
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ vsetvli_helper(bt, Matcher::vector_length(this));
-    __ vfsgnjx_vv(as_VectorRegister($dst_src$$reg), as_VectorRegister($dst_src$$reg),
-                  as_VectorRegister($dst_src$$reg), Assembler::v0_t);
+    __ vfabs_v(as_VectorRegister($dst_src$$reg), as_VectorRegister($dst_src$$reg), Assembler::v0_t);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -1371,32 +1370,32 @@ instruct reduce_addL(iRegLNoSp dst, iRegL src1, vReg src2, vReg tmp) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct reduce_addF(fRegF src1_dst, vReg src2, vReg tmp) %{
-  match(Set src1_dst (AddReductionVF src1_dst src2));
+instruct reduce_addF(fRegF dst, fRegF src1, vReg src2, vReg tmp) %{
+  match(Set dst (AddReductionVF src1 src2));
   effect(TEMP tmp);
   ins_cost(VEC_COST);
-  format %{ "reduce_addF $src1_dst, $src1_dst, $src2\t# KILL $tmp" %}
+  format %{ "reduce_addF $dst, $src1, $src2\t# KILL $tmp" %}
   ins_encode %{
     __ vsetvli_helper(T_FLOAT, Matcher::vector_length(this, $src2));
-    __ vfmv_s_f(as_VectorRegister($tmp$$reg), $src1_dst$$FloatRegister);
+    __ vfmv_s_f(as_VectorRegister($tmp$$reg), $src1$$FloatRegister);
     __ vfredosum_vs(as_VectorRegister($tmp$$reg), as_VectorRegister($src2$$reg),
                     as_VectorRegister($tmp$$reg));
-    __ vfmv_f_s($src1_dst$$FloatRegister, as_VectorRegister($tmp$$reg));
+    __ vfmv_f_s($dst$$FloatRegister, as_VectorRegister($tmp$$reg));
   %}
   ins_pipe(pipe_slow);
 %}
 
-instruct reduce_addD(fRegD src1_dst, vReg src2, vReg tmp) %{
-  match(Set src1_dst (AddReductionVD src1_dst src2));
+instruct reduce_addD(fRegD dst, fRegD src1, vReg src2, vReg tmp) %{
+  match(Set dst (AddReductionVD src1 src2));
   effect(TEMP tmp);
   ins_cost(VEC_COST);
-  format %{ "reduce_addD $src1_dst, $src1_dst, $src2\t# KILL $tmp" %}
+  format %{ "reduce_addD $dst, $src1, $src2\t# KILL $tmp" %}
   ins_encode %{
     __ vsetvli_helper(T_DOUBLE, Matcher::vector_length(this, $src2));
-    __ vfmv_s_f(as_VectorRegister($tmp$$reg), $src1_dst$$FloatRegister);
+    __ vfmv_s_f(as_VectorRegister($tmp$$reg), $src1$$FloatRegister);
     __ vfredosum_vs(as_VectorRegister($tmp$$reg), as_VectorRegister($src2$$reg),
                     as_VectorRegister($tmp$$reg));
-    __ vfmv_f_s($src1_dst$$FloatRegister, as_VectorRegister($tmp$$reg));
+    __ vfmv_f_s($dst$$FloatRegister, as_VectorRegister($tmp$$reg));
   %}
   ins_pipe(pipe_slow);
 %}
@@ -1437,32 +1436,32 @@ instruct reduce_addL_masked(iRegLNoSp dst, iRegL src1, vReg src2, vRegMask_V0 v0
   ins_pipe(pipe_slow);
 %}
 
-instruct reduce_addF_masked(fRegF src1_dst, vReg src2, vRegMask_V0 v0, vReg tmp) %{
-  match(Set src1_dst (AddReductionVF (Binary src1_dst src2) v0));
+instruct reduce_addF_masked(fRegF dst, fRegF src1, vReg src2, vRegMask_V0 v0, vReg tmp) %{
+  match(Set dst (AddReductionVF (Binary src1 src2) v0));
   effect(TEMP tmp);
   ins_cost(VEC_COST);
-  format %{ "reduce_addF_masked $src1_dst, $src1_dst, $src2, $v0\t# KILL $tmp" %}
+  format %{ "reduce_addF_masked $dst, $src1, $src2, $v0\t# KILL $tmp" %}
   ins_encode %{
     __ vsetvli_helper(T_FLOAT, Matcher::vector_length(this, $src2));
-    __ vfmv_s_f(as_VectorRegister($tmp$$reg), $src1_dst$$FloatRegister);
+    __ vfmv_s_f(as_VectorRegister($tmp$$reg), $src1$$FloatRegister);
     __ vfredosum_vs(as_VectorRegister($tmp$$reg), as_VectorRegister($src2$$reg),
                     as_VectorRegister($tmp$$reg), Assembler::v0_t);
-    __ vfmv_f_s($src1_dst$$FloatRegister, as_VectorRegister($tmp$$reg));
+    __ vfmv_f_s($dst$$FloatRegister, as_VectorRegister($tmp$$reg));
   %}
   ins_pipe(pipe_slow);
 %}
 
-instruct reduce_addD_masked(fRegD src1_dst, vReg src2, vRegMask_V0 v0, vReg tmp) %{
-  match(Set src1_dst (AddReductionVD (Binary src1_dst src2) v0));
+instruct reduce_addD_masked(fRegD dst, fRegD src1, vReg src2, vRegMask_V0 v0, vReg tmp) %{
+  match(Set dst (AddReductionVD (Binary src1 src2) v0));
   effect(TEMP tmp);
   ins_cost(VEC_COST);
-  format %{ "reduce_addD_masked $src1_dst, $src1_dst, $src2, $v0\t# KILL $tmp" %}
+  format %{ "reduce_addD_masked $dst, $src1, $src2, $v0\t# KILL $tmp" %}
   ins_encode %{
     __ vsetvli_helper(T_DOUBLE, Matcher::vector_length(this, $src2));
-    __ vfmv_s_f(as_VectorRegister($tmp$$reg), $src1_dst$$FloatRegister);
+    __ vfmv_s_f(as_VectorRegister($tmp$$reg), $src1$$FloatRegister);
     __ vfredosum_vs(as_VectorRegister($tmp$$reg), as_VectorRegister($src2$$reg),
                     as_VectorRegister($tmp$$reg), Assembler::v0_t);
-    __ vfmv_f_s($src1_dst$$FloatRegister, as_VectorRegister($tmp$$reg));
+    __ vfmv_f_s($dst$$FloatRegister, as_VectorRegister($tmp$$reg));
   %}
   ins_pipe(pipe_slow);
 %}
