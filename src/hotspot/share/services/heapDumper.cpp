@@ -1485,38 +1485,37 @@ void HeapObjectDumper::do_object(oop o) {
 
 // The dumper controller for parallel heap dump
 class DumperController : public CHeapObj<mtInternal> {
-private:
-  Monitor* _lock;
-  uint   _dumper_number;
-  uint   _complete_number;
+ private:
+   Monitor* _lock;
+   uint   _dumper_number;
+   uint   _complete_number;
 
-public:
-  DumperController(uint number) :
-    _lock(new (std::nothrow) PaddedMonitor(Mutex::safepoint, "DumperController_lock")),
-    _dumper_number(number),
-    _complete_number(0) { }
+ public:
+   DumperController(uint number) :
+     _lock(new (std::nothrow) PaddedMonitor(Mutex::safepoint, "DumperController_lock")),
+     _dumper_number(number),
+     _complete_number(0) { }
 
-  ~DumperController() { delete _lock; }
+   ~DumperController() { delete _lock; }
 
-  void dumper_complete(DumpWriter* local_writer, DumpWriter* global_writer) {
-    MonitorLocker ml(_lock, Mutex::_no_safepoint_check_flag);
-    _complete_number++;
-    // propagate local error to global if any
-    if (local_writer->has_error()) {
-    global_writer->set_error(local_writer->error());
-    }
-    ml.notify();
-  }
+   void dumper_complete(DumpWriter* local_writer, DumpWriter* global_writer) {
+     MonitorLocker ml(_lock, Mutex::_no_safepoint_check_flag);
+     _complete_number++;
+     // propagate local error to global if any
+     if (local_writer->has_error()) {
+      global_writer->set_error(local_writer->error());
+     }
+     ml.notify();
+   }
 
-  void wait_all_dumpers_complete() {
-    MonitorLocker ml(_lock, Mutex::_no_safepoint_check_flag);
-    while (_complete_number != _dumper_number) {
-      ml.wait();
-    }
-  }
+   void wait_all_dumpers_complete() {
+     MonitorLocker ml(_lock, Mutex::_no_safepoint_check_flag);
+     while (_complete_number != _dumper_number) {
+        ml.wait();
+     }
+   }
 };
 
-// Merge segmented dump files into a complete one
 class VM_HeapDumpMerge : public VM_Operation {
 private:
   DumpWriter* _writer;

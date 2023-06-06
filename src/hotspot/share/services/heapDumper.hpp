@@ -31,7 +31,7 @@
 
 class outputStream;
 
-// HeapDumper is used to dump the java heap to file in HPROF binary format:
+// HeapDumper is used to dump the java heap to file in HPROF binary format
 class HeapDumper : public StackObj {
  private:
   char* _error;

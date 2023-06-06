@@ -1,7 +1,6 @@
 /*
  * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
- * Copyright (c) 2023, Alibaba Group Holding Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,13 +25,12 @@
 
 #include "precompiled.hpp"
 #include "jvm.h"
-#include "oops/klass.inline.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
-#include "services/heapDumper.hpp"
 #include "services/heapDumperCompression.hpp"
+
 
 char const* FileWriter::open_writer() {
   assert(_fd < 0, "Must not already be open");
