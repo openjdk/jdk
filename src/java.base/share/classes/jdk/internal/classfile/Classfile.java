@@ -143,7 +143,7 @@ public class Classfile {
 
         /**
          * {@return an option describing whether or not to filter unresolved labels}
-         * Default is to throw IllegalStateException when any {@link ExceptionCatch},
+         * Default is to throw IllegalArgumentException when any {@link ExceptionCatch},
          * {@link LocalVariableInfo}, {@link LocalVariableTypeInfo}, or {@link CharacterRangeInfo}
          * reference to unresolved {@link Label} during bytecode serialization.
          * Setting this option to true filters the above elements instead.

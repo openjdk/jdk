@@ -33,7 +33,6 @@ import java.util.concurrent.atomic.LongAdder;
 import java.util.stream.Stream;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
-import sun.nio.ch.Poller;
 import sun.security.action.GetPropertyAction;
 
 /**
@@ -54,7 +53,7 @@ public class ThreadContainers {
 
     static {
         String s = GetPropertyAction.privilegedGetProperty("jdk.trackAllThreads");
-        if (s != null && (s.isEmpty() || Boolean.parseBoolean(s))) {
+        if (s == null || s.isEmpty() || Boolean.parseBoolean(s)) {
             TRACK_ALL_THREADS = true;
             ROOT_CONTAINER = new RootContainer.TrackingRootContainer();
         } else {
@@ -206,9 +205,8 @@ public class ThreadContainers {
     }
 
     /**
-     * Root container that "contains" all platform threads not started in a
-     * container plus some (or all) virtual threads that are started directly
-     * with the Thread API.
+     * Root container that "contains" all platform threads not started in a container.
+     * It may include all virtual threads started directly with the Thread API.
      */
     private static abstract class RootContainer extends ThreadContainer {
         protected RootContainer() {
@@ -288,11 +286,7 @@ public class ThreadContainers {
             }
             @Override
             public Stream<Thread> threads() {
-                // virtual threads in this container that are those blocked on I/O.
-                Stream<Thread> blockedVirtualThreads = Poller.blockedThreads()
-                        .filter(t -> t.isVirtual()
-                                && JLA.threadContainer(t) == this);
-                return Stream.concat(platformThreads(), blockedVirtualThreads);
+                return platformThreads();
             }
         }
     }
