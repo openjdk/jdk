@@ -151,8 +151,9 @@ public final class ThemeReader {
     }
 
     private static native void paintBackground(int[] buffer, long theme,
-                                               int part, int state, int rectRight,
-                                               int rectBottom, int w, int h, int stride);
+                                               int part, int state,
+                                               int rectRight, int rectBottom,
+                                               int w, int h, int stride);
 
     public static void paintBackground(int[] buffer, String widget,
            int part, int state, int x, int y, int w, int h, int stride, int dpi) {
