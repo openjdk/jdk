@@ -1949,7 +1949,7 @@ VM_GetThreadListStackTraces::doit() {
       // thread_oop.
       // In the virtual thread case the get_threadOop_and_JavaThread is expected to correctly set
       // the thread_oop and return JVMTI_ERROR_THREAD_NOT_ALIVE which we ignore here.
-      // Thei corresponding thread state will be recorded in the jvmtiStackInfo.state.
+      // The corresponding thread state will be recorded in the jvmtiStackInfo.state.
       if (thread_oop == nullptr) {
         _collector.set_result(err);
         return;
