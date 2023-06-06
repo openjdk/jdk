@@ -422,7 +422,7 @@ public abstract class OverlappingTestBase {
         Util.waitForIdle(robot);
         try{
             Thread.sleep(500);
-        } catch(Exception exx) {
+        } catch (Exception exx) {
             exx.printStackTrace();
         }
 
@@ -480,7 +480,7 @@ public abstract class OverlappingTestBase {
         Robot robot = null;
         try {
             robot = new Robot();
-        } catch(Exception ignored) {
+        } catch (Exception ignored) {
         }
         currentAwtControl = component;
         System.out.println("Testing " + currentAwtControl.getClass().getSimpleName());
