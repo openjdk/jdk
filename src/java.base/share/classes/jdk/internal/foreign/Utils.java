@@ -40,6 +40,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
 
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.foreign.abi.SharedUtils;
@@ -166,11 +167,16 @@ public final class Utils {
     }
 
     @ForceInline
-    public static void checkElementAlignment(ValueLayout layout, String msg) {
+    public static boolean isElementAligned(ValueLayout layout) {
         // Fast-path: if both size and alignment are powers of two, we can just
         // check if one is greater than the other.
         assert isPowerOfTwo(layout.byteSize());
-        if (layout.byteAlignment() > layout.byteSize()) {
+        return layout.byteAlignment() <= layout.byteSize();
+    }
+
+    @ForceInline
+    public static void checkElementAlignment(ValueLayout layout, String msg) {
+        if (!isElementAligned(layout)) {
             throw new IllegalArgumentException(msg);
         }
     }
@@ -254,5 +260,13 @@ public final class Utils {
 
     public static boolean isPowerOfTwo(long value) {
         return (value & (value - 1)) == 0L;
+    }
+
+    public static <L extends MemoryLayout> L wrapOverflow(Supplier<L> layoutSupplier) {
+        try {
+            return layoutSupplier.get();
+        } catch (ArithmeticException ex) {
+            throw new IllegalArgumentException("Layout size exceeds Long.MAX_VALUE");
+        }
     }
 }

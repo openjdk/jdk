@@ -33,7 +33,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import jdk.internal.foreign.LayoutPath;
@@ -658,7 +657,7 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
         MemoryLayoutUtil.requireNonNegative(elementCount);
         Objects.requireNonNull(elementLayout);
         Utils.checkElementAlignment(elementLayout, "Element layout size is not multiple of alignment");
-        return wrapOverflow(() ->
+        return Utils.wrapOverflow(() ->
                 SequenceLayoutImpl.of(elementCount, elementLayout));
     }
 
@@ -712,7 +711,7 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      */
     static StructLayout structLayout(MemoryLayout... elements) {
         Objects.requireNonNull(elements);
-        return wrapOverflow(() ->
+        return Utils.wrapOverflow(() ->
                 StructLayoutImpl.of(Stream.of(elements)
                         .map(Objects::requireNonNull)
                         .toList()));
@@ -729,13 +728,5 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
         return UnionLayoutImpl.of(Stream.of(elements)
                 .map(Objects::requireNonNull)
                 .toList());
-    }
-
-    private static <L extends MemoryLayout> L wrapOverflow(Supplier<L> layoutSupplier) {
-        try {
-            return layoutSupplier.get();
-        } catch (ArithmeticException ex) {
-            throw new IllegalArgumentException("Layout size exceeds Long.MAX_VALUE");
-        }
     }
 }

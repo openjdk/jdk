@@ -441,6 +441,12 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
 
     /**
      * {@return the address of this memory segment}
+     *
+     * @apiNote When using this method to pass a segment address to some external operation (e.g. a JNI function),
+     * clients must ensure that the segment is kept <a href="../../../java/lang/ref/package.html#reachability">reachable</a>
+     * for the entire duration of the operation. A failure to do so might result in the premature deallocation of the
+     * region of memory backing the memory segment, in case the segment has been allocated with an
+     * {@linkplain Arena#ofAuto() automatic arena}.
      */
     long address();
 
