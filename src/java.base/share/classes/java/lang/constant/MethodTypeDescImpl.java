@@ -95,15 +95,11 @@ final class MethodTypeDescImpl implements MethodTypeDesc {
         MethodTypeDescImpl result;
 
         int paramCount = types.size() - 1;
-        if (paramCount > 0) {
-            var paramTypes = new ClassDesc[paramCount];
-            for (int i = 0; i < paramCount; i++) {
-                paramTypes[i] = ClassDesc.ofDescriptor(types.get(i + 1));
-            }
-            result = ofTrusted(returnType, paramTypes);
-        } else {
-            result = new MethodTypeDescImpl(returnType, ConstantUtils.EMPTY_CLASSDESC);
+        var paramTypes = paramCount > 0 ? new ClassDesc[paramCount] : ConstantUtils.EMPTY_CLASSDESC;
+        for (int i = 0; i < paramCount; i++) {
+            paramTypes[i] = ClassDesc.ofDescriptor(types.get(i + 1));
         }
+        result = ofTrusted(returnType, paramTypes);
 
         result.cachedDescriptorString = descriptor;
         return result;
