@@ -1712,7 +1712,7 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
     }
   }
 
-  // Part 1: print to screen
+  // Part 1: print to stdout/stderr
   if (!out_done) {
     // print an abbreviated version (the '#' section) to stdout by default.
     // full error log is printed if the print option to stdout and stderr is specified
