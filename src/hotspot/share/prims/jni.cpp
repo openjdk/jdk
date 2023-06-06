@@ -3621,21 +3621,8 @@ static jint JNI_CreateJavaVM_inner(JavaVM **vm, void **penv, void *args) {
     // Since this is not a JVM_ENTRY we have to set the thread state manually before leaving.
     ThreadStateTransition::transition_from_vm(thread, _thread_in_native);
     MACOS_AARCH64_ONLY(thread->enable_wx(WXExec));
+
   } else {
-    // If create_vm exits because of a pending exception, exit with that
-    // exception.  In the future when we figure out how to reclaim memory,
-    // we may be able to exit with JNI_ERR and allow the calling application
-    // to continue.
-    if (Universe::is_fully_initialized()) {
-      // otherwise no pending exception possible - VM will already have aborted
-      Thread* current = Thread::current_or_null();
-      if (current != nullptr) {
-        JavaThread* THREAD = JavaThread::cast(current); // For exception macros.
-        assert(HAS_PENDING_EXCEPTION, "must be - else no current thread exists");
-        HandleMark hm(THREAD);
-        vm_exit_during_initialization(Handle(THREAD, PENDING_EXCEPTION));
-      }
-    }
 
     if (can_try_again) {
       // reset safe_to_recreate_vm to 1 so that retrial would be possible
