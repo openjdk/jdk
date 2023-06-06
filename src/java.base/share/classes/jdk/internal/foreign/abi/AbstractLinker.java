@@ -56,9 +56,6 @@ import java.util.List;
 import java.nio.ByteOrder;
 import java.util.Objects;
 
-import static java.lang.foreign.ValueLayout.JAVA_DOUBLE;
-import static java.lang.foreign.ValueLayout.JAVA_INT;
-
 public abstract sealed class AbstractLinker implements Linker permits LinuxAArch64Linker, MacOsAArch64Linker,
                                                                       SysVx64Linker, WindowsAArch64Linker,
                                                                       Windowsx64Linker, LinuxPPC64leLinker,
@@ -92,19 +89,16 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
         Objects.requireNonNull(options);
         checkLayouts(function);
         function = stripNames(function);
-        FunctionDescriptor unPromotedDesc = function;
-        function = promoteVariadicArgs(function, firstVariadicArgIndex(options)); // the erased version can be shared
         LinkerOptions optionSet = LinkerOptions.forDowncall(function, options);
+        validateVariadicLayouts(function, optionSet);
 
-        MethodHandle mh = DOWNCALL_CACHE.get(new LinkRequest(function, optionSet), linkRequest ->  {
+        return DOWNCALL_CACHE.get(new LinkRequest(function, optionSet), linkRequest ->  {
             FunctionDescriptor fd = linkRequest.descriptor();
             MethodType type = fd.toMethodType();
             MethodHandle handle = arrangeDowncall(type, fd, linkRequest.options());
             handle = SharedUtils.maybeInsertAllocator(fd, handle);
             return handle;
         });
-
-        return unpromoteVariadicArgs(mh, unPromotedDesc, optionSet);
     }
 
     protected abstract MethodHandle arrangeDowncall(MethodType inferredMethodType, FunctionDescriptor function, LinkerOptions options);
@@ -140,6 +134,29 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
 
     /** {@return byte order used by this linker} */
     protected abstract ByteOrder linkerByteOrder();
+
+    // C spec mandates that variadic arguments smaller than int are promoted to int,
+    // and float is promoted to double
+    // See: https://en.cppreference.com/w/c/language/conversion#Default_argument_promotions
+    // We reject the corresponding layouts here, to avoid issues where unsigned values
+    // are sign extended when promoted. (as we don't have a way to unambiguously represent signed-ness atm).
+    private void validateVariadicLayouts(FunctionDescriptor function, LinkerOptions optionSet) {
+        if (optionSet.isVariadicFunction()) {
+            List<MemoryLayout> argumentLayouts = function.argumentLayouts();
+            List<MemoryLayout> variadicLayouts = argumentLayouts.subList(optionSet.firstVariadicArgIndex(), argumentLayouts.size());
+
+            for (MemoryLayout variadicLayout : variadicLayouts) {
+                if (variadicLayout instanceof ValueLayout vl
+                        && (vl.carrier() == boolean.class
+                            || vl.carrier() == byte.class
+                            || vl.carrier() == char.class
+                            || vl.carrier() == short.class
+                            || vl.carrier() == float.class)) {
+                    throw new IllegalArgumentException("Invalid variadic argument layout: " + variadicLayout);
+                }
+            }
+        }
+    }
 
     private void checkLayouts(FunctionDescriptor descriptor) {
         descriptor.returnLayout().ifPresent(this::checkLayout);
@@ -244,91 +261,5 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
         if (vl.order() != linkerByteOrder()) {
             throw new IllegalArgumentException("Layout does not have the right byte order: " + vl);
         }
-    }
-
-    private static int firstVariadicArgIndex(Option[] options) {
-        for (Option option : options) {
-            if (option instanceof LinkerOptions.FirstVariadicArg fva) {
-                return fva.index();
-            }
-        }
-        return -1;
-    }
-
-    // C spec mandates that variadic arguments smaller than int are promoted to int,
-    // and float is promoted to double
-    // See: https://en.cppreference.com/w/c/language/conversion#Default_argument_promotions
-    private static FunctionDescriptor promoteVariadicArgs(FunctionDescriptor function, int firstVariadicArgIndex) {
-        if (firstVariadicArgIndex != -1) {
-            MemoryLayout[] promotedLayouts = function.argumentLayouts().toArray(MemoryLayout[]::new);
-
-            for (int i = firstVariadicArgIndex; i < promotedLayouts.length; i++) {
-                MemoryLayout variadicLayout = promotedLayouts[i];
-
-                if (variadicLayout instanceof ValueLayout vl) {
-                    if (requiresVariadicIntPromotion(vl)) {
-                        promotedLayouts[i] = JAVA_INT;
-                    } else if (requiresVariadicDoublePromotion(vl)) {
-                        promotedLayouts[i] = JAVA_DOUBLE;
-                    }
-                }
-            }
-
-            function = function.returnLayout()
-                    .map(rl -> FunctionDescriptor.of(rl, promotedLayouts))
-                    .orElseGet(() -> FunctionDescriptor.ofVoid(promotedLayouts));
-        }
-
-        return function;
-    }
-
-    private static MethodHandle unpromoteVariadicArgs(MethodHandle mh, FunctionDescriptor unPromotedDesc, LinkerOptions optionSet) {
-        if (optionSet.isVariadicFunction()) {
-            Class<?>[] unpromotedParams = mh.type().parameterArray();
-            List<MemoryLayout> unpromotedLayouts = unPromotedDesc.argumentLayouts();
-            int numPrefixArgs = downcallNumPrefixArgs(unPromotedDesc, optionSet);
-            assert unpromotedLayouts.size() + numPrefixArgs == unpromotedParams.length;
-
-            for (int i = optionSet.firstVariadicArgIndex(); i < unpromotedLayouts.size(); i++) {
-                MemoryLayout variadicLayout = unpromotedLayouts.get(i);
-                if (variadicLayout instanceof ValueLayout vl) {
-                    if (requiresVariadicPromotion(vl)) {
-                        unpromotedParams[numPrefixArgs + i] = vl.carrier();
-                    }
-                }
-            }
-
-            MethodType unpromotedType = MethodType.methodType(mh.type().returnType(), unpromotedParams);
-            mh = mh.asType(unpromotedType);
-        }
-
-        return mh;
-    }
-
-    private static int downcallNumPrefixArgs(FunctionDescriptor descriptor, LinkerOptions options) {
-        int result = 1; // target address
-        if (SharedUtils.returnsGroupLayout(descriptor)) {
-            result++; // SegmentAllocator
-        }
-        if (options.hasCapturedCallState()) {
-            result++;
-        }
-        return result;
-    }
-
-    // For now all of these are the same for every implementation
-    // in the future we might need to make one of them abstract
-    // and implement on a per-linker basis.
-    private static boolean requiresVariadicIntPromotion(ValueLayout vl) {
-        return vl.carrier() == boolean.class || vl.carrier() == byte.class
-                    || vl.carrier() == char.class || vl.carrier() == short.class;
-    }
-
-    private static boolean requiresVariadicDoublePromotion(ValueLayout vl) {
-        return vl.carrier() == float.class;
-    }
-
-    private static boolean requiresVariadicPromotion(ValueLayout vl) {
-        return requiresVariadicIntPromotion(vl) || requiresVariadicDoublePromotion(vl);
     }
 }

@@ -335,12 +335,8 @@ public final class SharedUtils {
         }
     }
 
-    public static boolean returnsGroupLayout(FunctionDescriptor descriptor) {
-        return descriptor.returnLayout().isPresent() && (descriptor.returnLayout().get() instanceof GroupLayout);
-    }
-
     public static MethodHandle maybeInsertAllocator(FunctionDescriptor descriptor, MethodHandle handle) {
-        if (!returnsGroupLayout(descriptor)) {
+        if (descriptor.returnLayout().isEmpty() || !(descriptor.returnLayout().get() instanceof GroupLayout)) {
             // not returning segment, just insert a throwing allocator
             handle = insertArguments(handle, 1, THROWING_ALLOCATOR);
         }

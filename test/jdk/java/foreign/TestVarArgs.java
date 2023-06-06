@@ -34,12 +34,12 @@ import java.lang.foreign.Arena;
 import java.lang.foreign.Linker;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.ValueLayout;
 import java.lang.foreign.MemorySegment;
 
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
-import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -162,9 +162,6 @@ public class TestVarArgs extends CallGeneratorHelper {
         List<Arg> args = new ArrayList<>();
         for (ParamType pType : paramTypes) {
             MemoryLayout layout = pType.layout(fields);
-            // the test value would be automatically promoted to double
-            // so it would not match the value we get back from native.
-            // promote manually here to avoid that issue
             if (layout instanceof ValueLayout.OfFloat) {
                 layout = C_DOUBLE; // promote to double, per C spec
             }
@@ -331,7 +328,8 @@ public class TestVarArgs extends CallGeneratorHelper {
             public static NativeType of(String type) {
                 return NativeType.valueOf(switch (type) {
                     case "int" -> "INT";
-                    case "float", "double" -> "DOUBLE"; // float is promoted
+                    case "float" -> "DOUBLE"; // promote
+                    case "double" -> "DOUBLE";
                     case "void*" -> "POINTER";
                     default -> type.substring("struct ".length());
                 });
