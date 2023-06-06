@@ -23,6 +23,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 #include "jvmti.h"
 #include "agent_common.h"
 #include "JVMTITools.h"
@@ -137,6 +138,7 @@ sys_thread_2(jvmtiEnv* jvmti, JNIEnv* jni, void *p) {
 static void JNICALL
 sys_thread_3(jvmtiEnv* jvmti, JNIEnv* jni, void *p) {
     while (1) {
+      sleep(1);
     }
 }
 
