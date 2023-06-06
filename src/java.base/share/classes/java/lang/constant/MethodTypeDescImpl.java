@@ -54,7 +54,7 @@ final class MethodTypeDescImpl implements MethodTypeDesc {
      * @param returnType a {@link ClassDesc} describing the return type
      * @param validatedArgTypes {@link ClassDesc}s describing the trusted and validated parameter types
      */
-    MethodTypeDescImpl(ClassDesc returnType, ClassDesc[] validatedArgTypes) {
+    private MethodTypeDescImpl(ClassDesc returnType, ClassDesc[] validatedArgTypes) {
         this.returnType = requireNonNull(returnType);
         this.argTypes = requireNonNull(validatedArgTypes);
     }
@@ -91,16 +91,14 @@ final class MethodTypeDescImpl implements MethodTypeDesc {
         requireNonNull(descriptor);
 
         List<String> types = ConstantUtils.parseMethodDescriptor(descriptor);
-        ClassDesc returnType = ClassDesc.ofDescriptor(types.getFirst());
-        MethodTypeDescImpl result;
 
         int paramCount = types.size() - 1;
         var paramTypes = paramCount > 0 ? new ClassDesc[paramCount] : ConstantUtils.EMPTY_CLASSDESC;
         for (int i = 0; i < paramCount; i++) {
             paramTypes[i] = ClassDesc.ofDescriptor(types.get(i + 1));
         }
-        result = ofTrusted(returnType, paramTypes);
 
+        MethodTypeDescImpl result = ofTrusted(ClassDesc.ofDescriptor(types.getFirst()), paramTypes);
         result.cachedDescriptorString = descriptor;
         return result;
     }

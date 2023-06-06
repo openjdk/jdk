@@ -64,7 +64,7 @@ public sealed interface MethodTypeDesc
      * @since 21
      */
     static MethodTypeDesc of(ClassDesc returnDesc) {
-        return new MethodTypeDescImpl(returnDesc, ConstantUtils.EMPTY_CLASSDESC);
+        return MethodTypeDescImpl.ofTrusted(returnDesc, ConstantUtils.EMPTY_CLASSDESC);
     }
 
     /**
