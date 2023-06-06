@@ -2329,7 +2329,7 @@ void Compile::Optimize() {
         print_method(PHASE_ITER_GVN_AFTER_ELIMINATION, 2);
       }
 
-      NOT_PRODUCT(ConnectionGraph::verify_ram_nodes(this, root());)
+      ConnectionGraph::verify_ram_nodes(this, root());
       if (failing())  return;
 
       progress = do_iterative_escape_analysis() &&

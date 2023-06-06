@@ -268,16 +268,15 @@ void ScopeDesc::print_on(outputStream* st, PcDesc* pd) const {
   if (NOT_JVMCI(DoEscapeAnalysis &&) is_top() && _objects != nullptr) {
     st->print_cr("   Objects");
     for (int i = 0; i < _objects->length(); i++) {
-      ScopeValue* sv = (ScopeValue*) _objects->at(i);
-      st->print("    - %d: ", i);
-      if (sv->is_object_merge()) {
-        sv->as_ObjectMergeValue()->print_detailed(st);
-        st->cr();
-      } else if (sv->is_object()) {
-        sv->as_ObjectValue()->print_on(st);
-      } else {
-        st->print_cr("Unknown Object Type in Object Pool");
+      ObjectValue* sv = (ObjectValue*) _objects->at(i);
+      st->print("    - %d: %c ", i, sv->is_root() ? 'R' : ' ');
+      sv->print_on(st);
+      st->print(", ");
+      if (!sv->is_object_merge()) {
+        st->print("%s", java_lang_Class::as_Klass(sv->klass()->as_ConstantOopReadValue()->value()())->external_name());
       }
+      sv->print_fields_on(st);
+      st->cr();
     }
   }
 #endif // COMPILER2_OR_JVMCI

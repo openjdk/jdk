@@ -238,10 +238,6 @@ public:
   // Serialization of debugging information
   void read_object(DebugInfoReadStream* stream);
   void write_on(DebugInfoWriteStream* stream);
-
-  // Printing
-  void print_on(outputStream* st) const ;
-  void print_detailed(outputStream* st) const;
 };
 
 class AutoBoxObjectValue : public ObjectValue {

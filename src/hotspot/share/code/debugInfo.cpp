@@ -195,23 +195,39 @@ void ObjectValue::write_on(DebugInfoWriteStream* stream) {
 }
 
 void ObjectValue::print_on(outputStream* st) const {
-  st->print("%s: ID=%d, is_root=%d, N.Fields=%d",
-            is_auto_box() ? "box_obj" : "obj", _id,
-            _is_root, _field_values.length());
-  st->print_cr(", klass: %s ", java_lang_Class::as_Klass(_klass->as_ConstantOopReadValue()->value()())->external_name());
-  st->print("Fields: ");
-  print_fields_on(st);
-  st->cr();
+  st->print("%s[%d]", is_auto_box() ? "box_obj" : is_object_merge() ? "merge_obj" : "obj", _id);
 }
 
 void ObjectValue::print_fields_on(outputStream* st) const {
 #ifndef PRODUCT
-  if (_field_values.length() > 0) {
-    _field_values.at(0)->print_on(st);
-  }
-  for (int i = 1; i < _field_values.length(); i++) {
-    st->print(", ");
-    _field_values.at(i)->print_on(st);
+  if (is_object_merge()) {
+    ObjectMergeValue* omv = (ObjectMergeValue*)this;
+    st->print("selector=\"");
+    omv->selector()->print_on(st);
+    st->print("\"");
+    ScopeValue* merge_pointer = omv->merge_pointer();
+    if (!(merge_pointer->is_object() && merge_pointer->as_ObjectValue()->value()() == nullptr) &&
+        !(merge_pointer->is_constant_oop() && merge_pointer->as_ConstantOopReadValue()->value()() == nullptr)) {
+      st->print(", merge_pointer=\"");
+      merge_pointer->print_on(st);
+      st->print("\"");
+    }
+    GrowableArray<ScopeValue*>* possible_objects = omv->possible_objects();
+    st->print(", candidate_objs=[%d", possible_objects->at(0)->as_ObjectValue()->id());
+    int ncandidates = possible_objects->length();
+    for (int i = 1; i < ncandidates; i++) {
+      st->print(", %d", possible_objects->at(i)->as_ObjectValue()->id());
+    }
+    st->print("]");
+  } else {
+    st->print("\n        Fields: ");
+    if (_field_values.length() > 0) {
+      _field_values.at(0)->print_on(st);
+    }
+    for (int i = 1; i < _field_values.length(); i++) {
+      st->print(", ");
+      _field_values.at(i)->print_on(st);
+    }
   }
 #endif
 }
@@ -245,20 +261,7 @@ ObjectValue* ObjectMergeValue::select(frame& fr, RegisterMap& reg_map) {
   } else {
     assert(selector < _possible_objects.length(), "sanity");
     _selected = (ObjectValue*) _possible_objects.at(selector);
-
-    // Set it to true so that the object will get rematerialized
-    if (!_selected->is_root()) {
-      _selected->set_root(true);
-
-      // We can't assume that 'select(...)' will be called before we check if
-      // the candidate needs to be rematerialized or not. Therefore, we need to
-      // return the candidate, now set to 'not only merge candidate', and try to
-      // rematerialize it.
-      return _selected;
-    } else {
-      // Since the object was not only a candidate it will already be rematerialized on its own.
-      return nullptr;
-    }
+    return _selected;
   }
 }
 
@@ -290,28 +293,6 @@ void ObjectMergeValue::write_on(DebugInfoWriteStream* stream) {
       _possible_objects.at(i)->as_ObjectValue()->write_on(stream);
     }
   }
-}
-
-void ObjectMergeValue::print_on(outputStream* st) const {
-  st->print("merge: ID=%d", _id);
-}
-
-void ObjectMergeValue::print_detailed(outputStream* st) const {
-  st->print("merge: ID=%d", _id);
-#ifndef PRODUCT
-  st->print(", selector=\"");
-    _selector->print_on(st);
-    st->print("\"");
-  st->print(", merge_pointer=\"");
-    _merge_pointer->print_on(st);
-    st->print("\"");
-#endif
-  st->print(", candidate objs=[%d", _possible_objects.at(0)->as_ObjectValue()->id());
-  int ncandidates = _possible_objects.length();
-  for (int i = 1; i < ncandidates; i++) {
-    st->print(", %d", _possible_objects.at(i)->as_ObjectValue()->id());
-  }
-  st->print("]");
 }
 
 // ConstantIntValue
