@@ -85,6 +85,9 @@ class InterpreterCodelet: public Stub {
   }
   void use_remarks(AsmRemarks &remarks) { _asm_remarks.share(remarks); }
   void use_strings(DbgStrings &strings) { _dbg_strings.share(strings); }
+
+  void clear_remarks() { _asm_remarks.clear(); }
+  void clear_strings() { _dbg_strings.clear(); }
 #endif
 };
 

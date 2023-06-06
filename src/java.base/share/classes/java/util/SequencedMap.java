@@ -25,6 +25,8 @@
 
 package java.util;
 
+import jdk.internal.util.NullableKeyValueHolder;
+
 /**
  * A Map that has a well-defined encounter order, that supports operations at both ends, and
  * that is reversible. The <a href="SequencedCollection.html#encounter">encounter order</a>
@@ -148,7 +150,7 @@ public interface SequencedMap<K, V> extends Map<K, V> {
      */
     default Map.Entry<K,V> firstEntry() {
         var it = entrySet().iterator();
-        return it.hasNext() ? Map.Entry.copyOf(it.next()) : null;
+        return it.hasNext() ? new NullableKeyValueHolder<>(it.next()) : null;
     }
 
     /**
@@ -165,7 +167,7 @@ public interface SequencedMap<K, V> extends Map<K, V> {
      */
     default Map.Entry<K,V> lastEntry() {
         var it = reversed().entrySet().iterator();
-        return it.hasNext() ? Map.Entry.copyOf(it.next()) : null;
+        return it.hasNext() ? new NullableKeyValueHolder<>(it.next()) : null;
     }
 
     /**
@@ -185,7 +187,7 @@ public interface SequencedMap<K, V> extends Map<K, V> {
     default Map.Entry<K,V> pollFirstEntry() {
         var it = entrySet().iterator();
         if (it.hasNext()) {
-            var entry = Map.Entry.copyOf(it.next());
+            var entry = new NullableKeyValueHolder<>(it.next());
             it.remove();
             return entry;
         } else {
@@ -210,7 +212,7 @@ public interface SequencedMap<K, V> extends Map<K, V> {
     default Map.Entry<K,V> pollLastEntry() {
         var it = reversed().entrySet().iterator();
         if (it.hasNext()) {
-            var entry = Map.Entry.copyOf(it.next());
+            var entry = new NullableKeyValueHolder<>(it.next());
             it.remove();
             return entry;
         } else {

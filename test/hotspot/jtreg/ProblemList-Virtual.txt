@@ -93,16 +93,6 @@ vmTestbase/nsk/jdb/repeat/repeat001/repeat001.java  8300707 generic-all
 
 vmTestbase/nsk/jdi/ExceptionEvent/catchLocation/location002/TestDescription.java 8278470 generic-all
 
-####
-## JVMTI ForceEarlyReturn not supported for vthreads (JVMTI_ERROR_OPAQUE_FRAME)
-## Note forceEarlyReturn002 was converted to support vthreads. The rest were not
-## since there is no added value (JVMTI_ERROR_OPAQUE_FRAME is expected).
-
-vmTestbase/nsk/jdi/ThreadReference/forceEarlyReturn/forceEarlyReturn002/forceEarlyReturn002.java
-vmTestbase/nsk/jdi/ThreadReference/forceEarlyReturn/forceEarlyReturn014/forceEarlyReturn014.java 8285415 generic-all
-vmTestbase/nsk/jdi/stress/serial/forceEarlyReturn001/TestDescription.java 8285415 generic-all
-vmTestbase/nsk/jdi/stress/serial/forceEarlyReturn002/TestDescription.java 8285415 generic-all
-
 ###
 # This test always times out on windows. This is due to the test forcing OOME in the
 # debuggee, which has the side affect of making the Read-Poller thread exit. Because

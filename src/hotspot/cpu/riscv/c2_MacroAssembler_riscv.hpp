@@ -134,7 +134,7 @@
 
   void unspill(VectorRegister v, int offset) {
     add(t0, sp, offset);
-    vl1re8_v(v, t0);
+    vl1r_v(v, t0);
   }
 
   void spill_copy_vector_stack_to_stack(int src_offset, int dst_offset, int vector_length_in_bytes) {
@@ -175,7 +175,7 @@
 
  void encode_iso_array_v(Register src, Register dst,
                          Register len, Register result,
-                         Register tmp);
+                         Register tmp, bool ascii);
 
  void count_positives_v(Register ary, Register len,
                         Register result, Register tmp);
