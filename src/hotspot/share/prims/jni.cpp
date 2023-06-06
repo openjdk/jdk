@@ -3628,18 +3628,14 @@ static jint JNI_CreateJavaVM_inner(JavaVM **vm, void **penv, void *args) {
     // to continue.
     if (Universe::is_fully_initialized()) {
       // otherwise no pending exception possible - VM will already have aborted
-      JavaThread* THREAD = JavaThread::current(); // For exception macros.
-      if (HAS_PENDING_EXCEPTION) {
+      Thread* current = Thread::current_or_null();
+      if (current != nullptr) {
+        JavaThread* THREAD = JavaThread::cast(current); // For exception macros.
+        assert(HAS_PENDING_EXCEPTION, "must be - else no current thread exists");
         HandleMark hm(THREAD);
         vm_exit_during_initialization(Handle(THREAD, PENDING_EXCEPTION));
       }
-      // Unclear if we can actually reach here as all error returns should have
-      // set an exception pending. But it is okay to fall-through to the general
-      // termination code below.
     }
-    // else - we can get here if init_globals encountered an error for which
-    //        an exception could not be generated. There is nothing special
-    //        we need to do here as can_try_again will be false.
 
     if (can_try_again) {
       // reset safe_to_recreate_vm to 1 so that retrial would be possible
