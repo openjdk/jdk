@@ -758,11 +758,13 @@ JvmtiEnvBase::get_thread_state_base(oop thread_oop, JavaThread* jt) {
 
 jint
 JvmtiEnvBase::get_thread_state(oop thread_oop, JavaThread* jt) {
-  jint state = get_thread_state_base(thread_oop, jt);
+  jint state;
 
   if (is_passive_carrier_thread(jt, thread_oop)) {
     state = JVMTI_THREAD_STATE_ALIVE | JVMTI_THREAD_STATE_WAITING |
             JVMTI_THREAD_STATE_WAITING_INDEFINITELY;
+  } else {
+    state = get_thread_state_base(thread_oop, jt);
   }
   return state;
 }
