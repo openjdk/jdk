@@ -157,11 +157,8 @@ abstract class DSA extends SignatureSpi {
         if (!"NullDigest20".equals(md.getAlgorithm())) {
             checkKey(params, md.getDigestLength()*8, md.getAlgorithm());
         }
-
-        // reset signing random
+        
         this.signingRandom = null;
-        this.signingRandom = getSigningRandom();
-
         this.params = params;
         this.presetX = priv.getX();
         this.presetY = null;

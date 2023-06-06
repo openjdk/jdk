@@ -32,8 +32,9 @@ import java.security.KeyPairGenerator;
 import java.security.PrivateKey;
 import java.security.SecureRandom;
 import java.security.Signature;
-import java.util.HexFormat;
+import java.util.Arrays;
 import java.util.Random;
+
 
 public class SecureRandomReset {
 
@@ -44,13 +45,13 @@ public class SecureRandomReset {
 
         //Initialize deterministic RNG and sign
         s.initSign(sk, deterministic());
-        String sig1 = HexFormat.of().formatHex(s.sign());
+        byte[] sig1 = s.sign();
 
         //Re-initialize deterministic RNG and sign
         s.initSign(sk, deterministic());
-        String sig2 = HexFormat.of().formatHex(s.sign());
+        byte[] sig2 = s.sign();
 
-        if (!sig1.equals(sig2)) {
+        if (!Arrays.equals(sig1,sig2)) {
             System.out.println("Expected equal signatures");
             throw new RuntimeException("initSign not properly resetting RNG");
         }
