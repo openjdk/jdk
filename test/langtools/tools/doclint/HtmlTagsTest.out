@@ -19,16 +19,16 @@ HtmlTagsTest.java:34: error: block element not allowed within inline element <sp
 HtmlTagsTest.java:34: warning: empty <p> tag
      * <span> <p> </span>
               ^
-HtmlTagsTest.java:35: warning: block element not allowed within element <a> with default style: p
+HtmlTagsTest.java:35: warning: block element <p> not allowed within element <a> with default style
      * <a> <p> </a>
            ^
 HtmlTagsTest.java:35: warning: empty <p> tag
      * <a> <p> </a>
            ^
-HtmlTagsTest.java:40: warning: block element not allowed within @link with default style: p
+HtmlTagsTest.java:40: warning: block element <p> not allowed within @link with default style
      * {@link java.lang.String <p> }
                                ^
-HtmlTagsTest.java:41: warning: block element not allowed within @link with default style: p
+HtmlTagsTest.java:41: warning: block element <p> not allowed within @link with default style
      * {@link java.lang.String <p> }
                                ^
 HtmlTagsTest.java:46: error: invalid end tag: </img>
