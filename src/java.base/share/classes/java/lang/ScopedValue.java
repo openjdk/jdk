@@ -88,7 +88,7 @@ import sun.security.action.GetPropertyAction;
  * #getWhere(ScopedValue, Object, Supplier) getWhere} can be used to invoke a method that
  * returns a result.
  * In addition, {@code ScopedValue} defines the {@link #where(ScopedValue, Object)} method
- * for cases where multiple mappings of ({@code ScopedValue} to value) are accumulated
+ * for cases where multiple mappings (of {@code ScopedValue} to value) are accumulated
  * in advance of calling a method with all {@code ScopedValue}s bound to their value.
  *
  * <h2>Bindings are per-thread</h2>
