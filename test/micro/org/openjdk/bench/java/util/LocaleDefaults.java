@@ -60,5 +60,10 @@ public class LocaleDefaults {
     public Locale getDefaultFormat() {
         return Locale.getDefault(Locale.Category.FORMAT);
     }
+
+    @Benchmark
+    public Locale forLanguageTag() {
+        return Locale.forLanguageTag("en-US-x-lvariant-POSIX");
+    }
 }
 

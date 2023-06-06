@@ -60,7 +60,7 @@ public abstract class LocaleObjectCache<K, V> {
             V newVal = createObject(key);
             if (newVal == null) {
                 // subclass must return non-null key/value object
-                return null;
+                throw new NullPointerException();
             }
 
             CacheEntry<K, V> newEntry = new CacheEntry<>(key, newVal, queue);
