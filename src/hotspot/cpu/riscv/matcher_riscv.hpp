@@ -159,7 +159,7 @@
   }
 
   // Implements a variant of EncodeISOArrayNode that encode ASCII only
-  static const bool supports_encode_ascii_array = false;
+  static const bool supports_encode_ascii_array = true;
 
   // Some architecture needs a helper to check for alltrue vector
   static constexpr bool vectortest_needs_second_argument(bool is_alltrue, bool is_predicate) {
