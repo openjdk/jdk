@@ -1780,12 +1780,13 @@ JvmtiEnv::GetAllStackTraces(jint max_frame_count, jvmtiStackInfo** stack_info_pt
 jvmtiError
 JvmtiEnv::GetThreadListStackTraces(jint thread_count, const jthread* thread_list, jint max_frame_count, jvmtiStackInfo** stack_info_ptr) {
   jvmtiError err = JVMTI_ERROR_NONE;
+  JvmtiVTMSTransitionDisabler disabler;
 
   if (thread_count == 1) {
-    JvmtiVTMSTransitionDisabler disabler;
 
     // Use direct handshake if we need to get only one stack trace.
     JavaThread *current_thread = JavaThread::current();
+    HandleMark hm(current_thread);
     ThreadsListHandle tlh(current_thread);
 
     jthread thread = thread_list[0];
@@ -1806,7 +1807,7 @@ JvmtiEnv::GetThreadListStackTraces(jint thread_count, const jthread* thread_list
       return collector.result();
     }
 
-    GetSingleStackTraceClosure op(this, current_thread, thread, max_frame_count);
+    GetSingleStackTraceClosure op(this, current_thread, Handle(current_thread, thread_obj), thread, max_frame_count);
     Handshake::execute(&op, &tlh, java_thread);
     err = op.result();
     if (err == JVMTI_ERROR_NONE) {

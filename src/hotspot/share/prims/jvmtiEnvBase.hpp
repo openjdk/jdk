@@ -214,6 +214,8 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
     return result;
   }
 
+  static jvmtiError get_threadOop_and_JavaThread(ThreadsList* t_list, jthread thread, JavaThread* cur_thread,
+                                                 JavaThread** jt_pp, oop* thread_oop_p);
   static jvmtiError get_threadOop_and_JavaThread(ThreadsList* t_list, jthread thread,
                                                  JavaThread** jt_pp, oop* thread_oop_p);
 
@@ -733,14 +735,16 @@ public:
 class GetSingleStackTraceClosure : public HandshakeClosure {
 private:
   JavaThread *_calling_thread;
+  Handle _thr_oop_h;
   jthread _jthread;
   MultipleStackTracesCollector _collector;
 
 public:
   GetSingleStackTraceClosure(JvmtiEnv *env, JavaThread *calling_thread,
-                             jthread thread, jint max_frame_count)
+                             Handle thr_oop_h, jthread thread, jint max_frame_count)
     : HandshakeClosure("GetSingleStackTrace"),
       _calling_thread(calling_thread),
+      _thr_oop_h(thr_oop_h),
       _jthread(thread),
       _collector(env, max_frame_count) {
   }
