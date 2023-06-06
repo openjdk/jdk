@@ -666,7 +666,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
          * Generate bytecode for moduleDescriptors method
          */
         private void genModuleDescriptorsMethod(ClassBuilder clb) {
-            if (moduleInfos.size() <= 10) {
+            if (moduleInfos.size() <= 71) {
                 clb.withMethodBody(
                         "moduleDescriptors",
                         MethodTypeDesc.of(CD_MODULE_DESCRIPTOR.arrayType()),
