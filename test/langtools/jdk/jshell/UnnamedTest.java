@@ -54,5 +54,4 @@ public class UnnamedTest extends KullaTesting {
     public void setUp(Consumer<JShell.Builder> bc) {
         super.setUp(bc.andThen(b -> b.compilerOptions("--enable-preview", "--source", System.getProperty("java.specification.version"))));
     }
-    
 }
