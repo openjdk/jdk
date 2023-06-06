@@ -51,8 +51,9 @@ class TestTask implements Runnable {
         }
     }
 
-    public void ensureReady() {
-        while (!threadReady) {
+    public void ensureReady(Thread vt, Thread.State expState) {
+        // wait while the thread is not ready or thread state is unexpected
+        while (!threadReady || (vt.getState() != expState)) {
             sleep(1);
         }
     }
@@ -100,23 +101,23 @@ public class ThreadListStackTracesTest {
     }
 
     private static void checkReentrantLock() throws InterruptedException {
+        final Thread.State expState = Thread.State.WAITING;
         reentrantLock.lock();
         String name = "ObjectMonitorTestTask";
         TestTask task = new ReentrantLockTestTask();
         Thread vt = Thread.ofVirtual().name(name).start(task);
-        task.ensureReady();
-        TestTask.sleep(10);
-        checkStates(vt, Thread.State.WAITING);
+        task.ensureReady(vt, expState);
+        checkStates(vt, expState);
     }
 
     private static void checkSynchronized() throws InterruptedException {
+        final Thread.State expState = Thread.State.BLOCKED;
         synchronized (objectMonitor) {
             String name = "ObjectMonitorTestTask";
             TestTask task = new ObjectMonitorTestTask();
             Thread vt = Thread.ofVirtual().name(name).start(task);
-            task.ensureReady();
-            TestTask.sleep(10);
-            checkStates(vt, Thread.State.BLOCKED);
+            task.ensureReady(vt, expState);
+            checkStates(vt, expState);
         }
     }
 

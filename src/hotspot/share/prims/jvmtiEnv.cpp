@@ -1786,7 +1786,6 @@ JvmtiEnv::GetThreadListStackTraces(jint thread_count, const jthread* thread_list
 
     // Use direct handshake if we need to get only one stack trace.
     JavaThread *current_thread = JavaThread::current();
-    HandleMark hm(current_thread);
     ThreadsListHandle tlh(current_thread);
 
     jthread thread = thread_list[0];
@@ -1807,7 +1806,7 @@ JvmtiEnv::GetThreadListStackTraces(jint thread_count, const jthread* thread_list
       return collector.result();
     }
 
-    GetSingleStackTraceClosure op(this, current_thread, Handle(current_thread, thread_obj), thread, max_frame_count);
+    GetSingleStackTraceClosure op(this, current_thread, thread, max_frame_count);
     Handshake::execute(&op, &tlh, java_thread);
     err = op.result();
     if (err == JVMTI_ERROR_NONE) {
