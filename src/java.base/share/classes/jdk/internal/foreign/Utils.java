@@ -269,4 +269,8 @@ public final class Utils {
             throw new IllegalArgumentException("Layout size exceeds Long.MAX_VALUE");
         }
     }
+
+    public static boolean containsNullChars(String s) {
+        return s.indexOf('\u0000') >= 0;
+    }
 }

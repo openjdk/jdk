@@ -58,7 +58,6 @@ G1DirtyCardQueue::G1DirtyCardQueue(G1DirtyCardQueueSet* qset) :
 { }
 
 G1DirtyCardQueue::~G1DirtyCardQueue() {
-  G1BarrierSet::dirty_card_queue_set().flush_queue(*this);
   delete _refinement_stats;
 }
 

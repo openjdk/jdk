@@ -1182,7 +1182,7 @@ void SystemDictionary::load_shared_class_misc(InstanceKlass* ik, ClassLoaderData
   // For boot loader, ensure that GetSystemPackage knows that a class in this
   // package was loaded.
   if (loader_data->is_the_null_class_loader_data()) {
-    int path_index = ik->shared_classpath_index();
+    s2 path_index = ik->shared_classpath_index();
     ik->set_classpath_index(path_index);
   }
 

@@ -56,7 +56,6 @@ import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.nio.ByteOrder;
-import java.nio.file.Path;
 import java.security.ProtectionDomain;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -2252,7 +2251,7 @@ public class MethodHandles {
         }
 
         private static final ClassFileDumper DEFAULT_DUMPER = ClassFileDumper.getInstance(
-                "jdk.invoke.MethodHandle.dumpClassFiles", Path.of("DUMP_CLASS_FILES"));
+                "jdk.invoke.MethodHandle.dumpClassFiles", "DUMP_CLASS_FILES");
 
         static class ClassFile {
             final String name;  // internal name
@@ -3929,6 +3928,14 @@ return mh1;
             throw m.makeAccessException(message, this);
         }
 
+        private boolean isArrayClone(byte refKind, Class<?> refc, MemberName m) {
+            return Modifier.isProtected(m.getModifiers()) &&
+                    refKind == REF_invokeVirtual &&
+                    m.getDeclaringClass() == Object.class &&
+                    m.getName().equals("clone") &&
+                    refc.isArray();
+        }
+
         /** Check public/protected/private bits on the symbolic reference class and its member. */
         void checkAccess(byte refKind, Class<?> refc, MemberName m) throws IllegalAccessException {
             assert(m.referenceKindIsConsistentWith(refKind) &&
@@ -3937,11 +3944,7 @@ return mh1;
             int allowedModes = this.allowedModes;
             if (allowedModes == TRUSTED)  return;
             int mods = m.getModifiers();
-            if (Modifier.isProtected(mods) &&
-                    refKind == REF_invokeVirtual &&
-                    m.getDeclaringClass() == Object.class &&
-                    m.getName().equals("clone") &&
-                    refc.isArray()) {
+            if (isArrayClone(refKind, refc, m)) {
                 // The JVM does this hack also.
                 // (See ClassVerifier::verify_invoke_instructions
                 // and LinkResolver::check_method_accessability.)
@@ -4101,7 +4104,12 @@ return mh1;
             MethodHandle mh = dmh;
             // Optionally narrow the receiver argument to lookupClass using restrictReceiver.
             if ((doRestrict && refKind == REF_invokeSpecial) ||
-                    (MethodHandleNatives.refKindHasReceiver(refKind) && restrictProtectedReceiver(method))) {
+                    (MethodHandleNatives.refKindHasReceiver(refKind) &&
+                            restrictProtectedReceiver(method) &&
+                            // All arrays simply inherit the protected Object.clone method.
+                            // The leading argument is already restricted to the requested
+                            // array type (not the lookup class).
+                            !isArrayClone(refKind, refc, method))) {
                 mh = restrictReceiver(method, dmh, lookupClass());
             }
             mh = maybeBindCaller(method, mh, boundCaller);

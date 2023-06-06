@@ -129,9 +129,9 @@ MetaspaceArena::MetaspaceArena(ChunkManager* chunk_manager, const ArenaGrowthPol
 
 MetaspaceArena::~MetaspaceArena() {
 #ifdef ASSERT
-  verify();
+  SOMETIMES(verify();)
   if (Settings::use_allocation_guard()) {
-    verify_allocation_guards();
+    SOMETIMES(verify_allocation_guards();)
   }
 #endif
 
@@ -156,7 +156,7 @@ MetaspaceArena::~MetaspaceArena() {
       return_counter.count(), return_counter.total_size());
 
   _total_used_words_counter->decrement_by(return_counter.total_size());
-  DEBUG_ONLY(chunk_manager()->verify();)
+  SOMETIMES(chunk_manager()->verify();)
   delete _fbl;
   UL(debug, ": dies.");
 
@@ -343,7 +343,7 @@ MetaWord* MetaspaceArena::allocate_inner(size_t requested_word_size) {
   SOMETIMES(verify_locked();)
 
   if (p == nullptr) {
-    UL(info, "allocation failed, returned nullptr.");
+    UL(info, "allocation failed, returned null.");
   } else {
     UL2(trace, "after allocation: %u chunk(s), current:" METACHUNK_FULL_FORMAT,
         _chunks.count(), METACHUNK_FULL_FORMAT_ARGS(current_chunk()));
@@ -368,7 +368,7 @@ void MetaspaceArena::deallocate_locked(MetaWord* p, size_t word_size) {
   size_t raw_word_size = get_raw_word_size_for_requested_word_size(word_size);
   add_allocation_to_fbl(p, raw_word_size);
 
-  DEBUG_ONLY(verify_locked();)
+  SOMETIMES(verify_locked();)
 }
 
 // Prematurely returns a metaspace allocation to the _block_freelists because it is not
