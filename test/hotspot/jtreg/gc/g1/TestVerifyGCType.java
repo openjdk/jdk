@@ -161,7 +161,7 @@ public class TestVerifyGCType {
                                        "-XX:+UnlockDiagnosticVMOptions",
                                        "-XX:+UseG1GC",
                                        "-XX:+WhiteBoxAPI",
-                                       "-Xlog:gc,gc+start,gc+verify=info,gc+phases=debug,gc+heap=debug",
+                                       "-Xlog:gc,gc+start,gc+verify=info",
                                        "-Xms16m",
                                        "-Xmx16m",
                                        "-XX:ParallelGCThreads=1",
