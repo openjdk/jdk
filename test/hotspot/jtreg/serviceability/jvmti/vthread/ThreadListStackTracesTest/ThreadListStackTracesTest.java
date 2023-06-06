@@ -26,19 +26,17 @@
  * @bug 8295976
  * @summary GetThreadListStackTraces returns wrong state for blocked VirtualThread
  * @requires vm.continuations
- * @modules java.base/java.lang:+open
  * @run main/othervm/native -agentlib:ThreadListStackTracesTest ThreadListStackTracesTest
  */
 
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.concurrent.*;
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.List;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
-class TestTask implements Runnable {
+abstract class TestTask implements Runnable {
     volatile boolean threadReady = false;
 
     static void log(String msg) { System.out.println(msg); }
