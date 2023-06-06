@@ -284,7 +284,7 @@ public enum ClassFileFormatVersion {
     RELEASE_21(65),
 
     /**
-     * The version recognized by the Java Platform, Standard Edition
+     * The version introduced by the Java Platform, Standard Edition
      * 22.
      *
      * @since 22
