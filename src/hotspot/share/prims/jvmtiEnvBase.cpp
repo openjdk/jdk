@@ -1954,6 +1954,7 @@ VM_GetThreadListStackTraces::doit() {
         _collector.set_result(err);
         return;
       }
+      // We have a valid thread_oop.
     }
     _collector.fill_frames(jt, java_thread, thread_oop);
   }
