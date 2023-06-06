@@ -371,22 +371,35 @@ import java.util.stream.Stream;
  * <li>With an empty formal parameter list, called a prototype-less function, such as: {@code void foo();}</li>
  * </ol>
  * The arguments passed in place of the ellipsis, or the arguments passed to a prototype-less function are called
- * <em>variadic arguments</em>.
+ * <em>variadic arguments</em>. Variadic functions are, essentially, templates that can be <em>specialized</em> into multiple
+ * non-variadic functions by replacing the {@code ...} or empty formal parameter list with a list of <em>variadic parameters</em>
+ * of a fixed number and type.
  * <p>
- * The native linker does not support linking variadic functions in a way where it is possible to pass an arbitrary set
- * of variadic arguments to the resulting method handle, since the linker needs to know the memory layouts of all the arguments
- * up front in order to complete the linking process. However, it is still possible to link a variadic function by using
- * a <em>specialized</em> function descriptor. A specialized function descriptor describes a variadic function with a fixed
- * number and type(s) of variadic arguments. The index of the first variadic argument in the argument list should be indicated
- * using the {@link Linker.Option#firstVariadicArg(int)} linker option. The corresponding argument layout, and all following
- * argument layouts in the specialized function descriptor, are called <em>variadic argument layouts</em>. For a
- * prototype-less function, the index passed to {@link Linker.Option#firstVariadicArg(int)} should always be {@code 0}.
+ * It should be noted that values passed as variadic arguments undergo default argument promotion in C. For instance, the
+ * following argument promotions are applied:
+ * <ul>
+ * <li>{@code _Bool} -> {@code unsigned int}</li>
+ * <li>{@code [signed] char} -> {@code [signed] int}</li>
+ * <li>{@code [signed] short} -> {@code [signed] int}</li>
+ * <li>{@code float} -> {@code double}</li>
+ * </ul>
+ * whereby the signed-ness of the source type corresponds to the signed-ness of the promoted type. The complete process
+ * of default argument promotion is described in the C specification. In effect these promotions place limits on the
+ * specialized form of a variadic function, as the variadic parameters of the specialized form will always have a promoted
+ * type.
  * <p>
- * It should be noted that values passed as variadic arguments undergo default argument promotion in C. Each value of
- * type {@code float} is converted to {@code double}, and each integral type smaller than {@code int} is converted to
- * {@code int}. As such, the native linker will reject attempts to link function descriptors with certain variadic argument
- * layouts. Namely, {@linkplain ValueLayout value layouts} that have a carrier type of {@code boolean}, {@code byte},
- * {@code char}, {@code short}, or {@code float}, are not allowed to be used as variadic argument layouts.
+ * The native linker only supports linking the specialized form of a variadic function. A variadic function in its specialized
+ * form can be linked using a function descriptor describing the specialized form. Additionally, the
+ * {@link Linker.Option#firstVariadicArg(int)} linker option must be provided to indicate the first variadic parameter in
+ * the parameter list. The corresponding argument layout, and all following argument layouts in the specialized function
+ * descriptor, are called <em>variadic argument layouts</em>. For a prototype-less function, the index passed to
+ * {@link Linker.Option#firstVariadicArg(int)} should always be {@code 0}.
+ * <p>
+ * The native linker will reject an attempt to link a specialized function descriptor with any variadic argument layouts
+ * corresponding to a C type that would be subject to default argument promotion (as described above). Exactly which layouts
+ * will be rejected is platform specific, but as an example: on Linux/x64 the layouts {@link ValueLayout#JAVA_BOOLEAN},
+ * {@link ValueLayout#JAVA_BYTE}, {@link ValueLayout#JAVA_CHAR}, {@link ValueLayout#JAVA_SHORT}, and
+ * {@link ValueLayout#JAVA_FLOAT} will be rejected.
  * <p>
  * A well-known variadic function is the {@code printf} function, defined in the C standard library:
  *
