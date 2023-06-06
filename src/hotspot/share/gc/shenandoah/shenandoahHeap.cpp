@@ -1029,7 +1029,6 @@ void ShenandoahHeap::print_heap_regions_on(outputStream* st) const {
   st->print_cr("T=TLAB allocs, G=GCLAB allocs");
   st->print_cr("S=shared allocs, L=live data");
   st->print_cr("CP=critical pins");
-  //st->print_cr("SN=alloc sequence number");
 
   for (size_t i = 0; i < num_regions(); i++) {
     get_region(i)->print_on(st);
