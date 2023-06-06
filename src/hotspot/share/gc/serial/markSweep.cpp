@@ -201,11 +201,7 @@ void MarkSweep::adjust_marks() {
   }
 
   // deal with the overflow stack
-  StackIterator<OopAndMarkWord, mtGC> iter(_preserved_overflow_stack_set.get()->get_stack());
-  while (!iter.is_empty()) {
-    OopAndMarkWord* p = iter.next_addr();
-    MarkSweep::adjust_pointer(p->get_oop_pointer());
-  }
+  _preserved_overflow_stack_set.get()->adjust_during_full_gc();
 }
 
 void MarkSweep::restore_marks() {

@@ -57,7 +57,6 @@ private:
   inline bool should_preserve_mark(oop obj, markWord m) const;
 
 public:
-  OopAndMarkWordStack& get_stack() { return _stack; }
   size_t size() const { return _stack.size(); }
   inline void push_if_necessary(oop obj, markWord m);
   inline void push_always(oop obj, markWord m);
