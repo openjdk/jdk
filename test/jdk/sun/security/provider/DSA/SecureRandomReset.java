@@ -43,11 +43,11 @@ public class SecureRandomReset {
         PrivateKey sk = g.generateKeyPair().getPrivate();
         Signature s = Signature.getInstance("SHA256withDSA");
 
-        //Initialize deterministic RNG and sign
+        // Initialize deterministic RNG and sign
         s.initSign(sk, deterministic());
         byte[] sig1 = s.sign();
 
-        //Re-initialize deterministic RNG and sign
+        // Re-initialize deterministic RNG and sign
         s.initSign(sk, deterministic());
         byte[] sig2 = s.sign();
 
