@@ -163,7 +163,7 @@ public final class ThemeReader {
             and pass it to paintBackground */
             Dimension d = getPartSize(getTheme(widget, dpi), part, state);
             paintBackground(buffer, getTheme(widget, dpi), part, state,
-                            d.width, d.height , w, h, stride);
+                            d.width, d.height, w, h, stride);
         } finally {
             readLock.unlock();
         }
