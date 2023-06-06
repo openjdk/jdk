@@ -73,6 +73,9 @@ final class TokenStorage {
         PROPS_PATH = setupPath();
         if (PROPS_PATH != null) {
             PROP_FILENAME = PROPS_PATH.getFileName();
+            if (SCREENCAST_DEBUG) {
+                System.out.println("Token storage: using " + PROPS_PATH);
+            }
             setupWatch();
         } else {
             // We can still work with tokens,
