@@ -30,7 +30,7 @@
  * @run main/othervm/native -agentlib:ThreadListStackTracesTest ThreadListStackTracesTest
  */
 
-import java.util.concurrent.locks.ReentrantLock; 
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.*;
 import java.util.Arrays;
 import java.util.ArrayList;
