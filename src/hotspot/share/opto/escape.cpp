@@ -2248,6 +2248,7 @@ void ConnectionGraph::adjust_scalar_replaceable_state(JavaObjectNode* jobj, Uniq
 
   // Search for non-escaping objects which are not scalar replaceable
   // and mark them to propagate the state to referenced objects.
+
   for (UseIterator i(jobj); i.has_next(); i.next()) {
     PointsToNode* use = i.get();
     if (use->is_Arraycopy()) {
