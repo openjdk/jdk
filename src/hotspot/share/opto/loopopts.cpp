@@ -2711,7 +2711,7 @@ Node* PhaseIdealLoop::stay_in_loop( Node* n, IdealLoopTree *loop) {
 
 //------------------------------ register_node -------------------------------------
 // Utility to register node "n" with PhaseIdealLoop
-void PhaseIdealLoop::register_node(Node* n, IdealLoopTree *loop, Node* pred, uint ddepth) {
+void PhaseIdealLoop::register_node(Node* n, IdealLoopTree* loop, Node* pred, uint ddepth) {
   _igvn.register_new_node_with_optimizer(n);
   loop->_body.push(n);
   if (n->is_CFG()) {
