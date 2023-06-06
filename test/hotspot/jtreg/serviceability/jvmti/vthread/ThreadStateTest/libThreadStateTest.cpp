@@ -30,7 +30,8 @@
 // set by Agent_OnLoad
 static jvmtiEnv* jvmti = nullptr;
 static const jint EXP_VT_STATE = JVMTI_THREAD_STATE_ALIVE | JVMTI_THREAD_STATE_RUNNABLE;
-static const jint EXP_CT_STATE = EXP_VT_STATE | JVMTI_THREAD_STATE_WAITING | JVMTI_THREAD_STATE_WAITING_INDEFINITELY;
+static const jint EXP_CT_STATE = JVMTI_THREAD_STATE_ALIVE | JVMTI_THREAD_STATE_WAITING |
+                                 JVMTI_THREAD_STATE_WAITING_INDEFINITELY;
 static const jint MAX_FRAME_COUNT = 32;
 
 extern "C" {
