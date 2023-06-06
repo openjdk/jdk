@@ -1689,7 +1689,6 @@
   declare_c2_type(MultiNode, Node)                                        \
   declare_c2_type(ProjNode, Node)                                         \
   declare_c2_type(TypeNode, Node)                                         \
-  declare_c2_type(NodeHash, StackObj)                                     \
   declare_c2_type(RootNode, LoopNode)                                     \
   declare_c2_type(HaltNode, Node)                                         \
   declare_c2_type(SubNode, Node)                                          \

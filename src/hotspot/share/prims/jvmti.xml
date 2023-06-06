@@ -640,6 +640,17 @@ Agent_OnLoad_L(JavaVM *vm, char *options, void *reserved)</example>
     or implementation specific API, to attach to the running VM, and request it start a given
     agent.
     <p/>
+    The VM prints a warning on the standard error stream for each agent that it attempts
+    to start in the live phase. If an agent was previously started (in the <code>OnLoad</code>
+    phase or in the live phase), then it is implementation specific as to whether a
+    warning is printed when attempting to start the same agent a second or subsequent time.
+    Warnings can be disabled by means of an implementation-specific command line option.
+    <p/>
+    <b>Implementation Note:</b> For the HotSpot VM, the VM option
+    <code>-XX:+EnableDynamicAgentLoading</code> is used to opt-in to allow dynamic loading
+    of agents in the live phase. This option suppresses the warning to standard error when
+    starting an agent in the live phase.
+    <p/>
     If an agent is started during the live phase then its agent library
     must export a start-up function
     with the following prototype:
@@ -5826,9 +5837,8 @@ class C2 extends C1 implements I2 {
       The <code>GetLocalXXX</code> functions may be used to retrieve the value of
       a local variable contained in the frame of a virtual thread.
       The <code>SetLocalXXX</code> functions may be used to set the value of a
-      local variable in the topmost frame of a virtual thread suspended at a
-      breakpoint or single step event. An implementation may support setting locals
-      in other cases.
+      local variable in the topmost frame of a virtual thread suspended at an event.
+      An implementation may support setting locals in other cases.
     </intro>
 
     <function id="GetLocalObject" num="21">
@@ -6205,7 +6215,7 @@ class C2 extends C1 implements I2 {
           Not a visible frame
         </error>
         <error id="JVMTI_ERROR_OPAQUE_FRAME">
-          The thread is a virtual thread and the implementation does not support
+          The thread is a suspended virtual thread and the implementation does not support
           setting the value of locals in the frame of the given depth.
           See <internallink id="local">Local Variables</internallink>.
         </error>
@@ -6269,7 +6279,7 @@ class C2 extends C1 implements I2 {
           Not a visible frame
         </error>
         <error id="JVMTI_ERROR_OPAQUE_FRAME">
-          The thread is a virtual thread and the implementation does not support
+          The thread is a suspended virtual thread and the implementation does not support
           setting the value of locals in the frame of the given depth.
           See <internallink id="local">Local Variables</internallink>.
         </error>
@@ -6328,7 +6338,7 @@ class C2 extends C1 implements I2 {
           Not a visible frame
         </error>
         <error id="JVMTI_ERROR_OPAQUE_FRAME">
-          The thread is a virtual thread and the implementation does not support
+          The thread is a suspended virtual thread and the implementation does not support
           setting the value of locals in the frame of the given depth.
           See <internallink id="local">Local Variables</internallink>.
         </error>
@@ -6387,7 +6397,7 @@ class C2 extends C1 implements I2 {
           Not a visible frame
         </error>
         <error id="JVMTI_ERROR_OPAQUE_FRAME">
-          The thread is a virtual thread and the implementation does not support
+          The thread is a suspended virtual thread and the implementation does not support
           setting the value of locals in the frame of the given depth.
           See <internallink id="local">Local Variables</internallink>.
         </error>
@@ -6446,7 +6456,7 @@ class C2 extends C1 implements I2 {
           Not a visible frame
         </error>
         <error id="JVMTI_ERROR_OPAQUE_FRAME">
-          The thread is a virtual thread and the implementation does not support
+          The thread is a suspended virtual thread and the implementation does not support
           setting the value of locals in the frame of the given depth.
           See <internallink id="local">Local Variables</internallink>.
         </error>

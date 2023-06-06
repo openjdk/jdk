@@ -98,6 +98,7 @@ define SetupInterimModule
       EXCLUDES := sun javax/tools/snippet-files, \
       EXCLUDE_FILES := $(TOPDIR)/src/$1/share/classes/module-info.java \
           $(TOPDIR)/src/$1/share/classes/javax/tools/ToolProvider.java \
+          $(TOPDIR)/src/$1/share/classes/com/sun/tools/javac/launcher/Main.java \
           Standard.java, \
       EXTRA_FILES := $(BUILDTOOLS_OUTPUTDIR)/gensrc/$1.interim/module-info.java \
           $($1.interim_EXTRA_FILES), \

@@ -394,6 +394,10 @@ void VM_Version::initialize() {
       // high lock contention. For now we do not use it by default.
       vm_exit_during_initialization("UseRTMLocking flag should be only set on command line");
     }
+    if (LockingMode != LM_LEGACY) {
+      warning("UseRTMLocking requires LockingMode = 1");
+      FLAG_SET_DEFAULT(UseRTMLocking, false);
+    }
 #else
     // Only C2 does RTM locking optimization.
     vm_exit_during_initialization("RTM locking optimization is not supported in this VM");

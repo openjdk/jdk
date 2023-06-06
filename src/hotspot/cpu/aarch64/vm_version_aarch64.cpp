@@ -452,29 +452,25 @@ void VM_Version::initialize() {
 
   if (UseBranchProtection == nullptr || strcmp(UseBranchProtection, "none") == 0) {
     _rop_protection = false;
-  } else if (strcmp(UseBranchProtection, "standard") == 0) {
+  } else if (strcmp(UseBranchProtection, "standard") == 0 ||
+             strcmp(UseBranchProtection, "pac-ret") == 0) {
     _rop_protection = false;
-    // Enable PAC if this code has been built with branch-protection, the CPU/OS
-    // supports it, and incompatible preview features aren't enabled.
-#ifdef __ARM_FEATURE_PAC_DEFAULT
-    if (VM_Version::supports_paca() && !Arguments::enable_preview()) {
-      _rop_protection = true;
-    }
-#endif
-  } else if (strcmp(UseBranchProtection, "pac-ret") == 0) {
-    _rop_protection = true;
+    // Enable ROP-protection if
+    // 1) this code has been built with branch-protection,
+    // 2) the CPU/OS supports it, and
+    // 3) incompatible VMContinuations isn't enabled.
 #ifdef __ARM_FEATURE_PAC_DEFAULT
     if (!VM_Version::supports_paca()) {
-      warning("ROP-protection specified, but not supported on this CPU.");
       // Disable PAC to prevent illegal instruction crashes.
-      _rop_protection = false;
-    } else if (Arguments::enable_preview()) {
+      warning("ROP-protection specified, but not supported on this CPU. Disabling ROP-protection.");
+    } else if (VMContinuations) {
       // Not currently compatible with continuation freeze/thaw.
-      warning("PAC-RET is incompatible with virtual threads preview feature.");
-      _rop_protection = false;
+      warning("ROP-protection is incompatible with VMContinuations. Disabling ROP-protection.");
+    } else {
+      _rop_protection = true;
     }
 #else
-    warning("ROP-protection specified, but this VM was built without ROP-protection support.");
+    warning("ROP-protection specified, but this VM was built without ROP-protection support. Disabling ROP-protection.");
 #endif
   } else {
     vm_exit_during_initialization(err_msg("Unsupported UseBranchProtection: %s", UseBranchProtection));
@@ -568,6 +564,10 @@ void VM_Version::initialize() {
 
   if (FLAG_IS_DEFAULT(AlignVector)) {
     AlignVector = AvoidUnalignedAccesses;
+  }
+
+  if (FLAG_IS_DEFAULT(UsePoly1305Intrinsics)) {
+    FLAG_SET_DEFAULT(UsePoly1305Intrinsics, true);
   }
 #endif
 
