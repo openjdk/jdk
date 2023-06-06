@@ -1275,14 +1275,10 @@ HeapWord* ShenandoahHeap::allocate_new_gclab(size_t min_size,
 HeapWord* ShenandoahHeap::allocate_new_plab(size_t min_size,
                                             size_t word_size,
                                             size_t* actual_size) {
-  size_t unalignment = min_size % CardTable::card_size_in_words();
-  if (unalignment != 0) {
-    min_size = min_size - unalignment + CardTable::card_size_in_words();
-  }
-  unalignment = word_size % CardTable::card_size_in_words();
-  if (unalignment != 0) {
-    word_size = word_size - unalignment + CardTable::card_size_in_words();
-  }
+  size_t words_in_card = CardTable::card_size_in_words();
+  size_t align_mask = ~(words_in_card - 1);
+  min_size = (min_size + words_in_card - 1) & align_mask;
+  word_size = (word_size + words_in_card - 1) & align_mask;
   ShenandoahAllocRequest req = ShenandoahAllocRequest::for_plab(min_size, word_size);
   // Note that allocate_memory() sets a thread-local flag to prohibit further promotions by this thread
   // if we are at risk of infringing on the old-gen evacuation budget.
