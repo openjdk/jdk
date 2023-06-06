@@ -2730,6 +2730,11 @@ public class ClassReader {
             signatureBuffer = new byte[ns];
         }
         readClass(c);
+        if (previewClassFile) {
+            if ((c.flags_field & SYNTHETIC) != 0 && c.isSubClass(syms.objectType.tsym, types)) {
+                c.flags_field |= UNNAMED_CLASS;
+            }
+        }
     }
 
     public void readClassFile(ClassSymbol c) {

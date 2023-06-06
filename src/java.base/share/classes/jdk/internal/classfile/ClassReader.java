@@ -26,6 +26,7 @@ package jdk.internal.classfile;
 
 import jdk.internal.classfile.constantpool.ClassEntry;
 import jdk.internal.classfile.constantpool.ConstantPool;
+import jdk.internal.classfile.constantpool.ConstantPoolException;
 import jdk.internal.classfile.constantpool.MethodHandleEntry;
 import jdk.internal.classfile.constantpool.ModuleEntry;
 import jdk.internal.classfile.constantpool.NameAndTypeEntry;

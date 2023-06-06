@@ -175,7 +175,7 @@
 
  void encode_iso_array_v(Register src, Register dst,
                          Register len, Register result,
-                         Register tmp);
+                         Register tmp, bool ascii);
 
  void count_positives_v(Register ary, Register len,
                         Register result, Register tmp);
