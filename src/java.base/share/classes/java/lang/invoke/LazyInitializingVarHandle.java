@@ -69,31 +69,26 @@ final class LazyInitializingVarHandle extends VarHandle {
     }
 
     @Override
-    VarHandle target() {
-        return target;
-    }
-
-    @Override
     @ForceInline
-    boolean checkAccessModeThenIsDirect(AccessDescriptor ad) {
-        super.checkAccessModeThenIsDirect(ad);
-        return false;
+    VarHandle target() {
+        ensureInitialized();
+        return target;
     }
 
     @Override
     public VarHandle withInvokeExactBehavior() {
         if (!initialized && hasInvokeExactBehavior())
             return this;
-        var updatedDelegate = target.withInvokeExactBehavior();
-        return initialized ? updatedDelegate : new LazyInitializingVarHandle(updatedDelegate, refc);
+        var exactTarget = target.withInvokeExactBehavior();
+        return initialized ? exactTarget : new LazyInitializingVarHandle(exactTarget, refc);
     }
 
     @Override
     public VarHandle withInvokeBehavior() {
         if (!initialized && !hasInvokeExactBehavior())
             return this;
-        var updatedDelegate = target.withInvokeBehavior();
-        return initialized ? updatedDelegate : new LazyInitializingVarHandle(updatedDelegate, refc);
+        var nonExactTarget = target.withInvokeBehavior();
+        return initialized ? nonExactTarget : new LazyInitializingVarHandle(nonExactTarget, refc);
     }
 
     @Override
@@ -109,6 +104,8 @@ final class LazyInitializingVarHandle extends VarHandle {
         this.initialized = true;
 
         var cache = this.methodHandleTable;
+        if (cache == null)
+            return;
         int len = cache.length;
         for (int i = 0; i < len; i++) {
             var mh = cache[i];
@@ -133,5 +130,18 @@ final class LazyInitializingVarHandle extends VarHandle {
 
         return MethodHandles.collectArguments(callTarget, 0, MH_ensureInitialized)
                 .bindTo(this);
+    }
+
+    @Override
+    public MethodHandle toMethodHandle(AccessMode accessMode) {
+        if (isAccessModeSupported(accessMode)) {
+            MethodHandle mh = getMethodHandle(accessMode.ordinal());
+            return mh.bindTo(target); // prevents unnecessary initialization
+        }
+        else {
+            // Ensure an UnsupportedOperationException is thrown
+            return MethodHandles.varHandleInvoker(accessMode, accessModeType(accessMode)).
+                    bindTo(this);
+        }
     }
 }

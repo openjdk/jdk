@@ -520,11 +520,15 @@ public abstract sealed class VarHandle implements Constable
     }
 
     /**
-     * The backing var handle for indirect var handles. The var handle guards invokes
-     * with getMethodHandle on asDirect result.
+     * The VarHandle to be passed to {@link #getMethodHandle}, in Invokers
+     * LambdaForms and VarHandleGuards.
+     * Direct VH implementation methods also call this method to
+     * unwrap lazy initializing VarHandles.
+     *
      * @see #getMethodHandle(int)
      * @see #checkAccessModeThenIsDirect(AccessDescriptor)
      */
+    @ForceInline
     VarHandle target() {
         return this;
     }
@@ -2065,9 +2069,14 @@ public abstract sealed class VarHandle implements Constable
 
     /**
      * Validates that the given access descriptors method type matches up with
-     * the access mode of this VarHandle, then returns if this is a direct
-     * method handle. These operations were grouped together to slightly
+     * the access mode of this VarHandle, then returns if this is direct.
+     * These operations were grouped together to slightly
      * improve efficiency during startup/warmup.
+     *
+     * A direct VarHandle's VarForm has implementation MemberNames that can
+     * be linked directly. If a VarHandle is indirect, it must override
+     * {@link #isAccessModeSupported} and {@link #getMethodHandleUncached}
+     * which access MemberNames..
      *
      * @return true if this is a direct VarHandle, false if it's an indirect
      *         VarHandle.

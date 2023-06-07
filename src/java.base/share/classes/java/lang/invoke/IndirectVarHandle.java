@@ -69,10 +69,11 @@ import java.util.function.BiFunction;
 
     @Override
     public boolean isAccessModeSupported(AccessMode accessMode) {
-        return directTarget.isAccessModeSupported(accessMode);
+        return target.isAccessModeSupported(accessMode);
     }
 
     @Override
+    @ForceInline
     VarHandle target() {
         return this.directTarget;
     }
