@@ -27,6 +27,7 @@
  * @library /test/lib
  * @summary SSLEngine throws IAE during parsing of X500Principal
  * @run main/othervm TestBadDNForPeerCA
+ * @run main/othervm -Djavax.net.debug=all TestBadDNForPeerCA
  */
 
 import javax.net.ssl.KeyManagerFactory;
@@ -46,19 +47,16 @@ public class TestBadDNForPeerCA {
 
     private static final String proto = "TLSv1.3";
 
-    private static final boolean debug = false;
-
     private final SSLContext sslc;
 
     private SSLEngine serverEngine;     // server Engine
     private ByteBuffer serverIn;        // read side of serverEngine
-    private ByteBuffer clientOut;        // read side of serverEngine
 
     private ByteBuffer cTOs;            // "reliable" transport client->server
 
     private static final String keyStoreFile =
         System.getProperty("test.src", "./")
-            + "/../../../../javax/net/ssl/etc/keystore";
+        + "/open/test/jdk/javax/net/ssl/etc/keystore";
 
     // the following ClientHello contains a certificate with an
     // invalid/unparseable distinguished name
@@ -85,14 +83,11 @@ public class TestBadDNForPeerCA {
      * Main entry point for this demo.
      */
     public static void main(String[] args) throws Exception {
-        if (debug) {
-            System.setProperty("javax.net.debug", "all");
-        }
 
         TestBadDNForPeerCA test = new TestBadDNForPeerCA();
 
         try {
-            test.runTest(payload);
+            test.runTest();
             throw new Exception(
                 "TEST FAILED:  Didn't generate any exception");
         } catch (SSLHandshakeException she) {
@@ -128,12 +123,12 @@ public class TestBadDNForPeerCA {
     }
 
 
-    private void runTest(byte[] injected) throws Exception {
+    private void runTest() throws Exception {
 
         createSSLEngines();
         createBuffers();
 
-        cTOs = ByteBuffer.wrap(injected);
+        cTOs = ByteBuffer.wrap(payload);
 
         System.out.println("injecting client hello");
 
@@ -159,7 +154,6 @@ public class TestBadDNForPeerCA {
 
         cTOs = ByteBuffer.allocateDirect(65536);
 
-        clientOut = ByteBuffer.wrap("Hi Server, I'm Client".getBytes());
     }
 
     private static void runDelegatedTasks(SSLEngineResult result,

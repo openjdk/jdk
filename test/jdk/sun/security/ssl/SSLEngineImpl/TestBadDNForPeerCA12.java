@@ -25,8 +25,10 @@
  * @test
  * @bug 8294985
  * @library /test/lib
+ * @library /javax/net/ssl/templates
  * @summary SSLEngine throws IAE during parsing of X500Principal
  * @run main/othervm TestBadDNForPeerCA12
+ * @run main/othervm -Djavax.net.debug=all TestBadDNForPeerCA12
  */
 
 import javax.net.ssl.KeyManagerFactory;
@@ -40,21 +42,20 @@ import java.io.FileInputStream;
 import java.nio.ByteBuffer;
 import java.security.KeyStore;
 import java.util.Base64;
-import java.util.HexFormat;
-
 
 public class TestBadDNForPeerCA12 {
 
     // Test was originally written for TLSv1.2
     private static final String proto = "TLSv1.2";
 
-    private static final boolean debug = false;
-
     private final SSLContext sslc;
 
     protected SSLEngine clientEngine;     // client Engine
+    protected SSLEngine serverEngine;     // server Engine
     protected ByteBuffer clientOut;       // write side of clientEngine
+    protected ByteBuffer serverOut;       // write side of serverEngine
     protected ByteBuffer clientIn;        // read side of clientEngine
+    protected ByteBuffer serverIn;        // read side of serverEngine
     private ByteBuffer cTOs;            // "reliable" transport client->server
     protected ByteBuffer sTOc;          // "reliable" transport server->client
 
@@ -64,28 +65,7 @@ public class TestBadDNForPeerCA12 {
 
     // this contains a server response with invalid DNs
     private static final byte[] serverPayload = Base64.getDecoder().decode(
-        "FgMDBD0CAABVAwNKWHt3CgoZpm/OCew8thyunjMH+x098nzpC1eKd/PNpCBRO9+fS"
-        + "2VPFA7Do9BOr/LUkTGhHZP9meD0Sm8zSccrPsAsAAANABcAAAAjAAD/AQABAAsAAnUAA"
-        + "nIAAm8wggJrMIIBU6ADAgECAgkA7b7I9wWvJRQwDQYJKoZIhvcNAQELBQAwOzELMAkGA"
-        + "1UEBhMCVVMxDTALBgNVBAoMBEphdmExHTAbBgNVBAsMFFN1bkpTU0UgVGVzdCBTZXJpd"
-        + "mNlMB4XDTE4MDUyMjA3MTgxNloXDTI4MDUyMTA3MTgxNlowVTELMAkGA1UEBhMCVVMxD"
-        + "TALBgNVBAoMBEphdmExHTAbBgNVBAsMFFN1bkpTU0UgVGVzdCBTZXJpdmNlMRgwFgYDV"
-        + "QQDDA9SZWdyZXNzaW9uIFRlc3QwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAATn0wRE1"
-        + "OVVnV56mzxnc657lmSBB0+0P5YgTq2Pc9sgqnEY8PG980/3n0DJCMQr96FZBWsIyY2gS"
-        + "QjNj4ggGAHToyMwITAfBgNVHSMEGDAWgBQN3ZPJ/ku9NbfomXiQ+9taPdsVTDANBgkqh"
-        + "kiG9w0BAQsFAAOCAQEAU5NUSqzvTKSFmIh2sSwXVFojcHasu/BdmTna5KW2Tb9vNW97A"
-        + "DnvtkKjFDWkvvKeSKw98E3W5Vi0eMzVUDdEL7j5MArvx2cjui1iNagenmu+ziXpz8hs6"
-        + "ylLb3QiU24NTEwSsSbnDEjCP4C6TH/XLryE7IK8cEsxjZzUuyQfUwwFsO5LVoj6WcalO"
-        + "iL4yhg5vEZxXjny/G5Pz7DBXwWSm92WXwggWZ409G/7UT6VdsRLoJI0JVpn+UWE+B2Bg"
-        + "qV43ux+ymLPnQMbh2pp+4QBpfnForU1ZcnFNHPRE4f8hTOLK4NbqOmGuWCK3j7c0LOnq"
-        + "8/2EAlDxWFyPSfXkEochAwAAHADAB0gUsYb5i8nNJxMG2c6TY4P6TgXukhGhn2EqtOMC"
-        + "MYP1hUEAwBIMEYCIQCZN6uqbBUVnbWEVGacgAi8Inz+vbYB+nXxzXpS7B/rHgIhALedP"
-        + "TzefR4lNrQ5d4V42z0VIgIAEh811usG1hg58iFmDQAA7wNAAQIAKgQDBQMGAwgHCAgIB"
-        + "AgFCAYICQgKCAsEAQUBBgEEAgMDAwEDAgIDAgECAgC9AD0wOzELMAkRA1UEBhMCVVMxD"
-        + "TALBgNVBAoMBEphdmExHTAbBgNVBAsMFFN1bkpTU0UgVGVzdCBTZXJpdmNlAD0wOzELM"
-        + "AkRA1UEBhMCVVMxDTALBgNVBAoMBEphdmExHTAbBgNVBAsMFFN1bkpTU0UgVGVzdCBTZ"
-        + "XJpdmNlAD0wOzELMAkRA1UEBhMCVVMxDTALBgNVBAoMBEphdmExHTAbBgNVBAsMFFN1b"
-        + "kpTU0UgVGVzdCBTZXJpdmNlDgAAAA==");
+        "FgMDBSYCAABVAwPU0IrHPvJuIvTO6/Y+FaKcEJQdaMtrQJqC4jWJ9gnUsyCTfLM7CCg8lCjgTKFBrf44AEvb5HXOmW56ssFpmgHKbMAsAAANABcAAAAjAAD/AQABAAsAAfYAAfMAAfAwggHsMIIBj6ADAgECAgRGZGRDMAwGCCqGSM49BAMCBQAwajELMAkGA1UEBhMCVVMxCzAJBgNVBAgTAkNBMRIwEAYDVQQHEwlDdXBlcnRpbm8xDjAMBgNVBAoTBUR1bW15MQ4wDAYDVQQLEwVEdW1teTEaMBgGA1UEAxMRZHVtbXkuZXhhbXBsZS5jb20wHhcNMTgwMzI3MjI0MTMxWhcNMjgwMzI2MjI0MTMxWjBqMQswCQYDVQQGEwJVUzELMAkGA1UECBMCQ0ExEjAQBgNVBAcTCUN1cGVydGlubzEOMAwGA1UEChMFRHVtbXkxDjAMBgNVBAsTBUR1bW15MRowGAYDVQQDExFkdW1teS5leGFtcGxlLmNvbTBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABI0sz/qT0Es+i5F3Ae3czRsbFsMntuLUnntoOGWqLAEPPsLM4GEEDFNzWrlGxBrPsILKArunM5jrkqsfEc1VqfyjITAfMB0GA1UdDgQWBBQLzGwgL76ANOYop3WzQ3XjT9ulQTAMBggqhkjOPQQDAgUAA0kAMEYCIQC9nJbGueD7SkKrJmGQLNE4mFjB4wJKRT8AnWoH5BltQAIhAMibIWGQmR1iIAcrdmho9vU6YV9y7Oh6gPeFzGkfYeJnDAAAbwMAHSA/fEXlxdJD/2SshJYmnuInis+G7Rl2syMQ3yFunfm7dQQDAEcwRQIgEef2rIOJK6G/JsM5CwRzANMUhlzqm9IzwtARgMhFpc8CIQDq5Rk317feUvqAgCJ+h9MT20ljXou9SBk3YjA9tQ89EA0AAlgDQAECACoEAwUDBgMIBwgICAQIBQgGCAkICggLBAEFAQYBBAIDAwMBAwICAwIBAgICJgBsMGoxCzAJBgNVBAYTAlVTMQswCQYDVQQIEwJDQTESMBAGA1UEBxMJQ3VwZXJ0aW5vMQ4wDAYDVQQKEwVEdW1teTEOMAwGA1UECxMFRHVtbXkxGjAYBgNVBAMTEWR1bW15LmV4YW1wbGUuY29tAGwwajELMAkGA1UEBhMCVVMxCzAJBgNVBAgMAkNBMRIwEAYDVQQHDAlDdXBlcnRpbm8xDjAMBgNVBAoMBUR1bW15MQ4wDAYDVQQLDAVEdW1teTEaMBgGA1UEAwwRZHVtbXkuZXhhbXBsZS5jb20AbDBqMQswCQYDVQQGEwJVUzELMAkGA1UECAwCQ0ExEjAQBgNVBAcMCUN1cGVydGlubzEOMAwGA1UECgwFRHVtbXkxDjAMBgNVBAsMBUR1bW15MRowGAYDVQQDDBFkdW1teS5leGFtcGxlLmNvbQBsMGoxCzAJBgNVBAYTAlVTMQswCQYDVQQIEwJDQTESMBAGA1UEBxMJQ3VwZXJ0aW5vMQ4wDAYDVQQKEwVEdW1teTEOMAwGA1UECxMFRHVtbXkxGjAYBgNVBAMTEWR1bW15LmV4YW1wbGUuY29tAGwwajELMAkGA1UEBhMCVVMxCzAJBgNVBAgTAkNBMRIwEAYDVQQHEwlDdXBlcnRpbm8xDjAMBgNVBAoTBUR1bW15MQ4wDAYDVQQLEwVEdW1teTEaMBgGA1UEAxMRZHVtbXkuZXhhbXBsZS5jb20OAAAA");
 
     /*
      * The following is to set up the keystores.
@@ -96,9 +76,6 @@ public class TestBadDNForPeerCA12 {
      * Main entry point for this demo.
      */
     public static void main(String[] args) throws Exception {
-        if (debug) {
-            System.setProperty("javax.net.debug", "all");
-        }
 
         TestBadDNForPeerCA12 test = new TestBadDNForPeerCA12();
 
@@ -144,8 +121,30 @@ public class TestBadDNForPeerCA12 {
         createSSLEngines();
         createBuffers();
 
-        System.out.println("forcing client hello");
-        //sTOc = ByteBuffer.wrap(serverHello);
+        /*
+         * the following was used to generate the serverPayload value
+         */
+        // ignore output
+        /*SSLEngineResult clientResult = clientEngine.wrap(clientOut, cTOs);
+        runDelegatedTasks(clientResult, clientEngine);
+        cTOs.flip();
+
+        // ignore output
+        SSLEngineResult serverResult = serverEngine.unwrap(cTOs, serverIn);
+        runDelegatedTasks(serverResult, serverEngine);
+        // server hello, cert material, etc
+        SSLEngineResult serverWrapResult = serverEngine.wrap(serverOut, sTOc);
+        runDelegatedTasks(serverWrapResult, serverEngine);
+        sTOc.flip();
+        ByteBuffer sTOcBuff = sTOc.asReadOnlyBuffer();
+        byte[] serverContents = new byte[sTOcBuff.remaining()];
+        sTOcBuff.get(serverContents);
+        System.out.println("sw: " + Base64.getEncoder().encodeToString
+        (serverContents));
+         */
+
+
+        System.out.println("sending client hello");
         SSLEngineResult clientResult = clientEngine.wrap(clientOut, cTOs);
         runDelegatedTasks(clientResult, clientEngine);
 
@@ -157,19 +156,23 @@ public class TestBadDNForPeerCA12 {
         System.out.println("client unwrap: " + clientHelloResult);
         runDelegatedTasks(clientHelloResult, clientEngine);
 
-        sTOc.compact();
-        cTOs.compact();
+        //sTOc.compact();
+        //cTOs.compact();
 
-        SSLEngineResult clientExGen = clientEngine.wrap(clientOut, cTOs);
+        SSLEngineResult clientExGen = clientEngine.wrap(clientIn, cTOs);
         runDelegatedTasks(clientExGen, clientEngine);
 
     }
 
     private void createSSLEngines() {
         clientEngine = sslc.createSSLEngine();
-
         clientEngine.setEnabledProtocols(new String[] {proto});
         clientEngine.setUseClientMode(true);
+
+        serverEngine = sslc.createSSLEngine();
+        serverEngine.setEnabledProtocols(new String[] {proto});
+        serverEngine.setUseClientMode(false);
+        serverEngine.setNeedClientAuth(true);
     }
 
     private void createBuffers() {
@@ -180,6 +183,10 @@ public class TestBadDNForPeerCA12 {
         clientOut = ByteBuffer.wrap("Hi Server, I'm Client".getBytes());
 
         sTOc = ByteBuffer.allocateDirect(65536);
+
+        serverOut = ByteBuffer.wrap("Hi Client, I'm Server".getBytes());
+
+        serverIn = ByteBuffer.allocateDirect(65536);
     }
 
     private static void runDelegatedTasks(SSLEngineResult result,
