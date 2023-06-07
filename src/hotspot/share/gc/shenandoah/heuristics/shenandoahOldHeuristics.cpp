@@ -79,7 +79,7 @@ bool ShenandoahOldHeuristics::prime_collection_set(ShenandoahCollectionSet* coll
     fragmented_available = 0;
     excess_fragmented_available = 0;
   } else {
-    assert(_old_generation->available() > old_evacuation_budget, "Cannot budget more than is available");
+    assert(_old_generation->available() >= old_evacuation_budget, "Cannot budget more than is available");
     fragmented_available = _old_generation->available() - unfragmented_available;
     assert(fragmented_available + unfragmented_available >= old_evacuation_budget, "Budgets do not add up");
     if (fragmented_available + unfragmented_available > old_evacuation_budget) {
