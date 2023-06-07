@@ -63,7 +63,9 @@ allocateJPLISAgent(jvmtiEnv *       jvmtiEnv);
 JPLISInitializationError
 initializeJPLISAgent(   JPLISAgent *    agent,
                         JavaVM *        vm,
-                        jvmtiEnv *      jvmtienv);
+                        jvmtiEnv *      jvmtienv,
+                        const char *    jarfile,
+                        jboolean        printWarning);
 /* De-allocates a JPLIS agent data structure. Only used in partial-failure cases at startup;
  * in normal usage the JPLIS agent lives forever
  */
@@ -202,7 +204,7 @@ getJPLISEnvironment(jvmtiEnv * jvmtienv) {
  *  or NULL if an error has occurred.
  */
 JPLISInitializationError
-createNewJPLISAgent(JavaVM * vm, JPLISAgent **agent_ptr) {
+createNewJPLISAgent(JavaVM * vm, JPLISAgent **agent_ptr, const char * jarfile, jboolean printWarning) {
     JPLISInitializationError initerror       = JPLIS_INIT_ERROR_NONE;
     jvmtiEnv *               jvmtienv        = NULL;
     jint                     jnierror        = JNI_OK;
@@ -220,7 +222,9 @@ createNewJPLISAgent(JavaVM * vm, JPLISAgent **agent_ptr) {
         } else {
             initerror = initializeJPLISAgent(  agent,
                                                vm,
-                                               jvmtienv);
+                                               jvmtienv,
+                                               jarfile,
+                                               printWarning);
             if ( initerror == JPLIS_INIT_ERROR_NONE ) {
                 *agent_ptr = agent;
             } else {
@@ -251,7 +255,9 @@ allocateJPLISAgent(jvmtiEnv * jvmtienv) {
 JPLISInitializationError
 initializeJPLISAgent(   JPLISAgent *    agent,
                         JavaVM *        vm,
-                        jvmtiEnv *      jvmtienv) {
+                        jvmtiEnv *      jvmtienv,
+                        const char *    jarfile,
+                        jboolean        printWarning) {
     jvmtiError      jvmtierror = JVMTI_ERROR_NONE;
     jvmtiPhase      phase;
 
@@ -272,7 +278,8 @@ initializeJPLISAgent(   JPLISAgent *    agent,
     agent->mNativeMethodPrefixAdded                  = JNI_FALSE;
     agent->mAgentClassName                           = NULL;
     agent->mOptionsString                            = NULL;
-    agent->mJarfile                                  = NULL;
+    agent->mJarfile                                  = jarfile;
+    agent->mPrintWarning                             = printWarning;
 
     /* make sure we can recover either handle in either direction.
      * the agent has a ref to the jvmti; make it mutual
@@ -512,7 +519,8 @@ createInstrumentationImpl( JNIEnv *        jnienv,
                                                 constructorID,
                                                 peerReferenceAsScalar,
                                                 agent->mRedefineAdded,
-                                                agent->mNativeMethodPrefixAdded);
+                                                agent->mNativeMethodPrefixAdded,
+                                                agent->mPrintWarning);
         errorOutstanding = checkForAndClearThrowable(jnienv);
         errorOutstanding = errorOutstanding || (localReference == NULL);
         jplis_assert_msg(!errorOutstanding, "call constructor on InstrumentationImpl failed");
@@ -1604,4 +1612,9 @@ setNativeMethodPrefixes(JNIEnv * jnienv, JPLISAgent * agent, jobjectArray prefix
         deallocate(jvmtienv, (void*)prefixes);
         deallocate(jvmtienv, (void*)originForRelease);
     }
+}
+
+jstring
+jarFile(JNIEnv * jnienv, JPLISAgent * agent) {
+    return (*jnienv)->NewStringUTF(jnienv, agent->mJarfile);
 }

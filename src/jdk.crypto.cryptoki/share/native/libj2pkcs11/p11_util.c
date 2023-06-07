@@ -408,11 +408,32 @@ void freeCKMechanismPtr(CK_MECHANISM_PTR mechPtr) {
                  case CKM_CAMELLIA_CTR:
                      // params do not contain pointers
                      break;
+                 case CKM_PKCS5_PBKD2:
+                     // get the versioned structure from behind memory
+                     TRACE0(((VersionedPbkd2ParamsPtr)tmp)->version == PARAMS ?
+                             "[ CK_PKCS5_PBKD2_PARAMS ]\n" :
+                             "[ CK_PKCS5_PBKD2_PARAMS2 ]\n");
+                     FREE_VERSIONED_PBKD2_MEMBERS((VersionedPbkd2ParamsPtr)tmp);
+                     break;
+                 case CKM_PBA_SHA1_WITH_SHA1_HMAC:
+                 case CKM_NSS_PKCS12_PBE_SHA224_HMAC_KEY_GEN:
+                 case CKM_NSS_PKCS12_PBE_SHA256_HMAC_KEY_GEN:
+                 case CKM_NSS_PKCS12_PBE_SHA384_HMAC_KEY_GEN:
+                 case CKM_NSS_PKCS12_PBE_SHA512_HMAC_KEY_GEN:
+                     TRACE0("[ CK_PBE_PARAMS ]\n");
+                     free(((CK_PBE_PARAMS_PTR)tmp)->pInitVector);
+                     if (((CK_PBE_PARAMS_PTR)tmp)->pPassword != NULL) {
+                         memset(((CK_PBE_PARAMS_PTR)tmp)->pPassword, 0,
+                                 ((CK_PBE_PARAMS_PTR)tmp)->ulPasswordLen);
+                     }
+                     free(((CK_PBE_PARAMS_PTR)tmp)->pPassword);
+                     free(((CK_PBE_PARAMS_PTR)tmp)->pSalt);
+                     break;
                  default:
                      // currently unsupported mechs by SunPKCS11 provider
                      // CKM_RSA_PKCS_OAEP, CKM_ECMQV_DERIVE,
                      // CKM_X9_42_*, CKM_KEA_DERIVE, CKM_RC2_*, CKM_RC5_*,
-                     // CKM_SKIPJACK_*, CKM_KEY_WRAP_SET_OAEP, CKM_PKCS5_PBKD2,
+                     // CKM_SKIPJACK_*, CKM_KEY_WRAP_SET_OAEP,
                      // PBE mechs, WTLS mechs, CMS mechs,
                      // CKM_EXTRACT_KEY_FROM_KEY, CKM_OTP, CKM_KIP,
                      // CKM_DSA_PARAMETER_GEN?, CKM_GOSTR3410_*
@@ -515,12 +536,11 @@ void jBooleanArrayToCKBBoolArray(JNIEnv *env, const jbooleanArray jArray, CK_BBO
     jboolean* jpTemp;
     CK_ULONG i;
 
-    if(jArray == NULL) {
+    *ckpLength = jArray == NULL ? 0L : (*env)->GetArrayLength(env, jArray);
+    if(*ckpLength == 0L) {
         *ckpArray = NULL_PTR;
-        *ckpLength = 0L;
         return;
     }
-    *ckpLength = (*env)->GetArrayLength(env, jArray);
     jpTemp = (jboolean*) calloc(*ckpLength, sizeof(jboolean));
     if (jpTemp == NULL) {
         p11ThrowOutOfMemoryError(env, 0);
@@ -557,12 +577,11 @@ void jByteArrayToCKByteArray(JNIEnv *env, const jbyteArray jArray, CK_BYTE_PTR *
     jbyte* jpTemp;
     CK_ULONG i;
 
-    if(jArray == NULL) {
+    *ckpLength = jArray == NULL ? 0L : (*env)->GetArrayLength(env, jArray);
+    if(*ckpLength == 0L) {
         *ckpArray = NULL_PTR;
-        *ckpLength = 0L;
         return;
     }
-    *ckpLength = (*env)->GetArrayLength(env, jArray);
     jpTemp = (jbyte*) calloc(*ckpLength, sizeof(jbyte));
     if (jpTemp == NULL) {
         p11ThrowOutOfMemoryError(env, 0);
@@ -604,12 +623,11 @@ void jLongArrayToCKULongArray(JNIEnv *env, const jlongArray jArray, CK_ULONG_PTR
     jlong* jTemp;
     CK_ULONG i;
 
-    if(jArray == NULL) {
+    *ckpLength = jArray == NULL ? 0L : (*env)->GetArrayLength(env, jArray);
+    if(*ckpLength == 0L) {
         *ckpArray = NULL_PTR;
-        *ckpLength = 0L;
         return;
     }
-    *ckpLength = (*env)->GetArrayLength(env, jArray);
     jTemp = (jlong*) calloc(*ckpLength, sizeof(jlong));
     if (jTemp == NULL) {
         p11ThrowOutOfMemoryError(env, 0);
@@ -646,12 +664,11 @@ void jCharArrayToCKCharArray(JNIEnv *env, const jcharArray jArray, CK_CHAR_PTR *
     jchar* jpTemp;
     CK_ULONG i;
 
-    if(jArray == NULL) {
+    *ckpLength = jArray == NULL ? 0L : (*env)->GetArrayLength(env, jArray);
+    if(*ckpLength == 0L) {
         *ckpArray = NULL_PTR;
-        *ckpLength = 0L;
         return;
     }
-    *ckpLength = (*env)->GetArrayLength(env, jArray);
     jpTemp = (jchar*) calloc(*ckpLength, sizeof(jchar));
     if (jpTemp == NULL) {
         p11ThrowOutOfMemoryError(env, 0);
@@ -688,12 +705,11 @@ void jCharArrayToCKUTF8CharArray(JNIEnv *env, const jcharArray jArray, CK_UTF8CH
     jchar* jTemp;
     CK_ULONG i;
 
-    if(jArray == NULL) {
+    *ckpLength = jArray == NULL ? 0L : (*env)->GetArrayLength(env, jArray);
+    if(*ckpLength == 0L) {
         *ckpArray = NULL_PTR;
-        *ckpLength = 0L;
         return;
     }
-    *ckpLength = (*env)->GetArrayLength(env, jArray);
     jTemp = (jchar*) calloc(*ckpLength, sizeof(jchar));
     if (jTemp == NULL) {
         p11ThrowOutOfMemoryError(env, 0);
@@ -701,19 +717,20 @@ void jCharArrayToCKUTF8CharArray(JNIEnv *env, const jcharArray jArray, CK_UTF8CH
     }
     (*env)->GetCharArrayRegion(env, jArray, 0, *ckpLength, jTemp);
     if ((*env)->ExceptionCheck(env)) {
-        free(jTemp);
-        return;
+        goto cleanup;
     }
 
     *ckpArray = (CK_UTF8CHAR_PTR) calloc(*ckpLength, sizeof(CK_UTF8CHAR));
     if (*ckpArray == NULL) {
-        free(jTemp);
         p11ThrowOutOfMemoryError(env, 0);
-        return;
+        goto cleanup;
     }
     for (i=0; i<(*ckpLength); i++) {
         (*ckpArray)[i] = jCharToCKUTF8Char(jTemp[i]);
     }
+cleanup:
+    // Clean possible temporary copies of passwords.
+    memset(jTemp, 0, *ckpLength * sizeof(jchar));
     free(jTemp);
 }
 

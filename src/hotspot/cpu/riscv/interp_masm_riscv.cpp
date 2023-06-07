@@ -79,9 +79,8 @@ void InterpreterMacroAssembler::narrow(Register result) {
   bind(notChar);
   sign_extend(result, result, 16);
 
-  // Nothing to do for T_INT
   bind(done);
-  addw(result, result, zr);
+  sign_extend(result, result, 32);
 }
 
 void InterpreterMacroAssembler::jump_to_entry(address entry) {
@@ -220,7 +219,7 @@ void InterpreterMacroAssembler::get_cache_index_at_bcp(Register index,
     // plain index.
     assert(ConstantPool::decode_invokedynamic_index(~123) == 123, "else change next line");
     xori(index, index, -1);
-    addw(index, index, zr);
+    sign_extend(index, index, 32);
   } else if (index_size == sizeof(u1)) {
     load_unsigned_byte(index, Address(xbcp, bcp_offset));
   } else {
@@ -379,7 +378,7 @@ void InterpreterMacroAssembler::push_ptr(Register r) {
 
 void InterpreterMacroAssembler::push_i(Register r) {
   addi(esp, esp, -wordSize);
-  addw(r, r, zr); // signed extended
+  sign_extend(r, r, 32);
   sd(r, Address(esp, 0));
 }
 

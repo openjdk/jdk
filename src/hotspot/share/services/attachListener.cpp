@@ -402,10 +402,6 @@ static void attach_listener_thread_entry(JavaThread* thread, TRAPS) {
     // handle special detachall operation
     if (strcmp(op->name(), AttachOperation::detachall_operation_name()) == 0) {
       AttachListener::detachall();
-    } else if (!EnableDynamicAgentLoading && strcmp(op->name(), "load") == 0) {
-      st.print("Dynamic agent loading is not enabled. "
-               "Use -XX:+EnableDynamicAgentLoading to launch target VM.");
-      res = JNI_ERR;
     } else {
       // find the function to dispatch too
       AttachOperationFunctionInfo* info = nullptr;

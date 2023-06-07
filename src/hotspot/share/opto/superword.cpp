@@ -2664,6 +2664,7 @@ bool SuperWord::output() {
     // Create a vector mask node for post loop, bail out if not created
     vmask = create_post_loop_vmask();
     if (vmask == nullptr) {
+      // create_post_loop_vmask checks many conditions, any of them could fail
       return false; // and reverse to backup IG
     }
   }
@@ -2718,6 +2719,7 @@ bool SuperWord::output() {
         if (val == nullptr) {
           if (do_reserve_copy()) {
             NOT_PRODUCT(if(is_trace_loop_reverse() || TraceLoopOpts) {tty->print_cr("SWPointer::output: val should not be null, exiting SuperWord");})
+            assert(false, "input to vector store was not created");
             return false; //and reverse to backup IG
           }
           ShouldNotReachHere();
@@ -2857,6 +2859,7 @@ bool SuperWord::output() {
           if (in1 == nullptr) {
             if (do_reserve_copy()) {
               NOT_PRODUCT(if(is_trace_loop_reverse() || TraceLoopOpts) {tty->print_cr("SWPointer::output: in1 should not be null, exiting SuperWord");})
+              assert(false, "input in1 to vector operand was not created");
               return false; //and reverse to backup IG
             }
             ShouldNotReachHere();
@@ -2866,6 +2869,7 @@ bool SuperWord::output() {
         if (in2 == nullptr) {
           if (do_reserve_copy()) {
             NOT_PRODUCT(if(is_trace_loop_reverse() || TraceLoopOpts) {tty->print_cr("SWPointer::output: in2 should not be null, exiting SuperWord");})
+            assert(false, "input in2 to vector operand was not created");
             return false; //and reverse to backup IG
           }
           ShouldNotReachHere();
@@ -2939,6 +2943,7 @@ bool SuperWord::output() {
       } else {
         if (do_reserve_copy()) {
           NOT_PRODUCT(if(is_trace_loop_reverse() || TraceLoopOpts) {tty->print_cr("SWPointer::output: Unhandled scalar opcode (%s), ShouldNotReachHere, exiting SuperWord", NodeClassNames[opc]);})
+          assert(false, "Unhandled scalar opcode (%s)", NodeClassNames[opc]);
           return false; //and reverse to backup IG
         }
         ShouldNotReachHere();
@@ -3470,7 +3475,7 @@ bool SuperWord::construct_bb() {
             // First see if we can map the reduction on the given system we are on, then
             // make a data entry operation for each reduction we see.
             BasicType bt = use->bottom_type()->basic_type();
-            if (ReductionNode::implemented(use->Opcode(), Matcher::min_vector_size(bt), bt)) {
+            if (ReductionNode::implemented(use->Opcode(), Matcher::superword_max_vector_size(bt), bt)) {
               reduction_uses++;
             }
           }
@@ -3707,8 +3712,12 @@ void SuperWord::compute_vector_element_type() {
       assert(nn->is_Cmp(), "always have Cmp above Bool");
     }
     if (nn->is_Cmp() && nn->in(0) == nullptr) {
-      nn = nn->in(1);
-      set_velt_type(n, velt_type(nn));
+      assert(in_bb(nn->in(1)) || in_bb(nn->in(2)), "one of the inputs must be in the loop too");
+      if (in_bb(nn->in(1))) {
+        set_velt_type(n, velt_type(nn->in(1)));
+      } else {
+        set_velt_type(n, velt_type(nn->in(2)));
+      }
     }
   }
 #ifndef PRODUCT
