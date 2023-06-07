@@ -270,7 +270,7 @@ class InvokerBytecodeGenerator {
     private byte[] classFilePrologue(Consumer<? super ClassBuilder> config) {
         final int NOT_ACC_PUBLIC = 0;  // not ACC_PUBLIC
         try {
-            return Classfile.build(classDesc, new Consumer<ClassBuilder>() {
+            return Classfile.build(classDesc, new Consumer<>() {
                 @Override
                 public void accept(ClassBuilder clb) {
                     clb.withFlags(NOT_ACC_PUBLIC + ACC_FINAL + ACC_SUPER);
@@ -1675,11 +1675,10 @@ class InvokerBytecodeGenerator {
                     public void accept(MethodBuilder mb) {
                         mb.withFlags(ACC_STATIC);
 
-                        // Suppress this method in backtraces displayed to the user.
-                        mb.with(RuntimeVisibleAnnotationsAttribute.of(List.of(HIDDEN)));
-
-                        // Don't inline the interpreter entry.
-                        mb.with(RuntimeVisibleAnnotationsAttribute.of(List.of(DONTINLINE)));
+                        mb.with(RuntimeVisibleAnnotationsAttribute.of(List.of(
+                                HIDDEN,    // Suppress this method in backtraces displayed to the user.
+                                DONTINLINE // Don't inline the interpreter entry.
+                        )));
 
                         mb.withCode(new Consumer<CodeBuilder>() {
                             @Override
@@ -1713,7 +1712,7 @@ class InvokerBytecodeGenerator {
                                 }
 
                                 // return statement
-                                emitReturnInsn(cob, basicType(rtype));
+                                cob.returnInstruction(TypeKind.from(rtype));
                             }
                         });
                     }
@@ -1791,7 +1790,7 @@ class InvokerBytecodeGenerator {
                                 if (rtype == void.class) {
                                     cob.constantInstruction(null);
                                 }
-                                emitReturnInsn(cob, L_TYPE);  // NOTE: NamedFunction invokers always return a reference value.
+                               cob.returnInstruction(ReferenceType);  // NOTE: NamedFunction invokers always return a reference value.
                             }
                         });
                     }

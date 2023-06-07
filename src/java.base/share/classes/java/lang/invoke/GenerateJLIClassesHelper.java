@@ -43,11 +43,8 @@ import static java.lang.invoke.LambdaForm.BasicType.*;
 import static java.lang.invoke.MethodHandleStatics.CLASSFILE_VERSION;
 import static java.lang.invoke.MethodTypeForm.*;
 import static java.lang.invoke.LambdaForm.Kind.*;
-import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.lang.reflect.AccessFlag;
-import jdk.internal.classfile.AccessFlags;
 import jdk.internal.classfile.ClassBuilder;
 import jdk.internal.classfile.Classfile;
 
