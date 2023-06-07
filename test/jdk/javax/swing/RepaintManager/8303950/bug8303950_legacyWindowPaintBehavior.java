@@ -66,16 +66,31 @@ public class bug8303950_legacyWindowPaintBehavior {
                 Window w3 = createWindow( WINDOW_BACKGROUND, null, x, y + 400, 400, 400, true, "window 3");
                 Window w4 =  createWindow( WINDOW_BACKGROUND, ROOTPANE_BACKGROUND, x + 400, y + 400, 400, 400, true, "window 4");
 
-                createWhiteBackground(w1, w2, w3, w4);
+                // using a white background helps keep the colors we detect constant (because some windows
+                // are translucent)
+                Window background = createWhiteBackground(w1, w2, w3, w4);
                 w1.toFront();
                 w2.toFront();
                 w3.toFront();
                 w4.toFront();
+                background.toBack();
+
+                // So... one liability of this test is I'm unsure how to synchronize it really well. I'm open
+                // to suggestions here. Currently I use a combination of a large (but fast) loop, calling
+                // Window#repaint() and Toolkit#sync().
+
+                w1.repaint();
+                w2.repaint();
+                w3.repaint();
+                w4.repaint();
 
                 SwingUtilities.invokeLater(new Runnable() {
                     int ctr = 0;
                     @Override
                     public void run() {
+                        if (ctr == 0) {
+                            Toolkit.getDefaultToolkit().sync();
+                        }
                         while (ctr++ < 100_000) {
                             SwingUtilities.invokeLater(this);
                             return;
