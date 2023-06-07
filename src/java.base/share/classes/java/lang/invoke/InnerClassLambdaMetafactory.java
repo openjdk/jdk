@@ -42,6 +42,7 @@ import java.lang.reflect.Modifier;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
+import static java.lang.invoke.MethodHandleStatics.CLASSFILE_VERSION;
 import static java.lang.invoke.MethodHandles.Lookup.ClassOption.NESTMATE;
 import static java.lang.invoke.MethodHandles.Lookup.ClassOption.STRONG;
 import static java.lang.invoke.MethodType.methodType;
@@ -63,7 +64,6 @@ import jdk.internal.classfile.MethodBuilder;
  * @see LambdaMetafactory
  */
 /* package */ final class InnerClassLambdaMetafactory extends AbstractValidatingLambdaMetafactory {
-    private static final int CLASSFILE_VERSION = VM.classFileVersion();
     private static final String NAME_CTOR = "<init>";
     private static final String LAMBDA_INSTANCE_FIELD = "LAMBDA_INSTANCE$";
 
