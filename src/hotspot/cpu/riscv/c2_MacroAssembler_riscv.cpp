@@ -700,11 +700,17 @@ void C2_MacroAssembler::string_indexof_linearscan(Register haystack, Register ne
     slli(tmp3, result_tmp, haystack_chr_shift);
     add(haystack, haystack, tmp3);
     neg(hlen_neg, tmp3);
-
+    if (AvoidUnalignedAccesses) {
+      // preload first value, then we will read by 1 character per loop, instead of two
+      // just shifting previous ch2 right by size of character in bits
+      add(tmp3, haystack, hlen_neg);
+      (this->*haystack_load_1chr)(ch2, Address(tmp3), noreg);
+      slli(ch2, ch2, isLL ? 8 : 16);
+    }
     bind(CH1_LOOP);
     add(tmp3, haystack, hlen_neg);
     if (AvoidUnalignedAccesses) {
-      (this->*haystack_load_1chr)(ch2, Address(tmp3), noreg);
+      srli(ch2, ch2, isLL ? 8 : 16);
       (this->*haystack_load_1chr)(tmp3, Address(tmp3, isLL ? 1 : 2), noreg);
       slli(tmp3, tmp3, isLL ? 8 : 16);
       add(ch2, ch2, tmp3);
