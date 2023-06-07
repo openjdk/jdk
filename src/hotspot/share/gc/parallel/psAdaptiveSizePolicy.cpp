@@ -349,7 +349,7 @@ void PSAdaptiveSizePolicy::compute_eden_space_size(
     log_debug(gc, ergo)(
           "PSAdaptiveSizePolicy::compute_eden_space_size: gc time limit"
           " gc_cost: %f "
-          " GCTimeLimit: " UINT32_FORMAT,
+          " GCTimeLimit: %u",
           gc_cost(), GCTimeLimit);
   }
 

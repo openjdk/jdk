@@ -439,8 +439,6 @@ const uintx max_uintx = (uintx)-1;
 // max_uintx            0xFFFFFFFF      0xFFFFFFFFFFFFFFFF
 
 typedef unsigned int uint;   NEEDS_CLEANUP
-const uint  max_uint  = (uint)-1;
-
 
 //----------------------------------------------------------------------------------------------------
 // Java type definitions

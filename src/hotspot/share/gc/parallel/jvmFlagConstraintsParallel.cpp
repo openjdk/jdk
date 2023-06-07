@@ -47,7 +47,7 @@ JVMFlag::Error InitialTenuringThresholdConstraintFuncParallel(uintx value, bool 
   if (UseParallelGC && (value > MaxTenuringThreshold)) {
       JVMFlag::printError(verbose,
                           "InitialTenuringThreshold (" UINTX_FORMAT ") must be "
-                          "less than or equal to MaxTenuringThreshold (" UINTX_FORMAT ")\n",
+                          "less than or equal to MaxTenuringThreshold (%u)\n",
                           value, MaxTenuringThreshold);
       return JVMFlag::VIOLATES_CONSTRAINT;
   }
@@ -60,7 +60,7 @@ JVMFlag::Error MaxTenuringThresholdConstraintFuncParallel(uintx value, bool verb
   if (UseParallelGC && (value < InitialTenuringThreshold)) {
     JVMFlag::printError(verbose,
                         "MaxTenuringThreshold (" UINTX_FORMAT ") must be "
-                        "greater than or equal to InitialTenuringThreshold (" UINTX_FORMAT ")\n",
+                        "greater than or equal to InitialTenuringThreshold (%u)\n",
                         value, InitialTenuringThreshold);
     return JVMFlag::VIOLATES_CONSTRAINT;
   }
