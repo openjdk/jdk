@@ -677,6 +677,13 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
         UnsafeAccessor.setMemberValues(this, mv);
     }
 
+    /**
+     * Gets an unmodifiable view on the member values.
+     */
+    Map<String, Object> memberValues() {
+        return Collections.unmodifiableMap(memberValues);
+    }
+
     private static class UnsafeAccessor {
         private static final jdk.internal.misc.Unsafe unsafe
                 = jdk.internal.misc.Unsafe.getUnsafe();

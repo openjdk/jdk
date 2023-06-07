@@ -25,6 +25,7 @@
  */
 package jdk.internal.foreign.abi.aarch64;
 
+import java.lang.foreign.AddressLayout;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.GroupLayout;
 import java.lang.foreign.MemoryLayout;
@@ -44,14 +45,12 @@ import jdk.internal.foreign.abi.aarch64.macos.MacOsAArch64CallArranger;
 import jdk.internal.foreign.abi.aarch64.windows.WindowsAArch64CallArranger;
 import jdk.internal.foreign.Utils;
 
-import java.lang.foreign.SegmentScope;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.util.List;
 import java.util.Optional;
 
-import static jdk.internal.foreign.PlatformLayouts.*;
 import static jdk.internal.foreign.abi.aarch64.AArch64Architecture.*;
 import static jdk.internal.foreign.abi.aarch64.AArch64Architecture.Regs.*;
 
@@ -82,7 +81,7 @@ public abstract class CallArranger {
     //
     // Although the AAPCS64 says r0-7 and v0-7 are all valid return
     // registers, it's not possible to generate a C function that uses
-    // r2-7 and v4-7 so they are omitted here.
+    // r2-7 and v4-7 so, they are omitted here.
     protected static final ABIDescriptor C = abiFor(
         new VMStorage[] { r0, r1, r2, r3, r4, r5, r6, r7, INDIRECT_RESULT},
         new VMStorage[] { v0, v1, v2, v3, v4, v5, v6, v7 },
@@ -158,7 +157,7 @@ public abstract class CallArranger {
 
         boolean returnInMemory = isInMemoryReturn(cDesc.returnLayout());
         if (returnInMemory) {
-            csb.addArgumentBindings(MemorySegment.class, AArch64.C_POINTER,
+            csb.addArgumentBindings(MemorySegment.class, SharedUtils.C_POINTER,
                     argCalc.getIndirectBindings());
         } else if (cDesc.returnLayout().isPresent()) {
             Class<?> carrier = mt.returnType();
@@ -190,8 +189,9 @@ public abstract class CallArranger {
         return handle;
     }
 
-    public UpcallStubFactory arrangeUpcall(MethodType mt, FunctionDescriptor cDesc) {
-        Bindings bindings = getBindings(mt, cDesc, true);
+    public UpcallStubFactory arrangeUpcall(MethodType mt, FunctionDescriptor cDesc,
+                                                          LinkerOptions options) {
+        Bindings bindings = getBindings(mt, cDesc, true, options);
         final boolean dropReturn = true; /* drop return, since we don't have bindings for it */
         return SharedUtils.arrangeUpcallHelper(mt, bindings.isInMemoryReturn, dropReturn, abiDescriptor(),
                 bindings.callingSequence);
@@ -429,7 +429,7 @@ public abstract class CallArranger {
                     assert carrier == MemorySegment.class;
                     bindings.copy(layout)
                             .unboxAddress();
-                    VMStorage storage = storageCalculator.nextStorage(StorageType.INTEGER, AArch64.C_POINTER);
+                    VMStorage storage = storageCalculator.nextStorage(StorageType.INTEGER, SharedUtils.C_POINTER);
                     bindings.vmStore(storage, long.class);
                 }
                 case POINTER -> {
@@ -464,7 +464,7 @@ public abstract class CallArranger {
         List<Binding> getIndirectBindings() {
             return Binding.builder()
                 .vmLoad(INDIRECT_RESULT, long.class)
-                .boxAddressRaw(Long.MAX_VALUE)
+                .boxAddressRaw(Long.MAX_VALUE, 1)
                 .build();
         }
 
@@ -488,14 +488,15 @@ public abstract class CallArranger {
                 }
                 case STRUCT_REFERENCE -> {
                     assert carrier == MemorySegment.class;
-                    VMStorage storage = storageCalculator.nextStorage(StorageType.INTEGER, AArch64.C_POINTER);
+                    VMStorage storage = storageCalculator.nextStorage(StorageType.INTEGER, SharedUtils.C_POINTER);
                     bindings.vmLoad(storage, long.class)
                             .boxAddress(layout);
                 }
                 case POINTER -> {
-                    VMStorage storage = storageCalculator.nextStorage(StorageType.INTEGER, (ValueLayout) layout);
+                    AddressLayout addressLayout = (AddressLayout) layout;
+                    VMStorage storage = storageCalculator.nextStorage(StorageType.INTEGER, addressLayout);
                     bindings.vmLoad(storage, long.class)
-                            .boxAddressRaw(Utils.pointeeSize(layout));
+                            .boxAddressRaw(Utils.pointeeByteSize(addressLayout), Utils.pointeeByteAlign(addressLayout));
                 }
                 case INTEGER -> {
                     VMStorage storage = storageCalculator.nextStorage(StorageType.INTEGER, (ValueLayout) layout);

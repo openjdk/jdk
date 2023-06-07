@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,7 +82,7 @@
     // means we have to handle it here.
     NSEvent *currEvent = [[NSApplication sharedApplication] currentEvent];
 
-    if ([currEvent type] == NSKeyDown) {
+    if ([currEvent type] == NSEventTypeKeyDown) {
         // The action event can be ignored only if the key window is an AWT window.
         // Otherwise, the action event is the only notification and must be processed.
         NSWindow *keyWindow = [NSApp keyWindow];

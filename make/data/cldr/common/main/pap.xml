@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2023 Unicode, Inc.
+For terms of use, see http://www.unicode.org/copyright.html
+SPDX-License-Identifier: Unicode-DFS-2016
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+-->
+<ldml>
+	<identity>
+		<version number="$Revision$"/>
+		<language type="pap"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="en" draft="unconfirmed">ingles</language>
+			<language type="pap">Papiamentu</language>
+		</languages>
+		<scripts>
+			<script type="Latn" draft="unconfirmed">Latin</script>
+		</scripts>
+		<territories>
+			<territory type="AW" draft="unconfirmed">Aruba</territory>
+			<territory type="CW">Kòrsou</territory>
+			<territory type="TR" draft="unconfirmed">Turkia</territory>
+		</territories>
+		<measurementSystemNames>
+			<measurementSystemName type="metric" draft="unconfirmed">meter</measurementSystemName>
+			<measurementSystemName type="UK" draft="unconfirmed">britániko</measurementSystemName>
+			<measurementSystemName type="US" draft="unconfirmed">merikano</measurementSystemName>
+		</measurementSystemNames>
+		<codePatterns>
+			<codePattern type="language" draft="unconfirmed">Idioma: {0}</codePattern>
+			<codePattern type="script" draft="unconfirmed">Manera di skirbi: {0}</codePattern>
+			<codePattern type="territory" draft="unconfirmed">Region: {0}</codePattern>
+		</codePatterns>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters>[a b c d e è f g h i j k l m n ñ o ò p q r s t u ù ü v w x y z]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[á é í ó ú]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‑ , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] § @ / \&amp; # % ′ ″]</exemplarCharacters>
+	</characters>
+	<dates>
+		<calendars>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="wide">
+							<month type="1">Yanüari</month>
+							<month type="2">Febrüari</month>
+							<month type="3">Mart</month>
+							<month type="4">Aprel</month>
+							<month type="5">Mei</month>
+							<month type="6">Yüni</month>
+							<month type="7">Yüli</month>
+							<month type="8">Ougùstùs</month>
+							<month type="9">Sèptèmber</month>
+							<month type="10">Òktober</month>
+							<month type="11">Novèmber</month>
+							<month type="12">Desèmber</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<days>
+					<dayContext type="format">
+						<dayWidth type="wide">
+							<day type="sun">djadumingu</day>
+							<day type="mon">djaluna</day>
+							<day type="tue">djamars</day>
+							<day type="wed">djarason</day>
+							<day type="thu">djaweps</day>
+							<day type="fri">djabièrnè</day>
+							<day type="sat">djasabra</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+				<dayPeriods>
+					<dayPeriodContext type="format">
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am" draft="unconfirmed">AM</dayPeriod>
+							<dayPeriod type="pm" draft="unconfirmed">PM</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+				</dayPeriods>
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="yMd" draft="unconfirmed">dd-MM-y</dateFormatItem>
+						<dateFormatItem id="yMMMd" draft="unconfirmed">d MMM y</dateFormatItem>
+					</availableFormats>
+				</dateTimeFormats>
+			</calendar>
+		</calendars>
+		<timeZoneNames>
+			<regionFormat draft="unconfirmed">ora di {0}</regionFormat>
+			<metazone type="GMT">
+				<long>
+					<standard draft="unconfirmed">Greenwich Mean Time</standard>
+				</long>
+			</metazone>
+		</timeZoneNames>
+	</dates>
+	<numbers>
+		<symbols numberSystem="latn">
+			<decimal>.</decimal>
+			<group>,</group>
+			<percentSign>%</percentSign>
+			<minusSign>-</minusSign>
+		</symbols>
+	</numbers>
+	<personNames>
+		<personName order="givenFirst" length="long" usage="referring" formality="formal">
+			<namePattern draft="unconfirmed">{title} {given} {given2} {surname} {surname2}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="referring" formality="formal">
+			<namePattern draft="unconfirmed">{title} {surname} {surname2} {given} {given2}</namePattern>
+		</personName>
+		<sampleName item="nativeG">
+			<nameField type="given" draft="unconfirmed">Zendaya</nameField>
+		</sampleName>
+		<sampleName item="nativeGS">
+			<nameField type="given" draft="unconfirmed">Irene</nameField>
+		</sampleName>
+		<sampleName item="nativeGGS">
+			<nameField type="given" draft="unconfirmed">Mari-Sue</nameField>
+		</sampleName>
+		<sampleName item="nativeFull">
+			<nameField type="given" draft="unconfirmed">Jackson Martina</nameField>
+		</sampleName>
+		<sampleName item="foreignFull">
+			<nameField type="given" draft="unconfirmed">Ada Kornelia</nameField>
+		</sampleName>
+	</personNames>
+</ldml>

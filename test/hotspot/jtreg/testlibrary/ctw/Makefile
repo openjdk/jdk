@@ -57,7 +57,6 @@ EXPORTS=--add-exports java.base/jdk.internal.jimage=ALL-UNNAMED \
 	--add-exports java.base/jdk.internal.classfile=ALL-UNNAMED \
 	--add-exports java.base/jdk.internal.classfile.attribute=ALL-UNNAMED \
 	--add-exports java.base/jdk.internal.classfile.constantpool=ALL-UNNAMED \
-	--add-exports java.base/jdk.internal.classfile.java.lang.constant=ALL-UNNAMED \
 	--add-exports java.base/jdk.internal.access=ALL-UNNAMED
 
 CTW_MAIN_CLASS = sun.hotspot.tools.ctw.CompileTheWorld

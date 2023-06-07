@@ -71,6 +71,7 @@ bool JVMCIGlobals::check_jvmci_flags_are_consistent() {
   JVMCI_FLAG_CHECKED(UseJVMCICompiler)
   JVMCI_FLAG_CHECKED(EnableJVMCI)
   JVMCI_FLAG_CHECKED(EnableJVMCIProduct)
+  JVMCI_FLAG_CHECKED(UseGraalJIT)
 
   CHECK_NOT_SET(BootstrapJVMCI,   UseJVMCICompiler)
   CHECK_NOT_SET(PrintBootstrap,   UseJVMCICompiler)
@@ -164,7 +165,7 @@ bool JVMCIGlobals::check_jvmci_flags_are_consistent() {
 }
 
 // Convert JVMCI flags from experimental to product
-bool JVMCIGlobals::enable_jvmci_product_mode(JVMFlagOrigin origin) {
+bool JVMCIGlobals::enable_jvmci_product_mode(JVMFlagOrigin origin, bool use_graal_jit) {
   const char *JVMCIFlags[] = {
     "EnableJVMCI",
     "EnableJVMCIProduct",
@@ -201,6 +202,12 @@ bool JVMCIGlobals::enable_jvmci_product_mode(JVMFlagOrigin origin) {
   if (JVMFlagAccess::set_bool(jvmciEnableFlag, &value, origin) != JVMFlag::SUCCESS) {
     return false;
   }
+  if (use_graal_jit) {
+    JVMFlag *useGraalJITFlag = JVMFlag::find_flag("UseGraalJIT");
+    if (JVMFlagAccess::set_bool(useGraalJITFlag, &value, origin) != JVMFlag::SUCCESS) {
+      return false;
+    }
+  }
 
   // Effect of EnableJVMCIProduct on changing defaults of EnableJVMCI
   // and UseJVMCICompiler is deferred to check_jvmci_flags_are_consistent
@@ -211,7 +218,7 @@ bool JVMCIGlobals::enable_jvmci_product_mode(JVMFlagOrigin origin) {
 }
 
 bool JVMCIGlobals::gc_supports_jvmci() {
-  return UseSerialGC || UseParallelGC || UseG1GC;
+  return UseSerialGC || UseParallelGC || UseG1GC || (UseZGC && !ZGenerational);
 }
 
 void JVMCIGlobals::check_jvmci_supported_gc() {

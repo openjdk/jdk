@@ -23,12 +23,14 @@
 
 /*
  * @test
- * @bug 4904074 6328220 6330389
- * @summary Basic tests for SimpleEntry, SimpleImmutableEntry
+ * @bug 4904074 6328220 6330389 8308167
+ * @modules java.base/jdk.internal.util
+ * @summary Basic tests for several Map.Entry implementations
  * @author Martin Buchholz
  */
 
 import java.util.Map;
+import jdk.internal.util.NullableKeyValueHolder;
 
 import static java.util.AbstractMap.SimpleEntry;
 import static java.util.AbstractMap.SimpleImmutableEntry;
@@ -40,8 +42,12 @@ public class SimpleEntries {
     private static void realMain(String[] args) throws Throwable {
         testEntry(new SimpleEntry<String,Long>(k,v));
         testEntry(new SimpleImmutableEntry<String,Long>(k,v));
+        testEntry(Map.entry(k,v));
+        testEntry(Map.Entry.copyOf(Map.entry(k,v)));
+        testEntry(new NullableKeyValueHolder(k,v));
         testNullEntry(new SimpleEntry<String,Long>(null,null));
         testNullEntry(new SimpleImmutableEntry<String,Long>(null,null));
+        testNullEntry(new NullableKeyValueHolder(null,null));
     }
 
     private static void testEntry(Map.Entry<String,Long> e) {
@@ -52,6 +58,7 @@ public class SimpleEntries {
         check(! e.equals(null));
         equal(e, new SimpleImmutableEntry<String,Long>(k,v));
         equal(e.toString(), k+"="+v);
+        check(e.hashCode() == 101575); // hash("foo") ^ hash(1L)
         if (e instanceof SimpleEntry) {
             equal(e.setValue(v2), v);
             equal(e.getValue(), v2);
@@ -70,6 +77,7 @@ public class SimpleEntries {
         equal(e, new SimpleEntry<String,Long>(null, null));
         equal(e, new SimpleImmutableEntry<String,Long>(null, null));
         equal(e.toString(), "null=null");
+        check(e.hashCode() == 0);
         if (e instanceof SimpleEntry) {
             equal(e.setValue(v), null);
             equal(e.getValue(), v);

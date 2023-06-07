@@ -84,15 +84,15 @@ void OopMapDo<OopFnT, DerivedOopFnT, ValueFilterT>::iterate_oops_do(const frame 
       }
       guarantee(loc != nullptr, "missing saved register");
       derived_pointer* derived_loc = (derived_pointer*)loc;
-      void** base_loc = (void**) fr->oopmapreg_to_location(omv.content_reg(), reg_map);
+      derived_base* base_loc = (derived_base*) fr->oopmapreg_to_location(omv.content_reg(), reg_map);
 
       // Ignore nullptr oops and decoded null narrow oops which
       // equal to CompressedOops::base() when a narrow oop
       // implicit null check is used in compiled code.
       // The narrow_oop_base could be nullptr or be the address
       // of the page below heap depending on compressed oops mode.
-      if (base_loc != nullptr && !SkipNullValue::should_skip(*base_loc)) {
-        _derived_oop_fn->do_derived_oop((oop*)base_loc, derived_loc);
+      if (base_loc != nullptr && !SkipNullValue::should_skip((void*)*base_loc)) {
+        _derived_oop_fn->do_derived_oop(base_loc, derived_loc);
       }
     }
   }

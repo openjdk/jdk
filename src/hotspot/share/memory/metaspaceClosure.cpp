@@ -35,9 +35,7 @@ void MetaspaceClosure::Ref::update(address new_loc) const {
 void MetaspaceClosure::push_impl(MetaspaceClosure::Ref* ref) {
   if (_nest_level < MAX_NEST_LEVEL) {
     do_push(ref);
-    if (!ref->keep_after_pushing()) {
-      delete ref;
-    }
+    delete ref;
   } else {
     do_pending_ref(ref);
     ref->set_next(_pending_refs);
@@ -80,9 +78,7 @@ void MetaspaceClosure::finish() {
     Ref* ref = _pending_refs;
     _pending_refs = _pending_refs->next();
     do_push(ref);
-    if (!ref->keep_after_pushing()) {
-      delete ref;
-    }
+    delete ref;
   }
 }
 

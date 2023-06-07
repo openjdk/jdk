@@ -38,6 +38,7 @@
  */
 // -Djdk.internal.httpclient.debug=true
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -56,8 +57,14 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Flow;
+import java.util.concurrent.Flow.Publisher;
+import java.util.concurrent.Flow.Subscriber;
+import java.util.concurrent.Flow.Subscription;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Stream;
+
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
 import javax.net.ssl.SSLContext;
 
@@ -69,6 +76,7 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import static java.lang.System.err;
+import static java.lang.System.in;
 import static java.lang.System.out;
 import static java.net.http.HttpClient.Builder.NO_PROXY;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
@@ -86,6 +94,7 @@ public class HttpClientClose implements HttpServerAdapters {
     }
     static final Random RANDOM = RandomFactory.getRandom();
 
+    ExecutorService readerService;
     SSLContext sslContext;
     HttpTestServer httpTestServer;        // HTTP/1.1    [ 4 servers ]
     HttpTestServer httpsTestServer;       // HTTPS/1.1
@@ -112,20 +121,71 @@ public class HttpClientClose implements HttpServerAdapters {
     static final AtomicLong requestCounter = new AtomicLong();
     final ReferenceTracker TRACKER = ReferenceTracker.INSTANCE;
 
-    static String readBody(InputStream in) {
-        try {
+    static String readBody(InputStream body) {
+        try (InputStream in = body) {
             return new String(in.readAllBytes(), StandardCharsets.UTF_8);
         } catch (IOException io) {
             throw new UncheckedIOException(io);
         }
     }
 
+    private static record CancellingSubscriber<U>(ExchangeResult<?> result)
+            implements Subscriber<U> {
+        @Override
+        public void onSubscribe(Subscription subscription) {
+            out.printf("%s:  cancelling subscription", result.step());
+            subscription.cancel();
+        }
+        @Override
+        public void onNext(U item) {}
+        @Override
+        public void onError(Throwable throwable) {}
+        @Override
+        public void onComplete() {}
+    }
+
+    private static <U> void ensureClosed(ExchangeResult<U> result) {
+        var response = result.response;
+        if (response == null) return;
+        var body = response.body();
+        try {
+            if (body instanceof Closeable cl) {
+                cl.close();
+            } else if (body instanceof Publisher<?> pub) {
+                pub.subscribe(new CancellingSubscriber<Object>(result));
+            }
+        } catch (IOException io) {
+            out.printf("%s:  Failed to close body: %s", result.step(), io);
+            io.printStackTrace(out);
+        }
+    }
+
+    private record ExchangeResult<T>(int step, HttpResponse<T> response) {
+        public static <U> ExchangeResult<U> ofStep(int step) {
+            return new ExchangeResult<U>(step, null);
+        }
+        ExchangeResult<T> withResponse(HttpResponse<T> response) {
+            return new ExchangeResult(step, response);
+        }
+        ExchangeResult<T> assertResponseState() {
+            try {
+                out.println(step + ":  Got response: " + response);
+                assertEquals(response.statusCode(), 200);
+            } catch (AssertionError error) {
+                out.printf("%s:  Closing body due to assertion - %s", error);
+                ensureClosed(this);
+                throw error;
+            }
+            return this;
+        }
+    }
+
     @Test(dataProvider = "positive")
     void testConcurrent(String uriString) throws Exception {
-        out.printf("%n---- starting (%s) ----%n", uriString);
-        ExecutorService readerService = Executors.newCachedThreadPool();
+        out.printf("%n---- starting concurrent (%s) ----%n%n", uriString);
         Throwable failed = null;
         HttpClient toCheck = null;
+        List<CompletableFuture<String>> bodies = new ArrayList<>();
         try (HttpClient client = toCheck = HttpClient.newBuilder()
                 .proxy(NO_PROXY)
                 .followRedirects(Redirect.ALWAYS)
@@ -133,7 +193,6 @@ public class HttpClientClose implements HttpServerAdapters {
                 .build()) {
             TRACKER.track(client);
 
-            List<CompletableFuture<String>> bodies = new ArrayList<>();
             for (int i = 0; i < ITERATIONS; i++) {
                 URI uri = URI.create(uriString + "/concurrent/iteration-" + i);
                 HttpRequest request = HttpRequest.newBuilder(uri)
@@ -143,12 +202,11 @@ public class HttpClientClose implements HttpServerAdapters {
                 CompletableFuture<HttpResponse<InputStream>> responseCF;
                 CompletableFuture<String> bodyCF;
                 final int si = i;
+                ExchangeResult<InputStream> result = ExchangeResult.ofStep(si);
                 responseCF = client.sendAsync(request, BodyHandlers.ofInputStream())
-                        .thenApply((response) -> {
-                            out.println(si + ":  Got response: " + response);
-                            assertEquals(response.statusCode(), 200);
-                            return response;
-                        });
+                        .thenApply(result::withResponse)
+                        .thenApplyAsync(ExchangeResult::assertResponseState, readerService)
+                        .thenApply(ExchangeResult::response);
                 bodyCF = responseCF.thenApplyAsync(HttpResponse::body, readerService)
                         .thenApply(HttpClientClose::readBody)
                         .thenApply((s) -> {
@@ -163,33 +221,15 @@ public class HttpClientClose implements HttpServerAdapters {
                 var cf = bodyCF;
                 bodies.add(cf);
             }
-            CompletableFuture.allOf(bodies.toArray(new CompletableFuture<?>[0])).get();
-        } catch (Throwable throwable) {
-            failed = throwable;
-        } finally {
-            failed = cleanup(readerService, failed);
         }
-        if (failed instanceof Exception ex) throw ex;
-        if (failed instanceof Error e) throw e;
         assertTrue(toCheck.isTerminated());
-    }
-
-    static Throwable cleanup(ExecutorService readerService, Throwable failed) {
-        try {
-            readerService.shutdown();
-            readerService.awaitTermination(2000, TimeUnit.MILLISECONDS);
-        } catch (InterruptedException ie) {
-            if (failed != null) {
-                failed.addSuppressed(ie);
-            } else failed = ie;
-        }
-        return failed;
+        // assert all operations eventually terminate
+        CompletableFuture.allOf(bodies.toArray(new CompletableFuture<?>[0])).get();
     }
 
     @Test(dataProvider = "positive")
     void testSequential(String uriString) throws Exception {
-        out.printf("%n---- starting (%s) ----%n", uriString);
-        ExecutorService readerService = Executors.newCachedThreadPool();
+        out.printf("%n---- starting sequential (%s) ----%n%n", uriString);
         Throwable failed = null;
         HttpClient toCheck = null;
         try (HttpClient client = toCheck = HttpClient.newBuilder()
@@ -206,14 +246,13 @@ public class HttpClientClose implements HttpServerAdapters {
                         .build();
                 out.printf("Iteration %d request: %s%n", i, request.uri());
                 final int si = i;
+                ExchangeResult<InputStream> result = ExchangeResult.ofStep(si);
                 CompletableFuture<HttpResponse<InputStream>> responseCF;
                 CompletableFuture<String> bodyCF;
                 responseCF = client.sendAsync(request, BodyHandlers.ofInputStream())
-                        .thenApply((response) -> {
-                            out.println(si + ":  Got response: " + response);
-                            assertEquals(response.statusCode(), 200);
-                            return response;
-                        });
+                        .thenApply(result::withResponse)
+                        .thenApplyAsync(ExchangeResult::assertResponseState, readerService)
+                        .thenApply(ExchangeResult::response);
                 bodyCF = responseCF.thenApplyAsync(HttpResponse::body, readerService)
                         .thenApply(HttpClientClose::readBody)
                         .thenApply((s) -> {
@@ -231,13 +270,7 @@ public class HttpClientClose implements HttpServerAdapters {
                 }
                 bodyCF.get();
             }
-        } catch (Throwable throwable) {
-            failed = throwable;
-        } finally {
-            failed = cleanup(readerService, failed);
         }
-        if (failed instanceof Exception ex) throw ex;
-        if (failed instanceof Error e) throw e;
         assertTrue(toCheck.isTerminated());
     }
 
@@ -249,7 +282,7 @@ public class HttpClientClose implements HttpServerAdapters {
         sslContext = new SimpleSSLContext().get();
         if (sslContext == null)
             throw new AssertionError("Unexpected null sslContext");
-
+        readerService = Executors.newCachedThreadPool();
         httpTestServer = HttpTestServer.create(HTTP_1_1);
         httpTestServer.addHandler(new ServerRequestHandler(), "/http1/exec/");
         httpURI = "http://" + httpTestServer.serverAuthority() + "/http1/exec/retry";
@@ -275,12 +308,22 @@ public class HttpClientClose implements HttpServerAdapters {
         Thread.sleep(100);
         AssertionError fail = TRACKER.checkShutdown(5000);
         try {
+            shutdown(readerService);
             httpTestServer.stop();
             httpsTestServer.stop();
             http2TestServer.stop();
             https2TestServer.stop();
         } finally {
             if (fail != null) throw fail;
+        }
+    }
+
+    static void shutdown(ExecutorService executorService) {
+        try {
+            executorService.shutdown();
+            executorService.awaitTermination(2000, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException ie) {
+            executorService.shutdownNow();
         }
     }
 
