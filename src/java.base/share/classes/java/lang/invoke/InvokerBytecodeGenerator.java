@@ -1788,9 +1788,9 @@ class InvokerBytecodeGenerator {
 
                                 // If the return type is void we return a null reference.
                                 if (rtype == void.class) {
-                                    cob.constantInstruction(null);
+                                    cob.aconst_null();
                                 }
-                               cob.returnInstruction(ReferenceType);  // NOTE: NamedFunction invokers always return a reference value.
+                               cob.areturn();  // NOTE: NamedFunction invokers always return a reference value.
                             }
                         });
                     }
