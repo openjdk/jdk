@@ -4051,12 +4051,12 @@ public class JavacParser implements Parser {
         }
 
         Name name = names.fromString(simplename);
-        JCModifiers anonMods = F.at(primaryPos)
+        JCModifiers unnamedMods = F.at(primaryPos)
                 .Modifiers(Flags.FINAL|Flags.SYNTHETIC|Flags.UNNAMED_CLASS, List.nil());
-        JCClassDecl anon = F.at(primaryPos).ClassDef(
-                anonMods, name, List.nil(), null, List.nil(), List.nil(),
+        JCClassDecl unnamed = F.at(primaryPos).ClassDef(
+                unnamedMods, name, List.nil(), null, List.nil(), List.nil(),
                 defs.toList());
-        topDefs.append(anon);
+        topDefs.append(unnamed);
         return topDefs.toList();
     }
 
