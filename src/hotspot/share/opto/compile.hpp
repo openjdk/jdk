@@ -53,7 +53,6 @@ class Bundle;
 class CallGenerator;
 class CallStaticJavaNode;
 class CloneMap;
-class CMoveNode;
 class ConnectionGraph;
 class IdealGraphPrinter;
 class InlineTree;
@@ -308,8 +307,6 @@ class Compile : public Phase {
   bool                  _post_loop_opts_phase;  // Loop opts are finished.
 
   int                   _major_progress;        // Count of something big happening
-  bool                  _run_loop_conditional_propagation;
-  int                   _loop_conditional_propagation_rounds;
   bool                  _inlining_progress;     // progress doing incremental inlining?
   bool                  _inlining_incrementally;// Are we doing incremental inlining (post parse)
   bool                  _do_cleanup;            // Cleanup is needed before proceeding with incremental inlining
@@ -362,7 +359,6 @@ class Compile : public Phase {
   GrowableArray<Node*>  _for_post_loop_igvn;    // List of nodes for IGVN after loop opts are over
   GrowableArray<UnstableIfTrap*> _unstable_if_traps;        // List of ifnodes after IGVN
   GrowableArray<Node_List*> _coarsened_locks;   // List of coarsened Lock and Unlock nodes
-  GrowableArray<CMoveNode*> _cmove_nodes;   // List of coarsened Lock and Unlock nodes
   ConnectionGraph*      _congraph;
 #ifndef PRODUCT
   IdealGraphPrinter*    _igv_printer;
@@ -594,8 +590,6 @@ private:
   int               fixed_slots() const         { assert(_fixed_slots >= 0, "");         return _fixed_slots; }
   void          set_fixed_slots(int n)          { _fixed_slots = n; }
   int               major_progress() const      { return _major_progress; }
-  bool run_loop_conditional_propagation() const { return _run_loop_conditional_propagation; }
-  int loop_conditional_propagation_rounds() const { return _loop_conditional_propagation_rounds; }
   void          set_inlining_progress(bool z)   { _inlining_progress = z; }
   int               inlining_progress() const   { return _inlining_progress; }
   void          set_inlining_incrementally(bool z) { _inlining_incrementally = z; }
@@ -603,11 +597,8 @@ private:
   void          set_do_cleanup(bool z)          { _do_cleanup = z; }
   int               do_cleanup() const          { return _do_cleanup; }
   void          set_major_progress()            { _major_progress++; }
-  void set_run_loop_conditional_propagation()   { /*_run_loop_conditional_propagation = true;*/ }
   void          restore_major_progress(int progress) { _major_progress += progress; }
   void        clear_major_progress()            { _major_progress = 0; }
-  void clear_run_loop_conditional_propagation() { _run_loop_conditional_propagation = false; }
-  void set_loop_conditional_propagation_rounds(int r) { _loop_conditional_propagation_rounds = r; }
   int               max_inline_size() const     { return _max_inline_size; }
   void          set_freq_inline_size(int n)     { _freq_inline_size = n; }
   int               freq_inline_size() const    { return _freq_inline_size; }
@@ -711,7 +702,6 @@ private:
   int           template_assertion_predicate_count() const { return _template_assertion_predicate_opaqs.length(); }
   int           expensive_count()         const { return _expensive_nodes.length(); }
   int           coarsened_count()         const { return _coarsened_locks.length(); }
-  int           cmove_count()             const { return _cmove_nodes.length(); }
 
   Node*         macro_node(int idx)       const { return _macro_nodes.at(idx); }
   Node*         parse_predicate_opaque1_node(int idx) const { return _parse_predicate_opaqs.at(idx); }
@@ -721,7 +711,6 @@ private:
   }
 
   Node*         expensive_node(int idx)   const { return _expensive_nodes.at(idx); }
-  CMoveNode*         cmove_node(int idx)  const { return _cmove_nodes.at(idx); }
 
   ConnectionGraph* congraph()                   { return _congraph;}
   void set_congraph(ConnectionGraph* congraph)  { _congraph = congraph;}
@@ -765,13 +754,6 @@ private:
   void add_coarsened_locks(GrowableArray<AbstractLockNode*>& locks);
   void remove_coarsened_lock(Node* n);
   bool coarsened_locks_consistent();
-  void add_cmove_node(CMoveNode * n) {
-    assert(!_cmove_nodes.contains(n), "duplicate entry in expand list");
-    _cmove_nodes.append(n);
-  }
-  void remove_cmove_node(CMoveNode* n) {
-    _cmove_nodes.remove_if_existing(n);
-  }
 
   bool       post_loop_opts_phase() { return _post_loop_opts_phase;  }
   void   set_post_loop_opts_phase() { _post_loop_opts_phase = true;  }
@@ -1034,7 +1016,7 @@ private:
     _vector_reboxing_late_inlines.push(cg);
   }
 
-  template<class T> void remove_useless_nodes       (GrowableArray<T*>&        node_list, Unique_Node_List &useful);
+  void remove_useless_nodes       (GrowableArray<Node*>&        node_list, Unique_Node_List &useful);
 
   void remove_useless_late_inlines(GrowableArray<CallGenerator*>* inlines, Unique_Node_List &useful);
   void remove_useless_late_inlines(GrowableArray<CallGenerator*>* inlines, Node* dead);

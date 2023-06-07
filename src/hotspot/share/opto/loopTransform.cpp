@@ -690,8 +690,6 @@ void PhaseIdealLoop::peeled_dom_test_elim(IdealLoopTree* loop, Node_List& old_ne
 void PhaseIdealLoop::do_peeling(IdealLoopTree *loop, Node_List &old_new) {
 
   C->set_major_progress();
-  C->set_run_loop_conditional_propagation();
-
   // Peeling a 'main' loop in a pre/main/post situation obfuscates the
   // 'pre' loop from the main and the 'pre' can no longer have its
   // iterations adjusted.  Therefore, we need to declare this loop as
@@ -1828,7 +1826,6 @@ void PhaseIdealLoop::insert_pre_post_loops(IdealLoopTree *loop, Node_List &old_n
   // finds some, but we _know_ they are all useless.
   peeled_dom_test_elim(loop,old_new);
   loop->record_for_igvn();
-  C->set_run_loop_conditional_propagation();
 }
 
 //------------------------------insert_vector_post_loop------------------------
@@ -2303,7 +2300,7 @@ void PhaseIdealLoop::do_unroll(IdealLoopTree *loop, Node_List &old_new, bool adj
       } else {
         // limit = MinL(limit - stride, max_jint)
         new_limit_no_underflow_l = new MinLNode(C, new_limit_l, underflow_clamp_l);
-    }
+      }
       register_new_node(new_limit_no_underflow_l, ctrl);
 
       // (4) Convert back to int.
@@ -2606,7 +2603,6 @@ PhaseIdealLoop::add_constraint(IdealLoopTree* loop, jlong stride_con, jlong scal
   predicate_proj = add_range_check_elimination_assertion_predicate(loop, predicate_proj, scale, offset, low_limit, upper_limit,
                                              max_value);
   assert(assertion_predicate_has_loop_opaque_node(predicate_proj->in(0)->as_If()), "unexpected");
-  C->set_run_loop_conditional_propagation();
 }
 
 //----------------------------------is_iv------------------------------------
@@ -2919,7 +2915,6 @@ Node* PhaseIdealLoop::add_range_check_elimination_assertion_predicate(IdealLoopT
   register_new_node(opaque_bol, ctrl);
   IfNode* new_iff = new IfNode(ctrl, opaque_bol, PROB_MAX, COUNT_UNKNOWN);
   register_control(new_iff, loop->_parent, ctrl);
-
   Node* iffalse = new IfFalseNode(new_iff);
   register_control(iffalse, _ltree_root, new_iff);
   ProjNode* iftrue = new IfTrueNode(new_iff);

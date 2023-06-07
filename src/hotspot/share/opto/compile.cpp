@@ -47,7 +47,6 @@
 #include "opto/castnode.hpp"
 #include "opto/cfgnode.hpp"
 #include "opto/chaitin.hpp"
-#include "opto/movenode.hpp"
 #include "opto/compile.hpp"
 #include "opto/connode.hpp"
 #include "opto/convertnode.hpp"
@@ -361,8 +360,7 @@ void Compile::remove_useless_late_inlines(GrowableArray<CallGenerator*>* inlines
   assert(found <= 1, "not unique");
 }
 
-template<class T> void Compile::remove_useless_nodes(GrowableArray<T*>& node_list, Unique_Node_List& useful) {
-  static_assert(std::is_base_of<Node, T>::value, "");
+void Compile::remove_useless_nodes(GrowableArray<Node*>& node_list, Unique_Node_List& useful) {
   for (int i = node_list.length() - 1; i >= 0; i--) {
     Node* n = node_list.at(i);
     if (!useful.member(n)) {
@@ -393,9 +391,6 @@ void Compile::remove_useless_node(Node* dead) {
   }
   if (dead->for_post_loop_opts_igvn()) {
     remove_from_post_loop_opts_igvn(dead);
-  }
-  if (dead->is_CMove()) {
-    remove_cmove_node(dead->as_CMove());
   }
   if (dead->is_Call()) {
     remove_useless_late_inlines(                &_late_inlines, dead);
@@ -447,7 +442,6 @@ void Compile::disconnect_useless_nodes(Unique_Node_List& useful, Unique_Node_Lis
   remove_useless_nodes(_for_post_loop_igvn, useful); // remove useless node recorded for post loop opts IGVN pass
   remove_useless_unstable_if_traps(useful);          // remove useless unstable_if traps
   remove_useless_coarsened_locks(useful);            // remove useless coarsened locks nodes
-  remove_useless_nodes(_cmove_nodes,        useful); // remove useless macro nodes
 #ifdef ASSERT
   if (_modified_nodes != nullptr) {
     _modified_nodes->remove_useless_nodes(useful.member_set());
@@ -628,7 +622,6 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
                   _for_post_loop_igvn(comp_arena(), 8, 0, nullptr),
                   _unstable_if_traps (comp_arena(), 8, 0, nullptr),
                   _coarsened_locks   (comp_arena(), 8, 0, nullptr),
-                  _cmove_nodes       (comp_arena(), 8, 0, nullptr),
                   _congraph(nullptr),
                   NOT_PRODUCT(_igv_printer(nullptr) COMMA)
                   _unique(0),
@@ -1028,8 +1021,6 @@ void Compile::Init(bool aliasing) {
   set_has_boxed_value(false);
   _trap_can_recompile = false;  // no traps emitted yet
   _major_progress = true; // start out assuming good things will happen
-  _run_loop_conditional_propagation = true;
-  _loop_conditional_propagation_rounds = UseLoopConditionalPropagation ? 2 : 0;
   set_has_unsafe_access(false);
   set_max_vector_size(0);
   set_clear_upper_avx(false);  //false as default for clear upper bits of ymm registers

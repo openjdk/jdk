@@ -251,7 +251,7 @@ int hashstr(const void* t) {
 // Slimey cheap hash function; no guaranteed performance.  Better than the
 // default for pointers, especially on MS-DOS machines.
 int hashptr(const void* key) {
-  return ((intptr_t)key >> LogBytesPerWord);
+  return ((intptr_t)key >> 2);
 }
 
 // Slimey cheap hash function; no guaranteed performance.

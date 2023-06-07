@@ -633,7 +633,7 @@ class PhaseCCP : public PhaseIterGVN {
   void push_opaque_zero_trip_guard(Unique_Node_List& worklist, const Node* use) const;
   void push_opaque_orig_limit(Unique_Node_List& worklist, const Node* parent, const Node* use) const;
 
-public:
+ public:
   PhaseCCP( PhaseIterGVN *igvn ); // Compute conditional constants
   NOT_PRODUCT( ~PhaseCCP(); )
 

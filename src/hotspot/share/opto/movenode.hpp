@@ -43,7 +43,6 @@ class CMoveNode : public TypeNode {
     init_req(Condition,bol);
     init_req(IfFalse,left);
     init_req(IfTrue,right);
-    Compile::current()->add_cmove_node(this);
   }
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual const Type* Value(PhaseGVN* phase) const;
