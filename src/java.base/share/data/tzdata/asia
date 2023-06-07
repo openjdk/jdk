@@ -2714,6 +2714,40 @@ Zone	Asia/Pyongyang	8:23:00 -	LMT	1908 Apr  1
 
 
 # Lebanon
+#
+# From Saadallah Itani (2023-03-23):
+# Lebanon ... announced today delay of Spring forward from March 25 to April 20.
+#
+# From Paul Eggert (2023-03-27):
+# This announcement was by the Lebanese caretaker prime minister Najib Mikati.
+# https://www.mtv.com.lb/en/News/Local/1352516/lebanon-postpones-daylight-saving-time-adoption
+# A video was later leaked to the media of parliament speaker Nabih Berri
+# asking Mikati to postpone DST to aid observance of Ramadan, Mikati objecting
+# that this would cause problems such as scheduling airline flights, to which
+# Berri interjected, "What flights?"
+#
+# The change was controversial and led to a partly-sectarian divide.
+# Many Lebanese institutions, including the education ministry, the Maronite
+# church, and two news channels LCBI and MTV, ignored the announcement and
+# went ahead with the long-scheduled spring-forward on March 25/26, some
+# arguing that the prime minister had not followed the law because the change
+# had not been approved by the cabinet.  Google went with the announcement;
+# Apple ignored it.  At least one bank followed the announcement for its doors,
+# but ignored the announcement in internal computer systems.
+# Beirut international airport listed two times for each departure.
+# Dan Azzi wrote "My view is that this whole thing is a Dumb and Dumber movie."
+# Eventually the prime minister backed down, said the cabinet had decided to
+# stick with its 1998 decision, and that DST would begin midnight March 29/30.
+# https://www.nna-leb.gov.lb/en/miscellaneous/604093/lebanon-has-two-times-of-day-amid-daylight-savings
+# https://www.cnbc.com/2023/03/27/lebanon-in-two-different-time-zones-as-government-disagrees-on-daylight-savings.html
+#
+# Although we could model the chaos with two Zones, that would likely cause
+# more trouble than it would cure.  Since so many manual clocks and
+# computer-based timestamps ignored the announcement, stick with official
+# cabinet resolutions in the data while recording the prime minister's
+# announcement as a comment.  This is how we treated a similar situation in
+# Rio de Janeiro in spring 1993.
+#
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Lebanon	1920	only	-	Mar	28	0:00	1:00	S
 Rule	Lebanon	1920	only	-	Oct	25	0:00	0	-
@@ -2739,6 +2773,10 @@ Rule	Lebanon	1992	only	-	Oct	4	0:00	0	-
 Rule	Lebanon	1993	max	-	Mar	lastSun	0:00	1:00	S
 Rule	Lebanon	1993	1998	-	Sep	lastSun	0:00	0	-
 Rule	Lebanon	1999	max	-	Oct	lastSun	0:00	0	-
+# This one-time rule, announced by the prime minister first for April 21
+# then for March 30, is commented out for reasons described above.
+#Rule	Lebanon	2023	only	-	Mar	30	0:00	1:00	S
+
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Beirut	2:22:00 -	LMT	1880
 			2:00	Lebanon	EE%sT
@@ -2977,7 +3015,7 @@ Zone	Asia/Kathmandu	5:41:16 -	LMT	1920
 # 9pm and moving clocks forward by one hour for the next three months. ...."
 #
 # http://www.worldtimezone.com/dst_news/dst_news_pakistan01.html
-# http://www.dailytimes.com.pk/default.asp?page=2008%5C05%5C15%5Cstory_15-5-2008_pg1_4
+# http://www.dailytimes.com.pk/default.asp?page=2008\05\15\story_15-5-2008_pg1_4
 
 # From Arthur David Olson (2008-05-19):
 # XXX--midnight transitions is a guess; 2008 only is a guess.
@@ -3300,7 +3338,7 @@ Zone	Asia/Karachi	4:28:12 -	LMT	1907
 # Some of many sources in Arabic:
 # http://www.samanews.com/index.php?act=Show&id=122638
 #
-# http://safa.ps/details/news/74352/%D8%A8%D8%AF%D8%A1-%D8%A7%D9%84%D8%AA%D9%88%D9%82%D9%8A%D8%AA-%D8%A7%D9%84%D8%B5%D9%8A%D9%81%D9%8A-%D8%A8%D8%A7%D9%84%D8%B6%D9%81%D8%A9-%D9%88%D8%BA%D8%B2%D8%A9-%D9%84%D9%8A%D9%84%D8%A9-%D8%A7%D9%84%D8%AC%D9%85%D8%B9%D8%A9.html
+# http://safa.ps/details/news/74352/بدء-التوقيت-الصيفي-بالضفة-وغزة-ليلة-الجمعة.html
 #
 # Our brief summary:
 # https://www.timeanddate.com/news/time/gaza-west-bank-dst-2012.html
@@ -3310,7 +3348,7 @@ Zone	Asia/Karachi	4:28:12 -	LMT	1907
 # time from midnight on Friday, March 29, 2013" (translated).
 # [These are in Arabic and are for Gaza and for Ramallah, respectively.]
 # http://www.samanews.com/index.php?act=Show&id=154120
-# http://safa.ps/details/news/99844/%D8%B1%D8%A7%D9%85-%D8%A7%D9%84%D9%84%D9%87-%D8%A8%D8%AF%D8%A1-%D8%A7%D9%84%D8%AA%D9%88%D9%82%D9%8A%D8%AA-%D8%A7%D9%84%D8%B5%D9%8A%D9%81%D9%8A-29-%D8%A7%D9%84%D8%AC%D8%A7%D8%B1%D9%8A.html
+# http://safa.ps/details/news/99844/رام-الله-بدء-التوقيت-الصيفي-29-الجاري.html
 
 # From Steffen Thorsen (2013-09-24):
 # The Gaza and West Bank are ending DST Thursday at midnight
@@ -3408,9 +3446,41 @@ Zone	Asia/Karachi	4:28:12 -	LMT	1907
 # (2022-08-31): ... the Saturday before the last Sunday in March and October
 # at 2:00 AM ,for the years from 2023 to 2026.
 # (2022-09-05): https://mtit.pna.ps/Site/New/1453
+
+# From Heba Hamad (2023-03-22):
+# ... summer time will begin in Palestine from Saturday 04-29-2023,
+# 02:00 AM by 60 minutes forward.
 #
-# From Paul Eggert (2022-08-31):
-# For now, assume that this rule will also be used after 2026.
+# From Paul Eggert (2023-03-22):
+# For now, guess that spring and fall transitions will normally
+# continue to use 2022's rules, that during DST Palestine will switch
+# to standard time at 02:00 the last Saturday before Ramadan and back
+# to DST at 02:00 the first Saturday after Ramadan, and that
+# if the normal spring-forward or fall-back transition occurs during
+# Ramadan the former is delayed and the latter advanced.
+# To implement this, I predicted Ramadan-oriented transition dates for
+# 2023 through 2086 by running the following program under GNU Emacs 28.2,
+# with the results integrated by hand into the table below.
+# Predictions after 2086 are approximated without Ramadan.
+#
+# (let ((islamic-year 1444))
+#   (require 'cal-islam)
+#   (while (< islamic-year 1510)
+#     (let ((a (calendar-islamic-to-absolute (list 9 1 islamic-year)))
+#           (b (+ 1 (calendar-islamic-to-absolute (list 10 1 islamic-year))))
+#           (saturday 6))
+#       (while (/= saturday (mod (setq a (1- a)) 7)))
+#       (while (/= saturday (mod b 7))
+#         (setq b (1+ b)))
+#       (setq a (calendar-gregorian-from-absolute a))
+#       (setq b (calendar-gregorian-from-absolute b))
+#       (insert
+#        (format
+#         (concat "Rule Palestine\t%d\tonly\t-\t%s\t%2d\t2:00\t0\t-\n"
+#                 "Rule Palestine\t%d\tonly\t-\t%s\t%2d\t2:00\t1:00\tS\n")
+#         (car (cdr (cdr a))) (calendar-month-name (car a) t) (car (cdr a))
+#         (car (cdr (cdr b))) (calendar-month-name (car b) t) (car (cdr b)))))
+#     (setq islamic-year (+ 1 islamic-year))))
 
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule EgyptAsia	1957	only	-	May	10	0:00	1:00	S
@@ -3450,8 +3520,86 @@ Rule Palestine	2020	2021	-	Mar	Sat<=30	0:00	1:00	S
 Rule Palestine	2020	only	-	Oct	24	1:00	0	-
 Rule Palestine	2021	only	-	Oct	29	1:00	0	-
 Rule Palestine	2022	only	-	Mar	27	0:00	1:00	S
-Rule Palestine	2022	max	-	Oct	Sat<=30	2:00	0	-
-Rule Palestine	2023	max	-	Mar	Sat<=30	2:00	1:00	S
+Rule Palestine	2022	2035	-	Oct	Sat<=30	2:00	0	-
+Rule Palestine	2023	only	-	Apr	29	2:00	1:00	S
+Rule Palestine	2024	only	-	Apr	13	2:00	1:00	S
+Rule Palestine	2025	only	-	Apr	 5	2:00	1:00	S
+Rule Palestine	2026	2054	-	Mar	Sat<=30	2:00	1:00	S
+Rule Palestine	2036	only	-	Oct	18	2:00	0	-
+Rule Palestine	2037	only	-	Oct	10	2:00	0	-
+Rule Palestine	2038	only	-	Sep	25	2:00	0	-
+Rule Palestine	2039	only	-	Sep	17	2:00	0	-
+Rule Palestine	2039	only	-	Oct	22	2:00	1:00	S
+Rule Palestine	2039	2067	-	Oct	Sat<=30	2:00	0	-
+Rule Palestine	2040	only	-	Sep	 1	2:00	0	-
+Rule Palestine	2040	only	-	Oct	13	2:00	1:00	S
+Rule Palestine	2041	only	-	Aug	24	2:00	0	-
+Rule Palestine	2041	only	-	Sep	28	2:00	1:00	S
+Rule Palestine	2042	only	-	Aug	16	2:00	0	-
+Rule Palestine	2042	only	-	Sep	20	2:00	1:00	S
+Rule Palestine	2043	only	-	Aug	 1	2:00	0	-
+Rule Palestine	2043	only	-	Sep	12	2:00	1:00	S
+Rule Palestine	2044	only	-	Jul	23	2:00	0	-
+Rule Palestine	2044	only	-	Aug	27	2:00	1:00	S
+Rule Palestine	2045	only	-	Jul	15	2:00	0	-
+Rule Palestine	2045	only	-	Aug	19	2:00	1:00	S
+Rule Palestine	2046	only	-	Jun	30	2:00	0	-
+Rule Palestine	2046	only	-	Aug	11	2:00	1:00	S
+Rule Palestine	2047	only	-	Jun	22	2:00	0	-
+Rule Palestine	2047	only	-	Jul	27	2:00	1:00	S
+Rule Palestine	2048	only	-	Jun	 6	2:00	0	-
+Rule Palestine	2048	only	-	Jul	18	2:00	1:00	S
+Rule Palestine	2049	only	-	May	29	2:00	0	-
+Rule Palestine	2049	only	-	Jul	 3	2:00	1:00	S
+Rule Palestine	2050	only	-	May	21	2:00	0	-
+Rule Palestine	2050	only	-	Jun	25	2:00	1:00	S
+Rule Palestine	2051	only	-	May	 6	2:00	0	-
+Rule Palestine	2051	only	-	Jun	17	2:00	1:00	S
+Rule Palestine	2052	only	-	Apr	27	2:00	0	-
+Rule Palestine	2052	only	-	Jun	 1	2:00	1:00	S
+Rule Palestine	2053	only	-	Apr	12	2:00	0	-
+Rule Palestine	2053	only	-	May	24	2:00	1:00	S
+Rule Palestine	2054	only	-	Apr	 4	2:00	0	-
+Rule Palestine	2054	only	-	May	16	2:00	1:00	S
+Rule Palestine	2055	only	-	May	 1	2:00	1:00	S
+Rule Palestine	2056	only	-	Apr	22	2:00	1:00	S
+Rule Palestine	2057	only	-	Apr	 7	2:00	1:00	S
+Rule Palestine	2058	max	-	Mar	Sat<=30	2:00	1:00	S
+Rule Palestine	2068	only	-	Oct	20	2:00	0	-
+Rule Palestine	2069	only	-	Oct	12	2:00	0	-
+Rule Palestine	2070	only	-	Oct	 4	2:00	0	-
+Rule Palestine	2071	only	-	Sep	19	2:00	0	-
+Rule Palestine	2072	only	-	Sep	10	2:00	0	-
+Rule Palestine	2072	only	-	Oct	15	2:00	1:00	S
+Rule Palestine	2073	only	-	Sep	 2	2:00	0	-
+Rule Palestine	2073	only	-	Oct	 7	2:00	1:00	S
+Rule Palestine	2074	only	-	Aug	18	2:00	0	-
+Rule Palestine	2074	only	-	Sep	29	2:00	1:00	S
+Rule Palestine	2075	only	-	Aug	10	2:00	0	-
+Rule Palestine	2075	only	-	Sep	14	2:00	1:00	S
+Rule Palestine	2075	max	-	Oct	Sat<=30	2:00	0	-
+Rule Palestine	2076	only	-	Jul	25	2:00	0	-
+Rule Palestine	2076	only	-	Sep	 5	2:00	1:00	S
+Rule Palestine	2077	only	-	Jul	17	2:00	0	-
+Rule Palestine	2077	only	-	Aug	28	2:00	1:00	S
+Rule Palestine	2078	only	-	Jul	 9	2:00	0	-
+Rule Palestine	2078	only	-	Aug	13	2:00	1:00	S
+Rule Palestine	2079	only	-	Jun	24	2:00	0	-
+Rule Palestine	2079	only	-	Aug	 5	2:00	1:00	S
+Rule Palestine	2080	only	-	Jun	15	2:00	0	-
+Rule Palestine	2080	only	-	Jul	20	2:00	1:00	S
+Rule Palestine	2081	only	-	Jun	 7	2:00	0	-
+Rule Palestine	2081	only	-	Jul	12	2:00	1:00	S
+Rule Palestine	2082	only	-	May	23	2:00	0	-
+Rule Palestine	2082	only	-	Jul	 4	2:00	1:00	S
+Rule Palestine	2083	only	-	May	15	2:00	0	-
+Rule Palestine	2083	only	-	Jun	19	2:00	1:00	S
+Rule Palestine	2084	only	-	Apr	29	2:00	0	-
+Rule Palestine	2084	only	-	Jun	10	2:00	1:00	S
+Rule Palestine	2085	only	-	Apr	21	2:00	0	-
+Rule Palestine	2085	only	-	Jun	 2	2:00	1:00	S
+Rule Palestine	2086	only	-	Apr	13	2:00	0	-
+Rule Palestine	2086	only	-	May	18	2:00	1:00	S
 
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Gaza	2:17:52	-	LMT	1900 Oct
@@ -3655,7 +3803,7 @@ Zone	Asia/Singapore	6:55:25 -	LMT	1901 Jan  1
 # standard time is SLST.
 #
 # From Paul Eggert (2016-10-18):
-# "SLST" seems to be reasonably recent and rarely-used outside time
+# "SLST" seems to be reasonably recent and rarely used outside time
 # zone nerd sources.  I searched Google News and found three uses of
 # it in the International Business Times of India in February and
 # March of this year when discussing cricket match times, but nothing

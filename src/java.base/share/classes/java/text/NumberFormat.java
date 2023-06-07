@@ -586,6 +586,8 @@ public abstract class NumberFormat extends Format  {
      *
      * @param inLocale the desired locale
      * @return the {@code NumberFormat} instance for currency formatting
+     *
+     * @spec https://www.unicode.org/reports/tr35 Unicode Locale Data Markup Language (LDML)
      */
     public static NumberFormat getCurrencyInstance(Locale inLocale) {
         return getInstance(inLocale, null, CURRENCYSTYLE);

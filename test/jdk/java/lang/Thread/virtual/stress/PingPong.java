@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
  * @test id=sq
  * @summary Stress test virtual threads with a SynchronousQueue
  * @requires vm.debug != true
- * @enablePreview
  * @run main PingPong SQ 500000
  */
 
@@ -33,7 +32,6 @@
  * @test id=ltq
  * @summary Stress test virtual threads with a LinkedTransferQueue
  * @requires vm.debug != true
- * @enablePreview
  * @run main PingPong LTQ 500000
  */
 

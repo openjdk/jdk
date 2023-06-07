@@ -148,9 +148,10 @@ class StubRoutines: AllStatic {
   static address _atomic_add_entry;
   static address _fence_entry;
 
-  static BufferBlob* _code1;                               // code buffer for initial routines
-  static BufferBlob* _code2;
-  static BufferBlob* _code3;                               // code buffer for all other routines
+  static BufferBlob* _initial_stubs_code;                  // code buffer for initial routines
+  static BufferBlob* _continuation_stubs_code;             // code buffer for continuation stubs
+  static BufferBlob* _compiler_stubs_code;                 // code buffer for C2 intrinsics
+  static BufferBlob* _final_stubs_code;                    // code buffer for all other routines
 
   // Leaf routines which implement arraycopy and their addresses
   // arraycopy operands aligned on element type boundary
@@ -265,21 +266,25 @@ class StubRoutines: AllStatic {
 
  public:
   // Initialization/Testing
-  static void    initialize1();                            // must happen before universe::genesis
-  static void    initialize2();                            // must happen after  universe::genesis
-  static void    initializeContinuationStubs();            // must happen after  universe::genesis
+  static void    initialize_initial_stubs();               // must happen before universe::genesis
+  static void    initialize_continuation_stubs();          // must happen after  universe::genesis
+  static void    initialize_compiler_stubs();              // must happen after  universe::genesis
+  static void    initialize_final_stubs();                 // must happen after  universe::genesis
 
   static bool is_stub_code(address addr)                   { return contains(addr); }
 
   static bool contains(address addr) {
     return
-      (_code1 != nullptr && _code1->blob_contains(addr)) ||
-      (_code2 != nullptr && _code2->blob_contains(addr)) ;
+      (_initial_stubs_code      != nullptr && _initial_stubs_code->blob_contains(addr))  ||
+      (_continuation_stubs_code != nullptr && _continuation_stubs_code->blob_contains(addr)) ||
+      (_compiler_stubs_code     != nullptr && _compiler_stubs_code->blob_contains(addr)) ||
+      (_final_stubs_code        != nullptr && _final_stubs_code->blob_contains(addr)) ;
   }
 
-  static RuntimeBlob* code1() { return _code1; }
-  static RuntimeBlob* code2() { return _code2; }
-  static RuntimeBlob* code3() { return _code3; }
+  static RuntimeBlob* initial_stubs_code()      { return _initial_stubs_code; }
+  static RuntimeBlob* continuation_stubs_code() { return _continuation_stubs_code; }
+  static RuntimeBlob* compiler_stubs_code()     { return _compiler_stubs_code; }
+  static RuntimeBlob* final_stubs_code()        { return _final_stubs_code; }
 
   // Debugging
   static jint    verify_oop_count()                        { return _verify_oop_count; }

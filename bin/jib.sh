@@ -130,7 +130,7 @@ install_jib() {
     fi
     # Want to check the filetype using file, to see if we got served a HTML error page.
     # This is sensitive to the filename containing a specific string, but good enough.
-    file ${installed_jib_script}.gz | grep "gzip compressed data" > /dev/null
+    file "${installed_jib_script}.gz" | grep "gzip compressed data" > /dev/null
     if [ $? -ne 0 ]; then 
         echo "Warning: ${installed_jib_script}.gz is not a gzip file."
         echo "If you are behind a proxy you may need to configure exceptions using no_proxy."

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 SAP SE. All rights reserved.
+ * Copyright (c) 2022, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
 
 class ContinuationEntryPD {
   // This is needed to position the ContinuationEntry at the unextended sp of the entry frame
-  frame::abi_reg_args _abi;
+  frame::native_abi_reg_args _abi;
 };
 
 #endif // CPU_PPC_CONTINUATIONENTRY_PPC_HPP

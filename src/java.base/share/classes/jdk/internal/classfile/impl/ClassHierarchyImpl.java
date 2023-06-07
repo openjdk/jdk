@@ -45,9 +45,6 @@ public final class ClassHierarchyImpl {
 
     private final ClassHierarchyResolver resolver;
 
-    //defer initialization of logging until needed
-    private static System.Logger logger;
-
     /**
      * Public constructor of <code>ClassHierarchyImpl</code> accepting instances of <code>ClassHierarchyInfoResolver</code> to resolve individual class streams.
      * @param classHierarchyResolver <code>ClassHierarchyInfoResolver</code> instance
@@ -59,12 +56,7 @@ public final class ClassHierarchyImpl {
     private ClassHierarchyResolver.ClassHierarchyInfo resolve(ClassDesc classDesc) {
         var res = resolver.getClassInfo(classDesc);
         if (res != null) return res;
-        //maybe throw an exception here to avoid construction of potentially invalid stack maps
-        if (logger == null)
-            logger = System.getLogger("jdk.internal.classfile");
-        if (logger.isLoggable(System.Logger.Level.DEBUG))
-            logger.log(System.Logger.Level.DEBUG, "Could not resolve class " + classDesc.displayName());
-        return new ClassHierarchyResolver.ClassHierarchyInfo(classDesc, false, null);
+        throw new IllegalArgumentException("Could not resolve class " + classDesc.displayName());
     }
 
     /**
@@ -173,10 +165,15 @@ public final class ClassHierarchyImpl {
     }
 
     public static final class StaticClassHierarchyResolver implements ClassHierarchyResolver {
+
+        private static final ClassHierarchyInfo CHI_Object =
+                new ClassHierarchyInfo(ConstantDescs.CD_Object, false, null);
+
         private final Map<ClassDesc, ClassHierarchyInfo> map;
 
         public StaticClassHierarchyResolver(Collection<ClassDesc> interfaceNames, Map<ClassDesc, ClassDesc> classToSuperClass) {
-            map = new HashMap<>(interfaceNames.size() + classToSuperClass.size());
+            map = HashMap.newHashMap(interfaceNames.size() + classToSuperClass.size() + 1);
+            map.put(ConstantDescs.CD_Object, CHI_Object);
             for (var e : classToSuperClass.entrySet())
                 map.put(e.getKey(), new ClassHierarchyInfo(e.getKey(), false, e.getValue()));
             for (var i : interfaceNames)

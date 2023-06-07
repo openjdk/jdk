@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -162,7 +162,6 @@ JVM_IsRecord
 JVM_IsSameClassPackage
 JVM_IsSharingEnabled
 JVM_IsSupportedJNIVersion
-JVM_IsThreadAlive
 JVM_IsVMGeneratedMethodIx
 JVM_LatestUserDefinedLoader
 JVM_LoadZipLibrary
@@ -182,6 +181,7 @@ JVM_NewArray
 JVM_NewInstanceFromConstructor
 JVM_NewMultiArray
 JVM_PhantomReferenceRefersTo
+JVM_PrintWarningAtDynamicAgentLoad
 JVM_RaiseSignal
 JVM_RawMonitorCreate
 JVM_RawMonitorDestroy
@@ -218,10 +218,10 @@ JVM_DefineModule
 JVM_SetBootLoaderUnnamedModule
 
 # Virtual thread notifications for JVMTI
-JVM_VirtualThreadMountBegin
-JVM_VirtualThreadMountEnd
-JVM_VirtualThreadUnmountBegin
-JVM_VirtualThreadUnmountEnd
+JVM_VirtualThreadStart
+JVM_VirtualThreadEnd
+JVM_VirtualThreadMount
+JVM_VirtualThreadUnmount
 JVM_VirtualThreadHideFrames
 
 # Scoped values

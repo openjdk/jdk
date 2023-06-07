@@ -28,6 +28,7 @@
 #include "memory/referenceType.hpp"
 #include "oops/annotations.hpp"
 #include "oops/constantPool.hpp"
+#include "oops/fieldInfo.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/typeArrayOop.hpp"
 #include "utilities/accessFlags.hpp"
@@ -121,7 +122,8 @@ class ClassFileParser {
   // in which case these pointers have been set to null.
   const InstanceKlass* _super_klass;
   ConstantPool* _cp;
-  Array<u2>* _fields;
+  Array<u1>* _fieldinfo_stream;
+  Array<FieldStatus>* _fields_status;
   Array<Method*>* _methods;
   Array<u2>* _inner_classes;
   Array<u2>* _nest_members;
@@ -141,6 +143,7 @@ class ClassFileParser {
   ClassAnnotationCollector* _parsed_annotations;
   FieldAllocationCount* _fac;
   FieldLayoutInfo* _field_info;
+  GrowableArray<FieldInfo>* _temp_field_info;
   const intArray* _method_ordering;
   GrowableArray<Method*>* _all_mirandas;
 

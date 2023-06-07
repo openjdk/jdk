@@ -26,6 +26,8 @@
 #include "code/nmethod.hpp"
 #include "code/dependencies.hpp"
 #include "code/dependencyContext.hpp"
+#include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/deoptimization.hpp"
@@ -72,12 +74,14 @@ void DependencyContext::mark_dependent_nmethods(DeoptimizationScope* deopt_scope
       if (nm->is_marked_for_deoptimization()) {
         deopt_scope->dependent(nm);
       } else if (nm->check_dependency_on(changes)) {
-        if (TraceDependencies) {
+        LogTarget(Info, dependencies) lt;
+        if (lt.is_enabled()) {
           ResourceMark rm;
-          tty->print_cr("Marked for deoptimization");
-          changes.print();
-          nm->print();
-          nm->print_dependencies();
+          LogStream ls(&lt);
+          ls.print_cr("Marked for deoptimization");
+          changes.print_on(&ls);
+          nm->print_on(&ls);
+          nm->print_dependencies_on(&ls);
         }
         deopt_scope->mark(nm, !changes.is_call_site_change());
       }
@@ -210,7 +214,7 @@ void DependencyContext::print_dependent_nmethods(bool verbose) {
       tty->print_cr(" } ");
     } else {
       nm->print();
-      nm->print_dependencies();
+      nm->print_dependencies_on(tty);
       tty->print_cr("--- } ");
     }
   }

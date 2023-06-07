@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2022 Unicode, Inc.
+<!-- Copyright © 1991-2023 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -579,9 +579,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat>
 							<pattern draft="unconfirmed">{1} 'a' {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern draft="unconfirmed">{1} 'a' {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
+							<pattern draft="unconfirmed">{1} 'a' {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern draft="unconfirmed">{1} 'a' {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -589,9 +595,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat>
 							<pattern draft="unconfirmed">{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern draft="unconfirmed">{1} {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
+							<pattern draft="unconfirmed">{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern draft="unconfirmed">{1} {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -627,6 +639,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="10" draft="unconfirmed">oct.</month>
 							<month type="11" draft="unconfirmed">nov.</month>
 							<month type="12" draft="unconfirmed">dec.</month>
+						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1" draft="unconfirmed">G</month>
+							<month type="2" draft="unconfirmed">F</month>
+							<month type="3" draft="unconfirmed">M</month>
+							<month type="4" draft="unconfirmed">A</month>
+							<month type="5" draft="unconfirmed">M</month>
+							<month type="6" draft="unconfirmed">J</month>
+							<month type="7" draft="unconfirmed">J</month>
+							<month type="8" draft="unconfirmed">A</month>
+							<month type="9" draft="unconfirmed">S</month>
+							<month type="10" draft="unconfirmed">O</month>
+							<month type="11" draft="unconfirmed">N</month>
+							<month type="12" draft="unconfirmed">D</month>
 						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1" draft="unconfirmed">de genièr</month>
@@ -690,6 +716,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</months>
 				<days>
 					<dayContext type="format">
+						<dayWidth type="abbreviated">
+							<day type="sun" draft="unconfirmed">dimenge</day>
+							<day type="mon" draft="unconfirmed">diluns</day>
+							<day type="tue" draft="unconfirmed">dimars</day>
+							<day type="wed" draft="unconfirmed">dimècres</day>
+							<day type="thu" draft="unconfirmed">dijòus</day>
+							<day type="fri" draft="unconfirmed">divendres</day>
+							<day type="sat" draft="unconfirmed">dissabte</day>
+						</dayWidth>
 						<dayWidth type="narrow">
 							<day type="sun" draft="unconfirmed">Dg</day>
 							<day type="mon" draft="unconfirmed">Dl</day>
@@ -719,6 +754,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</dayWidth>
 					</dayContext>
 					<dayContext type="stand-alone">
+						<dayWidth type="abbreviated">
+							<day type="sun" draft="unconfirmed">dimenge</day>
+							<day type="mon" draft="unconfirmed">diluns</day>
+							<day type="tue" draft="unconfirmed">dimars</day>
+							<day type="wed" draft="unconfirmed">dimècres</day>
+							<day type="thu" draft="unconfirmed">dijòus</day>
+							<day type="fri" draft="unconfirmed">divendres</day>
+							<day type="sat" draft="unconfirmed">dissabte</day>
+						</dayWidth>
 						<dayWidth type="narrow">
 							<day type="sun" draft="unconfirmed">Dg</day>
 							<day type="mon" draft="unconfirmed">Dl</day>
@@ -737,6 +781,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="fri" draft="unconfirmed">dv</day>
 							<day type="sat" draft="unconfirmed">ds</day>
 						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun" draft="unconfirmed">dimenge</day>
+							<day type="mon" draft="unconfirmed">diluns</day>
+							<day type="tue" draft="unconfirmed">dimars</day>
+							<day type="wed" draft="unconfirmed">dimècres</day>
+							<day type="thu" draft="unconfirmed">dijòus</day>
+							<day type="fri" draft="unconfirmed">divendres</day>
+							<day type="sat" draft="unconfirmed">dissabte</day>
+						</dayWidth>
 					</dayContext>
 				</days>
 				<quarters>
@@ -746,6 +799,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<quarter type="2" draft="unconfirmed">T2</quarter>
 							<quarter type="3" draft="unconfirmed">T3</quarter>
 							<quarter type="4" draft="unconfirmed">T4</quarter>
+						</quarterWidth>
+						<quarterWidth type="narrow">
+							<quarter type="1" draft="unconfirmed">1</quarter>
+							<quarter type="2" draft="unconfirmed">2</quarter>
+							<quarter type="3" draft="unconfirmed">3</quarter>
+							<quarter type="4" draft="unconfirmed">4</quarter>
 						</quarterWidth>
 						<quarterWidth type="wide">
 							<quarter type="1" draft="unconfirmed">1èr trimèstre</quarter>
@@ -769,10 +828,37 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</quarterWidth>
 					</quarterContext>
 				</quarters>
+				<dayPeriods>
+					<dayPeriodContext type="format">
+						<dayPeriodWidth type="narrow">
+							<dayPeriod type="am" draft="unconfirmed">AM</dayPeriod>
+							<dayPeriod type="pm" draft="unconfirmed">PM</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am" draft="unconfirmed">AM</dayPeriod>
+							<dayPeriod type="pm" draft="unconfirmed">PM</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+					<dayPeriodContext type="stand-alone">
+						<dayPeriodWidth type="abbreviated">
+							<dayPeriod type="am" draft="unconfirmed">AM</dayPeriod>
+							<dayPeriod type="pm" draft="unconfirmed">PM</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="narrow">
+							<dayPeriod type="am" draft="unconfirmed">AM</dayPeriod>
+							<dayPeriod type="pm" draft="unconfirmed">PM</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am" draft="unconfirmed">AM</dayPeriod>
+							<dayPeriod type="pm" draft="unconfirmed">PM</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+				</dayPeriods>
 				<eras>
 					<eraNames>
 						<era type="0" draft="unconfirmed">Abans Jèsus-Crist</era>
 						<era type="0" alt="variant" draft="unconfirmed">Abans l’èra nòstra</era>
+						<era type="1" draft="unconfirmed">CE</era>
 						<era type="1" alt="variant" draft="unconfirmed">L’èra nòstra</era>
 					</eraNames>
 					<eraAbbr>
@@ -780,6 +866,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<era type="0" alt="variant" draft="unconfirmed">Ab. E.N.</era>
 						<era type="1" alt="variant" draft="unconfirmed">E.N.</era>
 					</eraAbbr>
+					<eraNarrow>
+						<era type="0" draft="unconfirmed">Ab. J.C.</era>
+						<era type="0" alt="variant" draft="unconfirmed">Ab. E.N.</era>
+						<era type="1" draft="unconfirmed">CE</era>
+						<era type="1" alt="variant" draft="unconfirmed">E.N.</era>
+					</eraNarrow>
 				</eras>
 				<dateFormats>
 					<dateFormatLength type="full">
@@ -838,9 +930,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat>
 							<pattern draft="unconfirmed">{1} 'a' {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern draft="unconfirmed">{1} 'a' {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
+							<pattern draft="unconfirmed">{1} 'a' {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern draft="unconfirmed">{1} 'a' {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -848,9 +946,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat>
 							<pattern draft="unconfirmed">{1}, {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern draft="unconfirmed">{1}, {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
+							<pattern draft="unconfirmed">{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern draft="unconfirmed">{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -1036,6 +1140,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<field type="era">
 				<displayName draft="unconfirmed">èra</displayName>
 			</field>
+			<field type="era-short">
+				<displayName draft="unconfirmed">èra</displayName>
+			</field>
+			<field type="era-narrow">
+				<displayName draft="unconfirmed">èra</displayName>
+			</field>
 			<field type="year">
 				<displayName draft="unconfirmed">annada</displayName>
 				<relative type="-1" draft="unconfirmed">l’an passat</relative>
@@ -1047,21 +1157,51 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="-1" draft="unconfirmed">l’an passat</relative>
 				<relative type="0" draft="unconfirmed">ongan</relative>
 				<relative type="1" draft="unconfirmed">l’an que ven</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other" draft="unconfirmed">+{0} y</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other" draft="unconfirmed">-{0} y</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="year-narrow">
 				<displayName draft="unconfirmed">an.</displayName>
 				<relative type="-1" draft="unconfirmed">l’an passat</relative>
 				<relative type="0" draft="unconfirmed">ongan</relative>
 				<relative type="1" draft="unconfirmed">l’an que ven</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other" draft="unconfirmed">+{0} y</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other" draft="unconfirmed">-{0} y</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="quarter">
 				<displayName draft="unconfirmed">trimèstre</displayName>
 			</field>
 			<field type="quarter-short">
 				<displayName draft="unconfirmed">trim.</displayName>
+				<relative type="-1" draft="unconfirmed">last quarter</relative>
+				<relative type="0" draft="unconfirmed">this quarter</relative>
+				<relative type="1" draft="unconfirmed">next quarter</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other" draft="unconfirmed">+{0} Q</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other" draft="unconfirmed">-{0} Q</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="quarter-narrow">
 				<displayName draft="unconfirmed">trim.</displayName>
+				<relative type="-1" draft="unconfirmed">last quarter</relative>
+				<relative type="0" draft="unconfirmed">this quarter</relative>
+				<relative type="1" draft="unconfirmed">next quarter</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other" draft="unconfirmed">+{0} Q</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other" draft="unconfirmed">-{0} Q</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="month">
 				<displayName draft="unconfirmed">mes</displayName>
@@ -1077,12 +1217,27 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="month-short">
 				<displayName draft="unconfirmed">mes</displayName>
+				<relative type="-1" draft="unconfirmed">lo mes passat</relative>
+				<relative type="0" draft="unconfirmed">aqueste mes</relative>
+				<relative type="1" draft="unconfirmed">lo que mes que ven</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other" draft="unconfirmed">d’aquí {0} meses</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other" draft="unconfirmed">fa {0} mese</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="month-narrow">
 				<displayName draft="unconfirmed">mes</displayName>
 				<relative type="-1" draft="unconfirmed">lo mes passat</relative>
 				<relative type="0" draft="unconfirmed">aqueste mes</relative>
 				<relative type="1" draft="unconfirmed">lo mes que ven</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other" draft="unconfirmed">d’aquí {0} meses</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other" draft="unconfirmed">fa {0} mese</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="week">
 				<displayName draft="unconfirmed">setmana</displayName>
@@ -1093,11 +1248,35 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="week-short">
 				<displayName draft="unconfirmed">setm.</displayName>
+				<relative type="-1" draft="unconfirmed">la setmana passada</relative>
+				<relative type="0" draft="unconfirmed">aquesta setmana</relative>
+				<relative type="1" draft="unconfirmed">la setmana que ven</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other" draft="unconfirmed">+{0} w</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other" draft="unconfirmed">-{0} w</relativeTimePattern>
+				</relativeTime>
 				<relativePeriod draft="unconfirmed">la setmana del {0}</relativePeriod>
 			</field>
 			<field type="week-narrow">
 				<displayName draft="unconfirmed">setm.</displayName>
+				<relative type="-1" draft="unconfirmed">la setmana passada</relative>
+				<relative type="0" draft="unconfirmed">aquesta setmana</relative>
+				<relative type="1" draft="unconfirmed">la setmana que ven</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other" draft="unconfirmed">+{0} w</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other" draft="unconfirmed">-{0} w</relativeTimePattern>
+				</relativeTime>
 				<relativePeriod draft="unconfirmed">la setmana del {0}</relativePeriod>
+			</field>
+			<field type="weekOfMonth-short">
+				<displayName draft="unconfirmed">Week Of Month</displayName>
+			</field>
+			<field type="weekOfMonth-narrow">
+				<displayName draft="unconfirmed">Week Of Month</displayName>
 			</field>
 			<field type="day">
 				<displayName draft="unconfirmed">jorn</displayName>
@@ -1107,17 +1286,210 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="day-short">
 				<displayName draft="unconfirmed">jorn</displayName>
+				<relative type="-1" draft="unconfirmed">ièr</relative>
+				<relative type="0" draft="unconfirmed">uèi</relative>
+				<relative type="1" draft="unconfirmed">deman</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other" draft="unconfirmed">+{0} d</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other" draft="unconfirmed">-{0} d</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="day-narrow">
 				<displayName draft="unconfirmed">jorn</displayName>
+				<relative type="-1" draft="unconfirmed">ièr</relative>
+				<relative type="0" draft="unconfirmed">uèi</relative>
+				<relative type="1" draft="unconfirmed">deman</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other" draft="unconfirmed">+{0} d</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other" draft="unconfirmed">-{0} d</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="dayOfYear-short">
+				<displayName draft="unconfirmed">Day Of Year</displayName>
+			</field>
+			<field type="dayOfYear-narrow">
+				<displayName draft="unconfirmed">Day Of Year</displayName>
 			</field>
 			<field type="weekday">
 				<displayName draft="unconfirmed">jorn de la setmana</displayName>
+			</field>
+			<field type="weekday-short">
+				<displayName draft="unconfirmed">jorn de la setmana</displayName>
+			</field>
+			<field type="weekday-narrow">
+				<displayName draft="unconfirmed">jorn de la setmana</displayName>
+			</field>
+			<field type="weekdayOfMonth-short">
+				<displayName draft="unconfirmed">Weekday Of Month</displayName>
+			</field>
+			<field type="weekdayOfMonth-narrow">
+				<displayName draft="unconfirmed">Weekday Of Month</displayName>
 			</field>
 			<field type="sun">
 				<relative type="-1" draft="unconfirmed">dimenge passat</relative>
 				<relative type="0" draft="unconfirmed">aqueste dimenge</relative>
 				<relative type="1" draft="unconfirmed">dimenge que ven</relative>
+			</field>
+			<field type="sun-short">
+				<relative type="-1" draft="unconfirmed">dimenge passat</relative>
+				<relative type="0" draft="unconfirmed">aqueste dimenge</relative>
+				<relative type="1" draft="unconfirmed">dimenge que ven</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other" draft="unconfirmed">+{0} Sundays</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other" draft="unconfirmed">-{0} Sundays</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sun-narrow">
+				<relative type="-1" draft="unconfirmed">dimenge passat</relative>
+				<relative type="0" draft="unconfirmed">aqueste dimenge</relative>
+				<relative type="1" draft="unconfirmed">dimenge que ven</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other" draft="unconfirmed">+{0} Sundays</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other" draft="unconfirmed">-{0} Sundays</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="mon-short">
+				<relative type="-1" draft="unconfirmed">last Monday</relative>
+				<relative type="0" draft="unconfirmed">this Monday</relative>
+				<relative type="1" draft="unconfirmed">next Monday</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other" draft="unconfirmed">+{0} Mondays</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other" draft="unconfirmed">-{0} Mondays</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="mon-narrow">
+				<relative type="-1" draft="unconfirmed">last Monday</relative>
+				<relative type="0" draft="unconfirmed">this Monday</relative>
+				<relative type="1" draft="unconfirmed">next Monday</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other" draft="unconfirmed">+{0} Mondays</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other" draft="unconfirmed">-{0} Mondays</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="tue-short">
+				<relative type="-1" draft="unconfirmed">last Tuesday</relative>
+				<relative type="0" draft="unconfirmed">this Tuesday</relative>
+				<relative type="1" draft="unconfirmed">next Tuesday</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other" draft="unconfirmed">+{0} Tuesdays</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other" draft="unconfirmed">-{0} Tuesdays</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="tue-narrow">
+				<relative type="-1" draft="unconfirmed">last Tuesday</relative>
+				<relative type="0" draft="unconfirmed">this Tuesday</relative>
+				<relative type="1" draft="unconfirmed">next Tuesday</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other" draft="unconfirmed">+{0} Tuesdays</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other" draft="unconfirmed">-{0} Tuesdays</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="wed-short">
+				<relative type="-1" draft="unconfirmed">last Wednesday</relative>
+				<relative type="0" draft="unconfirmed">this Wednesday</relative>
+				<relative type="1" draft="unconfirmed">next Wednesday</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other" draft="unconfirmed">+{0} Wednesdays</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other" draft="unconfirmed">-{0} Wednesdays</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="wed-narrow">
+				<relative type="-1" draft="unconfirmed">last Wednesday</relative>
+				<relative type="0" draft="unconfirmed">this Wednesday</relative>
+				<relative type="1" draft="unconfirmed">next Wednesday</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other" draft="unconfirmed">+{0} Wednesdays</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other" draft="unconfirmed">-{0} Wednesdays</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="thu-short">
+				<relative type="-1" draft="unconfirmed">last Thursday</relative>
+				<relative type="0" draft="unconfirmed">this Thursday</relative>
+				<relative type="1" draft="unconfirmed">next Thursday</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other" draft="unconfirmed">+{0} Thursdays</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other" draft="unconfirmed">-{0} Thursdays</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="thu-narrow">
+				<relative type="-1" draft="unconfirmed">last Thursday</relative>
+				<relative type="0" draft="unconfirmed">this Thursday</relative>
+				<relative type="1" draft="unconfirmed">next Thursday</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other" draft="unconfirmed">+{0} Thursdays</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other" draft="unconfirmed">-{0} Thursdays</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="fri-short">
+				<relative type="-1" draft="unconfirmed">last Friday</relative>
+				<relative type="0" draft="unconfirmed">this Friday</relative>
+				<relative type="1" draft="unconfirmed">next Friday</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other" draft="unconfirmed">+{0} Fridays</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other" draft="unconfirmed">-{0} Fridays</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="fri-narrow">
+				<relative type="-1" draft="unconfirmed">last Friday</relative>
+				<relative type="0" draft="unconfirmed">this Friday</relative>
+				<relative type="1" draft="unconfirmed">next Friday</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other" draft="unconfirmed">+{0} Fridays</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other" draft="unconfirmed">-{0} Fridays</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sat-short">
+				<relative type="-1" draft="unconfirmed">last Saturday</relative>
+				<relative type="0" draft="unconfirmed">this Saturday</relative>
+				<relative type="1" draft="unconfirmed">next Saturday</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other" draft="unconfirmed">+{0} Saturdays</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other" draft="unconfirmed">-{0} Saturdays</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sat-narrow">
+				<relative type="-1" draft="unconfirmed">last Saturday</relative>
+				<relative type="0" draft="unconfirmed">this Saturday</relative>
+				<relative type="1" draft="unconfirmed">next Saturday</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other" draft="unconfirmed">+{0} Saturdays</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other" draft="unconfirmed">-{0} Saturdays</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="dayperiod-short">
+				<displayName draft="unconfirmed">del matin/del vèspre</displayName>
 			</field>
 			<!-- <field type="sun">
 				 <relative type="-1" draft="unconfirmed">Dimenge passat</relative>
@@ -1126,23 +1498,54 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<field type="dayperiod">
 				<displayName draft="unconfirmed">del matin/del vèspre</displayName>
 			</field>
+			<field type="dayperiod-narrow">
+				<displayName draft="unconfirmed">del matin/del vèspre</displayName>
+			</field>
 			<field type="hour">
 				<displayName draft="unconfirmed">ora</displayName>
 			</field>
 			<field type="hour-short">
 				<displayName draft="unconfirmed">h</displayName>
+				<relative type="0" draft="unconfirmed">this hour</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other" draft="unconfirmed">+{0} h</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other" draft="unconfirmed">-{0} h</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="hour-narrow">
 				<displayName draft="unconfirmed">h</displayName>
+				<relative type="0" draft="unconfirmed">this hour</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other" draft="unconfirmed">+{0} h</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other" draft="unconfirmed">-{0} h</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="minute">
 				<displayName draft="unconfirmed">minuta</displayName>
 			</field>
 			<field type="minute-short">
 				<displayName draft="unconfirmed">min.</displayName>
+				<relative type="0" draft="unconfirmed">this minute</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other" draft="unconfirmed">+{0} min</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other" draft="unconfirmed">-{0} min</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="minute-narrow">
 				<displayName draft="unconfirmed">min.</displayName>
+				<relative type="0" draft="unconfirmed">this minute</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other" draft="unconfirmed">+{0} min</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other" draft="unconfirmed">-{0} min</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="second">
 				<displayName draft="unconfirmed">segonda</displayName>
@@ -1151,12 +1554,30 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<field type="second-short">
 				<displayName draft="unconfirmed">seg.</displayName>
 				<relative type="0" draft="unconfirmed">ara</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other" draft="unconfirmed">+{0} s</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other" draft="unconfirmed">-{0} s</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="second-narrow">
 				<displayName draft="unconfirmed">seg.</displayName>
 				<relative type="0" draft="unconfirmed">ara</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other" draft="unconfirmed">+{0} s</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other" draft="unconfirmed">-{0} s</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="zone">
+				<displayName draft="unconfirmed">zòna orària</displayName>
+			</field>
+			<field type="zone-short">
+				<displayName draft="unconfirmed">zòna orària</displayName>
+			</field>
+			<field type="zone-narrow">
 				<displayName draft="unconfirmed">zòna orària</displayName>
 			</field>
 		</fields>
@@ -1383,6 +1804,321 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<otherNumberingSystems>
 			<native draft="unconfirmed">latn</native>
 		</otherNumberingSystems>
+		<symbols numberSystem="adlm">
+			<decimal draft="unconfirmed">,</decimal>
+			<group draft="unconfirmed"> </group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">NaN</nan>
+			<timeSeparator draft="unconfirmed">'h'</timeSeparator>
+		</symbols>
+		<symbols numberSystem="bali">
+			<decimal draft="unconfirmed">,</decimal>
+			<group draft="unconfirmed"> </group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">NaN</nan>
+			<timeSeparator draft="unconfirmed">'h'</timeSeparator>
+		</symbols>
+		<symbols numberSystem="beng">
+			<decimal draft="unconfirmed">,</decimal>
+			<group draft="unconfirmed"> </group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">NaN</nan>
+			<timeSeparator draft="unconfirmed">'h'</timeSeparator>
+		</symbols>
+		<symbols numberSystem="brah">
+			<decimal draft="unconfirmed">,</decimal>
+			<group draft="unconfirmed"> </group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">NaN</nan>
+			<timeSeparator draft="unconfirmed">'h'</timeSeparator>
+		</symbols>
+		<symbols numberSystem="cakm">
+			<decimal draft="unconfirmed">,</decimal>
+			<group draft="unconfirmed"> </group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">NaN</nan>
+			<timeSeparator draft="unconfirmed">'h'</timeSeparator>
+		</symbols>
+		<symbols numberSystem="cham">
+			<decimal draft="unconfirmed">,</decimal>
+			<group draft="unconfirmed"> </group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">NaN</nan>
+			<timeSeparator draft="unconfirmed">'h'</timeSeparator>
+		</symbols>
+		<symbols numberSystem="deva">
+			<decimal draft="unconfirmed">,</decimal>
+			<group draft="unconfirmed"> </group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">NaN</nan>
+			<timeSeparator draft="unconfirmed">'h'</timeSeparator>
+		</symbols>
+		<symbols numberSystem="fullwide">
+			<decimal draft="unconfirmed">,</decimal>
+			<group draft="unconfirmed"> </group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">NaN</nan>
+			<timeSeparator draft="unconfirmed">'h'</timeSeparator>
+		</symbols>
+		<symbols numberSystem="gong">
+			<decimal draft="unconfirmed">,</decimal>
+			<group draft="unconfirmed"> </group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">NaN</nan>
+			<timeSeparator draft="unconfirmed">'h'</timeSeparator>
+		</symbols>
+		<symbols numberSystem="gonm">
+			<decimal draft="unconfirmed">,</decimal>
+			<group draft="unconfirmed"> </group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">NaN</nan>
+			<timeSeparator draft="unconfirmed">'h'</timeSeparator>
+		</symbols>
+		<symbols numberSystem="gujr">
+			<decimal draft="unconfirmed">,</decimal>
+			<group draft="unconfirmed"> </group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">NaN</nan>
+			<timeSeparator draft="unconfirmed">'h'</timeSeparator>
+		</symbols>
+		<symbols numberSystem="guru">
+			<decimal draft="unconfirmed">,</decimal>
+			<group draft="unconfirmed"> </group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">NaN</nan>
+			<timeSeparator draft="unconfirmed">'h'</timeSeparator>
+		</symbols>
+		<symbols numberSystem="hanidec">
+			<decimal draft="unconfirmed">,</decimal>
+			<group draft="unconfirmed"> </group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">NaN</nan>
+			<timeSeparator draft="unconfirmed">'h'</timeSeparator>
+		</symbols>
+		<symbols numberSystem="hmnp">
+			<decimal draft="unconfirmed">,</decimal>
+			<group draft="unconfirmed"> </group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">NaN</nan>
+			<timeSeparator draft="unconfirmed">'h'</timeSeparator>
+		</symbols>
+		<symbols numberSystem="java">
+			<decimal draft="unconfirmed">,</decimal>
+			<group draft="unconfirmed"> </group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">NaN</nan>
+			<timeSeparator draft="unconfirmed">'h'</timeSeparator>
+		</symbols>
+		<symbols numberSystem="kali">
+			<decimal draft="unconfirmed">,</decimal>
+			<group draft="unconfirmed"> </group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">NaN</nan>
+			<timeSeparator draft="unconfirmed">'h'</timeSeparator>
+		</symbols>
+		<symbols numberSystem="khmr">
+			<decimal draft="unconfirmed">,</decimal>
+			<group draft="unconfirmed"> </group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">NaN</nan>
+			<timeSeparator draft="unconfirmed">'h'</timeSeparator>
+		</symbols>
+		<symbols numberSystem="knda">
+			<decimal draft="unconfirmed">,</decimal>
+			<group draft="unconfirmed"> </group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">NaN</nan>
+			<timeSeparator draft="unconfirmed">'h'</timeSeparator>
+		</symbols>
+		<symbols numberSystem="lana">
+			<decimal draft="unconfirmed">,</decimal>
+			<group draft="unconfirmed"> </group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">NaN</nan>
+			<timeSeparator draft="unconfirmed">'h'</timeSeparator>
+		</symbols>
+		<symbols numberSystem="lanatham">
+			<decimal draft="unconfirmed">,</decimal>
+			<group draft="unconfirmed"> </group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">NaN</nan>
+			<timeSeparator draft="unconfirmed">'h'</timeSeparator>
+		</symbols>
+		<symbols numberSystem="laoo">
+			<decimal draft="unconfirmed">,</decimal>
+			<group draft="unconfirmed"> </group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">NaN</nan>
+			<timeSeparator draft="unconfirmed">'h'</timeSeparator>
+		</symbols>
 		<symbols numberSystem="latn">
 			<decimal draft="unconfirmed">,</decimal>
 			<group draft="unconfirmed"> </group>
@@ -1392,13 +2128,1151 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<perMille draft="unconfirmed">‰</perMille>
 			<timeSeparator draft="unconfirmed">'h'</timeSeparator>
 		</symbols>
-		<decimalFormats numberSystem="latn">
+		<symbols numberSystem="lepc">
+			<decimal draft="unconfirmed">,</decimal>
+			<group draft="unconfirmed"> </group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">NaN</nan>
+			<timeSeparator draft="unconfirmed">'h'</timeSeparator>
+		</symbols>
+		<symbols numberSystem="limb">
+			<decimal draft="unconfirmed">,</decimal>
+			<group draft="unconfirmed"> </group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">NaN</nan>
+			<timeSeparator draft="unconfirmed">'h'</timeSeparator>
+		</symbols>
+		<symbols numberSystem="mlym">
+			<decimal draft="unconfirmed">,</decimal>
+			<group draft="unconfirmed"> </group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">NaN</nan>
+			<timeSeparator draft="unconfirmed">'h'</timeSeparator>
+		</symbols>
+		<symbols numberSystem="mong">
+			<decimal draft="unconfirmed">,</decimal>
+			<group draft="unconfirmed"> </group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">NaN</nan>
+			<timeSeparator draft="unconfirmed">'h'</timeSeparator>
+		</symbols>
+		<symbols numberSystem="mtei">
+			<decimal draft="unconfirmed">,</decimal>
+			<group draft="unconfirmed"> </group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">NaN</nan>
+			<timeSeparator draft="unconfirmed">'h'</timeSeparator>
+		</symbols>
+		<symbols numberSystem="mymr">
+			<decimal draft="unconfirmed">,</decimal>
+			<group draft="unconfirmed"> </group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">NaN</nan>
+			<timeSeparator draft="unconfirmed">'h'</timeSeparator>
+		</symbols>
+		<symbols numberSystem="mymrshan">
+			<decimal draft="unconfirmed">,</decimal>
+			<group draft="unconfirmed"> </group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">NaN</nan>
+			<timeSeparator draft="unconfirmed">'h'</timeSeparator>
+		</symbols>
+		<symbols numberSystem="nkoo">
+			<decimal draft="unconfirmed">,</decimal>
+			<group draft="unconfirmed"> </group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">NaN</nan>
+			<timeSeparator draft="unconfirmed">'h'</timeSeparator>
+		</symbols>
+		<symbols numberSystem="olck">
+			<decimal draft="unconfirmed">,</decimal>
+			<group draft="unconfirmed"> </group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">NaN</nan>
+			<timeSeparator draft="unconfirmed">'h'</timeSeparator>
+		</symbols>
+		<symbols numberSystem="orya">
+			<decimal draft="unconfirmed">,</decimal>
+			<group draft="unconfirmed"> </group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">NaN</nan>
+			<timeSeparator draft="unconfirmed">'h'</timeSeparator>
+		</symbols>
+		<symbols numberSystem="osma">
+			<decimal draft="unconfirmed">,</decimal>
+			<group draft="unconfirmed"> </group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">NaN</nan>
+			<timeSeparator draft="unconfirmed">'h'</timeSeparator>
+		</symbols>
+		<symbols numberSystem="rohg">
+			<decimal draft="unconfirmed">,</decimal>
+			<group draft="unconfirmed"> </group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">NaN</nan>
+			<timeSeparator draft="unconfirmed">'h'</timeSeparator>
+		</symbols>
+		<symbols numberSystem="saur">
+			<decimal draft="unconfirmed">,</decimal>
+			<group draft="unconfirmed"> </group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">NaN</nan>
+			<timeSeparator draft="unconfirmed">'h'</timeSeparator>
+		</symbols>
+		<symbols numberSystem="shrd">
+			<decimal draft="unconfirmed">,</decimal>
+			<group draft="unconfirmed"> </group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">NaN</nan>
+			<timeSeparator draft="unconfirmed">'h'</timeSeparator>
+		</symbols>
+		<symbols numberSystem="sora">
+			<decimal draft="unconfirmed">,</decimal>
+			<group draft="unconfirmed"> </group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">NaN</nan>
+			<timeSeparator draft="unconfirmed">'h'</timeSeparator>
+		</symbols>
+		<symbols numberSystem="sund">
+			<decimal draft="unconfirmed">,</decimal>
+			<group draft="unconfirmed"> </group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">NaN</nan>
+			<timeSeparator draft="unconfirmed">'h'</timeSeparator>
+		</symbols>
+		<symbols numberSystem="takr">
+			<decimal draft="unconfirmed">,</decimal>
+			<group draft="unconfirmed"> </group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">NaN</nan>
+			<timeSeparator draft="unconfirmed">'h'</timeSeparator>
+		</symbols>
+		<symbols numberSystem="talu">
+			<decimal draft="unconfirmed">,</decimal>
+			<group draft="unconfirmed"> </group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">NaN</nan>
+			<timeSeparator draft="unconfirmed">'h'</timeSeparator>
+		</symbols>
+		<symbols numberSystem="tamldec">
+			<decimal draft="unconfirmed">,</decimal>
+			<group draft="unconfirmed"> </group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">NaN</nan>
+			<timeSeparator draft="unconfirmed">'h'</timeSeparator>
+		</symbols>
+		<symbols numberSystem="telu">
+			<decimal draft="unconfirmed">,</decimal>
+			<group draft="unconfirmed"> </group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">NaN</nan>
+			<timeSeparator draft="unconfirmed">'h'</timeSeparator>
+		</symbols>
+		<symbols numberSystem="thai">
+			<decimal draft="unconfirmed">,</decimal>
+			<group draft="unconfirmed"> </group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">NaN</nan>
+			<timeSeparator draft="unconfirmed">'h'</timeSeparator>
+		</symbols>
+		<symbols numberSystem="tibt">
+			<decimal draft="unconfirmed">,</decimal>
+			<group draft="unconfirmed"> </group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">NaN</nan>
+			<timeSeparator draft="unconfirmed">'h'</timeSeparator>
+		</symbols>
+		<symbols numberSystem="vaii">
+			<decimal draft="unconfirmed">,</decimal>
+			<group draft="unconfirmed"> </group>
+			<list draft="unconfirmed">;</list>
+			<percentSign draft="unconfirmed">%</percentSign>
+			<plusSign draft="unconfirmed">+</plusSign>
+			<minusSign draft="unconfirmed">-</minusSign>
+			<approximatelySign draft="unconfirmed">~</approximatelySign>
+			<exponential draft="unconfirmed">E</exponential>
+			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
+			<perMille draft="unconfirmed">‰</perMille>
+			<infinity draft="unconfirmed">∞</infinity>
+			<nan draft="unconfirmed">NaN</nan>
+			<timeSeparator draft="unconfirmed">'h'</timeSeparator>
+		</symbols>
+		<decimalFormats numberSystem="adlm">
 			<decimalFormatLength>
 				<decimalFormat>
 					<pattern draft="unconfirmed">#,##0.###</pattern>
 				</decimalFormat>
 			</decimalFormatLength>
 		</decimalFormats>
+		<decimalFormats numberSystem="arab">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="arabext">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="bali">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="beng">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="brah">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="cakm">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="cham">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="deva">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="fullwide">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="gong">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="gonm">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="gujr">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="guru">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="hanidec">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="java">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="kali">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="khmr">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="knda">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="lana">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="lanatham">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="laoo">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="latn">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+			<decimalFormatLength type="long">
+				<decimalFormat>
+					<pattern type="1000" count="other" draft="unconfirmed">0K</pattern>
+					<pattern type="10000" count="other" draft="unconfirmed">00K</pattern>
+					<pattern type="100000" count="other" draft="unconfirmed">000K</pattern>
+					<pattern type="1000000" count="other" draft="unconfirmed">0M</pattern>
+					<pattern type="10000000" count="other" draft="unconfirmed">00M</pattern>
+					<pattern type="100000000" count="other" draft="unconfirmed">000M</pattern>
+					<pattern type="1000000000" count="other" draft="unconfirmed">0G</pattern>
+					<pattern type="10000000000" count="other" draft="unconfirmed">00G</pattern>
+					<pattern type="100000000000" count="other" draft="unconfirmed">000G</pattern>
+					<pattern type="1000000000000" count="other" draft="unconfirmed">0T</pattern>
+					<pattern type="10000000000000" count="other" draft="unconfirmed">00T</pattern>
+					<pattern type="100000000000000" count="other" draft="unconfirmed">000T</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="lepc">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="limb">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="mlym">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="mong">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="mtei">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="mymr">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="mymrshan">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="nkoo">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="olck">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="orya">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="osma">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="rohg">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="saur">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="shrd">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="sora">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="sund">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="takr">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="talu">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="tamldec">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="telu">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="thai">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="tibt">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<decimalFormats numberSystem="vaii">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="unconfirmed">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<scientificFormats numberSystem="adlm">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="arab">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="arabext">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="bali">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="beng">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="brah">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="cakm">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="cham">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="deva">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="fullwide">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="gong">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="gonm">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="gujr">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="guru">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="hanidec">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="java">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="kali">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="khmr">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="knda">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="lana">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="lanatham">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="laoo">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="lepc">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="limb">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="mlym">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="mong">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="mtei">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="mymr">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="mymrshan">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="nkoo">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="olck">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="orya">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="osma">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="rohg">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="saur">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="shrd">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="sora">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="sund">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="takr">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="talu">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="tamldec">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="telu">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="thai">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="tibt">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<scientificFormats numberSystem="vaii">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="unconfirmed">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<percentFormats numberSystem="adlm">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0 %</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="arabext">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0 %</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="bali">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0 %</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="beng">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0 %</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="brah">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0 %</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="cakm">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0 %</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="cham">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0 %</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="deva">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0 %</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="fullwide">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0 %</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="gong">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0 %</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="gonm">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0 %</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="gujr">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0 %</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="guru">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0 %</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="hanidec">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0 %</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="java">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0 %</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="kali">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0 %</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="khmr">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0 %</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="knda">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0 %</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="lana">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0 %</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="lanatham">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0 %</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="laoo">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0 %</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
 		<percentFormats numberSystem="latn">
 			<percentFormatLength>
 				<percentFormat>
@@ -1406,6 +3280,469 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</percentFormat>
 			</percentFormatLength>
 		</percentFormats>
+		<percentFormats numberSystem="lepc">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0 %</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="limb">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0 %</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="mlym">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0 %</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="mong">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0 %</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="mtei">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0 %</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="mymr">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0 %</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="mymrshan">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0 %</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="nkoo">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0 %</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="olck">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0 %</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="orya">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0 %</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="osma">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0 %</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="rohg">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0 %</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="saur">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0 %</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="shrd">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0 %</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="sora">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0 %</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="sund">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0 %</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="takr">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0 %</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="talu">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0 %</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="tamldec">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0 %</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="telu">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0 %</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="thai">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0 %</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="tibt">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0 %</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<percentFormats numberSystem="vaii">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="unconfirmed">#,##0 %</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<currencyFormats numberSystem="adlm">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">#,##0.00¤</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">#,##0.00¤;(#,##0.00¤)</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO draft="unconfirmed">{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="arab">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">#,##0.00 ¤</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="arabext">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">#,##0.00¤</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">#,##0.00¤;(#,##0.00¤)</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO draft="unconfirmed">{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="bali">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">#,##0.00¤</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">#,##0.00¤;(#,##0.00¤)</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO draft="unconfirmed">{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="beng">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">#,##0.00¤</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">#,##0.00¤;(#,##0.00¤)</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO draft="unconfirmed">{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="brah">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">#,##0.00¤</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">#,##0.00¤;(#,##0.00¤)</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO draft="unconfirmed">{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="cakm">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">#,##0.00¤</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">#,##0.00¤;(#,##0.00¤)</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO draft="unconfirmed">{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="cham">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">#,##0.00¤</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">#,##0.00¤;(#,##0.00¤)</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO draft="unconfirmed">{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="deva">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">#,##0.00¤</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">#,##0.00¤;(#,##0.00¤)</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO draft="unconfirmed">{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="fullwide">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">#,##0.00¤</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">#,##0.00¤;(#,##0.00¤)</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO draft="unconfirmed">{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="gong">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">#,##0.00¤</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">#,##0.00¤;(#,##0.00¤)</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO draft="unconfirmed">{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="gonm">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">#,##0.00¤</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">#,##0.00¤;(#,##0.00¤)</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO draft="unconfirmed">{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="gujr">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">#,##0.00¤</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">#,##0.00¤;(#,##0.00¤)</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO draft="unconfirmed">{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="guru">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">#,##0.00¤</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">#,##0.00¤;(#,##0.00¤)</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO draft="unconfirmed">{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="hanidec">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">#,##0.00¤</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">#,##0.00¤;(#,##0.00¤)</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO draft="unconfirmed">{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="java">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">#,##0.00¤</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">#,##0.00¤;(#,##0.00¤)</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO draft="unconfirmed">{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="kali">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">#,##0.00¤</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">#,##0.00¤;(#,##0.00¤)</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO draft="unconfirmed">{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="khmr">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">#,##0.00¤</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">#,##0.00¤;(#,##0.00¤)</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO draft="unconfirmed">{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="knda">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">#,##0.00¤</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">#,##0.00¤;(#,##0.00¤)</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO draft="unconfirmed">{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="lana">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">#,##0.00¤</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">#,##0.00¤;(#,##0.00¤)</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO draft="unconfirmed">{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="lanatham">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">#,##0.00¤</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">#,##0.00¤;(#,##0.00¤)</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO draft="unconfirmed">{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="laoo">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">#,##0.00¤</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">#,##0.00¤;(#,##0.00¤)</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO draft="unconfirmed">{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
 		<currencyFormats numberSystem="latn">
 			<currencyFormatLength>
 				<currencyFormat type="standard">
@@ -1413,6 +3750,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</currencyFormat>
 				<currencyFormat type="accounting">
 					<pattern draft="unconfirmed">#,##0.00¤;(#,##0.00¤)</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
@@ -1431,6 +3769,328 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<pattern type="100000000000000" count="other" draft="unconfirmed">000T¤</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="lepc">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">#,##0.00¤</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">#,##0.00¤;(#,##0.00¤)</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO draft="unconfirmed">{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="limb">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">#,##0.00¤</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">#,##0.00¤;(#,##0.00¤)</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO draft="unconfirmed">{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="mlym">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">#,##0.00¤</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">#,##0.00¤;(#,##0.00¤)</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO draft="unconfirmed">{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="mong">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">#,##0.00¤</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">#,##0.00¤;(#,##0.00¤)</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO draft="unconfirmed">{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="mtei">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">#,##0.00¤</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">#,##0.00¤;(#,##0.00¤)</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO draft="unconfirmed">{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="mymr">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">#,##0.00¤</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">#,##0.00¤;(#,##0.00¤)</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO draft="unconfirmed">{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="mymrshan">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">#,##0.00¤</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">#,##0.00¤;(#,##0.00¤)</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO draft="unconfirmed">{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="nkoo">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">#,##0.00¤</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">#,##0.00¤;(#,##0.00¤)</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO draft="unconfirmed">{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="olck">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">#,##0.00¤</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">#,##0.00¤;(#,##0.00¤)</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO draft="unconfirmed">{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="orya">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">#,##0.00¤</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">#,##0.00¤;(#,##0.00¤)</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO draft="unconfirmed">{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="osma">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">#,##0.00¤</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">#,##0.00¤;(#,##0.00¤)</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO draft="unconfirmed">{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="rohg">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">#,##0.00¤</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">#,##0.00¤;(#,##0.00¤)</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO draft="unconfirmed">{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="saur">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">#,##0.00¤</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">#,##0.00¤;(#,##0.00¤)</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO draft="unconfirmed">{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="shrd">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">#,##0.00¤</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">#,##0.00¤;(#,##0.00¤)</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO draft="unconfirmed">{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="sora">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">#,##0.00¤</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">#,##0.00¤;(#,##0.00¤)</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO draft="unconfirmed">{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="sund">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">#,##0.00¤</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">#,##0.00¤;(#,##0.00¤)</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO draft="unconfirmed">{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="takr">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">#,##0.00¤</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">#,##0.00¤;(#,##0.00¤)</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO draft="unconfirmed">{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="talu">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">#,##0.00¤</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">#,##0.00¤;(#,##0.00¤)</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO draft="unconfirmed">{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="tamldec">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">#,##0.00¤</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">#,##0.00¤;(#,##0.00¤)</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO draft="unconfirmed">{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="telu">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">#,##0.00¤</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">#,##0.00¤;(#,##0.00¤)</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO draft="unconfirmed">{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="thai">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">#,##0.00¤</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">#,##0.00¤;(#,##0.00¤)</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO draft="unconfirmed">{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="tibt">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">#,##0.00¤</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">#,##0.00¤;(#,##0.00¤)</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO draft="unconfirmed">{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencyFormats numberSystem="vaii">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="unconfirmed">#,##0.00¤</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">#,##0.00¤;(#,##0.00¤)</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyPatternAppendISO draft="unconfirmed">{0} ¤¤</currencyPatternAppendISO>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencies>
 			<currency type="AUD">
@@ -1482,14 +4142,311 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="other" draft="unconfirmed">(moneda desconeguda)</displayName>
 			</currency>
 		</currencies>
+		<miscPatterns numberSystem="adlm">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+			<pattern type="atLeast" draft="unconfirmed">≥{0}</pattern>
+			<pattern type="atMost" draft="unconfirmed">≤{0}</pattern>
+			<pattern type="range" draft="unconfirmed">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="arab">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+			<pattern type="atLeast" draft="unconfirmed">≥{0}</pattern>
+			<pattern type="atMost" draft="unconfirmed">≤{0}</pattern>
+			<pattern type="range" draft="unconfirmed">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="arabext">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+			<pattern type="atLeast" draft="unconfirmed">≥{0}</pattern>
+			<pattern type="atMost" draft="unconfirmed">≤{0}</pattern>
+			<pattern type="range" draft="unconfirmed">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="bali">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+			<pattern type="atLeast" draft="unconfirmed">≥{0}</pattern>
+			<pattern type="atMost" draft="unconfirmed">≤{0}</pattern>
+			<pattern type="range" draft="unconfirmed">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="beng">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+			<pattern type="atLeast" draft="unconfirmed">≥{0}</pattern>
+			<pattern type="atMost" draft="unconfirmed">≤{0}</pattern>
+			<pattern type="range" draft="unconfirmed">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="brah">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+			<pattern type="atLeast" draft="unconfirmed">≥{0}</pattern>
+			<pattern type="atMost" draft="unconfirmed">≤{0}</pattern>
+			<pattern type="range" draft="unconfirmed">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="cakm">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+			<pattern type="atLeast" draft="unconfirmed">≥{0}</pattern>
+			<pattern type="atMost" draft="unconfirmed">≤{0}</pattern>
+			<pattern type="range" draft="unconfirmed">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="cham">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+			<pattern type="atLeast" draft="unconfirmed">≥{0}</pattern>
+			<pattern type="atMost" draft="unconfirmed">≤{0}</pattern>
+			<pattern type="range" draft="unconfirmed">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="deva">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+			<pattern type="atLeast" draft="unconfirmed">≥{0}</pattern>
+			<pattern type="atMost" draft="unconfirmed">≤{0}</pattern>
+			<pattern type="range" draft="unconfirmed">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="fullwide">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+			<pattern type="atLeast" draft="unconfirmed">≥{0}</pattern>
+			<pattern type="atMost" draft="unconfirmed">≤{0}</pattern>
+			<pattern type="range" draft="unconfirmed">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="gong">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+			<pattern type="atLeast" draft="unconfirmed">≥{0}</pattern>
+			<pattern type="atMost" draft="unconfirmed">≤{0}</pattern>
+			<pattern type="range" draft="unconfirmed">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="gonm">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+			<pattern type="atLeast" draft="unconfirmed">≥{0}</pattern>
+			<pattern type="atMost" draft="unconfirmed">≤{0}</pattern>
+			<pattern type="range" draft="unconfirmed">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="gujr">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+			<pattern type="atLeast" draft="unconfirmed">≥{0}</pattern>
+			<pattern type="atMost" draft="unconfirmed">≤{0}</pattern>
+			<pattern type="range" draft="unconfirmed">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="guru">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+			<pattern type="atLeast" draft="unconfirmed">≥{0}</pattern>
+			<pattern type="atMost" draft="unconfirmed">≤{0}</pattern>
+			<pattern type="range" draft="unconfirmed">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="hanidec">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+			<pattern type="atLeast" draft="unconfirmed">≥{0}</pattern>
+			<pattern type="atMost" draft="unconfirmed">≤{0}</pattern>
+			<pattern type="range" draft="unconfirmed">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="java">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+			<pattern type="atLeast" draft="unconfirmed">≥{0}</pattern>
+			<pattern type="atMost" draft="unconfirmed">≤{0}</pattern>
+			<pattern type="range" draft="unconfirmed">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="kali">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+			<pattern type="atLeast" draft="unconfirmed">≥{0}</pattern>
+			<pattern type="atMost" draft="unconfirmed">≤{0}</pattern>
+			<pattern type="range" draft="unconfirmed">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="khmr">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+			<pattern type="atLeast" draft="unconfirmed">≥{0}</pattern>
+			<pattern type="atMost" draft="unconfirmed">≤{0}</pattern>
+			<pattern type="range" draft="unconfirmed">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="knda">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+			<pattern type="atLeast" draft="unconfirmed">≥{0}</pattern>
+			<pattern type="atMost" draft="unconfirmed">≤{0}</pattern>
+			<pattern type="range" draft="unconfirmed">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="lana">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+			<pattern type="atLeast" draft="unconfirmed">≥{0}</pattern>
+			<pattern type="atMost" draft="unconfirmed">≤{0}</pattern>
+			<pattern type="range" draft="unconfirmed">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="lanatham">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+			<pattern type="atLeast" draft="unconfirmed">≥{0}</pattern>
+			<pattern type="atMost" draft="unconfirmed">≤{0}</pattern>
+			<pattern type="range" draft="unconfirmed">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="laoo">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+			<pattern type="atLeast" draft="unconfirmed">≥{0}</pattern>
+			<pattern type="atMost" draft="unconfirmed">≤{0}</pattern>
+			<pattern type="range" draft="unconfirmed">{0}–{1}</pattern>
+		</miscPatterns>
 		<miscPatterns numberSystem="latn">
 			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="lepc">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+			<pattern type="atLeast" draft="unconfirmed">≥{0}</pattern>
+			<pattern type="atMost" draft="unconfirmed">≤{0}</pattern>
+			<pattern type="range" draft="unconfirmed">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="limb">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+			<pattern type="atLeast" draft="unconfirmed">≥{0}</pattern>
+			<pattern type="atMost" draft="unconfirmed">≤{0}</pattern>
+			<pattern type="range" draft="unconfirmed">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="mlym">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+			<pattern type="atLeast" draft="unconfirmed">≥{0}</pattern>
+			<pattern type="atMost" draft="unconfirmed">≤{0}</pattern>
+			<pattern type="range" draft="unconfirmed">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="mong">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+			<pattern type="atLeast" draft="unconfirmed">≥{0}</pattern>
+			<pattern type="atMost" draft="unconfirmed">≤{0}</pattern>
+			<pattern type="range" draft="unconfirmed">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="mtei">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+			<pattern type="atLeast" draft="unconfirmed">≥{0}</pattern>
+			<pattern type="atMost" draft="unconfirmed">≤{0}</pattern>
+			<pattern type="range" draft="unconfirmed">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="mymr">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+			<pattern type="atLeast" draft="unconfirmed">≥{0}</pattern>
+			<pattern type="atMost" draft="unconfirmed">≤{0}</pattern>
+			<pattern type="range" draft="unconfirmed">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="mymrshan">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+			<pattern type="atLeast" draft="unconfirmed">≥{0}</pattern>
+			<pattern type="atMost" draft="unconfirmed">≤{0}</pattern>
+			<pattern type="range" draft="unconfirmed">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="nkoo">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+			<pattern type="atLeast" draft="unconfirmed">≥{0}</pattern>
+			<pattern type="atMost" draft="unconfirmed">≤{0}</pattern>
+			<pattern type="range" draft="unconfirmed">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="olck">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+			<pattern type="atLeast" draft="unconfirmed">≥{0}</pattern>
+			<pattern type="atMost" draft="unconfirmed">≤{0}</pattern>
+			<pattern type="range" draft="unconfirmed">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="orya">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+			<pattern type="atLeast" draft="unconfirmed">≥{0}</pattern>
+			<pattern type="atMost" draft="unconfirmed">≤{0}</pattern>
+			<pattern type="range" draft="unconfirmed">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="osma">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+			<pattern type="atLeast" draft="unconfirmed">≥{0}</pattern>
+			<pattern type="atMost" draft="unconfirmed">≤{0}</pattern>
+			<pattern type="range" draft="unconfirmed">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="rohg">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+			<pattern type="atLeast" draft="unconfirmed">≥{0}</pattern>
+			<pattern type="atMost" draft="unconfirmed">≤{0}</pattern>
+			<pattern type="range" draft="unconfirmed">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="saur">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+			<pattern type="atLeast" draft="unconfirmed">≥{0}</pattern>
+			<pattern type="atMost" draft="unconfirmed">≤{0}</pattern>
+			<pattern type="range" draft="unconfirmed">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="shrd">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+			<pattern type="atLeast" draft="unconfirmed">≥{0}</pattern>
+			<pattern type="atMost" draft="unconfirmed">≤{0}</pattern>
+			<pattern type="range" draft="unconfirmed">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="sora">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+			<pattern type="atLeast" draft="unconfirmed">≥{0}</pattern>
+			<pattern type="atMost" draft="unconfirmed">≤{0}</pattern>
+			<pattern type="range" draft="unconfirmed">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="sund">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+			<pattern type="atLeast" draft="unconfirmed">≥{0}</pattern>
+			<pattern type="atMost" draft="unconfirmed">≤{0}</pattern>
+			<pattern type="range" draft="unconfirmed">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="takr">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+			<pattern type="atLeast" draft="unconfirmed">≥{0}</pattern>
+			<pattern type="atMost" draft="unconfirmed">≤{0}</pattern>
+			<pattern type="range" draft="unconfirmed">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="talu">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+			<pattern type="atLeast" draft="unconfirmed">≥{0}</pattern>
+			<pattern type="atMost" draft="unconfirmed">≤{0}</pattern>
+			<pattern type="range" draft="unconfirmed">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="tamldec">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+			<pattern type="atLeast" draft="unconfirmed">≥{0}</pattern>
+			<pattern type="atMost" draft="unconfirmed">≤{0}</pattern>
+			<pattern type="range" draft="unconfirmed">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="telu">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+			<pattern type="atLeast" draft="unconfirmed">≥{0}</pattern>
+			<pattern type="atMost" draft="unconfirmed">≤{0}</pattern>
+			<pattern type="range" draft="unconfirmed">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="thai">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+			<pattern type="atLeast" draft="unconfirmed">≥{0}</pattern>
+			<pattern type="atMost" draft="unconfirmed">≤{0}</pattern>
+			<pattern type="range" draft="unconfirmed">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="tibt">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+			<pattern type="atLeast" draft="unconfirmed">≥{0}</pattern>
+			<pattern type="atMost" draft="unconfirmed">≤{0}</pattern>
+			<pattern type="range" draft="unconfirmed">{0}–{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="vaii">
+			<pattern type="approximately" draft="unconfirmed">~ {0}</pattern>
+			<pattern type="atLeast" draft="unconfirmed">≥{0}</pattern>
+			<pattern type="atMost" draft="unconfirmed">≤{0}</pattern>
+			<pattern type="range" draft="unconfirmed">{0}–{1}</pattern>
 		</miscPatterns>
 	</numbers>
 	<units>
 		<unitLength type="long">
+			<compoundUnit type="10p-1">
+				<unitPrefixPattern draft="unconfirmed">d{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-2">
+				<unitPrefixPattern draft="unconfirmed">c{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="10p-3">
 				<unitPrefixPattern draft="unconfirmed">mili{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-6">
+				<unitPrefixPattern draft="unconfirmed">μ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-9">
+				<unitPrefixPattern draft="unconfirmed">n{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-12">
+				<unitPrefixPattern draft="unconfirmed">p{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-15">
+				<unitPrefixPattern draft="unconfirmed">f{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-18">
+				<unitPrefixPattern draft="unconfirmed">a{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-21">
+				<unitPrefixPattern draft="unconfirmed">z{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-24">
+				<unitPrefixPattern draft="unconfirmed">y{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p1">
 				<unitPrefixPattern draft="unconfirmed">deca{0}</unitPrefixPattern>
@@ -1500,11 +4457,62 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<compoundUnit type="10p3">
 				<unitPrefixPattern draft="unconfirmed">quilo{0}</unitPrefixPattern>
 			</compoundUnit>
+			<compoundUnit type="10p6">
+				<unitPrefixPattern draft="unconfirmed">M{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p9">
+				<unitPrefixPattern draft="unconfirmed">G{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p12">
+				<unitPrefixPattern draft="unconfirmed">T{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p15">
+				<unitPrefixPattern draft="unconfirmed">P{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p18">
+				<unitPrefixPattern draft="unconfirmed">E{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p21">
+				<unitPrefixPattern draft="unconfirmed">Z{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p24">
+				<unitPrefixPattern draft="unconfirmed">Y{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p1">
+				<unitPrefixPattern draft="unconfirmed">Ki{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p2">
+				<unitPrefixPattern draft="unconfirmed">Mi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p3">
+				<unitPrefixPattern draft="unconfirmed">Gi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p4">
+				<unitPrefixPattern draft="unconfirmed">Ti{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p5">
+				<unitPrefixPattern draft="unconfirmed">Pi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p6">
+				<unitPrefixPattern draft="unconfirmed">Ei{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p7">
+				<unitPrefixPattern draft="unconfirmed">Zi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p8">
+				<unitPrefixPattern draft="unconfirmed">Yi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="per">
+				<compoundUnitPattern draft="unconfirmed">{0}/{1}</compoundUnitPattern>
+			</compoundUnit>
 			<compoundUnit type="power2">
 				<compoundUnitPattern1 count="other" draft="unconfirmed">{0} cairat</compoundUnitPattern1>
 			</compoundUnit>
 			<compoundUnit type="power3">
 				<compoundUnitPattern1 count="other" draft="unconfirmed">{0} cubic</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="times">
+				<compoundUnitPattern draft="unconfirmed">{0}⋅{1}</compoundUnitPattern>
 			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<displayName draft="unconfirmed">G d’acceleracion</displayName>
@@ -1553,6 +4561,36 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" draft="unconfirmed">{0} centimètres cairats</unitPattern>
 				<perUnitPattern draft="unconfirmed">{0} per centimètres cairats</perUnitPattern>
 			</unit>
+			<unit type="area-square-mile">
+				<displayName draft="unconfirmed">mi²</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} mi²</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/mi²</perUnitPattern>
+			</unit>
+			<unit type="area-acre">
+				<displayName draft="unconfirmed">acre</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} ac</unitPattern>
+			</unit>
+			<unit type="area-square-yard">
+				<displayName draft="unconfirmed">yd²</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} yd²</unitPattern>
+			</unit>
+			<unit type="area-square-foot">
+				<displayName draft="unconfirmed">ft²</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} ft²</unitPattern>
+			</unit>
+			<unit type="area-square-inch">
+				<displayName draft="unconfirmed">in²</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} in²</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/in²</perUnitPattern>
+			</unit>
+			<unit type="area-dunam">
+				<displayName draft="unconfirmed">dunam</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} dunam</unitPattern>
+			</unit>
+			<unit type="concentr-karat">
+				<displayName draft="unconfirmed">kt</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} kt</unitPattern>
+			</unit>
 			<unit type="concentr-milligram-ofglucose-per-deciliter">
 				<displayName draft="unconfirmed">miligramas per decilitre</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} miligramas per decilitre</unitPattern>
@@ -1573,6 +4611,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName draft="unconfirmed">de mila</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} de mila</unitPattern>
 			</unit>
+			<unit type="concentr-permyriad">
+				<displayName draft="unconfirmed">‱</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0}‱</unitPattern>
+			</unit>
 			<unit type="concentr-mole">
 				<displayName draft="unconfirmed">mòls</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} mòls</unitPattern>
@@ -1585,6 +4627,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName draft="unconfirmed">litres per 100 quilomètres</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} litres per 100 quilomètres</unitPattern>
 			</unit>
+			<unit type="consumption-mile-per-gallon">
+				<displayName draft="unconfirmed">mpg US</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} mpg US</unitPattern>
+			</unit>
+			<unit type="consumption-mile-per-gallon-imperial">
+				<displayName draft="unconfirmed">mpg Imp.</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} mpg Imp.</unitPattern>
+			</unit>
 			<unit type="digital-petabyte">
 				<displayName draft="unconfirmed">petaoctets</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} petaoctets</unitPattern>
@@ -1593,21 +4643,41 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName draft="unconfirmed">teraoctets</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} teraoctets</unitPattern>
 			</unit>
+			<unit type="digital-terabit">
+				<displayName draft="unconfirmed">Tb</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} Tb</unitPattern>
+			</unit>
 			<unit type="digital-gigabyte">
 				<displayName draft="unconfirmed">gigaoctets</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} gigaoctets</unitPattern>
+			</unit>
+			<unit type="digital-gigabit">
+				<displayName draft="unconfirmed">Gb</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} Gb</unitPattern>
 			</unit>
 			<unit type="digital-megabyte">
 				<displayName draft="unconfirmed">megaoctets</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} megaoctets</unitPattern>
 			</unit>
+			<unit type="digital-megabit">
+				<displayName draft="unconfirmed">Mb</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} Mb</unitPattern>
+			</unit>
 			<unit type="digital-kilobyte">
 				<displayName draft="unconfirmed">quilooctets</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} quilooctets</unitPattern>
 			</unit>
+			<unit type="digital-kilobit">
+				<displayName draft="unconfirmed">kb</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} kb</unitPattern>
+			</unit>
 			<unit type="digital-byte">
 				<displayName draft="unconfirmed">octets</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} octets</unitPattern>
+			</unit>
+			<unit type="digital-bit">
+				<displayName draft="unconfirmed">bit</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} bit</unitPattern>
 			</unit>
 			<unit type="duration-century">
 				<displayName draft="unconfirmed">sègles</displayName>
@@ -1640,14 +4710,29 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="duration-hour">
 				<displayName draft="unconfirmed">oras</displayName>
 				<unitPattern count="other">{0} oras</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/h</perUnitPattern>
 			</unit>
 			<unit type="duration-minute">
 				<displayName draft="unconfirmed">minutas</displayName>
 				<unitPattern count="other">{0} minutas</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/min</perUnitPattern>
 			</unit>
 			<unit type="duration-second">
 				<displayName draft="unconfirmed">segondas</displayName>
 				<unitPattern count="other">{0} segondas</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/s</perUnitPattern>
+			</unit>
+			<unit type="duration-millisecond">
+				<displayName draft="unconfirmed">ms</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} ms</unitPattern>
+			</unit>
+			<unit type="duration-microsecond">
+				<displayName draft="unconfirmed">μs</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} μs</unitPattern>
+			</unit>
+			<unit type="duration-nanosecond">
+				<displayName draft="unconfirmed">ns</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} ns</unitPattern>
 			</unit>
 			<unit type="electric-ampere">
 				<displayName draft="unconfirmed">ampèrs</displayName>
@@ -1656,6 +4741,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="electric-milliampere">
 				<displayName draft="unconfirmed">miliampèrs</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} miliampèrs</unitPattern>
+			</unit>
+			<unit type="electric-ohm">
+				<displayName draft="unconfirmed">ohm</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} Ω</unitPattern>
 			</unit>
 			<unit type="electric-volt">
 				<displayName draft="unconfirmed">vòlts</displayName>
@@ -1689,17 +4778,73 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName draft="unconfirmed">electronvòlts</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} electronvòlts</unitPattern>
 			</unit>
+			<unit type="energy-british-thermal-unit">
+				<displayName draft="unconfirmed">Btu</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} Btu</unitPattern>
+			</unit>
+			<unit type="energy-therm-us">
+				<displayName draft="unconfirmed">US therm</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} US therm</unitPattern>
+			</unit>
+			<unit type="force-pound-force">
+				<displayName draft="unconfirmed">lbf</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} lbf</unitPattern>
+			</unit>
+			<unit type="force-newton">
+				<displayName draft="unconfirmed">N</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} N</unitPattern>
+			</unit>
+			<unit type="frequency-gigahertz">
+				<displayName draft="unconfirmed">GHz</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} GHz</unitPattern>
+			</unit>
+			<unit type="frequency-megahertz">
+				<displayName draft="unconfirmed">MHz</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} MHz</unitPattern>
+			</unit>
 			<unit type="frequency-kilohertz">
 				<displayName draft="unconfirmed">quilohertz</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} quilohertz</unitPattern>
+			</unit>
+			<unit type="frequency-hertz">
+				<displayName draft="unconfirmed">Hz</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} Hz</unitPattern>
+			</unit>
+			<unit type="graphics-em">
+				<displayName draft="unconfirmed">em</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} em</unitPattern>
+			</unit>
+			<unit type="graphics-pixel">
+				<displayName draft="unconfirmed">px</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} px</unitPattern>
+			</unit>
+			<unit type="graphics-megapixel">
+				<displayName draft="unconfirmed">MP</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} MP</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-centimeter">
+				<displayName draft="unconfirmed">ppcm</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} ppcm</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-inch">
+				<displayName draft="unconfirmed">ppi</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
 				<displayName draft="unconfirmed">punts per centimètre</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} punts per centimètre</unitPattern>
 			</unit>
+			<unit type="graphics-dot-per-inch">
+				<displayName draft="unconfirmed">ppi</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} ppi</unitPattern>
+			</unit>
 			<unit type="graphics-dot">
 				<displayName draft="unconfirmed">punt</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} punt</unitPattern>
+			</unit>
+			<unit type="length-earth-radius">
+				<displayName draft="unconfirmed">R⊕</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} R⊕</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
 				<displayName draft="unconfirmed">quilomètres</displayName>
@@ -1717,6 +4862,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="length-centimeter">
 				<displayName draft="unconfirmed">centimètres</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} cm</unitPattern>
 				<perUnitPattern draft="unconfirmed">{0} per centimètres</perUnitPattern>
 			</unit>
 			<unit type="length-millimeter">
@@ -1735,9 +4881,63 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName draft="unconfirmed">picomètres</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} picomètres</unitPattern>
 			</unit>
+			<unit type="length-mile">
+				<displayName draft="unconfirmed">mi</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} mi</unitPattern>
+			</unit>
+			<unit type="length-yard">
+				<displayName draft="unconfirmed">yd</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} yd</unitPattern>
+			</unit>
+			<unit type="length-foot">
+				<displayName draft="unconfirmed">ft</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} ft</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/ft</perUnitPattern>
+			</unit>
+			<unit type="length-inch">
+				<displayName draft="unconfirmed">in</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} in</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/in</perUnitPattern>
+			</unit>
+			<unit type="length-parsec">
+				<displayName draft="unconfirmed">pc</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} pc</unitPattern>
+			</unit>
+			<unit type="length-light-year">
+				<displayName draft="unconfirmed">ly</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} ly</unitPattern>
+			</unit>
+			<unit type="length-astronomical-unit">
+				<displayName draft="unconfirmed">au</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} au</unitPattern>
+			</unit>
+			<unit type="length-nautical-mile">
+				<displayName draft="unconfirmed">nmi</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} nmi</unitPattern>
+			</unit>
+			<unit type="length-mile-scandinavian">
+				<displayName draft="unconfirmed">smi</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} smi</unitPattern>
+			</unit>
 			<unit type="length-point">
 				<displayName draft="unconfirmed">punts</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} punts</unitPattern>
+			</unit>
+			<unit type="length-solar-radius">
+				<displayName draft="unconfirmed">R☉</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} R☉</unitPattern>
+			</unit>
+			<unit type="light-lux">
+				<displayName draft="unconfirmed">lx</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} lx</unitPattern>
+			</unit>
+			<unit type="light-candela">
+				<displayName draft="unconfirmed">cd</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} cd</unitPattern>
+			</unit>
+			<unit type="light-lumen">
+				<displayName draft="unconfirmed">lm</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} lm</unitPattern>
 			</unit>
 			<unit type="light-solar-luminosity">
 				<displayName draft="unconfirmed">luminositats solaras</displayName>
@@ -1769,6 +4969,28 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName draft="unconfirmed">tonas</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} tonas</unitPattern>
 			</unit>
+			<unit type="mass-pound">
+				<displayName draft="unconfirmed">lb</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} lb</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/lb</perUnitPattern>
+			</unit>
+			<unit type="mass-ounce">
+				<displayName draft="unconfirmed">oz</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} oz</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/oz</perUnitPattern>
+			</unit>
+			<unit type="mass-ounce-troy">
+				<displayName draft="unconfirmed">oz t</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} oz t</unitPattern>
+			</unit>
+			<unit type="mass-carat">
+				<displayName draft="unconfirmed">CD</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} CD</unitPattern>
+			</unit>
+			<unit type="mass-dalton">
+				<displayName draft="unconfirmed">Da</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} Da</unitPattern>
+			</unit>
 			<unit type="mass-earth-mass">
 				<displayName draft="unconfirmed">massas de Tèrra</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} massas de Tèrra</unitPattern>
@@ -1781,6 +5003,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName draft="unconfirmed">gran</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} gran</unitPattern>
 			</unit>
+			<unit type="power-gigawatt">
+				<displayName draft="unconfirmed">GW</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} GW</unitPattern>
+			</unit>
+			<unit type="power-megawatt">
+				<displayName draft="unconfirmed">MW</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} MW</unitPattern>
+			</unit>
 			<unit type="power-kilowatt">
 				<displayName draft="unconfirmed">quilowatts</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} quilowatts</unitPattern>
@@ -1788,6 +5018,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="power-watt">
 				<displayName draft="unconfirmed">watts</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} watts</unitPattern>
+			</unit>
+			<unit type="power-milliwatt">
+				<displayName draft="unconfirmed">mW</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} mW</unitPattern>
 			</unit>
 			<unit type="power-horsepower">
 				<displayName draft="unconfirmed">cavals vapor</displayName>
@@ -1797,6 +5031,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName draft="unconfirmed">milimètres de mercuri</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} milimètres de mercuri</unitPattern>
 			</unit>
+			<unit type="pressure-pound-force-per-square-inch">
+				<displayName draft="unconfirmed">psi</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} psi</unitPattern>
+			</unit>
+			<unit type="pressure-inch-ofhg">
+				<displayName draft="unconfirmed">inHg</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} inHg</unitPattern>
+			</unit>
+			<unit type="pressure-bar">
+				<displayName draft="unconfirmed">bar</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} bar</unitPattern>
+			</unit>
 			<unit type="pressure-millibar">
 				<displayName draft="unconfirmed">milibars</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} milibars</unitPattern>
@@ -1804,6 +5050,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="pressure-atmosphere">
 				<displayName draft="unconfirmed">atmosfèras</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} atmosfèras</unitPattern>
+			</unit>
+			<unit type="pressure-pascal">
+				<displayName draft="unconfirmed">Pa</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} Pa</unitPattern>
 			</unit>
 			<unit type="pressure-hectopascal">
 				<displayName draft="unconfirmed">ectopascals</displayName>
@@ -1813,6 +5063,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName draft="unconfirmed">quilopascals</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} quilopascals</unitPattern>
 			</unit>
+			<unit type="pressure-megapascal">
+				<displayName draft="unconfirmed">MPa</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} MPa</unitPattern>
+			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName draft="unconfirmed">quilomètres per ora</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} quilomètres per ora</unitPattern>
@@ -1821,9 +5075,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName draft="unconfirmed">mètres per segonda</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} mètres per segonda</unitPattern>
 			</unit>
+			<unit type="speed-mile-per-hour">
+				<displayName draft="unconfirmed">mi/h</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} mi/h</unitPattern>
+			</unit>
 			<unit type="speed-knot">
 				<displayName draft="unconfirmed">noses</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} noses</unitPattern>
+			</unit>
+			<unit type="temperature-generic">
+				<displayName draft="unconfirmed">°</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0}°</unitPattern>
 			</unit>
 			<unit type="temperature-celsius">
 				<displayName draft="unconfirmed">grases Celsius</displayName>
@@ -1832,6 +5094,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="temperature-fahrenheit">
 				<displayName draft="unconfirmed">grases Fahrenheit</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} grases Fahrenheit</unitPattern>
+			</unit>
+			<unit type="temperature-kelvin">
+				<displayName draft="unconfirmed">K</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} K</unitPattern>
+			</unit>
+			<unit type="torque-pound-force-foot">
+				<displayName draft="unconfirmed">lbf⋅ft</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} lbf⋅ft</unitPattern>
 			</unit>
 			<unit type="torque-newton-meter">
 				<displayName draft="unconfirmed">newton-mètres</displayName>
@@ -1850,6 +5120,22 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName draft="unconfirmed">centimètres cubics</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} centimètres cubics</unitPattern>
 				<perUnitPattern draft="unconfirmed">{0} per centimètres cubics</perUnitPattern>
+			</unit>
+			<unit type="volume-cubic-mile">
+				<displayName draft="unconfirmed">mi³</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} mi³</unitPattern>
+			</unit>
+			<unit type="volume-cubic-yard">
+				<displayName draft="unconfirmed">yd³</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} yd³</unitPattern>
+			</unit>
+			<unit type="volume-cubic-foot">
+				<displayName draft="unconfirmed">ft³</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} ft³</unitPattern>
+			</unit>
+			<unit type="volume-cubic-inch">
+				<displayName draft="unconfirmed">in³</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} in³</unitPattern>
 			</unit>
 			<unit type="volume-megaliter">
 				<displayName draft="unconfirmed">megalitres</displayName>
@@ -1876,6 +5162,60 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName draft="unconfirmed">mililitres</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} mililitres</unitPattern>
 			</unit>
+			<unit type="volume-pint-metric">
+				<displayName draft="unconfirmed">mpt</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} mpt</unitPattern>
+			</unit>
+			<unit type="volume-cup-metric">
+				<displayName draft="unconfirmed">mcup</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} mc</unitPattern>
+			</unit>
+			<unit type="volume-acre-foot">
+				<displayName draft="unconfirmed">ac ft</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} ac ft</unitPattern>
+			</unit>
+			<unit type="volume-gallon">
+				<displayName draft="unconfirmed">US gal</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} gal US</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/gal US</perUnitPattern>
+			</unit>
+			<unit type="volume-gallon-imperial">
+				<displayName draft="unconfirmed">Imp. gal</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} gal Imp.</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/gal Imp.</perUnitPattern>
+			</unit>
+			<unit type="volume-quart">
+				<displayName draft="unconfirmed">qt</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} qt</unitPattern>
+			</unit>
+			<unit type="volume-pint">
+				<displayName draft="unconfirmed">pt</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} pt</unitPattern>
+			</unit>
+			<unit type="volume-cup">
+				<displayName draft="unconfirmed">cup</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} c</unitPattern>
+			</unit>
+			<unit type="volume-fluid-ounce">
+				<displayName draft="unconfirmed">US fl oz</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} fl oz US</unitPattern>
+			</unit>
+			<unit type="volume-fluid-ounce-imperial">
+				<displayName draft="unconfirmed">Imp. fl oz</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} fl oz Imp.</unitPattern>
+			</unit>
+			<unit type="volume-tablespoon">
+				<displayName draft="unconfirmed">tbsp</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} tbsp</unitPattern>
+			</unit>
+			<unit type="volume-teaspoon">
+				<displayName draft="unconfirmed">tsp</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} tsp</unitPattern>
+			</unit>
+			<unit type="volume-barrel">
+				<displayName draft="unconfirmed">bbl</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} bbl</unitPattern>
+			</unit>
 			<unit type="volume-dessert-spoon">
 				<displayName draft="unconfirmed">culhièr de cafè</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} culhièr de cafè</unitPattern>
@@ -1888,9 +5228,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName draft="unconfirmed">gota</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} gota</unitPattern>
 			</unit>
+			<unit type="volume-dram">
+				<displayName draft="unconfirmed">dram fluid</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} dram fl</unitPattern>
+			</unit>
+			<unit type="volume-jigger">
+				<displayName draft="unconfirmed">jigger</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} jigger</unitPattern>
+			</unit>
 			<unit type="volume-pinch">
 				<displayName draft="unconfirmed">pecic</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} pecic</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName draft="unconfirmed">qt Imp</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} qt Imp.</unitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName draft="unconfirmed">direccion cardinala</displayName>
@@ -1965,9 +5317,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="electric-volt">
 				<displayName draft="unconfirmed">vòlts</displayName>
 			</unit>
+			<unit type="energy-foodcalorie">
+				<displayName draft="unconfirmed">kcal</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} kcal</unitPattern>
+			</unit>
 			<unit type="graphics-dot-per-centimeter">
 				<displayName draft="unconfirmed">ppcm</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} ppcm</unitPattern>
+			</unit>
+			<unit type="graphics-dot-per-inch">
+				<displayName draft="unconfirmed">ppi</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
 				<displayName draft="unconfirmed">punt</displayName>
@@ -2019,12 +5379,117 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="narrow">
+			<compoundUnit type="10p-1">
+				<unitPrefixPattern draft="unconfirmed">d{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-2">
+				<unitPrefixPattern draft="unconfirmed">c{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-3">
+				<unitPrefixPattern draft="unconfirmed">m{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-6">
+				<unitPrefixPattern draft="unconfirmed">μ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-9">
+				<unitPrefixPattern draft="unconfirmed">n{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-12">
+				<unitPrefixPattern draft="unconfirmed">p{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-15">
+				<unitPrefixPattern draft="unconfirmed">f{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-18">
+				<unitPrefixPattern draft="unconfirmed">a{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-21">
+				<unitPrefixPattern draft="unconfirmed">z{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-24">
+				<unitPrefixPattern draft="unconfirmed">y{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p1">
+				<unitPrefixPattern draft="unconfirmed">da{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p2">
+				<unitPrefixPattern draft="unconfirmed">h{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p3">
+				<unitPrefixPattern draft="unconfirmed">k{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p6">
+				<unitPrefixPattern draft="unconfirmed">M{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p9">
+				<unitPrefixPattern draft="unconfirmed">G{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p12">
+				<unitPrefixPattern draft="unconfirmed">T{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p15">
+				<unitPrefixPattern draft="unconfirmed">P{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p18">
+				<unitPrefixPattern draft="unconfirmed">E{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p21">
+				<unitPrefixPattern draft="unconfirmed">Z{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p24">
+				<unitPrefixPattern draft="unconfirmed">Y{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p1">
+				<unitPrefixPattern draft="unconfirmed">Ki{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p2">
+				<unitPrefixPattern draft="unconfirmed">Mi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p3">
+				<unitPrefixPattern draft="unconfirmed">Gi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p4">
+				<unitPrefixPattern draft="unconfirmed">Ti{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p5">
+				<unitPrefixPattern draft="unconfirmed">Pi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p6">
+				<unitPrefixPattern draft="unconfirmed">Ei{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p7">
+				<unitPrefixPattern draft="unconfirmed">Zi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p8">
+				<unitPrefixPattern draft="unconfirmed">Yi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="per">
+				<compoundUnitPattern draft="unconfirmed">{0}/{1}</compoundUnitPattern>
+			</compoundUnit>
+			<compoundUnit type="power2">
+				<compoundUnitPattern1 count="other" draft="unconfirmed">{0}²</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="power3">
+				<compoundUnitPattern1 count="other" draft="unconfirmed">{0}³</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="times">
+				<compoundUnitPattern draft="unconfirmed">{0}⋅{1}</compoundUnitPattern>
+			</compoundUnit>
+			<unit type="concentr-percent">
+				<displayName draft="unconfirmed">de cent</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0}%</unitPattern>
+			</unit>
+			<unit type="consumption-liter-per-100-kilometer">
+				<displayName draft="unconfirmed">L/100km</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} L/100km</unitPattern>
+			</unit>
 			<unit type="duration-year">
 				<displayName draft="unconfirmed">an.</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} an.</unitPattern>
 			</unit>
 			<unit type="duration-month">
 				<displayName draft="unconfirmed">mes</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} m</unitPattern>
 			</unit>
 			<unit type="duration-week">
 				<displayName draft="unconfirmed">setm.</displayName>
@@ -2032,15 +5497,55 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="duration-day">
 				<displayName draft="unconfirmed">jorn</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} j</unitPattern>
 			</unit>
 			<unit type="duration-hour">
 				<displayName draft="unconfirmed">ora</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} h</unitPattern>
+			</unit>
+			<unit type="duration-minute">
+				<displayName draft="unconfirmed">min</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} min</unitPattern>
+			</unit>
+			<unit type="duration-second">
+				<displayName draft="unconfirmed">sec</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} s</unitPattern>
+			</unit>
+			<unit type="duration-millisecond">
+				<displayName draft="unconfirmed">ms</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} ms</unitPattern>
+			</unit>
+			<unit type="length-kilometer">
+				<displayName draft="unconfirmed">km</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} km</unitPattern>
 			</unit>
 			<unit type="length-meter">
 				<displayName draft="unconfirmed">m</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} m</unitPattern>
+			</unit>
+			<unit type="length-centimeter">
+				<displayName draft="unconfirmed">cm</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} cm</unitPattern>
+			</unit>
+			<unit type="length-millimeter">
+				<displayName draft="unconfirmed">mm</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} mm</unitPattern>
+			</unit>
+			<unit type="mass-kilogram">
+				<displayName draft="unconfirmed">kg</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} kg</unitPattern>
 			</unit>
 			<unit type="mass-gram">
 				<displayName draft="unconfirmed">grama</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} g</unitPattern>
+			</unit>
+			<unit type="speed-kilometer-per-hour">
+				<displayName draft="unconfirmed">km/h</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} km/h</unitPattern>
+			</unit>
+			<unit type="temperature-celsius">
+				<displayName draft="unconfirmed">gr. C</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0}°C</unitPattern>
 			</unit>
 			<unit type="volume-liter">
 				<displayName draft="unconfirmed">litres</displayName>
@@ -2048,6 +5553,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<coordinateUnit>
 				<displayName draft="unconfirmed">direccion</displayName>
+				<coordinateUnitPattern type="east" draft="unconfirmed">{0}E</coordinateUnitPattern>
+				<coordinateUnitPattern type="north" draft="unconfirmed">{0}N</coordinateUnitPattern>
+				<coordinateUnitPattern type="south" draft="unconfirmed">{0}S</coordinateUnitPattern>
+				<coordinateUnitPattern type="west" draft="unconfirmed">{0}W</coordinateUnitPattern>
 			</coordinateUnit>
 		</unitLength>
 	</units>
@@ -2061,10 +5570,46 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<listPatternPart type="2" draft="unconfirmed">{0} o {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="or-narrow">
+			<listPatternPart type="start" draft="unconfirmed">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle" draft="unconfirmed">{0}, {1}</listPatternPart>
 			<listPatternPart type="end" draft="unconfirmed">{0}, o {1}</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0} o {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="or-short">
+			<listPatternPart type="start" draft="unconfirmed">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle" draft="unconfirmed">{0}, {1}</listPatternPart>
 			<listPatternPart type="end" draft="unconfirmed">{0}, o {1}</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0} o {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="standard-narrow">
+			<listPatternPart type="start" draft="unconfirmed">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle" draft="unconfirmed">{0}, {1}</listPatternPart>
+			<listPatternPart type="end" draft="unconfirmed">{0}, e {1}</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0} e {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="standard-short">
+			<listPatternPart type="start" draft="unconfirmed">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle" draft="unconfirmed">{0}, {1}</listPatternPart>
+			<listPatternPart type="end" draft="unconfirmed">{0}, e {1}</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0} e {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="unit">
+			<listPatternPart type="start" draft="unconfirmed">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle" draft="unconfirmed">{0}, {1}</listPatternPart>
+			<listPatternPart type="end" draft="unconfirmed">{0}, e {1}</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0} e {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="unit-narrow">
+			<listPatternPart type="start" draft="unconfirmed">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle" draft="unconfirmed">{0}, {1}</listPatternPart>
+			<listPatternPart type="end" draft="unconfirmed">{0}, e {1}</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0} e {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="unit-short">
+			<listPatternPart type="start" draft="unconfirmed">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle" draft="unconfirmed">{0}, {1}</listPatternPart>
+			<listPatternPart type="end" draft="unconfirmed">{0}, e {1}</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0} e {1}</listPatternPart>
 		</listPattern>
 	</listPatterns>
 	<posix>

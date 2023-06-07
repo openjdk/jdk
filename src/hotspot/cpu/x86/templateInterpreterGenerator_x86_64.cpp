@@ -58,7 +58,7 @@ address TemplateInterpreterGenerator::generate_slow_signature_handler() {
   //        stack args
   //        garbage
   //        expression stack bottom
-  //        bcp (NULL)
+  //        bcp (null)
   //        ...
 
   // Do FP first so we can use c_rarg3 as temp
@@ -138,7 +138,7 @@ address TemplateInterpreterGenerator::generate_slow_signature_handler() {
   //        stack args
   //        garbage
   //        expression stack bottom
-  //        bcp (NULL)
+  //        bcp (null)
   //        ...
 
   // Do FP first so we can use c_rarg3 as temp
@@ -399,7 +399,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
 
   if (kind == Interpreter::java_lang_math_fmaD) {
     if (!UseFMA) {
-      return NULL; // Generate a vanilla entry
+      return nullptr; // Generate a vanilla entry
     }
     __ movdbl(xmm0, Address(rsp, wordSize));
     __ movdbl(xmm1, Address(rsp, 3 * wordSize));
@@ -407,7 +407,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
     __ fmad(xmm0, xmm1, xmm2, xmm0);
   } else if (kind == Interpreter::java_lang_math_fmaF) {
     if (!UseFMA) {
-      return NULL; // Generate a vanilla entry
+      return nullptr; // Generate a vanilla entry
     }
     __ movflt(xmm0, Address(rsp, wordSize));
     __ movflt(xmm1, Address(rsp, 2 * wordSize));
@@ -417,35 +417,35 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
     __ sqrtsd(xmm0, Address(rsp, wordSize));
   } else if (kind == Interpreter::java_lang_math_exp) {
     __ movdbl(xmm0, Address(rsp, wordSize));
-    if (StubRoutines::dexp() != NULL) {
+    if (StubRoutines::dexp() != nullptr) {
       __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::dexp())));
     } else {
       __ call_VM_leaf0(CAST_FROM_FN_PTR(address, SharedRuntime::dexp));
     }
   } else if (kind == Interpreter::java_lang_math_log) {
     __ movdbl(xmm0, Address(rsp, wordSize));
-    if (StubRoutines::dlog() != NULL) {
+    if (StubRoutines::dlog() != nullptr) {
       __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::dlog())));
     } else {
       __ call_VM_leaf0(CAST_FROM_FN_PTR(address, SharedRuntime::dlog));
     }
   } else if (kind == Interpreter::java_lang_math_log10) {
     __ movdbl(xmm0, Address(rsp, wordSize));
-    if (StubRoutines::dlog10() != NULL) {
+    if (StubRoutines::dlog10() != nullptr) {
       __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::dlog10())));
     } else {
       __ call_VM_leaf0(CAST_FROM_FN_PTR(address, SharedRuntime::dlog10));
     }
   } else if (kind == Interpreter::java_lang_math_sin) {
     __ movdbl(xmm0, Address(rsp, wordSize));
-    if (StubRoutines::dsin() != NULL) {
+    if (StubRoutines::dsin() != nullptr) {
       __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::dsin())));
     } else {
       __ call_VM_leaf0(CAST_FROM_FN_PTR(address, SharedRuntime::dsin));
     }
   } else if (kind == Interpreter::java_lang_math_cos) {
     __ movdbl(xmm0, Address(rsp, wordSize));
-    if (StubRoutines::dcos() != NULL) {
+    if (StubRoutines::dcos() != nullptr) {
       __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::dcos())));
     } else {
       __ call_VM_leaf0(CAST_FROM_FN_PTR(address, SharedRuntime::dcos));
@@ -453,20 +453,20 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
   } else if (kind == Interpreter::java_lang_math_pow) {
     __ movdbl(xmm1, Address(rsp, wordSize));
     __ movdbl(xmm0, Address(rsp, 3 * wordSize));
-    if (StubRoutines::dpow() != NULL) {
+    if (StubRoutines::dpow() != nullptr) {
       __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::dpow())));
     } else {
       __ call_VM_leaf0(CAST_FROM_FN_PTR(address, SharedRuntime::dpow));
     }
   } else if (kind == Interpreter::java_lang_math_tan) {
     __ movdbl(xmm0, Address(rsp, wordSize));
-    if (StubRoutines::dtan() != NULL) {
+    if (StubRoutines::dtan() != nullptr) {
       __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::dtan())));
     } else {
       __ call_VM_leaf0(CAST_FROM_FN_PTR(address, SharedRuntime::dtan));
     }
   } else if (kind == Interpreter::java_lang_math_abs) {
-    assert(StubRoutines::x86::double_sign_mask() != NULL, "not initialized");
+    assert(StubRoutines::x86::double_sign_mask() != nullptr, "not initialized");
     __ movdbl(xmm0, Address(rsp, wordSize));
     __ andpd(xmm0, ExternalAddress(StubRoutines::x86::double_sign_mask()));
   } else {

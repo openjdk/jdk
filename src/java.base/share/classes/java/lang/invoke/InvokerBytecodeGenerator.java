@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,9 +36,6 @@ import sun.invoke.util.VerifyAccess;
 import sun.invoke.util.VerifyType;
 import sun.invoke.util.Wrapper;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDesc;
 import static java.lang.constant.ConstantDescs.*;
@@ -125,7 +122,7 @@ class InvokerBytecodeGenerator {
             name = invokerName.substring(0, p);
             invokerName = invokerName.substring(p + 1);
         }
-        if (DUMP_CLASS_FILES) {
+        if (dumper().isEnabled()) {
             name = makeDumpableClassName(name);
         }
         this.name = name;
@@ -174,58 +171,8 @@ class InvokerBytecodeGenerator {
     }
 
     /** instance counters for dumped classes */
-    private static final HashMap<String,Integer> DUMP_CLASS_FILES_COUNTERS;
-    /** debugging flag for saving generated class files */
-    private static final File DUMP_CLASS_FILES_DIR;
-
-    static {
-        if (DUMP_CLASS_FILES) {
-            DUMP_CLASS_FILES_COUNTERS = new HashMap<>();
-            try {
-                File dumpDir = new File("DUMP_CLASS_FILES");
-                if (!dumpDir.exists()) {
-                    dumpDir.mkdirs();
-                }
-                DUMP_CLASS_FILES_DIR = dumpDir;
-                System.out.println("Dumping class files to "+DUMP_CLASS_FILES_DIR+"/...");
-            } catch (Exception e) {
-                throw newInternalError(e);
-            }
-        } else {
-            DUMP_CLASS_FILES_COUNTERS = null;
-            DUMP_CLASS_FILES_DIR = null;
-        }
-    }
-
-    private void maybeDump(final byte[] classFile) {
-        if (DUMP_CLASS_FILES) {
-            maybeDump(className, classFile);
-        }
-    }
-
-    // Also used from BoundMethodHandle
-    @SuppressWarnings("removal")
-    static void maybeDump(final String className, final byte[] classFile) {
-        if (DUMP_CLASS_FILES) {
-            java.security.AccessController.doPrivileged(
-            new java.security.PrivilegedAction<>() {
-                public Void run() {
-                    try {
-                        String dumpName = className.replace('.','/');
-                        File dumpFile = new File(DUMP_CLASS_FILES_DIR, dumpName+".class");
-                        System.out.println("dump: " + dumpFile);
-                        dumpFile.getParentFile().mkdirs();
-                        FileOutputStream file = new FileOutputStream(dumpFile);
-                        file.write(classFile);
-                        file.close();
-                        return null;
-                    } catch (IOException ex) {
-                        throw newInternalError(ex);
-                    }
-                }
-            });
-        }
-    }
+    private static final HashMap<String,Integer> DUMP_CLASS_FILES_COUNTERS =
+            dumper().isEnabled() ?  new HashMap<>(): null;
 
     private static String makeDumpableClassName(String className) {
         Integer ctr;
@@ -272,7 +219,7 @@ class InvokerBytecodeGenerator {
 
         // unique static variable name
         String name;
-        if (DUMP_CLASS_FILES) {
+        if (dumper().isEnabled()) {
             Class<?> c = arg.getClass();
             while (c.isArray()) {
                 c = c.getComponentType();
@@ -300,7 +247,7 @@ class InvokerBytecodeGenerator {
      * Extract the MemberName of a newly-defined method.
      */
     private MemberName loadMethod(byte[] classFile) {
-        Class<?> invokerClass = LOOKUP.makeHiddenClassDefiner(className, classFile, Set.of())
+        Class<?> invokerClass = LOOKUP.makeHiddenClassDefiner(className, classFile, Set.of(), dumper())
                                       .defineClass(true, classDataValues());
         return resolveInvokerMember(invokerClass, invokerName, invokerType);
     }
@@ -645,7 +592,6 @@ class InvokerBytecodeGenerator {
                 bogusMethod(clb, lambdaForm);
             }
         });
-        maybeDump(classFile);
         return classFile;
     }
 
@@ -1776,7 +1722,6 @@ class InvokerBytecodeGenerator {
                 bogusMethod(clb, invokerType);
             }
         });
-        maybeDump(classFile);
         return classFile;
     }
 
@@ -1855,7 +1800,6 @@ class InvokerBytecodeGenerator {
                 bogusMethod(clb, dstType);
             }
         });
-        maybeDump(classFile);
         return classFile;
     }
 
@@ -1864,7 +1808,7 @@ class InvokerBytecodeGenerator {
      * for debugging purposes.
      */
     private void bogusMethod(ClassBuilder clb, Object os) {
-        if (DUMP_CLASS_FILES) {
+        if (dumper().isEnabled()) {
             clb.withMethod("dummy", MethodTypeDesc.of(CD_void), ACC_STATIC, new Consumer<MethodBuilder>() {
                 @Override
                 public void accept(MethodBuilder mb) {

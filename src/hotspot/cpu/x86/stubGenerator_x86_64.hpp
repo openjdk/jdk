@@ -122,11 +122,11 @@ class StubGenerator: public StubCodeGenerator {
   void array_overlap_test(address no_overlap_target, Label* NOLp, Address::ScaleFactor sf);
 
   void array_overlap_test(address no_overlap_target, Address::ScaleFactor sf) {
-    assert(no_overlap_target != NULL, "must be generated");
-    array_overlap_test(no_overlap_target, NULL, sf);
+    assert(no_overlap_target != nullptr, "must be generated");
+    array_overlap_test(no_overlap_target, nullptr, sf);
   }
   void array_overlap_test(Label& L_no_overlap, Address::ScaleFactor sf) {
-    array_overlap_test(NULL, &L_no_overlap, sf);
+    array_overlap_test(nullptr, &L_no_overlap, sf);
   }
 
 
@@ -550,21 +550,13 @@ class StubGenerator: public StubCodeGenerator {
   void create_control_words();
 
   // Initialization
-  void generate_initial();
-  void generate_phase1();
-  void generate_all();
+  void generate_initial_stubs();
+  void generate_continuation_stubs();
+  void generate_compiler_stubs();
+  void generate_final_stubs();
 
  public:
-  StubGenerator(CodeBuffer* code, int phase) : StubCodeGenerator(code) {
-    DEBUG_ONLY( _regs_in_thread = false; )
-    if (phase == 0) {
-      generate_initial();
-    } else if (phase == 1) {
-      generate_phase1(); // stubs that must be available for the interpreter
-    } else {
-      generate_all();
-    }
-  }
+  StubGenerator(CodeBuffer* code, StubsKind kind);
 };
 
 #endif // CPU_X86_STUBGENERATOR_X86_64_HPP
