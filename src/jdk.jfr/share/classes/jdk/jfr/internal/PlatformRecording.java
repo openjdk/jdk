@@ -56,7 +56,6 @@ import jdk.jfr.Configuration;
 import jdk.jfr.FlightRecorderListener;
 import jdk.jfr.Recording;
 import jdk.jfr.RecordingState;
-import jdk.jfr.events.ErrorThrownEvent;
 import jdk.jfr.internal.SecuritySupport.SafePath;
 
 public final class PlatformRecording implements AutoCloseable {
@@ -899,14 +898,12 @@ public final class PlatformRecording implements AutoCloseable {
             Iterator<RepositoryChunk> it = chunks.iterator();
             Logger.log(JFR, INFO, "Checking for missing chunkfiles for recording \"" + name + "\" (" + id + ")");
             while (it.hasNext()) {
-                RepositoryChunk c = it.next();
-                c.chunkFileMissingMessage().ifPresent((message) -> {
-                    // add an Error event to the next recording to explain the possible data loss.
-                    ErrorThrownEvent.commit(0L, 0L, message, MissingChunkFileError.class);
-                    Logger.log(JFR, ERROR, "Chunkfile: \""+c.toString()+"\" is missing.");
+                RepositoryChunk chunk = it.next();
+                if (chunk.isMissingFile()) {
+                    chunk.emitMissingChunkFileEvent();
                     it.remove();
-                    removed(c);
-                });
+                    removed(chunk);
+                }
             }
         }
     }

@@ -25,13 +25,17 @@
 
 package jdk.jfr.internal;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.channels.ReadableByteChannel;
 import java.time.Instant;
+import java.time.Period;
+import java.time.Duration;
 import java.util.Comparator;
 import java.util.Optional;
 
+import jdk.jfr.events.ErrorThrownEvent;
 import jdk.jfr.internal.MissingChunkFileError;
 import jdk.jfr.internal.SecuritySupport.SafePath;
 
@@ -57,21 +61,21 @@ final class RepositoryChunk {
         this.unFinishedRAF = SecuritySupport.createRandomAccessFile(chunkFile);
     }
 
-    void finish(Instant endTime) throws MissingChunkFileError {
+    void finish(Instant endTime) throws FileNotFoundException, IOException {
         try {
-            finishWithException(endTime);
+            unFinishedRAF.close();
+            this.size = SecuritySupport.getFileSize(chunkFile);
+            this.endTime = endTime;
+            if (Logger.shouldLog(LogTag.JFR_SYSTEM, LogLevel.DEBUG)) {
+                Logger.log(LogTag.JFR_SYSTEM, LogLevel.DEBUG, "Chunk finished: " + chunkFile);
+            }
         } catch (IOException e) {
-            chunkFileMissingMessage().ifPresent((message) -> { throw new MissingChunkFileError(message); });
             Logger.log(LogTag.JFR, LogLevel.ERROR, "Could not finish chunk. " + e.getClass() + " "+ e.getMessage());
-        }
-    }
-
-    private void finishWithException(Instant endTime) throws IOException {
-        unFinishedRAF.close();
-        this.size = SecuritySupport.getFileSize(chunkFile);
-        this.endTime = endTime;
-        if (Logger.shouldLog(LogTag.JFR_SYSTEM, LogLevel.DEBUG)) {
-            Logger.log(LogTag.JFR_SYSTEM, LogLevel.DEBUG, "Chunk finished: " + chunkFile);
+            if (this.isMissingFile()) {
+                throw new FileNotFoundException();
+            } else {
+                throw e;
+            }
         }
     }
 
@@ -103,6 +107,7 @@ final class RepositoryChunk {
                 FilePurger.add(f);
             }
         }
+
     }
 
     private void destroy() {
@@ -168,21 +173,24 @@ final class RepositoryChunk {
         return chunkFile;
     }
 
-    /**
-     * If the optional is present, the chunkFile for this chunk is missing. The
-     * likely reason for missing chunkFiles is that the repository has been cleaned
-     * by an external process (not the JVM).
-     * @return a failure message if the chunkFile is missing.
-     */
-    Optional<String> chunkFileMissingMessage() {
+    boolean isMissingFile() {
         try {
             if (!SecuritySupport.exists(chunkFile)) {
-                String message = "Chunkfile \""+ chunkFile.toString() + "\" is missing. Data loss might occur from " + this.startTime.toString() + (endTime != null ? " to " + endTime.toString() : "");
-                return Optional.of(message);
+                return true;
             }
         } catch (IOException ioe) {
             // ignore
         }
-        return Optional.empty();
+        return false;
+    }
+
+    void emitMissingChunkFileEvent() {
+        emitMissingChunkFileEvent(this.endTime);
+    }
+
+    void emitMissingChunkFileEvent(Instant endTime) {
+        String message = "Chunkfile \""+ chunkFile.toString() + "\" is missing.";
+        Logger.log(LogTag.JFR, LogLevel.ERROR, message + " Data loss might occur from " + startTime.toString() + (endTime != null ? " to " + endTime.toString() : ""));
+        ErrorThrownEvent.commit(startTime.getNano(), endTime != null ? Duration.between(startTime, endTime).toNanos() : 0L, message, MissingChunkFileError.class);
     }
 }

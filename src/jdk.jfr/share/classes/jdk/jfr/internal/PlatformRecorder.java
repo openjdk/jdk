@@ -32,6 +32,7 @@ import static jdk.jfr.internal.LogLevel.WARN;
 import static jdk.jfr.internal.LogTag.JFR;
 import static jdk.jfr.internal.LogTag.JFR_SYSTEM;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.security.AccessControlContext;
 import java.security.AccessController;
@@ -456,13 +457,15 @@ public final class PlatformRecorder {
                     r.appendChunk(chunk);
                 }
             }
-        } catch (MissingChunkFileError e) {
-            Logger.log(LogTag.JFR, LogLevel.ERROR, "Finishing chunk failed: " + e.getClass().getName() + ", " + e.getMessage());
-            // with one chunkfile missing, iterate throguh recording to find anymore missing,
-            // and remove them. This will emit more errors that can be seen in subsequent recordings.
+        } catch (FileNotFoundException e)  {
+            chunk.emitMissingChunkFileEvent(time);
+            // With one chunkfile found missing, its likely more could've been removed too. Iterate through all recordings,
+            // and check for missing files. This will emit more error logs that can be seen in subsequent recordings.
             for (PlatformRecording r : getRecordings()) {
                 r.removeNonExistantPaths();
             }
+        } catch (IOException e) {
+            Logger.log(LogTag.JFR, LogLevel.ERROR, "Finishing chunk failed: " + e.getClass().getName() + ", " + e.getMessage());
         }
         FilePurger.purge();
     }

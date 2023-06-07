@@ -64,6 +64,13 @@ final class FilePurger {
 
     private static boolean delete(SafePath p) {
         try {
+            if (!SecuritySupport.exists(p)) {
+                return true;
+            }
+        } catch (IOException e) {
+            // ignore
+        }
+        try {
             SecuritySupport.delete(p);
             return true;
         } catch (IOException e) {
