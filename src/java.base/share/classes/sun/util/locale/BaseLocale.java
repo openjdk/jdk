@@ -36,6 +36,7 @@ import jdk.internal.misc.CDS;
 import jdk.internal.util.StaticProperty;
 import jdk.internal.vm.annotation.Stable;
 
+import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
 import java.util.StringJoiner;
 
@@ -366,7 +367,9 @@ public final class BaseLocale {
             assert (key.holder != null && key.holderRef == null);
             BaseLocale l = key.holder;
             BaseLocale locale = new BaseLocale(l.getLanguage(), l.getScript(), l.getRegion(), l.getVariant(), true);
-            return (new Key(locale)).getBaseLocale();
+            BaseLocale value = (new Key(locale)).getBaseLocale();
+            Reference.reachabilityFence(locale);
+            return value;
         }
     }
 }
