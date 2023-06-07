@@ -318,8 +318,8 @@ public final class ThemeReader {
         readLock.lock();
         try {
             return getThemeBackgroundContentMargins(getTheme(widget, defaultDPI),
-                                                    part, state, boundingWidth,
-                                                    boundingHeight);
+                                                    part, state,
+                                                    boundingWidth, boundingHeight);
         } finally {
             readLock.unlock();
         }
