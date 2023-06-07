@@ -15456,7 +15456,7 @@ typedef void (JNICALL *jvmtiEventVMInit)
       Minor update to deprecate Heap functions 1.0.
   </change>
   <change date="27 April 2022" version="19.0.0">
-      Preview feature - Support for virtual threads:
+      Support for virtual threads (Preview):
        - Add new capability:
          - can_support_virtual_threads
        - Add new functions:
