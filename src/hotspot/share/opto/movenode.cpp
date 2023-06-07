@@ -27,7 +27,6 @@
 #include "opto/connode.hpp"
 #include "opto/convertnode.hpp"
 #include "opto/matcher.hpp"
-#include "opto/loopConditionalPropagation.hpp"
 #include "opto/movenode.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/subnode.hpp"

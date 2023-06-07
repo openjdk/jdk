@@ -126,12 +126,12 @@ void PhaseConditionalPropagation::enqueue_uses(const Node* n, Node* c) {
         }
       }
 
-      mark_if_from_cmp(u);
+      mark_if_from_cmp(u, c);
 
       if (u->Opcode() == Op_ConvL2I) {
         for (DUIterator_Fast jmax, j = u->fast_outs(jmax); j < jmax; j++) {
           Node* u2 = u->fast_out(j);
-          mark_if_from_cmp(u2);
+          mark_if_from_cmp(u2, c);
         }
       }
 
@@ -161,7 +161,7 @@ void PhaseConditionalPropagation::enqueue_uses(const Node* n, Node* c) {
   }
 }
 
-void PhaseConditionalPropagation::mark_if_from_cmp(const Node* u) {
+void PhaseConditionalPropagation::mark_if_from_cmp(const Node* u, Node* c) {
   if (u->Opcode() == Op_CmpI || u->Opcode() == Op_CmpL || u->Opcode() == Op_CmpU || u->Opcode() == Op_CmpUL) {
     for (DUIterator_Fast jmax, j = u->fast_outs(jmax); j < jmax; j++) {
       Node* u2 = u->fast_out(j);
@@ -169,12 +169,12 @@ void PhaseConditionalPropagation::mark_if_from_cmp(const Node* u) {
         for (DUIterator_Fast kmax, k = u2->fast_outs(kmax); k < kmax; k++) {
           Node* u3 = u2->fast_out(k);
           if (u3->is_If()) {
-            mark_if(u3->as_If());
+            mark_if(u3->as_If(), c);
           } else if (u3->Opcode() == Op_Opaque4) {
             for (DUIterator_Fast lmax, l = u3->fast_outs(lmax); l < lmax; l++) {
               Node* u4 = u3->fast_out(l);
               if (u4->is_If()) {
-                mark_if(u4->as_If());
+                mark_if(u4->as_If(), c);
               }
             }
           }
@@ -184,10 +184,15 @@ void PhaseConditionalPropagation::mark_if_from_cmp(const Node* u) {
   }
 }
 
-void PhaseConditionalPropagation::mark_if(const IfNode* iff) {
-  assert(!_visited.test(iff->_idx), "");
-  _control_dependent_node[_iterations % 2].set(iff->proj_out(0)->_idx);
-  _control_dependent_node[_iterations % 2].set(iff->proj_out(1)->_idx);
+void PhaseConditionalPropagation::mark_if(IfNode* iff, Node* c) {
+  if (_phase->is_dominator(c, iff)) {
+    ProjNode* proj_false = iff->proj_out(0);
+    ProjNode* proj_true = iff->proj_out(1);
+    assert(!_visited.test(proj_false->_idx), "");
+    assert(!_visited.test(proj_true->_idx), "");
+    _control_dependent_node[_iterations % 2].set(proj_false->_idx);
+    _control_dependent_node[_iterations % 2].set(proj_true->_idx);
+  }
 }
 
 void PhaseConditionalPropagation::sync(Node* c) {
@@ -229,32 +234,6 @@ void PhaseConditionalPropagation::sync(Node* c) {
 }
 
 void PhaseConditionalPropagation::analyze(int rounds) {
-//  for (int i = 0; i < C->cmove_count(); ++i) {
-//    CMoveNode* cmove = C->cmove_node(i);
-//    const Type* t = cmove->Value(this);
-//    if (t != PhaseValues::type(cmove)) {
-//      PhaseValues::set_type(cmove, t);
-//      enqueue_uses(cmove, C->root());
-//    }
-//  }
-//
-//  while (_wq.size() > 0) {
-//    Node* n = _wq.pop();
-//    _value_calls++;
-//    _value_calls_graph.at_put(n->Opcode(), _value_calls_graph.at_grow(n->Opcode(), 0) + 1);
-//    const Type* t = n->Value(this);
-//    const Type* current_type = PhaseValues::type(n);
-//    t = t->filter(current_type);
-//    if (t != current_type) {
-//#ifdef ASSERT
-//      assert(narrows_type(current_type, t), "");
-//#endif
-//      set_type(n, t, current_type);
-//      enqueue_uses(n, C->root());
-//    }
-//  }
-
-
   bool progress = true;
   int extra_rounds = 0;
   int extra_rounds2 = 0;
@@ -1171,6 +1150,48 @@ const Type* PhaseConditionalPropagation::type(const Node* n, Node* c) const {
     res = PhaseValues::type(n);
   }
   return res;
+}
+
+PhaseConditionalPropagation::PhaseConditionalPropagation(PhaseIdealLoop* phase, VectorSet& visited, Node_Stack& nstack,
+                                                         Node_List& rpo_list)
+        : PhaseIterGVN(&phase->igvn()),
+          _updates(nullptr),
+          _phase(phase),
+          _visited(visited),
+          _rpo_list(rpo_list),
+          _current_ctrl(phase->C->root()),
+          _progress(true),
+          _value_calls(0),
+          _iterations(0),
+          _current_updates(nullptr),
+          _dom_updates(nullptr),
+          _prev_updates(nullptr) {
+  assert(nstack.is_empty(), "");
+  assert(_rpo_list.size() == 0, "");
+  phase->rpo(C->root(), nstack, _visited, _rpo_list);
+  Unique_Node_List check;
+  int shift = 0;
+  for (uint i = 0; i < _rpo_list.size(); ++i) {
+    Node* n = _rpo_list.at(i);
+    if (n->is_MultiBranch()) {
+      shift++;
+    } else if (shift > 0) {
+      check.push(n);
+      _rpo_list.map(i - shift, n);
+    }
+  }
+  while (shift > 0) {
+    shift--;
+    _rpo_list.pop();
+  }
+  for (uint i = 0; i < _rpo_list.size(); ++i) {
+    Node* n = _rpo_list.at(i);
+    check.remove(n);
+  }
+  assert(check.size() == 0, "");
+  Node* root = _rpo_list.pop();
+  assert(root == C->root(), "");
+  _updates = new Updates(8, _rpo_list.size());
 }
 
 void PhaseIdealLoop::conditional_elimination(VectorSet& visited, Node_Stack& nstack, Node_List& rpo_list, int rounds) {

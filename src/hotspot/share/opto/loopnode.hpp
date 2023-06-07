@@ -929,17 +929,6 @@ private:
   }
   Node *dom_lca_for_get_late_ctrl_internal( Node *lca, Node *n, Node *tag );
 
-  // Helper function for directing control inputs away from CFG split points.
-  Node *find_non_split_ctrl( Node *ctrl ) const {
-    if (ctrl != nullptr) {
-      if (ctrl->is_MultiBranch()) {
-        ctrl = ctrl->in(0);
-      }
-      assert(ctrl->is_CFG(), "CFG");
-    }
-    return ctrl;
-  }
-
   Node* cast_incr_before_loop(Node* incr, Node* ctrl, CountedLoopNode* loop);
 
 #ifdef ASSERT
@@ -1074,6 +1063,17 @@ public:
   void lazy_replace(Node *old_node, Node *new_node) {
     _igvn.replace_node(old_node, new_node);
     lazy_update(old_node, new_node);
+  }
+
+  // Helper function for directing control inputs away from CFG split points.
+  Node *find_non_split_ctrl( Node *ctrl ) const {
+    if (ctrl != nullptr) {
+      if (ctrl->is_MultiBranch()) {
+        ctrl = ctrl->in(0);
+      }
+      assert(ctrl->is_CFG(), "CFG");
+    }
+    return ctrl;
   }
 
 private:
@@ -1688,7 +1688,7 @@ public:
   bool verify_loop_ctrl(Node* n, const PhaseIdealLoop* phase_verify) const;
 #endif
 
-  void rpo(Node* start, Node_Stack& stk, VectorSet& visited, Node_List& rpo_list, bool only_proj_regions) const;
+  void rpo(Node* start, Node_Stack &stk, VectorSet &visited, Node_List &rpo_list) const;
 
   void check_counted_loop_shape(IdealLoopTree* loop, Node* x, BasicType bt) NOT_DEBUG_RETURN;
 

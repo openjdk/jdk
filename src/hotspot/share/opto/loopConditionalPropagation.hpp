@@ -183,33 +183,14 @@ private:
   int _iterations;
 
 public:
-  PhaseConditionalPropagation(PhaseIdealLoop* phase, VectorSet &visited, Node_Stack &nstack, Node_List &rpo_list)
-  : PhaseIterGVN(&phase->igvn()),
-    _updates(nullptr),
-    _phase(phase),
-    _visited(visited),
-    _rpo_list(rpo_list),
-    _current_ctrl(phase->C->root()),
-    _progress(true),
-    _value_calls(0),
-    _iterations(0),
-    _current_updates(nullptr),
-    _dom_updates(nullptr),
-    _prev_updates(nullptr) {
-    assert(nstack.is_empty(), "");
-    assert(_rpo_list.size() == 0, "");
-    phase->rpo(C->root(), nstack, _visited, _rpo_list, true);
-    Node* root = _rpo_list.pop();
-    assert(root == C->root(), "");
-    _updates = new Updates(8, _rpo_list.size());
-//       _updates = new Updates((unsigned int) (_rpo_list.size() / .8));
-  }
+  PhaseConditionalPropagation(PhaseIdealLoop* phase, VectorSet &visited, Node_Stack &nstack, Node_List &rpo_list);
 
   Node* known_updates(Node* c) const {
-    while (!_known_updates.test(c->_idx) && !c->is_Root()) {
-      c = _phase->idom(c);
-    }
-    return c;
+//    assert(_known_updates.test(c->_idx) || c->is_Root(), "");
+//    while (!_known_updates.test(c->_idx) && !c->is_Root()) {
+//      c = _phase->idom(c);
+//    }
+    return _phase->find_non_split_ctrl(c);
   }
 
   void analyze(int rounds);
@@ -275,9 +256,9 @@ public:
 
   void adjust_updates(Node* c, bool verify);
 
-  void mark_if(const IfNode* iff);
+  void mark_if(IfNode* iff, Node* c);
 
-  void mark_if_from_cmp(const Node* u);
+  void mark_if_from_cmp(const Node* u, Node* c);
 };
 
 #endif // SHARE_OPTO_LOOPCONDITIONALPROPAGATION_HPP

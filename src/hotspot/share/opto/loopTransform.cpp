@@ -2192,7 +2192,7 @@ void PhaseIdealLoop::do_unroll(IdealLoopTree *loop, Node_List &old_new, bool adj
     Node_List rpo_list;
     VectorSet visited;
     visited.set(loop_head->_idx);
-    rpo(loop_head, stack, visited, rpo_list, false);
+    rpo(loop_head, stack, visited, rpo_list);
     dump(loop, rpo_list.size(), rpo_list);
   }
 #endif

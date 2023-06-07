@@ -433,15 +433,9 @@ public:
   // Returns null is it couldn't improve the type.
   static const Type* filtered_int_type(PhaseValues* phase, Node* val, Node* if_proj, BasicType bt);
 
-  virtual bool safe_for_optimizations() const { return true; }
-
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
 #endif
-
-  static const Type*
-  filtered_int_type_helper(const PhaseTransform* phase, const Node* val, const Node* if_proj, BasicType& bt,
-                           const BoolNode* bol, bool taken);
 };
 
 class RangeCheckNode : public IfNode {

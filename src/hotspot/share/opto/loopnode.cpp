@@ -6389,7 +6389,7 @@ void PhaseIdealLoop::dump() const {
   Node_List rpo_list;
   VectorSet visited;
   visited.set(C->top()->_idx);
-  rpo(C->root(), stack, visited, rpo_list, false);
+  rpo(C->root(), stack, visited, rpo_list);
   // Dump root loop indexed by last element in PO order
   dump(_ltree_root, rpo_list.size(), rpo_list);
 }
@@ -6487,7 +6487,7 @@ void PhaseIdealLoop::dump_idoms_in_reverse(const Node* n, const Node_List& idom_
 
 // Collect a R-P-O for the whole CFG.
 // Result list is in post-order (scan backwards for RPO)
-void PhaseIdealLoop::rpo(Node* start, Node_Stack& stk, VectorSet& visited, Node_List& rpo_list, bool only_proj_regions) const {
+void PhaseIdealLoop::rpo(Node* start, Node_Stack &stk, VectorSet &visited, Node_List &rpo_list) const {
   stk.push(start, 0);
   visited.set(start->_idx);
 
@@ -6501,9 +6501,7 @@ void PhaseIdealLoop::rpo(Node* start, Node_Stack& stk, VectorSet& visited, Node_
         stk.push(n, 0);
       }
     } else {
-      if (!only_proj_regions || m->is_Region() || m->is_Proj()) {
-        rpo_list.push(m);
-      }
+      rpo_list.push(m);
       stk.pop();
     }
   }
