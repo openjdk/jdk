@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,13 +33,13 @@
  */
 import java.awt.AWTException;
 import java.awt.Component;
-import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.event.InputEvent;
-import java.awt.event.KeyEvent;
 import javax.swing.SwingUtilities;
+import java.util.concurrent.atomic.AtomicReference;
+import java.lang.reflect.InvocationTargetException;
 
 public class JRobot extends java.awt.Robot {
     private static int DEFAULT_DELAY = 550;
@@ -115,12 +115,27 @@ public class JRobot extends java.awt.Robot {
      * @param c Component the mouse is placed over
      */
     public void moveMouseTo(Component c) {
-        Point p = c.getLocationOnScreen();
-        Dimension size = c.getSize();
-        p.x += size.width / 2;
-        p.y += size.height / 2;
+        Point p = getCenterPoint(c);
         mouseMove(p.x, p.y);
         delay();
+    }
+
+    private static Point getCenterPoint(Component c) {
+        AtomicReference<Point> result = new AtomicReference<>();
+        if (SwingUtilities.isEventDispatchThread()) {
+            result.set(getCenterPointImpl(c));
+        } else {
+            try {
+                SwingUtilities.invokeAndWait(() -> result.set(getCenterPointImpl(c)));
+            } catch (InterruptedException | InvocationTargetException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        return result.get();
+    }
+
+    private static Point getCenterPointImpl(Component c) {
+        return centerOf(new Rectangle(c.getLocationOnScreen(), c.getSize()));
     }
 
     /**
@@ -153,7 +168,7 @@ public class JRobot extends java.awt.Robot {
      * Perform a click with the first mouse button.
      */
     public void clickMouse() {
-        clickMouse(InputEvent.BUTTON1_MASK);
+        clickMouse(InputEvent.BUTTON1_DOWN_MASK);
     }
 
     /**
@@ -171,7 +186,7 @@ public class JRobot extends java.awt.Robot {
      * @param c the Component to click on
      */
     public void clickMouseOn(Component c) {
-        clickMouseOn(c, InputEvent.BUTTON1_MASK);
+        clickMouseOn(c, InputEvent.BUTTON1_DOWN_MASK);
     }
 
     /**
@@ -219,8 +234,8 @@ public class JRobot extends java.awt.Robot {
      * @param r a non-null Rectangle
      * @return a new Point object containing coordinates of r's center
      */
-    public Point centerOf(Rectangle r) {
-        return new Point(r.x + r.width / 2, r.y + r.height / 2);
+    public static Point centerOf(Rectangle r) {
+        return centerOf(r, new Point());
     }
 
     /**
@@ -229,7 +244,7 @@ public class JRobot extends java.awt.Robot {
      * @param p a non-null Point that receives coordinates of r's center
      * @return p
      */
-    public Point centerOf(Rectangle r, Point p) {
+    public static Point centerOf(Rectangle r, Point p) {
         p.x = r.x + r.width / 2;
         p.y = r.y + r.height / 2;
         return p;
@@ -242,10 +257,17 @@ public class JRobot extends java.awt.Robot {
      * @param c a Component whose coordinate system is used for conversion
      */
     public void convertRectToScreen(Rectangle r, Component c) {
-        Point p = new Point(r.x, r.y);
-        SwingUtilities.convertPointToScreen(p, c);
-        r.x = p.x;
-        r.y = p.y;
+        AtomicReference<Point> p = new AtomicReference<>();
+        if (SwingUtilities.isEventDispatchThread()) {
+            p.set(c.getLocationOnScreen());
+        } else {
+            try {
+                SwingUtilities.invokeAndWait(() -> p.set(c.getLocationOnScreen()));
+            } catch (InterruptedException | InvocationTargetException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        r.setLocation(p.get());
     }
 
     /**
