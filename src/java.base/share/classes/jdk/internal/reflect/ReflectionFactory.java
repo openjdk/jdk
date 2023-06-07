@@ -575,8 +575,7 @@ public class ReflectionFactory {
     // for the first few invocations of Methods and Constructors and
     // then switch to the bytecode-based implementations.
 
-    private static final Config DEFAULT_CONFIG = new Config(ALL_MH_ACCESSORS, // useDirectMethodHandle
-                                                            false, // useNativeAccessorOnly
+    private static final Config DEFAULT_CONFIG = new Config(false, // useNativeAccessorOnly
                                                             false); // disableSerialConstructorChecks
 
     /**
@@ -590,8 +589,7 @@ public class ReflectionFactory {
      * are currently not called, but should they be needed, a workaround
      * is to override them.
      */
-    private record Config(int useDirectMethodHandle,
-                          boolean useNativeAccessorOnly,
+    private record Config(boolean useNativeAccessorOnly,
                           boolean disableSerialConstructorChecks) {
     }
 
@@ -614,22 +612,11 @@ public class ReflectionFactory {
     private static Config loadConfig() {
         assert VM.isModuleSystemInited();
 
-        int useDirectMethodHandle = DEFAULT_CONFIG.useDirectMethodHandle;
         boolean useNativeAccessorOnly = DEFAULT_CONFIG.useNativeAccessorOnly;
         boolean disableSerialConstructorChecks = DEFAULT_CONFIG.disableSerialConstructorChecks;
 
         Properties props = GetPropertyAction.privilegedGetProperties();
-        String val = props.getProperty("jdk.reflect.useDirectMethodHandle");
-        if (val != null) {
-            if (val.equals("false")) {
-                useDirectMethodHandle = 0;
-            } else if (val.equals("methods")) {
-                useDirectMethodHandle = METHOD_MH_ACCESSOR;
-            } else if (val.equals("fields")) {
-                useDirectMethodHandle = FIELD_MH_ACCESSOR;
-            }
-        }
-        val = props.getProperty("jdk.reflect.useNativeAccessorOnly");
+        String val = props.getProperty("jdk.reflect.useNativeAccessorOnly");
         if (val != null && val.equals("true")) {
             useNativeAccessorOnly = true;
         }
@@ -637,8 +624,7 @@ public class ReflectionFactory {
         disableSerialConstructorChecks =
             "true".equals(props.getProperty("jdk.disableSerialConstructorChecks"));
 
-        return new Config(useDirectMethodHandle,
-                          useNativeAccessorOnly,
+        return new Config(useNativeAccessorOnly,
                           disableSerialConstructorChecks);
     }
 
