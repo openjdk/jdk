@@ -181,12 +181,9 @@ class GenerateJLIClassesHelper {
             result.put(BASIC_FORMS_HOLDER,
                        generateBasicFormsClassBytes(BASIC_FORMS_HOLDER));
 
-            speciesTypes.forEach(new Consumer<String>() {
-                @Override
-                public void accept(String types) {
-                    Map.Entry<String, byte[]> entry = generateConcreteBMHClassBytes(types);
-                    result.put(entry.getKey(), entry.getValue());
-                }
+            speciesTypes.forEach(types -> {
+                Map.Entry<String, byte[]> entry = generateConcreteBMHClassBytes(types);
+                result.put(entry.getKey(), entry.getValue());
             });
 
             // clear builder
