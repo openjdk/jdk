@@ -1,0 +1,8 @@
+
+public interface  DynamicOldInterface
+	version 49:0
+{
+  public abstract Method bar:"()V";
+  public abstract Method foo:"()V";
+
+} // end Class DynamicOldInterface

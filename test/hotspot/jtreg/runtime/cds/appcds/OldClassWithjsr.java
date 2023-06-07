@@ -46,10 +46,10 @@ public class OldClassWithjsr {
         boolean dynamicMode = CDSTestUtils.DYNAMIC_DUMP;
 
         // create archive with class list
-        OutputAnalyzer output = TestCommon.dump(appJar, appClasses, "-Xlog:class+load,cds=debug,verification=trace");
+        OutputAnalyzer output = TestCommon.dump(appJar, appClasses, "-Xlog:class+load,cds+class=debug,cds=debug,verification=trace");
         TestCommon.checkExecReturn(output, 0,
-                                   dynamicMode ? true : false,
-                                   "Skipping " + mainClass + ": Old class has been linked");
+                                   true,
+                                   "Excluding old class OldClassWithjsrApp: has been regenerated", "OldClassWithjsrApp ** generated");
 
         // run with archive
         TestCommon.run(
@@ -57,13 +57,12 @@ public class OldClassWithjsr {
             "-Xlog:class+load,cds=debug,verification=trace",
             mainClass, "1")
           .assertNormalExit(out -> {
-              out.shouldContain("Verifying class " + mainClass + " with old format");
+              out.shouldNotContain("Verifying class " + mainClass + " with old format");
               if (!dynamicMode) {
                   out.shouldContain(mainClass + " source: shared objects file");
               } else {
-                  // Old classes were already linked before dynamic dump happened,
-                  // so they couldn't be archived.
-                  out.shouldMatch(".class.load.*" + mainClass + " source:.*" + namePrefix + ".jar");
+                  // Old classes were regenerated during dump time, so they can be archived.
+                  out.shouldContain(mainClass + " source: shared objects file (top)");
               }
           });
     }

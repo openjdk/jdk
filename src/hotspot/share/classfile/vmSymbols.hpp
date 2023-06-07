@@ -793,7 +793,12 @@ class SerializeClosure;
   template(jdk_internal_vm_ThreadDumper,           "jdk/internal/vm/ThreadDumper")                                \
   template(dumpThreads_name,                       "dumpThreads")                                                 \
   template(dumpThreadsToJson_name,                 "dumpThreadsToJson")                                           \
-
+                                                                                                                  \
+  /* Preverifier */                                                                                               \
+  template(jdk_internal_vm_Preverifier,                      "jdk/internal/vm/Preverifier")                       \
+  template(preverifier_patch,                                "patch")                                             \
+  template(byte_array_bool_byte_array_signature,             "([BZ)[B")                                           \
+                                                                                                                  \
   /*end*/
 
 // enum for figuring positions and size of Symbol::_vm_symbols[]

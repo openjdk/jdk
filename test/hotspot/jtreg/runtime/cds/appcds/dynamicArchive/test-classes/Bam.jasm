@@ -1,0 +1,25 @@
+
+super class Foo$Bar$Bam
+	extends Foo$Bar
+	version 49:0
+{
+  Method "<init>":"(LFoo$Bar;)V"
+	stack 1 locals 2
+  {
+		aload_0;
+		invokespecial	Method Foo$Bar."<init>":"()V";
+		return;
+  }
+  bridge synthetic Method doit:"()LFoo;"
+	stack 1 locals 1
+  {
+		aload_0;
+		invokespecial	Method Foo$Bar.doit:"()LFoo$Bar;";
+		areturn;
+  }
+
+  NestHost Foo;
+  static InnerClass Bar=class Foo$Bar of class Foo;
+  InnerClass Bam=class Foo$Bar$Bam of class Foo$Bar;
+
+} // end Class Foo$Bar$Bam

@@ -50,12 +50,14 @@ public class OldClassWithJavaAgent {
         String appJar =
             ClassFileInstaller.writeJar("OldClassWithJavaAgent.jar", appClasses);
         OutputAnalyzer output = TestCommon.testDump(appJar, TestCommon.list("OldSuper"),
-            "-Xlog:cds=debug,class+load",
+            "-Xlog:cds=debug,class+load,cds+class=debug,cds",
             "-XX:+UnlockDiagnosticVMOptions", diagnosticOption,
             "-javaagent:" + agentJar + "=OldSuper");
 
         // The java agent will load and link the class. We will skip old classes
         // which have been linked during CDS dump.
-        output.shouldContain("Skipping OldSuper: Old class has been linked");
+    output.shouldContain("OldSuper ** generated")
+          .shouldContain("Excluding old class OldSuper: has been regenerated");
+    //.shouldContain("Skipping old class OldSuper: will be regenerated during dump time");
     }
 }

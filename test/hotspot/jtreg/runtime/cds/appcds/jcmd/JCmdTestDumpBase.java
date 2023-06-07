@@ -159,6 +159,8 @@ public abstract class JCmdTestDumpBase {
         args.add("-Xshare:on");
         args.add("-XX:SharedArchiveFile=" + archiveName);
         args.add("-Xlog:class+load");
+        args.add("-Xlog:cds");
+        args.add("-Xlog:cds+class=debug");
 
         LingeredApp app = createLingeredApp(args.toArray(new String[0]));
         app.setLogFileName("JCmdTest-Run-" + (isStatic ? "Static.log" : "Dynamic.log.") + (logFileCount++));

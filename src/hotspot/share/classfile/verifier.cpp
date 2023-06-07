@@ -152,6 +152,21 @@ void Verifier::log_end_verification(outputStream* st, const char* klassName, Sym
   st->print_cr("End class verification for: %s", klassName);
 }
 
+bool Verifier::old_verify(InstanceKlass* klass, bool should_verify_class, TRAPS) {
+  ResourceMark rm(THREAD);
+
+  const size_t message_buffer_len = klass->name()->utf8_length() + 1024;
+  Symbol* exception_name = nullptr;
+  char* message_buffer = nullptr;
+  char* exception_message = nullptr;
+
+  message_buffer = NEW_RESOURCE_ARRAY(char, message_buffer_len);
+  exception_message = message_buffer;
+  exception_name = inference_verify(klass, message_buffer, message_buffer_len, THREAD);
+
+  return exception_name == nullptr;
+}
+
 bool Verifier::verify(InstanceKlass* klass, bool should_verify_class, TRAPS) {
   HandleMark hm(THREAD);
   ResourceMark rm(THREAD);

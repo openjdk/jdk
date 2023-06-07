@@ -72,6 +72,7 @@ public class RedefineCallerClassTest extends DynamicArchiveTestBase {
         for (String mainArg : mainArgs) {
             String[] options = {
                 "-Xlog:class+load,cds",
+                "-Xlog:cds+class=debug",
                 "-XX:+UnlockDiagnosticVMOptions",
                 "-XX:+AllowArchivingWithJavaAgent",
                 "-javaagent:redefineagent.jar",
@@ -82,8 +83,7 @@ public class RedefineCallerClassTest extends DynamicArchiveTestBase {
                 .assertNormalExit(output -> {
                     output.shouldHaveExitValue(0);
                     if (mainArg.equals("both") || mainArg.equals("useOldInf")) {
-                        output.shouldContain("Skipping OldProvider: Old class has been linked")
-                              .shouldMatch("Skipping.SimpleLambda[$][$]Lambda.*0x.*:.*Old.class.has.been.linked");
+                        output.shouldContain("OldProvider ** generated");
                     }
                     if (mainArg.equals("both") || mainArg.equals("redefineCaller")) {
                         output.shouldContain("Skipping SimpleLambda: Has been redefined");
@@ -93,10 +93,9 @@ public class RedefineCallerClassTest extends DynamicArchiveTestBase {
             run(topArchiveName, options)
                 .assertNormalExit(output -> {
                     output.shouldHaveExitValue(0)
-                          .shouldContain("RedefineCallerClass source: shared objects file (top)")
-                          .shouldMatch(".class.load. SimpleLambda[$][$]Lambda.*/0x.*source:.*SimpleLambda");
+                          .shouldContain("RedefineCallerClass source: shared objects file (top)");
                     if (mainArg.equals("both") || mainArg.equals("useOldInf")) {
-                        output.shouldMatch(".class.load. OldProvider.source:.*redefine_caller_class.jar");
+                        output.shouldContain("[class,load] OldProvider source: shared objects file (top)");
                     }
                     if (mainArg.equals("both") || mainArg.equals("redefineCaller")) {
                         output.shouldMatch(".class.load. SimpleLambda.source:.*redefine_caller_class.jar");

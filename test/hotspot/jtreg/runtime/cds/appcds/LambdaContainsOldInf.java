@@ -59,12 +59,12 @@ public class LambdaContainsOldInf {
             CDSOptions opts = (new CDSOptions())
                 .addPrefix("-XX:ExtraSharedClassListFile=" + classList,
                            "-cp", appJar,
-                           "-Xlog:class+load,cds")
+                           "-Xlog:class+load,cds,cds+class=debug")
                 .setArchiveName(archiveName);
             OutputAnalyzer output = CDSTestUtils.createArchiveAndCheck(opts);
-            TestCommon.checkExecReturn(output, 0, true,
-                                       "Skipping OldProvider: Old class has been linked");
-            output.shouldMatch("Skipping.LambdaContainsOldInfApp[$][$]Lambda.*0x.*:.*Old.class.has.been.linked");
+            output.shouldContain("Excluding old class OldProvider: has been regenerated")
+                .shouldContain("OldProvider ** generated");
+
 
             // run with archive
             CDSOptions runOpts = (new CDSOptions())
@@ -76,8 +76,8 @@ public class LambdaContainsOldInf {
             output = CDSTestUtils.runWithArchive(runOpts);
             TestCommon.checkExecReturn(output, 0, true,
                 "[class,load] LambdaContainsOldInfApp source: shared objects file");
-            output.shouldMatch(".class.load. OldProvider.source:.*lambdacontainsoldinf.jar")
-                  .shouldMatch(".class.load. LambdaContainsOldInfApp[$][$]Lambda.*/0x.*source:.*LambdaContainsOldInf");
+            output.shouldContain("[class,load] OldProvider source: shared objects file")
+                .shouldMatch(".class.load. LambdaContainsOldInfApp[$][$]Lambda.*/0x.*source:.*shared.objects.file");
        }
     }
 }

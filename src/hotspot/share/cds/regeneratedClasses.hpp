@@ -44,6 +44,9 @@ class RegeneratedClasses : public AllStatic {
   static void cleanup();
   static bool has_been_regenerated(address orig_obj);
   static void record_regenerated_objects();
+  static address get_regenerated_object_or_null(address obj);
+  static InstanceKlass* get_regenerated_class(InstanceKlass* ik);
+  static InstanceKlass* maybe_get_regenerated_class(InstanceKlass* ik);
 };
 
 #endif // SHARE_CDS_REGENERATEDCLASSES_HPP

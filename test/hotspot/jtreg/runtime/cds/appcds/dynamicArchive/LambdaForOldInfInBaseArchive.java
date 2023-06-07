@@ -61,10 +61,11 @@ public class LambdaForOldInfInBaseArchive extends DynamicArchiveTestBase {
 
         // create a custom base archive containing and old interface
         OutputAnalyzer output = TestCommon.dump(appJar,
-            TestCommon.list("OldProvider"), "-Xlog:class+load,cds+class=debug");
+            TestCommon.list("OldProvider"), "-Xlog:class+load,cds,cds+class=debug");
         TestCommon.checkDump(output);
         // Check that the OldProvider is being dumped into the base archive.
-        output.shouldMatch(".cds,class.*klass.*0x.*app.*OldProvider.*unlinked");
+        output.shouldContain("OldProvider ** generated")
+             .shouldContain("Excluding old class OldProvider: has been regenerated");
 
         String baseArchiveName = TestCommon.getCurrentArchiveName();
 

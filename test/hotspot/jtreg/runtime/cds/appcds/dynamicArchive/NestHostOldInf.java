@@ -60,12 +60,14 @@ public class NestHostOldInf extends DynamicArchiveTestBase {
              "-XX:+WhiteBoxAPI",
              "-Xlog:cds",
              "-Xlog:cds+dynamic=debug",
+             "-Xlog:cds+class=debug",
              "-cp", appJar,
              mainAppClass)
              .assertNormalExit(output -> {
                  output.shouldContain("Written dynamic archive 0x")
-                       .shouldContain("Skipping ChildOldInf: Old class has been linked")
-                       .shouldContain("Skipping OldInf: Old class has been linked")
+                        //We don't skip ChildOldInf because we have support for dumping of class files that implement old interfaces
+                       .shouldContain("Excluding old class OldInf: has been regenerated")
+                       .shouldContain("OldInf ** generated")
                        .shouldHaveExitValue(0);
                  });
 
@@ -80,10 +82,10 @@ public class NestHostOldInf extends DynamicArchiveTestBase {
             mainAppClass)
             .assertNormalExit(output -> {
                 output.shouldHaveExitValue(0)
-                      .shouldMatch(".class.load. OldInf source:.*oldclassapp.jar")
-                      .shouldMatch(".class.load. ChildOldInf source:.*oldclassapp.jar")
+                      .shouldContain("[class,load] OldInf source: shared objects file (top)")
+                      .shouldContain("[class,load] ChildOldInf source: shared objects file (top)")
                       .shouldContain("ChildOldInf$InnerChild source: shared objects file (top)")
-                      .shouldMatch(".class.load. ChildOldInf[$]InnerChild[$][$]Lambda.*/0x.*source:.ChildOldInf");
+                      .shouldMatch(".class.load. ChildOldInf[$]InnerChild[$][$]Lambda.*/0x.*source:.shared.objects.file");
                 });
     }
 }

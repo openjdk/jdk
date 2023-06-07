@@ -61,11 +61,13 @@ public class LambdaContainsOldInf extends DynamicArchiveTestBase {
                 "-XX:+UnlockDiagnosticVMOptions",
                 "-XX:+WhiteBoxAPI",
                 "-Xlog:class+load=debug,cds=debug,cds+dynamic=info",
+                "-Xlog:cds+class=debug",
                 use_whitebox_jar,
                 "-cp", appJar, mainClass, mainArg)
                 .assertNormalExit(output -> {
-                    output.shouldContain("Skipping OldProvider: Old class has been linked")
-                          .shouldMatch("Skipping.LambdaContainsOldInfApp[$][$]Lambda.*0x.*:.*Old.class.has.been.linked")
+                    output.shouldContain("Excluding old class OldProvider: has been regenerated")
+                        //we don't skip LambdaContainsOldInfApp because the OldProvider class is regenerated
+                          .shouldContain("OldProvider ** generated")
                           .shouldHaveExitValue(0);
             });
 
@@ -77,8 +79,8 @@ public class LambdaContainsOldInf extends DynamicArchiveTestBase {
                 "-cp", appJar, mainClass, mainArg)
                 .assertNormalExit(output -> {
                     output.shouldContain("[class,load] LambdaContainsOldInfApp source: shared objects file (top)")
-                          .shouldMatch(".class.load. OldProvider.source:.*lambda_contains_old_inf.jar")
-                          .shouldMatch(".class.load. LambdaContainsOldInfApp[$][$]Lambda.*/0x.*source:.*LambdaContainsOldInf")
+                          .shouldContain("[class,load] OldProvider source: shared objects file (top)")
+                          .shouldMatch(".class.load. LambdaContainsOldInfApp[$][$]Lambda.*/0x.*source:.*shared.objects.file")
                           .shouldHaveExitValue(0);
             });
         }

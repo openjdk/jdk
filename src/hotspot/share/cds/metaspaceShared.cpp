@@ -36,11 +36,15 @@
 #include "cds/filemap.hpp"
 #include "cds/heapShared.hpp"
 #include "cds/lambdaFormInvokers.hpp"
+#include "cds/regeneratedClasses.hpp"
 #include "cds/metaspaceShared.hpp"
+#include "classfile/classFileStream.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/classLoaderDataShared.hpp"
 #include "classfile/classLoaderExt.hpp"
+#include "classfile/classLoadInfo.hpp"
 #include "classfile/javaClasses.inline.hpp"
+#include "classfile/klassFactory.hpp"
 #include "classfile/loaderConstraints.hpp"
 #include "classfile/placeholders.hpp"
 #include "classfile/symbolTable.hpp"
@@ -84,6 +88,7 @@
 #include "utilities/ostream.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/resourceHash.hpp"
+#include "utilities/exceptions.hpp"
 
 ReservedSpace MetaspaceShared::_symbol_rs;
 VirtualSpace MetaspaceShared::_symbol_vs;
@@ -571,12 +576,7 @@ public:
 // Check if we can eagerly link this class at dump time, so we can avoid the
 // runtime linking overhead (especially verification)
 bool MetaspaceShared::may_be_eagerly_linked(InstanceKlass* ik) {
-  if (!ik->can_be_verified_at_dumptime()) {
-    // For old classes, try to leave them in the unlinked state, so
-    // we can still store them in the archive. They must be
-    // linked/verified at runtime.
-    return false;
-  }
+
   if (DynamicDumpSharedSpaces && ik->is_shared_unregistered_class()) {
     // Linking of unregistered classes at this stage may cause more
     // classes to be resolved, resulting in calls to ClassLoader.loadClass()
@@ -584,6 +584,7 @@ bool MetaspaceShared::may_be_eagerly_linked(InstanceKlass* ik) {
     //
     // It's OK to do this for the built-in loaders as we know they can
     // tolerate this.
+
     return false;
   }
   return true;
@@ -598,12 +599,85 @@ bool MetaspaceShared::link_class_for_cds(InstanceKlass* ik, TRAPS) {
   return res;
 }
 
+class CollectOldCLDClosure: public CLDClosure {
+
+    GrowableArray<InstanceKlass*> _loaded_old_cld;
+
+    public:
+      void do_cld(ClassLoaderData* cld) {
+        for (Klass* klass = cld->klasses(); klass != nullptr; klass = klass->next_link()) {
+          if (klass->is_instance_klass()) {
+            InstanceKlass* ik = InstanceKlass::cast(klass);
+            if (ik->major_version() < 50) {
+              //add to growable array of InstanceKlasses
+              _loaded_old_cld.append(ik);
+            }
+
+          }
+        }
+      }
+
+      int nof_old_cld() const          { return _loaded_old_cld.length(); }
+      InstanceKlass* old_cld_at(int index) { return _loaded_old_cld.at(index); }
+
+};
+
+void regenerate_old_class_files(TRAPS) {
+
+  if (Arguments::is_dumping_archive()) {
+
+    CollectOldCLDClosure collect_old_cld;
+    {
+    MutexLocker lock(ClassLoaderDataGraph_lock);
+    ClassLoaderDataGraph::loaded_cld_do(&collect_old_cld);
+    }
+
+  //Regenerate old classes and add them to the RegeneratedClasses Table
+    ResourceMark rm;
+    for (int i = 0; i < collect_old_cld.nof_old_cld(); i++) {
+      InstanceKlass* ik = collect_old_cld.old_cld_at(i);
+      int stream_length;
+      u1* bytes = (u1*) ik->old_stream(&stream_length);
+
+      if (bytes != nullptr) {
+        ClassFileStream* oldStream = new ClassFileStream(bytes, stream_length, ik->source_file_name()->as_C_string(), true);
+        Handle protection_domain;
+        ClassLoadInfo cl_info(protection_domain);
+        InstanceKlass* newIK = KlassFactory::regenerate_from_stream(oldStream, ik->name(), ik->class_loader_data(), cl_info, CHECK);
+
+        if (newIK != nullptr) {
+          RegeneratedClasses::add_class(ik, newIK);
+          newIK->set_regenerated_version();
+          newIK->add_to_hierarchy(THREAD);
+          newIK->set_shared_classpath_index(ik->shared_classpath_index());
+          newIK->assign_class_loader_type();
+
+          assert(newIK->is_shared_boot_class() == ik->is_shared_boot_class(), "sanity");
+          assert(newIK->is_shared_platform_class() == ik->is_shared_platform_class(), "sanity");
+          assert(newIK->is_shared_app_class() == ik->is_shared_app_class(), "sanity");
+          assert(newIK->is_shared_unregistered_class() == ik->is_shared_unregistered_class(), "sanity");
+
+          MetaspaceShared::try_link_class(THREAD, newIK);
+          log_info(cds)("Linked new class file: %s %p -> %p", newIK->name()->as_C_string(), ik, newIK);
+
+          assert(!HAS_PENDING_EXCEPTION, "Invariant");
+
+          newIK->set_is_generated_shared_class();
+          if (newIK->is_shared_unregistered_class()) {
+            SystemDictionaryShared::copy_shared_class_misc_info(ik, newIK);
+          }
+
+          if (!ik->is_shared()) {
+            SystemDictionaryShared::set_excluded(ik); // exclude the existing class from dump
+            log_info(cds)("Excluding old class %s: has been regenerated", ik->name()->as_C_string());
+          }
+        }
+      }
+    }
+  }
+}
 void MetaspaceShared::link_shared_classes(bool jcmd_request, TRAPS) {
   ClassPrelinker::initialize();
-
-  if (!jcmd_request) {
-    LambdaFormInvokers::regenerate_holder_classes(CHECK);
-  }
 
   // Collect all loaded ClassLoaderData.
   CollectCLDClosure collect_cld(THREAD);
@@ -622,6 +696,7 @@ void MetaspaceShared::link_shared_classes(bool jcmd_request, TRAPS) {
       ClassLoaderData* cld = collect_cld.cld_at(i);
       for (Klass* klass = cld->klasses(); klass != nullptr; klass = klass->next_link()) {
         if (klass->is_instance_klass()) {
+          ResourceMark rm;
           InstanceKlass* ik = InstanceKlass::cast(klass);
           if (may_be_eagerly_linked(ik)) {
             has_linked |= link_class_for_cds(ik, CHECK);
@@ -636,6 +711,12 @@ void MetaspaceShared::link_shared_classes(bool jcmd_request, TRAPS) {
     // Class linking includes verification which may load more classes.
     // Keep scanning until we have linked no more classes.
   }
+
+  if (!jcmd_request) {
+    LambdaFormInvokers::regenerate_holder_classes(CHECK);
+    regenerate_old_class_files(CHECK);
+  }
+
 }
 
 void MetaspaceShared::prepare_for_dumping() {

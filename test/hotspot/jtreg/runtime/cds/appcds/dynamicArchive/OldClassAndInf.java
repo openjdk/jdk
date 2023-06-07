@@ -41,10 +41,10 @@
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:./WhiteBox.jar OldClassAndInf
  */
 
-import java.io.File;
-import jdk.test.lib.cds.CDSTestUtils;
-import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.helpers.ClassFileInstaller;
+ import java.io.File;
+ import jdk.test.lib.cds.CDSTestUtils;
+ import jdk.test.lib.process.OutputAnalyzer;
+ import jdk.test.lib.helpers.ClassFileInstaller;
 
 public class OldClassAndInf extends DynamicArchiveTestBase {
     private static final String ARCHIVE_NAME = CDSTestUtils.getOutputFileName("oldclass-top.jsa");
@@ -72,20 +72,21 @@ public class OldClassAndInf extends DynamicArchiveTestBase {
         String[] loadeesArray = TestCommon.list(loadees);
 
         dump(ARCHIVE_NAME,
-             TestCommon.concat(
-                 TestCommon.list(
-                     use_whitebox_jar,
-                     "-XX:+UnlockDiagnosticVMOptions",
-                     "-XX:+WhiteBoxAPI",
-                     "-Xlog:cds",
-                     "-Xlog:cds+dynamic=debug",
-                     "-cp", appJar,
-                     mainAppClass, loadeesJar, inArchive, "keep-alive"),
-             loadees))
-             .assertNormalExit(output -> {
-                 output.shouldContain("Written dynamic archive 0x")
-                       .shouldHaveExitValue(0);
-                 });
+            TestCommon.concat(
+                TestCommon.list(
+                    use_whitebox_jar,
+                    "-XX:+UnlockDiagnosticVMOptions",
+                    "-XX:+WhiteBoxAPI",
+                    "-Xlog:cds",
+                    "-Xlog:cds+class=debug",
+                    "-Xlog:cds+dynamic=debug",
+                    "-cp", appJar,
+                    mainAppClass, loadeesJar, inArchive, "keep-alive"),
+            loadees))
+        .assertNormalExit(output -> {
+                output.shouldContain("Written dynamic archive 0x")
+                .shouldHaveExitValue(0);
+                });
 
         run(ARCHIVE_NAME,
             TestCommon.concat(
@@ -95,11 +96,12 @@ public class OldClassAndInf extends DynamicArchiveTestBase {
                     "-XX:+WhiteBoxAPI",
                     "-Xlog:class+load",
                     "-Xlog:cds=debug",
+                    "-Xlog:cds+class=debug",
                     "-Xlog:cds+dynamic=info",
                     "-cp", appJar,
                     mainAppClass, loadeesJar, inArchive),
             loadees))
-            .assertNormalExit(output -> {
+        .assertNormalExit(output -> {
                 output.shouldHaveExitValue(0);
                 for (String loadee : loadees) {
                     output.shouldContain(loadee + " source: shared objects file (top)");

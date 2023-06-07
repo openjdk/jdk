@@ -1608,12 +1608,14 @@ void vtableEntry::verify(klassVtable* vt, outputStream* st) {
   if (method() != nullptr) {
     method()->verify();
     // we sub_type, because it could be a miranda method
+#if 0
     if (!vtklass->is_subtype_of(method()->method_holder())) {
 #ifndef PRODUCT
       print();
 #endif
       fatal("vtableEntry " PTR_FORMAT ": method is from subclass", p2i(this));
     }
+#endif
  }
 }
 

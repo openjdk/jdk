@@ -1,0 +1,29 @@
+
+super public class DynamicOldSuper
+	version 49:0
+{
+  public Method "<init>":"()V"
+	stack 1 locals 1
+  {
+		aload_0;
+		invokespecial	Method java/lang/Object."<init>":"()V";
+		return;
+  }
+  Method foo:"()V"
+	stack 2 locals 1
+  {
+		getstatic	Field java/lang/System.out:"Ljava/io/PrintStream;";
+		ldc	String "Super.foo";
+		invokevirtual	Method java/io/PrintStream.println:"(Ljava/lang/String;)V";
+		return;
+  }
+  Method bar:"()V"
+	stack 2 locals 1
+  {
+		getstatic	Field java/lang/System.out:"Ljava/io/PrintStream;";
+		ldc	String "Super.bar";
+		invokevirtual	Method java/io/PrintStream.println:"(Ljava/lang/String;)V";
+		return;
+  }
+
+} // end Class DynamicOldSuper
