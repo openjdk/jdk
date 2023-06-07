@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,6 @@ import jdk.internal.misc.CDS;
 import jdk.internal.util.StaticProperty;
 import jdk.internal.vm.annotation.Stable;
 
-import java.lang.ref.SoftReference;
 import java.util.StringJoiner;
 
 public final class BaseLocale {
@@ -108,7 +107,7 @@ public final class BaseLocale {
             .equalsIgnoreCase("true");
 
     // This method must be called with normalize = false only when creating the
-    // Locale.* constants and non-normalized BaseLocale$Keys used for lookup.
+    // constantBaseLocales constants
     private BaseLocale(String language, String script, String region, String variant,
                        boolean normalize) {
         if (normalize) {
@@ -165,8 +164,7 @@ public final class BaseLocale {
             language = convertOldISOCodes(language);
         }
 
-        Key key = new Key(language, script, region, variant, false);
-        return Cache.CACHE.get(key);
+        return new BaseLocale(language, script, region, variant, true);
     }
 
     public static String convertOldISOCodes(String language) {
@@ -199,14 +197,13 @@ public final class BaseLocale {
         if (this == obj) {
             return true;
         }
-        if (!(obj instanceof BaseLocale)) {
-            return false;
+        if (obj instanceof BaseLocale other) {
+            return language == other.language
+                && script == other.script
+                && region == other.region
+                && variant == other.variant;
         }
-        BaseLocale other = (BaseLocale)obj;
-        return language == other.language
-               && script == other.script
-               && region == other.region
-               && variant == other.variant;
+        return false;
     }
 
     @Override
@@ -241,118 +238,5 @@ public final class BaseLocale {
             }
         }
         return h;
-    }
-
-    private static final class Key {
-        /**
-         * Keep a SoftReference to the Key data if normalized (actually used
-         * as a cache key) and not initialized via the constant creation path.
-         *
-         * This allows us to avoid creating SoftReferences on lookup Keys
-         * (which are short-lived) and for Locales created via
-         * Locale#createConstant.
-         */
-        private final SoftReference<BaseLocale> holderRef;
-        private final BaseLocale holder;
-
-        private final boolean normalized;
-        private final int hash;
-
-        private Key(String language, String script, String region,
-                    String variant, boolean normalize) {
-            BaseLocale locale = new BaseLocale(language, script, region, variant, normalize);
-            this.normalized = normalize;
-            if (normalized) {
-                this.holderRef = new SoftReference<>(locale);
-                this.holder = null;
-            } else {
-                this.holderRef = null;
-                this.holder = locale;
-            }
-            this.hash = hashCode(locale);
-        }
-
-        public int hashCode() {
-            return hash;
-        }
-
-        private int hashCode(BaseLocale locale) {
-            int h = 0;
-            String lang = locale.getLanguage();
-            int len = lang.length();
-            for (int i = 0; i < len; i++) {
-                h = 31*h + LocaleUtils.toLower(lang.charAt(i));
-            }
-            String scrt = locale.getScript();
-            len = scrt.length();
-            for (int i = 0; i < len; i++) {
-                h = 31*h + LocaleUtils.toLower(scrt.charAt(i));
-            }
-            String regn = locale.getRegion();
-            len = regn.length();
-            for (int i = 0; i < len; i++) {
-                h = 31*h + LocaleUtils.toLower(regn.charAt(i));
-            }
-            String vart = locale.getVariant();
-            len = vart.length();
-            for (int i = 0; i < len; i++) {
-                h = 31*h + vart.charAt(i);
-            }
-            return h;
-        }
-
-        private BaseLocale getBaseLocale() {
-            return (holder == null) ? holderRef.get() : holder;
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (this == obj) {
-                return true;
-            }
-            if (obj instanceof Key && this.hash == ((Key)obj).hash) {
-                BaseLocale other = ((Key) obj).getBaseLocale();
-                BaseLocale locale = this.getBaseLocale();
-                if (other != null && locale != null
-                    && LocaleUtils.caseIgnoreMatch(other.getLanguage(), locale.getLanguage())
-                    && LocaleUtils.caseIgnoreMatch(other.getScript(), locale.getScript())
-                    && LocaleUtils.caseIgnoreMatch(other.getRegion(), locale.getRegion())
-                    // variant is case sensitive in JDK!
-                    && other.getVariant().equals(locale.getVariant())) {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        public static Key normalize(Key key) {
-            if (key.normalized) {
-                return key;
-            }
-
-            // Only normalized keys may be softly referencing the data holder
-            assert (key.holder != null && key.holderRef == null);
-            BaseLocale locale = key.holder;
-            return new Key(locale.getLanguage(), locale.getScript(),
-                    locale.getRegion(), locale.getVariant(), true);
-        }
-    }
-
-    private static class Cache extends LocaleObjectCache<Key, BaseLocale> {
-
-        private static final Cache CACHE = new Cache();
-
-        public Cache() {
-        }
-
-        @Override
-        protected Key normalizeKey(Key key) {
-            return Key.normalize(key);
-        }
-
-        @Override
-        protected BaseLocale createObject(Key key) {
-            return Key.normalize(key).getBaseLocale();
-        }
     }
 }
