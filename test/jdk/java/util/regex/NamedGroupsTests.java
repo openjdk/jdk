@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8065554
+ * @bug 8065554 8309515
  * @run main NamedGroupsTests
  */
 
@@ -86,6 +86,8 @@ public class NamedGroupsTests {
 
         testMatchResultStartEndGroupBeforeMatchOp();
         testMatchResultStartEndGroupAfterMatchOp();
+
+        testMatchResultAfterUsePattern();
     }
 
     private static void testMatchResultNoDefault() {
@@ -342,6 +344,26 @@ public class NamedGroupsTests {
     private static void testPatternNamedGroupsTwoNamedGroups() {
         if (!Pattern.compile("(?<some>.+?)(?<rest>.*)").namedGroups()
                 .equals(Map.of("some", 1, "rest", 2))) {
+            throw new RuntimeException();
+        }
+    }
+
+    private static void testMatchResultAfterUsePattern() {
+        Pattern p1 = Pattern.compile("(?<a>...)(?<b>...)");
+        Matcher m = p1.matcher("foobar");
+        if (!m.matches()) {
+            throw new RuntimeException();
+        }
+        if (!m.group("a").equals("foo")) {
+            throw new RuntimeException();
+        }
+
+        Pattern p2 = Pattern.compile("(?<b>...)(?<a>...)");
+        m.usePattern(p2);
+        if (!m.matches()) {
+            throw new RuntimeException();
+        }
+        if (!m.group("a").equals("bar")) {
             throw new RuntimeException();
         }
     }
