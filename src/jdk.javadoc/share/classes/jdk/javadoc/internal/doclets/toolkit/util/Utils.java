@@ -34,6 +34,7 @@ import java.text.ParseException;
 import java.text.RuleBasedCollator;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
@@ -67,6 +68,7 @@ import javax.lang.model.element.Modifier;
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.ModuleElement.RequiresDirective;
 import javax.lang.model.element.PackageElement;
+import javax.lang.model.element.QualifiedNameable;
 import javax.lang.model.element.RecordComponentElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.TypeParameterElement;
@@ -2784,7 +2786,7 @@ public class Utils {
 
         public Overrides(ExecutableElement method) {
             if (method.getKind() != ElementKind.METHOD) {
-                throw new IllegalArgumentException(String.valueOf(method.getKind()));
+                throw new IllegalArgumentException(diagnosticDescriptionOf(method));
             }
             overrider = method;
             // java.lang.Object is to be searched for overrides last
@@ -2856,7 +2858,7 @@ public class Utils {
                 assert declaredMethods.stream()
                         .filter(candidate -> elementUtils.overrides(overrider, (ExecutableElement) candidate,
                                 (TypeElement) overrider.getEnclosingElement()))
-                        .count() <= 1;
+                        .count() <= 1 : diagnosticDescriptionOf(overrider);
 
                 if (overridden.isPresent()) {
                     next = (ExecutableElement) overridden.get();
@@ -2870,7 +2872,15 @@ public class Utils {
             // if the stack is empty, there's no unconsumed override:
             // if that ever fails, an iterator's client will be stuck
             // in an infinite loop
-            assert !searchStack.isEmpty() || next == null;
+            assert !searchStack.isEmpty() || next == null
+                    : diagnosticDescriptionOf(overrider);
         }
+    }
+
+    public static String diagnosticDescriptionOf(Element e) {
+        if (e == null) // shouldn't NPE if passed null
+            return "null";
+        return e + ", " + (e instanceof QualifiedNameable q ? q.getQualifiedName() : e.getSimpleName())
+                + ", " + e.getKind() + ", " + Objects.toIdentityString(e);
     }
 }

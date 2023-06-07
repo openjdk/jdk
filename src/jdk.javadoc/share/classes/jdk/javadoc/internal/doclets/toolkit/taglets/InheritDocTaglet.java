@@ -108,7 +108,7 @@ public class InheritDocTaglet extends BaseTaglet {
             for (Element e : methods) {
                 ExecutableElement m = (ExecutableElement) e;
                 if (configuration.utils.elementUtils.overrides(method, m, (TypeElement) method.getEnclosingElement())) {
-                    assert !method.equals(m);
+                    assert !method.equals(m) : Utils.diagnosticDescriptionOf(method);
                     src = m;
                     break;
                 }
