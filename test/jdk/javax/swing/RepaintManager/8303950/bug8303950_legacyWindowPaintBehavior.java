@@ -73,7 +73,6 @@ public class bug8303950_legacyWindowPaintBehavior {
                 w2.toFront();
                 w3.toFront();
                 w4.toFront();
-                background.toBack();
 
                 // So... one liability of this test is I'm unsure how to synchronize it really well. I'm open
                 // to suggestions here. Currently I use a combination of a large (but fast) loop, calling
