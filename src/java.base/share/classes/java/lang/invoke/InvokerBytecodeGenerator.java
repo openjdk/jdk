@@ -599,7 +599,6 @@ class InvokerBytecodeGenerator {
         methodPrologue(clb, new Consumer<MethodBuilder>() {
             @Override
             public void accept(MethodBuilder mb) {
-                mb.withFlags(ACC_STATIC);
 
                 List<Annotation> annotations = new ArrayList<>(3);
 
@@ -1586,22 +1585,22 @@ class InvokerBytecodeGenerator {
                 switch (from) {
                     case LONG -> {
                         switch (to) {
-                        case FLOAT:   cob.convertInstruction(TypeKind.LongType, TypeKind.FloatType);  break;
-                        case DOUBLE:  cob.convertInstruction(TypeKind.LongType, TypeKind.DoubleType);  break;
+                        case FLOAT:   cob.l2f();  break;
+                        case DOUBLE:  cob.l2d();  break;
                         default:      error = true;               break;
                         }
                     }
                     case FLOAT -> {
                         switch (to) {
-                        case LONG :   cob.convertInstruction(TypeKind.FloatType, TypeKind.LongType);  break;
-                        case DOUBLE:  cob.convertInstruction(TypeKind.FloatType, TypeKind.DoubleType);  break;
+                        case LONG :   cob.f2l();  break;
+                        case DOUBLE:  cob.f2d();  break;
                         default:      error = true;               break;
                         }
                     }
                     case DOUBLE -> {
                         switch (to) {
-                            case LONG :   cob.convertInstruction(TypeKind.DoubleType, TypeKind.LongType);  break;
-                            case FLOAT:   cob.convertInstruction(TypeKind.DoubleType, TypeKind.FloatType);  break;
+                            case LONG :   cob.d2l();  break;
+                            case FLOAT:   cob.d2f();  break;
                             default:      error = true;               break;
                         }
                     }
@@ -1617,20 +1616,20 @@ class InvokerBytecodeGenerator {
     private void emitI2X(CodeBuilder cob, Wrapper type) {
         switch (type) {
             case BYTE ->
-                cob.convertInstruction(TypeKind.IntType, TypeKind.ByteType);
+                cob.i2b();
             case SHORT ->
-                cob.convertInstruction(TypeKind.IntType, TypeKind.ShortType);
+                cob.i2s();
             case CHAR ->
-                cob.convertInstruction(TypeKind.IntType, TypeKind.CharType);
+                cob.i2c();
             case INT -> {
             }
             /* naught */
             case LONG ->
-                cob.convertInstruction(TypeKind.IntType, TypeKind.LongType);
+                cob.i2l();
             case FLOAT ->
-                cob.convertInstruction(TypeKind.IntType, TypeKind.FloatType);
+                cob.i2f();
             case DOUBLE ->
-                cob.convertInstruction(TypeKind.IntType, TypeKind.DoubleType);
+                cob.i2d();
             case BOOLEAN -> {
                 // For compatibility with ValueConversions and explicitCastArguments:
                 cob.constantInstruction(1);
@@ -1644,11 +1643,11 @@ class InvokerBytecodeGenerator {
     private void emitX2I(CodeBuilder cob, Wrapper type) {
         switch (type) {
             case LONG ->
-                cob.convertInstruction(TypeKind.LongType, TypeKind.IntType);
+                cob.l2i();
             case FLOAT ->
-                cob.convertInstruction(TypeKind.FloatType, TypeKind.IntType);
+                cob.f2i();
             case DOUBLE ->
-                cob.convertInstruction(TypeKind.DoubleType, TypeKind.IntType);
+                cob.d2i();
             default ->
                 throw new InternalError("unknown type: " + type);
         }
@@ -1673,7 +1672,6 @@ class InvokerBytecodeGenerator {
                 methodPrologue(clb, new Consumer<MethodBuilder>() {
                     @Override
                     public void accept(MethodBuilder mb) {
-                        mb.withFlags(ACC_STATIC);
 
                         mb.with(RuntimeVisibleAnnotationsAttribute.of(List.of(
                                 HIDDEN,    // Suppress this method in backtraces displayed to the user.
@@ -1742,13 +1740,11 @@ class InvokerBytecodeGenerator {
                 methodPrologue(clb, new Consumer<MethodBuilder>() {
                     @Override
                     public void accept(MethodBuilder mb) {
-                        mb.withFlags(ACC_STATIC);
 
-                        // Suppress this method in backtraces displayed to the user.
-                        mb.with(RuntimeVisibleAnnotationsAttribute.of(List.of(HIDDEN)));
-
-                        // Force inlining of this invoker method.
-                        mb.with(RuntimeVisibleAnnotationsAttribute.of(List.of(FORCEINLINE)));
+                        mb.with(RuntimeVisibleAnnotationsAttribute.of(List.of(
+                                HIDDEN,    // Suppress this method in backtraces displayed to the user.
+                                FORCEINLINE // Force inlining of this invoker method.
+                        )));
 
                         mb.withCode(new Consumer<CodeBuilder>() {
                             @Override
@@ -1808,18 +1804,13 @@ class InvokerBytecodeGenerator {
      */
     private void bogusMethod(ClassBuilder clb, Object os) {
         if (dumper().isEnabled()) {
-            clb.withMethod("dummy", MethodTypeDesc.of(CD_void), ACC_STATIC, new Consumer<MethodBuilder>() {
+            clb.withMethodBody("dummy", MethodTypeDesc.of(CD_void), ACC_STATIC, new Consumer<CodeBuilder>() {
                 @Override
-                public void accept(MethodBuilder mb) {
-                    mb.withFlags(ACC_STATIC);
-                    mb.withCode(new Consumer<CodeBuilder>() {
-                        @Override
-                        public void accept(CodeBuilder cob) {
-                            cob.constantInstruction(os.toString());
-                            cob.pop();
-                            cob.return_();
-                        }
-                    }); }
+                public void accept(CodeBuilder cob) {
+                    cob.constantInstruction(os.toString());
+                    cob.pop();
+                    cob.return_();
+                }
             });
         }
     }
