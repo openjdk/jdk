@@ -428,11 +428,11 @@ import jdk.internal.classfile.MethodBuilder;
                         cob.invokespecial(CD_Object, NAME_CTOR,
                                 MethodTypeDesc.of(CD_void));
                         int parameterCount = factoryType.parameterCount();
-                        for (int i = 0, lvIndex = 0; i < parameterCount; i++) {
+                        for (int i = 0; i < parameterCount; i++) {
                             cob.aload(0);
                             Class<?> argType = factoryType.parameterType(i);
-                            cob.loadInstruction(getLoadType(argType), lvIndex + 1);
-                            lvIndex += getParameterSize(argType);
+                            var tk = getLoadType(argType);
+                            cob.loadInstruction(tk, cob.parameterSlot(i));
                             cob.putfield(lambdaClassDesc, argNames[i], argDescs[i]);
                         }
                         cob.return_();
@@ -554,13 +554,12 @@ import jdk.internal.classfile.MethodBuilder;
     }
 
     private void convertArgumentTypes(CodeBuilder cob, MethodType samType) {
-        int lvIndex = 0;
         int samParametersLength = samType.parameterCount();
         int captureArity = factoryType.parameterCount();
         for (int i = 0; i < samParametersLength; i++) {
             Class<?> argType = samType.parameterType(i);
-            cob.loadInstruction(getLoadType(argType), lvIndex + 1);
-            lvIndex += getParameterSize(argType);
+            var tk = getLoadType(argType);
+            cob.loadInstruction(tk, cob.parameterSlot(i));
             TypeConvertingMethodAdapter.convertType(cob, argType, implMethodType.parameterType(captureArity + i), dynamicMethodType.parameterType(i));
         }
     }
@@ -580,15 +579,6 @@ import jdk.internal.classfile.MethodBuilder;
             default ->
                 throw new InternalError("Unexpected invocation kind: " + implKind);
         };
-    }
-
-    static int getParameterSize(Class<?> c) {
-        if (c == Void.TYPE) {
-            return 0;
-        } else if (c == Long.TYPE || c == Double.TYPE) {
-            return 2;
-        }
-        return 1;
     }
 
     static TypeKind getLoadType(Class<?> c) {
