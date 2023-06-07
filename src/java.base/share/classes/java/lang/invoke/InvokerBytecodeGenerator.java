@@ -1585,23 +1585,23 @@ class InvokerBytecodeGenerator {
                 switch (from) {
                     case LONG -> {
                         switch (to) {
-                        case FLOAT:   cob.l2f();  break;
-                        case DOUBLE:  cob.l2d();  break;
-                        default:      error = true;               break;
+                            case FLOAT  -> cob.l2f();
+                            case DOUBLE -> cob.l2d();
+                            default     -> error = true;
                         }
                     }
                     case FLOAT -> {
                         switch (to) {
-                        case LONG :   cob.f2l();  break;
-                        case DOUBLE:  cob.f2d();  break;
-                        default:      error = true;               break;
+                            case LONG   -> cob.f2l();
+                            case DOUBLE -> cob.f2d();
+                            default     -> error = true;
                         }
                     }
                     case DOUBLE -> {
                         switch (to) {
-                            case LONG :   cob.d2l();  break;
-                            case FLOAT:   cob.d2f();  break;
-                            default:      error = true;               break;
+                            case LONG   -> cob.d2l();
+                            case FLOAT  -> cob.d2f();
+                            default     -> error = true;
                         }
                     }
                     default -> error = true;
