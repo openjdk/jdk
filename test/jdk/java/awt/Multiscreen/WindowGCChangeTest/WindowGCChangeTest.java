@@ -27,7 +27,6 @@
   @bug 4868278
   @summary Tests that GraphicsConfig for invisible (peerless) windows is
            updated after showing the window
-  @requires os.family == "windows"
   @library ../../regtesthelpers
   @build Util
   @run main WindowGCChangeTest

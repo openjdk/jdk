@@ -40,7 +40,6 @@ import javax.swing.SwingUtilities;
  * @test
  * @bug 8006421
  * @key headful
- * @requires (os.family == "linux")
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @summary Test to check if Transparency of a frame when dragged is maintained
@@ -58,9 +57,9 @@ public class MultiscreenTransparencyTest {
         GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
         GraphicsDevice[] gds = ge.getScreenDevices();
 
-        if (gds.length != 2) {
+        if (gds.length < 2) {
             System.out.println("Returning without testing." +
-                    "2 Display screens are required for the test!");
+                    "Min 2 Display screens are required for the test!");
             return;
         }
         SwingUtilities.invokeAndWait(() -> {
@@ -133,7 +132,6 @@ public class MultiscreenTransparencyTest {
         @Override
         protected void paintComponent(Graphics g) {
             super.paintComponent(g);
-            g.clearRect(0, 0, getWidth(), getHeight());
             g.setColor(new Color(255, 0, 0, 127));
             g.fillOval(0, 0, getWidth(), getHeight());
         }
