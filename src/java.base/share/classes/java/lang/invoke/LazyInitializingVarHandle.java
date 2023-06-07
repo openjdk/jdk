@@ -96,10 +96,15 @@ final class LazyInitializingVarHandle extends VarHandle {
         return target.describeConstable();
     }
 
+    @ForceInline
     private void ensureInitialized() {
         if (this.initialized)
             return;
 
+        initialize();
+    }
+
+    private void initialize() {
         UNSAFE.ensureClassInitialized(refc);
         this.initialized = true;
 
