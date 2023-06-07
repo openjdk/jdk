@@ -356,25 +356,6 @@ class InvokerBytecodeGenerator {
         });
     }
 
-    /*
-     * NOTE: These load/store methods use the localsMap to find the correct index!
-     */
-    private void emitLoadInsn(CodeBuilder cob, BasicType type, int index) {
-        cob.loadInstruction(type.basicTypeKind(), localsMap[index]);
-    }
-
-    private void emitAloadInsn(CodeBuilder cob, int index) {
-        emitLoadInsn(cob, L_TYPE, index);
-    }
-
-    private void emitStoreInsn(CodeBuilder cob, BasicType type, int index) {
-        cob.storeInstruction(type.basicTypeKind(), localsMap[index]);
-    }
-
-    private void emitAstoreInsn(CodeBuilder cob, int index) {
-        emitStoreInsn(cob, L_TYPE, index);
-    }
-
     /**
      * Emit a boxing call.
      *
@@ -466,7 +447,7 @@ class InvokerBytecodeGenerator {
         }
         if (writeBack != null) {
             cob.dup();
-            emitAstoreInsn(cob, writeBack.index());
+            cob.astore(localsMap[writeBack.index()]);
         }
     }
 
@@ -566,7 +547,7 @@ class InvokerBytecodeGenerator {
     private boolean checkActualReceiver(CodeBuilder cob) {
         // Expects MethodHandle on the stack and actual receiver MethodHandle in slot #0
         cob.dup()
-           .aload(localsMap[0])
+           .aload(0)
            .invokestatic(MHI, "assertSame", LLV_SIG);
         return true;
     }
@@ -629,7 +610,7 @@ class InvokerBytecodeGenerator {
                             cob.getstatic(classDesc, classData(lambdaForm.customized), CD_MethodHandle)
                                .checkcast(CD_MethodHandle);
                             assert(checkActualReceiver(cob)); // expects MethodHandle on top of the stack
-                            cob.astore(localsMap[0]);
+                            cob.astore(0);
                         }
 
                         // iterate over the form's names, generating bytecode instructions for each
@@ -767,7 +748,7 @@ class InvokerBytecodeGenerator {
             emitReferenceCast(cob, MethodHandle.class, target);
         } else {
             // load receiver
-            emitAloadInsn(cob, 0);
+            cob.aload(0);
             emitReferenceCast(cob, MethodHandle.class, null);
             cob.getfield(CD_MethodHandle, "form", LF)
                .getfield(LF, "names", LFN);
@@ -951,7 +932,7 @@ class InvokerBytecodeGenerator {
         // invoke selectAlternativeName.arguments[1]
         Class<?>[] preForkClasses = localClasses.clone();
         emitPushArgument(cob, selectAlternativeName, 1);  // get 2nd argument of selectAlternative
-        emitAstoreInsn(cob, receiver.index());  // store the MH in the receiver slot
+        cob.astore(localsMap[receiver.index()]);  // store the MH in the receiver slot
         emitStaticInvoke(cob, invokeBasicName);
 
         // goto L_done
@@ -963,7 +944,7 @@ class InvokerBytecodeGenerator {
         // invoke selectAlternativeName.arguments[2]
         System.arraycopy(preForkClasses, 0, localClasses, 0, preForkClasses.length);
         emitPushArgument(cob, selectAlternativeName, 2);  // get 3rd argument of selectAlternative
-        emitAstoreInsn(cob, receiver.index());  // store the MH in the receiver slot
+        cob.astore(localsMap[receiver.index()]);  // store the MH in the receiver slot
         emitStaticInvoke(cob, invokeBasicName);
 
         // L_done:
@@ -1145,12 +1126,12 @@ class InvokerBytecodeGenerator {
         // FINALLY_NORMAL:
         int index = extendLocalsMap(new Class<?>[]{ returnType });
         if (isNonVoid) {
-            emitStoreInsn(cob, basicReturnType, index);
+            cob.storeInstruction(basicReturnType.basicTypeKind(), localsMap[index]);
         }
         emitPushArgument(cob, invoker, 1); // load cleanup
         cob.constantInstruction(null);
         if (isNonVoid) {
-            emitLoadInsn(cob, basicReturnType, index);
+            cob.loadInstruction(basicReturnType.basicTypeKind(), localsMap[index]);
         }
         emitPushArguments(cob, args, 1); // load args (skip 0: method handle)
         cob.invokevirtual(CD_MethodHandle, "invokeBasic", cleanupDesc);
@@ -1212,7 +1193,7 @@ class InvokerBytecodeGenerator {
         cob.getfield(ClassDesc.ofInternalName("java/lang/invoke/MethodHandleImpl$CasesHolder"), "cases",
                 CD_MethodHandle.arrayType());
         int casesLocal = extendLocalsMap(new Class<?>[] { MethodHandle[].class });
-        emitStoreInsn(cob, L_TYPE, casesLocal);
+        cob.astore(localsMap[casesLocal]);
 
         Label endLabel = cob.newLabel();
         Label defaultLabel = cob.newLabel();
@@ -1233,7 +1214,7 @@ class InvokerBytecodeGenerator {
         for (int i = 0; i < numCases; i++) {
             cob.labelBinding(cases.get(i).target());
             // Load the particular case:
-            emitLoadInsn(cob, L_TYPE, casesLocal);
+            cob.aload(localsMap[casesLocal]);
             cob.constantInstruction(i);
             cob.aaload();
 
@@ -1376,7 +1357,7 @@ class InvokerBytecodeGenerator {
         // PREINIT:
         emitPushArgument(cob, MethodHandleImpl.LoopClauses.class, invoker.arguments[1]);
         cob.getfield(LOOP_CLAUSES, "clauses", MHARY2);
-        emitAstoreInsn(cob, clauseDataIndex);
+        cob.astore(localsMap[clauseDataIndex]);
 
         // INIT:
         for (int c = 0, state = 0; c < nClauses; ++c) {
@@ -1384,7 +1365,7 @@ class InvokerBytecodeGenerator {
             emitLoopHandleInvoke(cob, invoker, inits, c, args, false, cInitType, loopLocalStateTypes, clauseDataIndex,
                     firstLoopStateIndex);
             if (cInitType.returnType() != void.class) {
-                emitStoreInsn(cob, BasicType.basicType(cInitType.returnType()), firstLoopStateIndex + state);
+                cob.storeInstruction(BasicType.basicType(cInitType.returnType()).basicTypeKind(), localsMap[firstLoopStateIndex + state]);
                 ++state;
             }
         }
@@ -1402,7 +1383,7 @@ class InvokerBytecodeGenerator {
             emitLoopHandleInvoke(cob, invoker, steps, c, args, true, stepType, loopLocalStateTypes, clauseDataIndex,
                     firstLoopStateIndex);
             if (!isVoid) {
-                emitStoreInsn(cob, BasicType.basicType(stepType.returnType()), firstLoopStateIndex + state);
+                cob.storeInstruction(BasicType.basicType(stepType.returnType()).basicTypeKind(), localsMap[firstLoopStateIndex + state]);
                 ++state;
             }
 
@@ -1454,7 +1435,7 @@ class InvokerBytecodeGenerator {
         // load loop state (preceding the other arguments)
         if (pushLocalState) {
             for (int s = 0; s < loopLocalStateTypes.length; ++s) {
-                emitLoadInsn(cob, BasicType.basicType(loopLocalStateTypes[s]), firstLoopStateSlot + s);
+                cob.loadInstruction(BasicType.basicType(loopLocalStateTypes[s]).basicTypeKind(), localsMap[firstLoopStateSlot + s]);
             }
         }
         // load loop args (skip 0: method handle)
@@ -1463,7 +1444,7 @@ class InvokerBytecodeGenerator {
     }
 
     private void emitPushClauseArray(CodeBuilder cob, int clauseDataSlot, int which) {
-        emitAloadInsn(cob, clauseDataSlot);
+        cob.aload(localsMap[clauseDataSlot]);
         cob.constantInstruction(which - 1);
         cob.aaload();
     }
@@ -1496,7 +1477,7 @@ class InvokerBytecodeGenerator {
         BasicType bptype = basicType(ptype);
         if (arg instanceof Name) {
             Name n = (Name) arg;
-            emitLoadInsn(cob, n.type, n.index());
+            cob.loadInstruction(n.type.basicTypeKind(), localsMap[n.index()]);
             emitImplicitConversion(cob, n.type, ptype, n);
         } else if ((arg == null || arg instanceof String) && bptype == L_TYPE) {
             cob.constantInstruction((ConstantDesc)arg);
@@ -1516,7 +1497,7 @@ class InvokerBytecodeGenerator {
     private void emitStoreResult(CodeBuilder cob, Name name) {
         if (name != null && name.type != V_TYPE) {
             // non-void: actually assign
-            emitStoreInsn(cob, name.type, name.index());
+            cob.storeInstruction(name.type.basicTypeKind(), localsMap[name.index()]);
         }
     }
 
@@ -1537,7 +1518,7 @@ class InvokerBytecodeGenerator {
 
             // put return value on the stack if it is not already there
             if (rn != onStack) {
-                emitLoadInsn(cob, rtype, lambdaForm.result);
+                cob.loadInstruction(rtype.basicTypeKind(), localsMap[lambdaForm.result]);
             }
 
             emitImplicitConversion(cob, rtype, rclass, rn);
@@ -1690,7 +1671,7 @@ class InvokerBytecodeGenerator {
                                     Class<?> ptype = invokerType.parameterType(i);
                                     cob.dup();
                                     cob.constantInstruction(i);
-                                    emitLoadInsn(cob, basicType(ptype), i);
+                                    cob.loadInstruction(basicType(ptype).basicTypeKind(), localsMap[i]);
                                     // box if primitive type
                                     if (ptype.isPrimitive()) {
                                         emitBoxing(cob, Wrapper.forPrimitiveType(ptype));
@@ -1698,7 +1679,7 @@ class InvokerBytecodeGenerator {
                                     cob.aastore();
                                 }
                                 // invoke
-                                emitAloadInsn(cob, 0);
+                                cob.aload(0);
                                 cob.getfield(CD_MethodHandle, "form", LF);
                                 cob.swap();  // swap form and array; avoid local variable
                                 cob.invokevirtual(LF, "interpretWithArguments", MethodTypeDesc.of(CD_Object, CD_Object.arrayType()));
@@ -1750,11 +1731,11 @@ class InvokerBytecodeGenerator {
                             @Override
                             public void accept(CodeBuilder cob) {
                                 // Load receiver
-                                emitAloadInsn(cob, 0);
+                                cob.aload(0);
 
                                 // Load arguments from array
                                 for (int i = 0; i < dstType.parameterCount(); i++) {
-                                    emitAloadInsn(cob, 1);
+                                    cob.aload(1);
                                     cob.constantInstruction(i);
                                     cob.aaload();
 
