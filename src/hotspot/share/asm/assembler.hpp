@@ -222,7 +222,7 @@ class AbstractAssembler : public ResourceObj  {
   // Labels and displacements truck in offsets, but target must return a PC.
   address target(Label& L)             { return code_section()->target(L, pc()); }
 
-  bool is8bit(int x) const             { return -0x80 <= x && x < 0x80; }
+  bool is8bit(intptr_t x) const        { return -0x80 <= x && x < 0x80; }
   bool isByte(int x) const             { return 0 <= x && x < 0x100; }
   bool isShiftCount(int x) const       { return 0 <= x && x < 32; }
 
@@ -252,7 +252,7 @@ class AbstractAssembler : public ResourceObj  {
     InlineSkippedInstructionsCounter(AbstractAssembler* assm) : _assm(assm), _start(assm->pc()) {
     }
     ~InlineSkippedInstructionsCounter() {
-      _assm->register_skipped(_assm->pc() - _start);
+      _assm->register_skipped(checked_cast<int>(_assm->pc() - _start));
     }
   };
 
@@ -298,15 +298,17 @@ class AbstractAssembler : public ResourceObj  {
   // ensure buf contains all code (call this before using/copying the code)
   void flush();
 
-  void emit_int8(   uint8_t x1)                                     { code_section()->emit_int8(x1); }
+  // These take full width arguments and cast down without checking. Many callers have sign extension converting up to
+  // full int width arguments, so this casts this away.
+  void emit_int8(   uint32_t x1)                                    { code_section()->emit_int8((uint8_t)x1); }
 
-  void emit_int16(  uint16_t x)                                     { code_section()->emit_int16(x); }
-  void emit_int16(  uint8_t x1, uint8_t x2)                         { code_section()->emit_int16(x1, x2); }
+  void emit_int16(  uint32_t x)                                     { code_section()->emit_int16((uint16_t)x); }
+  void emit_int16(  uint32_t x1, uint32_t x2)                       { code_section()->emit_int16((uint8_t)x1, (uint8_t)x2); }
 
-  void emit_int24(  uint8_t x1, uint8_t x2, uint8_t x3)             { code_section()->emit_int24(x1, x2, x3); }
+  void emit_int24(  uint32_t x1, uint32_t x2, uint32_t x3)          { code_section()->emit_int24((uint8_t)x1, (uint8_t)x2, (uint8_t)x3); }
 
-  void emit_int32(  uint32_t x)                                     { code_section()->emit_int32(x); }
-  void emit_int32(  uint8_t x1, uint8_t x2, uint8_t x3, uint8_t x4) { code_section()->emit_int32(x1, x2, x3, x4); }
+  void emit_int32(  uint64_t x)                                     { code_section()->emit_int32((uint32_t)x); }
+  void emit_int32(  uint32_t x1, uint32_t x2, uint32_t x3, uint32_t x4) { code_section()->emit_int32((uint8_t)x1, (uint8_t)x2, (uint8_t)x3, (uint8_t)x4); }
 
   void emit_int64(  uint64_t x)                                     { code_section()->emit_int64(x); }
 
