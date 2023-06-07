@@ -418,8 +418,7 @@ import jdk.internal.classfile.CodeBuilder;
                         for (int i = 0; i < parameterCount; i++) {
                             cob.aload(0);
                             Class<?> argType = factoryType.parameterType(i);
-                            var tk = getLoadType(argType);
-                            cob.loadInstruction(tk, cob.parameterSlot(i));
+                            cob.loadInstruction(TypeKind.from(argType), cob.parameterSlot(i));
                             cob.putfield(lambdaClassDesc, argNames[i], argDescs[i]);
                         }
                         cob.return_();
@@ -535,7 +534,7 @@ import jdk.internal.classfile.CodeBuilder;
                 Class<?> implReturnClass = implMethodType.returnType();
                 Class<?> samReturnClass = methodType.returnType();
                 TypeConvertingMethodAdapter.convertType(cob, implReturnClass, samReturnClass, samReturnClass);
-                cob.returnInstruction(getReturnOpcode(samReturnClass));
+                cob.returnInstruction(TypeKind.from(samReturnClass));
             }
         };
     }
@@ -545,8 +544,7 @@ import jdk.internal.classfile.CodeBuilder;
         int captureArity = factoryType.parameterCount();
         for (int i = 0; i < samParametersLength; i++) {
             Class<?> argType = samType.parameterType(i);
-            var tk = getLoadType(argType);
-            cob.loadInstruction(tk, cob.parameterSlot(i));
+            cob.loadInstruction(TypeKind.from(argType), cob.parameterSlot(i));
             TypeConvertingMethodAdapter.convertType(cob, argType, implMethodType.parameterType(captureArity + i), dynamicMethodType.parameterType(i));
         }
     }
@@ -567,34 +565,4 @@ import jdk.internal.classfile.CodeBuilder;
                 throw new InternalError("Unexpected invocation kind: " + implKind);
         };
     }
-
-    static TypeKind getLoadType(Class<?> c) {
-        if (c == Void.TYPE) {
-            throw new InternalError("Unexpected void type of load opcode");
-        }
-        return getClassTypeKind(c);
-    }
-
-    static TypeKind getReturnOpcode(Class<?> c) {
-        if (c == Void.TYPE) {
-            return TypeKind.VoidType;
-        }
-        return getClassTypeKind(c);
-    }
-
-    private static TypeKind getClassTypeKind(Class<?> c) {
-        if (c.isPrimitive()) {
-            if (c == Long.TYPE) {
-                return TypeKind.LongType;
-            } else if (c == Float.TYPE) {
-                return TypeKind.FloatType;
-            } else if (c == Double.TYPE) {
-                return TypeKind.DoubleType;
-            }
-            return TypeKind.IntType;
-        } else {
-            return TypeKind.ReferenceType;
-        }
-    }
-
 }
