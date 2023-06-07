@@ -71,7 +71,8 @@ public interface ClassHierarchyResolver {
 
         /**
          * Indicates that a class is a declared class, with the specific given super class.
-         * @param superClass descriptor of the super class
+         *
+         * @param superClass descriptor of the super class, may be {@code null}
          * @return the info indicating the super class
          */
         static ClassHierarchyInfo ofClass(ClassDesc superClass) {

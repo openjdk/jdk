@@ -32,7 +32,9 @@ import java.lang.constant.ClassDesc;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import jdk.internal.classfile.ClassHierarchyResolver;
 
@@ -53,7 +55,12 @@ public final class ClassHierarchyImpl {
     public static final ClassHierarchyResolver DEFAULT_RESOLVER = ClassHierarchyResolver
             .ofResourceParsing(ResourceParsingClassHierarchyResolver.SYSTEM_STREAM_PROVIDER)
             .orElse(new ClassLoadingClassHierarchyResolver(ClassLoadingClassHierarchyResolver.SYSTEM_CLASS_PROVIDER))
-            .cached();
+            .cached(new Supplier<>() {
+                @Override
+                public Map<ClassDesc, ClassHierarchyResolver.ClassHierarchyInfo> get() {
+                    return new ConcurrentHashMap<>();
+                }
+            });
 
     private final ClassHierarchyResolver resolver;
 
@@ -117,23 +124,23 @@ public final class ClassHierarchyImpl {
         private static final ClassHierarchyResolver.ClassHierarchyInfo NOPE =
                 new ClassHierarchyInfoImpl(null, true);
 
-        private final ClassHierarchyResolver delegate;
         private final Map<ClassDesc, ClassHierarchyInfo> resolvedCache;
+        private final Function<ClassDesc, ClassHierarchyInfo> delegateFunction;
 
         public CachedClassHierarchyResolver(ClassHierarchyResolver delegate, Map<ClassDesc, ClassHierarchyInfo> resolvedCache) {
-            this.delegate = delegate;
             this.resolvedCache = resolvedCache;
-        }
-
-        @Override
-        public ClassHierarchyInfo getClassInfo(ClassDesc classDesc) {
-            var ret = resolvedCache.computeIfAbsent(classDesc, new Function<>() {
+            this.delegateFunction = new Function<>() {
                 @Override
                 public ClassHierarchyInfo apply(ClassDesc classDesc) {
                     var ret = delegate.getClassInfo(classDesc);
                     return ret == null ? NOPE : ret;
                 }
-            });
+            };
+        }
+
+        @Override
+        public ClassHierarchyInfo getClassInfo(ClassDesc classDesc) {
+            var ret = resolvedCache.computeIfAbsent(classDesc, delegateFunction);
             return ret == NOPE ? null : ret;
         }
     }
@@ -230,6 +237,10 @@ public final class ClassHierarchyImpl {
         public ClassHierarchyInfo getClassInfo(ClassDesc cd) {
             if (!cd.isClassOrInterface())
                 return null;
+
+            if (cd.equals(CD_Object))
+                return ClassHierarchyInfo.ofClass(null);
+
             var cl = classProvider.apply(cd);
             if (cl == null) {
                 return null;

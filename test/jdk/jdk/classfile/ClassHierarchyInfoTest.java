@@ -31,9 +31,7 @@
  *          java.base/jdk.internal.classfile.instruction
  *          java.base/jdk.internal.classfile.impl
  *          java.base/jdk.internal.classfile.impl.verifier
- *          java.base/jdk.internal.classfile.java.lang.constant
  *          java.base/jdk.internal.classfile.components
- *          java.base/jdk.internal.classfile.util
  *          java.base/java.util:open
  * @comment Opens java.util so HashMap bytecode generation can access its nested
  *          classes with a proper Lookup object
@@ -83,7 +81,7 @@ class ClassHierarchyInfoTest {
         assertThrows(VerifyError.class, () ->
         transformAndVerify(ClassHierarchyResolver.of(
                 Set.of(),
-                Map.of(ClassDesc.of("java.util.HashMap$Node"), ClassDesc.of("java.util.HashMap$TreeNode"))).orElse(ClassHierarchyResolver.DEFAULT_CLASS_HIERARCHY_RESOLVER))
+                Map.of(ClassDesc.of("java.util.HashMap$Node"), ClassDesc.of("java.util.HashMap$TreeNode"))).orElse(ClassHierarchyResolver.defaultResolver()))
         );
     }
 
@@ -125,7 +123,7 @@ class ClassHierarchyInfoTest {
 
     void transformAndVerify(ClassHierarchyResolver res) throws Exception {
         transformAndVerifySingle(res);
-        transformAndVerifySingle(ClassHierarchyResolver.ofCached(res));
+        transformAndVerifySingle(res.cached());
     }
 
     void transformAndVerifySingle(ClassHierarchyResolver res) throws Exception {
