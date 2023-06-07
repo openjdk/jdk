@@ -23,15 +23,14 @@
 
 /*
  * @test
- * @summary Stress test ScopedValue with many bindings and rebinings
- * @modules jdk.incubator.concurrent
+ * @summary Stress test ScopedValue with many bindings and rebindings
+ * @enablePreview
  * @library /test/lib
  * @key randomness
  * @run junit ManyBindings
  */
 
-import jdk.incubator.concurrent.ScopedValue;
-import jdk.incubator.concurrent.ScopedValue.Carrier;
+import java.lang.ScopedValue.Carrier;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.Random;
@@ -129,7 +128,7 @@ class ManyBindings {
             test(newArray, depth+1);
         });
 
-        // check that the scoped values have the origina values
+        // check that the scoped values have the original values
         check(array);
     }
 
