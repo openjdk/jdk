@@ -944,8 +944,6 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
     // Other misc helpers:
     private static final String MH = "java/lang/invoke/MethodHandle";
     private static final String MH_SIG = "L" + MH + ";";
-    private static final ClassDesc STABLE = ClassDesc.ofInternalName("jdk/internal/vm/annotation/Stable");
-    private static final String E_THROWABLE = "java/lang/Throwable";
     static {
         assert(MH_SIG.equals(classSig(MethodHandle.class)));
         assert(MH.equals(classBCName(MethodHandle.class)));
