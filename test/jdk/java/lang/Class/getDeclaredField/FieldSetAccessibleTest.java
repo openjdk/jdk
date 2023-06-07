@@ -311,6 +311,7 @@ public class FieldSetAccessibleTest {
                                                      .add(u));
             });
 
+            // find all modules that depend on JVMCI directly and indirectly
             Set<String> mods = Set.of(
                     // All JVMCI packages other than jdk.vm.ci.services are dynamically
                     // exported to jdk.internal.vm.compiler
@@ -319,18 +320,19 @@ public class FieldSetAccessibleTest {
             Set<String> filters = mods.stream().flatMap(mn -> findDeps(mn, inverseDeps).stream())
                                       .collect(Collectors.toSet());
             System.out.println("Filtered modules: " + filters);
+            // return all modules except JVMCI and the modules that depend on it
             return modules.stream()
                           .filter(mn -> !filters.contains(mn))
                           .collect(Collectors.toSet());
         }
 
         /*
-         * Returns all transitive dependences from the given module name
+         * Traverse the graph to find all the dependences from the given name.
          */
-        static Set<String> findDeps(String mn, Map<String, Set<String>> graph) {
+        static Set<String> findDeps(String name, Map<String, Set<String>> graph) {
             Set<String> visited = new HashSet<>();
             Deque<String> deque = new LinkedList<>();
-            deque.add(mn);
+            deque.add(name);
             String node;
             while (!deque.isEmpty()) {
                 node = deque.pop();
