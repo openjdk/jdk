@@ -317,10 +317,12 @@ public class FieldSetAccessibleTest {
                     // exported to jdk.internal.vm.compiler
                     "jdk.internal.vm.compiler", "jdk.internal.vm.compiler.management"
             );
+            // Filters all modules that directly or indirectly require jdk.internal.vm.compiler
+            // and jdk.internal.vm.compiler.management, as these are upgradeable and
+            // also provide APIs to add qualified exports dynamically
             Set<String> filters = mods.stream().flatMap(mn -> findDeps(mn, inverseDeps).stream())
                                       .collect(Collectors.toSet());
             System.out.println("Filtered modules: " + filters);
-            // return all modules except JVMCI and the modules that depend on it
             return modules.stream()
                           .filter(mn -> !filters.contains(mn))
                           .collect(Collectors.toSet());
