@@ -540,6 +540,12 @@ class LoopLimitNode : public Node {
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual Node* Identity(PhaseGVN* phase);
+#ifdef ASSERT
+  void check_final_value(PhaseGVN* phase) const;
+#endif
+
+ private:
+  jlong calculate_final_con(const Type* init_t, const Type* limit_t, const Type* stride_t) const;
 };
 
 // Support for strip mining

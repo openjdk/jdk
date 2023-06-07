@@ -2271,6 +2271,19 @@ BaseCountedLoopEndNode* BaseCountedLoopEndNode::make(Node* control, Node* test, 
   return new LongCountedLoopEndNode(control, test, prob, cnt);
 }
 
+jlong LoopLimitNode::calculate_final_con(const Type* init_t,
+                                         const Type* limit_t,
+                                         const Type* stride_t) const {
+  // Use jlongs to avoid integer overflow.
+  jlong init_con   = init_t->is_int()->get_con();
+  jlong limit_con  = limit_t->is_int()->get_con();
+  int   stride_con = stride_t->is_int()->get_con();
+  int   stride_m   = stride_con - (stride_con > 0 ? 1 : -1);
+  jlong trip_count = (limit_con - init_con + stride_m) / stride_con;
+  jlong final_con  = init_con + stride_con * trip_count;
+  return final_con;
+}
+
 //=============================================================================
 //------------------------------Value-----------------------------------------
 const Type* LoopLimitNode::Value(PhaseGVN* phase) const {
@@ -2288,20 +2301,40 @@ const Type* LoopLimitNode::Value(PhaseGVN* phase) const {
 
   if (init_t->is_int()->is_con() && limit_t->is_int()->is_con()) {
     // Use jlongs to avoid integer overflow.
-    jlong init_con   =  init_t->is_int()->get_con();
-    jlong limit_con  = limit_t->is_int()->get_con();
-    int  stride_m   = stride_con - (stride_con > 0 ? 1 : -1);
-    jlong trip_count = (limit_con - init_con + stride_m)/stride_con;
-    jlong final_con  = init_con + stride_con*trip_count;
+    jlong final_con  = calculate_final_con(init_t, limit_t, stride_t);
     int final_int = (int)final_con;
-    // The final value should be in integer range since the loop
-    // is counted and the limit was checked for overflow.
-    assert(final_con == (jlong)final_int, "final value should be integer");
-    return TypeInt::make(final_int);
+    // During CCP, some control paths may not be found yet.
+    // So there may be "fake" `final_con`, that overflows.
+    // In this case, we conservatively return bottom_type().
+    //
+    // At the end of CCP, the final value should be in integer
+    // range since the loop is counted and the limit was
+    // checked for overflow. We check this in check_final_value().
+    if (final_con != (jlong) final_int) {
+      return bottom_type();
+    } else {
+      return TypeInt::make(final_int);
+    }
   }
 
   return bottom_type(); // TypeInt::INT
 }
+
+#ifdef ASSERT
+// At the end of CCP, final value should be in integer range
+void LoopLimitNode::check_final_value(PhaseGVN* phase) const {
+  const Type* init_t   = phase->type(in(Init));
+  const Type* limit_t  = phase->type(in(Limit));
+  const Type* stride_t = phase->type(in(Stride));
+  assert(init_t->is_int()->is_con()
+         && limit_t->is_int()->is_con()
+         && stride_t->is_int()->is_con(),
+         "Expect constant values");
+  jlong final_con = calculate_final_con(init_t, limit_t, stride_t);
+  int final_int = (int) final_con;
+  assert(final_con == (jlong) final_int, "final value should be integer");
+}
+#endif
 
 //------------------------------Ideal------------------------------------------
 // Return a node which is more "ideal" than the current node.

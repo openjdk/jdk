@@ -1091,6 +1091,13 @@ bool PhaseIterGVN::verify_node_value(Node* n) {
   // the node never went through gvn.transform, which would be a bug.
   const Type* told = type(n);
   const Type* tnew = n->Value(this);
+
+  if (n->is_LoopLimit()
+      && type(n)->isa_int() != nullptr
+      && type(n)->isa_int()->is_con()) {
+    n->as_LoopLimit()->check_final_value(this);
+  }
+
   if (told == tnew) {
     return false;
   }
