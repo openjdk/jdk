@@ -678,7 +678,7 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
                     int nextIndex() { return index + (slotSize() == 0 ? 0 : 1); }
                     int nextSlotIndex() { return slotIndex >= 0 ? slotIndex + slotSize() : slotIndex; }
                     boolean isInHeap() { return slotIndex < 0; }
-                    void emitVarInstruction(CodeBuilder cob) {
+                    void emitLoadInstruction(CodeBuilder cob) {
                         cob.loadInstruction(TypeKind.fromDescriptor(basicType.btChar + ""), slotIndex);
                     }
                 }
@@ -719,7 +719,7 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
 
                     final List<Var> ctorArgs = AFTER_THIS.fromTypes(superCtorType.parameterList());
                     for (Var ca : ctorArgs) {
-                        ca.emitVarInstruction(cob);
+                        ca.emitLoadInstruction(cob);
                     }
 
                     // super(ca...)
@@ -731,7 +731,7 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
                         // this.argL1 = argL1
                         cob.aload(0);  // this
                         lastFV = new Var(f.name, f.type, lastFV);
-                        lastFV.emitVarInstruction(cob);
+                        lastFV.emitLoadInstruction(cob);
                         cob.putfield(classDesc, f.name, ClassDesc.ofDescriptor(f.desc));
                     }
 
@@ -746,7 +746,7 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
                        .dup();
                     // load factory method arguments:  ctarg... and arg...
                     for (Var v : NO_THIS.fromTypes(ftryType.parameterList())) {
-                        v.emitVarInstruction(cob);
+                        v.emitLoadInstruction(cob);
                     }
 
                     // finally, invoke the constructor and return
@@ -788,7 +788,7 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
                                     cob.getfield(classDesc, ha.name, ClassDesc.ofDescriptor(ha.desc));
                                 } else {
                                     assert(targs.contains(ha));
-                                    ha.emitVarInstruction(cob);
+                                    ha.emitLoadInstruction(cob);
                                 }
                             }
 
