@@ -45,7 +45,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 public final class ThemeReader {
     private static final int defaultDPI = 96;
     private static final Map<Integer, Map<String, Long>> dpiAwareWidgetToTheme
-            = new HashMap<Integer, Map<String, Long>>();
+            = new HashMap<>();
 
     // lock for the cache
     // reading should be done with readLock
