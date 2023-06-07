@@ -675,6 +675,12 @@ void VMError::report(outputStream* st, bool _verbose) {
   // don't allocate large buffer on stack
   static char buf[O_BUFLEN];
 
+  // keep track of which code has already been printed
+  const int printed_capacity = max_error_log_print_code;
+  address printed[printed_capacity];
+  printed[0] = nullptr;
+  int printed_len = 0;
+
   BEGIN
 
   STEP("printing fatal error message")
@@ -963,9 +969,15 @@ void VMError::report(outputStream* st, bool _verbose) {
     st->cr();
 
   STEP_IF("printing native stack (with source info)", _verbose)
-    if (os::platform_print_native_stack(st, _context, buf, sizeof(buf))) {
+    address lastpc = nullptr;
+    if (os::platform_print_native_stack(st, _context, buf, sizeof(buf), lastpc)) {
       // We have printed the native stack in platform-specific code
       // Windows/x64 needs special handling.
+      // Stack walking may got stuck. Try to print the calling code.
+      if (lastpc != nullptr) {
+        st->print_cr("called by the following code:");
+        print_code(st, _thread, lastpc, true, printed, printed_capacity);
+      }
     } else {
       frame fr = _context ? os::fetch_frame_from_context(_context)
                           : os::current_frame();
@@ -1060,10 +1072,6 @@ void VMError::report(outputStream* st, bool _verbose) {
     st->cr();
 
   STEP_IF("printing code blobs if possible", _verbose)
-    const int printed_capacity = max_error_log_print_code;
-    address printed[printed_capacity];
-    printed[0] = nullptr;
-    int printed_len = 0;
     // Even though ErrorLogPrintCodeLimit is ranged checked
     // during argument parsing, there's no way to prevent it
     // subsequently (i.e., after parsing) being set to a
