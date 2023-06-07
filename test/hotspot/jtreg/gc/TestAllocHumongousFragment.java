@@ -177,6 +177,20 @@
  *      TestAllocHumongousFragment
  */
 
+/*
+ * @test id=iu-aggressive-comp
+ * @summary Make sure Shenandoah can recover from humongous allocation fragmentation
+ * @key randomness
+ * @bug 8289220 8309622
+ * @requires vm.gc.Shenandoah
+ * @library /test/lib
+ *
+ * @run main/othervm -Xlog:gc -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xmx1g -Xms1g -XX:ShenandoahTargetNumRegions=2048
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu -XX:ShenandoahGCHeuristics=aggressive
+ *      -XX:+ShenandoahOOMDuringEvacALot -XX:+ShenandoahVerify -Xcomp
+ *      TestAllocHumongousFragment
+ */
+
 import java.util.*;
 import jdk.test.lib.Utils;
 
