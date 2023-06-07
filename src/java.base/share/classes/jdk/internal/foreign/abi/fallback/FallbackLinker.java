@@ -49,7 +49,6 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import static java.lang.foreign.ValueLayout.ADDRESS;
-import static java.lang.foreign.ValueLayout.JAVA_LONG;
 import static java.lang.invoke.MethodHandles.foldArguments;
 
 public final class FallbackLinker extends AbstractLinker {
@@ -161,7 +160,7 @@ public final class FallbackLinker extends AbstractLinker {
 
             MemorySegment capturedState = null;
             if (invData.capturedStateMask() != 0) {
-                capturedState = (MemorySegment) args[argStart++];
+                capturedState = SharedUtils.checkCaptureSegment((MemorySegment) args[argStart++]);
                 MemorySessionImpl capturedStateImpl = ((AbstractMemorySegmentImpl) capturedState).sessionImpl();
                 capturedStateImpl.acquire0();
                 acquiredSessions.add(capturedStateImpl);

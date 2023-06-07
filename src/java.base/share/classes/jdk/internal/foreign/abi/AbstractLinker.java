@@ -96,6 +96,7 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
             FunctionDescriptor fd = linkRequest.descriptor();
             MethodType type = fd.toMethodType();
             MethodHandle handle = arrangeDowncall(type, fd, linkRequest.options());
+            handle = SharedUtils.maybeCheckCaptureSegment(handle, linkRequest.options());
             handle = SharedUtils.maybeInsertAllocator(fd, handle);
             return handle;
         });
