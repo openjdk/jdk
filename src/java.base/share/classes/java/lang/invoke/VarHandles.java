@@ -841,7 +841,7 @@ final class VarHandles {
 //            String SIGNATURE = getSignature(mt);
 //            String PARAMS = params.entrySet().stream().
 //                    map(e -> className(e.getValue()) + " " + e.getKey()).
-//                    collect(joining(", "));
+//                    collect(Collectors.joining(", "));
 //            String METHOD = GUARD_METHOD_SIG_TEMPLATE.
 //                    replace("<RETURN>", RETURN).
 //                    replace("<NAME>", NAME).
@@ -851,13 +851,11 @@ final class VarHandles {
 //            // Generate method
 //            params.remove("ad");
 //
-//            List<String> LINK_TO_STATIC_ARGS = params.keySet().stream().
-//                    collect(toList());
+//            List<String> LINK_TO_STATIC_ARGS = new ArrayList<>(params.keySet());
 //            LINK_TO_STATIC_ARGS.add("handle.vform.getMemberName(ad.mode)");
 //
-//            List<String> LINK_TO_INVOKER_ARGS = params.keySet().stream().
-//                    collect(toList());
-//            LINK_TO_INVOKER_ARGS.set(0, LINK_TO_INVOKER_ARGS.get(0) + ".asDirect()");
+//            List<String> LINK_TO_INVOKER_ARGS = new ArrayList<>(params.keySet());
+//            LINK_TO_INVOKER_ARGS.set(0, LINK_TO_INVOKER_ARGS.get(0) + ".target()");
 //
 //            RETURN = returnType == void.class
 //                     ? ""
@@ -885,9 +883,9 @@ final class VarHandles {
 //                    replace("<RESULT_ERASED>", RESULT_ERASED).
 //                    replace("<RETURN_ERASED>", RETURN_ERASED).
 //                    replaceAll("<LINK_TO_STATIC_ARGS>", LINK_TO_STATIC_ARGS.stream().
-//                            collect(joining(", "))).
+//                            collect(Collectors.joining(", "))).
 //                    replace("<LINK_TO_INVOKER_ARGS>", LINK_TO_INVOKER_ARGS.stream().
-//                            collect(joining(", ")))
+//                            collect(Collectors.joining(", ")))
 //                    .indent(4);
 //        }
 //

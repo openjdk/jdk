@@ -57,7 +57,7 @@ import java.util.function.BiFunction;
         super(form, exact);
         this.handleFactory = handleFactory;
         this.target = target;
-        this.directTarget = target.asDirect();
+        this.directTarget = target.target();
         this.value = value;
         this.coordinates = coordinates;
     }
@@ -73,7 +73,7 @@ import java.util.function.BiFunction;
     }
 
     @Override
-    VarHandle asDirect() {
+    VarHandle target() {
         return this.directTarget;
     }
 

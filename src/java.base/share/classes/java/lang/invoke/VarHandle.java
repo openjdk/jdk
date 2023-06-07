@@ -525,7 +525,7 @@ public abstract sealed class VarHandle implements Constable
      * @see #getMethodHandle(int)
      * @see #checkAccessModeThenIsDirect(AccessDescriptor)
      */
-    VarHandle asDirect() {
+    VarHandle target() {
         return this;
     }
 
@@ -2072,7 +2072,7 @@ public abstract sealed class VarHandle implements Constable
      * @return true if this is a direct VarHandle, false if it's an indirect
      *         VarHandle.
      * @throws WrongMethodTypeException if there's an access type mismatch
-     * @see #asDirect()
+     * @see #target()
      */
     @ForceInline
     boolean checkAccessModeThenIsDirect(VarHandle.AccessDescriptor ad) {
@@ -2148,7 +2148,7 @@ public abstract sealed class VarHandle implements Constable
     public MethodHandle toMethodHandle(AccessMode accessMode) {
         if (isAccessModeSupported(accessMode)) {
             MethodHandle mh = getMethodHandle(accessMode.ordinal());
-            return mh.bindTo(asDirect());
+            return mh.bindTo(target());
         }
         else {
             // Ensure an UnsupportedOperationException is thrown
@@ -2191,7 +2191,7 @@ public abstract sealed class VarHandle implements Constable
     }
 
     /**
-     * Computes a method handle that can be passed the {@linkplain #asDirect() direct}
+     * Computes a method handle that can be passed the {@linkplain #target() direct}
      * var handle of this var handle with the given access mode. Pre/postprocessing
      * such as argument or return value filtering should be done by the returned
      * method handle.

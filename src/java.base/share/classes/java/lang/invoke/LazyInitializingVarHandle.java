@@ -69,7 +69,7 @@ final class LazyInitializingVarHandle extends VarHandle {
     }
 
     @Override
-    VarHandle asDirect() {
+    VarHandle target() {
         return target;
     }
 

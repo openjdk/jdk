@@ -561,7 +561,7 @@ class Invokers {
     @ForceInline
     /*non-public*/
     static VarHandle directVarHandleTarget(VarHandle handle) {
-        return handle.asDirect();
+        return handle.target();
     }
 
     static MemberName linkToCallSiteMethod(MethodType mtype) {
