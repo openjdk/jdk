@@ -15469,21 +15469,8 @@ typedef void (JNICALL *jvmtiEventVMInit)
          - JVMTI_ERROR_UNSUPPORTED_OPERATION
   </change>
   <change date="7 June 2023" version="21.0.0">
-      Permanent feature - Support for virtual threads:
-       - Add new capability:
-         - can_support_virtual_threads
-       - Add new functions:
-         - SuspendAllVirtualThreads
-         - ResumeAllVirtualThreads
-       - Add new event types:
-         - JVMTI_EVENT_VIRTUAL_THREAD_START
-         - JVMTI_EVENT_VIRTUAL_THREAD_END
-       - Add new error code:
-         - JVMTI_ERROR_UNSUPPORTED_OPERATION
-
-      Minor update with Implementation Note that dynamic loading of agents
-      into a running VM is now specified to print a warning (JEP 451).
-      See the HotSpot VM option -XX:+EnableDynamicAgentLoading.
+      Virtual threads finalized to be a permanent feature.
+      Agent start-up in the live phase now specified to print a warning.
   </change>
 </changehistory>
 
