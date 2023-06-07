@@ -171,14 +171,6 @@ const Type* CMoveNode::Value(PhaseGVN* phase) const {
     return phase->type(in(IfTrue))->filter(_type);  // Always pick right(true) input
   }
 
-  if (phase->is_ConditionalPropagation() && 0) {
-    PhaseConditionalPropagation* conditionalPropagation = phase->is_ConditionalPropagation();
-    const Type* t = conditionalPropagation->cmove_value(this);
-    if (t != nullptr) {
-      return t;
-    }
-  }
-  
   const Type* t = phase->type(in(IfFalse))->meet_speculative(phase->type(in(IfTrue)));
   return t->filter(_type);
 }

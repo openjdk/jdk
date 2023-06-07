@@ -273,13 +273,6 @@ public:
   TypeUpdate* _dom_updates;
   TypeUpdate* _prev_updates;
 
-  const Type* cmove_value(const CMoveNode* cmove) ;
-
-  void cmove_enqueue_uses(Node* c, Unique_Node_List& wq, const Node* n, const CMoveNode* cmove);
-
-  const Type*
-  analyze_cmove(const CMoveNode* cmove, const Node* bol, const Node* cmp, Node* c, Unique_Node_List& wq, bool taken);
-
   void adjust_updates(Node* c, bool verify);
 
   void mark_if(const IfNode* iff);
