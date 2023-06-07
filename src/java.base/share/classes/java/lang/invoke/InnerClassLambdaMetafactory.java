@@ -52,7 +52,6 @@ import jdk.internal.classfile.Opcode;
 import jdk.internal.classfile.TypeKind;
 import static jdk.internal.classfile.Classfile.*;
 import jdk.internal.classfile.CodeBuilder;
-import jdk.internal.classfile.MethodBuilder;
 
 /**
  * Lambda metafactory implementation which dynamically creates an
@@ -345,30 +344,18 @@ import jdk.internal.classfile.MethodBuilder;
                 }
 
                 // Forward the SAM method
-                clb.withMethod(interfaceMethodName,
+                clb.withMethodBody(interfaceMethodName,
                         MethodTypeDesc.ofDescriptor(interfaceMethodType.toMethodDescriptorString()),
                         ACC_PUBLIC,
-                        new Consumer<MethodBuilder>() {
-                    @Override
-                    public void accept(MethodBuilder mb) {
-                        mb.withFlags(ACC_PUBLIC);
-                        generateForwardingMethod(mb, interfaceMethodType);
-                    }
-                });
+                        forwardingMethod(interfaceMethodType));
 
                 // Forward the bridges
                 if (altMethods != null) {
                     for (MethodType mt : altMethods) {
-                        clb.withMethod(interfaceMethodName,
+                        clb.withMethodBody(interfaceMethodName,
                                 MethodTypeDesc.ofDescriptor(mt.toMethodDescriptorString()),
                                 ACC_PUBLIC|ACC_BRIDGE,
-                                new Consumer<MethodBuilder>() {
-                            @Override
-                            public void accept(MethodBuilder mb) {
-                                mb.withFlags(ACC_PUBLIC|ACC_BRIDGE);
-                                generateForwardingMethod(mb, mt);
-                            }
-                        });
+                                forwardingMethod(mt));
                     }
                 }
 
@@ -511,8 +498,8 @@ import jdk.internal.classfile.MethodBuilder;
      * This method generates a method body which calls the lambda implementation
      * method, converting arguments, as needed.
      */
-    void generateForwardingMethod(MethodBuilder mb, MethodType methodType) {
-        mb.withCode(new Consumer<CodeBuilder>() {
+    Consumer<CodeBuilder> forwardingMethod(MethodType methodType) {
+        return new Consumer<CodeBuilder>() {
             @Override
             public void accept(CodeBuilder cob) {
                 if (implKind == MethodHandleInfo.REF_newInvokeSpecial) {
@@ -550,7 +537,7 @@ import jdk.internal.classfile.MethodBuilder;
                 TypeConvertingMethodAdapter.convertType(cob, implReturnClass, samReturnClass, samReturnClass);
                 cob.returnInstruction(getReturnOpcode(samReturnClass));
             }
-        });
+        };
     }
 
     private void convertArgumentTypes(CodeBuilder cob, MethodType samType) {
