@@ -132,13 +132,13 @@ public class ViewportOverlapping extends OverlappingTestBase {
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
         robot.waitForIdle();
-        captureScreen("Img_1.png", "png");
+        captureScreen("Img_1");
 
         robot.mouseMove(vLoc.x, vLoc.y);
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
         robot.waitForIdle();
-        captureScreen("Img_2.png", "png");
+        captureScreen("Img_2");
 
         clickAndBlink(robot, testLoc, false);
         robot.mouseMove(resizeLoc.x, resizeLoc.y);
@@ -146,30 +146,30 @@ public class ViewportOverlapping extends OverlappingTestBase {
         robot.mouseMove(resizeLoc.x + 5, resizeLoc.y + 5);
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
         robot.waitForIdle();
-        captureScreen("Img_3.png", "png");
+        captureScreen("Img_3");
 
         clickAndBlink(robot, testLoc, false);
-        captureScreen("Img_4.png", "png");
+        captureScreen("Img_4");
         return (frameClicked == 2);
     }
 
     // this strange plumbing stuff is required due to "Standard Test Machinery" in base class
-    public static void main(String args[]) throws Exception {
+    public static void main(String[] args) throws Exception {
         robot = new Robot();
         robot.setAutoDelay(ROBOT_DELAY);
 
         instance = new ViewportOverlapping();
         OverlappingTestBase.doMain(args);
-        captureScreen("Img_5.png", "png");
+        captureScreen("Img_5");
     }
 
-    private static void captureScreen(String filename, String format) {
+    private static void captureScreen(String filename) {
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
         try {
             ImageIO.write(
                     robot.createScreenCapture(new Rectangle(0, 0, screenSize.width, screenSize.height)),
-                    format,
-                    new File(filename)
+                    "png",
+                    new File(filename + ".png")
             );
         } catch (IOException ignored) {
         }
