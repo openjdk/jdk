@@ -208,11 +208,12 @@ import static java.net.spi.InetAddressResolver.LookupPolicy.IPV6_FIRST;
  * </dd>
  * <dt><b>networkaddress.cache.stale.ttl</b></dt>
  * <dd>Indicates the caching policy for stale names. The value is specified as
- * an integer to indicate the number of seconds the stale names will be kept in
- * the cache. The name is considered stale if it expired and attempts to refresh
- * it were unsuccessful. This property is useful if it is preferable to use a
- * stale name rather than result of unsuccessful name lookup. The default
- * setting is to cache for an implementation specific period of time.
+ * an integer to indicate the number of seconds that stale names will be kept in
+ * the cache. A name is considered stale if the TTL has expired and an attempt
+ * to lookup the host name again was not successful. This property is useful if
+ * it is preferable to use a stale name rather than result of unsuccessful name
+ * lookup. The default setting is to cache for an implementation specific period
+ * of time.
  * <p>
  * If the value of this property is larger than "networkaddress.cache.ttl" then
  * "networkaddress.cache.ttl" will be used as a refresh interval of the name in
