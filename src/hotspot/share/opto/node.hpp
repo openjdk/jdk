@@ -98,6 +98,7 @@ class LockNode;
 class LongCountedLoopNode;
 class LongCountedLoopEndNode;
 class LoopNode;
+class LoopLimitNode;
 class LShiftNode;
 class MachBranchNode;
 class MachCallDynamicJavaNode;
@@ -778,6 +779,7 @@ public:
     DEFINE_CLASS_ID(Opaque1,  Node, 16)
     DEFINE_CLASS_ID(Move,     Node, 17)
     DEFINE_CLASS_ID(LShift,   Node, 18)
+    DEFINE_CLASS_ID(LoopLimit, Node, 19)
 
     _max_classes  = ClassMask_LShift
   };
@@ -909,6 +911,7 @@ public:
   DEFINE_CLASS_QUERY(LoadStoreConditional)
   DEFINE_CLASS_QUERY(Lock)
   DEFINE_CLASS_QUERY(Loop)
+  DEFINE_CLASS_QUERY(LoopLimit)
   DEFINE_CLASS_QUERY(LShift)
   DEFINE_CLASS_QUERY(Mach)
   DEFINE_CLASS_QUERY(MachBranch)
