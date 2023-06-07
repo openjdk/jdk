@@ -26,30 +26,22 @@
 package jdk.internal.platform;
 
 import java.io.BufferedReader;
+import java.io.FileReader;
 import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.file.Files;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
 public final class CgroupUtil {
 
-    @SuppressWarnings("removal")
     public static Stream<String> readFilePrivileged(Path path) throws IOException {
-        try {
-            PrivilegedExceptionAction<Stream<String>> pea = () -> Files.lines(path);
-            return AccessController.doPrivileged(pea);
-        } catch (PrivilegedActionException e) {
-            unwrapIOExceptionAndRethrow(e);
-            throw new InternalError(e.getCause());
-        } catch (UncheckedIOException e) {
-            throw e.getCause();
-        }
+        return readAllLinesPrivileged(path).stream();
     }
 
     static void unwrapIOExceptionAndRethrow(PrivilegedActionException pae) throws IOException {
@@ -64,7 +56,7 @@ public final class CgroupUtil {
 
     static String readStringValue(CgroupSubsystemController controller, String param) throws IOException {
         PrivilegedExceptionAction<BufferedReader> pea = () ->
-                Files.newBufferedReader(Paths.get(controller.path(), param));
+                new BufferedReader(new FileReader(Paths.get(controller.path(), param).toString(), StandardCharsets.UTF_8));
         try (@SuppressWarnings("removal") BufferedReader bufferedReader =
                      AccessController.doPrivileged(pea)) {
             String line = bufferedReader.readLine();
@@ -72,21 +64,26 @@ public final class CgroupUtil {
         } catch (PrivilegedActionException e) {
             unwrapIOExceptionAndRethrow(e);
             throw new InternalError(e.getCause());
-        } catch (UncheckedIOException e) {
-            throw e.getCause();
         }
     }
 
     @SuppressWarnings("removal")
     public static List<String> readAllLinesPrivileged(Path path) throws IOException {
         try {
-            PrivilegedExceptionAction<List<String>> pea = () -> Files.readAllLines(path);
+            PrivilegedExceptionAction<List<String>> pea = () -> {
+                try (BufferedReader bufferedReader = new BufferedReader(new FileReader(path.toString(), StandardCharsets.UTF_8))) {
+                    String line;
+                    List<String> lines = new ArrayList<>();
+                    while ((line = bufferedReader.readLine()) != null) {
+                        lines.add(line);
+                    }
+                    return lines;
+                }
+            };
             return AccessController.doPrivileged(pea);
         } catch (PrivilegedActionException e) {
             unwrapIOExceptionAndRethrow(e);
             throw new InternalError(e.getCause());
-        } catch (UncheckedIOException e) {
-            throw e.getCause();
         }
     }
 }
