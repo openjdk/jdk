@@ -454,7 +454,7 @@ class Http2Connection  {
         this(connection,
              h2client,
              1,
-             keyFor(request.secure(), request.getAddress(), request.proxy()));
+             keyFor(request));
 
         Log.logTrace("Connection send window size {0} ", windowController.connectionWindowSize());
 
@@ -595,9 +595,11 @@ class Http2Connection  {
         return keyString(isSecure, proxyAddr, addr.getHostString(), addr.getPort());
     }
 
-    static String keyFor(final boolean secure, final InetSocketAddress reqTargetAddr,
-                         final InetSocketAddress proxy) {
-        return keyString(secure, proxy, reqTargetAddr.getHostString(), reqTargetAddr.getPort());
+    static String keyFor(final HttpRequestImpl request) {
+        final InetSocketAddress targetAddr = request.getAddress();
+        final InetSocketAddress proxy = request.proxy();
+        final boolean secure = request.secure();
+        return keyString(secure, proxy, targetAddr.getHostString(), targetAddr.getPort());
     }
 
     // Compute the key for an HttpConnection in the Http2ClientImpl pool:

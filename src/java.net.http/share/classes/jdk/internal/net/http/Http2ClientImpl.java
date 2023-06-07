@@ -98,8 +98,7 @@ class Http2ClientImpl {
      */
     CompletableFuture<Http2Connection> getConnectionFor(HttpRequestImpl req,
                                                         Exchange<?> exchange) {
-        InetSocketAddress proxy = req.proxy();
-        String key = Http2Connection.keyFor(req.secure(), req.getAddress(), proxy);
+        String key = Http2Connection.keyFor(req);
 
         lock.lock();
         try {
