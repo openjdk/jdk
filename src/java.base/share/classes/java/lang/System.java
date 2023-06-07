@@ -2621,19 +2621,6 @@ public final class System {
                 return Thread.scopedValueBindings();
             }
 
-            public Object findScopedValueBindings() {
-                return Thread.findScopedValueBindings();
-            }
-
-            public void setScopedValueBindings(Object bindings) {
-                Thread.setScopedValueBindings(bindings);
-            }
-
-            @ForceInline
-            public void ensureMaterializedForStackWalk(Object value) {
-                Thread.ensureMaterializedForStackWalk(value);
-            }
-
             public Continuation getContinuation(Thread thread) {
                 return thread.getContinuation();
             }
