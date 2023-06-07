@@ -360,7 +360,7 @@ class InvokerBytecodeGenerator {
      * NOTE: These load/store methods use the localsMap to find the correct index!
      */
     private void emitLoadInsn(CodeBuilder cob, BasicType type, int index) {
-        cob.loadInstruction(TypeKind.fromDescriptor(type.basicTypeChar() + ""), localsMap[index]);
+        cob.loadInstruction(type.basicTypeKind(), localsMap[index]);
     }
 
     private void emitAloadInsn(CodeBuilder cob, int index) {
@@ -368,7 +368,7 @@ class InvokerBytecodeGenerator {
     }
 
     private void emitStoreInsn(CodeBuilder cob, BasicType type, int index) {
-        cob.storeInstruction(TypeKind.fromDescriptor(type.basicTypeChar() + ""), localsMap[index]);
+        cob.storeInstruction(type.basicTypeKind(), localsMap[index]);
     }
 
     private void emitAstoreInsn(CodeBuilder cob, int index) {
@@ -474,7 +474,7 @@ class InvokerBytecodeGenerator {
      * Emits an actual return instruction conforming to the given return type.
      */
     private void emitReturnInsn(CodeBuilder cob, BasicType type) {
-        cob.returnInstruction(TypeKind.fromDescriptor(type.basicTypeChar() + ""));
+        cob.returnInstruction(type.basicTypeKind());
     }
 
     private ClassDesc classDescCached(Class<?> c) {
