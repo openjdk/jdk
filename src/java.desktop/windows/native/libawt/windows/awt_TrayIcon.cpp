@@ -262,7 +262,7 @@ LRESULT CALLBACK AwtTrayIcon::TrayWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam
                 }
             }
             break;
-        case WM_DPICHANGED:
+        case WM_DISPLAYCHANGE:
             // Set the flag to update icon images, see WmTaskbarCreated
             m_bDPIChanged = true;
             break;
