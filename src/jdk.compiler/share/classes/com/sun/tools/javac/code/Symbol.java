@@ -1256,6 +1256,7 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
 
     /** A class for class symbols
      */
+    @SuppressWarnings("preview") // isUnnamed()
     public static class ClassSymbol extends TypeSymbol implements TypeElement {
 
         /** a scope for all class members; variables, methods and inner classes
@@ -1367,10 +1368,15 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
                 return fullname.toString();
         }
 
-        @DefinedBy(Api.LANGUAGE_MODEL)
-        public Name getQualifiedName() {
-            return fullname;
-        }
+         @Override @DefinedBy(Api.LANGUAGE_MODEL)
+         public Name getQualifiedName() {
+             return isUnnamed() ? fullname.subName(0, 0) /* empty name */ : fullname;
+         }
+
+         @Override @DefinedBy(Api.LANGUAGE_MODEL)
+         public Name getSimpleName() {
+             return name;
+         }
 
         @Override @DefinedBy(Api.LANGUAGE_MODEL)
         public List<Symbol> getEnclosedElements() {
@@ -1545,7 +1551,7 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
         @DefinedBy(Api.LANGUAGE_MODEL)
         public NestingKind getNestingKind() {
             apiComplete();
-            if (owner.kind == PCK)
+            if (owner.kind == PCK) // Handles unnamed classes as well
                 return NestingKind.TOP_LEVEL;
             else if (name.isEmpty())
                 return NestingKind.ANONYMOUS;
@@ -1635,6 +1641,11 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
         @DefinedBy(Api.LANGUAGE_MODEL)
         public List<Type> getPermittedSubclasses() {
             return permitted.map(s -> s.type);
+        }
+
+        @Override @DefinedBy(Api.LANGUAGE_MODEL)
+        public boolean isUnnamed() {
+            return (flags_field & Flags.UNNAMED_CLASS) != 0 ;
         }
     }
 

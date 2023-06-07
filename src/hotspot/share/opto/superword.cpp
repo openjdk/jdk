@@ -3475,7 +3475,7 @@ bool SuperWord::construct_bb() {
             // First see if we can map the reduction on the given system we are on, then
             // make a data entry operation for each reduction we see.
             BasicType bt = use->bottom_type()->basic_type();
-            if (ReductionNode::implemented(use->Opcode(), Matcher::min_vector_size(bt), bt)) {
+            if (ReductionNode::implemented(use->Opcode(), Matcher::superword_max_vector_size(bt), bt)) {
               reduction_uses++;
             }
           }
@@ -3712,8 +3712,12 @@ void SuperWord::compute_vector_element_type() {
       assert(nn->is_Cmp(), "always have Cmp above Bool");
     }
     if (nn->is_Cmp() && nn->in(0) == nullptr) {
-      nn = nn->in(1);
-      set_velt_type(n, velt_type(nn));
+      assert(in_bb(nn->in(1)) || in_bb(nn->in(2)), "one of the inputs must be in the loop too");
+      if (in_bb(nn->in(1))) {
+        set_velt_type(n, velt_type(nn->in(1)));
+      } else {
+        set_velt_type(n, velt_type(nn->in(2)));
+      }
     }
   }
 #ifndef PRODUCT
