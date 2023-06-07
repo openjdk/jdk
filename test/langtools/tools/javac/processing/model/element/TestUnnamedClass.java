@@ -23,22 +23,23 @@
 
 /*
  * @test
- * @bug 8306112
+ * @bug 8306112 8309568
  * @summary Test basic processing of unnamed classes.
  * @library /tools/javac/lib
  * @modules java.compiler
  *          jdk.compiler
  * @build   JavacTestingAbstractProcessor TestUnnamedClass
  * @compile         -processor TestUnnamedClass            --enable-preview --release ${jdk.version}                            Anonymous.java
+ * @clean Nameless.java
  * @compile/process -processor TestUnnamedClass -proc:only --enable-preview --release ${jdk.version} -Xprefer:newer -AclassOnly Anonymous Nameless
  */
 
 // The first @compile line processes Anonymous.java and a
 // Nameless.java class generated using the Filer. Both of those
 // unnamed classes are then compiled down to class files.  The second
-// @compile line, as directed by -Xprefer:newer builds and checks the
-// language model objects constructed off of those class file,
-// bypassing the source files.
+// @compile line, as directed by -Xprefer:newer, builds and checks the
+// language model objects constructed from those class files, ignoring
+// any source files for those types.
 
 import java.lang.annotation.*;
 import java.io.Writer;
@@ -60,14 +61,17 @@ public class TestUnnamedClass  extends JavacTestingAbstractProcessor {
 
     private static int round  = 0;
     private static int checkedClassesCount = 0;
+    private static boolean classOnly = false;
 
     public boolean process(Set<? extends TypeElement> annotations,
                            RoundEnvironment roundEnv) {
         if (round == 0) {
+            classOnly = options.containsKey("classOnly");
+
             checkRoots(roundEnv); // Check any files from the comamnd line
 
-            // Don't generate a file if testing already generated class
-            if (!options.containsKey("classOnly")) {
+            // Don't generate any files if testing pre-existing class files
+            if (!classOnly) {
                 generateUnnamed();
             }
         } else {
@@ -152,7 +156,7 @@ public class TestUnnamedClass  extends JavacTestingAbstractProcessor {
         }
 
         if (unnamedClass.getSimpleName().isEmpty()) {
-            messager.printError("Unnamed class does have an empty simple name.", unnamedClass);
+            messager.printError("Unnamed class has an empty simple name.", unnamedClass);
         }
 
         if (!unnamedClass.getQualifiedName().isEmpty()) {
@@ -196,9 +200,12 @@ public class TestUnnamedClass  extends JavacTestingAbstractProcessor {
             messager.printError("Did not find exactly one constructor", unnamedClass);
         }
 
-        ExecutableElement ctor = ctors.getFirst();
-        if (elements.getOrigin(ctor) != Elements.Origin.MANDATED) {
-            messager.printError("Constructor was not marked as mandated", ctor);
+        if (!classOnly) {
+            // Mandated-ness of default constructors not preserved in class files
+            ExecutableElement ctor = ctors.getFirst();
+            if (elements.getOrigin(ctor) != Elements.Origin.MANDATED) {
+                messager.printError("Constructor was not marked as mandated", ctor);
+            }
         }
 
         List<ExecutableElement> methods = methodsIn(unnamedClass.getEnclosedElements());
