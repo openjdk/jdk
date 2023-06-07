@@ -352,19 +352,19 @@ public class NamedGroupsTests {
         Pattern p1 = Pattern.compile("(?<a>...)(?<b>...)");
         Matcher m = p1.matcher("foobar");
         if (!m.matches()) {
-            throw new RuntimeException();
+            throw new RuntimeException("matches() expected");
         }
         if (!m.group("a").equals("foo")) {
-            throw new RuntimeException();
+            throw new RuntimeException("\"foo\" expected for group(\"a\")");
         }
 
         Pattern p2 = Pattern.compile("(?<b>...)(?<a>...)");
         m.usePattern(p2);
         if (!m.matches()) {
-            throw new RuntimeException();
+            throw new RuntimeException("matches() expected");
         }
         if (!m.group("a").equals("bar")) {
-            throw new RuntimeException();
+            throw new RuntimeException("\"bar\" expected for group(\"a\")");
         }
     }
 
