@@ -56,7 +56,6 @@ public class Unnamed extends JavadocTester {
         Path out = base.resolve("out");
         Path src = base.resolve("src");
         Path sample = src.resolve(className + ".java");
-        Path result = out.resolve(className + ".html");
 
         Files.createDirectories(out);
         Files.createDirectories(src);
@@ -77,9 +76,7 @@ public class Unnamed extends JavadocTester {
              sample.toString()
          );
 
-         if (!result.toFile().exists()) {
-            throw new Error("Missing javadoc");
-         }
+        checkOutput(className + ".html", true, "This is a comment for the main method.");
     }
 
 }
