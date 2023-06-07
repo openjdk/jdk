@@ -651,24 +651,11 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
                         int n = vars.size();
                         return (n == 0 ? this : vars.get(n-1));
                     }
-                    <X> List<Var> fromTypes(List<X> types) {
+                     List<Var> fromTypes(List<Class<?>> types) {
                         Var prev = this;
                         ArrayList<Var> result = new ArrayList<>(types.size());
-                        int i = 0;
-                        for (X x : types) {
-                            String vn = name;
-                            Class<?> vt;
-                            if (x instanceof Class) {
-                                vt = (Class<?>) x;
-                                // make the names friendlier if debugging
-                                assert((vn = vn + "_" + (i++)) != null);
-                            } else {
-                                @SuppressWarnings("unchecked")
-                                Var v = (Var) x;
-                                vn = v.name;
-                                vt = v.type;
-                            }
-                            prev = new Var(vn, vt, prev);
+                        for (Class<?> vt : types) {
+                            prev = new Var(name, vt, prev);
                             result.add(prev);
                         }
                         return result;
