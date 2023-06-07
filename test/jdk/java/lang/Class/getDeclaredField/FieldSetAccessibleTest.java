@@ -57,7 +57,6 @@ import java.util.PropertyPermission;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import jdk.internal.module.Modules;
 
@@ -311,7 +310,6 @@ public class FieldSetAccessibleTest {
                                                      .add(u));
             });
 
-            // find all modules that depend on JVMCI directly and indirectly
             Set<String> mods = Set.of(
                     // All JVMCI packages other than jdk.vm.ci.services are dynamically
                     // exported to jdk.internal.vm.compiler
