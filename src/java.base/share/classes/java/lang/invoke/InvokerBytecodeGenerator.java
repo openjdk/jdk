@@ -1464,8 +1464,7 @@ class InvokerBytecodeGenerator {
 
     private void emitPushArgument(CodeBuilder cob, Class<?> ptype, Object arg) {
         BasicType bptype = basicType(ptype);
-        if (arg instanceof Name) {
-            Name n = (Name) arg;
+        if (arg instanceof Name n) {
             cob.loadInstruction(n.type.basicTypeKind(), localsMap[n.index()]);
             emitImplicitConversion(cob, n.type, ptype, n);
         } else if ((arg == null || arg instanceof String) && bptype == L_TYPE) {
