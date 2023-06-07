@@ -83,7 +83,7 @@ public class NoJavaLangWithAnnotationProcessorTest extends JavacTestingAbstractP
 
     // test with bootclasspath, for as long as its around
     void testBootClassPath() {
-        String[] bcpOpts = {"-XDrawDiagnostics", "-Xlint:-options", "-source", "8", "-target", "8", 
+        String[] bcpOpts = {"-XDrawDiagnostics", "-Xlint:-options", "-source", "8", "-target", "8",
             "-bootclasspath", ".", "-classpath", ".",
             "-processor", "NoJavaLangWithAnnotationProcessorTest", "-processorpath", System.getProperty("test.class.path") };
         test(bcpOpts, compilerErrorMessage);
