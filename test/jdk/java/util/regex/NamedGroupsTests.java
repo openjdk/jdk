@@ -87,7 +87,7 @@ public class NamedGroupsTests {
         testMatchResultStartEndGroupBeforeMatchOp();
         testMatchResultStartEndGroupAfterMatchOp();
 
-        testMatchResultAfterUsePattern();
+        testMatchAfterUsePattern();
     }
 
     private static void testMatchResultNoDefault() {
@@ -348,7 +348,7 @@ public class NamedGroupsTests {
         }
     }
 
-    private static void testMatchResultAfterUsePattern() {
+    private static void testMatchAfterUsePattern() {
         Pattern p1 = Pattern.compile("(?<a>...)(?<b>...)");
         Matcher m = p1.matcher("foobar");
         if (!m.matches()) {
