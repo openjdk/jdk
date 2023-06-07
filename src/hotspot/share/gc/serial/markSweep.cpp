@@ -153,7 +153,7 @@ void MarkSweep::preserve_mark(oop obj, markWord mark) {
   if (_preserved_count < _preserved_count_max) {
     _preserved_marks[_preserved_count++] = OopAndMarkWord(obj, mark);
   } else {
-    _preserved_overflow_stack_set.get()->push_if_necessary(obj, mark);
+    _preserved_overflow_stack_set.get()->push_always(obj, mark);
   }
 }
 
