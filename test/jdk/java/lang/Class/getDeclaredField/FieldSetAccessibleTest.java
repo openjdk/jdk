@@ -288,7 +288,7 @@ public class FieldSetAccessibleTest {
         }
 
         /*
-         * Filter deployment modules and JVMCI module and its transitive dependences
+         * Filter JVMCI module and its transitive dependences
          */
         static Set<String> systemModules() {
             // Build module graph and inverse dependences
@@ -311,16 +311,13 @@ public class FieldSetAccessibleTest {
                                                      .add(u));
             });
 
-            Set<String> deployModules = Set.of("javafx.deploy", "jdk.deploy", "jdk.plugin", "jdk.javaws");
             Set<String> mods = Set.of(
                     // All JVMCI packages other than jdk.vm.ci.services are dynamically
                     // exported to jdk.internal.vm.compiler
                     "jdk.internal.vm.compiler", "jdk.internal.vm.compiler.management"
             );
-            Set<String> filters = Stream.concat(deployModules.stream(),
-                                                mods.stream()
-                                                    .flatMap(mn -> findDeps(mn, inverseDeps).stream()))
-                                        .collect(Collectors.toSet());
+            Set<String> filters = mods.stream().flatMap(mn -> findDeps(mn, inverseDeps).stream())
+                                      .collect(Collectors.toSet());
             System.out.println("Filtered modules: " + filters);
             return modules.stream()
                           .filter(mn -> !filters.contains(mn))
