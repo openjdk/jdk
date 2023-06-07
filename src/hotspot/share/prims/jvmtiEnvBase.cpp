@@ -1344,13 +1344,15 @@ JvmtiEnvBase::current_thread_obj_or_resolve_external_guard(jthread thread) {
 }
 
 jvmtiError
-JvmtiEnvBase::get_threadOop_and_JavaThread(ThreadsList* t_list, jthread thread,
+JvmtiEnvBase::get_threadOop_and_JavaThread(ThreadsList* t_list, jthread thread, JavaThread* cur_thread,
                                            JavaThread** jt_pp, oop* thread_oop_p) {
-  JavaThread* cur_thread = JavaThread::current();
   JavaThread* java_thread = nullptr;
   oop thread_oop = nullptr;
 
   if (thread == nullptr) {
+    if (cur_thread == nullptr) { // cur_thread can be null when called from a VM_op
+      return JVMTI_ERROR_INVALID_THREAD;
+    }
     java_thread = cur_thread;
     thread_oop = get_vthread_or_thread_oop(java_thread);
     if (thread_oop == nullptr || !thread_oop->is_a(vmClasses::Thread_klass())) {
@@ -1379,6 +1381,14 @@ JvmtiEnvBase::get_threadOop_and_JavaThread(ThreadsList* t_list, jthread thread,
     return JVMTI_ERROR_THREAD_NOT_ALIVE;
   }
   return JVMTI_ERROR_NONE;
+}
+
+jvmtiError
+JvmtiEnvBase::get_threadOop_and_JavaThread(ThreadsList* t_list, jthread thread,
+                                           JavaThread** jt_pp, oop* thread_oop_p) {
+  JavaThread* cur_thread = JavaThread::current();
+  jvmtiError err = get_threadOop_and_JavaThread(t_list, thread, cur_thread, jt_pp, thread_oop_p);
+  return err;
 }
 
 // Check for JVMTI_ERROR_NOT_SUSPENDED and JVMTI_ERROR_OPAQUE_FRAME errors.
@@ -1931,13 +1941,15 @@ VM_GetThreadListStackTraces::doit() {
     jthread jt = _thread_list[i];
     JavaThread* java_thread = nullptr;
     oop thread_oop = nullptr;
-    jvmtiError err = JvmtiExport::cv_external_thread_to_JavaThread(tlh.list(), jt, &java_thread, &thread_oop);
+    jvmtiError err = JvmtiEnvBase::get_threadOop_and_JavaThread(tlh.list(), jt, nullptr, &java_thread, &thread_oop);
+
     if (err != JVMTI_ERROR_NONE) {
       // We got an error code so we don't have a JavaThread *, but
       // only return an error from here if we didn't get a valid
       // thread_oop.
-      // In the virtual thread case the cv_external_thread_to_JavaThread is expected to correctly set
-      // the thread_oop and return JVMTI_ERROR_INVALID_THREAD which we ignore here.
+      // In the virtual thread case the get_threadOop_and_JavaThread is expected to correctly set
+      // the thread_oop and return JVMTI_ERROR_THREAD_NOT_ALIVE which we ignore here.
+      // The corresponding thread state will be recorded in the jvmtiStackInfo.state.
       if (thread_oop == nullptr) {
         _collector.set_result(err);
         return;
@@ -1952,7 +1964,7 @@ VM_GetThreadListStackTraces::doit() {
 void
 GetSingleStackTraceClosure::do_thread(Thread *target) {
   JavaThread *jt = JavaThread::cast(target);
-  oop thread_oop = jt->threadObj();
+  oop thread_oop = JNIHandles::resolve_external_guard(_jthread);
 
   if (!jt->is_exiting() && thread_oop != nullptr) {
     ResourceMark rm;
