@@ -451,13 +451,6 @@ class InvokerBytecodeGenerator {
         }
     }
 
-    /**
-     * Emits an actual return instruction conforming to the given return type.
-     */
-    private void emitReturnInsn(CodeBuilder cob, BasicType type) {
-        cob.returnInstruction(type.basicTypeKind());
-    }
-
     private ClassDesc classDescCached(Class<?> c) {
         if (c == Object.class)             return CD_Object;
         else if (c == Object[].class)      return OBJARY;
@@ -1524,7 +1517,7 @@ class InvokerBytecodeGenerator {
             emitImplicitConversion(cob, rtype, rclass, rn);
 
             // generate actual return statement
-            emitReturnInsn(cob, rtype);
+            cob.returnInstruction(rtype.basicTypeKind());
         }
     }
 
