@@ -1736,7 +1736,7 @@ JvmtiEnvBase::suspend_thread(oop thread_oop, JavaThread* java_thread, bool singl
           (is_virtual && JvmtiVTSuspender::is_vthread_suspended(thread_h())),
          "sanity check");
 
-  // An attempt to handshake-suspend a passive carrier thread will result in
+  // An attempt to handshake-suspend a thread carrying virtual thread will result in
   // suspension of mounted virtual thread. So, we just mark it as suspended
   // and it will be actually suspended at virtual thread unmount transition.
   if (!is_thread_carrying) {
