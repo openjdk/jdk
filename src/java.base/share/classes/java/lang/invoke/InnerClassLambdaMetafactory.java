@@ -32,8 +32,7 @@ import sun.security.action.GetBooleanAction;
 
 import java.io.Serializable;
 import java.lang.constant.ClassDesc;
-import java.lang.constant.ConstantDescs;
-import java.lang.constant.DirectMethodHandleDesc;
+import static java.lang.constant.ConstantDescs.*;
 import java.lang.constant.DynamicConstantDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.reflect.Modifier;
@@ -70,27 +69,27 @@ import jdk.internal.classfile.MethodBuilder;
     private static final ClassDesc CD_NOT_SERIALIZABLE_EXCEPTION = ClassDesc.ofInternalName("java/io/NotSerializableException");
     private static final ClassDesc CD_OBJECTOUTPUTSTREAM = ClassDesc.ofInternalName("java/io/ObjectOutputStream");
     private static final ClassDesc CD_OBJECTINPUTSTREAM = ClassDesc.ofInternalName("java/io/ObjectInputStream");
-    private static final MethodTypeDesc MTD_METHOD_WRITE_REPLACE = MethodTypeDesc.of(ConstantDescs.CD_Object);
-    private static final MethodTypeDesc MTD_METHOD_WRITE_OBJECT = MethodTypeDesc.of(ConstantDescs.CD_void, CD_OBJECTOUTPUTSTREAM);
-    private static final MethodTypeDesc MTD_METHOD_READ_OBJECT = MethodTypeDesc.of(ConstantDescs.CD_void, CD_OBJECTINPUTSTREAM);
+    private static final MethodTypeDesc MTD_METHOD_WRITE_REPLACE = MethodTypeDesc.of(CD_Object);
+    private static final MethodTypeDesc MTD_METHOD_WRITE_OBJECT = MethodTypeDesc.of(CD_void, CD_OBJECTOUTPUTSTREAM);
+    private static final MethodTypeDesc MTD_METHOD_READ_OBJECT = MethodTypeDesc.of(CD_void, CD_OBJECTINPUTSTREAM);
 
     private static final String NAME_METHOD_WRITE_REPLACE = "writeReplace";
     private static final String NAME_METHOD_READ_OBJECT = "readObject";
     private static final String NAME_METHOD_WRITE_OBJECT = "writeObject";
 
-    private static final MethodTypeDesc MTD_CTOR_SERIALIZED_LAMBDA = MethodTypeDesc.of(ConstantDescs.CD_void,
-            ConstantDescs.CD_Class,
-            ConstantDescs.CD_String,
-            ConstantDescs.CD_String,
-            ConstantDescs.CD_String,
-            ConstantDescs.CD_int,
-            ConstantDescs.CD_String,
-            ConstantDescs.CD_String,
-            ConstantDescs.CD_String,
-            ConstantDescs.CD_String,
-            ConstantDescs.CD_Object.arrayType());
+    private static final MethodTypeDesc MTD_CTOR_SERIALIZED_LAMBDA = MethodTypeDesc.of(CD_void,
+            CD_Class,
+            CD_String,
+            CD_String,
+            CD_String,
+            CD_int,
+            CD_String,
+            CD_String,
+            CD_String,
+            CD_String,
+            CD_Object.arrayType());
 
-    private static final MethodTypeDesc MTD_CTOR_NOT_SERIALIZABLE_EXCEPTION = MethodTypeDesc.of(ConstantDescs.CD_void, ConstantDescs.CD_String);
+    private static final MethodTypeDesc MTD_CTOR_NOT_SERIALIZABLE_EXCEPTION = MethodTypeDesc.of(CD_void, CD_String);
 
     private static final String[] EMPTY_STRING_ARRAY = new String[0];
     private static final ClassDesc[] EMPTY_CLASSDESC_ARRAY = new ClassDesc[0];
@@ -115,8 +114,7 @@ import jdk.internal.classfile.MethodBuilder;
         disableEagerInitialization = GetBooleanAction.privilegedGetProperty(disableEagerInitializationKey);
 
         // condy to load implMethod from class data
-        DirectMethodHandleDesc classDataBsm = ConstantDescs.ofConstantBootstrap(ConstantDescs.CD_MethodHandles, "classData", ConstantDescs.CD_Object);
-        implMethodCondy = DynamicConstantDesc.ofNamed(classDataBsm, ConstantDescs.DEFAULT_NAME, ConstantDescs.CD_MethodHandle);
+        implMethodCondy = DynamicConstantDesc.ofNamed(BSM_CLASS_DATA, DEFAULT_NAME, CD_MethodHandle);
     }
 
     // See context values in AbstractValidatingLambdaMetafactory
@@ -404,7 +402,7 @@ import jdk.internal.classfile.MethodBuilder;
         clb.withField(LAMBDA_INSTANCE_FIELD, lambdaTypeDescriptor, ACC_PRIVATE | ACC_STATIC | ACC_FINAL);
 
         // Instantiate the lambda and store it to the static final field
-        clb.withMethodBody("<clinit>", MethodTypeDesc.of(ConstantDescs.CD_void), ACC_STATIC, new Consumer<CodeBuilder>() {
+        clb.withMethodBody("<clinit>", MethodTypeDesc.of(CD_void), ACC_STATIC, new Consumer<CodeBuilder>() {
             @Override
             public void accept(CodeBuilder cob) {
                 cob.new_(lambdaClassDesc)
@@ -427,15 +425,15 @@ import jdk.internal.classfile.MethodBuilder;
                     @Override
                     public void accept(CodeBuilder cob) {
                         cob.aload(0);
-                        cob.invokespecial(ConstantDescs.CD_Object, NAME_CTOR,
-                                MethodTypeDesc.of(ConstantDescs.CD_void));
+                        cob.invokespecial(CD_Object, NAME_CTOR,
+                                MethodTypeDesc.of(CD_void));
                         int parameterCount = factoryType.parameterCount();
                         for (int i = 0, lvIndex = 0; i < parameterCount; i++) {
                             cob.aload(0);
                             Class<?> argType = factoryType.parameterType(i);
                             cob.loadInstruction(getLoadType(argType), lvIndex + 1);
                             lvIndex += getParameterSize(argType);
-                            cob.fieldInstruction(Opcode.PUTFIELD, lambdaClassDesc, argNames[i], argDescs[i]);
+                            cob.putfield(lambdaClassDesc, argNames[i], argDescs[i]);
                         }
                         cob.return_();
                     }
@@ -463,7 +461,7 @@ import jdk.internal.classfile.MethodBuilder;
                            .constantInstruction(Opcode.LDC, dynamicMethodType.toMethodDescriptorString())
                            .constantInstruction(argDescs.length);
 
-                        cob.anewarray(ConstantDescs.CD_Object);
+                        cob.anewarray(CD_Object);
                         for (int i = 0; i < argDescs.length; i++) {
                             cob.dup();
                             cob.constantInstruction(i);
@@ -536,8 +534,8 @@ import jdk.internal.classfile.MethodBuilder;
                     if (implKind != MethodHandleInfo.REF_invokeStatic) {
                         mtype = mtype.insertParameterTypes(0, implClass);
                     }
-                    cob.invokeInstruction(Opcode.INVOKEVIRTUAL, ConstantDescs.CD_MethodHandle,
-                            "invokeExact", MethodTypeDesc.ofDescriptor(mtype.descriptorString()), false);
+                    cob.invokevirtual(CD_MethodHandle, "invokeExact",
+                            MethodTypeDesc.ofDescriptor(mtype.descriptorString()));
                 } else {
                     // Invoke the method we want to forward to
                     cob.invokeInstruction(invocationOpcode(), implMethodClassDesc,
