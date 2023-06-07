@@ -761,6 +761,10 @@ JvmtiEnvBase::get_thread_state(oop thread_oop, JavaThread* jt) {
   jint state = get_thread_state_base(thread_oop, jt);
 
   if (is_thread_carrying_vthread(jt, thread_oop)) {
+    // It's okay for the JVMTI state to be reported as WAITING when waiting
+    // for something other than an Object.wait. So, we treat a thread carrying
+    // a virtual thread as waiting indefinitely which is not runnable.
+    // It is why the RUNNABLE bit is cleared and the WAITING bits are added.
     state &= ~JVMTI_THREAD_STATE_RUNNABLE;
     state |= JVMTI_THREAD_STATE_WAITING | JVMTI_THREAD_STATE_WAITING_INDEFINITELY;
   }
@@ -1736,7 +1740,7 @@ JvmtiEnvBase::suspend_thread(oop thread_oop, JavaThread* java_thread, bool singl
           (is_virtual && JvmtiVTSuspender::is_vthread_suspended(thread_h())),
          "sanity check");
 
-  // An attempt to handshake-suspend a thread carrying virtual thread will result in
+  // An attempt to handshake-suspend a thread carrying a virtual thread will result in
   // suspension of mounted virtual thread. So, we just mark it as suspended
   // and it will be actually suspended at virtual thread unmount transition.
   if (!is_thread_carrying) {
