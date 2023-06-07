@@ -119,10 +119,7 @@ Java_TestNativeStack_triggerJNIStackTrace
     exit(1);
   }
 
-  if ((res = pthread_attr_destroy(&attr)) != 0) {
-    fprintf(stderr, "TEST ERROR: pthread_attr_destroy failed: %s (%d)\n", strerror(res), res);
-    exit(1);
-  }
+  pthread_attr_destroy(&attr);
 
   if ((res = pthread_join(thread, NULL)) != 0) {
     fprintf(stderr, "TEST ERROR: pthread_join failed: %s (%d)\n", strerror(res), res);
