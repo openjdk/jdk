@@ -181,6 +181,7 @@ JVM_NewArray
 JVM_NewInstanceFromConstructor
 JVM_NewMultiArray
 JVM_PhantomReferenceRefersTo
+JVM_PrintWarningAtDynamicAgentLoad
 JVM_RaiseSignal
 JVM_RawMonitorCreate
 JVM_RawMonitorDestroy
