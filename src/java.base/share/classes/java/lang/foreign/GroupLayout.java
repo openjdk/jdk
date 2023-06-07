@@ -68,9 +68,9 @@ public sealed interface GroupLayout extends MemoryLayout permits StructLayout, U
     /**
      * {@inheritDoc}
      * @throws IllegalArgumentException {@inheritDoc}
-     * @throws IllegalArgumentException if {@code bitAlignment} is less than {@code M}, where {@code M} is the maximum alignment
+     * @throws IllegalArgumentException if {@code byteAlignment} is less than {@code M}, where {@code M} is the maximum alignment
      * constraint in any of the member layouts associated with this group layout.
      */
     @Override
-    GroupLayout withBitAlignment(long bitAlignment);
+    GroupLayout withByteAlignment(long byteAlignment);
 }

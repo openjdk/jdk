@@ -593,6 +593,7 @@ void ShenandoahHeap::print_on(outputStream* st) const {
   MetaspaceUtils::print_on(st);
 
   if (Verbose) {
+    st->cr();
     print_heap_regions_on(st);
   }
 }
@@ -1021,10 +1022,13 @@ void ShenandoahHeap::trash_cset_regions() {
 
 void ShenandoahHeap::print_heap_regions_on(outputStream* st) const {
   st->print_cr("Heap Regions:");
-  st->print_cr("EU=empty-uncommitted, EC=empty-committed, R=regular, H=humongous start, HC=humongous continuation, CS=collection set, T=trash, P=pinned");
-  st->print_cr("BTE=bottom/top/end, U=used, T=TLAB allocs, G=GCLAB allocs, S=shared allocs, L=live data");
-  st->print_cr("R=root, CP=critical pins, TAMS=top-at-mark-start, UWM=update watermark");
-  st->print_cr("SN=alloc sequence number");
+  st->print_cr("Region state: EU=empty-uncommitted, EC=empty-committed, R=regular, H=humongous start, HP=pinned humongous start");
+  st->print_cr("              HC=humongous continuation, CS=collection set, TR=trash, P=pinned, CSP=pinned collection set");
+  st->print_cr("BTE=bottom/top/end, TAMS=top-at-mark-start");
+  st->print_cr("UWM=update watermark, U=used");
+  st->print_cr("T=TLAB allocs, G=GCLAB allocs");
+  st->print_cr("S=shared allocs, L=live data");
+  st->print_cr("CP=critical pins");
 
   for (size_t i = 0; i < num_regions(); i++) {
     get_region(i)->print_on(st);
@@ -1503,7 +1507,7 @@ public:
 
     size_t max = _heap->num_regions();
     while (Atomic::load(&_index) < max) {
-      size_t cur = Atomic::fetch_and_add(&_index, stride, memory_order_relaxed);
+      size_t cur = Atomic::fetch_then_add(&_index, stride, memory_order_relaxed);
       size_t start = cur;
       size_t end = MIN2(cur + stride, max);
       if (start >= max) break;
@@ -2115,6 +2119,7 @@ void ShenandoahHeap::rebuild_free_set(bool concurrent) {
 
 void ShenandoahHeap::print_extended_on(outputStream *st) const {
   print_on(st);
+  st->cr();
   print_heap_regions_on(st);
 }
 

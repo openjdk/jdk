@@ -98,7 +98,7 @@ public:
   bool equals(ciObject* obj);
 
   // A hash value for the convenience of compilers.
-  int hash();
+  uint hash();
 
   // Tells if this oop should be made a constant.
   bool should_be_constant();

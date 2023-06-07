@@ -77,7 +77,7 @@ import java.util.stream.Stream;
  * {@snippet lang = java:
  * Linker linker = Linker.nativeLinker();
  * MethodHandle strlen = linker.downcallHandle(
- *     linker.defaultLookup().find("strlen").get(),
+ *     linker.defaultLookup().find("strlen").orElseThrow(),
  *     FunctionDescriptor.of(JAVA_LONG, ADDRESS)
  * );
  * }
@@ -91,9 +91,9 @@ import java.util.stream.Stream;
  * The obtained downcall method handle is then invoked as follows:
  *
  * {@snippet lang = java:
- * try (Arena arena = Arena.openConfined()) {
+ * try (Arena arena = Arena.ofConfined()) {
  *     MemorySegment str = arena.allocateUtf8String("Hello");
- *     long len          = strlen.invoke(str);  // 5
+ *     long len = (long) strlen.invokeExact(str);  // 5
  * }
  * }
  * <h3 id="describing-c-sigs">Describing C signatures</h3>
@@ -226,7 +226,7 @@ import java.util.stream.Stream;
  * {@snippet lang = java:
  * Linker linker = Linker.nativeLinker();
  * MethodHandle qsort = linker.downcallHandle(
- *     linker.defaultLookup().find("qsort").get(),
+ *     linker.defaultLookup().find("qsort").orElseThrow(),
  *         FunctionDescriptor.ofVoid(ADDRESS, JAVA_LONG, JAVA_LONG, ADDRESS)
  * );
  * }
@@ -240,7 +240,7 @@ import java.util.stream.Stream;
  *
  * {@snippet lang = java:
  * class Qsort {
- *     static int qsortCompare(MemorySegment elem1, MemorySegmet elem2) {
+ *     static int qsortCompare(MemorySegment elem1, MemorySegment elem2) {
  *         return Integer.compare(elem1.get(JAVA_INT, 0), elem2.get(JAVA_INT, 0));
  *     }
  * }
@@ -268,7 +268,7 @@ import java.util.stream.Stream;
  * {@snippet lang = java:
  * try (Arena arena = Arena.ofConfined()) {
  *     MemorySegment comparFunc = linker.upcallStub(comparHandle, comparDesc, arena);
- *     MemorySegment array = session.allocateArray(0, 9, 3, 4, 6, 5, 1, 8, 2, 7);
+ *     MemorySegment array = arena.allocateArray(JAVA_INT, 0, 9, 3, 4, 6, 5, 1, 8, 2, 7);
  *     qsort.invokeExact(array, 10L, 4L, comparFunc);
  *     int[] sorted = array.toArray(JAVA_INT); // [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ]
  * }
@@ -307,12 +307,12 @@ import java.util.stream.Stream;
  * Linker linker = Linker.nativeLinker();
  *
  * MethodHandle malloc = linker.downcallHandle(
- *     linker.defaultLookup().find("malloc").get(),
+ *     linker.defaultLookup().find("malloc").orElseThrow(),
  *     FunctionDescriptor.of(ADDRESS, JAVA_LONG)
  * );
  *
  * MethodHandle free = linker.downcallHandle(
- *     linker.defaultLookup().find("free").get(),
+ *     linker.defaultLookup().find("free").orElseThrow(),
  *     FunctionDescriptor.ofVoid(ADDRESS)
  * );
  * }
@@ -334,9 +334,15 @@ import java.util.stream.Stream;
  * method, as follows:
  *
  * {@snippet lang = java:
- * MemorySegment allocateMemory(long byteSize, Arena arena) {
- *     MemorySegment segment = (MemorySegment)malloc.invokeExact(byteSize);    // size = 0, scope = always alive
- *     return segment.reinterpret(byteSize, arena, s -> free.invokeExact(s));  // size = byteSize, scope = arena.scope()
+ * MemorySegment allocateMemory(long byteSize, Arena arena) throws Throwable {
+ *     MemorySegment segment = (MemorySegment) malloc.invokeExact(byteSize); // size = 0, scope = always alive
+ *     return segment.reinterpret(byteSize, arena, s -> {
+ *         try {
+ *             free.invokeExact(s);
+ *         } catch (Throwable e) {
+ *             throw new RuntimeException(e);
+ *         }
+ *     });  // size = byteSize, scope = arena.scope()
  * }
  * }
  *
@@ -359,11 +365,41 @@ import java.util.stream.Stream;
  *
  * <h3 id="variadic-funcs">Variadic functions</h3>
  *
- * Variadic functions (e.g. a C function declared with a trailing ellipses {@code ...} at the end of the formal parameter
- * list or with an empty formal parameter list) are not supported directly by the native linker. However, it is still possible
- * to link a variadic function by using a <em>specialized</em> function descriptor, together with a
- * {@linkplain Linker.Option#firstVariadicArg(int) a linker option} which indicates the position of the first variadic argument
- * in that specialized descriptor.
+ * Variadic functions are C functions which can accept a variable number and type of arguments. They are declared:
+ * <ol>
+ * <li>With a trailing ellipsis ({@code ...}) at the end of the formal parameter list, such as: {@code void foo(int x, ...);}</li>
+ * <li>With an empty formal parameter list, called a prototype-less function, such as: {@code void foo();}</li>
+ * </ol>
+ * The arguments passed in place of the ellipsis, or the arguments passed to a prototype-less function are called
+ * <em>variadic arguments</em>. Variadic functions are, essentially, templates that can be <em>specialized</em> into multiple
+ * non-variadic functions by replacing the {@code ...} or empty formal parameter list with a list of <em>variadic parameters</em>
+ * of a fixed number and type.
+ * <p>
+ * It should be noted that values passed as variadic arguments undergo default argument promotion in C. For instance, the
+ * following argument promotions are applied:
+ * <ul>
+ * <li>{@code _Bool} -> {@code unsigned int}</li>
+ * <li>{@code [signed] char} -> {@code [signed] int}</li>
+ * <li>{@code [signed] short} -> {@code [signed] int}</li>
+ * <li>{@code float} -> {@code double}</li>
+ * </ul>
+ * whereby the signed-ness of the source type corresponds to the signed-ness of the promoted type. The complete process
+ * of default argument promotion is described in the C specification. In effect these promotions place limits on the
+ * specialized form of a variadic function, as the variadic parameters of the specialized form will always have a promoted
+ * type.
+ * <p>
+ * The native linker only supports linking the specialized form of a variadic function. A variadic function in its specialized
+ * form can be linked using a function descriptor describing the specialized form. Additionally, the
+ * {@link Linker.Option#firstVariadicArg(int)} linker option must be provided to indicate the first variadic parameter in
+ * the parameter list. The corresponding argument layout, and all following argument layouts in the specialized function
+ * descriptor, are called <em>variadic argument layouts</em>. For a prototype-less function, the index passed to
+ * {@link Linker.Option#firstVariadicArg(int)} should always be {@code 0}.
+ * <p>
+ * The native linker will reject an attempt to link a specialized function descriptor with any variadic argument layouts
+ * corresponding to a C type that would be subject to default argument promotion (as described above). Exactly which layouts
+ * will be rejected is platform specific, but as an example: on Linux/x64 the layouts {@link ValueLayout#JAVA_BOOLEAN},
+ * {@link ValueLayout#JAVA_BYTE}, {@link ValueLayout#JAVA_CHAR}, {@link ValueLayout#JAVA_SHORT}, and
+ * {@link ValueLayout#JAVA_FLOAT} will be rejected.
  * <p>
  * A well-known variadic function is the {@code printf} function, defined in the C standard library:
  *
@@ -389,7 +425,7 @@ import java.util.stream.Stream;
  * {@snippet lang = java:
  * Linker linker = Linker.nativeLinker();
  * MethodHandle printf = linker.downcallHandle(
- *     linker.defaultLookup().lookup("printf").get(),
+ *     linker.defaultLookup().find("printf").orElseThrow(),
  *         FunctionDescriptor.of(JAVA_INT, ADDRESS, JAVA_INT, JAVA_INT, JAVA_INT),
  *         Linker.Option.firstVariadicArg(1) // first int is variadic
  * );
@@ -430,11 +466,6 @@ public sealed interface Linker permits AbstractLinker {
     /**
      * Returns a linker for the ABI associated with the underlying native platform. The underlying native platform
      * is the combination of OS and processor where the Java runtime is currently executing.
-     * <p>
-     * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
-     * Restricted methods are unsafe, and, if used incorrectly, their use might crash
-     * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
-     * restricted methods, and use safe and supported functionalities, where possible.
      *
      * @apiNote It is not currently possible to obtain a linker for a different combination of OS and processor.
      * @implNote The libraries exposed by the {@linkplain #defaultLookup() default lookup} associated with the returned
@@ -443,11 +474,8 @@ public sealed interface Linker permits AbstractLinker {
      *
      * @return a linker for the ABI associated with the underlying native platform.
      * @throws UnsupportedOperationException if the underlying native platform is not supported.
-     * @throws IllegalCallerException If the caller is in a module that does not have native access enabled.
      */
-    @CallerSensitive
     static Linker nativeLinker() {
-        Reflection.ensureNativeAccess(Reflection.getCallerClass(), Linker.class, "nativeLinker");
         return SharedUtils.getSystemLinker();
     }
 
@@ -458,6 +486,11 @@ public sealed interface Linker permits AbstractLinker {
      * {@snippet lang=java :
      * linker.downcallHandle(function).bindTo(symbol);
      * }
+     * <p>
+     * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
+     * Restricted methods are unsafe, and, if used incorrectly, their use might crash
+     * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
+     * restricted methods, and use safe and supported functionalities, where possible.
      *
      * @param symbol   the address of the target function.
      * @param function the function descriptor of the target function.
@@ -466,11 +499,10 @@ public sealed interface Linker permits AbstractLinker {
      * @throws IllegalArgumentException if the provided function descriptor is not supported by this linker.
      *                                  or if the symbol is {@link MemorySegment#NULL}
      * @throws IllegalArgumentException if an invalid combination of linker options is given.
+     * @throws IllegalCallerException If the caller is in a module that does not have native access enabled.
      */
-    default MethodHandle downcallHandle(MemorySegment symbol, FunctionDescriptor function, Option... options) {
-        SharedUtils.checkSymbol(symbol);
-        return downcallHandle(function, options).bindTo(symbol);
-    }
+    @CallerSensitive
+    MethodHandle downcallHandle(MemorySegment symbol, FunctionDescriptor function, Option... options);
 
     /**
      * Creates a method handle which is used to call a foreign function with the given signature.
@@ -502,6 +534,11 @@ public sealed interface Linker permits AbstractLinker {
      * The returned method handle will throw an {@link IllegalArgumentException} if the {@link MemorySegment}
      * representing the target address of the foreign function is the {@link MemorySegment#NULL} address.
      * The returned method handle will additionally throw {@link NullPointerException} if any argument passed to it is {@code null}.
+     * <p>
+     * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
+     * Restricted methods are unsafe, and, if used incorrectly, their use might crash
+     * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
+     * restricted methods, and use safe and supported functionalities, where possible.
      *
      * @param function the function descriptor of the target function.
      * @param options  any linker options.
@@ -509,7 +546,9 @@ public sealed interface Linker permits AbstractLinker {
      * from the provided function descriptor.
      * @throws IllegalArgumentException if the provided function descriptor is not supported by this linker.
      * @throws IllegalArgumentException if an invalid combination of linker options is given.
+     * @throws IllegalCallerException If the caller is in a module that does not have native access enabled.
      */
+    @CallerSensitive
     MethodHandle downcallHandle(FunctionDescriptor function, Option... options);
 
     /**
@@ -533,6 +572,11 @@ public sealed interface Linker permits AbstractLinker {
      * could wrap all code in the target method handle in a try/catch block that catches any {@link Throwable}, for
      * instance by using the {@link java.lang.invoke.MethodHandles#catchException(MethodHandle, Class, MethodHandle)}
      * method handle combinator, and handle exceptions as desired in the corresponding catch block.
+     * <p>
+     * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
+     * Restricted methods are unsafe, and, if used incorrectly, their use might crash
+     * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
+     * restricted methods, and use safe and supported functionalities, where possible.
      *
      * @param target the target method handle.
      * @param function the upcall stub function descriptor.
@@ -545,7 +589,9 @@ public sealed interface Linker permits AbstractLinker {
      * @throws IllegalStateException if {@code arena.scope().isAlive() == false}
      * @throws WrongThreadException if {@code arena} is a confined arena, and this method is called from a
      * thread {@code T}, other than the arena's owner thread.
+     * @throws IllegalCallerException If the caller is in a module that does not have native access enabled.
      */
+    @CallerSensitive
     MemorySegment upcallStub(MethodHandle target, FunctionDescriptor function, Arena arena, Linker.Option... options);
 
     /**
@@ -582,7 +628,7 @@ public sealed interface Linker permits AbstractLinker {
         }
 
         /**
-         * {@return A linker option used to save portions of the execution state immediately after
+         * {@return a linker option used to save portions of the execution state immediately after
          *          calling a foreign function associated with a downcall method handle,
          *          before it can be overwritten by the Java runtime, or read through conventional means}
          * <p>
@@ -606,12 +652,12 @@ public sealed interface Linker permits AbstractLinker {
          * Linker.Option ccs = Linker.Option.captureCallState("errno");
          * MethodHandle handle = Linker.nativeLinker().downcallHandle(targetAddress, FunctionDescriptor.ofVoid(), ccs);
          *
-         * StructLayout capturedStateLayout = Linker.Option.capturedStateLayout();
+         * StructLayout capturedStateLayout = Linker.Option.captureStateLayout();
          * VarHandle errnoHandle = capturedStateLayout.varHandle(PathElement.groupElement("errno"));
          * try (Arena arena = Arena.ofConfined()) {
          *     MemorySegment capturedState = arena.allocate(capturedStateLayout);
          *     handle.invoke(capturedState);
-         *     int errno = errnoHandle.get(capturedState);
+         *     int errno = (int) errnoHandle.get(capturedState);
          *     // use errno
          * }
          * }
@@ -630,7 +676,7 @@ public sealed interface Linker permits AbstractLinker {
         }
 
          /**
-         * {@return A struct layout that represents the layout of the capture state segment that is passed
+         * {@return a struct layout that represents the layout of the capture state segment that is passed
          *          to a downcall handle linked with {@link #captureCallState(String...)}}.
          * <p>
          * The capture state layout is <em>platform dependent</em> but is guaranteed to be
@@ -658,7 +704,7 @@ public sealed interface Linker permits AbstractLinker {
         }
 
         /**
-         * {@return A linker option used to mark a foreign function as <em>trivial</em>}
+         * {@return a linker option used to mark a foreign function as <em>trivial</em>}
          * <p>
          * A trivial function is a function that has an extremely short running time
          * in all cases (similar to calling an empty function), and does not call back into Java (e.g. using an upcall stub).

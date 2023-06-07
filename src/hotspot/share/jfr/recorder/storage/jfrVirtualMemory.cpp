@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,8 +90,8 @@ class JfrVirtualMemorySegment : public JfrCHeapObj {
 };
 
 JfrVirtualMemorySegment::JfrVirtualMemorySegment() :
-  _next(NULL),
-  _top(NULL),
+  _next(nullptr),
+  _top(nullptr),
   _rs(),
   _virtual_memory() {}
 
@@ -108,7 +108,7 @@ bool JfrVirtualMemorySegment::initialize(size_t reservation_size_request_bytes) 
   if (!_rs.is_reserved()) {
     return false;
   }
-  assert(_rs.base() != NULL, "invariant");
+  assert(_rs.base() != nullptr, "invariant");
   assert(_rs.size() != 0, "invariant");
   assert(is_aligned(_rs.base(), os::vm_allocation_granularity()), "invariant");
   assert(is_aligned(_rs.size(), os::vm_allocation_granularity()), "invariant");
@@ -169,10 +169,10 @@ void* JfrVirtualMemorySegment::take_from_committed(size_t block_size_request_wor
   assert(_virtual_memory.committed_size() == _virtual_memory.actual_committed_size(),
     "The committed memory doesn't match the expanded memory.");
   if (!is_available(block_size_request_words)) {
-    return NULL;
+    return nullptr;
   }
   void* const block = top();
-  assert(block != NULL, "invariant");
+  assert(block != nullptr, "invariant");
   inc_top(block_size_request_words);
   return block;
 }
@@ -221,8 +221,8 @@ class JfrVirtualMemoryManager : public JfrCHeapObj {
 };
 
 JfrVirtualMemoryManager::JfrVirtualMemoryManager() :
-  _segments(NULL),
-  _current_segment(NULL),
+  _segments(nullptr),
+  _current_segment(nullptr),
   _reservation_size_request_words(0),
   _reservation_size_request_limit_words(0),
   _current_reserved_words(0),
@@ -230,7 +230,7 @@ JfrVirtualMemoryManager::JfrVirtualMemoryManager() :
 
 JfrVirtualMemoryManager::~JfrVirtualMemoryManager() {
   JfrVirtualMemorySegment* segment = _segments;
-  while (segment != NULL) {
+  while (segment != nullptr) {
     JfrVirtualMemorySegment* next_segment = segment->next();
     delete segment;
     segment = next_segment;
@@ -256,7 +256,7 @@ bool JfrVirtualMemoryManager::new_segment(size_t reservation_size_request_words)
   assert(reservation_size_request_words > 0, "invariant");
   assert(is_aligned(reservation_size_request_words * BytesPerWord, os::vm_allocation_granularity()), "invariant");
   Segment* segment = new Segment();
-  if (NULL == segment) {
+  if (nullptr == segment) {
     return false;
   }
   if (!segment->initialize(reservation_size_request_words * BytesPerWord)) {
@@ -270,7 +270,7 @@ bool JfrVirtualMemoryManager::new_segment(size_t reservation_size_request_words)
 }
 
 bool JfrVirtualMemoryManager::expand_segment_by(JfrVirtualMemorySegment* segment, size_t block_size_request_words) {
-  assert(segment != NULL, "invariant");
+  assert(segment != nullptr, "invariant");
   const size_t before = segment->committed_words();
   const bool result = segment->expand_by(block_size_request_words);
   const size_t after = segment->committed_words();
@@ -324,11 +324,11 @@ bool JfrVirtualMemoryManager::expand_by(size_t block_size_request_words, size_t 
 }
 
 void JfrVirtualMemoryManager::link(JfrVirtualMemorySegment* segment) {
-  assert(segment != NULL, "invariant");
-  if (_segments == NULL) {
+  assert(segment != nullptr, "invariant");
+  if (_segments == nullptr) {
     _segments = segment;
   } else {
-    assert(_current_segment != NULL, "invariant");
+    assert(_current_segment != nullptr, "invariant");
     assert(_segments == _current_segment, "invariant");
     _current_segment->set_next(segment);
   }
@@ -340,32 +340,32 @@ void JfrVirtualMemoryManager::link(JfrVirtualMemorySegment* segment) {
 void* JfrVirtualMemoryManager::commit(size_t block_size_request_words) {
   assert(is_aligned(block_size_request_words * BytesPerWord, os::vm_allocation_granularity()), "invariant");
   void* block = current()->commit(block_size_request_words);
-  if (block != NULL) {
+  if (block != nullptr) {
     return block;
   }
-  assert(block == NULL, "invariant");
+  assert(block == nullptr, "invariant");
   if (is_full()) {
-    return NULL;
+    return nullptr;
   }
   assert(block_size_request_words <= _reservation_size_request_words, "invariant");
   if (expand_by(block_size_request_words, _reservation_size_request_words)) {
     block = current()->commit(block_size_request_words);
-    assert(block != NULL, "The allocation was expected to succeed after the expansion");
+    assert(block != nullptr, "The allocation was expected to succeed after the expansion");
   }
   return block;
 }
 
 JfrVirtualMemory::JfrVirtualMemory() :
-  _vmm(NULL),
+  _vmm(nullptr),
   _reserved_low(),
   _reserved_high(),
-  _top(NULL),
-  _commit_point(NULL),
+  _top(nullptr),
+  _commit_point(nullptr),
   _physical_commit_size_request_words(0),
   _aligned_datum_size_bytes(0) {}
 
 JfrVirtualMemory::~JfrVirtualMemory() {
-  assert(_vmm != NULL, "invariant");
+  assert(_vmm != nullptr, "invariant");
   delete _vmm;
 }
 
@@ -374,9 +374,9 @@ size_t JfrVirtualMemory::aligned_datum_size_bytes() const {
 }
 
 static void adjust_allocation_ratio(size_t* const reservation_size_bytes, size_t* const commit_size_bytes) {
-  assert(reservation_size_bytes != NULL, "invariant");
+  assert(reservation_size_bytes != nullptr, "invariant");
   assert(*reservation_size_bytes > 0, "invariant");
-  assert(commit_size_bytes != NULL, "invariant");
+  assert(commit_size_bytes != nullptr, "invariant");
   assert(*commit_size_bytes > 0, "invariant");
   assert(*reservation_size_bytes >= *commit_size_bytes, "invariant");
   assert(is_aligned(*reservation_size_bytes, os::vm_allocation_granularity()), "invariant");
@@ -409,11 +409,11 @@ static void adjust_allocation_ratio(size_t* const reservation_size_bytes, size_t
 void* JfrVirtualMemory::initialize(size_t reservation_size_request_bytes,
                                    size_t block_size_request_bytes,
                                    size_t datum_size_bytes /* 1 */) {
-  assert(_vmm == NULL, "invariant");
+  assert(_vmm == nullptr, "invariant");
   _vmm = new JfrVirtualMemoryManager();
 
-  if (_vmm == NULL) {
-    return NULL;
+  if (_vmm == nullptr) {
+    return nullptr;
   }
 
   assert(reservation_size_request_bytes > 0, "invariant");
@@ -440,7 +440,7 @@ void* JfrVirtualMemory::initialize(size_t reservation_size_request_bytes,
   if (!_vmm->initialize(reservation_size_request_words)) {
     // is implicitly "full" if reservation fails
     assert(is_full(), "invariant");
-    return NULL;
+    return nullptr;
   }
   _reserved_low = (const u1*)_vmm->reserved_low();
   _reserved_high = (const u1*)_vmm->reserved_high();
@@ -454,7 +454,7 @@ void* JfrVirtualMemory::initialize(size_t reservation_size_request_bytes,
 }
 
 void* JfrVirtualMemory::commit(size_t block_size_request_words) {
-  assert(_vmm != NULL, "invariant");
+  assert(_vmm != nullptr, "invariant");
   assert(is_aligned(block_size_request_words * BytesPerWord, os::vm_allocation_granularity()), "invariant");
   return _vmm->commit(block_size_request_words);
 }
@@ -468,26 +468,26 @@ bool JfrVirtualMemory::is_empty() const {
 }
 
 bool JfrVirtualMemory::commit_memory_block() {
-  assert(_vmm != NULL, "invariant");
+  assert(_vmm != nullptr, "invariant");
   assert(!is_full(), "invariant");
   void* const block = _vmm->commit(_physical_commit_size_request_words);
-  if (block != NULL) {
+  if (block != nullptr) {
     _commit_point = _vmm->committed_high();
     return true;
   }
   // all reserved virtual memory is committed
-  assert(block == NULL, "invariant");
+  assert(block == nullptr, "invariant");
   assert(_vmm->reserved_high() == _vmm->committed_high(), "invariant");
   return false;
 }
 
 void* JfrVirtualMemory::new_datum() {
-  assert(_vmm != NULL, "invariant");
+  assert(_vmm != nullptr, "invariant");
   assert(!is_full(), "invariant");
   if (_top == _commit_point) {
     if (!commit_memory_block()) {
       assert(is_full(), "invariant");
-      return NULL;
+      return nullptr;
     }
   }
   assert(_top + _aligned_datum_size_bytes <= _commit_point, "invariant");

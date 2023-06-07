@@ -297,14 +297,12 @@ public class TagletWriterImpl extends TagletWriter {
         }
 
         DocTree.Kind kind = tag.getKind();
-        String tagName = ch.getTagName(tag);
         String refSignature = ch.getReferencedSignature(linkRef);
 
         return linkSeeReferenceOutput(element,
                 tag,
                 refSignature,
                 ch.getReferencedElement(tag),
-                tagName,
                 (kind == LINK_PLAIN),
                 htmlWriter.commentTagsToContent(element, tag.getLabel(), context),
                 (key, args) -> messages.warning(ch.getDocTreePath(tag), key, args)
@@ -431,7 +429,6 @@ public class TagletWriterImpl extends TagletWriter {
             case REFERENCE -> {
                 // @see reference label...
                 CommentHelper ch = utils.getCommentHelper(element);
-                String tagName = ch.getTagName(seeTag);
                 String refSignature = ch.getReferencedSignature(ref0);
                 List<? extends DocTree> label = ref.subList(1, ref.size());
 
@@ -439,7 +436,6 @@ public class TagletWriterImpl extends TagletWriter {
                         seeTag,
                         refSignature,
                         ch.getReferencedElement(seeTag),
-                        tagName,
                         false,
                         htmlWriter.commentTagsToContent(element, label, context),
                         (key, args) -> messages.warning(ch.getDocTreePath(seeTag), key, args)
@@ -466,7 +462,6 @@ public class TagletWriterImpl extends TagletWriter {
      * @param refTree       the tree node containing the information, or {@code null} if not available
      * @param refSignature  the normalized signature of the target of the reference
      * @param ref           the target of the reference
-     * @param tagName       the name of the tag in the source, to be used in diagnostics
      * @param isLinkPlain   {@code true} if the link should be presented in "plain" font,
      *                      or {@code false} for "code" font
      * @param label         the label for the link,
@@ -479,7 +474,6 @@ public class TagletWriterImpl extends TagletWriter {
                                            DocTree refTree,
                                            String refSignature,
                                            Element ref,
-                                           String tagName,
                                            boolean isLinkPlain,
                                            Content label,
                                            BiConsumer<String, Object[]> reportWarning) {
@@ -500,7 +494,7 @@ public class TagletWriterImpl extends TagletWriter {
             if (labelContent.isEmpty()) {
                 // A non-empty label is required for fragment links as the
                 // reference target does not provide a useful default label.
-                reportWarning.accept("doclet.link.see.no_label", null);
+                htmlWriter.messages.error(ch.getDocTreePath(refTree), "doclet.link.see.no_label");
                 return invalidTagOutput(resources.getText("doclet.link.see.no_label"),
                         Optional.of(refSignature));
             }
@@ -535,10 +529,10 @@ public class TagletWriterImpl extends TagletWriter {
                     // No cross link found so print warning
                     if (!configuration.isDocLintReferenceGroupEnabled()) {
                         reportWarning.accept(
-                                "doclet.see.class_or_package_not_found",
-                                new Object[] { "@" + tagName, refSignature});
+                                "doclet.link.see.reference_not_found",
+                                new Object[] { refSignature});
                     }
-                    return htmlWriter.invalidTagOutput(resources.getText("doclet.tag.invalid", tagName),
+                    return htmlWriter.invalidTagOutput(resources.getText("doclet.link.see.reference_invalid"),
                             Optional.of(labelContent.isEmpty() ? text: labelContent));
                 }
             }
@@ -586,12 +580,12 @@ public class TagletWriterImpl extends TagletWriter {
                 if (htmlWriter instanceof ClassWriterImpl writer) {
                     containing = writer.getTypeElement();
                 } else if (!utils.isPublic(containing)) {
-                    reportWarning.accept("doclet.see.class_or_package_not_accessible",
-                            new Object[] { tagName, utils.getFullyQualifiedName(containing)});
+                    reportWarning.accept("doclet.link.see.reference_not_accessible",
+                            new Object[] { utils.getFullyQualifiedName(containing)});
                 } else {
                     if (!configuration.isDocLintReferenceGroupEnabled()) {
-                        reportWarning.accept("doclet.see.class_or_package_not_found",
-                                new Object[] { tagName, refSignature });
+                        reportWarning.accept("doclet.link.see.reference_not_found",
+                                new Object[] { refSignature });
                     }
                 }
             }
@@ -697,7 +691,6 @@ public class TagletWriterImpl extends TagletWriter {
                                 null,
                                 t,
                                 e,
-                                "link",
                                 false, // TODO: for now
                                 Text.of(sequence.toString()),
                                 (key, args) -> { /* TODO: report diagnostic */ });
@@ -915,62 +908,66 @@ public class TagletWriterImpl extends TagletWriter {
             HtmlId id = HtmlIds.forText(tagText, htmlWriter.indexAnchorTable);
             result = HtmlTree.SPAN(id, HtmlStyle.searchTagResult, tagContent);
             if (options.createIndex() && !tagText.isEmpty()) {
-                String holder = new SimpleElementVisitor14<String, Void>() {
-
-                    @Override
-                    public String visitModule(ModuleElement e, Void p) {
-                        return resources.getText("doclet.module")
-                                + " " + utils.getFullyQualifiedName(e);
-                    }
-
-                    @Override
-                    public String visitPackage(PackageElement e, Void p) {
-                        return resources.getText("doclet.package")
-                                + " " + utils.getFullyQualifiedName(e);
-                    }
-
-                    @Override
-                    public String visitType(TypeElement e, Void p) {
-                        return utils.getTypeElementKindName(e, true)
-                                + " " + utils.getFullyQualifiedName(e);
-                    }
-
-                    @Override
-                    public String visitExecutable(ExecutableElement e, Void p) {
-                        return utils.getFullyQualifiedName(utils.getEnclosingTypeElement(e))
-                                + "." + utils.getSimpleName(e)
-                                + utils.flatSignature(e, htmlWriter.getCurrentPageElement());
-                    }
-
-                    @Override
-                    public String visitVariable(VariableElement e, Void p) {
-                        return utils.getFullyQualifiedName(utils.getEnclosingTypeElement(e))
-                                + "." + utils.getSimpleName(e);
-                    }
-
-                    @Override
-                    public String visitUnknown(Element e, Void p) {
-                        if (e instanceof DocletElement de) {
-                            return switch (de.getSubKind()) {
-                                case OVERVIEW -> resources.getText("doclet.Overview");
-                                case DOCFILE -> getHolderName(de);
-                            };
-                        } else {
-                            return super.visitUnknown(e, p);
-                        }
-                    }
-
-                    @Override
-                    protected String defaultAction(Element e, Void p) {
-                        return utils.getFullyQualifiedName(e);
-                    }
-                }.visit(element);
+                String holder = getHolderName(element);
                 IndexItem item = IndexItem.of(element, tree, tagText, holder, desc,
                         new DocLink(htmlWriter.path, id.name()));
                 configuration.mainIndex.add(item);
             }
         }
         return result;
+    }
+
+    String getHolderName(Element element) {
+        return new SimpleElementVisitor14<String, Void>() {
+
+            @Override
+            public String visitModule(ModuleElement e, Void p) {
+                return resources.getText("doclet.module")
+                        + " " + utils.getFullyQualifiedName(e);
+            }
+
+            @Override
+            public String visitPackage(PackageElement e, Void p) {
+                return resources.getText("doclet.package")
+                        + " " + utils.getFullyQualifiedName(e);
+            }
+
+            @Override
+            public String visitType(TypeElement e, Void p) {
+                return utils.getTypeElementKindName(e, true)
+                        + " " + utils.getFullyQualifiedName(e);
+            }
+
+            @Override
+            public String visitExecutable(ExecutableElement e, Void p) {
+                return utils.getFullyQualifiedName(utils.getEnclosingTypeElement(e))
+                        + "." + utils.getSimpleName(e)
+                        + utils.flatSignature(e, htmlWriter.getCurrentPageElement());
+            }
+
+            @Override
+            public String visitVariable(VariableElement e, Void p) {
+                return utils.getFullyQualifiedName(utils.getEnclosingTypeElement(e))
+                        + "." + utils.getSimpleName(e);
+            }
+
+            @Override
+            public String visitUnknown(Element e, Void p) {
+                if (e instanceof DocletElement de) {
+                    return switch (de.getSubKind()) {
+                        case OVERVIEW -> resources.getText("doclet.Overview");
+                        case DOCFILE -> getHolderName(de);
+                    };
+                } else {
+                    return super.visitUnknown(e, p);
+                }
+            }
+
+            @Override
+            protected String defaultAction(Element e, Void p) {
+                return utils.getFullyQualifiedName(e);
+            }
+        }.visit(element);
     }
 
     private String getHolderName(DocletElement de) {

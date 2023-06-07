@@ -448,15 +448,15 @@ public final class Channels {
      *
      * <p> An invocation of this method of the form
      *
-     * <pre> {@code
+     * {@snippet lang=java :
      *     Channels.newReader(ch, csname)
-     * } </pre>
+     * }
      *
      * behaves in exactly the same way as the expression
      *
-     * <pre> {@code
+     * {@snippet lang=java :
      *     Channels.newReader(ch, Charset.forName(csName))
-     * } </pre>
+     * }
      *
      * @param  ch
      *         The channel from which bytes will be read
@@ -483,15 +483,15 @@ public final class Channels {
      *
      * <p> An invocation of this method of the form
      *
-     * <pre> {@code
+     * {@snippet lang=java :
      *     Channels.newReader(ch, charset)
-     * } </pre>
+     * }
      *
      * behaves in exactly the same way as the expression
      *
-     * <pre> {@code
+     * {@snippet lang=java :
      *     Channels.newReader(ch, charset.newDecoder(), -1)
-     * } </pre>
+     * }
      *
      * <p> The reader's default action for malformed-input and unmappable-character
      * errors is to {@linkplain java.nio.charset.CodingErrorAction#REPORT report}
@@ -548,15 +548,15 @@ public final class Channels {
      *
      * <p> An invocation of this method of the form
      *
-     * <pre> {@code
+     * {@snippet lang=java :
      *     Channels.newWriter(ch, csname)
-     * } </pre>
+     * }
      *
      * behaves in exactly the same way as the expression
      *
-     * <pre> {@code
+     * {@snippet lang=java :
      *     Channels.newWriter(ch, Charset.forName(csName))
-     * } </pre>
+     * }
      *
      * @param  ch
      *         The channel to which bytes will be written
@@ -583,15 +583,15 @@ public final class Channels {
      *
      * <p> An invocation of this method of the form
      *
-     * <pre> {@code
+     * {@snippet lang=java :
      *     Channels.newWriter(ch, charset)
-     * } </pre>
+     * }
      *
      * behaves in exactly the same way as the expression
      *
-     * <pre> {@code
+     * {@snippet lang=java :
      *     Channels.newWriter(ch, charset.newEncoder(), -1)
-     * } </pre>
+     * }
      *
      * <p> The writer's default action for malformed-input and unmappable-character
      * errors is to {@linkplain java.nio.charset.CodingErrorAction#REPORT report}

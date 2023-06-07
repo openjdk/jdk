@@ -1689,7 +1689,6 @@
   declare_c2_type(MultiNode, Node)                                        \
   declare_c2_type(ProjNode, Node)                                         \
   declare_c2_type(TypeNode, Node)                                         \
-  declare_c2_type(NodeHash, StackObj)                                     \
   declare_c2_type(RootNode, LoopNode)                                     \
   declare_c2_type(HaltNode, Node)                                         \
   declare_c2_type(SubNode, Node)                                          \
@@ -1768,8 +1767,6 @@
   declare_c2_type(NegVDNode, NegVNode)                                    \
   declare_c2_type(FmaVDNode, VectorNode)                                  \
   declare_c2_type(FmaVFNode, VectorNode)                                  \
-  declare_c2_type(CMoveVFNode, VectorNode)                                \
-  declare_c2_type(CMoveVDNode, VectorNode)                                \
   declare_c2_type(CompressVNode, VectorNode)                              \
   declare_c2_type(CompressMNode, VectorNode)                              \
   declare_c2_type(ExpandVNode, VectorNode)                                \

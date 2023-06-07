@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -130,7 +130,7 @@ public final class DirectCodeBuilder
                                                                : new BufWriterImpl(constantPool);
         this.startLabel = new LabelImpl(this, 0);
         this.endLabel = new LabelImpl(this, -1);
-        this.topLocal = Util.maxLocals(methodInfo.methodFlags(), methodInfo.methodType().stringValue());
+        this.topLocal = Util.maxLocals(methodInfo.methodFlags(), methodInfo.methodTypeSymbol());
         if (original != null)
             this.topLocal = Math.max(this.topLocal, original.maxLocals());
     }
@@ -199,7 +199,7 @@ public final class DirectCodeBuilder
                 if (constantPool.options().filterDeadLabels) {
                     handlersSize--;
                 } else {
-                    throw new IllegalStateException("Unbound label in exception handler");
+                    throw new IllegalArgumentException("Unbound label in exception handler");
                 }
             } else {
                 buf.writeU2(startPc);
@@ -236,7 +236,7 @@ public final class DirectCodeBuilder
                                 if (constantPool.options().filterDeadLabels) {
                                     crSize--;
                                 } else {
-                                    throw new IllegalStateException("Unbound label in character range");
+                                    throw new IllegalArgumentException("Unbound label in character range");
                                 }
                             } else {
                                 b.writeU2(start);
@@ -265,7 +265,7 @@ public final class DirectCodeBuilder
                                 if (constantPool.options().filterDeadLabels) {
                                     lvSize--;
                                 } else {
-                                    throw new IllegalStateException("Unbound label in local variable type");
+                                    throw new IllegalArgumentException("Unbound label in local variable type");
                                 }
                             }
                         }
@@ -288,7 +288,7 @@ public final class DirectCodeBuilder
                                 if (constantPool.options().filterDeadLabels) {
                                     lvtSize--;
                                 } else {
-                                    throw new IllegalStateException("Unbound label in local variable type");
+                                    throw new IllegalArgumentException("Unbound label in local variable type");
                                 }
                             }
                         }
@@ -311,6 +311,13 @@ public final class DirectCodeBuilder
                 buf.setLabelContext(DirectCodeBuilder.this);
 
                 int codeLength = curPc();
+                if (codeLength == 0 || codeLength >= 65536) {
+                    throw new IllegalArgumentException(String.format(
+                            "Code length %d is outside the allowed range in %s%s",
+                            codeLength,
+                            methodInfo.methodName().stringValue(),
+                            methodInfo.methodTypeSymbol().displayDescriptor()));
+                }
                 int maxStack, maxLocals;
                 Attribute<? extends StackMapTableAttribute> stackMapAttr;
                 boolean canReuseStackmaps = codeAndExceptionsMatch(codeLength);
@@ -334,7 +341,7 @@ public final class DirectCodeBuilder
                         maxStack = gen.maxStack();
                         maxLocals = gen.maxLocals();
                         stackMapAttr = gen.stackMapTableAttribute();
-                    } catch (Exception e) {
+                    } catch (IllegalArgumentException e) {
                         if (buf.getMajorVersion() == Classfile.JAVA_6_VERSION) {
                             //failover following JVMS-4.10
                             StackCounter cntr = StackCounter.of(DirectCodeBuilder.this, buf);
@@ -690,7 +697,7 @@ public final class DirectCodeBuilder
 
         if (context == this) {
             if (lab.getBCI() != -1)
-                throw new IllegalStateException("Setting label target for already-set label");
+                throw new IllegalArgumentException("Setting label target for already-set label");
             lab.setBCI(bci);
         }
         else if (context == mruParent) {
@@ -745,7 +752,7 @@ public final class DirectCodeBuilder
     }
 
     //ToDo: consolidate and open all exceptions
-    private static final class LabelOverflowException extends IllegalStateException {
+    private static final class LabelOverflowException extends IllegalArgumentException {
 
         private static final long serialVersionUID = 1L;
 

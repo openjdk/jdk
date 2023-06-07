@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ import jdk.jfr.events.ErrorThrownEvent;
 import jdk.jfr.internal.MissingChunkFileError;
 import jdk.jfr.internal.SecuritySupport.SafePath;
 
-final class RepositoryChunk {
+public final class RepositoryChunk {
 
     static final Comparator<RepositoryChunk> END_TIME_COMPARATOR = new Comparator<RepositoryChunk>() {
         @Override
@@ -53,7 +53,7 @@ final class RepositoryChunk {
 
     private Instant endTime = null; // unfinished
     private Instant startTime;
-    private int refCount = 0;
+    private int refCount = 1;
     private long size;
 
     RepositoryChunk(SafePath path) throws Exception {
@@ -171,6 +171,14 @@ final class RepositoryChunk {
 
     public SafePath getFile() {
         return chunkFile;
+    }
+
+    public long getCurrentFileSize() {
+        try {
+            return SecuritySupport.getFileSize(chunkFile);
+        } catch (IOException e) {
+            return 0L;
+        }
     }
 
     boolean isMissingFile() {

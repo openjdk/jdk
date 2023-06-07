@@ -95,6 +95,8 @@ public class EventNames {
     public static final String ReservedStackActivation = PREFIX + "ReservedStackActivation";
 
     // GC
+    public static final String GCHeapMemoryUsage = PREFIX + "GCHeapMemoryUsage";
+    public static final String GCHeapMemoryPoolUsage = PREFIX + "GCHeapMemoryPoolUsage";
     public static final String GCHeapSummary = PREFIX + "GCHeapSummary";
     public static final String MetaspaceSummary = PREFIX + "MetaspaceSummary";
     public static final String MetaspaceGCThreshold = PREFIX + "MetaspaceGCThreshold";
@@ -142,6 +144,9 @@ public class EventNames {
     public static final String GCPhaseParallel = PREFIX + "GCPhaseParallel";
     public static final String GCPhaseConcurrent = PREFIX + "GCPhaseConcurrent";
     public static final String GCPhaseConcurrentLevel1 = PREFIX + "GCPhaseConcurrentLevel1";
+    public static final String GCPhaseConcurrentLevel2 = PREFIX + "GCPhaseConcurrentLevel2";
+    public static final String ZYoungGarbageCollection = PREFIX + "ZYoungGarbageCollection";
+    public static final String ZOldGarbageCollection = PREFIX + "ZOldGarbageCollection";
     public static final String ZAllocationStall = PREFIX + "ZAllocationStall";
     public static final String ZPageAllocation = PREFIX + "ZPageAllocation";
     public static final String ZRelocationSet = PREFIX + "ZRelocationSet";
@@ -181,6 +186,7 @@ public class EventNames {
     public static final String PhysicalMemory = PREFIX + "PhysicalMemory";
     public static final String NetworkUtilization = PREFIX + "NetworkUtilization";
     public static final String ProcessStart = PREFIX + "ProcessStart";
+    public static final String ResidentSetSize = PREFIX + "ResidentSetSize";
 
     // JDK
     public static final String FileForce  = PREFIX + "FileForce";

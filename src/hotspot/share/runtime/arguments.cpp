@@ -1482,29 +1482,10 @@ void Arguments::set_use_compressed_oops() {
 #endif // _LP64
 }
 
-
-// NOTE: set_use_compressed_klass_ptrs() must be called after calling
-// set_use_compressed_oops().
 void Arguments::set_use_compressed_klass_ptrs() {
 #ifdef _LP64
-  // On some architectures, the use of UseCompressedClassPointers implies the use of
-  // UseCompressedOops. The reason is that the rheap_base register of said platforms
-  // is reused to perform some optimized spilling, in order to use rheap_base as a
-  // temp register. But by treating it as any other temp register, spilling can typically
-  // be completely avoided instead. So it is better not to perform this trick. And by
-  // not having that reliance, large heaps, or heaps not supporting compressed oops,
-  // can still use compressed class pointers.
-  // Turn on UseCompressedClassPointers too
-  if (FLAG_IS_DEFAULT(UseCompressedClassPointers)) {
-    FLAG_SET_ERGO(UseCompressedClassPointers, true);
-  }
-  // Check the CompressedClassSpaceSize to make sure we use compressed klass ptrs.
-  if (UseCompressedClassPointers) {
-    if (CompressedClassSpaceSize > KlassEncodingMetaspaceMax) {
-      warning("CompressedClassSpaceSize is too large for UseCompressedClassPointers");
-      FLAG_SET_DEFAULT(UseCompressedClassPointers, false);
-    }
-  }
+  assert(!UseCompressedClassPointers || CompressedClassSpaceSize <= KlassEncodingMetaspaceMax,
+         "CompressedClassSpaceSize is too large for UseCompressedClassPointers");
 #endif // _LP64
 }
 
@@ -1526,9 +1507,6 @@ jint Arguments::set_ergonomics_flags() {
 
 #ifdef _LP64
   set_use_compressed_oops();
-
-  // set_use_compressed_klass_ptrs() must be called after calling
-  // set_use_compressed_oops().
   set_use_compressed_klass_ptrs();
 
   // Also checks that certain machines are slower with compressed oops
@@ -1927,7 +1905,7 @@ bool Arguments::check_vm_args_consistency() {
 #endif
 
 
-#if !defined(X86) && !defined(AARCH64) && !defined(RISCV64) && !defined(ARM)
+#if !defined(X86) && !defined(AARCH64) && !defined(RISCV64) && !defined(ARM) && !defined(PPC64)
   if (LockingMode == LM_LIGHTWEIGHT) {
     FLAG_SET_CMDLINE(LockingMode, LM_LEGACY);
     warning("New lightweight locking not supported on this platform");
@@ -1943,7 +1921,7 @@ bool Arguments::check_vm_args_consistency() {
     FLAG_SET_CMDLINE(LockingMode, LM_MONITOR);
   }
 
-#if !defined(X86) && !defined(AARCH64) && !defined(PPC64) && !defined(RISCV64)
+#if !defined(X86) && !defined(AARCH64) && !defined(PPC64) && !defined(RISCV64) && !defined(S390)
   if (LockingMode == LM_MONITOR) {
     jio_fprintf(defaultStream::error_stream(),
                 "LockingMode == 0 (LM_MONITOR) is not fully implemented on this architecture");
@@ -2849,28 +2827,42 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
         return JNI_ERR;
 #endif // INCLUDE_MANAGEMENT
 #if INCLUDE_JVMCI
-    } else if (match_option(option, "-XX:-EnableJVMCIProduct")) {
+    } else if (match_option(option, "-XX:-EnableJVMCIProduct") || match_option(option, "-XX:-UseGraalJIT")) {
       if (EnableJVMCIProduct) {
         jio_fprintf(defaultStream::error_stream(),
-                  "-XX:-EnableJVMCIProduct cannot come after -XX:+EnableJVMCIProduct\n");
+                  "-XX:-EnableJVMCIProduct or -XX:-UseGraalJIT cannot come after -XX:+EnableJVMCIProduct or -XX:+UseGraalJIT\n");
         return JNI_EINVAL;
       }
-    } else if (match_option(option, "-XX:+EnableJVMCIProduct")) {
-      // Just continue, since "-XX:+EnableJVMCIProduct" has been specified before
+    } else if (match_option(option, "-XX:+EnableJVMCIProduct") || match_option(option, "-XX:+UseGraalJIT")) {
+      bool use_graal_jit = match_option(option, "-XX:+UseGraalJIT");
+      if (use_graal_jit) {
+        const char* jvmci_compiler = get_property("jvmci.Compiler");
+        if (jvmci_compiler != nullptr) {
+          if (strncmp(jvmci_compiler, "graal", strlen("graal")) != 0) {
+            jio_fprintf(defaultStream::error_stream(),
+              "Value of jvmci.Compiler incompatible with +UseGraalJIT: %s", jvmci_compiler);
+            return JNI_ERR;
+          }
+        } else if (!add_property("jvmci.Compiler=graal")) {
+            return JNI_ENOMEM;
+        }
+      }
+
+      // Just continue, since "-XX:+EnableJVMCIProduct" or "-XX:+UseGraalJIT" has been specified before
       if (EnableJVMCIProduct) {
         continue;
       }
       JVMFlag *jvmciFlag = JVMFlag::find_flag("EnableJVMCIProduct");
       // Allow this flag if it has been unlocked.
       if (jvmciFlag != nullptr && jvmciFlag->is_unlocked()) {
-        if (!JVMCIGlobals::enable_jvmci_product_mode(origin)) {
+        if (!JVMCIGlobals::enable_jvmci_product_mode(origin, use_graal_jit)) {
           jio_fprintf(defaultStream::error_stream(),
             "Unable to enable JVMCI in product mode");
           return JNI_ERR;
         }
       }
       // The flag was locked so process normally to report that error
-      else if (!process_argument("EnableJVMCIProduct", args->ignoreUnrecognized, origin)) {
+      else if (!process_argument(use_graal_jit ? "UseGraalJIT" : "EnableJVMCIProduct", args->ignoreUnrecognized, origin)) {
         return JNI_EINVAL;
       }
 #endif // INCLUDE_JVMCI
