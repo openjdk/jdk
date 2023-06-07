@@ -701,8 +701,6 @@ com/sun/jdi/RepStep.java                                        8043571 generic-
 
 com/sun/jdi/InvokeHangTest.java                                 8218463 linux-all
 
-com/sun/jdi/AfterThreadDeathTest.java                           8232839 linux-all
-
 ############################################################################
 
 # jdk_time
