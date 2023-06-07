@@ -34,6 +34,7 @@ import javax.swing.plaf.PanelUI;
  * @bug 8303950
  * @summary translucent windows flicker on repaint
  * @author Jeremy Wood
+ * @key headful
  */
 public class bug8303950 {
 

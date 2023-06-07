@@ -36,6 +36,7 @@ import javax.swing.plaf.PanelUI;
  * @bug 8303950
  * @summary this codifies the preexisting behavior for Window/JRootPane backgrounds. I want to be sure the resolution
  *          to 8303950 does not alter this behavior.
+ * @key headful
  * @author Jeremy Wood
  */
 public class bug8303950_legacyWindowPaintBehavior {
