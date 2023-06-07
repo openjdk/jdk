@@ -43,7 +43,6 @@ class OopAndMarkWord {
   OopAndMarkWord(oop obj, markWord m) : _o(obj), _m(m) { }
 
   oop get_oop() { return _o; }
-  oop* get_oop_pointer() {return &_o; }
   inline void set_mark() const;
   void set_oop(oop obj) { _o = obj; }
 };
@@ -63,6 +62,11 @@ public:
   // Iterate over the stack, restore all preserved marks, and
   // reclaim the memory taken up by the stack segments.
   void restore();
+
+  // Adjust the preserved mark according to its
+  // forwarding location stored in the mark.
+  static void adjust_preserved_mark(OopAndMarkWord* elem);
+
   // Iterate over the stack, adjust all preserved marks according
   // to their forwarding location stored in the mark.
   void adjust_during_full_gc();

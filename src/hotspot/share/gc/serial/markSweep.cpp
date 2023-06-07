@@ -197,7 +197,7 @@ AdjustPointerClosure MarkSweep::adjust_pointer_closure;
 void MarkSweep::adjust_marks() {
   // adjust the oops we saved earlier
   for (size_t i = 0; i < _preserved_count; i++) {
-    MarkSweep::adjust_pointer(_preserved_marks[i].get_oop_pointer());
+    PreservedMarks::adjust_preserved_mark(_preserved_marks + i);
   }
 
   // deal with the overflow stack
