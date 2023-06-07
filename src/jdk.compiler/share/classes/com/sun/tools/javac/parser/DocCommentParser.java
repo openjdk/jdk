@@ -1309,20 +1309,8 @@ public class DocCommentParser {
                     skipWhitespace();
                     if (ch == '}') {
                         nextChar();
-                        // *** ATTENTION ***
-                        //
-                        // DocTreeFactory.newInheritDocTree() predates
-                        // DocTreeFactory.newInheritDocTree(ReferenceTree)
-                        //
-                        // Although it does not seem possible to plug in a custom
-                        // DocTreeFactory, for backward compatibility, we should
-                        // call the former method when there's no reference
-                        // rather the latter and pass null.
-                        //
-                        // Long story short: do NOT refactor the below if-else to
-                        //
-                        //     m.at(pos).newInheritDocTree(ref)
-                        //
+                        // for backward compatibility, use the original legacy
+                        // method if no ref is given
                         if (ref == null) {
                             return m.at(pos).newInheritDocTree();
                         } else {
