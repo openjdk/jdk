@@ -1179,6 +1179,7 @@ Method* LinkResolver::linktime_resolve_special_method(const LinkInfo& link_info,
       ResourceMark rm(THREAD);
       stringStream ss;
       ss.print("Interface method reference: '");
+      resolved_method->print_external_name(&ss);
       ss.print("', is in an indirect superinterface of %s",
                current_klass->external_name());
       THROW_MSG_NULL(vmSymbols::java_lang_IncompatibleClassChangeError(), ss.as_string());
