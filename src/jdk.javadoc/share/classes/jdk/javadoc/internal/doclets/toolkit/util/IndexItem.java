@@ -414,14 +414,7 @@ public class IndexItem {
      * @return {@code true} if this index is for a tag in a doc comment
      */
     public boolean isTagItem() {
-        return getDocTree() != null && getDocTree().getKind().tagName != null;
-    }
-
-    /**
-     * {@return {@code true} if this index item is for a HTML heading/section in a doc comment}
-     */
-    public boolean isSectionItem() {
-        return getDocTree() != null && getDocTree().getKind() == DocTree.Kind.START_ELEMENT;
+        return getDocTree() != null;
     }
 
     /**
