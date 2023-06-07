@@ -113,12 +113,12 @@ final class TokenStorage {
         }
 
         try {
-            Files.setPosixFilePermissions(workdir,
-                    Set.of(
-                            PosixFilePermission.OWNER_READ,
-                            PosixFilePermission.OWNER_WRITE,
-                            PosixFilePermission.OWNER_EXECUTE
-                    ));
+            Files.setPosixFilePermissions(
+                    workdir,
+                    Set.of(PosixFilePermission.OWNER_READ,
+                           PosixFilePermission.OWNER_WRITE,
+                           PosixFilePermission.OWNER_EXECUTE)
+            );
         } catch (IOException e) {
             if (SCREENCAST_DEBUG) {
                 System.err.printf("Token storage: cannot set permissions " +
@@ -142,7 +142,7 @@ final class TokenStorage {
             Files.setPosixFilePermissions(
                     path,
                     Set.of(PosixFilePermission.OWNER_READ,
-                            PosixFilePermission.OWNER_WRITE)
+                           PosixFilePermission.OWNER_WRITE)
             );
             return true;
         } catch (IOException e) {
@@ -311,7 +311,8 @@ final class TokenStorage {
         List<TokenItem> allTokenItems;
 
         synchronized (PROPS) {
-            allTokenItems = PROPS.entrySet()
+            allTokenItems =
+                    PROPS.entrySet()
                     .stream()
                     .map(o -> {
                         String token = String.valueOf(o.getKey());
@@ -331,8 +332,8 @@ final class TokenStorage {
         // 1. Try to find exact matches
         for (TokenItem tokenItem : allTokenItems) {
             if (tokenItem != null
-                    && tokenItem
-                    .hasAllScreensWithExactMatch(affectedScreenBounds)) {
+                && tokenItem.hasAllScreensWithExactMatch(affectedScreenBounds)) {
+
                 result.add(tokenItem);
             }
         }
@@ -343,7 +344,8 @@ final class TokenStorage {
 
         // 2. Try screens of the same size but in different locations,
         // screens may have been moved while the token is still valid
-        List<Dimension> dimensions = affectedScreenBounds
+        List<Dimension> dimensions =
+                affectedScreenBounds
                 .stream()
                 .map(rectangle -> new Dimension(
                         rectangle.width,
@@ -353,7 +355,8 @@ final class TokenStorage {
 
         for (TokenItem tokenItem : allTokenItems) {
             if (tokenItem != null
-                    && tokenItem.hasAllScreensOfSameSize(dimensions)) {
+                && tokenItem.hasAllScreensOfSameSize(dimensions)) {
+
                 result.add(tokenItem);
             }
         }
@@ -367,8 +370,8 @@ final class TokenStorage {
 
     private static void removeMalformedRecords(Set<String> malformedRecords) {
         if (!isWritable()
-                || malformedRecords == null
-                || malformedRecords.isEmpty()) {
+            || malformedRecords == null
+            || malformedRecords.isEmpty()) {
             return;
         }
 
@@ -403,7 +406,8 @@ final class TokenStorage {
 
     private static boolean isWritable() {
         if (PROPS_PATH == null
-                || (Files.exists(PROPS_PATH) && !Files.isWritable(PROPS_PATH))) {
+            || (Files.exists(PROPS_PATH) && !Files.isWritable(PROPS_PATH))) {
+
             if (SCREENCAST_DEBUG) {
                 System.err.printf(
                         "Token storage: %s is not writable\n", PROPS_PATH);

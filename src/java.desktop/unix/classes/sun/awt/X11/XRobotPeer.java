@@ -50,10 +50,10 @@ final class XRobotPeer implements RobotPeer {
         loadNativeLibraries();
 
         tryGtk = Boolean.parseBoolean(
-                AccessController.doPrivileged(
-                        new GetPropertyAction("awt.robot.gtk",
-                                "true")
-                ));
+                     AccessController.doPrivileged(
+                             new GetPropertyAction("awt.robot.gtk",
+                                     "true")
+                     ));
 
         boolean isOnWayland = false;
 
@@ -65,8 +65,8 @@ final class XRobotPeer implements RobotPeer {
                 new GetPropertyAction(
                         "awt.robot.screenshotMethod",
                         isOnWayland
-                                ? METHOD_SCREENCAST
-                                : METHOD_X11
+                            ? METHOD_SCREENCAST
+                            : METHOD_X11
                 ));
     }
 
@@ -123,7 +123,8 @@ final class XRobotPeer implements RobotPeer {
     public int getRGBPixel(int x, int y) {
         int[] pixelArray = new int[1];
         if (screenshotMethod.equals(METHOD_SCREENCAST)
-                && ScreencastHelper.isAvailable()) {
+            && ScreencastHelper.isAvailable()) {
+
             ScreencastHelper.getRGBPixels(x, y, 1, 1, pixelArray);
         } else {
             getRGBPixelsImpl(xgc, x, y, 1, 1, pixelArray, useGtk);
@@ -132,22 +133,19 @@ final class XRobotPeer implements RobotPeer {
     }
 
     @Override
-    public int [] getRGBPixels(Rectangle bounds) {
+    public int[] getRGBPixels(Rectangle bounds) {
         int[] pixelArray = new int[bounds.width * bounds.height];
         if (screenshotMethod.equals(METHOD_SCREENCAST)
-                && ScreencastHelper.isAvailable()) {
-            ScreencastHelper.getRGBPixels(
-                    bounds.x, bounds.y,
-                    bounds.width, bounds.height,
-                    pixelArray
-            );
+            && ScreencastHelper.isAvailable()) {
+
+            ScreencastHelper.getRGBPixels(bounds.x, bounds.y,
+                                          bounds.width, bounds.height,
+                                          pixelArray);
         } else {
-            getRGBPixelsImpl(
-                    xgc,
-                    bounds.x, bounds.y,
-                    bounds.width, bounds.height,
-                    pixelArray, useGtk
-            );
+            getRGBPixelsImpl(xgc,
+                             bounds.x, bounds.y,
+                             bounds.width, bounds.height,
+                             pixelArray, useGtk);
         }
         return pixelArray;
     }

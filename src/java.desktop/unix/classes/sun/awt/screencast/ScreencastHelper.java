@@ -59,18 +59,18 @@ public class ScreencastHelper {
 
     static {
         SCREENCAST_DEBUG = Boolean.parseBoolean(
-                AccessController.doPrivileged(
-                        new GetPropertyAction(
-                                "awt.robot.screenshotDebug",
-                                "false"
-                        )
-                ));
+                               AccessController.doPrivileged(
+                                       new GetPropertyAction(
+                                               "awt.robot.screenshotDebug",
+                                               "false"
+                                       )
+                               ));
 
         boolean loadFailed = false;
 
-        if (!(Toolkit.getDefaultToolkit()
-                instanceof UNIXToolkit tk && tk.loadGTK())
-                || !loadPipewire(SCREENCAST_DEBUG)) {
+        if (!(Toolkit.getDefaultToolkit() instanceof UNIXToolkit tk
+              && tk.loadGTK())
+              || !loadPipewire(SCREENCAST_DEBUG)) {
 
             System.err.println(
                     "Could not load native libraries for ScreencastHelper"

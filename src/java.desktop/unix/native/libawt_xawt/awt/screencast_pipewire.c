@@ -40,8 +40,8 @@
 int DEBUG_SCREENCAST_ENABLED = FALSE;
 
 #define EXCEPTION_CHECK_DESCRIBE() if ((*env)->ExceptionCheck(env)) { \
-                                            (*env)->ExceptionDescribe(env); \
-                                         }
+                                      (*env)->ExceptionDescribe(env); \
+                                   }
 
 struct ScreenSpace screenSpace = {0};
 static struct PwLoopData pw = {0};
@@ -671,7 +671,6 @@ void storeRestoreToken(const gchar* oldToken, const gchar* newToken) {
             allowedBounds = (*env)->NewIntArray(env, screenSpace.screenCount*4);
             EXCEPTION_CHECK_DESCRIBE();
             if (!allowedBounds) {
-                (*env)->ExceptionClear(env);
                 return;
             }
             jint* elements = (*env)->GetIntArrayElements(env, allowedBounds, NULL);
@@ -680,33 +679,21 @@ void storeRestoreToken(const gchar* oldToken, const gchar* newToken) {
                 return;
             }
 
-            gboolean failed = false;
-
             for (int i = 0; i < screenSpace.screenCount; ++i) {
                 GdkRectangle bounds = screenSpace.screens[i].bounds;
                 elements[4 * i] = bounds.x;
                 elements[4 * i + 1] = bounds.y;
                 elements[4 * i + 2] = bounds.width;
                 elements[4 * i + 3] = bounds.height;
-
-                if ((*env)->ExceptionCheck(env)) {
-                    (*env)->ExceptionDescribe(env);
-                    (*env)->ExceptionClear(env);
-                    failed = true;
-                    break;
-                }
             }
 
             (*env)->ReleaseIntArrayElements(env, allowedBounds, elements, 0);
-            EXCEPTION_CHECK_DESCRIBE();
 
-            if (!failed) {
-                (*env)->CallStaticVoidMethod(env, tokenStorageClass,
-                                             storeTokenMethodID,
-                                             jOldToken, jNewToken,
-                                             allowedBounds);
-                EXCEPTION_CHECK_DESCRIBE();
-            }
+            (*env)->CallStaticVoidMethod(env, tokenStorageClass,
+                                         storeTokenMethodID,
+                                         jOldToken, jNewToken,
+                                         allowedBounds);
+            EXCEPTION_CHECK_DESCRIBE();
         }
         (*env)->DeleteLocalRef(env, jOldToken);
         (*env)->DeleteLocalRef(env, jNewToken);
