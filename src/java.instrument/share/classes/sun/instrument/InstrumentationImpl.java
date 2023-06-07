@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,12 @@ import java.lang.reflect.AccessibleObject;
 import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.ClassDefinition;
 import java.lang.instrument.Instrumentation;
+import java.io.PrintStream;
+import java.nio.file.Path;
+import java.nio.file.InvalidPathException;
+import java.net.URL;
 import java.security.AccessController;
+import java.security.CodeSource;
 import java.security.PrivilegedAction;
 import java.security.ProtectionDomain;
 import java.util.Collections;
@@ -43,7 +48,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.jar.JarFile;
-
+import java.util.stream.Collectors;
 import jdk.internal.module.Modules;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
@@ -59,6 +64,15 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * processing behind native methods.
  */
 public class InstrumentationImpl implements Instrumentation {
+    private static final String TRACE_USAGE_PROP_NAME = "jdk.instrument.traceUsage";
+    private static final boolean TRACE_USAGE;
+    static {
+        PrivilegedAction<String> pa = () -> System.getProperty(TRACE_USAGE_PROP_NAME);
+        @SuppressWarnings("removal")
+        String s = AccessController.doPrivileged(pa);
+        TRACE_USAGE = (s != null) && (s.isEmpty() || Boolean.parseBoolean(s));
+    }
+
     private final     TransformerManager      mTransformerManager;
     private           TransformerManager      mRetransfomableTransformerManager;
     // needs to store a native pointer, so use 64 bits
@@ -71,7 +85,8 @@ public class InstrumentationImpl implements Instrumentation {
     private
     InstrumentationImpl(long    nativeAgent,
                         boolean environmentSupportsRedefineClasses,
-                        boolean environmentSupportsNativeMethodPrefix) {
+                        boolean environmentSupportsNativeMethodPrefix,
+                        boolean printWarning) {
         mTransformerManager                    = new TransformerManager(false);
         mRetransfomableTransformerManager      = null;
         mNativeAgent                           = nativeAgent;
@@ -79,60 +94,97 @@ public class InstrumentationImpl implements Instrumentation {
         mEnvironmentSupportsRetransformClassesKnown = false; // false = need to ask
         mEnvironmentSupportsRetransformClasses = false;      // don't know yet
         mEnvironmentSupportsNativeMethodPrefix = environmentSupportsNativeMethodPrefix;
+
+        if (printWarning) {
+            String source = jarFile(nativeAgent);
+            try {
+                Path path = Path.of(source);
+                PrivilegedAction<Path> pa = path::toAbsolutePath;
+                @SuppressWarnings("removal")
+                Path absolutePath = AccessController.doPrivileged(pa);
+                source = absolutePath.toString();
+            } catch (InvalidPathException e) {
+                // use original path
+            }
+
+            StringBuilder sb = new StringBuilder();
+            sb.append("WARNING: A Java agent has been loaded dynamically (")
+                    .append(source)
+                    .append(")")
+                    .append(System.lineSeparator());
+            sb.append("WARNING: If a serviceability tool is in use, please run with"
+                            + " -XX:+EnableDynamicAgentLoading to hide this warning")
+                    .append(System.lineSeparator());
+            if (!TRACE_USAGE) {
+                sb.append("WARNING: If a serviceability tool is not in use, please run with"
+                                + " -D" + TRACE_USAGE_PROP_NAME + " for more information")
+                        .append(System.lineSeparator());
+            }
+            sb.append("WARNING: Dynamic loading of agents will be disallowed by default in a future release");
+            String warningMessage = sb.toString();
+            System.err.println(warningMessage);
+        }
     }
 
-    public void
-    addTransformer(ClassFileTransformer transformer) {
+    @Override
+    public void addTransformer(ClassFileTransformer transformer) {
         addTransformer(transformer, false);
     }
 
-    public synchronized void
-    addTransformer(ClassFileTransformer transformer, boolean canRetransform) {
+    @Override
+    public void addTransformer(ClassFileTransformer transformer, boolean canRetransform) {
+        trace("addTransformer");
         if (transformer == null) {
             throw new NullPointerException("null passed as 'transformer' in addTransformer");
         }
-        if (canRetransform) {
-            if (!isRetransformClassesSupported()) {
-                throw new UnsupportedOperationException(
-                  "adding retransformable transformers is not supported in this environment");
-            }
-            if (mRetransfomableTransformerManager == null) {
-                mRetransfomableTransformerManager = new TransformerManager(true);
-            }
-            mRetransfomableTransformerManager.addTransformer(transformer);
-            if (mRetransfomableTransformerManager.getTransformerCount() == 1) {
-                setHasRetransformableTransformers(mNativeAgent, true);
-            }
-        } else {
-            mTransformerManager.addTransformer(transformer);
-            if (mTransformerManager.getTransformerCount() == 1) {
-                setHasTransformers(mNativeAgent, true);
+        synchronized (this) {
+            if (canRetransform) {
+                if (!isRetransformClassesSupported()) {
+                    throw new UnsupportedOperationException(
+                        "adding retransformable transformers is not supported in this environment");
+                }
+                if (mRetransfomableTransformerManager == null) {
+                    mRetransfomableTransformerManager = new TransformerManager(true);
+                }
+                mRetransfomableTransformerManager.addTransformer(transformer);
+                if (mRetransfomableTransformerManager.getTransformerCount() == 1) {
+                    setHasRetransformableTransformers(mNativeAgent, true);
+                }
+            } else {
+                mTransformerManager.addTransformer(transformer);
+                if (mTransformerManager.getTransformerCount() == 1) {
+                    setHasTransformers(mNativeAgent, true);
+                }
             }
         }
     }
 
-    public synchronized boolean
-    removeTransformer(ClassFileTransformer transformer) {
+    @Override
+    public boolean removeTransformer(ClassFileTransformer transformer) {
+        trace("removeTransformer");
         if (transformer == null) {
             throw new NullPointerException("null passed as 'transformer' in removeTransformer");
         }
-        TransformerManager mgr = findTransformerManager(transformer);
-        if (mgr != null) {
-            mgr.removeTransformer(transformer);
-            if (mgr.getTransformerCount() == 0) {
-                if (mgr.isRetransformable()) {
-                    setHasRetransformableTransformers(mNativeAgent, false);
-                } else {
-                    setHasTransformers(mNativeAgent, false);
+        synchronized (this) {
+            TransformerManager mgr = findTransformerManager(transformer);
+            if (mgr != null) {
+                mgr.removeTransformer(transformer);
+                if (mgr.getTransformerCount() == 0) {
+                    if (mgr.isRetransformable()) {
+                        setHasRetransformableTransformers(mNativeAgent, false);
+                    } else {
+                        setHasTransformers(mNativeAgent, false);
+                    }
                 }
+                return true;
             }
-            return true;
+            return false;
         }
-        return false;
     }
 
-    public boolean
-    isModifiableClass(Class<?> theClass) {
+    @Override
+    public boolean isModifiableClass(Class<?> theClass) {
+        trace("isModifiableClass");
         if (theClass == null) {
             throw new NullPointerException(
                          "null passed as 'theClass' in isModifiableClass");
@@ -140,15 +192,18 @@ public class InstrumentationImpl implements Instrumentation {
         return isModifiableClass0(mNativeAgent, theClass);
     }
 
+    @Override
     public boolean isModifiableModule(Module module) {
+        trace("isModifiableModule");
         if (module == null) {
             throw new NullPointerException("'module' is null");
         }
         return true;
     }
 
-    public boolean
-    isRetransformClassesSupported() {
+    @Override
+    public boolean isRetransformClassesSupported() {
+        trace("isRetransformClassesSupported");
         // ask lazily since there is some overhead
         if (!mEnvironmentSupportsRetransformClassesKnown) {
             mEnvironmentSupportsRetransformClasses = isRetransformClassesSupported0(mNativeAgent);
@@ -157,8 +212,9 @@ public class InstrumentationImpl implements Instrumentation {
         return mEnvironmentSupportsRetransformClasses;
     }
 
-    public void
-    retransformClasses(Class<?>... classes) {
+    @Override
+    public void retransformClasses(Class<?>... classes) {
+        trace("retransformClasses");
         if (!isRetransformClassesSupported()) {
             throw new UnsupportedOperationException(
               "retransformClasses is not supported in this environment");
@@ -169,14 +225,15 @@ public class InstrumentationImpl implements Instrumentation {
         retransformClasses0(mNativeAgent, classes);
     }
 
-    public boolean
-    isRedefineClassesSupported() {
+    @Override
+    public boolean isRedefineClassesSupported() {
+        trace("isRedefineClassesSupported");
         return mEnvironmentSupportsRedefineClasses;
     }
 
-    public void
-    redefineClasses(ClassDefinition...  definitions)
-            throws  ClassNotFoundException {
+    @Override
+    public void redefineClasses(ClassDefinition... definitions) throws ClassNotFoundException {
+        trace("retransformClasses");
         if (!isRedefineClassesSupported()) {
             throw new UnsupportedOperationException("redefineClasses is not supported in this environment");
         }
@@ -191,47 +248,53 @@ public class InstrumentationImpl implements Instrumentation {
         if (definitions.length == 0) {
             return; // short-circuit if there are no changes requested
         }
-
         redefineClasses0(mNativeAgent, definitions);
     }
 
+    @Override
     @SuppressWarnings("rawtypes")
-    public Class[]
-    getAllLoadedClasses() {
+    public Class[] getAllLoadedClasses() {
+        trace("getAllLoadedClasses");
         return getAllLoadedClasses0(mNativeAgent);
     }
 
+    @Override
     @SuppressWarnings("rawtypes")
-    public Class[]
-    getInitiatedClasses(ClassLoader loader) {
+    public Class[] getInitiatedClasses(ClassLoader loader) {
+        trace("getInitiatedClasses");
         return getInitiatedClasses0(mNativeAgent, loader);
     }
 
-    public long
-    getObjectSize(Object objectToSize) {
+    @Override
+    public long getObjectSize(Object objectToSize) {
+        trace("getObjectSize");
         if (objectToSize == null) {
             throw new NullPointerException("null passed as 'objectToSize' in getObjectSize");
         }
         return getObjectSize0(mNativeAgent, objectToSize);
     }
 
-    public void
-    appendToBootstrapClassLoaderSearch(JarFile jarfile) {
+    @Override
+    public void appendToBootstrapClassLoaderSearch(JarFile jarfile) {
+        trace("appendToBootstrapClassLoaderSearch");
         appendToClassLoaderSearch0(mNativeAgent, jarfile.getName(), true);
     }
 
-    public void
-    appendToSystemClassLoaderSearch(JarFile jarfile) {
+    @Override
+    public void appendToSystemClassLoaderSearch(JarFile jarfile) {
+        trace("appendToSystemClassLoaderSearch");
         appendToClassLoaderSearch0(mNativeAgent, jarfile.getName(), false);
     }
 
-    public boolean
-    isNativeMethodPrefixSupported() {
+    @Override
+    public boolean isNativeMethodPrefixSupported() {
+        trace("isNativeMethodPrefixSupported");
         return mEnvironmentSupportsNativeMethodPrefix;
     }
 
-    public synchronized void
-    setNativeMethodPrefix(ClassFileTransformer transformer, String prefix) {
+    @Override
+    public void setNativeMethodPrefix(ClassFileTransformer transformer, String prefix) {
+        trace("setNativeMethodPrefix");
         if (!isNativeMethodPrefixSupported()) {
             throw new UnsupportedOperationException(
                    "setNativeMethodPrefix is not supported in this environment");
@@ -240,14 +303,16 @@ public class InstrumentationImpl implements Instrumentation {
             throw new NullPointerException(
                        "null passed as 'transformer' in setNativeMethodPrefix");
         }
-        TransformerManager mgr = findTransformerManager(transformer);
-        if (mgr == null) {
-            throw new IllegalArgumentException(
-                       "transformer not registered in setNativeMethodPrefix");
+        synchronized (this) {
+            TransformerManager mgr = findTransformerManager(transformer);
+            if (mgr == null) {
+                throw new IllegalArgumentException(
+                        "transformer not registered in setNativeMethodPrefix");
+            }
+            mgr.setNativeMethodPrefix(transformer, prefix);
+            String[] prefixes = mgr.getNativeMethodPrefixes();
+            setNativeMethodPrefixes(mNativeAgent, prefixes, mgr.isRetransformable());
         }
-        mgr.setNativeMethodPrefix(transformer, prefix);
-        String[] prefixes = mgr.getNativeMethodPrefixes();
-        setNativeMethodPrefixes(mNativeAgent, prefixes, mgr.isRetransformable());
     }
 
     @Override
@@ -258,6 +323,8 @@ public class InstrumentationImpl implements Instrumentation {
                                Set<Class<?>> extraUses,
                                Map<Class<?>, List<Class<?>>> extraProvides)
     {
+        trace("redefineModule");
+
         if (!module.isNamed())
             return;
 
@@ -296,7 +363,6 @@ public class InstrumentationImpl implements Instrumentation {
             tmpProvides.put(service, providers);
         }
         extraProvides = tmpProvides;
-
 
         // update reads
         extraReads.forEach(m -> Modules.addReads(module, m));
@@ -351,8 +417,8 @@ public class InstrumentationImpl implements Instrumentation {
     }
 
 
-    private TransformerManager
-    findTransformerManager(ClassFileTransformer transformer) {
+    private TransformerManager findTransformerManager(ClassFileTransformer transformer) {
+        assert Thread.holdsLock(this);
         if (mTransformerManager.includesTransformer(transformer)) {
             return mTransformerManager;
         }
@@ -367,6 +433,9 @@ public class InstrumentationImpl implements Instrumentation {
     /*
      *  Natives
      */
+    private native
+    String jarFile(long nativeAgent);
+
     private native boolean
     isModifiableClass0(long nativeAgent, Class<?> theClass);
 
@@ -557,4 +626,61 @@ public class InstrumentationImpl implements Instrumentation {
     }
 
     private static native void loadAgent0(String path);
+
+    /**
+     * Prints a trace message and stack trace when tracing is enabled.
+     */
+    private void trace(String methodName) {
+        if (!TRACE_USAGE) return;
+
+        // stack trace without frames in java.instrument module
+        List<StackWalker.StackFrame> stack = HolderStackWalker.walker.walk(s ->
+            s.dropWhile(f -> f.getDeclaringClass().getModule() == Instrumentation.class.getModule())
+                .collect(Collectors.toList())
+        );
+
+        // for tracing purposes, use the direct caller to code in java.instrument as the source
+        if (stack.size() > 0) {
+            Class<?> callerClass = stack.get(0).getDeclaringClass();
+            URL callerUrl = codeSource(callerClass);
+            String source;
+            if (callerUrl == null) {
+                source = callerClass.getName();
+            } else {
+                source = callerClass.getName() + " (" + callerUrl + ")";
+            }
+            StringBuilder sb = new StringBuilder();
+            sb.append("java.lang.instrument.Instrumentation.")
+                    .append(methodName)
+                    .append(" has been called by ")
+                    .append(source);
+            stack.forEach(f -> sb.append(System.lineSeparator()).append("\tat " + f));
+            String traceMessage = sb.toString();
+            System.out.println(traceMessage);
+        }
+    }
+
+    /**
+     * Returns the possibly-bnull code source of the given class.
+     */
+    private static URL codeSource(Class<?> clazz) {
+        PrivilegedAction<ProtectionDomain> pa = clazz::getProtectionDomain;
+        @SuppressWarnings("removal")
+        CodeSource cs = AccessController.doPrivileged(pa).getCodeSource();
+        return (cs != null) ? cs.getLocation() : null;
+    }
+
+    /**
+     * Holder for StackWalker object.
+     */
+    private static class HolderStackWalker {
+        static final StackWalker walker;
+        static {
+            PrivilegedAction<StackWalker> pa = () ->
+                    StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
+            @SuppressWarnings("removal")
+            StackWalker w = AccessController.doPrivileged(pa);
+            walker = w;
+        }
+    }
 }

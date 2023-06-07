@@ -459,7 +459,6 @@ java/awt/GraphicsDevice/CheckDisplayModes.java 8266242 macosx-aarch64
 java/awt/GraphicsDevice/DisplayModes/UnknownRefrshRateTest.java 8286436 macosx-aarch64
 java/awt/image/multiresolution/MultiresolutionIconTest.java 8291979 linux-x64,windows-all
 java/awt/event/SequencedEvent/MultipleContextsFunctionalTest.java 8305061 macosx-x64
-java/awt/Toolkit/GetScreenInsetsCustomGC/GetScreenInsetsCustomGC.java 8308875 linux-x64
 sun/java2d/DirectX/OnScreenRenderingResizeTest/OnScreenRenderingResizeTest.java 8301177 linux-x64
 
 ############################################################################
@@ -487,6 +486,8 @@ java/lang/invoke/LFCaching/LFMultiThreadCachingTest.java        8151492 generic-
 java/lang/invoke/LFCaching/LFGarbageCollectedTest.java          8078602 generic-all
 java/lang/invoke/lambda/LambdaFileEncodingSerialization.java    8249079 linux-x64
 java/lang/invoke/RicochetTest.java                              8251969 generic-all
+
+java/lang/ScopedValue/StressStackOverflow.java                  8303498 linux-s390x
 
 ############################################################################
 
@@ -605,7 +606,7 @@ sun/security/provider/PolicyFile/GrantAllPermToExtWhenNoPolicy.java 8039280 gene
 sun/security/provider/PolicyParser/PrincipalExpansionError.java 8039280 generic-all
 
 sun/security/tools/keytool/NssTest.java                         8295343 linux-all
-sun/security/pkcs11/Signature/TestRSAKeyLength.java             8295343 linux-all
+sun/security/pkcs11/Signature/TestRSAKeyLength.java             8295343,8309569 linux-all,macosx-x64,windows-x64
 sun/security/pkcs11/rsa/TestSignatures.java                     8295343 linux-all
 sun/security/pkcs11/rsa/TestKeyPairGenerator.java               8295343 linux-all
 sun/security/pkcs11/rsa/TestKeyFactory.java                     8295343 linux-all
@@ -739,9 +740,6 @@ sun/tools/jhsdb/JStackStressTest.java                           8276210 linux-aa
 # jdk_other
 
 javax/rmi/ssl/SSLSocketParametersTest.sh                        8162906 generic-all
-
-
-jdk/incubator/concurrent/ScopedValue/StressStackOverflow.java   8303498 linux-s390x
 
 jdk/incubator/vector/ShortMaxVectorTests.java                   8306592 generic-i586
 jdk/incubator/vector/LoadJsvmlTest.java                         8305390 windows-x64
