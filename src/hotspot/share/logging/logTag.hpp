@@ -77,6 +77,7 @@ class outputStream;
   LOG_TAG(event) \
   LOG_TAG(exceptions) \
   LOG_TAG(exit) \
+  LOG_TAG(fastlock) \
   LOG_TAG(finalizer) \
   LOG_TAG(fingerprint) \
   NOT_PRODUCT(LOG_TAG(foreign)) \
@@ -137,6 +138,7 @@ class outputStream;
   LOG_TAG(oopstorage) \
   LOG_TAG(os) \
   LOG_TAG(owner) \
+  LOG_TAG(page) \
   LOG_TAG(pagesize) \
   LOG_TAG(parser) \
   LOG_TAG(patch) \
@@ -179,6 +181,7 @@ class outputStream;
   LOG_TAG(streaming) \
   LOG_TAG(stringdedup) \
   LOG_TAG(stringtable) \
+  LOG_TAG(stubs) \
   LOG_TAG(subclass) \
   LOG_TAG(survivor) \
   LOG_TAG(suspend) \

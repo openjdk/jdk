@@ -38,6 +38,7 @@ import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 import java.util.StringTokenizer;
 import java.util.Collections;
+import java.util.Locale;
 import java.util.Map;
 import java.util.List;
 import java.security.Permission;
@@ -131,6 +132,8 @@ import sun.security.action.GetPropertyAction;
  * instance, unless particular protocol specifications specify different behaviours
  * for it.
  *
+ * @spec https://www.rfc-editor.org/info/rfc2616
+ *      RFC 2616: Hypertext Transfer Protocol -- HTTP/1.1
  * @author  James Gosling
  * @see     java.net.URL#openConnection()
  * @see     java.net.URLConnection#connect()
@@ -1452,7 +1455,7 @@ public abstract class URLConnection {
      */
     private String typeToPackageName(String contentType) {
         // make sure we canonicalize the class name: all lower case
-        contentType = contentType.toLowerCase();
+        contentType = contentType.toLowerCase(Locale.ROOT);
         int len = contentType.length();
         char nm[] = new char[len];
         contentType.getChars(0, len, nm, 0);

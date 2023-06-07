@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,14 @@
 /*
  * @test
  * @enablePreview
- * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64" | os.arch == "riscv64"
+ * @requires jdk.foreign.linker != "UNSUPPORTED"
  * @run testng/othervm --enable-native-access=ALL-UNNAMED TestHeapAlignment
  */
 
+import java.lang.foreign.AddressLayout;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.SegmentScope;
+import java.lang.foreign.Arena;
 import java.lang.foreign.ValueLayout;
 import java.util.ArrayList;
 import java.util.List;
@@ -84,14 +85,6 @@ public class TestHeapAlignment {
         }
     }
 
-    static final ValueLayout.OfChar JAVA_CHAR_ALIGNED = ValueLayout.JAVA_CHAR.withBitAlignment(16);
-    static final ValueLayout.OfShort JAVA_SHORT_ALIGNED = ValueLayout.JAVA_SHORT.withBitAlignment(16);
-    static final ValueLayout.OfInt JAVA_INT_ALIGNED = ValueLayout.JAVA_INT.withBitAlignment(32);
-    static final ValueLayout.OfFloat JAVA_FLOAT_ALIGNED = ValueLayout.JAVA_FLOAT.withBitAlignment(32);
-    static final ValueLayout.OfLong JAVA_LONG_ALIGNED = ValueLayout.JAVA_LONG.withBitAlignment(64);
-    static final ValueLayout.OfDouble JAVA_DOUBLE_ALIGNED = ValueLayout.JAVA_DOUBLE.withBitAlignment(64);
-    static final ValueLayout.OfAddress ADDRESS_ALIGNED = ValueLayout.ADDRESS.withBitAlignment(ValueLayout.ADDRESS.bitSize());
-
     enum SegmentAndAlignment {
         HEAP_BYTE(MemorySegment.ofArray(new byte[8]), 1),
         HEAP_SHORT(MemorySegment.ofArray(new short[4]), 2),
@@ -100,7 +93,7 @@ public class TestHeapAlignment {
         HEAP_FLOAT(MemorySegment.ofArray(new float[2]), 4),
         HEAP_LONG(MemorySegment.ofArray(new long[1]), 8),
         HEAP_DOUBLE(MemorySegment.ofArray(new double[1]), 8),
-        NATIVE(MemorySegment.allocateNative(8, SegmentScope.auto()), -1);
+        NATIVE(Arena.ofAuto().allocate(8, 1), -1);
 
         final MemorySegment segment;
         final int align;
@@ -117,13 +110,13 @@ public class TestHeapAlignment {
         for (SegmentAndAlignment testCase : SegmentAndAlignment.values()) {
             layouts.add(new Object[] { testCase.segment, testCase.align, (byte) 42, new byte[]{42}, ValueLayout.JAVA_BYTE, (Function<byte[], MemorySegment>)MemorySegment::ofArray });
             layouts.add(new Object[] { testCase.segment, testCase.align, true, null, ValueLayout.JAVA_BOOLEAN, null });
-            layouts.add(new Object[] { testCase.segment, testCase.align, (char) 42, new char[]{42}, JAVA_CHAR_ALIGNED, (Function<char[], MemorySegment>)MemorySegment::ofArray });
-            layouts.add(new Object[] { testCase.segment, testCase.align, (short) 42, new short[]{42}, JAVA_SHORT_ALIGNED, (Function<short[], MemorySegment>)MemorySegment::ofArray });
-            layouts.add(new Object[] { testCase.segment, testCase.align, 42, new int[]{42}, JAVA_INT_ALIGNED, (Function<int[], MemorySegment>)MemorySegment::ofArray });
-            layouts.add(new Object[] { testCase.segment, testCase.align, 42f, new float[]{42}, JAVA_FLOAT_ALIGNED, (Function<float[], MemorySegment>)MemorySegment::ofArray });
-            layouts.add(new Object[] { testCase.segment, testCase.align, 42L, new long[]{42}, JAVA_LONG_ALIGNED, (Function<long[], MemorySegment>)MemorySegment::ofArray });
-            layouts.add(new Object[] { testCase.segment, testCase.align, 42d, new double[]{42}, JAVA_DOUBLE_ALIGNED, (Function<double[], MemorySegment>)MemorySegment::ofArray });
-            layouts.add(new Object[] { testCase.segment, testCase.align, MemorySegment.ofAddress(42), null, ADDRESS_ALIGNED, null });
+            layouts.add(new Object[] { testCase.segment, testCase.align, (char) 42, new char[]{42}, ValueLayout.JAVA_CHAR, (Function<char[], MemorySegment>)MemorySegment::ofArray });
+            layouts.add(new Object[] { testCase.segment, testCase.align, (short) 42, new short[]{42}, ValueLayout.JAVA_SHORT, (Function<short[], MemorySegment>)MemorySegment::ofArray });
+            layouts.add(new Object[] { testCase.segment, testCase.align, 42, new int[]{42}, ValueLayout.JAVA_INT, (Function<int[], MemorySegment>)MemorySegment::ofArray });
+            layouts.add(new Object[] { testCase.segment, testCase.align, 42f, new float[]{42}, ValueLayout.JAVA_FLOAT, (Function<float[], MemorySegment>)MemorySegment::ofArray });
+            layouts.add(new Object[] { testCase.segment, testCase.align, 42L, new long[]{42}, ValueLayout.JAVA_LONG, (Function<long[], MemorySegment>)MemorySegment::ofArray });
+            layouts.add(new Object[] { testCase.segment, testCase.align, 42d, new double[]{42}, ValueLayout.JAVA_DOUBLE, (Function<double[], MemorySegment>)MemorySegment::ofArray });
+            layouts.add(new Object[] { testCase.segment, testCase.align, MemorySegment.ofAddress(42), null, ValueLayout.ADDRESS, null });
         }
         return layouts.toArray(new Object[0][]);
     }

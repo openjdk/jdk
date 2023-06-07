@@ -738,6 +738,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
         pathsAndContainersByLocationAndRelativeDirectory.clear();
         nonIndexingContainersByLocation.clear();
         contentCache.clear();
+        resetOutputFilesWritten();
     }
 
     @Override @DefinedBy(Api.COMPILER)

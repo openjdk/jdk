@@ -85,7 +85,7 @@ address StubRoutines::x86::_decoding_table_base64 = nullptr;
 #endif
 address StubRoutines::x86::_pshuffle_byte_flip_mask_addr = nullptr;
 
-uint64_t StubRoutines::x86::_crc_by128_masks[] =
+const uint64_t StubRoutines::x86::_crc_by128_masks[] =
 {
   /* The fields in this structure are arranged so that they can be
    * picked up two at a time with 128-bit loads.
@@ -124,7 +124,7 @@ uint64_t StubRoutines::x86::_crc_by128_masks[] =
 /**
  *  crc_table[] from jdk/src/share/native/java/util/zip/zlib-1.2.5/crc32.h
  */
-juint StubRoutines::x86::_crc_table[] =
+const juint StubRoutines::x86::_crc_table[] =
 {
     0x00000000UL, 0x77073096UL, 0xee0e612cUL, 0x990951baUL, 0x076dc419UL,
     0x706af48fUL, 0xe963a535UL, 0x9e6495a3UL, 0x0edb8832UL, 0x79dcb8a4UL,
@@ -181,7 +181,7 @@ juint StubRoutines::x86::_crc_table[] =
 };
 
 #ifdef _LP64
-juint StubRoutines::x86::_crc_table_avx512[] =
+const juint StubRoutines::x86::_crc_table_avx512[] =
 {
     0xe95c1271UL, 0x00000000UL, 0xce3371cbUL, 0x00000000UL,
     0xccaa009eUL, 0x00000000UL, 0x751997d0UL, 0x00000001UL,
@@ -198,7 +198,7 @@ juint StubRoutines::x86::_crc_table_avx512[] =
     0x00000000UL, 0x00000000UL, 0x00000000UL, 0x00000000UL
 };
 
-juint StubRoutines::x86::_crc32c_table_avx512[] =
+const juint StubRoutines::x86::_crc32c_table_avx512[] =
 {
     0xb9e02b86UL, 0x00000000UL, 0xdcb17aa4UL, 0x00000000UL,
     0x493c7d27UL, 0x00000000UL, 0xc1068c50UL, 0x0000000eUL,
@@ -215,21 +215,21 @@ juint StubRoutines::x86::_crc32c_table_avx512[] =
     0x00000000UL, 0x00000000UL, 0x00000000UL, 0x00000000UL
 };
 
-juint StubRoutines::x86::_crc_by128_masks_avx512[] =
+const juint StubRoutines::x86::_crc_by128_masks_avx512[] =
 {
     0xffffffffUL, 0xffffffffUL, 0x00000000UL, 0x00000000UL,
     0x00000000UL, 0xffffffffUL, 0xffffffffUL, 0xffffffffUL,
     0x80808080UL, 0x80808080UL, 0x80808080UL, 0x80808080UL
 };
 
-juint StubRoutines::x86::_shuf_table_crc32_avx512[] =
+const juint StubRoutines::x86::_shuf_table_crc32_avx512[] =
 {
     0x83828100UL, 0x87868584UL, 0x8b8a8988UL, 0x8f8e8d8cUL,
     0x03020100UL, 0x07060504UL, 0x0b0a0908UL, 0x000e0d0cUL
 };
 #endif // _LP64
 
-jint StubRoutines::x86::_arrays_hashcode_powers_of_31[] =
+const jint StubRoutines::x86::_arrays_hashcode_powers_of_31[] =
 {
      2111290369,
     -2010103841,
@@ -370,7 +370,7 @@ void StubRoutines::x86::generate_CRC32C_table(bool is_pclmulqdq_table_supported)
   }
 }
 
-ATTRIBUTE_ALIGNED(64) juint StubRoutines::x86::_k256[] =
+ATTRIBUTE_ALIGNED(64) const juint StubRoutines::x86::_k256[] =
 {
     0x428a2f98UL, 0x71374491UL, 0xb5c0fbcfUL, 0xe9b5dba5UL,
     0x3956c25bUL, 0x59f111f1UL, 0x923f82a4UL, 0xab1c5ed5UL,
@@ -396,7 +396,7 @@ ATTRIBUTE_ALIGNED(64) juint StubRoutines::x86::_k256[] =
 ATTRIBUTE_ALIGNED(64) juint StubRoutines::x86::_k256_W[2*sizeof(StubRoutines::x86::_k256)];
 
 // used in MacroAssembler::sha512_AVX2
-ATTRIBUTE_ALIGNED(64) julong StubRoutines::x86::_k512_W[] =
+ATTRIBUTE_ALIGNED(64) const julong StubRoutines::x86::_k512_W[] =
 {
     0x428a2f98d728ae22ULL, 0x7137449123ef65cdULL,
     0xb5c0fbcfec4d3b2fULL, 0xe9b5dba58189dbbcULL,

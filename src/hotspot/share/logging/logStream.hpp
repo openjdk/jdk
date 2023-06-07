@@ -100,7 +100,7 @@ public:
   LogStream(const LogTargetImpl<level, T0, T1, T2, T3, T4, GuardTag>& type_carrier)
     : LogStreamImpl(LogTargetHandle(level, LogTagSetMapping<T0, T1, T2, T3, T4>::tagset())) {}
 
-  // Constructor to support creation from typed (likely nullptr) pointer. Mostly used by the logging framework.
+  // Constructor to support creation from typed (likely null) pointer. Mostly used by the logging framework.
   //
   // LogStream stream(log.debug());
   //  or

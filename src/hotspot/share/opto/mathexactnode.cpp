@@ -38,7 +38,7 @@ public:
   typedef typename TypeClass::NativeType NativeType;
 
   static bool will_overflow(NativeType value1, NativeType value2) {
-    NativeType result = value1 + value2;
+    NativeType result = java_add(value1, value2);
     // Hacker's Delight 2-12 Overflow if both arguments have the opposite sign of the result
     if (((value1 ^ result) & (value2 ^ result)) >= 0) {
       return false;
@@ -61,7 +61,7 @@ public:
   typedef typename TypeClass::NativeType NativeType;
 
   static bool will_overflow(NativeType value1, NativeType value2) {
-    NativeType result = value1 - value2;
+    NativeType result = java_subtract(value1, value2);
     // hacker's delight 2-12 overflow iff the arguments have different signs and
     // the sign of the result is different than the sign of arg1
     if (((value1 ^ value2) & (value1 ^ result)) >= 0) {
@@ -209,7 +209,7 @@ struct IdealHelper {
     return nullptr;
   }
 
-  static const Type* Value(const OverflowOp* node, PhaseTransform* phase) {
+  static const Type* Value(const OverflowOp* node, PhaseValues* phase) {
     const Type *t1 = phase->type( node->in(1) );
     const Type *t2 = phase->type( node->in(2) );
     if( t1 == Type::TOP ) return Type::TOP;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -58,7 +58,7 @@ inline address Assembler::emit_addr(const address addr) {
 
 #if !defined(ABI_ELFv2)
 // Emit a function descriptor with the specified entry point, TOC, and
-// ENV. If the entry point is NULL, the descriptor will point just
+// ENV. If the entry point is null, the descriptor will point just
 // past the descriptor.
 inline address Assembler::emit_fd(address entry, address toc, address env) {
   FunctionDescriptor* fd = (FunctionDescriptor*)pc();
@@ -69,7 +69,7 @@ inline address Assembler::emit_fd(address entry, address toc, address env) {
   (void)emit_addr();
   (void)emit_addr();
 
-  fd->set_entry(entry == NULL ? pc() : entry);
+  fd->set_entry(entry == nullptr ? pc() : entry);
   fd->set_toc(toc);
   fd->set_env(env);
 
@@ -361,6 +361,7 @@ inline void Assembler::lbz(  Register d, int si16,    Register s1) { emit_int32(
 inline void Assembler::lbzu( Register d, int si16,    Register s1) { assert(d != s1, "according to ibm manual"); emit_int32(LBZU_OPCODE | rt(d) | d1(si16) | rta0mem(s1));}
 
 inline void Assembler::ld(   Register d, int si16,    Register s1) { emit_int32(LD_OPCODE  | rt(d) | ds(si16)   | ra0mem(s1));}
+inline void Assembler::ld(   Register d, ByteSize si16, Register s1) { assert(in_bytes(si16) < 0x7fff, "overflow"); ld(d, in_bytes(si16), s1); }
 inline void Assembler::ldx(  Register d, Register s1, Register s2) { emit_int32(LDX_OPCODE | rt(d) | ra0mem(s1) | rb(s2));}
 inline void Assembler::ldu(  Register d, int si16,    Register s1) { assert(d != s1, "according to ibm manual"); emit_int32(LDU_OPCODE | rt(d) | ds(si16) | rta0mem(s1));}
 inline void Assembler::ldbrx( Register d, Register s1, Register s2) { emit_int32(LDBRX_OPCODE | rt(d) | ra0mem(s1) | rb(s2));}
@@ -1079,6 +1080,7 @@ inline void Assembler::lhbrx(Register d, Register s2) { emit_int32( LHBRX_OPCODE
 inline void Assembler::lbzx( Register d, Register s2) { emit_int32( LBZX_OPCODE | rt(d) | rb(s2));}
 inline void Assembler::lbz(  Register d, int si16   ) { emit_int32( LBZ_OPCODE  | rt(d) | d1(si16));}
 inline void Assembler::ld(   Register d, int si16   ) { emit_int32( LD_OPCODE   | rt(d) | ds(si16));}
+inline void Assembler::ld(   Register d, ByteSize si16) { assert(in_bytes(si16) < 0x7fff, "overflow"); ld(d, in_bytes(si16)); }
 inline void Assembler::ldx(  Register d, Register s2) { emit_int32( LDX_OPCODE  | rt(d) | rb(s2));}
 inline void Assembler::ldbrx(Register d, Register s2) { emit_int32( LDBRX_OPCODE| rt(d) | rb(s2));}
 inline void Assembler::stwx( Register d, Register s2) { emit_int32( STWX_OPCODE | rs(d) | rb(s2));}

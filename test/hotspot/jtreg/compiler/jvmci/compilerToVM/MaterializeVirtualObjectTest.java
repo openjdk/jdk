@@ -157,7 +157,11 @@ public class MaterializeVirtualObjectTest {
             throw new SkippedException("Test needs compilation level 4");
         }
 
-        new MaterializeVirtualObjectTest().test();
+        try {
+            new MaterializeVirtualObjectTest().test();
+        } catch (MaterializationNotSupported e) {
+            Asserts.assertTrue(Thread.currentThread().isVirtual());
+        }
     }
 
     private static String getName() {
@@ -168,7 +172,6 @@ public class MaterializeVirtualObjectTest {
     }
 
     private void test() {
-        System.out.println(getName());
         Asserts.assertFalse(WB.isMethodCompiled(MATERIALIZED_METHOD),
                 getName() + " : materialized method is compiled");
         Asserts.assertFalse(WB.isMethodCompiled(NOT_MATERIALIZED_METHOD),
@@ -230,6 +233,14 @@ public class MaterializeVirtualObjectTest {
         }
     }
 
+    private static void materializeVirtualObjects(InspectedFrame f, boolean invalidateCode) {
+        try {
+            f.materializeVirtualObjects(invalidateCode);
+        } catch (IllegalArgumentException e) {
+            throw new MaterializationNotSupported(e);
+        }
+    }
+
     private void checkStructure(boolean materialize) {
         boolean[] framesSeen = new boolean[2];
         Object[] helpers = new Object[1];
@@ -248,7 +259,7 @@ public class MaterializeVirtualObjectTest {
                     Asserts.assertEQ(((Helper) f.getLocal(3)).string, "foo", "innerHelper.string should be foo");
                     helpers[0] = f.getLocal(1);
                     if (materialize) {
-                        f.materializeVirtualObjects(false);
+                        materializeVirtualObjects(f, false);
                     }
                     return null; //continue
                 } else {
@@ -306,7 +317,7 @@ public class MaterializeVirtualObjectTest {
             Asserts.assertTrue(notMaterialized.hasVirtualObjects(), getName()
                     + ": notMaterialized frame has no virtual object before materialization");
             // materialize
-            CompilerToVMHelper.materializeVirtualObjects(materialized, INVALIDATE);
+            materializeVirtualObjects(materialized, INVALIDATE);
             // check that only not materialized frame has virtual objects
             Asserts.assertFalse(materialized.hasVirtualObjects(), getName()
                     + " : materialized has virtual object after materialization");
@@ -329,6 +340,12 @@ public class MaterializeVirtualObjectTest {
 
         public Helper(String s) {
             this.string = s;
+        }
+    }
+
+    static class MaterializationNotSupported extends RuntimeException {
+        public MaterializationNotSupported(Throwable cause) {
+            super(cause);
         }
     }
 }

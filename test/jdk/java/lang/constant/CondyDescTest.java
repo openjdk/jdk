@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
 
 import java.lang.Enum.EnumDesc;
 import java.lang.constant.MethodTypeDesc;
-import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.lang.invoke.VarHandle.VarHandleDesc;
@@ -49,7 +48,7 @@ import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertTrue;
 
-/**
+/*
  * @test
  * @compile CondyDescTest.java
  * @run testng CondyDescTest
@@ -99,7 +98,7 @@ public class CondyDescTest extends SymbolicDescTest {
         DirectMethodHandleDesc format = MethodHandleDesc.ofMethod(DirectMethodHandleDesc.Kind.STATIC, CD_String, "format",
                                                                   MethodTypeDesc.of(CD_String, CD_String, CD_Object.arrayType()));
 
-        String s = (String) ((MethodHandle) invoker.resolveConstantDesc(LOOKUP))
+        String s = (String) invoker.resolveConstantDesc(LOOKUP)
                                    .invoke(LOOKUP, "", String.class,
                                            format.resolveConstantDesc(LOOKUP), "%s%s", "moo", "cow");
         assertEquals(s, "moocow");

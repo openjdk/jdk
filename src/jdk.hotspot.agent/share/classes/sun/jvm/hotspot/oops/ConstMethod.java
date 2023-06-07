@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,19 +63,19 @@ public class ConstMethod extends Metadata {
     Type type                  = db.lookupType("ConstMethod");
     constants                  = new MetadataField(type.getAddressField("_constants"), 0);
     constMethodSize            = new CIntField(type.getCIntegerField("_constMethod_size"), 0);
-    flags                      = new CIntField(type.getCIntegerField("_flags"), 0);
+    flags                      = new CIntField(type.getCIntegerField("_flags._flags"), 0);
 
     // enum constants for flags
-    HAS_LINENUMBER_TABLE      = db.lookupIntConstant("ConstMethod::_has_linenumber_table").intValue();
-    HAS_CHECKED_EXCEPTIONS     = db.lookupIntConstant("ConstMethod::_has_checked_exceptions").intValue();
-    HAS_LOCALVARIABLE_TABLE   = db.lookupIntConstant("ConstMethod::_has_localvariable_table").intValue();
-    HAS_EXCEPTION_TABLE       = db.lookupIntConstant("ConstMethod::_has_exception_table").intValue();
-    HAS_GENERIC_SIGNATURE     = db.lookupIntConstant("ConstMethod::_has_generic_signature").intValue();
-    HAS_METHOD_ANNOTATIONS    = db.lookupIntConstant("ConstMethod::_has_method_annotations").intValue();
-    HAS_PARAMETER_ANNOTATIONS = db.lookupIntConstant("ConstMethod::_has_parameter_annotations").intValue();
-    HAS_METHOD_PARAMETERS = db.lookupIntConstant("ConstMethod::_has_method_parameters").intValue();
-    HAS_DEFAULT_ANNOTATIONS   = db.lookupIntConstant("ConstMethod::_has_default_annotations").intValue();
-    HAS_TYPE_ANNOTATIONS      = db.lookupIntConstant("ConstMethod::_has_type_annotations").intValue();
+    HAS_LINENUMBER_TABLE      = db.lookupIntConstant("ConstMethodFlags::_misc_has_linenumber_table").intValue();
+    HAS_CHECKED_EXCEPTIONS    = db.lookupIntConstant("ConstMethodFlags::_misc_has_checked_exceptions").intValue();
+    HAS_LOCALVARIABLE_TABLE   = db.lookupIntConstant("ConstMethodFlags::_misc_has_localvariable_table").intValue();
+    HAS_EXCEPTION_TABLE       = db.lookupIntConstant("ConstMethodFlags::_misc_has_exception_table").intValue();
+    HAS_GENERIC_SIGNATURE     = db.lookupIntConstant("ConstMethodFlags::_misc_has_generic_signature").intValue();
+    HAS_METHOD_ANNOTATIONS    = db.lookupIntConstant("ConstMethodFlags::_misc_has_method_annotations").intValue();
+    HAS_PARAMETER_ANNOTATIONS = db.lookupIntConstant("ConstMethodFlags::_misc_has_parameter_annotations").intValue();
+    HAS_METHOD_PARAMETERS     = db.lookupIntConstant("ConstMethodFlags::_misc_has_method_parameters").intValue();
+    HAS_DEFAULT_ANNOTATIONS   = db.lookupIntConstant("ConstMethodFlags::_misc_has_default_annotations").intValue();
+    HAS_TYPE_ANNOTATIONS      = db.lookupIntConstant("ConstMethodFlags::_misc_has_type_annotations").intValue();
 
     // Size of Java bytecodes allocated immediately after ConstMethod*.
     codeSize                   = new CIntField(type.getCIntegerField("_code_size"), 0);

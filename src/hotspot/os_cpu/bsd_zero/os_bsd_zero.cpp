@@ -253,7 +253,7 @@ void os::print_tos_pc(outputStream *st, const void *context) {
   ShouldNotCallThis();
 }
 
-void os::print_register_info(outputStream *st, const void *context) {
+void os::print_register_info(outputStream *st, const void *context, int& continuation) {
   ShouldNotCallThis();
 }
 

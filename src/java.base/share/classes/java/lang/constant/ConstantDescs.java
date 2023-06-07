@@ -212,7 +212,7 @@ public final class ConstantDescs {
             = ofConstantBootstrap(CD_ConstantBootstraps, "fieldVarHandle",
             CD_VarHandle, CD_Class, CD_Class);
 
-    /** {@link MethodHandleDesc} representing {@link ConstantBootstraps#staticFieldVarHandle(Lookup, String, Class, Class, Class) ConstantBootstraps.staticVarHandle} */
+    /** {@link MethodHandleDesc} representing {@link ConstantBootstraps#staticFieldVarHandle(Lookup, String, Class, Class, Class) ConstantBootstraps.staticFieldVarHandle} */
     public static final DirectMethodHandleDesc BSM_VARHANDLE_STATIC_FIELD
             = ofConstantBootstrap(CD_ConstantBootstraps, "staticFieldVarHandle",
             CD_VarHandle, CD_Class, CD_Class);
@@ -228,7 +228,7 @@ public final class ConstantDescs {
             CD_Object, CD_MethodHandle, CD_Object.arrayType());
 
     /**
-     * {@link MethodHandleDesc} representing {@link ConstantBootstraps#explicitCast(Lookup, String, Class, Object)} ConstantBootstraps.explicitCast}
+     * {@link MethodHandleDesc} representing {@link ConstantBootstraps#explicitCast(Lookup, String, Class, Object) ConstantBootstraps.explicitCast}
      * @since 15
      */
     public static final DirectMethodHandleDesc BSM_EXPLICIT_CAST
@@ -263,7 +263,7 @@ public final class ConstantDescs {
     public static final ClassDesc CD_void = ClassDesc.ofDescriptor("V");
 
     /**
-     * {@link MethodHandleDesc} representing {@link MethodHandles#classData(Lookup, String, Class)} MethodHandles.classData}
+     * {@link MethodHandleDesc} representing {@link MethodHandles#classData(Lookup, String, Class) MethodHandles.classData}
      * @since 21
      */
     public static final DirectMethodHandleDesc BSM_CLASS_DATA
@@ -271,7 +271,7 @@ public final class ConstantDescs {
             CD_Object);
 
     /**
-     * {@link MethodHandleDesc} representing {@link MethodHandles#classDataAt(Lookup, String, Class, int)} MethodHandles.classDataAt}
+     * {@link MethodHandleDesc} representing {@link MethodHandles#classDataAt(Lookup, String, Class, int) MethodHandles.classDataAt}
      * @since 21
      */
     public static final DirectMethodHandleDesc BSM_CLASS_DATA_AT
