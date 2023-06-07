@@ -332,6 +332,10 @@ public:
 
   static void assert_is_vm_thread() PRODUCT_RETURN;
 
+  void print_info_for_buffered_address(address p);
+private:
+  bool print_info_for_buffered_address_impl(address p, SourceObjList* src_objs);
+
 public:
   ArchiveBuilder();
   ~ArchiveBuilder();

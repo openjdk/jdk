@@ -34,6 +34,7 @@
 #include "cds/dumpTimeClassInfo.inline.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "cds/runTimeClassInfo.hpp"
+#include "cds/regeneratedClasses.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.inline.hpp"
@@ -219,6 +220,7 @@ bool SystemDictionaryShared::check_for_exclusion(InstanceKlass* k, DumpTimeClass
 bool SystemDictionaryShared::warn_excluded(InstanceKlass* k, const char* reason) {
   ResourceMark rm;
   log_warning(cds)("Skipping %s: %s", k->name()->as_C_string(), reason);
+
   return true;
 }
 
@@ -303,7 +305,12 @@ bool SystemDictionaryShared::check_for_exclusion_impl(InstanceKlass* k) {
       // won't work at runtime.
       // As a result, we cannot store this class. It must be loaded and fully verified
       // at runtime.
-      return warn_excluded(k, "Old class has been linked");
+
+      //Although old class has been linked, we will regenerate this class at dump time. This
+      //if is never entered as we changed the value of can_be_verified_at_dumptime() for old class files.
+      //return warn_excluded(k, "Old class has been linked");
+      log_info(cds)("Skipping old class %s: will be regenerated during dump time", k->name()->as_C_string());
+      return true;
     }
   }
 
@@ -313,8 +320,8 @@ bool SystemDictionaryShared::check_for_exclusion_impl(InstanceKlass* k) {
     return true;
   }
 
-  InstanceKlass* super = k->java_super();
-  if (super != nullptr && check_for_exclusion(super, nullptr)) {
+  InstanceKlass* super = RegeneratedClasses::maybe_get_regenerated_class(k->java_super());
+  if (super != nullptr && check_for_exclusion(super, nullptr) && !k->is_generated_shared_class()) {
     ResourceMark rm;
     log_warning(cds)("Skipping %s: super class %s is excluded", k->name()->as_C_string(), super->name()->as_C_string());
     return true;
@@ -323,7 +330,7 @@ bool SystemDictionaryShared::check_for_exclusion_impl(InstanceKlass* k) {
   Array<InstanceKlass*>* interfaces = k->local_interfaces();
   int len = interfaces->length();
   for (int i = 0; i < len; i++) {
-    InstanceKlass* intf = interfaces->at(i);
+    InstanceKlass* intf = RegeneratedClasses::maybe_get_regenerated_class(interfaces->at(i));
     if (check_for_exclusion(intf, nullptr)) {
       ResourceMark rm;
       log_warning(cds)("Skipping %s: interface %s is excluded", k->name()->as_C_string(), intf->name()->as_C_string());
@@ -332,6 +339,7 @@ bool SystemDictionaryShared::check_for_exclusion_impl(InstanceKlass* k) {
   }
 
   return false; // false == k should NOT be excluded
+
 }
 
 bool SystemDictionaryShared::is_builtin_loader(ClassLoaderData* loader_data) {
@@ -492,8 +500,18 @@ void SystemDictionaryShared::set_shared_class_misc_info(InstanceKlass* k, ClassF
   Arguments::assert_is_dumping_archive();
   assert(!is_builtin(k), "must be unregistered class");
   DumpTimeClassInfo* info = get_info(k);
+
   info->_clsfile_size  = cfs->length();
   info->_clsfile_crc32 = ClassLoader::crc32(0, (const char*)cfs->buffer(), cfs->length());
+}
+
+void SystemDictionaryShared::copy_shared_class_misc_info(InstanceKlass* k, InstanceKlass* newIK) {
+  Arguments::assert_is_dumping_archive();
+  DumpTimeClassInfo* newInfo = get_info(newIK);
+  DumpTimeClassInfo* oldInfo= get_info(k);
+
+  newInfo->_clsfile_size = oldInfo->_clsfile_size;
+  newInfo->_clsfile_crc32 = oldInfo->_clsfile_crc32;
 }
 
 void SystemDictionaryShared::initialize() {
@@ -613,7 +631,7 @@ public:
     for (int i = 0; i < _list.length(); i++) {
       InstanceKlass* k = _list.at(i);
       bool i_am_first = SystemDictionaryShared::add_unregistered_class(_thread, k);
-      if (!i_am_first) {
+      if (!i_am_first && !k->regenerated_version()) {
         SystemDictionaryShared::warn_excluded(k, "Duplicated unregistered class");
         SystemDictionaryShared::set_excluded_locked(k);
       }

@@ -250,7 +250,31 @@ class InstanceKlass: public Klass {
   // JVMTI: cached class file, before retransformable agent modified it in CFLH
   JvmtiCachedClassFileData* _cached_class_file;
 #endif
+private:
+  int _old_stream_length;
+  char* _old_stream;
+  bool _regenerated_version = false;
 
+public:
+  void set_old_stream(char* old_stream, int length) {
+    _old_stream = old_stream;
+    _old_stream_length = length;
+  }
+
+  char* old_stream(int* length) {
+    *length = _old_stream_length;
+    return _old_stream;
+  }
+
+  void set_regenerated_version() {
+    _regenerated_version = true;
+  }
+
+  bool regenerated_version() {
+    return _regenerated_version;
+  }
+
+protected:
 #if INCLUDE_JVMTI
   JvmtiCachedClassFieldMap* _jvmti_cached_class_field_map;  // JVMTI: used during heap iteration
 #endif

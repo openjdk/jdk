@@ -49,10 +49,10 @@ public class OldInfExtendsInfDefMeth {
         boolean dynamicMode = CDSTestUtils.DYNAMIC_DUMP;
 
         // create archive with class list
-        OutputAnalyzer output = TestCommon.dump(appJar, appClasses, "-Xlog:class+load,cds=debug,verification=trace");
+        OutputAnalyzer output = TestCommon.dump(appJar, appClasses, "-Xlog:class+load,cds+class=debug,cds=debug,verification=trace");
         TestCommon.checkExecReturn(output, 0,
-                                   dynamicMode ? true : false,
-                                   "Skipping OldInfDefMeth: Old class has been linked");
+                                   true,
+                                   "Excluding old class OldInfDefMeth: has been regenerated", "OldInfDefMeth ** generated");
 
         // run with archive
         TestCommon.run(
@@ -60,8 +60,8 @@ public class OldInfExtendsInfDefMeth {
             "-Xlog:class+load,cds=debug,verification=trace",
             mainClass)
           .assertNormalExit(out -> {
-              out.shouldContain("Verifying class OldInfDefMeth with old format")
-                 .shouldContain("Verifying class OldInfDefMethImpl with new format");
+              out.shouldNotContain("Verifying class OldInfDefMeth with old format")
+                 .shouldNotContain("Verifying class OldInfDefMethImpl with new format");
               if (!dynamicMode) {
                   out.shouldContain("InfDefMeth source: shared objects file")
                      .shouldContain("OldInfDefMeth source: shared objects file")
@@ -70,10 +70,9 @@ public class OldInfExtendsInfDefMeth {
                   // InfDefMeth has version >=50 so it should be loaded from the
                   // dynamic archive.
                   out.shouldContain("InfDefMeth source: shared objects file (top)")
-                  // Old classes were already linked before dynamic dump happened,
-                  // so they couldn't be archived.
-                     .shouldMatch(".class.load.*OldInfDefMeth source:.*oldinfdefmeth.jar")
-                     .shouldMatch(".class.load.*OldInfDefMethImpl source:.*oldinfdefmeth.jar");
+                  // Old classes were regenerated during dump time, so they can be archived.
+                     .shouldContain("OldInfDefMeth source: shared objects file (top)")
+                     .shouldContain("OldInfDefMethImpl source: shared objects file (top)");
               }
           });
     }

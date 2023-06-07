@@ -114,7 +114,7 @@
 
 // Used for backward compatibility reasons:
 // - to disallow argument and require ACC_STATIC for <clinit> methods
-#define JAVA_7_VERSION                    51
+// This is in the header file: #define JAVA_7_VERSION                    51
 
 // Extension method support.
 #define JAVA_8_VERSION                    52
@@ -2204,7 +2204,7 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
   if (name == vmSymbols::class_initializer_name()) {
     // We ignore the other access flags for a valid class initializer.
     // (JVM Spec 2nd ed., chapter 4.6)
-    if (_major_version < 51) { // backward compatibility
+    if (_major_version < 51 || _orig_major_version < 51) { // backward compatibility
       flags = JVM_ACC_STATIC;
     } else if ((flags & JVM_ACC_STATIC) == JVM_ACC_STATIC) {
       flags &= JVM_ACC_STATIC | (_major_version <= JAVA_16_VERSION ? JVM_ACC_STRICT : 0);
@@ -3082,10 +3082,35 @@ u2 ClassFileParser::parse_classfile_inner_classes_attribute(const ClassFileStrea
     } else {
       flags = cfs->get_u2_fast() & RECOGNIZED_INNER_CLASS_MODIFIERS;
     }
-    if ((flags & JVM_ACC_INTERFACE) && _major_version < JAVA_6_VERSION) {
+    if ((flags & JVM_ACC_INTERFACE) && (_major_version < JAVA_6_VERSION || _orig_major_version < JAVA_6_VERSION)) {
       // Set abstract bit for old class files for backward compatibility
       flags |= JVM_ACC_ABSTRACT;
     }
+
+    if (_orig_major_version < _major_version && _orig_major_version < JAVA_15_VERSION) {
+      // Class was preverified.
+      // Remove flags that have no meaning in old class file versions but do in
+      // newer class file versions to prevent potential modifier issues.
+      if (flags & JVM_ACC_INTERFACE) {
+#define JVM_OLD_INTERFACE_CLASS_MODIFIERS (JVM_ACC_PUBLIC | \
+                                           JVM_ACC_FINAL | \
+                                           JVM_ACC_INTERFACE | \
+                                           JVM_ACC_ABSTRACT | \
+                                           JVM_ACC_ANNOTATION | \
+                                           JVM_ACC_SYNTHETIC)
+        flags &= JVM_OLD_INTERFACE_CLASS_MODIFIERS;
+      } else {
+#define JVM_OLD_CLASS_MODIFIERS (JVM_ACC_PUBLIC | \
+                                 JVM_ACC_FINAL | \
+                                 JVM_ACC_SUPER | \
+                                 JVM_ACC_INTERFACE | \
+                                 JVM_ACC_ABSTRACT | \
+                                 JVM_ACC_ENUM | \
+                                 JVM_ACC_SYNTHETIC)
+        flags &= JVM_OLD_CLASS_MODIFIERS;
+      }
+    }
+
     verify_legal_class_modifiers(flags, CHECK_0);
     AccessFlags inner_access_flags(flags);
 
@@ -4858,7 +4883,7 @@ void ClassFileParser::verify_legal_class_name(const Symbol* name, TRAPS) const {
     if (bytes[0] == JVM_SIGNATURE_ARRAY) {
       p = skip_over_field_signature(bytes, false, length, CHECK);
       legal = (p != nullptr) && ((p - bytes) == (int)length);
-    } else if (_major_version < JAVA_1_5_VERSION) {
+    } else if (_major_version < JAVA_1_5_VERSION || _orig_major_version < JAVA_1_5_VERSION) {
       if (bytes[0] != JVM_SIGNATURE_SPECIAL) {
         p = skip_over_field_name(bytes, true, length);
         legal = (p != nullptr) && ((p - bytes) == (int)length);
@@ -5157,7 +5182,7 @@ InstanceKlass* ClassFileParser::create_instance_klass(bool changed_by_loadhook,
   if (_klass != nullptr) {
     return _klass;
   }
-
+  assert(_cp != NULL, "_cp is null in create_instance_klass()");
   InstanceKlass* const ik =
     InstanceKlass::allocate_instance_klass(*this, CHECK_NULL);
 
@@ -5442,6 +5467,7 @@ ClassFileParser::ClassFileParser(ClassFileStream* stream,
                                  ClassLoaderData* loader_data,
                                  const ClassLoadInfo* cl_info,
                                  Publicity pub_level,
+                                 int orig_major_version,
                                  TRAPS) :
   _stream(stream),
   _class_name(nullptr),
@@ -5502,7 +5528,8 @@ ClassFileParser::ClassFileParser(ClassFileStream* stream,
   _has_finalizer(false),
   _has_empty_finalizer(false),
   _has_vanilla_constructor(false),
-  _max_bootstrap_specifier_index(-1) {
+  _max_bootstrap_specifier_index(-1),
+  _orig_major_version(orig_major_version) {
 
   _class_name = name != nullptr ? name : vmSymbols::unknown_class_name();
   _class_name->increment_refcount();
@@ -5667,7 +5694,6 @@ void ClassFileParser::parse_stream(const ClassFileStream* const stream,
   _cp = ConstantPool::allocate(_loader_data,
                                cp_size,
                                CHECK);
-
   ConstantPool* const cp = _cp;
 
   parse_constant_pool(stream, cp, _orig_cp_size, CHECK);
@@ -5686,9 +5712,33 @@ void ClassFileParser::parse_stream(const ClassFileStream* const stream,
     flags = stream->get_u2_fast() & JVM_RECOGNIZED_CLASS_MODIFIERS;
   }
 
-  if ((flags & JVM_ACC_INTERFACE) && _major_version < JAVA_6_VERSION) {
+  if ((flags & JVM_ACC_INTERFACE) && (_major_version < JAVA_6_VERSION || _orig_major_version < JAVA_6_VERSION)) {
     // Set abstract bit for old class files for backward compatibility
     flags |= JVM_ACC_ABSTRACT;
+  }
+
+  if (_orig_major_version < _major_version && _orig_major_version < JAVA_15_VERSION) {
+    // Class was preverified.
+    // Remove flags that have no meaning in old class file versions but do in
+    // newer class file versions to prevent potential modifier issues.
+    if (flags & JVM_ACC_INTERFACE) {
+#define JVM_OLD_INTERFACE_CLASS_MODIFIERS (JVM_ACC_PUBLIC | \
+                                           JVM_ACC_FINAL | \
+                                           JVM_ACC_INTERFACE | \
+                                           JVM_ACC_ABSTRACT | \
+                                           JVM_ACC_ANNOTATION | \
+                                           JVM_ACC_SYNTHETIC)
+      flags &= JVM_OLD_INTERFACE_CLASS_MODIFIERS;
+    } else {
+#define JVM_OLD_CLASS_MODIFIERS (JVM_ACC_PUBLIC | \
+                                 JVM_ACC_FINAL | \
+                                 JVM_ACC_SUPER | \
+                                 JVM_ACC_INTERFACE | \
+                                 JVM_ACC_ABSTRACT | \
+                                 JVM_ACC_ENUM | \
+                                 JVM_ACC_SYNTHETIC)
+      flags &= JVM_OLD_CLASS_MODIFIERS;
+    }
   }
 
   verify_legal_class_modifiers(flags, CHECK);

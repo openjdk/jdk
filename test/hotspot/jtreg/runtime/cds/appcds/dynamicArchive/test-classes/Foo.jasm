@@ -1,0 +1,41 @@
+
+super class Foo
+	version 49:0
+{
+  Method "<init>":"()V"
+	stack 1 locals 1
+  {
+		aload_0;
+		invokespecial	Method java/lang/Object."<init>":"()V";
+		return;
+  }
+  public static Method main:"([Ljava/lang/String;)V"
+	stack 2 locals 1
+  {
+		getstatic	Field java/lang/System.out:"Ljava/io/PrintStream;";
+		ldc	String "HelloWorld";
+		invokevirtual	Method java/io/PrintStream.println:"(Ljava/lang/String;)V";
+		aload_0;
+		arraylength;
+		ifle	L21;
+		new	class Foo$Bar;
+		dup;
+		invokespecial	Method Foo$Bar."<init>":"()V";
+		pop;
+	L21:	stack_frame_type same;
+		return;
+  }
+  Method doit:"()LFoo;"
+	stack 2 locals 1
+  {
+		new	class Foo$Bar;
+		dup;
+		invokespecial	Method Foo$Bar."<init>":"()V";
+		areturn;
+  }
+
+  NestMembers Foo$Bar, Foo$Bar$Bam;
+  static InnerClass Bar=class Foo$Bar of class Foo;
+  InnerClass Bam=class Foo$Bar$Bam of class Foo$Bar;
+
+} // end Class Foo

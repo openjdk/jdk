@@ -1,0 +1,34 @@
+
+super class Foo$Bar
+	extends Foo
+	version 49:0
+{
+  Method "<init>":"()V"
+	stack 1 locals 1
+  {
+		aload_0;
+		invokespecial	Method Foo."<init>":"()V";
+		return;
+  }
+  Method doit:"()LFoo$Bar;"
+	stack 3 locals 1
+  {
+		new	class Foo$Bar$Bam;
+		dup;
+		aload_0;
+		invokespecial	Method Foo$Bar$Bam."<init>":"(LFoo$Bar;)V";
+		areturn;
+  }
+  bridge synthetic Method doit:"()LFoo;"
+	stack 1 locals 1
+  {
+		aload_0;
+		invokevirtual	Method doit:"()LFoo$Bar;";
+		areturn;
+  }
+
+  NestHost Foo;
+  static InnerClass Bar=class Foo$Bar of class Foo;
+  InnerClass Bam=class Foo$Bar$Bam of class Foo$Bar;
+
+} // end Class Foo$Bar

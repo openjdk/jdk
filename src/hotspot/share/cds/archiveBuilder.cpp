@@ -120,7 +120,7 @@ public:
     address old_p = *ptr_loc;
     address new_p = _builder->get_buffered_addr(old_p);
 
-    log_trace(cds)("Ref: [" PTR_FORMAT "] -> " PTR_FORMAT " => " PTR_FORMAT,
+    log_trace(cds)("Ref: " SIZE_FORMAT " [" PTR_FORMAT "] -> " PTR_FORMAT " => " PTR_FORMAT, bit_offset,
                    p2i(ptr_loc), p2i(old_p), p2i(new_p));
 
     ArchivePtrMarker::set_and_mark_pointer(ptr_loc, new_p);
@@ -415,11 +415,11 @@ bool ArchiveBuilder::gather_one_source_obj(MetaspaceClosure::Ref* ref, bool read
   if (src_obj == nullptr) {
     return false;
   }
+  remember_embedded_pointer_in_enclosing_obj(ref);
   if (RegeneratedClasses::has_been_regenerated(src_obj)) {
     // No need to copy it. We will later relocate it to point to the regenerated klass/method.
     return false;
   }
-  remember_embedded_pointer_in_enclosing_obj(ref);
 
   FollowMode follow_mode = get_follow_mode(ref);
   SourceObjInfo src_info(ref, read_only, follow_mode);
@@ -457,7 +457,7 @@ void ArchiveBuilder::record_regenerated_object(address orig_src_obj, address reg
   // Record the fact that orig_src_obj has been replaced by regen_src_obj. All calls to get_buffered_addr(orig_src_obj)
   // should return the same value as get_buffered_addr(regen_src_obj).
   SourceObjInfo* p = _src_obj_table.get(regen_src_obj);
-  assert(p != nullptr, "regenerated object should always be dumped");
+  assert(p != nullptr, "regenerated object should always be dumped %p", regen_src_obj);
   SourceObjInfo orig_src_info(orig_src_obj, p);
   bool created;
   _src_obj_table.put_if_absent(orig_src_obj, orig_src_info, &created);
@@ -871,6 +871,16 @@ class RelocateBufferToRequested : public BitMapClosure {
       // todo -- clear bit, etc
       ArchivePtrMarker::ptrmap()->clear_bit(offset);
     } else {
+
+      address o = *p;
+      address r = RegeneratedClasses::get_regenerated_object_or_null(o);
+
+      if (r != nullptr) {
+        *p = _builder->get_buffered_addr(r);
+        tty->print_cr("Fixed regenerated pointer " SIZE_FORMAT " @" PTR_FORMAT ": "  PTR_FORMAT " -> " PTR_FORMAT " -> (buffered) " PTR_FORMAT,
+                      offset, p2i(p), p2i(o), p2i(r), p2i(*p));
+      }
+
       if (STATIC_DUMP) {
         assert(_builder->is_in_buffer_space(*p), "old pointer must point inside buffer space");
         *p += _buffer_to_requested_delta;
@@ -880,7 +890,11 @@ class RelocateBufferToRequested : public BitMapClosure {
           *p += _buffer_to_requested_delta;
           // assert is in requested dynamic archive
         } else {
-          assert(_builder->is_in_mapped_static_archive(*p), "old pointer must point inside buffer space or mapped static archive");
+          if (!_builder->is_in_mapped_static_archive(*p)) {
+            _builder->print_info_for_buffered_address((address)p);
+          }
+          assert(_builder->is_in_mapped_static_archive(*p), "old pointer " PTR_FORMAT " at " PTR_FORMAT
+                 " must point inside buffer space or mapped static archive", p2i(*p), p2i(p));
           *p += _mapped_to_requested_static_archive_delta;
           assert(_builder->is_in_requested_static_archive(*p), "new pointer must point inside requested archive");
         }
@@ -897,6 +911,33 @@ class RelocateBufferToRequested : public BitMapClosure {
   }
 };
 
+bool ArchiveBuilder::print_info_for_buffered_address_impl(address p, SourceObjList* src_objs) {
+  for (int i = 0; i < src_objs->objs()->length(); i++) {
+    SourceObjInfo* src_info = src_objs->at(i);
+    address src = src_info->source_addr();
+    address dest = src_info->buffered_addr();
+    int bytes = src_info->size_in_bytes();
+
+    if (dest <= p && p < dest + bytes) {
+      tty->print_cr("The address " INTPTR_FORMAT " is %d bytes from the buffered object "
+                    INTPTR_FORMAT ",\n    which is a copy of the source object " INTPTR_FORMAT
+                    ",\n    which is of type %d (%s)",
+                    p2i(p), (int)(p - dest), p2i(dest),
+                    p2i(src),
+                    src_info->msotype(), MetaspaceObj::type_name(src_info->msotype()));
+      return true;
+    }
+  }
+
+  return false;
+}
+
+void ArchiveBuilder::print_info_for_buffered_address(address p) {
+  if (!print_info_for_buffered_address_impl(p, &_rw_src_objs) &&
+      !print_info_for_buffered_address_impl(p, &_ro_src_objs)) {
+    tty->print_cr("The address " INTPTR_FORMAT " doesn't appear to be a valid buffered address", p2i(p));
+  }
+}
 
 void ArchiveBuilder::relocate_to_requested() {
   ro_region()->pack();

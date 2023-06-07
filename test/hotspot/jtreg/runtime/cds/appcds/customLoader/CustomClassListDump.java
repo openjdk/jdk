@@ -34,6 +34,7 @@
  *          test-classes
  * @build CustomLoaderApp OldClass CustomLoadee CustomLoadee2
  *        CustomLoadee3Child CustomLoadee4WithLambda
+ * @compile ../test-classes/OldClass.jasm
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar CustomLoaderApp
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar custom.jar
  *             OldClass CustomLoadee
@@ -89,25 +90,28 @@ public class CustomClassListDump {
         CDSOptions opts = (new CDSOptions())
             .addPrefix("-cp", appJar,
                        "-Xlog:cds+class=debug",
+                       "-Xlog:cds",
+                       "-Xlog:class+load",
                        "-XX:SharedClassListFile=" + classList);
         CDSTestUtils.createArchiveAndCheck(opts)
             .shouldContain("unreg CustomLoadee")
             .shouldContain("unreg CustomLoadee2")
             .shouldContain("unreg CustomLoadee3Child")
-            .shouldContain("unreg OldClass ** unlinked");
+            //.shouldContain("unreg OldClass ** unlinked");
+            .shouldContain("OldClass ** generated")
+            .shouldContain("Excluding old class OldClass: has been regenerated");
 
         // Use the dumped static archive
         opts = (new CDSOptions())
             .setUseVersion(false)
             .addPrefix("-cp", appJar)
-            .addSuffix("-Xlog:class+load,verification")
+            .addSuffix("-Xlog:class+load,cds,cds+class,verification")
             .addSuffix(commandLine);
         CDSTestUtils.run(opts)
             .assertNormalExit("CustomLoadee source: shared objects file",
                               "CustomLoadee2 source: shared objects file",
                               "CustomLoadee3Child source: shared objects file",
-                              "OldClass source: shared objects file",
-                              "Verifying class OldClass with old format");
+                              "OldClass source: shared objects file");
     }
 
     static void check(String listData, boolean mustMatch, String regexp) throws Exception {

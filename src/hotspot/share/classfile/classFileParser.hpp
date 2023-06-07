@@ -33,6 +33,10 @@
 #include "oops/typeArrayOop.hpp"
 #include "utilities/accessFlags.hpp"
 
+// Used for backward compatibility reasons:
+// - to disallow argument and require ACC_STATIC for <clinit> methods
+#define JAVA_7_VERSION                    51
+
 class Annotations;
 template <typename T>
 class Array;
@@ -199,6 +203,8 @@ class ClassFileParser {
   bool _has_empty_finalizer;
   bool _has_vanilla_constructor;
   int _max_bootstrap_specifier_index;  // detects BSS values
+
+  int _orig_major_version;
 
   void parse_stream(const ClassFileStream* const stream, TRAPS);
 
@@ -537,7 +543,10 @@ class ClassFileParser {
                   ClassLoaderData* loader_data,
                   const ClassLoadInfo* cl_info,
                   Publicity pub_level,
+                  int orig_major_version,
                   TRAPS);
+
+  ConstantPool* get_cp() { return _cp; }
 
   ~ClassFileParser();
 

@@ -46,6 +46,9 @@ class Verifier : AllStatic {
   // Verify the bytecodes for a class.
   static bool verify(InstanceKlass* klass, bool should_verify_class, TRAPS);
 
+  // Verify the bytecodes for an old class file (major_version < 50)
+  static bool old_verify(InstanceKlass* klass, bool should_verify_class, TRAPS);
+
   static void log_end_verification(outputStream* st, const char* klassName, Symbol* exception_name,
                                     oop pending_exception);
 

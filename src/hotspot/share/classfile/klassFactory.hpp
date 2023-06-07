@@ -65,6 +65,9 @@ class KlassFactory : AllStatic {
                                            ClassLoaderData* loader_data,
                                            const ClassLoadInfo& cl_info,
                                            TRAPS);
+
+  static InstanceKlass* regenerate_from_stream(ClassFileStream* stream, Symbol* name, ClassLoaderData* loader_data, const ClassLoadInfo& cl_info, TRAPS);
+
   static InstanceKlass* check_shared_class_file_load_hook(
                                           InstanceKlass* ik,
                                           Symbol* class_name,

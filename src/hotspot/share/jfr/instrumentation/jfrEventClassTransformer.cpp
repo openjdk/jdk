@@ -1693,6 +1693,7 @@ static InstanceKlass* create_new_instance_klass(InstanceKlass* ik, ClassFileStre
                              cld,
                              &cl_info,
                              ClassFileParser::INTERNAL, // internal visibility
+                             JVM_CLASSFILE_MAJOR_VERSION,
                              THREAD);
   if (HAS_PENDING_EXCEPTION) {
     log_pending_exception(PENDING_EXCEPTION);

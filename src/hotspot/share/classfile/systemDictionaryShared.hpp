@@ -239,6 +239,7 @@ public:
 
   static void update_shared_entry(InstanceKlass* klass, int id);
   static void set_shared_class_misc_info(InstanceKlass* k, ClassFileStream* cfs);
+  static void copy_shared_class_misc_info(InstanceKlass* k, InstanceKlass* newIK);
 
   static InstanceKlass* lookup_from_stream(Symbol* class_name,
                                            Handle class_loader,

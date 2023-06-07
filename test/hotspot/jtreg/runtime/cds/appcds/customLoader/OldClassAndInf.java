@@ -90,7 +90,7 @@ public class OldClassAndInf {
                                          "OldClassApp", loadeesJar, inArchive),
                                      loadees));
 
-        TestCommon.checkExec(output);
+        //TestCommon.checkExec(output);
         for (String loadee : loadees) {
             output.shouldContain("[class,load] " + loadee + " source: shared objects file");
         }

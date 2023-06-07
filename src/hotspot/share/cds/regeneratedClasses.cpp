@@ -46,7 +46,6 @@ void RegeneratedClasses::add_class(InstanceKlass* orig_klass, InstanceKlass* reg
     _regenerated_mirrors = new GrowableArrayCHeap<OopHandle, mtClassShared>(150);
   }
   _regenerated_mirrors->append(OopHandle(Universe::vm_global(), regen_klass->java_mirror()));
-
   if (_renegerated_objs == nullptr) {
     _renegerated_objs = new (mtClass)RegeneratedObjTable();
   }
@@ -96,4 +95,38 @@ void RegeneratedClasses::cleanup() {
   if (_renegerated_objs != nullptr) {
     delete _renegerated_objs;
   }
+}
+
+InstanceKlass* RegeneratedClasses::get_regenerated_class(InstanceKlass* ik) {
+  address* newIKAddress = _renegerated_objs->get((address)ik);
+  if (newIKAddress == nullptr) {
+    return nullptr;
+  }
+
+  return (InstanceKlass*)*newIKAddress;
+}
+
+address RegeneratedClasses::get_regenerated_object_or_null(address obj) {
+  address* p = _renegerated_objs->get(obj);
+  if (p != nullptr) {
+    return *p;
+  } else {
+    return nullptr;
+  }
+}
+
+// If ik has been regenerated, return the regenerated version, or else return ik
+InstanceKlass* RegeneratedClasses::maybe_get_regenerated_class(InstanceKlass* ik) {
+  if (ik == nullptr) {
+    return nullptr;
+  }
+  if (_renegerated_objs == nullptr) {
+    return ik;
+  }
+  address* newIKAddress = _renegerated_objs->get((address)ik);
+  if (newIKAddress == nullptr) {
+    return ik;
+  }
+
+  return (InstanceKlass*)*newIKAddress;
 }

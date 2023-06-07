@@ -27,6 +27,7 @@
 #include "cds/classListWriter.hpp"
 #include "cds/heapShared.hpp"
 #include "cds/metaspaceShared.hpp"
+#include "cds/regeneratedClasses.hpp"
 #include "classfile/classFileParser.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.hpp"
@@ -2724,22 +2725,24 @@ void InstanceKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handl
 // without changing the old verifier, the verification constraint cannot be
 // retrieved during dump time.
 // Verification of archived old classes will be performed during run time.
+
+// TODO: This function always return true, look at all callers and rewrite
 bool InstanceKlass::can_be_verified_at_dumptime() const {
   if (MetaspaceShared::is_in_shared_metaspace(this)) {
     // This is a class that was dumped into the base archive, so we know
     // it was verified at dump time.
     return true;
   }
-  if (major_version() < 50 /*JAVA_6_VERSION*/) {
-    return false;
-  }
-  if (java_super() != nullptr && !java_super()->can_be_verified_at_dumptime()) {
+  // if (major_version() < 50 /*JAVA_6_VERSION*/) {
+  //   return false;
+  // }
+  if (java_super() != nullptr && !RegeneratedClasses::maybe_get_regenerated_class(java_super())->can_be_verified_at_dumptime()) {
     return false;
   }
   Array<InstanceKlass*>* interfaces = local_interfaces();
   int len = interfaces->length();
   for (int i = 0; i < len; i++) {
-    if (!interfaces->at(i)->can_be_verified_at_dumptime()) {
+    if (!RegeneratedClasses::maybe_get_regenerated_class(interfaces->at(i))->can_be_verified_at_dumptime()) {
       return false;
     }
   }
