@@ -99,7 +99,7 @@ uint AgeTable::compute_tenuring_threshold(size_t desired_survivor_size) {
   }
 
 
-  log_debug(gc, age)("Desired survivor size " SIZE_FORMAT " bytes, new threshold " UINTX_FORMAT " (max threshold %u)",
+  log_debug(gc, age)("Desired survivor size %zu bytes, new threshold " UINTX_FORMAT " (max threshold %u)",
                      desired_survivor_size * oopSize, (uintx) result, MaxTenuringThreshold);
 
   return result;

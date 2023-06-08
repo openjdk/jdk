@@ -431,7 +431,6 @@ const intx  min_intx  = (intx)1 << (sizeof(intx)*BitsPerByte-1);
 const intx  max_intx  = (uintx)min_intx - 1;
 const uintx max_uintx = (uintx)-1;
 
-
 // Table of values:
 //      sizeof intx         4               8
 // min_intx             0x80000000      0x8000000000000000
@@ -1076,7 +1075,7 @@ const int      badCodeHeapFreeVal = 0xDD;                   // value used to zap
 #define       badHeapWord       (::badHeapWordVal)
 
 // Default TaskQueue size is 16K (32-bit) or 128K (64-bit)
-#define TASKQUEUE_SIZE (NOT_LP64(1<<14) LP64_ONLY(1<<17))
+const size_t TASKQUEUE_SIZE = (NOT_LP64(1<<14) LP64_ONLY(1<<17));
 
 //----------------------------------------------------------------------------------------------------
 // Utility functions for bitfield manipulations
