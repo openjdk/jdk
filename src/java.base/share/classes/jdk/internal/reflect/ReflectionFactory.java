@@ -540,6 +540,10 @@ public class ReflectionFactory {
     // Internals only below this point
     //
 
+    /*
+     * If -Djdk.reflect.useNativeAccessorOnly is set, use the native accessor only.
+     * For testing purpose only.
+     */
     static boolean useNativeAccessorOnly() {
         return config().useNativeAccessorOnly;
     }
@@ -547,11 +551,6 @@ public class ReflectionFactory {
     private static boolean disableSerialConstructorChecks() {
         return config().disableSerialConstructorChecks;
     }
-
-    // New implementation uses direct invocation of method handles
-    private static final int METHOD_MH_ACCESSOR = 0x1;
-    private static final int FIELD_MH_ACCESSOR = 0x2;
-    private static final int ALL_MH_ACCESSORS = METHOD_MH_ACCESSOR | FIELD_MH_ACCESSOR;
 
     /**
      * The configuration is lazily initialized after the module system is initialized. The
@@ -563,17 +562,6 @@ public class ReflectionFactory {
      * that happens very early VM startup, initPhase1.
      */
     private static @Stable Config config;
-
-    // "Inflation" mechanism. Loading bytecodes to implement
-    // Method.invoke() and Constructor.newInstance() currently costs
-    // 3-4x more than an invocation via native code for the first
-    // invocation (though subsequent invocations have been benchmarked
-    // to be over 20x faster). Unfortunately this cost increases
-    // startup time for certain applications that use reflection
-    // intensively (but only once per class) to bootstrap themselves.
-    // To avoid this penalty we reuse the existing JVM entry points
-    // for the first few invocations of Methods and Constructors and
-    // then switch to the bytecode-based implementations.
 
     private static final Config DEFAULT_CONFIG = new Config(false, // useNativeAccessorOnly
                                                             false); // disableSerialConstructorChecks
@@ -599,9 +587,7 @@ public class ReflectionFactory {
             return c;
         }
 
-        // Defer initialization until module system is initialized so as
-        // to avoid inflation and spinning bytecode in unnamed modules
-        // during early startup.
+        // Always use the default configuration until the module system is initialized.
         if (!VM.isModuleSystemInited()) {
             return DEFAULT_CONFIG;
         }
@@ -612,20 +598,13 @@ public class ReflectionFactory {
     private static Config loadConfig() {
         assert VM.isModuleSystemInited();
 
-        boolean useNativeAccessorOnly = DEFAULT_CONFIG.useNativeAccessorOnly;
-        boolean disableSerialConstructorChecks = DEFAULT_CONFIG.disableSerialConstructorChecks;
-
         Properties props = GetPropertyAction.privilegedGetProperties();
-        String val = props.getProperty("jdk.reflect.useNativeAccessorOnly");
-        if (val != null && val.equals("true")) {
-            useNativeAccessorOnly = true;
-        }
-
-        disableSerialConstructorChecks =
+        boolean useNativeAccessorOnly =
+            "true".equals(props.getProperty("jdk.reflect.useNativeAccessorOnly"));
+        boolean disableSerialConstructorChecks =
             "true".equals(props.getProperty("jdk.disableSerialConstructorChecks"));
 
-        return new Config(useNativeAccessorOnly,
-                          disableSerialConstructorChecks);
+        return new Config(useNativeAccessorOnly, disableSerialConstructorChecks);
     }
 
     /**

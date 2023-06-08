@@ -24,7 +24,7 @@
 /**
  * @test
  * @bug 8277451
- * @run testng/othervm NegativeTest
+ * @run testng NegativeTest
  * @summary Test exception thrown due to bad receiver and bad value on
  *          Field with and without setAccessible(true)
  */
