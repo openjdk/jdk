@@ -399,10 +399,6 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
                 if (src == null) {
                     throw new Failure.NoOverrideFound(tag, holder, inheritDoc);
                 }
-                if (!utils.isDirectSupertype((TypeElement) holder.getEnclosingElement(), supertype)) {
-                    DocTreePath inheritDocPath = ch.getDocTreePath(inheritDoc.getSupertype());
-                    configuration.getMessages().warning(inheritDocPath, "doclet.inheritDocNonDirectSupertype");
-                }
             }
 
             Map<ThrowsTree, ExecutableElement> tags;

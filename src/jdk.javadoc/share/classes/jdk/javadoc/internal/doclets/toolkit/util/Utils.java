@@ -661,16 +661,6 @@ public class Utils {
         }
     }
 
-    public boolean isDirectSupertype(TypeElement overrider,
-                                     TypeElement overridden) {
-//        var t1 = overrider.asType();
-//        var t2 = overridden.asType();
-//        return typeUtils.directSupertypes(t1).stream()
-//                .anyMatch(t -> Objects.equals(typeUtils.asElement(t), typeUtils.asElement(t2)));
-
-        return true; /* disabled for causing issues in JDK API Documentation build */
-    }
-
     public SortedSet<TypeElement> getTypeElementsAsSortedSet(Iterable<TypeElement> typeElements) {
         SortedSet<TypeElement> set = new TreeSet<>(comparators.makeGeneralPurposeComparator());
         typeElements.forEach(set::add);

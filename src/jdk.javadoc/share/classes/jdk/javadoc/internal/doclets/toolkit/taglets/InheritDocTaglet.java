@@ -119,10 +119,6 @@ public class InheritDocTaglet extends BaseTaglet {
                 messages.error(inheritDocPath, "doclet.inheritDocBadSupertype");
                 return replacement;
             }
-            if (!utils.isDirectSupertype((TypeElement) method.getEnclosingElement(), supertype)) {
-                messages.warning(ch.getDocTreePath(inheritDoc.getSupertype()),
-                        "doclet.inheritDocNonDirectSupertype");
-            }
         }
 
         if (holderTag.getKind() == DocTree.Kind.DOC_COMMENT) {
