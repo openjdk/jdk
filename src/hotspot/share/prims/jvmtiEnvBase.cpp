@@ -758,15 +758,24 @@ JvmtiEnvBase::get_thread_state_base(oop thread_oop, JavaThread* jt) {
 
 jint
 JvmtiEnvBase::get_thread_state(oop thread_oop, JavaThread* jt) {
-  jint state = get_thread_state_base(thread_oop, jt);
+  jint state = 0;
 
   if (is_thread_carrying_vthread(jt, thread_oop)) {
+    state = (jint)java_lang_Thread::get_thread_status(thread_oop);
+
+    // This is for extra safety. Other bits are not expected nor needed.
+    state &= (JVMTI_THREAD_STATE_ALIVE | JVMTI_THREAD_STATE_INTERRUPTED);
+
+    if (jt->is_carrier_thread_suspended()) {
+      state |= JVMTI_THREAD_STATE_SUSPENDED;
+    }
     // It's okay for the JVMTI state to be reported as WAITING when waiting
     // for something other than an Object.wait. So, we treat a thread carrying
     // a virtual thread as waiting indefinitely which is not runnable.
-    // It is why the RUNNABLE bit is cleared and the WAITING bits are added.
-    state &= ~JVMTI_THREAD_STATE_RUNNABLE;
+    // It is why the RUNNABLE bit is not needed and the WAITING bits are added.
     state |= JVMTI_THREAD_STATE_WAITING | JVMTI_THREAD_STATE_WAITING_INDEFINITELY;
+  } else {
+    state = get_thread_state_base(thread_oop, jt);
   }
   return state;
 }
