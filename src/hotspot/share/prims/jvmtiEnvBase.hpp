@@ -97,7 +97,7 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
   static bool is_in_thread_list(jint count, const jthread* list, oop jt_oop);
 
   // check if thread_oop represents a passive carrier thread
-  static bool is_thread_carrying_vthread(JavaThread* java_thread, oop thread_oop) {
+  static bool is_passive_carrier_thread(JavaThread* java_thread, oop thread_oop) {
     return java_thread != nullptr && java_thread->jvmti_vthread() != nullptr
                                && java_thread->jvmti_vthread() != thread_oop
                                && java_thread->threadObj() == thread_oop;
@@ -384,8 +384,7 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
   // get carrier thread last java vframe
   static javaVFrame* get_cthread_last_java_vframe(JavaThread* jt, RegisterMap* reg_map);
 
-  // get platform thread state
-  static jint get_thread_state_base(oop thread_oop, JavaThread* jt);
+  // get ordinary thread thread state
   static jint get_thread_state(oop thread_oop, JavaThread* jt);
 
   // get virtual thread thread state
