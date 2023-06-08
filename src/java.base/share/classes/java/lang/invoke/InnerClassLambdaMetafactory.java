@@ -59,7 +59,6 @@ import jdk.internal.classfile.CodeBuilder;
  * @see LambdaMetafactory
  */
 /* package */ final class InnerClassLambdaMetafactory extends AbstractValidatingLambdaMetafactory {
-    private static final String NAME_CTOR = "<init>";
     private static final String LAMBDA_INSTANCE_FIELD = "LAMBDA_INSTANCE$";
 
     //Serialization support
@@ -387,13 +386,13 @@ import jdk.internal.classfile.CodeBuilder;
         clb.withField(LAMBDA_INSTANCE_FIELD, lambdaTypeDescriptor, ACC_PRIVATE | ACC_STATIC | ACC_FINAL);
 
         // Instantiate the lambda and store it to the static final field
-        clb.withMethodBody("<clinit>", MethodTypeDesc.of(CD_void), ACC_STATIC, new Consumer<CodeBuilder>() {
+        clb.withMethodBody(CLASS_INIT_NAME, MTD_void, ACC_STATIC, new Consumer<CodeBuilder>() {
             @Override
             public void accept(CodeBuilder cob) {
                 cob.new_(lambdaClassDesc)
                    .dup();
                 assert factoryType.parameterCount() == 0;
-                cob.invokespecial(lambdaClassDesc, NAME_CTOR, constructorTypeDesc)
+                cob.invokespecial(lambdaClassDesc, INIT_NAME, constructorTypeDesc)
                    .putstatic(lambdaClassDesc, LAMBDA_INSTANCE_FIELD, lambdaTypeDescriptor)
                    .return_();
             }
@@ -405,12 +404,12 @@ import jdk.internal.classfile.CodeBuilder;
      */
     private void generateConstructor(ClassBuilder clb) {
         // Generate constructor
-        clb.withMethodBody(NAME_CTOR, constructorTypeDesc, ACC_PRIVATE,
+        clb.withMethodBody(INIT_NAME, constructorTypeDesc, ACC_PRIVATE,
                 new Consumer<CodeBuilder>() {
                     @Override
                     public void accept(CodeBuilder cob) {
                         cob.aload(0);
-                        cob.invokespecial(CD_Object, NAME_CTOR,
+                        cob.invokespecial(CD_Object, INIT_NAME,
                                 MethodTypeDesc.of(CD_void));
                         int parameterCount = factoryType.parameterCount();
                         for (int i = 0; i < parameterCount; i++) {
@@ -454,7 +453,7 @@ import jdk.internal.classfile.CodeBuilder;
                             TypeConvertingMethodAdapter.boxIfTypePrimitive(cob, TypeKind.from(argDescs[i]));
                             cob.aastore();
                         }
-                        cob.invokespecial(CD_SERIALIZED_LAMBDA, NAME_CTOR,
+                        cob.invokespecial(CD_SERIALIZED_LAMBDA, INIT_NAME,
                                 MTD_CTOR_SERIALIZED_LAMBDA, false);
                         cob.areturn();
                     }
@@ -472,7 +471,7 @@ import jdk.internal.classfile.CodeBuilder;
                     cob.new_(CD_NOT_SERIALIZABLE_EXCEPTION)
                        .dup()
                        .constantInstruction(Opcode.LDC, "Non-serializable lambda")
-                       .invokespecial(CD_NOT_SERIALIZABLE_EXCEPTION, NAME_CTOR,
+                       .invokespecial(CD_NOT_SERIALIZABLE_EXCEPTION, INIT_NAME,
                             MTD_CTOR_NOT_SERIALIZABLE_EXCEPTION, false)
                        .throwInstruction();
                 }
@@ -484,7 +483,7 @@ import jdk.internal.classfile.CodeBuilder;
                     cob.new_(CD_NOT_SERIALIZABLE_EXCEPTION)
                        .dup()
                        .constantInstruction(Opcode.LDC, "Non-serializable lambda")
-                       .invokespecial(CD_NOT_SERIALIZABLE_EXCEPTION, NAME_CTOR,
+                       .invokespecial(CD_NOT_SERIALIZABLE_EXCEPTION, INIT_NAME,
                             MTD_CTOR_NOT_SERIALIZABLE_EXCEPTION, false)
                        .throwInstruction();
                 }

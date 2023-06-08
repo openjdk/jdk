@@ -64,19 +64,19 @@ import static jdk.internal.classfile.Classfile.*;
  */
 class InvokerBytecodeGenerator {
     /** Define class names for convenience. */
-    private static final ClassDesc MHI     = ClassDesc.ofInternalName("java/lang/invoke/MethodHandleImpl");
-    private static final ClassDesc LF      = ClassDesc.ofInternalName("java/lang/invoke/LambdaForm");
-    private static final ClassDesc LFN     = ClassDesc.ofInternalName("java/lang/invoke/LambdaForm$Name");
-    private static final ClassDesc OBJARY  = CD_Object.arrayType();
+    private static final ClassDesc CD_MHI     = ClassDesc.ofInternalName("java/lang/invoke/MethodHandleImpl");
+    private static final ClassDesc CD_LF      = ClassDesc.ofInternalName("java/lang/invoke/LambdaForm");
+    private static final ClassDesc CD_LFN     = ClassDesc.ofInternalName("java/lang/invoke/LambdaForm$Name");
+    private static final ClassDesc CD_OBJARY  = CD_Object.arrayType();
 
-    private static final ClassDesc LOOP_CLAUSES = ClassDesc.ofInternalName("java/lang/invoke/MethodHandleImpl$LoopClauses");
+    private static final ClassDesc CD_LOOP_CLAUSES = ClassDesc.ofInternalName("java/lang/invoke/MethodHandleImpl$LoopClauses");
 
-    private static final ClassDesc CASES_HOLDER = ClassDesc.ofInternalName("java/lang/invoke/MethodHandleImpl$CasesHolder");
-    private static final ClassDesc MHARY2       = CD_MethodHandle.arrayType(2);
+    private static final ClassDesc CD_MHARY2       = CD_MethodHandle.arrayType(2);
 
 
-    private static final MethodTypeDesc LL_SIG  = MethodTypeDesc.of(CD_Object, CD_Object);
-    private static final MethodTypeDesc LLV_SIG = MethodTypeDesc.of(CD_void, CD_Object, CD_Object);
+    private static final MethodTypeDesc MTD_LL_SIG  = MethodTypeDesc.of(CD_Object, CD_Object);
+    private static final MethodTypeDesc MTD_LLV_SIG = MethodTypeDesc.of(CD_void, CD_Object, CD_Object);
+    private static final MethodTypeDesc MTD_Object_int = MethodTypeDesc.of(CD_Object, CD_int);
     private static final String CLASS_PREFIX = "java/lang/invoke/LambdaForm$";
     private static final String SOURCE_PREFIX = "LambdaForm$";
 
@@ -212,7 +212,7 @@ class InvokerBytecodeGenerator {
         } else if (arg instanceof MethodHandle) {
             desc = CD_MethodHandle;
         } else if (arg instanceof LambdaForm) {
-            desc = LF;
+            desc = CD_LF;
         } else {
             desc = CD_Object;
         }
@@ -346,7 +346,7 @@ class InvokerBytecodeGenerator {
                         // initialize the static field
                         cob.aload(0)
                            .constantInstruction(index++)
-                           .invokeinterface(CD_List, "get", MethodTypeDesc.of(CD_Object, CD_int))
+                           .invokeinterface(CD_List, "get", MTD_Object_int)
                            .checkcast(p.desc)
                            .putstatic(classDesc, p.name, p.desc);
                     }
@@ -439,9 +439,9 @@ class InvokerBytecodeGenerator {
         } else {
             cob.getstatic(classDesc, classData(cls), CD_Class)
                .swap()
-               .invokevirtual(CD_Class, "cast", LL_SIG);
+               .invokevirtual(CD_Class, "cast", MTD_LL_SIG);
             if (Object[].class.isAssignableFrom(cls))
-                cob.checkcast(OBJARY);
+                cob.checkcast(CD_OBJARY);
             else if (PROFILE_LEVEL > 0)
                 cob.checkcast(CD_Object);
         }
@@ -453,7 +453,7 @@ class InvokerBytecodeGenerator {
 
     private ClassDesc classDescCached(Class<?> c) {
         if (c == Object.class)             return CD_Object;
-        else if (c == Object[].class)      return OBJARY;
+        else if (c == Object[].class)      return CD_OBJARY;
         else if (c == Class.class)         return CD_Class;
         else if (c == MethodHandle.class)  return CD_MethodHandle;
         assert(VerifyAccess.isTypeVisible(c, Object.class)) : c.getName();
@@ -541,7 +541,7 @@ class InvokerBytecodeGenerator {
         // Expects MethodHandle on the stack and actual receiver MethodHandle in slot #0
         cob.dup()
            .aload(0)
-           .invokestatic(MHI, "assertSame", LLV_SIG);
+           .invokestatic(CD_MHI, "assertSame", MTD_LLV_SIG);
         return true;
     }
 
@@ -743,8 +743,8 @@ class InvokerBytecodeGenerator {
             // load receiver
             cob.aload(0);
             emitReferenceCast(cob, MethodHandle.class, null);
-            cob.getfield(CD_MethodHandle, "form", LF)
-               .getfield(LF, "names", LFN);
+            cob.getfield(CD_MethodHandle, "form", CD_LF)
+               .getfield(CD_LF, "names", CD_LFN);
             // TODO more to come
         }
 
@@ -1345,7 +1345,7 @@ class InvokerBytecodeGenerator {
 
         // PREINIT:
         emitPushArgument(cob, MethodHandleImpl.LoopClauses.class, invoker.arguments[1]);
-        cob.getfield(LOOP_CLAUSES, "clauses", MHARY2);
+        cob.getfield(CD_LOOP_CLAUSES, "clauses", CD_MHARY2);
         cob.astore(localsMap[clauseDataIndex]);
 
         // INIT:
@@ -1668,9 +1668,9 @@ class InvokerBytecodeGenerator {
                                 }
                                 // invoke
                                 cob.aload(0);
-                                cob.getfield(CD_MethodHandle, "form", LF);
+                                cob.getfield(CD_MethodHandle, "form", CD_LF);
                                 cob.swap();  // swap form and array; avoid local variable
-                                cob.invokevirtual(LF, "interpretWithArguments", MethodTypeDesc.of(CD_Object, CD_Object.arrayType()));
+                                cob.invokevirtual(CD_LF, "interpretWithArguments", MethodTypeDesc.of(CD_Object, CD_Object.arrayType()));
 
                                 // maybe unbox
                                 Class<?> rtype = invokerType.returnType();
