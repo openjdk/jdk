@@ -34,13 +34,13 @@ class WorkerTask;
 class PreservedMarksSet;
 class WorkerThreads;
 
-class OopAndMarkWord {
+class PreservedMark {
  private:
   oop _o;
   markWord _m;
 
  public:
-  OopAndMarkWord(oop obj, markWord m) : _o(obj), _m(m) { }
+  PreservedMark(oop obj, markWord m) : _o(obj), _m(m) { }
 
   oop get_oop() { return _o; }
   inline void set_mark() const;
@@ -49,7 +49,7 @@ class OopAndMarkWord {
 
 class PreservedMarks {
 private:
-  typedef Stack<OopAndMarkWord, mtGC> OopAndMarkWordStack;
+  typedef Stack<PreservedMark, mtGC> OopAndMarkWordStack;
 
   OopAndMarkWordStack _stack;
 
@@ -65,7 +65,7 @@ public:
 
   // Adjust the preserved mark according to its
   // forwarding location stored in the mark.
-  static void adjust_preserved_mark(OopAndMarkWord* elem);
+  static void adjust_preserved_mark(PreservedMark* elem);
 
   // Iterate over the stack, adjust all preserved marks according
   // to their forwarding location stored in the mark.

@@ -37,14 +37,14 @@ inline bool PreservedMarks::should_preserve_mark(oop obj, markWord m) const {
 
 inline void PreservedMarks::push_if_necessary(oop obj, markWord m) {
   if (should_preserve_mark(obj, m)) {
-    OopAndMarkWord elem(obj, m);
+    PreservedMark elem(obj, m);
     _stack.push(elem);
   }
 }
 
 inline void PreservedMarks::push_always(oop obj, markWord m) {
   assert(!m.is_marked(), "precondition");
-  OopAndMarkWord elem(obj, m);
+  PreservedMark elem(obj, m);
   _stack.push(elem);
 }
 
@@ -56,7 +56,7 @@ inline PreservedMarks::PreservedMarks()
              // cache size to 0.
              0 /* max_cache_size */) { }
 
-void OopAndMarkWord::set_mark() const {
+void PreservedMark::set_mark() const {
   _o->set_mark(_m);
 }
 

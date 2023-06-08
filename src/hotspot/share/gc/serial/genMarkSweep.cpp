@@ -134,12 +134,12 @@ void GenMarkSweep::allocate_stacks() {
   // revert to malloc.
   if (scratch != nullptr) {
     _preserved_count_max =
-      scratch->num_words * HeapWordSize / sizeof(OopAndMarkWord);
+      scratch->num_words * HeapWordSize / sizeof(PreservedMark);
   } else {
     _preserved_count_max = 0;
   }
 
-  _preserved_marks = (OopAndMarkWord*)scratch;
+  _preserved_marks = (PreservedMark*)scratch;
   _preserved_count = 0;
 
   _preserved_overflow_stack_set.init(1);

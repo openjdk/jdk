@@ -34,13 +34,13 @@
 
 void PreservedMarks::restore() {
   while (!_stack.is_empty()) {
-    const OopAndMarkWord elem = _stack.pop();
+    const PreservedMark elem = _stack.pop();
     elem.set_mark();
   }
   assert_empty();
 }
 
-void PreservedMarks::adjust_preserved_mark(OopAndMarkWord* elem) {
+void PreservedMarks::adjust_preserved_mark(PreservedMark* elem) {
   oop obj = elem->get_oop();
   if (obj->is_forwarded()) {
     elem->set_oop(obj->forwardee());
@@ -48,9 +48,9 @@ void PreservedMarks::adjust_preserved_mark(OopAndMarkWord* elem) {
 }
 
 void PreservedMarks::adjust_during_full_gc() {
-  StackIterator<OopAndMarkWord, mtGC> iter(_stack);
+  StackIterator<PreservedMark, mtGC> iter(_stack);
   while (!iter.is_empty()) {
-    OopAndMarkWord* elem = iter.next_addr();
+    PreservedMark* elem = iter.next_addr();
     adjust_preserved_mark(elem);
   }
 }

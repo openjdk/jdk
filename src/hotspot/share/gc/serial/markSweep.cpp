@@ -47,7 +47,7 @@ Stack<ObjArrayTask, mtGC>     MarkSweep::_objarray_stack;
 PreservedMarksSet       MarkSweep::_preserved_overflow_stack_set(false /* in_c_heap */);
 size_t                  MarkSweep::_preserved_count = 0;
 size_t                  MarkSweep::_preserved_count_max = 0;
-OopAndMarkWord*         MarkSweep::_preserved_marks = nullptr;
+PreservedMark*          MarkSweep::_preserved_marks = nullptr;
 STWGCTimer*             MarkSweep::_gc_timer        = nullptr;
 SerialOldTracer*        MarkSweep::_gc_tracer       = nullptr;
 
@@ -151,7 +151,7 @@ void MarkSweep::preserve_mark(oop obj, markWord mark) {
   // sufficient space for the marks we need to preserve but if it isn't we fall
   // back to using Stacks to keep track of the overflow.
   if (_preserved_count < _preserved_count_max) {
-    _preserved_marks[_preserved_count++] = OopAndMarkWord(obj, mark);
+    _preserved_marks[_preserved_count++] = PreservedMark(obj, mark);
   } else {
     _preserved_overflow_stack_set.get()->push_always(obj, mark);
   }

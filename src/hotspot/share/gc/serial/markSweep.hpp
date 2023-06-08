@@ -103,7 +103,7 @@ class MarkSweep : AllStatic {
   static PreservedMarksSet               _preserved_overflow_stack_set;
   static size_t                          _preserved_count;
   static size_t                          _preserved_count_max;
-  static OopAndMarkWord*                 _preserved_marks;
+  static PreservedMark*                  _preserved_marks;
 
   static AlwaysTrueClosure               _always_true_closure;
   static ReferenceProcessor*             _ref_processor;
