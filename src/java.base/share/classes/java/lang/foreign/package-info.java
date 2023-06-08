@@ -89,7 +89,7 @@
  * Linker linker = Linker.nativeLinker();
  * SymbolLookup stdlib = linker.defaultLookup();
  * MethodHandle strlen = linker.downcallHandle(
- *     stdlib.find("strlen").get(),
+ *     stdlib.find("strlen").orElseThrow(),
  *     FunctionDescriptor.of(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS)
  * );
  *

@@ -25,6 +25,8 @@
 
 package java.util;
 
+import jdk.internal.util.NullableKeyValueHolder;
+
 /**
  * A Map that has a well-defined encounter order, that supports operations at both ends, and
  * that is reversible. The <a href="SequencedCollection.html#encounter">encounter order</a>
@@ -148,7 +150,7 @@ public interface SequencedMap<K, V> extends Map<K, V> {
      */
     default Map.Entry<K,V> firstEntry() {
         var it = entrySet().iterator();
-        return it.hasNext() ? Map.Entry.copyOf(it.next()) : null;
+        return it.hasNext() ? new NullableKeyValueHolder<>(it.next()) : null;
     }
 
     /**
@@ -165,7 +167,7 @@ public interface SequencedMap<K, V> extends Map<K, V> {
      */
     default Map.Entry<K,V> lastEntry() {
         var it = reversed().entrySet().iterator();
-        return it.hasNext() ? Map.Entry.copyOf(it.next()) : null;
+        return it.hasNext() ? new NullableKeyValueHolder<>(it.next()) : null;
     }
 
     /**
@@ -185,7 +187,7 @@ public interface SequencedMap<K, V> extends Map<K, V> {
     default Map.Entry<K,V> pollFirstEntry() {
         var it = entrySet().iterator();
         if (it.hasNext()) {
-            var entry = Map.Entry.copyOf(it.next());
+            var entry = new NullableKeyValueHolder<>(it.next());
             it.remove();
             return entry;
         } else {
@@ -210,7 +212,7 @@ public interface SequencedMap<K, V> extends Map<K, V> {
     default Map.Entry<K,V> pollLastEntry() {
         var it = reversed().entrySet().iterator();
         if (it.hasNext()) {
-            var entry = Map.Entry.copyOf(it.next());
+            var entry = new NullableKeyValueHolder<>(it.next());
             it.remove();
             return entry;
         } else {
@@ -257,45 +259,56 @@ public interface SequencedMap<K, V> extends Map<K, V> {
     }
 
     /**
-     * Returns a {@link SequencedSet} view of this map's keySet.
+     * Returns a {@code SequencedSet} view of this map's {@link #keySet keySet}.
      *
      * @implSpec
-     * The implementation in this interface returns a {@code SequencedSet}
-     * implementation that delegates all operations either to this map or to this map's
-     * {@link #keySet}, except for its {@link SequencedSet#reversed reversed} method,
-     * which instead returns the result of calling {@code sequencedKeySet} on this map's
-     * reverse-ordered view.
+     * The implementation in this interface returns a {@code SequencedSet} instance
+     * that behaves as follows. Its {@link SequencedSet#add add} and {@link
+     * SequencedSet#addAll addAll} methods throw {@link UnsupportedOperationException}.
+     * Its {@link SequencedSet#reversed reversed} method returns the {@link
+     * #sequencedKeySet sequencedKeySet} view of the {@link #reversed reversed} view of
+     * this map. Each of its other methods calls the corresponding method of the {@link
+     * #keySet keySet} view of this map.
      *
-     * @return a SequencedSet view of this map's keySet
+     * @return a {@code SequencedSet} view of this map's {@code keySet}
      */
     default SequencedSet<K> sequencedKeySet() {
         class SeqKeySet extends AbstractMap.ViewCollection<K> implements SequencedSet<K> {
-            SeqKeySet() {
-                super(SequencedMap.this.keySet());
+            Collection<K> view() {
+                return SequencedMap.this.keySet();
             }
             public SequencedSet<K> reversed() {
                 return SequencedMap.this.reversed().sequencedKeySet();
+            }
+            public boolean equals(Object other) {
+                return view().equals(other);
+            }
+            public int hashCode() {
+                return view().hashCode();
             }
         }
         return new SeqKeySet();
     }
 
     /**
-     * Returns a {@link SequencedCollection} view of this map's values collection.
+     * Returns a {@code SequencedCollection} view of this map's {@link #values values} collection.
      *
      * @implSpec
-     * The implementation in this interface returns a {@code SequencedCollection}
-     * implementation that delegates all operations either to this map or to this map's
-     * {@link #values} collection, except for its {@link SequencedCollection#reversed reversed}
-     * method, which instead returns the result of calling {@code sequencedValues} on this map's
-     * reverse-ordered view.
+     * The implementation in this interface returns a {@code SequencedCollection} instance
+     * that behaves as follows. Its {@link SequencedCollection#add add} and {@link
+     * SequencedCollection#addAll addAll} methods throw {@link UnsupportedOperationException}.
+     * Its {@link SequencedCollection#reversed reversed} method returns the {@link
+     * #sequencedValues sequencedValues} view of the {@link #reversed reversed} view of
+     * this map. Its {@link Object#equals equals} and {@link Object#hashCode hashCode} methods
+     * are inherited from {@link Object}. Each of its other methods calls the corresponding
+     * method of the {@link #values values} view of this map.
      *
-     * @return a SequencedCollection view of this map's values collection
+     * @return a {@code SequencedCollection} view of this map's {@code values} collection
      */
     default SequencedCollection<V> sequencedValues() {
         class SeqValues extends AbstractMap.ViewCollection<V> implements SequencedCollection<V> {
-            SeqValues() {
-                super(SequencedMap.this.values());
+            Collection<V> view() {
+                return SequencedMap.this.values();
             }
             public SequencedCollection<V> reversed() {
                 return SequencedMap.this.reversed().sequencedValues();
@@ -305,25 +318,33 @@ public interface SequencedMap<K, V> extends Map<K, V> {
     }
 
     /**
-     * Returns a {@link SequencedSet} view of this map's entrySet.
+     * Returns a {@code SequencedSet} view of this map's {@link #entrySet entrySet}.
      *
      * @implSpec
-     * The implementation in this interface returns a {@code SequencedSet}
-     * implementation that delegates all operations either to this map or to this map's
-     * {@link #entrySet}, except for its {@link SequencedSet#reversed reversed} method,
-     * which instead returns the result of calling {@code sequencedEntrySet} on this map's
-     * reverse-ordered view.
+     * The implementation in this interface returns a {@code SequencedSet} instance
+     * that behaves as follows. Its {@link SequencedSet#add add} and {@link
+     * SequencedSet#addAll addAll} methods throw {@link UnsupportedOperationException}.
+     * Its {@link SequencedSet#reversed reversed} method returns the {@link
+     * #sequencedEntrySet sequencedEntrySet} view of the {@link #reversed reversed} view of
+     * this map. Each of its other methods calls the corresponding method of the {@link
+     * #entrySet entrySet} view of this map.
      *
-     * @return a SequencedSet view of this map's entrySet
+     * @return a {@code SequencedSet} view of this map's {@code entrySet}
      */
     default SequencedSet<Map.Entry<K, V>> sequencedEntrySet() {
         class SeqEntrySet extends AbstractMap.ViewCollection<Map.Entry<K, V>>
                 implements SequencedSet<Map.Entry<K, V>> {
-            SeqEntrySet() {
-                super(SequencedMap.this.entrySet());
+            Collection<Map.Entry<K, V>> view() {
+                return SequencedMap.this.entrySet();
             }
             public SequencedSet<Map.Entry<K, V>> reversed() {
                 return SequencedMap.this.reversed().sequencedEntrySet();
+            }
+            public boolean equals(Object other) {
+                return view().equals(other);
+            }
+            public int hashCode() {
+                return view().hashCode();
             }
         }
         return new SeqEntrySet();
