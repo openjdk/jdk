@@ -749,7 +749,7 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
                     final String     TNAME = TRANSFORM_NAMES.get(whichtm);
                     final MethodType TTYPE = TRANSFORM_TYPES.get(whichtm);
                     final int        TMODS = TRANSFORM_MODS.get(whichtm);
-                    clb.withMethod(TNAME, MethodTypeDesc.ofDescriptor(TTYPE.toMethodDescriptorString()), (TMODS & ACC_PPP) | ACC_FINAL, mb -> {
+                    clb.withMethod(TNAME, methodSig(TTYPE), (TMODS & ACC_PPP) | ACC_FINAL, mb -> {
                         mb.withFlags((TMODS & ACC_PPP) | ACC_FINAL)
                           .with(ExceptionsAttribute.of(mb.constantPool().classEntry(ConstantDescs.CD_Throwable)))
                           .withCode(cob -> {
