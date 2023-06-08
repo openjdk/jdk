@@ -22,6 +22,7 @@
  */
 package org.openjdk.bench.java.lang.foreign;
 
+import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 
 import org.openjdk.jmh.annotations.Benchmark;
@@ -37,7 +38,6 @@ import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.annotations.Warmup;
 import sun.misc.Unsafe;
 
-import java.lang.foreign.SegmentScope;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.concurrent.TimeUnit;
@@ -76,7 +76,8 @@ public class LoopOverNonConstantHeap extends JavaLayouts {
             MemorySegment intI = MemorySegment.ofArray(new int[ALLOC_SIZE]);
             MemorySegment intD = MemorySegment.ofArray(new double[ALLOC_SIZE]);
             MemorySegment intF = MemorySegment.ofArray(new float[ALLOC_SIZE]);
-            MemorySegment s = MemorySegment.allocateNative(ALLOC_SIZE, 1, SegmentScope.auto());
+            Arena scope = Arena.ofAuto();
+            MemorySegment s = scope.allocate(ALLOC_SIZE, 1);
             for (int i = 0; i < ALLOC_SIZE; i++) {
                 intB.set(JAVA_BYTE, i, (byte)i);
                 intI.setAtIndex(JAVA_INT, i, i);

@@ -429,4 +429,20 @@ public interface NavigableMap<K,V> extends SortedMap<K,V> {
      * @throws IllegalArgumentException {@inheritDoc}
      */
     SortedMap<K,V> tailMap(K fromKey);
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * This method is equivalent to {@link #descendingMap descendingMap}.
+     *
+     * @implSpec
+     * The implementation in this interface returns the result of calling the
+     * {@code descendingMap} method.
+     *
+     * @return a reverse-ordered view of this map, as a {@code NavigableMap}
+     * @since 21
+     */
+    default NavigableMap<K, V> reversed() {
+        return this.descendingMap();
+    }
 }

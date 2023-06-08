@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@ import java.security.PrivilegedExceptionAction;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jdk.internal.util.OperatingSystem;
 import sun.net.dns.ResolverConfiguration;
 import sun.security.action.GetPropertyAction;
 import sun.security.krb5.internal.crypto.EType;
@@ -159,8 +160,7 @@ public class Config {
 
     private static boolean isMacosLionOrBetter() {
         // split the "10.x.y" version number
-        String osname = GetPropertyAction.privilegedGetProperty("os.name");
-        if (!osname.contains("OS X")) {
+        if (!OperatingSystem.isMacOS()) {
             return false;
         }
 
@@ -671,6 +671,9 @@ public class Config {
     private List<String> loadConfigFile(final String fileName)
             throws IOException, KrbException {
 
+        if (DEBUG) {
+            System.out.println("Loading config file from " + fileName);
+        }
         List<String> result = new ArrayList<>();
         List<String> raw = new ArrayList<>();
         Set<Path> dupsCheck = new HashSet<>();
@@ -781,6 +784,9 @@ public class Config {
             throws KrbException {
         Hashtable<String,Object> current = stanzaTable;
         for (String line: v) {
+            if (DEBUG) {
+                System.out.println(line);
+            }
             // There are only 3 kinds of lines
             // 1. a = b
             // 2. a = {
@@ -892,8 +898,7 @@ public class Config {
      */
     private String getNativeFileName() {
         String name = null;
-        String osname = GetPropertyAction.privilegedGetProperty("os.name");
-        if (osname.startsWith("Windows")) {
+        if (OperatingSystem.isWindows()) {
             try {
                 Credentials.ensureLoaded();
             } catch (Exception e) {
@@ -926,7 +931,7 @@ public class Config {
             if (name == null) {
                 name = "c:\\winnt\\krb5.ini";
             }
-        } else if (osname.contains("OS X")) {
+        } else if (OperatingSystem.isMacOS()) {
             name = findMacosConfigFile();
         } else {
             name =  "/etc/krb5.conf";
@@ -980,16 +985,22 @@ public class Config {
         String default_enctypes;
         default_enctypes = get("libdefaults", configName);
         if (default_enctypes == null && !configName.equals("permitted_enctypes")) {
+            if (DEBUG) {
+                System.out.println("Getting permitted_enctypes from libdefaults");
+            }
             default_enctypes = get("libdefaults", "permitted_enctypes");
         }
         int[] etype;
         if (default_enctypes == null) {
             if (DEBUG) {
-                System.out.println("Using builtin default etypes for " +
+                System.out.println("default_enctypes were null, using builtin default etypes for configuration " +
                     configName);
             }
             etype = EType.getBuiltInDefaults();
         } else {
+            if (DEBUG) {
+                System.out.println("default_enctypes:" + default_enctypes);
+            }
             String delim = " ";
             StringTokenizer st;
             for (int j = 0; j < default_enctypes.length(); j++) {
@@ -1011,7 +1022,8 @@ public class Config {
                 }
             }
             if (ls.isEmpty()) {
-                throw new KrbException("no supported default etypes for "
+                throw new KrbException("out of " + len +
+                        " default etypes no supported etypes found for configuration "
                         + configName);
             } else {
                 etype = new int[ls.size()];
@@ -1193,8 +1205,7 @@ public class Config {
                     new java.security.PrivilegedAction<String>() {
                 @Override
                 public String run() {
-                    String osname = System.getProperty("os.name");
-                    if (osname.startsWith("Windows")) {
+                    if (OperatingSystem.isWindows()) {
                         return System.getenv("USERDNSDOMAIN");
                     }
                     return null;
@@ -1241,8 +1252,7 @@ public class Config {
                     new java.security.PrivilegedAction<String>() {
                 @Override
                 public String run() {
-                    String osname = System.getProperty("os.name");
-                    if (osname.startsWith("Windows")) {
+                    if (OperatingSystem.isWindows()) {
                         String logonServer = System.getenv("LOGONSERVER");
                         if (logonServer != null
                                 && logonServer.startsWith("\\\\")) {

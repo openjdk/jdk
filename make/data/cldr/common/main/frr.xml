@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2022 Unicode, Inc.
+<!-- Copyright © 1991-2023 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -533,6 +533,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="unconfirmed">Jan</month>
+							<month type="2" draft="unconfirmed">Feb</month>
+							<month type="3" draft="unconfirmed">Mar</month>
+							<month type="4" draft="unconfirmed">Apr</month>
+							<month type="5" draft="unconfirmed">Mei</month>
+							<month type="6" draft="unconfirmed">Jün</month>
+							<month type="7" draft="unconfirmed">Jül</month>
+							<month type="8" draft="unconfirmed">Aug</month>
+							<month type="9" draft="unconfirmed">Sep</month>
+							<month type="10" draft="unconfirmed">Okt</month>
+							<month type="11" draft="unconfirmed">Nof</month>
+							<month type="12" draft="unconfirmed">Det</month>
+						</monthWidth>
 						<monthWidth type="narrow">
 							<month type="1" draft="unconfirmed">J</month>
 							<month type="2" draft="unconfirmed">F</month>
@@ -547,6 +561,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="11" draft="unconfirmed">N</month>
 							<month type="12" draft="unconfirmed">D</month>
 						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="unconfirmed">Janewoore</month>
+							<month type="2" draft="unconfirmed">Febrewoore</month>
+							<month type="3" draft="unconfirmed">Maarts</month>
+							<month type="4" draft="unconfirmed">April</month>
+							<month type="5" draft="unconfirmed">Mei</month>
+							<month type="6" draft="unconfirmed">Jüüne</month>
+							<month type="7" draft="unconfirmed">Jüüle</month>
+							<month type="8" draft="unconfirmed">August</month>
+							<month type="9" draft="unconfirmed">September</month>
+							<month type="10" draft="unconfirmed">Oktuuber</month>
+							<month type="11" draft="unconfirmed">Nofember</month>
+							<month type="12" draft="unconfirmed">Detsember</month>
+						</monthWidth>
 					</monthContext>
 				</months>
 				<days>
@@ -559,6 +587,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="thu" draft="unconfirmed">Tür</day>
 							<day type="fri" draft="unconfirmed">Fre</day>
 							<day type="sat" draft="unconfirmed">San</day>
+						</dayWidth>
+						<dayWidth type="narrow">
+							<day type="sun" draft="unconfirmed">S</day>
+							<day type="mon" draft="unconfirmed">M</day>
+							<day type="tue" draft="unconfirmed">T</day>
+							<day type="wed" draft="unconfirmed">W</day>
+							<day type="thu" draft="unconfirmed">T</day>
+							<day type="fri" draft="unconfirmed">F</day>
+							<day type="sat" draft="unconfirmed">S</day>
 						</dayWidth>
 						<dayWidth type="short">
 							<day type="sun" draft="unconfirmed">Sö</day>
@@ -580,6 +617,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</dayWidth>
 					</dayContext>
 					<dayContext type="stand-alone">
+						<dayWidth type="abbreviated">
+							<day type="sun" draft="unconfirmed">Sön</day>
+							<day type="mon" draft="unconfirmed">Mun</day>
+							<day type="tue" draft="unconfirmed">Tei</day>
+							<day type="wed" draft="unconfirmed">Wed</day>
+							<day type="thu" draft="unconfirmed">Tür</day>
+							<day type="fri" draft="unconfirmed">Fre</day>
+							<day type="sat" draft="unconfirmed">San</day>
+						</dayWidth>
 						<dayWidth type="narrow">
 							<day type="sun" draft="unconfirmed">S</day>
 							<day type="mon" draft="unconfirmed">M</day>
@@ -589,10 +635,34 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="fri" draft="unconfirmed">F</day>
 							<day type="sat" draft="unconfirmed">S</day>
 						</dayWidth>
+						<dayWidth type="short">
+							<day type="sun" draft="unconfirmed">Sö</day>
+							<day type="mon" draft="unconfirmed">Mu</day>
+							<day type="tue" draft="unconfirmed">Te</day>
+							<day type="wed" draft="unconfirmed">We</day>
+							<day type="thu" draft="unconfirmed">Tü</day>
+							<day type="fri" draft="unconfirmed">Fr</day>
+							<day type="sat" draft="unconfirmed">Sa</day>
+						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun" draft="unconfirmed">Söndai</day>
+							<day type="mon" draft="unconfirmed">Mundai</day>
+							<day type="tue" draft="unconfirmed">Teisdai</day>
+							<day type="wed" draft="unconfirmed">Weedensdai</day>
+							<day type="thu" draft="unconfirmed">Tüürsdai</day>
+							<day type="fri" draft="unconfirmed">Freidai</day>
+							<day type="sat" draft="unconfirmed">Saninj</day>
+						</dayWidth>
 					</dayContext>
 				</days>
 				<quarters>
 					<quarterContext type="format">
+						<quarterWidth type="abbreviated">
+							<quarter type="1" draft="unconfirmed">iarst kwartaal</quarter>
+							<quarter type="2" draft="unconfirmed">naist kwartaal</quarter>
+							<quarter type="3" draft="unconfirmed">traad kwartaal</quarter>
+							<quarter type="4" draft="unconfirmed">fjuard kwartaal</quarter>
+						</quarterWidth>
 						<quarterWidth type="narrow">
 							<quarter type="1" draft="unconfirmed">I</quarter>
 							<quarter type="2" draft="unconfirmed">II</quarter>
@@ -607,11 +677,23 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</quarterWidth>
 					</quarterContext>
 					<quarterContext type="stand-alone">
+						<quarterWidth type="abbreviated">
+							<quarter type="1" draft="unconfirmed">iarst kwartaal</quarter>
+							<quarter type="2" draft="unconfirmed">naist kwartaal</quarter>
+							<quarter type="3" draft="unconfirmed">traad kwartaal</quarter>
+							<quarter type="4" draft="unconfirmed">fjuard kwartaal</quarter>
+						</quarterWidth>
 						<quarterWidth type="narrow">
 							<quarter type="1" draft="unconfirmed">I</quarter>
 							<quarter type="2" draft="unconfirmed">II</quarter>
 							<quarter type="3" draft="unconfirmed">III</quarter>
 							<quarter type="4" draft="unconfirmed">IV</quarter>
+						</quarterWidth>
+						<quarterWidth type="wide">
+							<quarter type="1" draft="unconfirmed">iarst kwartaal</quarter>
+							<quarter type="2" draft="unconfirmed">naist kwartaal</quarter>
+							<quarter type="3" draft="unconfirmed">traad kwartaal</quarter>
+							<quarter type="4" draft="unconfirmed">fjuard kwartaal</quarter>
 						</quarterWidth>
 					</quarterContext>
 				</quarters>
@@ -817,7 +899,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<greatestDifference id="y" draft="unconfirmed">G MMM y – MMM y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMMd">
-							<greatestDifference id="d" draft="unconfirmed">G d. – d. MMM y</greatestDifference>
+							<greatestDifference id="d" draft="unconfirmed">G d. – d. MMM y</greatestDifference>
 							<greatestDifference id="G" draft="unconfirmed">G d. MMM y – G d. MMM y</greatestDifference>
 							<greatestDifference id="M" draft="unconfirmed">G d. MMM – d. MMM y</greatestDifference>
 							<greatestDifference id="y" draft="unconfirmed">G d. MMM y – d. MMM y</greatestDifference>
@@ -875,7 +957,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<greatestDifference id="M" draft="unconfirmed">LLL – LLL</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMd">
-							<greatestDifference id="d" draft="unconfirmed">d. – d. MMM</greatestDifference>
+							<greatestDifference id="d" draft="unconfirmed">d. – d. MMM</greatestDifference>
 							<greatestDifference id="M" draft="unconfirmed">d. MMM – d. MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
@@ -904,7 +986,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<greatestDifference id="y" draft="unconfirmed">MMM y – MMM y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMd">
-							<greatestDifference id="d" draft="unconfirmed">d. – d. MMM y</greatestDifference>
+							<greatestDifference id="d" draft="unconfirmed">d. – d. MMM y</greatestDifference>
 							<greatestDifference id="M" draft="unconfirmed">d. MMM – d. MMM y</greatestDifference>
 							<greatestDifference id="y" draft="unconfirmed">d. MMM y – d. MMM y</greatestDifference>
 						</intervalFormatItem>
@@ -2261,6 +2343,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<infinity draft="unconfirmed">∞</infinity>
 			<nan draft="unconfirmed">nian taal</nan>
 		</symbols>
+		<currencyFormats numberSystem="latn">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
+					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
 		<currencies>
 			<currency type="AED">
 				<displayName draft="unconfirmed">Ferianagt Araabisk Emiraaten Dirham</displayName>
@@ -2910,6 +3000,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</numbers>
 	<units>
 		<unitLength type="long">
+			<compoundUnit type="per">
+				<compoundUnitPattern draft="unconfirmed">{0}/{1}</compoundUnitPattern>
+			</compoundUnit>
 			<compoundUnit type="times">
 				<compoundUnitPattern draft="unconfirmed">{0}⋅{1}</compoundUnitPattern>
 			</compoundUnit>
@@ -2934,6 +3027,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="narrow">
+			<compoundUnit type="per">
+				<compoundUnitPattern draft="unconfirmed">{0}/{1}</compoundUnitPattern>
+			</compoundUnit>
 			<compoundUnit type="times">
 				<compoundUnitPattern draft="unconfirmed">{0}{1}</compoundUnitPattern>
 			</compoundUnit>
@@ -2967,24 +3063,46 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<listPatternPart type="2" draft="unconfirmed">{0} of {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="or-narrow">
+			<listPatternPart type="start" draft="unconfirmed">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle" draft="unconfirmed">{0}, {1}</listPatternPart>
 			<listPatternPart type="end" draft="unconfirmed">{0} of {1}</listPatternPart>
 			<listPatternPart type="2" draft="unconfirmed">{0} of {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="or-short">
+			<listPatternPart type="start" draft="unconfirmed">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle" draft="unconfirmed">{0}, {1}</listPatternPart>
 			<listPatternPart type="end" draft="unconfirmed">{0} of {1}</listPatternPart>
 			<listPatternPart type="2" draft="unconfirmed">{0} of {1}</listPatternPart>
 		</listPattern>
-		<listPattern type="standard-short">
+		<listPattern type="standard-narrow">
+			<listPatternPart type="start" draft="unconfirmed">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle" draft="unconfirmed">{0}, {1}</listPatternPart>
 			<listPatternPart type="end" draft="unconfirmed">{0} an {1}</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0} an {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="standard-short">
+			<listPatternPart type="start" draft="unconfirmed">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle" draft="unconfirmed">{0}, {1}</listPatternPart>
+			<listPatternPart type="end" draft="unconfirmed">{0} an {1}</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0} an {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="unit">
+			<listPatternPart type="start" draft="unconfirmed">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle" draft="unconfirmed">{0}, {1}</listPatternPart>
 			<listPatternPart type="end" draft="unconfirmed">{0} an {1}</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0} an {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="unit-narrow">
+			<listPatternPart type="start" draft="unconfirmed">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle" draft="unconfirmed">{0}, {1}</listPatternPart>
 			<listPatternPart type="end" draft="unconfirmed">{0} an {1}</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0} an {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="unit-short">
+			<listPatternPart type="start" draft="unconfirmed">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle" draft="unconfirmed">{0}, {1}</listPatternPart>
 			<listPatternPart type="end" draft="unconfirmed">{0} an {1}</listPatternPart>
+			<listPatternPart type="2" draft="unconfirmed">{0} an {1}</listPatternPart>
 		</listPattern>
 	</listPatterns>
 	<posix>

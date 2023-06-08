@@ -135,7 +135,6 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
   void env_dispose();
 
   void set_env_local_storage(const void* data)     { _env_local_storage = data; }
-  const void* get_env_local_storage()              { return _env_local_storage; }
 
   void record_class_file_load_hook_enabled();
   void record_first_time_class_file_load_hook_enabled();
@@ -169,6 +168,8 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
   bool use_version_1_2_semantics();  // agent asked for version 1.2
 
   bool is_retransformable()                        { return _is_retransformable; }
+
+  const void* get_env_local_storage() { return _env_local_storage; }
 
   static ByteSize jvmti_external_offset() {
     return byte_offset_of(JvmtiEnvBase, _jvmti_external);
@@ -213,12 +214,21 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
     return result;
   }
 
+  static jvmtiError get_threadOop_and_JavaThread(ThreadsList* t_list, jthread thread, JavaThread* cur_thread,
+                                                 JavaThread** jt_pp, oop* thread_oop_p);
   static jvmtiError get_threadOop_and_JavaThread(ThreadsList* t_list, jthread thread,
                                                  JavaThread** jt_pp, oop* thread_oop_p);
 
   // Return true if java thread is a carrier thread with a mounted virtual thread.
   static bool is_cthread_with_mounted_vthread(JavaThread* jt);
   static bool is_cthread_with_continuation(JavaThread* jt);
+
+  // Check if VirtualThread or BoundVirtualThread is suspended.
+  static bool is_vthread_suspended(oop vt_oop, JavaThread* jt);
+
+  // Check for JVMTI_ERROR_NOT_SUSPENDED and JVMTI_ERROR_OPAQUE_FRAME errors.
+  // Used in PopFrame and ForceEarlyReturn implementations.
+  static jvmtiError check_non_suspended_or_opaque_frame(JavaThread* jt, oop thr_obj, bool self);
 
   static JvmtiEnv* JvmtiEnv_from_jvmti_env(jvmtiEnv *env) {
     return (JvmtiEnv*)((intptr_t)env - in_bytes(jvmti_external_offset()));

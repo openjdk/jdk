@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ import jdk.internal.classfile.attribute.CharacterRangeInfo;
 import jdk.internal.classfile.attribute.LocalVariableInfo;
 import jdk.internal.classfile.attribute.LocalVariableTypeInfo;
 import jdk.internal.classfile.instruction.ExceptionCatch;
-import jdk.internal.classfile.java.lang.constant.PackageDesc;
+import java.lang.constant.PackageDesc;
 
 /**
  * Main entry points for parsing, transforming, and generating classfiles.
@@ -143,7 +143,7 @@ public class Classfile {
 
         /**
          * {@return an option describing whether or not to filter unresolved labels}
-         * Default is to throw IllegalStateException when any {@link ExceptionCatch},
+         * Default is to throw IllegalArgumentException when any {@link ExceptionCatch},
          * {@link LocalVariableInfo}, {@link LocalVariableTypeInfo}, or {@link CharacterRangeInfo}
          * reference to unresolved {@link Label} during bytecode serialization.
          * Setting this option to true filters the above elements instead.
@@ -606,8 +606,9 @@ public class Classfile {
     public static final int JAVA_19_VERSION = 63;
     public static final int JAVA_20_VERSION = 64;
     public static final int JAVA_21_VERSION = 65;
+    public static final int JAVA_22_VERSION = 66;
 
-    public static final int LATEST_MAJOR_VERSION = JAVA_21_VERSION;
+    public static final int LATEST_MAJOR_VERSION = JAVA_22_VERSION;
     public static final int LATEST_MINOR_VERSION = 0;
     public static final int PREVIEW_MINOR_VERSION = -1;
 

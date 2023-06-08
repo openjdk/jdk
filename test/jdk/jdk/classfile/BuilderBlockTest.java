@@ -255,6 +255,7 @@ class BuilderBlockTest {
                               assertEquals(slot1, 4);
                               assertEquals(slot2, 5);
                               assertEquals(slot3, 7);
+                              xb.return_();
                           }));
         });
     }
@@ -275,6 +276,7 @@ class BuilderBlockTest {
                               });
                               int slot4 = xb.allocateLocal(TypeKind.IntType);
                               assertEquals(slot4, 4);
+                              xb.return_();
                           }));
         });
     }

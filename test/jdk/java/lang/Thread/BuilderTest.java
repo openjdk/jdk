@@ -24,7 +24,6 @@
 /**
  * @test
  * @summary Unit test for Thread.Builder
- * @enablePreview
  * @run junit BuilderTest
  */
 
@@ -574,36 +573,6 @@ class BuilderTest {
     }
 
     /**
-     * Test Thread.Builder creating threads that disallow or allow
-     * thread locals.
-     */
-    @Test
-    void testThreadLocals3() throws Exception {
-        Thread.Builder builder = Thread.ofPlatform();
-
-        // disallow
-        builder.allowSetThreadLocals(false);
-        testNoThreadLocals(builder);
-
-        // allow
-        builder.allowSetThreadLocals(true);
-        testThreadLocals(builder);
-    }
-
-    @Test
-    void testThreadLocals4() throws Exception {
-        Thread.Builder builder = Thread.ofVirtual();
-
-        // disallow
-        builder.allowSetThreadLocals(false);
-        testNoThreadLocals(builder);
-
-        // allow
-        builder.allowSetThreadLocals(true);
-        testThreadLocals(builder);
-    }
-
-    /**
      * Tests that a builder creates threads that inherits the initial values of
      * inheritable thread locals.
      */
@@ -695,46 +664,6 @@ class BuilderTest {
         testNoInheritedThreadLocals(builder);
 
         // inherit
-        builder.inheritInheritableThreadLocals(true);
-        testInheritedThreadLocals(builder);
-    }
-
-    @Test
-    void testInheritedThreadLocals3() throws Exception {
-        Thread.Builder builder = Thread.ofPlatform();
-
-        // thread locals not allowed
-        builder.allowSetThreadLocals(false);
-        testNoInheritedThreadLocals(builder);
-        builder.inheritInheritableThreadLocals(false);
-        testNoInheritedThreadLocals(builder);
-        builder.inheritInheritableThreadLocals(true);
-        testNoInheritedThreadLocals(builder);
-
-        // thread locals allowed
-        builder.allowSetThreadLocals(true);
-        builder.inheritInheritableThreadLocals(false);
-        testNoInheritedThreadLocals(builder);
-        builder.inheritInheritableThreadLocals(true);
-        testInheritedThreadLocals(builder);
-    }
-
-    @Test
-    void testInheritedThreadLocals4() throws Exception {
-        Thread.Builder builder = Thread.ofVirtual();
-
-        // thread locals not allowed
-        builder.allowSetThreadLocals(false);
-        testNoInheritedThreadLocals(builder);
-        builder.inheritInheritableThreadLocals(false);
-        testNoInheritedThreadLocals(builder);
-        builder.inheritInheritableThreadLocals(true);
-        testNoInheritedThreadLocals(builder);
-
-        // thread locals allowed
-        builder.allowSetThreadLocals(true);
-        builder.inheritInheritableThreadLocals(false);
-        testNoInheritedThreadLocals(builder);
         builder.inheritInheritableThreadLocals(true);
         testInheritedThreadLocals(builder);
     }
@@ -846,46 +775,6 @@ class BuilderTest {
         testNoInheritContextClassLoader(builder);
 
         // inherit
-        builder.inheritInheritableThreadLocals(true);
-        testInheritContextClassLoader(builder);
-    }
-
-    @Test
-    void testContextClassLoader3() throws Exception {
-        Thread.Builder builder = Thread.ofPlatform();
-
-        // thread locals not allowed
-        builder.allowSetThreadLocals(false);
-        testNoInheritContextClassLoader(builder);
-        builder.inheritInheritableThreadLocals(false);
-        testNoInheritContextClassLoader(builder);
-        builder.inheritInheritableThreadLocals(true);
-        testNoInheritContextClassLoader(builder);
-
-        // thread locals allowed
-        builder.allowSetThreadLocals(true);
-        builder.inheritInheritableThreadLocals(false);
-        testNoInheritContextClassLoader(builder);
-        builder.inheritInheritableThreadLocals(true);
-        testInheritContextClassLoader(builder);
-    }
-
-    @Test
-    void testContextClassLoader4() throws Exception {
-        Thread.Builder builder = Thread.ofVirtual();
-
-        // thread locals not allowed
-        builder.allowSetThreadLocals(false);
-        testNoInheritContextClassLoader(builder);
-        builder.inheritInheritableThreadLocals(false);
-        testNoInheritContextClassLoader(builder);
-        builder.inheritInheritableThreadLocals(true);
-        testNoInheritContextClassLoader(builder);
-
-        // thread locals allowed
-        builder.allowSetThreadLocals(true);
-        builder.inheritInheritableThreadLocals(false);
-        testNoInheritContextClassLoader(builder);
         builder.inheritInheritableThreadLocals(true);
         testInheritContextClassLoader(builder);
     }

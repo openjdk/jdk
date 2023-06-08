@@ -22,9 +22,6 @@
  */
 
 // key: compiler.err.unconditional.pattern.and.default
-// key: compiler.misc.feature.pattern.switch
-// key: compiler.warn.preview.feature.use.plural
-// options: --enable-preview -source ${jdk.version} -Xlint:preview
 
 class UnconditionalPatternAndDefault {
     private void doSwitch(Object o) {

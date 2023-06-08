@@ -142,7 +142,7 @@ void vmClasses::resolve_all(TRAPS) {
     // Object_klass is resolved. See the above resolve_through()
     // call. No mirror objects are accessed/restored in the above call.
     // Mirrors are restored after java.lang.Class is loaded.
-    ArchiveHeapLoader::fixup_regions();
+    ArchiveHeapLoader::fixup_region();
 
     // Initialize the constant pool for the Object_class
     assert(Object_klass()->is_shared(), "must be");

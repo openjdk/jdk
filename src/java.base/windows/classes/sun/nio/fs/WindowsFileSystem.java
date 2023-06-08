@@ -31,7 +31,6 @@ import java.nio.file.spi.*;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.io.IOException;
-import jdk.internal.util.StaticProperty;
 
 class WindowsFileSystem
     extends FileSystem
@@ -43,11 +42,12 @@ class WindowsFileSystem
     private final String defaultRoot;
 
     // package-private
-    WindowsFileSystem(WindowsFileSystemProvider provider) {
+    WindowsFileSystem(WindowsFileSystemProvider provider,
+                      String dir)
+    {
         this.provider = provider;
 
         // parse default directory and check it is absolute
-        String dir = StaticProperty.userDir();
         WindowsPathParser.Result result = WindowsPathParser.parse(dir);
 
         if ((result.type() != WindowsPathType.ABSOLUTE) &&

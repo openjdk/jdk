@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,6 +105,16 @@ public final class BufferedFieldBuilder
         @Override
         public Utf8Entry fieldType() {
             return desc;
+        }
+
+        @Override
+        public void writeTo(DirectClassBuilder builder) {
+            builder.withField(name, desc, new Consumer<FieldBuilder>() {
+                @Override
+                public void accept(FieldBuilder fieldBuilder) {
+                    elements.forEach(fieldBuilder);
+                }
+            });
         }
 
         @Override

@@ -324,6 +324,25 @@ Java_sun_nio_fs_UnixNativeDispatcher_init(JNIEnv* env, jclass this)
     return capabilities;
 }
 
+JNIEXPORT jbyteArray JNICALL
+Java_sun_nio_fs_UnixNativeDispatcher_getcwd(JNIEnv* env, jclass this) {
+    jbyteArray result = NULL;
+    char buf[PATH_MAX+1];
+
+    /* EINTR not listed as a possible error */
+    char* cwd = getcwd(buf, sizeof(buf));
+    if (cwd == NULL) {
+        throwUnixException(env, errno);
+    } else {
+        jsize len = (jsize)strlen(buf);
+        result = (*env)->NewByteArray(env, len);
+        if (result != NULL) {
+            (*env)->SetByteArrayRegion(env, result, 0, len, (jbyte*)buf);
+        }
+    }
+    return result;
+}
+
 JNIEXPORT jbyteArray
 Java_sun_nio_fs_UnixNativeDispatcher_strerror(JNIEnv* env, jclass this, jint error)
 {
@@ -1229,7 +1248,7 @@ Java_sun_nio_fs_UnixNativeDispatcher_fgetxattr0(JNIEnv* env, jclass clazz,
 
 #ifdef __linux__
     res = fgetxattr(fd, name, value, valueLen);
-#elif _ALLBSD_SOURCE
+#elif defined(_ALLBSD_SOURCE)
     res = fgetxattr(fd, name, value, valueLen, 0, 0);
 #else
     throwUnixException(env, ENOTSUP);
@@ -1250,7 +1269,7 @@ Java_sun_nio_fs_UnixNativeDispatcher_fsetxattr0(JNIEnv* env, jclass clazz,
 
 #ifdef __linux__
     res = fsetxattr(fd, name, value, valueLen, 0);
-#elif _ALLBSD_SOURCE
+#elif defined(_ALLBSD_SOURCE)
     res = fsetxattr(fd, name, value, valueLen, 0, 0);
 #else
     throwUnixException(env, ENOTSUP);
@@ -1269,7 +1288,7 @@ Java_sun_nio_fs_UnixNativeDispatcher_fremovexattr0(JNIEnv* env, jclass clazz,
 
 #ifdef __linux__
     res = fremovexattr(fd, name);
-#elif _ALLBSD_SOURCE
+#elif defined(_ALLBSD_SOURCE)
     res = fremovexattr(fd, name, 0);
 #else
     throwUnixException(env, ENOTSUP);
@@ -1288,7 +1307,7 @@ Java_sun_nio_fs_UnixNativeDispatcher_flistxattr(JNIEnv* env, jclass clazz,
 
 #ifdef __linux__
     res = flistxattr(fd, list, (size_t)size);
-#elif _ALLBSD_SOURCE
+#elif defined(_ALLBSD_SOURCE)
     res = flistxattr(fd, list, (size_t)size, 0);
 #else
     throwUnixException(env, ENOTSUP);
