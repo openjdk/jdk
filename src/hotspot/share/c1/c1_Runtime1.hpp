@@ -191,7 +191,7 @@ class Runtime1: public AllStatic {
 
   static void predicate_failed_trap(JavaThread* current);
 
-  static void check_abort_on_vm_exception(JavaThread* current, oopDesc* ex);
+  static void check_abort_on_vm_exception(oopDesc* ex);
 
   static void print_statistics()                 PRODUCT_RETURN;
 };

@@ -1505,9 +1505,9 @@ JRT_ENTRY(void, Runtime1::predicate_failed_trap(JavaThread* current))
 JRT_END
 
 // Check exception if AbortVMOnException flag set
-JRT_LEAF(void, Runtime1::check_abort_on_vm_exception(JavaThread* current, oopDesc* ex))
+JRT_LEAF(void, Runtime1::check_abort_on_vm_exception(oopDesc* ex))
   ResourceMark rm;
-  const char* message;
+  const char* message = nullptr;
   if (ex->is_a(vmClasses::Throwable_klass())) {
     oop msg = java_lang_Throwable::message(ex);
     if (msg != nullptr) {

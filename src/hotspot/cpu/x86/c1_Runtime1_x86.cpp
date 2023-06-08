@@ -1211,10 +1211,8 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
 
         if (AbortVMOnException) {
           __ enter();
-          OopMap* oop_map = save_live_registers(sasm, 2);
-          int call_offset = __ call_RT(noreg, noreg, CAST_FROM_FN_PTR(address, check_abort_on_vm_exception), rax);
-          oop_maps = new OopMapSet();
-          oop_maps->add_gc_map(call_offset, oop_map);
+          save_live_registers(sasm, 2);
+          __ call_VM_leaf(CAST_FROM_FN_PTR(address, check_abort_on_vm_exception), rax);
           restore_live_registers(sasm);
           __ leave();
         }
