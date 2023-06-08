@@ -72,7 +72,7 @@ public class TestDirectedInheritance extends JavadocTester {
         // there's no crash with DocLint on and off, but don't check that the exit
         // code is OK, it likely isn't (after all, there's an unknown tag).
         setAutomaticCheckNoStacktrace(true);
-        { // DocLint is on
+        { // DocLint is explicit
             int i = 0;
             for (var check : new String[]{":all", ":none", ""}) {
                 var outputDir = "out-DocLint-" + i++; // use separate output directories
@@ -82,7 +82,7 @@ public class TestDirectedInheritance extends JavadocTester {
                         "x");
             }
         }
-        // DocLint is off
+        // DocLint is default
         javadoc("-d", base.resolve("out").toString(),
                 "--source-path", src.toString(),
                 "x");
