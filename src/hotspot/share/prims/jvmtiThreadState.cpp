@@ -245,7 +245,7 @@ JvmtiVTMSTransitionDisabler::print_info() {
 #endif
 
 // disable VTMS transitions for one virtual thread
-// no-op if thread is non-NULL and not a virtual thread
+// no-op if thread is non-null and not a virtual thread
 JvmtiVTMSTransitionDisabler::JvmtiVTMSTransitionDisabler(jthread thread)
   : _is_SR(false), _thread(thread)
 {

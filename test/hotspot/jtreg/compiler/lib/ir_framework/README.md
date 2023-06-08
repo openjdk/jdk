@@ -118,7 +118,7 @@ The framework allows the use of additional compiler control annotations for help
 - [@DontInline](./DontInline.java)
 - [@ForceInline](./ForceInline.java)
 - [@DontCompile](./DontCompile.java)
-- [@ForceCompile](./DontCompile.java)
+- [@ForceCompile](./ForceCompile.java)
 - [@ForceCompileClassInitializer](./ForceCompileClassInitializer.java)
 
 ### 2.5 Framework Debug and Stress Flags

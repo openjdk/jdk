@@ -90,11 +90,13 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
         checkLayouts(function);
         function = stripNames(function);
         LinkerOptions optionSet = LinkerOptions.forDowncall(function, options);
+        validateVariadicLayouts(function, optionSet);
 
         return DOWNCALL_CACHE.get(new LinkRequest(function, optionSet), linkRequest ->  {
             FunctionDescriptor fd = linkRequest.descriptor();
             MethodType type = fd.toMethodType();
             MethodHandle handle = arrangeDowncall(type, fd, linkRequest.options());
+            handle = SharedUtils.maybeCheckCaptureSegment(handle, linkRequest.options());
             handle = SharedUtils.maybeInsertAllocator(fd, handle);
             return handle;
         });
@@ -133,6 +135,28 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
 
     /** {@return byte order used by this linker} */
     protected abstract ByteOrder linkerByteOrder();
+
+    // C spec mandates that variadic arguments smaller than int are promoted to int,
+    // and float is promoted to double
+    // See: https://en.cppreference.com/w/c/language/conversion#Default_argument_promotions
+    // We reject the corresponding layouts here, to avoid issues where unsigned values
+    // are sign extended when promoted. (as we don't have a way to unambiguously represent signed-ness atm).
+    private void validateVariadicLayouts(FunctionDescriptor function, LinkerOptions optionSet) {
+        if (optionSet.isVariadicFunction()) {
+            List<MemoryLayout> argumentLayouts = function.argumentLayouts();
+            List<MemoryLayout> variadicLayouts = argumentLayouts.subList(optionSet.firstVariadicArgIndex(), argumentLayouts.size());
+
+            for (MemoryLayout variadicLayout : variadicLayouts) {
+                if (variadicLayout.equals(ValueLayout.JAVA_BOOLEAN)
+                    || variadicLayout.equals(ValueLayout.JAVA_BYTE)
+                    || variadicLayout.equals(ValueLayout.JAVA_CHAR)
+                    || variadicLayout.equals(ValueLayout.JAVA_SHORT)
+                    || variadicLayout.equals(ValueLayout.JAVA_FLOAT)) {
+                    throw new IllegalArgumentException("Invalid variadic argument layout: " + variadicLayout);
+                }
+            }
+        }
+    }
 
     private void checkLayouts(FunctionDescriptor descriptor) {
         descriptor.returnLayout().ifPresent(this::checkLayout);
