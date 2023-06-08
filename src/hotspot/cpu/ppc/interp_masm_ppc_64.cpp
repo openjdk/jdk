@@ -924,7 +924,7 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
   if (LockingMode == LM_MONITOR) {
     call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter), monitor);
   } else {
-    // template code:
+    // template code (for LM_LEGACY):
     //
     // markWord displaced_header = obj->mark().set_unlocked();
     // monitor->lock()->set_displaced_header(displaced_header);
@@ -938,7 +938,7 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
     //   InterpreterRuntime::monitorenter(THREAD, monitor);
     // }
 
-    const Register displaced_header = R7_ARG5;
+    const Register header           = R7_ARG5;
     const Register object_mark_addr = R8_ARG6;
     const Register current_header   = R9_ARG7;
     const Register tmp              = R10_ARG8;
@@ -946,12 +946,12 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
     Label count_locking, done;
     Label cas_failed, slow_case;
 
-    assert_different_registers(displaced_header, object_mark_addr, current_header, tmp);
+    assert_different_registers(header, object_mark_addr, current_header, tmp);
 
     // markWord displaced_header = obj->mark().set_unlocked();
 
-    // Load markWord from object into displaced_header.
-    ld(displaced_header, oopDesc::mark_offset_in_bytes(), object);
+    // Load markWord from object into header.
+    ld(header, oopDesc::mark_offset_in_bytes(), object);
 
     if (DiagnoseSyncOnValueBasedClasses != 0) {
       load_klass(tmp, object);
@@ -960,58 +960,64 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
       bne(CCR0, slow_case);
     }
 
-    // Set displaced_header to be (markWord of object | UNLOCK_VALUE).
-    ori(displaced_header, displaced_header, markWord::unlocked_value);
+    if (LockingMode == LM_LIGHTWEIGHT) {
+      fast_lock(object, /* mark word */ header, tmp, slow_case);
+      b(count_locking);
+    } else if (LockingMode == LM_LEGACY) {
 
-    // monitor->lock()->set_displaced_header(displaced_header);
-    const int lock_offset = in_bytes(BasicObjectLock::lock_offset());
-    const int mark_offset = lock_offset +
-                            BasicLock::displaced_header_offset_in_bytes();
+      // Set displaced_header to be (markWord of object | UNLOCK_VALUE).
+      ori(header, header, markWord::unlocked_value);
 
-    // Initialize the box (Must happen before we update the object mark!).
-    std(displaced_header, mark_offset, monitor);
+      // monitor->lock()->set_displaced_header(displaced_header);
+      const int lock_offset = in_bytes(BasicObjectLock::lock_offset());
+      const int mark_offset = lock_offset +
+                              BasicLock::displaced_header_offset_in_bytes();
 
-    // if (Atomic::cmpxchg(/*addr*/obj->mark_addr(), /*cmp*/displaced_header, /*ex=*/monitor) == displaced_header) {
+      // Initialize the box (Must happen before we update the object mark!).
+      std(header, mark_offset, monitor);
 
-    // Store stack address of the BasicObjectLock (this is monitor) into object.
-    addi(object_mark_addr, object, oopDesc::mark_offset_in_bytes());
+      // if (Atomic::cmpxchg(/*addr*/obj->mark_addr(), /*cmp*/displaced_header, /*ex=*/monitor) == displaced_header) {
 
-    // Must fence, otherwise, preceding store(s) may float below cmpxchg.
-    // CmpxchgX sets CCR0 to cmpX(current, displaced).
-    cmpxchgd(/*flag=*/CCR0,
-             /*current_value=*/current_header,
-             /*compare_value=*/displaced_header, /*exchange_value=*/monitor,
-             /*where=*/object_mark_addr,
-             MacroAssembler::MemBarRel | MacroAssembler::MemBarAcq,
-             MacroAssembler::cmpxchgx_hint_acquire_lock(),
-             noreg,
-             &cas_failed,
-             /*check without membar and ldarx first*/true);
+      // Store stack address of the BasicObjectLock (this is monitor) into object.
+      addi(object_mark_addr, object, oopDesc::mark_offset_in_bytes());
 
-    // If the compare-and-exchange succeeded, then we found an unlocked
-    // object and we have now locked it.
-    b(count_locking);
-    bind(cas_failed);
+      // Must fence, otherwise, preceding store(s) may float below cmpxchg.
+      // CmpxchgX sets CCR0 to cmpX(current, displaced).
+      cmpxchgd(/*flag=*/CCR0,
+               /*current_value=*/current_header,
+               /*compare_value=*/header, /*exchange_value=*/monitor,
+               /*where=*/object_mark_addr,
+               MacroAssembler::MemBarRel | MacroAssembler::MemBarAcq,
+               MacroAssembler::cmpxchgx_hint_acquire_lock(),
+               noreg,
+               &cas_failed,
+               /*check without membar and ldarx first*/true);
 
-    // } else if (THREAD->is_lock_owned((address)displaced_header))
-    //   // Simple recursive case.
-    //   monitor->lock()->set_displaced_header(nullptr);
+      // If the compare-and-exchange succeeded, then we found an unlocked
+      // object and we have now locked it.
+      b(count_locking);
+      bind(cas_failed);
 
-    // We did not see an unlocked object so try the fast recursive case.
+      // } else if (THREAD->is_lock_owned((address)displaced_header))
+      //   // Simple recursive case.
+      //   monitor->lock()->set_displaced_header(nullptr);
 
-    // Check if owner is self by comparing the value in the markWord of object
-    // (current_header) with the stack pointer.
-    sub(current_header, current_header, R1_SP);
+      // We did not see an unlocked object so try the fast recursive case.
 
-    assert(os::vm_page_size() > 0xfff, "page size too small - change the constant");
-    load_const_optimized(tmp, ~(os::vm_page_size()-1) | markWord::lock_mask_in_place);
+      // Check if owner is self by comparing the value in the markWord of object
+      // (current_header) with the stack pointer.
+      sub(current_header, current_header, R1_SP);
 
-    and_(R0/*==0?*/, current_header, tmp);
-    // If condition is true we are done and hence we can store 0 in the displaced
-    // header indicating it is a recursive lock.
-    bne(CCR0, slow_case);
-    std(R0/*==0!*/, mark_offset, monitor);
-    b(count_locking);
+      assert(os::vm_page_size() > 0xfff, "page size too small - change the constant");
+      load_const_optimized(tmp, ~(os::vm_page_size()-1) | markWord::lock_mask_in_place);
+
+      and_(R0/*==0?*/, current_header, tmp);
+      // If condition is true we are done and hence we can store 0 in the displaced
+      // header indicating it is a recursive lock.
+      bne(CCR0, slow_case);
+      std(R0/*==0!*/, mark_offset, monitor);
+      b(count_locking);
+    }
 
     // } else {
     //   // Slow path.
@@ -1020,7 +1026,11 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
     // None of the above fast optimizations worked so we have to get into the
     // slow case of monitor enter.
     bind(slow_case);
-    call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter), monitor);
+    if (LockingMode == LM_LIGHTWEIGHT) {
+      call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter_obj), object);
+    } else {
+      call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter), monitor);
+    }
     b(done);
     // }
     align(32, 12);
@@ -1042,7 +1052,7 @@ void InterpreterMacroAssembler::unlock_object(Register monitor) {
     call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorexit), monitor);
   } else {
 
-    // template code:
+    // template code (for LM_LEGACY):
     //
     // if ((displaced_header = monitor->displaced_header()) == nullptr) {
     //   // Recursive unlock. Mark the monitor unlocked by setting the object field to null.
@@ -1056,22 +1066,24 @@ void InterpreterMacroAssembler::unlock_object(Register monitor) {
     // }
 
     const Register object           = R7_ARG5;
-    const Register displaced_header = R8_ARG6;
+    const Register header           = R8_ARG6;
     const Register object_mark_addr = R9_ARG7;
     const Register current_header   = R10_ARG8;
 
     Label free_slot;
     Label slow_case;
 
-    assert_different_registers(object, displaced_header, object_mark_addr, current_header);
+    assert_different_registers(object, header, object_mark_addr, current_header);
 
-    // Test first if we are in the fast recursive case.
-    ld(displaced_header, in_bytes(BasicObjectLock::lock_offset()) +
-                         BasicLock::displaced_header_offset_in_bytes(), monitor);
+    if (LockingMode != LM_LIGHTWEIGHT) {
+      // Test first if we are in the fast recursive case.
+      ld(header, in_bytes(BasicObjectLock::lock_offset()) +
+                 BasicLock::displaced_header_offset_in_bytes(), monitor);
 
-    // If the displaced header is zero, we have a recursive unlock.
-    cmpdi(CCR0, displaced_header, 0);
-    beq(CCR0, free_slot); // recursive unlock
+      // If the displaced header is zero, we have a recursive unlock.
+      cmpdi(CCR0, header, 0);
+      beq(CCR0, free_slot); // recursive unlock
+    }
 
     // } else if (Atomic::cmpxchg(obj->mark_addr(), monitor, displaced_header) == monitor) {
     //   // We swapped the unlocked mark in displaced_header into the object's mark word.
@@ -1081,20 +1093,41 @@ void InterpreterMacroAssembler::unlock_object(Register monitor) {
 
     // The object address from the monitor is in object.
     ld(object, in_bytes(BasicObjectLock::obj_offset()), monitor);
-    addi(object_mark_addr, object, oopDesc::mark_offset_in_bytes());
 
-    // We have the displaced header in displaced_header. If the lock is still
-    // lightweight, it will contain the monitor address and we'll store the
-    // displaced header back into the object's mark word.
-    // CmpxchgX sets CCR0 to cmpX(current, monitor).
-    cmpxchgd(/*flag=*/CCR0,
-             /*current_value=*/current_header,
-             /*compare_value=*/monitor, /*exchange_value=*/displaced_header,
-             /*where=*/object_mark_addr,
-             MacroAssembler::MemBarRel,
-             MacroAssembler::cmpxchgx_hint_release_lock(),
-             noreg,
-             &slow_case);
+    if (LockingMode == LM_LIGHTWEIGHT) {
+      // Check for non-symmetric locking. This is allowed by the spec and the interpreter
+      // must handle it.
+      Register tmp = current_header;
+      // First check for lock-stack underflow.
+      lwz(tmp, in_bytes(JavaThread::lock_stack_top_offset()), R16_thread);
+      cmplwi(CCR0, tmp, (unsigned)LockStack::start_offset());
+      ble(CCR0, slow_case);
+      // Then check if the top of the lock-stack matches the unlocked object.
+      addi(tmp, tmp, -oopSize);
+      ldx(tmp, tmp, R16_thread);
+      cmpd(CCR0, tmp, object);
+      bne(CCR0, slow_case);
+
+      ld(header, oopDesc::mark_offset_in_bytes(), object);
+      andi_(R0, header, markWord::monitor_value);
+      bne(CCR0, slow_case);
+      fast_unlock(object, header, slow_case);
+    } else {
+      addi(object_mark_addr, object, oopDesc::mark_offset_in_bytes());
+
+      // We have the displaced header in displaced_header. If the lock is still
+      // lightweight, it will contain the monitor address and we'll store the
+      // displaced header back into the object's mark word.
+      // CmpxchgX sets CCR0 to cmpX(current, monitor).
+      cmpxchgd(/*flag=*/CCR0,
+               /*current_value=*/current_header,
+               /*compare_value=*/monitor, /*exchange_value=*/header,
+               /*where=*/object_mark_addr,
+               MacroAssembler::MemBarRel,
+               MacroAssembler::cmpxchgx_hint_release_lock(),
+               noreg,
+               &slow_case);
+    }
     b(free_slot);
 
     // } else {

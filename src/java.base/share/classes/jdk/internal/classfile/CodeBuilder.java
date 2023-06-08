@@ -234,7 +234,7 @@ public sealed interface CodeBuilder
      * @param thenHandler handler that receives a {@linkplain BlockCodeBuilder} to
      *                    generate the body of the {@code if}
      * @return this builder
-     * @throws java.lang.IllegalArgumentException if the operation code is not for a branch instruction that accepts
+     * @throws IllegalArgumentException if the operation code is not for a branch instruction that accepts
      * one or two operands
      */
     default CodeBuilder ifThen(Opcode opcode,
@@ -284,7 +284,7 @@ public sealed interface CodeBuilder
      * @param elseHandler handler that receives a {@linkplain BlockCodeBuilder} to
      *                    generate the body of the {@code else}
      * @return this builder
-     * @throws java.lang.IllegalArgumentException if the operation code is not for a branch instruction that accepts
+     * @throws IllegalArgumentException if the operation code is not for a branch instruction that accepts
      * one or two operands
      */
     default CodeBuilder ifThenElse(Opcode opcode,
@@ -327,7 +327,7 @@ public sealed interface CodeBuilder
          * @param catchHandler handler that receives a {@linkplain CodeBuilder} to
          *                     generate the body of the catch block.
          * @return this builder
-         * @throws java.lang.IllegalArgumentException if an existing catch block catches an exception of the given type.
+         * @throws IllegalArgumentException if an existing catch block catches an exception of the given type.
          * @see #catchingMulti
          * @see #catchingAll
          */
@@ -344,7 +344,7 @@ public sealed interface CodeBuilder
          * @param catchHandler handler that receives a {@linkplain CodeBuilder} to
          *                     generate the body of the catch block.
          * @return this builder
-         * @throws java.lang.IllegalArgumentException if an existing catch block catches one or more exceptions of the given types.
+         * @throws IllegalArgumentException if an existing catch block catches one or more exceptions of the given types.
          * @see #catching
          * @see #catchingAll
          */
@@ -357,7 +357,7 @@ public sealed interface CodeBuilder
          *
          * @param catchAllHandler handler that receives a {@linkplain CodeBuilder} to
          *                        generate the body of the catch block
-         * @throws java.lang.IllegalArgumentException if an existing catch block catches all exceptions.
+         * @throws IllegalArgumentException if an existing catch block catches all exceptions.
          * @see #catching
          * @see #catchingMulti
          */
@@ -373,6 +373,7 @@ public sealed interface CodeBuilder
      * @param catchesHandler a handler that receives a {@linkplain CatchBuilder}
      *                       to generate bodies of catch blocks.
      * @return this builder
+     * @throws IllegalArgumentException if the try block is empty.
      * @see CatchBuilder
      */
     default CodeBuilder trying(Consumer<BlockCodeBuilder> tryHandler,
@@ -386,7 +387,7 @@ public sealed interface CodeBuilder
 
         // Check for empty try block
         if (tryBlock.isEmpty()) {
-            throw new IllegalStateException("The body of the try block is empty");
+            throw new IllegalArgumentException("The body of the try block is empty");
         }
 
         var catchBuilder = new CatchBuilderImpl(this, tryBlock, tryCatchEnd);
