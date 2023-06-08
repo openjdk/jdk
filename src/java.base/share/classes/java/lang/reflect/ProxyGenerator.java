@@ -28,20 +28,16 @@ package java.lang.reflect;
 import jdk.internal.classfile.*;
 import jdk.internal.classfile.constantpool.*;
 import jdk.internal.classfile.attribute.ExceptionsAttribute;
-import jdk.internal.misc.VM;
-import jdk.internal.org.objectweb.asm.Type;
 import sun.security.action.GetBooleanAction;
 
 import java.io.IOException;
 import java.lang.constant.ClassDesc;
 import static java.lang.constant.ConstantDescs.*;
 import java.lang.constant.MethodTypeDesc;
-import java.lang.invoke.MethodType;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.ListIterator;
@@ -120,9 +116,9 @@ final class ProxyGenerator {
     }
 
     /**
-     * Class loader
+     * Classfile context
      */
-    private final ClassLoader loader;
+    private final List<Classfile.Option> classfileContext;
 
     /**
      * Name of proxy class
@@ -161,7 +157,9 @@ final class ProxyGenerator {
      */
     private ProxyGenerator(ClassLoader loader, String className, List<Class<?>> interfaces,
                            int accessFlags) {
-        this.loader = loader;
+        this.classfileContext = List.of(
+                Classfile.Option.classHierarchyResolver(
+                        ClassHierarchyResolver.ofClassLoading(loader).cached()));
         this.classDesc = ClassDesc.of(className);
         this.interfaces = interfaces;
         this.accessFlags = accessFlags;
@@ -413,25 +411,7 @@ final class ProxyGenerator {
      * class file generation process.
      */
     private byte[] generateClassFile() {
-        var localCache = new HashMap<ClassDesc, ClassHierarchyResolver.ClassHierarchyInfo>();
-        return Classfile.build(classDesc, List.of(Classfile.Option.classHierarchyResolver(classDesc ->
-                /*
-                 * Class hierarchy resolution is critical for stack maps generation.
-                 * Provided loader is used to retrieve class hierarchy info and the info is cached.
-                 */
-                localCache.computeIfAbsent(classDesc, cd -> {
-                    try {
-                        var desc = cd.descriptorString();
-                        var cls = Class.forName(desc.substring(1, desc.length() - 1).replace('/', '.'), false, loader);
-                        var superCls = cls.getSuperclass();
-                        return new ClassHierarchyResolver.ClassHierarchyInfo(cd,
-                                                                             cls.isInterface(),
-                                                                             superCls == null ? null : toClassDesc(superCls));
-                    } catch (ClassNotFoundException e) {
-                        throw new TypeNotPresentException(cd.descriptorString(), e);
-                    }
-                })
-        )), clb -> {
+        return Classfile.build(classDesc, classfileContext, clb -> {
             clb.withFlags(accessFlags);
             clb.withSuperclass(CD_Proxy);
             clb.withInterfaceSymbols(interfaces.stream().map(ProxyGenerator::toClassDesc).toList());
