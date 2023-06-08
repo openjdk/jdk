@@ -50,9 +50,9 @@ public class ProfileAtTypeCheck {
     @DontInline
     static void dummyI(I i) {
     }
-    
+
     // profile reports many classes
-    
+
     @Test
     @IR(phase = { CompilePhase.AFTER_PARSING }, counts = { IRNode.SUBTYPE_CHECK, "1" })
     @IR(phase = { CompilePhase.MACRO_EXPANSION }, counts = { IRNode.CMP_P, "2", IRNode.LOAD_KLASS, "2" })
@@ -70,7 +70,7 @@ public class ProfileAtTypeCheck {
     }
 
     // profile reports a single class
-    
+
     @Test
     @IR(phase = { CompilePhase.AFTER_PARSING }, failOn = { IRNode.SUBTYPE_CHECK })
     @IR(phase = { CompilePhase.AFTER_PARSING }, counts = { IRNode.CMP_P, "2", IRNode.LOAD_KLASS, "1" })
@@ -85,7 +85,7 @@ public class ProfileAtTypeCheck {
     }
 
     // "easy" test because B has no subclass
-    
+
     @Test
     @IR(phase = { CompilePhase.AFTER_PARSING }, counts = { IRNode.SUBTYPE_CHECK, "1" })
     @IR(phase = { CompilePhase.MACRO_EXPANSION }, counts = { IRNode.CMP_P, "2", IRNode.LOAD_KLASS, "1" })
@@ -203,7 +203,7 @@ public class ProfileAtTypeCheck {
             }
         } else {
             if (flag2) {
-                o = o1;   
+                o = o1;
             } else {
                 o = o2;
             }
@@ -218,7 +218,7 @@ public class ProfileAtTypeCheck {
         test9(false, true, c, c);
         test9(false, false, d, d);
     }
-    
+
     // test that dominating subtype check is removed
     static Object fieldTest10;
     @Test
@@ -244,7 +244,7 @@ public class ProfileAtTypeCheck {
         fieldTest10 = d;
         test10(false);
     }
-    
+
     static Object fieldTest11;
     @Test
     @IR(phase = { CompilePhase.AFTER_PARSING }, counts = { IRNode.SUBTYPE_CHECK, "2" })
@@ -273,7 +273,7 @@ public class ProfileAtTypeCheck {
         fieldTest11 = d;
         test11(false, false);
     }
-    
+
     static Object fieldTest12;
     @Test
     @IR(phase = { CompilePhase.AFTER_PARSING }, counts = { IRNode.SUBTYPE_CHECK, "3" })
@@ -315,14 +315,14 @@ public class ProfileAtTypeCheck {
 
     interface I {
     }
-    
-    
+
+
     static A a = new A();
     static B b = new B();
     static C c = new C();
     static D d = new D();
     static E e = new E();
-    
+
     static class A implements I {
     }
 

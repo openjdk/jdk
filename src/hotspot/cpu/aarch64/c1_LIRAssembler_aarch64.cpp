@@ -1340,7 +1340,7 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
     __ ldr(rscratch1, nonprofiled_receiver_count_addr);
     __ add(rscratch1, rscratch1, DataLayout::counter_increment);
     __ str(rscratch1, nonprofiled_receiver_count_addr);
-    
+
     __ bind(update_done);
   } else {
     __ cbz(obj, *obj_is_null);
