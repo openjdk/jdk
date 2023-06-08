@@ -36,6 +36,9 @@ import static com.sun.crypto.provider.KWUtil.*;
  * This class is the impl class for AES KeyWrap algorithms as defined in
  * <a href=https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-38F.pdf>
  * "Recommendation for Block Cipher Modes of Operation: Methods for Key Wrapping"
+ *
+ * @spec https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-38F.pdf
+ *      Recommendation for Block Cipher Modes of Operation: Methods for Key Wrapping
  */
 abstract class KeyWrapCipher extends CipherSpi {
 

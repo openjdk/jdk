@@ -31,6 +31,9 @@ import java.util.Arrays;
  * This class acts as the base class for AES KeyWrap algorithms as defined
  * in <a href=https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-38F.pdf>
  * "Recommendation for Block Cipher Modes of Operation: Methods for Key Wrapping"
+ *
+ * @spec https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-38F.pdf
+ *      Recommendation for Block Cipher Modes of Operation: Methods for Key Wrapping
  */
 class KWUtil {
 
