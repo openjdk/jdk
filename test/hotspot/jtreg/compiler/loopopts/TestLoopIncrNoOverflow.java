@@ -27,7 +27,7 @@
  * @summary With JDK-8303466 the unroll-limit became more precise, and does not overflow.
  *          We must ensure that the type of the loop incr also does not overflow.
  * @run main/othervm -Xcomp -XX:-TieredCompilation
- *                   -XX:RepeatCompilation=100
+ *                   -XX:+UnlockDiagnosticVMOptions -XX:RepeatCompilation=100
  *                   -XX:+StressIGVN
  *                   -XX:CompileOnly=compiler.loopopts.TestLoopIncrNoOverflow::test
  *                   compiler.loopopts.TestLoopIncrNoOverflow
