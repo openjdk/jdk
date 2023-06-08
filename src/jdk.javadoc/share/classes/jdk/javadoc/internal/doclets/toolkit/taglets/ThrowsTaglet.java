@@ -390,7 +390,7 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
                 List<Element> methods = visibleMemberTable.getAllVisibleMembers(VisibleMemberTable.Kind.METHODS);
                 for (Element e : methods) {
                     ExecutableElement m = (ExecutableElement) e;
-                    if (configuration.utils.elementUtils.overrides(holder, m, (TypeElement) holder.getEnclosingElement())) {
+                    if (utils.elementUtils.overrides(holder, m, (TypeElement) holder.getEnclosingElement())) {
                         assert !holder.equals(m) : Utils.diagnosticDescriptionOf(holder);
                         src = m;
                         break;

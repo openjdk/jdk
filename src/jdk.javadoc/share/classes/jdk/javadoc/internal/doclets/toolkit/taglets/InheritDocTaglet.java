@@ -107,7 +107,7 @@ public class InheritDocTaglet extends BaseTaglet {
             List<Element> methods = visibleMemberTable.getAllVisibleMembers(VisibleMemberTable.Kind.METHODS);
             for (Element e : methods) {
                 ExecutableElement m = (ExecutableElement) e;
-                if (configuration.utils.elementUtils.overrides(method, m, (TypeElement) method.getEnclosingElement())) {
+                if (utils.elementUtils.overrides(method, m, (TypeElement) method.getEnclosingElement())) {
                     assert !method.equals(m) : Utils.diagnosticDescriptionOf(method);
                     src = m;
                     break;
