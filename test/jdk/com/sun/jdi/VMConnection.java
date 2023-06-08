@@ -125,14 +125,16 @@ class VMConnection {
 
     VMConnection(String connectSpec, int traceFlags) {
         String nameString;
-        String argString;
+        String argString = "includevirtualthreads=y";
         int index = connectSpec.indexOf(':');
         if (index == -1) {
             nameString = connectSpec;
-            argString = "";
         } else {
             nameString = connectSpec.substring(0, index);
-            argString = connectSpec.substring(index + 1);
+            // Only append args if there are actually some args after the ':'
+            if (index < connectSpec.length() - 1) {
+                argString = argString + "," + connectSpec.substring(index + 1);
+            }
         }
 
         connector = findConnector(nameString);

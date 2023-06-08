@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,9 +84,26 @@ public class Util {
         return count;
     }
 
-    public static String toClassString(String desc) {
-        //TODO: this doesn't look right L ... ;
-        return desc.replace('/', '.');
+    /**
+     * Convert a descriptor of classes or interfaces or arrays, or an internal
+     * name of a class or interface, into a fully qualified binary name, that can
+     * be resolved by {@link Class#forName(String) Class::forName}. Primitive type
+     * descriptors should never be passed into this method.
+     *
+     * @param descOrInternalName a descriptor or internal name
+     * @return the fully qualified binary name
+     */
+    public static String toBinaryName(String descOrInternalName) {
+        if (descOrInternalName.startsWith("L")) {
+            // descriptors of classes or interfaces
+            if (descOrInternalName.length() <= 2 || !descOrInternalName.endsWith(";")) {
+                throw new IllegalArgumentException(descOrInternalName);
+            }
+            return descOrInternalName.substring(1, descOrInternalName.length() - 1).replace('/', '.');
+        } else {
+            // arrays, classes or interfaces' internal names
+            return descOrInternalName.replace('/', '.');
+        }
     }
 
     public static Iterator<String> parameterTypes(String s) {
