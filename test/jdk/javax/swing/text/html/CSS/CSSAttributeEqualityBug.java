@@ -83,7 +83,7 @@ public class CSSAttributeEqualityBug {
 
             {"margin-top: 42px", "margin-top: 22px"},
             {"margin-top: 42px", "margin-top: 42pt"},
-            {"margin-top: 100%", "margin-top: 200%"},
+            {"margin-top: 100%", "margin-top: 50%"},
     };
 
     public static void main(String[] args) {

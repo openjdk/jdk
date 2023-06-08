@@ -2215,7 +2215,7 @@ public class CSS implements Serializable {
 
         @Override
         public int hashCode() {
-            int hashCode = Float.hashCode(value) | Boolean.hashCode(index) ;
+            int hashCode = Float.hashCode(value) | Boolean.hashCode(index);
             if (lu != null) {
                 hashCode = lu.hashCode();
             }
@@ -2678,23 +2678,16 @@ public class CSS implements Serializable {
 
         @Override
         public int hashCode() {
-            int hashCode = Float.hashCode(span) | Boolean.hashCode(percentage);
-            if (units != null) {
-                hashCode |= units.hashCode();
-            }
-            return hashCode;
+            return Float.hashCode(span)
+                   | Boolean.hashCode(percentage)
+                   | Objects.hashCode(units);
         }
 
         @Override
         public boolean equals(Object val) {
-            if (percentage) {
-                return val instanceof CSS.LengthValue lu
-                       && Objects.equals(svalue, lu.svalue);
-            } else {
-                return val instanceof CSS.LengthValue lu
-                       && span == lu.span
-                       && Objects.equals(units, lu.units);
-            }
+            return val instanceof CSS.LengthValue lu
+                   && span == lu.span
+                   && Objects.equals(units, lu.units);
         }
 
         /** If true, span is a percentage value, and that to determine
@@ -3093,11 +3086,8 @@ public class CSS implements Serializable {
 
         @Override
         public int hashCode() {
-            int hashCode = Float.hashCode(value) | Short.hashCode(type);
-            if (units != null) {
-                hashCode |= units.hashCode();
-            }
-            return hashCode;
+            return Float.hashCode(value) | Short.hashCode(type)
+                   | Objects.hashCode(units);
         }
 
         @Override
