@@ -139,7 +139,6 @@ public class TestFramework {
                     "UseAVX",
                     "UseSSE",
                     "UseSVE",
-                    "AlignVector",
                     "UseZbb",
                     "UseRVV",
                     "Xlog",
