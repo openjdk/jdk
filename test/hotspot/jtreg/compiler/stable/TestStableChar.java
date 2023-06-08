@@ -30,23 +30,23 @@
  * @build jdk.test.whitebox.WhiteBox
  *
  * @run main/bootclasspath/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
- *                                 -XX:CompileOnly=*TestStableChar::get*
+ *                                 -XX:CompileOnly=*TestStableChar*::get*
  *                                 -XX:-TieredCompilation
  *                                 -XX:+FoldStableValues
  *                                 compiler.stable.TestStableChar
  * @run main/bootclasspath/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
- *                                 -XX:CompileOnly=*TestStableChar::get*
+ *                                 -XX:CompileOnly=*TestStableChar*::get*
  *                                 -XX:-TieredCompilation
  *                                 -XX:-FoldStableValues
  *                                 compiler.stable.TestStableChar
  *
  * @run main/bootclasspath/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
- *                                 -XX:CompileOnly=*TestStableChar::get*
+ *                                 -XX:CompileOnly=*TestStableChar*::get*
  *                                 -XX:+TieredCompilation -XX:TieredStopAtLevel=1
  *                                 -XX:+FoldStableValues
  *                                 compiler.stable.TestStableChar
  * @run main/bootclasspath/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
- *                                 -XX:CompileOnly=*TestStableChar::get*
+ *                                 -XX:CompileOnly=*TestStableChar*::get*
  *                                 -XX:+TieredCompilation -XX:TieredStopAtLevel=1
  *                                 -XX:-FoldStableValues
  *                                 compiler.stable.TestStableChar
