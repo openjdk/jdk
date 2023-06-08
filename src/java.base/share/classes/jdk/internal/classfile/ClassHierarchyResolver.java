@@ -56,16 +56,19 @@ public interface ClassHierarchyResolver {
      * The returned resolver is thread-safe.
      */
     static ClassHierarchyResolver ofSystem() {
+        record Factory() implements Supplier<Map<ClassDesc, ClassHierarchyInfo>> {
+            static final Factory INSTANCE = new Factory();
+
+            @Override
+            public Map<ClassDesc, ClassHierarchyInfo> get() {
+                return new ConcurrentHashMap<>();
+            }
+        }
         var sysLoader = ClassLoader.getSystemClassLoader();
         return ClassHierarchyResolver
             .ofResourceParsing(sysLoader)
             .orElse(ClassHierarchyResolver.ofClassLoading(sysLoader))
-            .cached(new Supplier<>() {
-                @Override
-                public Map<ClassDesc, ClassHierarchyResolver.ClassHierarchyInfo> get() {
-                    return new ConcurrentHashMap<>();
-                }
-            });
+            .cached(Factory.INSTANCE);
     }
 
     /**
