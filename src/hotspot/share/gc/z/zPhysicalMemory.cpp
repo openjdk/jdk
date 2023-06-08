@@ -283,15 +283,15 @@ void ZPhysicalMemoryManager::nmt_commit(zoffset offset, size_t size) const {
   // When this function is called we don't know where in the virtual memory
   // this physical memory will be mapped. So we fake that the virtual memory
   // address is the heap base + the given offset.
-  const zaddress addr = ZOffset::address(offset);
-  MemTracker::record_virtual_memory_commit((void*)untype(addr), size, CALLER_PC);
+  const uintptr_t addr = ZAddressHeapBase + untype(offset);
+  MemTracker::record_virtual_memory_commit((void*)addr, size, CALLER_PC);
 }
 
 void ZPhysicalMemoryManager::nmt_uncommit(zoffset offset, size_t size) const {
   if (MemTracker::enabled()) {
-    const zaddress addr = ZOffset::address(offset);
+    const uintptr_t addr = ZAddressHeapBase + untype(offset);
     Tracker tracker(Tracker::uncommit);
-    tracker.record((address)untype(addr), size);
+    tracker.record((address)addr, size);
   }
 }
 
