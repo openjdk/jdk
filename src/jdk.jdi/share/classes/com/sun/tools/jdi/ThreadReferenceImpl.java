@@ -597,11 +597,10 @@ public class ThreadReferenceImpl extends ObjectReferenceImpl
         } catch (JDWPException exc) {
             switch (exc.errorCode()) {
             case JDWP.Error.OPAQUE_FRAME:
-                if (meth.isNative()) {
-                    throw new NativeMethodException();
-                } else {
-                    assert isVirtual(); // can only happen with virtual threads
+                if (isVirtual() && !meth.isNative()) {
                     throw new OpaqueFrameException();
+                } else {
+                    throw new NativeMethodException();
                 }
             case JDWP.Error.THREAD_NOT_SUSPENDED:
                 throw new IncompatibleThreadStateException(

@@ -794,6 +794,16 @@ public class IRNode {
         superWordNodes(MUL_REDUCTION_VL, "MulReductionVL");
     }
 
+    public static final String MIN_REDUCTION_V = PREFIX + "MIN_REDUCTION_V" + POSTFIX;
+    static {
+        superWordNodes(MIN_REDUCTION_V, "MinReductionV");
+    }
+
+    public static final String MAX_REDUCTION_V = PREFIX + "MAX_REDUCTION_V" + POSTFIX;
+    static {
+        superWordNodes(MAX_REDUCTION_V, "MaxReductionV");
+    }
+
     public static final String NEG_V = PREFIX + "NEG_V" + POSTFIX;
     static {
         beforeMatchingNameRegex(NEG_V, "NegV(F|D)");
@@ -1461,6 +1471,11 @@ public class IRNode {
     public static final String VNOT_L_MASKED = PREFIX + "VNOT_L_MASKED" + POSTFIX;
     static {
         machOnlyNameRegex(VNOT_L_MASKED, "vnotL_masked");
+    }
+
+    public static final String VSTOREMASK_TRUECOUNT = PREFIX + "VSTOREMASK_TRUECOUNT" + POSTFIX;
+    static {
+        machOnlyNameRegex(VSTOREMASK_TRUECOUNT, "vstoremask_truecount_neon");
     }
 
     public static final String XOR = PREFIX + "XOR" + POSTFIX;
