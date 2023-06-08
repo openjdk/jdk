@@ -778,9 +778,6 @@
   product(bool, UseLoopConditionalPropagation, true,                        \
           "Perform Loop Conditional Propagation pass")                      \
                                                                             \
-  product(bool, StressLoopConditionalPropagation, false,                    \
-          "Stress Loop Conditional Propagation pass")                       \
-                                                                            \
 
 // end of C2_FLAGS
 
