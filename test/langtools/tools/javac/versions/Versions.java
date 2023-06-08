@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4981566 5028634 5094412 6304984 7025786 7025789 8001112 8028545 8000961 8030610 8028546 8188870 8173382 8173382 8193290 8205619 8028563 8245147 8245586 8257453 8286035
+ * @bug 4981566 5028634 5094412 6304984 7025786 7025789 8001112 8028545 8000961 8030610 8028546 8188870 8173382 8173382 8193290 8205619 8028563 8245147 8245586 8257453 8286035 8306586
  * @summary Check interpretation of -target and -source options
  * @modules java.compiler
  *          jdk.compiler
@@ -71,9 +71,9 @@ public class Versions {
 
     public static final Set<String> VALID_SOURCES =
         Set.of("1.8", "1.9", "1.10", "11", "12", "13", "14",
-               "15", "16", "17", "18", "19", "20", "21");
+               "15", "16", "17", "18", "19", "20", "21", "22");
 
-    public static final String LATEST_MAJOR_VERSION = "65.0";
+    public static final String LATEST_MAJOR_VERSION = "66.0";
 
     static enum SourceTarget {
         EIGHT(true,      "52.0",  "8", Versions::checksrc8),
@@ -89,7 +89,9 @@ public class Versions {
         EIGHTEEN(false,  "62.0", "18", Versions::checksrc18),
         NINETEEN(false,  "63.0", "19", Versions::checksrc19),
         TWENTY(false,    "64.0", "20", Versions::checksrc20),
-        TWENTY_ONE(false,"65.0", "21", Versions::checksrc21);
+        TWENTY_ONE(false,"65.0", "21", Versions::checksrc21),
+        TWENTY_TWO(false,"66.0", "22", Versions::checksrc22),
+        ; // Reduce code churn when appending new constants
 
         private final boolean dotOne;
         private final String classFileVer;
@@ -341,6 +343,15 @@ public class Versions {
                                   "New21.java"));
        // Add expectedFail after new language features added in a later release.
     }
+
+   protected void checksrc22(List<String> args) {
+       printargs("checksrc22", args);
+       expectedPass(args, List.of("New7.java", "New8.java", "New10.java", "New11.java",
+                                  "New14.java", "New15.java", "New16.java", "New17.java",
+                                  "New21.java"));
+       // Add expectedFail after new language features added in a later release.
+    }
+
 
     protected void expected(List<String> args, List<String> fileNames,
                             Consumer<List<String>> passOrFail) {
