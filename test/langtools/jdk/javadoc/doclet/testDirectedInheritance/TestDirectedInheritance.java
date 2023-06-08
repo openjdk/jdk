@@ -44,7 +44,7 @@ public class TestDirectedInheritance extends JavadocTester {
     private final ToolBox tb = new ToolBox();
 
     /*
-     * Javadoc won't crash if an unknown tag uses @inheritDoc.
+     * Javadoc won't crash if an unknown tag uses {@inheritDoc}.
      */
     @Test
     public void testUnknownTag(Path base) throws Exception {
@@ -234,9 +234,11 @@ public class TestDirectedInheritance extends JavadocTester {
     }
 
     /*
-     * C1.m inherits documentation from B1.m, which does not override, but inherits A.m.
-     * C2.m inherits documentation from B2.m, which overrides A.m and implicitly inherits
-     * its documentation.
+     * C1.m directedly inherits documentation from B1, which inherits A.m
+     * along with its documentation.
+     *
+     * C2.m directedly inherits documentation from B2, whose m overrides A.m
+     * and implicitly inherits its documentation.
      */
     @Test
     public void testRecursiveInheritance1(Path base) throws Exception {
@@ -286,8 +288,11 @@ public class TestDirectedInheritance extends JavadocTester {
     }
 
     /*
-     * C1.m inherits documentation from B1.m explicitly and undirect.
-     * C2.m inherits documentation from B2.m explicitly and direct.
+     * C1.m directedly inherits documentation from B1, which in turn inherits
+     * it undirectedly from A.
+     *
+     * C2.m directedly inherits documentation from B2, which in turn inherits
+     * in directedly from A.
      */
     @Test
     public void testRecursiveInheritance2(Path base) throws Exception {
