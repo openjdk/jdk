@@ -276,7 +276,7 @@ static int pipeline_res_stages_initializer(
   int commentlen = 0;
   int max_stage = 0;
   i = 0;
-  for (pipeline->_reslist.reset(); (resource = pipeline->_reslist.iter()) != NULL;) {
+  for (pipeline->_reslist.reset(); (resource = pipeline->_reslist.iter()) != nullptr;) {
     if (pipeline->_resdict[resource]->is_resource()->is_discrete()) {
       if (res_stages[i] == 0) {
         if (max_stage < 9) {
@@ -302,7 +302,7 @@ static int pipeline_res_stages_initializer(
 
   templen = 0;
   i = 0;
-  for (pipeline->_reslist.reset(); (resource = pipeline->_reslist.iter()) != NULL;) {
+  for (pipeline->_reslist.reset(); (resource = pipeline->_reslist.iter()) != nullptr;) {
     if (pipeline->_resdict[resource]->is_resource()->is_discrete()) {
       const char* const resname = res_stages[i] == 0 ? "undefined" : pipeline->_stages.name(res_stages[i] - 1);
 
@@ -365,7 +365,7 @@ static int pipeline_res_cycles_initializer(
 
   const char* resource;
   i = 0;
-  for (pipeline->_reslist.reset(); (resource = pipeline->_reslist.iter()) != NULL;) {
+  for (pipeline->_reslist.reset(); (resource = pipeline->_reslist.iter()) != nullptr;) {
     if (pipeline->_resdict[resource]->is_resource()->is_discrete()) {
       if (max_cycles < res_cycles[i]) {
         max_cycles = res_cycles[i];
@@ -390,7 +390,7 @@ static int pipeline_res_cycles_initializer(
   templen = 0;
 
   i = 0;
-  for (pipeline->_reslist.reset(); (resource = pipeline->_reslist.iter()) != NULL;) {
+  for (pipeline->_reslist.reset(); (resource = pipeline->_reslist.iter()) != nullptr;) {
     if (pipeline->_resdict[resource]->is_resource()->is_discrete()) {
       templen += snprintf_checked(&resource_cycles[templen], resource_cycles_size - templen, "  %*d%c // %s\n",
       cyclelen, res_cycles[i], (i < pipeline->_rescount-1) ? ',' : ' ', resource);
@@ -1006,7 +1006,7 @@ void ArchDesc::build_pipe_classes(FILE *fp_cpp) {
   // Don't add compound resources to the list of resource names
   const char* resource;
   i = 0;
-  for (_pipeline->_reslist.reset(); (resource = _pipeline->_reslist.iter()) != NULL;) {
+  for (_pipeline->_reslist.reset(); (resource = _pipeline->_reslist.iter()) != nullptr;) {
     if (_pipeline->_resdict[resource]->is_resource()->is_discrete()) {
       fprintf(fp_cpp, " \"%s\"%c", resource, i < _pipeline->_rescount - 1 ? ',' : ' ');
       i++;

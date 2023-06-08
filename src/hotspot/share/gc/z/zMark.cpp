@@ -375,16 +375,17 @@ void ZMark::follow_array_object(objArrayOop obj, bool finalizable) {
 
 void ZMark::follow_object(oop obj, bool finalizable) {
   if (_generation->is_old()) {
-    if (ZHeap::heap()->is_old(to_zaddress(obj))) {
-      if (finalizable) {
-        ZMarkBarrierFollowOopClosure<true /* finalizable */, ZGenerationIdOptional::old> cl;
-        ZIterator::oop_iterate(obj, &cl);
-      } else {
-        ZMarkBarrierFollowOopClosure<false /* finalizable */, ZGenerationIdOptional::old> cl;
-        ZIterator::oop_iterate(obj, &cl);
-      }
+    assert(ZHeap::heap()->is_old(to_zaddress(obj)), "Should only follow objects from old gen");
+    if (obj->is_stackChunk()) {
+      // No support for tracing through stack chunks as finalizably reachable
+      ZMarkBarrierFollowOopClosure<false /* finalizable */, ZGenerationIdOptional::old> cl;
+      ZIterator::oop_iterate(obj, &cl);
+    } else if (finalizable) {
+      ZMarkBarrierFollowOopClosure<true /* finalizable */, ZGenerationIdOptional::old> cl;
+      ZIterator::oop_iterate(obj, &cl);
     } else {
-      fatal("Catch me!");
+      ZMarkBarrierFollowOopClosure<false /* finalizable */, ZGenerationIdOptional::old> cl;
+      ZIterator::oop_iterate(obj, &cl);
     }
   } else {
     // Young gen must help out with old marking

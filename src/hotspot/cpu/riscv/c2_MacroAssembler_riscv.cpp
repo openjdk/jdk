@@ -1521,26 +1521,39 @@ void C2_MacroAssembler::byte_array_inflate_v(Register src, Register dst, Registe
 
 // Compress char[] array to byte[].
 // result: the array length if every element in array can be encoded; 0, otherwise.
-void C2_MacroAssembler::char_array_compress_v(Register src, Register dst, Register len, Register result, Register tmp) {
+void C2_MacroAssembler::char_array_compress_v(Register src, Register dst, Register len,
+                                              Register result, Register tmp) {
   Label done;
-  encode_iso_array_v(src, dst, len, result, tmp);
+  encode_iso_array_v(src, dst, len, result, tmp, false);
   beqz(len, done);
   mv(result, zr);
   bind(done);
 }
 
-// result: the number of elements had been encoded.
-void C2_MacroAssembler::encode_iso_array_v(Register src, Register dst, Register len, Register result, Register tmp) {
-  Label loop, DIFFERENCE, DONE;
+// Intrinsic for
+//
+// - sun/nio/cs/ISO_8859_1$Encoder.implEncodeISOArray
+//     return the number of characters copied.
+// - java/lang/StringUTF16.compress
+//     return zero (0) if copy fails, otherwise 'len'.
+//
+// This version always returns the number of characters copied. A successful
+// copy will complete with the post-condition: 'res' == 'len', while an
+// unsuccessful copy will exit with the post-condition: 0 <= 'res' < 'len'.
+//
+// Clobbers: src, dst, len, result, t0
+void C2_MacroAssembler::encode_iso_array_v(Register src, Register dst, Register len,
+                                           Register result, Register tmp, bool ascii) {
+  Label loop, fail, done;
 
   BLOCK_COMMENT("encode_iso_array_v {");
   mv(result, 0);
 
   bind(loop);
-  mv(tmp, 0xff);
+  mv(tmp, ascii ? 0x7f : 0xff);
   vsetvli(t0, len, Assembler::e16, Assembler::m2);
   vle16_v(v2, src);
-  // if element > 0xff, stop
+
   vmsgtu_vx(v1, v2, tmp);
   vfirst_m(tmp, v1);
   vmsbf_m(v0, v1);
@@ -1549,18 +1562,19 @@ void C2_MacroAssembler::encode_iso_array_v(Register src, Register dst, Register 
   vncvt_x_x_w(v1, v2, Assembler::v0_t);
   vse8_v(v1, dst, Assembler::v0_t);
 
-  bgez(tmp, DIFFERENCE);
+  // fail if char > 0x7f/0xff
+  bgez(tmp, fail);
   add(result, result, t0);
   add(dst, dst, t0);
   sub(len, len, t0);
   shadd(src, t0, src, t0, 1);
   bnez(len, loop);
-  j(DONE);
+  j(done);
 
-  bind(DIFFERENCE);
+  bind(fail);
   add(result, result, tmp);
 
-  bind(DONE);
+  bind(done);
   BLOCK_COMMENT("} encode_iso_array_v");
 }
 
