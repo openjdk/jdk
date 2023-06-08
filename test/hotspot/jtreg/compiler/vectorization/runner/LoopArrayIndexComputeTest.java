@@ -37,7 +37,7 @@
  *                   compiler.vectorization.runner.LoopArrayIndexComputeTest
  *
  * @requires (os.simpleArch == "x64") | (os.simpleArch == "aarch64")
- * @requires vm.compiler2.enabled & vm.flagless
+ * @requires vm.compiler2.enabled
  */
 
 package compiler.vectorization.runner;
@@ -163,6 +163,7 @@ public class LoopArrayIndexComputeTest extends VectorizationTestRunner {
     @Test
     // No true dependency in read-forward case.
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        applyIf = {"AlignVector", "false"},
         counts = {IRNode.STORE_VECTOR, ">0"})
     public int[] indexWithDifferentConstantsPos() {
         int[] res = new int[SIZE];
@@ -262,6 +263,7 @@ public class LoopArrayIndexComputeTest extends VectorizationTestRunner {
     @Test
     // No true dependency in read-forward case.
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        applyIf = {"AlignVector", "false"},
         counts = {IRNode.STORE_VECTOR, ">0"})
     public short[] shortArrayWithDependencePos() {
         short[] res = new short[SIZE];
@@ -287,6 +289,7 @@ public class LoopArrayIndexComputeTest extends VectorizationTestRunner {
     @Test
     // No true dependency in read-forward case.
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        applyIf = {"AlignVector", "false"},
         counts = {IRNode.STORE_VECTOR, ">0"})
     public char[] charArrayWithDependencePos() {
         char[] res = new char[SIZE];
@@ -312,6 +315,7 @@ public class LoopArrayIndexComputeTest extends VectorizationTestRunner {
     @Test
     // No true dependency in read-forward case.
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        applyIf = {"AlignVector", "false"},
         counts = {IRNode.STORE_VECTOR, ">0"})
     public byte[] byteArrayWithDependencePos() {
         byte[] res = new byte[SIZE];
@@ -338,6 +342,7 @@ public class LoopArrayIndexComputeTest extends VectorizationTestRunner {
     @Test
     // No true dependency in read-forward case.
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        applyIf = {"AlignVector", "false"},
         counts = {IRNode.STORE_VECTOR, ">0"})
     public boolean[] booleanArrayWithDependencePos() {
         boolean[] res = new boolean[SIZE];
