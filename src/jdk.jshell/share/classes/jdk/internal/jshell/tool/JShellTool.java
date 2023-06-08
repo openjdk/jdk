@@ -3351,7 +3351,7 @@ public class JShellTool implements MessageHandler {
                     ? feedback.truncateVarValue(state.varValue(vk))
                     : getResourceString("jshell.msg.vars.not.active");
             String varName = vk.name();
-            hard("  %s %s = %s", vk.typeName(),  varName.isEmpty() ? "_" : varName, val);
+            hard("  %s %s = %s", vk.typeName(), varName.isEmpty() ? "_" : varName, val);
         });
         return true;
     }
