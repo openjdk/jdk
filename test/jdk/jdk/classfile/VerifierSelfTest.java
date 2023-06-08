@@ -37,8 +37,8 @@ import java.nio.file.Path;
 import java.util.stream.Stream;
 import jdk.internal.classfile.ClassHierarchyResolver;
 import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.CodeModel;
-import jdk.internal.classfile.MethodModel;
+import jdk.internal.classfile.ClassTransform;
+import jdk.internal.classfile.CodeTransform;
 import org.junit.jupiter.api.Test;
 
 class VerifierSelfTest {
@@ -64,22 +64,10 @@ class VerifierSelfTest {
     void testFailedDump() throws IOException {
         Path path = FileSystems.getFileSystem(URI.create("jrt:/")).getPath("modules/java.base/java/util/HashMap.class");
         var cc = Classfile.of(Classfile.ClassHierarchyResolverOption.of(
-                className -> new ClassHierarchyResolver.ClassHierarchyInfo(className, false, null)));
+                className -> ClassHierarchyResolver.ClassHierarchyInfo.ofClass(null)));
         var classModel = cc.parse(path);
         byte[] brokenClassBytes = cc.transform(classModel,
-                (clb, cle) -> {
-                    if (cle instanceof MethodModel mm) {
-                        clb.transformMethod(mm, (mb, me) -> {
-                            if (me instanceof CodeModel cm) {
-                                mb.withCode(cob -> cm.forEachElement(cob));
-                            }
-                            else
-                                mb.with(me);
-                        });
-                    }
-                    else
-                        clb.with(cle);
-                });
+                ClassTransform.transformMethodBodies(CodeTransform.ACCEPT_ALL));
         StringBuilder sb = new StringBuilder();
         if (Classfile.of().parse(brokenClassBytes).verify(sb::append).isEmpty()) {
             throw new AssertionError("expected verification failure");

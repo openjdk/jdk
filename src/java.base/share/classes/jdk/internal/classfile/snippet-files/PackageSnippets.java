@@ -25,6 +25,7 @@
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
 import java.lang.constant.MethodTypeDesc;
+import java.lang.invoke.MethodHandles;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -35,7 +36,9 @@ import java.util.Map;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
 import jdk.internal.classfile.ClassElement;
+import jdk.internal.classfile.ClassHierarchyResolver;
 import jdk.internal.classfile.ClassModel;
 import jdk.internal.classfile.ClassTransform;
 import jdk.internal.classfile.Classfile;
@@ -306,4 +309,11 @@ class PackageSnippets {
                             .andThen(instrumentorClassRemapper)))));
     }
     // @end
+
+    void resolverExample() {
+        // @start region="lookup-class-hierarchy-resolver"
+        MethodHandles.Lookup lookup = MethodHandles.lookup(); // @replace regex="MethodHandles\.lookup\(\)" replacement="..."
+        ClassHierarchyResolver resolver = ClassHierarchyResolver.ofClassLoading(lookup).cached();
+        // @end
+    }
 }
