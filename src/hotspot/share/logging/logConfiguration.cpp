@@ -41,7 +41,7 @@
 #include "utilities/globalDefinitions.hpp"
 
 LogOutput** LogConfiguration::_outputs = nullptr;
-size_t LogConfiguration::_n_outputs = 0;
+size_t      LogConfiguration::_n_outputs = 0;
 
 LogStdoutOutput* LogConfiguration::LogConfiguration::StdoutLog = nullptr;
 LogStderrOutput* LogConfiguration::LogConfiguration::StderrLog = nullptr;
