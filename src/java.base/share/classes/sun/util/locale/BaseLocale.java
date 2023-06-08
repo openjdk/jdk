@@ -109,7 +109,7 @@ public final class BaseLocale {
             .equalsIgnoreCase("true");
 
     // This method must be called with normalize = false only when creating the
-    // constantBaseLocales instances
+    // Locale.* constants and non-normalized BaseLocale$Keys used for lookup.
     private BaseLocale(String language, String script, String region, String variant,
                        boolean normalize) {
         if (normalize) {
@@ -167,8 +167,10 @@ public final class BaseLocale {
         }
 
         Key key = new Key(language, script, region, variant);
-        Cache.putIfAbsent(key, key.getBaseLocale());
-        return Cache.get(key);
+        return CACHE.computeIfAbsent(key, (k) -> {
+            var base = k.getBaseLocale();
+            return new BaseLocale(base.getLanguage(), base.getScript(), base.getRegion(), base.getVariant(), true);
+        });
     }
 
     public static String convertOldISOCodes(String language) {
@@ -201,10 +203,9 @@ public final class BaseLocale {
         if (this == obj) {
             return true;
         }
-        if (!(obj instanceof BaseLocale)) {
+        if (!(obj instanceof BaseLocale other)) {
             return false;
         }
-        BaseLocale other = (BaseLocale)obj;
         return language == other.language
                && script == other.script
                && region == other.region
@@ -246,14 +247,13 @@ public final class BaseLocale {
     }
 
     private static final class Key {
-        private final BaseLocale holder;
+        private final BaseLocale base;
         private final int hash;
 
         private Key(String language, String script, String region,
                     String variant) {
-            BaseLocale locale = new BaseLocale(language, script, region, variant, true);
-            this.holder = locale;
-            this.hash = hashCode(locale);
+            base = new BaseLocale(language, script, region, variant, false);
+            hash = hashCode(base);
         }
 
         public int hashCode() {
@@ -286,7 +286,7 @@ public final class BaseLocale {
         }
 
         private BaseLocale getBaseLocale() {
-            return holder;
+            return base;
         }
 
         @Override
@@ -294,21 +294,19 @@ public final class BaseLocale {
             if (this == obj) {
                 return true;
             }
-            if (obj instanceof Key && this.hash == ((Key)obj).hash) {
-                BaseLocale other = ((Key) obj).getBaseLocale();
+            if (obj instanceof Key o && this.hash == o.hash) {
+                BaseLocale other = o.getBaseLocale();
                 BaseLocale locale = this.getBaseLocale();
-                if (other != null && locale != null
+                return other != null && locale != null
                     && LocaleUtils.caseIgnoreMatch(other.getLanguage(), locale.getLanguage())
                     && LocaleUtils.caseIgnoreMatch(other.getScript(), locale.getScript())
                     && LocaleUtils.caseIgnoreMatch(other.getRegion(), locale.getRegion())
                     // variant is case sensitive in JDK!
-                    && other.getVariant().equals(locale.getVariant())) {
-                    return true;
-                }
+                    && other.getVariant().equals(locale.getVariant());
             }
             return false;
         }
     }
 
-    private static final Map<Key, BaseLocale> Cache = new WeakHashMap<>();
+    private static final Map<Key, BaseLocale> CACHE = new WeakHashMap<>();
 }
