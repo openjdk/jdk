@@ -602,17 +602,14 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
 
         /*non-public*/
         byte[] generateConcreteSpeciesCodeFile(String className0, ClassSpecializer<T,K,S>.SpeciesData speciesData) {
-            final String className = classBCName(className0);
             final ClassDesc classDesc = ClassDesc.of(className0);
             final ClassDesc superClassDesc = ClassDesc.ofDescriptor(speciesData.deriveSuperClass().descriptorString());
             final int NOT_ACC_PUBLIC = 0;  // not ACC_PUBLIC
             return Classfile.build(classDesc, clb -> {
                 clb.withFlags(NOT_ACC_PUBLIC + ACC_FINAL + ACC_SUPER);
                 clb.withSuperclass(superClassDesc);
-                clb.withVersion(CLASSFILE_VERSION, 0);
 
-                final String sourceFile = className.substring(className.lastIndexOf('.')+1);
-                clb.with(SourceFileAttribute.of(sourceFile));
+                clb.with(SourceFileAttribute.of(classDesc.displayName()));
 
                 // emit static types and BMH_SPECIES fields
                 clb.withField(sdFieldName, SPECIES_DATA_DESC, NOT_ACC_PUBLIC + ACC_STATIC);
@@ -701,7 +698,7 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
                 MethodType thisCtorType = superCtorType.appendParameterTypes(fieldTypes);
 
                 // emit constructor
-                clb.withMethodBody("<init>", methodSig(thisCtorType), ACC_PRIVATE, cob -> {
+                clb.withMethodBody(ConstantDescs.INIT_NAME, methodSig(thisCtorType), ACC_PRIVATE, cob -> {
                     cob.aload(0); // this
 
                     final List<Var> ctorArgs = AFTER_THIS.fromTypes(superCtorType.parameterList());
@@ -710,7 +707,7 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
                     }
 
                     // super(ca...)
-                    cob.invokespecial(superClassDesc, "<init>", methodSig(superCtorType));
+                    cob.invokespecial(superClassDesc, ConstantDescs.INIT_NAME, methodSig(superCtorType));
 
                     // store down fields
                     Var lastFV = AFTER_THIS.lastOf(ctorArgs);
@@ -737,7 +734,7 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
                     }
 
                     // finally, invoke the constructor and return
-                    cob.invokespecial(classDesc, "<init>", methodSig(thisCtorType))
+                    cob.invokespecial(classDesc, ConstantDescs.INIT_NAME, methodSig(thisCtorType))
                        .areturn();
                 });
 

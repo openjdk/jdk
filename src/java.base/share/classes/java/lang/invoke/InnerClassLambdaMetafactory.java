@@ -39,7 +39,6 @@ import java.lang.reflect.Modifier;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-import static java.lang.invoke.MethodHandleStatics.CLASSFILE_VERSION;
 import static java.lang.invoke.MethodHandles.Lookup.ClassOption.NESTMATE;
 import static java.lang.invoke.MethodHandles.Lookup.ClassOption.STRONG;
 import static java.lang.invoke.MethodType.methodType;
@@ -331,7 +330,6 @@ import jdk.internal.classfile.CodeBuilder;
             public void accept(ClassBuilder clb) {
                 clb.withFlags(ACC_SUPER + ACC_FINAL + ACC_SYNTHETIC);
                 clb.withInterfaceSymbols(interfaces);
-                clb.withVersion(CLASSFILE_VERSION, 0);
                 // Generate final fields to be filled in by constructor
                 for (int i = 0; i < argDescs.length; i++) {
                     clb.withField(argNames[i], argDescs[i], ACC_PRIVATE + ACC_FINAL);
