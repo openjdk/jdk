@@ -122,9 +122,9 @@ final class LazyInitializingVarHandle extends VarHandle {
                         return callTarget.form;
                     }
                 });
-                cache[i] = callTarget;
             }
         }
+        this.methodHandleTable = target.methodHandleTable;
     }
 
     @Override
