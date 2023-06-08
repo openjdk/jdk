@@ -100,8 +100,8 @@ int main (int argc, char* argv[]) {
       printf("[*] Error creating thread %d - %d\n", i, status);
       exit(-1);
     }
-    pthread_attr_destroy(&attr);
   }
+  pthread_attr_destroy(&attr);
   for (int i = 0; i < NUM_THREADS; i++ ) {
     pthread_join(threads[i], NULL);
   }
