@@ -492,7 +492,8 @@ void C2_MacroAssembler::string_indexof(Register haystack, Register needle,
   bne(tmp3, skipch, BMSKIP); // if not equal, skipch is bad char
   add(result, haystack, isLL ? nlen_tmp : ch2);
   // load 8 bytes from source string
-  load_long_misaligned(ch2, Address(result), ch1); // can use ch1 as temp register here as it will be trashed by next mv anyway
+  // if isLL is false then read granularity can be 2
+  load_long_misaligned(ch2, Address(result), ch1, isLL ? 1 : 2); // can use ch1 as temp register here as it will be trashed by next mv anyway
   mv(ch1, tmp6);
   if (isLL) {
     j(BMLOOPSTR1_AFTER_LOAD);
