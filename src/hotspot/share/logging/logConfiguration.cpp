@@ -41,7 +41,10 @@
 #include "utilities/globalDefinitions.hpp"
 
 LogOutput** LogConfiguration::_outputs = nullptr;
-size_t      LogConfiguration::_n_outputs = 0;
+size_t LogConfiguration::_n_outputs = 0;
+
+LogStdoutOutput* LogConfiguration::LogConfiguration::StdoutLog = nullptr;
+LogStderrOutput* LogConfiguration::LogConfiguration::StderrLog = nullptr;
 
 LogConfiguration::UpdateListenerFunction* LogConfiguration::_listener_callbacks = nullptr;
 size_t      LogConfiguration::_n_listener_callbacks = 0;
@@ -102,20 +105,20 @@ void LogConfiguration::post_initialize() {
 }
 
 void LogConfiguration::initialize(jlong vm_start_time) {
-  StdoutLog = new LogStdoutOutput();
-  StderrLog = new LogStderrOutput();
+  LogConfiguration::StdoutLog = new LogStdoutOutput();
+  LogConfiguration::StderrLog = new LogStderrOutput();
   LogFileOutput::set_file_name_parameters(vm_start_time);
   assert(_outputs == nullptr, "Should not initialize _outputs before this function, initialize called twice?");
   _outputs = NEW_C_HEAP_ARRAY(LogOutput*, 2, mtLogging);
-  _outputs[0] = StdoutLog;
-  _outputs[1] = StderrLog;
+  _outputs[0] = LogConfiguration::StdoutLog;
+  _outputs[1] = LogConfiguration::StderrLog;
   _n_outputs = 2;
   _outputs[0]->set_config_string("all=warning");
   _outputs[1]->set_config_string("all=off");
 
   // Set the default output to warning and error level for all new tagsets.
   for (LogTagSet* ts = LogTagSet::first(); ts != nullptr; ts = ts->next()) {
-    ts->set_output_level(StdoutLog, LogLevel::Default);
+    ts->set_output_level(LogConfiguration::StdoutLog, LogLevel::Default);
   }
 }
 
@@ -421,12 +424,12 @@ bool LogConfiguration::parse_command_line_arguments(const char* opts) {
 
   // Normally options can't be used to change an existing output
   // (parse_log_arguments() will report an error), but we make an exception for
-  // both StdoutLog and StderrLog as they're initialized automatically
+  // both LogConfiguration::StdoutLog and LogConfiguration::StderrLog as they're initialized automatically
   // very early in the boot process.
   if (output == nullptr || strlen(output) == 0 ||
       strcmp("stdout", output) == 0 || strcmp("#0", output) == 0) {
     if (!stdout_configured) {
-      success = StdoutLog->parse_options(output_options, &ss);
+      success = LogConfiguration::StdoutLog->parse_options(output_options, &ss);
       stdout_configured = true;
       // We no longer need to pass output options to parse_log_arguments().
       output_options = nullptr;
@@ -435,7 +438,7 @@ bool LogConfiguration::parse_command_line_arguments(const char* opts) {
     // with a warning
   } else if (strcmp("stderr", output) == 0 || strcmp("#1", output) == 0) {
     if (!stderr_configured) {
-      success = StderrLog->parse_options(output_options, &ss);
+      success = LogConfiguration::StderrLog->parse_options(output_options, &ss);
       stderr_configured = true;
       // We no longer need to pass output options to parse_log_arguments().
       output_options = nullptr;

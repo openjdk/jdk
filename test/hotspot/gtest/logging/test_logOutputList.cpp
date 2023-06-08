@@ -22,6 +22,7 @@
  */
 
 #include "precompiled.hpp"
+#include "logging/logConfiguration.hpp"
 #include "logging/logFileStreamOutput.hpp"
 #include "logging/logLevel.hpp"
 #include "logging/logOutput.hpp"
@@ -174,7 +175,7 @@ TEST(LogOutputList, is_level_single_output) {
   for (size_t i = LogLevel::First; i < LogLevel::Count; i++) {
     LogLevelType level = static_cast<LogLevelType>(i);
     LogOutputList list;
-    list.set_output_level(StdoutLog, level);
+    list.set_output_level(LogConfiguration::StdoutLog, level);
     for (size_t j = LogLevel::First; j < LogLevel::Count; j++) {
       LogLevelType other = static_cast<LogLevelType>(j);
       // Verify that levels finer than the current level for stdout are reported as disabled,
@@ -202,8 +203,8 @@ TEST(LogOutputList, is_level_empty) {
 // Test is_level() on lists with two outputs on different levels
 TEST(LogOutputList, is_level_multiple_outputs) {
   for (size_t i = LogLevel::First; i < LogLevel::Count - 1; i++) {
-      LogOutput* dummy1 = StdoutLog;
-      LogOutput* dummy2 = StderrLog;
+      LogOutput* dummy1 = LogConfiguration::StdoutLog;
+      LogOutput* dummy2 = LogConfiguration::StderrLog;
       LogLevelType first = static_cast<LogLevelType>(i);
       LogLevelType second = static_cast<LogLevelType>(i + 1);
       LogOutputList list;
@@ -227,19 +228,19 @@ TEST(LogOutputList, level_for) {
   LogOutputList list;
 
   // Ask the empty list about stdout, stderr
-  EXPECT_EQ(LogLevel::Off, list.level_for(StdoutLog));
-  EXPECT_EQ(LogLevel::Off, list.level_for(StderrLog));
+  EXPECT_EQ(LogLevel::Off, list.level_for(LogConfiguration::StdoutLog));
+  EXPECT_EQ(LogLevel::Off, list.level_for(LogConfiguration::StderrLog));
 
   // Ask for level in a list with two outputs on different levels
-  list.set_output_level(StdoutLog, LogLevel::Info);
-  list.set_output_level(StderrLog, LogLevel::Trace);
-  EXPECT_EQ(LogLevel::Info, list.level_for(StdoutLog));
-  EXPECT_EQ(LogLevel::Trace, list.level_for(StderrLog));
+  list.set_output_level(LogConfiguration::StdoutLog, LogLevel::Info);
+  list.set_output_level(LogConfiguration::StderrLog, LogLevel::Trace);
+  EXPECT_EQ(LogLevel::Info, list.level_for(LogConfiguration::StdoutLog));
+  EXPECT_EQ(LogLevel::Trace, list.level_for(LogConfiguration::StderrLog));
 
   // Remove and ask again
-  list.set_output_level(StdoutLog, LogLevel::Off);
-  EXPECT_EQ(LogLevel::Off, list.level_for(StdoutLog));
-  EXPECT_EQ(LogLevel::Trace, list.level_for(StderrLog));
+  list.set_output_level(LogConfiguration::StdoutLog, LogLevel::Off);
+  EXPECT_EQ(LogLevel::Off, list.level_for(LogConfiguration::StdoutLog));
+  EXPECT_EQ(LogLevel::Trace, list.level_for(LogConfiguration::StderrLog));
 
   // Ask about an unknown output
   LogOutput* dummy = dummy_output(4711);
@@ -252,5 +253,5 @@ TEST(LogOutputList, level_for) {
   }
 
   // Make sure the stderr level is still the same
-  EXPECT_EQ(LogLevel::Trace, list.level_for(StderrLog));
+  EXPECT_EQ(LogLevel::Trace, list.level_for(LogConfiguration::StderrLog));
 }
