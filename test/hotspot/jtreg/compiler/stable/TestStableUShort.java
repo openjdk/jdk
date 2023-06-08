@@ -33,26 +33,26 @@
  *                                 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
  *                                 -XX:-TieredCompilation
  *                                 -XX:+FoldStableValues
- *                                 -XX:CompileOnly=*TestStableUShort::get*
+ *                                 -XX:CompileOnly=*TestStableUShort*::get*
  *                                 compiler.stable.TestStableUShort
  * @run main/bootclasspath/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+AlwaysIncrementalInline
  *                                 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
  *                                 -XX:-TieredCompilation
  *                                 -XX:-FoldStableValues
- *                                 -XX:CompileOnly=*TestStableUShort::get*
+ *                                 -XX:CompileOnly=*TestStableUShort*::get*
  *                                 compiler.stable.TestStableUShort
  *
  * @run main/bootclasspath/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+AlwaysIncrementalInline
  *                                 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
  *                                 -XX:+TieredCompilation -XX:TieredStopAtLevel=1
  *                                 -XX:+FoldStableValues
- *                                 -XX:CompileOnly=*TestStableUShort::get*
+ *                                 -XX:CompileOnly=*TestStableUShort*::get*
  *                                 compiler.stable.TestStableUShort
  * @run main/bootclasspath/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+AlwaysIncrementalInline
  *                                 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
  *                                 -XX:+TieredCompilation -XX:TieredStopAtLevel=1
  *                                 -XX:-FoldStableValues
- *                                 -XX:CompileOnly=*TestStableUShort::get*
+ *                                 -XX:CompileOnly=*TestStableUShort*::get*
  *                                 compiler.stable.TestStableUShort
  */
 
