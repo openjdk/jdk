@@ -128,15 +128,15 @@ public final class ThemeReader {
             }
         }
 
-        // mostly copied from the javadoc for ReentrantReadWriteLock
         Long theme = null;
 
-        Map<String, Long> dpiWidgetToTheme = dpiAwareWidgetToTheme.get(dpi);
+        Map<String, Long> widgetToTheme = dpiAwareWidgetToTheme.get(dpi);
 
-        if (dpiWidgetToTheme != null) {
-            theme = dpiWidgetToTheme.get(widget);
+        if (widgetToTheme != null) {
+            theme = widgetToTheme.get(widget);
         }
 
+        // mostly copied from the javadoc for ReentrantReadWriteLock
         if (theme == null) {
             readLock.unlock();
             writeLock.lock();

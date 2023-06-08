@@ -51,6 +51,7 @@ import java.awt.Insets;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Toolkit;
+import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
 import java.awt.image.WritableRaster;
@@ -80,8 +81,6 @@ import sun.awt.image.SunWritableRaster;
 import sun.awt.windows.ThemeReader;
 import sun.security.action.GetPropertyAction;
 import sun.swing.CachedPainter;
-
-import java.awt.geom.AffineTransform;
 
 import static com.sun.java.swing.plaf.windows.TMSchema.Part;
 import static com.sun.java.swing.plaf.windows.TMSchema.Prop;
