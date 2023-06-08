@@ -25,7 +25,6 @@
  * @test
  * @bug 8308474
  * @summary Test that calling initSign resets RNG
- * @run main SecureRandomReset
  */
 
 import java.security.KeyPairGenerator;
