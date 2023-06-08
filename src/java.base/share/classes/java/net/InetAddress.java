@@ -211,7 +211,7 @@ import static java.net.spi.InetAddressResolver.LookupPolicy.IPV6_FIRST;
  * an integer to indicate the number of seconds that stale names will be kept in
  * the cache. A name is considered stale if the TTL has expired and an attempt
  * to lookup the host name again was not successful. This property is useful if
- * it is preferable to use a stale name rather than result of unsuccessful name
+ * it is preferable to use a stale name rather than fail due to an unsuccessful
  * lookup. The default setting is to cache for an implementation specific period
  * of time.
  * <p>
