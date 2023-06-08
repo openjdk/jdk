@@ -27,8 +27,8 @@
  * @summary Verify that expect 100-continue doesn't hang
  * @library /test/lib
  * @run junit/othervm HttpURLConnectionExpectContinueTest
- * @run junit/othervm -Djava.net.preferIPv4Stack=True HttpURLConnectionExpectContinueTest
- * @run junit/othervm -Djava.net.preferIPv6Addresses=True HttpURLConnectionExpectContinueTest
+ * @run junit/othervm -Djava.net.preferIPv4Stack=true HttpURLConnectionExpectContinueTest
+ * @run junit/othervm -Djava.net.preferIPv6Addresses=true HttpURLConnectionExpectContinueTest
  */
 
 import jdk.test.lib.net.URIBuilder;
