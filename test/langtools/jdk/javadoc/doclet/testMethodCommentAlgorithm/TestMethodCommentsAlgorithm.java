@@ -87,7 +87,7 @@ import toolbox.ToolBox;
  *
  * The test challenges javadoc by asking the following question:
  *
- *     Whose documentation will inherit T1 if Tj (1 <= j <= i)
+ *     Whose documentation will T1 inherit if Tj (1 <= j <= i)
  *     do not have doc comments, but Tk (i < k <= N) do?
  *
  * For the i-th run the test checks that T1 inherits documentation of T(i+1).
@@ -141,12 +141,12 @@ public class TestMethodCommentsAlgorithm extends JavadocTester {
                 throw new SkippedException("can't find TEST.ROOT");
             }
         }
-        System.err.println("Test suite root: " + p);
+        out.println("Test suite root: " + p);
         Path javaBase = p.resolve("../../src/java.base").normalize();
         if (!Files.exists(javaBase)) {
             throw new SkippedException("can't find java.base");
         }
-        System.err.println("java.base: " + javaBase);
+        out.println("java.base: " + javaBase);
 
         for (int i = 1; i < 7; i++) {
             mixedHierarchyI(base, javaBase, i);
@@ -352,7 +352,7 @@ public class TestMethodCommentsAlgorithm extends JavadocTester {
      * for Object.equals in the provided destination directory and returns
      * the path to that created copy.
      */
-    private static Path createPatchedJavaLangObject(Path src, Path dst, String newComment)
+    private Path createPatchedJavaLangObject(Path src, Path dst, String newComment)
             throws IOException {
         if (!Files.isDirectory(src) || !Files.isDirectory(dst)) {
             throw new IllegalArgumentException();
@@ -368,7 +368,7 @@ public class TestMethodCommentsAlgorithm extends JavadocTester {
             throw new IllegalStateException(Arrays.toString(files.toArray()));
         }
         var original = files.get(0);
-        System.out.println("found " + original.toAbsolutePath());
+        out.println("found " + original.toAbsolutePath());
         var source = Files.readString(original);
         var region = findDocCommentRegion(original);
         var newSource = source.substring(0, region.start)
@@ -377,7 +377,7 @@ public class TestMethodCommentsAlgorithm extends JavadocTester {
         // create intermediate directories in the destination first, otherwise
         // writeString will throw java.nio.file.NoSuchFileException
         var copy = dst.resolve(src.relativize(original));
-        System.out.println("to be copied to " + copy);
+        out.println("to be copied to " + copy);
         if (Files.notExists(copy.getParent())) {
             Files.createDirectories(copy.getParent());
         }
