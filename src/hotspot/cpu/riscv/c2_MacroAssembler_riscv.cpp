@@ -491,7 +491,8 @@ void C2_MacroAssembler::string_indexof(Register haystack, Register needle,
   }
   bne(tmp3, skipch, BMSKIP); // if not equal, skipch is bad char
   add(result, haystack, isLL ? nlen_tmp : ch2);
-  load_long_misaligned(ch2, Address(result), ch1); // can use ch1 as tmpreg here as it will be trashed on next mv command anyway
+  // load 8 bytes from source string
+  load_long_misaligned(ch2, Address(result), ch1); // can use ch1 as temp register here as it will be trashed by next mv anyway
   mv(ch1, tmp6);
   if (isLL) {
     j(BMLOOPSTR1_AFTER_LOAD);
@@ -680,17 +681,16 @@ void C2_MacroAssembler::string_indexof_linearscan(Register haystack, Register ne
     add(haystack, haystack, tmp3);
     neg(hlen_neg, tmp3);
     if (AvoidUnalignedAccesses) {
-      // preload first value, then we will read by 1 character per loop, instead of two
+      // preload first value, then we will read by 1 character per loop, instead of four
       // just shifting previous ch2 right by size of character in bits
       add(tmp3, haystack, hlen_neg);
       (this->*load_4chr)(ch2, Address(tmp3), noreg);
-      if (isLL)
-      {
-        //need to erase 1 most significant byte in 32-bit value of ch2
+      if (isLL) {
+        // need to erase 1 most significant byte in 32-bit value of ch2
         slli(ch2, ch2, 40);
         srli(ch2, ch2, 32);
       } else {
-        slli(ch2, ch2, 16); //2 most significant bytes will be erased by this operation
+        slli(ch2, ch2, 16); // 2 most significant bytes will be erased by this operation
       }
     }
 
@@ -792,10 +792,7 @@ void C2_MacroAssembler::string_indexof_linearscan(Register haystack, Register ne
     bind(DO1);
     (this->*needle_load_1chr)(ch1, Address(needle), noreg);
     sub(result_tmp, haystack_len, 1);
-    mv(tmp3, result_tmp);
-    if (haystack_chr_shift) {
-      slli(tmp3, result_tmp, haystack_chr_shift);
-    }
+    slli(tmp3, result_tmp, haystack_chr_shift);
     add(haystack, haystack, tmp3);
     neg(hlen_neg, tmp3);
 
