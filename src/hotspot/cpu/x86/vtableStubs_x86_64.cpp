@@ -175,10 +175,12 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   // (various calling sequences use r[cd]x, r[sd]i, r[89]; stay away from them)
   const Register recv_klass_reg     = r10;
   const Register holder_klass_reg   = rax; // declaring interface klass (DECC)
-  const Register resolved_klass_reg = rbx; // resolved interface klass (REFC)
+  const Register resolved_klass_reg = r14; // resolved interface klass (REFC)
   const Register temp_reg           = r11;
+  const Register temp_reg2          = r13;
+  const Register method             = rbx;
+  const Register icholder_reg       = rax;
 
-  const Register icholder_reg = rax;
   __ movptr(resolved_klass_reg, Address(icholder_reg, CompiledICHolder::holder_klass_offset()));
   __ movptr(holder_klass_reg,   Address(icholder_reg, CompiledICHolder::holder_metadata_offset()));
 
@@ -192,25 +194,16 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   start_pc = __ pc();
 
   // Receiver subtype check against REFC.
-  // Destroys recv_klass_reg value.
-  __ lookup_interface_method(// inputs: rec. class, interface
-                             recv_klass_reg, resolved_klass_reg, noreg,
-                             // outputs:  scan temp. reg1, scan temp. reg2
-                             recv_klass_reg, temp_reg,
-                             L_no_such_interface,
-                             /*return_method=*/false);
-
-  const ptrdiff_t  typecheckSize = __ pc() - start_pc;
-  start_pc = __ pc();
-
   // Get selected method from declaring class and itable index
-  const Register method = rbx;
-  __ load_klass(recv_klass_reg, j_rarg0, temp_reg);   // restore recv_klass_reg
-  __ lookup_interface_method(// inputs: rec. class, interface, itable index
-                             recv_klass_reg, holder_klass_reg, itable_index,
-                             // outputs: method, scan temp. reg
-                             method, temp_reg,
-                             L_no_such_interface);
+  __ lookup_interface_method_stub(recv_klass_reg, // input
+                                  holder_klass_reg, // input
+                                  resolved_klass_reg, // input
+                                  method, // output
+                                  temp_reg,
+                                  temp_reg2,
+                                  noreg,
+                                  itable_index,
+                                  L_no_such_interface);
 
   const ptrdiff_t  lookupSize = __ pc() - start_pc;
 
@@ -218,7 +211,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   // The emitted code in lookup_interface_method changes when itable_index exceeds 15.
   // For linux, a very narrow estimate would be 112, but Solaris requires some more space (130).
   const ptrdiff_t estimate = 136;
-  const ptrdiff_t codesize = typecheckSize + lookupSize + index_dependent_slop;
+  const ptrdiff_t codesize = lookupSize + index_dependent_slop;
   slop_delta  = (int)(estimate - codesize);
   slop_bytes += slop_delta;
   assert(slop_delta >= 0, "itable #%d: Code size estimate (%d) for lookup_interface_method too small, required: %d", itable_index, (int)estimate, (int)codesize);

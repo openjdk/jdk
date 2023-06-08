@@ -95,6 +95,8 @@ public class EventNames {
     public static final String ReservedStackActivation = PREFIX + "ReservedStackActivation";
 
     // GC
+    public static final String GCHeapMemoryUsage = PREFIX + "GCHeapMemoryUsage";
+    public static final String GCHeapMemoryPoolUsage = PREFIX + "GCHeapMemoryPoolUsage";
     public static final String GCHeapSummary = PREFIX + "GCHeapSummary";
     public static final String MetaspaceSummary = PREFIX + "MetaspaceSummary";
     public static final String MetaspaceGCThreshold = PREFIX + "MetaspaceGCThreshold";
@@ -184,6 +186,7 @@ public class EventNames {
     public static final String PhysicalMemory = PREFIX + "PhysicalMemory";
     public static final String NetworkUtilization = PREFIX + "NetworkUtilization";
     public static final String ProcessStart = PREFIX + "ProcessStart";
+    public static final String ResidentSetSize = PREFIX + "ResidentSetSize";
 
     // JDK
     public static final String FileForce  = PREFIX + "FileForce";

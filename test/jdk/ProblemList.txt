@@ -458,6 +458,8 @@ java/awt/dnd/BadSerializationTest/BadSerializationTest.java 8277817 linux-x64,wi
 java/awt/GraphicsDevice/CheckDisplayModes.java 8266242 macosx-aarch64
 java/awt/GraphicsDevice/DisplayModes/UnknownRefrshRateTest.java 8286436 macosx-aarch64
 java/awt/image/multiresolution/MultiresolutionIconTest.java 8291979 linux-x64,windows-all
+java/awt/event/SequencedEvent/MultipleContextsFunctionalTest.java 8305061 macosx-x64
+sun/java2d/DirectX/OnScreenRenderingResizeTest/OnScreenRenderingResizeTest.java 8301177 linux-x64
 
 ############################################################################
 
@@ -484,6 +486,8 @@ java/lang/invoke/LFCaching/LFMultiThreadCachingTest.java        8151492 generic-
 java/lang/invoke/LFCaching/LFGarbageCollectedTest.java          8078602 generic-all
 java/lang/invoke/lambda/LambdaFileEncodingSerialization.java    8249079 linux-x64
 java/lang/invoke/RicochetTest.java                              8251969 generic-all
+
+java/lang/ScopedValue/StressStackOverflow.java                  8303498 linux-s390x
 
 ############################################################################
 
@@ -523,6 +527,8 @@ javax/management/MBeanServer/OldMBeanServerTest.java            8030957 aix-all
 javax/management/monitor/DerivedGaugeMonitorTest.java           8042211 generic-all
 
 javax/management/remote/mandatory/connection/RMIConnector_NPETest.java 8267887 generic-all
+
+javax/management/remote/mandatory/connection/BrokenConnectionTest.java 8262312 linux-all
 
 ############################################################################
 
@@ -621,6 +627,7 @@ javax/sound/sampled/Mixers/DisabledAssertionCrash.java 7067310 generic-all
 
 javax/sound/midi/Sequencer/Recording.java 8167580,8265485 linux-all,macosx-aarch64
 javax/sound/midi/Sequencer/Looping.java 8136897 generic-all
+javax/sound/sampled/Clip/ClipIsRunningAfterStop.java 8307574 linux-x64
 
 ############################################################################
 
@@ -733,9 +740,6 @@ sun/tools/jhsdb/JStackStressTest.java                           8276210 linux-aa
 # jdk_other
 
 javax/rmi/ssl/SSLSocketParametersTest.sh                        8162906 generic-all
-
-
-jdk/incubator/concurrent/ScopedValue/StressStackOverflow.java   8303498 linux-s390x
 
 jdk/incubator/vector/ShortMaxVectorTests.java                   8306592 generic-i586
 jdk/incubator/vector/LoadJsvmlTest.java                         8305390 windows-x64

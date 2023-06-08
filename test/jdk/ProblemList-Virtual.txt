@@ -27,35 +27,29 @@ com/sun/jdi/EATests.java#id0                                    8264699 generic-
 ## Tests failing when main() is executed in additional vthread or in vthread instead of thread
 #
 
-com/sun/jdi/DeferredStepTest.java 8285422 generic-all
-com/sun/jdi/EarlyReturnTest.java 8285422 generic-all
-com/sun/jdi/ExceptionEvents.java 8285422 generic-all
-com/sun/jdi/JdbMethodExitTest.java 8285422 generic-all
-com/sun/jdi/JdbStepTest.java 8285422 generic-all
-com/sun/jdi/JdbStopThreadTest.java 8285422 generic-all
-com/sun/jdi/JdbStopThreadidTest.java 8285422 generic-all
-com/sun/jdi/MethodEntryExitEvents.java 8285422 generic-all
-com/sun/jdi/MultiBreakpointsTest.java 8285422 generic-all
-com/sun/jdi/PopAndStepTest.java 8285422 generic-all
-com/sun/jdi/PopAsynchronousTest.java 8285422 generic-all
-com/sun/jdi/PopSynchronousTest.java 8285422 generic-all
-com/sun/jdi/RedefineCrossStart.java 8285422 generic-all
-com/sun/jdi/RedefineG.java 8285422 generic-all
-com/sun/jdi/RedefineNestmateAttr/TestNestmateAttr.java 8285422 generic-all
-com/sun/jdi/RedefineTTYLineNumber.java 8285422 generic-all
+com/sun/jdi/ExceptionEvents.java 8278470 generic-all
+com/sun/jdi/RedefineCrossStart.java 8278470 generic-all
 com/sun/jdi/ReferrersTest.java 8285422 generic-all
 com/sun/jdi/SetLocalWhileThreadInNative.java 8285422 generic-all
-com/sun/jdi/StepTest.java 8285422 generic-all
-com/sun/jdi/PopAndInvokeTest.java 8305632 generic-all
 com/sun/jdi/cds/CDSBreakpointTest.java 8307778 generic-all
 com/sun/jdi/cds/CDSDeleteAllBkptsTest.java 8307778 generic-all
 com/sun/jdi/cds/CDSFieldWatchpoints.java 8307778 generic-all
 
+sun/tools/jcmd/JcmdOutputEncodingTest.java 8308033 generic-all
+sun/tools/jstack/BasicJStackTest.java 8308033 generic-all
+
+javax/management/remote/mandatory/connection/BrokenConnectionTest.java 8308035 windows-x64
+
+javax/management/remote/mandatory/loading/MissingClassTest.java 8145413 windows-x64
+
+javax/management/remote/mandatory/loading/RMIDownloadTest.java 8308366 windows-x64
+
+java/lang/instrument/NativeMethodPrefixAgent.java 8307169 generic-all
 
 ##########
-## Tests incompatible with  with virtual test thread factory.
+## Tests incompatible with virtual test thread factory.
 ## There is no goal to run all test with virtual test thread factory.
-## So any test migth be added as incompatible, the bug is not required.
+## So any test might be added as incompatible, the bug id is not required.
 
 # Incorrect stack/threadgroup/exception expectations for main thread
 java/lang/StackWalker/DumpStackTest.java 0000000 generic-all
@@ -66,6 +60,7 @@ java/lang/Thread/UncaughtExceptionsTest.java 0000000 generic-all
 java/lang/Thread/virtual/GetStackTraceWhenRunnable.java 0000000 generic-all
 java/lang/invoke/condy/CondyNestedResolutionTest.java 0000000 generic-all
 java/lang/ref/OOMEInReferenceHandler.java 0000000 generic-all
+java/util/concurrent/locks/Lock/OOMEInAQS.java 0000000 generic-all
 jdk/internal/vm/Continuation/Scoped.java 0000000 generic-all
 
 # The problems with permissions
@@ -74,3 +69,4 @@ java/lang/SecurityManager/modules/CustomSecurityManagerTest.java 0000000 generic
 java/util/PluggableLocale/PermissionTest.java 0000000 generic-all
 java/util/Properties/StoreReproducibilityTest.java 0000000 generic-all
 java/util/Properties/StoreReproducibilityTest.java 0000000 generic-all
+javax/management/remote/mandatory/subjectDelegation/SubjectDelegation1Test.java 0000000 generic-all

@@ -37,8 +37,8 @@
 #include "runtime/thread.hpp"
 #include "utilities/preserveException.hpp"
 
-ZOnStackCodeBlobClosure::ZOnStackCodeBlobClosure() :
-    _bs_nm(BarrierSet::barrier_set()->barrier_set_nmethod()) {}
+ZOnStackCodeBlobClosure::ZOnStackCodeBlobClosure()
+  : _bs_nm(BarrierSet::barrier_set()->barrier_set_nmethod()) {}
 
 void ZOnStackCodeBlobClosure::do_code_blob(CodeBlob* cb) {
   nmethod* const nm = cb->as_nmethod_or_null();
@@ -56,8 +56,8 @@ uint32_t ZStackWatermark::epoch_id() const {
   return *ZPointerStoreGoodMaskLowOrderBitsAddr;
 }
 
-ZStackWatermark::ZStackWatermark(JavaThread* jt) :
-    StackWatermark(jt, StackWatermarkKind::gc, *ZPointerStoreGoodMaskLowOrderBitsAddr),
+ZStackWatermark::ZStackWatermark(JavaThread* jt)
+  : StackWatermark(jt, StackWatermarkKind::gc, *ZPointerStoreGoodMaskLowOrderBitsAddr),
     // First watermark is fake and setup to be replaced at next phase shift
     _old_watermarks{{ZPointerStoreBadMask, 1}, {}, {}},
     _old_watermarks_newest(0),
@@ -154,8 +154,8 @@ private:
   }
 
 public:
-  ZStackWatermarkProcessOopClosure(void* context, uintptr_t color) :
-      _function(select_function(context)), _color(color) {}
+  ZStackWatermarkProcessOopClosure(void* context, uintptr_t color)
+    : _function(select_function(context)), _color(color) {}
 
   virtual void do_root(zaddress_unsafe* p) {
     _function(p, _color);

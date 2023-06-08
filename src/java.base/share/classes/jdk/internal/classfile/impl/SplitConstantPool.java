@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,6 +103,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
         this.parentSize = 0;
         this.parentBsmSize = 0;
         this.options = options;
+        this.doneFullScan = true;
     }
 
     public SplitConstantPool(ClassReader parent) {
@@ -193,6 +194,9 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
     @Override
     public void writeTo(BufWriter buf) {
         int writeFrom = 1;
+        if (entryCount() >= 65536) {
+            throw new IllegalArgumentException(String.format("Constant pool is too large %d", entryCount()));
+        }
         buf.writeU2(entryCount());
         if (parent != null && buf.constantPool().canWriteDirect(this)) {
             parent.writeConstantPoolEntries(buf);
@@ -380,8 +384,9 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
 
     @Override
     public AbstractPoolEntry.Utf8EntryImpl utf8Entry(String s) {
-        var ce = tryFindUtf8(AbstractPoolEntry.hashString(s.hashCode()), s);
-        return ce == null ? internalAdd(new AbstractPoolEntry.Utf8EntryImpl(this, size, s)) : ce;
+        int hash = AbstractPoolEntry.hashString(s.hashCode());
+        var ce = tryFindUtf8(hash, s);
+        return ce == null ? internalAdd(new AbstractPoolEntry.Utf8EntryImpl(this, size, s, hash)) : ce;
     }
 
     AbstractPoolEntry.Utf8EntryImpl maybeCloneUtf8Entry(Utf8Entry entry) {
@@ -459,7 +464,9 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
 
     @Override
     public MethodTypeEntry methodTypeEntry(MethodTypeDesc descriptor) {
-        return methodTypeEntry(utf8Entry(descriptor.descriptorString()));
+        var ret = (AbstractPoolEntry.MethodTypeEntryImpl)methodTypeEntry(utf8Entry(descriptor.descriptorString()));
+        ret.sym = descriptor;
+        return ret;
     }
 
     @Override
@@ -476,7 +483,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
                 case TAG_FIELDREF -> fieldRefEntry(reference.owner(), reference.nameAndType());
                 case TAG_METHODREF -> methodRefEntry(reference.owner(), reference.nameAndType());
                 case TAG_INTERFACEMETHODREF -> interfaceMethodRefEntry(reference.owner(), reference.nameAndType());
-                default -> throw new IllegalStateException(String.format("Bad tag %d", reference.tag()));
+                default -> throw new IllegalArgumentException(String.format("Bad tag %d", reference.tag()));
             };
         }
 
