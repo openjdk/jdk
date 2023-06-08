@@ -24,6 +24,7 @@
 package compiler.c2.irTests;
 
 import compiler.lib.ir_framework.*;
+import jdk.test.lib.Platform;
 
 /*
  * @test
@@ -36,7 +37,11 @@ import compiler.lib.ir_framework.*;
 
 public class ProfileAtTypeCheck {
     public static void main(String[] args) {
-        TestFramework.runWithFlags("-XX:-UseCompressedClassPointers", "-XX:TypeProfileSubTypeCheckCommonThreshold=90");
+        if (Platform.is32bit()) {
+            TestFramework.runWithFlags("-XX:TypeProfileSubTypeCheckCommonThreshold=90");
+        } else {
+            TestFramework.runWithFlags("-XX:-UseCompressedClassPointers", "-XX:TypeProfileSubTypeCheckCommonThreshold=90");
+        }
     }
 
     @DontInline
