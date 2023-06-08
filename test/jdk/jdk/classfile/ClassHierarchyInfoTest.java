@@ -81,7 +81,7 @@ class ClassHierarchyInfoTest {
         assertThrows(VerifyError.class, () ->
         transformAndVerify(ClassHierarchyResolver.of(
                 Set.of(),
-                Map.of(ClassDesc.of("java.util.HashMap$Node"), ClassDesc.of("java.util.HashMap$TreeNode"))).orElse(ClassHierarchyResolver.defaultResolver()))
+                Map.of(ClassDesc.of("java.util.HashMap$Node"), ClassDesc.of("java.util.HashMap$TreeNode"))).orElse(ClassHierarchyResolver.ofSystem()))
         );
     }
 

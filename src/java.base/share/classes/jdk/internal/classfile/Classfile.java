@@ -36,7 +36,6 @@ import jdk.internal.classfile.attribute.UnknownAttribute;
 import jdk.internal.classfile.constantpool.ClassEntry;
 import jdk.internal.classfile.constantpool.ConstantPoolBuilder;
 import jdk.internal.classfile.constantpool.Utf8Entry;
-import jdk.internal.classfile.impl.AbstractPoolEntry;
 import jdk.internal.classfile.impl.ClassfileImpl;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 import java.lang.reflect.AccessFlag;
@@ -54,18 +53,11 @@ public sealed interface Classfile
         permits ClassfileImpl {
 
     /**
-     * {@return a new context with default options}
-     */
-    static Classfile of() {
-        return new ClassfileImpl();
-    }
-
-    /**
      * {@return a new context with options altered from the default}
      * @param options the desired processing options
      */
     static Classfile of(Option... options) {
-        return of().withOptions(options);
+        return ClassfileImpl.of(options);
     }
 
     /**

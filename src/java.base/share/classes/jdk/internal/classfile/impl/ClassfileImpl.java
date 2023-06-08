@@ -40,8 +40,6 @@ import jdk.internal.classfile.constantpool.ClassEntry;
 import jdk.internal.classfile.constantpool.ConstantPoolBuilder;
 import jdk.internal.classfile.constantpool.Utf8Entry;
 
-import static jdk.internal.classfile.ClassHierarchyResolver.DEFAULT_CLASS_HIERARCHY_RESOLVER;
-
 public record ClassfileImpl(StackMapsOption stackMapsOption,
                             DebugElementsOption debugElementsOption,
                             LineNumbersOption lineNumbersOption,
@@ -53,8 +51,8 @@ public record ClassfileImpl(StackMapsOption stackMapsOption,
                             ClassHierarchyResolverOption classHierarchyResolverOption,
                             AttributeMapperOption attributeMapperOption) implements Classfile {
 
-    public ClassfileImpl() {
-        this(StackMapsOption.STACK_MAPS_WHEN_REQUIRED,
+    private static final ClassfileImpl DEFAULT_STATIC_CONTEXT = new ClassfileImpl(
+            StackMapsOption.STACK_MAPS_WHEN_REQUIRED,
              DebugElementsOption.PASS_DEBUG,
              LineNumbersOption.PASS_LINE_NUMBERS,
              UnknownAttributesOption.PASS_UNKNOWN_ATTRIBUTES,
@@ -62,13 +60,16 @@ public record ClassfileImpl(StackMapsOption stackMapsOption,
              ShortJumpsOption.FIX_SHORT_JUMPS,
              DeadCodeOption.PATCH_DEAD_CODE,
              DeadLabelsOption.FAIL_ON_DEAD_LABELS,
-             new ClassHierarchyResolverOptionImpl(DEFAULT_CLASS_HIERARCHY_RESOLVER),
+             null,
              new AttributeMapperOptionImpl(new Function<>() {
                  @Override
                  public AttributeMapper<?> apply(Utf8Entry k) {
                      return null;
                  }
              }));
+
+    public static ClassfileImpl of(Option... options) {
+        return DEFAULT_STATIC_CONTEXT.withOptions(options);
     }
 
     @SuppressWarnings("unchecked")
@@ -97,6 +98,9 @@ public record ClassfileImpl(StackMapsOption stackMapsOption,
                 case ClassHierarchyResolverOption oo -> chro = oo;
                 case AttributeMapperOption oo -> amo = oo;
             }
+        }
+        if (chro == null) {
+            chro = ClassHierarchyResolverOption.of(ClassHierarchyResolver.ofSystem());
         }
         return new ClassfileImpl(smo, deo, lno, uao, cpso, sjo, dco, dlo, chro, amo);
     }

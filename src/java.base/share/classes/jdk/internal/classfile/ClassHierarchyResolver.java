@@ -30,6 +30,7 @@ import java.lang.invoke.MethodHandles;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -48,13 +49,23 @@ import static java.lang.constant.ConstantDescs.CD_Object;
 public interface ClassHierarchyResolver {
 
     /**
-     * Returns a default instance of {@linkplain ClassHierarchyResolver}
-     * that reads from system class loader with
-     * {@link ClassLoader#getSystemResourceAsStream(String)} and falls
-     * back to reflection if a class is not found.
+     * Returns new instance of {@link ClassHierarchyResolver}
+     * that caches {@link ClassHierarchyInfo} instances read from system
+     * class loader with {@link ClassLoader#getSystemResourceAsStream(String)}
+     * and falls back to reflection if a class is not found.
+     * The returned resolver is thread-safe.
      */
-    static ClassHierarchyResolver defaultResolver() {
-        return ClassHierarchyImpl.DEFAULT_RESOLVER;
+    static ClassHierarchyResolver ofSystem() {
+        var sysLoader = ClassLoader.getSystemClassLoader();
+        return ClassHierarchyResolver
+            .ofResourceParsing(sysLoader)
+            .orElse(ClassHierarchyResolver.ofClassLoading(sysLoader))
+            .cached(new Supplier<>() {
+                @Override
+                public Map<ClassDesc, ClassHierarchyResolver.ClassHierarchyInfo> get() {
+                    return new ConcurrentHashMap<>();
+                }
+            });
     }
 
     /**

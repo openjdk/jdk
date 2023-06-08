@@ -32,9 +32,7 @@ import java.lang.constant.ClassDesc;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 import jdk.internal.classfile.ClassHierarchyResolver;
 
@@ -51,16 +49,6 @@ public final class ClassHierarchyImpl {
     public record ClassHierarchyInfoImpl(ClassDesc superClass, boolean isInterface) implements ClassHierarchyResolver.ClassHierarchyInfo {
         static final ClassHierarchyResolver.ClassHierarchyInfo OBJECT_INFO = new ClassHierarchyInfoImpl(null, false);
     }
-
-    public static final ClassHierarchyResolver DEFAULT_RESOLVER = ClassHierarchyResolver
-            .ofResourceParsing(ResourceParsingClassHierarchyResolver.SYSTEM_STREAM_PROVIDER)
-            .orElse(new ClassLoadingClassHierarchyResolver(ClassLoadingClassHierarchyResolver.SYSTEM_CLASS_PROVIDER))
-            .cached(new Supplier<>() {
-                @Override
-                public Map<ClassDesc, ClassHierarchyResolver.ClassHierarchyInfo> get() {
-                    return new ConcurrentHashMap<>();
-                }
-            });
 
     private final ClassHierarchyResolver resolver;
 
@@ -146,12 +134,6 @@ public final class ClassHierarchyImpl {
     }
 
     public static final class ResourceParsingClassHierarchyResolver implements ClassHierarchyResolver {
-        public static final Function<ClassDesc, InputStream> SYSTEM_STREAM_PROVIDER = new Function<>() {
-            @Override
-            public InputStream apply(ClassDesc cd) {
-                return ClassLoader.getSystemClassLoader().getResourceAsStream(Util.toInternalName(cd) + ".class");
-            }
-        };
         private final Function<ClassDesc, InputStream> streamProvider;
 
         public ResourceParsingClassHierarchyResolver(Function<ClassDesc, InputStream> classStreamProvider) {
@@ -217,16 +199,6 @@ public final class ClassHierarchyImpl {
     }
 
     public static final class ClassLoadingClassHierarchyResolver implements ClassHierarchyResolver {
-        public static final Function<ClassDesc, Class<?>> SYSTEM_CLASS_PROVIDER = new Function<>() {
-            @Override
-            public Class<?> apply(ClassDesc cd) {
-                try {
-                    return Class.forName(Util.toBinaryName(cd.descriptorString()), false, ClassLoader.getSystemClassLoader());
-                } catch (ClassNotFoundException ex) {
-                    return null;
-                }
-            }
-        };
         private final Function<ClassDesc, Class<?>> classProvider;
 
         public ClassLoadingClassHierarchyResolver(Function<ClassDesc, Class<?>> classProvider) {

@@ -37,8 +37,8 @@ import java.nio.file.Path;
 import java.util.stream.Stream;
 import jdk.internal.classfile.ClassHierarchyResolver;
 import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.ClassTransform;
-import jdk.internal.classfile.CodeTransform;
+import jdk.internal.classfile.CodeModel;
+import jdk.internal.classfile.MethodModel;
 import org.junit.jupiter.api.Test;
 
 class VerifierSelfTest {
@@ -67,7 +67,19 @@ class VerifierSelfTest {
                 className -> ClassHierarchyResolver.ClassHierarchyInfo.ofClass(null)));
         var classModel = cc.parse(path);
         byte[] brokenClassBytes = cc.transform(classModel,
-                ClassTransform.transformMethodBodies(CodeTransform.ACCEPT_ALL));
+                (clb, cle) -> {
+                    if (cle instanceof MethodModel mm) {
+                        clb.transformMethod(mm, (mb, me) -> {
+                            if (me instanceof CodeModel cm) {
+                                mb.withCode(cob -> cm.forEachElement(cob));
+                            }
+                            else
+                                mb.with(me);
+                        });
+                    }
+                    else
+                        clb.with(cle);
+                });
         StringBuilder sb = new StringBuilder();
         if (Classfile.of().parse(brokenClassBytes).verify(sb::append).isEmpty()) {
             throw new AssertionError("expected verification failure");
