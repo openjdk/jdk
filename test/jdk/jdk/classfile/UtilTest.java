@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,8 @@
 import java.lang.constant.MethodTypeDesc;
 import jdk.internal.classfile.impl.Util;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -38,6 +40,25 @@ import static org.junit.jupiter.api.Assertions.*;
  * UtilTest
  */
 class UtilTest {
+    @ParameterizedTest
+    @ValueSource(classes = {
+            Long.class,
+            Object.class,
+            Util.class,
+            Test.class,
+            int[][].class,
+            Object[].class,
+    })
+    void testDescToBinaryName(Class<?> type) throws ReflectiveOperationException {
+        if (!type.isArray()) {
+            // Test internal name
+            var internal = type.getName().replace('.', '/');
+            assertEquals(type, Class.forName(Util.toBinaryName(internal)));
+        }
+        // Test descriptor
+        assertEquals(type, Class.forName(Util.toBinaryName(type.descriptorString())));
+    }
+
 
     @Test
     void testParameterSlots() {
