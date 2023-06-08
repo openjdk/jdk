@@ -2215,7 +2215,11 @@ public class CSS implements Serializable {
 
         @Override
         public int hashCode() {
-            return Float.hashCode(value);
+            int hashCode = Float.hashCode(value) | Boolean.hashCode(index) ;
+            if (lu != null) {
+                hashCode = lu.hashCode();
+            }
+            return hashCode;
         }
 
         @Override
@@ -2674,7 +2678,11 @@ public class CSS implements Serializable {
 
         @Override
         public int hashCode() {
-            return Float.hashCode(span);
+            int hashCode = Float.hashCode(span) | Boolean.hashCode(percentage);
+            if (units != null) {
+                hashCode |= units.hashCode();
+            }
+            return hashCode;
         }
 
         @Override
@@ -2912,10 +2920,9 @@ public class CSS implements Serializable {
 
         @Override
         public int hashCode() {
-            int hashCode = Float.hashCode(horizontalPosition);
-            hashCode |= Float.hashCode(verticalPosition);
-            hashCode |= Short.hashCode(relative);
-            return hashCode;
+            return Float.hashCode(horizontalPosition)
+                   | Float.hashCode(verticalPosition)
+                   | Short.hashCode(relative);
         }
 
         @Override
@@ -3086,7 +3093,11 @@ public class CSS implements Serializable {
 
         @Override
         public int hashCode() {
-            return Float.hashCode(value);
+            int hashCode = Float.hashCode(value) | Short.hashCode(type);
+            if (units != null) {
+                hashCode |= units.hashCode();
+            }
+            return hashCode;
         }
 
         @Override
