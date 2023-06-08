@@ -39,6 +39,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.ModuleElement;
@@ -362,17 +364,24 @@ public class HtmlDoclet extends AbstractDoclet {
                     if (!Files.isRegularFile(entry)) {
                         continue;
                     }
-                    String fileName = entry.getFileName().toString();
-                    if (fileName.startsWith("jquery") && !includeJQuery) {
+                    if (entry.getFileName().toString().startsWith("jquery") && !includeJQuery) {
                         continue;
                     }
-                    DocPath filePath = DocPaths.LEGAL.resolve(fileName);
+                    DocPath filePath = DocPaths.LEGAL.resolve(entry.getFileName().toString());
                     DocFile df = DocFile.createFileForOutput(configuration, filePath);
-                    if (isDefault && ("LICENSE".equals(fileName) || "ASSEMBLY_EXCEPTION".equals(fileName) || "ADDITIONAL_LICENSE_INFO".equals(fileName))) {
-                        df.copyFile(DocFile.createFileForInput(configuration, entry.resolve("..").resolve("..").resolve("java.base").resolve(fileName)));
-                    } else {
-                        df.copyFile(DocFile.createFileForInput(configuration, entry));
+                    if (isDefault) {
+                        Pattern pattern = Pattern.compile("Please see (.*)\\R"); // follow jlink descriptive links
+                        Matcher matcher = pattern.matcher(Files.readString(entry));
+                        if (matcher.find()) {
+                            try {
+                                Path descriptive_link = entry.getParent().resolve(matcher.group(1));
+                                if (Files.isRegularFile(descriptive_link)) {
+                                    entry = descriptive_link;
+                                }
+                            } catch(InvalidPathException e) {}
+                        }
                     }
+                    df.copyFile(DocFile.createFileForInput(configuration, entry));
                 }
             } catch (IOException e) {
                 messages.error("doclet.Error_copying_legal_notices", e);
