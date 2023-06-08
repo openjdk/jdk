@@ -3842,7 +3842,6 @@ public final class Arrays {
      * @since 1.6
      */
     public static byte[] copyOfRange(byte[] original, int from, int to) {
-        // Tickle the JIT to fold special cases optimally
         if (from == 0 && to == original.length) {
             return original.clone();
         }
@@ -4003,7 +4002,6 @@ public final class Arrays {
      * @since 1.6
      */
     public static char[] copyOfRange(char[] original, int from, int to) {
-        // Tickle the JIT to fold special cases optimally
         if (from == 0 && to == original.length) {
             return original.clone();
         }
