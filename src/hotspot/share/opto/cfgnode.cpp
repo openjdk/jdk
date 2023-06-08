@@ -1455,8 +1455,17 @@ Node* PhiNode::Identity(PhaseGVN* phase) {
 }
 
 //-----------------------------unique_input------------------------------------
-// Find the unique value, discounting top, self-loops, and casts.
-// Return top if there are no inputs, and self if there are multiple.
+// Find the unique value, discounting self-loops, and casts.
+// Return top if there are no inputs, or only top inputs.
+// Return nullptr if the inputs are not unique (multiple non-top, or top and non-top).
+// Return nullptr if the region has a top input.
+//
+// It may sound like a great idea to just ignore top inputs, as they would presumably
+// die later anyway. The issue is that if the phi disappears before the region, then
+// the region realizes that it is phi-less, and concludes that it cannot be a loop head.
+// This is problematic because loop heads must perform reachability checks when they
+// lose a control input, to see if they are now dead. If we do not do that, we get dead
+// loop bugs.
 Node* PhiNode::unique_input(PhaseValues* phase, bool uncast) {
   //  1) One unique direct input,
   // or if uncast is true:
@@ -1469,16 +1478,29 @@ Node* PhiNode::unique_input(PhaseValues* phase, bool uncast) {
   //      phi            \   /               /  \  /
   //                      phi               /    --
 
-  Node* r = in(0);                      // RegionNode
-  Node* input = nullptr; // The unique direct input (maybe uncasted = ConstraintCasts removed)
+  Node* r = in(0)->as_Region();
+
+  // Cache the unique input, which may be uncasted (ConstraintCasts removed)
+  //   nullptr      -> no input found yet
+  //   NodeSentilen -> multiple non-identical inputs found (not unique)
+  //   else         -> unique input (so far)
+  Node* input = nullptr;
 
   for (uint i = 1, cnt = req(); i < cnt; ++i) {
+    // Check for dead control input to region.
     Node* rc = r->in(i);
-    if (rc == nullptr || phase->type(rc) == Type::TOP)
-      continue;                 // ignore unreachable control path
+    if (rc == nullptr || phase->type(rc) == Type::TOP) {
+      return nullptr;
+    }
+
+    // Take the ith input
     Node* n = in(i);
-    if (n == nullptr)
+    if (n == nullptr) {
+      assert(false, "should not happen");
       continue;
+    }
+
+    // Uncast the ith input
     Node* un = n;
     if (uncast) {
 #ifdef ASSERT
@@ -1494,25 +1516,40 @@ Node* PhiNode::unique_input(PhaseValues* phase, bool uncast) {
       }
       assert(m == un || un->in(1) == m, "Only expected at CheckCastPP from allocation");
     }
-    if (un == nullptr || un == this || phase->type(un) == Type::TOP) {
-      continue; // ignore if top, or in(i) and "this" are in a data cycle
+
+    // Ignore the (uncasted) ith input if it is nullptr, or "this" (we have a data cycle)
+    if (un == nullptr || un == this) {
+      continue;
     }
+
+    // Is the (uncasted) ith input of type top?
+    if (phase->type(un) == Type::TOP) {
+      un = phase->C->top();
+    }
+
     // Check for a unique input (maybe uncasted)
     if (input == nullptr) {
+      // First input found             -> so far unique
       input = un;
     } else if (input != un) {
-      input = NodeSentinel; // no unique input
+      // Found a different input       -> not unique
+      input = NodeSentinel;
+    } else {
+      // Found another identical input -> so far still unique
     }
   }
+
+  // No inputs?
   if (input == nullptr) {
-    return phase->C->top();        // no inputs
+    return phase->C->top();
   }
 
+  // Unique?
   if (input != NodeSentinel) {
-    return input;           // one unique direct input
+    return input;
   }
 
-  // Nothing.
+  // Not unique!
   return nullptr;
 }
 

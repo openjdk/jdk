@@ -1493,4 +1493,57 @@ super public class TestDeadIrreducibleLoops
         iload 3;
         ireturn;
     }
+
+    static Method test_026:"(IIII)V"
+    stack 200 locals 6
+    {
+    // Irreducible case that hit a dead-loop assert.
+    // In this case it can happen that top reaches the phis
+    // first and removes them. The regions do not know of top
+    // yet, so they cannot "wait".
+        iconst_0;
+        istore     4;
+        iconst_0;
+        istore     5;
+
+    LOOP1:
+        iload      4;
+        ifge LEND;
+        iinc       4, -1;
+        iload      0;
+        iflt LOOP5;
+
+        iconst_m1;
+        istore     5;
+        goto LOOP1;
+
+
+    LOOP5:
+        iload      1;
+        ifle LOOP2;
+        goto LOOP4;
+
+
+    LOOP2:
+        iload      5;
+        iconst_m1;
+        ior;          // dead-loop OrI
+        istore     5;
+        iload      2;
+        ifgt LOOP2;
+
+
+    LOOP4:
+        iload      3;
+        iflt LOOP3;
+        goto LOOP2;
+
+
+    LOOP3:
+        iconst_0;
+        ifne LOOP1;
+
+    LEND:
+        return;
+    }
 }

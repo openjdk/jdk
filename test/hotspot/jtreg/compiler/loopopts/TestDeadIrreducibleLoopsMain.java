@@ -117,6 +117,7 @@ public class TestDeadIrreducibleLoopsMain {
         t.test_024();
         test_025a(false);
         test_025b(false, false);
+        t.test_026(0, 0, 0, 0);
     }
 
     public static float test_000(boolean flag1, boolean flag2) {

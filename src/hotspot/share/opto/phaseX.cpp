@@ -1091,9 +1091,30 @@ bool PhaseIterGVN::verify_node_value(Node* n) {
   // the node never went through gvn.transform, which would be a bug.
   const Type* told = type(n);
   const Type* tnew = n->Value(this);
+
+  if (n->is_Phi()) {
+    // Verify that no input type is top / nullptr
+    Node* r = n->in(0)->as_Region();
+    for (uint i = 1; i < n->req(); i++) {
+      Node* def = n->in(i);
+      Node* rc  = r->in(i);
+      // If ith control is live but the phi input is dead, something went wrong.
+      if ((rc  != nullptr && type(rc)  != Type::TOP) &&
+          (def == nullptr || type(def) == Type::TOP)) {
+        tty->cr();
+        tty->print_cr("Phi input invalid at position %d:", i);
+        n->dump_bfs(2, 0, "");
+        tty->cr();
+        return true; // failure
+      }
+    }
+  }
+
+  // Type match, success.
   if (told == tnew) {
     return false;
   }
+
   // Exception (1)
   // Integer "widen" changes, but range is the same.
   if (told->isa_integer(tnew->basic_type()) != nullptr) { // both either int or long
