@@ -37,8 +37,8 @@ import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
 /*
- * This benchmark tests DateFormat/Locale.getAvailableLocales() which
- * effectively creates lots of Locale/BaseLocale instances
+ * This benchmark tests caching of Locale objects works
+ * correctly without the cache in underlying BaseLocale class
  */
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
@@ -46,10 +46,28 @@ import java.util.concurrent.TimeUnit;
 @Warmup(iterations = 4, time = 2)
 @Measurement(iterations = 4, time = 2)
 @Fork(value = 5)
-public class AvailLocales {
+public class LocaleCache {
     @Benchmark
-    public void getAvailableLocales() {
-        Locale.getAvailableLocales();
-        DateFormat.getAvailableLocales();
+    public void testForLanguageTag() {
+        Locale previous = null;
+        for (int count = 100; count > 0; count--) {
+            var l = Locale.forLanguageTag("foo");
+            if (previous != null && previous != l) {
+                throw new RuntimeException("Different Locale was created");
+            }
+            previous =  l;
+        }
+    }
+
+    @Benchmark
+    public void testLocaleOf() {
+        Locale previous = null;
+        for (int count = 100; count > 0; count--) {
+            var l = Locale.of("foo");
+            if (previous != null && previous != l) {
+                throw new RuntimeException("Different Locale was created");
+            }
+            previous =  l;
+        }
     }
 }
