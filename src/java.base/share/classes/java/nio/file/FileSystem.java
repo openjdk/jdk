@@ -178,7 +178,7 @@ public abstract class FileSystem
      * hierarchies may change during the lifetime of the Java virtual machine.
      * For example, in some implementations, the insertion of removable media
      * may result in the creation of a new file hierarchy with its own
-     * top-level directory. There is no guarantee that the root directory
+     * top-level directory. There is no guarantee that a root directory
      * can be accessed.
      *
      * <p> When a security manager is installed, it is invoked to check access

@@ -1819,7 +1819,7 @@ public class File
      * root directories of the available filesystem roots.  It is guaranteed
      * that the canonical pathname of any file physically present on the local
      * machine will begin with one of the roots returned by this method.
-     * There is no guarantee that the root directory can be accessed.
+     * There is no guarantee that a root directory can be accessed.
      *
      * <p> Unlike most methods in this class, this method does not throw
      * security exceptions.  If a security manager exists and its {@link
