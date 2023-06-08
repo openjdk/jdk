@@ -425,7 +425,7 @@ public class HttpURLConnectionExpectContinueTest {
     private HttpURLConnection createConnection() throws Exception {
         URL url = URIBuilder.newBuilder()
                 .scheme("http")
-                .host(InetAddress.getLoopbackAddress())
+                .loopback()
                 .port(control.serverSocket.getLocalPort())
                 .toURL();
 
