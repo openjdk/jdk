@@ -85,6 +85,9 @@ JAVA_INTEGER_OP(*, java_multiply, jlong, julong)
 
 #undef JAVA_INTEGER_OP
 
+inline jint  java_negate(jint  v) { return java_subtract((jint) 0, v); }
+inline jlong java_negate(jlong v) { return java_subtract((jlong)0, v); }
+
 // Provide integer shift operations with Java semantics.  No overflow
 // issues - left shifts simply discard shifted out bits.  No undefined
 // behavior for large or negative shift quantities; instead the actual
