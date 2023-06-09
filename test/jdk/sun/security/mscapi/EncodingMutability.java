@@ -18,7 +18,7 @@ public class EncodingMutability {
         byte mutatedByte = publicKey.getEncoded()[0];
 
         if (initialByte != mutatedByte) {
-            System.out.println("Was able to mutate first byte of pubkey from " + initialByte + "to " + mutatedByte);
+            System.out.println("Was able to mutate first byte of pubkey from " + initialByte + " to " + mutatedByte);
             throw new RuntimeException("Pubkey was mutated via getEncoded");
         }
     }
