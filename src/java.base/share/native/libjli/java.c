@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -401,8 +401,10 @@ JavaMain(void* _args)
     JNIEnv *env = 0;
     jclass mainClass = NULL;
     jclass appClass = NULL; // actual application class being launched
-    jmethodID mainID;
     jobjectArray mainArgs;
+    jmethodID mainID;
+    jmethodID constructor;
+    jobject mainObject;
     int ret = 0;
     jlong start = 0, end = 0;
 
@@ -539,12 +541,55 @@ JavaMain(void* _args)
      * is not required. The main method is invoked here so that extraneous java
      * stacks are not in the application stack trace.
      */
-    mainID = (*env)->GetStaticMethodID(env, mainClass, "main",
-                                       "([Ljava/lang/String;)V");
-    CHECK_EXCEPTION_NULL_LEAVE(mainID);
+#define MAIN_WITHOUT_ARGS 1
+#define MAIN_NONSTATIC 2
 
-    /* Invoke main method. */
-    (*env)->CallStaticVoidMethod(env, mainClass, mainID, mainArgs);
+    jclass helperClass = GetLauncherHelperClass(env);
+    jmethodID getMainType = (*env)->GetStaticMethodID(env, helperClass,
+                                                      "getMainType",
+                                                      "()I");
+    CHECK_EXCEPTION_NULL_LEAVE(getMainType);
+    int mainType = (*env)->CallStaticIntMethod(env, helperClass, getMainType);
+    CHECK_EXCEPTION_LEAVE(mainType);
+
+    switch (mainType) {
+    case 0: {
+        mainID = (*env)->GetStaticMethodID(env, mainClass, "main",
+                                           "([Ljava/lang/String;)V");
+        CHECK_EXCEPTION_NULL_LEAVE(mainID);
+        (*env)->CallStaticVoidMethod(env, mainClass, mainID, mainArgs);
+        break;
+        }
+    case MAIN_WITHOUT_ARGS: {
+        mainID = (*env)->GetStaticMethodID(env, mainClass, "main",
+                                           "()V");
+        CHECK_EXCEPTION_NULL_LEAVE(mainID);
+        (*env)->CallStaticVoidMethod(env, mainClass, mainID);
+        break;
+        }
+    case MAIN_NONSTATIC: {
+        constructor = (*env)->GetMethodID(env, mainClass, "<init>", "()V");
+        CHECK_EXCEPTION_NULL_LEAVE(constructor);
+        mainObject = (*env)->NewObject(env, mainClass, constructor);
+        CHECK_EXCEPTION_NULL_LEAVE(mainObject);
+        mainID = (*env)->GetMethodID(env, mainClass, "main",
+                                     "([Ljava/lang/String;)V");
+        CHECK_EXCEPTION_NULL_LEAVE(mainID);
+        (*env)->CallVoidMethod(env, mainObject, mainID, mainArgs);
+        break;
+        }
+    case MAIN_NONSTATIC | MAIN_WITHOUT_ARGS: {
+        constructor = (*env)->GetMethodID(env, mainClass, "<init>", "()V");
+        CHECK_EXCEPTION_NULL_LEAVE(constructor);
+        mainObject = (*env)->NewObject(env, mainClass, constructor);
+        CHECK_EXCEPTION_NULL_LEAVE(mainObject);
+        mainID = (*env)->GetMethodID(env, mainClass, "main",
+                                     "()V");
+        CHECK_EXCEPTION_NULL_LEAVE(mainID);
+        (*env)->CallVoidMethod(env, mainObject, mainID);
+        break;
+        }
+    }
 
     /*
      * The launcher's exit code (in the absence of calls to
@@ -908,10 +953,11 @@ SetClassPath(const char *s)
     if (sizeof(format) - 2 + JLI_StrLen(s) < JLI_StrLen(s))
         // s is became corrupted after expanding wildcards
         return;
-    def = JLI_MemAlloc(sizeof(format)
+    size_t defSize = sizeof(format)
                        - 2 /* strlen("%s") */
-                       + JLI_StrLen(s));
-    sprintf(def, format, s);
+                       + JLI_StrLen(s);
+    def = JLI_MemAlloc(defSize);
+    snprintf(def, defSize, format, s);
     AddOption(def, NULL);
     if (s != orig)
         JLI_MemFree((char *) s);
@@ -1007,7 +1053,7 @@ SelectVersion(int argc, char **argv, char **main_class)
 
     argc--;
     argv++;
-    while ((arg = *argv) != 0 && *arg == '-') {
+    while (argc > 0 && *(arg = *argv) == '-') {
         has_arg = IsOptionWithArgument(argc, argv);
         if (JLI_StrCCmp(arg, "-version:") == 0) {
             JLI_ReportErrorMessage(SPC_ERROR1);
@@ -1205,11 +1251,11 @@ ParseArguments(int *pargc, char ***pargv,
     int argc = *pargc;
     char **argv = *pargv;
     int mode = LM_UNKNOWN;
-    char *arg;
+    char *arg = NULL;
 
     *pret = 0;
 
-    while ((arg = *argv) != 0 && *arg == '-') {
+    while (argc > 0 && *(arg = *argv) == '-') {
         char *option = NULL;
         char *value = NULL;
         int kind = GetOpt(&argc, &argv, &option, &value);
@@ -1364,8 +1410,9 @@ ParseArguments(int *pargc, char ***pargv,
                    JLI_StrCCmp(arg, "-oss") == 0 ||
                    JLI_StrCCmp(arg, "-ms") == 0 ||
                    JLI_StrCCmp(arg, "-mx") == 0) {
-            char *tmp = JLI_MemAlloc(JLI_StrLen(arg) + 6);
-            sprintf(tmp, "-X%s", arg + 1); /* skip '-' */
+            size_t tmpSize = JLI_StrLen(arg) + 6;
+            char *tmp = JLI_MemAlloc(tmpSize);
+            snprintf(tmp, tmpSize, "-X%s", arg + 1); /* skip '-' */
             AddOption(tmp, NULL);
         } else if (JLI_StrCmp(arg, "-checksource") == 0 ||
                    JLI_StrCmp(arg, "-cs") == 0 ||
@@ -1699,8 +1746,9 @@ AddApplicationOptions(int cpathc, const char **cpathv)
             s = (char *) JLI_WildcardExpandClasspath(s);
             /* 40 for -Denv.class.path= */
             if (JLI_StrLen(s) + 40 > JLI_StrLen(s)) { // Safeguard from overflow
-                envcp = (char *)JLI_MemAlloc(JLI_StrLen(s) + 40);
-                sprintf(envcp, "-Denv.class.path=%s", s);
+                size_t envcpSize = JLI_StrLen(s) + 40;
+                envcp = (char *)JLI_MemAlloc(envcpSize);
+                snprintf(envcp, envcpSize, "-Denv.class.path=%s", s);
                 AddOption(envcp, NULL);
             }
         }
@@ -1712,8 +1760,9 @@ AddApplicationOptions(int cpathc, const char **cpathv)
     }
 
     /* 40 for '-Dapplication.home=' */
-    apphome = (char *)JLI_MemAlloc(JLI_StrLen(home) + 40);
-    sprintf(apphome, "-Dapplication.home=%s", home);
+    size_t apphomeSize = JLI_StrLen(home) + 40;
+    apphome = (char *)JLI_MemAlloc(apphomeSize);
+    snprintf(apphome, apphomeSize, "-Dapplication.home=%s", home);
     AddOption(apphome, NULL);
 
     /* How big is the application's classpath? */

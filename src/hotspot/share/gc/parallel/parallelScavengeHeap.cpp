@@ -147,8 +147,8 @@ void ParallelScavengeHeap::initialize_serviceability() {
                                    "PS Old Gen",
                                    true /* support_usage_threshold */);
 
-  _young_manager = new GCMemoryManager("PS Scavenge", "end of minor GC");
-  _old_manager = new GCMemoryManager("PS MarkSweep", "end of major GC");
+  _young_manager = new GCMemoryManager("PS Scavenge");
+  _old_manager = new GCMemoryManager("PS MarkSweep");
 
   _old_manager->add_pool(_eden_pool);
   _old_manager->add_pool(_survivor_pool);
@@ -590,7 +590,7 @@ public:
   // Claim the block and get the block index.
   size_t claim_and_get_block() {
     size_t block_index;
-    block_index = Atomic::fetch_and_add(&_claimed_index, 1u);
+    block_index = Atomic::fetch_then_add(&_claimed_index, 1u);
 
     PSOldGen* old_gen = ParallelScavengeHeap::heap()->old_gen();
     size_t num_claims = old_gen->num_iterable_blocks() + NumNonOldGenClaims;

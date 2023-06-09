@@ -1031,14 +1031,10 @@ void ConnectionGraph::add_call_node(CallNode* call) {
     ciMethod* meth = call->as_CallJava()->method();
     if (meth == nullptr) {
       const char* name = call->as_CallStaticJava()->_name;
-      if (strncmp(name, "_notify_jvmti_object_alloc", 26) == 0) { // Object escapes to JVMTI
-        add_java_object(call, PointsToNode::GlobalEscape);
-      } else {
-        assert(strncmp(name, "_multianewarray", 15) == 0, "TODO: add failed case check");
-        // Returns a newly allocated non-escaped object.
-        add_java_object(call, PointsToNode::NoEscape);
-        set_not_scalar_replaceable(ptnode_adr(call_idx) NOT_PRODUCT(COMMA "is result of multinewarray"));
-      }
+      assert(strncmp(name, "_multianewarray", 15) == 0, "TODO: add failed case check");
+      // Returns a newly allocated non-escaped object.
+      add_java_object(call, PointsToNode::NoEscape);
+      set_not_scalar_replaceable(ptnode_adr(call_idx) NOT_PRODUCT(COMMA "is result of multinewarray"));
     } else if (meth->is_boxing_method()) {
       // Returns boxing object
       PointsToNode::EscapeState es;
@@ -1740,7 +1736,7 @@ int ConnectionGraph::find_init_values_phantom(JavaObjectNode* pta) {
 }
 
 // Find fields initializing values for allocations.
-int ConnectionGraph::find_init_values_null(JavaObjectNode* pta, PhaseTransform* phase) {
+int ConnectionGraph::find_init_values_null(JavaObjectNode* pta, PhaseValues* phase) {
   assert(pta->escape_state() == PointsToNode::NoEscape, "Not escaped Allocate nodes only");
   Node* alloc = pta->ideal_node();
   // Do nothing for Call nodes since its fields values are unknown.
@@ -2502,7 +2498,7 @@ bool ConnectionGraph::is_captured_store_address(Node* addp) {
   return false;
 }
 
-int ConnectionGraph::address_offset(Node* adr, PhaseTransform *phase) {
+int ConnectionGraph::address_offset(Node* adr, PhaseValues* phase) {
   const Type *adr_type = phase->type(adr);
   if (adr->is_AddP() && adr_type->isa_oopptr() == nullptr && is_captured_store_address(adr)) {
     // We are computing a raw address for a store captured by an Initialize

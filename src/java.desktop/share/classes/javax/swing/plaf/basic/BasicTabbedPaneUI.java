@@ -4142,7 +4142,7 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
                 else if (tabPane.isRequestFocusEnabled()) {
                     // Clicking on selected tab, try and give the tabbedpane
                     // focus.  Repaint will occur in focusGained.
-                    tabPane.requestFocus();
+                    tabPane.requestFocus(FocusEvent.Cause.MOUSE_EVENT);
                 }
             }
         }

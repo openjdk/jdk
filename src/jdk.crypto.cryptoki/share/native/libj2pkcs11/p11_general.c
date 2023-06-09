@@ -75,7 +75,7 @@ jclass jLongClass;
 
 JavaVM* jvm_j2pkcs11 = NULL;
 
-jboolean debug = 0;
+jboolean debug_j2pkcs11 = 0;
 
 JNIEXPORT jint JNICALL DEF_JNI_OnLoad(JavaVM *vm, void *reserved) {
     jvm_j2pkcs11 = vm;
@@ -122,7 +122,7 @@ Java_sun_security_pkcs11_wrapper_PKCS11_initializeLibrary
 #endif
 
     prefetchFields(env, thisClass);
-    debug = enableDebug;
+    debug_j2pkcs11 = enableDebug;
 }
 
 jclass fetchClass(JNIEnv *env, const char *name) {
