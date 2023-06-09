@@ -1023,7 +1023,29 @@ public class VisibleMemberTable {
     /*
      * Translates the provided class or interface to a type given its subtype.
      *
-     * The correctness relies on no more than 1 parameterization from JLS. (TODO link the correct section)
+     * Walks the supertype DAG searching for a declared type whose
+     * corresponding type element is equal to the given type element.
+     *
+     * The correctness of this simple algorithm relies on the fact that
+     * there's at most one parameterization of any given interface (this is not
+     * an issue for classes given there's no multiple inheritance for them).
+     *
+     * 8.1.5. Superinterfaces:
+     *
+     *     A class may not declare a direct superclass type and a direct
+     *     superinterface type, or two direct superinterface types, which are,
+     *     or which have supertypes (4.10.2) which are, different
+     *     parameterizations of the same generic interface (9.1.2), or a
+     *     parameterization of a generic interface and a raw type naming that
+     *     same generic interface. In the case of such a conflict,
+     *     a compile-time error occurs.
+     *
+     * Put differently, type elements corresponding to the provided declared
+     * supertype type mirrors are unique.
+     *
+     * If we understand that correctly, it means, for example, that among
+     * supertypes there cannot be Set<Integer> and Set<Object>; there can
+     * be at most at most one of those.
      *
      * There's probably a better way of doing it using javax.lang.model.util.Types.getDeclaredType(),
      * but for now this will do.
