@@ -91,6 +91,9 @@ public final class BaseLocale {
         }
     }
 
+    // Non-normalized to normalized BaseLocale cache for saving costly normalizations
+    private static final Map<BaseLocale, BaseLocale> CACHE = new WeakHashMap<>();
+
     public static final String SEP = "_";
 
     private final String language;
@@ -156,10 +159,11 @@ public final class BaseLocale {
             language = convertOldISOCodes(language);
         }
 
-        // Compute normalized BaseLocale from the cache with non-normalized
-        // BaseLocale as the key
-        BaseLocale base = new BaseLocale(language, script, region, variant);
-        return CACHE.computeIfAbsent(base,
+        // Obtain the "normalized" BaseLocale, using un-normalized
+        // BaseLocale as the key. The returned "normalized" instance
+        // can subsequently be used by the Locale instance which
+        // guarantees the locale components are properly cased/interned.
+        return CACHE.computeIfAbsent(new BaseLocale(language, script, region, variant),
             (b) -> new BaseLocale(
                 LocaleUtils.toLowerString(b.getLanguage()).intern(),
                 LocaleUtils.toTitleString(b.getScript()).intern(),
@@ -251,7 +255,4 @@ public final class BaseLocale {
         }
         return h;
     }
-
-    // Non-normalized to normalized BaseLocale cache for saving costly normalizations
-    private static final Map<BaseLocale, BaseLocale> CACHE = new WeakHashMap<>();
 }

@@ -37,8 +37,8 @@ import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
 /*
- * This benchmark tests caching of Locale objects works
- * correctly without the cache in underlying BaseLocale class
+ * This benchmark tests if caching of Locale objects works
+ * correctly.
  */
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
