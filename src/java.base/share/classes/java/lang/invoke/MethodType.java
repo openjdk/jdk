@@ -1168,7 +1168,8 @@ class MethodType
      * <p>
      * Note that it is possible to encounter method types which cannot be
      * constructed by this method, because their component types are
-     * not all reachable from a common class loader.
+     * not all reachable from a common class loader, or some component types
+     * cannot be {@linkplain ##descriptor described nominally}.
      * <p>
      * This method is included for the benefit of applications that must
      * generate bytecodes that process method handles and {@code invokedynamic}.
@@ -1223,15 +1224,16 @@ class MethodType
      * Returns a descriptor string for the method type.  This method
      * is equivalent to calling {@link #descriptorString() MethodType::descriptorString}.
      *
-     * <p>
-     * Note that this is not a strict inverse of {@link #fromMethodDescriptorString fromMethodDescriptorString}.
+     * @apiNote
+     * This is not a strict inverse of {@link #fromMethodDescriptorString fromMethodDescriptorString}
+     * because the latter requires a suitable class loader argument.
      * Two distinct classes which share a common name but have different class loaders
      * will appear identical when viewed within descriptor strings.
+     * In addition, the result string is not a bytecode descriptor if this
+     * method type cannot be {@linkplain ##descriptor described nominally}.
      * <p>
      * This method is included for the benefit of applications that must
      * generate bytecodes that process method handles and {@code invokedynamic}.
-     * {@link #fromMethodDescriptorString(java.lang.String, java.lang.ClassLoader) fromMethodDescriptorString},
-     * because the latter requires a suitable class loader argument.
      * @return the descriptor string for this method type
      * @jvms 4.3.3 Method Descriptors
      * @see <a href="#descriptor">Nominal Descriptor for {@code MethodType}</a>
@@ -1249,13 +1251,13 @@ class MethodType
      * Returns a descriptor string for this method type.
      *
      * <p>
-     * If this method type can be <a href="#descriptor">described nominally</a>,
+     * If this method type can be {@linkplain ##descriptor described nominally},
      * then the result is a method type descriptor (JVMS {@jvms 4.3.3}).
      * {@link MethodTypeDesc MethodTypeDesc} for this method type
      * can be produced by calling {@link MethodTypeDesc#ofDescriptor(String)
      * MethodTypeDesc::ofDescriptor} with the result descriptor string.
      * <p>
-     * If this method type cannot be <a href="#descriptor">described nominally</a>
+     * If this method type cannot be {@linkplain ##descriptor described nominally}
      * and the result is a string of the form:
      * <blockquote>{@code "(<parameter-descriptors>)<return-descriptor>"}</blockquote>
      * where {@code <parameter-descriptors>} is the concatenation of the
