@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package jdk.internal.loader;
 
 import java.io.IOException;
 import java.net.URL;
+import java.net.URLStreamHandler;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.security.CodeSource;
@@ -37,6 +38,7 @@ import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.VM;
 import jdk.internal.module.ServicesCatalog;
+import sun.net.www.protocol.jar.Handler;
 
 /**
  * Creates and provides access to the built-in platform and application class
@@ -64,6 +66,9 @@ public class ClassLoaders {
     // Creates the built-in class loaders.
     static {
         ArchivedClassLoaders archivedClassLoaders = ArchivedClassLoaders.get();
+        // we use the system provided jar protocol handler implementation for loading jars
+        // in the classpath of the app classloader
+        URLStreamHandler jarHandler = new Handler();
         if (archivedClassLoaders != null) {
             // assert VM.getSavedProperty("jdk.boot.class.path.append") == null
             BOOT_LOADER = (BootClassLoader) archivedClassLoaders.bootLoader();
@@ -74,7 +79,7 @@ public class ClassLoaders {
             // -Xbootclasspath/a or -javaagent with Boot-Class-Path attribute
             String append = VM.getSavedProperty("jdk.boot.class.path.append");
             URLClassPath ucp = (append != null && !append.isEmpty())
-                    ? new URLClassPath(append, true)
+                    ? new URLClassPath(append, jarHandler, true)
                     : null;
             BOOT_LOADER = new BootClassLoader(ucp);
             PLATFORM_LOADER = new PlatformClassLoader(BOOT_LOADER);
@@ -89,7 +94,7 @@ public class ClassLoaders {
             String initialModuleName = System.getProperty("jdk.module.main");
             cp = (initialModuleName == null) ? "" : null;
         }
-        URLClassPath ucp = new URLClassPath(cp, false);
+        URLClassPath ucp = new URLClassPath(cp, jarHandler, false);
         if (archivedClassLoaders != null) {
             APP_LOADER = (AppClassLoader) archivedClassLoaders.appLoader();
             setArchivedServicesCatalog(APP_LOADER);
