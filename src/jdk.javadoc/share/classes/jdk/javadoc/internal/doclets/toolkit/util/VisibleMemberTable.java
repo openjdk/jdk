@@ -54,6 +54,7 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -881,16 +882,14 @@ public class VisibleMemberTable {
 
         // impose an order
         var order = createSupertypeOrderMap(te);
-        var copyList = new ArrayList<>(rawSequence);
-        copyList.sort(Comparator.comparingInt(o -> {
+        rawSequence.sort(Comparator.comparingInt(o -> {
             assert order.containsKey(o.enclosing.asElement()) :
                     diagnosticDescriptionOf(o.enclosing.asElement()) + "in: "
                             + order.keySet().stream().map(VisibleMemberTable::diagnosticDescriptionOf);
             return order.get(o.enclosing.asElement());
         }));
-        rawSequence = com.sun.tools.javac.util.List.from(copyList);
-        // Prepend the member from which the exploration started, unconditionally
-        rawSequence = rawSequence.prepend(new OverrideData(
+        // prepend the member from which the sequencing started, unconditionally
+        rawSequence.add(0, new OverrideData(
                 (DeclaredType) m.getEnclosingElement().asType(), m, false /* this flag's value is immaterial */));
 
 
@@ -899,30 +898,33 @@ public class VisibleMemberTable {
         //
         // Start from the least specific member, which by convention is not
         // a simple override (even if it has no documentation), and work our
-        // way _backwards_ to the most specific
-        // member. Enter each member into a hash map as an entry point for
+        // way _backwards_ to the most specific member.
+        //
+        // Enter each member into a hash map as an entry point for
         // a subsequence starring from that member.
+        //
         // FIXME: what if we have initial method enclosed in an undocumented class or interface?
         //  i.e. what if we cannot guarantee that at least one member is not a simple override?
-        var fixedSequence = com.sun.tools.javac.util.List.<OverrideData>nil();
-        rawSequence = rawSequence.reverse();
-        boolean simpleOverride = false;
-        while (!rawSequence.isEmpty()) {
-            var f = new OverrideData(rawSequence.head.enclosing, rawSequence.head.method(), simpleOverride);
-            fixedSequence = fixedSequence.prepend(f);
-            rawSequence = rawSequence.tail;
-            if (!rawSequence.isEmpty()) {
-                // Even with --override-methods=summary we want to include details of
-                // overriding method if something noteworthy has been added or changed
-                // in the local overriding method
-                var enclosing = (TypeElement) rawSequence.head.method.getEnclosingElement();
-                simpleOverride = isSimpleOverride(rawSequence.head.method)
-                        && !utils.isUndocumentedEnclosure(enclosing)
-                        && !overridingSignatureChanged(rawSequence.head.method, f.method);
-            }
+        var fixedSequence = new LinkedList<OverrideData>();
+        // accessing that element through iterator.next() would be awkward
+        // as it would move the iterator
+        OverrideData next = null;
+        for (var iterator = rawSequence.listIterator(rawSequence.size()); iterator.hasPrevious(); ) {
+            var e = iterator.previous();
+            // Even with --override-methods=summary we want to include details of
+            // overriding method if something noteworthy has been added or changed
+            // in the local overriding method
+            var simpleOverride = next != null /* the least significant element,
+                                                 for which next == null, is always
+                                                 a non-simple override */
+                    && isSimpleOverride(e.method)
+                    && !utils.isUndocumentedEnclosure((TypeElement) e.method.getEnclosingElement())
+                    && !overridingSignatureChanged(e.method, next.method);
+            fixedSequence.add(0, new OverrideData(e.enclosing, e.method(), simpleOverride));
+            next = e;
         }
         // hash sequences as entry points
-        var t = new OverrideSequence(fixedSequence, 0);
+        var t = new OverrideSequence(List.copyOf(fixedSequence), 0);
         while (true) {
             overriddenMethods.put(t.getMethod(), t);
             if (!t.hasLessSpecific()) {
@@ -997,14 +999,14 @@ public class VisibleMemberTable {
 
 
 
-    private com.sun.tools.javac.util.List<OverrideData> findOverriddenBy(ExecutableElement m) {
-        return findOverriddenBy(m, (DeclaredType) te.asType(), com.sun.tools.javac.util.List.nil(), new HashSet<>());
+    private List<OverrideData> findOverriddenBy(ExecutableElement m) {
+        return findOverriddenBy(m, (DeclaredType) te.asType(), new LinkedList<>(), new HashSet<>());
     }
 
-    private com.sun.tools.javac.util.List<OverrideData> findOverriddenBy(ExecutableElement m,
-                                                                         DeclaredType declaredType,
-                                                                         com.sun.tools.javac.util.List<OverrideData> result,
-                                                                         Set<ExecutableElement> foundOverriddenSoFar) {
+    private List<OverrideData> findOverriddenBy(ExecutableElement m,
+                                                DeclaredType declaredType,
+                                                List<OverrideData> result,
+                                                Set<ExecutableElement> foundOverriddenSoFar) {
         for (var s : directSupertypes(declaredType)) {
             var supertypeElement = (TypeElement) s.asElement();
             for (var m1 : mcache.getVisibleMemberTable(supertypeElement).getMethodMembers())
@@ -1012,10 +1014,10 @@ public class VisibleMemberTable {
                     // use any value for `simpleOverride` for now: the actual value
                     // will be computed once the complete sequence is available
                     var simpleOverride = false;
-                    result = result.append(new OverrideData(toDeclaringType(s,
+                    result.add(new OverrideData(toDeclaringType(s,
                             (TypeElement) m1.getEnclosingElement()), m1, simpleOverride));
                 }
-            result = findOverriddenBy(m, s, result, foundOverriddenSoFar);
+            findOverriddenBy(m, s, result, foundOverriddenSoFar);
         }
         return result;
     }
