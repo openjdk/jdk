@@ -31,9 +31,9 @@ import java.lang.invoke.VarHandle;
  * @test
  * bug 8308444
  * @summary verify that the correct node is matched for atomic getAndAdd
- * @requires os.arch=="amd64" | os.arch=="x86_64"
- * @library /test/lib /
+ * @requires os.simpleArch == "x64"
  * @requires vm.compiler2.enabled
+ * @library /test/lib /
  * @run driver compiler.c2.x86.TestGetAndAdd
  */
 public class TestGetAndAdd {

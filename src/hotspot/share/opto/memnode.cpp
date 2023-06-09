@@ -3013,6 +3013,11 @@ uint LoadStoreNode::ideal_reg() const {
   return _type->ideal_reg();
 }
 
+// This method conservatively checks if the result of a LoadStoreNode is
+// used, that is, if it returns true, then it is definitely the case that
+// the result of the node is not needed.
+// For example, GetAndAdd can be matched into a lock_add instead of a
+// lock_xadd if the result of LoadStoreNode::result_not_used() is true
 bool LoadStoreNode::result_not_used() const {
   for (DUIterator_Fast imax, i = fast_outs(imax); i < imax; i++) {
     Node *x = fast_out(i);
@@ -3020,6 +3025,7 @@ bool LoadStoreNode::result_not_used() const {
       continue;
     }
     if (x->bottom_type() == TypeTuple::MEMBAR &&
+        !x->is_Call() &&
         x->Opcode() != Op_Blackhole) {
       continue;
     }
