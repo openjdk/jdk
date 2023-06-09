@@ -973,10 +973,14 @@ void VMError::report(outputStream* st, bool _verbose) {
     if (os::platform_print_native_stack(st, _context, buf, sizeof(buf), lastpc)) {
       // We have printed the native stack in platform-specific code
       // Windows/x64 needs special handling.
-      // Stack walking may got stuck. Try to print the calling code.
+      // Stack walking may get stuck. Try to print the calling code.
       if (lastpc != nullptr) {
         st->print_cr("called by the following code:");
-        print_code(st, _thread, lastpc, true, printed, printed_capacity);
+        if (print_code(st, _thread, lastpc, true, printed, printed_capacity)) {
+          printed_len++;
+        } else {
+          st->print_cr("no VM gerenated code");
+        }
       }
     } else {
       frame fr = _context ? os::fetch_frame_from_context(_context)
