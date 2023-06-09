@@ -31,7 +31,6 @@ import java.security.PrivilegedAction;
 import java.util.Objects;
 
 /*non-public*/ class VectorIntrinsics {
-
     @SuppressWarnings("removal")
     static final int VECTOR_ACCESS_OOB_CHECK = AccessController.doPrivileged((PrivilegedAction<Integer>) () ->
             Integer.getInteger("jdk.incubator.vector.VECTOR_ACCESS_OOB_CHECK", 2));
