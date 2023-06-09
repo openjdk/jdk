@@ -17,7 +17,7 @@ extern "C" {
 
 #if defined(AIX)
 #include <sys/machine.h>
-#define __BIG_ENDIAN      4321
+#define __BIG_ENDIAN      BIG_ENDIAN
 #define __BYTE_ORDER      BIG_ENDIAN
 #endif
 
