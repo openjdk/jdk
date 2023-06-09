@@ -1386,7 +1386,7 @@ JVM_ENTRY(jobject, JVM_FindScopedValueBindings(JNIEnv *env, jclass cls))
     InstanceKlass* holder = method->method_holder();
     if (name == vmSymbols::runWith_method_name()) {
       if ((holder == resolver.Carrier_klass
-           || holder == vmClasses::VirtualThread_klass()
+           || holder == vmClasses::BaseVirtualThread_klass()
            || holder == vmClasses::Thread_klass())) {
         loc = 1;
       }

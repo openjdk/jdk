@@ -24,7 +24,6 @@
  */
 package java.lang;
 
-import java.lang.ref.Reference;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Locale;
@@ -332,14 +331,6 @@ final class VirtualThread extends BaseVirtualThread {
                 setState(TERMINATED);
             }
         }
-    }
-
-    @Hidden
-    @ForceInline
-    private void runWith(Object bindings, Runnable op) {
-        ensureMaterializedForStackWalk(bindings);
-        op.run();
-        Reference.reachabilityFence(bindings);
     }
 
     /**
