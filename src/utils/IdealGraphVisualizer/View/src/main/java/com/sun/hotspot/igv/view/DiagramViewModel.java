@@ -95,9 +95,11 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         return newLayout;
     }
 
-    public void setNewLayout(boolean b) {
-        newLayout = b;
-        diagramChangedEvent.fire();
+    public void setNewLayout(boolean enable) {
+        newLayout = enable;
+        if (enable) {
+            diagramChangedEvent.fire();
+        }
     }
 
     public boolean getShowSea() {
