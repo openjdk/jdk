@@ -375,8 +375,18 @@ class Compile : public Phase {
   DEBUG_ONLY(Unique_Node_List* _modified_nodes;)   // List of nodes which inputs were modified
   DEBUG_ONLY(bool       _phase_optimize_finished;) // Used for live node verification while creating new nodes
 
-  Arena                 _node_arena;            // Arena for new-space Nodes
-  Arena                 _old_arena;             // Arena for old-space Nodes, lifetime during xform
+  Arena                 _node_arena_one;            // Arena for new-space Nodes
+  Arena                 _node_arena_two;            // Arena for old-space Nodes, lifetime during xform
+  Arena*                _node_arena;
+public:
+  Arena* swap_old_and_new() {
+    Arena* filled_arena_ptr = _node_arena;
+    Arena* old_arena_ptr = old_arena();
+    old_arena_ptr->destruct_contents();
+    _node_arena = old_arena_ptr;
+    return filled_arena_ptr;
+  }
+private:
   RootNode*             _root;                  // Unique root of compilation, or null after bail-out.
   Node*                 _top;                   // Unique top node.  (Reset by various phases.)
 
@@ -795,8 +805,8 @@ class Compile : public Phase {
   uint         unique() const              { return _unique; }
   uint         next_unique()               { return _unique++; }
   void         set_unique(uint i)          { _unique = i; }
-  Arena*       node_arena()                { return &_node_arena; }
-  Arena*       old_arena()                 { return &_old_arena; }
+  Arena*       node_arena()                { return _node_arena; }
+  Arena*       old_arena()                 { return &_node_arena_one == _node_arena ? &_node_arena_two : &_node_arena_one; }
   RootNode*    root() const                { return _root; }
   void         set_root(RootNode* r)       { _root = r; }
   StartNode*   start() const;              // (Derived from root.)
