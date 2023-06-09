@@ -1023,7 +1023,7 @@ public class VisibleMemberTable {
     /*
      * Translates the provided class or interface to a type given its subtype.
      *
-     * The correctness relies of no more than 1 parameterization from JLS. (TODO link the correct section)
+     * The correctness relies on no more than 1 parameterization from JLS. (TODO link the correct section)
      *
      * There's probably a better way of doing it using javax.lang.model.util.Types.getDeclaredType(),
      * but for now this will do.

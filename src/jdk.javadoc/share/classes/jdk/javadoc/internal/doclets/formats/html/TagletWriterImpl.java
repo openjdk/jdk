@@ -619,7 +619,7 @@ public class TagletWriterImpl extends TagletWriter {
      * nowhere), we need to find the method that is a substitute for the
      * given method.
      */
-    public Optional<ExecutableElement> getActualMethod(ExecutableElement method) {
+    private Optional<ExecutableElement> getActualMethod(ExecutableElement method) {
         if (method.getKind() != ElementKind.METHOD)
             throw new IllegalArgumentException(String.valueOf(method.getKind()));
 
