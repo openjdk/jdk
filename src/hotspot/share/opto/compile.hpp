@@ -375,8 +375,11 @@ class Compile : public Phase {
   DEBUG_ONLY(Unique_Node_List* _modified_nodes;)   // List of nodes which inputs were modified
   DEBUG_ONLY(bool       _phase_optimize_finished;) // Used for live node verification while creating new nodes
 
-  Arena                 _node_arena_one;            // Arena for new-space Nodes
-  Arena                 _node_arena_two;            // Arena for old-space Nodes, lifetime during xform
+  // Arenas for new-space and old-space nodes.
+  // Swapped between using _node_arena.
+  // The lifetime of the old-space nodes is during xform.
+  Arena                 _node_arena_one;
+  Arena                 _node_arena_two;
   Arena*                _node_arena;
 public:
   Arena* swap_old_and_new() {
