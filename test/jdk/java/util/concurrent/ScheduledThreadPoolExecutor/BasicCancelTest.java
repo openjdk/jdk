@@ -76,7 +76,7 @@ public class BasicCancelTest {
         // Needed to avoid OOME
         pool.setRemoveOnCancelPolicy(true);
 
-        final long moreThanYouCanChew = Runtime.getRuntime().maxMemory() / 4;
+        final long moreThanYouCanChew = Runtime.getRuntime().maxMemory() / 32;
         System.out.printf("moreThanYouCanChew=%d%n", moreThanYouCanChew);
 
         Runnable noopTask = new Runnable() { public void run() {}};
