@@ -676,6 +676,13 @@ sanity/client/SwingSet/src/ToolTipDemoTest.java 8293001 linux-all
 sanity/client/SwingSet/src/ButtonDemoScreenshotTest.java 8265770 macosx-all
 sanity/client/SwingSet/src/EditorPaneDemoTest.java 8212240 linux-x64
 
+# jdk_swing Ubuntu 23.04 specific
+
+javax/swing/JTree/8003400/Test8003400.java 8309734 linux-all
+javax/swing/JTable/7124218/SelectEditTableCell.java 8309734 linux-all
+javax/swing/JFileChooser/JFileChooserSetLocationTest.java 8309734 linux-all
+javax/swing/JComboBox/TestComboBoxComponentRendering.java 8309734 linux-all
+
 ############################################################################
 
 # jdk_text
