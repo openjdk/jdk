@@ -166,11 +166,9 @@ public final class BaseLocale {
             language = convertOldISOCodes(language);
         }
 
-        Key key = new Key(language, script, region, variant);
-        return CACHE.computeIfAbsent(key, (k) -> {
-            var base = k.getBaseLocale();
-            return new BaseLocale(base.getLanguage(), base.getScript(), base.getRegion(), base.getVariant(), true);
-        });
+        BaseLocale base = new BaseLocale(language, script, region, variant, false);
+        return CACHE.computeIfAbsent(base,
+            (b) -> new BaseLocale(b.getLanguage(), b.getScript(), b.getRegion(), b.getVariant(), true));
     }
 
     public static String convertOldISOCodes(String language) {
@@ -203,13 +201,14 @@ public final class BaseLocale {
         if (this == obj) {
             return true;
         }
-        if (!(obj instanceof BaseLocale other)) {
-            return false;
+        if (obj instanceof BaseLocale other && this.hash == other.hash) {
+            return LocaleUtils.caseIgnoreMatch(other.getLanguage(), language)
+                && LocaleUtils.caseIgnoreMatch(other.getScript(), script)
+                && LocaleUtils.caseIgnoreMatch(other.getRegion(), region)
+                // variant is case sensitive in JDK!
+                && other.getVariant().equals(variant);
         }
-        return language == other.language
-               && script == other.script
-               && region == other.region
-               && variant == other.variant;
+        return false;
     }
 
     @Override
@@ -246,67 +245,6 @@ public final class BaseLocale {
         return h;
     }
 
-    private static final class Key {
-        private final BaseLocale base;
-        private final int hash;
-
-        private Key(String language, String script, String region,
-                    String variant) {
-            base = new BaseLocale(language, script, region, variant, false);
-            hash = hashCode(base);
-        }
-
-        public int hashCode() {
-            return hash;
-        }
-
-        private int hashCode(BaseLocale locale) {
-            int h = 0;
-            String lang = locale.getLanguage();
-            int len = lang.length();
-            for (int i = 0; i < len; i++) {
-                h = 31*h + LocaleUtils.toLower(lang.charAt(i));
-            }
-            String scrt = locale.getScript();
-            len = scrt.length();
-            for (int i = 0; i < len; i++) {
-                h = 31*h + LocaleUtils.toLower(scrt.charAt(i));
-            }
-            String regn = locale.getRegion();
-            len = regn.length();
-            for (int i = 0; i < len; i++) {
-                h = 31*h + LocaleUtils.toLower(regn.charAt(i));
-            }
-            String vart = locale.getVariant();
-            len = vart.length();
-            for (int i = 0; i < len; i++) {
-                h = 31*h + vart.charAt(i);
-            }
-            return h;
-        }
-
-        private BaseLocale getBaseLocale() {
-            return base;
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (this == obj) {
-                return true;
-            }
-            if (obj instanceof Key o && this.hash == o.hash) {
-                BaseLocale other = o.getBaseLocale();
-                BaseLocale locale = this.getBaseLocale();
-                return other != null && locale != null
-                    && LocaleUtils.caseIgnoreMatch(other.getLanguage(), locale.getLanguage())
-                    && LocaleUtils.caseIgnoreMatch(other.getScript(), locale.getScript())
-                    && LocaleUtils.caseIgnoreMatch(other.getRegion(), locale.getRegion())
-                    // variant is case sensitive in JDK!
-                    && other.getVariant().equals(locale.getVariant());
-            }
-            return false;
-        }
-    }
-
-    private static final Map<Key, BaseLocale> CACHE = new WeakHashMap<>();
+    // Non-normalized to normalized BaseLocale cache for saving costly normalizations
+    private static final Map<BaseLocale, BaseLocale> CACHE = new WeakHashMap<>();
 }
