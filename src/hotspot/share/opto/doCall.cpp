@@ -653,8 +653,12 @@ void Parse::do_call() {
   if (DoPartialEscapeAnalysis) {
     if (cg->is_inline()) {
       static_cast<InlineCallGenerator* >(cg)->set_caller_state(&block()->state());
-    } else { // TODO: what about late inline?
+    } else {
       PEAState& state = jvms->alloc_state();
+      // Materialize all inputs to non-inline and late inline calls.
+      // TODO: we can support late inline calls if we can pass the right JVM
+      // state to the late inline call.
+      //
       // TODO: Should we query BCEA to make an enger inlining decision here?
       // Because callee require a concrete object pointer as an argument,
       // we have nothing to do but matertialize it.

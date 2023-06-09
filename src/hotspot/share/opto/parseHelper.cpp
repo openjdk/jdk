@@ -491,8 +491,7 @@ void PEAState::add_new_allocation(Node* obj) {
 
 PEAState& PEAState::operator=(const PEAState& init) {
   if (this != &init) {
-    _state.unlink_all();
-    _alias.unlink_all();
+    clear();
 
     init._state.iterate([&](ObjID key, ObjectState* value) {
       _state.put(key, value->clone());

@@ -186,6 +186,11 @@ class PEAState {
     return nullptr;
   }
 
+  void clear() {
+    _state.unlink_all();
+    _alias.unlink_all();
+  }
+
   void materialize_all();
 
 #ifndef PRODUCT
