@@ -37,6 +37,7 @@ import jdk.internal.classfile.constantpool.InvokeDynamicEntry;
 import jdk.internal.classfile.constantpool.LoadableConstantEntry;
 import jdk.internal.classfile.constantpool.Utf8Entry;
 import jdk.internal.classfile.impl.AbstractInstruction;
+import jdk.internal.classfile.impl.AbstractPoolEntry;
 import jdk.internal.classfile.impl.Util;
 
 /**
@@ -69,7 +70,7 @@ public sealed interface InvokeDynamicInstruction extends Instruction
      * {@return the invocation type of the call site, as a symbolic descriptor}
      */
     default MethodTypeDesc typeSymbol() {
-        return MethodTypeDesc.ofDescriptor(type().stringValue());
+        return Util.methodTypeSymbol(invokedynamic().nameAndType());
     }
 
     /**

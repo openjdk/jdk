@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@
 package jdk.internal.foreign;
 
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.SegmentScope;
 import java.nio.ByteBuffer;
 import java.util.Optional;
 
@@ -44,17 +43,32 @@ public sealed class NativeMemorySegmentImpl extends AbstractMemorySegmentImpl pe
 
     private static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
-    // The maximum alignment supported by malloc - typically 16 on
-    // 64-bit platforms and 8 on 32-bit platforms.
+    // The maximum alignment supported by malloc - typically 16 bytes on
+    // 64-bit platforms and 8 bytes on 32-bit platforms.
     private static final long MAX_MALLOC_ALIGN = Unsafe.ADDRESS_SIZE == 4 ? 8 : 16;
     private static final boolean SKIP_ZERO_MEMORY = GetBooleanAction.privilegedGetProperty("jdk.internal.foreign.skipZeroMemory");
 
     final long min;
 
     @ForceInline
-    NativeMemorySegmentImpl(long min, long length, boolean readOnly, SegmentScope scope) {
+    NativeMemorySegmentImpl(long min, long length, boolean readOnly, MemorySessionImpl scope) {
         super(length, readOnly, scope);
-        this.min = min;
+        this.min = (Unsafe.getUnsafe().addressSize() == 4)
+                // On 32-bit systems, normalize the upper unused 32-bits to zero
+                ? min & 0x0000_0000_FFFF_FFFFL
+                // On 64-bit systems, all the bits are used
+                : min;
+    }
+
+    /**
+     * This constructor should only be used when initializing {@link MemorySegment#NULL}. Note: because of the memory
+     * segment class hierarchy, it is possible to end up in a situation where this constructor is called
+     * when the static fields in this class are not yet initialized.
+     */
+    @ForceInline
+    public NativeMemorySegmentImpl() {
+        super(0L, false, new GlobalSession(null));
+        this.min = 0L;
     }
 
     @Override
@@ -63,13 +77,13 @@ public sealed class NativeMemorySegmentImpl extends AbstractMemorySegmentImpl pe
     }
 
     @Override
-    public Optional<Object> array() {
+    public Optional<Object> heapBase() {
         return Optional.empty();
     }
 
     @ForceInline
     @Override
-    NativeMemorySegmentImpl dup(long offset, long size, boolean readOnly, SegmentScope scope) {
+    NativeMemorySegmentImpl dup(long offset, long size, boolean readOnly, MemorySessionImpl scope) {
         return new NativeMemorySegmentImpl(min + offset, size, readOnly, scope);
     }
 
@@ -101,8 +115,7 @@ public sealed class NativeMemorySegmentImpl extends AbstractMemorySegmentImpl pe
 
     // factories
 
-    public static MemorySegment makeNativeSegment(long byteSize, long byteAlignment, SegmentScope scope) {
-        MemorySessionImpl sessionImpl = (MemorySessionImpl) scope;
+    public static MemorySegment makeNativeSegment(long byteSize, long byteAlignment, MemorySessionImpl sessionImpl) {
         sessionImpl.checkValidState();
         if (VM.isDirectMemoryPageAligned()) {
             byteAlignment = Math.max(byteAlignment, NIO_ACCESS.pageSize());
@@ -119,7 +132,7 @@ public sealed class NativeMemorySegmentImpl extends AbstractMemorySegmentImpl pe
         }
         long alignedBuf = Utils.alignUp(buf, byteAlignment);
         AbstractMemorySegmentImpl segment = new NativeMemorySegmentImpl(buf, alignedSize,
-                false, scope);
+                false, sessionImpl);
         sessionImpl.addOrCleanupIfFail(new MemorySessionImpl.ResourceList.ResourceCleanup() {
             @Override
             public void cleanup() {
@@ -138,25 +151,23 @@ public sealed class NativeMemorySegmentImpl extends AbstractMemorySegmentImpl pe
     // associated with MemorySegment::ofAddress.
 
     @ForceInline
-    public static MemorySegment makeNativeSegmentUnchecked(long min, long byteSize, SegmentScope scope, Runnable action) {
-        MemorySessionImpl sessionImpl = (MemorySessionImpl) scope;
+    public static MemorySegment makeNativeSegmentUnchecked(long min, long byteSize, MemorySessionImpl sessionImpl, Runnable action) {
         if (action == null) {
             sessionImpl.checkValidState();
         } else {
             sessionImpl.addCloseAction(action);
         }
-        return new NativeMemorySegmentImpl(min, byteSize, false, scope);
+        return new NativeMemorySegmentImpl(min, byteSize, false, sessionImpl);
     }
 
     @ForceInline
-    public static MemorySegment makeNativeSegmentUnchecked(long min, long byteSize, SegmentScope scope) {
-        MemorySessionImpl sessionImpl = (MemorySessionImpl) scope;
+    public static MemorySegment makeNativeSegmentUnchecked(long min, long byteSize, MemorySessionImpl sessionImpl) {
         sessionImpl.checkValidState();
-        return new NativeMemorySegmentImpl(min, byteSize, false, scope);
+        return new NativeMemorySegmentImpl(min, byteSize, false, sessionImpl);
     }
 
     @ForceInline
     public static MemorySegment makeNativeSegmentUnchecked(long min, long byteSize) {
-        return new NativeMemorySegmentImpl(min, byteSize, false, SegmentScope.global());
+        return new NativeMemorySegmentImpl(min, byteSize, false, new GlobalSession(null));
     }
 }

@@ -581,7 +581,7 @@ public abstract class JComponent extends Container implements Serializable,
      * <p>
      * This is a bound property.
      *
-     * @param popup - the popup that will be assigned to this component
+     * @param popup the popup that will be assigned to this component
      *                may be null
      * @see #getComponentPopupMenu
      * @since 1.5

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,9 +129,7 @@ public class Binder extends DebugeeBinder {
     public Debugee makeLocalDebugee(Process process) {
         LocalLaunchedDebugee debugee = new LocalLaunchedDebugee(process, this);
 
-        Finalizer finalizer = new Finalizer(debugee);
-        finalizer.activate();
-
+        debugee.registerCleanup();
         return debugee;
     }
 
@@ -753,8 +751,6 @@ public class Binder extends DebugeeBinder {
 
         boolean vthreadMode = "Virtual".equals(System.getProperty("main.wrapper"));
         if (vthreadMode) {
-            /* Need --enable-preview on the debuggee in order to support virtual threads. */
-            vmArgs += " --enable-preview";
             /* Some tests need more carrier threads than the default provided. */
             vmArgs += " -Djdk.virtualThreadScheduler.parallelism=15";
         }
@@ -944,8 +940,7 @@ public class Binder extends DebugeeBinder {
 
         RemoteLaunchedDebugee debugee = new RemoteLaunchedDebugee(this);
 
-        Finalizer finalizer = new Finalizer(debugee);
-        finalizer.activate();
+        debugee.registerCleanup();
 
         return debugee;
     }
@@ -958,8 +953,7 @@ public class Binder extends DebugeeBinder {
         ManualLaunchedDebugee debugee = new ManualLaunchedDebugee(this);
         debugee.launchDebugee(cmd);
 
-        Finalizer finalizer = new Finalizer(debugee);
-        finalizer.activate();
+        debugee.registerCleanup();
 
         return debugee;
     }

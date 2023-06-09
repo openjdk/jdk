@@ -51,6 +51,7 @@ import static java.nio.file.Files.*;
 import static jdk.internal.org.objectweb.asm.Opcodes.*;
 
 public class LambdaAsm {
+    static final Path DUMP_LAMBDA_PROXY_CLASS_FILES = Path.of("DUMP_LAMBDA_PROXY_CLASS_FILES");
 
     static final File TestFile = new File("A.java");
 
@@ -58,7 +59,7 @@ public class LambdaAsm {
         emitCode();
         LUtils.compile(TestFile.getName());
         LUtils.TestResult tr = LUtils.doExec(LUtils.JAVA_CMD.getAbsolutePath(),
-                "-Djdk.internal.lambda.dumpProxyClasses=.",
+                "-Djdk.invoke.LambdaMetafactory.dumpProxyClassFiles=true",
                 "-cp", ".", "A");
         if (tr.exitValue != 0) {
             System.out.println("Error: " + tr.toString());
@@ -134,7 +135,7 @@ public class LambdaAsm {
     static void verifyInvokerBytecodeGenerator() throws Exception {
         int count = 0;
         int mcount = 0;
-        try (DirectoryStream<Path> ds = newDirectoryStream(new File(".").toPath(),
+        try (DirectoryStream<Path> ds = newDirectoryStream(DUMP_LAMBDA_PROXY_CLASS_FILES,
                 // filter in lambda proxy classes
                 "A$I$$Lambda.*.class")) {
             for (Path p : ds) {

@@ -65,19 +65,19 @@
 const int MXCSR_MASK  = 0xFFC0;  // Mask out any pending exceptions
 const int FPU_CNTRL_WRD_MASK = 0xFFFF;
 
-ATTRIBUTE_ALIGNED(16) uint32_t KEY_SHUFFLE_MASK[] = {
+ATTRIBUTE_ALIGNED(16) static const uint32_t KEY_SHUFFLE_MASK[] = {
     0x00010203UL, 0x04050607UL, 0x08090A0BUL, 0x0C0D0E0FUL,
 };
 
-ATTRIBUTE_ALIGNED(16) uint32_t COUNTER_SHUFFLE_MASK[] = {
+ATTRIBUTE_ALIGNED(16) static const uint32_t COUNTER_SHUFFLE_MASK[] = {
     0x0C0D0E0FUL, 0x08090A0BUL, 0x04050607UL, 0x00010203UL,
 };
 
-ATTRIBUTE_ALIGNED(16) uint32_t GHASH_BYTE_SWAP_MASK[] = {
+ATTRIBUTE_ALIGNED(16) static const uint32_t GHASH_BYTE_SWAP_MASK[] = {
     0x0C0D0E0FUL, 0x08090A0BUL, 0x04050607UL, 0x00010203UL,
 };
 
-ATTRIBUTE_ALIGNED(16) uint32_t GHASH_LONG_SWAP_MASK[] = {
+ATTRIBUTE_ALIGNED(16) static const uint32_t GHASH_LONG_SWAP_MASK[] = {
     0x0B0A0908UL, 0x0F0E0D0CUL, 0x03020100UL, 0x07060504UL,
 };
 
@@ -4062,7 +4062,7 @@ class StubGenerator: public StubCodeGenerator {
   //---------------------------------------------------------------------------
   // Initialization
 
-  void generate_initial() {
+  void generate_initial_stubs() {
     // Generates all stubs and initializes the entry points
 
     //------------------------------------------------------------------------------------------------------------------------
@@ -4078,6 +4078,11 @@ class StubGenerator: public StubCodeGenerator {
 
     // platform dependent
     create_control_words();
+
+    // Initialize table for copy memory (arraycopy) check.
+    if (UnsafeCopyMemory::_table == nullptr) {
+      UnsafeCopyMemory::create_table(16);
+    }
 
     StubRoutines::x86::_verify_mxcsr_entry         = generate_verify_mxcsr();
     StubRoutines::x86::_verify_fpu_cntrl_wrd_entry = generate_verify_fpu_cntrl_wrd();
@@ -4137,7 +4142,7 @@ class StubGenerator: public StubCodeGenerator {
     }
   }
 
-  void generate_phase1() {
+  void generate_continuation_stubs() {
     // Continuation stubs:
     StubRoutines::_cont_thaw          = generate_cont_thaw();
     StubRoutines::_cont_returnBarrier = generate_cont_returnBarrier();
@@ -4147,7 +4152,7 @@ class StubGenerator: public StubCodeGenerator {
     JFR_ONLY(StubRoutines::_jfr_write_checkpoint = StubRoutines::_jfr_write_checkpoint_stub->entry_point();)
   }
 
-  void generate_all() {
+  void generate_final_stubs() {
     // Generates all stubs and initializes the entry points
 
     // These entry points require SharedInfo::stack0 to be set up in non-core builds
@@ -4156,8 +4161,22 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_throw_IncompatibleClassChangeError_entry= generate_throw_exception("IncompatibleClassChangeError throw_exception", CAST_FROM_FN_PTR(address, SharedRuntime::throw_IncompatibleClassChangeError));
     StubRoutines::_throw_NullPointerException_at_call_entry= generate_throw_exception("NullPointerException at call throw_exception", CAST_FROM_FN_PTR(address, SharedRuntime::throw_NullPointerException_at_call));
 
-    //------------------------------------------------------------------------------------------------------------------------
-    // entry points that are platform specific
+    // support for verify_oop (must happen after universe_init)
+    StubRoutines::_verify_oop_subroutine_entry     = generate_verify_oop();
+
+    // arraycopy stubs used by compilers
+    generate_arraycopy_stubs();
+
+    BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
+    if (bs_nm != nullptr) {
+      StubRoutines::x86::_method_entry_barrier = generate_method_entry_barrier();
+    }
+  }
+
+  void generate_compiler_stubs() {
+#if COMPILER2_OR_JVMCI
+
+    // entry points that are C2/JVMCI specific
 
     StubRoutines::x86::_vector_float_sign_mask = generate_vector_mask("vector_float_sign_mask", 0x7FFFFFFF);
     StubRoutines::x86::_vector_float_sign_flip = generate_vector_mask("vector_float_sign_flip", 0x80000000);
@@ -4189,12 +4208,6 @@ class StubGenerator: public StubCodeGenerator {
       // lut implementation influenced by counting 1s algorithm from section 5-1 of Hackers' Delight.
       StubRoutines::x86::_vector_popcount_lut = generate_popcount_avx_lut("popcount_lut");
     }
-
-    // support for verify_oop (must happen after universe_init)
-    StubRoutines::_verify_oop_subroutine_entry     = generate_verify_oop();
-
-    // arraycopy stubs used by compilers
-    generate_arraycopy_stubs();
 
     // don't bother generating these AES intrinsic stubs unless global flag is set
     if (UseAESIntrinsics) {
@@ -4229,30 +4242,32 @@ class StubGenerator: public StubCodeGenerator {
     if (UseGHASHIntrinsics) {
       StubRoutines::_ghash_processBlocks = generate_ghash_processBlocks();
     }
-
-    BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
-    if (bs_nm != nullptr) {
-      StubRoutines::x86::_method_entry_barrier = generate_method_entry_barrier();
-    }
+#endif // COMPILER2_OR_JVMCI
   }
 
 
  public:
-  StubGenerator(CodeBuffer* code, int phase) : StubCodeGenerator(code) {
-    if (phase == 0) {
-      generate_initial();
-    } else if (phase == 1) {
-      generate_phase1(); // stubs that must be available for the interpreter
-    } else {
-      generate_all();
-    }
+  StubGenerator(CodeBuffer* code, StubsKind kind) : StubCodeGenerator(code) {
+    switch(kind) {
+    case Initial_stubs:
+      generate_initial_stubs();
+      break;
+     case Continuation_stubs:
+      generate_continuation_stubs();
+      break;
+    case Compiler_stubs:
+      generate_compiler_stubs();
+      break;
+    case Final_stubs:
+      generate_final_stubs();
+      break;
+    default:
+      fatal("unexpected stubs kind: %d", kind);
+      break;
+    };
   }
 }; // end class declaration
 
-#define UCM_TABLE_MAX_ENTRIES 16
-void StubGenerator_generate(CodeBuffer* code, int phase) {
-  if (UnsafeCopyMemory::_table == nullptr) {
-    UnsafeCopyMemory::create_table(UCM_TABLE_MAX_ENTRIES);
-  }
-  StubGenerator g(code, phase);
+void StubGenerator_generate(CodeBuffer* code, StubCodeGenerator::StubsKind kind) {
+  StubGenerator g(code, kind);
 }

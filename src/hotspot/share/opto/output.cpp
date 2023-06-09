@@ -2849,6 +2849,8 @@ void Scheduling::anti_do_def( Block *b, Node *def, OptoReg::Name def_reg, int is
       pinch = new Node(1); // Pinch point to-be
     }
     if (pinch->_idx >= _regalloc->node_regs_max_index()) {
+      DEBUG_ONLY( pinch->dump(); );
+      assert(false, "too many D-U pinch points: %d >= %d", pinch->_idx, _regalloc->node_regs_max_index());
       _cfg->C->record_method_not_compilable("too many D-U pinch points");
       return;
     }
@@ -3070,7 +3072,7 @@ void Scheduling::garbage_collect_pinch_nodes() {
   if (_cfg->C->trace_opto_output()) tty->print("Reclaimed pinch nodes:");
 #endif
   int trace_cnt = 0;
-  for (uint k = 0; k < _reg_node.Size(); k++) {
+  for (uint k = 0; k < _reg_node.max(); k++) {
     Node* pinch = _reg_node[k];
     if ((pinch != nullptr) && pinch->Opcode() == Op_Node &&
         // no predecence input edges

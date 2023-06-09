@@ -42,7 +42,6 @@
 #include "oops/klass.inline.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/continuation.hpp"
-#include "runtime/flags/flagSetting.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.hpp"
@@ -68,7 +67,7 @@
 bool AbstractAssembler::pd_check_instruction_mark() { return true; }
 #endif
 
-static Assembler::Condition reverse[] = {
+static const Assembler::Condition reverse[] = {
     Assembler::noOverflow     /* overflow      = 0x0 */ ,
     Assembler::overflow       /* noOverflow    = 0x1 */ ,
     Assembler::aboveEqual     /* carrySet      = 0x2, below         = 0x2 */ ,
@@ -403,7 +402,7 @@ void MacroAssembler::debug32(int rdi, int rsi, int rbp, int rsp, int rbx, int rd
 
 void MacroAssembler::print_state32(int rdi, int rsi, int rbp, int rsp, int rbx, int rdx, int rcx, int rax, int eip) {
   ttyLocker ttyl;
-  FlagSetting fs(Debugging, true);
+  DebuggingContext debugging{};
   tty->print_cr("eip = 0x%08x", eip);
 #ifndef PRODUCT
   if ((WizardMode || Verbose) && PrintMiscellaneous) {
@@ -832,7 +831,7 @@ void MacroAssembler::debug64(char* msg, int64_t pc, int64_t regs[]) {
 
 void MacroAssembler::print_state64(int64_t pc, int64_t regs[]) {
   ttyLocker ttyl;
-  FlagSetting fs(Debugging, true);
+  DebuggingContext debugging{};
   tty->print_cr("rip = 0x%016lx", (intptr_t)pc);
 #ifndef PRODUCT
   tty->cr();
@@ -4245,7 +4244,7 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
 
   // Compute start of first itableOffsetEntry (which is at the end of the vtable)
   int vtable_base = in_bytes(Klass::vtable_start_offset());
-  int itentry_off = itableMethodEntry::method_offset_in_bytes();
+  int itentry_off = in_bytes(itableMethodEntry::method_offset());
   int scan_step   = itableOffsetEntry::size() * wordSize;
   int vte_size    = vtableEntry::size_in_bytes();
   Address::ScaleFactor times_vte_scale = Address::times_ptr;
@@ -4270,7 +4269,7 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
   Label search, found_method;
 
   for (int peel = 1; peel >= 0; peel--) {
-    movptr(method_result, Address(scan_temp, itableOffsetEntry::interface_offset_in_bytes()));
+    movptr(method_result, Address(scan_temp, itableOffsetEntry::interface_offset()));
     cmpptr(intf_klass, method_result);
 
     if (peel) {
@@ -4296,8 +4295,127 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
 
   if (return_method) {
     // Got a hit.
-    movl(scan_temp, Address(scan_temp, itableOffsetEntry::offset_offset_in_bytes()));
+    movl(scan_temp, Address(scan_temp, itableOffsetEntry::offset_offset()));
     movptr(method_result, Address(recv_klass, scan_temp, Address::times_1));
+  }
+}
+
+// Look up the method for a megamorphic invokeinterface call in a single pass over itable:
+// - check recv_klass (actual object class) is a subtype of resolved_klass from CompiledICHolder
+// - find a holder_klass (class that implements the method) vtable offset and get the method from vtable by index
+// The target method is determined by <holder_klass, itable_index>.
+// The receiver klass is in recv_klass.
+// On success, the result will be in method_result, and execution falls through.
+// On failure, execution transfers to the given label.
+void MacroAssembler::lookup_interface_method_stub(Register recv_klass,
+                                                  Register holder_klass,
+                                                  Register resolved_klass,
+                                                  Register method_result,
+                                                  Register scan_temp,
+                                                  Register temp_reg2,
+                                                  Register receiver,
+                                                  int itable_index,
+                                                  Label& L_no_such_interface) {
+  assert_different_registers(recv_klass, method_result, holder_klass, resolved_klass, scan_temp, temp_reg2, receiver);
+  Register temp_itbl_klass = method_result;
+  Register temp_reg = (temp_reg2 == noreg ? recv_klass : temp_reg2); // reuse recv_klass register on 32-bit x86 impl
+
+  int vtable_base = in_bytes(Klass::vtable_start_offset());
+  int itentry_off = in_bytes(itableMethodEntry::method_offset());
+  int scan_step = itableOffsetEntry::size() * wordSize;
+  int vte_size = vtableEntry::size_in_bytes();
+  int ioffset = in_bytes(itableOffsetEntry::interface_offset());
+  int ooffset = in_bytes(itableOffsetEntry::offset_offset());
+  Address::ScaleFactor times_vte_scale = Address::times_ptr;
+  assert(vte_size == wordSize, "adjust times_vte_scale");
+
+  Label L_loop_scan_resolved_entry, L_resolved_found, L_holder_found;
+
+  // temp_itbl_klass = recv_klass.itable[0]
+  // scan_temp = &recv_klass.itable[0] + step
+  movl(scan_temp, Address(recv_klass, Klass::vtable_length_offset()));
+  movptr(temp_itbl_klass, Address(recv_klass, scan_temp, times_vte_scale, vtable_base + ioffset));
+  lea(scan_temp, Address(recv_klass, scan_temp, times_vte_scale, vtable_base + ioffset + scan_step));
+  xorptr(temp_reg, temp_reg);
+
+  // Initial checks:
+  //   - if (holder_klass != resolved_klass), go to "scan for resolved"
+  //   - if (itable[0] == 0), no such interface
+  //   - if (itable[0] == holder_klass), shortcut to "holder found"
+  cmpptr(holder_klass, resolved_klass);
+  jccb(Assembler::notEqual, L_loop_scan_resolved_entry);
+  testptr(temp_itbl_klass, temp_itbl_klass);
+  jccb(Assembler::zero, L_no_such_interface);
+  cmpptr(holder_klass, temp_itbl_klass);
+  jccb(Assembler::equal, L_holder_found);
+
+  // Loop: Look for holder_klass record in itable
+  //   do {
+  //     tmp = itable[index];
+  //     index += step;
+  //     if (tmp == holder_klass) {
+  //       goto L_holder_found; // Found!
+  //     }
+  //   } while (tmp != 0);
+  //   goto L_no_such_interface // Not found.
+  Label L_scan_holder;
+  bind(L_scan_holder);
+    movptr(temp_itbl_klass, Address(scan_temp, 0));
+    addptr(scan_temp, scan_step);
+    cmpptr(holder_klass, temp_itbl_klass);
+    jccb(Assembler::equal, L_holder_found);
+    testptr(temp_itbl_klass, temp_itbl_klass);
+    jccb(Assembler::notZero, L_scan_holder);
+
+  jmpb(L_no_such_interface);
+
+  // Loop: Look for resolved_class record in itable
+  //   do {
+  //     tmp = itable[index];
+  //     index += step;
+  //     if (tmp == holder_klass) {
+  //        // Also check if we have met a holder klass
+  //        holder_tmp = itable[index-step-ioffset];
+  //     }
+  //     if (tmp == resolved_klass) {
+  //        goto L_resolved_found;  // Found!
+  //     }
+  //   } while (tmp != 0);
+  //   goto L_no_such_interface // Not found.
+  //
+  Label L_loop_scan_resolved;
+  bind(L_loop_scan_resolved);
+    movptr(temp_itbl_klass, Address(scan_temp, 0));
+    addptr(scan_temp, scan_step);
+    bind(L_loop_scan_resolved_entry);
+    cmpptr(holder_klass, temp_itbl_klass);
+    cmovl(Assembler::equal, temp_reg, Address(scan_temp, ooffset - ioffset - scan_step));
+    cmpptr(resolved_klass, temp_itbl_klass);
+    jccb(Assembler::equal, L_resolved_found);
+    testptr(temp_itbl_klass, temp_itbl_klass);
+    jccb(Assembler::notZero, L_loop_scan_resolved);
+
+  jmpb(L_no_such_interface);
+
+  Label L_ready;
+
+  // See if we already have a holder klass. If not, go and scan for it.
+  bind(L_resolved_found);
+  testptr(temp_reg, temp_reg);
+  jccb(Assembler::zero, L_scan_holder);
+  jmpb(L_ready);
+
+  bind(L_holder_found);
+  movl(temp_reg, Address(scan_temp, ooffset - ioffset - scan_step));
+
+  // Finally, temp_reg contains holder_klass vtable offset
+  bind(L_ready);
+  assert(itableMethodEntry::size() * wordSize == wordSize, "adjust the scaling in the code below");
+  if (temp_reg2 == noreg) { // recv_klass register is clobbered for 32-bit x86 impl
+    load_klass(scan_temp, receiver, noreg);
+    movptr(method_result, Address(scan_temp, temp_reg, Address::times_1, itable_index * wordSize + itentry_off));
+  } else {
+    movptr(method_result, Address(recv_klass, temp_reg, Address::times_1, itable_index * wordSize + itentry_off));
   }
 }
 
@@ -4306,11 +4424,11 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
 void MacroAssembler::lookup_virtual_method(Register recv_klass,
                                            RegisterOrConstant vtable_index,
                                            Register method_result) {
-  const int base = in_bytes(Klass::vtable_start_offset());
+  const ByteSize base = Klass::vtable_start_offset();
   assert(vtableEntry::size() * wordSize == wordSize, "else adjust the scaling in the code below");
   Address vtable_entry_addr(recv_klass,
                             vtable_index, Address::times_ptr,
-                            base + vtableEntry::method_offset_in_bytes());
+                            base + vtableEntry::method_offset());
   movptr(method_result, vtable_entry_addr);
 }
 
@@ -5117,7 +5235,7 @@ void MacroAssembler::load_method_holder_cld(Register rresult, Register rmethod) 
 void MacroAssembler::load_method_holder(Register holder, Register method) {
   movptr(holder, Address(method, Method::const_offset()));                      // ConstMethod*
   movptr(holder, Address(holder, ConstMethod::constants_offset()));             // ConstantPool*
-  movptr(holder, Address(holder, ConstantPool::pool_holder_offset_in_bytes())); // InstanceKlass*
+  movptr(holder, Address(holder, ConstantPool::pool_holder_offset()));          // InstanceKlass*
 }
 
 void MacroAssembler::load_klass(Register dst, Register src, Register tmp) {
@@ -5130,11 +5248,6 @@ void MacroAssembler::load_klass(Register dst, Register src, Register tmp) {
   } else
 #endif
     movptr(dst, Address(src, oopDesc::klass_offset_in_bytes()));
-}
-
-void MacroAssembler::load_klass_check_null(Register dst, Register src, Register tmp) {
-  null_check(src, oopDesc::klass_offset_in_bytes());
-  load_klass(dst, src, tmp);
 }
 
 void MacroAssembler::store_klass(Register dst, Register src, Register tmp) {
@@ -9195,7 +9308,7 @@ void MacroAssembler::fill64_masked(uint shift, Register dst, int disp,
                                        XMMRegister xmm, KRegister mask, Register length,
                                        Register temp, bool use64byteVector) {
   assert(MaxVectorSize >= 32, "vector length should be >= 32");
-  BasicType type[] = { T_BYTE, T_SHORT, T_INT, T_LONG};
+  const BasicType type[] = { T_BYTE, T_SHORT, T_INT, T_LONG};
   if (!use64byteVector) {
     fill32(dst, disp, xmm);
     subptr(length, 32 >> shift);
@@ -9211,7 +9324,7 @@ void MacroAssembler::fill32_masked(uint shift, Register dst, int disp,
                                        XMMRegister xmm, KRegister mask, Register length,
                                        Register temp) {
   assert(MaxVectorSize >= 32, "vector length should be >= 32");
-  BasicType type[] = { T_BYTE, T_SHORT, T_INT, T_LONG};
+  const BasicType type[] = { T_BYTE, T_SHORT, T_INT, T_LONG};
   fill_masked(type[shift], Address(dst, disp), xmm, mask, length, temp, Assembler::AVX_256bit);
 }
 
@@ -9675,4 +9788,71 @@ void MacroAssembler::check_stack_alignment(Register sp, const char* msg, unsigne
   block_comment(msg);
   stop(msg);
   bind(L_stack_ok);
+}
+
+// Implements fast-locking.
+// Branches to slow upon failure to lock the object, with ZF cleared.
+// Falls through upon success with unspecified ZF.
+//
+// obj: the object to be locked
+// hdr: the (pre-loaded) header of the object, must be rax
+// thread: the thread which attempts to lock obj
+// tmp: a temporary register
+void MacroAssembler::fast_lock_impl(Register obj, Register hdr, Register thread, Register tmp, Label& slow) {
+  assert(hdr == rax, "header must be in rax for cmpxchg");
+  assert_different_registers(obj, hdr, thread, tmp);
+
+  // First we need to check if the lock-stack has room for pushing the object reference.
+  // Note: we subtract 1 from the end-offset so that we can do a 'greater' comparison, instead
+  // of 'greaterEqual' below, which readily clears the ZF. This makes C2 code a little simpler and
+  // avoids one branch.
+  cmpl(Address(thread, JavaThread::lock_stack_top_offset()), LockStack::end_offset() - 1);
+  jcc(Assembler::greater, slow);
+
+  // Now we attempt to take the fast-lock.
+  // Clear lock_mask bits (locked state).
+  andptr(hdr, ~(int32_t)markWord::lock_mask_in_place);
+  movptr(tmp, hdr);
+  // Set unlocked_value bit.
+  orptr(hdr, markWord::unlocked_value);
+  lock();
+  cmpxchgptr(tmp, Address(obj, oopDesc::mark_offset_in_bytes()));
+  jcc(Assembler::notEqual, slow);
+
+  // If successful, push object to lock-stack.
+  movl(tmp, Address(thread, JavaThread::lock_stack_top_offset()));
+  movptr(Address(thread, tmp), obj);
+  incrementl(tmp, oopSize);
+  movl(Address(thread, JavaThread::lock_stack_top_offset()), tmp);
+}
+
+// Implements fast-unlocking.
+// Branches to slow upon failure, with ZF cleared.
+// Falls through upon success, with unspecified ZF.
+//
+// obj: the object to be unlocked
+// hdr: the (pre-loaded) header of the object, must be rax
+// tmp: a temporary register
+void MacroAssembler::fast_unlock_impl(Register obj, Register hdr, Register tmp, Label& slow) {
+  assert(hdr == rax, "header must be in rax for cmpxchg");
+  assert_different_registers(obj, hdr, tmp);
+
+  // Mark-word must be lock_mask now, try to swing it back to unlocked_value.
+  movptr(tmp, hdr); // The expected old value
+  orptr(tmp, markWord::unlocked_value);
+  lock();
+  cmpxchgptr(tmp, Address(obj, oopDesc::mark_offset_in_bytes()));
+  jcc(Assembler::notEqual, slow);
+  // Pop the lock object from the lock-stack.
+#ifdef _LP64
+  const Register thread = r15_thread;
+#else
+  const Register thread = rax;
+  get_thread(thread);
+#endif
+  subl(Address(thread, JavaThread::lock_stack_top_offset()), oopSize);
+#ifdef ASSERT
+  movl(tmp, Address(thread, JavaThread::lock_stack_top_offset()));
+  movptr(Address(thread, tmp), 0);
+#endif
 }

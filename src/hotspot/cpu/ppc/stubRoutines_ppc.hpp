@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -33,8 +33,11 @@
 static bool returns_to_call_stub(address return_pc) { return return_pc == _call_stub_return_address; }
 
 enum platform_dependent_constants {
-  code_size1 = 20000,          // simply increase if too small (assembler will crash if too small)
-  code_size2 = 24000           // simply increase if too small (assembler will crash if too small)
+  // simply increase sizes if too small (assembler will crash if too small)
+  _initial_stubs_code_size      = 20000,
+  _continuation_stubs_code_size =  2000,
+  _compiler_stubs_code_size     = 24000,
+  _final_stubs_code_size        = 24000
 };
 
 // CRC32 Intrinsics.

@@ -26,7 +26,6 @@
  * @bug 8280113
  * @summary Test async close of a DatagramSocket obtained from a DatagramChannel where
  *     the DatagramChannel's internal socket address caches are already populated
- * @enablePreview
  * @library /test/lib
  * @run junit AdaptorAsyncCloseAfterReceive
  */

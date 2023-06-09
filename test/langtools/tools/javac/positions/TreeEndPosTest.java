@@ -147,7 +147,7 @@ public class TreeEndPosTest {
 
     static void testFinalVariableWithConstructor() throws IOException {
         compile(JavaSource.createJavaSource("public Bug (){} private static final String Foo; public void bar() { }",
-                "{}"));
+                "private static final String Foo;"));
     }
 
     static void testWholeTextSpan() throws IOException {
