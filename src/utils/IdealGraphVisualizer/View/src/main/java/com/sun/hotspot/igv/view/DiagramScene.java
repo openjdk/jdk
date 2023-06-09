@@ -689,8 +689,8 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         return w1.isVisible() && w2.isVisible();
     }
 
-    private void doNewLayout(HashSet<Figure> visibleFigures, HashSet<Connection> visibleConnections, String name) {
-        newLayoutManager.updateLayout(visibleFigures, visibleConnections, name);
+    private void doNewLayout(HashSet<Figure> visibleFigures, HashSet<Connection> visibleConnections) {
+        newLayoutManager.updateLayout(visibleFigures, visibleConnections);
     }
 
     private void doSeaLayout(HashSet<Figure> figures, HashSet<Connection> edges) {
@@ -1192,12 +1192,8 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
 
         HashSet<Figure> visibleFigures = getVisibleFigures();
         HashSet<Connection> visibleConnections = getVisibleConnections();
-
-        String key = getModel().getGraph().getGroup().getName() + "::" + getModel().getGraph().getName();
-        key = key.replaceAll(",", ";");
-
         if (getModel().getNewLayout()) {
-            doNewLayout(visibleFigures, visibleConnections, key);
+            doNewLayout(visibleFigures, visibleConnections);
         } else if (getModel().getShowSea()) {
             doSeaLayout(visibleFigures, visibleConnections);
         } else if (getModel().getShowBlocks()) {

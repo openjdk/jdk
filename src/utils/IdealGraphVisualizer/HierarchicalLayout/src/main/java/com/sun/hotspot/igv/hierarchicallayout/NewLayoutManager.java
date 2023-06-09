@@ -62,7 +62,6 @@ public class NewLayoutManager {
     private boolean shouldLayoutOptimally = false;
     private boolean shouldUseStatic = true;
 
-    private String graphName;
     private int addedNodes = 0;
     private int addedEdges = 0;
     private int removedNodes = 0;
@@ -480,7 +479,7 @@ public class NewLayoutManager {
         }
     }
 
-    public void updateLayout(HashSet<? extends Vertex> vertices, HashSet<? extends Link> links, String name) {
+    public void updateLayout(HashSet<? extends Vertex> vertices, HashSet<? extends Link> links) {
         currentVertices = vertices;
         currentLinks = links;
         reversedLinks = new HashSet<>();
@@ -489,7 +488,6 @@ public class NewLayoutManager {
         vertexActions = new LinkedList<>();
         linkActions = new LinkedList<>();
         vertexToAction = new HashMap<>();
-        graphName = name;
         addedNodes = 0;
         addedEdges = 0;
         removedNodes = 0;
@@ -2674,7 +2672,7 @@ public class NewLayoutManager {
             float nodeDisplacement = averageNodeDisplacement();
             int reversedEdges = reversedEdges();
 
-            System.out.println("DATA LINE:" + graphName + "," + currentVertices.size() + "," + currentLinks.size() + ","
+            System.out.println("DATA LINE:" + currentVertices.size() + "," + currentLinks.size() + ","
                     + addedNodes + "," + removedNodes + "," + addedEdges + "," + removedEdges + ","
                     + edgeCrossings + "," + reversedEdges + "," + edgeBendsDeg + "," + edgeLength + ","
                     + nodeDisplacement);
