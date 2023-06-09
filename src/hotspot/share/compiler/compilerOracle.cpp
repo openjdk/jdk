@@ -1036,7 +1036,7 @@ bool compilerOracle_init() {
 
 bool CompilerOracle::parse_compile_only(char* line) {
   if (line[0] == '\0') {
-    return false;
+    return true;
   }
   ResourceMark rm;
   char error_buf[1024] = {0};
