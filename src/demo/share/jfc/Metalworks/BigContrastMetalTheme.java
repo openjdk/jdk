@@ -103,7 +103,7 @@ public class BigContrastMetalTheme extends ContrastMetalTheme {
     public void addCustomEntriesToTable(UIDefaults table) {
         super.addCustomEntriesToTable(table);
 
-        final int internalFrameIconSize = 24;
+        final int internalFrameIconSize = 30;
         table.put("InternalFrame.closeIcon", MetalIconFactory.
                 getInternalFrameCloseIcon(internalFrameIconSize));
         table.put("InternalFrame.maximizeIcon", MetalIconFactory.
@@ -125,7 +125,7 @@ public class BigContrastMetalTheme extends ContrastMetalTheme {
         table.put("TextField.border", textBorder);
         table.put("PasswordField.border", textBorder);
         table.put("TextArea.border", textBorder);
-        table.put("TextPane.font", textBorder);
+        table.put("TextPane.font", controlFont);
 
         table.put("ScrollPane.border", blackLineBorder);
 
