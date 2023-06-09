@@ -104,25 +104,6 @@ public class NewLayoutManager {
         oldNodes = new ArrayList<>();
     }
 
-    public void action1() {
-        System.out.println("action1: adjusting x coordinates for all layers");
-        adjustXCoordinatesForAllLayers();
-    }
-
-    public void action2() {
-        System.out.println("action2: toggle layouting using HierarchicalLayoutManager");
-        shouldUseStatic = !shouldUseStatic;
-        System.out.println("now set to: " + shouldUseStatic);
-        // shouldRedrawLayout = true;
-        // updateLayout(currentVertices, currentLinks, graphName);
-    }
-
-    public void action3() {
-        System.out.println("action3: toggle optimal layouting");
-        shouldLayoutOptimally = !shouldLayoutOptimally;
-        System.out.println("now set to: " + shouldLayoutOptimally);
-    }
-
     private void adjustXCoordinatesForAllLayers() {
         // Adjust x coordinates for every layer, sweeping up once
         for (int i = layers.keySet().size() - 1; i >= 0; i--) {
@@ -163,7 +144,7 @@ public class NewLayoutManager {
     /**
      * Adjust the X-coordinates of the nodes in the given layer, as a new node has
      * been inserted at that layer
-     * 
+     *
      * @param newNode
      * @param layer
      */
@@ -764,7 +745,7 @@ public class NewLayoutManager {
 
         /**
          * Restore the positions of the nodes at a given layer
-         * 
+         *
          * @param layer
          * @param addedNodePos position of the node that was temporarily added
          */
@@ -1037,7 +1018,7 @@ public class NewLayoutManager {
         /**
          * Insert node at the assigned layer, updating the positions of the nodes within
          * the layer
-         * 
+         *
          * @param node
          * @param layer
          */
@@ -1454,7 +1435,7 @@ public class NewLayoutManager {
         /**
          * Find the optimal position within the given layer to insert the given node.
          * The optimum is given by the least amount of edge crossings.
-         * 
+         *
          * @param node
          * @param layer
          * @return
@@ -1565,7 +1546,7 @@ public class NewLayoutManager {
         /**
          * Insert node at the assigned layer, updating the positions of the nodes within
          * the layer
-         * 
+         *
          * @param node
          * @param layer
          */
@@ -1783,7 +1764,7 @@ public class NewLayoutManager {
         /**
          * Create a new layer at node.layer + 1 and move the given node there. Adjust
          * remaining layers numbers
-         * 
+         *
          * @param node
          */
         private void expandNewLayerBeneath(LayoutNode node) {
@@ -1949,7 +1930,7 @@ public class NewLayoutManager {
          * Calculate which layer the given vertex should be inserted at to minimize
          * reversed edges and edge lengths
          * If there are multiple options, choose the bottom most layer
-         * 
+         *
          * @param vertex
          * @param links
          * @return
@@ -2384,7 +2365,7 @@ public class NewLayoutManager {
     private class ComputeLayoutScore {
         /**
          * https://www.geeksforgeeks.org/check-if-two-given-line-segments-intersect/
-         * 
+         *
          * @param p
          * @param q
          * @param r
@@ -2401,7 +2382,7 @@ public class NewLayoutManager {
         /**
          * To find orientation of ordered triplet (p, q, r).
          * https://www.geeksforgeeks.org/check-if-two-given-line-segments-intersect/
-         * 
+         *
          * @return 0 --> p, q and r are collinear, 1 --> Clockwise, 2 -->
          *         Counterclockwise
          */
@@ -2417,7 +2398,7 @@ public class NewLayoutManager {
 
         /**
          * https://www.geeksforgeeks.org/check-if-two-given-line-segments-intersect/
-         * 
+         *
          * @return true if line segment 'p1q1' and 'p2q2' intersect.
          */
         private boolean doIntersect(Point p1, Point q1, Point p2, Point q2) {
@@ -2559,7 +2540,7 @@ public class NewLayoutManager {
         /**
          * Computes how much the bends in an edge deviates from being straight, on
          * average
-         * 
+         *
          * @return
          */
         private float averageEdgeBendDegrees() {

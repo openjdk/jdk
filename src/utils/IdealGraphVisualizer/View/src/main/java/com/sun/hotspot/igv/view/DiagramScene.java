@@ -128,22 +128,6 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
     }
 
     @Override
-    public void layoutAction(int nr) {
-        if (newLayoutManager == null)
-            return;
-        if (nr == 1) {
-            newLayoutManager.action1();
-            SwingUtilities.invokeLater(this::relayout); // or this::update
-        } else if (nr == 2) {
-            newLayoutManager.action2();
-            SwingUtilities.invokeLater(this::relayout); // or this::update
-        } else if (nr == 3) {
-            newLayoutManager.action3();
-            SwingUtilities.invokeLater(this::relayout); // or this::update
-        }
-    }
-
-    @Override
     public void zoomIn(Point zoomCenter, double factor) {
         centredZoom(getZoomFactor() * factor, zoomCenter);
     }
