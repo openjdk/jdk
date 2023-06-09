@@ -108,27 +108,17 @@ public final class BaseLocale {
     private static final boolean OLD_ISO_CODES = StaticProperty.javaLocaleUseOldISOCodes()
             .equalsIgnoreCase("true");
 
-    // This method must be called with normalize = false only when creating the
-    // Locale.* constants and non-normalized BaseLocale$Keys used for lookup.
-    private BaseLocale(String language, String script, String region, String variant,
-                       boolean normalize) {
-        if (normalize) {
-            this.language = LocaleUtils.toLowerString(language).intern();
-            this.script = LocaleUtils.toTitleString(script).intern();
-            this.region = LocaleUtils.toUpperString(region).intern();
-            this.variant = variant.intern();
-        } else {
-            this.language = language;
-            this.script = script;
-            this.region = region;
-            this.variant = variant;
-        }
+    private BaseLocale(String language, String script, String region, String variant) {
+        this.language = language;
+        this.script = script;
+        this.region = region;
+        this.variant = variant;
     }
 
     // Called for creating the Locale.* constants. No argument
     // validation is performed.
     private static BaseLocale createInstance(String language, String region) {
-        return new BaseLocale(language, "", region, "", false);
+        return new BaseLocale(language, "", region, "");
     }
 
     public static BaseLocale getInstance(String language, String script,
@@ -166,9 +156,15 @@ public final class BaseLocale {
             language = convertOldISOCodes(language);
         }
 
-        BaseLocale base = new BaseLocale(language, script, region, variant, false);
+        // Compute normalized BaseLocale from the cache with non-normalized
+        // BaseLocale as the key
+        BaseLocale base = new BaseLocale(language, script, region, variant);
         return CACHE.computeIfAbsent(base,
-            (b) -> new BaseLocale(b.getLanguage(), b.getScript(), b.getRegion(), b.getVariant(), true));
+            (b) -> new BaseLocale(
+                LocaleUtils.toLowerString(b.getLanguage()).intern(),
+                LocaleUtils.toTitleString(b.getScript()).intern(),
+                LocaleUtils.toUpperString(b.getRegion()).intern(),
+                b.getVariant().intern()));
     }
 
     public static String convertOldISOCodes(String language) {
@@ -201,7 +197,7 @@ public final class BaseLocale {
         if (this == obj) {
             return true;
         }
-        if (obj instanceof BaseLocale other && this.hash == other.hash) {
+        if (obj instanceof BaseLocale other) {
             return LocaleUtils.caseIgnoreMatch(other.getLanguage(), language)
                 && LocaleUtils.caseIgnoreMatch(other.getScript(), script)
                 && LocaleUtils.caseIgnoreMatch(other.getRegion(), region)
@@ -233,11 +229,22 @@ public final class BaseLocale {
     public int hashCode() {
         int h = hash;
         if (h == 0) {
-            // Generating a hash value from language, script, region and variant
-            h = language.hashCode();
-            h = 31 * h + script.hashCode();
-            h = 31 * h + region.hashCode();
-            h = 31 * h + variant.hashCode();
+            int len = language.length();
+            for (int i = 0; i < len; i++) {
+                h = 31*h + LocaleUtils.toLower(language.charAt(i));
+            }
+            len = script.length();
+            for (int i = 0; i < len; i++) {
+                h = 31*h + LocaleUtils.toLower(script.charAt(i));
+            }
+            len = region.length();
+            for (int i = 0; i < len; i++) {
+                h = 31*h + LocaleUtils.toLower(region.charAt(i));
+            }
+            len = variant.length();
+            for (int i = 0; i < len; i++) {
+                h = 31*h + variant.charAt(i);
+            }
             if (h != 0) {
                 hash = h;
             }
