@@ -190,14 +190,26 @@ class G1CollectedHeap : public CollectedHeap {
       Failed,
     };
 
-    StalledAllocReq(size_t size, uint numa_node) :
+    StalledAllocReq(size_t size, uint numa_node, G1CollectedHeap* g1h = G1CollectedHeap::heap()) :
       _size(size),
       _result(nullptr),
       _node_index(numa_node),
-      _state(AllocationState::Pending)
-    { }
+      _state(AllocationState::Pending),
+      _g1h(g1h)
+    {
+      if (_g1h != nullptr) {
+        _g1h->enqueue_req(this);
+      }
+    }
 
-    StalledAllocReq() : StalledAllocReq(0, 0) { }
+    StalledAllocReq() : StalledAllocReq(0, 0, nullptr) { }
+
+    ~StalledAllocReq() {
+      if (_g1h != nullptr) {
+        assert(_result == nullptr || succeeded(), "Sanity");
+        _g1h->dequeue_req(this);
+      }
+    }
 
     size_t size() { return _size; }
 
@@ -220,10 +232,21 @@ class G1CollectedHeap : public CollectedHeap {
     HeapWord* _result;
     const uint _node_index;
     AllocationState _state;
+    G1CollectedHeap* _g1h;
   };
 
   Mutex _alloc_request_lock;
   DoublyLinkedList<StalledAllocReq> _stalled_allocations;
+
+  void enqueue_req(StalledAllocReq *req) {
+    MutexLocker ml(&_alloc_request_lock, Mutex::_no_safepoint_check_flag);
+    _stalled_allocations.insert_last(req);
+  }
+
+  void dequeue_req(StalledAllocReq *req) {
+    MutexLocker ml(&_alloc_request_lock, Mutex::_no_safepoint_check_flag);
+    _stalled_allocations.remove(req);
+  }
 
 private:
   G1ServiceThread* _service_thread;
@@ -520,10 +543,9 @@ private:
   // potentially schedule a GC pause.
   HeapWord* attempt_allocation_humongous(size_t word_size);
 
-  bool attempt_allocation_after_gc(size_t word_size,
+  void attempt_allocation_after_gc(StalledAllocReq* req,
                                    uint gc_count_before,
                                    bool should_try_gc,
-                                   HeapWord** result,
                                    GCCause::Cause gc_cause);
 
   // Allocation attempt that should be called during safepoints (e.g.,

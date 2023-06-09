@@ -402,46 +402,19 @@ G1CollectedHeap::mem_allocate(size_t word_size,
   return attempt_allocation(word_size, word_size, &dummy);
 }
 
-bool G1CollectedHeap::attempt_allocation_after_gc(size_t word_size,
+void G1CollectedHeap::attempt_allocation_after_gc(StalledAllocReq* req,
                                                   uint gc_count_before,
                                                   bool should_try_gc,
-                                                  HeapWord** result,
                                                   GCCause::Cause gc_cause) {
 
-  StalledAllocReq request(word_size, _allocator->current_node_index());
-
-  {
-    MutexLocker ml(&_alloc_request_lock, Mutex::_no_safepoint_check_flag);
-    _stalled_allocations.insert_last(&request);
-  }
-
   if (should_try_gc) {
-    do_collection_pause(word_size, gc_count_before, gc_cause);
+    do_collection_pause(req->size(), gc_count_before, gc_cause);
   } else {
     log_trace(gc, alloc)("%s: Stall until clear", Thread::current()->name());
     // The GCLocker is either active or the GCLocker initiated
     // GC has not yet been performed. Stall until it is completed.
     GCLocker::stall_until_clear();
   }
-
-  {
-    MutexLocker ml(&_alloc_request_lock, Mutex::_no_safepoint_check_flag);
-    _stalled_allocations.remove(&request);
-  }
-
-  if (request.pending()) {
-    // GC Safepoint did not handle our allocation request. We should retry.
-    return false;
-  } else if (request.succeeded()) {
-    *result = request.result();
-  } else {
-    assert(request.failed(), "Sanity check!");
-    // VM successfully scheduled a collection which failed to allocate. No
-    // point in trying to allocate further. We'll just return null.
-    log_debug(gc, alloc)("%s: Failed to allocate %zu words", Thread::current()->name(), word_size);
-    *result = nullptr;
-  }
-  return true;
 }
 
 HeapWord* G1CollectedHeap::attempt_allocation_slow(size_t word_size) {
@@ -460,7 +433,7 @@ HeapWord* G1CollectedHeap::attempt_allocation_slow(size_t word_size) {
   // allocation or b) we successfully schedule a collection which
   // fails to perform the allocation. b) is the only case when we'll
   // return null.
-  HeapWord* result = nullptr;
+  StalledAllocReq request(word_size, _allocator->current_node_index(), this);
   while (true) {
     bool should_try_gc;
     uint gc_count_before;
@@ -468,10 +441,16 @@ HeapWord* G1CollectedHeap::attempt_allocation_slow(size_t word_size) {
     {
       MutexLocker x(Heap_lock);
 
+      // Allocation request could have been satisfied while thread was blocked on the lock.
+      if (!request.pending()){
+        return request.result();
+      }
+
       // Now that we have the lock, we first retry the allocation in case another
       // thread changed the region while we were waiting to acquire the lock.
-      result = _allocator->attempt_allocation_locked(word_size);
+      HeapWord* result = _allocator->attempt_allocation_locked(word_size);
       if (result != nullptr) {
+        assert(request.pending(), "Sanity!");
         return result;
       }
 
@@ -483,6 +462,7 @@ HeapWord* G1CollectedHeap::attempt_allocation_slow(size_t word_size) {
         // it returns true.
         result = _allocator->attempt_allocation_force(word_size);
         if (result != nullptr) {
+          assert(request.pending(), "Sanity!");
           return result;
         }
       }
@@ -495,9 +475,18 @@ HeapWord* G1CollectedHeap::attempt_allocation_slow(size_t word_size) {
       gc_count_before = total_collections();
     }
 
-    if (attempt_allocation_after_gc(word_size, gc_count_before, should_try_gc, &result, GCCause::_g1_inc_collection_pause)) {
-      return result;
+    attempt_allocation_after_gc(&request, gc_count_before, should_try_gc, GCCause::_g1_inc_collection_pause);
+
+    if (request.pending()) {
+      // GC Safepoint did not handle our allocation request. We should retry.
+      continue;
+    } else if (request.failed()) {
+      // VM successfully scheduled a collection which failed to allocate. No
+      // point in trying to allocate further. We'll just return null.
+      log_debug(gc, alloc)("%s: Failed to allocate %zu words", Thread::current()->name(), request.size());
     }
+
+    return request.result();
   }
 
   ShouldNotReachHere();
@@ -678,7 +667,7 @@ HeapWord* G1CollectedHeap::attempt_allocation_humongous(size_t word_size) {
   // allocation or b) we successfully schedule a collection which
   // fails to perform the allocation. b) is the only case when we'll
   // return null.
-  HeapWord* result = nullptr;
+  StalledAllocReq request(word_size, _allocator->current_node_index(), this);
   while (true) {
     bool should_try_gc;
     uint gc_count_before;
@@ -686,14 +675,21 @@ HeapWord* G1CollectedHeap::attempt_allocation_humongous(size_t word_size) {
     {
       MutexLocker x(Heap_lock);
 
+      // Allocation request could have been satisfied while thread was blocked on the lock.
+      if (!request.pending()){
+        return request.result();
+      }
+
       size_t size_in_regions = humongous_obj_size_in_regions(word_size);
       // Given that humongous objects are not allocated in young
       // regions, we'll first try to do the allocation without doing a
       // collection hoping that there's enough space in the heap.
-      result = humongous_obj_allocate(word_size);
+      HeapWord* result = humongous_obj_allocate(word_size);
       if (result != nullptr) {
         policy()->old_gen_alloc_tracker()->
           add_allocated_humongous_bytes_since_last_gc(size_in_regions * HeapRegion::GrainBytes);
+
+        assert(request.pending(), "Sanity!");
         return result;
       }
 
@@ -705,9 +701,18 @@ HeapWord* G1CollectedHeap::attempt_allocation_humongous(size_t word_size) {
       gc_count_before = total_collections();
     }
 
-    if (attempt_allocation_after_gc(word_size, gc_count_before, should_try_gc, &result, GCCause::_g1_humongous_allocation)) {
-      return result;
+    attempt_allocation_after_gc(&request, gc_count_before, should_try_gc, GCCause::_g1_humongous_allocation);
+
+    if (request.pending()) {
+      // GC Safepoint did not handle our allocation request. We should retry.
+      continue;
+    } else if (request.failed()) {
+      // VM successfully scheduled a collection which failed to allocate. No
+      // point in trying to allocate further. We'll just return null.
+      log_debug(gc, alloc)("%s: Failed to allocate %zu words", Thread::current()->name(), request.size());
     }
+
+    return request.result();
   }
 
   ShouldNotReachHere();

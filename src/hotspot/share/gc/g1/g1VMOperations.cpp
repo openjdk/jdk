@@ -132,9 +132,8 @@ VM_G1CollectForAllocation::VM_G1CollectForAllocation(size_t         word_size,
 void VM_G1CollectForAllocation::doit() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
-  // If any allocation has been requested, try to do that first.
-  bool has_allocation_requests = !g1h->_stalled_allocations.is_empty();
-  if (has_allocation_requests) {
+  // Only if operation was really triggered by an allocation.
+  if (_word_size) {
     bool alloc_succeeded = g1h->handle_allocation_requests(false /* expand_heap */);
 
     if (alloc_succeeded) {
@@ -154,9 +153,7 @@ void VM_G1CollectForAllocation::doit() {
     return;
   }
 
-  has_allocation_requests = !g1h->_stalled_allocations.is_empty();
-
-  if (has_allocation_requests) {
+  if (!g1h->_stalled_allocations.is_empty()) {
     g1h->satisfy_failed_allocations(&_gc_succeeded);
   } else if (g1h->should_upgrade_to_full_gc()) {
     // There has been a request to perform a GC to free some space. We have no
