@@ -29,7 +29,6 @@ import java.awt.Color;
 import java.awt.Point;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 /**
  *
@@ -162,9 +161,9 @@ public class FigureConnection implements Connection {
         if (!(o instanceof FigureConnection)) {
             return false;
         }
-        
-        return getInputSlot().getFigure().equals(((FigureConnection)o).getInputSlot().getFigure()) 
-                && getOutputSlot().getFigure().equals(((FigureConnection)o).getOutputSlot().getFigure()) 
+
+        return getInputSlot().getFigure().equals(((FigureConnection)o).getInputSlot().getFigure())
+                && getOutputSlot().getFigure().equals(((FigureConnection)o).getOutputSlot().getFigure())
                 && getInputSlot().getPosition() == ((FigureConnection)o).getInputSlot().getPosition()
                 && getOutputSlot().getPosition() == ((FigureConnection) o).getOutputSlot().getPosition();
     }
