@@ -31,6 +31,10 @@
  */
 
 import java.util.Objects;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 public class Unnamed {
     public static void main(String[] args) throws Throwable {
@@ -89,6 +93,9 @@ public class Unnamed {
                 } catch (Exception _) {}
             }
         }
+        try (final Lock _ = null) { }
+        try (@Foo Lock _ = null) { }
+
         String[] strs = new String[] { "str1", "str2" };
         for (var _ : strs) {
             for (var _ : strs) {
@@ -290,6 +297,9 @@ public class Unnamed {
         public int run(int a, int b);
     }
     record R(Object o) {}
+    @Target(ElementType.LOCAL_VARIABLE)
+    @Retention(RetentionPolicy.RUNTIME)
+    public @interface Foo { }
 
     sealed abstract class Base permits R1, R2, R3, R4 { }
     final  class R1  extends Base { }

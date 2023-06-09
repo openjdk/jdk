@@ -220,6 +220,30 @@ void JvmtiAgentList::unload_agents() {
   }
 }
 
+// Return true if a statically linked agent is on the list
+bool JvmtiAgentList::is_static_lib_loaded(const char* name) {
+  JvmtiAgentList::Iterator it = JvmtiAgentList::agents();
+  while (it.has_next()) {
+    JvmtiAgent* const agent = it.next();
+    if (agent->is_static_lib() && strcmp(agent->name(), name) == 0) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// Return true if a agent library on the list
+bool JvmtiAgentList::is_dynamic_lib_loaded(void* os_lib) {
+  JvmtiAgentList::Iterator it = JvmtiAgentList::agents();
+  while (it.has_next()) {
+    JvmtiAgent* const agent = it.next();
+    if (!agent->is_static_lib() && agent->os_lib() == os_lib) {
+      return true;
+    }
+  }
+  return false;
+}
+
 static bool match(JvmtiEnv* env, const JvmtiAgent* agent, const void* os_module_address) {
   assert(env != nullptr, "invariant");
   assert(agent != nullptr, "invariant");

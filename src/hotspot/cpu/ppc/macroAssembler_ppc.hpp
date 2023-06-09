@@ -606,6 +606,9 @@ class MacroAssembler: public Assembler {
   void pop_cont_fastpath();
   void inc_held_monitor_count(Register tmp);
   void dec_held_monitor_count(Register tmp);
+  void atomically_flip_locked_state(bool is_unlock, Register obj, Register tmp, Label& failed, int semantics);
+  void fast_lock(Register obj, Register hdr, Register t1, Label& slow);
+  void fast_unlock(Register obj, Register hdr, Label& slow);
 
   // allocation (for C1)
   void tlab_allocate(
@@ -732,7 +735,7 @@ class MacroAssembler: public Assembler {
 
   // Load/Store klass oop from klass field. Compress.
   void load_klass(Register dst, Register src);
-  void load_klass_check_null(Register dst, Register src, Label* is_null = NULL);
+  void load_klass_check_null(Register dst, Register src, Label* is_null = nullptr);
   void store_klass(Register dst_oop, Register klass, Register tmp = R0);
   void store_klass_gap(Register dst_oop, Register val = noreg); // Will store 0 if val not specified.
 
