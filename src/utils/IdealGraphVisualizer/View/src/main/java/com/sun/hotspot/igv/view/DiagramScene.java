@@ -26,10 +26,7 @@ package com.sun.hotspot.igv.view;
 import com.sun.hotspot.igv.data.Properties;
 import com.sun.hotspot.igv.data.*;
 import com.sun.hotspot.igv.graph.*;
-import com.sun.hotspot.igv.hierarchicallayout.HierarchicalCFGLayoutManager;
-import com.sun.hotspot.igv.hierarchicallayout.HierarchicalClusterLayoutManager;
-import com.sun.hotspot.igv.hierarchicallayout.HierarchicalLayoutManager;
-import com.sun.hotspot.igv.hierarchicallayout.LinearLayoutManager;
+import com.sun.hotspot.igv.hierarchicallayout.*;
 import com.sun.hotspot.igv.layout.LayoutGraph;
 import com.sun.hotspot.igv.selectioncoordinator.SelectionCoordinator;
 import com.sun.hotspot.igv.util.ColorIcon;
@@ -87,6 +84,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
     private final DiagramViewModel model;
     private ModelState modelState;
     private boolean rebuilding;
+    private final NewLayoutManager newLayoutManager;
 
     /**
      * The alpha level of partially visible figures.
@@ -487,6 +485,9 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
                 }
             }
         });
+
+        newLayoutManager = new NewLayoutManager();
+        update();
     }
 
     @Override
@@ -686,6 +687,10 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
             w2 = getWidget(c.getTo().getVertex());
         }
         return w1.isVisible() && w2.isVisible();
+    }
+
+    private void doNewLayout(HashSet<Figure> visibleFigures, HashSet<Connection> visibleConnections) {
+        newLayoutManager.updateLayout(visibleFigures, visibleConnections);
     }
 
     private void doSeaLayout(HashSet<Figure> figures, HashSet<Connection> edges) {
@@ -1187,7 +1192,9 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
 
         HashSet<Figure> visibleFigures = getVisibleFigures();
         HashSet<Connection> visibleConnections = getVisibleConnections();
-        if (getModel().getShowSea()) {
+        if (getModel().getNewLayout()) {
+            doNewLayout(visibleFigures, visibleConnections);
+        } else if (getModel().getShowSea()) {
             doSeaLayout(visibleFigures, visibleConnections);
         } else if (getModel().getShowBlocks()) {
             doClusteredLayout(visibleConnections);

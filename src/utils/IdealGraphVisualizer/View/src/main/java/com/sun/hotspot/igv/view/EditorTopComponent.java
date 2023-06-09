@@ -29,6 +29,7 @@ import com.sun.hotspot.igv.data.InputGraph;
 import com.sun.hotspot.igv.data.InputNode;
 import com.sun.hotspot.igv.data.services.InputGraphProvider;
 import com.sun.hotspot.igv.graph.Figure;
+import com.sun.hotspot.igv.settings.Settings;
 import com.sun.hotspot.igv.util.LookupHistory;
 import com.sun.hotspot.igv.util.RangeSlider;
 import com.sun.hotspot.igv.util.StringUtils;
@@ -174,6 +175,11 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
 
         toolBar.addSeparator();
         ButtonGroup layoutButtons = new ButtonGroup();
+
+        JToggleButton newLayoutButton = new JToggleButton(new EnableNewLayoutAction(this));
+        newLayoutButton.setSelected(diagramViewModel.getNewLayout());
+        layoutButtons.add(newLayoutButton);
+        toolBar.add(newLayoutButton);
 
         JToggleButton seaLayoutButton = new JToggleButton(new EnableSeaLayoutAction(this));
         seaLayoutButton.setSelected(diagramViewModel.getShowSea());

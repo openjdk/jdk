@@ -62,6 +62,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
     private final ChangedEvent<DiagramViewModel> selectedNodesChangedEvent = new ChangedEvent<>(this);
     private final ChangedEvent<DiagramViewModel> hiddenNodesChangedEvent = new ChangedEvent<>(this);
     private ChangedListener<InputGraph> titleChangedListener = g -> {};
+    private boolean newLayout;
     private boolean showSea;
     private boolean showBlocks;
     private boolean showCFG;
@@ -88,6 +89,15 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         if (fire && enable) {
             diagramChangedEvent.fire();
         }
+    }
+
+    public boolean getNewLayout() {
+        return newLayout;
+    }
+
+    public void setNewLayout(boolean b) {
+        newLayout = b;
+        diagramChangedEvent.fire();
     }
 
     public boolean getShowSea() {
@@ -216,6 +226,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         filtersOrder = provider.getAllFiltersOrdered();
 
         globalSelection = GlobalSelectionAction.get(GlobalSelectionAction.class).isSelected();
+        newLayout = Settings.get().getInt(Settings.DEFAULT_VIEW, Settings.DEFAULT_VIEW_DEFAULT) == Settings.DefaultView.NEW_LAYOUT;
         showSea = Settings.get().getInt(Settings.DEFAULT_VIEW, Settings.DEFAULT_VIEW_DEFAULT) == Settings.DefaultView.SEA_OF_NODES;
         showBlocks = Settings.get().getInt(Settings.DEFAULT_VIEW, Settings.DEFAULT_VIEW_DEFAULT) == Settings.DefaultView.CLUSTERED_SEA_OF_NODES;
         showCFG = Settings.get().getInt(Settings.DEFAULT_VIEW, Settings.DEFAULT_VIEW_DEFAULT) == Settings.DefaultView.CONTROL_FLOW_GRAPH;
