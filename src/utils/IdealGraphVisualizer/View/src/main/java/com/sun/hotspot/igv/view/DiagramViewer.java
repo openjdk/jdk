@@ -64,6 +64,8 @@ public interface DiagramViewer {
 
     void zoomIn(Point zoomCenter, double speed);
 
+    void layoutAction(int nr);
+
     void setZoomPercentage(int percentage);
 
     int getZoomPercentage();

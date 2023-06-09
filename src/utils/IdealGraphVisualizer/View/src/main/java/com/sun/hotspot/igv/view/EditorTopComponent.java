@@ -268,6 +268,10 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
         }
     }
 
+    public void layoutAction(int nr) {
+        scene.layoutAction(nr);
+    }
+
     public void zoomOut() {
         scene.zoomOut(null, DiagramScene.ZOOM_INCREMENT);
     }

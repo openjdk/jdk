@@ -128,6 +128,22 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
     }
 
     @Override
+    public void layoutAction(int nr) {
+        if (newLayoutManager == null)
+            return;
+        if (nr == 1) {
+            newLayoutManager.action1();
+            SwingUtilities.invokeLater(this::relayout); // or this::update
+        } else if (nr == 2) {
+            newLayoutManager.action2();
+            SwingUtilities.invokeLater(this::relayout); // or this::update
+        } else if (nr == 3) {
+            newLayoutManager.action3();
+            SwingUtilities.invokeLater(this::relayout); // or this::update
+        }
+    }
+
+    @Override
     public void zoomIn(Point zoomCenter, double factor) {
         centredZoom(getZoomFactor() * factor, zoomCenter);
     }
@@ -689,8 +705,8 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         return w1.isVisible() && w2.isVisible();
     }
 
-    private void doNewLayout(HashSet<Figure> visibleFigures, HashSet<Connection> visibleConnections) {
-        newLayoutManager.updateLayout(visibleFigures, visibleConnections);
+    private void doNewLayout(HashSet<Figure> visibleFigures, HashSet<Connection> visibleConnections, String name) {
+        newLayoutManager.updateLayout(visibleFigures, visibleConnections, name);
     }
 
     private void doSeaLayout(HashSet<Figure> figures, HashSet<Connection> edges) {
@@ -1192,8 +1208,12 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
 
         HashSet<Figure> visibleFigures = getVisibleFigures();
         HashSet<Connection> visibleConnections = getVisibleConnections();
+
+        String key = getModel().getGraph().getGroup().getName() + "::" + getModel().getGraph().getName();
+        key = key.replaceAll(",", ";");
+
         if (getModel().getNewLayout()) {
-            doNewLayout(visibleFigures, visibleConnections);
+            doNewLayout(visibleFigures, visibleConnections, key);
         } else if (getModel().getShowSea()) {
             doSeaLayout(visibleFigures, visibleConnections);
         } else if (getModel().getShowBlocks()) {

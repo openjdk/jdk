@@ -79,49 +79,6 @@ public class HierarchicalLayoutManager implements LayoutManager {
     private Set<? extends Link> importantLinks;
     private final Set<Link> linksToFollow;
 
-    private class LayoutNode {
-
-        public int x;
-        public int y;
-        public int width;
-        public int height;
-        public int layer = -1;
-        public int xOffset;
-        public int yOffset;
-        public int bottomYOffset;
-        public Vertex vertex; // Only used for non-dummy nodes, otherwise null
-
-        public List<LayoutEdge> preds = new ArrayList<>();
-        public List<LayoutEdge> succs = new ArrayList<>();
-        public HashMap<Integer, Integer> outOffsets = new HashMap<>();
-        public HashMap<Integer, Integer> inOffsets = new HashMap<>();
-        public int pos = -1; // Position within layer
-
-        public int crossingNumber;
-
-        @Override
-        public String toString() {
-            return "Node " + vertex;
-        }
-    }
-
-    private class LayoutEdge {
-
-        public LayoutNode from;
-        public LayoutNode to;
-        // Horizontal distance relative to start of 'from'.
-        public int relativeFrom;
-        // Horizontal distance relative to start of 'to'.
-        public int relativeTo;
-        public Link link;
-        public boolean vip;
-
-        @Override
-        public String toString() {
-            return "Edge " + from + ", " + to;
-        }
-    }
-
     private abstract static class AlgorithmPart {
 
         public void start() {
@@ -188,6 +145,10 @@ public class HierarchicalLayoutManager implements LayoutManager {
 
     public void setLayoutSelfEdges(boolean layoutSelfEdges) {
         this.layoutSelfEdges = layoutSelfEdges;
+    }
+
+    public List<LayoutNode> getNodes() {
+        return nodes;
     }
 
     // Remove self-edges, possibly saving them into the selfEdges set.
@@ -305,7 +266,7 @@ public class HierarchicalLayoutManager implements LayoutManager {
             for (LayoutNode n : nodes) {
 
                 for (LayoutEdge e : n.preds) {
-                    if (e.link != null) {
+                    if (e.link != null && !linkPositions.containsKey(e.link)) {
                         ArrayList<Point> points = new ArrayList<>();
 
                         Point p = new Point(e.to.x + e.relativeTo, e.to.y + e.to.yOffset + e.link.getTo().getRelativePosition().y);
@@ -386,14 +347,12 @@ public class HierarchicalLayoutManager implements LayoutManager {
                             linkPositions.put(e.link, points);
                         }
                         pointCount += points.size();
-
-                        // No longer needed!
-                        e.link = null;
                     }
                 }
 
+                // THIS PART IS NOT NECESSARY SINCE ALL EDGES CAN BE DRAWN FROM BOTTOM UP
                 for (LayoutEdge e : n.succs) {
-                    if (e.link != null) {
+                    if (e.link != null && !linkPositions.containsKey(e.link)) {
                         ArrayList<Point> points = new ArrayList<>();
                         Point p = new Point(e.from.x + e.relativeFrom, e.from.y + e.from.height - e.from.bottomYOffset + e.link.getFrom().getRelativePosition().y);
                         points.add(p);
@@ -470,7 +429,6 @@ public class HierarchicalLayoutManager implements LayoutManager {
                         }
 
                         pointCount += points.size();
-                        e.link = null;
                     }
                 }
             }
@@ -831,6 +789,9 @@ public class HierarchicalLayoutManager implements LayoutManager {
                         if (!visited.contains(e.to)) {
                             visited.add(e.to);
                             layers[i + 1].add(e.to);
+                            if (!nodes.contains(e.to)) {
+                                nodes.add(e.to);
+                            }
                         }
                     }
                 }
@@ -1229,10 +1190,10 @@ public class HierarchicalLayoutManager implements LayoutManager {
         }
 
         private void processSingleEdge(LayoutEdge e) {
-            LayoutNode n = e.from;
-            if (e.to.layer > n.layer + 1) {
+            LayoutNode n = e.to;
+            if (e.to.layer - 1 > e.from.layer) {
                 LayoutEdge last = e;
-                for (int i = n.layer + 1; i < last.to.layer; i++) {
+                for (int i = n.layer - 1; i > last.from.layer; i--) {
                     last = addBetween(last, i);
                 }
             }
@@ -1240,22 +1201,23 @@ public class HierarchicalLayoutManager implements LayoutManager {
 
         private LayoutEdge addBetween(LayoutEdge e, int layer) {
             LayoutNode n = new LayoutNode();
-            n.width = dummyWidth;
-            n.height = dummyHeight;
+            n.width = DUMMY_WIDTH;
+            n.height = DUMMY_HEIGHT;
             n.layer = layer;
-            n.preds.add(e);
+            n.succs.add(e);
             nodes.add(n);
             LayoutEdge result = new LayoutEdge();
             result.vip = e.vip;
-            n.succs.add(result);
-            result.from = n;
-            result.relativeFrom = n.width / 2;
-            result.to = e.to;
-            result.relativeTo = e.relativeTo;
-            e.relativeTo = n.width / 2;
-            e.to.preds.remove(e);
-            e.to.preds.add(result);
-            e.to = n;
+            n.preds.add(result);
+            result.to = n;
+            result.relativeTo = n.width / 2;
+            result.from = e.from;
+            result.relativeFrom = e.relativeFrom;
+            result.link = e.link;
+            e.relativeFrom = n.width / 2;
+            e.from.succs.remove(e);
+            e.from.succs.add(result);
+            e.from = n;
             return result;
         }
 
@@ -1713,7 +1675,24 @@ public class HierarchicalLayoutManager implements LayoutManager {
             }
 
             // Set up edges
-            List<Link> links = new ArrayList<>(graph.getLinks());
+            List<Link> links = new ArrayList<>();
+            for (Link link1 : graph.getLinks()) {
+                if (link1.getTo().getVertex().equals(link1.getFrom().getVertex())) {
+                    // self-edge
+                    continue;
+                }
+                boolean duplicate = false;
+                for (Link link2 : links) {
+                    if (link1.equals(link2)) {
+                        duplicate = true;
+                        break;
+                    }
+                }
+                if (!duplicate) {
+                    links.add(link1);
+                }
+            }
+
             links.sort(linkComparator);
             for (Link l : links) {
                 LayoutEdge edge = new LayoutEdge();

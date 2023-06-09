@@ -29,6 +29,7 @@ import java.awt.Color;
 import java.awt.Point;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  *
@@ -54,6 +55,13 @@ public class FigureConnection implements Connection {
         Figure destFigure = this.inputSlot.getFigure();
         sourceFigure.addSuccessor(destFigure);
         destFigure.addPredecessor(sourceFigure);
+
+        if (Objects.equals(sourceFigure.getProperties().get("category"), "control")) {
+            setStyle(ConnectionStyle.BOLD);
+        }
+        if (Objects.equals(destFigure.getProperties().get("category"), "control")) {
+            setStyle(ConnectionStyle.BOLD);
+        }
 
         this.color = Color.BLACK;
         this.style = ConnectionStyle.NORMAL;
@@ -154,6 +162,18 @@ public class FigureConnection implements Connection {
     @Override
     public boolean hasSlots() {
         return true;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof FigureConnection)) {
+            return false;
+        }
+        
+        return getInputSlot().getFigure().equals(((FigureConnection)o).getInputSlot().getFigure()) 
+                && getOutputSlot().getFigure().equals(((FigureConnection)o).getOutputSlot().getFigure()) 
+                && getInputSlot().getPosition() == ((FigureConnection)o).getInputSlot().getPosition()
+                && getOutputSlot().getPosition() == ((FigureConnection) o).getOutputSlot().getPosition();
     }
 
 }
