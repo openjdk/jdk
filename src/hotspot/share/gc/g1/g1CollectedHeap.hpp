@@ -709,6 +709,8 @@ public:
   // and mark them as 'old' region(s). Preferred address is treated as a hint for
   // the location of the archive space in the heap. The returned address may or may
   // not be same as the preferred address.
+  // This API is only used for allocating heap space for the archived heap objects
+  // in the CDS archive.
   HeapWord* alloc_archive_region(size_t word_size, HeapWord* preferred_addr);
 
   // Populate the G1BlockOffsetTablePart for archived regions with the given
