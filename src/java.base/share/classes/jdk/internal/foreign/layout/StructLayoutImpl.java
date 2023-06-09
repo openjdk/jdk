@@ -32,24 +32,24 @@ import java.util.Optional;
 
 public final class StructLayoutImpl extends AbstractGroupLayout<StructLayoutImpl> implements StructLayout {
 
-    private StructLayoutImpl(List<MemoryLayout> elements, long bitSize, long bitAlignment, long minBitAlignment, Optional<String> name) {
-        super(Kind.STRUCT, elements, bitSize, bitAlignment, minBitAlignment, name);
+    private StructLayoutImpl(List<MemoryLayout> elements, long byteSize, long byteAlignment, long minByteAlignment, Optional<String> name) {
+        super(Kind.STRUCT, elements, byteSize, byteAlignment, minByteAlignment, name);
     }
 
     @Override
-    StructLayoutImpl dup(long bitAlignment, Optional<String> name) {
-        return new StructLayoutImpl(memberLayouts(), bitSize(), bitAlignment, minBitAlignment, name);
+    StructLayoutImpl dup(long byteAlignment, Optional<String> name) {
+        return new StructLayoutImpl(memberLayouts(), byteSize(), byteAlignment, minByteAlignment, name);
     }
 
     public static StructLayout of(List<MemoryLayout> elements) {
         long size = 0;
-        long align = 8;
+        long align = 1;
         for (MemoryLayout elem : elements) {
-            if (size % elem.bitAlignment() != 0) {
+            if (size % elem.byteAlignment() != 0) {
                 throw new IllegalArgumentException("Invalid alignment constraint for member layout: " + elem);
             }
-            size = Math.addExact(size, elem.bitSize());
-            align = Math.max(align, elem.bitAlignment());
+            size = Math.addExact(size, elem.byteSize());
+            align = Math.max(align, elem.byteAlignment());
         }
         return new StructLayoutImpl(elements, size, align, align, Optional.empty());
     }

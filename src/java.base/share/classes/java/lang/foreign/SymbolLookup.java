@@ -28,6 +28,7 @@ package java.lang.foreign;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.foreign.MemorySessionImpl;
+import jdk.internal.foreign.Utils;
 import jdk.internal.javac.PreviewFeature;
 import jdk.internal.loader.BuiltinClassLoader;
 import jdk.internal.loader.NativeLibrary;
@@ -130,6 +131,28 @@ public interface SymbolLookup {
     Optional<MemorySegment> find(String name);
 
     /**
+     * {@return a composed symbol lookup that returns result of finding the symbol with this lookup if found,
+     * otherwise returns the result of finding the symbol with the other lookup}
+     *
+     * @apiNote This method could be used to chain multiple symbol lookups together, e.g. so that symbols could
+     * be retrieved, in order, from multiple libraries:
+     * {@snippet lang = java:
+     * var lookup = SymbolLookup.libraryLookup("foo", arena)
+     *         .or(SymbolLookup.libraryLookup("bar", arena))
+     *         .or(SymbolLookup.loaderLookup());
+     *}
+     * The above code creates a symbol lookup that first searches for symbols in the "foo" library. If no symbol is found
+     * in "foo" then "bar" is searched. Finally, if a symbol is not found in neither "foo" nor "bar", the {@linkplain
+     * SymbolLookup#loaderLookup() loader lookup} is used.
+     *
+     * @param other the symbol lookup that should be used to look for symbols not found in this lookup.
+     */
+    default SymbolLookup or(SymbolLookup other) {
+        Objects.requireNonNull(other);
+        return name -> find(name).or(() -> other.find(name));
+    }
+
+    /**
      * Returns a symbol lookup for symbols in the libraries associated with the caller's class loader.
      * <p>
      * A library is associated with a class loader {@code CL} when the library is loaded via an invocation of
@@ -170,6 +193,7 @@ public interface SymbolLookup {
         }
         return name -> {
             Objects.requireNonNull(name);
+            if (Utils.containsNullChars(name)) return Optional.empty();
             JavaLangAccess javaLangAccess = SharedSecrets.getJavaLangAccess();
             // note: ClassLoader::findNative supports a null loader
             long addr = javaLangAccess.findNative(loader, name);
@@ -207,6 +231,9 @@ public interface SymbolLookup {
     @CallerSensitive
     static SymbolLookup libraryLookup(String name, Arena arena) {
         Reflection.ensureNativeAccess(Reflection.getCallerClass(), SymbolLookup.class, "libraryLookup");
+        if (Utils.containsNullChars(name)) {
+            throw new IllegalArgumentException("Cannot open library: " + name);
+        }
         return libraryLookup(name, RawNativeLibraries::load, arena);
     }
 
@@ -257,6 +284,7 @@ public interface SymbolLookup {
         });
         return name -> {
             Objects.requireNonNull(name);
+            if (Utils.containsNullChars(name)) return Optional.empty();
             long addr = library.find(name);
             return addr == 0L ?
                     Optional.empty() :

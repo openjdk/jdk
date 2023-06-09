@@ -30,7 +30,7 @@
 #include "oops/oopHandle.inline.hpp"
 #include "runtime/atomic.hpp"
 
-inline int ConstantPoolCacheEntry::indices_ord() const { return Atomic::load_acquire(&_indices); }
+inline intx ConstantPoolCacheEntry::indices_ord() const { return Atomic::load_acquire(&_indices); }
 
 inline Bytecodes::Code ConstantPoolCacheEntry::bytecode_1() const {
   return Bytecodes::cast((indices_ord() >> bytecode_1_shift) & bytecode_1_mask);

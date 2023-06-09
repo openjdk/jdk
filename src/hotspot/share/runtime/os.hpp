@@ -229,6 +229,8 @@ class os: AllStatic {
   // Get summary strings for system information in buffer provided
   static void  get_summary_cpu_info(char* buf, size_t buflen);
   static void  get_summary_os_info(char* buf, size_t buflen);
+  // Returns number of bytes written on success, OS_ERR on failure.
+  static ssize_t pd_write(int fd, const void *buf, size_t nBytes);
 
   static void initialize_initial_active_processor_count();
 
@@ -310,7 +312,13 @@ class os: AllStatic {
     return (_processor_count != 1);
   }
 
+  // On some platforms there is a distinction between "available" memory and "free" memory.
+  // For example, on Linux, "available" memory (`MemAvailable` in `/proc/meminfo`) is greater
+  // than "free" memory (`MemFree` in `/proc/meminfo`) because Linux can free memory
+  // aggressively (e.g. clear caches) so that it becomes available.
   static julong available_memory();
+  static julong free_memory();
+
   static julong physical_memory();
   static bool has_allocatable_memory_limit(size_t* limit);
   static bool is_server_class_machine();
@@ -644,7 +652,8 @@ class os: AllStatic {
   //File i/o operations
 
   static ssize_t read_at(int fd, void *buf, unsigned int nBytes, jlong offset);
-  static ssize_t write(int fd, const void *buf, unsigned int nBytes);
+  // Writes the bytes completely. Returns true on success, false otherwise.
+  static bool write(int fd, const void *buf, size_t nBytes);
 
   // Reading directories.
   static DIR*           opendir(const char* dirname);
@@ -765,6 +774,7 @@ class os: AllStatic {
   static void print_tos_pc(outputStream* st, const void* context);
   static void print_tos(outputStream* st, address sp);
   static void print_instructions(outputStream* st, address pc, int unitsize);
+  static void print_register_info(outputStream* st, const void* context, int& continuation);
   static void print_register_info(outputStream* st, const void* context);
   static bool signal_sent_by_kill(const void* siginfo);
   static void print_siginfo(outputStream* st, const void* siginfo);
@@ -780,6 +790,9 @@ class os: AllStatic {
   static void print_location(outputStream* st, intptr_t x, bool verbose = false);
   static size_t lasterror(char *buf, size_t len);
   static int get_last_error();
+
+  // Send JFR memory info event
+  static void jfr_report_memory_info() NOT_JFR_RETURN();
 
   // Replacement for strerror().
   // Will return the english description of the error (e.g. "File not found", as

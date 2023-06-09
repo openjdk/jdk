@@ -125,7 +125,7 @@ public abstract sealed class AbstractMemorySegmentImpl
     public final MemorySegment reinterpret(long newSize, Arena arena, Consumer<MemorySegment> cleanup) {
         Objects.requireNonNull(arena);
         return reinterpretInternal(Reflection.getCallerClass(), newSize,
-                MemorySessionImpl.toMemorySession(arena), null);
+                MemorySessionImpl.toMemorySession(arena), cleanup);
     }
 
     @Override
@@ -165,7 +165,7 @@ public abstract sealed class AbstractMemorySegmentImpl
         if (elementLayout.byteSize() == 0) {
             throw new IllegalArgumentException("Element layout size cannot be zero");
         }
-        Utils.checkElementAlignment(elementLayout, "Element layout alignment greater than its size");
+        Utils.checkElementAlignment(elementLayout, "Element layout size is not multiple of alignment");
         if (!isAlignedForElement(0, elementLayout)) {
             throw new IllegalArgumentException("Incompatible alignment constraints");
         }

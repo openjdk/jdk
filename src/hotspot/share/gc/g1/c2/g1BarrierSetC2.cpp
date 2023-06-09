@@ -88,7 +88,7 @@ const TypeFunc *G1BarrierSetC2::write_ref_field_post_entry_Type() {
  * Returns true if the pre-barrier can be removed
  */
 bool G1BarrierSetC2::g1_can_remove_pre_barrier(GraphKit* kit,
-                                               PhaseTransform* phase,
+                                               PhaseValues* phase,
                                                Node* adr,
                                                BasicType bt,
                                                uint adr_idx) const {
@@ -303,7 +303,7 @@ void G1BarrierSetC2::pre_barrier(GraphKit* kit,
  * Returns true if the post barrier can be removed
  */
 bool G1BarrierSetC2::g1_can_remove_post_barrier(GraphKit* kit,
-                                                PhaseTransform* phase, Node* store,
+                                                PhaseValues* phase, Node* store,
                                                 Node* adr) const {
   intptr_t      offset = 0;
   Node*         base   = AddPNode::Ideal_base_and_offset(adr, phase, offset);

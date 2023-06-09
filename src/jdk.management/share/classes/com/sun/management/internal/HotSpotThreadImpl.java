@@ -58,6 +58,11 @@ public class HotSpotThreadImpl extends ThreadImpl implements ThreadMXBean {
     }
 
     @Override
+    public long getTotalThreadAllocatedBytes() {
+        return super.getTotalThreadAllocatedBytes();
+    }
+
+    @Override
     public long getCurrentThreadAllocatedBytes() {
         return super.getCurrentThreadAllocatedBytes();
     }

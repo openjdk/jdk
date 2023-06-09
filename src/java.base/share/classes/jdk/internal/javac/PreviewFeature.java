@@ -64,14 +64,20 @@ public @interface PreviewFeature {
      * Values should be annotated with the feature's {@code JEP}.
      */
     public enum Feature {
-        @JEP(number=433, title="Pattern Matching for switch", status="Fourth Preview")
-        SWITCH_PATTERN_MATCHING(),
-        @JEP(number=432, title="Record Patterns", status="Second Preview")
-        RECORD_PATTERNS,
         // not used
         VIRTUAL_THREADS,
         @JEP(number=442, title="Foreign Function & Memory API", status="Third Preview")
         FOREIGN,
+        @JEP(number=430, title="String Templates")
+        STRING_TEMPLATES,
+        @JEP(number=443, title="Unnamed Patterns and Variables")
+        UNNAMED,
+        @JEP(number=445, title="Unnamed Classes and Instance Main Methods")
+        UNNAMED_CLASSES,
+        @JEP(number=446, title="Scoped Values", status="Preview")
+        SCOPED_VALUES,
+        @JEP(number=453, title="Structured Concurrency", status="Preview")
+        STRUCTURED_CONCURRENCY,
         /**
          * A key for testing.
          */

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2018, Red Hat Inc. All rights reserved.
- * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,11 +81,19 @@ class NativeInstruction {
   static bool is_addiw_to_zr_at(address instr) { assert_cond(instr != nullptr); return is_addiw_at(instr) && extract_rd(instr) == zr; }
   static bool is_lui_at(address instr)        { assert_cond(instr != nullptr); return extract_opcode(instr) == 0b0110111; }
   static bool is_lui_to_zr_at(address instr)  { assert_cond(instr != nullptr); return is_lui_at(instr) && extract_rd(instr) == zr; }
+
+  static bool is_srli_at(address instr) {
+    assert_cond(instr != nullptr);
+    return extract_opcode(instr) == 0b0010011 &&
+           extract_funct3(instr) == 0b101 &&
+           Assembler::extract(((unsigned*)instr)[0], 31, 26) == 0b000000;
+  }
+
   static bool is_slli_shift_at(address instr, uint32_t shift) {
     assert_cond(instr != nullptr);
     return (extract_opcode(instr) == 0b0010011 && // opcode field
             extract_funct3(instr) == 0b001 &&     // funct3 field, select the type of operation
-            Assembler::extract(((unsigned*)instr)[0], 25, 20) == shift);    // shamt field
+            Assembler::extract(Assembler::ld_instr(instr), 25, 20) == shift);    // shamt field
   }
 
   static Register extract_rs1(address instr);
@@ -153,6 +161,17 @@ class NativeInstruction {
            extract_rs1(addi4) == extract_rd(addi4);
   }
 
+  // the instruction sequence of li16u is as below:
+  //     lui
+  //     srli
+  static bool check_li16u_data_dependency(address instr) {
+    address lui = instr;
+    address srli = lui + instruction_size;
+
+    return extract_rs1(srli) == extract_rd(lui) &&
+           extract_rs1(srli) == extract_rd(srli);
+  }
+
   // the instruction sequence of li32 is as below:
   //     lui
   //     addiw
@@ -186,6 +205,7 @@ class NativeInstruction {
   }
 
   static bool is_movptr_at(address instr);
+  static bool is_li16u_at(address instr);
   static bool is_li32_at(address instr);
   static bool is_li64_at(address instr);
   static bool is_pc_relative_at(address branch);
@@ -208,18 +228,18 @@ class NativeInstruction {
  protected:
   address addr_at(int offset) const    { return address(this) + offset; }
 
-  jint int_at(int offset) const        { return *(jint*) addr_at(offset); }
-  juint uint_at(int offset) const      { return *(juint*) addr_at(offset); }
+  jint int_at(int offset) const        { return (jint)Bytes::get_native_u4(addr_at(offset)); }
+  juint uint_at(int offset) const      { return Bytes::get_native_u4(addr_at(offset)); }
 
-  address ptr_at(int offset) const     { return *(address*) addr_at(offset); }
+  address ptr_at(int offset) const     { return (address)Bytes::get_native_u8(addr_at(offset)); }
 
-  oop  oop_at (int offset) const       { return *(oop*) addr_at(offset); }
+  oop  oop_at (int offset) const       { return cast_to_oop(Bytes::get_native_u8(addr_at(offset))); }
 
 
-  void set_int_at(int offset, jint  i)        { *(jint*)addr_at(offset) = i; }
-  void set_uint_at(int offset, jint  i)       { *(juint*)addr_at(offset) = i; }
-  void set_ptr_at (int offset, address  ptr)  { *(address*) addr_at(offset) = ptr; }
-  void set_oop_at (int offset, oop  o)        { *(oop*) addr_at(offset) = o; }
+  void set_int_at(int offset, jint i)        { Bytes::put_native_u4(addr_at(offset), i); }
+  void set_uint_at(int offset, jint i)       { Bytes::put_native_u4(addr_at(offset), i); }
+  void set_ptr_at (int offset, address ptr)  { Bytes::put_native_u8(addr_at(offset), (u8)ptr); }
+  void set_oop_at (int offset, oop o)        { Bytes::put_native_u8(addr_at(offset), cast_from_oop<u8>(o)); }
 
  public:
 
@@ -490,7 +510,7 @@ class NativeIllegalInstruction: public NativeInstruction {
 };
 
 inline bool NativeInstruction::is_nop() const {
-  uint32_t insn = *(uint32_t*)addr_at(0);
+  uint32_t insn = Assembler::ld_instr(addr_at(0));
   return insn == 0x13;
 }
 
@@ -532,7 +552,7 @@ inline bool is_NativeCallTrampolineStub_at(address addr) {
       (NativeInstruction::extract_rd(addr + instr_size)       == x5) &&
       (NativeInstruction::extract_rs1(addr + instr_size)      == x5) &&
       (NativeInstruction::extract_rs1(addr + 2 * instr_size)  == x5) &&
-      (Assembler::extract(((unsigned*)addr)[1], 31, 20) == NativeCallTrampolineStub::data_offset)) {
+      (Assembler::extract(Assembler::ld_instr(addr + 4), 31, 20) == NativeCallTrampolineStub::data_offset)) {
     return true;
   }
   return false;
@@ -604,7 +624,7 @@ class NativeDeoptInstruction: public NativeInstruction {
 
   static bool is_deopt_at(address instr) {
     assert(instr != nullptr, "");
-    uint32_t value = *(uint32_t *) instr;
+    uint32_t value = Assembler::ld_instr(instr);
     // 0xc0201073 encodes CSRRW x0, instret, x0
     return value == 0xc0201073;
   }

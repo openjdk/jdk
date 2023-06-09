@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,9 @@
 import java.io.FilePermission;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleFinder;
-import java.lang.reflect.AccessibleObject;
+import java.lang.module.ModuleReference;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.InaccessibleObjectException;
@@ -43,22 +44,25 @@ import java.security.Policy;
 import java.security.ProtectionDomain;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
+import java.util.Deque;
 import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.PropertyPermission;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import jdk.internal.module.Modules;
 
 /**
  * @test
- * @bug 8065552
+ * @bug 8065552 8309532
  * @summary test that all public fields returned by getDeclaredFields() can
  *          be set accessible if the right permission is granted; this test
  *          loads all classes and get their declared fields
@@ -283,18 +287,64 @@ public class FieldSetAccessibleTest {
         }
 
         /*
-         * Filter deployment modules
+         * Filter JVMCI module and its transitive dependences
          */
         static Set<String> systemModules() {
-            Set<String> mods = Set.of("javafx.deploy", "jdk.deploy", "jdk.plugin", "jdk.javaws",
-                // All JVMCI packages other than jdk.vm.ci.services are dynamically
-                // exported to jdk.internal.vm.compiler
-                "jdk.internal.vm.compiler"
+            // Build module graph and inverse dependences
+            Set<String> modules = new HashSet<>();
+            Map<String, Set<String>> moduleToDeps = new HashMap<>();
+            Map<String, Set<String>> inverseDeps = new HashMap<>();
+            for (ModuleReference mref : ModuleFinder.ofSystem().findAll()) {
+                var md = mref.descriptor();
+                modules.add(md.name());
+                Set<String> deps = md.requires().stream().map(ModuleDescriptor.Requires::name)
+                                                .collect(Collectors.toSet());
+                moduleToDeps.put(md.name(), deps);
+                inverseDeps.put(md.name(), new HashSet<>());
+            }
+
+            // reverse edges
+            moduleToDeps.keySet().forEach(u -> {
+                moduleToDeps.get(u)
+                            .forEach(v -> inverseDeps.get(v)
+                                                     .add(u));
+            });
+
+            Set<String> mods = Set.of(
+                    // All JVMCI packages other than jdk.vm.ci.services are dynamically
+                    // exported to jdk.internal.vm.compiler
+                    "jdk.internal.vm.compiler", "jdk.internal.vm.compiler.management"
             );
-            return ModuleFinder.ofSystem().findAll().stream()
-                               .map(mref -> mref.descriptor().name())
-                               .filter(mn -> !mods.contains(mn))
-                               .collect(Collectors.toSet());
+            // Filters all modules that directly or indirectly require jdk.internal.vm.compiler
+            // and jdk.internal.vm.compiler.management, as these are upgradeable and
+            // also provide APIs to add qualified exports dynamically
+            Set<String> filters = mods.stream().flatMap(mn -> findDeps(mn, inverseDeps).stream())
+                                      .collect(Collectors.toSet());
+            System.out.println("Filtered modules: " + filters);
+            return modules.stream()
+                          .filter(mn -> !filters.contains(mn))
+                          .collect(Collectors.toSet());
+        }
+
+        /*
+         * Traverse the graph to find all the dependences from the given name.
+         */
+        static Set<String> findDeps(String name, Map<String, Set<String>> graph) {
+            Set<String> visited = new HashSet<>();
+            Deque<String> deque = new LinkedList<>();
+            deque.add(name);
+            String node;
+            while (!deque.isEmpty()) {
+                node = deque.pop();
+                if (visited.contains(node))
+                    continue;
+
+                visited.add(node);
+                Set<String> deps = graph.get(node);
+                if (deps != null)
+                    deque.addAll(deps);
+            }
+            return visited;
         }
     }
 
