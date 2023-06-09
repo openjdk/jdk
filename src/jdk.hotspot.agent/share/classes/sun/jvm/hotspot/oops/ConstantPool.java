@@ -259,7 +259,7 @@ public class ConstantPool extends Metadata implements ClassConstants {
     switch(code) {
       case Bytecodes._invokedynamic:
         int poolIndex = getCache().getIndyEntryAt(index).getConstantPoolIndex();
-        return poolIndex = invokeDynamicNameAndTypeRefIndexAt(poolIndex);
+        return invokeDynamicNameAndTypeRefIndexAt(poolIndex);
       case Bytecodes._getfield:
       case Bytecodes._getstatic:
       case Bytecodes._putfield:
