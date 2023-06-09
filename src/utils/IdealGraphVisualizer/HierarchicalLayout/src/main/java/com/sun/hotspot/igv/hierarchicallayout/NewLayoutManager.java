@@ -32,40 +32,31 @@ import java.util.*;
 
 public class NewLayoutManager {
 
-    public static final int SWEEP_ITERATIONS = 1;
-    public static final int CROSSING_ITERATIONS = 2;
     public static final int DUMMY_HEIGHT = 1;
     public static final int DUMMY_WIDTH = 1;
     public static final int X_OFFSET = 8;
     public static final int LAYER_OFFSET = 8;
-    public static final int MIN_LAYER_DIFFERENCE = 1;
     // Algorithm global datastructures
     private HashSet<? extends Vertex> currentVertices;
     private HashSet<? extends Link> currentLinks;
     private Set<Link> reversedLinks;
     private List<LayoutNode> nodes;
-    private List<LayoutNode> oldNodes;
-    private HashMap<Vertex, LayoutNode> vertexToLayoutNode;
-    private HashMap<Vertex, LayoutNode> oldVertexToLayoutNode;
+    private final List<LayoutNode> oldNodes;
+    private final HashMap<Vertex, LayoutNode> vertexToLayoutNode;
+    private final HashMap<Vertex, LayoutNode> oldVertexToLayoutNode;
     private HashMap<Link, List<Point>> reversedLinkStartPoints;
     private HashMap<Link, List<Point>> reversedLinkEndPoints;
     private HashMap<Integer, List<LayoutNode>> layers;
 
-    private HierarchicalLayoutManager manager;
+    private final HierarchicalLayoutManager manager;
     private HashMap<Vertex, VertexAction> vertexToAction;
     private List<VertexAction> vertexActions;
     private List<LinkAction> linkActions;
     private HashSet<? extends Vertex> oldVertices;
     private HashSet<? extends Link> oldLinks;
     private boolean shouldRedrawLayout = true;
-    private boolean shouldRemoveEmptyLayers = false;
-    private boolean shouldLayoutOptimally = false;
-    private boolean shouldUseStatic = true;
-
-    private int addedNodes = 0;
-    private int addedEdges = 0;
-    private int removedNodes = 0;
-    private int removedEdges = 0;
+    private final boolean shouldRemoveEmptyLayers = false;
+    private final boolean shouldComputeLayoutScore = false;
 
     enum Action {
         ADD,
@@ -101,13 +92,6 @@ public class NewLayoutManager {
         nodes = new ArrayList<>();
         oldVertexToLayoutNode = new HashMap<>();
         oldNodes = new ArrayList<>();
-    }
-
-    private void adjustXCoordinatesForAllLayers() {
-        // Adjust x coordinates for every layer, sweeping up once
-        for (int i = layers.keySet().size() - 1; i >= 0; i--) {
-            adjustXCoordinates(i);
-        }
     }
 
     private int calculateOptimalBoth(LayoutNode n) {
@@ -175,7 +159,7 @@ public class NewLayoutManager {
     private void sanityCheckNodesAndLayerNodes() {
         int nodeCount = 0;
         for (int i = 0; i < layers.keySet().size(); i++) {
-            assert layers.keySet().contains(i);
+            assert layers.containsKey(i);
             layers.get(i).sort(nodePositionComparator);
             int nodePos = 0;
             for (LayoutNode n : layers.get(i)) {
@@ -187,9 +171,7 @@ public class NewLayoutManager {
             }
         }
         for (LayoutNode n : nodes) {
-            if (n.vertex != null) {
-                assert vertexToLayoutNode.get(n.vertex).equals(n);
-            }
+            assert n.vertex == null || vertexToLayoutNode.get(n.vertex).equals(n);
             assert n.layer < layers.keySet().size();
             assert layers.get(n.layer).contains(n);
         }
@@ -209,7 +191,6 @@ public class NewLayoutManager {
         }
     }
 
-    // TODO
     private static final Comparator<VertexAction> vertexActionComparator = (a1, a2) -> {
         if (a1.action == Action.REMOVE) {
             if (a2.action == Action.REMOVE) {
@@ -249,14 +230,12 @@ public class NewLayoutManager {
             VertexAction a = new VertexAction(v, Action.ADD);
             vertexActions.add(a);
             vertexToAction.put(v, a);
-            addedNodes += 1;
         }
 
         for (Vertex v : removedVertices) {
             VertexAction a = new VertexAction(v, Action.REMOVE);
             vertexActions.add(a);
             vertexToAction.put(v, a);
-            removedNodes += 1;
         }
 
         for (Link l : addedLinks) {
@@ -273,8 +252,6 @@ public class NewLayoutManager {
             if (!addedVertices.contains(to) && !addedVertices.contains(from)) {
                 linkActions.add(a);
             }
-
-            addedEdges += 1;
         }
 
         for (Link l : removedLinks) {
@@ -291,8 +268,6 @@ public class NewLayoutManager {
             if (!removedVertices.contains(to) && !removedVertices.contains(from)) {
                 linkActions.add(a);
             }
-
-            removedEdges += 1;
         }
 
         vertexActions.sort(vertexActionComparator);
@@ -488,51 +463,27 @@ public class NewLayoutManager {
         vertexActions = new LinkedList<>();
         linkActions = new LinkedList<>();
         vertexToAction = new HashMap<>();
-        addedNodes = 0;
-        addedEdges = 0;
-        removedNodes = 0;
-        removedEdges = 0;
-
-        System.out.println();
-        System.out.println("---------------------------------------------------------------");
-        System.out.println();
-
-        System.out.println("Input: " + links.size() + " links, " + vertices.size() + " vertices: " + vertices);
 
         new ProcessInput().run();
 
         if (shouldRedrawLayout) {
-            System.out.println("Redrawing the graph using HierarchicalLayoutManager");
             manager.doLayout(new LayoutGraph(links, vertices));
             nodes = manager.getNodes();
             shouldRedrawLayout = false;
-        } else if (shouldUseStatic) {
-            System.out.println("Redrawing the graph using HierarchicalLayoutManager in subsequent iterations");
-            generateActions();
-            manager.doLayout(new LayoutGraph(links, vertices));
-            nodes = manager.getNodes();
-            new BuildDatastructure().run();
-            new ComputeLayoutScore().run();
         } else {
-            System.out.println("Updating Layout");
-
             generateActions();
 
             new BuildDatastructure().run();
 
             findInitialReversedLinks();
 
-            if (shouldLayoutOptimally) {
-                new ApplyActionUpdatesOptimal().run();
-            } else {
-                new ApplyActionUpdates().run();
-            }
+            new ApplyActionUpdates().run();
 
             new AssignYCoordinates().run();
 
             new WriteResult().run();
 
-            if (!shouldLayoutOptimally) {
+            if (!shouldComputeLayoutScore) {
                 new ComputeLayoutScore().run();
             }
 
@@ -654,8 +605,6 @@ public class NewLayoutManager {
                 }
                 layers.get(node.layer).add(node);
             }
-            // TODO: might be layers missing due to nodes not yet added, add function to
-            // remove given layer?
             for (int i = 0; i < layers.keySet().size(); i++) {
                 if (!layers.containsKey(i)) {
                     layers.put(i, new ArrayList<>());
@@ -675,758 +624,6 @@ public class NewLayoutManager {
             updateLayersXCoords();
             sanityCheckNodesAndLayerNodes();
         }
-    }
-
-    private class ApplyActionUpdatesOptimal {
-
-        ComputeLayoutScore layoutScoring = new ComputeLayoutScore();
-
-        private float getEdgeCrossings() {
-            return layoutScoring.totalEdgeCrossings();
-        }
-
-        private float getEdgeLength() {
-            return layoutScoring.averageEdgeLength();
-        }
-
-        private float getEdgeBends() {
-            return layoutScoring.averageEdgeBendDegrees();
-        }
-
-        private float getNodeDisplacement() {
-            return layoutScoring.averageNodeDisplacement();
-        }
-
-        private boolean betterScore(float edgeCrossings, float avgEdgeLength, float edgeBends,
-                float avgNodeDisplacement) {
-            if (getEdgeCrossings() < edgeCrossings) {
-                edgeCrossings = getEdgeCrossings();
-                return true;
-            } else if (getEdgeCrossings() == edgeCrossings) {
-                if (getEdgeLength() < avgEdgeLength) {
-                    avgEdgeLength = getEdgeLength();
-                    return true;
-                } else if (getEdgeLength() == avgEdgeLength) {
-                    if (getEdgeBends() < edgeBends) {
-                        edgeBends = getEdgeBends();
-                        return true;
-                    } else if (getEdgeBends() == edgeBends) {
-                        if (getNodeDisplacement() < avgNodeDisplacement) {
-                            avgNodeDisplacement = getNodeDisplacement();
-                            return true;
-                        } else {
-                            return false;
-                        }
-                    } else {
-                        return false;
-                    }
-                } else {
-                    return false;
-                }
-            } else {
-                return false;
-            }
-        }
-
-        private void storePrevXCoords(HashMap<Integer, HashMap<Integer, Integer>> prevXCoordsWithinLayer) {
-            for (Integer i : layers.keySet()) {
-                if (!prevXCoordsWithinLayer.containsKey(i)) {
-                    prevXCoordsWithinLayer.put(i, new HashMap<>());
-                }
-
-                layers.get(i).sort(nodePositionComparator);
-                for (LayoutNode n : layers.get(i)) {
-                    prevXCoordsWithinLayer.get(i).put(n.pos, n.x);
-                }
-            }
-        }
-
-        /**
-         * Restore the positions of the nodes at a given layer
-         *
-         * @param layer
-         * @param addedNodePos position of the node that was temporarily added
-         */
-        private void restorePrevXCoords(int layer, int addedNodePos,
-                HashMap<Integer, HashMap<Integer, Integer>> prevXCoordsWithinLayer) {
-            HashMap<Integer, Integer> prevXCoords = prevXCoordsWithinLayer.get(layer);
-            for (LayoutNode n : layers.get(layer)) {
-                if (n.pos == addedNodePos) {
-                    continue;
-                } else if (addedNodePos != -1 && n.pos > addedNodePos) {
-                    n.x = prevXCoords.get(n.pos - 1);
-                } else {
-                    n.x = prevXCoords.get(n.pos);
-                }
-            }
-        }
-
-        private void applyAddVertexAction(VertexAction action) {
-            // System.out.println("Adding vertex " + action.vertex);
-            LayoutNode node = new LayoutNode();
-            Dimension size = action.vertex.getSize();
-            node.width = (int) size.getWidth();
-            node.height = (int) size.getHeight();
-            node.vertex = action.vertex;
-
-            HashMap<Integer, HashMap<Integer, Integer>> prevXCoordsWithinLayer = new HashMap<>();
-            storePrevXCoords(prevXCoordsWithinLayer);
-
-            float edgeCrossings = Float.MAX_VALUE;
-            float edgeLength = Float.MAX_VALUE;
-            float edgeBends = Float.MAX_VALUE;
-            float nodeDisplacement = Float.MAX_VALUE;
-
-            int optLayer = -1;
-            int optPos = -1;
-            // Try every position in existing layers
-            System.out.println("Trying existing layers");
-            for (int i = 0; i < layers.keySet().size(); i++) {
-                insertNode(node, i);
-                boolean edgeOnSameLayer = false;
-                // Check so there are no neighbors on the same layer
-                for (LinkAction linkAction : action.linkActions) {
-                    Link l = linkAction.link;
-                    Vertex from = l.getFrom().getVertex();
-                    Vertex to = l.getTo().getVertex();
-                    LayoutNode fromNode = vertexToLayoutNode.get(from);
-                    LayoutNode toNode = vertexToLayoutNode.get(to);
-                    if (nodes.contains(fromNode) && nodes.contains(toNode) && fromNode.layer == toNode.layer) {
-                        removeNode(node, true);
-                        sanityCheckNodesAndLayerNodes();
-                        edgeOnSameLayer = true;
-                        break;
-                    }
-                }
-                if (edgeOnSameLayer) {
-                    continue;
-                }
-                for (int pos = 0; pos < layers.get(i).size(); pos++) {
-                    insertNodeAtPosition(node, pos);
-                    adjustXCoordinates(i);
-                    sanityCheckNodesAndLayerNodes();
-                    for (LinkAction linkAction : action.linkActions) {
-                        Link l = linkAction.link;
-                        if (linkAction.action == Action.ADD) {
-                            applyAddLinkAction(l);
-                        }
-                    }
-                    adjustXCoordinates(i);
-                    new AssignYCoordinates().run();
-
-                    System.out.println("Results layer " + i + " pos " + pos);
-                    new ComputeLayoutScore().run();
-
-                    if (betterScore(edgeCrossings, edgeLength, edgeBends, nodeDisplacement)) {
-                        edgeCrossings = getEdgeCrossings();
-                        edgeLength = getEdgeLength();
-                        edgeBends = getEdgeBends();
-                        nodeDisplacement = getNodeDisplacement();
-                        optLayer = i;
-                        optPos = pos;
-                    }
-
-                    // Restore layout
-                    for (LinkAction linkAction : action.linkActions) {
-                        applyRemoveLinkAction(linkAction.link);
-                    }
-                    for (int j = 0; j < layers.keySet().size(); j++) {
-                        int addedNodePos = -1;
-                        if (j == i) {
-                            addedNodePos = pos;
-                        }
-                        restorePrevXCoords(j, addedNodePos, prevXCoordsWithinLayer);
-                    }
-                }
-                removeNode(node, true);
-                sanityCheckNodesAndLayerNodes();
-            }
-
-            boolean betterNewLayer = false;
-            // Try adding new layers inbetween existing ones, then every position in these
-            System.out.println("Try adding new layers");
-            for (int i = 0; i < layers.keySet().size() + 1; i++) {
-                System.out.println("Trying layer " + i + "/" + (layers.keySet().size() + 1));
-                createNewLayer(i);
-                insertNode(node, i);
-                HashMap<Integer, HashMap<Integer, Integer>> tempPrevXCoordsWithinLayer = new HashMap<>();
-                storePrevXCoords(tempPrevXCoordsWithinLayer);
-                for (int pos = 0; pos < layers.get(i).size(); pos++) {
-                    insertNodeAtPosition(node, pos);
-                    adjustXCoordinates(i);
-                    sanityCheckNodesAndLayerNodes();
-                    for (LinkAction linkAction : action.linkActions) {
-                        Link l = linkAction.link;
-                        if (linkAction.action == Action.ADD) {
-                            applyAddLinkAction(l);
-                        }
-                    }
-                    adjustXCoordinates(i);
-                    new AssignYCoordinates().run();
-
-                    System.out.println("Results layer " + i + " pos " + pos);
-                    new ComputeLayoutScore().run();
-
-                    if (betterScore(edgeCrossings, edgeLength, edgeBends, nodeDisplacement)) {
-                        edgeCrossings = getEdgeCrossings();
-                        edgeLength = getEdgeLength();
-                        edgeBends = getEdgeBends();
-                        nodeDisplacement = getNodeDisplacement();
-                        optLayer = i;
-                        optPos = pos;
-                        betterNewLayer = true;
-                    }
-
-                    // Restore layout
-                    for (LinkAction linkAction : action.linkActions) {
-                        applyRemoveLinkAction(linkAction.link);
-                    }
-                    for (int j = 0; j < layers.keySet().size(); j++) {
-                        int addedNodePos = -1;
-                        if (j == i) {
-                            addedNodePos = pos;
-                        }
-                        restorePrevXCoords(j, addedNodePos, tempPrevXCoordsWithinLayer);
-                    }
-                }
-                removeNode(node, true);
-                removeLayer(i);
-                for (int j = 0; j < layers.keySet().size(); j++) {
-                    int addedNodePos = -1;
-                    restorePrevXCoords(j, addedNodePos, prevXCoordsWithinLayer);
-                }
-                sanityCheckNodesAndLayerNodes();
-                sanityCheckEdges();
-            }
-
-            System.out.println(
-                    "Best to place at - new layer: " + betterNewLayer + ", layer: " + optLayer +
-                            ", pos: " + optPos);
-            if (betterNewLayer) {
-                createNewLayer(optLayer);
-                insertNode(node, optLayer);
-                insertNodeAtPosition(node, optPos);
-            } else {
-                insertNode(node, optLayer);
-                insertNodeAtPosition(node, optPos);
-            }
-            adjustXCoordinates(optLayer);
-            for (LinkAction linkAction : action.linkActions) {
-                Link l = linkAction.link;
-                if (linkAction.action == Action.ADD) {
-                    applyAddLinkAction(l);
-                }
-            }
-            sanityCheckNodesAndLayerNodes();
-            sanityCheckEdges();
-            adjustXCoordinates(optLayer);
-        }
-
-        private void createNewLayer(int layer) {
-            // Move conflicting layers down one step
-            for (int i = layers.size() - 1; i >= layer; i--) {
-                List<LayoutNode> list = layers.get(i);
-                layers.remove(i);
-                layers.put(i + 1, list);
-                for (LayoutNode n : list) {
-                    n.layer += 1;
-                }
-            }
-
-            // Create a new layer
-            List<LayoutNode> l = new ArrayList<>();
-            layers.put(layer, l);
-
-            // Add dummy nodes for edges going across new layer. One for each port on the
-            // nodes that has outgoing edges
-            if (layer > 0 && layer != layers.keySet().size() - 1) {
-                layers.get(layer - 1).sort(nodePositionComparator.reversed());
-                for (LayoutNode n : List.copyOf(layers.get(layer - 1))) {
-                    HashMap<Integer, List<LayoutEdge>> portHashes = new HashMap<>();
-
-                    for (LayoutEdge e : n.succs) {
-                        if (!portHashes.keySet().contains(e.relativeFrom)) {
-                            portHashes.put(e.relativeFrom, new ArrayList<>());
-                        }
-                        portHashes.get(e.relativeFrom).add(e);
-                    }
-
-                    List<Integer> ports = new ArrayList<>(portHashes.keySet());
-                    ports.sort(Collections.reverseOrder());
-                    for (Integer i : ports) {
-                        List<LayoutEdge> edges = portHashes.get(i);
-
-                        LayoutNode dummy = new LayoutNode();
-                        dummy.width = DUMMY_WIDTH;
-                        dummy.height = DUMMY_HEIGHT;
-
-                        LayoutEdge newEdge = new LayoutEdge();
-                        newEdge.from = n;
-                        newEdge.relativeFrom = i;
-                        newEdge.to = dummy;
-                        newEdge.relativeTo = dummy.width / 2;
-                        newEdge.link = edges.get(0).link;
-                        n.succs.add(newEdge);
-                        dummy.preds.add(newEdge);
-
-                        for (LayoutEdge e : edges) {
-                            e.from = dummy;
-                            e.relativeFrom = dummy.width / 2;
-                            n.succs.remove(e);
-                            dummy.succs.add(e);
-                        }
-
-                        insertNode(dummy, layer);
-                    }
-                }
-                adjustXCoordinates(layer);
-            }
-        }
-
-        private void removeLayer(int layer) {
-            // Only remove layer if it does not contain any nodes
-            for (LayoutNode n : layers.get(layer)) {
-                assert n.vertex == null;
-                assert n.preds.size() == 1;
-                LayoutEdge predEdge = n.preds.get(0);
-                for (LayoutEdge e : n.succs) {
-                    e.from = predEdge.from;
-                    e.relativeFrom = predEdge.relativeFrom;
-                    predEdge.from.succs.add(e);
-                    predEdge.from.succs.remove(predEdge);
-                }
-                nodes.remove(n);
-            }
-            layers.remove(layer);
-            for (Integer i : List.copyOf(layers.keySet())) {
-                if (i <= layer) {
-                    continue;
-                }
-                List<LayoutNode> list = layers.get(i);
-                layers.remove(i);
-                layers.put(i - 1, list);
-                for (LayoutNode n : list) {
-                    n.layer -= 1;
-                }
-            }
-            sanityCheckNodesAndLayerNodes();
-            sanityCheckEdges();
-        }
-
-        /**
-         * Insert node at the assigned layer, updating the positions of the nodes within
-         * the layer
-         *
-         * @param node
-         * @param layer
-         */
-        private void insertNode(LayoutNode node, int layer) {
-            node.layer = layer;
-            List<LayoutNode> layerNodes = layers.get(layer);
-
-            // Always start leftmost, then try all other positions
-            insertNodeAtPosition(node, 0);
-            layerNodes.add(node);
-
-            if (!nodes.contains(node)) {
-                nodes.add(node);
-            }
-            if (node.vertex != null) {
-                vertexToLayoutNode.put(node.vertex, node);
-            }
-
-            sanityCheckNodesAndLayerNodes();
-        }
-
-        private void insertNodeAtPosition(LayoutNode node, int pos) {
-            // Must remove node from layer if it has already been inserted
-            if (layers.get(node.layer).contains(node)) {
-                for (LayoutNode n : layers.get(node.layer)) {
-                    if (n.pos > node.pos) {
-                        n.pos -= 1;
-                    }
-                }
-            }
-
-            node.pos = pos;
-
-            for (LayoutNode n : layers.get(node.layer)) {
-                if (n.pos >= node.pos && !n.equals(node)) {
-                    n.pos += 1;
-                }
-            }
-        }
-
-        private void processSingleEdge(LayoutEdge e) {
-            HashMap<Integer, HashMap<Integer, Integer>> prevXCoordsWithinLayer = new HashMap<>();
-            storePrevXCoords(prevXCoordsWithinLayer);
-
-            LayoutNode n = e.to;
-            int nrDummies = e.to.layer - e.from.layer - 1;
-            assert nrDummies > 0;
-            LayoutNode[] addedDummyNodes = new LayoutNode[nrDummies];
-            if (e.to.layer - 1 > e.from.layer) {
-                LayoutEdge last = e;
-                for (int i = n.layer - 1; i > last.from.layer; i--) {
-                    last = addBetween(last, i);
-                    addedDummyNodes[n.layer - i - 1] = last.to;
-                }
-            }
-
-            // List of all the position combinations possible for the dummy nodes
-            // The index of each int[] correspond to the index of addedDummyNodes
-            List<int[]> layerPositionCombinations = new ArrayList<>();
-            for (int i = 0; i < nrDummies; i++) {
-                LayoutNode dummy = addedDummyNodes[i];
-                List<int[]> newLayerPositionCombinations = new ArrayList<>();
-                for (int pos = 0; pos < layers.get(dummy.layer).size(); pos++) {
-                    if (i == 0) {
-                        int[] positions = new int[nrDummies];
-                        positions[i] = pos;
-                        newLayerPositionCombinations.add(positions);
-                    } else {
-                        if (pos == 0) {
-                            continue;
-                        }
-                        for (int[] otherNodePositions : layerPositionCombinations) {
-                            int[] positions = new int[nrDummies];
-                            positions[i] = pos;
-                            for (int j = i - 1; j >= 0; j--) {
-                                positions[j] = otherNodePositions[j];
-                            }
-                            newLayerPositionCombinations.add(positions);
-                        }
-                    }
-                }
-                layerPositionCombinations.addAll(newLayerPositionCombinations);
-            }
-
-            // Try every possible way of placing the dummy nodes of the given edge
-            float edgeCrossings = Float.MAX_VALUE;
-            float edgeLength = Float.MAX_VALUE;
-            float edgeBends = Float.MAX_VALUE;
-            float nodeDisplacement = Float.MAX_VALUE;
-            int[] bestPositions = new int[nrDummies];
-            int[] prevPositions = new int[nrDummies];
-            Arrays.fill(prevPositions, -1); // To ensure no matches in first iteration
-            for (int[] positions : layerPositionCombinations) {
-                for (int i = 0; i < nrDummies; i++) {
-                    if (prevPositions[i] != positions[i]) {
-                        insertNodeAtPosition(addedDummyNodes[i], positions[i]);
-                        prevPositions[i] = positions[i];
-                    }
-                    adjustXCoordinates(addedDummyNodes[i].layer);
-                }
-                sanityCheckNodesAndLayerNodes();
-                new AssignYCoordinates().run();
-                if (betterScore(edgeCrossings, edgeLength, edgeBends, nodeDisplacement)) {
-                    edgeCrossings = getEdgeCrossings();
-                    edgeLength = getEdgeLength();
-                    edgeBends = getEdgeBends();
-                    nodeDisplacement = getNodeDisplacement();
-                    bestPositions = positions;
-                }
-                for (int i = 0; i < nrDummies; i++) {
-                    restorePrevXCoords(addedDummyNodes[i].layer, positions[i], prevXCoordsWithinLayer);
-                }
-            }
-
-            for (int i = 0; i < nrDummies; i++) {
-                insertNodeAtPosition(addedDummyNodes[i], bestPositions[i]);
-                adjustXCoordinates(addedDummyNodes[i].layer);
-            }
-
-            sanityCheckEdges();
-            sanityCheckNodesAndLayerNodes();
-        }
-
-        private LayoutEdge addBetween(LayoutEdge e, int layer) {
-            LayoutNode n = new LayoutNode();
-            n.width = DUMMY_WIDTH;
-            n.height = DUMMY_HEIGHT;
-            n.succs.add(e);
-            LayoutEdge result = new LayoutEdge();
-            result.vip = e.vip;
-            n.preds.add(result);
-            result.to = n;
-            result.relativeTo = n.width / 2;
-            result.from = e.from;
-            result.relativeFrom = e.relativeFrom;
-            result.link = e.link;
-            e.relativeFrom = n.width / 2;
-            e.from.succs.remove(e);
-            e.from.succs.add(result);
-            e.from = n;
-            insertNode(n, layer);
-            return result;
-        }
-
-        private void insertDummyNodes(LayoutEdge edge) {
-            LayoutNode from = edge.from;
-            LayoutNode to = edge.to;
-
-            boolean hasEdgeFromSamePort = false;
-            LayoutEdge edgeFromSamePort = new LayoutEdge();
-
-            for (LayoutEdge e : edge.from.succs) {
-                if (e.relativeFrom == edge.relativeFrom && e.to.vertex == null) {
-                    edgeFromSamePort = e;
-                    hasEdgeFromSamePort = true;
-                    break;
-                }
-            }
-
-            if (!hasEdgeFromSamePort) {
-                processSingleEdge(edge);
-            } else {
-                LayoutEdge curEdge = edgeFromSamePort;
-                boolean newEdge = true;
-                while (curEdge.to.layer < to.layer - 1 && curEdge.to.vertex == null && newEdge) {
-                    // Traverse down the chain of dummy nodes linking together the edges originating
-                    // from the same port
-                    newEdge = false;
-                    if (curEdge.to.succs.size() == 1) {
-                        curEdge = curEdge.to.succs.get(0);
-                        newEdge = true;
-                    } else {
-                        for (LayoutEdge e : curEdge.to.succs) {
-                            if (e.to.vertex == null) {
-                                curEdge = e;
-                                newEdge = true;
-                                break;
-                            }
-                        }
-                    }
-                }
-
-                LayoutNode prevDummy;
-                if (curEdge.to.vertex != null) {
-                    prevDummy = curEdge.from;
-                } else {
-                    prevDummy = curEdge.to;
-                }
-
-                edge.from = prevDummy;
-                edge.relativeFrom = prevDummy.width / 2;
-                from.succs.remove(edge);
-                prevDummy.succs.add(edge);
-                if (to.layer != prevDummy.layer + 1) {
-                    processSingleEdge(edge);
-                }
-            }
-        }
-
-        private void applyAddLinkAction(Link l) {
-            Vertex from = l.getFrom().getVertex();
-            Vertex to = l.getTo().getVertex();
-            LayoutNode fromNode = vertexToLayoutNode.get(from);
-            LayoutNode toNode = vertexToLayoutNode.get(to);
-
-            if (!nodes.contains(fromNode) || !nodes.contains(toNode) || to.equals(from)) {
-                return;
-            }
-
-            if (toNode.layer == fromNode.layer) {
-                // System.out.println("Tried to add link between nodes on same layer");
-                // handleNeighborNodesOnSameLayer(fromNode, toNode, l);
-            }
-
-            LayoutEdge edge = new LayoutEdge();
-            edge.link = l;
-            edge.from = fromNode;
-            edge.relativeFrom = l.getFrom().getRelativePosition().x;
-            edge.to = toNode;
-            edge.relativeTo = l.getTo().getRelativePosition().x;
-
-            boolean reversedLink = fromNode.layer > toNode.layer;
-            if (reversedLink) {
-                // Reversed link
-                reversedLinks.add(l);
-
-                LayoutNode temp = fromNode;
-                fromNode = toNode;
-                toNode = temp;
-
-                int oldRelativeFrom = edge.relativeFrom;
-                int oldRelativeTo = edge.relativeTo;
-
-                edge.from = fromNode;
-                edge.to = toNode;
-                edge.relativeFrom = oldRelativeTo;
-                edge.relativeTo = oldRelativeFrom;
-            }
-
-            fromNode.succs.add(edge);
-            toNode.preds.add(edge);
-
-            if (reversedLink) {
-                updateReversedLinkPositions(l);
-            }
-
-            if (fromNode.layer != toNode.layer - 1) {
-                // Edge span multiple layers - must insert dummy nodes
-                insertDummyNodes(edge);
-            }
-
-            sanityCheckEdges();
-        }
-
-        private void applyRemoveLinkAction(Link l) {
-            Vertex from = l.getFrom().getVertex();
-            Vertex to = l.getTo().getVertex();
-            LayoutNode toNode = vertexToLayoutNode.get(to);
-            LayoutNode fromNode = vertexToLayoutNode.get(from);
-
-            if (!nodes.contains(fromNode) || !nodes.contains(toNode)) {
-                return;
-            }
-
-            if (toNode.layer < fromNode.layer) {
-                // Reversed edge
-                LayoutNode temp = toNode;
-                toNode = fromNode;
-                fromNode = temp;
-
-                reversedLinks.remove(l);
-                reversedLinkEndPoints.remove(l);
-                reversedLinkStartPoints.remove(l);
-            }
-
-            // Remove preds-edges bottom up, starting at "to" node
-            // Cannot start from "from" node since there might be joint edges
-            List<LayoutEdge> toNodePredsEdges = List.copyOf(toNode.preds);
-            for (LayoutEdge edge : toNodePredsEdges) {
-                LayoutNode n = edge.from;
-                LayoutEdge edgeToRemove;
-
-                if (edge.link != null && edge.link.equals(l)) {
-                    toNode.preds.remove(edge);
-                    edgeToRemove = edge;
-                } else {
-                    // Wrong edge, look at next
-                    continue;
-                }
-
-                if (n.vertex != null && n.vertex.equals(from)) {
-                    // No dummy nodes inbetween 'from' and 'to' vertex
-                    n.succs.remove(edgeToRemove);
-                    break;
-                } else {
-                    // Must remove edges between dummy nodes
-                    boolean found = true;
-                    LayoutNode prev = toNode;
-                    while (n.vertex == null && found) {
-                        found = false;
-
-                        if (n.vertex == null && n.succs.size() <= 1 && n.preds.size() <= 1) {
-                            // Dummy node used only for this link, remove if not already removed
-                            if (nodes.contains(n)) {
-                                removeNode(n, false);
-                            }
-                        } else {
-                            // anchor node, should not be removed
-                            break;
-                        }
-
-                        if (n.preds.size() == 1) {
-                            prev = n;
-                            edgeToRemove = n.preds.get(0);
-                            n = edgeToRemove.from;
-                            found = true;
-                        }
-                    }
-
-                    n.succs.remove(edgeToRemove);
-                    prev.preds.remove(edgeToRemove);
-                }
-                sanityCheckEdges();
-            }
-        }
-
-        private void removeNode(LayoutNode node, boolean restoring) {
-            assert nodes.contains(node);
-            int layer = node.layer;
-            int pos = node.pos;
-            List<LayoutNode> remainingLayerNodes = layers.get(layer);
-            assert remainingLayerNodes.contains(node);
-            remainingLayerNodes.remove(node);
-
-            // Update position of remaining nodes on the same layer
-            boolean onlyDummiesLeft = true;
-            for (LayoutNode n : remainingLayerNodes) {
-                if (n.pos > pos) {
-                    n.pos -= 1;
-                }
-                if (n.vertex != null) {
-                    onlyDummiesLeft = false;
-                }
-            }
-
-            // Remove node from graph layout
-            nodes.remove(node);
-
-            if (!restoring && onlyDummiesLeft && shouldRemoveEmptyLayers) {
-                removeLayer(layer);
-            } else {
-                layers.put(layer, remainingLayerNodes);
-            }
-        }
-
-        private void applyRemoveVertexAction(VertexAction action) {
-            LayoutNode node = vertexToLayoutNode.get(action.vertex);
-            // System.out.println("Removing " + node);
-
-            assert nodes.contains(node);
-
-            // Remove associated edges
-            for (LinkAction a : action.linkActions) {
-                // System.out.println("Associated action " + a.action + " on " + a.link);
-                if (a.action == Action.REMOVE) {
-                    applyRemoveLinkAction(a.link);
-                }
-            }
-
-            removeNode(node, false);
-        }
-
-        void run() {
-            // TODO: Decide order of which the actions should occur
-            System.out.println("Running all actions in OPT MODE");
-            for (LinkAction action : linkActions) {
-                if (action.action == Action.REMOVE) {
-                    // System.out.println("Applying action " + action.action + " on " +
-                    // action.link);
-                    applyRemoveLinkAction(action.link);
-                }
-            }
-
-            for (VertexAction action : vertexActions) {
-                // System.out.println("Applying action " + action.action + " on " +
-                // action.vertex);
-                switch (action.action) {
-                    case REMOVE:
-                        applyRemoveVertexAction(action);
-                        break;
-                    case ADD:
-                        applyAddVertexAction(action);
-                        break;
-                    default:
-                        System.out.println("Should not be here");
-                }
-            }
-
-            for (LinkAction action : linkActions) {
-                if (action.action == Action.ADD) {
-                    // System.out.println("Applying action " + action.action + " on " +
-                    // action.link);
-                    applyAddLinkAction(action.link);
-                }
-            }
-
-            sanityCheckEdges();
-            sanityCheckNodesAndLayerNodes();
-        }
-
     }
 
     private class ApplyActionUpdates {
@@ -1457,8 +654,6 @@ public class NewLayoutManager {
 
                 int currentCrossings = 0;
 
-                // TODO: Use scoring func instead?
-                // Edge crossings across current layer and layer above
                 if (layers.keySet().contains(layer - 1)) {
                     List<LayoutNode> predNodes = layers.get(layer - 1);
                     // For each link with an end point in vertex, check how many edges crosses it
@@ -1487,7 +682,7 @@ public class NewLayoutManager {
                                     }
                                     if ((fromNodeXCoord > compFromXCoord && toNodeXCoord < compToXCoord)
                                             || (fromNodeXCoord < compFromXCoord
-                                                    && toNodeXCoord > compToXCoord)) {
+                                            && toNodeXCoord > compToXCoord)) {
                                         currentCrossings += 1;
                                     }
                                 }
@@ -1524,7 +719,7 @@ public class NewLayoutManager {
                                     }
                                     if ((fromNodeXCoord > compFromXCoord && toNodeXCoord < compToXCoord)
                                             || (fromNodeXCoord < compFromXCoord
-                                                    && toNodeXCoord > compToXCoord)) {
+                                            && toNodeXCoord > compToXCoord)) {
                                         currentCrossings += 1;
                                     }
                                 }
@@ -1742,16 +937,11 @@ public class NewLayoutManager {
         }
 
         private void handleNeighborNodesOnSameLayer(LayoutNode from, LayoutNode to) {
-            // System.out.println(from + " and " + to + " on same layer " + to.layer + "/" +
-            // (layers.keySet().size() - 1));
             if (canMoveNodeDown(to)) {
-                System.out.println("Moving " + to + " to new layer " + (to.layer + 1));
                 moveNodeDown(to);
             } else if (canMoveNodeUp(from)) {
-                System.out.println("Moving " + from + " to new layer " + (from.layer - 1));
                 moveNodeUp(from);
             } else {
-                System.out.println("Expanding layer for " + to);
                 expandNewLayerBeneath(to);
             }
 
@@ -1876,7 +1066,6 @@ public class NewLayoutManager {
             LayoutNode toNode = vertexToLayoutNode.get(to);
 
             if (!nodes.contains(fromNode) || !nodes.contains(toNode) || to.equals(from)) {
-                System.out.println("Did not add link");
                 return;
             }
 
@@ -2170,19 +1359,13 @@ public class NewLayoutManager {
         }
 
         void run() {
-            // TODO: Decide order of which the actions should occur
-            System.out.println("Running all actions");
             for (LinkAction action : linkActions) {
                 if (action.action == Action.REMOVE) {
-                    // System.out.println("Applying action " + action.action + " on " +
-                    // action.link);
                     applyRemoveLinkAction(action.link);
                 }
             }
 
             for (VertexAction action : vertexActions) {
-                // System.out.println("Applying action " + action.action + " on " +
-                // action.vertex);
                 switch (action.action) {
                     case REMOVE:
                         applyRemoveVertexAction(action);
@@ -2197,8 +1380,6 @@ public class NewLayoutManager {
 
             for (LinkAction action : linkActions) {
                 if (action.action == Action.ADD) {
-                    // System.out.println("Applying action " + action.action + " on " +
-                    // action.link);
                     applyAddLinkAction(action.link);
                 }
             }
@@ -2225,7 +1406,6 @@ public class NewLayoutManager {
                 applyAddLinkAction(l);
                 layoutedLinks.add(l);
             }
-            // Not necessary to remove - won't be drawn on screen anyways
             Set<Link> superfluousLinks = new HashSet<>(layoutedLinks);
             superfluousLinks.removeAll(currentLinks);
             for (Link l : superfluousLinks) {
@@ -2238,18 +1418,6 @@ public class NewLayoutManager {
     }
 
     private static final Comparator<LayoutNode> nodePositionComparator = Comparator.comparingInt(n -> n.pos);
-    private static final Comparator<LayoutNode> nodeProcessingDownComparator = (n1, n2) -> {
-        if (n1.vertex == null) {
-            if (n2.vertex == null) {
-                return 0;
-            }
-            return -1;
-        }
-        if (n2.vertex == null) {
-            return 1;
-        }
-        return n1.preds.size() - n2.preds.size();
-    };
     private static final Comparator<LayoutNode> nodeProcessingUpComparator = (n1, n2) -> {
         if (n1.vertex == null) {
             if (n2.vertex == null) {
@@ -2455,7 +1623,7 @@ public class NewLayoutManager {
                             // Exists edge from same vertex, same port
                             if (l.getFrom().getVertex().equals(e.link.getFrom().getVertex())
                                     && l.getFrom().getRelativePosition().x == e.link.getFrom()
-                                            .getRelativePosition().x) {
+                                    .getRelativePosition().x) {
                                 List<Point> duplicatePoints = new ArrayList<>();
                                 for (Point p : points) {
                                     if (linkPositions.get(l).contains(p)) {
@@ -2590,63 +1758,6 @@ public class NewLayoutManager {
             return reversedLinks.size();
         }
 
-        // TODO: only use edge bend deg, change to number of reversed edges instead
-        private float averageEdgeBends() {
-            float totBends = 0;
-            int edgeCount = 0;
-
-            for (LayoutNode node : nodes) {
-                if (node.vertex == null)
-                    continue;
-                for (LayoutEdge e : node.preds) {
-                    if (e.link == null)
-                        continue;
-                    float bends = 0;
-                    List<Point> points = new WriteResult().edgePoints(e);
-                    Point prevPoint = points.get(0);
-                    Point curPoint = points.get(1);
-                    for (int i = 2; i < points.size(); i++) {
-                        Point nextPoint = points.get(i);
-
-                        double x1 = prevPoint.getX() - curPoint.getX();
-                        double y1 = prevPoint.getY() - curPoint.getY();
-                        double x2 = nextPoint.getX() - curPoint.getX();
-                        double y2 = nextPoint.getY() - curPoint.getY();
-
-                        double dotProduct = x1 * x2 + y1 * y2;
-                        double prevMagnitude = Math.sqrt(Math.pow(x1, 2) + Math.pow(y1, 2));
-                        double nextMagnitude = Math.sqrt(Math.pow(x2, 2) + Math.pow(y2, 2));
-                        double cos = dotProduct / (prevMagnitude * nextMagnitude);
-                        double angle = Math.acos(cos);
-
-                        if (angle < 0.999 * Math.PI) {
-                            // If edge angle not close enough to 180 degrees it's counted as a bend
-                            // TODO: determine threshold
-                            bends += 1;
-                        }
-
-                        prevPoint = curPoint;
-                        curPoint = nextPoint;
-                    }
-
-                    totBends += bends;
-                    edgeCount += 1;
-                }
-            }
-
-            if (edgeCount > 0) {
-                return totBends / edgeCount;
-            } else {
-                return 0;
-            }
-        }
-
-        // TODO: Add clustering change metric
-        private float proximityMetric() {
-
-            return 0;
-        }
-
         private float averageNodeDisplacement() {
             HashSet<Vertex> commonVertices = new HashSet<>(oldVertices);
             commonVertices.retainAll(currentVertices);
@@ -2666,16 +1777,10 @@ public class NewLayoutManager {
 
         public void run() {
             int edgeCrossings = totalEdgeCrossings();
-            // float edgeBends = averageEdgeBends();
             float edgeBendsDeg = averageEdgeBendDegrees();
             float edgeLength = averageEdgeLength();
             float nodeDisplacement = averageNodeDisplacement();
             int reversedEdges = reversedEdges();
-
-            System.out.println("DATA LINE:" + currentVertices.size() + "," + currentLinks.size() + ","
-                    + addedNodes + "," + removedNodes + "," + addedEdges + "," + removedEdges + ","
-                    + edgeCrossings + "," + reversedEdges + "," + edgeBendsDeg + "," + edgeLength + ","
-                    + nodeDisplacement);
         }
     }
 
