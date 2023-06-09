@@ -25,7 +25,6 @@
  * @test
  * @bug 8294985
  * @library /test/lib
- * @library /javax/net/ssl/templates
  * @summary SSLEngine throws IAE during parsing of X500Principal
  * @run main/othervm TestBadDNForPeerCA12
  * @run main/othervm -Djavax.net.debug=all TestBadDNForPeerCA12

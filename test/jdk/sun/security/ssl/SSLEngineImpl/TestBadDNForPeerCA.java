@@ -56,7 +56,7 @@ public class TestBadDNForPeerCA {
 
     private static final String keyStoreFile =
         System.getProperty("test.src", "./")
-        + "/open/test/jdk/javax/net/ssl/etc/keystore";
+        + "/../../../../javax/net/ssl/etc/keystore";
 
     // the following ClientHello contains a certificate with an
     // invalid/unparseable distinguished name
