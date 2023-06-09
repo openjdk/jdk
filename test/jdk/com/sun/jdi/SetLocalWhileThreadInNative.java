@@ -175,7 +175,7 @@ public class SetLocalWhileThreadInNative extends TestScaffold {
             }
         }
         boolean isVirtualThread = "Virtual".equals(System.getProperty("main.wrapper"));
-        Asserts.assertTrue(caughtOPE == isVirtualThread);        
+        Asserts.assertTrue(caughtOPE == isVirtualThread);
         Asserts.assertTrue(changedLocal == !isVirtualThread);
 
         // signal stop
