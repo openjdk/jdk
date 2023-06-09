@@ -390,7 +390,7 @@ public final class LauncherHelper {
         ostream.print("\n");
     }
 
-    // return a string split across multiple lines where aims to limit max width
+    // return a string split across multiple lines which aims to limit max width
     private static String wrappedString(String orig, int limit) {
         if (orig == null || orig.isEmpty() || limit <= 0) {
             // bad input
