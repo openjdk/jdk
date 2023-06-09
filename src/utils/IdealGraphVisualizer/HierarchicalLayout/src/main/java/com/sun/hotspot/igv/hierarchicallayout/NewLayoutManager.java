@@ -60,8 +60,13 @@ public class NewLayoutManager {
     private boolean shouldRedrawLayout = true;
     private boolean shouldRemoveEmptyLayers = false;
     private boolean shouldLayoutOptimally = false;
+    private boolean shouldUseStatic = true;
 
     private String graphName;
+    private int addedNodes = 0;
+    private int addedEdges = 0;
+    private int removedNodes = 0;
+    private int removedEdges = 0;
 
     enum Action {
         ADD,
@@ -105,9 +110,11 @@ public class NewLayoutManager {
     }
 
     public void action2() {
-        System.out.println("action2: redrawing using HierarchicalLayoutManager");
-        shouldRedrawLayout = true;
-        updateLayout(currentVertices, currentLinks, graphName);
+        System.out.println("action2: toggle layouting using HierarchicalLayoutManager");
+        shouldUseStatic = !shouldUseStatic;
+        System.out.println("now set to: " + shouldUseStatic);
+        // shouldRedrawLayout = true;
+        // updateLayout(currentVertices, currentLinks, graphName);
     }
 
     public void action3() {
@@ -262,12 +269,14 @@ public class NewLayoutManager {
             VertexAction a = new VertexAction(v, Action.ADD);
             vertexActions.add(a);
             vertexToAction.put(v, a);
+            addedNodes += 1;
         }
 
         for (Vertex v : removedVertices) {
             VertexAction a = new VertexAction(v, Action.REMOVE);
             vertexActions.add(a);
             vertexToAction.put(v, a);
+            removedNodes += 1;
         }
 
         for (Link l : addedLinks) {
@@ -284,6 +293,8 @@ public class NewLayoutManager {
             if (!addedVertices.contains(to) && !addedVertices.contains(from)) {
                 linkActions.add(a);
             }
+
+            addedEdges += 1;
         }
 
         for (Link l : removedLinks) {
@@ -300,6 +311,8 @@ public class NewLayoutManager {
             if (!removedVertices.contains(to) && !removedVertices.contains(from)) {
                 linkActions.add(a);
             }
+
+            removedEdges += 1;
         }
 
         vertexActions.sort(vertexActionComparator);
@@ -496,6 +509,10 @@ public class NewLayoutManager {
         linkActions = new LinkedList<>();
         vertexToAction = new HashMap<>();
         graphName = name;
+        addedNodes = 0;
+        addedEdges = 0;
+        removedNodes = 0;
+        removedEdges = 0;
 
         System.out.println();
         System.out.println("---------------------------------------------------------------");
@@ -510,8 +527,9 @@ public class NewLayoutManager {
             manager.doLayout(new LayoutGraph(links, vertices));
             nodes = manager.getNodes();
             shouldRedrawLayout = false;
-        } else if (false) {
+        } else if (shouldUseStatic) {
             System.out.println("Redrawing the graph using HierarchicalLayoutManager in subsequent iterations");
+            generateActions();
             manager.doLayout(new LayoutGraph(links, vertices));
             nodes = manager.getNodes();
             new BuildDatastructure().run();
@@ -535,7 +553,9 @@ public class NewLayoutManager {
 
             new WriteResult().run();
 
-            new ComputeLayoutScore().run();
+            if (!shouldLayoutOptimally) {
+                new ComputeLayoutScore().run();
+            }
 
             sanityCheckEdges();
             sanityCheckNodesAndLayerNodes();
@@ -691,7 +711,7 @@ public class NewLayoutManager {
         }
 
         private float getEdgeBends() {
-            return layoutScoring.totEdgeBendDegrees();
+            return layoutScoring.averageEdgeBendDegrees();
         }
 
         private float getNodeDisplacement() {
@@ -781,7 +801,7 @@ public class NewLayoutManager {
             int optLayer = -1;
             int optPos = -1;
             // Try every position in existing layers
-            // System.out.println("Trying existing layers");
+            System.out.println("Trying existing layers");
             for (int i = 0; i < layers.keySet().size(); i++) {
                 insertNode(node, i);
                 boolean edgeOnSameLayer = false;
@@ -815,6 +835,9 @@ public class NewLayoutManager {
                     adjustXCoordinates(i);
                     new AssignYCoordinates().run();
 
+                    System.out.println("Results layer " + i + " pos " + pos);
+                    new ComputeLayoutScore().run();
+
                     if (betterScore(edgeCrossings, edgeLength, edgeBends, nodeDisplacement)) {
                         edgeCrossings = getEdgeCrossings();
                         edgeLength = getEdgeLength();
@@ -842,9 +865,9 @@ public class NewLayoutManager {
 
             boolean betterNewLayer = false;
             // Try adding new layers inbetween existing ones, then every position in these
-            // System.out.println("Try adding new layers");
+            System.out.println("Try adding new layers");
             for (int i = 0; i < layers.keySet().size() + 1; i++) {
-                // System.out.println("Trying layer " + i + "/" + (layers.keySet().size() + 1));
+                System.out.println("Trying layer " + i + "/" + (layers.keySet().size() + 1));
                 createNewLayer(i);
                 insertNode(node, i);
                 HashMap<Integer, HashMap<Integer, Integer>> tempPrevXCoordsWithinLayer = new HashMap<>();
@@ -861,6 +884,9 @@ public class NewLayoutManager {
                     }
                     adjustXCoordinates(i);
                     new AssignYCoordinates().run();
+
+                    System.out.println("Results layer " + i + " pos " + pos);
+                    new ComputeLayoutScore().run();
 
                     if (betterScore(edgeCrossings, edgeLength, edgeBends, nodeDisplacement)) {
                         edgeCrossings = getEdgeCrossings();
@@ -894,9 +920,9 @@ public class NewLayoutManager {
                 sanityCheckEdges();
             }
 
-            // System.out.println(
-            // "Best to place at - new layer: " + betterNewLayer + ", layer: " + optLayer +
-            // ", pos: " + optPos);
+            System.out.println(
+                    "Best to place at - new layer: " + betterNewLayer + ", layer: " + optLayer +
+                            ", pos: " + optPos);
             if (betterNewLayer) {
                 createNewLayer(optLayer);
                 insertNode(node, optLayer);
@@ -1740,12 +1766,13 @@ public class NewLayoutManager {
             // System.out.println(from + " and " + to + " on same layer " + to.layer + "/" +
             // (layers.keySet().size() - 1));
             if (canMoveNodeDown(to)) {
-                // System.out.println("Moving " + to + " to new layer " + (to.layer + 1));
+                System.out.println("Moving " + to + " to new layer " + (to.layer + 1));
                 moveNodeDown(to);
             } else if (canMoveNodeUp(from)) {
-                // System.out.println("Moving " + from + " to new layer " + (from.layer - 1));
+                System.out.println("Moving " + from + " to new layer " + (from.layer - 1));
                 moveNodeUp(from);
             } else {
+                System.out.println("Expanding layer for " + to);
                 expandNewLayerBeneath(to);
             }
 
@@ -1858,6 +1885,9 @@ public class NewLayoutManager {
 
                 insertNode(dummy, layer - 1);
             }
+
+            sanityCheckEdges();
+            sanityCheckNodesAndLayerNodes();
         }
 
         private void applyAddLinkAction(Link l) {
@@ -2501,10 +2531,11 @@ public class NewLayoutManager {
             int edgeCount = 0;
 
             for (LayoutNode node : nodes) {
-                if (node.vertex == null) {
+                if (node.vertex == null)
                     continue;
-                }
                 for (LayoutEdge e : node.preds) {
+                    if (e.link == null)
+                        continue;
                     List<Point> points = new WriteResult().edgePoints(e);
                     float edgeLength = 0;
                     Point prevPoint = points.get(0);
@@ -2525,14 +2556,22 @@ public class NewLayoutManager {
             }
         }
 
-        private float totEdgeBendDegrees() {
+        /**
+         * Computes how much the bends in an edge deviates from being straight, on
+         * average
+         * 
+         * @return
+         */
+        private float averageEdgeBendDegrees() {
             float totDegree = 0;
+            int edgeCount = 0;
 
             for (LayoutNode node : nodes) {
-                if (node.vertex == null) {
+                if (node.vertex == null)
                     continue;
-                }
                 for (LayoutEdge e : node.preds) {
+                    if (e.link == null)
+                        continue;
                     List<Point> points = new WriteResult().edgePoints(e);
                     Point prevPoint = points.get(0);
                     Point curPoint = points.get(1);
@@ -2557,21 +2596,32 @@ public class NewLayoutManager {
                         prevPoint = curPoint;
                         curPoint = nextPoint;
                     }
+                    edgeCount += 1;
                 }
             }
 
-            return totDegree;
+            if (edgeCount > 0) {
+                return totDegree / edgeCount;
+            } else {
+                return 0;
+            }
         }
 
+        private int reversedEdges() {
+            return reversedLinks.size();
+        }
+
+        // TODO: only use edge bend deg, change to number of reversed edges instead
         private float averageEdgeBends() {
             float totBends = 0;
             int edgeCount = 0;
 
             for (LayoutNode node : nodes) {
-                if (node.vertex == null) {
+                if (node.vertex == null)
                     continue;
-                }
                 for (LayoutEdge e : node.preds) {
+                    if (e.link == null)
+                        continue;
                     float bends = 0;
                     List<Point> points = new WriteResult().edgePoints(e);
                     Point prevPoint = points.get(0);
@@ -2612,6 +2662,12 @@ public class NewLayoutManager {
             }
         }
 
+        // TODO: Add clustering change metric
+        private float proximityMetric() {
+
+            return 0;
+        }
+
         private float averageNodeDisplacement() {
             HashSet<Vertex> commonVertices = new HashSet<>(oldVertices);
             commonVertices.retainAll(currentVertices);
@@ -2630,21 +2686,17 @@ public class NewLayoutManager {
         }
 
         public void run() {
-            float edgeCrossings = totalEdgeCrossings();
-            float edgeBends = averageEdgeBends();
-            float edgeBendsDeg = totEdgeBendDegrees();
+            int edgeCrossings = totalEdgeCrossings();
+            // float edgeBends = averageEdgeBends();
+            float edgeBendsDeg = averageEdgeBendDegrees();
             float edgeLength = averageEdgeLength();
             float nodeDisplacement = averageNodeDisplacement();
-
-            // System.out.println("---- Computing layout metrics ----");
-            // System.out.println("Tot edge crossings: " + edgeCrossings);
-            // System.out.println("Avg edge bends: " + edgeBends);
-            // System.out.println("Tot edge bends degree: " + edgeBendsDeg);
-            // System.out.println("Avg edge length: " + edgeLength);
-            // System.out.println("Avg node displacement: " + nodeDisplacement);
+            int reversedEdges = reversedEdges();
 
             System.out.println("DATA LINE:" + graphName + "," + currentVertices.size() + "," + currentLinks.size() + ","
-                    + edgeCrossings + "," + edgeBends + "," + edgeBendsDeg + "," + edgeLength + "," + nodeDisplacement);
+                    + addedNodes + "," + removedNodes + "," + addedEdges + "," + removedEdges + ","
+                    + edgeCrossings + "," + reversedEdges + "," + edgeBendsDeg + "," + edgeLength + ","
+                    + nodeDisplacement);
         }
     }
 

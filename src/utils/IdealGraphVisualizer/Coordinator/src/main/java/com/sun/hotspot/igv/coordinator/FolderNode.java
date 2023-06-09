@@ -63,7 +63,8 @@ public class FolderNode extends AbstractNode {
     static private int REPETITIONS = 1;
     static private int MAX_GRAPHS = 5000;
     static {
-        System.out.println("DATA LINE:graph,nodes,edges,crossings,bends,degrees,length,displacement");
+        System.out.println(
+                "DATA LINE:graph,nodes,edges,added nodes,removed nodes,added edges,removed edges,EC,RE,EBD,EL,ND");
     }
 
     private static class FolderChildren extends Children.Keys<FolderElement> implements ChangedListener {
