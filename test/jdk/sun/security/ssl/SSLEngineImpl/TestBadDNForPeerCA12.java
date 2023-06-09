@@ -65,32 +65,37 @@ public class TestBadDNForPeerCA12 {
 
     // this contains a server response with invalid DNs
     private static final byte[] serverPayload = Base64.getDecoder().decode(
-        "FgMDBSYCAABVAwPU0IrHPvJuIvTO6/Y+FaKcEJQdaMtrQJqC4jWJ9gnUsyCTfLM7C"
-        + "Cg8lCjgTKFBrf44AEvb5HXOmW56ssFpmgHKbMAsAAANABcAAAAjAAD/AQABAAsAAfYAA"
-        + "fMAAfAwggHsMIIBj6ADAgECAgRGZGRDMAwGCCqGSM49BAMCBQAwajELMAkGA1UEBhMCV"
-        + "VMxCzAJBgNVBAgTAkNBMRIwEAYDVQQHEwlDdXBlcnRpbm8xDjAMBgNVBAoTBUR1bW15M"
-        + "Q4wDAYDVQQLEwVEdW1teTEaMBgGA1UEAxMRZHVtbXkuZXhhbXBsZS5jb20wHhcNMTgwM"
-        + "zI3MjI0MTMxWhcNMjgwMzI2MjI0MTMxWjBqMQswCQYDVQQGEwJVUzELMAkGA1UECBMCQ"
-        + "0ExEjAQBgNVBAcTCUN1cGVydGlubzEOMAwGA1UEChMFRHVtbXkxDjAMBgNVBAsTBUR1b"
-        + "W15MRowGAYDVQQDExFkdW1teS5leGFtcGxlLmNvbTBZMBMGByqGSM49AgEGCCqGSM49A"
-        + "wEHA0IABI0sz/qT0Es+i5F3Ae3czRsbFsMntuLUnntoOGWqLAEPPsLM4GEEDFNzWrlGx"
-        + "BrPsILKArunM5jrkqsfEc1VqfyjITAfMB0GA1UdDgQWBBQLzGwgL76ANOYop3WzQ3XjT"
-        + "9ulQTAMBggqhkjOPQQDAgUAA0kAMEYCIQC9nJbGueD7SkKrJmGQLNE4mFjB4wJKRT8An"
-        + "WoH5BltQAIhAMibIWGQmR1iIAcrdmho9vU6YV9y7Oh6gPeFzGkfYeJnDAAAbwMAHSA/f"
-        + "EXlxdJD/2SshJYmnuInis+G7Rl2syMQ3yFunfm7dQQDAEcwRQIgEef2rIOJK6G/JsM5C"
-        + "wRzANMUhlzqm9IzwtARgMhFpc8CIQDq5Rk317feUvqAgCJ+h9MT20ljXou9SBk3YjA9t"
-        + "Q89EA0AAlgDQAECACoEAwUDBgMIBwgICAQIBQgGCAkICggLBAEFAQYBBAIDAwMBAwICA"
-        + "wIBAgICJgBsMGoxCzAJBgNVBAYTAlVTMQswCQYDVQQIEwJDQTESMBAGA1UEBxMJQ3VwZ"
-        + "XJ0aW5vMQ4wDAYDVQQKEwVEdW1teTEOMAwGA1UECxMFRHVtbXkxGjAYBgNVBAMTEWR1b"
-        + "W15LmV4YW1wbGUuY29tAGwwajELMAkGA1UEBhMCVVMxCzAJBgNVBAgMAkNBMRIwEAYDV"
-        + "QQHDAlDdXBlcnRpbm8xDjAMBgNVBAoMBUR1bW15MQ4wDAYDVQQLDAVEdW1teTEaMBgGA"
-        + "1UEAwwRZHVtbXkuZXhhbXBsZS5jb20AbDBqMQswCQYDVQQGEwJVUzELMAkGA1UECAwCQ"
-        + "0ExEjAQBgNVBAcMCUN1cGVydGlubzEOMAwGA1UECgwFRHVtbXkxDjAMBgNVBAsMBUR1b"
-        + "W15MRowGAYDVQQDDBFkdW1teS5leGFtcGxlLmNvbQBsMGoxCzAJBgNVBAYTAlVTMQswC"
-        + "QYDVQQIEwJDQTESMBAGA1UEBxMJQ3VwZXJ0aW5vMQ4wDAYDVQQKEwVEdW1teTEOMAwGA"
-        + "1UECxMFRHVtbXkxGjAYBgNVBAMTEWR1bW15LmV4YW1wbGUuY29tAGwwajELMAkGA1UEB"
-        + "hMCVVMxCzAJBgNVBAgTAkNBMRIwEAYDVQQHEwlDdXBlcnRpbm8xDjAMBgNVBAoTBUR1b"
-        + "W15MQ4wDAYDVQQLEwVEdW1teTEaMBgGA1UEAxMRZHVtbXkuZXhhbXBsZS5jb20OAAAA"
+        "FgMDBhICAABVAwPMLHtEUgYD0pQlnACp5PtTXmQCBFZPhgc04XLxigmrmSCMBvYxrX"
+        + "/ABiIaHm7woaRU8L4ln578hiTkdcvJgQdUDgA1AAANABcAAAAjAAD/AQABAAsAA1UAA1"
+        + "IAA08wggNLMIICMwIEVzmbhzANBgkqhkiG9w0BAQsFADBqMQswCQYDVQQGEwJVUzELMA"
+        + "kGA1UECAwCQ0ExEjAQBgNVBAcMCUN1cGVydGlubzEOMAwGA1UECgwFRHVtbXkxDjAMBg"
+        + "NVBAsMBUR1bW15MRowGAYDVQQDDBFkdW1teS5leGFtcGxlLmNvbTAeFw0xNjA1MTYxMD"
+        + "A2MzhaFw0yNjA1MTYxMDA2MzhaMGoxCzAJBgNVBAYTAlVTMQswCQYDVQQIDAJDQTESMB"
+        + "AGA1UEBwwJQ3VwZXJ0aW5vMQ4wDAYDVQQKDAVEdW1teTEOMAwGA1UECwwFRHVtbXkxGj"
+        + "AYBgNVBAMMEWR1bW15LmV4YW1wbGUuY29tMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMI"
+        + "IBCgKCAQEAyRtAPlvIbvGfI5ZXN4jBu0dU96b8smVcAdxYnDPylnvmsYGdmYC2C6ddT7"
+        + "7I9Nlk6BhNmkz6pCGsXLZnUOL+9XOGVWlw5kHDVEGUjeza5BhpZW0G0q00QthZcRuF/F"
+        + "UkUGzmUuaxgm59VqwxP7dfMERG4gRRXjclMpLm23CShWBhFfooOsiPSFgDtmY4H/LkTU"
+        + "EbaYuxKRfRKhMKm6GBjCVY7iS9iga728dJ+6BTNAGpKITXI35B+Xf7vpTbc+Zub9vL2f"
+        + "czcChQvGTZedCaAFi3NWJXR/UTeuv/vte8jJ1YscHSSi2k0P5k3gi9PCmve/sjLrBuh+"
+        + "D466e/B/swowIDAQABMA0GCSqGSIb3DQEBCwUAA4IBAQBZFaKJtN/1RkCVev7ZmYEwww"
+        + "42kE5RpJt7Es2zoxqEGaNx0TA5D6XnEB1XjFUQOgOG7SbUl4NfLpJejuZiQzaX27+7Pu"
+        + "1FK24SIz61sINpyVtb8flA52mIjH26HzpwSAGmTjFQ7m9Josj/25IqAaRM0AWuPLcwTf"
+        + "B9zRx3me1LxxrzGhtyZDn1Jhlv0aLS79g33Kuj1HAYMvw7UGan372ufmGiv+g5UYeVvP"
+        + "Yw3jeahJkSIh96Bb05aJpaogaoE5e+gQanR7E36WGGaicjfN1gIHSOyzZBibcTUhaplS"
+        + "Q06DfK6UjGmHcVi8X5wD+9NWWiGrlUHcOwKueQOaptTaaXDQACWANAAQIAKgQDBQMGAw"
+        + "gHCAgIBAgFCAYICQgKCAsEAQUBBgEEAgMDAwEDAgIDAgECAgImAGwwajELMAkGA1UEBh"
+        + "MCVVMxCzAJBgNVBAgTAkNBMRIwEAYDVQQHEwlDdXBlcnRpbm8xDjAMBgNVBAoTBUR1bW"
+        + "15MQ4wDAYDVQQLEwVEdW1teTEaMBgGA1UEAxMRZHVtbXkuZXhhbXBsZS5jb20AbDBqMQ"
+        + "swCQYDVQQGEwJVUzELMAkGA1UECAwCQ0ExEjAQBgNVBAcMCUN1cGVydGlubzEOMAwGA1"
+        + "UECgwFRHVtbXkxDjAMBgNVBAsMBUR1bW15MRowGAYDVQQDDBFkdW1teS5leGFtcGxlLm"
+        + "NvbQBsMGoxCzAJBgNVBAYTAlVTMQswCQYDVQQIDAJDQTESMBAGA1UEBwwJQ3VwZXJ0aW"
+        + "5vMQ4wDAYDVQQKDAVEdW1teTEOMAwGA1UECwwFRHVtbXkxGjAYBgNVBAMMEWR1bW15Lm"
+        + "V4YW1wbGUuY29tAGwwajELMAkGA1UEBhMCVVMxCzAJBgNVBAgTAkNBMRIwEAYDVQQHEw"
+        + "lDdXBlcnRpbm8xDjAMBgNVBAoTBUR1bW15MQ4wDAYDVQQLEwVEdW1teTEaMBgGA1UEAx"
+        + "MRZHVtbXkuZXhhbXBsZS5jb20AbDBqMQswCQYDVQQGEwJVUzELMAkGA1UECBMCQ0ExEj"
+        + "AQBgNVBAcTCUN1cGVydGlubzEOMAwGA1UEChMFRHVtbXkxDjAMBgNVBAsTBUR1bW15MR"
+        + "owGAYDVQQDExFkdW1teS5leGFtcGxlLmNvbQ4AAAA="
     );
 
     /*
@@ -166,8 +171,8 @@ public class TestBadDNForPeerCA12 {
         byte[] serverContents = new byte[sTOcBuff.remaining()];
         sTOcBuff.get(serverContents);
         System.out.println("sw: " + Base64.getEncoder().encodeToString
-        (serverContents));
-         */
+        (serverContents));*/
+
 
 
         System.out.println("sending client hello");
@@ -182,9 +187,6 @@ public class TestBadDNForPeerCA12 {
         System.out.println("client unwrap: " + clientHelloResult);
         runDelegatedTasks(clientHelloResult, clientEngine);
 
-        //sTOc.compact();
-        //cTOs.compact();
-
         SSLEngineResult clientExGen = clientEngine.wrap(clientIn, cTOs);
         runDelegatedTasks(clientExGen, clientEngine);
 
@@ -194,11 +196,15 @@ public class TestBadDNForPeerCA12 {
         clientEngine = sslc.createSSLEngine();
         clientEngine.setEnabledProtocols(new String[] {proto});
         clientEngine.setUseClientMode(true);
+        clientEngine.setEnabledCipherSuites(new String[]
+            {"TLS_RSA_WITH_AES_256_CBC_SHA"});
 
         serverEngine = sslc.createSSLEngine();
         serverEngine.setEnabledProtocols(new String[] {proto});
         serverEngine.setUseClientMode(false);
         serverEngine.setNeedClientAuth(true);
+        serverEngine.setEnabledCipherSuites(new String[]
+            {"TLS_RSA_WITH_AES_256_CBC_SHA"});
     }
 
     private void createBuffers() {
