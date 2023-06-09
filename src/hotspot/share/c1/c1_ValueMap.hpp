@@ -237,6 +237,7 @@ class GlobalValueNumbering: public ValueNumberingVisitor {
   ValueMapArray _value_maps;      // list of value maps for all blocks
   ValueSet      _processed_values;  // marker for instructions that were already processed
   bool          _has_substitutions; // set to true when substitutions must be resolved
+  IR*           _ir;
 
  public:
   // accessors

@@ -28,6 +28,7 @@
 #include "c1/c1_ValueMap.hpp"
 #include "c1/c1_ValueSet.hpp"
 #include "c1/c1_ValueStack.hpp"
+#include "c1/c1_CFGPrinter.hpp"
 
 #ifndef PRODUCT
 
@@ -267,6 +268,7 @@ class ShortLoopOptimizer : public ValueNumberingVisitor {
   bool                  _too_complicated_loop;
   bool                  _has_field_store[T_VOID];
   bool                  _has_indexed_store[T_VOID];
+  IR*                   _ir;
 
   // simplified access to methods of GlobalValueNumbering
   ValueMap* current_map()                        { return _gvn->current_map(); }
@@ -286,11 +288,12 @@ class ShortLoopOptimizer : public ValueNumberingVisitor {
   }
 
  public:
-  ShortLoopOptimizer(GlobalValueNumbering* gvn)
+  ShortLoopOptimizer(GlobalValueNumbering* gvn, IR* ir)
     : _gvn(gvn)
     , _loop_blocks(ValueMapMaxLoopSize)
     , _too_complicated_loop(false)
   {
+    _ir = ir;
     for (int i = 0; i < T_VOID; i++) {
       _has_field_store[i] = false;
       _has_indexed_store[i] = false;
@@ -308,6 +311,10 @@ class ShortLoopOptimizer : public ValueNumberingVisitor {
   }
 
   bool process(BlockBegin* loop_header);
+
+  void printCFG() {
+    CFGPrinter::print_cfg(_ir, "Right at this point in ShortLoopOptimizer", true, false);
+  }
 };
 
 class LoopInvariantCodeMotion : public StackObj  {
@@ -320,52 +327,28 @@ class LoopInvariantCodeMotion : public StackObj  {
 
   bool is_invariant(Value v) const     { return _gvn->is_processed(v); }
 
-  bool has_lower_dom(Value v) const    { return v->dominator_depth() <= _insertion_point->dominator_depth(); }
-
   void process_block(BlockBegin* block);
 
  public:
   LoopInvariantCodeMotion(ShortLoopOptimizer *slo, GlobalValueNumbering* gvn, BlockBegin* loop_header, BlockList* loop_blocks);
 };
 
-class VerifyDomVisitor: public ValueVisitor {
-  private:
-   Value _instr;
-   Value _insert;
-   bool _strong = false;
-   bool _valid = true;
-
-  bool quick_check(Value use) {
-    return (_insert->dominator_depth() >= use->dominator_depth());
-  }
-
-  bool strong_check(Value use) {
-     if (_insert->block() == use->block()) {return true; }
-     BlockBegin *cur = _insert->block()->dominator();
-
-     while (cur && cur != use->block()) {
-       cur = cur->dominator();
-     }
-     return cur == use->block();
-  }
+class DomCheckVisitor: public ValueVisitor {
+ private:
+  Value _insert;
+  bool _valid = true;
 
   void visit(Value* vp) {
-    if (_strong) {
-      if (!strong_check(*vp)) {
-        _valid = false;
-      }
-    }
-    else if (!quick_check(*vp)) {
+    assert(*vp != nullptr, "use should not be null");
+    if (_insert->dominator_depth() < (*vp)->dominator_depth()) {
       _valid = false;
     }
   }
 
-  public:
-   bool is_valid() {return _valid; }
-   VerifyDomVisitor(Value instr, Value insert, bool strong = false)
-     { _instr = instr;
-       _insert = insert;
-       _strong = strong; } 
+ public:
+  bool is_valid() {return _valid; }
+  DomCheckVisitor(Value insert)
+    : _insert(insert) {}
 };
 
 LoopInvariantCodeMotion::LoopInvariantCodeMotion(ShortLoopOptimizer *slo, GlobalValueNumbering* gvn, BlockBegin* loop_header, BlockList* loop_blocks)
@@ -404,10 +387,6 @@ LoopInvariantCodeMotion::LoopInvariantCodeMotion(ShortLoopOptimizer *slo, Global
 void LoopInvariantCodeMotion::process_block(BlockBegin* block) {
   TRACE_VALUE_NUMBERING(tty->print_cr("processing block B%d", block->block_id()));
 
-  if (CrashInLoopInvariantCodeMotion) {
-    guarantee(false, "in loop invariant code motion");
-  }
-
   Instruction* prev = block;
   Instruction* cur = block->next();
 
@@ -440,25 +419,21 @@ void LoopInvariantCodeMotion::process_block(BlockBegin* block) {
       cur_invariant = is_invariant(cvt->value());
     }
 
+    // Check that insertion point has higher dom depth than all uses
+    DomCheckVisitor v(_insertion_point);
+    cur->input_values_do(&v);
 
-    if (cur_invariant) {
-      VerifyDomVisitor v1(cur, _insertion_point, false);
-      cur->input_values_do(&v1);
-      VerifyDomVisitor v2(cur, _insertion_point, true);
-      cur->input_values_do(&v2);
-#ifdef ASSERT
-      assert((v1.is_valid() == v2.is_valid()), "weak and strong check don't agree!");
-      assert(v1.is_valid(), "tried to hoist instruction which would have wrong depth (weak check)");
-#endif
-
-#ifdef ASSERT
-      assert(v2.is_valid(), "tried to hoist instruction which would have wrong depth (strong check)");
-#endif
+    if (VerifyShortLoopOptimizations) {
+      if ((cur_invariant && !v.is_valid())) {
+        (tty->print_cr("Instruction %c%d to be lifted over %c%d (from block %d to block %d)", cur->type()->tchar(), cur->id(), _insertion_point->type()->tchar(), _insertion_point->id(), cur->block()->id(), _insertion_point->block()->id()));
+        (cur->print_line());
+        (_insertion_point->print_line());
+        _short_loop_optimizer->printCFG();
+        guarantee(false, "optimization candidate tried to hoist over uses?");
+      }
     }
 
-    VerifyDomVisitor v_intermediate(cur, _insertion_point, false);
-    cur->input_values_do(&v_intermediate);
-    if (cur_invariant && v_intermediate.is_valid()) {
+    if (cur_invariant && v.is_valid()) {
       // perform value numbering and mark instruction as loop-invariant
       _gvn->substitute(cur);
 
@@ -466,18 +441,6 @@ void LoopInvariantCodeMotion::process_block(BlockBegin* block) {
         // ensure that code for non-constant instructions is always generated
         cur->pin();
       }
-
-#ifdef ASSERT
-      VerifyDomVisitor v3(cur, _insertion_point, false);
-      cur->input_values_do(&v3);
-      VerifyDomVisitor v4(cur, _insertion_point, true);
-      cur->input_values_do(&v4);
-
-      assert((v3.is_valid() == v4.is_valid()), "weak and strong check don't agree!");
-      assert(v3.is_valid(), "hoisted instruction now has wrong depth (weak check).");
-
-      assert(v4.is_valid(), "hoisted instruction now has wrong depth (strong check)");
-#endif
 
       // remove cur instruction from loop block and append it to block before loop
       Instruction* next = cur->next();
@@ -570,9 +533,10 @@ GlobalValueNumbering::GlobalValueNumbering(IR* ir)
   , _value_maps(ir->linear_scan_order()->length(), ir->linear_scan_order()->length(), nullptr)
   , _has_substitutions(false)
 {
+  _ir = ir;
   TRACE_VALUE_NUMBERING(tty->print_cr("****** start of global value numbering"));
 
-  ShortLoopOptimizer short_loop_optimizer(this);
+  ShortLoopOptimizer short_loop_optimizer(this, _ir);
 
   BlockList* blocks = ir->linear_scan_order();
   int num_blocks = blocks->length();
