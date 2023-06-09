@@ -376,49 +376,6 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseVectorizedMismatchIntrinsic, false);
   }
 
-
-  // Adjust RTM (Restricted Transactional Memory) flags.
-  if (UseRTMLocking) {
-    // If CPU or OS do not support RTM:
-    if (PowerArchitecturePPC64 < 8 || PowerArchitecturePPC64 > 9) {
-      vm_exit_during_initialization("RTM instructions are not available on this CPU.");
-    }
-
-    if (!has_tm()) {
-      vm_exit_during_initialization("RTM is not supported on this OS version.");
-    }
-
-#if INCLUDE_RTM_OPT
-    if (!FLAG_IS_CMDLINE(UseRTMLocking)) {
-      // RTM locking should be used only for applications with
-      // high lock contention. For now we do not use it by default.
-      vm_exit_during_initialization("UseRTMLocking flag should be only set on command line");
-    }
-    if (LockingMode != LM_LEGACY) {
-      warning("UseRTMLocking requires LockingMode = 1");
-      FLAG_SET_DEFAULT(UseRTMLocking, false);
-    }
-#else
-    // Only C2 does RTM locking optimization.
-    vm_exit_during_initialization("RTM locking optimization is not supported in this VM");
-#endif
-  } else { // !UseRTMLocking
-    if (UseRTMForStackLocks) {
-      if (!FLAG_IS_DEFAULT(UseRTMForStackLocks)) {
-        warning("UseRTMForStackLocks flag should be off when UseRTMLocking flag is off");
-      }
-      FLAG_SET_DEFAULT(UseRTMForStackLocks, false);
-    }
-    if (UseRTMDeopt) {
-      FLAG_SET_DEFAULT(UseRTMDeopt, false);
-    }
-#ifdef COMPILER2
-    if (PrintPreciseRTMLockingStatistics) {
-      FLAG_SET_DEFAULT(PrintPreciseRTMLockingStatistics, false);
-    }
-#endif
-  }
-
   // This machine allows unaligned memory accesses
   if (FLAG_IS_DEFAULT(UseUnalignedAccesses)) {
     FLAG_SET_DEFAULT(UseUnalignedAccesses, true);

@@ -84,7 +84,7 @@ public abstract class RTMGenericCommandLineOptionTest {
     }
 
     public void runTestCases() throws Throwable {
-        if (Platform.isX86() || Platform.isX64() || Platform.isPPC()) {
+        if (Platform.isX86() || Platform.isX64()) {
             if (Platform.isServer()) {
                 runX86SupportedVMTestCases();
             } else {
