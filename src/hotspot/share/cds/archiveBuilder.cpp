@@ -465,7 +465,7 @@ void ArchiveBuilder::remember_embedded_pointer_in_enclosing_obj(MetaspaceClosure
   //     ref->mpp()           == 0x00001008   (the location of the first element in the array)
   //     ref->enclosing_obj() == 0x00001000   (the Array that contains the Method)
   //
-  // We use the above informatio to mark the bitmap to indicate that there's a pointer on address 0x00001008.
+  // We use the above information to mark the bitmap to indicate that there's a pointer on address 0x00001008.
   SourceObjInfo* src_info = _src_obj_table.get(enclosing_obj);
   if (src_info == nullptr || !src_info->should_copy()) {
     // source objects of point_to_it/set_to_null types are not copied
