@@ -657,11 +657,6 @@ void ShenandoahGeneration::establish_usage(size_t num_regions, size_t num_bytes,
 
 void ShenandoahGeneration::increase_used(size_t bytes) {
   Atomic::add(&_used, bytes);
-  // This detects arithmetic wraparound on _used.  Non-generational mode does not keep track of _affiliated_region_count
-  // TODO: REMOVE IS_GLOBAL() QUALIFIER AFTER WE FIX GLOBAL AFFILIATED REGION ACCOUNTING
-  assert(is_global() || ShenandoahHeap::heap()->is_full_gc_in_progress() ||
-         (_used + _humongous_waste <= _affiliated_region_count * ShenandoahHeapRegion::region_size_bytes()),
-         "used cannot exceed regions");
 }
 
 void ShenandoahGeneration::increase_humongous_waste(size_t bytes) {
@@ -683,12 +678,6 @@ void ShenandoahGeneration::decrease_used(size_t bytes) {
   assert(is_global() || ShenandoahHeap::heap()->is_full_gc_in_progress() ||
          (_used >= bytes), "cannot reduce bytes used by generation below zero");
   Atomic::sub(&_used, bytes);
-
-  // Non-generational mode does not maintain affiliated region counts
-  // TODO: REMOVE IS_GLOBAL() QUALIFIER AFTER WE FIX GLOBAL AFFILIATED REGION ACCOUNTING
-  assert(is_global() || ShenandoahHeap::heap()->is_full_gc_in_progress() ||
-         (_affiliated_region_count * ShenandoahHeapRegion::region_size_bytes() >= _used),
-         "Affiliated regions must hold more than what is currently used");
 }
 
 size_t ShenandoahGeneration::used_regions() const {

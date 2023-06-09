@@ -52,7 +52,7 @@ GCName GCConfiguration::young_collector() const {
     return NA;
   }
 
- if (UseZGC) {
+  if (UseZGC) {
     if (ZGenerational) {
       return ZMinor;
     } else {
@@ -71,14 +71,6 @@ GCName GCConfiguration::old_collector() const {
     return ParallelOld;
   }
 
-  if (UseZGC) {
-    if (ZGenerational) {
-      return ZMajor;
-    } else {
-      return Z;
-    }
-  }
-
   if (UseShenandoahGC) {
 #if INCLUDE_SHENANDOAHGC
     if (strcmp(ShenandoahGCMode, "generational") == 0) {
@@ -88,6 +80,13 @@ GCName GCConfiguration::old_collector() const {
     return NA;
   }
 
+  if (UseZGC) {
+    if (ZGenerational) {
+      return ZMajor;
+    } else {
+      return Z;
+    }
+  }
   return SerialOld;
 }
 

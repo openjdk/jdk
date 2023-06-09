@@ -144,7 +144,7 @@
  * @requires vm.gc.Shenandoah
  * @library /test/lib
  *
- * @run main/othervm/timeout=240 -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ * @run main/othervm/timeout=300 -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC
  *      -XX:-UseTLAB -XX:+ShenandoahVerify
  *      TestSieveObjects

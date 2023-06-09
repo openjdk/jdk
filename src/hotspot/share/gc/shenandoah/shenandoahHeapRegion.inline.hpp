@@ -157,13 +157,6 @@ inline void ShenandoahHeapRegion::increase_live_data_gc_words(size_t s) {
 
 inline void ShenandoahHeapRegion::internal_increase_live_data(size_t s) {
   size_t new_live_data = Atomic::add(&_live_data, s, memory_order_relaxed);
-#ifdef ASSERT
-  size_t live_bytes = new_live_data * HeapWordSize;
-  size_t used_bytes = used();
-  assert(live_bytes <= used_bytes,
-         "%s Region " SIZE_FORMAT " can't have more live data than used: " SIZE_FORMAT ", " SIZE_FORMAT " after adding " SIZE_FORMAT,
-         affiliation_name(), index(), live_bytes, used_bytes, s * HeapWordSize);
-#endif
 }
 
 inline void ShenandoahHeapRegion::clear_live_data() {

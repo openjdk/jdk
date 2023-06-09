@@ -113,7 +113,7 @@
  *
  * @run main/othervm -Xmx128m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
- *      -Dprecise=false
+ *      -Dprecise=false -Dmem.pool=Young
  *      TestChurnNotifications
  */
 
@@ -141,16 +141,7 @@ public class TestChurnNotifications {
 
     static volatile Object sink;
 
-    private static final String DEFAULT_POOL_NAME = "Shenandoah";
-    private static final String YOUNG_GEN_POOL_NAME = "Shenandoah Young Gen";
-
-    private static MemoryUsage getUsage(Map<String, MemoryUsage> pools) {
-        MemoryUsage usage = pools.get(DEFAULT_POOL_NAME);
-        if (usage == null) {
-            usage = pools.get(YOUNG_GEN_POOL_NAME);
-        }
-        return usage;
-    }
+    private static final String POOL_NAME = "Young".equals(System.getProperty("mem.pool")) ? "Shenandoah Young Gen" : "Shenandoah";
 
     public static void main(String[] args) throws Exception {
         final long startTime = System.currentTimeMillis();
@@ -165,8 +156,8 @@ public class TestChurnNotifications {
                     Map<String, MemoryUsage> mapBefore = info.getGcInfo().getMemoryUsageBeforeGc();
                     Map<String, MemoryUsage> mapAfter = info.getGcInfo().getMemoryUsageAfterGc();
 
-                    MemoryUsage before = getUsage(mapBefore);
-                    MemoryUsage after = getUsage(mapAfter);
+                    MemoryUsage before = mapBefore.get(POOL_NAME);
+                    MemoryUsage after = mapAfter.get(POOL_NAME);
 
                     if ((before != null) && (after != null)) {
                         long diff = before.getUsed() - after.getUsed();

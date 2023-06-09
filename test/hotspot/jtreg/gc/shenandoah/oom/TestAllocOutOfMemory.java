@@ -45,6 +45,7 @@
  * @library /test/lib
  * @run driver TestAllocOutOfMemory small
  */
+
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
@@ -60,16 +61,16 @@ public class TestAllocOutOfMemory {
         }
     }
 
-    private static void allocate(String size) throws Exception {
+    private static void allocate(String size, int multiplier) throws Exception {
         switch (size) {
             case "large":
-                work(1024 * 1024, 16);
+                work(1024 * 1024, 16 * multiplier);
                 break;
             case "heap":
-                work(16 * 1024 * 1024, 1);
+                work(16 * 1024 * 1024, multiplier);
                 break;
             case "small":
-                work(1, 16 * 1024 * 1024);
+                work(1, 16 * 1024 * 1024 * multiplier);
                 break;
             default:
                 throw new IllegalArgumentException("Usage: test [large|small|heap]");
@@ -77,41 +78,56 @@ public class TestAllocOutOfMemory {
     }
 
     public static void main(String[] args) throws Exception {
-        if (args.length > 1) {
-            // Called from test, size is second argument
+        if (args.length > 2) {
+            // Called from test, size is second argument, heap requested is third
             String size = args[1];
-            allocate(size);
+            long spec_heap = Integer.parseInt(args[2]);
+
+            // The actual heap we get may be larger than the one we asked for
+            // (particularly in the generational case)
+            final long actual_heap = Runtime.getRuntime().maxMemory();
+            int multiplier = 1;
+            if (actual_heap > spec_heap) {
+                // A suitable multiplier is used, so as to allocate an
+                // amount appropriate to the larger actual heap size than what
+                // was specified.
+                multiplier = (int)((actual_heap + spec_heap - 1)/spec_heap);
+            }
+
+            allocate(size, multiplier);
             return;
         }
 
         // Called from jtreg, size is first argument
         String size = args[0];
         {
+            int heap = 16*1024*1024;      // -Xmx16m
             expectFailure("-Xmx16m",
                           "-XX:+UnlockExperimentalVMOptions",
                           "-XX:+UseShenandoahGC",
                           TestAllocOutOfMemory.class.getName(),
-                          "test", size);
+                          "test", size, Integer.toString(heap));
 
             expectFailure("-Xmx16m",
                           "-XX:+UnlockExperimentalVMOptions",
                           "-XX:+UseShenandoahGC", "-XX:ShenandoahGCMode=generational",
                           TestAllocOutOfMemory.class.getName(),
-                          "test", size);
+                          "test", size, Integer.toString(heap));
         }
 
         {
+            int heap = 1*1024*1024*1024;  // -Xmx1g
             expectSuccess("-Xmx1g",
                           "-XX:+UnlockExperimentalVMOptions",
                           "-XX:+UseShenandoahGC",
                           TestAllocOutOfMemory.class.getName(),
-                          "test", size);
+                          "test", size, Integer.toString(heap));
 
             expectSuccess("-Xmx1g",
                           "-XX:+UnlockExperimentalVMOptions",
                           "-XX:+UseShenandoahGC", "-XX:ShenandoahGCMode=generational",
                           TestAllocOutOfMemory.class.getName(),
-                          "test", size);
+                          "test", size, Integer.toString(heap));
         }
     }
 

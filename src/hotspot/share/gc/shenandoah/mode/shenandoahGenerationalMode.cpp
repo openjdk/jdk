@@ -61,6 +61,10 @@ ShenandoahHeuristics* ShenandoahGenerationalMode::initialize_heuristics(Shenando
     vm_exit_during_initialization("Generational mode requires the (default) adaptive heuristic");
   }
 
+#if !(defined AARCH64 || defined AMD64 || defined IA32 || defined PPC64)
+  vm_exit_during_initialization("Shenandoah Generational GC is not supported on this platform.");
+#endif
+
   return new ShenandoahAdaptiveHeuristics(generation);
 }
 
