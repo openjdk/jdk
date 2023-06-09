@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,16 +25,28 @@
 
 /*
  * @test
+ * @modules java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.instruction
+ *          java.base/jdk.internal.classfile.impl
+ *          java.base/jdk.internal.classfile.impl.verifier
+ *          java.base/jdk.internal.classfile.components
+ *          java.base/java.util:open
+ * @comment Opens java.util so HashMap bytecode generation can access its nested
+ *          classes with a proper Lookup object
  * @summary Testing Classfile class hierarchy resolution SPI.
  * @run junit ClassHierarchyInfoTest
  */
 import java.io.IOException;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
+import java.lang.invoke.MethodHandles;
 import java.net.URI;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import jdk.internal.classfile.ClassHierarchyResolver;
@@ -65,18 +77,18 @@ class ClassHierarchyInfoTest {
     }
 
     @Test
-    void testBreakDefaulClassHierarchy() throws Exception {
+    void testBreakDefaultClassHierarchy() throws Exception {
         assertThrows(VerifyError.class, () ->
         transformAndVerify(ClassHierarchyResolver.of(
                 Set.of(),
-                Map.of(ClassDesc.of("java.util.HashMap$Node"), ClassDesc.of("java.util.HashMap$TreeNode"))).orElse(ClassHierarchyResolver.DEFAULT_CLASS_HIERARCHY_RESOLVER))
+                Map.of(ClassDesc.of("java.util.HashMap$Node"), ClassDesc.of("java.util.HashMap$TreeNode"))).orElse(ClassHierarchyResolver.defaultResolver()))
         );
     }
 
     @Test
     void testProvideCustomClassStreamResolver() throws Exception {
         var fs = FileSystems.getFileSystem(URI.create("jrt:/"));
-        transformAndVerify(ClassHierarchyResolver.ofCached(classDesc -> {
+        transformAndVerify(ClassHierarchyResolver.ofResourceParsing(classDesc -> {
             try {
                 return Files.newInputStream(fs.getPath("modules/java.base/" + Util.toInternalName(classDesc) + ".class"));
             } catch (IOException ioe) {
@@ -85,7 +97,36 @@ class ClassHierarchyInfoTest {
         }));
     }
 
+    @Test
+    void testClassLoaderParsingResolver() throws Exception {
+        transformAndVerify(ClassHierarchyResolver.ofResourceParsing(ClassLoader.getSystemClassLoader()));
+    }
+
+    @Test
+    void testClassLoaderReflectionResolver() throws Exception {
+        transformAndVerify(ClassHierarchyResolver.ofClassLoading(ClassLoader.getSystemClassLoader()));
+    }
+
+    @Test
+    void testLookupResolver() throws Exception {
+        // A lookup must be able to access all the classes involved in the class file generation
+        var privilegedLookup = MethodHandles.privateLookupIn(HashMap.class, MethodHandles.lookup());
+        transformAndVerify(ClassHierarchyResolver.ofClassLoading(privilegedLookup));
+    }
+
+    @Test
+    void testLookupResolver_IllegalAccess() throws Exception {
+        // A lookup from this test class, cannot access nested classes in HashMap
+        var lookup = MethodHandles.lookup();
+        assertThrows(IllegalArgumentException.class, () -> transformAndVerify(ClassHierarchyResolver.ofClassLoading(lookup)));
+    }
+
     void transformAndVerify(ClassHierarchyResolver res) throws Exception {
+        transformAndVerifySingle(res);
+        transformAndVerifySingle(res.cached());
+    }
+
+    void transformAndVerifySingle(ClassHierarchyResolver res) throws Exception {
         Path path = FileSystems.getFileSystem(URI.create("jrt:/")).getPath("modules/java.base/java/util/HashMap.class");
         var classModel = Classfile.parse(path, Classfile.Option.classHierarchyResolver(res));
         byte[] newBytes = classModel.transform(
@@ -103,6 +144,11 @@ class ClassHierarchyInfoTest {
                         clb.with(cle);
                 });
         var errors = Classfile.parse(newBytes).verify(null);
-        if (!errors.isEmpty()) throw errors.iterator().next();
+        if (!errors.isEmpty()) {
+            var itr = errors.iterator();
+            var thrown = itr.next();
+            itr.forEachRemaining(thrown::addSuppressed);
+            throw thrown;
+        }
     }
 }

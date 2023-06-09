@@ -54,7 +54,7 @@ class ThreadPerTaskExecutor extends ThreadContainer implements ExecutorService {
             MethodHandles.Lookup l = MethodHandles.lookup();
             STATE = l.findVarHandle(ThreadPerTaskExecutor.class, "state", int.class);
         } catch (Exception e) {
-            throw new InternalError(e);
+            throw new ExceptionInInitializerError(e);
         }
     }
 
