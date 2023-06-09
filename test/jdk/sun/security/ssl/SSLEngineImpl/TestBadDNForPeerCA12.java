@@ -64,8 +64,8 @@ public class TestBadDNForPeerCA12 {
 
     // this contains a server response with invalid DNs
     private static final byte[] serverPayload = Base64.getDecoder().decode(
-        "FgMDBhICAABVAwPMLHtEUgYD0pQlnACp5PtTXmQCBFZPhgc04XLxigmrmSCMBvYxrX"
-        + "/ABiIaHm7woaRU8L4ln578hiTkdcvJgQdUDgA1AAANABcAAAAjAAD/AQABAAsAA1UAA1"
+        "FgMDBhICAABVAwPORrwPxSL0DOnCC+cCvQcXxeU1ugjN5XyT0r9qOrlT0iD4I0BgFq"
+        + "2Hbt7a9cGreNkhniEEhgQIuxa2Ur21VJr9/AA1AAANABcAAAAjAAD/AQABAAsAA1UAA1"
         + "IAA08wggNLMIICMwIEVzmbhzANBgkqhkiG9w0BAQsFADBqMQswCQYDVQQGEwJVUzELMA"
         + "kGA1UECAwCQ0ExEjAQBgNVBAcMCUN1cGVydGlubzEOMAwGA1UECgwFRHVtbXkxDjAMBg"
         + "NVBAsMBUR1bW15MRowGAYDVQQDDBFkdW1teS5leGFtcGxlLmNvbTAeFw0xNjA1MTYxMD"
@@ -83,16 +83,16 @@ public class TestBadDNForPeerCA12 {
         + "B9zRx3me1LxxrzGhtyZDn1Jhlv0aLS79g33Kuj1HAYMvw7UGan372ufmGiv+g5UYeVvP"
         + "Yw3jeahJkSIh96Bb05aJpaogaoE5e+gQanR7E36WGGaicjfN1gIHSOyzZBibcTUhaplS"
         + "Q06DfK6UjGmHcVi8X5wD+9NWWiGrlUHcOwKueQOaptTaaXDQACWANAAQIAKgQDBQMGAw"
-        + "gHCAgIBAgFCAYICQgKCAsEAQUBBgEEAgMDAwEDAgIDAgECAgImAGwwajELMAkGA1UEBh"
+        + "gHCAgIBAgFCAYICQgKCAsEAQUBBgEEAgMDAwEDAgIDAgECAgImAGwwajELMAkRA1UEBh"
         + "MCVVMxCzAJBgNVBAgTAkNBMRIwEAYDVQQHEwlDdXBlcnRpbm8xDjAMBgNVBAoTBUR1bW"
         + "15MQ4wDAYDVQQLEwVEdW1teTEaMBgGA1UEAxMRZHVtbXkuZXhhbXBsZS5jb20AbDBqMQ"
-        + "swCQYDVQQGEwJVUzELMAkGA1UECAwCQ0ExEjAQBgNVBAcMCUN1cGVydGlubzEOMAwGA1"
+        + "swCREDVQQGEwJVUzELMAkGA1UECAwCQ0ExEjAQBgNVBAcMCUN1cGVydGlubzEOMAwGA1"
         + "UECgwFRHVtbXkxDjAMBgNVBAsMBUR1bW15MRowGAYDVQQDDBFkdW1teS5leGFtcGxlLm"
-        + "NvbQBsMGoxCzAJBgNVBAYTAlVTMQswCQYDVQQIDAJDQTESMBAGA1UEBwwJQ3VwZXJ0aW"
+        + "NvbQBsMGoxCzAJEQNVBAYTAlVTMQswCQYDVQQIDAJDQTESMBAGA1UEBwwJQ3VwZXJ0aW"
         + "5vMQ4wDAYDVQQKDAVEdW1teTEOMAwGA1UECwwFRHVtbXkxGjAYBgNVBAMMEWR1bW15Lm"
-        + "V4YW1wbGUuY29tAGwwajELMAkGA1UEBhMCVVMxCzAJBgNVBAgTAkNBMRIwEAYDVQQHEw"
+        + "V4YW1wbGUuY29tAGwwajELMAkRA1UEBhMCVVMxCzAJBgNVBAgTAkNBMRIwEAYDVQQHEw"
         + "lDdXBlcnRpbm8xDjAMBgNVBAoTBUR1bW15MQ4wDAYDVQQLEwVEdW1teTEaMBgGA1UEAx"
-        + "MRZHVtbXkuZXhhbXBsZS5jb20AbDBqMQswCQYDVQQGEwJVUzELMAkGA1UECBMCQ0ExEj"
+        + "MRZHVtbXkuZXhhbXBsZS5jb20AbDBqMQswCREDVQQGEwJVUzELMAkGA1UECBMCQ0ExEj"
         + "AQBgNVBAcTCUN1cGVydGlubzEOMAwGA1UEChMFRHVtbXkxDjAMBgNVBAsTBUR1bW15MR"
         + "owGAYDVQQDExFkdW1teS5leGFtcGxlLmNvbQ4AAAA="
     );
@@ -171,8 +171,6 @@ public class TestBadDNForPeerCA12 {
         sTOcBuff.get(serverContents);
         System.out.println("sw: " + Base64.getEncoder().encodeToString
         (serverContents));*/
-
-
 
         System.out.println("sending client hello");
         SSLEngineResult clientResult = clientEngine.wrap(clientOut, cTOs);
