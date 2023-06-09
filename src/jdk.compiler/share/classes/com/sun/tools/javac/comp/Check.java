@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2247,6 +2247,36 @@ public class Check {
                 log.warning(LintCategory.OVERRIDES, pos,
                             Warnings.OverrideEqualsButNotHashcode(someClass));
             }
+        }
+    }
+
+    public void checkHasMain(DiagnosticPosition pos, ClassSymbol c) {
+        boolean found = false;
+
+        for (Symbol sym : c.members().getSymbolsByName(names.main)) {
+            if (sym.kind == MTH && (sym.flags() & PRIVATE) == 0) {
+                MethodSymbol meth = (MethodSymbol)sym;
+                if (!types.isSameType(meth.getReturnType(), syms.voidType)) {
+                    continue;
+                }
+                if (meth.params.isEmpty()) {
+                    found = true;
+                    break;
+                }
+                if (meth.params.size() != 1) {
+                    continue;
+                }
+                if (!types.isSameType(meth.params.head.type, types.makeArrayType(syms.stringType))) {
+                    continue;
+                }
+
+                found = true;
+                break;
+            }
+        }
+
+        if (!found) {
+            log.error(pos, Errors.UnnamedClassDoesNotHaveMainMethod);
         }
     }
 
@@ -4572,8 +4602,11 @@ public class Check {
                         }
                     }
                 }
-            } else {
-                if (c.labels.tail.nonEmpty()) {
+            } else if (c.labels.tail.nonEmpty()) {
+                var patterCaseLabels = c.labels.stream().filter(ll -> ll instanceof JCPatternCaseLabel).map(cl -> (JCPatternCaseLabel)cl);
+                var allUnderscore = patterCaseLabels.allMatch(pcl -> !hasBindings(pcl.getPattern()));
+
+                if (!allUnderscore) {
                     log.error(c.labels.tail.head.pos(), Errors.FlowsThroughFromPattern);
                 }
             }
@@ -4608,7 +4641,7 @@ public class Check {
         new TreeScanner() {
             @Override
             public void visitBindingPattern(JCBindingPattern tree) {
-                bindings[0] = true;
+                bindings[0] = !tree.var.sym.isUnnamedVariable();
                 super.visitBindingPattern(tree);
             }
         }.scan(p);
@@ -4626,7 +4659,7 @@ public class Check {
         return false;
     }
     void checkSwitchCaseLabelDominated(List<JCCase> cases) {
-        List<JCCaseLabel> caseLabels = List.nil();
+        List<Pair<JCCase, JCCaseLabel>> caseLabels = List.nil();
         boolean seenDefault = false;
         boolean seenDefaultLabel = false;
         boolean warnDominatedByDefault = false;
@@ -4653,7 +4686,9 @@ public class Check {
                     }
                 }
                 Type currentType = labelType(label);
-                for (JCCaseLabel testCaseLabel : caseLabels) {
+                for (Pair<JCCase, JCCaseLabel> caseAndLabel : caseLabels) {
+                    JCCase testCase = caseAndLabel.fst;
+                    JCCaseLabel testCaseLabel = caseAndLabel.snd;
                     Type testType = labelType(testCaseLabel);
                     if (types.isSubtype(currentType, testType) &&
                         !currentType.hasTag(ERROR) && !testType.hasTag(ERROR)) {
@@ -4663,7 +4698,7 @@ public class Check {
                             dominated |= !(testCaseLabel instanceof JCConstantCaseLabel);
                         } else if (label instanceof JCPatternCaseLabel patternCL &&
                                    testCaseLabel instanceof JCPatternCaseLabel testPatternCaseLabel &&
-                                   TreeInfo.unguardedCaseLabel(testCaseLabel)) {
+                                   TreeInfo.unguardedCase(testCase)) {
                             dominated = patternDominated(testPatternCaseLabel.pat,
                                                          patternCL.pat);
                         }
@@ -4672,7 +4707,7 @@ public class Check {
                         }
                     }
                 }
-                caseLabels = caseLabels.prepend(label);
+                caseLabels = caseLabels.prepend(Pair.of(c, label));
             }
         }
     }
@@ -4696,12 +4731,6 @@ public class Check {
                 if (!types.isSubtype(currentPatternType, existingPatternType)) {
                     return false;
                 }
-            }
-            while (existingPattern instanceof JCParenthesizedPattern parenthesized) {
-                existingPattern = parenthesized.pattern;
-            }
-            while (currentPattern instanceof JCParenthesizedPattern parenthesized) {
-                currentPattern = parenthesized.pattern;
             }
             if (currentPattern instanceof JCBindingPattern) {
                 return existingPattern instanceof JCBindingPattern;

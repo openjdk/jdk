@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,7 @@ import java.util.Objects;
 
 import jdk.internal.module.Checks;
 import jdk.jfr.Event;
+import jdk.jfr.EventType;
 import jdk.jfr.FlightRecorderPermission;
 import jdk.jfr.Recording;
 import jdk.jfr.RecordingState;
@@ -120,9 +121,9 @@ public final class Utils {
         }
     }
 
-    // Tjis method can't handle Long.MIN_VALUE because absolute value is negative
+    // handle Long.MIN_VALUE as a special case since its absolute value is negative
     private static String formatDataAmount(String formatter, long amount) {
-        int exp = (int) (Math.log(Math.abs(amount)) / Math.log(1024));
+        int exp = (amount == Long.MIN_VALUE) ? 6 : (int) (Math.log(Math.abs(amount)) / Math.log(1024));
         char unitPrefix = "kMGTPE".charAt(exp - 1);
         return String.format(formatter, amount / Math.pow(1024, exp), unitPrefix);
     }
@@ -858,5 +859,13 @@ public final class Utils {
                 // ignore
             }
         }
+    }
+
+    public static String makeSimpleName(EventType type) {
+      return makeSimpleName(type.getName());
+    }
+
+    public static String makeSimpleName(String qualified) {
+        return qualified.substring(qualified.lastIndexOf(".") + 1);
     }
 }

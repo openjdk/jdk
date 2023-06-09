@@ -63,31 +63,30 @@ public class StackMapDecoder {
     static List<VerificationTypeInfo> initFrameLocals(MethodModel method) {
         return initFrameLocals(method.parent().orElseThrow().thisClass(),
                 method.methodName().stringValue(),
-                method.methodType().stringValue(),
+                method.methodTypeSymbol(),
                 method.flags().has(AccessFlag.STATIC));
     }
 
-    public static List<VerificationTypeInfo> initFrameLocals(ClassEntry thisClass, String methodName, String methodType, boolean isStatic) {
-        var mdesc = MethodTypeDesc.ofDescriptor(methodType);
+    public static List<VerificationTypeInfo> initFrameLocals(ClassEntry thisClass, String methodName, MethodTypeDesc methodType, boolean isStatic) {
         VerificationTypeInfo vtis[];
         int i = 0;
         if (!isStatic) {
-            vtis = new VerificationTypeInfo[mdesc.parameterCount() + 1];
+            vtis = new VerificationTypeInfo[methodType.parameterCount() + 1];
             if ("<init>".equals(methodName) && !ConstantDescs.CD_Object.equals(thisClass.asSymbol())) {
                 vtis[i++] = SimpleVerificationTypeInfo.ITEM_UNINITIALIZED_THIS;
             } else {
                 vtis[i++] = new StackMapDecoder.ObjectVerificationTypeInfoImpl(thisClass);
             }
         } else {
-            vtis = new VerificationTypeInfo[mdesc.parameterCount()];
+            vtis = new VerificationTypeInfo[methodType.parameterCount()];
         }
-        for(var arg : mdesc.parameterList()) {
-            vtis[i++] = switch (arg.descriptorString()) {
-                case "I", "S", "C" ,"B", "Z" ->  SimpleVerificationTypeInfo.ITEM_INTEGER;
-                case "J" -> SimpleVerificationTypeInfo.ITEM_LONG;
-                case "F" -> SimpleVerificationTypeInfo.ITEM_FLOAT;
-                case "D" -> SimpleVerificationTypeInfo.ITEM_DOUBLE;
-                case "V" -> throw new IllegalArgumentException("Illegal method argument type: " + arg);
+        for(var arg : methodType.parameterList()) {
+            vtis[i++] = switch (arg.descriptorString().charAt(0)) {
+                case 'I', 'S', 'C' ,'B', 'Z' -> SimpleVerificationTypeInfo.ITEM_INTEGER;
+                case 'J' -> SimpleVerificationTypeInfo.ITEM_LONG;
+                case 'F' -> SimpleVerificationTypeInfo.ITEM_FLOAT;
+                case 'D' -> SimpleVerificationTypeInfo.ITEM_DOUBLE;
+                case 'V' -> throw new IllegalArgumentException("Illegal method argument type: " + arg);
                 default -> new StackMapDecoder.ObjectVerificationTypeInfoImpl(TemporaryConstantPool.INSTANCE.classEntry(arg));
             };
         }
@@ -100,7 +99,7 @@ public class StackMapDecoder {
         var mi = dcb.methodInfo();
         var prevLocals = StackMapDecoder.initFrameLocals(buf.thisClass(),
                 mi.methodName().stringValue(),
-                mi.methodType().stringValue(),
+                mi.methodTypeSymbol(),
                 (mi.methodFlags() & ACC_STATIC) != 0);
         int prevOffset = -1;
         var map = new TreeMap<Integer, StackMapFrameInfo>();
