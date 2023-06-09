@@ -319,6 +319,54 @@ public final class DirectCodeBuilder
         }
 
         content = new UnboundAttribute.AdHocAttribute<>(Attributes.CODE) {
+
+            private void writeCounters(boolean codeMatch, BufWriterImpl buf) {
+                if (codeMatch) {
+                    buf.writeU2(original.maxStack());
+                    buf.writeU2(original.maxLocals());
+                } else {
+                    StackCounter cntr = StackCounter.of(DirectCodeBuilder.this, buf);
+                    buf.writeU2(cntr.maxStack());
+                    buf.writeU2(cntr.maxLocals());
+                }
+            }
+
+            private void generateStackMaps(BufWriterImpl buf) throws IllegalArgumentException {
+                //new instance of generator immediately calculates maxStack, maxLocals, all frames,
+                // patches dead bytecode blocks and removes them from exception table
+                StackMapGenerator gen = StackMapGenerator.of(DirectCodeBuilder.this, buf);
+                attributes.withAttribute(gen.stackMapTableAttribute());
+                buf.writeU2(gen.maxStack());
+                buf.writeU2(gen.maxLocals());
+            }
+
+            private void tryGenerateStackMaps(boolean codeMatch, BufWriterImpl buf) {
+                if (buf.getMajorVersion() >= Classfile.JAVA_6_VERSION) {
+                    try {
+                        generateStackMaps(buf);
+                    } catch (IllegalArgumentException e) {
+                        //failover following JVMS-4.10
+                        if (buf.getMajorVersion() == Classfile.JAVA_6_VERSION) {
+                            writeCounters(codeMatch, buf);
+                        } else {
+                            throw e;
+                        }
+                    }
+                } else {
+                    writeCounters(codeMatch, buf);
+                }
+            }
+
+            private boolean writeOriginalAttribute(BufWriterImpl buf) {
+                var stackMapAttr = original.findAttribute(Attributes.STACK_MAP_TABLE).orElse(null);
+                if (stackMapAttr != null) {
+                    attributes.withAttribute(stackMapAttr);
+                    writeCounters(true, buf);
+                    return true;
+                }
+                return false;
+            }
+
             @Override
             public void writeBody(BufWriter b) {
                 BufWriterImpl buf = (BufWriterImpl) b;
@@ -332,51 +380,37 @@ public final class DirectCodeBuilder
                             methodInfo.methodName().stringValue(),
                             methodInfo.methodTypeSymbol().displayDescriptor()));
                 }
-                int maxStack, maxLocals;
-                Attribute<? extends StackMapTableAttribute> stackMapAttr;
 
-                if (!needsStackMap || context.stackMapsOption() == Classfile.StackMapsOption.STACK_MAPS_NEVER) {
-                    StackCounter cntr = StackCounter.of(DirectCodeBuilder.this, buf);
-                    maxStack = cntr.maxStack();
-                    maxLocals = cntr.maxLocals();
-                    stackMapAttr = null;
-                } else if (codeAndExceptionsMatch(codeLength) &&
-                          (stackMapAttr = original.findAttribute(Attributes.STACK_MAP_TABLE).orElse(null)) != null) {
-                    maxLocals = original.maxLocals();
-                    maxStack = original.maxStack();
-                } else if (buf.getMajorVersion() >= Classfile.JAVA_6_VERSION ||
-                           context.stackMapsOption() == Classfile.StackMapsOption.STACK_MAPS_ALWAYS) {
-                    try {
-                        //new instance of generator immediately calculates maxStack, maxLocals, all frames,
-                        // patches dead bytecode blocks and removes them from exception table
-                        StackMapGenerator gen = StackMapGenerator.of(DirectCodeBuilder.this, buf);
-                        maxStack = gen.maxStack();
-                        maxLocals = gen.maxLocals();
-                        stackMapAttr = gen.stackMapTableAttribute();
-                    } catch (IllegalArgumentException e) {
-                        if (buf.getMajorVersion() == Classfile.JAVA_6_VERSION &&
-                            context.stackMapsOption() == Classfile.StackMapsOption.STACK_MAPS_WHEN_REQUIRED) {
-                            //failover following JVMS-4.10
-                            StackCounter cntr = StackCounter.of(DirectCodeBuilder.this, buf);
-                            maxStack = cntr.maxStack();
-                            maxLocals = cntr.maxLocals();
-                            stackMapAttr = null;
-                        } else {
-                            throw e;
+                if (needsStackMap) {
+                    if (codeAndExceptionsMatch(codeLength)) {
+                        switch (context.stackMapsOption()) {
+                            case STACK_MAPS_WHEN_REQUIRED -> {
+                                if (!writeOriginalAttribute(buf)) {
+                                    tryGenerateStackMaps(true, buf);
+                                }
+                            }
+                            case STACK_MAPS_ALWAYS -> {
+                                if (!writeOriginalAttribute(buf)) {
+                                    generateStackMaps(buf);
+                                }
+                            }
+                            case STACK_MAPS_NEVER ->
+                                writeCounters(true, buf);
+                        }
+                    } else {
+                        switch (context.stackMapsOption()) {
+                            case STACK_MAPS_WHEN_REQUIRED ->
+                                tryGenerateStackMaps(false, buf);
+                            case STACK_MAPS_ALWAYS ->
+                                generateStackMaps(buf);
+                            case STACK_MAPS_NEVER ->
+                                writeCounters(false, buf);
                         }
                     }
-                }
-                else {
-                    StackCounter cntr = StackCounter.of(DirectCodeBuilder.this, buf);
-                    maxStack = cntr.maxStack();
-                    maxLocals = cntr.maxLocals();
-                    stackMapAttr = null;
+                } else {
+                    writeCounters(codeAndExceptionsMatch(codeLength), buf);
                 }
 
-                attributes.withAttribute(stackMapAttr);
-
-                buf.writeU2(maxStack);
-                buf.writeU2(maxLocals);
                 buf.writeInt(codeLength);
                 buf.writeBytes(bytecodesBufWriter);
                 writeExceptionHandlers(b);
