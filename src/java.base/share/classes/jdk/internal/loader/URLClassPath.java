@@ -73,6 +73,7 @@ import jdk.internal.access.JavaUtilZipFileAccess;
 import jdk.internal.access.SharedSecrets;
 import sun.net.util.URLUtil;
 import sun.net.www.ParseUtil;
+import sun.net.www.protocol.jar.Handler;
 import sun.security.action.GetPropertyAction;
 
 /**
@@ -177,13 +178,12 @@ public class URLClassPath {
      * Constructs a URLClassPath from a class path string.
      *
      * @param cp the class path string
-     * @param jarHandler the {@link URLStreamHandler} for {@code jar} protocol
      * @param skipEmptyElements indicates if empty elements are ignored or
      *        treated as the current working directory
      *
      * @apiNote Used to create the application class path.
      */
-    URLClassPath(String cp, URLStreamHandler jarHandler, boolean skipEmptyElements) {
+    URLClassPath(String cp, boolean skipEmptyElements) {
         ArrayList<URL> path = new ArrayList<>();
         if (cp != null) {
             // map each element of class path to a file URL
@@ -210,7 +210,10 @@ public class URLClassPath {
 
         this.unopenedUrls = unopenedUrls;
         this.path = path;
-        this.jarHandler = jarHandler;
+        // this URLClassPath constructor is solely for the app classloader, for which we use
+        // the system provided jar protocol handler implementation for loading jars
+        // in the classpath
+        this.jarHandler = new Handler();
         this.acc = null;
     }
 
