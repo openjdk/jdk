@@ -29,7 +29,6 @@ com/sun/jdi/EATests.java#id0                                    8264699 generic-
 
 com/sun/jdi/ExceptionEvents.java 8278470 generic-all
 com/sun/jdi/RedefineCrossStart.java 8278470 generic-all
-com/sun/jdi/ReferrersTest.java 8285422 generic-all
 com/sun/jdi/SetLocalWhileThreadInNative.java 8285422 generic-all
 com/sun/jdi/cds/CDSBreakpointTest.java 8307778 generic-all
 com/sun/jdi/cds/CDSDeleteAllBkptsTest.java 8307778 generic-all
