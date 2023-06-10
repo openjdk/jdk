@@ -3267,26 +3267,22 @@ void MacroAssembler::compiler_fast_unlock_object(Register oop, Register box, Reg
   if (LockingMode == LM_MONITOR) {
     // Set NE to indicate 'failure' -> take slow-path
     z_ltgr(oop, oop);
+    z_bru(done);
   } else if (LockingMode == LM_LEGACY) {
     // Check if it is still a light weight lock, this is true if we see
     // the stack address of the basicLock in the markWord of the object
     // copy box to currentHeader such that csg does not kill it.
     z_lgr(currentHeader, box);
     z_csg(currentHeader, displacedHeader, 0, oop);
-    // csg sets CR as desired.
+    z_bru(done); // csg sets CR as desired.
   } else {
     assert(LockingMode == LM_LIGHTWEIGHT, "must be");
 
     z_lg(currentHeader, hdr_offset, oop);
 
-    // check if object is fast-locked otherwise take slow path
-    z_lgr(temp, currentHeader);
-    z_nill(temp, markWord::lock_mask_in_place);
-    z_brne(done);
-
     fast_unlock(oop, currentHeader, temp, done);
+    z_bru(done);
   }
-  z_bru(done);
 
   // In case of LM_LIGHTWEIGHT, we may reach here with (temp & ObjectMonitor::ANONYMOUS_OWNER) != 0.
   // This is handled like owner thread mismatches: We take the slow path.
