@@ -543,7 +543,7 @@ private:
   // potentially schedule a GC pause.
   HeapWord* attempt_allocation_humongous(size_t word_size);
 
-  void attempt_allocation_after_gc(StalledAllocReq* req,
+  void attempt_allocation_after_gc(size_t word_size,
                                    uint gc_count_before,
                                    bool should_try_gc,
                                    GCCause::Cause gc_cause);

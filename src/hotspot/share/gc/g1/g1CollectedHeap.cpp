@@ -402,13 +402,13 @@ G1CollectedHeap::mem_allocate(size_t word_size,
   return attempt_allocation(word_size, word_size, &dummy);
 }
 
-void G1CollectedHeap::attempt_allocation_after_gc(StalledAllocReq* req,
+void G1CollectedHeap::attempt_allocation_after_gc(size_t word_size,
                                                   uint gc_count_before,
                                                   bool should_try_gc,
                                                   GCCause::Cause gc_cause) {
 
   if (should_try_gc) {
-    do_collection_pause(req->size(), gc_count_before, gc_cause);
+    do_collection_pause(word_size, gc_count_before, gc_cause);
   } else {
     log_trace(gc, alloc)("%s: Stall until clear", Thread::current()->name());
     // The GCLocker is either active or the GCLocker initiated
@@ -475,7 +475,7 @@ HeapWord* G1CollectedHeap::attempt_allocation_slow(size_t word_size) {
       gc_count_before = total_collections();
     }
 
-    attempt_allocation_after_gc(&request, gc_count_before, should_try_gc, GCCause::_g1_inc_collection_pause);
+    attempt_allocation_after_gc(request.size(), gc_count_before, should_try_gc, GCCause::_g1_inc_collection_pause);
 
     if (request.pending()) {
       // GC Safepoint did not handle our allocation request. We should retry.
@@ -701,7 +701,7 @@ HeapWord* G1CollectedHeap::attempt_allocation_humongous(size_t word_size) {
       gc_count_before = total_collections();
     }
 
-    attempt_allocation_after_gc(&request, gc_count_before, should_try_gc, GCCause::_g1_humongous_allocation);
+    attempt_allocation_after_gc(request.size(), gc_count_before, should_try_gc, GCCause::_g1_humongous_allocation);
 
     if (request.pending()) {
       // GC Safepoint did not handle our allocation request. We should retry.
