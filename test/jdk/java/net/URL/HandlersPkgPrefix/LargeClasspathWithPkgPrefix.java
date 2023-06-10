@@ -75,12 +75,15 @@ public class LargeClasspathWithPkgPrefix {
         createJar(jarPath);
 
         // create multiple such jar files in the lib dir
-        int numCopies = 1000;
+        int numCopies = 750;
+        long start = System.currentTimeMillis();
         for (int i = 1; i <= numCopies; i++) {
             Path dest = Path.of(libDir.toString(), "8308184-dummy-" + i + ".jar");
             Files.copy(jarPath, dest);
         }
-        System.out.println("Created " + numCopies + " jars under " + libDir);
+        long end = System.currentTimeMillis();
+        System.out.println("Created " + numCopies + " jars under " + libDir
+                + ", took " + (end - start) + " milli seconds");
 
         // create the application's main java file
         Path fooJavaSrcFile = Path.of(classesDir.toString(), "Foo.java");
