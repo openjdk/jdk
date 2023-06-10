@@ -701,7 +701,6 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                 }
                 currentModuleInfos.add(moduleInfos.get(index));
             }
-
             // generate all helper methods
             final String helperMethodNamePrefix = "moduleDescriptorsSub";
             final int[] globalCount = {0};
@@ -712,10 +711,10 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                         ACC_PUBLIC,
                         cob -> {
                             List<ModuleInfo> moduleInfosPackage = splitModuleInfos.get(index[0]);
-                            if (index[0] > 0) {
+                            if (index[0] >= 0) {
                                 // call last helper method
                                 cob.aload(0)
-                                   .aload(1) // load first parameter, which is MD_VAR
+                                   .aload(MD_VAR) // load first parameter, which is MD_VAR
                                    .invokevirtual(
                                            this.classDesc,
                                            helperMethodNamePrefix + (index[0] - 1),
