@@ -26,6 +26,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import jdk.test.lib.JDKToolFinder;
+import jdk.test.lib.compiler.CompilerUtils;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.util.JarBuilder;
@@ -36,7 +37,8 @@ import jdk.test.lib.util.JarBuilder;
  * @summary Verify that an application can be launched when the classpath contains large number of
  *          jars and the java.protocol.handler.pkgs system property is set
  * @library /test/lib/
- * @build jdk.test.lib.util.JarBuilder
+ * @build jdk.test.lib.util.JarBuilder jdk.test.lib.compiler.CompilerUtils
+ *        jdk.test.lib.process.ProcessTools
  * @run driver LargeClasspathWithPkgPrefix
  */
 public class LargeClasspathWithPkgPrefix {
@@ -112,13 +114,11 @@ public class LargeClasspathWithPkgPrefix {
 
     // javac -d <destDir> <javaFile>
     private static void compile(Path javaFile, Path destDir) throws Exception {
-        String javacPath = JDKToolFinder.getJDKTool("javac");
-        ProcessBuilder pb = new ProcessBuilder(javacPath, javaFile.toString(),
-                "-d", destDir.toString());
-        pb.directory(CWD.toFile());
-        System.out.println("Compiling: " + pb.command());
-        OutputAnalyzer analyzer = ProcessTools.executeProcess(pb);
-        analyzer.shouldHaveExitValue(0);
+        boolean compiled = CompilerUtils.compile(javaFile, destDir);
+        if (!compiled) {
+            // compilation failure log/reason would already be available on System.out/err
+            throw new AssertionError("Compilation failed for " + javaFile);
+        }
     }
 
     // java -Djava.protocol.handler.pkgs=foo.bar.some.nonexistent.pkg -cp <classpath> Foo
