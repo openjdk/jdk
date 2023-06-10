@@ -163,19 +163,19 @@ public class SetLocalWhileThreadInNative extends TestScaffold {
         Asserts.assertEQ(frame.location().method().toString(), "SetLocalWhileThreadInNativeTarget.dontinline_testMethod()");
         List<LocalVariable> localVars = frame.visibleVariables();
         boolean changedLocal = false;
-        boolean caughtOPE = false;
+        boolean caughtOFE = false;
         for (LocalVariable lv : localVars) {
             if (lv.name().equals("zero")) {
                 try {
                     frame.setValue(lv, vm().mirrorOf(0)); // triggers deoptimization!
                     changedLocal = true;
                 } catch (OpaqueFrameException e) {
-                    caughtOPE = true;
+                    caughtOFE = true;
                 }
             }
         }
         boolean isVirtualThread = "Virtual".equals(System.getProperty("main.wrapper"));
-        Asserts.assertTrue(caughtOPE == isVirtualThread);
+        Asserts.assertTrue(caughtOFE == isVirtualThread);
         Asserts.assertTrue(changedLocal == !isVirtualThread);
 
         // signal stop
