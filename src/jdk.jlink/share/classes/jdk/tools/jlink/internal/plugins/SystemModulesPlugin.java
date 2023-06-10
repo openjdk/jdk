@@ -711,7 +711,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                         ACC_PUBLIC,
                         cob -> {
                             List<ModuleInfo> moduleInfosPackage = splitModuleInfos.get(index[0]);
-                            if (index[0] >= 0) {
+                            if (index[0] > 0) {
                                 // call last helper method
                                 cob.aload(0)
                                    .aload(MD_VAR) // load first parameter, which is MD_VAR
