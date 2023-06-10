@@ -3277,9 +3277,7 @@ void MacroAssembler::compiler_fast_unlock_object(Register oop, Register box, Reg
     z_bru(done); // csg sets CR as desired.
   } else {
     assert(LockingMode == LM_LIGHTWEIGHT, "must be");
-
     z_lg(currentHeader, hdr_offset, oop);
-
     fast_unlock(oop, currentHeader, temp, done);
     z_bru(done);
   }
