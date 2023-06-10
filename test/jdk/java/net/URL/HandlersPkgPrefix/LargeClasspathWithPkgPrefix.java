@@ -112,7 +112,7 @@ public class LargeClasspathWithPkgPrefix {
         System.out.println("Created jar at " + p);
     }
 
-    // javac -d <destDir> <javaFile>
+    // compile <javaFile> to <destDir>
     private static void compile(Path javaFile, Path destDir) throws Exception {
         boolean compiled = CompilerUtils.compile(javaFile, destDir);
         if (!compiled) {
