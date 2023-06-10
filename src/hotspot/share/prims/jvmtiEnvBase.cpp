@@ -730,7 +730,7 @@ JvmtiEnvBase::get_cthread_last_java_vframe(JavaThread* jt, RegisterMap* reg_map_
 }
 
 jint
-JvmtiEnvBase::get_thread_state(oop thread_oop, JavaThread* jt) {
+JvmtiEnvBase::get_thread_state_base(oop thread_oop, JavaThread* jt) {
   jint state = 0;
 
   if (thread_oop != nullptr) {
@@ -757,6 +757,30 @@ JvmtiEnvBase::get_thread_state(oop thread_oop, JavaThread* jt) {
 }
 
 jint
+JvmtiEnvBase::get_thread_state(oop thread_oop, JavaThread* jt) {
+  jint state = 0;
+
+  if (is_thread_carrying_vthread(jt, thread_oop)) {
+    state = (jint)java_lang_Thread::get_thread_status(thread_oop);
+
+    // This is for extra safety. Other bits are not expected nor needed.
+    state &= (JVMTI_THREAD_STATE_ALIVE | JVMTI_THREAD_STATE_INTERRUPTED);
+
+    if (jt->is_carrier_thread_suspended()) {
+      state |= JVMTI_THREAD_STATE_SUSPENDED;
+    }
+    // It's okay for the JVMTI state to be reported as WAITING when waiting
+    // for something other than an Object.wait. So, we treat a thread carrying
+    // a virtual thread as waiting indefinitely which is not runnable.
+    // It is why the RUNNABLE bit is not needed and the WAITING bits are added.
+    state |= JVMTI_THREAD_STATE_WAITING | JVMTI_THREAD_STATE_WAITING_INDEFINITELY;
+  } else {
+    state = get_thread_state_base(thread_oop, jt);
+  }
+  return state;
+}
+
+jint
 JvmtiEnvBase::get_vthread_state(oop thread_oop, JavaThread* java_thread) {
   jint state = 0;
   bool ext_suspended = JvmtiVTSuspender::is_vthread_suspended(thread_oop);
@@ -770,7 +794,7 @@ JvmtiEnvBase::get_vthread_state(oop thread_oop, JavaThread* java_thread) {
     jint filtered_bits = JVMTI_THREAD_STATE_SUSPENDED | JVMTI_THREAD_STATE_INTERRUPTED;
 
     // This call can trigger a safepoint, so thread_oop must not be used after it.
-    state = get_thread_state(ct_oop, java_thread) & ~filtered_bits;
+    state = get_thread_state_base(ct_oop, java_thread) & ~filtered_bits;
   } else {
     jshort vt_state = java_lang_VirtualThread::state(thread_oop);
     state = (jint)java_lang_VirtualThread::map_state_to_thread_status(vt_state);
@@ -1708,13 +1732,13 @@ JvmtiEnvBase::suspend_thread(oop thread_oop, JavaThread* java_thread, bool singl
   if (java_thread->is_hidden_from_external_view()) {
     return JVMTI_ERROR_NONE;
   }
-  bool is_passive_cthread = is_passive_carrier_thread(java_thread, thread_h());
+  bool is_thread_carrying = is_thread_carrying_vthread(java_thread, thread_h());
 
   // A case of non-virtual thread.
   if (!is_virtual) {
     // Thread.suspend() is used in some tests. It sets jt->is_suspended() only.
     if (java_thread->is_carrier_thread_suspended() ||
-        (!is_passive_cthread && java_thread->is_suspended())) {
+        (!is_thread_carrying && java_thread->is_suspended())) {
       return JVMTI_ERROR_THREAD_SUSPENDED;
     }
     java_thread->set_carrier_thread_suspended();
@@ -1725,10 +1749,10 @@ JvmtiEnvBase::suspend_thread(oop thread_oop, JavaThread* java_thread, bool singl
           (is_virtual && JvmtiVTSuspender::is_vthread_suspended(thread_h())),
          "sanity check");
 
-  // An attempt to handshake-suspend a passive carrier thread will result in
+  // An attempt to handshake-suspend a thread carrying a virtual thread will result in
   // suspension of mounted virtual thread. So, we just mark it as suspended
   // and it will be actually suspended at virtual thread unmount transition.
-  if (!is_passive_cthread) {
+  if (!is_thread_carrying) {
     assert(thread_h() != nullptr, "sanity check");
     assert(single_suspend || thread_h()->is_a(vmClasses::BaseVirtualThread_klass()),
            "SuspendAllVirtualThreads should never suspend non-virtual threads");
@@ -1778,19 +1802,19 @@ JvmtiEnvBase::resume_thread(oop thread_oop, JavaThread* java_thread, bool single
   if (java_thread->is_hidden_from_external_view()) {
     return JVMTI_ERROR_NONE;
   }
-  bool is_passive_cthread = is_passive_carrier_thread(java_thread, thread_h());
+  bool is_thread_carrying = is_thread_carrying_vthread(java_thread, thread_h());
 
   // A case of a non-virtual thread.
   if (!is_virtual) {
     if (!java_thread->is_carrier_thread_suspended() &&
-        (is_passive_cthread || !java_thread->is_suspended())) {
+        (is_thread_carrying || !java_thread->is_suspended())) {
       return JVMTI_ERROR_THREAD_NOT_SUSPENDED;
     }
     java_thread->clear_carrier_thread_suspended();
   }
   assert(!java_thread->is_in_VTMS_transition(), "sanity check");
 
-  if (!is_passive_cthread) {
+  if (!is_thread_carrying) {
     assert(thread_h() != nullptr, "sanity check");
     assert(single_resume || thread_h()->is_a(vmClasses::BaseVirtualThread_klass()),
            "ResumeAllVirtualThreads should never resume non-virtual threads");
