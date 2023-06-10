@@ -26,7 +26,7 @@
  * @bug 8307131
  * @summary C2: assert(false) failed: malformed control flow
  * @library /test/lib
- * @run main/othervm -Xcomp -XX:CompileOnly=TestNondeleteableSafePoint -XX:-TieredCompilation TestNondeleteableSafePoint
+ * @run main/othervm -Xcomp -XX:CompileOnly=TestNondeleteableSafePoint::* -XX:-TieredCompilation TestNondeleteableSafePoint
  */
 
 import jdk.test.lib.Utils;
