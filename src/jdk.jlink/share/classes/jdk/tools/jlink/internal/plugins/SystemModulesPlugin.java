@@ -118,7 +118,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
             ClassDesc.ofInternalName("jdk/internal/module/SystemModules");
     private static final ClassDesc CD_SYSTEM_MODULES_MAP =
             ClassDesc.ofInternalName(SYSTEM_MODULES_MAP_CLASSNAME);
-    private boolean enabled;
+    private final boolean enabled;
 
     public SystemModulesPlugin() {
         super("system-modules");
@@ -517,9 +517,10 @@ public final class SystemModulesPlugin extends AbstractPlugin {
         private static final ClassDesc CD_MODULE_RESOLUTION =
             ClassDesc.ofInternalName("jdk/internal/module/ModuleResolution");
 
+        // Constant chosen for this generator, can be higher in practice
         private static final int MAX_LOCAL_VARS = 256;
 
-        private final int BUILDER_VAR    = 0;
+        private final int BUILDER_VAR    = MAX_LOCAL_VARS + 1; // we need 0 for "this"
         private final int MD_VAR         = 1;  // variable for ModuleDescriptor
         private final int MT_VAR         = 1;  // variable for ModuleTarget
         private final int MH_VAR         = 1;  // variable for ModuleHashes
@@ -666,25 +667,140 @@ public final class SystemModulesPlugin extends AbstractPlugin {
          * Generate bytecode for moduleDescriptors method
          */
         private void genModuleDescriptorsMethod(ClassBuilder clb) {
+            if (moduleInfos.size() <= 75) {
+                // In case there won't be a Method_Too_Large exception, we use the unsplit method to generate the method "moduleDescriptors"
+                clb.withMethodBody(
+                        "moduleDescriptors",
+                        MethodTypeDesc.of(CD_MODULE_DESCRIPTOR.arrayType()),
+                        ACC_PUBLIC,
+                        cob -> {
+                            cob.constantInstruction(moduleInfos.size())
+                               .anewarray(CD_MODULE_DESCRIPTOR)
+                               .astore(MD_VAR);
+                            for (int index = 0; index < moduleInfos.size(); index++) {
+                                ModuleInfo minfo = moduleInfos.get(index);
+                                new ModuleDescriptorBuilder(cob,
+                                        minfo.descriptor(),
+                                        minfo.packages(),
+                                        index).build();
+                            }
+                            cob.aload(MD_VAR)
+                               .areturn();
+                        });
+                return;
+            }
+
+            // split up module infos in "consumable" packages
+            List<List<ModuleInfo>> splitModuleInfos = new ArrayList<>();
+            List<ModuleInfo> currentModuleInfos = null;
+            for (int index = 0; index < moduleInfos.size(); index++) {
+                // The method is "manually split" based on the heuristics that 90 ModuleDescriptors are smaller than 64kb
+                // The number 50 is chosen "randomly" to be below the 64kb limit of a method
+                if (index % 50 == 0) {
+                    // Prepare new list
+                    currentModuleInfos = new ArrayList<>();
+                    splitModuleInfos.add(currentModuleInfos);
+                }
+                currentModuleInfos.add(moduleInfos.get(index));
+            }
+
+            final String helperMethodNamePrefix = "moduleDescriptorsSub";
+            // Variable holding List<Set>, which needs to be restored at each helper method
+            // This list grows at each call of each helper method
+            final ClassDesc arrayListClassDesc = ClassDesc.ofInternalName("java/util/ArrayList");
+
+            // dedupSetBuilder will (!) use this index for the first variable
+            final int firstVariableForDedup = nextLocalVar;
+
+            // generate call to first helper method
             clb.withMethodBody(
                     "moduleDescriptors",
                     MethodTypeDesc.of(CD_MODULE_DESCRIPTOR.arrayType()),
                     ACC_PUBLIC,
                     cob -> {
                         cob.constantInstruction(moduleInfos.size())
-                           .anewarray(CD_MODULE_DESCRIPTOR)
-                           .astore(MD_VAR);
-
-                        for (int index = 0; index < moduleInfos.size(); index++) {
-                            ModuleInfo minfo = moduleInfos.get(index);
-                            new ModuleDescriptorBuilder(cob,
-                                                        minfo.descriptor(),
-                                                        minfo.packages(),
-                                                        index).build();
-                        }
-                        cob.aload(MD_VAR)
+                                .anewarray(CD_MODULE_DESCRIPTOR)
+                                .dup() // storing for the return at the end
+                                .astore(MD_VAR);
+                        // Generate List of Sets required by dedupSetBuilder
+                        // We use slot "nextLocalVar" temporarily. We do net need the list later as the helper methods modify the list and pass it on.
+                        cob.new_(arrayListClassDesc)
+                           .dup()
+                           .invokespecial(arrayListClassDesc, "<init>", MethodTypeDesc.of(CD_void))
+                           .astore(nextLocalVar);
+                        cob.aload(0)
+                           .aload(MD_VAR)
+                           .aload(nextLocalVar)
+                           .invokevirtual(
+                                   this.classDesc,
+                                   helperMethodNamePrefix + "0",
+                                   MethodTypeDesc.of(CD_void, CD_MODULE_DESCRIPTOR.arrayType(), arrayListClassDesc)
+                           )
                            .areturn();
                     });
+
+            // generate all helper methods
+            final int[] globalCount = {0};
+            for (final int[] index = {0}; index[0] < splitModuleInfos.size(); index[0]++) {
+                clb.withMethodBody(
+                        helperMethodNamePrefix + index[0],
+                        MethodTypeDesc.of(CD_void, CD_MODULE_DESCRIPTOR.arrayType(), arrayListClassDesc),
+                        ACC_PUBLIC,
+                        cob -> {
+                            List<ModuleInfo> moduleInfosPackage = splitModuleInfos.get(index[0]);
+
+                            // Restore all (!) sets from parameter to local variables
+                            if (nextLocalVar > firstVariableForDedup) {
+                                // We need to go from the end to the beginning as we will probably overwrite position 2 (which holds the list at the beginning)
+                                for (int i = nextLocalVar-1; i >= firstVariableForDedup; i--) {
+                                    cob.aload(2)
+                                       .constantInstruction(i-firstVariableForDedup)
+                                       .invokevirtual(arrayListClassDesc, "get", MethodTypeDesc.of(CD_Object, CD_int))
+                                       .astore(i);
+                                }
+                            }
+
+                            for (int j = 0; j < moduleInfosPackage.size(); j++) {
+                                ModuleInfo minfo = moduleInfosPackage.get(j);
+                                // executed after the call, thus it is OK to overwrite index 0 (BUILDER_VAR)
+                                new ModuleDescriptorBuilder(cob,
+                                        minfo.descriptor(),
+                                        minfo.packages(),
+                                        globalCount[0]).build();
+                                globalCount[0]++;
+                            }
+
+                            if (index[0] + 1 < (splitModuleInfos.size())) {
+                                // We are not the last one of the calling chain of helper methods
+                                // Prepare next call
+
+                                // Store all new sets to List
+                                if (nextLocalVar > firstVariableForDedup) {
+                                    cob.new_(arrayListClassDesc)
+                                       .dup()
+                                       .invokespecial(arrayListClassDesc, "<init>", MethodTypeDesc.of(CD_void))
+                                       .astore(nextLocalVar);
+                                    for (int i = firstVariableForDedup; i < nextLocalVar; i++) {
+                                        cob.aload(nextLocalVar)
+                                           .aload(i)
+                                           .invokevirtual(arrayListClassDesc, "add", MethodTypeDesc.of(CD_boolean, CD_Object))
+                                           .pop(); // remove boolean result value
+                                    }
+                                }
+                                // call to next helper method
+                                cob.aload(0)
+                                   .aload(MD_VAR) // load first parameter, which is MD_VAR
+                                   .aload(nextLocalVar)
+                                   .invokevirtual(
+                                           this.classDesc,
+                                           helperMethodNamePrefix + (index[0] + 1),
+                                           MethodTypeDesc.of(CD_void, CD_MODULE_DESCRIPTOR.arrayType(), arrayListClassDesc)
+                                   );
+                            }
+
+                            cob.return_();
+                        });
+            }
         }
 
         /**
