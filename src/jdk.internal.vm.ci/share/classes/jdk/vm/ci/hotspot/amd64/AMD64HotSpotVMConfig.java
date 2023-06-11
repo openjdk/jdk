@@ -25,6 +25,7 @@ package jdk.vm.ci.hotspot.amd64;
 import jdk.vm.ci.hotspot.HotSpotVMConfigAccess;
 import jdk.vm.ci.hotspot.HotSpotVMConfigStore;
 import jdk.vm.ci.services.Services;
+import jdk.internal.util.OperatingSystem;
 
 /**
  * Used to access AMD64 specific native configuration details.
@@ -35,7 +36,7 @@ class AMD64HotSpotVMConfig extends HotSpotVMConfigAccess {
         super(config);
     }
 
-    final boolean windowsOs = Services.getSavedProperty("os.name", "").startsWith("Windows");
+    final boolean windowsOs = OperatingSystem.isWindows();
 
     final boolean useCountLeadingZerosInstruction = getFlag("UseCountLeadingZerosInstruction", Boolean.class);
     final boolean useCountTrailingZerosInstruction = getFlag("UseCountTrailingZerosInstruction", Boolean.class);

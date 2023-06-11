@@ -43,6 +43,7 @@ import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Formatter;
 import java.util.HashMap;
 import java.util.List;
@@ -339,6 +340,9 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
          * @param out stream to print to
          */
         public static void printProperties(PrintStream out) {
+            out.println("[Saved system properties]");
+            Comparator<Map.Entry<String, String>> c = Comparator.comparing(Map.Entry<String, String>::getKey);
+            Services.getSavedProperties().entrySet().stream().sorted(c).forEach(e -> System.out.println(e));
             out.println("[JVMCI properties]");
             Option[] values = values();
             for (Option option : values) {

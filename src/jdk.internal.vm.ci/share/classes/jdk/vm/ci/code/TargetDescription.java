@@ -26,6 +26,7 @@ import static jdk.vm.ci.meta.MetaUtil.identityHashCodeString;
 
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.services.Services;
+import jdk.internal.util.OperatingSystem;
 
 /**
  * Represents the target machine for a compiler, including the CPU architecture, the size of
@@ -33,8 +34,8 @@ import jdk.vm.ci.services.Services;
  */
 public class TargetDescription {
 
-    public final boolean linuxOs = Services.getSavedProperty("os.name", "").startsWith("Linux");
-    public final boolean macOs = Services.getSavedProperty("os.name", "").startsWith("Mac");
+    public final boolean linuxOs = OperatingSystem.isLinux();
+    public final boolean macOs = OperatingSystem.isMacOS();
 
     public final Architecture arch;
 

@@ -101,19 +101,6 @@ public class VMSupport {
         return serializePropertiesToByteArray(onlyStrings(getAgentProperties()));
     }
 
-    /**
-     * Serializes {@link VM#getSavedProperties()} to a byte array.
-     *
-     * Used by JVMCI to copy properties into libjvmci.
-     */
-    public static byte[] serializeSavedPropertiesToByteArray() throws IOException {
-        Properties props = new Properties();
-        for (var e : VM.getSavedProperties().entrySet()) {
-            props.put(e.getKey(), e.getValue());
-        }
-        return serializePropertiesToByteArray(props);
-    }
-
     /*
      * Return the temporary directory that the VM uses for the attach
      * and perf data files.
