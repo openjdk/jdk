@@ -915,7 +915,10 @@ class StubGenerator: public StubCodeGenerator {
 
     __ vlex_v(v0, src, sew);
     __ sub(cnt, cnt, vl);
-    __ slli(vl, vl, (int)sew);
+    if (sew != Assembler::e8) {
+      // when sew == e8 (e.g., elem size is 1 byte), slli R, R, 0 is a nop and unnecessary
+      __ slli(vl, vl, sew);
+    }
     __ add(src, src, vl);
 
     __ vsex_v(v0, dst, sew);
@@ -927,7 +930,10 @@ class StubGenerator: public StubCodeGenerator {
 
       __ bind(loop_backward);
       __ sub(t0, cnt, vl);
-      __ slli(t0, t0, sew);
+      if (sew != Assembler::e8) {
+        // when sew == e8 (e.g., elem size is 1 byte), slli R, R, 0 is a nop and unnecessary
+        __ slli(t0, t0, sew);
+      }
       __ add(tmp1, s, t0);
       __ vlex_v(v0, tmp1, sew);
       __ add(tmp2, d, t0);
