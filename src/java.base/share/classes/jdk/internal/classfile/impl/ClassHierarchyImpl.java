@@ -113,21 +113,22 @@ public final class ClassHierarchyImpl {
                 new ClassHierarchyInfoImpl(null, true);
 
         private final Map<ClassDesc, ClassHierarchyInfo> resolvedCache;
-        private final ClassHierarchyResolver delegate;
+        private final Function<ClassDesc, ClassHierarchyInfo> delegateFunction;
 
         public CachedClassHierarchyResolver(ClassHierarchyResolver delegate, Map<ClassDesc, ClassHierarchyInfo> resolvedCache) {
             this.resolvedCache = resolvedCache;
-            this.delegate = delegate;
+            this.delegateFunction = new Function<>() {
+                @Override
+                public ClassHierarchyInfo apply(ClassDesc classDesc) {
+                    var ret = delegate.getClassInfo(classDesc);
+                    return ret == null ? NOPE : ret;
+                }
+            };
         }
 
         @Override
         public ClassHierarchyInfo getClassInfo(ClassDesc classDesc) {
-            var ret = resolvedCache.get(classDesc);
-            if (ret == null) {
-                //semi-synchronized caching, where the map is not locked during delegate call
-                ret = delegate.getClassInfo(classDesc);
-                resolvedCache.put(classDesc, ret == null ? NOPE : ret);
-            }
+            var ret = resolvedCache.computeIfAbsent(classDesc, delegateFunction);
             return ret == NOPE ? null : ret;
         }
     }
