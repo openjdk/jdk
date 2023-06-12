@@ -672,6 +672,12 @@ class Compile : public Phase {
   void print_method(CompilerPhaseType cpt, int level, Node* n = nullptr);
 
 #ifndef PRODUCT
+  void dump_igv(const char* graph_name, int level = 3) {
+    if (should_print_igv(level)) {
+      _igv_printer->print_method(graph_name, level);
+    }
+  }
+
   void igv_print_method_to_file(const char* phase_name = "Debug", bool append = false);
   void igv_print_method_to_network(const char* phase_name = "Debug");
   static IdealGraphPrinter* debug_file_printer() { return _debug_file_printer; }
