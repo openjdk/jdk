@@ -114,12 +114,13 @@ AC_DEFUN_ONCE([LIB_SETUP_LIBFFI],
       AC_MSG_ERROR([Could not find libffi! $HELP_MSG])
     fi
 
-    AC_MSG_CHECKING([if libffi works])
     AC_LANG_PUSH(C)
     OLD_CFLAGS="$CFLAGS"
     CFLAGS="$CFLAGS $LIBFFI_CFLAGS"
     OLD_LIBS="$LIBS"
     LIBS="$LIBS $LIBFFI_LIBS"
+
+    AC_MSG_CHECKING([if libffi works])
     AC_LINK_IFELSE([AC_LANG_PROGRAM([#include <ffi.h>],
         [
           ffi_call(NULL, NULL, NULL, NULL);
@@ -128,15 +129,36 @@ AC_DEFUN_ONCE([LIB_SETUP_LIBFFI],
         [LIBFFI_WORKS=yes],
         [LIBFFI_WORKS=no]
     )
-    CFLAGS="$OLD_CFLAGS"
-    LIBS="$OLD_LIBS"
-    AC_LANG_POP(C)
     AC_MSG_RESULT([$LIBFFI_WORKS])
 
     if test "x$LIBFFI_WORKS" = xno; then
       HELP_MSG_MISSING_DEPENDENCY([ffi])
       AC_MSG_ERROR([Found libffi but could not link and compile with it. $HELP_MSG])
     fi
+
+    # Check if FFI_GO_CLOSURES is properly defined. On some distributions, notably MacOS AArch64,
+    # ffitarget.h (included from ffi.h) does not explicitly define FFI_GO_CLOSURES. This makes the
+    # further include of ffi.h trigger the "FFI_GO_CLOSURES is undefined" warning, which fails
+    # the build when warnings are fatal.
+    AC_MSG_CHECKING([for FFI_GO_CLOSURES definition])
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
+      #include <ffi.h>
+      #ifndef FFI_GO_CLOSURES
+      #error "FFI_GO_CLOSURES is not defined"
+      #endif
+      ][])],
+      [
+        AC_MSG_RESULT([yes])
+      ],
+      [
+        AC_MSG_RESULT([no, defining])
+        LIBFFI_CFLAGS="$LIBFFI_CFLAGS -DFFI_GO_CLOSURES=0"
+      ]
+    )
+
+    CFLAGS="$OLD_CFLAGS"
+    LIBS="$OLD_LIBS"
+    AC_LANG_POP(C)
 
     # Find the libffi.so.X to bundle
     if test "x${ENABLE_LIBFFI_BUNDLING}" = "xtrue"; then
@@ -147,7 +169,7 @@ AC_DEFUN_ONCE([LIB_SETUP_LIBFFI],
       else
         LIBFFI_LIB_FILE_NAME=libffi.so.?
       fi
-    
+
       AC_MSG_CHECKING([for libffi lib file location])
       if test "x${LIBFFI_LIB_PATH}" != x; then
         if test -e ${LIBFFI_LIB_PATH}/${LIBFFI_LIB_FILE_NAME}; then
