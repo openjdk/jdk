@@ -61,6 +61,7 @@ import sun.awt.DisplayChangedListener;
 import sun.awt.IconInfo;
 import sun.awt.SunToolkit;
 import sun.awt.X11GraphicsDevice;
+import sun.awt.X11GraphicsConfig;
 import sun.awt.X11GraphicsEnvironment;
 import sun.java2d.pipe.Region;
 import sun.util.logging.PlatformLogger;
@@ -205,6 +206,39 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         GraphicsConfiguration gc = getGraphicsConfiguration();
         ((X11GraphicsDevice)gc.getDevice()).addDisplayChangedListener(this);
     }
+
+    public GraphicsConfiguration getAppropriateGraphicsConfiguration(
+            GraphicsConfiguration gc)
+    {
+        if (graphicsConfig == null || gc == null) {
+            return gc;
+        }
+
+        final X11GraphicsDevice newDev = getSameScreenDevice(gc);
+        final int visualToLookFor = graphicsConfig.getVisual();
+
+        final GraphicsConfiguration[] configurations = newDev.getConfigurations();
+        for (final GraphicsConfiguration config : configurations) {
+            final X11GraphicsConfig x11gc = (X11GraphicsConfig) config;
+            if (visualToLookFor == x11gc.getVisual()) {
+                graphicsConfig = x11gc;
+            }
+        }
+        return graphicsConfig;
+    }
+
+    private X11GraphicsDevice getSameScreenDevice(GraphicsConfiguration gc) {
+        XToolkit.awtLock();
+        try {
+            final int screenNum = ((X11GraphicsDevice) gc.getDevice()).getScreen();
+            return (X11GraphicsDevice) GraphicsEnvironment.
+                    getLocalGraphicsEnvironment().
+                    getScreenDevices()[screenNum];
+        } finally {
+            XToolkit.awtUnlock();
+        }
+    }
+
 
     protected String getWMName() {
         String name = target.getName();
@@ -693,13 +727,13 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
                     if (intAmt == area) {
                         // Completely on this screen - done!
                         newScreenNum = i;
-                        newGC = getAppropriateGraphicsConfiguration(gds[i].getDefaultConfiguration());
+                        newGC = gds[i].getDefaultConfiguration();
                         break;
                     }
                     if (intAmt > largestAmt) {
                         largestAmt = intAmt;
                         newScreenNum = i;
-                        newGC = getAppropriateGraphicsConfiguration(gds[i].getDefaultConfiguration());
+                        newGC = gds[i].getDefaultConfiguration();
                     }
                 }
             }

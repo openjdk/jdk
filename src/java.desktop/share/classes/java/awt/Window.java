@@ -3215,13 +3215,11 @@ public class Window extends Container implements Accessible {
 
     @Override
     void setGraphicsConfiguration(GraphicsConfiguration gc) {
-        if (gc == null) {
-            gc = GraphicsEnvironment.
-                    getLocalGraphicsEnvironment().
-                    getDefaultScreenDevice().
-                    getDefaultConfiguration();
-        }
-        synchronized (getTreeLock()) {
+        synchronized(getTreeLock()) {
+            WindowPeer peer = (WindowPeer) this.peer;
+            if (peer != null) {
+                gc = peer.getAppropriateGraphicsConfiguration(gc);
+            }
             super.setGraphicsConfiguration(gc);
             if (log.isLoggable(PlatformLogger.Level.FINER)) {
                 log.finer("+ Window.setGraphicsConfiguration(): new GC is \n+ " + getGraphicsConfiguration_NoClientCode() + "\n+ this is " + this);
