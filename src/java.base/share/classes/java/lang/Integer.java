@@ -1009,6 +1009,7 @@ public final class Integer extends Number
     private static final class IntegerCache {
         static final int low = -128;
         static final int high;
+        
         @Stable
         static final Integer[] cache;
         static Integer[] archivedCache;
