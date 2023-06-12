@@ -43,25 +43,25 @@ import java.util.WeakHashMap;
 public final class BaseLocale {
 
     public static @Stable BaseLocale[] constantBaseLocales;
-    public static final byte ENGLISH = 0,
-            FRENCH = 1,
-            GERMAN = 2,
-            ITALIAN = 3,
-            JAPANESE = 4,
-            KOREAN = 5,
-            CHINESE = 6,
-            SIMPLIFIED_CHINESE = 7,
-            TRADITIONAL_CHINESE = 8,
-            FRANCE = 9,
-            GERMANY = 10,
-            ITALY = 11,
-            JAPAN = 12,
-            KOREA = 13,
-            UK = 14,
-            US = 15,
-            CANADA = 16,
-            CANADA_FRENCH = 17,
-            ROOT = 18,
+    public static final byte ROOT = 0,
+            ENGLISH = 1,
+            US = 2,
+            FRENCH = 3,
+            GERMAN = 4,
+            ITALIAN = 5,
+            JAPANESE = 6,
+            KOREAN = 7,
+            CHINESE = 8,
+            SIMPLIFIED_CHINESE = 9,
+            TRADITIONAL_CHINESE = 10,
+            FRANCE = 11,
+            GERMANY = 12,
+            ITALY = 13,
+            JAPAN = 14,
+            KOREA = 15,
+            UK = 16,
+            CANADA = 17,
+            CANADA_FRENCH = 18,
             NUM_CONSTANTS = 19;
     static {
         CDS.initializeFromArchive(BaseLocale.class);
@@ -163,12 +163,14 @@ public final class BaseLocale {
         // BaseLocale as the key. The returned "normalized" instance
         // can subsequently be used by the Locale instance which
         // guarantees the locale components are properly cased/interned.
-        return CACHE.computeIfAbsent(new BaseLocale(language, script, region, variant),
-            (b) -> new BaseLocale(
-                LocaleUtils.toLowerString(b.getLanguage()).intern(),
-                LocaleUtils.toTitleString(b.getScript()).intern(),
-                LocaleUtils.toUpperString(b.getRegion()).intern(),
-                b.getVariant().intern()));
+        synchronized (BaseLocale.class) {
+            return CACHE.computeIfAbsent(new BaseLocale(language, script, region, variant),
+                    (b) -> new BaseLocale(
+                            LocaleUtils.toLowerString(b.getLanguage()).intern(),
+                            LocaleUtils.toTitleString(b.getScript()).intern(),
+                            LocaleUtils.toUpperString(b.getRegion()).intern(),
+                            b.getVariant().intern()));
+        }
     }
 
     public static String convertOldISOCodes(String language) {

@@ -149,6 +149,20 @@
  */
 
 /*
+ * @test id=iu-aggressive-comp
+ * @summary Make sure Shenandoah can recover from humongous allocation fragmentation
+ * @key randomness
+ * @bug 8289220 8309622
+ * @requires vm.gc.Shenandoah
+ * @library /test/lib
+ *
+ * @run main/othervm -Xlog:gc -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xmx1g -Xms1g -XX:ShenandoahTargetNumRegions=2048
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu -XX:ShenandoahGCHeuristics=aggressive
+ *      -XX:+ShenandoahOOMDuringEvacALot -XX:+ShenandoahVerify -Xcomp
+ *      TestAllocHumongousFragment
+ */
+
+/*
  * @test id=iu
  * @summary Make sure Shenandoah can recover from humongous allocation fragmentation
  * @key randomness
@@ -174,20 +188,6 @@
  *
  * @run main/othervm -Xlog:gc+region=trace -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xmx1g -Xms1g
  *      -XX:VerifyGCType=full -XX:+VerifyDuringGC -XX:+VerifyAfterGC
- *      TestAllocHumongousFragment
- */
-
-/*
- * @test id=iu-aggressive-comp
- * @summary Make sure Shenandoah can recover from humongous allocation fragmentation
- * @key randomness
- * @bug 8289220 8309622
- * @requires vm.gc.Shenandoah
- * @library /test/lib
- *
- * @run main/othervm -Xlog:gc -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xmx1g -Xms1g -XX:ShenandoahTargetNumRegions=2048
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu -XX:ShenandoahGCHeuristics=aggressive
- *      -XX:+ShenandoahOOMDuringEvacALot -XX:+ShenandoahVerify -Xcomp
  *      TestAllocHumongousFragment
  */
 
