@@ -387,6 +387,27 @@ static bool print_code(outputStream* st, Thread* thread, address pc, bool is_cra
   return false;
 }
 
+// Like above, but only try to figure out a short name. Return nullptr if not found.
+static const char* find_code_name(address pc) {
+  if (Interpreter::contains(pc)) {
+    InterpreterCodelet* codelet = Interpreter::codelet_containing(pc);
+    if (codelet != nullptr) {
+      return codelet->description();
+    }
+  } else {
+    StubCodeDesc* desc = StubCodeDesc::desc_for(pc);
+    if (desc != nullptr) {
+      return desc->name();
+    } else {
+      CodeBlob* cb = CodeCache::find_blob(pc);
+      if (cb != nullptr) {
+        return cb->name();
+      }
+    }
+  }
+  return nullptr;
+}
+
 /**
  * Gets the caller frame of `fr`.
  *
@@ -675,11 +696,9 @@ void VMError::report(outputStream* st, bool _verbose) {
   // don't allocate large buffer on stack
   static char buf[O_BUFLEN];
 
-  // keep track of which code has already been printed
-  const int printed_capacity = max_error_log_print_code;
-  address printed[printed_capacity];
-  printed[0] = nullptr;
-  int printed_len = 0;
+  // Native stack trace may get stuck. We try to handle the last pc if it
+  // belongs to VM generated code.
+  address lastpc = nullptr;
 
   BEGIN
 
@@ -969,17 +988,14 @@ void VMError::report(outputStream* st, bool _verbose) {
     st->cr();
 
   STEP_IF("printing native stack (with source info)", _verbose)
-    address lastpc = nullptr;
     if (os::platform_print_native_stack(st, _context, buf, sizeof(buf), lastpc)) {
       // We have printed the native stack in platform-specific code
       // Windows/x64 needs special handling.
-      // Stack walking may get stuck. Try to print the calling code.
+      // Stack walking may get stuck. Try to find the calling code.
       if (lastpc != nullptr) {
-        st->print_cr("called by the following code:");
-        if (print_code(st, _thread, lastpc, true, printed, printed_capacity)) {
-          printed_len++;
-        } else {
-          st->print_cr("no VM gerenated code");
+        const char* name = find_code_name(lastpc);
+        if (name != nullptr) {
+          st->print_cr("the last pc belongs to %s (will be printed below)", name);
         }
       }
     } else {
@@ -1076,12 +1092,23 @@ void VMError::report(outputStream* st, bool _verbose) {
     st->cr();
 
   STEP_IF("printing code blobs if possible", _verbose)
+    const int printed_capacity = max_error_log_print_code;
+    address printed[printed_capacity];
+    printed[0] = nullptr;
+    int printed_len = 0;
     // Even though ErrorLogPrintCodeLimit is ranged checked
     // during argument parsing, there's no way to prevent it
     // subsequently (i.e., after parsing) being set to a
     // value outside the range.
     int limit = MIN2(ErrorLogPrintCodeLimit, printed_capacity);
     if (limit > 0) {
+      // Check if a pc was found by native stack trace above.
+      if (lastpc != nullptr) {
+        if (print_code(st, _thread, lastpc, true, printed, printed_capacity)) {
+          printed_len++;
+        }
+      }
+
       // Scan the native stack
       if (!_print_native_stack_used) {
         // Only try to print code of the crashing frame since
