@@ -340,7 +340,7 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      */
     default MethodHandle byteOffsetHandle(PathElement... elements) {
         return computePathOp(LayoutPath.rootPath(this), LayoutPath::offsetHandle,
-                EnumSet.of(PathKind.SEQUENCE_RANGE, PathKind.DEREF_ELEMENT), elements);
+                EnumSet.of(PathKind.DEREF_ELEMENT), elements);
     }
 
     /**
