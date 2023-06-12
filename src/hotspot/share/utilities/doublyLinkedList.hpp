@@ -67,13 +67,10 @@ public:
 //
 template <typename T>
 class DoublyLinkedList {
-  static_assert(std::is_default_constructible<T>::value,
-                "DoublyLinkedList requires default-constructible elements");
-
   static_assert(std::is_base_of<DoublyLinkedListNode, T>::value,
                 "DoublyLinkedList requires elements derived from DoublyLinkedListNode");
 
-  T _head;
+  DoublyLinkedListNode _head;
   size_t _size;
 
   NONCOPYABLE(DoublyLinkedList);

@@ -225,7 +225,7 @@ inline typename DoublyLinkedList<T>::Iterator DoublyLinkedList<T>::begin() {
 
 template <typename T>
 inline typename DoublyLinkedList<T>::Iterator DoublyLinkedList<T>::end() {
- return Iterator(this, &_head);
+ return Iterator(this, cast_to_outer(&_head));
 }
 
 template <typename T>

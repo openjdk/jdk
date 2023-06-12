@@ -133,7 +133,7 @@ void VM_G1CollectForAllocation::doit() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
   // Only if operation was really triggered by an allocation.
-  if (_word_size) {
+  if (_word_size > 0) {
     bool alloc_succeeded = g1h->handle_allocation_requests(false /* expand_heap */);
 
     if (alloc_succeeded) {

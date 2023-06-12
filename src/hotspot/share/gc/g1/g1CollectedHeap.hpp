@@ -190,7 +190,7 @@ class G1CollectedHeap : public CollectedHeap {
       Failed,
     };
 
-    StalledAllocReq(size_t size, uint numa_node, G1CollectedHeap* g1h = G1CollectedHeap::heap()) :
+    StalledAllocReq(size_t size, uint numa_node, G1CollectedHeap* g1h) :
       _size(size),
       _result(nullptr),
       _node_index(numa_node),
@@ -201,8 +201,6 @@ class G1CollectedHeap : public CollectedHeap {
         _g1h->enqueue_req(this);
       }
     }
-
-    StalledAllocReq() : StalledAllocReq(0, 0, nullptr) { }
 
     ~StalledAllocReq() {
       if (_g1h != nullptr) {
@@ -229,9 +227,9 @@ class G1CollectedHeap : public CollectedHeap {
 
   private:
     const size_t _size;
-    HeapWord* _result;
+    HeapWord* volatile _result;
     const uint _node_index;
-    AllocationState _state;
+    volatile AllocationState _state;
     G1CollectedHeap* _g1h;
   };
 
