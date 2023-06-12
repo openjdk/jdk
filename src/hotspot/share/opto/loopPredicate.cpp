@@ -609,6 +609,10 @@ void PhaseIdealLoop::clone_parse_and_assertion_predicates_to_unswitched_loop(Ide
 
     clone_assertion_predicates_to_unswitched_loop(loop, old_new, Deoptimization::Reason_predicate, loop_predicate_proj,
                                                   iffast_pred, ifslow_pred);
+
+    // Now the old predicate is useless (it was cloned to both unswitched loops), we make it always true.
+    ParsePredicateNode* old_predicate = loop_predicate_proj->in(0)->as_ParsePredicate();
+    _igvn.replace_input_of(old_predicate, 1, _igvn.intcon(1));
   }
 
   ParsePredicateSuccessProj* profiled_loop_predicate_proj = parse_predicates.profiled_loop_predicate_proj();
@@ -625,6 +629,9 @@ void PhaseIdealLoop::clone_parse_and_assertion_predicates_to_unswitched_loop(Ide
     clone_assertion_predicates_to_unswitched_loop(loop, old_new, Deoptimization::Reason_profile_predicate,
                                                   profiled_loop_predicate_proj, iffast_pred, ifslow_pred);
 
+    // Now the old predicate is useless (it was cloned to both unswitched loops), we make it always true.
+    ParsePredicateNode* old_predicate = profiled_loop_predicate_proj->in(0)->as_ParsePredicate();
+    _igvn.replace_input_of(old_predicate, 1, _igvn.intcon(1));
   }
 
   ParsePredicateSuccessProj* loop_limit_check_predicate_proj = parse_predicates.loop_limit_check_predicate_proj();
@@ -638,6 +645,10 @@ void PhaseIdealLoop::clone_parse_and_assertion_predicates_to_unswitched_loop(Ide
     ifslow_pred = clone_parse_predicate_to_unswitched_loop(loop_limit_check_predicate_proj, ifslow_pred,
                                                            Deoptimization::Reason_loop_limit_check, true);
     check_cloned_parse_predicate_for_unswitching(ifslow_pred, false);
+
+    // Now the old predicate is useless (it was cloned to both unswitched loops), we make it always true.
+    ParsePredicateNode* old_predicate = loop_limit_check_predicate_proj->in(0)->as_ParsePredicate();
+    _igvn.replace_input_of(old_predicate, 1, _igvn.intcon(1));
   }
 }
 

@@ -1546,6 +1546,7 @@ Node* PhiNode::unique_input(PhaseValues* phase, bool uncast) {
 
   // Unique?
   if (input != NodeSentinel) {
+    if (input == phase->C->top()) { return nullptr; }
     return input;
   }
 
