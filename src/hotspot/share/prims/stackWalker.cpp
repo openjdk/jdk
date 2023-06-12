@@ -108,7 +108,6 @@ void compiledFrameStream::cf_next() {
 // assured that fr is for a java compiled method.
 // Might change the compiled frame
 static void make_first_compiled_frame_more_precise(JavaThread* thread, frame* fr, CompiledMethod* nm) {
-       if (std::getenv("ASGST_SIG") != nullptr && *std::getenv("ASGST_SIG") == '1') {
   assert(nm->is_java_method(), "invariant");
 
   if (thread->has_last_Java_frame() && thread->last_Java_pc() == fr->pc()) {

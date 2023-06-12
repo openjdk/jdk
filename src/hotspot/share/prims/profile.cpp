@@ -305,7 +305,7 @@ void asyncGetStackTraceImpl(ASGST_CallTrace *trace, jint depth, void* ucontext, 
     // We found the thread on the threads list above, but it is too
     // young to be useful so return that there are no Java frames.
     if (walk_during_unsafe_states && include_c_frames) {
-      trace->kind == ASGST_NEW_THREAD_TRACE;
+      trace->kind = ASGST_NEW_THREAD_TRACE;
       if ((trace->kind & kind_mask) == 0) {
         trace->num_frames = ASGST_WRONG_KIND;
         return;

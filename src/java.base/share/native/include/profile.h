@@ -26,7 +26,6 @@
 #ifndef JVM_PROFILE_H
 #define JVM_PROFILE_H
 
-#include <_types/_uint8_t.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <stdint.h>
