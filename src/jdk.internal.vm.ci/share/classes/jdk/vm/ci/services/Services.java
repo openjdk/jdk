@@ -324,11 +324,11 @@ public final class Services {
             props.put("java.specification.version", v);
         }
 
-        SystemProperties res = new SystemProperties(sanitizeOSArch(props));
+        SystemProperties res = new SystemProperties(unsafe, sanitizeOSArch(props));
         if ("true".equals(res.get("debug.jvmci.PrintSavedProperties"))) {
             System.out.println("[Saved system properties]");
             for (Map.Entry<String, String> e : res.entrySet()) {
-                System.out.println(e);
+                System.out.printf("%s=%s%n", e.getKey(), e.getValue());
             }
         }
         return res;

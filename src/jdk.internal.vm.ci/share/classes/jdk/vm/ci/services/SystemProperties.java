@@ -22,14 +22,10 @@
  */
 package jdk.vm.ci.services;
 
-import java.util.AbstractCollection;
-import java.util.AbstractSet;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
-import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import jdk.internal.misc.Unsafe;
 
@@ -39,11 +35,13 @@ import jdk.internal.misc.Unsafe;
  */
 final class SystemProperties implements Map<String, String> {
 
-    final Map<String, Value> entries;
-    EntrySet entrySet;
-    Values values;
+    private final Unsafe unsafe;
+    private final Map<String, Value> entries;
+    private Set<Entry<String, String>> entrySet;
+    private Collection<String> values;
 
-    SystemProperties(Map<String, Value> entries) {
+    SystemProperties(Unsafe unsafe, Map<String, Value> entries) {
+        this.unsafe = unsafe;
         this.entries = entries;
     }
 
@@ -65,7 +63,7 @@ final class SystemProperties implements Map<String, String> {
     @Override
     public boolean containsValue(Object value) {
         for (Value v : entries.values()) {
-            if (v.getString().equals(value)) {
+            if (v.getString(unsafe).equals(value)) {
                 return true;
             }
         }
@@ -76,7 +74,7 @@ final class SystemProperties implements Map<String, String> {
     public String get(Object key) {
         Value v = entries.get(key);
         if (v != null) {
-            return v.getString();
+            return v.getString(unsafe);
         }
         return null;
     }
@@ -108,21 +106,51 @@ final class SystemProperties implements Map<String, String> {
 
     @Override
     public Collection<String> values() {
-        Values vs;
-        return (vs = values) == null ? (values = new Values(this)) : vs;
+        if (values == null) {
+            values = entries.values().stream().map(v -> v.getString(unsafe)).collect(Collectors.toUnmodifiableList());
+        }
+        return values;
     }
+
+    static class Property implements Map.Entry<String, String> {
+        private final Unsafe unsafe;
+        private final String key;
+        private final Value value;
+
+        Property(Unsafe unsafe, Map.Entry<String, Value> e) {
+            this.unsafe = unsafe;
+            this.key = e.getKey();
+            this.value = e.getValue();
+        }
+
+        @Override
+        public String getKey() {
+            return key;
+        }
+
+        @Override
+        public String getValue() {
+            return value.getString(unsafe);
+        }
+
+        @Override
+        public String setValue(String value) {
+            throw new UnsupportedOperationException();
+        }
+    };
 
     @Override
     public Set<Entry<String, String>> entrySet() {
-        EntrySet es;
-        return (es = entrySet) == null ? (entrySet = new EntrySet(this)) : es;
+        if (entrySet == null) {
+            entrySet = entries.entrySet().stream().map(e -> new Property(unsafe, e)).collect(Collectors.toUnmodifiableSet());
+        }
+        return entrySet;
     }
 
     /**
      * Represents a value in {@link SystemProperties}.
      */
     static class Value {
-        private final Unsafe unsafe;
         private final long cstring;
         private volatile String string;
 
@@ -130,7 +158,6 @@ final class SystemProperties implements Map<String, String> {
          * Creates a value whose string representation will be lazily constructed from {@code cstring}.
          */
         Value(Unsafe unsafe, long cstring) {
-            this.unsafe = unsafe;
             this.cstring = cstring;
         }
 
@@ -138,170 +165,16 @@ final class SystemProperties implements Map<String, String> {
          * Creates a value whose string representation is known at construction time.
          */
         Value(String string) {
-            this.unsafe = null;
             this.cstring = 0;
             this.string = string;
         }
 
-        String getString() {
+        String getString(Unsafe unsafe) {
             if (string == null) {
                 // Racy but it doesn't matter.
                 string = Services.toJavaString(unsafe, cstring);
             }
             return string;
-        }
-    }
-
-    static final class EntrySet extends AbstractSet<Entry<String, String>> {
-
-        final SystemProperties sp;
-
-        EntrySet(SystemProperties sp) {
-            this.sp = sp;
-        }
-
-        public final int size() {
-            return sp.size();
-        }
-
-        public final void clear() {
-            throw new UnsupportedOperationException();
-        }
-
-        public final Iterator<Entry<String, String>> iterator() {
-            return new Iterator<Entry<String, String>>() {
-                Iterator<Entry<String, Value>> entriesIter = sp.entries.entrySet().iterator();
-
-                @Override
-                public boolean hasNext() {
-                    return entriesIter.hasNext();
-                }
-
-                @Override
-                public Entry<String, String> next() {
-                    Entry<String, Value> next = entriesIter.next();
-                    return new Node(next.getKey(), next.getValue());
-                }
-            };
-        }
-
-        public final boolean contains(Object o) {
-            return sp.entries.entrySet().contains(o);
-        }
-
-        public final boolean remove(Object o) {
-            throw new UnsupportedOperationException();
-        }
-
-        public final void forEach(Consumer<? super Entry<String, String>> action) {
-            for (Entry<String, String> e : this) {
-                action.accept(e);
-            }
-        }
-    }
-
-    static class Node implements Map.Entry<String, String> {
-        final String key;
-        final Value value;
-
-        Node(String key, Value value) {
-            this.key = key;
-            this.value = value;
-        }
-
-
-        public final String getKey() {
-            return key;
-        }
-
-        public final String getValue() {
-            return value.getString();
-        }
-
-        public final String toString() {
-            return key + "=" + getValue();
-        }
-
-        public final int hashCode() {
-            return Objects.hashCode(key) ^ Long.hashCode(value.cstring);
-        }
-
-        public final String setValue(String newValue) {
-            throw new UnsupportedOperationException();
-        }
-
-        public final boolean equals(Object o) {
-            if (o == this) {
-                return true;
-            }
-            return o instanceof Node e
-                    && Objects.equals(key, e.getKey())
-                    && Objects.equals(value.getString(), e.value.getString());
-        }
-    }
-
-    static final class Values extends AbstractCollection<String> {
-        final SystemProperties sp;
-
-        Values(SystemProperties sp) {
-            this.sp = sp;
-        }
-
-        @Override
-        public int size() {
-            return sp.size();
-        }
-
-        @Override
-        public boolean isEmpty() {
-            return sp.isEmpty();
-        }
-
-        @Override
-        public boolean contains(Object o) {
-            return sp.containsValue(o);
-        }
-
-        @Override
-        public Iterator<String> iterator() {
-            Iterator<Entry<String, Value>> entriesIter = sp.entries.entrySet().iterator();
-            return new Iterator<String>() {
-                @Override
-                public boolean hasNext() {
-                    return entriesIter.hasNext();
-                }
-
-                @Override
-                public String next() {
-                    Entry<String, Value> next = entriesIter.next();
-                    return next.getValue().getString();
-                }
-            };
-        }
-
-        @Override
-        public boolean remove(Object o) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public boolean addAll(Collection<? extends String> c) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public boolean removeAll(Collection<?> c) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public boolean retainAll(Collection<?> c) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void clear() {
-            throw new UnsupportedOperationException();
         }
     }
 }
