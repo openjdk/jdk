@@ -498,6 +498,15 @@ void Runtime1::generate_unwind_exception(StubAssembler *sasm) {
   // other registers used in this stub
   const Register handler_addr = x11;
 
+  if (AbortVMOnException) {
+    __ mov(x15, x10);
+    __ enter();
+    save_live_registers(sasm);
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, check_abort_on_vm_exception), x15);
+    restore_live_registers(sasm);
+    __ leave();
+  }
+
   // verify that only x10, is valid at this time
   __ invalidate_registers(false, true, true, true, true, true);
 
@@ -954,16 +963,6 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
     case unwind_exception_id:
       {
         __ set_info("unwind_exception", dont_gc_arguments);
-
-        if (AbortVMOnException) {
-          __ mov(x15, x10);
-          __ enter();
-          save_live_registers(sasm);
-          __ call_VM_leaf(CAST_FROM_FN_PTR(address, check_abort_on_vm_exception), x15);
-          restore_live_registers(sasm);
-          __ leave();
-        }
-
         // note: no stubframe since we are about to leave the current
         //       activation and we are calling a leaf VM function only.
         generate_unwind_exception(sasm);

@@ -798,6 +798,14 @@ void Runtime1::generate_unwind_exception(StubAssembler *sasm) {
   const Register handler_addr = rbx;
   const Register thread = NOT_LP64(rdi) LP64_ONLY(r15_thread);
 
+  if (AbortVMOnException) {
+    __ enter();
+    save_live_registers(sasm, 2);
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, check_abort_on_vm_exception), rax);
+    restore_live_registers(sasm);
+    __ leave();
+  }
+
   // verify that only rax, is valid at this time
   __ invalidate_registers(false, true, true, true, true, true);
 
@@ -1208,15 +1216,6 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
 
     case unwind_exception_id:
       { __ set_info("unwind_exception", dont_gc_arguments);
-
-        if (AbortVMOnException) {
-          __ enter();
-          save_live_registers(sasm, 2);
-          __ call_VM_leaf(CAST_FROM_FN_PTR(address, check_abort_on_vm_exception), rax);
-          restore_live_registers(sasm);
-          __ leave();
-        }
-
         // note: no stubframe since we are about to leave the current
         //       activation and we are calling a leaf VM function only.
         generate_unwind_exception(sasm);
