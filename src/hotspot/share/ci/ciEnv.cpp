@@ -1317,9 +1317,7 @@ void ciEnv::record_best_dyno_loc(const InstanceKlass* ik) {
     return;
   }
   const char *loc0;
-  if (dyno_loc(ik, loc0)) {
-    // TODO: found multiple references, see if we can improve
-  } else {
+  if (!dyno_loc(ik, loc0)) {
     set_dyno_loc(ik);
   }
 }
