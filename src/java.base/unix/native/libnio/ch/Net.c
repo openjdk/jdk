@@ -49,10 +49,14 @@
 /**
  * IP_MULTICAST_ALL supported since 2.6.31 but may not be available at
  * build time.
+ * IPV6_MULTICAST_ALL supported since 4.20
  */
 #ifdef __linux__
   #ifndef IP_MULTICAST_ALL
     #define IP_MULTICAST_ALL    49
+  #endif
+  #ifndef IPV6_MULTICAST_ALL
+    #define IPV6_MULTICAST_ALL    29
   #endif
 #endif
 
@@ -294,6 +298,16 @@ Java_sun_nio_ch_Net_socket0(JNIEnv *env, jclass cl, jboolean preferIPv6,
                                          "Unable to set IP_MULTICAST_ALL");
             close(fd);
             return -1;
+        }
+        if (level == IPPROTO_IPV6) {
+            if ((setsockopt(fd, level, IPV6_MULTICAST_ALL, (char*)&arg, sizeof(arg)) < 0) &&
+                (errno != ENOPROTOOPT)) {
+                JNU_ThrowByNameWithLastError(env,
+                                         JNU_JAVANETPKG "SocketException",
+                                         "Unable to set IPV6_MULTICAST_ALL");
+                close(fd);
+                return -1;
+            }
         }
     }
 
