@@ -31,6 +31,7 @@
 #include "cds/metaspaceShared.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/classLoaderStats.hpp"
+#include "classfile/classPrinter.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/modules.hpp"
 #include "classfile/protectionDomainCache.hpp"
@@ -1897,6 +1898,35 @@ WB_ENTRY(jint, WB_getIndyCPIndex(JNIEnv* env, jobject wb, jclass klass, jint ind
   return cp->resolved_indy_entry_at(index)->constant_pool_index();
 WB_END
 
+WB_ENTRY(jobject, WB_printClasses(JNIEnv* env, jobject wb, jstring class_name_pattern, jint flags))
+  ThreadToNativeFromVM ttnfv(thread);
+  const char* c = env->GetStringUTFChars(class_name_pattern, nullptr);
+  ResourceMark rm;
+  stringStream st;
+  {
+    ThreadInVMfromNative ttvfn(thread); // back to VM
+    ClassPrinter::print_classes(c, flags, &st);
+  }
+  jstring result = env->NewStringUTF(st.freeze());
+  CHECK_JNI_EXCEPTION_(env, nullptr);
+  return result;
+WB_END
+
+WB_ENTRY(jobject, WB_printMethods(JNIEnv* env, jobject wb, jstring class_name_pattern, jstring method_pattern, jint flags))
+  ThreadToNativeFromVM ttnfv(thread);
+  const char* c = env->GetStringUTFChars(class_name_pattern, nullptr);
+  const char* m = env->GetStringUTFChars(method_pattern, nullptr);
+  ResourceMark rm;
+  stringStream st;
+  {
+    ThreadInVMfromNative ttvfn(thread); // back to VM
+    ClassPrinter::print_methods(c, m, flags, &st);
+  }
+  jstring result = env->NewStringUTF(st.freeze());
+  CHECK_JNI_EXCEPTION_(env, nullptr);
+  return result;
+WB_END
+
 WB_ENTRY(void, WB_ClearInlineCaches(JNIEnv* env, jobject wb, jboolean preserve_static_stubs))
   VM_ClearICs clear_ics(preserve_static_stubs == JNI_TRUE);
   VMThread::execute(&clear_ics);
@@ -2737,6 +2767,8 @@ static JNINativeMethod methods[] = {
       CC"(I)I",                      (void*)&WB_ConstantPoolEncodeIndyIndex},
   {CC"getIndyInfoLength0", CC"(Ljava/lang/Class;)I",  (void*)&WB_getIndyInfoLength},
   {CC"getIndyCPIndex0",    CC"(Ljava/lang/Class;I)I", (void*)&WB_getIndyCPIndex},
+  {CC"printClasses0",      CC"(Ljava/lang/String;I)Ljava/lang/String;", (void*)&WB_printClasses},
+  {CC"printMethods0",      CC"(Ljava/lang/String;Ljava/lang/String;I)Ljava/lang/String;", (void*)&WB_printMethods},
   {CC"getMethodBooleanOption",
       CC"(Ljava/lang/reflect/Executable;Ljava/lang/String;)Ljava/lang/Boolean;",
                                                       (void*)&WB_GetMethodBooleaneOption},

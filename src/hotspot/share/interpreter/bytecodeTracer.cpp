@@ -302,10 +302,16 @@ bool BytecodePrinter::check_obj_index(int i, int& cp_index, outputStream* st) {
 
 
 bool BytecodePrinter::check_invokedynamic_index(int i, int& cp_index, outputStream* st) {
-  assert(ConstantPool::is_invokedynamic_index(i), "not secondary index?");
-  i = ConstantPool::decode_invokedynamic_index(i) + ConstantPool::CPCACHE_INDEX_TAG;
-
-  return check_cp_cache_index(i, cp_index, st);
+  ConstantPool* constants = _current_method->constants();
+  if (constants->cache() == nullptr) {
+    cp_index = i; // TODO: This is wrong on little-endian. See JDK-8309811.
+  } else {
+    assert(ConstantPool::is_invokedynamic_index(i), "not secondary index?");
+    i = ConstantPool::decode_invokedynamic_index(i);
+    ResolvedIndyEntry* indy_entry = constants->resolved_indy_entry_at(i);
+    cp_index = indy_entry->constant_pool_index();
+  }
+  return true;
 }
 
 void BytecodePrinter::print_constant(int i, outputStream* st) {
