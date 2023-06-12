@@ -21,14 +21,24 @@
  * questions.
  */
 
-/**
- * @test
+/*
+ * @test id=default
  * @summary StressStackOverflow the recovery path for ScopedValue
  * @enablePreview
  * @run main/othervm/timeout=300 -XX:-TieredCompilation StressStackOverflow
  * @run main/othervm/timeout=300 -XX:TieredStopAtLevel=1 StressStackOverflow
  * @run main/othervm/timeout=300 StressStackOverflow
  */
+
+/*
+ * @test id=no-vmcontinuations
+ * @requires vm.continuations
+ * @enablePreview
+ * @run main/othervm/timeout=300 -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations StressStackOverflow
+ */
+
+
+
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.ThreadFactory;

@@ -1591,7 +1591,7 @@ public class Thread implements Runnable {
      */
     @Hidden
     @ForceInline
-    private void runWith(Object bindings, Runnable op) {
+    final void runWith(Object bindings, Runnable op) {
         ensureMaterializedForStackWalk(bindings);
         op.run();
         Reference.reachabilityFence(bindings);

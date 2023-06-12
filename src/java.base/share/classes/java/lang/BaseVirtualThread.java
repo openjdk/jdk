@@ -24,11 +24,6 @@
  */
 package java.lang;
 
-import jdk.internal.vm.annotation.ForceInline;
-import jdk.internal.vm.annotation.Hidden;
-
-import java.lang.ref.Reference;
-
 /**
  * Base class for virtual thread implementations.
  */
@@ -68,13 +63,5 @@ sealed abstract class BaseVirtualThread extends Thread
      * Makes available the parking permit to the given this virtual thread.
      */
     abstract void unpark();
-
-    @Hidden
-    @ForceInline
-    protected void runWith(Object bindings, Runnable op) {
-        ensureMaterializedForStackWalk(bindings);
-        op.run();
-        Reference.reachabilityFence(bindings);
-    }
 }
 
