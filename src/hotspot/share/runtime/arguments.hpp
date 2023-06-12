@@ -76,7 +76,7 @@ class PathString : public CHeapObj<mtArguments> {
   PathString(const char* value);
   ~PathString();
 
-  // for JVMCIEnv::init_saved_properties
+  // for JVM_ReadSystemPropertiesInfo
   static int value_offset_in_bytes()  { return (int)offset_of(PathString, _value);  }
 };
 
@@ -140,7 +140,7 @@ class SystemProperty : public PathString {
   // Constructor
   SystemProperty(const char* key, const char* value, bool writeable, bool internal = false);
 
-  // for JVMCIEnv::init_saved_properties
+  // for JVM_ReadSystemPropertiesInfo
   static int key_offset_in_bytes()  { return (int)offset_of(SystemProperty, _key);  }
   static int next_offset_in_bytes() { return (int)offset_of(SystemProperty, _next); }
 };
