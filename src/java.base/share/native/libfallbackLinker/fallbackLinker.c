@@ -58,6 +58,10 @@ Java_jdk_internal_foreign_abi_fallback_LibFallback_ffi_1prep_1cif(JNIEnv* env, j
   return ffi_prep_cif(jlong_to_ptr(cif), (ffi_abi) abi, (unsigned int) nargs, jlong_to_ptr(rtype), jlong_to_ptr(atypes));
 }
 JNIEXPORT jint JNICALL
+Java_jdk_internal_foreign_abi_fallback_LibFallback_ffi_1prep_1cif_1var(JNIEnv* env, jclass cls, jlong cif, jint abi, jint nfixedargs, jint ntotalargs, jlong rtype, jlong atypes) {
+  return ffi_prep_cif_var(jlong_to_ptr(cif), (ffi_abi) abi, (unsigned int) nfixedargs, (unsigned int) ntotalargs, jlong_to_ptr(rtype), jlong_to_ptr(atypes));
+}
+JNIEXPORT jint JNICALL
 Java_jdk_internal_foreign_abi_fallback_LibFallback_ffi_1get_1struct_1offsets(JNIEnv* env, jclass cls, jint abi, jlong type, jlong offsets) {
   return ffi_get_struct_offsets((ffi_abi) abi, jlong_to_ptr(type), jlong_to_ptr(offsets));
 }
