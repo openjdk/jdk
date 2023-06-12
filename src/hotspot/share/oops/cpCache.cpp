@@ -941,6 +941,12 @@ void ConstantPoolCache::print_value_on(outputStream* st) const {
 }
 
 
+void ConstantPoolCache::print_resolved_indy_entries(outputStream* st)   const {
+  for (int i = 0; i < _resolved_indy_entries->length(); i++) {
+    _resolved_indy_entries->at(i).print_on(st);
+  }
+}
+
 // Verification
 
 void ConstantPoolCache::verify_on(outputStream* st) {
