@@ -23,9 +23,9 @@
 
 /* @test
  * @bug 8307508
- * @summary tests for IndirectVarHandle
- * @compile --enable-preview --release 22 IndirectVarHandleTest.java
- * @run junit/othervm --enable-preview IndirectVarHandleTest
+ * @enablePreview
+ * @run junit IndirectVarHandleTest
+ * @summary Test VarHandle::isAccessModeSupported on indirect VarHandle produced by MethodHandles.filterCoordinates
  */
 import org.junit.jupiter.api.Test;
 
