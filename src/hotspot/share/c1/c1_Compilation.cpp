@@ -194,12 +194,6 @@ void Compilation::build_hir() {
   // the control flow must not be changed from here on
   _hir->compute_code();
 
-#ifndef PRODUCT
-  if (PrintCFGToFile) {
-    CFGPrinter::print_cfg(_hir, "Before GlobalValueNumbering", true, false);
-  }
-#endif
-
   if (UseGlobalValueNumbering) {
     // No resource mark here! LoopInvariantCodeMotion can allocate ValueStack objects.
     PhaseTraceTime timeit(_t_gvn);

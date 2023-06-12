@@ -81,7 +81,6 @@
                                                                             \
   /* C1 optimizations */                                                    \
                                                                             \
-  product(bool, VerifyShortLoopOptimizations, false, "verify SLO")          \
   develop(bool, UseC1Optimizations, true,                                   \
           "Turn on C1 optimizations")                                       \
                                                                             \

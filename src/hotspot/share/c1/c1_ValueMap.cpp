@@ -28,7 +28,6 @@
 #include "c1/c1_ValueMap.hpp"
 #include "c1/c1_ValueSet.hpp"
 #include "c1/c1_ValueStack.hpp"
-#include "c1/c1_CFGPrinter.hpp"
 
 #ifndef PRODUCT
 
@@ -268,7 +267,6 @@ class ShortLoopOptimizer : public ValueNumberingVisitor {
   bool                  _too_complicated_loop;
   bool                  _has_field_store[T_VOID];
   bool                  _has_indexed_store[T_VOID];
-  IR*                   _ir;
 
   // simplified access to methods of GlobalValueNumbering
   ValueMap* current_map()                        { return _gvn->current_map(); }
@@ -288,12 +286,11 @@ class ShortLoopOptimizer : public ValueNumberingVisitor {
   }
 
  public:
-  ShortLoopOptimizer(GlobalValueNumbering* gvn, IR* ir)
+  ShortLoopOptimizer(GlobalValueNumbering* gvn)
     : _gvn(gvn)
     , _loop_blocks(ValueMapMaxLoopSize)
     , _too_complicated_loop(false)
   {
-    _ir = ir;
     for (int i = 0; i < T_VOID; i++) {
       _has_field_store[i] = false;
       _has_indexed_store[i] = false;
@@ -311,10 +308,6 @@ class ShortLoopOptimizer : public ValueNumberingVisitor {
   }
 
   bool process(BlockBegin* loop_header);
-
-  void printCFG() {
-    CFGPrinter::print_cfg(_ir, "Right at this point in ShortLoopOptimizer", true, false);
-  }
 };
 
 class LoopInvariantCodeMotion : public StackObj  {
@@ -331,24 +324,6 @@ class LoopInvariantCodeMotion : public StackObj  {
 
  public:
   LoopInvariantCodeMotion(ShortLoopOptimizer *slo, GlobalValueNumbering* gvn, BlockBegin* loop_header, BlockList* loop_blocks);
-};
-
-class DomCheckVisitor: public ValueVisitor {
- private:
-  Value _insert;
-  bool _valid = true;
-
-  void visit(Value* vp) {
-    assert(*vp != nullptr, "use should not be null");
-    if (_insert->dominator_depth() < (*vp)->dominator_depth()) {
-      _valid = false;
-    }
-  }
-
- public:
-  bool is_valid() {return _valid; }
-  DomCheckVisitor(Value insert)
-    : _insert(insert) {}
 };
 
 LoopInvariantCodeMotion::LoopInvariantCodeMotion(ShortLoopOptimizer *slo, GlobalValueNumbering* gvn, BlockBegin* loop_header, BlockList* loop_blocks)
@@ -383,6 +358,24 @@ LoopInvariantCodeMotion::LoopInvariantCodeMotion(ShortLoopOptimizer *slo, Global
     process_block(loop_blocks->at(i));
   }
 }
+
+class CheckInsertionPoint: public ValueVisitor {
+ private:
+  Value _insert;
+  bool _valid = true;
+
+  void visit(Value* vp) {
+    assert(*vp != nullptr, "value should not be null");
+    if (_insert->dominator_depth() < (*vp)->dominator_depth()) {
+      _valid = false;
+    }
+  }
+
+ public:
+  bool is_valid() {return _valid; }
+  CheckInsertionPoint(Value insert)
+    : _insert(insert) {}
+};
 
 void LoopInvariantCodeMotion::process_block(BlockBegin* block) {
   TRACE_VALUE_NUMBERING(tty->print_cr("processing block B%d", block->block_id()));
@@ -420,18 +413,8 @@ void LoopInvariantCodeMotion::process_block(BlockBegin* block) {
     }
 
     // Check that insertion point has higher dom depth than all uses
-    DomCheckVisitor v(_insertion_point);
+    CheckInsertionPoint v(_insertion_point);
     cur->input_values_do(&v);
-
-    if (VerifyShortLoopOptimizations) {
-      if ((cur_invariant && !v.is_valid())) {
-        (tty->print_cr("Instruction %c%d to be lifted over %c%d (from block %d to block %d)", cur->type()->tchar(), cur->id(), _insertion_point->type()->tchar(), _insertion_point->id(), cur->block()->id(), _insertion_point->block()->id()));
-        (cur->print_line());
-        (_insertion_point->print_line());
-        _short_loop_optimizer->printCFG();
-        guarantee(false, "optimization candidate tried to hoist over uses?");
-      }
-    }
 
     if (cur_invariant && v.is_valid()) {
       // perform value numbering and mark instruction as loop-invariant
@@ -533,10 +516,9 @@ GlobalValueNumbering::GlobalValueNumbering(IR* ir)
   , _value_maps(ir->linear_scan_order()->length(), ir->linear_scan_order()->length(), nullptr)
   , _has_substitutions(false)
 {
-  _ir = ir;
   TRACE_VALUE_NUMBERING(tty->print_cr("****** start of global value numbering"));
 
-  ShortLoopOptimizer short_loop_optimizer(this, _ir);
+  ShortLoopOptimizer short_loop_optimizer(this);
 
   BlockList* blocks = ir->linear_scan_order();
   int num_blocks = blocks->length();
