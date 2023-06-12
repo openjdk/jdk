@@ -1265,6 +1265,10 @@ public:
   }
 
   // vector pseudo instructions
+  inline void vl1r_v(VectorRegister vd, Register rs) {
+    vl1re8_v(vd, rs);
+  }
+
   inline void vmnot_m(VectorRegister vd, VectorRegister vs) {
     vmnand_mm(vd, vs, vs);
   }
@@ -1279,6 +1283,10 @@ public:
 
   inline void vfneg_v(VectorRegister vd, VectorRegister vs, VectorMask vm = unmasked) {
     vfsgnjn_vv(vd, vs, vs, vm);
+  }
+
+  inline void vfabs_v(VectorRegister vd, VectorRegister vs, VectorMask vm = unmasked) {
+    vfsgnjx_vv(vd, vs, vs, vm);
   }
 
   inline void vmsgt_vv(VectorRegister vd, VectorRegister vs2, VectorRegister vs1, VectorMask vm = unmasked) {

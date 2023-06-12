@@ -483,7 +483,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
                 case TAG_FIELDREF -> fieldRefEntry(reference.owner(), reference.nameAndType());
                 case TAG_METHODREF -> methodRefEntry(reference.owner(), reference.nameAndType());
                 case TAG_INTERFACEMETHODREF -> interfaceMethodRefEntry(reference.owner(), reference.nameAndType());
-                default -> throw new IllegalStateException(String.format("Bad tag %d", reference.tag()));
+                default -> throw new IllegalArgumentException(String.format("Bad tag %d", reference.tag()));
             };
         }
 

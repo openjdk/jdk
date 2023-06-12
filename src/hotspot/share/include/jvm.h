@@ -1165,6 +1165,12 @@ JNIEXPORT jint JNICALL
 JVM_GetClassFileVersion(JNIEnv *env, jclass current);
 
 /*
+ * Return JNI_TRUE if warnings are printed when agents are dynamically loaded.
+ */
+JNIEXPORT jboolean JNICALL
+JVM_PrintWarningAtDynamicAgentLoad(void);
+
+/*
  * This structure is used by the launcher to get the default thread
  * stack size from the VM using JNI_GetDefaultJavaVMInitArgs() with a
  * version of 1.1.  As it is not supported otherwise, it has been removed
