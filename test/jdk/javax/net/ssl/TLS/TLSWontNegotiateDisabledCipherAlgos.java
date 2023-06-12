@@ -36,18 +36,7 @@ import java.util.List;
  * other side of the connection requests them.
  *
  * @library /javax/net/ssl/templates
- * @run main/othervm TLSWontNegotiateDisabledCipherAlgos server true TLS_ECDH_ECDSA_WITH_AES_256_GCM_SHA384
- * @run main/othervm TLSWontNegotiateDisabledCipherAlgos server true TLS_ECDH_RSA_WITH_AES_256_GCM_SHA384
- * @run main/othervm TLSWontNegotiateDisabledCipherAlgos server true TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256
- * @run main/othervm TLSWontNegotiateDisabledCipherAlgos server true TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256
- * @run main/othervm TLSWontNegotiateDisabledCipherAlgos server true TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA384
- * @run main/othervm TLSWontNegotiateDisabledCipherAlgos server true TLS_ECDH_RSA_WITH_AES_256_CBC_SHA384
- * @run main/othervm TLSWontNegotiateDisabledCipherAlgos server true TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256
- * @run main/othervm TLSWontNegotiateDisabledCipherAlgos server true TLS_ECDH_RSA_WITH_AES_128_CBC_SHA256
- * @run main/othervm TLSWontNegotiateDisabledCipherAlgos server true TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA
- * @run main/othervm TLSWontNegotiateDisabledCipherAlgos server true TLS_ECDH_RSA_WITH_AES_256_CBC_SHA
- * @run main/othervm TLSWontNegotiateDisabledCipherAlgos server true TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA
- * @run main/othervm TLSWontNegotiateDisabledCipherAlgos server true TLS_ECDH_RSA_WITH_AES_128_CBC_SHA
+ * @run main/othervm TLSWontNegotiateDisabledCipherAlgos server true
  */
 
 /*
@@ -57,22 +46,26 @@ import java.util.List;
  * other side of the connection requests them.
  *
  * @library /javax/net/ssl/templates
- * @run main/othervm TLSWontNegotiateDisabledCipherAlgos server false TLS_ECDH_ECDSA_WITH_AES_256_GCM_SHA384
- * @run main/othervm TLSWontNegotiateDisabledCipherAlgos server false TLS_ECDH_RSA_WITH_AES_256_GCM_SHA384
- * @run main/othervm TLSWontNegotiateDisabledCipherAlgos server false TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256
- * @run main/othervm TLSWontNegotiateDisabledCipherAlgos server false TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256
- * @run main/othervm TLSWontNegotiateDisabledCipherAlgos server false TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA384
- * @run main/othervm TLSWontNegotiateDisabledCipherAlgos server false TLS_ECDH_RSA_WITH_AES_256_CBC_SHA384
- * @run main/othervm TLSWontNegotiateDisabledCipherAlgos server false TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256
- * @run main/othervm TLSWontNegotiateDisabledCipherAlgos server false TLS_ECDH_RSA_WITH_AES_128_CBC_SHA256
- * @run main/othervm TLSWontNegotiateDisabledCipherAlgos server false TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA
- * @run main/othervm TLSWontNegotiateDisabledCipherAlgos server false TLS_ECDH_RSA_WITH_AES_256_CBC_SHA
- * @run main/othervm TLSWontNegotiateDisabledCipherAlgos server false TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA
- * @run main/othervm TLSWontNegotiateDisabledCipherAlgos server false TLS_ECDH_RSA_WITH_AES_128_CBC_SHA
+ * @run main/othervm TLSWontNegotiateDisabledCipherAlgos server false
  */
 
 
 public class TLSWontNegotiateDisabledCipherAlgos {
+    private static final String [] DISABLED_CIPHERS = {
+        "TLS_ECDH_ECDSA_WITH_AES_256_GCM_SHA384",
+        "TLS_ECDH_RSA_WITH_AES_256_GCM_SHA384",
+        "TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256",
+        "TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256",
+        "TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA384",
+        "TLS_ECDH_RSA_WITH_AES_256_CBC_SHA384",
+        "TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256",
+        "TLS_ECDH_RSA_WITH_AES_128_CBC_SHA256",
+        "TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA",
+        "TLS_ECDH_RSA_WITH_AES_256_CBC_SHA",
+        "TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA",
+        "TLS_ECDH_RSA_WITH_AES_128_CBC_SHA"
+    };
+
     public static void main(String [] args) throws Exception {
         boolean useDisabledAlgo = Boolean.parseBoolean(args[1]);
         if (useDisabledAlgo) {
@@ -80,14 +73,13 @@ public class TLSWontNegotiateDisabledCipherAlgos {
         }
 
         if (args[0].equals("server")) {
-            try(TLSServer server = new TLSServer(useDisabledAlgo, args[2])) {
+            try (TLSServer server = new TLSServer(useDisabledAlgo)) {
                 List<String> command = List.of(
                         Path.of(System.getProperty("java.home"), "bin", "java").toString(),
                         "TLSWontNegotiateDisabledCipherAlgos",
                         "client",
                         Boolean.toString(!useDisabledAlgo),
-                        Integer.toString(server.getListeningPort()),
-                        args[2]
+                        Integer.toString(server.getListeningPort())
                 );
                 ProcessBuilder builder = new ProcessBuilder(command);
                 Process p = builder.inheritIO().start();
@@ -95,30 +87,32 @@ public class TLSWontNegotiateDisabledCipherAlgos {
                 p.destroy();
             }
         } else if (args[0].equals("client")) {
-            try(TLSClient client = new TLSClient(Integer.parseInt(args[2]), useDisabledAlgo, args[3])) {
+            try (TLSClient client = new TLSClient(Integer.parseInt(args[2]), useDisabledAlgo)) {
                 client.run();
             }
         }
     }
 
     private static class TLSClient extends SSLContextTemplate implements AutoCloseable {
-        private final int portNumber;
         private final SSLSocket socket;
 
-        public TLSClient(int portNumber, boolean useDisableAlgo, String cipherSuite) throws Exception {
-            this.portNumber = portNumber;
+        public TLSClient(int portNumber, boolean useDisableAlgo) throws Exception {
             SSLContext context = createClientSSLContext();
             socket = (SSLSocket)context.getSocketFactory().createSocket("localhost", portNumber);
             if (useDisableAlgo) {
-                socket.setEnabledCipherSuites(new String[]{cipherSuite});
+                socket.setEnabledCipherSuites(DISABLED_CIPHERS);
             }
         }
 
         public void run() throws IOException {
             try {
                 socket.getOutputStream().write("SECRET MESSAGE".getBytes(StandardCharsets.UTF_8));
+                throw new RuntimeException("SSL handshake completed successfully.");
             } catch (SSLHandshakeException exc) {
-                // handshake failures are expected
+                if (!exc.getMessage().equals("Received fatal alert: handshake_failure")) {
+                    throw new RuntimeException("Expected handshake_failure message. Got: "
+                            + "\"" + exc.getMessage() + "\" message.", exc);
+                }
             }
         }
 
@@ -131,11 +125,11 @@ public class TLSWontNegotiateDisabledCipherAlgos {
     private static class TLSServer extends SSLContextTemplate implements AutoCloseable {
         private SSLServerSocket serverSocket;
 
-        public TLSServer(boolean useDisableAlgo, String cipherSuite) throws Exception {
+        public TLSServer(boolean useDisableAlgo) throws Exception {
             SSLContext ctx = createServerSSLContext();
             serverSocket = (SSLServerSocket) ctx.getServerSocketFactory().createServerSocket(0);
             if (useDisableAlgo) {
-                serverSocket.setEnabledCipherSuites(new String[]{cipherSuite});
+                serverSocket.setEnabledCipherSuites(DISABLED_CIPHERS);
             }
         }
 
@@ -149,7 +143,7 @@ public class TLSWontNegotiateDisabledCipherAlgos {
         }
 
         public void run() throws IOException {
-            try(Socket clientSocket = serverSocket.accept()) {
+            try (Socket clientSocket = serverSocket.accept()) {
                 try {
                     byte[] bytes = clientSocket.getInputStream().readAllBytes();
                     throw new RuntimeException("The expected SSLHandshakeException was not thrown.");
