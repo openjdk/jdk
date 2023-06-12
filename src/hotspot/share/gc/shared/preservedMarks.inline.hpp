@@ -49,7 +49,7 @@ inline void PreservedMarks::push_always(oop obj, markWord m) {
 }
 
 inline PreservedMarks::PreservedMarks()
-    : _stack(OopAndMarkWordStack::default_segment_size(),
+    : _stack(PreservedMarkStack::default_segment_size(),
              // This stack should be used very infrequently so there's
              // no point in caching stack segments (there will be a
              // waste of space most of the time). So we set the max

@@ -49,9 +49,9 @@ class PreservedMark {
 
 class PreservedMarks {
 private:
-  typedef Stack<PreservedMark, mtGC> OopAndMarkWordStack;
+  typedef Stack<PreservedMark, mtGC> PreservedMarkStack;
 
-  OopAndMarkWordStack _stack;
+  PreservedMarkStack _stack;
 
   inline bool should_preserve_mark(oop obj, markWord m) const;
 
