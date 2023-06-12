@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,6 +89,11 @@ import static com.sun.tools.javac.main.Option.OptionKind.*;
  * or deletion without notice.</b></p>
  */
 public enum Option {
+    /*
+     * Maintenance note: when adding new annotation processing related
+     * options, the list of options regarded as requesting explicit
+     * annotation processing in JavaCompiler should be updated.
+     */
     G("-g", "opt.g", STANDARD, BASIC),
 
     G_NONE("-g:none", "opt.g.none", STANDARD, BASIC) {
