@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,7 +27,7 @@
  * @bug 8247763
  * @summary assert(outer->outcnt() == 2) failed: 'only phis' failure in LoopNode::verify_strip_mined()
  *
- * @run main/othervm -Xcomp -XX:CompileOnly=TestStoreSunkToOuterLoop TestStoreSunkToOuterLoop
+ * @run main/othervm -Xcomp -XX:CompileOnly=TestStoreSunkToOuterLoop::* TestStoreSunkToOuterLoop
  *
  */
 

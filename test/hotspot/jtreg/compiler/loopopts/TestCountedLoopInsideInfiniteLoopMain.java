@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,20 +19,21 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_GC_SHARED_SOFTREFGENPOLICY_HPP
-#define SHARE_GC_SHARED_SOFTREFGENPOLICY_HPP
+/*
+ * @test
+ * @bug 8308749
+ * @compile TestCountedLoopInsideInfiniteLoop.jasm
+ * @summary Counted Loops inside infinite loops are only detected later,
+ *          and may still be a Region and not a LoopNode as expected.
+ * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:PerMethodTrapLimit=0
+ *      -XX:CompileCommand=compileonly,TestCountedLoopInsideInfiniteLoop::test
+ *      TestCountedLoopInsideInfiniteLoopMain
+ */
 
-#include "gc/shared/softRefPolicy.hpp"
-#include "utilities/globalDefinitions.hpp"
-
-class AdaptiveSizePolicy;
-
-class SoftRefGenPolicy : public SoftRefPolicy {
-public:
-  virtual void cleared_all_soft_refs();
-};
-
-#endif // SHARE_GC_SHARED_SOFTREFGENPOLICY_HPP
+public class TestCountedLoopInsideInfiniteLoopMain {
+    public static void main (String[] args) {
+        TestCountedLoopInsideInfiniteLoop.test(0, 0, 0, 0);
+    }
+}
