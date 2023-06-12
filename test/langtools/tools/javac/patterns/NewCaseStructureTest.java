@@ -68,9 +68,7 @@ public class NewCaseStructureTest extends TestRunner {
     @Test
     public void testCorrectMultiLabelCaseStructure(Path base) throws Exception {
         for (String pattern : new String[] {"String s",
-                                            "(String s)",
                                             "R(int i)",
-                                            "(R(int i))",
                                             "null, default",
                                             "null",
                                             "1",
@@ -271,7 +269,7 @@ public class NewCaseStructureTest extends TestRunner {
     @Test
     public void testDominance(Path base) throws Exception {
         //A case label with a case pattern p (guarded or unguarded) dominates another case label with a case constant c if p dominates c, which is defined as follows:
-        // A type pattern that declares a pattern variable of type T dominates a constant c of a primitive type P if the wrapper class of P ([5.1.7]) is a subtype of the erasure of T.
+        // (unguarded case with) A type pattern that declares a pattern variable of type T dominates a constant c of a primitive type P if the wrapper class of P ([5.1.7]) is a subtype of the erasure of T.
         doTest(base,
                """
                package test;
@@ -284,10 +282,22 @@ public class NewCaseStructureTest extends TestRunner {
                        };
                    }
                }
+               """);
+        doTest(base,
+               """
+               package test;
+               public class Test {
+                   private int test(Integer o) {
+                       return switch (o) {
+                           case Integer i -> 0;
+                           case 0 -> 0;
+                       };
+                   }
+               }
                """,
                "Test.java:6:18: compiler.err.pattern.dominated",
                "1 error");
-        // A type pattern that declares a pattern variable of type T dominates an enum constant c of type E if E is a subtype of the erasure of the type of T.
+        // (unguarded case with) A type pattern that declares a pattern variable of type T dominates an enum constant c of type E if E is a subtype of the erasure of the type of T.
         doTest(base,
                """
                package test;
@@ -297,6 +307,19 @@ public class NewCaseStructureTest extends TestRunner {
                            case E e when e == E.A -> 0;
                            case B -> 0;
                            case E e -> 0;
+                       };
+                   }
+               }
+               enum E {A, B;}
+               """);
+        doTest(base,
+               """
+               package test;
+               public class Test {
+                   private int test(E o) {
+                       return switch (o) {
+                           case E e -> 0;
+                           case B -> 0;
                        };
                    }
                }
@@ -317,19 +340,15 @@ public class NewCaseStructureTest extends TestRunner {
                        };
                    }
                }
-               """,
-               "Test.java:6:18: compiler.err.pattern.dominated",
-               "1 error");
-        // A parenthesized pattern dominates a constant c if its contained pattern dominates c.
+               """);
         doTest(base,
                """
                package test;
                public class Test {
-                   private int test(Integer o) {
+                   private int test(String o) {
                        return switch (o) {
-                           case (Integer i) when i > 0 -> 0;
-                           case 0 -> 0;
-                           case Integer i -> 0;
+                           case String s -> 0;
+                           case "a" -> 0;
                        };
                    }
                }
@@ -344,8 +363,8 @@ public class NewCaseStructureTest extends TestRunner {
                    private int test(Integer o) {
                        return switch (o) {
                            default -> 0;
-                           case (Integer i) when i > 0 -> 0;
-                           case (Integer i) when i > 0 -> 0;
+                           case Integer i when i > 0 -> 0;
+                           case Integer i when i > 0 -> 0;
                        };
                    }
                }
@@ -358,7 +377,7 @@ public class NewCaseStructureTest extends TestRunner {
                public class Test {
                    private int test(Integer o) {
                        return switch (o) {
-                           case (Integer i) when i > 0 -> 0;
+                           case Integer i when i > 0 -> 0;
                            default -> 0;
                            case null -> 0;
                        };
@@ -375,7 +394,7 @@ public class NewCaseStructureTest extends TestRunner {
                    private int test(Integer o) {
                        return switch (o) {
                            case null, default -> 0;
-                           case (Integer i) when i > 0 -> 0;
+                           case Integer i when i > 0 -> 0;
                        };
                    }
                }
@@ -431,9 +450,7 @@ public class NewCaseStructureTest extends TestRunner {
         Files.createDirectories(classes);
 
         List<String> actual = new JavacTask(tb)
-            .options("--enable-preview",
-                     "-source", JAVA_VERSION,
-                     "-XDrawDiagnostics",
+            .options("-XDrawDiagnostics",
                      "-Xlint:-preview",
                      "-XDshould-stop.at=FLOW")
             .outdir(classes)

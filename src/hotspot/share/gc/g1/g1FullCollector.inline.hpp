@@ -40,10 +40,6 @@ bool G1FullCollector::is_skip_compacting(uint region_index) const {
   return _region_attr_table.is_skip_compacting(region_index);
 }
 
-bool G1FullCollector::is_skip_marking(oop obj) const {
-  return _region_attr_table.is_skip_marking(cast_from_oop<HeapWord*>(obj));
-}
-
 bool G1FullCollector::is_compaction_target(uint region_index) const {
   return _region_attr_table.is_compacting(region_index) || is_free(region_index);
 }

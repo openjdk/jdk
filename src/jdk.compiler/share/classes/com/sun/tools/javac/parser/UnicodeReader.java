@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,6 +53,11 @@ public class UnicodeReader {
      * Length of meaningful content in buffer.
      */
     private final int length;
+
+    /**
+     * Virtual position offset in the original buffer.
+     */
+    private final int offset;
 
     /**
      * Character buffer index of character currently being observed.
@@ -115,7 +120,7 @@ public class UnicodeReader {
      * @param length  length of meaningful content in buffer.
      */
     protected UnicodeReader(Log log, char[] array, int length) {
-        this(log, array, 0, length);
+        this(log, array, 0, 0, length);
     }
 
     /**
@@ -127,9 +132,10 @@ public class UnicodeReader {
       * @param endPos  end of meaningful content in buffer.
       */
     @SuppressWarnings("this-escape")
-    protected UnicodeReader(Log log, char[] array, int pos, int endPos) {
+    protected UnicodeReader(Log log, char[] array, int offset, int pos, int endPos) {
         this.buffer = array;
         this.length = endPos;
+        this.offset = offset;
         this.position = pos;
         this.width = 0;
         this.character = '\0';
@@ -139,6 +145,15 @@ public class UnicodeReader {
         this.log = log;
 
         nextCodePoint();
+    }
+
+    /**
+     * Returns the character buffer.
+     *
+     * @return character buffer.
+     */
+    protected char[] buffer() {
+        return buffer;
     }
 
     /**
@@ -315,22 +330,22 @@ public class UnicodeReader {
     }
 
     /**
-     * Return the current position in the character buffer.
+     * Return the virtual position in the character buffer.
      *
-     * @return  current position in the character buffer.
+     * @return  virtual position in the character buffer.
      */
     protected int position() {
-        return position;
+        return offset + position;
     }
 
 
     /**
-     * Reset the reader to the specified position.
+     * Reset the reader to the specified virtual position.
      * Warning: Do not use when previous character was an ASCII or unicode backslash.
      * @param pos
      */
     protected void reset(int pos) {
-        position = pos;
+        position = pos - offset;
         width = 0;
         wasBackslash = false;
         wasUnicodeEscape = false;
@@ -404,6 +419,9 @@ public class UnicodeReader {
     protected boolean isOneOf(char ch1, char ch2, char ch3) {
         return is(ch1) || is(ch2) || is(ch3);
     }
+    protected boolean isOneOf(char ch1, char ch2, char ch3, char ch4) {
+        return is(ch1) || is(ch2) || is(ch3) || is(ch4);
+    }
     protected boolean isOneOf(char ch1, char ch2, char ch3, char ch4, char ch5, char ch6) {
         return is(ch1) || is(ch2) || is(ch3) || is(ch4) || is(ch5) || is(ch6);
     }
@@ -474,7 +492,7 @@ public class UnicodeReader {
         int endPos = position;
         accept('\r');
         accept('\n');
-        return lineReader(pos, endPos);
+        return new UnicodeReader(log, buffer, offset, pos, endPos);
     }
 
     /**
@@ -487,7 +505,7 @@ public class UnicodeReader {
      * @return a new reader
      */
     protected UnicodeReader lineReader(int pos, int endPos) {
-        return new UnicodeReader(log, buffer, pos, endPos);
+        return new UnicodeReader(log, buffer, offset, pos - offset, endPos - offset);
     }
 
     /**
@@ -561,7 +579,7 @@ public class UnicodeReader {
         }
 
         // Be prepared to retreat if not a match.
-        int savedPosition = position;
+        int savedPosition = position();
 
         nextCodePoint();
 
@@ -695,7 +713,7 @@ public class UnicodeReader {
          * @param endPos  end of meaningful content in buffer.
          */
         protected PositionTrackingReader(UnicodeReader reader, int pos, int endPos) {
-            super(reader.log, reader.buffer, pos, endPos);
+            super(reader.log, reader.getRawCharacters(pos, endPos), reader.offset + pos, 0, endPos - pos);
             this.column = 0;
         }
 

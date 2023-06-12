@@ -31,6 +31,7 @@
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
+#include "prims/jvmtiAgentList.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/flags/jvmFlag.hpp"
@@ -134,7 +135,7 @@ static jint load_agent(AttachOperation* op, outputStream* out) {
     }
   }
 
-  return JvmtiExport::load_agent_library(agent, absParam, options, out);
+  return JvmtiAgentList::load_agent(agent, absParam, options, out);
 }
 
 // Implementation of "properties" command.
@@ -401,10 +402,6 @@ static void attach_listener_thread_entry(JavaThread* thread, TRAPS) {
     // handle special detachall operation
     if (strcmp(op->name(), AttachOperation::detachall_operation_name()) == 0) {
       AttachListener::detachall();
-    } else if (!EnableDynamicAgentLoading && strcmp(op->name(), "load") == 0) {
-      st.print("Dynamic agent loading is not enabled. "
-               "Use -XX:+EnableDynamicAgentLoading to launch target VM.");
-      res = JNI_ERR;
     } else {
       // find the function to dispatch too
       AttachOperationFunctionInfo* info = nullptr;
@@ -457,7 +454,7 @@ void AttachListener::init() {
   EXCEPTION_MARK;
 
   const char* name = "Attach Listener";
-  Handle thread_oop = JavaThread::create_system_thread_object(name, true /* visible */, THREAD);
+  Handle thread_oop = JavaThread::create_system_thread_object(name, THREAD);
   if (has_init_error(THREAD)) {
     set_state(AL_NOT_INITIALIZED);
     return;

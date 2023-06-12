@@ -2373,6 +2373,8 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
         assert(n->Opcode() == Op_LoopLimit ||
                n->Opcode() == Op_Opaque3   ||
                n->Opcode() == Op_Opaque4   ||
+               n->Opcode() == Op_MaxL      ||
+               n->Opcode() == Op_MinL      ||
                BarrierSet::barrier_set()->barrier_set_c2()->is_gc_barrier_node(n),
                "unknown node type in macro list");
       }
@@ -2456,6 +2458,18 @@ bool PhaseMacroExpand::expand_macro_nodes() {
       } else if (n->Opcode() == Op_OuterStripMinedLoop) {
         n->as_OuterStripMinedLoop()->adjust_strip_mined_loop(&_igvn);
         C->remove_macro_node(n);
+        success = true;
+      } else if (n->Opcode() == Op_MaxL) {
+        // Since MaxL and MinL are not implemented in the backend, we expand them to
+        // a CMoveL construct now. At least until here, the type could be computed
+        // precisely. CMoveL is not so smart, but we can give it at least the best
+        // type we know abouot n now.
+        Node* repl = MaxNode::signed_max(n->in(1), n->in(2), _igvn.type(n), _igvn);
+        _igvn.replace_node(n, repl);
+        success = true;
+      } else if (n->Opcode() == Op_MinL) {
+        Node* repl = MaxNode::signed_min(n->in(1), n->in(2), _igvn.type(n), _igvn);
+        _igvn.replace_node(n, repl);
         success = true;
       }
       assert(!success || (C->macro_count() == (old_macro_count - 1)), "elimination must have deleted one node from macro list");

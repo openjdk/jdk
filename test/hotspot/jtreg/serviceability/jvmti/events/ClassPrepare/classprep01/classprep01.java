@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,8 +38,8 @@
  *     Ported from JVMDI.
  *
  * @library /test/lib
- * @compile --enable-preview -source ${jdk.version} classprep01.java
- * @run main/othervm/native --enable-preview -agentlib:classprep01 classprep01
+ * @compile classprep01.java
+ * @run main/othervm/native -agentlib:classprep01 classprep01
  */
 
 public class classprep01 {

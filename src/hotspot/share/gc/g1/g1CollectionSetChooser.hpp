@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,12 +38,7 @@ class WorkerThreads;
 class G1CollectionSetChooser : public AllStatic {
   static uint calculate_work_chunk_size(uint num_workers, uint num_regions);
 
-  // Remove regions in the collection set candidates as long as the G1HeapWastePercent
-  // criteria is met. Keep at least the minimum amount of old regions to guarantee
-  // some progress.
-  static void prune(G1CollectionSetCandidates* candidates);
 public:
-
   static size_t mixed_gc_live_threshold_bytes() {
     return HeapRegion::GrainBytes * (size_t) G1MixedGCLiveThresholdPercent / 100;
   }
@@ -53,14 +48,14 @@ public:
   }
 
   // Determine whether to add the given region to the collection set candidates or
-  // not. Currently, we skip pinned regions and regions whose live
-  // bytes are over the threshold. Humongous regions may be reclaimed during cleanup.
+  // not. Currently, we skip regions that we will never move during young gc, and
+  // regions which liveness is over the occupancy threshold.
   // Regions also need a complete remembered set to be a candidate.
   static bool should_add(HeapRegion* hr);
 
   // Build and return set of collection set candidates sorted by decreasing gc
   // efficiency.
-  static G1CollectionSetCandidates* build(WorkerThreads* workers, uint max_num_regions);
+  static void build(WorkerThreads* workers, uint max_num_regions, G1CollectionSetCandidates* candidates);
 };
 
 #endif // SHARE_GC_G1_G1COLLECTIONSETCHOOSER_HPP

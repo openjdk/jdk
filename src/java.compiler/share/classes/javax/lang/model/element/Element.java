@@ -131,9 +131,10 @@ public interface Element extends javax.lang.model.AnnotatedConstruct {
      * {@code java.util.Set<E>} is {@code "Set"}.
      *
      * If this element represents an unnamed {@linkplain
-     * PackageElement#getSimpleName package} or unnamed {@linkplain
-     * ModuleElement#getSimpleName module}, an {@linkplain
-     * Name##empty_name empty name} is returned.
+     * PackageElement#getSimpleName package}, an unnamed {@linkplain
+     * ModuleElement#getSimpleName module} or an unnamed {@linkplain
+     * VariableElement#getSimpleName variable}, an {@linkplain Name##empty_name empty name}
+     * is returned.
      *
      * If it represents a {@linkplain ExecutableElement#getSimpleName
      * constructor}, the name "{@code <init>}" is returned.  If it

@@ -132,7 +132,7 @@ public class ExternalSpecsWriter extends HtmlDocletWriter {
         for (IndexItem ii : configuration.mainIndex.getItems(DocTree.Kind.SPEC)) {
             if (ii.getDocTree() instanceof SpecTree st) {
                 String url = st.getURL().toString();
-                String title = st.getTitle().toString();
+                String title = ii.getLabel(); // normalized form of  st.getTitle()
                 itemsByTitle
                         .computeIfAbsent(title, l -> new HashMap<>())
                         .computeIfAbsent(url, u -> new ArrayList<>())

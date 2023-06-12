@@ -2079,10 +2079,13 @@ bool VM_Version::is_default_intel_cascade_lake() {
   return FLAG_IS_DEFAULT(UseAVX) &&
          FLAG_IS_DEFAULT(MaxVectorSize) &&
          UseAVX > 2 &&
-         is_intel_skylake() &&
-         _stepping >= 5;
+         is_intel_cascade_lake();
 }
 #endif
+
+bool VM_Version::is_intel_cascade_lake() {
+  return is_intel_skylake() && _stepping >= 5;
+}
 
 // avx3_threshold() sets the threshold at which 64-byte instructions are used
 // for implementing the array copy and clear operations.

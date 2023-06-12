@@ -585,7 +585,7 @@ public class ObjectOutputStream
      * substituted or the original object.
      *
      * <p>Null can be returned as the object to be substituted, but may cause
-     * NullReferenceException in classes that contain references to the
+     * {@link NullPointerException} in classes that contain references to the
      * original object since they may be expecting an object instead of
      * null.
      *
