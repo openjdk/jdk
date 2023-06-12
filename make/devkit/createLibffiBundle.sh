@@ -49,6 +49,7 @@ SRC_DIR="$OUTPUT_DIR/src"
 DOWNLOAD_DIR="$OUTPUT_DIR/download"
 INSTALL_DIR="$OUTPUT_DIR/install"
 IMAGE_DIR="$OUTPUT_DIR/image"
+OS_NAME=$(uname -s)
 
 USAGE="$0 <devkit dir>"
 
@@ -81,8 +82,33 @@ cd $LIBFFI_DIR
 if [ ! -e $LIBFFI_DIR/configure ]; then
   bash ./autogen.sh
 fi
+
+case $OS_NAME in
+  Linux)
+    CC=$DEVKIT_DIR/bin/gcc
+    CXX=$DEVKIT_DIR/bin/g++
+    # For Linux/x86 it's under /lib/ instead of /lib64/
+    LIB_FOLDER=lib64
+    LIB_NAME=libffi.so*
+    ;;
+  Darwin)
+    CC=$DEVKIT_DIR/Xcode/Contents/Developer/usr/bin/gcc
+    CXX=$DEVKIT_DIR/Xcode/Contents/Developer/usr/bin/gcc
+    LIB_FOLDER=lib
+    LIB_NAME=libffi.*.dylib
+    ;;
+  *)
+    echo " Unsupported OS: $OS_NAME"
+    exit 1
+    ;;
+esac
+
 # For Linux/x86, add --build=i686-pc-linux-gnu CFLAGS=-m32 CXXFLAGS=-m32 LDFLAGS=-m32
-bash ./configure --prefix=$INSTALL_DIR CC=$DEVKIT_DIR/bin/gcc CXX=$DEVKIT_DIR/bin/g++
+bash ./configure \
+  --disable-docs \
+  --prefix=$INSTALL_DIR \
+  CC=$CC \
+  CXX=$CXX
 
 # Run with nice to keep system usable during build.
 nice make $MAKE_ARGS install
@@ -90,10 +116,9 @@ nice make $MAKE_ARGS install
 mkdir -p $IMAGE_DIR
 # Extract what we need into an image
 if [ ! -e $IMAGE_DIR/lib/libffi.so ]; then
-  echo "Copying libffi.so* to image"
+  echo "Copying ${LIB_NAME} to image"
   mkdir -p $IMAGE_DIR/lib
-  # For Linux/x86 it's under /lib/ instead of /lib64/
-  cp -a $INSTALL_DIR/lib64/libffi.so* $IMAGE_DIR/lib/
+  cp -a $INSTALL_DIR/${LIB_FOLDER}/${LIB_NAME} $IMAGE_DIR/lib/
 fi
 if [ ! -e $IMAGE_DIR/include/ ]; then
   echo "Copying include to image"
