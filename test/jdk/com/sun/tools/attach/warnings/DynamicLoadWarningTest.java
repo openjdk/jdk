@@ -119,10 +119,13 @@ class DynamicLoadWarningTest {
         test().whenRunning(loadJvmtiAgent1)
                 .stderrShouldContain(JVMTI_AGENT_WARNING);
 
-        // dynamically load loadJvmtiAgent1 twice, should be one warning
-        test().whenRunning(loadJvmtiAgent1)
-                .whenRunning(loadJvmtiAgent1)
-                .stderrShouldContain(JVMTI_AGENT_WARNING, 1);
+        // dynamically load loadJvmtiAgent1 twice, should be one warning on platforms
+        // that can detect if an agent library was previously loaded
+        if (!Platform.isAix()) {
+            test().whenRunning(loadJvmtiAgent1)
+                    .whenRunning(loadJvmtiAgent1)
+                    .stderrShouldContain(JVMTI_AGENT_WARNING, 1);
+        }
 
         // opt-in via command line option to allow dynamic loading of agents
         test().withOpts("-XX:+EnableDynamicAgentLoading")
