@@ -556,6 +556,7 @@
      static_field(StubRoutines,                _dlog,                                         address)                               \
      static_field(StubRoutines,                _dlog10,                                       address)                               \
      static_field(StubRoutines,                _dpow,                                         address)                               \
+     static_field(StubRoutines,                _fmod,                                         address)                               \
      static_field(StubRoutines,                _dsin,                                         address)                               \
      static_field(StubRoutines,                _dcos,                                         address)                               \
      static_field(StubRoutines,                _dtan,                                         address)                               \

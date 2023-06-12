@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -671,8 +671,9 @@ public sealed interface Classfile
     int JAVA_19_VERSION = 63;
     int JAVA_20_VERSION = 64;
     int JAVA_21_VERSION = 65;
+    int JAVA_22_VERSION = 66;
 
-    int LATEST_MAJOR_VERSION = JAVA_21_VERSION;
+    int LATEST_MAJOR_VERSION = JAVA_22_VERSION;
     int LATEST_MINOR_VERSION = 0;
     int PREVIEW_MINOR_VERSION = -1;
 
