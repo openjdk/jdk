@@ -118,7 +118,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
             ClassDesc.ofInternalName("jdk/internal/module/SystemModules");
     private static final ClassDesc CD_SYSTEM_MODULES_MAP =
             ClassDesc.ofInternalName(SYSTEM_MODULES_MAP_CLASSNAME);
-    private final boolean enabled;
+    private boolean enabled;
 
     public SystemModulesPlugin() {
         super("system-modules");
