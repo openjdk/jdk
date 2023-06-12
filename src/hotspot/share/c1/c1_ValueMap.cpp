@@ -412,7 +412,7 @@ void LoopInvariantCodeMotion::process_block(BlockBegin* block) {
       cur_invariant = is_invariant(cvt->value());
     }
 
-    // Check that insertion point has higher dom depth than all uses
+    // Check that insertion point has higher dom depth than all inputs to cur
     CheckInsertionPoint v(_insertion_point);
     cur->input_values_do(&v);
 

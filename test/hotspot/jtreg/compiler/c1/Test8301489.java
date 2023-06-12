@@ -53,9 +53,9 @@ public class Test8301489 {
         // Exception handler as predecessor of the next loop header block
         catch (ArithmeticException e) {}
 
-        // op2(x, y) as candidate for hoisting: operands are loop invariant
+        // op2(a, b) as candidate for hoisting: operands are loop invariant
         while (a + b < b) {}
-        // op2(x, y) should not be hoisted above if (a < 0) {...} block
+        // op2(a, b) should not be hoisted above 'if (a < 0) {...}' block
     }
 
     static void arrayLengthTest() {
