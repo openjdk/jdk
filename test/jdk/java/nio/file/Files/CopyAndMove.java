@@ -62,7 +62,7 @@ public class CopyAndMove {
             // Use test.dir to define second directory if possible as it might
             // be a different volume/file system and so improve test coverage.
             String testDir = System.getProperty("test.dir", ".");
-            Path dir2 = TestUtil.createTemporaryDirectory(testDir).toAbsolutePath();
+            Path dir2 = TestUtil.createTemporaryDirectory(testDir);
             FileStore fileStore2 = getFileStore(dir2);
             printDirInfo("dir2", dir2, fileStore2);
 
@@ -909,7 +909,7 @@ public class CopyAndMove {
         if (supportsLinks) {
             source = createSourceFile(dir1);
             link = dir1.resolve("link");
-            createSymbolicLink(link, source);
+            createSymbolicLink(link, source.getFileName());
             target = getTargetFile(dir2);
             copyAndVerify(link, target);
             delete(link);
