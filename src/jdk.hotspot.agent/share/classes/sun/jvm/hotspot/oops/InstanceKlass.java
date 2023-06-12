@@ -859,7 +859,6 @@ public class InstanceKlass extends Klass {
     return VMObjectFactory.newObject(U2Array.class, addr);
   }
 
-
   //----------------------------------------------------------------------
   // Internals only below this point
   //
