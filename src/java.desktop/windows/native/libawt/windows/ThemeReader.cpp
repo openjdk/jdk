@@ -40,6 +40,7 @@
 #define RED_SHIFT 16
 #define GREEN_SHIFT 8
 
+
 typedef HRESULT(__stdcall *PFNCLOSETHEMEDATA)(HTHEME hTheme);
 
 typedef HRESULT(__stdcall *PFNDRAWTHEMEBACKGROUND)(HTHEME hTheme, HDC hdc,
@@ -172,10 +173,10 @@ BOOL InitThemes() {
               DTRACE_PRINTLN("Loaded function pointers.\n");
               // We need to make sure we can load the Theme.
               // Use the default DPI value of 96 on windows.
-              unsigned int dpi =96;
+              constexpr unsigned int defaultDPI = 96;
               HTHEME hTheme = OpenThemeDataFuncForDpi (
                               AwtToolkit::GetInstance().GetHWnd(),
-                              L"Button", dpi);
+                              L"Button", defaultDPI);
               if(hTheme) {
                   DTRACE_PRINTLN("Loaded Theme data.\n");
                   CloseThemeDataFunc(hTheme);
@@ -240,7 +241,7 @@ static void assert_result(HRESULT hres, JNIEnv *env) {
 JNIEXPORT jlong JNICALL Java_sun_awt_windows_ThemeReader_openTheme
 (JNIEnv *env, jclass klass, jstring widget, jint dpi) {
 
-    LPCTSTR str = (LPCTSTR)JNU_GetStringPlatformChars(env, widget, NULL);
+    LPCTSTR str = (LPCTSTR) JNU_GetStringPlatformChars(env, widget, NULL);
     if (str == NULL) {
         JNU_ThrowOutOfMemoryError(env, 0);
         return 0;
@@ -251,7 +252,7 @@ JNIEXPORT jlong JNICALL Java_sun_awt_windows_ThemeReader_openTheme
                     AwtToolkit::GetInstance().GetHWnd(),
                     str, dpi);
     JNU_ReleaseStringPlatformChars(env, widget, str);
-    return (jlong)htheme;
+    return (jlong) htheme;
 }
 
 /*
@@ -430,7 +431,6 @@ JNIEXPORT void JNICALL Java_sun_awt_windows_ThemeReader_paintBackground
     rect.top = 0;
     rect.bottom = rectBottom;
     rect.right = rectRight;
-
 
     ZeroMemory(pSrcBits,(BITS_PER_PIXEL>>3)*w*h);
 
