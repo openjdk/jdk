@@ -88,7 +88,6 @@ public final class DirectCodeBuilder
     private Map<CodeAttribute, int[]> parentMap;
     private DedupLineNumberTableAttribute lineNumberWriter;
     private int topLocal;
-    private boolean needsStackMap, ncf;
 
     List<DeferredLabel> deferredLabels;
 
@@ -137,21 +136,11 @@ public final class DirectCodeBuilder
         this.topLocal = Util.maxLocals(methodInfo.methodFlags(), methodInfo.methodTypeSymbol());
         if (original != null)
             this.topLocal = Math.max(this.topLocal, original.maxLocals());
-        this.needsStackMap = false;
-        this.ncf = false;
     }
 
     @Override
     public CodeBuilder with(CodeElement element) {
         ((AbstractElement) element).writeTo(this);
-        if (!needsStackMap && element instanceof Instruction i) {
-            if (ncf) {
-                needsStackMap = true;
-            } else {
-                var kind = i.opcode().kind();
-                ncf = kind == Opcode.Kind.RETURN || kind == Opcode.Kind.THROW_EXCEPTION;
-            }
-        }
         return this;
     }
 
@@ -381,34 +370,30 @@ public final class DirectCodeBuilder
                             methodInfo.methodTypeSymbol().displayDescriptor()));
                 }
 
-                if (needsStackMap) {
-                    if (codeAndExceptionsMatch(codeLength)) {
-                        switch (context.stackMapsOption()) {
-                            case STACK_MAPS_WHEN_REQUIRED -> {
-                                if (!writeOriginalAttribute(buf)) {
-                                    tryGenerateStackMaps(true, buf);
-                                }
+                if (codeAndExceptionsMatch(codeLength)) {
+                    switch (context.stackMapsOption()) {
+                        case STACK_MAPS_WHEN_REQUIRED -> {
+                            if (!writeOriginalAttribute(buf)) {
+                                tryGenerateStackMaps(true, buf);
                             }
-                            case STACK_MAPS_ALWAYS -> {
-                                if (!writeOriginalAttribute(buf)) {
-                                    generateStackMaps(buf);
-                                }
-                            }
-                            case STACK_MAPS_NEVER ->
-                                writeCounters(true, buf);
                         }
-                    } else {
-                        switch (context.stackMapsOption()) {
-                            case STACK_MAPS_WHEN_REQUIRED ->
-                                tryGenerateStackMaps(false, buf);
-                            case STACK_MAPS_ALWAYS ->
+                        case STACK_MAPS_ALWAYS -> {
+                            if (!writeOriginalAttribute(buf)) {
                                 generateStackMaps(buf);
-                            case STACK_MAPS_NEVER ->
-                                writeCounters(false, buf);
+                            }
                         }
+                        case STACK_MAPS_NEVER ->
+                            writeCounters(true, buf);
                     }
                 } else {
-                    writeCounters(codeAndExceptionsMatch(codeLength), buf);
+                    switch (context.stackMapsOption()) {
+                        case STACK_MAPS_WHEN_REQUIRED ->
+                            tryGenerateStackMaps(false, buf);
+                        case STACK_MAPS_ALWAYS ->
+                            generateStackMaps(buf);
+                        case STACK_MAPS_NEVER ->
+                            writeCounters(false, buf);
+                    }
                 }
 
                 buf.writeInt(codeLength);
@@ -569,7 +554,6 @@ public final class DirectCodeBuilder
             writeBytecode(op);
             writeLabelOffset(op.sizeIfFixed() == 3 ? 2 : 4, instructionPc, target);
         }
-        needsStackMap = true;
     }
 
     public void writeLookupSwitch(Label defaultTarget, List<SwitchCase> cases) {
@@ -591,7 +575,6 @@ public final class DirectCodeBuilder
             bytecodesBufWriter.writeInt(c.caseValue());
             writeLabelOffset(4, instructionPc, c.target());
         }
-        needsStackMap = true;
     }
 
     public void writeTableSwitch(int low, int high, Label defaultTarget, List<SwitchCase> cases) {
@@ -610,7 +593,6 @@ public final class DirectCodeBuilder
         for (long l = low; l<=high; l++) {
             writeLabelOffset(4, instructionPc, caseMap.getOrDefault((int)l, defaultTarget));
         }
-        needsStackMap = true;
     }
 
     public void writeFieldAccess(Opcode opcode, FieldRefEntry ref) {
@@ -786,7 +768,6 @@ public final class DirectCodeBuilder
         if (type != null && !constantPool.canWriteDirect(type.constantPool()))
             el = new AbstractPseudoInstruction.ExceptionCatchImpl(element.handler(), element.tryStart(), element.tryEnd(), AbstractPoolEntry.maybeClone(constantPool, type));
         handlers.add(el);
-        needsStackMap = true;
     }
 
     public void addLocalVariable(LocalVariable element) {
