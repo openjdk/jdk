@@ -32,6 +32,7 @@ import sun.security.util.math.*;
 import sun.security.util.math.intpoly.*;
 import sun.security.x509.AlgorithmId;
 
+import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.security.*;
