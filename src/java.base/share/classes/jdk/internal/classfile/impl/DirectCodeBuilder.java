@@ -346,16 +346,6 @@ public final class DirectCodeBuilder
                 }
             }
 
-            private boolean writeOriginalAttribute(BufWriterImpl buf) {
-                var stackMapAttr = original.findAttribute(Attributes.STACK_MAP_TABLE).orElse(null);
-                if (stackMapAttr != null) {
-                    attributes.withAttribute(stackMapAttr);
-                    writeCounters(true, buf);
-                    return true;
-                }
-                return false;
-            }
-
             @Override
             public void writeBody(BufWriter b) {
                 BufWriterImpl buf = (BufWriterImpl) b;
@@ -373,15 +363,11 @@ public final class DirectCodeBuilder
                 if (codeAndExceptionsMatch(codeLength)) {
                     switch (context.stackMapsOption()) {
                         case STACK_MAPS_WHEN_REQUIRED -> {
-                            if (!writeOriginalAttribute(buf)) {
-                                tryGenerateStackMaps(true, buf);
-                            }
+                            attributes.withAttribute(original.findAttribute(Attributes.STACK_MAP_TABLE).orElse(null));
+                            writeCounters(true, buf);
                         }
-                        case STACK_MAPS_ALWAYS -> {
-                            if (!writeOriginalAttribute(buf)) {
-                                generateStackMaps(buf);
-                            }
-                        }
+                        case STACK_MAPS_ALWAYS ->
+                            generateStackMaps(buf);
                         case STACK_MAPS_NEVER ->
                             writeCounters(true, buf);
                     }
