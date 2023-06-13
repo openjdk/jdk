@@ -25,6 +25,7 @@
 
 package sun.security.ec;
 
+import java.io.IOException;
 import java.math.BigInteger;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.NamedParameterSpec;
