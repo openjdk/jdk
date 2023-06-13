@@ -39,6 +39,7 @@ import jdk.internal.vm.annotation.Stable;
 import java.util.Map;
 import java.util.StringJoiner;
 import java.util.WeakHashMap;
+import java.util.concurrent.locks.ReentrantLock;
 
 public final class BaseLocale {
 
@@ -92,7 +93,9 @@ public final class BaseLocale {
     }
 
     // Non-normalized to normalized BaseLocale cache for saving costly normalizations
+    // WeakHashMap is not thread safe, thus accessed with the lock held
     private static final Map<BaseLocale, BaseLocale> CACHE = new WeakHashMap<>();
+    private static final ReentrantLock LOCK = new ReentrantLock();
 
     public static final String SEP = "_";
 
@@ -163,13 +166,16 @@ public final class BaseLocale {
         // BaseLocale as the key. The returned "normalized" instance
         // can subsequently be used by the Locale instance which
         // guarantees the locale components are properly cased/interned.
-        synchronized (BaseLocale.class) {
+        LOCK.lock();
+        try {
             return CACHE.computeIfAbsent(new BaseLocale(language, script, region, variant),
                     (b) -> new BaseLocale(
                             LocaleUtils.toLowerString(b.getLanguage()).intern(),
                             LocaleUtils.toTitleString(b.getScript()).intern(),
                             LocaleUtils.toUpperString(b.getRegion()).intern(),
                             b.getVariant().intern()));
+        } finally {
+            LOCK.unlock();
         }
     }
 

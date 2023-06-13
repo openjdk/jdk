@@ -32,7 +32,6 @@ import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 
-import java.text.DateFormat;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
@@ -55,7 +54,7 @@ public class LocaleCache {
             if (previous != null && previous != l) {
                 throw new RuntimeException("Different Locale was created");
             }
-            previous =  l;
+            previous = l;
         }
     }
 
@@ -67,7 +66,7 @@ public class LocaleCache {
             if (previous != null && previous != l) {
                 throw new RuntimeException("Different Locale was created");
             }
-            previous =  l;
+            previous = l;
         }
     }
 }
