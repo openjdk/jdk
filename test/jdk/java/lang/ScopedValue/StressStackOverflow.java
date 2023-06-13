@@ -240,6 +240,9 @@ public class StressStackOverflow {
                 && System.nanoTime() - startTime <= 3 * MINUTES) { // 3 minutes is long enough
             try {
                 torture.run();
+                if (inheritedValue.isBound()) {
+                    throw new TestFailureException("Should not be bound here");
+                }
             } catch (TestFailureException e) {
                 throw e;
             } finally {
