@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.atomic.AtomicLong;
 
+import jdk.internal.net.http.common.TimeSource;
+
 /**
  * Timeout event notified by selector thread. Executes the given handler if
  * the timer not canceled first.
@@ -48,7 +50,7 @@ abstract class TimeoutEvent implements Comparable<TimeoutEvent> {
 
     TimeoutEvent(Duration duration) {
         this.duration = duration;
-        deadline = Instant.now().plus(duration);
+        deadline = TimeSource.now().plus(duration);
     }
 
     public abstract void handle();

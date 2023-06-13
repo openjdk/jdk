@@ -44,6 +44,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 import jdk.internal.net.http.common.FlowTube;
 import jdk.internal.net.http.common.Logger;
+import jdk.internal.net.http.common.TimeSource;
 import jdk.internal.net.http.common.Utils;
 import static jdk.internal.net.http.HttpClientImpl.KEEP_ALIVE_TIMEOUT; //seconds
 
@@ -63,6 +64,7 @@ final class ConnectionPool {
     private final HashMap<CacheKey,LinkedList<HttpConnection>> sslPool;
     private final ExpiryList expiryList;
     private final String dbgTag; // used for debug
+    private final TimeSource timeSource;
     volatile boolean stopped;
 
     /**
@@ -124,17 +126,22 @@ final class ConnectionPool {
     }
 
     ConnectionPool(long clientId) {
-        this("ConnectionPool("+clientId+")");
+        this(clientId, TimeSource.source());
     }
 
-    /**
-     * There should be one of these per HttpClient.
-     */
-    private ConnectionPool(String tag) {
+    ConnectionPool(long clientId, TimeSource timeSource) {
+        this("ConnectionPool("+clientId+")", Objects.requireNonNull(timeSource));
+    }
+
+        /**
+         * There should be one of these per HttpClient.
+         */
+    private ConnectionPool(String tag, TimeSource timeSource) {
         dbgTag = tag;
         plainPool = new HashMap<>();
         sslPool = new HashMap<>();
-        expiryList = new ExpiryList();
+        this.timeSource = timeSource;
+        this.expiryList = new ExpiryList(timeSource);
     }
 
     final String dbgString() {
@@ -181,7 +188,7 @@ final class ConnectionPool {
      * Returns the connection to the pool.
      */
     void returnToPool(HttpConnection conn) {
-        returnToPool(conn, Instant.now(), KEEP_ALIVE_TIMEOUT);
+        returnToPool(conn, timeSource.instant(), KEEP_ALIVE_TIMEOUT);
     }
 
     // Called also by whitebox tests
@@ -291,7 +298,7 @@ final class ConnectionPool {
      */
     long purgeExpiredConnectionsAndReturnNextDeadline() {
         if (!expiryList.purgeMaybeRequired()) return 0;
-        return purgeExpiredConnectionsAndReturnNextDeadline(Instant.now());
+        return purgeExpiredConnectionsAndReturnNextDeadline(timeSource.instant());
     }
 
     // Used for whitebox testing
@@ -371,7 +378,12 @@ final class ConnectionPool {
      */
     private static final class ExpiryList {
         private final LinkedList<ExpiryEntry> list = new LinkedList<>();
+        private final TimeSource timeSource;
         private volatile boolean mayContainEntries;
+
+        ExpiryList(TimeSource timeSource) {
+            this.timeSource = timeSource;
+        }
 
         int size() { return list.size(); }
 
@@ -397,7 +409,7 @@ final class ConnectionPool {
 
         // should only be called while holding the ConnectionPool stateLock.
         void add(HttpConnection conn) {
-            add(conn, Instant.now(), KEEP_ALIVE_TIMEOUT);
+            add(conn, timeSource.instant(), KEEP_ALIVE_TIMEOUT);
         }
 
         // Used by whitebox test.

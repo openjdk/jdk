@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import jdk.internal.net.http.common.FlowTube;
+import jdk.internal.net.http.common.TimeSource;
 
 /**
  * @summary Verifies that the ConnectionPool correctly handle
@@ -101,7 +102,7 @@ public class ConnectionPoolTest {
         Random random = new Random();
 
         final int count = 20;
-        Instant now = Instant.now().truncatedTo(ChronoUnit.SECONDS);
+        Instant now = TimeSource.now().truncatedTo(ChronoUnit.SECONDS);
         int[] keepAlives = new int[count];
         HttpConnectionStub[] connections = new HttpConnectionStub[count];
         long purge = pool.purgeExpiredConnectionsAndReturnNextDeadline(now);
@@ -180,7 +181,7 @@ public class ConnectionPoolTest {
         Random random = new Random();
 
         final int count = 20;
-        Instant now = Instant.now().truncatedTo(ChronoUnit.SECONDS);
+        Instant now = TimeSource.now().truncatedTo(ChronoUnit.SECONDS);
         int[] keepAlives = new int[count];
         HttpConnectionStub[] connections = new HttpConnectionStub[count];
         long purge = pool.purgeExpiredConnectionsAndReturnNextDeadline(now);

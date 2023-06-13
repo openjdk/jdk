@@ -92,6 +92,7 @@ import jdk.internal.net.http.common.Log;
 import jdk.internal.net.http.common.Logger;
 import jdk.internal.net.http.common.MinimalFuture;
 import jdk.internal.net.http.common.Pair;
+import jdk.internal.net.http.common.TimeSource;
 import jdk.internal.net.http.common.Utils;
 import jdk.internal.net.http.common.OperationTrackers.Trackable;
 import jdk.internal.net.http.common.OperationTrackers.Tracker;
@@ -1745,7 +1746,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
         synchronized (this) {
             if (timeouts.isEmpty()) return 0L;
 
-            Instant now = Instant.now();
+            Instant now = TimeSource.now();
             Iterator<TimeoutEvent> itr = timeouts.iterator();
             while (itr.hasNext()) {
                 TimeoutEvent event = itr.next();
