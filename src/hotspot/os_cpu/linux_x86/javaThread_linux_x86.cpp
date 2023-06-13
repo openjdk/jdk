@@ -38,7 +38,8 @@ frame JavaThread::pd_last_frame() {
 bool JavaThread::pd_get_top_frame_for_signal_handler(frame* fr_addr,
   void* ucontext, bool isInJava, bool forceUContextUsage) {
 
-  assert(Thread::current() == this, "caller must be current thread");
+  assert(Thread::current() == this || Thread::currently_in_async_stack_walking(),
+    "caller must be current thread or in async stack walking");
   return pd_get_top_frame(fr_addr, ucontext, isInJava, forceUContextUsage);
 }
 
