@@ -60,7 +60,7 @@ public class PainterGenerator {
 
     private static final boolean debug = false;
 
-    //a handful of counters, incremented whenever the associated object type is encounted.
+    //a handful of counters, incremented whenever the associated object type is encountered.
     //These counters form the basis of the field and method suffixes.
     //These are all 1 based, because I felt like it :-)
     private int colorCounter = 1;
@@ -536,10 +536,10 @@ public class PainterGenerator {
             }
             index++;
         }
-        // Check boundry conditions
+        // Check boundary conditions
         for (int i = 1; i < fractions.length; i++) {
             //to avoid an error with LinearGradientPaint where two fractions
-            //are identical, bump up the fraction value by a miniscule amount
+            //are identical, bump up the fraction value by a minuscule amount
             //if it is identical to the previous one
             //NOTE: The <= is critical because the previous value may already
             //have been bumped up

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,6 @@
 
 #ifndef SHARE_SERVICES_MEMBASELINE_HPP
 #define SHARE_SERVICES_MEMBASELINE_HPP
-
-#if INCLUDE_NMT
 
 #include "memory/metaspaceStats.hpp"
 #include "runtime/mutex.hpp"
@@ -90,7 +88,7 @@ class MemBaseline {
     _baseline_type(Not_baselined) {
   }
 
-  bool baseline(bool summaryOnly = true);
+  void baseline(bool summaryOnly = true);
 
   BaselineType baseline_type() const { return _baseline_type; }
 
@@ -142,7 +140,7 @@ class MemBaseline {
   size_t malloc_tracking_overhead() const {
     assert(baseline_type() != Not_baselined, "Not yet baselined");
     MemBaseline* bl = const_cast<MemBaseline*>(this);
-    return bl->_malloc_memory_snapshot.malloc_overhead()->size();
+    return bl->_malloc_memory_snapshot.malloc_overhead();
   }
 
   MallocMemory* malloc_memory(MEMFLAGS flag) {
@@ -190,7 +188,7 @@ class MemBaseline {
 
  private:
   // Baseline summary information
-  bool baseline_summary();
+  void baseline_summary();
 
   // Baseline allocation sites (detail tracking only)
   bool baseline_allocation_sites();
@@ -211,7 +209,5 @@ class MemBaseline {
   // Sort allocation sites in call site address order
   void virtual_memory_sites_to_reservation_site_order();
 };
-
-#endif // INCLUDE_NMT
 
 #endif // SHARE_SERVICES_MEMBASELINE_HPP

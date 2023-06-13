@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,8 @@
  *
  * @requires vm.cds
  * @library /test/lib
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @compile test-classes/MultiProcClass.java
  * @run driver MultiProcessSharing
  */
@@ -38,7 +38,7 @@ import java.io.File;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 
 public class MultiProcessSharing {
@@ -47,7 +47,7 @@ public class MultiProcessSharing {
     static boolean checkPmap = false;
 
     public static void main(String[] args) throws Exception {
-        String wbJar = JarBuilder.build(true, "WhiteBox", "sun/hotspot/WhiteBox");
+        String wbJar = JarBuilder.build(true, "WhiteBox", "jdk/test/whitebox/WhiteBox");
         useWbJar = "-Xbootclasspath/a:" + wbJar;
         sharedClass1Jar = JarBuilder.build("shared_class1", "MultiProcClass");
 

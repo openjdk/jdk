@@ -38,36 +38,29 @@ import java.util.List;
 public class RangeSliderModel implements ChangedEventProvider<RangeSliderModel> {
 
     // Warning: Update setData method if fields are added
-    private ChangedEvent<RangeSliderModel> changedEvent;
-    private ChangedEvent<RangeSliderModel> colorChangedEvent;
+    private final ChangedEvent<RangeSliderModel> changedEvent;
+    private final ChangedEvent<RangeSliderModel> colorChangedEvent;
     private List<String> positions;
     private int firstPosition;
     private int secondPosition;
     private List<Color> colors;
 
-    public void setData(RangeSliderModel model) {
-        boolean changed = false;
-        changed |= (positions != model.positions);
-        positions = model.positions;
-        changed |= (firstPosition != model.firstPosition);
-        firstPosition = model.firstPosition;
-        changed |= (secondPosition != model.secondPosition);
-        secondPosition = model.secondPosition;
-        boolean colorChanged = (colors != model.colors);
-        colors = model.colors;
-        if (changed) {
-            changedEvent.fire();
-        }
-        if (colorChanged) {
-            colorChangedEvent.fire();
-        }
+    public RangeSliderModel(RangeSliderModel model) {
+        firstPosition = model.getFirstPosition();
+        secondPosition = model.getSecondPosition();
+        changedEvent = new ChangedEvent<>(this);
+        colorChangedEvent = new ChangedEvent<>(this);
+        positions = new ArrayList<>(model.getPositions());
+        colors = new ArrayList<>(model.getColors());
     }
 
-    public RangeSliderModel(List<String> positions) {
-        assert positions.size() > 0;
-        this.changedEvent = new ChangedEvent<>(this);
-        this.colorChangedEvent = new ChangedEvent<>(this);
-        setPositions(positions);
+    public RangeSliderModel() {
+        firstPosition = -1;
+        secondPosition = -1;
+        changedEvent = new ChangedEvent<>(this);
+        colorChangedEvent = new ChangedEvent<>(this);
+        positions = new ArrayList<>();
+        colors = new ArrayList<>();
     }
 
     protected void setPositions(List<String> positions) {
@@ -91,12 +84,6 @@ public class RangeSliderModel implements ChangedEventProvider<RangeSliderModel> 
         return colors;
     }
 
-    public RangeSliderModel copy() {
-        RangeSliderModel newModel = new RangeSliderModel(positions);
-        newModel.setData(this);
-        return newModel;
-    }
-
     public List<String> getPositions() {
         return Collections.unmodifiableList(positions);
     }
@@ -112,10 +99,12 @@ public class RangeSliderModel implements ChangedEventProvider<RangeSliderModel> 
     public void setPositions(int fp, int sp) {
         assert fp >= 0 && fp < positions.size();
         assert sp >= 0 && sp < positions.size();
-        firstPosition = fp;
-        secondPosition = sp;
-        ensureOrder();
-        changedEvent.fire();
+        if (firstPosition != fp || secondPosition != sp) {
+            firstPosition = fp;
+            secondPosition = sp;
+            ensureOrder();
+            changedEvent.fire();
+        }
     }
 
     private void ensureOrder() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 
 #include "gc/shared/threadLocalAllocBuffer.hpp"
 #include "gc/z/zValue.hpp"
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 
 class JavaThread;
 
@@ -41,7 +41,6 @@ public:
   static void publish_statistics();
 
   static void retire(JavaThread* thread, ThreadLocalAllocStats* stats);
-  static void remap(JavaThread* thread);
   static void update_stats(JavaThread* thread);
 };
 

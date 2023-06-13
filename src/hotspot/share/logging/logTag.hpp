@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,10 @@
 #ifndef SHARE_LOGGING_LOGTAG_HPP
 #define SHARE_LOGGING_LOGTAG_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "utilities/globalDefinitions.hpp"
+
+class outputStream;
 
 // List of available logging tags. New tags should be added here, in
 // alphabetical order.
@@ -56,6 +58,7 @@
   LOG_TAG(constantpool) \
   LOG_TAG(constraints) \
   LOG_TAG(container) \
+  LOG_TAG(continuations) \
   LOG_TAG(coops) \
   LOG_TAG(cpu) \
   LOG_TAG(cset) \
@@ -64,16 +67,20 @@
   LOG_TAG(dcmd) \
   LOG_TAG(decoder) \
   LOG_TAG(defaultmethods) \
+  LOG_TAG(deoptimization) \
+  LOG_TAG(dependencies) \
   LOG_TAG(director) \
+  NOT_PRODUCT(LOG_TAG(downcall)) \
   LOG_TAG(dump) \
   LOG_TAG(dynamic) \
   LOG_TAG(ergo) \
   LOG_TAG(event) \
   LOG_TAG(exceptions) \
   LOG_TAG(exit) \
+  LOG_TAG(fastlock) \
   LOG_TAG(finalizer) \
   LOG_TAG(fingerprint) \
-  DEBUG_ONLY(LOG_TAG(foreign)) \
+  NOT_PRODUCT(LOG_TAG(foreign)) \
   LOG_TAG(free) \
   LOG_TAG(freelist) \
   LOG_TAG(gc) \
@@ -131,6 +138,7 @@
   LOG_TAG(oopstorage) \
   LOG_TAG(os) \
   LOG_TAG(owner) \
+  LOG_TAG(page) \
   LOG_TAG(pagesize) \
   LOG_TAG(parser) \
   LOG_TAG(patch) \
@@ -140,6 +148,7 @@
   LOG_TAG(phases) \
   LOG_TAG(plab) \
   LOG_TAG(placeholders) \
+  LOG_TAG(preempt) \
   LOG_TAG(preorder)  /* Trace all classes loaded in order referenced (not loaded) */ \
   LOG_TAG(preview)   /* Trace loading of preview feature types */ \
   LOG_TAG(promotion) \
@@ -172,6 +181,7 @@
   LOG_TAG(streaming) \
   LOG_TAG(stringdedup) \
   LOG_TAG(stringtable) \
+  LOG_TAG(stubs) \
   LOG_TAG(subclass) \
   LOG_TAG(survivor) \
   LOG_TAG(suspend) \
@@ -183,12 +193,12 @@
   DEBUG_ONLY(LOG_TAG(test)) \
   LOG_TAG(thread) \
   LOG_TAG(throttle) \
-  LOG_TAG(time) \
   LOG_TAG(timer) \
   LOG_TAG(tlab) \
   LOG_TAG(tracking) \
   LOG_TAG(unload) /* Trace unloading of classes */ \
   LOG_TAG(unshareable) \
+  NOT_PRODUCT(LOG_TAG(upcall)) \
   LOG_TAG(update) \
   LOG_TAG(valuebasedclasses) \
   LOG_TAG(verification) \

@@ -215,8 +215,21 @@ AC_DEFUN([FLAGS_SETUP_SYSROOT_FLAGS],
       $1SYSROOT_CFLAGS="--sysroot=[$]$1SYSROOT"
       $1SYSROOT_LDFLAGS="--sysroot=[$]$1SYSROOT"
     elif test "x$TOOLCHAIN_TYPE" = xclang; then
-      $1SYSROOT_CFLAGS="-isysroot [$]$1SYSROOT"
-      $1SYSROOT_LDFLAGS="-isysroot [$]$1SYSROOT"
+      if test "x$OPENJDK_TARGET_OS" = "xlinux"; then
+        # -isysroot has no effect on linux
+        # https://bugs.llvm.org/show_bug.cgi?id=11503
+        $1SYSROOT_CFLAGS="--sysroot=[$]$1SYSROOT"
+        $1SYSROOT_LDFLAGS="--sysroot=[$]$1SYSROOT"
+        if test -d "$DEVKIT_TOOLCHAIN_PATH"; then
+          # In devkits, gcc is not located in the sysroot.
+          # use --gcc-toolchain to let clang find the gcc installation.
+          $1SYSROOT_CFLAGS="[$]$1SYSROOT_CFLAGS --gcc-toolchain=$DEVKIT_TOOLCHAIN_PATH/.."
+          $1SYSROOT_LDFLAGS="[$]$1SYSROOT_LDFLAGS --gcc-toolchain=$DEVKIT_TOOLCHAIN_PATH/.."
+        fi
+      else
+        $1SYSROOT_CFLAGS="-isysroot [$]$1SYSROOT"
+        $1SYSROOT_LDFLAGS="-isysroot [$]$1SYSROOT"
+      fi
     fi
   fi
 
@@ -282,12 +295,13 @@ AC_DEFUN_ONCE([FLAGS_PRE_TOOLCHAIN],
   # FIXME: Don't really know how to do with this, but this was the old behavior
   GLOBAL_CPPFLAGS="$SYSROOT_CFLAGS"
 
-  # FIXME: For compatilibity, export this as EXTRA_CFLAGS for now.
+  # FIXME: For compatibility, export this as EXTRA_CFLAGS for now.
   EXTRA_CFLAGS="$MACHINE_FLAG $USER_CFLAGS"
   EXTRA_CXXFLAGS="$MACHINE_FLAG $USER_CXXFLAGS"
   EXTRA_LDFLAGS="$MACHINE_FLAG $USER_LDFLAGS"
   EXTRA_ASFLAGS="$USER_ASFLAGS"
 
+  AC_SUBST(MACHINE_FLAG)
   AC_SUBST(EXTRA_CFLAGS)
   AC_SUBST(EXTRA_CXXFLAGS)
   AC_SUBST(EXTRA_LDFLAGS)
@@ -327,8 +341,9 @@ AC_DEFUN([FLAGS_SETUP_TOOLCHAIN_CONTROL],
     # Check if @file is supported by gcc
     if test "x$TOOLCHAIN_TYPE" = xgcc; then
       AC_MSG_CHECKING([if @file is supported by gcc])
-      # Extra emtpy "" to prevent ECHO from interpreting '--version' as argument
+      # Extra empty "" to prevent ECHO from interpreting '--version' as argument
       $ECHO "" "--version" > command.file
+      # Redirect stderr and stdout to config.log (AS_MESSAGE_LOG_FD) via merge
       if $CXX @command.file 2>&AS_MESSAGE_LOG_FD >&AS_MESSAGE_LOG_FD; then
         AC_MSG_RESULT(yes)
         COMPILER_COMMAND_FILE_FLAG="@"
@@ -489,14 +504,14 @@ UTIL_DEFUN_NAMED([FLAGS_CXX_COMPILER_CHECK_ARGUMENTS],
 UTIL_DEFUN_NAMED([FLAGS_COMPILER_CHECK_ARGUMENTS],
     [*ARGUMENT IF_TRUE IF_FALSE PREFIX], [$@],
 [
-  FLAGS_C_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [ARG_ARGUMENT],
+  FLAGS_C_COMPILER_CHECK_ARGUMENTS(ARGUMENT: ARG_ARGUMENT,
       IF_TRUE: [C_COMP_SUPPORTS="yes"],
       IF_FALSE: [C_COMP_SUPPORTS="no"],
-      PREFIX: [ARG_PREFIX])
-  FLAGS_CXX_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [ARG_ARGUMENT],
+      PREFIX: ARG_PREFIX)
+  FLAGS_CXX_COMPILER_CHECK_ARGUMENTS(ARGUMENT: ARG_ARGUMENT,
       IF_TRUE: [CXX_COMP_SUPPORTS="yes"],
       IF_FALSE: [CXX_COMP_SUPPORTS="no"],
-      PREFIX: [ARG_PREFIX])
+      PREFIX: ARG_PREFIX)
 
   AC_MSG_CHECKING([if both ARG_PREFIX[CC] and ARG_PREFIX[CXX] support "ARG_ARGUMENT"])
   supports=no

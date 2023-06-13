@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -51,7 +51,9 @@ class NativeInstruction {
   friend class Relocation;
 
  public:
-  bool is_jump() { return Assembler::is_b(long_at(0)); } // See NativeGeneralJump.
+  bool is_nop() const { return Assembler::is_nop(long_at(0)); }
+
+  bool is_jump() const { return Assembler::is_b(long_at(0)); } // See NativeGeneralJump.
 
   bool is_sigtrap_ic_miss_check() {
     assert(UseSIGTRAP, "precondition");
@@ -67,12 +69,12 @@ class NativeInstruction {
     return MacroAssembler::tdi_get_si16(long_at(0), Assembler::traptoUnconditional, 0);
   }
 
-  // We use an illtrap for marking a method as not_entrant or zombie.
-  bool is_sigill_zombie_not_entrant() {
+  // We use an illtrap for marking a method as not_entrant.
+  bool is_sigill_not_entrant() {
     // Work around a C++ compiler bug which changes 'this'.
-    return NativeInstruction::is_sigill_zombie_not_entrant_at(addr_at(0));
+    return NativeInstruction::is_sigill_not_entrant_at(addr_at(0));
   }
-  static bool is_sigill_zombie_not_entrant_at(address addr);
+  static bool is_sigill_not_entrant_at(address addr);
 
 #ifdef COMPILER2
   // SIGTRAP-based implicit range checks
@@ -89,7 +91,7 @@ class NativeInstruction {
       return MacroAssembler::is_tdi(long_at(0), Assembler::traptoGreaterThanUnsigned | Assembler::traptoEqual,
                                     -1, encoding);
     }
-    return MacroAssembler::is_load_from_polling_page(long_at(0), NULL);
+    return MacroAssembler::is_load_from_polling_page(long_at(0), nullptr);
   }
 
   bool is_safepoint_poll_return() {
@@ -175,7 +177,7 @@ inline NativeCall* nativeCall_at(address instr) {
 }
 
 inline NativeCall* nativeCall_before(address return_address) {
-  NativeCall* call = NULL;
+  NativeCall* call = nullptr;
   if (MacroAssembler::is_bl(*(int*)(return_address - 4)))
     call = (NativeCall*)(return_address - 4);
   call->verify();
@@ -257,8 +259,8 @@ class NativeMovConstReg: public NativeInstruction {
   // Patch the code stream and oop pool.
   void set_data(intptr_t x);
 
-  // Patch narrow oop constants. Use this also for narrow klass.
-  void set_narrow_oop(narrowOop data, CodeBlob *code = NULL);
+  // Patch narrow oop constants.
+  void set_narrow_oop(narrowOop data, CodeBlob *code = nullptr);
 
   void verify() NOT_DEBUG_RETURN;
 };
@@ -305,7 +307,7 @@ class NativeJump: public NativeInstruction {
       return (address)((NativeMovConstReg *)this)->data();
     } else {
       ShouldNotReachHere();
-      return NULL;
+      return nullptr;
     }
   }
 
@@ -375,7 +377,7 @@ class NativeCallTrampolineStub : public NativeInstruction {
 
  public:
 
-  address destination(nmethod *nm = NULL) const;
+  address destination(nmethod *nm = nullptr) const;
   int destination_toc_offset() const;
 
   void set_destination(address new_destination);
@@ -501,6 +503,40 @@ class NativeMovRegMem: public NativeInstruction {
     DEBUG_ONLY( test->verify(); )
     return test;
   }
+};
+
+class NativePostCallNop: public NativeInstruction {
+public:
+  bool check() const { return is_nop(); }
+  int displacement() const { return 0; }
+  void patch(jint diff);
+  void make_deopt();
+};
+
+inline NativePostCallNop* nativePostCallNop_at(address address) {
+  NativePostCallNop* nop = (NativePostCallNop*) address;
+  if (nop->check()) {
+    return nop;
+  }
+  return nullptr;
+}
+
+class NativeDeoptInstruction: public NativeInstruction {
+ public:
+  enum {
+    instruction_size            =    4,
+    instruction_offset          =    0,
+  };
+
+  address instruction_address() const       { return addr_at(instruction_offset); }
+  address next_instruction_address() const  { return addr_at(instruction_size); }
+
+  void  verify();
+
+  static bool is_deopt_at(address code_pos);
+
+  // MT-safe patching
+  static void insert(address code_pos);
 };
 
 #endif // CPU_PPC_NATIVEINST_PPC_HPP

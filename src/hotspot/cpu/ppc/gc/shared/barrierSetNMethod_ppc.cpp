@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
 #include "code/codeBlob.hpp"
 #include "code/nmethod.hpp"
 #include "code/nativeInst.hpp"
+#include "gc/shared/barrierSet.hpp"
+#include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "utilities/debug.hpp"
 
@@ -74,7 +76,7 @@ public:
     get_patchable_instruction_handle()->verify();
     current_instruction += 2;
 
-    verify_op_code(current_instruction, Assembler::LWZ_OPCODE);
+    verify_op_code(current_instruction, Assembler::LD_OPCODE);
 
     // cmpw (mnemonic)
     verify_op_code(current_instruction, Assembler::CMP_OPCODE);
@@ -82,7 +84,7 @@ public:
     // bnectrl (mnemonic) (weak check; not checking the exact type)
     verify_op_code(current_instruction, Assembler::BCCTR_OPCODE);
 
-    verify_op_code(current_instruction, Assembler::ISYNC_OPCODE);
+    // isync is optional
   }
 
 private:
@@ -100,7 +102,11 @@ private:
 };
 
 static NativeNMethodBarrier* get_nmethod_barrier(nmethod* nm) {
-  address barrier_address = nm->code_begin() + nm->frame_complete_offset() + (-9 * 4);
+  BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
+  address barrier_address = nm->code_begin() + nm->frame_complete_offset() + (-8 * 4);
+  if (bs_asm->nmethod_patching_type() != NMethodPatchingType::stw_instruction_and_data_patch) {
+    barrier_address -= 4; // isync (see nmethod_entry_barrier)
+  }
 
   auto barrier = reinterpret_cast<NativeNMethodBarrier*>(barrier_address);
   debug_only(barrier->verify());
@@ -112,20 +118,20 @@ void BarrierSetNMethod::deoptimize(nmethod* nm, address* return_address_ptr) {
   // Thus, there's nothing to do here.
 }
 
-void BarrierSetNMethod::disarm(nmethod* nm) {
+void BarrierSetNMethod::set_guard_value(nmethod* nm, int value) {
   if (!supports_entry_barrier(nm)) {
     return;
   }
 
   NativeNMethodBarrier* barrier = get_nmethod_barrier(nm);
-  barrier->release_set_guard_value(disarmed_value());
+  barrier->release_set_guard_value(value);
 }
 
-bool BarrierSetNMethod::is_armed(nmethod* nm) {
+int BarrierSetNMethod::guard_value(nmethod* nm) {
   if (!supports_entry_barrier(nm)) {
-    return false;
+    return disarmed_guard_value();
   }
 
   NativeNMethodBarrier* barrier = get_nmethod_barrier(nm);
-  return barrier->get_guard_value() != disarmed_value();
+  return barrier->get_guard_value();
 }

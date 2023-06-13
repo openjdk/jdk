@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,11 @@
 #ifndef OS_BSD_OS_BSD_HPP
 #define OS_BSD_OS_BSD_HPP
 
+#include "runtime/os.hpp"
+
 // Bsd_OS defines the interface to Bsd operating systems
 
-// Information about the protection of the page at address '0' on this os.
-static bool zero_page_read_protected() { return true; }
-
-class Bsd {
+class os::Bsd {
   friend class os;
 
 #ifdef __APPLE__
@@ -45,9 +44,9 @@ class Bsd {
 
   static julong _physical_memory;
   static pthread_t _main_thread;
-  static int _page_size;
 
   static julong available_memory();
+  static julong free_memory();
   static julong physical_memory() { return _physical_memory; }
   static void initialize_system_info();
 
@@ -62,9 +61,6 @@ class Bsd {
   static pthread_t main_thread(void)                                { return _main_thread; }
 
   static pid_t gettid();
-
-  static int page_size(void)                                        { return _page_size; }
-  static void set_page_size(int val)                                { _page_size = val; }
 
   static intptr_t* ucontext_get_sp(const ucontext_t* uc);
   static intptr_t* ucontext_get_fp(const ucontext_t* uc);
@@ -102,17 +98,17 @@ class Bsd {
   static void set_numa_interleave_memory(numa_interleave_memory_func_t func) { _numa_interleave_memory = func; }
   static void set_numa_all_nodes(unsigned long* ptr) { _numa_all_nodes = ptr; }
  public:
-  static int sched_getcpu()  { return _sched_getcpu != NULL ? _sched_getcpu() : -1; }
+  static int sched_getcpu()  { return _sched_getcpu != nullptr ? _sched_getcpu() : -1; }
   static int numa_node_to_cpus(int node, unsigned long *buffer, int bufferlen) {
-    return _numa_node_to_cpus != NULL ? _numa_node_to_cpus(node, buffer, bufferlen) : -1;
+    return _numa_node_to_cpus != nullptr ? _numa_node_to_cpus(node, buffer, bufferlen) : -1;
   }
-  static int numa_max_node() { return _numa_max_node != NULL ? _numa_max_node() : -1; }
-  static int numa_available() { return _numa_available != NULL ? _numa_available() : -1; }
+  static int numa_max_node() { return _numa_max_node != nullptr ? _numa_max_node() : -1; }
+  static int numa_available() { return _numa_available != nullptr ? _numa_available() : -1; }
   static int numa_tonode_memory(void *start, size_t size, int node) {
-    return _numa_tonode_memory != NULL ? _numa_tonode_memory(start, size, node) : -1;
+    return _numa_tonode_memory != nullptr ? _numa_tonode_memory(start, size, node) : -1;
   }
   static void numa_interleave_memory(void *start, size_t size) {
-    if (_numa_interleave_memory != NULL && _numa_all_nodes != NULL) {
+    if (_numa_interleave_memory != nullptr && _numa_all_nodes != nullptr) {
       _numa_interleave_memory(start, size, _numa_all_nodes);
     }
   }

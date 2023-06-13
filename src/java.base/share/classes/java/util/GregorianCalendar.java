@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -599,6 +599,7 @@ public class GregorianCalendar extends Calendar {
      * {@link Locale.Category#FORMAT FORMAT} locale.
      *
      * @param zone the given time zone.
+     * @throws NullPointerException if {@code zone} is {@code null}
      */
     public GregorianCalendar(TimeZone zone) {
         this(zone, Locale.getDefault(Locale.Category.FORMAT));
@@ -609,6 +610,7 @@ public class GregorianCalendar extends Calendar {
      * in the default time zone with the given locale.
      *
      * @param aLocale the given locale.
+     * @throws NullPointerException if {@code aLocale} is {@code null}
      */
     public GregorianCalendar(Locale aLocale) {
         this(TimeZone.getDefaultRef(), aLocale);
@@ -621,6 +623,7 @@ public class GregorianCalendar extends Calendar {
      *
      * @param zone the given time zone.
      * @param aLocale the given locale.
+     * @throws NullPointerException if {@code zone} or {@code aLocale} is {@code null}
      */
     public GregorianCalendar(TimeZone zone, Locale aLocale) {
         super(zone, aLocale);
@@ -1307,7 +1310,15 @@ public class GregorianCalendar extends Calendar {
                             woy = min;
                         }
                     }
-                    set(field, getRolledValue(woy, amount, min, max));
+                    int newWeekOfYear = getRolledValue(woy, amount, min, max);
+                    // Final check to ensure that the first week has the
+                    // current DAY_OF_WEEK. Only make a check for
+                    // rolling up into week 1, as the existing checks
+                    // sufficiently handle rolling down into week 1.
+                    if (newWeekOfYear == 1 && isInvalidWeek1() && amount > 0) {
+                        newWeekOfYear++;
+                    }
+                    set(field, newWeekOfYear);
                     return;
                 }
 
@@ -2323,11 +2334,11 @@ public class GregorianCalendar extends Calendar {
         fixedDate += time / ONE_DAY;
         timeOfDay += (int) (time % ONE_DAY);
         if (timeOfDay >= ONE_DAY) {
-            timeOfDay -= ONE_DAY;
+            timeOfDay -= (int)ONE_DAY;
             ++fixedDate;
         } else {
             while (timeOfDay < 0) {
-                timeOfDay += ONE_DAY;
+                timeOfDay += (int)ONE_DAY;
                 --fixedDate;
             }
         }
@@ -2431,7 +2442,6 @@ public class GregorianCalendar extends Calendar {
             long fixedDateJan1 = calsys.getFixedDate(normalizedYear, 1, 1, cdate);
             int dayOfYear = (int)(fixedDate - fixedDateJan1) + 1;
             long fixedDateMonth1 = fixedDate - dayOfMonth + 1;
-            int cutoverGap = 0;
             int cutoverYear = (calsys == gcal) ? gregorianCutoverYear : gregorianCutoverYearJulian;
             int relativeDayOfMonth = dayOfMonth - 1;
 
@@ -2447,9 +2457,7 @@ public class GregorianCalendar extends Calendar {
                         fixedDateMonth1 = getFixedDateMonth1(cdate, fixedDate);
                     }
                 }
-                int realDayOfYear = (int)(fixedDate - fixedDateJan1) + 1;
-                cutoverGap = dayOfYear - realDayOfYear;
-                dayOfYear = realDayOfYear;
+                dayOfYear = (int)(fixedDate - fixedDateJan1) + 1;
                 relativeDayOfMonth = (int)(fixedDate - fixedDateMonth1);
             }
             internalSet(DAY_OF_YEAR, dayOfYear);
@@ -2973,6 +2981,54 @@ public class GregorianCalendar extends Calendar {
     private boolean isCutoverYear(int normalizedYear) {
         int cutoverYear = (calsys == gcal) ? gregorianCutoverYear : gregorianCutoverYearJulian;
         return normalizedYear == cutoverYear;
+    }
+
+    /**
+     * {@return {@code true} if the first week of the current year is minimum
+     * and the {@code DAY_OF_WEEK} does not exist in that week}
+     *
+     * This method is used to check the validity of a {@code WEEK_OF_YEAR} and
+     * {@code DAY_OF_WEEK} combo when WEEK_OF_YEAR is rolled to a value of 1.
+     * This prevents other methods from calling complete() with an invalid combo.
+     */
+    private boolean isInvalidWeek1() {
+        // Calculate the DAY_OF_WEEK for Jan 1 of the current YEAR
+        long jan1Fd =  gcal.getFixedDate(internalGet(YEAR), 1, 1, null);
+        int jan1Dow = BaseCalendar.getDayOfWeekFromFixedDate(jan1Fd);
+        // Calculate how many days are in the first week
+        int daysInFirstWeek;
+        if (getFirstDayOfWeek() <= jan1Dow) {
+            // Add wrap around days
+            daysInFirstWeek = 7 - jan1Dow + getFirstDayOfWeek();
+        } else {
+            daysInFirstWeek = getFirstDayOfWeek() - jan1Dow;
+        }
+        // Calculate the end day of the first week
+        int endDow = getFirstDayOfWeek() - 1 == 0
+                ? 7 : getFirstDayOfWeek() - 1;
+        // If the week is a valid minimum, check if the DAY_OF_WEEK does not exist
+        return daysInFirstWeek >= getMinimalDaysInFirstWeek() &&
+                !dayInMinWeek(internalGet(DAY_OF_WEEK), jan1Dow, endDow);
+    }
+
+    /**
+     * Given the first day and last day of a week, this method determines
+     * if the specified day exists in the minimum week.
+     * This method expects all parameters to be passed in as DAY_OF_WEEK values.
+     * For example, dayInMinWeek(4, 6, 3) returns false since Wednesday
+     * is not between the minimum week given by [Friday, Saturday,
+     * Sunday, Monday, Tuesday].
+     */
+    private boolean dayInMinWeek (int day, int startDay, int endDay) {
+        if (endDay >= startDay) {
+            // dayInMinWeek(6, 3, 5), check that 6 is
+            // between 3 4 5
+            return (day >= startDay && day <= endDay);
+        } else {
+            // dayInMinWeek(4, 6, 3), check that 4 is
+            // between 6 7 1 2 3
+            return (day >= startDay || day <= endDay);
+        }
     }
 
     /**

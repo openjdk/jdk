@@ -70,7 +70,7 @@ public class SSLEngineService {
     protected static void deliver(SSLEngine ssle, SocketChannel sc)
         throws Exception {
 
-        // create buufer.
+        // create buffer.
         int appBufferMax = ssle.getSession().getApplicationBufferSize();
         int netBufferMax = ssle.getSession().getPacketBufferSize();
         int length = appBufferMax * (Integer.SIZE / 8);
@@ -128,7 +128,7 @@ public class SSLEngineService {
                 // maybe need to enlarge the local network packet buffer.
                 int size = ssle.getSession().getPacketBufferSize();
                 if (size > localNetData.capacity()) {
-                    System.out.println("resize destination buffer upto " +
+                    System.out.println("send: resize destination buffer upto " +
                                 size + " bytes for BUFFER_OVERFLOW");
                     localNetData = enlargeBuffer(localNetData, size);
                 }
@@ -143,16 +143,14 @@ public class SSLEngineService {
 
 
     // receive peer application data.
-    protected static void receive(SSLEngine ssle, SocketChannel sc)
-        throws Exception {
+    protected static void receive(SSLEngine ssle, SocketChannel sc,
+            ByteBuffer peerNetData) throws Exception {
 
-        // create buufers.
+        // create buffer.
         int appBufferMax = ssle.getSession().getApplicationBufferSize();
-        int netBufferMax = ssle.getSession().getPacketBufferSize();
 
-        // allocate less in order to check BUFFER_OVERFLOW/BUFFER_UNDERFLOW
+        // allocate less in order to check BUFFER_OVERFLOW
         ByteBuffer peerAppData = ByteBuffer.allocate(appBufferMax/2);
-        ByteBuffer peerNetData = ByteBuffer.allocate(netBufferMax/2);
         int received = -1;
 
         boolean needToReadMore = true;
@@ -189,8 +187,8 @@ public class SSLEngineService {
 
                 System.out.println("received " + peerAppData.position() +
                         " bytes client application data");
-                System.out.println("\tcomsumed " + res.bytesConsumed() +
-                        " byes network data");
+                System.out.println("\tconsumed " + res.bytesConsumed() +
+                        " bytes network data");
                 peerAppData.clear();
 
                 received -= res.bytesProduced();
@@ -209,7 +207,7 @@ public class SSLEngineService {
                 // maybe need to enlarge the peer application data buffer.
                 int size = ssle.getSession().getApplicationBufferSize();
                 if (size > peerAppData.capacity()) {
-                    System.out.println("resize destination buffer upto " +
+                    System.out.println("recv: resize destination buffer upto " +
                         size + " bytes for BUFFER_OVERFLOW");
                     peerAppData = enlargeBuffer(peerAppData, size);
                 }
@@ -219,8 +217,8 @@ public class SSLEngineService {
                 // maybe need to enlarge the peer network packet data buffer.
                 size = ssle.getSession().getPacketBufferSize();
                 if (size > peerNetData.capacity()) {
-                    System.out.println("resize source buffer upto " + size +
-                        " bytes for BUFFER_UNDERFLOW");
+                    System.out.println("recv: resize source buffer upto " +
+                        size + " bytes for BUFFER_UNDERFLOW");
                     peerNetData = enlargeBuffer(peerNetData, size);
                 }
 
@@ -234,15 +232,16 @@ public class SSLEngineService {
         }
     }
 
-    protected static void handshaking(SSLEngine ssle, SocketChannel sc,
+    protected static ByteBuffer handshaking(SSLEngine ssle, SocketChannel sc,
             ByteBuffer additional) throws Exception {
 
         int appBufferMax = ssle.getSession().getApplicationBufferSize();
         int netBufferMax = ssle.getSession().getPacketBufferSize();
 
+        // zero-byte app buffers - we do not want to exchange app data here
+        ByteBuffer localAppData = ByteBuffer.allocate(0);
+        ByteBuffer peerAppData = ByteBuffer.allocate(0);
         // allocate less in order to check BUFFER_OVERFLOW/BUFFER_UNDERFLOW
-        ByteBuffer localAppData = ByteBuffer.allocate(appBufferMax/10);
-        ByteBuffer peerAppData = ByteBuffer.allocate(appBufferMax/10);
         ByteBuffer localNetData = ByteBuffer.allocate(netBufferMax/10);
         ByteBuffer peerNetData = ByteBuffer.allocate(netBufferMax/10);
 
@@ -272,7 +271,7 @@ public class SSLEngineService {
                     } else {
                         if (sc.read(peerNetData) < 0) {
                             ssle.closeInbound();
-                            return;
+                            throw new EOFException();
                         }
                     }
                 }
@@ -280,7 +279,7 @@ public class SSLEngineService {
                 if (underflow) {
                     if (sc.read(peerNetData) < 0) {
                         ssle.closeInbound();
-                        return;
+                        throw new EOFException();
                     }
 
                     underflow = false;
@@ -298,7 +297,7 @@ public class SSLEngineService {
                     // maybe need to enlarge the peer network packet buffer.
                     int size = ssle.getSession().getPacketBufferSize();
                     if (size > peerNetData.capacity()) {
-                        System.out.println("resize source buffer upto " +
+                        System.out.println("hs recv: resize source buffer upto " +
                                 size + " bytes for BUFFER_UNDERFLOW");
                         peerNetData = enlargeBuffer(peerNetData, size);
                     }
@@ -309,7 +308,7 @@ public class SSLEngineService {
                     // maybe need to enlarge the peer application data buffer.
                     size = ssle.getSession().getApplicationBufferSize();
                     if (size > peerAppData.capacity()) {
-                        System.out.println("resize destination buffer upto " +
+                        System.out.println("hs recv: resize destination buffer upto " +
                                 size + " bytes for BUFFER_OVERFLOW");
                         peerAppData = enlargeBuffer(peerAppData, size);
                     }
@@ -346,7 +345,7 @@ public class SSLEngineService {
                     // maybe need to enlarge the local network packet buffer.
                     int size = ssle.getSession().getPacketBufferSize();
                     if (size > localNetData.capacity()) {
-                        System.out.println("resize destination buffer upto " +
+                        System.out.println("hs send: resize destination buffer upto " +
                                 size + " bytes for BUFFER_OVERFLOW");
                         localNetData = enlargeBuffer(localNetData, size);
                     }
@@ -371,6 +370,7 @@ public class SSLEngineService {
             }
         } while (hs != SSLEngineResult.HandshakeStatus.FINISHED &&
                 hs != SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING);
+        return peerNetData;
     }
 
     private static ByteBuffer enlargeBuffer(ByteBuffer buffer, int size) {

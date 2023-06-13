@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8282625
  * @library /java/text/testlib
  * @summary test International Decimal Format Symbols
  */
@@ -59,6 +60,14 @@ public class IntlTestDecimalFormatSymbols extends IntlTest
         }
 
         // just do some VERY basic tests to make sure that get/set work
+
+        if (!fr.getLocale().equals(Locale.FRENCH)) {
+            errln("ERROR: French DecimalFormatSymbols not Locale.FRENCH");
+        }
+
+        if (!en.getLocale().equals(Locale.ENGLISH)) {
+            errln("ERROR: English DecimalFormatSymbols not Locale.ENGLISH");
+        }
 
         char zero = en.getZeroDigit();
         fr.setZeroDigit(zero);

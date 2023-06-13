@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,14 +61,13 @@ import sun.util.ResourceBundleEnumeration;
  * "MyResources" is the default member of the bundle family, and
  * "MyResources_fr" is the French member.
  * These members are based on {@code ListResourceBundle}
- * (a related <a href="PropertyResourceBundle.html#sample">example</a> shows
+ * (a related {@linkplain PropertyResourceBundle##sample example} shows
  * how you can add a bundle to this family that's based on a properties file).
  * The keys in this example are of the form "s1" etc. The actual
  * keys are entirely up to your choice, so long as they are the same as
  * the keys you use in your program to retrieve the objects from the bundle.
  * Keys are case-sensitive.
- * <blockquote>
- * <pre>
+ * {@snippet lang=java :
  *
  * public class MyResources extends ListResourceBundle {
  *     protected Object[][] getContents() {
@@ -103,8 +102,7 @@ import sun.util.ResourceBundleEnumeration;
  *         };
  *     }
  * }
- * </pre>
- * </blockquote>
+ * }
  *
  * <p>
  * The implementation of a {@code ListResourceBundle} subclass must be thread-safe
@@ -193,7 +191,7 @@ public abstract class ListResourceBundle extends ResourceBundle {
             return;
 
         Object[][] contents = getContents();
-        HashMap<String,Object> temp = new HashMap<>(contents.length);
+        HashMap<String,Object> temp = HashMap.newHashMap(contents.length);
         for (Object[] content : contents) {
             // key must be non-null String, value must be non-null
             String key = (String) content[0];

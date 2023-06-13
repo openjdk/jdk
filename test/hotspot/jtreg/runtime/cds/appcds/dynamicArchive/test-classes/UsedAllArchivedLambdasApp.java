@@ -23,7 +23,7 @@
  */
 
 import java.util.HashMap;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 public class UsedAllArchivedLambdasApp {
     public static boolean isRuntime;

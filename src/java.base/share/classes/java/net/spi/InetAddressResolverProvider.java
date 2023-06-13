@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,8 +41,8 @@ import java.util.ServiceLoader;
  *
  * <p> A given invocation of the Java virtual machine maintains a single
  * system-wide resolver instance, which is used by
- * <a href="{@docRoot}/java.base/java/net/InetAddress.html#host-name-resolution">
- * InetAddress</a>. It is set after the VM is fully initialized and when an
+ * {@linkplain InetAddress##host-name-resolution
+ * InetAddress}. It is set after the VM is fully initialized and when an
  * invocation of a method in {@link InetAddress} class triggers the first lookup
  * operation.
  *
@@ -60,13 +60,14 @@ import java.util.ServiceLoader;
  *      method. The returned {@code InetAddressResolver} will be set as the
  *      system-wide resolver.
  *  <li>If the previous step fails to find any resolver provider the
- *      <a href="{@docRoot}/java.base/java/net/InetAddress.html#built-in-resolver">
- *      built-in resolver</a> will be set as the system-wide resolver.
+ *      {@linkplain InetAddress##built-in-resolver
+ *      built-in resolver} will be set as the system-wide resolver.
  * </ol>
  *
  * <p> If instantiating a custom resolver from a provider discovered in
  * step 1 throws an error or exception, the system-wide resolver will not be
- * set and the error or exception will be propagated to the calling thread.
+ * set and the error or exception will be propagated to the caller of the method
+ * that triggered the lookup operation.
  * Otherwise, any lookup operation will be performed using the
  * <i>system-wide resolver</i>.
  *
@@ -85,7 +86,7 @@ public abstract class InetAddressResolverProvider {
      *
      * <p> Any error or exception thrown by this method is considered as
      * a failure of {@code InetAddressResolver} instantiation and will be propagated to
-     * the calling thread.
+     * the caller of the method that triggered the lookup operation.
      * @param configuration a {@link Configuration} instance containing platform built-in address
      *                     resolution configuration.
      * @return the resolver provided by this provider

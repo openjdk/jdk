@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1051,7 +1051,7 @@ public class TestDateTimeFormatterBuilder {
             {"d", "Value(DayOfMonth)"},
             {"dd", "Value(DayOfMonth,2)"},
 
-            {"F", "Value(AlignedDayOfWeekInMonth)"},
+            {"F", "Value(AlignedWeekOfMonth)"},
 
             {"Q", "Value(QuarterOfYear)"},
             {"QQ", "Value(QuarterOfYear,2)"},
@@ -1254,18 +1254,18 @@ public class TestDateTimeFormatterBuilder {
     @DataProvider(name="localePatterns")
     Object[][] localizedDateTimePatterns() {
         return new Object[][] {
-            {FormatStyle.FULL, FormatStyle.FULL, IsoChronology.INSTANCE, Locale.US, "EEEE, MMMM d, y 'at' h:mm:ss a zzzz"},
-            {FormatStyle.LONG, FormatStyle.LONG, IsoChronology.INSTANCE, Locale.US, "MMMM d, y 'at' h:mm:ss a z"},
-            {FormatStyle.MEDIUM, FormatStyle.MEDIUM, IsoChronology.INSTANCE, Locale.US, "MMM d, y, h:mm:ss a"},
-            {FormatStyle.SHORT, FormatStyle.SHORT, IsoChronology.INSTANCE, Locale.US, "M/d/yy, h:mm a"},
+            {FormatStyle.FULL, FormatStyle.FULL, IsoChronology.INSTANCE, Locale.US, "EEEE, MMMM d, y, h:mm:ss\u202fa zzzz"},
+            {FormatStyle.LONG, FormatStyle.LONG, IsoChronology.INSTANCE, Locale.US, "MMMM d, y, h:mm:ss\u202fa z"},
+            {FormatStyle.MEDIUM, FormatStyle.MEDIUM, IsoChronology.INSTANCE, Locale.US, "MMM d, y, h:mm:ss\u202fa"},
+            {FormatStyle.SHORT, FormatStyle.SHORT, IsoChronology.INSTANCE, Locale.US, "M/d/yy, h:mm\u202fa"},
             {FormatStyle.FULL, null, IsoChronology.INSTANCE, Locale.US, "EEEE, MMMM d, y"},
             {FormatStyle.LONG, null, IsoChronology.INSTANCE, Locale.US, "MMMM d, y"},
             {FormatStyle.MEDIUM, null, IsoChronology.INSTANCE, Locale.US, "MMM d, y"},
             {FormatStyle.SHORT, null, IsoChronology.INSTANCE, Locale.US, "M/d/yy"},
-            {null, FormatStyle.FULL, IsoChronology.INSTANCE, Locale.US, "h:mm:ss a zzzz"},
-            {null, FormatStyle.LONG, IsoChronology.INSTANCE, Locale.US, "h:mm:ss a z"},
-            {null, FormatStyle.MEDIUM, IsoChronology.INSTANCE, Locale.US, "h:mm:ss a"},
-            {null, FormatStyle.SHORT, IsoChronology.INSTANCE, Locale.US, "h:mm a"},
+            {null, FormatStyle.FULL, IsoChronology.INSTANCE, Locale.US, "h:mm:ss\u202fa zzzz"},
+            {null, FormatStyle.LONG, IsoChronology.INSTANCE, Locale.US, "h:mm:ss\u202fa z"},
+            {null, FormatStyle.MEDIUM, IsoChronology.INSTANCE, Locale.US, "h:mm:ss\u202fa"},
+            {null, FormatStyle.SHORT, IsoChronology.INSTANCE, Locale.US, "h:mm\u202fa"},
         };
     }
 

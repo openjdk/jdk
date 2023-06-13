@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ import jdk.test.lib.Asserts;
 import jdk.test.lib.jfr.EventNames;
 import jdk.test.lib.jfr.Events;
 
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 /**
  * @test
@@ -44,8 +44,8 @@ import sun.hotspot.WhiteBox;
  * @requires vm.gc == "G1" | vm.gc == null
  * @requires vm.debug
  *
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *          -Xmx32m -Xms32m -XX:+UnlockExperimentalVMOptions -XX:+G1EvacuationFailureALot
  *          -XX:G1EvacuationFailureALotCount=100 -XX:G1EvacuationFailureALotInterval=1
@@ -76,13 +76,17 @@ public class TestEvacuationFailedEvent {
 
         // Verify recording
         List<RecordedEvent> events = Events.fromRecording(recording);
+        int minObjectAlignment = 8;
 
         Events.hasEvents(events);
         for (RecordedEvent event : events) {
             long objectCount = Events.assertField(event, "evacuationFailed.objectCount").atLeast(1L).getValue();
             long smallestSize = Events.assertField(event, "evacuationFailed.smallestSize").atLeast(1L).getValue();
+            Asserts.assertTrue((smallestSize % minObjectAlignment) == 0, "smallestSize " + smallestSize + " is not a valid size.");
             long firstSize = Events.assertField(event, "evacuationFailed.firstSize").atLeast(smallestSize).getValue();
+            Asserts.assertTrue((firstSize % minObjectAlignment) == 0, "firstSize " + firstSize + " is not a valid size.");
             long totalSize = Events.assertField(event, "evacuationFailed.totalSize").atLeast(firstSize).getValue();
+            Asserts.assertTrue((totalSize % minObjectAlignment) == 0, "totalSize " + totalSize + " is not a valid size.");
             Asserts.assertLessThanOrEqual(smallestSize * objectCount, totalSize, "smallestSize * objectCount <= totalSize");
         }
         recording.close();

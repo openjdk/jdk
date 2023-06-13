@@ -37,8 +37,11 @@ import java.util.List;
  * Auxiliary event containing a list of files.
  *
  * @since 9
+ * @sealedGraph
  */
-public class FilesEvent extends AppEvent {
+public sealed class FilesEvent extends AppEvent
+    permits OpenFilesEvent,
+            PrintFilesEvent {
 
     /**
      * Use serialVersionUID from JDK 9 for interoperability.

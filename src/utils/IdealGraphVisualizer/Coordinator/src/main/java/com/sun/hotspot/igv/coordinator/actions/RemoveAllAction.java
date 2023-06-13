@@ -25,10 +25,7 @@
 package com.sun.hotspot.igv.coordinator.actions;
 
 import com.sun.hotspot.igv.coordinator.OutlineTopComponent;
-import java.awt.event.InputEvent;
-import java.awt.event.KeyEvent;
 import javax.swing.Action;
-import javax.swing.KeyStroke;
 import org.openide.util.HelpCtx;
 import org.openide.util.NbBundle;
 import org.openide.util.actions.CallableSystemAction;
@@ -39,7 +36,6 @@ import org.openide.util.actions.CallableSystemAction;
  */
 public final class RemoveAllAction extends CallableSystemAction {
 
-
     @Override
     public String getName() {
         return NbBundle.getMessage(RemoveAllAction.class, "CTL_RemoveAllAction");
@@ -47,7 +43,6 @@ public final class RemoveAllAction extends CallableSystemAction {
 
     public RemoveAllAction() {
         putValue(Action.SHORT_DESCRIPTION, "Remove all graphs and groups");
-        putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_SHIFT, InputEvent.CTRL_MASK));
     }
 
     @Override

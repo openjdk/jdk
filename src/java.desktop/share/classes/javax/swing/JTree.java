@@ -92,6 +92,7 @@ import javax.swing.tree.TreeSelectionModel;
 
 import sun.awt.AWTAccessor;
 import sun.awt.AWTAccessor.MouseEventAccessor;
+import sun.swing.SwingAccessor;
 import sun.swing.SwingUtilities2;
 import sun.swing.SwingUtilities2.Section;
 
@@ -1251,7 +1252,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
      * tree's {@code TransferHandler}.
      *
      * @param b whether or not to enable automatic drag handling
-     * @exception HeadlessException if
+     * @throws HeadlessException if
      *            <code>b</code> is <code>true</code> and
      *            <code>GraphicsEnvironment.isHeadless()</code>
      *            returns <code>true</code>
@@ -3087,7 +3088,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
      * Position.Bias.Forward or Position.Bias.Backward.
      * @return the TreePath of the next tree element that
      * starts with the prefix; otherwise null
-     * @exception IllegalArgumentException if prefix is null
+     * @throws IllegalArgumentException if prefix is null
      * or startingRow is out of bounds
      * @since 1.4
      */
@@ -3301,7 +3302,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
     }
 
     /**
-     * Returns an array of integers specifying the indexs of the
+     * Returns an array of integers specifying the indices of the
      * components in the <code>path</code>. If <code>path</code> is
      * the root, this will return an empty array.  If <code>path</code>
      * is <code>null</code>, <code>null</code> will be returned.
@@ -3310,29 +3311,29 @@ public class JTree extends JComponent implements Scrollable, Accessible
         if(path != null) {
             TreeModel   model = getModel();
             int         count = path.getPathCount();
-            int[]       indexs = new int[count - 1];
+            int[]       indices = new int[count - 1];
             Object      parent = model.getRoot();
 
             for(int counter = 1; counter < count; counter++) {
-                indexs[counter - 1] = model.getIndexOfChild
+                indices[counter - 1] = model.getIndexOfChild
                                    (parent, path.getPathComponent(counter));
                 parent = path.getPathComponent(counter);
-                if(indexs[counter - 1] < 0)
+                if(indices[counter - 1] < 0)
                     return null;
             }
-            return indexs;
+            return indices;
         }
         return null;
     }
 
     /**
      * Returns a <code>TreePath</code> created by obtaining the children
-     * for each of the indices in <code>indexs</code>. If <code>indexs</code>
+     * for each of the indices in <code>indices</code>. If <code>indices</code>
      * or the <code>TreeModel</code> is <code>null</code>, it will return
      * <code>null</code>.
      */
-    private TreePath getPathForIndexs(int[] indexs) {
-        if(indexs == null)
+    private TreePath getPathForIndexs(int[] indices) {
+        if(indices == null)
             return null;
 
         TreeModel    model = getModel();
@@ -3340,7 +3341,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
         if(model == null)
             return null;
 
-        int          count = indexs.length;
+        int          count = indices.length;
 
         Object       parent = model.getRoot();
         if (parent == null)
@@ -3348,7 +3349,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
 
         TreePath     parentPath = new TreePath(parent);
         for(int counter = 0; counter < count; counter++) {
-            parent = model.getChild(parent, indexs[counter]);
+            parent = model.getChild(parent, indices[counter]);
             if(parent == null)
                 return null;
             parentPath = parentPath.pathByAddingChild(parent);
@@ -3394,7 +3395,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
         }
 
         /**
-         * This is overriden to do nothing; {@code EmptySelectionModel}
+         * This is overridden to do nothing; {@code EmptySelectionModel}
          * does not allow a selection.
          *
          * @param paths the paths to select; this is ignored
@@ -3402,7 +3403,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
         public void setSelectionPaths(TreePath[] paths) {}
 
         /**
-         * This is overriden to do nothing; {@code EmptySelectionModel}
+         * This is overridden to do nothing; {@code EmptySelectionModel}
          * does not allow a selection.
          *
          * @param paths the paths to add to the selection; this is ignored
@@ -3410,7 +3411,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
         public void addSelectionPaths(TreePath[] paths) {}
 
         /**
-         * This is overriden to do nothing; {@code EmptySelectionModel}
+         * This is overridden to do nothing; {@code EmptySelectionModel}
          * does not allow a selection.
          *
          * @param paths the paths to remove; this is ignored
@@ -3418,7 +3419,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
         public void removeSelectionPaths(TreePath[] paths) {}
 
         /**
-         * This is overriden to do nothing; {@code EmptySelectionModel}
+         * This is overridden to do nothing; {@code EmptySelectionModel}
          * does not allow a selection.
          *
          * @param mode the selection mode; this is ignored
@@ -3428,7 +3429,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
         }
 
         /**
-         * This is overriden to do nothing; {@code EmptySelectionModel}
+         * This is overridden to do nothing; {@code EmptySelectionModel}
          * does not allow a selection.
          *
          * @param mapper the {@code RowMapper} instance; this is ignored
@@ -3438,7 +3439,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
         }
 
         /**
-         * This is overriden to do nothing; {@code EmptySelectionModel}
+         * This is overridden to do nothing; {@code EmptySelectionModel}
          * does not allow a selection.
          *
          * @param listener the listener to add; this is ignored
@@ -3448,7 +3449,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
         }
 
         /**
-         * This is overriden to do nothing; {@code EmptySelectionModel}
+         * This is overridden to do nothing; {@code EmptySelectionModel}
          * does not allow a selection.
          *
          * @param listener the listener to remove; this is ignored
@@ -3459,7 +3460,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
         }
 
         /**
-         * This is overriden to do nothing; {@code EmptySelectionModel}
+         * This is overridden to do nothing; {@code EmptySelectionModel}
          * does not allow a selection.
          *
          * @param listener the listener to add; this is ignored
@@ -3470,7 +3471,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
         }
 
         /**
-         * This is overriden to do nothing; {@code EmptySelectionModel}
+         * This is overridden to do nothing; {@code EmptySelectionModel}
          * does not allow a selection.
          *
          * @param listener the listener to remove; this is ignored
@@ -4740,6 +4741,26 @@ public class JTree extends JComponent implements Scrollable, Accessible
             implements Accessible, AccessibleComponent, AccessibleSelection,
             AccessibleAction {
 
+            static {
+                SwingAccessor.setAccessibleComponentAccessor(new AccessibleJTreeNodeAccessor());
+            }
+
+            private static class AccessibleJTreeNodeAccessor implements SwingAccessor.AccessibleComponentAccessor {
+
+                private AccessibleJTreeNodeAccessor() {}
+
+                @Override
+                public Accessible getCurrentAccessible(AccessibleContext ac) {
+                    if (ac instanceof AccessibleJTreeNode) {
+                        Component c = ((AccessibleJTreeNode) ac).getCurrentComponent();
+                        if (c instanceof Accessible) {
+                            return (Accessible)c;
+                        }
+                    }
+                    return null;
+                }
+            }
+
             private JTree tree = null;
             private TreeModel treeModel = null;
             private Object obj = null;
@@ -5053,7 +5074,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
              *
              * @return This component's locale. If this component does not have
              * a locale, the locale of its parent is returned.
-             * @exception IllegalComponentStateException
+             * @throws IllegalComponentStateException
              * If the Component does not have its own locale and has not yet
              * been added to a containment hierarchy such that the locale can be
              * determined from the containing parent.

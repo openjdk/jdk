@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,18 +31,22 @@ package gc.g1;
  * @library /test/lib
  * @requires vm.gc.G1
  * @requires vm.opt.LargePageSizeInBytes == null
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+IgnoreUnrecognizedVMOptions -XX:+UseLargePages gc.g1.TestLargePageUseForAuxMemory
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseLargePages gc.g1.TestLargePageUseForAuxMemory
  */
 
+import java.util.ArrayList;
+import java.util.List;
 import java.lang.Math;
+import java.util.Collections;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Platform;
+import jdk.test.whitebox.WhiteBox;
+
 import jtreg.SkippedException;
-import sun.hotspot.WhiteBox;
 
 public class TestLargePageUseForAuxMemory {
     static final long HEAP_REGION_SIZE = 1 * 1024 * 1024;
@@ -61,7 +65,7 @@ public class TestLargePageUseForAuxMemory {
         // being checked. In case of a large page allocation failure the output will
         // include logs like this for the affected data structure:
         // [0.048s][debug][gc,heap,coops] Reserve regular memory without large pages
-        // [0.048s][info ][pagesize     ] Next Bitmap: ... page_size=4K ...
+        // [0.048s][info ][pagesize     ] Mark Bitmap: ... page_size=4K ...
         //
         // The pattern passed in should match the second line.
         String failureMatch = output.firstMatch("Reserve regular memory without large pages\\n.*" + pattern, 1);
@@ -98,52 +102,46 @@ public class TestLargePageUseForAuxMemory {
 
     static void checkSmallTables(OutputAnalyzer output, long expectedPageSize) throws Exception {
         checkSize(output, expectedPageSize, "Block Offset Table: .*page_size=([^ ]+)");
-        checkSize(output, expectedPageSize, "Card Counts Table: .*page_size=([^ ]+)");
     }
 
-    static void checkBitmaps(OutputAnalyzer output, long expectedPageSize) throws Exception {
-        checkSize(output, expectedPageSize, "Prev Bitmap: .*page_size=([^ ]+)");
-        checkSize(output, expectedPageSize, "Next Bitmap: .*page_size=([^ ]+)");
+    static void checkBitmap(OutputAnalyzer output, long expectedPageSize) throws Exception {
+        checkSize(output, expectedPageSize, "Mark Bitmap: .*page_size=([^ ]+)");
+    }
+
+    static List<String> getOpts(long heapsize, boolean largePageEnabled) {
+        return List.of("-XX:+UseG1GC",
+                       "-XX:G1HeapRegionSize=" + HEAP_REGION_SIZE,
+                       "-Xmx" + heapsize,
+                       "-Xlog:pagesize,gc+init,gc+heap+coops=debug",
+                       "-XX:" + (largePageEnabled ? "+" : "-") + "UseLargePages",
+                       "-version");
     }
 
     static void testVM(String what, long heapsize, boolean cardsShouldUseLargePages, boolean bitmapShouldUseLargePages) throws Exception {
         System.out.println(what + " heapsize " + heapsize + " card table should use large pages " + cardsShouldUseLargePages + " " +
                            "bitmaps should use large pages " + bitmapShouldUseLargePages);
         ProcessBuilder pb;
+
         // Test with large page enabled.
-        pb = ProcessTools.createJavaProcessBuilder("-XX:+UseG1GC",
-                                                   "-XX:G1HeapRegionSize=" + HEAP_REGION_SIZE,
-                                                   "-Xmx" + heapsize,
-                                                   "-Xlog:pagesize,gc+init,gc+heap+coops=debug",
-                                                   "-XX:+UseLargePages",
-                                                   "-XX:+IgnoreUnrecognizedVMOptions",  // there is no ObjectAlignmentInBytes in 32 bit builds
-                                                   "-XX:ObjectAlignmentInBytes=8",
-                                                   "-version");
+        pb = ProcessTools.createJavaProcessBuilder(getOpts(heapsize, true));
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         // Only expect large page size if large pages are enabled.
         if (largePagesEnabled(output)) {
             checkSmallTables(output, (cardsShouldUseLargePages ? largePageSize : smallPageSize));
-            checkBitmaps(output, (bitmapShouldUseLargePages ? largePageSize : smallPageSize));
+            checkBitmap(output, (bitmapShouldUseLargePages ? largePageSize : smallPageSize));
         } else {
             checkSmallTables(output, smallPageSize);
-            checkBitmaps(output, smallPageSize);
+            checkBitmap(output, smallPageSize);
         }
         output.shouldHaveExitValue(0);
 
         // Test with large page disabled.
-        pb = ProcessTools.createJavaProcessBuilder("-XX:+UseG1GC",
-                                                   "-XX:G1HeapRegionSize=" + HEAP_REGION_SIZE,
-                                                   "-Xmx" + heapsize,
-                                                   "-Xlog:pagesize",
-                                                   "-XX:-UseLargePages",
-                                                   "-XX:+IgnoreUnrecognizedVMOptions",  // there is no ObjectAlignmentInBytes in 32 bit builds
-                                                   "-XX:ObjectAlignmentInBytes=8",
-                                                   "-version");
+        pb = ProcessTools.createJavaProcessBuilder(getOpts(heapsize, false));
 
         output = new OutputAnalyzer(pb.start());
         checkSmallTables(output, smallPageSize);
-        checkBitmaps(output, smallPageSize);
+        checkBitmap(output, smallPageSize);
         output.shouldHaveExitValue(0);
     }
 

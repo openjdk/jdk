@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@
 #include "logging/log.hpp"
 
 template <typename NodeType, template <typename> class RetrievalPolicy, bool EagerReclaim>
-JfrEpochStorageHost<NodeType, RetrievalPolicy, EagerReclaim>::JfrEpochStorageHost() : _mspace(NULL) {}
+JfrEpochStorageHost<NodeType, RetrievalPolicy, EagerReclaim>::JfrEpochStorageHost() : _mspace(nullptr) {}
 
 template <typename NodeType, template <typename> class RetrievalPolicy, bool EagerReclaim>
 JfrEpochStorageHost<NodeType, RetrievalPolicy, EagerReclaim>::~JfrEpochStorageHost() {
@@ -43,17 +43,17 @@ JfrEpochStorageHost<NodeType, RetrievalPolicy, EagerReclaim>::~JfrEpochStorageHo
 
 template <typename NodeType, template <typename> class RetrievalPolicy, bool EagerReclaim>
 bool JfrEpochStorageHost<NodeType, RetrievalPolicy, EagerReclaim>::initialize(size_t min_elem_size, size_t free_list_cache_count_limit, size_t cache_prealloc_count) {
-  assert(_mspace == NULL, "invariant");
+  assert(_mspace == nullptr, "invariant");
   _mspace = new EpochMspace(min_elem_size, free_list_cache_count_limit, this);
-  return _mspace != NULL && _mspace->initialize(cache_prealloc_count);
+  return _mspace != nullptr && _mspace->initialize(cache_prealloc_count);
 }
 
 template <typename NodeType, template <typename> class RetrievalPolicy, bool EagerReclaim>
 inline NodeType* JfrEpochStorageHost<NodeType, RetrievalPolicy, EagerReclaim>::acquire(size_t size, Thread* thread) {
   BufferPtr buffer = mspace_acquire_to_live_list(size, _mspace, thread);
-  if (buffer == NULL) {
+  if (buffer == nullptr) {
     log_warning(jfr)("Unable to allocate " SIZE_FORMAT " bytes of %s.", _mspace->min_element_size(), "epoch storage");
-    return NULL;
+    return nullptr;
   }
   assert(buffer->acquired_by_self(), "invariant");
   return buffer;
@@ -61,7 +61,7 @@ inline NodeType* JfrEpochStorageHost<NodeType, RetrievalPolicy, EagerReclaim>::a
 
 template <typename NodeType, template <typename> class RetrievalPolicy, bool EagerReclaim>
 void JfrEpochStorageHost<NodeType, RetrievalPolicy, EagerReclaim>::release(NodeType* buffer) {
-  assert(buffer != NULL, "invariant");
+  assert(buffer != nullptr, "invariant");
   buffer->set_retired();
 }
 
@@ -75,8 +75,7 @@ template <typename Functor>
 void JfrEpochStorageHost<NodeType, RetrievalPolicy, EagerReclaim>::iterate(Functor& functor, bool previous_epoch) {
   typedef ReinitializeAllReleaseRetiredOp<EpochMspace, typename EpochMspace::LiveList> PreviousEpochReleaseOperation;
   typedef CompositeOperation<Functor, PreviousEpochReleaseOperation> PreviousEpochOperation;
-  typedef ReleaseRetiredOp<EpochMspace, typename EpochMspace::LiveList> CurrentEpochReleaseOperation;
-  typedef CompositeOperation<Functor, CurrentEpochReleaseOperation> CurrentEpochOperation;
+  typedef ReleaseRetiredOp<Functor, EpochMspace, typename EpochMspace::LiveList> CurrentEpochOperation;
   if (previous_epoch) {
     PreviousEpochReleaseOperation pero(_mspace, _mspace->live_list(true));
     PreviousEpochOperation peo(&functor, &pero);
@@ -84,8 +83,7 @@ void JfrEpochStorageHost<NodeType, RetrievalPolicy, EagerReclaim>::iterate(Funct
     return;
   }
   if (EagerReclaim) {
-    CurrentEpochReleaseOperation cero(_mspace, _mspace->live_list());
-    CurrentEpochOperation ceo(&functor, &cero);
+    CurrentEpochOperation ceo(functor, _mspace, _mspace->live_list());
     process_live_list(ceo, _mspace, false); // current epoch list
     return;
   }
@@ -103,7 +101,7 @@ class EmptyVerifier {
   typedef typename Mspace::NodePtr NodePtr;
   EmptyVerifier(Mspace* mspace) : _mspace(mspace) {}
   bool process(NodePtr node) {
-    assert(node != NULL, "invariant");
+    assert(node != nullptr, "invariant");
     assert(node->empty(), "invariant");
     return true;
   }

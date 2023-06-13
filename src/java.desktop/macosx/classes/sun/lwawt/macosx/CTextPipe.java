@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,16 +81,88 @@ public class CTextPipe implements TextPipe {
         }
     }
 
-    public void drawGlyphVector(final SunGraphics2D sg2d, final GlyphVector gV, final float x, final float y) {
-        final Font prevFont = sg2d.getFont();
-        sg2d.setFont(gV.getFont());
+    private boolean hasSlotData(GlyphVector gv) {
+        final int length = gv.getNumGlyphs();
+        for (int i = 0; i < length; i++) {
+            if ((gv.getGlyphCode(i) & CompositeGlyphMapper.SLOTMASK) != 0) {
+                return true;
+            }
+        }
+        return false;
+    }
 
+    private Font getSlotFont(Font font, int slot) {
+        Font2D f2d = FontUtilities.getFont2D(font);
+        if (f2d instanceof CFont) {
+            CompositeFont cf = ((CFont)f2d).getCompositeFont2D();
+            PhysicalFont pf = cf.getSlotFont(slot);
+            Font f = new Font(pf.getFontName(null),
+                              font.getStyle(), font.getSize());
+            return f;
+        }
+        return null;
+    }
+
+    private GlyphVector getGlyphVectorWithRange(final Font font, final GlyphVector gV, int start, int count) {
+        int[] glyphs = new int[count];
+        for (int i = 0; i < count; i++) {
+            glyphs[i] = gV.getGlyphCode(start+i) & CompositeGlyphMapper.GLYPHMASK;
+        }
+        // Positions should be null to recalculate by native methods,
+        // if GV was segmented.
+        StandardGlyphVector sgv = new StandardGlyphVector(font,
+                                          gV.getFontRenderContext(),
+                                          glyphs,
+                                          null, // positions
+                                          null, // indices
+                                          gV.getLayoutFlags());
+        return sgv;
+    }
+
+    private int getLengthOfSameSlot(final GlyphVector gV, final int targetSlot, final int start, final int length) {
+        int count = 1;
+        for (; start + count < length; count++) {
+            int slot = (gV.getGlyphCode(start + count) &
+                        CompositeGlyphMapper.SLOTMASK) >> 24;
+            if (targetSlot != slot) {
+                break;
+            }
+        }
+        return count;
+    }
+
+    private void drawGlyphVectorImpl(final SunGraphics2D sg2d, final GlyphVector gV, final float x, final float y) {
         final long nativeStrikePtr = getNativeStrikePtr(sg2d);
         if (OSXSurfaceData.IsSimpleColor(sg2d.paint) && nativeStrikePtr != 0) {
             final OSXSurfaceData surfaceData = (OSXSurfaceData)sg2d.getSurfaceData();
             surfaceData.drawGlyphs(this, sg2d, nativeStrikePtr, gV, x, y);
         } else {
             drawGlyphVectorAsShape(sg2d, gV, x, y);
+        }
+    }
+
+    public void drawGlyphVector(final SunGraphics2D sg2d, final GlyphVector gV, final float x, final float y) {
+        final Font prevFont = sg2d.getFont();
+        sg2d.setFont(gV.getFont());
+
+        if (hasSlotData(gV)) {
+            final int length = gV.getNumGlyphs();
+            float[] positions = gV.getGlyphPositions(0, length, null);
+            int start = 0;
+            while (start < length) {
+                int slot = (gV.getGlyphCode(start) &
+                            CompositeGlyphMapper.SLOTMASK) >> 24;
+                sg2d.setFont(getSlotFont(gV.getFont(), slot));
+                int count = getLengthOfSameSlot(gV, slot, start, length);
+                GlyphVector rangeGV = getGlyphVectorWithRange(sg2d.getFont(),
+                                                              gV, start, count);
+                drawGlyphVectorImpl(sg2d, rangeGV,
+                                    x + positions[start * 2],
+                                    y + positions[start * 2 + 1]);
+                start += count;
+            }
+        } else {
+            drawGlyphVectorImpl(sg2d, gV, x, y);
         }
         sg2d.setFont(prevFont);
     }

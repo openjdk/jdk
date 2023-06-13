@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@
 
 // An entry in a linked list. It should use the same backing storage
 // as the linked list that contains this entry.
-template <class E> class LinkedListNode : public ResourceObj {
+template <class E> class LinkedListNode : public AnyObj {
  private:
   E                       _data;  // embedded content
   LinkedListNode<E>*      _next;  // next entry
@@ -60,10 +60,10 @@ template <class E> class LinkedListNode : public ResourceObj {
   }
 
  protected:
-  LinkedListNode() : _next(NULL) { }
+  LinkedListNode() : _next(nullptr) { }
 
  public:
-  LinkedListNode(const E& e): _data(e), _next(NULL) { }
+  LinkedListNode(const E& e): _data(e), _next(nullptr) { }
 
   inline void set_next(LinkedListNode<E>* node) { _next = node; }
   inline LinkedListNode<E> * next() const       { return _next; }
@@ -72,30 +72,30 @@ template <class E> class LinkedListNode : public ResourceObj {
   const E* peek() const { return &_data; }
 
   bool equals(const E& t) const {
-    return equal<E>(_data, t, NULL);
+    return equal<E>(_data, t, nullptr);
   }
 };
 
 // A linked list interface. It does not specify
 // any storage type it uses, so all methods involving
 // memory allocation or deallocation are pure virtual
-template <class E> class LinkedList : public ResourceObj {
+template <class E> class LinkedList : public AnyObj {
  protected:
   LinkedListNode<E>*    _head;
   NONCOPYABLE(LinkedList<E>);
 
  public:
-  LinkedList() : _head(NULL) { }
+  LinkedList() : _head(nullptr) { }
   virtual ~LinkedList() {}
 
   inline void set_head(LinkedListNode<E>* h) { _head = h; }
   inline LinkedListNode<E>* head() const     { return _head; }
-  inline bool is_empty()           const     { return head() == NULL; }
+  inline bool is_empty()           const     { return head() == nullptr; }
 
   inline size_t size() const {
     LinkedListNode<E>* p;
     size_t count = 0;
-    for (p = head(); p != NULL; count++, p = p->next());
+    for (p = head(); p != nullptr; count++, p = p->next());
     return count;
  }
 
@@ -126,24 +126,24 @@ template <class E> class LinkedList : public ResourceObj {
 
   LinkedListNode<E>* unlink_head() {
     LinkedListNode<E>* h = this->head();
-    if (h != NULL) {
+    if (h != nullptr) {
       this->set_head(h->next());
     }
     return h;
   }
 
-  DEBUG_ONLY(virtual ResourceObj::allocation_type storage_type() = 0;)
+  DEBUG_ONLY(virtual AnyObj::allocation_type storage_type() = 0;)
 };
 
 // A linked list implementation.
 // The linked list can be allocated in various type of memory: C heap, arena and resource area, etc.
-template <class E, ResourceObj::allocation_type T = ResourceObj::C_HEAP,
+template <class E, AnyObj::allocation_type T = AnyObj::C_HEAP,
   MEMFLAGS F = mtNMT, AllocFailType alloc_failmode = AllocFailStrategy::RETURN_NULL>
   class LinkedListImpl : public LinkedList<E> {
  protected:
   Arena*                 _arena;
  public:
-  LinkedListImpl() :  _arena(NULL) { }
+  LinkedListImpl() :  _arena(nullptr) { }
   LinkedListImpl(Arena* a) : _arena(a) { }
 
   virtual ~LinkedListImpl() {
@@ -152,8 +152,8 @@ template <class E, ResourceObj::allocation_type T = ResourceObj::C_HEAP,
 
   virtual void clear() {
     LinkedListNode<E>* p = this->head();
-    this->set_head(NULL);
-    while (p != NULL) {
+    this->set_head(nullptr);
+    while (p != nullptr) {
       LinkedListNode<E>* to_delete = p;
       p = p->next();
       delete_node(to_delete);
@@ -163,7 +163,7 @@ template <class E, ResourceObj::allocation_type T = ResourceObj::C_HEAP,
   // Add an entry to the linked list
   virtual LinkedListNode<E>* add(const E& e)  {
     LinkedListNode<E>* node = this->new_node(e);
-    if (node != NULL) {
+    if (node != nullptr) {
       this->add(node);
     }
 
@@ -171,7 +171,7 @@ template <class E, ResourceObj::allocation_type T = ResourceObj::C_HEAP,
   }
 
   virtual void add(LinkedListNode<E>* node) {
-    assert(node != NULL, "NULL pointer");
+    assert(node != nullptr, "null pointer");
     node->set_next(this->head());
     this->set_head(node);
   }
@@ -181,22 +181,22 @@ template <class E, ResourceObj::allocation_type T = ResourceObj::C_HEAP,
   virtual void move(LinkedList<E>* list) {
     assert(list->storage_type() == this->storage_type(), "Different storage type");
     LinkedListNode<E>* node = this->head();
-    while (node != NULL && node->next() != NULL) {
+    while (node != nullptr && node->next() != nullptr) {
       node = node->next();
     }
-    if (node == NULL) {
+    if (node == nullptr) {
       this->set_head(list->head());
     } else {
       node->set_next(list->head());
     }
     // All entries are moved
-    list->set_head(NULL);
+    list->set_head(nullptr);
   }
 
   virtual bool add(const LinkedList<E>* list) {
     LinkedListNode<E>* node = list->head();
-    while (node != NULL) {
-      if (this->add(*node->peek()) == NULL) {
+    while (node != nullptr) {
+      if (this->add(*node->peek()) == nullptr) {
         return false;
       }
       node = node->next();
@@ -207,7 +207,7 @@ template <class E, ResourceObj::allocation_type T = ResourceObj::C_HEAP,
 
   virtual LinkedListNode<E>* find_node(const E& e) {
     LinkedListNode<E>* p = this->head();
-    while (p != NULL && !p->equals(e)) {
+    while (p != nullptr && !p->equals(e)) {
       p = p->next();
     }
     return p;
@@ -215,23 +215,23 @@ template <class E, ResourceObj::allocation_type T = ResourceObj::C_HEAP,
 
   E* find(const E& e) {
     LinkedListNode<E>* node = find_node(e);
-    return (node == NULL) ? NULL : node->data();
+    return (node == nullptr) ? nullptr : node->data();
   }
 
 
   // Add an entry in front of the reference entry
   LinkedListNode<E>* insert_before(const E& e, LinkedListNode<E>* ref_node) {
     LinkedListNode<E>* node = this->new_node(e);
-    if (node == NULL) return NULL;
+    if (node == nullptr) return nullptr;
     if (ref_node == this->head()) {
       node->set_next(ref_node);
       this->set_head(node);
     } else {
       LinkedListNode<E>* p = this->head();
-      while (p != NULL && p->next() != ref_node) {
+      while (p != nullptr && p->next() != ref_node) {
         p = p->next();
       }
-      assert(p != NULL, "ref_node not in the list");
+      assert(p != nullptr, "ref_node not in the list");
       node->set_next(ref_node);
       p->set_next(node);
     }
@@ -241,7 +241,7 @@ template <class E, ResourceObj::allocation_type T = ResourceObj::C_HEAP,
    // Add an entry behind the reference entry
    LinkedListNode<E>* insert_after(const E& e, LinkedListNode<E>* ref_node) {
      LinkedListNode<E>* node = this->new_node(e);
-     if (node == NULL) return NULL;
+     if (node == nullptr) return nullptr;
      node->set_next(ref_node->next());
      ref_node->set_next(node);
      return node;
@@ -251,9 +251,9 @@ template <class E, ResourceObj::allocation_type T = ResourceObj::C_HEAP,
    // Return true if the entry is successfully removed
    virtual bool remove(const E& e) {
      LinkedListNode<E>* tmp = this->head();
-     LinkedListNode<E>* prev = NULL;
+     LinkedListNode<E>* prev = nullptr;
 
-     while (tmp != NULL) {
+     while (tmp != nullptr) {
        if (tmp->equals(e)) {
          return remove_after(prev);
        }
@@ -266,16 +266,16 @@ template <class E, ResourceObj::allocation_type T = ResourceObj::C_HEAP,
   // Remove the node after the reference entry
   virtual bool remove_after(LinkedListNode<E>* prev) {
     LinkedListNode<E>* to_delete;
-    if (prev == NULL) {
+    if (prev == nullptr) {
       to_delete = this->unlink_head();
     } else {
       to_delete = prev->next();
-      if (to_delete != NULL) {
+      if (to_delete != nullptr) {
         prev->set_next(to_delete->next());
       }
     }
 
-    if (to_delete != NULL) {
+    if (to_delete != nullptr) {
       delete_node(to_delete);
       return true;
     }
@@ -289,10 +289,10 @@ template <class E, ResourceObj::allocation_type T = ResourceObj::C_HEAP,
       delete_node(node);
       return true;
     }
-    while (p != NULL && p->next() != node) {
+    while (p != nullptr && p->next() != node) {
       p = p->next();
     }
-    if (p != NULL) {
+    if (p != nullptr) {
       p->set_next(node->next());
       delete_node(node);
       return true;
@@ -302,20 +302,20 @@ template <class E, ResourceObj::allocation_type T = ResourceObj::C_HEAP,
   }
 
   virtual bool remove_before(LinkedListNode<E>* ref) {
-    assert(ref != NULL, "NULL pointer");
+    assert(ref != nullptr, "null pointer");
     LinkedListNode<E>* p = this->head();
-    LinkedListNode<E>* to_delete = NULL; // to be deleted
-    LinkedListNode<E>* prev = NULL;      // node before the node to be deleted
-    while (p != NULL && p != ref) {
+    LinkedListNode<E>* to_delete = nullptr; // to be deleted
+    LinkedListNode<E>* prev = nullptr;      // node before the node to be deleted
+    while (p != nullptr && p != ref) {
       prev = to_delete;
       to_delete = p;
       p = p->next();
     }
-    if (p == NULL || to_delete == NULL) return false;
+    if (p == nullptr || to_delete == nullptr) return false;
     assert(to_delete->next() == ref, "Wrong node to delete");
-    assert(prev == NULL || prev->next() == to_delete,
+    assert(prev == nullptr || prev->next() == to_delete,
       "Sanity check");
-    if (prev == NULL) {
+    if (prev == nullptr) {
       assert(to_delete == this->head(), "Must be head");
       this->set_head(to_delete->next());
     } else {
@@ -325,32 +325,37 @@ template <class E, ResourceObj::allocation_type T = ResourceObj::C_HEAP,
     return true;
   }
 
-  DEBUG_ONLY(ResourceObj::allocation_type storage_type() { return T; })
+  DEBUG_ONLY(AnyObj::allocation_type storage_type() { return T; })
  protected:
   // Create new linked list node object in specified storage
   LinkedListNode<E>* new_node(const E& e) const {
      switch(T) {
-       case ResourceObj::ARENA: {
-         assert(_arena != NULL, "Arena not set");
+       case AnyObj::ARENA: {
+         assert(_arena != nullptr, "Arena not set");
          return new(_arena) LinkedListNode<E>(e);
        }
-       case ResourceObj::RESOURCE_AREA:
-       case ResourceObj::C_HEAP: {
+       case AnyObj::RESOURCE_AREA:
          if (alloc_failmode == AllocFailStrategy::RETURN_NULL) {
-           return new(std::nothrow, T, F) LinkedListNode<E>(e);
+           return new(std::nothrow) LinkedListNode<E>(e);
          } else {
-           return new(T, F) LinkedListNode<E>(e);
+           return new LinkedListNode<E>(e);
+         }
+       case AnyObj::C_HEAP: {
+         if (alloc_failmode == AllocFailStrategy::RETURN_NULL) {
+           return new(std::nothrow, F) LinkedListNode<E>(e);
+         } else {
+           return new(F) LinkedListNode<E>(e);
          }
        }
        default:
          ShouldNotReachHere();
      }
-     return NULL;
+     return nullptr;
   }
 
   // Delete linked list node object
   void delete_node(LinkedListNode<E>* node) {
-    if (T == ResourceObj::C_HEAP) {
+    if (T == AnyObj::C_HEAP) {
       delete node;
     }
   }
@@ -359,7 +364,7 @@ template <class E, ResourceObj::allocation_type T = ResourceObj::C_HEAP,
 // Sorted linked list. The linked list maintains sorting order specified by the comparison
 // function
 template <class E, int (*FUNC)(const E&, const E&),
-  ResourceObj::allocation_type T = ResourceObj::C_HEAP,
+  AnyObj::allocation_type T = AnyObj::C_HEAP,
   MEMFLAGS F = mtNMT, AllocFailType alloc_failmode = AllocFailStrategy::RETURN_NULL>
   class SortedLinkedList : public LinkedListImpl<E, T, F, alloc_failmode> {
  public:
@@ -373,19 +378,19 @@ template <class E, int (*FUNC)(const E&, const E&),
   virtual void move(LinkedList<E>* list) {
     assert(list->storage_type() == this->storage_type(), "Different storage type");
     LinkedListNode<E>* node;
-    while ((node = list->unlink_head()) != NULL) {
+    while ((node = list->unlink_head()) != nullptr) {
       this->add(node);
     }
     assert(list->is_empty(), "All entries are moved");
   }
 
   virtual void add(LinkedListNode<E>* node) {
-    assert(node != NULL, "NULL pointer");
+    assert(node != nullptr, "null pointer");
     LinkedListNode<E>* tmp = this->head();
-    LinkedListNode<E>* prev = NULL;
+    LinkedListNode<E>* prev = nullptr;
 
     int cmp_val;
-    while (tmp != NULL) {
+    while (tmp != nullptr) {
       cmp_val = FUNC(*tmp->peek(), *node->peek());
       if (cmp_val >= 0) {
         break;
@@ -394,7 +399,7 @@ template <class E, int (*FUNC)(const E&, const E&),
       tmp = tmp->next();
     }
 
-    if (prev != NULL) {
+    if (prev != nullptr) {
       node->set_next(prev->next());
       prev->set_next(node);
     } else {
@@ -410,16 +415,16 @@ template <class E, int (*FUNC)(const E&, const E&),
   virtual LinkedListNode<E>* find_node(const E& e) {
     LinkedListNode<E>* p = this->head();
 
-    while (p != NULL) {
+    while (p != nullptr) {
       int comp_val = FUNC(*p->peek(), e);
       if (comp_val == 0) {
         return p;
       } else if (comp_val > 0) {
-        return NULL;
+        return nullptr;
       }
       p = p->next();
     }
-    return NULL;
+    return nullptr;
   }
 };
 
@@ -431,17 +436,17 @@ template <class E> class LinkedListIterator : public StackObj {
  public:
   LinkedListIterator(LinkedListNode<E>* head) : _p(head) {}
 
-  bool is_empty() const { return _p == NULL; }
+  bool is_empty() const { return _p == nullptr; }
 
   E* next() {
-    if (_p == NULL) return NULL;
+    if (_p == nullptr) return nullptr;
     E* e = _p->data();
     _p = _p->next();
     return e;
   }
 
   const E* next() const {
-    if (_p == NULL) return NULL;
+    if (_p == nullptr) return nullptr;
     const E* e = _p->peek();
     _p = _p->next();
     return e;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -331,7 +331,7 @@ public class ObjectMethods {
      * Chops the getters into smaller chunks according to the maximum number of slots
      * StringConcatFactory::makeConcatWithConstants can chew
      * @param getters the current getters
-     * @return chunks that wont surpass the maximum number of slots StringConcatFactory::makeConcatWithConstants can chew
+     * @return chunks that won't surpass the maximum number of slots StringConcatFactory::makeConcatWithConstants can chew
      */
     private static List<List<MethodHandle>> split(MethodHandle[] getters) {
         List<List<MethodHandle>> splits = new ArrayList<>();
@@ -396,15 +396,15 @@ public class ObjectMethods {
      *                     if invoked by a condy
      * @throws IllegalArgumentException if the bootstrap arguments are invalid
      *                                  or inconsistent
-     * @throws NullPointerException if any argument but {@code lookup} is {@code null},
-     *                              in the case of the {@code getters} argument, its
-     *                              contents cannot be {@code null} either
+     * @throws NullPointerException if any argument is {@code null} or if any element
+     *                              in the {@code getters} array is {@code null}
      * @throws Throwable if any exception is thrown during call site construction
      */
     public static Object bootstrap(MethodHandles.Lookup lookup, String methodName, TypeDescriptor type,
                                    Class<?> recordClass,
                                    String names,
                                    MethodHandle... getters) throws Throwable {
+        requireNonNull(lookup);
         requireNonNull(methodName);
         requireNonNull(type);
         requireNonNull(recordClass);

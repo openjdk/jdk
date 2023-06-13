@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import static org.testng.Assert.*;
 
 /**
  * @test
+ * @bug 8303930
  * @compile ConstantUtilsTest.java
  * @run testng ConstantUtilsTest
  * @summary unit tests for methods of java.lang.constant.ConstantUtils that are not covered by other unit tests
@@ -65,5 +66,10 @@ public class ConstantUtilsTest {
                 // good
             }
         }
+    }
+
+    public void testSkipOverFieldSignatureVoid() {
+       int ret = ConstantUtils.skipOverFieldSignature("(V)V", 1, 4, false);
+       assertEquals(ret, 0, "Descriptor of (V)V starting at index 1, void disallowed");
     }
 }

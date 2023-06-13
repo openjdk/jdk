@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,11 +27,15 @@ import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.Platform;
 import jdk.test.lib.Utils;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.lang.Thread.State;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -44,6 +48,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -68,14 +73,17 @@ public final class ProcessTools {
             ps.println("[" + prefix + "] " + line);
         }
     }
-
     private ProcessTools() {
     }
 
     /**
      * <p>Starts a process from its builder.</p>
      * <span>The default redirects of STDOUT and STDERR are started</span>
-     *
+     * <p>
+     * Same as
+     * {@linkplain #startProcess(String, ProcessBuilder, Consumer, Predicate, long, TimeUnit) startProcess}
+     * {@code (name, processBuilder, null, null, -1, TimeUnit.NANOSECONDS)}
+     * </p>
      * @param name           The process name
      * @param processBuilder The process builder
      * @return Returns the initialized process
@@ -90,11 +98,15 @@ public final class ProcessTools {
     /**
      * <p>Starts a process from its builder.</p>
      * <span>The default redirects of STDOUT and STDERR are started</span>
-     * <p>It is possible to monitor the in-streams via the provided {@code consumer}
+     * <p>
+     * Same as
+     * {@linkplain #startProcess(String, ProcessBuilder, Consumer, Predicate, long, TimeUnit) startProcess}
+     * {@code (name, processBuilder, consumer, null, -1, TimeUnit.NANOSECONDS)}
+     * </p>
      *
      * @param name           The process name
-     * @param consumer       {@linkplain Consumer} instance to process the in-streams
      * @param processBuilder The process builder
+     * @param consumer       {@linkplain Consumer} instance to process the in-streams
      * @return Returns the initialized process
      * @throws IOException
      */
@@ -105,7 +117,7 @@ public final class ProcessTools {
             throws IOException {
         try {
             return startProcess(name, processBuilder, consumer, null, -1, TimeUnit.NANOSECONDS);
-        } catch (InterruptedException | TimeoutException e) {
+        } catch (InterruptedException | TimeoutException | CancellationException e) {
             // will never happen
             throw new RuntimeException(e);
         }
@@ -115,8 +127,9 @@ public final class ProcessTools {
      * <p>Starts a process from its builder.</p>
      * <span>The default redirects of STDOUT and STDERR are started</span>
      * <p>
-     * It is possible to wait for the process to get to a warmed-up state
-     * via {@linkplain Predicate} condition on the STDOUT/STDERR
+     * Same as
+     * {@linkplain #startProcess(String, ProcessBuilder, Consumer, Predicate, long, TimeUnit) startProcess}
+     * {@code (name, processBuilder, null, linePredicate, timeout, unit)}
      * </p>
      *
      * @param name           The process name
@@ -140,6 +153,73 @@ public final class ProcessTools {
             throws IOException, InterruptedException, TimeoutException {
         return startProcess(name, processBuilder, null, linePredicate, timeout, unit);
     }
+
+
+    /*
+        BufferOutputStream and BufferInputStream allow to re-use p.getInputStream() amd p.getOutputStream() of
+        processes started with ProcessTools.startProcess(...).
+        Implementation cashes ALL process output and allow to read it through InputStream.
+        The stream uses  Future<Void> task from StreamPumper.process() to check if output is complete.
+     */
+    private static class BufferOutputStream extends ByteArrayOutputStream {
+        private int current = 0;
+        final private Process p;
+
+        private Future<Void> task;
+
+        public BufferOutputStream(Process p) {
+            this.p = p;
+        }
+
+        synchronized void setTask(Future<Void> task) {
+            this.task = task;
+        }
+        synchronized int readNext() {
+            if (current > count) {
+                throw new RuntimeException("Shouldn't ever happen.  start: "
+                        + current + " count: " + count + " buffer: " + this);
+            }
+            while (current == count) {
+                if (!p.isAlive() && (task != null)) {
+                    try {
+                        task.get(10, TimeUnit.MILLISECONDS);
+                        if (current == count) {
+                            return -1;
+                        }
+                    } catch (TimeoutException e) {
+                        // continue execution, so wait() give a chance to write
+                    } catch (InterruptedException | ExecutionException e) {
+                        return -1;
+                    }
+                }
+                try {
+                    wait(1);
+                } catch (InterruptedException ie) {
+                    return -1;
+                }
+            }
+            return this.buf[current++];
+        }
+    }
+
+    private static class BufferInputStream extends InputStream {
+
+        private final BufferOutputStream buffer;
+
+        public BufferInputStream(Process p) {
+            buffer = new BufferOutputStream(p);
+        }
+
+        BufferOutputStream getOutputStream() {
+            return buffer;
+        }
+
+        @Override
+        public int read() throws IOException {
+            return buffer.readNext();
+        }
+    }
+
 
     /**
      * <p>Starts a process from its builder.</p>
@@ -178,6 +258,14 @@ public final class ProcessTools {
 
         stdout.addPump(new LineForwarder(name, System.out));
         stderr.addPump(new LineForwarder(name, System.err));
+
+
+        BufferInputStream stdOut = new BufferInputStream(p);
+        BufferInputStream stdErr = new BufferInputStream(p);
+
+        stdout.addOutputStream(stdOut.getOutputStream());
+        stderr.addOutputStream(stdErr.getOutputStream());
+
         if (lineConsumer != null) {
             StreamPumper.LinePump pump = new StreamPumper.LinePump() {
                 @Override
@@ -188,7 +276,6 @@ public final class ProcessTools {
             stdout.addPump(pump);
             stderr.addPump(pump);
         }
-
 
         CountDownLatch latch = new CountDownLatch(1);
         if (linePredicate != null) {
@@ -212,17 +299,30 @@ public final class ProcessTools {
         final Future<Void> stdoutTask = stdout.process();
         final Future<Void> stderrTask = stderr.process();
 
+        stdOut.getOutputStream().setTask(stdoutTask);
+        stdErr.getOutputStream().setTask(stderrTask);
+
         try {
             if (timeout > -1) {
-                if (timeout == 0) {
-                    latch.await();
-                } else {
-                    if (!latch.await(Utils.adjustTimeout(timeout), unit)) {
+
+                long timeoutMs = timeout == 0 ? -1: unit.toMillis(Utils.adjustTimeout(timeout));
+                // Every second check if line is printed and if process is still alive
+                Utils.waitForCondition(() -> latch.getCount() == 0 || !p.isAlive(),
+                       timeoutMs , 1000);
+
+                if (latch.getCount() > 0) {
+                    if (!p.isAlive()) {
+                        // Give some extra time for the StreamPumper to run after the process completed
+                        Thread.sleep(1000);
+                        if (latch.getCount() > 0) {
+                            throw new RuntimeException("Started process " + name + " terminated before producing the expected output.");
+                        }
+                    } else {
                         throw new TimeoutException();
                     }
                 }
             }
-        } catch (TimeoutException | InterruptedException e) {
+        } catch (TimeoutException | RuntimeException | InterruptedException e) {
             System.err.println("Failed to start a process (thread dump follows)");
             for (Map.Entry<Thread, StackTraceElement[]> s : Thread.getAllStackTraces().entrySet()) {
                 printStack(s.getKey(), s.getValue());
@@ -237,7 +337,7 @@ public final class ProcessTools {
             throw e;
         }
 
-        return new ProcessImpl(p, stdoutTask, stderrTask);
+        return new ProcessImpl(p, stdoutTask, stderrTask, stdOut, stdErr);
     }
 
     /**
@@ -287,6 +387,71 @@ public final class ProcessTools {
         return createJavaProcessBuilder(command.toArray(String[]::new));
     }
 
+    /*
+      Convert arguments for tests running with virtual threads main wrapper
+      When test is executed with process wrapper the line is changed from
+      java <jvm-args> <test-class> <test-args>
+      to
+      java <jvm-args> -Dmain.wrapper=<wrapper-name> jdk.test.lib.process.ProcessTools <wrapper-name> <test-class> <test-args>
+     */
+
+    private static List<String> addMainWrapperArgs(String mainWrapper, List<String> command) {
+
+        final List<String> unsupportedArgs = List.of(
+                "-jar", "-cp", "-classpath", "--class-path", "--describe-module", "-d",
+                "--dry-run", "--list-modules","--validate-modules", "-m", "--module", "-version");
+
+        final List<String> doubleWordArgs = List.of(
+                "--add-opens", "--upgrade-module-path", "--add-modules", "--add-exports",
+                "--limit-modules", "--add-reads", "--patch-module", "--module-path", "-p");
+
+        ArrayList<String> args = new ArrayList<>();
+
+        boolean expectSecondArg = false;
+        boolean isWrapperClassAdded = false;
+        for (String cmd : command) {
+            if (isWrapperClassAdded) {
+                args.add(cmd);
+                continue;
+            }
+
+            if (expectSecondArg) {
+                expectSecondArg = false;
+                args.add(cmd);
+                continue;
+            }
+            if (unsupportedArgs.contains(cmd)) {
+                return command;
+            }
+            if (doubleWordArgs.contains(cmd)) {
+                expectSecondArg = true;
+                args.add(cmd);
+                continue;
+            }
+            if (expectSecondArg) {
+                continue;
+            }
+            // command-line or name command-line file
+            if (cmd.startsWith("-") || cmd.startsWith("@")) {
+                args.add(cmd);
+                continue;
+            }
+
+            // if command is like 'java source.java' then return
+            if (cmd.endsWith(".java")) {
+                return command;
+            }
+            // Some tests might check property to understand
+            // if virtual threads are tested
+            args.add("-Dmain.wrapper=" + mainWrapper);
+            args.add("jdk.test.lib.process.ProcessTools");
+            args.add(mainWrapper);
+            isWrapperClassAdded = true;
+            args.add(cmd);
+        }
+        return args;
+    }
+
     /**
      * Create ProcessBuilder using the java launcher from the jdk to be tested.
      *
@@ -299,10 +464,19 @@ public final class ProcessTools {
         ArrayList<String> args = new ArrayList<>();
         args.add(javapath);
 
-        args.add("-cp");
-        args.add(System.getProperty("java.class.path"));
+        String noCPString = System.getProperty("test.noclasspath", "false");
+        boolean noCP = Boolean.valueOf(noCPString);
+        if (!noCP) {
+            args.add("-cp");
+            args.add(System.getProperty("java.class.path"));
+        }
 
-        Collections.addAll(args, command);
+        String mainWrapper = System.getProperty("main.wrapper");
+        if (mainWrapper != null) {
+            args.addAll(addMainWrapperArgs(mainWrapper, Arrays.asList(command)));
+        } else {
+            Collections.addAll(args, command);
+        }
 
         // Reporting
         StringBuilder cmdLine = new StringBuilder();
@@ -310,7 +484,12 @@ public final class ProcessTools {
             cmdLine.append(cmd).append(' ');
         System.out.println("Command line: [" + cmdLine.toString() + "]");
 
-        return new ProcessBuilder(args);
+        ProcessBuilder pb = new ProcessBuilder(args);
+        if (noCP) {
+            // clear CLASSPATH from the env
+            pb.environment().remove("CLASSPATH");
+        }
+        return pb;
     }
 
     private static void printStack(Thread t, StackTraceElement[] stack) {
@@ -432,6 +611,7 @@ public final class ProcessTools {
      *              the default charset.
      * @return The {@linkplain OutputAnalyzer} instance wrapping the process.
      */
+    @SuppressWarnings("removal")
     public static OutputAnalyzer executeProcess(ProcessBuilder pb, String input,
                                                 Charset cs) throws Exception {
         OutputAnalyzer output = null;
@@ -604,6 +784,7 @@ public final class ProcessTools {
         return pb;
     }
 
+    @SuppressWarnings("removal")
     private static Process privilegedStart(ProcessBuilder pb) throws IOException {
         try {
             return AccessController.doPrivileged(
@@ -615,14 +796,19 @@ public final class ProcessTools {
 
     private static class ProcessImpl extends Process {
 
+        private final InputStream stdOut;
+        private final InputStream stdErr;
         private final Process p;
         private final Future<Void> stdoutTask;
         private final Future<Void> stderrTask;
 
-        public ProcessImpl(Process p, Future<Void> stdoutTask, Future<Void> stderrTask) {
+        public ProcessImpl(Process p, Future<Void> stdoutTask, Future<Void> stderrTask,
+                           InputStream stdOut, InputStream etdErr) {
             this.p = p;
             this.stdoutTask = stdoutTask;
             this.stderrTask = stderrTask;
+            this.stdOut = stdOut;
+            this.stdErr = etdErr;
         }
 
         @Override
@@ -632,12 +818,12 @@ public final class ProcessTools {
 
         @Override
         public InputStream getInputStream() {
-            return p.getInputStream();
+            return stdOut;
         }
 
         @Override
         public InputStream getErrorStream() {
-            return p.getErrorStream();
+            return stdErr;
         }
 
         @Override
@@ -691,5 +877,71 @@ public final class ProcessTools {
             } catch (ExecutionException e) {
             }
         }
+    }
+
+    public static final String OLD_MAIN_THREAD_NAME = "old-m-a-i-n";
+
+    // ProcessTools as a wrapper
+    // It executes method main in a separate virtual or platform thread
+    public static void main(String[] args) throws Throwable {
+        String wrapper = args[0];
+        String className = args[1];
+        String[] classArgs = new String[args.length - 2];
+        System.arraycopy(args, 2, classArgs, 0, args.length - 2);
+        Class c = Class.forName(className);
+        Method mainMethod = c.getMethod("main", new Class[] { String[].class });
+        mainMethod.setAccessible(true);
+
+        if (wrapper.equals("Virtual")) {
+            // MainThreadGroup used just as a container for exceptions
+            // when main is executed in virtual thread
+            MainThreadGroup tg = new MainThreadGroup();
+            Thread vthread = Thread.ofVirtual().unstarted(() -> {
+                    try {
+                        mainMethod.invoke(null, new Object[] { classArgs });
+                    } catch (InvocationTargetException e) {
+                        tg.uncaughtThrowable = e.getCause();
+                    } catch (Throwable error) {
+                        tg.uncaughtThrowable = error;
+                    }
+                });
+            Thread.currentThread().setName(OLD_MAIN_THREAD_NAME);
+            vthread.setName("main");
+            vthread.start();
+            vthread.join();
+            if (tg.uncaughtThrowable != null) {
+                throw tg.uncaughtThrowable;
+            }
+        } else if (wrapper.equals("Kernel")) {
+            MainThreadGroup tg = new MainThreadGroup();
+            Thread t = new Thread(tg, () -> {
+                    try {
+                        mainMethod.invoke(null, new Object[] { classArgs });
+                    } catch (InvocationTargetException e) {
+                        tg.uncaughtThrowable = e.getCause();
+                    } catch (Throwable error) {
+                        tg.uncaughtThrowable = error;
+                    }
+                });
+            t.start();
+            t.join();
+            if (tg.uncaughtThrowable != null) {
+                throw tg.uncaughtThrowable;
+            }
+        } else {
+            mainMethod.invoke(null, new Object[] { classArgs });
+        }
+    }
+
+    static class MainThreadGroup extends ThreadGroup {
+        MainThreadGroup() {
+            super("MainThreadGroup");
+        }
+
+        public void uncaughtException(Thread t, Throwable e) {
+            e.printStackTrace(System.err);
+            uncaughtThrowable = e;
+        }
+        Throwable uncaughtThrowable = null;
     }
 }

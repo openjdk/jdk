@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @bug 8051408 8157308 8130181
  * @modules java.base/sun.security.provider
  * @build java.base/sun.security.provider.S
- * @run main SpecTest
+ * @run main/othervm -Djava.security.egd=file:/dev/urandom SpecTest
  * @summary check the AbstractDrbg API etc
  */
 

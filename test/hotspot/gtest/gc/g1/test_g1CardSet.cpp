@@ -25,7 +25,7 @@
 #include "gc/g1/g1CardSet.inline.hpp"
 #include "gc/g1/g1CardSetContainers.hpp"
 #include "gc/g1/g1CardSetMemory.hpp"
-#include "gc/g1/g1SegmentedArrayFreePool.hpp"
+#include "gc/g1/g1MonotonicArenaFreePool.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/workerThread.hpp"
@@ -165,13 +165,13 @@ void G1CardSetTest::translate_cards(uint cards_per_region, uint region_idx, uint
   }
 }
 
-class G1CountCardsOccupied : public G1CardSet::CardSetPtrClosure {
+class G1CountCardsOccupied : public G1CardSet::ContainerPtrClosure {
   size_t _num_occupied;
 
 public:
   G1CountCardsOccupied() : _num_occupied(0) { }
 
-  void do_cardsetptr(uint region_idx, size_t num_occupied, G1CardSet::CardSetPtr card_set) override {
+  void do_containerptr(uint region_idx, size_t num_occupied, G1CardSet::ContainerPtr container) override {
     _num_occupied += num_occupied;
   }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@
 // flags. Analogous to PromotionFailureALot for the other collectors.
 //
 // Every G1EvacuationFailureALotInterval collections without evacuation failure
-// inbetween we "arm" the injector to induce evacuation failures after
+// in between we "arm" the injector to induce evacuation failures after
 // G1EvacuationFailureALotCount successful evacuations.
 //
 // Available only when EVAC_FAILURE_INJECTOR is defined.
@@ -61,13 +61,15 @@ class G1YoungGCEvacFailureInjector {
   CHeapBitMap _evac_failure_regions;
 #endif
 
-  bool arm_if_needed_for_gc_type(bool for_young_gc,
+  bool arm_if_needed_for_gc_type(bool for_young_only_phase,
                                  bool during_concurrent_start,
                                  bool mark_or_rebuild_in_progress) EVAC_FAILURE_INJECTOR_RETURN_( return false; );
 
   // Selects the regions that will fail evacuation by G1EvacuationFailureALotCSetPercent.
   void select_evac_failure_regions() EVAC_FAILURE_INJECTOR_RETURN;
 public:
+
+  G1YoungGCEvacFailureInjector() EVAC_FAILURE_INJECTOR_RETURN;
 
   // Arm the evacuation failure injector if needed for the current
   // GC (based upon the type of GC and which command line flags are set);

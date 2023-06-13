@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,226 +28,108 @@ package jdk.javadoc.internal.doclets.formats.html;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
+import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
-import jdk.javadoc.internal.doclets.toolkit.util.links.LinkInfo;
 
 
 /**
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
+ * HTML-specific information about a link.
  */
-public class HtmlLinkInfo extends LinkInfo {
+public class HtmlLinkInfo {
 
+    /**
+     * Enumeration of different kinds of links.
+     */
     public enum Kind {
-        DEFAULT,
+        /**
+         * Link with just the element name as label.
+         */
+        PLAIN,
+        /**
+         * Link with additional preview flag if appropriate.
+         */
+        SHOW_PREVIEW,
+        /**
+         * Link with optional type parameters appended as plain text.
+         */
+        SHOW_TYPE_PARAMS,
 
         /**
-         * Indicate that the link appears in a class documentation.
+         * Link with optional type parameters included in the link label.
          */
-        CLASS,
+        SHOW_TYPE_PARAMS_IN_LABEL,
 
         /**
-         * Indicate that the link appears in member documentation.
+         * Link with optional type parameters and bounds appended as plain text.
          */
-        MEMBER,
-
+        SHOW_TYPE_PARAMS_AND_BOUNDS,
         /**
-         * Indicate that the link appears in member documentation on the Deprecated or Preview page.
+         * Link with optional type parameters but no bounds rendered as separate links.
          */
-        MEMBER_DEPRECATED_PREVIEW,
-
+        LINK_TYPE_PARAMS,
         /**
-         * Indicate that the link appears in class use documentation.
+         * Link with optional type parameters and bounds rendered as separate links.
          */
-        CLASS_USE,
-
-        /**
-         * Indicate that the link appears in index documentation.
-         */
-        INDEX,
-
-        /**
-         * Indicate that the link appears in constant value summary.
-         */
-        CONSTANT_SUMMARY,
-
-        /**
-         * Indicate that the link appears in serialized form documentation.
-         */
-        SERIALIZED_FORM,
-
-        /**
-         * Indicate that the link appears in serial member documentation.
-         */
-        SERIAL_MEMBER,
-
-        /**
-         * Indicate that the link appears in package documentation.
-         */
-        PACKAGE,
-
-        /**
-         * Indicate that the link appears in see tag documentation.
-         */
-        SEE_TAG,
-
-        /**
-         * Indicate that the link appears in value tag documentation.
-         */
-        VALUE_TAG,
-
-        /**
-         * Indicate that the link appears in tree documentation.
-         */
-        TREE,
-
-        /**
-         * The header in the class documentation.
-         */
-        CLASS_HEADER,
-
-        /**
-         * The signature in the class documentation.
-         */
-        CLASS_SIGNATURE,
-
-        /**
-         * The return type of a method.
-         */
-        RETURN_TYPE,
-
-        /**
-         * The return type of a method in a member summary.
-         */
-        SUMMARY_RETURN_TYPE,
-
-        /**
-         * The type of a method/constructor parameter.
-         */
-        EXECUTABLE_MEMBER_PARAM,
-
-        /**
-         * Super interface links.
-         */
-        SUPER_INTERFACES,
-
-        /**
-         * Implemented interface links.
-         */
-        IMPLEMENTED_INTERFACES,
-
-        /**
-         * Implemented class links.
-         */
-        IMPLEMENTED_CLASSES,
-
-        /**
-         * Subinterface links.
-         */
-        SUBINTERFACES,
-
-        /**
-         * Subclasses links.
-         */
-        SUBCLASSES,
-
-        /**
-         * The signature in the class documentation (implements/extends portion).
-         */
-        CLASS_SIGNATURE_PARENT_NAME,
-
-        /**
-         * Permitted subclasses of a sealed type.
-         */
-        PERMITTED_SUBCLASSES,
-
-        /**
-         * The header for method documentation copied from parent.
-         */
-        EXECUTABLE_ELEMENT_COPY,
-
-        /**
-         * Method "specified by" link.
-         */
-        METHOD_SPECIFIED_BY,
-
-        /**
-         * Method "overrides" link.
-         */
-        METHOD_OVERRIDES,
-
-        /**
-         * Annotation link.
-         */
-        ANNOTATION,
-
-        /**
-         * The parent nodes in the class tree.
-         */
-        CLASS_TREE_PARENT,
-
-        /**
-         * The type parameters of a method or constructor.
-         */
-        MEMBER_TYPE_PARAMS,
-
-        /**
-         * Indicate that the link appears in class use documentation.
-         */
-        CLASS_USE_HEADER,
-
-        /**
-         * The header for property documentation copied from parent.
-         */
-        PROPERTY_COPY,
-
-        /**
-         * A receiver type.
-         */
-        RECEIVER_TYPE,
-
-        /**
-         * A record component within a class signature.
-         */
-        RECORD_COMPONENT,
-
-        /**
-         * A type thrown from a method.
-         */
-        THROWS_TYPE
+        LINK_TYPE_PARAMS_AND_BOUNDS;
     }
 
-    public final HtmlConfiguration configuration;
+    private final HtmlConfiguration configuration;
 
-    /**
-     * The location of the link.
-     */
-    public Kind context = Kind.DEFAULT;
+    // The context of the link.
+    private Kind context = Kind.PLAIN;
 
-    /**
-     * The value of the marker #.
-     */
-    public String where = "";
+    // The fragment of the link.
+    private String fragment = "";
 
-    /**
-     * The member this link points to (if any).
-     */
-    public Element targetMember;
+    // The member this link points to (if any).
+    private Element targetMember;
 
-    /**
-     * Optional style for the link.
-     */
-    public HtmlStyle style = null;
+    // Optional style for the link.
+    private HtmlStyle style = null;
 
-    public final Utils utils;
+    // The class we want to link to. Null if we are not linking to a class.
+    private TypeElement typeElement;
+
+    // The executable element we want to link to. Null if we are not linking to an executable element.
+    private ExecutableElement executableElement;
+
+    // The Type we want to link to. Null if we are not linking to a type.
+    private TypeMirror type;
+
+    // True if this is a link to a VarArg.
+    private boolean isVarArg = false;
+
+    // The label for the link.
+    private Content label;
+
+    // True if we should print the type bounds for the type parameter.
+    private boolean showTypeBounds = true;
+
+    // True if type parameters should be rendered as links.
+    private boolean linkTypeParameters = true;
+
+    // By default, the link can be to the page it's already on.  However,
+    // there are cases where we don't want this (e.g. heading of class page).
+    private boolean linkToSelf = true;
+
+    // True iff the preview flags should be skipped for this link.
+    private boolean skipPreview;
+
+    // True if type parameters should be separated by hard line breaks.
+    private boolean addLineBreaksInTypeParameters = false;
+
+    // True if additional <wbr> tags should be added to type parameters
+    private boolean addLineBreakOpportunitiesInTypeParameters = false;
+
+    // True if annotations on type parameters should be shown.
+    private boolean showTypeParameterAnnotations = false;
 
     /**
      * Construct a LinkInfo object.
@@ -258,14 +140,8 @@ public class HtmlLinkInfo extends LinkInfo {
      */
     public HtmlLinkInfo(HtmlConfiguration configuration, Kind context, ExecutableElement ee) {
         this.configuration = configuration;
-        this.utils = configuration.utils;
         this.executableElement = ee;
         setContext(context);
-    }
-
-    @Override
-    protected Content newContent() {
-        return new ContentBuilder();
     }
 
     /**
@@ -277,7 +153,6 @@ public class HtmlLinkInfo extends LinkInfo {
      */
     public HtmlLinkInfo(HtmlConfiguration configuration, Kind context, TypeElement typeElement) {
         this.configuration = configuration;
-        this.utils = configuration.utils;
         this.typeElement = typeElement;
         setContext(context);
     }
@@ -291,14 +166,63 @@ public class HtmlLinkInfo extends LinkInfo {
      */
     public HtmlLinkInfo(HtmlConfiguration configuration, Kind context, TypeMirror type) {
         this.configuration = configuration;
-        this.utils = configuration.utils;
         this.type = type;
         setContext(context);
     }
 
     /**
+     * Creates a copy of this HtmlLinkInfo instance with a different TypeMirror.
+     * This is used for contained types such as type parameters or array components.
+     *
+     * @param type the type mirror
+     * @return the new link info
+     */
+    public HtmlLinkInfo forType(TypeMirror type) {
+        HtmlLinkInfo linkInfo = new HtmlLinkInfo(configuration, context, type);
+        linkInfo.showTypeBounds = showTypeBounds;
+        linkInfo.linkTypeParameters = linkTypeParameters;
+        linkInfo.linkToSelf = linkToSelf;
+        linkInfo.addLineBreaksInTypeParameters = addLineBreaksInTypeParameters;
+        linkInfo.showTypeParameterAnnotations = showTypeParameterAnnotations;
+        linkInfo.skipPreview = skipPreview;
+        return linkInfo;
+    }
+
+    /**
+     * Sets the typeElement
+     * @param typeElement the new typeElement object
+     */
+    public void setTypeElement(TypeElement typeElement) {
+        this.typeElement = typeElement;
+    }
+
+    /**
+     * The class we want to link to.  Null if we are not linking
+     * to a class.
+     */
+    public TypeElement getTypeElement() {
+        return typeElement;
+    }
+
+    /**
+     * The executable element we want to link to.  Null if we are not linking
+     * to an executable element.
+     */
+    public ExecutableElement getExecutableElement() {
+        return executableElement;
+    }
+
+    /**
+     * The Type we want to link to.  Null if we are not linking to a type.
+     */
+    public TypeMirror getType() {
+        return type;
+    }
+
+    /**
      * Set the label for the link.
      * @param label plain-text label for the link
+     * @return this object
      */
     public HtmlLinkInfo label(CharSequence label) {
         this.label = Text.of(label);
@@ -307,6 +231,8 @@ public class HtmlLinkInfo extends LinkInfo {
 
     /**
      * Set the label for the link.
+     * @param label the new value
+     * @return this object
      */
     public HtmlLinkInfo label(Content label) {
         this.label = label;
@@ -314,7 +240,16 @@ public class HtmlLinkInfo extends LinkInfo {
     }
 
     /**
+     * {@return the label for the link}
+     */
+    public Content getLabel() {
+        return label;
+    }
+
+    /**
      * Sets the style to be used for the link.
+     * @param style the new style value
+     * @return this object
      */
     public HtmlLinkInfo style(HtmlStyle style) {
         this.style = style;
@@ -322,7 +257,16 @@ public class HtmlLinkInfo extends LinkInfo {
     }
 
     /**
+     * {@return the optional style for the link}
+     */
+    public HtmlStyle getStyle() {
+        return style;
+    }
+
+    /**
      * Set whether or not this is a link to a varargs parameter.
+     * @param varargs the new value
+     * @return this object
      */
     public HtmlLinkInfo varargs(boolean varargs) {
         this.isVarArg = varargs;
@@ -330,15 +274,123 @@ public class HtmlLinkInfo extends LinkInfo {
     }
 
     /**
-     * Set the fragment specifier for the link.
+     * {@return true if this is a link to a vararg member}
      */
-    public HtmlLinkInfo where(String where) {
-        this.where = where;
+    public boolean isVarArg() {
+        return isVarArg;
+    }
+
+    /**
+     * Set the fragment specifier for the link.
+     * @param fragment the new fragment value
+     * @return this object
+     */
+    public HtmlLinkInfo fragment(String fragment) {
+        this.fragment = fragment;
         return this;
     }
 
     /**
+     * {@return the fragment of the link}
+     */
+    public String getFragment() {
+        return fragment;
+    }
+
+    /**
+     * Sets the addLineBreaksInTypeParameters flag for this link.
+     * @param addLineBreaksInTypeParameters the new value
+     * @return this object
+     */
+    public HtmlLinkInfo addLineBreaksInTypeParameters(boolean addLineBreaksInTypeParameters) {
+        this.addLineBreaksInTypeParameters = addLineBreaksInTypeParameters;
+        return this;
+    }
+
+    /**
+     * {@return true if type parameters should be separated by line breaks}
+     */
+    public boolean addLineBreaksInTypeParameters() {
+        return addLineBreaksInTypeParameters;
+    }
+
+    /**
+     * Sets the addLineBreakOpportunitiesInTypeParameters flag for this link.
+     * @param addLineBreakOpportunities the new value
+     * @return this object
+     */
+    public HtmlLinkInfo addLineBreakOpportunitiesInTypeParameters(boolean addLineBreakOpportunities) {
+        this.addLineBreakOpportunitiesInTypeParameters = addLineBreakOpportunities;
+        return this;
+    }
+
+    /**
+     * {@return true if line break opportunities should be added to type parameters}
+     */
+    public boolean addLineBreakOpportunitiesInTypeParameters() {
+        return addLineBreakOpportunitiesInTypeParameters;
+    }
+
+    /**
+     * Set the linkToSelf flag for this link.
+     * @param linkToSelf the new value
+     * @return this object
+     */
+    public HtmlLinkInfo linkToSelf(boolean linkToSelf) {
+        this.linkToSelf = linkToSelf;
+        return this;
+    }
+
+    /**
+     * {@return true if we should generate links to the current page}
+     */
+    public boolean linkToSelf() {
+        return linkToSelf;
+    }
+
+    /**
+     * {@return true if type parameters should be rendered as links}
+     */
+    public boolean linkTypeParameters() {
+        return linkTypeParameters;
+    }
+
+    /**
+     * Set the showTypeBounds flag for this link
+     * @param showTypeBounds the new value
+     */
+    public void showTypeBounds(boolean showTypeBounds) {
+        this.showTypeBounds = showTypeBounds;
+    }
+
+    /**
+     * {@return true if we should print the type bounds for the type parameter}
+     */
+    public boolean showTypeBounds() {
+        return showTypeBounds;
+    }
+
+    /**
+     * Set the showTypeParameterAnnotations flag for this link.
+     * @param showTypeParameterAnnotations the new value
+     * @return this object
+     */
+    public HtmlLinkInfo showTypeParameterAnnotations(boolean showTypeParameterAnnotations) {
+        this.showTypeParameterAnnotations = showTypeParameterAnnotations;
+        return this;
+    }
+
+    /**
+     * {@return true if annotations on type parameters should be shown}
+     */
+    public boolean showTypeParameterAnnotations() {
+        return showTypeParameterAnnotations;
+    }
+
+    /**
      * Set the member this link points to (if any).
+     * @param el the new member value
+     * @return this object
      */
     public HtmlLinkInfo targetMember(Element el) {
         this.targetMember = el;
@@ -346,13 +398,32 @@ public class HtmlLinkInfo extends LinkInfo {
     }
 
     /**
+     * {@return the member this link points to (if any)}
+     */
+    public Element getTargetMember() {
+        return targetMember;
+    }
+
+    /**
      * Set whether or not the preview flags should be skipped for this link.
+     * @param skipPreview the new value
+     * @return this object
      */
     public HtmlLinkInfo skipPreview(boolean skipPreview) {
         this.skipPreview = skipPreview;
         return this;
     }
 
+    /**
+     * {@return true iff the preview flags should be skipped for this link}
+     */
+    public boolean isSkipPreview() {
+        return skipPreview;
+    }
+
+    /**
+     * {@return the link context}
+     */
     public Kind getContext() {
         return context;
     }
@@ -363,35 +434,9 @@ public class HtmlLinkInfo extends LinkInfo {
      *
      * @param c the context id to set.
      */
-    public final void setContext(Kind c) {
-        switch (c) {
-            case ANNOTATION:
-            case IMPLEMENTED_INTERFACES:
-            case SUPER_INTERFACES:
-            case SUBINTERFACES:
-            case CLASS_TREE_PARENT:
-            case TREE:
-            case CLASS_SIGNATURE_PARENT_NAME:
-            case PERMITTED_SUBCLASSES:
-                excludeTypeParameterLinks = true;
-                excludeTypeBounds = true;
-                break;
-
-            case PACKAGE:
-            case CLASS_USE:
-            case CLASS_HEADER:
-            case CLASS_SIGNATURE:
-            case RECEIVER_TYPE:
-                excludeTypeParameterLinks = true;
-                break;
-
-            case RETURN_TYPE:
-            case SUMMARY_RETURN_TYPE:
-            case EXECUTABLE_MEMBER_PARAM:
-            case THROWS_TYPE:
-                excludeTypeBounds = true;
-                break;
-        }
+    private void setContext(Kind c) {
+        linkTypeParameters = c == Kind.LINK_TYPE_PARAMS || c == Kind.LINK_TYPE_PARAMS_AND_BOUNDS;
+        showTypeBounds = c == Kind.SHOW_TYPE_PARAMS_AND_BOUNDS || c == Kind.LINK_TYPE_PARAMS_AND_BOUNDS;
         context = c;
     }
 
@@ -402,44 +447,68 @@ public class HtmlLinkInfo extends LinkInfo {
      * @return true if this link is linkable and false if we can't link to the
      * desired place.
      */
-    @Override
     public boolean isLinkable() {
         return configuration.utils.isLinkable(typeElement);
     }
 
-    @Override
-    public boolean includeTypeParameterLinks() {
-        return switch (context) {
-            case IMPLEMENTED_INTERFACES,
-                 SUPER_INTERFACES,
-                 SUBINTERFACES,
-                 CLASS_TREE_PARENT,
-                 TREE,
-                 CLASS_SIGNATURE_PARENT_NAME,
-                 PERMITTED_SUBCLASSES,
-                 PACKAGE,
-                 CLASS_USE,
-                 CLASS_HEADER,
-                 CLASS_SIGNATURE,
-                 RECEIVER_TYPE,
-                 MEMBER_TYPE_PARAMS -> true;
+    /**
+     * Returns true if links to declared types should include type parameters.
+     *
+     * @return true if type parameter links should be included
+     */
+    public boolean showTypeParameters() {
+        // Type parameters for these kinds of links are either not desired
+        // or already included in the link label.
+        return context != Kind.PLAIN && context != Kind.SHOW_PREVIEW
+                && context != Kind.SHOW_TYPE_PARAMS_IN_LABEL;
+    }
 
-            case IMPLEMENTED_CLASSES,
-                 SUBCLASSES,
-                 EXECUTABLE_ELEMENT_COPY,
-                 PROPERTY_COPY,
-                 CLASS_USE_HEADER -> false;
+    /**
+     * Return the label for this class link.
+     *
+     * @param configuration the current configuration of the doclet.
+     * @return the label for this class link.
+     */
+    public Content getClassLinkLabel(BaseConfiguration configuration) {
+        if (label != null && !label.isEmpty()) {
+            return label;
+        } else if (isLinkable()) {
+            Content tlabel = newContent();
+            Utils utils = configuration.utils;
+            tlabel.add(type instanceof DeclaredType dt && utils.isGenericType(dt.getEnclosingType())
+                    // If enclosing type is rendered as separate links only use own class name
+                    ? typeElement.getSimpleName().toString()
+                    : configuration.utils.getSimpleName(typeElement));
+            return tlabel;
+        } else {
+            Content tlabel = newContent();
+            tlabel.add(configuration.getClassName(typeElement));
+            return tlabel;
+        }
+    }
 
-            default -> label == null || label.isEmpty();
-        };
+    /**
+     * {@return a new instance of a content object}
+     */
+    protected Content newContent() {
+        return new ContentBuilder();
     }
 
     @Override
     public String toString() {
         return "HtmlLinkInfo{" +
-                "context=" + context +
-                ", where=" + where +
-                ", style=" + style +
-                super.toString() + '}';
+                "typeElement=" + typeElement +
+                ", executableElement=" + executableElement +
+                ", type=" + type +
+                ", isVarArg=" + isVarArg +
+                ", label=" + label +
+                ", showTypeBounds=" + showTypeBounds +
+                ", linkTypeParameters=" + linkTypeParameters +
+                ", linkToSelf=" + linkToSelf +
+                ", addLineBreaksInTypeParameters=" + addLineBreaksInTypeParameters +
+                ", showTypeParameterAnnotations=" + showTypeParameterAnnotations +
+                ", context=" + context +
+                ", fragment=" + fragment +
+                ", style=" + style + '}';
     }
 }

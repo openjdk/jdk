@@ -508,7 +508,7 @@ transport_startTransport(jboolean isServer, char *name, char *address,
     trans = info->transport;
 
     if (isServer) {
-        char *retAddress;
+        char *retAddress = NULL;
         char *launchCommand;
         jvmtiError error;
         int len;
@@ -607,9 +607,13 @@ transport_startTransport(jboolean isServer, char *name, char *address,
                     name, retAddress));
             }
         }
+        jvmtiDeallocate(retAddress);
         return JDWP_ERROR(NONE);
 
 handleError:
+        if (retAddress != NULL) {
+            jvmtiDeallocate(retAddress);
+        }
         freeTransportInfo(info);
     } else {
         /*

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,8 +35,8 @@ import com.foobar.Utils;
  * Implementation class for getGenericTimeZoneName which returns "Generic "+<standard name in OSAKA>.
  */
 public class GenericTimeZoneNameProviderImpl extends TimeZoneNameProviderImpl {
-    static final Locale jaJPGeneric = new Locale("ja", "JP", "generic");
-    static final Locale OSAKA = new Locale("ja", "JP", "osaka");
+    static final Locale jaJPGeneric = Locale.of("ja", "JP", "generic");
+    static final Locale OSAKA = Locale.of("ja", "JP", "osaka");
 
     static Locale[] avail = {
         jaJPGeneric

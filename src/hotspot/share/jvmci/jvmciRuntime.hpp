@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,9 @@
 #ifndef SHARE_JVMCI_JVMCIRUNTIME_HPP
 #define SHARE_JVMCI_JVMCIRUNTIME_HPP
 
-#include "jvm_io.h"
 #include "code/nmethod.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "jvm_io.h"
 #include "jvmci/jvmci.hpp"
 #include "jvmci/jvmciExceptions.hpp"
 #include "jvmci/jvmciObject.hpp"
@@ -40,18 +40,25 @@ class JVMCICompiler;
 class JVMCICompileState;
 class MetadataHandles;
 
-// Encapsulates the JVMCI metadata for an nmethod.
-// JVMCINMethodData objects are inlined into nmethods
-// at nmethod::_jvmci_data_offset.
-class JVMCINMethodData {
+// Encapsulates the JVMCI metadata for an nmethod.  JVMCINMethodData objects are normally inlined
+// into nmethods at nmethod::_jvmci_data_offset but during construction of the nmethod they are
+// resource allocated so they can be passed into the nmethod constructor.
+class JVMCINMethodData : public ResourceObj {
   friend class JVMCIVMStructs;
-  // Index for the HotSpotNmethod mirror in the nmethod's oops table.
-  // This is -1 if there is no mirror in the oops table.
-  int _nmethod_mirror_index;
 
   // Is HotSpotNmethod.name non-null? If so, the value is
   // embedded in the end of this object.
   bool _has_name;
+
+  // Index for the HotSpotNmethod mirror in the nmethod's oops table.
+  // This is -1 if there is no mirror in the oops table.
+  int _nmethod_mirror_index;
+
+  // This is the offset of the patchable part of the nmethod entry barrier sequence.  The meaning is
+  // somewhat platform dependent as the way patching is done varies by architecture.  Older JVMCI
+  // based compilers didn't emit the entry barrier so having a positive value for this offset
+  // confirms that the installed code supports the entry barrier.
+  int _nmethod_entry_patch_offset;
 
   // Address of the failed speculations list to which a speculation
   // is appended when it causes a deoptimization.
@@ -65,25 +72,52 @@ class JVMCINMethodData {
     SPECULATION_LENGTH_MASK = (1 << SPECULATION_LENGTH_BITS) - 1
   };
 
+  // Allocate a temporary data object for use during installation
+  void initialize(int nmethod_mirror_index,
+                   int nmethod_entry_patch_offset,
+                   const char* nmethod_mirror_name,
+                   FailedSpeculation** failed_speculations);
+
+  void* operator new(size_t size, const char* nmethod_mirror_name) {
+    assert(size == sizeof(JVMCINMethodData), "must agree");
+    size_t total_size = compute_size(nmethod_mirror_name);
+    return (address)resource_allocate_bytes(total_size);
+  }
+
 public:
+  static JVMCINMethodData* create(int nmethod_mirror_index,
+                                  int nmethod_entry_patch_offset,
+                                  const char* nmethod_mirror_name,
+                                  FailedSpeculation** failed_speculations) {
+    JVMCINMethodData* result = new (nmethod_mirror_name) JVMCINMethodData();
+    result->initialize(nmethod_mirror_index,
+                       nmethod_entry_patch_offset,
+                       nmethod_mirror_name,
+                       failed_speculations);
+    return result;
+  }
+
   // Computes the size of a JVMCINMethodData object
   static int compute_size(const char* nmethod_mirror_name) {
     int size = sizeof(JVMCINMethodData);
-    if (nmethod_mirror_name != NULL) {
+    if (nmethod_mirror_name != nullptr) {
       size += (int) strlen(nmethod_mirror_name) + 1;
     }
     return size;
   }
 
-  void initialize(int nmethod_mirror_index,
-             const char* name,
-             FailedSpeculation** failed_speculations);
+  int size() {
+    return compute_size(name());
+  }
+
+  // Copy the contents of this object into data which is normally the storage allocated in the nmethod.
+  void copy(JVMCINMethodData* data);
 
   // Adds `speculation` to the failed speculations list.
   void add_failed_speculation(nmethod* nm, jlong speculation);
 
-  // Gets the JVMCI name of the nmethod (which may be NULL).
-  const char* name() { return _has_name ? (char*)(((address) this) + sizeof(JVMCINMethodData)) : NULL; }
+  // Gets the JVMCI name of the nmethod (which may be null).
+  const char* name() { return _has_name ? (char*)(((address) this) + sizeof(JVMCINMethodData)) : nullptr; }
 
   // Clears the HotSpotNmethod.address field in the  mirror. If nm
   // is dead, the HotSpotNmethod.entryPoint field is also cleared.
@@ -95,14 +129,21 @@ public:
   // Sets the mirror in nm's oops table.
   void set_nmethod_mirror(nmethod* nm, oop mirror);
 
-  // Clears the mirror in nm's oops table.
-  void clear_nmethod_mirror(nmethod* nm);
+  bool has_entry_barrier() {
+    return _nmethod_entry_patch_offset != -1;
+  }
+
+  int nmethod_entry_patch_offset() {
+    guarantee(_nmethod_entry_patch_offset != -1, "missing entry barrier");
+    return _nmethod_entry_patch_offset;
+  }
 };
 
 // A top level class that represents an initialized JVMCI runtime.
 // There is one instance of this class per HotSpotJVMCIRuntime object.
 class JVMCIRuntime: public CHeapObj<mtJVMCI> {
   friend class JVMCI;
+  friend class JavaVMRefsInitialization;
  public:
   // Constants describing whether JVMCI wants to be able to adjust the compilation
   // level selected for a method by the VM compilation policy and if so, based on
@@ -124,6 +165,14 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
   // Initialization state of this JVMCIRuntime.
   InitState _init_state;
 
+  // Initialization state of the references to classes, methods
+  // and fields in the JVMCI shared library.
+  static InitState _shared_library_javavm_refs_init_state;
+
+  // Initialization state of the references to classes, methods
+  // and fields in HotSpot metadata.
+  static InitState _hotspot_javavm_refs_init_state;
+
   // A wrapper for a VM scoped JNI global handle (i.e. JVMCIEnv::make_global)
   // to a HotSpotJVMCIRuntime instance. This JNI global handle must never
   // be explicitly destroyed as it can be accessed in a racy way during
@@ -131,16 +180,45 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
   // the VM or shared library JavaVM managing the handle dies.
   JVMCIObject _HotSpotJVMCIRuntime_instance;
 
-  // Result of calling JNI_CreateJavaVM in the JVMCI shared library.
-  // Must only be modified under JVMCI_lock.
-  volatile JavaVM* _shared_library_javavm;
+  // Lock for operations that may be performed by
+  // any thread attached this runtime. To avoid deadlock,
+  // this lock must always be acquired before JVMCI_lock.
+  Monitor* _lock;
 
+  // Result of calling JNI_CreateJavaVM in the JVMCI shared library.
+  // Must only be mutated under _lock.
+  JavaVM* _shared_library_javavm;
+
+  // Id for _shared_library_javavm.
+  int _shared_library_javavm_id;
+
+  // Position and link in global list of JVMCI shared library runtimes.
   // The HotSpot heap based runtime will have an id of -1 and the
-  // JVMCI shared library runtime will have an id of 0.
+  // runtime reserved for threads attaching during JVMCI shutdown
+  // will have an id of -2.
   int _id;
+  JVMCIRuntime* _next;
 
   // Handles to Metadata objects.
   MetadataHandles* _metadata_handles;
+
+  // List of oop handles allocated via make_oop_handle. This is to support
+  // destroying remaining oop handles when the JavaVM associated
+  // with this runtime is shutdown.
+  GrowableArray<oop*> _oop_handles;
+
+  // Number of threads attached or about to be attached to this runtime.
+  // Must only be mutated under JVMCI_lock to facilitate safely moving
+  // threads between JVMCI runtimes. A value of -1 implies this runtime is
+  // not available to be attached to another thread because it is in the
+  // process of shutting down and destroying its JavaVM.
+  int _num_attached_threads;
+  static const int cannot_be_attached = -1;
+
+  // Is this runtime for threads managed by the CompileBroker?
+  // Examples of non-CompileBroker threads are CompileTheWorld threads
+  // or Truffle compilation threads.
+  bool _for_compile_broker;
 
   JVMCIObject create_jvmci_primitive_type(BasicType type, JVMCI_TRAPS);
 
@@ -154,7 +232,7 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
                                           bool& is_accessible,
                                           Klass* loading_klass);
   static void   get_field_by_index_impl(InstanceKlass* loading_klass, fieldDescriptor& fd,
-                                        int field_index);
+                                        int field_index, Bytecodes::Code bc);
   static Method*  get_method_by_index_impl(const constantPoolHandle& cpool,
                                            int method_index, Bytecodes::Code bc,
                                            InstanceKlass* loading_klass);
@@ -168,18 +246,48 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
                                   Bytecodes::Code bc,
                                   constantTag     tag);
 
+  // Helpers for `for_thread`.
+
+  // Selects an existing runtime (except for `skip`) that has
+  // fewer than JVMCI::max_threads_per_runtime() attached threads.
+  // If such a runtime exists, its _num_attached_threads is incremented
+  // and the caller must subsequently attach `thread` to it.
+  // JVMCI_lock must be held by current thread.
+  // If null is returned, then `*count` contains the number of JVMCIRuntimes
+  // currently allocated.
+  static JVMCIRuntime* select_runtime(JavaThread* thread, JVMCIRuntime* skip, int* count);
+
+  // Selects an existing runtime for `thread` or creates a new one if
+  // no applicable runtime exists.
+  // JVMCI_lock must be held by current thread
+  static JVMCIRuntime* select_or_create_runtime(JavaThread* thread);
+
+  // Selects an existing runtime for `thread` when in JVMCI shutdown.
+  // JVMCI_lock must be held by current thread
+  static JVMCIRuntime* select_runtime_in_shutdown(JavaThread* thread);
+
+  // Releases all the non-null entries in _oop_handles and then clears
+  // the list. Returns the number released handles.
+  int release_and_clear_oop_handles();
+
  public:
-  JVMCIRuntime(int id);
+  JVMCIRuntime(JVMCIRuntime* next, int id, bool for_compile_broker);
 
   int id() const        { return _id;   }
+  Monitor* lock() const { return _lock; }
 
   // Ensures that a JVMCI shared library JavaVM exists for this runtime.
   // If the JavaVM was created by this call, then the thread-local JNI
-  // interface pointer for the JavaVM is returned otherwise NULL is returned.
-  JNIEnv* init_shared_library_javavm();
+  // interface pointer for the JavaVM is returned otherwise null is returned.
+  // If this method tried to create the JavaVM but failed, the error code returned
+  // by JNI_CreateJavaVM is returned in create_JavaVM_err.
+  JNIEnv* init_shared_library_javavm(int* create_JavaVM_err);
 
   // Determines if the JVMCI shared library JavaVM exists for this runtime.
-  bool has_shared_library_javavm() { return _shared_library_javavm != NULL; }
+  bool has_shared_library_javavm() { return _shared_library_javavm != nullptr; }
+
+  // Gets an ID for the JVMCI shared library JavaVM associated with this runtime.
+  int get_shared_library_javavm_id() { return _shared_library_javavm_id; }
 
   // Copies info about the JVMCI shared library JavaVM associated with this
   // runtime into `info` as follows:
@@ -202,20 +310,54 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
   // Compute offsets and construct any state required before executing JVMCI code.
   void initialize(JVMCIEnv* jvmciEnv);
 
-  // Allocation and management of JNI global object handles
-  // whose lifetime is scoped by this JVMCIRuntime. The lifetime
+  // Allocation and management of handles to HotSpot heap objects
+  // whose lifetime is scoped by this JVMCIRuntime. The max lifetime
   // of these handles is the same as the JVMCI shared library JavaVM
   // associated with this JVMCIRuntime. These JNI handles are
-  // used when creating a IndirectHotSpotObjectConstantImpl in the
+  // used when creating an IndirectHotSpotObjectConstantImpl in the
   // shared library JavaVM.
-  jobject make_global(const Handle& obj);
-  void destroy_global(jobject handle);
-  bool is_global_handle(jobject handle);
+  jlong make_oop_handle(const Handle& obj);
+
+  // Releases all the non-null entries in _oop_handles whose referent is null.
+  // Returns the number of handles released by this call.
+  // The method also resets _last_found_oop_handle_index to -1
+  // and _null_oop_handles to 0.
+  int release_cleared_oop_handles();
 
   // Allocation and management of metadata handles.
   jmetadata allocate_handle(const methodHandle& handle);
   jmetadata allocate_handle(const constantPoolHandle& handle);
   void release_handle(jmetadata handle);
+
+  // Finds a JVMCI runtime for `thread`. A new JVMCI runtime is created if
+  // there are none currently available with JVMCI::max_threads_per_runtime()
+  // or fewer attached threads.
+  static JVMCIRuntime* for_thread(JavaThread* thread);
+
+  // Finds the JVMCI runtime owning `javavm` and attaches `thread` to it.
+  // Returns an error message if attaching fails.
+  static const char* attach_shared_library_thread(JavaThread* thread, JavaVM* javaVM);
+
+  // Reserves a slot in this runtime for `thread` to prevent it being
+  // shutdown before `thread` is attached. JVMCI_lock must be held
+  // and the caller must call `attach_thread` upon releasing it.
+  void pre_attach_thread(JavaThread* thread);
+
+  // Attaches `thread` to this runtime.
+  void attach_thread(JavaThread* thread);
+
+  // Detaches `thread` from this runtime.
+  // Returns whether DestroyJavaVM was called on the JavaVM associated
+  // with this runtime as a result of detaching.
+  // The `can_destroy_javavm` is false when in the scope of
+  // a down call from the JVMCI shared library JavaVM. Since the scope
+  // will return to the shared library JavaVM, the JavaVM must not be destroyed.
+  bool detach_thread(JavaThread* thread, const char* reason, bool can_destroy_javavm=true);
+
+  // If `thread` is the last thread attached to this runtime,
+  // move it to another runtime with an existing JavaVM and available capacity
+  // if possible, thus allowing this runtime to release its JavaVM.
+  void repack(JavaThread* thread);
 
   // Gets the HotSpotJVMCIRuntime instance for this runtime,
   // initializing it first if necessary.
@@ -240,12 +382,19 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
   void call_getCompiler(TRAPS);
 
   // Shuts down this runtime by calling HotSpotJVMCIRuntime.shutdown().
+  // If this is the last thread attached to this runtime, then
+  // `_HotSpotJVMCIRuntime_instance` is set to null and `_init_state`
+  // to uninitialized.
   void shutdown();
+
+  // Destroys the JVMCI shared library JavaVM attached to this runtime.
+  // Return true iff DestroyJavaVM was called on the JavaVM.
+  bool destroy_shared_library_javavm();
 
   void bootstrap_finished(TRAPS);
 
   // Look up a klass by name from a particular class loader (the accessor's).
-  // If require_local, result must be defined in that class loader, or NULL.
+  // If require_local, result must be defined in that class loader, or null.
   // If !require_local, a result from remote class loader may be reported,
   // if sufficient class loader constraints exist such that initiating
   // a class loading request from the given loader is bound to return
@@ -266,7 +415,7 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
                                      bool& is_accessible,
                                      Klass* loading_klass);
   static void   get_field_by_index(InstanceKlass* loading_klass, fieldDescriptor& fd,
-                                   int field_index);
+                                   int field_index, Bytecodes::Code bc);
   static Method*  get_method_by_index(const constantPoolHandle& cpool,
                                       int method_index, Bytecodes::Code bc,
                                       InstanceKlass* loading_klass);
@@ -279,7 +428,10 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
 
   // Helper routine for determining the validity of a compilation
   // with respect to concurrent class loading.
-  static JVMCI::CodeInstallResult validate_compile_task_dependencies(Dependencies* target, JVMCICompileState* task, char** failure_detail);
+  static JVMCI::CodeInstallResult validate_compile_task_dependencies(Dependencies* target,
+                                                                     JVMCICompileState* task,
+                                                                     char** failure_detail,
+                                                                     bool& failing_dep_is_call_site);
 
   // Compiles `target` with the JVMCI compiler.
   void compile_method(JVMCIEnv* JVMCIENV, JVMCICompiler* compiler, const methodHandle& target, int entry_bci);
@@ -289,38 +441,44 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
 
   // Register the result of a compilation.
   JVMCI::CodeInstallResult register_method(JVMCIEnv* JVMCIENV,
-                       const methodHandle&       target,
-                       nmethodLocker&            code_handle,
-                       int                       entry_bci,
-                       CodeOffsets*              offsets,
-                       int                       orig_pc_offset,
-                       CodeBuffer*               code_buffer,
-                       int                       frame_words,
-                       OopMapSet*                oop_map_set,
-                       ExceptionHandlerTable*    handler_table,
-                       ImplicitExceptionTable*   implicit_exception_table,
-                       AbstractCompiler*         compiler,
-                       DebugInformationRecorder* debug_info,
-                       Dependencies*             dependencies,
-                       int                       compile_id,
-                       bool                      has_unsafe_access,
-                       bool                      has_wide_vector,
-                       JVMCIObject               compiled_code,
-                       JVMCIObject               nmethod_mirror,
-                       FailedSpeculation**       failed_speculations,
-                       char*                     speculations,
-                       int                       speculations_len);
+                                           const methodHandle&       target,
+                                           nmethod*&                 nm,
+                                           int                       entry_bci,
+                                           CodeOffsets*              offsets,
+                                           int                       orig_pc_offset,
+                                           CodeBuffer*               code_buffer,
+                                           int                       frame_words,
+                                           OopMapSet*                oop_map_set,
+                                           ExceptionHandlerTable*    handler_table,
+                                           ImplicitExceptionTable*   implicit_exception_table,
+                                           AbstractCompiler*         compiler,
+                                           DebugInformationRecorder* debug_info,
+                                           Dependencies*             dependencies,
+                                           int                       compile_id,
+                                           bool                      has_monitors,
+                                           bool                      has_unsafe_access,
+                                           bool                      has_wide_vector,
+                                           JVMCIObject               compiled_code,
+                                           JVMCIObject               nmethod_mirror,
+                                           FailedSpeculation**       failed_speculations,
+                                           char*                     speculations,
+                                           int                       speculations_len,
+                                           int                       nmethod_entry_patch_offset);
+
+  // Detach `thread` from this runtime and destroy this runtime's JavaVM
+  // if using one JavaVM per JVMCI compilation .
+  void post_compile(JavaThread* thread);
 
   // Reports an unexpected exception and exits the VM with a fatal error.
   static void fatal_exception(JVMCIEnv* JVMCIENV, const char* message);
 
-  static void describe_pending_hotspot_exception(JavaThread* THREAD, bool clear);
+  static void describe_pending_hotspot_exception(JavaThread* THREAD);
 
 #define CHECK_EXIT THREAD); \
   if (HAS_PENDING_EXCEPTION) { \
     char buf[256]; \
     jio_snprintf(buf, 256, "Uncaught exception at %s:%d", __FILE__, __LINE__); \
-    JVMCIRuntime::fatal_exception(NULL, buf); \
+    JVMCIRuntime::fatal_exception(nullptr, buf); \
     return; \
   } \
   (void)(0
@@ -329,7 +487,7 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
   if (HAS_PENDING_EXCEPTION) { \
     char buf[256]; \
     jio_snprintf(buf, 256, "Uncaught exception at %s:%d", __FILE__, __LINE__); \
-    JVMCIRuntime::fatal_exception(NULL, buf); \
+    JVMCIRuntime::fatal_exception(nullptr, buf); \
     return v; \
   } \
   (void)(0
@@ -365,7 +523,7 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
   // When allocation fails, these stubs:
   // 1. Exercise -XX:+HeapDumpOnOutOfMemoryError and -XX:OnOutOfMemoryError handling and also
   //    post a JVMTI_EVENT_RESOURCE_EXHAUSTED event if the failure is an OutOfMemroyError
-  // 2. Return NULL with a pending exception.
+  // 2. Return null with a pending exception.
   // Compiled code must ensure these stubs are not called twice for the same allocation
   // site due to the non-repeatable side effects in the case of OOME.
   static void new_instance(JavaThread* current, Klass* klass) { new_instance_common(current, klass, false); }
@@ -374,7 +532,7 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
   static void dynamic_new_array(JavaThread* current, oopDesc* element_mirror, jint length) { dynamic_new_array_common(current, element_mirror, length, false); }
   static void dynamic_new_instance(JavaThread* current, oopDesc* type_mirror) { dynamic_new_instance_common(current, type_mirror, false); }
 
-  // When allocation fails, these stubs return NULL and have no pending exception. Compiled code
+  // When allocation fails, these stubs return null and have no pending exception. Compiled code
   // can use these stubs if a failed allocation will be retried (e.g., by deoptimizing and
   // re-executing in the interpreter).
   static void new_instance_or_null(JavaThread* thread, Klass* klass) { new_instance_common(thread, klass, true); }
@@ -414,7 +572,7 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
 
   // A helper to allow invocation of an arbitrary Java method.  For simplicity the method is
   // restricted to a static method that takes at most one argument.  For calling convention
-  // simplicty all types are passed by being converted into a jlong
+  // simplicity all types are passed by being converted into a jlong
   static jlong invoke_static_method_one_arg(JavaThread* current, Method* method, jlong argument);
 
   // Test only function

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ class BarrierSetAssembler;
 class BarrierSetC1;
 class BarrierSetC2;
 class BarrierSetNMethod;
+class BarrierSetStackChunk;
 class JavaThread;
 
 // This class provides the interface between a barrier implementation and
@@ -74,6 +75,7 @@ private:
   BarrierSetC1* _barrier_set_c1;
   BarrierSetC2* _barrier_set_c2;
   BarrierSetNMethod* _barrier_set_nmethod;
+  BarrierSetStackChunk* _barrier_set_stack_chunk;
 
 public:
   // Metafunction mapping a class derived from BarrierSet to the
@@ -98,27 +100,23 @@ protected:
              BarrierSetC1* barrier_set_c1,
              BarrierSetC2* barrier_set_c2,
              BarrierSetNMethod* barrier_set_nmethod,
-             const FakeRtti& fake_rtti) :
-    _fake_rtti(fake_rtti),
-    _barrier_set_assembler(barrier_set_assembler),
-    _barrier_set_c1(barrier_set_c1),
-    _barrier_set_c2(barrier_set_c2),
-    _barrier_set_nmethod(barrier_set_nmethod) {}
+             BarrierSetStackChunk* barrier_set_stack_chunk,
+             const FakeRtti& fake_rtti);
   ~BarrierSet() { }
 
   template <class BarrierSetAssemblerT>
   static BarrierSetAssembler* make_barrier_set_assembler() {
-    return NOT_ZERO(new BarrierSetAssemblerT()) ZERO_ONLY(NULL);
+    return NOT_ZERO(new BarrierSetAssemblerT()) ZERO_ONLY(nullptr);
   }
 
   template <class BarrierSetC1T>
   static BarrierSetC1* make_barrier_set_c1() {
-    return COMPILER1_PRESENT(new BarrierSetC1T()) NOT_COMPILER1(NULL);
+    return COMPILER1_PRESENT(new BarrierSetC1T()) NOT_COMPILER1(nullptr);
   }
 
   template <class BarrierSetC2T>
   static BarrierSetC2* make_barrier_set_c2() {
-    return COMPILER2_PRESENT(new BarrierSetC2T()) NOT_COMPILER2(NULL);
+    return COMPILER2_PRESENT(new BarrierSetC2T()) NOT_COMPILER2(nullptr);
   }
 
 public:
@@ -139,7 +137,7 @@ public:
   // caller. That locking ensures the operation is "atomic" with the list
   // modification wrto operations that hold the NJTList_lock and either also
   // hold the Threads_lock or are at a safepoint.
-  virtual void on_thread_attach(Thread* thread) {}
+  virtual void on_thread_attach(Thread* thread);
   virtual void on_thread_detach(Thread* thread) {}
 
   virtual void make_parsable(JavaThread* thread) {}
@@ -152,22 +150,27 @@ public:
   static void set_barrier_set(BarrierSet* barrier_set);
 
   BarrierSetAssembler* barrier_set_assembler() {
-    assert(_barrier_set_assembler != NULL, "should be set");
+    assert(_barrier_set_assembler != nullptr, "should be set");
     return _barrier_set_assembler;
   }
 
   BarrierSetC1* barrier_set_c1() {
-    assert(_barrier_set_c1 != NULL, "should be set");
+    assert(_barrier_set_c1 != nullptr, "should be set");
     return _barrier_set_c1;
   }
 
   BarrierSetC2* barrier_set_c2() {
-    assert(_barrier_set_c2 != NULL, "should be set");
+    assert(_barrier_set_c2 != nullptr, "should be set");
     return _barrier_set_c2;
   }
 
   BarrierSetNMethod* barrier_set_nmethod() {
     return _barrier_set_nmethod;
+  }
+
+  BarrierSetStackChunk* barrier_set_stack_chunk() {
+    assert(_barrier_set_stack_chunk != nullptr, "should be set");
+    return _barrier_set_stack_chunk;
   }
 
   // The AccessBarrier of a BarrierSet subclass is called by the Access API

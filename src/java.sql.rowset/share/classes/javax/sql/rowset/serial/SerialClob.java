@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -235,7 +235,7 @@ public class SerialClob implements Clob, Serializable, Cloneable {
             return this.clob.getAsciiStream();
         } else {
             throw new SerialException("Unsupported operation. SerialClob cannot " +
-                "return a the CLOB value as an ascii stream, unless instantiated " +
+                "return the CLOB value as an ascii stream, unless instantiated " +
                 "with a fully implemented Clob object.");
         }
     }

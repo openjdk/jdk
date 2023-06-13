@@ -54,7 +54,6 @@ public class ClhsdbWhere {
             expStrMap.put("where -a", List.of(
                     "Java Stack Trace for Service Thread",
                     "Java Stack Trace for Common-Cleaner",
-                    "Java Stack Trace for Sweeper thread",
                     "CompilerThread",
                     "Java Stack Trace for Finalizer",
                     "Java Stack Trace for Signal Dispatcher",

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,20 +29,11 @@
 #include "memory/allocation.inline.hpp"
 #include "misc_aix.hpp"
 #include "porting_aix.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/os.hpp"
-#include "runtime/thread.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
-
-// distinguish old xlc and xlclang++, where
-// <ibmdemangle.h> is suggested but not found in GA release (might come with a fix)
-#if defined(__clang__)
-#define DISABLE_DEMANGLE
-// #include <ibmdemangle.h>
-#else
-#include <demangle.h>
-#endif
-
+#include <cxxabi.h>
 #include <sys/debug.h>
 #include <pthread.h>
 #include <ucontext.h>
@@ -62,7 +53,7 @@ typedef unsigned long stackslot_t;
 typedef stackslot_t* stackptr_t;
 typedef unsigned int* codeptr_t;
 
-// Unfortunately, the interface of dladdr makes the implementator
+// Unfortunately, the interface of dladdr makes the implementer
 // responsible for maintaining memory for function name/library
 // name. I guess this is because most OS's keep those values as part
 // of the mapped executable image ready to use. On AIX, this doesn't
@@ -111,7 +102,7 @@ bool AixSymbols::get_function_name (
     char* p_name, size_t namelen,    // [out] optional: function name ("" if not available)
     int* p_displacement,             // [out] optional: displacement (-1 if not available)
     const struct tbtable** p_tb,     // [out] optional: ptr to traceback table to get further
-                                     //                 information (NULL if not available)
+                                     //                 information (null if not available)
     bool demangle                    // [in] whether to demangle the name
   ) {
   struct tbtable* tb = 0;
@@ -125,7 +116,7 @@ bool AixSymbols::get_function_name (
     *p_displacement = -1;
   }
   if (p_tb) {
-    *p_tb = NULL;
+    *p_tb = nullptr;
   }
 
   codeptr_t pc = (codeptr_t)pc0;
@@ -141,7 +132,7 @@ bool AixSymbols::get_function_name (
   // we read it (?).
   // As the pc cannot be trusted to be anything sensible lets make all reads via SafeFetch. Also
   // bail if this is not a text address right now.
-  if (!LoadedLibraries::find_for_text_address(pc, NULL)) {
+  if (!LoadedLibraries::find_for_text_address(pc, nullptr)) {
     trcVerbose("not a text address");
     return false;
   }
@@ -163,7 +154,7 @@ bool AixSymbols::get_function_name (
 
   // Find start of traceback table.
   // (starts after code, is marked by word-aligned (32bit) zeros)
-  while ((*pc2 != NULL) && (searchcount++ < MAX_FUNC_SEARCH_LEN)) {
+  while ((*pc2 != 0) && (searchcount++ < MAX_FUNC_SEARCH_LEN)) {
     CHECK_POINTER_READABLE(pc2)
     pc2++;
   }
@@ -244,21 +235,18 @@ bool AixSymbols::get_function_name (
       }
       p_name[i] = '\0';
 
-      // If it is a C++ name, try and demangle it using the Demangle interface (see demangle.h).
-#ifndef DISABLE_DEMANGLE
+      // If it is a C++ name, try and demangle it using the __cxa_demangle interface(see demangle.h).
       if (demangle) {
-        char* rest;
-        Name* const name = Demangle(p_name, rest);
-        if (name) {
-          const char* const demangled_name = name->Text();
-          if (demangled_name) {
-            strncpy(p_name, demangled_name, namelen-1);
-            p_name[namelen-1] = '\0';
-          }
-          delete name;
+        int status;
+        char *demangled_name = abi::__cxa_demangle(p_name, nullptr, nullptr, &status);
+        if ((demangled_name != nullptr) && (status == 0)) {
+          strncpy(p_name, demangled_name, namelen-1);
+          p_name[namelen-1] = '\0';
+        }
+        if (demangled_name != nullptr) {
+          ALLOW_C_FUNCTION(::free, ::free(demangled_name));
         }
       }
-#endif
     } else {
       strncpy(p_name, "<nameless function>", namelen-1);
       p_name[namelen-1] = '\0';
@@ -280,9 +268,27 @@ bool AixSymbols::get_module_name(address pc,
   if (p_name && namelen > 0) {
     p_name[0] = '\0';
     loaded_module_t lm;
-    if (LoadedLibraries::find_for_text_address(pc, &lm) != NULL) {
+    if (LoadedLibraries::find_for_text_address(pc, &lm)) {
       strncpy(p_name, lm.shortname, namelen);
       p_name[namelen - 1] = '\0';
+      return true;
+    }
+  }
+
+  return false;
+}
+
+bool AixSymbols::get_module_name_and_base(address pc,
+                         char* p_name, size_t namelen,
+                         address* p_base) {
+
+  if (p_base && p_name && namelen > 0) {
+    p_name[0] = '\0';
+    loaded_module_t lm;
+    if (LoadedLibraries::find_for_text_address(pc, &lm)) {
+      strncpy(p_name, lm.shortname, namelen);
+      p_name[namelen - 1] = '\0';
+      *p_base = (address) lm.text;
       return true;
     }
   }
@@ -310,10 +316,10 @@ int dladdr(void* addr, Dl_info* info) {
   const char* const ZEROSTRING = "";
 
   // Always return a string, even if a "" one. Linux dladdr manpage
-  // does not say anything about returning NULL
+  // does not say anything about returning null
   info->dli_fname = ZEROSTRING;
   info->dli_sname = ZEROSTRING;
-  info->dli_saddr = NULL;
+  info->dli_saddr = nullptr;
 
   address p = (address) addr;
   loaded_module_t lm;
@@ -324,7 +330,7 @@ int dladdr(void* addr, Dl_info* info) {
   trcVerbose("dladdr(%p)...", p);
 
   // Note: input address may be a function. I accept both a pointer to
-  // the entry of a function and a pointer to the function decriptor.
+  // the entry of a function and a pointer to the function descriptor.
   // (see ppc64 ABI)
   found = LoadedLibraries::find_for_text_address(p, &lm);
   if (found) {
@@ -368,7 +374,7 @@ int dladdr(void* addr, Dl_info* info) {
       int displacement = 0;
 
       if (AixSymbols::get_function_name(p, funcname, sizeof(funcname),
-                      &displacement, NULL, true)) {
+                      &displacement, nullptr, true)) {
         if (funcname[0] != '\0') {
           const char* const interned = dladdr_fixed_strings.intern(funcname);
           info->dli_sname = interned;
@@ -418,7 +424,7 @@ int dladdr(void* addr, Dl_info* info) {
 // Print the traceback table for one stack frame.
 static void print_tbtable (outputStream* st, const struct tbtable* p_tb) {
 
-  if (p_tb == NULL) {
+  if (p_tb == nullptr) {
     st->print("<null>");
     return;
   }
@@ -496,7 +502,7 @@ static void print_tbtable (outputStream* st, const struct tbtable* p_tb) {
 // on one line.
 static void print_info_for_pc (outputStream* st, codeptr_t pc, char* buf,
                                size_t buf_size, bool demangle) {
-  const struct tbtable* tb = NULL;
+  const struct tbtable* tb = nullptr;
   int displacement = -1;
 
   if (!os::is_readable_pointer(pc)) {
@@ -545,9 +551,9 @@ static void print_stackframe(outputStream* st, stackptr_t sp, char* buf,
   // retrieve lrsave. That is the only info I need to get the function/displacement
 
   codeptr_t lrsave = (codeptr_t) *(sp2);
-  st->print (PTR64_FORMAT " - " PTR64_FORMAT " ", sp2, lrsave);
+  st->print (PTR_FORMAT " - " PTR_FORMAT " ", p2i(sp2), p2i(lrsave));
 
-  if (lrsave != NULL) {
+  if (lrsave != nullptr) {
     print_info_for_pc(st, lrsave, buf, buf_size, demangle);
   }
 
@@ -575,10 +581,7 @@ static bool is_valid_codepointer(codeptr_t p) {
   if (((uintptr_t)p) & 0x3) {
     return false;
   }
-  if (LoadedLibraries::find_for_text_address(p, NULL) == NULL) {
-    return false;
-  }
-  return true;
+  return LoadedLibraries::find_for_text_address(p, nullptr);
 }
 
 // Function tries to guess if the given combination of stack pointer, stack base
@@ -608,7 +611,7 @@ static stackptr_t try_find_backchain (stackptr_t last_known_good_frame,
                                       stackptr_t stack_base, size_t stack_size)
 {
   if (!is_valid_stackpointer(last_known_good_frame, stack_base, stack_size)) {
-    return NULL;
+    return nullptr;
   }
 
   stackptr_t sp = last_known_good_frame;
@@ -621,7 +624,7 @@ static stackptr_t try_find_backchain (stackptr_t last_known_good_frame,
     sp ++;
   }
 
-  return NULL;
+  return nullptr;
 }
 
 static void decode_instructions_at_pc(const char* header,
@@ -677,7 +680,7 @@ void AixNativeCallstack::print_callstack_for_context(outputStream* st, const uco
   //      |            |
   //      |------------|   <-- cur_sp, current stack ptr
   //      |            |
-  //      |  unsused   |
+  //      |  unused    |
   //      |    stack   |
   //      |            |
   //      .            .
@@ -690,8 +693,8 @@ void AixNativeCallstack::print_callstack_for_context(outputStream* st, const uco
 
   // Retrieve current stack base, size from the current thread. If there is none,
   // retrieve it from the OS.
-  stackptr_t stack_base = NULL;
-  size_t stack_size = NULL;
+  stackptr_t stack_base = nullptr;
+  size_t stack_size = 0;
   {
     AixMisc::stackbounds_t stackbounds;
     if (!AixMisc::query_stack_bounds_for_current_thread(&stackbounds)) {
@@ -702,8 +705,8 @@ void AixNativeCallstack::print_callstack_for_context(outputStream* st, const uco
     stack_size = stackbounds.size;
   }
 
-  st->print_cr("------ current frame:");
-  st->print("iar:  " PTR64_FORMAT " ", p2i(cur_iar));
+  st->print_cr("Native frame:");
+  st->print("iar:  " PTR_FORMAT " ", p2i(cur_iar));
   print_info_for_pc(st, cur_iar, buf, buf_size, demangle);
   st->cr();
 
@@ -716,7 +719,7 @@ void AixNativeCallstack::print_callstack_for_context(outputStream* st, const uco
   // Print out lr too, which may be interesting if we did jump to some bogus location;
   // in those cases the new frame is not built up yet and the caller location is only
   // preserved via lr register.
-  st->print("lr:   " PTR64_FORMAT " ", p2i(cur_lr));
+  st->print("lr:   " PTR_FORMAT " ", p2i(cur_lr));
   print_info_for_pc(st, cur_lr, buf, buf_size, demangle);
   st->cr();
 
@@ -727,7 +730,7 @@ void AixNativeCallstack::print_callstack_for_context(outputStream* st, const uco
   }
 
   // Check and print sp.
-  st->print("sp:   " PTR64_FORMAT " ", p2i(cur_sp));
+  st->print("sp:   " PTR_FORMAT " ", p2i(cur_sp));
   if (!is_valid_stackpointer(cur_sp, stack_base, stack_size)) {
     st->print("(invalid) ");
     goto cleanup;
@@ -737,8 +740,8 @@ void AixNativeCallstack::print_callstack_for_context(outputStream* st, const uco
   st->cr();
 
   // Check and print rtoc.
-  st->print("rtoc: "  PTR64_FORMAT " ", p2i(cur_rtoc));
-  if (cur_rtoc == NULL || cur_rtoc == (codeptr_t)-1 ||
+  st->print("rtoc: "  PTR_FORMAT " ", p2i(cur_rtoc));
+  if (cur_rtoc == nullptr || cur_rtoc == (codeptr_t)-1 ||
       !os::is_readable_pointer(cur_rtoc)) {
     st->print("(invalid)");
   } else if (((uintptr_t)cur_rtoc) & 0x7) {
@@ -761,14 +764,14 @@ void AixNativeCallstack::print_callstack_for_context(outputStream* st, const uco
 
     // Check sp.
     bool retry = false;
-    if (sp == NULL) {
-      // The backchain pointer was NULL. This normally means the end of the chain. But the
+    if (sp == nullptr) {
+      // The backchain pointer was null. This normally means the end of the chain. But the
       // stack might be corrupted, and it may be worth looking for the stack chain.
       if (is_valid_stackpointer(sp_last, stack_base, stack_size) && (stack_base - 0x10) > sp_last) {
         // If we are not within <guess> 0x10 stackslots of the stack base, we assume that this
         // is indeed not the end of the chain but that the stack was corrupted. So lets try to
         // find the end of the chain.
-        st->print_cr("*** back chain pointer is NULL - end of stack or broken backchain ? ***");
+        st->print_cr("*** back chain pointer is null - end of stack or broken backchain ? ***");
         retry = true;
       } else {
         st->print_cr("*** end of backchain ***");
@@ -788,7 +791,7 @@ void AixNativeCallstack::print_callstack_for_context(outputStream* st, const uco
       st->print_cr("trying to recover and find backchain...");
       sp = try_find_backchain(sp_last, stack_base, stack_size);
       if (sp) {
-        st->print_cr("found something which looks like a backchain at " PTR64_FORMAT ", after 0x%x bytes... ",
+        st->print_cr("found something which looks like a backchain at " PTR_FORMAT ", after 0x%x bytes... ",
             p2i(sp), PTRDIFF_BYTES(sp, sp_last));
       } else {
         st->print_cr("did not find a backchain, giving up.");
@@ -853,7 +856,7 @@ bool AixMisc::query_stack_bounds_for_current_thread(stackbounds_t* out) {
   // running on a user provided stack (when handing down a stack to pthread
   // create, see pthread_attr_setstackaddr).
   // Not sure what to do then.
-  if (pinfo.__pi_stackend == NULL || pinfo.__pi_stackaddr == NULL) {
+  if (pinfo.__pi_stackend == nullptr || pinfo.__pi_stackaddr == nullptr) {
     fprintf(stderr, "pthread_getthrds_np - invalid values\n");
     fflush(stdout);
     return false;
@@ -888,7 +891,3 @@ bool AixMisc::query_stack_bounds_for_current_thread(stackbounds_t* out) {
   return true;
 
 }
-
-
-
-

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ class JvmtiBreakpoints;
 //
 // GrowableCache is a permanent CHeap growable array of <GrowableElement *>
 //
-// In addition, the GrowableCache maintains a NULL terminated cache array of type address
+// In addition, the GrowableCache maintains a null terminated cache array of type address
 // that's created from the element array using the function:
 //     address GrowableElement::getCacheValue().
 //
@@ -162,7 +162,7 @@ private:
   OopHandle             _class_holder;  // keeps _method memory from being deallocated
 
 public:
-  JvmtiBreakpoint() : _method(NULL), _bci(0) {}
+  JvmtiBreakpoint() : _method(nullptr), _bci(0) {}
   JvmtiBreakpoint(Method* m_method, jlocation location);
   virtual ~JvmtiBreakpoint();
   bool equals(JvmtiBreakpoint& bp);
@@ -248,7 +248,7 @@ private:
   // Current breakpoints, lazily initialized by get_jvmti_breakpoints();
   static JvmtiBreakpoints *_jvmti_breakpoints;
 
-  // NULL terminated cache of byte-code pointers corresponding to current breakpoints.
+  // null terminated cache of byte-code pointers corresponding to current breakpoints.
   // Updated only at safepoints (with listener_fun) when the cache is moved.
   // It exists only to make is_breakpoint fast.
   static address          *_breakpoint_list;
@@ -289,7 +289,7 @@ public:
     _breakpoints = &current_bps;
     _bp = bp;
     _operation = operation;
-    assert(bp != NULL, "bp != NULL");
+    assert(bp != nullptr, "bp != null");
   }
 
   VMOp_Type type() const { return VMOp_ChangeBreakpoints; }
@@ -310,9 +310,8 @@ public:
 // to prevent compiledVFrames from trying to add deferred updates
 // to the thread simultaneously.
 //
-class VM_GetOrSetLocal : public VM_Operation {
+class VM_BaseGetOrSetLocal : public VM_Operation {
  protected:
-  JavaThread* _thread;
   JavaThread* _calling_thread;
   jint        _depth;
   jint        _index;
@@ -320,8 +319,9 @@ class VM_GetOrSetLocal : public VM_Operation {
   jvalue      _value;
   javaVFrame* _jvf;
   bool        _set;
+  bool        _self;
 
-  EscapeBarrier _eb;
+  static const jvalue _DEFAULT_VALUE;
 
   // It is possible to get the receiver out of a non-static native wrapper
   // frame.  Use VM_GetReceiver to do this.
@@ -329,33 +329,49 @@ class VM_GetOrSetLocal : public VM_Operation {
 
   jvmtiError  _result;
 
-  vframe* get_vframe();
-  javaVFrame* get_java_vframe();
+  virtual javaVFrame* get_java_vframe() = 0;
   bool check_slot_type_lvt(javaVFrame* vf);
   bool check_slot_type_no_lvt(javaVFrame* vf);
 
 public:
-  // Constructor for non-object getter
-  VM_GetOrSetLocal(JavaThread* thread, jint depth, jint index, BasicType type);
+  VM_BaseGetOrSetLocal(JavaThread* calling_thread, jint depth, jint index,
+                       BasicType type, jvalue value, bool set, bool self);
 
-  // Constructor for object or non-object setter
-  VM_GetOrSetLocal(JavaThread* thread, jint depth, jint index, BasicType type, jvalue value);
-
-  // Constructor for object getter
-  VM_GetOrSetLocal(JavaThread* thread, JavaThread* calling_thread, jint depth,
-                   int index);
-
-  VMOp_Type type() const { return VMOp_GetOrSetLocal; }
   jvalue value()         { return _value; }
   jvmtiError result()    { return _result; }
 
-  bool doit_prologue();
   void doit();
   bool allow_nested_vm_operations() const;
-  const char* name() const                       { return "get/set locals"; }
+  virtual const char* name() const = 0;
 
   // Check that the klass is assignable to a type with the given signature.
   static bool is_assignable(const char* ty_sign, Klass* klass, Thread* thread);
+};
+
+
+class VM_GetOrSetLocal : public VM_BaseGetOrSetLocal {
+ protected:
+  JavaThread* _thread;
+  EscapeBarrier _eb;
+
+  vframe* get_vframe();
+  javaVFrame* get_java_vframe();
+
+public:
+  // Constructor for non-object getter
+  VM_GetOrSetLocal(JavaThread* thread, jint depth, jint index, BasicType type, bool self);
+
+  // Constructor for object or non-object setter
+  VM_GetOrSetLocal(JavaThread* thread, jint depth, jint index, BasicType type, jvalue value, bool self);
+
+  // Constructor for object getter
+  VM_GetOrSetLocal(JavaThread* thread, JavaThread* calling_thread, jint depth, int index, bool self);
+
+  VMOp_Type type() const { return VMOp_GetOrSetLocal; }
+
+  bool doit_prologue();
+
+  const char* name() const                       { return "get/set locals"; }
 };
 
 class VM_GetReceiver : public VM_GetOrSetLocal {
@@ -363,8 +379,42 @@ class VM_GetReceiver : public VM_GetOrSetLocal {
   virtual bool getting_receiver() const { return true; }
 
  public:
-  VM_GetReceiver(JavaThread* thread, JavaThread* calling_thread, jint depth);
+  VM_GetReceiver(JavaThread* thread, JavaThread* calling_thread, jint depth, bool self);
   const char* name() const                       { return "get receiver"; }
+};
+
+// VM operation to get or set virtual thread local.
+class VM_VirtualThreadGetOrSetLocal : public VM_BaseGetOrSetLocal {
+ protected:
+  JvmtiEnv *_env;
+  Handle _vthread_h;
+
+  javaVFrame* get_java_vframe();
+
+public:
+  // Constructor for non-object getter.
+  VM_VirtualThreadGetOrSetLocal(JvmtiEnv* env, Handle vthread_h, jint depth, jint index, BasicType type, bool self);
+
+  // Constructor for object or non-object setter.
+  VM_VirtualThreadGetOrSetLocal(JvmtiEnv* env, Handle vthread_h, jint depth,
+                                jint index, BasicType type, jvalue value, bool self);
+
+  // Constructor for object getter.
+  VM_VirtualThreadGetOrSetLocal(JvmtiEnv* env, Handle vthread_h, JavaThread* calling_thread,
+                                jint depth, int index, bool self);
+
+  VMOp_Type type() const { return VMOp_VirtualThreadGetOrSetLocal; }
+
+  const char* name() const                       { return "virtual thread get/set locals"; }
+};
+
+class VM_VirtualThreadGetReceiver : public VM_VirtualThreadGetOrSetLocal {
+ protected:
+  virtual bool getting_receiver() const { return true; }
+
+ public:
+  VM_VirtualThreadGetReceiver(JvmtiEnv* env, Handle vthread_h, JavaThread* calling_thread, jint depth, bool self);
+  const char* name() const                       { return "virtual thread get receiver"; }
 };
 
 
@@ -450,7 +500,7 @@ class JvmtiDeferredEvent {
   void post() NOT_JVMTI_RETURN;
   void post_compiled_method_load_event(JvmtiEnv* env) NOT_JVMTI_RETURN;
   void run_nmethod_entry_barriers() NOT_JVMTI_RETURN;
-  // Sweeper support to keep nmethods from being zombied while in the queue.
+  // GC support to keep nmethods from unloading while in the queue.
   void nmethods_do(CodeBlobClosure* cf) NOT_JVMTI_RETURN;
   // GC support to keep nmethod from being unloaded while in the queue.
   void oops_do(OopClosure* f, CodeBlobClosure* cf) NOT_JVMTI_RETURN;
@@ -471,7 +521,7 @@ class JvmtiDeferredEventQueue : public CHeapObj<mtInternal> {
 
    public:
     QueueNode(const JvmtiDeferredEvent& event)
-      : _event(event), _next(NULL) {}
+      : _event(event), _next(nullptr) {}
 
     JvmtiDeferredEvent& event() { return _event; }
     QueueNode* next() const { return _next; }
@@ -483,7 +533,7 @@ class JvmtiDeferredEventQueue : public CHeapObj<mtInternal> {
   QueueNode* _queue_tail;
 
  public:
-  JvmtiDeferredEventQueue() : _queue_head(NULL), _queue_tail(NULL) {}
+  JvmtiDeferredEventQueue() : _queue_head(nullptr), _queue_tail(nullptr) {}
 
   bool has_events() NOT_JVMTI_RETURN_(false);
   JvmtiDeferredEvent dequeue() NOT_JVMTI_RETURN_(JvmtiDeferredEvent());
@@ -493,13 +543,13 @@ class JvmtiDeferredEventQueue : public CHeapObj<mtInternal> {
   void enqueue(JvmtiDeferredEvent event) NOT_JVMTI_RETURN;
   void run_nmethod_entry_barriers();
 
-  // Sweeper support to keep nmethods from being zombied while in the queue.
+  // GC support to keep nmethods from unloading while in the queue.
   void nmethods_do(CodeBlobClosure* cf) NOT_JVMTI_RETURN;
   // GC support to keep nmethod from being unloaded while in the queue.
   void oops_do(OopClosure* f, CodeBlobClosure* cf) NOT_JVMTI_RETURN;
 };
 
-// Utility macro that checks for NULL pointers:
-#define NULL_CHECK(X, Y) if ((X) == NULL) { return (Y); }
+// Utility macro that checks for null pointers:
+#define NULL_CHECK(X, Y) if ((X) == nullptr) { return (Y); }
 
 #endif // SHARE_PRIMS_JVMTIIMPL_HPP

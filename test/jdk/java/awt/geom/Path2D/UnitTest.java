@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4172661
+ * @bug 4172661 8176501
  * @summary Tests all public methods of Path2D classes on all 3 variants
  *          Path2D.Float, Path2D.Double, and GeneralPath.
  *          REMIND: Note that the hit testing tests will fail
@@ -49,6 +49,7 @@ import java.awt.geom.Point2D;
 import java.awt.geom.QuadCurve2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.geom.RoundRectangle2D;
+import java.util.Random;
 import java.util.NoSuchElementException;
 
 public class UnitTest {
@@ -89,7 +90,10 @@ public class UnitTest {
         return at;
     }
 
-    public static void init() {
+    Random random;
+
+    public UnitTest(long randomSeed) {
+        this.random = new Random(randomSeed);
         TestShapes = new Shape[] {
             EmptyShapeNonZero,
             EmptyShapeEvenOdd,
@@ -132,6 +136,16 @@ public class UnitTest {
             makeGeneralPath(WIND_EVEN_ODD, 1.0),
             makeGeneralPath(WIND_NON_ZERO, -1.0),
             makeGeneralPath(WIND_EVEN_ODD, -1.0),
+            makeJDK8176501(),
+
+            // this shape has a special property: some coefficients to the t^3 term
+            // are *nearly* zero. And analytically they should be zero, but machine
+            // error prevented it. In these cases cubic polynomials should degenerate
+            // into quadratic polynomials, but because the coefficient is not exactly
+            // zero that may not always be handled correctly:
+            AffineTransform.getRotateInstance(Math.PI / 4).createTransformedShape(
+                    new Ellipse2D.Float(0, 0, 100, 100))
+
         };
 
         int types[] = new int[100];
@@ -146,7 +160,7 @@ public class UnitTest {
         while (i < types.length) {
             int t;
             do {
-                t = (int) (Math.random() * 5);
+                t = (int) (random.nextDouble() * 5);
             } while (t == prevt &&
                      (t == PathIterator.SEG_MOVETO ||
                       t == PathIterator.SEG_CLOSE));
@@ -180,7 +194,7 @@ public class UnitTest {
                                             types.length, numcoords);
     }
 
-    public static GeneralPath makeGeneralPath(int windingrule, double sign) {
+    public GeneralPath makeGeneralPath(int windingrule, double sign) {
         GeneralPath gp = new GeneralPath(windingrule);
         gp.moveTo((float) (sign * rpc()), (float) (sign * rpc()));
         gp.lineTo((float) (sign * rpc()), (float) (sign * rpc()));
@@ -193,6 +207,20 @@ public class UnitTest {
         return gp;
     }
 
+    /**
+     * JDK-8176501 focused on a shape whose bounds included a lot of dead space.
+     * This recreates that shape, and the unit test testGetBounds2D checks the
+     * accuracy of {@link Shape#getBounds2D()}
+     */
+    public static Path2D makeJDK8176501() {
+        Path2D.Double path = new Path2D.Double();
+        path.moveTo(40, 140);
+        path.curveTo(40, 60, 160, 60, 160, 140);
+        path.curveTo(160, 220, 40, 220, 40, 140);
+        path.closePath();
+        return path;
+    }
+
     // Due to odd issues with the sizes of errors when the values
     // being manipulated are near zero, we try to avoid values
     // near zero by ensuring that both the rpc (positive coords)
@@ -203,29 +231,29 @@ public class UnitTest {
 
     // Random positive coordinate (10 -> 110)
     // rpc + rd gives a total range of (30 -> 170)
-    public static double rpc() {
-        return (Math.random() * 100.0) + 10.0;
+    public double rpc() {
+        return (random.nextDouble() * 100.0) + 10.0;
     }
 
     // Random negative coordinate (-200 -> -100)
     // rnc + rd gives a total range of (-180 -> -40)
-    public static double rnc() {
-        return (Math.random() * 100.0) - 200.0;
+    public double rnc() {
+        return (random.nextDouble() * 100.0) - 200.0;
     }
 
     // Random dimension (20 -> 60)
-    public static double rd() {
-        return (Math.random() * 40.0) + 20.0;
+    public double rd() {
+        return (random.nextDouble() * 40.0) + 20.0;
     }
 
     // Random arc width/height (0.1 -> 5.1)
-    public static double ra() {
-        return (Math.random() * 5.0) + 0.1;
+    public double ra() {
+        return (random.nextDouble() * 5.0) + 0.1;
     }
 
     // Random arc angle (theta) (PI/4 => 5PI/4)
-    public static double rt() {
-        return (Math.random() * Math.PI) + Math.PI/4;
+    public double rt() {
+        return (random.nextDouble() * Math.PI) + Math.PI/4;
     }
 
     public static int fltulpdiff(double v1, double v2) {
@@ -538,33 +566,11 @@ public class UnitTest {
             return testshape;
         }
 
-        private Rectangle2D cachedBounds;
-        public Rectangle2D getCachedBounds2D() {
-            if (cachedBounds == null) {
-                double xmin, ymin, xmax, ymax;
-                int ci = 0;
-                xmin = xmax = theCoords[ci++];
-                ymin = ymax = theCoords[ci++];
-                while (ci < numCoords) {
-                    double c = theCoords[ci++];
-                    if (xmin > c) xmin = c;
-                    if (xmax < c) xmax = c;
-                    c = theCoords[ci++];
-                    if (ymin > c) ymin = c;
-                    if (ymax < c) ymax = c;
-                }
-                cachedBounds = new Rectangle2D.Double(xmin, ymin,
-                                                      xmax - xmin,
-                                                      ymax - ymin);
-            }
-            return cachedBounds;
-        }
-
         public Rectangle getBounds() {
-            return getCachedBounds2D().getBounds();
+            return getBounds2D().getBounds();
         }
         public Rectangle2D getBounds2D() {
-            return getCachedBounds2D().getBounds2D();
+            return getTestShape().getBounds2D();
         }
         public boolean contains(double x, double y) {
             return getTestShape().contains(x, y);
@@ -997,14 +1003,14 @@ public class UnitTest {
         }
     }
 
-    public static void checkHits(Shape stest, Shape sref) {
+    public void checkHits(Shape stest, Shape sref) {
         for (int i = 0; i < 10; i++) {
-            double px = Math.random() * 500 - 250;
-            double py = Math.random() * 500 - 250;
+            double px = random.nextDouble() * 500 - 250;
+            double py = random.nextDouble() * 500 - 250;
             Point2D pnt = new Point2D.Double(px, py);
 
-            double rw = Math.random()*10+0.4;
-            double rh = Math.random()*10+0.4;
+            double rw = random.nextDouble()*10+0.4;
+            double rh = random.nextDouble()*10+0.4;
             double rx = px - rw/2;
             double ry = py - rh/2;
             Rectangle2D rect = new Rectangle2D.Double(rx, ry, rw, rh);
@@ -1166,7 +1172,7 @@ public class UnitTest {
         }
     }
 
-    public static void test(Creator c) {
+    public void test(Creator c) {
         testConstructors(c);
         testPathConstruction(c);
         testAppend(c);
@@ -1297,6 +1303,7 @@ public class UnitTest {
             if (verbose) System.out.println("bounds testing "+sref);
             Shape stest = c.makePath(sref);
             checkBounds(c.makePath(sref), sref);
+            testGetBounds2D(stest);
         }
         testBounds(c, ShortSampleNonZero);
         testBounds(c, ShortSampleEvenOdd);
@@ -1312,7 +1319,94 @@ public class UnitTest {
         checkBounds(ref.makeDoublePath(c), ref);
     }
 
-    public static void testHits(Creator c) {
+    /**
+     * Make sure the {@link Shape#getBounds2D()} returns a Rectangle2D that tightly fits the
+     * shape data. It shouldn't contain lots of dead space (see JDK 8176501), and it shouldn't
+     * leave out any shape path. This test relies on the accuracy of
+     * {@link Shape#intersects(double, double, double, double)}
+     */
+    public static void testGetBounds2D(Shape shape) {
+        // first: make sure the shape is actually close to the perimeter of shape.getBounds2D().
+        // this is the crux of JDK 8176501:
+
+        Rectangle2D r = shape.getBounds2D();
+
+        if (r.getWidth() == 0 || r.getHeight() == 0) {
+            // this can happen for completely empty paths, which are part of our
+            // edge test cases in this class.
+            return;
+        }
+
+        if (verbose) System.out.println("testGetBounds2D "+shape+", "+r);
+
+        double xminInterior = r.getMinX() + .000001;
+        double yminInterior = r.getMinY() + .000001;
+        double xmaxInterior = r.getMaxX() - .000001;
+        double ymaxInterior = r.getMaxY() - .000001;
+
+        Rectangle2D topStrip = new Rectangle2D.Double(r.getMinX(), r.getMinY(), r.getWidth(), yminInterior - r.getMinY());
+        Rectangle2D leftStrip = new Rectangle2D.Double(r.getMinX(), r.getMinY(), xminInterior - r.getMinX(), r.getHeight());
+        Rectangle2D bottomStrip = new Rectangle2D.Double(r.getMinX(), ymaxInterior, r.getWidth(), r.getMaxY() - ymaxInterior);
+        Rectangle2D rightStrip = new Rectangle2D.Double(xmaxInterior, r.getMinY(), r.getMaxX() - xmaxInterior, r.getHeight());
+        if (!shape.intersects(topStrip)) {
+            if (verbose)
+                System.out.println("topStrip = "+topStrip);
+            throw new RuntimeException("the shape must intersect the top strip of its bounds");
+        }
+        if (!shape.intersects(leftStrip)) {
+            if (verbose)
+                System.out.println("leftStrip = " + leftStrip);
+            throw new RuntimeException("the shape must intersect the left strip of its bounds");
+        }
+        if (!shape.intersects(bottomStrip)) {
+            if (verbose)
+                System.out.println("bottomStrip = " + bottomStrip);
+            throw new RuntimeException("the shape must intersect the bottom strip of its bounds");
+        }
+        if (!shape.intersects(rightStrip)) {
+            if (verbose)
+                System.out.println("rightStrip = " + rightStrip);
+            throw new RuntimeException("the shape must intersect the right strip of bounds");
+        }
+
+        // Similarly: make sure our shape doesn't exist OUTSIDE of r, either. To my knowledge this has never
+        // been a problem, but if it did happen this would be an even more serious breach of contract than
+        // the former case.
+
+        double xminExterior = r.getMinX() - .000001;
+        double yminExterior = r.getMinY() - .000001;
+        double xmaxExterior = r.getMaxX() + .000001;
+        double ymaxExterior = r.getMaxY() + .000001;
+
+        // k is simply meant to mean "a large number, functionally similar to infinity for this test"
+        double k = 10000.0;
+        leftStrip = new Rectangle2D.Double(xminExterior - k, -k, k, 3 * k);
+        rightStrip = new Rectangle2D.Double(xmaxExterior, -k, k, 3 * k);
+        topStrip = new Rectangle2D.Double(-k, yminExterior - k, 3 * k, k);
+        bottomStrip = new Rectangle2D.Double(-k, ymaxExterior, 3 * k, k);
+        if (shape.intersects(leftStrip)) {
+            if (verbose)
+                System.out.println("leftStrip = " + leftStrip);
+            throw new RuntimeException("the shape must not intersect anything to the left of its bounds");
+        }
+        if (shape.intersects(rightStrip)) {
+            if (verbose)
+                System.out.println("rightStrip = " + rightStrip);
+            throw new RuntimeException("the shape must not intersect anything to the right of its bounds");
+        }
+        if (shape.intersects(topStrip)) {
+            if (verbose)
+                System.out.println("topStrip = " + topStrip);
+            throw new RuntimeException("the shape must not intersect anything above its bounds");
+        }
+        if (shape.intersects(bottomStrip)) {
+            if (verbose)
+                System.out.println("bottomStrip = " + bottomStrip);
+            throw new RuntimeException("the shape must not intersect anything below its bounds");
+        }
+    }
+
+    public void testHits(Creator c) {
         for (int i = 0; i < TestShapes.length; i++) {
             Shape sref = TestShapes[i];
             if (verbose) System.out.println("hit testing "+sref);
@@ -1326,7 +1420,7 @@ public class UnitTest {
         //testHits(c, LongSampleEvenOdd);
     }
 
-    public static void testHits(Creator c, SampleShape ref) {
+    public void testHits(Creator c, SampleShape ref) {
         if (verbose) System.out.println("hit testing "+ref);
         if (c.supportsFloatCompose()) {
             checkHits(ref.makeFloatPath(c), ref);
@@ -1335,16 +1429,39 @@ public class UnitTest {
     }
 
     public static void main(String argv[]) {
-        int limit = (argv.length > 0) ? 10000 : 1;
+        // as specific failures come up we can add them to this array to make sure they're frequently tested:
+        long[] previousBugSeeds = new long[] {
+
+            // these are all failures related to JDK-8176501
+            4603421469924484958L,
+            4596019360892069260L,
+            4604586530476373958L,
+            4603766396818608126L
+
+        };
+
         verbose = (argv.length > 1);
-        for (int i = 0; i < limit; i++) {
-            if (limit > 1) {
-                System.out.println("loop #"+(i+1));
-            }
-            init();
-            test(new GPCreator());
-            test(new FltCreator());
-            test(new DblCreator());
+
+        for (long seed : previousBugSeeds) {
+            test("", seed);
         }
+
+        int limit = (argv.length > 0) ? 10000 : 1;
+        for (int i = 0; i < limit; i++) {
+            long seed = Double.doubleToLongBits(Math.random());
+            test("loop #" + (i + 1), seed);
+        }
+    }
+
+    private static void test(String logPrefix, long seed) {
+        String msg = "seed = " + seed;
+        if (!logPrefix.isEmpty())
+            msg = logPrefix + ", " + msg;
+        System.out.println(msg);
+
+        UnitTest t = new UnitTest(seed);
+        t.test(new GPCreator());
+        t.test(new FltCreator());
+        t.test(new DblCreator());
     }
 }

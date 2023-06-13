@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, NTT DATA.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -26,14 +26,9 @@
 /*
  * @test
  * @bug 8257736
- * @modules java.net.http
- *          java.base/sun.net.www.http
- *          java.net.http/jdk.internal.net.http.common
- *          java.net.http/jdk.internal.net.http.frame
- *          java.net.http/jdk.internal.net.http.hpack
- * @library http2/server
- * @build Http2TestServer Http2TestExchange
- * @compile HttpServerAdapters.java
+ * @library /test/jdk/java/net/httpclient/lib
+ * @build jdk.httpclient.test.lib.common.HttpServerAdapters
+ *        jdk.httpclient.test.lib.http2.Http2TestServer
  * @run testng/othervm StreamCloseTest
  */
 
@@ -50,6 +45,8 @@ import java.net.http.HttpResponse.BodyHandlers;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
+import jdk.httpclient.test.lib.common.HttpServerAdapters;
+import jdk.httpclient.test.lib.http2.Http2TestServer;
 
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
@@ -91,8 +88,7 @@ public class StreamCloseTest {
 
     @BeforeTest
     public void setup() throws Exception {
-        InetSocketAddress sa = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
-        httpTestServer = HttpServerAdapters.HttpTestServer.of(HttpServer.create(sa, 0));
+        httpTestServer = HttpServerAdapters.HttpTestServer.create(Version.HTTP_1_1);
         httpTestServer.addHandler(new HttpServerAdapters.HttpTestEchoHandler(), "/");
         URI uri = URI.create("http://" + httpTestServer.serverAuthority() + "/");
         httpTestServer.start();

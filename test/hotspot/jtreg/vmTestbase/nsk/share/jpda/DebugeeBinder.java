@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@ package nsk.share.jpda;
 import nsk.share.*;
 
 import java.io.*;
+import java.lang.ref.Cleaner;
 import java.net.*;
 import java.util.*;
 
@@ -109,7 +110,6 @@ public class DebugeeBinder extends Log.Logger implements Finalizable {
     private ServerSocket pipeServerSocket = null;
 
     // -------------------------------------------------- //
-
     /**
      * Incarnate new Binder obeying the given
      * <code>argumentHandler</code>; and assign the given
@@ -118,8 +118,8 @@ public class DebugeeBinder extends Log.Logger implements Finalizable {
     public DebugeeBinder (DebugeeArgumentHandler argumentHandler, Log log) {
         super(log, LOG_PREFIX);
         this.argumentHandler = argumentHandler;
-        Finalizer finalizer = new Finalizer(this);
-        finalizer.activate();
+
+        registerCleanup();
     }
 
     /**
@@ -340,7 +340,8 @@ public class DebugeeBinder extends Log.Logger implements Finalizable {
         String jdwpArgs = "-Xrunjdwp:"
                         + "server=" + server
                         + ",transport=" + argumentHandler.getTransportName()
-                        + ",address=" + transportAddress;
+                        + ",address=" + transportAddress
+                        + ",includevirtualthreads=y";
 
         if (! argumentHandler.isDefaultJVMDIStrictMode()) {
             if (argumentHandler.isJVMDIStrictMode())
@@ -350,6 +351,11 @@ public class DebugeeBinder extends Log.Logger implements Finalizable {
         }
 
         args.add(jdwpArgs);
+
+        if(System.getProperty("main.wrapper") != null) {
+            args.add(MainWrapper.class.getName());
+            args.add(System.getProperty("main.wrapper"));
+        }
 
         if (classToExecute != null) {
             StringTokenizer st = new StringTokenizer(classToExecute);
@@ -545,20 +551,9 @@ public class DebugeeBinder extends Log.Logger implements Finalizable {
     /**
      * Finalize binder by invoking <code>close()</code>.
      *
-     * @throws Throwable if any throwable exception is thrown during finalization
      */
-    protected void finalize() throws Throwable {
+    public void cleanup() {
         close();
-        super.finalize();
-    }
-
-    /**
-     * Finalize binder at exit by invoking <code>finalize()</code>.
-     *
-     * @throws Throwable if any throwable exception is thrown during finalization
-     */
-    public void finalizeAtExit() throws Throwable {
-        finalize();
     }
 
     /**

@@ -24,10 +24,13 @@
 package org.openjdk.bench.java.nio.channels;
 
 import org.openjdk.jmh.annotations.Benchmark;
+import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Level;
+import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.annotations.Warmup;
 
 import java.io.*;
 import java.net.*;
@@ -39,6 +42,9 @@ import java.nio.channels.*;
  * epoll(7)-based implementation on Linux.
  */
 @State(Scope.Thread)
+@Warmup(iterations = 5, time = 1)
+@Measurement(iterations = 5, time = 1)
+@Fork(value = 3)
 public class SelectorWakeup {
     private Selector sel;
 

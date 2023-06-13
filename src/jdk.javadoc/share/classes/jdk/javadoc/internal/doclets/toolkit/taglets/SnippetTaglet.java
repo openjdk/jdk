@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,6 @@ import javax.lang.model.element.PackageElement;
 import javax.tools.Diagnostic;
 import javax.tools.DocumentationTool.Location;
 import javax.tools.FileObject;
-import javax.tools.JavaFileManager;
 
 import com.sun.source.doctree.AttributeTree;
 import com.sun.source.doctree.DocTree;
@@ -56,11 +55,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
 /**
  * A taglet that represents the {@code @snippet} tag.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
 public class SnippetTaglet extends BaseTaglet {
 
@@ -120,7 +114,8 @@ public class SnippetTaglet extends BaseTaglet {
             return generateContent(holder, tag, writer);
         } catch (BadSnippetException e) {
             error(writer, holder, e.tag(), e.key(), e.args());
-            return badSnippet(writer);
+            String details = writer.configuration().getDocResources().getText(e.key(), e.args());
+            return badSnippet(writer, Optional.of(details));
         }
     }
 
@@ -219,14 +214,14 @@ public class SnippetTaglet extends BaseTaglet {
             // we didn't create JavaFileManager, so we won't close it; even if an error occurs
             var fileManager = writer.configuration().getFileManager();
 
-            // first, look in local snippet-files subdirectory
-            Utils utils = writer.configuration().utils;
-            PackageElement pkg = getPackageElement(holder, utils);
-            JavaFileManager.Location l = utils.getLocationForPackage(pkg);
-            String relativeName = "snippet-files/" + v;
-            String packageName = packageName(pkg, utils);
             try {
-                fileObject = fileManager.getFileForInput(l, packageName, relativeName);
+                // first, look in local snippet-files subdirectory
+                var utils = writer.configuration().utils;
+                var pkg = getPackageElement(holder, utils);
+                var pkgLocation = utils.getLocationForPackage(pkg);
+                var pkgName = pkg.getQualifiedName().toString(); // note: empty string for unnamed package
+                var relativeName = "snippet-files/" + v;
+                fileObject = fileManager.getFileForInput(pkgLocation, pkgName, relativeName);
 
                 // if not found in local snippet-files directory, look on snippet path
                 if (fileObject == null && fileManager.hasLocation(Location.SNIPPET_PATH)) {
@@ -234,19 +229,19 @@ public class SnippetTaglet extends BaseTaglet {
                 }
             } catch (IOException | IllegalArgumentException e) { // TODO: test this when JDK-8276892 is integrated
                 // JavaFileManager.getFileForInput can throw IllegalArgumentException in certain cases
-                throw new BadSnippetException(a, "doclet.exception.read.file", v, e.getCause());
+                throw new BadSnippetException(a, "doclet.exception.read.file", v, e);
             }
 
             if (fileObject == null) {
                 // i.e. the file does not exist
-                throw new BadSnippetException(a, "doclet.File_not_found", v);
+                throw new BadSnippetException(a, "doclet.snippet_file_not_found", v);
             }
 
             try {
                 externalContent = fileObject.getCharContent(true).toString();
             } catch (IOException e) {  // TODO: test this when JDK-8276892 is integrated
                 throw new BadSnippetException(a, "doclet.exception.read.file",
-                        fileObject.getName(), e.getCause());
+                        fileObject.getName(), e);
             }
         }
 
@@ -269,8 +264,14 @@ public class SnippetTaglet extends BaseTaglet {
         StyledText externalSnippet = null;
 
         try {
+            Diags d = (text, pos) -> {
+                var path = writer.configuration().utils.getCommentHelper(holder)
+                        .getDocTreePath(snippetTag.getBody());
+                writer.configuration().getReporter().print(Diagnostic.Kind.WARNING,
+                        path, pos, pos, pos, text);
+            };
             if (inlineContent != null) {
-                inlineSnippet = parse(writer.configuration().getDocResources(), language, inlineContent);
+                inlineSnippet = parse(writer.configuration().getDocResources(), d, language, inlineContent);
             }
         } catch (ParseException e) {
             var path = writer.configuration().utils.getCommentHelper(holder)
@@ -280,18 +281,20 @@ public class SnippetTaglet extends BaseTaglet {
                     .getText("doclet.snippet.markup", e.getMessage());
             writer.configuration().getReporter().print(Diagnostic.Kind.ERROR,
                     path, e.getPosition(), e.getPosition(), e.getPosition(), msg);
-            return badSnippet(writer);
+            return badSnippet(writer, Optional.of(e.getMessage()));
         }
 
         try {
+            var finalFileObject = fileObject;
+            Diags d = (text, pos) -> writer.configuration().getMessages().warning(finalFileObject, pos, pos, pos, text);
             if (externalContent != null) {
-                externalSnippet = parse(writer.configuration().getDocResources(), language, externalContent);
+                externalSnippet = parse(writer.configuration().getDocResources(), d, language, externalContent);
             }
         } catch (ParseException e) {
             assert fileObject != null;
             writer.configuration().getMessages().error(fileObject, e.getPosition(),
                     e.getPosition(), e.getPosition(), "doclet.snippet.markup", e.getMessage());
-            return badSnippet(writer);
+            return badSnippet(writer, Optional.of(e.getMessage()));
         }
 
         // the region must be matched at least in one content: it can be matched
@@ -363,10 +366,14 @@ public class SnippetTaglet extends BaseTaglet {
                """.formatted(inline, external);
     }
 
-    private StyledText parse(Resources resources, Optional<Language> language, String content) throws ParseException {
-        Parser.Result result = new Parser(resources).parse(language, content);
+    private StyledText parse(Resources resources, Diags diags, Optional<Language> language, String content) throws ParseException {
+        Parser.Result result = new Parser(resources).parse(diags, language, content);
         result.actions().forEach(Action::perform);
         return result.text();
+    }
+
+    public interface Diags {
+        void warn(String text, int pos);
     }
 
     private static String stringValueOf(AttributeTree at) throws BadSnippetException {
@@ -396,12 +403,9 @@ public class SnippetTaglet extends BaseTaglet {
             writer.configuration().utils.getCommentHelper(holder).getDocTreePath(tag), key, args);
     }
 
-    private Content badSnippet(TagletWriter writer) {
-        return writer.getOutputInstance().add("bad snippet");
-    }
-
-    private String packageName(PackageElement pkg, Utils utils) {
-        return utils.getPackageName(pkg);
+    private Content badSnippet(TagletWriter writer, Optional<String> details) {
+        Resources resources = writer.configuration().getDocResources();
+        return writer.invalidTagOutput(resources.getText("doclet.tag.invalid", "snippet"), details);
     }
 
     private static PackageElement getPackageElement(Element e, Utils utils) {

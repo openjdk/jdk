@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/threadCritical.hpp"
 
 // OS-includes here
@@ -52,13 +52,13 @@ static DWORD lock_owner = 0;
 //
 
 static BOOL WINAPI initialize(PINIT_ONCE InitOnce, PVOID Parameter, PVOID *Context) {
-  lock_event = CreateEvent(NULL, false, true, NULL);
-  assert(lock_event != NULL, "unexpected return value from CreateEvent");
+  lock_event = CreateEvent(nullptr, false, true, nullptr);
+  assert(lock_event != nullptr, "unexpected return value from CreateEvent");
   return true;
 }
 
 ThreadCritical::ThreadCritical() {
-  InitOnceExecuteOnce(&initialized, &initialize, NULL, NULL);
+  InitOnceExecuteOnce(&initialized, &initialize, nullptr, nullptr);
 
   DWORD current_thread = GetCurrentThreadId();
   if (lock_owner != current_thread) {

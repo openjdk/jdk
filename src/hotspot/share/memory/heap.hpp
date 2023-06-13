@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "code/codeBlob.hpp"
 #include "memory/allocation.hpp"
 #include "memory/virtualspace.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/macros.hpp"
 
 // Blocks
@@ -71,7 +72,7 @@ class FreeBlock: public HeapBlock {
 
  public:
   // Initialization
-  void initialize(size_t length)             { HeapBlock::initialize(length); _link= NULL; }
+  void initialize(size_t length)             { HeapBlock::initialize(length); _link= nullptr; }
 
   // Accessors
   FreeBlock* link() const                    { return _link; }
@@ -98,7 +99,7 @@ class CodeHeap : public CHeapObj<mtCode> {
   size_t       _max_allocated_capacity;          // Peak capacity that was allocated during lifetime of the heap
 
   const char*  _name;                            // Name of the CodeHeap
-  const int    _code_blob_type;                  // CodeBlobType it contains
+  const CodeBlobType _code_blob_type;            // CodeBlobType it contains
   int          _blob_count;                      // Number of CodeBlobs
   int          _nmethod_count;                   // Number of nmethods
   int          _adapter_count;                   // Number of adapters
@@ -145,14 +146,14 @@ class CodeHeap : public CHeapObj<mtCode> {
   void on_code_mapping(char* base, size_t size);
 
  public:
-  CodeHeap(const char* name, const int code_blob_type);
+  CodeHeap(const char* name, const CodeBlobType code_blob_type);
 
   // Heap extents
   bool  reserve(ReservedSpace rs, size_t committed_size, size_t segment_size);
   bool  expand_by(size_t size);                  // expands committed memory by size
 
   // Memory allocation
-  void* allocate (size_t size); // Allocate 'size' bytes in the code cache or return NULL
+  void* allocate (size_t size); // Allocate 'size' bytes in the code cache or return null
   void  deallocate(void* p);    // Deallocate memory
   // Free the tail of segments allocated by the last call to 'allocate()' which exceed 'used_size'.
   // ATTENTION: this is only safe to use if there was no other call to 'allocate()' after
@@ -174,8 +175,8 @@ class CodeHeap : public CHeapObj<mtCode> {
     return contains((void*)blob);
   }
 
-  virtual void* find_start(void* p)     const;   // returns the block containing p or NULL
-  virtual CodeBlob* find_blob_unsafe(void* start) const;
+  void* find_start(void* p)     const;   // returns the block containing p or null
+  CodeBlob* find_blob(void* start) const;
   size_t alignment_unit()       const;           // alignment of any block
   size_t alignment_offset()     const;           // offset of first byte of any block, within the enclosing alignment unit
   static size_t header_size()         { return sizeof(HeapBlock); } // returns the header size for each heap block
@@ -190,10 +191,10 @@ class CodeHeap : public CHeapObj<mtCode> {
   size_t allocated_in_freelist() const           { return _freelist_segments * CodeCacheSegmentSize; }
   int    freelist_length()       const           { return _freelist_length; } // number of elements in the freelist
 
-  // returns the first block or NULL
-  virtual void* first() const                    { return next_used(first_block()); }
-  // returns the next block given a block p or NULL
-  virtual void* next(void* p) const              { return next_used(next_block(block_start(p))); }
+  // returns the first block or null
+  void* first() const                    { return next_used(first_block()); }
+  // returns the next block given a block p or null
+  void* next(void* p) const              { return next_used(next_block(block_start(p))); }
 
   // Statistics
   size_t capacity() const;
@@ -204,9 +205,9 @@ class CodeHeap : public CHeapObj<mtCode> {
   size_t unallocated_capacity() const            { return max_capacity() - allocated_capacity(); }
 
   // Returns true if the CodeHeap contains CodeBlobs of the given type
-  bool accepts(int code_blob_type) const         { return (_code_blob_type == CodeBlobType::All) ||
+  bool accepts(CodeBlobType code_blob_type) const{ return (_code_blob_type == CodeBlobType::All) ||
                                                           (_code_blob_type == code_blob_type); }
-  int code_blob_type() const                     { return _code_blob_type; }
+  CodeBlobType code_blob_type() const            { return _code_blob_type; }
 
   // Debugging / Profiling
   const char* name() const                       { return _name; }
@@ -216,7 +217,7 @@ class CodeHeap : public CHeapObj<mtCode> {
   int         adapter_count()                    { return _adapter_count; }
   void    set_adapter_count(int count)           {        _adapter_count = count; }
   int         full_count()                       { return _full_count; }
-  void        report_full()                      {        _full_count++; }
+  int         report_full()                      { return Atomic::add(&_full_count, 1); }
 
 private:
   size_t heap_unallocated_capacity() const;

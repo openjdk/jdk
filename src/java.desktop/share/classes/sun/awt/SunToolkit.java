@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -130,7 +130,7 @@ public abstract class SunToolkit extends Toolkit
         touchKeyboardAutoShowIsEnabled = Boolean.parseBoolean(
             GetPropertyAction.privilegedGetProperty(
                 "awt.touchKeyboardAutoShowIsEnabled", "true"));
-    };
+    }
 
     /**
      * Special mask for the UngrabEvent events, in addition to the
@@ -204,7 +204,7 @@ public abstract class SunToolkit extends Toolkit
      * access to Xlib, OpenGL, etc.  However, these methods are implemented
      * in SunToolkit so that they can be called from shared code (e.g.
      * from the OGL pipeline) or from the X11 pipeline regardless of whether
-     * XToolkit or MToolkit is currently in use.  There are native macros
+     * XToolkit is currently in use.  There are native macros
      * (such as AWT_LOCK) defined in awt.h, so if the implementation of these
      * methods is changed, make sure it is compatible with the native macros.
      *
@@ -231,7 +231,9 @@ public abstract class SunToolkit extends Toolkit
      *     }
      */
 
-    private static final ReentrantLock AWT_LOCK = new ReentrantLock();
+    @SuppressWarnings("removal")
+    private static final ReentrantLock AWT_LOCK = new ReentrantLock(
+            AccessController.doPrivileged(new GetBooleanAction("awt.lock.fair")));
     private static final Condition AWT_LOCK_COND = AWT_LOCK.newCondition();
 
     public static final void awtLock() {
@@ -298,7 +300,7 @@ public abstract class SunToolkit extends Toolkit
      * Fetch the peer associated with the given target (as specified
      * in the peer creation method).  This can be used to determine
      * things like what the parent peer is.  If the target is null
-     * or the target can't be found (either because the a peer was
+     * or the target can't be found (either because the peer was
      * never created for it or the peer was disposed), a null will
      * be returned.
      */
@@ -410,7 +412,7 @@ public abstract class SunToolkit extends Toolkit
 
     public static void setLWRequestStatus(Window changed,boolean status){
         AWTAccessor.getWindowAccessor().setLWRequestStatus(changed, status);
-    };
+    }
 
     public static void checkAndSetPolicy(Container cont) {
         FocusTraversalPolicy defaultPolicy = KeyboardFocusManager.
@@ -1181,7 +1183,7 @@ public abstract class SunToolkit extends Toolkit
                 variant = AccessController.doPrivileged(
                                 new GetPropertyAction("user.variant", ""));
             }
-            startupLocale = new Locale(language, country, variant);
+            startupLocale = Locale.of(language, country, variant);
         }
         return startupLocale;
     }
@@ -1431,7 +1433,8 @@ public abstract class SunToolkit extends Toolkit
     private static final int MINIMAL_DELAY = 5;
 
     /**
-     * Parameterless version of realsync which uses default timout (see DEFAUL_WAIT_TIME).
+     * Parameterless version of {@link #realSync(long)} which uses
+     * the default timeout of {@link #DEFAULT_WAIT_TIME}.
      */
     public void realSync() {
         realSync(DEFAULT_WAIT_TIME);
@@ -1476,8 +1479,8 @@ public abstract class SunToolkit extends Toolkit
      *
      * <p> For example, requestFocus() generates native request, which
      * generates one or two Java focus events, which then generate a
-     * serie of paint events, a serie of Java focus events, which then
-     * generate a serie of paint events which then are processed -
+     * series of paint events, a series of Java focus events, which then
+     * generate a series of paint events which then are processed -
      * three cycles, minimum.
      *
      * @param timeout the maximum time to wait in milliseconds, negative means "forever".
@@ -1533,7 +1536,7 @@ public abstract class SunToolkit extends Toolkit
             bigLoop++;
             // Again, for Java events, it was simple to check for new Java
             // events by checking event queue, but what if Java events
-            // resulted in native requests?  Therefor, check native events again.
+            // resulted in native requests?  Therefore, check native events again.
         } while ((syncNativeQueue(timeout(end)) || waitForIdle(end))
                 && bigLoop < MAX_ITERS);
     }
@@ -1880,6 +1883,20 @@ public abstract class SunToolkit extends Toolkit
         return false;
     }
 
+    /**
+     * Checks if the system is running Linux with the Wayland server.
+     *
+     * @return true if running on Wayland, false otherwise
+     */
+    public boolean isRunningOnWayland() {
+        return false;
+    }
+
+    public void dismissPopupOnFocusLostIfNeeded(Window invoker) {}
+
+    public void dismissPopupOnFocusLostIfNeededCleanUp(Window invoker) {}
+
+
     private static final Object DEACTIVATION_TIMES_MAP_KEY = new Object();
 
     public synchronized void setWindowDeactivationTime(Window w, long time) {
@@ -1975,7 +1992,7 @@ public abstract class SunToolkit extends Toolkit
      * Returns whether the native system requires using the peer.updateWindow()
      * method to update the contents of a non-opaque window, or if usual
      * painting procedures are sufficient. The default return value covers
-     * the X11 systems. On MS Windows this method is overriden in WToolkit
+     * the X11 systems. On MS Windows this method is overridden in WToolkit
      * to return true.
      */
     public boolean needUpdateWindow() {

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2021 Unicode, Inc.
+<!-- Copyright © 1991-2023 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -35,6 +35,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="es_MX">Èdè Sípáníìshì (orílɛ̀-èdè Mɛ́síkò)</language>
 			<language type="fr_CA">Èdè Faransé (orílɛ̀-èdè Kánádà)</language>
 			<language type="fr_CH">Èdè Faranshé (Súwísàlaǹdì)</language>
+			<language type="gez">Ede Gɛ́sì</language>
+			<language type="hi_Latn" alt="variant">Èdè Híńgílíshì</language>
 			<language type="id">Èdè Indonéshíà</language>
 			<language type="ii">Shíkuán Yì</language>
 			<language type="jmc">Máshámè</language>
@@ -132,8 +134,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="BA">Bɔ̀síníà àti Ɛtisɛgófínà</territory>
 			<territory type="BE">Bégíɔ́mù</territory>
 			<territory type="BJ">Bɛ̀nɛ̀</territory>
+			<territory type="BL">Ìlú Bátílɛ́mì</territory>
 			<territory type="BN">Búrúnɛ́lì</territory>
 			<territory type="BO">Bɔ̀lífíyà</territory>
+			<territory type="BQ">Káríbíánì ti Nɛ́dálándì</territory>
 			<territory type="BW">Bɔ̀tìsúwánà</territory>
 			<territory type="BZ">Bèlísɛ̀</territory>
 			<territory type="CH">switishilandi</territory>
@@ -148,6 +152,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="EU">Àpapɔ̀ Yúróòpù</territory>
 			<territory type="FO">Àwɔn Erékùsù ti Faroe</territory>
 			<territory type="GB">Gɛ̀ɛ́sì</territory>
+			<territory type="GB" alt="short">Gɛ̀ɛ́sì</territory>
 			<territory type="GE">Gɔgia</territory>
 			<territory type="GF">Firenshi Guana</territory>
 			<territory type="GS">Gúúsù Georgia àti Gúúsù Àwɔn Erékùsù Sandwich</territory>
@@ -176,12 +181,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="PS" alt="short">Palɛsítínì</territory>
 			<territory type="PT">Pɔ́túgà</territory>
 			<territory type="QO">Agbègbè Òshɔ́ɔ́níà</territory>
+			<territory type="RS">Sɛ́bíà</territory>
 			<territory type="RU">Rɔshia</territory>
 			<territory type="SC">Sheshɛlɛsi</territory>
 			<territory type="SH">Hɛlena</territory>
+			<territory type="SJ">Sífábáàdì àti Jánì Máyɛ̀nì</territory>
 			<territory type="SN">Sɛnɛga</territory>
 			<territory type="ST">Sao tomi ati piriishipi</territory>
 			<territory type="SV">Ɛɛsáfádò</territory>
+			<territory type="SX">Síntì Mátɛ́ɛ̀nì</territory>
 			<territory type="SZ">Sashiland</territory>
 			<territory type="TC">Tɔɔki ati Etikun Kakɔsi</territory>
 			<territory type="TD">Shààdì</territory>
@@ -191,9 +199,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="TM">Tɔɔkimenisita</territory>
 			<territory type="TN">Tunishia</territory>
 			<territory type="TR">Tɔɔki</territory>
+			<territory type="TR" alt="variant">Tɔɔki</territory>
 			<territory type="UM">Àwɔn Erékùsù Kékèké Agbègbè US</territory>
 			<territory type="UN">Ìshɔ̀kan àgbáyé</territory>
 			<territory type="US">Amɛrikà</territory>
+			<territory type="US" alt="short">Amɛrikà</territory>
 			<territory type="UZ">Nshibɛkisitani</territory>
 			<territory type="VC">Fisɛnnti ati Genadina</territory>
 			<territory type="VE">Fɛnɛshuɛla</territory>
@@ -207,6 +217,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="ZW">Shimibabe</territory>
 			<territory type="ZZ">Àgbègbè àìmɔ̀</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">Ilɛ̀gɛ̀ɛ́sì</subdivision>
+			<subdivision type="gbsct">Skɔ́tlándì</subdivision>
+		</subdivisions>
 		<keys>
 			<key type="calendar">Kàlɛ́ńdà</key>
 			<key type="cf">Ìgúnrégé Kɔ́rɛ́ńsì</key>
@@ -223,6 +237,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="gregorian">Kàlɛ́ńdà Gregory</type>
 			<type key="calendar" type="hebrew">Kàlɛ́ńdà Hébérù</type>
 			<type key="calendar" type="islamic">Kàlɛ́ńdà Lárúbáwá</type>
+			<type key="calendar" type="islamic-civil">Kàlɛ́ńdà ti Musulumi</type>
+			<type key="calendar" type="islamic-umalqura">Kàlɛ́ńdà Musulumi</type>
 			<type key="calendar" type="iso8601">Kàlɛ́ńdà ISO-8601</type>
 			<type key="calendar" type="japanese">Kàlɛ́ńdà ti Jàpánù</type>
 			<type key="calendar" type="persian">Kàlɛ́ńdà Pásíànù</type>
@@ -239,6 +255,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="numbers" type="armn">Àwɔn nɔ́ńbà Àmɛ́níà</type>
 			<type key="numbers" type="armnlow">Àwɔn Nɔ́ńbà Kékèké ti Amɛ́ríkà</type>
 			<type key="numbers" type="beng">Àwɔn díjíìtì Báńgílà</type>
+			<type key="numbers" type="cakm">Àwɔn díjíìtì Shakma</type>
 			<type key="numbers" type="deva">Àwɔn díjììtì Defanagárì</type>
 			<type key="numbers" type="ethi">Àwɔn nɔ́ńbà Ɛtiópíìkì</type>
 			<type key="numbers" type="fullwide">Àwɔn Díjíìtì Fífɛ̀-Ɛ̀kún</type>
@@ -253,6 +270,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="numbers" type="hant">Àwɔn nɔ́ńbà Ìbílɛ̀ Sháìnà</type>
 			<type key="numbers" type="hantfin">Àwɔn nɔ́ńbà Ìshúná Ìbílɛ̀ Sháìnà</type>
 			<type key="numbers" type="hebr">Àwɔn nɔ́ńbà Hébérù</type>
+			<type key="numbers" type="java">Àwɔn díjíìtì Jafaniisi</type>
 			<type key="numbers" type="jpan">Àwɔn nɔ́ńbà Jápànù</type>
 			<type key="numbers" type="jpanfin">Àwɔn nɔ́ńbà Ìshúná Jàpáànù</type>
 			<type key="numbers" type="khmr">Àwɔn díjíìtì Kɛ́mɛ̀</type>
@@ -260,7 +278,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="numbers" type="laoo">Àwɔn díjíìtì Láó</type>
 			<type key="numbers" type="latn">Díjíítì Ìwɔ̀ Oòrùn</type>
 			<type key="numbers" type="mlym">Àwɔn díjíìtì Málàyálámù</type>
+			<type key="numbers" type="mtei">Àwɔn díjíìtì Mete Mayeki</type>
 			<type key="numbers" type="mymr">Àwɔn díjíìtì Myánmarí</type>
+			<type key="numbers" type="olck">Àwɔn díjíìtì Shiki</type>
 			<type key="numbers" type="orya">Àwɔn díjíìtì Òdíà</type>
 			<type key="numbers" type="roman">Àwɔn díjíìtì Rómánù</type>
 			<type key="numbers" type="romanlow">Àwɔn díjíìtì Rómánù Kékeré</type>
@@ -269,6 +289,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="numbers" type="telu">Àwɔn díjíìtì Télúgù</type>
 			<type key="numbers" type="thai">Àwɔn díjíìtì Thai</type>
 			<type key="numbers" type="tibt">Àwɔn díjíìtì Tibetán</type>
+			<type key="numbers" type="vaii">Àwɔn díjíìtì Fai</type>
 		</types>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">Mɛ́tíríìkì</measurementSystemName>
@@ -395,6 +416,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="fri">Ɛ</day>
 							<day type="sat">À</day>
 						</dayWidth>
+						<dayWidth type="short">
+							<day type="sun">Àìk</day>
+							<day type="mon">Aj</day>
+							<day type="tue">Ìsɛ́g</day>
+							<day type="wed">Ɔjɔ́r</day>
+							<day type="thu">Ɔjɔ́b</day>
+							<day type="fri">Ɛt</day>
+							<day type="sat">Àbám</day>
+						</dayWidth>
 						<dayWidth type="wide">
 							<day type="sun">Ɔjɔ́ Àìkú</day>
 							<day type="mon">Ɔjɔ́ Ajé</day>
@@ -406,6 +436,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</dayWidth>
 					</dayContext>
 					<dayContext type="stand-alone">
+						<dayWidth type="abbreviated">
+							<day type="sun">Àìk</day>
+							<day type="mon">Aj</day>
+							<day type="tue">Ìsɛ́g</day>
+							<day type="wed">Ɔjɔ́r</day>
+							<day type="thu">Ɔjɔ́b</day>
+							<day type="fri">Ɛt</day>
+							<day type="sat">Àbám</day>
+						</dayWidth>
 						<dayWidth type="narrow">
 							<day type="sun">À</day>
 							<day type="mon">A</day>
@@ -414,6 +453,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="thu">Ɔ</day>
 							<day type="fri">Ɛ</day>
 							<day type="sat">À</day>
+						</dayWidth>
+						<dayWidth type="short">
+							<day type="sun">Àìk</day>
+							<day type="mon">Aj</day>
+							<day type="tue">Ìsɛ́g</day>
+							<day type="wed">Ɔjɔ́r</day>
+							<day type="thu">Ɔjɔ́b</day>
+							<day type="fri">Ɛt</day>
+							<day type="sat">Àbám</day>
 						</dayWidth>
 						<dayWidth type="wide">
 							<day type="sun">Àìkú</day>
@@ -428,6 +476,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</days>
 				<quarters>
 					<quarterContext type="format">
+						<quarterWidth type="abbreviated">
+							<quarter type="1">Ìdámɛ́rin kíní</quarter>
+							<quarter type="2">Ìdámɛ́rin Kejì</quarter>
+							<quarter type="3">Ìdámɛ́rin Kɛta</quarter>
+							<quarter type="4">Ìdámɛ́rin Kɛrin</quarter>
+						</quarterWidth>
 						<quarterWidth type="narrow">
 							<quarter type="1">kíní</quarter>
 							<quarter type="2">Kejì</quarter>
@@ -442,6 +496,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</quarterWidth>
 					</quarterContext>
 					<quarterContext type="stand-alone">
+						<quarterWidth type="abbreviated">
+							<quarter type="1">Ìdámɛ́rin kíní</quarter>
+							<quarter type="2">Ìdámɛ́rin Kejì</quarter>
+							<quarter type="3">Ìdámɛ́rin Kɛta</quarter>
+							<quarter type="4">Ìdámɛ́rin Kɛrin</quarter>
+						</quarterWidth>
 						<quarterWidth type="narrow">
 							<quarter type="1">kí</quarter>
 							<quarter type="2">Ke</quarter>
@@ -449,7 +509,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<quarter type="4">Kɛr</quarter>
 						</quarterWidth>
 						<quarterWidth type="wide">
+							<quarter type="1">Ìdámɛ́rin kíní</quarter>
+							<quarter type="2">Ìdámɛ́rin Kejì</quarter>
 							<quarter type="3">Ìdámɛ́rin Kɛta</quarter>
+							<quarter type="4">Ìdámɛ́rin Kɛrin</quarter>
 						</quarterWidth>
 					</quarterContext>
 				</quarters>
@@ -498,11 +561,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="1">Àmɔ́dún</relative>
 			</field>
 			<field type="year-short">
+				<displayName>Ɔdún</displayName>
+				<relative type="-1">Ɔdún tó kɔjá</relative>
+				<relative type="0">Ɔdún yìí</relative>
+				<relative type="1">Ɔdún tó ńbɔ̀</relative>
+			</field>
+			<field type="year-narrow">
+				<displayName>Ɔdún</displayName>
 				<relative type="-1">Ɔdún tó kɔjá</relative>
 				<relative type="0">Ɔdún yìí</relative>
 				<relative type="1">Ɔdún tó ńbɔ̀</relative>
 			</field>
 			<field type="quarter">
+				<displayName>Ìdá mɛ́rin</displayName>
+			</field>
+			<field type="quarter-short">
 				<displayName>Ìdá mɛ́rin</displayName>
 			</field>
 			<field type="quarter-narrow">
@@ -513,8 +586,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">oshù yìí</relative>
 				<relative type="1">óshù tó ń bɔ̀,</relative>
 			</field>
+			<field type="month-short">
+				<relative type="-1">óshù tó kɔjá</relative>
+				<relative type="0">oshù yìí</relative>
+				<relative type="1">óshù tó ń bɔ̀,</relative>
+			</field>
 			<field type="month-narrow">
 				<displayName>Oshù</displayName>
+				<relative type="-1">óshù tó kɔjá</relative>
+				<relative type="0">oshù yìí</relative>
+				<relative type="1">óshù tó ń bɔ̀,</relative>
 			</field>
 			<field type="week">
 				<displayName>Ɔ̀sɛ̀</displayName>
@@ -524,14 +605,43 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relativePeriod>ɔ̀sɛ̀ ti {0}</relativePeriod>
 			</field>
 			<field type="week-short">
+				<displayName>Ɔ̀sɛ̀</displayName>
+				<relative type="-1">ɔ̀sɛ̀ tó kɔjá</relative>
+				<relative type="0">ɔ̀sɛ̀ yìí</relative>
+				<relative type="1">ɔ́sɛ̀ tó ń bɔ̀</relative>
+				<relativePeriod>ɔ̀sɛ̀ ti {0}</relativePeriod>
+			</field>
+			<field type="week-narrow">
+				<displayName>Ɔ̀sɛ̀</displayName>
+				<relative type="-1">ɔ̀sɛ̀ tó kɔjá</relative>
+				<relative type="0">ɔ̀sɛ̀ yìí</relative>
+				<relative type="1">ɔ́sɛ̀ tó ń bɔ̀</relative>
 				<relativePeriod>ɔ̀sɛ̀ ti {0}</relativePeriod>
 			</field>
 			<field type="weekOfMonth">
 				<displayName>Ɔshɛ̀ inú Oshù</displayName>
 			</field>
+			<field type="weekOfMonth-short">
+				<displayName>Ɔshɛ̀ inú Oshù</displayName>
+			</field>
+			<field type="weekOfMonth-narrow">
+				<displayName>Ɔshɛ̀ inú Oshù</displayName>
+			</field>
 			<field type="day">
 				<displayName>Ɔjɔ́</displayName>
 				<relative type="-2">íjɛta</relative>
+				<relative type="-1">Àná</relative>
+				<relative type="0">Òní</relative>
+				<relative type="1">Ɔ̀la</relative>
+			</field>
+			<field type="day-short">
+				<displayName>Ɔjɔ́</displayName>
+				<relative type="-1">Àná</relative>
+				<relative type="0">Òní</relative>
+				<relative type="1">Ɔ̀la</relative>
+			</field>
+			<field type="day-narrow">
+				<displayName>Ɔjɔ́</displayName>
 				<relative type="-1">Àná</relative>
 				<relative type="0">Òní</relative>
 				<relative type="1">Ɔ̀la</relative>
@@ -568,15 +678,157 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">Ɔjɔ́ Àìkú yìí</relative>
 				<relative type="1">Ɔjɔ́ Àìkú tó ń bɔ̀</relative>
 			</field>
+			<field type="sun-short">
+				<relative type="-1">Ɔjɔ́ Àìkú tó kɔjá</relative>
+				<relative type="0">Ɔjɔ́ Àìkú yìí</relative>
+				<relative type="1">Ɔjɔ́ Àìkú tó ń bɔ̀</relative>
+			</field>
 			<field type="sun-narrow">
+				<relative type="-1">Ɔjɔ́ Àìkú tó kɔjá</relative>
+				<relative type="0">Ɔjɔ́ Àìkú yìí</relative>
+				<relative type="1">Ɔjɔ́ Àìkú tó ń bɔ̀</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="other">Ɔjɔ́ Àíkú +{0}</relativeTimePattern>
 				</relativeTime>
 			</field>
+			<field type="tue">
+				<relative type="-1">Ìshɛ́gun tókɔ́já</relative>
+				<relative type="0">Ìshɛ́gun èyí</relative>
+				<relative type="1">Ìshɛ́gun tóńbɔ̀</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">+{0} àwɔn ìsɛ́gun</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} àwɔn Ìshɛ́gun tɛ́lɛ̀</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="tue-short">
+				<relative type="-1">Ìshɛ́ tókɔ́já</relative>
+				<relative type="0">Ìshɛ́ èyí</relative>
+				<relative type="1">Ìshɛ́ tónbɔ̀</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">{0} Ìshɛ́</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} Ishɛ́. tɛ́lɛ̀</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="tue-narrow">
+				<relative type="-1">Ìshɛ́gun tɛ́lɛ̀</relative>
+				<relative type="0">Ìshɛ́gun yì</relative>
+				<relative type="1">Ìshɛ́gun tɔ́ńbɔ̀</relative>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} Ìs tɛ́lɛ̀</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="wed">
+				<relative type="-1">Ojɔ́rú àná</relative>
+				<relative type="0">Ojɔ́rú yì</relative>
+				<relative type="1">Ojɔ́rú tónbɔ̀</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">{0} Àwɔn Ojɔ́rú</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">-{0} Àwɔn Ojɔ́rú tɛ́lɛ̀</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="wed-short">
+				<relative type="-1">Ojɔ́rú àná</relative>
+				<relative type="0">Ojɔ́rú yì</relative>
+				<relative type="1">Ojɔ́rú tóńbɔ̀</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">ní {0} Ojɔ́</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} Ojɔ́ tɛ́lɛ̀</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="wed-narrow">
+				<relative type="-1">O àná</relative>
+				<relative type="0">O yì</relative>
+				<relative type="1">O tóńbɔ̀</relative>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} W tɛ́lɛ̀</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="thu">
+				<relative type="-1">Ojɔ́bɔ̀ kɛyìn</relative>
+				<relative type="0">Ojɔ́bɔ̀ eyì</relative>
+				<relative type="1">Ojɔ́bɔ̀ tónbɔ̀</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">+{0} Ojɔ́bɔ̀</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">-{0} Àwɔn Ojɔ́bɔ̀</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="thu-short">
+				<relative type="-1">Ojɔ́ sɛ́yìn</relative>
+				<relative type="0">Ojɔ́ èyí</relative>
+				<relative type="1">Ojɔ́ tónbɔ̀</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">+ {0} Ojɔ́</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} Ojɔ́ èyìn</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="thu-narrow">
+				<relative type="-1">Ojɔ́ sɛ́yìn</relative>
+				<relative type="0">Ojɔ́ èyí</relative>
+				<relative type="1">Ojɔ́ tónbɔ̀</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">{0} Ojɔ́</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} Ojɔ́ sɛ́yìn</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="fri-short">
+				<relative type="-1">Etì àná</relative>
+				<relative type="0">Etì yì</relative>
+				<relative type="1">Et tónbɔ̀</relative>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} Et sɛ́yìn</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="fri-narrow">
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} F tɛ́lɛ̀</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sat-short">
+				<relative type="-1">Aba tókojá</relative>
+				<relative type="0">Aba èyí</relative>
+				<relative type="1">Aba tónbɔ̀</relative>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} Aba. sɛ́yìn</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sat-narrow">
+				<relative type="-1">Ab sɛ́yìn</relative>
+				<relative type="0">Ab èyí</relative>
+				<relative type="1">Ab tónbò</relative>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} Ab ɛ̀yí</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="dayperiod-short">
+				<displayName>Àárɔ̀/ɔ̀sán</displayName>
+			</field>
 			<field type="dayperiod">
 				<displayName>Àárɔ̀/ɔ̀sán</displayName>
 			</field>
+			<field type="dayperiod-narrow">
+				<displayName>Àárɔ̀/ɔ̀sán</displayName>
+			</field>
 			<field type="minute">
+				<displayName>Ìsɛ́jú</displayName>
+			</field>
+			<field type="minute-short">
+				<displayName>Ìsɛ́jú</displayName>
+			</field>
+			<field type="minute-narrow">
 				<displayName>Ìsɛ́jú</displayName>
 			</field>
 			<field type="second">
@@ -662,6 +914,27 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/St_Thomas">
 				<exemplarCity>ìlú St Tɔ́màsì</exemplarCity>
 			</zone>
+			<metazone type="Africa_Western">
+				<long>
+					<generic>Àkókò Ìwɔ̀-Oòrùn Afírikà</generic>
+					<standard>Àkókò Ìwɔ̀-Oòrùn Àfɛnukò Afírikà</standard>
+					<daylight>Àkókò Ìwɔ̀-Oòrùn Ooru Afírikà</daylight>
+				</long>
+			</metazone>
+			<metazone type="Alaska">
+				<long>
+					<generic>Àkókò Alásíkà</generic>
+					<standard>Àkókò Àfɛnukò Alásíkà</standard>
+					<daylight>Àkókò Ìyálɛ̀ta Alásíkà</daylight>
+				</long>
+			</metazone>
+			<metazone type="Amazon">
+				<long>
+					<generic>Àkókò Amásɔ́nì</generic>
+					<standard>Àkókò Afɛnukò Amásɔ́nì</standard>
+					<daylight>Àkókò Oru Amásɔ́nì</daylight>
+				</long>
+			</metazone>
 			<metazone type="America_Central">
 				<long>
 					<generic>àkókò àárín gbùngbùn</generic>
@@ -697,11 +970,39 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Aago Soma Argentina</daylight>
 				</long>
 			</metazone>
+			<metazone type="Argentina_Western">
+				<long>
+					<generic>Àkókò Iwɔ́-oòrùn Ajɛ́ntínà</generic>
+					<standard>Àkókò Iwɔ́-oòrùn Àfɛnukò Ajɛ́ntínà</standard>
+					<daylight>Àkókò Oru Iwɔ́-oòrùn Ajɛ́ntínà</daylight>
+				</long>
+			</metazone>
 			<metazone type="Atlantic">
 				<long>
 					<generic>Àkókò Àtìláńtíìkì</generic>
 					<standard>Àkókò àsikò Àtìláńtíìkì</standard>
 					<daylight>Àkókò Ìyálɛta Àtìláńtíìkì</daylight>
+				</long>
+			</metazone>
+			<metazone type="Azores">
+				<long>
+					<generic>Àkókò Ásɔ́sì</generic>
+					<standard>Àkókò Àfɛnukò Ásɔ́sì</standard>
+					<daylight>Àkókò Ooru Ásɔ́sì</daylight>
+				</long>
+			</metazone>
+			<metazone type="Cape_Verde">
+				<long>
+					<generic>Àkókò Képú Fáàdì</generic>
+					<standard>Àkókò Àfɛnukò Képú Fáàdì</standard>
+					<daylight>Àkókò Sɔ́mà Képú Fáàdì</daylight>
+				</long>
+			</metazone>
+			<metazone type="Chile">
+				<long>
+					<generic>Àkókò Shílè</generic>
+					<standard>Àkókò Àfɛnukò Shílè</standard>
+					<daylight>Àkókò Oru Shílè</daylight>
 				</long>
 			</metazone>
 			<metazone type="China">
@@ -739,6 +1040,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Àkókò Sɔmà Ìhà Ìwɔ Oòrùn Europe</daylight>
 				</long>
 			</metazone>
+			<metazone type="Falkland">
+				<long>
+					<generic>Àkókò Fókílándì</generic>
+					<standard>Àkókò Àfɛnukò Etíkun Fókílándì</standard>
+					<daylight>Àkókò Ooru Etíkun Fókílándì</daylight>
+				</long>
+			</metazone>
 			<metazone type="Greenland_Eastern">
 				<long>
 					<generic>Àkókò Ìlà oorùn Greenland</generic>
@@ -765,6 +1073,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>Àkókò Ìwɔ̀ oorùn Indonesia</standard>
 				</long>
 			</metazone>
+			<metazone type="Irkutsk">
+				<long>
+					<generic>Àkókò Íkósíkì</generic>
+					<standard>Àkókò Àfɛnukò Íkósíkì</standard>
+					<daylight>Àkókò Sɔmà Íkúsíkì</daylight>
+				</long>
+			</metazone>
+			<metazone type="Mauritius">
+				<long>
+					<generic>Àkókò Máríshúshì</generic>
+					<standard>Àkókò Àfɛnukò Máríshúshì</standard>
+					<daylight>Àkókò Ooru Máríshúshì</daylight>
+				</long>
+			</metazone>
 			<metazone type="Mexico_Northwest">
 				<long>
 					<generic>Àkókò Apá Ìwɔ̀ Oorùn Mɛ́shíkò</generic>
@@ -786,11 +1108,52 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Àkókò Ojúmɔmɔ Newfoundland</daylight>
 				</long>
 			</metazone>
+			<metazone type="Paraguay">
+				<long>
+					<generic>Àkókò Párágúwè</generic>
+					<standard>Àkókò Àfɛnukò Párágúwè</standard>
+					<daylight>Àkókò Ooru Párágúwè</daylight>
+				</long>
+			</metazone>
+			<metazone type="Peru">
+				<long>
+					<generic>Àkókò Pérù</generic>
+					<standard>Àkókò Àfɛnukò Pérù</standard>
+					<daylight>Àkókò Ooru Pérù</daylight>
+				</long>
+			</metazone>
 			<metazone type="Pierre_Miquelon">
 				<long>
 					<generic>Àkókò Pierre &amp; Miquelon</generic>
 					<standard>Àkókò Àfɛnukò Pierre &amp; Miquelon</standard>
 					<daylight>Àkókò Ojúmɔmɔ Pierre &amp; Miquelon</daylight>
+				</long>
+			</metazone>
+			<metazone type="Reunion">
+				<long>
+					<standard>Àkókò Rɛ́yúníɔ́nì</standard>
+				</long>
+			</metazone>
+			<metazone type="Seychelles">
+				<long>
+					<standard>Àkókò Sèshɛ́ɛ̀lì</standard>
+				</long>
+			</metazone>
+			<metazone type="South_Georgia">
+				<long>
+					<standard>Àkókò Gúsù Jɔ́jíà</standard>
+				</long>
+			</metazone>
+			<metazone type="Uruguay">
+				<long>
+					<generic>Aago Uruguay</generic>
+					<standard>Àkókò Àfɛnukò Úrúgúwè</standard>
+					<daylight>Aago Soma Uruguay</daylight>
+				</long>
+			</metazone>
+			<metazone type="Yukon">
+				<long>
+					<standard>Àkókò Yúkɔ́nì</standard>
 				</long>
 			</metazone>
 		</timeZoneNames>
@@ -820,13 +1183,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<currencies>
 			<currency type="AED">
 				<displayName>Diami ti Awon Orílɛ́ède Arabu</displayName>
+				<displayName count="other">Diami ti Awon Orílɛ́ède Arabu</displayName>
 			</currency>
 			<currency type="ALL">
-				<displayName>Lɛ́kɛ̀ Àlìbéníà</displayName>
+				<displayName>Lɛ́ɛ̀kì Àlìbáníà</displayName>
 				<displayName count="other">lɛ́kè Àlìbéníà</displayName>
 			</currency>
 			<currency type="AMD">
 				<displayName>Dírààmù Àmɛ́níà</displayName>
+				<displayName count="other">Dírààmù Àmɛ́níà</displayName>
 			</currency>
 			<currency type="ANG">
 				<displayName count="other">àwɔn gílídà Netherlands Antillean</displayName>
@@ -840,6 +1205,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="AUD">
 				<displayName>Dɔla ti Orílɛ́ède Ástràlìá</displayName>
+				<displayName count="other">Dɔla ti Orílɛ́ède Ástràlìá</displayName>
 			</currency>
 			<currency type="AWG">
 				<displayName count="other">àwɔn fuloríìnì Àrúbà</displayName>
@@ -853,6 +1219,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="BDT">
 				<displayName>Tákà Báńgíládɛ̀ɛ̀shì</displayName>
+				<displayName count="other">Tákà Báńgíládɛ̀ɛ̀shì</displayName>
 			</currency>
 			<currency type="BGN">
 				<displayName>Owó Lɛ́fì Bɔ̀lìgéríà</displayName>
@@ -860,6 +1227,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="BHD">
 				<displayName>Dina ti Orílɛ́ède Báránì</displayName>
+				<displayName count="other">Dina ti Orílɛ́ède Báránì</displayName>
 			</currency>
 			<currency type="BIF">
 				<displayName count="other">àwɔn faransi Bùùrúndì</displayName>
@@ -870,6 +1238,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="BND">
 				<displayName>Dɔ́là Bùrùnéì</displayName>
+				<displayName count="other">Dɔ́là Bùrùnéì</displayName>
 			</currency>
 			<currency type="BOB">
 				<displayName>Bɔlifiánò Bɔ̀lífíà</displayName>
@@ -885,6 +1254,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="BTN">
 				<displayName>Ìngɔ́tírɔ̀mù Bútàànì</displayName>
+				<displayName count="other">Ìngɔ́tírɔ̀mù Bútàànì</displayName>
 			</currency>
 			<currency type="BWP">
 				<displayName>Pula Bɔ̀tìsúwánà</displayName>
@@ -905,15 +1275,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="CDF">
 				<displayName count="other">àwɔn firanki Kongo</displayName>
 			</currency>
-			<currency type="CHF">
-				<displayName>Faransi ti Orílɛ́ède Siwisi</displayName>
-			</currency>
 			<currency type="CLP">
 				<displayName>Pɛ́sò Shílè</displayName>
 				<displayName count="other">àwɔn pɛ́sò Shílè</displayName>
 			</currency>
 			<currency type="CNY">
 				<displayName>Reminibi ti Orílɛ́ède sháínà</displayName>
+				<displayName count="other">Reminibi ti Orílɛ́ède sháínà</displayName>
 			</currency>
 			<currency type="COP">
 				<displayName>Pɛ́sò Kòlóḿbíà</displayName>
@@ -929,6 +1297,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="CUP">
 				<displayName>Pɛ́sò Kúbà</displayName>
+				<displayName count="other">Pɛ́sò Kúbà</displayName>
 			</currency>
 			<currency type="CVE">
 				<displayName count="other">àwɔn èsìkúdò Kapú Faadì</displayName>
@@ -964,6 +1333,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="FJD">
 				<displayName>Dɔ́là Fíjì</displayName>
+				<displayName count="other">Dɔ́là Fíjì</displayName>
 			</currency>
 			<currency type="FKP">
 				<displayName>Pɔ́n-ùn Erékùsù Falkland</displayName>
@@ -971,9 +1341,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="GBP">
 				<displayName>Pɔ́n-ùn ti Orilɛ̀-èdè Gɛ̀ɛ́sì</displayName>
+				<displayName count="other">Pɔ́n-ùn ti Orilɛ̀-èdè Gɛ̀ɛ́sì</displayName>
 			</currency>
 			<currency type="GEL">
 				<displayName>Lárì Jɔ́jíà</displayName>
+				<displayName count="other">Lárì Jɔ́jíà</displayName>
 			</currency>
 			<currency type="GHC">
 				<displayName>shidi ti Orílɛ́ède Gana</displayName>
@@ -982,8 +1354,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="other">àwɔn sídì Gana</displayName>
 			</currency>
 			<currency type="GIP">
-				<displayName>Pɔ́n-ùn Gibraltar</displayName>
-				<displayName count="other">àwɔn pɔ́n-ùn Gibraltar</displayName>
+				<displayName>Pɔ́n-ùn Gibúrátà</displayName>
+				<displayName count="other">àwɔn pɔ́n-ùn Gibúrátà</displayName>
 			</currency>
 			<currency type="GMD">
 				<displayName count="other">àwɔn dalasi Gamibia</displayName>
@@ -1004,13 +1376,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="HKD">
 				<displayName>Dɔ́là Hong Kong</displayName>
+				<displayName count="other">Dɔ́là Hong Kong</displayName>
 			</currency>
 			<currency type="HNL">
 				<displayName>Lɛmipírà Ɔ́ńdúrà</displayName>
 				<displayName count="other">àwɔn Lɛmipírà Ɔ́ńdúrà</displayName>
 			</currency>
 			<currency type="HRK">
-				<displayName count="other">àwɔn kúnà Croatian</displayName>
+				<displayName>Kúnà Kúróshíà</displayName>
+				<displayName count="other">àwɔn kúnà Kúróshíà</displayName>
 			</currency>
 			<currency type="HTG">
 				<displayName>Gɔ́dì Àítì</displayName>
@@ -1022,9 +1396,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="ILS">
 				<displayName>Shékélì Tuntun Ísírɛ̀ɛ̀lì</displayName>
+				<displayName count="other">Shékélì Tuntun Ísírɛ̀ɛ̀lì</displayName>
 			</currency>
 			<currency type="INR">
 				<displayName>Rupi ti Orílɛ́ède Indina</displayName>
+				<displayName count="other">Rupi ti Orílɛ́ède Indina</displayName>
+			</currency>
+			<currency type="ISK">
+				<displayName count="other">kórónɔ̀ Áílándíìkì</displayName>
 			</currency>
 			<currency type="JMD">
 				<displayName>Dɔ́là Jàmáíkà</displayName>
@@ -1032,9 +1411,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="JOD">
 				<displayName>Dínárì Jɔ́dàànì</displayName>
+				<displayName count="other">Dínárì Jɔ́dàànì</displayName>
 			</currency>
 			<currency type="JPY">
 				<displayName>Yeni ti Orílɛ́ède Japani</displayName>
+				<displayName count="other">Yeni ti Orílɛ́ède Japani</displayName>
 			</currency>
 			<currency type="KES">
 				<displayName>Shiili Kenya</displayName>
@@ -1042,15 +1423,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="KHR">
 				<displayName>Ráyò Kàm̀bɔ́díà</displayName>
+				<displayName count="other">Ráyò Kàm̀bɔ́díà</displayName>
 			</currency>
 			<currency type="KMF">
 				<displayName count="other">àwɔn faransi Komori</displayName>
 			</currency>
 			<currency type="KPW">
 				<displayName>Wɔ́ɔ̀nù Àríwá Kòríà</displayName>
+				<displayName count="other">Wɔ́ɔ̀nù Àríwá Kòríà</displayName>
 			</currency>
 			<currency type="KRW">
 				<displayName>Wɔ́ɔ̀nù Gúúsù Kòríà</displayName>
+				<displayName count="other">Wɔ́ɔ̀nù Gúúsù Kòríà</displayName>
 			</currency>
 			<currency type="KYD">
 				<displayName>Dɔ́là Erékùsù Cayman</displayName>
@@ -1058,9 +1442,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="KZT">
 				<displayName>Tɛngé Kasakísítàànì</displayName>
+				<displayName count="other">Tɛngé Kasakísítàànì</displayName>
 			</currency>
 			<currency type="LBP">
 				<displayName>Pɔ́n-ùn Lebanese</displayName>
+				<displayName count="other">Pɔ́n-ùn Lebanese</displayName>
 			</currency>
 			<currency type="LRD">
 				<displayName>Dɔla Liberia</displayName>
@@ -1068,6 +1454,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="LSL">
 				<displayName>Loti ti Orílɛ́ède Lesoto</displayName>
+				<displayName count="other">Lótì ti Lɛ̀sótò</displayName>
 			</currency>
 			<currency type="LYD">
 				<displayName count="other">àwɔn dínà Líbíyà</displayName>
@@ -1087,12 +1474,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="MRU">
 				<displayName>Ouguiya ti Orílɛ́ède Maritania</displayName>
+				<displayName count="other">Ouguiya ti Orílɛ́ède Maritania</displayName>
 			</currency>
 			<currency type="MUR">
 				<displayName count="other">àwɔn rupi Maritusi</displayName>
 			</currency>
 			<currency type="MVR">
 				<displayName>Rúfìyá Mɔ̀lìdífà</displayName>
+				<displayName count="other">Rúfìyá Mɔ̀lìdífà</displayName>
 			</currency>
 			<currency type="MWK">
 				<displayName count="other">àwɔn kásà Màláwì</displayName>
@@ -1103,6 +1492,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="MYR">
 				<displayName>Ríngìtì Màléshíà</displayName>
+				<displayName count="other">Ríngìtì Màléshíà</displayName>
 			</currency>
 			<currency type="MZM">
 				<displayName>Metika ti Orílɛ́ède Mosamibiki</displayName>
@@ -1120,14 +1510,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="other">àwɔn kɔ̀dóbà Naikarágúà</displayName>
 			</currency>
 			<currency type="NOK">
-				<displayName>Kírónì Nɔ́ɔ́wè</displayName>
-				<displayName count="other">kìrónà Nɔ́ɔ́wè</displayName>
+				<displayName>kórónì Nɔ́wè</displayName>
+				<displayName count="other">kórónà Nɔ́wè</displayName>
 			</currency>
 			<currency type="NPR">
 				<displayName>Rúpìì Nɛ̵́pààlì</displayName>
+				<displayName count="other">Rúpìì Nɛ̵́pààlì</displayName>
 			</currency>
 			<currency type="NZD">
 				<displayName>Dɔ́là New Zealand</displayName>
+				<displayName count="other">Dɔ́là New Zealand</displayName>
 			</currency>
 			<currency type="PAB">
 				<displayName count="other">àwɔn bálíbóà Pànámà</displayName>
@@ -1154,9 +1546,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="SAR">
 				<displayName>Riya ti Orílɛ́ède Saudi</displayName>
+				<displayName count="other">Riya ti Orílɛ́ède Saudi</displayName>
 			</currency>
 			<currency type="SBD">
 				<displayName>Dɔ́là Erékùsù Sɔ́lómɔ́nì</displayName>
+				<displayName count="other">Dɔ́là Erékùsù Sɔ́lómɔ́nì</displayName>
 			</currency>
 			<currency type="SCR">
 				<displayName count="other">àwɔ́n rúpì Sayiselesi</displayName>
@@ -1173,6 +1567,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="SGD">
 				<displayName>Dɔ́là Síngápɔ̀</displayName>
+				<displayName count="other">Dɔ́là Síngápɔ̀</displayName>
 			</currency>
 			<currency type="SHP">
 				<displayName>Pɔ́n-un Elena</displayName>
@@ -1198,12 +1593,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="STN">
 				<displayName>Dɔbíra Sao tome àti Pirisipi</displayName>
+				<displayName count="other">Dɔbíra Sao tome àti Pirisipi</displayName>
 			</currency>
 			<currency type="SYP">
 				<displayName>Pɔ́n-ùn Sírìà</displayName>
+				<displayName count="other">Pɔ́n-ùn Sírìà</displayName>
 			</currency>
 			<currency type="TMT">
 				<displayName>Mánààtì Tɔkimɛnístàànì</displayName>
+				<displayName count="other">Mánààtì Tɔkimɛnístàànì</displayName>
 			</currency>
 			<currency type="TND">
 				<displayName>Dínà Tunishíà</displayName>
@@ -1211,6 +1609,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="TRY">
 				<displayName>Lírà Tɔ́kì</displayName>
+				<displayName count="other">Lírà Tɔ́kì</displayName>
 			</currency>
 			<currency type="TTD">
 				<displayName>Dɔ́là Trinidad &amp; Tobago</displayName>
@@ -1218,12 +1617,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="TWD">
 				<displayName>Dɔ́là Tàìwánì Tuntun</displayName>
+				<displayName count="other">Dɔ́là Tàìwánì Tuntun</displayName>
 			</currency>
 			<currency type="TZS">
 				<displayName count="other">àwɔn shile Tansania</displayName>
 			</currency>
 			<currency type="UAH">
 				<displayName>Ɔrifiníyà Yukiréníà</displayName>
+				<displayName count="other">Ɔrifiníyà Yukiréníà</displayName>
 			</currency>
 			<currency type="UGX">
 				<displayName>Shile Uganda</displayName>
@@ -1239,6 +1640,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="UZS">
 				<displayName>Sómú Usibɛkísítàànì</displayName>
+				<displayName count="other">Sómú Usibɛkísítàànì</displayName>
 			</currency>
 			<currency type="VES">
 				<displayName>Bɔ̀lífà Fɛnɛsuɛ́là</displayName>
@@ -1261,6 +1663,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="YER">
 				<displayName>Ráyò Yɛ́mɛ̀nì</displayName>
+				<displayName count="other">Ráyò Yɛ́mɛ̀nì</displayName>
 			</currency>
 			<currency type="ZMK">
 				<displayName>Kawasha ti Orílɛ́ède Saabia (1968–2012)</displayName>
@@ -1294,7 +1697,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<compoundUnit type="1024p7">
 				<unitPrefixPattern>sɛ́bì {0}</unitPrefixPattern>
 			</compoundUnit>
+			<unit type="concentr-item">
+				<displayName>àwɔ́n ohun</displayName>
+			</unit>
+			<unit type="concentr-permillion">
+				<displayName>ara/milíɔ̀nù</displayName>
+			</unit>
 			<unit type="concentr-permille">
+				<displayName>ìdákan nínú ɛgbɛ̀rún</displayName>
 				<unitPattern count="other">{0} ìdákan nínú ɛgbɛ̀rún</unitPattern>
 			</unit>
 			<unit type="digital-petabyte">
@@ -1379,6 +1789,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0}ìsh àáy</unitPattern>
 				<perUnitPattern>{0}/ìsh àáy</perUnitPattern>
 			</unit>
+			<unit type="force-kilowatt-hour-per-100-kilometer">
+				<displayName>àwɔ́n wákàtí kílówáàtì ní kìlómítà ɔgɔ́rùn</displayName>
+				<unitPattern count="other">{0} àwɔ́n wákàtí kílówáàtì ní kìlómítà ɔgɔ́rùn</unitPattern>
+			</unit>
 			<unit type="graphics-dot">
 				<displayName>dɔ́ɔ̀tì</displayName>
 				<unitPattern count="other">{0} dɔ́ɔ̀tì</unitPattern>
@@ -1387,6 +1801,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>ìdinwɔ̀n ayé</displayName>
 				<unitPattern count="other">{0} ìdinwɔ̀n ayé</unitPattern>
 			</unit>
+			<unit type="length-furlong">
+				<displayName>àwɔn fɔ́lɔ́ɔ̀ngì</displayName>
+				<unitPattern count="other">{0} àwɔn fɔ́lɔ́ɔ̀ngì</unitPattern>
+			</unit>
+			<unit type="length-fathom">
+				<displayName>fátɔ́ɔ̀mu</displayName>
+				<unitPattern count="other">{0} fátɔ́ɔ̀mù</unitPattern>
+			</unit>
 			<unit type="light-candela">
 				<displayName>kandɛ́là</displayName>
 				<unitPattern count="other">{0} kandɛ́là</unitPattern>
@@ -1394,6 +1816,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="light-lumen">
 				<displayName>lumɛ́ɛ̀nì</displayName>
 				<unitPattern count="other">{0} lumɛ́ɛ̀nì</unitPattern>
+			</unit>
+			<unit type="volume-bushel">
+				<displayName>búsɛ́ɛ̀li</displayName>
+				<unitPattern count="other">{0} búsɛ́ɛ̀li</unitPattern>
 			</unit>
 			<unit type="volume-dessert-spoon">
 				<displayName>àmì shíbí oúnjɛ́ kékeré</displayName>
@@ -1413,6 +1839,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 		</unitLength>
 		<unitLength type="short">
+			<unit type="concentr-permillion">
+				<displayName>ara/milíɔ̀nù</displayName>
+			</unit>
 			<unit type="concentr-permille">
 				<displayName>ìdákan nínú ɛgbɛ̀rún</displayName>
 			</unit>
@@ -1457,6 +1886,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} ìsh àáy</unitPattern>
 				<perUnitPattern>{0} ìsh àáy</perUnitPattern>
 			</unit>
+			<unit type="force-kilowatt-hour-per-100-kilometer">
+				<displayName>KWh lɔ́rí 100km</displayName>
+				<unitPattern count="other">{0} KWh lɔ́rí 100km</unitPattern>
+			</unit>
 			<unit type="graphics-dot">
 				<displayName>dɔ́ɔ̀tì</displayName>
 				<unitPattern count="other">{0} dɔ́ɔ̀tì</unitPattern>
@@ -1465,9 +1898,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>àmì ìdínwɔ̀n ayé</displayName>
 				<unitPattern count="other">{0} àmì ìdínwɔ̀n ayé</unitPattern>
 			</unit>
+			<unit type="length-furlong">
+				<displayName>fɔ́lɔ́ɔ̀ngì</displayName>
+				<unitPattern count="other">{0} fɔ́</unitPattern>
+			</unit>
+			<unit type="length-fathom">
+				<displayName>fátɔ́mù</displayName>
+			</unit>
 			<unit type="light-lumen">
 				<displayName>àmì lumɛ́ɛ̀nì</displayName>
-				<unitPattern count="other">{0} àmi lumɛ́ɛ̀nì</unitPattern>
+				<unitPattern count="other">{0} Lúmɛ́nì</unitPattern>
+			</unit>
+			<unit type="volume-bushel">
+				<displayName>Búsɛ́ɛ̀li</displayName>
 			</unit>
 			<unit type="volume-dessert-spoon">
 				<displayName>shíbí oúnjɛ́ kékeré</displayName>
@@ -1487,36 +1930,137 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 		</unitLength>
 		<unitLength type="narrow">
+			<unit type="concentr-permillion">
+				<displayName>ara/milíɔ̀nù</displayName>
+			</unit>
+			<unit type="concentr-permille">
+				<displayName>ìdákan nínú ɛgbɛ̀rún</displayName>
+			</unit>
+			<unit type="duration-decade">
+				<displayName>ɛ̀wádùn</displayName>
+				<unitPattern count="other">ɛ̀wádún {0}</unitPattern>
+			</unit>
 			<unit type="duration-year">
 				<displayName>ɔd</displayName>
 				<unitPattern count="other">{0} ɔd</unitPattern>
+				<perUnitPattern>{0}/ɔd</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
 				<displayName>oshù</displayName>
 				<unitPattern count="other">{0} oshù</unitPattern>
+				<perUnitPattern>{0}/oshù</perUnitPattern>
 			</unit>
 			<unit type="duration-week">
 				<displayName>ɔshɛ́</displayName>
 				<unitPattern count="other">{0} ɔsh</unitPattern>
+				<perUnitPattern>{0}/ɔ̀shɛ̀</perUnitPattern>
 			</unit>
 			<unit type="duration-day">
 				<displayName>ɔjɔ́</displayName>
 				<unitPattern count="other">ɔj {0}</unitPattern>
+				<perUnitPattern>{0}/ɔj</perUnitPattern>
 			</unit>
 			<unit type="duration-minute">
 				<displayName>ìsh</displayName>
 				<unitPattern count="other">{0}/ìsh</unitPattern>
+				<perUnitPattern>{0}/ìsh</perUnitPattern>
 			</unit>
 			<unit type="duration-second">
 				<displayName>ìsh àáy</displayName>
 				<unitPattern count="other">{0} ìsh àáy</unitPattern>
+				<perUnitPattern>{0} ìsh àáy</perUnitPattern>
+			</unit>
+			<unit type="graphics-dot">
+				<displayName>dɔ́ɔ̀tì</displayName>
+				<unitPattern count="other">{0} dɔ́ɔ̀tì</unitPattern>
+			</unit>
+			<unit type="length-furlong">
+				<displayName>fɔ́lɔ́ɔ̀ngì</displayName>
+			</unit>
+			<unit type="length-fathom">
+				<displayName>fatɔ́</displayName>
+			</unit>
+			<unit type="light-lux">
+				<displayName>lɔ́s</displayName>
+			</unit>
+			<unit type="light-lumen">
+				<unitPattern count="other">{0} Lúmɛ́nì</unitPattern>
+			</unit>
+			<unit type="volume-bushel">
+				<displayName>búsɛ́li</displayName>
+				<unitPattern count="other">{0}búsɛ́ɛ̀li</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName>shíbí oúnjɛ́ kékeré</displayName>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<displayName>àmì oúnjɛ kékeré</displayName>
+				<unitPattern count="other">{0} àmì oúnjɛ kékeré</unitPattern>
+			</unit>
+			<unit type="volume-drop">
+				<displayName>dírɔ́pù</displayName>
 			</unit>
 		</unitLength>
 	</units>
+	<listPatterns>
+		<listPattern type="or">
+			<listPatternPart type="start">{0} pɛ̀lú {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="or-narrow">
+			<listPatternPart type="start">{0} pɛ̀lú {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="or-short">
+			<listPatternPart type="start">{0} pɛ̀lú {1}</listPatternPart>
+		</listPattern>
+	</listPatterns>
 	<posix>
 		<messages>
 			<yesstr>Bɛ́ɛ̀ni :N</yesstr>
 			<nostr>Bɛ́ɛ̀kɔ́:K</nostr>
 		</messages>
 	</posix>
+	<characterLabels>
+		<characterLabelPattern type="scripts">àwɔ́n ìwé - {0}</characterLabelPattern>
+		<characterLabel type="weather">ojú=ɔjɔ́</characterLabel>
+	</characterLabels>
+	<typographicNames>
+		<axisName type="wdth">fífɛ̀ sí</axisName>
+		<styleName type="ital" subtype="1">kíkɔ́</styleName>
+		<styleName type="opsz" subtype="8">ɔ̀rɔ̀ àtúmɔ̀</styleName>
+		<styleName type="opsz" subtype="12">àtɛ̀jíshɛ́</styleName>
+		<styleName type="slnt" subtype="-12">sílántì ɛ̀yìn</styleName>
+		<styleName type="slnt" subtype="24">sílántì-púpɔ̀</styleName>
+		<styleName type="wdth" subtype="50">kànpɔ̀ gidigidi</styleName>
+		<styleName type="wdth" subtype="50" alt="compressed">tɛ̀pɔ̀ gidigidi</styleName>
+		<styleName type="wdth" subtype="50" alt="narrow">papɔ̀ gidigidi</styleName>
+		<styleName type="wdth" subtype="62.5">kànpɔ̀ púpɔ̀</styleName>
+		<styleName type="wdth" subtype="62.5" alt="compressed">tɛ̀pɔ̀ pupɔ̀</styleName>
+		<styleName type="wdth" subtype="62.5" alt="narrow">papɔ̀-púpɔ̀</styleName>
+		<styleName type="wdth" subtype="75">kànpɔ̀</styleName>
+		<styleName type="wdth" subtype="75" alt="compressed">tɛ̀pɔ̀</styleName>
+		<styleName type="wdth" subtype="75" alt="narrow">tɛ̀pɔ̀</styleName>
+		<styleName type="wdth" subtype="87.5">tɛ̀pɔ̀ díɛ̀</styleName>
+		<styleName type="wdth" subtype="87.5" alt="compressed">kànpɔ̀ díɛ̀</styleName>
+		<styleName type="wdth" subtype="87.5" alt="narrow">papɔ̀ díɛ̀</styleName>
+		<styleName type="wdth" subtype="112.5">tóbi díɛ̀</styleName>
+		<styleName type="wdth" subtype="112.5" alt="wide">sánra díɛ̀</styleName>
+		<styleName type="wdth" subtype="150">tobi-púpɔ̀</styleName>
+		<styleName type="wdth" subtype="150" alt="wide">sanra-pupɔ̀</styleName>
+		<styleName type="wght" subtype="200">fuyɛ́ púpɔ̀</styleName>
+		<styleName type="wght" subtype="200" alt="ultra">fúyɛ́ gidigidi</styleName>
+		<styleName type="wght" subtype="300">fúyɛ́</styleName>
+		<styleName type="wght" subtype="350">fúyɛ́ díɛ̀</styleName>
+		<styleName type="wght" subtype="400">níwɔ́n</styleName>
+		<styleName type="wght" subtype="600">gbojú díɛ̀</styleName>
+		<styleName type="wght" subtype="950">dúdú-púpɔ̀</styleName>
+		<featureName type="dlig">ligasɔ̀ ti o fɛ́</featureName>
+	</typographicNames>
+	<personNames>
+		<sampleName item="nativeFull">
+			<nameField type="title">Ɔ̀gbɛ́ni</nameField>
+		</sampleName>
+		<sampleName item="foreignFull">
+			<nameField type="title">Ɔ̀jɔ̀gbɔ́n Ɔ̀mɔ̀wé</nameField>
+		</sampleName>
+	</personNames>
 </ldml>

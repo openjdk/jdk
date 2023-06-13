@@ -1,5 +1,7 @@
 /*
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2018 SAP SE. All rights reserved.
+ * Copyright (c) 2022, IBM Corp.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,13 +30,23 @@
 #include <dlfcn.h>
 
 // Handle to the libperfstat.
-static void* g_libhandle = NULL;
+static void* g_libhandle = nullptr;
+
+typedef int (*fun_perfstat_cpu_t) (perfstat_id_t *name, PERFSTAT_CPU_T_LATEST* userbuff,
+                                   int sizeof_userbuff, int desired_number);
 
 typedef int (*fun_perfstat_cpu_total_t) (perfstat_id_t *name, PERFSTAT_CPU_TOTAL_T_LATEST* userbuff,
                                          int sizeof_userbuff, int desired_number);
 
 typedef int (*fun_perfstat_memory_total_t) (perfstat_id_t *name, perfstat_memory_total_t* userbuff,
                                             int sizeof_userbuff, int desired_number);
+
+typedef int (*fun_perfstat_netinterface_t) (perfstat_id_t *name, perfstat_netinterface_t* userbuff,
+                                            int sizeof_userbuff, int desired_number);
+
+typedef int (*fun_perfstat_process_t) (perfstat_id_t *name,
+                                       PERFSTAT_PROCESS_T_LATEST* userbuff, int sizeof_userbuff,
+                                       int desired_number);
 
 typedef int (*fun_perfstat_partition_total_t) (perfstat_id_t *name,
     PERFSTAT_PARTITON_TOTAL_T_LATEST* userbuff, int sizeof_userbuff,
@@ -48,12 +60,15 @@ typedef void (*fun_perfstat_reset_t) ();
 
 typedef cid_t (*fun_wpar_getcid_t) ();
 
-static fun_perfstat_cpu_total_t     g_fun_perfstat_cpu_total = NULL;
-static fun_perfstat_memory_total_t  g_fun_perfstat_memory_total = NULL;
-static fun_perfstat_partition_total_t g_fun_perfstat_partition_total = NULL;
-static fun_perfstat_wpar_total_t    g_fun_perfstat_wpar_total = NULL;
-static fun_perfstat_reset_t         g_fun_perfstat_reset = NULL;
-static fun_wpar_getcid_t            g_fun_wpar_getcid = NULL;
+static fun_perfstat_cpu_total_t       g_fun_perfstat_cpu_total       = nullptr;
+static fun_perfstat_cpu_t             g_fun_perfstat_cpu             = nullptr;
+static fun_perfstat_memory_total_t    g_fun_perfstat_memory_total    = nullptr;
+static fun_perfstat_netinterface_t    g_fun_perfstat_netinterface    = nullptr;
+static fun_perfstat_partition_total_t g_fun_perfstat_partition_total = nullptr;
+static fun_perfstat_process_t         g_fun_perfstat_process         = nullptr;
+static fun_perfstat_wpar_total_t      g_fun_perfstat_wpar_total      = nullptr;
+static fun_perfstat_reset_t           g_fun_perfstat_reset           = nullptr;
+static fun_wpar_getcid_t              g_fun_wpar_getcid              = nullptr;
 
 bool libperfstat::init() {
 
@@ -84,7 +99,10 @@ bool libperfstat::init() {
 
   // These functions are required for every release.
   RESOLVE_FUN(perfstat_cpu_total);
+  RESOLVE_FUN(perfstat_cpu);
   RESOLVE_FUN(perfstat_memory_total);
+  RESOLVE_FUN(perfstat_netinterface);
+  RESOLVE_FUN(perfstat_process);
   RESOLVE_FUN(perfstat_reset);
 
   trcVerbose("libperfstat loaded.");
@@ -96,59 +114,84 @@ void libperfstat::cleanup() {
 
   if (g_libhandle) {
     dlclose(g_libhandle);
-    g_libhandle = NULL;
+    g_libhandle = nullptr;
   }
 
-  g_fun_perfstat_cpu_total = NULL;
-  g_fun_perfstat_memory_total = NULL;
-  g_fun_perfstat_partition_total = NULL;
-  g_fun_perfstat_wpar_total = NULL;
-  g_fun_perfstat_reset = NULL;
-  g_fun_wpar_getcid = NULL;
+  g_fun_perfstat_cpu_total = nullptr;
+  g_fun_perfstat_memory_total = nullptr;
+  g_fun_perfstat_partition_total = nullptr;
+  g_fun_perfstat_wpar_total = nullptr;
+  g_fun_perfstat_reset = nullptr;
+  g_fun_wpar_getcid = nullptr;
 
-}
-
-int libperfstat::perfstat_memory_total(perfstat_id_t *name,
-                                       perfstat_memory_total_t* userbuff,
-                                       int sizeof_userbuff, int desired_number) {
-  if (g_fun_perfstat_memory_total == NULL) {
-    return -1;
-  }
-  return g_fun_perfstat_memory_total(name, userbuff, sizeof_userbuff, desired_number);
 }
 
 int libperfstat::perfstat_cpu_total(perfstat_id_t *name, PERFSTAT_CPU_TOTAL_T_LATEST* userbuff,
                                     int sizeof_userbuff, int desired_number) {
-  if (g_fun_perfstat_cpu_total == NULL) {
+  if (g_fun_perfstat_cpu_total == nullptr) {
     return -1;
   }
   return g_fun_perfstat_cpu_total(name, userbuff, sizeof_userbuff, desired_number);
 }
 
+int libperfstat::perfstat_cpu(perfstat_id_t *name, PERFSTAT_CPU_T_LATEST* userbuff,
+                              int sizeof_userbuff, int desired_number) {
+  if (g_fun_perfstat_cpu == nullptr) {
+    return -1;
+  }
+  return g_fun_perfstat_cpu(name, userbuff, sizeof_userbuff, desired_number);
+}
+
+int libperfstat::perfstat_memory_total(perfstat_id_t *name,
+                                       perfstat_memory_total_t* userbuff,
+                                       int sizeof_userbuff, int desired_number) {
+  if (g_fun_perfstat_memory_total == nullptr) {
+    return -1;
+  }
+  return g_fun_perfstat_memory_total(name, userbuff, sizeof_userbuff, desired_number);
+}
+
+int libperfstat::perfstat_netinterface(perfstat_id_t *name,
+                                       perfstat_netinterface_t* userbuff,
+                                       int sizeof_userbuff, int desired_number) {
+  if (g_fun_perfstat_netinterface == nullptr) {
+    return -1;
+  }
+  return g_fun_perfstat_netinterface(name, userbuff, sizeof_userbuff, desired_number);
+}
+
 int libperfstat::perfstat_partition_total(perfstat_id_t *name, PERFSTAT_PARTITON_TOTAL_T_LATEST* userbuff,
                                           int sizeof_userbuff, int desired_number) {
-  if (g_fun_perfstat_partition_total == NULL) {
+  if (g_fun_perfstat_partition_total == nullptr) {
     return -1;
   }
   return g_fun_perfstat_partition_total(name, userbuff, sizeof_userbuff, desired_number);
 }
 
+int libperfstat::perfstat_process(perfstat_id_t *name, perfstat_process_t* userbuff,
+                                  int sizeof_userbuff, int desired_number) {
+  if (g_fun_perfstat_process == nullptr) {
+    return -1;
+  }
+  return g_fun_perfstat_process(name, userbuff, sizeof_userbuff, desired_number);
+}
+
 int libperfstat::perfstat_wpar_total(perfstat_id_wpar_t *name, PERFSTAT_WPAR_TOTAL_T_LATEST* userbuff,
                                      int sizeof_userbuff, int desired_number) {
-  if (g_fun_perfstat_wpar_total == NULL) {
+  if (g_fun_perfstat_wpar_total == nullptr) {
     return -1;
   }
   return g_fun_perfstat_wpar_total(name, userbuff, sizeof_userbuff, desired_number);
 }
 
 void libperfstat::perfstat_reset() {
-  if (g_fun_perfstat_reset != NULL) {
+  if (g_fun_perfstat_reset != nullptr) {
     g_fun_perfstat_reset();
   }
 }
 
 cid_t libperfstat::wpar_getcid() {
-  if (g_fun_wpar_getcid == NULL) {
+  if (g_fun_wpar_getcid == nullptr) {
     return (cid_t) -1;
   }
   return g_fun_wpar_getcid();
@@ -167,10 +210,10 @@ bool libperfstat::get_cpuinfo(cpuinfo_t* pci) {
   PERFSTAT_CPU_TOTAL_T_LATEST psct;
   memset (&psct, '\0', sizeof(psct));
 
-  if (-1 == libperfstat::perfstat_cpu_total(NULL, &psct, sizeof(PERFSTAT_CPU_TOTAL_T_LATEST), 1)) {
-    if (-1 == libperfstat::perfstat_cpu_total(NULL, &psct, sizeof(perfstat_cpu_total_t_71), 1)) {
-      if (-1 == libperfstat::perfstat_cpu_total(NULL, &psct, sizeof(perfstat_cpu_total_t_61), 1)) {
-        if (-1 == libperfstat::perfstat_cpu_total(NULL, &psct, sizeof(perfstat_cpu_total_t_53), 1)) {
+  if (-1 == libperfstat::perfstat_cpu_total(nullptr, &psct, sizeof(PERFSTAT_CPU_TOTAL_T_LATEST), 1)) {
+    if (-1 == libperfstat::perfstat_cpu_total(nullptr, &psct, sizeof(perfstat_cpu_total_t_71), 1)) {
+      if (-1 == libperfstat::perfstat_cpu_total(nullptr, &psct, sizeof(perfstat_cpu_total_t_61), 1)) {
+        if (-1 == libperfstat::perfstat_cpu_total(nullptr, &psct, sizeof(perfstat_cpu_total_t_53), 1)) {
           trcVerbose("perfstat_cpu_total() failed (errno=%d)", errno);
           return false;
         }
@@ -205,12 +248,12 @@ bool libperfstat::get_partitioninfo(partitioninfo_t* ppi) {
 
   bool ame_details = true;
 
-  if (-1 == libperfstat::perfstat_partition_total(NULL, &pspt, sizeof(PERFSTAT_PARTITON_TOTAL_T_LATEST), 1)) {
-    if (-1 == libperfstat::perfstat_partition_total(NULL, &pspt, sizeof(perfstat_partition_total_t_71), 1)) {
+  if (-1 == libperfstat::perfstat_partition_total(nullptr, &pspt, sizeof(PERFSTAT_PARTITON_TOTAL_T_LATEST), 1)) {
+    if (-1 == libperfstat::perfstat_partition_total(nullptr, &pspt, sizeof(perfstat_partition_total_t_71), 1)) {
       ame_details = false;
-      if (-1 == libperfstat::perfstat_partition_total(NULL, &pspt, sizeof(perfstat_partition_total_t_61), 1)) {
-        if (-1 == libperfstat::perfstat_partition_total(NULL, &pspt, sizeof(perfstat_partition_total_t_53), 1)) {
-          if (-1 == libperfstat::perfstat_partition_total(NULL, &pspt, sizeof(perfstat_partition_total_t_53_5), 1)) {
+      if (-1 == libperfstat::perfstat_partition_total(nullptr, &pspt, sizeof(perfstat_partition_total_t_61), 1)) {
+        if (-1 == libperfstat::perfstat_partition_total(nullptr, &pspt, sizeof(perfstat_partition_total_t_53), 1)) {
+          if (-1 == libperfstat::perfstat_partition_total(nullptr, &pspt, sizeof(perfstat_partition_total_t_53_5), 1)) {
             trcVerbose("perfstat_partition_total() failed (errno=%d)", errno);
             return false;
           }
@@ -279,8 +322,8 @@ bool libperfstat::get_wparinfo(wparinfo_t* pwi) {
   PERFSTAT_WPAR_TOTAL_T_LATEST pswt;
   memset (&pswt, '\0', sizeof(pswt));
 
-  if (-1 == libperfstat::perfstat_wpar_total(NULL, &pswt, sizeof(PERFSTAT_WPAR_TOTAL_T_LATEST), 1)) {
-    if (-1 == libperfstat::perfstat_wpar_total(NULL, &pswt, sizeof(perfstat_wpar_total_t_61), 1)) {
+  if (-1 == libperfstat::perfstat_wpar_total(nullptr, &pswt, sizeof(PERFSTAT_WPAR_TOTAL_T_LATEST), 1)) {
+    if (-1 == libperfstat::perfstat_wpar_total(nullptr, &pswt, sizeof(perfstat_wpar_total_t_61), 1)) {
       trcVerbose("perfstat_wpar_total() failed (errno=%d)", errno);
       return false;
     }

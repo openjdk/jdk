@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -406,7 +406,7 @@ Java_sun_nio_fs_UnixNativeDispatcher_getlinelen(JNIEnv* env, jclass this, jlong 
     if (feof(fp))
         return -1;
 
-    /* On successfull return res >= 0, otherwise res is -1 */
+    /* On successful return res >= 0, otherwise res is -1 */
     if (res == -1)
         throwUnixException(env, saved_errno);
 
@@ -465,7 +465,7 @@ Java_sun_nio_fs_UnixNativeDispatcher_close0(JNIEnv* env, jclass this, jint fd) {
 }
 
 JNIEXPORT jint JNICALL
-Java_sun_nio_fs_UnixNativeDispatcher_read(JNIEnv* env, jclass this, jint fd,
+Java_sun_nio_fs_UnixNativeDispatcher_read0(JNIEnv* env, jclass this, jint fd,
     jlong address, jint nbytes)
 {
     ssize_t n;
@@ -478,7 +478,7 @@ Java_sun_nio_fs_UnixNativeDispatcher_read(JNIEnv* env, jclass this, jint fd,
 }
 
 JNIEXPORT jint JNICALL
-Java_sun_nio_fs_UnixNativeDispatcher_write(JNIEnv* env, jclass this, jint fd,
+Java_sun_nio_fs_UnixNativeDispatcher_write0(JNIEnv* env, jclass this, jint fd,
     jlong address, jint nbytes)
 {
     ssize_t n;
@@ -521,7 +521,7 @@ static void prepAttributes(JNIEnv* env, struct stat64* buf, jobject attrs) {
 #endif
 }
 
-JNIEXPORT void JNICALL
+JNIEXPORT jint JNICALL
 Java_sun_nio_fs_UnixNativeDispatcher_stat0(JNIEnv* env, jclass this,
     jlong pathAddress, jobject attrs)
 {
@@ -530,24 +530,11 @@ Java_sun_nio_fs_UnixNativeDispatcher_stat0(JNIEnv* env, jclass this,
     const char* path = (const char*)jlong_to_ptr(pathAddress);
 
     RESTARTABLE(stat64(path, &buf), err);
-    if (err == -1) {
-        throwUnixException(env, errno);
-    } else {
+    if (err == 0) {
         prepAttributes(env, &buf, attrs);
-    }
-}
-
-JNIEXPORT jint JNICALL
-Java_sun_nio_fs_UnixNativeDispatcher_stat1(JNIEnv* env, jclass this, jlong pathAddress) {
-    int err;
-    struct stat64 buf;
-    const char* path = (const char*)jlong_to_ptr(pathAddress);
-
-    RESTARTABLE(stat64(path, &buf), err);
-    if (err == -1) {
         return 0;
     } else {
-        return (jint)buf.st_mode;
+        return errno;
     }
 }
 
@@ -568,7 +555,7 @@ Java_sun_nio_fs_UnixNativeDispatcher_lstat0(JNIEnv* env, jclass this,
 }
 
 JNIEXPORT void JNICALL
-Java_sun_nio_fs_UnixNativeDispatcher_fstat(JNIEnv* env, jclass this, jint fd,
+Java_sun_nio_fs_UnixNativeDispatcher_fstat0(JNIEnv* env, jclass this, jint fd,
     jobject attrs)
 {
     int err;
@@ -616,7 +603,7 @@ Java_sun_nio_fs_UnixNativeDispatcher_chmod0(JNIEnv* env, jclass this,
 }
 
 JNIEXPORT void JNICALL
-Java_sun_nio_fs_UnixNativeDispatcher_fchmod(JNIEnv* env, jclass this, jint filedes,
+Java_sun_nio_fs_UnixNativeDispatcher_fchmod0(JNIEnv* env, jclass this, jint filedes,
     jint mode)
 {
     int err;
@@ -626,7 +613,6 @@ Java_sun_nio_fs_UnixNativeDispatcher_fchmod(JNIEnv* env, jclass this, jint filed
         throwUnixException(env, errno);
     }
 }
-
 
 JNIEXPORT void JNICALL
 Java_sun_nio_fs_UnixNativeDispatcher_chown0(JNIEnv* env, jclass this,
@@ -654,7 +640,7 @@ Java_sun_nio_fs_UnixNativeDispatcher_lchown0(JNIEnv* env, jclass this, jlong pat
 }
 
 JNIEXPORT void JNICALL
-Java_sun_nio_fs_UnixNativeDispatcher_fchown(JNIEnv* env, jclass this, jint filedes, jint uid, jint gid)
+Java_sun_nio_fs_UnixNativeDispatcher_fchown0(JNIEnv* env, jclass this, jint filedes, jint uid, jint gid)
 {
     int err;
 
@@ -685,7 +671,7 @@ Java_sun_nio_fs_UnixNativeDispatcher_utimes0(JNIEnv* env, jclass this,
 }
 
 JNIEXPORT void JNICALL
-Java_sun_nio_fs_UnixNativeDispatcher_futimes(JNIEnv* env, jclass this, jint filedes,
+Java_sun_nio_fs_UnixNativeDispatcher_futimes0(JNIEnv* env, jclass this, jint filedes,
     jlong accessTime, jlong modificationTime)
 {
     struct timeval times[2];
@@ -712,7 +698,7 @@ Java_sun_nio_fs_UnixNativeDispatcher_futimes(JNIEnv* env, jclass this, jint file
 }
 
 JNIEXPORT void JNICALL
-Java_sun_nio_fs_UnixNativeDispatcher_futimens(JNIEnv* env, jclass this, jint filedes,
+Java_sun_nio_fs_UnixNativeDispatcher_futimens0(JNIEnv* env, jclass this, jint filedes,
     jlong accessTime, jlong modificationTime)
 {
     struct timespec times[2];
@@ -804,7 +790,7 @@ Java_sun_nio_fs_UnixNativeDispatcher_closedir(JNIEnv* env, jclass this, jlong di
 }
 
 JNIEXPORT jbyteArray JNICALL
-Java_sun_nio_fs_UnixNativeDispatcher_readdir(JNIEnv* env, jclass this, jlong value) {
+Java_sun_nio_fs_UnixNativeDispatcher_readdir0(JNIEnv* env, jclass this, jlong value) {
     DIR* dirp = jlong_to_ptr(value);
     struct dirent* ptr;
 
@@ -1262,7 +1248,7 @@ Java_sun_nio_fs_UnixNativeDispatcher_fgetxattr0(JNIEnv* env, jclass clazz,
 
 #ifdef __linux__
     res = fgetxattr(fd, name, value, valueLen);
-#elif _ALLBSD_SOURCE
+#elif defined(_ALLBSD_SOURCE)
     res = fgetxattr(fd, name, value, valueLen, 0, 0);
 #else
     throwUnixException(env, ENOTSUP);
@@ -1283,7 +1269,7 @@ Java_sun_nio_fs_UnixNativeDispatcher_fsetxattr0(JNIEnv* env, jclass clazz,
 
 #ifdef __linux__
     res = fsetxattr(fd, name, value, valueLen, 0);
-#elif _ALLBSD_SOURCE
+#elif defined(_ALLBSD_SOURCE)
     res = fsetxattr(fd, name, value, valueLen, 0, 0);
 #else
     throwUnixException(env, ENOTSUP);
@@ -1302,7 +1288,7 @@ Java_sun_nio_fs_UnixNativeDispatcher_fremovexattr0(JNIEnv* env, jclass clazz,
 
 #ifdef __linux__
     res = fremovexattr(fd, name);
-#elif _ALLBSD_SOURCE
+#elif defined(_ALLBSD_SOURCE)
     res = fremovexattr(fd, name, 0);
 #else
     throwUnixException(env, ENOTSUP);
@@ -1321,7 +1307,7 @@ Java_sun_nio_fs_UnixNativeDispatcher_flistxattr(JNIEnv* env, jclass clazz,
 
 #ifdef __linux__
     res = flistxattr(fd, list, (size_t)size);
-#elif _ALLBSD_SOURCE
+#elif defined(_ALLBSD_SOURCE)
     res = flistxattr(fd, list, (size_t)size, 0);
 #else
     throwUnixException(env, ENOTSUP);

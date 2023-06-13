@@ -150,7 +150,6 @@ public:
 
   void register_nmethod(nmethod* nm);
   void unregister_nmethod(nmethod* nm);
-  void flush_nmethod(nmethod* nm);
 
   bool contain(nmethod* nm) const;
   int length() const { return _index; }
@@ -180,7 +179,6 @@ private:
   // Logging support
   void log_register_nmethod(nmethod* nm);
   void log_unregister_nmethod(nmethod* nm);
-  void log_flush_nmethod(nmethod* nm);
 };
 
 class ShenandoahConcurrentNMethodIterator {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ import static java.util.Calendar.*;
 import sun.util.locale.provider.*;
 
 public class CldrFormatNamesTest {
-    private static final Locale ARABIC = new Locale("ar");
+    private static final Locale ARABIC = Locale.of("ar");
     private static final Locale ZH_HANT = Locale.forLanguageTag("zh-Hant");
 
     /*

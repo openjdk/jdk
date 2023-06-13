@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ package sun.jvm.hotspot.utilities;
     <P> An RBTree takes a Comparator as argument to its constructor
     which is used internally to order the nodes in the tree. The
     comparator's arguments are obtained by calling the routine
-    "getNodeData" on two nodes; the default implementaion returns the
+    "getNodeData" on two nodes; the default implementation returns the
     node data. This Comparator is also used to perform the generic
     "find" operation, which returns the RBNode containing user data
     precisely equalling the query data. Different types of user data

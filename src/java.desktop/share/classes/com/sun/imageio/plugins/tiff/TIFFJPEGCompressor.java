@@ -173,7 +173,7 @@ public class TIFFJPEGCompressor extends TIFFBaseJPEGCompressor {
 
             // Initialize JPEG writer to one supporting abbreviated streams.
             if(JPEGTablesField != null) {
-                // Intialize the JPEG writer to one that supports stream
+                // Initialize the JPEG writer to one that supports stream
                 // metadata, i.e., abbreviated streams, and may or may not
                 // support image metadata.
                 initJPEGWriter(true, false);

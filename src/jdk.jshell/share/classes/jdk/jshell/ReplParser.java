@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -201,7 +201,6 @@ class ReplParser extends JavacParser {
                     List<JCAnnotation> annosAfterParams = annotationsOpt(Tag.ANNOTATION);
 
                     if (annosAfterParams.nonEmpty()) {
-                        checkSourceLevel(annosAfterParams.head.pos, Feature.ANNOTATIONS_AFTER_TYPE_PARAMS);
                         mods.annotations = mods.annotations.appendList(annosAfterParams);
                         if (mods.pos == Position.NOPOS) {
                             mods.pos = mods.annotations.head.pos;
@@ -230,7 +229,7 @@ class ReplParser extends JavacParser {
                     } else if ((isVoid || (lastmode & TYPE) != 0) && LAX_IDENTIFIER.test(token.kind)) {
                         // we have "Type Ident", so we can assume it is variable or method declaration
                         pos = token.pos;
-                        Name name = ident();
+                        Name name = identOrUnderscore();
                         if (token.kind == LPAREN) {
                         // method declaration
                             //mods.flags |= Flags.STATIC;

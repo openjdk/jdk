@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,16 +43,18 @@ public class StreamingUtils {
     public static Path getJfrRepository(Process process) throws Exception {
         while (true) {
             if (!process.isAlive()) {
-                String msg = String.format("Process (pid = %d) is no longer alive, exit value = %d",
+                String msg = String.format("Process (pid = %d) is no longer alive, exit value = %d\n",
                                            process.pid(), process.exitValue());
+                msg += "Stderr: " + new String(process.getErrorStream().readAllBytes()) + "\n";
+                msg += "Stdout: " + new String(process.getInputStream().readAllBytes()) + "\n";
                 throw new RuntimeException(msg);
             }
 
             try {
                 VirtualMachine vm = VirtualMachine.attach(String.valueOf(process.pid()));
                 String repo = vm.getSystemProperties().getProperty("jdk.jfr.repository");
+                vm.detach();
                 if (repo != null) {
-                    vm.detach();
                     System.out.println("JFR repository: " + repo);
                     return Paths.get(repo);
                 }

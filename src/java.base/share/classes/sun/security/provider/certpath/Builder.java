@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package sun.security.provider.certpath;
 
 import java.io.IOException;
-import java.security.AccessController;
 import java.security.GeneralSecurityException;
 import java.security.cert.*;
 import java.util.*;
@@ -51,7 +50,7 @@ import sun.security.x509.X509CertImpl;
  * @author      Yassir Elley
  */
 
-public abstract class Builder {
+abstract class Builder {
 
     private static final Debug debug = Debug.getInstance("certpath");
     private Set<String> matchingPolicies;
@@ -158,7 +157,6 @@ public abstract class Builder {
         case GeneralNameInterface.NAME_MATCH:
             return 0;
         case GeneralNameInterface.NAME_WIDENS:
-            break;
         case GeneralNameInterface.NAME_NARROWS:
             break;
         default: // should never occur
@@ -204,10 +202,9 @@ public abstract class Builder {
             return 0;
         case GeneralNameInterface.NAME_WIDENS:
             /* base is ancestor of test */
-            return (test.subtreeDepth()-base.subtreeDepth());
         case GeneralNameInterface.NAME_NARROWS:
             /* base is descendant of test */
-            return (test.subtreeDepth()-base.subtreeDepth());
+            return test.subtreeDepth() - base.subtreeDepth();
         default: // should never occur
             return incomparable;
         }
@@ -233,7 +230,7 @@ public abstract class Builder {
             int commonDistance = commonName.subtreeDepth();
             int baseDistance = baseName.subtreeDepth();
             int testDistance = testName.subtreeDepth();
-            return (baseDistance + testDistance - (2 * commonDistance));
+            return baseDistance + testDistance - (2 * commonDistance);
         }
     }
 
@@ -303,8 +300,7 @@ public abstract class Builder {
         SubjectAlternativeNameExtension altNameExt =
             certImpl.getSubjectAlternativeNameExtension();
         if (altNameExt != null) {
-            GeneralNames altNames = altNameExt.get(
-                    SubjectAlternativeNameExtension.SUBJECT_NAME);
+            GeneralNames altNames = altNameExt.getNames();
             /* see if any alternative name matches target */
             if (altNames != null) {
                 for (int j = 0, n = altNames.size(); j < n; j++) {
@@ -330,20 +326,18 @@ public abstract class Builder {
             constraints.merge(ncExt);
         } else {
             // Make sure we do a clone here, because we're probably
-            // going to modify this object later and we don't want to
+            // going to modify this object later, and we don't want to
             // be sharing it with a Certificate object!
             constraints = (NameConstraintsExtension) ncExt.clone();
         }
 
         if (debug != null) {
             debug.println("Builder.targetDistance() merged constraints: "
-                + String.valueOf(constraints));
+                + constraints);
         }
         /* reduce permitted by excluded */
-        GeneralSubtrees permitted =
-                constraints.get(NameConstraintsExtension.PERMITTED_SUBTREES);
-        GeneralSubtrees excluded =
-                constraints.get(NameConstraintsExtension.EXCLUDED_SUBTREES);
+        GeneralSubtrees permitted = constraints.getPermittedSubtrees();
+        GeneralSubtrees excluded = constraints.getExcludedSubtrees();
         if (permitted != null) {
             permitted.reduce(excluded);
         }
@@ -365,7 +359,7 @@ public abstract class Builder {
             GeneralNameInterface perName = permitted.get(i).getName().getName();
             int distance = distance(perName, target, -1);
             if (distance >= 0) {
-                return (distance + 1);
+                return distance + 1;
             }
         }
         /* no matching type in permitted; cert holder could certify target */
@@ -404,7 +398,7 @@ public abstract class Builder {
             } else {
                 // we just return an empty set to make sure that there is
                 // at least a certificate policies extension in the cert
-                matchingPolicies = Collections.<String>emptySet();
+                matchingPolicies = Collections.emptySet();
             }
         }
         return matchingPolicies;
@@ -412,8 +406,7 @@ public abstract class Builder {
 
     /**
      * Search the specified CertStores and add all certificates matching
-     * selector to resultCerts. Self-signed certs are not useful here
-     * and therefore ignored.
+     * selector to resultCerts.
      *
      * If the targetCert criterion of the selector is set, only that cert
      * is examined and the CertStores are not searched.
@@ -432,8 +425,7 @@ public abstract class Builder {
         X509Certificate targetCert = selector.getCertificate();
         if (targetCert != null) {
             // no need to search CertStores
-            if (selector.match(targetCert) && !X509CertImpl.isSelfSigned
-                (targetCert, buildParams.sigProvider())) {
+            if (selector.match(targetCert)) {
                 if (debug != null) {
                     debug.println("Builder.addMatchingCerts: " +
                         "adding target cert" +
@@ -452,11 +444,8 @@ public abstract class Builder {
                 Collection<? extends Certificate> certs =
                                         store.getCertificates(selector);
                 for (Certificate cert : certs) {
-                    if (!X509CertImpl.isSelfSigned
-                        ((X509Certificate)cert, buildParams.sigProvider())) {
-                        if (resultCerts.add((X509Certificate)cert)) {
-                            add = true;
-                        }
+                    if (resultCerts.add((X509Certificate)cert)) {
+                        add = true;
                     }
                 }
                 if (!checkAll && add) {

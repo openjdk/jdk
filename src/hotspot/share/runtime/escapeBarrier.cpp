@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -33,6 +33,7 @@
 #include "runtime/handles.hpp"
 #include "runtime/handshake.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/javaThread.inline.hpp"
 #include "runtime/keepStackGCProcessed.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/registerMap.hpp"
@@ -51,9 +52,9 @@
 // Returns true iff objects were reallocated and relocked because of access through JVMTI
 bool EscapeBarrier::objs_are_deoptimized(JavaThread* thread, intptr_t* fr_id) {
   // first/oldest update holds the flag
-  GrowableArray<jvmtiDeferredLocalVariableSet*>* list = JvmtiDeferredUpdates::deferred_locals(thread);
+  GrowableArrayView<jvmtiDeferredLocalVariableSet*>* list = JvmtiDeferredUpdates::deferred_locals(thread);
   bool result = false;
-  if (list != NULL) {
+  if (list != nullptr) {
     for (int i = 0; i < list->length(); i++) {
       if (list->at(i)->matches(fr_id)) {
         result = list->at(i)->objects_are_deoptimized();
@@ -79,17 +80,20 @@ bool EscapeBarrier::deoptimize_objects(int d1, int d2) {
     KeepStackGCProcessedMark ksgcpm(deoptee_thread());
     ResourceMark rm(calling_thread());
     HandleMark   hm(calling_thread());
-    RegisterMap  reg_map(deoptee_thread(), false /* update_map */, false /* process_frames */);
+    RegisterMap  reg_map(deoptee_thread(),
+                         RegisterMap::UpdateMap::skip,
+                         RegisterMap::ProcessFrames::skip,
+                         RegisterMap::WalkContinuation::skip);
     vframe* vf = deoptee_thread()->last_java_vframe(&reg_map);
     int cur_depth = 0;
 
     // Skip frames at depth < d1
-    while (vf != NULL && cur_depth < d1) {
+    while (vf != nullptr && cur_depth < d1) {
       cur_depth++;
       vf = vf->sender();
     }
 
-    while (vf != NULL && ((cur_depth <= d2) || !vf->is_entry_frame())) {
+    while (vf != nullptr && ((cur_depth <= d2) || !vf->is_entry_frame())) {
       if (vf->is_compiled_frame()) {
         compiledVFrame* cvf = compiledVFrame::cast(vf);
         // Deoptimize frame and local objects if any exist.
@@ -119,6 +123,10 @@ bool EscapeBarrier::deoptimize_objects_all_threads() {
   if (!barrier_active()) return true;
   ResourceMark rm(calling_thread());
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *jt = jtiwh.next(); ) {
+    // Skip thread with mounted continuation
+    if (jt->last_continuation() != nullptr) {
+      continue;
+    }
     if (jt->frames_to_pop_failed_realloc() > 0) {
       // The deoptee thread jt has frames with reallocation failures on top of its stack.
       // These frames are about to be removed. We must not interfere with that and signal failure.
@@ -126,12 +134,15 @@ bool EscapeBarrier::deoptimize_objects_all_threads() {
     }
     if (jt->has_last_Java_frame()) {
       KeepStackGCProcessedMark ksgcpm(jt);
-      RegisterMap reg_map(jt, false /* update_map */, false /* process_frames */);
+      RegisterMap reg_map(jt,
+                          RegisterMap::UpdateMap::skip,
+                          RegisterMap::ProcessFrames::skip,
+                          RegisterMap::WalkContinuation::skip);
       vframe* vf = jt->last_java_vframe(&reg_map);
       assert(jt->frame_anchor()->walkable(),
              "The stack of JavaThread " PTR_FORMAT " is not walkable. Thread state is %d",
              p2i(jt), jt->thread_state());
-      while (vf != NULL) {
+      while (vf != nullptr) {
         if (vf->is_compiled_frame()) {
           compiledVFrame* cvf = compiledVFrame::cast(vf);
           if ((cvf->has_ea_local_in_scope() || cvf->arg_escape()) &&
@@ -162,8 +173,8 @@ class EscapeBarrierSuspendHandshake : public HandshakeClosure {
 };
 
 void EscapeBarrier::sync_and_suspend_one() {
-  assert(_calling_thread != NULL, "calling thread must not be NULL");
-  assert(_deoptee_thread != NULL, "deoptee thread must not be NULL");
+  assert(_calling_thread != nullptr, "calling thread must not be null");
+  assert(_deoptee_thread != nullptr, "deoptee thread must not be null");
   assert(barrier_active(), "should not call");
 
   // Sync with other threads that might be doing deoptimizations
@@ -193,7 +204,7 @@ void EscapeBarrier::sync_and_suspend_one() {
 
 void EscapeBarrier::sync_and_suspend_all() {
   assert(barrier_active(), "should not call");
-  assert(_calling_thread != NULL, "calling thread must not be NULL");
+  assert(_calling_thread != nullptr, "calling thread must not be null");
   assert(all_threads(), "sanity");
 
   // Sync with other threads that might be doing deoptimizations
@@ -291,10 +302,10 @@ void EscapeBarrier::thread_removed(JavaThread* jt) {
 // Remember that objects were reallocated and relocked for the compiled frame with the given id
 static void set_objs_are_deoptimized(JavaThread* thread, intptr_t* fr_id) {
   // set in first/oldest update
-  GrowableArray<jvmtiDeferredLocalVariableSet*>* list =
+  GrowableArrayView<jvmtiDeferredLocalVariableSet*>* list =
     JvmtiDeferredUpdates::deferred_locals(thread);
   DEBUG_ONLY(bool found = false);
-  if (list != NULL) {
+  if (list != nullptr) {
     for (int i = 0; i < list->length(); i++) {
       if (list->at(i)->matches(fr_id)) {
         DEBUG_ONLY(found = true);

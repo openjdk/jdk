@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,16 +34,14 @@ import jdk.jfr.consumer.RecordedEvent;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.jfr.EventNames;
 import jdk.test.lib.jfr.Events;
-import sun.hotspot.WhiteBox;
-import sun.hotspot.code.BlobType;
-import sun.hotspot.code.CodeBlob;
+import jdk.test.whitebox.WhiteBox;
+import jdk.test.whitebox.code.BlobType;
+import jdk.test.whitebox.code.CodeBlob;
 
 /**
- * Test for events: vm/code_sweeper/sweep vm/code_cache/full vm/compiler/failure
+ * Test for events: vm/code_cache/full vm/compiler/failure
  *
- * We verify: 1. That sweptCount >= flushedCount + zombifiedCount 2. That
- * sweepIndex increases by 1. 3. We should get at least one of each of the
- * events listed above.
+ * We verify that we should get at least one of each of the events listed above.
  *
  * NOTE! The test is usually able to trigger the events but not always. If an
  * event is received, the event is verified. If an event is missing, we do NOT
@@ -54,8 +52,8 @@ import sun.hotspot.code.CodeBlob;
  * @key jfr
  * @requires vm.hasJFR
  * @library /test/lib
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:-SegmentedCodeCache -XX:+WhiteBoxAPI jdk.jfr.event.compiler.TestCodeSweeper
  */
 
@@ -65,7 +63,6 @@ public class TestCodeSweeper {
     private static final int COMP_LEVEL_FULL_OPTIMIZATION = 4;
     private static final int SIZE = 1;
     private static final String METHOD_NAME = "verifyFullEvent";
-    private static final String pathSweep = EventNames.SweepCodeCache;
     private static final String pathFull = EventNames.CodeCacheFull;
     private static final String pathFailure = EventNames.CompilationFailure;
     public static final long SEGMENT_SIZE = WhiteBox.getWhiteBox().getUintxVMFlag("CodeCacheSegmentSize");
@@ -82,14 +79,12 @@ public class TestCodeSweeper {
         System.out.println("************************************************");
 
         Recording r = new Recording();
-        r.enable(pathSweep);
         r.enable(pathFull);
         r.enable(pathFailure);
         r.start();
         provokeEvents();
         r.stop();
 
-        int countEventSweep = 0;
         int countEventFull = 0;
         int countEventFailure = 0;
 
@@ -97,10 +92,6 @@ public class TestCodeSweeper {
         Events.hasEvents(events);
         for (RecordedEvent event : events) {
             switch (event.getEventType().getName()) {
-            case pathSweep:
-                countEventSweep++;
-                verifySingleSweepEvent(event);
-                break;
             case pathFull:
                 countEventFull++;
                 verifyFullEvent(event);
@@ -112,7 +103,7 @@ public class TestCodeSweeper {
             }
         }
 
-        System.out.println(String.format("eventCount: %d, %d, %d", countEventSweep, countEventFull, countEventFailure));
+        System.out.println(String.format("eventCount: %d, %d", countEventFull, countEventFailure));
     }
 
     private static boolean canAllocate(double size, long maxSize, MemoryPoolMXBean bean) {
@@ -131,7 +122,6 @@ public class TestCodeSweeper {
                 + "." + METHOD_NAME + "\", " + "BackgroundCompilation: false }]";
 
         // Fill up code heaps until they are almost full
-        // to trigger the vm/code_sweeper/sweep event.
         ArrayList<Long> blobs = new ArrayList<>();
         MemoryPoolMXBean bean = BlobType.All.getMemoryPool();
         long max = bean.getUsage().getMax();
@@ -193,15 +183,6 @@ public class TestCodeSweeper {
     private static void verifyFailureEvent(RecordedEvent event) throws Throwable {
         Events.assertField(event, "failureMessage").notEmpty();
         Events.assertField(event, "compileId").atLeast(0);
-    }
-
-    private static void verifySingleSweepEvent(RecordedEvent event) throws Throwable {
-        int flushedCount = Events.assertField(event, "flushedCount").atLeast(0).getValue();
-        int zombifiedCount = Events.assertField(event, "zombifiedCount").atLeast(0).getValue();
-        Events.assertField(event, "sweptCount").atLeast(flushedCount + zombifiedCount);
-        Events.assertField(event, "sweepId").atLeast(0);
-        Asserts.assertGreaterThanOrEqual(event.getStartTime(), Instant.EPOCH, "startTime was < 0");
-        Asserts.assertGreaterThanOrEqual(event.getEndTime(), event.getStartTime(), "startTime was > endTime");
     }
 
     /** Returns true if less <= bigger. */

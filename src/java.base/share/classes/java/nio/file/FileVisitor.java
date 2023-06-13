@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,17 +36,17 @@ import java.io.IOException;
  * <p> <b>Usage Examples:</b>
  * Suppose we want to delete a file tree. In that case, each directory should
  * be deleted after the entries in the directory are deleted.
- * <pre>
+ * {@snippet lang=java :
  *     Path start = ...
- *     Files.walkFileTree(start, new SimpleFileVisitor&lt;Path&gt;() {
- *         &#64;Override
+ *     Files.walkFileTree(start, new SimpleFileVisitor<Path>() {
+ *         @Override
  *         public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
  *             throws IOException
  *         {
  *             Files.delete(file);
  *             return FileVisitResult.CONTINUE;
  *         }
- *         &#64;Override
+ *         @Override
  *         public FileVisitResult postVisitDirectory(Path dir, IOException e)
  *             throws IOException
  *         {
@@ -59,17 +59,17 @@ import java.io.IOException;
  *             }
  *         }
  *     });
- * </pre>
+ * }
  * <p> Furthermore, suppose we want to copy a file tree to a target location.
  * In that case, symbolic links should be followed and the target directory
  * should be created before the entries in the directory are copied.
- * <pre>
+ * {@snippet lang=java :
  *     final Path source = ...
  *     final Path target = ...
  *
  *     Files.walkFileTree(source, EnumSet.of(FileVisitOption.FOLLOW_LINKS), Integer.MAX_VALUE,
- *         new SimpleFileVisitor&lt;Path&gt;() {
- *             &#64;Override
+ *         new SimpleFileVisitor<Path>() {
+ *             @Override
  *             public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs)
  *                 throws IOException
  *             {
@@ -82,7 +82,7 @@ import java.io.IOException;
  *                 }
  *                 return CONTINUE;
  *             }
- *             &#64;Override
+ *             @Override
  *             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
  *                 throws IOException
  *             {
@@ -90,7 +90,8 @@ import java.io.IOException;
  *                 return CONTINUE;
  *             }
  *         });
- * </pre>
+ * }
+ * @param <T> the type of file/directory
  *
  * @since 1.7
  */

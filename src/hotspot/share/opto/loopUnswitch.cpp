@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,14 +34,14 @@
 //
 // orig:                       transformed:
 //                               if (invariant-test) then
-//  predicate                      predicate
+//  predicates                     predicates
 //  loop                           loop
 //    stmt1                          stmt1
 //    if (invariant-test) then       stmt2
 //      stmt2                        stmt4
 //    else                         endloop
 //      stmt3                    else
-//    endif                        predicate [clone]
+//    endif                        predicates [clone]
 //    stmt4                        loop [clone]
 //  endloop                          stmt1 [clone]
 //                                   stmt3
@@ -74,7 +74,7 @@ bool IdealLoopTree::policy_unswitching( PhaseIdealLoop *phase ) const {
   if (head->unswitch_count() + 1 > head->unswitch_max()) {
     return false;
   }
-  if (phase->find_unswitching_candidate(this) == NULL) {
+  if (phase->find_unswitching_candidate(this) == nullptr) {
     return false;
   }
 
@@ -88,7 +88,7 @@ IfNode* PhaseIdealLoop::find_unswitching_candidate(const IdealLoopTree *loop) co
 
   // Find first invariant test that doesn't exit the loop
   LoopNode *head = loop->_head->as_Loop();
-  IfNode* unswitch_iff = NULL;
+  IfNode* unswitch_iff = nullptr;
   Node* n = head->in(LoopNode::LoopBackControl);
   while (n != head) {
     Node* n_dom = idom(n);
@@ -117,23 +117,20 @@ IfNode* PhaseIdealLoop::find_unswitching_candidate(const IdealLoopTree *loop) co
 // insert a clone of the test that selects which version to
 // execute.
 void PhaseIdealLoop::do_unswitching(IdealLoopTree *loop, Node_List &old_new) {
-
   LoopNode *head = loop->_head->as_Loop();
   Node* entry = head->skip_strip_mined()->in(LoopNode::EntryControl);
-  if (find_predicate_insertion_point(entry, Deoptimization::Reason_loop_limit_check) != NULL
-      || (UseProfiledLoopPredicate && find_predicate_insertion_point(entry, Deoptimization::Reason_profile_predicate) != NULL)
-      || (UseLoopPredicate && find_predicate_insertion_point(entry, Deoptimization::Reason_predicate) != NULL)) {
+  if (ParsePredicates::is_success_proj(entry)) {
     assert(entry->is_IfProj(), "sanity - must be ifProj since there is at least one predicate");
     if (entry->outcnt() > 1) {
-      // Bailout if there are loop predicates from which there are additional control dependencies (i.e. from
-      // loop entry 'entry') to previously partially peeled statements since this case is not handled and can lead
-      // to wrong execution. Remove this bailout, once this is fixed.
+      // Bailout if there are predicates from which there are additional control dependencies (i.e. from loop
+      // entry 'entry') to previously partially peeled statements since this case is not handled and can lead
+      // to a wrong execution. Remove this bailout, once this is fixed.
       return;
     }
   }
   // Find first invariant test that doesn't exit the loop
   IfNode* unswitch_iff = find_unswitching_candidate((const IdealLoopTree *)loop);
-  assert(unswitch_iff != NULL, "should be at least one");
+  assert(unswitch_iff != nullptr, "should be at least one");
 
 #ifndef PRODUCT
   if (TraceLoopOpts) {
@@ -154,29 +151,17 @@ void PhaseIdealLoop::do_unswitching(IdealLoopTree *loop, Node_List &old_new) {
 #ifdef ASSERT
   assert(proj_true->is_IfTrue(), "must be true projection");
   entry = head->skip_strip_mined()->in(LoopNode::EntryControl);
-  Node* predicate = find_predicate(entry);
-  if (predicate == NULL) {
-    // No empty predicate
+  ParsePredicates parse_predicates(entry);
+  if (!parse_predicates.has_any()) {
+    // No Parse Predicate.
     Node* uniqc = proj_true->unique_ctrl_out();
     assert((uniqc == head && !head->is_strip_mined()) || (uniqc == head->in(LoopNode::EntryControl)
            && head->is_strip_mined()), "must hold by construction if no predicates");
   } else {
-    // There is at least one empty predicate. When calling 'skip_loop_predicates' on each found empty predicate,
-    // we should end up at 'proj_true'.
-    Node* proj_before_first_empty_predicate = skip_loop_predicates(entry);
-    if (UseProfiledLoopPredicate) {
-      predicate = find_predicate(proj_before_first_empty_predicate);
-      if (predicate != NULL) {
-        proj_before_first_empty_predicate = skip_loop_predicates(predicate);
-      }
-    }
-    if (UseLoopPredicate) {
-      predicate = find_predicate(proj_before_first_empty_predicate);
-      if (predicate != NULL) {
-        proj_before_first_empty_predicate = skip_loop_predicates(predicate);
-      }
-    }
-    assert(proj_true == proj_before_first_empty_predicate, "must hold by construction if at least one predicate");
+    // There is at least one Parse Predicate. When skipping all predicates/Regular Predicate Blocks, we should end up
+    // at 'proj_true'.
+    assert(proj_true == Predicates::skip_all_predicates(parse_predicates),
+           "must hold by construction if at least one Parse Predicate");
   }
 #endif
   // Increment unswitch count
@@ -213,11 +198,11 @@ void PhaseIdealLoop::do_unswitching(IdealLoopTree *loop, Node_List &old_new) {
 
   // Hardwire the control paths in the loops into if(true) and if(false)
   _igvn.rehash_node_delayed(unswitch_iff);
-  dominated_by(proj_true, unswitch_iff, false, false);
+  dominated_by(proj_true->as_IfProj(), unswitch_iff, false, false);
 
   IfNode* unswitch_iff_clone = old_new[unswitch_iff->_idx]->as_If();
   _igvn.rehash_node_delayed(unswitch_iff_clone);
-  dominated_by(proj_false, unswitch_iff_clone, false, false);
+  dominated_by(proj_false->as_IfProj(), unswitch_iff_clone, false, false);
 
   // Reoptimize loops
   loop->record_for_igvn();
@@ -258,9 +243,9 @@ IfNode* PhaseIdealLoop::create_slow_version_of_loop(IdealLoopTree *loop,
   IfNode* iff = (unswitch_iff->Opcode() == Op_RangeCheck) ? new RangeCheckNode(entry, bol, unswitch_iff->_prob, unswitch_iff->_fcnt) :
     new IfNode(entry, bol, unswitch_iff->_prob, unswitch_iff->_fcnt);
   register_node(iff, outer_loop, entry, dom_depth(entry));
-  ProjNode* iffast = new IfTrueNode(iff);
+  IfProjNode* iffast = new IfTrueNode(iff);
   register_node(iffast, outer_loop, iff, dom_depth(iff));
-  ProjNode* ifslow = new IfFalseNode(iff);
+  IfProjNode* ifslow = new IfFalseNode(iff);
   register_node(ifslow, outer_loop, iff, dom_depth(iff));
 
   // Clone the loop body.  The clone becomes the slow loop.  The
@@ -270,9 +255,9 @@ IfNode* PhaseIdealLoop::create_slow_version_of_loop(IdealLoopTree *loop,
   assert(old_new[head->_idx]->is_Loop(), "" );
 
   // Fast (true) and Slow (false) control
-  ProjNode* iffast_pred = iffast;
-  ProjNode* ifslow_pred = ifslow;
-  clone_predicates_to_unswitched_loop(loop, old_new, iffast_pred, ifslow_pred);
+  IfProjNode* iffast_pred = iffast;
+  IfProjNode* ifslow_pred = ifslow;
+  clone_parse_and_assertion_predicates_to_unswitched_loop(loop, old_new, iffast_pred, ifslow_pred);
 
   Node* l = head->skip_strip_mined();
   _igvn.replace_input_of(l, LoopNode::EntryControl, iffast_pred);
@@ -343,9 +328,9 @@ LoopNode* PhaseIdealLoop::create_reserve_version_of_loop(IdealLoopTree *loop, Co
 CountedLoopReserveKit::CountedLoopReserveKit(PhaseIdealLoop* phase, IdealLoopTree *loop, bool active = true) :
   _phase(phase),
   _lpt(loop),
-  _lp(NULL),
-  _iff(NULL),
-  _lp_reserved(NULL),
+  _lp(nullptr),
+  _iff(nullptr),
+  _lp_reserved(nullptr),
   _has_reserved(false),
   _use_new(false),
   _active(active)

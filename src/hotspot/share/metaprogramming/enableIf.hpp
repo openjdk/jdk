@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 #ifndef SHARE_METAPROGRAMMING_ENABLEIF_HPP
 #define SHARE_METAPROGRAMMING_ENABLEIF_HPP
 
-#include "metaprogramming/logical.hpp"
 #include <type_traits>
 
 // Retained temporarily for backward compatibility.
@@ -96,7 +95,7 @@ using EnableIf = std::enable_if<cond, T>;
 // separate from its declaration cannot have a default value.  Thus,
 // ENABLE_IF can't be used in such a definition.  But the type expression in
 // the separate definition must be equivalent (C++14 14.4 and 14.5.6.1) to
-// that in the declation.  The ENABLE_IF_SDEFN macro provides the common
+// that in the declaration.  The ENABLE_IF_SDEFN macro provides the common
 // code for the separate definition that must match the corresponding
 // declaration code at the token level.
 //

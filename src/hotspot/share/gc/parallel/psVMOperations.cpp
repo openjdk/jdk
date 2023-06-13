@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ void VM_ParallelGCFailedAllocation::doit() {
   GCCauseSetter gccs(heap, _gc_cause);
   _result = heap->failed_mem_allocate(_word_size);
 
-  if (_result == NULL && GCLocker::is_active_and_needs_gc()) {
+  if (_result == nullptr && GCLocker::is_active_and_needs_gc()) {
     set_gc_locked();
   }
 }
@@ -58,7 +58,8 @@ static bool is_cause_full(GCCause::Cause cause) {
 VM_ParallelGCSystemGC::VM_ParallelGCSystemGC(uint gc_count,
                                              uint full_gc_count,
                                              GCCause::Cause gc_cause) :
-  VM_GC_Operation(gc_count, gc_cause, full_gc_count, is_cause_full(gc_cause))
+  VM_GC_Operation(gc_count, gc_cause, full_gc_count, is_cause_full(gc_cause)),
+  _full_gc_succeeded(false)
 {
 }
 
@@ -70,8 +71,8 @@ void VM_ParallelGCSystemGC::doit() {
   GCCauseSetter gccs(heap, _gc_cause);
   if (!_full) {
     // If (and only if) the scavenge fails, this will invoke a full gc.
-    heap->invoke_scavenge();
+    _full_gc_succeeded = heap->invoke_scavenge();
   } else {
-    heap->do_full_collection(false);
+    _full_gc_succeeded = PSParallelCompact::invoke(false);
   }
 }

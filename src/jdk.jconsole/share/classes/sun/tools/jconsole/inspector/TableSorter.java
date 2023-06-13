@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -126,7 +126,7 @@ public class TableSorter extends DefaultTableModel implements MouseListener {
         //
         // When we reach here the previous value is already validated, and the
         // old editor is closed, but the new editor might have opened.
-        // It's this new editor that wil be cancelled here, if needed.
+        // It's this new editor that will be cancelled here, if needed.
         //
         if (attrs != null && attrs.isEditing())
             attrs.cancelCellEditing();

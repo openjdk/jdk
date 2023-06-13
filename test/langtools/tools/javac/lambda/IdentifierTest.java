@@ -3,8 +3,9 @@
  * @bug    8007401 8007427 8061549
  * @author sogoel
  * @summary Test generation of warnings when '_' is used an identifier
- * @compile/fail/ref=IdentifierTest8.out -source 8 -Xlint:-options -Werror -XDrawDiagnostics IdentifierTest.java
+ * @compile/fail/ref=IdentifierTest8.out --release 8 -Werror -XDrawDiagnostics -Xlint:-options IdentifierTest.java
  * @compile/fail/ref=IdentifierTest9.out -XDrawDiagnostics IdentifierTest.java
+ * @compile/fail/ref=IdentifierTest21.out -source ${jdk.version} --enable-preview -XDrawDiagnostics IdentifierTest.java
  */
 
 import java.util.List;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,8 @@ import jdk.jfr.internal.Type;
 import jdk.jfr.internal.consumer.ChunkHeader;
 import jdk.jfr.internal.consumer.FileAccess;
 import jdk.jfr.internal.consumer.RecordingInput;
+import jdk.jfr.internal.util.UserDataException;
+import jdk.jfr.internal.util.UserSyntaxException;
 
 final class Summary extends Command {
     private final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withLocale(Locale.UK).withZone(ZoneOffset.UTC);
@@ -100,7 +102,7 @@ final class Summary extends Command {
             }
             HashMap<Long, Statistics> stats = new HashMap<>();
             stats.put(0L, new Statistics(eventPrefix + "Metadata"));
-            stats.put(1L, new Statistics(eventPrefix + "CheckPoint"));
+            stats.put(1L, new Statistics(eventPrefix + "Checkpoint"));
             int minWidth = 0;
             while (true) {
                 long chunkEnd = ch.getEnd();
@@ -147,19 +149,11 @@ final class Summary extends Command {
             String header = "      Count  Size (bytes) ";
             String typeHeader = " Event Type";
             minWidth = Math.max(minWidth, typeHeader.length());
-            println(typeHeader + pad(minWidth - typeHeader.length(), ' ') + header);
-            println(pad(minWidth + header.length(), '='));
+            println(typeHeader + " ".repeat(minWidth - typeHeader.length()) + header);
+            println("=".repeat(minWidth + header.length()));
             for (Statistics s : statsList) {
                 System.out.printf(" %-" + minWidth + "s%10d  %12d\n", s.name, s.count, s.size);
             }
         }
-    }
-
-    private String pad(int count, char c) {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < count; i++) {
-            sb.append(c);
-        }
-        return sb.toString();
     }
 }

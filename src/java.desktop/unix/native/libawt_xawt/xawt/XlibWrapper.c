@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -825,7 +825,7 @@ JNIEXPORT void JNICALL Java_sun_awt_X11_XlibWrapper_SetProperty
     */
     if (!JNU_IsNull(env, jstr)) {
 #ifdef X_HAVE_UTF8_STRING
-        cname = (char *) (*env)->GetStringUTFChars(env, jstr, JNI_FALSE);
+        cname = (char *) (*env)->GetStringUTFChars(env, jstr, NULL);
 #else
         cname = (char *) JNU_GetStringPlatformChars(env, jstr, NULL);
 #endif
@@ -1324,15 +1324,15 @@ JNIEXPORT jboolean JNICALL Java_sun_awt_X11_XlibWrapper_IsKanaKeyboard
     return result ? JNI_TRUE : JNI_FALSE;
 }
 
-JavaVM* jvm = NULL;
+JavaVM* jvm_xawt = NULL;
 static int ToolkitErrorHandler(Display * dpy, XErrorEvent * event) {
     JNIEnv * env;
     // First call the native synthetic error handler declared in "awt_util.h" file.
     if (current_native_xerror_handler != NULL) {
         current_native_xerror_handler(dpy, event);
     }
-    if (jvm != NULL) {
-        env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
+    if (jvm_xawt != NULL) {
+        env = (JNIEnv *)JNU_GetEnv(jvm_xawt, JNI_VERSION_1_2);
         if (env) {
             return JNU_CallStaticMethodByName(env, NULL, "sun/awt/X11/XErrorHandlerUtil",
                 "globalErrorHandler", "(JJ)I", ptr_to_jlong(dpy), ptr_to_jlong(event)).i;
@@ -1349,7 +1349,7 @@ static int ToolkitErrorHandler(Display * dpy, XErrorEvent * event) {
 JNIEXPORT jlong JNICALL Java_sun_awt_X11_XlibWrapper_SetToolkitErrorHandler
 (JNIEnv *env, jclass clazz)
 {
-    if ((*env)->GetJavaVM(env, &jvm) < 0) {
+    if ((*env)->GetJavaVM(env, &jvm_xawt) < 0) {
         return 0;
     }
     AWT_CHECK_HAVE_LOCK_RETURN(0);
@@ -2184,11 +2184,6 @@ Java_sun_awt_X11_XlibWrapper_copyLongArray(JNIEnv *env,
     }
 }
 
-JNIEXPORT jint JNICALL
-Java_sun_awt_X11_XlibWrapper_XSynchronize(JNIEnv *env, jclass clazz, jlong display, jboolean onoff)
-{
-    return (jint) XSynchronize((Display*)jlong_to_ptr(display), (onoff == JNI_TRUE ? True : False));
-}
 
 JNIEXPORT jboolean JNICALL
 Java_sun_awt_X11_XlibWrapper_XShapeQueryExtension

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,28 +22,57 @@
  */
 
 /**
- * @test
+ * @test id=with-dtrace
+ * @requires vm.debug
+ * @requires vm.hasDTrace
+ * @bug 8168712
+ *
+ * @run main/othervm -XX:CompileCommand=compileonly,Test8168712.*
+ *                   -XX:CompileCommand=compileonly,*Object.*
+ *                   -XX:+DTraceMethodProbes
+ *                   -XX:-UseOnStackReplacement
+ *                   -XX:+DeoptimizeRandom
+ *                   compiler.runtime.Test8168712
+ */
+
+/**
+ * @test id=without-dtrace
  * @requires vm.debug
  * @bug 8168712
  *
- * @run main/othervm -XX:CompileCommand=compileonly,Test8168712.* -XX:CompileCommand=compileonly,*Object.* -XX:+DTraceMethodProbes -XX:-UseOnStackReplacement -XX:+DeoptimizeRandom compiler.runtime.Test8168712
+ * @run main/othervm -XX:CompileCommand=compileonly,Test8168712.*
+ *                   -XX:CompileCommand=compileonly,*Object.*
+ *                   -XX:-UseOnStackReplacement
+ *                   -XX:+DeoptimizeRandom
+ *                   compiler.runtime.Test8168712
  */
 package compiler.runtime;
 
+import java.lang.ref.Cleaner;
 import java.util.*;
 
 public class Test8168712 {
     static HashSet<Test8168712> m = new HashSet<>();
+
+    // One cleaner thread for cleaning all the instances. Otherwise, we get OOME.
+    static Cleaner cleaner = Cleaner.create();
+
+    public Test8168712() {
+        cleaner.register(this, () -> cleanup());
+    }
+
     public static void main(String args[]) {
         int i = 0;
         while (i++<15000) {
             test();
         }
     }
+
     static Test8168712 test() {
         return new Test8168712();
     }
-    protected void finalize() {
+
+    public void cleanup() {
         m.add(this);
     }
 }

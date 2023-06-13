@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@
 #include "gc/shared/stringdedup/stringDedupStat.hpp"
 #include "gc/shared/stringdedup/stringDedupStorageUse.hpp"
 #include "gc/shared/stringdedup/stringDedupTable.hpp"
+#include "gc/shared/stringdedup/stringDedupThread.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.hpp"
 #include "memory/iterator.hpp"
@@ -46,7 +47,6 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/safepoint.hpp"
-#include "runtime/thread.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -57,9 +57,12 @@ StringDedup::Processor* StringDedup::_processor = nullptr;
 StringDedup::Stat StringDedup::_cur_stat{};
 StringDedup::Stat StringDedup::_total_stat{};
 
-const Klass* StringDedup::_string_klass_or_null = nullptr;
-uint StringDedup::_enabled_age_threshold = 0;
-uint StringDedup::_enabled_age_limit = 0;
+// Configuration for predicates used to decide whether to deduplicate.
+// The initial values are suitable for deduplication being disabled.
+const Klass* StringDedup::_string_klass_or_null = nullptr; // No klass will match.
+static_assert(markWord::max_age < UINT_MAX, "assumption");
+uint StringDedup::_enabled_age_threshold = UINT_MAX;       // Age never equals max.
+uint StringDedup::_enabled_age_limit = 0;                  // Age is never less than zero.
 
 bool StringDedup::ergo_initialize() {
   return Config::ergo_initialize();
@@ -82,30 +85,16 @@ void StringDedup::initialize() {
     _enabled_age_limit = Config::age_threshold();
     Table::initialize();
     Processor::initialize();
+    // Don't create the thread yet.  JavaThreads need to be created later.
     _enabled = true;
     log_info_p(stringdedup, init)("String Deduplication is enabled");
-  } else {
-    // No klass will ever match.
-    _string_klass_or_null = nullptr;
-    // Age can never equal UINT_MAX.
-    static_assert(markWord::max_age < UINT_MAX, "assumption");
-    _enabled_age_threshold = UINT_MAX;
-    // Age can never be less than zero.
-    _enabled_age_limit = 0;
   }
   _initialized = true;
 }
 
-void StringDedup::stop() {
+void StringDedup::start() {
   assert(is_enabled(), "precondition");
-  assert(_processor != nullptr, "invariant");
-  _processor->stop();
-}
-
-void StringDedup::threads_do(ThreadClosure* tc) {
-  assert(is_enabled(), "precondition");
-  assert(_processor != nullptr, "invariant");
-  tc->do_thread(_processor);
+  StringDedupThread::initialize();
 }
 
 void StringDedup::forbid_deduplication(oop java_string) {

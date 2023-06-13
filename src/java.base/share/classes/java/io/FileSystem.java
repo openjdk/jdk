@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,6 +86,11 @@ abstract class FileSystem {
      * Tell whether or not the given abstract pathname is absolute.
      */
     public abstract boolean isAbsolute(File f);
+
+    /**
+     * Tell whether the given abstract pathname is invalid.
+     */
+    public abstract boolean isInvalid(File f);
 
     /**
      * Resolve the given abstract pathname into absolute form.  Invoked by the
@@ -238,18 +243,4 @@ abstract class FileSystem {
      */
     public abstract int hashCode(File f);
 
-    // Flags for enabling/disabling performance optimizations for file
-    // name canonicalization
-    static final boolean useCanonCaches;
-    static final boolean useCanonPrefixCache;
-
-    private static boolean getBooleanProperty(String prop, boolean defaultVal) {
-        String value = System.getProperty(prop);
-        return (value != null) ? Boolean.parseBoolean(value) : defaultVal;
-    }
-
-    static {
-        useCanonCaches      = getBooleanProperty("sun.io.useCanonCaches", false);
-        useCanonPrefixCache = useCanonCaches && getBooleanProperty("sun.io.useCanonPrefixCache", false);
-    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ import sun.security.util.*;
  * @author Hemma Prafullchandra
  */
 public class KeyIdentifier {
-    private byte[] octetString;
+    private final byte[] octetString;
 
     /**
      * Create a KeyIdentifier with the passed bit settings.
@@ -90,7 +90,7 @@ public class KeyIdentifier {
         AlgorithmId algid = AlgorithmId.parse(algAndKey.data.getDerValue());
         byte[] key = algAndKey.data.getUnalignedBitString().toByteArray();
 
-        MessageDigest md = null;
+        MessageDigest md;
         try {
             md = MessageDigest.getInstance("SHA1");
         } catch (NoSuchAlgorithmException e3) {
@@ -125,7 +125,7 @@ public class KeyIdentifier {
      * @param out the DerOutputStream to write the object to.
      * @exception IOException
      */
-    void encode(DerOutputStream out) throws IOException {
+    void encode(DerOutputStream out) {
         out.putOctetString(octetString);
     }
 

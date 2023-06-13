@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,13 +101,6 @@ typedef unsigned int            uintptr_t;
 
 #endif // !LINUX && !_ALLBSD_SOURCE
 
-// Additional Java basic types
-
-typedef uint8_t  jubyte;
-typedef uint16_t jushort;
-typedef uint32_t juint;
-typedef uint64_t julong;
-
 // checking for nanness
 #if defined(__APPLE__)
 inline int g_isnan(double f) { return isnan(f); }
@@ -127,11 +120,6 @@ inline int g_isfinite(jfloat  f)                 { return isfinite(f); }
 inline int g_isfinite(jdouble f)                 { return isfinite(f); }
 
 
-// Wide characters
-
-inline int wcslen(const jchar* x) { return wcslen((const wchar_t*)x); }
-
-
 // Formatting.
 #ifdef _LP64
 # ifdef __APPLE__
@@ -144,10 +132,21 @@ inline int wcslen(const jchar* x) { return wcslen((const wchar_t*)x); }
 #endif // _LP64
 
 // gcc warns about applying offsetof() to non-POD object or calculating
-// offset directly when base address is NULL. Use 16 to get around the
-// warning. The -Wno-invalid-offsetof option could be used to suppress
-// this warning, but we instead just avoid the use of offsetof().
-#define offset_of(klass,field) (size_t)((intx)&(((klass*)16)->field) - 16)
+// offset directly when base address is null. The -Wno-invalid-offsetof
+// option could be used to suppress this warning, but we instead just
+// avoid the use of offsetof().
+//
+// FIXME: This macro is complex and rather arcane. Perhaps we should
+// use offsetof() instead, with the invalid-offsetof warning
+// temporarily disabled.
+#define offset_of(klass,field)                          \
+([]() {                                                 \
+  char space[sizeof (klass)] ATTRIBUTE_ALIGNED(16);     \
+  klass* dummyObj = (klass*)space;                      \
+  char* c = (char*)(void*)&dummyObj->field;             \
+  return (size_t)(c - space);                           \
+}())
+
 
 #if defined(_LP64) && defined(__APPLE__)
 #define JLONG_FORMAT          "%ld"

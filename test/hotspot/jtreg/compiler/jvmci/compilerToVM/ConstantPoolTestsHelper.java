@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,11 +32,12 @@ import jdk.internal.access.SharedSecrets;
 import jdk.internal.org.objectweb.asm.Opcodes;
 import jdk.internal.reflect.ConstantPool;
 import jdk.internal.reflect.ConstantPool.Tag;
+import jdk.vm.ci.hotspot.HotSpotConstantPool.Bytecodes;
 import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.runtime.JVMCI;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -76,6 +77,13 @@ public class ConstantPoolTestsHelper {
         }
 
         public int getCPCacheIndex(int cpi) {
+            if (constantPoolSS.getTagAt(cpi).equals(Tag.INVOKEDYNAMIC)) {
+                for (int indy_index = 0; indy_index < WB.getIndyInfoLength(this.klass); indy_index++) {
+                    if (WB.getIndyCPIndex(this.klass, indy_index) == cpi) {
+                        return ~indy_index;
+                    }
+                }
+            }
             int cacheLength = WB.getConstantPoolCacheLength(this.klass);
             int indexTag = WB.getConstantPoolCacheIndexTag();
             for (int cpci = indexTag; cpci < cacheLength + indexTag; cpci++) {
@@ -90,6 +98,29 @@ public class ConstantPoolTestsHelper {
         }
     }
 
+    /**
+     *
+     * @param cpType Constant type from the Constant pool
+     * @return a bytecode that's suitable for passing to the following functions for the given cpType:
+     *     - CompilerToVMHelper.lookupNameAndTypeRefIndexInPool()
+     *     - CompilerToVMHelper.lookupNameInPool()
+     *     - CompilerToVMHelper.lookupSignatureInPool()
+     *     - CompilerToVMHelper.lookupKlassRefIndexInPool()
+     */
+    public static int getDummyOpcode(ConstantTypes cpType) {
+        switch (cpType) {
+            case CONSTANT_FIELDREF:
+              return Bytecodes.GETFIELD;
+          case CONSTANT_METHODREF:
+              return Bytecodes.INVOKEVIRTUAL;
+          case CONSTANT_INTERFACEMETHODREF:
+              return Bytecodes.INVOKEINTERFACE;
+          case CONSTANT_INVOKEDYNAMIC:
+              return Bytecodes.INVOKEDYNAMIC;
+          default:
+              throw new IllegalArgumentException("Unexpected constant pool entry type");
+        }
+    }
     /**
      * Obtain a resolved Java method declared by a given type.
      *

@@ -46,11 +46,11 @@ class InterpreterCodelet: public Stub {
   friend class VMStructs;
   friend class CodeCacheDumper; // possible extension [do not remove]
  private:
-  int         _size;                      // the size in bytes
-  const char* _description;               // a description of the codelet, for debugging & printing
-  Bytecodes::Code _bytecode;              // associated bytecode if any
   NOT_PRODUCT(AsmRemarks _asm_remarks;)   // Comments for annotating assembler output.
   NOT_PRODUCT(DbgStrings _dbg_strings;)   // Debug strings used in generated code.
+  const char*     _description;           // A description of the codelet, for debugging & printing
+  int             _size;                  // The codelet size in bytes
+  Bytecodes::Code _bytecode;              // Associated bytecode, if any
 
  public:
   // Initialization/finalization
@@ -59,10 +59,10 @@ class InterpreterCodelet: public Stub {
 
   // General info/converters
   int     size() const                           { return _size; }
-  static  int code_size_to_size(int code_size)   { return align_up((int)sizeof(InterpreterCodelet), CodeEntryAlignment) + code_size; }
+  static  int alignment()                        { return HeapWordSize; }
 
   // Code info
-  address code_begin() const                     { return (address)this + align_up(sizeof(InterpreterCodelet), CodeEntryAlignment); }
+  address code_begin() const                     { return align_up((address)this + sizeof(InterpreterCodelet), CodeEntryAlignment); }
   address code_end() const                       { return (address)this + size(); }
 
   // Debugging
@@ -85,6 +85,9 @@ class InterpreterCodelet: public Stub {
   }
   void use_remarks(AsmRemarks &remarks) { _asm_remarks.share(remarks); }
   void use_strings(DbgStrings &strings) { _dbg_strings.share(strings); }
+
+  void clear_remarks() { _asm_remarks.clear(); }
+  void clear_strings() { _dbg_strings.clear(); }
 #endif
 };
 

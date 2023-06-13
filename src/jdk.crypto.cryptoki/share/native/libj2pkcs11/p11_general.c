@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -73,12 +73,12 @@ jfieldID mech_pHandleID;
 jclass jByteArrayClass;
 jclass jLongClass;
 
-JavaVM* jvm = NULL;
+JavaVM* jvm_j2pkcs11 = NULL;
 
-jboolean debug = 0;
+jboolean debug_j2pkcs11 = 0;
 
 JNIEXPORT jint JNICALL DEF_JNI_OnLoad(JavaVM *vm, void *reserved) {
-    jvm = vm;
+    jvm_j2pkcs11 = vm;
     return JNI_VERSION_1_4;
 }
 
@@ -122,7 +122,7 @@ Java_sun_security_pkcs11_wrapper_PKCS11_initializeLibrary
 #endif
 
     prefetchFields(env, thisClass);
-    debug = enableDebug;
+    debug_j2pkcs11 = enableDebug;
 }
 
 jclass fetchClass(JNIEnv *env, const char *name) {
@@ -210,7 +210,7 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1Initialize
 (JNIEnv *env, jobject obj, jobject jInitArgs)
 {
     /*
-     * Initalize Cryptoki
+     * Initialize Cryptoki
      */
     CK_C_INITIALIZE_ARGS_PTR ckpInitArgs;
     CK_RV rv;
@@ -385,7 +385,7 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1GetSlotList
 
     ckpSlotList = (CK_SLOT_ID_PTR) malloc(ckTokenNumber * sizeof(CK_SLOT_ID));
     if (ckpSlotList == NULL) {
-        throwOutOfMemoryError(env, 0);
+        p11ThrowOutOfMemoryError(env, 0);
         return NULL;
     }
 
@@ -686,7 +686,7 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1GetMechanismList
     ckpMechanismList = (CK_MECHANISM_TYPE_PTR)
       malloc(ckMechanismNumber * sizeof(CK_MECHANISM_TYPE));
     if (ckpMechanismList == NULL) {
-        throwOutOfMemoryError(env, 0);
+        p11ThrowOutOfMemoryError(env, 0);
         return NULL;
     }
 

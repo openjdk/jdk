@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2021 Unicode, Inc.
+<!-- Copyright © 1991-2023 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -25,6 +25,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="dum" draft="unconfirmed">neerlandés mitjà</language>
 			<language type="en" draft="unconfirmed">anglés</language>
 			<language type="en_GB" alt="short" draft="unconfirmed">anglés (GB)</language>
+			<language type="en_US" alt="short" draft="unconfirmed">anglés (EUA)</language>
 			<language type="enm" draft="unconfirmed">anglés mitjà</language>
 			<language type="fi" draft="unconfirmed">finés</language>
 			<language type="fo" draft="unconfirmed">feroés</language>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8167108 8265240
+ * @bug 8167108 8265240 8286830
  * @summary Stress test SuspendThread at thread exit.
  * @requires vm.jvmti
  * @run main/othervm/native -agentlib:SuspendAtExit SuspendAtExit
@@ -78,7 +78,32 @@ public class SuspendAtExit extends Thread {
                     usage();
             }
         }
+        timeMax /= 2;  // Split time between the two sub-tests.
 
+        test(timeMax);
+
+        // Fire-up deamon that just creates new threads. This generates contention on
+        // Threads_lock while worker tries to exit, creating more places where target
+        // can be seen as handshake safe.
+        Thread threadCreator = new Thread() {
+            @Override
+            public void run() {
+                while (true) {
+                    Thread dummyThread = new Thread(() -> {});
+                    dummyThread.start();
+                    try {
+                        dummyThread.join();
+                    } catch(InterruptedException ie) {
+                    }
+                }
+            }
+        };
+        threadCreator.setDaemon(true);
+        threadCreator.start();
+        test(timeMax);
+    }
+
+    public static void test(int timeMax) {
         System.out.println("About to execute for " + timeMax + " seconds.");
 
         long count = 0;

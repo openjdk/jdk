@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -138,8 +138,7 @@ public class RelationTypeSupport implements RelationType {
      * @serial {@link Map} holding the mapping:
      *           &lt;role name ({@link String})&gt; -&gt; &lt;role info ({@link RoleInfo} object)&gt;
      */
-    private Map<String,RoleInfo> roleName2InfoMap =
-        new HashMap<String,RoleInfo>();
+    private Map<String,RoleInfo> roleName2InfoMap = new HashMap<>();
 
     /**
      * @serial Flag specifying whether the relation type has been declared in the
@@ -223,7 +222,7 @@ public class RelationTypeSupport implements RelationType {
      * Returns the list of role definitions (ArrayList of RoleInfo objects).
      */
     public List<RoleInfo> getRoleInfos() {
-        return new ArrayList<RoleInfo>(roleName2InfoMap.values());
+        return new ArrayList<>(roleName2InfoMap.values());
     }
 
     /**
@@ -390,7 +389,7 @@ public class RelationTypeSupport implements RelationType {
         }
 
 
-        Set<String> roleNames = new HashSet<String>();
+        Set<String> roleNames = new HashSet<>();
 
         for (int i = 0; i < roleInfoArray.length; i++) {
             RoleInfo currRoleInfo = roleInfoArray[i];

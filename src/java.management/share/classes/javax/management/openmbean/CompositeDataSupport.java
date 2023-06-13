@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,22 +26,15 @@
 
 package javax.management.openmbean;
 
-
-// java import
-//
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
-
-// jmx import
 import java.util.TreeSet;
-//
 
 
 /**
@@ -133,7 +126,7 @@ public class CompositeDataSupport
                     "], itemValues[" + itemValues.length + "]");
         }
 
-        SortedMap<String, Object> map = new TreeMap<String, Object>();
+        SortedMap<String, Object> map = new TreeMap<>();
         for (int i = 0; i < itemNames.length; i++) {
             String name = itemNames[i];
             if (name == null || name.equals(""))
@@ -182,7 +175,7 @@ public class CompositeDataSupport
         if (items == null || items.isEmpty())
             throw new IllegalArgumentException("Null or empty items map");
 
-        SortedMap<String, Object> map = new TreeMap<String, Object>();
+        SortedMap<String, Object> map = new TreeMap<>();
         for (Object key : items.keySet()) {
             if (key == null || key.equals(""))
                 throw new IllegalArgumentException("Null or empty item name");
@@ -214,9 +207,9 @@ public class CompositeDataSupport
         // This is just a comparison, but we do it this way for a better
         // exception message.
         if (!namesFromType.equals(namesFromItems)) {
-            Set<String> extraFromType = new TreeSet<String>(namesFromType);
+            Set<String> extraFromType = new TreeSet<>(namesFromType);
             extraFromType.removeAll(namesFromItems);
-            Set<String> extraFromItems = new TreeSet<String>(namesFromItems);
+            Set<String> extraFromItems = new TreeSet<>(namesFromItems);
             extraFromItems.removeAll(namesFromType);
             if (!extraFromType.isEmpty() || !extraFromItems.isEmpty()) {
                 throw new OpenDataException(

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -154,8 +154,7 @@ public final class DRBG extends SecureRandomSpi {
 
         if (params != null) {
             // MoreDrbgParameters is used for testing.
-            if (params instanceof MoreDrbgParameters) {
-                MoreDrbgParameters m = (MoreDrbgParameters) params;
+            if (params instanceof MoreDrbgParameters m) {
                 params = DrbgParameters.instantiation(m.strength,
                         m.capability, m.personalizationString);
 
@@ -171,9 +170,7 @@ public final class DRBG extends SecureRandomSpi {
                 }
                 usedf = m.usedf;
             }
-            if (params instanceof DrbgParameters.Instantiation) {
-                DrbgParameters.Instantiation dp =
-                        (DrbgParameters.Instantiation) params;
+            if (params instanceof DrbgParameters.Instantiation dp) {
 
                 // ps is still null by now
                 ps = dp.getPersonalizationString();

@@ -69,7 +69,7 @@ public class RuleSwitchBreaks extends LineNumberTestBase {
                      public class TestGuards {                             // 1
                          private void test(Object o) {                     // 2
                              switch (o) {                                  // 3
-                                 case String s && s.isEmpty() ->           // 4
+                                 case String s when s.isEmpty() ->         // 4
                                      System.out.println("a");              // 5
                                  case String s ->                          // 6
                                      System.out.println("a");              // 7
@@ -81,7 +81,7 @@ public class RuleSwitchBreaks extends LineNumberTestBase {
                      """,
                      List.of(1, 3, 4, 5, 6, 7, 9, 11),
                      true,
-                     List.of("--enable-preview", "-source", System.getProperty("java.specification.version")),
+                     List.of(),
                      "TestGuards")
     };
 

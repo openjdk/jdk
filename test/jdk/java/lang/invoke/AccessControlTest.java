@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -190,7 +190,7 @@ public class AccessControlTest {
          * [A9] If the new lookup class is in the same module as the old lookup class,
          * the new previous lookup class is the old previous lookup class.
          * [A10] If the new lookup class is in a different module from the old lookup class,
-         * the new previous lookup class is the the old lookup class.
+         * the new previous lookup class is the old lookup class.
          *
          * Other than the above cases, the new lookup will have the same
          * access capabilities as the original. [A11]

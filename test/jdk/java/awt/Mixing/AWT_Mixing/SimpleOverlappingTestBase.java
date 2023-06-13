@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 import java.awt.*;
 import java.awt.event.*;
+import java.util.regex.*;
 import javax.swing.*;
 import test.java.awt.regtesthelpers.Util;
 
@@ -142,7 +143,7 @@ public abstract class SimpleOverlappingTestBase extends OverlappingTestBase {
         JFrame ancestor = (JFrame)(testedComponent.getTopLevelAncestor());
         if( ancestor != null ) {
             Point ancestorLoc = ancestor.getLocationOnScreen();
-            ancestorLoc.translate(isOel7() ? 5 :
+            ancestorLoc.translate(isOel7orLater() ? 5 :
                                              ancestor.getWidth() / 2 - 15, 2);
             robot.mouseMove(ancestorLoc.x, ancestorLoc.y);
             Util.waitForIdle(robot);
@@ -158,10 +159,18 @@ public abstract class SimpleOverlappingTestBase extends OverlappingTestBase {
         return wasLWClicked;
     }
 
-    public boolean isOel7() {
-        return System.getProperty("os.name").toLowerCase()
-                .contains("linux") && System.getProperty("os.version")
-                .toLowerCase().contains("el7");
+    public boolean isOel7orLater() {
+        if (System.getProperty("os.name").toLowerCase().contains("linux") &&
+            System.getProperty("os.version").toLowerCase().contains("el")) {
+            Pattern p = Pattern.compile("el(\\d+)");
+            Matcher m = p.matcher(System.getProperty("os.version"));
+            if (m.find()) {
+                try {
+                    return Integer.parseInt(m.group(1)) >= 7;
+                } catch (NumberFormatException nfe) {}
+            }
+        }
+        return false;
     }
 
 }

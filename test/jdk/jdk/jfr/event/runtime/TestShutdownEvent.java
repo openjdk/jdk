@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,6 +92,7 @@ public class TestShutdownEvent {
         ProcessBuilder pb = ProcessTools.createTestJvm(
                                 "-Xlog:jfr=debug",
                                 "-XX:-CreateCoredumpOnCrash",
+                                "-XX:-TieredCompilation",
                                 "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED",
                                 "-XX:StartFlightRecording:filename=./dumped.jfr,dumponexit=true,settings=default",
                                 "jdk.jfr.event.runtime.TestShutdownEvent$TestMain",

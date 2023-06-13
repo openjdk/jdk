@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,8 +61,8 @@ public class ExpCornerCaseTests {
 
     private static int testExp(double input, double expected) {
         int failures = 0;
-        failures += Tests.test("StrictMath.exp", input, StrictMath.exp(input), expected);
-        failures += Tests.test("Math.exp", input, Math.exp(input), expected);
+        failures += Tests.test("StrictMath.exp", input, StrictMath::exp, expected);
+        failures += Tests.test("Math.exp",       input, Math::exp,       expected);
         return failures;
     }
 }

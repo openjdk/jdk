@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,9 +50,15 @@ public class GetOwnedMonitorInfoTest {
     private static native boolean hasEventPosted();
 
     public static void main(String[] args) throws Exception {
+        runTest(true);
+        runTest(false);
+    }
+
+    public static void runTest(boolean isVirtual) throws Exception {
+        var threadFactory = isVirtual ? Thread.ofVirtual().factory() : Thread.ofPlatform().factory();
         final GetOwnedMonitorInfoTest lock = new GetOwnedMonitorInfoTest();
 
-        Thread t1 = new Thread(() -> {
+        Thread t1 = threadFactory.newThread(() -> {
             synchronized (lock) {
                 System.out.println("Thread in sync section: "
                                    + Thread.currentThread().getName());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2009, 2021, Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -30,12 +30,16 @@
 #define SUPPORTS_NATIVE_CX8
 #endif
 
+#define SUPPORT_MONITOR_COUNT
+
+#ifdef __APPLE__
+#define FFI_GO_CLOSURES 0
+#endif
+
 #include <ffi.h>
 
 // Indicates whether the C calling conventions require that
 // 32-bit integer argument values are extended to 64 bits.
 const bool CCallingConventionRequiresIntsAsLongs = false;
-
-#define COMPRESSED_CLASS_POINTERS_DEPENDS_ON_COMPRESSED_OOPS false
 
 #endif // CPU_ZERO_GLOBALDEFINITIONS_ZERO_HPP

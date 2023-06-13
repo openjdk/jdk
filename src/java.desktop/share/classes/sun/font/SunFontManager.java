@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1325,7 +1325,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
          */
         HashMap<String,String> fontToFileMap2 = null;
         HashMap<String,String> fontToFamilyNameMap2 = null;
-        HashMap<String,ArrayList<String>> familyToFontListMap2 = null;;
+        HashMap<String,ArrayList<String>> familyToFontListMap2 = null;
 
         for (String pathFile : getFontFilesFromPath(false)) {
             if (!registryFiles.contains(pathFile)) {
@@ -1686,7 +1686,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
 
     /* Used to register any font files that are found by platform APIs
      * that weren't previously found in the standard font locations.
-     * the isAbsolute() check is needed since that's whats stored in the
+     * the isAbsolute() check is needed since that's what's stored in the
      * set, and on windows, the fonts in the system font directory that
      * are in the fontToFileMap are just basenames. We don't want to try
      * to register those again, but we do want to register other registry
@@ -3466,7 +3466,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
                     String language = System.getProperty("user.language", "en");
                     String country  = System.getProperty("user.country","");
                     String variant  = System.getProperty("user.variant","");
-                    return new Locale(language, country, variant);
+                    return Locale.of(language, country, variant);
                 }
             });
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,8 @@
 #include "memory/resourceArea.hpp"
 #include "runtime/os.hpp"
 #include "runtime/os_perf.hpp"
+#include "runtime/vm_version.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include CPU_HEADER(vm_version_ext)
 
 #ifdef __APPLE__
   #import <libproc.h>
@@ -46,16 +46,17 @@ static const double NANOS_PER_SEC = 1000000000.0;
 class CPUPerformanceInterface::CPUPerformance : public CHeapObj<mtInternal> {
    friend class CPUPerformanceInterface;
  private:
-  long _total_cpu_nanos;
-  long _total_csr_nanos;
-  long _jvm_user_nanos;
-  long _jvm_system_nanos;
+#ifdef __APPLE__
+  uint64_t _total_cpu_nanos;
+  uint64_t _total_csr_nanos;
+  uint64_t _jvm_user_nanos;
+  uint64_t _jvm_system_nanos;
   long _jvm_context_switches;
   long _used_ticks;
   long _total_ticks;
   int  _active_processor_count;
 
-  bool now_in_nanos(long* resultp) {
+  bool now_in_nanos(uint64_t* resultp) {
     struct timespec tp;
     int status = clock_gettime(CLOCK_REALTIME, &tp);
     assert(status == 0, "clock_gettime error: %s", os::strerror(errno));
@@ -65,6 +66,7 @@ class CPUPerformanceInterface::CPUPerformance : public CHeapObj<mtInternal> {
     *resultp = tp.tv_sec * NANOS_PER_SEC + tp.tv_nsec;
     return true;
   }
+#endif
 
   double normalize(double value) {
     return MIN2<double>(MAX2<double>(value, 0.0), 1.0);
@@ -83,6 +85,7 @@ class CPUPerformanceInterface::CPUPerformance : public CHeapObj<mtInternal> {
 };
 
 CPUPerformanceInterface::CPUPerformance::CPUPerformance() {
+#ifdef __APPLE__
   _total_cpu_nanos= 0;
   _total_csr_nanos= 0;
   _jvm_context_switches = 0;
@@ -91,6 +94,7 @@ CPUPerformanceInterface::CPUPerformance::CPUPerformance() {
   _used_ticks = 0;
   _total_ticks = 0;
   _active_processor_count = 0;
+#endif
 }
 
 bool CPUPerformanceInterface::CPUPerformance::initialize() {
@@ -158,10 +162,10 @@ int CPUPerformanceInterface::CPUPerformance::cpu_loads_process(double* pjvmUserL
   task_absolutetime_info_t absolutetime_info = (task_absolutetime_info_t)task_info_data;
 
   int active_processor_count = os::active_processor_count();
-  long jvm_user_nanos = absolutetime_info->total_user;
-  long jvm_system_nanos = absolutetime_info->total_system;
+  uint64_t jvm_user_nanos = absolutetime_info->total_user;
+  uint64_t jvm_system_nanos = absolutetime_info->total_system;
 
-  long total_cpu_nanos;
+  uint64_t total_cpu_nanos;
   if(!now_in_nanos(&total_cpu_nanos)) {
     return OS_ERR;
   }
@@ -169,16 +173,16 @@ int CPUPerformanceInterface::CPUPerformance::cpu_loads_process(double* pjvmUserL
   if (_total_cpu_nanos == 0 || active_processor_count != _active_processor_count) {
     // First call or change in active processor count
     result = OS_ERR;
-  }
+  } else {
+    uint64_t delta_nanos = active_processor_count * (total_cpu_nanos - _total_cpu_nanos);
+    if (delta_nanos == 0) {
+      // Avoid division by zero
+      return OS_ERR;
+    }
 
-  long delta_nanos = active_processor_count * (total_cpu_nanos - _total_cpu_nanos);
-  if (delta_nanos == 0) {
-    // Avoid division by zero
-    return OS_ERR;
+    *pjvmUserLoad = normalize((double)(jvm_user_nanos - _jvm_user_nanos)/delta_nanos);
+    *pjvmKernelLoad = normalize((double)(jvm_system_nanos - _jvm_system_nanos)/delta_nanos);
   }
-
-  *pjvmUserLoad = normalize((double)(jvm_user_nanos - _jvm_user_nanos)/delta_nanos);
-  *pjvmKernelLoad = normalize((double)(jvm_system_nanos - _jvm_system_nanos)/delta_nanos);
 
   _active_processor_count = active_processor_count;
   _total_cpu_nanos = total_cpu_nanos;
@@ -209,7 +213,7 @@ int CPUPerformanceInterface::CPUPerformance::context_switch_rate(double* rate) {
 
   long jvm_context_switches = ((task_events_info_t)task_info_data)->csw;
 
-  long total_csr_nanos;
+  uint64_t total_csr_nanos;
   if(!now_in_nanos(&total_csr_nanos)) {
     return OS_ERR;
   }
@@ -231,7 +235,7 @@ int CPUPerformanceInterface::CPUPerformance::context_switch_rate(double* rate) {
 }
 
 CPUPerformanceInterface::CPUPerformanceInterface() {
-  _impl = NULL;
+  _impl = nullptr;
 }
 
 bool CPUPerformanceInterface::initialize() {
@@ -240,7 +244,7 @@ bool CPUPerformanceInterface::initialize() {
 }
 
 CPUPerformanceInterface::~CPUPerformanceInterface() {
-  if (_impl != NULL) {
+  if (_impl != nullptr) {
     delete _impl;
   }
 }
@@ -283,17 +287,17 @@ bool SystemProcessInterface::SystemProcesses::initialize() {
 SystemProcessInterface::SystemProcesses::~SystemProcesses() {
 }
 int SystemProcessInterface::SystemProcesses::system_processes(SystemProcess** system_processes, int* no_of_sys_processes) const {
-  assert(system_processes != NULL, "system_processes pointer is NULL!");
-  assert(no_of_sys_processes != NULL, "system_processes counter pointer is NULL!");
+  assert(system_processes != nullptr, "system_processes pointer is null!");
+  assert(no_of_sys_processes != nullptr, "system_processes counter pointer is null!");
 #ifdef __APPLE__
-  pid_t* pids = NULL;
+  pid_t* pids = nullptr;
   int pid_count = 0;
   ResourceMark rm;
 
   int try_count = 0;
-  while (pids == NULL) {
+  while (pids == nullptr) {
     // Find out buffer size
-    size_t pids_bytes = proc_listpids(PROC_ALL_PIDS, 0, NULL, 0);
+    size_t pids_bytes = proc_listpids(PROC_ALL_PIDS, 0, nullptr, 0);
     if (pids_bytes <= 0) {
       return OS_ERR;
     }
@@ -305,7 +309,7 @@ int SystemProcessInterface::SystemProcesses::system_processes(SystemProcess** sy
     if (pids_bytes <= 0) {
        // couldn't fit buffer, retry.
       FREE_RESOURCE_ARRAY(pid_t, pids, pid_count);
-      pids = NULL;
+      pids = nullptr;
       try_count++;
       if (try_count > 3) {
       return OS_ERR;
@@ -316,7 +320,7 @@ int SystemProcessInterface::SystemProcesses::system_processes(SystemProcess** sy
   }
 
   int process_count = 0;
-  SystemProcess* next = NULL;
+  SystemProcess* next = nullptr;
   for (int i = 0; i < pid_count; i++) {
     pid_t pid = pids[i];
     if (pid != 0) {
@@ -351,7 +355,7 @@ int SystemProcessInterface::system_processes(SystemProcess** system_procs, int* 
 }
 
 SystemProcessInterface::SystemProcessInterface() {
-  _impl = NULL;
+  _impl = nullptr;
 }
 
 bool SystemProcessInterface::initialize() {
@@ -360,43 +364,44 @@ bool SystemProcessInterface::initialize() {
 }
 
 SystemProcessInterface::~SystemProcessInterface() {
-  if (_impl != NULL) {
+  if (_impl != nullptr) {
     delete _impl;
  }
 }
 
 CPUInformationInterface::CPUInformationInterface() {
-  _cpu_info = NULL;
+  _cpu_info = nullptr;
 }
 
 bool CPUInformationInterface::initialize() {
   _cpu_info = new CPUInformation();
-  _cpu_info->set_number_of_hardware_threads(VM_Version_Ext::number_of_threads());
-  _cpu_info->set_number_of_cores(VM_Version_Ext::number_of_cores());
-  _cpu_info->set_number_of_sockets(VM_Version_Ext::number_of_sockets());
-  _cpu_info->set_cpu_name(VM_Version_Ext::cpu_name());
-  _cpu_info->set_cpu_description(VM_Version_Ext::cpu_description());
+  VM_Version::initialize_cpu_information();
+  _cpu_info->set_number_of_hardware_threads(VM_Version::number_of_threads());
+  _cpu_info->set_number_of_cores(VM_Version::number_of_cores());
+  _cpu_info->set_number_of_sockets(VM_Version::number_of_sockets());
+  _cpu_info->set_cpu_name(VM_Version::cpu_name());
+  _cpu_info->set_cpu_description(VM_Version::cpu_description());
   return true;
 }
 
 CPUInformationInterface::~CPUInformationInterface() {
-  if (_cpu_info != NULL) {
-    if (_cpu_info->cpu_name() != NULL) {
+  if (_cpu_info != nullptr) {
+    if (_cpu_info->cpu_name() != nullptr) {
       const char* cpu_name = _cpu_info->cpu_name();
       FREE_C_HEAP_ARRAY(char, cpu_name);
-      _cpu_info->set_cpu_name(NULL);
+      _cpu_info->set_cpu_name(nullptr);
     }
-    if (_cpu_info->cpu_description() != NULL) {
+    if (_cpu_info->cpu_description() != nullptr) {
       const char* cpu_desc = _cpu_info->cpu_description();
       FREE_C_HEAP_ARRAY(char, cpu_desc);
-      _cpu_info->set_cpu_description(NULL);
+      _cpu_info->set_cpu_description(nullptr);
     }
     delete _cpu_info;
   }
 }
 
 int CPUInformationInterface::cpu_information(CPUInformation& cpu_info) {
-  if (NULL == _cpu_info) {
+  if (nullptr == _cpu_info) {
     return OS_ERR;
   }
 
@@ -427,16 +432,16 @@ NetworkPerformanceInterface::NetworkPerformance::~NetworkPerformance() {
 int NetworkPerformanceInterface::NetworkPerformance::network_utilization(NetworkInterface** network_interfaces) const {
   size_t len;
   int mib[] = {CTL_NET, PF_ROUTE, /* protocol number */ 0, /* address family */ 0, NET_RT_IFLIST2, /* NET_RT_FLAGS mask*/ 0};
-  if (sysctl(mib, sizeof(mib) / sizeof(mib[0]), NULL, &len, NULL, 0) != 0) {
+  if (sysctl(mib, sizeof(mib) / sizeof(mib[0]), nullptr, &len, nullptr, 0) != 0) {
     return OS_ERR;
   }
   uint8_t* buf = NEW_RESOURCE_ARRAY(uint8_t, len);
-  if (sysctl(mib, sizeof(mib) / sizeof(mib[0]), buf, &len, NULL, 0) != 0) {
+  if (sysctl(mib, sizeof(mib) / sizeof(mib[0]), buf, &len, nullptr, 0) != 0) {
     return OS_ERR;
   }
 
   size_t index = 0;
-  NetworkInterface* ret = NULL;
+  NetworkInterface* ret = nullptr;
   while (index < len) {
     if_msghdr* msghdr = reinterpret_cast<if_msghdr*>(buf + index);
     index += msghdr->ifm_msglen;
@@ -467,11 +472,11 @@ int NetworkPerformanceInterface::NetworkPerformance::network_utilization(Network
 }
 
 NetworkPerformanceInterface::NetworkPerformanceInterface() {
-  _impl = NULL;
+  _impl = nullptr;
 }
 
 NetworkPerformanceInterface::~NetworkPerformanceInterface() {
-  if (_impl != NULL) {
+  if (_impl != nullptr) {
     delete _impl;
   }
 }

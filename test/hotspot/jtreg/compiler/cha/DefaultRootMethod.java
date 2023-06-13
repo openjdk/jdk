@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,26 +29,31 @@
  *          java.base/jdk.internal.vm.annotation
  * @library /test/lib /
  * @compile Utils.java
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
  * @run main/othervm -Xbootclasspath/a:. -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
- *                   -XX:+PrintCompilation -XX:+PrintInlining -XX:+TraceDependencies -verbose:class -XX:CompileCommand=quiet
+ *                   -XX:+PrintCompilation -XX:+PrintInlining -Xlog:dependencies=debug -verbose:class -XX:CompileCommand=quiet
  *                   -XX:CompileCommand=compileonly,*::m
  *                   -XX:CompileCommand=compileonly,*::test -XX:CompileCommand=dontinline,*::test
  *                   -Xbatch -Xmixed -XX:+WhiteBoxAPI
  *                   -XX:-TieredCompilation
+ *                   -XX:-StressMethodHandleLinkerInlining
  *                      compiler.cha.DefaultRootMethod
  *
  * @run main/othervm -Xbootclasspath/a:. -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
- *                   -XX:+PrintCompilation -XX:+PrintInlining -XX:+TraceDependencies -verbose:class -XX:CompileCommand=quiet
+ *                   -XX:+PrintCompilation -XX:+PrintInlining -Xlog:dependencies=debug -verbose:class -XX:CompileCommand=quiet
  *                   -XX:CompileCommand=compileonly,*::m
  *                   -XX:CompileCommand=compileonly,*::test -XX:CompileCommand=dontinline,*::test
  *                   -Xbatch -Xmixed -XX:+WhiteBoxAPI
  *                   -XX:+TieredCompilation -XX:TieredStopAtLevel=1
+ *                   -XX:-StressMethodHandleLinkerInlining
  *                      compiler.cha.DefaultRootMethod
  */
 package compiler.cha;
+
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 
 import static compiler.cha.Utils.*;
 
@@ -56,6 +61,13 @@ public class DefaultRootMethod {
     public static void main(String[] args) {
         run(DefaultRoot.class);
         run(InheritedDefault.class);
+
+        // Implementation limitation: CHA is not performed by C1 during inlining through MH linkers.
+        if (!jdk.test.whitebox.code.Compiler.isC1Enabled()) {
+            run(DefaultRoot.TestMH.class, DefaultRoot.class);
+            run(InheritedDefault.TestMH.class, InheritedDefault.class);
+        }
+
         System.out.println("TEST PASSED");
     }
 
@@ -83,7 +95,7 @@ public class DefaultRootMethod {
         static          class G  extends C { public Object m() { return CORRECT; } }
 
         @Override
-        public Object test(C obj) {
+        public Object test(C obj) throws Throwable {
             return obj.m(); // invokevirtual C.m()
         }
 
@@ -122,6 +134,15 @@ public class DefaultRootMethod {
             call(new G() { public Object m() { return CORRECT; } }); //  Gn <: G.m <: C <: I.m DEFAULT
             assertCompiled();
         }
+
+        public static class TestMH extends DefaultRoot {
+            static final MethodHandle TEST_MH = findVirtualHelper(C.class, "m", Object.class, MethodHandles.lookup());
+
+            @Override
+            public Object test(C obj) throws Throwable {
+                return TEST_MH.invokeExact(obj); // invokevirtual C.m()
+            }
+        }
     }
 
     public static class InheritedDefault extends ATest<InheritedDefault.C> {
@@ -151,7 +172,7 @@ public class DefaultRootMethod {
         static class G extends C implements K { /* inherits K.m DEFAULT */ }
 
         @Override
-        public Object test(C obj) {
+        public Object test(C obj) throws Throwable {
             return obj.m(); // invokevirtual C.m()
         }
 
@@ -189,6 +210,15 @@ public class DefaultRootMethod {
             call(new C() { public Object m() { return CORRECT; } }); //  Cn.m <: C <: I.m DEFAULT
             call(new G() { public Object m() { return CORRECT; } }); //  Gn <: G.m <: C <: I.m DEFAULT
             assertCompiled();
+        }
+
+        public static class TestMH extends InheritedDefault {
+            static final MethodHandle TEST_MH = findVirtualHelper(C.class, "m", Object.class, MethodHandles.lookup());
+
+            @Override
+            public Object test(C obj) throws Throwable {
+                return TEST_MH.invokeExact(obj); // invokevirtual C.m()
+            }
         }
     }
 }

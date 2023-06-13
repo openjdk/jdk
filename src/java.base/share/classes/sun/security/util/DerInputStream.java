@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -288,8 +288,8 @@ public class DerInputStream {
     /**
      * Mark the current position in the buffer, so that
      * a later call to <code>reset</code> will return here.
-     * The {@code readAheadLimit} is useless here because
-     * all data is available and we can go to anywhere at will.
+     * The {@code readAheadLimit} is useless here, because
+     * all data is available, and we can go to anywhere at will.
      */
     public void mark(int readAheadLimit) { mark = pos; }
 
@@ -324,7 +324,6 @@ public class DerInputStream {
      *
      * @param rule the rule to check for the tag.
      * @return true if matches, false if not or stream is at end.
-     * @throws IOException if an I/O error happens while peeking the byte
      */
     private boolean checkNextTag(Predicate<Byte> rule) {
         return available() > 0 && rule.test(data[pos]);
@@ -335,7 +334,6 @@ public class DerInputStream {
      *
      * @param tag the expected tag
      * @return true if matches, false if not or stream is at end.
-     * @throws IOException if an I/O error happens while peeking the byte
      */
     private boolean checkNextTag(byte tag) {
         return checkNextTag(t -> t == tag);

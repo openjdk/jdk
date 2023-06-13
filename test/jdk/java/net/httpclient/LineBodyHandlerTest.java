@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,8 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.net.ssl.SSLContext;
+import jdk.httpclient.test.lib.common.HttpServerAdapters;
+import jdk.httpclient.test.lib.http2.Http2TestServer;
 import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsServer;
@@ -63,6 +65,8 @@ import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
+import static java.net.http.HttpClient.Version.HTTP_1_1;
+import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.nio.charset.StandardCharsets.UTF_16;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.net.http.HttpRequest.BodyPublishers.ofString;
@@ -77,15 +81,9 @@ import static org.testng.Assert.assertTrue;
  *          the BodyHandlers returned by BodyHandler::fromLineSubscriber
  *          and BodyHandler::asLines
  * @bug 8256459
- * @modules java.base/sun.net.www.http
- *          java.net.http/jdk.internal.net.http.common
- *          java.net.http/jdk.internal.net.http.frame
- *          java.net.http/jdk.internal.net.http.hpack
- *          java.logging
- *          jdk.httpserver
- * @library /test/lib http2/server
- * @build Http2TestServer LineBodyHandlerTest HttpServerAdapters
- * @build jdk.test.lib.net.SimpleSSLContext
+ * @library /test/lib /test/jdk/java/net/httpclient/lib
+ * @build ReferenceTracker jdk.httpclient.test.lib.http2.Http2TestServer
+ *        jdk.test.lib.net.SimpleSSLContext
  * @run testng/othervm -XX:+UnlockDiagnosticVMOptions -XX:DiagnoseSyncOnValueBasedClasses=1 LineBodyHandlerTest
  */
 
@@ -100,6 +98,10 @@ public class LineBodyHandlerTest implements HttpServerAdapters {
     String httpsURI;
     String http2URI;
     String https2URI;
+
+    final ReferenceTracker TRACKER = ReferenceTracker.INSTANCE;
+    final AtomicInteger clientCount = new AtomicInteger();
+    HttpClient sharedClient;
 
     @DataProvider(name = "uris")
     public Object[][] variants() {
@@ -189,10 +191,14 @@ public class LineBodyHandlerTest implements HttpServerAdapters {
     }
 
     HttpClient newClient() {
-        return HttpClient.newBuilder()
+        if (sharedClient != null) {
+            return sharedClient;
+        }
+        clientCount.incrementAndGet();
+        return sharedClient = TRACKER.track(HttpClient.newBuilder()
                 .sslContext(sslContext)
                 .proxy(Builder.NO_PROXY)
-                .build();
+                .build());
     }
 
     @Test(dataProvider = "uris")
@@ -666,24 +672,21 @@ public class LineBodyHandlerTest implements HttpServerAdapters {
         if (sslContext == null)
             throw new AssertionError("Unexpected null sslContext");
 
-        InetSocketAddress sa = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
-        httpTestServer = HttpTestServer.of(HttpServer.create(sa, 0),
+        httpTestServer = HttpTestServer.create(HTTP_1_1, null,
                 executorFor("HTTP/1.1 Server Thread"));
         httpTestServer.addHandler(new HttpTestEchoHandler(), "/http1/echo");
         httpURI = "http://" + httpTestServer.serverAuthority() + "/http1/echo";
 
-        HttpsServer httpsServer = HttpsServer.create(sa, 0);
-        httpsServer.setHttpsConfigurator(new HttpsConfigurator(sslContext));
-        httpsTestServer = HttpTestServer.of(httpsServer,
+        httpsTestServer = HttpTestServer.create(HTTP_1_1, sslContext,
                 executorFor("HTTPS/1.1 Server Thread"));
         httpsTestServer.addHandler(new HttpTestEchoHandler(),"/https1/echo");
         httpsURI = "https://" + httpsTestServer.serverAuthority() + "/https1/echo";
 
-        http2TestServer = HttpTestServer.of(new Http2TestServer("localhost", false, 0));
+        http2TestServer = HttpTestServer.create(HTTP_2);
         http2TestServer.addHandler(new HttpTestEchoHandler(), "/http2/echo");
         http2URI = "http://" + http2TestServer.serverAuthority() + "/http2/echo";
 
-        https2TestServer = HttpTestServer.of(new Http2TestServer("localhost", true, sslContext));
+        https2TestServer = HttpTestServer.create(HTTP_2, sslContext);
         https2TestServer.addHandler(new HttpTestEchoHandler(), "/https2/echo");
         https2URI = "https://" + https2TestServer.serverAuthority() + "/https2/echo";
 
@@ -695,10 +698,21 @@ public class LineBodyHandlerTest implements HttpServerAdapters {
 
     @AfterTest
     public void teardown() throws Exception {
+        sharedClient = null;
+        try {
+            System.gc();
+            Thread.sleep(200);
+        } catch (InterruptedException io) {
+            // don't care;
+        }
+        AssertionError fail = TRACKER.check(500);
+        System.out.printf("Tear down: %s client created.%n", clientCount.get());
+        System.err.printf("Tear down: %s client created.%n", clientCount.get());
         httpTestServer.stop();
         httpsTestServer.stop();
         http2TestServer.stop();
         https2TestServer.stop();
+        if (fail != null) throw fail;
     }
 
     static void printBytes(PrintStream out, String prefix, byte[] bytes) {

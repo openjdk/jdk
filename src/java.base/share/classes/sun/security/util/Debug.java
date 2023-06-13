@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,10 +87,12 @@ public class Debug {
         System.err.println("pkcs11keystore");
         System.err.println("              PKCS11 KeyStore debugging");
         System.err.println("pkcs12        PKCS12 KeyStore debugging");
+        System.err.println("properties    Security property and configuration file debugging");
         System.err.println("sunpkcs11     SunPKCS11 provider debugging");
         System.err.println("scl           permissions SecureClassLoader assigns");
         System.err.println("securerandom  SecureRandom");
         System.err.println("ts            timestamping");
+        System.err.println("x509          X.509 certificate debugging");
         System.err.println();
         System.err.println("The following can be used with access:");
         System.err.println();
@@ -122,6 +124,10 @@ public class Debug {
         System.err.println("ocsp          dump the OCSP protocol exchanges");
         System.err.println("verbose       verbose debugging");
         System.err.println();
+        System.err.println("The following can be used with x509:");
+        System.err.println();
+        System.err.println("ava           embed non-printable/non-escaped characters in AVA components as hex strings");
+        System.err.println();
         System.err.println("Note: Separate multiple options with a comma");
         System.exit(0);
     }
@@ -139,7 +145,7 @@ public class Debug {
 
     /**
      * Get a Debug object corresponding to whether or not the given
-     * option is set. Set the prefix to be prefix.
+     * option is set. Set the prefix to prefix.
      */
     public static Debug getInstance(String option, String prefix)
     {
@@ -214,7 +220,7 @@ public class Debug {
     }
 
     /**
-     * PrintStream for debug methods. Currently only System.err is supported.
+     * PrintStream for debug methods. Currently, only System.err is supported.
      */
     public PrintStream getPrintStream() {
         return System.err;

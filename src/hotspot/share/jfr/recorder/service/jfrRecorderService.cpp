@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,16 +41,17 @@
 #include "jfr/recorder/storage/jfrStorageControl.hpp"
 #include "jfr/recorder/stringpool/jfrStringPool.hpp"
 #include "jfr/utilities/jfrAllocation.hpp"
+#include "jfr/utilities/jfrThreadIterator.hpp"
 #include "jfr/utilities/jfrTime.hpp"
 #include "jfr/writers/jfrJavaEventWriter.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
 #include "logging/log.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
 #include "runtime/safepoint.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/vmOperations.hpp"
 #include "runtime/vmThread.hpp"
 
@@ -67,7 +68,7 @@ class JfrRotationLock : public StackObj {
 
   static bool acquire(Thread* thread) {
     if (Atomic::cmpxchg(&_lock, 0, 1) == 0) {
-      assert(_owner_thread == NULL, "invariant");
+      assert(_owner_thread == nullptr, "invariant");
       _owner_thread = thread;
       return true;
     }
@@ -86,7 +87,7 @@ class JfrRotationLock : public StackObj {
 
  public:
   JfrRotationLock() : _thread(Thread::current()), _recursive(false) {
-    assert(_thread != NULL, "invariant");
+    assert(_thread != nullptr, "invariant");
     if (_thread == _owner_thread) {
       // Recursive case is not supported.
       _recursive = true;
@@ -103,7 +104,7 @@ class JfrRotationLock : public StackObj {
     if (_recursive) {
       return;
     }
-    _owner_thread = NULL;
+    _owner_thread = nullptr;
     OrderAccess::storestore();
     _lock = 0;
   }
@@ -117,9 +118,33 @@ class JfrRotationLock : public StackObj {
   }
 };
 
-const Thread* JfrRotationLock::_owner_thread = NULL;
+const Thread* JfrRotationLock::_owner_thread = nullptr;
 const int JfrRotationLock::retry_wait_millis = 10;
 volatile int JfrRotationLock::_lock = 0;
+
+// Reset thread local state used for object allocation sampling.
+class ClearObjectAllocationSampling : public ThreadClosure {
+ public:
+  void do_thread(Thread* t) {
+    assert(t != nullptr, "invariant");
+    t->jfr_thread_local()->clear_last_allocated_bytes();
+  }
+};
+
+template <typename Iterator>
+static inline void iterate(Iterator& it, ClearObjectAllocationSampling& coas) {
+  while (it.has_next()) {
+    coas.do_thread(it.next());
+  }
+}
+
+static void clear_object_allocation_sampling() {
+  ClearObjectAllocationSampling coas;
+  JfrJavaThreadIterator jit;
+  iterate(jit, coas);
+  JfrNonJavaThreadIterator njit;
+  iterate(njit, coas);
+}
 
 template <typename Instance, size_t(Instance::*func)()>
 class Content {
@@ -185,8 +210,8 @@ class WriteContent : public StackObj {
     return (u4) _content.elements();
   }
 
-  u4 size() const {
-    return (u4)(end_offset() - start_offset());
+  u8 size() const {
+    return (u8)(end_offset() - start_offset());
   }
 
   void write_elements(int64_t offset) {
@@ -194,7 +219,7 @@ class WriteContent : public StackObj {
   }
 
   void write_size() {
-    _cw.write_padded_at_offset<u4>(size(), start_offset());
+    _cw.write_padded_at_offset<u8>(size(), start_offset());
   }
 
   void set_last_checkpoint() {
@@ -209,7 +234,7 @@ class WriteContent : public StackObj {
 static int64_t write_checkpoint_event_prologue(JfrChunkWriter& cw, u8 type_id) {
   const int64_t last_cp_offset = cw.last_checkpoint_offset();
   const int64_t delta_to_last_checkpoint = 0 == last_cp_offset ? 0 : last_cp_offset - cw.current_offset();
-  cw.reserve(sizeof(u4));
+  cw.reserve(sizeof(u8));
   cw.write<u8>(EVENT_CHECKPOINT);
   cw.write(JfrTicks::now());
   cw.write<u8>(0); // duration
@@ -435,6 +460,7 @@ void JfrRecorderService::clear() {
 }
 
 void JfrRecorderService::pre_safepoint_clear() {
+  clear_object_allocation_sampling();
   _string_pool.clear();
   _storage.clear();
   JfrStackTraceRepository::clear();
@@ -589,13 +615,13 @@ void JfrRecorderService::post_safepoint_write() {
 }
 
 static JfrBuffer* thread_local_buffer(Thread* t) {
-  assert(t != NULL, "invariant");
+  assert(t != nullptr, "invariant");
   return t->jfr_thread_local()->native_buffer();
 }
 
 static void reset_buffer(JfrBuffer* buffer, Thread* t) {
-  assert(buffer != NULL, "invariant");
-  assert(t != NULL, "invariant");
+  assert(buffer != nullptr, "invariant");
+  assert(t != nullptr, "invariant");
   assert(buffer == thread_local_buffer(t), "invariant");
   buffer->set_pos(const_cast<u1*>(buffer->top()));
 }
@@ -606,7 +632,7 @@ static void reset_thread_local_buffer(Thread* t) {
 
 static void write_thread_local_buffer(JfrChunkWriter& chunkwriter, Thread* t) {
   JfrBuffer * const buffer = thread_local_buffer(t);
-  assert(buffer != NULL, "invariant");
+  assert(buffer != nullptr, "invariant");
   if (!buffer->empty()) {
     chunkwriter.write_unbuffered(buffer->top(), buffer->pos() - buffer->top());
   }

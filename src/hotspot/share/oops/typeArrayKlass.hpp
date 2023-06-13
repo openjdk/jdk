@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ class TypeArrayKlass : public ArrayKlass {
   friend class VMStructs;
 
  public:
-  static const KlassID ID = TypeArrayKlassID;
+  static const KlassKind Kind = TypeArrayKlassKind;
 
  private:
   jint _max_length;            // maximum number of elements allowed in an array
@@ -68,7 +68,7 @@ class TypeArrayKlass : public ArrayKlass {
   typeArrayOop allocate(int length, TRAPS) { return allocate_common(length, true, THREAD); }
   oop multi_allocate(int rank, jint* sizes, TRAPS);
 
-  oop protection_domain() const { return NULL; }
+  oop protection_domain() const { return nullptr; }
 
   // Copying
   void  copy_array(arrayOop s, int src_pos, arrayOop d, int dst_pos, int length, TRAPS);

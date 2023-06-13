@@ -48,7 +48,7 @@ import javax.tools.SimpleJavaFileObject;
 import javax.tools.ToolProvider;
 
 /**
- * Post https://bugs.openjdk.java.net/browse/JDK-8190452, the test verifies that MethodParameters
+ * Post https://bugs.openjdk.org/browse/JDK-8190452, the test verifies that MethodParameters
  * attributes are not emitted when targeting --release < 8.
  */
 public class LegacyOutputTest {
@@ -57,16 +57,7 @@ public class LegacyOutputTest {
     }
 
     void test() throws Exception {
-        release7();
         release8();
-    }
-
-    void release7() throws Exception {
-        List<String> names = getParameterNames("7");
-        if (names != null) {
-            throw new AssertionError(
-                    "expected no MethodParameters for --release 7, actual: " + names);
-        }
     }
 
     void release8() throws Exception {

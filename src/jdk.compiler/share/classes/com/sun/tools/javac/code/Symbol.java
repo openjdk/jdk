@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -491,7 +491,7 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
         return kind == TYP && type.getEnclosingType().hasTag(CLASS);
     }
 
-    /** An inner class has an outer instance if it is not an interface
+    /** An inner class has an outer instance if it is not an interface, enum or record,
      *  it has an enclosing instance class which might be referenced from the class.
      *  Nested classes can see instance members of their enclosing class.
      *  Their constructors carry an additional this$n parameter, inserted
@@ -501,7 +501,7 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
      */
     public boolean hasOuterInstance() {
         return
-            type.getEnclosingType().hasTag(CLASS) && (flags() & (INTERFACE | NOOUTERTHIS)) == 0;
+            type.getEnclosingType().hasTag(CLASS) && (flags() & (INTERFACE | ENUM | RECORD | NOOUTERTHIS)) == 0;
     }
 
     /** The closest enclosing class of this symbol's declaration.
@@ -667,7 +667,7 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
      *  It is assumed that both symbols have the same name.  The static
      *  modifier is ignored for this test.
      *
-     *  See JLS 8.4.6.1 (without transitivity) and 8.4.6.4
+     *  See JLS 8.4.8.1 (without transitivity) and 8.4.8.4
      */
     public boolean overrides(Symbol _other, TypeSymbol origin, Types types, boolean checkResult) {
         return false;
@@ -839,8 +839,8 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
                 if (type.hasTag(CLASS)) {
                     return
                         types.rank(that.type) < types.rank(this.type) ||
-                        types.rank(that.type) == types.rank(this.type) &&
-                        that.getQualifiedName().compareTo(this.getQualifiedName()) < 0;
+                        (types.rank(that.type) == types.rank(this.type) &&
+                         this.getQualifiedName().compareTo(that.getQualifiedName()) < 0);
                 } else if (type.hasTag(TYPEVAR)) {
                     return types.isSubtype(this.type, that.type);
                 }
@@ -1000,6 +1000,7 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
             return msym;
         }
 
+        @SuppressWarnings("this-escape")
         public ModuleSymbol(Name name, Symbol owner) {
             super(MDL, 0, name, null, owner);
             Assert.checkNonNull(name);
@@ -1153,6 +1154,7 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
             this.fullname = formFullName(name, owner);
         }
 
+        @SuppressWarnings("this-escape")
         public PackageSymbol(Name name, Symbol owner) {
             this(name, null, owner);
             this.type = new PackageType(this);
@@ -1254,6 +1256,7 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
 
     /** A class for class symbols
      */
+    @SuppressWarnings("preview") // isUnnamed()
     public static class ClassSymbol extends TypeSymbol implements TypeElement {
 
         /** a scope for all class members; variables, methods and inner classes
@@ -1365,10 +1368,15 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
                 return fullname.toString();
         }
 
-        @DefinedBy(Api.LANGUAGE_MODEL)
-        public Name getQualifiedName() {
-            return fullname;
-        }
+         @Override @DefinedBy(Api.LANGUAGE_MODEL)
+         public Name getQualifiedName() {
+             return isUnnamed() ? fullname.subName(0, 0) /* empty name */ : fullname;
+         }
+
+         @Override @DefinedBy(Api.LANGUAGE_MODEL)
+         public Name getSimpleName() {
+             return name;
+         }
 
         @Override @DefinedBy(Api.LANGUAGE_MODEL)
         public List<Symbol> getEnclosedElements() {
@@ -1503,32 +1511,30 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
             return null;
         }
 
-        public RecordComponent getRecordComponent(JCVariableDecl var, boolean addIfMissing, List<JCAnnotation> annotations) {
+        public RecordComponent findRecordComponentToRemove(JCVariableDecl var) {
             RecordComponent toRemove = null;
             for (RecordComponent rc : recordComponents) {
                 /* it could be that a record erroneously declares two record components with the same name, in that
                  * case we need to use the position to disambiguate
                  */
                 if (rc.name == var.name && var.pos == rc.pos) {
-                    if (rc.type.hasTag(TypeTag.ERROR) && !var.sym.type.hasTag(TypeTag.ERROR)) {
-                        // Found a record component with an erroneous type: save it so that it can be removed later.
-                        // If the class type of the record component is generated by annotation processor, it should
-                        // use the new actual class type and symbol instead of the old dummy ErrorType.
-                        toRemove = rc;
-                    } else {
-                        // Found a good record component: just return.
-                        return rc;
-                    }
+                    toRemove = rc;
                 }
             }
+            return toRemove;
+        }
+
+        /* creates a record component if non is related to the given variable and recreates a brand new one
+         * in other case
+         */
+        public RecordComponent createRecordComponent(RecordComponent existing, JCVariableDecl rcDecl, VarSymbol varSym) {
             RecordComponent rc = null;
-            if (toRemove != null) {
-                // Found a record component with an erroneous type: remove it and create a new one
-                recordComponents = List.filter(recordComponents, toRemove);
-                recordComponents = recordComponents.append(rc = new RecordComponent(var.sym, annotations));
-            } else if (addIfMissing) {
+            if (existing != null) {
+                recordComponents = List.filter(recordComponents, existing);
+                recordComponents = recordComponents.append(rc = new RecordComponent(varSym, existing.ast, existing.isVarargs));
+            } else {
                 // Didn't find the record component: create one.
-                recordComponents = recordComponents.append(rc = new RecordComponent(var.sym, annotations));
+                recordComponents = recordComponents.append(rc = new RecordComponent(varSym, rcDecl));
             }
             return rc;
         }
@@ -1545,7 +1551,7 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
         @DefinedBy(Api.LANGUAGE_MODEL)
         public NestingKind getNestingKind() {
             apiComplete();
-            if (owner.kind == PCK)
+            if (owner.kind == PCK) // Handles unnamed classes as well
                 return NestingKind.TOP_LEVEL;
             else if (name.isEmpty())
                 return NestingKind.ANONYMOUS;
@@ -1636,11 +1642,17 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
         public List<Type> getPermittedSubclasses() {
             return permitted.map(s -> s.type);
         }
+
+        @Override @DefinedBy(Api.LANGUAGE_MODEL)
+        public boolean isUnnamed() {
+            return (flags_field & Flags.UNNAMED_CLASS) != 0 ;
+        }
     }
 
 
     /** A class for variable symbols
      */
+    @SuppressWarnings("preview")
     public static class VarSymbol extends Symbol implements VariableElement {
 
         /** The variable's declaration position.
@@ -1783,14 +1795,16 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
         public <R, P> R accept(Symbol.Visitor<R, P> v, P p) {
             return v.visitVarSymbol(this, p);
         }
+
+        public boolean isUnnamedVariable() {
+            return name.isEmpty();
+        }
     }
 
     public static class RecordComponent extends VarSymbol implements RecordComponentElement {
         public MethodSymbol accessor;
         public JCTree.JCMethodDecl accessorMeth;
-        /* the original annotations applied to the record component
-         */
-        private final List<JCAnnotation> originalAnnos;
+
         /* if the user happens to erroneously declare two components with the same name, we need a way to differentiate
          * them, the code will fail anyway but we need to keep the information for better error recovery
          */
@@ -1798,29 +1812,37 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
 
         private final boolean isVarargs;
 
+        private JCVariableDecl ast;
+
         /**
          * Construct a record component, given its flags, name, type and owner.
          */
         public RecordComponent(Name name, Type type, Symbol owner) {
             super(PUBLIC, name, type, owner);
             pos = -1;
-            originalAnnos = List.nil();
+            ast = null;
             isVarargs = false;
         }
 
-        public RecordComponent(VarSymbol field, List<JCAnnotation> annotations) {
+        public RecordComponent(VarSymbol field, JCVariableDecl ast) {
+            this(field, ast, field.type.hasTag(TypeTag.ARRAY) && ((ArrayType)field.type).isVarargs());
+        }
+
+        public RecordComponent(VarSymbol field, JCVariableDecl ast, boolean isVarargs) {
             super(PUBLIC, field.name, field.type, field.owner);
-            this.originalAnnos = annotations;
+            this.ast = ast;
             this.pos = field.pos;
             /* it is better to store the original information for this one, instead of relying
              * on the info in the type of the symbol. This is because on the presence of APs
              * the symbol will be blown out and we won't be able to know if the original
              * record component was declared varargs or not.
              */
-            this.isVarargs = type.hasTag(TypeTag.ARRAY) && ((ArrayType)type).isVarargs();
+            this.isVarargs = isVarargs;
         }
 
-        public List<JCAnnotation> getOriginalAnnos() { return originalAnnos; }
+        public List<JCAnnotation> getOriginalAnnos() { return this.ast == null ? List.nil() : this.ast.mods.annotations; }
+
+        public JCVariableDecl declarationFor() { return this.ast; }
 
         public boolean isVarargs() {
             return isVarargs;
@@ -2060,7 +2082,7 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
          *  origin) don't get rejected as summarily and are put to test against the
          *  suitable criteria.
          *
-         *  See JLS 8.4.6.1 (without transitivity) and 8.4.6.4
+         *  See JLS 8.4.8.1 (without transitivity) and 8.4.8.4
          */
         public boolean overrides(Symbol _other, TypeSymbol origin, Types types, boolean checkResult) {
             return overrides(_other, origin, types, checkResult, true);
@@ -2077,7 +2099,7 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
          *  It is assumed that both symbols have the same name.  The static
          *  modifier is ignored for this test.
          *
-         *  See JLS 8.4.6.1 (without transitivity) and 8.4.6.4
+         *  See JLS 8.4.8.1 (without transitivity) and 8.4.8.4
          */
         public boolean overrides(Symbol _other, TypeSymbol origin, Types types, boolean checkResult,
                                             boolean requireConcreteIfInherited) {
@@ -2115,7 +2137,7 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
         }
 
         private boolean isOverridableIn(TypeSymbol origin) {
-            // JLS 8.4.6.1
+            // JLS 8.4.8.1
             switch ((int)(flags_field & Flags.AccessFlags)) {
             case Flags.PRIVATE:
                 return false;
@@ -2279,6 +2301,11 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
         }
 
         @Override
+        public Name name() {
+            return name;
+        }
+
+        @Override
         public boolean isDynamic() {
             return true;
         }
@@ -2314,6 +2341,11 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
             super(0, name, type, owner);
             this.bsm = bsm;
             this.staticArgs = staticArgs;
+        }
+
+        @Override
+        public Name name() {
+            return name;
         }
 
         @Override

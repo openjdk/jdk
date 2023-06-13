@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,38 +24,19 @@
 #ifndef SHARE_GC_Z_ZTHREAD_HPP
 #define SHARE_GC_Z_ZTHREAD_HPP
 
-#include "memory/allocation.hpp"
-#include "utilities/globalDefinitions.hpp"
+#include "gc/shared/concurrentGCThread.hpp"
 
-class ZThread : public AllStatic {
-  friend class ZTask;
-  friend class ZWorkersInitializeTask;
-  friend class ZRuntimeWorkersInitializeTask;
+// A ZThread is a ConcurrentGCThread with some ZGC-specific handling of GC shutdown
 
+class ZThread : public ConcurrentGCThread {
 private:
-  static THREAD_LOCAL bool      _initialized;
-  static THREAD_LOCAL uintptr_t _id;
-  static THREAD_LOCAL bool      _is_vm;
-  static THREAD_LOCAL bool      _is_java;
-  static THREAD_LOCAL bool      _is_worker;
-  static THREAD_LOCAL uint      _worker_id;
-
-  static void initialize();
-  static void ensure_initialized();
-
-  static void set_worker();
-
-  static bool has_worker_id();
-  static void set_worker_id(uint worker_id);
-  static void clear_worker_id();
+  virtual void run_service();
+  virtual void stop_service();
 
 public:
-  static const char* name();
-  static uintptr_t id();
-  static bool is_vm();
-  static bool is_java();
-  static bool is_worker();
-  static uint worker_id();
+
+  virtual void run_thread() = 0;
+  virtual void terminate() = 0;
 };
 
 #endif // SHARE_GC_Z_ZTHREAD_HPP

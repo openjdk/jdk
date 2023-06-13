@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2022, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -128,7 +128,7 @@ import org.xml.sax.InputSource;
  *
  *
  * @see XIncludeNamespaceSupport
- * @LastModified: May 2021
+ * @LastModified: July 2022
  */
 public class XIncludeHandler
     implements XMLComponent, XMLDocumentFilter, XMLDTDFilter {
@@ -1638,8 +1638,8 @@ public class XIncludeHandler
         }
 
         XMLInputSource includedSource = null;
-        if (fEntityResolver != null) {
-            try {
+        try {
+            if (fEntityResolver != null) {
                 XMLResourceIdentifier resourceIdentifier =
                     new XMLResourceIdentifierImpl(
                         null,
@@ -1652,56 +1652,55 @@ public class XIncludeHandler
 
                 includedSource =
                     fEntityResolver.resolveEntity(resourceIdentifier);
+            }
+            if (includedSource == null && fUseCatalog) {
+                if (fCatalogFeatures == null) {
+                    fCatalogFeatures = JdkXmlUtils.getCatalogFeatures(fDefer, fCatalogFile, fPrefer, fResolve);
+                }
+                fCatalogFile = fCatalogFeatures.get(CatalogFeatures.Feature.FILES);
+                if (fCatalogFile != null) {
+                    /*
+                       Although URI entry is preferred for resolving XInclude, system entry
+                       is allowed as well.
+                    */
+                    Source source = null;
+                    try {
+                        if (fCatalogResolver == null) {
+                            fCatalogResolver = CatalogManager.catalogResolver(fCatalogFeatures);
+                        }
+                        source = fCatalogResolver.resolve(href, fCurrentBaseURI.getExpandedSystemId());
+                    } catch (CatalogException e) {}
 
-                if (includedSource == null && fUseCatalog) {
-                    if (fCatalogFeatures == null) {
-                        fCatalogFeatures = JdkXmlUtils.getCatalogFeatures(fDefer, fCatalogFile, fPrefer, fResolve);
-                    }
-                    fCatalogFile = fCatalogFeatures.get(CatalogFeatures.Feature.FILES);
-                    if (fCatalogFile != null) {
-                        /*
-                           Although URI entry is preferred for resolving XInclude, system entry
-                           is allowed as well.
-                        */
-                        Source source = null;
-                        try {
-                            if (fCatalogResolver == null) {
-                                fCatalogResolver = CatalogManager.catalogResolver(fCatalogFeatures);
-                            }
-                            source = fCatalogResolver.resolve(href, fCurrentBaseURI.getExpandedSystemId());
-                        } catch (CatalogException e) {}
-
-                        if (source != null && !source.isEmpty()) {
-                            includedSource = new XMLInputSource(null, source.getSystemId(),
-                                    fCurrentBaseURI.getExpandedSystemId(), true);
-                        } else {
-                            if (fCatalogResolver == null) {
-                                fCatalogResolver = CatalogManager.catalogResolver(fCatalogFeatures);
-                            }
-                            InputSource is = fCatalogResolver.resolveEntity(href, href);
-                            if (is != null && !is.isEmpty()) {
-                                includedSource = new XMLInputSource(is, true);
-                            }
+                    if (source != null && !source.isEmpty()) {
+                        includedSource = new XMLInputSource(null, source.getSystemId(),
+                                fCurrentBaseURI.getExpandedSystemId(), true);
+                    } else {
+                        if (fCatalogResolver == null) {
+                            fCatalogResolver = CatalogManager.catalogResolver(fCatalogFeatures);
+                        }
+                        InputSource is = fCatalogResolver.resolveEntity(href, href);
+                        if (is != null && !is.isEmpty()) {
+                            includedSource = new XMLInputSource(is, true);
                         }
                     }
                 }
-
-                if (includedSource != null &&
-                    !(includedSource instanceof HTTPInputSource) &&
-                    (accept != null || acceptLanguage != null) &&
-                    includedSource.getCharacterStream() == null &&
-                    includedSource.getByteStream() == null) {
-
-                    includedSource = createInputSource(includedSource.getPublicId(), includedSource.getSystemId(),
-                        includedSource.getBaseSystemId(), accept, acceptLanguage);
-                }
             }
-            catch (IOException | CatalogException e) {
-                reportResourceError(
-                    "XMLResourceError",
-                    new Object[] { href, e.getMessage()}, e);
-                return false;
+
+            if (includedSource != null &&
+                !(includedSource instanceof HTTPInputSource) &&
+                (accept != null || acceptLanguage != null) &&
+                includedSource.getCharacterStream() == null &&
+                includedSource.getByteStream() == null) {
+
+                includedSource = createInputSource(includedSource.getPublicId(), includedSource.getSystemId(),
+                    includedSource.getBaseSystemId(), accept, acceptLanguage);
             }
+        }
+        catch (IOException | CatalogException e) {
+            reportResourceError(
+                "XMLResourceError",
+                new Object[] { href, e.getMessage()}, e);
+            return false;
         }
 
         if (includedSource == null) {

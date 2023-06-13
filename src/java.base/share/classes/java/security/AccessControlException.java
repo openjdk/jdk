@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,12 +26,12 @@
 package java.security;
 
 /**
- * <p> This exception is thrown by the AccessController to indicate
+ * <p> This exception is thrown by the {@code AccessController} to indicate
  * that a requested access (to a critical system resource such as the
  * file system or the network) is denied.
  *
  * <p> The reason to deny access can vary.  For example, the requested
- * permission might be of an incorrect type,  contain an invalid
+ * permission might be of an incorrect type, contain an invalid
  * value, or request access that is not allowed according to the
  * security policy.  Such information should be given whenever
  * possible at the time the exception is thrown.
@@ -81,8 +81,8 @@ public class AccessControlException extends SecurityException {
     }
 
     /**
-     * Gets the Permission object associated with this exception, or
-     * null if there was no corresponding Permission object.
+     * Gets the {@code Permission} object associated with this exception, or
+     * {@code null} if there was no corresponding {@code Permission} object.
      *
      * @return the Permission object.
      */

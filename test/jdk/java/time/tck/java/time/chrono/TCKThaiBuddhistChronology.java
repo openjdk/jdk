@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -140,21 +140,21 @@ public class TCKThaiBuddhistChronology {
 
     @Test
     public void test_chrono_byLocale_oldTH_noVariant() {  // deliberately different to Calendar
-        Chronology test = Chronology.ofLocale(new Locale("th", "TH"));
+        Chronology test = Chronology.ofLocale(Locale.of("th", "TH"));
         Assert.assertEquals(test.getId(), "ISO");
         Assert.assertEquals(test, IsoChronology.INSTANCE);
     }
 
     @Test
     public void test_chrono_byLocale_oldTH_variant() {
-        Chronology test = Chronology.ofLocale(new Locale("th", "TH", "TH"));
+        Chronology test = Chronology.ofLocale(Locale.of("th", "TH", "TH"));
         Assert.assertEquals(test.getId(), "ISO");
         Assert.assertEquals(test, IsoChronology.INSTANCE);
     }
 
     @Test
     public void test_chrono_byLocale_iso() {
-        Assert.assertEquals(Chronology.ofLocale(new Locale("th", "TH")).getId(), "ISO");
+        Assert.assertEquals(Chronology.ofLocale(Locale.of("th", "TH")).getId(), "ISO");
         Assert.assertEquals(Chronology.ofLocale(Locale.forLanguageTag("th-TH")).getId(), "ISO");
         Assert.assertEquals(Chronology.ofLocale(Locale.forLanguageTag("th-TH-TH")).getId(), "ISO");
     }

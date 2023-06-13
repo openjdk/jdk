@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -200,7 +200,7 @@ void BCEscapeAnalyzer::set_modified(ArgumentMap vars, int offs, int size) {
 }
 
 bool BCEscapeAnalyzer::is_recursive_call(ciMethod* callee) {
-  for (BCEscapeAnalyzer* scope = this; scope != NULL; scope = scope->_parent) {
+  for (BCEscapeAnalyzer* scope = this; scope != nullptr; scope = scope->_parent) {
     if (scope->method() == callee) {
       return true;
     }
@@ -296,7 +296,7 @@ void BCEscapeAnalyzer::invoke(StateInfo &state, Bytecodes::Code code, ciMethod* 
   }
 
   // determine actual method (use CHA if necessary)
-  ciMethod* inline_target = NULL;
+  ciMethod* inline_target = nullptr;
   if (target->is_loaded() && klass->is_loaded()
       && (klass->is_initialized() || (klass->is_interface() && target->holder()->is_initialized()))) {
     if (code == Bytecodes::_invokestatic
@@ -308,7 +308,7 @@ void BCEscapeAnalyzer::invoke(StateInfo &state, Bytecodes::Code code, ciMethod* 
     }
   }
 
-  if (inline_target != NULL && !is_recursive_call(inline_target)) {
+  if (inline_target != nullptr && !is_recursive_call(inline_target)) {
     // analyze callee
     BCEscapeAnalyzer analyzer(inline_target, this);
 
@@ -416,11 +416,11 @@ void BCEscapeAnalyzer::iterate_one_block(ciBlock *blk, StateInfo &state, Growabl
         // Avoid calling get_constant() which will try to allocate
         // unloaded constant. We need only constant's type.
         int index = s.get_constant_pool_index();
-        constantTag tag = s.get_constant_pool_tag(index);
-        if (tag.is_long() || tag.is_double()) {
+        BasicType con_bt = s.get_basic_type_for_constant_at(index);
+        if (con_bt == T_LONG || con_bt == T_DOUBLE) {
           // Only longs and doubles use 2 stack slots.
           state.lpush();
-        } else if (tag.basic_type() == T_OBJECT) {
+        } else if (con_bt == T_OBJECT) {
           state.apush(unknown_obj);
         } else {
           state.spush();
@@ -881,7 +881,7 @@ void BCEscapeAnalyzer::iterate_one_block(ciBlock *blk, StateInfo &state, Growabl
           if (s.cur_bc() != Bytecodes::_putstatic) {
             ArgumentMap p = state.apop();
             set_method_escape(p);
-            set_modified(p, will_link ? field->offset() : OFFSET_ANY, type2size[field_type]*HeapWordSize);
+            set_modified(p, will_link ? field->offset_in_bytes() : OFFSET_ANY, type2size[field_type]*HeapWordSize);
           }
         }
         break;
@@ -891,10 +891,10 @@ void BCEscapeAnalyzer::iterate_one_block(ciBlock *blk, StateInfo &state, Growabl
       case Bytecodes::_invokedynamic:
       case Bytecodes::_invokeinterface:
         { bool ignored_will_link;
-          ciSignature* declared_signature = NULL;
+          ciSignature* declared_signature = nullptr;
           ciMethod* target = s.get_method(ignored_will_link, &declared_signature);
           ciKlass*  holder = s.get_declared_method_holder();
-          assert(declared_signature != NULL, "cannot be null");
+          assert(declared_signature != nullptr, "cannot be null");
           // If the current bytecode has an attached appendix argument,
           // push an unknown object to represent that argument. (Analysis
           // of dynamic call sites, especially invokehandle calls, needs
@@ -1105,8 +1105,8 @@ void BCEscapeAnalyzer::iterate_blocks(Arena *arena) {
     blockstates[i]._stack_height = 0;
     blockstates[i]._max_stack  = stkSize;
   }
-  GrowableArray<ciBlock *> worklist(arena, numblocks / 4, 0, NULL);
-  GrowableArray<ciBlock *> successors(arena, 4, 0, NULL);
+  GrowableArray<ciBlock *> worklist(arena, numblocks / 4, 0, nullptr);
+  GrowableArray<ciBlock *> successors(arena, 4, 0, nullptr);
 
   _methodBlocks->clear_processed();
 
@@ -1439,9 +1439,9 @@ void BCEscapeAnalyzer::dump() {
 
 BCEscapeAnalyzer::BCEscapeAnalyzer(ciMethod* method, BCEscapeAnalyzer* parent)
     : _arena(CURRENT_ENV->arena())
-    , _conservative(method == NULL || !EstimateArgEscape)
+    , _conservative(method == nullptr || !EstimateArgEscape)
     , _method(method)
-    , _methodData(method ? method->method_data() : NULL)
+    , _methodData(method ? method->method_data() : nullptr)
     , _arg_size(method ? method->arg_size() : 0)
     , _arg_local(_arena)
     , _arg_stack(_arena)
@@ -1450,9 +1450,9 @@ BCEscapeAnalyzer::BCEscapeAnalyzer(ciMethod* method, BCEscapeAnalyzer* parent)
     , _return_allocated(false)
     , _allocated_escapes(false)
     , _unknown_modified(false)
-    , _dependencies(_arena, 4, 0, NULL)
+    , _dependencies(_arena, 4, 0, nullptr)
     , _parent(parent)
-    , _level(parent == NULL ? 0 : parent->level() + 1) {
+    , _level(parent == nullptr ? 0 : parent->level() + 1) {
   if (!_conservative) {
     _arg_local.clear();
     _arg_stack.clear();
@@ -1461,7 +1461,7 @@ BCEscapeAnalyzer::BCEscapeAnalyzer(ciMethod* method, BCEscapeAnalyzer* parent)
     _arg_modified = (uint *) arena->Amalloc(_arg_size * sizeof(uint));
     Copy::zero_to_bytes(_arg_modified, _arg_size * sizeof(uint));
 
-    if (methodData() == NULL)
+    if (methodData() == nullptr)
       return;
     if (methodData()->has_escape_info()) {
       TRACE_BCEA(2, tty->print_cr("[EA] Reading previous results for %s.%s",

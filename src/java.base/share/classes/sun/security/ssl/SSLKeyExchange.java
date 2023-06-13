@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,12 +26,8 @@
 package sun.security.ssl;
 
 import java.io.IOException;
+import java.util.*;
 import java.util.AbstractMap.SimpleImmutableEntry;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import sun.security.ssl.SupportedGroupsExtension.SupportedGroups;
 import sun.security.ssl.X509Authentication.X509Possession;
 
 final class SSLKeyExchange implements SSLKeyAgreementGenerator,
@@ -64,10 +60,9 @@ final class SSLKeyExchange implements SSLKeyAgreementGenerator,
 
             if (authPossession == null) {
                 return new SSLPossession[0];
-            } else if (context instanceof ServerHandshakeContext) {
+            } else if (context instanceof ServerHandshakeContext shc) {
                 // The authentication information may be used further for
                 // key agreement parameters negotiation.
-                ServerHandshakeContext shc = (ServerHandshakeContext)context;
                 shc.interimAuthn = authPossession;
             }
         }
@@ -564,23 +559,13 @@ final class SSLKeyExchange implements SSLKeyAgreementGenerator,
 
     private static final class T13KeyAgreement implements SSLKeyAgreement {
         private final NamedGroup namedGroup;
-        static final Map<NamedGroup, T13KeyAgreement>
-                supportedKeyShares = new HashMap<>();
-
-        static {
-            for (NamedGroup namedGroup :
-                    SupportedGroups.supportedNamedGroups) {
-                supportedKeyShares.put(
-                        namedGroup, new T13KeyAgreement(namedGroup));
-            }
-        }
 
         private T13KeyAgreement(NamedGroup namedGroup) {
             this.namedGroup = namedGroup;
         }
 
         static T13KeyAgreement valueOf(NamedGroup namedGroup) {
-            return supportedKeyShares.get(namedGroup);
+            return new T13KeyAgreement(namedGroup);
         }
 
         @Override

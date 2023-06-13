@@ -22,7 +22,6 @@
  */
 
 #include "precompiled.hpp"
-
 #include "gc/g1/g1BlockOffsetTable.inline.hpp"
 #include "gc/g1/g1CardSet.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
@@ -57,7 +56,7 @@ TEST_VM(FreeRegionList, length) {
                                          bot_rs.size(),
                                          os::vm_page_size(),
                                          HeapRegion::GrainBytes,
-                                         BOTConstants::N_bytes,
+                                         BOTConstants::card_size(),
                                          mtGC);
   G1BlockOffsetTable bot(heap, bot_storage);
   bot_storage->commit_regions(0, num_regions_in_test);

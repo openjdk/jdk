@@ -4,9 +4,9 @@
  *
  * @summary  add a warning to detect diamond sites (including anonymous class instance creation at source >= 9)
  * @author mcimadamore
- * @compile/ref=T6939780_7.out -Xlint:-options -source 7 T6939780.java -XDrawDiagnostics -XDfind=diamond
- * @compile/ref=T6939780_8.out -Xlint:-options -source 8 T6939780.java -XDrawDiagnostics -XDfind=diamond
- * @compile/ref=T6939780_9.out -Xlint:-options -source 9 T6939780.java -XDrawDiagnostics -XDfind=diamond
+ *
+ * @compile/ref=T6939780_8.out --release 8 T6939780.java -XDrawDiagnostics -XDfind=diamond -Xlint:-options
+ * @compile/ref=T6939780_9.out             T6939780.java -XDrawDiagnostics -XDfind=diamond
  *
  */
 

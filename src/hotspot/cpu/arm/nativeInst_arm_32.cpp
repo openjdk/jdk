@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "asm/assembler.inline.hpp"
 #include "code/codeCache.hpp"
+#include "code/icBuffer.hpp"
 #include "memory/resourceArea.hpp"
 #include "nativeInst_arm.hpp"
 #include "oops/oop.inline.hpp"
@@ -35,7 +36,6 @@
 #ifdef COMPILER1
 #include "c1/c1_Runtime1.hpp"
 #endif
-#include "code/icBuffer.hpp"
 
 int NativeMovRegMem::offset() const {
   switch (kind()) {
@@ -134,12 +134,12 @@ intptr_t NativeMovConstReg::data() const {
 void NativeMovConstReg::set_data(intptr_t x, address pc) {
   // Find and replace the oop corresponding to this instruction in oops section
   RawNativeInstruction* next = next_raw();
-  oop* oop_addr = NULL;
-  Metadata** metadata_addr = NULL;
+  oop* oop_addr = nullptr;
+  Metadata** metadata_addr = nullptr;
   CodeBlob* cb = CodeCache::find_blob(instruction_address());
-  if (cb != NULL) {
+  if (cb != nullptr) {
     nmethod* nm = cb->as_nmethod_or_null();
-    if (nm != NULL) {
+    if (nm != nullptr) {
       RelocIterator iter(nm, instruction_address(), next->instruction_address());
       while (iter.next()) {
         if (iter.type() == relocInfo::oop_type) {
@@ -162,7 +162,7 @@ void NativeMovConstReg::set_data(intptr_t x, address pc) {
     unsigned int hi = (unsigned int)(x >> 16);
     this->set_encoding((this->encoding() & 0xfff0f000) | (lo & 0xf000) << 4 | (lo & 0xfff));
     next->set_encoding((next->encoding() & 0xfff0f000) | (hi & 0xf000) << 4 | (hi & 0xfff));
-  } else if (oop_addr == NULL & metadata_addr == NULL) {
+  } else if (oop_addr == nullptr & metadata_addr == nullptr) {
     // A static ldr_literal (without oop or metadata relocation)
     assert(is_ldr_literal(), "must be");
     int offset = ldr_offset();
@@ -172,7 +172,7 @@ void NativeMovConstReg::set_data(intptr_t x, address pc) {
     // data is loaded from oop or metadata section
     int offset;
 
-    address addr = oop_addr != NULL ? (address)oop_addr : (address)metadata_addr;
+    address addr = oop_addr != nullptr ? (address)oop_addr : (address)metadata_addr;
 
     if(pc == 0) {
       offset = addr - instruction_address() - 8;
@@ -290,7 +290,7 @@ void RawNativeJump::check_verified_entry_alignment(address entry, address verifi
 void RawNativeJump::patch_verified_entry(address entry, address verified_entry, address dest) {
   assert(dest == SharedRuntime::get_handle_wrong_method_stub(), "should be");
   int *a = (int *)verified_entry;
-  a[0] = zombie_illegal_instruction; // always illegal
+  a[0] = not_entrant_illegal_instruction; // always illegal
   ICache::invalidate_range((address)&a[0], sizeof a[0]);
 }
 
@@ -303,9 +303,9 @@ void NativeGeneralJump::insert_unconditional(address code_pos, address entry) {
 static address raw_call_for(address return_address) {
   CodeBlob* cb = CodeCache::find_blob(return_address);
   nmethod* nm = cb->as_nmethod_or_null();
-  if (nm == NULL) {
+  if (nm == nullptr) {
     ShouldNotReachHere();
-    return NULL;
+    return nullptr;
   }
   // Look back 4 instructions, to allow for ic_call
   address begin = MAX2(return_address - 4*NativeInstruction::instruction_size, nm->code_begin());
@@ -324,16 +324,38 @@ static address raw_call_for(address return_address) {
       }
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 bool RawNativeCall::is_call_before(address return_address) {
-  return (raw_call_for(return_address) != NULL);
+  return (raw_call_for(return_address) != nullptr);
 }
 
 NativeCall* rawNativeCall_before(address return_address) {
   address call = raw_call_for(return_address);
-  assert(call != NULL, "must be");
+  assert(call != nullptr, "must be");
   return nativeCall_at(call);
 }
 
+void NativePostCallNop::make_deopt() {
+  NativeDeoptInstruction::insert(addr_at(0));
+}
+
+void NativePostCallNop::patch(jint diff) {
+  // unsupported for now
+}
+
+void NativeDeoptInstruction::verify() {
+}
+
+// Inserts an undefined instruction at a given pc
+void NativeDeoptInstruction::insert(address code_pos) {
+  // UDF, Encoding A1:
+  // 1 1 1 0 | 0 1 1 1 | 1 1 1 1 | imm12 | 1 1 1 1 | imm4 |
+  // e       | 7       | f       | dec   | f       | a    |
+  // 0xe7              | 0xfd, 0xec      | 0xfa
+  uint32_t insn = 0xe7fdecfa;
+  uint32_t *pos = (uint32_t *) code_pos;
+  *pos = insn;
+  ICache::invalidate_range(code_pos, 4);
+}

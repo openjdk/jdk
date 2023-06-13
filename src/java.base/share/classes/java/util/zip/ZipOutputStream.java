@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ import java.util.HashSet;
 import static java.util.zip.ZipConstants64.*;
 import static java.util.zip.ZipUtils.*;
 import sun.nio.cs.UTF_8;
-import sun.security.action.GetPropertyAction;
+import sun.security.action.GetBooleanAction;
 
 /**
  * This class implements an output stream filter for writing files in the
@@ -55,8 +55,7 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
      * some in jdk7.
      */
     private static final boolean inhibitZip64 =
-        Boolean.parseBoolean(
-            GetPropertyAction.privilegedGetProperty("jdk.util.zip.inhibitZip64"));
+        GetBooleanAction.privilegedGetProperty("jdk.util.zip.inhibitZip64");
 
     private static class XEntry {
         final ZipEntry entry;
@@ -192,6 +191,21 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
      * <p>
      * The current time will be used if the entry has no set modification time.
      *
+     * @apiNote When writing a directory entry, the STORED compression method
+     * should be used and the size and CRC-32 values should be set to 0:
+     *
+     * {@snippet lang = "java":
+     *     ZipEntry e = new ZipEntry(entryName);
+     *     if (e.isDirectory()) {
+     *         e.setMethod(ZipEntry.STORED);
+     *         e.setSize(0);
+     *         e.setCrc(0);
+     *     }
+     *     stream.putNextEntry(e);
+     *}
+     *
+     * This allows optimal performance when processing directory entries.
+     *
      * @param     e the ZIP entry to be written
      * @throws    ZipException if a ZIP format error has occurred
      * @throws    IOException if an I/O error has occurred
@@ -314,7 +328,7 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
                 crc.reset();
                 current = null;
             } catch (IOException e) {
-                if (usesDefaultDeflater && !(e instanceof ZipException))
+                if (def.shouldFinish() && usesDefaultDeflater && !(e instanceof ZipException))
                     def.end();
                 throw e;
             }
@@ -700,8 +714,8 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
             writeShort(45);                // version needed to extract
             writeInt(0);                   // number of this disk
             writeInt(0);                   // central directory start disk
-            writeLong(xentries.size());    // number of directory entires on disk
-            writeLong(xentries.size());    // number of directory entires
+            writeLong(xentries.size());    // number of directory entries on disk
+            writeLong(xentries.size());    // number of directory entries
             writeLong(len);                // length of central directory
             writeLong(off);                // offset of central directory
 

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,7 +95,7 @@ class AddressLiteral {
 
  protected:
   // creation
-  AddressLiteral() : _address(NULL), _rspec(NULL) {}
+  AddressLiteral() : _address(nullptr), _rspec() {}
 
  public:
   AddressLiteral(address addr, RelocationHolder const& rspec)
@@ -140,6 +140,9 @@ class Argument {
     // shows that xlC places all float args after argument 8 on the stack AND
     // in a register. This is not documented, but we follow this convention, too.
     n_regs_not_on_stack_c = 8,
+
+    n_int_register_parameters_j   = 8,  // duplicates num_java_iarg_registers
+    n_float_register_parameters_j = 13, // num_java_farg_registers
   };
   // creation
   Argument(int number) : _number(number) {}
@@ -234,10 +237,12 @@ class Assembler : public AbstractAssembler {
 
   enum opcdxos_masks {
     XL_FORM_OPCODE_MASK = (63u << OPCODE_SHIFT) | (1023u << 1),
+    ANDI_OPCODE_MASK    = (63u << OPCODE_SHIFT),
     ADDI_OPCODE_MASK    = (63u << OPCODE_SHIFT),
     ADDIS_OPCODE_MASK   = (63u << OPCODE_SHIFT),
     BXX_OPCODE_MASK     = (63u << OPCODE_SHIFT),
     BCXX_OPCODE_MASK    = (63u << OPCODE_SHIFT),
+    CMPLI_OPCODE_MASK   = (63u << OPCODE_SHIFT),
     // trap instructions
     TDI_OPCODE_MASK     = (63u << OPCODE_SHIFT),
     TWI_OPCODE_MASK     = (63u << OPCODE_SHIFT),
@@ -445,6 +450,7 @@ class Assembler : public AbstractAssembler {
     MULHD_OPCODE  = (31u << OPCODE_SHIFT |  73u << 1),              // XO-FORM
     MULHDU_OPCODE = (31u << OPCODE_SHIFT |   9u << 1),              // XO-FORM
     DIVD_OPCODE   = (31u << OPCODE_SHIFT | 489u << 1),              // XO-FORM
+    DIVDU_OPCODE  = (31u << OPCODE_SHIFT | 457u << 1),              // XO-FORM
 
     CNTLZD_OPCODE = (31u << OPCODE_SHIFT |  58u << XO_21_30_SHIFT), // X-FORM
     CNTTZD_OPCODE = (31u << OPCODE_SHIFT | 570u << XO_21_30_SHIFT), // X-FORM
@@ -728,7 +734,10 @@ class Assembler : public AbstractAssembler {
     VSRAB_OPCODE   = (4u  << OPCODE_SHIFT |  772u     ),
     VSRAW_OPCODE   = (4u  << OPCODE_SHIFT |  900u     ),
     VSRAH_OPCODE   = (4u  << OPCODE_SHIFT |  836u     ),
+    VPOPCNTB_OPCODE= (4u  << OPCODE_SHIFT | 1795u     ),
+    VPOPCNTH_OPCODE= (4u  << OPCODE_SHIFT | 1859u     ),
     VPOPCNTW_OPCODE= (4u  << OPCODE_SHIFT | 1923u     ),
+    VPOPCNTD_OPCODE= (4u  << OPCODE_SHIFT | 1987u     ),
 
     // Vector Floating-Point
     // not implemented yet
@@ -1004,15 +1013,15 @@ class Assembler : public AbstractAssembler {
   // Test if x is within signed immediate range for nbits.
   static bool is_simm(int x, unsigned int nbits) {
     assert(0 < nbits && nbits < 32, "out of bounds");
-    const int   min      = -(((int)1) << nbits-1);
-    const int   maxplus1 =  (((int)1) << nbits-1);
+    const int   min      = -(((int)1) << (nbits-1));
+    const int   maxplus1 =  (((int)1) << (nbits-1));
     return min <= x && x < maxplus1;
   }
 
   static bool is_simm(jlong x, unsigned int nbits) {
     assert(0 < nbits && nbits < 64, "out of bounds");
-    const jlong min      = -(((jlong)1) << nbits-1);
-    const jlong maxplus1 =  (((jlong)1) << nbits-1);
+    const jlong min      = -(((jlong)1) << (nbits-1));
+    const jlong maxplus1 =  (((jlong)1) << (nbits-1));
     return min <= x && x < maxplus1;
   }
 
@@ -1035,7 +1044,7 @@ class Assembler : public AbstractAssembler {
   // X is supposed to fit in a field "nbits" wide
   // and be sign-extended. Check the range.
   static void assert_signed_range(intptr_t x, int nbits) {
-    assert(nbits == 32 || (-(1 << nbits-1) <= x && x < (1 << nbits-1)),
+    assert(nbits == 32 || (-(1 << (nbits-1)) <= x && x < (1 << (nbits-1))),
            "value out of range");
   }
 
@@ -1077,7 +1086,7 @@ class Assembler : public AbstractAssembler {
   // Same as u_field for signed values
   static int s_field(int x, int hi_bit, int lo_bit) {
     int nbits = hi_bit - lo_bit + 1;
-    assert(nbits == 32 || (-(1 << nbits-1) <= x && x < (1 << nbits-1)),
+    assert(nbits == 32 || (-(1 << (nbits-1)) <= x && x < (1 << (nbits-1))),
       "value out of range");
     x &= fmask(hi_bit, lo_bit);
     int r = x << lo_bit;
@@ -1342,14 +1351,14 @@ class Assembler : public AbstractAssembler {
   inline void emit_data(int, relocInfo::relocType rtype);
 
   // Emit an address.
-  inline address emit_addr(const address addr = NULL);
+  inline address emit_addr(const address addr = nullptr);
 
 #if !defined(ABI_ELFv2)
   // Emit a function descriptor with the specified entry point, TOC,
-  // and ENV. If the entry point is NULL, the descriptor will point
+  // and ENV. If the entry point is null, the descriptor will point
   // just past the descriptor.
   // Use values from friend functions as defaults.
-  inline address emit_fd(address entry = NULL,
+  inline address emit_fd(address entry = nullptr,
                          address toc = (address) FunctionDescriptor::friend_toc,
                          address env = (address) FunctionDescriptor::friend_env);
 #endif
@@ -1365,7 +1374,7 @@ class Assembler : public AbstractAssembler {
 
   // Issue an illegal instruction.
   inline void illtrap();
-  static inline bool is_illtrap(int x);
+  static inline bool is_illtrap(address instr_addr);
 
   // PPC 1, section 3.3.8, Fixed-Point Arithmetic Instructions
   inline void addi( Register d, Register a, int si16);
@@ -1422,6 +1431,8 @@ class Assembler : public AbstractAssembler {
   inline void divd_(  Register d, Register a, Register b);
   inline void divw(   Register d, Register a, Register b);
   inline void divw_(  Register d, Register a, Register b);
+  inline void divdu(  Register d, Register a, Register b);
+  inline void divdu_( Register d, Register a, Register b);
   inline void divwu(  Register d, Register a, Register b);
   inline void divwu_( Register d, Register a, Register b);
 
@@ -1469,6 +1480,9 @@ class Assembler : public AbstractAssembler {
   static bool is_addis(int x) {
      return ADDIS_OPCODE == (x & ADDIS_OPCODE_MASK);
   }
+  static bool is_andi(int x) {
+     return ANDI_OPCODE == (x & ANDI_OPCODE_MASK);
+  }
   static bool is_bxx(int x) {
      return BXX_OPCODE == (x & BXX_OPCODE_MASK);
   }
@@ -1492,6 +1506,9 @@ class Assembler : public AbstractAssembler {
   }
   static bool is_bclr(int x) {
      return BCLR_OPCODE == (x & XL_FORM_OPCODE_MASK);
+  }
+  static bool is_cmpli(int x) {
+     return CMPLI_OPCODE == (x & CMPLI_OPCODE_MASK);
   }
   static bool is_li(int x) {
      return is_addi(x) && inv_ra_field(x)==0;
@@ -1585,7 +1602,7 @@ class Assembler : public AbstractAssembler {
   inline void xoris(  Register a, Register s, int ui16);
   inline void andr(   Register a, Register s, Register b);  // suffixed by 'r' as 'and' is C++ keyword
   inline void and_(   Register a, Register s, Register b);
-  // Turn or0(rx,rx,rx) into a nop and avoid that we accidently emit a
+  // Turn or0(rx,rx,rx) into a nop and avoid that we accidentally emit a
   // SMT-priority change instruction (see SMT instructions below).
   inline void or_unchecked(Register a, Register s, Register b);
   inline void orr(    Register a, Register s, Register b);  // suffixed by 'r' as 'or' is C++ keyword
@@ -1731,6 +1748,7 @@ class Assembler : public AbstractAssembler {
   // 8 bytes
   inline void ldx(  Register d, Register s1, Register s2);
   inline void ld(   Register d, int si16,    Register s1);
+  inline void ld(   Register d, ByteSize si16, Register s1);
   inline void ldu(  Register d, int si16,    Register s1);
 
   // 8 bytes reversed
@@ -1923,7 +1941,7 @@ class Assembler : public AbstractAssembler {
 
   // More convenient version.
   int condition_register_bit(ConditionRegister cr, Condition c) {
-    return 4 * (int)(intptr_t)cr + c;
+    return 4 * cr.encoding() + c;
   }
   void crand( ConditionRegister crdst, Condition cdst, ConditionRegister crsrc, Condition csrc);
   void crnand(ConditionRegister crdst, Condition cdst, ConditionRegister crsrc, Condition csrc);
@@ -2336,7 +2354,10 @@ class Assembler : public AbstractAssembler {
   inline void vsrab(    VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vsraw(    VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vsrah(    VectorRegister d, VectorRegister a, VectorRegister b);
+  inline void vpopcntb( VectorRegister d, VectorRegister b);
+  inline void vpopcnth( VectorRegister d, VectorRegister b);
   inline void vpopcntw( VectorRegister d, VectorRegister b);
+  inline void vpopcntd( VectorRegister d, VectorRegister b);
   // Vector Floating-Point not implemented yet
   inline void mtvscr(   VectorRegister b);
   inline void mfvscr(   VectorRegister d);
@@ -2466,6 +2487,7 @@ class Assembler : public AbstractAssembler {
   inline void lbz(  Register d, int si16);
   inline void ldx(  Register d, Register s2);
   inline void ld(   Register d, int si16);
+  inline void ld(   Register d, ByteSize si16);
   inline void ldbrx(Register d, Register s2);
   inline void stwx( Register d, Register s2);
   inline void stw(  Register d, int si16);
@@ -2531,7 +2553,7 @@ class Assembler : public AbstractAssembler {
   inline void lvsl(  VectorRegister d, Register s2);
   inline void lvsr(  VectorRegister d, Register s2);
 
-  // Endianess specific concatenation of 2 loaded vectors.
+  // Endianness specific concatenation of 2 loaded vectors.
   inline void load_perm(VectorRegister perm, Register addr);
   inline void vec_perm(VectorRegister first_dest, VectorRegister second, VectorRegister perm);
   inline void vec_perm(VectorRegister dest, VectorRegister first, VectorRegister second, VectorRegister perm);
@@ -2570,7 +2592,7 @@ class Assembler : public AbstractAssembler {
   inline void load_const(Register d, AddressLiteral& a, Register tmp = noreg);
   inline void load_const32(Register d, int i); // load signed int (patchable)
 
-  // Load a 64 bit constant, optimized, not identifyable.
+  // Load a 64 bit constant, optimized, not identifiable.
   // Tmp can be used to increase ILP. Set return_simm16_rest = true to get a
   // 16 bit immediate offset. This is useful if the offset can be encoded in
   // a succeeding instruction.

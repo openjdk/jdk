@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, BELLSOFT. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,7 +26,8 @@
  * LoadLibraryUnload class calls ClassLoader.loadedLibrary from multiple threads
  */
 /*
- * @test
+ * The driver for this test is LoadLibraryUnloadTest.java.
+ *
  * @bug 8266310
  * @summary Loads a native library from multiple class loaders and multiple
  *          threads. This creates a race for loading the library. The winner
@@ -35,13 +36,13 @@
  *          loaded in a different class loader that won the race. The test
  *          checks that the loaded class is GC'ed, that means the class loader
  *          is GC'ed and the native library is unloaded.
- * @library /test/lib
- * @build LoadLibraryUnload p.Class1
- * @run main/othervm/native -Xcheck:jni LoadLibraryUnload
  */
 import jdk.test.lib.Asserts;
-import jdk.test.lib.util.ForceGC;
+import jdk.test.lib.Utils;
+
 import java.lang.*;
+import java.lang.ref.Reference;
+import java.lang.ref.ReferenceQueue;
 import java.lang.reflect.*;
 import java.lang.ref.WeakReference;
 import java.net.URL;
@@ -51,6 +52,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+
+import jdk.test.lib.util.ForceGC;
 
 import p.Class1;
 
@@ -82,11 +85,13 @@ public class LoadLibraryUnload {
     private static class LoadLibraryFromClass implements Runnable {
         Object object;
         Method method;
+        Object canary;
 
-        public LoadLibraryFromClass(Class<?> fromClass) {
+        public LoadLibraryFromClass(Class<?> fromClass, Object canary) {
             try {
                 this.object = fromClass.newInstance();
-                this.method = fromClass.getDeclaredMethod("loadLibrary");
+                this.method = fromClass.getDeclaredMethod("loadLibrary", Object.class);
+                this.canary = canary;
             } catch (ReflectiveOperationException roe) {
                 throw new RuntimeException(roe);
             }
@@ -95,7 +100,7 @@ public class LoadLibraryUnload {
         @Override
         public void run() {
             try {
-                method.invoke(object);
+                method.invoke(object, canary);
             } catch (ReflectiveOperationException roe) {
                 throw new RuntimeException(roe);
             }
@@ -104,15 +109,20 @@ public class LoadLibraryUnload {
 
     public static void main(String[] args) throws Exception {
 
-        Class<?> clazz = null;
+        int LOADER_COUNT = 5;
         List<Thread> threads = new ArrayList<>();
+        Object[] canary = new Object[LOADER_COUNT];
+        final WeakReference<Object> wCanary[] = new WeakReference[LOADER_COUNT];
 
-        for (int i = 0 ; i < 5 ; i++) {
-            // 5 loaders and 10 threads in total.
+        for (int i = 0 ; i < LOADER_COUNT ; i++) {
+            // LOADER_COUNT loaders and 2X threads in total.
             // winner loads the library in 2 threads
-            clazz = new TestLoader().loadClass("p.Class1");
-            threads.add(new Thread(new LoadLibraryFromClass(clazz)));
-            threads.add(new Thread(new LoadLibraryFromClass(clazz)));
+            canary[i] = new Object();
+            wCanary[i] = new WeakReference<>(canary[i], null);
+
+            Class<?> clazz = new TestLoader().loadClass("p.Class1");
+            threads.add(new Thread(new LoadLibraryFromClass(clazz, canary[i])));
+            threads.add(new Thread(new LoadLibraryFromClass(clazz, canary[i])));
         }
 
         final Set<Throwable> exceptions = ConcurrentHashMap.newKeySet();
@@ -140,21 +150,30 @@ public class LoadLibraryUnload {
                 .reduce(true, (i, a) -> i && a);
 
         // expect exactly 8 errors
-        Asserts.assertTrue(exceptions.size() == 8,
-                "Expected to see 8 failing threads");
+        int expectedErrorCount = (LOADER_COUNT - 1) * 2;
+        Asserts.assertTrue(exceptions.size() == expectedErrorCount,
+                "Expected to see " + expectedErrorCount + " failing threads");
 
         Asserts.assertTrue(allAreUnsatisfiedLinkError,
                 "All errors have to be UnsatisfiedLinkError");
 
-        WeakReference<Class<?>> wClass = new WeakReference<>(clazz);
-
         // release strong refs
-        clazz = null;
         threads = null;
+        canary = null;
         exceptions.clear();
-        ForceGC gc = new ForceGC();
-        if (!gc.await(() -> wClass.refersTo(null))) {
-            throw new RuntimeException("Class1 hasn't been GC'ed");
-        }
+
+        // Wait for the canary for each of the libraries to be GC'd (cleared)
+        boolean allClear = ForceGC.wait(() -> {
+            for (int i = 0; i < wCanary.length; i++) {
+                if (!wCanary[i].refersTo(null)) {
+                    return false;
+                }
+            }
+            return true;
+        });
+        Asserts.assertTrue(allClear, "Not all WeakReferences cleared");
+
+        // Ensure the WeakReferences are strongly referenced until they can be dequeued
+        Reference.reachabilityFence(wCanary);
     }
 }

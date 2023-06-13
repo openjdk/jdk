@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,7 +82,7 @@ import jdk.internal.jimage.ImageStringsReader;
  *     size N.  If this situation occurs then the size of the table is
  *     adjusted so that keys distribute differently.
  *
- * Readers algoritm;
+ * Readers algorithm;
  *
  *   - Compute the hash for the key using the fixed base value modulo N.  This
  *     will provide an index into the redirect table. The integer value in the
@@ -246,7 +246,7 @@ public class PerfectHashBuilder<E> {
                 if (bucket.getSize() != 1) {
                     // Attempt to pack entries until no collisions occur.
                     if (!collidedEntries(bucket, count)) {
-                        // Failed to pack. Meed to grow table.
+                        // Failed to pack. Need to grow table.
                         redo = true;
                         break;
                     }

@@ -158,7 +158,7 @@
           <Properties>
             <Property name="columns" type="int" value="20"/>
             <Property name="rows" type="int" value="5"/>
-            <Property name="text" type="java.lang.String" value="Create translucent and/or shaped, or&#xa;non-opaque frame. Make sure it behaves&#xa;correctly (no artifacts left on the screen&#xa;when dragging - if dragging is possible).&#xa;Click &quot;Passed&quot; if the test behaves correctly,&#xa;&quot;Falied&quot; otherwise."/>
+            <Property name="text" type="java.lang.String" value="Create translucent and/or shaped, or&#xa;non-opaque frame. Make sure it behaves&#xa;correctly (no artifacts left on the screen&#xa;when dragging - if dragging is possible).&#xa;Click &quot;Passed&quot; if the test behaves correctly,&#xa;&quot;Failed&quot; otherwise."/>
           </Properties>
         </Component>
       </SubComponents>

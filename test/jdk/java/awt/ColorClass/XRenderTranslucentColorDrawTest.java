@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,14 +21,15 @@
  * questions.
  */
 
+
 /*
  * @test
  * @key headful
- * @bug      8176795
+ * @bug      8176795 8275843
  * @summary  Test verifies that we get proper color when we draw translucent
  *           color over an opaque color using X Render extension in Linux.
- * @requires (os.family == "linux")
- * @run      main XRenderTranslucentColorDrawTest -Dsun.java2d.xrender=true
+ * @run      main/othervm XRenderTranslucentColorDrawTest
+ * @run      main/othervm -Dsun.java2d.xrender=true XRenderTranslucentColorDrawTest
  */
 
 import java.awt.Color;
@@ -36,30 +37,28 @@ import java.awt.Graphics2D;
 import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
+import java.awt.Transparency;
 import java.awt.image.BufferedImage;
 import java.awt.image.VolatileImage;
 
 public class XRenderTranslucentColorDrawTest {
 
-    public static void main(String[] args) throws Exception {
-        GraphicsEnvironment env = GraphicsEnvironment.
-                getLocalGraphicsEnvironment();
-        GraphicsConfiguration translucentGC = null;
-        SCREENS: for (GraphicsDevice screen : env.getScreenDevices()) {
+    public static void main(String[] args) {
+        var env = GraphicsEnvironment.getLocalGraphicsEnvironment();
+        for (GraphicsDevice screen : env.getScreenDevices()) {
             for (GraphicsConfiguration gc : screen.getConfigurations()) {
-                if (gc.isTranslucencyCapable()) {
-                    translucentGC = gc;
-                    break SCREENS;
-                }
+                test(gc, Transparency.OPAQUE);
+                test(gc, Transparency.BITMASK);
+                test(gc, Transparency.TRANSLUCENT);
             }
         }
-        if (translucentGC == null) {
-            throw new RuntimeException("No suitable gc found.");
-        }
+    }
+
+    private static void test(GraphicsConfiguration gc, int transparency) {
         int width = 10;
         int height = 10;
-        VolatileImage image = translucentGC.
-                createCompatibleVolatileImage(width, height);
+        VolatileImage image = gc.createCompatibleVolatileImage(width, height,
+                                                               transparency);
         Graphics2D g = image.createGraphics();
         // draw opaque black color
         g.setColor(new Color(0xff000000, true));
@@ -72,10 +71,10 @@ public class XRenderTranslucentColorDrawTest {
         BufferedImage snapshot = image.getSnapshot();
         int argb = snapshot.getRGB(width / 2, height / 2);
         // we expect the resultant rgb hex value to be ff808080
-        if (!(Integer.toHexString(argb).equals("ff808080"))) {
-            throw new RuntimeException("Using X Render extension for drawing"
-                    + " translucent color is not giving expected results.");
+        String actual = Integer.toHexString(argb);
+        if (!(actual.equals("ff808080"))) {
+            throw new RuntimeException("Drawing translucent color is not " +
+                                       "giving expected results: " + actual);
         }
     }
 }
-

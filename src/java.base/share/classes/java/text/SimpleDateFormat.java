@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1581,7 +1581,7 @@ public class SimpleDateFormat extends DateFormat {
     }
 
     /* If the next tag/pattern is a <Numeric_Field> then the parser
-     * should consider the count of digits while parsing the contigous digits
+     * should consider the count of digits while parsing the contiguous digits
      * for the current tag/pattern
      */
     private boolean shouldObeyCount(int tag, int count) {

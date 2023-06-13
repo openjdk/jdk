@@ -73,6 +73,7 @@ public:
   bool is_obj_array_klass() const { return true; }
 
   static ciObjArrayKlass* make(ciKlass* element_klass);
+  static ciObjArrayKlass* make(ciKlass* element_klass, int dims);
 
   virtual ciKlass* exact_klass();
 };

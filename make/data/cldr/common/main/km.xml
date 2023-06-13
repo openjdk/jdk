@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2021 Unicode, Inc.
+<!-- Copyright © 1991-2023 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 
 Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
@@ -33,14 +33,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="alt">អាល់តៃខាងត្បូង</language>
 			<language type="am">អាំហារិក</language>
 			<language type="an">អារ៉ាហ្គោន</language>
+			<language type="ann">អូបូឡូ</language>
 			<language type="anp">អាហ្គីកា</language>
 			<language type="ar">អារ៉ាប់</language>
 			<language type="ar_001">អារ៉ាប់ (ស្តង់ដារ)</language>
 			<language type="arn">ម៉ាពូឈី</language>
 			<language type="arp">អារ៉ាប៉ាហូ</language>
+			<language type="ars">អារ៉ាប់ណាឌី</language>
 			<language type="as">អាសាមីស</language>
 			<language type="asa">អាស៊ូ</language>
 			<language type="ast">អាស្ទូរី</language>
+			<language type="atj">អាទិកាម៉េក</language>
 			<language type="av">អាវ៉ារីក</language>
 			<language type="awa">អាវ៉ាឌី</language>
 			<language type="ay">អីម៉ារ៉ា</language>
@@ -67,6 +70,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="bug">ប៊ុកហ្គី</language>
 			<language type="byn">ប្ល៊ីន</language>
 			<language type="ca">កាតាឡាន</language>
+			<language type="cay">ខាយូហ្កា</language>
 			<language type="ccp">ចាក់ម៉ា</language>
 			<language type="ce">ឈីឆេន</language>
 			<language type="ceb">ស៊ីប៊ូអាណូ</language>
@@ -75,12 +79,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="chk">ឈូគី</language>
 			<language type="chm">ម៉ារី</language>
 			<language type="cho">ឆុកតាវ</language>
+			<language type="chp">ឈីប៉េវ៉ាយអិន</language>
 			<language type="chr">ឆេរូគី</language>
 			<language type="chy">ឈីយីនី</language>
 			<language type="ckb">ឃើដភាគកណ្តាល</language>
+			<language type="clc">ឈីលកូទីន</language>
 			<language type="co">កូស៊ីខាន</language>
+			<language type="crg">មីឈីហ្វ</language>
+			<language type="crj">គ្រីខាងកើត​ប៉ែកខាងត្បូង</language>
+			<language type="crk">គ្រីតំបន់វាលរាប</language>
+			<language type="crl">គ្រីខាងកើត​ប៉ែកខាងជើង</language>
+			<language type="crm">មូសគ្រី</language>
+			<language type="crr">អាល់ហ្គនខ្វៀន ខារ៉ូលីណា</language>
 			<language type="crs">សេសេលវ៉ាគ្រីអូល (បារាំង)</language>
 			<language type="cs">ឆែក</language>
+			<language type="csw">គ្រីតំបន់ភក់ល្បាប់</language>
 			<language type="cu">ឈើជស្លាវិក</language>
 			<language type="cv">ឈូវ៉ាស</language>
 			<language type="cy">វេល</language>
@@ -89,8 +102,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="dar">ដាចវ៉ា</language>
 			<language type="dav">តៃតា</language>
 			<language type="de">អាល្លឺម៉ង់</language>
+			<language type="de_CH">អាល្លឺម៉ង់ (ស្វ៊ីស)</language>
 			<language type="dgr">ដូគ្រីប</language>
 			<language type="dje">ហ្សាម៉ា</language>
+			<language type="doi">ដូហ្គ្រី</language>
 			<language type="dsb">សូប៊ីក្រោម</language>
 			<language type="dua">ឌួលឡា</language>
 			<language type="dv">ទេវីហ៊ី</language>
@@ -103,6 +118,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="eka">អ៊ីកាជុក</language>
 			<language type="el">ក្រិក</language>
 			<language type="en">អង់គ្លេស</language>
+			<language type="en_GB" alt="short">អង់គ្លេស (ច.អ.)</language>
 			<language type="en_US" alt="short">អង់គ្លេស (ស.រ.អ.)</language>
 			<language type="eo">អេស្ពេរ៉ាន់តូ</language>
 			<language type="es">អេស្ប៉ាញ</language>
@@ -119,6 +135,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="fo">ហ្វារូស</language>
 			<language type="fon">ហ្វ៊ុន</language>
 			<language type="fr">បារាំង</language>
+			<language type="fr_CH">បារាំង (ស្វ៊ីស)</language>
+			<language type="frc">បារាំងកាហ្សង់</language>
+			<language type="frr">ហ្វ្រ៊ីសៀន​ខាងជើង</language>
 			<language type="fur">ហ៊្វ្រូលាន</language>
 			<language type="fy">ហ្វ្រីស៊ានខាងលិច</language>
 			<language type="ga">អៀរឡង់</language>
@@ -136,9 +155,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="gv">មេន</language>
 			<language type="gwi">ហ្គីចឈីន</language>
 			<language type="ha">ហូសា</language>
+			<language type="hai">ហៃដា</language>
 			<language type="haw">ហាវ៉ៃ</language>
+			<language type="hax">ហៃដាខាងត្បូង</language>
 			<language type="he">ហេប្រឺ</language>
 			<language type="hi">ហិណ្ឌី</language>
+			<language type="hi_Latn" alt="variant">ហ៊ីងលីង</language>
 			<language type="hil">ហ៊ីលីហ្គេណុន</language>
 			<language type="hmn">ម៉ុង</language>
 			<language type="hr">ក្រូអាត</language>
@@ -146,6 +168,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ht">ហៃទី</language>
 			<language type="hu">ហុងគ្រី</language>
 			<language type="hup">ហ៊ូប៉ា</language>
+			<language type="hur">ហាល់កូម៉េឡេម</language>
 			<language type="hy">អាមេនី</language>
 			<language type="hz">ហឺរីរ៉ូ</language>
 			<language type="ia">អ៊ីនធើលីង</language>
@@ -154,6 +177,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="id">ឥណ្ឌូណេស៊ី</language>
 			<language type="ig">អ៊ីកបូ</language>
 			<language type="ii">ស៊ីឈាន់យី</language>
+			<language type="ikt">អ៊ីនុកទីទុត​កាណាដា​ប៉ែកខាងលិច</language>
 			<language type="ilo">អ៊ីឡូកូ</language>
 			<language type="inh">អ៊ិនហ្គូស</language>
 			<language type="io">អ៊ីដូ</language>
@@ -175,6 +199,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="kde">ម៉ាកូនដេ</language>
 			<language type="kea">កាប៊ូវឺឌៀនូ</language>
 			<language type="kfo">គូរូ</language>
+			<language type="kgp">ខាងហ្កេង</language>
 			<language type="kha">កាស៊ី</language>
 			<language type="khq">គុយរ៉ាឈីនី</language>
 			<language type="ki">គីគូយូ</language>
@@ -202,6 +227,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="kum">គូមីគ</language>
 			<language type="kv">កូមី</language>
 			<language type="kw">កូនីស</language>
+			<language type="kwk">ក្វាក់វ៉ាឡា</language>
 			<language type="ky">​កៀហ្ស៊ីស</language>
 			<language type="la">ឡាតំាង</language>
 			<language type="lad">ឡាឌីណូ</language>
@@ -210,11 +236,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="lez">ឡេសហ្គី</language>
 			<language type="lg">ហ្កាន់ដា</language>
 			<language type="li">លីមប៊ូស</language>
+			<language type="lij">លីគូរី</language>
+			<language type="lil">លីលលូអេត</language>
 			<language type="lkt">ឡាកូតា</language>
 			<language type="ln">លីនកាឡា</language>
 			<language type="lo">ឡាវ</language>
+			<language type="lou">ក្រេអូល លូអ៊ីស៊ីអាណា</language>
 			<language type="loz">ឡូហ្ស៊ី</language>
 			<language type="lrc">លូរីខាងជើង</language>
+			<language type="lsm">សាមៀ</language>
 			<language type="lt">លីទុយអានី</language>
 			<language type="lu">លូបាកាតានហ្គា</language>
 			<language type="lua">លូបាលូឡា</language>
@@ -243,6 +273,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ml">ម៉ាឡាយ៉ាឡាម</language>
 			<language type="mn">ម៉ុងហ្គោលី</language>
 			<language type="mni">ម៉ានីពូរី</language>
+			<language type="moe">អ៊ីននូអៃមុន</language>
 			<language type="moh">ម៊ូហាគ</language>
 			<language type="mos">មូស៊ី</language>
 			<language type="mr">ម៉ារ៉ាធី</language>
@@ -282,6 +313,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ny">ណានចា</language>
 			<language type="nyn">ណានកូលេ</language>
 			<language type="oc">អូសីតាន់</language>
+			<language type="ojb">អូជីបវ៉ា​ប៉ែកពាយ័ព្យ</language>
+			<language type="ojc">អូជីពវ៉ាកណ្ដាល</language>
+			<language type="ojs">អូជីគ្រី</language>
+			<language type="ojw">អូជីបវ៉ា​ខាងលិច</language>
+			<language type="oka">អូកាណាហ្កាន</language>
 			<language type="om">អូរ៉ូម៉ូ</language>
 			<language type="or">អូឌៀ</language>
 			<language type="os">អូស៊ីទិក</language>
@@ -291,7 +327,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="pap">ប៉ាប៉ៃមេនតូ</language>
 			<language type="pau">ប៉ាលូអាន</language>
 			<language type="pcm">ភាសាទំនាក់ទំនងនីហ្សេរីយ៉ា</language>
+			<language type="pis">ពីជីន</language>
 			<language type="pl">ប៉ូឡូញ</language>
+			<language type="pqm">ម៉ាលីស៊ីត ប៉ាសាម៉ាខ្វូឌី</language>
 			<language type="prg">ព្រូស៊ាន</language>
 			<language type="ps">បាស្តូ</language>
 			<language type="pt">ព័រទុយហ្គាល់</language>
@@ -301,6 +339,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="quc">គីចឈី</language>
 			<language type="rap">រ៉ាប៉ានូ</language>
 			<language type="rar">រ៉ារ៉ូតុងហ្គាន</language>
+			<language type="rhg">រ៉ូហ៊ីងយ៉ា</language>
 			<language type="rm">រ៉ូម៉ង់</language>
 			<language type="rn">រុណ្ឌី</language>
 			<language type="ro">រូម៉ានី</language>
@@ -332,6 +371,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="si">ស្រីលង្កា</language>
 			<language type="sk">ស្លូវ៉ាគី</language>
 			<language type="sl">ស្លូវ៉ានី</language>
+			<language type="slh">ឡាស៊ូតស៊ីតខាងត្បូង</language>
 			<language type="sm">សាម័រ</language>
 			<language type="sma">សាមីខាងត្បូង</language>
 			<language type="smj">លូលីសាមី</language>
@@ -346,6 +386,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ss">ស្វាទី</language>
 			<language type="ssy">សាហូ</language>
 			<language type="st">សូថូខាងត្បូង</language>
+			<language type="str">សាលីសស្ត្រេតស៍</language>
 			<language type="su">ស៊ូដង់</language>
 			<language type="suk">ស៊ូគូម៉ា</language>
 			<language type="sv">ស៊ុយអែត</language>
@@ -354,23 +395,29 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="swb">កូម៉ូរី</language>
 			<language type="syr">ស៊ីរី</language>
 			<language type="ta">តាមីល</language>
+			<language type="tce">ថុចឆុនខាងត្បូង</language>
 			<language type="te">តេលុគុ</language>
 			<language type="tem">ធីមនី</language>
 			<language type="teo">តេសូ</language>
 			<language type="tet">ទីទុំ</language>
 			<language type="tg">តាហ្ស៊ីគ</language>
+			<language type="tgx">តាហ្គីស</language>
 			<language type="th">ថៃ</language>
+			<language type="tht">តាល់តាន</language>
 			<language type="ti">ទីហ្គ្រីញ៉ា</language>
 			<language type="tig">ធីហ្គ្រា</language>
 			<language type="tk">តួកម៉េន</language>
 			<language type="tlh">ឃ្លីនហ្គុន</language>
+			<language type="tli">ថ្លីងហ្គីត</language>
 			<language type="tn">ស្វាណា</language>
 			<language type="to">តុងហ្គា</language>
+			<language type="tok">តូគីប៉ូណា</language>
 			<language type="tpi">ថុកពីស៊ីន</language>
 			<language type="tr">ទួរគី</language>
 			<language type="trv">តារ៉ូកូ</language>
 			<language type="ts">សុងហ្គា</language>
 			<language type="tt">តាតា</language>
+			<language type="ttm">ថុចឆុនខាងជើង</language>
 			<language type="tum">ទុមប៊ូកា</language>
 			<language type="tvl">ទូវ៉ាលូ</language>
 			<language type="tw">ទ្វី</language>
@@ -387,6 +434,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="uz">អ៊ូសបេគ</language>
 			<language type="vai">វៃ</language>
 			<language type="ve">វេនដា</language>
+			<language type="vec">វេណេតូ</language>
 			<language type="vi">វៀតណាម</language>
 			<language type="vo">វូឡាពូក</language>
 			<language type="vun">វុនចូ</language>
@@ -396,6 +444,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="war">វ៉ារេយ</language>
 			<language type="wbp">វ៉ារីប៉ារី</language>
 			<language type="wo">វូឡុហ្វ</language>
+			<language type="wuu">អ៊ូចិន</language>
 			<language type="xal">កាលមីគ</language>
 			<language type="xh">ឃសា</language>
 			<language type="xog">សូហ្គា</language>
@@ -403,6 +452,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ybb">យេមបា</language>
 			<language type="yi">យ៉ីឌីស</language>
 			<language type="yo">យរូបា</language>
+			<language type="yrl">ញីនហ្កាទូ</language>
 			<language type="yue">កន្តាំង</language>
 			<language type="yue" alt="menu">ចិនកាតាំង</language>
 			<language type="za">ហ្សួង</language>
@@ -419,15 +469,39 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="zza">ហ្សាហ្សា</language>
 		</languages>
 		<scripts>
+			<script type="Adlm">អាតឡាម</script>
+			<script type="Aghb">អាល់បានីកៅកាស៊ី</script>
+			<script type="Ahom">អាហូម</script>
 			<script type="Arab">អារ៉ាប់</script>
+			<script type="Aran">អារ៉ាន</script>
+			<script type="Armi">អារ៉ាម៉ាអ៊ីមភើរៀល</script>
 			<script type="Armn">អាមេនី</script>
+			<script type="Avst">អាវេស្ថាន</script>
+			<script type="Bali">បាលី</script>
+			<script type="Bamu">បាមុន</script>
+			<script type="Bass">បាសាវ៉ះ</script>
+			<script type="Batk">បាតាក</script>
 			<script type="Beng">បង់ក្លាដែស</script>
+			<script type="Bhks">ប៉ៃស៊ូគី</script>
 			<script type="Bopo">បូផូម៉ូហ្វូ</script>
+			<script type="Brah">ប្រាមិ</script>
 			<script type="Brai">អក្សរ​សម្រាប់មនុស្ស​ពិការ​ភ្នែក</script>
+			<script type="Bugi">ប៊ូគីនេ</script>
+			<script type="Buhd">ប៊ូហ៊ីដ</script>
+			<script type="Cakm">ចាក់ម៉ា</script>
+			<script type="Cans">ព្យាង្គអាបូរីជីន​កាណាដារួម</script>
+			<script type="Cari">ខារី</script>
+			<script type="Cham">ចាម</script>
+			<script type="Cher">ឆេរ៉ូគី</script>
+			<script type="Chrs">ខូរ៉ាស្មី</script>
+			<script type="Copt">ខូប្ទ</script>
+			<script type="Cpmn">ស៊ីប្រូមីណូ</script>
+			<script type="Cprt">ស៊ីប</script>
 			<script type="Cyrl">ស៊ីរីលីក</script>
 			<script type="Deva">ដាវ៉ាន់ណាការិ</script>
 			<script type="Ethi">អេត្យូពី</script>
 			<script type="Geor">ហ្សកហ្ស៊ី</script>
+			<script type="Gong">គុនចាឡាកុនឌិ</script>
 			<script type="Grek">ក្រិច</script>
 			<script type="Gujr">គូចារ៉ាទី</script>
 			<script type="Guru">កុមុយឃី</script>
@@ -440,25 +514,52 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Hant" alt="stand-alone">អក្សរ​ហាន​ពេញ</script>
 			<script type="Hebr">អ៊ីស្រាអែល</script>
 			<script type="Hira">ហ៊ីរ៉ាកាណា</script>
+			<script type="Hmnp">នីយ៉ាកេងពួជឺម៉ុង</script>
 			<script type="Hrkt">សញ្ញាសំឡេងភាសាជប៉ុន</script>
 			<script type="Jamo">ចាម៉ូ</script>
+			<script type="Java">ជ្វា</script>
 			<script type="Jpan">ជប៉ុន</script>
+			<script type="Kali">កាយ៉ាលី</script>
 			<script type="Kana">កាតាកាណា</script>
 			<script type="Khmr">ខ្មែរ</script>
 			<script type="Knda">ខាណាដា</script>
 			<script type="Kore">កូរ៉េ</script>
+			<script type="Lana">ឡាណា</script>
 			<script type="Laoo">ឡាវ</script>
 			<script type="Latn">ឡាតាំង</script>
+			<script type="Lepc">ឡេបចា</script>
+			<script type="Limb">លីបប៊ូ</script>
+			<script type="Lisu">ហ្វ្រាសឺ</script>
+			<script type="Mand">ម៉ានដា</script>
 			<script type="Mlym">ម៉ាឡាយ៉ាឡាម</script>
 			<script type="Mong">ម៉ុងហ្គោលី</script>
+			<script type="Mtei">ម៉ីតីម៉ាយ៉ែក</script>
 			<script type="Mymr">ភូមា</script>
+			<script type="Newa">ណេវ៉ា</script>
+			<script type="Nkoo">នកូ</script>
+			<script type="Olck">អូលឈិគិ</script>
 			<script type="Orya">អូឌៀ</script>
+			<script type="Osge">អូស្គ</script>
+			<script type="Plrd">ផូឡាដ</script>
+			<script type="Rohg">ហានីហ្វ៊ី</script>
+			<script type="Saur">សៅរ៉ាសត្រា</script>
 			<script type="Sinh">ស៊ីនហាឡា</script>
+			<script type="Sund">ស៊ូដង់</script>
+			<script type="Sylo">ស៊ីឡូ</script>
+			<script type="Syrc">ស៊ីរីអែក</script>
+			<script type="Tale">តៃឡេ</script>
+			<script type="Talu">តៃឡឺថ្មី</script>
 			<script type="Taml">តាមីល</script>
+			<script type="Tavt">តៃវៀត</script>
 			<script type="Telu">តេលុគុ</script>
+			<script type="Tfng">ទីហ្វ៊ីណាហ្វ</script>
 			<script type="Thaa">ថាណា</script>
 			<script type="Thai">ថៃ</script>
 			<script type="Tibt">ទីបេ</script>
+			<script type="Vaii">វ៉ៃ</script>
+			<script type="Wcho">វ៉ាន់ឆូ</script>
+			<script type="Yiii">យី</script>
+			<script type="Zinh">ស្នងកេរ្តិ៍</script>
 			<script type="Zmth">និមិត្តសញ្ញាគណិតវិទ្យា</script>
 			<script type="Zsye">សញ្ញាអារម្មណ៍</script>
 			<script type="Zsym">និមិត្តសញ្ញា</script>
@@ -742,6 +843,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="TN">ទុយនីស៊ី</territory>
 			<territory type="TO">តុងហ្គា</territory>
 			<territory type="TR">តួកគី</territory>
+			<territory type="TR" alt="variant">តួកគីយេ</territory>
 			<territory type="TT">ទ្រីនីដាត និង​តូបាហ្គោ</territory>
 			<territory type="TV">ទូវ៉ាលូ</territory>
 			<territory type="TW">តៃវ៉ាន់</territory>
@@ -774,6 +876,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ZW">ស៊ីមបាវ៉េ</territory>
 			<territory type="ZZ">តំបន់មិនស្គាល់</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">អង់គ្លេស</subdivision>
+			<subdivision type="gbsct">ស្កុតឡែន</subdivision>
+			<subdivision type="gbwls">វ៉ាល់ស៍</subdivision>
+		</subdivisions>
 		<keys>
 			<key type="calendar">ប្រតិទិន</key>
 			<key type="cf">ទម្រង់រូបិយបណ្ណ</key>
@@ -787,11 +894,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<types>
 			<type key="calendar" type="buddhist">ប្រតិទិនពុទ្ធសាសនា</type>
 			<type key="calendar" type="chinese">ប្រតិទិន​ចិន</type>
+			<type key="calendar" type="coptic">ប្រតិទិនកបទិច</type>
 			<type key="calendar" type="dangi">ប្រតិទិនកូរ៉េ</type>
 			<type key="calendar" type="ethiopic">ប្រតិទិន​អេត្យូពី</type>
+			<type key="calendar" type="ethiopic-amete-alem">ប្រតិទិនអេត្យូពីអាម៉េតេ​អាលែម</type>
 			<type key="calendar" type="gregorian">ប្រតិទិន​ហ្សកហ្ស៊ី</type>
 			<type key="calendar" type="hebrew">ប្រតិទិនហេប្រឺ</type>
 			<type key="calendar" type="islamic">ប្រតិទិនអ៊ីស្លាម</type>
+			<type key="calendar" type="islamic-civil">ប្រតិទិនអ៊ិស្លាម (តារាង, សម័យស៊ីវិល)</type>
+			<type key="calendar" type="islamic-umalqura">ប្រតិទិនអ៊ិស្លាម (អ៊ុំអាល់គូរ៉ា)</type>
 			<type key="calendar" type="iso8601">ប្រតិទិន ISO-8601</type>
 			<type key="calendar" type="japanese">ប្រតិទិន​ជប៉ុន</type>
 			<type key="calendar" type="persian">ប្រតិទិនពែក្ស</type>
@@ -816,6 +927,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="armn">លេខ​អាមេនី</type>
 			<type key="numbers" type="armnlow">លេខ​តូច​អាមេនី</type>
 			<type key="numbers" type="beng">លេខ​បង់ក្លាដែស</type>
+			<type key="numbers" type="cakm">លេខចាក់ម៉ា</type>
 			<type key="numbers" type="deva">លេខ​ឌីវ៉ាណាការី</type>
 			<type key="numbers" type="ethi">លេខ​អេត្យូពី</type>
 			<type key="numbers" type="fullwide">លេខ​ទទឹង​ពេញ</type>
@@ -830,6 +942,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="hant">លេខ​ចិន​អក្សរ​ពេញ</type>
 			<type key="numbers" type="hantfin">លេខ​ហិរញ្ញវត្ថុ​ចិន​អក្សរ​ពេញ</type>
 			<type key="numbers" type="hebr">លេខហេប្រឺ</type>
+			<type key="numbers" type="java">លេខជ្វា</type>
 			<type key="numbers" type="jpan">លេខ​ជប៉ុន</type>
 			<type key="numbers" type="jpanfin">លេខ​ហិរញ្ញវត្ថុ​ជប៉ុន</type>
 			<type key="numbers" type="khmr">លេខ​ខ្មែរ</type>
@@ -837,7 +950,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="laoo">លេខ​ឡាវ</type>
 			<type key="numbers" type="latn">លេខ​បច្ចឹម​ប្រទេស</type>
 			<type key="numbers" type="mlym">លេខ​មលយាល័ម</type>
+			<type key="numbers" type="mtei">លេខមីតីម៉ាយ៉ែក</type>
 			<type key="numbers" type="mymr">លេខ​ភូមា</type>
+			<type key="numbers" type="olck">លេខអូលឈិគិ</type>
 			<type key="numbers" type="orya">លេខអូឌៀ</type>
 			<type key="numbers" type="roman">លេខ​រ៉ូមាំង</type>
 			<type key="numbers" type="romanlow">លេខ​តូច​រ៉ូមាំង</type>
@@ -846,6 +961,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="telu">លេខ​តេលុគុ</type>
 			<type key="numbers" type="thai">លេខ​ថៃ</type>
 			<type key="numbers" type="tibt">លេខទីបេ</type>
+			<type key="numbers" type="vaii">លេខវ៉ៃ</type>
 		</types>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">រង្វាស់​ប្រវែង</measurementSystemName>
@@ -892,32 +1008,42 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>EEEE d MMMM y G</pattern>
+							<datetimeSkeleton>GyMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>d MMMM y G</pattern>
+							<datetimeSkeleton>GyMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>d MMM y G</pattern>
+							<datetimeSkeleton>GyMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>d/M/y GGGGG</pattern>
+							<datetimeSkeleton>GGGGGyMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
 				<dateTimeFormats>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} នៅ​ម៉ោង {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} នៅ​ម៉ោង {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -925,9 +1051,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -1411,21 +1543,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>EEEE d MMMM y</pattern>
+							<datetimeSkeleton>yMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>d MMMM y</pattern>
+							<datetimeSkeleton>yMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>d MMM y</pattern>
+							<datetimeSkeleton>yMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>d/M/yy</pattern>
+							<datetimeSkeleton>yyMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -1433,32 +1569,42 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<timeFormatLength type="full">
 						<timeFormat>
 							<pattern>h:mm:ss a zzzz</pattern>
+							<datetimeSkeleton>ahmmsszzzz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="long">
 						<timeFormat>
 							<pattern>h:mm:ss a z</pattern>
+							<datetimeSkeleton>ahmmssz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="medium">
 						<timeFormat>
 							<pattern>h:mm:ss a</pattern>
+							<datetimeSkeleton>ahmmss</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="short">
 						<timeFormat>
 							<pattern>h:mm a</pattern>
+							<datetimeSkeleton>ahmm</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 				</timeFormats>
 				<dateTimeFormats>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} នៅ​ម៉ោង {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} នៅ​ម៉ោង {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -1466,9 +1612,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -2881,6 +3033,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Pacific/Enderbury">
 				<exemplarCity>អ៊ីនដឺប៊ូរី</exemplarCity>
 			</zone>
+			<zone type="Pacific/Kanton">
+				<exemplarCity>កាន់តុន</exemplarCity>
+			</zone>
 			<zone type="Pacific/Kiritimati">
 				<exemplarCity>គិរីទីម៉ាទិ</exemplarCity>
 			</zone>
@@ -3033,6 +3188,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="America/Hermosillo">
 				<exemplarCity>ហ៊ែម៉ូស៊ីឡូ</exemplarCity>
+			</zone>
+			<zone type="America/Ciudad_Juarez">
+				<exemplarCity>ស៊ីអ៊ូដាដ ហ៊ូអារ៉េស</exemplarCity>
 			</zone>
 			<zone type="America/Mazatlan">
 				<exemplarCity>ម៉ាហ្សាតឡង់</exemplarCity>
@@ -4419,6 +4577,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>ម៉ោង​នៅ​អ៊ិខាធឺរីនប៊័កនា​រដូវ​​ក្ដៅ</daylight>
 				</long>
 			</metazone>
+			<metazone type="Yukon">
+				<long>
+					<standard>ម៉ោងនៅយូខន់</standard>
+				</long>
+			</metazone>
 		</timeZoneNames>
 	</dates>
 	<numbers>
@@ -4498,25 +4661,41 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>#,##0.00¤</pattern>
+					<pattern alt="alphaNextToNumber" draft="provisional">#,##0.00 ¤</pattern>
+					<pattern alt="noCurrency" draft="provisional">#,##0.00</pattern>
 				</currencyFormat>
 				<currencyFormat type="accounting">
 					<pattern>#,##0.00¤;(#,##0.00¤)</pattern>
+					<pattern alt="alphaNextToNumber">#,##0.00 ¤;(#,##0.00 ¤)</pattern>
+					<pattern alt="noCurrency">#,##0.00;(#,##0.00)</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
 				<currencyFormat type="standard">
 					<pattern type="1000" count="other">¤0 ពាន់</pattern>
+					<pattern type="1000" count="other" alt="alphaNextToNumber">¤ 0 ពាន់</pattern>
 					<pattern type="10000" count="other">¤00 ពាន់</pattern>
+					<pattern type="10000" count="other" alt="alphaNextToNumber">¤ 00 ពាន់</pattern>
 					<pattern type="100000" count="other">¤000 ពាន់</pattern>
+					<pattern type="100000" count="other" alt="alphaNextToNumber">¤ 000 ពាន់</pattern>
 					<pattern type="1000000" count="other">¤0 លាន</pattern>
+					<pattern type="1000000" count="other" alt="alphaNextToNumber">¤ 0 លាន</pattern>
 					<pattern type="10000000" count="other">¤00 លាន</pattern>
+					<pattern type="10000000" count="other" alt="alphaNextToNumber">¤ 00 លាន</pattern>
 					<pattern type="100000000" count="other">¤000 លាន</pattern>
+					<pattern type="100000000" count="other" alt="alphaNextToNumber">¤ 000 លាន</pattern>
 					<pattern type="1000000000" count="other">¤0 ប៊ីលាន</pattern>
+					<pattern type="1000000000" count="other" alt="alphaNextToNumber">¤ 0 ប៊ីលាន</pattern>
 					<pattern type="10000000000" count="other">¤00 ប៊ីលាន</pattern>
+					<pattern type="10000000000" count="other" alt="alphaNextToNumber">¤ 00 ប៊ីលាន</pattern>
 					<pattern type="100000000000" count="other">¤000 ប៊ីលាន</pattern>
+					<pattern type="100000000000" count="other" alt="alphaNextToNumber">¤ 000 ប៊ីលាន</pattern>
 					<pattern type="1000000000000" count="other">¤0 ទ្រីលាន</pattern>
+					<pattern type="1000000000000" count="other" alt="alphaNextToNumber">¤ 0 ទ្រីលាន</pattern>
 					<pattern type="10000000000000" count="other">¤00 ទ្រីលាន</pattern>
+					<pattern type="10000000000000" count="other" alt="alphaNextToNumber">¤ 00 ទ្រីលាន</pattern>
 					<pattern type="100000000000000" count="other">¤000 ទ្រីលាន</pattern>
+					<pattern type="100000000000000" count="other" alt="alphaNextToNumber">¤ 000 ទ្រីលាន</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<unitPattern count="other">{0} {1}</unitPattern>
@@ -4539,6 +4718,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="AMD">
 				<displayName>ដ្រាំ​អាមេនី</displayName>
+				<displayName count="other">ដ្រាំ​អាមេនី</displayName>
 				<symbol>AMD</symbol>
 			</currency>
 			<currency type="ANG">
@@ -4798,7 +4978,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ឡារី​​ហ្សកហ្ស៊ី</displayName>
 				<displayName count="other">ឡារី​​ហ្សកហ្ស៊ី</displayName>
 				<symbol>GEL</symbol>
-				<symbol alt="variant" draft="contributed">₾</symbol>
 			</currency>
 			<currency type="GHS">
 				<displayName>ស៊ីឌី​ហ្គាណា</displayName>
@@ -4820,7 +4999,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ហ្វ្រង់​ហ្គីណេ</displayName>
 				<displayName count="other">ហ្វ្រង់ ហ្គីណេ</displayName>
 				<symbol>GNF</symbol>
-				<symbol alt="narrow" draft="contributed">FG</symbol>
+				<symbol alt="narrow">FG</symbol>
 			</currency>
 			<currency type="GTQ">
 				<displayName>ហ្គីស្សាល​ក្វាតេម៉ាឡា</displayName>
@@ -4986,7 +5165,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ដុល្លារ​លីប៊ី</displayName>
 				<displayName count="other">ដុល្លារ​លីប៊ី</displayName>
 				<symbol>LRD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
+				<symbol alt="narrow">$</symbol>
+			</currency>
+			<currency type="LSL">
+				<displayName>ឡូទីឡេសូតូ</displayName>
+				<displayName count="other">ឡូទីឡេសូតូ</displayName>
+				<symbol draft="contributed">ឡូទី</symbol>
 			</currency>
 			<currency type="LTL">
 				<displayName>លីតា​លីទុយអានី</displayName>
@@ -5093,7 +5277,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ណៃរ៉ា​នីហ្សេរីយ៉ា</displayName>
 				<displayName count="other">ណៃរ៉ា​នីហ្សេរីយ៉ា</displayName>
 				<symbol>NGN</symbol>
-				<symbol alt="narrow" draft="contributed">₦</symbol>
+				<symbol alt="narrow">₦</symbol>
 			</currency>
 			<currency type="NIO">
 				<displayName>ខឌូបា​នីការ៉ាហ្កា</displayName>
@@ -5226,7 +5410,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ផោន​សាំងហេឡេណា</displayName>
 				<displayName count="other">ផោន​សាំងហេឡេណា</displayName>
 				<symbol>SHP</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
+				<symbol alt="narrow">£</symbol>
 			</currency>
 			<currency type="SLL">
 				<displayName>លីអ៊ុន​សៀរ៉ាឡេអូន</displayName>
@@ -5495,6 +5679,30 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<compoundUnit type="10p24">
 				<unitPrefixPattern>យ៉ុតតា{0}</unitPrefixPattern>
 			</compoundUnit>
+			<compoundUnit type="1024p1">
+				<unitPrefixPattern>Ki{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p2">
+				<unitPrefixPattern>Mi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p3">
+				<unitPrefixPattern>Gi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p4">
+				<unitPrefixPattern>Ti{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p5">
+				<unitPrefixPattern>Pi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p6">
+				<unitPrefixPattern>Ei{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p7">
+				<unitPrefixPattern>Zi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p8">
+				<unitPrefixPattern>Yi{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}​ ក្នុង​មួយ​ {1}</compoundUnitPattern>
 			</compoundUnit>
@@ -5503,6 +5711,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</compoundUnit>
 			<compoundUnit type="power3">
 				<compoundUnitPattern1 count="other">{0}គូប</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="times">
+				<compoundUnitPattern>{0}⋅{1}</compoundUnitPattern>
 			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<displayName>កម្លាំង​ទំនាញ</displayName>
@@ -5589,6 +5800,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>មិល្លីម៉ូលក្នុងមួយលីត្រ</displayName>
 				<unitPattern count="other">{0} មិល្លីម៉ូលក្នុងមួយលីត្រ</unitPattern>
 			</unit>
+			<unit type="concentr-item">
+				<displayName>របស់</displayName>
+				<unitPattern count="other">{0} របស់</unitPattern>
+			</unit>
 			<unit type="concentr-permillion">
 				<displayName>ផ្នែកក្នុងមួយលាន</displayName>
 				<unitPattern count="other">{0} ផ្នែកក្នុងមួយលាន</unitPattern>
@@ -5600,6 +5815,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="concentr-permille">
 				<displayName>‰</displayName>
 				<unitPattern count="other">{0}‰</unitPattern>
+			</unit>
+			<unit type="concentr-permyriad">
+				<displayName>‱</displayName>
+				<unitPattern count="other">{0}‱</unitPattern>
+			</unit>
+			<unit type="concentr-mole">
+				<displayName>mol</displayName>
+				<unitPattern count="other">{0} mol</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>លីត្រ​ក្នុង​មួយ​គីឡូម៉ែត្រ</displayName>
@@ -5673,6 +5896,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ឆ្នាំ</displayName>
 				<unitPattern count="other">{0} ឆ្នាំ</unitPattern>
 				<perUnitPattern>{0} ក្នុងមួយឆ្នាំ</perUnitPattern>
+			</unit>
+			<unit type="duration-quarter">
+				<displayName>ត្រីមាស</displayName>
+				<unitPattern count="other">{0} ត្រីមាស</unitPattern>
+				<perUnitPattern>{0}/ត្រី</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
 				<displayName>ខែ</displayName>
@@ -5768,6 +5996,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ឯកតាកម្ដៅអាមេរិក</displayName>
 				<unitPattern count="other">{0} ឯកតាកម្ដៅអាមេរិក</unitPattern>
 			</unit>
+			<unit type="force-pound-force">
+				<displayName>lbf</displayName>
+				<unitPattern count="other">{0} lbf</unitPattern>
+			</unit>
+			<unit type="force-newton">
+				<displayName>N</displayName>
+				<unitPattern count="other">{0} N</unitPattern>
+			</unit>
+			<unit type="force-kilowatt-hour-per-100-kilometer">
+				<displayName>គីឡូវ៉ាត់ម៉ោងក្នុង 100 គីឡូម៉ែត្រ</displayName>
+				<unitPattern count="other">{0} គីឡូវ៉ាត់ម៉ោងក្នុង 100 គីឡូម៉ែត្រ</unitPattern>
+			</unit>
 			<unit type="frequency-gigahertz">
 				<displayName>ជីកាហឺត</displayName>
 				<unitPattern count="other">{0} ជីកាហឺត</unitPattern>
@@ -5783,6 +6023,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="frequency-hertz">
 				<displayName>ហឺត</displayName>
 				<unitPattern count="other">{0} ហឺត</unitPattern>
+			</unit>
+			<unit type="graphics-em">
+				<displayName>em</displayName>
+				<unitPattern count="other">{0} em</unitPattern>
 			</unit>
 			<unit type="graphics-pixel">
 				<displayName>ភិចស៊ែល</displayName>
@@ -5901,6 +6145,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>pt</displayName>
 				<unitPattern count="other">{0} pt</unitPattern>
 			</unit>
+			<unit type="length-solar-radius">
+				<displayName>R☉</displayName>
+				<unitPattern count="other">{0} R☉</unitPattern>
+			</unit>
 			<unit type="light-lux">
 				<displayName>lux</displayName>
 				<unitPattern count="other">{0} lux</unitPattern>
@@ -5913,7 +6161,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>លូមែន</displayName>
 				<unitPattern count="other">{0} លូមែន</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="light-solar-luminosity">
+				<displayName>L☉</displayName>
+				<unitPattern count="other">{0} L☉</unitPattern>
+			</unit>
+			<unit type="mass-tonne">
 				<displayName>តោនម៉ែត្រ</displayName>
 				<unitPattern count="other">{0} តោនម៉ែត្រ</unitPattern>
 			</unit>
@@ -5961,6 +6213,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ការ៉ាត់</displayName>
 				<unitPattern count="other">{0} ការ៉ាត់</unitPattern>
 			</unit>
+			<unit type="mass-dalton">
+				<displayName>Da</displayName>
+				<unitPattern count="other">{0} Da</unitPattern>
+			</unit>
+			<unit type="mass-earth-mass">
+				<displayName>M⊕</displayName>
+				<unitPattern count="other">{0} M⊕</unitPattern>
+			</unit>
+			<unit type="mass-solar-mass">
+				<displayName>M☉</displayName>
+				<unitPattern count="other">{0} M☉</unitPattern>
+			</unit>
 			<unit type="mass-grain">
 				<displayName>គ្រាប់</displayName>
 				<unitPattern count="other">{0} គ្រាប់</unitPattern>
@@ -6000,6 +6264,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="pressure-inch-ofhg">
 				<displayName>អ៊ីញនៃបារត</displayName>
 				<unitPattern count="other">{0} អ៊ីញនៃបារត</unitPattern>
+			</unit>
+			<unit type="pressure-bar">
+				<displayName>bar</displayName>
+				<unitPattern count="other">{0} bar</unitPattern>
 			</unit>
 			<unit type="pressure-millibar">
 				<displayName>មិល្លីបារ</displayName>
@@ -6056,6 +6324,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="temperature-kelvin">
 				<displayName>អង្សា​ខែលវិន</displayName>
 				<unitPattern count="other">{0} អង្សា​ខែលវិន</unitPattern>
+			</unit>
+			<unit type="torque-pound-force-foot">
+				<displayName>lbf⋅ft</displayName>
+				<unitPattern count="other">{0} lbf⋅ft</unitPattern>
+			</unit>
+			<unit type="torque-newton-meter">
+				<displayName>N⋅m</displayName>
+				<unitPattern count="other">{0} N⋅m</unitPattern>
 			</unit>
 			<unit type="volume-cubic-kilometer">
 				<displayName>គីឡូម៉ែត្រ​គូប</displayName>
@@ -6154,6 +6430,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>អោន​វត្ថុ​រាវ</displayName>
 				<unitPattern count="other">{0} អោន​វត្ថុ​រាវ</unitPattern>
 			</unit>
+			<unit type="volume-fluid-ounce-imperial">
+				<displayName>Imp. fl oz</displayName>
+				<unitPattern count="other">{0} fl oz Imp.</unitPattern>
+			</unit>
 			<unit type="volume-tablespoon">
 				<displayName>ស្លាបព្រា​បាយ</displayName>
 				<unitPattern count="other">{0} ស្លាបព្រា​បាយ</unitPattern>
@@ -6162,9 +6442,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ស្លាបព្រា​កាហ្វេ</displayName>
 				<unitPattern count="other">{0} ស្លាបព្រា​កាហ្វេ</unitPattern>
 			</unit>
+			<unit type="volume-barrel">
+				<displayName>bbl</displayName>
+				<unitPattern count="other">{0} bbl</unitPattern>
+			</unit>
 			<unit type="volume-dessert-spoon">
 				<displayName>ស្លាបព្រាបង្អែម</displayName>
 				<unitPattern count="other">{0} ស្លាបព្រាបង្អែម</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<displayName>dstspn Imp</displayName>
+				<unitPattern count="other">{0} dstspn Imp</unitPattern>
 			</unit>
 			<unit type="volume-drop">
 				<displayName>តំណក់</displayName>
@@ -6181,6 +6469,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="volume-pinch">
 				<displayName>ច្បិច</displayName>
 				<unitPattern count="other">{0} ច្បិច</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName>qt Imp</displayName>
+				<unitPattern count="other">{0} qt Imp.</unitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>ទិសទាំងបួន</displayName>
@@ -6342,8 +6634,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} mg/dL</unitPattern>
 			</unit>
 			<unit type="concentr-millimole-per-liter">
-				<displayName>mmol/L</displayName>
-				<unitPattern count="other">{0} mmol/L</unitPattern>
+				<displayName>មិល្លីម៉ូល/លីត្រ</displayName>
+				<unitPattern count="other">{0} ម.ម៉ូល/លី</unitPattern>
+			</unit>
+			<unit type="concentr-item">
+				<displayName>របស់</displayName>
+				<unitPattern count="other">{0} របស់</unitPattern>
 			</unit>
 			<unit type="concentr-permillion">
 				<displayName>ppm</displayName>
@@ -6358,8 +6654,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}‰</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
-				<displayName>លីត្រ/km</displayName>
-				<unitPattern count="other">{0} L/km</unitPattern>
+				<displayName>លីត្រ/គម</displayName>
+				<unitPattern count="other">{0} លី/គម</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>L/100km</displayName>
@@ -6429,6 +6725,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ឆ្នាំ</displayName>
 				<unitPattern count="other">{0} ឆ្នាំ</unitPattern>
 				<perUnitPattern>{0}/ឆ្នាំ</perUnitPattern>
+			</unit>
+			<unit type="duration-quarter">
+				<displayName>ត្រីមាស</displayName>
+				<unitPattern count="other">{0} ត្រីមាស</unitPattern>
+				<perUnitPattern>{0}/ត្រី</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
 				<displayName>ខែ</displayName>
@@ -6531,6 +6832,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Hz</displayName>
 				<unitPattern count="other">{0} Hz</unitPattern>
 			</unit>
+			<unit type="graphics-dot-per-centimeter">
+				<displayName>ppcm</displayName>
+				<unitPattern count="other">{0} ppcm</unitPattern>
+			</unit>
+			<unit type="graphics-dot-per-inch">
+				<displayName>ppi</displayName>
+				<unitPattern count="other">{0} ppi</unitPattern>
+			</unit>
 			<unit type="graphics-dot">
 				<displayName>ចំណុច</displayName>
 				<unitPattern count="other">{0} ចំណុច</unitPattern>
@@ -6623,7 +6932,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>lux</displayName>
 				<unitPattern count="other">{0} lx</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>t</displayName>
 				<unitPattern count="other">{0} t</unitPattern>
 			</unit>
@@ -6944,176 +7253,802 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<compoundUnit type="10p24">
 				<unitPrefixPattern>Y{0}</unitPrefixPattern>
 			</compoundUnit>
+			<compoundUnit type="1024p1">
+				<unitPrefixPattern>Ki{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p2">
+				<unitPrefixPattern>Mi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p3">
+				<unitPrefixPattern>Gi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p4">
+				<unitPrefixPattern>Ti{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p5">
+				<unitPrefixPattern>Pi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p6">
+				<unitPrefixPattern>Ei{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p7">
+				<unitPrefixPattern>Zi{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="1024p8">
+				<unitPrefixPattern>Yi{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
 			</compoundUnit>
 			<compoundUnit type="power2">
 				<compoundUnitPattern1>{0}²</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0}²</compoundUnitPattern1>
 			</compoundUnit>
 			<compoundUnit type="power3">
 				<compoundUnitPattern1>{0}³</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0}³</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="times">
+				<compoundUnitPattern>{0}⋅{1}</compoundUnitPattern>
 			</compoundUnit>
 			<unit type="acceleration-g-force">
+				<displayName>កម្លាំង​ទំនាញ</displayName>
 				<unitPattern count="other">{0} ក.ទ.</unitPattern>
 			</unit>
+			<unit type="acceleration-meter-per-square-second">
+				<displayName>ម៉ែត្រ​/​វិនាទី​ការ៉េ</displayName>
+				<unitPattern count="other">{0} m/s²</unitPattern>
+			</unit>
+			<unit type="angle-revolution">
+				<displayName>rev</displayName>
+				<unitPattern count="other">{0} rev</unitPattern>
+			</unit>
+			<unit type="angle-radian">
+				<displayName>រ៉ាដ្យង់</displayName>
+				<unitPattern count="other">{0} rad</unitPattern>
+			</unit>
 			<unit type="angle-degree">
+				<displayName>ដឺក្រេ</displayName>
 				<unitPattern count="other">{0}°</unitPattern>
 			</unit>
 			<unit type="angle-arc-minute">
+				<displayName>អាកនាទី</displayName>
 				<unitPattern count="other">{0}′</unitPattern>
 			</unit>
 			<unit type="angle-arc-second">
+				<displayName>អាកវិនាទី</displayName>
 				<unitPattern count="other">{0}″</unitPattern>
 			</unit>
 			<unit type="area-square-kilometer">
+				<displayName>km²</displayName>
 				<unitPattern count="other">{0} គ.ម².</unitPattern>
+				<perUnitPattern>{0}/km²</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
+				<displayName>ហិកតា</displayName>
 				<unitPattern count="other">{0} ហ.</unitPattern>
 			</unit>
 			<unit type="area-square-meter">
+				<displayName>m²</displayName>
 				<unitPattern count="other">{0} ម².</unitPattern>
+				<perUnitPattern>{0}/m²</perUnitPattern>
+			</unit>
+			<unit type="area-square-centimeter">
+				<displayName>cm²</displayName>
+				<unitPattern count="other">{0} cm²</unitPattern>
+				<perUnitPattern>{0}/cm²</perUnitPattern>
 			</unit>
 			<unit type="area-square-mile">
+				<displayName>mi²</displayName>
 				<unitPattern count="other">{0} ម៉².</unitPattern>
+				<perUnitPattern>{0}/mi²</perUnitPattern>
 			</unit>
 			<unit type="area-acre">
+				<displayName>អា</displayName>
 				<unitPattern count="other">{0} អា</unitPattern>
 			</unit>
+			<unit type="area-square-yard">
+				<displayName>yd²</displayName>
+				<unitPattern count="other">{0} yd²</unitPattern>
+			</unit>
 			<unit type="area-square-foot">
+				<displayName>ft²</displayName>
 				<unitPattern count="other">{0} ហ្វ².</unitPattern>
+			</unit>
+			<unit type="area-square-inch">
+				<displayName>អ៊ីញការ៉េ</displayName>
+				<unitPattern count="other">{0} in²</unitPattern>
+				<perUnitPattern>{0}/in²</perUnitPattern>
+			</unit>
+			<unit type="area-dunam">
+				<displayName>ឌូណាម</displayName>
+				<unitPattern count="other">{0} ឌូណាម</unitPattern>
+			</unit>
+			<unit type="concentr-karat">
+				<displayName>ការ៉ាត់</displayName>
+				<unitPattern count="other">{0} kt</unitPattern>
+			</unit>
+			<unit type="concentr-milligram-ofglucose-per-deciliter">
+				<displayName>mg/dL</displayName>
+				<unitPattern count="other">{0} mg/dL</unitPattern>
+			</unit>
+			<unit type="concentr-millimole-per-liter">
+				<displayName>ម.ម៉ូល/លី</displayName>
+				<unitPattern count="other">{0} ម.ម៉ូល/លី</unitPattern>
+			</unit>
+			<unit type="concentr-item">
+				<displayName>របស់</displayName>
+				<unitPattern count="other">{0} របស់</unitPattern>
+			</unit>
+			<unit type="concentr-permillion">
+				<displayName>ppm</displayName>
+				<unitPattern count="other">{0} ppm</unitPattern>
 			</unit>
 			<unit type="concentr-percent">
 				<displayName>%</displayName>
 				<unitPattern count="other">{0}%</unitPattern>
 			</unit>
+			<unit type="concentr-permille">
+				<displayName>‰</displayName>
+				<unitPattern count="other">{0}‰</unitPattern>
+			</unit>
+			<unit type="concentr-permyriad">
+				<displayName>‱</displayName>
+				<unitPattern count="other">{0}‱</unitPattern>
+			</unit>
+			<unit type="concentr-mole">
+				<displayName>ម៉ូល</displayName>
+				<unitPattern count="other">{0} ម៉ូល</unitPattern>
+			</unit>
+			<unit type="consumption-liter-per-kilometer">
+				<displayName>លី/គម</displayName>
+				<unitPattern count="other">{0} លី/គម</unitPattern>
+			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>L/100km</displayName>
 				<unitPattern count="other">{0}L/100km</unitPattern>
 			</unit>
+			<unit type="consumption-mile-per-gallon">
+				<displayName>ម៉ាយ​/​ហ្គាឡុង</displayName>
+				<unitPattern count="other">{0} mpg</unitPattern>
+			</unit>
+			<unit type="consumption-mile-per-gallon-imperial">
+				<displayName>ម៉ាយ/gal Imp.</displayName>
+				<unitPattern count="other">{0} mpg Imp.</unitPattern>
+			</unit>
+			<unit type="digital-petabyte">
+				<displayName>PB</displayName>
+				<unitPattern count="other">{0} PB</unitPattern>
+			</unit>
+			<unit type="digital-terabyte">
+				<displayName>TB</displayName>
+				<unitPattern count="other">{0} TB</unitPattern>
+			</unit>
+			<unit type="digital-terabit">
+				<displayName>Tb</displayName>
+				<unitPattern count="other">{0} Tb</unitPattern>
+			</unit>
+			<unit type="digital-gigabyte">
+				<displayName>GB</displayName>
+				<unitPattern count="other">{0} GB</unitPattern>
+			</unit>
+			<unit type="digital-gigabit">
+				<displayName>Gb</displayName>
+				<unitPattern count="other">{0} Gb</unitPattern>
+			</unit>
+			<unit type="digital-megabyte">
+				<displayName>MB</displayName>
+				<unitPattern count="other">{0} MB</unitPattern>
+			</unit>
+			<unit type="digital-megabit">
+				<displayName>Mb</displayName>
+				<unitPattern count="other">{0} Mb</unitPattern>
+			</unit>
+			<unit type="digital-kilobyte">
+				<displayName>kB</displayName>
+				<unitPattern count="other">{0} kB</unitPattern>
+			</unit>
+			<unit type="digital-kilobit">
+				<displayName>kb</displayName>
+				<unitPattern count="other">{0} kb</unitPattern>
+			</unit>
+			<unit type="digital-byte">
+				<displayName>byte</displayName>
+				<unitPattern count="other">{0} byte</unitPattern>
+			</unit>
+			<unit type="digital-bit">
+				<displayName>bit</displayName>
+				<unitPattern count="other">{0} bit</unitPattern>
+			</unit>
+			<unit type="duration-century">
+				<displayName>ស.វ</displayName>
+				<unitPattern count="other">{0} ស.វ</unitPattern>
+			</unit>
+			<unit type="duration-decade">
+				<displayName>ទសវត្សរ៍</displayName>
+				<unitPattern count="other">{0} ទសវត្សរ៍</unitPattern>
+			</unit>
 			<unit type="duration-year">
 				<displayName>ឆ្នាំ</displayName>
 				<unitPattern count="other">{0} ឆ្នាំ</unitPattern>
+				<perUnitPattern>{0}/ឆ្នាំ</perUnitPattern>
+			</unit>
+			<unit type="duration-quarter">
+				<displayName>ត្រីមាស</displayName>
+				<unitPattern count="other">{0} ត្រី</unitPattern>
+				<perUnitPattern>{0}/ត្រី</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
 				<displayName>ខែ</displayName>
 				<unitPattern count="other">{0} ខែ</unitPattern>
+				<perUnitPattern>{0}/ខែ</perUnitPattern>
 			</unit>
 			<unit type="duration-week">
 				<displayName>សប្ដាហ៍</displayName>
 				<unitPattern count="other">{0} សប្ដាហ៍</unitPattern>
+				<perUnitPattern>{0}/សប្តាហ៍</perUnitPattern>
 			</unit>
 			<unit type="duration-day">
 				<displayName>ថ្ងៃ</displayName>
 				<unitPattern count="other">{0} ថ្ងៃ</unitPattern>
+				<perUnitPattern>{0}/ថ្ងៃ</perUnitPattern>
 			</unit>
 			<unit type="duration-hour">
 				<displayName>ម៉ោង</displayName>
 				<unitPattern count="other">{0} ម៉ោង</unitPattern>
+				<perUnitPattern>{0}/ម៉ោង</perUnitPattern>
 			</unit>
 			<unit type="duration-minute">
 				<displayName>នាទី</displayName>
 				<unitPattern count="other">{0} នាទី</unitPattern>
+				<perUnitPattern>{0}/នាទី</perUnitPattern>
 			</unit>
 			<unit type="duration-second">
 				<displayName>វិនាទី</displayName>
 				<unitPattern count="other">{0} វិនាទី</unitPattern>
+				<perUnitPattern>{0}/វិនាទី</perUnitPattern>
 			</unit>
 			<unit type="duration-millisecond">
 				<displayName>មិល្លី​វិនាទី</displayName>
 				<unitPattern count="other">{0} ម.វិ</unitPattern>
 			</unit>
+			<unit type="duration-microsecond">
+				<displayName>មីក្រូ​វិនាទី</displayName>
+				<unitPattern count="other">{0} μs</unitPattern>
+			</unit>
+			<unit type="duration-nanosecond">
+				<displayName>ណាណូវិនាទី</displayName>
+				<unitPattern count="other">{0} ns</unitPattern>
+			</unit>
+			<unit type="electric-ampere">
+				<displayName>អំពែរ</displayName>
+				<unitPattern count="other">{0} A</unitPattern>
+			</unit>
+			<unit type="electric-milliampere">
+				<displayName>មិល្លីអំពែរ</displayName>
+				<unitPattern count="other">{0} mA</unitPattern>
+			</unit>
+			<unit type="electric-ohm">
+				<displayName>អូម</displayName>
+				<unitPattern count="other">{0} Ω</unitPattern>
+			</unit>
+			<unit type="electric-volt">
+				<displayName>វ៉ុល</displayName>
+				<unitPattern count="other">{0} V</unitPattern>
+			</unit>
+			<unit type="energy-kilocalorie">
+				<displayName>kcal</displayName>
+				<unitPattern count="other">{0} kcal</unitPattern>
+			</unit>
+			<unit type="energy-calorie">
+				<displayName>cal</displayName>
+				<unitPattern count="other">{0} cal</unitPattern>
+			</unit>
+			<unit type="energy-foodcalorie">
+				<displayName>Cal</displayName>
+				<unitPattern count="other">{0} Cal</unitPattern>
+			</unit>
+			<unit type="energy-kilojoule">
+				<displayName>គីឡូស៊ូល</displayName>
+				<unitPattern count="other">{0} kJ</unitPattern>
+			</unit>
+			<unit type="energy-joule">
+				<displayName>ស៊ូល</displayName>
+				<unitPattern count="other">{0} J</unitPattern>
+			</unit>
+			<unit type="energy-kilowatt-hour">
+				<displayName>kWh</displayName>
+				<unitPattern count="other">{0} kWh</unitPattern>
+			</unit>
+			<unit type="energy-electronvolt">
+				<displayName>eV</displayName>
+				<unitPattern count="other">{0} eV</unitPattern>
+			</unit>
+			<unit type="energy-british-thermal-unit">
+				<displayName>BTU</displayName>
+				<unitPattern count="other">{0} Btu</unitPattern>
+			</unit>
+			<unit type="energy-therm-us">
+				<displayName>US therm</displayName>
+				<unitPattern count="other">{0} US therm</unitPattern>
+			</unit>
+			<unit type="force-pound-force">
+				<displayName>lbf</displayName>
+				<unitPattern count="other">{0} lbf</unitPattern>
+			</unit>
+			<unit type="force-newton">
+				<displayName>N</displayName>
+				<unitPattern count="other">{0} N</unitPattern>
+			</unit>
+			<unit type="force-kilowatt-hour-per-100-kilometer">
+				<displayName>kWh/100km</displayName>
+				<unitPattern count="other">{0} kWh/100km</unitPattern>
+			</unit>
+			<unit type="frequency-gigahertz">
+				<displayName>GHz</displayName>
+				<unitPattern count="other">{0} GHz</unitPattern>
+			</unit>
+			<unit type="frequency-megahertz">
+				<displayName>MHz</displayName>
+				<unitPattern count="other">{0} MHz</unitPattern>
+			</unit>
+			<unit type="frequency-kilohertz">
+				<displayName>kHz</displayName>
+				<unitPattern count="other">{0} kHz</unitPattern>
+			</unit>
+			<unit type="frequency-hertz">
+				<displayName>Hz</displayName>
+				<unitPattern count="other">{0} Hz</unitPattern>
+			</unit>
+			<unit type="graphics-em">
+				<displayName>em</displayName>
+				<unitPattern count="other">{0} em</unitPattern>
+			</unit>
+			<unit type="graphics-pixel">
+				<displayName>px</displayName>
+				<unitPattern count="other">{0} px</unitPattern>
+			</unit>
+			<unit type="graphics-megapixel">
+				<displayName>MP</displayName>
+				<unitPattern count="other">{0} MP</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-centimeter">
+				<displayName>ppcm</displayName>
+				<unitPattern count="other">{0} ppcm</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-inch">
+				<displayName>ppi</displayName>
+				<unitPattern count="other">{0} ppi</unitPattern>
+			</unit>
+			<unit type="graphics-dot-per-centimeter">
+				<displayName>ppcm</displayName>
+				<unitPattern count="other">{0} ppcm</unitPattern>
+			</unit>
+			<unit type="graphics-dot-per-inch">
+				<displayName>ppi</displayName>
+				<unitPattern count="other">{0} ppi</unitPattern>
+			</unit>
+			<unit type="graphics-dot">
+				<displayName>ចំណុច</displayName>
+				<unitPattern count="other">{0} ចំណុច</unitPattern>
+			</unit>
+			<unit type="length-earth-radius">
+				<displayName>R⊕</displayName>
+				<unitPattern count="other">{0} R⊕</unitPattern>
+			</unit>
 			<unit type="length-kilometer">
 				<displayName>គម</displayName>
+				<unitPattern count="other">{0} គម</unitPattern>
+				<perUnitPattern>{0}/គម</perUnitPattern>
 			</unit>
 			<unit type="length-meter">
 				<displayName>ម៉ែត្រ</displayName>
 				<unitPattern count="other">{0} ម</unitPattern>
+				<perUnitPattern>{0}/ម</perUnitPattern>
+			</unit>
+			<unit type="length-decimeter">
+				<displayName>ដម</displayName>
+				<unitPattern count="other">{0} ដម</unitPattern>
 			</unit>
 			<unit type="length-centimeter">
 				<displayName>សម</displayName>
 				<unitPattern count="other">{0} សម</unitPattern>
+				<perUnitPattern>{0}/សម</perUnitPattern>
 			</unit>
 			<unit type="length-millimeter">
 				<displayName>មម</displayName>
 				<unitPattern count="other">{0} មម</unitPattern>
 			</unit>
+			<unit type="length-micrometer">
+				<displayName>មីក្រូ​ម៉ែត្រ</displayName>
+				<unitPattern count="other">{0} μm</unitPattern>
+			</unit>
+			<unit type="length-nanometer">
+				<displayName>nm</displayName>
+				<unitPattern count="other">{0} nm</unitPattern>
+			</unit>
 			<unit type="length-picometer">
+				<displayName>pm</displayName>
 				<unitPattern count="other">{0} ព.ម.</unitPattern>
 			</unit>
 			<unit type="length-mile">
+				<displayName>ម៉ាយ</displayName>
 				<unitPattern count="other">{0} ម៉.</unitPattern>
 			</unit>
 			<unit type="length-yard">
+				<displayName>យ៉ាត</displayName>
 				<unitPattern count="other">{0} យ៉.</unitPattern>
 			</unit>
 			<unit type="length-foot">
+				<displayName>ហ្វីត</displayName>
 				<unitPattern count="other">{0}′</unitPattern>
+				<perUnitPattern>{0}/ft</perUnitPattern>
 			</unit>
 			<unit type="length-inch">
+				<displayName>អ៊ីញ</displayName>
 				<unitPattern count="other">{0}″</unitPattern>
+				<perUnitPattern>{0}/in</perUnitPattern>
+			</unit>
+			<unit type="length-parsec">
+				<displayName>ផាសិក</displayName>
+				<unitPattern count="other">{0} pc</unitPattern>
 			</unit>
 			<unit type="length-light-year">
+				<displayName>ឆ្នាំ​ពន្លឺ</displayName>
 				<unitPattern count="other">{0} ឆ្នាំ​ពន្លឺ</unitPattern>
+			</unit>
+			<unit type="length-astronomical-unit">
+				<displayName>au</displayName>
+				<unitPattern count="other">{0} au</unitPattern>
+			</unit>
+			<unit type="length-furlong">
+				<displayName>ហ្វឺឡង</displayName>
+				<unitPattern count="other">{0} ហ្វឺ</unitPattern>
+			</unit>
+			<unit type="length-fathom">
+				<displayName>ហ្វាតឹម</displayName>
+				<unitPattern count="other">{0} fth</unitPattern>
+			</unit>
+			<unit type="length-nautical-mile">
+				<displayName>nmi</displayName>
+				<unitPattern count="other">{0} nmi</unitPattern>
+			</unit>
+			<unit type="length-mile-scandinavian">
+				<displayName>smi</displayName>
+				<unitPattern count="other">{0} smi</unitPattern>
+			</unit>
+			<unit type="length-point">
+				<displayName>pt</displayName>
+				<unitPattern count="other">{0} pt</unitPattern>
+			</unit>
+			<unit type="length-solar-radius">
+				<displayName>R☉</displayName>
+				<unitPattern count="other">{0} R☉</unitPattern>
+			</unit>
+			<unit type="light-lux">
+				<displayName>lux</displayName>
+				<unitPattern count="other">{0} lx</unitPattern>
+			</unit>
+			<unit type="light-candela">
+				<displayName>cd</displayName>
+				<unitPattern count="other">{0} cd</unitPattern>
+			</unit>
+			<unit type="light-lumen">
+				<displayName>lm</displayName>
+				<unitPattern count="other">{0} lm</unitPattern>
+			</unit>
+			<unit type="light-solar-luminosity">
+				<displayName>L☉</displayName>
+				<unitPattern count="other">{0} L☉</unitPattern>
+			</unit>
+			<unit type="mass-tonne">
+				<displayName>t</displayName>
+				<unitPattern count="other">{0} t</unitPattern>
 			</unit>
 			<unit type="mass-kilogram">
 				<displayName>kg</displayName>
 				<unitPattern count="other">{0}kg</unitPattern>
+				<perUnitPattern>{0}/kg</perUnitPattern>
 			</unit>
 			<unit type="mass-gram">
 				<displayName>ក្រាម</displayName>
 				<unitPattern count="other">{0}g</unitPattern>
+				<perUnitPattern>{0}/g</perUnitPattern>
+			</unit>
+			<unit type="mass-milligram">
+				<displayName>mg</displayName>
+				<unitPattern count="other">{0} mg</unitPattern>
+			</unit>
+			<unit type="mass-microgram">
+				<displayName>μg</displayName>
+				<unitPattern count="other">{0} μg</unitPattern>
+			</unit>
+			<unit type="mass-ton">
+				<displayName>តោនអាមេរិក</displayName>
+				<unitPattern count="other">{0} tn</unitPattern>
+			</unit>
+			<unit type="mass-stone">
+				<displayName>ស្តូន</displayName>
+				<unitPattern count="other">{0} st</unitPattern>
 			</unit>
 			<unit type="mass-pound">
+				<displayName>ផោន</displayName>
 				<unitPattern count="other">{0}#</unitPattern>
+				<perUnitPattern>{0}/lb</perUnitPattern>
 			</unit>
 			<unit type="mass-ounce">
+				<displayName>oz</displayName>
 				<unitPattern count="other">{0} អ.</unitPattern>
+				<perUnitPattern>{0}/oz</perUnitPattern>
+			</unit>
+			<unit type="mass-ounce-troy">
+				<displayName>oz troy</displayName>
+				<unitPattern count="other">{0} oz t</unitPattern>
+			</unit>
+			<unit type="mass-carat">
+				<displayName>ការ៉ាត់</displayName>
+				<unitPattern count="other">{0} CD</unitPattern>
+			</unit>
+			<unit type="mass-dalton">
+				<displayName>Da</displayName>
+				<unitPattern count="other">{0} Da</unitPattern>
+			</unit>
+			<unit type="mass-earth-mass">
+				<displayName>M⊕</displayName>
+				<unitPattern count="other">{0} M⊕</unitPattern>
+			</unit>
+			<unit type="mass-solar-mass">
+				<displayName>M☉</displayName>
+				<unitPattern count="other">{0} M☉</unitPattern>
+			</unit>
+			<unit type="mass-grain">
+				<displayName>គ្រាប់</displayName>
+				<unitPattern count="other">{0} គ្រាប់</unitPattern>
+			</unit>
+			<unit type="power-gigawatt">
+				<displayName>GW</displayName>
+				<unitPattern count="other">{0} GW</unitPattern>
+			</unit>
+			<unit type="power-megawatt">
+				<displayName>MW</displayName>
+				<unitPattern count="other">{0} MW</unitPattern>
 			</unit>
 			<unit type="power-kilowatt">
+				<displayName>kW</displayName>
 				<unitPattern count="other">{0} គ.វ.</unitPattern>
 			</unit>
 			<unit type="power-watt">
+				<displayName>វ៉ាត់</displayName>
 				<unitPattern count="other">{0} វ.</unitPattern>
 			</unit>
+			<unit type="power-milliwatt">
+				<displayName>mW</displayName>
+				<unitPattern count="other">{0} mW</unitPattern>
+			</unit>
 			<unit type="power-horsepower">
+				<displayName>hp</displayName>
 				<unitPattern count="other">{0} សេះ</unitPattern>
 			</unit>
+			<unit type="pressure-millimeter-ofhg">
+				<displayName>mmHg</displayName>
+				<unitPattern count="other">{0}mmHg</unitPattern>
+			</unit>
+			<unit type="pressure-pound-force-per-square-inch">
+				<displayName>psi</displayName>
+				<unitPattern count="other">{0} psi</unitPattern>
+			</unit>
 			<unit type="pressure-inch-ofhg">
+				<displayName>″ Hg</displayName>
 				<unitPattern count="other">{0}&quot; Hg</unitPattern>
 			</unit>
+			<unit type="pressure-bar">
+				<displayName>បារ</displayName>
+				<unitPattern count="other">{0} បារ</unitPattern>
+			</unit>
 			<unit type="pressure-millibar">
-				<unitPattern count="other">{0} ម.ប.</unitPattern>
+				<displayName>mbar</displayName>
+				<unitPattern count="other">{0}mb</unitPattern>
+			</unit>
+			<unit type="pressure-atmosphere">
+				<displayName>atm</displayName>
+				<unitPattern count="other">{0} atm</unitPattern>
+			</unit>
+			<unit type="pressure-pascal">
+				<displayName>Pa</displayName>
+				<unitPattern count="other">{0} Pa</unitPattern>
 			</unit>
 			<unit type="pressure-hectopascal">
+				<displayName>hPa</displayName>
 				<unitPattern count="other">{0} hPa</unitPattern>
+			</unit>
+			<unit type="pressure-kilopascal">
+				<displayName>kPa</displayName>
+				<unitPattern count="other">{0} kPa</unitPattern>
+			</unit>
+			<unit type="pressure-megapascal">
+				<displayName>MPa</displayName>
+				<unitPattern count="other">{0} MPa</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName>km/h</displayName>
 				<unitPattern count="other">{0} kph</unitPattern>
 			</unit>
 			<unit type="speed-meter-per-second">
+				<displayName>ម៉ែត្រ​/​វិនាទី</displayName>
 				<unitPattern count="other">{0} ម./វិ.</unitPattern>
 			</unit>
 			<unit type="speed-mile-per-hour">
+				<displayName>ម៉ាយ​/​ម៉ោង</displayName>
 				<unitPattern count="other">{0} ម៉./ម៉</unitPattern>
+			</unit>
+			<unit type="speed-knot">
+				<displayName>kn</displayName>
+				<unitPattern count="other">{0} kn</unitPattern>
+			</unit>
+			<unit type="temperature-generic">
+				<displayName>°</displayName>
+				<unitPattern count="other">{0}°</unitPattern>
 			</unit>
 			<unit type="temperature-celsius">
 				<displayName>°C</displayName>
 				<unitPattern count="other">{0}°C</unitPattern>
 			</unit>
 			<unit type="temperature-fahrenheit">
+				<displayName>°F</displayName>
 				<unitPattern count="other">{0}°F</unitPattern>
 			</unit>
+			<unit type="temperature-kelvin">
+				<displayName>K</displayName>
+				<unitPattern count="other">{0} K</unitPattern>
+			</unit>
+			<unit type="torque-pound-force-foot">
+				<displayName>lbf⋅ft</displayName>
+				<unitPattern count="other">{0} lbf⋅ft</unitPattern>
+			</unit>
+			<unit type="torque-newton-meter">
+				<displayName>N⋅m</displayName>
+				<unitPattern count="other">{0} N⋅m</unitPattern>
+			</unit>
 			<unit type="volume-cubic-kilometer">
+				<displayName>km³</displayName>
 				<unitPattern count="other">{0} គ.ម³.</unitPattern>
 			</unit>
+			<unit type="volume-cubic-meter">
+				<displayName>m³</displayName>
+				<unitPattern count="other">{0} m³</unitPattern>
+				<perUnitPattern>{0}/m³</perUnitPattern>
+			</unit>
+			<unit type="volume-cubic-centimeter">
+				<displayName>cm³</displayName>
+				<unitPattern count="other">{0} cm³</unitPattern>
+				<perUnitPattern>{0}/cm³</perUnitPattern>
+			</unit>
 			<unit type="volume-cubic-mile">
+				<displayName>mi³</displayName>
 				<unitPattern count="other">{0} ម៉³.</unitPattern>
+			</unit>
+			<unit type="volume-cubic-yard">
+				<displayName>យ៉ាតគូប</displayName>
+				<unitPattern count="other">{0} yd³</unitPattern>
+			</unit>
+			<unit type="volume-cubic-foot">
+				<displayName>ហ្វីត​គូប</displayName>
+				<unitPattern count="other">{0} ft³</unitPattern>
+			</unit>
+			<unit type="volume-cubic-inch">
+				<displayName>អ៊ីញគូប</displayName>
+				<unitPattern count="other">{0} in³</unitPattern>
+			</unit>
+			<unit type="volume-megaliter">
+				<displayName>ML</displayName>
+				<unitPattern count="other">{0} ML</unitPattern>
+			</unit>
+			<unit type="volume-hectoliter">
+				<displayName>hL</displayName>
+				<unitPattern count="other">{0} hL</unitPattern>
 			</unit>
 			<unit type="volume-liter">
 				<displayName>លីត្រ</displayName>
 				<unitPattern count="other">{0}L</unitPattern>
+				<perUnitPattern>{0}/l</perUnitPattern>
+			</unit>
+			<unit type="volume-deciliter">
+				<displayName>dL</displayName>
+				<unitPattern count="other">{0} dL</unitPattern>
+			</unit>
+			<unit type="volume-centiliter">
+				<displayName>cL</displayName>
+				<unitPattern count="other">{0} cL</unitPattern>
+			</unit>
+			<unit type="volume-milliliter">
+				<displayName>mL</displayName>
+				<unitPattern count="other">{0} mL</unitPattern>
+			</unit>
+			<unit type="volume-pint-metric">
+				<displayName>mpt</displayName>
+				<unitPattern count="other">{0} mpt</unitPattern>
+			</unit>
+			<unit type="volume-cup-metric">
+				<displayName>mcup</displayName>
+				<unitPattern count="other">{0} mc</unitPattern>
+			</unit>
+			<unit type="volume-acre-foot">
+				<displayName>អាហ្វីត</displayName>
+				<unitPattern count="other">{0} ac ft</unitPattern>
+			</unit>
+			<unit type="volume-bushel">
+				<displayName>ប៊ូសែល</displayName>
+				<unitPattern count="other">{0} bu</unitPattern>
+			</unit>
+			<unit type="volume-gallon">
+				<displayName>gal</displayName>
+				<unitPattern count="other">{0} gal</unitPattern>
+				<perUnitPattern>{0}/gal</perUnitPattern>
+			</unit>
+			<unit type="volume-gallon-imperial">
+				<displayName>Imp. gal</displayName>
+				<unitPattern count="other">{0} gal Imp.</unitPattern>
+				<perUnitPattern>{0}/gal Imp.</perUnitPattern>
+			</unit>
+			<unit type="volume-quart">
+				<displayName>qts</displayName>
+				<unitPattern count="other">{0} qt</unitPattern>
+			</unit>
+			<unit type="volume-pint">
+				<displayName>ភីន</displayName>
+				<unitPattern count="other">{0} pt</unitPattern>
+			</unit>
+			<unit type="volume-cup">
+				<displayName>ពែង</displayName>
+				<unitPattern count="other">{0} c</unitPattern>
+			</unit>
+			<unit type="volume-fluid-ounce">
+				<displayName>fl oz</displayName>
+				<unitPattern count="other">{0} fl oz</unitPattern>
+			</unit>
+			<unit type="volume-fluid-ounce-imperial">
+				<displayName>Imp. fl oz</displayName>
+				<unitPattern count="other">{0} fl oz Imp.</unitPattern>
+			</unit>
+			<unit type="volume-tablespoon">
+				<displayName>tbsp</displayName>
+				<unitPattern count="other">{0} tbsp</unitPattern>
+			</unit>
+			<unit type="volume-teaspoon">
+				<displayName>tsp</displayName>
+				<unitPattern count="other">{0} tsp</unitPattern>
+			</unit>
+			<unit type="volume-barrel">
+				<displayName>bbl</displayName>
+				<unitPattern count="other">{0} bbl</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName>dstspn</displayName>
+				<unitPattern count="other">{0} dstspn</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<displayName>dstspn Imp</displayName>
+				<unitPattern count="other">{0} dstspn Imp</unitPattern>
+			</unit>
+			<unit type="volume-drop">
+				<displayName>តំណក់</displayName>
+				<unitPattern count="other">{0} តំណក់</unitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<displayName>ត្រាមរាវ</displayName>
+				<unitPattern count="other">{0} ត្រាមរាវ</unitPattern>
+			</unit>
+			<unit type="volume-jigger">
+				<displayName>ជីកហ្គឺរ</displayName>
+				<unitPattern count="other">{0} ជីកហ្គឺរ</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<displayName>ច្បិច</displayName>
+				<unitPattern count="other">{0} ច្បិច</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName>qt Imp</displayName>
+				<unitPattern count="other">{0} qt Imp.</unitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>ទិស</displayName>
@@ -7124,13 +8059,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</coordinateUnit>
 		</unitLength>
 		<durationUnit type="hm">
-			<durationUnitPattern>ម៉:នន</durationUnitPattern>
+			<durationUnitPattern>h:mm</durationUnitPattern>
 		</durationUnit>
 		<durationUnit type="hms">
-			<durationUnitPattern>ម៉:នន:វិវិ</durationUnitPattern>
+			<durationUnitPattern>h:mm:ss</durationUnitPattern>
 		</durationUnit>
 		<durationUnit type="ms">
-			<durationUnitPattern>ម៉:វិវិ</durationUnitPattern>
+			<durationUnitPattern>m:ss</durationUnitPattern>
 		</durationUnit>
 	</units>
 	<listPatterns>
@@ -7146,11 +8081,28 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<listPatternPart type="end">{0} ឬ {1}</listPatternPart>
 			<listPatternPart type="2">{0} ឬ {1}</listPatternPart>
 		</listPattern>
+		<listPattern type="or-narrow">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0} ឬ {1}</listPatternPart>
+			<listPatternPart type="2">{0} ឬ {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="or-short">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0} ឬ {1}</listPatternPart>
+			<listPatternPart type="2">{0} ឬ {1}</listPatternPart>
+		</listPattern>
 		<listPattern type="standard-narrow">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
 			<listPatternPart type="end">{0}, {1}</listPatternPart>
 			<listPatternPart type="2">{0}, {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="standard-short">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0} និង {1}</listPatternPart>
 			<listPatternPart type="2">{0} និង {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="unit">
@@ -7348,4 +8300,180 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<featureName type="tnum">លេខតារាង</featureName>
 		<featureName type="zero">លេខសូន្យវះពោះ</featureName>
 	</typographicNames>
+	<personNames>
+		<nameOrderLocales order="surnameFirst">ja km ko vi yue zh</nameOrderLocales>
+		<foreignSpaceReplacement xml:space="preserve"> </foreignSpaceReplacement>
+		<personName order="givenFirst" length="long" usage="referring" formality="formal">
+			<namePattern>{title} {given} {given2} {surname} {generation}, {credentials}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="referring" formality="informal">
+			<namePattern>{given-informal} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="addressing" formality="formal">
+			<namePattern>{title} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="monogram" formality="formal">
+			<namePattern>{given-monogram-allCaps}{given2-monogram-allCaps}{surname-core-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="monogram" formality="informal">
+			<namePattern>{given-informal-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="referring" formality="formal">
+			<namePattern>{given} {given2-initial} {surname} {generation}, {credentials}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="referring" formality="informal">
+			<namePattern>{given-informal} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="addressing" formality="formal">
+			<namePattern>{title} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="monogram" formality="informal">
+			<namePattern>{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="referring" formality="formal">
+			<namePattern>{given-initial} {given2-initial} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="referring" formality="informal">
+			<namePattern>{given-informal} {surname-initial}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="addressing" formality="formal">
+			<namePattern>{title} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="monogram" formality="informal">
+			<namePattern>{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="referring" formality="formal">
+			<namePattern>{surname} {title} {given} {given2} {generation}, {credentials}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="referring" formality="informal">
+			<namePattern>{surname} {given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="addressing" formality="formal">
+			<namePattern>{title} {surname}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="monogram" formality="formal">
+			<namePattern>{surname-core-monogram-allCaps}{given-monogram-allCaps}{given2-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="monogram" formality="informal">
+			<namePattern>{surname-monogram-allCaps}{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="referring" formality="formal">
+			<namePattern>{surname} {given} {given2-initial} {generation}, {credentials}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="referring" formality="informal">
+			<namePattern>{surname} {given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="addressing" formality="formal">
+			<namePattern>{title} {surname}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="monogram" formality="informal">
+			<namePattern>{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="referring" formality="formal">
+			<namePattern>{surname} {given-initial} {given2-initial}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="referring" formality="informal">
+			<namePattern>{surname} {given-initial}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="addressing" formality="formal">
+			<namePattern>{title} {surname}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="monogram" formality="informal">
+			<namePattern>{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="sorting" length="long" usage="referring" formality="formal">
+			<namePattern>{surname-core}, {given} {given2} {surname-prefix}</namePattern>
+		</personName>
+		<personName order="sorting" length="long" usage="referring" formality="informal">
+			<namePattern>{surname}, {given-informal}</namePattern>
+		</personName>
+		<personName order="sorting" length="medium" usage="referring" formality="formal">
+			<namePattern>{surname-core}, {given} {given2-initial} {surname-prefix}</namePattern>
+		</personName>
+		<personName order="sorting" length="medium" usage="referring" formality="informal">
+			<namePattern>{surname}, {given-informal}</namePattern>
+		</personName>
+		<personName order="sorting" length="short" usage="referring" formality="formal">
+			<namePattern>{surname-core}, {given-initial} {given2-initial} {surname-prefix}</namePattern>
+		</personName>
+		<personName order="sorting" length="short" usage="referring" formality="informal">
+			<namePattern>{surname}, {given-informal}</namePattern>
+		</personName>
+		<sampleName item="nativeG">
+			<nameField type="given">សុខា</nameField>
+		</sampleName>
+		<sampleName item="nativeGS">
+			<nameField type="given">សុជាតិ</nameField>
+			<nameField type="surname">សុង</nameField>
+		</sampleName>
+		<sampleName item="nativeGGS">
+			<nameField type="given">រិទ្ធី</nameField>
+			<nameField type="given2">មករា</nameField>
+			<nameField type="surname">វ៉េង</nameField>
+		</sampleName>
+		<sampleName item="nativeFull">
+			<nameField type="title">លោក</nameField>
+			<nameField type="given">សុវណ្ណថេត</nameField>
+			<nameField type="given-informal">ថេត</nameField>
+			<nameField type="given2">សុធារ៉ា</nameField>
+			<nameField type="surname-prefix">∅∅∅</nameField>
+			<nameField type="surname-core">វេហា</nameField>
+			<nameField type="surname2">∅∅∅</nameField>
+			<nameField type="generation">∅∅∅</nameField>
+			<nameField type="credentials">សមាជិកសភា</nameField>
+		</sampleName>
+		<sampleName item="foreignG">
+			<nameField type="given">ស៊ីនប៊ែត</nameField>
+		</sampleName>
+		<sampleName item="foreignGS">
+			<nameField type="given">កាតេ</nameField>
+			<nameField type="surname">មូលឡើ</nameField>
+		</sampleName>
+		<sampleName item="foreignGGS">
+			<nameField type="given">ហ្សាហ្សីលៀ</nameField>
+			<nameField type="given2">ហេមីស</nameField>
+			<nameField type="surname">ស្តូបើ</nameField>
+		</sampleName>
+		<sampleName item="foreignFull">
+			<nameField type="title">សាស្ត្រាចារ្យបណ្ឌិត</nameField>
+			<nameField type="given">អាដា ខរនែលៀ</nameField>
+			<nameField type="given-informal">នីឡេ</nameField>
+			<nameField type="given2">ឆេសារ ម៉ាធីន</nameField>
+			<nameField type="surname-prefix">វន់</nameField>
+			<nameField type="surname-core">ប្រ៊ូល</nameField>
+			<nameField type="surname2">ហ្កនហ្សាឡេស ដូមីងហ្គោ</nameField>
+			<nameField type="generation">ជូនៀ</nameField>
+			<nameField type="credentials">ទន្ដបណ្ឌិត</nameField>
+		</sampleName>
+	</personNames>
 </ldml>

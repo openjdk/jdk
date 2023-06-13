@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@
  * referenced in their nominal description are present and accessible.
  *
  * <p>The subtypes of {@link java.lang.constant.ConstantDesc} describe various kinds
- * of constant values.  For each type of loadable constant pool entry defined in JVMS 4.4,
+ * of constant values.  For each type of loadable constant pool entry defined in JVMS {@jvms 4.4},
  * there is a corresponding subtype of {@link java.lang.constant.ConstantDesc}:
  * {@link java.lang.constant.ClassDesc}, {@link java.lang.constant.MethodTypeDesc},
  * {@link java.lang.constant.DirectMethodHandleDesc}, {@link java.lang.String},
@@ -87,6 +87,11 @@
  * pool entry.  It describes the bootstrap method, invocation name and type,
  * and bootstrap arguments associated with an {@code invokedynamic} instruction.
  * It is also suitable for describing {@code invokedynamic} call sites in bytecode
+ * reading and writing APIs.
+ *
+ * <p>Other members of this package are {@link ModuleDesc}
+ * and  {@link PackageDesc}. They represent module and package
+ * info structures, suitable for describing modules and their content in bytecode
  * reading and writing APIs.
  *
  * @jvms 4.4 The Constant Pool

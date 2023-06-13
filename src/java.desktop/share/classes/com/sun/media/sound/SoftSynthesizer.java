@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
  */
 
 package com.sun.media.sound;
+
+import sun.awt.OSInfo;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -679,8 +681,7 @@ public final class SoftSynthesizer implements AudioSynthesizer,
             actions.add(new PrivilegedAction<InputStream>() {
                 @Override
                 public InputStream run() {
-                    if (System.getProperties().getProperty("os.name")
-                            .startsWith("Linux")) {
+                    if (OSInfo.getOSType() == OSInfo.OSType.LINUX) {
 
                         File[] systemSoundFontsDir = new File[] {
                             /* Arch, Fedora, Mageia */
@@ -714,8 +715,7 @@ public final class SoftSynthesizer implements AudioSynthesizer,
             actions.add(new PrivilegedAction<InputStream>() {
                 @Override
                 public InputStream run() {
-                    if (System.getProperties().getProperty("os.name")
-                            .startsWith("Windows")) {
+                    if (OSInfo.getOSType() == OSInfo.OSType.WINDOWS) {
                         File gm_dls = new File(System.getenv("SystemRoot")
                                 + "\\system32\\drivers\\gm.dls");
                         if (gm_dls.isFile()) {
@@ -755,10 +755,8 @@ public final class SoftSynthesizer implements AudioSynthesizer,
                     InputStream is = AccessController.doPrivileged(action);
                     if(is == null) continue;
                     Soundbank sbk;
-                    try {
+                    try (is) {
                         sbk = MidiSystem.getSoundbank(new BufferedInputStream(is));
-                    } finally {
-                        is.close();
                     }
                     if (sbk != null) {
                         defaultSoundBank = sbk;
@@ -802,9 +800,8 @@ public final class SoftSynthesizer implements AudioSynthesizer,
                             return null;
                         });
                 if (out != null) {
-                    try {
+                    try (out) {
                         ((SF2Soundbank) defaultSoundBank).save(out);
-                        out.close();
                     } catch (final IOException ignored) {
                     }
                 }

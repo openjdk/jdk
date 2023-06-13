@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,8 @@
  */
 
 package sun.net.www;
-import java.net.URL;
 import java.io.*;
+import java.util.Locale;
 import java.util.StringJoiner;
 import java.util.StringTokenizer;
 
@@ -63,39 +63,11 @@ public class MimeEntry implements Cloneable {
         this(type, UNKNOWN, null, null, null);
     }
 
-    //
-    // The next two constructors are used only by the deprecated
-    // PlatformMimeTable classes or, in last case, is called by the public
-    // constructor.  They are kept here anticipating putting support for
-    // mailcap formatted config files back in (so BOTH the properties format
-    // and the mailcap formats are supported).
-    //
-    MimeEntry(String type, String imageFileName, String extensionString) {
-        typeName = type.toLowerCase();
-        action = UNKNOWN;
-        command = null;
-        this.imageFileName = imageFileName;
-        setExtensions(extensionString);
-        starred = isStarred(typeName);
-    }
-
-    // For use with MimeTable::parseMailCap
-    MimeEntry(String typeName, int action, String command,
-              String tempFileNameTemplate) {
-        this.typeName = typeName.toLowerCase();
-        this.action = action;
-        this.command = command;
-        this.imageFileName = null;
-        this.fileExtensions = null;
-
-        this.tempFileNameTemplate = tempFileNameTemplate;
-    }
-
     // This is the one called by the public constructor.
     MimeEntry(String typeName, int action, String command,
               String imageFileName, String fileExtensions[]) {
 
-        this.typeName = typeName.toLowerCase();
+        this.typeName = typeName.toLowerCase(Locale.ROOT);
         this.action = action;
         this.command = command;
         this.imageFileName = imageFileName;
@@ -110,7 +82,7 @@ public class MimeEntry implements Cloneable {
     }
 
     public synchronized void setType(String type) {
-        typeName = type.toLowerCase();
+        typeName = type.toLowerCase(Locale.ROOT);
     }
 
     public synchronized int getAction() {

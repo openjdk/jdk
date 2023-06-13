@@ -56,8 +56,11 @@ import sun.util.logging.PlatformLogger;
  * @see MouseMotionAdapter
  *
  * @since 1.1
+ * @sealedGraph
  */
-public abstract class InputEvent extends ComponentEvent {
+public abstract sealed class InputEvent extends ComponentEvent
+    permits KeyEvent,
+            MouseEvent {
 
     private static final PlatformLogger logger = PlatformLogger.getLogger("java.awt.event.InputEvent");
 

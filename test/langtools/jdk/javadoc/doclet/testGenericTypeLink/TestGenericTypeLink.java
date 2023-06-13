@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug     8177280 8262992 8259499
+ * @bug     8177280 8262992 8259499 8307377
  * @summary see and link tag syntax should allow generic types
  * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -70,7 +70,7 @@ public class TestGenericTypeLink extends JavadocTester {
                     <dl class="notes">
                     <dt>See Also:</dt>
                     <dd>
-                    <ul class="see-list-long">
+                    <ul class="tag-list-long">
                     <li><code><a href="http://example.com/docs/api/java.base/java/util/Map.html" title="\
                     class or interface in java.util" class="external-link">Map</a>&lt;<a href="http://ex\
                     ample.com/docs/api/java.base/java/lang/String.html" title="class or interface in jav\
@@ -106,7 +106,7 @@ public class TestGenericTypeLink extends JavadocTester {
                     <dl class="notes">
                     <dt>See Also:</dt>
                     <dd>
-                    <ul class="see-list-long">
+                    <ul class="tag-list-long">
                     <li><code><a href="A.html" title="class in pkg1">A</a>&lt;<a href="http://example.c\
                     om/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang\
                     " class="external-link">String</a>,<wbr><a href="A.SomeException.html" title="class\
@@ -123,7 +123,7 @@ public class TestGenericTypeLink extends JavadocTester {
                     <dl class="notes">
                     <dt>See Also:</dt>
                     <dd>
-                    <ul class="see-list-long">
+                    <ul class="tag-list-long">
                     <li><code><a href="A.html" title="class in pkg1">A</a>&lt;<a href="http://exampl\
                     e.com/docs/api/java.base/java/lang/String.html" title="class or interface in jav\
                     a.lang" class="external-link">String</a>,<wbr><a href="http://example.com/docs/a\
@@ -166,18 +166,48 @@ public class TestGenericTypeLink extends JavadocTester {
         checkExit(Exit.ERROR);
         checkOutput("pkg2/B.html", true,
                 """
-                    <div class="block"><code>java.util.Foo&lt;String&gt;</code>
-                     Baz&lt;Object&gt;
-                     <code>#b(List&lt;Integer&gt;)</code></div>""",
+                    <div class="block">
+                    <details class="invalid-tag">
+                    <summary>invalid reference</summary>
+                    <pre><code>java.util.Foo&lt;String&gt;</code></pre>
+                    </details>
+
+                    \s
+                    <details class="invalid-tag">
+                    <summary>invalid reference</summary>
+                    <pre>Baz&lt;Object&gt;</pre>
+                    </details>
+
+                    \s
+                    <details class="invalid-tag">
+                    <summary>invalid reference</summary>
+                    <pre><code>#b(List&lt;Integer&gt;)</code></pre>
+                    </details>
+                    </div>""",
 
                 """
                     <dl class="notes">
                     <dt>See Also:</dt>
                     <dd>
-                    <ul class="see-list-long">
-                    <li><code>java.util.List&lt;Bar&gt;</code></li>
-                    <li><code>Baz&lt;Object, String&gt;</code></li>
-                    <li><code>B#b(List&lt;Baz&gt;)</code></li>
+                    <ul class="tag-list-long">
+                    <li>
+                    <details class="invalid-tag">
+                    <summary>invalid reference</summary>
+                    <pre><code>java.util.List&lt;Bar&gt;</code></pre>
+                    </details>
+                    </li>
+                    <li>
+                    <details class="invalid-tag">
+                    <summary>invalid reference</summary>
+                    <pre><code>Baz&lt;Object, String&gt;</code></pre>
+                    </details>
+                    </li>
+                    <li>
+                    <details class="invalid-tag">
+                    <summary>invalid reference</summary>
+                    <pre><code>B#b(List&lt;Baz&gt;)</code></pre>
+                    </details>
+                    </li>
                     </ul>
                     </dd>
                     </dl>""");

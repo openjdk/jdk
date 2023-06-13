@@ -137,19 +137,27 @@ public class MapToPathTest {
                 var res3 = client.send(req3, BodyHandlers.ofString());
                 assertEquals(res3.statusCode(), 404);  // not found
 
-                var req4 = HttpRequest.newBuilder(uri(server, "/foo/file:" + TEST_DIR.getParent())).build();
+                var req4 = HttpRequest.newBuilder(uri(server, "/foo/bar/baz/c:.//")).build();
                 var res4 = client.send(req4, BodyHandlers.ofString());
                 assertEquals(res4.statusCode(), 404);  // not found
 
-                var req5 = HttpRequest.newBuilder(uri(server, "/foo/bar/\\..\\../")).build();
+                var req5 = HttpRequest.newBuilder(uri(server, "/foo/bar/baz/c:..//")).build();
                 var res5 = client.send(req5, BodyHandlers.ofString());
                 assertEquals(res5.statusCode(), 404);  // not found
 
-                var req6 = HttpRequest.newBuilder(uri(server, "/foo")).build();
+                var req6 = HttpRequest.newBuilder(uri(server, "/foo/file:" + TEST_DIR.getParent())).build();
                 var res6 = client.send(req6, BodyHandlers.ofString());
-                assertEquals(res6.statusCode(), 301);  // redirect
-                assertEquals(res6.headers().firstValue("content-length").get(), "0");
-                assertEquals(res6.headers().firstValue("location").get(), "/foo/");
+                assertEquals(res6.statusCode(), 404);  // not found
+
+                var req7 = HttpRequest.newBuilder(uri(server, "/foo/bar/\\..\\../")).build();
+                var res7 = client.send(req7, BodyHandlers.ofString());
+                assertEquals(res7.statusCode(), 404);  // not found
+
+                var req8 = HttpRequest.newBuilder(uri(server, "/foo")).build();
+                var res8 = client.send(req8, BodyHandlers.ofString());
+                assertEquals(res8.statusCode(), 301);  // redirect
+                assertEquals(res8.headers().firstValue("content-length").get(), "0");
+                assertEquals(res8.headers().firstValue("location").get(), "/foo/");
             } finally {
                 server.stop(0);
             }
@@ -246,6 +254,29 @@ public class MapToPathTest {
                 assertEquals(res6.statusCode(), 301);  // redirect
                 assertEquals(res6.headers().firstValue("content-length").get(), "0");
                 assertEquals(res6.headers().firstValue("location").get(), "/foo/");
+            } finally {
+                server.stop(0);
+            }
+        }
+        {
+            // Test that a request path segment that is a Windows root drive
+            // does not circumvent access restrictions.
+            //
+            // For example, given the test directory tree:
+            //
+            //      |-- TEST_DIR
+            //          |-- foo
+            //              |-- bar  ----->>> if hidden, itself and any of its subdirectories are not accessible
+            //                  |-- baz
+            //                      |-- file.txt
+            //      ...
+            var handler = SimpleFileServer.createFileHandler(TEST_DIR);
+            var server = HttpServer.create(LOOPBACK_ADDR, 10, "/", handler, OUTPUT_FILTER);
+            server.start();
+            try {
+                var req1 = HttpRequest.newBuilder(uri(server, "/foo/bar/c:/baz/")).build();
+                var res1 = client.send(req1, BodyHandlers.ofString());
+                assertEquals(res1.statusCode(), 404);  // not found
             } finally {
                 server.stop(0);
             }

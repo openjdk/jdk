@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,10 +32,12 @@ import java.awt.ImageCapabilities;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.awt.image.VolatileImage;
+
 import sun.awt.DisplayChangedListener;
 import sun.java2d.SunGraphicsEnvironment;
 import sun.java2d.SurfaceData;
-import static sun.java2d.pipe.hw.AccelSurface.*;
+
+import static sun.java2d.pipe.hw.AccelSurface.UNDEFINED;
 
 /**
  * This SurfaceManager variant manages an accelerated volatile surface, if it
@@ -89,7 +91,7 @@ public abstract class VolatileSurfaceManager
     protected SurfaceData sdPrevious;
 
     /**
-     * Tracks loss of surface contents; queriable by user to see whether
+     * Tracks loss of surface contents; queryable by user to see whether
      * contents need to be restored.
      */
     protected boolean lostSurface;
@@ -307,6 +309,9 @@ public abstract class VolatileSurfaceManager
      * primary SurfaceData object.
      */
     public SurfaceData restoreContents() {
+        // We're asked to restore contents by the accelerated surface, which
+        // means that it had been lost
+        acceleratedSurfaceLost();
         return getBackupSurface();
     }
 

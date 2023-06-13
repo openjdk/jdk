@@ -34,14 +34,6 @@ class PSPromotionManager;
 
 class PSCardTable: public CardTable {
  private:
-  // Support methods for resizing the card table.
-  // resize_commit_uncommit() returns true if the pages were committed or
-  // uncommitted
-  bool resize_commit_uncommit(int changed_region, MemRegion new_region);
-  void resize_update_card_table_entries(int changed_region,
-                                        MemRegion new_region);
-  void resize_update_committed_table(int changed_region, MemRegion new_region);
-  void resize_update_covered_table(int changed_region, MemRegion new_region);
 
   void verify_all_young_refs_precise_helper(MemRegion mr);
 
@@ -49,6 +41,19 @@ class PSCardTable: public CardTable {
     youngergen_card   = CT_MR_BS_last_reserved + 1,
     verify_card       = CT_MR_BS_last_reserved + 5
   };
+
+  CardValue* find_first_dirty_card(CardValue* const start_card,
+                                   CardValue* const end_card);
+
+  CardValue* find_first_clean_card(ObjectStartArray* start_array,
+                                   CardValue* const start_card,
+                                   CardValue* const end_card);
+
+  void clear_cards(CardValue* const start, CardValue* const end);
+
+  void scan_objects_in_range(PSPromotionManager* pm,
+                             HeapWord* start,
+                             HeapWord* end);
 
  public:
   PSCardTable(MemRegion whole_heap) : CardTable(whole_heap) {}
@@ -61,8 +66,8 @@ class PSCardTable: public CardTable {
                                   MutableSpace* sp,
                                   HeapWord* space_top,
                                   PSPromotionManager* pm,
-                                  uint stripe_number,
-                                  uint stripe_total);
+                                  uint stripe_index,
+                                  uint n_stripes);
 
   bool addr_is_marked_imprecise(void *addr);
   bool addr_is_marked_precise(void *addr);
@@ -76,26 +81,13 @@ class PSCardTable: public CardTable {
   static bool card_is_verify(int value)     { return value == verify_card; }
 
   // Card marking
-  void inline_write_ref_field_gc(void* field, oop new_val) {
+  void inline_write_ref_field_gc(void* field) {
     CardValue* byte = byte_for(field);
     *byte = youngergen_card;
   }
 
   // ReduceInitialCardMarks support
-  bool is_in_young(oop obj) const;
-
-  // Adaptive size policy support
-  // Allows adjustment of the base and size of the covered regions
-  void resize_covered_region(MemRegion new_region);
-  // Finds the covered region to resize based on the start address
-  // of the covered regions.
-  void resize_covered_region_by_start(MemRegion new_region);
-  // Finds the covered region to resize based on the end address
-  // of the covered regions.
-  void resize_covered_region_by_end(int changed_region, MemRegion new_region);
-  // Finds the lowest start address of a covered region that is
-  // previous (i.e., lower index) to the covered region with index "ind".
-  HeapWord* lowest_prev_committed_start(int ind) const;
+  bool is_in_young(const void* p) const override;
 
 #ifdef ASSERT
   bool is_valid_card_address(CardValue* addr) {

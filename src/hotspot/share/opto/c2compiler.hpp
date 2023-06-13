@@ -49,6 +49,7 @@ public:
   // sentinel value used to trigger backtracking in compile_method().
   static const char* retry_no_subsuming_loads();
   static const char* retry_no_escape_analysis();
+  static const char* retry_no_iterative_escape_analysis();
   static const char* retry_no_locks_coarsening();
   static const char* retry_class_loading_during_parsing();
 
@@ -60,13 +61,7 @@ public:
   // possible for only a limited set of available intrinsics whereas
   // a non-virtual dispatch is possible for all available intrinsics.)
   // Return false otherwise.
-  virtual bool is_intrinsic_supported(const methodHandle& method) {
-    return is_intrinsic_supported(method, false);
-  }
-
-  // Check if the compiler supports an intrinsic for 'method' given the
-  // the dispatch mode specified by the 'is_virtual' parameter.
-  bool is_intrinsic_supported(const methodHandle& method, bool is_virtual);
+  virtual bool is_intrinsic_supported(const methodHandle& method);
 
   // Initial size of the code buffer (may be increased at runtime)
   static int initial_code_buffer_size(int const_size = initial_const_capacity);

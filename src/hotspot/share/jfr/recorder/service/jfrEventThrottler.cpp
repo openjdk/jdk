@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, Datadog, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -35,7 +35,7 @@ constexpr static const JfrSamplerParams _disabled_params = {
                                                              false // reconfigure
                                                            };
 
-static JfrEventThrottler* _throttler = NULL;
+static JfrEventThrottler* _throttler = nullptr;
 
 JfrEventThrottler::JfrEventThrottler(JfrEventId event_id) :
   JfrAdaptiveSampler(),
@@ -48,29 +48,29 @@ JfrEventThrottler::JfrEventThrottler(JfrEventId event_id) :
   _update(false) {}
 
 bool JfrEventThrottler::create() {
-  assert(_throttler == NULL, "invariant");
+  assert(_throttler == nullptr, "invariant");
   _throttler = new JfrEventThrottler(JfrObjectAllocationSampleEvent);
-  return _throttler != NULL && _throttler->initialize();
+  return _throttler != nullptr && _throttler->initialize();
 }
 
 void JfrEventThrottler::destroy() {
   delete _throttler;
-  _throttler = NULL;
+  _throttler = nullptr;
 }
 
 // There is currently only one throttler instance, for the jdk.ObjectAllocationSample event.
 // When introducing additional throttlers, also add a lookup map keyed by event id.
 JfrEventThrottler* JfrEventThrottler::for_event(JfrEventId event_id) {
-  assert(_throttler != NULL, "JfrEventThrottler has not been properly initialized");
+  assert(_throttler != nullptr, "JfrEventThrottler has not been properly initialized");
   assert(event_id == JfrObjectAllocationSampleEvent, "Event type has an unconfigured throttler");
-  return event_id == JfrObjectAllocationSampleEvent ? _throttler : NULL;
+  return event_id == JfrObjectAllocationSampleEvent ? _throttler : nullptr;
 }
 
 void JfrEventThrottler::configure(JfrEventId event_id, int64_t sample_size, int64_t period_ms) {
   if (event_id != JfrObjectAllocationSampleEvent) {
     return;
   }
-  assert(_throttler != NULL, "JfrEventThrottler has not been properly initialized");
+  assert(_throttler != nullptr, "JfrEventThrottler has not been properly initialized");
   _throttler->configure(sample_size, period_ms);
 }
 
@@ -93,13 +93,13 @@ void JfrEventThrottler::configure(int64_t sample_size, int64_t period_ms) {
 // Predicate for event selection.
 bool JfrEventThrottler::accept(JfrEventId event_id, int64_t timestamp /* 0 */) {
   JfrEventThrottler* const throttler = for_event(event_id);
-  if (throttler == NULL) return true;
+  if (throttler == nullptr) return true;
   return _throttler->_disabled ? true : _throttler->sample(timestamp);
 }
 
 /*
  * The window_lookback_count defines the history in number of windows to take into account
- * when the JfrAdaptiveSampler engine is calcualting an expected weigthed moving average (EWMA) over the population.
+ * when the JfrAdaptiveSampler engine is calculating an expected weighted moving average (EWMA) over the population.
  * Technically, it determines the alpha coefficient in the EMWA formula.
  */
 constexpr static const size_t default_window_lookback_count = 25; // 25 windows == 5 seconds (for default window duration of 200 ms)
@@ -168,8 +168,8 @@ inline void set_sample_points_and_window_duration(JfrSamplerParams& params, int6
  * If the input event sample size is large enough, normalize to per 1000 ms
  */
 inline void normalize(int64_t* sample_size, int64_t* period_ms) {
-  assert(sample_size != NULL, "invariant");
-  assert(period_ms != NULL, "invariant");
+  assert(sample_size != nullptr, "invariant");
+  assert(period_ms != nullptr, "invariant");
   if (*period_ms == MILLIUNITS) {
     return;
   }
@@ -245,7 +245,7 @@ inline double compute_ewma_alpha_coefficient(size_t lookback_count) {
  * When introducing additional throttlers, also provide a map from the event id to the event name.
  */
 static void log(const JfrSamplerWindow* expired, double* sample_size_ewma) {
-  assert(sample_size_ewma != NULL, "invariant");
+  assert(sample_size_ewma != nullptr, "invariant");
   if (log_is_enabled(Debug, jfr, system, throttle)) {
     *sample_size_ewma = exponentially_weighted_moving_average(expired->sample_size(), compute_ewma_alpha_coefficient(expired->params().window_lookback_count), *sample_size_ewma);
     log_debug(jfr, system, throttle)("jdk.ObjectAllocationSample: avg.sample size: %0.4f, window set point: %zu, sample size: %zu, population size: %zu, ratio: %.4f, window duration: %zu ms\n",
@@ -266,7 +266,7 @@ static void log(const JfrSamplerWindow* expired, double* sample_size_ewma) {
  * in the process of rotating windows.
  */
 const JfrSamplerParams& JfrEventThrottler::next_window_params(const JfrSamplerWindow* expired) {
-  assert(expired != NULL, "invariant");
+  assert(expired != nullptr, "invariant");
   assert(_lock, "invariant");
   log(expired, &_sample_size_ewma);
   if (_update) {

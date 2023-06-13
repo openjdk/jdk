@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,8 +50,10 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.Objects;
 import java.util.StringTokenizer;
 
+import sun.awt.AWTAccessor;
 import sun.java2d.cmm.CMSManager;
 import sun.java2d.cmm.PCMM;
 import sun.java2d.cmm.Profile;
@@ -83,7 +85,9 @@ import sun.java2d.cmm.ProfileDeferralInfo;
  *
  * @see ICC_ColorSpace
  */
-public class ICC_Profile implements Serializable {
+public sealed class ICC_Profile implements Serializable
+    permits ICC_ProfileGray,
+            ICC_ProfileRGB {
 
     /**
      * Use serialVersionUID from JDK 1.2 for interoperability.
@@ -130,6 +134,10 @@ public class ICC_Profile implements Serializable {
 
         ICC_Profile GRAY = new ICC_ProfileGray(new ProfileDeferralInfo(
                "GRAY.pf", ColorSpace.TYPE_GRAY, 1, CLASS_DISPLAY));
+    }
+
+    static {
+        AWTAccessor.setICC_ProfileAccessor(ICC_Profile::cmmProfile);
     }
 
     /**
@@ -843,10 +851,7 @@ public class ICC_Profile implements Serializable {
      * {@code java.class.path} property; finally, in a directory used to store
      * profiles always available, such as the profile for sRGB. Built-in
      * profiles use {@code .pf} as the file name extension for profiles, e.g.
-     * {@code sRGB.pf}. This method throws an {@code IOException} if the
-     * specified file cannot be opened or if an I/O error occurs while reading
-     * the file. It throws an {@code IllegalArgumentException} if the file does
-     * not contain valid ICC Profile data.
+     * {@code sRGB.pf}.
      *
      * @param  fileName the file that contains the data for the profile
      * @return an {@code ICC_Profile} object corresponding to the data in the
@@ -857,6 +862,7 @@ public class ICC_Profile implements Serializable {
      *         Profile data
      * @throws SecurityException If a security manager is installed and it does
      *         not permit read access to the given file
+     * @throws NullPointerException if {@code fileName} is {@code null}
      */
     public static ICC_Profile getInstance(String fileName) throws IOException {
         InputStream is;
@@ -876,10 +882,7 @@ public class ICC_Profile implements Serializable {
 
     /**
      * Constructs an {@code ICC_Profile} corresponding to the data in an
-     * {@code InputStream}. This method throws an
-     * {@code IllegalArgumentException} if the stream does not contain valid ICC
-     * Profile data. It throws an {@code IOException} if an I/O error occurs
-     * while reading the stream.
+     * {@code InputStream}.
      *
      * @param  s the input stream from which to read the profile data
      * @return an {@code ICC_Profile} object corresponding to the data in the
@@ -887,8 +890,10 @@ public class ICC_Profile implements Serializable {
      * @throws IOException If an I/O error occurs while reading the stream
      * @throws IllegalArgumentException If the stream does not contain valid ICC
      *         Profile data
+     * @throws NullPointerException if {@code s} is {@code null}
      */
     public static ICC_Profile getInstance(InputStream s) throws IOException {
+        Objects.requireNonNull(s);
         return getInstance(getProfileDataFromStream(s));
     }
 
@@ -1039,6 +1044,7 @@ public class ICC_Profile implements Serializable {
      * @param  fileName the file to write the profile data to
      * @throws IOException If the file cannot be opened for writing or an I/O
      *         error occurs while writing to the file
+     * @throws NullPointerException if {@code fileName} is {@code null}
      */
     public void write(String fileName) throws IOException {
         try (OutputStream out = new FileOutputStream(fileName)) {
@@ -1051,6 +1057,7 @@ public class ICC_Profile implements Serializable {
      *
      * @param  s the stream to write the profile data to
      * @throws IOException If an I/O error occurs while writing to the stream
+     * @throws NullPointerException if {@code s} is {@code null}
      */
     public void write(OutputStream s) throws IOException {
         s.write(getData());
@@ -1071,8 +1078,8 @@ public class ICC_Profile implements Serializable {
      * Returns a particular tagged data element from the profile as a byte
      * array. Elements are identified by signatures as defined in the ICC
      * specification. The signature icSigHead can be used to get the header.
-     * This method is useful for advanced applets or applications which need to
-     * access profile data directly.
+     * This method is useful for advanced applications which need to access
+     * profile data directly.
      *
      * @param  tagSignature the ICC tag signature for the data element you want
      *         to get
@@ -1097,8 +1104,8 @@ public class ICC_Profile implements Serializable {
      * Sets a particular tagged data element in the profile from a byte array.
      * The array should contain data in a format, corresponded to the
      * {@code tagSignature} as defined in the ICC specification, section 10.
-     * This method is useful for advanced applets or applications which need to
-     * access profile data directly.
+     * This method is useful for advanced applications which need to access
+     * profile data directly.
      *
      * @param  tagSignature the ICC tag signature for the data element you want
      *         to set

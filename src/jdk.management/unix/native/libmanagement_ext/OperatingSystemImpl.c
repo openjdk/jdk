@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,7 +87,6 @@ static jlong page_size = 0;
 static jlong get_total_or_available_swap_space_size(JNIEnv* env, jboolean available) {
 #if defined(__linux__)
     int ret;
-    FILE *fp;
     jlong total = 0, avail = 0;
 
     struct sysinfo si;
@@ -123,29 +122,13 @@ Java_com_sun_management_internal_OperatingSystemImpl_initialize0
     page_size = sysconf(_SC_PAGESIZE);
 }
 
+// Linux-specific implementation is in UnixOperatingSystem.c
+#if !defined(__linux__)
 JNIEXPORT jlong JNICALL
 Java_com_sun_management_internal_OperatingSystemImpl_getCommittedVirtualMemorySize0
   (JNIEnv *env, jobject mbean)
 {
-#if defined(__linux__)
-    FILE *fp;
-    unsigned long vsize = 0;
-
-    if ((fp = fopen("/proc/self/stat", "r")) == NULL) {
-        throw_internal_error(env, "Unable to open /proc/self/stat");
-        return -1;
-    }
-
-    // Ignore everything except the vsize entry
-    if (fscanf(fp, "%*d %*s %*c %*d %*d %*d %*d %*d %*u %*u %*u %*u %*u %*d %*d %*d %*d %*d %*d %*u %*u %*d %lu %*[^\n]\n", &vsize) == EOF) {
-        throw_internal_error(env, "Unable to get virtual memory usage");
-        fclose(fp);
-        return -1;
-    }
-
-    fclose(fp);
-    return (jlong)vsize;
-#elif defined(__APPLE__)
+#if defined(__APPLE__)
     struct task_basic_info t_info;
     mach_msg_type_number_t t_info_count = TASK_BASIC_INFO_COUNT;
 
@@ -162,6 +145,7 @@ Java_com_sun_management_internal_OperatingSystemImpl_getCommittedVirtualMemorySi
     return (64 * MB);
 #endif
 }
+#endif
 
 JNIEXPORT jlong JNICALL
 Java_com_sun_management_internal_OperatingSystemImpl_getTotalSwapSpaceSize0
@@ -311,7 +295,7 @@ Java_com_sun_management_internal_OperatingSystemImpl_getOpenFileDescriptorCount0
         return -1;
     }
 
-    // allocate memory to hold the fd information (we don't acutally use this information
+    // allocate memory to hold the fd information (we don't actually use this information
     // but need it to get the number of open files)
     fds_size = bsdinfo.pbi_nfiles * sizeof(struct proc_fdinfo);
     fds = malloc(fds_size);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,9 @@
  * @library /test/lib /
  * @requires vm.flagless
  *
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
- * @run driver compiler.jsr292.ContinuousCallSiteTargetChange
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run driver/timeout=180 compiler.jsr292.ContinuousCallSiteTargetChange
  */
 
 package compiler.jsr292;
@@ -36,7 +36,7 @@ package compiler.jsr292;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 import java.lang.invoke.CallSite;
 import java.lang.invoke.MethodHandle;
@@ -171,7 +171,7 @@ public class ContinuousCallSiteTargetChange {
             WhiteBox whiteBox = WhiteBox.getWhiteBox();
             for (int i = 0; i < iterations; i++) {
                 iteration();
-                whiteBox.forceNMethodSweep();
+                whiteBox.fullGC();
             }
         }
     }

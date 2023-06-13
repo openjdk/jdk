@@ -108,6 +108,6 @@ public class SerialExceptionTests extends BaseTest {
         assertTrue(ex1.getMessage().equals(reason)
                 && ex1.getSQLState() == null
                 && ex1.getCause() == null
-                && ex1.getErrorCode() == 0);;
+                && ex1.getErrorCode() == 0);
     }
 }

@@ -21,7 +21,7 @@
  *
  */
 
-/* @test @(#)TestOldHangul.java
+/* @test
  * @summary Verify Old Hangul display
  * @bug 6886358
  * @ignore Requires a special font installed.
@@ -80,4 +80,3 @@ public class TestOldHangul {
         frame.setVisible(true);
     }
 }
-

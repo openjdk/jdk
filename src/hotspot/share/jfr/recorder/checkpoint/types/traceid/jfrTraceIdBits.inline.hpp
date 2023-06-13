@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ const int meta_offset = low_offset - 1;
 #endif
 
 inline jbyte* low_addr(jbyte* addr) {
-  assert(addr != NULL, "invariant");
+  assert(addr != nullptr, "invariant");
   return addr + low_offset;
 }
 
@@ -49,7 +49,7 @@ inline jbyte* low_addr(traceid* addr) {
 }
 
 inline jbyte* meta_addr(jbyte* addr) {
-  assert(addr != NULL, "invariant");
+  assert(addr != nullptr, "invariant");
   return addr + meta_offset;
 }
 
@@ -59,25 +59,25 @@ inline jbyte* meta_addr(traceid* addr) {
 
 template <typename T>
 inline jbyte* traceid_tag_byte(const T* ptr) {
-  assert(ptr != NULL, "invariant");
+  assert(ptr != nullptr, "invariant");
   return low_addr(ptr->trace_id_addr());
 }
 
 template <>
 inline jbyte* traceid_tag_byte<Method>(const Method* ptr) {
-  assert(ptr != NULL, "invariant");
+  assert(ptr != nullptr, "invariant");
   return ptr->trace_flags_addr();
 }
 
 template <typename T>
 inline jbyte* traceid_meta_byte(const T* ptr) {
-  assert(ptr != NULL, "invariant");
+  assert(ptr != nullptr, "invariant");
   return meta_addr(ptr->trace_id_addr());
 }
 
 template <>
 inline jbyte* traceid_meta_byte<Method>(const Method* ptr) {
-  assert(ptr != NULL, "invariant");
+  assert(ptr != nullptr, "invariant");
   return ptr->trace_meta_addr();
 }
 
@@ -95,14 +95,14 @@ inline jbyte traceid_xor(jbyte bits, jbyte current) {
 
 template <jbyte op(jbyte, jbyte)>
 inline void set_form(jbyte bits, jbyte* dest) {
-  assert(dest != NULL, "invariant");
+  assert(dest != nullptr, "invariant");
   *dest = op(bits, *dest);
   OrderAccess::storestore();
 }
 
 template <jbyte op(jbyte, jbyte)>
 inline void set_cas_form(jbyte bits, jbyte volatile* dest) {
-  assert(dest != NULL, "invariant");
+  assert(dest != nullptr, "invariant");
   do {
     const jbyte current = *dest;
     const jbyte new_value = op(bits, current);
@@ -114,30 +114,38 @@ inline void set_cas_form(jbyte bits, jbyte volatile* dest) {
 
 template <typename T>
 inline void JfrTraceIdBits::cas(jbyte bits, const T* ptr) {
-  assert(ptr != NULL, "invariant");
+  assert(ptr != nullptr, "invariant");
   set_cas_form<traceid_or>(bits, traceid_tag_byte(ptr));
 }
 
 template <typename T>
 inline traceid JfrTraceIdBits::load(const T* ptr) {
-  assert(ptr != NULL, "invariant");
+  assert(ptr != nullptr, "invariant");
   return ptr->trace_id();
 }
 
 inline void set(jbyte bits, jbyte* dest) {
-  assert(dest != NULL, "invariant");
+  assert(dest != nullptr, "invariant");
   set_form<traceid_or>(bits, dest);
 }
 
 template <typename T>
 inline void JfrTraceIdBits::store(jbyte bits, const T* ptr) {
-  assert(ptr != NULL, "invariant");
+  assert(ptr != nullptr, "invariant");
+  // gcc12 warns "writing 1 byte into a region of size 0" when T == Klass.
+  // The warning seems to be a false positive.  And there is no warning for
+  // other types that use the same mechanisms.  The warning also sometimes
+  // goes away with minor code perturbations, such as replacing function calls
+  // with equivalent code directly inlined.
+  PRAGMA_DIAG_PUSH
+  PRAGMA_STRINGOP_OVERFLOW_IGNORED
   set(bits, traceid_tag_byte(ptr));
+  PRAGMA_DIAG_POP
 }
 
 template <typename T>
 inline void JfrTraceIdBits::meta_store(jbyte bits, const T* ptr) {
-  assert(ptr != NULL, "invariant");
+  assert(ptr != nullptr, "invariant");
   set(bits, traceid_meta_byte(ptr));
 }
 
@@ -147,13 +155,13 @@ inline void set_mask(jbyte mask, jbyte* dest) {
 
 template <typename T>
 inline void JfrTraceIdBits::mask_store(jbyte mask, const T* ptr) {
-  assert(ptr != NULL, "invariant");
+  assert(ptr != nullptr, "invariant");
   set_mask(mask, traceid_tag_byte(ptr));
 }
 
 template <typename T>
 inline void JfrTraceIdBits::meta_mask_store(jbyte mask, const T* ptr) {
-  assert(ptr != NULL, "invariant");
+  assert(ptr != nullptr, "invariant");
   set_mask(mask, traceid_meta_byte(ptr));
 }
 
@@ -163,7 +171,7 @@ inline void clear_bits(jbyte bits, jbyte* dest) {
 
 template <typename T>
 inline void JfrTraceIdBits::clear(jbyte bits, const T* ptr) {
-  assert(ptr != NULL, "invariant");
+  assert(ptr != nullptr, "invariant");
   clear_bits(bits, traceid_tag_byte(ptr));
 }
 
@@ -173,13 +181,13 @@ inline void clear_bits_cas(jbyte bits, jbyte* dest) {
 
 template <typename T>
 inline void JfrTraceIdBits::clear_cas(jbyte bits, const T* ptr) {
-  assert(ptr != NULL, "invariant");
+  assert(ptr != nullptr, "invariant");
   clear_bits_cas(bits, traceid_tag_byte(ptr));
 }
 
 template <typename T>
 inline void JfrTraceIdBits::meta_clear(jbyte bits, const T* ptr) {
-  assert(ptr != NULL, "invariant");
+  assert(ptr != nullptr, "invariant");
   clear_bits(bits, traceid_meta_byte(ptr));
 }
 

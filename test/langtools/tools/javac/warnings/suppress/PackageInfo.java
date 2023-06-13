@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,6 @@
  * @test
  * @bug 8021112
  * @summary Verify that deprecated warnings are printed correctly for package-info.java
- * @clean pack.package-info pack.DeprecatedClass
- * @compile/ref=PackageInfo.out -source 8 -XDrawDiagnostics -Xlint:deprecation,-options pack/package-info.java pack/DeprecatedClass.java
+ * @clean pack.*
+ * @compile/ref=PackageInfo.out --release 8 -XDrawDiagnostics -Xlint:deprecation,-options pack/package-info.java pack/DeprecatedClass.java
  */

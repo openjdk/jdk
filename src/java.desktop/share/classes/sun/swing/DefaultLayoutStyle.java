@@ -91,7 +91,7 @@ public class DefaultLayoutStyle extends LayoutStyle {
     }
 
     /**
-     * For some look and feels check boxs and radio buttons typically
+     * For some look and feels check boxes and radio buttons typically
      * don't paint the border, yet they have padding for a border.  Look
      * and feel guidelines generally don't include this space.  Use
      * this method to subtract this space from the specified
@@ -116,7 +116,7 @@ public class DefaultLayoutStyle extends LayoutStyle {
     }
 
     /**
-     * For some look and feels check boxs and radio buttons typically
+     * For some look and feels check boxes and radio buttons typically
      * don't paint the border, yet they have padding for a border.  Look
      * and feel guidelines generally don't include this space.  Use
      * this method to subtract this space from the specified

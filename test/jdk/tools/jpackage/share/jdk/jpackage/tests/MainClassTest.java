@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@ import jdk.jpackage.test.HelloApp;
 import jdk.jpackage.test.JavaTool;
 import jdk.jpackage.test.Annotations.Parameters;
 import jdk.jpackage.test.Annotations.Test;
+import jdk.jpackage.test.CfgFile;
 import jdk.jpackage.test.Functional.ThrowingConsumer;
 import static jdk.jpackage.tests.MainClassTest.Script.MainClassType.*;
 
@@ -55,7 +56,7 @@ import static jdk.jpackage.tests.MainClassTest.Script.MainClassType.*;
  * @build jdk.jpackage.test.*
  * @modules jdk.jpackage/jdk.jpackage.internal
  * @compile MainClassTest.java
- * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
+ * @run main/othervm/timeout=720 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=jdk.jpackage.tests.MainClassTest
  */
 
@@ -246,6 +247,39 @@ public final class MainClassTest {
                         nonExistingMainClass)).apply(output.stream());
             }
         }
+
+        CfgFile cfg = cmd.readLauncherCfgFile();
+        if (!cmd.hasArgument("--module")) {
+            verifyCfgFileForNonModularApp(cmd, cfg);
+        }
+    }
+
+    private static void verifyCfgFileForNonModularApp(JPackageCommand cmd,
+            CfgFile cfg) {
+        final List<String> mainJarProperties = List.of("app.mainjar");
+        final List<String> classPathProperties = List.of("app.mainclass",
+                "app.classpath");
+
+        final List<String> withProperties;
+        final List<String> withoutProperties;
+
+        if (cmd.hasArgument("--main-jar") && !cmd.hasArgument("--main-class")) {
+            withProperties = mainJarProperties;
+            withoutProperties = classPathProperties;
+        } else {
+            withProperties = classPathProperties;
+            withoutProperties = mainJarProperties;
+        }
+
+        withProperties.forEach(prop -> {
+            TKit.assertNotNull(cfg.getValue("Application", prop), String.format(
+                    "Check \"%s\" property is set", prop));
+        });
+
+        withoutProperties.forEach(prop -> {
+            TKit.assertNull(cfg.getValueUnchecked("Application", prop),
+                    String.format("Check \"%s\" property is NOT set", prop));
+        });
     }
 
     private void initJarWithWrongMainClass() throws IOException {

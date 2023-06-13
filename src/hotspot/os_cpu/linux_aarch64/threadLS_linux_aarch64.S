@@ -1,4 +1,4 @@
-// Copyright (c) 2015, Red Hat Inc. All rights reserved.
+// Copyright (c) 2015, 2022, Red Hat Inc. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 	.type	_ZN10JavaThread25aarch64_get_thread_helperEv, %function
 
 _ZN10JavaThread25aarch64_get_thread_helperEv:
+	hint #0x19      // paciasp
 	stp x29, x30, [sp, -16]!
 	adrp x0, :tlsdesc:_ZN6Thread12_thr_currentE
 	ldr x1, [x0, #:tlsdesc_lo12:_ZN6Thread12_thr_currentE]
@@ -39,6 +40,7 @@ _ZN10JavaThread25aarch64_get_thread_helperEv:
 	add x0, x1, x0
 	ldr x0, [x0]
 	ldp x29, x30, [sp], 16
+	hint #0x1d      // autiasp
 	ret
 
 	.size _ZN10JavaThread25aarch64_get_thread_helperEv, .-_ZN10JavaThread25aarch64_get_thread_helperEv

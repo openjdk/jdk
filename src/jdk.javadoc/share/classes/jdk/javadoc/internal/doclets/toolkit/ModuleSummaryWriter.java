@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,60 +29,54 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 
 /**
  * The interface for writing module summary output.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
-
 public interface ModuleSummaryWriter {
 
     /**
      * Get the header for the summary.
      *
      * @param heading module name.
-     * @return the header to be added to the content tree
+     * @return the header to be added to the content
      */
     Content getModuleHeader(String heading);
 
     /**
      * Get the header for the module content.
      *
-     * @return a content tree for the module content header
+     * @return the module content header
      */
     Content getContentHeader();
 
     /**
      * Get the header for the summary header.
      *
-     * @return a content tree with the summary header
+     * @return the summary header
      */
     Content getSummariesList();
 
     /**
-     * Get the header for the summary tree.
+     * Wrap the content into summary section.
      *
-     * @param summaryContentTree the content tree.
-     * @return a content tree with the summary tree
+     * @param source the content to wrap into the summary section
+     * @return the summary
      */
-    Content getSummaryTree(Content summaryContentTree);
+    Content getSummary(Content source);
 
     /**
      * Adds the module description.
      *
-     * @param moduleContentTree the content tree to which the module description
-     *                           will be added
+     * @param moduleContent the content to which the module description
+     *                      will be added
      */
-    void addModuleDescription(Content moduleContentTree);
+    void addModuleDescription(Content moduleContent);
 
     /**
      * Adds the module signature.
      *
-     * @param moduleContentTree the content tree to which the module signature
-     *                           will be added
+     * @param moduleContent the content to which the module signature
+     *                      will be added
      */
-    void addModuleSignature(Content moduleContentTree);
+    void addModuleSignature(Content moduleContent);
 
     /**
      * Adds the summary of modules to the list of summaries.
@@ -106,22 +100,22 @@ public interface ModuleSummaryWriter {
     void addServicesSummary(Content summariesList);
 
     /**
-     * Adds the module content tree to the documentation tree.
+     * Adds the module content to the documentation.
      *
-     * @param moduleContentTree the content tree that will be added
+     * @param source the content that will be added
      */
-    void addModuleContent(Content moduleContentTree);
+    void addModuleContent(Content source);
 
     /**
-     * Adds the footer to the documentation tree.
+     * Adds the footer to the documentation.
      */
     void addModuleFooter();
 
     /**
      * Print the module summary document.
      *
-     * @param contentTree the content tree that will be printed
+     * @param content the content that will be printed
      * @throws DocFileIOException if there is a problem while writing the document
      */
-    void printDocument(Content contentTree) throws DocFileIOException;
+    void printDocument(Content content) throws DocFileIOException;
 }

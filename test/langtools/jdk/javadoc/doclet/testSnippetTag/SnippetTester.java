@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,11 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.BiPredicate;
 import java.util.function.ObjIntConsumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -117,9 +119,52 @@ public class SnippetTester extends JavadocTester {
         var idString = id.isEmpty() ? "" : " id=\"%s\"".formatted(id.get());
         var langString = lang.isEmpty() ? "" : " class=\"language-%s\"".formatted(lang.get());
         return """
-                <div class="snippet-container"><button class="snippet-copy" onclick="copySnippet(this)">\
-                <span data-copied="Copied!">Copy</span><img src="%s" alt="Copy"></button>
+                <div class="snippet-container"><button class="copy snippet-copy" aria-label="Copy snippet" \
+                onclick="copySnippet(this)"><span data-copied="Copied!">Copy</span><img src="%s" alt="Copy \
+                snippet"></button>
                 <pre class="snippet"%s><code%s>%s</code></pre>
                 </div>""".formatted(svgString, idString, langString, content);
+    }
+
+    // There's JavadocTester.diff(), but its semantics is different; hence we
+    // use this method.
+    protected void match(Path path1, Path path2, BiPredicate<Path, BasicFileAttributes> filter) throws IOException {
+        checking("diff " + path1 + ", " + path2);
+        try (var paths1 = Files.find(path1, Integer.MAX_VALUE, filter).sorted();
+             var paths2 = Files.find(path2, Integer.MAX_VALUE, filter).sorted()) {
+            var it1 = paths1.iterator();
+            var it2 = paths2.iterator();
+            while (true) {
+                if (it1.hasNext() != it2.hasNext()) {
+                    failed(it1.hasNext() ? it1.next() : it2.next(), "missing");
+                    return;
+                }
+                if (!it1.hasNext()) {
+                    passed("match");
+                    return;
+                }
+                Path next1 = it1.next();
+                Path next2 = it2.next();
+                if (!path1.relativize(next1).equals(path2.relativize(next2))) {
+                    // compare directory tree to see the difference
+                    failed("mismatching names %s %s".formatted(next1, next2));
+                    return;
+                }
+                if (Files.isDirectory(next1) != Files.isDirectory(next2)) {
+                    // it'd be surprising to ever see this
+                    failed("mismatching types %s %s".formatted(next1, next2));
+                    return;
+                }
+                if (Files.isDirectory(next1)) {
+                    continue;
+                }
+                if (Files.size(next1) != Files.size(next2)
+                        || Files.mismatch(next1, next2) != -1L) {
+                    failed("mismatching contents: diff %s %s".formatted(next1.toAbsolutePath(),
+                            next2.toAbsolutePath()));
+                    return;
+                }
+            }
+        }
     }
 }

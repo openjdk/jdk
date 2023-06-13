@@ -140,7 +140,7 @@ public class InputContext {
      * @param locale The desired new locale.
      * @return true if the input method or keyboard layout that's active after
      *         this call supports the desired locale.
-     * @exception NullPointerException if {@code locale} is null
+     * @throws NullPointerException if {@code locale} is null
      */
     public boolean selectInputMethod(Locale locale) {
         // real implementation is in sun.awt.im.InputContext
@@ -268,7 +268,7 @@ public class InputContext {
      * If no input method is available, then the event will never be consumed.
      *
      * @param event The event
-     * @exception NullPointerException if {@code event} is null
+     * @throws NullPointerException if {@code event} is null
      */
     public void dispatchEvent(AWTEvent event) {
         // real implementation is in sun.awt.im.InputContext
@@ -286,7 +286,7 @@ public class InputContext {
      * If no input methods are available, then this method has no effect.
      *
      * @param client Client component
-     * @exception NullPointerException if {@code client} is null
+     * @throws NullPointerException if {@code client} is null
      */
     public void removeNotify(Component client) {
         // real implementation is in sun.awt.im.InputContext

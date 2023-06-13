@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,7 +116,6 @@ class ValueMap: public CompilationResourceObj {
   void kill_memory();
   void kill_field(ciField* field, bool all_offsets);
   void kill_array(ValueType* type);
-  void kill_exception();
   void kill_map(ValueMap* map);
   void kill_all();
 
@@ -165,7 +164,12 @@ class ValueNumberingVisitor: public InstructionVisitor {
 
   void do_Phi            (Phi*             x) { /* nothing to do */ }
   void do_Local          (Local*           x) { /* nothing to do */ }
-  void do_Constant       (Constant*        x) { /* nothing to do */ }
+  void do_Constant       (Constant*        x) {
+    if (x->kills_memory()) {
+      assert(x->can_trap(), "already linked");
+      kill_memory();
+    }
+  }
   void do_LoadField      (LoadField*       x) {
     if (x->is_init_point() ||         // getstatic is an initialization point so treat it as a wide kill
         x->field()->is_volatile()) {  // the JMM requires this
@@ -239,7 +243,7 @@ class GlobalValueNumbering: public ValueNumberingVisitor {
   Compilation*  compilation() const              { return _compilation; }
   ValueMap*     current_map()                    { return _current_map; }
   ValueMap*     value_map_of(BlockBegin* block)  { return _value_maps.at(block->linear_scan_number()); }
-  void          set_value_map_of(BlockBegin* block, ValueMap* map)   { assert(value_map_of(block) == NULL, ""); _value_maps.at_put(block->linear_scan_number(), map); }
+  void          set_value_map_of(BlockBegin* block, ValueMap* map) { assert(value_map_of(block) == nullptr, ""); _value_maps.at_put(block->linear_scan_number(), map); }
 
   bool          is_processed(Value v)            { return _processed_values.contains(v); }
   void          set_processed(Value v)           { _processed_values.put(v); }

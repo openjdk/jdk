@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,6 +63,7 @@ import jdk.internal.net.http.common.Log;
 import jdk.internal.net.http.common.Logger;
 import jdk.internal.net.http.common.MinimalFuture;
 import jdk.internal.net.http.common.Utils;
+import jdk.internal.net.http.HttpClientImpl.DelegatingExecutor;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class ResponseSubscribers {
@@ -77,7 +78,7 @@ public class ResponseSubscribers {
      * might be called and might block before the last bit is
      * received (for instance, if a mapping subscriber is used with
      * a mapper function that maps an InputStream to a GZIPInputStream,
-     * as the the constructor of GZIPInputStream calls read()).
+     * as the constructor of GZIPInputStream calls read()).
      * @param <T> The response type.
      */
     public interface TrustedSubscriber<T> extends BodySubscriber<T> {
@@ -281,7 +282,10 @@ public class ResponseSubscribers {
         @Override
         public void onNext(List<ByteBuffer> items) {
             try {
-                out.write(items.toArray(Utils.EMPTY_BB_ARRAY));
+                ByteBuffer[] buffers = items.toArray(Utils.EMPTY_BB_ARRAY);
+                do {
+                    out.write(buffers);
+                } while (Utils.hasRemaining(buffers));
             } catch (IOException ex) {
                 close();
                 subscription.cancel();
@@ -480,7 +484,12 @@ public class ResponseSubscribers {
                     if (debug.on()) debug.log("Next Buffer");
                     currentBuffer = currentListItr.next();
                 } catch (InterruptedException ex) {
-                    // continue
+                    try {
+                        close();
+                    } catch (IOException ignored) {
+                    }
+                    Thread.currentThread().interrupt();
+                    throw new IOException(ex);
                 }
             }
             assert currentBuffer == LAST_BUFFER || currentBuffer.hasRemaining();
@@ -536,8 +545,10 @@ public class ResponseSubscribers {
         @Override
         public void onSubscribe(Flow.Subscription s) {
             Objects.requireNonNull(s);
+            if (debug.on()) debug.log("onSubscribe called");
             try {
                 if (!subscribed.compareAndSet(false, true)) {
+                    if (debug.on()) debug.log("Already subscribed: canceling");
                     s.cancel();
                 } else {
                     // check whether the stream is already closed.
@@ -548,13 +559,19 @@ public class ResponseSubscribers {
                         closed = this.closed;
                         if (!closed) {
                             this.subscription = s;
+                            // should contain at least 2, unless closed or failed.
+                            assert buffers.remainingCapacity() > 1 || failed != null
+                                    : "buffers capacity: " + buffers.remainingCapacity()
+                                    + ", closed: " + closed + ", terminated: "
+                                    + buffers.contains(LAST_LIST)
+                                    + ", failed: " + failed;
                         }
                     }
                     if (closed) {
+                        if (debug.on()) debug.log("Already closed: canceling");
                         s.cancel();
                         return;
                     }
-                    assert buffers.remainingCapacity() > 1; // should contain at least 2
                     if (debug.on())
                         debug.log("onSubscribe: requesting "
                                   + Math.max(1, buffers.remainingCapacity() - 1));
@@ -562,6 +579,8 @@ public class ResponseSubscribers {
                 }
             } catch (Throwable t) {
                 failed = t;
+                if (debug.on())
+                    debug.log("onSubscribe failed", t);
                 try {
                     close();
                 } catch (IOException x) {
@@ -595,6 +614,8 @@ public class ResponseSubscribers {
 
         @Override
         public void onError(Throwable thrwbl) {
+            if (debug.on())
+                debug.log("onError called: " + thrwbl);
             subscription = null;
             failed = Objects.requireNonNull(thrwbl);
             // The client process that reads the input stream might
@@ -609,6 +630,8 @@ public class ResponseSubscribers {
 
         @Override
         public void onComplete() {
+            if (debug.on())
+                debug.log("onComplete called");
             subscription = null;
             onNext(LAST_LIST);
         }
@@ -622,6 +645,8 @@ public class ResponseSubscribers {
                 s = subscription;
                 subscription = null;
             }
+            if (debug.on())
+                debug.log("close called");
             // s will be null if already completed
             try {
                 if (s != null) {
@@ -1141,8 +1166,8 @@ public class ResponseSubscribers {
             assert cf != null;
 
             if (TrustedSubscriber.needsExecutor(bs)) {
-                e = (e instanceof HttpClientImpl.DelegatingExecutor)
-                        ? ((HttpClientImpl.DelegatingExecutor) e).delegate() : e;
+                e = (e instanceof DelegatingExecutor exec)
+                        ? exec::ensureExecutedAsync : e;
             }
 
             e.execute(() -> {
@@ -1155,12 +1180,14 @@ public class ResponseSubscribers {
                         }
                     });
                 } catch (Throwable t) {
+                    // the errorHandler will complete the CF
                     errorHandler.accept(t);
                 }
             });
             return cf;
 
         } catch (Throwable t) {
+            // the errorHandler will complete the CF
             errorHandler.accept(t);
         }
         return cf;

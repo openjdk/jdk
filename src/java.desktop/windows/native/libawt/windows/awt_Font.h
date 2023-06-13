@@ -155,7 +155,7 @@ public:
      */
     static AwtFont* Create(JNIEnv *env, jobject font,
                            jint angle = 0, jfloat awScale=1.0f);
-    static HFONT CreateHFont(WCHAR* name, int style, int height,
+    static HFONT CreateHFont(LPCWSTR name, int style, int height,
                              int angle = 0, float awScale=1.0f);
 
     static void Cleanup();

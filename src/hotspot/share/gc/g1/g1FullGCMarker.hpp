@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #define SHARE_GC_G1_G1FULLGCMARKER_HPP
 
 #include "gc/g1/g1FullGCOopClosures.hpp"
+#include "gc/g1/g1OopClosures.hpp"
 #include "gc/g1/g1RegionMarkStatsCache.hpp"
 #include "gc/shared/preservedMarks.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
@@ -62,7 +63,6 @@ class G1FullGCMarker : public CHeapObj<mtGC> {
 
   // Marking closures
   G1MarkAndPushClosure  _mark_closure;
-  G1VerifyOopClosure    _verify_closure;
   G1FollowStackClosure  _stack_closure;
   CLDToOopClosure       _cld_closure;
   StringDedup::Requests _string_dedup_requests;
@@ -71,8 +71,6 @@ class G1FullGCMarker : public CHeapObj<mtGC> {
   G1RegionMarkStatsCache _mark_stats_cache;
 
   inline bool is_empty();
-  inline bool pop_object(oop& obj);
-  inline bool pop_objarray(ObjArrayTask& array);
   inline void push_objarray(oop obj, size_t index);
   inline bool mark_object(oop obj);
 
@@ -80,6 +78,14 @@ class G1FullGCMarker : public CHeapObj<mtGC> {
   inline void follow_object(oop obj);
   inline void follow_array(objArrayOop array);
   inline void follow_array_chunk(objArrayOop array, int index);
+
+  inline void publish_and_drain_oop_tasks();
+  // Try to publish all contents from the objArray task queue overflow stack to
+  // the shared objArray stack.
+  // Returns true and a valid task if there has not been enough space in the shared
+  // objArray stack, otherwise returns false and the task is invalid.
+  inline bool publish_or_pop_objarray_tasks(ObjArrayTask& task);
+
 public:
   G1FullGCMarker(G1FullCollector* collector,
                  uint worker_id,
@@ -94,10 +100,8 @@ public:
 
   // Marking entry points
   template <class T> inline void mark_and_push(T* p);
-  inline void follow_klass(Klass* k);
-  inline void follow_cld(ClassLoaderData* cld);
 
-  inline void drain_stack();
+  inline void follow_marking_stacks();
   void complete_marking(OopQueueSet* oop_stacks,
                         ObjArrayTaskQueueSet* array_stacks,
                         TaskTerminator* terminator);

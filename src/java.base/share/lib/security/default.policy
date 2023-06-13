@@ -19,8 +19,11 @@ grant codeBase "jrt:/java.net.http" {
     permission java.lang.RuntimePermission "accessClassInPackage.sun.net.util";
     permission java.lang.RuntimePermission "accessClassInPackage.sun.net.www";
     permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.misc";
+    permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.ref";
     permission java.lang.RuntimePermission "modifyThread";
     permission java.net.SocketPermission "*","connect,resolve";
+    // required if the HTTPClient is configured to use a local bind address
+    permission java.net.SocketPermission "localhost:*","listen,resolve";
     permission java.net.URLPermission "http:*","*:*";
     permission java.net.URLPermission "https:*","*:*";
     permission java.net.URLPermission "ws:*","*:*";
@@ -47,6 +50,8 @@ grant codeBase "jrt:/java.smartcardio" {
                    "accessClassInPackage.sun.security.jca";
     permission java.lang.RuntimePermission
                    "accessClassInPackage.sun.security.util";
+    permission java.lang.RuntimePermission
+                   "accessClassInPackage.jdk.internal.util";
     permission java.util.PropertyPermission
                    "javax.smartcardio.TerminalFactory.DefaultType", "read";
     permission java.util.PropertyPermission "os.name", "read";
@@ -92,6 +97,8 @@ grant codeBase "jrt:/java.xml.crypto" {
     permission java.security.SecurityPermission
                    "com.sun.org.apache.xml.internal.security.register";
     permission java.security.SecurityPermission
+                   "getProperty.jdk.xml.dsig.hereFunctionSupported";
+    permission java.security.SecurityPermission
                    "getProperty.jdk.xml.dsig.secureValidationPolicy";
     permission java.lang.RuntimePermission
                    "accessClassInPackage.com.sun.org.apache.xml.internal.*";
@@ -115,6 +122,8 @@ grant codeBase "jrt:/jdk.charsets" {
                    "accessClassInPackage.jdk.internal.access";
     permission java.lang.RuntimePermission
                    "accessClassInPackage.jdk.internal.misc";
+    permission java.lang.RuntimePermission
+                   "accessClassInPackage.jdk.internal.util";
     permission java.lang.RuntimePermission "accessClassInPackage.sun.nio.cs";
 };
 
@@ -131,6 +140,7 @@ grant codeBase "jrt:/jdk.crypto.cryptoki" {
     permission java.lang.RuntimePermission
                    "accessClassInPackage.com.sun.crypto.provider";
     permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.misc";
+    permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.access";
     permission java.lang.RuntimePermission
                    "accessClassInPackage.sun.security.*";
     permission java.lang.RuntimePermission "accessClassInPackage.sun.nio.ch";

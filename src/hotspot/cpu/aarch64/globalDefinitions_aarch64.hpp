@@ -34,6 +34,8 @@ const bool CCallingConventionRequiresIntsAsLongs = false;
 
 #define SUPPORTS_NATIVE_CX8
 
+#define SUPPORT_MONITOR_COUNT
+
 // Aarch64 was not originally defined to be multi-copy-atomic, but now
 // is.  See: "Simplifying ARM Concurrency: Multicopy-atomic Axiomatic
 // and Operational Models for ARMv8"
@@ -56,8 +58,6 @@ const bool CCallingConventionRequiresIntsAsLongs = false;
 
 #define SUPPORT_RESERVED_STACK_AREA
 
-#define COMPRESSED_CLASS_POINTERS_DEPENDS_ON_COMPRESSED_OOPS false
-
 #if defined(__APPLE__) || defined(_WIN64)
 #define R18_RESERVED
 #define R18_RESERVED_ONLY(code) code
@@ -66,5 +66,7 @@ const bool CCallingConventionRequiresIntsAsLongs = false;
 #define R18_RESERVED_ONLY(code)
 #define NOT_R18_RESERVED(code) code
 #endif
+
+#define USE_POINTERS_TO_REGISTER_IMPL_ARRAY
 
 #endif // CPU_AARCH64_GLOBALDEFINITIONS_AARCH64_HPP

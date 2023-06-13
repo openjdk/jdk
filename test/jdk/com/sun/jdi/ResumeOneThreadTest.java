@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,26 +37,30 @@ import com.sun.jdi.request.*;
 
 import java.util.*;
 
-class ResumeOneThreadTarg extends Thread {
+class ResumeOneThreadTarg implements Runnable {
     static String name1 = "Thread 1";
     static String name2 = "Thread 2";
 
-    public ResumeOneThreadTarg(String name) {
-        super(name);
-    }
-
     public static void main(String[] args) {
         System.out.println("    Debuggee: Howdy!");
-        ResumeOneThreadTarg t1 = new ResumeOneThreadTarg(name1);
-        ResumeOneThreadTarg t2 = new ResumeOneThreadTarg(name2);
-
+        Thread t1 = TestScaffold.newThread(new ResumeOneThreadTarg(), name1);
+        Thread t2 = TestScaffold.newThread(new ResumeOneThreadTarg(), name2);
         t1.start();
         t2.start();
+        // We must block until these threads exit. Otherwise for virtual threads
+        // there will be nothing keeping these threads alive because all the threads
+        // involved are daemon threads. See JDK-8283796.
+        try {
+            t1.join();
+            t2.join();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     // This just starts two threads. Each runs to a bkpt.
     public void run() {
-        if (getName().equals(name1)) {
+        if (Thread.currentThread().getName().equals(name1)) {
             run1();
         } else {
             run2();

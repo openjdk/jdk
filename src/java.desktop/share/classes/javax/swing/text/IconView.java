@@ -81,7 +81,7 @@ public class IconView extends View  {
      *           Typically the view is told to render into the span
      *           that is returned, although there is no guarantee.
      *           The parent may choose to resize or break the view.
-     * @exception IllegalArgumentException for an invalid axis
+     * @throws IllegalArgumentException for an invalid axis
      */
     public float getPreferredSpan(int axis) {
         switch (axis) {
@@ -123,7 +123,7 @@ public class IconView extends View  {
      * @param pos the position to convert &gt;= 0
      * @param a the allocated region to render into
      * @return the bounding box of the given position
-     * @exception BadLocationException  if the given position does not
+     * @throws BadLocationException  if the given position does not
      *   represent a valid location in the associated document
      * @see View#modelToView
      */

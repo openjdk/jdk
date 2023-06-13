@@ -66,8 +66,6 @@ public class Resources_ja extends java.util.ListResourceBundle {
         {"Subject.", "\u30B5\u30D6\u30B8\u30A7\u30AF\u30C8:\n"},
         {".Principal.", "\t\u30D7\u30EA\u30F3\u30B7\u30D1\u30EB: "},
         {".Public.Credential.", "\t\u516C\u958B\u8CC7\u683C: "},
-        {".Private.Credentials.inaccessible.",
-                "\t\u975E\u516C\u958B\u8CC7\u683C\u306B\u306F\u30A2\u30AF\u30BB\u30B9\u3067\u304D\u307E\u305B\u3093\n"},
         {".Private.Credential.", "\t\u975E\u516C\u958B\u8CC7\u683C: "},
         {".Private.Credential.inaccessible.",
                 "\t\u975E\u516C\u958B\u8CC7\u683C\u306B\u306F\u30A2\u30AF\u30BB\u30B9\u3067\u304D\u307E\u305B\u3093\n"},
@@ -89,16 +87,6 @@ public class Resources_ja extends java.util.ListResourceBundle {
                 "\u7121\u52B9\u306Anull CallbackHandler\u304C\u6307\u5B9A\u3055\u308C\u307E\u3057\u305F"},
         {"null.subject.logout.called.before.login",
                 "null\u30B5\u30D6\u30B8\u30A7\u30AF\u30C8 - \u30ED\u30B0\u30A4\u30F3\u3059\u308B\u524D\u306B\u30ED\u30B0\u30A2\u30A6\u30C8\u304C\u547C\u3073\u51FA\u3055\u308C\u307E\u3057\u305F"},
-        {"unable.to.instantiate.LoginModule.module.because.it.does.not.provide.a.no.argument.constructor",
-                "LoginModule {0}\u306F\u5F15\u6570\u3092\u53D6\u3089\u306A\u3044\u30B3\u30F3\u30B9\u30C8\u30E9\u30AF\u30BF\u3092\u6307\u5B9A\u3067\u304D\u306A\u3044\u305F\u3081\u3001\u30A4\u30F3\u30B9\u30BF\u30F3\u30B9\u3092\u751F\u6210\u3067\u304D\u307E\u305B\u3093"},
-        {"unable.to.instantiate.LoginModule",
-                "LoginModule\u306E\u30A4\u30F3\u30B9\u30BF\u30F3\u30B9\u3092\u751F\u6210\u3067\u304D\u307E\u305B\u3093"},
-        {"unable.to.instantiate.LoginModule.",
-                "LoginModule\u306E\u30A4\u30F3\u30B9\u30BF\u30F3\u30B9\u3092\u751F\u6210\u3067\u304D\u307E\u305B\u3093: "},
-        {"unable.to.find.LoginModule.class.",
-                "LoginModule\u30AF\u30E9\u30B9\u3092\u691C\u51FA\u3067\u304D\u307E\u305B\u3093: "},
-        {"unable.to.access.LoginModule.",
-                "LoginModule\u306B\u30A2\u30AF\u30BB\u30B9\u3067\u304D\u307E\u305B\u3093: "},
         {"Login.Failure.all.modules.ignored",
                 "\u30ED\u30B0\u30A4\u30F3\u5931\u6557: \u3059\u3079\u3066\u306E\u30E2\u30B8\u30E5\u30FC\u30EB\u306F\u7121\u8996\u3055\u308C\u307E\u3059"},
 
@@ -150,11 +138,6 @@ public class Resources_ja extends java.util.ListResourceBundle {
         // sun.security.pkcs11.SunPKCS11
         {"PKCS11.Token.providerName.Password.",
                 "PKCS11\u30C8\u30FC\u30AF\u30F3[{0}]\u30D1\u30B9\u30EF\u30FC\u30C9: "},
-
-        /* --- DEPRECATED --- */
-        // javax.security.auth.Policy
-        {"unable.to.instantiate.Subject.based.policy",
-                "\u30B5\u30D6\u30B8\u30A7\u30AF\u30C8\u30FB\u30D9\u30FC\u30B9\u306E\u30DD\u30EA\u30B7\u30FC\u306E\u30A4\u30F3\u30B9\u30BF\u30F3\u30B9\u3092\u751F\u6210\u3067\u304D\u307E\u305B\u3093"}
     };
 
 

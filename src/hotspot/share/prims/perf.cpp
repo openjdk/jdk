@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,9 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/vmSymbols.hpp"
 #include "jni.h"
 #include "jvm.h"
-#include "classfile/vmSymbols.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
@@ -47,9 +47,9 @@
 
 static char* jstr_to_utf(JNIEnv *env, jstring str, TRAPS) {
 
-  char* utfstr = NULL;
+  char* utfstr = nullptr;
 
-  if (str == NULL) {
+  if (str == nullptr) {
     THROW_0(vmSymbols::java_lang_NullPointerException());
     //throw_new(env,"NullPointerException");
   }
@@ -64,30 +64,15 @@ static char* jstr_to_utf(JNIEnv *env, jstring str, TRAPS) {
   return utfstr;
 }
 
-PERF_ENTRY(jobject, Perf_Attach(JNIEnv *env, jobject unused, jstring user, int vmid, int mode))
+PERF_ENTRY(jobject, Perf_Attach(JNIEnv *env, jobject unused, int vmid))
 
   PerfWrapper("Perf_Attach");
 
   char* address = 0;
   size_t capacity = 0;
-  const char* user_utf = NULL;
-
-  ResourceMark rm;
-
-  {
-    ThreadToNativeFromVM ttnfv(thread);
-
-    user_utf = user == NULL ? NULL : jstr_to_utf(env, user, CHECK_NULL);
-  }
-
-  if (mode != PerfMemory::PERF_MODE_RO &&
-      mode != PerfMemory::PERF_MODE_RW) {
-    THROW_0(vmSymbols::java_lang_IllegalArgumentException());
-  }
 
   // attach to the PerfData memory region for the specified VM
-  PerfMemory::attach(user_utf, vmid, (PerfMemory::PerfMemoryMode) mode,
-                     &address, &capacity, CHECK_NULL);
+  PerfMemory::attach(vmid, &address, &capacity, CHECK_NULL);
 
   {
     ThreadToNativeFromVM ttnfv(thread);
@@ -124,7 +109,7 @@ PERF_ENTRY(jobject, Perf_CreateLong(JNIEnv *env, jobject perf, jstring name,
 
   PerfWrapper("Perf_CreateLong");
 
-  char* name_utf = NULL;
+  char* name_utf = nullptr;
 
   if (units <= 0 || units > PerfData::U_Last) {
     debug_only(warning("unexpected units argument, units = %d", units));
@@ -139,7 +124,7 @@ PERF_ENTRY(jobject, Perf_CreateLong(JNIEnv *env, jobject perf, jstring name,
     name_utf = jstr_to_utf(env, name, CHECK_NULL);
   }
 
-  PerfLong* pl = NULL;
+  PerfLong* pl = nullptr;
 
   // check that the PerfData name doesn't already exist
   if (PerfDataManager::exists(name_utf)) {
@@ -188,7 +173,7 @@ PERF_ENTRY(jobject, Perf_CreateByteArray(JNIEnv *env, jobject perf,
   PerfWrapper("Perf_CreateByteArray");
 
   // check for valid byte array objects
-  if (name == NULL || value == NULL) {
+  if (name == nullptr || value == nullptr) {
     THROW_0(vmSymbols::java_lang_NullPointerException());
   }
 
@@ -207,8 +192,8 @@ PERF_ENTRY(jobject, Perf_CreateByteArray(JNIEnv *env, jobject perf,
   }
 
   int value_length;
-  char* name_utf = NULL;
-  jbyte* value_local = NULL;
+  char* name_utf = nullptr;
+  jbyte* value_local = nullptr;
 
   ResourceMark rm;
 
@@ -229,7 +214,7 @@ PERF_ENTRY(jobject, Perf_CreateByteArray(JNIEnv *env, jobject perf,
     THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(), "PerfByteArray name already exists");
   }
 
-  PerfByteArray* pbv = NULL;
+  PerfByteArray* pbv = nullptr;
 
   if (units == PerfData::U_String) {
 
@@ -300,7 +285,7 @@ PERF_END
 
 static JNINativeMethod perfmethods[] = {
 
-  {CC "attach",              CC "(" JLS "II)" BB, FN_PTR(Perf_Attach)},
+  {CC "attach0",             CC "(I)" BB,         FN_PTR(Perf_Attach)},
   {CC "detach",              CC "(" BB ")V",      FN_PTR(Perf_Detach)},
   {CC "createLong",          CL_ARGS,             FN_PTR(Perf_CreateLong)},
   {CC "createByteArray",     CBA_ARGS,            FN_PTR(Perf_CreateByteArray)},

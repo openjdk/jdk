@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,10 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/symbolTable.hpp"
 #include "memory/allocation.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/symbolHandle.hpp"
 #include "unittest.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -84,7 +86,7 @@ class SmallResourceHashtableTest : public CommonResourceHashtableTest {
   unsigned (*HASH) (K const&) = primitive_hash<K>,
   bool (*EQUALS)(K const&, K const&) = primitive_equals<K>,
   unsigned SIZE = 256,
-  ResourceObj::allocation_type ALLOC_TYPE = ResourceObj::RESOURCE_AREA
+  AnyObj::allocation_type ALLOC_TYPE = AnyObj::RESOURCE_AREA
   >
   class Runner : public AllStatic {
    public:
@@ -186,27 +188,27 @@ TEST_VM_F(SmallResourceHashtableTest, identity_hash_shifted) {
 }
 
 TEST_VM_F(SmallResourceHashtableTest, primitive_hash_no_rm) {
-  Runner<primitive_hash<K>, primitive_equals<K>, 512, ResourceObj::C_HEAP>::test(0x1);
+  Runner<primitive_hash<K>, primitive_equals<K>, 512, AnyObj::C_HEAP>::test(0x1);
 }
 
 TEST_VM_F(SmallResourceHashtableTest, primitive_hash_no_rm_shifted) {
-  Runner<primitive_hash<K>, primitive_equals<K>, 512, ResourceObj::C_HEAP>::test(0x10);
+  Runner<primitive_hash<K>, primitive_equals<K>, 512, AnyObj::C_HEAP>::test(0x10);
 }
 
 TEST_VM_F(SmallResourceHashtableTest, bad_hash_no_rm) {
-  Runner<bad_hash, primitive_equals<K>, 512, ResourceObj::C_HEAP>::test(0x1);
+  Runner<bad_hash, primitive_equals<K>, 512, AnyObj::C_HEAP>::test(0x1);
 }
 
 TEST_VM_F(SmallResourceHashtableTest, bad_hash_no_rm_shifted) {
-  Runner<bad_hash, primitive_equals<K>, 512, ResourceObj::C_HEAP>::test(0x10);
+  Runner<bad_hash, primitive_equals<K>, 512, AnyObj::C_HEAP>::test(0x10);
 }
 
 TEST_VM_F(SmallResourceHashtableTest, identity_hash_no_rm) {
-  Runner<identity_hash, primitive_equals<K>, 1, ResourceObj::C_HEAP>::test(0x1);
+  Runner<identity_hash, primitive_equals<K>, 1, AnyObj::C_HEAP>::test(0x1);
 }
 
 TEST_VM_F(SmallResourceHashtableTest, identity_hash_no_rm_shifted) {
-  Runner<identity_hash, primitive_equals<K>, 1, ResourceObj::C_HEAP>::test(0x10);
+  Runner<identity_hash, primitive_equals<K>, 1, AnyObj::C_HEAP>::test(0x10);
 }
 
 class GenericResourceHashtableTest : public CommonResourceHashtableTest {
@@ -216,7 +218,7 @@ class GenericResourceHashtableTest : public CommonResourceHashtableTest {
   unsigned (*HASH) (K const&) = primitive_hash<K>,
   bool (*EQUALS)(K const&, K const&) = primitive_equals<K>,
   unsigned SIZE = 256,
-  ResourceObj::allocation_type ALLOC_TYPE = ResourceObj::RESOURCE_AREA
+  AnyObj::allocation_type ALLOC_TYPE = AnyObj::RESOURCE_AREA
   >
   class Runner : public AllStatic {
    public:
@@ -277,13 +279,198 @@ TEST_VM_F(GenericResourceHashtableTest, identity_hash) {
 }
 
 TEST_VM_F(GenericResourceHashtableTest, primitive_hash_no_rm) {
-  Runner<primitive_hash<K>, primitive_equals<K>, 512, ResourceObj::C_HEAP>::test();
+  Runner<primitive_hash<K>, primitive_equals<K>, 512, AnyObj::C_HEAP>::test();
 }
 
 TEST_VM_F(GenericResourceHashtableTest, bad_hash_no_rm) {
-  Runner<bad_hash, primitive_equals<K>, 512, ResourceObj::C_HEAP>::test();
+  Runner<bad_hash, primitive_equals<K>, 512, AnyObj::C_HEAP>::test();
 }
 
 TEST_VM_F(GenericResourceHashtableTest, identity_hash_no_rm) {
-  Runner<identity_hash, primitive_equals<K>, 1, ResourceObj::C_HEAP>::test(512);
+  Runner<identity_hash, primitive_equals<K>, 1, AnyObj::C_HEAP>::test(512);
+}
+
+// Simple ResourceHashtable whose key is a SymbolHandle and value is an int
+// This test is to show that the SymbolHandle will correctly handle the refcounting
+// in the table.
+class SimpleResourceHashtableDeleteTest : public ::testing::Test {
+ public:
+    ResourceHashtable<SymbolHandle, int, 107, AnyObj::C_HEAP, mtTest, SymbolHandle::compute_hash> _simple_test_table;
+
+    class SimpleDeleter : public StackObj {
+      public:
+        bool do_entry(SymbolHandle& key, int value) {
+          return true;
+        }
+    };
+};
+
+TEST_VM_F(SimpleResourceHashtableDeleteTest, simple_remove) {
+  TempNewSymbol t = SymbolTable::new_symbol("abcdefg_simple");
+  Symbol* s = t;
+  int s_orig_count = s->refcount();
+  _simple_test_table.put(s, 55);
+  ASSERT_EQ(s->refcount(), s_orig_count + 1) << "refcount should be incremented in table";
+
+  // Deleting this value from a hashtable
+  _simple_test_table.remove(s);
+  ASSERT_EQ(s->refcount(), s_orig_count) << "refcount should be same as start";
+}
+
+TEST_VM_F(SimpleResourceHashtableDeleteTest, simple_delete) {
+  TempNewSymbol t = SymbolTable::new_symbol("abcdefg_simple");
+  Symbol* s = t;
+  int s_orig_count = s->refcount();
+  _simple_test_table.put(s, 66);
+  ASSERT_EQ(s->refcount(), s_orig_count + 1) << "refcount should be incremented in table";
+
+  // Use unlink to remove the matching (or all) values from the table.
+  SimpleDeleter deleter;
+  _simple_test_table.unlink(&deleter);
+  ASSERT_EQ(s->refcount(), s_orig_count) << "refcount should be same as start";
+}
+
+// More complicated ResourceHashtable with SymbolHandle in the key. Since the *same* Symbol is part
+// of the value, it's not necessary to manipulate the refcount of the key, but you must in the value.
+// Luckily SymbolHandle does this.
+class ResourceHashtableDeleteTest : public ::testing::Test {
+ public:
+    class TestValue : public CHeapObj<mtTest> {
+        SymbolHandle _s;
+      public:
+        // Never have ctors and dtors fix refcounts without copy ctors and assignment operators!
+        // Unless it's declared and used as a CHeapObj with
+        // NONCOPYABLE(TestValue)
+
+        // Using SymbolHandle deals with refcount manipulation so this class doesn't have to
+        // have dtors, copy ctors and assignment operators to do so.
+        TestValue(Symbol* name) : _s(name) { }
+        // Symbol* s() const { return _s; }  // needed for conversion from TempNewSymbol to SymbolHandle member
+    };
+
+    // ResourceHashtable whose value is a *copy* of TestValue.
+    ResourceHashtable<Symbol*, TestValue, 107, AnyObj::C_HEAP, mtTest> _test_table;
+
+    class Deleter : public StackObj {
+      public:
+        bool do_entry(Symbol*& key, TestValue& value) {
+          // Since we didn't increment the key, we shouldn't decrement it.
+          // Calling delete on the hashtable Node which contains value will
+          // decrement the refcount.  That's actually best since the whole
+          // entry will be gone at once.
+          return true;
+        }
+    };
+
+    // ResourceHashtable whose value is a pointer to TestValue.
+    ResourceHashtable<Symbol*, TestValue*, 107, AnyObj::C_HEAP, mtTest> _ptr_test_table;
+
+    class PtrDeleter : public StackObj {
+      public:
+        bool do_entry(Symbol*& key, TestValue*& value) {
+          // If the hashtable value is a pointer, need to delete it from here.
+          // This will also potentially make the refcount of the Key = 0, but the
+          // next thing that happens is that the hashtable node is deleted so this is ok.
+          delete value;
+          return true;
+        }
+    };
+};
+
+
+TEST_VM_F(ResourceHashtableDeleteTest, value_remove) {
+  TempNewSymbol s = SymbolTable::new_symbol("abcdefg");
+  int s_orig_count = s->refcount();
+  {
+    TestValue tv(s);
+    // Since TestValue contains the pointer to the key, it will handle the
+    // refcounting.
+    _test_table.put(s, tv);
+    ASSERT_EQ(s->refcount(), s_orig_count + 2) << "refcount incremented by copy";
+  }
+  ASSERT_EQ(s->refcount(), s_orig_count + 1) << "refcount incremented in table";
+
+  // Deleting this value from a hashtable calls the destructor!
+  _test_table.remove(s);
+  // Removal should make the refcount be the original refcount.
+  ASSERT_EQ(s->refcount(), s_orig_count) << "refcount should be as we started";
+}
+
+TEST_VM_F(ResourceHashtableDeleteTest, value_delete) {
+  TempNewSymbol d = SymbolTable::new_symbol("defghijklmnop");
+  int d_orig_count = d->refcount();
+  {
+    TestValue tv(d);
+    // Same as above, but the do_entry does nothing because the value is deleted when the
+    // hashtable node is deleted.
+    _test_table.put(d, tv);
+    ASSERT_EQ(d->refcount(), d_orig_count + 2) << "refcount incremented by copy";
+  }
+  ASSERT_EQ(d->refcount(), d_orig_count + 1) << "refcount incremented in table";
+  Deleter deleter;
+  _test_table.unlink(&deleter);
+  ASSERT_EQ(d->refcount(), d_orig_count) << "refcount should be as we started";
+}
+
+TEST_VM_F(ResourceHashtableDeleteTest, check_delete_ptr) {
+  TempNewSymbol s = SymbolTable::new_symbol("abcdefg_ptr");
+  int s_orig_count = s->refcount();
+  {
+    TestValue* tv = new TestValue(s);
+    // Again since TestValue contains the pointer to the key Symbol, it will
+    // handle the refcounting.
+    _ptr_test_table.put(s, tv);
+    ASSERT_EQ(s->refcount(), s_orig_count + 1) << "refcount incremented by allocation";
+  }
+  ASSERT_EQ(s->refcount(), s_orig_count + 1) << "refcount incremented in table";
+
+  // Deleting this pointer value from a hashtable must call the destructor in the
+  // do_entry function.
+  PtrDeleter deleter;
+  _ptr_test_table.unlink(&deleter);
+  // Removal should make the refcount be the original refcount.
+  ASSERT_EQ(s->refcount(), s_orig_count) << "refcount should be as we started";
+}
+
+class ResourceHashtablePrintTest : public ::testing::Test {
+ public:
+    class TestValue {
+      int _i;
+      int _j;
+      int _k;
+     public:
+      TestValue(int i) : _i(i), _j(i+1), _k(i+2) {}
+    };
+    ResourceHashtable<int, TestValue*, 30, AnyObj::C_HEAP, mtTest> _test_table;
+
+    class TableDeleter {
+     public:
+      bool do_entry(int& key, TestValue*& val) {
+        delete val;
+        return true;
+      }
+    };
+};
+
+TEST_VM_F(ResourceHashtablePrintTest, print_test) {
+  for (int i = 0; i < 300; i++) {
+    TestValue* tv = new TestValue(i);
+    _test_table.put(i, tv);  // all the entries can be the same.
+  }
+  auto printer = [&] (int& key, TestValue*& val) {
+    return sizeof(*val);
+  };
+  TableStatistics ts = _test_table.statistics_calculate(printer);
+  ResourceMark rm;
+  stringStream st;
+  ts.print(&st, "TestTable");
+  // Verify output in string
+  const char* strings[] = {
+      "Number of buckets", "Number of entries", "300", "Number of literals", "Average bucket size", "Maximum bucket size" };
+  for (const auto& str : strings) {
+    ASSERT_TRUE(strstr(st.as_string(), str) != nullptr) << "string not present " << str;
+  }
+  // Cleanup: need to delete pointers in entries
+  TableDeleter deleter;
+  _test_table.unlink(&deleter);
 }

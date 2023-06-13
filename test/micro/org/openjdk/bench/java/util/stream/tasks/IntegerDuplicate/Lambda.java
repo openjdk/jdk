@@ -24,11 +24,14 @@ package org.openjdk.bench.java.util.stream.tasks.IntegerDuplicate;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.Fork;
+import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.annotations.Warmup;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -39,6 +42,9 @@ import java.util.concurrent.atomic.LongAdder;
  * This benchmark assesses flatMap() performance.
  */
 @BenchmarkMode(Mode.Throughput)
+@Warmup(iterations = 4, time = 2, timeUnit = TimeUnit.SECONDS)
+@Measurement(iterations = 4, time = 2, timeUnit = TimeUnit.SECONDS)
+@Fork(value = 3)
 @OutputTimeUnit(TimeUnit.SECONDS)
 @State(Scope.Thread)
 public class Lambda {

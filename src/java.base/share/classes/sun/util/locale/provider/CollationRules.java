@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -177,7 +177,7 @@ final class CollationRules {
         + "<\u00b4"          // acute accent (spacing)
         + "<'\u0060'"        // grave accent (spacing)
         + "<'\u005e'"        // circumflex accent (spacing)
-        + "<\u00a8"          // diaresis/umlaut accent (spacing)
+        + "<\u00a8"          // diaeresis/umlaut accent (spacing)
         + "<'\u007e'"        // tilde accent (spacing)
         + "<\u00b7"          // middle dot (spacing)
         + "<\u00b8"          // cedilla accent (spacing)

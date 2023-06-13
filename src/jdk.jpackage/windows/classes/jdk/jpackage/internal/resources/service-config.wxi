@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<Include xmlns="http://schemas.microsoft.com/wix/2006/wi"
+         xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
+  <!--
+    Configuration correponds to NSSM
+  -->
+  <DirectoryRef Id="INSTALLDIR">
+    <Component Id="nssm_Application_APPLICATION_LAUNCHER_ID" Guid="*">
+      <RegistryValue Root="HKLM"
+                     Key="System\CurrentControlSet\Services\SERVICE_NAME\Parameters"
+                     Type="string"
+                     KeyPath="yes"
+                     Name="Application"
+                     Value="APPLICATION_LAUNCHER"
+      />
+    </Component>
+    <Component Id="nssm_AppDirectory_APPLICATION_LAUNCHER_ID" Guid="*">
+      <RegistryValue Root="HKLM"
+                     Key="System\CurrentControlSet\Services\SERVICE_NAME\Parameters"
+                     Type="string"
+                     KeyPath="yes"
+                     Name="AppDirectory"
+                     Value="[INSTALLDIR]"
+      />
+    </Component>
+  </DirectoryRef>
+</Include>

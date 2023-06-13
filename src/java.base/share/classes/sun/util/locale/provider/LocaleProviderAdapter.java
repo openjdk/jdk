@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -124,13 +124,15 @@ public abstract class LocaleProviderAdapter {
         String order = GetPropertyAction.privilegedGetProperty("java.locale.providers");
         ArrayList<Type> typeList = new ArrayList<>();
         String invalidTypeMessage = null;
+        String compatWarningMessage = null;
 
         // Check user specified adapter preference
         if (order != null && !order.isEmpty()) {
             String[] types = order.split(",");
             for (String type : types) {
                 type = type.trim().toUpperCase(Locale.ROOT);
-                if (type.equals("COMPAT")) {
+                if (type.equals("COMPAT") || type.equals("JRE")) {
+                    compatWarningMessage = "COMPAT locale provider will be removed in a future release";
                     type = "JRE";
                 }
                 try {
@@ -167,6 +169,10 @@ public abstract class LocaleProviderAdapter {
             // provider name or format in the system property
             getLogger(LocaleProviderAdapter.class.getCanonicalName())
                 .log(Logger.Level.INFO, invalidTypeMessage);
+        }
+        if (compatWarningMessage != null) {
+            getLogger(LocaleProviderAdapter.class.getCanonicalName())
+                .log(Logger.Level.WARNING, compatWarningMessage);
         }
     }
 
@@ -308,23 +314,16 @@ public abstract class LocaleProviderAdapter {
     }
 
     public static Locale[] toLocaleArray(Set<String> tags) {
-        Locale[] locs = new Locale[tags.size() + 1];
-        int index = 0;
-        locs[index++] = Locale.ROOT;
-        for (String tag : tags) {
-            switch (tag) {
-            case "ja-JP-JP":
-                locs[index++] = JRELocaleConstants.JA_JP_JP;
-                break;
-            case "th-TH-TH":
-                locs[index++] = JRELocaleConstants.TH_TH_TH;
-                break;
-            default:
-                locs[index++] = Locale.forLanguageTag(tag);
-                break;
-            }
-        }
-        return locs;
+        return tags.stream()
+            .map(t -> {
+                return switch (t) {
+                    case "ja-JP-JP" -> JRELocaleConstants.JA_JP_JP;
+                    case "no-NO-NY" -> JRELocaleConstants.NO_NO_NY;
+                    case "th-TH-TH" -> JRELocaleConstants.TH_TH_TH;
+                    default -> Locale.forLanguageTag(t);
+                };
+            })
+            .toArray(Locale[]::new);
     }
 
     /**

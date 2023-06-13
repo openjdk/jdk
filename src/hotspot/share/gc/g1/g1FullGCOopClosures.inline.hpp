@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,18 +51,6 @@ inline void G1MarkAndPushClosure::do_oop(narrowOop* p) {
   do_oop_work(p);
 }
 
-inline bool G1MarkAndPushClosure::do_metadata() {
-  return true;
-}
-
-inline void G1MarkAndPushClosure::do_klass(Klass* k) {
-  _marker->follow_klass(k);
-}
-
-inline void G1MarkAndPushClosure::do_cld(ClassLoaderData* cld) {
-  _marker->follow_cld(cld);
-}
-
 template <class T> inline void G1AdjustClosure::adjust_pointer(T* p) {
   T heap_oop = RawAccess<>::oop_load(p);
   if (CompressedOops::is_null(heap_oop)) {
@@ -90,7 +78,7 @@ inline void G1AdjustClosure::do_oop(oop* p)       { do_oop_work(p); }
 inline void G1AdjustClosure::do_oop(narrowOop* p) { do_oop_work(p); }
 
 inline bool G1IsAliveClosure::do_object_b(oop p) {
-  return _bitmap->is_marked(p) || _collector->is_skip_marking(p);
+  return _bitmap->is_marked(p);
 }
 
 template<typename T>

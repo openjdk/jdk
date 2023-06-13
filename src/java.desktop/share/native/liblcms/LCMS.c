@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 #include <stdlib.h>
 #include <memory.h>
 #include "sun_java2d_cmm_lcms_LCMS.h"
+#include "sun_java2d_cmm_lcms_LCMSImageLayout.h"
 #include "jni_util.h"
 #include "Trace.h"
 #include "Disposer.h"
@@ -45,10 +46,9 @@
 
 #define SigHead TagIdConst('h','e','a','d')
 
-#define DT_BYTE     0
-#define DT_SHORT    1
-#define DT_INT      2
-#define DT_DOUBLE   3
+#define DT_BYTE     sun_java2d_cmm_lcms_LCMSImageLayout_DT_BYTE
+#define DT_SHORT    sun_java2d_cmm_lcms_LCMSImageLayout_DT_SHORT
+#define DT_INT      sun_java2d_cmm_lcms_LCMSImageLayout_DT_INT
 
 /* Default temp profile list size */
 #define DF_ICC_BUF_SIZE 32
@@ -141,9 +141,8 @@ static void ThrowIllegalArgumentException(JNIEnv *env, const char *msg) {
  * Signature: ([JIIZIZLjava/lang/Object;)J
  */
 JNIEXPORT jlong JNICALL Java_sun_java2d_cmm_lcms_LCMS_createNativeTransform
-  (JNIEnv *env, jclass cls, jlongArray profileIDs, jint renderType,
-   jint inFormatter, jboolean isInIntPacked,
-   jint outFormatter, jboolean isOutIntPacked, jobject disposerRef)
+  (JNIEnv *env, jclass cls, jlongArray profileIDs, jint renderingIntent,
+   jint inFormatter, jint outFormatter, jobject disposerRef)
 {
     cmsHPROFILE _iccArray[DF_ICC_BUF_SIZE];
     cmsHPROFILE *iccArray = &_iccArray[0];
@@ -157,16 +156,6 @@ JNIEXPORT jlong JNICALL Java_sun_java2d_cmm_lcms_LCMS_createNativeTransform
         // An exception should have already been thrown.
         return 0L;
     }
-
-#ifdef _LITTLE_ENDIAN
-    /* Reversing data packed into int for LE archs */
-    if (isInIntPacked) {
-        inFormatter ^= DOSWAP_SH(1);
-    }
-    if (isOutIntPacked) {
-        outFormatter ^= DOSWAP_SH(1);
-    }
-#endif
 
     if (DF_ICC_BUF_SIZE < size*2) {
         iccArray = (cmsHPROFILE*) malloc(
@@ -200,7 +189,7 @@ JNIEXPORT jlong JNICALL Java_sun_java2d_cmm_lcms_LCMS_createNativeTransform
     }
 
     sTrans = cmsCreateMultiprofileTransform(iccArray, j,
-        inFormatter, outFormatter, renderType, cmsFLAGS_COPY_ALPHA);
+        inFormatter, outFormatter, renderingIntent, cmsFLAGS_COPY_ALPHA);
 
     (*env)->ReleaseLongArrayElements(env, profileIDs, ids, 0);
 
@@ -489,26 +478,22 @@ static void *getILData(JNIEnv *env, jobject data, jint type) {
             return (*env)->GetShortArrayElements(env, data, 0);
         case DT_INT:
             return (*env)->GetIntArrayElements(env, data, 0);
-        case DT_DOUBLE:
-            return (*env)->GetDoubleArrayElements(env, data, 0);
         default:
             return NULL;
     }
 }
 
-static void releaseILData(JNIEnv *env, void *pData, jint type, jobject data) {
+static void releaseILData(JNIEnv *env, void *pData, jint type, jobject data,
+                          jint mode) {
     switch (type) {
         case DT_BYTE:
-            (*env)->ReleaseByteArrayElements(env, data, (jbyte *) pData, 0);
+            (*env)->ReleaseByteArrayElements(env, data, (jbyte *) pData, mode);
             break;
         case DT_SHORT:
-            (*env)->ReleaseShortArrayElements(env, data, (jshort *) pData, 0);
+            (*env)->ReleaseShortArrayElements(env, data, (jshort *) pData, mode);
             break;
         case DT_INT:
-            (*env)->ReleaseIntArrayElements(env, data, (jint *) pData, 0);
-            break;
-        case DT_DOUBLE:
-            (*env)->ReleaseDoubleArrayElements(env, data, (jdouble *) pData, 0);
+            (*env)->ReleaseIntArrayElements(env, data, (jint *) pData, mode);
             break;
     }
 }
@@ -521,7 +506,6 @@ static void releaseILData(JNIEnv *env, void *pData, jint type, jobject data) {
 JNIEXPORT void JNICALL Java_sun_java2d_cmm_lcms_LCMS_colorConvert
   (JNIEnv *env, jclass cls, jlong ID, jint width, jint height, jint srcOffset,
    jint srcNextRowOffset, jint dstOffset, jint dstNextRowOffset,
-   jboolean srcAtOnce, jboolean dstAtOnce,
    jobject srcData, jobject dstData, jint srcDType, jint dstDType)
 {
     cmsHTRANSFORM sTrans = jlong_to_ptr(ID);
@@ -542,60 +526,19 @@ JNIEXPORT void JNICALL Java_sun_java2d_cmm_lcms_LCMS_colorConvert
 
     void *outputBuffer = getILData(env, dstData, dstDType);
     if (outputBuffer == NULL) {
-        releaseILData(env, inputBuffer, srcDType, srcData);
+        releaseILData(env, inputBuffer, srcDType, srcData, JNI_ABORT);
         // An exception should have already been thrown.
         return;
     }
 
-    char *inputRow = (char *) inputBuffer + srcOffset;
-    char *outputRow = (char *) outputBuffer + dstOffset;
+    char *input = (char *) inputBuffer + srcOffset;
+    char *output = (char *) outputBuffer + dstOffset;
 
-    if (srcAtOnce && dstAtOnce) {
-        cmsDoTransform(sTrans, inputRow, outputRow, width * height);
-    } else {
-        for (int i = 0; i < height; i++) {
-            cmsDoTransform(sTrans, inputRow, outputRow, width);
-            inputRow += srcNextRowOffset;
-            outputRow += dstNextRowOffset;
-        }
-    }
+    cmsDoTransformLineStride(sTrans, input, output, width, height,
+                             srcNextRowOffset, dstNextRowOffset, 0, 0);
 
-    releaseILData(env, inputBuffer, srcDType, srcData);
-    releaseILData(env, outputBuffer, dstDType, dstData);
-}
-
-/*
- * Class:     sun_java2d_cmm_lcms_LCMS
- * Method:    getProfileID
- * Signature: (Ljava/awt/color/ICC_Profile;)Lsun/java2d/cmm/lcms/LCMSProfile;
- */
-JNIEXPORT jobject JNICALL Java_sun_java2d_cmm_lcms_LCMS_getProfileID
-  (JNIEnv *env, jclass cls, jobject pf)
-{
-    if (pf == NULL) {
-        return NULL;
-    }
-    jclass pcls = (*env)->GetObjectClass(env, pf);
-    if (pcls == NULL) {
-        return NULL;
-    }
-    jmethodID mid = (*env)->GetMethodID(env, pcls, "cmmProfile",
-                                        "()Lsun/java2d/cmm/Profile;");
-    if (mid == NULL) {
-        return NULL;
-    }
-    jobject cmmProfile = (*env)->CallObjectMethod(env, pf, mid);
-    if ((*env)->ExceptionCheck(env)) {
-        return NULL;
-    }
-    jclass lcmsPCls = (*env)->FindClass(env, "sun/java2d/cmm/lcms/LCMSProfile");
-    if (lcmsPCls == NULL) {
-        return NULL;
-    }
-    if ((*env)->IsInstanceOf(env, cmmProfile, lcmsPCls)) {
-        return cmmProfile;
-    }
-    return NULL;
+    releaseILData(env, inputBuffer, srcDType, srcData, JNI_ABORT);
+    releaseILData(env, outputBuffer, dstDType, dstData, 0);
 }
 
 static cmsBool _getHeaderInfo(cmsHPROFILE pf, jbyte* pBuffer, jint bufferSize)
@@ -733,34 +676,43 @@ static cmsHPROFILE _writeCookedTag(const cmsHPROFILE pfTarget,
 
     // now we have all tags moved to the new profile.
     // do some sanity checks: write it to a memory buffer and read again.
+    void* buf = NULL;
     if (cmsSaveProfileToMem(p, NULL, &pfSize)) {
-        void* buf = malloc(pfSize);
+        buf = malloc(pfSize);
         if (buf != NULL) {
             // load raw profile data into the buffer
             if (cmsSaveProfileToMem(p, buf, &pfSize)) {
                 pfSanity = cmsOpenProfileFromMem(buf, pfSize);
             }
-            free(buf);
         }
     }
+
+    cmsCloseProfile(p); // No longer needed.
 
     if (pfSanity == NULL) {
         // for some reason, we failed to save and read the updated profile
         // It likely indicates that the profile is not correct, so we report
         // a failure here.
-        cmsCloseProfile(p);
-        p =  NULL;
+        free(buf);
+        return NULL;
     } else {
         // do final check whether we can read and handle the target tag.
         const void* pTag = cmsReadTag(pfSanity, sig);
         if (pTag == NULL) {
             // the tag can not be cooked
-            cmsCloseProfile(p);
-            p = NULL;
+            free(buf);
+            cmsCloseProfile(pfSanity);
+            return NULL;
         }
+        // The profile we used for sanity checking needs to be returned
+        // since the one we updated is raw - not cooked.
+        // Except we want to re-open it since the call to cmsReadTag()
+        // means we may not get back the same bytes as we set.
+        // Whilst this may change later anyway, we can at least prevent
+        // it from happening immediately.
         cmsCloseProfile(pfSanity);
-        pfSanity = NULL;
+        pfSanity = cmsOpenProfileFromMem(buf, pfSize);
+        free(buf);
+        return pfSanity;
     }
-
-    return p;
 }

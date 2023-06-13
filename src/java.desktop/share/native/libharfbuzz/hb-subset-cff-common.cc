@@ -38,13 +38,12 @@
 
 using namespace CFF;
 
-/**
- * hb_plan_subset_cff_fdselect
- * Determine an optimal FDSelect format according to a provided plan.
+
+/* Determine an optimal FDSelect format according to a provided plan.
  *
  * Return value: FDSelect format, size, and ranges for the most compact subset FDSelect
  * along with a font index remapping table
- **/
+ */
 
 bool
 hb_plan_subset_cff_fdselect (const hb_subset_plan_t *plan,
@@ -67,8 +66,7 @@ hb_plan_subset_cff_fdselect (const hb_subset_plan_t *plan,
 
   {
     /* use hb_set to determine the subset of font dicts */
-    hb_set_t *set = hb_set_create ();
-    if (unlikely (set == &Null (hb_set_t))) return false;
+    hb_set_t set;
     hb_codepoint_t prev_fd = CFF_UNDEF_CODE;
     for (hb_codepoint_t i = 0; i < subset_num_glyphs; i++)
     {
@@ -80,7 +78,7 @@ hb_plan_subset_cff_fdselect (const hb_subset_plan_t *plan,
         glyph = i;
       }
       fd = src.get_fd (glyph);
-      set->add (fd);
+      set.add (fd);
 
       if (fd != prev_fd)
       {
@@ -91,12 +89,11 @@ hb_plan_subset_cff_fdselect (const hb_subset_plan_t *plan,
       }
     }
 
-    subset_fd_count = set->get_population ();
+    subset_fd_count = set.get_population ();
     if (subset_fd_count == fdCount)
     {
       /* all font dicts belong to the subset. no need to subset FDSelect & FDArray */
       fdmap.identity (fdCount);
-      hb_set_destroy (set);
     }
     else
     {
@@ -104,9 +101,8 @@ hb_plan_subset_cff_fdselect (const hb_subset_plan_t *plan,
       fdmap.reset ();
 
       hb_codepoint_t fd = CFF_UNDEF_CODE;
-      while (set->next (&fd))
+      while (set.next (&fd))
         fdmap.add (fd);
-      hb_set_destroy (set);
       if (unlikely (fdmap.get_population () != subset_fd_count))
         return false;
     }
@@ -169,10 +165,7 @@ serialize_fdselect_3_4 (hb_serialize_context_t *c,
   return_trace (true);
 }
 
-/**
- * hb_serialize_cff_fdselect
- * Serialize a subset FDSelect format planned above.
- **/
+/* Serialize a subset FDSelect format planned above. */
 bool
 hb_serialize_cff_fdselect (hb_serialize_context_t *c,
                            const unsigned int num_glyphs,

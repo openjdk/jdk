@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import jdk.internal.jimage.ImageReader.Node;
 
@@ -245,7 +246,7 @@ class ExplodedImage extends SystemImage {
 
     // initialize file system Nodes
     private void initNodes() throws IOException {
-        // same package prefix may exist in mutliple modules. This Map
+        // same package prefix may exist in multiple modules. This Map
         // is filled by walking "jdk modules" directory recursively!
         Map<String, List<String>> packageToModules = new HashMap<>();
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(explodedModulesDir)) {
@@ -254,19 +255,21 @@ class ExplodedImage extends SystemImage {
                     String moduleName = module.getFileName().toString();
                     // make sure "/modules/<moduleName>" is created
                     findModulesNode(MODULES + moduleName);
-                    Files.walk(module).filter(Files::isDirectory).forEach((p) -> {
-                        p = module.relativize(p);
-                        String pkgName = slashesToDots(p.toString());
-                        // skip META-INFO and empty strings
-                        if (!pkgName.isEmpty() && !pkgName.startsWith("META-INF")) {
-                            List<String> moduleNames = packageToModules.get(pkgName);
-                            if (moduleNames == null) {
-                                moduleNames = new ArrayList<>();
-                                packageToModules.put(pkgName, moduleNames);
+                    try (Stream<Path> contentsStream = Files.walk(module)) {
+                        contentsStream.filter(Files::isDirectory).forEach((p) -> {
+                            p = module.relativize(p);
+                            String pkgName = slashesToDots(p.toString());
+                            // skip META-INF and empty strings
+                            if (!pkgName.isEmpty() && !pkgName.startsWith("META-INF")) {
+                                List<String> moduleNames = packageToModules.get(pkgName);
+                                if (moduleNames == null) {
+                                    moduleNames = new ArrayList<>();
+                                    packageToModules.put(pkgName, moduleNames);
+                                }
+                                moduleNames.add(moduleName);
                             }
-                            moduleNames.add(moduleName);
-                        }
-                    });
+                        });
+                    }
                 }
             }
         }

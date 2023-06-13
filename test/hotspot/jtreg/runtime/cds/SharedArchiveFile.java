@@ -45,12 +45,6 @@ public class SharedArchiveFile {
             .setArchiveName("./SharedArchiveFile.jsa");
         CDSTestUtils.createArchiveAndCheck(opts);
 
-        // -XX:+DumpSharedSpaces should behave the same as -Xshare:dump
-        opts = (new CDSOptions())
-            .addPrefix("-XX:+DumpSharedSpaces", "-Xlog:cds")
-            .setArchiveName("./SharedArchiveFile.jsa");
-        CDSTestUtils.createArchiveAndCheck(opts);
-
         opts = (new CDSOptions())
             .setArchiveName("./SharedArchiveFile.jsa");
         CDSTestUtils.run(opts)

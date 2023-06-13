@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,16 +25,22 @@
 
 package java.nio.channels;
 
-import java.io.*;
+import java.io.IOException;
+import java.lang.foreign.Arena;
+import java.lang.foreign.MemorySegment;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.spi.AbstractInterruptibleChannel;
-import java.nio.file.*;
+import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.OpenOption;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.FileAttribute;
-import java.nio.file.spi.*;
+import java.nio.file.spi.FileSystemProvider;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.Collections;
+import jdk.internal.javac.PreviewFeature;
 
 /**
  * A channel for reading, writing, mapping, and manipulating a file.
@@ -116,7 +122,8 @@ import java.util.Collections;
  * the originating object, and vice versa. Changing the file's length via the
  * file channel will change the length seen via the originating object, and vice
  * versa.  Changing the file's content by writing bytes will change the content
- * seen by the originating object, and vice versa.
+ * seen by the originating object, and vice versa. Closing the channel will
+ * close the originating object.
  *
  * <a id="open-mode"></a> <p> At various points this class specifies that an
  * instance that is "open for reading," "open for writing," or "open for
@@ -140,7 +147,9 @@ import java.util.Collections;
  * operation first advances the position to the end of the file and then writes
  * the requested data.  Whether the advancement of the position and the writing
  * of the data are done in a single atomic operation is system-dependent and
- * therefore unspecified.
+ * therefore unspecified.  In this mode the behavior of the method to
+ * {@linkplain #write(ByteBuffer,long) write at a given position} is also
+ * system-dependent.
  *
  * @see java.io.FileInputStream#getChannel()
  * @see java.io.FileOutputStream#getChannel()
@@ -187,7 +196,9 @@ public abstract class FileChannel
      *     the position to the end of the file and then writes the requested
      *     data. Whether the advancement of the position and the writing of the
      *     data are done in a single atomic operation is system-dependent and
-     *     therefore unspecified. This option may not be used in conjunction
+     *     therefore unspecified. The effect of {@linkplain
+     *     #write(ByteBuffer,long) writing at a given position} with this option
+     *     present is unspecified. This option may not be used in conjunction
      *     with the {@code READ} or {@code TRUNCATE_EXISTING} options. </td>
      * </tr>
      * <tr>
@@ -306,9 +317,10 @@ public abstract class FileChannel
      *
      * <p> An invocation of this method behaves in exactly the same way as the
      * invocation
-     * <pre>
-     *     fc.{@link #open(Path,Set,FileAttribute[]) open}(file, opts, new FileAttribute&lt;?&gt;[0]);
-     * </pre>
+     * {@snippet lang=java :
+     *     // @link substring="open" target="#open(Path,Set,FileAttribute[])" :
+     *     fc.open(file, opts, new FileAttribute<?>[0]);
+     * }
      * where {@code opts} is a set of the options specified in the {@code
      * options} array.
      *
@@ -366,6 +378,11 @@ public abstract class FileChannel
      * then the file position is updated with the number of bytes actually
      * read.  Otherwise this method behaves exactly as specified in the {@link
      * ReadableByteChannel} interface. </p>
+     *
+     * @throws  ClosedChannelException      {@inheritDoc}
+     * @throws  AsynchronousCloseException  {@inheritDoc}
+     * @throws  ClosedByInterruptException  {@inheritDoc}
+     * @throws  NonReadableChannelException {@inheritDoc}
      */
     public abstract int read(ByteBuffer dst) throws IOException;
 
@@ -377,6 +394,11 @@ public abstract class FileChannel
      * then the file position is updated with the number of bytes actually
      * read.  Otherwise this method behaves exactly as specified in the {@link
      * ScatteringByteChannel} interface.  </p>
+     *
+     * @throws  ClosedChannelException      {@inheritDoc}
+     * @throws  AsynchronousCloseException  {@inheritDoc}
+     * @throws  ClosedByInterruptException  {@inheritDoc}
+     * @throws  NonReadableChannelException {@inheritDoc}
      */
     public abstract long read(ByteBuffer[] dsts, int offset, int length)
         throws IOException;
@@ -388,6 +410,11 @@ public abstract class FileChannel
      * then the file position is updated with the number of bytes actually
      * read.  Otherwise this method behaves exactly as specified in the {@link
      * ScatteringByteChannel} interface.  </p>
+     *
+     * @throws  ClosedChannelException      {@inheritDoc}
+     * @throws  AsynchronousCloseException  {@inheritDoc}
+     * @throws  ClosedByInterruptException  {@inheritDoc}
+     * @throws  NonReadableChannelException {@inheritDoc}
      */
     public final long read(ByteBuffer[] dsts) throws IOException {
         return read(dsts, 0, dsts.length);
@@ -403,6 +430,11 @@ public abstract class FileChannel
      * with the number of bytes actually written.  Otherwise this method
      * behaves exactly as specified by the {@link WritableByteChannel}
      * interface. </p>
+     *
+     * @throws  ClosedChannelException      {@inheritDoc}
+     * @throws  AsynchronousCloseException  {@inheritDoc}
+     * @throws  ClosedByInterruptException  {@inheritDoc}
+     * @throws  NonWritableChannelException {@inheritDoc}
      */
     public abstract int write(ByteBuffer src) throws IOException;
 
@@ -417,6 +449,11 @@ public abstract class FileChannel
      * with the number of bytes actually written.  Otherwise this method
      * behaves exactly as specified in the {@link GatheringByteChannel}
      * interface.  </p>
+     *
+     * @throws  ClosedChannelException      {@inheritDoc}
+     * @throws  AsynchronousCloseException  {@inheritDoc}
+     * @throws  ClosedByInterruptException  {@inheritDoc}
+     * @throws  NonWritableChannelException {@inheritDoc}
      */
     public abstract long write(ByteBuffer[] srcs, int offset, int length)
         throws IOException;
@@ -431,6 +468,11 @@ public abstract class FileChannel
      * with the number of bytes actually written.  Otherwise this method
      * behaves exactly as specified in the {@link GatheringByteChannel}
      * interface.  </p>
+     *
+     * @throws  ClosedChannelException      {@inheritDoc}
+     * @throws  AsynchronousCloseException  {@inheritDoc}
+     * @throws  ClosedByInterruptException  {@inheritDoc}
+     * @throws  NonWritableChannelException {@inheritDoc}
      */
     public final long write(ByteBuffer[] srcs) throws IOException {
         return write(srcs, 0, srcs.length);
@@ -554,8 +596,11 @@ public abstract class FileChannel
      * actually done is system-dependent and is therefore unspecified.
      *
      * <p> This method is only guaranteed to force changes that were made to
-     * this channel's file via the methods defined in this class.  It may or
-     * may not force changes that were made by modifying the content of a
+     * this channel's file via the methods defined in this class, or the methods
+     * defined by {@link java.io.FileOutputStream} or
+     * {@link java.io.RandomAccessFile} when the channel was obtained with the
+     * {@code getChannel} method. It may or may not force changes that were made
+     * by modifying the content of a
      * {@link MappedByteBuffer <i>mapped byte buffer</i>} obtained by
      * invoking the {@link #map map} method.  Invoking the {@link
      * MappedByteBuffer#force force} method of the mapped byte buffer will
@@ -590,10 +635,10 @@ public abstract class FileChannel
      * bytes free in its output buffer.
      *
      * <p> This method does not modify this channel's position.  If the given
-     * position is greater than the file's current size then no bytes are
-     * transferred.  If the target channel has a position then bytes are
-     * written starting at that position and then the position is incremented
-     * by the number of bytes written.
+     * position is greater than or equal to the file's current size then no
+     * bytes are transferred.  If the target channel has a position then bytes
+     * are written starting at that position and then the position
+     * is incremented by the number of bytes written.
      *
      * <p> This method is potentially much more efficient than a simple loop
      * that reads from this channel and writes to the target channel.  Many
@@ -658,8 +703,10 @@ public abstract class FileChannel
      * source has reached end-of-stream.
      *
      * <p> This method does not modify this channel's position.  If the given
-     * position is greater than the file's current size then no bytes are
-     * transferred.  If the source channel has a position then bytes are read
+     * position is greater than or equal to the file's current size then the
+     * file will be grown to accommodate the new bytes; the values of any bytes
+     * between the previous end-of-file and the newly-written bytes are
+     * unspecified.  If the source channel has a position then bytes are read
      * starting at that position and then the position is incremented by the
      * number of bytes read.
      *
@@ -672,7 +719,7 @@ public abstract class FileChannel
      *         The source channel
      *
      * @param  position
-     *         The position within the file at which the transfer is to begin;
+     *         The file position at which the transfer is to begin;
      *         must be non-negative
      *
      * @param  count
@@ -718,7 +765,8 @@ public abstract class FileChannel
      * #read(ByteBuffer)} method, except that bytes are read starting at the
      * given file position rather than at the channel's current position.  This
      * method does not modify this channel's position.  If the given position
-     * is greater than the file's current size then no bytes are read.  </p>
+     * is greater than or equal to the file's current size then no bytes are
+     * read.  </p>
      *
      * @param  dst
      *         The buffer into which bytes are to be transferred
@@ -763,9 +811,13 @@ public abstract class FileChannel
      * #write(ByteBuffer)} method, except that bytes are written starting at
      * the given file position rather than at the channel's current position.
      * This method does not modify this channel's position.  If the given
-     * position is greater than the file's current size then the file will be
-     * grown to accommodate the new bytes; the values of any bytes between the
-     * previous end-of-file and the newly-written bytes are unspecified.  </p>
+     * position is greater than or equal to the file's current size then the
+     * file will be grown to accommodate the new bytes; the values of any bytes
+     * between the previous end-of-file and the newly-written bytes are
+     * unspecified.  </p>
+     *
+     * <p> If the file is open in <a href="#append-mode">append mode</a>, then
+     * the effect of invoking this method is unspecified.
      *
      * @param  src
      *         The buffer from which bytes are to be transferred
@@ -924,17 +976,17 @@ public abstract class FileChannel
      *         The size of the region to be mapped; must be non-negative and
      *         no greater than {@link java.lang.Integer#MAX_VALUE}
      *
-     * @return  The mapped byte buffer
+     * @return The mapped byte buffer
      *
      * @throws NonReadableChannelException
      *         If the {@code mode} is {@link MapMode#READ_ONLY READ_ONLY} or
-     *         an implementation specific map mode requiring read access
+     *         an implementation specific map mode requiring read access,
      *         but this channel was not opened for reading
      *
      * @throws NonWritableChannelException
-     *         If the {@code mode} is {@link MapMode#READ_WRITE READ_WRITE}.
+     *         If the {@code mode} is {@link MapMode#READ_WRITE READ_WRITE},
      *         {@link MapMode#PRIVATE PRIVATE} or an implementation specific
-     *         map mode requiring write access but this channel was not
+     *         map mode requiring write access, but this channel was not
      *         opened for both reading and writing
      *
      * @throws IllegalArgumentException
@@ -952,6 +1004,98 @@ public abstract class FileChannel
     public abstract MappedByteBuffer map(MapMode mode, long position, long size)
         throws IOException;
 
+    /**
+     * Maps a region of this channel's file into a new mapped memory segment,
+     * with the given offset, size and arena.
+     * The {@linkplain MemorySegment#address() address} of the returned memory
+     * segment is the starting address of the mapped off-heap region backing
+     * the segment.
+     * <p>
+     * The lifetime of the returned segment is controlled by the provided arena.
+     * For instance, if the provided arena is a closeable arena,
+     * the returned segment will be unmapped when the provided closeable arena
+     * is {@linkplain Arena#close() closed}.
+     * <p> If the specified mapping mode is
+     * {@linkplain FileChannel.MapMode#READ_ONLY READ_ONLY}, the resulting
+     * segment will be read-only (see {@link MemorySegment#isReadOnly()}).
+     *
+     * <p> The content of a mapped memory segment can change at any time, for
+     * example if the content of the corresponding region of the mapped file is
+     * changed by this (or another) program.  Whether such changes occur, and
+     * when they occur, is operating-system dependent and therefore unspecified.
+     *
+     * <p> All or part of a mapped memory segment may become inaccessible at any
+     * time, for example if the backing mapped file is truncated. An attempt to
+     * access an inaccessible region of a mapped memory segment will not change
+     * the segment's content and will cause an unspecified exception to be
+     * thrown either at the time of the access or at some later time. It is
+     * therefore strongly recommended that appropriate precautions be taken to
+     * avoid the manipulation of a mapped file by this (or another) program,
+     * except to read or write the file's content.
+     *
+     * @implNote When obtaining a mapped segment from a newly created file
+     *           channel, the initialization state of the contents of the block
+     *           of mapped memory associated with the returned mapped memory
+     *           segment is unspecified and should not be relied upon.
+     *
+     * @implSpec The default implementation of this method throws
+     *           {@code UnsupportedOperationException}.
+     *
+     * @param   mode
+     *          The file mapping mode, see
+     *          {@link FileChannel#map(FileChannel.MapMode, long, long)};
+     *          the mapping mode might affect the behavior of the returned
+     *          memory mapped segment (see {@link MemorySegment#force()}).
+     *
+     * @param   offset
+     *          The offset (expressed in bytes) within the file at which the
+     *          mapped segment is to start.
+     *
+     * @param   size
+     *          The size (in bytes) of the mapped memory backing the memory
+     *          segment.
+     *
+     * @param   arena
+     *          The segment arena.
+     *
+     * @return  A new mapped memory segment.
+     *
+     * @throws  IllegalArgumentException
+     *          If {@code offset < 0}, {@code size < 0} or
+     *          {@code offset + size} overflows the range of {@code long}.
+     *
+     * @throws  IllegalStateException
+     *          If {@code arena.isAlive() == false}.
+     *
+     * @throws  WrongThreadException
+     *          If {@code arena} is a confined scoped arena, and this method is called from a
+     *          thread {@code T}, other than the scoped arena's owner thread.
+     *
+     * @throws  NonReadableChannelException
+     *          If the {@code mode} is {@link MapMode#READ_ONLY READ_ONLY} or
+     *          an implementation specific map mode requiring read access,
+     *          but this channel was not opened for reading.
+     *
+     * @throws  NonWritableChannelException
+     *          If the {@code mode} is {@link MapMode#READ_WRITE READ_WRITE},
+     *          {@link MapMode#PRIVATE PRIVATE} or an implementation specific
+     *          map mode requiring write access, but this channel was not
+     *          opened for both reading and writing.
+     *
+     * @throws  IOException
+     *          If some other I/O error occurs.
+     *
+     * @throws  UnsupportedOperationException
+     *          If an unsupported map mode is specified.
+     *
+     * @since   19
+     */
+    @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
+    public MemorySegment map(MapMode mode, long offset, long size, Arena arena)
+        throws IOException
+    {
+        throw new UnsupportedOperationException();
+    }
 
     // -- Locks --
 
@@ -981,7 +1125,9 @@ public abstract class FileChannel
      * required then a region starting at zero, and no smaller than the
      * expected maximum size of the file, should be locked.  The zero-argument
      * {@link #lock()} method simply locks a region of size {@link
-     * Long#MAX_VALUE}.
+     * Long#MAX_VALUE}.  If the {@code position} is non-negative and the
+     * {@code size} is zero, then a lock of size
+     * {@code Long.MAX_VALUE - position} is returned.
      *
      * <p> Some operating systems do not support shared locks, in which case a
      * request for a shared lock is automatically converted into a request for
@@ -999,7 +1145,10 @@ public abstract class FileChannel
      *
      * @param  size
      *         The size of the locked region; must be non-negative, and the sum
-     *         {@code position}&nbsp;+&nbsp;{@code size} must be non-negative
+     *         {@code position}&nbsp;+&nbsp;{@code size} must be non-negative.
+     *         A value of zero means to lock all bytes from the specified
+     *         starting position to the end of the file, regardless of whether
+     *         the file is subsequently extended or truncated
      *
      * @param  shared
      *         {@code true} to request a shared lock, in which case this
@@ -1030,7 +1179,7 @@ public abstract class FileChannel
      *          region
      *
      * @throws  NonReadableChannelException
-     *          If {@code shared} is {@code true} this channel was not
+     *          If {@code shared} is {@code true} but this channel was not
      *          opened for reading
      *
      * @throws  NonWritableChannelException
@@ -1053,8 +1202,10 @@ public abstract class FileChannel
      * <p> An invocation of this method of the form {@code fc.lock()} behaves
      * in exactly the same way as the invocation
      *
-     * <pre>
-     *     fc.{@link #lock(long,long,boolean) lock}(0L, Long.MAX_VALUE, false) </pre>
+     * {@snippet lang=java :
+     *     // @link substring="lock" target="#lock(long,long,boolean)" :
+     *     fc.lock(0L, Long.MAX_VALUE, false)
+     * }
      *
      * @return  A lock object representing the newly-acquired lock
      *
@@ -1108,7 +1259,9 @@ public abstract class FileChannel
      * required then a region starting at zero, and no smaller than the
      * expected maximum size of the file, should be locked.  The zero-argument
      * {@link #tryLock()} method simply locks a region of size {@link
-     * Long#MAX_VALUE}.
+     * Long#MAX_VALUE}.  If the {@code position} is non-negative and the
+     * {@code size} is zero, then a lock of size
+     * {@code Long.MAX_VALUE - position} is returned.
      *
      * <p> Some operating systems do not support shared locks, in which case a
      * request for a shared lock is automatically converted into a request for
@@ -1126,7 +1279,10 @@ public abstract class FileChannel
      *
      * @param  size
      *         The size of the locked region; must be non-negative, and the sum
-     *         {@code position}&nbsp;+&nbsp;{@code size} must be non-negative
+     *         {@code position}&nbsp;+&nbsp;{@code size} must be non-negative.
+     *         A value of zero means to lock all bytes from the specified
+     *         starting position to the end of the file, regardless of whether
+     *         the file is subsequently extended or truncated
      *
      * @param  shared
      *         {@code true} to request a shared lock,
@@ -1148,6 +1304,14 @@ public abstract class FileChannel
      *          blocked in this method and is attempting to lock an overlapping
      *          region of the same file
      *
+     * @throws  NonReadableChannelException
+     *          If {@code shared} is {@code true} but this channel was not
+     *          opened for reading
+     *
+     * @throws  NonWritableChannelException
+     *          If {@code shared} is {@code false} but this channel was not
+     *          opened for writing
+     *
      * @throws  IOException
      *          If some other I/O error occurs
      *
@@ -1164,8 +1328,10 @@ public abstract class FileChannel
      * <p> An invocation of this method of the form {@code fc.tryLock()}
      * behaves in exactly the same way as the invocation
      *
-     * <pre>
-     *     fc.{@link #tryLock(long,long,boolean) tryLock}(0L, Long.MAX_VALUE, false) </pre>
+     * {@snippet lang=java :
+     *     // @link substring="tryLock" target="#tryLock(long,long,boolean)" :
+     *     fc.tryLock(0L, Long.MAX_VALUE, false)
+     * }
      *
      * @return  A lock object representing the newly-acquired lock,
      *          or {@code null} if the lock could not be acquired
@@ -1179,6 +1345,9 @@ public abstract class FileChannel
      *          this Java virtual machine, or if another thread is already
      *          blocked in this method and is attempting to lock an overlapping
      *          region
+     *
+     * @throws  NonWritableChannelException
+     *          If this channel was not opened for writing
      *
      * @throws  IOException
      *          If some other I/O error occurs

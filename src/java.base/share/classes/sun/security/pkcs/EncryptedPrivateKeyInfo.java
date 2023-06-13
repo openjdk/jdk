@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,10 +47,10 @@ import sun.security.util.DerOutputStream;
 public class EncryptedPrivateKeyInfo {
 
     // the "encryptionAlgorithm" field
-    private AlgorithmId algid;
+    private final AlgorithmId algid;
 
     // the "encryptedData" field
-    private byte[] encryptedData;
+    private final byte[] encryptedData;
 
     // the ASN.1 encoded contents of this class
     private byte[] encoded;
@@ -115,9 +115,7 @@ public class EncryptedPrivateKeyInfo {
     /**
      * Returns the ASN.1 encoding of this class.
      */
-    public byte[] getEncoded()
-        throws IOException
-    {
+    public byte[] getEncoded() {
         if (this.encoded != null) return this.encoded.clone();
 
         DerOutputStream out = new DerOutputStream();
@@ -141,20 +139,16 @@ public class EncryptedPrivateKeyInfo {
             return true;
         if (!(other instanceof EncryptedPrivateKeyInfo))
             return false;
-        try {
-            byte[] thisEncrInfo = this.getEncoded();
-            byte[] otherEncrInfo
-                = ((EncryptedPrivateKeyInfo)other).getEncoded();
+        byte[] thisEncrInfo = this.getEncoded();
+        byte[] otherEncrInfo
+                = ((EncryptedPrivateKeyInfo) other).getEncoded();
 
-            if (thisEncrInfo.length != otherEncrInfo.length)
-                return false;
-            for (int i = 0; i < thisEncrInfo.length; i++)
-                 if (thisEncrInfo[i] != otherEncrInfo[i])
-                     return false;
-            return true;
-        } catch (IOException e) {
+        if (thisEncrInfo.length != otherEncrInfo.length)
             return false;
-        }
+        for (int i = 0; i < thisEncrInfo.length; i++)
+            if (thisEncrInfo[i] != otherEncrInfo[i])
+                return false;
+        return true;
     }
 
     /**

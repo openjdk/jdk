@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,7 +85,7 @@
   product(intx, ArrayOperationPartialInlineSize, 0, DIAGNOSTIC,             \
           "Partial inline size used for small array operations"             \
           "(e.g. copy,cmp) acceleration.")                                  \
-          range(0, 64)                                                      \
+          range(0, 256)                                                     \
                                                                             \
   product(bool, AlignVector, true,                                          \
           "Perform vector store/load alignment in loop")                    \
@@ -112,10 +112,6 @@
   notproduct(bool, PrintIdeal, false,                                       \
           "Print ideal graph before code generation")                       \
                                                                             \
-  notproduct(uintx, PrintIdealIndentThreshold, 0,                           \
-          "A depth threshold of ideal graph. Indentation is disabled "      \
-          "when users attempt to dump an ideal graph deeper than it.")      \
-                                                                            \
   notproduct(bool, PrintOpto, false,                                        \
           "Print compiler2 attempts")                                       \
                                                                             \
@@ -137,7 +133,7 @@
   notproduct(bool, OptoBreakpointOSR, false,                                \
           "insert breakpoint at osr method entry")                          \
                                                                             \
-  notproduct(intx, BreakAtNode, 0,                                          \
+  notproduct(uint64_t, BreakAtNode, 0,                                      \
           "Break at construction of this Node (either _idx or _debug_idx)") \
                                                                             \
   notproduct(bool, OptoBreakpointC2R, false,                                \
@@ -165,7 +161,7 @@
           "Print New compiler peephole replacements")                       \
                                                                             \
   develop(bool, PrintCFGBlockFreq, false,                                   \
-          "Print CFG block freqencies")                                     \
+          "Print CFG block frequencies")                                    \
                                                                             \
   develop(bool, TraceOptoParse, false,                                      \
           "Trace bytecode parse and control-flow merge")                    \
@@ -334,7 +330,7 @@
           "Trace loop unswitching")                                         \
                                                                             \
   product(bool, AllowVectorizeOnDemand, true,                               \
-          "Globally supress vectorization set in VectorizeMethod")          \
+          "Globally suppress vectorization set in VectorizeMethod")         \
                                                                             \
   product(bool, UseSuperWord, true,                                         \
           "Transform scalar operations into superword operations")          \
@@ -384,7 +380,7 @@
   notproduct(ccstr, PrintIdealGraphAddress, "127.0.0.1",                    \
           "IP address to connect to visualizer")                            \
                                                                             \
-  notproduct(ccstr, PrintIdealGraphFile, NULL,                              \
+  notproduct(ccstr, PrintIdealGraphFile, nullptr,                           \
           "File to dump ideal graph to.  If set overrides the "             \
           "use of the network")                                             \
                                                                             \
@@ -410,6 +406,9 @@
   product(intx, LoopOptsCount, 43,                                          \
           "Set level of loop optimization for tier 1 compiles")             \
           range(5, 43)                                                      \
+                                                                            \
+  product(bool, OptimizeUnstableIf, true, DIAGNOSTIC,                       \
+          "Optimize UnstableIf traps")                                      \
                                                                             \
   /* controls for heat-based inlining */                                    \
                                                                             \
@@ -529,7 +528,7 @@
           "Use edge frequencies to drive block ordering")                   \
                                                                             \
   product(intx, BlockLayoutMinDiamondPercentage, 20,                        \
-          "Miniumum %% of a successor (predecessor) for which block "       \
+          "Minimum %% of a successor (predecessor) for which block "        \
           "layout a will allow a fork (join) in a single chain")            \
           range(0, 100)                                                     \
                                                                             \
@@ -614,9 +613,12 @@
   develop(bool, TraceIterativeGVN, false,                                   \
           "Print progress during Iterative Global Value Numbering")         \
                                                                             \
-  develop(bool, VerifyIterativeGVN, false,                                  \
-          "Verify Def-Use modifications during sparse Iterative Global "    \
-          "Value Numbering")                                                \
+  develop(uint, VerifyIterativeGVN, 0,                                      \
+          "Verify Iterative Global Value Numbering"                         \
+          "=XY, with Y: verify Def-Use modifications during IGVN"           \
+          "          X: verify that type(n) == n->Value() after IGVN"       \
+          "X and Y in 0=off; 1=on")                                         \
+          constraint(VerifyIterativeGVNConstraintFunc, AtParse)             \
                                                                             \
   notproduct(bool, TraceCISCSpill, false,                                   \
           "Trace allocators use of cisc spillable instructions")            \
@@ -628,12 +630,6 @@
   develop(intx, FreqCountInvocations,  1,                                   \
           "Scaling factor for branch frequencies (deprecated)")             \
           range(1, max_intx)                                                \
-                                                                            \
-  product(intx, AliasLevel,     3,                                          \
-          "0 for no aliasing, 1 for oop/field/static/array split, "         \
-          "2 for class split, 3 for unique instances")                      \
-          range(0, 3)                                                       \
-          constraint(AliasLevelConstraintFunc,AfterErgo)                    \
                                                                             \
   develop(bool, VerifyAliases, false,                                       \
           "perform extra checks on the results of alias analysis")          \
@@ -764,6 +760,14 @@
           "to stress handling of long counted loops: run inner loop"        \
           "for at most jint_max / StressLongCountedLoop")                   \
           range(0, max_juint)                                               \
+                                                                            \
+  product(bool, DuplicateBackedge, true, DIAGNOSTIC,                        \
+          "Transform loop with a merge point into 2 loops if inner loop is" \
+          "expected to optimize better")                                    \
+                                                                            \
+  develop(bool, StressDuplicateBackedge, false,                             \
+          "Run DuplicateBackedge whenever possible ignoring benefit"        \
+          "analysis")                                                       \
                                                                             \
   product(bool, VerifyReceiverTypes, trueInDebug, DIAGNOSTIC,               \
           "Verify receiver types at runtime")                               \

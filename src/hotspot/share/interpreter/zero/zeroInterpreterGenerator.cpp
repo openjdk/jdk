@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2009, 2010, 2011 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -32,7 +32,7 @@
 #include "oops/method.hpp"
 #include "zeroInterpreterGenerator.hpp"
 
-ZeroInterpreterGenerator::ZeroInterpreterGenerator(StubQueue* _code): AbstractInterpreterGenerator(_code) {
+ZeroInterpreterGenerator::ZeroInterpreterGenerator(): AbstractInterpreterGenerator() {
   generate_all();
 }
 
@@ -56,6 +56,7 @@ void ZeroInterpreterGenerator::generate_all() {
     method_entry(java_lang_math_tan   );
     method_entry(java_lang_math_abs   );
     method_entry(java_lang_math_sqrt  );
+    method_entry(java_lang_math_sqrt_strict);
     method_entry(java_lang_math_log   );
     method_entry(java_lang_math_log10 );
     method_entry(java_lang_math_pow );
@@ -66,10 +67,8 @@ void ZeroInterpreterGenerator::generate_all() {
 
     AbstractInterpreter::initialize_method_handle_entries();
 
-    Interpreter::_native_entry_begin = Interpreter::code()->code_end();
     method_entry(native);
     method_entry(native_synchronized);
-    Interpreter::_native_entry_end = Interpreter::code()->code_end();
   }
 
 #undef method_entry
@@ -81,7 +80,7 @@ address ZeroInterpreterGenerator::generate_method_entry(
   // determine code generation flags
   bool native = false;
   bool synchronized = false;
-  address entry_point = NULL;
+  address entry_point = nullptr;
 
   switch (kind) {
   case Interpreter::zerolocals             :                                          break;
@@ -100,6 +99,7 @@ address ZeroInterpreterGenerator::generate_method_entry(
   case Interpreter::java_lang_math_log     : // fall thru
   case Interpreter::java_lang_math_log10   : // fall thru
   case Interpreter::java_lang_math_sqrt    : // fall thru
+  case Interpreter::java_lang_math_sqrt_strict: // fall thru
   case Interpreter::java_lang_math_pow     : // fall thru
   case Interpreter::java_lang_math_exp     : // fall thru
   case Interpreter::java_lang_math_fmaD    : // fall thru
@@ -118,12 +118,12 @@ address ZeroInterpreterGenerator::generate_method_entry(
   // We expect the normal and native entry points to be generated first so we can reuse them.
   if (native) {
     entry_point = Interpreter::entry_for_kind(synchronized ? Interpreter::native_synchronized : Interpreter::native);
-    if (entry_point == NULL) {
+    if (entry_point == nullptr) {
       entry_point = generate_native_entry(synchronized);
     }
   } else {
     entry_point = Interpreter::entry_for_kind(synchronized ? Interpreter::zerolocals_synchronized : Interpreter::zerolocals);
-    if (entry_point == NULL) {
+    if (entry_point == nullptr) {
       entry_point = generate_normal_entry(synchronized);
     }
   }
@@ -139,10 +139,10 @@ address ZeroInterpreterGenerator::generate_slow_signature_handler() {
 address ZeroInterpreterGenerator::generate_math_entry(
     AbstractInterpreter::MethodKind kind) {
   if (!InlineIntrinsics)
-    return NULL;
+    return nullptr;
 
   Unimplemented();
-  return NULL;
+  return nullptr;
 }
 
 address ZeroInterpreterGenerator::generate_abstract_entry() {
@@ -151,21 +151,21 @@ address ZeroInterpreterGenerator::generate_abstract_entry() {
 
 address ZeroInterpreterGenerator::generate_empty_entry() {
   if (!UseFastEmptyMethods)
-    return NULL;
+    return nullptr;
 
   return generate_entry((address) ZeroInterpreter::empty_entry);
 }
 
 address ZeroInterpreterGenerator::generate_getter_entry() {
   if (!UseFastAccessorMethods)
-    return NULL;
+    return nullptr;
 
   return generate_entry((address) ZeroInterpreter::getter_entry);
 }
 
 address ZeroInterpreterGenerator::generate_setter_entry() {
   if (!UseFastAccessorMethods)
-    return NULL;
+    return nullptr;
 
   return generate_entry((address) ZeroInterpreter::setter_entry);
 }

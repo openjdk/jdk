@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,6 +61,7 @@ public class Tokens {
         return instance;
     }
 
+    @SuppressWarnings("this-escape")
     protected Tokens(Context context) {
         context.put(tokensKey, this);
         names = Names.instance(context);
@@ -151,6 +152,7 @@ public class Tokens {
         DOUBLELITERAL(Tag.NUMERIC),
         CHARLITERAL(Tag.NUMERIC),
         STRINGLITERAL(Tag.STRING),
+        STRINGFRAGMENT(Tag.STRING),
         TRUE("true", Tag.NAMED),
         FALSE("false", Tag.NAMED),
         NULL("null", Tag.NAMED),
@@ -272,9 +274,9 @@ public class Tokens {
     public interface Comment {
 
         enum CommentStyle {
-            LINE,
-            BLOCK,
-            JAVADOC,
+            LINE,       // Starting with //
+            BLOCK,      // starting with /*
+            JAVADOC,    // starting with /**
         }
 
         String getText();
@@ -319,14 +321,14 @@ public class Tokens {
 
         Token[] split(Tokens tokens) {
             if (kind.name.length() < 2 || kind.tag != Tag.DEFAULT) {
-                throw new AssertionError("Cant split" + kind);
+                throw new AssertionError("Can't split" + kind);
             }
 
             TokenKind t1 = tokens.lookupKind(kind.name.substring(0, 1));
             TokenKind t2 = tokens.lookupKind(kind.name.substring(1));
 
             if (t1 == null || t2 == null) {
-                throw new AssertionError("Cant split - bad subtokens");
+                throw new AssertionError("Can't split - bad subtokens");
             }
             return new Token[] {
                 new Token(t1, pos, pos + t1.name.length(), comments),

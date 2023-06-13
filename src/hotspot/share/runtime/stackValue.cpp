@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,11 @@
 
 #include "precompiled.hpp"
 #include "code/debugInfo.hpp"
+#include "oops/access.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/stackValue.hpp"
 #if INCLUDE_ZGC
@@ -36,19 +38,122 @@
 #include "gc/shenandoah/shenandoahBarrierSet.inline.hpp"
 #endif
 
-StackValue* StackValue::create_stack_value(const frame* fr, const RegisterMap* reg_map, ScopeValue* sv) {
+class RegisterMap;
+class SmallRegisterMap;
+
+template StackValue* StackValue::create_stack_value(const frame* fr, const RegisterMap* reg_map, ScopeValue* sv);
+template StackValue* StackValue::create_stack_value(const frame* fr, const SmallRegisterMap* reg_map, ScopeValue* sv);
+
+template<typename RegisterMapT>
+StackValue* StackValue::create_stack_value(const frame* fr, const RegisterMapT* reg_map, ScopeValue* sv) {
+  return create_stack_value(sv, stack_value_address(fr, reg_map, sv), reg_map);
+}
+
+static oop oop_from_oop_location(stackChunkOop chunk, void* addr) {
+  if (addr == nullptr) {
+    return nullptr;
+  }
+
+  if (UseCompressedOops) {
+    // When compressed oops is enabled, an oop location may
+    // contain narrow oop values - we deal with that here
+
+    if (chunk != nullptr && chunk->has_bitmap()) {
+      // Transformed stack chunk with narrow oops
+      return chunk->load_oop((narrowOop*)addr);
+    }
+
+#ifdef _LP64
+    if (CompressedOops::is_base(*(void**)addr)) {
+      // Compiled code may produce decoded oop = narrow_oop_base
+      // when a narrow oop implicit null check is used.
+      // The narrow_oop_base could be null or be the address
+      // of the page below heap. Use null value for both cases.
+      return nullptr;
+    }
+#endif
+  }
+
+  if (chunk != nullptr) {
+    // Load oop from chunk
+    return chunk->load_oop((oop*)addr);
+  }
+
+  // Load oop from stack
+  oop val = *(oop*)addr;
+
+#if INCLUDE_SHENANDOAHGC
+  if (UseShenandoahGC) {
+    // Pass the value through the barrier to avoid capturing bad oops as
+    // stack values. Note: do not heal the location, to avoid accidentally
+    // corrupting the stack. Stack watermark barriers are supposed to handle
+    // the healing.
+    val = ShenandoahBarrierSet::barrier_set()->load_reference_barrier(val);
+  }
+#endif
+
+  return val;
+}
+
+static oop oop_from_narrowOop_location(stackChunkOop chunk, void* addr, bool is_register) {
+  assert(UseCompressedOops, "Narrow oops should not exist");
+  assert(addr != nullptr, "Not expecting null address");
+  narrowOop* narrow_addr;
+  if (is_register) {
+    // The callee has no clue whether the register holds an int,
+    // long or is unused.  He always saves a long.  Here we know
+    // a long was saved, but we only want an int back.  Narrow the
+    // saved long to the int that the JVM wants.  We can't just
+    // use narrow_oop_cast directly, because we don't know what
+    // the high bits of the value might be.
+    narrow_addr = ((narrowOop*)addr) BIG_ENDIAN_ONLY(+ 1);
+  } else {
+    narrow_addr = (narrowOop*)addr;
+  }
+
+  if (chunk != nullptr) {
+    // Load oop from chunk
+    return chunk->load_oop(narrow_addr);
+  }
+
+  // Load oop from stack
+  oop val = CompressedOops::decode(*narrow_addr);
+
+#if INCLUDE_SHENANDOAHGC
+  if (UseShenandoahGC) {
+    // Pass the value through the barrier to avoid capturing bad oops as
+    // stack values. Note: do not heal the location, to avoid accidentally
+    // corrupting the stack. Stack watermark barriers are supposed to handle
+    // the healing.
+    val = ShenandoahBarrierSet::barrier_set()->load_reference_barrier(val);
+  }
+#endif
+
+  return val;
+}
+
+StackValue* StackValue::create_stack_value_from_oop_location(stackChunkOop chunk, void* addr) {
+  oop val = oop_from_oop_location(chunk, addr);
+  assert(oopDesc::is_oop_or_null(val), "bad oop found at " INTPTR_FORMAT " in_cont: %d compressed: %d",
+         p2i(addr), chunk != nullptr, chunk != nullptr && chunk->has_bitmap() && UseCompressedOops);
+  Handle h(Thread::current(), val); // Wrap a handle around the oop
+  return new StackValue(h);
+}
+
+StackValue* StackValue::create_stack_value_from_narrowOop_location(stackChunkOop chunk, void* addr, bool is_register) {
+  oop val = oop_from_narrowOop_location(chunk, addr, is_register);
+  assert(oopDesc::is_oop_or_null(val), "bad oop found at " INTPTR_FORMAT " in_cont: %d compressed: %d",
+         p2i(addr), chunk != nullptr, chunk != nullptr && chunk->has_bitmap() && UseCompressedOops);
+  Handle h(Thread::current(), val); // Wrap a handle around the oop
+  return new StackValue(h);
+}
+
+template<typename RegisterMapT>
+StackValue* StackValue::create_stack_value(ScopeValue* sv, address value_addr, const RegisterMapT* reg_map) {
+  stackChunkOop chunk = reg_map->stack_chunk()();
   if (sv->is_location()) {
     // Stack or register value
     Location loc = ((LocationValue *)sv)->location();
-
-    // First find address of value
-
-    address value_addr = loc.is_register()
-      // Value was in a callee-save register
-      ? reg_map->location(VMRegImpl::as_VMReg(loc.register_number()))
-      // Else value was directly saved on the stack. The frame's original stack pointer,
-      // before any extension by its callee (due to Compiler1 linkage on SPARC), must be used.
-      : ((address)fr->unextended_sp()) + loc.stack_offset();
 
     // Then package it right depending on type
     // Note: the transfer of the data is thru a union that contains
@@ -91,55 +196,11 @@ StackValue* StackValue::create_stack_value(const frame* fr, const RegisterMap* r
     case Location::lng:
       // Long   value in an aligned adjacent pair
       return new StackValue(*(intptr_t*)value_addr);
-    case Location::narrowoop: {
-      union { intptr_t p; narrowOop noop;} value;
-      value.p = (intptr_t) CONST64(0xDEADDEAFDEADDEAF);
-      if (loc.is_register()) {
-        // The callee has no clue whether the register holds an int,
-        // long or is unused.  He always saves a long.  Here we know
-        // a long was saved, but we only want an int back.  Narrow the
-        // saved long to the int that the JVM wants.  We can't just
-        // use narrow_oop_cast directly, because we don't know what
-        // the high bits of the value might be.
-        static_assert(sizeof(narrowOop) == sizeof(juint), "size mismatch");
-        juint narrow_value = (juint) *(julong*)value_addr;
-        value.noop = CompressedOops::narrow_oop_cast(narrow_value);
-      } else {
-        value.noop = *(narrowOop*) value_addr;
-      }
-      // Decode narrowoop
-      oop val = CompressedOops::decode(value.noop);
-      // Deoptimization must make sure all oops have passed load barriers
-#if INCLUDE_SHENANDOAHGC
-      if (UseShenandoahGC) {
-        val = ShenandoahBarrierSet::barrier_set()->load_reference_barrier(val);
-      }
+    case Location::narrowoop:
+      return create_stack_value_from_narrowOop_location(reg_map->stack_chunk()(), (void*)value_addr, loc.is_register());
 #endif
-      Handle h(Thread::current(), val); // Wrap a handle around the oop
-      return new StackValue(h);
-    }
-#endif
-    case Location::oop: {
-      oop val = *(oop *)value_addr;
-#ifdef _LP64
-      if (CompressedOops::is_base(val)) {
-         // Compiled code may produce decoded oop = narrow_oop_base
-         // when a narrow oop implicit null check is used.
-         // The narrow_oop_base could be NULL or be the address
-         // of the page below heap. Use NULL value for both cases.
-         val = (oop)NULL;
-      }
-#endif
-      // Deoptimization must make sure all oops have passed load barriers
-#if INCLUDE_SHENANDOAHGC
-      if (UseShenandoahGC) {
-        val = ShenandoahBarrierSet::barrier_set()->load_reference_barrier(val);
-      }
-#endif
-      assert(oopDesc::is_oop_or_null(val, false), "bad oop found");
-      Handle h(Thread::current(), val); // Wrap a handle around the oop
-      return new StackValue(h);
-    }
+    case Location::oop:
+      return create_stack_value_from_oop_location(reg_map->stack_chunk()(), (void*)value_addr);
     case Location::addr: {
       loc.print_on(tty);
       ShouldNotReachHere(); // both C1 and C2 now inline jsrs
@@ -198,6 +259,38 @@ StackValue* StackValue::create_stack_value(const frame* fr, const RegisterMap* r
   return new StackValue((intptr_t) 0);   // dummy
 }
 
+template address StackValue::stack_value_address(const frame* fr, const RegisterMap* reg_map, ScopeValue* sv);
+template address StackValue::stack_value_address(const frame* fr, const SmallRegisterMap* reg_map, ScopeValue* sv);
+
+template<typename RegisterMapT>
+address StackValue::stack_value_address(const frame* fr, const RegisterMapT* reg_map, ScopeValue* sv) {
+  if (!sv->is_location()) {
+    return nullptr;
+  }
+  Location loc = ((LocationValue *)sv)->location();
+  if (loc.type() == Location::invalid) {
+    return nullptr;
+  }
+
+  if (!reg_map->in_cont()) {
+    address value_addr = loc.is_register()
+      // Value was in a callee-save register
+      ? reg_map->location(VMRegImpl::as_VMReg(loc.register_number()), fr->sp())
+      // Else value was directly saved on the stack. The frame's original stack pointer,
+      // before any extension by its callee (due to Compiler1 linkage on SPARC), must be used.
+      : ((address)fr->unextended_sp()) + loc.stack_offset();
+
+    assert(value_addr == nullptr || reg_map->thread() == nullptr || reg_map->thread()->is_in_usable_stack(value_addr), INTPTR_FORMAT, p2i(value_addr));
+    return value_addr;
+  }
+
+  address value_addr = loc.is_register()
+    ? reg_map->as_RegisterMap()->stack_chunk()->reg_to_location(*fr, reg_map->as_RegisterMap(), VMRegImpl::as_VMReg(loc.register_number()))
+    : reg_map->as_RegisterMap()->stack_chunk()->usp_offset_to_location(*fr, loc.stack_offset());
+
+  assert(value_addr == nullptr || Continuation::is_in_usable_stack(value_addr, reg_map->as_RegisterMap()) || (reg_map->thread() != nullptr && reg_map->thread()->is_in_usable_stack(value_addr)), INTPTR_FORMAT, p2i(value_addr));
+  return value_addr;
+}
 
 BasicLock* StackValue::resolve_monitor_lock(const frame* fr, Location location) {
   assert(location.is_stack(), "for now we only look at the stack");
@@ -223,10 +316,10 @@ void StackValue::print_on(outputStream* st) const {
       break;
 
     case T_OBJECT:
-      if (_handle_value() != NULL) {
+      if (_handle_value() != nullptr) {
         _handle_value()->print_value_on(st);
       } else {
-        st->print("NULL");
+        st->print("null");
       }
       st->print(" <" INTPTR_FORMAT ">", p2i(_handle_value()));
       break;

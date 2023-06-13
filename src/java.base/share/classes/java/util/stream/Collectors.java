@@ -194,55 +194,18 @@ public final class Collectors {
      * @param <T> the type of elements to be collected
      * @param <R> the type of the result
      */
-    static class CollectorImpl<T, A, R> implements Collector<T, A, R> {
-        private final Supplier<A> supplier;
-        private final BiConsumer<A, T> accumulator;
-        private final BinaryOperator<A> combiner;
-        private final Function<A, R> finisher;
-        private final Set<Characteristics> characteristics;
-
-        CollectorImpl(Supplier<A> supplier,
-                      BiConsumer<A, T> accumulator,
-                      BinaryOperator<A> combiner,
-                      Function<A,R> finisher,
-                      Set<Characteristics> characteristics) {
-            this.supplier = supplier;
-            this.accumulator = accumulator;
-            this.combiner = combiner;
-            this.finisher = finisher;
-            this.characteristics = characteristics;
-        }
+    record CollectorImpl<T, A, R>(Supplier<A> supplier,
+                                  BiConsumer<A, T> accumulator,
+                                  BinaryOperator<A> combiner,
+                                  Function<A, R> finisher,
+                                  Set<Characteristics> characteristics
+            ) implements Collector<T, A, R> {
 
         CollectorImpl(Supplier<A> supplier,
                       BiConsumer<A, T> accumulator,
                       BinaryOperator<A> combiner,
                       Set<Characteristics> characteristics) {
             this(supplier, accumulator, combiner, castingIdentity(), characteristics);
-        }
-
-        @Override
-        public BiConsumer<A, T> accumulator() {
-            return accumulator;
-        }
-
-        @Override
-        public Supplier<A> supplier() {
-            return supplier;
-        }
-
-        @Override
-        public BinaryOperator<A> combiner() {
-            return combiner;
-        }
-
-        @Override
-        public Function<A, R> finisher() {
-            return finisher;
-        }
-
-        @Override
-        public Set<Characteristics> characteristics() {
-            return characteristics;
         }
     }
 
@@ -666,7 +629,7 @@ public final class Collectors {
     }
 
     /**
-     * Returns a {@code Collector} that produces the sum of a integer-valued
+     * Returns a {@code Collector} that produces the sum of an integer-valued
      * function applied to the input elements.  If no elements are present,
      * the result is 0.
      *
@@ -2007,6 +1970,35 @@ public final class Collectors {
         Partition(T forTrue, T forFalse) {
             this.forTrue = forTrue;
             this.forFalse = forFalse;
+        }
+
+        @Override
+        public int size() {
+            return 2;
+        }
+
+        @Override
+        public boolean isEmpty() {
+            return false;
+        }
+
+        @Override
+        public T get(Object key) {
+            if (key instanceof Boolean b) {
+                return b ? forTrue : forFalse;
+            } else {
+                return null;
+            }
+        }
+
+        @Override
+        public boolean containsKey(Object key) {
+            return key instanceof Boolean;
+        }
+
+        @Override
+        public boolean containsValue(Object value) {
+            return Objects.equals(value, forTrue) || Objects.equals(value, forFalse);
         }
 
         @Override

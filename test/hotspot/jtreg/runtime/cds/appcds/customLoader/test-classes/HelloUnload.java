@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,17 @@
 import java.io.File;
 import java.net.URL;
 import java.net.URLClassLoader;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 import jdk.test.lib.classloader.ClassUnloadCommon;
 
 public class HelloUnload {
     private static String className = "CustomLoadee";
+    // Prevent the following class from being GC'ed too soon.
+    private static Class keptC = null;
 
     public static void main(String args[]) throws Exception {
-        if (args.length != 3) {
-            throw new RuntimeException("Unexpected number of arguments: expected 3, actual " + args.length);
+        if (args.length < 3) {
+            throw new RuntimeException("Unexpected number of arguments: expected at least 3, actual " + args.length);
         }
 
         String path = args[0];
@@ -62,9 +64,20 @@ public class HelloUnload {
             throw new RuntimeException("args[2] can only be either \"true\" or \"false\", actual " + args[1]);
         }
 
+        // The HelloDynamicCustom.java and PrintSharedArchiveAndExit.java tests
+        // under appcds/dynamicArchive pass the keep-alive argument for preventing
+        // the class from being GC'ed prior to dumping of the dynamic CDS archive.
+        boolean keepAlive = false;
+        if (args[args.length - 1].equals("keep-alive")) {
+            keepAlive = true;
+        }
+
         URLClassLoader urlClassLoader =
             new URLClassLoader("HelloClassLoader", urls, null);
         Class c = Class.forName(className, true, urlClassLoader);
+        if (keepAlive) {
+            keptC = c;
+        }
         System.out.println(c);
         System.out.println(c.getClassLoader());
         Object o = c.newInstance();
@@ -86,22 +99,11 @@ public class HelloUnload {
         ClassUnloadCommon.failIf(!wb.isClassAlive(className), "should be live here");
 
         if (doUnload) {
-            String loaderName = urlClassLoader.getName();
-            int loadedRefcount = wb.getSymbolRefcount(loaderName);
-            System.out.println("Refcount of symbol " + loaderName + " is " + loadedRefcount);
-
             urlClassLoader = null; c = null; o = null;
             ClassUnloadCommon.triggerUnloading();
             System.out.println("Is CustomLoadee alive? " + wb.isClassAlive(className));
             ClassUnloadCommon.failIf(wb.isClassAlive(className), "should have been unloaded");
 
-            int unloadedRefcount = wb.getSymbolRefcount(loaderName);
-            System.out.println("Refcount of symbol " + loaderName + " is " + unloadedRefcount);
-
-            // refcount of a permanent symbol will not be decremented
-            if (loadedRefcount != 65535) {
-                ClassUnloadCommon.failIf(unloadedRefcount != (loadedRefcount - 1), "Refcount must be decremented");
-            }
         }
     }
 }

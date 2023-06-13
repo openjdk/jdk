@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,8 +141,7 @@ public class MonitoredHostProvider extends MonitoredHost {
         VmIdentifier nvmid = null;
         try {
             nvmid = hostId.resolve(vmid);
-            RemoteVm rvm = remoteHost.attachVm(vmid.getLocalVmId(),
-                                               vmid.getMode());
+            RemoteVm rvm = remoteHost.attachVm(vmid.getLocalVmId());
             RemoteMonitoredVm rmvm = new RemoteMonitoredVm(rvm, nvmid, timer,
                                                            interval);
             rmvm.attach();

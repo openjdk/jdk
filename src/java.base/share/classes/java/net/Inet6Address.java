@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -169,6 +169,9 @@ import java.util.Arrays;
  * <p> Note also, that the numeric <i>scope_id</i> can be retrieved from
  * Inet6Address instances returned from the NetworkInterface class. This can be
  * used to find out the current scope ids configured on the system.
+ *
+ * @spec https://www.rfc-editor.org/info/rfc2373
+ *      RFC 2373: IP Version 6 Addressing Architecture
  * @since 1.4
  */
 
@@ -387,7 +390,7 @@ class Inet6Address extends InetAddress {
         holder6 = new Inet6AddressHolder();
         try {
             initif (hostName, addr, null);
-        } catch (UnknownHostException e) {} /* cant happen if ifname is null */
+        } catch (UnknownHostException e) {} /* can't happen if ifname is null */
     }
 
     Inet6Address (String hostName, byte[] addr, NetworkInterface nif)
@@ -592,10 +595,6 @@ class Inet6Address extends InetAddress {
     private void readObject(ObjectInputStream s)
         throws IOException, ClassNotFoundException {
         NetworkInterface scope_ifname = null;
-
-        if (getClass().getClassLoader() != null) {
-            throw new SecurityException ("invalid address type");
-        }
 
         ObjectInputStream.GetField gf = s.readFields();
         byte[] ipaddress = (byte[])gf.get("ipaddress", new byte[0]);

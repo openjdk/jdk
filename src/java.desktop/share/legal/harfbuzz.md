@@ -1,8 +1,8 @@
-## Harfbuzz v2.8
+## Harfbuzz v7.2.0
 
 ### Harfbuzz License
 
-https://github.com/harfbuzz/harfbuzz/blob/master/COPYING
+https://github.com/harfbuzz/harfbuzz/blob/7.2.0/COPYING
 
 <pre>
 
@@ -10,19 +10,24 @@ HarfBuzz is licensed under the so-called "Old MIT" license.  Details follow.
 For parts of HarfBuzz that are licensed under different licenses see individual
 files names COPYING in subdirectories where applicable.
 
-Copyright © 2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020  Google, Inc.
-Copyright © 2018,2019,2020  Ebrahim Byagowi
-Copyright © 2019,2020  Facebook, Inc. 
-Copyright © 2012  Mozilla Foundation
-Copyright © 2011  Codethink Limited
-Copyright © 2008,2010  Nokia Corporation and/or its subsidiary(-ies)
-Copyright © 2009  Keith Stribley
-Copyright © 2009  Martin Hosken and SIL International
+Copyright © 2010-2023  Google, Inc.
+Copyright © 2018-2020  Ebrahim Byagowi
+Copyright © 2004-2013  Red Hat, Inc.
+Copyright © 2019  Facebook, Inc.
 Copyright © 2007  Chris Wilson
-Copyright © 2006  Behdad Esfahbod
-Copyright © 2005  David Turner
-Copyright © 2004,2007,2008,2009,2010  Red Hat, Inc.
+Copyright © 2018-2019 Adobe Inc.
+Copyright © 2006-2023 Behdad Esfahbod
 Copyright © 1998-2004  David Turner and Werner Lemberg
+Copyright © 2009  Keith Stribley
+Copyright © 2018  Khaled Hosny
+Copyright © 2016  Elie Roux <elie.roux@telecom-bretagne.eu>
+Copyright © 2016  Igalia S.L.
+Copyright © 2015  Mozilla Foundation.
+Copyright © 1999  David Turner
+Copyright © 2005  Werner Lemberg
+Copyright © 2013-2015  Alexei Podtelezhnikov
+Copyright © 2022 Matthias Clasen
+Copyright © 2011  Codethink Limited
 
 For full copyright notices consult the individual files in the package.
 
@@ -49,6 +54,10 @@ All source code, except for one section, is licensed as above. The one
 exception is licensed with a slightly different MIT variant:
 The contents of this directory are licensed under the following terms:
 
+---------------------------------
+The below license applies to the following files:
+libharfbuzz/hb-ucd.cc
+
 Copyright (C) 2012 Grigori Goronzy <greg@kinoho.net>
 
 Permission to use, copy, modify, and/or distribute this software for any
@@ -64,3 +73,23 @@ ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 </pre>
+
+### AUTHORS File Information
+```
+
+Behdad Esfahbod
+David Corbett
+David Turner
+Ebrahim Byagowi
+Garret Rieger
+Jonathan Kew
+Khaled Hosny
+Lars Knoll
+Martin Hosken
+Owen Taylor
+Roderick Sheeter
+Roozbeh Pournader
+Simon Hausmann
+Werner Lemberg
+
+```

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,14 +113,14 @@ public abstract class Scope {
     public abstract Iterable<Symbol> getSymbolsByName(final Name name, final Predicate<Symbol> sf,
             final LookupKind lookupKind);
 
-    /** Return the first Symbol from this or outward scopes with the given name.
+    /** Returns the first Symbol from this or outward scopes with the given name.
      * Returns null if none.
      */
     public final Symbol findFirst(Name name) {
         return findFirst(name, noFilter);
     }
 
-    /** Return the first Symbol from this or outward scopes with the given name that matches the
+    /** Returns the first Symbol from this or outward scopes with the given name that matches the
      *  given filter. Returns null if none.
      */
     public Symbol findFirst(Name name, Predicate<Symbol> sf) {
@@ -128,7 +128,7 @@ public abstract class Scope {
         return it.hasNext() ? it.next() : null;
     }
 
-    /** Returns true iff there are is at least one Symbol in this scope matching the given filter.
+    /** Returns true iff there is at least one Symbol in this scope matching the given filter.
      *  Does not inspect outward scopes.
      */
     public boolean anyMatch(Predicate<Symbol> filter) {
@@ -153,7 +153,7 @@ public abstract class Scope {
         return !getSymbols(NON_RECURSIVE).iterator().hasNext();
     }
 
-    /** Returns the Scope from which the givins Symbol originates in this scope.
+    /** Returns the Scope from which the given Symbol originates in this scope.
      */
     public abstract Scope getOrigin(Symbol byName);
 
@@ -232,7 +232,7 @@ public abstract class Scope {
         public abstract void remove(Symbol c);
 
         /** Construct a fresh scope within this scope, with same owner. The new scope may
-         *  shares internal structures with the this scope. Used in connection with
+         *  share internal structures with this scope. Used in connection with
          *  method leave if scope access is stack-like in order to avoid allocation
          *  of fresh tables.
          */
@@ -241,7 +241,7 @@ public abstract class Scope {
         }
 
         /** Construct a fresh scope within this scope, with new owner. The new scope may
-         *  shares internal structures with the this scope. Used in connection with
+         *  share internal structures with this scope. Used in connection with
          *  method leave if scope access is stack-like in order to avoid allocation
          *  of fresh tables.
          */
@@ -272,11 +272,11 @@ public abstract class Scope {
     }
 
     private static class ScopeImpl extends WriteableScope {
-        /** The number of scopes that share this scope's hash table.
+        /** true if this scope's hash table is shared with a nested scope.
          */
-        private int shared;
+        private boolean shared;
 
-        /** Next enclosing scope (with whom this scope may share a hashtable)
+        /** Next enclosing scope (with whom this scope may share a hash table)
          */
         public ScopeImpl next;
 
@@ -339,8 +339,10 @@ public abstract class Scope {
          *  of fresh tables.
          */
         public WriteableScope dup(Symbol newOwner) {
+            Assert.check(!shared);
+
             ScopeImpl result = new ScopeImpl(this, newOwner, this.table, this.nelems);
-            shared++;
+            shared = true;
             // System.out.println("====> duping scope " + this.hashCode() + " owned by " + newOwner + " to " + result.hashCode());
             // new Error().printStackTrace(System.out);
             return result;
@@ -351,7 +353,7 @@ public abstract class Scope {
          *  the table of its outer scope.
          */
         public WriteableScope dupUnshared(Symbol newOwner) {
-            if (shared > 0) {
+            if (shared) {
                 //The nested Scopes might have already added something to the table, so all items
                 //that don't originate in this Scope or any of its outer Scopes need to be cleared:
                 Set<Scope> acceptScopes = Collections.newSetFromMap(new IdentityHashMap<>());
@@ -383,7 +385,7 @@ public abstract class Scope {
          *  with next.
          */
         public WriteableScope leave() {
-            Assert.check(shared == 0);
+            Assert.check(!shared);
             if (table != next.table) return next;
             while (elems != null) {
                 int hash = getIndex(elems.sym.name);
@@ -392,8 +394,8 @@ public abstract class Scope {
                 table[hash] = elems.shadowed;
                 elems = elems.nextSibling;
             }
-            Assert.check(next.shared > 0);
-            next.shared--;
+            Assert.check(next.shared);
+            next.shared = false;
             next.nelems = nelems;
             // System.out.println("====> leaving scope " + this.hashCode() + " owned by " + this.owner + " to " + next.hashCode());
             // new Error().printStackTrace(System.out);
@@ -403,12 +405,12 @@ public abstract class Scope {
         /** Double size of hash table.
          */
         private void dble() {
-            Assert.check(shared == 0);
+            Assert.check(!shared);
             Entry[] oldtable = table;
             Entry[] newtable = new Entry[oldtable.length * 2];
             for (ScopeImpl s = this; s != null; s = s.next) {
                 if (s.table == oldtable) {
-                    Assert.check(s == this || s.shared != 0);
+                    Assert.check(s == this || s.shared);
                     s.table = newtable;
                     s.hashMask = newtable.length - 1;
                 }
@@ -429,7 +431,7 @@ public abstract class Scope {
         /** Enter symbol sym in this scope.
          */
         public void enter(Symbol sym) {
-            Assert.check(shared == 0);
+            Assert.check(!shared);
             if (nelems * 3 >= hashMask * 2)
                 dble();
             int hash = getIndex(sym.name);
@@ -449,7 +451,7 @@ public abstract class Scope {
         /** Remove symbol from this scope.
          */
         public void remove(Symbol sym) {
-            Assert.check(shared == 0);
+            Assert.check(!shared);
             Entry e = lookup(sym.name, candidate -> candidate == sym);
             if (e.scope == null) return;
 
@@ -487,7 +489,7 @@ public abstract class Scope {
         /** Enter symbol sym in this scope if not already there.
          */
         public void enterIfAbsent(Symbol sym) {
-            Assert.check(shared == 0);
+            Assert.check(!shared);
             Entry e = lookup(sym.name);
             while (e.scope == this && e.sym.kind != sym.kind) e = e.next();
             if (e.scope != this) enter(sym);

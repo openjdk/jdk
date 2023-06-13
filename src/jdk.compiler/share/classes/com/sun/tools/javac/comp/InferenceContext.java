@@ -27,8 +27,6 @@ package com.sun.tools.javac.comp;
 
 import java.util.Collections;
 import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -338,6 +336,17 @@ public class InferenceContext {
         if (roots.length() == inferencevars.length()) {
             return this;
         }
+        /* if any of the inference vars is a captured variable bail out, this is because
+         * we could end up generating more than necessary captured variables in an outer
+         * inference context and then when we need to propagate back to an inner inference
+         * context that has been minimized it could be that some bounds constraints doesn't
+         * hold like subtyping constraints between bonds etc.
+         */
+        for (Type iv : inferencevars) {
+            if (iv.hasTag(TypeTag.TYPEVAR) && ((TypeVar)iv).isCaptured()) {
+                return this;
+            }
+        }
         ReachabilityVisitor rv = new ReachabilityVisitor();
         rv.scan(roots);
         if (rv.min.size() == inferencevars.length()) {
@@ -393,7 +402,7 @@ public class InferenceContext {
         Map<Type, Set<Type>> minMap = new LinkedHashMap<>();
 
         void scan(List<Type> roots) {
-            roots.stream().forEach(this::visit);
+            roots.forEach(this::visit);
         }
 
         @Override
@@ -511,13 +520,6 @@ public class InferenceContext {
         }, warn);
     }
 
-    /**
-     * Apply a set of inference steps
-     */
-    private List<Type> solveBasic(EnumSet<InferenceStep> steps) {
-        return solveBasic(inferencevars, steps);
-    }
-
     List<Type> solveBasic(List<Type> varsToSolve, EnumSet<InferenceStep> steps) {
         ListBuffer<Type> solvedVars = new ListBuffer<>();
         for (Type t : varsToSolve.intersect(restvars())) {
@@ -531,36 +533,6 @@ public class InferenceContext {
             }
         }
         return solvedVars.toList();
-    }
-
-    /**
-     * Instantiate inference variables in legacy mode (JLS 15.12.2.7, 15.12.2.8).
-     * During overload resolution, instantiation is done by doing a partial
-     * inference process using eq/lower bound instantiation. During check,
-     * we also instantiate any remaining vars by repeatedly using eq/upper
-     * instantiation, until all variables are solved.
-     */
-    public void solveLegacy(boolean partial, Warner warn, EnumSet<InferenceStep> steps) {
-        while (true) {
-            List<Type> solvedVars = solveBasic(steps);
-            if (restvars().isEmpty() || partial) {
-                //all variables have been instantiated - exit
-                break;
-            } else if (solvedVars.isEmpty()) {
-                //some variables could not be instantiated because of cycles in
-                //upper bounds - provide a (possibly recursive) default instantiation
-                infer.instantiateAsUninferredVars(restvars(), this);
-                break;
-            } else {
-                //some variables have been instantiated - replace newly instantiated
-                //variables in remaining upper bounds and continue
-                for (Type t : undetvars) {
-                    UndetVar uv = (UndetVar)t;
-                    uv.substBounds(solvedVars, asInstTypes(solvedVars), types);
-                }
-            }
-        }
-        infer.doIncorporation(this, warn);
     }
 
     @Override
@@ -578,7 +550,7 @@ public class InferenceContext {
      * This is why the tree is used as the key of the map below. This map
      * stores a Type per AST.
      */
-    Map<JCTree, Type> captureTypeCache = new HashMap<>();
+    Map<JCTree, Type> captureTypeCache = new LinkedHashMap<>();
 
     Type cachedCapture(JCTree tree, Type t, boolean readOnly) {
         Type captured = captureTypeCache.get(tree);

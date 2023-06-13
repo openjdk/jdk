@@ -217,7 +217,7 @@ public class OverlayLayout implements LayoutManager2,Serializable {
      *
      * @param target  the container to lay out
      *
-     * @exception AWTError  if the target isn't the container specified to the
+     * @throws AWTError  if the target isn't the container specified to the
      *                      constructor
      */
     public void layoutContainer(Container target) {

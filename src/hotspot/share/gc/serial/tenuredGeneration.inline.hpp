@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,30 @@
 #include "gc/serial/tenuredGeneration.hpp"
 
 #include "gc/shared/space.inline.hpp"
+
+inline size_t TenuredGeneration::capacity() const {
+  return space()->capacity();
+}
+
+inline size_t TenuredGeneration::used() const {
+  return space()->used();
+}
+
+inline size_t TenuredGeneration::free() const {
+  return space()->free();
+}
+
+inline MemRegion TenuredGeneration::used_region() const {
+  return space()->used_region();
+}
+
+inline bool TenuredGeneration::is_in(const void* p) const {
+  return space()->is_in(p);
+}
+
+inline ContiguousSpace* TenuredGeneration::first_compaction_space() const {
+  return space();
+}
 
 HeapWord* TenuredGeneration::allocate(size_t word_size,
                                                  bool is_tlab) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ public abstract class Slot implements Port, Source.Provider, Properties.Provider
 
     private int wantedIndex;
     private Source source;
-    protected List<Connection> connections;
+    protected List<FigureConnection> connections;
     private InputNode associatedNode;
     private Color color;
     private String text;
@@ -67,7 +67,7 @@ public abstract class Slot implements Port, Source.Provider, Properties.Provider
     @Override
     public Properties getProperties() {
         Properties p = new Properties();
-        if (source.getSourceNodes().size() > 0) {
+        if (hasSourceNodes()) {
             for (InputNode n : source.getSourceNodes()) {
                 p.add(n.getProperties());
             }
@@ -78,24 +78,7 @@ public abstract class Slot implements Port, Source.Provider, Properties.Provider
         }
         return p;
     }
-    public static final Comparator<Slot> slotIndexComparator = new Comparator<Slot>() {
-
-        @Override
-        public int compare(Slot o1, Slot o2) {
-            return o1.wantedIndex - o2.wantedIndex;
-        }
-    };
-    public static final Comparator<Slot> slotFigureComparator = new Comparator<Slot>() {
-
-        @Override
-        public int compare(Slot o1, Slot o2) {
-            return o1.figure.getId() - o2.figure.getId();
-        }
-    };
-
-    public InputNode getAssociatedNode() {
-        return associatedNode;
-    }
+    public static final Comparator<Slot> slotIndexComparator = Comparator.comparingInt(o -> o.wantedIndex);
 
     public void setAssociatedNode(InputNode node) {
         associatedNode = node;
@@ -107,7 +90,7 @@ public abstract class Slot implements Port, Source.Provider, Properties.Provider
         } else {
             BufferedImage image = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
             Graphics g = image.getGraphics();
-            g.setFont(figure.getDiagram().getSlotFont().deriveFont(Font.BOLD));
+            g.setFont(Diagram.SLOT_FONT.deriveFont(Font.BOLD));
             FontMetrics metrics = g.getFontMetrics();
             return Math.max(Figure.SLOT_WIDTH, metrics.stringWidth(shortName) + 6);
         }
@@ -158,6 +141,10 @@ public abstract class Slot implements Port, Source.Provider, Properties.Provider
         return getShortName() != null && getShortName().length() > 0;
     }
 
+    public boolean hasSourceNodes() {
+        return !getSource().getSourceNodes().isEmpty();
+    }
+
     public void setText(String s) {
         if (s == null) {
             s = "";
@@ -178,13 +165,13 @@ public abstract class Slot implements Port, Source.Provider, Properties.Provider
         color = c;
     }
 
-    public List<Connection> getConnections() {
+    public List<FigureConnection> getConnections() {
         return Collections.unmodifiableList(connections);
     }
 
     public void removeAllConnections() {
-        List<Connection> connectionsCopy = new ArrayList<>(this.connections);
-        for (Connection c : connectionsCopy) {
+        List<FigureConnection> connectionsCopy = new ArrayList<>(this.connections);
+        for (FigureConnection c : connectionsCopy) {
             c.remove();
         }
     }

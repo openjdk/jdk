@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,8 +41,8 @@
  *          jdk.internal.vm.ci/jdk.vm.ci.code.stack
  *          jdk.internal.vm.ci/jdk.vm.ci.meta
  *
- * @build jdk.internal.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.internal.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbatch -Xbootclasspath/a:.
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                   -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
@@ -104,7 +104,7 @@ import jdk.vm.ci.hotspot.CompilerToVMHelper;
 import jdk.vm.ci.hotspot.HotSpotStackFrameReference;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jtreg.SkippedException;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 import java.lang.reflect.Method;
 
@@ -157,7 +157,11 @@ public class MaterializeVirtualObjectTest {
             throw new SkippedException("Test needs compilation level 4");
         }
 
-        new MaterializeVirtualObjectTest().test();
+        try {
+            new MaterializeVirtualObjectTest().test();
+        } catch (MaterializationNotSupported e) {
+            Asserts.assertTrue(Thread.currentThread().isVirtual());
+        }
     }
 
     private static String getName() {
@@ -168,7 +172,6 @@ public class MaterializeVirtualObjectTest {
     }
 
     private void test() {
-        System.out.println(getName());
         Asserts.assertFalse(WB.isMethodCompiled(MATERIALIZED_METHOD),
                 getName() + " : materialized method is compiled");
         Asserts.assertFalse(WB.isMethodCompiled(NOT_MATERIALIZED_METHOD),
@@ -230,6 +233,14 @@ public class MaterializeVirtualObjectTest {
         }
     }
 
+    private static void materializeVirtualObjects(InspectedFrame f, boolean invalidateCode) {
+        try {
+            f.materializeVirtualObjects(invalidateCode);
+        } catch (IllegalArgumentException e) {
+            throw new MaterializationNotSupported(e);
+        }
+    }
+
     private void checkStructure(boolean materialize) {
         boolean[] framesSeen = new boolean[2];
         Object[] helpers = new Object[1];
@@ -248,7 +259,7 @@ public class MaterializeVirtualObjectTest {
                     Asserts.assertEQ(((Helper) f.getLocal(3)).string, "foo", "innerHelper.string should be foo");
                     helpers[0] = f.getLocal(1);
                     if (materialize) {
-                        f.materializeVirtualObjects(false);
+                        materializeVirtualObjects(f, false);
                     }
                     return null; //continue
                 } else {
@@ -306,7 +317,7 @@ public class MaterializeVirtualObjectTest {
             Asserts.assertTrue(notMaterialized.hasVirtualObjects(), getName()
                     + ": notMaterialized frame has no virtual object before materialization");
             // materialize
-            CompilerToVMHelper.materializeVirtualObjects(materialized, INVALIDATE);
+            materializeVirtualObjects(materialized, INVALIDATE);
             // check that only not materialized frame has virtual objects
             Asserts.assertFalse(materialized.hasVirtualObjects(), getName()
                     + " : materialized has virtual object after materialization");
@@ -329,6 +340,12 @@ public class MaterializeVirtualObjectTest {
 
         public Helper(String s) {
             this.string = s;
+        }
+    }
+
+    static class MaterializationNotSupported extends RuntimeException {
+        public MaterializationNotSupported(Throwable cause) {
+            super(cause);
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "oops/constantPool.hpp"
 #include "oops/cpCache.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/resolvedIndyEntry.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/signature.hpp"
@@ -120,7 +121,7 @@ int Bytecode_tableswitch::dest_offset_at(int i) const {
 
 void Bytecode_invoke::verify() const {
   assert(is_valid(), "check invoke");
-  assert(cpcache() != NULL, "do not call this from verifier or rewriter");
+  assert(cpcache() != nullptr, "do not call this from verifier or rewriter");
 }
 
 int Bytecode_invoke::size_of_parameters() const {
@@ -130,17 +131,17 @@ int Bytecode_invoke::size_of_parameters() const {
 
 
 Symbol* Bytecode_member_ref::klass() const {
-  return constants()->klass_ref_at_noresolve(index());
+  return constants()->klass_ref_at_noresolve(index(), _code);
 }
 
 
 Symbol* Bytecode_member_ref::name() const {
-  return constants()->name_ref_at(index());
+  return constants()->name_ref_at(index(), _code);
 }
 
 
 Symbol* Bytecode_member_ref::signature() const {
-  return constants()->signature_ref_at(index());
+  return constants()->signature_ref_at(index(), _code);
 }
 
 
@@ -159,7 +160,7 @@ Method* Bytecode_invoke::static_target(TRAPS) {
 
 int Bytecode_member_ref::index() const {
   // Note:  Rewriter::rewrite changes the Java_u2 of an invokedynamic to a native_u4,
-  // at the same time it allocates per-call-site CP cache entries.
+  // at the same time it allocates per-call-site resolved indy entries.
   Bytecodes::Code rawc = code();
   if (has_index_u4(rawc))
     return get_index_u4(rawc);
@@ -168,12 +169,23 @@ int Bytecode_member_ref::index() const {
 }
 
 int Bytecode_member_ref::pool_index() const {
-  return cpcache_entry()->constant_pool_index();
+  if (invoke_code() == Bytecodes::_invokedynamic) {
+    return resolved_indy_entry()->constant_pool_index();
+  } else {
+    return cpcache_entry()->constant_pool_index();
+  }
 }
 
 ConstantPoolCacheEntry* Bytecode_member_ref::cpcache_entry() const {
   int index = this->index();
+  assert(invoke_code() != Bytecodes::_invokedynamic, "should not call this");
   return cpcache()->entry_at(ConstantPool::decode_cpcache_index(index, true));
+}
+
+ResolvedIndyEntry* Bytecode_member_ref::resolved_indy_entry() const {
+  int index = this->index();
+  assert(invoke_code() == Bytecodes::_invokedynamic, "should not call this");
+  return cpcache()->resolved_indy_entry_at(ConstantPool::decode_invokedynamic_index(index));
 }
 
 // Implementation of Bytecode_field
@@ -208,7 +220,7 @@ BasicType Bytecode_loadconstant::result_type() const {
 }
 
 oop Bytecode_loadconstant::resolve_constant(TRAPS) const {
-  assert(_method != NULL, "must supply method to resolve constant");
+  assert(_method != nullptr, "must supply method to resolve constant");
   int index = raw_index();
   ConstantPool* constants = _method->constants();
   if (has_cache_index()) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -125,10 +125,7 @@ public final class ZoneInfoFile {
             if (zi != null) {
                 return zi;
             }
-            String zid = zoneId;
-            if (aliases.containsKey(zoneId)) {
-                zid = aliases.get(zoneId);
-            }
+            String zid = aliases.getOrDefault(zoneId, zoneId);
             int index = Arrays.binarySearch(regions, zid);
             if (index < 0) {
                 return null;
@@ -178,26 +175,33 @@ public final class ZoneInfoFile {
 
     public static String toCustomID(int gmtOffset) {
         char sign;
-        int offset = gmtOffset / 60000;
+        int offset = gmtOffset / 1_000;
         if (offset >= 0) {
             sign = '+';
         } else {
             sign = '-';
             offset = -offset;
         }
-        int hh = offset / 60;
-        int mm = offset % 60;
+        int hh = offset / 3_600;
+        int mm = (offset % 3_600) / 60;
+        int ss = offset % 60;
 
         char[] buf = new char[] { 'G', 'M', 'T', sign, '0', '0', ':', '0', '0' };
         if (hh >= 10) {
-            buf[4] += hh / 10;
+            buf[4] += (char)(hh / 10);
         }
-        buf[5] += hh % 10;
+        buf[5] += (char)(hh % 10);
         if (mm != 0) {
-            buf[7] += mm / 10;
-            buf[8] += mm % 10;
+            buf[7] += (char)(mm / 10);
+            buf[8] += (char)(mm % 10);
         }
-        return new String(buf);
+        var id = new String(buf);
+        if (ss != 0) {
+            buf[7] = (char)('0' + ss / 10);
+            buf[8] = (char)('0' + ss % 10);
+            id += new String(buf, 6, 3);
+        }
+        return id;
     }
 
     ///////////////////////////////////////////////////////////
@@ -293,9 +297,9 @@ public final class ZoneInfoFile {
      * Loads the rules from a DateInputStream
      *
      * @param dis  the DateInputStream to load, not null
-     * @throws Exception if an error occurs
+     * @throws IOException if an error occurs
      */
-    private static void load(DataInputStream dis) throws ClassNotFoundException, IOException {
+    private static void load(DataInputStream dis) throws IOException {
         if (dis.readByte() != 1) {
             throw new StreamCorruptedException("File format not recognised");
         }
@@ -335,7 +339,7 @@ public final class ZoneInfoFile {
             }
         }
         // remove the following ids from the map, they
-        // are exclued from the "old" ZoneInfo
+        // are excluded from the "old" ZoneInfo
         zones.remove("ROC");
         for (int i = 0; i < versionCount; i++) {
             int aliasCount = dis.readShort();
@@ -414,7 +418,8 @@ public final class ZoneInfoFile {
     //Current time. Used to determine future GMToffset transitions
     private static final long CURRT = System.currentTimeMillis()/1000;
 
-    /* Get a ZoneInfo instance.
+    /**
+     * Get a ZoneInfo instance.
      *
      * @param standardTransitions  the standard transitions, not null
      * @param standardOffsets  the standard offsets, not null
@@ -578,12 +583,8 @@ public final class ZoneInfoFile {
                     // we can then pass in the dom = -1, dow > 0 into ZoneInfo
                     //
                     // hacking, assume the >=24 is the result of ZRB optimization for
-                    // "last", it works for now. From tzdata2020d this hacking
-                    // will not work for Asia/Gaza and Asia/Hebron which follow
-                    // Palestine DST rules.
-                    if (dom < 0 || dom >= 24 &&
-                                   !(zoneId.equals("Asia/Gaza") ||
-                                     zoneId.equals("Asia/Hebron"))) {
+                    // "last", it works for now.
+                    if (dom < 0 || dom >= 24) {
                         params[1] = -1;
                         params[2] = toCalendarDOW[dow];
                     } else {
@@ -605,7 +606,6 @@ public final class ZoneInfoFile {
                     params[7] = 0;
                 } else {
                     // hacking: see comment above
-                    // No need of hacking for Asia/Gaza and Asia/Hebron from tz2021e
                     if (dom < 0 || dom >= 24) {
                         params[6] = -1;
                         params[7] = toCalendarDOW[dow];
@@ -617,6 +617,17 @@ public final class ZoneInfoFile {
                 params[8] = endRule.secondOfDay * 1000;
                 params[9] = toSTZTime[endRule.timeDefinition];
                 dstSavings = (startRule.offsetAfter - startRule.offsetBefore) * 1000;
+
+                // Note: known mismatching -> Africa/Cairo
+                // ZoneInfo :      startDayOfWeek=5     <= Thursday
+                //                 startTime=86400000   <= 24:00
+                // This:           startDayOfWeek=6     <= Friday
+                //                 startTime=0          <= 0:00
+                if (zoneId.equals("Africa/Cairo") &&
+                        params[7] == Calendar.FRIDAY && params[8] == 0) {
+                    params[7] = Calendar.THURSDAY;
+                    params[8] = SECONDS_PER_DAY * 1000;
+                }
             } else if (nTrans > 0) {  // only do this if there is something in table already
                 if (lastyear < LASTYEAR) {
                     // ZoneInfo has an ending entry for 2037
@@ -712,9 +723,7 @@ public final class ZoneInfoFile {
                 for (i = 0; i < transitions.length; i++) {
                     long val = transitions[i];
                     int dst = (int)((val >>> DST_NSHIFT) & 0xfL);
-                    int saving = (dst == 0) ? 0 : offsets[dst];
                     int index = (int)(val & OFFSET_MASK);
-                    int offset = offsets[index];
                     long second = (val >> TRANSITION_NSHIFT);
                     // javazic uses "index of the offset in offsets",
                     // instead of the real offset value itself to
@@ -781,13 +790,11 @@ public final class ZoneInfoFile {
         int marchDoy0 = (int) doyEst;
         // convert march-based values back to january-based
         int marchMonth0 = (marchDoy0 * 5 + 2) / 153;
-        int month = (marchMonth0 + 2) % 12 + 1;
-        int dom = marchDoy0 - (marchMonth0 * 306 + 5) / 10 + 1;
         yearEst += marchMonth0 / 10;
         return (int)yearEst;
     }
 
-    private static final int toCalendarDOW[] = new int[] {
+    private static final int[] toCalendarDOW = new int[] {
         -1,
         Calendar.MONDAY,
         Calendar.TUESDAY,
@@ -798,7 +805,7 @@ public final class ZoneInfoFile {
         Calendar.SUNDAY
     };
 
-    private static final int toSTZTime[] = new int[] {
+    private static final int[] toSTZTime = new int[] {
         SimpleTimeZone.UTC_TIME,
         SimpleTimeZone.WALL_TIME,
         SimpleTimeZone.STANDARD_TIME,
@@ -822,8 +829,8 @@ public final class ZoneInfoFile {
     }
 
     // return updated nOffsets
-    private static int addTrans(long transitions[], int nTrans,
-                                int offsets[], int nOffsets,
+    private static int addTrans(long[] transitions, int nTrans,
+                                int[] offsets, int nOffsets,
                                 long trans, int offset, int stdOffset) {
         int offsetIndex = indexOf(offsets, 0, nOffsets, offset);
         if (offsetIndex == nOffsets)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ import jdk.jpackage.test.PackageType;
  * @build WinShortcutPromptTest
  * @requires (os.family == "windows")
  * @modules jdk.jpackage/jdk.jpackage.internal
- * @run main/othervm/timeout=360 -Xmx512m  jdk.jpackage.test.Main
+ * @run main/othervm/timeout=720 -Xmx512m  jdk.jpackage.test.Main
  *  --jpt-run=WinShortcutPromptTest
  */
 public class WinShortcutPromptTest {
@@ -122,13 +122,13 @@ public class WinShortcutPromptTest {
         StringBuilder sb = new StringBuilder(cmd.name());
         sb.append("With");
         if (withShortcutPrompt) {
-            sb.append("ShortcutPrompt");
+            sb.append("P");
         }
         if (withStartMenuShortcut) {
-            sb.append("StartMenu");
+            sb.append("M");
         }
         if (withDesktopShortcut) {
-            sb.append("Desktop");
+            sb.append("D");
         }
         cmd.setArgumentValue("--name", sb.toString());
     }

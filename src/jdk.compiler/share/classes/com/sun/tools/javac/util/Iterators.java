@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package com.sun.tools.javac.util;
 
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.function.Function;
@@ -39,63 +40,59 @@ import java.util.function.Predicate;
  */
 public class Iterators {
 
-    public static <I, O> Iterator<O> createCompoundIterator(Iterable<I> inputs, Function<I, Iterator<O>> convertor) {
-        return new CompoundIterator<>(inputs, convertor);
+    // cache the result of java.util.Collections.emptyIterator(), which
+    // explicitly does not guarantee to return the same instance
+    private static final Iterator<?> EMPTY = Collections.emptyIterator();
+
+    @SuppressWarnings("unchecked")
+    public static <T> Iterator<T> emptyIterator() {
+        return (Iterator<T>) EMPTY;
+    }
+
+    public static <I, O> Iterator<O> createCompoundIterator(Iterable<I> inputs, Function<I, Iterator<O>> converter) {
+        return new CompoundIterator<>(inputs, converter);
     }
 
     private static class CompoundIterator<I, O> implements Iterator<O> {
 
         private final Iterator<I> inputs;
-        private final Function<I, Iterator<O>> convertor;
-        @SuppressWarnings("unchecked")
-        private Iterator<O> currentIterator = EMPTY;
+        private final Function<I, Iterator<O>> converter;
+        private Iterator<O> currentIterator = emptyIterator();
 
-        public CompoundIterator(Iterable<I> inputs, Function<I, Iterator<O>> convertor) {
+        public CompoundIterator(Iterable<I> inputs, Function<I, Iterator<O>> converter) {
             this.inputs = inputs.iterator();
-            this.convertor = convertor;
-        }
-
-        public boolean hasNext() {
-            if (currentIterator != null && !currentIterator.hasNext()) {
-                update();
-            }
-            return currentIterator != null;
-        }
-
-        public O next() {
-            if (currentIterator == EMPTY && !hasNext()) {
-                throw new NoSuchElementException();
-            }
-            return currentIterator.next();
-        }
-
-        public void remove() {
-            throw new UnsupportedOperationException();
-        }
-
-        private void update() {
-            while (inputs.hasNext()) {
-                currentIterator = convertor.apply(inputs.next());
-                if (currentIterator.hasNext()) return;
-            }
-            currentIterator = null;
-        }
-    }
-
-    @SuppressWarnings("rawtypes")
-    private static final Iterator EMPTY = new Iterator() {
-        public boolean hasNext() {
-            return false;
+            this.converter = converter;
         }
 
         @Override
-        public Object next() {
-            return null;
+        public boolean hasNext() {
+            // if there's no element currently available, advance until there
+            // is one or the input is exhausted
+            for (;;) {
+                if (currentIterator.hasNext())
+                    return true;
+                else if (inputs.hasNext())
+                    currentIterator = converter.apply(inputs.next());
+                else
+                    return false;
+            }
         }
-    };
 
+        @Override
+        public O next() {
+            // next() cannot assume hasNext() was called immediately before:
+            // next() must itself be able to find the next available element
+            // if there is one
+            while (!currentIterator.hasNext() && inputs.hasNext()) {
+                currentIterator = converter.apply(inputs.next());
+            }
+            return currentIterator.next();
+        }
+    }
+
+    // input.next() is assumed to never return null
     public static <E> Iterator<E> createFilterIterator(Iterator<E> input, Predicate<E> test) {
-        return new Iterator<E>() {
+        return new Iterator<>() {
             private E current = update();
             private E update () {
                 while (input.hasNext()) {
@@ -114,6 +111,9 @@ public class Iterators {
 
             @Override
             public E next() {
+                if (current == null) {
+                    throw new NoSuchElementException();
+                }
                 E res = current;
                 current = update();
                 return res;

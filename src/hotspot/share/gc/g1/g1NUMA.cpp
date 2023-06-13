@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,11 +24,12 @@
 
 #include "precompiled.hpp"
 #include "gc/g1/g1NUMA.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "logging/logStream.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 
-G1NUMA* G1NUMA::_inst = NULL;
+G1NUMA* G1NUMA::_inst = nullptr;
 
 size_t G1NUMA::region_size() const {
   assert(_region_size > 0, "Heap region size is not yet set");
@@ -43,7 +44,7 @@ size_t G1NUMA::page_size() const {
 bool G1NUMA::is_enabled() const { return num_active_nodes() > 1; }
 
 G1NUMA* G1NUMA::create() {
-  guarantee(_inst == NULL, "Should be called once.");
+  guarantee(_inst == nullptr, "Should be called once.");
   _inst = new G1NUMA();
 
   // NUMA only supported on Linux.
@@ -71,13 +72,13 @@ uint G1NUMA::index_of_node_id(int node_id) const {
 }
 
 G1NUMA::G1NUMA() :
-  _node_id_to_index_map(NULL), _len_node_id_to_index_map(0),
-  _node_ids(NULL), _num_active_node_ids(0),
-  _region_size(0), _page_size(0), _stats(NULL) {
+  _node_id_to_index_map(nullptr), _len_node_id_to_index_map(0),
+  _node_ids(nullptr), _num_active_node_ids(0),
+  _region_size(0), _page_size(0), _stats(nullptr) {
 }
 
 void G1NUMA::initialize_without_numa() {
-  // If NUMA is not enabled or supported, initialize as having a singel node.
+  // If NUMA is not enabled or supported, initialize as having a single node.
   _num_active_node_ids = 1;
   _node_ids = NEW_C_HEAP_ARRAY(int, _num_active_node_ids, mtGC);
   _node_ids[0] = 0;
@@ -231,7 +232,7 @@ uint G1NUMA::max_search_depth() const {
 void G1NUMA::update_statistics(G1NUMAStats::NodeDataItems phase,
                                uint requested_node_index,
                                uint allocated_node_index) {
-  if (_stats == NULL) {
+  if (_stats == nullptr) {
     return;
   }
 
@@ -249,7 +250,7 @@ void G1NUMA::update_statistics(G1NUMAStats::NodeDataItems phase,
 void G1NUMA::copy_statistics(G1NUMAStats::NodeDataItems phase,
                              uint requested_node_index,
                              size_t* allocated_stat) {
-  if (_stats == NULL) {
+  if (_stats == nullptr) {
     return;
   }
 
@@ -257,7 +258,7 @@ void G1NUMA::copy_statistics(G1NUMAStats::NodeDataItems phase,
 }
 
 void G1NUMA::print_statistics() const {
-  if (_stats == NULL) {
+  if (_stats == nullptr) {
     return;
   }
 

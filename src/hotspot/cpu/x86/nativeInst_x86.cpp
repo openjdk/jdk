@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -214,13 +214,13 @@ void NativeCall::insert(address code_pos, address entry) {
 }
 
 // MT-safe patching of a call instruction.
-// First patches first word of instruction to two jmp's that jmps to them
-// selfs (spinlock). Then patches the last byte, and then atomicly replaces
+// First patches first word of instruction to two jmp's that jmps to themselves
+// (spinlock). Then patches the last byte, and then atomically replaces
 // the jmp's with the first 4 byte of the new instruction.
 void NativeCall::replace_mt_safe(address instr_addr, address code_buffer) {
   assert(Patching_lock->is_locked() ||
          SafepointSynchronize::is_at_safepoint(), "concurrent code patching");
-  assert (instr_addr != NULL, "illegal address for code patching");
+  assert (instr_addr != nullptr, "illegal address for code patching");
 
   NativeCall* n_call =  nativeCall_at (instr_addr); // checking that it is a call
   guarantee((intptr_t)instr_addr % BytesPerWord == 0, "must be aligned");
@@ -495,8 +495,8 @@ void NativeJump::check_verified_entry_alignment(address entry, address verified_
 }
 
 
-// MT safe inserting of a jump over an unknown instruction sequence (used by nmethod::makeZombie)
-// The problem: jmp <dest> is a 5-byte instruction. Atomical write can be only with 4 bytes.
+// MT safe inserting of a jump over an unknown instruction sequence (used by nmethod::make_not_entrant)
+// The problem: jmp <dest> is a 5-byte instruction. Atomic write can be only with 4 bytes.
 // First patches the first word atomically to be a jump to itself.
 // Then patches the last byte  and then atomically patches the first word (4-bytes),
 // thus inserting the desired jump
@@ -510,12 +510,27 @@ void NativeJump::check_verified_entry_alignment(address entry, address verified_
 //
 void NativeJump::patch_verified_entry(address entry, address verified_entry, address dest) {
   // complete jump instruction (to be inserted) is in code_buffer;
+#ifdef _LP64
+  union {
+    jlong cb_long;
+    unsigned char code_buffer[8];
+  } u;
+
+  u.cb_long = *(jlong *)verified_entry;
+
+  intptr_t disp = (intptr_t)dest - ((intptr_t)verified_entry + 1 + 4);
+  guarantee(disp == (intptr_t)(int32_t)disp, "must be 32-bit offset");
+
+  u.code_buffer[0] = instruction_code;
+  *(int32_t*)(u.code_buffer + 1) = (int32_t)disp;
+
+  Atomic::store((jlong *) verified_entry, u.cb_long);
+  ICache::invalidate_range(verified_entry, 8);
+
+#else
   unsigned char code_buffer[5];
   code_buffer[0] = instruction_code;
   intptr_t disp = (intptr_t)dest - ((intptr_t)verified_entry + 1 + 4);
-#ifdef AMD64
-  guarantee(disp == (intptr_t)(int32_t)disp, "must be 32-bit offset");
-#endif // AMD64
   *(int32_t*)(code_buffer + 1) = (int32_t)disp;
 
   check_verified_entry_alignment(entry, verified_entry);
@@ -546,6 +561,7 @@ void NativeJump::patch_verified_entry(address entry, address verified_entry, add
   *(int32_t*)verified_entry = *(int32_t *)code_buffer;
   // Invalidate.  Opteron requires a flush after every write.
   n_jump->wrote(0);
+#endif // _LP64
 
 }
 
@@ -596,11 +612,11 @@ void NativeGeneralJump::insert_unconditional(address code_pos, address entry) {
 
 
 // MT-safe patching of a long jump instruction.
-// First patches first word of instruction to two jmp's that jmps to them
-// selfs (spinlock). Then patches the last byte, and then atomicly replaces
+// First patches first word of instruction to two jmp's that jmps to themselves
+// (spinlock). Then patches the last byte, and then atomically replaces
 // the jmp's with the first 4 byte of the new instruction.
 void NativeGeneralJump::replace_mt_safe(address instr_addr, address code_buffer) {
-   assert (instr_addr != NULL, "illegal address for code patching (4)");
+   assert (instr_addr != nullptr, "illegal address for code patching (4)");
    NativeGeneralJump* n_jump =  nativeGeneralJump_at (instr_addr); // checking that it is a jump
 
    // Temporary code
@@ -633,7 +649,6 @@ void NativeGeneralJump::replace_mt_safe(address instr_addr, address code_buffer)
      assert(*((address)((intptr_t)instr_addr + i)) == a_byte, "mt safe patching failed");
    }
 #endif
-
 }
 
 
@@ -648,4 +663,42 @@ address NativeGeneralJump::jump_destination() const {
     return addr_at(0) + length + int_at(offset);
   else
     return addr_at(0) + length + sbyte_at(offset);
+}
+
+void NativePostCallNop::make_deopt() {
+  /* makes the first 3 bytes into UD
+   * With the 8 bytes possibly (likely) split over cachelines the protocol on x86 looks like:
+   *
+   * Original state: NOP (4 bytes) offset (4 bytes)
+   * Writing the offset only touches the 4 last bytes (offset bytes)
+   * Making a deopt only touches the first 4 bytes and turns the NOP into a UD
+   * and to make disasembly look "reasonable" it turns the last byte into a
+   * TEST eax, offset so that the offset bytes of the NOP now becomes the imm32.
+   */
+
+  unsigned char patch[4];
+  NativeDeoptInstruction::insert((address) patch, false);
+  patch[3] = 0xA9; // TEST eax, imm32 - this is just to keep disassembly looking correct and fills no real use.
+  address instr_addr = addr_at(0);
+  *(int32_t *)instr_addr = *(int32_t *)patch;
+  ICache::invalidate_range(instr_addr, instruction_size);
+}
+
+void NativePostCallNop::patch(jint diff) {
+  assert(diff != 0, "must be");
+  int32_t *code_pos = (int32_t *) addr_at(displacement_offset);
+  *((int32_t *)(code_pos)) = (int32_t) diff;
+}
+
+void NativeDeoptInstruction::verify() {
+}
+
+// Inserts an undefined instruction at a given pc
+void NativeDeoptInstruction::insert(address code_pos, bool invalidate) {
+  *code_pos = instruction_prefix;
+  *(code_pos+1) = instruction_code;
+  *(code_pos+2) = 0x00;
+  if (invalidate) {
+    ICache::invalidate_range(code_pos, instruction_size);
+  }
 }

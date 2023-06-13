@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,12 +34,11 @@
 //
 class JavaThread;
 class MacroAssembler;
-class ProgrammableUpcallHandler;
+class UpcallLinker;
 class ZeroFrame;
 
 class JavaFrameAnchor {
 // Too many friends...
-friend class CallNativeDirectNode;
 friend class OptoRuntime;
 friend class Runtime1;
 friend class StubAssembler;
@@ -54,11 +53,11 @@ friend class VMStructs;
 friend class JVMCIVMStructs;
 friend class BytecodeInterpreter;
 friend class JavaCallWrapper;
-friend class ProgrammableUpcallHandler;
+friend class UpcallLinker;
 
  private:
   //
-  // Whenever _last_Java_sp != NULL other anchor fields MUST be valid!
+  // Whenever _last_Java_sp != nullptr other anchor fields MUST be valid!
   // The stack may not be walkable [check with walkable() ] but the values must be valid.
   // The profiler apparently depends on this.
   //
@@ -73,20 +72,22 @@ friend class ProgrammableUpcallHandler;
   volatile  address _last_Java_pc;
 
   // tells whether the last Java frame is set
-  // It is important that when last_Java_sp != NULL that the rest of the frame
+  // It is important that when last_Java_sp != nullptr that the rest of the frame
   // anchor (including platform specific) all be valid.
 
-  bool has_last_Java_frame() const                   { return _last_Java_sp != NULL; }
-  // This is very dangerous unless sp == NULL
+  bool has_last_Java_frame() const                   { return _last_Java_sp != nullptr; }
+  // This is very dangerous unless sp == nullptr
   // Invalidate the anchor so that has_last_frame is false
   // and no one should look at the other fields.
-  void zap(void)                                     { _last_Java_sp = NULL; }
+  void zap(void)                                     { _last_Java_sp = nullptr; }
 
 #include CPU_HEADER(javaFrameAnchor)
 
 public:
   JavaFrameAnchor()                              { clear(); }
   JavaFrameAnchor(JavaFrameAnchor *src)          { copy(src); }
+
+  void set_last_Java_pc(address pc)              { _last_Java_pc = pc; }
 
   // Assembly stub generation helpers
 

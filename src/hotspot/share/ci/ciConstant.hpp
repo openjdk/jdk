@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 #define SHARE_CI_CICONSTANT_HPP
 
 #include "ci/ciClassList.hpp"
-#include "ci/ciNullObject.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 // ciConstant
 //
@@ -110,23 +110,14 @@ public:
     return _value._object;
   }
 
-  bool      is_null_or_zero() const {
-    if (!is_java_primitive(basic_type())) {
-      return as_object()->is_null_object();
-    } else if (type2size[basic_type()] == 1) {
-      // treat float bits as int, to avoid comparison with -0 and NaN
-      return (_value._int == 0);
-    } else if (type2size[basic_type()] == 2) {
-      // treat double bits as long, to avoid comparison with -0 and NaN
-      return (_value._long == 0);
-    } else {
-      return false;
-    }
-  }
+  bool is_null_or_zero() const;
 
   bool is_valid() const {
     return basic_type() != T_ILLEGAL;
   }
+
+  bool is_loaded() const;
+
   // Debugging output
   void print();
 };

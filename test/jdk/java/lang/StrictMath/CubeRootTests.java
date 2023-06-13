@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@
  * @build CubeRootTests
  * @run main CubeRootTests
  * @summary Tests specifically for StrictMath.cbrt
- * @author Joseph D. Darcy
  */
 
 import jdk.test.lib.RandomFactory;
@@ -71,9 +70,9 @@ public class CubeRootTests {
         double minus_expected = -expected;
 
         failures+=Tests.test("StrictMath.cbrt(double)", input,
-                             StrictMath.cbrt(input), expected);
+                             StrictMath::cbrt, expected);
         failures+=Tests.test("StrictMath.cbrt(double)", minus_input,
-                             StrictMath.cbrt(minus_input), minus_expected);
+                             StrictMath::cbrt, minus_expected);
         return failures;
     }
 

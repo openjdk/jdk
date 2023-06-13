@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,16 +28,16 @@ package jdk.internal.net.http;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.net.ConnectException;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.util.Base64;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.locks.ReentrantLock;
+
 import jdk.internal.net.http.common.Log;
 import jdk.internal.net.http.common.Logger;
 import jdk.internal.net.http.common.MinimalFuture;
@@ -59,6 +59,8 @@ class Http2ClientImpl {
 
     private final HttpClientImpl client;
 
+    private volatile boolean stopping;
+
     Http2ClientImpl(HttpClientImpl client) {
         this.client = client;
     }
@@ -66,7 +68,10 @@ class Http2ClientImpl {
     /* Map key is "scheme:host:port" */
     private final Map<String,Http2Connection> connections = new ConcurrentHashMap<>();
 
-    private final Set<String> failures = Collections.synchronizedSet(new HashSet<>());
+    // only accessed from within lock protected blocks
+    private final Set<String> failures = new HashSet<>();
+
+    private final ReentrantLock lock = new ReentrantLock();
 
     /**
      * When HTTP/2 requested only. The following describes the aggregate behavior including the
@@ -93,15 +98,14 @@ class Http2ClientImpl {
      */
     CompletableFuture<Http2Connection> getConnectionFor(HttpRequestImpl req,
                                                         Exchange<?> exchange) {
-        URI uri = req.uri();
-        InetSocketAddress proxy = req.proxy();
-        String key = Http2Connection.keyFor(uri, proxy);
+        String key = Http2Connection.keyFor(req);
 
-        synchronized (this) {
+        lock.lock();
+        try {
             Http2Connection connection = connections.get(key);
             if (connection != null) {
                 try {
-                    if (connection.closed || !connection.reserveStream(true)) {
+                    if (!connection.isOpen() || !connection.reserveStream(true)) {
                         if (debug.on())
                             debug.log("removing found closed or closing connection: %s", connection);
                         deleteConnection(connection);
@@ -123,11 +127,14 @@ class Http2ClientImpl {
                 if (debug.on()) debug.log("not found in connection pool");
                 return MinimalFuture.completedFuture(null);
             }
+        } finally {
+            lock.unlock();
         }
         return Http2Connection
                 .createAsync(req, this, exchange)
                 .whenComplete((conn, t) -> {
-                    synchronized (Http2ClientImpl.this) {
+                    lock.lock();
+                    try {
                         if (conn != null) {
                             try {
                                 conn.reserveStream(true);
@@ -140,6 +147,8 @@ class Http2ClientImpl {
                             if (cause instanceof Http2Connection.ALPNException)
                                 failures.add(key);
                         }
+                    } finally {
+                        lock.unlock();
                     }
                 });
     }
@@ -153,14 +162,25 @@ class Http2ClientImpl {
      */
     boolean offerConnection(Http2Connection c) {
         if (debug.on()) debug.log("offering to the connection pool: %s", c);
-        if (c.closed || c.finalStream()) {
+        if (!c.isOpen() || c.finalStream()) {
             if (debug.on())
                 debug.log("skipping offered closed or closing connection: %s", c);
             return false;
         }
 
         String key = c.key();
-        synchronized(this) {
+        lock.lock();
+        try {
+            if (stopping) {
+                if (debug.on()) debug.log("stopping - closing connection: %s", c);
+                close(c);
+                return false;
+            }
+            if (!c.isOpen()) {
+                if (debug.on())
+                    debug.log("skipping offered closed or closing connection: %s", c);
+                return false;
+            }
             Http2Connection c1 = connections.putIfAbsent(key, c);
             if (c1 != null) {
                 c.setFinalStream();
@@ -171,19 +191,22 @@ class Http2ClientImpl {
             if (debug.on())
                 debug.log("put in the connection pool: %s", c);
             return true;
+        } finally {
+            lock.unlock();
         }
     }
 
     void deleteConnection(Http2Connection c) {
         if (debug.on())
             debug.log("removing from the connection pool: %s", c);
-        synchronized (this) {
-            Http2Connection c1 = connections.get(c.key());
-            if (c1 != null && c1.equals(c)) {
-                connections.remove(c.key());
+        lock.lock();
+        try {
+            if (connections.remove(c.key(), c)) {
                 if (debug.on())
                     debug.log("removed from the connection pool: %s", c);
             }
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -192,13 +215,26 @@ class Http2ClientImpl {
         if (debug.on()) debug.log("stopping");
         STOPPED = new EOFException("HTTP/2 client stopped");
         STOPPED.setStackTrace(new StackTraceElement[0]);
-        connections.values().forEach(this::close);
-        connections.clear();
+        lock.lock();
+        try {
+            stopping = true;
+        } finally {
+            lock.unlock();
+        }
+        do {
+            connections.values().forEach(this::close);
+        } while (!connections.isEmpty());
     }
 
     private void close(Http2Connection h2c) {
+        // close all streams
+        try { h2c.closeAllStreams(); } catch (Throwable t) {}
+        // send GOAWAY
         try { h2c.close(); } catch (Throwable t) {}
+        // attempt graceful shutdown
         try { h2c.shutdown(STOPPED); } catch (Throwable t) {}
+        // double check and close any new streams
+        try { h2c.closeAllStreams(); } catch (Throwable t) {}
     }
 
     HttpClientImpl client() {
@@ -274,5 +310,9 @@ class Http2ClientImpl {
                 "jdk.httpclient.maxframesize",
                 16 * K, 16 * K * K -1, 16 * K));
         return frame;
+    }
+
+    public boolean stopping() {
+        return stopping;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import com.sun.hotspot.igv.data.Properties.RegexpPropertyMatcher;
 import com.sun.hotspot.igv.data.services.InputGraphProvider;
 import com.sun.hotspot.igv.settings.Settings;
 import com.sun.hotspot.igv.util.LookupHistory;
+import com.sun.hotspot.igv.util.StringUtils;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -107,24 +108,23 @@ public class NodeQuickSearch implements SearchProvider {
             }
 
             if (matches != null) {
-                final Set<InputNode> set = new HashSet<>(matches);
+                final Set<InputNode> nodeSet = new HashSet<>(matches);
                 final InputGraph theGraph = p.getGraph() != matchGraph ? matchGraph : null;
                 // Show "All N matching nodes" entry only if 1) there are
                 // multiple matches and 2) the query does not only contain
                 // digits (it is rare to select all nodes whose id contains a
                 // certain subsequence of digits).
                 if (matches.size() > 1 && !rawValue.matches("\\d+")) {
-                    if (!response.addResult(new Runnable() {
-                        @Override
-                        public void run() {
-                            final EditorTopComponent comp = EditorTopComponent.getActive();
-                            if (comp != null) {
-                                if (theGraph != null) {
-                                    comp.getDiagramModel().selectGraph(theGraph);
-                                }
-                                comp.setSelectedNodes(set);
-                                comp.requestActive();
+                    if (!response.addResult(() -> {
+                        final EditorTopComponent editor = EditorTopComponent.getActive();
+                        if (editor != null) {
+                            if (theGraph != null) {
+                                editor.getModel().selectGraph(theGraph);
                             }
+                            editor.clearSelectedNodes();
+                            editor.addSelectedNodes(nodeSet, true);
+                            editor.centerSelectedNodes();
+                            editor.requestActive();
                         }
                     },
                             "All " + matches.size() + " matching nodes (" + name + "=" + value + ")" + (theGraph != null ? " in " + theGraph.getName() : "")
@@ -144,15 +144,17 @@ public class NodeQuickSearch implements SearchProvider {
                     if (!response.addResult(new Runnable() {
                         @Override
                         public void run() {
-                            final EditorTopComponent comp = EditorTopComponent.getActive();
-                            if (comp != null) {
+                            final EditorTopComponent editor = EditorTopComponent.getActive();
+                            if (editor != null) {
                                 final Set<InputNode> tmpSet = new HashSet<>();
                                 tmpSet.add(n);
                                 if (theGraph != null) {
-                                    comp.getDiagramModel().selectGraph(theGraph);
+                                    editor.getModel().selectGraph(theGraph);
                                 }
-                                comp.setSelectedNodes(tmpSet);
-                                comp.requestActive();
+                                editor.clearSelectedNodes();
+                                editor.addSelectedNodes(tmpSet, true);
+                                editor.centerSelectedNodes();
+                                editor.requestActive();
                             }
                         }
                     },
@@ -175,14 +177,11 @@ public class NodeQuickSearch implements SearchProvider {
             return matches.size() == 0 ? null : matches;
         } catch (Exception e) {
             final String msg = e.getMessage();
-            response.addResult(new Runnable() {
-                @Override
-                public void run() {
-                    Message desc = new NotifyDescriptor.Message("An exception occurred during the search, "
-                            + "perhaps due to a malformed query string:\n" + msg,
-                            NotifyDescriptor.WARNING_MESSAGE);
-                    DialogDisplayer.getDefault().notify(desc);
-                }
+            response.addResult(() -> {
+                Message desc = new Message("An exception occurred during the search, "
+                        + "perhaps due to a malformed query string:\n" + msg,
+                        NotifyDescriptor.WARNING_MESSAGE);
+                DialogDisplayer.getDefault().notify(desc);
             },
                     "(Error during search)"
             );
@@ -214,24 +213,16 @@ public class NodeQuickSearch implements SearchProvider {
     /**
      * Rank a match by splitting the property into words. Full matches of a word
      * rank highest, followed by partial matches at the word start, followed by
-     * the rest of matches in increasing size of the partially matched word, for
-     * example:
-     *
-     *   rank("5", "5 AddI")   = 1 (full match of first word)
-     *   rank("5", "554 MulI") = 2 (start match of first word)
-     *   rank("5", "25 AddL")  = 3 (middle match of first word with excess 1)
-     *   rank("5", "253 AddL") = 4 (middle match of first word with excess 2)
+     * the rest of matches in increasing size of the partially matched word. See
+     * examples in class StringUtils.
      */
     private int rankMatch(String qry, String prop) {
         String query = qry.toLowerCase();
         String property = prop.toLowerCase();
         for (String component : property.split("\\W+")) {
-            if (component.equals(query)) {
-                return 1;
-            } else if (component.startsWith(query)) {
-                return 2;
-            } else if (component.contains(query)) {
-                return component.length() - query.length() + 2;
+            int rank = StringUtils.rankMatch(query, component);
+            if (rank != Integer.MAX_VALUE) {
+                return rank;
             }
         }
         return Integer.MAX_VALUE;

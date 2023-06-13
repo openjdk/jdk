@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
 # typically beginning with -c.
 #
 # This script will run the shell command line and it will also store a simple
-# log of the the time it takes to execute the command in the OUTPUT_FILE, using
+# log of the time it takes to execute the command in the OUTPUT_FILE, using
 # utility for time measure specified with TIME_CMD option.
 #
 # Type of time measure utility is specified with TIME_CMD_TYPE option.

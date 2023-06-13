@@ -150,7 +150,7 @@ void ShenandoahDegenGC::op_degenerated() {
           heap->collection_set()->clear_current_index();
 
           ShenandoahHeapRegion* r;
-          while ((r = heap->collection_set()->next()) != NULL) {
+          while ((r = heap->collection_set()->next()) != nullptr) {
             if (r->is_pinned()) {
               heap->cancel_gc(GCCause::_shenandoah_upgrade_to_full_gc);
               op_degenerated_fail();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,11 +66,6 @@ import com.sun.tools.javac.util.StringUtils;
 /**
  * Utility container for current execution environment,
  * providing the current declaration and its doc comment.
- *
- * <p><b>This is NOT part of any supported API.
- * If you write code that depends on this, you do so at your own
- * risk.  This code and its internal interfaces are subject to change
- * or deletion without notice.</b></p>
  */
 public class Env {
     /**
@@ -107,6 +102,20 @@ public class Env {
 
     Set<Pattern> includePackages;
     Set<Pattern> excludePackages;
+
+    /**
+     * How to handle bad references.
+     *
+     * If {@code false}, a reference into a module that is not
+     * in the module graph will just be reported as a warning.
+     * All other bad references will be reported as errors.
+     * This is the desired behavior for javac.
+     *
+     * If {@code true}, all bad references will be reported as
+     * errors. This is the desired behavior for javadoc.
+     *
+     */
+    boolean strictReferenceChecks = false;
 
     // Utility classes
     DocTrees trees;
@@ -348,7 +357,7 @@ public class Env {
 
             }
         }
-        return Collections.emptyList();
+        return List.of();
     }
 
 

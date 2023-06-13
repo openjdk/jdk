@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -138,12 +138,12 @@ final class NewSessionTicket {
         @Override
         public String toString() {
             MessageFormat messageFormat = new MessageFormat(
-                    "\"NewSessionTicket\": '{'\n" +
-                            "  \"ticket_lifetime\"      : \"{0}\",\n" +
-                            "  \"ticket\"               : '{'\n" +
-                            "{1}\n" +
-                            "  '}'" +
-                            "'}'",
+                    """
+                            "NewSessionTicket": '{'
+                              "ticket_lifetime"      : "{0}",
+                              "ticket"               : '{'
+                            {1}
+                              '}''}'""",
                 Locale.ENGLISH);
 
             HexDumpEncoder hexEncoder = new HexDumpEncoder();
@@ -267,17 +267,17 @@ final class NewSessionTicket {
         @Override
         public String toString() {
             MessageFormat messageFormat = new MessageFormat(
-                "\"NewSessionTicket\": '{'\n" +
-                "  \"ticket_lifetime\"      : \"{0}\",\n" +
-                "  \"ticket_age_add\"       : \"{1}\",\n" +
-                "  \"ticket_nonce\"         : \"{2}\",\n" +
-                "  \"ticket\"               : '{'\n" +
-                "{3}\n" +
-                "  '}'" +
-                "  \"extensions\"           : [\n" +
-                "{4}\n" +
-                "  ]\n" +
-                "'}'",
+                    """
+                            "NewSessionTicket": '{'
+                              "ticket_lifetime"      : "{0}",
+                              "ticket_age_add"       : "{1}",
+                              "ticket_nonce"         : "{2}",
+                              "ticket"               : '{'
+                            {3}
+                              '}'  "extensions"           : [
+                            {4}
+                              ]
+                            '}'""",
                 Locale.ENGLISH);
 
             HexDumpEncoder hexEncoder = new HexDumpEncoder();
@@ -302,8 +302,7 @@ final class NewSessionTicket {
             return hkdf.expand(resumptionMasterSecret, hkdfInfo,
                     hashAlg.hashLength, "TlsPreSharedKey");
         } catch  (GeneralSecurityException gse) {
-            throw (SSLHandshakeException) new SSLHandshakeException(
-                    "Could not derive PSK").initCause(gse);
+            throw new SSLHandshakeException("Could not derive PSK", gse);
         }
     }
 
@@ -361,7 +360,7 @@ final class NewSessionTicket {
                 }
             } else {     // PostHandshakeContext
                 // Check if we have sent a PSK already, then we know it is
-                // using a allowable PSK exchange key mode.
+                // using an allowable PSK exchange key mode.
                 if (!hc.handshakeSession.isPSKable()) {
                     if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                         SSLLogger.fine(

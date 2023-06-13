@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,8 +72,8 @@ public:
   const char *_lchild;
   const char *_rchild;
 
-  MatchList(MatchList *nxt, Predicate *prd): _next(nxt), _pred(prd), _cost(NULL){
-    _resultStr = _lchild = _rchild = _opcode = NULL; }
+  MatchList(MatchList *nxt, Predicate *prd): _next(nxt), _pred(prd), _cost(nullptr){
+    _resultStr = _lchild = _rchild = _opcode = nullptr; }
 
   MatchList(MatchList *nxt, Predicate *prd, const char *cost,
             const char *opcode, const char *resultStr, const char *lchild,
@@ -82,9 +82,9 @@ public:
       _resultStr(resultStr), _lchild(lchild), _rchild(rchild) { }
 
   MatchList  *get_next(void)  { return _next; }
-  char       *get_pred(void)  { return (_pred?_pred->_pred:NULL); }
+  char       *get_pred(void)  { return (_pred?_pred->_pred:nullptr); }
   Predicate  *get_pred_obj(void)  { return _pred; }
-  const char *get_cost(void) { return _cost == NULL ? "0" :_cost; }
+  const char *get_cost(void) { return _cost == nullptr ? "0" :_cost; }
   bool        search(const char *opc, const char *res, const char *lch,
                     const char *rch, Predicate *pr);
 
@@ -128,7 +128,8 @@ private:
   bool _needs_deep_clone_jvms;
 
   // Methods for outputting the DFA
-  void gen_match(FILE *fp, MatchList &mlist, ProductionState &status, Dict &operands_chained_from);
+  void gen_match(FILE *fp, MatchList &mlist, ProductionState &status,
+                 Dict &operands_chained_from, bool is_vector_unary_op);
   void chain_rule(FILE *fp, const char *indent, const char *ideal,
                   const Expr *icost, const char *irule,
                   Dict &operands_chained_from, ProductionState &status);
@@ -170,14 +171,14 @@ public:
   // Machine dependent files, built from architecture definition
   ADLFILE  _DFA_file;          // File for definition of Matcher::DFA
   ADLFILE  _HPP_file;          // File for ArchNode class declarations
-  ADLFILE  _CPP_file;          // File for ArchNode class defintions
-  ADLFILE  _CPP_CLONE_file;    // File for MachNode/Oper clone defintions
+  ADLFILE  _CPP_file;          // File for ArchNode class definitions
+  ADLFILE  _CPP_CLONE_file;    // File for MachNode/Oper clone definitions
   ADLFILE  _CPP_EXPAND_file;   // File for MachNode expand methods
-  ADLFILE  _CPP_FORMAT_file;   // File for MachNode/Oper format defintions
+  ADLFILE  _CPP_FORMAT_file;   // File for MachNode/Oper format definitions
   ADLFILE  _CPP_GEN_file;      // File for MachNode/Oper generator methods
   ADLFILE  _CPP_MISC_file;     // File for miscellaneous MachNode/Oper tables & methods
   ADLFILE  _CPP_PEEPHOLE_file; // File for MachNode peephole methods
-  ADLFILE  _CPP_PIPELINE_file; // File for MachNode pipeline defintions
+  ADLFILE  _CPP_PIPELINE_file; // File for MachNode pipeline definitions
   ADLFILE  _VM_file;           // File for constants needed in VM code
   ADLFILE  _bug_file;          // DFA debugging file
 
@@ -265,7 +266,7 @@ public:
   void  buildMachRegisterNumbers(FILE *fp_hpp);
   // Generate enumeration of machine register encodings
   void  buildMachRegisterEncodes(FILE *fp_hpp);
-  // Generate Regsiter Size Array
+  // Generate Register Size Array
   void  declareRegSizes(FILE *fp_hpp);
   // Generate Pipeline Class information
   void declare_pipe_classes(FILE *fp_hpp);
@@ -351,7 +352,7 @@ public:
   void          identify_unique_operands();
   void          set_cisc_spill_operand(OperandForm *opForm) { _cisc_spill_operand = opForm; }
   OperandForm  *cisc_spill_operand() { return _cisc_spill_operand; }
-  bool          can_cisc_spill() { return _cisc_spill_operand != NULL; }
+  bool          can_cisc_spill() { return _cisc_spill_operand != nullptr; }
 
 
 protected:

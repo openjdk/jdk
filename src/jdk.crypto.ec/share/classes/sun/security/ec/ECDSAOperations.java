@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,8 @@ import sun.security.util.ArrayUtil;
 import sun.security.util.math.*;
 import static sun.security.ec.ECOperations.IntermediateValueException;
 
+import java.math.BigInteger;
+import java.security.MessageDigest;
 import java.security.ProviderException;
 import java.security.spec.*;
 import java.util.Arrays;
@@ -112,7 +114,7 @@ public class ECDSAOperations {
      * @return the ECDSA signature value
      * @throws IntermediateValueException if the signature cannot be produced
      *      due to an unacceptable intermediate or final value. If this
-     *      exception is thrown, then the caller should discard the nonnce and
+     *      exception is thrown, then the caller should discard the nonce and
      *      try again with an entirely new nonce value.
      */
     public byte[] signDigest(byte[] privateKey, byte[] digest, Seed seed)
@@ -140,7 +142,7 @@ public class ECDSAOperations {
      * @return the ECDSA signature value
      * @throws IntermediateValueException if the signature cannot be produced
      *      due to an unacceptable intermediate or final value. If this
-     *      exception is thrown, then the caller should discard the nonnce and
+     *      exception is thrown, then the caller should discard the nonce and
      *      try again with an entirely new nonce value.
      */
     public byte[] signDigest(byte[] privateKey, byte[] digest, Nonce nonce)
@@ -200,7 +202,8 @@ public class ECDSAOperations {
 
         IntegerFieldModuloP field = ecOps.getField();
         IntegerFieldModuloP orderField = ecOps.getOrderField();
-        int length = (orderField.getSize().bitLength() + 7) / 8;
+        BigInteger mod = orderField.getSize();
+        int length = (mod.bitLength() + 7) / 8;
 
         byte[] r;
         byte[] s;
@@ -218,6 +221,13 @@ public class ECDSAOperations {
             System.arraycopy(sig, encodeLength, s, length - encodeLength, encodeLength);
         }
 
+        BigInteger rb = new BigInteger(1, r);
+        BigInteger sb = new BigInteger(1, s);
+        if (rb.signum() == 0 || sb.signum() == 0
+                || rb.compareTo(mod) >= 0 || sb.compareTo(mod) >= 0) {
+            return false;
+        }
+
         ArrayUtil.reverse(r);
         ArrayUtil.reverse(s);
         IntegerModuloP ri = orderField.getElement(r);
@@ -233,9 +243,6 @@ public class ECDSAOperations {
         ImmutableIntegerModuloP u1 = e.multiply(sInv);
         ImmutableIntegerModuloP u2 = ri.multiply(sInv);
 
-        AffinePoint pub = new AffinePoint(field.getElement(pp.getAffineX()),
-                field.getElement(pp.getAffineY()));
-
         byte[] temp1 = new byte[length];
         b2a(u1, orderField, temp1);
 
@@ -243,14 +250,12 @@ public class ECDSAOperations {
         b2a(u2, orderField, temp2);
 
         MutablePoint p1 = ecOps.multiply(basePoint, temp1);
-        MutablePoint p2 = ecOps.multiply(pub, temp2);
+        MutablePoint p2 = ecOps.multiply(pp, temp2);
 
         ecOps.setSum(p1, p2.asAffine());
         IntegerModuloP result = p1.asAffine().getX();
-        result = result.additiveInverse().add(ri);
-
         b2a(result, orderField, temp1);
-        return ECOperations.allZero(temp1);
+        return MessageDigest.isEqual(temp1, r);
     }
 
     public static ImmutableIntegerModuloP b2a(IntegerModuloP b,

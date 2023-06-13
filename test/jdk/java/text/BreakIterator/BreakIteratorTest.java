@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,18 @@
  * @test
  * @bug 4035266 4052418 4068133 4068137 4068139 4086052 4095322 4097779
  *      4097920 4098467 4111338 4113835 4117554 4143071 4146175 4152117
- *      4152416 4153072 4158381 4214367 4217703 4638433 8264765
+ *      4152416 4153072 4158381 4214367 4217703 4638433 8264765 8291660
+ *      8294008
  * @library /java/text/testlib
  * @run main/timeout=2000 BreakIteratorTest
  * @summary test BreakIterator
  */
 
 /*
- *
+ * This file is available under and governed by the GNU General Public
+ * License version 2 only, as published by the Free Software Foundation.
+ * However, the following notice accompanied the original version of this
+ * file and, per its terms, should not be removed:
  *
  * (C) Copyright Taligent, Inc. 1996, 1997 - All Rights Reserved
  * (C) Copyright IBM Corp. 1996 - 1998 - All Rights Reserved
@@ -64,13 +68,15 @@
  *
  */
 
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.text.BreakIterator;
-import java.text.CharacterIterator;
 import java.text.StringCharacterIterator;
+import java.util.Arrays;
 import java.util.Locale;
 import java.util.Vector;
-import java.util.Enumeration;
-import java.io.*;
+import java.util.function.Predicate;
+import java.util.regex.Pattern;
 
 public class BreakIteratorTest extends IntlTest
 {
@@ -1391,7 +1397,7 @@ public class BreakIteratorTest extends IntlTest
 
 
         // Confirm changes in BreakIteratorRules_th.java have been reflected.
-        iter = BreakIterator.getLineInstance(new Locale("th", ""));
+        iter = BreakIterator.getLineInstance(Locale.of("th"));
 
         /* Thai <Seven(Nd)>
          *      <Left Double Quotation Mark(Pi)>
@@ -1446,4 +1452,25 @@ public class BreakIteratorTest extends IntlTest
         generalIteratorTest(lineBreak, expected);
     }
 
+    private static final Pattern CODEPOINT = Pattern.compile("([0-9A-F]{4,5})");
+    public void TestGraphemeBreak() throws Exception {
+        Files.lines(Paths.get(System.getProperty("test.root"),
+                "../../src/java.base/share/data/unicodedata/auxiliary/GraphemeBreakTest.txt"))
+                .map(ln -> ln.replaceFirst("#.*", ""))
+                .filter(Predicate.not(String::isEmpty))
+                .map(line -> line.split("\\s*÷[\\s\\t]*"))
+                .forEach(sa -> {
+                    Vector<String> expected = new Vector<>(
+                        Arrays.stream(sa)
+                            .map(line -> CODEPOINT.matcher(line).replaceAll(mr -> Character.toString(Integer.valueOf(mr.group(),16))))
+                            .map(line -> line.replaceAll("\\s×\\s", ""))
+                            .filter(Predicate.not(String::isEmpty))
+                            .toList());
+                    generalIteratorTest(characterBreak, expected);
+                });
+    }
+
+    public void TestSetTextIOOBException() {
+        BreakIterator.getCharacterInstance().setText(new StringCharacterIterator("abcfefg", 1, 5, 3));
+    }
 }

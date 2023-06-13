@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2013, 2022, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,11 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/shenandoah/shenandoahBarrierSet.hpp"
+#include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetClone.inline.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetAssembler.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetNMethod.hpp"
+#include "gc/shenandoah/shenandoahBarrierSetStackChunk.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahStackWatermark.hpp"
@@ -44,7 +45,8 @@ ShenandoahBarrierSet::ShenandoahBarrierSet(ShenandoahHeap* heap) :
   BarrierSet(make_barrier_set_assembler<ShenandoahBarrierSetAssembler>(),
              make_barrier_set_c1<ShenandoahBarrierSetC1>(),
              make_barrier_set_c2<ShenandoahBarrierSetC2>(),
-             ShenandoahNMethodBarrier ? new ShenandoahBarrierSetNMethod(heap) : NULL,
+             ShenandoahNMethodBarrier ? new ShenandoahBarrierSetNMethod(heap) : nullptr,
+             new ShenandoahBarrierSetStackChunk(),
              BarrierSet::FakeRtti(BarrierSet::ShenandoahBarrierSet)),
   _heap(heap),
   _satb_mark_queue_buffer_allocator("SATB Buffer Allocator", ShenandoahSATBBufferSize),
@@ -99,7 +101,11 @@ void ShenandoahBarrierSet::on_thread_attach(Thread *thread) {
   if (thread->is_Java_thread()) {
     ShenandoahThreadLocalData::set_gc_state(thread, _heap->gc_state());
     ShenandoahThreadLocalData::initialize_gclab(thread);
-    ShenandoahThreadLocalData::set_disarmed_value(thread, ShenandoahCodeRoots::disarmed_value());
+
+    BarrierSetNMethod* bs_nm = barrier_set_nmethod();
+    if (bs_nm != nullptr) {
+      thread->set_nmethod_disarmed_guard_value(bs_nm->disarmed_guard_value());
+    }
 
     if (ShenandoahStackWatermarkBarrier) {
       JavaThread* const jt = JavaThread::cast(thread);
@@ -114,11 +120,11 @@ void ShenandoahBarrierSet::on_thread_detach(Thread *thread) {
   _satb_mark_queue_set.flush_queue(queue);
   if (thread->is_Java_thread()) {
     PLAB* gclab = ShenandoahThreadLocalData::gclab(thread);
-    if (gclab != NULL) {
+    if (gclab != nullptr) {
       gclab->retire();
     }
 
-    // SATB protocol requires to keep alive reacheable oops from roots at the beginning of GC
+    // SATB protocol requires to keep alive reachable oops from roots at the beginning of GC
     if (ShenandoahStackWatermarkBarrier) {
       if (_heap->is_concurrent_mark_in_progress()) {
         ShenandoahKeepAliveClosure oops;

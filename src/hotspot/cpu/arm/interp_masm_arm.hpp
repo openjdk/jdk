@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,7 @@
 #include "runtime/frame.hpp"
 #include "prims/jvmtiExport.hpp"
 
-// This file specializes the assember with interpreter-specific macros
-
+// This file specializes the assembler with interpreter-specific macros
 
 class InterpreterMacroAssembler: public MacroAssembler {
 
@@ -70,10 +69,12 @@ class InterpreterMacroAssembler: public MacroAssembler {
   inline void check_extended_sp(Register tmp) {}
   inline void check_no_cached_stack_top(Register tmp) {}
 
-
   void save_bcp()                                          { str(Rbcp, Address(FP, frame::interpreter_frame_bcp_offset * wordSize)); }
   void restore_bcp()                                       { ldr(Rbcp, Address(FP, frame::interpreter_frame_bcp_offset * wordSize)); }
-  void restore_locals()                                    { ldr(Rlocals, Address(FP, frame::interpreter_frame_locals_offset * wordSize)); }
+  void restore_locals() {
+    ldr(Rlocals, Address(FP, frame::interpreter_frame_locals_offset * wordSize));
+    add(Rlocals, FP, AsmOperand(Rlocals, lsl, LogBytesPerWord));
+  }
   void restore_method()                                    { ldr(Rmethod, Address(FP, frame::interpreter_frame_method_offset * wordSize)); }
   void restore_dispatch();
 
@@ -81,8 +82,8 @@ class InterpreterMacroAssembler: public MacroAssembler {
   // Helpers for runtime call arguments/results
   void get_const(Register reg)                             { ldr(reg, Address(Rmethod, Method::const_offset())); }
   void get_constant_pool(Register reg)                     { get_const(reg); ldr(reg, Address(reg, ConstMethod::constants_offset())); }
-  void get_constant_pool_cache(Register reg)               { get_constant_pool(reg); ldr(reg, Address(reg, ConstantPool::cache_offset_in_bytes())); }
-  void get_cpool_and_tags(Register cpool, Register tags)   { get_constant_pool(cpool); ldr(tags, Address(cpool, ConstantPool::tags_offset_in_bytes())); }
+  void get_constant_pool_cache(Register reg)               { get_constant_pool(reg); ldr(reg, Address(reg, ConstantPool::cache_offset())); }
+  void get_cpool_and_tags(Register cpool, Register tags)   { get_constant_pool(cpool); ldr(tags, Address(cpool, ConstantPool::tags_offset())); }
 
   // Sets reg. Blows Rtemp.
   void get_unsigned_2_byte_index_at_bcp(Register reg, int bcp_offset);
@@ -100,6 +101,8 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   // load cpool->resolved_klass_at(index); Rtemp is corrupted upon return
   void load_resolved_klass_at_offset(Register Rcpool, Register Rindex, Register Rklass);
+
+  void load_resolved_indy_entry(Register cache, Register index);
 
   void pop_ptr(Register r);
   void pop_i(Register r = R0_tos);
@@ -142,7 +145,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void empty_expression_stack() {
       ldr(Rstack_top, Address(FP, frame::interpreter_frame_monitor_block_top_offset * wordSize));
       check_stack_top();
-      // NULL last_sp until next java call
+      // null last_sp until next java call
       str(zero_register(Rtemp), Address(FP, frame::interpreter_frame_last_sp_offset * wordSize));
   }
 

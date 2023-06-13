@@ -1,5 +1,5 @@
 /*
- o Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ o Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -151,21 +151,21 @@ public class TCKJapaneseChronology {
 
     @Test
     public void test_chrono_byLocale_oldJP_noVariant() {
-        Chronology test = Chronology.ofLocale(new Locale("ja", "JP"));
+        Chronology test = Chronology.ofLocale(Locale.JAPAN);
         Assert.assertEquals(test.getId(), "ISO");
         Assert.assertEquals(test, IsoChronology.INSTANCE);
     }
 
     @Test
     public void test_chrono_byLocale_oldJP_variant() {
-        Chronology test = Chronology.ofLocale(new Locale("ja", "JP", "JP"));
+        Chronology test = Chronology.ofLocale(Locale.of("ja", "JP", "JP"));
         Assert.assertEquals(test.getId(), "Japanese");
         Assert.assertEquals(test, JapaneseChronology.INSTANCE);
     }
 
     @Test
     public void test_chrono_byLocale_iso() {
-        Assert.assertEquals(Chronology.ofLocale(new Locale("ja", "JP")).getId(), "ISO");
+        Assert.assertEquals(Chronology.ofLocale(Locale.JAPAN).getId(), "ISO");
         Assert.assertEquals(Chronology.ofLocale(Locale.forLanguageTag("ja-JP")).getId(), "ISO");
         Assert.assertEquals(Chronology.ofLocale(Locale.forLanguageTag("ja-JP-JP")).getId(), "ISO");
     }

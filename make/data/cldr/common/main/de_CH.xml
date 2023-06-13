@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2021 Unicode, Inc.
+<!-- Copyright © 1991-2023 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -13,35 +13,26 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</identity>
 	<localeDisplayNames>
 		<languages>
-			<language type="ace">Aceh-Sprache</language>
 			<language type="ach">Acholi-Sprache</language>
-			<language type="ar_001">Modernes Hocharabisch</language>
-			<language type="ars">Nadschd-Arabisch</language>
-			<language type="bas">Basaa-Sprache</language>
 			<language type="bik">Bikol-Sprache</language>
-			<language type="bin">Bini-Sprache</language>
 			<language type="chb">Chibcha-Sprache</language>
-			<language type="de_CH">Schweizer Hochdeutsch</language>
 			<language type="din">Dinka-Sprache</language>
 			<language type="fan">Pangwe-Sprache</language>
 			<language type="gba">Gbaya-Sprache</language>
-			<language type="kmb">Kimbundu-Sprache</language>
-			<language type="mus">Muskogee-Sprache</language>
-			<language type="nl_BE">Flämisch</language>
 			<language type="prg">Altpreussisch</language>
-			<language type="zh_Hans">Chinesisch (vereinfacht)</language>
+			<language type="rhg">Rohingya</language>
+			<language type="tgx">Tagisch</language>
 			<language type="zh_Hans" alt="long">Hochchinesisch (vereinfacht)</language>
-			<language type="zh_Hant">Chinesisch (traditionell)</language>
 			<language type="zh_Hant" alt="long">Hochchinesisch (traditionell)</language>
 		</languages>
 		<territories>
 			<territory type="BN">Brunei</territory>
 			<territory type="BW">Botswana</territory>
 			<territory type="CV">Kapverden</territory>
-			<territory type="GB">Grossbritannien</territory>
 			<territory type="QO">Äusseres Ozeanien</territory>
 			<territory type="SB">Salomon-Inseln</territory>
 			<territory type="TL">Osttimor</territory>
+			<territory type="TR" alt="variant">Türkiye</territory>
 			<territory type="ZW">Zimbabwe</territory>
 		</territories>
 		<keys>
@@ -61,7 +52,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<exemplarCharacters>[a ä b c d e f g h i j k l m n o ö p q r s t u ü v w x y z]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\- ‑ . ’ % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 		<parseLenients scope="general" level="lenient">
-			<parseLenient sample="’" draft="contributed">['ʼ՚᾽᾿’＇]</parseLenient>
+			<parseLenient sample="’">['ʼ՚᾽᾿’＇]</parseLenient>
 		</parseLenients>
 	</characters>
 	<dates>
@@ -80,6 +71,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</dayWidth>
 					</dayContext>
 				</days>
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="GyMd">dd.MM.y GGGGG</dateFormatItem>
+					</availableFormats>
+					<intervalFormats>
+						<intervalFormatItem id="M">
+							<greatestDifference id="M">M – M</greatestDifference>
+						</intervalFormatItem>
+					</intervalFormats>
+				</dateTimeFormats>
 			</calendar>
 		</calendars>
 		<fields>
@@ -164,8 +165,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="other">Weissrussische Rubel (2000–2016)</displayName>
 			</currency>
 			<currency type="EUR">
-				<symbol draft="contributed">EUR</symbol>
-				<symbol alt="narrow" draft="contributed">EUR</symbol>
+				<symbol>EUR</symbol>
+				<symbol alt="narrow">EUR</symbol>
 			</currency>
 			<currency type="STN">
 				<displayName>São-toméischer Dobra (2018)</displayName>
@@ -187,8 +188,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="dative">{0} Quadratfuss</unitPattern>
 				<unitPattern count="other" case="genitive">{0} Quadratfuss</unitPattern>
 			</unit>
-			<unit type="concentr-milligram-ofglucose-per-deciliter">
-				<displayName>mg/dL</displayName>
+			<unit type="duration-quarter">
+				<displayName>Quartal</displayName>
 			</unit>
 			<unit type="length-foot">
 				<displayName>Fuss</displayName>
@@ -201,9 +202,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="dative">{0} Fuss</unitPattern>
 				<unitPattern count="other" case="genitive">{0} Fuss</unitPattern>
 				<perUnitPattern>{0} pro Fuss</perUnitPattern>
-			</unit>
-			<unit type="mass-grain">
-				<displayName>Messerspitze</displayName>
 			</unit>
 			<unit type="volume-cubic-foot">
 				<displayName>Kubikfuss</displayName>
@@ -218,24 +216,24 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="volume-gallon-imperial">
 				<unitPattern count="one">{0} gal Imp.</unitPattern>
+				<unitPattern count="one" case="accusative">{0} gal Imp.</unitPattern>
+				<unitPattern count="one" case="dative">{0} gal Imp.</unitPattern>
+				<unitPattern count="one" case="genitive">{0} gal Imp.</unitPattern>
 				<unitPattern count="other">{0} gal Imp.</unitPattern>
+				<unitPattern count="other" case="accusative">{0} gal Imp.</unitPattern>
+				<unitPattern count="other" case="dative">{0} gal Imp.</unitPattern>
+				<unitPattern count="other" case="genitive">{0} gal Imp.</unitPattern>
 				<perUnitPattern>{0}/gal Imp.</perUnitPattern>
-			</unit>
-			<unit type="volume-jigger">
-				<displayName>Schuss</displayName>
 			</unit>
 		</unitLength>
 		<unitLength type="short">
+			<unit type="duration-quarter">
+				<displayName>Quartal</displayName>
+			</unit>
 			<unit type="length-foot">
 				<displayName>Fuss</displayName>
 			</unit>
-			<unit type="mass-grain">
-				<displayName>Messerspitze</displayName>
-				<unitPattern count="other">{0} Msp.</unitPattern>
-			</unit>
 			<unit type="volume-gallon-imperial">
-				<unitPattern count="one">{0} gal Imp.</unitPattern>
-				<unitPattern count="other">{0} gal Imp.</unitPattern>
 				<perUnitPattern>{0}/gal Imp.</perUnitPattern>
 			</unit>
 			<unit type="volume-dram">
@@ -253,6 +251,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} Prise</unitPattern>
 			</unit>
 		</unitLength>
+		<unitLength type="narrow">
+			<unit type="volume-jigger">
+				<unitPattern count="one">Schuss</unitPattern>
+				<unitPattern count="other">{0} Schuss</unitPattern>
+			</unit>
+		</unitLength>
 	</units>
 	<typographicNames>
 		<axisName type="opsz">optische Grösse</axisName>
@@ -261,6 +265,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<styleName type="opsz" subtype="18">Schaugrösse</styleName>
 		<styleName type="opsz" subtype="72">Plakatgrösse</styleName>
 		<styleName type="opsz" subtype="144">Ferngrösse</styleName>
-		<styleName type="wght" subtype="500">medium</styleName>
 	</typographicNames>
+	<personNames>
+		<sampleName item="nativeFull">
+			<nameField type="surname2">Müller</nameField>
+		</sampleName>
+	</personNames>
 </ldml>

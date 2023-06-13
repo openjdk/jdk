@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,13 +36,12 @@ import sun.java2d.SunGraphics2D;
 /**
  *   GraphicsComponentMgr provides services to
  *   1. register primitives for later use
- *   2. locate an instance of a primitve based on characteristics
+ *   2. locate an instance of a primitive based on characteristics
  */
 public final class GraphicsPrimitiveMgr {
 
     private static final boolean debugTrace = false;
     private static GraphicsPrimitive[] primitives;
-    private static GraphicsPrimitive[] generalPrimitives;
     private static boolean needssort = true;
 
     private static native void initIDs(Class<?> GP, Class<?> ST, Class<?> CT,
@@ -79,7 +78,7 @@ public final class GraphicsPrimitiveMgr {
             int id1 = o1.getUniqueID();
             int id2 = o2.getUniqueID();
 
-            return (id1 == id2 ? 0 : (id1 < id2 ? -1 : 1));
+            return Integer.compare(id1, id2);
         }
     };
 
@@ -88,12 +87,12 @@ public final class GraphicsPrimitiveMgr {
             int id1 = ((GraphicsPrimitive) o1).getUniqueID();
             int id2 = ((PrimitiveSpec) o2).uniqueID;
 
-            return (id1 == id2 ? 0 : (id1 < id2 ? -1 : 1));
+            return Integer.compare(id1, id2);
         }
     };
 
     /**
-     * Ensure that noone can instantiate this class.
+     * Ensure that no one can instantiate this class.
      */
     private GraphicsPrimitiveMgr() {
     }
@@ -119,24 +118,6 @@ public final class GraphicsPrimitiveMgr {
         System.arraycopy(newPrimitives, 0, temp, oldSize, newSize);
         needssort = true;
         primitives = temp;
-    }
-
-    /**
-     * Registers the general loop which will be used to produce specific
-     * primitives by the {@link GraphicsPrimitive#makePrimitive} function.
-     *
-     * @param gen the graphics primitive to be registered as the general loop
-     */
-    public static synchronized void registerGeneral(GraphicsPrimitive gen) {
-        if (generalPrimitives == null) {
-            generalPrimitives = new GraphicsPrimitive[] {gen};
-            return;
-        }
-        int len = generalPrimitives.length;
-        GraphicsPrimitive[] newGen = new GraphicsPrimitive[len + 1];
-        System.arraycopy(generalPrimitives, 0, newGen, 0, len);
-        newGen[len] = gen;
-        generalPrimitives = newGen;
     }
 
     public static synchronized GraphicsPrimitive locate(int primTypeID,
@@ -165,7 +146,7 @@ public final class GraphicsPrimitiveMgr {
 
         if (prim == null) {
             //System.out.println("Trying general loop");
-            prim = locateGeneral(primTypeID);
+            prim = GeneralPrimitives.locate(primTypeID);
             if (prim != null) {
                 prim = prim.makePrimitive(srctype, comptype, dsttype);
                 if (prim != null && GraphicsPrimitive.traceflags != 0) {
@@ -218,20 +199,6 @@ public final class GraphicsPrimitiveMgr {
         return null;
     }
 
-    private static GraphicsPrimitive locateGeneral(int primTypeID) {
-        if (generalPrimitives == null) {
-            return null;
-        }
-        for (int i = 0; i < generalPrimitives.length; i++) {
-            GraphicsPrimitive prim = generalPrimitives[i];
-            if (prim.getPrimTypeID() == primTypeID) {
-                return prim;
-            }
-        }
-        return null;
-        //throw new InternalError("No general handler registered for"+signature);
-    }
-
     private static GraphicsPrimitive locate(PrimitiveSpec spec) {
         if (needssort) {
             if (GraphicsPrimitive.traceflags != 0) {
@@ -271,6 +238,46 @@ public final class GraphicsPrimitiveMgr {
     private static void writeLog(String str) {
         if (debugTrace) {
             System.err.println(str);
+        }
+    }
+
+    /**
+     * A holder for general primitives to avoid circular dependencies
+     * between GraphicsPrimitiveMgr and Blit/etc classes.
+     */
+    final static class GeneralPrimitives {
+
+        private static GraphicsPrimitive[] primitives;
+
+        /**
+         * Registers the general loop which will be used to produce specific
+         * primitives by the {@link GraphicsPrimitive#makePrimitive} function.
+         *
+         * @param gen the graphics primitive to be registered as the general loop
+         */
+        static synchronized void register(GraphicsPrimitive gen) {
+            if (primitives == null) {
+                primitives = new GraphicsPrimitive[]{gen};
+                return;
+            }
+            int len = primitives.length;
+            GraphicsPrimitive[] newGen = new GraphicsPrimitive[len + 1];
+            System.arraycopy(primitives, 0, newGen, 0, len);
+            newGen[len] = gen;
+            primitives = newGen;
+        }
+
+        static synchronized GraphicsPrimitive locate(int primTypeID) {
+            if (primitives == null) {
+                return null;
+            }
+            for (int i = 0; i < primitives.length; i++) {
+                GraphicsPrimitive prim = primitives[i];
+                if (prim.getPrimTypeID() == primTypeID) {
+                    return prim;
+                }
+            }
+            return null;
         }
     }
 

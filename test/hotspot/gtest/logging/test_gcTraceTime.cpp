@@ -22,8 +22,8 @@
  *
  */
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "gc/shared/gcTraceTime.inline.hpp"
+#include "jvm.h"
 #include "logTestFixture.hpp"
 #include "logTestUtils.inline.hpp"
 #include "logging/log.hpp"

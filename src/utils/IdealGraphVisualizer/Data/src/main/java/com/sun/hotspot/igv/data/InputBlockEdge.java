@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,15 +35,17 @@ public class InputBlockEdge {
         DELETED
     }
 
-    private InputBlock from;
-    private InputBlock to;
+    private final InputBlock from;
+    private final InputBlock to;
     private State state = State.SAME;
+    private final String label;
 
-    public InputBlockEdge(InputBlock from, InputBlock to) {
+    public InputBlockEdge(InputBlock from, InputBlock to, String label) {
         assert from != null;
         assert to != null;
         this.from = from;
         this.to = to;
+        this.label = label;
     }
 
     public InputBlock getFrom() {
@@ -62,9 +64,13 @@ public class InputBlockEdge {
         this.state = state;
     }
 
+    public String getLabel() {
+        return label;
+    }
+
     @Override
     public boolean equals(Object obj) {
-        if (obj != null && obj instanceof InputBlockEdge) {
+        if (obj instanceof InputBlockEdge) {
             InputBlockEdge e = (InputBlockEdge) obj;
             return e.from.equals(from) && e.to.equals(to);
         }

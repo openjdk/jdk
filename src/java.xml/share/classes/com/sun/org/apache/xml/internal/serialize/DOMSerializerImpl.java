@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -1030,7 +1030,7 @@ public class DOMSerializerImpl implements LSSerializer, DOMConfiguration {
             try {
                 return doc.getXmlVersion();
             } // The VM ran out of memory or there was some other serious problem. Re-throw.
-             catch (VirtualMachineError | ThreadDeath vme) {
+             catch (VirtualMachineError vme) {
                 throw vme;
             } // Ignore all other exceptions and errors
             catch (Throwable t) {
@@ -1046,7 +1046,7 @@ public class DOMSerializerImpl implements LSSerializer, DOMConfiguration {
             try {
                 return doc.getInputEncoding();
             } // The VM ran out of memory or there was some other serious problem. Re-throw.
-            catch (VirtualMachineError | ThreadDeath vme) {
+            catch (VirtualMachineError vme) {
                 throw vme;
             } // Ignore all other exceptions and errors
             catch (Throwable t) {
@@ -1062,7 +1062,7 @@ public class DOMSerializerImpl implements LSSerializer, DOMConfiguration {
             try {
                 return doc.getXmlEncoding();
             } // The VM ran out of memory or there was some other serious problem. Re-throw.
-            catch (VirtualMachineError | ThreadDeath vme) {
+            catch (VirtualMachineError vme) {
                 throw vme;
             } // Ignore all other exceptions and errors
             catch (Throwable t) {

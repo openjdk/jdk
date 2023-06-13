@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,7 @@ public class HandlerBase
      * in a subclass to do special translations such as catalog lookups
      * or URI redirection.</p>
      *
-     * @param publicId The public identifer, or null if none is
+     * @param publicId The public identifier, or null if none is
      *                 available.
      * @param systemId The system identifier provided in the XML
      *                 document.

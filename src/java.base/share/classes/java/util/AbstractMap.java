@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,11 @@
  */
 
 package java.util;
-import java.util.Map.Entry;
+
+import java.util.stream.Stream;
+import java.util.function.Consumer;
+import java.util.function.IntFunction;
+import java.util.function.Predicate;
 
 /**
  * This class provides a skeletal implementation of the {@code Map}
@@ -493,9 +497,7 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
                         return false;
                 }
             }
-        } catch (ClassCastException unused) {
-            return false;
-        } catch (NullPointerException unused) {
+        } catch (ClassCastException | NullPointerException unused) {
             return false;
         }
 
@@ -593,13 +595,17 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
     /**
      * An Entry maintaining a key and a value.  The value may be
      * changed using the {@code setValue} method. Instances of
-     * this class are not associated with any map's entry-set view.
+     * this class are not associated with any map nor with any
+     * map's entry-set view.
      *
      * @apiNote
      * This class facilitates the process of building custom map
      * implementations. For example, it may be convenient to return
      * arrays of {@code SimpleEntry} instances in method
      * {@code Map.entrySet().toArray}.
+     *
+     * @param <K> the type of key
+     * @param <V> the type of the value
      *
      * @since 1.6
      */
@@ -730,7 +736,8 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
     /**
      * An unmodifiable Entry maintaining a key and a value.  This class
      * does not support the {@code setValue} method. Instances of
-     * this class are not associated with any map's entry-set view.
+     * this class are not associated with any map nor with any map's
+     * entry-set view.
      *
      * @apiNote
      * Instances of this class are not necessarily immutable, as the key
@@ -744,6 +751,8 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
      * {@link Map#entry Map::entry} and {@link Map.Entry#copyOf Map.Entry::copyOf}
      * methods.
      *
+     * @param <K> the type of the keys
+     * @param <V> the type of the value
      * @since 1.6
      */
     public static class SimpleImmutableEntry<K,V>
@@ -871,7 +880,48 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
         public String toString() {
             return key + "=" + value;
         }
-
     }
 
+    /**
+     * Delegates all Collection methods to the provided non-sequenced map view,
+     * except add() and addAll(), which throw UOE. This provides the common
+     * implementation of each of the sequenced views of the SequencedMap.
+     * Each view implementation is a subclass that provides an instance of the
+     * non-sequenced view as a delegate and an implementation of reversed().
+     * Each view also inherits the default implementations for the sequenced
+     * methods from SequencedCollection or SequencedSet.
+     * <p>
+     * Ideally this would be a private class within SequencedMap, but private
+     * classes aren't permitted within interfaces.
+     * <p>
+     * The non-sequenced map view is obtained by calling the abstract view()
+     * method for each operation.
+     *
+     * @param <E> the view's element type
+     */
+    /* non-public */ abstract static class ViewCollection<E> implements Collection<E> {
+        UnsupportedOperationException uoe() { return new UnsupportedOperationException(); }
+        abstract Collection<E> view();
+
+        public boolean add(E t) { throw uoe(); }
+        public boolean addAll(Collection<? extends E> c) { throw uoe(); }
+        public void clear() { view().clear(); }
+        public boolean contains(Object o) { return view().contains(o); }
+        public boolean containsAll(Collection<?> c) { return view().containsAll(c); }
+        public void forEach(Consumer<? super E> c) { view().forEach(c); }
+        public boolean isEmpty() { return view().isEmpty(); }
+        public Iterator<E> iterator() { return view().iterator(); }
+        public Stream<E> parallelStream() { return view().parallelStream(); }
+        public boolean remove(Object o) { return view().remove(o); }
+        public boolean removeAll(Collection<?> c) { return view().removeAll(c); }
+        public boolean removeIf(Predicate<? super E> filter) { return view().removeIf(filter); }
+        public boolean retainAll(Collection<?> c) { return view().retainAll(c); }
+        public int size() { return view().size(); }
+        public Spliterator<E> spliterator() { return view().spliterator(); }
+        public Stream<E> stream() { return view().stream(); }
+        public Object[] toArray() { return view().toArray(); }
+        public <T> T[] toArray(IntFunction<T[]> generator) { return view().toArray(generator); }
+        public <T> T[] toArray(T[] a) { return view().toArray(a); }
+        public String toString() { return view().toString(); }
+    }
 }

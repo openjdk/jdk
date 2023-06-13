@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,22 +25,17 @@
 #ifndef CPU_X86_BYTES_X86_HPP
 #define CPU_X86_BYTES_X86_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "utilities/align.hpp"
+#include "utilities/byteswap.hpp"
 #include "utilities/macros.hpp"
 
 class Bytes: AllStatic {
- private:
-#ifndef AMD64
-  // Helper function for swap_u8
-  static inline u8   swap_u8_base(u4 x, u4 y);        // compiler-dependent implementation
-#endif // AMD64
-
  public:
   // Efficient reading and writing of unaligned unsigned data in platform-specific byte ordering
   template <typename T>
   static inline T get_native(const void* p) {
-    assert(p != NULL, "null pointer");
+    assert(p != nullptr, "null pointer");
 
     T x;
 
@@ -55,7 +50,7 @@ class Bytes: AllStatic {
 
   template <typename T>
   static inline void put_native(void* p, T x) {
-    assert(p != NULL, "null pointer");
+    assert(p != nullptr, "null pointer");
 
     if (is_aligned(p, sizeof(T))) {
       *(T*)p = x;
@@ -79,7 +74,7 @@ class Bytes: AllStatic {
     T x = get_native<T>(p);
 
     if (Endian::is_Java_byte_ordering_different()) {
-      x = swap<T>(x);
+      x = byteswap(x);
     }
 
     return x;
@@ -88,7 +83,7 @@ class Bytes: AllStatic {
   template <typename T>
   static inline void put_Java(address p, T x) {
     if (Endian::is_Java_byte_ordering_different()) {
-      x = swap<T>(x);
+      x = byteswap(x);
     }
 
     put_native<T>(p, x);
@@ -101,27 +96,6 @@ class Bytes: AllStatic {
   static inline void put_Java_u2(address p, u2 x)     { put_Java<u2>(p, x); }
   static inline void put_Java_u4(address p, u4 x)     { put_Java<u4>(p, x); }
   static inline void put_Java_u8(address p, u8 x)     { put_Java<u8>(p, x); }
-
-  // Efficient swapping of byte ordering
-  template <typename T>
-  static T swap(T x) {
-    switch (sizeof(T)) {
-    case sizeof(u1): return x;
-    case sizeof(u2): return swap_u2(x);
-    case sizeof(u4): return swap_u4(x);
-    case sizeof(u8): return swap_u8(x);
-    default:
-      guarantee(false, "invalid size: " SIZE_FORMAT "\n", sizeof(T));
-      return 0;
-    }
-  }
-
-  static inline u2   swap_u2(u2 x);                   // compiler-dependent implementation
-  static inline u4   swap_u4(u4 x);                   // compiler-dependent implementation
-  static inline u8   swap_u8(u8 x);
 };
-
-// The following header contains the implementations of swap_u2, swap_u4, and swap_u8[_base]
-#include OS_CPU_HEADER(bytes)
 
 #endif // CPU_X86_BYTES_X86_HPP

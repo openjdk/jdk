@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,10 +34,10 @@
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "runtime/handles.inline.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "utilities/stack.inline.hpp"
 
-static jobject empty_java_util_arraylist = NULL;
+static jobject empty_java_util_arraylist = nullptr;
 
 static oop new_java_util_arraylist(TRAPS) {
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(THREAD));
@@ -51,16 +51,16 @@ static const int initial_array_size = 64;
 
 template <typename T>
 static GrowableArray<T>* c_heap_allocate_array(int size = initial_array_size) {
-  return new (ResourceObj::C_HEAP, mtTracing) GrowableArray<T>(size, mtTracing);
+  return new (mtTracing) GrowableArray<T>(size, mtTracing);
 }
 
 static bool initialize(TRAPS) {
   static bool initialized = false;
   if (!initialized) {
-    assert(NULL == empty_java_util_arraylist, "invariant");
+    assert(nullptr == empty_java_util_arraylist, "invariant");
     const oop array_list = new_java_util_arraylist(CHECK_false);
     empty_java_util_arraylist = JfrJavaSupport::global_jni_handle(array_list, THREAD);
-    initialized = empty_java_util_arraylist != NULL;
+    initialized = empty_java_util_arraylist != nullptr;
   }
   return initialized;
 }
@@ -72,13 +72,17 @@ static bool initialize(TRAPS) {
  * trigger initialization.
  */
 static bool is_allowed(const Klass* k) {
-  assert(k != NULL, "invariant");
+  assert(k != nullptr, "invariant");
+  if (!JfrTraceId::is_jdk_jfr_event_sub(k)) {
+    // Was excluded during initial class load.
+    return false;
+  }
   return !(k->is_abstract() || k->should_be_initialized());
 }
 
 static void fill_klasses(GrowableArray<const void*>& event_subklasses, const InstanceKlass* event_klass, JavaThread* thread) {
   assert(event_subklasses.length() == 0, "invariant");
-  assert(event_klass != NULL, "invariant");
+  assert(event_klass != nullptr, "invariant");
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(thread));
 
   for (ClassHierarchyIterator iter(const_cast<InstanceKlass*>(event_klass)); !iter.done(); iter.next()) {
@@ -103,21 +107,21 @@ static void transform_klasses_to_local_jni_handles(GrowableArray<const void*>& e
 jobject JdkJfrEvent::get_all_klasses(TRAPS) {
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(THREAD));
   initialize(THREAD);
-  assert(empty_java_util_arraylist != NULL, "should have been setup already!");
+  assert(empty_java_util_arraylist != nullptr, "should have been setup already!");
   static const char jdk_jfr_event_name[] = "jdk/internal/event/Event";
   Symbol* const event_klass_name = SymbolTable::probe(jdk_jfr_event_name, sizeof jdk_jfr_event_name - 1);
 
-  if (NULL == event_klass_name) {
+  if (nullptr == event_klass_name) {
     // not loaded yet
     return empty_java_util_arraylist;
   }
 
   const Klass* const klass = SystemDictionary::resolve_or_null(event_klass_name, THREAD);
-  assert(klass != NULL, "invariant");
+  assert(klass != nullptr, "invariant");
   assert(klass->is_instance_klass(), "invariant");
   assert(JdkJfrEvent::is(klass), "invariant");
 
-  if (klass->subklass() == NULL) {
+  if (klass->subklass() == nullptr) {
     return empty_java_util_arraylist;
   }
 
@@ -137,13 +141,12 @@ jobject JdkJfrEvent::get_all_klasses(TRAPS) {
   static const char add_method_name[] = "add";
   static const char add_method_signature[] = "(Ljava/lang/Object;)Z";
   const Klass* const array_list_klass = JfrJavaSupport::klass(empty_java_util_arraylist);
-  assert(array_list_klass != NULL, "invariant");
+  assert(array_list_klass != nullptr, "invariant");
 
   const Symbol* const add_method_sym = SymbolTable::new_symbol(add_method_name);
-  assert(add_method_sym != NULL, "invariant");
+  assert(add_method_sym != nullptr, "invariant");
 
   const Symbol* const add_method_sig_sym = SymbolTable::new_symbol(add_method_signature);
-  assert(add_method_signature != NULL, "invariant");
 
   JavaValue result(T_BOOLEAN);
   for (int i = 0; i < event_subklasses.length(); ++i) {
@@ -196,6 +199,10 @@ bool JdkJfrEvent::is_a(const jclass jc) {
   return JfrTraceId::in_jdk_jfr_event_hierarchy(jc);
 }
 
+void JdkJfrEvent::remove(const Klass* k) {
+  JfrTraceId::untag_jdk_jfr_event_sub(k);
+}
+
 bool JdkJfrEvent::is_host(const Klass* k) {
   return JfrTraceId::is_event_host(k);
 }
@@ -219,3 +226,8 @@ bool JdkJfrEvent::is_visible(const Klass* k) {
 bool JdkJfrEvent::is_visible(const jclass jc) {
   return JfrTraceId::in_visible_set(jc);
 }
+
+bool JdkJfrEvent::is_excluded(const jclass jc) {
+  return !JfrTraceId::in_visible_set(jc);
+}
+

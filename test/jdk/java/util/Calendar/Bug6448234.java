@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ import static java.util.Calendar.*;
 
 public class Bug6448234 {
     public static void main(String[] args) {
-        Calendar jcal = Calendar.getInstance(new Locale("ja", "JP", "JP"));
+        Calendar jcal = Calendar.getInstance(Locale.of("ja", "JP", "JP"));
         Calendar gcal = Calendar.getInstance(Locale.US);
 
         for (int i = SUNDAY; i <= SATURDAY; i++) {

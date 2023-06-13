@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ import java.lang.invoke.VarHandle.VarHandleDesc;
 
 /**
  * A <a href="package-summary.html#nominal">nominal descriptor</a> for a loadable
- * constant value, as defined in JVMS 4.4. Such a descriptor can be resolved via
+ * constant value, as defined in JVMS {@jvms 4.4}. Such a descriptor can be resolved via
  * {@link ConstantDesc#resolveConstantDesc(MethodHandles.Lookup)} to yield the
  * constant value itself.
  *
@@ -74,6 +74,7 @@ import java.lang.invoke.VarHandle.VarHandleDesc;
  * @jvms 4.4 The Constant Pool
  *
  * @since 12
+ * @sealedGraph
  */
 public sealed interface ConstantDesc
         permits ClassDesc,
@@ -87,7 +88,7 @@ public sealed interface ConstantDesc
                 String {
     /**
      * Resolves this descriptor reflectively, emulating the resolution behavior
-     * of JVMS 5.4.3 and the access control behavior of JVMS 5.4.4.  The resolution
+     * of JVMS {@jvms 5.4.3} and the access control behavior of JVMS {@jvms 5.4.4}.  The resolution
      * and access control context is provided by the {@link MethodHandles.Lookup}
      * parameter.  No caching of the resulting value is performed.
      *
@@ -98,9 +99,9 @@ public sealed interface ConstantDesc
      * could not be reflectively resolved in the course of resolution
      * @throws LinkageError if a linkage error occurs
      *
-     * @apiNote {@linkplain MethodTypeDesc} can represent method type descriptors
-     * that are not representable by {@linkplain MethodType}, such as methods with
-     * more than 255 parameter slots, so attempts to resolve these may result in errors.
+     * @apiNote Some constant descriptors, such as {@linkplain MethodTypeDesc}, can represent
+     * a value that is not representable by run-time entities. Attempts to resolve these may
+     * result in errors.
      *
      * @jvms 5.4.3 Resolution
      * @jvms 5.4.4 Access Control

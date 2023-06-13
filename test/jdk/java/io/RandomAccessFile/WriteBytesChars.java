@@ -37,7 +37,7 @@ public class WriteBytesChars {
         byte[] b = new byte[80];
         File fn = new File("x.WriteBytesChars");
 
-        RandomAccessFile raf = new RandomAccessFile(fn , "rw");;
+        RandomAccessFile raf = new RandomAccessFile(fn , "rw");
         try {
             for (int i = 0; i < 80; i++) {
                 buf[i] = 'a';

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,6 @@ package sun.awt.X11;
 
 import java.awt.*;
 import java.io.*;
-import sun.security.action.GetPropertyAction;
-import java.security.AccessController;
 import sun.awt.OSInfo;
 
 /**
@@ -427,7 +425,7 @@ class MotifColorUtilities {
 
         for (int i=0;i<8;i++) {
             temp = bfr.readLine();
-            color = temp.substring(1,temp.length());
+            color = temp.substring(1);
             r = Integer.parseInt(color.substring(0, 4), 16) >> 8;
             g = Integer.parseInt(color.substring(4, 8), 16) >> 8;
             b = Integer.parseInt(color.substring(8, 12), 16) >> 8;
@@ -636,9 +634,8 @@ class MotifColorUtilities {
     }
 
 
-    @SuppressWarnings("removal")
     static void loadSystemColors(int[] systemColors) {
-        if ("Linux".equals(AccessController.doPrivileged(new GetPropertyAction("os.name")))) { // Load motif default colors on Linux.
+        if (OSInfo.getOSType() == OSInfo.OSType.LINUX) { // Load motif default colors on Linux.
             loadMotifDefaultColors(systemColors);
         }
         else

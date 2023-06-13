@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ import static jdk.internal.icu.impl.NormalizerImpl.UTF16Plus;
 /**
  * Immutable Unicode code point trie.
  * Fast, reasonably compact, map from Unicode code points (U+0000..U+10FFFF) to integer values.
- * For details see http://site.icu-project.org/design/struct/utrie
+ * For details see https://icu.unicode.org/design/struct/utrie
  *
  * <p>This class is not intended for public subclassing.
  *

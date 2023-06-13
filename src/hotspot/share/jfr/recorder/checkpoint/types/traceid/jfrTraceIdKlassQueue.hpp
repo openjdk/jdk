@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "jfr/utilities/jfrAllocation.hpp"
 #include "jfr/utilities/jfrEpochQueue.hpp"
 
+class JfrBuffer;
 class Klass;
 class Thread;
 
@@ -47,7 +48,7 @@ class KlassFunctor {
 // It details how to store and process an enqueued Klass representation. See utilities/jfrEpochQueue.hpp.
 //
 template <typename Buffer>
-class JfrEpochQueueKlassPolicy {
+class JfrEpochQueueKlassPolicy : public JfrCHeapObj {
  public:
   typedef Buffer* BufferPtr;
   typedef Klass Type;
@@ -56,7 +57,7 @@ class JfrEpochQueueKlassPolicy {
   void store_element(const Klass* klass, BufferPtr buffer);
   // Element size is a function of the traceid value.
   size_t element_size(const Klass* klass);
-  // Storage associated with the the queue is distributed and cached in thread locals.
+  // Storage associated with the queue is distributed and cached in thread locals.
   BufferPtr thread_local_storage(Thread* thread) const;
   void set_thread_local_storage(BufferPtr buffer, Thread* thread);
   // Klasses are validated for liveness before being forwarded to the user provided callback.
@@ -64,8 +65,11 @@ class JfrEpochQueueKlassPolicy {
 };
 
 class JfrTraceIdKlassQueue : public JfrCHeapObj {
+  friend class JfrTraceIdLoadBarrier;
  private:
   JfrEpochQueue<JfrEpochQueueKlassPolicy>* _queue;
+  JfrBuffer* get_enqueue_buffer(Thread* thread);
+  JfrBuffer* renew_enqueue_buffer(Thread* thread, size_t size = 0);
  public:
   JfrTraceIdKlassQueue();
   ~JfrTraceIdKlassQueue();

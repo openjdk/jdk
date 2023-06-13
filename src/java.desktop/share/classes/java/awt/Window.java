@@ -442,9 +442,9 @@ public class Window extends Container implements Accessible {
      * @param gc the {@code GraphicsConfiguration} of the target screen
      *     device. If {@code gc} is {@code null}, the system default
      *     {@code GraphicsConfiguration} is assumed
-     * @exception IllegalArgumentException if {@code gc}
+     * @throws IllegalArgumentException if {@code gc}
      *    is not from a screen device
-     * @exception HeadlessException when
+     * @throws HeadlessException when
      *     {@code GraphicsEnvironment.isHeadless()} returns {@code true}
      *
      * @see java.awt.GraphicsEnvironment#isHeadless
@@ -544,7 +544,7 @@ public class Window extends Container implements Accessible {
      * If that check fails with a {@code SecurityException} then a warning
      * banner is created.
      *
-     * @exception HeadlessException when
+     * @throws HeadlessException when
      *     {@code GraphicsEnvironment.isHeadless()} returns {@code true}
      *
      * @see java.awt.GraphicsEnvironment#isHeadless
@@ -566,9 +566,9 @@ public class Window extends Container implements Accessible {
      *
      * @param owner the {@code Frame} to act as owner or {@code null}
      *    if this window has no owner
-     * @exception IllegalArgumentException if the {@code owner}'s
+     * @throws IllegalArgumentException if the {@code owner}'s
      *    {@code GraphicsConfiguration} is not from a screen device
-     * @exception HeadlessException when
+     * @throws HeadlessException when
      *    {@code GraphicsEnvironment.isHeadless} returns {@code true}
      *
      * @see java.awt.GraphicsEnvironment#isHeadless
@@ -593,9 +593,9 @@ public class Window extends Container implements Accessible {
      *
      * @param owner the {@code Window} to act as owner or
      *     {@code null} if this window has no owner
-     * @exception IllegalArgumentException if the {@code owner}'s
+     * @throws IllegalArgumentException if the {@code owner}'s
      *     {@code GraphicsConfiguration} is not from a screen device
-     * @exception HeadlessException when
+     * @throws HeadlessException when
      *     {@code GraphicsEnvironment.isHeadless()} returns
      *     {@code true}
      *
@@ -627,9 +627,9 @@ public class Window extends Container implements Accessible {
      * @param gc the {@code GraphicsConfiguration} of the target
      *     screen device; if {@code gc} is {@code null},
      *     the system default {@code GraphicsConfiguration} is assumed
-     * @exception IllegalArgumentException if {@code gc}
+     * @throws IllegalArgumentException if {@code gc}
      *     is not from a screen device
-     * @exception HeadlessException when
+     * @throws HeadlessException when
      *     {@code GraphicsEnvironment.isHeadless()} returns
      *     {@code true}
      *
@@ -1964,10 +1964,10 @@ public class Window extends Container implements Accessible {
      *          <code><em>Foo</em>Listener</code>s on this window,
      *          or an empty array if no such
      *          listeners have been added
-     * @exception ClassCastException if {@code listenerType}
+     * @throws ClassCastException if {@code listenerType}
      *          doesn't specify a class or interface that implements
      *          {@code java.util.EventListener}
-     * @exception NullPointerException if {@code listenerType} is {@code null}
+     * @throws NullPointerException if {@code listenerType} is {@code null}
      *
      * @see #getWindowListeners
      * @since 1.3
@@ -3372,8 +3372,8 @@ public class Window extends Container implements Accessible {
      * Each time this method is called,
      * the existing buffer strategy for this component is discarded.
      * @param numBuffers number of buffers to create
-     * @exception IllegalArgumentException if numBuffers is less than 1.
-     * @exception IllegalStateException if the component is not displayable
+     * @throws IllegalArgumentException if numBuffers is less than 1.
+     * @throws IllegalStateException if the component is not displayable
      * @see #isDisplayable
      * @see #getBufferStrategy
      * @since 1.4
@@ -3393,11 +3393,11 @@ public class Window extends Container implements Accessible {
      * @param numBuffers number of buffers to create, including the front buffer
      * @param caps the required capabilities for creating the buffer strategy;
      * cannot be {@code null}
-     * @exception AWTException if the capabilities supplied could not be
+     * @throws AWTException if the capabilities supplied could not be
      * supported or met; this may happen, for example, if there is not enough
      * accelerated memory currently available, or if page flipping is specified
      * but not possible.
-     * @exception IllegalArgumentException if numBuffers is less than 1, or if
+     * @throws IllegalArgumentException if numBuffers is less than 1, or if
      * caps is {@code null}
      * @see #getBufferStrategy
      * @since 1.4

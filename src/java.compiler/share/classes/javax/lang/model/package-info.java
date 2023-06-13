@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,8 +36,8 @@
  * <p> This language model follows a <i>mirror</i>-based design; see
  *
  * <blockquote>
- * Gilad Bracha and David Ungar. <i>Mirrors: Design Principles for
- * Meta-level Facilities of Object-Oriented Programming Languages</i>.
+ * Gilad Bracha and David Ungar. <cite>Mirrors: Design Principles for
+ * Meta-level Facilities of Object-Oriented Programming Languages</cite>.
  * In Proc. of the ACM Conf. on Object-Oriented Programming, Systems,
  * Languages and Applications, October 2004.
  * </blockquote>
@@ -52,10 +52,10 @@
  * <p>Unless otherwise specified, methods in this package will throw
  * a {@code NullPointerException} if given a {@code null} argument.
  *
- * @author Joseph D. Darcy
- * @author Scott Seligman
- * @author Peter von der Ah&eacute;
  * @since 1.6
+ *
+ * @see <a href="https://jcp.org/en/jsr/detail?id=269">
+ * JSR 269: Pluggable Annotation Processing API</a>
  */
 
 package javax.lang.model;

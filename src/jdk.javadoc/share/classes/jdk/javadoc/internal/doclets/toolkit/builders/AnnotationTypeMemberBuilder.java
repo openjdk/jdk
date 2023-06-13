@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,11 +39,6 @@ import static jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable.Kind.
 
 /**
  * Builds documentation for required annotation type members.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
 public class AnnotationTypeMemberBuilder extends AbstractMemberBuilder {
 
@@ -106,100 +101,100 @@ public class AnnotationTypeMemberBuilder extends AbstractMemberBuilder {
     }
 
     @Override
-    public void build(Content contentTree) throws DocletException {
-        buildAnnotationTypeMember(contentTree);
+    public void build(Content target) throws DocletException {
+        buildAnnotationTypeMember(target);
     }
 
     /**
      * Build the member documentation.
      *
-     * @param detailsList the content tree to which the documentation will be added
+     * @param target the content to which the documentation will be added
      * @throws DocletException if an error occurs
      */
-    protected void buildAnnotationTypeMember(Content detailsList)
+    protected void buildAnnotationTypeMember(Content target)
             throws DocletException {
         if (hasMembersToDocument()) {
-            writer.addAnnotationDetailsMarker(detailsList);
-            Content annotationDetailsTreeHeader = writer.getAnnotationDetailsTreeHeader();
+            writer.addAnnotationDetailsMarker(target);
+            Content annotationDetailsHeader = writer.getAnnotationDetailsHeader();
             Content memberList = writer.getMemberList();
 
             for (Element member : members) {
                 currentMember = member;
-                Content annotationDocTree = writer.getAnnotationDocTreeHeader(currentMember);
+                Content annotationContent = writer.getAnnotationHeaderContent(currentMember);
 
-                buildAnnotationTypeMemberChildren(annotationDocTree);
+                buildAnnotationTypeMemberChildren(annotationContent);
 
-                memberList.add(writer.getMemberListItem(annotationDocTree));
+                memberList.add(writer.getMemberListItem(annotationContent));
             }
-            Content annotationDetails = writer.getAnnotationDetails(annotationDetailsTreeHeader, memberList);
-            detailsList.add(annotationDetails);
+            Content annotationDetails = writer.getAnnotationDetails(annotationDetailsHeader, memberList);
+            target.add(annotationDetails);
         }
     }
 
-    protected void buildAnnotationTypeMemberChildren(Content annotationDocTree) {
-        buildSignature(annotationDocTree);
-        buildDeprecationInfo(annotationDocTree);
-        buildPreviewInfo(annotationDocTree);
-        buildMemberComments(annotationDocTree);
-        buildTagInfo(annotationDocTree);
-        buildDefaultValueInfo(annotationDocTree);
+    protected void buildAnnotationTypeMemberChildren(Content annotationContent) {
+        buildSignature(annotationContent);
+        buildDeprecationInfo(annotationContent);
+        buildPreviewInfo(annotationContent);
+        buildMemberComments(annotationContent);
+        buildTagInfo(annotationContent);
+        buildDefaultValueInfo(annotationContent);
     }
 
     /**
      * Build the signature.
      *
-     * @param annotationDocTree the content tree to which the documentation will be added
+     * @param target the content to which the documentation will be added
      */
-    protected void buildSignature(Content annotationDocTree) {
-        annotationDocTree.add(writer.getSignature(currentMember));
+    protected void buildSignature(Content target) {
+        target.add(writer.getSignature(currentMember));
     }
 
     /**
      * Build the deprecation information.
      *
-     * @param annotationDocTree the content tree to which the documentation will be added
+     * @param annotationContent the content to which the documentation will be added
      */
-    protected void buildDeprecationInfo(Content annotationDocTree) {
-        writer.addDeprecated(currentMember, annotationDocTree);
+    protected void buildDeprecationInfo(Content annotationContent) {
+        writer.addDeprecated(currentMember, annotationContent);
     }
 
     /**
      * Build the preview information.
      *
-     * @param annotationDocTree the content tree to which the documentation will be added
+     * @param annotationContent the content to which the documentation will be added
      */
-    protected void buildPreviewInfo(Content annotationDocTree) {
-        writer.addPreview(currentMember, annotationDocTree);
+    protected void buildPreviewInfo(Content annotationContent) {
+        writer.addPreview(currentMember, annotationContent);
     }
 
     /**
      * Build the comments for the member.  Do nothing if
      * {@link BaseOptions#noComment()} is set to true.
      *
-     * @param annotationDocTree the content tree to which the documentation will be added
+     * @param annotationContent the content to which the documentation will be added
      */
-    protected void buildMemberComments(Content annotationDocTree) {
+    protected void buildMemberComments(Content annotationContent) {
         if (!options.noComment()) {
-            writer.addComments(currentMember, annotationDocTree);
+            writer.addComments(currentMember, annotationContent);
         }
     }
 
     /**
      * Build the tag information.
      *
-     * @param annotationDocTree the content tree to which the documentation will be added
+     * @param annotationContent the content to which the documentation will be added
      */
-    protected void buildTagInfo(Content annotationDocTree) {
-        writer.addTags(currentMember, annotationDocTree);
+    protected void buildTagInfo(Content annotationContent) {
+        writer.addTags(currentMember, annotationContent);
     }
 
     /**
      * Build the default value for this optional member.
      *
-     * @param annotationDocTree the content tree to which the documentation will be added
+     * @param annotationContent the content to which the documentation will be added
      */
-    protected void buildDefaultValueInfo(Content annotationDocTree) {
-        writer.addDefaultValueInfo(currentMember, annotationDocTree);
+    protected void buildDefaultValueInfo(Content annotationContent) {
+        writer.addDefaultValueInfo(currentMember, annotationContent);
     }
 
     /**

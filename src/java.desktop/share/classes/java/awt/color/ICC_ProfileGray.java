@@ -65,7 +65,7 @@ import sun.java2d.cmm.ProfileDeferralInfo;
  * The inverse transform is done by converting the PCS Y components to device
  * Gray via the inverse of the grayTRC.
  */
-public class ICC_ProfileGray extends ICC_Profile {
+public final class ICC_ProfileGray extends ICC_Profile {
 
     /**
      * Use serialVersionUID from JDK 1.2 for interoperability.

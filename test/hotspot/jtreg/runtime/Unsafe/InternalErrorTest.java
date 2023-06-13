@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,8 @@
  *          java.base/java.nio:+open
  *
  * @library /test/lib
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
  * @run main/othervm -XX:CompileCommand=exclude,*InternalErrorTest.main -XX:CompileCommand=inline,*.get -XX:CompileCommand=inline,*Unsafe.* -Xbootclasspath/a:.  -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI InternalErrorTest
  */
@@ -47,7 +47,7 @@ import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import jdk.internal.misc.Unsafe;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 // Test that illegal memory access errors in Unsafe_CopyMemory0() and
 // UnsafeCopySwapMemory() that cause SIGBUS errors result in

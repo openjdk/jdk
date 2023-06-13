@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,9 +42,9 @@
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/safepoint.hpp"
-#include "runtime/thread.hpp"
 
 // Timestamp of when the gc last processed the set of sampled objects.
 // Atomic access to prevent word tearing on 32-bit platforms.
@@ -57,13 +57,13 @@ static bool volatile _dead_samples = false;
 // The OopStorage instance is used to hold weak references to sampled objects.
 // It is constructed and registered during VM initialization. This is a singleton
 // that persist independent of the state of the ObjectSampler.
-static OopStorage* _oop_storage = NULL;
+static OopStorage* _oop_storage = nullptr;
 
 OopStorage* ObjectSampler::oop_storage() { return _oop_storage; }
 
 // Callback invoked by the GC after an iteration over the oop storage
 // that may have cleared dead referents. num_dead is the number of entries
-// already NULL or cleared by the iteration.
+// already nullptr or cleared by the iteration.
 void ObjectSampler::oop_storage_gc_notification(size_t num_dead) {
   if (num_dead != 0) {
     // The ObjectSampler instance may have already been cleaned or a new
@@ -76,15 +76,15 @@ void ObjectSampler::oop_storage_gc_notification(size_t num_dead) {
 
 bool ObjectSampler::create_oop_storage() {
   _oop_storage = OopStorageSet::create_weak("Weak JFR Old Object Samples", mtTracing);
-  assert(_oop_storage != NULL, "invariant");
+  assert(_oop_storage != nullptr, "invariant");
   _oop_storage->register_num_dead_callback(&oop_storage_gc_notification);
   return true;
 }
 
-static ObjectSampler* _instance = NULL;
+static ObjectSampler* _instance = nullptr;
 
 static ObjectSampler& instance() {
-  assert(_instance != NULL, "invariant");
+  assert(_instance != nullptr, "invariant");
   return *_instance;
 }
 
@@ -100,22 +100,22 @@ ObjectSampler::ObjectSampler(size_t size) :
 
 ObjectSampler::~ObjectSampler() {
   delete _priority_queue;
-  _priority_queue = NULL;
+  _priority_queue = nullptr;
   delete _list;
-  _list = NULL;
+  _list = nullptr;
 }
 
 bool ObjectSampler::create(size_t size) {
   assert(SafepointSynchronize::is_at_safepoint(), "invariant");
-  assert(_oop_storage != NULL, "should be already created");
+  assert(_oop_storage != nullptr, "should be already created");
   ObjectSampleCheckpoint::clear();
-  assert(_instance == NULL, "invariant");
+  assert(_instance == nullptr, "invariant");
   _instance = new ObjectSampler(size);
-  return _instance != NULL;
+  return _instance != nullptr;
 }
 
 bool ObjectSampler::is_created() {
-  return _instance != NULL;
+  return _instance != nullptr;
 }
 
 ObjectSampler* ObjectSampler::sampler() {
@@ -125,9 +125,9 @@ ObjectSampler* ObjectSampler::sampler() {
 
 void ObjectSampler::destroy() {
   assert(SafepointSynchronize::is_at_safepoint(), "invariant");
-  if (_instance != NULL) {
+  if (_instance != nullptr) {
     ObjectSampler* const sampler = _instance;
-    _instance = NULL;
+    _instance = nullptr;
     delete sampler;
   }
 }
@@ -144,21 +144,36 @@ void ObjectSampler::release() {
   _lock = 0;
 }
 
-static traceid get_thread_id(JavaThread* thread) {
-  assert(thread != NULL, "invariant");
-  if (thread->threadObj() == NULL) {
+static traceid get_thread_id(JavaThread* thread, bool* virtual_thread) {
+  assert(thread != nullptr, "invariant");
+  assert(virtual_thread != nullptr, "invariant");
+  if (thread->threadObj() == nullptr) {
     return 0;
   }
   const JfrThreadLocal* const tl = thread->jfr_thread_local();
-  assert(tl != NULL, "invariant");
+  assert(tl != nullptr, "invariant");
   if (tl->is_excluded()) {
     return 0;
   }
-  if (!tl->has_thread_blob()) {
-    JfrCheckpointManager::create_thread_blob(thread);
+  *virtual_thread = tl->is_vthread(thread);
+  return JfrThreadLocal::thread_id(thread);
+}
+
+static JfrBlobHandle get_thread_blob(JavaThread* thread, traceid tid, bool virtual_thread) {
+  assert(thread != nullptr, "invariant");
+  JfrThreadLocal* const tl = thread->jfr_thread_local();
+  assert(tl != nullptr, "invariant");
+  assert(!tl->is_excluded(), "invariant");
+  if (virtual_thread) {
+    // TODO: blob cache for virtual threads
+    return JfrCheckpointManager::create_thread_blob(thread, tid, thread->vthread());
   }
-  assert(tl->has_thread_blob(), "invariant");
-  return tl->thread_id();
+  if (!tl->has_thread_blob()) {
+    // for regular threads, the blob is cached in the thread local data structure
+    tl->set_thread_blob(JfrCheckpointManager::create_thread_blob(thread, tid));
+    assert(tl->has_thread_blob(), "invariant");
+  }
+  return tl->thread_blob();
 }
 
 class RecordStackTrace {
@@ -180,12 +195,15 @@ class RecordStackTrace {
 };
 
 void ObjectSampler::sample(HeapWord* obj, size_t allocated, JavaThread* thread) {
-  assert(thread != NULL, "invariant");
+  assert(thread != nullptr, "invariant");
   assert(is_created(), "invariant");
-  const traceid thread_id = get_thread_id(thread);
+  bool virtual_thread = false;
+  const traceid thread_id = get_thread_id(thread, &virtual_thread);
   if (thread_id == 0) {
     return;
   }
+  const JfrBlobHandle bh = get_thread_blob(thread, thread_id, virtual_thread);
+  assert(bh.valid(), "invariant");
   RecordStackTrace rst(thread);
   // try enter critical section
   JfrTryLock tryLock(&_lock);
@@ -193,14 +211,13 @@ void ObjectSampler::sample(HeapWord* obj, size_t allocated, JavaThread* thread) 
     log_trace(jfr, oldobject, sampling)("Skipping old object sample due to lock contention");
     return;
   }
-  instance().add(obj, allocated, thread_id, thread);
+  instance().add(obj, allocated, thread_id, virtual_thread, bh, thread);
 }
 
-void ObjectSampler::add(HeapWord* obj, size_t allocated, traceid thread_id, JavaThread* thread) {
-  assert(obj != NULL, "invariant");
+void ObjectSampler::add(HeapWord* obj, size_t allocated, traceid thread_id, bool virtual_thread, const JfrBlobHandle& bh, JavaThread* thread) {
+  assert(obj != nullptr, "invariant");
   assert(thread_id != 0, "invariant");
-  assert(thread != NULL, "invariant");
-  assert(thread->jfr_thread_local()->has_thread_blob(), "invariant");
+  assert(thread != nullptr, "invariant");
 
   if (Atomic::load(&_dead_samples)) {
     // There's a small race where a GC scan might reset this to true, potentially
@@ -224,12 +241,14 @@ void ObjectSampler::add(HeapWord* obj, size_t allocated, traceid thread_id, Java
     sample = _list->get();
   }
 
-  assert(sample != NULL, "invariant");
+  assert(sample != nullptr, "invariant");
   sample->set_thread_id(thread_id);
+  if (virtual_thread) {
+    sample->set_thread_is_virtual();
+  }
+  sample->set_thread(bh);
 
   const JfrThreadLocal* const tl = thread->jfr_thread_local();
-  sample->set_thread(tl->thread_blob());
-
   const unsigned int stacktrace_hash = tl->cached_stack_trace_hash();
   if (stacktrace_hash != 0) {
     sample->set_stack_trace_id(tl->cached_stack_trace_id());
@@ -246,7 +265,7 @@ void ObjectSampler::add(HeapWord* obj, size_t allocated, traceid thread_id, Java
 
 void ObjectSampler::scavenge() {
   ObjectSample* current = _list->last();
-  while (current != NULL) {
+  while (current != nullptr) {
     ObjectSample* next = current->next();
     if (current->is_dead()) {
       remove_dead(current);
@@ -256,13 +275,13 @@ void ObjectSampler::scavenge() {
 }
 
 void ObjectSampler::remove_dead(ObjectSample* sample) {
-  assert(sample != NULL, "invariant");
+  assert(sample != nullptr, "invariant");
   assert(sample->is_dead(), "invariant");
   sample->release();
 
   ObjectSample* const previous = sample->prev();
   // push span onto previous
-  if (previous != NULL) {
+  if (previous != nullptr) {
     _priority_queue->remove(previous);
     previous->add_span(sample->span());
     _priority_queue->push(previous);

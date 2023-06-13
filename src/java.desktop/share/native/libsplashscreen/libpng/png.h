@@ -29,9 +29,9 @@
  * However, the following notice accompanied the original version of this
  * file and, per its terms, should not be removed:
  *
- * libpng version 1.6.37 - April 14, 2019
+ * libpng version 1.6.39 - November 20, 2022
  *
- * Copyright (c) 2018-2019 Cosmin Truta
+ * Copyright (c) 2018-2022 Cosmin Truta
  * Copyright (c) 1998-2002,2004,2006-2018 Glenn Randers-Pehrson
  * Copyright (c) 1996-1997 Andreas Dilger
  * Copyright (c) 1995-1996 Guy Eric Schalnat, Group 42, Inc.
@@ -43,7 +43,7 @@
  *   libpng versions 0.89, June 1996, through 0.96, May 1997: Andreas Dilger
  *   libpng versions 0.97, January 1998, through 1.6.35, July 2018:
  *     Glenn Randers-Pehrson
- *   libpng versions 1.6.36, December 2018, through 1.6.37, April 2019:
+ *   libpng versions 1.6.36, December 2018, through 1.6.39, November 2022:
  *     Cosmin Truta
  *   See also "Contributing Authors", below.
  */
@@ -55,8 +55,8 @@
  * PNG Reference Library License version 2
  * ---------------------------------------
  *
- *  * Copyright (c) 1995-2019 The PNG Reference Library Authors.
- *  * Copyright (c) 2018-2019 Cosmin Truta.
+ *  * Copyright (c) 1995-2022 The PNG Reference Library Authors.
+ *  * Copyright (c) 2018-2022 Cosmin Truta.
  *  * Copyright (c) 2000-2002, 2004, 2006-2018 Glenn Randers-Pehrson.
  *  * Copyright (c) 1996-1997 Andreas Dilger.
  *  * Copyright (c) 1995-1996 Guy Eric Schalnat, Group 42, Inc.
@@ -267,7 +267,7 @@
  *    ...
  *    1.5.30                  15    10530  15.so.15.30[.0]
  *    ...
- *    1.6.37                  16    10637  16.so.16.37[.0]
+ *    1.6.39                  16    10639  16.so.16.39[.0]
  *
  *    Henceforth the source version will match the shared-library major and
  *    minor numbers; the shared-library major version number will be used for
@@ -306,8 +306,8 @@
  */
 
 /* Version information for png.h - this should match the version in png.c */
-#define PNG_LIBPNG_VER_STRING "1.6.37"
-#define PNG_HEADER_VERSION_STRING " libpng version 1.6.37 - April 14, 2019\n"
+#define PNG_LIBPNG_VER_STRING "1.6.39"
+#define PNG_HEADER_VERSION_STRING " libpng version 1.6.39 - November 20, 2022\n"
 
 #define PNG_LIBPNG_VER_SONUM   16
 #define PNG_LIBPNG_VER_DLLNUM  16
@@ -315,7 +315,7 @@
 /* These should match the first 3 components of PNG_LIBPNG_VER_STRING: */
 #define PNG_LIBPNG_VER_MAJOR   1
 #define PNG_LIBPNG_VER_MINOR   6
-#define PNG_LIBPNG_VER_RELEASE 37
+#define PNG_LIBPNG_VER_RELEASE 39
 
 /* This should be zero for a public release, or non-zero for a
  * development version.  [Deprecated]
@@ -346,7 +346,7 @@
  * From version 1.0.1 it is:
  * XXYYZZ, where XX=major, YY=minor, ZZ=release
  */
-#define PNG_LIBPNG_VER 10637 /* 1.6.37 */
+#define PNG_LIBPNG_VER 10639 /* 1.6.39 */
 
 /* Library configuration: these options cannot be changed after
  * the library has been built.
@@ -456,7 +456,7 @@ extern "C" {
 /* This triggers a compiler error in png.c, if png.c and png.h
  * do not agree upon the version number.
  */
-typedef char* png_libpng_version_1_6_37;
+typedef char* png_libpng_version_1_6_39;
 
 /* Basic control structions.  Read libpng-manual.txt or libpng.3 for more info.
  *
@@ -1474,7 +1474,7 @@ PNG_EXPORT(66, void, png_set_crc_action, (png_structrp png_ptr, int crit_action,
  * mainly useful for testing, as the defaults should work with most users.
  * Those users who are tight on memory or want faster performance at the
  * expense of compression can modify them.  See the compression library
- * header file (zlib.h) for an explination of the compression functions.
+ * header file (zlib.h) for an explanation of the compression functions.
  */
 
 /* Set the filtering method(s) used by libpng.  Currently, the only valid
@@ -1529,7 +1529,7 @@ PNG_FIXED_EXPORT(209, void, png_set_filter_heuristics_fixed,
  * 0 - 9, corresponding directly to the zlib compression levels 0 - 9
  * (0 - no compression, 9 - "maximal" compression).  Note that tests have
  * shown that zlib compression levels 3-6 usually perform as well as level 9
- * for PNG images, and do considerably fewer caclulations.  In the future,
+ * for PNG images, and do considerably fewer calculations.  In the future,
  * these values may not correspond directly to the zlib compression levels.
  */
 #ifdef PNG_WRITE_CUSTOMIZE_COMPRESSION_SUPPORTED

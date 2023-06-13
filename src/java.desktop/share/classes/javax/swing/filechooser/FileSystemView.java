@@ -65,7 +65,6 @@ import sun.awt.shell.ShellFolder;
 // PENDING(jeff) - need to provide a specification for
 // how Mac/OS2/BeOS/etc file systems can modify FileSystemView
 // to handle their particular type of file system.
-@SuppressWarnings("doclint:missing")
 public abstract class FileSystemView {
 
     static FileSystemView windowsFileSystemView = null;
@@ -348,13 +347,14 @@ public abstract class FileSystemView {
     }
 
     /**
+     * Returns a <code>File</code> object which is normally constructed with <code>new
+     * File(parent, fileName)</code> except when the parent and child are both
+     * special folders, in which case the <code>File</code> is a wrapper containing
+     * a ShellFolder object.
      *
      * @param parent a <code>File</code> object representing a directory or special folder
      * @param fileName a name of a file or folder which exists in <code>parent</code>
-     * @return a File object. This is normally constructed with <code>new
-     * File(parent, fileName)</code> except when parent and child are both
-     * special folders, in which case the <code>File</code> is a wrapper containing
-     * a <code>ShellFolder</code> object.
+     * @return a File object.
      * @since 1.4
      */
     public File getChild(File parent, String fileName) {

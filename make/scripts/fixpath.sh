@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,14 @@
 # available, or extract values automatically from the environment if missing.
 # This is robust, but slower.
 function setup() {
+
+  # Make regexp tests case insensitive
+  shopt -s nocasematch
+  # Prohibit msys2 from meddling with paths
+  export MSYS2_ARG_CONV_EXCL="*"
+  #  Make sure WSL gets a copy of the path
+  export WSLENV=PATH/l
+
   while getopts "e:p:r:t:c:qmi" opt; do
     case "$opt" in
     e) PATHTOOL="$OPTARG" ;;
@@ -87,13 +95,6 @@ function setup() {
     wintemp_win="$($CMD /q /c echo %TEMP% 2>/dev/null | tr -d \\n\\r)"
     WINTEMP="$($PATHTOOL -u "$wintemp_win")"
   fi
-
-  # Make regexp tests case insensitive
-  shopt -s nocasematch
-  # Prohibit msys2 from meddling with paths
-  export MSYS2_ARG_CONV_EXCL="*"
-  #  Make sure WSL gets a copy of the path
-  export WSLENV=PATH/l
 }
 
 # Cleanup handling
@@ -147,14 +148,13 @@ function import_path() {
   if [[ "$path" != "" ]]; then
     # Store current unix path
     unixpath="$path"
-    # Now turn it into a windows path
-    winpath="$($PATHTOOL -w "$path" 2>/dev/null)"
-    # If it fails, try again with an added .exe (needed on WSL)
-    if [[ $? -ne 0 ]]; then
+    # If $unixpath does not exist, add .exe (needed on WSL)
+    if [[ ! -e "$unixpath" ]]; then
       unixpath="$unixpath.exe"
-      winpath="$($PATHTOOL -w "$unixpath" 2>/dev/null)"
     fi
-    if [[ $? -eq 0 ]]; then
+    # Now turn it into a windows path
+    winpath="$($PATHTOOL -w "$unixpath" 2>/dev/null)"
+    if [[ $? -eq 0 && -e "$unixpath" ]]; then
       if [[ ! "$winpath" =~ ^"$ENVROOT"\\.*$ ]] ; then
         # If it is not in envroot, it's a generic windows path
         if [[ ! $winpath =~ ^[-_.:\\a-zA-Z0-9]*$ ]] ; then
@@ -299,6 +299,19 @@ function convert_path() {
   if [[ $arg =~ ^([^/]*|-[^:=]*[:=]|.*file://|/[a-zA-Z:]{1,3}:?)($DRIVEPREFIX/)([a-z])(/[^/]+.*$) ]] ; then
     prefix="${BASH_REMATCH[1]}"
     winpath="${BASH_REMATCH[3]}:${BASH_REMATCH[4]}"
+
+    # If the thing in its entirety points to an existing path, use that instead of thinking
+    # we have a prefix. This can only happen if the top-level directory has a single-letter name.
+    if [[ ${#prefix} -eq 2 && "${prefix:0:1}" == "/" ]]; then
+      possiblepath="${BASH_REMATCH[1]}/${BASH_REMATCH[3]}${BASH_REMATCH[4]}"
+      if [[ -e "$possiblepath" || -e "$(dirname $possiblepath)" || -e "$(echo $possiblepath | cut -d / -f 1-5)" ]] ; then
+        prefix=
+        drivepart="${possiblepath:1:1}"
+        pathpart="${possiblepath:2}"
+        winpath="$drivepart:$pathpart"
+      fi
+    fi
+
     # Change slash to backslash (or vice versa if mixed mode)
     if [[ $MIXEDMODE != true ]]; then
       winpath="${winpath//'/'/'\'}"
@@ -339,7 +352,22 @@ function convert_path() {
   fi
 }
 
-# Treat $1 as name of a file containg paths. Convert those paths to Windows style,
+# Treat $1 as name of a file containing paths. Convert those paths to Windows style,
+# and output them to the file specified by $2.
+# If the output file already exists, it is overwritten.
+function convert_file() {
+  infile="$1"
+  outfile="$2"
+  if [[ -e $outfile ]] ; then
+    rm $outfile
+  fi
+  while read line; do
+    convert_path "$line"
+    echo "$result" >> $outfile
+  done < $infile
+}
+
+# Treat $1 as name of a file containing paths. Convert those paths to Windows style,
 # in a new temporary file, and return a string "@<temp file>" pointing to that
 # new file.
 function convert_at_file() {
@@ -485,6 +513,8 @@ if [[ "$ACTION" == "import" ]] ; then
 elif [[ "$ACTION" == "print" ]] ; then
   print_command_line "$@"
   echo "$result"
+elif [[ "$ACTION" == "convert" ]] ; then
+  convert_file "$@"
 elif [[ "$ACTION" == "exec" ]] ; then
   exec_command_line "$@"
   # Propagate exit code

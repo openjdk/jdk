@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,7 @@
 #define SHARE_GC_SHARED_VMSTRUCTS_GC_HPP
 
 #include "gc/shared/ageTable.hpp"
-#include "gc/shared/cardGeneration.hpp"
 #include "gc/shared/cardTable.hpp"
-#include "gc/shared/cardTableRS.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/generation.hpp"
@@ -52,7 +50,7 @@
 #include "gc/shenandoah/vmStructs_shenandoah.hpp"
 #endif
 #if INCLUDE_ZGC
-#include "gc/z/vmStructs_z.hpp"
+#include "gc/z/shared/vmStructs_z_shared.hpp"
 #endif
 
 #define VM_STRUCTS_GC(nonstatic_field,                                                                                               \
@@ -74,9 +72,9 @@
   SHENANDOAHGC_ONLY(VM_STRUCTS_SHENANDOAH(nonstatic_field,                                                                           \
                                volatile_nonstatic_field,                                                                             \
                                static_field))                                                                                        \
-  ZGC_ONLY(VM_STRUCTS_ZGC(nonstatic_field,                                                                                           \
-                          volatile_nonstatic_field,                                                                                  \
-                          static_field))                                                                                             \
+  ZGC_ONLY(VM_STRUCTS_Z_SHARED(nonstatic_field,                                                                                      \
+                               volatile_nonstatic_field,                                                                             \
+                               static_field))                                                                                        \
                                                                                                                                      \
   /**********************************************************************************/                                               \
   /* Generation and Space hierarchies                                               */                                               \
@@ -88,36 +86,12 @@
                                                                                                                                      \
   nonstatic_field(BarrierSet::FakeRtti,        _concrete_tag,                                 BarrierSet::Name)                      \
                                                                                                                                      \
-  nonstatic_field(BlockOffsetTable,            _bottom,                                       HeapWord*)                             \
-  nonstatic_field(BlockOffsetTable,            _end,                                          HeapWord*)                             \
-                                                                                                                                     \
-  nonstatic_field(BlockOffsetSharedArray,      _reserved,                                     MemRegion)                             \
-  nonstatic_field(BlockOffsetSharedArray,      _end,                                          HeapWord*)                             \
-  nonstatic_field(BlockOffsetSharedArray,      _vs,                                           VirtualSpace)                          \
-  nonstatic_field(BlockOffsetSharedArray,      _offset_array,                                 u_char*)                               \
-                                                                                                                                     \
-  nonstatic_field(BlockOffsetArray,            _array,                                        BlockOffsetSharedArray*)               \
-  nonstatic_field(BlockOffsetArray,            _sp,                                           Space*)                                \
-  nonstatic_field(BlockOffsetArrayContigSpace, _next_offset_threshold,                        HeapWord*)                             \
-  nonstatic_field(BlockOffsetArrayContigSpace, _next_offset_index,                            size_t)                                \
-                                                                                                                                     \
-  nonstatic_field(CardGeneration,              _rs,                                           CardTableRS*)                          \
-  nonstatic_field(CardGeneration,              _bts,                                          BlockOffsetSharedArray*)               \
-  nonstatic_field(CardGeneration,              _shrink_factor,                                size_t)                                \
-  nonstatic_field(CardGeneration,              _capacity_at_prologue,                         size_t)                                \
-  nonstatic_field(CardGeneration,              _used_at_prologue,                             size_t)                                \
-                                                                                                                                     \
   nonstatic_field(CardTable,                   _whole_heap,                                   const MemRegion)                       \
-  nonstatic_field(CardTable,                   _guard_index,                                  const size_t)                          \
-  nonstatic_field(CardTable,                   _last_valid_index,                             const size_t)                          \
   nonstatic_field(CardTable,                   _page_size,                                    const size_t)                          \
   nonstatic_field(CardTable,                   _byte_map_size,                                const size_t)                          \
-  nonstatic_field(CardTable,                   _byte_map,                                     CardTable::CardValue*)                                \
-  nonstatic_field(CardTable,                   _cur_covered_regions,                          int)                                   \
-  nonstatic_field(CardTable,                   _covered,                                      MemRegion*)                            \
-  nonstatic_field(CardTable,                   _committed,                                    MemRegion*)                            \
+  nonstatic_field(CardTable,                   _byte_map,                                     CardTable::CardValue*)                 \
   nonstatic_field(CardTable,                   _guard_region,                                 MemRegion)                             \
-  nonstatic_field(CardTable,                   _byte_map_base,                                CardTable::CardValue*)                                \
+  nonstatic_field(CardTable,                   _byte_map_base,                                CardTable::CardValue*)                 \
   nonstatic_field(CardTableBarrierSet,         _defer_initial_card_mark,                      bool)                                  \
   nonstatic_field(CardTableBarrierSet,         _card_table,                                   CardTable*)                            \
                                                                                                                                      \
@@ -125,9 +99,9 @@
   nonstatic_field(CollectedHeap,               _is_gc_active,                                 bool)                                  \
   nonstatic_field(CollectedHeap,               _total_collections,                            unsigned int)                          \
                                                                                                                                      \
-  nonstatic_field(CompactibleSpace,            _compaction_top,                               HeapWord*)                             \
-  nonstatic_field(CompactibleSpace,            _first_dead,                                   HeapWord*)                             \
-  nonstatic_field(CompactibleSpace,            _end_of_live,                                  HeapWord*)                             \
+  nonstatic_field(ContiguousSpace,            _compaction_top,                               HeapWord*)                             \
+  nonstatic_field(ContiguousSpace,            _first_dead,                                   HeapWord*)                             \
+  nonstatic_field(ContiguousSpace,            _end_of_live,                                  HeapWord*)                             \
                                                                                                                                      \
   nonstatic_field(ContiguousSpace,             _top,                                          HeapWord*)                             \
   nonstatic_field(ContiguousSpace,             _saved_mark_word,                              HeapWord*)                             \
@@ -151,8 +125,6 @@
   nonstatic_field(MemRegion,                   _start,                                        HeapWord*)                             \
   nonstatic_field(MemRegion,                   _word_size,                                    size_t)                                \
                                                                                                                                      \
-  nonstatic_field(OffsetTableContigSpace,      _offsets,                                      BlockOffsetArray)                      \
-                                                                                                                                     \
   nonstatic_field(Space,                       _bottom,                                       HeapWord*)                             \
   nonstatic_field(Space,                       _end,                                          HeapWord*)
 
@@ -174,9 +146,9 @@
   SHENANDOAHGC_ONLY(VM_TYPES_SHENANDOAH(declare_type,                     \
                              declare_toplevel_type,                       \
                              declare_integer_type))                       \
-  ZGC_ONLY(VM_TYPES_ZGC(declare_type,                                     \
-                        declare_toplevel_type,                            \
-                        declare_integer_type))                            \
+  ZGC_ONLY(VM_TYPES_Z_SHARED(declare_type,                                \
+                             declare_toplevel_type,                       \
+                             declare_integer_type))                       \
                                                                           \
   /******************************************/                            \
   /* Generation and space hierarchies       */                            \
@@ -186,21 +158,13 @@
   declare_toplevel_type(CollectedHeap)                                    \
            declare_type(GenCollectedHeap,             CollectedHeap)      \
   declare_toplevel_type(Generation)                                       \
-           declare_type(CardGeneration,               Generation)         \
   declare_toplevel_type(Space)                                            \
-           declare_type(CompactibleSpace,             Space)              \
-           declare_type(ContiguousSpace,              CompactibleSpace)   \
-           declare_type(OffsetTableContigSpace,       ContiguousSpace)    \
+           declare_type(ContiguousSpace,             Space)               \
   declare_toplevel_type(BarrierSet)                                       \
            declare_type(ModRefBarrierSet,             BarrierSet)         \
            declare_type(CardTableBarrierSet,          ModRefBarrierSet)   \
   declare_toplevel_type(CardTable)                                        \
-           declare_type(CardTableRS, CardTable)                           \
   declare_toplevel_type(BarrierSet::Name)                                 \
-  declare_toplevel_type(BlockOffsetSharedArray)                           \
-  declare_toplevel_type(BlockOffsetTable)                                 \
-           declare_type(BlockOffsetArray,             BlockOffsetTable)   \
-           declare_type(BlockOffsetArrayContigSpace,  BlockOffsetArray)   \
                                                                           \
   /* Miscellaneous other GC types */                                      \
                                                                           \
@@ -216,10 +180,8 @@
   /* Pointers to Garbage Collection types */                              \
                                                                           \
   declare_toplevel_type(BarrierSet*)                                      \
-  declare_toplevel_type(BlockOffsetSharedArray*)                          \
   declare_toplevel_type(CardTable*)                                       \
   declare_toplevel_type(CardTable*const)                                  \
-  declare_toplevel_type(CardTableRS*)                                     \
   declare_toplevel_type(CardTableBarrierSet*)                             \
   declare_toplevel_type(CardTableBarrierSet**)                            \
   declare_toplevel_type(CollectedHeap*)                                   \
@@ -231,7 +193,6 @@
   declare_toplevel_type(HeapWord*)                                        \
   declare_toplevel_type(HeapWord* volatile)                               \
   declare_toplevel_type(MemRegion*)                                       \
-  declare_toplevel_type(OffsetTableContigSpace*)                          \
   declare_toplevel_type(Space*)                                           \
   declare_toplevel_type(ThreadLocalAllocBuffer*)                          \
                                                                           \
@@ -249,8 +210,8 @@
                                           declare_constant_with_value))     \
   SHENANDOAHGC_ONLY(VM_INT_CONSTANTS_SHENANDOAH(declare_constant,           \
                                      declare_constant_with_value))          \
-  ZGC_ONLY(VM_INT_CONSTANTS_ZGC(declare_constant,                           \
-                                declare_constant_with_value))               \
+  ZGC_ONLY(VM_INT_CONSTANTS_Z_SHARED(declare_constant,                      \
+                                     declare_constant_with_value))          \
                                                                             \
   /********************************************/                            \
   /* Generation and Space Hierarchy Constants */                            \
@@ -261,22 +222,12 @@
   declare_constant(BarrierSet::ModRef)                                      \
   declare_constant(BarrierSet::CardTableBarrierSet)                         \
                                                                             \
-  declare_constant(BOTConstants::LogN)                                      \
-  declare_constant(BOTConstants::LogN_words)                                \
-  declare_constant(BOTConstants::N_bytes)                                   \
-  declare_constant(BOTConstants::N_words)                                   \
   declare_constant(BOTConstants::LogBase)                                   \
   declare_constant(BOTConstants::Base)                                      \
   declare_constant(BOTConstants::N_powers)                                  \
                                                                             \
   declare_constant(CardTable::clean_card)                                   \
-  declare_constant(CardTable::last_card)                                    \
   declare_constant(CardTable::dirty_card)                                   \
-  declare_constant(CardTable::Precise)                                      \
-  declare_constant(CardTable::ObjHeadPreciseArray)                          \
-  declare_constant(CardTable::card_shift)                                   \
-  declare_constant(CardTable::card_size)                                    \
-  declare_constant(CardTable::card_size_in_words)                           \
                                                                             \
   declare_constant(CollectedHeap::Serial)                                   \
   declare_constant(CollectedHeap::Parallel)                                 \
@@ -292,6 +243,6 @@
   declare_constant(Generation::GenGrain)                                    \
 
 #define VM_LONG_CONSTANTS_GC(declare_constant)                              \
-  ZGC_ONLY(VM_LONG_CONSTANTS_ZGC(declare_constant))
+  ZGC_ONLY(VM_LONG_CONSTANTS_Z_SHARED(declare_constant))
 
 #endif // SHARE_GC_SHARED_VMSTRUCTS_GC_HPP

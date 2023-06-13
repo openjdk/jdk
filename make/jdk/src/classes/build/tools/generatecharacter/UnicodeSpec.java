@@ -569,7 +569,7 @@ public class UnicodeSpec {
 
     int codePoint;         // the characters UTF-32 code value
     String name;            // the ASCII name
-    byte generalCategory;   // general category, available via Characte.getType()
+    byte generalCategory;   // general category, available via Character.getType()
     byte bidiCategory;      // available via Character.getBidiType()
     int combiningClass;     // not used in Character
     String decomposition;   // not used in Character

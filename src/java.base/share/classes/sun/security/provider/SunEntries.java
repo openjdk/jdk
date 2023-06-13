@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,22 @@
 
 package sun.security.provider;
 
-import java.io.*;
-import java.net.*;
-import java.util.*;
-import java.security.*;
+import java.io.File;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.security.Provider;
+import java.security.Security;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
 
 import jdk.internal.util.StaticProperty;
-import sun.security.action.GetPropertyAction;
-import sun.security.util.SecurityProviderConstants;
+import sun.security.action.GetBooleanAction;
+
 import static sun.security.util.SecurityProviderConstants.getAliases;
 
 /**
@@ -177,6 +185,10 @@ public final class SunEntries {
                 "sun.security.provider.DSA$SHA3_384withDSAinP1363Format");
         add(p, "Signature", "SHA3-512withDSAinP1363Format",
                 "sun.security.provider.DSA$SHA3_512withDSAinP1363Format");
+
+        attrs.clear();
+        attrs.put("ImplementedIn", "Software");
+        addWithAlias(p, "Signature", "HSS/LMS", "sun.security.provider.HSS", attrs);
         /*
          *  Key Pair Generator engines
          */
@@ -206,12 +218,16 @@ public final class SunEntries {
          */
         addWithAlias(p, "KeyFactory", "DSA",
                 "sun.security.provider.DSAKeyFactory", attrs);
+        addWithAlias(p, "KeyFactory", "HSS/LMS",
+                "sun.security.provider.HSS$KeyFactoryImpl", attrs);
 
         /*
          * Digest engines
          */
-        add(p, "MessageDigest", "MD2", "sun.security.provider.MD2", attrs);
-        add(p, "MessageDigest", "MD5", "sun.security.provider.MD5", attrs);
+        addWithAlias(p, "MessageDigest", "MD2", "sun.security.provider.MD2",
+                attrs);
+        addWithAlias(p, "MessageDigest", "MD5", "sun.security.provider.MD5",
+                attrs);
         addWithAlias(p, "MessageDigest", "SHA-1", "sun.security.provider.SHA",
                 attrs);
 
@@ -310,7 +326,7 @@ public final class SunEntries {
             getAliases(algo), attrs));
     }
 
-    private LinkedHashSet<Provider.Service> services;
+    private final LinkedHashSet<Provider.Service> services;
 
     // name of the *System* property, takes precedence over PROP_RNDSOURCE
     private static final String PROP_EGD = "java.security.egd";
@@ -318,8 +334,8 @@ public final class SunEntries {
     private static final String PROP_RNDSOURCE = "securerandom.source";
 
     private static final boolean useLegacyDSA =
-        Boolean.parseBoolean(GetPropertyAction.privilegedGetProperty
-            ("jdk.security.legacyDSAKeyPairGenerator"));
+        GetBooleanAction.privilegedGetProperty
+            ("jdk.security.legacyDSAKeyPairGenerator");
 
     static final String URL_DEV_RANDOM = "file:/dev/random";
     static final String URL_DEV_URANDOM = "file:/dev/urandom";
@@ -356,7 +372,7 @@ public final class SunEntries {
     /*
      * Use a URI to access this File. Previous code used a URL
      * which is less strict on syntax. If we encounter a
-     * URISyntaxException we make best efforts for backwards
+     * URISyntaxException we make a best effort for backwards
      * compatibility. e.g. space character in deviceName string.
      *
      * Method called within PrivilegedExceptionAction block.
@@ -379,7 +395,7 @@ public final class SunEntries {
             }
         } catch (URISyntaxException use) {
             /*
-             * Make best effort to access this File.
+             * Make a best effort to access this File.
              * We can try using the URL path.
              */
             return new File(device.getPath());

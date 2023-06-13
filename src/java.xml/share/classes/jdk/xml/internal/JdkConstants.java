@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -206,6 +206,21 @@ public final class JdkConstants {
     public static final String SP_MAX_ELEMENT_DEPTH = "jdk.xml.maxElementDepth";
 
     /**
+     * JDK XPath Expression group limit
+     */
+    public static final String XPATH_GROUP_LIMIT = "jdk.xml.xpathExprGrpLimit";
+
+    /**
+     * JDK XPath Expression operators limit
+     */
+    public static final String XPATH_OP_LIMIT = "jdk.xml.xpathExprOpLimit";
+
+    /**
+     * JDK XSL XPath limit or Total Number of Operators Permitted in an XSL Stylesheet
+     */
+    public static final String XPATH_TOTALOP_LIMIT = "jdk.xml.xpathTotalOpLimit";
+
+    /**
      * JDK TransformerFactory and Transformer attribute that specifies a class
      * loader that will be used for extension functions class loading
      * Value: a "null", the default value, means that the default EF class loading
@@ -267,6 +282,12 @@ public final class JdkConstants {
 
     public static final String XML_SECURITY_PROPERTY_MANAGER =
             "jdk.xml.xmlSecurityPropertyManager";
+
+    /**
+     * System Property for the Configuration File
+     * @since 21
+     */
+    public static final String CONFIG_FILE = "java.xml.config.file";
 
     /**
      * Values for a feature

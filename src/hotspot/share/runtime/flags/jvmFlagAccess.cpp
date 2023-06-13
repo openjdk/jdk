@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,11 +61,15 @@ class TypedFlagAccessImpl : public FlagAccessImpl {
 
 public:
   JVMFlag::Error check_constraint_and_set(JVMFlag* flag, void* value_addr, JVMFlagOrigin origin, bool verbose) const {
+    verbose |= (origin == JVMFlagOrigin::ERGONOMIC);
     T value = *((T*)value_addr);
     const JVMTypedFlagLimit<T>* constraint = (const JVMTypedFlagLimit<T>*)JVMFlagLimit::get_constraint(flag);
-    if (constraint != NULL && constraint->phase() <= static_cast<int>(JVMFlagLimit::validating_phase())) {
+    if (constraint != nullptr && constraint->phase() <= static_cast<int>(JVMFlagLimit::validating_phase())) {
       JVMFlag::Error err = typed_check_constraint(constraint->constraint_func(), value, verbose);
       if (err != JVMFlag::SUCCESS) {
+        if (origin == JVMFlagOrigin::ERGONOMIC) {
+          fatal("FLAG_SET_ERGO cannot be used to set an invalid value for %s", flag->name());
+        }
         return err;
       }
     }
@@ -104,12 +108,15 @@ class RangedFlagAccessImpl : public TypedFlagAccessImpl<T, EVENT> {
 public:
   virtual JVMFlag::Error set_impl(JVMFlag* flag, void* value_addr, JVMFlagOrigin origin) const {
     T value = *((T*)value_addr);
-    bool verbose = JVMFlagLimit::verbose_checks_needed();
+    bool verbose = JVMFlagLimit::verbose_checks_needed() | (origin == JVMFlagOrigin::ERGONOMIC);
 
     const JVMTypedFlagLimit<T>* range = (const JVMTypedFlagLimit<T>*)JVMFlagLimit::get_range(flag);
-    if (range != NULL) {
+    if (range != nullptr) {
       if ((value < range->min()) || (value > range->max())) {
         range_error(flag->name(), value, range->min(), range->max(), verbose);
+        if (origin == JVMFlagOrigin::ERGONOMIC) {
+          fatal("FLAG_SET_ERGO cannot be used to set an invalid value for %s", flag->name());
+        }
         return JVMFlag::OUT_OF_BOUNDS;
       }
     }
@@ -119,7 +126,7 @@ public:
 
   virtual JVMFlag::Error check_range(const JVMFlag* flag, bool verbose) const {
     const JVMTypedFlagLimit<T>* range = (const JVMTypedFlagLimit<T>*)JVMFlagLimit::get_range(flag);
-    if (range != NULL) {
+    if (range != nullptr) {
       T value = flag->read<T>();
       if ((value < range->min()) || (value > range->max())) {
         range_error(flag->name(), value, range->min(), range->max(), verbose);
@@ -301,16 +308,16 @@ JVMFlag::Error JVMFlagAccess::set_impl(JVMFlag* flag, void* value, JVMFlagOrigin
 }
 
 JVMFlag::Error JVMFlagAccess::set_ccstr(JVMFlag* flag, ccstr* value, JVMFlagOrigin origin) {
-  if (flag == NULL) return JVMFlag::INVALID_FLAG;
+  if (flag == nullptr) return JVMFlag::INVALID_FLAG;
   if (!flag->is_ccstr()) return JVMFlag::WRONG_FORMAT;
   ccstr old_value = flag->get_ccstr();
   trace_flag_changed<ccstr, EventStringFlagChanged>(flag, old_value, *value, origin);
-  char* new_value = NULL;
-  if (*value != NULL) {
+  char* new_value = nullptr;
+  if (*value != nullptr) {
     new_value = os::strdup_check_oom(*value);
   }
   flag->set_ccstr(new_value);
-  if (!flag->is_default() && old_value != NULL) {
+  if (!flag->is_default() && old_value != nullptr) {
     // Old value is heap allocated so free it.
     FREE_C_HEAP_ARRAY(char, old_value);
   }
@@ -318,7 +325,7 @@ JVMFlag::Error JVMFlagAccess::set_ccstr(JVMFlag* flag, ccstr* value, JVMFlagOrig
   // The callers typically don't care what the old value is.
   // If the caller really wants to know the old value, read it (and make a copy if necessary)
   // before calling this API.
-  *value = NULL;
+  *value = nullptr;
   flag->set_origin(origin);
   return JVMFlag::SUCCESS;
 }
@@ -355,11 +362,11 @@ void JVMFlagAccess::print_range(outputStream* st, const JVMFlag* flag, const JVM
 
 void JVMFlagAccess::print_range(outputStream* st, const JVMFlag* flag) {
   const JVMFlagLimit* range = JVMFlagLimit::get_range(flag);
-  if (range != NULL) {
+  if (range != nullptr) {
     print_range(st, flag, range);
   } else {
     const JVMFlagLimit* limit = JVMFlagLimit::get_constraint(flag);
-    if (limit != NULL) {
+    if (limit != nullptr) {
       void* func = limit->constraint_func();
 
       // Two special cases where the lower limit of the range is defined by an os:: function call

@@ -36,10 +36,12 @@ import java.awt.geom.AffineTransform;
 import java.awt.image.ColorModel;
 import java.awt.image.DirectColorModel;
 import java.awt.image.Raster;
+
 import sun.awt.SunHints;
 import sun.awt.SunToolkit;
 import sun.awt.X11ComponentPeer;
 import sun.awt.image.PixelConverter;
+import sun.font.FontManagerNativeLibrary;
 import sun.java2d.InvalidPipeException;
 import sun.java2d.SunGraphics2D;
 import sun.java2d.SurfaceData;
@@ -55,7 +57,6 @@ import sun.java2d.pipe.ShapeDrawPipe;
 import sun.java2d.pipe.TextPipe;
 import sun.java2d.pipe.ValidatePipe;
 import sun.java2d.x11.XSurfaceData;
-import sun.font.FontManagerNativeLibrary;
 
 public abstract class XRSurfaceData extends XSurfaceData {
     X11ComponentPeer peer;
@@ -276,7 +277,7 @@ public abstract class XRSurfaceData extends XSurfaceData {
         }
 
         return new XRPixmapSurfaceData
-            (gc, width, height, image, getSurfaceType(gc, transparency),
+            (gc, width, height, image, getPixmapSurfaceType(transparency),
              cm, drawable, transparency,
              XRUtils.getPictureFormatForTransparency(transparency), depth, isTexture);
     }
@@ -343,7 +344,7 @@ public abstract class XRSurfaceData extends XSurfaceData {
     public abstract boolean canSourceSendExposures(int x, int y, int w, int h);
 
     /**
-     * CopyArea is implemented using the "old" X11 GC, therefor clip and
+     * CopyArea is implemented using the "old" X11 GC, therefore clip and
      * needExposures have to be validated against that GC. Pictures and GCs
      * don't share state.
      */
@@ -392,11 +393,10 @@ public abstract class XRSurfaceData extends XSurfaceData {
     }
 
     /**
-     * Returns the XRender SurfaceType which is able to fullfill the specified
+     * Returns the XRender SurfaceType which is able to fulfill the specified
      * transparency requirement.
      */
-    public static SurfaceType getSurfaceType(XRGraphicsConfig gc,
-                                             int transparency) {
+    public static SurfaceType getPixmapSurfaceType(int transparency) {
         SurfaceType sType = null;
 
         switch (transparency) {

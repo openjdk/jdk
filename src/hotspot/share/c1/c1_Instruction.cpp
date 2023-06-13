@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,20 +76,20 @@ Instruction::Condition Instruction::negate(Condition cond) {
 }
 
 void Instruction::update_exception_state(ValueStack* state) {
-  if (state != NULL && (state->kind() == ValueStack::EmptyExceptionState || state->kind() == ValueStack::ExceptionState)) {
+  if (state != nullptr && (state->kind() == ValueStack::EmptyExceptionState || state->kind() == ValueStack::ExceptionState)) {
     assert(state->kind() == ValueStack::EmptyExceptionState || Compilation::current()->env()->should_retain_local_variables(), "unexpected state kind");
     _exception_state = state;
   } else {
-    _exception_state = NULL;
+    _exception_state = nullptr;
   }
 }
 
 // Prev without need to have BlockBegin
 Instruction* Instruction::prev() {
-  Instruction* p = NULL;
+  Instruction* p = nullptr;
   Instruction* q = block();
   while (q != this) {
-    assert(q != NULL, "this is not in the block's instruction list");
+    assert(q != nullptr, "this is not in the block's instruction list");
     p = q; q = q->next();
   }
   return p;
@@ -97,26 +97,26 @@ Instruction* Instruction::prev() {
 
 
 void Instruction::state_values_do(ValueVisitor* f) {
-  if (state_before() != NULL) {
+  if (state_before() != nullptr) {
     state_before()->values_do(f);
   }
-  if (exception_state() != NULL){
+  if (exception_state() != nullptr) {
     exception_state()->values_do(f);
   }
 }
 
 ciType* Instruction::exact_type() const {
   ciType* t =  declared_type();
-  if (t != NULL && t->is_klass()) {
+  if (t != nullptr && t->is_klass()) {
     return t->as_klass()->exact_klass();
   }
-  return NULL;
+  return nullptr;
 }
 
 
 #ifndef PRODUCT
 void Instruction::check_state(ValueStack* state) {
-  if (state != NULL) {
+  if (state != nullptr) {
     state->verify();
   }
 }
@@ -168,12 +168,12 @@ ciType* Constant::exact_type() const {
   if (type()->is_object() && type()->as_ObjectType()->is_loaded()) {
     return type()->as_ObjectType()->exact_type();
   }
-  return NULL;
+  return nullptr;
 }
 
 ciType* LoadIndexed::exact_type() const {
   ciType* array_type = array()->exact_type();
-  if (array_type != NULL) {
+  if (array_type != nullptr) {
     assert(array_type->is_array_klass(), "what else?");
     ciArrayKlass* ak = (ciArrayKlass*)array_type;
 
@@ -190,8 +190,8 @@ ciType* LoadIndexed::exact_type() const {
 
 ciType* LoadIndexed::declared_type() const {
   ciType* array_type = array()->declared_type();
-  if (array_type == NULL || !array_type->is_loaded()) {
-    return NULL;
+  if (array_type == nullptr || !array_type->is_loaded()) {
+    return nullptr;
   }
   assert(array_type->is_array_klass(), "what else?");
   ciArrayKlass* ak = (ciArrayKlass*)array_type;
@@ -304,7 +304,7 @@ IRScope* StateSplit::scope() const {
 
 void StateSplit::state_values_do(ValueVisitor* f) {
   Instruction::state_values_do(f);
-  if (state() != NULL) state()->values_do(f);
+  if (state() != nullptr) state()->values_do(f);
 }
 
 
@@ -333,7 +333,7 @@ Invoke::Invoke(Bytecodes::Code code, ValueType* result_type, Value recv, Values*
   set_flag(TargetIsLoadedFlag,   target->is_loaded());
   set_flag(TargetIsFinalFlag,    target_is_loaded() && target->is_final_method());
 
-  assert(args != NULL, "args must exist");
+  assert(args != nullptr, "args must exist");
 #ifdef ASSERT
   AssertValues assert_value;
   values_do(&assert_value);
@@ -354,8 +354,8 @@ Invoke::Invoke(Bytecodes::Code code, ValueType* result_type, Value recv, Values*
 
 void Invoke::state_values_do(ValueVisitor* f) {
   StateSplit::state_values_do(f);
-  if (state_before() != NULL) state_before()->values_do(f);
-  if (state()        != NULL) state()->values_do(f);
+  if (state_before() != nullptr) state_before()->values_do(f);
+  if (state()        != nullptr) state()->values_do(f);
 }
 
 ciType* Invoke::declared_type() const {
@@ -365,9 +365,9 @@ ciType* Invoke::declared_type() const {
   return t;
 }
 
-// Implementation of Contant
+// Implementation of Constant
 intx Constant::hash() const {
-  if (state_before() == NULL) {
+  if (state_before() == nullptr) {
     switch (type()->tag()) {
     case intTag:
       return HASH2(name(), type()->as_IntConstant()->value());
@@ -399,42 +399,42 @@ intx Constant::hash() const {
 }
 
 bool Constant::is_equal(Value v) const {
-  if (v->as_Constant() == NULL) return false;
+  if (v->as_Constant() == nullptr) return false;
 
   switch (type()->tag()) {
     case intTag:
       {
         IntConstant* t1 =    type()->as_IntConstant();
         IntConstant* t2 = v->type()->as_IntConstant();
-        return (t1 != NULL && t2 != NULL &&
+        return (t1 != nullptr && t2 != nullptr &&
                 t1->value() == t2->value());
       }
     case longTag:
       {
         LongConstant* t1 =    type()->as_LongConstant();
         LongConstant* t2 = v->type()->as_LongConstant();
-        return (t1 != NULL && t2 != NULL &&
+        return (t1 != nullptr && t2 != nullptr &&
                 t1->value() == t2->value());
       }
     case floatTag:
       {
         FloatConstant* t1 =    type()->as_FloatConstant();
         FloatConstant* t2 = v->type()->as_FloatConstant();
-        return (t1 != NULL && t2 != NULL &&
+        return (t1 != nullptr && t2 != nullptr &&
                 jint_cast(t1->value()) == jint_cast(t2->value()));
       }
     case doubleTag:
       {
         DoubleConstant* t1 =    type()->as_DoubleConstant();
         DoubleConstant* t2 = v->type()->as_DoubleConstant();
-        return (t1 != NULL && t2 != NULL &&
+        return (t1 != nullptr && t2 != nullptr &&
                 jlong_cast(t1->value()) == jlong_cast(t2->value()));
       }
     case objectTag:
       {
         ObjectType* t1 =    type()->as_ObjectType();
         ObjectType* t2 = v->type()->as_ObjectType();
-        return (t1 != NULL && t2 != NULL &&
+        return (t1 != nullptr && t2 != nullptr &&
                 t1->is_loaded() && t2->is_loaded() &&
                 t1->constant_value() == t2->constant_value());
       }
@@ -442,7 +442,7 @@ bool Constant::is_equal(Value v) const {
       {
         MetadataType* t1 =    type()->as_MetadataType();
         MetadataType* t2 = v->type()->as_MetadataType();
-        return (t1 != NULL && t2 != NULL &&
+        return (t1 != nullptr && t2 != nullptr &&
                 t1->is_loaded() && t2->is_loaded() &&
                 t1->constant_value() == t2->constant_value());
       }
@@ -454,7 +454,7 @@ bool Constant::is_equal(Value v) const {
 Constant::CompareResult Constant::compare(Instruction::Condition cond, Value right) const {
   Constant* rc = right->as_Constant();
   // other is not a constant
-  if (rc == NULL) return not_comparable;
+  if (rc == nullptr) return not_comparable;
 
   ValueType* lt = type();
   ValueType* rt = rc->type();
@@ -492,7 +492,7 @@ Constant::CompareResult Constant::compare(Instruction::Condition cond, Value rig
   case objectTag: {
     ciObject* xvalue = lt->as_ObjectType()->constant_value();
     ciObject* yvalue = rt->as_ObjectType()->constant_value();
-    assert(xvalue != NULL && yvalue != NULL, "not constants");
+    assert(xvalue != nullptr && yvalue != nullptr, "not constants");
     if (xvalue->is_loaded() && yvalue->is_loaded()) {
       switch (cond) {
       case If::eql: return xvalue == yvalue ? cond_true : cond_false;
@@ -505,7 +505,7 @@ Constant::CompareResult Constant::compare(Instruction::Condition cond, Value rig
   case metaDataTag: {
     ciMetadata* xvalue = lt->as_MetadataType()->constant_value();
     ciMetadata* yvalue = rt->as_MetadataType()->constant_value();
-    assert(xvalue != NULL && yvalue != NULL, "not constants");
+    assert(xvalue != nullptr && yvalue != nullptr, "not constants");
     if (xvalue->is_loaded() && yvalue->is_loaded()) {
       switch (cond) {
       case If::eql: return xvalue == yvalue ? cond_true : cond_false;
@@ -524,39 +524,22 @@ Constant::CompareResult Constant::compare(Instruction::Condition cond, Value rig
 
 // Implementation of BlockBegin
 
-void BlockBegin::set_end(BlockEnd* end) {
-  assert(end != NULL, "should not reset block end to NULL");
-  if (end == _end) {
-    return;
-  }
-  clear_end();
+void BlockBegin::set_end(BlockEnd* new_end) { // Assumes that no predecessor of new_end still has it as its successor
+  assert(new_end != nullptr, "Should not reset block new_end to null");
+  if (new_end == _end) return;
 
-  // Set the new end
-  _end = end;
-
-  _successors.clear();
-  // Now reset successors list based on BlockEnd
-  for (int i = 0; i < end->number_of_sux(); i++) {
-    BlockBegin* sux = end->sux_at(i);
-    _successors.append(sux);
-    sux->_predecessors.append(this);
-  }
-  _end->set_begin(this);
-}
-
-
-void BlockBegin::clear_end() {
-  // Must make the predecessors/successors match up with the
-  // BlockEnd's notion.
-  if (_end != NULL) {
-    // disconnect from the old end
-    _end->set_begin(NULL);
-
-    // disconnect this block from it's current successors
-    for (int i = 0; i < _successors.length(); i++) {
-      _successors.at(i)->remove_predecessor(this);
+  // Remove this block as predecessor of its current successors
+  if (_end != nullptr) {
+    for (int i = 0; i < number_of_sux(); i++) {
+      sux_at(i)->remove_predecessor(this);
     }
-    _end = NULL;
+  }
+
+  _end = new_end;
+
+  // Add this block as predecessor of its new successors
+  for (int i = 0; i < number_of_sux(); i++) {
+    sux_at(i)->add_predecessor(this);
   }
 }
 
@@ -575,23 +558,13 @@ void BlockBegin::disconnect_edge(BlockBegin* from, BlockBegin* to) {
       if (index >= 0) {
         sux->_predecessors.remove_at(index);
       }
-      from->_successors.remove_at(s);
+      from->end()->remove_sux_at(s);
     } else {
       s++;
     }
   }
 }
 
-
-void BlockBegin::disconnect_from_graph() {
-  // disconnect this block from all other blocks
-  for (int p = 0; p < number_of_preds(); p++) {
-    pred_at(p)->remove_successor(this);
-  }
-  for (int s = 0; s < number_of_sux(); s++) {
-    sux_at(s)->remove_predecessor(this);
-  }
-}
 
 void BlockBegin::substitute_sux(BlockBegin* old_sux, BlockBegin* new_sux) {
   // modify predecessors before substituting successors
@@ -669,14 +642,6 @@ BlockBegin* BlockBegin::insert_block_between(BlockBegin* sux) {
 }
 
 
-void BlockBegin::remove_successor(BlockBegin* pred) {
-  int idx;
-  while ((idx = _successors.find(pred)) >= 0) {
-    _successors.remove_at(idx);
-  }
-}
-
-
 void BlockBegin::add_predecessor(BlockBegin* pred) {
   _predecessors.append(pred);
 }
@@ -691,14 +656,14 @@ void BlockBegin::remove_predecessor(BlockBegin* pred) {
 
 
 void BlockBegin::add_exception_handler(BlockBegin* b) {
-  assert(b != NULL && (b->is_set(exception_entry_flag)), "exception handler must exist");
+  assert(b != nullptr && (b->is_set(exception_entry_flag)), "exception handler must exist");
   // add only if not in the list already
   if (!_exception_handlers.contains(b)) _exception_handlers.append(b);
 }
 
 int BlockBegin::add_exception_state(ValueStack* state) {
   assert(is_set(exception_entry_flag), "only for xhandlers");
-  if (_exception_states == NULL) {
+  if (_exception_states == nullptr) {
     _exception_states = new ValueStackStack(4);
   }
   _exception_states->append(state);
@@ -743,7 +708,7 @@ void BlockBegin::iterate_postorder(BlockClosure* closure) {
 
 
 void BlockBegin::block_values_do(ValueVisitor* f) {
-  for (Instruction* n = this; n != NULL; n = n->next()) n->values_do(f);
+  for (Instruction* n = this; n != nullptr; n = n->next()) n->values_do(f);
 }
 
 
@@ -754,7 +719,7 @@ void BlockBegin::block_values_do(ValueVisitor* f) {
 #endif
 
 
-bool BlockBegin::try_merge(ValueStack* new_state) {
+bool BlockBegin::try_merge(ValueStack* new_state, bool has_irreducible_loops) {
   TRACE_PHI(tty->print_cr("********** try_merge for block B%d", block_id()));
 
   // local variables used for state iteration
@@ -762,7 +727,7 @@ bool BlockBegin::try_merge(ValueStack* new_state) {
   Value new_value, existing_value;
 
   ValueStack* existing_state = state();
-  if (existing_state == NULL) {
+  if (existing_state == nullptr) {
     TRACE_PHI(tty->print_cr("first call of try_merge for this block"));
 
     if (is_set(BlockBegin::was_visited_flag)) {
@@ -795,10 +760,9 @@ bool BlockBegin::try_merge(ValueStack* new_state) {
       }
 
       BitMap& requires_phi_function = new_state->scope()->requires_phi_function();
-
       for_each_local_value(new_state, index, new_value) {
         bool requires_phi = requires_phi_function.at(index) || (new_value->type()->is_double_word() && requires_phi_function.at(index + 1));
-        if (requires_phi || !SelectivePhiFunctions) {
+        if (requires_phi || !SelectivePhiFunctions || has_irreducible_loops) {
           new_state->setup_phi_for_local(this, index);
           TRACE_PHI(tty->print_cr("creating phi-function %c%d for local %d", new_state->local_at(index)->type()->tchar(), new_state->local_at(index)->id(), index));
         }
@@ -809,7 +773,7 @@ bool BlockBegin::try_merge(ValueStack* new_state) {
     set_state(new_state);
 
   } else if (existing_state->is_same(new_state)) {
-    TRACE_PHI(tty->print_cr("exisiting state found"));
+    TRACE_PHI(tty->print_cr("existing state found"));
 
     assert(existing_state->scope() == new_state->scope(), "not matching");
     assert(existing_state->locals_size() == new_state->locals_size(), "not matching");
@@ -825,9 +789,9 @@ bool BlockBegin::try_merge(ValueStack* new_state) {
 
       for_each_local_value(existing_state, index, existing_value) {
         Value new_value = new_state->local_at(index);
-        if (new_value == NULL || new_value->type()->tag() != existing_value->type()->tag()) {
+        if (new_value == nullptr || new_value->type()->tag() != existing_value->type()->tag()) {
           Phi* existing_phi = existing_value->as_Phi();
-          if (existing_phi == NULL) {
+          if (existing_phi == nullptr) {
             return false; // BAILOUT in caller
           }
           // Invalidate the phi function here. This case is very rare except for
@@ -837,15 +801,20 @@ bool BlockBegin::try_merge(ValueStack* new_state) {
           existing_state->invalidate_local(index);
           TRACE_PHI(tty->print_cr("invalidating local %d because of type mismatch", index));
         }
+
+        if (existing_value != new_state->local_at(index) && existing_value->as_Phi() == nullptr) {
+          TRACE_PHI(tty->print_cr("required phi for local %d is missing, irreducible loop?", index));
+          return false; // BAILOUT in caller
+        }
       }
 
 #ifdef ASSERT
       // check that all necessary phi functions are present
       for_each_stack_value(existing_state, index, existing_value) {
-        assert(existing_value->as_Phi() != NULL && existing_value->as_Phi()->block() == this, "phi function required");
+        assert(existing_value->as_Phi() != nullptr && existing_value->as_Phi()->block() == this, "phi function required");
       }
       for_each_local_value(existing_state, index, existing_value) {
-        assert(existing_value == new_state->local_at(index) || (existing_value->as_Phi() != NULL && existing_value->as_Phi()->as_Phi()->block() == this), "phi function required");
+        assert(existing_value == new_state->local_at(index) || (existing_value->as_Phi() != nullptr && existing_value->as_Phi()->as_Phi()->block() == this), "phi function required");
       }
 #endif
 
@@ -857,7 +826,7 @@ bool BlockBegin::try_merge(ValueStack* new_state) {
         Value new_value = new_state->stack_at(index);
         Phi* existing_phi = existing_value->as_Phi();
 
-        if (new_value != existing_value && (existing_phi == NULL || existing_phi->block() != this)) {
+        if (new_value != existing_value && (existing_phi == nullptr || existing_phi->block() != this)) {
           existing_state->setup_phi_for_stack(this, index);
           TRACE_PHI(tty->print_cr("creating phi-function %c%d for stack %d", existing_state->stack_at(index)->type()->tchar(), existing_state->stack_at(index)->id(), index));
         }
@@ -868,10 +837,10 @@ bool BlockBegin::try_merge(ValueStack* new_state) {
         Value new_value = new_state->local_at(index);
         Phi* existing_phi = existing_value->as_Phi();
 
-        if (new_value == NULL || new_value->type()->tag() != existing_value->type()->tag()) {
+        if (new_value == nullptr || new_value->type()->tag() != existing_value->type()->tag()) {
           existing_state->invalidate_local(index);
           TRACE_PHI(tty->print_cr("invalidating local %d because of type mismatch", index));
-        } else if (new_value != existing_value && (existing_phi == NULL || existing_phi->block() != this)) {
+        } else if (new_value != existing_value && (existing_phi == nullptr || existing_phi->block() != this)) {
           existing_state->setup_phi_for_local(this, index);
           TRACE_PHI(tty->print_cr("creating phi-function %c%d for local %d", existing_state->local_at(index)->type()->tchar(), existing_state->local_at(index)->id(), index));
         }
@@ -903,7 +872,7 @@ void BlockBegin::print_block(InstructionPrinter& ip, bool live_only) {
   ip.print_stack(this->state()); tty->cr();
   ip.print_inline_level(this);
   ip.print_head();
-  for (Instruction* n = next(); n != NULL; n = n->next()) {
+  for (Instruction* n = next(); n != nullptr; n = n->next()) {
     if (!live_only || n->is_pinned() || n->use_count() > 0) {
       ip.print_line(n);
     }
@@ -923,11 +892,6 @@ void BlockList::iterate_forward (BlockClosure* closure) {
 
 void BlockList::iterate_backward(BlockClosure* closure) {
   for (int i = length() - 1; i >= 0; i--) closure->block_do(at(i));
-}
-
-
-void BlockList::blocks_do(void f(BlockBegin*)) {
-  for (int i = length() - 1; i >= 0; i--) f(at(i));
 }
 
 
@@ -953,25 +917,9 @@ void BlockList::print(bool cfg_only, bool live_only) {
 
 // Implementation of BlockEnd
 
-void BlockEnd::set_begin(BlockBegin* begin) {
-  BlockList* sux = NULL;
-  if (begin != NULL) {
-    sux = begin->successors();
-  } else if (this->begin() != NULL) {
-    // copy our sux list
-    BlockList* sux = new BlockList(this->begin()->number_of_sux());
-    for (int i = 0; i < this->begin()->number_of_sux(); i++) {
-      sux->append(this->begin()->sux_at(i));
-    }
-  }
-  _sux = sux;
-}
-
-
 void BlockEnd::substitute_sux(BlockBegin* old_sux, BlockBegin* new_sux) {
   substitute(*_sux, old_sux, new_sux);
 }
-
 
 // Implementation of Phi
 
@@ -986,7 +934,7 @@ Value Phi::operand_at(int i) const {
   } else {
     state = _block->pred_at(i)->end()->state();
   }
-  assert(state != NULL, "");
+  assert(state != nullptr, "");
 
   if (is_local()) {
     return state->local_at(local_index());
@@ -1027,7 +975,7 @@ Assert::Assert(Value x, Condition cond, bool unordered_is_true, Value y) : Instr
   ip2.print_instr(y);
 
   stringStream ss;
-  ss.print("Assertion %s %s %s in method %s", strStream1.as_string(), ip2.cond_name(cond), strStream2.as_string(), strStream.as_string());
+  ss.print("Assertion %s %s %s in method %s", strStream1.freeze(), ip2.cond_name(cond), strStream2.freeze(), strStream.freeze());
 
   _message = ss.as_string();
 }
@@ -1038,5 +986,5 @@ void RangeCheckPredicate::check_state() {
 }
 
 void ProfileInvoke::state_values_do(ValueVisitor* f) {
-  if (state() != NULL) state()->values_do(f);
+  if (state() != nullptr) state()->values_do(f);
 }

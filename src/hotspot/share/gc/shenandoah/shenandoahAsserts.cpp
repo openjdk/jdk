@@ -40,7 +40,7 @@ void print_raw_memory(ShenandoahMessageBuffer &msg, void* loc) {
   if (!heap->is_in(loc)) return;
 
   ShenandoahHeapRegion* r = heap->heap_region_containing(loc);
-  if (r != NULL && r->is_committed()) {
+  if (r != nullptr && r->is_committed()) {
     address start = MAX2((address) r->bottom(), (address) loc - 32);
     address end   = MIN2((address) r->end(),    (address) loc + 128);
     if (start >= end) return;
@@ -48,7 +48,7 @@ void print_raw_memory(ShenandoahMessageBuffer &msg, void* loc) {
     stringStream ss;
     os::print_hex_dump(&ss, start, end, 4);
     msg.append("\n");
-    msg.append("Raw heap memory:\n%s", ss.as_string());
+    msg.append("Raw heap memory:\n%s", ss.freeze());
   }
 }
 
@@ -71,8 +71,8 @@ void ShenandoahAsserts::print_obj(ShenandoahMessageBuffer& msg, oop obj) {
   msg.append("    %3s marked strong\n",              ctx->is_marked_strong(obj) ? "" : "not");
   msg.append("    %3s marked weak\n",                ctx->is_marked_weak(obj) ? "" : "not");
   msg.append("    %3s in collection set\n",          heap->in_collection_set(obj) ? "" : "not");
-  msg.append("  mark:%s\n", mw_ss.as_string());
-  msg.append("  region: %s", ss.as_string());
+  msg.append("  mark:%s\n", mw_ss.freeze());
+  msg.append("  region: %s", ss.freeze());
 }
 
 void ShenandoahAsserts::print_non_obj(ShenandoahMessageBuffer& msg, void* loc) {
@@ -84,12 +84,12 @@ void ShenandoahAsserts::print_non_obj(ShenandoahMessageBuffer& msg, void* loc) {
     r->print_on(&ss);
 
     msg.append("    %3s in collection set\n",    heap->in_collection_set_loc(loc) ? "" : "not");
-    msg.append("  region: %s", ss.as_string());
+    msg.append("  region: %s", ss.freeze());
   } else {
     msg.append("  outside of Java heap\n");
     stringStream ss;
     os::print_location(&ss, (intptr_t) loc, false);
-    msg.append("  %s", ss.as_string());
+    msg.append("  %s", ss.freeze());
   }
 }
 
@@ -98,10 +98,10 @@ void ShenandoahAsserts::print_obj_safe(ShenandoahMessageBuffer& msg, void* loc) 
   msg.append("  " PTR_FORMAT " - safe print, no details\n", p2i(loc));
   if (heap->is_in(loc)) {
     ShenandoahHeapRegion* r = heap->heap_region_containing(loc);
-    if (r != NULL) {
+    if (r != nullptr) {
       stringStream ss;
       r->print_on(&ss);
-      msg.append("  region: %s", ss.as_string());
+      msg.append("  region: %s", ss.freeze());
       print_raw_memory(msg, loc);
     }
   }
@@ -113,12 +113,12 @@ void ShenandoahAsserts::print_failure(SafeLevel level, oop obj, void* interior_l
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   ResourceMark rm;
 
-  bool loc_in_heap = (loc != NULL && heap->is_in(loc));
+  bool loc_in_heap = (loc != nullptr && heap->is_in(loc));
 
   ShenandoahMessageBuffer msg("%s; %s\n\n", phase, label);
 
   msg.append("Referenced from:\n");
-  if (interior_loc != NULL) {
+  if (interior_loc != nullptr) {
     msg.append("  interior location: " PTR_FORMAT "\n", p2i(interior_loc));
     if (loc_in_heap) {
       print_obj(msg, loc);
@@ -170,7 +170,7 @@ void ShenandoahAsserts::assert_in_heap(void* interior_loc, oop obj, const char *
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 
   if (!heap->is_in(obj)) {
-    print_failure(_safe_unknown, obj, interior_loc, NULL, "Shenandoah assert_in_heap failed",
+    print_failure(_safe_unknown, obj, interior_loc, nullptr, "Shenandoah assert_in_heap failed",
                   "oop must point to a heap address",
                   file, line);
   }
@@ -179,8 +179,8 @@ void ShenandoahAsserts::assert_in_heap(void* interior_loc, oop obj, const char *
 void ShenandoahAsserts::assert_in_heap_or_null(void* interior_loc, oop obj, const char *file, int line) {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 
-  if (obj != NULL && !heap->is_in(obj)) {
-    print_failure(_safe_unknown, obj, interior_loc, NULL, "Shenandoah assert_in_heap_or_null failed",
+  if (obj != nullptr && !heap->is_in(obj)) {
+    print_failure(_safe_unknown, obj, interior_loc, nullptr, "Shenandoah assert_in_heap_or_null failed",
                   "oop must point to a heap address",
                   file, line);
   }
@@ -192,20 +192,20 @@ void ShenandoahAsserts::assert_correct(void* interior_loc, oop obj, const char* 
   // Step 1. Check that obj is correct.
   // After this step, it is safe to call heap_region_containing().
   if (!heap->is_in(obj)) {
-    print_failure(_safe_unknown, obj, interior_loc, NULL, "Shenandoah assert_correct failed",
+    print_failure(_safe_unknown, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
                   "oop must point to a heap address",
                   file, line);
   }
 
   Klass* obj_klass = obj->klass_or_null();
-  if (obj_klass == NULL) {
-    print_failure(_safe_unknown, obj, interior_loc, NULL, "Shenandoah assert_correct failed",
-                  "Object klass pointer should not be NULL",
+  if (obj_klass == nullptr) {
+    print_failure(_safe_unknown, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
+                  "Object klass pointer should not be null",
                   file,line);
   }
 
   if (!Metaspace::contains(obj_klass)) {
-    print_failure(_safe_unknown, obj, interior_loc, NULL, "Shenandoah assert_correct failed",
+    print_failure(_safe_unknown, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
                   "Object klass pointer must go to metaspace",
                   file,line);
   }
@@ -217,27 +217,27 @@ void ShenandoahAsserts::assert_correct(void* interior_loc, oop obj, const char* 
     // tries fwdptr manipulation when Full GC is running. The only exception is using the fwdptr
     // that still points to the object itself.
     if (heap->is_full_gc_move_in_progress()) {
-      print_failure(_safe_oop, obj, interior_loc, NULL, "Shenandoah assert_correct failed",
+      print_failure(_safe_oop, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
                     "Non-trivial forwarding pointer during Full GC moves, probable bug.",
                     file, line);
     }
 
     // Step 2. Check that forwardee is correct
     if (!heap->is_in(fwd)) {
-      print_failure(_safe_oop, obj, interior_loc, NULL, "Shenandoah assert_correct failed",
+      print_failure(_safe_oop, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
                     "Forwardee must point to a heap address",
                     file, line);
     }
 
     if (obj_klass != fwd->klass()) {
-      print_failure(_safe_oop, obj, interior_loc, NULL, "Shenandoah assert_correct failed",
+      print_failure(_safe_oop, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
                     "Forwardee klass disagrees with object class",
                     file, line);
     }
 
     // Step 3. Check that forwardee points to correct region
     if (heap->heap_region_index_containing(fwd) == heap->heap_region_index_containing(obj)) {
-      print_failure(_safe_all, obj, interior_loc, NULL, "Shenandoah assert_correct failed",
+      print_failure(_safe_all, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
                     "Non-trivial forwardee should in another region",
                     file, line);
     }
@@ -245,7 +245,7 @@ void ShenandoahAsserts::assert_correct(void* interior_loc, oop obj, const char* 
     // Step 4. Check for multiple forwardings
     oop fwd2 = ShenandoahForwarding::get_forwardee_raw_unchecked(fwd);
     if (fwd != fwd2) {
-      print_failure(_safe_all, obj, interior_loc, NULL, "Shenandoah assert_correct failed",
+      print_failure(_safe_all, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
                     "Multiple forwardings",
                     file, line);
     }
@@ -258,7 +258,7 @@ void ShenandoahAsserts::assert_in_correct_region(void* interior_loc, oop obj, co
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   ShenandoahHeapRegion* r = heap->heap_region_containing(obj);
   if (!r->is_active()) {
-    print_failure(_safe_unknown, obj, interior_loc, NULL, "Shenandoah assert_in_correct_region failed",
+    print_failure(_safe_unknown, obj, interior_loc, nullptr, "Shenandoah assert_in_correct_region failed",
                   "Object must reside in active region",
                   file, line);
   }
@@ -270,12 +270,12 @@ void ShenandoahAsserts::assert_in_correct_region(void* interior_loc, oop obj, co
     for (size_t i = idx; i < idx + num_regions; i++) {
       ShenandoahHeapRegion* chain_reg = heap->get_region(i);
       if (i == idx && !chain_reg->is_humongous_start()) {
-        print_failure(_safe_unknown, obj, interior_loc, NULL, "Shenandoah assert_in_correct_region failed",
+        print_failure(_safe_unknown, obj, interior_loc, nullptr, "Shenandoah assert_in_correct_region failed",
                       "Object must reside in humongous start",
                       file, line);
       }
       if (i != idx && !chain_reg->is_humongous_continuation()) {
-        print_failure(_safe_oop, obj, interior_loc, NULL, "Shenandoah assert_in_correct_region failed",
+        print_failure(_safe_oop, obj, interior_loc, nullptr, "Shenandoah assert_in_correct_region failed",
                       "Humongous continuation should be of proper size",
                       file, line);
       }
@@ -288,7 +288,7 @@ void ShenandoahAsserts::assert_forwarded(void* interior_loc, oop obj, const char
   oop fwd =   ShenandoahForwarding::get_forwardee_raw_unchecked(obj);
 
   if (obj == fwd) {
-    print_failure(_safe_all, obj, interior_loc, NULL, "Shenandoah assert_forwarded failed",
+    print_failure(_safe_all, obj, interior_loc, nullptr, "Shenandoah assert_forwarded failed",
                   "Object should be forwarded",
                   file, line);
   }
@@ -299,7 +299,7 @@ void ShenandoahAsserts::assert_not_forwarded(void* interior_loc, oop obj, const 
   oop fwd = ShenandoahForwarding::get_forwardee_raw_unchecked(obj);
 
   if (obj != fwd) {
-    print_failure(_safe_all, obj, interior_loc, NULL, "Shenandoah assert_not_forwarded failed",
+    print_failure(_safe_all, obj, interior_loc, nullptr, "Shenandoah assert_not_forwarded failed",
                   "Object should not be forwarded",
                   file, line);
   }
@@ -310,7 +310,7 @@ void ShenandoahAsserts::assert_marked(void *interior_loc, oop obj, const char *f
 
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   if (!heap->marking_context()->is_marked(obj)) {
-    print_failure(_safe_all, obj, interior_loc, NULL, "Shenandoah assert_marked failed",
+    print_failure(_safe_all, obj, interior_loc, nullptr, "Shenandoah assert_marked failed",
                   "Object should be marked",
                   file, line);
   }
@@ -321,7 +321,7 @@ void ShenandoahAsserts::assert_marked_weak(void *interior_loc, oop obj, const ch
 
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   if (!heap->marking_context()->is_marked_weak(obj)) {
-    print_failure(_safe_all, obj, interior_loc, NULL, "Shenandoah assert_marked_weak failed",
+    print_failure(_safe_all, obj, interior_loc, nullptr, "Shenandoah assert_marked_weak failed",
                   "Object should be marked weakly",
                   file, line);
   }
@@ -332,7 +332,7 @@ void ShenandoahAsserts::assert_marked_strong(void *interior_loc, oop obj, const 
 
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   if (!heap->marking_context()->is_marked_strong(obj)) {
-    print_failure(_safe_all, obj, interior_loc, NULL, "Shenandoah assert_marked_strong failed",
+    print_failure(_safe_all, obj, interior_loc, nullptr, "Shenandoah assert_marked_strong failed",
                   "Object should be marked strongly",
                   file, line);
   }
@@ -343,7 +343,7 @@ void ShenandoahAsserts::assert_in_cset(void* interior_loc, oop obj, const char* 
 
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   if (!heap->in_collection_set(obj)) {
-    print_failure(_safe_all, obj, interior_loc, NULL, "Shenandoah assert_in_cset failed",
+    print_failure(_safe_all, obj, interior_loc, nullptr, "Shenandoah assert_in_cset failed",
                   "Object should be in collection set",
                   file, line);
   }
@@ -354,7 +354,7 @@ void ShenandoahAsserts::assert_not_in_cset(void* interior_loc, oop obj, const ch
 
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   if (heap->in_collection_set(obj)) {
-    print_failure(_safe_all, obj, interior_loc, NULL, "Shenandoah assert_not_in_cset failed",
+    print_failure(_safe_all, obj, interior_loc, nullptr, "Shenandoah assert_not_in_cset failed",
                   "Object should not be in collection set",
                   file, line);
   }
@@ -363,7 +363,7 @@ void ShenandoahAsserts::assert_not_in_cset(void* interior_loc, oop obj, const ch
 void ShenandoahAsserts::assert_not_in_cset_loc(void* interior_loc, const char* file, int line) {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   if (heap->in_collection_set_loc(interior_loc)) {
-    print_failure(_safe_unknown, NULL, interior_loc, NULL, "Shenandoah assert_not_in_cset_loc failed",
+    print_failure(_safe_unknown, nullptr, interior_loc, nullptr, "Shenandoah assert_not_in_cset_loc failed",
                   "Interior location should not be in collection set",
                   file, line);
   }

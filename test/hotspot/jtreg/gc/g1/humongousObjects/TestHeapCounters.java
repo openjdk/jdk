@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@ package gc.g1.humongousObjects;
 
 import gc.testlibrary.Helpers;
 import jdk.test.lib.Asserts;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
@@ -40,8 +40,8 @@ import java.util.List;
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  * @modules java.management
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
  * @run main/othervm -XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *                   -Xmx128m -Xms128m
@@ -162,7 +162,7 @@ public class TestHeapCounters {
             if (gcCountNow == gcCountBefore) {
                 // We should allocate at least allocation.expectedSize
                 Asserts.assertGreaterThanOrEqual(usedMemoryAfter - usedMemoryBefore, expectedAllocationSize,
-                        "Counter of type " + memoryCounter.getClass().getSimpleName() +
+                        "Counter of type " + memoryCounter.toString() +
                                 " returned wrong allocation size");
             } else {
                 System.out.println("GC happened during allocation so the check is skipped");
@@ -184,7 +184,7 @@ public class TestHeapCounters {
             // We should free at least allocation.expectedSize * ALLOCATION_SIZE_TOLERANCE_FACTOR
             Asserts.assertGreaterThanOrEqual(usedMemoryBefore - usedMemoryAfter,
                     (long) (allocation.expectedSize * ALLOCATION_SIZE_TOLERANCE_FACTOR),
-                    "Counter of type " + memoryCounter.getClass().getSimpleName() + " returned wrong allocation size");
+                    "Counter of type " + memoryCounter.toString() + " returned wrong allocation size");
         });
     }
 }

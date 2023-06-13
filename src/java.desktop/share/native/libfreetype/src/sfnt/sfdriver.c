@@ -4,7 +4,7 @@
  *
  *   High-level SFNT driver interface (body).
  *
- * Copyright (C) 1996-2020 by
+ * Copyright (C) 1996-2023 by
  * David Turner, Robert Wilhelm, and Werner Lemberg.
  *
  * This file is part of the FreeType project, and may only be used,
@@ -34,6 +34,10 @@
 #ifdef TT_CONFIG_OPTION_COLOR_LAYERS
 #include "ttcolr.h"
 #include "ttcpal.h"
+#endif
+
+#ifdef FT_CONFIG_OPTION_SVG
+#include "ttsvg.h"
 #endif
 
 #ifdef TT_CONFIG_OPTION_POSTSCRIPT_NAMES
@@ -374,61 +378,61 @@
       {
       case 15:
         k4 ^= (FT_UInt32)tail[14] << 16;
-        /* fall through */
+        FALL_THROUGH;
       case 14:
         k4 ^= (FT_UInt32)tail[13] << 8;
-        /* fall through */
+        FALL_THROUGH;
       case 13:
         k4 ^= (FT_UInt32)tail[12];
         k4 *= c4;
         k4  = ROTL32( k4, 18 );
         k4 *= c1;
         h4 ^= k4;
-        /* fall through */
+        FALL_THROUGH;
 
       case 12:
         k3 ^= (FT_UInt32)tail[11] << 24;
-        /* fall through */
+        FALL_THROUGH;
       case 11:
         k3 ^= (FT_UInt32)tail[10] << 16;
-        /* fall through */
+        FALL_THROUGH;
       case 10:
         k3 ^= (FT_UInt32)tail[9] << 8;
-        /* fall through */
+        FALL_THROUGH;
       case 9:
         k3 ^= (FT_UInt32)tail[8];
         k3 *= c3;
         k3  = ROTL32( k3, 17 );
         k3 *= c4;
         h3 ^= k3;
-        /* fall through */
+        FALL_THROUGH;
 
       case 8:
         k2 ^= (FT_UInt32)tail[7] << 24;
-        /* fall through */
+        FALL_THROUGH;
       case 7:
         k2 ^= (FT_UInt32)tail[6] << 16;
-        /* fall through */
+        FALL_THROUGH;
       case 6:
         k2 ^= (FT_UInt32)tail[5] << 8;
-        /* fall through */
+        FALL_THROUGH;
       case 5:
         k2 ^= (FT_UInt32)tail[4];
         k2 *= c2;
         k2  = ROTL32( k2, 16 );
         k2 *= c3;
         h2 ^= k2;
-        /* fall through */
+        FALL_THROUGH;
 
       case 4:
         k1 ^= (FT_UInt32)tail[3] << 24;
-        /* fall through */
+        FALL_THROUGH;
       case 3:
         k1 ^= (FT_UInt32)tail[2] << 16;
-        /* fall through */
+        FALL_THROUGH;
       case 2:
         k1 ^= (FT_UInt32)tail[1] << 8;
-        /* fall through */
+        FALL_THROUGH;
       case 1:
         k1 ^= (FT_UInt32)tail[0];
         k1 *= c1;
@@ -491,17 +495,15 @@
                   char_type_func  char_type,
                   FT_Bool         report_invalid_characters )
   {
-    FT_Error  error = FT_Err_Ok;
+    FT_Error  error;
 
     char*       result = NULL;
     FT_String*  r;
     FT_Char*    p;
     FT_UInt     len;
 
-    FT_UNUSED( error );
 
-
-    if ( FT_ALLOC( result, entry->stringLength / 2 + 1 ) )
+    if ( FT_QALLOC( result, entry->stringLength / 2 + 1 ) )
       return NULL;
 
     if ( FT_STREAM_SEEK( entry->stringOffset ) ||
@@ -550,17 +552,15 @@
                     char_type_func  char_type,
                     FT_Bool         report_invalid_characters )
   {
-    FT_Error  error = FT_Err_Ok;
+    FT_Error  error;
 
     char*       result = NULL;
     FT_String*  r;
     FT_Char*    p;
     FT_UInt     len;
 
-    FT_UNUSED( error );
 
-
-    if ( FT_ALLOC( result, entry->stringLength + 1 ) )
+    if ( FT_QALLOC( result, entry->stringLength + 1 ) )
       return NULL;
 
     if ( FT_STREAM_SEEK( entry->stringOffset ) ||
@@ -657,7 +657,7 @@
 
 
   /*
-   * Find the shortest decimal representation of a 16.16 fixed point
+   * Find the shortest decimal representation of a 16.16 fixed-point
    * number.  The function fills `buf' with the result, returning a pointer
    * to the position after the representation's last byte.
    */
@@ -733,7 +733,7 @@
         an equivalent representation of `fixed'.
 
         The above FOR loop always finds the larger of the two values; I
-        verified this by iterating over all possible fixed point numbers.
+        verified this by iterating over all possible fixed-point numbers.
 
         If the remainder is 17232*10, both values are equally good, and we
         take the next even number (following IEEE 754's `round to nearest,
@@ -741,7 +741,7 @@
 
         If the remainder is smaller than 17232*10, the lower of the two
         numbers is nearer to the exact result (values 17232 and 34480 were
-        also found by testing all possible fixed point values).
+        also found by testing all possible fixed-point values).
 
         We use this to find a shorter decimal representation.  If not ending
         with digit zero, we take the representation with less error.
@@ -868,8 +868,8 @@
         result[len] = '\0';
 
         FT_TRACE0(( "sfnt_get_var_ps_name:"
-                    " Shortening variation PS name prefix\n"
-                    "                     "
+                    " Shortening variation PS name prefix\n" ));
+        FT_TRACE0(( "                     "
                     " to %d characters\n", len ));
       }
 
@@ -920,16 +920,16 @@
         if ( !subfamily_name )
         {
           FT_TRACE1(( "sfnt_get_var_ps_name:"
-                      " can't construct named instance PS name;\n"
-                      "                     "
+                      " can't construct named instance PS name;\n" ));
+          FT_TRACE1(( "                     "
                       " trying to construct normal instance PS name\n" ));
           goto construct_instance_name;
         }
 
         /* after the prefix we have character `-' followed by the   */
         /* subfamily name (using only characters a-z, A-Z, and 0-9) */
-        if ( FT_ALLOC( result, face->var_postscript_prefix_len +
-                               1 + ft_strlen( subfamily_name ) + 1 ) )
+        if ( FT_QALLOC( result, face->var_postscript_prefix_len +
+                                1 + ft_strlen( subfamily_name ) + 1 ) )
           return NULL;
 
         ft_strcpy( result, face->var_postscript_prefix );
@@ -957,9 +957,9 @@
     construct_instance_name:
       axis = mm_var->axis;
 
-      if ( FT_ALLOC( result,
-                     face->var_postscript_prefix_len +
-                       num_coords * MAX_VALUE_DESCRIPTOR_LEN + 1 ) )
+      if ( FT_QALLOC( result,
+                      face->var_postscript_prefix_len +
+                        num_coords * MAX_VALUE_DESCRIPTOR_LEN + 1 ) )
         return NULL;
 
       p = result;
@@ -993,6 +993,7 @@
         if ( t != ' ' && ft_isalnum( t ) )
           *p++ = t;
       }
+      *p++ = '\0';
     }
 
   check_length:
@@ -1213,6 +1214,14 @@
 #define PUT_COLOR_LAYERS( a )  NULL
 #endif
 
+#ifdef FT_CONFIG_OPTION_SVG
+#define PUT_SVG_SUPPORT( a )  a
+#else
+#define PUT_SVG_SUPPORT( a )  NULL
+#endif
+
+#define PUT_COLOR_LAYERS_V1( a )  PUT_COLOR_LAYERS( a )
+
 #ifdef TT_CONFIG_OPTION_POSTSCRIPT_NAMES
 #define PUT_PS_NAMES( a )  a
 #else
@@ -1271,9 +1280,9 @@
                             /* TT_Free_Table_Func      free_eblc       */
 
     PUT_EMBEDDED_BITMAPS( tt_face_set_sbit_strike     ),
-                   /* TT_Set_SBit_Strike_Func      set_sbit_strike     */
+                  /* TT_Set_SBit_Strike_Func      set_sbit_strike      */
     PUT_EMBEDDED_BITMAPS( tt_face_load_strike_metrics ),
-                   /* TT_Load_Strike_Metrics_Func  load_strike_metrics */
+                  /* TT_Load_Strike_Metrics_Func  load_strike_metrics  */
 
     PUT_COLOR_LAYERS( tt_face_load_cpal ),
                             /* TT_Load_Table_Func      load_cpal       */
@@ -1287,13 +1296,32 @@
                             /* TT_Set_Palette_Func     set_palette     */
     PUT_COLOR_LAYERS( tt_face_get_colr_layer ),
                             /* TT_Get_Colr_Layer_Func  get_colr_layer  */
+
+    PUT_COLOR_LAYERS_V1( tt_face_get_colr_glyph_paint ),
+              /* TT_Get_Color_Glyph_Paint_Func    get_colr_glyph_paint */
+    PUT_COLOR_LAYERS_V1( tt_face_get_color_glyph_clipbox ),
+              /* TT_Get_Color_Glyph_ClipBox_Func  get_clipbox          */
+    PUT_COLOR_LAYERS_V1( tt_face_get_paint_layers ),
+              /* TT_Get_Paint_Layers_Func         get_paint_layers     */
+    PUT_COLOR_LAYERS_V1( tt_face_get_colorline_stops ),
+              /* TT_Get_Paint                     get_paint            */
+    PUT_COLOR_LAYERS_V1( tt_face_get_paint ),
+              /* TT_Get_Colorline_Stops_Func      get_colorline_stops  */
+
     PUT_COLOR_LAYERS( tt_face_colr_blend_layer ),
                             /* TT_Blend_Colr_Func      colr_blend      */
 
     tt_face_get_metrics,    /* TT_Get_Metrics_Func     get_metrics     */
 
     tt_face_get_name,       /* TT_Get_Name_Func        get_name        */
-    sfnt_get_name_id        /* TT_Get_Name_ID_Func     get_name_id     */
+    sfnt_get_name_id,       /* TT_Get_Name_ID_Func     get_name_id     */
+
+    PUT_SVG_SUPPORT( tt_face_load_svg ),
+                            /* TT_Load_Table_Func      load_svg        */
+    PUT_SVG_SUPPORT( tt_face_free_svg ),
+                            /* TT_Free_Table_Func      free_svg        */
+    PUT_SVG_SUPPORT( tt_face_load_svg_doc )
+                            /* TT_Load_Svg_Doc_Func    load_svg_doc    */
   )
 
 

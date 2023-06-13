@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,9 +44,9 @@ import java.util.Collections;
  */
 public class AppConfigurationEntry {
 
-    private String loginModuleName;
-    private LoginModuleControlFlag controlFlag;
-    private Map<String,?> options;
+    private final String loginModuleName;
+    private final LoginModuleControlFlag controlFlag;
+    private final Map<String,?> options;
 
     /**
      * Default constructor for this class.
@@ -122,12 +122,12 @@ public class AppConfigurationEntry {
     }
 
     /**
-     * This class represents whether or not a {@code LoginModule}
+     * This class represents whether a {@code LoginModule}
      * is REQUIRED, REQUISITE, SUFFICIENT or OPTIONAL.
      */
     public static class LoginModuleControlFlag {
 
-        private String controlFlag;
+        private final String controlFlag;
 
         /**
          * Required {@code LoginModule}.

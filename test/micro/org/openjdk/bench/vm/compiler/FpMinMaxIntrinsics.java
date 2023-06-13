@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,9 @@ import java.util.Random;
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @State(Scope.Thread)
+@Warmup(iterations = 4, time = 2, timeUnit = TimeUnit.SECONDS)
+@Measurement(iterations = 4, time = 2, timeUnit = TimeUnit.SECONDS)
+@Fork(value = 3)
 public class FpMinMaxIntrinsics {
     private static final int COUNT = 1000;
 
@@ -40,6 +43,9 @@ public class FpMinMaxIntrinsics {
     private int c1, c2, s1, s2;
 
     private Random r = new Random();
+
+    private static int stride = 1;
+    private static float acc;
 
     @Setup
     public void init() {
@@ -124,4 +130,44 @@ public class FpMinMaxIntrinsics {
 
         return result;
     }
+
+    @Benchmark
+    public float fMinReducePartiallyUnrolled() {
+        float result = Float.MAX_VALUE;
+        for (int i = 0; i < COUNT / 2; i++) {
+            result = Math.min(result, floats[2*i]);
+            result = Math.min(result, floats[2*i + 1]);
+        }
+        return result;
+    }
+
+    @Benchmark
+    public float fMinReduceNonCounted() {
+        float result = Float.MAX_VALUE;
+        for (int i = 0; i < COUNT; i += stride)
+            result = Math.min(result, floats[i]);
+        return result;
+    }
+
+    @Benchmark
+    public float fMinReduceGlobalAccumulator() {
+        acc = Float.MAX_VALUE;
+        for (int i = 0; i < COUNT; i += stride)
+            acc = Math.min(acc, floats[i]);
+        return acc;
+    }
+
+    @Benchmark
+    public float fMinReduceInOuterLoop() {
+        float result = Float.MAX_VALUE;
+        int count = 0;
+        for (int i = 0; i < COUNT; i++) {
+            result = Math.min(result, floats[i]);
+            for (int j = 0; j < 10; j += stride) {
+                count++;
+            }
+        }
+        return result + count;
+    }
+
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 package com.sun.hotspot.igv.view.actions;
 
+import com.sun.hotspot.igv.view.EditorTopComponent;
 import java.awt.event.ActionEvent;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
@@ -35,20 +36,20 @@ import org.openide.util.ImageUtilities;
  */
 public class PredSuccAction extends AbstractAction {
 
-    private boolean state;
-    public static final String STATE = "state";
 
-    public PredSuccAction() {
-        state = true;
+    public PredSuccAction(boolean selected) {
+        putValue(Action.SELECTED_KEY, selected);
         putValue(AbstractAction.SMALL_ICON, new ImageIcon(ImageUtilities.loadImage(iconResource())));
-        putValue(STATE, true);
         putValue(Action.SHORT_DESCRIPTION, "Show neighboring nodes of fully visible nodes semi-transparent");
     }
 
     @Override
     public void actionPerformed(ActionEvent ev) {
-        this.state = !state;
-        this.putValue(STATE, state);
+        EditorTopComponent editor = EditorTopComponent.getActive();
+        if (editor != null) {
+            boolean selected = (boolean)getValue(SELECTED_KEY);
+            editor.getModel().setShowNodeHull(selected);
+        }
     }
 
     protected String iconResource() {

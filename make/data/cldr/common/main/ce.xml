@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2021 Unicode, Inc.
+<!-- Copyright © 1991-2023 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -105,6 +105,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="en_GB">британин ингалсан</language>
 			<language type="en_GB" alt="short">ингалсан (Британи)</language>
 			<language type="en_US">американ ингалсан</language>
+			<language type="en_US" alt="short">ингалсан (АЦШ)</language>
 			<language type="eo">эсперанто</language>
 			<language type="es">испанхойн</language>
 			<language type="es_419">латинан американ испанхойн</language>
@@ -3841,9 +3842,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>#,##0.00 ¤</pattern>
+					<pattern alt="noCurrency" draft="provisional">#,##0.00</pattern>
 				</currencyFormat>
 				<currencyFormat type="accounting">
 					<pattern>#,##0.00 ¤</pattern>
+					<pattern alt="noCurrency" draft="provisional">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
@@ -4200,7 +4203,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="one">Гуьржийчоьнан лари</displayName>
 				<displayName count="other">Гуьржийчоьнан лариш</displayName>
 				<symbol draft="contributed">GEL</symbol>
-				<symbol alt="variant" draft="contributed">₾</symbol>
 			</currency>
 			<currency type="GHS">
 				<displayName>Ганан седи</displayName>

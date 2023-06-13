@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -529,6 +529,7 @@ class CheckedFeatures {
         {"linux-ppc64",     "com.sun.jdi.SharedMemoryAttach"},
         {"linux-ppc64le",   "com.sun.jdi.SharedMemoryAttach"},
         {"linux-s390x",     "com.sun.jdi.SharedMemoryAttach"},
+        {"linux-riscv64",   "com.sun.jdi.SharedMemoryAttach"},
         {"macosx-amd64",    "com.sun.jdi.SharedMemoryAttach"},
         {"mac-x64",         "com.sun.jdi.SharedMemoryAttach"},
         {"macosx-aarch64",  "com.sun.jdi.SharedMemoryAttach"},
@@ -554,6 +555,7 @@ class CheckedFeatures {
         {"linux-ppc64",     "com.sun.jdi.SharedMemoryListen"},
         {"linux-ppc64le",   "com.sun.jdi.SharedMemoryListen"},
         {"linux-s390x",     "com.sun.jdi.SharedMemoryListen"},
+        {"linux-riscv64",   "com.sun.jdi.SharedMemoryListen"},
         {"macosx-amd64",    "com.sun.jdi.SharedMemoryListen"},
         {"mac-x64",         "com.sun.jdi.SharedMemoryListen"},
         {"macosx-aarch64",  "com.sun.jdi.SharedMemoryListen"},
@@ -600,6 +602,9 @@ class CheckedFeatures {
         {"linux-s390x",     "com.sun.jdi.CommandLineLaunch", "dt_shmem"},
         {"linux-s390x",     "com.sun.jdi.RawCommandLineLaunch", "dt_shmem"},
 
+        {"linux-riscv64",   "com.sun.jdi.CommandLineLaunch", "dt_shmem"},
+        {"linux-riscv64",   "com.sun.jdi.RawCommandLineLaunch", "dt_shmem"},
+
         {"windows-i586",    "com.sun.jdi.CommandLineLaunch", "dt_socket"},
         {"windows-i586",    "com.sun.jdi.RawCommandLineLaunch", "dt_socket"},
 
@@ -637,6 +642,7 @@ class CheckedFeatures {
         {"linux-ppc64",     "dt_shmem"},
         {"linux-ppc64le",   "dt_shmem"},
         {"linux-s390x",     "dt_shmem"},
+        {"linux-riscv64",   "dt_shmem"},
         {"macosx-amd64",    "dt_shmem"},
         {"mac-x64",         "dt_shmem"},
         {"macosx-aarch64",  "dt_shmem"},

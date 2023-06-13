@@ -86,7 +86,7 @@ class AwtDropTarget;
 enum MsgRouting {
     mrPassAlong,    /* pass along to next in chain */
     mrDoDefault,    /* skip right to underlying default behavior */
-    mrConsume,      /* consume msg & terminate routing immediatly,
+    mrConsume,      /* consume msg & terminate routing immediately,
                      * don't pass anywhere
                      */
 };
@@ -543,7 +543,7 @@ public:
     virtual MsgRouting WmIMEChar(UINT character, UINT repCnt, UINT flags, BOOL system);
     virtual MsgRouting WmInputLangChange(UINT charset, HKL hKeyBoardLayout);
     virtual MsgRouting WmForwardChar(WCHAR character, LPARAM lParam,
-                                     BOOL synthethic);
+                                     BOOL synthetic);
     virtual MsgRouting WmPaste();
 
     virtual void SetCompositionWindow(RECT &r);
@@ -740,7 +740,7 @@ protected:
 
     /*
      * The function sets the focus-restore flag ON/OFF.
-     * When the flag is ON, focus is restored immidiately after the proxy loses it.
+     * When the flag is ON, focus is restored immediately after the proxy loses it.
      * All focus messages are suppressed. It's also assumed that sm_focusedWindow and
      * sm_focusOwner don't change after the flag is set ON and before it's set OFF.
      */
@@ -849,7 +849,7 @@ private:
     /*
      * The association list of children's IDs and corresponding components.
      * Some components like Choice or List are required their sizes while
-     * the creations of themselfs are in progress.
+     * the creations of themselves are in progress.
      */
     class ChildListItem {
     public:

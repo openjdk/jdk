@@ -89,7 +89,7 @@ jint forceSharedPixmaps = JNI_FALSE;
 int mitShmPermissionMask = MITSHM_PERM_OWNER;
 #endif
 
-/* Cached shared image, one for all surface datas. */
+/* Cached shared image, one for all surface data. */
 static XImage * cachedXImage;
 
 #endif /* !HEADLESS */
@@ -1298,6 +1298,7 @@ void X11SD_DisposeXImage(XImage * image) {
 #ifdef MITSHM
         if (image->obdata != NULL) {
             X11SD_DropSharedSegment((XShmSegmentInfo*)image->obdata);
+            free(image->obdata);
             image->obdata = NULL;
         }
 #endif /* MITSHM */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ public class ClasspathTest {
          * Since providers can be loaded from the application's classpath,
          * this test will fail if they are NOT loaded from classpath.
          */
-        Locale OSAKA = new Locale("ja", "JP", "osaka");
+        Locale OSAKA = Locale.of("ja", "JP", "osaka");
         List<Locale> availableLocales = Arrays.asList(Locale.getAvailableLocales());
         if (!availableLocales.contains(OSAKA)) {
             throw new RuntimeException("LSS providers were NOT loaded from the class path.");

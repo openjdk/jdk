@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@
  *          java.base/sun.security.x509
  * @run main SignerOrder
  */
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.security.KeyPair;
@@ -115,8 +114,8 @@ public class SignerOrder {
     }
 
     static void printSignerInfos(SignerInfo signerInfo) throws IOException {
-        ByteArrayOutputStream strm = new ByteArrayOutputStream();
-        signerInfo.derEncode(strm);
+        DerOutputStream strm = new DerOutputStream();
+        signerInfo.encode(strm);
         System.out.println("SignerInfo, length: "
                 + strm.toByteArray().length);
         HexPrinter.simple().format(strm.toByteArray());
@@ -125,9 +124,9 @@ public class SignerOrder {
     }
 
     static void printSignerInfos(SignerInfo[] signerInfos) throws IOException {
-        ByteArrayOutputStream strm = new ByteArrayOutputStream();
+        DerOutputStream strm = new DerOutputStream();
         for (int i = 0; i < signerInfos.length; i++) {
-            signerInfos[i].derEncode(strm);
+            signerInfos[i].encode(strm);
             System.out.println("SignerInfo[" + i + "], length: "
                     + strm.toByteArray().length);
             HexPrinter.simple().format(strm.toByteArray());
@@ -246,20 +245,16 @@ class SimpleSigner {
 
         X509CertInfo info = new X509CertInfo();
         // Add all mandatory attributes
-        info.set(X509CertInfo.VERSION,
-                new CertificateVersion(CertificateVersion.V1));
-        info.set(X509CertInfo.SERIAL_NUMBER,
-                new CertificateSerialNumber(
+        info.setVersion(new CertificateVersion(CertificateVersion.V1));
+        info.setSerialNumber(new CertificateSerialNumber(
                         (int) (firstDate.getTime() / 1000)));
-        info.set(X509CertInfo.ALGORITHM_ID,
-                new CertificateAlgorithmId(algId));
-        info.set(X509CertInfo.SUBJECT, agent);
-        info.set(X509CertInfo.KEY, new CertificateX509Key(publicKey));
-        info.set(X509CertInfo.VALIDITY, interval);
-        info.set(X509CertInfo.ISSUER, agent);
+        info.setAlgorithmId(new CertificateAlgorithmId(algId));
+        info.setSubject(agent);
+        info.setKey(new CertificateX509Key(publicKey));
+        info.setValidity(interval);
+        info.setIssuer(agent);
 
-        certLocal = new X509CertImpl(info);
-        certLocal.sign(privateKey, algId.getName());
+        certLocal = X509CertImpl.newSigned(info, privateKey, algId.getName());
 
         return certLocal;
     }

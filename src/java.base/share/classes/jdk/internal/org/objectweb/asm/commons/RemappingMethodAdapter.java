@@ -81,7 +81,7 @@ public class RemappingMethodAdapter extends LocalVariablesSorter {
             final String descriptor,
             final MethodVisitor methodVisitor,
             final Remapper remapper) {
-        this(Opcodes.ASM6, access, descriptor, methodVisitor, remapper);
+        this(Opcodes.ASM9, access, descriptor, methodVisitor, remapper);
     }
 
     protected RemappingMethodAdapter(
@@ -307,3 +307,4 @@ public class RemappingMethodAdapter extends LocalVariablesSorter {
                 : new RemappingAnnotationAdapter(annotationVisitor, remapper);
     }
 }
+

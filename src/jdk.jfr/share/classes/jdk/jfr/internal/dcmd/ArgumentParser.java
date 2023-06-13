@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,10 +30,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.StringJoiner;
 
 final class ArgumentParser {
     private final Map<String, Object> options = new HashMap<>();
     private final Map<String, Object> extendedOptions = new HashMap<>();
+    private final List<String> conflictedOptions = new ArrayList<>();
     private final StringBuilder builder = new StringBuilder();
     private final String text;
     private final char delimiter;
@@ -41,6 +43,7 @@ final class ArgumentParser {
     private final String valueDelimiter;
     private final Argument[] arguments;
     private int position;
+    private int argumentIndex;
 
     ArgumentParser(Argument[] arguments, String text, char delimiter) {
         this.text = text;
@@ -57,6 +60,11 @@ final class ArgumentParser {
             String value = null;
             if (accept('=')) {
                 value = readText(valueDelimiter);
+            } else {
+                if (hasArgumentsLeft()) {
+                    value = key;
+                    key = nextArgument().name();
+                }
             }
             if (!atEnd() && !accept(delimiter)) { // must be followed by delimiter
                 throw new IllegalArgumentException("Expected delimiter, but found " + currentChar());
@@ -64,18 +72,64 @@ final class ArgumentParser {
             addOption(key, value);
             eatDelimiter();
         }
+        checkConflict();
         checkMandatory();
         return options;
     }
 
-    private void checkMandatory() {
+    private boolean hasArgumentsLeft() {
+        for (int index = argumentIndex; index < arguments.length; index++) {
+            if (!arguments[index].option()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private Argument nextArgument() {
+        while (argumentIndex < arguments.length) {
+            Argument argument = arguments[argumentIndex++];
+            if (!argument.option()) {
+                return argument;
+            }
+        }
+        return null;
+    }
+
+    protected void checkConflict() {
+        if (conflictedOptions.isEmpty()) {
+            return;
+        }
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("Option");
+
+        // If multiple options conflict, the following blocks are executed
+        if (conflictedOptions.size() > 1) {
+            sb.append("s ");
+            StringJoiner sj = new StringJoiner(", ");
+            while (conflictedOptions.size() > 1) {
+                sj.add(conflictedOptions.remove(0));
+            }
+            sb.append(sj);
+            sb.append(" and");
+        }
+
+        sb.append(" ");
+        sb.append(conflictedOptions.remove(0));
+        sb.append(" can only be specified once.");
+        throw new IllegalArgumentException(sb.toString());
+    }
+
+    public boolean checkMandatory() {
         for (Argument arg : arguments) {
             if (!options.containsKey(arg.name())) {
                 if (arg.mandatory()) {
-                    throw new IllegalArgumentException("The argument '" + arg.name() + "' is mandatory");
+                    return false;
                 }
             }
         }
+        return true;
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -94,9 +148,12 @@ final class ArgumentParser {
                     }
                 } else {
                     if (options.containsKey(key)) {
-                        throw new IllegalArgumentException("Duplicates in diagnostic command arguments");
+                        if (!conflictedOptions.contains(key)) {
+                            conflictedOptions.add(key);
+                        }
+                    } else {
+                        options.put(key, v);
                     }
-                    options.put(key, v);
                 }
             }
         }
@@ -162,12 +219,29 @@ final class ArgumentParser {
 
     private Object value(String name, String type, String text) {
         return switch (type) {
+            case "JULONG" -> parseLong(name, text);
             case "STRING", "STRING SET" -> text == null ? "" : text;
             case "BOOLEAN" -> parseBoolean(name, text);
             case "NANOTIME" -> parseNanotime(name, text);
             case "MEMORY SIZE" -> parseMemorySize(name, text);
             default -> throw new InternalError("Unknown type: " + type);
         };
+    }
+
+    private Long parseLong(String name, String text) {
+        if (text == null) {
+            throw new IllegalArgumentException("Parsing error long value: syntax error, value is null");
+        }
+        try {
+            long value = Long.parseLong(text);
+            if (value >= 0) {
+                return value;
+            }
+        } catch (NumberFormatException nfe) {
+          // fall through
+        }
+        String msg = "Integer parsing error in command argument '" + name + "'. Could not parse: " + text + ".";
+        throw new IllegalArgumentException(msg);
     }
 
     private Boolean parseBoolean(String name, String text) {

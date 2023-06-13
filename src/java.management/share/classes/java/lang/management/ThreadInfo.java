@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import javax.management.openmbean.ArrayType;
 import javax.management.openmbean.CompositeData;
 import sun.management.ManagementFactoryHelper;
 import sun.management.ThreadInfoCompositeData;
-import static java.lang.Thread.State.*;
 
 /**
  * Thread information. {@code ThreadInfo} contains the information
@@ -224,7 +223,7 @@ public class ThreadInfo {
                             StackTraceElement[] stackTrace,
                             MonitorInfo[] lockedMonitors,
                             LockInfo[] lockedSynchronizers) {
-        this.threadId = t.getId();
+        this.threadId = t.threadId();
         this.threadName = t.getName();
         this.threadState = ManagementFactoryHelper.toThreadState(state);
         this.suspended = ManagementFactoryHelper.isThreadSuspended(state);
@@ -249,7 +248,7 @@ public class ThreadInfo {
             this.lockOwnerId = -1;
             this.lockOwnerName = null;
         } else {
-            this.lockOwnerId = lockOwner.getId();
+            this.lockOwnerId = lockOwner.threadId();
             this.lockOwnerName = lockOwner.getName();
         }
         if (stackTrace == null) {
@@ -333,7 +332,7 @@ public class ThreadInfo {
      *
      * <p>The Java virtual machine may measure the time with a high
      * resolution timer.  This statistic is reset when
-     * the thread contention monitoring is reenabled.
+     * the thread contention monitoring is re-enabled.
      *
      * @return the approximate accumulated elapsed time in milliseconds
      * that a thread entered the {@code BLOCKED} state;
@@ -377,7 +376,7 @@ public class ThreadInfo {
      *
      * <p>The Java virtual machine may measure the time with a high
      * resolution timer.  This statistic is reset when
-     * the thread contention monitoring is reenabled.
+     * the thread contention monitoring is re-enabled.
      *
      * @return the approximate accumulated elapsed time in milliseconds
      * that a thread has been in the {@code WAITING} or

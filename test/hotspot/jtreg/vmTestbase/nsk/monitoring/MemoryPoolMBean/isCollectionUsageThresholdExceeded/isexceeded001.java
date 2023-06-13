@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,8 @@ public class isexceeded001 {
     public static int run(String[] argv, PrintStream out) {
         ArgumentHandler argHandler = new ArgumentHandler(argv);
         Log log = new Log(out, argHandler);
+        log.enableVerbose(true);
+
         monitor = Monitor.getMemoryMonitor(log, argHandler);
         List pools = monitor.getMemoryPoolMBeans();
 
@@ -118,15 +120,11 @@ public class isexceeded001 {
                 isExceeded = monitor.isCollectionThresholdExceeded(pool);
                 if (!isExceeded) {
 
-                    // Refresh the values
-                    threshold = monitor.getCollectionThreshold(pool);
-                    usage = monitor.getCollectionUsage(pool);
-                    if (used >= threshold) {
-                        log.complain("isCollectionUsageThresholdExceeded() "
-                                   + "returned false, while threshold = "
-                                   + threshold + " and " + "used = " + used);
-                        testFailed = true;
-                    }
+                    // Don't refresh the values: usage may have decreased outside our control.
+                    log.complain("isCollectionUsageThresholdExceeded() "
+                               + "returned false, while threshold = "
+                               + threshold + " and " + "used = " + used);
+                    testFailed = true;
                 }
             } else {
                 log.display("  used value (" + used + ") did not cross the "
@@ -135,9 +133,10 @@ public class isexceeded001 {
                 isExceeded = monitor.isCollectionThresholdExceeded(pool);
                 if (isExceeded) {
 
-                    // Refresh the values
+                    // Refresh the values: usage may have increased outside our control.
                     threshold = monitor.getCollectionThreshold(pool);
                     usage = monitor.getCollectionUsage(pool);
+                    used = usage.getUsed();
                     if (used < threshold) {
                         log.complain("isCollectionUsageThresholdExceeded() "
                                    + "returned true, while threshold = "

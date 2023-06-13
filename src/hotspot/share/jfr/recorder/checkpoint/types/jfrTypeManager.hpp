@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,13 @@
 #define SHARE_JFR_RECORDER_CHECKPOINT_TYPES_JFRTYPEMANAGER_HPP
 
 #include "jfr/utilities/jfrAllocation.hpp"
+#include "jfr/utilities/jfrBlob.hpp"
+#include "jfr/utilities/jfrTypes.hpp"
+#include "oops/oopsHierarchy.hpp"
 
 class JavaThread;
 class JfrCheckpointWriter;
+class Thread;
 
 class JfrTypeManager : public AllStatic {
  public:
@@ -35,8 +39,8 @@ class JfrTypeManager : public AllStatic {
   static void destroy();
   static void on_rotation();
   static void write_threads(JfrCheckpointWriter& writer);
-  static void create_thread_blob(Thread* t);
-  static void write_thread_checkpoint(Thread* t);
+  static JfrBlobHandle create_thread_blob(JavaThread* jt, traceid tid = 0, oop vthread = nullptr);
+  static void write_checkpoint(Thread* t, traceid tid = 0, oop vthread = nullptr);
   static void write_static_types(JfrCheckpointWriter& writer);
 };
 

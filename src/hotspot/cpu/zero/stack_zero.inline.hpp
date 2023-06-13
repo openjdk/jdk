@@ -26,7 +26,7 @@
 #ifndef CPU_ZERO_STACK_ZERO_INLINE_HPP
 #define CPU_ZERO_STACK_ZERO_INLINE_HPP
 
-#include "runtime/thread.hpp"
+#include "runtime/javaThread.hpp"
 #include "stack_zero.hpp"
 
 inline void ZeroStack::overflow_check(int required_words, TRAPS) {

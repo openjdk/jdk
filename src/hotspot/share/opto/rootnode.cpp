@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@ Node *RootNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // If we want to get the rest of the win later, we should pattern match
   // simple recursive call trees to closed-form solutions.
 
-  return modified ? this : NULL;
+  return modified ? this : nullptr;
 }
 
 //=============================================================================
@@ -78,7 +78,7 @@ uint HaltNode::size_of() const { return sizeof(*this); }
 
 //------------------------------Ideal------------------------------------------
 Node *HaltNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  return remove_dead_region(phase, can_reshape) ? this : NULL;
+  return remove_dead_region(phase, can_reshape) ? this : nullptr;
 }
 
 //------------------------------Value------------------------------------------
@@ -91,18 +91,3 @@ const Type* HaltNode::Value(PhaseGVN* phase) const {
 const RegMask &HaltNode::out_RegMask() const {
   return RegMask::Empty;
 }
-
-#ifndef PRODUCT
-//-----------------------------related-----------------------------------------
-// Include all control inputs in the related set, and also the input data
-// boundary. In compact mode, include all inputs till level 2. Also include
-// all outputs at level 1.
-void HaltNode::related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_rel, bool compact) const {
-  if (compact) {
-    this->collect_nodes(in_rel, 2, false, false);
-  } else {
-    this->collect_nodes_in_all_ctrl(in_rel, true);
-  }
-  this->collect_nodes(out_rel, -1, false, false);
-}
-#endif

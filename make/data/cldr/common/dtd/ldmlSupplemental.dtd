@@ -1,26 +1,21 @@
 <!--
-Copyright © 2003-2019 Unicode, Inc. and others. All rights reserved. Distributed under the Terms of Use in http://www.unicode.org/copyright.html.
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of the Unicode data files and any associated documentation (the "Data Files") or Unicode software and any associated documentation (the "Software") to deal in the Data Files or Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, and/or sell copies of the Data Files or Software, and to permit persons to whom the Data Files or Software are furnished to do so, provided that (a) the above copyright notice(s) and this permission notice appear with all copies of the Data Files or Software, (b) both the above copyright notice(s) and this permission notice appear in associated documentation, and (c) there is clear notice in each modified Data File or in the Software as well as in the documentation associated with the Data File(s) or Software that the data or software has been modified.
-
-THE DATA FILES AND SOFTWARE ARE PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT OF THIRD PARTY RIGHTS. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR HOLDERS INCLUDED IN THIS NOTICE BE LIABLE FOR ANY CLAIM, OR ANY SPECIAL INDIRECT OR CONSEQUENTIAL DAMAGES, OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THE DATA FILES OR SOFTWARE.
-
-Except as contained in this notice, the name of a copyright holder shall not be used in advertising or otherwise to promote the sale, use or other dealings in these Data Files or Software without prior written authorization of the copyright holder.
-
-    $Revision$
+Copyright © 1991-2023 Unicode, Inc.
+For terms of use, see http://www.unicode.org/copyright.html
+SPDX-License-Identifier: Unicode-DFS-2016
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 
-<!ELEMENT supplementalData ( version, generation?, cldrVersion?, currencyData?, territoryContainment?, subdivisionContainment?, languageData?, territoryInfo?, postalCodeData?, calendarData?, calendarPreferenceData?, weekData?, timeData?, measurementData?, unitConstants*, unitQuantities*, convertUnits*, unitPreferenceData?, timezoneData?, characters?, transforms?, metadata?, codeMappings?, parentLocales?, likelySubtags?, metazoneInfo?, plurals?, telephoneCodeData?, numberingSystems?, bcp47KeywordMappings?, gender?, references?, languageMatching?, dayPeriodRuleSet*, metaZones?, primaryZones?, windowsZones?, coverageLevels?, idValidity?, rgScope?, languageGroups?, grammaticalData? ) >
+<!ELEMENT supplementalData ( version, generation?, cldrVersion?, currencyData?, territoryContainment?, subdivisionContainment?, languageData?, territoryInfo?, postalCodeData?, calendarData?, calendarPreferenceData?, weekData?, timeData?, measurementData?, unitIdComponents?, unitConstants*, unitQuantities*, convertUnits*, unitPreferenceData?, timezoneData?, characters?, transforms?, metadata?, codeMappings?, parentLocales*, personNamesDefaults?, likelySubtags?, metazoneInfo?, plurals?, telephoneCodeData?, numberingSystems?, bcp47KeywordMappings?, gender?, references?, languageMatching?, dayPeriodRuleSet*, metaZones?, primaryZones?, windowsZones?, coverageLevels?, idValidity?, rgScope?, languageGroups?, grammaticalData? ) >
 
 <!ELEMENT version EMPTY >
     <!--@METADATA-->
 <!ATTLIST version number CDATA #REQUIRED >
     <!--@MATCH:any-->
     <!--@METADATA-->
-<!ATTLIST version cldrVersion CDATA #FIXED "39" >
+<!ATTLIST version cldrVersion CDATA #FIXED "43" >
     <!--@MATCH:version-->
     <!--@VALUE-->
-<!ATTLIST version unicodeVersion CDATA #FIXED "13.0.0" >
+<!ATTLIST version unicodeVersion CDATA #FIXED "15.0.0" >
     <!--@MATCH:version-->
     <!--@VALUE-->
 
@@ -221,7 +216,7 @@ Except as contained in this notice, the name of a copyright holder shall not be 
 
 <!ELEMENT calendarData ( calendar* ) >
 
-<!ELEMENT calendar ( calendarSystem?, eras? ) >
+<!ELEMENT calendar ( calendarSystem?, inheritEras?, eras? ) >
 <!ATTLIST calendar type NMTOKEN #REQUIRED >
     <!--@MATCH:bcp47/ca-->
 <!ATTLIST calendar territories NMTOKENS #IMPLIED >
@@ -242,6 +237,11 @@ Except as contained in this notice, the name of a copyright holder shall not be 
 <!ATTLIST calendarSystem references CDATA #IMPLIED >
     <!--@METADATA-->
 
+<!ELEMENT inheritEras EMPTY >
+<!ATTLIST inheritEras calendar NMTOKEN #REQUIRED >
+    <!--@MATCH:bcp47/ca-->
+    <!--@VALUE-->
+
 <!ELEMENT eras ( era* ) >
 <!ATTLIST eras references CDATA #IMPLIED >
     <!--@METADATA-->
@@ -254,6 +254,12 @@ Except as contained in this notice, the name of a copyright holder shall not be 
     <!--@VALUE-->
 <!ATTLIST era end CDATA #IMPLIED >
     <!--@MATCH:time/yyyy-MM-dd-->
+    <!--@VALUE-->
+<!ATTLIST era code NMTOKEN #IMPLIED >
+    <!--@MATCH:regex/[a-z0-9]{3,8}(\-[a-z0-9]{3,8})*-->
+    <!--@VALUE-->
+<!ATTLIST era aliases NMTOKENS #IMPLIED >
+    <!--@MATCH:set/regex/[a-z0-9]{2,8}(\-[a-z0-9]{3,8})*-->
     <!--@VALUE-->
 <!ATTLIST era named (true | false) #IMPLIED >
     <!--@VALUE-->
@@ -373,6 +379,15 @@ Except as contained in this notice, the name of a copyright holder shall not be 
 <!ATTLIST paperSize alt NMTOKENS #IMPLIED >
     <!--@MATCH:literal/variant-->
 
+<!ELEMENT unitIdComponents ( unitIdComponent* ) >
+
+<!ELEMENT unitIdComponent EMPTY >
+<!ATTLIST unitIdComponent type NMTOKEN #REQUIRED >
+    <!--@MATCH:literal/prefix, suffix, power, and, per-->
+<!ATTLIST unitIdComponent values NMTOKENS #REQUIRED >
+    <!--@MATCH:set/regex/[a-z]+[0-9]*-->
+    <!--@VALUE-->
+
 <!ELEMENT unitConstants ( unitConstant* ) >
 
 <!ELEMENT unitConstant EMPTY >
@@ -417,7 +432,7 @@ Except as contained in this notice, the name of a copyright holder shall not be 
     <!--@MATCH:regex/[-+*/\._ 0-9a-zA-Z]+-->
     <!--@VALUE-->
 <!ATTLIST convertUnit systems NMTOKENS #IMPLIED >
-    <!--@MATCH:set/literal/ussystem, uksystem, metric, si, other -->
+    <!--@MATCH:set/literal/ussystem, uksystem, metric, si, other-->
     <!--@VALUE-->
 <!ATTLIST convertUnit description CDATA #IMPLIED >
     <!--@METADATA-->
@@ -435,7 +450,6 @@ Except as contained in this notice, the name of a copyright holder shall not be 
     <!--@DEPRECATED-->
 <!ATTLIST unitPreferences draft (approved | contributed | provisional | unconfirmed) #IMPLIED >
     <!--@METADATA-->
-    <!--@DEPRECATED-->
 
 <!ELEMENT unitPreference ( #PCDATA ) >
     <!--@ORDERED-->
@@ -896,6 +910,8 @@ Except as contained in this notice, the name of a copyright holder shall not be 
 <!-- # Parent locales -->
 
 <!ELEMENT parentLocales ( parentLocale* ) >
+<!ATTLIST parentLocales component NMTOKEN #IMPLIED >
+    <!--@MATCH:literal/segmentations, collations-->
 
 <!ELEMENT parentLocale EMPTY >
 <!ATTLIST parentLocale parent NMTOKEN #REQUIRED >
@@ -903,6 +919,13 @@ Except as contained in this notice, the name of a copyright holder shall not be 
 <!ATTLIST parentLocale locales NMTOKENS #REQUIRED >
     <!--@MATCH:set/validity/locale-->
     <!--@VALUE-->
+
+<!ELEMENT personNamesDefaults ( alias | ( nameOrderLocalesDefault* ) ) >
+
+<!ELEMENT nameOrderLocalesDefault ( #PCDATA ) >
+<!ATTLIST nameOrderLocalesDefault order (givenFirst | surnameFirst) #REQUIRED >
+<!ATTLIST nameOrderLocalesDefault references CDATA #IMPLIED >
+    <!--@METADATA-->
 
 <!ELEMENT likelySubtags ( likelySubtag* ) >
 
@@ -912,6 +935,9 @@ Except as contained in this notice, the name of a copyright holder shall not be 
 <!ATTLIST likelySubtag to NMTOKEN #REQUIRED >
     <!--@MATCH:validity/locale-->
     <!--@VALUE-->
+<!ATTLIST likelySubtag origin NMTOKENS #IMPLIED >
+    <!--@MATCH:set/literal/sil1, wikidata, special-->
+    <!--@METADATA-->
 
 <!ELEMENT metazoneInfo ( timezone* ) >
 
@@ -1021,7 +1047,7 @@ Except as contained in this notice, the name of a copyright holder shall not be 
 <!ATTLIST numberingSystem radix NMTOKEN #IMPLIED >
     <!--@VALUE-->
 <!ATTLIST numberingSystem digits CDATA #IMPLIED >
-    <!--@MATCH:unicodeset/[\p{Nd}[\u3007\u4E00\u4E03\u4E09\u4E5D\u4E8C\u4E94\u516B\u516D\u56DB][\U0001E140-\U0001E149][\U0001E2F0-\U0001E2F9]]-->
+    <!--@MATCH:unicodeset/[\p{Nd}[\u3007\u4E00\u4E03\u4E09\u4E5D\u4E8C\u4E94\u516B\u516D\u56DB][\U00011F50-\U00011F59\U0001E4F0-\U0001E4F9]]-->
     <!--@VALUE-->
 <!ATTLIST numberingSystem rules CDATA #IMPLIED >
     <!--@MATCH:any-->
@@ -1163,7 +1189,24 @@ Except as contained in this notice, the name of a copyright holder shall not be 
 <!ATTLIST dayPeriodRule references CDATA #IMPLIED >
     <!--@METADATA-->
 
-<!ELEMENT metaZones ( metazoneInfo?, mapTimezones? ) >
+<!ELEMENT metaZones ( metazoneInfo?, mapTimezones?, metazoneIds? ) >
+
+<!ELEMENT metazoneIds ( metazoneId* ) >
+
+<!ELEMENT metazoneId EMPTY >
+<!ATTLIST metazoneId shortId NMTOKEN #REQUIRED >
+    <!--@MATCH:regex/[a-z][a-z][a-z][a-z]-->
+<!ATTLIST metazoneId longId CDATA #IMPLIED >
+    <!--@MATCH:metazone-->
+    <!--@VALUE-->
+<!ATTLIST metazoneId deprecated (true | false) "false" >
+    <!--@VALUE-->
+<!ATTLIST metazoneId preferred NMTOKEN #IMPLIED >
+    <!--@MATCH:metazone-->
+    <!--@VALUE-->
+<!ATTLIST metazoneId since CDATA "40" >
+    <!--@MATCH:version-->
+    <!--@METADATA-->
 
 <!ELEMENT primaryZones ( primaryZone* ) >
 
@@ -1177,7 +1220,7 @@ Except as contained in this notice, the name of a copyright holder shall not be 
 
 <!-- # Coverage levels -->
 
-<!ELEMENT coverageLevels ( approvalRequirements, coverageVariable*, coverageLevel* ) >
+<!ELEMENT coverageLevels ( approvalRequirements, coverageVariable*, coverageLevel*, pathMatch* ) >
     <!--@METADATA-->
 
 <!ELEMENT approvalRequirements ( approvalRequirement* ) >
@@ -1212,6 +1255,13 @@ Except as contained in this notice, the name of a copyright holder shall not be 
     <!--@VALUE-->
 <!ATTLIST coverageLevel match CDATA #REQUIRED >
     <!--@MATCH:any-->
+
+<!ELEMENT pathMatch EMPTY >
+<!ATTLIST pathMatch id NMTOKENS #IMPLIED >
+    <!--@MATCH:any-->
+<!ATTLIST pathMatch match CDATA #REQUIRED >
+    <!--@MATCH:any-->
+    <!--@VALUE-->
 
 <!ELEMENT idValidity ( id* ) >
 

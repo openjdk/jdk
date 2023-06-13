@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ class PhaseTransform;
 class MulNode : public Node {
   virtual uint hash() const;
 public:
-  MulNode(Node *in1, Node *in2): Node(NULL,in1,in2) {
+  MulNode(Node *in1, Node *in2): Node(nullptr,in1,in2) {
     init_class_id(Class_Mul);
   }
 
@@ -75,16 +75,16 @@ public:
   // Supplied function to return the multiplicative opcode
   virtual int mul_opcode() const = 0;
 
-  virtual bool operates_on(BasicType bt, bool signed_int) const {
-    assert(bt == T_INT || bt == T_LONG, "unsupported");
-    return false;
-  }
-
   // Supplied function to return the additive opcode
   virtual int max_opcode() const = 0;
 
   // Supplied function to return the multiplicative opcode
   virtual int min_opcode() const = 0;
+
+  static MulNode* make(Node* in1, Node* in2, BasicType bt);
+
+  static bool AndIL_shift_and_mask_is_always_zero(PhaseGVN* phase, Node* shift, Node* mask, BasicType bt, bool check_reverse);
+  Node* AndIL_add_shift_and_mask(PhaseGVN* phase, BasicType bt);
 };
 
 //------------------------------MulINode---------------------------------------
@@ -103,10 +103,6 @@ public:
   int min_opcode() const { return Op_MinI; }
   const Type *bottom_type() const { return TypeInt::INT; }
   virtual uint ideal_reg() const { return Op_RegI; }
-  virtual bool operates_on(BasicType bt, bool signed_int) const {
-    assert(bt == T_INT || bt == T_LONG, "unsupported");
-    return bt == T_INT;
-  }
 };
 
 //------------------------------MulLNode---------------------------------------
@@ -125,10 +121,6 @@ public:
   int min_opcode() const { return Op_MinL; }
   const Type *bottom_type() const { return TypeLong::LONG; }
   virtual uint ideal_reg() const { return Op_RegL; }
-  virtual bool operates_on(BasicType bt, bool signed_int) const {
-    assert(bt == T_INT || bt == T_LONG, "unsupported");
-    return bt == T_LONG;
-  }
 };
 
 
@@ -138,6 +130,7 @@ class MulFNode : public MulNode {
 public:
   MulFNode( Node *in1, Node *in2 ) : MulNode(in1,in2) {}
   virtual int Opcode() const;
+  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual const Type *mul_ring( const Type *, const Type * ) const;
   const Type *mul_id() const { return TypeF::ONE; }
   const Type *add_id() const { return TypeF::ZERO; }
@@ -155,6 +148,7 @@ class MulDNode : public MulNode {
 public:
   MulDNode( Node *in1, Node *in2 ) : MulNode(in1,in2) {}
   virtual int Opcode() const;
+  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual const Type *mul_ring( const Type *, const Type * ) const;
   const Type *mul_id() const { return TypeD::ONE; }
   const Type *add_id() const { return TypeD::ZERO; }
@@ -200,6 +194,7 @@ public:
   virtual int Opcode() const;
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual Node* Identity(PhaseGVN* phase);
+  virtual const Type* Value(PhaseGVN* phase) const;
   virtual const Type *mul_ring( const Type *, const Type * ) const;
   const Type *mul_id() const { return TypeInt::MINUS_1; }
   const Type *add_id() const { return TypeInt::ZERO; }
@@ -219,6 +214,7 @@ public:
   virtual int Opcode() const;
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual Node* Identity(PhaseGVN* phase);
+  virtual const Type* Value(PhaseGVN* phase) const;
   virtual const Type *mul_ring( const Type *, const Type * ) const;
   const Type *mul_id() const { return TypeLong::MINUS_1; }
   const Type *add_id() const { return TypeLong::ZERO; }
@@ -231,13 +227,11 @@ public:
 
 class LShiftNode : public Node {
 public:
-  LShiftNode(Node *in1, Node *in2) : Node(NULL,in1,in2) {
+  LShiftNode(Node *in1, Node *in2) : Node(nullptr,in1,in2) {
     init_class_id(Class_LShift);
   }
-  virtual bool operates_on(BasicType bt, bool signed_int) const {
-    assert(bt == T_INT || bt == T_LONG, "unsupported");
-    return false;
-  }
+
+  static LShiftNode* make(Node* in1, Node* in2, BasicType bt);
 };
 
 //------------------------------LShiftINode------------------------------------
@@ -251,10 +245,6 @@ public:
   virtual const Type* Value(PhaseGVN* phase) const;
   const Type *bottom_type() const { return TypeInt::INT; }
   virtual uint ideal_reg() const { return Op_RegI; }
-  virtual bool operates_on(BasicType bt, bool signed_int) const {
-    assert(bt == T_INT || bt == T_LONG, "unsupported");
-    return bt == T_INT;
-  }
 };
 
 //------------------------------LShiftLNode------------------------------------
@@ -268,10 +258,6 @@ public:
   virtual const Type* Value(PhaseGVN* phase) const;
   const Type *bottom_type() const { return TypeLong::LONG; }
   virtual uint ideal_reg() const { return Op_RegL; }
-  virtual bool operates_on(BasicType bt, bool signed_int) const {
-    assert(bt == T_INT || bt == T_LONG, "unsupported");
-    return bt == T_LONG;
-  }
 };
 
 

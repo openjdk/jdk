@@ -41,7 +41,7 @@ void LIR_OpShenandoahCompareAndSwap::emit_code(LIR_Assembler* masm) {
   Register tmp2 = _tmp2->as_register();
   Register result = result_opr()->as_register();
   assert(cmpval == rax, "wrong register");
-  assert(newval != NULL, "new val must be register");
+  assert(newval != noreg, "new val must be register");
   assert(cmpval != newval, "cmp and new values must be in different registers");
   assert(cmpval != addr, "cmp and addr must be in different registers");
   assert(newval != addr, "new value and addr must be in different registers");

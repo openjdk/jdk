@@ -4,7 +4,7 @@
  *
  *   TrueType bytecode interpreter (body).
  *
- * Copyright (C) 1996-2020 by
+ * Copyright (C) 1996-2023 by
  * David Turner, Robert Wilhelm, and Werner Lemberg.
  *
  * This file is part of the FreeType project, and may only be used,
@@ -251,6 +251,14 @@
     FT_FREE( exec->stack );
     exec->stackSize = 0;
 
+    /* free glyf cvt working area */
+    FT_FREE( exec->glyfCvt );
+    exec->glyfCvtSize = 0;
+
+    /* free glyf storage working area */
+    FT_FREE( exec->glyfStorage );
+    exec->glyfStoreSize = 0;
+
     /* free call stack */
     FT_FREE( exec->callStack );
     exec->callSize = 0;
@@ -265,64 +273,6 @@
 
     FT_FREE( exec );
   }
-
-
-  /**************************************************************************
-   *
-   * @Function:
-   *   Init_Context
-   *
-   * @Description:
-   *   Initializes a context object.
-   *
-   * @Input:
-   *   memory ::
-   *     A handle to the parent memory object.
-   *
-   * @InOut:
-   *   exec ::
-   *     A handle to the target execution context.
-   *
-   * @Return:
-   *   FreeType error code.  0 means success.
-   */
-  static FT_Error
-  Init_Context( TT_ExecContext  exec,
-                FT_Memory       memory )
-  {
-    FT_Error  error;
-
-
-    FT_TRACE1(( "Init_Context: new object at %p\n", (void *)exec ));
-
-    exec->memory   = memory;
-    exec->callSize = 32;
-
-    if ( FT_NEW_ARRAY( exec->callStack, exec->callSize ) )
-      goto Fail_Memory;
-
-    /* all values in the context are set to 0 already, but this is */
-    /* here as a remainder                                         */
-    exec->maxPoints   = 0;
-    exec->maxContours = 0;
-
-    exec->stackSize = 0;
-    exec->glyphSize = 0;
-
-    exec->stack    = NULL;
-    exec->glyphIns = NULL;
-
-    exec->face = NULL;
-    exec->size = NULL;
-
-    return FT_Err_Ok;
-
-  Fail_Memory:
-    FT_ERROR(( "Init_Context: not enough memory for %p\n", (void *)exec ));
-    TT_Done_Context( exec );
-
-    return error;
- }
 
 
   /**************************************************************************
@@ -367,7 +317,7 @@
 
     if ( *size < new_max )
     {
-      if ( FT_REALLOC( *pbuff, *size * multiplier, new_max * multiplier ) )
+      if ( FT_QREALLOC( *pbuff, *size * multiplier, new_max * multiplier ) )
         return error;
       *size = new_max;
     }
@@ -400,6 +350,8 @@
    *
    * @Note:
    *   Only the glyph loader and debugger should call this function.
+   *
+   *   Note that not all members of `TT_ExecContext` get initialized.
    */
   FT_LOCAL_DEF( FT_Error )
   TT_Load_Context( TT_ExecContext  exec,
@@ -464,13 +416,13 @@
     if ( error )
       return error;
 
-    tmp = exec->glyphSize;
+    tmp = (FT_ULong)exec->glyphSize;
     error = Update_Max( exec->memory,
                         &tmp,
                         sizeof ( FT_Byte ),
                         (void*)&exec->glyphIns,
                         maxp->maxSizeOfInstructions );
-    exec->glyphSize = (FT_UShort)tmp;
+    exec->glyphSize = (FT_UInt)tmp;
     if ( error )
       return error;
 
@@ -609,19 +561,19 @@
 
     memory = driver->root.root.memory;
 
-    /* allocate object */
+    /* allocate object and zero everything inside */
     if ( FT_NEW( exec ) )
       goto Fail;
 
-    /* initialize it; in case of error this deallocates `exec' too */
-    error = Init_Context( exec, memory );
-    if ( error )
-      goto Fail;
+    /* create callStack here, other allocations delayed */
+    exec->memory   = memory;
+    exec->callSize = 32;
 
-    return exec;
+    if ( FT_QNEW_ARRAY( exec->callStack, exec->callSize ) )
+      FT_FREE( exec );
 
   Fail:
-    return NULL;
+    return exec;
   }
 
 
@@ -1572,11 +1524,35 @@
   }
 
 
+  static void
+  Modify_CVT_Check( TT_ExecContext  exc )
+  {
+    if ( exc->iniRange == tt_coderange_glyph &&
+         exc->cvt != exc->glyfCvt            )
+    {
+      exc->error = Update_Max( exc->memory,
+                               &exc->glyfCvtSize,
+                               sizeof ( FT_Long ),
+                               (void*)&exc->glyfCvt,
+                               exc->cvtSize );
+      if ( exc->error )
+        return;
+
+      FT_ARRAY_COPY( exc->glyfCvt, exc->cvt, exc->glyfCvtSize );
+      exc->cvt = exc->glyfCvt;
+    }
+  }
+
+
   FT_CALLBACK_DEF( void )
   Write_CVT( TT_ExecContext  exc,
              FT_ULong        idx,
              FT_F26Dot6      value )
   {
+    Modify_CVT_Check( exc );
+    if ( exc->error )
+      return;
+
     exc->cvt[idx] = value;
   }
 
@@ -1586,6 +1562,10 @@
                        FT_ULong        idx,
                        FT_F26Dot6      value )
   {
+    Modify_CVT_Check( exc );
+    if ( exc->error )
+      return;
+
     exc->cvt[idx] = FT_DivFix( value, Current_Ratio( exc ) );
   }
 
@@ -1595,6 +1575,10 @@
             FT_ULong        idx,
             FT_F26Dot6      value )
   {
+    Modify_CVT_Check( exc );
+    if ( exc->error )
+      return;
+
     exc->cvt[idx] = ADD_LONG( exc->cvt[idx], value );
   }
 
@@ -1604,6 +1588,10 @@
                       FT_ULong        idx,
                       FT_F26Dot6      value )
   {
+    Modify_CVT_Check( exc );
+    if ( exc->error )
+      return;
+
     exc->cvt[idx] = ADD_LONG( exc->cvt[idx],
                               FT_DivFix( value, Current_Ratio( exc ) ) );
   }
@@ -3125,7 +3113,28 @@
         ARRAY_BOUND_ERROR;
     }
     else
+    {
+      if ( exc->iniRange == tt_coderange_glyph &&
+           exc->storage != exc->glyfStorage    )
+      {
+        FT_ULong  tmp = (FT_ULong)exc->glyfStoreSize;
+
+
+        exc->error = Update_Max( exc->memory,
+                                 &tmp,
+                                 sizeof ( FT_Long ),
+                                 (void*)&exc->glyfStorage,
+                                 exc->storeSize );
+        exc->glyfStoreSize = (FT_UShort)tmp;
+        if ( exc->error )
+          return;
+
+        FT_ARRAY_COPY( exc->glyfStorage, exc->storage, exc->glyfStoreSize );
+        exc->storage = exc->glyfStorage;
+      }
+
       exc->storage[I] = args[1];
+    }
   }
 
 
@@ -3525,7 +3534,7 @@
       return;
     }
 
-    exc->IP += args[0];
+    exc->IP = ADD_LONG( exc->IP, args[0] );
     if ( exc->IP < 0                                             ||
          ( exc->callTop > 0                                    &&
            exc->IP > exc->callStack[exc->callTop - 1].Def->end ) )
@@ -3697,7 +3706,7 @@
 
 
     /* FDEF is only allowed in `prep' or `fpgm' */
-    if ( exc->curRange == tt_coderange_glyph )
+    if ( exc->iniRange == tt_coderange_glyph )
     {
       exc->error = FT_THROW( DEF_In_Glyf_Bytecode );
       return;
@@ -3771,7 +3780,7 @@
 
             if ( opcode_pointer[i] == opcode_size[i] )
             {
-              FT_TRACE6(( "sph: Function %d, opcode ptrn: %d, %s %s\n",
+              FT_TRACE6(( "sph: Function %d, opcode ptrn: %ld, %s %s\n",
                           i, n,
                           exc->face->root.family_name,
                           exc->face->root.style_name ));
@@ -4133,7 +4142,7 @@
 
 
     /* we enable IDEF only in `prep' or `fpgm' */
-    if ( exc->curRange == tt_coderange_glyph )
+    if ( exc->iniRange == tt_coderange_glyph )
     {
       exc->error = FT_THROW( DEF_In_Glyf_Bytecode );
       return;
@@ -4362,7 +4371,7 @@
 
     if ( ( opcode & 1 ) != 0 )
     {
-      C = B;   /* counter clockwise rotation */
+      C = B;   /* counter-clockwise rotation */
       B = A;
       A = NEG_LONG( C );
     }
@@ -4991,9 +5000,9 @@
 
 #ifdef TT_SUPPORT_SUBPIXEL_HINTING_INFINALITY
     /* Disable Type 2 Vacuform Rounds - e.g. Arial Narrow */
-    if ( SUBPIXEL_HINTING_INFINALITY &&
-         exc->ignore_x_mode          &&
-         FT_ABS( D ) == 64           )
+    if ( SUBPIXEL_HINTING_INFINALITY         &&
+         exc->ignore_x_mode                  &&
+         ( D < 0 ? NEG_LONG( D ) : D ) == 64 )
       D += 1;
 #endif /* TT_SUPPORT_SUBPIXEL_HINTING_INFINALITY */
 
@@ -5050,7 +5059,7 @@
 
     if ( ( opcode & 1 ) != 0 )
     {
-      C = B;   /* counter clockwise rotation */
+      C = B;   /* counter-clockwise rotation */
       B = A;
       A = NEG_LONG( C );
     }
@@ -5074,7 +5083,7 @@
 
     if ( ( opcode & 1 ) != 0 )
     {
-      C = B;   /* counter clockwise rotation */
+      C = B;   /* counter-clockwise rotation */
       B = A;
       A = NEG_LONG( C );
     }
@@ -5248,16 +5257,21 @@
       }
     }
 
-    exc->GS.instruct_control &= ~(FT_Byte)Kf;
-    exc->GS.instruct_control |= (FT_Byte)L;
+    /* INSTCTRL should only be used in the CVT program */
+    if ( exc->iniRange == tt_coderange_cvt )
+    {
+      exc->GS.instruct_control &= ~(FT_Byte)Kf;
+      exc->GS.instruct_control |= (FT_Byte)L;
+    }
 
-    if ( K == 3 )
+    /* except to change the subpixel flags temporarily */
+    else if ( exc->iniRange == tt_coderange_glyph && K == 3 )
     {
 #ifdef TT_SUPPORT_SUBPIXEL_HINTING_INFINALITY
       /* INSTCTRL modifying flag 3 also has an effect */
       /* outside of the CVT program                   */
       if ( SUBPIXEL_HINTING_INFINALITY )
-        exc->ignore_x_mode = FT_BOOL( L == 4 );
+        exc->ignore_x_mode = !FT_BOOL( L == 4 );
 #endif
 
 #ifdef TT_SUPPORT_SUBPIXEL_HINTING_MINIMAL
@@ -5268,6 +5282,8 @@
         exc->backward_compatibility = !FT_BOOL( L == 4 );
 #endif
     }
+    else if ( exc->pedantic_hinting )
+      exc->error = FT_THROW( Invalid_Reference );
   }
 
 
@@ -6855,7 +6871,7 @@
 
 
   static void
-  _iup_worker_shift( IUP_Worker  worker,
+  iup_worker_shift_( IUP_Worker  worker,
                      FT_UInt     p1,
                      FT_UInt     p2,
                      FT_UInt     p )
@@ -6877,7 +6893,7 @@
 
 
   static void
-  _iup_worker_interpolate( IUP_Worker  worker,
+  iup_worker_interpolate_( IUP_Worker  worker,
                            FT_UInt     p1,
                            FT_UInt     p2,
                            FT_UInt     ref1,
@@ -7071,7 +7087,7 @@
         {
           if ( ( exc->pts.tags[point] & mask ) != 0 )
           {
-            _iup_worker_interpolate( &V,
+            iup_worker_interpolate_( &V,
                                      cur_touched + 1,
                                      point - 1,
                                      cur_touched,
@@ -7083,17 +7099,17 @@
         }
 
         if ( cur_touched == first_touched )
-          _iup_worker_shift( &V, first_point, end_point, cur_touched );
+          iup_worker_shift_( &V, first_point, end_point, cur_touched );
         else
         {
-          _iup_worker_interpolate( &V,
+          iup_worker_interpolate_( &V,
                                    (FT_UShort)( cur_touched + 1 ),
                                    end_point,
                                    cur_touched,
                                    first_touched );
 
           if ( first_touched > 0 )
-            _iup_worker_interpolate( &V,
+            iup_worker_interpolate_( &V,
                                      first_point,
                                      first_touched - 1,
                                      cur_touched,
@@ -7743,35 +7759,6 @@
 #endif /* TT_SUPPORT_SUBPIXEL_HINTING_INFINALITY */
 
 
-#ifdef TT_SUPPORT_SUBPIXEL_HINTING_INFINALITY
-    exc->iup_called = FALSE;
-#endif /* TT_SUPPORT_SUBPIXEL_HINTING_INFINALITY */
-
-#ifdef TT_SUPPORT_SUBPIXEL_HINTING_MINIMAL
-    /*
-     * Toggle backward compatibility according to what font wants, except
-     * when
-     *
-     * 1) we have a `tricky' font that heavily relies on the interpreter to
-     *    render glyphs correctly, for example DFKai-SB, or
-     * 2) FT_RENDER_MODE_MONO (i.e, monochome rendering) is requested.
-     *
-     * In those cases, backward compatibility needs to be turned off to get
-     * correct rendering.  The rendering is then completely up to the
-     * font's programming.
-     *
-     */
-    if ( SUBPIXEL_HINTING_MINIMAL          &&
-         exc->subpixel_hinting_lean        &&
-         !FT_IS_TRICKY( &exc->face->root ) )
-      exc->backward_compatibility = !( exc->GS.instruct_control & 4 );
-    else
-      exc->backward_compatibility = FALSE;
-
-    exc->iupx_called = FALSE;
-    exc->iupy_called = FALSE;
-#endif
-
     /* We restrict the number of twilight points to a reasonable,     */
     /* heuristic value to avoid slow execution of malformed bytecode. */
     num_twilight_points = FT_MAX( 30,
@@ -7781,8 +7768,8 @@
       if ( num_twilight_points > 0xFFFFU )
         num_twilight_points = 0xFFFFU;
 
-      FT_TRACE5(( "TT_RunIns: Resetting number of twilight points\n"
-                  "           from %d to the more reasonable value %ld\n",
+      FT_TRACE5(( "TT_RunIns: Resetting number of twilight points\n" ));
+      FT_TRACE5(( "           from %d to the more reasonable value %ld\n",
                   exc->twilight.n_points,
                   num_twilight_points ));
       exc->twilight.n_points = (FT_UShort)num_twilight_points;
@@ -7842,14 +7829,26 @@
       exc->func_move_cvt  = Move_CVT;
     }
 
+    exc->iniRange    = exc->curRange;
+
     Compute_Funcs( exc );
     Compute_Round( exc, (FT_Byte)exc->GS.round_state );
+
+    /* These flags cancel execution of some opcodes after IUP is called */
+#ifdef TT_SUPPORT_SUBPIXEL_HINTING_INFINALITY
+    exc->iup_called  = FALSE;
+#endif
+#ifdef TT_SUPPORT_SUBPIXEL_HINTING_MINIMAL
+    exc->iupx_called = FALSE;
+    exc->iupy_called = FALSE;
+#endif
 
     do
     {
       exc->opcode = exc->code[exc->IP];
 
 #ifdef FT_DEBUG_LEVEL_TRACE
+      if ( ft_trace_levels[trace_ttinterp] >= 6 )
       {
         FT_Long  cnt = FT_MIN( 8, exc->top );
         FT_Long  n;
@@ -8567,7 +8566,10 @@
       /* increment instruction counter and check if we didn't */
       /* run this program for too long (e.g. infinite loops). */
       if ( ++ins_counter > TT_CONFIG_OPTION_MAX_RUNNABLE_OPCODES )
-        return FT_THROW( Execution_Too_Long );
+      {
+        exc->error = FT_THROW( Execution_Too_Long );
+        goto LErrorLabel_;
+      }
 
     LSuiteLabel_:
       if ( exc->IP >= exc->codeSize )
@@ -8586,6 +8588,7 @@
     FT_TRACE4(( "  %ld instruction%s executed\n",
                 ins_counter,
                 ins_counter == 1 ? "" : "s" ));
+
     return FT_Err_Ok;
 
   LErrorCodeOverflow_:

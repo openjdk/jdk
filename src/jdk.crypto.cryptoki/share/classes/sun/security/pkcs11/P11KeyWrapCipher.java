@@ -37,13 +37,14 @@ import javax.crypto.spec.*;
 
 import java.util.HexFormat;
 
+import jdk.internal.access.JavaNioAccess;
+import jdk.internal.access.SharedSecrets;
 import sun.nio.ch.DirectBuffer;
 import sun.security.jca.JCAUtil;
 import sun.security.pkcs11.wrapper.*;
 import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
 import static sun.security.pkcs11.wrapper.PKCS11Exception.RV.*;
 import static sun.security.pkcs11.TemplateManager.*;
-import static sun.security.pkcs11.P11Cipher.*;
 
 /**
  * P11 KeyWrap Cipher implementation class for native impl which only support
@@ -57,6 +58,8 @@ import static sun.security.pkcs11.P11Cipher.*;
  * @since 18
  */
 final class P11KeyWrapCipher extends CipherSpi {
+
+    private static final JavaNioAccess NIO_ACCESS = SharedSecrets.getJavaNioAccess();
 
     private static final int BLK_SIZE = 8;
 
@@ -114,7 +117,7 @@ final class P11KeyWrapCipher extends CipherSpi {
     private SecureRandom random = JCAUtil.getSecureRandom();
 
     // dataBuffer for storing enc/dec data; cleared upon doFinal calls
-    private ByteArrayOutputStream dataBuffer = new ByteArrayOutputStream();
+    private final ByteArrayOutputStream dataBuffer = new ByteArrayOutputStream();
 
     P11KeyWrapCipher(Token token, String algorithm, long mechanism)
             throws PKCS11Exception, NoSuchAlgorithmException {
@@ -126,7 +129,7 @@ final class P11KeyWrapCipher extends CipherSpi {
         String[] algoParts = algorithm.split("/");
         if (algoParts[0].startsWith("AES")) {
             int index = algoParts[0].indexOf('_');
-            fixedKeySize = (index == -1? -1 :
+            fixedKeySize = (index == -1 ? -1 :
                 // should be well-formed since we specify what we support
                 Integer.parseInt(algoParts[0].substring(index+1)) >> 3);
             try {
@@ -180,7 +183,7 @@ final class P11KeyWrapCipher extends CipherSpi {
     protected AlgorithmParameters engineGetParameters() {
         // KW and KWP uses but not require parameters, return the default
         // IV when no IV is supplied by caller
-        byte[] iv = (this.iv == null? type.defIv : this.iv);
+        byte[] iv = (this.iv == null ? type.defIv : this.iv);
 
         AlgorithmParameterSpec spec = new IvParameterSpec(iv);
         try {
@@ -213,7 +216,7 @@ final class P11KeyWrapCipher extends CipherSpi {
                     ("Only IvParameterSpec is supported");
         }
 
-        byte[] ivValue = (params == null? null :
+        byte[] ivValue = (params == null ? null :
                 ((IvParameterSpec)params).getIV());
 
         implInit(opmode, key, ivValue, sr);
@@ -285,7 +288,14 @@ final class P11KeyWrapCipher extends CipherSpi {
     }
 
     private void cancelOperation() {
-        // cancel operation by finishing it; avoid killSession as some
+        token.ensureValid();
+
+        if (P11Util.trySessionCancel(token, session,
+                (opmode == Cipher.ENCRYPT_MODE ? CKF_ENCRYPT : CKF_DECRYPT))) {
+            return;
+        }
+
+        // cancel by finishing operations; avoid killSession as some
         // hardware vendors may require re-login
         byte[] in = dataBuffer.toByteArray();
         int inLen = in.length;
@@ -338,14 +348,10 @@ final class P11KeyWrapCipher extends CipherSpi {
                     session = token.getOpSession();
                 }
                 switch (opmode) {
-                case Cipher.ENCRYPT_MODE:
-                    token.p11.C_EncryptInit(session.id(), mechWithParams,
+                    case Cipher.ENCRYPT_MODE -> token.p11.C_EncryptInit(session.id(), mechWithParams,
                             p11KeyID);
-                break;
-                case Cipher.DECRYPT_MODE:
-                    token.p11.C_DecryptInit(session.id(), mechWithParams,
+                    case Cipher.DECRYPT_MODE -> token.p11.C_DecryptInit(session.id(), mechWithParams,
                             p11KeyID);
-                break;
                 }
             } catch (PKCS11Exception e) {
                 session = token.releaseSession(session);
@@ -379,7 +385,7 @@ final class P11KeyWrapCipher extends CipherSpi {
         } else {
             result -= BLK_SIZE; // minus the leading block including the ICV
         }
-        return (result > 0? result : 0);
+        return (Math.max(result, 0));
     }
 
     // reset the states to the pre-initialized values
@@ -549,78 +555,88 @@ final class P11KeyWrapCipher extends CipherSpi {
 
         boolean doCancel = true;
         int k = 0;
+        NIO_ACCESS.acquireSession(inBuffer);
         try {
-            ensureInitialized();
+            NIO_ACCESS.acquireSession(outBuffer);
+            try {
+                try {
+                    ensureInitialized();
 
-            long inAddr = 0;
-            byte[] in = null;
-            int inOfs = 0;
+                    long inAddr = 0;
+                    byte[] in = null;
+                    int inOfs = 0;
 
-            if (dataBuffer.size() > 0) {
-                if (inBuffer != null && inLen > 0) {
-                    byte[] temp = new byte[inLen];
-                    inBuffer.get(temp);
-                    dataBuffer.write(temp, 0, temp.length);
-                }
+                    if (dataBuffer.size() > 0) {
+                        if (inBuffer != null && inLen > 0) {
+                            byte[] temp = new byte[inLen];
+                            inBuffer.get(temp);
+                            dataBuffer.write(temp, 0, temp.length);
+                        }
 
-                in = dataBuffer.toByteArray();
-                inOfs = 0;
-                inLen = in.length;
-            } else {
-                if (inBuffer instanceof DirectBuffer) {
-                    inAddr = ((DirectBuffer) inBuffer).address();
-                    inOfs = inBuffer.position();
-                } else {
-                    if (inBuffer.hasArray()) {
-                        in = inBuffer.array();
-                        inOfs = inBuffer.position() + inBuffer.arrayOffset();
+                        in = dataBuffer.toByteArray();
+                        inOfs = 0;
+                        inLen = in.length;
                     } else {
-                        in = new byte[inLen];
-                        inBuffer.get(in);
+                        if (inBuffer instanceof DirectBuffer dInBuffer) {
+                            inAddr = dInBuffer.address();
+                            inOfs = inBuffer.position();
+                        } else {
+                            if (inBuffer.hasArray()) {
+                                in = inBuffer.array();
+                                inOfs = inBuffer.position() + inBuffer.arrayOffset();
+                            } else {
+                                in = new byte[inLen];
+                                inBuffer.get(in);
+                            }
+                        }
                     }
-                }
-            }
-            long outAddr = 0;
-            byte[] outArray = null;
-            int outOfs = 0;
-            if (outBuffer instanceof DirectBuffer) {
-                outAddr = ((DirectBuffer) outBuffer).address();
-                outOfs = outBuffer.position();
-            } else {
-                if (outBuffer.hasArray()) {
-                    outArray = outBuffer.array();
-                    outOfs = outBuffer.position() + outBuffer.arrayOffset();
-                } else {
-                    outArray = new byte[outLen];
-                }
-            }
+                    long outAddr = 0;
+                    byte[] outArray = null;
+                    int outOfs = 0;
+                    if (outBuffer instanceof DirectBuffer dOutBuffer) {
+                        outAddr = dOutBuffer.address();
+                        outOfs = outBuffer.position();
+                    } else {
+                        if (outBuffer.hasArray()) {
+                            outArray = outBuffer.array();
+                            outOfs = outBuffer.position() + outBuffer.arrayOffset();
+                        } else {
+                            outArray = new byte[outLen];
+                        }
+                    }
 
-            if (opmode == Cipher.ENCRYPT_MODE) {
-                k = token.p11.C_Encrypt(session.id(), inAddr, in, inOfs, inLen,
-                        outAddr, outArray, outOfs, outLen);
-                doCancel = false;
-            } else {
-                // Special handling to match SunJCE provider behavior
-                if (inLen == 0) {
-                    return 0;
+                    if (opmode == Cipher.ENCRYPT_MODE) {
+                        k = token.p11.C_Encrypt(session.id(), inAddr, in, inOfs, inLen,
+                                outAddr, outArray, outOfs, outLen);
+                        doCancel = false;
+                    } else {
+                        // Special handling to match SunJCE provider behavior
+                        if (inLen == 0) {
+                            return 0;
+                        }
+                        k = token.p11.C_Decrypt(session.id(), inAddr, in, inOfs, inLen,
+                                outAddr, outArray, outOfs, outLen);
+                        doCancel = false;
+                    }
+                    inBuffer.position(inBuffer.limit());
+                    outBuffer.position(outBuffer.position() + k);
+                } catch (PKCS11Exception e) {
+                    // As per the PKCS#11 standard, C_Encrypt and C_Decrypt may only
+                    // keep the operation active on CKR_BUFFER_TOO_SMALL errors or
+                    // successful calls to determine the output length. However,
+                    // these cases are not expected here because the output length
+                    // is checked in the OpenJDK side before making the PKCS#11 call.
+                    // Thus, doCancel can safely be 'false'.
+                    doCancel = false;
+                    handleEncException("doFinal() failed", e);
+                } finally {
+                    reset(doCancel);
                 }
-                k = token.p11.C_Decrypt(session.id(), inAddr, in, inOfs, inLen,
-                        outAddr, outArray, outOfs, outLen);
-                doCancel = false;
+            } finally {
+                NIO_ACCESS.releaseSession(outBuffer);
             }
-            inBuffer.position(inBuffer.limit());
-            outBuffer.position(outBuffer.position() + k);
-        } catch (PKCS11Exception e) {
-            // As per the PKCS#11 standard, C_Encrypt and C_Decrypt may only
-            // keep the operation active on CKR_BUFFER_TOO_SMALL errors or
-            // successful calls to determine the output length. However,
-            // these cases are not expected here because the output length
-            // is checked in the OpenJDK side before making the PKCS#11 call.
-            // Thus, doCancel can safely be 'false'.
-            doCancel = false;
-            handleEncException("doFinal() failed", e);
         } finally {
-            reset(doCancel);
+            NIO_ACCESS.releaseSession(inBuffer);
         }
         return k;
     }
@@ -654,7 +670,7 @@ final class P11KeyWrapCipher extends CipherSpi {
         P11Key tbwP11Key = null;
         if (!(tbwKey instanceof P11Key)) {
             try {
-                tbwP11Key = (tbwKey instanceof SecretKey?
+                tbwP11Key = (tbwKey instanceof SecretKey ?
                         P11SecretKeyFactory.convertKey(token, tbwKey,
                                 tbwKey.getAlgorithm()) :
                         P11KeyFactory.convertKey(token, tbwKey,
@@ -737,20 +753,19 @@ final class P11KeyWrapCipher extends CipherSpi {
         long keyClass;
         long keyType;
         switch (wrappedKeyType) {
-            case Cipher.PRIVATE_KEY:
+            case Cipher.PRIVATE_KEY -> {
                 keyClass = CKO_PRIVATE_KEY;
                 keyType = P11KeyFactory.getPKCS11KeyType(wrappedKeyAlgo);
-                break;
-            case Cipher.SECRET_KEY:
+            }
+            case Cipher.SECRET_KEY -> {
                 keyClass = CKO_SECRET_KEY;
                 keyType = P11SecretKeyFactory.getPKCS11KeyType(wrappedKeyAlgo);
-                break;
-            case Cipher.PUBLIC_KEY:
-                throw new UnsupportedOperationException
-                        ("cannot unwrap public keys");
-            default: // should never happen
-                throw new AssertionError();
-        };
+            }
+            case Cipher.PUBLIC_KEY -> throw new UnsupportedOperationException
+                    ("cannot unwrap public keys");
+            default -> // should never happen
+                    throw new AssertionError();
+        }
 
         CK_ATTRIBUTE[] attributes;
         try {

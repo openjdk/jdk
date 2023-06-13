@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -140,10 +140,6 @@ public:
 
   void flush_queue(SATBMarkQueue& queue);
 
-  // When active, add obj to queue by calling enqueue_known_active.
-  void enqueue(SATBMarkQueue& queue, oop obj) {
-    if (queue.is_active()) enqueue_known_active(queue, obj);
-  }
   // Add obj to queue.  This qset and the queue must be active.
   void enqueue_known_active(SATBMarkQueue& queue, oop obj);
   virtual void filter(SATBMarkQueue& queue) = 0;
@@ -178,7 +174,7 @@ template<typename Filter>
 inline void SATBMarkQueueSet::apply_filter(Filter filter_out, SATBMarkQueue& queue) {
   void** buf = queue.buffer();
 
-  if (buf == NULL) {
+  if (buf == nullptr) {
     // nothing to do
     return;
   }

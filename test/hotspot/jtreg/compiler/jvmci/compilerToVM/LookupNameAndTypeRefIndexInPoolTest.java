@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,8 +35,8 @@
  *          jdk.internal.vm.ci/jdk.vm.ci.runtime
  *          jdk.internal.vm.ci/jdk.vm.ci.meta
  *
- * @build jdk.internal.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.internal.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
  *                   -XX:-UseJVMCICompiler
@@ -95,19 +95,13 @@ public class LookupNameAndTypeRefIndexInPoolTest {
         if (entry == null) {
             return;
         }
-        int index = cpi;
-        String cached = "";
-        int cpci = dummyClass.getCPCacheIndex(cpi);
-        if (cpci != ConstantPoolTestsHelper.NO_CP_CACHE_PRESENT) {
-            index = cpci;
-            cached = "cached ";
-        }
-        int indexToVerify = CompilerToVMHelper.lookupNameAndTypeRefIndexInPool(constantPoolCTVM, index);
+        int opcode = ConstantPoolTestsHelper.getDummyOpcode(cpType);
+        int index = dummyClass.getCPCacheIndex(cpi);
+        Asserts.assertTrue(index != ConstantPoolTestsHelper.NO_CP_CACHE_PRESENT, "the class must have been rewritten");
+        int indexToVerify = CompilerToVMHelper.lookupNameAndTypeRefIndexInPool(constantPoolCTVM, index, opcode);
         int indexToRefer = dummyClass.constantPoolSS.getNameAndTypeRefIndexAt(cpi);
         String msg = String.format("Wrong nameAndType index returned by lookupNameAndTypeRefIndexInPool"
-                                           + " method applied to %sconstant pool index %d",
-                                   cached,
-                                   index);
+                                           + " method applied to cached constant pool index %d", index);
         Asserts.assertEQ(indexToRefer, indexToVerify, msg);
     }
 }

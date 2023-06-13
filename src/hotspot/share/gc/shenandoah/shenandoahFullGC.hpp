@@ -66,6 +66,7 @@ private:
 
 public:
   ShenandoahFullGC();
+  ~ShenandoahFullGC();
   bool collect(GCCause::Cause cause);
 
 private:

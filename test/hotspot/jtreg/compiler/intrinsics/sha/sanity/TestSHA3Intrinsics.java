@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -31,14 +31,14 @@
  * @modules java.base/jdk.internal.misc
  *          java.management
  *
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -Xbatch -XX:CompileThreshold=500
  *                   -XX:Tier4InvocationThreshold=500
  *                   -XX:+LogCompilation -XX:LogFile=positive_224.log
- *                   -XX:CompileOnly=sun/security/provider/DigestBase
- *                   -XX:CompileOnly=sun/security/provider/SHA3
+ *                   -XX:CompileOnly=sun.security.provider.DigestBase::*
+ *                   -XX:CompileOnly=sun.security.provider.SHA3::*
  *                   -XX:+UseSHA3Intrinsics
  *                   -Dalgorithm=SHA3-224
  *                   compiler.intrinsics.sha.sanity.TestSHA3Intrinsics
@@ -46,8 +46,8 @@
  *                   -XX:+WhiteBoxAPI -Xbatch -XX:CompileThreshold=500
  *                   -XX:Tier4InvocationThreshold=500
  *                   -XX:+LogCompilation -XX:LogFile=negative_224.log
- *                   -XX:CompileOnly=sun/security/provider/DigestBase
- *                   -XX:CompileOnly=sun/security/provider/SHA3
+ *                   -XX:CompileOnly=sun.security.provider.DigestBase::*
+ *                   -XX:CompileOnly=sun.security.provider.SHA3::*
  *                   -XX:-UseSHA3Intrinsics
  *                   -Dalgorithm=SHA3-224
  *                   compiler.intrinsics.sha.sanity.TestSHA3Intrinsics
@@ -55,8 +55,8 @@
  *                   -XX:+WhiteBoxAPI -Xbatch -XX:CompileThreshold=500
  *                   -XX:Tier4InvocationThreshold=500
  *                   -XX:+LogCompilation -XX:LogFile=positive_256.log
- *                   -XX:CompileOnly=sun/security/provider/DigestBase
- *                   -XX:CompileOnly=sun/security/provider/SHA3
+ *                   -XX:CompileOnly=sun.security.provider.DigestBase::*
+ *                   -XX:CompileOnly=sun.security.provider.SHA3::*
  *                   -XX:+UseSHA3Intrinsics
  *                   -Dalgorithm=SHA3-256
  *                   compiler.intrinsics.sha.sanity.TestSHA3Intrinsics
@@ -64,8 +64,8 @@
  *                   -XX:+WhiteBoxAPI -Xbatch -XX:CompileThreshold=500
  *                   -XX:Tier4InvocationThreshold=500
  *                   -XX:+LogCompilation -XX:LogFile=negative_256.log
- *                   -XX:CompileOnly=sun/security/provider/DigestBase
- *                   -XX:CompileOnly=sun/security/provider/SHA3
+ *                   -XX:CompileOnly=sun.security.provider.DigestBase::*
+ *                   -XX:CompileOnly=sun.security.provider.SHA3::*
  *                   -XX:-UseSHA3Intrinsics
  *                   -Dalgorithm=SHA3-256
  *                   compiler.intrinsics.sha.sanity.TestSHA3Intrinsics
@@ -73,8 +73,8 @@
  *                   -XX:+WhiteBoxAPI -Xbatch -XX:CompileThreshold=500
  *                   -XX:Tier4InvocationThreshold=500
  *                   -XX:+LogCompilation -XX:LogFile=positive_384.log
- *                   -XX:CompileOnly=sun/security/provider/DigestBase
- *                   -XX:CompileOnly=sun/security/provider/SHA3
+ *                   -XX:CompileOnly=sun.security.provider.DigestBase::*
+ *                   -XX:CompileOnly=sun.security.provider.SHA3::*
  *                   -XX:+UseSHA3Intrinsics
  *                   -Dalgorithm=SHA3-384
  *                   compiler.intrinsics.sha.sanity.TestSHA3Intrinsics
@@ -82,8 +82,8 @@
  *                   -XX:+WhiteBoxAPI -Xbatch -XX:CompileThreshold=500
  *                   -XX:Tier4InvocationThreshold=500
  *                   -XX:+LogCompilation -XX:LogFile=negative_384.log
- *                   -XX:CompileOnly=sun/security/provider/DigestBase
- *                   -XX:CompileOnly=sun/security/provider/SHA3
+ *                   -XX:CompileOnly=sun.security.provider.DigestBase::*
+ *                   -XX:CompileOnly=sun.security.provider.SHA3::*
  *                   -XX:-UseSHA3Intrinsics
  *                   -Dalgorithm=SHA3-384
  *                   compiler.intrinsics.sha.sanity.TestSHA3Intrinsics
@@ -91,8 +91,8 @@
  *                   -XX:+WhiteBoxAPI -Xbatch -XX:CompileThreshold=500
  *                   -XX:Tier4InvocationThreshold=500
  *                   -XX:+LogCompilation -XX:LogFile=positive_512.log
- *                   -XX:CompileOnly=sun/security/provider/DigestBase
- *                   -XX:CompileOnly=sun/security/provider/SHA3
+ *                   -XX:CompileOnly=sun.security.provider.DigestBase::*
+ *                   -XX:CompileOnly=sun.security.provider.SHA3::*
  *                   -XX:+UseSHA3Intrinsics
  *                   -Dalgorithm=SHA3-512
  *                   compiler.intrinsics.sha.sanity.TestSHA3Intrinsics
@@ -100,8 +100,8 @@
  *                   -XX:+WhiteBoxAPI -Xbatch -XX:CompileThreshold=500
  *                   -XX:Tier4InvocationThreshold=500
  *                   -XX:+LogCompilation -XX:LogFile=negative_512.log
- *                   -XX:CompileOnly=sun/security/provider/DigestBase
- *                   -XX:CompileOnly=sun/security/provider/SHA3
+ *                   -XX:CompileOnly=sun.security.provider.DigestBase::*
+ *                   -XX:CompileOnly=sun.security.provider.SHA3::*
  *                   -XX:-UseSHA3Intrinsics
  *                   -Dalgorithm=SHA3-512
  *                   compiler.intrinsics.sha.sanity.TestSHA3Intrinsics

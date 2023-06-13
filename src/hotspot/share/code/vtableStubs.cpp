@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,8 +47,8 @@
 // -----------------------------------------------------------------------------------------
 // Implementation of VtableStub
 
-address VtableStub::_chunk             = NULL;
-address VtableStub::_chunk_end         = NULL;
+address VtableStub::_chunk             = nullptr;
+address VtableStub::_chunk_end         = nullptr;
 VMReg   VtableStub::_receiver_location = VMRegImpl::Bad();
 
 
@@ -59,14 +59,14 @@ void* VtableStub::operator new(size_t size, int code_size) throw() {
   const int real_size = align_up(code_size + (int)sizeof(VtableStub), wordSize);
   // malloc them in chunks to minimize header overhead
   const int chunk_factor = 32;
-  if (_chunk == NULL || _chunk + real_size > _chunk_end) {
+  if (_chunk == nullptr || _chunk + real_size > _chunk_end) {
     const int bytes = chunk_factor * real_size + pd_code_alignment();
 
    // There is a dependency on the name of the blob in src/share/vm/prims/jvmtiCodeBlobEvents.cpp
    // If changing the name, update the other file accordingly.
     VtableBlob* blob = VtableBlob::create("vtable chunks", bytes);
-    if (blob == NULL) {
-      return NULL;
+    if (blob == nullptr) {
+      return nullptr;
     }
     _chunk = blob->content_begin();
     _chunk_end = _chunk + bytes;
@@ -132,7 +132,7 @@ void VtableStubs::initialize() {
     assert(_number_of_vtable_stubs == 0, "potential performance bug: VtableStubs initialized more than once");
     assert(is_power_of_2(int(N)), "N must be a power of 2");
     for (int i = 0; i < N; i++) {
-      _table[i] = NULL;
+      _table[i] = nullptr;
     }
   }
 }
@@ -216,7 +216,7 @@ address VtableStubs::find_stub(bool is_vtable_stub, int vtable_index) {
   {
     MutexLocker ml(VtableStubs_lock, Mutex::_no_safepoint_check_flag);
     s = lookup(is_vtable_stub, vtable_index);
-    if (s == NULL) {
+    if (s == nullptr) {
       if (is_vtable_stub) {
         s = create_vtable_stub(vtable_index);
       } else {
@@ -224,8 +224,8 @@ address VtableStubs::find_stub(bool is_vtable_stub, int vtable_index) {
       }
 
       // Creation of vtable or itable can fail if there is not enough free space in the code cache.
-      if (s == NULL) {
-        return NULL;
+      if (s == nullptr) {
+        return nullptr;
       }
 
       enter(is_vtable_stub, vtable_index, s);
@@ -279,14 +279,14 @@ VtableStub* VtableStubs::entry_point(address pc) {
   VtableStub* stub = (VtableStub*)(pc - VtableStub::entry_offset());
   uint hash = VtableStubs::hash(stub->is_vtable_stub(), stub->index());
   VtableStub* s;
-  for (s = _table[hash]; s != NULL && s != stub; s = s->next()) {}
-  return (s == stub) ? s : NULL;
+  for (s = _table[hash]; s != nullptr && s != stub; s = s->next()) {}
+  return (s == stub) ? s : nullptr;
 }
 
 bool VtableStubs::contains(address pc) {
   // simple solution for now - we may want to use
   // a faster way if this function is called often
-  return stub_containing(pc) != NULL;
+  return stub_containing(pc) != nullptr;
 }
 
 
@@ -295,11 +295,11 @@ VtableStub* VtableStubs::stub_containing(address pc) {
   //       happens with an atomic store into it (we don't care about
   //       consistency with the _number_of_vtable_stubs counter).
   for (int i = 0; i < N; i++) {
-    for (VtableStub* s = _table[i]; s != NULL; s = s->next()) {
+    for (VtableStub* s = _table[i]; s != nullptr; s = s->next()) {
       if (s->contains(pc)) return s;
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 void vtableStubs_init() {
@@ -308,7 +308,7 @@ void vtableStubs_init() {
 
 void VtableStubs::vtable_stub_do(void f(VtableStub*)) {
     for (int i = 0; i < N; i++) {
-        for (VtableStub* s = _table[i]; s != NULL; s = s->next()) {
+        for (VtableStub* s = _table[i]; s != nullptr; s = s->next()) {
             f(s);
         }
     }

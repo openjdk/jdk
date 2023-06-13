@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -288,7 +288,7 @@ OopMapSet* Runtime1::generate_handle_exception(StubID id, StubAssembler* sasm) {
 
   // Save registers, if required.
   OopMapSet* oop_maps = new OopMapSet();
-  OopMap* oop_map = NULL;
+  OopMap* oop_map = nullptr;
 
   switch (id) {
   case forward_exception_id: {
@@ -336,7 +336,7 @@ OopMapSet* Runtime1::generate_handle_exception(StubID id, StubAssembler* sasm) {
     // Note: the restore live registers includes the jump to LR (patched to R0)
     break;
   case handle_exception_from_callee_id:
-    restore_live_registers_without_return(sasm); // must not jump immediatly to handler
+    restore_live_registers_without_return(sasm); // must not jump immediately to handler
     restore_sp_for_method_handle(sasm);
     __ ret();
     break;
@@ -379,7 +379,7 @@ OopMapSet* Runtime1::generate_patching(StubAssembler* sasm, address target) {
   oop_maps->add_gc_map(call_offset, oop_map);
 
   DeoptimizationBlob* deopt_blob = SharedRuntime::deopt_blob();
-  assert(deopt_blob != NULL, "deoptimization blob must have been created");
+  assert(deopt_blob != nullptr, "deoptimization blob must have been created");
 
   __ cmp_32(R0, 0);
 
@@ -401,7 +401,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
   const bool must_gc_arguments = true;
   const bool dont_gc_arguments = false;
 
-  OopMapSet* oop_maps = NULL;
+  OopMapSet* oop_maps = nullptr;
   bool save_fpu_registers = HaveVFP;
 
   switch (id) {
@@ -418,40 +418,6 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
       {
         const Register result = R0;
         const Register klass  = R1;
-
-        // If TLAB is disabled, see if there is support for inlining contiguous
-        // allocations.
-        // Otherwise, just go to the slow path.
-        if (!UseTLAB && Universe::heap()->supports_inline_contig_alloc() && id != new_instance_id) {
-          Label slow_case, slow_case_no_pop;
-
-          // Make sure the class is fully initialized
-          if (id == fast_new_instance_init_check_id) {
-            __ ldrb(result, Address(klass, InstanceKlass::init_state_offset()));
-            __ cmp(result, InstanceKlass::fully_initialized);
-            __ b(slow_case_no_pop, ne);
-          }
-
-          // Free some temporary registers
-          const Register obj_size = R4;
-          const Register tmp1     = R5;
-          const Register tmp2     = LR;
-          const Register obj_end  = Rtemp;
-
-          __ raw_push(R4, R5, LR);
-
-          __ ldr_u32(obj_size, Address(klass, Klass::layout_helper_offset()));
-          __ eden_allocate(result, obj_end, tmp1, tmp2, obj_size, slow_case);        // initializes result and obj_end
-          __ initialize_object(result, obj_end, klass, noreg /* len */, tmp1, tmp2,
-                               instanceOopDesc::header_size() * HeapWordSize, -1,
-                               /* is_tlab_allocated */ false);
-          __ raw_pop_and_ret(R4, R5);
-
-          __ bind(slow_case);
-          __ raw_pop(R4, R5, LR);
-
-          __ bind(slow_case_no_pop);
-        }
 
         OopMap* map = save_live_registers(sasm);
         int call_offset = __ call_RT(result, noreg, CAST_FROM_FN_PTR(address, new_instance), klass);
@@ -488,47 +454,6 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         const Register result = R0;
         const Register klass  = R1;
         const Register length = R2;
-
-        // If TLAB is disabled, see if there is support for inlining contiguous
-        // allocations.
-        // Otherwise, just go to the slow path.
-        if (!UseTLAB && Universe::heap()->supports_inline_contig_alloc()) {
-          Label slow_case, slow_case_no_pop;
-
-          __ cmp_32(length, C1_MacroAssembler::max_array_allocation_length);
-          __ b(slow_case_no_pop, hs);
-
-          // Free some temporary registers
-          const Register arr_size = R4;
-          const Register tmp1     = R5;
-          const Register tmp2     = LR;
-          const Register tmp3     = Rtemp;
-          const Register obj_end  = tmp3;
-
-          __ raw_push(R4, R5, LR);
-
-          // Get the allocation size: round_up((length << (layout_helper & 0xff)) + header_size)
-          __ ldr_u32(tmp1, Address(klass, Klass::layout_helper_offset()));
-          __ mov(arr_size, MinObjAlignmentInBytesMask);
-          __ and_32(tmp2, tmp1, (unsigned int)(Klass::_lh_header_size_mask << Klass::_lh_header_size_shift));
-
-          __ add(arr_size, arr_size, AsmOperand(length, lsl, tmp1));
-
-          __ add(arr_size, arr_size, AsmOperand(tmp2, lsr, Klass::_lh_header_size_shift));
-          __ align_reg(arr_size, arr_size, MinObjAlignmentInBytes);
-
-          // eden_allocate destroys tmp2, so reload header_size after allocation
-          // eden_allocate initializes result and obj_end
-          __ eden_allocate(result, obj_end, tmp1, tmp2, arr_size, slow_case);
-          __ ldrb(tmp2, Address(klass, in_bytes(Klass::layout_helper_offset()) +
-                                       Klass::_lh_header_size_shift / BitsPerByte));
-          __ initialize_object(result, obj_end, klass, length, tmp1, tmp2, tmp2, -1, /* is_tlab_allocated */ false);
-          __ raw_pop_and_ret(R4, R5);
-
-          __ bind(slow_case);
-          __ raw_pop(R4, R5, LR);
-          __ bind(slow_case_no_pop);
-        }
 
         OopMap* map = save_live_registers(sasm);
         int call_offset;
@@ -739,7 +664,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         oop_maps->add_gc_map(call_offset, oop_map);
         restore_live_registers_without_return(sasm);
         DeoptimizationBlob* deopt_blob = SharedRuntime::deopt_blob();
-        assert(deopt_blob != NULL, "deoptimization blob must have been created");
+        assert(deopt_blob != nullptr, "deoptimization blob must have been created");
         __ jump(deopt_blob->unpack_with_reexecution(), relocInfo::runtime_call_type, noreg);
       }
       break;
@@ -785,7 +710,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         restore_live_registers_without_return(sasm);
 
         DeoptimizationBlob* deopt_blob = SharedRuntime::deopt_blob();
-        assert(deopt_blob != NULL, "deoptimization blob must have been created");
+        assert(deopt_blob != nullptr, "deoptimization blob must have been created");
         __ jump(deopt_blob->unpack_with_reexecution(), relocInfo::runtime_call_type, Rtemp);
       }
       break;

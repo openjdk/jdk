@@ -29,6 +29,7 @@ import javax.sound.sampled.Mixer;
 
 /**
  * @test
+ * @key sound
  * @bug 4936397
  * @summary Verify that there'll for a given endianness, there's also the little
  *          endian version

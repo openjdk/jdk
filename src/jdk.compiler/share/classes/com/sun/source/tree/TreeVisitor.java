@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -260,6 +260,25 @@ public interface TreeVisitor<R,P> {
     R visitLiteral(LiteralTree node, P p);
 
     /**
+     * Visits a StringTemplateTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
+    @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES, reflective=true)
+    R visitStringTemplate(StringTemplateTree node, P p);
+
+    /**
+     * Visits a {@code AnyPatternTree} node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     * @since 21
+     */
+    @PreviewFeature(feature=PreviewFeature.Feature.UNNAMED)
+    R visitAnyPattern(AnyPatternTree node, P p);
+
+    /**
      * Visits a {@code BindingPatternTree} node.
      * @param node the node being visited
      * @param p a parameter value
@@ -273,10 +292,36 @@ public interface TreeVisitor<R,P> {
      * @param node the node being visited
      * @param p a parameter value
      * @return a result value
-     * @since 17
+     * @since 21
      */
-    @PreviewFeature(feature=PreviewFeature.Feature.SWITCH_PATTERN_MATCHING, reflective=true)
     R visitDefaultCaseLabel(DefaultCaseLabelTree node, P p);
+
+    /**
+     * Visits a {@code ConstantCaseLabelTree} node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     * @since 21
+     */
+    R visitConstantCaseLabel(ConstantCaseLabelTree node, P p);
+
+    /**
+     * Visits a {@code PatternCaseLabelTree} node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     * @since 21
+     */
+    R visitPatternCaseLabel(PatternCaseLabelTree node, P p);
+
+    /**
+     * Visits a {@code DeconstructionPatternTree} node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     * @since 21
+     */
+    R visitDeconstructionPattern(DeconstructionPatternTree node, P p);
 
     /**
      * Visits a {@code MethodTree} node.
@@ -301,26 +346,6 @@ public interface TreeVisitor<R,P> {
      * @return a result value
      */
     R visitNewArray(NewArrayTree node, P p);
-
-    /**
-     * Visits a {@code GuardPatternTree} node.
-     * @param node the node being visited
-     * @param p a parameter value
-     * @return a result value
-     * @since 17
-     */
-    @PreviewFeature(feature=PreviewFeature.Feature.SWITCH_PATTERN_MATCHING, reflective=true)
-    R visitGuardedPattern(GuardedPatternTree node, P p);
-
-    /**
-     * Visits a {@code ParenthesizedPatternTree} node.
-     * @param node the node being visited
-     * @param p a parameter value
-     * @return a result value
-     * @since 17
-     */
-    @PreviewFeature(feature=PreviewFeature.Feature.SWITCH_PATTERN_MATCHING, reflective=true)
-    R visitParenthesizedPattern(ParenthesizedPatternTree node, P p);
 
     /**
      * Visits a {@code NewClassTree} node.

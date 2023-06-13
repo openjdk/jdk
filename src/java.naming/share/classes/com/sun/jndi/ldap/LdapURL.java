@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,10 @@ package com.sun.jndi.ldap;
 import javax.naming.*;
 import java.net.MalformedURLException;
 import java.io.UnsupportedEncodingException;
+import java.net.URI;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.util.Locale;
 import java.util.StringTokenizer;
 import com.sun.jndi.toolkit.url.Uri;
 import com.sun.jndi.toolkit.url.UrlUtil;
@@ -64,6 +68,25 @@ import com.sun.jndi.toolkit.url.UrlUtil;
 
 public final class LdapURL extends Uri {
 
+    private static final String PARSE_MODE_PROP = "com.sun.jndi.ldapURLParsing";
+    private static final ParseMode DEFAULT_PARSE_MODE = ParseMode.COMPAT;
+
+    public static final ParseMode PARSE_MODE;
+    static {
+        PrivilegedAction<String> action = () ->
+                System.getProperty(PARSE_MODE_PROP, DEFAULT_PARSE_MODE.toString());
+        ParseMode parseMode = DEFAULT_PARSE_MODE;
+        try {
+            @SuppressWarnings("removal")
+            String mode = AccessController.doPrivileged(action);
+            parseMode = ParseMode.valueOf(mode.toUpperCase(Locale.ROOT));
+        } catch (Throwable t) {
+            parseMode = DEFAULT_PARSE_MODE;
+        } finally {
+            PARSE_MODE = parseMode;
+        }
+    }
+
     private boolean useSsl = false;
     private String DN = null;
     private String attributes = null;
@@ -83,7 +106,7 @@ public final class LdapURL extends Uri {
             useSsl = scheme.equalsIgnoreCase("ldaps");
 
             if (! (scheme.equalsIgnoreCase("ldap") || useSsl)) {
-                throw new MalformedURLException("Not an LDAP URL: " + url);
+                throw newInvalidURISchemeException(url);
             }
 
             parsePathAndQuery(); // DN, attributes, scope, filter, extensions
@@ -97,6 +120,21 @@ public final class LdapURL extends Uri {
             ne.setRootCause(e);
             throw ne;
         }
+    }
+
+    @Override
+    protected MalformedURLException newInvalidURISchemeException(String uri) {
+        return new MalformedURLException("Not an LDAP URL: " + uri);
+    }
+
+    @Override
+    protected boolean isSchemeOnly(String uri) {
+        return isLdapSchemeOnly(uri);
+    }
+
+    @Override
+    protected ParseMode parseMode() {
+        return PARSE_MODE;
     }
 
     /**
@@ -151,11 +189,31 @@ public final class LdapURL extends Uri {
         StringTokenizer st = new StringTokenizer(urlList, " ");
 
         while (st.hasMoreTokens()) {
-            urls[i++] = st.nextToken();
+            // we don't accept scheme-only URLs here
+            urls[i++] = validateURI(st.nextToken());
         }
         String[] trimmed = new String[i];
         System.arraycopy(urls, 0, trimmed, 0, i);
         return trimmed;
+    }
+
+    public static boolean isLdapSchemeOnly(String uri) {
+        return "ldap:".equals(uri) || "ldaps:".equals(uri);
+    }
+
+    public static String validateURI(String uri) {
+        // no validation in legacy mode parsing
+        if (PARSE_MODE == ParseMode.LEGACY) {
+            return uri;
+        }
+
+        // special case of scheme-only URIs
+        if (isLdapSchemeOnly(uri)) {
+            return uri;
+        }
+
+        // use java.net.URI to validate the uri syntax
+        return URI.create(uri).toString();
     }
 
     /**
@@ -181,7 +239,8 @@ public final class LdapURL extends Uri {
             String p = (port != -1) ? (":" + port) : "";
             String d = (dn != null) ? ("/" + UrlUtil.encode(dn, "UTF8")) : "";
 
-            return useSsl ? "ldaps://" + h + p + d : "ldap://" + h + p + d;
+            String uri = useSsl ? "ldaps://" + h + p + d : "ldap://" + h + p + d;
+            return validateURI(uri);
         } catch (UnsupportedEncodingException e) {
             // UTF8 should always be supported
             throw new IllegalStateException("UTF-8 encoding unavailable");

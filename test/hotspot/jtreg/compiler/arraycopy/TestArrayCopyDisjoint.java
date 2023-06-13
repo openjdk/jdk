@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,29 +26,31 @@ import java.util.Random;
 
 /**
  * @test
- * @bug 8251871
+ * @bug 8251871 8285301
  * @summary Optimize arrayCopy using AVX-512 masked instructions.
  *
- * @run main/othervm/timeout=600 -XX:-TieredCompilation  -Xbatch -XX:+IgnoreUnrecognizedVMOptions
+ * @run main/othervm/timeout=600 -XX:-TieredCompilation -Xbatch -XX:+IgnoreUnrecognizedVMOptions
  *      -XX:UseAVX=3 -XX:+UnlockDiagnosticVMOptions -XX:ArrayOperationPartialInlineSize=0 -XX:MaxVectorSize=32 -XX:+UnlockDiagnosticVMOptions
  *      compiler.arraycopy.TestArrayCopyDisjoint
- * @run main/othervm/timeout=600 -XX:-TieredCompilation  -Xbatch -XX:+IgnoreUnrecognizedVMOptions
+ * @run main/othervm/timeout=600 -XX:-TieredCompilation -Xbatch -XX:+IgnoreUnrecognizedVMOptions
  *      -XX:UseAVX=3 -XX:+UnlockDiagnosticVMOptions -XX:ArrayOperationPartialInlineSize=0 -XX:MaxVectorSize=64
  *      compiler.arraycopy.TestArrayCopyDisjoint
- * @run main/othervm/timeout=600 -XX:-TieredCompilation  -Xbatch -XX:+IgnoreUnrecognizedVMOptions
+ * @run main/othervm/timeout=600 -XX:-TieredCompilation -Xbatch -XX:+IgnoreUnrecognizedVMOptions
  *      -XX:UseAVX=3 -XX:+UnlockDiagnosticVMOptions -XX:ArrayOperationPartialInlineSize=32 -XX:+UnlockDiagnosticVMOptions -XX:MaxVectorSize=32 -XX:+UnlockDiagnosticVMOption
  *      compiler.arraycopy.TestArrayCopyDisjoint
- * @run main/othervm/timeout=600 -XX:-TieredCompilation  -Xbatch -XX:+IgnoreUnrecognizedVMOptions
+ * @run main/othervm/timeout=600 -XX:-TieredCompilation -Xbatch -XX:+IgnoreUnrecognizedVMOptions
  *      -XX:UseAVX=3 -XX:+UnlockDiagnosticVMOptions -XX:ArrayOperationPartialInlineSize=32 -XX:+UnlockDiagnosticVMOptions -XX:MaxVectorSize=64
  *      compiler.arraycopy.TestArrayCopyDisjoint
- * @run main/othervm/timeout=600 -XX:-TieredCompilation  -Xbatch -XX:+IgnoreUnrecognizedVMOptions
+ * @run main/othervm/timeout=600 -XX:-TieredCompilation -Xbatch -XX:+IgnoreUnrecognizedVMOptions
  *      -XX:UseAVX=3 -XX:+UnlockDiagnosticVMOptions -XX:ArrayOperationPartialInlineSize=64 -XX:MaxVectorSize=64
  *      compiler.arraycopy.TestArrayCopyDisjoint
- * @run main/othervm/timeout=600 -XX:-TieredCompilation  -Xbatch -XX:+IgnoreUnrecognizedVMOptions
+ * @run main/othervm/timeout=600 -XX:-TieredCompilation -Xbatch -XX:+IgnoreUnrecognizedVMOptions
  *      -XX:UseAVX=3 -XX:+UnlockDiagnosticVMOptions -XX:ArrayOperationPartialInlineSize=32 -XX:+UnlockDiagnosticVMOptions -XX:MaxVectorSize=32 -XX:+UnlockDiagnosticVMOption -XX:ArrayCopyLoadStoreMaxElem=16
  *      compiler.arraycopy.TestArrayCopyDisjoint
- * @run main/othervm/timeout=600 -XX:-TieredCompilation  -Xbatch -XX:+IgnoreUnrecognizedVMOptions
+ * @run main/othervm/timeout=600 -XX:-TieredCompilation -Xbatch -XX:+IgnoreUnrecognizedVMOptions
  *      -XX:UseAVX=3 -XX:+UnlockDiagnosticVMOptions -XX:ArrayOperationPartialInlineSize=64 -XX:MaxVectorSize=64 -XX:ArrayCopyLoadStoreMaxElem=16
+ *      compiler.arraycopy.TestArrayCopyDisjoint
+ * @run main/othervm/timeout=600 -XX:-TieredCompilation -Xbatch -XX:+UnlockExperimentalVMOptions -XX:+AlwaysAtomicAccesses
  *      compiler.arraycopy.TestArrayCopyDisjoint
  *
  */
@@ -200,27 +202,22 @@ public class TestArrayCopyDisjoint {
 
       setup();
 
-      try {
-        for (int i = 0 ; i < 1000000 ; i++ ) {
-          testByte(lengths[i % lengths.length], r.nextInt(2048) , r.nextInt(2048));
-          testByte_constant_LT32B (r.nextInt(2048) , r.nextInt(2048));
-          testByte_constant_LT64B (r.nextInt(2048) , r.nextInt(2048));
+      for (int i = 0 ; i < 30_000 ; i++ ) {
+        testByte(lengths[i % lengths.length], r.nextInt(2048) , r.nextInt(2048));
+        testByte_constant_LT32B (r.nextInt(2048) , r.nextInt(2048));
+        testByte_constant_LT64B (r.nextInt(2048) , r.nextInt(2048));
 
-          testChar(lengths[i % lengths.length] >> 1, r.nextInt(2048) , r.nextInt(2048));
-          testChar_constant_LT32B (r.nextInt(2048) , r.nextInt(2048));
-          testChar_constant_LT64B (r.nextInt(2048) , r.nextInt(2048));
+        testChar(lengths[i % lengths.length] >> 1, r.nextInt(2048) , r.nextInt(2048));
+        testChar_constant_LT32B (r.nextInt(2048) , r.nextInt(2048));
+        testChar_constant_LT64B (r.nextInt(2048) , r.nextInt(2048));
 
-          testInt(lengths[i % lengths.length]  >> 2, r.nextInt(2048) , r.nextInt(2048));
-          testInt_constant_LT32B (r.nextInt(2048) , r.nextInt(2048));
-          testInt_constant_LT64B (r.nextInt(2048) , r.nextInt(2048));
+        testInt(lengths[i % lengths.length]  >> 2, r.nextInt(2048) , r.nextInt(2048));
+        testInt_constant_LT32B (r.nextInt(2048) , r.nextInt(2048));
+        testInt_constant_LT64B (r.nextInt(2048) , r.nextInt(2048));
 
-          testLong(lengths[i % lengths.length] >> 3, r.nextInt(2048) , r.nextInt(2048));
-          testLong_constant_LT32B (r.nextInt(2048) , r.nextInt(2048));
-          testLong_constant_LT64B (r.nextInt(2048) , r.nextInt(2048));
-        }
-        System.out.println("PASS : " + validate_ctr);
-      } catch (Exception e) {
-         System.out.println(e.getMessage());
+        testLong(lengths[i % lengths.length] >> 3, r.nextInt(2048) , r.nextInt(2048));
+        testLong_constant_LT32B (r.nextInt(2048) , r.nextInt(2048));
+        testLong_constant_LT64B (r.nextInt(2048) , r.nextInt(2048));
       }
     }
 }

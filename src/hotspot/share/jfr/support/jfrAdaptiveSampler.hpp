@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
 * Copyright (c) 2020, Datadog, Inc. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
@@ -66,7 +66,7 @@
  * report a rate higher than n per second.
  *
  * One good use of the sampler is to employ it as a throttler, or regulator, to help shape large data sets into smaller,
- * more managable subsets while still keeping the data somewhat representative.
+ * more manageable subsets while still keeping the data somewhat representative.
  *
  */
 

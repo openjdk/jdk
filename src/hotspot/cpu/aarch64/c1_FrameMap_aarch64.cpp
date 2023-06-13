@@ -300,8 +300,6 @@ void FrameMap::initialize() {
 
 
 Address FrameMap::make_new_address(ByteSize sp_offset) const {
-  // for rbp, based address use this:
-  // return Address(rbp, in_bytes(sp_offset) - (framesize() - 2) * 4);
   return Address(sp, in_bytes(sp_offset));
 }
 

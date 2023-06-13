@@ -16238,7 +16238,7 @@
                <uiProperty name="tileWidth" type="INT" value="27"/>
                <uiProperty name="paintOutsideClip" type="BOOLEAN" value="true"/>
                <uiProperty name="rotateText" type="BOOLEAN" value="true"/>
-               <uiProperty name="vertictalSize" type="DIMENSION">
+               <uiProperty name="verticalSize" type="DIMENSION">
                   <dimension width="19" height="150"/>
                </uiProperty>
                <uiProperty name="horizontalSize" type="DIMENSION">

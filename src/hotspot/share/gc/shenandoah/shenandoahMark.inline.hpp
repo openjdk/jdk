@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2015, 2022, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 #include "gc/shenandoah/shenandoahMark.hpp"
 
+#include "gc/shared/continuationGCSupport.inline.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
@@ -38,6 +39,7 @@
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/prefetch.inline.hpp"
+#include "utilities/devirtualizer.inline.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 template <StringDedupMode STRING_DEDUP>
@@ -58,9 +60,9 @@ template <class T, StringDedupMode STRING_DEDUP>
 void ShenandoahMark::do_task(ShenandoahObjToScanQueue* q, T* cl, ShenandoahLiveData* live_data, StringDedup::Requests* const req, ShenandoahMarkTask* task) {
   oop obj = task->obj();
 
-  shenandoah_assert_not_forwarded(NULL, obj);
-  shenandoah_assert_marked(NULL, obj);
-  shenandoah_assert_not_in_cset_except(NULL, obj, ShenandoahHeap::heap()->cancelled_gc());
+  shenandoah_assert_not_forwarded(nullptr, obj);
+  shenandoah_assert_marked(nullptr, obj);
+  shenandoah_assert_not_in_cset_except(nullptr, obj, ShenandoahHeap::heap()->cancelled_gc());
 
   // Are we in weak subgraph scan?
   bool weak = task->is_weak();
@@ -69,6 +71,12 @@ void ShenandoahMark::do_task(ShenandoahObjToScanQueue* q, T* cl, ShenandoahLiveD
   if (task->is_not_chunked()) {
     if (obj->is_instance()) {
       // Case 1: Normal oop, process as usual.
+      if (ContinuationGCSupport::relativize_stack_chunk(obj)) {
+          // Loom doesn't support mixing of weak marking and strong marking of
+          // stack chunks.
+          cl->set_weak(false);
+      }
+
       obj->oop_iterate(cl);
       dedup_string<STRING_DEDUP>(obj, req);
     } else if (obj->is_objArray()) {
@@ -113,7 +121,7 @@ inline void ShenandoahMark::count_liveness(ShenandoahLiveData* live_data, oop ob
       live_data[region_idx] = (ShenandoahLiveData) new_val;
     }
   } else {
-    shenandoah_assert_in_correct_region(NULL, obj);
+    shenandoah_assert_in_correct_region(nullptr, obj);
     size_t num_regions = ShenandoahHeapRegion::required_regions(size * HeapWordSize);
 
     for (size_t i = region_idx; i < region_idx + num_regions; i++) {

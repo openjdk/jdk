@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,8 +37,8 @@
  *          jdk.internal.vm.ci/jdk.vm.ci.code.stack
  *          jdk.internal.vm.ci/jdk.vm.ci.meta
  *
- * @build jdk.internal.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.internal.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbatch -Xbootclasspath/a:.
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                   -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
@@ -61,7 +61,7 @@ import jdk.vm.ci.code.stack.InspectedFrameVisitor;
 import jdk.vm.ci.hotspot.CompilerToVMHelper;
 import jdk.vm.ci.hotspot.HotSpotStackFrameReference;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 import java.lang.reflect.Method;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -104,8 +104,17 @@ public class IterateFramesNative {
     }
 
     private void test() {
-        for (int i = 0; i < CompilerWhiteBoxTest.THRESHOLD + 1; i++) {
+        // Run enough iterations to reach compilation.
+        for (int i = 0; i < (CHECK_COMPILED ? 1 : 10_000); i++) {
             testNativeFrame("someString", i);
+        }
+
+        if (CHECK_COMPILED) {
+            // Verify that we reached compilation at some point.
+            Asserts.assertTrue(WB.isMethodCompiled(ITERATE_FRAMES_METHOD),
+                "Expected native method to be compiled: " + ITERATE_FRAMES_METHOD);
+            Asserts.assertTrue(WB.isMethodCompiled(NATIVE_METHOD),
+                "Expected native method to be compiled: " + NATIVE_METHOD);
         }
     }
 
@@ -125,13 +134,6 @@ public class IterateFramesNative {
 
         Asserts.assertEQ(innerHelper.string, NATIVE_METHOD_RESOLVED.getName(),
             "Native frame not found?: " + NATIVE_METHOD_RESOLVED.getName());
-
-        if (CHECK_COMPILED) {
-            Asserts.assertTrue(WB.isMethodCompiled(ITERATE_FRAMES_METHOD),
-                "Expected native method to be compiled: " + ITERATE_FRAMES_METHOD);
-            Asserts.assertTrue(WB.isMethodCompiled(NATIVE_METHOD),
-                "Expected native method to be compiled: " + NATIVE_METHOD);
-        }
     }
 
     private void testNativeFrameCallback(Helper helper, int iteration) {

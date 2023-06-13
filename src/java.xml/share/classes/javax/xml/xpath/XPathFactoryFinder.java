@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package javax.xml.xpath;
 
 import com.sun.org.apache.xpath.internal.jaxp.XPathFactoryImpl;
-import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.security.AccessControlContext;
 import java.security.AccessController;
@@ -174,36 +173,11 @@ class XPathFactoryFinder  {
             }
         }
 
-        String javah = SecuritySupport.getSystemProperty( "java.home" );
-        String configFile = javah + File.separator +
-        "conf" + File.separator + "jaxp.properties";
-
-        // try to read from $java.home/conf/jaxp.properties
-        try {
-            if(firstTime){
-                synchronized(cacheProps){
-                    if(firstTime){
-                        File f=new File( configFile );
-                        firstTime = false;
-                        if(SecuritySupport.doesFileExist(f)){
-                            debugPrintln(()->"Read properties file " + f);
-                            cacheProps.load(SecuritySupport.getFileInputStream(f));
-                        }
-                    }
-                }
-            }
-            final String factoryClassName = cacheProps.getProperty(propertyName);
-            debugPrintln(()->"found " + factoryClassName + " in $java.home/conf/jaxp.properties");
-
-            if (factoryClassName != null) {
-                xpathFactory = createInstance(factoryClassName);
-                if(xpathFactory != null){
-                    return xpathFactory;
-                }
-            }
-        } catch (Exception ex) {
-            if (debug) {
-                ex.printStackTrace();
+        String factoryClassName = SecuritySupport.readConfig(propertyName);
+        if (factoryClassName != null) {
+            xpathFactory = createInstance(factoryClassName);
+            if(xpathFactory != null){
+                return xpathFactory;
             }
         }
 
@@ -245,7 +219,7 @@ class XPathFactoryFinder  {
             }
         }
 
-        // use approprite ClassLoader
+        // use appropriate ClassLoader
         try {
             if (classLoader != null && !internal) {
                     clazz = Class.forName(className, false, classLoader);

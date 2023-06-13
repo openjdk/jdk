@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -142,7 +142,7 @@ public class VirtualMachineDescriptor {
 
     /**
      * Returns a hash-code value for this VirtualMachineDescriptor. The hash
-     * code is based upon the descriptor's components, and satifies
+     * code is based upon the descriptor's components, and satisfies
      * the general contract of the {@link java.lang.Object#hashCode()
      * Object.hashCode} method.
      *

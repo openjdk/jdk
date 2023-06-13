@@ -37,7 +37,7 @@ import java.util.EventObject;
  * A <code>TreeCellEditor</code>. You need to supply an
  * instance of <code>DefaultTreeCellRenderer</code>
  * so that the icons can be obtained. You can optionally supply
- * a <code>TreeCellEditor</code> that will be layed out according
+ * a <code>TreeCellEditor</code> that will be laid out according
  * to the icon in the <code>DefaultTreeCellRenderer</code>.
  * If you do not supply a <code>TreeCellEditor</code>,
  * a <code>TextField</code> will be used. Editing is started

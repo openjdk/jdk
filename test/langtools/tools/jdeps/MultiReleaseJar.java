@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,10 +80,10 @@ public class MultiReleaseJar {
 
     @Test
     public void basic() throws Exception {
-        Result r = run("jdeps --multi-release 9  -v missing.jar");
+        Result r = run("jdeps -J-Duser.language=en -J-Duser.country=US --multi-release 9  -v missing.jar");
         checkResult(r, false, "Warning: Path does not exist: missing.jar");
 
-        r = run("jdeps -v Version.jar");
+        r = run("jdeps -J-Duser.language=en -J-Duser.country=US -v Version.jar");
         checkResult(r, false, "--multi-release option is not set");
 
         r = run("jdeps --multi-release base  -v Version.jar");
@@ -115,10 +115,10 @@ public class MultiReleaseJar {
             "9/test.NonPublic"
         );
 
-        r = run("jdeps --multi-release 8  -v Version.jar");
+        r = run("jdeps -J-Duser.language=en -J-Duser.country=US --multi-release 8  -v Version.jar");
         checkResult(r, false, "Error: invalid argument for option: 8");
 
-        r = run("jdeps --multi-release 9.1  -v Version.jar");
+        r = run("jdeps -J-Duser.language=en -J-Duser.country=US --multi-release 9.1  -v Version.jar");
         checkResult(r, false, "Error: invalid argument for option: 9.1");
 
         runJdeps("Main.class");
@@ -127,10 +127,10 @@ public class MultiReleaseJar {
 
 
     private void runJdeps(String path) throws Exception {
-        Result r = run("jdeps -v -R -cp Version.jar " + path);
+        Result r = run("jdeps -J-Duser.language=en -J-Duser.country=US -v -R -cp Version.jar " + path);
         checkResult(r, false, "--multi-release option is not set");
 
-        r = run("jdeps -v -R -cp Version.jar --module-path Foo.jar -multi-release 9 " + path);
+        r = run("jdeps -J-Duser.language=en -J-Duser.country=US -v -R -cp Version.jar --module-path Foo.jar -multi-release 9 " + path);
         checkResult(r, false,
             "Error: unknown option: -multi-release",
             "Usage: jdeps <options> <path",
@@ -208,7 +208,7 @@ public class MultiReleaseJar {
             "p.Foo"
         );
 
-        r = run("jdeps -v -R -cp Version.jar --module-path  Foo.jar --multi-release 9.1 " + path);
+        r = run("jdeps -J-Duser.language=en -J-Duser.country=US -v -R -cp Version.jar --module-path  Foo.jar --multi-release 9.1 " + path);
         checkResult(r, false, "Error: invalid argument for option: 9.1");
 
         // Version_9.jar does not have any version 10 entry

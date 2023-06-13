@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,7 +68,7 @@ StubQueue::StubQueue(StubInterface* stub_interface, int buffer_size,
                      Mutex* lock, const char* name) : _mutex(lock) {
   intptr_t size = align_up(buffer_size, 2*BytesPerWord);
   BufferBlob* blob = BufferBlob::create(name, size);
-  if( blob == NULL) {
+  if( blob == nullptr) {
     vm_exit_out_of_memory(size, OOM_MALLOC_ERROR, "CodeCache: no room for %s", name);
   }
   _stub_interface  = stub_interface;
@@ -99,26 +99,32 @@ void StubQueue::deallocate_unused_tail() {
 
 Stub* StubQueue::stub_containing(address pc) const {
   if (contains(pc)) {
-    for (Stub* s = first(); s != NULL; s = next(s)) {
+    for (Stub* s = first(); s != nullptr; s = next(s)) {
       if (stub_contains(s, pc)) return s;
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 
 Stub* StubQueue::request_committed(int code_size) {
   Stub* s = request(code_size);
-  if (s != NULL) commit(code_size);
+  if (s != nullptr) commit(code_size);
   return s;
 }
 
+int StubQueue::compute_stub_size(Stub* stub, int code_size) {
+  address stub_begin = (address) stub;
+  address code_begin = stub_code_begin(stub);
+  address code_end = align_up(code_begin + code_size, stub_alignment());
+  return (int)(code_end - stub_begin);
+}
 
 Stub* StubQueue::request(int requested_code_size) {
   assert(requested_code_size > 0, "requested_code_size must be > 0");
-  if (_mutex != NULL) _mutex->lock_without_safepoint_check();
+  if (_mutex != nullptr) _mutex->lock_without_safepoint_check();
   Stub* s = current_stub();
-  int requested_size = align_up(stub_code_size_to_size(requested_code_size), CodeEntryAlignment);
+  int requested_size = compute_stub_size(s, requested_code_size);
   if (requested_size <= available_space()) {
     if (is_contiguous()) {
       // Queue: |...|XXXXXXX|.............|
@@ -147,20 +153,20 @@ Stub* StubQueue::request(int requested_code_size) {
     return s;
   }
   // Not enough space left
-  if (_mutex != NULL) _mutex->unlock();
-  return NULL;
+  if (_mutex != nullptr) _mutex->unlock();
+  return nullptr;
 }
 
 
 void StubQueue::commit(int committed_code_size) {
   assert(committed_code_size > 0, "committed_code_size must be > 0");
-  int committed_size = align_up(stub_code_size_to_size(committed_code_size), CodeEntryAlignment);
   Stub* s = current_stub();
+  int committed_size = compute_stub_size(s, committed_code_size);
   assert(committed_size <= stub_size(s), "committed size must not exceed requested size");
   stub_initialize(s, committed_size);
   _queue_end += committed_size;
   _number_of_stubs++;
-  if (_mutex != NULL) _mutex->unlock();
+  if (_mutex != nullptr) _mutex->unlock();
   debug_only(stub_verify(s);)
 }
 
@@ -203,7 +209,7 @@ void StubQueue::remove_all(){
 
 void StubQueue::verify() {
   // verify only if initialized
-  if (_stub_buffer == NULL) return;
+  if (_stub_buffer == nullptr) return;
   MutexLocker lock(_mutex, Mutex::_no_safepoint_check_flag);
   // verify index boundaries
   guarantee(0 <= _buffer_size, "buffer size must be positive");
@@ -211,17 +217,17 @@ void StubQueue::verify() {
   guarantee(0 <= _queue_begin  && _queue_begin  <  _buffer_limit, "_queue_begin out of bounds");
   guarantee(0 <= _queue_end    && _queue_end    <= _buffer_limit, "_queue_end   out of bounds");
   // verify alignment
-  guarantee(_buffer_size  % CodeEntryAlignment == 0, "_buffer_size  not aligned");
-  guarantee(_buffer_limit % CodeEntryAlignment == 0, "_buffer_limit not aligned");
-  guarantee(_queue_begin  % CodeEntryAlignment == 0, "_queue_begin  not aligned");
-  guarantee(_queue_end    % CodeEntryAlignment == 0, "_queue_end    not aligned");
+  guarantee(_buffer_size  % stub_alignment() == 0, "_buffer_size  not aligned");
+  guarantee(_buffer_limit % stub_alignment() == 0, "_buffer_limit not aligned");
+  guarantee(_queue_begin  % stub_alignment() == 0, "_queue_begin  not aligned");
+  guarantee(_queue_end    % stub_alignment() == 0, "_queue_end    not aligned");
   // verify buffer limit/size relationship
   if (is_contiguous()) {
     guarantee(_buffer_limit == _buffer_size, "_buffer_limit must equal _buffer_size");
   }
   // verify contents
   int n = 0;
-  for (Stub* s = first(); s != NULL; s = next(s)) {
+  for (Stub* s = first(); s != nullptr; s = next(s)) {
     stub_verify(s);
     n++;
   }
@@ -232,7 +238,7 @@ void StubQueue::verify() {
 
 void StubQueue::print() {
   MutexLocker lock(_mutex, Mutex::_no_safepoint_check_flag);
-  for (Stub* s = first(); s != NULL; s = next(s)) {
+  for (Stub* s = first(); s != nullptr; s = next(s)) {
     stub_print(s);
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,7 @@ public class WriterUtility {
 
     /**XXX: This feature is only used when writing element content values.
      * default value is 'true' however, if the feature is set to false
-     * characters wont be escaped.
+     * characters won't be escaped.
      * This feature has no effect when writing Attribute values, character would still be escaped.
      * I can't think of any reason why this would be useful when writing attribute values.
      * However, this can be reconsidered if there is any usecase.
@@ -94,7 +94,7 @@ public class WriterUtility {
             }
         }
         else{
-            //attempt to retreive default fEncoderoder
+            //attempt to retrieve default fEncoder
             fEncoder = getDefaultEncoder();
         }
     }

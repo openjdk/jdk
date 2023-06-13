@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,18 +25,35 @@
 
 package com.sun.beans.introspect;
 
+import java.io.Closeable;
+import java.io.Externalizable;
+import java.io.Serializable;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
 
 import com.sun.beans.TypeResolver;
 import com.sun.beans.finder.MethodFinder;
 
 final class MethodInfo {
+
+    // These are some common interfaces that we know a priori
+    // will not contain any bean property getters or setters.
+    static final Set<Class<?>> IGNORABLE_INTERFACES = Set.of(
+        AutoCloseable.class,
+        Cloneable.class,
+        Closeable.class,
+        Comparable.class,
+        Externalizable.class,
+        Serializable.class
+    );
+
     final Method method;
     final Class<?> type;
 
@@ -66,6 +83,8 @@ final class MethodInfo {
     static List<Method> get(Class<?> type) {
         List<Method> list = null;
         if (type != null) {
+
+            // Add declared methods
             boolean inaccessible = !Modifier.isPublic(type.getModifiers());
             for (Method method : type.getMethods()) {
                 if (method.getDeclaringClass().equals(type)) {
@@ -81,10 +100,19 @@ final class MethodInfo {
                         }
                     }
                     if (method != null) {
-                        if (list == null) {
-                            list = new ArrayList<>();
-                        }
-                        list.add(method);
+                        (list = createIfNeeded(list)).add(method);
+                    }
+                }
+            }
+
+            // Add default methods inherited from interfaces
+            for (Class<?> iface : type.getInterfaces()) {
+                if (IGNORABLE_INTERFACES.contains(iface)) {
+                    continue;
+                }
+                for (Method method : iface.getMethods()) {
+                    if (!Modifier.isAbstract(method.getModifiers())) {
+                        (list = createIfNeeded(list)).add(method);
                     }
                 }
             }
@@ -96,12 +124,13 @@ final class MethodInfo {
         return Collections.emptyList();
     }
 
+    private static List<Method> createIfNeeded(List<Method> list) {
+        return list != null ? list : new ArrayList<>();
+    }
+
     /**
      * A comparator that defines a total order so that methods have the same
-     * name and identical signatures appear next to each others. The methods are
-     * sorted in such a way that methods which override each other will sit next
-     * to each other, with the overridden method last - e.g. is Integer getFoo()
-     * placed before Object getFoo().
+     * name and identical signatures appear next to each others.
      **/
     private static final class MethodOrder implements Comparator<Method> {
 
@@ -132,18 +161,7 @@ final class MethodInfo {
             }
             final Class<?> aret = a.getReturnType();
             final Class<?> bret = b.getReturnType();
-            if (aret == bret) {
-                return 0;
-            }
-
-            // Super type comes last: Integer, Number, Object
-            if (aret.isAssignableFrom(bret)) {
-                return 1;
-            }
-            if (bret.isAssignableFrom(aret)) {
-                return -1;
-            }
-            return aret.getName().compareTo(bret.getName());
+            return aret == bret ? 0 : aret.getName().compareTo(bret.getName());
         }
 
         static final MethodOrder instance = new MethodOrder();

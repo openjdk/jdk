@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,48 +23,120 @@
 
 /**
  * @test
+ * @library /test/lib
+ * @modules java.base/sun.security.x509
+ * @modules java.base/sun.security.tools.keytool
  * @bug 4419266 4842702
  * @summary Make sure verifying signed Jar doesn't throw SecurityException
  */
-import java.io.File;
-import java.util.jar.JarFile;
+import jdk.security.jarsigner.JarSigner;
+import sun.security.tools.keytool.CertAndKeyGen;
+import sun.security.x509.X500Name;
+
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.security.KeyStore;
+import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
+import java.util.Collections;
+import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
+import java.util.jar.JarOutputStream;
 import java.util.zip.ZipEntry;
-import java.util.Enumeration;
+import java.util.zip.ZipFile;
+
+import static jdk.test.lib.Utils.runAndCheckException;
+
 
 public class VerifySignedJar {
-    private static void Unreached (Object o)
-        throws Exception
-    {
-        // Should never get here
-        throw new Exception ("Expected exception was not thrown");
-    }
 
     public static void main(String[] args) throws Exception {
-        File f = new File(System.getProperty("test.src", "."), "thawjar.jar");
-        JarFile jf = new JarFile(f);
-        try {
-            // Read entries via Enumeration
-            for (Enumeration e = jf.entries(); e.hasMoreElements();)
-                jf.getInputStream((ZipEntry) e.nextElement());
 
-            // Read entry by name
-            ZipEntry ze = jf.getEntry("getprop.class");
-            JarEntry je = jf.getJarEntry("getprop.class");
+        Path j = createJar();
+        Path s = signJar(j, keyEntry("cn=duke"));
 
-            // Make sure we throw NPE on null objects
-            try { Unreached (jf.getEntry(null)); }
-            catch (NullPointerException e) {}
+        try (JarFile jf = new JarFile(s.toFile())) {
 
-            try { Unreached (jf.getJarEntry(null)); }
-            catch (NullPointerException e) {}
+            for (JarEntry e: Collections.list(jf.entries())) {
+                // Reading entry to trigger verification
+                jf.getInputStream(e).transferTo(OutputStream.nullOutputStream());
+                // Check that all regular files are signed by duke
+                if (!e.getName().startsWith("META-INF/")) {
+                    checkSignedBy(e, "cn=duke");
+                }
+            }
 
-            try { Unreached (jf.getInputStream(null)); }
-            catch (NullPointerException e) {}
+            // Read ZIP and JAR entries by name
+            Objects.requireNonNull(jf.getEntry("getprop.class"));
+            Objects.requireNonNull(jf.getJarEntry("getprop.class"));
+
+            // Make sure we throw NPE on null parameters
+            runAndCheckException(() -> jf.getEntry(null), NullPointerException.class);
+            runAndCheckException(() -> jf.getJarEntry(null), NullPointerException.class);
+            runAndCheckException(() -> jf.getInputStream(null), NullPointerException.class);
 
         } catch (SecurityException se) {
             throw new Exception("Got SecurityException when verifying signed " +
                 "jar:" + se);
         }
+    }
+
+    // Check that a JAR entry is signed by an expected DN
+    private static void checkSignedBy(JarEntry e, String expectedDn) throws Exception {
+        Certificate[] certs = e.getCertificates();
+        if (certs == null || certs.length == 0) {
+            throw new Exception("JarEntry has no certificates: " + e.getName());
+        }
+
+        if (certs[0] instanceof X509Certificate x) {
+            String name = x.getSubjectX500Principal().getName();
+            if (!name.equalsIgnoreCase(expectedDn)) {
+                throw new Exception("Expected entry signed by %s, was %s".formatted(name, expectedDn));
+            }
+        } else {
+            throw new Exception("Expected JarEntry.getCertificate to return X509Certificate");
+        }
+    }
+
+    private static Path createJar() throws Exception {
+        Path j = Path.of("unsigned.jar");
+        try (JarOutputStream out = new JarOutputStream(Files.newOutputStream(j))){
+            out.putNextEntry(new JarEntry("getprop.class"));
+            out.write(new byte[] {(byte) 0XCA, (byte) 0XFE, (byte) 0XBA, (byte) 0XBE});
+        }
+        return j;
+    }
+
+    private static Path signJar(Path j, KeyStore.PrivateKeyEntry entry) throws Exception {
+        Path s = Path.of("signed.jar");
+
+        JarSigner signer = new JarSigner.Builder(entry)
+                .signerName("zigbert")
+                .digestAlgorithm("SHA-256")
+                .signatureAlgorithm("SHA256withRSA")
+                .build();
+
+        try (ZipFile zip = new ZipFile(j.toFile());
+            OutputStream out = Files.newOutputStream(s)) {
+            signer.sign(zip, out);
+        }
+
+        return s;
+    }
+
+    private static KeyStore.PrivateKeyEntry keyEntry(String dname) throws Exception {
+
+        CertAndKeyGen gen = new CertAndKeyGen("RSA", "SHA256withRSA");
+
+        gen.generate(1048); // Small key size makes test run faster
+
+        var oneDay = TimeUnit.DAYS.toSeconds(1);
+        Certificate cert = gen.getSelfCertificate(new X500Name(dname), oneDay);
+
+        return new KeyStore.PrivateKeyEntry(gen.getPrivateKey(),
+                new Certificate[] {cert});
     }
 }

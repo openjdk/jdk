@@ -28,6 +28,7 @@ import java.lang.module.ModuleReference;
 import java.lang.module.ResolvedModule;
 import java.net.URL;
 import java.util.Enumeration;
+import java.util.stream.Stream;
 
 /**
  * Usage: Main $MODULE
@@ -79,8 +80,9 @@ public class Main {
                 .map(ResolvedModule::reference)
                 .orElseThrow(() -> new RuntimeException(mn + " not resolved!!"));
 
-        try (ModuleReader reader = mref.open()) {
-            reader.list().forEach(name -> {
+        try (ModuleReader reader = mref.open();
+             Stream<String> stream = reader.list()) {
+            stream.forEach(name -> {
                 testFindUnchecked(name);
 
                 // if the resource is a directory then find without trailing slash

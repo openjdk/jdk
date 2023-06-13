@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -161,6 +161,15 @@ public class Launcher extends DebugeeBinder {
 
         String jdbExecPath = argumentHandler.getJdbExecPath();
         args.add(jdbExecPath.trim());
+
+        if (argumentHandler.isLaunchingConnector()) {
+            boolean vthreadMode = "Virtual".equals(System.getProperty("main.wrapper"));
+            if (vthreadMode) {
+                /* Some tests need more carrier threads than the default provided. */
+                args.add("-R-Djdk.virtualThreadScheduler.parallelism=15");
+            }
+        }
+
         args.addAll(argumentHandler.enwrapJavaOptions(argumentHandler.getJavaOptions()));
 
         String jdbOptions = argumentHandler.getJdbOptions();
@@ -184,7 +193,7 @@ public class Launcher extends DebugeeBinder {
             connect.append(argumentHandler.getConnectorName() + ":");
 
             String connectorAddress;
-            String vmAddress = makeTransportAddress();;
+            String vmAddress = makeTransportAddress();
 
             if (argumentHandler.isRawLaunchingConnector()) {
 
@@ -217,6 +226,13 @@ public class Launcher extends DebugeeBinder {
                     }
                 }
                 String cmdline = classToExecute + " " + ArgumentHandler.joinArguments(argumentHandler.getArguments(), " ");
+                cmdline += " -waittime " + argumentHandler.getWaitTime();
+                if (argumentHandler.verbose()) {
+                    cmdline += " -verbose";
+                }
+                if (System.getProperty("main.wrapper") != null) {
+                    cmdline = MainWrapper.class.getName() + " " + System.getProperty("main.wrapper") +  " " + cmdline;
+                }
                 connect.append(",main=" + cmdline.trim());
 
             }

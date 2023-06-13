@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,8 @@
  * @test
  * @bug 8217264
  * @summary Tests that you can map an InputStream to a GZIPInputStream
- * @library /test/lib http2/server
- * @build jdk.test.lib.net.SimpleSSLContext
- * @modules java.base/sun.net.www.http
- *          java.net.http/jdk.internal.net.http.common
- *          java.net.http/jdk.internal.net.http.frame
- *          java.net.http/jdk.internal.net.http.hpack
+ * @library /test/lib /test/jdk/java/net/httpclient/lib
+ * @build jdk.test.lib.net.SimpleSSLContext jdk.httpclient.test.lib.common.HttpServerAdapters
  * @run testng/othervm GZIPInputStreamTest
  */
 
@@ -65,8 +61,12 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
+import jdk.httpclient.test.lib.common.HttpServerAdapters;
+import jdk.httpclient.test.lib.http2.Http2TestServer;
 
 import static java.lang.System.out;
+import static java.net.http.HttpClient.Version.HTTP_1_1;
+import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testng.Assert.assertEquals;
 
@@ -544,26 +544,23 @@ public class GZIPInputStreamTest implements HttpServerAdapters {
         HttpTestHandler gzipHandler  = new LoremIpsumGZIPHandler();
 
         // HTTP/1.1
-        InetSocketAddress sa = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
-        httpTestServer = HttpTestServer.of(HttpServer.create(sa, 0));
+        httpTestServer = HttpTestServer.create(HTTP_1_1);
         httpTestServer.addHandler(plainHandler, "/http1/chunk/txt");
         httpTestServer.addHandler(gzipHandler,  "/http1/chunk/gz");
         httpURI = "http://" + httpTestServer.serverAuthority() + "/http1/chunk";
 
-        HttpsServer httpsServer = HttpsServer.create(sa, 0);
-        httpsServer.setHttpsConfigurator(new HttpsConfigurator(sslContext));
-        httpsTestServer = HttpTestServer.of(httpsServer);
+        httpsTestServer = HttpTestServer.create(HTTP_1_1, sslContext);
         httpsTestServer.addHandler(plainHandler, "/https1/chunk/txt");
         httpsTestServer.addHandler(gzipHandler, "/https1/chunk/gz");
         httpsURI = "https://" + httpsTestServer.serverAuthority() + "/https1/chunk";
 
         // HTTP/2
-        http2TestServer = HttpTestServer.of(new Http2TestServer("localhost", false, 0));
+        http2TestServer = HttpTestServer.create(HTTP_2);
         http2TestServer.addHandler(plainHandler, "/http2/chunk/txt");
         http2TestServer.addHandler(gzipHandler, "/http2/chunk/gz");
         http2URI = "http://" + http2TestServer.serverAuthority() + "/http2/chunk";
 
-        https2TestServer = HttpTestServer.of(new Http2TestServer("localhost", true, sslContext));
+        https2TestServer = HttpTestServer.create(HTTP_2, sslContext);
         https2TestServer.addHandler(plainHandler, "/https2/chunk/txt");
         https2TestServer.addHandler(gzipHandler, "/https2/chunk/gz");
         https2URI = "https://" + https2TestServer.serverAuthority() + "/https2/chunk";

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,8 @@
 #include "opto/machnode.hpp"
 #include "opto/memnode.hpp"
 #include "opto/opcodes.hpp"
+
+#include <fenv.h>
 
 PhaseIFG::PhaseIFG( Arena *arena ) : Phase(Interference_Graph), _arena(arena) {
 }
@@ -784,7 +786,7 @@ void PhaseChaitin::add_input_to_liveout(Block* b, Node* n, IndexSet* liveout, do
       assert(int_pressure.current_pressure() == count_int_pressure(liveout), "the int pressure is incorrect");
       assert(float_pressure.current_pressure() == count_float_pressure(liveout), "the float pressure is incorrect");
     }
-    assert(lrg._area >= 0.0, "negative spill area" );
+    assert(lrg._area >= 0.0, "unexpected spill area value %g (rounding mode %x)", lrg._area, fegetround());
   }
 }
 
@@ -817,7 +819,7 @@ void PhaseChaitin::adjust_high_pressure_index(Block* b, uint& block_hrp_index, P
 }
 
 void PhaseChaitin::print_pressure_info(Pressure& pressure, const char *str) {
-  if (str != NULL) {
+  if (str != nullptr) {
     tty->print_cr("#  *** %s ***", str);
   }
   tty->print_cr("#     start pressure is = %d", pressure.start_pressure());
@@ -895,7 +897,7 @@ uint PhaseChaitin::build_ifg_physical( ResourceArea *a ) {
           if (g_isfinite(cost)) {
             lrg._area -= cost;
           }
-          assert(lrg._area >= 0.0, "negative spill area" );
+          assert(lrg._area >= 0.0, "unexpected spill area value %g (rounding mode %x)", lrg._area, fegetround());
 
           assign_high_score_to_immediate_copies(block, n, lrg, location + 1, last_inst);
 

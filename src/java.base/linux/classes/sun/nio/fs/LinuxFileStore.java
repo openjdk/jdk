@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@ import java.nio.file.attribute.PosixFileAttributeView;
 import java.nio.file.attribute.UserDefinedFileAttributeView;
 import java.util.Arrays;
 import java.util.List;
-import java.util.regex.Pattern;
 
 /**
  * Linux implementation of FileStore
@@ -105,18 +104,6 @@ class LinuxFileStore
         throw new IOException("Mount point not found");
     }
 
-    // get kernel version as a three element array {major, minor, micro}
-    private static int[] getKernelVersion() {
-        Pattern pattern = Pattern.compile("\\D+");
-        String[] matches = pattern.split(System.getProperty("os.version"));
-        int[] majorMinorMicro = new int[3];
-        int length = Math.min(matches.length, majorMinorMicro.length);
-        for (int i = 0; i < length; i++) {
-            majorMinorMicro[i] = Integer.valueOf(matches[i]);
-        }
-        return majorMinorMicro;
-    }
-
     @Override
     public boolean supportsFileAttributeView(Class<? extends FileAttributeView> type) {
         // support DosFileAttributeView and UserDefinedAttributeView if extended
@@ -142,19 +129,9 @@ class LinuxFileStore
             }
 
             // user_xattr option not present but we special-case ext4 as we
-            // know that extended attributes are enabled by default for
-            // kernel version >= 2.6.39
+            // know that extended attributes are enabled by default
             if (entry().fstype().equals("ext4")) {
-                if (!xattrChecked) {
-                    // check kernel version
-                    int[] kernelVersion = getKernelVersion();
-                    xattrEnabled = kernelVersion[0] > 2 ||
-                        (kernelVersion[0] == 2 && kernelVersion[1] > 6) ||
-                        (kernelVersion[0] == 2 && kernelVersion[1] == 6 &&
-                            kernelVersion[2] >= 39);
-                    xattrChecked = true;
-                }
-                return xattrEnabled;
+                return true;
             }
 
             // not ext4 so probe mount point

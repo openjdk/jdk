@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,14 @@
  * questions.
  */
 
-// This library is client-side only, and only supports the default credentials.
-// It speaks krb5 and SPNEGO. NTLM is excluded from SPNEGO negotiation.
-//
-// This library can be built directly with the following command:
-//   cl -I %OPENJDK%\src\java.security.jgss\share\native\libj2gss\ sspi.cpp \
-//      -link -dll -out:sspi_bridge.dll
+/*
+ * This library is client-side only, and only supports the default credentials.
+ * It speaks krb5 and SPNEGO. NTLM is excluded from SPNEGO negotiation.
+ *
+ * This library can be built directly with the following command:
+ *   cl -I %OPENJDK%\src\java.security.jgss\share\native\libj2gss\ sspi.cpp \
+ *      -link -dll -out:sspi_bridge.dll
+ */
 
 #define UNICODE
 #define _UNICODE
@@ -47,15 +49,13 @@
 #define SECURITY_WIN32
 #include <sspi.h>
 
-#pragma comment(lib, "secur32.lib")
-
 // Otherwise an exception will be thrown
 #define new new (std::nothrow)
 
 // A debugging macro
 #define PP(fmt, ...) \
         if (trace) { \
-            fprintf(stderr, "[SSPI:%ld] "fmt"\n", __LINE__, ##__VA_ARGS__); \
+            fprintf(stderr, "[SSPI:%ld] " fmt "\n", __LINE__, ##__VA_ARGS__); \
             fflush(stderr); \
         }
 #define SEC_SUCCESS(status) ((*minor_status = (status)), (status) >= SEC_E_OK)
@@ -139,7 +139,7 @@ seconds_until(int inputIsUTC, TimeStamp *time)
 }
 
 static void
-show_time(char* label, TimeStamp* ts)
+show_time(const char* label, TimeStamp* ts)
 {
     if (trace) {
         SYSTEMTIME stLocal;
@@ -281,12 +281,18 @@ get_full_name(WCHAR* input)
             continue;
         }
         if (input[i] == L'@') {
-            return _wcsdup(input);
+            size_t newlen = wcslen(input) + 1;
+            WCHAR* result = new WCHAR[newlen];
+            if (!result) {
+                return NULL;
+            }
+            wcscpy_s(result, newlen, input);
+            return result;
         }
     }
 
     // Always use the default domain
-    WCHAR* realm = _wgetenv(L"USERDNSDOMAIN");
+    const WCHAR* realm = _wgetenv(L"USERDNSDOMAIN");
     if (realm == NULL) {
         realm = L"";
     }
@@ -539,7 +545,7 @@ gss_export_name(OM_uint32 *minor_status,
     // We only deal with not-so-long names.
     // 04 01 00 ** 06 ** OID len:int32 name
     int mechLen = KRB5_OID.length;
-    char* buffer = new char[10 + mechLen + len];
+    char* buffer = (char*) malloc(10 + mechLen + len);
     if (buffer == NULL) {
         goto err;
     }
@@ -555,7 +561,7 @@ gss_export_name(OM_uint32 *minor_status,
     len = WideCharToMultiByte(CP_UTF8, 0, fullname, len,
                 buffer+10+mechLen, len, NULL, NULL);
     if (len == 0) {
-        delete[] buffer;
+        free(buffer);
         goto err;
     }
     exported_name->length = 10 + mechLen + len;
@@ -580,13 +586,13 @@ gss_display_name(OM_uint32 *minor_status,
 
     SEC_WCHAR* names = input_name->name;
     int len = (int)wcslen(names);
-    char* buffer = new char[4*len+1];
+    char* buffer = (char*) malloc(4*len+1);
     if (buffer == NULL) {
         return GSS_S_FAILURE;
     }
     len = WideCharToMultiByte(CP_UTF8, 0, names, len, buffer, 4*len, NULL, NULL);
     if (len == 0) {
-        delete[] buffer;
+        free(buffer);
         return GSS_S_FAILURE;
     }
     buffer[len] = 0;
@@ -653,7 +659,7 @@ gss_acquire_cred(OM_uint32 *minor_status,
         }
         ss = AcquireCredentialsHandle(
                 NULL,
-                L"Kerberos",
+                (LPWSTR)L"Kerberos",
                 cred_usage == 0 ? SECPKG_CRED_BOTH :
                     (cred_usage == 1 ? SECPKG_CRED_OUTBOUND : SECPKG_CRED_INBOUND),
                 NULL,
@@ -683,7 +689,7 @@ gss_acquire_cred(OM_uint32 *minor_status,
         auth.PackageListLength = 8;
         ss = AcquireCredentialsHandle(
                 NULL,
-                L"Negotiate",
+                (LPWSTR)L"Negotiate",
                 cred_usage == 0 ? SECPKG_CRED_BOTH :
                     (cred_usage == 1 ? SECPKG_CRED_OUTBOUND : SECPKG_CRED_INBOUND),
                 NULL,
@@ -736,8 +742,6 @@ gss_acquire_cred(OM_uint32 *minor_status,
             PP("Cannot get owner name of default creds");
             goto err;
         }
-        SEC_WCHAR* rnames = realname->name;
-        SEC_WCHAR* dnames = desired_name->name;
         int equals = 0;
         gss_compare_name(minor_status, realname, desired_name, &equals);
         gss_release_name(minor_status, &realname);
@@ -804,6 +808,7 @@ gss_inquire_cred(OM_uint32 *minor_status,
         }
         SEC_WCHAR* names = new SEC_WCHAR[lstrlen(snames.sUserName) + 1];
         if (names == NULL) {
+            FreeContextBuffer(snames.sUserName);
             return GSS_S_FAILURE;
         }
         StringCchCopy(names, lstrlen(snames.sUserName) + 1, snames.sUserName);
@@ -897,7 +902,7 @@ gss_init_sec_context(OM_uint32 *minor_status,
     gss_buffer_desc tn;
     gss_display_name(&minor, target_name, &tn, NULL);
     int len = MultiByteToWideChar(CP_UTF8, 0, (LPCCH)tn.value, (int)tn.length,
-            outName, sizeof(outName) - 1);
+            outName, (sizeof(outName) / sizeof(outName[0])) - 1);
     if (len == 0) {
         goto err;
     }
@@ -945,7 +950,7 @@ gss_init_sec_context(OM_uint32 *minor_status,
             auth.PackageListLength = 8;
             ss = AcquireCredentialsHandle(
                     NULL,
-                    isSPNEGO ? L"Negotiate" : L"Kerberos",
+                    (LPWSTR)(isSPNEGO ? L"Negotiate" : L"Kerberos"),
                     SECPKG_CRED_OUTBOUND,
                     NULL,
                     isSPNEGO ? &auth : NULL,
@@ -992,7 +997,7 @@ gss_init_sec_context(OM_uint32 *minor_status,
     output_token->length = outSecBuff.cbBuffer;
     if (outSecBuff.cbBuffer) {
         // No idea how user would free the data. Let's duplicate one.
-        output_token->value = new char[outSecBuff.cbBuffer];
+        output_token->value = malloc(outSecBuff.cbBuffer);
         if (!output_token->value) {
             FreeContextBuffer(outSecBuff.pvBuffer);
             goto err;
@@ -1014,12 +1019,12 @@ gss_init_sec_context(OM_uint32 *minor_status,
         return GSS_S_COMPLETE;
     }
 err:
-    if (newCred) {
-        delete newCred;
-    }
     if (firstTime) {
         OM_uint32 dummy;
         gss_delete_sec_context(&dummy, context_handle, GSS_C_NO_BUFFER);
+    }
+    if (newCred) {
+        delete newCred;
     }
     if (output_token->value) {
         gss_release_buffer(NULL, output_token);
@@ -1043,6 +1048,10 @@ gss_accept_sec_context(OM_uint32 *minor_status,
 {
     PP(">>>> Calling UNIMPLEMENTED gss_accept_sec_context...");
     PP("gss_accept_sec_context is not supported in this initiator-only library");
+    if (output_token) {
+        output_token->length = 0;
+        output_token->value = NULL;
+    }
     return GSS_S_FAILURE;
 }
 
@@ -1239,7 +1248,7 @@ gss_get_mic(OM_uint32 *minor_status,
 
     secBuff[1].BufferType = SECBUFFER_TOKEN;
     secBuff[1].cbBuffer = context_handle->SecPkgContextSizes.cbMaxSignature;
-    secBuff[1].pvBuffer = msg_token->value = new char[secBuff[1].cbBuffer];
+    secBuff[1].pvBuffer = msg_token->value = malloc(secBuff[1].cbBuffer);
 
     if (!secBuff[1].pvBuffer) {
         goto err;
@@ -1258,7 +1267,7 @@ err:
     msg_token->length = 0;
     msg_token->value = NULL;
     if (secBuff[1].pvBuffer) {
-        delete[] secBuff[1].pvBuffer;
+        free(secBuff[1].pvBuffer);
     }
     return GSS_S_FAILURE;
 }
@@ -1322,7 +1331,7 @@ gss_wrap(OM_uint32 *minor_status,
 
     SECURITY_STATUS ss;
     SecBufferDesc buffDesc;
-    SecBuffer secBuff[3];
+    SecBuffer secBuff[3] = {0};
 
     buffDesc.ulVersion = SECBUFFER_VERSION;
     buffDesc.cBuffers = 3;
@@ -1330,11 +1339,11 @@ gss_wrap(OM_uint32 *minor_status,
 
     secBuff[0].BufferType = SECBUFFER_TOKEN;
     secBuff[0].cbBuffer = context_handle->SecPkgContextSizes.cbSecurityTrailer;
-    output_message_buffer->value = secBuff[0].pvBuffer = malloc(
+    secBuff[0].pvBuffer = malloc(
             context_handle->SecPkgContextSizes.cbSecurityTrailer
                     + input_message_buffer->length
                     + context_handle->SecPkgContextSizes.cbBlockSize);;
-    if (!output_message_buffer->value) {
+    if (!secBuff[0].pvBuffer) {
         goto err;
     }
 
@@ -1374,8 +1383,10 @@ gss_wrap(OM_uint32 *minor_status,
             secBuff[2].pvBuffer,
             secBuff[2].cbBuffer);
 
+    output_message_buffer->value = secBuff[0].pvBuffer;
     output_message_buffer->length = secBuff[0].cbBuffer + secBuff[1].cbBuffer
             + secBuff[2].cbBuffer;
+
     free(secBuff[1].pvBuffer);
     free(secBuff[2].pvBuffer);
 
@@ -1411,7 +1422,7 @@ gss_unwrap(OM_uint32 *minor_status,
 
     SECURITY_STATUS ss;
     SecBufferDesc buffDesc;
-    SecBuffer secBuff[2];
+    SecBuffer secBuff[2] = {0};
     ULONG ulQop = 0;
 
     buffDesc.cBuffers = 2;
@@ -1443,7 +1454,7 @@ gss_unwrap(OM_uint32 *minor_status,
 
     // Must allocate a new memory block so client can release it correctly
     output_message_buffer->length = secBuff[1].cbBuffer;
-    output_message_buffer->value = new char[secBuff[1].cbBuffer];
+    output_message_buffer->value = malloc(secBuff[1].cbBuffer);
 
     if (!output_message_buffer->value) {
         goto err;
@@ -1593,7 +1604,7 @@ gss_display_status(OM_uint32 *minor_status,
             MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
             msg, 256, 0);
     if (len > 0) {
-        status_string->value = new char[len + 20];
+        status_string->value = malloc(len + 20);
         if (!status_string->value) {
             status_string = GSS_C_NO_BUFFER;
             return GSS_S_FAILURE;
@@ -1602,7 +1613,7 @@ gss_display_status(OM_uint32 *minor_status,
                 (LPSTR)status_string->value, len + 19,
                 "(%lx) %ls", status_value, msg);
     } else {
-        status_string->value = new char[33];
+        status_string->value = malloc(33);
         if (!status_string->value) {
             status_string = GSS_C_NO_BUFFER;
             return GSS_S_FAILURE;
@@ -1660,7 +1671,7 @@ gss_release_buffer(OM_uint32 *minor_status,
         return GSS_S_COMPLETE;
     }
     if (buffer->value) {
-        delete[] buffer->value;
+        free(buffer->value);
         buffer->value = NULL;
     }
     buffer->length = 0;

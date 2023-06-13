@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,20 +38,20 @@
  */
 template <typename Node>
 inline Node* mark_for_removal(Node* node) {
-  assert(node != NULL, "invariant");
+  assert(node != nullptr, "invariant");
   const Node* next = node->_next;
-  assert(next != NULL, "invariant");
+  assert(next != nullptr, "invariant");
   Node* const unmasked_next = unmask(next);
-  return next == unmasked_next && cas(&node->_next, unmasked_next, set_excision_bit(unmasked_next)) ? unmasked_next : NULL;
+  return next == unmasked_next && cas(&node->_next, unmasked_next, set_excision_bit(unmasked_next)) ? unmasked_next : nullptr;
 }
 
 /*
  * The insertion marker (i.e. the insertion bit) is represented by '[ ]' as part of state description comments:
- * "node --> next" becomes "[node] --> next", in an attempt to convey the node as exlusively reserved.
+ * "node --> next" becomes "[node] --> next", in an attempt to convey the node as exclusively reserved.
  */
 template <typename Node>
 inline bool mark_for_insertion(Node* node, const Node* tail) {
-  assert(node != NULL, "invariant");
+  assert(node != nullptr, "invariant");
   return node->_next == tail && cas(&node->_next, const_cast<Node*>(tail), set_insertion_bit(tail));
 }
 
@@ -60,16 +60,16 @@ inline bool mark_for_insertion(Node* node, const Node* tail) {
  */
 template <typename Node, typename VersionHandle, template <typename> class SearchPolicy>
 Node* find_adjacent(Node* head, const Node* tail, Node** predecessor, VersionHandle& version_handle, SearchPolicy<Node>& predicate) {
-  assert(head != NULL, "invariant");
-  assert(tail != NULL, "invariant");
+  assert(head != nullptr, "invariant");
+  assert(tail != nullptr, "invariant");
   assert(head != tail, "invariant");
-  Node* predecessor_next = NULL;
+  Node* predecessor_next = nullptr;
   while (true) {
     Node* current = head;
     version_handle->checkout();
     Node* next = Atomic::load_acquire(&current->_next);
     do {
-      assert(next != NULL, "invariant");
+      assert(next != nullptr, "invariant");
       Node* const unmasked_next = unmask(next);
       // 1A: Locate the first node to keep as predecessor.
       if (!is_marked_for_removal(next)) {
@@ -133,10 +133,10 @@ void JfrConcurrentLinkedListHost<Client, SearchPolicy, AllocPolicy>::insert_tail
                                                                                  typename Client::Node* head,
                                                                                  typename Client::Node* last,
                                                                                  const typename Client::Node* tail) const {
-  assert(node != NULL, "invariant");
-  assert(head != NULL, "invariant");
-  assert(last != NULL, "invarinat");
-  assert(tail != NULL, "invariant");
+  assert(node != nullptr, "invariant");
+  assert(head != nullptr, "invariant");
+  assert(last != nullptr, "invarinat");
+  assert(tail != nullptr, "invariant");
   // Mark the new node to be inserted with the insertion marker already.
   node->_next = set_insertion_bit(const_cast<NodePtr>(tail));
   // Invariant: [node]--> tail
@@ -188,10 +188,10 @@ void JfrConcurrentLinkedListHost<Client, SearchPolicy, AllocPolicy>::insert_tail
 template <typename Client, template <typename> class SearchPolicy, typename AllocPolicy>
 typename Client::Node* JfrConcurrentLinkedListHost<Client, SearchPolicy, AllocPolicy>::remove(typename Client::Node* head,
                                                                                               const typename Client::Node* tail,
-                                                                                              typename Client::Node* last /* NULL */,
+                                                                                              typename Client::Node* last /* nullptr */,
                                                                                               bool insert_is_head /* true */) {
-  assert(head != NULL, "invariant");
-  assert(tail != NULL, "invariant");
+  assert(head != nullptr, "invariant");
+  assert(tail != nullptr, "invariant");
   assert(head != tail, "invariant");
   NodePtr predecessor;
   NodePtr successor;
@@ -202,14 +202,14 @@ typename Client::Node* JfrConcurrentLinkedListHost<Client, SearchPolicy, AllocPo
     // Find an adjacent predecessor and successor node pair.
     successor = find_adjacent<Node, VersionHandle, SearchPolicy>(head, tail, &predecessor, version_handle, predicate);
     if (successor == tail) {
-      return NULL;
+      return nullptr;
     }
     // Invariant: predecessor --> successor
     // Invariant (optional: key-based total order): predecessor->key() < key  && key <= successor->key()
     // It is the successor node that is to be removed.
     // We first attempt to reserve (logically excise) the successor node.
     successor_next = mark_for_removal(successor);
-    if (successor_next != NULL) {
+    if (successor_next != nullptr) {
       break;
     }
   }
@@ -225,7 +225,7 @@ typename Client::Node* JfrConcurrentLinkedListHost<Client, SearchPolicy, AllocPo
     Identity<Node> excise(successor);
     find_adjacent<Node, VersionHandle, Identity>(head, tail, &predecessor, version_handle, excise);
   }
-  if (last != NULL && Atomic::load_acquire(&last->_next) == successor) {
+  if (last != nullptr && Atomic::load_acquire(&last->_next) == successor) {
     guarantee(!insert_is_head, "invariant");
     guarantee(successor_next == tail, "invariant");
     LastNode<Node> excise;
@@ -243,8 +243,8 @@ template <typename Client, template <typename> class SearchPolicy, typename Allo
 bool JfrConcurrentLinkedListHost<Client, SearchPolicy, AllocPolicy>::in_list(const typename Client::Node* node,
                                                                              typename Client::Node* head,
                                                                              const typename Client::Node* tail) const {
-  assert(head != NULL, "invariant");
-  assert(tail != NULL, "invariant");
+  assert(head != nullptr, "invariant");
+  assert(tail != nullptr, "invariant");
   assert(head != tail, "invariant");
   VersionHandle version_handle = _client->get_version_handle();
   const Node* current = head;
@@ -268,8 +268,8 @@ template <typename Callback>
 inline void JfrConcurrentLinkedListHost<Client, SearchPolicy, AllocPolicy>::iterate(typename Client::Node* head,
                                                                                     const typename Client::Node* tail,
                                                                                     Callback& cb) {
-  assert(head != NULL, "invariant");
-  assert(tail != NULL, "invariant");
+  assert(head != nullptr, "invariant");
+  assert(tail != nullptr, "invariant");
   assert(head != tail, "invariant");
   VersionHandle version_handle = _client->get_version_handle();
   NodePtr current = head;

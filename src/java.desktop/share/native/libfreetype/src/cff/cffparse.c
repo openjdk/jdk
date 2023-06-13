@@ -4,7 +4,7 @@
  *
  *   CFF token stream parser (body)
  *
- * Copyright (C) 1996-2020 by
+ * Copyright (C) 1996-2023 by
  * David Turner, Robert Wilhelm, and Werner Lemberg.
  *
  * This file is part of the FreeType project, and may only be used,
@@ -62,7 +62,7 @@
     parser->num_axes    = num_axes;
 
     /* allocate the stack buffer */
-    if ( FT_NEW_ARRAY( parser->stack, stackSize ) )
+    if ( FT_QNEW_ARRAY( parser->stack, stackSize ) )
     {
       FT_FREE( parser->stack );
       goto Exit;
@@ -530,7 +530,7 @@
 
     else if ( **d == 255 )
     {
-      /* 16.16 fixed point is used internally for CFF2 blend results. */
+      /* 16.16 fixed-point is used internally for CFF2 blend results. */
       /* Since these are trusted values, a limit check is not needed. */
 
       /* After the 255, 4 bytes give the number.                 */
@@ -713,9 +713,10 @@
            ( max_scaling - min_scaling ) > 9 )
       {
         FT_TRACE1(( "cff_parse_font_matrix:"
-                    " strange scaling values (minimum %ld, maximum %ld),\n"
-                    "                      "
-                    " using default matrix\n", min_scaling, max_scaling ));
+                    " strange scaling values (minimum %ld, maximum %ld),\n",
+                    min_scaling, max_scaling ));
+        FT_TRACE1(( "                      "
+                    " using default matrix\n" ));
         goto Unlikely;
       }
 
@@ -757,12 +758,12 @@
       *upm = (FT_ULong)power_tens[-max_scaling];
 
       FT_TRACE4(( " [%f %f %f %f %f %f]\n",
-                  (double)matrix->xx / *upm / 65536,
-                  (double)matrix->xy / *upm / 65536,
-                  (double)matrix->yx / *upm / 65536,
-                  (double)matrix->yy / *upm / 65536,
-                  (double)offset->x  / *upm / 65536,
-                  (double)offset->y  / *upm / 65536 ));
+                  (double)matrix->xx / (double)*upm / 65536,
+                  (double)matrix->xy / (double)*upm / 65536,
+                  (double)matrix->yx / (double)*upm / 65536,
+                  (double)matrix->yy / (double)*upm / 65536,
+                  (double)offset->x  / (double)*upm / 65536,
+                  (double)offset->y  / (double)*upm / 65536 ));
 
       if ( !FT_Matrix_Check( matrix ) )
       {
@@ -1515,6 +1516,7 @@
 
               case cff_kind_fixed_thousand:
                 FT_TRACE4(( " %f\n", (double)val / 65536 / 1000 ));
+                break;
 
               default:
                 ; /* never reached */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,7 @@ public class C1 implements Serializable {
      * @param test boolean value
      * @exception IllegalArgumentException if the <code>owner</code>'s
      *     <code>GraphicsConfiguration</code> is not from a screen device
-     * @exception HeadlessException
+     * @exception java.awt.HeadlessException
      */
      public C1(String title, boolean test) {
 

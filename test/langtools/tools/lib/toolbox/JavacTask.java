@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
 
 package toolbox;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Path;
@@ -55,6 +54,7 @@ public class JavacTask extends AbstractTask<JavacTask> {
     private List<Path> classpath;
     private List<Path> sourcepath;
     private Path outdir;
+    private Path headerdir;
     private List<String> options;
     private List<String> classes;
     private List<String> files;
@@ -89,7 +89,7 @@ public class JavacTask extends AbstractTask<JavacTask> {
      * @return this task object
      */
     public JavacTask classpath(String classpath) {
-        this.classpath = Stream.of(classpath.split(File.pathSeparator))
+        this.classpath = Stream.of(classpath.split(ToolBox.pathSeparator))
                 .filter(s -> !s.isEmpty())
                 .map(s -> Paths.get(s))
                 .collect(Collectors.toList());
@@ -122,7 +122,7 @@ public class JavacTask extends AbstractTask<JavacTask> {
      * @return this task object
      */
     public JavacTask sourcepath(String sourcepath) {
-        this.sourcepath = Stream.of(sourcepath.split(File.pathSeparator))
+        this.sourcepath = Stream.of(sourcepath.split(ToolBox.pathSeparator))
                 .filter(s -> !s.isEmpty())
                 .map(s -> Paths.get(s))
                 .collect(Collectors.toList());
@@ -166,6 +166,26 @@ public class JavacTask extends AbstractTask<JavacTask> {
      */
     public JavacTask outdir(Path outdir) {
         this.outdir = outdir;
+        return this;
+    }
+
+    /**
+     * Sets the native header output directory.
+     * @param headerdir the native header output directory
+     * @return this task object
+     */
+    public JavacTask headerdir(String headerdir) {
+        this.headerdir = Paths.get(headerdir);
+        return this;
+    }
+
+    /**
+     * Sets the native header output directory.
+     * @param headerdir the native header output directory
+     * @return this task object
+     */
+    public JavacTask headerdir(Path headerdir) {
+        this.headerdir = headerdir;
         return this;
     }
 
@@ -258,7 +278,7 @@ public class JavacTask extends AbstractTask<JavacTask> {
     }
 
     /**
-     * Sets the the annotation processors to be used.
+     * Sets the annotation processors to be used.
      */
     public JavacTask processors(Processor... procs) {
         this.procs = List.of(procs);
@@ -353,6 +373,8 @@ public class JavacTask extends AbstractTask<JavacTask> {
                 fileManager = internalFileManager = compiler.getStandardFileManager(null, null, null);
             if (outdir != null)
                 setLocationFromPaths(StandardLocation.CLASS_OUTPUT, Collections.singletonList(outdir));
+            if (headerdir != null)
+                setLocationFromPaths(StandardLocation.NATIVE_HEADER_OUTPUT, Collections.singletonList(headerdir));
             if (classpath != null)
                 setLocationFromPaths(StandardLocation.CLASS_PATH, classpath);
             if (sourcepath != null)
@@ -422,6 +444,10 @@ public class JavacTask extends AbstractTask<JavacTask> {
             args.add("-d");
             args.add(outdir.toString());
         }
+        if (headerdir != null) {
+            args.add("-h");
+            args.add(headerdir.toString());
+        }
         if (classpath != null) {
             args.add("-classpath");
             args.add(toSearchPath(classpath));
@@ -441,7 +467,7 @@ public class JavacTask extends AbstractTask<JavacTask> {
     private String toSearchPath(List<Path> files) {
         return files.stream()
             .map(Path::toString)
-            .collect(Collectors.joining(File.pathSeparator));
+            .collect(Collectors.joining(ToolBox.pathSeparator));
     }
 
     private Iterable<? extends JavaFileObject> joinFiles(

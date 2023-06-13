@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
-import jdk.javadoc.internal.doclets.formats.html.markup.TextBuilder;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.DocletElement;
 import jdk.javadoc.internal.doclets.toolkit.OverviewElement;
@@ -52,11 +51,6 @@ import java.util.ArrayList;
 
 /**
  * Generates the file with the summary of all the system properties.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
 public class SystemPropertiesWriter extends HtmlDocletWriter {
 
@@ -119,14 +113,14 @@ public class SystemPropertiesWriter extends HtmlDocletWriter {
     }
 
     /**
-     * Adds all the system properties to the content tree.
+     * Adds all the system properties to the content.
      *
-     * @param content HtmlTree content to which the links will be added
+     * @param target the content to which the links will be added
      */
-    protected void addSystemProperties(Content content) {
+    protected void addSystemProperties(Content target) {
         Map<String, List<IndexItem>> searchIndexMap = groupSystemProperties();
         Content separator = Text.of(", ");
-        Table table = new Table(HtmlStyle.summaryTable)
+        var table = new Table<Void>(HtmlStyle.summaryTable)
                 .setCaption(contents.systemPropertiesSummaryLabel)
                 .setHeader(new TableHeader(contents.propertyLabel, contents.referencedIn))
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast);
@@ -141,7 +135,7 @@ public class SystemPropertiesWriter extends HtmlDocletWriter {
             }
             table.addRow(propertyName, HtmlTree.DIV(HtmlStyle.block, separatedReferenceLinks));
         }
-        content.add(table);
+        target.add(table);
     }
 
     private Map<String, List<IndexItem>> groupSystemProperties() {

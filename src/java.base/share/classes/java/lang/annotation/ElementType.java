@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,14 +40,14 @@ package java.lang.annotation;
  * <p>The constants {@link #ANNOTATION_TYPE}, {@link #CONSTRUCTOR}, {@link
  * #FIELD}, {@link #LOCAL_VARIABLE}, {@link #METHOD}, {@link #PACKAGE}, {@link
  * #MODULE}, {@link #PARAMETER}, {@link #TYPE}, and {@link #TYPE_PARAMETER}
- * correspond to the declaration contexts in JLS 9.6.4.1.
+ * correspond to the declaration contexts in JLS {@jls 9.6.4.1}.
  *
  * <p>For example, an annotation whose interface is meta-annotated with
  * {@code @Target(ElementType.FIELD)} may only be written as a modifier for a
  * field declaration.
  *
  * <p>The constant {@link #TYPE_USE} corresponds to the type contexts in JLS
- * 4.11, as well as to two declaration contexts: class and interface
+ * {@jls 4.11}, as well as to two declaration contexts: class and interface
  * declarations (including annotation declarations) and type parameter
  * declarations.
  *

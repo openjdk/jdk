@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,18 @@
 
 /*
  * @test
- * @bug 4851638
+ * @bug 4851638 8301392
+ * @key randomness
+ * @library /test/lib
+ * @build jdk.test.lib.RandomFactory
+ * @build Tests
+ * @build FdlibmTranslit
+ * @build Log1pTests
+ * @run main Log1pTests
  * @summary Tests for StrictMath.log1p
- * @author Joseph D. Darcy
  */
+
+import jdk.test.lib.RandomFactory;
 
 /**
  * The tests in ../Math/Log1pTests.java test properties that should
@@ -42,9 +50,22 @@
 public class Log1pTests {
     private Log1pTests(){}
 
+    public static void main(String... args) {
+        int failures = 0;
+
+        failures += testLog1p();
+        failures += testAgainstTranslit();
+
+        if (failures > 0) {
+            System.err.println("Testing log1p incurred "
+                               + failures + " failures.");
+            throw new RuntimeException();
+        }
+    }
+
     static int testLog1pCase(double input, double expected) {
         return Tests.test("StrictMath.log1p(double)", input,
-                          StrictMath.log1p(input), expected);
+                          StrictMath::log1p, expected);
     }
 
     static int testLog1p() {
@@ -196,15 +217,71 @@ public class Log1pTests {
         return failures;
     }
 
-    public static void main(String [] argv) {
+    // Initialize shared random number generator
+    private static java.util.Random random = RandomFactory.getRandom();
+
+    /**
+     * Test StrictMath.log1p against transliteration port of log1p.
+     */
+    private static int testAgainstTranslit() {
         int failures = 0;
+        double x;
 
-        failures += testLog1p();
+        // Test just above subnormal threshold...
+        x = Double.MIN_NORMAL;
+        failures += testRange(x, Math.ulp(x), 1000);
 
-        if (failures > 0) {
-            System.err.println("Testing log1p incurred "
-                               + failures + " failures.");
-            throw new RuntimeException();
+        // ... and just below subnormal threshold ...
+        x = Math.nextDown(Double.MIN_NORMAL);
+        failures += testRange(x, -Math.ulp(x), 1000);
+
+        // Probe near decision points in the FDLIBM algorithm.
+        double[] decisionPoints = {
+             1.0,
+            -0x1.0p-29,
+             0x1.0p-29,
+            -0x1.0p-54,
+             0x1.0p-54,
+
+            -0.2930, // approx. sqrt(2)/2 -1
+            -0.2929,
+            -0.2928,
+
+             0.41421, // approx. sqrt(2) -1
+             0.41422,
+             0.41423,
+         };
+
+         for (double testPoint : decisionPoints) {
+             failures += testRangeMidpoint(testPoint, Math.ulp(testPoint), 1000);
+         }
+
+         x = Tests.createRandomDouble(random);
+
+         // Make the increment twice the ulp value in case the random
+         // value is near an exponent threshold. Don't worry about test
+         // elements overflowing to infinity if the starting value is
+         // near Double.MAX_VALUE.
+         failures += testRange(x, 2.0 * Math.ulp(x), 1000);
+
+         return failures;
+    }
+
+    private static int testRange(double start, double increment, int count) {
+        int failures = 0;
+        double x = start;
+        for (int i = 0; i < count; i++, x += increment) {
+            failures += testLog1pCase(x, FdlibmTranslit.log1p(x));
         }
+        return failures;
+    }
+
+    private static int testRangeMidpoint(double midpoint, double increment, int count) {
+        int failures = 0;
+        double x = midpoint - increment*(count / 2) ;
+        for (int i = 0; i < count; i++, x += increment) {
+            failures += testLog1pCase(x, FdlibmTranslit.log1p(x));
+        }
+        return failures;
     }
 }

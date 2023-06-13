@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,20 +60,21 @@ final class CryptoAllPermission extends CryptoPermission {
      *
      * @param p the permission to check against.
      *
-     * @return true if the specified permission is an
-     * instance of CryptoPermission.
+     * @return {@code true} if the specified permission is an
+     * instance of {@code CryptoPermission}.
      */
     public boolean implies(Permission p) {
          return (p instanceof CryptoPermission);
     }
 
     /**
-     * Checks two CryptoAllPermission objects for equality.
-     * Two CryptoAllPermission objects are always equal.
+     * Checks two {@code CryptoAllPermission} objects for equality.
+     * Two {@code CryptoAllPermission} objects are always equal.
      *
      * @param obj the object to test for equality with this object.
      *
-     * @return true if <i>obj</i> is a CryptoAllPermission object.
+     * @return {@code true} if <i>obj</i> is a
+     * {@code CryptoAllPermission} object.
      */
     public boolean equals(Object obj) {
         return (obj == INSTANCE);
@@ -90,12 +91,11 @@ final class CryptoAllPermission extends CryptoPermission {
     }
 
     /**
-     * Returns a new PermissionCollection object for storing
-     * CryptoAllPermission objects.
-     * <p>
+     * Returns a new {@code PermissionCollection} object for storing
+     * {@code CryptoAllPermission} objects.
      *
-     * @return a new PermissionCollection object suitable for
-     * storing CryptoAllPermissions.
+     * @return a new {@code PermissionCollection} object suitable for
+     * storing {@code CryptoAllPermission} objects.
      */
     public PermissionCollection newPermissionCollection() {
         return new CryptoAllPermissionCollection();
@@ -103,8 +103,8 @@ final class CryptoAllPermission extends CryptoPermission {
 }
 
 /**
- * A CryptoAllPermissionCollection stores a collection
- * of CryptoAllPermission permissions.
+ * A {@code CryptoAllPermissionCollection} stores a collection
+ * of {@code CryptoAllPermission} objects.
  *
  * @see java.security.Permission
  * @see java.security.Permissions
@@ -123,18 +123,18 @@ final class CryptoAllPermissionCollection extends PermissionCollection
     private boolean all_allowed;
 
     /**
-     * Create an empty CryptoAllPermissions object.
+     * Create an empty {@code CryptoAllPermission} object.
      */
     CryptoAllPermissionCollection() {
         all_allowed = false;
     }
 
     /**
-     * Adds a permission to the CryptoAllPermissions.
+     * Adds a permission to {@code CryptoAllPermission} object.
      *
-     * @param permission the Permission object to add.
+     * @param permission the {@code Permission} object to add.
      *
-     * @exception SecurityException - if this CryptoAllPermissionCollection
+     * @exception SecurityException if this {@code CryptoAllPermissionCollection}
      * object has been marked readonly
      */
     public void add(Permission permission) {
@@ -152,10 +152,10 @@ final class CryptoAllPermissionCollection extends PermissionCollection
      * Check and see if this set of permissions implies the permissions
      * expressed in "permission".
      *
-     * @param permission the Permission object to compare
+     * @param permission the {@code Permission} object to compare
      *
-     * @return true if the given permission is implied by this
-     * CryptoAllPermissionCollection.
+     * @return {@code true} if the given permission is implied by this
+     * {@code CryptoAllPermissionCollection} object.
      */
     public boolean implies(Permission permission) {
         if (!(permission instanceof CryptoPermission)) {
@@ -165,10 +165,10 @@ final class CryptoAllPermissionCollection extends PermissionCollection
     }
 
     /**
-     * Returns an enumeration of all the CryptoAllPermission
-     * objects in the  container.
+     * Returns an enumeration of all the {@code CryptoAllPermission}
+     * objects in the container.
      *
-     * @return an enumeration of all the CryptoAllPermission objects.
+     * @return an enumeration of all {@code CryptoAllPermission} objects.
      */
     public Enumeration<Permission> elements() {
         Vector<Permission> v = new Vector<>(1);

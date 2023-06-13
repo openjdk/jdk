@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ public class Attrs implements Attributes {
      * Attributes string array. Each individual attribute is represented by four
      * strings: namespace URL(+0), qname(+1), local name(+2), value(+3),
      * type(+4), declared["d"] and default["D"](+5). In order to find attribute
-     * by the attrubute index, the attribute index MUST be multiplied by 8. The
+     * by the attribute index, the attribute index MUST be multiplied by 8. The
      * result will point to the attribute namespace URL.
      */
     /* pkg */ String[] mItems;

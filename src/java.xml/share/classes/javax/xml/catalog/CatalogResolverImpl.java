@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -154,14 +154,15 @@ final class CatalogResolverImpl implements CatalogResolver {
                             new Object[]{href, base});
             }
             try {
-                URL url = null;
-
                 if (base == null) {
-                    url = new URL(uri);
+                    @SuppressWarnings("deprecation")
+                    URL url = new URL(uri);
                     result = url.toString();
                 } else {
+                    @SuppressWarnings("deprecation")
                     URL baseURL = new URL(base);
-                    url = (href.length() == 0 ? baseURL : new URL(baseURL, uri));
+                    @SuppressWarnings("deprecation")
+                    URL url = (href.length() == 0 ? baseURL : new URL(baseURL, uri));
                     result = url.toString();
                 }
             } catch (java.net.MalformedURLException mue) {
@@ -219,7 +220,9 @@ final class CatalogResolverImpl implements CatalogResolver {
         if (is != null && !is.isEmpty()) {
 
             try {
-                return new URL(is.getSystemId()).openStream();
+                @SuppressWarnings("deprecation")
+                InputStream result = new URL(is.getSystemId()).openStream();
+                return result;
             } catch (IOException ex) {
                 //considered as no mapping.
             }

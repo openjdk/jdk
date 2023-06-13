@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,20 +25,21 @@
 
 package sun.security.jgss.wrapper;
 
-import org.ietf.jgss.*;
-import java.security.Provider;
-import java.security.Security;
-import java.io.IOException;
-import sun.security.krb5.Realm;
+import org.ietf.jgss.GSSException;
+import org.ietf.jgss.GSSName;
+import org.ietf.jgss.Oid;
+import sun.security.jgss.GSSExceptionImpl;
 import sun.security.jgss.GSSUtil;
-import sun.security.util.ObjectIdentifier;
+import sun.security.jgss.spi.GSSNameSpi;
+import sun.security.krb5.Realm;
 import sun.security.util.DerInputStream;
 import sun.security.util.DerOutputStream;
-import sun.security.jgss.GSSUtil;
-import sun.security.jgss.GSSExceptionImpl;
-import sun.security.jgss.spi.GSSNameSpi;
+import sun.security.util.ObjectIdentifier;
 
 import javax.security.auth.kerberos.ServicePermission;
+import java.io.IOException;
+import java.lang.ref.Cleaner;
+import java.security.Provider;
 
 /**
  * This class is essentially a wrapper class for the gss_name_t
@@ -48,11 +49,12 @@ import javax.security.auth.kerberos.ServicePermission;
  */
 
 public class GSSNameElement implements GSSNameSpi {
+    private final Cleaner.Cleanable cleanable;
 
-    long pName = 0; // Pointer to the gss_name_t structure
+    final long pName; // Pointer to the gss_name_t structure
     private String printableName;
     private Oid printableType;
-    private GSSLibStub cStub;
+    final private GSSLibStub cStub;
 
     static final GSSNameElement DEF_ACCEPTOR = new GSSNameElement();
 
@@ -71,12 +73,16 @@ public class GSSNameElement implements GSSNameSpi {
                         supportedNTs = stub.inquireNamesForMech();
                     } catch (GSSException ge2) {
                         // Should never happen
-                        SunNativeProvider.debug("Name type list unavailable: " +
-                            ge2.getMajorString());
+                        if (SunNativeProvider.DEBUG) {
+                            SunNativeProvider.debug("Name type list unavailable: " +
+                                    ge2.getMajorString());
+                        }
                     }
                 } else {
-                    SunNativeProvider.debug("Name type list unavailable: " +
-                        ge.getMajorString());
+                    if (SunNativeProvider.DEBUG) {
+                        SunNativeProvider.debug("Name type list unavailable: " +
+                                ge.getMajorString());
+                    }
                 }
             }
             if (supportedNTs != null) {
@@ -84,8 +90,10 @@ public class GSSNameElement implements GSSNameSpi {
                     if (supportedNTs[i].equals(nameType)) return nameType;
                 }
                 // Special handling the specified name type
-                SunNativeProvider.debug("Override " + nameType +
-                    " with mechanism default(null)");
+                if (SunNativeProvider.DEBUG) {
+                    SunNativeProvider.debug("Override " + nameType +
+                            " with mechanism default(null)");
+                }
                 return null; // Use mechanism specific default
             }
         }
@@ -94,6 +102,9 @@ public class GSSNameElement implements GSSNameSpi {
 
     private GSSNameElement() {
         printableName = "<DEFAULT ACCEPTOR>";
+        pName = 0;
+        cleanable = null;
+        cStub = null;
     }
 
     // Warning: called by NativeUtil.c
@@ -106,6 +117,8 @@ public class GSSNameElement implements GSSNameSpi {
         pName = pNativeName;
         cStub = stub;
         setPrintables();
+
+        cleanable = Krb5Util.cleaner.register(this, disposerFor(stub, pName));
     }
 
     GSSNameElement(byte[] nameBytes, Oid nameType, GSSLibStub stub)
@@ -126,7 +139,7 @@ public class GSSNameElement implements GSSNameSpi {
                 // Need to add back the mech Oid portion (stripped
                 // off by GSSNameImpl class prior to calling this
                 // method) for "NT_EXPORT_NAME"
-                byte[] mechBytes = null;
+                byte[] mechBytes;
                 DerOutputStream dout = new DerOutputStream();
                 Oid mech = cStub.getMech();
                 try {
@@ -151,6 +164,8 @@ public class GSSNameElement implements GSSNameSpi {
             }
         }
         pName = cStub.importName(name, nameType);
+        cleanable = Krb5Util.cleaner.register(this, disposerFor(stub, pName));
+
         setPrintables();
 
         @SuppressWarnings("removal")
@@ -176,12 +191,14 @@ public class GSSNameElement implements GSSNameSpi {
             }
         }
 
-        SunNativeProvider.debug("Imported " + printableName + " w/ type " +
-                                printableType);
+        if (SunNativeProvider.DEBUG) {
+            SunNativeProvider.debug("Imported " + printableName + " w/ type " +
+                    printableType);
+        }
     }
 
     private void setPrintables() throws GSSException {
-        Object[] printables = null;
+        Object[] printables;
         printables = cStub.displayName(pName);
         assert((printables != null) && (printables.length == 2));
         printableName = (String) printables[0];
@@ -194,7 +211,7 @@ public class GSSNameElement implements GSSNameSpi {
 
     // Need to be public for GSSUtil.getSubject()
     public String getKrbName() throws GSSException {
-        long mName = 0;
+        long mName;
         GSSLibStub stub = cStub;
         if (!GSSUtil.isKerberosMech(cStub.getMech())) {
             stub = GSSLibStub.getInstance(GSSUtil.GSS_KRB5_MECH_OID);
@@ -202,7 +219,9 @@ public class GSSNameElement implements GSSNameSpi {
         mName = stub.canonicalizeName(pName);
         Object[] printables2 = stub.displayName(mName);
         stub.releaseName(mName);
-        SunNativeProvider.debug("Got kerberized name: " + printables2[0]);
+        if (SunNativeProvider.DEBUG) {
+            SunNativeProvider.debug("Got kerberized name: " + printables2[0]);
+        }
         return (String) printables2[0];
     }
 
@@ -244,7 +263,7 @@ public class GSSNameElement implements GSSNameSpi {
 
         int mechOidLen  = (((0xFF & nameVal[pos++]) << 8) |
                            (0xFF & nameVal[pos++]));
-        ObjectIdentifier temp = null;
+        ObjectIdentifier temp;
         try {
             DerInputStream din = new DerInputStream(nameVal, pos,
                                                     mechOidLen);
@@ -284,14 +303,14 @@ public class GSSNameElement implements GSSNameSpi {
     }
 
     public void dispose() {
-        if (pName != 0) {
-            cStub.releaseName(pName);
-            pName = 0;
+        if (cleanable != null) {
+            cleanable.clean();
         }
     }
 
-    @SuppressWarnings("deprecation")
-    protected void finalize() throws Throwable {
-        dispose();
+    private static Runnable disposerFor(GSSLibStub stub, long pName) {
+        return () -> {
+            stub.releaseName(pName);
+        };
     }
 }

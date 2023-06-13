@@ -70,8 +70,8 @@ public class RTFEditorKit extends StyledEditorKit {
      * @param doc The destination for the insertion.
      * @param pos The location in the document to place the
      *   content.
-     * @exception IOException on any I/O error
-     * @exception BadLocationException if pos represents an invalid
+     * @throws IOException on any I/O error
+     * @throws BadLocationException if pos represents an invalid
      *   location within the document.
      */
     public void read(InputStream in, Document doc, int pos) throws IOException, BadLocationException {
@@ -97,8 +97,8 @@ public class RTFEditorKit extends StyledEditorKit {
      * @param pos The location in the document to fetch the
      *   content.
      * @param len The amount to write out.
-     * @exception IOException on any I/O error
-     * @exception BadLocationException if pos represents an invalid
+     * @throws IOException on any I/O error
+     * @throws BadLocationException if pos represents an invalid
      *   location within the document.
      */
     public void write(OutputStream out, Document doc, int pos, int len)
@@ -117,8 +117,8 @@ public class RTFEditorKit extends StyledEditorKit {
      * @param doc The destination for the insertion.
      * @param pos The location in the document to place the
      *   content.
-     * @exception IOException on any I/O error
-     * @exception BadLocationException if pos represents an invalid
+     * @throws IOException on any I/O error
+     * @throws BadLocationException if pos represents an invalid
      *   location within the document.
      */
     public void read(Reader in, Document doc, int pos)
@@ -143,8 +143,8 @@ public class RTFEditorKit extends StyledEditorKit {
      * @param pos The location in the document to fetch the
      *   content.
      * @param len The amount to write out.
-     * @exception IOException on any I/O error
-     * @exception BadLocationException if pos represents an invalid
+     * @throws IOException on any I/O error
+     * @throws BadLocationException if pos represents an invalid
      *   location within the document.
      */
     public void write(Writer out, Document doc, int pos, int len)

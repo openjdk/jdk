@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,30 @@
 
 package org.openjdk.foreigntest;
 
+import java.lang.foreign.*;
+import java.lang.foreign.Arena;
 import java.lang.invoke.*;
-import jdk.incubator.foreign.*;
 
 public class PanamaMainInvoke {
-   public static void main(String[] args) throws Throwable {
-       var mh = MethodHandles.lookup().findStatic(CLinker.class, "systemCLinker",
-           MethodType.methodType(CLinker.class));
-       var linker = (CLinker)mh.invokeExact();
-   }
+    public static void main(String[] args) throws Throwable {
+       testInvokenativeLinker();
+       testInvokeMemorySegment();
+    }
+
+    public static void testInvokenativeLinker() throws Throwable {
+        Linker linker = Linker.nativeLinker();
+        System.out.println("Trying to obtain a downcall handle");
+        var mh = MethodHandles.lookup().findVirtual(Linker.class, "downcallHandle",
+                MethodType.methodType(MethodHandle.class, FunctionDescriptor.class, Linker.Option[].class));
+        var handle = (MethodHandle)mh.invokeExact(linker, FunctionDescriptor.ofVoid(), new Linker.Option[0]);
+        System.out.println("Got downcall handle");
+    }
+
+    public static void testInvokeMemorySegment() throws Throwable {
+        System.out.println("Trying to get MemorySegment");
+        var mh = MethodHandles.lookup().findVirtual(MemorySegment.class, "reinterpret",
+                MethodType.methodType(MemorySegment.class, long.class));
+        var seg = (MemorySegment)mh.invokeExact(MemorySegment.NULL, 10L);
+        System.out.println("Got MemorySegment");
+    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.FileTime;
 import java.text.MessageFormat;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.jar.Attributes;
@@ -60,6 +61,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
+
 import jdk.internal.module.Checks;
 import jdk.internal.module.ModuleHashes;
 import jdk.internal.module.ModuleHashesBuilder;
@@ -67,12 +69,12 @@ import jdk.internal.module.ModuleInfo;
 import jdk.internal.module.ModuleInfoExtender;
 import jdk.internal.module.ModuleResolution;
 import jdk.internal.module.ModuleTarget;
-import jdk.internal.util.jar.JarIndex;
+import jdk.internal.opt.CommandLine;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static java.util.jar.JarFile.MANIFEST_NAME;
 import static java.util.stream.Collectors.joining;
-import static jdk.internal.util.jar.JarIndex.INDEX_NAME;
+import static sun.tools.jar.JarIndex.INDEX_NAME;
 
 /**
  * This class implements a simple utility for creating files in the JAR
@@ -173,6 +175,9 @@ public class Main {
     static final String VERSION = "1.0";
     static final int VERSIONS_DIR_LENGTH = VERSIONS_DIR.length();
     private static ResourceBundle rsrc;
+
+    /* Date option for entry timestamps resolved to UTC Local time */
+    LocalDateTime date;
 
     /**
      * If true, maintain compatibility with JDK releases prior to 6.0 by
@@ -390,6 +395,10 @@ public class Main {
                     }
                 }
             } else if (iflag) {
+                if (!suppressDeprecateMsg) {
+                    warn(getMsg("warn.index.is.ignored"));
+                    warn(formatMsg("warn.flag.is.deprecated", "--generate-index/-i"));
+                }
                 String[] files = filesMap.get(BASE_VERSION);  // base entries only, can be null
                 genIndex(rootjar, files);
             } else if (dflag) {
@@ -421,10 +430,10 @@ public class Main {
             fatalError(e);
             ok = false;
         } catch (Error ee) {
-            ee.printStackTrace();
+            ee.printStackTrace(err);
             ok = false;
         } catch (Throwable t) {
-            t.printStackTrace();
+            t.printStackTrace(err);
             ok = false;
         } finally {
             if (tmpFile != null && tmpFile.exists())
@@ -455,7 +464,12 @@ public class Main {
         try {
             if (ok) {
                 if (fname != null) {
-                    Files.move(path, Paths.get(fname), StandardCopyOption.REPLACE_EXISTING);
+                    Path target = Paths.get(fname);
+                    Path parent = target.getParent();
+                    if (parent != null) {
+                        Files.createDirectories(parent);
+                    }
+                    Files.move(path, target, StandardCopyOption.REPLACE_EXISTING);
                 } else {
                     Files.copy(path, new FileOutputStream(FileDescriptor.out));
                 }
@@ -862,12 +876,13 @@ public class Main {
                     output(getMsg("out.added.manifest"));
                 }
                 ZipEntry e = new ZipEntry(MANIFEST_DIR);
-                e.setTime(System.currentTimeMillis());
+                setZipEntryTime(e);
+                e.setMethod(ZipEntry.STORED);
                 e.setSize(0);
                 e.setCrc(0);
                 zos.putNextEntry(e);
                 e = new ZipEntry(MANIFEST_NAME);
-                e.setTime(System.currentTimeMillis());
+                setZipEntryTime(e);
                 if (flag0) {
                     crc32Manifest(e, manifest);
                 }
@@ -967,7 +982,7 @@ public class Main {
                     // do our own compression
                     ZipEntry e2 = new ZipEntry(name);
                     e2.setMethod(e.getMethod());
-                    e2.setTime(e.getTime());
+                    setZipEntryTime(e2, e.getTime());
                     e2.setComment(e.getComment());
                     e2.setExtra(e.getExtra());
                     if (e.getMethod() == ZipEntry.STORED) {
@@ -1033,7 +1048,7 @@ public class Main {
         throws IOException
     {
         ZipEntry e = new ZipEntry(INDEX_NAME);
-        e.setTime(System.currentTimeMillis());
+        setZipEntryTime(e);
         if (flag0) {
             CRC32OutputStream os = new CRC32OutputStream();
             index.write(os);
@@ -1055,9 +1070,9 @@ public class Main {
             ZipEntry e = new ZipEntry(name);
             FileTime lastModified = mie.getLastModifiedTime();
             if (lastModified != null) {
-                e.setLastModifiedTime(lastModified);
+                setZipEntryTime(e, lastModified.toMillis());
             } else {
-                e.setLastModifiedTime(FileTime.fromMillis(System.currentTimeMillis()));
+                setZipEntryTime(e);
             }
             if (flag0) {
                 crc32ModuleInfo(e, bytes);
@@ -1083,7 +1098,7 @@ public class Main {
             addMultiRelease(m);
         }
         ZipEntry e = new ZipEntry(MANIFEST_NAME);
-        e.setTime(System.currentTimeMillis());
+        setZipEntryTime(e);
         if (flag0) {
             crc32Manifest(e, m);
         }
@@ -1204,7 +1219,7 @@ public class Main {
             out.print(formatMsg("out.adding", name));
         }
         ZipEntry e = new ZipEntry(name);
-        e.setTime(file.lastModified());
+        setZipEntryTime(e, file.lastModified());
         if (size == 0) {
             e.setMethod(ZipEntry.STORED);
             e.setSize(0);
@@ -1647,7 +1662,7 @@ public class Main {
      * A fatal exception has been caught.  No recovery possible
      */
     void fatalError(Exception e) {
-        e.printStackTrace();
+        e.printStackTrace(err);
     }
 
     /**
@@ -2318,4 +2333,18 @@ public class Main {
     static Comparator<ZipEntry> ENTRY_COMPARATOR =
         Comparator.comparing(ZipEntry::getName, ENTRYNAME_COMPARATOR);
 
+    // Set the ZipEntry dostime using date if specified otherwise the current time
+    private void setZipEntryTime(ZipEntry e) {
+        setZipEntryTime(e, System.currentTimeMillis());
+    }
+
+    // Set the ZipEntry dostime using the date if specified
+    // otherwise the original time
+    private void setZipEntryTime(ZipEntry e, long origTime) {
+        if (date != null) {
+            e.setTimeLocal(date);
+        } else {
+            e.setTime(origTime);
+        }
+    }
 }

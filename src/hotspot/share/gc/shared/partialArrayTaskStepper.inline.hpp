@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,9 +71,9 @@ PartialArrayTaskStepper::next_impl(int length,
   // Because we limit the number of enqueued tasks to being no more than the
   // number of remaining chunks to process, we can use an atomic add for the
   // claim, rather than a CAS loop.
-  int start = Atomic::fetch_and_add(to_length_addr,
-                                    chunk_size,
-                                    memory_order_relaxed);
+  int start = Atomic::fetch_then_add(to_length_addr,
+                                     chunk_size,
+                                     memory_order_relaxed);
 
   assert(start < length, "invariant: start %d, length %d", start, length);
   assert(((length - start) % chunk_size) == 0,
@@ -89,8 +89,8 @@ PartialArrayTaskStepper::next_impl(int length,
   // Compute number of pending tasks, including this one.  The maximum number
   // of tasks is a function of task_num (N) and _task_fanout (F).
   //   1    : current task
-  //   N    : number of preceeding tasks
-  //   F*N  : maximum created for preceeding tasks
+  //   N    : number of preceding tasks
+  //   F*N  : maximum created for preceding tasks
   // => F*N - N + 1 : maximum number of tasks
   // => (F-1)*N + 1
   assert(_task_limit > 0, "precondition");

@@ -17,7 +17,7 @@ grant {
     // allows anyone to listen on dynamic ports
     permission java.net.SocketPermission "localhost:0", "listen";
 
-    // "standard" properies that can be read by anyone
+    // "standard" properties that can be read by anyone
     permission java.util.PropertyPermission "java.version", "read";
     permission java.util.PropertyPermission "java.vendor", "read";
     permission java.util.PropertyPermission "java.vendor.url", "read";
@@ -30,6 +30,8 @@ grant {
     permission java.util.PropertyPermission "line.separator", "read";
     permission java.util.PropertyPermission
                    "java.specification.version", "read";
+    permission java.util.PropertyPermission
+                   "java.specification.maintenance.version", "read";
     permission java.util.PropertyPermission "java.specification.vendor", "read";
     permission java.util.PropertyPermission "java.specification.name", "read";
     permission java.util.PropertyPermission

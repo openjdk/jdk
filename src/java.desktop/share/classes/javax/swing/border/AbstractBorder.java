@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,7 +84,9 @@ public abstract class AbstractBorder implements Border, Serializable
      * Reinitializes the insets parameter with this Border's current Insets.
      * @param c the component for which this border insets value applies
      * @param insets the object to be reinitialized
-     * @return the <code>insets</code> object
+     * @return the {@code insets} object
+     * @throws NullPointerException if the specified {@code insets}
+     *         is {@code null}
      */
     public Insets getBorderInsets(Component c, Insets insets) {
         insets.left = insets.top = insets.right = insets.bottom = 0;
@@ -181,6 +183,7 @@ public abstract class AbstractBorder implements Border, Serializable
      * @param c <code>Component</code> to return baseline resize behavior for
      * @return an enum indicating how the baseline changes as the border is
      *         resized
+     * @throws NullPointerException if {@code Component} is {@code null}
      * @see java.awt.Component#getBaseline(int,int)
      * @see java.awt.Component#getBaselineResizeBehavior()
      * @since 1.6

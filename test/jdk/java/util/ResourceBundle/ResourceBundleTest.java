@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,10 @@
     @run main ResourceBundleTest
 */
 /*
- *
+ * This file is available under and governed by the GNU General Public
+ * License version 2 only, as published by the Free Software Foundation.
+ * However, the following notice accompanied the original version of this
+ * file and, per its terms, should not be removed:
  *
  * (C) Copyright Taligent, Inc. 1996, 1997 - All Rights Reserved
  * (C) Copyright IBM Corp. 1996 - 1998 - All Rights Reserved
@@ -78,7 +81,7 @@ public class ResourceBundleTest extends RBTestFmwk {
 
     public void TestResourceBundle() {
         Locale  saveDefault = Locale.getDefault();
-        Locale.setDefault(new Locale("fr", "FR"));
+        Locale.setDefault(Locale.FRANCE);
 
         // load up the resource bundle, and make sure we got the right one
         ResourceBundle  bundle = ResourceBundle.getBundle("TestResource");
@@ -136,7 +139,7 @@ public class ResourceBundleTest extends RBTestFmwk {
         // load up the resource and check to make sure we got the right class
         // (we don't define be_BY or be, so we fall back on the root default)
         ResourceBundle  bundle = ResourceBundle.getBundle("TestResource",
-                            new Locale("be", "BY"),
+                            Locale.of("be", "BY"),
                             Control.getNoFallbackControl(Control.FORMAT_DEFAULT));
         if (!bundle.getClass().getName().equals("TestResource"))
             errln("Expected TestResource, got " + bundle.getClass().getName());
@@ -152,7 +155,7 @@ public class ResourceBundleTest extends RBTestFmwk {
      */
     public void TestEmptyListResourceBundle() {
         ResourceBundle bundle = ResourceBundle.getBundle("TestResource",
-                            new Locale("it", "IT"));
+                            Locale.ITALY);
         doListResourceBundleTest(bundle);
     }
 
@@ -210,7 +213,7 @@ public class ResourceBundleTest extends RBTestFmwk {
      */
     public void TestPropertyResourceBundle() {
         ResourceBundle  bundle = ResourceBundle.getBundle("TestResource",
-                            new Locale("es", "ES"));
+                            Locale.of("es", "ES"));
 
         // these resources are defined in TestResource_es.properties
         String  test = bundle.getString("Now");
@@ -256,14 +259,14 @@ public class ResourceBundleTest extends RBTestFmwk {
     public void TestGetLocale() {
         // try to find TestResource_fr_CH.  Should get fr_CH as its locale
         ResourceBundle test = ResourceBundle.getBundle("TestResource",
-                        new Locale("fr", "CH", ""));
+                        Locale.of("fr", "CH"));
         Locale locale = test.getLocale();
         if (!(locale.getLanguage().equals("fr")) || !(locale.getCountry().equals("CH")))
             errln("Actual locale for TestResource_fr_CH should have been fr_CH, got " + locale);
 
         // try to find TestResource_fr_BE, which doesn't exist.  Should get fr as its locale
         test = ResourceBundle.getBundle("TestResource",
-                        new Locale("fr", "BE", ""));
+                        Locale.of("fr", "BE"));
         locale = test.getLocale();
         if (!(locale.getLanguage().equals("fr")) || !(locale.getCountry().equals("")))
             errln("Actual locale for TestResource_fr_BE should have been fr, got " + locale);
@@ -271,7 +274,7 @@ public class ResourceBundleTest extends RBTestFmwk {
         // try to find TestResource_iw_IL, which doesn't exist.  Should get root locale
         // as its locale
         test = ResourceBundle.getBundle("TestResource",
-                        new Locale("iw", "IL", ""),
+                        Locale.of("iw", "IL"),
                         Control.getNoFallbackControl(Control.FORMAT_DEFAULT));
         locale = test.getLocale();
         if (!(locale.getLanguage().equals("")) || !(locale.getCountry().equals("")))
@@ -315,7 +318,7 @@ public class ResourceBundleTest extends RBTestFmwk {
         final String className = "TestResource";
         final String keyName = "DontGetThis";
         ResourceBundle bundle = ResourceBundle.getBundle(className,
-                            new Locale("it", "IT"));
+                            Locale.ITALY);
         try {
             Object o = bundle.getObject(keyName);
             errln(bundle.getClass().getName()+" returned a value for tag \""+keyName+"\" when it should have thrown an exception.  It returned "+o);

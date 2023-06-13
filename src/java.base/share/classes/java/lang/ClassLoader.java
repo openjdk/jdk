@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -407,6 +407,11 @@ public abstract class ClassLoader {
         return nid;
     }
 
+    // Returns nameAndId string for exception message printing
+    String nameAndId() {
+        return nameAndId;
+    }
+
     /**
      * Creates a new class loader of the specified name and using the
      * specified parent class loader for delegation.
@@ -494,7 +499,7 @@ public abstract class ClassLoader {
     }
 
     // package-private used by StackTraceElement to avoid
-    // calling the overrideable getName method
+    // calling the overridable getName method
     final String name() {
         return name;
     }
@@ -1606,9 +1611,16 @@ public abstract class ClassLoader {
      * </ol>
      * <p>Note that once a class loader is registered as parallel capable, there
      * is no way to change it back.</p>
+     * <p>
+     * In cases where this method is called from a context where the caller is
+     * not a subclass of {@code ClassLoader} or there is no caller frame on the
+     * stack (e.g. when called directly from a JNI attached thread),
+     * {@code IllegalCallerException} is thrown.
+     * </p>
      *
      * @return  {@code true} if the caller is successfully registered as
      *          parallel capable and {@code false} if otherwise.
+     * @throws IllegalCallerException if the caller is not a subclass of {@code ClassLoader}
      *
      * @see #isRegisteredAsParallelCapable()
      *
@@ -1622,6 +1634,9 @@ public abstract class ClassLoader {
     // Caller-sensitive adapter method for reflective invocation
     @CallerSensitiveAdapter
     private static boolean registerAsParallelCapable(Class<?> caller) {
+        if ((caller == null) || !ClassLoader.class.isAssignableFrom(caller)) {
+            throw new IllegalCallerException(caller + " not a subclass of ClassLoader");
+        }
         return ParallelLoaders.register(caller.asSubclass(ClassLoader.class));
     }
 
@@ -2385,7 +2400,7 @@ public abstract class ClassLoader {
         return null;
     }
 
-    private final NativeLibraries libraries = NativeLibraries.jniNativeLibraries(this);
+    private final NativeLibraries libraries = NativeLibraries.newInstance(this);
 
     // Invoked in the java.lang.Runtime class to implement load and loadLibrary.
     static NativeLibrary loadLibrary(Class<?> fromClass, File file) {
@@ -2706,7 +2721,9 @@ public abstract class ClassLoader {
      * Called by the VM, during -Xshare:dump
      */
     private void resetArchivedStates() {
-        parallelLockMap.clear();
+        if (parallelLockMap != null) {
+            parallelLockMap.clear();
+        }
         packages.clear();
         package2certs.clear();
         classes.clear();

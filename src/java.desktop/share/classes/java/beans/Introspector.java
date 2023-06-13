@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -178,7 +178,7 @@ public class Introspector {
      *
      * @param beanClass  The bean class to be analyzed.
      * @return  A BeanInfo object describing the target bean.
-     * @exception IntrospectionException if an exception occurs during
+     * @throws IntrospectionException if an exception occurs during
      *              introspection.
      * @see #flushCaches
      * @see #flushFromCaches
@@ -216,7 +216,7 @@ public class Introspector {
      *           associated with the specified beanClass or any of its
      *           parent classes.
      * @return  A BeanInfo object describing the target bean.
-     * @exception IntrospectionException if an exception occurs during
+     * @throws IntrospectionException if an exception occurs during
      *              introspection.
      * @since 1.2
      */
@@ -237,7 +237,7 @@ public class Introspector {
      * @param stopClass The baseclass at which to stop the analysis.  Any
      *    methods/properties/events in the stopClass or in its baseclasses
      *    will be ignored in the analysis.
-     * @exception IntrospectionException if an exception occurs during
+     * @throws IntrospectionException if an exception occurs during
      *              introspection.
      */
     public static BeanInfo getBeanInfo(Class<?> beanClass, Class<?> stopClass)
@@ -269,7 +269,7 @@ public class Introspector {
      * @param stopClass  the parent class at which to stop the analysis
      * @param flags      flags to control the introspection
      * @return a BeanInfo object describing the target bean
-     * @exception IntrospectionException if an exception occurs during introspection
+     * @throws IntrospectionException if an exception occurs during introspection
      *
      * @since 1.7
      */
@@ -339,7 +339,7 @@ public class Introspector {
      * method is called. This could result in a SecurityException.
      *
      * @param path  Array of package names.
-     * @exception  SecurityException  if a security manager exists and its
+     * @throws  SecurityException  if a security manager exists and its
      *             {@code checkPropertiesAccess} method doesn't allow setting
      *              of system properties.
      * @see SecurityManager#checkPropertiesAccess
@@ -1155,9 +1155,11 @@ public class Introspector {
      */
     private static Method internalFindMethod(Class<?> start, String methodName,
                                                  int argCount, Class<?>[] args) {
-        // For overriden methods we need to find the most derived version.
+        // For overridden methods we need to find the most derived version.
         // So we start with the given class and walk up the superclass chain.
         for (Class<?> cl = start; cl != null; cl = cl.getSuperclass()) {
+            Class<?> type = null;
+            Method foundMethod = null;
             for (Method method : ClassInfo.get(cl).getMethods()) {
                 // make sure method signature matches.
                 if (method.getName().equals(methodName)) {
@@ -1177,9 +1179,16 @@ public class Introspector {
                                 }
                             }
                         }
-                        return method;
+                        Class<?> rt = method.getReturnType();
+                        if (foundMethod == null || type.isAssignableFrom(rt)) {
+                            foundMethod = method;
+                            type = rt;
+                        }
                     }
                 }
+            }
+            if (foundMethod != null) {
+                return foundMethod;
             }
         }
         // Now check any inherited interfaces.  This is necessary both when
@@ -1208,7 +1217,7 @@ public class Introspector {
     /**
      * Find a target methodName with specific parameter list on a given class.
      * <p>
-     * Used in the contructors of the EventSetDescriptor,
+     * Used in the constructors of the EventSetDescriptor,
      * PropertyDescriptor and the IndexedPropertyDescriptor.
      * <p>
      * @param cls The Class object on which to retrieve the method.
@@ -1229,11 +1238,11 @@ public class Introspector {
      * Return true if class a is either equivalent to class b, or
      * if class a is a subclass of class b, i.e. if a either "extends"
      * or "implements" b.
-     * Note tht either or both "Class" objects may represent interfaces.
+     * Note that either or both "Class" objects may represent interfaces.
      */
     static  boolean isSubclass(Class<?> a, Class<?> b) {
         // We rely on the fact that for any given java class or
-        // primtitive type there is a unqiue Class object, so
+        // primtitive type there is a unique Class object, so
         // we can use object equivalence in the comparisons.
         if (a == b) {
             return true;

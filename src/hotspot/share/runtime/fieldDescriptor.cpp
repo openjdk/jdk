@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,27 +35,11 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/signature.hpp"
 
-
-oop fieldDescriptor::loader() const {
-  return _cp->pool_holder()->class_loader();
-}
-
 Symbol* fieldDescriptor::generic_signature() const {
   if (!has_generic_signature()) {
-    return NULL;
+    return nullptr;
   }
-
-  int idx = 0;
-  InstanceKlass* ik = field_holder();
-  for (AllFieldStream fs(ik); !fs.done(); fs.next()) {
-    if (idx == _index) {
-      return fs.generic_signature();
-    } else {
-      idx ++;
-    }
-  }
-  assert(false, "should never happen");
-  return vmSymbols::void_signature(); // return a default value (for code analyzers)
+  return _cp->symbol_at(_fieldinfo.generic_signature_index());
 }
 
 bool fieldDescriptor::is_trusted_final() const {
@@ -66,16 +50,16 @@ bool fieldDescriptor::is_trusted_final() const {
 AnnotationArray* fieldDescriptor::annotations() const {
   InstanceKlass* ik = field_holder();
   Array<AnnotationArray*>* md = ik->fields_annotations();
-  if (md == NULL)
-    return NULL;
+  if (md == nullptr)
+    return nullptr;
   return md->at(index());
 }
 
 AnnotationArray* fieldDescriptor::type_annotations() const {
   InstanceKlass* ik = field_holder();
   Array<AnnotationArray*>* type_annos = ik->fields_type_annotations();
-  if (type_annos == NULL)
-    return NULL;
+  if (type_annos == nullptr)
+    return nullptr;
   return type_annos->at(index());
 }
 
@@ -107,32 +91,18 @@ void fieldDescriptor::reinitialize(InstanceKlass* ik, int index) {
   if (_cp.is_null() || field_holder() != ik) {
     _cp = constantPoolHandle(Thread::current(), ik->constants());
     // _cp should now reference ik's constant pool; i.e., ik is now field_holder.
-    assert(field_holder() == ik, "must be already initialized to this class");
+    // If the class is a scratch class, the constant pool points to the original class,
+    // but that's ok because of constant pool merging.
+    assert(field_holder() == ik || ik->is_scratch_class(), "must be already initialized to this class");
   }
-  FieldInfo* f = ik->field(index);
-  _access_flags = accessFlags_from(f->access_flags());
-  guarantee(f->name_index() != 0 && f->signature_index() != 0, "bad constant pool index for fieldDescriptor");
-  _index = index;
-  verify();
+  _fieldinfo= ik->field(index);
+  assert((int)_fieldinfo.index() == index, "just checking");
+  guarantee(_fieldinfo.name_index() != 0 && _fieldinfo.signature_index() != 0, "bad constant pool index for fieldDescriptor");
 }
-
-#ifndef PRODUCT
-
-void fieldDescriptor::verify() const {
-  if (_cp.is_null()) {
-    assert(_index == badInt, "constructor must be called");  // see constructor
-  } else {
-    assert(_index >= 0, "good index");
-    assert(access_flags().is_internal() ||
-           _index < field_holder()->java_fields_count(), "oob");
-  }
-}
-
-#endif /* PRODUCT */
 
 void fieldDescriptor::print_on(outputStream* st) const {
   access_flags().print_on(st);
-  if (access_flags().is_internal()) st->print("internal ");
+  if (field_flags().is_injected()) st->print("injected ");
   name()->print_value_on(st);
   st->print(" ");
   signature()->print_value_on(st);
@@ -156,78 +126,80 @@ void fieldDescriptor::print() const { print_on(tty); }
 
 void fieldDescriptor::print_on_for(outputStream* st, oop obj) {
   print_on(st);
+  st->print(" ");
+
   BasicType ft = field_type();
-  jint as_int = 0;
   switch (ft) {
     case T_BYTE:
-      as_int = (jint)obj->byte_field(offset());
-      st->print(" %d", obj->byte_field(offset()));
+      st->print("%d", obj->byte_field(offset()));
       break;
     case T_CHAR:
-      as_int = (jint)obj->char_field(offset());
       {
         jchar c = obj->char_field(offset());
-        as_int = c;
-        st->print(" %c %d", isprint(c) ? c : ' ', c);
+        st->print("%c %d", isprint(c) ? c : ' ', c);
       }
       break;
     case T_DOUBLE:
-      st->print(" %lf", obj->double_field(offset()));
+      st->print("%lf", obj->double_field(offset()));
       break;
     case T_FLOAT:
-      as_int = obj->int_field(offset());
-      st->print(" %f", obj->float_field(offset()));
+      st->print("%f", obj->float_field(offset()));
       break;
     case T_INT:
-      as_int = obj->int_field(offset());
-      st->print(" %d", obj->int_field(offset()));
+      st->print("%d", obj->int_field(offset()));
       break;
     case T_LONG:
-      st->print(" ");
       st->print_jlong(obj->long_field(offset()));
       break;
     case T_SHORT:
-      as_int = obj->short_field(offset());
-      st->print(" %d", obj->short_field(offset()));
+      st->print("%d", obj->short_field(offset()));
       break;
     case T_BOOLEAN:
-      as_int = obj->bool_field(offset());
-      st->print(" %s", obj->bool_field(offset()) ? "true" : "false");
+      st->print("%s", obj->bool_field(offset()) ? "true" : "false");
       break;
     case T_ARRAY:
-      st->print(" ");
-      NOT_LP64(as_int = obj->int_field(offset()));
-      if (obj->obj_field(offset()) != NULL) {
+      if (obj->obj_field(offset()) != nullptr) {
         obj->obj_field(offset())->print_value_on(st);
       } else {
-        st->print("NULL");
+        st->print("null");
       }
       break;
     case T_OBJECT:
-      st->print(" ");
-      NOT_LP64(as_int = obj->int_field(offset()));
-      if (obj->obj_field(offset()) != NULL) {
+      if (obj->obj_field(offset()) != nullptr) {
         obj->obj_field(offset())->print_value_on(st);
       } else {
-        st->print("NULL");
+        st->print("null");
       }
       break;
     default:
       ShouldNotReachHere();
       break;
   }
-  // Print a hint as to the underlying integer representation. This can be wrong for
-  // pointers on an LP64 machine
+
+  // Print a hint as to the underlying integer representation.
+  if (is_reference_type(ft)) {
 #ifdef _LP64
-  if (is_reference_type(ft) && UseCompressedOops) {
-    st->print(" (%x)", obj->int_field(offset()));
-  }
-  else // <- intended
+    if (UseCompressedOops) {
+      st->print(" (" INT32_FORMAT_X_0 ")", obj->int_field(offset()));
+    } else {
+      st->print(" (" INT64_FORMAT_X_0 ")", (int64_t)obj->long_field(offset()));
+    }
+#else
+    st->print(" (" INT32_FORMAT_X_0 ")", obj->int_field(offset()));
 #endif
-  if (ft == T_LONG || ft == T_DOUBLE LP64_ONLY(|| !is_java_primitive(ft)) ) {
-    st->print(" (%x %x)", obj->int_field(offset()), obj->int_field(offset()+sizeof(jint)));
-  } else if (as_int < 0 || as_int > 9) {
-    st->print(" (%x)", as_int);
+  } else { // Primitives
+    switch (ft) {
+      case T_LONG:    st->print(" (" INT64_FORMAT_X_0 ")", (int64_t)obj->long_field(offset())); break;
+      case T_DOUBLE:  st->print(" (" INT64_FORMAT_X_0 ")", (int64_t)obj->long_field(offset())); break;
+      case T_BYTE:    st->print(" (" INT8_FORMAT_X_0  ")", obj->byte_field(offset()));          break;
+      case T_CHAR:    st->print(" (" INT16_FORMAT_X_0 ")", obj->char_field(offset()));          break;
+      case T_FLOAT:   st->print(" (" INT32_FORMAT_X_0 ")", obj->int_field(offset()));           break;
+      case T_INT:     st->print(" (" INT32_FORMAT_X_0 ")", obj->int_field(offset()));           break;
+      case T_SHORT:   st->print(" (" INT16_FORMAT_X_0 ")", obj->short_field(offset()));         break;
+      case T_BOOLEAN: st->print(" (" INT8_FORMAT_X_0  ")", obj->bool_field(offset()));          break;
+    default:
+      ShouldNotReachHere();
+      break;
+    }
   }
 }
-

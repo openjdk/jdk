@@ -51,7 +51,7 @@ typedef jushort UshortIndexedDataType;
 
 #define DeclareUshortIndexedStoreVars(PREFIX) \
     int PREFIX ## XDither, PREFIX ## YDither; \
-    char *PREFIX ## rerr, *PREFIX ## gerr, *PREFIX ## berr; \
+    signed char *PREFIX ## rerr, *PREFIX ## gerr, *PREFIX ## berr; \
     unsigned char *PREFIX ## InvLut;
 
 #define SetUshortIndexedStoreVarsYPos(PREFIX, pRasInfo, LOC) \

@@ -31,6 +31,7 @@ import org.openjdk.jmh.infra.Blackhole;
 
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Thread)
+@Fork(jvmArgsPrepend = {"--add-modules=jdk.incubator.vector"})
 public class MaskQueryOperationsBenchmark {
     @Param({"128","256","512"})
     int bits;
@@ -155,4 +156,23 @@ public class MaskQueryOperationsBenchmark {
     public int testLastTrueLong(Blackhole bh) {
         return lmask.lastTrue();
     }
+
+    @Benchmark
+    public long testToLongByte(Blackhole bh) {
+        return bmask.toLong();
+    }
+
+    @Benchmark
+    public long testToLongShort(Blackhole bh) {
+        return smask.toLong();
+    }
+    @Benchmark
+    public long testToLongInt(Blackhole bh) {
+        return imask.toLong();
+    }
+    @Benchmark
+    public long testToLongLong(Blackhole bh) {
+        return lmask.toLong();
+    }
+
 }

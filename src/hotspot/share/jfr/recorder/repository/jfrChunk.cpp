@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,8 @@ static jlong nanos_now() {
   const jlong now = seconds * 1000000000 + nanos;
   if (now > last) {
     last = now;
+  } else {
+    ++last;
   }
   return last;
 }
@@ -56,7 +58,7 @@ static jlong ticks_now() {
 }
 
 JfrChunk::JfrChunk() :
-  _path(NULL),
+  _path(nullptr),
   _start_ticks(0),
   _previous_start_ticks(invalid_time),
   _start_nanos(0),
@@ -72,9 +74,9 @@ JfrChunk::~JfrChunk() {
 }
 
 void JfrChunk::reset() {
-  if (_path != NULL) {
+  if (_path != nullptr) {
     JfrCHeapObj::free(_path, strlen(_path) + 1);
-    _path = NULL;
+    _path = nullptr;
   }
   _last_checkpoint_offset = _last_metadata_offset = 0;
   _generation = 1;
@@ -178,7 +180,7 @@ int64_t JfrChunk::last_chunk_duration() const {
 }
 
 static char* copy_path(const char* path) {
-  assert(path != NULL, "invariant");
+  assert(path != nullptr, "invariant");
   const size_t path_len = strlen(path);
   char* new_path = JfrCHeapObj::new_array<char>(path_len + 1);
   strncpy(new_path, path, path_len + 1);
@@ -186,11 +188,11 @@ static char* copy_path(const char* path) {
 }
 
 void JfrChunk::set_path(const char* path) {
-  if (_path != NULL) {
+  if (_path != nullptr) {
     JfrCHeapObj::free(_path, strlen(_path) + 1);
-    _path = NULL;
+    _path = nullptr;
   }
-  if (path != NULL) {
+  if (path != nullptr) {
     _path = copy_path(path);
   }
 }

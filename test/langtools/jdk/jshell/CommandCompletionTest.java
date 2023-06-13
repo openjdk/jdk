@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8144095 8164825 8169818 8153402 8165405 8177079 8178013 8167554 8166232
+ * @bug 8144095 8164825 8169818 8153402 8165405 8177079 8178013 8167554 8166232 8277328
  * @summary Test Command Completion
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -36,18 +36,15 @@
  */
 
 import java.io.IOException;
-import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 import org.testng.SkipException;
 import org.testng.annotations.Test;
@@ -76,6 +73,16 @@ public class CommandCompletionTest extends ReplToolTesting {
         }
     }
 
+    public void assertCompletion(boolean after, String code, int minElements) {
+        if (!after) {
+            setCommandInput("\n");
+        } else {
+            List<String> completions = computeCompletions(code, false);
+            assertTrue(completions.size() >= minElements, "Command: " + code + ", output: " +
+                    completions.toString() + ", expected output with at least " + minElements + " elements");
+        }
+    }
+
     public void assertCompletion(boolean after, String code, boolean isSmart, String... expected) {
         if (!after) {
             setCommandInput("\n");
@@ -86,8 +93,9 @@ public class CommandCompletionTest extends ReplToolTesting {
 
     public void assertCompletion(String code, boolean isSmart, String... expected) {
         List<String> completions = computeCompletions(code, isSmart);
-        assertEquals(completions, Arrays.asList(expected), "Command: " + code + ", output: " +
-                completions.toString());
+        List<String> expectedL = Arrays.asList(expected);
+        assertEquals(completions, expectedL, "Command: " + code + ", output: " +
+                completions.toString() + ", expected: " + expectedL.toString());
     }
 
     private List<String> computeCompletions(String code, boolean isSmart) {
@@ -272,16 +280,12 @@ public class CommandCompletionTest extends ReplToolTesting {
         testNoStartUp(
                 a -> assertCompletion(a, "/o|", false, "/open ")
         );
-        List<String> p1 = listFiles(Paths.get(""));
-        getRootDirectories().forEach(s -> p1.add(s.toString()));
-        Collections.sort(p1);
         testNoStartUp(
-                a -> assertCompletion(a, "/open |", false, p1.toArray(new String[p1.size()]))
+                a -> assertCompletion(a, "/open |", 1)
         );
         Path classDir = compiler.getClassDir();
-        List<String> p2 = listFiles(classDir);
         testNoStartUp(
-                a -> assertCompletion(a, "/open " + classDir + "/|", false, p2.toArray(new String[p2.size()]))
+                a -> assertCompletion(a, "/open " + classDir + "/|", 1)
         );
     }
 
@@ -291,20 +295,13 @@ public class CommandCompletionTest extends ReplToolTesting {
         testNoStartUp(
                 a -> assertCompletion(a, "/s|", false, "/save ", "/set ")
         );
-        List<String> p1 = listFiles(Paths.get(""));
-        Collections.addAll(p1, "-all ", "-history ", "-start ");
-        getRootDirectories().forEach(s -> p1.add(s.toString()));
-        Collections.sort(p1);
         testNoStartUp(
-                a -> assertCompletion(a, "/save |", false, p1.toArray(new String[p1.size()]))
+                a -> assertCompletion(a, "/save |", 4)
         );
         Path classDir = compiler.getClassDir();
-        List<String> p2 = listFiles(classDir);
         testNoStartUp(
-                a -> assertCompletion(a, "/save " + classDir + "/|",
-                false, p2.toArray(new String[p2.size()])),
-                a -> assertCompletion(a, "/save -all " + classDir + "/|",
-                false, p2.toArray(new String[p2.size()]))
+                a -> assertCompletion(a, "/save " + classDir + "/|", 1),
+                a -> assertCompletion(a, "/save -all " + classDir + "/|", 1)
         );
     }
 
@@ -332,14 +329,31 @@ public class CommandCompletionTest extends ReplToolTesting {
     }
 
     @Test
+    public void testClassPathWithSpace() throws IOException {
+        Compiler compiler = new Compiler();
+        Path outDir = compiler.getPath("testClassPathWithSpace");
+        Path dirWithSpace = Files.createDirectories(outDir.resolve("dir with space"));
+        Files.createDirectories(dirWithSpace.resolve("nested with space"));
+        String[] pathArray = new String[] {"dir\\ with\\ space/"};
+        String[] pathArray2 = new String[] {"nested\\ with\\ space/"};
+        testNoStartUp(
+                a -> assertCompletion(a, "/env -class-path " + outDir + "/|", false, pathArray),
+                a -> assertCompletion(a, "/env -class-path " + outDir + "/dir|", false, pathArray),
+                a -> assertCompletion(a, "/env -class-path " + outDir + "/dir\\ with|", false, pathArray),
+                a -> assertCompletion(a, "/env -class-path " + outDir + "/dir\\ with\\ space/|", false, pathArray2)
+        );
+    }
+
+    @Test
     public void testUserHome() throws IOException {
         List<String> completions;
         Path home = Paths.get(System.getProperty("user.home"));
         String selectedFile;
         try (Stream<Path> content = Files.list(home)) {
             selectedFile = content.filter(CLASSPATH_FILTER)
+                                  .filter(file -> file.getFileName().toString().contains(" "))
                                   .findAny()
-                                  .map(file -> file.getFileName().toString())
+                                  .map(file -> file.getFileName().toString().replace(" ", "\\ "))
                                   .orElse(null);
         }
         if (selectedFile == null) {
@@ -347,8 +361,8 @@ public class CommandCompletionTest extends ReplToolTesting {
         }
         try (Stream<Path> content = Files.list(home)) {
             completions = content.filter(CLASSPATH_FILTER)
-                                 .filter(file -> file.getFileName().toString().startsWith(selectedFile))
-                                 .map(file -> file.getFileName().toString() + (Files.isDirectory(file) ? "/" : ""))
+                                 .filter(file -> file.getFileName().toString().startsWith(selectedFile.replace("\\ ", " ")))
+                                 .map(file -> file.getFileName().toString().replace(" ", "\\ ") + (Files.isDirectory(file) ? "/" : ""))
                                  .sorted()
                                  .collect(Collectors.toList());
         }
@@ -359,9 +373,6 @@ public class CommandCompletionTest extends ReplToolTesting {
 
     @Test
     public void testSet() throws IOException {
-        List<String> p1 = listFiles(Paths.get(""));
-        getRootDirectories().forEach(s -> p1.add(s.toString()));
-        Collections.sort(p1);
 
         String[] modes = {"concise ", "normal ", "silent ", "verbose "};
         String[] options = {"-command", "-delete", "-quiet"};
@@ -372,7 +383,7 @@ public class CommandCompletionTest extends ReplToolTesting {
 
                 // /set editor
                 a -> assertCompletion(a, "/set e|", false, "editor "),
-                a -> assertCompletion(a, "/set editor |", false, p1.toArray(new String[p1.size()])),
+                a -> assertCompletion(a, "/set editor |", 1),
 
                 // /set feedback
                 a -> assertCompletion(a, "/set fe|", false, "feedback "),
@@ -396,7 +407,7 @@ public class CommandCompletionTest extends ReplToolTesting {
 
                 // /set start
                 a -> assertCompletion(a, "/set st|", false, "start "),
-                a -> assertCompletion(a, "/set st |", false, p1.toArray(new String[p1.size()])),
+                a -> assertCompletion(a, "/set st |", 1),
 
                 // /set truncation
                 a -> assertCompletion(a, "/set tr|", false, "truncation "),
@@ -430,12 +441,4 @@ public class CommandCompletionTest extends ReplToolTesting {
                      file.getFileName().toString().endsWith(".jar") ||
                      file.getFileName().toString().endsWith(".zip"));
 
-    private static Iterable<? extends Path> getRootDirectories() {
-        return StreamSupport.stream(FileSystems.getDefault()
-                                               .getRootDirectories()
-                                               .spliterator(),
-                                    false)
-                            .filter(p -> Files.exists(p))
-                            .collect(Collectors.toList());
-    }
 }

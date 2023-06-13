@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ import java.security.cert.CertificateException;
 import sun.security.util.*;
 
 /**
- * This class defines the mapping from OID {@literal &} name to classes and vice
+ * This class defines the mapping from OID {@literal &} name to class and vice
  * versa.  Used by CertificateExtensions {@literal &} PKCS10 to get the java
  * classes associated with a particular OID/name.
  *
@@ -109,8 +109,8 @@ public class OIDMap {
     private static final Map<String,OIDInfo> nameMap;
 
     static {
-        oidMap = new HashMap<ObjectIdentifier,OIDInfo>();
-        nameMap = new HashMap<String,OIDInfo>();
+        oidMap = new HashMap<>();
+        nameMap = new HashMap<>();
         addInternal(SUB_KEY_IDENTIFIER, PKIXExtensions.SubjectKey_Id,
                     "sun.security.x509.SubjectKeyIdentifierExtension");
         addInternal(KEY_USAGE, PKIXExtensions.KeyUsage_Id,
@@ -243,10 +243,10 @@ public class OIDMap {
     }
 
     /**
-     * Return user friendly name associated with the OID.
+     * Return user-friendly name associated with the OID.
      *
      * @param oid the name of the object identifier to be returned.
-     * @return the user friendly name or null if no name
+     * @return the user-friendly name or null if no name
      * is registered for this oid.
      */
     public static String getName(ObjectIdentifier oid) {
@@ -257,7 +257,7 @@ public class OIDMap {
     /**
      * Return Object identifier for user friendly name.
      *
-     * @param name the user friendly name.
+     * @param name the user-friendly name.
      * @return the Object Identifier or null if no oid
      * is registered for this name.
      */
@@ -267,9 +267,9 @@ public class OIDMap {
     }
 
     /**
-     * Return the java class object associated with the user friendly name.
+     * Return the java class object associated with the user-friendly name.
      *
-     * @param name the user friendly name.
+     * @param name the user-friendly name.
      * @exception CertificateException if class cannot be instantiated.
      */
     public static Class<?> getClass(String name) throws CertificateException {
@@ -281,7 +281,7 @@ public class OIDMap {
      * Return the java class object associated with the object identifier.
      *
      * @param oid the name of the object identifier to be returned.
-     * @exception CertificateException if class cannot be instatiated.
+     * @exception CertificateException if class cannot be instantiated.
      */
     public static Class<?> getClass(ObjectIdentifier oid)
             throws CertificateException {

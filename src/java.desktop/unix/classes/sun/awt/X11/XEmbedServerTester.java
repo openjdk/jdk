@@ -564,10 +564,10 @@ public class XEmbedServerTester implements XEventDispatcher {
             eventWaited = -1;
             if (checkEventList(position, event) == -1) {
                 dumpReceivedEvents();
-                throw new RuntimeException("Didn't receive event " + XEmbedHelper.msgidToString(event) + " but recevied " + XEmbedHelper.msgidToString(eventReceived));
+                throw new RuntimeException("Didn't receive event " + XEmbedHelper.msgidToString(event) + " but received " + XEmbedHelper.msgidToString(eventReceived));
             } else {
                 if (xembedLog.isLoggable(PlatformLogger.Level.FINER)) {
-                    xembedLog.finer("Successfully recevied " + XEmbedHelper.msgidToString(event));
+                    xembedLog.finer("Successfully received " + XEmbedHelper.msgidToString(event));
                 }
             }
         }

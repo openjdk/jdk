@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ import sun.reflect.generics.factory.GenericsFactory;
 import sun.reflect.generics.scope.ClassScope;
 import java.lang.annotation.Annotation;
 import java.util.Map;
+import java.util.Set;
 import java.util.Objects;
 import sun.reflect.annotation.AnnotationParser;
 import sun.reflect.annotation.AnnotationSupport;
@@ -76,7 +77,7 @@ class Field extends AccessibleObject implements Member {
     // Generics and annotations support
     private final transient String    signature;
     // generic info repository; lazily initialized
-    private transient FieldRepository genericInfo;
+    private transient volatile FieldRepository genericInfo;
     private final byte[]              annotations;
     // Cached field accessor created without override
     @Stable
@@ -105,11 +106,13 @@ class Field extends AccessibleObject implements Member {
 
     // Accessor for generic info repository
     private FieldRepository getGenericInfo() {
+        var genericInfo = this.genericInfo;
         // lazily initialize repository if necessary
         if (genericInfo == null) {
             // create and cache generic info repository
             genericInfo = FieldRepository.make(getGenericSignature(),
                                                getFactory());
+            this.genericInfo = genericInfo;
         }
         return genericInfo; //return cached repository
     }
@@ -202,11 +205,24 @@ class Field extends AccessibleObject implements Member {
      * be used to decode the modifiers.
      *
      * @see Modifier
+     * @see #accessFlags()
      * @jls 8.3 Field Declarations
      * @jls 9.3 Field (Constant) Declarations
      */
     public int getModifiers() {
         return modifiers;
+    }
+
+    /**
+     * {@return an unmodifiable set of the {@linkplain AccessFlag
+     * access flags} for this field, possibly empty}
+     * @see #getModifiers()
+     * @jvms 4.5 Fields
+     * @since 20
+     */
+    @Override
+    public Set<AccessFlag> accessFlags() {
+        return AccessFlag.maskToAccessFlags(getModifiers(), AccessFlag.Location.FIELD);
     }
 
     /**

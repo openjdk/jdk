@@ -59,7 +59,7 @@ public class RunTest {
                 System.err.println("test: " + m.getName());
                 try {
                     StringWriter sw = new StringWriter();
-                    PrintWriter pw = new PrintWriter(sw);;
+                    PrintWriter pw = new PrintWriter(sw);
                     m.invoke(this, new Object[] { pw });
                     String out = sw.toString();
                     System.err.println(">>> " + out.replace("\n", "\n>>> "));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,7 @@ public class FieldAccessWatch {
             throw ex;
         }
 
-        if (!initWatchers(MyList.class, MyList.class.getDeclaredField("items"))) {
+        if (!initWatchers(MyList.class, MyList.class.getDeclaredField("items"), Thread.currentThread())) {
             throw new RuntimeException("Watchers initializations error");
         }
 
@@ -131,7 +131,7 @@ public class FieldAccessWatch {
         log(descr + ": OK");
     }
 
-    private static native boolean initWatchers(Class cls, Field field);
+    private static native boolean initWatchers(Class cls, Field field, Thread testThread);
     private static native boolean startTest(TestResult results);
     private static native void stopTest();
 

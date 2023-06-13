@@ -65,10 +65,10 @@ public class TestGetResource extends JavacTestingAbstractProcessor {
                 String phase = options.get("phase");
 
                 if (phase.equals("write")) {
-                    PrintWriter pw =
-                        new PrintWriter(filer.createResource(CLASS_OUTPUT, PKG, RESOURCE_NAME).openWriter());
-                    pw.print(CONTENTS);
-                    pw.close();
+                    try (PrintWriter pw =
+                        new PrintWriter(filer.createResource(CLASS_OUTPUT, PKG, RESOURCE_NAME).openWriter())) {
+                        pw.print(CONTENTS);
+                    }
                 } else if (phase.equals("read")) {
                     String contents = filer.getResource(CLASS_OUTPUT,
                                                        PKG,

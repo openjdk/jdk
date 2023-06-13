@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ final class SSLSecretDerivation implements SSLKeyDerivation {
      *     Derive-Secret(Secret, Label, Messages) =
      *          HKDF-Expand-Label(..., Transcript-Hash(""), ...);
      *
-     * Hardcode tha Transcript-Hash("") result and skip a digest operation.
+     * Hardcode the Transcript-Hash("") result and skip a digest operation.
      */
     private static final byte[] sha256EmptyDigest = new byte[] {
         (byte)0xE3, (byte)0xB0, (byte)0xC4, (byte)0x42,
@@ -113,8 +113,7 @@ final class SSLSecretDerivation implements SSLKeyDerivation {
             HKDF hkdf = new HKDF(hashAlg.name);
             return hkdf.expand(secret, hkdfInfo, hashAlg.hashLength, algorithm);
         } catch (GeneralSecurityException gse) {
-            throw (SSLHandshakeException) new SSLHandshakeException(
-                "Could not generate secret").initCause(gse);
+            throw new SSLHandshakeException("Could not generate secret", gse);
         }
     }
 

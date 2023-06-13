@@ -44,7 +44,7 @@ void G1CardTable::verify_g1_young_region(MemRegion mr) {
 void G1CardTableChangedListener::on_commit(uint start_idx, size_t num_regions, bool zero_filled) {
   // Default value for a clean card on the card table is -1. So we cannot take advantage of the zero_filled parameter.
   MemRegion mr(G1CollectedHeap::heap()->bottom_addr_for_region(start_idx), num_regions * HeapRegion::GrainWords);
-  _card_table->clear(mr);
+  _card_table->clear_MemRegion(mr);
 }
 
 void G1CardTable::initialize(G1RegionToSpaceMapper* mapper) {
@@ -52,27 +52,23 @@ void G1CardTable::initialize(G1RegionToSpaceMapper* mapper) {
 
   _byte_map_size = mapper->reserved().byte_size();
 
-  _guard_index = cards_required(_whole_heap.word_size()) - 1;
-  _last_valid_index = _guard_index - 1;
-
   HeapWord* low_bound  = _whole_heap.start();
   HeapWord* high_bound = _whole_heap.end();
 
-  _cur_covered_regions = 1;
   _covered[0] = _whole_heap;
 
   _byte_map = (CardValue*) mapper->reserved().start();
-  _byte_map_base = _byte_map - (uintptr_t(low_bound) >> card_shift);
+  _byte_map_base = _byte_map - (uintptr_t(low_bound) >> _card_shift);
   assert(byte_for(low_bound) == &_byte_map[0], "Checking start of map");
-  assert(byte_for(high_bound-1) <= &_byte_map[_last_valid_index], "Checking end of map");
+  assert(byte_for(high_bound-1) <= &_byte_map[last_valid_index()], "Checking end of map");
 
   log_trace(gc, barrier)("G1CardTable::G1CardTable: ");
-  log_trace(gc, barrier)("    &_byte_map[0]: " INTPTR_FORMAT "  &_byte_map[_last_valid_index]: " INTPTR_FORMAT,
-                         p2i(&_byte_map[0]), p2i(&_byte_map[_last_valid_index]));
-  log_trace(gc, barrier)("    _byte_map_base: " INTPTR_FORMAT,  p2i(_byte_map_base));
+  log_trace(gc, barrier)("    &_byte_map[0]: " PTR_FORMAT "  &_byte_map[last_valid_index()]: " PTR_FORMAT,
+                         p2i(&_byte_map[0]), p2i(&_byte_map[last_valid_index()]));
+  log_trace(gc, barrier)("    _byte_map_base: " PTR_FORMAT,  p2i(_byte_map_base));
 }
 
-bool G1CardTable::is_in_young(oop obj) const {
-  volatile CardValue* p = byte_for(obj);
-  return *p == G1CardTable::g1_young_card_val();
+bool G1CardTable::is_in_young(const void* p) const {
+  volatile CardValue* card = byte_for(p);
+  return *card == G1CardTable::g1_young_card_val();
 }

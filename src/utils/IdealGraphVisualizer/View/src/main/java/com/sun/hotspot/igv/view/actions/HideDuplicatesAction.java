@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 package com.sun.hotspot.igv.view.actions;
 
+import com.sun.hotspot.igv.view.EditorTopComponent;
 import java.awt.event.ActionEvent;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
@@ -35,23 +36,19 @@ import org.openide.util.ImageUtilities;
  */
 public class HideDuplicatesAction extends AbstractAction {
 
-    private boolean state;
-    public static final String STATE = "state";
-
-    public HideDuplicatesAction() {
+    public HideDuplicatesAction(boolean selected) {
         putValue(AbstractAction.SMALL_ICON, new ImageIcon(ImageUtilities.loadImage(iconResource())));
+        putValue(Action.SELECTED_KEY, selected);
         putValue(Action.SHORT_DESCRIPTION, "Hide graphs which are the same as the previous graph");
-        setState(false);
     }
 
     @Override
     public void actionPerformed(ActionEvent ev) {
-        setState(!state);
-    }
-
-    public void setState(boolean b) {
-        this.putValue(STATE, b);
-        this.state = b;
+        EditorTopComponent editor = EditorTopComponent.getActive();
+        if (editor != null) {
+            boolean selected = (boolean)getValue(SELECTED_KEY);
+            editor.getModel().setHideDuplicates(selected);
+        }
     }
 
     protected String iconResource() {

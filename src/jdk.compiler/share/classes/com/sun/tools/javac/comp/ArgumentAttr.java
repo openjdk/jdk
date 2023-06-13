@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,6 +120,7 @@ public class ArgumentAttr extends JCTree.Visitor {
         return instance;
     }
 
+    @SuppressWarnings("this-escape")
     protected ArgumentAttr(Context context) {
         context.put(methodAttrKey, this);
         deferredAttr = DeferredAttr.instance(context);
@@ -143,7 +144,7 @@ public class ArgumentAttr extends JCTree.Visitor {
 
     /**
      * Checks a type in the speculative tree against a given result; the type can be either a plain
-     * type or an argument type,in which case a more complex check is required.
+     * type or an argument type, in which case a more complex check is required.
      */
     Type checkSpeculative(JCTree expr, ResultInfo resultInfo) {
         return checkSpeculative(expr, expr.type, resultInfo);
@@ -151,7 +152,7 @@ public class ArgumentAttr extends JCTree.Visitor {
 
     /**
      * Checks a type in the speculative tree against a given result; the type can be either a plain
-     * type or an argument type,in which case a more complex check is required.
+     * type or an argument type, in which case a more complex check is required.
      */
     Type checkSpeculative(DiagnosticPosition pos, Type t, ResultInfo resultInfo) {
         if (t.hasTag(DEFERRED)) {

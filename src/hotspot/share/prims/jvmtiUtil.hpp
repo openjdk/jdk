@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "jvmtifiles/jvmti.h"
 #include "memory/resourceArea.hpp"
 #include "prims/jvmtiEventController.hpp"
+#include "runtime/threads.hpp"
 
 ///////////////////////////////////////////////////////////////
 //
@@ -56,7 +57,7 @@ public:
       return _event_threaded[num];
     }
     if (num >= EXT_MIN_EVENT_TYPE_VAL && num <= EXT_MAX_EVENT_TYPE_VAL) {
-      return false;
+      return (num != EXT_EVENT_CLASS_UNLOAD);
     }
     ShouldNotReachHere();
     return false;
@@ -80,7 +81,7 @@ class SafeResourceMark : public ResourceMark {
       return JvmtiUtil::single_threaded_resource_area();
     }
     thread = Thread::current_or_null();
-    if (thread == NULL) {
+    if (thread == nullptr) {
       return JvmtiUtil::single_threaded_resource_area();
     }
     return thread->resource_area();

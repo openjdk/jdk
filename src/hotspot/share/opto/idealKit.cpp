@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,9 +45,9 @@ IdealKit::IdealKit(GraphKit* gkit, bool delay_all_transforms, bool has_declarati
   _initial_i_o = gkit->i_o();
   _delay_all_transforms = delay_all_transforms;
   _var_ct = 0;
-  _cvstate = NULL;
+  _cvstate = nullptr;
   // We can go memory state free or else we need the entire memory state
-  assert(_initial_memory == NULL || _initial_memory->Opcode() == Op_MergeMem, "memory must be pre-split");
+  assert(_initial_memory == nullptr || _initial_memory->Opcode() == Op_MergeMem, "memory must be pre-split");
   assert(!_gvn.is_IterGVN(), "IdealKit can't be used during Optimize phase");
   int init_size = 5;
   _pending_cvstates = new (C->node_arena()) GrowableArray<Node*>(C->node_arena(), init_size, 0, 0);
@@ -73,18 +73,18 @@ void IdealKit::if_then(Node* left, BoolTest::mask relop,
                        Node* right, float prob, float cnt, bool push_new_state) {
   assert((state() & (BlockS|LoopS|IfThenS|ElseS)), "bad state for new If");
   Node* bol;
-  if (left->bottom_type()->isa_ptr() == NULL) {
-    if (left->bottom_type()->isa_int() != NULL) {
+  if (left->bottom_type()->isa_ptr() == nullptr) {
+    if (left->bottom_type()->isa_int() != nullptr) {
       bol = Bool(CmpI(left, right), relop);
     } else {
-      assert(left->bottom_type()->isa_long() != NULL, "what else?");
+      assert(left->bottom_type()->isa_long() != nullptr, "what else?");
       bol = Bool(CmpL(left, right), relop);
     }
 
   } else {
     bol = Bool(CmpP(left, right), relop);
   }
-  // Delay gvn.tranform on if-nodes until construction is finished
+  // Delay gvn.transform on if-nodes until construction is finished
   // to prevent a constant bool input from discarding a control output.
   IfNode* iff = delay_transform(new IfNode(ctrl(), bol, prob, cnt))->as_If();
   Node* then  = IfTrue(iff);
@@ -167,8 +167,8 @@ void IdealKit::loop(GraphKit* gkit, int nargs, IdealVariable& iv, Node* init, Bo
   if (UseLoopPredicate) {
     // Sync IdealKit and graphKit.
     gkit->sync_kit(*this);
-    // Add loop predicate.
-    gkit->add_empty_predicates(nargs);
+    // Add Parse Predicates.
+    gkit->add_parse_predicates(nargs);
     // Update IdealKit memory.
     sync_kit(gkit);
   }
@@ -202,7 +202,7 @@ void IdealKit::end_loop() {
 // must be specified (which should be 1 less than
 // the number of precedessors.)
 Node* IdealKit::make_label(int goto_ct) {
-  assert(_cvstate != NULL, "must declare variables before labels");
+  assert(_cvstate != nullptr, "must declare variables before labels");
   Node* lab = new_cvstate();
   int sz = 1 + goto_ct + 1 /* fall thru */;
   Node* reg = delay_transform(new RegionNode(sz));
@@ -228,7 +228,7 @@ void IdealKit::goto_(Node* lab, bool bind) {
   Node* reg = lab->in(TypeFunc::Control);
   // find next empty slot in region
   uint slot = 1;
-  while (slot < reg->req() && reg->in(slot) != NULL) slot++;
+  while (slot < reg->req() && reg->in(slot) != nullptr) slot++;
   assert(slot < reg->req(), "too many gotos");
   // If this is last predecessor, then don't force phi creation
   if (slot == reg->req() - 1) bind = false;
@@ -245,9 +245,9 @@ void IdealKit::goto_(Node* lab, bool bind) {
     // Get the current value of the var
     Node* m = _cvstate->in(i);
     // If the var went unused no need for a phi
-    if (m == NULL) {
+    if (m == nullptr) {
       continue;
-    } else if (l == NULL || m == l) {
+    } else if (l == nullptr || m == l) {
       // Only one unique value "m" is known to reach this label so a phi
       // is not yet necessary unless:
       //    the label is being bound and all predecessors have not been seen,
@@ -326,7 +326,7 @@ Node* IdealKit::copy_cvstate() {
 
 //-----------------------------clear-----------------------------------
 void IdealKit::clear(Node* m) {
-  for (uint i = 0; i < m->req(); i++) m->set_req(i, NULL);
+  for (uint i = 0; i < m->req(); i++) m->set_req(i, nullptr);
 }
 
 //-----------------------------IdealVariable----------------------------
@@ -352,18 +352,14 @@ Node* IdealKit::load(Node* ctl,
                      BasicType bt,
                      int adr_idx,
                      bool require_atomic_access,
-                     MemNode::MemOrd mo) {
+                     MemNode::MemOrd mo,
+                     LoadNode::ControlDependency control_dependency) {
 
   assert(adr_idx != Compile::AliasIdxTop, "use other make_load factory" );
-  const TypePtr* adr_type = NULL; // debug-mode-only argument
+  const TypePtr* adr_type = nullptr; // debug-mode-only argument
   debug_only(adr_type = C->get_adr_type(adr_idx));
   Node* mem = memory(adr_idx);
-  Node* ld;
-  if (require_atomic_access && bt == T_LONG) {
-    ld = LoadLNode::make_atomic(ctl, mem, adr, adr_type, t, mo);
-  } else {
-    ld = LoadNode::make(_gvn, ctl, mem, adr, adr_type, t, bt, mo);
-  }
+  Node* ld = LoadNode::make(_gvn, ctl, mem, adr, adr_type, t, bt, mo, control_dependency, require_atomic_access);
   return transform(ld);
 }
 
@@ -372,15 +368,10 @@ Node* IdealKit::store(Node* ctl, Node* adr, Node *val, BasicType bt,
                       MemNode::MemOrd mo, bool require_atomic_access,
                       bool mismatched) {
   assert(adr_idx != Compile::AliasIdxTop, "use other store_to_memory factory");
-  const TypePtr* adr_type = NULL;
+  const TypePtr* adr_type = nullptr;
   debug_only(adr_type = C->get_adr_type(adr_idx));
   Node *mem = memory(adr_idx);
-  Node* st;
-  if (require_atomic_access && bt == T_LONG) {
-    st = StoreLNode::make_atomic(ctl, mem, adr, adr_type, val, mo);
-  } else {
-    st = StoreNode::make(_gvn, ctl, mem, adr, adr_type, val, bt, mo);
-  }
+  Node* st = StoreNode::make(_gvn, ctl, mem, adr, adr_type, val, bt, mo, require_atomic_access);
   if (mismatched) {
     st->as_Store()->set_mismatched_access();
   }
@@ -396,7 +387,7 @@ Node* IdealKit::storeCM(Node* ctl, Node* adr, Node *val, Node* oop_store, int oo
                         BasicType bt,
                         int adr_idx) {
   assert(adr_idx != Compile::AliasIdxTop, "use other store_to_memory factory" );
-  const TypePtr* adr_type = NULL;
+  const TypePtr* adr_type = nullptr;
   debug_only(adr_type = C->get_adr_type(adr_idx));
   Node *mem = memory(adr_idx);
 
@@ -420,11 +411,11 @@ void IdealKit::do_memory_merge(Node* merging, Node* join) {
 
   // Get the region for the join state
   Node* join_region = join->in(TypeFunc::Control);
-  assert(join_region != NULL, "join region must exist");
-  if (join->in(TypeFunc::I_O) == NULL ) {
+  assert(join_region != nullptr, "join region must exist");
+  if (join->in(TypeFunc::I_O) == nullptr ) {
     join->set_req(TypeFunc::I_O,  merging->in(TypeFunc::I_O));
   }
-  if (join->in(TypeFunc::Memory) == NULL ) {
+  if (join->in(TypeFunc::Memory) == nullptr ) {
     join->set_req(TypeFunc::Memory,  merging->in(TypeFunc::Memory));
     return;
   }
@@ -512,10 +503,10 @@ Node* IdealKit::make_leaf_call(const TypeFunc *slow_call_type,
   call->init_req( TypeFunc::FramePtr, top() /* frameptr() */ );
   call->init_req( TypeFunc::ReturnAdr, top() );
 
-  if (parm0 != NULL)  call->init_req(TypeFunc::Parms+0, parm0);
-  if (parm1 != NULL)  call->init_req(TypeFunc::Parms+1, parm1);
-  if (parm2 != NULL)  call->init_req(TypeFunc::Parms+2, parm2);
-  if (parm3 != NULL)  call->init_req(TypeFunc::Parms+3, parm3);
+  if (parm0 != nullptr)  call->init_req(TypeFunc::Parms+0, parm0);
+  if (parm1 != nullptr)  call->init_req(TypeFunc::Parms+1, parm1);
+  if (parm2 != nullptr)  call->init_req(TypeFunc::Parms+2, parm2);
+  if (parm3 != nullptr)  call->init_req(TypeFunc::Parms+3, parm3);
 
   // Node *c = _gvn.transform(call);
   call = (CallNode *) _gvn.transform(call);
@@ -533,7 +524,7 @@ Node* IdealKit::make_leaf_call(const TypeFunc *slow_call_type,
 
   assert(C->alias_type(call->adr_type()) == C->alias_type(adr_type),
          "call node must be constructed correctly");
-  Node* res = NULL;
+  Node* res = nullptr;
   if (slow_call_type->range()->cnt() > TypeFunc::Parms) {
     assert(slow_call_type->range()->cnt() == TypeFunc::Parms+1, "only one return value");
     res = transform(new ProjNode(call, TypeFunc::Parms));
@@ -564,10 +555,10 @@ void IdealKit::make_leaf_call_no_fp(const TypeFunc *slow_call_type,
   call->init_req( TypeFunc::FramePtr, top() /* frameptr() */ );
   call->init_req( TypeFunc::ReturnAdr, top() );
 
-  if (parm0 != NULL)  call->init_req(TypeFunc::Parms+0, parm0);
-  if (parm1 != NULL)  call->init_req(TypeFunc::Parms+1, parm1);
-  if (parm2 != NULL)  call->init_req(TypeFunc::Parms+2, parm2);
-  if (parm3 != NULL)  call->init_req(TypeFunc::Parms+3, parm3);
+  if (parm0 != nullptr)  call->init_req(TypeFunc::Parms+0, parm0);
+  if (parm1 != nullptr)  call->init_req(TypeFunc::Parms+1, parm1);
+  if (parm2 != nullptr)  call->init_req(TypeFunc::Parms+2, parm2);
+  if (parm3 != nullptr)  call->init_req(TypeFunc::Parms+3, parm3);
 
   // Node *c = _gvn.transform(call);
   call = (CallNode *) _gvn.transform(call);

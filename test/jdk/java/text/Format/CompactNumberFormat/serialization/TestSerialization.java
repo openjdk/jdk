@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ import static org.testng.Assert.*;
 public class TestSerialization {
 
     private static final NumberFormat FORMAT_HI = NumberFormat.getCompactNumberInstance(
-            new Locale("hi"), NumberFormat.Style.SHORT);
+            Locale.of("hi"), NumberFormat.Style.SHORT);
     private static final CompactNumberFormat FORMAT_EN_US = (CompactNumberFormat) NumberFormat
             .getCompactNumberInstance(Locale.US, NumberFormat.Style.LONG);
     private static final NumberFormat FORMAT_JA_JP = NumberFormat.getCompactNumberInstance(

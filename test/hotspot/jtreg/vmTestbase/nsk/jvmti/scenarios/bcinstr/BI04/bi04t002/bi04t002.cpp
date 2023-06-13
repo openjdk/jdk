@@ -51,10 +51,10 @@ int readNewBytecode(jvmtiEnv* jvmti) {
     jint read_bytes;
 
     if (pathToByteCode)
-        sprintf(filename,"%s/%s/%s.class",
+        snprintf(filename, sizeof(filename), "%s/%s/%s.class",
                     pathToByteCode, "newclass02", TESTED_CLASS_NAME);
     else
-        sprintf(filename,"%s/%s.class",
+        snprintf(filename, sizeof(filename), "%s/%s.class",
                     "newclass02", TESTED_CLASS_NAME);
 
     NSK_DISPLAY1("Reading new bytecode for java.lang.Object\n\tfile name: %s\n",

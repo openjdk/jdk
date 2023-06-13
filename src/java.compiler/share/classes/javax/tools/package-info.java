@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,9 @@
  * a default compiler is provided, it can be located using the
  * {@link javax.tools.ToolProvider}, for example:
  *
- * <p>{@code JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();}
+ * {@snippet id="show-getSystemJavaCompiler" lang=java :
+ *     JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+ *     }
  *
  * <p>It is possible to provide alternative compilers or tools
  * through the {@linkplain java.util.ServiceLoader service provider
@@ -64,15 +66,17 @@
  * META-INF/services/javax.tools.JavaCompiler}.  This file would
  * contain the single line:
  *
- * <p>{@code com.vendor.VendorJavaCompiler}
+ * {@snippet id="show-service" :
+ *     com.vendor.VendorJavaCompiler
+ *     }
  *
- * <p>If the jar file is on the class path, VendorJavaCompiler can be
+ * <p>If the jar file is on the class path, {@code VendorJavaCompiler} can be
  * located using code like this:
  *
- * <p>{@code JavaCompiler compiler = ServiceLoader.load(JavaCompiler.class).iterator().next();}
+ * {@snippet id="show-serviceLoader" lang=java :
+ *     JavaCompiler compiler = ServiceLoader.load(JavaCompiler.class).iterator().next();
+ *     }
  *
- * @author Peter von der Ah&eacute;
- * @author Jonathan Gibbons
  * @since 1.6
  */
 package javax.tools;

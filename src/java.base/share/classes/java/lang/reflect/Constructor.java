@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import jdk.internal.vm.annotation.Stable;
 import sun.reflect.annotation.TypeAnnotation;
 import sun.reflect.annotation.TypeAnnotationParser;
 import sun.reflect.generics.repository.ConstructorRepository;
+import sun.reflect.generics.repository.GenericDeclRepository;
 import sun.reflect.generics.factory.CoreReflectionFactory;
 import sun.reflect.generics.factory.GenericsFactory;
 import sun.reflect.generics.scope.ConstructorScope;
@@ -72,7 +73,7 @@ public final class Constructor<T> extends Executable {
     // Generics and annotations support
     private final transient String    signature;
     // generic info repository; lazily initialized
-    private transient ConstructorRepository genericInfo;
+    private transient volatile ConstructorRepository genericInfo;
     private final byte[]              annotations;
     private final byte[]              parameterAnnotations;
 
@@ -86,12 +87,14 @@ public final class Constructor<T> extends Executable {
     // Accessor for generic info repository
     @Override
     ConstructorRepository getGenericInfo() {
+        var genericInfo = this.genericInfo;
         // lazily initialize repository if necessary
         if (genericInfo == null) {
             // create and cache generic info repository
             genericInfo =
                 ConstructorRepository.make(getSignature(),
                                            getFactory());
+            this.genericInfo = genericInfo;
         }
         return genericInfo; //return cached repository
     }
@@ -244,7 +247,7 @@ public final class Constructor<T> extends Executable {
       if (getSignature() != null) {
         return (TypeVariable<Constructor<T>>[])getGenericInfo().getTypeParameters();
       } else
-          return (TypeVariable<Constructor<T>>[])new TypeVariable[0];
+          return (TypeVariable<Constructor<T>>[])GenericDeclRepository.EMPTY_TYPE_VARS;
     }
 
 
@@ -371,7 +374,7 @@ public final class Constructor<T> extends Executable {
         sb.append(getDeclaringClass().getTypeName());
         sb.append('(');
         StringJoiner sj = new StringJoiner(",");
-        for (Class<?> parameterType : getParameterTypes()) {
+        for (Class<?> parameterType : getSharedParameterTypes()) {
             sj.add(parameterType.getTypeName());
         }
         sb.append(sj);

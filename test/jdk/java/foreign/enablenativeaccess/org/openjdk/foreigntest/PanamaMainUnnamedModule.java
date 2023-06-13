@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,35 +23,45 @@
 
 package org.openjdk.foreigntest;
 
-import jdk.incubator.foreign.*;
-import org.testng.annotations.Test;
+import java.lang.foreign.*;
+import java.lang.foreign.Linker.Option;
+import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Method;
 
 public class PanamaMainUnnamedModule {
-   @Test
-   public void testReflection() throws Throwable {
-       Method method = CLinker.class.getDeclaredMethod("systemCLinker");
-       method.invoke(null);
+
+    static {
+        System.loadLibrary("LinkerInvokerUnnamed");
+    }
+
+    public static void main(String[] args) throws Throwable {
+        testReflection();
+        testInvoke();
+        testDirectAccess();
+        testJNIAccess();
+    }
+
+   public static void testReflection() throws Throwable {
+       Linker linker = Linker.nativeLinker();
+       Method method = Linker.class.getDeclaredMethod("downcallHandle", FunctionDescriptor.class, Option[].class);
+       method.invoke(linker, FunctionDescriptor.ofVoid(), new Linker.Option[0]);
    }
 
-   @Test
-   public void testSetAccessible() throws Throwable {
-       Method method = CLinker.class.getDeclaredMethod("systemCLinker");
-       method.setAccessible(true);
-       method.invoke(null);
+   public static void testInvoke() throws Throwable {
+       var mh = MethodHandles.lookup().findVirtual(Linker.class, "downcallHandle",
+           MethodType.methodType(MethodHandle.class, FunctionDescriptor.class, Linker.Option[].class));
+       var downcall = (MethodHandle)mh.invokeExact(Linker.nativeLinker(), FunctionDescriptor.ofVoid(), new Linker.Option[0]);
    }
 
-   @Test
-   public void testInvoke() throws Throwable {
-       var mh = MethodHandles.lookup().findStatic(CLinker.class, "systemCLinker",
-           MethodType.methodType(CLinker.class));
-       var linker = (CLinker)mh.invokeExact();
+   public static void testDirectAccess() {
+       Linker.nativeLinker().downcallHandle(FunctionDescriptor.ofVoid());
    }
 
-   @Test
-   public void testDirectAccess() throws Throwable {
-       CLinker.systemCLinker();
-   }
+   public static void testJNIAccess() {
+        nativeLinker0();
+    }
+
+    static native void nativeLinker0();
 }

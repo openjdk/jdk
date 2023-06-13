@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -213,8 +213,16 @@ public interface ModuleReader extends Closeable {
      * when using the stream to list the module contents and access is denied
      * by the security manager. </p>
      *
+     * <p> The returned stream may contain references to one or more open directories
+     * in the module. The directories are closed by closing the stream. </p>
+     *
      * <p> The behavior of the stream when used after the module reader is
      * closed is implementation specific and therefore not specified. </p>
+     *
+     * @apiNote
+     * This method should be used within a try-with-resources statement or similar
+     * control structure to ensure that any open directories referenced by the
+     * stream are closed promptly after the stream's operations have completed.
      *
      * @return A stream of elements that are the names of all resources
      *         in the module

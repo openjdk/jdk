@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,11 @@
  */
 
 /* @test
-   @bug 4691554 6221056 6380723 6404504 6419565 6529796
+   @bug 4691554 6221056 6380723 6404504 6419565 6529796 8301119
    @summary Test the supported New I/O coders
    @modules jdk.charsets
+   @run main CoderTest
+   @run main/othervm -Djdk.charset.GB18030=2000 CoderTest
  */
 
 import java.io.*;
@@ -55,6 +57,9 @@ public class CoderTest {
         = new String[] { ".b2c",
                          ".c2b-irreversible",
                          ".b2c-irreversible" };
+
+    private static final boolean IS_2000 =
+            "2000".equals(System.getProperty("jdk.charset.GB18030"));
 
 
     // Utilities
@@ -466,7 +471,12 @@ public class CoderTest {
         // Outer loop runs three passes: roundtrip, irreversible encodings,
         // and then irreversible decodings
         for (int mode = ROUNDTRIP; mode <= DECODE; mode++) {
-            File f = testFile(encoding, mode);
+            var fileName = encoding;
+            if (fileName.equals("GB18030") && IS_2000) {
+                // tweak the map file name
+                fileName = "GB18030_2000";
+            }
+            File f = testFile(fileName, mode);
             if (f == null)
                 continue;
             loadTests(f);

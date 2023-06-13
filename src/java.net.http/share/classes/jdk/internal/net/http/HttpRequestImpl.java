@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -124,7 +124,7 @@ public class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
             checkTimeout(timeout);
             this.systemHeadersBuilder = new HttpHeadersBuilder();
         }
-        if (!userHeaders.firstValue("User-Agent").isPresent()) {
+        if (userHeaders.firstValue("User-Agent").isEmpty()) {
             this.systemHeadersBuilder.setHeader("User-Agent", USER_AGENT);
         }
         this.uri = requestURI;
@@ -182,7 +182,7 @@ public class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
         this.userHeaders = other.userHeaders;
         this.isWebSocket = other.isWebSocket;
         this.systemHeadersBuilder = new HttpHeadersBuilder();
-        if (!userHeaders.firstValue("User-Agent").isPresent()) {
+        if (userHeaders.firstValue("User-Agent").isEmpty()) {
             this.systemHeadersBuilder.setHeader("User-Agent", USER_AGENT);
         }
         this.uri = uri;
@@ -359,10 +359,6 @@ public class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
 
     @Override
     public Optional<HttpClient.Version> version() { return version; }
-
-    void addSystemHeader(String name, String value) {
-        systemHeadersBuilder.addHeader(name, value);
-    }
 
     @Override
     public void setSystemHeader(String name, String value) {

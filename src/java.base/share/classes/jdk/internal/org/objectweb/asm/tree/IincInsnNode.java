@@ -56,6 +56,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 package jdk.internal.org.objectweb.asm.tree;
 
 import java.util.Map;
@@ -78,12 +79,12 @@ public class IincInsnNode extends AbstractInsnNode {
     /**
       * Constructs a new {@link IincInsnNode}.
       *
-      * @param var index of the local variable to be incremented.
+      * @param varIndex index of the local variable to be incremented.
       * @param incr increment amount to increment the local variable by.
       */
-    public IincInsnNode(final int var, final int incr) {
+    public IincInsnNode(final int varIndex, final int incr) {
         super(Opcodes.IINC);
-        this.var = var;
+        this.var = varIndex;
         this.incr = incr;
     }
 
@@ -103,3 +104,4 @@ public class IincInsnNode extends AbstractInsnNode {
         return new IincInsnNode(var, incr).cloneAnnotations(this);
     }
 }
+

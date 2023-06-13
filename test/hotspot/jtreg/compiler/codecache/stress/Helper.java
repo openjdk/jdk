@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,14 +26,16 @@ package compiler.codecache.stress;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.ByteCodeLoader;
 import jdk.test.lib.InfiniteLoop;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ThreadFactory;
 
 public final class Helper {
+    public static final boolean VIRTUAL_THREAD = Boolean.getBoolean("helperVirtualThread");
     public static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
 
     private static final long THRESHOLD = WHITE_BOX.getIntxVMFlag("CompileThreshold");
@@ -55,9 +57,15 @@ public final class Helper {
     }
 
     public static void startInfiniteLoopThread(Runnable action, long millis) {
-        Thread t = new Thread(new InfiniteLoop(action, millis));
-        t.setDaemon(true);
-        t.start();
+        startInfiniteLoopThread(threadFactory(VIRTUAL_THREAD), action, millis);
+    }
+
+    public static void startInfiniteLoopThread(ThreadFactory threadFactory, Runnable action, long millis) {
+        threadFactory.newThread(new InfiniteLoop(action, millis)).start();
+    }
+
+    public static ThreadFactory threadFactory(boolean virtual) {
+        return (virtual ? Thread.ofVirtual() : Thread.ofPlatform().daemon()).factory();
     }
 
     public static int callMethod(Callable<Integer> callable, int expected) {

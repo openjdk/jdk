@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
  * @test
  * @bug 4984407 5033578 8134795
  * @summary Tests for {Math, StrictMath}.pow
- * @author Joseph D. Darcy
  */
 
 public class PowTests {
@@ -35,35 +34,29 @@ public class PowTests {
 
     static int testPowCase(double input1, double input2, double expected) {
         int failures = 0;
-        failures += Tests.test("StrictMath.pow(double, double)", input1, input2,
-                               StrictMath.pow(input1, input2), expected);
-        failures += Tests.test("Math.pow(double, double)", input1, input2,
-                               Math.pow(input1, input2), expected);
+        failures += Tests.test("StrictMath.pow", input1, input2, StrictMath::pow, expected);
+        failures += Tests.test("Math.pow",       input1, input2, Math::pow,       expected);
         return failures;
     }
 
-
     static int testStrictPowCase(double input1, double input2, double expected) {
         int failures = 0;
-        failures += Tests.test("StrictMath.pow(double, double)", input1, input2,
-                               StrictMath.pow(input1, input2), expected);
+        failures += Tests.test("StrictMath.pow", input1, input2,
+                               StrictMath::pow, expected);
         return failures;
     }
 
     static int testNonstrictPowCase(double input1, double input2, double expected) {
         int failures = 0;
-        failures += Tests.test("Math.pow(double, double)", input1, input2,
-                               Math.pow(input1, input2), expected);
+        failures += Tests.test("Math.pow", input1, input2,
+                               Math::pow, expected);
         return failures;
     }
 
     static int testStrictVsNonstrictPowCase(double input1, double input2) {
-        double smResult = StrictMath.pow(input1, input2);
-        double mResult = Math.pow(input1, input2);
         return Tests.testUlpDiff(
             "StrictMath.pow(double, double) vs Math.pow(double, double)",
-            input1, input2, mResult, smResult, 2.0
-        );
+            input1, input2, Math::pow, StrictMath.pow(input1, input2), 2.0);
     }
 
     /*
@@ -313,7 +306,7 @@ public class PowTests {
         }
     }
 
-    public static void main(String [] argv) {
+    public static void main(String... argv) {
         int failures = 0;
 
         failures += testPow();

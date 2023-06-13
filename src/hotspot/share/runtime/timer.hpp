@@ -38,6 +38,7 @@ class elapsedTimer {
  public:
   elapsedTimer()             { _active = false; reset(); }
   void add(elapsedTimer t);
+  void add_nanoseconds(jlong ns);
   void start();
   void stop();
   void reset()               { _counter = 0; }
@@ -54,7 +55,6 @@ class TimeStamp {
   jlong _counter;
  public:
   TimeStamp()  { _counter = 0; }
-  void clear() { _counter = 0; }
   // has the timestamp been updated since being created or cleared?
   bool is_updated() const { return _counter != 0; }
   // update to current elapsed time

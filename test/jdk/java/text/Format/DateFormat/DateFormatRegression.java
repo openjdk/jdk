@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ import java.io.*;
  * @bug 4029195 4052408 4056591 4059917 4060212 4061287 4065240 4071441 4073003
  * 4089106 4100302 4101483 4103340 4103341 4104136 4104522 4106807 4108407
  * 4134203 4138203 4148168 4151631 4151706 4153860 4162071 4182066 4209272 4210209
- * 4213086 4250359 4253490 4266432 4406615 4413980 8008577
+ * 4213086 4250359 4253490 4266432 4406615 4413980 8008577 8305853
  * @library /java/text/testlib
  * @run main/othervm -Djava.locale.providers=COMPAT,SPI DateFormatRegression
  */
@@ -265,7 +265,7 @@ public class DateFormatRegression extends IntlTest {
         Locale saveLocale = Locale.getDefault();
         TimeZone saveZone = TimeZone.getDefault();
         try {
-            Locale curLocale = new Locale("de","DE");
+            Locale curLocale = Locale.GERMANY;
             Locale.setDefault(curLocale);
             TimeZone.setDefault(TimeZone.getTimeZone("EST"));
             curDate = new Date(98, 0, 1);
@@ -357,11 +357,11 @@ public class DateFormatRegression extends IntlTest {
     public void Test4089106() {
         TimeZone def = TimeZone.getDefault();
         try {
-            TimeZone z = new SimpleTimeZone((int)(1.25 * 3600000), "FAKEZONE");
-            TimeZone.setDefault(z);
+            TimeZone customTz = TimeZone.getTimeZone("GMT-08:15");
+            TimeZone.setDefault(customTz);
             SimpleDateFormat f = new SimpleDateFormat();
-            if (!f.getTimeZone().equals(z))
-                errln("Fail: SimpleTimeZone should use TimeZone.getDefault()");
+            if (!f.getTimeZone().equals(customTz))
+                errln("Fail: SimpleDateFormat should use TimeZone.getDefault()");
         }
         finally {
             TimeZone.setDefault(def);

@@ -4,7 +4,7 @@
  *
  *   TrueType character mapping table (cmap) support (body).
  *
- * Copyright (C) 2002-2020 by
+ * Copyright (C) 2002-2023 by
  * David Turner, Robert Wilhelm, and Werner Lemberg.
  *
  * This file is part of the FreeType project, and may only be used,
@@ -465,7 +465,7 @@
     if ( subheader )
     {
       FT_Byte*  p   = subheader;
-      FT_UInt   idx = (FT_UInt)(char_code & 0xFF);
+      FT_UInt   idx = (FT_UInt)( char_code & 0xFF );
       FT_UInt   start, count;
       FT_Int    delta;
       FT_UInt   offset;
@@ -912,6 +912,16 @@
     {
       if ( valid->level >= FT_VALIDATE_TIGHT )
         FT_INVALID_TOO_SHORT;
+
+      length = (FT_UInt)( valid->limit - table );
+    }
+
+    /* it also happens that the `length' field is too small; */
+    /* this is easy to correct                               */
+    if ( length < (FT_UInt)( valid->limit - table ) )
+    {
+      if ( valid->level >= FT_VALIDATE_PARANOID )
+        FT_INVALID_DATA;
 
       length = (FT_UInt)( valid->limit - table );
     }
@@ -3869,12 +3879,13 @@
   }
 
 
-  FT_LOCAL( FT_Error )
+  FT_LOCAL_DEF( FT_Error )
   tt_get_cmap_info( FT_CharMap    charmap,
                     TT_CMapInfo  *cmap_info )
   {
     FT_CMap        cmap  = (FT_CMap)charmap;
     TT_CMap_Class  clazz = (TT_CMap_Class)cmap->clazz;
+
 
     if ( clazz->get_cmap_info )
       return clazz->get_cmap_info( charmap, cmap_info );

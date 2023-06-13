@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,8 @@
  * @author Eric Wang <yiming.wang@oracle.com>
  * @summary tests java.util.Base64
  * @library /test/lib /
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
  * @run main/othervm/timeout=600 -Xbatch -DcheckOutput=true
  *       -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
@@ -48,9 +48,10 @@ import java.util.Base64.Decoder;
 import java.util.Base64.Encoder;
 import java.util.Objects;
 import java.util.Random;
+import java.util.Arrays;
 
 import compiler.whitebox.CompilerWhiteBoxTest;
-import sun.hotspot.code.Compiler;
+import jdk.test.whitebox.code.Compiler;
 import jtreg.SkippedException;
 import jdk.test.lib.Utils;
 
@@ -79,9 +80,9 @@ public class TestBase64 {
 
     private static void warmup() {
         final int warmupCount = 20_000;
-        final int bufSize = 60;
+        final int bufSize = 15308;
         byte[] srcBuf = new byte[bufSize];
-        byte[] encBuf = new byte[(bufSize / 3) * 4];
+        byte[] encBuf = new byte[((bufSize + 2) / 3) * 4];
         byte[] decBuf = new byte[bufSize];
 
         ran.nextBytes(srcBuf);
@@ -163,10 +164,13 @@ public class TestBase64 {
                 assertEqual(resEncodeStr, encodedStr);
 
                 // test int decode(byte[], byte[])
-                resArr = new byte[srcArr.length];
+                // JDK-8273108: Test for output buffer overrun
+                resArr = new byte[srcArr.length + 2];
+                resArr[srcArr.length + 1] = (byte) 167;
                 len = decoder.decode(encodedArr, resArr);
                 assertEqual(len, srcArr.length);
-                assertEqual(resArr, srcArr);
+                assertEqual(Arrays.copyOfRange(resArr, 0, srcArr.length), srcArr);
+                assertEqual(resArr[srcArr.length + 1], (byte) 167);
 
                 // test byte[] decode(byte[])
                 resArr = decoder.decode(encodedArr);

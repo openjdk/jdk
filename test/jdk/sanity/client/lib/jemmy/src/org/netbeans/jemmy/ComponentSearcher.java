@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ import java.util.Vector;
 
 /**
  *
- * Contains methods to search for components below a a given
+ * Contains methods to search for components below a given
  * {@code java.awt.Container} in the display containment hierarchy. Uses a
  * {@code ComponentChooser} interface implementation to find a component.
  *

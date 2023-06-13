@@ -26,15 +26,15 @@
 package com.sun.hotspot.igv.data.serialization;
 
 import com.sun.hotspot.igv.data.*;
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.CharArrayWriter;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.channels.Channels;
-
 import static java.nio.charset.StandardCharsets.UTF_8;
+import org.junit.*;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import org.junit.*;
-import org.openide.util.Exceptions;
-import org.xml.sax.InputSource;
 
 /**
  *

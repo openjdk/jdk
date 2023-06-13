@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8144903 8177466 8191842 8211694 8213725 8239536 8257236 8252409
+ * @bug 8144903 8177466 8191842 8211694 8213725 8239536 8257236 8252409 8294431
  * @summary Tests for EvaluationState.variables
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -340,7 +340,7 @@ public class VariablesTest extends KullaTesting {
         //assertEquals(getState().source(snippet), src);
         //assertEquals(snippet, undefKey);
         assertEquals(getState().status(undefKey), RECOVERABLE_NOT_DEFINED);
-        List<String> unr = getState().unresolvedDependencies((VarSnippet) undefKey).collect(toList());;
+        List<String> unr = getState().unresolvedDependencies((VarSnippet) undefKey).collect(toList());
         assertEquals(unr.size(), 1);
         assertEquals(unr.get(0), "class undefined");
         assertVariables(variable("undefined", "d"));
@@ -615,6 +615,10 @@ public class VariablesTest extends KullaTesting {
         assertEval("interface Marker {}");
         assertEval("var v = (Marker & Runnable) () -> {};", added(VALID));
         assertEval("v.run()");
+    }
+
+    public void varAnonymousClassAndStaticField() { //JDK-8294431
+        assertEval("var obj = new Object() { public static final String msg = \"hello\"; };");
     }
 
 }

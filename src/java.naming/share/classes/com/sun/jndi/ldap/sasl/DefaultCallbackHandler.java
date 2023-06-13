@@ -131,7 +131,7 @@ final class DefaultCallbackHandler implements CallbackHandler {
         }
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     protected void finalize() throws Throwable {
         clearPassword();
     }

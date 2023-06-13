@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@ protected:
   DCmdArgument<bool> _all;
   DCmdArgument<char*> _cmd;
 public:
+  static int num_arguments() { return 2; }
   HelpDCmd(outputStream* output, bool heap);
   static const char* name() { return "help"; }
   static const char* description() {
@@ -81,7 +82,7 @@ public:
   static const char* impact() { return "Low"; }
   static const JavaPermission permission() {
     JavaPermission p = {"java.lang.management.ManagementPermission",
-                        "monitor", NULL};
+                        "monitor", nullptr};
     return p;
   }
   virtual void execute(DCmdSource source, TRAPS) {
@@ -113,6 +114,7 @@ class PrintVMFlagsDCmd : public DCmdWithParser {
 protected:
   DCmdArgument<bool> _all;
 public:
+  static int num_arguments() { return 1; }
   PrintVMFlagsDCmd(outputStream* output, bool heap);
   static const char* name() { return "VM.flags"; }
   static const char* description() {
@@ -123,7 +125,7 @@ public:
   }
   static const JavaPermission permission() {
     JavaPermission p = {"java.lang.management.ManagementPermission",
-                        "monitor", NULL};
+                        "monitor", nullptr};
     return p;
   }
   virtual void execute(DCmdSource source, TRAPS);
@@ -135,6 +137,7 @@ protected:
   DCmdArgument<char*> _value;
 
 public:
+  static int num_arguments() { return 2; }
   SetVMFlagDCmd(outputStream* output, bool heap);
   static const char* name() { return "VM.set_flag"; }
   static const char* description() {
@@ -145,7 +148,7 @@ public:
   }
   static const JavaPermission permission() {
     JavaPermission p = {"java.lang.management.ManagementPermission",
-                        "control", NULL};
+                        "control", nullptr};
     return p;
   }
   virtual void execute(DCmdSource source, TRAPS);
@@ -163,7 +166,7 @@ public:
   }
   static const JavaPermission permission() {
     JavaPermission p = {"java.lang.management.ManagementPermission",
-                        "monitor", NULL};
+                        "monitor", nullptr};
     return p;
   }
   virtual void execute(DCmdSource source, TRAPS);
@@ -176,6 +179,7 @@ protected:
   DCmdArgument<char*> _libpath;
   DCmdArgument<char*> _option;
 public:
+  static int num_arguments() { return 2; }
   JVMTIAgentLoadDCmd(outputStream* output, bool heap);
   static const char* name() { return "JVMTI.agent_load"; }
   static const char* description() {
@@ -184,7 +188,7 @@ public:
   static const char* impact() { return "Low"; }
   static const JavaPermission permission() {
     JavaPermission p = {"java.lang.management.ManagementPermission",
-                        "control", NULL};
+                        "control", nullptr};
     return p;
   }
   virtual void execute(DCmdSource source, TRAPS);
@@ -206,7 +210,7 @@ public:
   }
   static const JavaPermission permission() {
     JavaPermission p = {"java.lang.management.ManagementPermission",
-                        "monitor", NULL};
+                        "monitor", nullptr};
     return p;
   }
   virtual void execute(DCmdSource source, TRAPS);
@@ -216,6 +220,7 @@ class VMUptimeDCmd : public DCmdWithParser {
 protected:
   DCmdArgument<bool> _date;
 public:
+  static int num_arguments() { return 1; }
   VMUptimeDCmd(outputStream* output, bool heap);
   static const char* name() { return "VM.uptime"; }
   static const char* description() {
@@ -237,7 +242,7 @@ public:
   static const char* impact() { return "Low"; }
   static const JavaPermission permission() {
     JavaPermission p = {"java.lang.management.ManagementPermission",
-                        "monitor", NULL};
+                        "monitor", nullptr};
     return p;
   }
   virtual void execute(DCmdSource source, TRAPS);
@@ -281,7 +286,7 @@ public:
   }
   static const JavaPermission permission() {
     JavaPermission p = {"java.lang.management.ManagementPermission",
-      "monitor", NULL};
+      "monitor", nullptr};
       return p;
   }
 
@@ -300,7 +305,7 @@ public:
   }
   static const JavaPermission permission() {
     JavaPermission p = {"java.lang.management.ManagementPermission",
-      "monitor", NULL};
+      "monitor", nullptr};
       return p;
   }
 
@@ -316,6 +321,7 @@ protected:
   DCmdArgument<jlong> _gzip;
   DCmdArgument<bool> _overwrite;
 public:
+  static int num_arguments() { return 4; }
   HeapDumpDCmd(outputStream* output, bool heap);
   static const char* name() {
     return "GC.heap_dump";
@@ -329,7 +335,7 @@ public:
   }
   static const JavaPermission permission() {
     JavaPermission p = {"java.lang.management.ManagementPermission",
-                        "monitor", NULL};
+                        "monitor", nullptr};
     return p;
   }
   virtual void execute(DCmdSource source, TRAPS);
@@ -342,6 +348,7 @@ protected:
   DCmdArgument<bool> _all;
   DCmdArgument<jlong> _parallel_thread_num;
 public:
+  static int num_arguments() { return 2; }
   ClassHistogramDCmd(outputStream* output, bool heap);
   static const char* name() {
     return "GC.class_histogram";
@@ -354,7 +361,7 @@ public:
   }
   static const JavaPermission permission() {
     JavaPermission p = {"java.lang.management.ManagementPermission",
-                        "monitor", NULL};
+                        "monitor", nullptr};
     return p;
   }
   virtual void execute(DCmdSource source, TRAPS);
@@ -366,6 +373,7 @@ protected:
   DCmdArgument<bool> _print_subclasses; // true if subclasses of the specified classname should be printed.
   DCmdArgument<char*> _classname; // Optional single class name whose hierarchy should be printed.
 public:
+  static int num_arguments() { return 3; }
   ClassHierarchyDCmd(outputStream* output, bool heap);
   static const char* name() {
     return "VM.class_hierarchy";
@@ -380,23 +388,8 @@ public:
   }
   static const JavaPermission permission() {
     JavaPermission p = {"java.lang.management.ManagementPermission",
-                        "monitor", NULL};
+                        "monitor", nullptr};
     return p;
-  }
-  virtual void execute(DCmdSource source, TRAPS);
-};
-
-class TouchedMethodsDCmd : public DCmd {
-public:
-  TouchedMethodsDCmd(outputStream* output, bool heap) : DCmd(output, heap) {}
-  static const char* name() {
-    return "VM.print_touched_methods";
-  }
-  static const char* description() {
-    return "Print all methods that have ever been touched during the lifetime of this JVM.";
-  }
-  static const char* impact() {
-    return "Medium: Depends on Java content.";
   }
   virtual void execute(DCmdSource source, TRAPS);
 };
@@ -407,6 +400,7 @@ protected:
   DCmdArgument<char*> _suboption;   // option of VM.cds
   DCmdArgument<char*> _filename;    // file name, optional
 public:
+  static int num_arguments() { return 2; }
   DumpSharedArchiveDCmd(outputStream* output, bool heap);
   static const char* name() {
     return "VM.cds";
@@ -419,10 +413,9 @@ public:
   }
   static const JavaPermission permission() {
     JavaPermission p = {"java.lang.management.ManagementPermission",
-                        "monitor", NULL};
+                        "monitor", nullptr};
     return p;
   }
-  static int num_arguments();
   virtual void execute(DCmdSource source, TRAPS);
 };
 #endif // INCLUDE_CDS
@@ -433,6 +426,7 @@ protected:
   DCmdArgument<bool> _locks;
   DCmdArgument<bool> _extended;
 public:
+  static int num_arguments() { return 2; }
   ThreadDumpDCmd(outputStream* output, bool heap);
   static const char* name() { return "Thread.print"; }
   static const char* description() {
@@ -443,7 +437,7 @@ public:
   }
   static const JavaPermission permission() {
     JavaPermission p = {"java.lang.management.ManagementPermission",
-                        "monitor", NULL};
+                        "monitor", nullptr};
     return p;
   }
   virtual void execute(DCmdSource source, TRAPS);
@@ -484,6 +478,8 @@ class JMXStartRemoteDCmd : public DCmdWithParser {
   DCmdArgument<char *> _jdp_name;
 
 public:
+  static int num_arguments() { return 21; }
+
   JMXStartRemoteDCmd(outputStream *output, bool heap_allocated);
 
   static const char *name() {
@@ -551,7 +547,7 @@ public:
 
   static const JavaPermission permission() {
     JavaPermission p = {"java.lang.management.ManagementPermission",
-                        "monitor", NULL};
+                        "monitor", nullptr};
     return p;
   }
 
@@ -573,7 +569,7 @@ public:
   }
   static const JavaPermission permission() {
     JavaPermission p = {"java.lang.management.ManagementPermission",
-                        "monitor", NULL};
+                        "monitor", nullptr};
     return p;
   }
   virtual void execute(DCmdSource source, TRAPS);
@@ -594,7 +590,7 @@ public:
   }
   static const JavaPermission permission() {
     JavaPermission p = {"java.lang.management.ManagementPermission",
-                        "monitor", NULL};
+                        "monitor", nullptr};
     return p;
   }
   virtual void execute(DCmdSource source, TRAPS);
@@ -615,7 +611,7 @@ public:
   }
   static const JavaPermission permission() {
     JavaPermission p = {"java.lang.management.ManagementPermission",
-                        "monitor", NULL};
+                        "monitor", nullptr};
     return p;
   }
   virtual void execute(DCmdSource source, TRAPS);
@@ -635,7 +631,7 @@ public:
   }
   static const JavaPermission permission() {
     JavaPermission p = {"java.lang.management.ManagementPermission",
-                        "monitor", NULL};
+                        "monitor", nullptr};
     return p;
   }
   virtual void execute(DCmdSource source, TRAPS);
@@ -647,6 +643,7 @@ protected:
   DCmdArgument<char*> _function;
   DCmdArgument<jlong> _granularity;
 public:
+  static int num_arguments() { return 2; }
   CodeHeapAnalyticsDCmd(outputStream* output, bool heap);
   static const char* name() {
     return "Compiler.CodeHeap_Analytics";
@@ -660,7 +657,7 @@ public:
   }
   static const JavaPermission permission() {
     JavaPermission p = {"java.lang.management.ManagementPermission",
-                        "monitor", NULL};
+                        "monitor", nullptr};
     return p;
   }
   virtual void execute(DCmdSource source, TRAPS);
@@ -681,7 +678,7 @@ public:
   }
   static const JavaPermission permission() {
     JavaPermission p = {"java.lang.management.ManagementPermission",
-                        "monitor", NULL};
+                        "monitor", nullptr};
     return p;
   }
   virtual void execute(DCmdSource source, TRAPS);
@@ -701,7 +698,7 @@ public:
   }
   static const JavaPermission permission() {
     JavaPermission p = {"java.lang.management.ManagementPermission",
-                        "monitor", NULL};
+                        "control", nullptr};
     return p;
   }
   virtual void execute(DCmdSource source, TRAPS);
@@ -711,6 +708,7 @@ class CompilerDirectivesAddDCmd : public DCmdWithParser {
 protected:
   DCmdArgument<char*> _filename;
 public:
+  static int num_arguments() { return 1; }
   CompilerDirectivesAddDCmd(outputStream* output, bool heap);
   static const char* name() {
     return "Compiler.directives_add";
@@ -723,7 +721,7 @@ public:
   }
   static const JavaPermission permission() {
     JavaPermission p = {"java.lang.management.ManagementPermission",
-                        "monitor", NULL};
+                        "control", nullptr};
     return p;
   }
   virtual void execute(DCmdSource source, TRAPS);
@@ -743,7 +741,7 @@ public:
   }
   static const JavaPermission permission() {
     JavaPermission p = {"java.lang.management.ManagementPermission",
-                        "monitor", NULL};
+                        "control", nullptr};
     return p;
   }
   virtual void execute(DCmdSource source, TRAPS);
@@ -796,6 +794,7 @@ class SymboltableDCmd : public DCmdWithParser {
 protected:
   DCmdArgument<bool> _verbose;
 public:
+  static int num_arguments() { return 1; }
   SymboltableDCmd(outputStream* output, bool heap);
   static const char* name() {
     return "VM.symboltable";
@@ -808,7 +807,7 @@ public:
   }
   static const JavaPermission permission() {
     JavaPermission p = {"java.lang.management.ManagementPermission",
-                        "monitor", NULL};
+                        "monitor", nullptr};
     return p;
   }
   virtual void execute(DCmdSource source, TRAPS);
@@ -818,6 +817,7 @@ class StringtableDCmd : public DCmdWithParser {
 protected:
   DCmdArgument<bool> _verbose;
 public:
+  static int num_arguments() { return 1; }
   StringtableDCmd(outputStream* output, bool heap);
   static const char* name() {
     return "VM.stringtable";
@@ -830,7 +830,7 @@ public:
   }
   static const JavaPermission permission() {
     JavaPermission p = {"java.lang.management.ManagementPermission",
-                        "monitor", NULL};
+                        "monitor", nullptr};
     return p;
   }
   virtual void execute(DCmdSource source, TRAPS);
@@ -840,6 +840,7 @@ class SystemDictionaryDCmd : public DCmdWithParser {
 protected:
   DCmdArgument<bool> _verbose;
 public:
+  static int num_arguments() { return 1; }
   SystemDictionaryDCmd(outputStream* output, bool heap);
   static const char* name() {
     return "VM.systemdictionary";
@@ -852,7 +853,30 @@ public:
   }
   static const JavaPermission permission() {
     JavaPermission p = {"java.lang.management.ManagementPermission",
-                        "monitor", NULL};
+                        "monitor", nullptr};
+    return p;
+  }
+  virtual void execute(DCmdSource source, TRAPS);
+};
+
+class ClassesDCmd : public DCmdWithParser {
+protected:
+  DCmdArgument<bool> _verbose;
+public:
+  static int num_arguments() { return 1; }
+  ClassesDCmd(outputStream* output, bool heap);
+  static const char* name() {
+    return "VM.classes";
+  }
+  static const char* description() {
+    return "Print all loaded classes";
+  }
+  static const char* impact() {
+      return "Medium: Depends on number of loaded classes.";
+  }
+  static const JavaPermission permission() {
+    JavaPermission p = {"java.lang.management.ManagementPermission",
+                        "monitor", nullptr};
     return p;
   }
   virtual void execute(DCmdSource source, TRAPS);
@@ -872,7 +896,7 @@ public:
     return "High: Switches the VM into Java debug mode.";
   }
   static const JavaPermission permission() {
-    JavaPermission p = { "java.lang.management.ManagementPermission", "control", NULL };
+    JavaPermission p = { "java.lang.management.ManagementPermission", "control", nullptr };
     return p;
   }
   virtual void execute(DCmdSource source, TRAPS);
@@ -884,6 +908,7 @@ protected:
   DCmdArgument<char*> _log;
   DCmdArgument<char*> _max;
 public:
+  static int num_arguments() { return 2; }
   EventLogDCmd(outputStream* output, bool heap);
   static const char* name() {
     return "VM.events";
@@ -896,7 +921,33 @@ public:
   }
   static const JavaPermission permission() {
     JavaPermission p = {"java.lang.management.ManagementPermission",
-                        "monitor", NULL};
+                        "monitor", nullptr};
+    return p;
+  }
+  virtual void execute(DCmdSource source, TRAPS);
+};
+
+class ThreadDumpToFileDCmd : public DCmdWithParser {
+private:
+  void dumpToFile(Symbol* name, Symbol* signature, const char* path, bool overwrite, TRAPS);
+protected:
+  DCmdArgument<bool> _overwrite;
+  DCmdArgument<char*> _format;
+  DCmdArgument<char*> _filepath;
+public:
+  static int num_arguments() { return 3; }
+  ThreadDumpToFileDCmd(outputStream *output, bool heap);
+  static const char *name() {
+    return "Thread.dump_to_file";
+  }
+  static const char *description() {
+    return "Dump threads, with stack traces, to a file in plain text or JSON format.";
+  }
+  static const char* impact() {
+    return "Medium: Depends on the number of threads.";
+  }
+  static const JavaPermission permission() {
+    JavaPermission p = {"java.lang.management.ManagementPermission", "monitor", nullptr};
     return p;
   }
   virtual void execute(DCmdSource source, TRAPS);

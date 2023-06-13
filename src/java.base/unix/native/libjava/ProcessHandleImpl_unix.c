@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,7 +87,7 @@
  * Example 1:
  * ----------
  * The implementation of Java_java_lang_ProcessHandleImpl_initNative()
- * is the same on all platforms except on Linux where it initilizes one
+ * is the same on all platforms except on Linux where it initializes one
  * additional field. So we place the implementation right into
  * Java_java_lang_ProcessHandleImpl_initNative() but add call to
  * os_init() at the end of the function which is empty on all platforms
@@ -622,7 +622,7 @@ jint unix_getChildren(JNIEnv *env, jlong jpid, jlongArray jarray,
 static int getPsinfo(pid_t pid, psinfo_t *psinfo) {
     FILE* fp;
     char fn[32];
-    int ret;
+    size_t ret;
 
     /*
      * Try to open /proc/%d/psinfo

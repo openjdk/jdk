@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -213,20 +213,20 @@ AWT_NS_WINDOW_IMPLEMENTATION
     NSUInteger type = 0;
     if (IS(styleBits, DECORATED)) {
         type |= NSTitledWindowMask;
-        if (IS(styleBits, CLOSEABLE))            type |= NSClosableWindowMask;
-        if (IS(styleBits, RESIZABLE))            type |= NSResizableWindowMask;
-        if (IS(styleBits, FULL_WINDOW_CONTENT))  type |= NSFullSizeContentViewWindowMask;
+        if (IS(styleBits, CLOSEABLE))            type |= NSWindowStyleMaskClosable;
+        if (IS(styleBits, RESIZABLE))            type |= NSWindowStyleMaskResizable;
+        if (IS(styleBits, FULL_WINDOW_CONTENT))  type |= NSWindowStyleMaskFullSizeContentView;
     } else {
-        type |= NSBorderlessWindowMask;
+        type |= NSWindowStyleMaskBorderless;
     }
 
-    if (IS(styleBits, MINIMIZABLE))   type |= NSMiniaturizableWindowMask;
-    if (IS(styleBits, TEXTURED))      type |= NSTexturedBackgroundWindowMask;
-    if (IS(styleBits, UNIFIED))       type |= NSUnifiedTitleAndToolbarWindowMask;
-    if (IS(styleBits, UTILITY))       type |= NSUtilityWindowMask;
-    if (IS(styleBits, HUD))           type |= NSHUDWindowMask;
+    if (IS(styleBits, MINIMIZABLE))   type |= NSWindowStyleMaskMiniaturizable;
+    if (IS(styleBits, TEXTURED))      type |= NSWindowStyleMaskTexturedBackground;
+    if (IS(styleBits, UNIFIED))       type |= NSWindowStyleMaskUnifiedTitleAndToolbar;
+    if (IS(styleBits, UTILITY))       type |= NSWindowStyleMaskUtilityWindow;
+    if (IS(styleBits, HUD))           type |= NSWindowStyleMaskHUDWindow;
     if (IS(styleBits, SHEET))         type |= NSWindowStyleMaskDocModalWindow;
-    if (IS(styleBits, NONACTIVATING)) type |= NSNonactivatingPanelMask;
+    if (IS(styleBits, NONACTIVATING)) type |= NSWindowStyleMaskNonactivatingPanel;
 
     return type;
 }
@@ -269,7 +269,7 @@ AWT_NS_WINDOW_IMPLEMENTATION
 
     if (IS(mask, FULLSCREENABLE) && [self.nsWindow respondsToSelector:@selector(toggleFullScreen:)]) {
         if (IS(bits, FULLSCREENABLE)) {
-            [self.nsWindow setCollectionBehavior:(1 << 7) /*NSWindowCollectionBehaviorFullScreenPrimary*/];
+            [self.nsWindow setCollectionBehavior:NSWindowCollectionBehaviorFullScreenPrimary];
         } else {
             [self.nsWindow setCollectionBehavior:NSWindowCollectionBehaviorDefault];
         }
@@ -343,7 +343,7 @@ AWT_ASSERT_APPKIT_THREAD;
     [self setPropertiesForStyleBits:styleBits mask:MASK(_METHOD_PROP_BITMASK)];
 
     if (IS(self.styleBits, IS_POPUP)) {
-        [self.nsWindow setCollectionBehavior:(1 << 8) /*NSWindowCollectionBehaviorFullScreenAuxiliary*/];
+        [self.nsWindow setCollectionBehavior:NSWindowCollectionBehaviorFullScreenAuxiliary];
     }
 
     if (IS(bits, SHEET) && owner != nil) {
@@ -439,7 +439,7 @@ AWT_ASSERT_APPKIT_THREAD;
 
     NSPoint screenLocation = [NSEvent mouseLocation];
     NSPoint windowLocation = [window convertScreenToBase: screenLocation];
-    int modifierFlags = (eventType == NSMouseEntered) ? NSMouseEnteredMask : NSMouseExitedMask;
+    int modifierFlags = (eventType == NSEventTypeMouseEntered) ? NSMouseEnteredMask : NSMouseExitedMask;
 
     NSEvent *mouseEvent = [NSEvent enterExitEventWithType: eventType
                                                  location: windowLocation
@@ -467,9 +467,9 @@ AWT_ASSERT_APPKIT_THREAD;
             BOOL isUnderMouse = ([window windowNumber] == topmostWindowUnderMouseID);
             BOOL mouseIsOver = [[window contentView] mouseIsOver];
             if (isUnderMouse && !mouseIsOver) {
-                [AWTWindow synthesizeMouseEnteredExitedEvents:window withType:NSMouseEntered];
+                [AWTWindow synthesizeMouseEnteredExitedEvents:window withType:NSEventTypeMouseEntered];
             } else if (!isUnderMouse && mouseIsOver) {
-                [AWTWindow synthesizeMouseEnteredExitedEvents:window withType:NSMouseExited];
+                [AWTWindow synthesizeMouseEnteredExitedEvents:window withType:NSEventTypeMouseExited];
             }
         }
     }
@@ -549,7 +549,7 @@ AWT_ASSERT_APPKIT_THREAD;
     return isVisible;
 }
 
-// Orders window's childs based on the current focus state
+// Orders window children based on the current focus state
 - (void) orderChildWindows:(BOOL)focus {
 AWT_ASSERT_APPKIT_THREAD;
 
@@ -685,7 +685,7 @@ AWT_ASSERT_APPKIT_THREAD;
                 : [self standardFrame];
 }
 
-// Hides/shows window's childs during iconify/de-iconify operation
+// Hides/shows window children during iconify/de-iconify operation
 - (void) iconifyChildWindows:(BOOL)iconify {
 AWT_ASSERT_APPKIT_THREAD;
 
@@ -999,7 +999,9 @@ AWT_ASSERT_APPKIT_THREAD;
 }
 
 - (void)sendEvent:(NSEvent *)event {
-        if ([event type] == NSLeftMouseDown || [event type] == NSRightMouseDown || [event type] == NSOtherMouseDown) {
+        if ([event type] == NSEventTypeLeftMouseDown  ||
+            [event type] == NSEventTypeRightMouseDown ||
+            [event type] == NSEventTypeOtherMouseDown) {
             if ([self isBlocked]) {
                 // Move parent windows to front and make sure that a child window is displayed
                 // in front of its nearest parent.
@@ -1602,7 +1604,7 @@ JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CPlatformWindow_nativeSynthesizeMou
 {
 JNI_COCOA_ENTER(env);
 
-    if (eventType == NSMouseEntered || eventType == NSMouseExited) {
+    if (eventType == NSEventTypeMouseEntered || eventType == NSEventTypeMouseExited) {
         NSWindow *nsWindow = OBJC(windowPtr);
 
         [ThreadUtilities performOnMainThreadWaiting:NO block:^(){
@@ -1690,7 +1692,7 @@ JNI_COCOA_ENTER(env);
         if (CGDisplayCapture(aID) == kCGErrorSuccess) {
             // remove window decoration
             NSUInteger styleMask = [AWTWindow styleMaskForStyleBits:window.styleBits];
-            [nsWindow setStyleMask:(styleMask & ~NSTitledWindowMask) | NSBorderlessWindowMask];
+            [nsWindow setStyleMask:(styleMask & ~NSTitledWindowMask) | NSWindowStyleMaskBorderless];
 
             int shieldLevel = CGShieldingWindowLevel();
             window.preFullScreenLevel = [nsWindow level];

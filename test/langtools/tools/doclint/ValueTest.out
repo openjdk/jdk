@@ -19,4 +19,10 @@ ValueTest.java:63: error: value does not refer to a constant
 ValueTest.java:66: error: value does not refer to a constant
     /** invalid enum constant: {@value Thread.State#NEW} */
                                ^
-7 errors
+ValueTest.java:75: error: invalid format: %%04x
+    /** invalid format: {@value %%04x} */
+                                ^
+ValueTest.java:78: error: invalid format: "04x"
+    /** invalid format: {@value "04x"} */
+                                ^
+9 errors

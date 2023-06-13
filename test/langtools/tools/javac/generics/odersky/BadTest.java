@@ -3,7 +3,7 @@
  * @summary Negative regression test from odersky
  * @author odersky
  *
- * @compile/fail/ref=BadTest-old.out -XDrawDiagnostics -source 15 -Xlint:-options BadTest.java
+ * @compile/fail/ref=BadTest-old.out -XDrawDiagnostics --release 15 BadTest.java
  * @compile/fail/ref=BadTest.out -XDrawDiagnostics  BadTest.java
  */
 
@@ -15,7 +15,7 @@ class BadTest {
         static <A> Cell<A> makeCell(A x) { return new Cell<A>(x); }
         static <A> A id(A x) { return x; }
 
-        public static void main(String[] args) {
+        public static void meth() {
             List<Cell<String>> as = nil().prepend(makeCell(null));
             List<Cell<String>> bs = cons(makeCell(null), nil());
             List<String> xs = id(nil());

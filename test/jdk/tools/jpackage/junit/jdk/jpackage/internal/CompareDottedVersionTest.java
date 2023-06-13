@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,12 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 import static org.junit.Assert.assertEquals;
 
+/*
+ * @test
+ * @modules jdk.jpackage
+ * @compile --patch-module jdk.jpackage=${test.src} --add-reads jdk.jpackage=ALL-UNNAMED --add-exports jdk.jpackage/jdk.jpackage.internal=ALL-UNNAMED CompareDottedVersionTest.java
+ * @run junit/othervm --patch-module jdk.jpackage=${test.classes} --add-reads jdk.jpackage=ALL-UNNAMED --add-exports jdk.jpackage/jdk.jpackage.internal=ALL-UNNAMED jdk.jpackage.internal.CompareDottedVersionTest
+ */
 @RunWith(Parameterized.class)
 public class CompareDottedVersionTest {
 

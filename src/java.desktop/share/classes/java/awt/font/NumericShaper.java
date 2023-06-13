@@ -1533,12 +1533,7 @@ public final class NumericShaper implements java.io.Serializable {
         rangeArray = rangeSet.toArray(new Range[rangeSet.size()]);
         if (rangeArray.length > BSEARCH_THRESHOLD) {
             // sort rangeArray for binary search
-            Arrays.sort(rangeArray,
-                        new Comparator<Range>() {
-                            public int compare(Range s1, Range s2) {
-                                return s1.base > s2.base ? 1 : s1.base == s2.base ? 0 : -1;
-                            }
-                        });
+            Arrays.sort(rangeArray, Comparator.comparingInt(s -> s.base));
         }
     }
 

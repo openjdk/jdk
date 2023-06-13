@@ -4,7 +4,7 @@
  *
  *   TrueType font driver implementation (body).
  *
- * Copyright (C) 1996-2020 by
+ * Copyright (C) 1996-2023 by
  * David Turner, Robert Wilhelm, and Werner Lemberg.
  *
  * This file is part of the FreeType project, and may only be used,
@@ -108,7 +108,7 @@
       return error;
     }
 
-    FT_TRACE0(( "tt_property_set: missing property `%s'\n",
+    FT_TRACE2(( "tt_property_set: missing property `%s'\n",
                 property_name ));
     return FT_THROW( Missing_Property );
   }
@@ -135,7 +135,7 @@
       return error;
     }
 
-    FT_TRACE0(( "tt_property_get: missing property `%s'\n",
+    FT_TRACE2(( "tt_property_get: missing property `%s'\n",
                 property_name ));
     return FT_THROW( Missing_Property );
   }
@@ -354,7 +354,16 @@
 
 #endif /* TT_CONFIG_OPTION_EMBEDDED_BITMAPS */
 
-    FT_Request_Metrics( size->face, req );
+    {
+      FT_Error  err = FT_Request_Metrics( size->face, req );
+
+
+      if ( err )
+      {
+        error = err;
+        goto Exit;
+      }
+    }
 
     if ( FT_IS_SCALABLE( size->face ) )
     {
@@ -382,6 +391,7 @@
 #endif
     }
 
+  Exit:
     return error;
   }
 
@@ -497,19 +507,34 @@
   FT_DEFINE_SERVICE_MULTIMASTERSREC(
     tt_service_gx_multi_masters,
 
-    (FT_Get_MM_Func)             NULL,                  /* get_mm              */
-    (FT_Set_MM_Design_Func)      NULL,                  /* set_mm_design       */
-    (FT_Set_MM_Blend_Func)       TT_Set_MM_Blend,       /* set_mm_blend        */
-    (FT_Get_MM_Blend_Func)       TT_Get_MM_Blend,       /* get_mm_blend        */
-    (FT_Get_MM_Var_Func)         TT_Get_MM_Var,         /* get_mm_var          */
-    (FT_Set_Var_Design_Func)     TT_Set_Var_Design,     /* set_var_design      */
-    (FT_Get_Var_Design_Func)     TT_Get_Var_Design,     /* get_var_design      */
-    (FT_Set_Instance_Func)       TT_Set_Named_Instance, /* set_instance        */
-    (FT_Set_MM_WeightVector_Func)NULL,                  /* set_mm_weightvector */
-    (FT_Get_MM_WeightVector_Func)NULL,                  /* get_mm_weightvector */
-
-    (FT_Get_Var_Blend_Func)      tt_get_var_blend,      /* get_var_blend       */
-    (FT_Done_Blend_Func)         tt_done_blend          /* done_blend          */
+    (FT_Get_MM_Func)        NULL,                  /* get_mm                    */
+    (FT_Set_MM_Design_Func) NULL,                  /* set_mm_design             */
+    (FT_Set_MM_Blend_Func)  TT_Set_MM_Blend,       /* set_mm_blend              */
+    (FT_Get_MM_Blend_Func)  TT_Get_MM_Blend,       /* get_mm_blend              */
+    (FT_Get_MM_Var_Func)    TT_Get_MM_Var,         /* get_mm_var                */
+    (FT_Set_Var_Design_Func)TT_Set_Var_Design,     /* set_var_design            */
+    (FT_Get_Var_Design_Func)TT_Get_Var_Design,     /* get_var_design            */
+    (FT_Set_Instance_Func)  TT_Set_Named_Instance, /* set_instance              */
+    (FT_Set_MM_WeightVector_Func)
+                            NULL,                  /* set_mm_weightvector       */
+    (FT_Get_MM_WeightVector_Func)
+                            NULL,                  /* get_mm_weightvector       */
+    (FT_Var_Load_Delta_Set_Idx_Map_Func)
+                            tt_var_load_delta_set_index_mapping,
+                                                   /* load_delta_set_idx_map    */
+    (FT_Var_Load_Item_Var_Store_Func)
+                            tt_var_load_item_variation_store,
+                                                   /* load_item_variation_store */
+    (FT_Var_Get_Item_Delta_Func)
+                            tt_var_get_item_delta, /* get_item_delta            */
+    (FT_Var_Done_Item_Var_Store_Func)
+                            tt_var_done_item_variation_store,
+                                                   /* done_item_variation_store */
+    (FT_Var_Done_Delta_Set_Idx_Map_Func)
+                            tt_var_done_delta_set_index_map,
+                                                   /* done_delta_set_index_map  */
+    (FT_Get_Var_Blend_Func) tt_get_var_blend,      /* get_var_blend             */
+    (FT_Done_Blend_Func)    tt_done_blend          /* done_blend                */
   )
 
   FT_DEFINE_SERVICE_METRICSVARIATIONSREC(

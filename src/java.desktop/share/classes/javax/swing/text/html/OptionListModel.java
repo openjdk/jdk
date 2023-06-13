@@ -234,7 +234,7 @@ class OptionListModel<E> extends DefaultListModel<E> implements ListSelectionMod
            and therefore that the minIndex and maxIndex had 'real' values.
 
            If we have cleared the whole selection, set the minIndex and maxIndex
-           to their cannonical values so that the next set command always works
+           to their canonical values so that the next set command always works
            just by using Math.min and Math.max.
         */
         if (isSelectionEmpty()) {
@@ -464,7 +464,7 @@ class OptionListModel<E> extends DefaultListModel<E> implements ListSelectionMod
      * <code>listenerLists</code> are not duplicated.
      *
      * @return a clone of the receiver
-     * @exception CloneNotSupportedException if the receiver does not
+     * @throws CloneNotSupportedException if the receiver does not
      *    both (a) implement the <code>Cloneable</code> interface
      *    and (b) define a <code>clone</code> method
      */

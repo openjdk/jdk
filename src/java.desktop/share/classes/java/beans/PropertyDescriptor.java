@@ -66,7 +66,7 @@ public class PropertyDescriptor extends FeatureDescriptor {
      * @param propertyName The programmatic name of the property.
      * @param beanClass The Class object for the target bean.  For
      *          example sun.beans.OurButton.class.
-     * @exception IntrospectionException if an exception occurs during
+     * @throws IntrospectionException if an exception occurs during
      *              introspection.
      */
     public PropertyDescriptor(String propertyName, Class<?> beanClass)
@@ -87,7 +87,7 @@ public class PropertyDescriptor extends FeatureDescriptor {
      *           value.  May be null if the property is write-only.
      * @param writeMethodName The name of the method used for writing the property
      *           value.  May be null if the property is read-only.
-     * @exception IntrospectionException if an exception occurs during
+     * @throws IntrospectionException if an exception occurs during
      *              introspection.
      */
     public PropertyDescriptor(String propertyName, Class<?> beanClass,
@@ -129,7 +129,7 @@ public class PropertyDescriptor extends FeatureDescriptor {
      *          May be null if the property is write-only.
      * @param writeMethod The method used for writing the property value.
      *          May be null if the property is read-only.
-     * @exception IntrospectionException if an exception occurs during
+     * @throws IntrospectionException if an exception occurs during
      *              introspection.
      */
     public PropertyDescriptor(String propertyName, Method readMethod, Method writeMethod)

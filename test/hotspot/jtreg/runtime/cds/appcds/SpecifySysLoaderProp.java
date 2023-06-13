@@ -44,7 +44,7 @@ public class SpecifySysLoaderProp {
     String jarFileName = "sysloader.jar";
     String appJar = TestCommon.getTestJar(jarFileName);
     TestCommon.testDump(appJar, TestCommon.list("ReportMyLoader"));
-    String warning = "VM warning: Archived non-system classes are disabled because the java.system.class.loader property is specified";
+    String warning = "Archived non-system classes are disabled because the java.system.class.loader property is specified";
 
 
     // (0) Baseline. Do not specify -Djava.system.class.loader

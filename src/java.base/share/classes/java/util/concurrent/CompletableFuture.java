@@ -438,7 +438,7 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
         ForkJoinPool.commonPool() : new ThreadPerTaskExecutor();
 
     /** Fallback if ForkJoinPool.commonPool() cannot support parallelism */
-    static final class ThreadPerTaskExecutor implements Executor {
+    private static final class ThreadPerTaskExecutor implements Executor {
         public void execute(Runnable r) {
             Objects.requireNonNull(r);
             new Thread(r).start();
@@ -2134,6 +2134,38 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
         return ((r = result) == null) ? valueIfAbsent : (T) reportJoin(r);
     }
 
+    @Override
+    public T resultNow() {
+        Object r = result;
+        if (r != null) {
+            if (r instanceof AltResult alt) {
+                if (alt.ex == null) return null;
+            } else {
+                @SuppressWarnings("unchecked")
+                T t = (T) r;
+                return t;
+            }
+        }
+        throw new IllegalStateException();
+    }
+
+    @Override
+    public Throwable exceptionNow() {
+        Object r = result;
+        Throwable x;
+        if (r instanceof AltResult alt
+                && ((x = alt.ex) != null)
+                && !(x instanceof CancellationException)) {
+            if (x instanceof CompletionException) {
+                Throwable cause = x.getCause();
+                if (cause != null)
+                    x = cause;
+            }
+            return x;
+        }
+        throw new IllegalStateException();
+    }
+
     /**
      * If not already completed, sets the value returned by {@link
      * #get()} and related methods to the given value.
@@ -2507,6 +2539,20 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
     public boolean isCompletedExceptionally() {
         Object r;
         return ((r = result) instanceof AltResult) && r != NIL;
+    }
+
+    @Override
+    public State state() {
+        Object r = result;
+        if (r == null)
+            return State.RUNNING;
+        if (r != NIL && r instanceof AltResult alt) {
+            if (alt.ex instanceof CancellationException)
+                return State.CANCELLED;
+            else
+                return State.FAILED;
+        }
+        return State.SUCCESS;
     }
 
     /**
@@ -2891,7 +2937,7 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
         final Future<?> f;
         Canceller(Future<?> f) { this.f = f; }
         public void accept(Object ignore, Throwable ex) {
-            if (ex == null && f != null && !f.isDone())
+            if (f != null && !f.isDone())
                 f.cancel(false);
         }
     }
@@ -2912,6 +2958,10 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
             throw new UnsupportedOperationException(); }
         @Override public T join() {
             throw new UnsupportedOperationException(); }
+        @Override public T resultNow() {
+            throw new UnsupportedOperationException(); }
+        @Override public Throwable exceptionNow() {
+            throw new UnsupportedOperationException(); }
         @Override public boolean complete(T value) {
             throw new UnsupportedOperationException(); }
         @Override public boolean completeExceptionally(Throwable ex) {
@@ -2927,6 +2977,8 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
         @Override public boolean isCancelled() {
             throw new UnsupportedOperationException(); }
         @Override public boolean isCompletedExceptionally() {
+            throw new UnsupportedOperationException(); }
+        @Override public State state() {
             throw new UnsupportedOperationException(); }
         @Override public int getNumberOfDependents() {
             throw new UnsupportedOperationException(); }
@@ -2969,7 +3021,7 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
         }
 
         // Reduce the risk of rare disastrous classloading in first call to
-        // LockSupport.park: https://bugs.openjdk.java.net/browse/JDK-8074773
+        // LockSupport.park: https://bugs.openjdk.org/browse/JDK-8074773
         Class<?> ensureLoaded = LockSupport.class;
     }
 }

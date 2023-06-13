@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,13 @@
 
 package sun.awt.X11;
 
-import java.awt.*;
-import sun.awt.*;
-import java.util.*;
+import java.awt.Dimension;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.util.HashSet;
+import java.util.Set;
+
+import sun.awt.SunToolkit;
 import sun.util.logging.PlatformLogger;
 
 public class XBaseWindow {
@@ -81,7 +85,7 @@ public class XBaseWindow {
         INITIALISING,
         INITIALISED,
         FAILED_INITIALISATION
-    };
+    }
 
     private InitialiseState initialising;
 
@@ -483,7 +487,7 @@ public class XBaseWindow {
 
     /*
      * Call this method under AWTLock.
-     * The lock should be acquired untill all operations with XSizeHints are completed.
+     * The lock should be acquired until all operations with XSizeHints are completed.
      */
     public XSizeHints getHints() {
         if (hints == null) {
@@ -912,7 +916,7 @@ public class XBaseWindow {
         }
     }
 
-    static void ungrabInput() {
+    public static void ungrabInput() {
         XToolkit.awtLock();
         try {
             XBaseWindow grabWindow = XAwtState.getGrabWindow();

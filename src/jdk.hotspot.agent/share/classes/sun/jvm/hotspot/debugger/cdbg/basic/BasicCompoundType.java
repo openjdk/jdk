@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ public class BasicCompoundType extends BasicType implements CompoundType {
     return ((baseClasses == null) ? 0 : baseClasses.size());
   }
   public BaseClass getBaseClass(int i) {
-    return (BaseClass) baseClasses.get(i);
+    return baseClasses.get(i);
   }
 
   public void addBaseClass(BaseClass b) {
@@ -66,7 +66,7 @@ public class BasicCompoundType extends BasicType implements CompoundType {
     return ((fields == null) ? 0 : fields.size());
   }
   public Field getField(int i) {
-    return (Field) fields.get(i);
+    return fields.get(i);
   }
 
   public void addField(Field f) {

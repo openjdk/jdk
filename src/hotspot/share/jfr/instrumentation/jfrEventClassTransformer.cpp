@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "classfile/classFileParser.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoadInfo.hpp"
@@ -32,13 +31,14 @@
 #include "classfile/modules.hpp"
 #include "classfile/stackMapTable.hpp"
 #include "classfile/symbolTable.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "classfile/verificationType.hpp"
 #include "interpreter/bytecodes.hpp"
+#include "jvm.h"
 #include "jfr/instrumentation/jfrEventClassTransformer.hpp"
 #include "jfr/jfr.hpp"
 #include "jfr/jni/jfrJavaSupport.hpp"
 #include "jfr/jni/jfrUpcalls.hpp"
+#include "jfr/recorder/jfrRecorder.hpp"
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceId.inline.hpp"
 #include "jfr/support/jfrJdkJfrEvent.hpp"
 #include "jfr/utilities/jfrBigEndian.hpp"
@@ -47,16 +47,19 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/array.hpp"
+#include "oops/constMethod.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/method.hpp"
 #include "prims/jvmtiRedefineClasses.hpp"
+#include "prims/jvmtiThreadState.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/os.hpp"
-#include "runtime/thread.inline.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 
 static const u2 number_of_new_methods = 5;
@@ -68,7 +71,7 @@ static const char* utf8_constants[] = {
   "Code",         // 0
   "J",            // 1
   "commit",       // 2
-  "eventHandler", // 3
+  "eventConfiguration", // 3
   "duration",     // 4
   "begin",        // 5
   "()V",          // 6
@@ -77,7 +80,7 @@ static const char* utf8_constants[] = {
   "end",          // 9
   "shouldCommit", // 10
   "startTime",    // 11 // LAST_REQUIRED_UTF8
-  "Ljdk/jfr/internal/handlers/EventHandler;", // 12
+  "Ljdk/jfr/internal/event/EventConfiguration;", // 12
   "Ljava/lang/Object;", // 13
   "<clinit>",     // 14
   "jdk/jfr/FlightRecorder", // 15
@@ -95,7 +98,7 @@ enum utf8_req_symbols {
   UTF8_REQ_Code,
   UTF8_REQ_J_FIELD_DESC,
   UTF8_REQ_commit,
-  UTF8_REQ_eventHandler,
+  UTF8_REQ_eventConfiguration,
   UTF8_REQ_duration,
   UTF8_REQ_begin,
   UTF8_REQ_EMPTY_VOID_METHOD_DESC,
@@ -108,7 +111,7 @@ enum utf8_req_symbols {
 };
 
 enum utf8_opt_symbols {
-  UTF8_OPT_eventHandler_FIELD_DESC = NOF_UTF8_REQ_SYMBOLS,
+  UTF8_OPT_eventConfiguration_FIELD_DESC = NOF_UTF8_REQ_SYMBOLS,
   UTF8_OPT_LjavaLangObject,
   UTF8_OPT_clinit,
   UTF8_OPT_FlightRecorder,
@@ -188,7 +191,7 @@ static int skip_annotation_value(const address, int, int); // fwd decl
 
 // Skip an annotation.  Return >=limit if there is any problem.
 static int next_annotation_index(const address buffer, int limit, int index) {
-  assert(buffer != NULL, "invariant");
+  assert(buffer != nullptr, "invariant");
   index += 2;  // skip atype
   if ((index += 2) >= limit) {
     return limit;
@@ -203,7 +206,7 @@ static int next_annotation_index(const address buffer, int limit, int index) {
 
 // Skip an annotation value.  Return >=limit if there is any problem.
 static int skip_annotation_value(const address buffer, int limit, int index) {
-  assert(buffer != NULL, "invariant");
+  assert(buffer != nullptr, "invariant");
   // value := switch (tag:u1) {
   //   case B, C, I, S, Z, D, F, J, c: con:u2;
   //   case e: e_class:u2 e_name:u2;
@@ -277,7 +280,7 @@ class AnnotationElementIterator : public StackObj {
                                                                                  _limit(limit),
                                                                                  _current(element_name_offset),
                                                                                  _next(element_name_offset) {
-    assert(_buffer != NULL, "invariant");
+    assert(_buffer != nullptr, "invariant");
     assert(_next == element_name_offset, "invariant");
     assert(_current == element_name_offset, "invariant");
   }
@@ -329,11 +332,11 @@ class AnnotationIterator : public StackObj {
 
  public:
   AnnotationIterator(const InstanceKlass* ik, AnnotationArray* ar) : _ik(ik),
-                                                                     _limit(ar != NULL ? ar->length() : 0),
-                                                                     _buffer(_limit > 2 ? ar->adr_at(2) : NULL),
+                                                                     _limit(ar != nullptr ? ar->length() : 0),
+                                                                     _buffer(_limit > 2 ? ar->adr_at(2) : nullptr),
                                                                      _current(0),
                                                                      _next(0) {
-    if (_buffer != NULL) {
+    if (_buffer != nullptr) {
       _limit -= 2; // subtract sizeof(u2) number of annotations field
     }
   }
@@ -355,7 +358,7 @@ class AnnotationIterator : public StackObj {
     return AnnotationElementIterator(_ik, _buffer + _current, _next - _current);
   }
   const Symbol* type() const {
-    assert(_buffer != NULL, "invariant");
+    assert(_buffer != nullptr, "invariant");
     assert(_current < _limit, "invariant");
     return _ik->constants()->symbol_at(JfrBigEndian::read<u2>(_buffer + _current));
   }
@@ -363,9 +366,9 @@ class AnnotationIterator : public StackObj {
 
 static const char value_name[] = "value";
 static bool has_annotation(const InstanceKlass* ik, const Symbol* annotation_type, bool& value) {
-  assert(annotation_type != NULL, "invariant");
+  assert(annotation_type != nullptr, "invariant");
   AnnotationArray* class_annotations = ik->class_annotations();
-  if (class_annotations == NULL) {
+  if (class_annotations == nullptr) {
     return false;
   }
 
@@ -376,7 +379,7 @@ static bool has_annotation(const InstanceKlass* ik, const Symbol* annotation_typ
       // target annotation found
       static const Symbol* value_symbol =
         SymbolTable::probe(value_name, sizeof value_name - 1);
-      assert(value_symbol != NULL, "invariant");
+      assert(value_symbol != nullptr, "invariant");
       const AnnotationElementIterator element_iterator = annotation_iterator.elements();
       while (element_iterator.has_next()) {
         element_iterator.move_to_next();
@@ -396,14 +399,14 @@ static bool has_annotation(const InstanceKlass* ik, const Symbol* annotation_typ
 // Searching moves upwards in the klass hierarchy in order to support
 // inherited annotations in addition to the ability to override.
 static bool annotation_value(const InstanceKlass* ik, const Symbol* annotation_type, bool& value) {
-  assert(ik != NULL, "invariant");
-  assert(annotation_type != NULL, "invariant");
+  assert(ik != nullptr, "invariant");
+  assert(annotation_type != nullptr, "invariant");
   assert(JdkJfrEvent::is_a(ik), "invariant");
   if (has_annotation(ik, annotation_type, value)) {
     return true;
   }
   InstanceKlass* const super = InstanceKlass::cast(ik->super());
-  return super != NULL && JdkJfrEvent::is_a(super) ? annotation_value(super, annotation_type, value) : false;
+  return super != nullptr && JdkJfrEvent::is_a(super) ? annotation_value(super, annotation_type, value) : false;
 }
 
 static const char jdk_jfr_module_name[] = "jdk.jfr";
@@ -413,26 +416,30 @@ static bool java_base_can_read_jdk_jfr() {
   if (can_read) {
     return true;
   }
-  static Symbol* jdk_jfr_module_symbol = NULL;
-  if (jdk_jfr_module_symbol == NULL) {
+  static Symbol* jdk_jfr_module_symbol = nullptr;
+  if (jdk_jfr_module_symbol == nullptr) {
     jdk_jfr_module_symbol = SymbolTable::probe(jdk_jfr_module_name, sizeof jdk_jfr_module_name - 1);
-    if (jdk_jfr_module_symbol == NULL) {
+    if (jdk_jfr_module_symbol == nullptr) {
       return false;
     }
   }
-  assert(jdk_jfr_module_symbol != NULL, "invariant");
+  assert(jdk_jfr_module_symbol != nullptr, "invariant");
   ModuleEntryTable* const table = Modules::get_module_entry_table(Handle());
-  assert(table != NULL, "invariant");
+  assert(table != nullptr, "invariant");
   const ModuleEntry* const java_base_module = table->javabase_moduleEntry();
-  if (java_base_module == NULL) {
+  if (java_base_module == nullptr) {
     return false;
   }
-  assert(java_base_module != NULL, "invariant");
-  ModuleEntry* const jdk_jfr_module = table->lookup_only(jdk_jfr_module_symbol);
-  if (jdk_jfr_module == NULL) {
-    return false;
+  assert(java_base_module != nullptr, "invariant");
+  ModuleEntry* jdk_jfr_module;
+  {
+    MutexLocker ml(Module_lock);
+    jdk_jfr_module = table->lookup_only(jdk_jfr_module_symbol);
+    if (jdk_jfr_module == nullptr) {
+      return false;
+    }
   }
-  assert(jdk_jfr_module != NULL, "invariant");
+  assert(jdk_jfr_module != nullptr, "invariant");
   if (java_base_module->can_read(jdk_jfr_module)) {
     can_read = true;
   }
@@ -445,18 +452,18 @@ static const char registered_constant[] = "Ljdk/jfr/Registered;";
 // Searching moves upwards in the klass hierarchy in order to support
 // inherited annotations in addition to the ability to override.
 static bool should_register_klass(const InstanceKlass* ik, bool& untypedEventHandler) {
-  assert(ik != NULL, "invariant");
+  assert(ik != nullptr, "invariant");
   assert(JdkJfrEvent::is_a(ik), "invariant");
   assert(!untypedEventHandler, "invariant");
-  static const Symbol* registered_symbol = NULL;
-  if (registered_symbol == NULL) {
+  static const Symbol* registered_symbol = nullptr;
+  if (registered_symbol == nullptr) {
     registered_symbol = SymbolTable::probe(registered_constant, sizeof registered_constant - 1);
-    if (registered_symbol == NULL) {
+    if (registered_symbol == nullptr) {
       untypedEventHandler = true;
       return false;
     }
   }
-  assert(registered_symbol != NULL, "invariant");
+  assert(registered_symbol != nullptr, "invariant");
   bool value = false; // to be set by annotation_value
   untypedEventHandler = !(annotation_value(ik, registered_symbol, value) || java_base_can_read_jdk_jfr());
   return value;
@@ -466,14 +473,14 @@ static bool should_register_klass(const InstanceKlass* ik, bool& untypedEventHan
  * Map an utf8 constant back to its CONSTANT_UTF8_INFO
  */
 static u2 utf8_info_index(const InstanceKlass* ik, const Symbol* const target, TRAPS) {
-  assert(target != NULL, "invariant");
+  assert(target != nullptr, "invariant");
   const ConstantPool* cp = ik->constants();
   const int cp_len = cp->length();
   for (u2 index = 1; index < cp_len; ++index) {
     const constantTag tag = cp->tag_at(index);
     if (tag.is_utf8()) {
       const Symbol* const utf8_sym = cp->symbol_at(index);
-      assert(utf8_sym != NULL, "invariant");
+      assert(utf8_sym != nullptr, "invariant");
       if (utf8_sym == target) {
         return index;
       }
@@ -490,7 +497,7 @@ static bool is_index_within_range(u2 index, u2 orig_cp_len, u2 new_cp_entries_le
 #endif
 
 static u2 add_utf8_info(JfrBigEndianWriter& writer, const char* utf8_constant, u2 orig_cp_len, u2& new_cp_entries_len) {
-  assert(utf8_constant != NULL, "invariant");
+  assert(utf8_constant != nullptr, "invariant");
   writer.write<u1>(JVM_CONSTANT_Utf8);
   writer.write_utf8_u2_len(utf8_constant);
   assert(writer.is_valid(), "invariant");
@@ -533,7 +540,7 @@ static u2 add_flr_register_method_constants(JfrBigEndianWriter& writer,
                                             u2 orig_cp_len,
                                             u2& number_of_new_constants,
                                             TRAPS) {
-  assert(utf8_indexes != NULL, "invariant");
+  assert(utf8_indexes != nullptr, "invariant");
   return add_method_ref_info(writer,
                              utf8_indexes[UTF8_OPT_FlightRecorder],
                              utf8_indexes[UTF8_OPT_register],
@@ -565,11 +572,11 @@ static jlong add_field_info(JfrBigEndianWriter& writer, u2 name_index, u2 desc_i
   return writer.current_offset();
 }
 
-static u2 add_field_infos(JfrBigEndianWriter& writer, const u2* utf8_indexes, bool untypedEventHandler) {
-  assert(utf8_indexes != NULL, "invariant");
+static u2 add_field_infos(JfrBigEndianWriter& writer, const u2* utf8_indexes, bool untypedEventConfiguration) {
+  assert(utf8_indexes != nullptr, "invariant");
   add_field_info(writer,
-                 utf8_indexes[UTF8_REQ_eventHandler],
-                 untypedEventHandler ? utf8_indexes[UTF8_OPT_LjavaLangObject] : utf8_indexes[UTF8_OPT_eventHandler_FIELD_DESC],
+                 utf8_indexes[UTF8_REQ_eventConfiguration],
+                 untypedEventConfiguration ? utf8_indexes[UTF8_OPT_LjavaLangObject] : utf8_indexes[UTF8_OPT_eventConfiguration_FIELD_DESC],
                  true); // static
 
   add_field_info(writer,
@@ -641,7 +648,7 @@ static jlong add_method_info(JfrBigEndianWriter& writer,
  * Stream should come in at the start position.
  */
 static u2 position_stream_after_cp(const ClassFileStream* stream) {
-  assert(stream != NULL, "invariant");
+  assert(stream != nullptr, "invariant");
   assert(stream->current_offset() == 0, "invariant");
   stream->skip_u4_fast(2);  // 8 bytes skipped
   const u2 cp_len = stream->get_u2_fast();
@@ -708,7 +715,7 @@ static u2 position_stream_after_cp(const ClassFileStream* stream) {
 * Stream should come in positioned just before fields_count
 */
 static u2 position_stream_after_fields(const ClassFileStream* stream) {
-  assert(stream != NULL, "invariant");
+  assert(stream != nullptr, "invariant");
   assert(stream->current_offset() > 0, "invariant");
   // fields len
   const u2 orig_fields_len = stream->get_u2_fast();
@@ -738,9 +745,9 @@ static u2 position_stream_after_methods(JfrBigEndianWriter& writer,
                                         bool register_klass,
                                         const Method* clinit_method,
                                         u4& orig_method_len_offset) {
-  assert(stream != NULL, "invariant");
+  assert(stream != nullptr, "invariant");
   assert(stream->current_offset() > 0, "invariant");
-  assert(utf8_indexes != NULL, "invariant");
+  assert(utf8_indexes != nullptr, "invariant");
   // We will come back to this location when we
   // know how many methods there will be.
   writer.reserve(sizeof(u2));
@@ -759,7 +766,7 @@ static u2 position_stream_after_methods(JfrBigEndianWriter& writer,
       const u4 attrib_len = stream->get_u4_fast();
       stream->skip_u1_fast(attrib_len);
     }
-    if (clinit_method != NULL && name_index == clinit_method->name_index()) {
+    if (clinit_method != nullptr && name_index == clinit_method->name_index()) {
       // The method just parsed is an existing <clinit> method.
       // If the class has the @Registered(false) annotation, i.e. marking a class
       // for opting out from automatic registration, then we do not need to do anything.
@@ -783,7 +790,7 @@ static u2 position_stream_after_methods(JfrBigEndianWriter& writer,
 }
 
 static u2 add_method_infos(JfrBigEndianWriter& writer, const u2* utf8_indexes) {
-  assert(utf8_indexes != NULL, "invariant");
+  assert(utf8_indexes != nullptr, "invariant");
   add_method_info(writer,
                   utf8_indexes[UTF8_REQ_begin],
                   utf8_indexes[UTF8_REQ_EMPTY_VOID_METHOD_DESC],
@@ -831,13 +838,13 @@ static u2 add_method_infos(JfrBigEndianWriter& writer, const u2* utf8_indexes) {
 }
 
 static void adjust_exception_table(JfrBigEndianWriter& writer, u2 bci_adjustment_offset, const Method* method, TRAPS) {
-  const u2 ex_table_length = method != NULL ? (u2)method->exception_table_length() : 0;
+  const u2 ex_table_length = method != nullptr ? (u2)method->exception_table_length() : 0;
   writer.write<u2>(ex_table_length); // Exception table length
   if (ex_table_length > 0) {
-    assert(method != NULL, "invariant");
+    assert(method != nullptr, "invariant");
     const ExceptionTableElement* const ex_elements = method->exception_table_start();
     for (int i = 0; i < ex_table_length; ++i) {
-      assert(ex_elements != NULL, "invariant");
+      assert(ex_elements != nullptr, "invariant");
       writer.write<u2>(ex_elements[i].start_pc + bci_adjustment_offset);
       writer.write<u2>(ex_elements[i].end_pc + bci_adjustment_offset);
       writer.write<u2>(ex_elements[i].handler_pc + bci_adjustment_offset);
@@ -865,8 +872,8 @@ static void adjust_stack_map(JfrBigEndianWriter& writer,
                              const u2* utf8_indexes,
                              u2 bci_adjustment_offset,
                              TRAPS) {
-  assert(stack_map != NULL, "invariant");
-  assert(utf8_indexes != NULL, "invariant");
+  assert(stack_map != nullptr, "invariant");
+  assert(utf8_indexes != nullptr, "invariant");
   writer.write<u2>(utf8_indexes[UTF8_OPT_StackMapTable]);
   const jlong stack_map_attrib_len_offset = writer.current_offset();
   writer.reserve(sizeof(u4));
@@ -913,8 +920,8 @@ static void adjust_line_number_table(JfrBigEndianWriter& writer,
                                      u4 bci_adjustement_offset,
                                      const Method* method,
                                      TRAPS) {
-  assert(utf8_indexes != NULL, "invariant");
-  assert(method != NULL, "invariant");
+  assert(utf8_indexes != nullptr, "invariant");
+  assert(method != nullptr, "invariant");
   assert(method->has_linenumber_table(), "invariant");
   writer.write(utf8_indexes[UTF8_OPT_LineNumberTable]);
   const jlong lnt_attributes_length_offset = writer.current_offset();
@@ -943,8 +950,8 @@ static u2 adjust_local_variable_table(JfrBigEndianWriter& writer,
                                       u2 bci_adjustment_offset,
                                       const Method* method,
                                       TRAPS) {
-  assert(utf8_indexes != NULL, "invariant");
-  assert(method != NULL, "invariant");
+  assert(utf8_indexes != nullptr, "invariant");
+  assert(method != nullptr, "invariant");
   assert(method->has_localvariable_table(), "invariant");
   writer.write<u2>(utf8_indexes[UTF8_OPT_LocalVariableTable]);
   const jlong lvt_attributes_length_offset = writer.current_offset();
@@ -952,7 +959,7 @@ static u2 adjust_local_variable_table(JfrBigEndianWriter& writer,
   const int lvt_len = method->localvariable_table_length();
   writer.write<u2>((u2)lvt_len);
   const LocalVariableTableElement* table = method->localvariable_table_start();
-  assert(table != NULL, "invariant");
+  assert(table != nullptr, "invariant");
   u2 num_lvtt_entries = 0;
   for (int i = 0; i < lvt_len; ++i) {
     writer.write<u2>(table[i].start_bci + bci_adjustment_offset);
@@ -983,7 +990,7 @@ static void adjust_local_variable_type_table(JfrBigEndianWriter& writer,
   writer.reserve(sizeof(u4));
   writer.write<u2>(num_lvtt_entries);
   const LocalVariableTableElement* table = method->localvariable_table_start();
-  assert(table != NULL, "invariant");
+  assert(table != nullptr, "invariant");
   const int lvt_len = method->localvariable_table_length();
   for (int i = 0; i < lvt_len; ++i) {
     if (table[i].signature_cp_index > 0) {
@@ -1006,23 +1013,23 @@ static void adjust_code_attributes(JfrBigEndianWriter& writer,
                                    const Method* clinit_method,
                                    TRAPS) {
   // "Code" attributes
-  assert(utf8_indexes != NULL, "invariant");
+  assert(utf8_indexes != nullptr, "invariant");
   const jlong code_attributes_offset = writer.current_offset();
   writer.reserve(sizeof(u2));
   u2 number_of_code_attributes = 0;
-  if (clinit_method != NULL) {
+  if (clinit_method != nullptr) {
     Array<u1>* stack_map = clinit_method->stackmap_data();
-    if (stack_map != NULL) {
+    if (stack_map != nullptr) {
       ++number_of_code_attributes;
       adjust_stack_map(writer, stack_map, utf8_indexes, bci_adjustment_offset, THREAD);
       assert(writer.is_valid(), "invariant");
     }
-    if (clinit_method != NULL && clinit_method->has_linenumber_table()) {
+    if (clinit_method != nullptr && clinit_method->has_linenumber_table()) {
       ++number_of_code_attributes;
       adjust_line_number_table(writer, utf8_indexes, bci_adjustment_offset, clinit_method, THREAD);
       assert(writer.is_valid(), "invariant");
     }
-    if (clinit_method != NULL && clinit_method->has_localvariable_table()) {
+    if (clinit_method != nullptr && clinit_method->has_localvariable_table()) {
       ++number_of_code_attributes;
       const u2 num_of_lvtt_entries = adjust_local_variable_table(writer, utf8_indexes, bci_adjustment_offset, clinit_method, THREAD);
       assert(writer.is_valid(), "invariant");
@@ -1046,7 +1053,7 @@ static jlong insert_clinit_method(const InstanceKlass* ik,
                                   const u2 register_method_ref_index,
                                   const Method* clinit_method,
                                   TRAPS) {
-  assert(utf8_indexes != NULL, "invariant");
+  assert(utf8_indexes != nullptr, "invariant");
   // The injected code length is always this value.
   // This is to ensure that padding can be done
   // where needed and to simplify size calculations.
@@ -1054,10 +1061,10 @@ static jlong insert_clinit_method(const InstanceKlass* ik,
   const u2 name_index = utf8_indexes[UTF8_OPT_clinit];
   assert(name_index != invalid_cp_index, "invariant");
   const u2 desc_index = utf8_indexes[UTF8_REQ_EMPTY_VOID_METHOD_DESC];
-  const u2 max_stack = MAX2(clinit_method != NULL ? clinit_method->verifier_max_stack() : 1, 1);
-  const u2 max_locals = MAX2(clinit_method != NULL ? clinit_method->max_locals() : 0, 0);
-  const u2 orig_bytecodes_length = clinit_method != NULL ? (u2)clinit_method->code_size() : 0;
-  const address orig_bytecodes = clinit_method != NULL ? clinit_method->code_base() : NULL;
+  const u2 max_stack = MAX2(clinit_method != nullptr ? clinit_method->verifier_max_stack() : 1, 1);
+  const u2 max_locals = MAX2(clinit_method != nullptr ? clinit_method->max_locals() : 0, 0);
+  const u2 orig_bytecodes_length = clinit_method != nullptr ? (u2)clinit_method->code_size() : 0;
+  const address orig_bytecodes = clinit_method != nullptr ? clinit_method->code_base() : nullptr;
   const u2 new_code_length = injected_code_length + orig_bytecodes_length;
   DEBUG_ONLY(const jlong start_offset = writer.current_offset();)
   writer.write<u2>(JVM_ACC_STATIC); // flags
@@ -1083,7 +1090,7 @@ static jlong insert_clinit_method(const InstanceKlass* ik,
   writer.write<u1>((u1)Bytecodes::_invokestatic);
   // invoke "FlightRecorder.register(Ljava/lang/Class;")
   writer.write<u2>(register_method_ref_index);
-  if (clinit_method == NULL) {
+  if (clinit_method == nullptr) {
     writer.write<u1>((u1)Bytecodes::_nop);
     writer.write<u1>((u1)Bytecodes::_return);
   } else {
@@ -1111,18 +1118,47 @@ static jlong insert_clinit_method(const InstanceKlass* ik,
   return writer.current_offset();
 }
 
+static Symbol* begin = nullptr;
+static Symbol* end = nullptr;
+static Symbol* commit = nullptr;
+static Symbol* isEnabled = nullptr;
+static Symbol* shouldCommit = nullptr;
+static Symbol* void_method_sig = nullptr;
+static Symbol* boolean_method_sig = nullptr;
+
+static void initialize_symbols() {
+  if (begin == nullptr) {
+    begin = SymbolTable::probe("begin", 5);
+    assert(begin != nullptr, "invariant");
+    end = SymbolTable::probe("end", 3);
+    assert(end != nullptr, "invariant");
+    commit = SymbolTable::probe("commit", 6);
+    assert(commit != nullptr, "invariant");
+    isEnabled = SymbolTable::probe("isEnabled", 9);
+    assert(isEnabled != nullptr, "invariant");
+    shouldCommit = SymbolTable::probe("shouldCommit", 12);
+    assert(shouldCommit != nullptr, "invariant");
+    void_method_sig = SymbolTable::probe("()V", 3);
+    assert(void_method_sig != nullptr, "invariant");
+    boolean_method_sig = SymbolTable::probe("()Z", 3);
+    assert(boolean_method_sig != nullptr, "invariant");
+  }
+}
+
 // Caller needs ResourceMark
-static ClassFileStream* create_new_bytes_for_event_klass(const InstanceKlass* ik, const ClassFileParser& parser, TRAPS) {
+static ClassFileStream* schema_extend_event_klass_bytes(const InstanceKlass* ik, const ClassFileParser& parser, TRAPS) {
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(THREAD));
+  initialize_symbols();
   static const u2 public_final_flag_mask = JVM_ACC_PUBLIC | JVM_ACC_FINAL;
   const ClassFileStream* const orig_stream = parser.clone_stream();
+  assert(orig_stream != nullptr, "invariant");
   const int orig_stream_length = orig_stream->length();
   // allocate an identically sized buffer
   u1* const new_buffer = NEW_RESOURCE_ARRAY_IN_THREAD_RETURN_NULL(THREAD, u1, orig_stream_length);
-  if (new_buffer == NULL) {
-    return NULL;
+  if (new_buffer == nullptr) {
+    return nullptr;
   }
-  assert(new_buffer != NULL, "invariant");
+  assert(new_buffer != nullptr, "invariant");
   // memcpy the entire [B
   memcpy(new_buffer, orig_stream->buffer(), orig_stream_length);
   const u2 orig_cp_len = position_stream_after_cp(orig_stream);
@@ -1162,7 +1198,7 @@ static ClassFileStream* create_new_bytes_for_event_klass(const InstanceKlass* ik
       orig_stream->skip_u1_fast(attrib_len);
     }
   }
-  return new ClassFileStream(new_buffer, orig_stream_length, NULL, ClassFileStream::verify);
+  return new ClassFileStream(new_buffer, orig_stream_length, nullptr, ClassFileStream::verify);
 }
 
 // Attempt to locate an existing UTF8_INFO mapping the utf8_constant.
@@ -1173,7 +1209,7 @@ static u2 find_or_add_utf8_info(JfrBigEndianWriter& writer,
                                 u2 orig_cp_len,
                                 u2& added_cp_entries,
                                 TRAPS) {
-  assert(utf8_constant != NULL, "invariant");
+  assert(utf8_constant != nullptr, "invariant");
   TempNewSymbol utf8_sym = SymbolTable::new_symbol(utf8_constant);
   // lookup existing
   const int utf8_orig_idx = utf8_info_index(ik, utf8_sym, THREAD);
@@ -1202,9 +1238,9 @@ static u2 resolve_utf8_indexes(JfrBigEndianWriter& writer,
                                u2 orig_cp_len,
                                const Method* clinit_method,
                                bool register_klass,
-                               bool untypedEventHandler,
+                               bool untypedEventConfiguration,
                                TRAPS) {
-  assert(utf8_indexes != NULL, "invariant");
+  assert(utf8_indexes != nullptr, "invariant");
   u2 added_cp_entries = 0;
   // resolve all required symbols
   for (u2 index = 0; index < NOF_UTF8_REQ_SYMBOLS; ++index) {
@@ -1212,10 +1248,10 @@ static u2 resolve_utf8_indexes(JfrBigEndianWriter& writer,
   }
 
   // resolve optional constants
-  utf8_indexes[UTF8_OPT_eventHandler_FIELD_DESC] = untypedEventHandler ? invalid_cp_index :
-    find_or_add_utf8_info(writer, ik, utf8_constants[UTF8_OPT_eventHandler_FIELD_DESC], orig_cp_len, added_cp_entries, THREAD);
+  utf8_indexes[UTF8_OPT_eventConfiguration_FIELD_DESC] = untypedEventConfiguration ? invalid_cp_index :
+    find_or_add_utf8_info(writer, ik, utf8_constants[UTF8_OPT_eventConfiguration_FIELD_DESC], orig_cp_len, added_cp_entries, THREAD);
 
-  utf8_indexes[UTF8_OPT_LjavaLangObject] = untypedEventHandler ?
+  utf8_indexes[UTF8_OPT_LjavaLangObject] = untypedEventConfiguration ?
     find_or_add_utf8_info(writer, ik, utf8_constants[UTF8_OPT_LjavaLangObject], orig_cp_len, added_cp_entries, THREAD) : invalid_cp_index;
 
   if (register_klass) {
@@ -1234,21 +1270,21 @@ static u2 resolve_utf8_indexes(JfrBigEndianWriter& writer,
     utf8_indexes[UTF8_OPT_CLASS_VOID_METHOD_DESC] = invalid_cp_index;
   }
 
-  if (clinit_method != NULL && clinit_method->has_stackmap_table()) {
+  if (clinit_method != nullptr && clinit_method->has_stackmap_table()) {
     utf8_indexes[UTF8_OPT_StackMapTable] =
       find_or_add_utf8_info(writer, ik, utf8_constants[UTF8_OPT_StackMapTable], orig_cp_len, added_cp_entries, THREAD);
   } else {
     utf8_indexes[UTF8_OPT_StackMapTable] = invalid_cp_index;
   }
 
-  if (clinit_method != NULL && clinit_method->has_linenumber_table()) {
+  if (clinit_method != nullptr && clinit_method->has_linenumber_table()) {
     utf8_indexes[UTF8_OPT_LineNumberTable] =
       find_or_add_utf8_info(writer, ik, utf8_constants[UTF8_OPT_LineNumberTable], orig_cp_len, added_cp_entries, THREAD);
   } else {
     utf8_indexes[UTF8_OPT_LineNumberTable] = invalid_cp_index;
   }
 
-  if (clinit_method != NULL && clinit_method->has_localvariable_table()) {
+  if (clinit_method != nullptr && clinit_method->has_localvariable_table()) {
     utf8_indexes[UTF8_OPT_LocalVariableTable] =
       find_or_add_utf8_info(writer, ik, utf8_constants[UTF8_OPT_LocalVariableTable], orig_cp_len, added_cp_entries, THREAD);
     utf8_indexes[UTF8_OPT_LocalVariableTypeTable] =
@@ -1261,11 +1297,11 @@ static u2 resolve_utf8_indexes(JfrBigEndianWriter& writer,
   return added_cp_entries;
 }
 
-static u1* new_bytes_for_lazy_instrumentation(const InstanceKlass* ik,
+static u1* schema_extend_event_subklass_bytes(const InstanceKlass* ik,
                                               const ClassFileParser& parser,
                                               jint& size_of_new_bytes,
                                               TRAPS) {
-  assert(ik != NULL, "invariant");
+  assert(ik != nullptr, "invariant");
   // If the class already has a clinit method
   // we need to take that into account
   const Method* clinit_method = ik->class_initializer();
@@ -1281,12 +1317,12 @@ static u1* new_bytes_for_lazy_instrumentation(const InstanceKlass* ik,
   // to be used in building up a modified class [B.
   const jint new_buffer_size = extra_stream_bytes + orig_stream_size;
   u1* const new_buffer = NEW_RESOURCE_ARRAY_IN_THREAD_RETURN_NULL(THREAD, u1, new_buffer_size);
-  if (new_buffer == NULL) {
+  if (new_buffer == nullptr) {
     log_error(jfr, system) ("Thread local allocation (native) for " SIZE_FORMAT
-      " bytes failed in JfrClassAdapter::on_klass_creation", (size_t)new_buffer_size);
-    return NULL;
+      " bytes failed in JfrEventClassTransformer::on_klass_creation", static_cast<size_t>(new_buffer_size));
+    return nullptr;
   }
-  assert(new_buffer != NULL, "invariant");
+  assert(new_buffer != nullptr, "invariant");
   // [B wrapped in a big endian writer
   JfrBigEndianWriter writer(new_buffer, new_buffer_size);
   assert(writer.current_offset() == 0, "invariant");
@@ -1365,12 +1401,12 @@ static u1* new_bytes_for_lazy_instrumentation(const InstanceKlass* ik,
   // We would need to do:
   // 1. Nothing (@Registered(false) annotation)
   // 2. Build up a new <clinit> - and if the original class already contains a <clinit>,
-  //                              merging will be neccessary.
+  //                              merging will be necessary.
   //
   if (register_klass) {
     insert_clinit_method(ik, parser, writer, orig_cp_len, utf8_indexes, flr_register_method_ref_index, clinit_method, THREAD);
   }
-  number_of_new_methods += clinit_method != NULL ? 0 : register_klass ? 1 : 0;
+  number_of_new_methods += clinit_method != nullptr ? 0 : register_klass ? 1 : 0;
   // Update classfile methods_count
   writer.write_at_offset<u2>(orig_methods_len + number_of_new_methods, new_method_len_offset);
   assert(writer.is_valid(), "invariant");
@@ -1382,93 +1418,275 @@ static u1* new_bytes_for_lazy_instrumentation(const InstanceKlass* ik,
   return new_buffer;
 }
 
+static bool should_force_instrumentation() {
+  return !JfrOptionSet::allow_event_retransforms() || JfrEventClassTransformer::is_force_instrumentation();
+}
+
 static void log_pending_exception(oop throwable) {
-  assert(throwable != NULL, "invariant");
+  assert(throwable != nullptr, "invariant");
   oop msg = java_lang_Throwable::message(throwable);
-  if (msg != NULL) {
+  if (msg != nullptr) {
     char* text = java_lang_String::as_utf8_string(msg);
-    if (text != NULL) {
+    if (text != nullptr) {
       log_error(jfr, system) ("%s", text);
     }
   }
 }
 
-static bool should_force_instrumentation() {
-  return !JfrOptionSet::allow_event_retransforms() || JfrEventClassTransformer::is_force_instrumentation();
+static bool has_pending_exception(TRAPS) {
+  assert(THREAD != nullptr, "invariant");
+  if (HAS_PENDING_EXCEPTION) {
+    log_pending_exception(PENDING_EXCEPTION);
+    CLEAR_PENDING_EXCEPTION;
+    return true;
+  }
+  return false;
 }
 
-static ClassFileStream* create_new_bytes_for_subklass(const InstanceKlass* ik, const ClassFileParser& parser, JavaThread* t) {
-  assert(JdkJfrEvent::is_a(ik), "invariant");
-  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(t));
-  jint size_of_new_bytes = 0;
-  const u1* new_bytes = new_bytes_for_lazy_instrumentation(ik, parser, size_of_new_bytes, t);
-  if (new_bytes == NULL) {
-    return NULL;
-  }
-  assert(new_bytes != NULL, "invariant");
-  assert(size_of_new_bytes > 0, "invariant");
+static bool has_local_method_implementation(const InstanceKlass* ik, const Symbol* name, const Symbol* signature) {
+  assert(ik != nullptr, "invariant");
+  assert(name != nullptr, "invariant");
+  assert(signature != nullptr, "invariant");
+  return nullptr != ik->find_local_method(name, signature, Klass::OverpassLookupMode::skip, Klass::StaticLookupMode::find,
+                                          Klass::PrivateLookupMode::find);
+}
 
-  bool force_instrumentation = should_force_instrumentation();
+// If for a subklass, on initial class load, an implementation exist for any of the final methods declared in Event,
+// then constraints are considered breached.
+static bool invalid_preconditions_for_subklass_on_initial_load(const InstanceKlass* ik) {
+  assert(ik != nullptr, "invariant");
+  return has_local_method_implementation(ik, begin, void_method_sig) ||
+         has_local_method_implementation(ik, end, void_method_sig) ||
+         has_local_method_implementation(ik, commit, void_method_sig) ||
+         has_local_method_implementation(ik, isEnabled, boolean_method_sig) ||
+         has_local_method_implementation(ik, shouldCommit, boolean_method_sig);
+}
+
+static ClassFileStream* schema_extend_event_subklass_bytes(const InstanceKlass* ik, const ClassFileParser& parser, bool& is_instrumented, TRAPS) {
+  assert(JdkJfrEvent::is_a(ik), "invariant");
+  assert(!is_instrumented, "invariant");
+  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(THREAD));
+  if (invalid_preconditions_for_subklass_on_initial_load(ik)) {
+    // Remove the tag denoting this as a jdk.jfr.Event subklass. No instrumentation, hence no events can be written.
+    // The class is allowed to load as-is, but it is classified as outside of the jfr system.
+    JdkJfrEvent::remove(ik);
+    return nullptr;
+  }
+  jint size_of_new_bytes = 0;
+  const u1* new_bytes = schema_extend_event_subklass_bytes(ik, parser, size_of_new_bytes, THREAD);
+  if (new_bytes == nullptr) {
+    return nullptr;
+  }
+  assert(new_bytes != nullptr, "invariant");
+  assert(size_of_new_bytes > 0, "invariant");
+  const bool force_instrumentation = should_force_instrumentation();
   if (Jfr::is_recording() || force_instrumentation) {
-    jint size_instrumented_data = 0;
-    unsigned char* instrumented_data = NULL;
-    const jclass super = (jclass)JNIHandles::make_local(ik->super()->java_mirror());
+    jint size_of_instrumented_bytes = 0;
+    unsigned char* instrumented_bytes = nullptr;
+    const jclass super = static_cast<jclass>(JfrJavaSupport::local_jni_handle(ik->super()->java_mirror(), THREAD));
+    const jboolean boot_class_loader = ik->class_loader_data()->is_boot_class_loader_data();
     JfrUpcalls::new_bytes_eager_instrumentation(JfrTraceId::load_raw(ik),
                                                 force_instrumentation,
+                                                boot_class_loader,
                                                 super,
                                                 size_of_new_bytes,
                                                 new_bytes,
-                                                &size_instrumented_data,
-                                                &instrumented_data,
-                                                t);
-    if (t->has_pending_exception()) {
-      log_pending_exception(t->pending_exception());
-      t->clear_pending_exception();
-      return NULL;
+                                                &size_of_instrumented_bytes,
+                                                &instrumented_bytes,
+                                                THREAD);
+    JfrJavaSupport::destroy_local_jni_handle(super);
+    if (has_pending_exception(THREAD)) {
+      return nullptr;
     }
-    assert(instrumented_data != NULL, "invariant");
-    assert(size_instrumented_data > 0, "invariant");
-    return new ClassFileStream(instrumented_data, size_instrumented_data, NULL, ClassFileStream::verify);
+    assert(instrumented_bytes != nullptr, "invariant");
+    assert(size_of_instrumented_bytes > 0, "invariant");
+    new_bytes = instrumented_bytes;
+    size_of_new_bytes = size_of_instrumented_bytes;
+    is_instrumented = true;
   }
-  return new ClassFileStream(new_bytes, size_of_new_bytes, NULL, ClassFileStream::verify);
+  return new ClassFileStream(new_bytes, size_of_new_bytes, nullptr, ClassFileStream::verify);
 }
 
-static bool cache_bytes(InstanceKlass* ik, ClassFileStream* new_stream, InstanceKlass* new_ik, TRAPS) {
-  assert(ik != NULL, "invariant");
-  assert(new_ik != NULL, "invariant");
-  assert(new_ik->name() != NULL, "invariant");
-  assert(new_stream != NULL, "invariant");
-  assert(!HAS_PENDING_EXCEPTION, "invariant");
-  static const bool can_retransform = JfrOptionSet::allow_retransforms();
-  if (!can_retransform) {
-    return true;
+static bool _force_instrumentation = false;
+
+void JfrEventClassTransformer::set_force_instrumentation(bool force_instrumentation) {
+  _force_instrumentation = force_instrumentation;
+}
+
+bool JfrEventClassTransformer::is_force_instrumentation() {
+  return _force_instrumentation;
+}
+
+static ClassFileStream* retransform_bytes(const Klass* existing_klass, const ClassFileParser& parser, bool& is_instrumented, TRAPS) {
+  assert(existing_klass != nullptr, "invariant");
+  assert(!is_instrumented, "invariant");
+  assert(JdkJfrEvent::is_a(existing_klass) || JdkJfrEvent::is_host(existing_klass), "invariant");
+  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(THREAD));
+  jint size_of_new_bytes = 0;
+  unsigned char* new_bytes = nullptr;
+  const ClassFileStream* const stream = parser.clone_stream();
+  assert(stream != nullptr, "invariant");
+  const jclass clazz = static_cast<jclass>(JfrJavaSupport::local_jni_handle(existing_klass->java_mirror(), THREAD));
+  JfrUpcalls::on_retransform(JfrTraceId::load_raw(existing_klass),
+                              clazz,
+                              stream->length(),
+                              stream->buffer(),
+                              &size_of_new_bytes,
+                              &new_bytes,
+                              THREAD);
+  JfrJavaSupport::destroy_local_jni_handle(clazz);
+  if (has_pending_exception(THREAD)) {
+    return nullptr;
+  }
+  assert(new_bytes != nullptr, "invariant");
+  assert(size_of_new_bytes > 0, "invariant");
+  is_instrumented = true;
+  return new ClassFileStream(new_bytes, size_of_new_bytes, nullptr, ClassFileStream::verify);
+}
+
+// On initial class load.
+static void cache_class_file_data(InstanceKlass* new_ik, const ClassFileStream* new_stream, const JavaThread* thread) {
+  assert(new_ik != nullptr, "invariant");
+  assert(new_stream != nullptr, "invariant");
+  assert(thread != nullptr, "invariant");
+  assert(!thread->has_pending_exception(), "invariant");
+  if (!JfrOptionSet::allow_retransforms()) {
+    return;
   }
   const jint stream_len = new_stream->length();
   JvmtiCachedClassFileData* p =
     (JvmtiCachedClassFileData*)NEW_C_HEAP_ARRAY_RETURN_NULL(u1, offset_of(JvmtiCachedClassFileData, data) + stream_len, mtInternal);
-  if (p == NULL) {
-    log_error(jfr, system)("Allocation using C_HEAP_ARRAY for " SIZE_FORMAT
-      " bytes failed in JfrClassAdapter::on_klass_creation", (size_t)offset_of(JvmtiCachedClassFileData, data) + stream_len);
-    return false;
+  if (p == nullptr) {
+    log_error(jfr, system)("Allocation using C_HEAP_ARRAY for " SIZE_FORMAT " bytes failed in JfrEventClassTransformer::cache_class_file_data",
+      static_cast<size_t>(offset_of(JvmtiCachedClassFileData, data) + stream_len));
+    return;
   }
   p->length = stream_len;
   memcpy(p->data, new_stream->buffer(), stream_len);
   new_ik->set_cached_class_file(p);
-  JvmtiCachedClassFileData* const cached_class_data = ik->get_cached_class_file();
-  if (cached_class_data != NULL) {
-    os::free(cached_class_data);
-    ik->set_cached_class_file(NULL);
+}
+
+// On redefine / retransform, in case an agent modified the class, the original bytes are cached onto the scratch klass.
+static void transfer_cached_class_file_data(InstanceKlass* ik, InstanceKlass* new_ik, const ClassFileParser& parser, JavaThread* thread) {
+  assert(ik != nullptr, "invariant");
+  assert(new_ik != nullptr, "invariant");
+  JvmtiCachedClassFileData* const p = ik->get_cached_class_file();
+  if (p != nullptr) {
+    new_ik->set_cached_class_file(p);
+    ik->set_cached_class_file(nullptr);
+    return;
   }
-  return true;
+  // No cached classfile indicates that no agent modified the klass.
+  // This means that the parser is holding the original bytes. Hence, we cache it onto the scratch klass.
+  const ClassFileStream* const stream = parser.clone_stream();
+  cache_class_file_data(new_ik, stream, thread);
+}
+
+static void rewrite_klass_pointer(InstanceKlass*& ik, InstanceKlass* new_ik, ClassFileParser& parser, const JavaThread* thread) {
+  assert(ik != nullptr, "invariant");
+  assert(new_ik != nullptr, "invariant");
+  assert(thread != nullptr, "invariant");
+  assert(IS_EVENT_OR_HOST_KLASS(new_ik), "invariant");
+  assert(TRACE_ID(ik) == TRACE_ID(new_ik), "invariant");
+  assert(!thread->has_pending_exception(), "invariant");
+  // Assign original InstanceKlass* back onto "its" parser object for proper destruction.
+  parser.set_klass_to_deallocate(ik);
+  // Finally rewrite the original pointer to the newly created InstanceKlass.
+  ik = new_ik;
+}
+
+// If code size is 1, it is 0xb1, i.e. the return instruction.
+static inline bool is_commit_method_instrumented(const Method* m) {
+  assert(m != nullptr, "invariant");
+  assert(m->name() == commit, "invariant");
+  assert(m->constMethod()->code_size() > 0, "invariant");
+  return m->constMethod()->code_size() > 1;
+}
+
+static bool bless_static_commit_method(const Array<Method*>* methods) {
+  assert(methods != nullptr, "invariant");
+  for (int i = 0; i < methods->length(); ++i) {
+    const Method* const m = methods->at(i);
+    // Method is of the form "static void UserEvent::commit(...)" and instrumented
+    if (m->is_static() && m->name() == commit && is_commit_method_instrumented(m)) {
+      BLESS_METHOD(m);
+      return true;
+    }
+  }
+  return false;
+}
+
+static void bless_instance_commit_method(const Array<Method*>* methods) {
+  assert(methods != nullptr, "invariant");
+  for (int i = 0; i < methods->length(); ++i) {
+    const Method* const m = methods->at(i);
+    // Method is of the form "void UserEvent:commit()" and instrumented
+    if (!m->is_static() &&
+         m->name() == commit &&
+         m->signature() == void_method_sig &&
+         is_commit_method_instrumented(m)) {
+      BLESS_METHOD(m);
+    }
+  }
+}
+
+// A blessed method is a method that is allowed to link to system sensitive code.
+// It is primarily the class file schema extended instance 'commit()V' method.
+// Jdk events can also define a static commit method with an arbitrary signature.
+static void bless_commit_method(const InstanceKlass* new_ik) {
+  assert(new_ik != nullptr, "invariant");
+  assert(JdkJfrEvent::is_subklass(new_ik), "invariant");
+  const Array<Method*>* const methods = new_ik->methods();
+  if (new_ik->class_loader() == nullptr) {
+    // JDK events are allowed an additional commit method that is static.
+    // Search precedence must therefore inspect static methods first.
+    if (bless_static_commit_method(methods)) {
+      return;
+    }
+  }
+  bless_instance_commit_method(methods);
+}
+
+static void copy_traceid(const InstanceKlass* ik, const InstanceKlass* new_ik) {
+  assert(ik != nullptr, "invariant");
+  assert(new_ik != nullptr, "invariant");
+  new_ik->set_trace_id(ik->trace_id());
+  assert(TRACE_ID(ik) == TRACE_ID(new_ik), "invariant");
+}
+
+static const Klass* klass_being_redefined(const InstanceKlass* ik, JvmtiThreadState* state) {
+  assert(ik != nullptr, "invariant");
+  assert(state != nullptr, "invariant");
+  const GrowableArray<Klass*>* const redef_klasses = state->get_classes_being_redefined();
+  if (redef_klasses == nullptr || redef_klasses->is_empty()) {
+    return nullptr;
+  }
+  for (int i = 0; i < redef_klasses->length(); ++i) {
+    const Klass* const existing_klass = redef_klasses->at(i);
+    assert(existing_klass != nullptr, "invariant");
+    if (ik->name() == existing_klass->name() && ik->class_loader_data() == existing_klass->class_loader_data()) {
+      // 'ik' is a scratch klass. Return the klass being redefined.
+      return existing_klass;
+    }
+  }
+  return nullptr;
+}
+
+// Redefining / retransforming?
+static const Klass* find_existing_klass(const InstanceKlass* ik, JavaThread* thread) {
+  assert(ik != nullptr, "invariant");
+  assert(thread != nullptr, "invariant");
+  JvmtiThreadState* const state = thread->jvmti_thread_state();
+  return state != nullptr ? klass_being_redefined(ik, state) : nullptr;
 }
 
 static InstanceKlass* create_new_instance_klass(InstanceKlass* ik, ClassFileStream* stream, TRAPS) {
-  assert(stream != NULL, "invariant");
+  assert(stream != nullptr, "invariant");
   ResourceMark rm(THREAD);
   ClassLoaderData* const cld = ik->class_loader_data();
   Handle pd(THREAD, ik->protection_domain());
   Symbol* const class_name = ik->name();
-  const char* const klass_name = class_name != NULL ? class_name->as_C_string() : "";
+  const char* const klass_name = class_name != nullptr ? class_name->as_C_string() : "";
   ClassLoadInfo cl_info(pd);
   ClassFileParser new_parser(stream,
                              class_name,
@@ -1479,100 +1697,117 @@ static InstanceKlass* create_new_instance_klass(InstanceKlass* ik, ClassFileStre
   if (HAS_PENDING_EXCEPTION) {
     log_pending_exception(PENDING_EXCEPTION);
     CLEAR_PENDING_EXCEPTION;
-    return NULL;
+    return nullptr;
   }
   const ClassInstanceInfo* cl_inst_info = cl_info.class_hidden_info_ptr();
   InstanceKlass* const new_ik = new_parser.create_instance_klass(false, *cl_inst_info, THREAD);
   if (HAS_PENDING_EXCEPTION) {
     log_pending_exception(PENDING_EXCEPTION);
     CLEAR_PENDING_EXCEPTION;
-    return NULL;
+    return nullptr;
   }
-  assert(new_ik != NULL, "invariant");
-  assert(new_ik->name() != NULL, "invariant");
+  assert(new_ik != nullptr, "invariant");
+  assert(new_ik->name() != nullptr, "invariant");
   assert(strncmp(ik->name()->as_C_string(), new_ik->name()->as_C_string(), strlen(ik->name()->as_C_string())) == 0, "invariant");
-  return cache_bytes(ik, stream, new_ik, THREAD) ? new_ik : NULL;
+  return new_ik;
 }
 
-static void rewrite_klass_pointer(InstanceKlass*& ik, InstanceKlass* new_ik, ClassFileParser& parser, TRAPS) {
-  assert(ik != NULL, "invariant");
-  assert(new_ik != NULL, "invariant");
-  assert(new_ik->name() != NULL, "invariant");
-  assert(JdkJfrEvent::is(new_ik) || JdkJfrEvent::is_subklass(new_ik), "invariant");
-  assert(!HAS_PENDING_EXCEPTION, "invariant");
-  // assign original InstanceKlass* back onto "its" parser object for proper destruction
-  parser.set_klass_to_deallocate(ik);
-  // now rewrite original pointer to newly created InstanceKlass
-  ik = new_ik;
-}
-
-static bool is_retransforming(const InstanceKlass* ik, TRAPS) {
-  assert(ik != NULL, "invariant");
-  assert(JdkJfrEvent::is_a(ik), "invariant");
-  Symbol* const name = ik->name();
-  assert(name != NULL, "invariant");
-  Handle class_loader(THREAD, ik->class_loader());
-  Handle protection_domain(THREAD, ik->protection_domain());
-  return SystemDictionary::find_instance_klass(name, class_loader, protection_domain) != NULL;
-}
-
-// target for JFR_ON_KLASS_CREATION hook
-void JfrEventClassTransformer::on_klass_creation(InstanceKlass*& ik, ClassFileParser& parser, TRAPS) {
-  assert(ik != NULL, "invariant");
-  if (JdkJfrEvent::is(ik)) {
-    ResourceMark rm(THREAD);
-    HandleMark hm(THREAD);
-    ClassFileStream* new_stream = create_new_bytes_for_event_klass(ik, parser, THREAD);
-    if (new_stream == NULL) {
-      log_error(jfr, system)("JfrClassAdapter: unable to create ClassFileStream");
-      return;
+static InstanceKlass* create_instance_klass(InstanceKlass*& ik, ClassFileStream* stream, bool is_initial_load, JavaThread* thread) {
+  if (stream == nullptr) {
+    if (is_initial_load) {
+      log_error(jfr, system)("JfrEventClassTransformer: unable to create ClassFileStream for %s", ik->external_name());
     }
-    assert(new_stream != NULL, "invariant");
-    InstanceKlass* new_ik = create_new_instance_klass(ik, new_stream, THREAD);
-    if (new_ik == NULL) {
-      log_error(jfr, system)("JfrClassAdapter: unable to create InstanceKlass");
-      return;
+    return nullptr;
+  }
+  InstanceKlass* const new_ik = create_new_instance_klass(ik, stream, thread);
+  if (new_ik == nullptr) {
+    if (is_initial_load) {
+      log_error(jfr, system)("JfrEventClassTransformer: unable to create InstanceKlass for %s", ik->external_name());
     }
-    assert(new_ik != NULL, "invariant");
-    // We now need to explicitly tag the replaced klass as the jdk.jfr.Event klass
-    assert(!JdkJfrEvent::is(new_ik), "invariant");
-    JdkJfrEvent::tag_as(new_ik);
-    assert(JdkJfrEvent::is(new_ik), "invariant");
-    rewrite_klass_pointer(ik, new_ik, parser, THREAD);
+  }
+  return new_ik;
+}
+
+static void transform(InstanceKlass*& ik, ClassFileParser& parser, JavaThread* thread) {
+  assert(IS_EVENT_OR_HOST_KLASS(ik), "invariant");
+  bool is_instrumented = false;
+  ClassFileStream* stream = nullptr;
+  const Klass* const existing_klass = find_existing_klass(ik, thread);
+  if (existing_klass != nullptr) {
+    // There is already a klass defined, implying we are redefining / retransforming.
+    stream = retransform_bytes(existing_klass, parser, is_instrumented, thread);
+  } else {
+    // No existing klass, implying this is the initial load.
+    stream = JdkJfrEvent::is(ik) ? schema_extend_event_klass_bytes(ik, parser, thread) : schema_extend_event_subklass_bytes(ik, parser, is_instrumented, thread);
+  }
+  InstanceKlass* const new_ik = create_instance_klass(ik, stream, existing_klass == nullptr, thread);
+  if (new_ik == nullptr) {
     return;
   }
-  assert(JdkJfrEvent::is_subklass(ik), "invariant");
-  if (ik->is_abstract() || is_retransforming(ik, THREAD)) {
-    // abstract and scratch classes are not instrumented
+  if (existing_klass != nullptr) {
+    transfer_cached_class_file_data(ik, new_ik, parser, thread);
+  } else {
+    cache_class_file_data(new_ik, stream, thread);
+  }
+  if (is_instrumented && JdkJfrEvent::is_subklass(new_ik)) {
+    bless_commit_method(new_ik);
+  }
+  copy_traceid(ik, new_ik);
+  rewrite_klass_pointer(ik, new_ik, parser, thread);
+}
+
+// Target for the JFR_ON_KLASS_CREATION hook.
+// Extends the class file schema on initial class load or reinstruments on redefine / retransform.
+// The passed in parameter 'ik' acts as an in-out parameter: it is rewritten to point to a replaced
+// instance of the passed in InstanceKlass. The original 'ik' will be set onto the passed parser,
+// for destruction when the parser goes out of scope.
+void JfrEventClassTransformer::on_klass_creation(InstanceKlass*& ik, ClassFileParser& parser, TRAPS) {
+  assert(ik != nullptr, "invariant");
+  assert(IS_EVENT_OR_HOST_KLASS(ik), "invariant");
+  if (ik->is_abstract() && !JdkJfrEvent::is(ik)) {
+    assert(JdkJfrEvent::is_subklass(ik), "invariant");
+    // Abstract subklasses are not instrumented.
     return;
   }
   ResourceMark rm(THREAD);
   HandleMark hm(THREAD);
-  ClassFileStream* const new_stream = create_new_bytes_for_subklass(ik, parser, THREAD);
-  if (NULL == new_stream) {
-    log_error(jfr, system)("JfrClassAdapter: unable to create ClassFileStream");
-    return;
-  }
-  assert(new_stream != NULL, "invariant");
-  InstanceKlass* new_ik = create_new_instance_klass(ik, new_stream, THREAD);
-  if (new_ik == NULL) {
-    log_error(jfr, system)("JfrClassAdapter: unable to create InstanceKlass");
-    return;
-  }
-  assert(new_ik != NULL, "invariant");
-  // would have been tagged already as a subklass during the normal process of traceid assignment
-  assert(JdkJfrEvent::is_subklass(new_ik), "invariant");
-  traceid id = ik->trace_id();
-  ik->set_trace_id(0);
-  new_ik->set_trace_id(id);
-  rewrite_klass_pointer(ik, new_ik, parser, THREAD);
+  transform(ik, parser, THREAD);
 }
 
-static bool _force_instrumentation = false;
-void JfrEventClassTransformer::set_force_instrumentation(bool force_instrumentation) {
-  _force_instrumentation = force_instrumentation;
+static bool is_static_commit_method_blessed(const Array<Method*>* methods) {
+  assert(methods != nullptr, "invariant");
+  for (int i = 0; i < methods->length(); ++i) {
+    const Method* const m = methods->at(i);
+    // Must be of form: static void UserEvent::commit(...)
+    if (m->is_static() && m->name() == commit) {
+      return IS_METHOD_BLESSED(m);
+    }
+  }
+  return false;
 }
 
-bool JfrEventClassTransformer::is_force_instrumentation() {
-  return _force_instrumentation;
+static bool is_instance_commit_method_blessed(const Array<Method*>* methods) {
+  assert(methods != nullptr, "invariant");
+  for (int i = 0; i < methods->length(); ++i) {
+    const Method* const m = methods->at(i);
+    // Must be of form: void UserEvent::commit()
+    if (!m->is_static() && m->name() == commit && m->signature() == void_method_sig) {
+      return IS_METHOD_BLESSED(m);
+    }
+  }
+  return false;
+}
+
+bool JfrEventClassTransformer::is_instrumented(const InstanceKlass* ik) {
+  assert(ik != nullptr, "invariant");
+  assert(JdkJfrEvent::is_subklass(ik), "invariant");
+  const Array<Method*>* const methods = ik->methods();
+  if (ik->class_loader() == nullptr) {
+    // JDK events are allowed an additional commit method that is static.
+    // Search precedence must therefore inspect static methods first.
+    if (is_static_commit_method_blessed(methods)) {
+      return true;
+    }
+  }
+  return is_instance_commit_method_blessed(methods);
 }

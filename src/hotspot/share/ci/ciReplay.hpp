@@ -99,7 +99,6 @@
 class ciReplay {
   CI_PACKAGE_ACCESS
 
-#ifndef PRODUCT
  private:
   static int replay_impl(TRAPS);
 
@@ -123,7 +122,6 @@ class ciReplay {
   static bool should_not_inline(ciMethod* method);
   static bool should_inline(void* data, ciMethod* method, int bci, int inline_depth, bool& should_delay);
   static bool should_not_inline(void* data, ciMethod* method, int bci, int inline_depth);
-#endif
 
  public:
   static oop obj_field(oop obj, Symbol* name);

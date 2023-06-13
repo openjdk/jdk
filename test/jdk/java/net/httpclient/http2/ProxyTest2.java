@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,9 @@ import javax.net.ssl.SSLSession;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import jdk.httpclient.test.lib.http2.Http2TestServer;
+import jdk.httpclient.test.lib.http2.Http2TestExchange;
+import jdk.httpclient.test.lib.http2.Http2Handler;
 import jdk.test.lib.net.SimpleSSLContext;
 import java.util.concurrent.*;
 
@@ -60,13 +63,8 @@ import java.util.concurrent.*;
  * @bug 8181422
  * @summary  Verifies that you can access an HTTP/2 server over HTTPS by
  *           tunnelling through an HTTP/1.1 proxy.
- * @modules java.net.http
- * @library /test/lib server
- * @modules java.base/sun.net.www.http
- *          java.net.http/jdk.internal.net.http.common
- *          java.net.http/jdk.internal.net.http.frame
- *          java.net.http/jdk.internal.net.http.hpack
- * @build jdk.test.lib.net.SimpleSSLContext ProxyTest2
+ * @library /test/lib /test/jdk/java/net/httpclient/lib
+ * @build jdk.test.lib.net.SimpleSSLContext jdk.httpclient.test.lib.http2.Http2TestServer
  * @run main/othervm ProxyTest2
  * @author danielfuchs
  */
@@ -189,13 +187,14 @@ public class ProxyTest2 {
                 public void run() {
                     try {
                         try {
-                            int c;
-                            while ((c = is.read()) != -1) {
-                                os.write(c);
+                            int len;
+                            byte[] buf = new byte[16 * 1024];
+                            while ((len = is.read(buf)) != -1) {
+                                os.write(buf, 0, len);
                                 os.flush();
                                 // if DEBUG prints a + or a - for each transferred
                                 // character.
-                                if (DEBUG) System.out.print(tag);
+                                if (DEBUG) System.out.print(String.valueOf(tag).repeat(len));
                             }
                             is.close();
                         } finally {

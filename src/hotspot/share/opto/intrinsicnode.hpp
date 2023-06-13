@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -157,15 +157,29 @@ class AryEqNode: public StrIntrinsicNode {
   virtual const Type* bottom_type() const { return TypeInt::BOOL; }
 };
 
-//------------------------------HasNegatives---------------------------------
-class HasNegativesNode: public StrIntrinsicNode {
+//------------------------------CountPositives------------------------------
+class CountPositivesNode: public StrIntrinsicNode {
  public:
-  HasNegativesNode(Node* control, Node* char_array_mem, Node* s1, Node* c1):
+  CountPositivesNode(Node* control, Node* char_array_mem, Node* s1, Node* c1):
   StrIntrinsicNode(control, char_array_mem, s1, c1, none) {};
   virtual int Opcode() const;
-  virtual const Type* bottom_type() const { return TypeInt::BOOL; }
+  virtual const Type* bottom_type() const { return TypeInt::POS; }
 };
 
+//------------------------------VectorizedHashCodeNode----------------------
+class VectorizedHashCodeNode: public Node {
+ public:
+  VectorizedHashCodeNode(Node* control, Node* ary_mem, Node* arg1, Node* cnt1, Node* result, Node* basic_type)
+    : Node(control, ary_mem, arg1, cnt1, result, basic_type) {};
+  virtual int Opcode() const;
+  virtual bool depends_only_on_test() const { return false; }
+  virtual const Type* bottom_type() const { return TypeInt::INT; }
+  virtual const TypePtr* adr_type() const { return TypePtr::BOTTOM; }
+  virtual uint match_edge(uint idx) const;
+  virtual uint ideal_reg() const { return Op_RegI; }
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+  virtual const Type* Value(PhaseGVN* phase) const;
+};
 
 //------------------------------EncodeISOArray--------------------------------
 // encode char[] to byte[] in ISO_8859_1 or ASCII
@@ -260,6 +274,69 @@ class SignumFNode : public Node {
   virtual int Opcode() const;
   virtual const Type* bottom_type() const { return Type::FLOAT; }
   virtual uint ideal_reg() const { return Op_RegF; }
+};
+
+//----------------------------CompressBits/ExpandBits---------------------------
+class CompressBitsNode : public TypeNode {
+ public:
+  CompressBitsNode(Node* in1, Node* in2, const Type* type) : TypeNode(type, 3) {
+    init_req(1, in1);
+    init_req(2, in2);
+  }
+  virtual int Opcode() const;
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+  virtual Node* Identity(PhaseGVN* phase);
+  virtual const Type* Value(PhaseGVN* phase) const;
+  static jlong compress_bits(jlong src, jlong mask, int bit_size);
+};
+
+class ExpandBitsNode : public TypeNode {
+ public:
+  ExpandBitsNode(Node* in1, Node* in2, const Type* type) : TypeNode(type, 3) {
+    init_req(1, in1);
+    init_req(2, in2);
+  }
+  virtual int Opcode() const;
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+  virtual Node* Identity(PhaseGVN* phase);
+  virtual const Type* Value(PhaseGVN* phase) const;
+  static jlong expand_bits(jlong src, jlong mask, int bit_size);
+};
+
+//---------- IsInfiniteFNode -----------------------------------------------------
+class IsInfiniteFNode : public Node {
+  public:
+  IsInfiniteFNode(Node* in1) : Node(0, in1) {}
+  virtual int   Opcode() const;
+  const Type* bottom_type() const { return TypeInt::BOOL; }
+  virtual uint ideal_reg() const { return Op_RegI; }
+};
+
+//---------- IsInfiniteDNode -----------------------------------------------------
+class IsInfiniteDNode : public Node {
+  public:
+  IsInfiniteDNode(Node* in1) : Node(0, in1) {}
+  virtual int   Opcode() const;
+  const Type* bottom_type() const { return TypeInt::BOOL; }
+  virtual uint ideal_reg() const { return Op_RegI; }
+};
+
+//---------- IsFiniteFNode -----------------------------------------------------
+class IsFiniteFNode : public Node {
+  public:
+  IsFiniteFNode(Node* in1) : Node(0, in1) {}
+  virtual int   Opcode() const;
+  const Type* bottom_type() const { return TypeInt::BOOL; }
+  virtual uint ideal_reg() const { return Op_RegI; }
+};
+
+//---------- IsFiniteDNode -----------------------------------------------------
+class IsFiniteDNode : public Node {
+  public:
+  IsFiniteDNode(Node* in1) : Node(0, in1) {}
+  virtual int   Opcode() const;
+  const Type* bottom_type() const { return TypeInt::BOOL; }
+  virtual uint ideal_reg() const { return Op_RegI; }
 };
 
 #endif // SHARE_OPTO_INTRINSICNODE_HPP

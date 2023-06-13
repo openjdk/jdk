@@ -122,7 +122,7 @@ public class RepaintManager
     DoubleBufferInfo standardDoubleBuffer;
 
     /**
-     * Object responsible for hanlding core paint functionality.
+     * Object responsible for handling core paint functionality.
      */
     private PaintManager paintManager;
 
@@ -966,7 +966,7 @@ public class RepaintManager
         tmp.setBounds(dirtyComponents.get(dirtyComponent));
 
         // System.out.println("Collect dirty component for bound " + tmp +
-        //                                   "component bounds is " + cBounds);;
+        //                                   "component bounds is " + cBounds);
         SwingUtilities.computeIntersection(0,0,w,h,tmp);
 
         if (tmp.isEmpty()) {
@@ -1085,7 +1085,7 @@ public class RepaintManager
 
         // If the window is non-opaque, it's double-buffered at peer's level
         Window w = (c instanceof Window) ? (Window)c : SwingUtilities.getWindowAncestor(c);
-        if (!w.isOpaque()) {
+        if (w != null && !w.isOpaque()) {
             Toolkit tk = Toolkit.getDefaultToolkit();
             if ((tk instanceof SunToolkit) && (((SunToolkit)tk).needUpdateWindow())) {
                 return null;

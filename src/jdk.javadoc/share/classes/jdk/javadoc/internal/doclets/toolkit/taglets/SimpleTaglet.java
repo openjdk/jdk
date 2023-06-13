@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,27 +27,25 @@ package jdk.javadoc.internal.doclets.toolkit.taglets;
 
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
+import javax.lang.model.element.ExecutableElement;
 
 import com.sun.source.doctree.DocTree;
 import jdk.javadoc.doclet.Taglet.Location;
 
+import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
-import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFinder;
+import jdk.javadoc.internal.doclets.toolkit.util.DocFinder.Result;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
 /**
  * A custom single-argument block tag.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
-
 public class SimpleTaglet extends BaseTaglet implements InheritableTaglet {
 
     /**
@@ -165,16 +163,29 @@ public class SimpleTaglet extends BaseTaglet implements InheritableTaglet {
     }
 
     @Override
-    public void inherit(DocFinder.Input input, DocFinder.Output output) {
-        List<? extends DocTree> tags = input.utils.getBlockTags(input.element, this);
-        if (!tags.isEmpty()) {
-            output.holder = input.element;
-            output.holderTag = tags.get(0);
-            CommentHelper ch = input.utils.getCommentHelper(output.holder);
-            output.inlineTags = input.isFirstSentence
-                    ? ch.getFirstSentenceTrees(output.holderTag)
-                    : ch.getTags(output.holderTag);
+    public Output inherit(Element owner, DocTree tag, boolean isFirstSentence, BaseConfiguration configuration) {
+        assert owner.getKind() == ElementKind.METHOD;
+        assert !isFirstSentence;
+        try {
+            var docFinder = configuration.utils.docFinder();
+            var r = docFinder.trySearch((ExecutableElement) owner,
+                    m -> Result.fromOptional(extractFirst(m, configuration.utils))).toOptional();
+            return r.map(result -> new Output(result.tag, result.method, result.description, true))
+                    .orElseGet(()->new Output(null, null, List.of(), true));
+        } catch (DocFinder.NoOverriddenMethodsFound e) {
+            return new Output(null, null, List.of(), false);
         }
+    }
+
+    record Documentation(DocTree tag, List<? extends DocTree> description, ExecutableElement method) { }
+
+    private Optional<Documentation> extractFirst(ExecutableElement m, Utils utils) {
+        List<? extends DocTree> tags = utils.getBlockTags(m, this);
+        if (tags.isEmpty()) {
+            return Optional.empty();
+        }
+        DocTree t = tags.get(0);
+        return Optional.of(new Documentation(t, utils.getCommentHelper(m).getDescription(t), m));
     }
 
     @Override

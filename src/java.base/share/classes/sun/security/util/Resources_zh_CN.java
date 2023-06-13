@@ -66,8 +66,6 @@ public class Resources_zh_CN extends java.util.ListResourceBundle {
         {"Subject.", "\u4E3B\u4F53: \n"},
         {".Principal.", "\t\u4E3B\u7528\u6237: "},
         {".Public.Credential.", "\t\u516C\u5171\u8EAB\u4EFD\u8BC1\u660E: "},
-        {".Private.Credentials.inaccessible.",
-                "\t\u65E0\u6CD5\u8BBF\u95EE\u4E13\u7528\u8EAB\u4EFD\u8BC1\u660E\n"},
         {".Private.Credential.", "\t\u4E13\u7528\u8EAB\u4EFD\u8BC1\u660E: "},
         {".Private.Credential.inaccessible.",
                 "\t\u65E0\u6CD5\u8BBF\u95EE\u4E13\u7528\u8EAB\u4EFD\u8BC1\u660E\n"},
@@ -89,16 +87,6 @@ public class Resources_zh_CN extends java.util.ListResourceBundle {
                 "\u63D0\u4F9B\u4E86\u65E0\u6548\u7684\u7A7A CallbackHandler"},
         {"null.subject.logout.called.before.login",
                 "\u7A7A\u4E3B\u4F53 - \u5728\u767B\u5F55\u4E4B\u524D\u8C03\u7528\u4E86\u6CE8\u9500"},
-        {"unable.to.instantiate.LoginModule.module.because.it.does.not.provide.a.no.argument.constructor",
-                "\u65E0\u6CD5\u5B9E\u4F8B\u5316 LoginModule, {0}, \u56E0\u4E3A\u5B83\u672A\u63D0\u4F9B\u4E00\u4E2A\u65E0\u53C2\u6570\u6784\u9020\u5668"},
-        {"unable.to.instantiate.LoginModule",
-                "\u65E0\u6CD5\u5B9E\u4F8B\u5316 LoginModule"},
-        {"unable.to.instantiate.LoginModule.",
-                "\u65E0\u6CD5\u5B9E\u4F8B\u5316 LoginModule: "},
-        {"unable.to.find.LoginModule.class.",
-                "\u65E0\u6CD5\u627E\u5230 LoginModule \u7C7B: "},
-        {"unable.to.access.LoginModule.",
-                "\u65E0\u6CD5\u8BBF\u95EE LoginModule: "},
         {"Login.Failure.all.modules.ignored",
                 "\u767B\u5F55\u5931\u8D25: \u5FFD\u7565\u6240\u6709\u6A21\u5757"},
 
@@ -150,11 +138,6 @@ public class Resources_zh_CN extends java.util.ListResourceBundle {
         // sun.security.pkcs11.SunPKCS11
         {"PKCS11.Token.providerName.Password.",
                 "PKCS11 \u6807\u8BB0 [{0}] \u53E3\u4EE4: "},
-
-        /* --- DEPRECATED --- */
-        // javax.security.auth.Policy
-        {"unable.to.instantiate.Subject.based.policy",
-                "\u65E0\u6CD5\u5B9E\u4F8B\u5316\u57FA\u4E8E\u4E3B\u9898\u7684\u7B56\u7565"}
     };
 
 

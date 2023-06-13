@@ -74,9 +74,8 @@ import jdk.internal.access.SharedSecrets;
  * exception for its correctness: <i>the fail-fast behavior of iterators
  * should be used only to detect bugs.</i>
  *
- * <p>This class and its iterator implement all of the
- * <em>optional</em> methods of the {@link Collection} and {@link
- * Iterator} interfaces.
+ * <p>This class and its iterator implement all of the <em>optional</em> methods of the
+ * {@link Collection}, {@link SequencedCollection}, and {@link Iterator} interfaces.
  *
  * <p>This class is a member of the
  * <a href="{@docRoot}/java.base/java/util/package-summary.html#CollectionsFramework">
@@ -1040,7 +1039,7 @@ public class ArrayDeque<E> extends AbstractCollection<E>
     }
 
     /**
-     * Nulls out slots starting at array index i, upto index end.
+     * Nulls out slots starting at array index i, up to index end.
      * Condition i == end means "empty" - nothing to do.
      */
     private static void circularClear(Object[] es, int i, int end) {

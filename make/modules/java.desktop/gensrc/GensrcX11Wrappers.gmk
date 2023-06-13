@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,13 @@
 #
 
 # Generate java sources using the X11 offsets that are precalculated in files
-# make/data/x11wrappergen/sizes-<address size>.txt.
+# src/java.desktop/unix/data/x11wrappergen/sizes-<address size>.txt.
 
 # Put the generated Java classes used to interface X11 from awt here.
 GENSRC_X11WRAPPERS_OUTPUTDIR := $(SUPPORT_OUTPUTDIR)/gensrc/java.desktop/sun/awt/X11
 
 # The pre-calculated offset file are stored here:
-GENSRC_X11WRAPPERS_DATADIR := $(TOPDIR)/make/data/x11wrappergen
+GENSRC_X11WRAPPERS_DATADIR := $(MODULE_SRC)/unix/data/x11wrappergen
 GENSRC_X11WRAPPERS_DATA := $(GENSRC_X11WRAPPERS_DATADIR)/sizes-$(OPENJDK_TARGET_CPU_BITS).txt
 
 # Run the tool on the offset files to generate several Java classes used in awt.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,8 @@ import com.sun.jdi.request.MonitorContendedEnterRequest;
 import com.sun.jdi.request.MonitorContendedEnteredRequest;
 import com.sun.jdi.request.MonitorWaitRequest;
 import com.sun.jdi.request.MonitorWaitedRequest;
+import com.sun.jdi.request.ThreadDeathRequest;
+import com.sun.jdi.request.ThreadStartRequest;
 import com.sun.jdi.request.VMDeathRequest;
 
 /**
@@ -142,7 +144,7 @@ public interface VirtualMachine extends Mirror {
      *
      * @return a list of {@link ReferenceType} objects, each mirroring
      * a loaded type in the target VM.
-     * @see <a href="{@docRoot}/../specs/jvmti/jvmti.html#GetLoadedClasses">
+     * @see <a href="{@docRoot}/../specs/jvmti.html#GetLoadedClasses">
      * JVM TI GetLoadedClasses</a> regarding how class and interface creation can be triggered
      */
     List<ReferenceType> allClasses();
@@ -153,7 +155,7 @@ public interface VirtualMachine extends Mirror {
      * is called 'equivalent' (to the old version of the
      * method) if
      * <UL>
-     * <LI>their bytecodes are the same except for indicies into
+     * <LI>their bytecodes are the same except for indices into
      *   the constant pool, and
      * <LI>the referenced constants are equal.
      * </UL>
@@ -250,20 +252,24 @@ public interface VirtualMachine extends Mirror {
     void redefineClasses(Map<? extends ReferenceType,byte[]> classToBytes);
 
     /**
-     * Returns a list of the currently running threads. For each
-     * running thread in the target VM, a {@link ThreadReference}
-     * that mirrors it is placed in the list.
-     * The returned list contains threads created through
-     * java.lang.Thread, all native threads attached to
-     * the target VM through JNI, and system threads created
-     * by the target VM. Thread objects that have
-     * not yet been started
-     * (see {@link java.lang.Thread#start Thread.start()})
-     * and thread objects that have
-     * completed their execution are not included in the returned list.
+     * Returns a list of the live threads in the target VM. Threads that have not yet
+     * started or threads that have terminated are not included in the list.
      *
-     * @return a list of {@link ThreadReference} objects, one for each
-     * running thread in the mirrored VM.
+     * <p> The returned list contains a {@code ThreadReference} for each live
+     * <a href="{@docRoot}/java.base/java/lang/Thread.html#platform-threads">platform
+     * thread</a> in the target VM. This includes platform threads created with the
+     * {@code java.lang.Thread} API and all native threads attached to the target VM
+     * with <a href="{@docRoot}/../specs/jni/index.html">JNI code</a>.
+     *
+     * <p> It is implementation dependent if the list contains elements for live
+     * <a href=../../api/java.base/java/lang/Thread.html#virtual-threads>virtual threads</a>
+     * in the target VM. The target VM may not return any references to virtual threads,
+     * or it may be configured to return a reference to some or all virtual threads.
+     * Tools that want to track all virtual threads may enable {@link ThreadStartRequest}
+     * and {@link ThreadDeathRequest} to get notifications when virtual threads start
+     * and terminate.
+     *
+     * @return a list of {@link ThreadReference} objects for the threads in the target VM
      */
     List<ThreadReference> allThreads();
 
@@ -271,13 +277,13 @@ public interface VirtualMachine extends Mirror {
      * Suspends the execution of the application running in this
      * virtual machine. All threads currently running will be suspended.
      * <p>
-     * Unlike {@link java.lang.Thread#suspend Thread.suspend()},
-     * suspends of both the virtual machine and individual threads are
+     * Suspends of both the virtual machine and individual threads are
      * counted. Before a thread will run again, it must be resumed
      * (through {@link #resume} or {@link ThreadReference#resume})
      * the same number of times it has been suspended.
      *
-     * @throws VMCannotBeModifiedException if the VirtualMachine is read-only - see {@link VirtualMachine#canBeModified()}.
+     * @throws VMCannotBeModifiedException if the VirtualMachine is read-only
+     * @see #canBeModified()
      */
     void suspend();
 
@@ -286,9 +292,9 @@ public interface VirtualMachine extends Mirror {
      * virtual machine. All threads are resumed as documented in
      * {@link ThreadReference#resume}.
      *
-     * @throws VMCannotBeModifiedException if the VirtualMachine is read-only - see {@link VirtualMachine#canBeModified()}.
-     *
-     * @see #suspend
+     * @throws VMCannotBeModifiedException if the VirtualMachine is read-only
+     * @see #suspend()
+     * @see #canBeModified()
      */
     void resume();
 
@@ -893,7 +899,7 @@ public interface VirtualMachine extends Mirror {
     int TRACE_RECEIVES    = 0x00000002;
     /** Tracing enabled for internal event handling. */
     int TRACE_EVENTS      = 0x00000004;
-    /** Tracing enabled for internal managment of reference types. */
+    /** Tracing enabled for internal management of reference types. */
     int TRACE_REFTYPES    = 0x00000008;
     /** Tracing enabled for internal management of object references. */
     int TRACE_OBJREFS      = 0x00000010;

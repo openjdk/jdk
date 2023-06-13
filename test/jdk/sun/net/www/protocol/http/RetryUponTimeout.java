@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,13 +26,13 @@
  * @bug 4772077
  * @library /test/lib
  * @summary  using defaultReadTimeout appear to retry request upon timeout
- * @modules java.base/sun.net.www
  */
 
 import java.net.*;
 import java.io.*;
+
+import jdk.test.lib.net.HttpHeaderParser;
 import jdk.test.lib.net.URIBuilder;
-import sun.net.www.*;
 
 public class RetryUponTimeout implements Runnable {
     // run server
@@ -42,7 +42,7 @@ public class RetryUponTimeout implements Runnable {
             for (int i = 0; i < 2; i++) {
                 socket = server.accept();
                 InputStream is = socket.getInputStream ();
-                MessageHeader header = new MessageHeader (is);
+                HttpHeaderParser header = new HttpHeaderParser (is);
                 count++;
             }
         } catch (Exception ex) {

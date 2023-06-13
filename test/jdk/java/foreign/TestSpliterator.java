@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,11 @@
 
 /*
  * @test
+ * @enablePreview
  * @run testng TestSpliterator
  */
 
-import jdk.incubator.foreign.MemoryLayout;
-import jdk.incubator.foreign.MemorySegment;
-import jdk.incubator.foreign.ResourceScope;
-import jdk.incubator.foreign.SequenceLayout;
+import java.lang.foreign.*;
 
 import java.lang.invoke.VarHandle;
 import java.util.LinkedList;
@@ -40,15 +38,13 @@ import java.util.concurrent.RecursiveTask;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.LongStream;
 
-import jdk.incubator.foreign.ValueLayout;
 import org.testng.annotations.*;
 
 import static org.testng.Assert.*;
 
 public class TestSpliterator {
 
-    static final VarHandle INT_HANDLE = MemoryLayout.sequenceLayout(ValueLayout.JAVA_INT)
-            .varHandle(MemoryLayout.PathElement.sequenceElement());
+    static final VarHandle INT_HANDLE = ValueLayout.JAVA_INT.arrayElementVarHandle();
 
     final static int CARRIER_SIZE = 4;
 
@@ -57,12 +53,12 @@ public class TestSpliterator {
         SequenceLayout layout = MemoryLayout.sequenceLayout(size, ValueLayout.JAVA_INT);
 
         //setup
-        try (ResourceScope scope = ResourceScope.newSharedScope()) {
-            MemorySegment segment = MemorySegment.allocateNative(layout, scope);
-            for (int i = 0; i < layout.elementCount().getAsLong(); i++) {
+        try (Arena arena = Arena.ofShared()) {
+            MemorySegment segment = arena.allocate(layout);;
+            for (int i = 0; i < layout.elementCount(); i++) {
                 INT_HANDLE.set(segment, (long) i, i);
             }
-            long expected = LongStream.range(0, layout.elementCount().getAsLong()).sum();
+            long expected = LongStream.range(0, layout.elementCount()).sum();
             //serial
             long serial = sum(0, segment);
             assertEquals(serial, expected);
@@ -84,11 +80,12 @@ public class TestSpliterator {
         SequenceLayout layout = MemoryLayout.sequenceLayout(1024, ValueLayout.JAVA_INT);
 
         //setup
-        MemorySegment segment = MemorySegment.allocateNative(layout, ResourceScope.newImplicitScope());
-        for (int i = 0; i < layout.elementCount().getAsLong(); i++) {
+        Arena scope = Arena.ofAuto();
+        MemorySegment segment = scope.allocate(layout);
+        for (int i = 0; i < layout.elementCount(); i++) {
             INT_HANDLE.set(segment, (long) i, i);
         }
-        long expected = LongStream.range(0, layout.elementCount().getAsLong()).sum();
+        long expected = LongStream.range(0, layout.elementCount()).sum();
 
         //check that a segment w/o ACQUIRE access mode can still be used from same thread
         AtomicLong spliteratorSum = new AtomicLong();
@@ -99,32 +96,67 @@ public class TestSpliterator {
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testBadSpliteratorElementSizeTooBig() {
-        MemorySegment.ofArray(new byte[2]).spliterator(ValueLayout.JAVA_INT);
+        Arena scope = Arena.ofAuto();
+        scope.allocate(2, 1)
+                .spliterator(ValueLayout.JAVA_INT);
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testBadStreamElementSizeTooBig() {
-        MemorySegment.ofArray(new byte[2]).elements(ValueLayout.JAVA_INT);
+        Arena scope = Arena.ofAuto();
+        scope.allocate(2, 1)
+                .elements(ValueLayout.JAVA_INT);
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testBadSpliteratorElementSizeNotMultiple() {
-        MemorySegment.ofArray(new byte[7]).spliterator(ValueLayout.JAVA_INT);
+        Arena scope = Arena.ofAuto();
+        scope.allocate(7, 1)
+                .spliterator(ValueLayout.JAVA_INT);
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testBadStreamElementSizeNotMultiple() {
-        MemorySegment.ofArray(new byte[7]).elements(ValueLayout.JAVA_INT);
+        Arena scope = Arena.ofAuto();
+        scope.allocate(7, 1)
+                .elements(ValueLayout.JAVA_INT);
+    }
+
+    @Test
+    public void testSpliteratorElementSizeMultipleButNotPowerOfTwo() {
+        Arena scope = Arena.ofAuto();
+        scope.allocate(12, 1)
+                .spliterator(ValueLayout.JAVA_INT);
+    }
+
+    @Test
+    public void testStreamElementSizeMultipleButNotPowerOfTwo() {
+        Arena scope = Arena.ofAuto();
+        scope.allocate(12, 1)
+                .elements(ValueLayout.JAVA_INT);
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testBadSpliteratorElementSizeZero() {
-        MemorySegment.ofArray(new byte[7]).spliterator(MemoryLayout.sequenceLayout(0, ValueLayout.JAVA_INT));
+        Arena scope = Arena.ofAuto();
+        scope.allocate(7, 1)
+                .spliterator(MemoryLayout.sequenceLayout(0, ValueLayout.JAVA_INT));
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testBadStreamElementSizeZero() {
-        MemorySegment.ofArray(new byte[7]).elements(MemoryLayout.sequenceLayout(0, ValueLayout.JAVA_INT));
+        Arena scope = Arena.ofAuto();
+        scope.allocate(7, 1)
+                .elements(MemoryLayout.sequenceLayout(0, ValueLayout.JAVA_INT));
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void testHyperAligned() {
+        Arena scope = Arena.ofAuto();
+        MemorySegment segment = scope.allocate(8, 1);
+        // compute an alignment constraint (in bytes) which exceed that of the native segment
+        long bigByteAlign = Long.lowestOneBit(segment.address()) << 1;
+        segment.elements(MemoryLayout.sequenceLayout(2, ValueLayout.JAVA_INT.withByteAlignment(bigByteAlign)));
     }
 
     static long sumSingle(long acc, MemorySegment segment) {

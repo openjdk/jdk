@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@ import sun.security.util.SecurityProperties;
  * <a href="{@docRoot}/../specs/jar/jar.html">
  * Manifest format specification</a>.
  *
+ * @spec jar/jar.html JAR File Specification
  * @author  David Connelly
  * @see     Attributes
  * @since   1.2
@@ -336,7 +337,7 @@ public class Manifest implements Cloneable {
                     lastline = buf;
                     continue;
                 }
-                name = new String(buf, 0, buf.length, UTF_8.INSTANCE);
+                name = new String(buf, UTF_8.INSTANCE);
                 lastline = null;
             }
             Attributes attr = getAttributes(name);
@@ -533,7 +534,7 @@ public class Manifest implements Cloneable {
             if (n > avail) {
                 n = avail;
             }
-            pos += n;
+            pos += (int) n;
             return n;
         }
 

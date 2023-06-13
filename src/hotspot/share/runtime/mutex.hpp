@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,13 @@
 
 #include "memory/allocation.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/os.hpp"
+
+#if defined(LINUX) || defined(AIX) || defined(BSD)
+# include "mutex_posix.hpp"
+#else
+# include OS_HEADER(mutex)
+#endif
+
 
 // A Mutex/Monitor is a simple wrapper around a native lock plus condition
 // variable that supports lock ownership tracking, lock ranking for deadlock
@@ -83,13 +89,13 @@ class Mutex : public CHeapObj<mtSynchronizer> {
 
  private:
   // The _owner field is only set by the current thread, either to itself after it has acquired
-  // the low-level _lock, or to NULL before it has released the _lock. Accesses by any thread other
+  // the low-level _lock, or to null before it has released the _lock. Accesses by any thread other
   // than the lock owner are inherently racy.
   Thread* volatile _owner;
   void raw_set_owner(Thread* new_owner) { Atomic::store(&_owner, new_owner); }
 
  protected:                              // Monitor-Mutex metadata
-  os::PlatformMonitor _lock;             // Native monitor implementation
+  PlatformMonitor _lock;                 // Native monitor implementation
   const char* _name;                     // Name of mutex/monitor
 
   // Debugging fields for naming, deadlock detection, etc. (some only used in debug mode)
@@ -102,7 +108,6 @@ class Mutex : public CHeapObj<mtSynchronizer> {
   Thread* _last_owner;           // the last thread to own the lock
   bool _skip_rank_check;         // read only by owner when doing rank checks
 
-  static bool contains(Mutex* locks, Mutex* lock);
   static Mutex* get_least_ranked_lock(Mutex* locks);
   Mutex* get_least_ranked_lock_besides_this(Mutex* locks);
   bool skip_rank_check() {
@@ -114,7 +119,6 @@ class Mutex : public CHeapObj<mtSynchronizer> {
   Rank   rank() const          { return _rank; }
   const char*  rank_name() const;
   Mutex* next()  const         { return _next; }
-  void   set_next(Mutex *next) { _next = next; }
 #endif // ASSERT
 
  protected:
@@ -164,7 +168,7 @@ class Mutex : public CHeapObj<mtSynchronizer> {
   void lock(); // prints out warning if VM thread blocks
   void lock(Thread *thread); // overloaded with current thread
   void unlock();
-  bool is_locked() const                     { return owner() != NULL; }
+  bool is_locked() const                     { return owner() != nullptr; }
 
   bool try_lock(); // Like lock(), but unblocking. It returns false instead
  private:
@@ -192,7 +196,7 @@ class Mutex : public CHeapObj<mtSynchronizer> {
   void print_on_error(outputStream* st) const;
   #ifndef PRODUCT
     void print_on(outputStream* st) const;
-    void print() const                      { print_on(::tty); }
+    void print() const;
   #endif
 };
 
@@ -208,8 +212,8 @@ class Monitor : public Mutex {
   // Wait until monitor is notified (or times out).
   // Defaults are to make safepoint checks, wait time is forever (i.e.,
   // zero). Returns true if wait times out; otherwise returns false.
-  bool wait(int64_t timeout = 0);
-  bool wait_without_safepoint_check(int64_t timeout = 0);
+  bool wait(uint64_t timeout = 0);
+  bool wait_without_safepoint_check(uint64_t timeout = 0);
   void notify();
   void notify_all();
 };

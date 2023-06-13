@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,9 +110,7 @@ bool AppLauncher::libEnvVariableContainsAppDir() const {
 }
 
 Jvm* AppLauncher::createJvmLauncher() const {
-    const tstring cfgFilePath = FileUtils::mkpath()
-        << appDirPath << FileUtils::stripExeSuffix(
-            FileUtils::basename(launcherPath)) + _T(".cfg");
+    const tstring cfgFilePath = getCfgFilePath();
 
     LOG_TRACE(tstrings::any() << "Launcher config file path: \""
             << cfgFilePath << "\"");
@@ -159,4 +157,21 @@ Jvm* AppLauncher::createJvmLauncher() const {
 
 void AppLauncher::launch() const {
     std::unique_ptr<Jvm>(createJvmLauncher())->launch();
+}
+
+
+tstring AppLauncher::getCfgFilePath() const {
+    tstring_array::const_iterator it = cfgFileLookupDirs.begin();
+    tstring_array::const_iterator end = cfgFileLookupDirs.end();
+    const tstring cfgFileName = FileUtils::stripExeSuffix(
+            FileUtils::basename(launcherPath)) + _T(".cfg");
+    for (; it != end; ++it) {
+        const tstring cfgFilePath = FileUtils::mkpath() << *it << cfgFileName;
+        LOG_TRACE(tstrings::any() << "Check [" << cfgFilePath << "] file exit");
+        if (FileUtils::isFileExists(cfgFilePath)) {
+            return cfgFilePath;
+        }
+    }
+
+    return FileUtils::mkpath() << appDirPath << cfgFileName;
 }

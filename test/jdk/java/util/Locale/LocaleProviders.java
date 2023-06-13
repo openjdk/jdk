@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -127,7 +127,7 @@ public class LocaleProviders {
     }
 
     static void adapterTest(String expected, String lang, String ctry) {
-        Locale testLocale = new Locale(lang, ctry);
+        Locale testLocale = Locale.of(lang, ctry);
         LocaleProviderAdapter ldaExpected =
             LocaleProviderAdapter.forType(LocaleProviderAdapter.Type.valueOf(expected));
         if (!ldaExpected.getDateFormatProvider().isSupportedLocale(testLocale)) {
@@ -248,7 +248,7 @@ public class LocaleProviders {
     static void bug8013086Test(String lang, String ctry) {
         try {
             // Throws a NullPointerException if the test fails.
-            System.out.println(new SimpleDateFormat("z", new Locale(lang, ctry)).parse("UTC"));
+            System.out.println(new SimpleDateFormat("z", Locale.of(lang, ctry)).parse("UTC"));
         } catch (ParseException pe) {
             // ParseException is fine in this test, as it's not "UTC"
         }
@@ -258,7 +258,7 @@ public class LocaleProviders {
         if (IS_WINDOWS) {
             Date sampleDate = new Date(0x10000000000L);
             String expected = "\u5e73\u6210 16.11.03 (\u6c34) \u5348\u524d 11:53:47";
-            Locale l = new Locale("ja", "JP", "JP");
+            Locale l = Locale.of("ja", "JP", "JP");
             SimpleDateFormat sdf = new SimpleDateFormat("GGGG yyyy.MMM.dd '('E')' a hh:mm:ss", l);
             sdf.setTimeZone(TimeZone.getTimeZone("America/Los_Angeles"));
             String result = sdf.format(sampleDate);
@@ -295,7 +295,7 @@ public class LocaleProviders {
 
     static void bug8220227Test() {
         if (IS_WINDOWS) {
-            Locale l = new Locale("xx","XX");
+            Locale l = Locale.of("xx","XX");
             String country = l.getDisplayCountry();
             if (country.endsWith("(XX)")) {
                 throw new RuntimeException(

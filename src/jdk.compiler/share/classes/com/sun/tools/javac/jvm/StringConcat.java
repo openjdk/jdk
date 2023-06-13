@@ -105,6 +105,7 @@ public abstract class StringConcat {
         }
     }
 
+    @SuppressWarnings("this-escape")
     protected StringConcat(Context context) {
         context.put(concatKey, this);
         gen = Gen.instance(context);
@@ -140,25 +141,6 @@ public abstract class StringConcat {
             }
         }
         return res.append(tree);
-    }
-
-    /**
-     * If the type is not accessible from current context, try to figure out the
-     * sharpest accessible supertype.
-     *
-     * @param originalType type to sharpen
-     * @return sharped type
-     */
-    Type sharpestAccessible(Type originalType) {
-        if (originalType.hasTag(ARRAY)) {
-            return types.makeArrayType(sharpestAccessible(types.elemtype(originalType)));
-        }
-
-        Type type = originalType;
-        while (!rs.isAccessible(gen.getAttrEnv(), type.asElement())) {
-            type = types.supertype(type);
-        }
-        return type;
     }
 
     /**
@@ -305,6 +287,14 @@ public abstract class StringConcat {
 
             return splits.toList();
         }
+
+        /**
+         * Returns true if the argument should be converted to a string eagerly, to preserve
+         * possible side-effects.
+         */
+        protected boolean shouldConvertToStringEagerly(Type argType) {
+            return !types.unboxedTypeOrType(argType).isPrimitive() && argType.tsym != syms.stringType.tsym;
+        }
     }
 
     /**
@@ -333,14 +323,18 @@ public abstract class StringConcat {
                 for (JCTree arg : t) {
                     Object constVal = arg.type.constValue();
                     if ("".equals(constVal)) continue;
-                    if (arg.type == syms.botType) {
-                        dynamicArgs.add(types.boxedClass(syms.voidType).type);
-                    } else {
-                        dynamicArgs.add(sharpestAccessible(arg.type));
+                    Type argType = arg.type;
+                    if (argType == syms.botType) {
+                        argType = types.boxedClass(syms.voidType).type;
                     }
                     if (!first || generateFirstArg) {
                         gen.genExpr(arg, arg.type).load();
                     }
+                    if (shouldConvertToStringEagerly(argType)) {
+                        gen.callMethod(pos, syms.stringType, names.valueOf, List.of(syms.objectType), true);
+                        argType = syms.stringType;
+                    }
+                    dynamicArgs.add(argType);
                     first = false;
                 }
                 doCall(type, pos, dynamicArgs.toList());
@@ -439,10 +433,15 @@ public abstract class StringConcat {
                     } else {
                         // Ordinary arguments come through the dynamic arguments.
                         recipe.append(TAG_ARG);
-                        dynamicArgs.add(sharpestAccessible(arg.type));
+                        Type argType = arg.type;
                         if (!first || generateFirstArg) {
                             gen.genExpr(arg, arg.type).load();
                         }
+                        if (shouldConvertToStringEagerly(argType)) {
+                            gen.callMethod(pos, syms.stringType, names.valueOf, List.of(syms.objectType), true);
+                            argType = syms.stringType;
+                        }
+                        dynamicArgs.add(argType);
                         first = false;
                     }
                 }

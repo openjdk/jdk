@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 
 package jdk.jfr.internal.dcmd;
 
-
+import java.io.IOException;
 
 import jdk.jfr.FlightRecorder;
 import jdk.jfr.internal.LogLevel;
@@ -51,9 +51,9 @@ final class DCmdConfigure extends AbstractDCmd {
      * @param globalBufferCount number of global buffers
      * @param globalBufferSize size of global buffers
      * @param threadBufferSize size of thread buffer for events
+     * @param memorySize Size of in memory buffer
      * @param maxChunkSize threshold at which a new chunk is created in the disk repository
-     * @param sampleThreads if thread sampling should be enabled
-     *
+     * @param preserveRepository if files in the repository should be deleted on exit.
      * @return result
 
      * @throws DCmdException
@@ -70,7 +70,7 @@ final class DCmdConfigure extends AbstractDCmd {
             Long threadBufferSize,
             Long memorySize,
             Long maxChunkSize,
-            Boolean sampleThreads
+            Boolean preserveRepository
 
     ) throws DCmdException {
         if (Logger.shouldLog(LogTag.JFR_DCMD, LogLevel.DEBUG)) {
@@ -82,7 +82,7 @@ final class DCmdConfigure extends AbstractDCmd {
                     ", thread_buffer_size=" + threadBufferSize +
                     ", memorysize=" + memorySize +
                     ", maxchunksize=" + maxChunkSize +
-                    ", samplethreads=" + sampleThreads);
+                    ", preserveRepository=" + preserveRepository);
         }
 
 
@@ -105,8 +105,20 @@ final class DCmdConfigure extends AbstractDCmd {
             updated = true;
         }
 
+        if (preserveRepository != null) {
+            Options.setPreserveRepository(preserveRepository.booleanValue());
+            if (verbose) {
+                printPreserveRepository();
+            }
+            updated = true;
+        }
+
         if (dumpPath != null)  {
-            Options.setDumpPath(new SafePath(dumpPath));
+            try {
+                Options.setDumpPath(new SafePath(dumpPath));
+            } catch (IOException e) {
+                throw new DCmdException("Could not set " + dumpPath + " to emergency dump path. " + e.getMessage(), e);
+            }
             Logger.log(LogTag.JFR, LogLevel.INFO, "Emergency dump path set to " + dumpPath);
            if (verbose) {
                printDumpPath();
@@ -168,28 +180,21 @@ final class DCmdConfigure extends AbstractDCmd {
             updated = true;
         }
 
-        if (sampleThreads != null)  {
-            Options.setSampleThreads(sampleThreads);
-            Logger.log(LogTag.JFR, LogLevel.INFO, "Sample threads set to " + sampleThreads);
-            if (verbose) {
-                printSampleThreads();
-            }
-            updated = true;
-        }
         if (!verbose) {
             return new String[0];
         }
         if (!updated) {
             println("Current configuration:");
             println();
+            printPreserveRepository();
             printRepositoryPath();
+            printDumpPath();
             printStackDepth();
             printGlobalBufferCount();
             printGlobalBufferSize();
             printThreadBufferSize();
             printMemorySize();
             printMaxChunkSize();
-            printSampleThreads();
         }
         return getResult();
     }
@@ -200,14 +205,14 @@ final class DCmdConfigure extends AbstractDCmd {
         println();
     }
 
+    private void printPreserveRepository() {
+        println("Preserve repository: " + Options.getPreserveRepository());
+    }
+
     private void printDumpPath() {
         print("Dump path: ");
         printPath(Options.getDumpPath());
         println();
-    }
-
-    private void printSampleThreads() {
-        println("Sample threads: " + Options.getSampleThreads());
     }
 
     private void printStackDepth() {

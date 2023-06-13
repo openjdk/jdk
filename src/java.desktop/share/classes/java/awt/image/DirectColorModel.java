@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -642,12 +642,12 @@ public class DirectColorModel extends PackedColorModel {
      * @param inData the specified pixel
      * @return the alpha component of the specified pixel, scaled from
      *         0 to 255.
-     * @exception ClassCastException if {@code inData}
+     * @throws ClassCastException if {@code inData}
      *  is not a primitive array of type {@code transferType}
-     * @exception ArrayIndexOutOfBoundsException if
+     * @throws ArrayIndexOutOfBoundsException if
      *  {@code inData} is not large enough to hold a pixel value
      *  for this {@code ColorModel}
-     * @exception UnsupportedOperationException if this
+     * @throws UnsupportedOperationException if this
      *  {@code tranferType} is not supported by this
      *  {@code ColorModel}
      */
@@ -694,7 +694,7 @@ public class DirectColorModel extends PackedColorModel {
      *
      * @param inData the specified pixel
      * @return the color and alpha components of the specified pixel.
-     * @exception UnsupportedOperationException if this
+     * @throws UnsupportedOperationException if this
      *            {@code transferType} is not supported by this
      *            {@code ColorModel}
      * @see ColorModel#getRGBdefault
@@ -744,12 +744,12 @@ public class DirectColorModel extends PackedColorModel {
      * @param pixel the specified pixel
      * @return an array representation of the specified pixel in this
      *         {@code ColorModel}
-     * @exception ClassCastException if {@code pixel}
+     * @throws ClassCastException if {@code pixel}
      *  is not a primitive array of type {@code transferType}
-     * @exception ArrayIndexOutOfBoundsException if
+     * @throws ArrayIndexOutOfBoundsException if
      *  {@code pixel} is not large enough to hold a pixel value
      *  for this {@code ColorModel}
-     * @exception UnsupportedOperationException if this
+     * @throws UnsupportedOperationException if this
      *  {@code transferType} is not supported by this
      *  {@code ColorModel}
      * @see WritableRaster#setDataElements
@@ -963,14 +963,14 @@ public class DirectColorModel extends PackedColorModel {
      *        which to start storing the color and alpha components
      * @return an array containing the color and alpha components of the
      * specified pixel starting at the specified offset.
-     * @exception ClassCastException if {@code pixel}
+     * @throws ClassCastException if {@code pixel}
      *  is not a primitive array of type {@code transferType}
-     * @exception ArrayIndexOutOfBoundsException if
+     * @throws ArrayIndexOutOfBoundsException if
      *  {@code pixel} is not large enough to hold a pixel value
      *  for this {@code ColorModel}, or if {@code components}
      *  is not {@code null} and is not large enough to hold all the
      *  color and alpha components, starting at {@code offset}
-     * @exception UnsupportedOperationException if this
+     * @throws UnsupportedOperationException if this
      *            {@code transferType} is not supported by this
      *            color model
      */
@@ -1055,7 +1055,7 @@ public class DirectColorModel extends PackedColorModel {
      * begin retrieving the color and alpha components
      * @return an {@code int} pixel value in this
      * {@code ColorModel} corresponding to the specified components.
-     * @exception ArrayIndexOutOfBoundsException if
+     * @throws ArrayIndexOutOfBoundsException if
      *  the {@code components} array is not large enough to
      *  hold all of the color and alpha components starting at
      *  {@code offset}
@@ -1097,14 +1097,14 @@ public class DirectColorModel extends PackedColorModel {
      * and alpha components
      * @return an {@code Object} representing an array of color and
      * alpha components.
-     * @exception ClassCastException if {@code obj}
+     * @throws ClassCastException if {@code obj}
      *  is not a primitive array of type {@code transferType}
-     * @exception ArrayIndexOutOfBoundsException if
+     * @throws ArrayIndexOutOfBoundsException if
      *  {@code obj} is not large enough to hold a pixel value
      *  for this {@code ColorModel} or the {@code components}
      *  array is not large enough to hold all of the color and alpha
      *  components starting at {@code offset}
-     * @exception UnsupportedOperationException if this
+     * @throws UnsupportedOperationException if this
      *            {@code transferType} is not supported by this
      *            color model
      * @see WritableRaster#setDataElements
@@ -1169,7 +1169,7 @@ public class DirectColorModel extends PackedColorModel {
      * premultiplied; {@code false} otherwise
      * @return a {@code ColorModel} object that represents the
      * coerced data.
-     * @exception UnsupportedOperationException if this
+     * @throws UnsupportedOperationException if this
      *            {@code transferType} is not supported by this
      *            color model
      */
@@ -1212,7 +1212,6 @@ public class DirectColorModel extends PackedColorModel {
                             } else {
                                 if (zpixel == null) {
                                     zpixel = new int[numComponents];
-                                    java.util.Arrays.fill(zpixel, 0);
                                 }
                                 raster.setPixel(rX, rY, zpixel);
                             }
@@ -1235,7 +1234,6 @@ public class DirectColorModel extends PackedColorModel {
                             } else {
                                 if (zpixel == null) {
                                     zpixel = new int[numComponents];
-                                    java.util.Arrays.fill(zpixel, 0);
                                 }
                                 raster.setPixel(rX, rY, zpixel);
                             }
@@ -1258,7 +1256,6 @@ public class DirectColorModel extends PackedColorModel {
                             } else {
                                 if (zpixel == null) {
                                     zpixel = new int[numComponents];
-                                    java.util.Arrays.fill(zpixel, 0);
                                 }
                                 raster.setPixel(rX, rY, zpixel);
                             }

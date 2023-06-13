@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,9 +21,8 @@
  * questions.
  */
 
-import jdk.incubator.foreign.MemorySegment;
-import jdk.incubator.foreign.ResourceScope;
-
+import java.lang.foreign.Arena;
+import java.lang.foreign.MemorySegment;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Collection;
@@ -37,18 +36,27 @@ public class AbstractVectorLoadStoreTest extends AbstractVectorTest {
             ByteOrder.BIG_ENDIAN, ByteOrder.LITTLE_ENDIAN);
 
     static final List<IntFunction<ByteBuffer>> BYTE_BUFFER_GENERATORS = List.of(
-            withToString("HB:RW:NE", (int s) -> {
-                return ByteBuffer.allocate(s)
-                        .order(ByteOrder.nativeOrder());
-            }),
-            withToString("DB:RW:NE", (int s) -> {
-                return ByteBuffer.allocateDirect(s)
-                        .order(ByteOrder.nativeOrder());
-            }),
-            withToString("MS:RW:NE", (int s) -> {
-                return MemorySegment.allocateNative(s, ResourceScope.newImplicitScope())
+            withToString("HB:RW:NE", (int s) ->
+                    ByteBuffer.allocate(s)
+                        .order(ByteOrder.nativeOrder())),
+            withToString("DB:RW:NE", (int s) ->
+                    ByteBuffer.allocateDirect(s)
+                        .order(ByteOrder.nativeOrder())),
+            withToString("MS:RW:NE", (int s) ->
+                    Arena.ofAuto().allocate(s)
                         .asByteBuffer()
-                        .order(ByteOrder.nativeOrder());
+                        .order(ByteOrder.nativeOrder())
+            )
+    );
+
+    static final List<IntFunction<MemorySegment>> MEMORY_SEGMENT_GENERATORS = List.of(
+            withToString("HMS", (int s) ->
+                    Arena.ofAuto().allocate(s)
+            ),
+            withToString("DMS", (int s) -> {
+                byte[] b = new byte[s];
+                return MemorySegment.ofArray(b);
             })
     );
+
 }

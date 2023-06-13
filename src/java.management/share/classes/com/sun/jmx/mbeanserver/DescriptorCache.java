@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ public class DescriptorCache {
         ImmutableDescriptor got = (wr == null) ? null : wr.get();
         if (got != null)
             return got;
-        map.put(descriptor, new WeakReference<ImmutableDescriptor>(descriptor));
+        map.put(descriptor, new WeakReference<>(descriptor));
         return descriptor;
     }
 
@@ -62,6 +62,5 @@ public class DescriptorCache {
     private static final DescriptorCache instance = new DescriptorCache();
     private final WeakHashMap<ImmutableDescriptor,
                               WeakReference<ImmutableDescriptor>>
-        map = new WeakHashMap<ImmutableDescriptor,
-                              WeakReference<ImmutableDescriptor>>();
+        map = new WeakHashMap<>();
 }

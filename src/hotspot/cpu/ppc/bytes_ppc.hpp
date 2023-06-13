@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2016 SAP SE. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,8 @@
 #ifndef CPU_PPC_BYTES_PPC_HPP
 #define CPU_PPC_BYTES_PPC_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
+#include "utilities/byteswap.hpp"
 
 class Bytes: AllStatic {
  public:
@@ -36,11 +37,6 @@ class Bytes: AllStatic {
   // Can I count on address always being a pointer to an unsigned char? Yes.
 
 #if defined(VM_LITTLE_ENDIAN)
-
-  // Forward declarations of the compiler-dependent implementation
-  static inline u2 swap_u2(u2 x);
-  static inline u4 swap_u4(u4 x);
-  static inline u8 swap_u8(u8 x);
 
   static inline u2   get_native_u2(address p) {
     return (intptr_t(p) & 1) == 0
@@ -141,20 +137,15 @@ class Bytes: AllStatic {
 
   // Efficient reading and writing of unaligned unsigned data in Java byte ordering (i.e. big-endian ordering)
   // (no byte-order reversal is needed since Power CPUs are big-endian oriented).
-  static inline u2   get_Java_u2(address p) { return swap_u2(get_native_u2(p)); }
-  static inline u4   get_Java_u4(address p) { return swap_u4(get_native_u4(p)); }
-  static inline u8   get_Java_u8(address p) { return swap_u8(get_native_u8(p)); }
+  static inline u2   get_Java_u2(address p) { return byteswap(get_native_u2(p)); }
+  static inline u4   get_Java_u4(address p) { return byteswap(get_native_u4(p)); }
+  static inline u8   get_Java_u8(address p) { return byteswap(get_native_u8(p)); }
 
-  static inline void put_Java_u2(address p, u2 x)     { put_native_u2(p, swap_u2(x)); }
-  static inline void put_Java_u4(address p, u4 x)     { put_native_u4(p, swap_u4(x)); }
-  static inline void put_Java_u8(address p, u8 x)     { put_native_u8(p, swap_u8(x)); }
+  static inline void put_Java_u2(address p, u2 x)     { put_native_u2(p, byteswap(x)); }
+  static inline void put_Java_u4(address p, u4 x)     { put_native_u4(p, byteswap(x)); }
+  static inline void put_Java_u8(address p, u8 x)     { put_native_u8(p, byteswap(x)); }
 
 #else // !defined(VM_LITTLE_ENDIAN)
-
-  // Thus, a swap between native and Java ordering is always a no-op:
-  static inline u2   swap_u2(u2 x)  { return x; }
-  static inline u4   swap_u4(u4 x)  { return x; }
-  static inline u8   swap_u8(u8 x)  { return x; }
 
   static inline u2   get_native_u2(address p) {
     return (intptr_t(p) & 1) == 0
@@ -265,7 +256,5 @@ class Bytes: AllStatic {
 
 #endif // VM_LITTLE_ENDIAN
 };
-
-#include OS_CPU_HEADER(bytes)
 
 #endif // CPU_PPC_BYTES_PPC_HPP

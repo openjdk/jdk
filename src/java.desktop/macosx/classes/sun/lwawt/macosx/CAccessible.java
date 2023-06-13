@@ -172,7 +172,8 @@ class CAccessible extends CFRetainedResource implements Accessible {
                                 ((AccessibleState)oldValue) == AccessibleState.VISIBLE ) {
                             menuClosed(ptr);
                         }
-                    } else if (thisRole == AccessibleRole.MENU_ITEM) {
+                    } else if (thisRole == AccessibleRole.MENU_ITEM ||
+                            (thisRole == AccessibleRole.MENU)) {
                         if ( newValue != null &&
                                 ((AccessibleState)newValue) == AccessibleState.FOCUSED ) {
                             menuItemSelected(ptr);
@@ -181,6 +182,16 @@ class CAccessible extends CFRetainedResource implements Accessible {
 
                     // Do send check box state changes to native side
                     if (thisRole == AccessibleRole.CHECK_BOX) {
+                        valueChanged(ptr);
+                    }
+
+                    // Do send radio button state changes to native side
+                    if (thisRole == AccessibleRole.RADIO_BUTTON) {
+                        valueChanged(ptr);
+                    }
+
+                    // Do send toggle button state changes to native side
+                    if (thisRole == AccessibleRole.TOGGLE_BUTTON) {
                         valueChanged(ptr);
                     }
                 } else if (name.equals(ACCESSIBLE_NAME_PROPERTY)) {
@@ -199,7 +210,6 @@ class CAccessible extends CFRetainedResource implements Accessible {
             }
         }
     }
-
 
     static Accessible getSwingAccessible(final Accessible a) {
         return (a instanceof CAccessible) ? ((CAccessible)a).accessible : a;

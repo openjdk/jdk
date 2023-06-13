@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,8 @@
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.lang.ref.ReferenceQueue;
+import java.lang.ref.WeakReference;
 import java.math.BigInteger;
 import java.net.ProxySelector;
 import java.net.URI;
@@ -32,7 +34,6 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublisher;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
-import java.net.http.HttpResponse.BodyHandler;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
@@ -51,9 +52,11 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.net.ssl.SSLContext;
+import jdk.httpclient.test.lib.common.HttpServerAdapters;
 import jdk.test.lib.net.SimpleSSLContext;
 import sun.net.NetProperties;
 import sun.net.www.HeaderParser;
+
 import static java.lang.System.out;
 import static java.lang.String.format;
 
@@ -62,16 +65,9 @@ import static java.lang.String.format;
  * @summary this test verifies that a client may provides authorization
  *          headers directly when connecting with a server.
  * @bug 8087112
- * @library /test/lib http2/server
- * @build jdk.test.lib.net.SimpleSSLContext HttpServerAdapters DigestEchoServer
- *        ReferenceTracker DigestEchoClient
- * @modules java.net.http/jdk.internal.net.http.common
- *          java.net.http/jdk.internal.net.http.frame
- *          java.net.http/jdk.internal.net.http.hpack
- *          java.logging
- *          java.base/sun.net.www.http
- *          java.base/sun.net.www
- *          java.base/sun.net
+ * @library /test/lib /test/jdk/java/net/httpclient/lib
+ * @build jdk.httpclient.test.lib.common.HttpServerAdapters jdk.test.lib.net.SimpleSSLContext
+ *        DigestEchoServer ReferenceTracker DigestEchoClient
  * @run main/othervm DigestEchoClient
  * @run main/othervm -Djdk.http.auth.proxying.disabledSchemes=
  *                   -Djdk.http.auth.tunneling.disabledSchemes=
@@ -392,6 +388,8 @@ public class DigestEchoClient {
                 server.getServerAddress(), "/foo/");
 
         HttpClient client = newHttpClient(server);
+        ReferenceQueue<HttpClient> queue = new ReferenceQueue<>();
+        WeakReference<HttpClient> ref = new WeakReference<>(client, queue);
         HttpResponse<String> r;
         CompletableFuture<HttpResponse<String>> cf1;
         String auth = null;
@@ -503,6 +501,14 @@ public class DigestEchoClient {
                 }
             }
         } finally {
+            client = null;
+            System.gc();
+            while (!ref.refersTo(null)) {
+                System.gc();
+                if (queue.remove(100) == ref) break;
+            }
+            var error = TRACKER.checkShutdown(900);
+            if (error != null) throw error;
         }
         System.out.println("OK");
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ class VirtualSpaceSummary : public StackObj {
   HeapWord* _reserved_end;
 public:
   VirtualSpaceSummary() :
-      _start(NULL), _committed_end(NULL), _reserved_end(NULL) { }
+      _start(nullptr), _committed_end(nullptr), _reserved_end(nullptr) { }
   VirtualSpaceSummary(HeapWord* start, HeapWord* committed_end, HeapWord* reserved_end) :
       _start(start), _committed_end(committed_end), _reserved_end(reserved_end) { }
 
@@ -52,7 +52,7 @@ class SpaceSummary : public StackObj {
   size_t    _used;
 public:
   SpaceSummary() :
-      _start(NULL), _end(NULL), _used(0) { }
+      _start(nullptr), _end(nullptr), _used(0) { }
   SpaceSummary(HeapWord* start, HeapWord* end, size_t used) :
       _start(start), _end(end), _used(used) { }
 
@@ -117,13 +117,15 @@ class G1HeapSummary : public GCHeapSummary {
   size_t  _edenUsed;
   size_t  _edenCapacity;
   size_t  _survivorUsed;
+  size_t  _oldGenUsed;
   uint    _numberOfRegions;
  public:
-   G1HeapSummary(VirtualSpaceSummary& heap_space, size_t heap_used, size_t edenUsed, size_t edenCapacity, size_t survivorUsed, uint numberOfRegions) :
-      GCHeapSummary(heap_space, heap_used), _edenUsed(edenUsed), _edenCapacity(edenCapacity), _survivorUsed(survivorUsed), _numberOfRegions(numberOfRegions) { }
+   G1HeapSummary(VirtualSpaceSummary& heap_space, size_t heap_used, size_t edenUsed, size_t edenCapacity, size_t survivorUsed, size_t oldGenUsed, uint numberOfRegions) :
+      GCHeapSummary(heap_space, heap_used), _edenUsed(edenUsed), _edenCapacity(edenCapacity), _survivorUsed(survivorUsed), _oldGenUsed(oldGenUsed), _numberOfRegions(numberOfRegions) { }
    const size_t edenUsed() const { return _edenUsed; }
    const size_t edenCapacity() const { return _edenCapacity; }
    const size_t survivorUsed() const { return _survivorUsed; }
+   const size_t oldGenUsed() const { return _oldGenUsed; }
    const uint   numberOfRegions() const { return _numberOfRegions; }
 
    virtual void accept(GCHeapSummaryVisitor* visitor) const {
@@ -177,7 +179,9 @@ private:
 
   size_t _region_end_waste; // Number of words wasted due to skipping to the next region.
   uint   _regions_filled;   // Number of regions filled completely.
+  size_t _num_plab_filled;  // Number of PLABs refilled/retired.
   size_t _direct_allocated; // Number of words allocated directly into the regions.
+  size_t _num_direct_allocated; // Number of direct allocations.
 
   // Number of words in live objects remaining in regions that ultimately suffered an
   // evacuation failure. This is used in the regions when the regions are made old regions.
@@ -187,12 +191,23 @@ private:
   // end of regions.
   size_t _failure_waste;
 public:
-  G1EvacSummary(size_t allocated, size_t wasted, size_t undo_wasted, size_t unused,
-    size_t used, size_t region_end_waste, uint regions_filled, size_t direct_allocated,
-    size_t failure_used, size_t failure_waste) :
+  G1EvacSummary(size_t allocated,
+                size_t wasted,
+                size_t undo_wasted,
+                size_t unused,
+                size_t used,
+                size_t region_end_waste,
+                uint regions_filled,
+                size_t num_plab_filled,
+                size_t direct_allocated,
+                size_t num_direct_allocated,
+                size_t failure_used,
+                size_t failure_waste) :
     _allocated(allocated), _wasted(wasted), _undo_wasted(undo_wasted), _unused(unused),
-    _used(used),  _region_end_waste(region_end_waste), _regions_filled(regions_filled),
-    _direct_allocated(direct_allocated), _failure_used(failure_used), _failure_waste(failure_waste)
+    _used(used),  _region_end_waste(region_end_waste),
+    _regions_filled(regions_filled), _num_plab_filled(num_plab_filled),
+    _direct_allocated(direct_allocated),_num_direct_allocated(num_direct_allocated),
+    _failure_used(failure_used), _failure_waste(failure_waste)
   { }
 
   size_t allocated() const { return _allocated; }
@@ -202,7 +217,9 @@ public:
   size_t used() const { return _used; }
   size_t region_end_waste() const { return _region_end_waste; }
   uint regions_filled() const { return _regions_filled; }
+  size_t num_plab_filled() const { return _num_plab_filled; }
   size_t direct_allocated() const { return _direct_allocated; }
+  size_t num_direct_allocated() const { return _num_direct_allocated; }
   size_t failure_used() const { return _failure_used; }
   size_t failure_waste() const { return _failure_waste; }
 };

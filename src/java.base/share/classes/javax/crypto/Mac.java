@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -142,11 +142,11 @@ public class Mac implements Cloneable {
      * Returns a {@code Mac} object that implements the
      * specified MAC algorithm.
      *
-     * <p> This method traverses the list of registered security Providers,
-     * starting with the most preferred Provider.
-     * A new Mac object encapsulating the
-     * MacSpi implementation from the first
-     * Provider that supports the specified algorithm is returned.
+     * <p> This method traverses the list of registered security providers,
+     * starting with the most preferred provider.
+     * A new {@code Mac} object encapsulating the
+     * {@code MacSpi} implementation from the first
+     * provider that supports the specified algorithm is returned.
      *
      * <p> Note that the list of registered providers may be retrieved via
      * the {@link Security#getProviders() Security.getProviders()} method.
@@ -156,7 +156,7 @@ public class Mac implements Cloneable {
      * {@code jdk.security.provider.preferred}
      * {@link Security#getProperty(String) Security} property to determine
      * the preferred provider order for the specified algorithm. This
-     * may be different than the order of providers returned by
+     * may be different from the order of providers returned by
      * {@link Security#getProviders() Security.getProviders()}.
      *
      * @param algorithm the standard name of the requested MAC algorithm.
@@ -182,7 +182,7 @@ public class Mac implements Cloneable {
         Iterator<Service> t = services.iterator();
         while (t.hasNext()) {
             Service s = t.next();
-            if (JceSecurity.canUseProvider(s.getProvider()) == false) {
+            if (!JceSecurity.canUseProvider(s.getProvider())) {
                 continue;
             }
             return new Mac(s, t, algorithm);
@@ -195,8 +195,8 @@ public class Mac implements Cloneable {
      * Returns a {@code Mac} object that implements the
      * specified MAC algorithm.
      *
-     * <p> A new Mac object encapsulating the
-     * MacSpi implementation from the specified provider
+     * <p> A new {@code Mac} object encapsulating the
+     * {@code MacSpi} implementation from the specified provider
      * is returned.  The specified provider must be registered
      * in the security provider list.
      *
@@ -239,9 +239,9 @@ public class Mac implements Cloneable {
      * Returns a {@code Mac} object that implements the
      * specified MAC algorithm.
      *
-     * <p> A new Mac object encapsulating the
-     * MacSpi implementation from the specified Provider
-     * object is returned.  Note that the specified Provider object
+     * <p> A new {@code Mac} object encapsulating the
+     * {@code MacSpi} implementation from the specified provider
+     * is returned.  Note that the specified provider
      * does not have to be registered in the provider list.
      *
      * @param algorithm the standard name of the requested MAC algorithm.
@@ -310,12 +310,12 @@ public class Mac implements Cloneable {
                 } else {
                     s = serviceIterator.next();
                 }
-                if (JceSecurity.canUseProvider(s.getProvider()) == false) {
+                if (!JceSecurity.canUseProvider(s.getProvider())) {
                     continue;
                 }
                 try {
                     Object obj = s.newInstance(null);
-                    if (obj instanceof MacSpi == false) {
+                    if (!(obj instanceof MacSpi)) {
                         continue;
                     }
                     spi = (MacSpi)obj;
@@ -354,10 +354,10 @@ public class Mac implements Cloneable {
                     s = serviceIterator.next();
                 }
                 // if provider says it does not support this key, ignore it
-                if (s.supportsParameter(key) == false) {
+                if (!s.supportsParameter(key)) {
                     continue;
                 }
-                if (JceSecurity.canUseProvider(s.getProvider()) == false) {
+                if (!JceSecurity.canUseProvider(s.getProvider())) {
                     continue;
                 }
                 try {
@@ -423,7 +423,7 @@ public class Mac implements Cloneable {
      *
      * @param key the key.
      *
-     * @exception InvalidKeyException if the given key is inappropriate for
+     * @throws InvalidKeyException if the given key is inappropriate for
      * initializing this MAC.
      */
     public final void init(Key key) throws InvalidKeyException {
@@ -451,9 +451,9 @@ public class Mac implements Cloneable {
      * @param key the key.
      * @param params the algorithm parameters.
      *
-     * @exception InvalidKeyException if the given key is inappropriate for
+     * @throws InvalidKeyException if the given key is inappropriate for
      * initializing this MAC.
-     * @exception InvalidAlgorithmParameterException if the given algorithm
+     * @throws InvalidAlgorithmParameterException if the given algorithm
      * parameters are inappropriate for this MAC.
      */
     public final void init(Key key, AlgorithmParameterSpec params)
@@ -476,12 +476,12 @@ public class Mac implements Cloneable {
      *
      * @param input the input byte to be processed.
      *
-     * @exception IllegalStateException if this {@code Mac} has not been
+     * @throws IllegalStateException if this {@code Mac} has not been
      * initialized.
      */
     public final void update(byte input) throws IllegalStateException {
         chooseFirstProvider();
-        if (initialized == false) {
+        if (!initialized) {
             throw new IllegalStateException("MAC not initialized");
         }
         spi.engineUpdate(input);
@@ -492,12 +492,12 @@ public class Mac implements Cloneable {
      *
      * @param input the array of bytes to be processed.
      *
-     * @exception IllegalStateException if this {@code Mac} has not been
+     * @throws IllegalStateException if this {@code Mac} has not been
      * initialized.
      */
     public final void update(byte[] input) throws IllegalStateException {
         chooseFirstProvider();
-        if (initialized == false) {
+        if (!initialized) {
             throw new IllegalStateException("MAC not initialized");
         }
         if (input != null) {
@@ -513,13 +513,13 @@ public class Mac implements Cloneable {
      * @param offset the offset in {@code input} where the input starts.
      * @param len the number of bytes to process.
      *
-     * @exception IllegalStateException if this {@code Mac} has not been
+     * @throws IllegalStateException if this {@code Mac} has not been
      * initialized.
      */
     public final void update(byte[] input, int offset, int len)
             throws IllegalStateException {
         chooseFirstProvider();
-        if (initialized == false) {
+        if (!initialized) {
             throw new IllegalStateException("MAC not initialized");
         }
 
@@ -538,13 +538,14 @@ public class Mac implements Cloneable {
      *
      * @param input the ByteBuffer
      *
-     * @exception IllegalStateException if this {@code Mac} has not been
+     * @throws IllegalStateException if this {@code Mac} has not been
      * initialized.
+     * @throws IllegalArgumentException if {@code input} is null
      * @since 1.5
      */
     public final void update(ByteBuffer input) {
         chooseFirstProvider();
-        if (initialized == false) {
+        if (!initialized) {
             throw new IllegalStateException("MAC not initialized");
         }
         if (input == null) {
@@ -569,12 +570,12 @@ public class Mac implements Cloneable {
      *
      * @return the MAC result.
      *
-     * @exception IllegalStateException if this {@code Mac} has not been
+     * @throws IllegalStateException if this {@code Mac} has not been
      * initialized.
      */
     public final byte[] doFinal() throws IllegalStateException {
         chooseFirstProvider();
-        if (initialized == false) {
+        if (!initialized) {
             throw new IllegalStateException("MAC not initialized");
         }
         byte[] mac = spi.engineDoFinal();
@@ -603,16 +604,16 @@ public class Mac implements Cloneable {
      * @param outOffset the offset in {@code output} where the MAC is
      * stored
      *
-     * @exception ShortBufferException if the given output buffer is too small
+     * @throws ShortBufferException if the given output buffer is too small
      * to hold the result
-     * @exception IllegalStateException if this {@code Mac} has not been
+     * @throws IllegalStateException if this {@code Mac} has not been
      * initialized.
      */
     public final void doFinal(byte[] output, int outOffset)
         throws ShortBufferException, IllegalStateException
     {
         chooseFirstProvider();
-        if (initialized == false) {
+        if (!initialized) {
             throw new IllegalStateException("MAC not initialized");
         }
         int macLen = getMacLength();
@@ -622,7 +623,6 @@ public class Mac implements Cloneable {
         }
         byte[] mac = doFinal();
         System.arraycopy(mac, 0, output, outOffset, macLen);
-        return;
     }
 
     /**
@@ -642,13 +642,13 @@ public class Mac implements Cloneable {
      * @param input data in bytes
      * @return the MAC result.
      *
-     * @exception IllegalStateException if this {@code Mac} has not been
+     * @throws IllegalStateException if this {@code Mac} has not been
      * initialized.
      */
     public final byte[] doFinal(byte[] input) throws IllegalStateException
     {
         chooseFirstProvider();
-        if (initialized == false) {
+        if (!initialized) {
             throw new IllegalStateException("MAC not initialized");
         }
         update(input);
@@ -679,7 +679,7 @@ public class Mac implements Cloneable {
      *
      * @return a clone if the provider implementation is cloneable.
      *
-     * @exception CloneNotSupportedException if this is called on a
+     * @throws CloneNotSupportedException if this is called on a
      * delegate that does not support {@code Cloneable}.
      */
     public final Object clone() throws CloneNotSupportedException {

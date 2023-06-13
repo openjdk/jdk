@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,20 +26,15 @@
 package sun.security.provider;
 
 import java.io.IOException;
-import java.security.Key;
-import java.security.KeyStoreException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
-import java.security.UnrecoverableKeyException;
-import java.util.*;
+import java.security.*;
+import java.util.Arrays;
 
-import sun.security.pkcs.PKCS8Key;
 import sun.security.pkcs.EncryptedPrivateKeyInfo;
-import sun.security.x509.AlgorithmId;
-import sun.security.util.ObjectIdentifier;
+import sun.security.pkcs.PKCS8Key;
 import sun.security.util.KnownOIDs;
-import sun.security.util.DerValue;
+import sun.security.util.ObjectIdentifier;
+import sun.security.x509.AlgorithmId;
 
 /**
  * This is an implementation of a Sun proprietary, exportable algorithm
@@ -110,7 +105,7 @@ final class KeyProtector {
     // key protector. We store it as a byte array, so that we can digest it.
     private byte[] passwdBytes;
 
-    private MessageDigest md;
+    private final MessageDigest md;
 
 
     /**
@@ -210,14 +205,9 @@ final class KeyProtector {
 
         // wrap the protected private key in a PKCS#8-style
         // EncryptedPrivateKeyInfo, and returns its encoding
-        AlgorithmId encrAlg;
-        try {
-            encrAlg = new AlgorithmId(ObjectIdentifier.of
-                    (KnownOIDs.JAVASOFT_JDKKeyProtector));
-            return new EncryptedPrivateKeyInfo(encrAlg,encrKey).getEncoded();
-        } catch (IOException ioe) {
-            throw new KeyStoreException(ioe.getMessage());
-        }
+        AlgorithmId encrAlg = new AlgorithmId(ObjectIdentifier.of
+                (KnownOIDs.JAVASOFT_JDKKeyProtector));
+        return new EncryptedPrivateKeyInfo(encrAlg,encrKey).getEncoded();
     }
 
     /*
@@ -231,7 +221,7 @@ final class KeyProtector {
         byte[] digest;
         int numRounds;
         int xorOffset; // offset in xorKey where next digest will be stored
-        int encrKeyLen; // the length of the encrpyted key
+        int encrKeyLen; // the length of the encrypted key
 
         // do we support the algorithm?
         AlgorithmId encrAlg = encrInfo.getAlgorithm();

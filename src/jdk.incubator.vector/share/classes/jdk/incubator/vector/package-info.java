@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,7 +92,7 @@
  * Other lane-wise operations, such as the {@code min} operator, are defined as a
  * partially serviced (not a full-service) named operation, where a corresponding
  * method on {@code Vector} and/or a subclass provide some but all possible
- * overloadings and overrides (commonly the unmasked varient with scalar-broadcast
+ * overloadings and overrides (commonly the unmasked variant with scalar-broadcast
  * overloadings).
  *
  * Finally, all lane-wise operations (those named as previously described,

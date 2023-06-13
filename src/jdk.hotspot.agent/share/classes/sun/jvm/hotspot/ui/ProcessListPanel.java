@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,7 @@ public class ProcessListPanel extends JPanel {
         }
 
         public Object getValueAt(int row, int col) {
-          ProcessInfo info = (ProcessInfo) els.get(row);
+          ProcessInfo info = els.get(row);
 
           switch (col) {
           case 0:

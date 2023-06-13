@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,35 +23,17 @@
  */
 #include "precompiled.hpp"
 #include "jvm.h"
-#include "logging/logDecorators.hpp"
+#include "logging/logAsyncWriter.hpp"
 #include "logging/logDecorations.hpp"
+#include "logging/logDecorators.hpp"
 #include "logging/logFileStreamOutput.hpp"
 #include "logging/logMessageBuffer.hpp"
 #include "memory/allocation.inline.hpp"
 #include "utilities/defaultStream.hpp"
 
 const char* const LogFileStreamOutput::FoldMultilinesOptionKey = "foldmultilines";
-
-static bool initialized;
-static union {
-  char stdoutmem[sizeof(LogStdoutOutput)];
-  jlong dummy;
-} aligned_stdoutmem;
-static union {
-  char stderrmem[sizeof(LogStderrOutput)];
-  jlong dummy;
-} aligned_stderrmem;
-
-LogStdoutOutput &StdoutLog = reinterpret_cast<LogStdoutOutput&>(aligned_stdoutmem.stdoutmem);
-LogStderrOutput &StderrLog = reinterpret_cast<LogStderrOutput&>(aligned_stderrmem.stderrmem);
-
-LogFileStreamInitializer::LogFileStreamInitializer() {
-  if (!initialized) {
-    ::new (&StdoutLog) LogStdoutOutput();
-    ::new (&StderrLog) LogStderrOutput();
-    initialized = true;
-  }
-}
+LogStdoutOutput* StdoutLog = nullptr;
+LogStderrOutput* StderrLog = nullptr;
 
 bool LogFileStreamOutput::set_option(const char* key, const char* value, outputStream* errstream) {
   bool success = false;
@@ -135,8 +117,15 @@ bool LogFileStreamOutput::flush() {
   total += result;                                            \
 }
 
-int LogFileStreamOutput::write_internal(const char* msg) {
+int LogFileStreamOutput::write_internal(const LogDecorations& decorations, const char* msg) {
   int written = 0;
+  const bool use_decorations = !_decorators.is_empty();
+
+  if (use_decorations) {
+    WRITE_LOG_WITH_RESULT_CHECK(write_decorations(decorations), written);
+    WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, " "), written);
+  }
+
   if (!_fold_multilines) {
     WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, "%s\n", msg), written);
   } else {
@@ -145,7 +134,7 @@ int LogFileStreamOutput::write_internal(const char* msg) {
     char *next;
     do {
       next = strpbrk(cur, "\n\\");
-      if (next == NULL) {
+      if (next == nullptr) {
         WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, "%s\n", cur), written);
       } else {
         const char *found = (*next == '\n') ? "\\n" : "\\\\";
@@ -153,37 +142,41 @@ int LogFileStreamOutput::write_internal(const char* msg) {
         WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, "%s%s", cur, found), written);
         cur = next + 1;
       }
-    } while (next != NULL);
+    } while (next != nullptr);
     os::free(dupstr);
   }
   return written;
 }
 
-int LogFileStreamOutput::write(const LogDecorations& decorations, const char* msg) {
-  const bool use_decorations = !_decorators.is_empty();
+int LogFileStreamOutput::write_blocking(const LogDecorations& decorations, const char* msg) {
+  int written = write_internal(decorations, msg);
+  return flush() ? written : -1;
+}
 
-  int written = 0;
-  FileLocker flocker(_stream);
-  if (use_decorations) {
-    WRITE_LOG_WITH_RESULT_CHECK(write_decorations(decorations), written);
-    WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, " "), written);
+int LogFileStreamOutput::write(const LogDecorations& decorations, const char* msg) {
+  AsyncLogWriter* aio_writer = AsyncLogWriter::instance();
+  if (aio_writer != nullptr) {
+    aio_writer->enqueue(*this, decorations, msg);
+    return 0;
   }
-  written += write_internal(msg);
+
+  FileLocker flocker(_stream);
+  int written = write_internal(decorations, msg);
 
   return flush() ? written : -1;
 }
 
 int LogFileStreamOutput::write(LogMessageBuffer::Iterator msg_iterator) {
-  const bool use_decorations = !_decorators.is_empty();
+  AsyncLogWriter* aio_writer = AsyncLogWriter::instance();
+  if (aio_writer != nullptr) {
+    aio_writer->enqueue(*this, msg_iterator);
+    return 0;
+  }
 
   int written = 0;
   FileLocker flocker(_stream);
   for (; !msg_iterator.is_at_end(); msg_iterator++) {
-    if (use_decorations) {
-      WRITE_LOG_WITH_RESULT_CHECK(write_decorations(msg_iterator.decorations()), written);
-      WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, " "), written);
-    }
-    written += write_internal(msg_iterator.message());
+    written += write_internal(msg_iterator.decorations(), msg_iterator.message());
   }
 
   return flush() ? written : -1;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -246,8 +246,7 @@ public class FieldGen {
         }
 
         public BigInteger getValue() {
-            return BigInteger.valueOf(2).pow(power)
-                    .multiply(BigInteger.valueOf(coefficient));
+            return BigInteger.valueOf(coefficient).shiftLeft(power);
         }
 
         public String toString() {
@@ -614,7 +613,7 @@ public class FieldGen {
         }
         result.appendLine("import java.math.BigInteger;");
 
-        result.appendLine("public class " + params.getClassName()
+        result.appendLine("public final class " + params.getClassName()
                 + " extends " + this.parentName + " {");
         result.incrIndent();
 
@@ -632,9 +631,12 @@ public class FieldGen {
             result.appendLine("private static final int LIMB_MASK = -1 "
                     + ">>> (64 - BITS_PER_LIMB);");
         }
-        int termIndex = 0;
 
-        result.appendLine("public " + params.getClassName() + "() {");
+        result.appendLine();
+        result.appendLine("public static final " + params.getClassName() + " ONE = new "
+                          + params.getClassName() + "();");
+        result.appendLine();
+        result.appendLine("private " + params.getClassName() + "() {");
         result.appendLine();
         result.appendLine("    super(BITS_PER_LIMB, NUM_LIMBS, MAX_ADDS, MODULUS);");
         result.appendLine();
@@ -660,14 +662,12 @@ public class FieldGen {
                 subtract = true;
             }
             String coefExpr = "BigInteger.valueOf(" + coefValue + ")";
-            String powExpr = "BigInteger.valueOf(2).pow(" + t.getPower() + ")";
+            String powExpr = ".shiftLeft(" + t.getPower() + ")";
             String termExpr = "ERROR";
             if (t.getPower() == 0) {
                 termExpr = coefExpr;
-            } else if (coefValue == 1) {
-                termExpr = powExpr;
             } else {
-                termExpr = powExpr + ".multiply(" + coefExpr + ")";
+                termExpr = coefExpr + powExpr;
             }
             if (subtract) {
                 result.appendLine("result = result.subtract(" + termExpr + ");");
@@ -822,6 +822,16 @@ public class FieldGen {
         result.decrIndent();
         result.appendLine("}");
 
+        // Use grade-school multiplication with a simple squaring optimization.
+        // Multiply into primitives to avoid the temporary array allocation.
+        // This is equivalent to the following code:
+        //  long[] c = new long[2 * NUM_LIMBS - 1];
+        //  for(int i = 0; i < NUM_LIMBS; i++) {
+        //      c[2 * i] = a[i] * a[i];
+        //      for(int j = i + 1; j < NUM_LIMBS; j++) {
+        //          c[i + j] += 2 * a[i] * a[j]
+        //      }
+        //  }
         result.appendLine("@Override");
         result.appendLine("protected void square(long[] a, long[] r) {");
         result.incrIndent();

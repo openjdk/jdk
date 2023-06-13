@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #ifndef SHARE_CDS_LAMBDAFORMINVOKERS_HPP
 #define SHARE_CDS_LAMBDAFORMINVOKERS_HPP
 #include "memory/allStatic.hpp"
+#include "oops/oopHandle.hpp"
 #include "runtime/handles.hpp"
 #include "utilities/growableArray.hpp"
 
@@ -37,13 +38,15 @@ class LambdaFormInvokers : public AllStatic {
   static GrowableArrayCHeap<char*, mtClassShared>* _lambdaform_lines;
   // For storing LF form lines (LF_RESOLVE only) in read only table.
   static Array<Array<char>*>* _static_archive_invokers;
-  static void reload_class(char* name, ClassFileStream& st, TRAPS);
+  static GrowableArrayCHeap<OopHandle, mtClassShared>* _regenerated_mirrors;
+  static void regenerate_class(char* name, ClassFileStream& st, TRAPS);
+  static void add_regenerated_class(oop regenerated_class);
  public:
   static void append(char* line);
-  static void append_filtered(char* line);
   static void dump_static_archive_invokers();
   static void read_static_archive_invokers();
   static void regenerate_holder_classes(TRAPS);
   static void serialize(SerializeClosure* soc);
+  static void cleanup_regenerated_classes();
 };
 #endif // SHARE_CDS_LAMBDAFORMINVOKERS_HPP

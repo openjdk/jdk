@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 #define SHARE_JFR_SUPPORT_JFRJDKJFREVENT_HPP
 
 #include "jni.h"
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "utilities/exceptions.hpp"
 
 class Klass;
@@ -59,6 +59,7 @@ class JdkJfrEvent : AllStatic {
   // jdk.jfr.Event hierarchy
   static bool is_a(const Klass* k);
   static bool is_a(const jclass jc);
+  static void remove(const Klass* k);
 
   // klasses that host a jdk.jfr.Event
   static bool is_host(const Klass* k);
@@ -69,6 +70,7 @@ class JdkJfrEvent : AllStatic {
   // in the set of classes made visible to java
   static bool is_visible(const Klass* k);
   static bool is_visible(const jclass jc);
+  static bool is_excluded(const jclass jc);
 
   // all klasses in the hierarchy
   static jobject get_all_klasses(TRAPS);

@@ -120,7 +120,7 @@ public abstract class LayoutStyle {
          * This value is typically only useful with a direction of
          * <code>EAST</code> or <code>WEST</code>.
          */
-        INDENT;
+        INDENT
     }
 
 

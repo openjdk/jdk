@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,9 +57,6 @@
   // No support for generic vector operands.
   static const bool supports_generic_vector_operands = false;
 
-  // No support for 48 extra htbl entries in aes-gcm intrinsic
-  static const int htbl_entries = -1;
-
   static constexpr bool isSimpleConstant64(jlong value) {
     // Probably always true, even if a temp register is required.
     return true;
@@ -96,12 +93,12 @@
 
   static bool const_oop_prefer_decode() {
     // Prefer ConN+DecodeN over ConP in simple compressed oops mode.
-    return CompressedOops::base() == NULL;
+    return CompressedOops::base() == nullptr;
   }
 
   static bool const_klass_prefer_decode() {
     // Prefer ConNKlass+DecodeNKlass over ConP in simple compressed klass mode.
-    return CompressedKlassPointers::base() == NULL;
+    return CompressedKlassPointers::base() == nullptr;
   }
 
   // Is it better to copy float constants, or load them directly from memory?
@@ -156,7 +153,7 @@
     return false;
   }
 
-  // true means we have fast l2f convers
+  // true means we have fast l2f conversion
   // false means that conversion is done by runtime call
   static const bool convL2FSupported(void) {
     // fcfids can do the conversion (>= Power7).
@@ -166,5 +163,36 @@
 
   // Implements a variant of EncodeISOArrayNode that encode ASCII only
   static const bool supports_encode_ascii_array = true;
+
+  // Some architecture needs a helper to check for alltrue vector
+  static constexpr bool vectortest_needs_second_argument(bool is_alltrue, bool is_predicate) {
+    return false;
+  }
+
+  // BoolTest mask for vector test intrinsics
+  static constexpr BoolTest::mask vectortest_mask(bool is_alltrue, bool is_predicate, int vlen) {
+    return BoolTest::illegal;
+  }
+
+  // Returns pre-selection estimated size of a vector operation.
+  static int vector_op_pre_select_sz_estimate(int vopc, BasicType ety, int vlen) {
+    switch(vopc) {
+      default: return 0;
+      case Op_RoundVF: // fall through
+      case Op_RoundVD: {
+        return 30;
+      }
+    }
+  }
+  // Returns pre-selection estimated size of a scalar operation.
+  static int scalar_op_pre_select_sz_estimate(int vopc, BasicType ety) {
+    switch(vopc) {
+      default: return 0;
+      case Op_RoundF: // fall through
+      case Op_RoundD: {
+        return 30;
+      }
+    }
+  }
 
 #endif // CPU_PPC_MATCHER_PPC_HPP

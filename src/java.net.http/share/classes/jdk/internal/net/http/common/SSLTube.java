@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -529,7 +529,7 @@ public class SSLTube implements FlowTube {
         public void onComplete() {
             assert !finished && !onCompleteReceived;
             DelegateWrapper subscriberImpl;
-            synchronized(this) {
+            synchronized (this) {
                 subscriberImpl = subscribed;
             }
 
@@ -592,9 +592,7 @@ public class SSLTube implements FlowTube {
                     engine.isOutboundDone(),
                     handshakeFailed);
 
-        SSLHandshakeException e = new SSLHandshakeException(handshakeFailed);
-        if (t != null) e.initCause(t);
-        return e;
+        return new SSLHandshakeException(handshakeFailed, t);
     }
 
     @Override

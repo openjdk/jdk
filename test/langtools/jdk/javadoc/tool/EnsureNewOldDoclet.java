@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,7 +106,8 @@ public class EnsureNewOldDoclet extends TestRunner {
     // outcome: new tool and new doclet
     @Test
     public void testDefault() throws Exception {
-        setArgs("-classpath", ".", // insulates us from ambient classpath
+        setArgs("-J-Duser.language=en", "-J-Duser.country=US",
+                "-classpath", ".", // insulates us from ambient classpath
                   testSrc.toString());
         Task.Result tr = task.run(Task.Expect.SUCCESS);
         List<String> err = tr.getOutputLines(Task.OutputKind.STDERR);
@@ -117,7 +118,9 @@ public class EnsureNewOldDoclet extends TestRunner {
     // outcome: new doclet and new taglet should register
     @Test
     public void testNewDocletNewTaglet() throws Exception {
-        setArgs("-classpath", ".", // ambient classpath insulation
+        setArgs("-J-Duser.language=en",
+                "-J-Duser.country=US",
+                "-classpath", ".", // ambient classpath insulation
                 "-doclet",
                 NEW_STDDOCLET,
                 "-taglet",

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -33,13 +33,14 @@ include ToolsJdk.gmk
 # On Mac, we have always exported all symbols, probably due to oversight
 # and/or misunderstanding. To emulate this, don't hide any symbols
 # by default.
-# On AIX/xlc we need at least xlc 13.1 for the symbol hiding (see JDK-8214063)
 # Also provide an override for non-conformant libraries.
 ifeq ($(TOOLCHAIN_TYPE), gcc)
   LAUNCHER_CFLAGS += -fvisibility=hidden
   LDFLAGS_JDKEXE += -Wl,--exclude-libs,ALL
 else ifeq ($(TOOLCHAIN_TYPE), clang)
   LAUNCHER_CFLAGS += -fvisibility=hidden
+else ifeq ($(TOOLCHAIN_TYPE), xlc)
+  LAUNCHER_CFLAGS += -qvisibility=hidden
 endif
 
 LAUNCHER_SRC := $(TOPDIR)/src/java.base/share/native/launcher
@@ -86,8 +87,8 @@ define SetupBuildLauncherBody
     $1_MAIN_MODULE := $(MODULE)
   endif
 
-  $1_JAVA_ARGS += -ms8m
   ifneq ($$($1_MAIN_CLASS), )
+    $1_JAVA_ARGS += -ms8m
     $1_LAUNCHER_CLASS := -m $$($1_MAIN_MODULE)/$$($1_MAIN_CLASS)
   endif
 
@@ -96,9 +97,12 @@ define SetupBuildLauncherBody
       $$(addprefix -J, $$($1_EXTRA_JAVA_ARGS)), "$$a"$(COMMA) )) }'
     $1_CFLAGS += -DEXTRA_JAVA_ARGS=$$($1_EXTRA_JAVA_ARGS_STR)
   endif
-  $1_JAVA_ARGS_STR := '{ $$(strip $$(foreach a, \
-      $$(addprefix -J, $$($1_JAVA_ARGS)) $$($1_LAUNCHER_CLASS), "$$a"$(COMMA) )) }'
-  $1_CFLAGS += -DJAVA_ARGS=$$($1_JAVA_ARGS_STR)
+
+  ifneq ($$($1_JAVA_ARGS), )
+    $1_JAVA_ARGS_STR := '{ $$(strip $$(foreach a, \
+        $$(addprefix -J, $$($1_JAVA_ARGS)) $$($1_LAUNCHER_CLASS), "$$a"$(COMMA) )) }'
+    $1_CFLAGS += -DJAVA_ARGS=$$($1_JAVA_ARGS_STR)
+  endif
 
   ifeq ($(call isTargetOs, macosx), true)
     ifeq ($$($1_MACOSX_PRIVILEGED), true)
@@ -126,7 +130,6 @@ define SetupBuildLauncherBody
           $$(shell $(FIND) $(SUPPORT_OUTPUTDIR)/modules_libs/java.base -name "*.a") \
           $(SUPPORT_OUTPUTDIR)/modules_libs/jdk.jdwp.agent/libdt_socket.a \
           $(SUPPORT_OUTPUTDIR)/modules_libs/jdk.jdwp.agent/libjdwp.a \
-          $(SUPPORT_OUTPUTDIR)/native/java.base/$(LIBRARY_PREFIX)fdlibm$(STATIC_LIBRARY_SUFFIX) \
           -framework CoreFoundation \
           -framework Foundation \
           -framework SystemConfiguration \
@@ -140,9 +143,19 @@ define SetupBuildLauncherBody
 
   $1_WINDOWS_JLI_LIB := $(call FindStaticLib, java.base, jli, /libjli)
 
+  $1_EXTRA_FILES := $(LAUNCHER_SRC)/main.c
+
+  ifeq ($(ASAN_ENABLED), true)
+    $1_EXTRA_FILES += $(TOPDIR)/make/data/asan/asan_default_options.c
+  endif
+
+  ifeq ($(LSAN_ENABLED), true)
+    $1_EXTRA_FILES += $(TOPDIR)/make/data/lsan/lsan_default_options.c
+  endif
+
   $$(eval $$(call SetupJdkExecutable, BUILD_LAUNCHER_$1, \
       NAME := $1, \
-      EXTRA_FILES := $(LAUNCHER_SRC)/main.c, \
+      EXTRA_FILES := $$($1_EXTRA_FILES), \
       OPTIMIZATION := $$($1_OPTIMIZATION), \
       CFLAGS := $$(CFLAGS_JDKEXE) \
           $$(LAUNCHER_CFLAGS) \
@@ -196,9 +209,11 @@ endef
 ################################################################################
 # Create man pages for jmod to pick up. There should be a one-to-one
 # relationship between executables and man pages (even if this is not always
-# the case), so piggyback man page generation on the launcher compilation.
+# the case), so piggyback man page generation on the launcher compilation. This
+# file may be included from other places as well, so only process man pages
+# when called from <module>/Launcher.gmk.
 
-ifeq ($(call isTargetOsType, unix), true)
+ifeq ($(call isTargetOsType, unix)+$(MAKEFILE_PREFIX), true+Launcher)
   # Only build manpages on unix systems.
   # We assume all our man pages should reside in section 1.
 
@@ -242,9 +257,9 @@ ifeq ($(call isTargetOsType, unix), true)
           FILTER := $(PANDOC_TROFF_MANPAGE_FILTER), \
           POST_PROCESS := $(MAN_POST_PROCESS), \
           REPLACEMENTS := \
-		@@COPYRIGHT_YEAR@@ => $(COPYRIGHT_YEAR) ; \
-		@@VERSION_SHORT@@ => $(VERSION_SHORT) ; \
-		@@VERSION_SPECIFICATION@@ => $(VERSION_SPECIFICATION), \
+              @@COPYRIGHT_YEAR@@ => $(COPYRIGHT_YEAR) ; \
+              @@VERSION_SHORT@@ => $(VERSION_SHORT) ; \
+              @@VERSION_SPECIFICATION@@ => $(VERSION_SPECIFICATION), \
           EXTRA_DEPS := $(PANDOC_TROFF_MANPAGE_FILTER) \
               $(PANDOC_TROFF_MANPAGE_FILTER_SOURCE), \
       ))

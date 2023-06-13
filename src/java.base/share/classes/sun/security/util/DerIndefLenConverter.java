@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,8 +58,8 @@ class DerIndefLenConverter {
     // actual length and the position value is substituted with a calculated
     // length octets. At the end, the new DER encoding is a concatenation of
     // all existing tags, existing definite length octets, existing contents,
-    // and the newly created definte length octets in this list.
-    private ArrayList<Object> ndefsList = new ArrayList<Object>();
+    // and the newly created definite length octets in this list.
+    private final ArrayList<Object> ndefsList = new ArrayList<>();
 
     // Length of extra bytes needed to convert indefinite encoding to definite.
     // For each resolved indefinite length encoding, the starting 0x80 byte
@@ -144,15 +144,14 @@ class DerIndefLenConverter {
      * then skip the tag and its 1 byte length of zero.
      */
     private void writeTag() {
-        if (dataPos == dataSize) {
-            return;
-        }
-        assert dataPos + 1 < dataSize;
-        if (isEOC(data, dataPos)) {
-            dataPos += 2;  // skip tag and length
-            writeTag();
-        } else {
-            newData[newDataPos++] = data[dataPos++];
+        while (dataPos < dataSize) {
+            assert dataPos + 1 < dataSize;
+            if (isEOC(data, dataPos)) {
+                dataPos += 2;  // skip tag and length
+            } else {
+                newData[newDataPos++] = data[dataPos++];
+                break;
+            }
         }
     }
 
@@ -304,7 +303,7 @@ class DerIndefLenConverter {
     // Returns the number of bytes needed to represent the given length
     // in ASN.1 notation
     private int getNumOfLenBytes(int len) {
-        int numOfLenBytes = 0;
+        int numOfLenBytes;
 
         if (len < 128) {
             numOfLenBytes = 1;
@@ -330,8 +329,8 @@ class DerIndefLenConverter {
     }
 
     /**
-     * Converts a indefinite length DER encoded byte array to
-     * a definte length DER encoding.
+     * Converts an indefinite length DER encoded byte array to
+     * a definite length DER encoding.
      *
      * @param indefData the byte array holding the indefinite
      *        length encoding.

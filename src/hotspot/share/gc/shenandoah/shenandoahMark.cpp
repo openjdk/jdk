@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2021, 2022, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,18 @@ ShenandoahMark::ShenandoahMark() :
   _task_queues(ShenandoahHeap::heap()->marking_context()->task_queues()) {
 }
 
+void ShenandoahMark::start_mark() {
+  if (!CodeCache::is_gc_marking_cycle_active()) {
+    CodeCache::on_gc_marking_cycle_start();
+  }
+}
+
+void ShenandoahMark::end_mark() {
+  // Unlike other GCs, we do not arm the nmethods
+  // when marking terminates.
+  CodeCache::on_gc_marking_cycle_finish();
+}
+
 void ShenandoahMark::clear() {
   // Clean up marking stacks.
   ShenandoahObjToScanQueueSet* queues = ShenandoahHeap::heap()->marking_context()->task_queues();
@@ -63,26 +75,14 @@ void ShenandoahMark::mark_loop_prework(uint w, TaskTerminator *t, ShenandoahRefe
 
   // TODO: We can clean up this if we figure out how to do templated oop closures that
   // play nice with specialized_oop_iterators.
-  if (heap->unload_classes()) {
-    if (heap->has_forwarded_objects()) {
-      using Closure = ShenandoahMarkUpdateRefsMetadataClosure;
-      Closure cl(q, rp);
-      mark_loop_work<Closure, CANCELLABLE, STRING_DEDUP>(&cl, ld, w, t, req);
-    } else {
-      using Closure = ShenandoahMarkRefsMetadataClosure;
-      Closure cl(q, rp);
-      mark_loop_work<Closure, CANCELLABLE, STRING_DEDUP>(&cl, ld, w, t, req);
-    }
+  if (heap->has_forwarded_objects()) {
+    using Closure = ShenandoahMarkUpdateRefsClosure;
+    Closure cl(q, rp);
+    mark_loop_work<Closure, CANCELLABLE, STRING_DEDUP>(&cl, ld, w, t, req);
   } else {
-    if (heap->has_forwarded_objects()) {
-      using Closure = ShenandoahMarkUpdateRefsClosure;
-      Closure cl(q, rp);
-      mark_loop_work<Closure, CANCELLABLE, STRING_DEDUP>(&cl, ld, w, t, req);
-    } else {
-      using Closure = ShenandoahMarkRefsClosure;
-      Closure cl(q, rp);
-      mark_loop_work<Closure, CANCELLABLE, STRING_DEDUP>(&cl, ld, w, t, req);
-    }
+    using Closure = ShenandoahMarkRefsClosure;
+    Closure cl(q, rp);
+    mark_loop_work<Closure, CANCELLABLE, STRING_DEDUP>(&cl, ld, w, t, req);
   }
 
   heap->flush_liveness_cache(w);
@@ -139,7 +139,7 @@ void ShenandoahMark::mark_loop_work(T* cl, ShenandoahLiveData* live_data, uint w
          "Need to reserve proper number of queues: reserved: %u, active: %u", queues->get_reserved(), heap->workers()->active_workers());
 
   q = queues->claim_next();
-  while (q != NULL) {
+  while (q != nullptr) {
     if (CANCELLABLE && heap->check_cancelled_gc_and_yield()) {
       return;
     }

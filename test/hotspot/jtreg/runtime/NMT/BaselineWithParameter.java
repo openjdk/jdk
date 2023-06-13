@@ -46,7 +46,8 @@ public class BaselineWithParameter {
 
     // Run 'jcmd <pid> VM.native_memory baseline=false'
     pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.native_memory", "baseline=false"});
-    pb.start().waitFor();
+    output = new OutputAnalyzer(pb.start());
+    output.shouldContain("Total: reserved");
 
     // Run 'jcmd <pid> VM.native_memory summary=false'
     pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.native_memory", "summary=false"});

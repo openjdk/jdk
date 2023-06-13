@@ -96,7 +96,8 @@ public class TestMemoryMXBeansAndPoolsPresence {
         switch (args[0]) {
             case "G1":
                 test(new GCBeanDescription("G1 Young Generation", new String[] {"G1 Eden Space", "G1 Survivor Space", "G1 Old Gen"}),
-                     new GCBeanDescription("G1 Old Generation",   new String[] {"G1 Eden Space", "G1 Survivor Space", "G1 Old Gen"}));
+                     new GCBeanDescription("G1 Old Generation",   new String[] {"G1 Eden Space", "G1 Survivor Space", "G1 Old Gen"}),
+                     new GCBeanDescription("G1 Concurrent GC",    new String[] {"G1 Old Gen"}));
                 break;
             case "Parallel":
                 test(new GCBeanDescription("PS Scavenge",         new String[] {"PS Eden Space", "PS Survivor Space"}),

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,9 @@
  * @test
  * @summary Tests that our client deals correctly with servers that
  *          close the connection right after sending the last byte.
- * @library /test/lib http2/server
- * @build jdk.test.lib.net.SimpleSSLContext HttpServerAdapters EncodedCharsInURI
- * @modules java.base/sun.net.www.http
- *          java.net.http/jdk.internal.net.http.common
- *          java.net.http/jdk.internal.net.http.frame
- *          java.net.http/jdk.internal.net.http.hpack
+ * @library /test/lib /test/jdk/java/net/httpclient/lib
+ * @build jdk.test.lib.net.SimpleSSLContext
+ *        jdk.httpclient.test.lib.common.HttpServerAdapters
  * @run testng/othervm -Djdk.tls.acknowledgeCloseNotify=true ServerCloseTest
  */
 //*        -Djdk.internal.httpclient.debug=true
@@ -72,6 +69,8 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
+import jdk.httpclient.test.lib.common.HttpServerAdapters;
+import jdk.httpclient.test.lib.http2.Http2TestServer;
 
 import static java.lang.System.out;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -287,14 +286,12 @@ public class ServerCloseTest implements HttpServerAdapters {
             try {
                 while(!stopped) {
                     Socket clientConnection = ss.accept();
-                    connections.add(clientConnection);
                     System.out.println(now() + getName() + ": Client accepted");
                     StringBuilder headers = new StringBuilder();
-                    Socket targetConnection = null;
                     InputStream  ccis = clientConnection.getInputStream();
                     OutputStream ccos = clientConnection.getOutputStream();
                     Writer w = new OutputStreamWriter(
-                            clientConnection.getOutputStream(), "UTF-8");
+                            clientConnection.getOutputStream(), UTF_8);
                     PrintWriter pw = new PrintWriter(w);
                     System.out.println(now() + getName() + ": Reading request line");
                     String requestLine = readLine(ccis);
@@ -302,20 +299,32 @@ public class ServerCloseTest implements HttpServerAdapters {
 
                     StringTokenizer tokenizer = new StringTokenizer(requestLine);
                     String method = tokenizer.nextToken();
-                    assert method.equalsIgnoreCase("POST")
-                            || method.equalsIgnoreCase("GET");
+                    if (!method.equals("GET") && !method.equals("POST")) {
+                        System.err.println(now() + getName() + ": Unexpected request method. Method: " + method);
+                        clientConnection.close();
+                        continue;
+                    }
+
                     String path = tokenizer.nextToken();
+                    if (!path.contains("/dummy/x")) {
+                        System.err.println(now() + getName() + ": Unexpected request path. Path: " + path);
+                        clientConnection.close();
+                        continue;
+                    }
+
                     URI uri;
                     try {
                         String hostport = serverAuthority();
-                        uri = new URI((secure ? "https" : "http") +"://" + hostport + path);
+                        uri = new URI((secure ? "https" : "http") + "://" + hostport + path);
                     } catch (Throwable x) {
-                        System.err.printf("Bad target address: \"%s\" in \"%s\"%n",
+                        System.err.printf(now() + getName() + ": Bad target address: \"%s\" in \"%s\"%n",
                                 path, requestLine);
                         clientConnection.close();
                         continue;
                     }
 
+                    // Method, path and URI are valid. Add to connections list
+                    connections.add(clientConnection);
                     // Read all headers until we find the empty line that
                     // signals the end of all headers.
                     String line = requestLine;

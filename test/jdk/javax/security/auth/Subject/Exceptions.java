@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,7 @@
  * @bug 8267108
  * @library /test/lib
  * @summary Check that callAs and doAs throw the specified exceptions
- * @run main/othervm -Djava.security.manager=allow -Djdk.security.auth.subject.useTL=true Exceptions
- * @run main/othervm -Djava.security.manager=allow -Djdk.security.auth.subject.useTL=false Exceptions
+ * @run main/othervm -Djava.security.manager=allow Exceptions
  */
 import jdk.test.lib.Asserts;
 

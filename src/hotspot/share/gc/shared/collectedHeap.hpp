@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 #include "memory/allocation.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/universe.hpp"
+#include "oops/stackChunkOop.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/perfDataTypes.hpp"
 #include "runtime/safepoint.hpp"
@@ -90,10 +91,11 @@ public:
 //   ShenandoahHeap
 //   ZCollectedHeap
 //
-class CollectedHeap : public CHeapObj<mtInternal> {
+class CollectedHeap : public CHeapObj<mtGC> {
   friend class VMStructs;
   friend class JVMCIVMStructs;
   friend class IsGCActiveMark; // Block structured external access to _is_gc_active
+  friend class DisableIsGCActiveMark; // Disable current IsGCActiveMark
   friend class MemAllocator;
   friend class ParallelObjectIterator;
 
@@ -104,14 +106,22 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   size_t _capacity_at_last_gc;
   size_t _used_at_last_gc;
 
+  // First, set it to java_lang_Object.
+  // Then, set it to FillerObject after the FillerObject_klass loading is complete.
+  static Klass* _filler_object_klass;
+
  protected:
   // Not used by all GCs
   MemRegion _reserved;
 
   bool _is_gc_active;
 
+  // (Minimum) Alignment reserve for TLABs and PLABs.
+  static size_t _lab_alignment_reserve;
   // Used for filler objects (static, but initialized in ctor).
   static size_t _filler_array_max_size;
+
+  static size_t _stack_chunk_max_size; // 0 for no limit
 
   // Last time the whole heap has been examined in support of RMI
   // MaxObjectInspectionAge.
@@ -157,6 +167,7 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   static inline size_t filler_array_hdr_size();
   static inline size_t filler_array_min_size();
 
+  static inline void zap_filler_array_with(HeapWord* start, size_t words, juint value);
   DEBUG_ONLY(static void fill_args_check(HeapWord* start, size_t words);)
   DEBUG_ONLY(static void zap_filler_array(HeapWord* start, size_t words, bool zap = true);)
 
@@ -170,8 +181,6 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   virtual void trace_heap(GCWhen::Type when, const GCTracer* tracer);
 
   // Verification functions
-  virtual void check_for_non_bad_heap_word_value(HeapWord* addr, size_t size)
-    PRODUCT_RETURN;
   debug_only(static void check_for_valid_allocation_state();)
 
  public:
@@ -191,7 +200,7 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   template<typename T>
   static T* named_heap(Name kind) {
     CollectedHeap* heap = Universe::heap();
-    assert(heap != NULL, "Uninitialized heap");
+    assert(heap != nullptr, "Uninitialized heap");
     assert(kind == heap->kind(), "Heap kind %u should be %u",
            static_cast<uint>(heap->kind()), static_cast<uint>(kind));
     return static_cast<T*>(heap);
@@ -201,6 +210,18 @@ class CollectedHeap : public CHeapObj<mtInternal> {
 
   static inline size_t filler_array_max_size() {
     return _filler_array_max_size;
+  }
+
+  static inline size_t stack_chunk_max_size() {
+    return _stack_chunk_max_size;
+  }
+
+  static inline Klass* filler_object_klass() {
+    return _filler_object_klass;
+  }
+
+  static inline void set_filler_object_klass(Klass* k) {
+    _filler_object_klass = k;
   }
 
   virtual Name kind() const = 0;
@@ -256,9 +277,7 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   // code.
   virtual bool is_in(const void* p) const = 0;
 
-  DEBUG_ONLY(bool is_in_or_null(const void* p) const { return p == NULL || is_in(p); })
-
-  virtual uint32_t hash_oop(oop obj) const;
+  DEBUG_ONLY(bool is_in_or_null(const void* p) const { return p == nullptr || is_in(p); })
 
   void set_gc_cause(GCCause::Cause v);
   GCCause::Cause gc_cause() { return _gc_cause; }
@@ -289,28 +308,13 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   }
 
   virtual void fill_with_dummy_object(HeapWord* start, HeapWord* end, bool zap);
-  virtual size_t min_dummy_object_size() const;
-  size_t tlab_alloc_reserve() const;
-
-  // Some heaps may offer a contiguous region for shared non-blocking
-  // allocation, via inlined code (by exporting the address of the top and
-  // end fields defining the extent of the contiguous allocation region.)
-
-  // This function returns "true" iff the heap supports this kind of
-  // allocation.  (Default is "no".)
-  virtual bool supports_inline_contig_alloc() const {
-    return false;
+  static constexpr size_t min_dummy_object_size() {
+    return oopDesc::header_size();
   }
-  // These functions return the addresses of the fields that define the
-  // boundaries of the contiguous allocation area.  (These fields should be
-  // physically near to one another.)
-  virtual HeapWord* volatile* top_addr() const {
-    guarantee(false, "inline contiguous allocation not supported");
-    return NULL;
-  }
-  virtual HeapWord** end_addr() const {
-    guarantee(false, "inline contiguous allocation not supported");
-    return NULL;
+
+  static size_t lab_alignment_reserve() {
+    assert(_lab_alignment_reserve != SIZE_MAX, "uninitialized");
+    return _lab_alignment_reserve;
   }
 
   // Some heaps may be in an unparseable state at certain times between
@@ -369,6 +373,15 @@ class CollectedHeap : public CHeapObj<mtInternal> {
                                                        size_t size,
                                                        Metaspace::MetadataType mdtype);
 
+  // Return true, if accesses to the object would require barriers.
+  // This is used by continuations to copy chunks of a thread stack into StackChunk object or out of a StackChunk
+  // object back into the thread stack. These chunks may contain references to objects. It is crucial that
+  // the GC does not attempt to traverse the object while we modify it, because its structure (oopmap) is changed
+  // when stack chunks are stored into it.
+  // StackChunk objects may be reused, the GC must not assume that a StackChunk object is always a freshly
+  // allocated object.
+  virtual bool requires_barriers(stackChunkOop obj) const = 0;
+
   // Returns "true" iff there is a stop-world GC in progress.  (I assume
   // that it should answer "false" for the concurrent part of a concurrent
   // collector -- dld).
@@ -400,7 +413,7 @@ class CollectedHeap : public CHeapObj<mtInternal> {
 
  protected:
   virtual ParallelObjectIteratorImpl* parallel_object_iterator(uint thread_num) {
-    return NULL;
+    return nullptr;
   }
 
  public:
@@ -431,6 +444,12 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   GCHeapSummary create_heap_summary();
 
   MetaspaceSummary create_metaspace_summary();
+
+  // GCs are free to represent the bit representation for null differently in memory,
+  // which is typically not observable when using the Access API. However, if for
+  // some reason a context doesn't allow using the Access API, then this function
+  // explicitly checks if the given memory location contains a null value.
+  virtual bool contains_null(const oop* p) const;
 
   // Print heap information on the given outputStream.
   virtual void print_on(outputStream* st) const = 0;
@@ -463,8 +482,6 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   // Registering and unregistering an nmethod (compiled code) with the heap.
   virtual void register_nmethod(nmethod* nm) = 0;
   virtual void unregister_nmethod(nmethod* nm) = 0;
-  // Callback for when nmethod is about to be deleted.
-  virtual void flush_nmethod(nmethod* nm) = 0;
   virtual void verify_nmethod(nmethod* nm) = 0;
 
   void trace_heap_before_gc(const GCTracer* gc_tracer);
@@ -478,7 +495,7 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   virtual bool supports_concurrent_gc_breakpoints() const;
 
   // Workers used in non-GC safepoints for parallel safepoint cleanup. If this
-  // method returns NULL, cleanup tasks are done serially in the VMThread. See
+  // method returns null, cleanup tasks are done serially in the VMThread. See
   // `SafepointSynchronize::do_cleanup_tasks` for details.
   // GCs using a GC worker thread pool inside GC safepoints may opt to share
   // that pool with non-GC safepoints, avoiding creating extraneous threads.
@@ -486,22 +503,19 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   // overlap. For example, `G1CollectedHeap::workers()` (for GC safepoints) and
   // `G1CollectedHeap::safepoint_workers()` (for non-GC safepoints) return the
   // same thread-pool.
-  virtual WorkerThreads* safepoint_workers() { return NULL; }
+  virtual WorkerThreads* safepoint_workers() { return nullptr; }
 
   // Support for object pinning. This is used by JNI Get*Critical()
-  // and Release*Critical() family of functions. If supported, the GC
-  // must guarantee that pinned objects never move.
-  virtual bool supports_object_pinning() const;
-  virtual oop pin_object(JavaThread* thread, oop obj);
-  virtual void unpin_object(JavaThread* thread, oop obj);
-
-  // Is the given object inside a CDS archive area?
-  virtual bool is_archived_object(oop object) const;
+  // and Release*Critical() family of functions. The GC must guarantee
+  // that pinned objects never move and don't get reclaimed as garbage.
+  // These functions are potentially safepointing.
+  virtual void pin_object(JavaThread* thread, oop obj) = 0;
+  virtual void unpin_object(JavaThread* thread, oop obj) = 0;
 
   // Support for loading objects from CDS archive into the heap
   // (usually as a snapshot of the old generation).
   virtual bool can_load_archived_objects() const { return false; }
-  virtual HeapWord* allocate_loaded_archive_space(size_t size) { return NULL; }
+  virtual HeapWord* allocate_loaded_archive_space(size_t size) { return nullptr; }
   virtual void complete_loaded_archive_space(MemRegion archive_space) { }
 
   virtual bool is_oop(oop object) const;

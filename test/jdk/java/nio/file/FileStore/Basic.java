@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,10 +57,14 @@ public class Basic {
             throw new RuntimeException("Assertion failed");
     }
 
-    static void checkWithin1GB(long value1, long value2) {
-        long diff = Math.abs(value1 - value2);
-        if (diff > G)
-            throw new RuntimeException("values differ by more than 1GB");
+    static void checkWithin1GB(String space, long expected, long actual) {
+        long diff = Math.abs(actual - expected);
+        if (diff > G) {
+            String msg = String.format("%s: |actual %d - expected %d| = %d (%f G)",
+                                       space, actual, expected, diff,
+                                       (float)diff/G);
+            throw new RuntimeException(msg);
+        }
     }
 
     static void doTests(Path dir) throws IOException {
@@ -107,19 +111,19 @@ public class Basic {
          * Test: Space atributes
          */
         File f = file1.toFile();
-        long total = f.getTotalSpace();
-        long free = f.getFreeSpace();
-        long usable = f.getUsableSpace();
 
         // check values are "close"
-        checkWithin1GB(total,  store1.getTotalSpace());
-        checkWithin1GB(free,   store1.getUnallocatedSpace());
-        checkWithin1GB(usable, store1.getUsableSpace());
+        checkWithin1GB("total",  f.getTotalSpace(),  store1.getTotalSpace());
+        checkWithin1GB("free",   f.getFreeSpace(),   store1.getUnallocatedSpace());
+        checkWithin1GB("usable", f.getUsableSpace(), store1.getUsableSpace());
 
         // get values by name
-        checkWithin1GB(total,  (Long)store1.getAttribute("totalSpace"));
-        checkWithin1GB(free,   (Long)store1.getAttribute("unallocatedSpace"));
-        checkWithin1GB(usable, (Long)store1.getAttribute("usableSpace"));
+        checkWithin1GB("total",  f.getTotalSpace(),
+                       (Long)store1.getAttribute("totalSpace"));
+        checkWithin1GB("free",   f.getFreeSpace(),
+                       (Long)store1.getAttribute("unallocatedSpace"));
+        checkWithin1GB("usable", f.getUsableSpace(),
+                       (Long)store1.getAttribute("usableSpace"));
 
         /**
          * Test: Enumerate all FileStores

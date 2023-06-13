@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 #include "oops/instanceClassLoaderKlass.hpp"
 #include "oops/instanceMirrorKlass.hpp"
 #include "oops/instanceRefKlass.hpp"
+#include "oops/instanceStackChunkKlass.hpp"
 #include "oops/methodData.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/typeArrayKlass.hpp"
@@ -57,6 +58,7 @@
   f(InstanceClassLoaderKlass) \
   f(InstanceMirrorKlass) \
   f(InstanceRefKlass) \
+  f(InstanceStackChunkKlass) \
   f(Method) \
   f(ObjArrayKlass) \
   f(TypeArrayKlass)
@@ -124,7 +126,7 @@ void CppVtableCloner<T>::initialize(const char* name, CppVtableInfo* info) {
 // trick by declaring 2 subclasses:
 //
 //   class CppVtableTesterA: public InstanceKlass {virtual int   last_virtual_method() {return 1;}    };
-//   class CppVtableTesterB: public InstanceKlass {virtual void* last_virtual_method() {return NULL}; };
+//   class CppVtableTesterB: public InstanceKlass {virtual void* last_virtual_method() {return nullptr}; };
 //
 // CppVtableTesterA and CppVtableTesterB's vtables have the following properties:
 // - Their size (N+1) is exactly one more than the size of InstanceKlass's vtable (N)
@@ -147,7 +149,7 @@ public:
   virtual void* last_virtual_method() {
     // Make this different than CppVtableTesterB::last_virtual_method so the C++
     // compiler/linker won't alias the two functions.
-    return NULL;
+    return nullptr;
   }
 };
 
@@ -210,7 +212,7 @@ void CppVtableCloner<T>::init_orig_cpp_vtptr(int kind) {
 // the following holds true:
 //     _index[ConstantPool_Kind]->cloned_vtable()  == ((intptr_t**)cp)[0]
 //     _index[InstanceKlass_Kind]->cloned_vtable() == ((intptr_t**)ik)[0]
-CppVtableInfo** CppVtables::_index = NULL;
+CppVtableInfo** CppVtables::_index = nullptr;
 
 char* CppVtables::dumptime_init(ArchiveBuilder* builder) {
   assert(DumpSharedSpaces, "must");
@@ -226,7 +228,7 @@ char* CppVtables::dumptime_init(ArchiveBuilder* builder) {
 }
 
 void CppVtables::serialize(SerializeClosure* soc) {
-  soc->do_ptr((void**)&_index);
+  soc->do_ptr(&_index);
   if (soc->reading()) {
     CPP_VTABLE_TYPES_DO(INITIALIZE_VTABLE);
   }
@@ -251,6 +253,7 @@ intptr_t* CppVtables::get_archived_vtable(MetaspaceObj::Type msotype, address ob
   case MetaspaceObj::ConstantPoolCacheType:
   case MetaspaceObj::AnnotationsType:
   case MetaspaceObj::MethodCountersType:
+  case MetaspaceObj::SharedClassPathEntryType:
   case MetaspaceObj::RecordComponentType:
     // These have no vtables.
     break;
@@ -266,7 +269,7 @@ intptr_t* CppVtables::get_archived_vtable(MetaspaceObj::Type msotype, address ob
     }
     if (kind >= _num_cloned_vtable_kinds) {
       fatal("Cannot find C++ vtable for " INTPTR_FORMAT " -- you probably added"
-            " a new subtype of Klass or MetaData without updating CPP_VTABLE_TYPES_DO",
+            " a new subtype of Klass or MetaData without updating CPP_VTABLE_TYPES_DO or the cases in this 'switch' statement",
             p2i(obj));
     }
   }
@@ -275,7 +278,7 @@ intptr_t* CppVtables::get_archived_vtable(MetaspaceObj::Type msotype, address ob
     assert(kind < _num_cloned_vtable_kinds, "must be");
     return _index[kind]->cloned_vtable();
   } else {
-    return NULL;
+    return nullptr;
   }
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ import sun.security.util.*;
  * @author Hemma Prafullchandra
  */
 public class DNSName implements GeneralNameInterface {
-    private String name;
+    private final String name;
 
     private static final String alphaDigits =
         "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -100,7 +100,7 @@ public class DNSName implements GeneralNameInterface {
                 if (alphaDigits.indexOf(name.charAt(startIndex)) < 0) {
                     // Checking to make sure the wildcard only appears in the first component,
                     // and it has to be at least 3-char long with the form of *.[alphaDigit]
-                    if ((name.length() < 3) || (name.indexOf('*', 0) != 0) ||
+                    if ((name.length() < 3) || (name.indexOf('*') != 0) ||
                         (name.charAt(startIndex+1) != '.') ||
                         (alphaDigits.indexOf(name.charAt(startIndex+2)) < 0))
                         throw new IOException("DNSName components must begin with a letter, digit, "
@@ -150,9 +150,9 @@ public class DNSName implements GeneralNameInterface {
      * Encode the DNSName into the DerOutputStream.
      *
      * @param out the DER stream to encode the DNSName to.
-     * @exception IOException on encoding errors.
      */
-    public void encode(DerOutputStream out) throws IOException {
+    @Override
+    public void encode(DerOutputStream out) {
         out.putIA5String(name);
     }
 
@@ -173,10 +173,8 @@ public class DNSName implements GeneralNameInterface {
         if (this == obj)
             return true;
 
-        if (!(obj instanceof DNSName))
+        if (!(obj instanceof DNSName other))
             return false;
-
-        DNSName other = (DNSName)obj;
 
         // RFC5280 mandates that these names are
         // not case-sensitive
@@ -210,7 +208,7 @@ public class DNSName implements GeneralNameInterface {
      * <p>
      * RFC 5280:  DNSName restrictions are expressed as foo.bar.com.
      * Any DNSName that
-     * can be constructed by simply adding to the left hand side of the name
+     * can be constructed by simply adding to the left-hand side of the name
      * satisfies the name constraint. For example, www.foo.bar.com would
      * satisfy the constraint but foo1.bar.com would not.
      * <p>

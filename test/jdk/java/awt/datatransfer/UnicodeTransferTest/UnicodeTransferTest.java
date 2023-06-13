@@ -25,7 +25,7 @@
 /*
   @test
   @key headful
-  @bug 4718897
+  @bug 4718897 8278908
   @summary tests that a Unicode string can be transferred between JVMs.
   @author das@sparc.spb.su area=datatransfer
   @library ../../regtesthelpers/process
@@ -35,7 +35,6 @@
 
 import java.awt.datatransfer.*;
 import java.awt.*;
-import java.text.Normalizer;
 
 import test.java.awt.regtesthelpers.process.ProcessResults;
 import test.java.awt.regtesthelpers.process.ProcessCommunicator;
@@ -77,10 +76,7 @@ class Util {
                 buf.append(0x20);
             }
         }
-        // On OS X the unicode string is normalized but the clipboard,
-        // so we need to use normalized strings as well to be able to
-        // check the result
-        testString = Normalizer.normalize(buf.toString(), Normalizer.Form.NFC);
+        testString = buf.toString();
     }
 
     public static String getTestString() {

@@ -128,7 +128,7 @@ public class BasicSliderUI extends SliderUI{
     protected FocusListener focusListener;
     /** Scroll listener */
     protected ScrollListener scrollListener;
-    /** Property chane listener */
+    /** Property change listener */
     protected PropertyChangeListener propertyChangeListener;
     private Handler handler;
     private int lastValue;
@@ -139,7 +139,7 @@ public class BasicSliderUI extends SliderUI{
     private Color focusColor;
 
     /**
-     * Whther or not sameLabelBaselines is up to date.
+     * Whether or not sameLabelBaselines is up to date.
      */
     private boolean checkedLabelBaselines;
     /**
@@ -1981,7 +1981,7 @@ public class BasicSliderUI extends SliderUI{
             currentMouseY = e.getY();
 
             if (slider.isRequestFocusEnabled()) {
-                slider.requestFocus();
+                slider.requestFocus(FocusEvent.Cause.MOUSE_EVENT);
             }
 
             // Clicked in the Thumb area?

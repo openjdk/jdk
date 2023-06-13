@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
 
 #include "runtime/handles.hpp"
 
-#include "runtime/thread.hpp"
+#include "runtime/javaThread.hpp"
 #include "oops/metadata.hpp"
 #include "oops/oop.hpp"
 
@@ -36,11 +36,19 @@
 
 inline Handle::Handle(Thread* thread, oop obj) {
   assert(thread == Thread::current(), "sanity check");
-  if (obj == NULL) {
-    _handle = NULL;
+  if (obj == nullptr) {
+    _handle = nullptr;
   } else {
     _handle = thread->handle_area()->allocate_handle(obj);
   }
+}
+
+inline void Handle::replace(oop obj) {
+  // Unlike in OopHandle::replace, we shouldn't use a barrier here.
+  // OopHandle has its storage in OopStorage, which is walked concurrently and uses barriers.
+  // Handle is thread private, and iterated by Thread::oops_do, which is why it shouldn't have any barriers at all.
+  assert(_handle != nullptr, "should not use replace");
+  *_handle = obj;
 }
 
 // Inline constructors for Specific Handles for different oop types
@@ -57,7 +65,7 @@ DEF_HANDLE_CONSTR(typeArray, is_typeArray_noinline)
 // Constructor for metadata handles
 #define DEF_METADATA_HANDLE_FN(name, type) \
 inline name##Handle::name##Handle(Thread* thread, type* obj) : _value(obj), _thread(thread) { \
-  if (obj != NULL) {                                                   \
+  if (obj != nullptr) {                                                   \
     assert(((Metadata*)obj)->is_valid(), "obj is valid");              \
     assert(_thread == Thread::current(), "thread must be current");    \
     assert(_thread->is_in_live_stack((address)this), "not on stack?"); \
@@ -77,7 +85,7 @@ inline void HandleMark::push() {
 
 inline void HandleMark::pop_and_restore() {
   // Delete later chunks
-  if(_chunk->next() != NULL) {
+  if(_chunk->next() != nullptr) {
     assert(_area->size_in_bytes() > size_in_bytes(), "Sanity check");
     chop_later_chunks();
   } else {

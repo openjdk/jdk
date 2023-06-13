@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2021 Unicode, Inc.
+<!-- Copyright © 1991-2023 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -61,9 +61,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<greatestDifference id="y" draft="unconfirmed">d MMM y – d MMM y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
-							<greatestDifference id="d" draft="unconfirmed">E, d – E, d MMM y 'г'.</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">E, d MMM – E, d MMM y 'г'.</greatestDifference>
-							<greatestDifference id="y" draft="unconfirmed">E, d MMM y – E, d MMM y 'г'.</greatestDifference>
+							<greatestDifference id="d" draft="unconfirmed">E, d – E, d MMM y 'г'.</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E, d MMM – E, d MMM y 'г'.</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">E, d MMM y – E, d MMM y 'г'.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMM">
 							<greatestDifference id="M" draft="unconfirmed">LLLL–LLLL y</greatestDifference>
@@ -75,7 +75,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<calendar type="gregorian">
 				<dateTimeFormats>
 					<availableFormats>
-						<dateFormatItem id="GyMMM" draft="contributed">LLL y 'г'. G</dateFormatItem>
 						<dateFormatItem id="yMEd" draft="contributed">ccc, d.MM.y</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>

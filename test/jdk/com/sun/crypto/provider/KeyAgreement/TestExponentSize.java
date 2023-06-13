@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 6330287 6331386 7044060
+ * @bug 6330287 6331386 7044060 8267319
  * @summary verify that DHKeyPairGenerator returns keys of the expected size
  * (modulus and exponent)
  * -and-
@@ -58,7 +58,7 @@ public class TestExponentSize {
      */
     private enum Sizes {
         two56(256), three84(384), five12(512), seven68(768), ten24(1024),
-        twenty48(2048);
+        fifteen36(1536), twenty48(2048), thirty72(3072);
 
         private final int intSize;
         private final BigInteger bigIntValue;
@@ -83,11 +83,14 @@ public class TestExponentSize {
         KeyPair kp;
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("DH", "SunJCE");
 
-        // Sun's default uses a default psize of 2048 and
+        // Sun's default uses a default psize of 3072 and
         // lsize of (pSize / 2) but at least 384 bits
         kp = kpg.generateKeyPair();
-        checkKeyPair(kp, Sizes.twenty48, Sizes.ten24);
+        checkKeyPair(kp, Sizes.thirty72, Sizes.fifteen36);
 
+        kpg.initialize(Sizes.twenty48.getIntSize());
+        kp = kpg.generateKeyPair();
+        checkKeyPair(kp, Sizes.twenty48, Sizes.ten24);
         DHPublicKey publicKey = (DHPublicKey)kp.getPublic();
         BigInteger p = publicKey.getParams().getP();
         BigInteger g = publicKey.getParams().getG();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
 #include "jfr/utilities/jfrTime.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
 #include "jfr/writers/jfrNativeEventWriter.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/javaThread.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/ticks.hpp"
 #ifdef ASSERT
@@ -43,7 +43,7 @@ class JfrEventVerifier {
   template <typename>
   friend class JfrEvent;
  private:
-  // verification of event fields
+  // Verification of fields.
   BitMap::bm_word_t _verification_storage[1];
   BitMapView _verification_bit_map;
   bool _committed;
@@ -63,24 +63,20 @@ class JfrEvent {
  private:
   jlong _start_time;
   jlong _end_time;
-  bool _started;
   bool _untimed;
   bool _should_commit;
   bool _evaluated;
 
  protected:
   JfrEvent(EventStartTime timing=TIMED) : _start_time(0), _end_time(0),
-                                          _started(false), _untimed(timing == UNTIMED),
+                                          _untimed(timing == UNTIMED),
                                           _should_commit(false), _evaluated(false)
 #ifdef ASSERT
   , _verifier()
 #endif
   {
-    if (T::is_enabled()) {
-      _started = true;
-      if (TIMED == timing && !T::isInstant) {
-        set_starttime(JfrTicks::now());
-      }
+    if (!T::isInstant && !_untimed && is_enabled()) {
+      set_starttime(JfrTicks::now());
     }
   }
 
@@ -146,19 +142,16 @@ class JfrEvent {
     return T::hasStackTrace;
   }
 
-  bool is_started() const {
-    return _started;
+  bool is_started() {
+    return is_instant() || _start_time != 0 || _untimed;
   }
 
   bool should_commit() {
-    if (!_started) {
+    if (!is_enabled()) {
       return false;
     }
     if (_untimed) {
       return true;
-    }
-    if (_evaluated) {
-      return _should_commit;
     }
     _should_commit = evaluate();
     _evaluated = true;
@@ -167,11 +160,16 @@ class JfrEvent {
 
  private:
   bool should_write() {
-    return _started && (_evaluated ? _should_commit : evaluate());
+    if (_evaluated) {
+      return _should_commit;
+    }
+    if (!is_enabled()) {
+      return false;
+    }
+    return evaluate() && JfrThreadLocal::is_included(Thread::current());
   }
 
   bool evaluate() {
-    assert(_started, "invariant");
     if (_start_time == 0) {
       set_starttime(JfrTicks::now());
     } else if (_end_time == 0) {
@@ -186,31 +184,51 @@ class JfrEvent {
     return T::hasThrottle ? JfrEventThrottler::accept(T::eventId, _untimed ? 0 : _end_time) : true;
   }
 
+  traceid thread_id(Thread* thread) {
+    return T::hasThread ? JfrThreadLocal::thread_id(thread) : 0;
+  }
+
+  traceid stack_trace_id(Thread* thread, const JfrThreadLocal* tl) {
+    return T::hasStackTrace && is_stacktrace_enabled() ?
+      tl->has_cached_stack_trace() ? tl->cached_stack_trace_id() :
+        JfrStackTraceRepository::record(thread) : 0;
+  }
+
+  /*
+   * Support for virtual threads involves oops, access of which may trigger
+   * events, i.e. load barriers. Hence, write_event() must be re-entrant
+   * for recursion. Getting the thread id and capturing a stacktrace may
+   * involve oop access, and are therefore hoisted before claiming a buffer
+   * and binding it to a writer.
+   */
   void write_event() {
     DEBUG_ONLY(assert_precondition();)
-    Thread* const event_thread = Thread::current();
-    JfrThreadLocal* const tl = event_thread->jfr_thread_local();
+    Thread* const thread = Thread::current();
+    JfrThreadLocal* const tl = thread->jfr_thread_local();
+    const traceid tid = thread_id(thread);
+    const traceid sid = stack_trace_id(thread, tl);
+    // Keep tid and sid above this line.
     JfrBuffer* const buffer = tl->native_buffer();
-    if (buffer == NULL) {
-      // most likely a pending OOM
+    if (buffer == nullptr) {
+      // Most likely a pending OOM.
       return;
     }
     bool large = is_large();
-    if (write_sized_event(buffer, event_thread, tl, large)) {
-      // Event written succesfully
+    if (write_sized_event(buffer, thread, tid, sid, large)) {
+      // Event written successfully
       return;
     }
     if (!large) {
-      // Try large size
-      if (write_sized_event(buffer, event_thread, tl, true)) {
-        // Event written succesfully, use large size from now on
+      // Try large size.
+      if (write_sized_event(buffer, thread, tid, sid, true)) {
+        // Event written successfully, use large size from now on.
         set_large();
       }
     }
   }
 
-  bool write_sized_event(JfrBuffer* const buffer, Thread* const event_thread, JfrThreadLocal* const tl, bool large_size) {
-    JfrNativeEventWriter writer(buffer, event_thread);
+  bool write_sized_event(JfrBuffer* buffer, Thread* thread, traceid tid, traceid sid, bool large_size) {
+    JfrNativeEventWriter writer(buffer, thread);
     writer.begin_event_write(large_size);
     writer.write<u8>(T::eventId);
     assert(_start_time != 0, "invariant");
@@ -220,27 +238,19 @@ class JfrEvent {
       writer.write(_end_time - _start_time);
     }
     if (T::hasThread) {
-      writer.write(tl->thread_id());
+      writer.write(tid);
     }
     if (T::hasStackTrace) {
-      if (is_stacktrace_enabled()) {
-        if (tl->has_cached_stack_trace()) {
-          writer.write(tl->cached_stack_trace_id());
-        } else {
-          writer.write(JfrStackTraceRepository::record(event_thread));
-        }
-      } else {
-        writer.write<traceid>(0);
-      }
+      writer.write(sid);
     }
-    // payload
+    // Payload.
     static_cast<T*>(this)->writeData(writer);
     return writer.end_event_write(large_size) > 0;
   }
 
 #ifdef ASSERT
  private:
-  // verification of event fields
+  // Verification of fields.
   JfrEventVerifier _verifier;
 
   void assert_precondition() {
@@ -252,8 +262,8 @@ class JfrEvent {
  protected:
   void set_field_bit(size_t field_idx) {
     _verifier.set_field_bit(field_idx);
-    // it is ok to reuse an already committed event
-    // granted you provide new informational content
+    // It is ok to reuse an already committed event
+    // granted you provide new informational content.
     _verifier.clear_committed();
   }
 

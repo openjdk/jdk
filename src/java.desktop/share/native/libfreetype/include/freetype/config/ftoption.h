@@ -4,7 +4,7 @@
  *
  *   User-selectable configuration macros (specification only).
  *
- * Copyright (C) 1996-2020 by
+ * Copyright (C) 1996-2023 by
  * David Turner, Robert Wilhelm, and Werner Lemberg.
  *
  * This file is part of the FreeType project, and may only be used,
@@ -105,8 +105,7 @@ FT_BEGIN_HEADER
    *
    * ```
    *   FREETYPE_PROPERTIES=truetype:interpreter-version=35 \
-   *                       cff:no-stem-darkening=1 \
-   *                       autofitter:warping=1
+   *                       cff:no-stem-darkening=1
    * ```
    *
    */
@@ -220,6 +219,10 @@ FT_BEGIN_HEADER
    *   If you use a build system like cmake or the `configure` script,
    *   options set by those programs have precedence, overwriting the value
    *   here with the configured one.
+   *
+   *   If you use the GNU make build system directly (that is, without the
+   *   `configure` script) and you define this macro, you also have to pass
+   *   `SYSTEM_ZLIB=yes` as an argument to make.
    */
 /* #define FT_CONFIG_OPTION_SYSTEM_ZLIB */
 
@@ -433,6 +436,23 @@ FT_BEGIN_HEADER
 
   /**************************************************************************
    *
+   * Logging
+   *
+   *   Compiling FreeType in debug or trace mode makes FreeType write error
+   *   and trace log messages to `stderr`.  Enabling this macro
+   *   automatically forces the `FT_DEBUG_LEVEL_ERROR` and
+   *   `FT_DEBUG_LEVEL_TRACE` macros and allows FreeType to write error and
+   *   trace log messages to a file instead of `stderr`.  For writing logs
+   *   to a file, FreeType uses an the external `dlg` library (the source
+   *   code is in `src/dlg`).
+   *
+   *   This option needs a C99 compiler.
+   */
+/* #define FT_DEBUG_LOGGING */
+
+
+  /**************************************************************************
+   *
    * Autofitter debugging
    *
    *   If `FT_DEBUG_AUTOFIT` is defined, FreeType provides some means to
@@ -441,9 +461,9 @@ FT_BEGIN_HEADER
    *   while compiling in 'release' mode):
    *
    *   ```
-   *     _af_debug_disable_horz_hints
-   *     _af_debug_disable_vert_hints
-   *     _af_debug_disable_blue_hints
+   *     af_debug_disable_horz_hints_
+   *     af_debug_disable_vert_hints_
+   *     af_debug_disable_blue_hints_
    *   ```
    *
    *   Additionally, the following functions provide dumps of various
@@ -460,7 +480,7 @@ FT_BEGIN_HEADER
    *   As an argument, they use another global variable:
    *
    *   ```
-   *     _af_debug_hints
+   *     af_debug_hints_
    *   ```
    *
    *   Please have a look at the `ftgrid` demo program to see how those
@@ -509,6 +529,20 @@ FT_BEGIN_HEADER
 
   /**************************************************************************
    *
+   * OpenType SVG Glyph Support
+   *
+   *   Setting this macro enables support for OpenType SVG glyphs.  By
+   *   default, FreeType can only fetch SVG documents.  However, it can also
+   *   render them if external rendering hook functions are plugged in at
+   *   runtime.
+   *
+   *   More details on the hooks can be found in file `otsvg.h`.
+   */
+/* #define FT_CONFIG_OPTION_SVG */
+
+
+  /**************************************************************************
+   *
    * Error Strings
    *
    *   If this macro is set, `FT_Error_String` will return meaningful
@@ -550,12 +584,12 @@ FT_BEGIN_HEADER
   /**************************************************************************
    *
    * Define `TT_CONFIG_OPTION_POSTSCRIPT_NAMES` if you want to be able to
-   * load and enumerate the glyph Postscript names in a TrueType or OpenType
+   * load and enumerate Postscript names of glyphs in a TrueType or OpenType
    * file.
    *
-   * Note that when you do not compile the 'psnames' module by undefining the
-   * above `FT_CONFIG_OPTION_POSTSCRIPT_NAMES`, the 'sfnt' module will
-   * contain additional code used to read the PS Names table from a font.
+   * Note that if you do not compile the 'psnames' module by undefining the
+   * above `FT_CONFIG_OPTION_POSTSCRIPT_NAMES` macro, the 'sfnt' module will
+   * contain additional code to read the PostScript name table from a font.
    *
    * (By default, the module uses 'psnames' to extract glyph names.)
    */
@@ -703,6 +737,24 @@ FT_BEGIN_HEADER
    * also.  This has many similarities to Type~1 Multiple Masters support.
    */
 #define TT_CONFIG_OPTION_GX_VAR_SUPPORT
+
+
+  /**************************************************************************
+   *
+   * Define `TT_CONFIG_OPTION_NO_BORING_EXPANSION` if you want to exclude
+   * support for 'boring' OpenType specification expansions.
+   *
+   *   https://github.com/harfbuzz/boring-expansion-spec
+   *
+   * Right now, the following features are covered:
+   *
+   *   - 'avar' version 2.0
+   *
+   * Most likely, this is a temporary configuration option to be removed in
+   * the near future, since it is assumed that eventually those features are
+   * added to the OpenType standard.
+   */
+/* #define TT_CONFIG_OPTION_NO_BORING_EXPANSION */
 
 
   /**************************************************************************
@@ -894,24 +946,6 @@ FT_BEGIN_HEADER
 
   /**************************************************************************
    *
-   * Compile 'autofit' module with warp hinting.  The idea of the warping
-   * code is to slightly scale and shift a glyph within a single dimension so
-   * that as much of its segments are aligned (more or less) on the grid.  To
-   * find out the optimal scaling and shifting value, various parameter
-   * combinations are tried and scored.
-   *
-   * You can switch warping on and off with the `warping` property of the
-   * auto-hinter (see file `ftdriver.h` for more information; by default it
-   * is switched off).
-   *
-   * This experimental option is not active if the rendering mode is
-   * `FT_RENDER_MODE_LIGHT`.
-   */
-#define AF_CONFIG_OPTION_USE_WARPER
-
-
-  /**************************************************************************
-   *
    * Use TrueType-like size metrics for 'light' auto-hinting.
    *
    * It is strongly recommended to avoid this option, which exists only to
@@ -962,6 +996,21 @@ FT_BEGIN_HEADER
 
 
   /*
+   * The TT_SUPPORT_COLRV1 macro is defined to indicate to clients that this
+   * version of FreeType has support for 'COLR' v1 API.  This definition is
+   * useful to FreeType clients that want to build in support for 'COLR' v1
+   * depending on a tip-of-tree checkout before it is officially released in
+   * FreeType, and while the feature cannot yet be tested against using
+   * version macros.  Don't change this macro.  This may be removed once the
+   * feature is in a FreeType release version and version macros can be used
+   * to test for availability.
+   */
+#ifdef TT_CONFIG_OPTION_COLOR_LAYERS
+#define  TT_SUPPORT_COLRV1
+#endif
+
+
+  /*
    * Check CFF darkening parameters.  The checks are the same as in function
    * `cff_property_set` in file `cffdrivr.c`.
    */
@@ -989,8 +1038,8 @@ FT_BEGIN_HEADER
 #error "Invalid CFF darkening parameters!"
 #endif
 
-FT_END_HEADER
 
+FT_END_HEADER
 
 #endif /* FTOPTION_H_ */
 

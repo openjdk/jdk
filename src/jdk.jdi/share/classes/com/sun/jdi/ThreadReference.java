@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package com.sun.jdi;
 
 import java.util.List;
-
 import com.sun.jdi.event.EventSet;
 
 /**
@@ -47,11 +46,14 @@ public interface ThreadReference extends ObjectReference {
     public final int THREAD_STATUS_ZOMBIE = 0;
     /** Thread is runnable */
     public final int THREAD_STATUS_RUNNING = 1;
-    /** Thread is sleeping - Thread.sleep() or JVM_Sleep() was called */
+    /** Thread is sleeping - {@link Thread#sleep(long)}. */
     public final int THREAD_STATUS_SLEEPING = 2;
     /** Thread is waiting on a java monitor */
     public final int THREAD_STATUS_MONITOR = 3;
-    /** Thread is waiting - Object.wait() or JVM_MonitorWait() was called */
+    /** Thread is waiting - {@link Object#wait()} or
+     * {@link java.util.concurrent.locks.LockSupport#park()}.
+     * A virtual thread that is sleeping in {@link Thread#sleep(long)} may
+     * have this thread status instead of {@link #THREAD_STATUS_SLEEPING}. */
     public final int THREAD_STATUS_WAIT = 4;
     /** Thread has not yet been started */
     public final int THREAD_STATUS_NOT_STARTED = 5;
@@ -68,23 +70,21 @@ public interface ThreadReference extends ObjectReference {
      * {@link #resume} or resumed with other threads through
      * {@link VirtualMachine#resume}.
      * <p>
-     * Unlike {@link java.lang.Thread#suspend},
-     * suspends of both the virtual machine and individual threads are
+     * Suspends of both the virtual machine and individual threads are
      * counted. Before a thread will run again, it must be resumed
-     * (through {@link #resume} or {@link ThreadReference#resume})
+     * (through {@link #resume} or {@link VirtualMachine#resume})
      * the same number of times it has been suspended.
      * <p>
-     * Suspending single threads with this method has the same dangers
-     * as {@link java.lang.Thread#suspend()}. If the suspended thread
-     * holds a monitor needed by another running thread, deadlock is
-     * possible in the target VM (at least until the suspended thread
+     * Suspending single threads with this method is inherently deadlock-prone.
+     * If the suspended thread holds a monitor needed by another running thread,
+     * deadlock is possible in the target VM (at least until the suspended thread
      * is resumed again).
      * <p>
      * The suspended thread is guaranteed to remain suspended until
-     * resumed through one of the JDI resume methods mentioned above;
-     * the application in the target VM cannot resume the suspended thread
-     * through {@link java.lang.Thread#resume}.
-     * @throws VMCannotBeModifiedException if the VirtualMachine is read-only - see {@link VirtualMachine#canBeModified()}.
+     * resumed through one of the JDI resume methods mentioned above.
+     *
+     * @throws VMCannotBeModifiedException if the VirtualMachine is read-only
+     * @see VirtualMachine#canBeModified()
      */
     @SuppressWarnings("javadoc")
     void suspend();
@@ -98,7 +98,9 @@ public interface ThreadReference extends ObjectReference {
      * the thread will continue to execute.
      * Note: the normal way to resume from an event related suspension is
      * via {@link EventSet#resume}.
-     * @throws VMCannotBeModifiedException if the VirtualMachine is read-only - see {@link VirtualMachine#canBeModified()}.
+     *
+     * @throws VMCannotBeModifiedException if the VirtualMachine is read-only
+     * @see VirtualMachine#canBeModified()
      */
     void resume();
 
@@ -113,11 +115,23 @@ public interface ThreadReference extends ObjectReference {
      * Stops this thread with an asynchronous exception.
      * A debugger thread in the target VM will stop this thread
      * with the given {@link java.lang.Throwable} object.
+     * <p>
+     * This method may be used to send an asynchronous
+     * exception to a virtual thread when it is suspended at an event.
+     * An implementation may support sending an asynchronous exception
+     * to a suspended virtual thread in other cases.
+
      *
-     * @param throwable the asynchronous exception to throw.
+     * @param throwable the asynchronous exception to throw
      * @throws InvalidTypeException if <code>throwable</code> is not
-     * an instance of java.lang.Throwable in the target VM.
-     * @throws VMCannotBeModifiedException if the VirtualMachine is read-only - see {@link VirtualMachine#canBeModified()}.
+     * an instance of java.lang.Throwable in the target VM
+     * @throws IllegalThreadStateException if the thread has terminated,
+     * or if the thread is a virtual thread and was not suspended
+     * @throws OpaqueFrameException if the thread is a suspended
+     * virtual thread and the implementation was unable to throw an
+     * asynchronous exception from the thread's current frame
+     * @throws VMCannotBeModifiedException if the VirtualMachine is read-only
+     * @see VirtualMachine#canBeModified()
      */
     @SuppressWarnings("javadoc")
     void stop(ObjectReference throwable) throws InvalidTypeException;
@@ -125,9 +139,11 @@ public interface ThreadReference extends ObjectReference {
     /**
      * Interrupts this thread unless the thread has been suspended by the
      * debugger.
-     * @throws VMCannotBeModifiedException if the VirtualMachine is read-only - see {@link VirtualMachine#canBeModified()}.
+     *
+     * @throws VMCannotBeModifiedException if the VirtualMachine is read-only
      *
      * @see java.lang.Thread#interrupt()
+     * @see VirtualMachine#canBeModified()
      */
     void interrupt();
 
@@ -233,7 +249,7 @@ public interface ThreadReference extends ObjectReference {
      * @throws IncompatibleThreadStateException if the thread is
      * not suspended in the target VM
      * @throws IndexOutOfBoundsException if the specified range is not
-     * within the range of stack frame indicies.
+     * within the range of stack frame indices.
      * That is, the exception is thrown if any of the following are true:
      * <pre>    start &lt; 0
      *    start &gt;= {@link #frameCount}
@@ -354,10 +370,14 @@ public interface ThreadReference extends ObjectReference {
      * Thus the target program may
      * proceed differently than the user would expect.
      * <P>
-     * The specified thread must be suspended.
+     * This thread must be suspended.
      * <P>
      * All <code>StackFrame</code> objects for this thread are
      * invalidated.
+     * <p>
+     * This method may be used to pop frames of a virtual thread when
+     * it is suspended at an event. An implementation may support popping
+     * the frames of a suspended virtual thread in other cases.
      * <P>
      * No events are generated by this method.
      * <P>
@@ -382,6 +402,9 @@ public interface ThreadReference extends ObjectReference {
      * @throws java.lang.IllegalArgumentException if <CODE>frame</CODE>
      * is not on this thread's call stack.
      *
+     * @throws OpaqueFrameException if this thread is a suspended virtual thread and the
+     * target VM was unable to pop the frames.
+     *
      * @throws NativeMethodException if one of the frames that would be
      * popped is that of a native method or if the frame previous to
      * <i>frame</i> is native.
@@ -390,9 +413,11 @@ public interface ThreadReference extends ObjectReference {
      * invalid. Once this thread is resumed, the stack frame is
      * no longer valid.  This exception is also thrown if there are no
      * more frames.
-     * @throws VMCannotBeModifiedException if the VirtualMachine is read-only - see {@link VirtualMachine#canBeModified()}.
+     * @throws VMCannotBeModifiedException if the VirtualMachine is read-only.
      *
-     * @since 1.4 */
+     * @since 1.4
+     * @see VirtualMachine#canBeModified()
+     */
     void popFrames(StackFrame frame) throws IncompatibleThreadStateException;
 
     /**
@@ -410,6 +435,11 @@ public interface ThreadReference extends ObjectReference {
      * language code is resumed on this thread. Between the call to
      * this method and resumption of thread execution, the
      * state of the stack is undefined.
+     * <p>
+     * This method may be used to force a return from the current frame
+     * of a virtual thread when it is suspended at an event.
+     * An implementation may support forcing a return from the current frame
+     * of a suspended virtual thread in other cases.
      * <p>
      * No further instructions are executed in the called
      * method. Specifically, finally blocks are not executed. Note:
@@ -454,6 +484,9 @@ public interface ThreadReference extends ObjectReference {
      * @throws IncompatibleThreadStateException if this
      * thread is not suspended.
      *
+     * @throws OpaqueFrameException if this thread is a suspended virtual thread and the
+     * target VM is unable to force the method to return.
+     *
      * @throws NativeMethodException if the frame to be returned from
      * is that of a native method.
      *
@@ -465,12 +498,27 @@ public interface ThreadReference extends ObjectReference {
      * @throws ClassNotLoadedException if the method's return type has not yet
      * been loaded through the appropriate class loader.
      *
-     * @throws VMCannotBeModifiedException if the VirtualMachine is read-only - see {@link VirtualMachine#canBeModified()}.
+     * @throws VMCannotBeModifiedException if the VirtualMachine is read-only.
      *
      * @since 1.6
+     * @see VirtualMachine#canBeModified()
      */
     void forceEarlyReturn(Value value) throws InvalidTypeException,
                                               ClassNotLoadedException,
                                               IncompatibleThreadStateException;
 
+    /**
+     * Returns {@code true} if the thread is a
+     * <a href="{@docRoot}/java.base/java/lang/Thread.html#virtual-threads">virtual thread</a>.
+     *
+     * @return true if the thread is a virtual thread
+     *
+     * @implSpec
+     * The default implementation throws {@code UnsupportedOperationException}.
+     *
+     * @since 21
+     */
+    default boolean isVirtual() {
+        throw new UnsupportedOperationException("Method not implemented");
+    }
 }

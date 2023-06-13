@@ -60,7 +60,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * @test
  * @key headful
- * @bug 4393148 8136999 8186263 8224632
+ * @bug 4393148 4357905 8136999 8186263 8224632
  * @summary tests that removal of the drop target or disposal of frame during
  *          drop processing doesn't cause crash
  * @run main/timeout=300 RemoveDropTargetCrashTest RUN_PROCESS

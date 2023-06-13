@@ -242,7 +242,7 @@ public class JTextField extends JTextComponent implements SwingConstants {
      *   the preferred width &gt;= 0; if <code>columns</code>
      *   is set to zero, the preferred width will be whatever
      *   naturally results from the component implementation
-     * @exception IllegalArgumentException if <code>columns</code> &lt; 0
+     * @throws IllegalArgumentException if <code>columns</code> &lt; 0
      */
     public JTextField(Document doc, String text, int columns) {
         if (columns < 0) {
@@ -343,7 +343,7 @@ public class JTextField extends JTextComponent implements SwingConstants {
      * and a <code>PropertyChange</code> event ("horizontalAlignment") is fired.
      *
      * @param alignment the alignment
-     * @exception IllegalArgumentException if <code>alignment</code>
+     * @throws IllegalArgumentException if <code>alignment</code>
      *  is not a valid key
      */
      @BeanProperty(preferred = true, enumerationValues = {
@@ -393,7 +393,7 @@ public class JTextField extends JTextComponent implements SwingConstants {
      * and then invalidate the layout.
      *
      * @param columns the number of columns &gt;= 0
-     * @exception IllegalArgumentException if <code>columns</code>
+     * @throws IllegalArgumentException if <code>columns</code>
      *          is less than 0
      */
     @BeanProperty(bound = false, description

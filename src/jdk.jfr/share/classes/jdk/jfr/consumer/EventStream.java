@@ -95,25 +95,7 @@ import jdk.jfr.internal.consumer.FileAccess;
  * The following example shows how an {@code EventStream} can be used to listen
  * to events on a JVM running Flight Recorder
  *
- * <pre>{@literal
- * try (var es = EventStream.openRepository()) {
- *   es.onEvent("jdk.CPULoad", event -> {
- *     System.out.println("CPU Load " + event.getEndTime());
- *     System.out.println(" Machine total: " + 100 * event.getFloat("machineTotal") + "%");
- *     System.out.println(" JVM User: " + 100 * event.getFloat("jvmUser") + "%");
- *     System.out.println(" JVM System: " + 100 * event.getFloat("jvmSystem") + "%");
- *     System.out.println();
- *   });
- *   es.onEvent("jdk.GarbageCollection", event -> {
- *     System.out.println("Garbage collection: " + event.getLong("gcId"));
- *     System.out.println(" Cause: " + event.getString("cause"));
- *     System.out.println(" Total pause: " + event.getDuration("sumOfPauses"));
- *     System.out.println(" Longest pause: " + event.getDuration("longestPause"));
- *     System.out.println();
- *   });
- *   es.start();
- * }
- * }</pre>
+ * {@snippet class="Snippets" region="EventStreamOverview"}
  * <p>
  * To start recording together with the stream, see {@link RecordingStream}.
  *
@@ -154,6 +136,8 @@ public interface EventStream extends AutoCloseable {
      * <p>
      * By default, the stream starts with the next event flushed by Flight
      * Recorder.
+     * <p>
+     * Only trusted disk repositories should be opened.
      *
      * @param directory location of the disk repository, not {@code null}
      *
@@ -167,7 +151,7 @@ public interface EventStream extends AutoCloseable {
      *         files in the directory.
      */
     public static EventStream openRepository(Path directory) throws IOException {
-        Objects.requireNonNull(directory);
+        Objects.requireNonNull(directory, "directory");
         @SuppressWarnings("removal")
         AccessControlContext acc = AccessController.getContext();
         return new EventDirectoryStream(
@@ -184,6 +168,8 @@ public interface EventStream extends AutoCloseable {
      * Creates an event stream from a file.
      * <p>
      * By default, the stream starts with the first event in the file.
+     * <p>
+     * Only recording files from trusted sources should be opened.
      *
      * @param file location of the file, not {@code null}
      *
@@ -197,6 +183,7 @@ public interface EventStream extends AutoCloseable {
      */
     @SuppressWarnings("removal")
     static EventStream openFile(Path file) throws IOException {
+        Objects.requireNonNull(file, "file");
         return new EventFileStream(AccessController.getContext(), file);
     }
 
@@ -205,6 +192,15 @@ public interface EventStream extends AutoCloseable {
      *
      * The event type of an event always arrives sometime before the actual event.
      * The action must be registered before the stream is started.
+     * <p>
+     * The following example shows how to listen to new event types, register
+     * an action if the event type name matches a regular expression and increase a
+     * counter if a matching event is found. A benefit of using an action per
+     * event type, instead of the generic {@link #onEvent(Consumer)} method,
+     * is that a stream implementation can avoid reading events that are of no
+     * interest.
+     *
+     * {@snippet class = "Snippets" region = "EventStreamMetadata"}
      *
      * @implSpec The default implementation of this method is empty.
      *
@@ -212,15 +208,24 @@ public interface EventStream extends AutoCloseable {
      *
      * @throws IllegalStateException if an action is added after the stream has
      *                               started
+     * @since 16
      */
      default void onMetadata(Consumer<MetadataEvent> action) {
      }
 
     /**
      * Registers an action to perform on all events in the stream.
+     * <p>
+     * To perform an action on a subset of event types, consider using
+     * {@link #onEvent(String, Consumer)} and {@link #onMetadata(Consumer)} as it is
+     * likely more performant than any selection or filtering mechanism implemented
+     * in a generic action.
      *
      * @param action an action to perform on each {@code RecordedEvent}, not
      *        {@code null}
+     *
+     * @see #onEvent(Consumer)
+     * @see #onMetadata(Consumer)
      */
     void onEvent(Consumer<RecordedEvent> action);
 

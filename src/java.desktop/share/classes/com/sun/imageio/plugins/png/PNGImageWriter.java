@@ -147,7 +147,7 @@ final class ChunkStream extends ImageOutputStreamImpl {
     }
 
     @Override
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     protected void finalize() throws Throwable {
         // Empty finalizer (for improved performance; no need to call
         // super.finalize() in this case)
@@ -284,7 +284,7 @@ final class IDATOutputStream extends ImageOutputStreamImpl {
     }
 
     @Override
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     protected void finalize() throws Throwable {
         // Empty finalizer (for improved performance; no need to call
         // super.finalize() in this case)
@@ -322,7 +322,7 @@ final class PNGImageWriteParam extends ImageWriteParam {
      * <p> The default implementation resets the compression quality
      * to <code>0.5F</code>.
      *
-     * @exception IllegalStateException if the compression mode is not
+     * @throws IllegalStateException if the compression mode is not
      * <code>MODE_EXPLICIT</code>.
      */
     @Override

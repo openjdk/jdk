@@ -62,7 +62,7 @@ struct SettingName
   bool sanitize (hb_sanitize_context_t *c) const
   {
     TRACE_SANITIZE (this);
-    return_trace (likely (c->check_struct (this)));
+    return_trace (c->check_struct (this));
   }
 
   protected:
@@ -144,7 +144,7 @@ struct FeatureName
   protected:
   HBUINT16      feature;        /* Feature type. */
   HBUINT16      nSettings;      /* The number of records in the setting name array. */
-  LNNOffsetTo<UnsizedArrayOf<SettingName>>
+  NNOffset32To<UnsizedArrayOf<SettingName>>
                 settingTableZ;  /* Offset in bytes from the beginning of this table to
                                  * this feature's setting name array. The actual type of
                                  * record this offset refers to will depend on the

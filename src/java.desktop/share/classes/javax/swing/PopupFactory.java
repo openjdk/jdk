@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,6 @@ import java.awt.Toolkit;
 import java.awt.Window;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.security.AccessController;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -127,7 +126,7 @@ public class PopupFactory {
      * <code>factory</code> is null.
      *
      * @param factory Shared PopupFactory
-     * @exception IllegalArgumentException if <code>factory</code> is null
+     * @throws IllegalArgumentException if <code>factory</code> is null
      * @see #getPopup
      */
     public static void setSharedInstance(PopupFactory factory) {
@@ -178,7 +177,7 @@ public class PopupFactory {
      * <code>Popup</code> creates to. A null <code>owner</code> implies there
      * is no valid parent. <code>x</code> and
      * <code>y</code> specify the preferred initial location to place
-     * the <code>Popup</code> at. Based on screen size, or other paramaters,
+     * the <code>Popup</code> at. Based on screen size, or other parameters,
      * the <code>Popup</code> may not display at <code>x</code> and
      * <code>y</code>.
      *
@@ -186,7 +185,7 @@ public class PopupFactory {
      * @param contents Contents of the Popup
      * @param x        Initial x screen coordinate
      * @param y        Initial y screen coordinate
-     * @exception IllegalArgumentException if contents is null
+     * @throws IllegalArgumentException if contents is null
      * @return Popup containing Contents
      */
     public Popup getPopup(Component owner, Component contents,
@@ -289,8 +288,7 @@ public class PopupFactory {
             return getMediumWeightPopup(owner, contents, ownerX, ownerY);
         case HEAVY_WEIGHT_POPUP:
             Popup popup = getHeavyWeightPopup(owner, contents, ownerX, ownerY);
-            if ((AccessController.doPrivileged(OSInfo.getOSTypeAction()) ==
-                OSInfo.OSType.MACOSX) && (owner != null) &&
+            if ((OSInfo.getOSType() == OSInfo.OSType.MACOSX) && (owner != null) &&
                 (EmbeddedFrame.getAppletIfAncestorOf(owner) != null)) {
                 ((HeavyWeightPopup)popup).setCacheEnabled(false);
             }
@@ -997,7 +995,7 @@ public class PopupFactory {
             rootPane = new JRootPane();
             // NOTE: this uses setOpaque vs LookAndFeel.installProperty as
             // there is NO reason for the RootPane not to be opaque. For
-            // painting to work the contentPane must be opaque, therefor the
+            // painting to work the contentPane must be opaque, therefore the
             // RootPane can also be opaque.
             rootPane.setOpaque(true);
             component.add(rootPane, BorderLayout.CENTER);
@@ -1030,4 +1028,3 @@ public class PopupFactory {
         }
     }
 }
-

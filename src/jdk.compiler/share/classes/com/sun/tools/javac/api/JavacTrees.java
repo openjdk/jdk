@@ -106,16 +106,10 @@ import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.resources.CompilerProperties.Notes;
 import com.sun.tools.javac.resources.CompilerProperties.Warnings;
 import com.sun.tools.javac.tree.DCTree;
-import com.sun.tools.javac.tree.DCTree.DCBlockTag;
-import com.sun.tools.javac.tree.DCTree.DCComment;
 import com.sun.tools.javac.tree.DCTree.DCDocComment;
-import com.sun.tools.javac.tree.DCTree.DCEndPosTree;
-import com.sun.tools.javac.tree.DCTree.DCEntity;
-import com.sun.tools.javac.tree.DCTree.DCErroneous;
 import com.sun.tools.javac.tree.DCTree.DCIdentifier;
 import com.sun.tools.javac.tree.DCTree.DCParam;
 import com.sun.tools.javac.tree.DCTree.DCReference;
-import com.sun.tools.javac.tree.DCTree.DCText;
 import com.sun.tools.javac.tree.DocCommentTable;
 import com.sun.tools.javac.tree.DocTreeMaker;
 import com.sun.tools.javac.tree.EndPosTable;
@@ -161,25 +155,24 @@ import static com.sun.tools.javac.code.Kinds.Kind.*;
  * @author Peter von der Ah&eacute;
  */
 public class JavacTrees extends DocTrees {
+    private final Modules modules;
+    private final Resolve resolve;
+    private final Enter enter;
+    private final Log log;
+    private final MemberEnter memberEnter;
+    private final Attr attr;
+    private final Check chk;
+    private final TreeMaker treeMaker;
+    private final JavacElements elements;
+    private final JavacTaskImpl javacTaskImpl;
+    private final Names names;
+    private final Types types;
+    private final DocTreeMaker docTreeMaker;
+    private final JavaFileManager fileManager;
+    private final ParserFactory parser;
+    private final Symtab syms;
 
-    // in a world of a single context per compilation, these would all be final
-    private Modules modules;
-    private Resolve resolve;
-    private Enter enter;
-    private Log log;
-    private MemberEnter memberEnter;
-    private Attr attr;
-    private Check chk;
-    private TreeMaker treeMaker;
-    private JavacElements elements;
-    private JavacTaskImpl javacTaskImpl;
-    private Names names;
-    private Types types;
-    private DocTreeMaker docTreeMaker;
     private BreakIterator breakIterator;
-    private JavaFileManager fileManager;
-    private ParserFactory parser;
-    private Symtab syms;
 
     private final Map<Type, Type> extraType2OriginalMap = new WeakHashMap<>();
 
@@ -204,17 +197,11 @@ public class JavacTrees extends DocTrees {
         return instance;
     }
 
+    @SuppressWarnings("this-escape")
     protected JavacTrees(Context context) {
         this.breakIterator = null;
         context.put(JavacTrees.class, this);
-        init(context);
-    }
 
-    public void updateContext(Context context) {
-        init(context);
-    }
-
-    private void init(Context context) {
         modules = Modules.instance(context);
         attr = Attr.instance(context);
         chk = Check.instance(context);
@@ -230,9 +217,8 @@ public class JavacTrees extends DocTrees {
         parser = ParserFactory.instance(context);
         syms = Symtab.instance(context);
         fileManager = context.get(JavaFileManager.class);
-        JavacTask t = context.get(JavacTask.class);
-        if (t instanceof JavacTaskImpl taskImpl)
-            javacTaskImpl = taskImpl;
+        var task = context.get(JavacTask.class);
+        javacTaskImpl = (task instanceof JavacTaskImpl taskImpl) ? taskImpl : null;
     }
 
     @Override @DefinedBy(Api.COMPILER_TREE)
@@ -507,10 +493,16 @@ public class JavacTrees extends DocTrees {
             }
 
             ClassSymbol sym = (ClassSymbol) types.skipTypeVars(tsym.type, false).tsym;
-
             Symbol msym = (memberName == sym.name)
-                    ? findConstructor(sym, paramTypes)
-                    : findMethod(sym, memberName, paramTypes);
+                    ? findConstructor(sym, paramTypes, true)
+                    : findMethod(sym, memberName, paramTypes, true);
+
+            if (msym == null) {
+                msym = (memberName == sym.name)
+                        ? findConstructor(sym, paramTypes, false)
+                        : findMethod(sym, memberName, paramTypes, false);
+            }
+
             if (paramTypes != null) {
                 // explicit (possibly empty) arg list given, so cannot be a field
                 return msym;
@@ -608,10 +600,10 @@ public class JavacTrees extends DocTrees {
         return null;
     }
 
-    MethodSymbol findConstructor(ClassSymbol tsym, List<Type> paramTypes) {
+    MethodSymbol findConstructor(ClassSymbol tsym, List<Type> paramTypes, boolean strict) {
         for (Symbol sym : tsym.members().getSymbolsByName(names.init)) {
             if (sym.kind == MTH) {
-                if (hasParameterTypes((MethodSymbol) sym, paramTypes)) {
+                if (hasParameterTypes((MethodSymbol) sym, paramTypes, strict)) {
                     return (MethodSymbol) sym;
                 }
             }
@@ -619,12 +611,13 @@ public class JavacTrees extends DocTrees {
         return null;
     }
 
-    private MethodSymbol findMethod(ClassSymbol tsym, Name methodName, List<Type> paramTypes) {
-        return searchMethod(tsym, methodName, paramTypes, new HashSet<>());
+    private MethodSymbol findMethod(ClassSymbol tsym, Name methodName, List<Type> paramTypes, boolean strict) {
+        return searchMethod(tsym, methodName, paramTypes, strict, new HashSet<>());
     }
 
     private MethodSymbol searchMethod(ClassSymbol tsym, Name methodName,
-                                       List<Type> paramTypes, Set<ClassSymbol> searched) {
+                                       List<Type> paramTypes, boolean strict,
+                                       Set<ClassSymbol> searched) {
         //### Note that this search is not necessarily what the compiler would do!
 
         // do not match constructors
@@ -662,7 +655,7 @@ public class JavacTrees extends DocTrees {
             for (Symbol sym : tsym.members().getSymbolsByName(methodName)) {
                 if (sym != null &&
                     sym.kind == MTH) {
-                    if (hasParameterTypes((MethodSymbol) sym, paramTypes)) {
+                    if (hasParameterTypes((MethodSymbol) sym, paramTypes, strict)) {
                         return (MethodSymbol) sym;
                     }
                 }
@@ -675,7 +668,7 @@ public class JavacTrees extends DocTrees {
         // search superclass
         Type superclass = tsym.getSuperclass();
         if (superclass.tsym != null) {
-            MethodSymbol msym = searchMethod((ClassSymbol) superclass.tsym, methodName, paramTypes, searched);
+            MethodSymbol msym = searchMethod((ClassSymbol) superclass.tsym, methodName, paramTypes, strict, searched);
             if (msym != null) {
                 return msym;
             }
@@ -686,7 +679,7 @@ public class JavacTrees extends DocTrees {
         for (List<Type> l = intfs; l.nonEmpty(); l = l.tail) {
             Type intf = l.head;
             if (intf.isErroneous()) continue;
-            MethodSymbol msym = searchMethod((ClassSymbol) intf.tsym, methodName, paramTypes, searched);
+            MethodSymbol msym = searchMethod((ClassSymbol) intf.tsym, methodName, paramTypes, strict, searched);
             if (msym != null) {
                 return msym;
             }
@@ -695,7 +688,7 @@ public class JavacTrees extends DocTrees {
         // search enclosing class
         ClassSymbol encl = tsym.owner.enclClass();
         if (encl != null) {
-            MethodSymbol msym = searchMethod(encl, methodName, paramTypes, searched);
+            MethodSymbol msym = searchMethod(encl, methodName, paramTypes, strict, searched);
             if (msym != null) {
                 return msym;
             }
@@ -704,7 +697,7 @@ public class JavacTrees extends DocTrees {
         return null;
     }
 
-    private boolean hasParameterTypes(MethodSymbol method, List<Type> paramTypes) {
+    private boolean hasParameterTypes(MethodSymbol method, List<Type> paramTypes, boolean strict) {
         if (paramTypes == null)
             return true;
 
@@ -712,7 +705,7 @@ public class JavacTrees extends DocTrees {
             return false;
 
         List<Type> methodParamTypes = method.asType().getParameterTypes();
-        if (!Type.isErroneous(paramTypes) && types.isSubtypes(paramTypes, methodParamTypes)) {
+        if (!strict && !Type.isErroneous(paramTypes) && types.isSubtypes(paramTypes, methodParamTypes)) {
             return true;
         }
 
@@ -980,7 +973,7 @@ public class JavacTrees extends DocTrees {
                 }
             }.scan(env.enclClass);
             //revert changes done by the visitor:
-            toClear.stream().forEach(c -> {
+            toClear.forEach(c -> {
                 chk.clearLocalClassNameIndexes(c);
                 chk.removeCompiled(c);
             });

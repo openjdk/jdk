@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #ifndef SHARE_RUNTIME_ORDERACCESS_HPP
 #define SHARE_RUNTIME_ORDERACCESS_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/macros.hpp"
 
@@ -92,7 +92,7 @@
 //
 // Total Store Order (TSO) machines can be seen as machines issuing a
 // release store for each store and a load acquire for each load. Therefore
-// there is an inherent resemblence between TSO and acquire/release
+// there is an inherent resemblance between TSO and acquire/release
 // semantics. TSO can be seen as an abstract machine where loads are
 // executed immediately when encountered (hence loadload reordering not
 // happening) but enqueues stores in a FIFO queue

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,6 @@ class     CallRuntimeNode;
 class       CallLeafNode;
 class         CallLeafNoFPNode;
 class         CallLeafVectorNode;
-class     CallNativeNode;
 class     AllocateNode;
 class       AllocateArrayNode;
 class     AbstractLockNode;
@@ -109,7 +108,6 @@ public:
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
   virtual void dump_compact_spec(outputStream *st) const;
-  virtual void related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_rel, bool compact) const;
 #endif
 };
 
@@ -128,7 +126,7 @@ public:
   virtual uint ideal_reg() const { return NotAMachineReg; }
   virtual uint match_edge(uint idx) const;
 #ifndef PRODUCT
-  virtual void dump_req(outputStream *st = tty) const;
+  virtual void dump_req(outputStream *st = tty, DumpConfig* dc = nullptr) const;
 #endif
 };
 
@@ -149,7 +147,7 @@ class RethrowNode : public Node {
   virtual uint match_edge(uint idx) const;
   virtual uint ideal_reg() const { return NotAMachineReg; }
 #ifndef PRODUCT
-  virtual void dump_req(outputStream *st = tty) const;
+  virtual void dump_req(outputStream *st = tty, DumpConfig* dc = nullptr) const;
 #endif
 };
 
@@ -205,7 +203,7 @@ private:
   uint              _monoff;    // Offset to monitors in input edge mapping
   uint              _scloff;    // Offset to fields of scalar objs in input edge mapping
   uint              _endoff;    // Offset to end of input edge mapping
-  uint              _sp;        // Jave Expression Stack Pointer for this state
+  uint              _sp;        // Java Expression Stack Pointer for this state
   int               _bci;       // Byte Code Index of this JVM point
   ReexecuteState    _reexecute; // Whether this bytecode need to be re-executed
   ciMethod*         _method;    // Method Pointer
@@ -249,7 +247,7 @@ public:
   int                      bci() const { return _bci; }
   bool        should_reexecute() const { return _reexecute==Reexecute_True; }
   bool  is_reexecute_undefined() const { return _reexecute==Reexecute_Undefined; }
-  bool              has_method() const { return _method != NULL; }
+  bool              has_method() const { return _method != nullptr; }
   ciMethod*             method() const { assert(has_method(), ""); return _method; }
   JVMState*             caller() const { return _caller; }
   SafePointNode*           map() const { return _map; }
@@ -337,13 +335,13 @@ protected:
   bool            _has_ea_local_in_scope; // NoEscape or ArgEscape objects in JVM States
 
   void set_jvms(JVMState* s) {
-  assert(s != nullptr, "assign NULL value to _jvms");
+  assert(s != nullptr, "assign null value to _jvms");
     *(JVMState**)&_jvms = s;  // override const attribute in the accessor
   }
 public:
   SafePointNode(uint edges, JVMState* jvms,
-                // A plain safepoint advertises no memory effects (NULL):
-                const TypePtr* adr_type = NULL)
+                // A plain safepoint advertises no memory effects (null):
+                const TypePtr* adr_type = nullptr)
     : MultiNode( edges ),
       _jvms(jvms),
       _adr_type(adr_type),
@@ -355,7 +353,7 @@ public:
   JVMState* jvms() const { return _jvms; }
   virtual bool needs_deep_clone_jvms(Compile* C) { return false; }
   void clone_jvms(Compile* C) {
-    if (jvms() != NULL) {
+    if (jvms() != nullptr) {
       if (needs_deep_clone_jvms(C)) {
         set_jvms(jvms()->clone_deep(C));
         jvms()->set_map_deep(this);
@@ -417,6 +415,8 @@ public:
   void pop_monitor ();
   Node *peek_monitor_box() const;
   Node *peek_monitor_obj() const;
+  // Peek Operand Stacks, JVMS 2.6.2
+  Node* peek_operand(uint off = 0) const;
 
   // Access functions for the JVM
   Node *control  () const { return in(TypeFunc::Control  ); }
@@ -434,7 +434,7 @@ public:
   }
 
   // The parser marks useless maps as dead when it's done with them:
-  bool is_killed() { return in(TypeFunc::Control) == NULL; }
+  bool is_killed() { return in(TypeFunc::Control) == nullptr; }
 
   // Exception states bubbling out of subgraphs such as inlined calls
   // are recorded here.  (There might be more than one, hence the "next".)
@@ -442,7 +442,7 @@ public:
   // for JVM states during parsing, intrinsic expansion, etc.
   SafePointNode*         next_exception() const;
   void               set_next_exception(SafePointNode* n);
-  bool                   has_exceptions() const { return next_exception() != NULL; }
+  bool                   has_exceptions() const { return next_exception() != nullptr; }
 
   // Helper methods to operate on replaced nodes
   ReplacedNodes replaced_nodes() const {
@@ -499,7 +499,6 @@ public:
 
 #ifndef PRODUCT
   virtual void           dump_spec(outputStream *st) const;
-  virtual void           related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_rel, bool compact) const;
 #endif
 };
 
@@ -512,7 +511,6 @@ class SafePointScalarObjectNode: public TypeNode {
                      // states of the scalarized object fields are collected.
                      // It is relative to the last (youngest) jvms->_scloff.
   uint _n_fields;    // Number of non-static fields of the scalarized object.
-  bool _is_auto_box; // True if the scalarized object is an auto box.
   DEBUG_ONLY(Node* _alloc;)
 
   virtual uint hash() const ; // { return NO_HASH; }
@@ -525,7 +523,7 @@ public:
 #ifdef ASSERT
                             Node* alloc,
 #endif
-                            uint first_index, uint n_fields, bool is_auto_box = false);
+                            uint first_index, uint n_fields);
   virtual int Opcode() const;
   virtual uint           ideal_reg() const;
   virtual const RegMask &in_RegMask(uint) const;
@@ -533,12 +531,11 @@ public:
   virtual uint           match_edge(uint idx) const;
 
   uint first_index(JVMState* jvms) const {
-    assert(jvms != NULL, "missed JVMS");
+    assert(jvms != nullptr, "missed JVMS");
     return jvms->scloff() + _first_index;
   }
   uint n_fields()    const { return _n_fields; }
 
-  bool is_auto_box() const { return _is_auto_box; }
 #ifdef ASSERT
   Node* alloc() const { return _alloc; }
 #endif
@@ -584,22 +581,22 @@ class CallNode : public SafePointNode {
   friend class VMStructs;
 
 protected:
-  bool may_modify_arraycopy_helper(const TypeOopPtr* dest_t, const TypeOopPtr* t_oop, PhaseTransform* phase);
+  bool may_modify_arraycopy_helper(const TypeOopPtr* dest_t, const TypeOopPtr* t_oop, PhaseValues* phase);
 
 public:
   const TypeFunc* _tf;          // Function type
   address         _entry_point; // Address of method being called
   float           _cnt;         // Estimate of number of times called
   CallGenerator*  _generator;   // corresponding CallGenerator for some late inline calls
-  const char*     _name;        // Printable name, if _method is NULL
+  const char*     _name;        // Printable name, if _method is null
 
   CallNode(const TypeFunc* tf, address addr, const TypePtr* adr_type, JVMState* jvms = nullptr)
     : SafePointNode(tf->domain()->cnt(), jvms, adr_type),
       _tf(tf),
       _entry_point(addr),
       _cnt(COUNT_UNKNOWN),
-      _generator(NULL),
-      _name(NULL)
+      _generator(nullptr),
+      _name(nullptr)
   {
     init_class_id(Class_Call);
   }
@@ -632,12 +629,12 @@ public:
   virtual bool needs_deep_clone_jvms(Compile* C) { return C->needs_deep_clone_jvms(); }
 
   // Returns true if the call may modify n
-  virtual bool        may_modify(const TypeOopPtr* t_oop, PhaseTransform* phase);
+  virtual bool        may_modify(const TypeOopPtr* t_oop, PhaseValues* phase);
   // Does this node have a use of n other than in debug information?
   bool                has_non_debug_use(Node* n);
   // Returns the unique CheckCastPP of a call
   // or result projection is there are several CheckCastPP
-  // or returns NULL if there is no one.
+  // or returns null if there is no one.
   Node* result_cast();
   // Does this node returns pointer?
   bool returns_pointer() const {
@@ -658,7 +655,7 @@ public:
   virtual void copy_call_debug_info(PhaseIterGVN* phase, SafePointNode* sfpt) {}
 
 #ifndef PRODUCT
-  virtual void        dump_req(outputStream* st = tty) const;
+  virtual void        dump_req(outputStream* st = tty, DumpConfig* dc = nullptr) const;
   virtual void        dump_spec(outputStream* st) const;
 #endif
 };
@@ -723,13 +720,13 @@ public:
   CallStaticJavaNode(Compile* C, const TypeFunc* tf, address addr, ciMethod* method)
     : CallJavaNode(tf, addr, method) {
     init_class_id(Class_CallStaticJava);
-    if (C->eliminate_boxing() && (method != NULL) && method->is_boxing_method()) {
+    if (C->eliminate_boxing() && (method != nullptr) && method->is_boxing_method()) {
       init_flags(Flag_is_macro);
       C->add_macro_node(this);
     }
   }
   CallStaticJavaNode(const TypeFunc* tf, address addr, const char* name, const TypePtr* adr_type)
-    : CallJavaNode(tf, addr, NULL) {
+    : CallJavaNode(tf, addr, nullptr) {
     init_class_id(Class_CallStaticJava);
     // This node calls a runtime stub, which often has narrow memory effects.
     _adr_type = adr_type;
@@ -741,7 +738,7 @@ public:
   static int extract_uncommon_trap_request(const Node* call);
 
   bool is_boxing_method() const {
-    return is_macro() && (method() != NULL) && method()->is_boxing_method();
+    return is_macro() && (method() != nullptr) && method()->is_boxing_method();
   }
   // Late inlining modifies the JVMState, so we need to deep clone it
   // when the call node is cloned (because it is macro node).
@@ -824,42 +821,6 @@ public:
 #endif
 };
 
-//------------------------------CallNativeNode-----------------------------------
-// Make a direct call into a foreign function with an arbitrary ABI
-// safepoints
-class CallNativeNode : public CallNode {
-  friend class MachCallNativeNode;
-  virtual bool cmp( const Node &n ) const;
-  virtual uint size_of() const;
-  static void print_regs(const GrowableArray<VMReg>& regs, outputStream* st);
-public:
-  GrowableArray<VMReg> _arg_regs;
-  GrowableArray<VMReg> _ret_regs;
-  const int _shadow_space_bytes;
-  const bool _need_transition;
-
-  CallNativeNode(const TypeFunc* tf, address addr, const char* name,
-                 const TypePtr* adr_type,
-                 const GrowableArray<VMReg>& arg_regs,
-                 const GrowableArray<VMReg>& ret_regs,
-                 int shadow_space_bytes,
-                 bool need_transition)
-    : CallNode(tf, addr, adr_type), _arg_regs(arg_regs),
-      _ret_regs(ret_regs), _shadow_space_bytes(shadow_space_bytes),
-      _need_transition(need_transition)
-  {
-    init_class_id(Class_CallNative);
-    _name = name;
-  }
-  virtual int   Opcode() const;
-  virtual bool  guaranteed_safepoint()  { return _need_transition; }
-  virtual Node* match(const ProjNode *proj, const Matcher *m);
-  virtual void  calling_convention( BasicType* sig_bt, VMRegPair *parm_regs, uint argcnt ) const;
-#ifndef PRODUCT
-  virtual void  dump_spec(outputStream *st) const;
-#endif
-};
-
 //------------------------------CallLeafNoFPNode-------------------------------
 // CallLeafNode, not using floating point or using it in the same manner as
 // the generated code
@@ -913,6 +874,7 @@ public:
     KlassNode,                        // type (maybe dynamic) of the obj.
     InitialTest,                      // slow-path test (may be constant)
     ALength,                          // array length (or TOP if none)
+    ValidLengthTest,
     ParmLimit
   };
 
@@ -922,6 +884,7 @@ public:
     fields[KlassNode]   = TypeInstPtr::NOTNULL;
     fields[InitialTest] = TypeInt::BOOL;
     fields[ALength]     = t;  // length (can be a bad length)
+    fields[ValidLengthTest] = TypeInt::BOOL;
 
     const TypeTuple *domain = TypeTuple::make(ParmLimit, fields);
 
@@ -950,7 +913,7 @@ public:
   virtual bool        guaranteed_safepoint()  { return false; }
 
   // allocations do not modify their arguments
-  virtual bool        may_modify(const TypeOopPtr *t_oop, PhaseTransform *phase) { return false;}
+  virtual bool        may_modify(const TypeOopPtr* t_oop, PhaseValues* phase) { return false;}
 
   // Pattern-match a possible usage of AllocateNode.
   // Return null if no allocation is recognized.
@@ -959,18 +922,18 @@ public:
   // (Note:  This function is defined in file graphKit.cpp, near
   // GraphKit::new_instance/new_array, whose output it recognizes.)
   // The 'ptr' may not have an offset unless the 'offset' argument is given.
-  static AllocateNode* Ideal_allocation(Node* ptr, PhaseTransform* phase);
+  static AllocateNode* Ideal_allocation(Node* ptr, PhaseValues* phase);
 
   // Fancy version which uses AddPNode::Ideal_base_and_offset to strip
   // an offset, which is reported back to the caller.
   // (Note:  AllocateNode::Ideal_allocation is defined in graphKit.cpp.)
-  static AllocateNode* Ideal_allocation(Node* ptr, PhaseTransform* phase,
+  static AllocateNode* Ideal_allocation(Node* ptr, PhaseValues* phase,
                                         intptr_t& offset);
 
   // Dig the klass operand out of a (possible) allocation site.
-  static Node* Ideal_klass(Node* ptr, PhaseTransform* phase) {
+  static Node* Ideal_klass(Node* ptr, PhaseValues* phase) {
     AllocateNode* allo = Ideal_allocation(ptr, phase);
-    return (allo == NULL) ? NULL : allo->in(KlassNode);
+    return (allo == nullptr) ? nullptr : allo->in(KlassNode);
   }
 
   // Conservatively small estimate of offset of first non-header byte.
@@ -991,13 +954,13 @@ public:
   // Return true if allocation doesn't escape thread, its escape state
   // needs be noEscape or ArgEscape. InitializeNode._does_not_escape
   // is true when its allocation's escape state is noEscape or
-  // ArgEscape. In case allocation's InitializeNode is NULL, check
+  // ArgEscape. In case allocation's InitializeNode is null, check
   // AlllocateNode._is_non_escaping flag.
   // AlllocateNode._is_non_escaping is true when its escape state is
   // noEscape.
   bool does_not_escape_thread() {
-    InitializeNode* init = NULL;
-    return _is_non_escaping || (((init = initialization()) != NULL) && init->does_not_escape());
+    InitializeNode* init = nullptr;
+    return _is_non_escaping || (((init = initialization()) != nullptr) && init->does_not_escape());
   }
 
   // If object doesn't escape in <.init> method and there is memory barrier
@@ -1016,18 +979,16 @@ public:
 //
 class AllocateArrayNode : public AllocateNode {
 public:
-  AllocateArrayNode(Compile* C, const TypeFunc *atype, Node *ctrl, Node *mem, Node *abio,
-                    Node* size, Node* klass_node, Node* initial_test,
-                    Node* count_val
-                    )
+  AllocateArrayNode(Compile* C, const TypeFunc* atype, Node* ctrl, Node* mem, Node* abio, Node* size, Node* klass_node,
+                    Node* initial_test, Node* count_val, Node* valid_length_test)
     : AllocateNode(C, atype, ctrl, mem, abio, size, klass_node,
                    initial_test)
   {
     init_class_id(Class_AllocateArray);
     set_req(AllocateNode::ALength,        count_val);
+    set_req(AllocateNode::ValidLengthTest, valid_length_test);
   }
   virtual int Opcode() const;
-  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
 
   // Dig the length operand out of a array allocation site.
   Node* Ideal_length() {
@@ -1036,14 +997,14 @@ public:
 
   // Dig the length operand out of a array allocation site and narrow the
   // type with a CastII, if necesssary
-  Node* make_ideal_length(const TypeOopPtr* ary_type, PhaseTransform *phase, bool can_create = true);
+  Node* make_ideal_length(const TypeOopPtr* ary_type, PhaseValues* phase, bool can_create = true);
 
   // Pattern-match a possible usage of AllocateArrayNode.
   // Return null if no allocation is recognized.
-  static AllocateArrayNode* Ideal_array_allocation(Node* ptr, PhaseTransform* phase) {
+  static AllocateArrayNode* Ideal_array_allocation(Node* ptr, PhaseValues* phase) {
     AllocateNode* allo = Ideal_allocation(ptr, phase);
-    return (allo == NULL || !allo->is_AllocateArray())
-           ? NULL : allo->as_AllocateArray();
+    return (allo == nullptr || !allo->is_AllocateArray())
+           ? nullptr : allo->as_AllocateArray();
   }
 };
 
@@ -1080,11 +1041,11 @@ protected:
 
 public:
   AbstractLockNode(const TypeFunc *tf)
-    : CallNode(tf, NULL, TypeRawPtr::BOTTOM),
+    : CallNode(tf, nullptr, TypeRawPtr::BOTTOM),
       _kind(Regular)
   {
 #ifndef PRODUCT
-    _counter = NULL;
+    _counter = nullptr;
 #endif
   }
   virtual int Opcode() const = 0;
@@ -1103,21 +1064,20 @@ public:
   bool is_nested()      const { return (_kind == Nested); }
 
   const char * kind_as_string() const;
-  void log_lock_optimization(Compile* c, const char * tag, Node* bad_lock = NULL) const;
+  void log_lock_optimization(Compile* c, const char * tag, Node* bad_lock = nullptr) const;
 
   void set_non_esc_obj() { _kind = NonEscObj; set_eliminated_lock_counter(); }
   void set_coarsened()   { _kind = Coarsened; set_eliminated_lock_counter(); }
   void set_nested()      { _kind = Nested; set_eliminated_lock_counter(); }
 
   // locking does not modify its arguments
-  virtual bool may_modify(const TypeOopPtr *t_oop, PhaseTransform *phase){ return false;}
+  virtual bool may_modify(const TypeOopPtr* t_oop, PhaseValues* phase){ return false; }
 
 #ifndef PRODUCT
   void create_lock_counter(JVMState* s);
   NamedCounter* counter() const { return _counter; }
   virtual void dump_spec(outputStream* st) const;
   virtual void dump_compact_spec(outputStream* st) const;
-  virtual void related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_rel, bool compact) const;
 #endif
 };
 
@@ -1178,7 +1138,7 @@ public:
   virtual uint size_of() const; // Size is bigger
   UnlockNode(Compile* C, const TypeFunc *tf) : AbstractLockNode( tf )
 #ifdef ASSERT
-    , _dbg_jvms(NULL)
+    , _dbg_jvms(nullptr)
 #endif
   {
     init_class_id(Class_Unlock);
@@ -1194,7 +1154,7 @@ public:
   }
   JVMState* dbg_jvms() const { return _dbg_jvms; }
 #else
-  JVMState* dbg_jvms() const { return NULL; }
+  JVMState* dbg_jvms() const { return nullptr; }
 #endif
 };
 #endif // SHARE_OPTO_CALLNODE_HPP

@@ -633,8 +633,15 @@ public final class Unsafe {
      * the field locations in a form usable by {@link #getInt(Object,long)}.
      * Therefore, code which will be ported to such JVMs on 64-bit platforms
      * must preserve all bits of static field offsets.
+     *
+     * @deprecated The guarantee that a field will always have the same offset
+     * and base may not be true in a future release. The ability to provide an
+     * offset and object reference to a heap memory accessor will be removed
+     * in a future release. Use {@link java.lang.invoke.VarHandle} instead.
+     *
      * @see #getInt(Object, long)
      */
+    @Deprecated(since="18")
     @ForceInline
     public long objectFieldOffset(Field f) {
         if (f == null) {
@@ -665,8 +672,15 @@ public final class Unsafe {
      * a few bits to encode an offset within a non-array object,
      * However, for consistency with other methods in this class,
      * this method reports its result as a long value.
+     *
+     * @deprecated The guarantee that a field will always have the same offset
+     * and base may not be true in a future release. The ability to provide an
+     * offset and object reference to a heap memory accessor will be removed
+     * in a future release. Use {@link java.lang.invoke.VarHandle} instead.
+     *
      * @see #getInt(Object, long)
      */
+    @Deprecated(since="18")
     @ForceInline
     public long staticFieldOffset(Field f) {
         if (f == null) {
@@ -691,7 +705,13 @@ public final class Unsafe {
      * which is a "cookie", not guaranteed to be a real Object, and it should
      * not be used in any way except as argument to the get and put routines in
      * this class.
+     *
+     * @deprecated The guarantee that a field will always have the same offset
+     * and base may not be true in a future release. The ability to provide an
+     * offset and object reference to a heap memory accessor will be removed
+     * in a future release. Use {@link java.lang.invoke.VarHandle} instead.
      */
+    @Deprecated(since="18")
     @ForceInline
     public Object staticFieldBase(Field f) {
         if (f == null) {

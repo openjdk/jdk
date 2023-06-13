@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "memory/allocation.hpp"
 #include "oops/array.hpp"
 #include "oops/oopHandle.hpp"
+#include "oops/resolvedIndyEntry.hpp"
 #include "runtime/handles.hpp"
 #include "utilities/align.hpp"
 #include "utilities/constantTag.hpp"
@@ -131,7 +132,6 @@ class CallInfo;
 
 class ConstantPoolCacheEntry {
   friend class VMStructs;
-  friend class constantPoolCacheKlass;
   friend class ConstantPool;
   friend class InterpreterRuntime;
 
@@ -146,7 +146,7 @@ class ConstantPoolCacheEntry {
   void set_bytecode_2(Bytecodes::Code code);
   void set_f1(Metadata* f1) {
     Metadata* existing_f1 = _f1; // read once
-    assert(existing_f1 == NULL || existing_f1 == f1, "illegal field change");
+    assert(existing_f1 == nullptr || existing_f1 == f1, "illegal field change");
     _f1 = f1;
   }
   void release_set_f1(Metadata* f1);
@@ -159,7 +159,7 @@ class ConstantPoolCacheEntry {
     assert(is_vfinal(), "flags must be set");
     set_f2((intx)f2);
   }
-  int make_flags(TosState state, int option_bits, int field_index_or_method_params);
+  intx make_flags(TosState state, int option_bits, int field_index_or_method_params);
   void set_flags(intx flags)                     { _flags = flags; }
   void set_field_flags(TosState field_type, int option_bits, int field_index) {
     assert((field_index & field_index_mask) == field_index, "field_index in range");
@@ -227,7 +227,7 @@ class ConstantPoolCacheEntry {
  private:
   void set_direct_or_vtable_call(
     Bytecodes::Code invoke_code,                 // the bytecode used for invoking the method
-    const methodHandle& method,                  // the method/prototype if any (NULL, otherwise)
+    const methodHandle& method,                  // the method/prototype if any (null, otherwise)
     int             vtable_index,                // the vtable index if any, else negative
     bool            sender_is_interface
   );
@@ -257,11 +257,6 @@ class ConstantPoolCacheEntry {
     const CallInfo &call_info                    // Call link information
   );
 
-  void set_dynamic_call(
-    const constantPoolHandle& cpool,             // holding constant pool (required for locking)
-    const CallInfo &call_info                    // Call link information
-  );
-
   // Common code for invokedynamic and MH invocations.
 
   // The "appendix" is an optional call-site-specific parameter which is
@@ -283,17 +278,10 @@ class ConstantPoolCacheEntry {
     const CallInfo &call_info                    // Call link information
   );
 
-  // Return TRUE if resolution failed and this thread got to record the failure
-  // status.  Return FALSE if another thread succeeded or failed in resolving
-  // the method and recorded the success or failure before this thread had a
-  // chance to record its failure.
-  bool save_and_throw_indy_exc(const constantPoolHandle& cpool, int cpool_index,
-                               int index, constantTag tag, TRAPS);
-
   // invokedynamic and invokehandle call sites have an "appendix" item in the
   // resolved references array.
-  Method*      method_if_resolved(const constantPoolHandle& cpool);
-  oop        appendix_if_resolved(const constantPoolHandle& cpool);
+  Method*      method_if_resolved(const constantPoolHandle& cpool) const;
+  oop        appendix_if_resolved(const constantPoolHandle& cpool) const;
 
   void set_parameter_size(int value);
 
@@ -320,8 +308,8 @@ class ConstantPoolCacheEntry {
   bool is_resolved(Bytecodes::Code code) const;
 
   // Accessors
-  int indices() const                            { return _indices; }
-  int indices_ord() const;
+  intx indices() const                           { return _indices; }
+  intx indices_ord() const;
   int constant_pool_index() const                { return (indices() & cp_index_mask); }
   Bytecodes::Code bytecode_1() const;
   Bytecodes::Code bytecode_2() const;
@@ -379,16 +367,13 @@ class ConstantPoolCacheEntry {
 #endif // INCLUDE_JVMTI
 
   // Debugging & Printing
-  void print (outputStream* st, int index) const;
+  void print (outputStream* st, int index, const ConstantPoolCache* cache) const;
   void verify(outputStream* st) const;
 
   static void verify_tos_state_shift() {
     // When shifting flags as a 32-bit int, make sure we don't need an extra mask for tos_state:
     assert((((u4)-1 >> tos_state_shift) & ~tos_state_mask) == 0, "no need for tos_state mask");
   }
-
-  void verify_just_initialized(bool f2_used);
-  void reinitialize(bool f2_used);
 };
 
 
@@ -404,6 +389,11 @@ class ConstantPoolCache: public MetaspaceObj {
   // If you add a new field that points to any metaspace object, you
   // must add this field to ConstantPoolCache::metaspace_pointers_do().
   int             _length;
+
+  // The narrowOop pointer to the archived resolved_references. Set at CDS dump
+  // time when caching java heap object is supported.
+  CDS_JAVA_HEAP_ONLY(int _archived_references_index;) // Gap on LP64
+
   ConstantPool*   _constant_pool;          // the corresponding constant pool
 
   // The following fields need to be modified at runtime, so they cannot be
@@ -412,9 +402,13 @@ class ConstantPoolCache: public MetaspaceObj {
   // object index to original constant pool index
   OopHandle            _resolved_references;
   Array<u2>*           _reference_map;
-  // The narrowOop pointer to the archived resolved_references. Set at CDS dump
-  // time when caching java heap object is supported.
-  CDS_JAVA_HEAP_ONLY(int _archived_references_index;)
+
+  // RedefineClasses support
+  uint64_t             _gc_epoch;
+
+  Array<ResolvedIndyEntry>* _resolved_indy_entries;
+
+  CDS_ONLY(Array<ConstantPoolCacheEntry>* _initial_entries;)
 
   // Sizing
   debug_only(friend class ClassVerifier;)
@@ -422,38 +416,50 @@ class ConstantPoolCache: public MetaspaceObj {
   // Constructor
   ConstantPoolCache(int length,
                     const intStack& inverse_index_map,
-                    const intStack& invokedynamic_inverse_index_map,
-                    const intStack& invokedynamic_references_map);
+                    const intStack& invokedynamic_references_map,
+                    Array<ResolvedIndyEntry>* indy_info);
 
   // Initialization
   void initialize(const intArray& inverse_index_map,
-                  const intArray& invokedynamic_inverse_index_map,
                   const intArray& invokedynamic_references_map);
  public:
   static ConstantPoolCache* allocate(ClassLoaderData* loader_data,
                                      const intStack& cp_cache_map,
-                                     const intStack& invokedynamic_cp_cache_map,
-                                     const intStack& invokedynamic_references_map, TRAPS);
+                                     const intStack& invokedynamic_references_map,
+                                     const GrowableArray<ResolvedIndyEntry> indy_entries,
+                                     TRAPS);
 
   int length() const                      { return _length; }
   void metaspace_pointers_do(MetaspaceClosure* it);
   MetaspaceObj::Type type() const         { return ConstantPoolCacheType; }
 
-  oop  archived_references() NOT_CDS_JAVA_HEAP_RETURN_(NULL);
-  void set_archived_references(oop o) NOT_CDS_JAVA_HEAP_RETURN;
+  oop  archived_references() NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
+  void set_archived_references(int root_index) NOT_CDS_JAVA_HEAP_RETURN;
   void clear_archived_references() NOT_CDS_JAVA_HEAP_RETURN;
 
-  inline oop resolved_references();
+  inline objArrayOop resolved_references();
   void set_resolved_references(OopHandle s) { _resolved_references = s; }
   Array<u2>* reference_map() const        { return _reference_map; }
   void set_reference_map(Array<u2>* o)    { _reference_map = o; }
 
-  // Assembly code support
-  static int resolved_references_offset_in_bytes() { return offset_of(ConstantPoolCache, _resolved_references); }
+  Array<ResolvedIndyEntry>* resolved_indy_entries()          { return _resolved_indy_entries; }
+  ResolvedIndyEntry* resolved_indy_entry_at(int index) const { return _resolved_indy_entries->adr_at(index); }
+  int resolved_indy_entries_length()                   const { return _resolved_indy_entries->length();      }
+  void print_resolved_indy_entries(outputStream* st)   const {
+    for (int i = 0; i < _resolved_indy_entries->length(); i++) {
+        _resolved_indy_entries->at(i).print_on(st);
+    }
+  }
 
-  // CDS support
+  // Assembly code support
+  static ByteSize resolved_references_offset()   { return byte_offset_of(ConstantPoolCache, _resolved_references); }
+  static ByteSize invokedynamic_entries_offset() { return byte_offset_of(ConstantPoolCache, _resolved_indy_entries); }
+
+#if INCLUDE_CDS
   void remove_unshareable_info();
-  void verify_just_initialized();
+  void save_for_archive(TRAPS);
+#endif
+
  private:
   void walk_entries_for_initialization(bool check_only);
   void set_length(int length)                    { _length = length; }
@@ -468,7 +474,6 @@ class ConstantPoolCache: public MetaspaceObj {
   ConstantPool**        constant_pool_addr()     { return &_constant_pool; }
   ConstantPoolCacheEntry* base() const           { return (ConstantPoolCacheEntry*)((address)this + in_bytes(base_offset())); }
 
-  friend class constantPoolCacheKlass;
   friend class ConstantPoolCacheEntry;
 
  public:
@@ -505,6 +510,15 @@ class ConstantPoolCache: public MetaspaceObj {
   DEBUG_ONLY(bool on_stack() { return false; })
   void deallocate_contents(ClassLoaderData* data);
   bool is_klass() const { return false; }
+  void record_gc_epoch();
+  uint64_t gc_epoch() { return _gc_epoch; }
+
+  // Return TRUE if resolution failed and this thread got to record the failure
+  // status.  Return FALSE if another thread succeeded or failed in resolving
+  // the method and recorded the success or failure before this thread had a
+  // chance to record its failure.
+  bool save_and_throw_indy_exc(const constantPoolHandle& cpool, int cpool_index, int index, constantTag tag, TRAPS);
+  oop set_dynamic_call(const CallInfo &call_info, int index);
 
   // Printing
   void print_on(outputStream* st) const;

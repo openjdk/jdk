@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
  */
 package jdk.incubator.vector;
 
-import java.nio.ByteBuffer;
+import java.lang.foreign.MemorySegment;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.IntUnaryOperator;
@@ -141,24 +141,9 @@ final class ShortMaxVector extends ShortVector {
     @ForceInline
     ShortMaxShuffle iotaShuffle() { return ShortMaxShuffle.IOTA; }
 
-    @ForceInline
-    ShortMaxShuffle iotaShuffle(int start, int step, boolean wrap) {
-      if (wrap) {
-        return (ShortMaxShuffle)VectorSupport.shuffleIota(ETYPE, ShortMaxShuffle.class, VSPECIES, VLENGTH, start, step, 1,
-                (l, lstart, lstep, s) -> s.shuffleFromOp(i -> (VectorIntrinsics.wrapToRange(i*lstep + lstart, l))));
-      } else {
-        return (ShortMaxShuffle)VectorSupport.shuffleIota(ETYPE, ShortMaxShuffle.class, VSPECIES, VLENGTH, start, step, 0,
-                (l, lstart, lstep, s) -> s.shuffleFromOp(i -> (i*lstep + lstart)));
-      }
-    }
-
     @Override
     @ForceInline
-    ShortMaxShuffle shuffleFromBytes(byte[] reorder) { return new ShortMaxShuffle(reorder); }
-
-    @Override
-    @ForceInline
-    ShortMaxShuffle shuffleFromArray(int[] indexes, int i) { return new ShortMaxShuffle(indexes, i); }
+    ShortMaxShuffle shuffleFromArray(int[] indices, int i) { return new ShortMaxShuffle(indices, i); }
 
     @Override
     @ForceInline
@@ -357,9 +342,11 @@ final class ShortMaxVector extends ShortVector {
         return (long) super.reduceLanesTemplate(op, ShortMaxMask.class, (ShortMaxMask) m);  // specialized
     }
 
+    @Override
     @ForceInline
-    public VectorShuffle<Short> toShuffle() {
-        return super.toShuffleTemplate(ShortMaxShuffle.class); // specialize
+    public final
+    <F> VectorShuffle<F> toShuffle(AbstractSpecies<F> dsp) {
+        return super.toShuffleTemplate(dsp);
     }
 
     // Specialized unary testing
@@ -368,6 +355,12 @@ final class ShortMaxVector extends ShortVector {
     @ForceInline
     public final ShortMaxMask test(Test op) {
         return super.testTemplate(ShortMaxMask.class, op);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public final ShortMaxMask test(Test op, VectorMask<Short> m) {
+        return super.testTemplate(ShortMaxMask.class, op, (ShortMaxMask) m);  // specialize
     }
 
     // Specialized comparisons
@@ -466,6 +459,22 @@ final class ShortMaxVector extends ShortVector {
             super.rearrangeTemplate(ShortMaxShuffle.class,
                                     (ShortMaxShuffle) s,
                                     (ShortMaxVector) v);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public ShortMaxVector compress(VectorMask<Short> m) {
+        return (ShortMaxVector)
+            super.compressTemplate(ShortMaxMask.class,
+                                   (ShortMaxMask) m);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public ShortMaxVector expand(VectorMask<Short> m) {
+        return (ShortMaxVector)
+            super.expandTemplate(ShortMaxMask.class,
+                                   (ShortMaxMask) m);  // specialize
     }
 
     @Override
@@ -627,10 +636,11 @@ final class ShortMaxVector extends ShortVector {
 
         @Override
         @ForceInline
-        public ShortMaxMask eq(VectorMask<Short> mask) {
-            Objects.requireNonNull(mask);
-            ShortMaxMask m = (ShortMaxMask)mask;
-            return xor(m.not());
+        /*package-private*/
+        ShortMaxMask indexPartiallyInUpperRange(long offset, long limit) {
+            return (ShortMaxMask) VectorSupport.indexPartiallyInUpperRange(
+                ShortMaxMask.class, short.class, VLENGTH, offset, limit,
+                (o, l) -> (ShortMaxMask) TRUE_MASK.indexPartiallyInRange(o, l));
         }
 
         // Unary operations
@@ -640,6 +650,15 @@ final class ShortMaxVector extends ShortVector {
         public ShortMaxMask not() {
             return xor(maskAll(true));
         }
+
+        @Override
+        @ForceInline
+        public ShortMaxMask compress() {
+            return (ShortMaxMask)VectorSupport.compressExpandOp(VectorSupport.VECTOR_OP_MASK_COMPRESS,
+                ShortMaxVector.class, ShortMaxMask.class, ETYPE, VLENGTH, null, this,
+                (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT, m1.trueCount()));
+        }
+
 
         // Binary operations
 
@@ -663,9 +682,9 @@ final class ShortMaxVector extends ShortVector {
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a | b));
         }
 
+        @Override
         @ForceInline
-        /* package-private */
-        ShortMaxMask xor(VectorMask<Short> mask) {
+        public ShortMaxMask xor(VectorMask<Short> mask) {
             Objects.requireNonNull(mask);
             ShortMaxMask m = (ShortMaxMask)mask;
             return VectorSupport.binaryOp(VECTOR_OP_XOR, ShortMaxMask.class, null, short.class, VLENGTH,
@@ -727,9 +746,9 @@ final class ShortMaxVector extends ShortVector {
         @ForceInline
         /*package-private*/
         static ShortMaxMask maskAll(boolean bit) {
-            return VectorSupport.broadcastCoerced(ShortMaxMask.class, short.class, VLENGTH,
-                                                  (bit ? -1 : 0), null,
-                                                  (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
+            return VectorSupport.fromBitsCoerced(ShortMaxMask.class, short.class, VLENGTH,
+                                                 (bit ? -1 : 0), MODE_BROADCAST, null,
+                                                 (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
         }
         private static final ShortMaxMask  TRUE_MASK = new ShortMaxMask(true);
         private static final ShortMaxMask FALSE_MASK = new ShortMaxMask(false);
@@ -742,23 +761,26 @@ final class ShortMaxVector extends ShortVector {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
         static final Class<Short> ETYPE = short.class; // used by the JVM
 
-        ShortMaxShuffle(byte[] reorder) {
-            super(VLENGTH, reorder);
+        ShortMaxShuffle(short[] indices) {
+            super(indices);
+            assert(VLENGTH == indices.length);
+            assert(indicesInRange(indices));
         }
 
-        public ShortMaxShuffle(int[] reorder) {
-            super(VLENGTH, reorder);
+        ShortMaxShuffle(int[] indices, int i) {
+            this(prepare(indices, i));
         }
 
-        public ShortMaxShuffle(int[] reorder, int i) {
-            super(VLENGTH, reorder, i);
+        ShortMaxShuffle(IntUnaryOperator fn) {
+            this(prepare(fn));
         }
 
-        public ShortMaxShuffle(IntUnaryOperator fn) {
-            super(VLENGTH, fn);
+        short[] indices() {
+            return (short[])getPayload();
         }
 
         @Override
+        @ForceInline
         public ShortSpecies vspecies() {
             return VSPECIES;
         }
@@ -766,40 +788,77 @@ final class ShortMaxVector extends ShortVector {
         static {
             // There must be enough bits in the shuffle lanes to encode
             // VLENGTH valid indexes and VLENGTH exceptional ones.
-            assert(VLENGTH < Byte.MAX_VALUE);
-            assert(Byte.MIN_VALUE <= -VLENGTH);
+            assert(VLENGTH < Short.MAX_VALUE);
+            assert(Short.MIN_VALUE <= -VLENGTH);
         }
         static final ShortMaxShuffle IOTA = new ShortMaxShuffle(IDENTITY);
 
         @Override
         @ForceInline
-        public ShortMaxVector toVector() {
-            return VectorSupport.shuffleToVector(VCLASS, ETYPE, ShortMaxShuffle.class, this, VLENGTH,
-                                                    (s) -> ((ShortMaxVector)(((AbstractShuffle<Short>)(s)).toVectorTemplate())));
+        ShortMaxVector toBitsVector() {
+            return (ShortMaxVector) super.toBitsVectorTemplate();
         }
 
         @Override
         @ForceInline
-        public <F> VectorShuffle<F> cast(VectorSpecies<F> s) {
-            AbstractSpecies<F> species = (AbstractSpecies<F>) s;
-            if (length() != species.laneCount())
-                throw new IllegalArgumentException("VectorShuffle length and species length differ");
-            int[] shuffleArray = toArray();
-            return s.shuffleFromArray(shuffleArray, 0).check(s);
+        ShortVector toBitsVector0() {
+            return ShortMaxVector.VSPECIES.dummyVector().vectorFactory(indices());
         }
 
-        @ForceInline
         @Override
-        public ShortMaxShuffle rearrange(VectorShuffle<Short> shuffle) {
-            ShortMaxShuffle s = (ShortMaxShuffle) shuffle;
-            byte[] reorder1 = reorder();
-            byte[] reorder2 = s.reorder();
-            byte[] r = new byte[reorder1.length];
-            for (int i = 0; i < reorder1.length; i++) {
-                int ssi = reorder2[i];
-                r[i] = reorder1[ssi];  // throws on exceptional index
+        @ForceInline
+        public int laneSource(int i) {
+            return (int)toBitsVector().lane(i);
+        }
+
+        @Override
+        @ForceInline
+        public void intoArray(int[] a, int offset) {
+            VectorSpecies<Integer> species = IntVector.SPECIES_MAX;
+            Vector<Short> v = toBitsVector();
+            v.convertShape(VectorOperators.S2I, species, 0)
+                    .reinterpretAsInts()
+                    .intoArray(a, offset);
+            v.convertShape(VectorOperators.S2I, species, 1)
+                    .reinterpretAsInts()
+                    .intoArray(a, offset + species.length());
+        }
+
+        private static short[] prepare(int[] indices, int offset) {
+            short[] a = new short[VLENGTH];
+            for (int i = 0; i < VLENGTH; i++) {
+                int si = indices[offset + i];
+                si = partiallyWrapIndex(si, VLENGTH);
+                a[i] = (short)si;
             }
-            return new ShortMaxShuffle(r);
+            return a;
+        }
+
+        private static short[] prepare(IntUnaryOperator f) {
+            short[] a = new short[VLENGTH];
+            for (int i = 0; i < VLENGTH; i++) {
+                int si = f.applyAsInt(i);
+                si = partiallyWrapIndex(si, VLENGTH);
+                a[i] = (short)si;
+            }
+            return a;
+        }
+
+        private static boolean indicesInRange(short[] indices) {
+            int length = indices.length;
+            for (short si : indices) {
+                if (si >= (short)length || si < (short)(-length)) {
+                    boolean assertsEnabled = false;
+                    assert(assertsEnabled = true);
+                    if (assertsEnabled) {
+                        String msg = ("index "+si+"out of range ["+length+"] in "+
+                                  java.util.Arrays.toString(indices));
+                        throw new AssertionError(msg);
+                    }
+                    return false;
+                }
+            }
+            return true;
         }
     }
 
@@ -817,8 +876,8 @@ final class ShortMaxVector extends ShortVector {
     @ForceInline
     @Override
     final
-    ShortVector fromArray0(short[] a, int offset, VectorMask<Short> m) {
-        return super.fromArray0Template(ShortMaxMask.class, a, offset, (ShortMaxMask) m);  // specialize
+    ShortVector fromArray0(short[] a, int offset, VectorMask<Short> m, int offsetInRange) {
+        return super.fromArray0Template(ShortMaxMask.class, a, offset, (ShortMaxMask) m, offsetInRange);  // specialize
     }
 
 
@@ -832,37 +891,23 @@ final class ShortMaxVector extends ShortVector {
     @ForceInline
     @Override
     final
-    ShortVector fromCharArray0(char[] a, int offset, VectorMask<Short> m) {
-        return super.fromCharArray0Template(ShortMaxMask.class, a, offset, (ShortMaxMask) m);  // specialize
+    ShortVector fromCharArray0(char[] a, int offset, VectorMask<Short> m, int offsetInRange) {
+        return super.fromCharArray0Template(ShortMaxMask.class, a, offset, (ShortMaxMask) m, offsetInRange);  // specialize
     }
 
 
     @ForceInline
     @Override
     final
-    ShortVector fromByteArray0(byte[] a, int offset) {
-        return super.fromByteArray0Template(a, offset);  // specialize
+    ShortVector fromMemorySegment0(MemorySegment ms, long offset) {
+        return super.fromMemorySegment0Template(ms, offset);  // specialize
     }
 
     @ForceInline
     @Override
     final
-    ShortVector fromByteArray0(byte[] a, int offset, VectorMask<Short> m) {
-        return super.fromByteArray0Template(ShortMaxMask.class, a, offset, (ShortMaxMask) m);  // specialize
-    }
-
-    @ForceInline
-    @Override
-    final
-    ShortVector fromByteBuffer0(ByteBuffer bb, int offset) {
-        return super.fromByteBuffer0Template(bb, offset);  // specialize
-    }
-
-    @ForceInline
-    @Override
-    final
-    ShortVector fromByteBuffer0(ByteBuffer bb, int offset, VectorMask<Short> m) {
-        return super.fromByteBuffer0Template(ShortMaxMask.class, bb, offset, (ShortMaxMask) m);  // specialize
+    ShortVector fromMemorySegment0(MemorySegment ms, long offset, VectorMask<Short> m, int offsetInRange) {
+        return super.fromMemorySegment0Template(ShortMaxMask.class, ms, offset, (ShortMaxMask) m, offsetInRange);  // specialize
     }
 
     @ForceInline
@@ -884,22 +929,8 @@ final class ShortMaxVector extends ShortVector {
     @ForceInline
     @Override
     final
-    void intoByteArray0(byte[] a, int offset) {
-        super.intoByteArray0Template(a, offset);  // specialize
-    }
-
-    @ForceInline
-    @Override
-    final
-    void intoByteArray0(byte[] a, int offset, VectorMask<Short> m) {
-        super.intoByteArray0Template(ShortMaxMask.class, a, offset, (ShortMaxMask) m);  // specialize
-    }
-
-    @ForceInline
-    @Override
-    final
-    void intoByteBuffer0(ByteBuffer bb, int offset, VectorMask<Short> m) {
-        super.intoByteBuffer0Template(ShortMaxMask.class, bb, offset, (ShortMaxMask) m);
+    void intoMemorySegment0(MemorySegment ms, long offset, VectorMask<Short> m) {
+        super.intoMemorySegment0Template(ShortMaxMask.class, ms, offset, (ShortMaxMask) m);
     }
 
     @ForceInline
@@ -914,3 +945,4 @@ final class ShortMaxVector extends ShortVector {
     // ================================================
 
 }
+

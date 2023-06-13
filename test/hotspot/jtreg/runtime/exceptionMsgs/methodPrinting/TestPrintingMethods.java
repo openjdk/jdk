@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -101,7 +101,7 @@ public class TestPrintingMethods {
 // -----------------------------------------------------------------------
 // Test AbstractMethod error shadowing existing implementation.
 //
-// Class hierachy:
+// Class hierarchy:
 //
 //           A           // A class implementing m() and similar.
 //           |

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,14 +32,23 @@
 @implementation MenuAccessibility
 - (NSAccessibilityRole _Nonnull)accessibilityRole
 {
-        return [[[self parent] javaRole] isEqualToString:@"combobox"]
-               ? NSAccessibilityPopUpButtonRole
-               : NSAccessibilityMenuRole;
+        if ([[[self parent] javaRole] isEqualToString:@"combobox"]) {
+            return NSAccessibilityPopUpButtonRole;
+        } else if ([[[self parent] javaRole] isEqualToString:@"menubar"]) {
+            return NSAccessibilityMenuBarItemRole;
+        } else {
+            return NSAccessibilityMenuRole;
+        }
 }
 
 - (BOOL)isAccessibilityElement
 {
     return YES;
+}
+
+- (id _Nullable)accessibilityValue
+{
+    return NULL;
 }
 
 @end

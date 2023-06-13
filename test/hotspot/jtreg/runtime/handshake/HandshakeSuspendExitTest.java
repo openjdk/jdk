@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,11 +30,35 @@
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:GuaranteedSafepointInterval=1 -XX:+HandshakeALot HandshakeSuspendExitTest
  */
 
+import jvmti.JVMTIUtils;
+
 public class HandshakeSuspendExitTest  implements Runnable {
 
     static Thread[] _suspend_threads = new Thread[16];
     static volatile boolean _exit_now = false;
     static java.util.concurrent.Semaphore _sem = new java.util.concurrent.Semaphore(0);
+
+    static void suspendThread(Thread t) {
+        try {
+            JVMTIUtils.suspendThread(t);
+        } catch (JVMTIUtils.JvmtiException e) {
+            if (e.getCode() != JVMTIUtils.JVMTI_ERROR_THREAD_SUSPENDED
+                && e.getCode() != JVMTIUtils.JVMTI_ERROR_THREAD_NOT_ALIVE) {
+                throw e;
+            }
+        }
+    }
+
+    static void resumeThread(Thread t) {
+        try {
+            JVMTIUtils.resumeThread(t);
+        } catch (JVMTIUtils.JvmtiException e) {
+            if (e.getCode() != JVMTIUtils.JVMTI_ERROR_THREAD_NOT_SUSPENDED
+                && e.getCode() != JVMTIUtils.JVMTI_ERROR_THREAD_NOT_ALIVE) {
+                throw e;
+            }
+        }
+    }
 
     @Override
     public void run() {
@@ -43,13 +67,14 @@ public class HandshakeSuspendExitTest  implements Runnable {
             // Leave last 2 threads running.
             for (int i = 0; i < _suspend_threads.length - 2; i++) {
                 if (Thread.currentThread() != _suspend_threads[i]) {
-                    _suspend_threads[i].suspend();
-                    _suspend_threads[i].resume();
+                    suspendThread(_suspend_threads[i]);
+                    resumeThread(_suspend_threads[i]);
                 }
             }
         }
         _sem.release();
     }
+
 
     public static void main(String... args) throws Exception {
         HandshakeSuspendExitTest test = new HandshakeSuspendExitTest();
@@ -74,10 +99,10 @@ public class HandshakeSuspendExitTest  implements Runnable {
 
         // Try to suspend them.
         for (Thread thr : exit_threads) {
-            thr.suspend();
+            suspendThread(thr);
         }
         for (Thread thr : exit_threads) {
-            thr.resume();
+            resumeThread(thr);
         }
 
         // Start exit and join.
@@ -88,7 +113,7 @@ public class HandshakeSuspendExitTest  implements Runnable {
             // each other at exactly the same time so they can see
             // _exit_now and check in via the semaphore.
             for (Thread thr : _suspend_threads) {
-                thr.resume();
+                resumeThread(thr);
             }
             while (_sem.tryAcquire()) {
                 --waiting;

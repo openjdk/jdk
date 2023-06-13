@@ -10,101 +10,131 @@ Debugging transported core dumps
 <p>
 When a core dump is moved to a machine different from the one where it was
 produced ("transported core dump"), debuggers (dbx, gdb, windbg or SA) do not
-always successfully open the dump. This is due to kernel, library (shared
-objects or DLLs) mismatch between core dump machine and debugger machine.
-</p>
-
-<p>
-In most platforms, core dumps do not contain text (a.k.a) Code pages.
-There pages are to be read from executable and shared objects (or DLLs).
-Therefore it is important to have matching executable and shared object
-files in debugger machine. 
-</p>
-
-<h3>Solaris transported core dumps</h3>
-
-<p>
-Debuggers on Solaris (and Linux) use two addtional shared objects
-<b>rtld_db.so</b> and <b>libthread_db.so</b>. rtld_db.so is used to
-read information on shared objects from the core dump. libthread_db.so
-is used to get information on threads from the core dump. rtld_db.so
-evolves along with rtld.so (the runtime linker library) and libthread_db.so
-evolves along with libthread.so (user land multithreading library). 
-Hence, debugger machine should have right version of rtld_db.so and
-libthread_db.so to open the core dump successfully. More details on
-these debugger libraries can be found in 
-<a href="http://docs.sun.com/app/docs/doc/817-1984/">
-Solaris Linkers and Libraries Guide - 817-1984</a>
-</p>
-
-<h3>Solaris SA against transported core dumps</h3>
-
-<p>
-With transported core dumps, you may get "rtld_db failures" or
-"libthread_db failures" or SA may just throw some other error
-(hotspot symbol is missing) when opening the core dump. 
-Enviroment variable <b>LIBSAPROC_DEBUG</b> may be set to any value
-to debug such scenarios. With this env. var set, SA prints many
-messages in standard error which can be useful for further debugging.
-SA on Solaris uses <b>libproc.so</b> library. This library also
-prints debug messages with env. var <b>LIBPROC_DEBUG</b>. But,
-setting LIBSAPROC_DEBUG results in setting LIBPROC_DEBUG as well.
-</p>
-<p>
-The best possible way to debug a transported core dump is to match the
-debugger machine to that of core dump machine. i.e., have same Kernel
-and libthread patch level between the machines. mdb (Solaris modular
-debugger) may be used to find the Kernel patch level of core dump
-machine and debugger machine may be brought to the same level.
-</p>
-<p>
-If the matching machine is "far off" in your network, then
+always successfully open the core dump. This is due to library (shared
+objects or DLLs) mismatches between the core dump machine and the debugger machine.
+For this reason you should first consider using one of the following approaches to
+debugging the core dump rather than transporting it to a different machine:
 <ul>
-<li>consider using rlogin and <a href="clhsdb.html">CLHSDB - SA command line HSDB interface</a> or
-<li>use SA remote debugging and debug the core from core machine remotely.
+  <li>Remote login to the machine that the core dump was produced on,
+    and use <a href="clhsdb.html">CLHSDB - SA command line HSDB interface</a>.
+  <li>Use SA remote debugging support to remotely debug the core directly on the machine
+    it was produced on. This is done by first running <b>jhsdb debugd</b> on the machine with
+    the core dump, and then attaching to it from another machine by using the jhsdb
+    <b>--connect</b> argument. See the <b>jhsdb</b> man page for details.
 </ul>
 </p>
 
 <p>
-But, it may not be feasible to find matching machine to debug. 
-If so, you can copy all application shared objects (and libthread_db.so, if needed) from the core dump 
-machine into your debugger machine's directory, say, /export/applibs. Now, set <b>SA_ALTROOT</b> 
-environment variable to point to /export/applibs directory. Note that /export/applibs should either 
-contain matching 'full path' of libraries. i.e., /usr/lib/libthread_db.so from core 
-machine should be under /export/applibs/use/lib directory and /use/java/jre/lib/sparc/client/libjvm.so 
-from core machine should be under /export/applibs/use/java/jre/lib/sparc/client so on or /export/applibs 
-should just contain libthread_db.so, libjvm.so etc. directly. 
+With transported core dumps, SA may produce an error message or throw
+an exception (such as for a missing hotspot symbol) when opening the core dump.
+Environment variable <b>LIBSAPROC_DEBUG</b> may be set to any value
+to help debug the root casue of these failures. With <b>LIBSAPROC_DEBUG</b> set, SA prints many
+messages in standard error which can be useful for further debugging. Note that
+<b>LIBSAPROC_DEBUG</b> is not supported on Windows.
 </p>
 
 <p>
-Support for transported core dumps is <b>not</b> built into the standard version of libproc.so. You need to
-set <b>LD_LIBRARY_PATH</b> env var to point to the path of a specially built version of libproc.so. 
-Note that this version of libproc.so has a special symbol to support transported core dump debugging. 
-In future, we may get this feature built into standard libproc.so -- if that happens, this step (of 
-setting LD_LIBRARY_PATH) can be skipped.
+On most platforms, core dumps do not contain text (code) pages.
+Their pages are instead read from the executable and shared objects (or DLLs).
+Therefore it is important to have a matching java executable and shared object
+files on the debugger machine. The best way to guarantee this match is to match the
+debugger machine to that of core dump machine. This means having the same
+OS version and libraries, and also having the same version of the JDK. It also means having
+the OS libraries and JDK installed in the same locations on both machines. However, often
+this isn't an option, and instead you need to copy the libraries and java installation from
+the machine where the core dump was produced to the debugger machine, and you need
+to tell SA where these are all located. That is done differently for each
+OS type, and is described in the following sections.
 </p>
 
-<h3>Ignoring libthread_db.so failures</h3>
+<h3>Using transported core dumps on Linux</h3>
 <p>
-If you are okay with missing thread related information, you can set 
-<b>SA_IGNORE_THREADDB</b> environment variable to any value. With this
-set, SA ignores libthread_db failure, but you won't be able to get any
-thread related information. But, you would be able to use SA and get
-other information.
-</p>
-
-<h3>Linux SA against transported core dumps</h3>
-<p>
-On Linux, SA parses core and shared library ELF files. SA <b>does not</b> use
-libthread_db.so or rtld_db.so for core dump debugging (although 
-libthread_db.so is used for live process debugging). But, you
+On Linux, SA parses core and shared library ELF files. But, you
 may still face problems with transported core dumps, because matching shared
 objects may not be in the path(s) specified in core dump file. To
 workaround this, you can define environment variable <b>SA_ALTROOT</b>
-to be the directory where shared libraries are kept. The semantics of
-this env. variable is same as that for Solaris (please refer above).
+to be the directory where shared libraries are kept. In this directory you should
+copy all the needed JDK libraries, and any other user JNI libraries that were used.
+You should also copy any referenced linux
+libraries from the core dump machine, unless they are identical to what are
+installed on the debugger machine.
+</p>
+<p>
+ You can also use <b>SA_ALTROOT</b> to specify a path mapping. For example, if you
+ set <b>SA_ALTROOT=/altroot</b>, then <b>/altroot</b> will be prepended to any path found
+ in the core file, and also prepended to any subdir with the root part stripped off. For example,
+ when looking up <b>/usr/lib/libfoo.so</b>, SA will try to find <b>/altroot/usr/lib/libfoo.so</b>,
+ <b>/altroot/lib/libfoo.so</b>, and <b>/altroot/libfoo.so</b>.
 </p>
 
+<h3>Using transported core dumps on Windows</h3>
+<p>
+ If the debugger machine and core dump machine have identical Windows libraries, then you only
+ need to point SA to the location of the JDK <b>java.exe</b> and libraries. This is done by making
+ sure the <b>bin</b> and <b>bin/server</b> directories are included in the <b>PATH</b>
+ environment variable. Something like the following should work if <b>JAVA_HOME</b>
+ is setup:
+ </p>
+
+<code>
+ set PATH=%JAVA_HOME%\bin;%JAVA_HOME%\bin\server;%PATH%
+</code>
+
+<p>
+You can also include user JNI libraries in <b>PATH</b>.
+If the windows libraries are not identical, then they may also need to be copied
+to the debugger machine and included in <b>PATH</b>.
+</p>
+
+<p>
+By default symbols are also located using <b>PATH</b>. However, there are also Java properties that can be used to specify both the location of the binaries, and also separately the location of symbols. Use <b>sun.jvm.hotspot.debugger.windbg.imagePath</b> for the location of binaries, and use <b>sun.jvm.hotspot.debugger.windbg.symbolPath</b> for the location of symbols. <b>imagePath</b> defaults to <b>PATH</b> if not set, and <b>symbolPath</b> defaults to <b>imagePath</b>. The advantage of using these propeties is that you don't need to change your <b>PATH</b> setting, and they allow for binaries to be located separately from symbols.
+</p>
+
+<p>
+How you set these properties will depend on the SA tool being used. The following example demonstrates how to set one of the properties when launching the clhsdb tool:
+</p>
+
+<code>
+jhsdb -J-Dsun.jvm.hotspot.debugger.windbg.imagePath="%PATH%;D:\SomePath" clhsdb
+</code>
+
+<p>If you are not seeing symbols for Windows libraries, try setting <b>sun.jvm.hotspot.debugger.windbg.symbolPath</b> to include "<b>srv*https://msdl.microsoft.com/download/symbols</b>". Also include <b>PATH</b> so SA will still find your JVM and JNI symbols. For example:
+</p>
+
+<code>
+jhsdb -J-Dsun.jvm.hotspot.debugger.windbg.symbolPath="%PATH%;srv*https://msdl.microsoft.com/download/symbol" clhsdb
+</code>
+
+<h3>Using transported core dumps on macOS</h3>
+<p>
+ SA normally uses the path to the specified java executable to locate the JDK libraries. It will look
+ in the following subdirectories for them (relative to the path to the specified java executable):
+ <b>../lib</b>, <b>../lib/server</b>, <b>../jre/lib</b>, and <b>../jre/lib/server</b>. If not found
+ in any of those locations, it will look in the same subdirectories relative to the <b>JAVA_HOME</b>
+ environment variable, but using <b>JAVA_HOME</b> normally should not be necessary.
+</p>
+
+<p>
+ For locating the user JNI libraries, SA uses <b>DYLD_LIBRARY_PATH</b>. It can contain
+ more than one directory separated by a colon. <b>DYLD_LIBRARY_PATH</b> can also be
+ used for locating the JDK libraries, but it needs to specify the full path to the libraries. SA will
+ not automatically search subdirs such as <b>lib/server</b> as it does for <b>JAVA_HOME</b>.
+</p>
+
+<p>
+ For locating the macOS libraries, SA uses <b>SA_ALTROOT</b> similar to the linux support,
+ except it does not use it to map all the subdirs. It just appends <b>SA_ALTROOT</b> to the
+ full path of each macOS library. So if you specify <b>SA_ALTROOT=/altroot</b>, SA will
+ prepend <b>/altroot</b> to the full path of each macOS library. Note however, due to
+ <a href="https://bugs.openjdk.org/browse/JDK-8249779">JDK-8249779</a> , SA will not
+ even try to open macOS libraries, so at the moment there is no need to try to match up the
+ macOS libraries by pointing to them with <b>SA_ALTROOT</b>.
+</p>
+
+<p>
+ Note: Starting with macOS 12, core files are no longer working with macOS on the x64 platform.
+ See <a href="https://bugs.openjdk.org/browse/JDK-8294316">JDK-8294316</a>.
+</p>
 
 </body>
 </html>

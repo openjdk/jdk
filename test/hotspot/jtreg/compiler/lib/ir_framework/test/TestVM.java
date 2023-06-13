@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@ import compiler.lib.ir_framework.Compiler;
 import compiler.lib.ir_framework.shared.*;
 import jdk.test.lib.Platform;
 import jdk.test.lib.Utils;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -267,7 +267,7 @@ public class TestVM {
         if (PRINT_VALID_IR_RULES) {
             irMatchRulePrinter.emit();
         }
-        TestFormat.reportIfAnyFailures();
+        TestFormat.throwIfAnyFailures();
         declaredTests.clear();
         testMethodMap.clear();
     }
@@ -363,7 +363,9 @@ public class TestVM {
             TestFormat.checkNoThrow(WHITE_BOX.enqueueInitializerForCompilation(c, level.getValue()),
                                     "Failed to enqueue <clinit> of " + c + " for compilation. Did you specify "
                                     + "@ForceCompileClassInitializer without providing a static class initialization? "
-                                    + "Make sure to provide any form of static initialization or remove the annotation.");
+                                    + "Make sure to provide any form of static initialization or remove the annotation. "
+                                    + "For debugging purposes, -DIgnoreCompilerControls=true can be used to temporarly "
+                                    + "ignore @ForceCompileClassInitializer annotations.");
         }
     }
 
@@ -503,7 +505,8 @@ public class TestVM {
                 if (testAnno != null) {
                     addDeclaredTest(m);
                 } else {
-                    TestFormat.checkNoThrow(!m.isAnnotationPresent(IR.class), "Found @IR annotation on non-@Test method " + m);
+                    TestFormat.checkNoThrow(!m.isAnnotationPresent(IR.class) && !m.isAnnotationPresent(IRs.class),
+                                            "Found @IR annotation on non-@Test method " + m);
                     TestFormat.checkNoThrow(!m.isAnnotationPresent(Warmup.class) || getAnnotation(m, Run.class) != null,
                                             "Found @Warmup annotation on non-@Test or non-@Run method " + m);
                 }

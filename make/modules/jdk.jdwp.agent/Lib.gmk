@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ include LibCommon.gmk
 $(eval $(call SetupJdkLibrary, BUILD_LIBDT_SOCKET, \
     NAME := dt_socket, \
     OPTIMIZATION := LOW, \
+    DISABLED_WARNINGS_clang_aix := missing-braces, \
     CFLAGS := $(CFLAGS_JDKLIB) $(LIBDT_SOCKET_CPPFLAGS), \
     EXTRA_HEADER_DIRS := \
         include \
@@ -52,9 +53,11 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJDWP, \
     NAME := jdwp, \
     OPTIMIZATION := LOW, \
     CFLAGS := $(CFLAGS_JDKLIB) -DJDWP_LOGGING, \
-    DISABLED_WARNINGS_gcc := unused-function, \
-    DISABLED_WARNINGS_clang := sometimes-uninitialized format-nonliteral \
-        self-assign, \
+    DISABLED_WARNINGS_gcc_SDE.c := unused-function, \
+    DISABLED_WARNINGS_clang_error_messages.c := format-nonliteral, \
+    DISABLED_WARNINGS_clang_EventRequestImpl.c := self-assign, \
+    DISABLED_WARNINGS_clang_inStream.c := sometimes-uninitialized, \
+    DISABLED_WARNINGS_clang_log_messages.c := format-nonliteral, \
     EXTRA_HEADER_DIRS := \
       include \
       libjdwp/export, \

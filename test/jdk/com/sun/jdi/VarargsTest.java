@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -328,7 +328,7 @@ public class VarargsTest extends TestScaffold {
                  * Since the number of args passed is > than
                  * the number of params, JDI assumes they are var args
                  * and tries to put the array containing the "a" and
-                 * "be" elements into a the first element of an array
+                 * "b" elements into the first element of an array
                  * of Strings.  This fails because you can't store
                  * an array into a String
                  */

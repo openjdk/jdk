@@ -65,9 +65,9 @@
  * com.sun.nio.sctp.NotificationHandler notification handler}.
  *
  * <P> The SCTP protocol is defined by
- * <A HREF="http://tools.ietf.org/html/rfc4960">RFC4960</A>, and the optional
+ * <A HREF="https://tools.ietf.org/html/rfc4960">RFC4960</A>, and the optional
  * extension for <I>Dynamic Address Reconfiguration</I> is defined by
- * <A HREF="http://tools.ietf.org/html/rfc5061">RFC5061</A>.
+ * <A HREF="https://tools.ietf.org/html/rfc5061">RFC5061</A>.
  *
  * @since 1.7
  */

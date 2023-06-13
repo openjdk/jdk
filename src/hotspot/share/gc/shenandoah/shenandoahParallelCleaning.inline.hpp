@@ -30,7 +30,7 @@
 #include "gc/shared/weakProcessor.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/safepoint.hpp"
 
 template<typename IsAlive, typename KeepAlive>

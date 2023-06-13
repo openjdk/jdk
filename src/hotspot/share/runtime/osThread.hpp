@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,12 @@
 #include "runtime/handles.hpp"
 #include "runtime/javaFrameAnchor.hpp"
 #include "runtime/objectMonitor.hpp"
+#include "runtime/suspendedThreadTask.hpp"
 #include "utilities/macros.hpp"
+
+#if defined(LINUX) || defined(AIX) || defined(BSD)
+#include "suspendResume_posix.hpp"
+#endif
 
 class Monitor;
 
@@ -61,8 +66,6 @@ class OSThread: public CHeapObj<mtThread> {
   friend class VMStructs;
   friend class JVMCIVMStructs;
  private:
-  OSThreadStartFunc _start_proc;  // Thread start routine
-  void* _start_parm;              // Thread start routine parameter
   volatile ThreadState _state;    // Thread state *hint*
 
   // Methods
@@ -70,18 +73,9 @@ class OSThread: public CHeapObj<mtThread> {
   void set_state(ThreadState state)                { _state = state; }
   ThreadState get_state()                          { return _state; }
 
-  OSThread(OSThreadStartFunc start_proc, void* start_parm);
+  OSThread();
   ~OSThread();
 
-  // Accessors
-  OSThreadStartFunc start_proc() const              { return _start_proc; }
-  void set_start_proc(OSThreadStartFunc start_proc) { _start_proc = start_proc; }
-  void* start_parm() const                          { return _start_parm; }
-  void set_start_parm(void* start_parm)             { _start_parm = start_parm; }
-  // This is specialized on Windows.
-#ifndef _WINDOWS
-  void set_interrupted(bool z)                      { /* nothing to do */ }
-#endif
   // Printing
   void print_on(outputStream* st) const;
   void print() const;
@@ -90,8 +84,6 @@ class OSThread: public CHeapObj<mtThread> {
 #include OS_HEADER(osThread)
 
  public:
-  static ByteSize thread_id_offset()              { return byte_offset_of(OSThread, _thread_id); }
-  static size_t thread_id_size()                  { return sizeof(thread_id_t); }
 
   thread_id_t thread_id() const                   { return _thread_id; }
 

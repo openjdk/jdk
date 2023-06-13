@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,6 +68,25 @@ public final class KeychainStore extends KeyStoreSpi {
 
         Certificate cert;
         long certRef;  // SecCertificateRef for this key
+
+        // Each KeyStore.TrustedCertificateEntry has 2 attributes:
+        // 1. "trustSettings" -> trustSettings.toString()
+        // 2. "2.16.840.1.113894.746875.1.1" -> trustedKeyUsageValue
+        // The 1st one is mainly for debugging use. The 2nd one is similar
+        // to the attribute with the same key in a PKCS12KeyStore.
+
+        // The SecTrustSettingsCopyTrustSettings() output for this certificate
+        // inside the KeyChain in its original array of CFDictionaryRef objects
+        // structure with values dumped as strings. For each trust, an extra
+        // entry "SecPolicyOid" is added whose value is the OID for this trust.
+        // The extra entries are used to construct trustedKeyUsageValue.
+        List<Map<String, String>> trustSettings;
+
+        // One or more OIDs defined in http://oidref.com/1.2.840.113635.100.1.
+        // It can also be "2.5.29.37.0" for a self-signed certificate with
+        // an empty trust settings. This value is never empty. When there are
+        // multiple OID values, it takes the form of "[1.1.1, 1.1.2]".
+        String trustedKeyUsageValue;
     };
 
     /**
@@ -164,12 +183,12 @@ public final class KeychainStore extends KeyStoreSpi {
 
         Object entry = entries.get(alias.toLowerCase());
 
-        if (entry == null || !(entry instanceof KeyEntry)) {
+        if (!(entry instanceof KeyEntry keyEntry)) {
             return null;
         }
 
         // This call gives us a PKCS12 bag, with the key inside it.
-        byte[] exportedKeyInfo = _getEncodedKeyData(((KeyEntry)entry).keyRef, password);
+        byte[] exportedKeyInfo = _getEncodedKeyData(keyEntry.keyRef, password);
         if (exportedKeyInfo == null) {
             return null;
         }
@@ -254,11 +273,11 @@ public final class KeychainStore extends KeyStoreSpi {
 
         Object entry = entries.get(alias.toLowerCase());
 
-        if (entry != null && entry instanceof KeyEntry) {
-            if (((KeyEntry)entry).chain == null) {
+        if (entry instanceof KeyEntry keyEntry) {
+            if (keyEntry.chain == null) {
                 return null;
             } else {
-                return ((KeyEntry)entry).chain.clone();
+                return keyEntry.chain.clone();
             }
         } else {
             return null;
@@ -298,6 +317,35 @@ public final class KeychainStore extends KeyStoreSpi {
         } else {
             return null;
         }
+    }
+
+    private record LocalAttr(String name, String value)
+            implements KeyStore.Entry.Attribute {
+
+        @Override
+        public String getName() {
+            return name;
+        }
+
+        @Override
+        public String getValue() {
+            return value;
+        }
+    }
+
+    @Override
+    public KeyStore.Entry engineGetEntry(String alias, KeyStore.ProtectionParameter protParam)
+            throws KeyStoreException, NoSuchAlgorithmException, UnrecoverableEntryException {
+        if (engineIsCertificateEntry(alias)) {
+            Object entry = entries.get(alias.toLowerCase());
+            if (entry instanceof TrustedCertEntry tEntry) {
+                return new KeyStore.TrustedCertificateEntry(
+                        tEntry.cert, Set.of(
+                                new LocalAttr(KnownOIDs.ORACLE_TrustedKeyUsage.value(), tEntry.trustedKeyUsageValue),
+                                new LocalAttr("trustSettings", tEntry.trustSettings.toString())));
+            }
+        }
+        return super.engineGetEntry(alias, protParam);
     }
 
     /**
@@ -453,55 +501,12 @@ public final class KeychainStore extends KeyStoreSpi {
     }
 
     /**
-     * Assigns the given certificate to the given alias.
-     *
-     * <p>If the given alias already exists in this keystore and identifies a
-     * <i>trusted certificate entry</i>, the certificate associated with it is
-     * overridden by the given certificate.
-     *
-     * @param alias the alias name
-     * @param cert the certificate
-     *
-     * @exception KeyStoreException if the given alias already exists and does
-     * not identify a <i>trusted certificate entry</i>, or this operation
-     * fails for some other reason.
+     * Adding trusted certificate entry is not supported.
      */
     public void engineSetCertificateEntry(String alias, Certificate cert)
-        throws KeyStoreException
-    {
-        permissionCheck();
-
-        synchronized(entries) {
-
-            Object entry = entries.get(alias.toLowerCase());
-            if ((entry != null) && (entry instanceof KeyEntry)) {
-                throw new KeyStoreException
-                ("Cannot overwrite key entry with certificate");
-            }
-
-            // This will be slow, but necessary.  Enumerate the values and then see if the cert matches the one in the trusted cert entry.
-            // Security framework doesn't support the same certificate twice in a keychain.
-            Collection<Object> allValues = entries.values();
-
-            for (Object value : allValues) {
-                if (value instanceof TrustedCertEntry) {
-                    TrustedCertEntry tce = (TrustedCertEntry)value;
-                    if (tce.cert.equals(cert)) {
-                        throw new KeyStoreException("Keychain does not support mulitple copies of same certificate.");
-                    }
-                }
-            }
-
-            TrustedCertEntry trustedCertEntry = new TrustedCertEntry();
-            trustedCertEntry.cert = cert;
-            trustedCertEntry.date = new Date();
-            String lowerAlias = alias.toLowerCase();
-            if (entries.get(lowerAlias) != null) {
-                deletedEntries.put(lowerAlias, entries.get(lowerAlias));
-            }
-            entries.put(lowerAlias, trustedCertEntry);
-            addedEntries.put(lowerAlias, trustedCertEntry);
-        }
+            throws KeyStoreException {
+        throw new KeyStoreException("Cannot set trusted certificate entry." +
+                " Use the macOS \"security add-trusted-cert\" command instead.");
     }
 
     /**
@@ -564,11 +569,7 @@ public final class KeychainStore extends KeyStoreSpi {
     public boolean engineIsKeyEntry(String alias) {
         permissionCheck();
         Object entry = entries.get(alias.toLowerCase());
-        if ((entry != null) && (entry instanceof KeyEntry)) {
-            return true;
-        } else {
-            return false;
-        }
+        return entry instanceof KeyEntry;
     }
 
     /**
@@ -581,11 +582,7 @@ public final class KeychainStore extends KeyStoreSpi {
     public boolean engineIsCertificateEntry(String alias) {
         permissionCheck();
         Object entry = entries.get(alias.toLowerCase());
-        if ((entry != null) && (entry instanceof TrustedCertEntry)) {
-            return true;
-        } else {
-            return false;
-        }
+        return entry instanceof TrustedCertEntry;
     }
 
     /**
@@ -655,7 +652,6 @@ public final class KeychainStore extends KeyStoreSpi {
                     _releaseKeychainItemRef(((TrustedCertEntry)entry).certRef);
                 }
             } else {
-                Certificate certElem;
                 KeyEntry keyEntry = (KeyEntry)entry;
 
                 if (keyEntry.chain != null) {
@@ -680,10 +676,7 @@ public final class KeychainStore extends KeyStoreSpi {
             String alias = e.nextElement();
             Object entry = addedEntries.get(alias);
             if (entry instanceof TrustedCertEntry) {
-                TrustedCertEntry tce = (TrustedCertEntry)entry;
-                Certificate certElem;
-                certElem = tce.cert;
-                tce.certRef = addCertificateToKeychain(alias, certElem);
+                // Cannot set trusted certificate entry
             } else {
                 KeyEntry keyEntry = (KeyEntry)entry;
 
@@ -778,9 +771,28 @@ public final class KeychainStore extends KeyStoreSpi {
     private native void _scanKeychain();
 
     /**
-     * Callback method from _scanKeychain.  If a trusted certificate is found, this method will be called.
+     * Callback method from _scanKeychain.  If a trusted certificate is found,
+     * this method will be called.
+     *
+     * inputTrust is a list of strings in groups. Each group contains key/value
+     * pairs for one trust setting and ends with a null. Thus the size of the
+     * whole list is (2 * s_1 + 1) + (2 * s_2 + 1) + ... + (2 * s_n + 1),
+     * where s_i is the size of mapping for the i'th trust setting,
+     * and n is the number of trust settings. Ex:
+     *
+     * key1 for trust1
+     * value1 for trust1
+     * ..
+     * null (end of trust1)
+     * key1 for trust2
+     * value1 for trust2
+     * ...
+     * null (end of trust2)
+     * ...
+     * null (end if trust_n)
      */
-    private void createTrustedCertEntry(String alias, long keychainItemRef, long creationDate, byte[] derStream) {
+    private void createTrustedCertEntry(String alias, List<String> inputTrust,
+            long keychainItemRef, long creationDate, byte[] derStream) {
         TrustedCertEntry tce = new TrustedCertEntry();
 
         try {
@@ -791,19 +803,102 @@ public final class KeychainStore extends KeyStoreSpi {
             tce.cert = cert;
             tce.certRef = keychainItemRef;
 
+            // Check whether a certificate with same alias already exists and is the same
+            // If yes, we can return here - the existing entry must have the same
+            // properties and trust settings
+            if (entries.contains(alias.toLowerCase())) {
+                int uniqueVal = 1;
+                String originalAlias = alias;
+                var co = entries.get(alias.toLowerCase());
+                while (co != null) {
+                    if (co instanceof TrustedCertEntry tco) {
+                        if (tco.cert.equals(tce.cert)) {
+                            return;
+                        }
+                    }
+                    alias = originalAlias + " " + uniqueVal++;
+                    co = entries.get(alias.toLowerCase());
+                }
+            }
+
+            tce.trustSettings = new ArrayList<>();
+            Map<String, String> tmpMap = new LinkedHashMap<>();
+            for (int i = 0; i < inputTrust.size(); i++) {
+                if (inputTrust.get(i) == null) {
+                    tce.trustSettings.add(tmpMap);
+                    if (i < inputTrust.size() - 1) {
+                        // Prepare an empty map for the next trust setting.
+                        // Do not just clear(), must be a new object.
+                        // Only create if not at end of list.
+                        tmpMap = new LinkedHashMap<>();
+                    }
+                } else {
+                    tmpMap.put(inputTrust.get(i), inputTrust.get(i+1));
+                    i++;
+                }
+            }
+
+            boolean isSelfSigned;
+            try {
+                cert.verify(cert.getPublicKey());
+                isSelfSigned = true;
+            } catch (Exception e) {
+                isSelfSigned = false;
+            }
+
+            if (tce.trustSettings.isEmpty()) {
+                if (isSelfSigned) {
+                    // If a self-signed certificate has trust settings without specific entries,
+                    // trust it for all purposes
+                    tce.trustedKeyUsageValue = KnownOIDs.anyExtendedKeyUsage.value();
+                } else {
+                    // Otherwise, return immediately. The certificate is not
+                    // added into entries.
+                    return;
+                }
+            } else {
+                List<String> values = new ArrayList<>();
+                for (var oneTrust : tce.trustSettings) {
+                    var result = oneTrust.get("kSecTrustSettingsResult");
+                    // https://developer.apple.com/documentation/security/sectrustsettingsresult?language=objc
+                    // 1 = kSecTrustSettingsResultTrustRoot, 2 = kSecTrustSettingsResultTrustAsRoot,
+                    // 3 = kSecTrustSettingsResultDeny
+                    // If missing, a default value of kSecTrustSettingsResultTrustRoot is assumed
+                    // (see doc for SecTrustSettingsCopyTrustSettings).
+                    // Note that the same SecPolicyOid can appear in multiple trust settings
+                    // for different kSecTrustSettingsAllowedError and/or kSecTrustSettingsPolicyString.
+
+                    // If we find explicit distrust in some record, we ignore the certificate
+                    if ("3".equals(result)) {
+                        return;
+                    }
+
+                    // Trust, if explicitly trusted or result is null and certificate is self signed
+                    if ((result == null && isSelfSigned)
+                            || "1".equals(result) || "2".equals(result)) {
+                        // When no kSecTrustSettingsPolicy, it means everything
+                        String oid = oneTrust.getOrDefault("SecPolicyOid",
+                                KnownOIDs.anyExtendedKeyUsage.value());
+                        if (!values.contains(oid)) {
+                            values.add(oid);
+                        }
+                    }
+                }
+                if (values.isEmpty()) {
+                    return;
+                }
+                if (values.size() == 1) {
+                    tce.trustedKeyUsageValue = values.get(0);
+                } else {
+                    tce.trustedKeyUsageValue = values.toString();
+                }
+            }
+
             // Make a creation date.
             if (creationDate != 0)
                 tce.date = new Date(creationDate);
             else
                 tce.date = new Date();
-
-            int uniqueVal = 1;
-            String originalAlias = alias;
-
-            while (entries.containsKey(alias.toLowerCase())) {
-                alias = originalAlias + " " + uniqueVal;
-                uniqueVal++;
-            }
 
             entries.put(alias.toLowerCase(), tce);
         } catch (Exception e) {
@@ -945,7 +1040,6 @@ public final class KeychainStore extends KeyStoreSpi {
             byte[] safeContentsData;
             ContentInfo safeContents;
             DerInputStream sci;
-            byte[] eAlgId = null;
 
             sci = new DerInputStream(safeContentsArray[i].toByteArray());
             safeContents = new ContentInfo(sci);
@@ -984,7 +1078,6 @@ public final class KeychainStore extends KeyStoreSpi {
             ObjectIdentifier bagId;
             DerInputStream sbi;
             DerValue bagValue;
-            Object bagItem = null;
 
             sbi = safeBags[i].toDerInputStream();
             bagId = sbi.getOID();

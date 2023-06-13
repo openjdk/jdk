@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,12 @@
 #include "accessBackend.inline.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/javaThread.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/copy.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/vmError.hpp"
 
 namespace AccessInternal {
   // VM_Version::supports_cx8() is a surrogate for 'supports atomic long memory ops'.
@@ -203,4 +206,22 @@ namespace AccessInternal {
   void arraycopy_conjoint_atomic<void>(void* src, void* dst, size_t length) {
     Copy::conjoint_memory_atomic(src, dst, length);
   }
+
+#ifdef ASSERT
+  void check_access_thread_state() {
+    if (VMError::is_error_reported() || DebuggingContext::is_enabled()) {
+      return;
+    }
+
+    Thread* thread = Thread::current();
+    if (!thread->is_Java_thread()) {
+      return;
+    }
+
+    JavaThread* java_thread = JavaThread::cast(thread);
+    JavaThreadState state = java_thread->thread_state();
+    assert(state == _thread_in_vm || state == _thread_in_Java || state == _thread_new,
+           "Wrong thread state for accesses: %d", (int)state);
+  }
+#endif
 }

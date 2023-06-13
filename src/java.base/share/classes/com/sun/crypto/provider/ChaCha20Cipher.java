@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,9 @@ import javax.crypto.*;
 import javax.crypto.spec.ChaCha20ParameterSpec;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
+
+import jdk.internal.vm.annotation.ForceInline;
+import jdk.internal.vm.annotation.IntrinsicCandidate;
 import sun.security.util.DerValue;
 
 /**
@@ -58,8 +61,9 @@ abstract class ChaCha20Cipher extends CipherSpi {
     private static final int STATE_CONST_3 = 0x6b206574;
 
     // The keystream block size in bytes and as integers
-    private static final int KEYSTREAM_SIZE = 64;
-    private static final int KS_SIZE_INTS = KEYSTREAM_SIZE / Integer.BYTES;
+    private static final int KS_MAX_LEN = 1024;
+    private static final int KS_BLK_SIZE = 64;
+    private static final int KS_SIZE_INTS = KS_BLK_SIZE / Integer.BYTES;
     private static final int CIPHERBUF_BASE = 1024;
 
     // The initialization state of the cipher
@@ -83,16 +87,21 @@ abstract class ChaCha20Cipher extends CipherSpi {
     // The counter
     private static final long MAX_UINT32 = 0x00000000FFFFFFFFL;
     private long finalCounterValue;
+    private long initCounterValue;
     private long counter;
 
-    // Two arrays, both implemented as 16-element integer arrays:
-    // The base state, created at initialization time, and a working
-    // state which is a clone of the start state, and is then modified
-    // with the counter and the ChaCha20 block function.
+    // The base state is created at initialization time as a 16-int array
+    // and then is copied into either local variables for computations (Java) or
+    // into SIMD registers (intrinsics).
     private final int[] startState = new int[KS_SIZE_INTS];
-    private final byte[] keyStream = new byte[KEYSTREAM_SIZE];
 
-    // The offset into the current keystream
+    // The output keystream array is sized to hold keystream output from the
+    // implChaCha20Block method.  This can range from a single block at a time
+    // (Java software) up to 16 blocks on x86_64 with AVX512 support.
+    private final byte[] keyStream = new byte[KS_MAX_LEN];
+
+    // The keystream buffer limit and offset
+    private int keyStrLimit;
     private int keyStrOffset;
 
     // AEAD-related fields and constants
@@ -159,7 +168,7 @@ abstract class ChaCha20Cipher extends CipherSpi {
      * ciphers, but allow {@code NoPadding}.  See JCE spec.
      *
      * @param padding The padding type.  The only allowed value is
-     *      {@code NoPadding} case insensitive).
+     *      {@code NoPadding} case insensitive.
      *
      * @throws NoSuchPaddingException if a padding scheme besides
      *      {@code NoPadding} is provided.
@@ -328,7 +337,9 @@ abstract class ChaCha20Cipher extends CipherSpi {
                 }
                 ChaCha20ParameterSpec chaParams = (ChaCha20ParameterSpec)params;
                 newNonce = chaParams.getNonce();
-                counter = ((long)chaParams.getCounter()) & 0x00000000FFFFFFFFL;
+                initCounterValue = ((long)chaParams.getCounter()) &
+                        0x00000000FFFFFFFFL;
+                counter = initCounterValue;
                 break;
             case MODE_AEAD:
                 if (!(params instanceof IvParameterSpec)) {
@@ -393,7 +404,7 @@ abstract class ChaCha20Cipher extends CipherSpi {
             return;
         }
 
-        byte[] newNonce = null;
+        byte[] newNonce;
         switch (mode) {
             case MODE_NONE:
                 throw new InvalidAlgorithmParameterException(
@@ -418,12 +429,6 @@ abstract class ChaCha20Cipher extends CipherSpi {
                 break;
             default:
                 throw new RuntimeException("Invalid mode: " + mode);
-        }
-
-        // If after all the above processing we still don't have a nonce value
-        // then supply a random one provided a random source has been given.
-        if (newNonce == null) {
-            newNonce = createRandomNonce(random);
         }
 
         // Continue with initialization
@@ -543,9 +548,12 @@ abstract class ChaCha20Cipher extends CipherSpi {
         }
 
         // Make sure that the provided key and nonce are unique before
-        // assigning them to the object.
+        // assigning them to the object.  Key and nonce uniqueness
+        // protection is for encryption operations only.
         byte[] newKeyBytes = getEncodedKey(key);
-        checkKeyAndNonce(newKeyBytes, newNonce);
+        if (opmode == Cipher.ENCRYPT_MODE) {
+            checkKeyAndNonce(newKeyBytes, newNonce);
+        }
         if (this.keyBytes != null) {
             Arrays.fill(this.keyBytes, (byte)0);
         }
@@ -567,12 +575,14 @@ abstract class ChaCha20Cipher extends CipherSpi {
             }
         }
 
-        // We can also get one block's worth of keystream created
+        // We can also generate the first block (or blocks if intrinsics
+        // are capable of doing multiple blocks at a time) of keystream.
         finalCounterValue = counter + MAX_UINT32;
-        generateKeystream();
+        this.keyStrLimit = chaCha20Block(startState, counter, keyStream);
+        this.keyStrOffset = 0;
+        this.counter += (keyStrLimit / KS_BLK_SIZE);
         direction = opmode;
         aadDone = false;
-        this.keyStrOffset = 0;
         initialized = true;
     }
 
@@ -700,9 +710,8 @@ abstract class ChaCha20Cipher extends CipherSpi {
         } catch (ShortBufferException | KeyException exc) {
             throw new RuntimeException(exc);
         } finally {
-            // Regardless of what happens, the cipher cannot be used for
-            // further processing until it has been freshly initialized.
-            initialized = false;
+            // Reset the cipher's state to post-init values.
+            resetStartState();
         }
         return output;
     }
@@ -738,9 +747,8 @@ abstract class ChaCha20Cipher extends CipherSpi {
         } catch (KeyException ke) {
             throw new RuntimeException(ke);
         } finally {
-            // Regardless of what happens, the cipher cannot be used for
-            // further processing until it has been freshly initialized.
-            initialized = false;
+            // Reset the cipher's state to post-init values.
+            resetStartState();
         }
         return bytesUpdated;
     }
@@ -837,31 +845,34 @@ abstract class ChaCha20Cipher extends CipherSpi {
         }
     }
 
-    /**
-     * Using the current state and counter create the next set of keystream
-     * bytes.  This method will generate the next 512 bits of keystream and
-     * return it in the {@code keyStream} parameter.  Following the
-     * block function the counter will be incremented.
-     */
-    private void generateKeystream() {
-        chaCha20Block(startState, counter, keyStream);
-        counter++;
+    @ForceInline
+    private static int chaCha20Block(int[] initState, long counter,
+            byte[] result) {
+        if (initState.length != KS_SIZE_INTS || result.length != KS_MAX_LEN) {
+            throw new IllegalArgumentException(
+                    "Illegal state or keystream buffer length");
+        }
+
+        // Set the counter value before sending into the underlying
+        // private block method
+        initState[12] = (int)counter;
+        return implChaCha20Block(initState, result);
     }
 
     /**
      * Perform a full 20-round ChaCha20 transform on the initial state.
      *
-     * @param initState the starting state, not including the counter
-     *      value.
-     * @param counter the counter value to apply
+     * @param initState the starting state using the current counter value.
      * @param result  the array that will hold the result of the ChaCha20
      *      block function.
      *
-     * @note it is the caller's responsibility to ensure that the workState
-     * is sized the same as the initState, no checking is performed internally.
+     * @return the number of keystream bytes generated.  In a pure Java method
+     *      this will always be 64 bytes, but intrinsics that make use of
+     *      AVX2 or AVX512 registers may generate multiple blocks of keystream
+     *      in a single call and therefore may be a larger multiple of 64.
      */
-    private static void chaCha20Block(int[] initState, long counter,
-                                      byte[] result) {
+    @IntrinsicCandidate
+    private static int implChaCha20Block(int[] initState, byte[] result) {
         // Create an initial state and clone a working copy
         int ws00 = STATE_CONST_0;
         int ws01 = STATE_CONST_1;
@@ -875,12 +886,12 @@ abstract class ChaCha20Cipher extends CipherSpi {
         int ws09 = initState[9];
         int ws10 = initState[10];
         int ws11 = initState[11];
-        int ws12 = (int)counter;
+        int ws12 = initState[12];
         int ws13 = initState[13];
         int ws14 = initState[14];
         int ws15 = initState[15];
 
-        // Peform 10 iterations of the 8 quarter round set
+        // Perform 10 iterations of the 8 quarter round set
         for (int round = 0; round < 10; round++) {
             ws00 += ws04;
             ws12 = Integer.rotateLeft(ws12 ^ ws00, 16);
@@ -992,11 +1003,12 @@ abstract class ChaCha20Cipher extends CipherSpi {
         asIntLittleEndian.set(result, 36, ws09 + initState[9]);
         asIntLittleEndian.set(result, 40, ws10 + initState[10]);
         asIntLittleEndian.set(result, 44, ws11 + initState[11]);
-        // Add the counter back into workState[12]
-        asIntLittleEndian.set(result, 48, ws12 + (int)counter);
+        asIntLittleEndian.set(result, 48, ws12 + initState[12]);
         asIntLittleEndian.set(result, 52, ws13 + initState[13]);
         asIntLittleEndian.set(result, 56, ws14 + initState[14]);
         asIntLittleEndian.set(result, 60, ws15 + initState[15]);
+
+        return KS_BLK_SIZE;
     }
 
     /**
@@ -1015,12 +1027,21 @@ abstract class ChaCha20Cipher extends CipherSpi {
         int remainingData = inLen;
 
         while (remainingData > 0) {
-            int ksRemain = keyStream.length - keyStrOffset;
+            int ksRemain = keyStrLimit - keyStrOffset;
             if (ksRemain <= 0) {
                 if (counter <= finalCounterValue) {
-                    generateKeystream();
+                    // Intrinsics can do multiple blocks at once.  This means
+                    // it may overrun the counter. In order to prevent key
+                    // stream reuse, we adjust the key stream limit to only the
+                    // key stream length that is calculated from unique
+                    // counter values.
+                    keyStrLimit = chaCha20Block(startState, counter, keyStream);
+                    counter += (keyStrLimit / KS_BLK_SIZE);
+                    if (counter > finalCounterValue) {
+                        keyStrLimit -= (int)(counter - finalCounterValue) * 64;
+                    }
                     keyStrOffset = 0;
-                    ksRemain = keyStream.length;
+                    ksRemain = keyStrLimit;
                 } else {
                     throw new KeyException("Counter exhausted.  " +
                             "Reinitialize with new key and/or nonce");
@@ -1066,9 +1087,10 @@ abstract class ChaCha20Cipher extends CipherSpi {
     private void initAuthenticator() throws InvalidKeyException {
         authenticator = new Poly1305();
 
-        // Derive the Poly1305 key from the starting state
-        byte[] serializedKey = new byte[KEYSTREAM_SIZE];
-        chaCha20Block(startState, 0, serializedKey);
+        // Derive the Poly1305 key from the starting state with the counter
+        // value forced to zero.
+        byte[] serializedKey = new byte[KS_MAX_LEN];
+        chaCha20Block(startState, 0L, serializedKey);
 
         authenticator.engineInit(new SecretKeySpec(serializedKey, 0, 32,
                 authAlgName), null);
@@ -1150,6 +1172,23 @@ abstract class ChaCha20Cipher extends CipherSpi {
     private void authWriteLengths(long aLen, long dLen, byte[] buf) {
         asLongLittleEndian.set(buf, 0, aLen);
         asLongLittleEndian.set(buf, Long.BYTES, dLen);
+    }
+
+    /**
+     * reset the Cipher's state to the values it had after
+     * the initial init() call.
+     *
+     * Note: The cipher's internal "initialized" field is set differently
+     * for ENCRYPT_MODE and DECRYPT_MODE in order to allow DECRYPT_MODE
+     * ciphers to reuse the key/nonce/counter values.  This kind of reuse
+     * is disallowed in ENCRYPT_MODE.
+     */
+    private void resetStartState() {
+        keyStrLimit = 0;
+        keyStrOffset = 0;
+        counter = initCounterValue;
+        aadDone = false;
+        initialized = (direction == Cipher.DECRYPT_MODE);
     }
 
     /**
@@ -1257,7 +1296,8 @@ abstract class ChaCha20Cipher extends CipherSpi {
 
         private EngineAEADEnc() throws InvalidKeyException {
             initAuthenticator();
-            counter = 1;
+            initCounterValue = 1;
+            counter = initCounterValue;
         }
 
         @Override
@@ -1329,7 +1369,8 @@ abstract class ChaCha20Cipher extends CipherSpi {
 
         private EngineAEADDec() throws InvalidKeyException {
             initAuthenticator();
-            counter = 1;
+            initCounterValue = 1;
+            counter = initCounterValue;
             cipherBuf = new ByteArrayOutputStream(CIPHERBUF_BASE);
             tag = new byte[TAG_LENGTH];
         }

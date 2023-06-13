@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,10 +34,10 @@ import java.util.Properties;
  * itself, and therefore has a name and can have a scope. It can also
  * optionally have a public key and associated certificates.
  *
- * <p>An IdentityScope can contain Identity objects of all kinds, including
- * Signers. All types of Identity objects can be retrieved, added, and
- * removed using the same methods. Note that it is possible, and in fact
- * expected, that different types of identity scopes will
+ * <p>An {@code IdentityScope} can contain {@code Identity} objects of all
+ * kinds, including signers. All types of {@code Identity} objects can be
+ * retrieved, added, and removed using the same methods. Note that it is
+ * possible, and in fact expected, that different types of identity scopes will
  * apply different policies for their various operations on the
  * various types of Identities.
  *
@@ -121,7 +121,7 @@ class IdentityScope extends Identity {
      * @param name the scope name.
      * @param scope the scope for the new identity scope.
      *
-     * @throws    KeyManagementException if there is already an identity
+     * @throws    KeyManagementException if there is already an {@code Identity}
      * with the same name in the scope.
      */
     public IdentityScope(String name, IdentityScope scope)
@@ -175,24 +175,26 @@ class IdentityScope extends Identity {
     public abstract int size();
 
     /**
-     * Returns the identity in this scope with the specified name (if any).
+     * Returns the {@code Identity} in this scope with the specified
+     * name (if any).
      *
-     * @param name the name of the identity to be retrieved.
+     * @param name the name of the {@code Identity} to be retrieved.
      *
-     * @return the identity named {@code name}, or null if there are
-     * no identities named {@code name} in this scope.
+     * @return the {@code Identity} named {@code name}, or {@code null}
+     * if there are no identities named {@code name} in this scope.
      */
     public abstract Identity getIdentity(String name);
 
     /**
-     * Retrieves the identity whose name is the same as that of the
-     * specified principal. (Note: Identity implements Principal.)
+     * Retrieves the {@code Identity} whose name is the same as that of the
+     * specified principal. (Note: {@code Identity} implements
+     * {@code Principal}.)
      *
-     * @param principal the principal corresponding to the identity
+     * @param principal the principal corresponding to the {@code Identity}
      * to be retrieved.
      *
-     * @return the identity whose name is the same as that of the
-     * principal, or null if there are no identities of the same name
+     * @return the {@code Identity} whose name is the same as that of the
+     * principal, or {@code null} if there are no identities of the same name
      * in this scope.
      */
     public Identity getIdentity(Principal principal) {
@@ -200,19 +202,19 @@ class IdentityScope extends Identity {
     }
 
     /**
-     * Retrieves the identity with the specified public key.
+     * Retrieves the {@code identity} with the specified public key.
      *
      * @param key the public key for the identity to be returned.
      *
-     * @return the identity with the given key, or null if there are
+     * @return the identity with the given key, or {@code null} if there are
      * no identities in this scope with that key.
      */
     public abstract Identity getIdentity(PublicKey key);
 
     /**
-     * Adds an identity to this identity scope.
+     * Adds an {@code Identity} to this identity scope.
      *
-     * @param identity the identity to be added.
+     * @param identity the {@code Identity} to be added.
      *
      * @throws    KeyManagementException if the identity is not
      * valid, a name conflict occurs, another identity has the same
@@ -222,9 +224,9 @@ class IdentityScope extends Identity {
     throws KeyManagementException;
 
     /**
-     * Removes an identity from this identity scope.
+     * Removes an {@code Identity} from this identity scope.
      *
-     * @param identity the identity to be removed.
+     * @param identity the {@code Identity} to be removed.
      *
      * @throws    KeyManagementException if the identity is missing,
      * or another exception occurs.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,10 +65,9 @@ final class ChangeCipherSpec {
             HandshakeContext hc = (HandshakeContext)context;
             SSLKeyDerivation kd = hc.handshakeKeyDerivation;
 
-            if (!(kd instanceof LegacyTrafficKeyDerivation)) {
+            if (!(kd instanceof LegacyTrafficKeyDerivation tkd)) {
                 throw new UnsupportedOperationException("Not supported.");
             }
-            LegacyTrafficKeyDerivation tkd = (LegacyTrafficKeyDerivation)kd;
             CipherSuite ncs = hc.negotiatedCipherSuite;
             Authenticator writeAuthenticator;
             if (ncs.bulkCipher.cipherType == CipherType.AEAD_CIPHER) {
@@ -164,8 +163,7 @@ final class ChangeCipherSpec {
             }
 
             SSLKeyDerivation kd = hc.handshakeKeyDerivation;
-            if (kd instanceof LegacyTrafficKeyDerivation) {
-                LegacyTrafficKeyDerivation tkd = (LegacyTrafficKeyDerivation)kd;
+            if (kd instanceof LegacyTrafficKeyDerivation tkd) {
                 CipherSuite ncs = hc.negotiatedCipherSuite;
                 Authenticator readAuthenticator;
                 if (ncs.bulkCipher.cipherType == CipherType.AEAD_CIPHER) {

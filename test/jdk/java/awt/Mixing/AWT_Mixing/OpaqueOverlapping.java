@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ import test.java.awt.regtesthelpers.Util;
 /**
  * AWT/Swing overlapping test for opaque Swing components.
  * <p>This test verify if AWT components are drawn correctly under opaque components.
- * <p>See <a href="https://bugs.openjdk.java.net/browse/JDK-6776743">JDK-6776743</a> for details
+ * <p>See <a href="https://bugs.openjdk.org/browse/JDK-6776743">JDK-6776743</a> for details
  * <p>See base class for test info.
  */
 /*

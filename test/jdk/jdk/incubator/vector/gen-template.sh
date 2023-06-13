@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -55,17 +55,13 @@ compare_template="Compare"
 compare_masked_template="Compare-Masked"
 compare_broadcast_template="Compare-Broadcast"
 reduction_scalar="Reduction-Scalar-op"
-reduction_scalar_min="Reduction-Scalar-Min-op"
-reduction_scalar_max="Reduction-Scalar-Max-op"
+reduction_scalar_func="Reduction-Scalar-op-func"
 reduction_scalar_masked="Reduction-Scalar-Masked-op"
-reduction_scalar_min_masked="Reduction-Scalar-Masked-Min-op"
-reduction_scalar_max_masked="Reduction-Scalar-Masked-Max-op"
+reduction_scalar_masked_func="Reduction-Scalar-Masked-op-func"
 reduction_op="Reduction-op"
-reduction_op_min="Reduction-Min-op"
-reduction_op_max="Reduction-Max-op"
+reduction_op_func="Reduction-op-func"
 reduction_op_masked="Reduction-Masked-op"
-reduction_op_min_masked="Reduction-Masked-Min-op"
-reduction_op_max_masked="Reduction-Masked-Max-op"
+reduction_op_masked_func="Reduction-Masked-op-func"
 unary_math_template="Unary-op-math"
 binary_math_template="Binary-op-math"
 binary_math_broadcast_template="Binary-Broadcast-op-math"
@@ -74,8 +70,11 @@ bool_reduction_template="BoolReduction-op"
 with_op_template="With-Op"
 shift_template="Shift-op"
 shift_masked_template="Shift-Masked-op"
+shift_const_template="Shift-Const-op"
+shift_masked_const_template="Shift-Masked-Const-op"
 get_template="Get-op"
 rearrange_template="Rearrange"
+compressexpand_template="CompressExpand"
 broadcast_template="Broadcast"
 zero_template="Zero"
 slice_template="Slice-op"
@@ -147,7 +146,7 @@ function replace_variables {
 
   # Guard the test if necessary
   if [ "$guard" != "" ]; then
-    echo -e "#if[${guard}]\n" >> $output
+    echo -e "#if[${guard}]" >> $output
   fi
   if [ "$test" != "" ]; then
     sed -e "$sed_prog" < ${filename}.current >> $output
@@ -168,7 +167,7 @@ function replace_variables {
     fi
   fi
   if [ "$guard" != "" ]; then
-    echo -e "#end[${guard}]\n" >> $output
+    echo -e "#end[${guard}]" >> $output
   fi
 
   rm -f ${filename}.current
@@ -224,6 +223,7 @@ function gen_op_tmpl {
   replace_variables $unit_filename $unit_output "$kernel" "$test" "$op" "$init" "$guard" "$masked" "$op_name" "$kernel_smoke"
 
   local gen_perf_tests=$generate_perf_tests
+  gen_perf_tests=true
   if [[ $template == *"-Broadcast-"* ]] || [[ $template == "Miscellaneous" ]] ||
      [[ $template == *"Compare-Masked"* ]] || [[ $template == *"Compare-Broadcast"* ]]; then
     gen_perf_tests=false
@@ -268,10 +268,16 @@ function gen_binary_alu_bcst_long_op {
   gen_op_tmpl $binary_broadcast_masked_long "$@"
 }
 
-function gen_shift_cst_op {
+function gen_shift_op {
   echo "Generating Shift constant op $1 ($2)..."
   gen_op_tmpl $shift_template "$@"
   gen_op_tmpl $shift_masked_template "$@"
+}
+
+function gen_shift_cst_op {
+  echo "Generating Shift constant op $1 ($2)..."
+  gen_op_tmpl $shift_const_template "$@"
+  gen_op_tmpl $shift_masked_const_template "$@"
 }
 
 function gen_unary_alu_op {
@@ -337,20 +343,12 @@ function gen_reduction_op {
   gen_op_tmpl $reduction_op_masked "$@"
 }
 
-function gen_reduction_op_min {
+function gen_reduction_op_func {
   echo "Generating reduction op $1 ($2)..."
-  gen_op_tmpl $reduction_scalar_min "$@"
-  gen_op_tmpl $reduction_op_min "$@"
-  gen_op_tmpl $reduction_scalar_min_masked "$@"
-  gen_op_tmpl $reduction_op_min_masked "$@"
-}
-
-function gen_reduction_op_max {
-  echo "Generating reduction op $1 ($2)..."
-  gen_op_tmpl $reduction_scalar_max "$@"
-  gen_op_tmpl $reduction_op_max "$@"
-  gen_op_tmpl $reduction_scalar_max_masked "$@"
-  gen_op_tmpl $reduction_op_max_masked "$@"
+  gen_op_tmpl $reduction_scalar_func "$@"
+  gen_op_tmpl $reduction_op_func "$@"
+  gen_op_tmpl $reduction_scalar_masked_func "$@"
+  gen_op_tmpl $reduction_op_masked_func "$@"
 }
 
 function gen_bool_reduction_op {
@@ -414,6 +412,8 @@ gen_binary_alu_op "AND_NOT" "a \& ~b" "BITWISE"
 gen_binary_alu_op "OR+or"    "a | b"   "BITWISE"
 # Missing:        "OR_UNCHECKED"
 gen_binary_alu_op "XOR"   "a ^ b"   "BITWISE"
+gen_binary_alu_op "COMPRESS_BITS" "\$Boxtype\$.compress(a, b)" "intOrLong"
+gen_binary_alu_op "EXPAND_BITS" "\$Boxtype\$.expand(a, b)" "intOrLong"
 # Generate the broadcast versions
 gen_binary_alu_bcst_op "add+withMask" "a + b"
 gen_binary_alu_bcst_op "sub+withMask" "a - b"
@@ -436,19 +436,28 @@ gen_binary_alu_op "ASHR" "(a >> (b \& 0xF))" "short"
 gen_binary_alu_op "LSHR" "(a >>> b)" "intOrLong"
 gen_binary_alu_op "LSHR" "((a \& 0xFF) >>> (b \& 0x7))" "byte"
 gen_binary_alu_op "LSHR" "((a \& 0xFFFF) >>> (b \& 0xF))" "short"
-gen_shift_cst_op  "LSHL" "(a << b)" "intOrLong"
-gen_shift_cst_op  "LSHL" "(a << (b \& 7))" "byte"
-gen_shift_cst_op  "LSHL" "(a << (b \& 15))" "short"
-gen_shift_cst_op  "LSHR" "(a >>> b)" "intOrLong"
-gen_shift_cst_op  "LSHR" "((a \& 0xFF) >>> (b \& 7))" "byte"
-gen_shift_cst_op  "LSHR" "((a \& 0xFFFF) >>> (b \& 15))" "short"
-gen_shift_cst_op  "ASHR" "(a >> b)" "intOrLong"
-gen_shift_cst_op  "ASHR" "(a >> (b \& 7))" "byte"
-gen_shift_cst_op  "ASHR" "(a >> (b \& 15))" "short"
+gen_shift_op  "LSHL" "(a << b)" "intOrLong"
+gen_shift_op  "LSHL" "(a << (b \& 7))" "byte"
+gen_shift_op  "LSHL" "(a << (b \& 15))" "short"
+gen_shift_op  "LSHR" "(a >>> b)" "intOrLong"
+gen_shift_op  "LSHR" "((a \& 0xFF) >>> (b \& 7))" "byte"
+gen_shift_op  "LSHR" "((a \& 0xFFFF) >>> (b \& 15))" "short"
+gen_shift_op  "ASHR" "(a >> b)" "intOrLong"
+gen_shift_op  "ASHR" "(a >> (b \& 7))" "byte"
+gen_shift_op  "ASHR" "(a >> (b \& 15))" "short"
 gen_binary_alu_op "ROR" "ROR_scalar(a,b)" "BITWISE"
 gen_binary_alu_op "ROL" "ROL_scalar(a,b)" "BITWISE"
-gen_shift_cst_op  "ROR" "ROR_scalar(a,b)" "BITWISE"
-gen_shift_cst_op  "ROL" "ROL_scalar(a,b)" "BITWISE"
+gen_shift_op  "ROR" "ROR_scalar(a, b)" "BITWISE"
+gen_shift_op  "ROL" "ROL_scalar(a, b)" "BITWISE"
+
+# Constant Shifts
+gen_shift_cst_op  "LSHR" "(a >>> CONST_SHIFT)" "intOrLong"
+gen_shift_cst_op  "LSHR" "((a \& 0xFF) >>> CONST_SHIFT)" "byte"
+gen_shift_cst_op  "LSHR" "((a \& 0xFFFF) >>> CONST_SHIFT)" "short"
+gen_shift_cst_op  "LSHL" "(a << CONST_SHIFT)" "BITWISE"
+gen_shift_cst_op  "ASHR" "(a >> CONST_SHIFT)" "BITWISE"
+gen_shift_cst_op  "ROR" "ROR_scalar(a, CONST_SHIFT)" "BITWISE"
+gen_shift_cst_op  "ROL" "ROL_scalar(a, CONST_SHIFT)" "BITWISE"
 
 # Masked reductions.
 gen_binary_op_no_masked "MIN+min" "Math.min(a, b)"
@@ -462,9 +471,9 @@ gen_reduction_op "OR" "|" "BITWISE" "0"
 gen_reduction_op "XOR" "^" "BITWISE" "0"
 gen_reduction_op "ADD" "+" "" "0"
 gen_reduction_op "MUL" "*" "" "1"
-gen_reduction_op_min "MIN" "" "" "\$Wideboxtype\$.\$MaxValue\$"
-gen_reduction_op_max "MAX" "" "" "\$Wideboxtype\$.\$MinValue\$"
-#gen_reduction_op "reduce_FIRST_NONZERO" "lanewise_FIRST_NONZERO" "{#if[FP]?Double.doubleToLongBits}(a)=0?a:b" "" "1"
+gen_reduction_op_func "MIN" "(\$type\$) Math.min" "" "\$Wideboxtype\$.\$MaxValue\$"
+gen_reduction_op_func "MAX" "(\$type\$) Math.max" "" "\$Wideboxtype\$.\$MinValue\$"
+gen_reduction_op_func "FIRST_NONZERO" "firstNonZero" "" "(\$type\$) 0"
 
 # Boolean reductions.
 gen_bool_reduction_op "anyTrue" "|" "BITWISE" "false"
@@ -502,6 +511,9 @@ gen_op_tmpl $blend "blend" ""
 
 # Rearrange
 gen_op_tmpl $rearrange_template "rearrange" ""
+
+# Compress/Expand
+gen_op_tmpl $compressexpand_template "compress_expand" ""
 
 # Get
 gen_get_op "lane" ""
@@ -557,6 +569,15 @@ gen_unary_alu_op "ABS+abs" "Math.abs((\$type\$)a)"
 gen_unary_alu_op "NOT+not" "~((\$type\$)a)" "BITWISE"
 gen_unary_alu_op "ZOMO" "(a==0?0:-1)" "BITWISE"
 gen_unary_alu_op "SQRT+sqrt" "Math.sqrt((double)a)" "FP"
+gen_unary_alu_op "BIT_COUNT" "\$Boxtype\$.bitCount(a)" "intOrLong"
+gen_unary_alu_op "BIT_COUNT" "Integer.bitCount((int)a \& 0xFF)" "byte"
+gen_unary_alu_op "BIT_COUNT" "Integer.bitCount((int)a \& 0xFFFF)" "short"
+gen_unary_alu_op "TRAILING_ZEROS_COUNT" "TRAILING_ZEROS_COUNT_scalar(a)" "BITWISE"
+gen_unary_alu_op "LEADING_ZEROS_COUNT" "LEADING_ZEROS_COUNT_scalar(a)" "BITWISE"
+gen_unary_alu_op "REVERSE" "REVERSE_scalar(a)" "BITWISE"
+gen_unary_alu_op "REVERSE_BYTES" "\$Boxtype\$.reverseBytes(a)" "intOrLong"
+gen_unary_alu_op "REVERSE_BYTES" "\$Boxtype\$.reverseBytes(a)" "short"
+gen_unary_alu_op "REVERSE_BYTES" "a" "byte"
 
 # Miscellaneous Smoke Tests
 gen_op_tmpl $miscellaneous_template "MISC" "" ""

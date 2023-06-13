@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,6 @@
 
 #ifndef CPU_PPC_FRAME_PPC_HPP
 #define CPU_PPC_FRAME_PPC_HPP
-
-#include "runtime/synchronizer.hpp"
 
   //  C frame layout on PPC-64.
   //
@@ -64,16 +62,16 @@
   //            ...
   //            spill slot for FR
   //
-  //  ABI_48:
+  //  ABI_MINFRAME:
   //    0       caller's SP
   //    8       space for condition register (CR) for next call
   //    16      space for link register (LR) for next call
-  //    24      reserved
-  //    32      reserved
+  //    24      reserved (ABI_ELFv2 only)
+  //    32      reserved (ABI_ELFv2 only)
   //    40      space for TOC (=R2) register for next call
   //
   //  ABI_REG_ARGS:
-  //    0       [ABI_48]
+  //    0       [ABI_MINFRAME]
   //    48      CARG_1: spill slot for outgoing arg 1. used by next callee.
   //    ...     ...
   //    104     CARG_8: spill slot for outgoing arg 8. used by next callee.
@@ -84,11 +82,15 @@
   // C frame layout
   static const int alignment_in_bytes = 16;
 
-  // ABI_MINFRAME:
-  struct abi_minframe {
+  // Common ABI. On top of all frames, C and Java
+  struct common_abi {
     uint64_t callers_sp;
-    uint64_t cr;                                  //_16
+    uint64_t cr;
     uint64_t lr;
+  };
+
+  // ABI_MINFRAME. Used for native C frames.
+  struct native_abi_minframe : common_abi {
 #if !defined(ABI_ELFv2)
     uint64_t reserved1;                           //_16
     uint64_t reserved2;
@@ -98,11 +100,7 @@
     // aligned to frame::alignment_in_bytes (16)
   };
 
-  enum {
-    abi_minframe_size = sizeof(abi_minframe)
-  };
-
-  struct abi_reg_args : abi_minframe {
+  struct native_abi_reg_args : native_abi_minframe {
     uint64_t carg_1;
     uint64_t carg_2;                              //_16
     uint64_t carg_3;
@@ -115,13 +113,14 @@
   };
 
   enum {
-    abi_reg_args_size = sizeof(abi_reg_args)
+    native_abi_minframe_size = sizeof(native_abi_minframe),
+    native_abi_reg_args_size = sizeof(native_abi_reg_args)
   };
 
   #define _abi0(_component) \
-          (offset_of(frame::abi_reg_args, _component))
+          (offset_of(frame::native_abi_reg_args, _component))
 
-  struct abi_reg_args_spill : abi_reg_args {
+  struct native_abi_reg_args_spill : native_abi_reg_args {
     // additional spill slots
     uint64_t spill_ret;
     uint64_t spill_fret;                          //_16
@@ -129,11 +128,11 @@
   };
 
   enum {
-    abi_reg_args_spill_size = sizeof(abi_reg_args_spill)
+    native_abi_reg_args_spill_size = sizeof(native_abi_reg_args_spill)
   };
 
-  #define _abi_reg_args_spill(_component) \
-          (offset_of(frame::abi_reg_args_spill, _component))
+  #define _native_abi_reg_args_spill(_component) \
+          (offset_of(frame::native_abi_reg_args_spill, _component))
 
   // non-volatile GPRs:
 
@@ -188,6 +187,10 @@
 
   // Frame layout for the Java template interpreter on PPC64.
   //
+  // We differnetiate between TOP and PARENT frames.
+  // TOP frames allow for calling native C code.
+  // A TOP frame is trimmed to a PARENT frame when calling a Java method.
+  //
   // In these figures the stack grows upwards, while memory grows
   // downwards. Square brackets denote regions possibly larger than
   // single 64 bit slots.
@@ -229,20 +232,23 @@
   //            [outgoing arguments]
   //            [ENTRY_FRAME_LOCALS]
 
-  struct parent_ijava_frame_abi : abi_minframe {
+  // ABI for every Java frame, compiled and interpreted
+  struct java_abi : common_abi {
+    uint64_t toc;
   };
 
-  enum {
-    parent_ijava_frame_abi_size = sizeof(parent_ijava_frame_abi)
+  struct parent_ijava_frame_abi : java_abi {
   };
 
 #define _parent_ijava_frame_abi(_component) \
         (offset_of(frame::parent_ijava_frame_abi, _component))
 
-  struct top_ijava_frame_abi : abi_reg_args {
+  struct top_ijava_frame_abi : native_abi_reg_args {
   };
 
   enum {
+    java_abi_size = sizeof(java_abi),
+    parent_ijava_frame_abi_size = sizeof(parent_ijava_frame_abi),
     top_ijava_frame_abi_size = sizeof(top_ijava_frame_abi)
   };
 
@@ -270,8 +276,13 @@
     ijava_state_size = sizeof(ijava_state)
   };
 
+// Byte offset relative to fp
 #define _ijava_state_neg(_component) \
         (int) (-frame::ijava_state_size + offset_of(frame::ijava_state, _component))
+
+// Frame slot index relative to fp
+#define ijava_idx(_component) \
+        (_ijava_state_neg(_component) >> LogBytesPerWord)
 
   // ENTRY_FRAME
 
@@ -315,18 +326,10 @@
   //          [in_preserve] added / removed by prolog / epilog
   //
 
-  // JIT_ABI (TOP and PARENT)
+  // For JIT frames we don't differentiate between TOP and PARENT frames.
+  // Runtime calls go through stubs which push a new frame.
 
-  struct jit_abi {
-    uint64_t callers_sp;
-    uint64_t cr;
-    uint64_t lr;
-    uint64_t toc;
-    // Nothing to add here!
-    // NOT ALIGNED to frame::alignment_in_bytes (16).
-  };
-
-  struct jit_out_preserve : jit_abi {
+  struct jit_out_preserve : java_abi {
     // Nothing to add here!
   };
 
@@ -349,6 +352,13 @@
 
  private:
 
+#ifdef ASSERT
+  enum special_backlink_values : uint64_t {
+    NOT_FULLY_INITIALIZED = 0xBBAADDF9
+  };
+  bool is_fully_initialized()       const { return (uint64_t)_fp != NOT_FULLY_INITIALIZED; }
+#endif // ASSERT
+
   //  STACK:
   //            ...
   //            [THIS_FRAME]             <-- this._sp (stack pointer for this frame)
@@ -358,36 +368,47 @@
 
   // The frame's stack pointer before it has been extended by a c2i adapter;
   // needed by deoptimization
-  intptr_t* _unextended_sp;
+  union {
+    intptr_t* _unextended_sp;
+    int _offset_unextended_sp; // for use in stack-chunk frames
+  };
 
-  // frame pointer for this frame
-  intptr_t* _fp;
+  union {
+    intptr_t* _fp;  // frame pointer
+    int _offset_fp; // relative frame pointer for use in stack-chunk frames
+  };
 
  public:
 
   // Accessors for fields
-  intptr_t* fp() const { return _fp; }
+  intptr_t* fp() const { assert_absolute(); return _fp; }
+  void set_fp(intptr_t* newfp)  { _fp = newfp; }
+  int offset_fp() const         { assert_offset();  return _offset_fp; }
+  void set_offset_fp(int value) { assert_on_heap(); _offset_fp = value; }
+
+  // Mark a frame as not fully initialized. Must not be used for frames in the valid back chain.
+  void mark_not_fully_initialized() const { DEBUG_ONLY(own_abi()->callers_sp = NOT_FULLY_INITIALIZED;)  }
 
   // Accessors for ABIs
-  inline abi_minframe* own_abi()     const { return (abi_minframe*) _sp; }
-  inline abi_minframe* callers_abi() const { return (abi_minframe*) _fp; }
+  inline common_abi* own_abi()     const { return (common_abi*) _sp; }
+  inline common_abi* callers_abi() const { return (common_abi*) _fp; }
 
  private:
 
-  // Find codeblob and set deopt_state.
-  inline void find_codeblob_and_set_pc_and_deopt_state(address pc);
+  // Initialize frame members (_pc and _sp must be given)
+  inline void setup();
 
  public:
 
+  const ImmutableOopMap* get_oop_map() const;
+
   // Constructors
-  inline frame(intptr_t* sp);
-  inline frame(intptr_t* sp, address pc);
-  inline frame(intptr_t* sp, address pc, intptr_t* unextended_sp);
+  inline frame(intptr_t* sp, intptr_t* fp, address pc);
+  inline frame(intptr_t* sp, address pc, intptr_t* unextended_sp = nullptr, intptr_t* fp = nullptr, CodeBlob* cb = nullptr);
+  inline frame(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, address pc, CodeBlob* cb, const ImmutableOopMap* oop_map);
+  inline frame(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, address pc, CodeBlob* cb, const ImmutableOopMap* oop_map, bool on_heap);
 
  private:
-
-  intptr_t* compiled_sender_sp(CodeBlob* cb) const;
-  address*  compiled_sender_pc_addr(CodeBlob* cb) const;
   address*  sender_pc_addr(void) const;
 
  public:
@@ -399,6 +420,9 @@
   inline void interpreter_frame_set_esp(intptr_t* esp);
   inline void interpreter_frame_set_top_frame_sp(intptr_t* top_frame_sp);
   inline void interpreter_frame_set_sender_sp(intptr_t* sender_sp);
+
+  template <typename RegisterMapT>
+  static void update_map_with_saved_link(RegisterMapT* map, intptr_t** link_addr);
 
   // Size of a monitor in bytes.
   static int interpreter_frame_monitor_size_in_bytes();
@@ -413,12 +437,27 @@
 
   enum {
     // normal return address is 1 bundle past PC
-    pc_return_offset = 0
+    pc_return_offset                       = 0,
+    // size, in words, of frame metadata (e.g. pc and link)
+    metadata_words                         = sizeof(java_abi) >> LogBytesPerWord,
+    // size, in words, of metadata at frame bottom, i.e. it is not part of the
+    // caller/callee overlap
+    metadata_words_at_bottom               = 0,
+    // size, in words, of frame metadata at the frame top, i.e. it is located
+    // between a callee frame and its stack arguments, where it is part
+    // of the caller/callee overlap
+    metadata_words_at_top                  = sizeof(java_abi) >> LogBytesPerWord,
+    // size, in words, of frame metadata at the frame top that needs
+    // to be reserved for callee functions in the runtime
+    frame_alignment                        = 16,
+    frame_alignment_in_words               = frame_alignment >> LogBytesPerWord,
+    // size, in words, of maximum shift in frame position due to alignment
+    align_wiggle                           =  1
   };
 
   static jint interpreter_frame_expression_stack_direction() { return -1; }
 
   // returns the sending frame, without applying any barriers
-  frame sender_raw(RegisterMap* map) const;
+  inline frame sender_raw(RegisterMap* map) const;
 
 #endif // CPU_PPC_FRAME_PPC_HPP

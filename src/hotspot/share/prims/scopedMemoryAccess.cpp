@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,18 +23,17 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/vmSymbols.hpp"
 #include "jni.h"
 #include "jvm.h"
-#include "classfile/vmSymbols.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/jniHandles.inline.hpp"
+#include "prims/stackwalk.hpp"
+#include "runtime/deoptimization.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/jniHandles.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/vframe.inline.hpp"
-#include "runtime/deoptimization.hpp"
-#include "prims/stackwalk.hpp"
-
 
 class CloseScopedMemoryFindOopClosure : public OopClosure {
   oop _deopt;
@@ -70,7 +69,6 @@ public:
 
 class CloseScopedMemoryClosure : public HandshakeClosure {
   jobject _deopt;
-  jobject _exception;
 
 public:
   jboolean _found;
@@ -78,31 +76,33 @@ public:
   CloseScopedMemoryClosure(jobject deopt, jobject exception)
     : HandshakeClosure("CloseScopedMemory")
     , _deopt(deopt)
-    , _exception(exception)
     , _found(false) {}
 
   void do_thread(Thread* thread) {
 
-    JavaThread* jt = (JavaThread*)thread;
+    JavaThread* jt = JavaThread::cast(thread);
 
     if (!jt->has_last_Java_frame()) {
       return;
     }
 
     frame last_frame = jt->last_frame();
-    RegisterMap register_map(jt, true);
+    RegisterMap register_map(jt,
+                             RegisterMap::UpdateMap::include,
+                             RegisterMap::ProcessFrames::include,
+                             RegisterMap::WalkContinuation::skip);
 
     if (last_frame.is_safepoint_blob_frame()) {
       last_frame = last_frame.sender(&register_map);
     }
 
     ResourceMark rm;
-    if (_deopt != NULL && last_frame.is_compiled_frame() && last_frame.can_be_deoptimized()) {
+    if (_deopt != nullptr && last_frame.is_compiled_frame() && last_frame.can_be_deoptimized()) {
       CloseScopedMemoryFindOopClosure cl(_deopt);
       CompiledMethod* cm = last_frame.cb()->as_compiled_method();
 
       /* FIXME: this doesn't work if reachability fences are violated by C2
-      last_frame.oops_do(&cl, NULL, &register_map);
+      last_frame.oops_do(&cl, nullptr, &register_map);
       if (cl.found()) {
            //Found the deopt oop in a compiled method; deoptimize.
            Deoptimization::deoptimize(jt, last_frame);
@@ -140,12 +140,11 @@ public:
 };
 
 /*
- * This function issues a global handshake operation with all
- * Java threads. This is useful for implementing asymmetric
- * dekker synchronization schemes, where expensive synchronization
- * in performance sensitive common paths, may be shifted to
- * a less common slow path instead.
- * Top frames containg obj will be deoptimized.
+ * This function performs a thread-local handshake against all threads running at the time
+ * the given session (deopt) was closed. If the handshake for a given thread is processed while
+ * one or more threads is found inside a scoped method (that is, a method inside the ScopedMemoryAccess
+ * class annotated with the '@Scoped' annotation), and whose local variables mention the session being
+ * closed (deopt), this method returns false, signalling that the session cannot be closed safely.
  */
 JVM_ENTRY(jboolean, ScopedMemoryAccess_closeScope(JNIEnv *env, jobject receiver, jobject deopt, jobject exception))
   CloseScopedMemoryClosure cl(deopt, exception);
@@ -155,26 +154,26 @@ JVM_END
 
 /// JVM_RegisterUnsafeMethods
 
-#define PKG "Ljdk/internal/misc/"
+#define PKG_MISC "Ljdk/internal/misc/"
+#define PKG_FOREIGN "Ljdk/internal/foreign/"
 
 #define MEMACCESS "ScopedMemoryAccess"
-#define SCOPE PKG MEMACCESS "$Scope;"
-#define SCOPED_ERR PKG MEMACCESS "$Scope$ScopedAccessError;"
+#define SCOPE PKG_FOREIGN "MemorySessionImpl;"
 
 #define CC (char*)  /*cast a literal from (const char*)*/
 #define FN_PTR(f) CAST_FROM_FN_PTR(void*, &f)
 
 static JNINativeMethod jdk_internal_misc_ScopedMemoryAccess_methods[] = {
-    {CC "closeScope0",   CC "(" SCOPE SCOPED_ERR ")Z",           FN_PTR(ScopedMemoryAccess_closeScope)},
+    {CC "closeScope0",   CC "(" SCOPE ")Z",           FN_PTR(ScopedMemoryAccess_closeScope)},
 };
 
 #undef CC
 #undef FN_PTR
 
-#undef PKG
+#undef PKG_MISC
+#undef PKG_FOREIGN
 #undef MEMACCESS
 #undef SCOPE
-#undef SCOPED_EXC
 
 // This function is exported, used by NativeLookup.
 

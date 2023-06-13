@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,7 @@ class DnDSource extends Button implements Transferable,
      * a Drag gesture has been recognized
      */
     int iProblem = 0;
-    String[] problem = {"unready", "throw exeption", "good"};
+    String[] problem = {"unready", "throw exception", "good"};
     public void dragGestureRecognized(DragGestureEvent dge) {
         System.out.println("starting Drag");
         if( !DragSource.isDragImageSupported() ) {

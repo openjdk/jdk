@@ -62,6 +62,7 @@ import com.sun.tools.javac.tree.JCTree.Tag;
 import com.sun.tools.javac.tree.TreeScanner;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.JCDiagnostic;
+import java.io.InputStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -93,8 +94,11 @@ public class DeduplicationTest {
                         Arrays.asList(
                                 "-d",
                                 ".",
+                                "-g:none",
                                 "-XDdebug.dumpLambdaToMethodDeduplication",
-                                "-XDdebug.dumpLambdaToMethodStats"),
+                                "-XDdebug.dumpLambdaToMethodStats",
+                                "--enable-preview",
+                                "-source", System.getProperty("java.specification.version")),
                         null,
                         fileManager.getJavaFileObjects(file));
         Map<JCLambda, JCLambda> dedupedLambdas = new LinkedHashMap<>();
@@ -132,7 +136,13 @@ public class DeduplicationTest {
         // lambdas.
         Set<String> bootstrapMethodNames = new TreeSet<>();
         for (JavaFileObject output : generated) {
-            ClassFile cf = ClassFile.read(output.openInputStream());
+            ClassFile cf;
+            try (InputStream input = output.openInputStream()) {
+                cf = ClassFile.read(input);
+            }
+            if (cf.getName().equals("com/sun/tools/javac/comp/Deduplication$R")) {
+                continue;
+            }
             BootstrapMethods_attribute bsm =
                     (BootstrapMethods_attribute) cf.getAttribute(Attribute.BootstrapMethods);
             for (BootstrapMethodSpecifier b : bsm.bootstrap_method_specifiers) {

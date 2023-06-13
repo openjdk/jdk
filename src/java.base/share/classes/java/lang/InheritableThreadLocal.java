@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
  */
 
 package java.lang;
-import java.lang.ref.*;
 
 /**
  * This class extends {@code ThreadLocal} to provide inheritance of values
@@ -44,10 +43,12 @@ import java.lang.ref.*;
  * Thread#Thread(ThreadGroup,Runnable,String,long,boolean) thread}, it is
  * possible to <i>opt out</i> of receiving initial values for inheritable
  * thread-local variables.
+ * @param <T> the type of the inheritable thread local's value
  *
  * @author  Josh Bloch and Doug Lea
  * @see     ThreadLocal
  * @since   1.2
+ * @see Thread.Builder#inheritInheritableThreadLocals(boolean)
  */
 
 public class InheritableThreadLocal<T> extends ThreadLocal<T> {
@@ -77,8 +78,9 @@ public class InheritableThreadLocal<T> extends ThreadLocal<T> {
      *
      * @param t the current thread
      */
+    @Override
     ThreadLocalMap getMap(Thread t) {
-       return t.inheritableThreadLocals;
+        return t.inheritableThreadLocals;
     }
 
     /**
@@ -87,6 +89,7 @@ public class InheritableThreadLocal<T> extends ThreadLocal<T> {
      * @param t the current thread
      * @param firstValue value for the initial entry of the table.
      */
+    @Override
     void createMap(Thread t, T firstValue) {
         t.inheritableThreadLocals = new ThreadLocalMap(this, firstValue);
     }

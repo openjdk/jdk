@@ -32,17 +32,22 @@ import java.net.URISyntaxException;
 import java.security.NoSuchAlgorithmException;
 import java.security.Policy;
 import java.security.URIParameter;
+import java.util.concurrent.TimeUnit;
 
+import org.openjdk.jmh.annotations.Fork;
+import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.annotations.Warmup;
 
 /**
  * Reflection benchmark
- *
- * @author sfriberg
  */
 @State(Scope.Benchmark)
+@Warmup(iterations = 10, time = 1, timeUnit = TimeUnit.SECONDS)
+@Measurement(iterations = 5, time = 2, timeUnit = TimeUnit.SECONDS)
+@Fork(3)
 public class ClazzWithSecurityManager extends Clazz {
 
     @SuppressWarnings("removal")

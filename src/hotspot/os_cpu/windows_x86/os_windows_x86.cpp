@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,16 +23,16 @@
  */
 
 // no precompiled headers
-#include "jvm.h"
 #include "asm/macroAssembler.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "interpreter/interpreter.hpp"
+#include "jvm.h"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "nativeInst_x86.hpp"
-#include "os_share_windows.hpp"
+#include "os_windows.hpp"
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
 #include "runtime/arguments.hpp"
@@ -40,11 +40,12 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
+#include "runtime/os.inline.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/timer.hpp"
 #include "symbolengine.hpp"
 #include "unwind_windows_x86.hpp"
@@ -76,7 +77,7 @@ void os::os_exception_wrapper(java_call_t f, JavaValue* value, const methodHandl
 #ifndef AMD64
     // We store the current thread in this wrapperthread location
     // and determine how far away this address is from the structured
-    // execption pointer that FS:[0] points to.  This get_thread
+    // exception pointer that FS:[0] points to.  This get_thread
     // code can then get the thread pointer via FS.
     //
     // Warning:  This routine must NEVER be inlined since we'd end up with
@@ -94,7 +95,7 @@ void os::os_exception_wrapper(java_call_t f, JavaValue* value, const methodHandl
       os::win32::set_thread_ptr_offset(thread_ptr_offset);
     }
 #ifdef ASSERT
-    // Verify that the offset hasn't changed since we initally captured
+    // Verify that the offset hasn't changed since we initially captured
     // it. This might happen if we accidentally ended up with an
     // inlined version of this routine.
     else {
@@ -166,7 +167,7 @@ typedef struct {
 // Arguments:  low and high are the address of the full reserved
 // codeCache area
 //
-bool os::register_code_area(char *low, char *high) {
+bool os::win32::register_code_area(char *low, char *high) {
 #ifdef AMD64
 
   ResourceMark rm;
@@ -180,7 +181,7 @@ bool os::register_code_area(char *low, char *high) {
   MacroAssembler* masm = new MacroAssembler(&cb);
   pDCD = (pDynamicCodeData) masm->pc();
 
-  masm->jump(ExternalAddress((address)&HandleExceptionFromCodeCache));
+  masm->jump(ExternalAddress((address)&HandleExceptionFromCodeCache), rscratch1);
   masm->flush();
 
   // Create an Unwind Structure specifying no unwind info
@@ -210,7 +211,7 @@ bool os::register_code_area(char *low, char *high) {
   return true;
 }
 
-#ifdef AMD64
+#ifdef HAVE_PLATFORM_PRINT_NATIVE_STACK
 /*
  * Windows/x64 does not use stack frames the way expected by Java:
  * [1] in most cases, there is no frame pointer. All locals are addressed via RSP
@@ -222,11 +223,11 @@ bool os::register_code_area(char *low, char *high) {
  *     while (...) {...  fr = os::get_sender_for_C_frame(&fr); }
  * loop in vmError.cpp. We need to roll our own loop.
  */
-bool os::platform_print_native_stack(outputStream* st, const void* context,
-                                     char *buf, int buf_size)
+bool os::win32::platform_print_native_stack(outputStream* st, const void* context,
+                                            char *buf, int buf_size)
 {
   CONTEXT ctx;
-  if (context != NULL) {
+  if (context != nullptr) {
     memcpy(&ctx, context, sizeof(ctx));
   } else {
     RtlCaptureContext(&ctx);
@@ -250,7 +251,7 @@ bool os::platform_print_native_stack(outputStream* st, const void* context,
     intptr_t* fp = (intptr_t*)stk.AddrFrame.Offset; // NOT necessarily the same as ctx.Rbp!
     address pc = (address)stk.AddrPC.Offset;
 
-    if (pc != NULL) {
+    if (pc != nullptr) {
       if (count == 2 && lastpc == pc) {
         // Skip it -- StackWalk64() may return the same PC
         // (but different SP) on the first try.
@@ -294,7 +295,7 @@ bool os::platform_print_native_stack(outputStream* st, const void* context,
 
   return true;
 }
-#endif // AMD64
+#endif // HAVE_PLATFORM_PRINT_NATIVE_STACK
 
 address os::fetch_frame_from_context(const void* ucVoid,
                     intptr_t** ret_sp, intptr_t** ret_fp) {
@@ -302,14 +303,14 @@ address os::fetch_frame_from_context(const void* ucVoid,
   address  epc;
   CONTEXT* uc = (CONTEXT*)ucVoid;
 
-  if (uc != NULL) {
+  if (uc != nullptr) {
     epc = (address)uc->REG_PC;
     if (ret_sp) *ret_sp = (intptr_t*)uc->REG_SP;
     if (ret_fp) *ret_fp = (intptr_t*)uc->REG_FP;
   } else {
-    epc = NULL;
-    if (ret_sp) *ret_sp = (intptr_t *)NULL;
-    if (ret_fp) *ret_fp = (intptr_t *)NULL;
+    epc = nullptr;
+    if (ret_sp) *ret_sp = (intptr_t *)nullptr;
+    if (ret_fp) *ret_fp = (intptr_t *)nullptr;
   }
 
   return epc;
@@ -319,6 +320,12 @@ frame os::fetch_frame_from_context(const void* ucVoid) {
   intptr_t* sp;
   intptr_t* fp;
   address epc = fetch_frame_from_context(ucVoid, &sp, &fp);
+  if (!is_readable_pointer(epc)) {
+    // Try to recover from calling into bad memory
+    // Assume new frame has not been set up, the same as
+    // compiled frame stack bang
+    return frame(sp + 1, fp, (address)*sp);
+  }
   return frame(sp, fp, epc);
 }
 
@@ -362,7 +369,7 @@ bool os::win32::get_frame_at_stack_banging_point(JavaThread* thread,
     // more complex code with compiled code
     assert(!Interpreter::contains(pc), "Interpreted methods should have been handled above");
     CodeBlob* cb = CodeCache::find_blob(pc);
-    if (cb == NULL || !cb->is_nmethod() || cb->is_frame_complete_at(pc)) {
+    if (cb == nullptr || !cb->is_nmethod() || cb->is_frame_complete_at(pc)) {
       // Not sure where the pc points to, fallback to default
       // stack overflow handling
       return false;
@@ -397,7 +404,7 @@ frame os::current_frame() {
 }
 
 void os::print_context(outputStream *st, const void *context) {
-  if (context == NULL) return;
+  if (context == nullptr) return;
 
   const CONTEXT* uc = (const CONTEXT*)context;
 
@@ -441,62 +448,70 @@ void os::print_context(outputStream *st, const void *context) {
 #endif // AMD64
   st->cr();
   st->cr();
+}
 
-  intptr_t *sp = (intptr_t *)uc->REG_SP;
-  st->print_cr("Top of Stack: (sp=" PTR_FORMAT ")", sp);
-  print_hex_dump(st, (address)sp, (address)(sp + 32), sizeof(intptr_t));
+void os::print_tos_pc(outputStream *st, const void *context) {
+  if (context == nullptr) return;
+
+  const CONTEXT* uc = (const CONTEXT*)context;
+
+  address sp = (address)uc->REG_SP;
+  print_tos(st, sp);
   st->cr();
 
   // Note: it may be unsafe to inspect memory near pc. For example, pc may
   // point to garbage if entry point in an nmethod is corrupted. Leave
   // this at the end, and hope for the best.
-  address pc = (address)uc->REG_PC;
+  address pc = os::fetch_frame_from_context(uc).pc();
   print_instructions(st, pc, sizeof(char));
   st->cr();
 }
 
-
-void os::print_register_info(outputStream *st, const void *context) {
-  if (context == NULL) return;
+void os::print_register_info(outputStream *st, const void *context, int& continuation) {
+  const int register_count = AMD64_ONLY(16) NOT_AMD64(8);
+  int n = continuation;
+  assert(n >= 0 && n <= register_count, "Invalid continuation value");
+  if (context == nullptr || n == register_count) {
+    return;
+  }
 
   const CONTEXT* uc = (const CONTEXT*)context;
-
-  st->print_cr("Register to memory mapping:");
-  st->cr();
-
-  // this is only for the "general purpose" registers
-
+  while (n < register_count) {
+    // Update continuation with next index before printing location
+    continuation = n + 1;
+# define CASE_PRINT_REG(n, str, id) case n: st->print(str); print_location(st, uc->id);
+    switch (n) {
 #ifdef AMD64
-  st->print("RIP="); print_location(st, uc->Rip);
-  st->print("RAX="); print_location(st, uc->Rax);
-  st->print("RBX="); print_location(st, uc->Rbx);
-  st->print("RCX="); print_location(st, uc->Rcx);
-  st->print("RDX="); print_location(st, uc->Rdx);
-  st->print("RSP="); print_location(st, uc->Rsp);
-  st->print("RBP="); print_location(st, uc->Rbp);
-  st->print("RSI="); print_location(st, uc->Rsi);
-  st->print("RDI="); print_location(st, uc->Rdi);
-  st->print("R8 ="); print_location(st, uc->R8);
-  st->print("R9 ="); print_location(st, uc->R9);
-  st->print("R10="); print_location(st, uc->R10);
-  st->print("R11="); print_location(st, uc->R11);
-  st->print("R12="); print_location(st, uc->R12);
-  st->print("R13="); print_location(st, uc->R13);
-  st->print("R14="); print_location(st, uc->R14);
-  st->print("R15="); print_location(st, uc->R15);
+    CASE_PRINT_REG( 0, "RAX=", Rax); break;
+    CASE_PRINT_REG( 1, "RBX=", Rbx); break;
+    CASE_PRINT_REG( 2, "RCX=", Rcx); break;
+    CASE_PRINT_REG( 3, "RDX=", Rdx); break;
+    CASE_PRINT_REG( 4, "RSP=", Rsp); break;
+    CASE_PRINT_REG( 5, "RBP=", Rbp); break;
+    CASE_PRINT_REG( 6, "RSI=", Rsi); break;
+    CASE_PRINT_REG( 7, "RDI=", Rdi); break;
+    CASE_PRINT_REG( 8, "R8 =", R8); break;
+    CASE_PRINT_REG( 9, "R9 =", R9); break;
+    CASE_PRINT_REG(10, "R10=", R10); break;
+    CASE_PRINT_REG(11, "R11=", R11); break;
+    CASE_PRINT_REG(12, "R12=", R12); break;
+    CASE_PRINT_REG(13, "R13=", R13); break;
+    CASE_PRINT_REG(14, "R14=", R14); break;
+    CASE_PRINT_REG(15, "R15=", R15); break;
 #else
-  st->print("EIP="); print_location(st, uc->Eip);
-  st->print("EAX="); print_location(st, uc->Eax);
-  st->print("EBX="); print_location(st, uc->Ebx);
-  st->print("ECX="); print_location(st, uc->Ecx);
-  st->print("EDX="); print_location(st, uc->Edx);
-  st->print("ESP="); print_location(st, uc->Esp);
-  st->print("EBP="); print_location(st, uc->Ebp);
-  st->print("ESI="); print_location(st, uc->Esi);
-  st->print("EDI="); print_location(st, uc->Edi);
-#endif
-
-  st->cr();
+    CASE_PRINT_REG(0, "EAX=", Eax); break;
+    CASE_PRINT_REG(1, "EBX=", Ebx); break;
+    CASE_PRINT_REG(2, "ECX=", Ecx); break;
+    CASE_PRINT_REG(3, "EDX=", Edx); break;
+    CASE_PRINT_REG(4, "ESP=", Esp); break;
+    CASE_PRINT_REG(5, "EBP=", Ebp); break;
+    CASE_PRINT_REG(6, "ESI=", Esi); break;
+    CASE_PRINT_REG(7, "EDI=", Edi); break;
+#endif // AMD64
+    }
+# undef CASE_PRINT_REG
+    ++n;
+  }
 }
 
 extern "C" int SpinPause () {
@@ -521,7 +536,7 @@ juint os::cpu_microcode_revision() {
                "HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0", &key);
   if (status == ERROR_SUCCESS) {
     DWORD size = sizeof(data);
-    status = RegQueryValueEx(key, "Update Revision", NULL, NULL, data, &size);
+    status = RegQueryValueEx(key, "Update Revision", nullptr, nullptr, data, &size);
     if (status == ERROR_SUCCESS) {
       if (size == 4) result = *((juint*)data);
       if (size == 8) result = *((juint*)data + 1); // upper 32-bits
@@ -543,7 +558,7 @@ void os::verify_stack_alignment() {
 #ifdef AMD64
   // The current_stack_pointer() calls generated get_previous_sp stub routine.
   // Only enable the assert after the routine becomes available.
-  if (StubRoutines::code1() != NULL) {
+  if (StubRoutines::initial_stubs_code() != nullptr) {
     assert(((intptr_t)os::current_stack_pointer() & (StackAlignmentInBytes-1)) == 0, "incorrect stack alignment");
   }
 #endif

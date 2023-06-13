@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,9 +64,9 @@ package sun.security.action;
  */
 
 public class GetLongAction implements java.security.PrivilegedAction<Long> {
-    private String theProp;
-    private long defaultVal;
-    private boolean defaultSet = false;
+    private final String theProp;
+    private final long defaultVal;
+    private final boolean defaultSet;
 
     /**
      * Constructor that takes the name of the system property whose
@@ -76,6 +76,8 @@ public class GetLongAction implements java.security.PrivilegedAction<Long> {
      */
     public GetLongAction(String theProp) {
         this.theProp = theProp;
+        this.defaultVal = 0;
+        this.defaultSet = false;
     }
 
     /**

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2017 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,16 +27,18 @@
 #include "asm/macroAssembler.inline.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/thread.inline.hpp"
 
 // Implementation of the platform-specific part of StubRoutines - for
 // a description of how to extend it, see the stubRoutines.hpp file.
 
-address StubRoutines::zarch::_partial_subtype_check = NULL;
+address StubRoutines::zarch::_partial_subtype_check = nullptr;
 
 // Comapct string intrinsics: Translate table for string inflate intrinsic. Used by trot instruction.
-address StubRoutines::zarch::_trot_table_addr = NULL;
+address StubRoutines::zarch::_trot_table_addr = nullptr;
+
+address StubRoutines::zarch::_nmethod_entry_barrier = nullptr;
 
 int StubRoutines::zarch::_atomic_memory_operation_lock = StubRoutines::zarch::unlocked;
 
@@ -46,15 +48,14 @@ void StubRoutines::zarch::generate_load_absolute_address(MacroAssembler* masm, R
   __ load_absolute_address(table, table_addr);
 
 #ifdef ASSERT
-  assert(table_addr != NULL, "CRC lookup table address must be initialized by now");
+  assert(table_addr != nullptr, "CRC lookup table address must be initialized by now");
   assert(*((uint32_t*)(table_addr+4)) == (uint32_t)table_contents, "Bad CRC lookup table: 0x%8.8x, expected 0x%8.8x", *((uint32_t*)(table_addr+4)), (uint32_t)table_contents);
   {
     Label L;
     __ load_const_optimized(Z_R0, table_addr);
     __ z_cgr(table, Z_R0);  // safety net
     __ z_bre(L);
-    __ z_illtrap();
-    __ asm_assert_eq("crc_table: external word relocation required for load_absolute_address", 0x33);
+    __ stop("crc_table: external word relocation required for load_absolute_address", 0x33);
     __ bind(L);
   }
   {
@@ -63,8 +64,7 @@ void StubRoutines::zarch::generate_load_absolute_address(MacroAssembler* masm, R
     __ z_cl(Z_R0, Address(table, 4));  // safety net
     __ z_bre(L);
     __ z_l(Z_R0, Address(table, 4));   // Load data from memory, we know the constant we compared against.
-    __ z_illtrap();
-    __ asm_assert_eq("crc_table: address or contents seems to be messed up", 0x22);
+    __ stop("crc_table: address or contents seems to be messed up", 0x22);
     __ bind(L);
   }
 #endif
@@ -88,7 +88,7 @@ void StubRoutines::zarch::generate_load_trot_table_addr(MacroAssembler* masm, Re
   __ relocate(rspec);
   __ load_absolute_address(table, _trot_table_addr);
 #ifdef ASSERT
-    assert(_trot_table_addr != NULL, "Translate table address must be initialized by now");
+    assert(_trot_table_addr != nullptr, "Translate table address must be initialized by now");
     assert((p2i(_trot_table_addr) & (TROT_ALIGNMENT-1)) == 0, "Translate table alignment error");
     for (int i = 0; i < 256; i++) {
       assert(i == *((jshort*)(_trot_table_addr+2*i)), "trot_table[%d] = %d", i, *((jshort*)(_trot_table_addr+2*i)));
@@ -98,8 +98,7 @@ void StubRoutines::zarch::generate_load_trot_table_addr(MacroAssembler* masm, Re
       __ load_const_optimized(Z_R0, StubRoutines::zarch::_trot_table_addr);
       __ z_cgr(table, Z_R0);  // safety net
       __ z_bre(L);
-      __ z_illtrap();
-      __ asm_assert_eq("crc_table: external word relocation does not work for load_absolute_address", 0x33);
+      __ stop("crc_table: external word relocation does not work for load_absolute_address", 0x33);
       __ bind(L);
     }
     {
@@ -108,8 +107,7 @@ void StubRoutines::zarch::generate_load_trot_table_addr(MacroAssembler* masm, Re
       __ z_clg(Z_R0, Address(table, 8));  // safety net
       __ z_bre(L);
       __ z_lg(Z_R0, Address(table, 8));   // Load data from memory, we know the constant we compared against.
-      __ z_illtrap();
-      __ asm_assert_eq("trot_table: address or contents seems to be messed up", 0x22);
+      __ stop("trot_table: address or contents seems to be messed up", 0x22);
       __ bind(L);
     }
 #endif

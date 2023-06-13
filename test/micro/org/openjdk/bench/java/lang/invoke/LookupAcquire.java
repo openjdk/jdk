@@ -25,11 +25,14 @@ package org.openjdk.bench.java.lang.invoke;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.Fork;
+import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.annotations.Warmup;
 
 import java.lang.invoke.MethodHandles;
 import java.util.concurrent.TimeUnit;
@@ -40,32 +43,10 @@ import java.util.concurrent.TimeUnit;
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @State(Scope.Thread)
+@Warmup(iterations = 5, time = 1, timeUnit = TimeUnit.SECONDS)
+@Measurement(iterations = 5, time = 1, timeUnit = TimeUnit.SECONDS)
+@Fork(3)
 public class LookupAcquire {
-
-    /*
-        Implementation notes:
-            - this test assesses acquiring lookup object only
-            - baseline includes returning cached lookup object, i.e. measures infra overheads
-            - additional baseline includes allocating object to understand Lookup instantiation costs
-            - cached instance is static, because that provides (unbeatably) best performance
-     */
-
-    public static MethodHandles.Lookup cached;
-
-    @Setup
-    public void setup() {
-        cached = MethodHandles.lookup();
-    }
-
-    @Benchmark
-    public MethodHandles.Lookup baselineCached() throws Exception {
-        return cached;
-    }
-
-    @Benchmark
-    public MyLookup baselineNew() throws Exception {
-        return new MyLookup(Object.class, 1);
-    }
 
     @Benchmark
     public MethodHandles.Lookup testPublicLookup() throws Exception {
@@ -75,20 +56,5 @@ public class LookupAcquire {
     @Benchmark
     public MethodHandles.Lookup testLookup() throws Exception {
         return MethodHandles.lookup();
-    }
-
-    /**
-     * Dummy Lookup-looking class.
-     * Lookup is final, and all constructors are private.
-     * This class mocks the hotpath.
-     */
-    private static class MyLookup {
-        private final Class<?> klass;
-        private final int mode;
-
-        public MyLookup(Class<?> klass, int i) {
-            this.klass = klass;
-            this.mode = i;
-        }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 #define SHARE_PRIMS_JVMTIEVENTCONTROLLER_HPP
 
 #include "jvmtifiles/jvmti.h"
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 // forward declaration
@@ -44,13 +44,17 @@ class JvmtiEnvBase;
 
 // Extension events start JVMTI_MIN_EVENT_TYPE_VAL-1 and work towards 0.
 typedef enum {
+  EXT_EVENT_VIRTUAL_THREAD_UNMOUNT = JVMTI_MIN_EVENT_TYPE_VAL-3,
+  EXT_EVENT_VIRTUAL_THREAD_MOUNT = JVMTI_MIN_EVENT_TYPE_VAL-2,
   EXT_EVENT_CLASS_UNLOAD = JVMTI_MIN_EVENT_TYPE_VAL-1,
-  EXT_MIN_EVENT_TYPE_VAL = EXT_EVENT_CLASS_UNLOAD,
+  EXT_MIN_EVENT_TYPE_VAL = EXT_EVENT_VIRTUAL_THREAD_UNMOUNT,
   EXT_MAX_EVENT_TYPE_VAL = EXT_EVENT_CLASS_UNLOAD
 } jvmtiExtEvent;
 
 typedef struct {
   jvmtiExtensionEvent ClassUnload;
+  jvmtiExtensionEvent VirtualThreadMount;
+  jvmtiExtensionEvent VirtualThreadUnmount;
 } jvmtiExtEventCallbacks;
 
 
@@ -206,14 +210,14 @@ public:
         && ((int)event_type <= TOTAL_MAX_EVENT_TYPE_VAL);
   }
 
-  // Use (thread == NULL) to enable/disable an event globally.
-  // Use (thread != NULL) to enable/disable an event for a particular thread.
+  // Use (thread == nullptr) to enable/disable an event globally.
+  // Use (thread != nullptr) to enable/disable an event for a particular thread.
   // thread is ignored for events that can only be specified globally
-  static void set_user_enabled(JvmtiEnvBase *env, JavaThread *thread,
+  static void set_user_enabled(JvmtiEnvBase *env, JavaThread *thread, oop thread_oop,
                                jvmtiEvent event_type, bool enabled);
 
   // Setting callbacks changes computed enablement and must be done
-  // at a safepoint otherwise a NULL callback could be attempted
+  // at a safepoint otherwise a null callback could be attempted
   static void set_event_callbacks(JvmtiEnvBase *env,
                                   const jvmtiEventCallbacks* callbacks,
                                   jint size_of_callbacks);
@@ -224,6 +228,7 @@ public:
                                            jint extension_event_index,
                                            jvmtiExtensionEvent callback);
 
+  static void enter_interp_only_mode();
   static void set_frame_pop(JvmtiEnvThreadState *env_thread, JvmtiFramePop fpop);
   static void clear_frame_pop(JvmtiEnvThreadState *env_thread, JvmtiFramePop fpop);
 

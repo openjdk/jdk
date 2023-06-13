@@ -2,7 +2,7 @@
  * @test /nodynamiccopyright/
  * @bug 8206986 8222169 8224031 8240964 8267119 8268670
  * @summary Check expression switch works.
- * @compile/fail/ref=ExpressionSwitch-old.out -source 9 -Xlint:-options -XDrawDiagnostics ExpressionSwitch.java
+ * @compile/fail/ref=ExpressionSwitch-old.out --release 9 -XDrawDiagnostics ExpressionSwitch.java
  * @compile ExpressionSwitch.java
  * @run main ExpressionSwitch
  */

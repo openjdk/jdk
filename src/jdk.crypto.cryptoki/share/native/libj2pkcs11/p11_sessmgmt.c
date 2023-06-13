@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -98,7 +98,7 @@ JNIEXPORT jlong JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1OpenSession
     if (jNotify != NULL) {
         notifyEncapsulation = (NotifyEncapsulation *) malloc(sizeof(NotifyEncapsulation));
         if (notifyEncapsulation == NULL) {
-            throwOutOfMemoryError(env, 0);
+            p11ThrowOutOfMemoryError(env, 0);
             return 0L;
         }
         notifyEncapsulation->jApplicationData = (jApplication != NULL)
@@ -272,6 +272,33 @@ JNIEXPORT jobject JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1GetSessionI
 }
 #endif
 
+#ifdef P11_ENABLE_C_SESSIONCANCEL
+/*
+ * Class:     sun_security_pkcs11_wrapper_PKCS11
+ * Method:    C_SessionCancel
+ * Signature: (JJ)V
+ * Parametermapping:                    *PKCS11*
+ * @param   jlong jSessionHandle        CK_SESSION_HANDLE hSession
+ * @param   jlong jFlags                CK_FLAGS flags
+ */
+JNIEXPORT void JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1SessionCancel
+    (JNIEnv *env, jobject obj, jlong jSessionHandle, jlong jFlags)
+{
+    CK_SESSION_HANDLE ckSessionHandle;
+    CK_RV rv;
+
+    CK_FUNCTION_LIST_3_0_PTR ckpFunctions30 = getFunctionList30(env, obj);
+    if (ckpFunctions30 == NULL) { return; }
+
+    ckSessionHandle = jLongToCKULong(jSessionHandle);
+
+    rv = (*ckpFunctions30->C_SessionCancel)(ckSessionHandle,
+            jLongToCKULong(jFlags));
+
+    ckAssertReturnValueOK(env, rv);
+}
+#endif
+
 #ifdef P11_ENABLE_C_GETOPERATIONSTATE
 /*
  * Class:     sun_security_pkcs11_wrapper_PKCS11
@@ -301,7 +328,7 @@ JNIEXPORT jbyteArray JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1GetOpera
 
     ckpState = (CK_BYTE_PTR) malloc(ckStateLength);
     if (ckpState == NULL) {
-        throwOutOfMemoryError(env, 0);
+        p11ThrowOutOfMemoryError(env, 0);
         return NULL;
     }
 
@@ -351,7 +378,7 @@ JNIEXPORT void JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1SetOperationSt
 
     free(ckpState);
 
-    if (ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) { return; }
+    ckAssertReturnValueOK(env, rv);
 }
 #endif
 
@@ -367,28 +394,83 @@ JNIEXPORT void JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1SetOperationSt
  *                                      CK_ULONG ulPinLen
  */
 JNIEXPORT void JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1Login
-    (JNIEnv *env, jobject obj, jlong jSessionHandle, jlong jUserType, jcharArray jPin)
+    (JNIEnv *env, jobject obj, jlong jSessionHandle, jlong jUserType,
+     jcharArray jPin)
 {
     CK_SESSION_HANDLE ckSessionHandle;
     CK_USER_TYPE ckUserType;
     CK_CHAR_PTR ckpPinArray = NULL_PTR;
     CK_ULONG ckPinLength;
     CK_RV rv;
+    CK_FUNCTION_LIST_PTR ckpFunctions;
 
-    CK_FUNCTION_LIST_PTR ckpFunctions = getFunctionList(env, obj);
-    if (ckpFunctions == NULL) { return; }
+    ckpFunctions = getFunctionList(env, obj);
+
+    if (ckpFunctions == NULL) {
+        return;
+    }
 
     ckSessionHandle = jLongToCKULong(jSessionHandle);
     ckUserType = jLongToCKULong(jUserType);
     jCharArrayToCKCharArray(env, jPin, &ckpPinArray, &ckPinLength);
     if ((*env)->ExceptionCheck(env)) { return; }
 
-    rv = (*ckpFunctions->C_Login)(ckSessionHandle, ckUserType, ckpPinArray, ckPinLength);
-
+    rv = (*ckpFunctions->C_Login)(ckSessionHandle, ckUserType, ckpPinArray,
+            ckPinLength);
     free(ckpPinArray);
 
-    if (ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) { return; }
+    ckAssertReturnValueOK(env, rv);
 }
+#endif
+
+#ifdef P11_ENABLE_C_LOGINUSER
+/*
+ * Class:     sun_security_pkcs11_wrapper_PKCS11
+ * Method:    C_LoginUser
+ * Signature: (JJ[C;Ljava/lang/String;)V
+ * Parametermapping:                    *PKCS11*
+ * @param   jlong jSessionHandle        CK_SESSION_HANDLE hSession
+ * @param   jlong jUserType             CK_USER_TYPE userType
+ * @param   jcharArray jPin             CK_CHAR_PTR pPin
+ *                                      CK_ULONG ulPinLen
+ * @param   jstring jUsername           CK_CHAR_PTR pUsername
+ *                                      CK_ULONG ulUsernameLen
+ */
+JNIEXPORT void JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1LoginUser
+    (JNIEnv *env, jobject obj, jlong jSessionHandle, jlong jUserType,
+     jcharArray jPin, jstring jUsername)
+{
+    CK_SESSION_HANDLE ckSessionHandle;
+    CK_USER_TYPE ckUserType;
+    CK_CHAR_PTR ckpPinArray = NULL_PTR;
+    CK_ULONG ckPinLength;
+    CK_CHAR_PTR ckpUsername = NULL_PTR;
+    CK_ULONG ckUsernameLength;
+    CK_RV rv;
+    CK_FUNCTION_LIST_3_0_PTR ckpFunctions30;
+
+    ckpFunctions30 = getFunctionList30(env, obj);
+
+    ckSessionHandle = jLongToCKULong(jSessionHandle);
+    ckUserType = jLongToCKULong(jUserType);
+    jCharArrayToCKCharArray(env, jPin, &ckpPinArray, &ckPinLength);
+    if ((*env)->ExceptionCheck(env)) { return; }
+    jStringToCKUTF8CharArray(env, jUsername, &ckpUsername,
+            &ckUsernameLength);
+    if ((*env)->ExceptionCheck(env)) { return; }
+
+    if (ckpFunctions30 == NULL) {
+        return;
+    }
+    rv = (*ckpFunctions30->C_LoginUser)(ckSessionHandle, ckUserType,
+            ckpPinArray, ckPinLength, ckpUsername, ckUsernameLength);
+
+    free(ckpPinArray);
+    free(ckpUsername);
+
+    ckAssertReturnValueOK(env, rv);
+}
+
 #endif
 
 #ifdef P11_ENABLE_C_LOGOUT
@@ -411,7 +493,7 @@ JNIEXPORT void JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1Logout
     ckSessionHandle = jLongToCKULong(jSessionHandle);
 
     rv = (*ckpFunctions->C_Logout)(ckSessionHandle);
-    if (ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) { return; }
+    ckAssertReturnValueOK(env, rv);
 }
 #endif
 
@@ -435,7 +517,7 @@ void putNotifyEntry(JNIEnv *env, CK_SESSION_HANDLE hSession, NotifyEncapsulation
 
     newNode = (NotifyListNode *) malloc(sizeof(NotifyListNode));
     if (newNode == NULL) {
-        throwOutOfMemoryError(env, 0);
+        p11ThrowOutOfMemoryError(env, 0);
         return;
     }
     newNode->hSession = hSession;
@@ -543,7 +625,7 @@ NotifyEncapsulation * removeFirstNotifyEntry(JNIEnv *env) {
  * back to a NotifyEncapsulation structure and retrieves the Notify object and
  * the application data from it.
  *
- * @param hSession The session, this callback is comming from.
+ * @param hSession The session, this callback is coming from.
  * @param event The type of event that occurred.
  * @param pApplication The application data as passed in upon OpenSession. In
                        this wrapper we always pass in a NotifyEncapsulation
@@ -558,7 +640,7 @@ CK_RV notifyCallback(
 )
 {
     NotifyEncapsulation *notifyEncapsulation;
-    extern JavaVM *jvm;
+    extern JavaVM *jvm_j2pkcs11;
     JNIEnv *env;
     jint returnValue;
     jlong jSessionHandle;
@@ -576,21 +658,21 @@ CK_RV notifyCallback(
     notifyEncapsulation = (NotifyEncapsulation *) pApplication;
 
     /* Get the currently running Java VM */
-    if (jvm == NULL) { return rv ; } /* there is no VM running */
+    if (jvm_j2pkcs11 == NULL) { return rv ; } /* there is no VM running */
 
     /* Determine, if current thread is already attached */
-    returnValue = (*jvm)->GetEnv(jvm, (void **) &env, JNI_VERSION_1_2);
+    returnValue = (*jvm_j2pkcs11)->GetEnv(jvm_j2pkcs11, (void **) &env, JNI_VERSION_1_2);
     if (returnValue == JNI_EDETACHED) {
         /* thread detached, so attach it */
         wasAttached = 0;
-        returnValue = (*jvm)->AttachCurrentThread(jvm, (void **) &env, NULL);
+        returnValue = (*jvm_j2pkcs11)->AttachCurrentThread(jvm_j2pkcs11, (void **) &env, NULL);
     } else if (returnValue == JNI_EVERSION) {
         /* this version of JNI is not supported, so just try to attach */
         /* we assume it was attached to ensure that this thread is not detached
          * afterwards even though it should not
          */
         wasAttached = 1;
-        returnValue = (*jvm)->AttachCurrentThread(jvm, (void **) &env, NULL);
+        returnValue = (*jvm_j2pkcs11)->AttachCurrentThread(jvm_j2pkcs11, (void **) &env, NULL);
     } else {
         /* attached */
         wasAttached = 1;
@@ -625,7 +707,7 @@ CK_RV notifyCallback(
 
     /* if we attached this thread to the VM just for callback, we detach it now */
     if (wasAttached) {
-        returnValue = (*jvm)->DetachCurrentThread(jvm);
+        returnValue = (*jvm_j2pkcs11)->DetachCurrentThread(jvm_j2pkcs11);
     }
 
     return rv ;

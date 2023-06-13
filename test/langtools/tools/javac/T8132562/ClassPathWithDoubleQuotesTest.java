@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -125,7 +125,7 @@ public class ClassPathWithDoubleQuotesTest extends TestRunner {
                 "and for which they are a legal filename character");
         List<String> log = new JavacTask(tb, Task.Mode.EXEC)
                 .envVar("CLASSPATH", "Ztest/jarOut/J.jar" + File.pathSeparator + "test/srcZ")
-                .options("-XDrawDiagnostics")
+                .options("-XDrawDiagnostics", "-J-Duser.language=en", "-J-Duser.country=US")
                 .files("test/src/A.java").run(Task.Expect.FAIL)
                 .writeAll()
                 .getOutputLines(Task.OutputKind.STDERR);
@@ -138,7 +138,7 @@ public class ClassPathWithDoubleQuotesTest extends TestRunner {
         System.err.println("invoking javac EXEC mode with double quotes in the CLASSPATH env variable");
         List<String> log2 = new JavacTask(tb, Task.Mode.EXEC)
                     .envVar("CLASSPATH", "\"test/jarOut/J.jar" + File.pathSeparator + "test/src\"")
-                    .options("-Xlint:path", "-XDrawDiagnostics")
+                    .options("-Xlint:path", "-XDrawDiagnostics", "-J-Duser.language=en", "-J-Duser.country=US")
                     .files("test/src/A.java").run(Task.Expect.FAIL)
                     .writeAll()
                     .getOutputLines(Task.OutputKind.STDERR);

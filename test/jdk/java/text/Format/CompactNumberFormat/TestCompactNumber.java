@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 /*
  * @test
- * @bug 8177552 8217721 8222756
+ * @bug 8177552 8217721 8222756 8295372
  * @summary Checks the functioning of compact number format
  * @modules jdk.localedata
  * @run testng/othervm TestCompactNumber
@@ -43,43 +43,58 @@ import org.testng.annotations.Test;
 public class TestCompactNumber {
 
     private static final NumberFormat FORMAT_DZ_LONG = NumberFormat
-            .getCompactNumberInstance(new Locale("dz"), NumberFormat.Style.LONG);
+            .getCompactNumberInstance(Locale.of("dz"), NumberFormat.Style.LONG);
 
     private static final NumberFormat FORMAT_EN_US_SHORT = NumberFormat
             .getCompactNumberInstance(Locale.US, NumberFormat.Style.SHORT);
 
     private static final NumberFormat FORMAT_EN_LONG = NumberFormat
-            .getCompactNumberInstance(new Locale("en"), NumberFormat.Style.LONG);
+            .getCompactNumberInstance(Locale.ENGLISH, NumberFormat.Style.LONG);
 
     private static final NumberFormat FORMAT_HI_IN_LONG = NumberFormat
-            .getCompactNumberInstance(new Locale("hi", "IN"), NumberFormat.Style.LONG);
+            .getCompactNumberInstance(Locale.of("hi", "IN"), NumberFormat.Style.LONG);
 
     private static final NumberFormat FORMAT_JA_JP_SHORT = NumberFormat
             .getCompactNumberInstance(Locale.JAPAN, NumberFormat.Style.SHORT);
 
     private static final NumberFormat FORMAT_IT_SHORT = NumberFormat
-            .getCompactNumberInstance(new Locale("it"), NumberFormat.Style.SHORT);
+            .getCompactNumberInstance(Locale.ITALIAN, NumberFormat.Style.SHORT);
 
     private static final NumberFormat FORMAT_CA_LONG = NumberFormat
-            .getCompactNumberInstance(new Locale("ca"), NumberFormat.Style.LONG);
+            .getCompactNumberInstance(Locale.of("ca"), NumberFormat.Style.LONG);
 
     private static final NumberFormat FORMAT_AS_LONG = NumberFormat
-            .getCompactNumberInstance(new Locale("as"), NumberFormat.Style.LONG);
+            .getCompactNumberInstance(Locale.of("as"), NumberFormat.Style.LONG);
 
     private static final NumberFormat FORMAT_BRX_SHORT = NumberFormat
-            .getCompactNumberInstance(new Locale("brx"), NumberFormat.Style.SHORT);
+            .getCompactNumberInstance(Locale.of("brx"), NumberFormat.Style.SHORT);
 
     private static final NumberFormat FORMAT_SW_LONG = NumberFormat
-            .getCompactNumberInstance(new Locale("sw"), NumberFormat.Style.LONG);
+            .getCompactNumberInstance(Locale.of("sw"), NumberFormat.Style.LONG);
 
     private static final NumberFormat FORMAT_SE_SHORT = NumberFormat
-            .getCompactNumberInstance(new Locale("se"), NumberFormat.Style.SHORT);
+            .getCompactNumberInstance(Locale.of("se"), NumberFormat.Style.SHORT);
 
     private static final NumberFormat FORMAT_DE_LONG = NumberFormat
             .getCompactNumberInstance(Locale.GERMAN, NumberFormat.Style.LONG);
 
     private static final NumberFormat FORMAT_SL_LONG = NumberFormat
-            .getCompactNumberInstance(new Locale("sl"), NumberFormat.Style.LONG);
+            .getCompactNumberInstance(Locale.of("sl"), NumberFormat.Style.LONG);
+
+    private static final NumberFormat FORMAT_ES_LONG_FD1 = NumberFormat
+            .getCompactNumberInstance(Locale.of("es"), NumberFormat.Style.LONG);
+    private static final NumberFormat FORMAT_DE_LONG_FD2 = NumberFormat
+            .getCompactNumberInstance(Locale.GERMAN, NumberFormat.Style.LONG);
+    private static final NumberFormat FORMAT_IT_LONG_FD3 = NumberFormat
+            .getCompactNumberInstance(Locale.ITALIAN, NumberFormat.Style.LONG);
+    private static final NumberFormat FORMAT_PT_LONG_FD4 = NumberFormat
+            .getCompactNumberInstance(Locale.of("pt"), NumberFormat.Style.LONG);
+    static {
+        FORMAT_ES_LONG_FD1.setMaximumFractionDigits(1);
+        FORMAT_DE_LONG_FD2.setMaximumFractionDigits(2);
+        FORMAT_IT_LONG_FD3.setMaximumFractionDigits(3);
+        FORMAT_PT_LONG_FD4.setMaximumFractionDigits(4);
+    }
 
     @DataProvider(name = "format")
     Object[][] compactFormatData() {
@@ -232,10 +247,10 @@ public class TestCompactNumber {
             {FORMAT_JA_JP_SHORT, 3000.90, "3,001"},
             // BigInteger path
             {FORMAT_JA_JP_SHORT, new BigInteger("12345678901234567890"),
-                "12345679\u5146"},
+                "1235\u4EAC"},
             // BigDecimal path
             {FORMAT_JA_JP_SHORT, new BigDecimal("12345678901234567890.89"),
-                "12345679\u5146"},
+                "1235\u4EAC"},
             // less than 1000 no suffix
             {FORMAT_IT_SHORT, 499, "499"},
             // Boundary number
@@ -278,15 +293,15 @@ public class TestCompactNumber {
             {FORMAT_AS_LONG, new BigDecimal("12345678901234567890123466767.89"),
                 "\u09e7\u09e8\u09e9\u09ea\u09eb\u09ec\u09ed\u09ee\u09ef\u09e6\u09e7\u09e8\u09e9\u09ea\u09eb\u09ec\u09ee \u09b6\u09a4 \u09aa\u09f0\u09be\u09f0\u09cd\u09a6\u09cd\u09a7"},
             {FORMAT_BRX_SHORT, 999, "999"},
-            {FORMAT_BRX_SHORT, 999.99, "1K"},
-            {FORMAT_BRX_SHORT, 99000, "99K"},
-            {FORMAT_BRX_SHORT, 330000, "330K"},
-            {FORMAT_BRX_SHORT, 3000.90, "3K"},
-            {FORMAT_BRX_SHORT, 1000000, "1M"},
+            {FORMAT_BRX_SHORT, 999.99, "1\u0915\u0947"},
+            {FORMAT_BRX_SHORT, 99000, "99\u0915\u0947"},
+            {FORMAT_BRX_SHORT, 330000, "330\u0915\u0947"},
+            {FORMAT_BRX_SHORT, 3000.90, "3\u0915\u0947"},
+            {FORMAT_BRX_SHORT, 1000000, "1\u090f\u092e"},
             {FORMAT_BRX_SHORT, new BigInteger("12345678901234567890"),
-                    "12345679T"},
+                    "12345679\u0924\u093f"},
             {FORMAT_BRX_SHORT, new BigDecimal("12345678901234567890.89"),
-                    "12345679T"},
+                    "12345679\u0924\u093f"},
             // Less than 1000 no suffix
             {FORMAT_SW_LONG, 499, "499"},
             // Boundary number
@@ -339,6 +354,11 @@ public class TestCompactNumber {
             {FORMAT_SL_LONG, 2_000_000, "2 milijona"},
             {FORMAT_SL_LONG, 3_000_000, "3 milijone"},
             {FORMAT_SL_LONG, 5_000_000, "5 milijonov"},
+            // Fractional plurals
+            {FORMAT_ES_LONG_FD1, 1_234_500, "1,2 millones"},
+            {FORMAT_DE_LONG_FD2, 1_234_500, "1,23 Millionen"},
+            {FORMAT_IT_LONG_FD3, 1_234_500, "1,234 milioni"},
+            {FORMAT_PT_LONG_FD4, 1_234_500, "1,2345 milh\u00f5es"},
         };
     }
 
@@ -441,13 +461,18 @@ public class TestCompactNumber {
                 {FORMAT_SL_LONG, "2 milijona",  2_000_000L, Long.class},
                 {FORMAT_SL_LONG, "3 milijone",  3_000_000L, Long.class},
                 {FORMAT_SL_LONG, "5 milijonov", 5_000_000L, Long.class},
+                // Fractional plurals
+                {FORMAT_ES_LONG_FD1, "1,2 millones", 1_200_000L, Long.class},
+                {FORMAT_DE_LONG_FD2, "1,23 Millionen", 1_230_000L, Long.class},
+                {FORMAT_IT_LONG_FD3, "1,234 milioni", 1_234_000L, Long.class},
+                {FORMAT_PT_LONG_FD4, "1,2345 milh\u00f5es", 1_234_500L, Long.class},
         };
     }
 
     @DataProvider(name = "exceptionParse")
     Object[][] exceptionParseData() {
         return new Object[][]{
-            // compact number instance, string to parse, null (no o/p; must throws exception)
+            // compact number instance, string to parse, null (no o/p; must throw exception)
             // no number
             {FORMAT_DZ_LONG, "\u0F66\u0F9F\u0F7C\u0F44\u0F0B\u0F55\u0FB2"
                 + "\u0F42", null},

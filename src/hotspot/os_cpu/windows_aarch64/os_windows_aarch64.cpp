@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020, Microsoft Corporation. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +24,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "asm/macroAssembler.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
@@ -31,7 +31,9 @@
 #include "code/vtableStubs.hpp"
 #include "code/nativeInst.hpp"
 #include "interpreter/interpreter.hpp"
+#include "jvm.h"
 #include "memory/allocation.inline.hpp"
+#include "os_windows.hpp"
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
 #include "runtime/arguments.hpp"
@@ -39,17 +41,16 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/timer.hpp"
 #include "unwind_windows_aarch64.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/events.hpp"
 #include "utilities/vmError.hpp"
-
 
 // put OS-includes here
 # include <sys/types.h>
@@ -78,15 +79,15 @@ address os::fetch_frame_from_context(const void* ucVoid,
   address  epc;
   CONTEXT* uc = (CONTEXT*)ucVoid;
 
-  if (uc != NULL) {
+  if (uc != nullptr) {
     epc = (address)uc->Pc;
     if (ret_sp) *ret_sp = (intptr_t*)uc->Sp;
     if (ret_fp) *ret_fp = (intptr_t*)uc->Fp;
   } else {
     // construct empty ExtendedPC for return value checking
-    epc = NULL;
-    if (ret_sp) *ret_sp = (intptr_t *)NULL;
-    if (ret_fp) *ret_fp = (intptr_t *)NULL;
+    epc = nullptr;
+    if (ret_sp) *ret_sp = (intptr_t *)nullptr;
+    if (ret_fp) *ret_fp = (intptr_t *)nullptr;
   }
   return epc;
 }
@@ -116,7 +117,7 @@ bool os::win32::get_frame_at_stack_banging_point(JavaThread* thread,
     // more complex code with compiled code
     assert(!Interpreter::contains(pc), "Interpreted methods should have been handled above");
     CodeBlob* cb = CodeCache::find_blob(pc);
-    if (cb == NULL || !cb->is_nmethod() || cb->is_frame_complete_at(pc)) {
+    if (cb == nullptr || !cb->is_nmethod() || cb->is_frame_complete_at(pc)) {
       // Not sure where the pc points to, fallback to default
       // stack overflow handling
       return false;
@@ -160,7 +161,7 @@ frame os::current_frame() {
 // helper functions for fatal error handler
 
 void os::print_context(outputStream *st, const void *context) {
-  if (context == NULL) return;
+  if (context == nullptr) return;
 
   const CONTEXT* uc = (const CONTEXT*)context;
 
@@ -203,10 +204,15 @@ void os::print_context(outputStream *st, const void *context) {
   st->print(", X28=" INTPTR_FORMAT, uc->X28);
   st->cr();
   st->cr();
+}
 
-  intptr_t *sp = (intptr_t *)uc->Sp;
-  st->print_cr("Top of Stack: (sp=" PTR_FORMAT ")", sp);
-  print_hex_dump(st, (address)sp, (address)(sp + 32), sizeof(intptr_t));
+void os::print_tos_pc(outputStream *st, const void *context) {
+  if (context == nullptr) return;
+
+  const CONTEXT* uc = (const CONTEXT*)context;
+
+  address sp = (address)uc->Sp;
+  print_tos(st, sp);
   st->cr();
 
   // Note: it may be unsafe to inspect memory near pc. For example, pc may
@@ -216,61 +222,58 @@ void os::print_context(outputStream *st, const void *context) {
   st->print_cr("Instructions: (pc=" PTR_FORMAT ")", pc);
   print_hex_dump(st, pc - 32, pc + 32, sizeof(char));
   st->cr();
-
 }
 
-void os::print_register_info(outputStream *st, const void *context) {
- if (context == NULL) return;
+void os::print_register_info(outputStream *st, const void *context, int& continuation) {
+  const int register_count = 29 /* X0-X28 */;
+  int n = continuation;
+  assert(n >= 0 && n <= register_count, "Invalid continuation value");
+  if (context == nullptr || n == register_count) {
+    return;
+  }
 
   const CONTEXT* uc = (const CONTEXT*)context;
-
-  st->print_cr("Register to memory mapping:");
-  st->cr();
-  // this is only for the "general purpose" registers
-  st->print(" X0="); print_location(st, uc->X0);
-  st->print(" X1="); print_location(st, uc->X1);
-  st->print(" X2="); print_location(st, uc->X2);
-  st->print(" X3="); print_location(st, uc->X3);
-  st->cr();
-  st->print(" X4="); print_location(st, uc->X4);
-  st->print(" X5="); print_location(st, uc->X5);
-  st->print(" X6="); print_location(st, uc->X6);
-  st->print(" X7="); print_location(st, uc->X7);
-  st->cr();
-  st->print(" X8="); print_location(st, uc->X8);
-  st->print(" X9="); print_location(st, uc->X9);
-  st->print("X10="); print_location(st, uc->X10);
-  st->print("X11="); print_location(st, uc->X11);
-  st->cr();
-  st->print("X12="); print_location(st, uc->X12);
-  st->print("X13="); print_location(st, uc->X13);
-  st->print("X14="); print_location(st, uc->X14);
-  st->print("X15="); print_location(st, uc->X15);
-  st->cr();
-  st->print("X16="); print_location(st, uc->X16);
-  st->print("X17="); print_location(st, uc->X17);
-  st->print("X18="); print_location(st, uc->X18);
-  st->print("X19="); print_location(st, uc->X19);
-  st->cr();
-  st->print("X20="); print_location(st, uc->X20);
-  st->print("X21="); print_location(st, uc->X21);
-  st->print("X22="); print_location(st, uc->X22);
-  st->print("X23="); print_location(st, uc->X23);
-  st->cr();
-  st->print("X24="); print_location(st, uc->X24);
-  st->print("X25="); print_location(st, uc->X25);
-  st->print("X26="); print_location(st, uc->X26);
-  st->print("X27="); print_location(st, uc->X27);
-  st->print("X28="); print_location(st, uc->X28);
-
-  st->cr();
+  while (n < register_count) {
+    // Update continuation with next index before printing location
+    continuation = n + 1;
+# define CASE_PRINT_REG(n, str, id) case n: st->print(str); print_location(st, uc->id);
+    switch (n) {
+      CASE_PRINT_REG( 0, " X0=", X0); break;
+      CASE_PRINT_REG( 1, " X1=", X1); break;
+      CASE_PRINT_REG( 2, " X2=", X2); break;
+      CASE_PRINT_REG( 3, " X3=", X3); break;
+      CASE_PRINT_REG( 4, " X4=", X4); break;
+      CASE_PRINT_REG( 5, " X5=", X5); break;
+      CASE_PRINT_REG( 6, " X6=", X6); break;
+      CASE_PRINT_REG( 7, " X7=", X7); break;
+      CASE_PRINT_REG( 8, " X8=", X8); break;
+      CASE_PRINT_REG( 9, " X9=", X9); break;
+      CASE_PRINT_REG(10, "X10=", X10); break;
+      CASE_PRINT_REG(11, "X11=", X11); break;
+      CASE_PRINT_REG(12, "X12=", X12); break;
+      CASE_PRINT_REG(13, "X13=", X13); break;
+      CASE_PRINT_REG(14, "X14=", X14); break;
+      CASE_PRINT_REG(15, "X15=", X15); break;
+      CASE_PRINT_REG(16, "X16=", X16); break;
+      CASE_PRINT_REG(17, "X17=", X17); break;
+      CASE_PRINT_REG(18, "X18=", X18); break;
+      CASE_PRINT_REG(19, "X19=", X19); break;
+      CASE_PRINT_REG(20, "X20=", X20); break;
+      CASE_PRINT_REG(21, "X21=", X21); break;
+      CASE_PRINT_REG(22, "X22=", X22); break;
+      CASE_PRINT_REG(23, "X23=", X23); break;
+      CASE_PRINT_REG(24, "X24=", X24); break;
+      CASE_PRINT_REG(25, "X25=", X25); break;
+      CASE_PRINT_REG(26, "X26=", X26); break;
+      CASE_PRINT_REG(27, "X27=", X27); break;
+      CASE_PRINT_REG(28, "X28=", X28); break;
+    }
+# undef CASE_PRINT_REG
+    ++n;
+  }
 }
 
 void os::setup_fpu() {
-}
-
-bool os::supports_sse() {
-  return true;
 }
 
 #ifndef PRODUCT

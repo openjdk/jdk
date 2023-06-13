@@ -581,7 +581,7 @@ public abstract class JComponent extends Container implements Serializable,
      * <p>
      * This is a bound property.
      *
-     * @param popup - the popup that will be assigned to this component
+     * @param popup the popup that will be assigned to this component
      *                may be null
      * @see #getComponentPopupMenu
      * @since 1.5
@@ -1118,7 +1118,7 @@ public abstract class JComponent extends Container implements Serializable,
                 }
             }
             else {
-                // Will ocassionaly happen in 1.2, especially when printing.
+                // Will occasionally happen in 1.2, especially when printing.
                 if (clipRect == null) {
                     co.setClip(clipX, clipY, clipW, clipH);
                 }
@@ -2455,7 +2455,7 @@ public abstract class JComponent extends Container implements Serializable,
      *
      * @param condition one of the values listed above
      * @param map  the <code>InputMap</code> to use for the given condition
-     * @exception IllegalArgumentException if <code>condition</code> is
+     * @throws IllegalArgumentException if <code>condition</code> is
      *          <code>WHEN_IN_FOCUSED_WINDOW</code> and <code>map</code>
      *          is not an instance of <code>ComponentInputMap</code>; or
      *          if <code>condition</code> is not one of the legal values
@@ -2554,7 +2554,7 @@ public abstract class JComponent extends Container implements Serializable,
      * @return the <code>InputMap</code> for the given <code>condition</code>;
      *          if <code>create</code> is false and the <code>InputMap</code>
      *          hasn't been created, returns <code>null</code>
-     * @exception IllegalArgumentException if <code>condition</code>
+     * @throws IllegalArgumentException if <code>condition</code>
      *          is not one of the legal values listed above
      */
     final InputMap getInputMap(int condition, boolean create) {
@@ -3482,7 +3482,7 @@ public abstract class JComponent extends Container implements Serializable,
         public boolean isEnabled() {
             if (actionListener == null) {
                 // This keeps the old semantics where
-                // registerKeyboardAction(null) would essentialy remove
+                // registerKeyboardAction(null) would essentially remove
                 // the binding. We don't remove the binding from the
                 // InputMap as that would still allow parent InputMaps
                 // bindings to be accessed.
@@ -3503,7 +3503,7 @@ public abstract class JComponent extends Container implements Serializable,
         // We don't allow any values to be added.
         public void putValue(String key, Object value) {}
 
-        // Does nothing, our enabledness is determiend from our asociated
+        // Does nothing, our enabledness is determined from our associated
         // action.
         public void setEnabled(boolean b) { }
 
@@ -4282,7 +4282,7 @@ public abstract class JComponent extends Container implements Serializable,
      */
     public static boolean isLightweightComponent(Component c) {
         // TODO we cannot call c.isLightweight() because it is incorrectly
-        // overriden in DelegateContainer on osx.
+        // overridden in DelegateContainer on osx.
         return AWTAccessor.getComponentAccessor().isLightweight(c);
     }
 
@@ -4623,7 +4623,7 @@ public abstract class JComponent extends Container implements Serializable,
      * @param propertyName  the name of the property that was listened on
      * @param oldValue  the old value of the property
      * @param newValue  the new value of the property
-     * @exception java.beans.PropertyVetoException when the attempt to set the
+     * @throws java.beans.PropertyVetoException when the attempt to set the
      *          property is vetoed by the component
      */
     protected void fireVetoableChange(String propertyName, Object oldValue, Object newValue)
@@ -4799,7 +4799,7 @@ public abstract class JComponent extends Container implements Serializable,
      *          <code><em>Foo</em>Listener</code>s on this component,
      *          or an empty array if no such
      *          listeners have been added
-     * @exception ClassCastException if <code>listenerType</code>
+     * @throws ClassCastException if <code>listenerType</code>
      *          doesn't specify a class or interface that implements
      *          <code>java.util.EventListener</code>
      *
@@ -5208,7 +5208,7 @@ public abstract class JComponent extends Container implements Serializable,
                 }
                 pCount++;
 
-                // look to see if the parent (and therefor this component)
+                // look to see if the parent (and therefore this component)
                 // is double buffered
                 if(repaintManager.isDoubleBufferingEnabled() && jc != null &&
                                   jc.isDoubleBuffered()) {
@@ -5407,7 +5407,7 @@ public abstract class JComponent extends Container implements Serializable,
         return ((flags & mask) == mask);
     }
     // These functions must be static so that they can be called from
-    // subclasses inside the package, but whose inheritance hierarhcy includes
+    // subclasses inside the package, but whose inheritance hierarchy includes
     // classes outside of the package below JComponent (e.g., JTextArea).
     static void setWriteObjCounter(JComponent comp, byte count) {
         comp.flags = (comp.flags & ~(0xFF << WRITE_OBJ_COUNTER_FIRST)) |

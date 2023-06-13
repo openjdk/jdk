@@ -30,7 +30,7 @@
 
 #include "hb-open-type.hh"
 #include "hb-ot-os2-unicode-ranges.hh"
-#include "hb-ot-cmap-table.hh"
+#include "hb-ot-var-mvar-table.hh"
 
 #include "hb-set.hh"
 
@@ -63,6 +63,7 @@ struct OS2V2Tail
   bool has_data () const { return sxHeight || sCapHeight; }
 
   const OS2V2Tail * operator -> () const { return this; }
+  OS2V2Tail * operator -> () { return this; }
 
   bool sanitize (hb_sanitize_context_t *c) const
   {
@@ -167,38 +168,111 @@ struct OS2
     }
   }
 
+  float map_wdth_to_widthclass(float width) const
+  {
+    if (width < 50) return 1.0f;
+    if (width > 200) return 9.0f;
+
+    float ratio = (width - 50) / 12.5f;
+    int a = (int) floorf (ratio);
+    int b = (int) ceilf (ratio);
+
+    /* follow this maping:
+     * https://docs.microsoft.com/en-us/typography/opentype/spec/os2#uswidthclass
+     */
+    if (b <= 6) // 50-125
+    {
+      if (a == b) return a + 1.0f;
+    }
+    else if (b == 7) // no mapping for 137.5
+    {
+      a = 6;
+      b = 8;
+    }
+    else if (b == 8)
+    {
+      if (a == b) return 8.0f; // 150
+      a = 6;
+    }
+    else
+    {
+      if (a == b && a == 12) return 9.0f; //200
+      b = 12;
+      a = 8;
+    }
+
+    float va = 50 + a * 12.5f;
+    float vb = 50 + b * 12.5f;
+
+    float ret =  a + (width - va) / (vb - va);
+    if (a <= 6) ret += 1.0f;
+    return ret;
+  }
+
   bool subset (hb_subset_context_t *c) const
   {
     TRACE_SUBSET (this);
     OS2 *os2_prime = c->serializer->embed (this);
     if (unlikely (!os2_prime)) return_trace (false);
 
-    hb_set_t unicodes;
-    if (!c->plan->glyphs_requested->is_empty ())
+#ifndef HB_NO_VAR
+    if (c->plan->normalized_coords)
     {
-      hb_map_t unicode_glyphid_map;
+      auto &MVAR = *c->plan->source->table.MVAR;
+      auto *table = os2_prime;
 
-      OT::cmap::accelerator_t cmap;
-      cmap.init (c->plan->source);
-      cmap.collect_mapping (&unicodes, &unicode_glyphid_map);
-      cmap.fini ();
+      HB_ADD_MVAR_VAR (HB_OT_METRICS_TAG_HORIZONTAL_ASCENDER,         sTypoAscender);
+      HB_ADD_MVAR_VAR (HB_OT_METRICS_TAG_HORIZONTAL_DESCENDER,        sTypoDescender);
+      HB_ADD_MVAR_VAR (HB_OT_METRICS_TAG_HORIZONTAL_LINE_GAP,         sTypoLineGap);
+      HB_ADD_MVAR_VAR (HB_OT_METRICS_TAG_HORIZONTAL_CLIPPING_ASCENT,  usWinAscent);
+      HB_ADD_MVAR_VAR (HB_OT_METRICS_TAG_HORIZONTAL_CLIPPING_DESCENT, usWinDescent);
+      HB_ADD_MVAR_VAR (HB_OT_METRICS_TAG_SUBSCRIPT_EM_X_SIZE,         ySubscriptXSize);
+      HB_ADD_MVAR_VAR (HB_OT_METRICS_TAG_SUBSCRIPT_EM_Y_SIZE,         ySubscriptYSize);
+      HB_ADD_MVAR_VAR (HB_OT_METRICS_TAG_SUBSCRIPT_EM_X_OFFSET,       ySubscriptXOffset);
+      HB_ADD_MVAR_VAR (HB_OT_METRICS_TAG_SUBSCRIPT_EM_Y_OFFSET,       ySubscriptYOffset);
+      HB_ADD_MVAR_VAR (HB_OT_METRICS_TAG_SUPERSCRIPT_EM_X_SIZE,       ySuperscriptXSize);
+      HB_ADD_MVAR_VAR (HB_OT_METRICS_TAG_SUPERSCRIPT_EM_Y_SIZE,       ySuperscriptYSize);
+      HB_ADD_MVAR_VAR (HB_OT_METRICS_TAG_SUPERSCRIPT_EM_X_OFFSET,     ySuperscriptXOffset);
+      HB_ADD_MVAR_VAR (HB_OT_METRICS_TAG_SUPERSCRIPT_EM_Y_OFFSET,     ySuperscriptYOffset);
+      HB_ADD_MVAR_VAR (HB_OT_METRICS_TAG_STRIKEOUT_SIZE,              yStrikeoutSize);
+      HB_ADD_MVAR_VAR (HB_OT_METRICS_TAG_STRIKEOUT_OFFSET,            yStrikeoutPosition);
 
-      hb_set_set (&unicodes, c->plan->unicodes);
-
-      + unicode_glyphid_map.iter ()
-      | hb_filter (c->plan->glyphs_requested, hb_second)
-      | hb_map (hb_first)
-      | hb_sink (unicodes)
-      ;
+      if (os2_prime->version >= 2)
+      {
+        auto *table = & const_cast<OS2V2Tail &> (os2_prime->v2 ());
+        HB_ADD_MVAR_VAR (HB_OT_METRICS_TAG_X_HEIGHT,                   sxHeight);
+        HB_ADD_MVAR_VAR (HB_OT_METRICS_TAG_CAP_HEIGHT,                 sCapHeight);
+      }
     }
-    /* when --gids option is not used, no need to do collect_mapping that is
-       * iterating all codepoints in each subtable, which is not efficient */
-    uint16_t min_cp, max_cp;
-    find_min_and_max_codepoint (unicodes.is_empty () ? c->plan->unicodes : &unicodes, &min_cp, &max_cp);
-    os2_prime->usFirstCharIndex = min_cp;
-    os2_prime->usLastCharIndex = max_cp;
+#endif
 
-    _update_unicode_ranges (unicodes.is_empty () ? c->plan->unicodes : &unicodes, os2_prime->ulUnicodeRange);
+    if (c->plan->user_axes_location.has (HB_TAG ('w','g','h','t')) &&
+        !c->plan->pinned_at_default)
+    {
+      float weight_class = c->plan->user_axes_location.get (HB_TAG ('w','g','h','t'));
+      if (!c->serializer->check_assign (os2_prime->usWeightClass,
+                                        roundf (hb_clamp (weight_class, 1.0f, 1000.0f)),
+                                        HB_SERIALIZE_ERROR_INT_OVERFLOW))
+        return_trace (false);
+    }
+
+    if (c->plan->user_axes_location.has (HB_TAG ('w','d','t','h')) &&
+        !c->plan->pinned_at_default)
+    {
+      float width = c->plan->user_axes_location.get (HB_TAG ('w','d','t','h'));
+      if (!c->serializer->check_assign (os2_prime->usWidthClass,
+                                        roundf (map_wdth_to_widthclass (width)),
+                                        HB_SERIALIZE_ERROR_INT_OVERFLOW))
+        return_trace (false);
+    }
+
+    if (c->plan->flags & HB_SUBSET_FLAGS_NO_PRUNE_UNICODE_RANGES)
+      return_trace (true);
+
+    os2_prime->usFirstCharIndex = hb_min (0xFFFFu, c->plan->unicodes.get_min ());
+    os2_prime->usLastCharIndex  = hb_min (0xFFFFu, c->plan->unicodes.get_max ());
+
+    _update_unicode_ranges (&c->plan->unicodes, os2_prime->ulUnicodeRange);
 
     return_trace (true);
   }
@@ -206,12 +280,16 @@ struct OS2
   void _update_unicode_ranges (const hb_set_t *codepoints,
                                HBUINT32 ulUnicodeRange[4]) const
   {
-    HBUINT32    newBits[4];
+    HBUINT32 newBits[4];
     for (unsigned int i = 0; i < 4; i++)
       newBits[i] = 0;
 
-    hb_codepoint_t cp = HB_SET_VALUE_INVALID;
-    while (codepoints->next (&cp)) {
+    /* This block doesn't show up in profiles. If it ever did,
+     * we can rewrite it to iterate over OS/2 ranges and use
+     * set iteration to check if the range matches. */
+    for (hb_codepoint_t cp = HB_SET_VALUE_INVALID;
+         codepoints->next (&cp);)
+    {
       unsigned int bit = _hb_ot_os2_get_unicode_range_bit (cp);
       if (bit < 128)
       {
@@ -233,17 +311,11 @@ struct OS2
       ulUnicodeRange[i] = ulUnicodeRange[i] & newBits[i]; // set bits only if set in the original
   }
 
-  static void find_min_and_max_codepoint (const hb_set_t *codepoints,
-                                          uint16_t *min_cp, /* OUT */
-                                          uint16_t *max_cp  /* OUT */)
-  {
-    *min_cp = hb_min (0xFFFFu, codepoints->get_min ());
-    *max_cp = hb_min (0xFFFFu, codepoints->get_max ());
-  }
-
-  /* https://github.com/Microsoft/Font-Validator/blob/520aaae/OTFontFileVal/val_OS2.cs#L644-L681 */
+  /* https://github.com/Microsoft/Font-Validator/blob/520aaae/OTFontFileVal/val_OS2.cs#L644-L681
+   * https://docs.microsoft.com/en-us/typography/legacy/legacy_arabic_fonts */
   enum font_page_t
   {
+    FONT_PAGE_NONE              = 0,
     FONT_PAGE_HEBREW            = 0xB100, /* Hebrew Windows 3.1 font page */
     FONT_PAGE_SIMP_ARABIC       = 0xB200, /* Simplified Arabic Windows 3.1 font page */
     FONT_PAGE_TRAD_ARABIC       = 0xB300, /* Traditional Arabic Windows 3.1 font page */

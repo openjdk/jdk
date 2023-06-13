@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@
  *     works as follow:
  *     When the test is starting debugee, debugger creates MethodEntryRequest.
  *     After MethodEntryEvent arrived, debugger checks line number of one's
- *     location. It should be 59th line, that is constructor of tc02x004aClass1
+ *     location. It should be 79th line, that is constructor of tc02x004aClass1
  *     class. Every thread must generate MethodEntryEvent.
  *     The test looks like tc002x001 except that synchronizing debugger and
  *     debugee is performed without IOPipe channel.

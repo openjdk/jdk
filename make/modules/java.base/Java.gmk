@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,9 @@
 # questions.
 #
 
-DOCLINT += -Xdoclint:all/protected,-reference,-accessibility \
+DISABLED_WARNINGS_java += this-escape
+
+DOCLINT += -Xdoclint:all/protected \
     '-Xdoclint/package:java.*,javax.*'
 JAVAC_FLAGS += -XDstringConcat=inline
 COPY += .icu .dat .spp .nrm content-types.properties \
@@ -33,7 +35,9 @@ CLEAN += intrinsic.properties
 EXCLUDE_FILES += \
   $(TOPDIR)/src/java.base/share/classes/jdk/internal/module/ModuleLoaderMap.java
 
-EXCLUDES += java/lang/doc-files
+EXCLUDES += java/lang/doc-files \
+    jdk/internal/classfile/snippet-files \
+    jdk/internal/classfile/components/snippet-files
 
 # Exclude BreakIterator classes that are just used in compile process to generate
 # data files and shouldn't go in the product

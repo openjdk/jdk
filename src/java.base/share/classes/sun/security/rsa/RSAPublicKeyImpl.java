@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,12 +58,12 @@ public final class RSAPublicKeyImpl extends X509Key implements RSAPublicKey {
     private BigInteger n;       // modulus
     private BigInteger e;       // public exponent
 
-    private transient KeyType type;
+    private final transient KeyType type;
 
     // optional parameters associated with this RSA key
     // specified in the encoding of its AlgorithmId
     // must be null for "RSA" keys.
-    private transient AlgorithmParameterSpec keyParams;
+    private final transient AlgorithmParameterSpec keyParams;
 
     /**
      * Generate a new RSAPublicKey from the specified type, format, and
@@ -104,7 +104,7 @@ public final class RSAPublicKeyImpl extends X509Key implements RSAPublicKey {
     }
 
     /**
-     * Construct a RSA key from the specified type and components. Used by
+     * Construct an RSA key from the specified type and components. Used by
      * RSAKeyFactory and RSAKeyPairGenerator.
      */
     RSAPublicKeyImpl(KeyType type, AlgorithmParameterSpec keyParams,
@@ -126,19 +126,14 @@ public final class RSAPublicKeyImpl extends X509Key implements RSAPublicKey {
         this.type = type;
         this.keyParams = keyParams;
 
-        try {
-            // generate the key encoding
-            DerOutputStream out = new DerOutputStream();
-            out.putInteger(n);
-            out.putInteger(e);
-            byte[] keyArray =
+        // generate the key encoding
+        DerOutputStream out = new DerOutputStream();
+        out.putInteger(n);
+        out.putInteger(e);
+        byte[] keyArray =
                 new DerValue(DerValue.tag_Sequence,
-                             out.toByteArray()).toByteArray();
-            setKey(new BitArray(keyArray.length*8, keyArray));
-        } catch (IOException exc) {
-            // should never occur
-            throw new InvalidKeyException(exc);
-        }
+                        out.toByteArray()).toByteArray();
+        setKey(new BitArray(keyArray.length * 8, keyArray));
     }
 
     /**

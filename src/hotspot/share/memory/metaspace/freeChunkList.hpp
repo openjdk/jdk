@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2020 SAP SE. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 #include "memory/metaspace/counters.hpp"
 #include "memory/metaspace/metachunk.hpp"
 #include "memory/metaspace/metachunkList.hpp"
+#include "memory/metaspace/metaspaceCommon.hpp"
 
 class outputStream;
 
@@ -52,15 +53,6 @@ namespace metaspace {
 //  committed word size. We stop searching at the first fully uncommitted
 //  chunk.
 //
-// Note that even though this is an O(n) search, partially committed chunks are
-//  very rare. A partially committed chunk is one spanning multiple commit
-//  granules, of which some are committed and some are not.
-// If metaspace reclamation is on (MetaspaceReclaimPolicy=balanced|aggressive), these
-//  chunks will become uncommitted after they are returned to the ChunkManager.
-// If metaspace reclamation is off (MetaspaceReclaimPolicy=none) they are fully
-//  committed when handed out and will not be uncommitted when returned to the
-//  ChunkManager.
-//
 // Therefore in all likelihood the chunk lists only contain fully committed or
 // fully uncommitted chunks; either way search will stop at the first chunk.
 
@@ -72,15 +64,15 @@ class FreeChunkList {
   IntCounter _num_chunks;
 
   void add_front(Metachunk* c) {
-    if (_first == NULL) {
-      assert(_last == NULL, "Sanity");
+    if (_first == nullptr) {
+      assert(_last == nullptr, "Sanity");
       _first = _last = c;
-      c->set_prev(NULL);
-      c->set_next(NULL);
+      c->set_prev(nullptr);
+      c->set_next(nullptr);
     } else {
-      assert(_last != NULL, "Sanity");
+      assert(_last != nullptr, "Sanity");
       c->set_next(_first);
-      c->set_prev(NULL);
+      c->set_prev(nullptr);
       _first->set_prev(c);
       _first = c;
     }
@@ -88,14 +80,14 @@ class FreeChunkList {
 
   // Add chunk to the back of the list.
   void add_back(Metachunk* c) {
-    if (_last == NULL) {
-      assert(_first == NULL, "Sanity");
+    if (_last == nullptr) {
+      assert(_first == nullptr, "Sanity");
       _last = _first = c;
-      c->set_prev(NULL);
-      c->set_next(NULL);
+      c->set_prev(nullptr);
+      c->set_next(nullptr);
     } else {
-      assert(_first != NULL, "Sanity");
-      c->set_next(NULL);
+      assert(_first != nullptr, "Sanity");
+      c->set_next(nullptr);
       c->set_prev(_last);
       _last->set_next(c);
       _last = c;
@@ -105,13 +97,13 @@ class FreeChunkList {
 public:
 
   FreeChunkList() :
-    _first(NULL),
-    _last(NULL)
+    _first(nullptr),
+    _last(nullptr)
   {}
 
   // Remove given chunk from anywhere in the list.
   Metachunk* remove(Metachunk* c) {
-    assert(contains(c), "Must be contained here");
+    ASSERT_SOMETIMES(contains(c), "Must be contained here");
     Metachunk* pred = c->prev();
     Metachunk* succ = c->next();
     if (pred) {
@@ -126,17 +118,17 @@ public:
     if (_last == c) {
       _last = pred;
     }
-    c->set_next(NULL);
-    c->set_prev(NULL);
+    c->set_next(nullptr);
+    c->set_prev(nullptr);
     _num_chunks.decrement();
     return c;
   }
 
   void add(Metachunk* c) {
-    assert(contains(c) == false, "Chunk already in freelist");
-    assert(_first == NULL || _first->level() == c->level(),
+    ASSERT_SOMETIMES(contains(c) == false, "Chunk already in freelist");
+    assert(_first == nullptr || _first->level() == c->level(),
            "List should only contains chunks of the same level.");
-    // Uncomitted chunks go to the back, fully or partially committed to the front.
+    // Uncommitted chunks go to the back, fully or partially committed to the front.
     if (c->committed_words() == 0) {
       add_back(c);
     } else {
@@ -145,34 +137,34 @@ public:
     _num_chunks.increment();
   }
 
-  // Removes the first chunk from the list and returns it. Returns NULL if list is empty.
+  // Removes the first chunk from the list and returns it. Returns null if list is empty.
   Metachunk* remove_first() {
     Metachunk* c = _first;
-    if (c != NULL) {
+    if (c != nullptr) {
       remove(c);
     }
     return c;
   }
 
-  // Returns reference to the first chunk in the list, or NULL
+  // Returns reference to the first chunk in the list, or null
   Metachunk* first() const { return _first; }
 
   // Returns reference to the fist chunk in the list with a committed word
-  // level >= min_committed_words, or NULL.
+  // level >= min_committed_words, or null.
   Metachunk* first_minimally_committed(size_t min_committed_words) const {
     // Since uncommitted chunks are added to the back we can stop looking once
     //  we encounter a fully uncommitted chunk.
     Metachunk* c = first();
-    while (c != NULL &&
+    while (c != nullptr &&
            c->committed_words() < min_committed_words &&
            c->committed_words() > 0) {
       c = c->next();
     }
-    if (c != NULL &&
+    if (c != nullptr &&
         c->committed_words() >= min_committed_words) {
       return c;
     }
-    return NULL;
+    return nullptr;
   }
 
 #ifdef ASSERT
@@ -208,7 +200,7 @@ public:
     list_for_chunk(c)->remove(c);
   }
 
-  // Remove first node unless empty. Returns node or NULL.
+  // Remove first node unless empty. Returns node or null.
   Metachunk* remove_first(chunklevel_t lvl) {
     Metachunk* c = list_for_level(lvl)->remove_first();
     return c;
@@ -223,20 +215,20 @@ public:
     return list_for_level(lvl)->num_chunks();
   }
 
-  // Returns reference to first chunk at this level, or NULL if sublist is empty.
+  // Returns reference to first chunk at this level, or null if sublist is empty.
   Metachunk* first_at_level(chunklevel_t lvl) const {
     return list_for_level(lvl)->first();
   }
 
   // Look for a chunk: starting at level, up to and including max_level,
   //  return the first chunk whose committed words >= min_committed_words.
-  // Return NULL if no such chunk was found.
+  // Return null if no such chunk was found.
   Metachunk* search_chunk_ascending(chunklevel_t level, chunklevel_t max_level,
                                     size_t min_committed_words);
 
   // Look for a chunk: starting at level, down to (including) the root chunk level,
   // return the first chunk whose committed words >= min_committed_words.
-  // Return NULL if no such chunk was found.
+  // Return null if no such chunk was found.
   Metachunk* search_chunk_descending(chunklevel_t level, size_t min_committed_words);
 
   // Returns total size in all lists (including uncommitted areas)

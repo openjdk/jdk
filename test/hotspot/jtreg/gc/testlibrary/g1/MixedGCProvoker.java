@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@ package gc.testlibrary.g1;
 
 import static java.util.stream.IntStream.range;
 import static jdk.test.lib.Asserts.assertTrue;
-import static sun.hotspot.WhiteBox.getWhiteBox;
+import static jdk.test.whitebox.WhiteBox.getWhiteBox;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -73,13 +73,12 @@ public class MixedGCProvoker {
     }
 
     /**
-     * Provoke at least one mixed gc by starting a marking cycle, waiting for its end and triggering two GCs.
+     * Provoke at least one mixed gc by performing a concurrent collection
+     * and triggering two GCs.
      * @param liveOldObjects The objects supposed to survive this marking cycle.
      */
     public static void provokeMixedGC(List<byte[]> liveOldObjects) {
-        Helpers.waitTillCMCFinished(getWhiteBox(), 10);
-        getWhiteBox().g1StartConcMarkCycle();
-        Helpers.waitTillCMCFinished(getWhiteBox(), 10);
+        getWhiteBox().g1RunConcurrentGC();
         getWhiteBox().youngGC(); // the "Prepare Mixed" gc
         getWhiteBox().youngGC(); // the "Mixed" gc
 

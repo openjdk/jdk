@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ const size_t JFR_MSPACE_UNLIMITED_CACHE_SIZE = max_uintx;
  *                   the type parameter for the RetrivalPolicy template class is JfrMemorySpace and the policy class must provide:
  *                   FreeListType::Node* acquire(JfrMemorySpace* mspace, FreeListType* free_list, Thread*, size_t size, bool previous_epoch);
  *
- * FreeListType      the type of the free list. The syntactic interface to be fullfilled is most conveniently read from an example,
+ * FreeListType      the type of the free list. The syntactic interface to be fulfilled is most conveniently read from an example,
  *                   please see utilities/jfrConcurrentQueue.hpp.
  *
  * FreeListType::Node gives the basic node type for each individual unit to be managed by the memory space.

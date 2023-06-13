@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@
 //
 // [Choi99] Jong-Deok Shoi, Manish Gupta, Mauricio Seffano,
 //          Vugranam C. Sreedhar, Sam Midkiff,
-//          "Escape Analysis for Java", Procedings of ACM SIGPLAN
+//          "Escape Analysis for Java", Proceedings of ACM SIGPLAN
 //          OOPSLA  Conference, November 1, 1999
 //
 // The flow-insensitive analysis described in the paper has been implemented.
@@ -128,7 +128,7 @@ class ArraycopyNode;
 class ConnectionGraph;
 
 // ConnectionGraph nodes
-class PointsToNode : public ResourceObj {
+class PointsToNode : public ArenaObj {
   GrowableArray<PointsToNode*> _edges; // List of nodes this node points to
   GrowableArray<PointsToNode*> _uses;  // List of nodes which point to this node
 
@@ -232,7 +232,8 @@ public:
 
 #ifndef PRODUCT
   NodeType node_type() const { return (NodeType)_type;}
-  void dump(bool print_state=true) const;
+  void dump(bool print_state=true, outputStream* out=tty, bool newline=true) const;
+  void dump_header(bool print_state=true, outputStream* out=tty) const;
 #endif
 
 };
@@ -294,7 +295,7 @@ public:
   inline PointsToIterator(const PointsToNode* n, int cnt) : node(n), cnt(cnt), i(0) { }
   inline bool has_next() const { return i < cnt; }
   inline void next() { i++; }
-  PointsToNode* get() const { ShouldNotCallThis(); return NULL; }
+  PointsToNode* get() const { ShouldNotCallThis(); return nullptr; }
 };
 
 class EdgeIterator: public PointsToIterator {
@@ -316,7 +317,7 @@ public:
 };
 
 
-class ConnectionGraph: public ResourceObj {
+class ConnectionGraph: public ArenaObj {
   friend class PointsToNode; // to access _compile
   friend class FieldNode;
 private:
@@ -340,6 +341,7 @@ private:
 
   Unique_Node_List ideal_nodes; // Used by CG construction and types splitting.
 
+  int              _invocation; // Current number of analysis invocation
   int        _build_iterations; // Number of iterations took to build graph
   double           _build_time; // Time (sec) took to build graph
 
@@ -424,25 +426,30 @@ private:
   int find_field_value(FieldNode* field);
 
   // Find fields initializing values for allocations.
-  int find_init_values_null   (JavaObjectNode* ptn, PhaseTransform* phase);
+  int find_init_values_null   (JavaObjectNode* ptn, PhaseValues* phase);
   int find_init_values_phantom(JavaObjectNode* ptn);
 
   // Set the escape state of an object and its fields.
-  void set_escape_state(PointsToNode* ptn, PointsToNode::EscapeState esc) {
-    // Don't change non-escaping state of NULL pointer.
+  void set_escape_state(PointsToNode* ptn, PointsToNode::EscapeState esc
+                        NOT_PRODUCT(COMMA const char* reason)) {
+    // Don't change non-escaping state of null pointer.
     if (ptn != null_obj) {
       if (ptn->escape_state() < esc) {
+        NOT_PRODUCT(trace_es_update_helper(ptn, esc, false, reason));
         ptn->set_escape_state(esc);
       }
       if (ptn->fields_escape_state() < esc) {
+        NOT_PRODUCT(trace_es_update_helper(ptn, esc, true, reason));
         ptn->set_fields_escape_state(esc);
       }
     }
   }
-  void set_fields_escape_state(PointsToNode* ptn, PointsToNode::EscapeState esc) {
-    // Don't change non-escaping state of NULL pointer.
+  void set_fields_escape_state(PointsToNode* ptn, PointsToNode::EscapeState esc
+                               NOT_PRODUCT(COMMA const char* reason)) {
+    // Don't change non-escaping state of null pointer.
     if (ptn != null_obj) {
       if (ptn->fields_escape_state() < esc) {
+        NOT_PRODUCT(trace_es_update_helper(ptn, esc, true, reason));
         ptn->set_fields_escape_state(esc);
       }
     }
@@ -456,13 +463,16 @@ private:
   // Adjust scalar_replaceable state after Connection Graph is built.
   void adjust_scalar_replaceable_state(JavaObjectNode* jobj);
 
+  // Propagate NSR (Not scalar replaceable) state.
+  void find_scalar_replaceable_allocs(GrowableArray<JavaObjectNode*>& jobj_worklist);
+
   // Optimize ideal graph.
   void optimize_ideal_graph(GrowableArray<Node*>& ptr_cmp_worklist,
                             GrowableArray<MemBarStoreStoreNode*>& storestore_worklist);
   // Optimize objects compare.
   const TypeInt* optimize_ptr_compare(Node* n);
 
-  // Returns unique corresponding java object or NULL.
+  // Returns unique corresponding java object or null.
   JavaObjectNode* unique_java_object(Node *n);
 
   // Add an edge of the specified type pointing to the specified target.
@@ -500,7 +510,7 @@ private:
     if (is_new) {      // New edge?
       assert(!_verify, "graph is incomplete");
       if (to == null_obj) {
-        return is_new; // Don't add fields to NULL pointer.
+        return is_new; // Don't add fields to null pointer.
       }
       if (to->is_JavaObject()) {
         is_new = to->add_edge(from);
@@ -516,7 +526,7 @@ private:
   bool   is_oop_field(Node* n, int offset, bool* unsafe);
   static Node* find_second_addp(Node* addp, Node* n);
   // offset of a field reference
-  int address_offset(Node* adr, PhaseTransform *phase);
+  int address_offset(Node* adr, PhaseValues* phase);
 
   bool is_captured_store_address(Node* addp);
 
@@ -554,7 +564,7 @@ private:
 
   PhiNode* get_map_phi(int idx) {
     Node* phi = _node_map[idx];
-    return (phi == NULL) ? NULL : phi->as_Phi();
+    return (phi == nullptr) ? nullptr : phi->as_Phi();
   }
 
   // Returns true if there is an object in the scope of sfn that does not escape globally.
@@ -568,8 +578,26 @@ private:
   // Compute the escape information
   bool compute_escape();
 
+  void set_not_scalar_replaceable(PointsToNode* ptn NOT_PRODUCT(COMMA const char* reason)) const {
+#ifndef PRODUCT
+    if (_compile->directive()->TraceEscapeAnalysisOption) {
+      assert(ptn != nullptr, "should not be null");
+      ptn->dump_header(true);
+      tty->print_cr("is NSR. %s", reason);
+    }
+#endif
+    ptn->set_scalar_replaceable(false);
+  }
+
+#ifndef PRODUCT
+  void trace_es_update_helper(PointsToNode* ptn, PointsToNode::EscapeState es, bool fields, const char* reason) const;
+  const char* trace_propagate_message(PointsToNode* from) const;
+  const char* trace_arg_escape_message(CallNode* call) const;
+  const char* trace_merged_message(PointsToNode* other) const;
+#endif
+
 public:
-  ConnectionGraph(Compile *C, PhaseIterGVN *igvn);
+  ConnectionGraph(Compile *C, PhaseIterGVN *igvn, int iteration);
 
   // Check for non-escaping candidates
   static bool has_candidates(Compile *C);
@@ -589,21 +617,21 @@ public:
   void add_local_var_and_edge(Node* n, PointsToNode::EscapeState es, Node* to,
                               Unique_Node_List *delayed_worklist) {
     PointsToNode* ptn = ptnode_adr(to->_idx);
-    if (delayed_worklist != NULL) { // First iteration of CG construction
+    if (delayed_worklist != nullptr) { // First iteration of CG construction
       add_local_var(n, es);
-      if (ptn == NULL) {
+      if (ptn == nullptr) {
         delayed_worklist->push(n);
         return; // Process it later.
       }
     } else {
-      assert(ptn != NULL, "node should be registered");
+      assert(ptn != nullptr, "node should be registered");
     }
     add_edge(ptnode_adr(n->_idx), ptn);
   }
 
   // Map ideal node to existing PointsTo node (usually phantom_object).
   void map_ideal_node(Node *n, PointsToNode* ptn) {
-    assert(ptn != NULL, "only existing PointsTo node");
+    assert(ptn != nullptr, "only existing PointsTo node");
     _nodes.at_put(n->_idx, ptn);
   }
 
@@ -611,13 +639,18 @@ public:
   bool add_final_edges_unsafe_access(Node* n, uint opcode);
 
 #ifndef PRODUCT
+  static int _no_escape_counter;
+  static int _arg_escape_counter;
+  static int _global_escape_counter;
   void dump(GrowableArray<PointsToNode*>& ptnodes_worklist);
+  static void print_statistics();
+  void escape_state_statistics(GrowableArray<JavaObjectNode*>& java_objects_worklist);
 #endif
 };
 
 inline PointsToNode::PointsToNode(ConnectionGraph *CG, Node* n, EscapeState es, NodeType type):
-  _edges(CG->_compile->comp_arena(), 2, 0, NULL),
-  _uses (CG->_compile->comp_arena(), 2, 0, NULL),
+  _edges(CG->_compile->comp_arena(), 2, 0, nullptr),
+  _uses (CG->_compile->comp_arena(), 2, 0, nullptr),
   _type((u1)type),
   _flags(ScalarReplaceable),
   _escape((u1)es),
@@ -625,12 +658,12 @@ inline PointsToNode::PointsToNode(ConnectionGraph *CG, Node* n, EscapeState es, 
   _node(n),
   _idx(n->_idx),
   _pidx(CG->next_pidx()) {
-  assert(n != NULL && es != UnknownEscape, "sanity");
+  assert(n != nullptr && es != UnknownEscape, "sanity");
 }
 
 inline FieldNode::FieldNode(ConnectionGraph *CG, Node* n, EscapeState es, int offs, bool is_oop):
   PointsToNode(CG, n, es, Field),
-  _bases(CG->_compile->comp_arena(), 2, 0, NULL),
+  _bases(CG->_compile->comp_arena(), 2, 0, nullptr),
   _offset(offs), _is_oop(is_oop),
   _has_unknown_base(false) {
 }

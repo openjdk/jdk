@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@ import sun.security.util.*;
  * @author      Ram Marti
  */
 
-public class CertId {
+public class CertId implements DerEncoder {
 
     private static final boolean debug = false;
     private static final AlgorithmId SHA1_ALGID
@@ -80,7 +80,7 @@ public class CertId {
                   SerialNumber serialNumber) throws IOException {
 
         // compute issuerNameHash
-        MessageDigest md = null;
+        MessageDigest md;
         try {
             md = MessageDigest.getInstance("SHA1");
         } catch (NoSuchAlgorithmException nsae) {
@@ -154,7 +154,8 @@ public class CertId {
      * Encode the CertId using ASN.1 DER.
      * The hash algorithm used is SHA-1.
      */
-    public void encode(DerOutputStream out) throws IOException {
+    @Override
+    public void encode(DerOutputStream out) {
 
         DerOutputStream tmp = new DerOutputStream();
         hashAlgId.encode(tmp);
@@ -202,34 +203,27 @@ public class CertId {
         if (this == other) {
             return true;
         }
-        if (other == null || (!(other instanceof CertId))) {
+        if (!(other instanceof CertId that)) {
             return false;
         }
 
-        CertId that = (CertId) other;
-        if (hashAlgId.equals(that.getHashAlgorithm()) &&
-            Arrays.equals(issuerNameHash, that.getIssuerNameHash()) &&
-            Arrays.equals(issuerKeyHash, that.getIssuerKeyHash()) &&
-            certSerialNumber.getNumber().equals(that.getSerialNumber())) {
-            return true;
-        } else {
-            return false;
-        }
+        return hashAlgId.equals(that.getHashAlgorithm()) &&
+                Arrays.equals(issuerNameHash, that.getIssuerNameHash()) &&
+                Arrays.equals(issuerKeyHash, that.getIssuerKeyHash()) &&
+                certSerialNumber.getNumber().equals(that.getSerialNumber());
     }
 
     /**
      * Create a string representation of the CertId.
      */
     @Override public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("CertId \n");
-        sb.append("Algorithm: " + hashAlgId.toString() +"\n");
-        sb.append("issuerNameHash \n");
         HexDumpEncoder encoder = new HexDumpEncoder();
-        sb.append(encoder.encode(issuerNameHash));
-        sb.append("\nissuerKeyHash: \n");
-        sb.append(encoder.encode(issuerKeyHash));
-        sb.append("\n" +  certSerialNumber.toString());
-        return sb.toString();
+        return "CertId \n" +
+                "Algorithm: " + hashAlgId.toString() + "\n" +
+                "issuerNameHash \n" +
+                encoder.encode(issuerNameHash) +
+                "\nissuerKeyHash: \n" +
+                encoder.encode(issuerKeyHash) +
+                "\n" + certSerialNumber.toString();
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -67,14 +67,21 @@
 
 /* extra PKCS#11 constants not in the standard include files */
 
+/* CKA_NETSCAPE_BASE is now known as CKM_NSS (CKM_VENDOR_DEFINED | NSSCK_VENDOR_NSS) */
 #define CKA_NETSCAPE_BASE                       (0x80000000 + 0x4E534350)
 #define CKA_NETSCAPE_TRUST_BASE                 (CKA_NETSCAPE_BASE + 0x2000)
 #define CKA_NETSCAPE_TRUST_SERVER_AUTH          (CKA_NETSCAPE_TRUST_BASE + 8)
 #define CKA_NETSCAPE_TRUST_CLIENT_AUTH          (CKA_NETSCAPE_TRUST_BASE + 9)
-#define CKA_NETSCAPE_TRUST_CODE_SIGNING (CKA_NETSCAPE_TRUST_BASE + 10)
+#define CKA_NETSCAPE_TRUST_CODE_SIGNING         (CKA_NETSCAPE_TRUST_BASE + 10)
 #define CKA_NETSCAPE_TRUST_EMAIL_PROTECTION     (CKA_NETSCAPE_TRUST_BASE + 11)
 #define CKA_NETSCAPE_DB                         0xD5A0DB00
 #define CKM_NSS_TLS_PRF_GENERAL                 0x80000373
+
+/* additional PKCS #12 PBE key derivation algorithms defined in NSS v3.29 */
+#define CKM_NSS_PKCS12_PBE_SHA224_HMAC_KEY_GEN  (CKA_NETSCAPE_BASE + 29)
+#define CKM_NSS_PKCS12_PBE_SHA256_HMAC_KEY_GEN  (CKA_NETSCAPE_BASE + 30)
+#define CKM_NSS_PKCS12_PBE_SHA384_HMAC_KEY_GEN  (CKA_NETSCAPE_BASE + 31)
+#define CKM_NSS_PKCS12_PBE_SHA512_HMAC_KEY_GEN  (CKA_NETSCAPE_BASE + 32)
 
 /*
 
@@ -100,9 +107,11 @@
 #define P11_ENABLE_C_CLOSESESSION
 #undef  P11_ENABLE_C_CLOSEALLSESSIONS
 #define P11_ENABLE_C_GETSESSIONINFO
+#define P11_ENABLE_C_SESSIONCANCEL
 #define P11_ENABLE_C_GETOPERATIONSTATE
 #define P11_ENABLE_C_SETOPERATIONSTATE
 #define P11_ENABLE_C_LOGIN
+//#define P11_ENABLE_C_LOGINUSER
 #define P11_ENABLE_C_LOGOUT
 #define P11_ENABLE_C_CREATEOBJECT
 #define P11_ENABLE_C_COPYOBJECT
@@ -209,23 +218,27 @@
 //#define TRACE0d(s) { printf(s); fflush(stdout); }
 //#define TRACE1d(s, p1) { printf(s, p1); fflush(stdout); }
 //#define TRACE2d(s, p1, p2) { printf(s, p1, p2); fflush(stdout); }
+//#define TRACE3d(s, p1, p2, p3) { printf(s, p1, p2, p3); fflush(stdout); }
+//#define TRACE4d(s, p1, p2, p3, p4) { printf(s, p1, p2, p3, p4); fflush(stdout); }
 
 #ifdef P11_DEBUG
 #define TRACE0(s) { printf(s); fflush(stdout); }
 #define TRACE1(s, p1) { printf(s, p1); fflush(stdout); }
 #define TRACE2(s, p1, p2) { printf(s, p1, p2); fflush(stdout); }
 #define TRACE3(s, p1, p2, p3) { printf(s, p1, p2, p3); fflush(stdout); }
+#define TRACE4(s, p1, p2, p3, p4) { printf(s, p1, p2, p3, p4); fflush(stdout); }
 #else
 #define TRACE0(s)
 #define TRACE1(s, p1)
 #define TRACE2(s, p1, p2)
 #define TRACE3(s, p1, p2, p3)
+#define TRACE4(s, p1, p2, p3, p4)
 #define TRACE_INTEND
 #define TRACE_UNINTEND
 #endif
 
 /* debug output */
-extern jboolean debug;
+extern jboolean debug_j2pkcs11;
 void printDebug(const char *format, ...);
 
 #define CK_ASSERT_OK 0L
@@ -265,6 +278,7 @@ void printDebug(const char *format, ...);
 #define CLASS_PBE_PARAMS "sun/security/pkcs11/wrapper/CK_PBE_PARAMS"
 #define PBE_INIT_VECTOR_SIZE 8
 #define CLASS_PKCS5_PBKD2_PARAMS "sun/security/pkcs11/wrapper/CK_PKCS5_PBKD2_PARAMS"
+#define CLASS_PKCS5_PBKD2_PARAMS2 "sun/security/pkcs11/wrapper/CK_PKCS5_PBKD2_PARAMS2"
 #define CLASS_EXTRACT_PARAMS "sun/security/pkcs11/wrapper/CK_EXTRACT_PARAMS"
 
 #define CLASS_ECDH1_DERIVE_PARAMS "sun/security/pkcs11/wrapper/CK_ECDH1_DERIVE_PARAMS"
@@ -308,11 +322,10 @@ CK_MECHANISM_PTR updateGCMParams(JNIEnv *env, CK_MECHANISM_PTR mechPtr);
 
 jlong ckAssertReturnValueOK(JNIEnv *env, CK_RV returnValue);
 jlong ckAssertReturnValueOK2(JNIEnv *env, CK_RV returnValue, const char *msg);
-void throwOutOfMemoryError(JNIEnv *env, const char *message);
-void throwNullPointerException(JNIEnv *env, const char *message);
-void throwIOException(JNIEnv *env, const char *message);
-void throwPKCS11RuntimeException(JNIEnv *env, const char *message);
-void throwDisconnectedRuntimeException(JNIEnv *env);
+void p11ThrowOutOfMemoryError(JNIEnv *env, const char *message);
+void p11ThrowNullPointerException(JNIEnv *env, const char *message);
+void p11ThrowIOException(JNIEnv *env, const char *message);
+void p11ThrowPKCS11RuntimeException(JNIEnv *env, const char *message);
 
 /* functions to free CK structures and pointers
  */
@@ -378,7 +391,7 @@ CK_VOID_PTR jMechParamToCKMechParamPtr(JNIEnv *env, jobject jParam, CK_MECHANISM
 CK_RSA_PKCS_OAEP_PARAMS_PTR jRsaPkcsOaepParamToCKRsaPkcsOaepParamPtr(JNIEnv *env,
     jobject jParam, CK_ULONG* pLength);
 CK_PBE_PARAMS_PTR jPbeParamToCKPbeParamPtr(JNIEnv *env, jobject jParam, CK_ULONG* pLength);
-CK_PKCS5_PBKD2_PARAMS_PTR jPkcs5Pbkd2ParamToCKPkcs5Pbkd2ParamPtr(JNIEnv *env, jobject jParam, CK_ULONG* pLength);
+CK_VOID_PTR jPkcs5Pbkd2ParamToCKPkcs5Pbkd2ParamPtr(JNIEnv *env, jobject jParam, CK_ULONG* pLength);
 CK_SSL3_MASTER_KEY_DERIVE_PARAMS_PTR jSsl3MasterKeyDeriveParamToCKSsl3MasterKeyDeriveParamPtr(JNIEnv *env, jobject jParam, CK_ULONG* pLength);
 CK_SSL3_KEY_MAT_PARAMS_PTR jSsl3KeyMatParamToCKSsl3KeyMatParamPtr(JNIEnv *env, jobject jParam, CK_ULONG* pLength);
 CK_KEY_DERIVATION_STRING_DATA jKeyDerivationStringDataToCKKeyDerivationStringData(JNIEnv *env, jobject jParam);
@@ -387,6 +400,41 @@ CK_ECDH1_DERIVE_PARAMS_PTR jEcdh1DeriveParamToCKEcdh1DeriveParamPtr(JNIEnv *env,
 CK_ECDH2_DERIVE_PARAMS_PTR jEcdh2DeriveParamToCKEcdh2DeriveParamPtr(JNIEnv *env, jobject jParam, CK_ULONG* pLength);
 CK_X9_42_DH1_DERIVE_PARAMS_PTR jX942Dh1DeriveParamToCKX942Dh1DeriveParamPtr(JNIEnv *env, jobject jParam, CK_ULONG* pLength);
 CK_X9_42_DH2_DERIVE_PARAMS_PTR jX942Dh2DeriveParamToCKX942Dh2DeriveParamPtr(JNIEnv *env, jobject jParam, CK_ULONG* pLength);
+
+/* handling of CK_PKCS5_PBKD2_PARAMS and CK_PKCS5_PBKD2_PARAMS2 */
+typedef enum {PARAMS=0, PARAMS2} ParamVersion;
+
+typedef struct {
+    union {
+        CK_PKCS5_PBKD2_PARAMS v1;
+        CK_PKCS5_PBKD2_PARAMS2 v2;
+    } params;
+    ParamVersion version;
+} VersionedPbkd2Params, *VersionedPbkd2ParamsPtr;
+
+#define FREE_VERSIONED_PBKD2_MEMBERS(verParamsPtr)                   \
+    do {                                                             \
+        if ((verParamsPtr)->version == PARAMS) {                     \
+            free((verParamsPtr)->params.v1.pSaltSourceData);         \
+            free((verParamsPtr)->params.v1.pPrfData);                \
+            if ((verParamsPtr)->params.v1.pPassword != NULL &&       \
+                    (verParamsPtr)->params.v1.ulPasswordLen          \
+                            != NULL) {                               \
+                memset((verParamsPtr)->params.v1.pPassword, 0,       \
+                        *((verParamsPtr)->params.v1.ulPasswordLen)); \
+            }                                                        \
+            free((verParamsPtr)->params.v1.pPassword);               \
+            free((verParamsPtr)->params.v1.ulPasswordLen);           \
+        } else {                                                     \
+            free((verParamsPtr)->params.v2.pSaltSourceData);         \
+            free((verParamsPtr)->params.v2.pPrfData);                \
+            if ((verParamsPtr)->params.v2.pPassword != NULL) {       \
+                memset((verParamsPtr)->params.v2.pPassword, 0,       \
+                        (verParamsPtr)->params.v2.ulPasswordLen);    \
+            }                                                        \
+            free((verParamsPtr)->params.v2.pPassword);               \
+        }                                                            \
+    } while(0)
 
 /* functions to copy the returned values inside CK-mechanism back to Java object */
 
@@ -410,8 +458,9 @@ CK_RV callJUnlockMutex(CK_VOID_PTR pMutex);
 #endif /* NO_CALLBACKS */
 
 void putModuleEntry(JNIEnv *env, jobject pkcs11Implementation, ModuleData *moduleData);
-ModuleData * removeModuleEntry(JNIEnv *env, jobject pkcs11Implementation);
 CK_FUNCTION_LIST_PTR getFunctionList(JNIEnv *env, jobject pkcs11Implementation);
+CK_FUNCTION_LIST_3_0_PTR getFunctionList30(JNIEnv *env, jobject
+        pkcs11Implementation);
 
 /* A structure to encapsulate the required data for a Notify callback */
 struct NotifyEncapsulation {

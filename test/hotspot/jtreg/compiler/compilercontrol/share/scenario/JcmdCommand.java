@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,27 +29,29 @@ public class JcmdCommand extends CompileCommand {
     public final Scenario.JcmdType jcmdType;
 
     public JcmdCommand(Command command,
+                       boolean isValid,
                        MethodDescriptor methodDescriptor,
                        Scenario.Compiler compiler,
                        Scenario.Type type,
                        Scenario.JcmdType jcmdType) {
-        super(command, methodDescriptor, compiler, type);
+        super(command, isValid, methodDescriptor, compiler, type);
         this.jcmdType = jcmdType;
     }
 
     public JcmdCommand(Command command,
+                       boolean isValid,
                        MethodDescriptor methodDescriptor,
                        Scenario.Compiler compiler,
                        Scenario.Type type,
                        Scenario.JcmdType jcmdType,
                        String argument) {
-        super(command, methodDescriptor, compiler, type, argument);
+        super(command, isValid, methodDescriptor, compiler, type, argument);
         this.jcmdType = jcmdType;
     }
 
 
     /**
-     * Enchances parent's class method with the the JCMDtype printing:
+     * Enchances parent's class method with the JCMDtype printing:
      * {@code ... JCMDType: <jcmd_type>}
      */
     protected String formatFields() {

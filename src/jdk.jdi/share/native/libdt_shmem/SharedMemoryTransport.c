@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,9 +64,9 @@ throwShmemException(JNIEnv *env, char *message, jint errorCode)
     char buf[255];
 
     if (shmemBase_getlasterror(msg, sizeof(msg)) == SYS_OK) {
-        sprintf(buf, "%s: %s\n", message, msg);
+        snprintf(buf, sizeof(buf), "%s: %s\n", message, msg);
     } else {
-        sprintf(buf, "%s, error code = %d", message, errorCode);
+        snprintf(buf, sizeof(buf), "%s, error code = %d", message, errorCode);
     }
     throwException(env, "java/io/IOException", buf);
 }
@@ -185,7 +185,6 @@ JNIEXPORT jlong JNICALL Java_com_sun_tools_jdi_SharedMemoryTransportService_star
 {
     const char *addrChars = NULL;
     jint rc;
-    jstring retAddress = NULL;
     SharedMemoryTransport *transport = NULL;
 
 

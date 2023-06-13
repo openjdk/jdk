@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2009 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,7 +26,7 @@
 #ifndef CPU_ZERO_BYTES_ZERO_HPP
 #define CPU_ZERO_BYTES_ZERO_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 
 typedef union unaligned {
   u4 u;
@@ -118,11 +118,6 @@ class Bytes: AllStatic {
     p[6] = lo >> 8;
     p[7] = lo;
   }
-
-  // Efficient swapping of byte ordering
-  static inline u2 swap_u2(u2 x);
-  static inline u4 swap_u4(u4 x);
-  static inline u8 swap_u8(u8 x);
 #else
   // No byte-order reversal is needed
   static inline u2 get_Java_u2(address p) {
@@ -144,20 +139,7 @@ class Bytes: AllStatic {
   static inline void put_Java_u8(address p, u8 x) {
     put_native_u8(p, x);
   }
-
-  // No byte-order reversal is needed
-  static inline u2 swap_u2(u2 x) { return x; }
-  static inline u4 swap_u4(u4 x) { return x; }
-  static inline u8 swap_u8(u8 x) { return x; }
 #endif // VM_LITTLE_ENDIAN
 };
-
-#ifdef VM_LITTLE_ENDIAN
-// The following header contains the implementations of swap_u2,
-// swap_u4, and swap_u8
-
-#include OS_CPU_HEADER(bytes)
-
-#endif // VM_LITTLE_ENDIAN
 
 #endif // CPU_ZERO_BYTES_ZERO_HPP

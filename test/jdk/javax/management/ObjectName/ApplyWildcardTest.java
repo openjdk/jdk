@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4716807
+ * @bug 4716807 8299234
  * @summary Test the ObjectName.apply(ObjectName) method
  *          with wildcards in the key properties value part.
  * @author Luis-Miguel Alventosa
@@ -75,6 +75,10 @@ public class ApplyWildcardTest {
         { "d:k1=\"a?b\",k2=\"c*d\"", "d:k1=\"axb\",k2=\"cyzd\"" },
         { "d:k1=\"a?b\",k2=\"c*d\",*", "d:k1=\"axb\",k2=\"cyzd\",k3=\"v3\"" },
         { "d:*,k1=\"a?b\",k2=\"c*d\"", "d:k1=\"axb\",k2=\"cyzd\",k3=\"v3\"" },
+
+        { "*:k=a", "d:k=a" },
+        { "*b*:k=a", "abc:k=a" },
+        { "?b?:k=a", "abc:k=a" },
     };
 
     private static final String negativeTests[][] = {
@@ -115,6 +119,10 @@ public class ApplyWildcardTest {
         { "d:k1=\"a?b\",k2=\"c*d\"", "d:k1=\"ab\",k2=\"cd\"" },
         { "d:k1=\"a?b\",k2=\"c*d\",*", "d:k1=\"ab\",k2=\"cd\",k3=\"v3\"" },
         { "d:*,k1=\"a?b\",k2=\"c*d\"", "d:k1=\"ab\",k2=\"cd\",k3=\"v3\"" },
+
+        { "?:k=a", "dd:k=a" },
+        { "*b*:k=a", "adc:k=a" },
+        { "?b?:k=a", "adc:k=a" },
     };
 
     private static int runPositiveTests() {

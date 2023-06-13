@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * @test
- * @bug     8140364 8189291
+ * @bug     8140364 8189291 8283049
  * @summary JDK implementation specific unit test for LoggerFinderLoader.
  *          Tests the behavior of LoggerFinderLoader with respect to the
  *          value of the internal diagnosability switches. Also test the
@@ -230,7 +230,7 @@ public class LoggerFinderLoaderTest {
                             throw new RuntimeException("Expected message not found. Error stream contained: " + warning);
                         }
                     } else if (singleton) {
-                        if (!warning.contains("java.util.ServiceConfigurationError: More than on LoggerFinder implementation")) {
+                        if (!warning.contains("java.util.ServiceConfigurationError: More than one LoggerFinder implementation")) {
                             throw new RuntimeException("Expected message not found. Error stream contained: " + warning);
                         }
                     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+
+import jdk.internal.util.OperatingSystem;
 import jdk.jpackage.internal.resources.ResourceLocator;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
@@ -44,6 +46,12 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
+/*
+ * @test
+ * @modules jdk.jpackage
+ * @compile --patch-module jdk.jpackage=${test.src} --add-reads jdk.jpackage=ALL-UNNAMED --add-exports jdk.jpackage/jdk.jpackage.internal=ALL-UNNAMED OverridableResourceTest.java
+ * @run junit/othervm --patch-module jdk.jpackage=${test.classes} --add-reads jdk.jpackage=ALL-UNNAMED --add-exports jdk.jpackage/jdk.jpackage.internal=ALL-UNNAMED jdk.jpackage.internal.OverridableResourceTest
+ */
 public class OverridableResourceTest {
 
     @Rule
@@ -136,16 +144,16 @@ public class OverridableResourceTest {
     }
 
     private void testCustomtWithSubstitution(String defaultName) throws IOException {
-        final List<String> resourceData = List.of("A", "[BB]", "C", "Foo",
-                "GoodbyeHello");
+        final List<String> resourceData = List.of("A", "[BB]", "C", "Foo", "Foo",
+                "GoodbyeHello", "_B");
         final Path customFile = createCustomFile("foo", resourceData);
 
         final Map<String, String> substitutionData = new HashMap(Map.of("B",
-                "Bar", "Foo", "B"));
+                "Bar", "Foo", "B", "_B", "JJ"));
         substitutionData.put("Hello", null);
 
         final List<String> expectedResourceData = List.of("A", "[BarBar]", "C",
-                "B", "Goodbye");
+                "Bar", "Bar", "Goodbye", "JJ");
 
         final List<String> actualResourceData = convertToStringList(saveToFile(
                 new OverridableResource(defaultName)
@@ -192,17 +200,17 @@ public class OverridableResourceTest {
     private final static String DEFAULT_NAME;
     private final static Map<String, String> SUBSTITUTION_DATA;
     static {
-        if (Platform.isWindows()) {
+        if (OperatingSystem.isWindows()) {
             DEFAULT_NAME = "WinLauncher.template";
             SUBSTITUTION_DATA = Map.of("COMPANY_NAME", "Foo9090345");
-        } else if (Platform.isLinux()) {
+        } else if (OperatingSystem.isLinux()) {
             DEFAULT_NAME = "template.control";
             SUBSTITUTION_DATA = Map.of("APPLICATION_PACKAGE", "Package1967");
-        } else if (Platform.isMac()) {
+        } else if (OperatingSystem.isMacOS()) {
             DEFAULT_NAME = "Info-lite.plist.template";
             SUBSTITUTION_DATA = Map.of("DEPLOY_BUNDLE_IDENTIFIER", "12345");
         } else {
-            throw Platform.throwUnknownPlatformError();
+            throw new IllegalArgumentException("Unknown platform: " + OperatingSystem.current());
         }
     }
 

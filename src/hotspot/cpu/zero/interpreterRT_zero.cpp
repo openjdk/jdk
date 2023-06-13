@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -62,7 +62,7 @@ void InterpreterRuntime::SignatureHandlerGeneratorBase::pass_object() {
 }
 
 void InterpreterRuntime::SignatureHandlerGeneratorBase::push(BasicType type) {
-  ffi_type *ftype = NULL;
+  ffi_type *ftype = nullptr;
   switch (type) {
   case T_VOID:
     ftype = &ffi_type_void;
@@ -114,7 +114,7 @@ void InterpreterRuntime::SignatureHandlerGeneratorBase::push(BasicType type) {
 // For fast signature handlers the "signature handler" is generated
 // into a temporary buffer.  It is then copied to its final location,
 // and pd_set_handler is called on it.  We have this two stage thing
-// to accomodate this.
+// to accommodate this.
 
 void InterpreterRuntime::SignatureHandlerGeneratorBase::generate(
   uint64_t fingerprint) {

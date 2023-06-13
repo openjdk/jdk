@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -102,7 +102,7 @@ class SimulatedOperandStack: CHeapObj<mtInternal> {
   // written, we don't know any more whether it was written as the
   // corresponding parameter, or whether another local has been
   // mapped to the slot. So we don't want to print 'parameter<i>' any
-  // more, but 'local<i>'. Similary for 'this'.
+  // more, but 'local<i>'. Similarly for 'this'.
   // Therefore, during the analysis, we mark a bit for local slots that
   // get written and propagate this information.
   // We only run the analysis for 64 slots. If a method has more
@@ -152,7 +152,7 @@ class SimulatedOperandStack: CHeapObj<mtInternal> {
 //
 // It analyses the bytecode to assemble Java-like message text
 // to give precise information where in a larger expression the
-// exception occured.
+// exception occurred.
 //
 // To assemble this message text, it is needed to know how
 // operand stack slot entries were pushed on the operand stack.
@@ -183,7 +183,7 @@ class ExceptionMessageBuilder : public StackObj {
 
   static const int _max_cause_detail = 5;
 
-  // Merges the stack the the given bci with the given stack. If there
+  // Merges the stack at the given bci with the given stack. If there
   // is no stack at the bci, we just put the given stack there. This
   // method doesn't takes ownership of the stack.
   void merge(int bci, SimulatedOperandStack* stack);
@@ -193,7 +193,7 @@ class ExceptionMessageBuilder : public StackObj {
   int do_instruction(int bci);
 
   bool print_NPE_cause0(outputStream *os, int bci, int slot, int max_detail,
-                        bool inner_expr = false, const char *prefix = NULL);
+                        bool inner_expr = false, const char *prefix = nullptr);
 
  public:
 
@@ -271,12 +271,12 @@ static void print_klass_name(outputStream *os, Symbol *klass) {
 
 // Prints the name of the method that is described at constant pool
 // index cp_index in the constant pool of method 'method'.
-static void print_method_name(outputStream *os, Method* method, int cp_index) {
+static void print_method_name(outputStream *os, Method* method, int cp_index, Bytecodes::Code bc) {
   ResourceMark rm;
   ConstantPool* cp  = method->constants();
-  Symbol* klass     = cp->klass_ref_at_noresolve(cp_index);
-  Symbol* name      = cp->name_ref_at(cp_index);
-  Symbol* signature = cp->signature_ref_at(cp_index);
+  Symbol* klass     = cp->klass_ref_at_noresolve(cp_index, bc);
+  Symbol* name      = cp->name_ref_at(cp_index, bc);
+  Symbol* signature = cp->signature_ref_at(cp_index, bc);
 
   print_klass_name(os, klass);
   os->print(".%s(", name->as_C_string());
@@ -287,19 +287,19 @@ static void print_method_name(outputStream *os, Method* method, int cp_index) {
 
 // Prints the name of the field that is described at constant pool
 // index cp_index in the constant pool of method 'method'.
-static void print_field_and_class(outputStream *os, Method* method, int cp_index) {
+static void print_field_and_class(outputStream *os, Method* method, int cp_index, Bytecodes::Code bc) {
   ResourceMark rm;
   ConstantPool* cp = method->constants();
-  Symbol* klass    = cp->klass_ref_at_noresolve(cp_index);
-  Symbol *name     = cp->name_ref_at(cp_index);
+  Symbol* klass    = cp->klass_ref_at_noresolve(cp_index, bc);
+  Symbol *name     = cp->name_ref_at(cp_index, bc);
   print_klass_name(os, klass);
   os->print(".%s", name->as_C_string());
 }
 
 // Returns the name of the field that is described at constant pool
 // index cp_index in the constant pool of method 'method'.
-static char const* get_field_name(Method* method, int cp_index) {
-  Symbol* name = method->constants()->name_ref_at(cp_index);
+static char const* get_field_name(Method* method, int cp_index, Bytecodes::Code bc) {
+  Symbol* name = method->constants()->name_ref_at(cp_index, bc);
   return name->as_C_string();
 }
 
@@ -469,19 +469,19 @@ ExceptionMessageBuilder::ExceptionMessageBuilder(Method* method, int bci) :
   _stacks = new GrowableArray<SimulatedOperandStack*> (len + 1);
 
   for (int i = 0; i <= len; ++i) {
-    _stacks->push(NULL);
+    _stacks->push(nullptr);
   }
 
   // Initialize stack a bci 0.
   _stacks->at_put(0, new SimulatedOperandStack());
 
   // And initialize the start of all exception handlers.
-  if (const_method->has_exception_handler()) {
+  if (const_method->has_exception_table()) {
     ExceptionTableElement *et = const_method->exception_table_start();
     for (int i = 0; i < const_method->exception_table_length(); ++i) {
       u2 index = et[i].handler_pc;
 
-      if (_stacks->at(index) == NULL) {
+      if (_stacks->at(index) == nullptr) {
         _stacks->at_put(index, new SimulatedOperandStack());
         _stacks->at(index)->push(index, T_OBJECT);
       }
@@ -499,7 +499,7 @@ ExceptionMessageBuilder::ExceptionMessageBuilder(Method* method, int bci) :
       i += do_instruction(i);
 
       // If we want the data only for a certain bci, we can possibly end early.
-      if ((bci == i) && (_stacks->at(i) != NULL)) {
+      if ((bci == i) && (_stacks->at(i) != nullptr)) {
         _all_processed = true;
         break;
       }
@@ -512,7 +512,7 @@ ExceptionMessageBuilder::ExceptionMessageBuilder(Method* method, int bci) :
 }
 
 ExceptionMessageBuilder::~ExceptionMessageBuilder() {
-  if (_stacks != NULL) {
+  if (_stacks != nullptr) {
     for (int i = 0; i < _stacks->length(); ++i) {
       delete _stacks->at(i);
     }
@@ -522,7 +522,7 @@ ExceptionMessageBuilder::~ExceptionMessageBuilder() {
 void ExceptionMessageBuilder::merge(int bci, SimulatedOperandStack* stack) {
   assert(stack != _stacks->at(bci), "Cannot merge itself");
 
-  if (_stacks->at(bci) != NULL) {
+  if (_stacks->at(bci) != nullptr) {
     stack->merge(*_stacks->at(bci));
   } else {
     // Got a new stack, so count the entries.
@@ -542,7 +542,7 @@ int ExceptionMessageBuilder::do_instruction(int bci) {
   int len = Bytecodes::java_length_at(_method, code_base + bci);
 
   // If we have no stack for this bci, we cannot process the bytecode now.
-  if (_stacks->at(bci) == NULL) {
+  if (_stacks->at(bci) == nullptr) {
     _all_processed = false;
     return len;
   }
@@ -970,7 +970,7 @@ int ExceptionMessageBuilder::do_instruction(int bci) {
       // Find out the type of the field accessed.
       int cp_index = Bytes::get_native_u2(code_base + pos) DEBUG_ONLY(+ ConstantPool::CPCACHE_INDEX_TAG);
       ConstantPool* cp = _method->constants();
-      int name_and_type_index = cp->name_and_type_ref_index_at(cp_index);
+      int name_and_type_index = cp->name_and_type_ref_index_at(cp_index, code);
       int type_index = cp->signature_ref_index_at(name_and_type_index);
       Symbol* signature = cp->symbol_at(type_index);
       // Simulate the bytecode: pop the address, push the 'value' loaded
@@ -984,7 +984,7 @@ int ExceptionMessageBuilder::do_instruction(int bci) {
     case Bytecodes::_putfield: {
       int cp_index = Bytes::get_native_u2(code_base + pos) DEBUG_ONLY(+ ConstantPool::CPCACHE_INDEX_TAG);
       ConstantPool* cp = _method->constants();
-      int name_and_type_index = cp->name_and_type_ref_index_at(cp_index);
+      int name_and_type_index = cp->name_and_type_ref_index_at(cp_index, code);
       int type_index = cp->signature_ref_index_at(name_and_type_index);
       Symbol* signature = cp->symbol_at(type_index);
       BasicType bt = Signature::basic_type(signature);
@@ -1006,7 +1006,7 @@ int ExceptionMessageBuilder::do_instruction(int bci) {
         cp_index = Bytes::get_native_u2(code_base + pos) DEBUG_ONLY(+ ConstantPool::CPCACHE_INDEX_TAG);
       }
 
-      int name_and_type_index = cp->name_and_type_ref_index_at(cp_index);
+      int name_and_type_index = cp->name_and_type_ref_index_at(cp_index, code);
       int type_index = cp->signature_ref_index_at(name_and_type_index);
       Symbol* signature = cp->symbol_at(type_index);
 
@@ -1029,7 +1029,6 @@ int ExceptionMessageBuilder::do_instruction(int bci) {
       break;
 
     case Bytecodes::_arraylength:
-      // The return type of arraylength is wrong in the bytecodes table (T_VOID).
       stack->pop(1);
       stack->push(bci, T_INT);
       break;
@@ -1067,7 +1066,7 @@ int ExceptionMessageBuilder::do_instruction(int bci) {
   // Put new stack to the next instruction, if we might reach it from
   // this bci.
   if (!flow_ended) {
-    if (_stacks->at(bci + len) == NULL) {
+    if (_stacks->at(bci + len) == nullptr) {
       _added_one = true;
     }
     merge(bci + len, stack);
@@ -1075,7 +1074,7 @@ int ExceptionMessageBuilder::do_instruction(int bci) {
 
   // Put the stack to the branch target too.
   if (dest_bci != -1) {
-    if (_stacks->at(dest_bci) == NULL) {
+    if (_stacks->at(dest_bci) == nullptr) {
       _added_one = true;
     }
     merge(dest_bci, stack);
@@ -1083,7 +1082,7 @@ int ExceptionMessageBuilder::do_instruction(int bci) {
 
   // If we have more than one branch target, process these too.
   for (int64_t i = 0; i < dests.length(); ++i) {
-    if (_stacks->at(dests.at(i)) == NULL) {
+    if (_stacks->at(dests.at(i)) == nullptr) {
       _added_one = true;
     }
     merge(dests.at(i), stack);
@@ -1135,7 +1134,7 @@ int ExceptionMessageBuilder::get_NPE_null_slot(int bci) {
     case Bytecodes::_putfield: {
         int cp_index = Bytes::get_native_u2(code_base + pos) DEBUG_ONLY(+ ConstantPool::CPCACHE_INDEX_TAG);
         ConstantPool* cp = _method->constants();
-        int name_and_type_index = cp->name_and_type_ref_index_at(cp_index);
+        int name_and_type_index = cp->name_and_type_ref_index_at(cp_index, code);
         int type_index = cp->signature_ref_index_at(name_and_type_index);
         Symbol* signature = cp->symbol_at(type_index);
         BasicType bt = Signature::basic_type(signature);
@@ -1146,11 +1145,11 @@ int ExceptionMessageBuilder::get_NPE_null_slot(int bci) {
     case Bytecodes::_invokeinterface: {
         int cp_index = Bytes::get_native_u2(code_base+ pos) DEBUG_ONLY(+ ConstantPool::CPCACHE_INDEX_TAG);
         ConstantPool* cp = _method->constants();
-        int name_and_type_index = cp->name_and_type_ref_index_at(cp_index);
+        int name_and_type_index = cp->name_and_type_ref_index_at(cp_index, code);
         int name_index = cp->name_ref_index_at(name_and_type_index);
         Symbol* name = cp->symbol_at(name_index);
 
-        // Assume the the call of a constructor can never cause a NullPointerException
+        // Assume the call of a constructor can never cause a NullPointerException
         // (which is true in Java). This is mainly used to avoid generating wrong
         // messages for NullPointerExceptions created explicitly by new in Java code.
         if (name != vmSymbols::object_initializer_name()) {
@@ -1201,7 +1200,7 @@ bool ExceptionMessageBuilder::print_NPE_cause0(outputStream* os, int bci, int sl
     return false;
   }
 
-  if (_stacks->at(bci) == NULL) {
+  if (_stacks->at(bci) == nullptr) {
     return false;
   }
 
@@ -1229,7 +1228,7 @@ bool ExceptionMessageBuilder::print_NPE_cause0(outputStream* os, int bci, int sl
   }
 
   if (max_detail == _max_cause_detail &&
-      prefix != NULL &&
+      prefix != nullptr &&
       code != Bytecodes::_invokevirtual &&
       code != Bytecodes::_invokespecial &&
       code != Bytecodes::_invokestatic &&
@@ -1328,7 +1327,7 @@ bool ExceptionMessageBuilder::print_NPE_cause0(outputStream* os, int bci, int sl
 
     case Bytecodes::_getstatic: {
       int cp_index = Bytes::get_native_u2(code_base + pos) + ConstantPool::CPCACHE_INDEX_TAG;
-      print_field_and_class(os, _method, cp_index);
+      print_field_and_class(os, _method, cp_index, code);
       return true;
     }
 
@@ -1339,7 +1338,7 @@ bool ExceptionMessageBuilder::print_NPE_cause0(outputStream* os, int bci, int sl
         os->print(".");
       }
       int cp_index = Bytes::get_native_u2(code_base + pos) + ConstantPool::CPCACHE_INDEX_TAG;
-      os->print("%s", get_field_name(_method, cp_index));
+      os->print("%s", get_field_name(_method, cp_index, code));
       return true;
     }
 
@@ -1351,7 +1350,7 @@ bool ExceptionMessageBuilder::print_NPE_cause0(outputStream* os, int bci, int sl
       if (max_detail == _max_cause_detail && !inner_expr) {
         os->print(" because the return value of \"");
       }
-      print_method_name(os, _method, cp_index);
+      print_method_name(os, _method, cp_index, code);
       return true;
     }
 
@@ -1417,21 +1416,21 @@ void ExceptionMessageBuilder::print_NPE_failed_action(outputStream *os, int bci)
     case Bytecodes::_getfield: {
         int cp_index = Bytes::get_native_u2(code_base + pos) DEBUG_ONLY(+ ConstantPool::CPCACHE_INDEX_TAG);
         ConstantPool* cp = _method->constants();
-        int name_and_type_index = cp->name_and_type_ref_index_at(cp_index);
+        int name_and_type_index = cp->name_and_type_ref_index_at(cp_index, code);
         int name_index = cp->name_ref_index_at(name_and_type_index);
         Symbol* name = cp->symbol_at(name_index);
         os->print("Cannot read field \"%s\"", name->as_C_string());
       } break;
     case Bytecodes::_putfield: {
         int cp_index = Bytes::get_native_u2(code_base + pos) DEBUG_ONLY(+ ConstantPool::CPCACHE_INDEX_TAG);
-        os->print("Cannot assign field \"%s\"", get_field_name(_method, cp_index));
+        os->print("Cannot assign field \"%s\"", get_field_name(_method, cp_index, code));
       } break;
     case Bytecodes::_invokevirtual:
     case Bytecodes::_invokespecial:
     case Bytecodes::_invokeinterface: {
         int cp_index = Bytes::get_native_u2(code_base+ pos) DEBUG_ONLY(+ ConstantPool::CPCACHE_INDEX_TAG);
         os->print("Cannot invoke \"");
-        print_method_name(os, _method, cp_index);
+        print_method_name(os, _method, cp_index, code);
         os->print("\"");
       } break;
 

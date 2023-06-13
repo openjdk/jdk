@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import java.time.LocalTime;
 import java.time.MonthDay;
 import java.time.OffsetDateTime;
 import java.time.Year;
+import java.time.chrono.HijrahDate;
 import java.time.chrono.ThaiBuddhistDate;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.IsoFields;
@@ -75,12 +76,13 @@ public class TestIsoWeekFields {
         assertEquals(weekField.isSupportedBy(MonthDay.of(2, 1)), false);
         assertEquals(weekField.isSupportedBy(LocalDate.MIN), true);
         assertEquals(weekField.isSupportedBy(OffsetDateTime.MAX), true);
+        assertEquals(weekField.isSupportedBy(ThaiBuddhistDate.now()), true);
     }
 
     @Test
     public void test_WOWBY_isSupportedBy_fieldsDiffer() {
-        assertEquals(IsoFields.WEEK_OF_WEEK_BASED_YEAR.isSupportedBy(ThaiBuddhistDate.now()), false);
-        assertEquals(WeekFields.ISO.weekOfWeekBasedYear().isSupportedBy(ThaiBuddhistDate.now()), true);
+        assertEquals(IsoFields.WEEK_OF_WEEK_BASED_YEAR.isSupportedBy(HijrahDate.now()), false);
+        assertEquals(WeekFields.ISO.weekOfWeekBasedYear().isSupportedBy(HijrahDate.now()), true);
     }
 
     @Test(dataProvider = "fields")
@@ -116,19 +118,22 @@ public class TestIsoWeekFields {
         assertEquals(yearField.isSupportedBy(MonthDay.of(2, 1)), false);
         assertEquals(yearField.isSupportedBy(LocalDate.MIN), true);
         assertEquals(yearField.isSupportedBy(OffsetDateTime.MAX), true);
+        assertEquals(yearField.isSupportedBy(ThaiBuddhistDate.now()), true);
     }
 
     @Test
     public void test_WBY_isSupportedBy_ISO() {
-        assertEquals(IsoFields.WEEK_BASED_YEAR.isSupportedBy(ThaiBuddhistDate.now()), false);
+        assertEquals(IsoFields.WEEK_BASED_YEAR.isSupportedBy(HijrahDate.now()), false);
     }
 
     @Test
     public void test_Unit_isSupportedBy_ISO() {
-        assertEquals(IsoFields.WEEK_BASED_YEARS.isSupportedBy(LocalDate.now()),true);
-        assertEquals(IsoFields.WEEK_BASED_YEARS.isSupportedBy(ThaiBuddhistDate.now()),false);
-        assertEquals(IsoFields.QUARTER_YEARS.isSupportedBy(LocalDate.now()),true);
-        assertEquals(IsoFields.QUARTER_YEARS.isSupportedBy(ThaiBuddhistDate.now()),false);
+        assertEquals(IsoFields.WEEK_BASED_YEARS.isSupportedBy(LocalDate.now()), true);
+        assertEquals(IsoFields.WEEK_BASED_YEARS.isSupportedBy(ThaiBuddhistDate.now()), true);
+        assertEquals(IsoFields.WEEK_BASED_YEARS.isSupportedBy(HijrahDate.now()), false);
+        assertEquals(IsoFields.QUARTER_YEARS.isSupportedBy(LocalDate.now()), true);
+        assertEquals(IsoFields.QUARTER_YEARS.isSupportedBy(ThaiBuddhistDate.now()), true);
+        assertEquals(IsoFields.QUARTER_YEARS.isSupportedBy(HijrahDate.now()), false);
     }
 
     @Test(dataProvider = "fields")

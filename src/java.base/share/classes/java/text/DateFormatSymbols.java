@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,9 +78,9 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * If you decide to create a date-time formatter with a specific
  * format pattern for a specific locale, you can do so with:
  * <blockquote>
- * <pre>
- * new SimpleDateFormat(aPattern, DateFormatSymbols.getInstance(aLocale)).
- * </pre>
+ * {@snippet lang=java :
+ * new SimpleDateFormat(aPattern, DateFormatSymbols.getInstance(aLocale));
+ * }
  * </blockquote>
  *
  * <p>If the locale contains "rg" (region override)
@@ -415,6 +415,9 @@ public class DateFormatSymbols implements Serializable, Cloneable {
      * @implSpec This method returns 13 elements since
      * {@link java.util.Calendar#UNDECIMBER Calendar.UNDECIMBER} is supported.
      * @return the month strings.
+     *
+     * @spec https://www.unicode.org/reports/tr35
+     *      Unicode Locale Data Markup Language (LDML)
      */
     public String[] getMonths() {
         return Arrays.copyOf(months, months.length);
@@ -453,6 +456,9 @@ public class DateFormatSymbols implements Serializable, Cloneable {
      * @implSpec This method returns 13 elements since
      * {@link java.util.Calendar#UNDECIMBER Calendar.UNDECIMBER} is supported.
      * @return the short month strings.
+     *
+     * @spec https://www.unicode.org/reports/tr35
+     *      Unicode Locale Data Markup Language (LDML)
      */
     public String[] getShortMonths() {
         return Arrays.copyOf(shortMonths, shortMonths.length);
@@ -696,11 +702,6 @@ public class DateFormatSymbols implements Serializable, Cloneable {
     }
 
     // =======================privates===============================
-
-    /**
-     * Useful constant for defining time zone offsets.
-     */
-    static final int millisPerHour = 60*60*1000;
 
     /**
      * Cache to hold DateFormatSymbols instances per Locale.

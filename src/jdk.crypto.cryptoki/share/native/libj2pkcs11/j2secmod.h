@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@
 #include "p11_md.h"
 
 
-void *findFunction(JNIEnv *env, jlong jHandle, const char *functionName);
+void *p11FindFunction(JNIEnv *env, jlong jHandle, const char *functionName);
 
 #ifdef SECMOD_DEBUG
 #define dprintf(s) printf(s)
@@ -88,7 +88,7 @@ struct PK11SlotInfoStr {
     void *functionList;
     SECMODModule *module; /* our parent module */
     /* Boolean to indicate the current state of this slot */
-    PRBool needTest;           /* Has this slot been tested for Export complience */
+    PRBool needTest;           /* Has this slot been tested for Export compliance */
     PRBool isPerm;             /* is this slot a permanment device */
     PRBool isHW;               /* is this slot a hardware device */
     PRBool isInternal;         /* is this slot one of our internal PKCS #11 devices */
@@ -110,9 +110,9 @@ struct PK11SlotInfoStr {
     void *sessionLock; /* lock for this session */
     /* our ID */
     CK_SLOT_ID slotID;
-    /* persistant flags saved from startup to startup */
+    /* persistent flags saved from startup to startup */
     unsigned long defaultFlags;
-    /* keep track of who is using us so we don't accidently get freed while
+    /* keep track of who is using us so we don't accidentally get freed while
      * still in use */
     PRInt32 refCount; /* to be in/decremented by atomic calls ONLY! */
     void *freeListLock;

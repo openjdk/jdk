@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ import javadoc.tester.JavadocTester;
 public class TestCopyFiles extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestCopyFiles tester = new TestCopyFiles();
+        var tester = new TestCopyFiles();
         tester.runTests();
     }
 
@@ -240,30 +240,6 @@ public class TestCopyFiles extends JavadocTester {
                     <title>Beep Beep (phi-WINDOW-TITLE-phi)</title>
                     """,
                 "SubReadme.html at second level of doc-file directory for unnamed package."
-        );
-    }
-
-    @Test
-    public void testDocFilesInPackagesSource7() {
-        javadoc("-d", "packages-out-src7",
-                "-source", "7",
-                "-sourcepath", testSrc("packages"),
-                "p1");
-        checkExit(Exit.OK);
-        checkOutput("p1/doc-files/inpackage.html", true,
-                "A named package in an unnamed module"
-        );
-    }
-
-    @Test
-    public void testDocFilesInPackagesSource7UsingClassPath() {
-        javadoc("-d", "packages-out-src7-cp",
-                "-source", "7",
-                "-classpath", testSrc("packages"),
-                "p1");
-        checkExit(Exit.OK);
-        checkOutput("p1/doc-files/inpackage.html", true,
-                "A named package in an unnamed module"
         );
     }
 

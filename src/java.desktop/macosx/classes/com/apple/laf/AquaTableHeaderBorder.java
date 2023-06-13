@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,7 +105,7 @@ public class AquaTableHeaderBorder extends AbstractBorder {
         final int newWidth = width;
         final int newHeight = height;
 
-        painter.paint(g, c, newX - 1, newY - 1, newWidth + 1, newHeight);
+        painter.paint(g, c, newX - 1, newY - 1, newWidth + 1, newHeight + 1);
 
         // Draw the header
         g.clipRect(newX, y, newWidth, height);

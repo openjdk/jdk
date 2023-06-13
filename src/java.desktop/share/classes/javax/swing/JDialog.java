@@ -95,8 +95,7 @@ import javax.accessibility.*;
  */
 @JavaBean(defaultProperty = "JMenuBar", description = "A toplevel window for creating dialog boxes.")
 @SwingContainer(delegate = "getContentPane")
-@SuppressWarnings({"serial", // Same-version serialization only
-                   "doclint:missing"})
+@SuppressWarnings({"serial"}) // Same-version serialization only
 public class JDialog extends Dialog implements WindowConstants,
                                                Accessible,
                                                RootPaneContainer,
@@ -112,6 +111,9 @@ public class JDialog extends Dialog implements WindowConstants,
     private int defaultCloseOperation = HIDE_ON_CLOSE;
 
     /**
+     * The <code>JRootPane</code> instance that manages the
+     * <code>contentPane</code>.
+     *
      * @see #getRootPane
      * @see #setRootPane
      */
@@ -671,7 +673,7 @@ public class JDialog extends Dialog implements WindowConstants,
         JRootPane rp = new JRootPane();
         // NOTE: this uses setOpaque vs LookAndFeel.installProperty as there
         // is NO reason for the RootPane not to be opaque. For painting to
-        // work the contentPane must be opaque, therefor the RootPane can
+        // work the contentPane must be opaque, therefore the RootPane can
         // also be opaque.
         rp.setOpaque(true);
         return rp;

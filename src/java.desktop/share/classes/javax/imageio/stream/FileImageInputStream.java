@@ -60,13 +60,13 @@ public class FileImageInputStream extends ImageInputStreamImpl {
      *
      * @param f a {@code File} to read from.
      *
-     * @exception IllegalArgumentException if {@code f} is
+     * @throws IllegalArgumentException if {@code f} is
      * {@code null}.
-     * @exception SecurityException if a security manager exists
+     * @throws SecurityException if a security manager exists
      * and does not allow read access to the file.
-     * @exception FileNotFoundException if {@code f} is a
+     * @throws FileNotFoundException if {@code f} is a
      * directory or cannot be opened for reading for any other reason.
-     * @exception IOException if an I/O error occurs.
+     * @throws IOException if an I/O error occurs.
      */
     public FileImageInputStream(File f)
         throws FileNotFoundException, IOException {
@@ -83,7 +83,7 @@ public class FileImageInputStream extends ImageInputStreamImpl {
      *
      * @param raf a {@code RandomAccessFile} to read from.
      *
-     * @exception IllegalArgumentException if {@code raf} is
+     * @throws IllegalArgumentException if {@code raf} is
      * {@code null}.
      */
     public FileImageInputStream(RandomAccessFile raf) {
@@ -156,16 +156,12 @@ public class FileImageInputStream extends ImageInputStreamImpl {
     /**
      * {@inheritDoc}
      *
-     * @deprecated The {@code finalize} method has been deprecated.
-     *     Subclasses that override {@code finalize} in order to perform cleanup
-     *     should be modified to use alternative cleanup mechanisms and
-     *     to remove the overriding {@code finalize} method.
-     *     When overriding the {@code finalize} method, its implementation must explicitly
-     *     ensure that {@code super.finalize()} is invoked as described in {@link Object#finalize}.
-     *     See the specification for {@link Object#finalize()} for further
-     *     information about migration options.
+     * @deprecated Finalization has been deprecated for removal.  See
+     * {@link java.lang.Object#finalize} for background information and details
+     * about migration options.
      */
-    @Deprecated(since="9")
+    @Deprecated(since="9", forRemoval=true)
+    @SuppressWarnings("removal")
     protected void finalize() throws Throwable {
         // Empty finalizer: for performance reasons we instead use the
         // Disposer mechanism for ensuring that the underlying

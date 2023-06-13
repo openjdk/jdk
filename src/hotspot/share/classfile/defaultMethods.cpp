@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,16 +38,14 @@
 #include "prims/jvmtiExport.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/signature.hpp"
-#include "runtime/thread.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.hpp"
 #include "oops/method.hpp"
 #include "utilities/accessFlags.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/ostream.hpp"
-#include "utilities/pair.hpp"
-#include "utilities/resourceHash.hpp"
 
 typedef enum { QUALIFIED, DISQUALIFIED } QualifiedState;
 
@@ -86,7 +84,7 @@ static void print_method(outputStream* str, Method* mo, bool with_class=true) {
  *
  * Bare minimum needed to be an ALGO class:
  * class Algo : public HierarchyVisitor<Algo> {
- *   void* new_node_data() { return NULL; }
+ *   void* new_node_data() { return nullptr; }
  *   void free_node_data(void* data) { return; }
  *   bool visit() { return true; }
  * };
@@ -140,7 +138,7 @@ class HierarchyVisitor : StackObj {
   Node* current_top() const { return _path.top(); }
   bool has_more_nodes() const { return _path.length() > 0; }
   void push(InstanceKlass* cls, ALGO* algo) {
-    assert(cls != NULL, "Requires a valid instance class");
+    assert(cls != nullptr, "Requires a valid instance class");
     if (cls == vmClasses::Object_klass()) {
       _visited_Object = true;
     }
@@ -165,11 +163,11 @@ class HierarchyVisitor : StackObj {
   // only ensures we don't then repeatedly enqueue Object for each interface
   // in the class hierarchy.
   bool has_super(InstanceKlass* cls) {
-    return cls->super() != NULL && (!_visited_Object || !cls->is_interface());
+    return cls->super() != nullptr && (!_visited_Object || !cls->is_interface());
   }
 
   Node* node_at_depth(int i) const {
-    return (i >= _path.length()) ? NULL : _path.at(_path.length() - i - 1);
+    return (i >= _path.length()) ? nullptr : _path.at(_path.length() - i - 1);
   }
 
  protected:
@@ -184,13 +182,13 @@ class HierarchyVisitor : StackObj {
 
   InstanceKlass* class_at_depth(int i) {
     Node* n = node_at_depth(i);
-    return n == NULL ? NULL : n->_class;
+    return n == nullptr ? nullptr : n->_class;
   }
   InstanceKlass* current_class() { return class_at_depth(0); }
 
   void* data_at_depth(int i) {
     Node* n = node_at_depth(i);
-    return n == NULL ? NULL : n->_algorithm_data;
+    return n == nullptr ? nullptr : n->_algorithm_data;
   }
   void* current_data() { return data_at_depth(0); }
 
@@ -218,7 +216,7 @@ class HierarchyVisitor : StackObj {
         algo->free_node_data(top->_algorithm_data);
         pop();
       } else {
-        InstanceKlass* next = NULL;
+        InstanceKlass* next = nullptr;
         if (top->has_visited_super() == false) {
           next = top->next_super();
           top->set_super_visited();
@@ -226,7 +224,7 @@ class HierarchyVisitor : StackObj {
           next = top->next_interface();
           top->increment_visited_interface();
         }
-        assert(next != NULL, "Otherwise we shouldn't be here");
+        assert(next != nullptr, "Otherwise we shouldn't be here");
         push(next, algo);
         top_needs_visit = true;
       }
@@ -245,7 +243,7 @@ class PrintHierarchy : public HierarchyVisitor<PrintHierarchy> {
     return true;
   }
 
-  void* new_node_data() { return NULL; }
+  void* new_node_data() { return nullptr; }
   void free_node_data(void* data) { return; }
 
   PrintHierarchy(outputStream* st = tty) : _st(st) {}
@@ -293,7 +291,7 @@ class KeepAliveVisitor : public HierarchyVisitor<KeepAliveVisitor> {
  public:
   KeepAliveVisitor(KeepAliveRegistrar* registrar) : _registrar(registrar) {}
 
-  void* new_node_data() { return NULL; }
+  void* new_node_data() { return nullptr; }
   void free_node_data(void* data) { return; }
 
   bool visit() {
@@ -315,7 +313,7 @@ class MethodState {
   Method* _method;
   QualifiedState _state;
 
-  MethodState() : _method(NULL), _state(DISQUALIFIED) {}
+  MethodState() : _method(nullptr), _state(DISQUALIFIED) {}
   MethodState(Method* method, QualifiedState state) : _method(method), _state(state) {}
 };
 
@@ -334,7 +332,7 @@ class MethodFamily : public ResourceObj {
         return &_members.at(i);
       }
     }
-    return NULL;
+    return nullptr;
   }
 
   void add_method(Method* method, QualifiedState state) {
@@ -349,10 +347,10 @@ class MethodFamily : public ResourceObj {
  public:
 
   MethodFamily()
-      : _selected_target(NULL), _exception_message(NULL), _exception_name(NULL) {}
+      : _selected_target(nullptr), _exception_message(nullptr), _exception_name(nullptr) {}
 
   void set_target_if_empty(Method* m) {
-    if (_selected_target == NULL && !m->is_overpass()) {
+    if (_selected_target == nullptr && !m->is_overpass()) {
       _selected_target = m;
     }
   }
@@ -362,15 +360,15 @@ class MethodFamily : public ResourceObj {
     // as is if state is qualified, or set it to disqualified if state is
     // disqualified.
     MethodState* method_state = find_method(m);
-    if (method_state == NULL) {
+    if (method_state == nullptr) {
       add_method(m, state);
     } else if (state == DISQUALIFIED) {
       method_state->_state = DISQUALIFIED;
     }
   }
 
-  bool has_target() const { return _selected_target != NULL; }
-  bool throws_exception() { return _exception_message != NULL; }
+  bool has_target() const { return _selected_target != nullptr; }
+  bool throws_exception() { return _exception_message != nullptr; }
 
   Method* get_selected_target() { return _selected_target; }
   Symbol* get_exception_message() { return _exception_message; }
@@ -421,7 +419,7 @@ class MethodFamily : public ResourceObj {
       if (qualified_methods.length() == 0) {
         _exception_message = generate_no_defaults_message();
       } else {
-        assert(root != NULL, "Null root class");
+        assert(root != nullptr, "Null root class");
         _exception_message = generate_method_message(root->name(), qualified_methods.at(0));
       }
       _exception_name = vmSymbols::java_lang_AbstractMethodError();
@@ -451,7 +449,7 @@ class MethodFamily : public ResourceObj {
 
   void print_exception(outputStream* str, int indent) {
     assert(throws_exception(), "Should be called otherwise");
-    assert(_exception_name != NULL, "exception_name should be set");
+    assert(_exception_name != nullptr, "exception_name should be set");
     streamIndentor si(str, indent * 2);
     str->indent().print_cr("%s: %s", _exception_name->as_C_string(), _exception_message->as_C_string());
   }
@@ -532,7 +530,7 @@ class StateRestorer : public ResourceObj {
   StatefulMethodFamily* _method;
   QualifiedState _state_to_restore;
 
-  StateRestorer() : _method(NULL), _state_to_restore(DISQUALIFIED) {}
+  StateRestorer() : _method(nullptr), _state_to_restore(DISQUALIFIED) {}
 
   void restore_state() { _method->set_qualification_state(_state_to_restore); }
 };
@@ -585,7 +583,7 @@ void StatefulMethodFamily::record_method_and_dq_further(StateRestorerScope* scop
 }
 
 // Represents a location corresponding to a vtable slot for methods that
-// neither the class nor any of it's ancestors provide an implementaion.
+// neither the class nor any of it's ancestors provide an implementation.
 // Default methods may be present to fill this slot.
 class EmptyVtableSlot : public ResourceObj {
  private:
@@ -597,14 +595,14 @@ class EmptyVtableSlot : public ResourceObj {
  public:
   EmptyVtableSlot(Method* method)
       : _name(method->name()), _signature(method->signature()),
-        _size_of_parameters(method->size_of_parameters()), _binding(NULL) {}
+        _size_of_parameters(method->size_of_parameters()), _binding(nullptr) {}
 
   Symbol* name() const { return _name; }
   Symbol* signature() const { return _signature; }
   int size_of_parameters() const { return _size_of_parameters; }
 
   void bind_family(MethodFamily* lm) { _binding = lm; }
-  bool is_bound() { return _binding != NULL; }
+  bool is_bound() { return _binding != nullptr; }
   MethodFamily* get_binding() { return _binding; }
 
   void print_on(outputStream* str) const {
@@ -627,7 +625,7 @@ static bool already_in_vtable_slots(GrowableArray<EmptyVtableSlot*>* slots, Meth
 static void find_empty_vtable_slots(GrowableArray<EmptyVtableSlot*>* slots,
     InstanceKlass* klass, const GrowableArray<Method*>* mirandas) {
 
-  assert(klass != NULL, "Must be valid class");
+  assert(klass != nullptr, "Must be valid class");
 
   // All miranda methods are obvious candidates
   for (int i = 0; i < mirandas->length(); ++i) {
@@ -640,7 +638,7 @@ static void find_empty_vtable_slots(GrowableArray<EmptyVtableSlot*>* slots,
   // Also any overpasses in our superclasses, that we haven't implemented.
   // (can't use the vtable because it is not guaranteed to be initialized yet)
   InstanceKlass* super = klass->java_super();
-  while (super != NULL) {
+  while (super != nullptr) {
     for (int i = 0; i < super->methods()->length(); ++i) {
       Method* m = super->methods()->at(i);
       if (m->is_overpass() || m->is_static()) {
@@ -650,7 +648,7 @@ static void find_empty_vtable_slots(GrowableArray<EmptyVtableSlot*>* slots,
         // unless we have a real implementation of it in the current class.
         if (!already_in_vtable_slots(slots, m)) {
           Method *impl = klass->lookup_method(m->name(), m->signature());
-          if (impl == NULL || impl->is_overpass() || impl->is_static()) {
+          if (impl == nullptr || impl->is_overpass() || impl->is_static()) {
             slots->append(new EmptyVtableSlot(m));
           }
         }
@@ -658,7 +656,7 @@ static void find_empty_vtable_slots(GrowableArray<EmptyVtableSlot*>* slots,
     }
 
     // also any default methods in our superclasses
-    if (super->default_methods() != NULL) {
+    if (super->default_methods() != nullptr) {
       for (int i = 0; i < super->default_methods()->length(); ++i) {
         Method* m = super->default_methods()->at(i);
         // m is a method that would have been a miranda if not for the
@@ -667,7 +665,7 @@ static void find_empty_vtable_slots(GrowableArray<EmptyVtableSlot*>* slots,
         // unless we have a real implementation of it in the current class.
         if (!already_in_vtable_slots(slots, m)) {
           Method* impl = klass->lookup_method(m->name(), m->signature());
-          if (impl == NULL || impl->is_overpass() || impl->is_static()) {
+          if (impl == nullptr || impl->is_overpass() || impl->is_static()) {
             slots->append(new EmptyVtableSlot(m));
           }
         }
@@ -709,15 +707,15 @@ class FindMethodsByErasedSig : public HierarchyVisitor<FindMethodsByErasedSig> {
     reset();
     _method_name = name;
     _method_signature = signature;
-    _family = NULL;
+    _family = nullptr;
     _cur_class_is_interface = is_interf;
   }
 
   void get_discovered_family(MethodFamily** family) {
-      if (_family != NULL) {
+      if (_family != nullptr) {
         *family = _family->get_method_family();
       } else {
-        *family = NULL;
+        *family = nullptr;
       }
   }
 
@@ -752,9 +750,9 @@ class FindMethodsByErasedSig : public HierarchyVisitor<FindMethodsByErasedSig> {
     // Non-public methods in java.lang.Object are not candidates for default
     // methods.
     // Future: take access controls into account for superclass methods
-    if (m != NULL && !m->is_static() && !m->is_overpass() && !m->is_private() &&
+    if (m != nullptr && !m->is_static() && !m->is_overpass() && !m->is_private() &&
      (!_cur_class_is_interface || !SystemDictionary::is_nonpublic_Object_method(m))) {
-      if (_family == NULL) {
+      if (_family == nullptr) {
         _family = new StatefulMethodFamily();
       }
 
@@ -792,7 +790,7 @@ static void generate_erased_defaults(
 
   MethodFamily* family;
   visitor->get_discovered_family(&family);
-  if (family != NULL) {
+  if (family != nullptr) {
     family->determine_target_or_set_exception_message(klass);
     slot->bind_family(family);
   }
@@ -817,7 +815,7 @@ static void create_default_methods( InstanceKlass* klass,
 // The JVM does not create bridges nor handle generic signatures here.
 void DefaultMethods::generate_default_methods(
     InstanceKlass* klass, const GrowableArray<Method*>* mirandas, TRAPS) {
-  assert(klass != NULL, "invariant");
+  assert(klass != nullptr, "invariant");
   assert(klass != vmClasses::Object_klass(), "Shouldn't be called for Object");
 
   // This resource mark is the bound for all memory allocation that takes
@@ -893,23 +891,23 @@ static Method* new_method(
   int code_length = 0;
   InlineTableSizes sizes;
 
-  if (bytecodes != NULL && bytecodes->length() > 0) {
+  if (bytecodes != nullptr && bytecodes->length() > 0) {
     code_start = static_cast<address>(bytecodes->adr_at(0));
     code_length = bytecodes->length();
   }
 
   Method* m = Method::allocate(cp->pool_holder()->class_loader_data(),
                                code_length, flags, &sizes,
-                               mt, CHECK_NULL);
+                               mt, name, CHECK_NULL);
 
-  m->set_constants(NULL); // This will get filled in later
+  m->set_constants(nullptr); // This will get filled in later
   m->set_name_index(cp->utf8(name));
   m->set_signature_index(cp->utf8(sig));
-  m->compute_from_signature(sig);
-  m->set_size_of_parameters(params);
+  m->constMethod()->compute_from_signature(sig, flags.is_static());
+  assert(m->size_of_parameters() == params, "should be computed above");
   m->set_max_stack(max_stack);
   m->set_max_locals(params);
-  m->constMethod()->set_stackmap_data(NULL);
+  m->constMethod()->set_stackmap_data(nullptr);
   m->set_code(code_start);
 
   return m;
@@ -958,7 +956,7 @@ static void create_defaults_and_exceptions(GrowableArray<EmptyVtableSlot*>* slot
   GrowableArray<Method*> defaults;
   BytecodeConstantPool bpool(klass->constants());
 
-  BytecodeBuffer* buffer = NULL; // Lazily create a reusable buffer
+  BytecodeBuffer* buffer = nullptr; // Lazily create a reusable buffer
   for (int i = 0; i < slots->length(); ++i) {
     EmptyVtableSlot* slot = slots->at(i);
 
@@ -986,7 +984,7 @@ static void create_defaults_and_exceptions(GrowableArray<EmptyVtableSlot*>* slot
           defaults.push(selected);
         }
       } else if (method->throws_exception()) {
-        if (buffer == NULL) {
+        if (buffer == nullptr) {
           buffer = new BytecodeBuffer();
         } else {
           buffer->clear();
@@ -1000,7 +998,7 @@ static void create_defaults_and_exceptions(GrowableArray<EmptyVtableSlot*>* slot
           ConstMethod::OVERPASS, CHECK);
         // We push to the methods list:
         // overpass methods which are exception throwing methods
-        if (m != NULL) {
+        if (m != nullptr) {
           overpasses.push(m);
         }
       }
@@ -1025,7 +1023,7 @@ static void create_default_methods(InstanceKlass* klass,
 
   int new_size = new_methods->length();
   Array<Method*>* total_default_methods = MetadataFactory::new_array<Method*>(
-      klass->class_loader_data(), new_size, NULL, CHECK);
+      klass->class_loader_data(), new_size, nullptr, CHECK);
   for (int index = 0; index < new_size; index++ ) {
     total_default_methods->at_put(index, new_methods->at(index));
   }
@@ -1078,7 +1076,7 @@ static void merge_in_new_methods(InstanceKlass* klass,
   int new_size = klass->methods()->length() + new_methods->length();
 
   Array<Method*>* merged_methods = MetadataFactory::new_array<Method*>(
-      klass->class_loader_data(), new_size, NULL, CHECK);
+      klass->class_loader_data(), new_size, nullptr, CHECK);
 
   // original_ordering might be empty if this class has no methods of its own
   if (JvmtiExport::can_maintain_original_method_order() || Arguments::is_dumping_archive()) {
@@ -1094,8 +1092,8 @@ static void merge_in_new_methods(InstanceKlass* klass,
   int new_idx = 0;
 
   for (int i = 0; i < new_size; ++i) {
-    Method* orig_method = NULL;
-    Method* new_method = NULL;
+    Method* orig_method = nullptr;
+    Method* new_method = nullptr;
     if (orig_idx < original_methods->length()) {
       orig_method = original_methods->at(orig_idx);
     }
@@ -1103,12 +1101,12 @@ static void merge_in_new_methods(InstanceKlass* klass,
       new_method = new_methods->at(new_idx);
     }
 
-    if (orig_method != NULL &&
-        (new_method == NULL || orig_method->name() < new_method->name())) {
+    if (orig_method != nullptr &&
+        (new_method == nullptr || orig_method->name() < new_method->name())) {
       merged_methods->at_put(i, orig_method);
-      original_methods->at_put(orig_idx, NULL);
+      original_methods->at_put(orig_idx, nullptr);
       if (merged_ordering->length() > 0) {
-        assert(original_ordering != NULL && original_ordering->length() > 0,
+        assert(original_ordering != nullptr && original_ordering->length() > 0,
                "should have original order information for this method");
         merged_ordering->at_put(i, original_ordering->at(orig_idx));
       }
@@ -1146,7 +1144,7 @@ static void merge_in_new_methods(InstanceKlass* klass,
   if (original_methods->length() > 0) {
     MetadataFactory::free_array(cld, original_methods);
   }
-  if (original_ordering != NULL && original_ordering->length() > 0) {
+  if (original_ordering != nullptr && original_ordering->length() > 0) {
     MetadataFactory::free_array(cld, original_ordering);
   }
 }

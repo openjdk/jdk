@@ -4,7 +4,7 @@
  *
  *   psnames module implementation (body).
  *
- * Copyright (C) 1996-2020 by
+ * Copyright (C) 1996-2023 by
  * David Turner, Robert Wilhelm, and Werner Lemberg.
  *
  * This file is part of the FreeType project, and may only be used,
@@ -155,31 +155,30 @@
     /* Look for a non-initial dot in the glyph name in order to */
     /* find variants like `A.swash', `e.final', etc.            */
     {
-      const char*  p   = glyph_name;
-      const char*  dot = NULL;
+      FT_UInt32    value = 0;
+      const char*  p     = glyph_name;
 
 
-      for ( ; *p; p++ )
+      for ( ; *p && *p != '.'; p++ )
+        ;
+
+      /* now look up the glyph in the Adobe Glyph List;      */
+      /* `.notdef', `.null' and the empty name are short cut */
+      if ( p > glyph_name )
       {
-        if ( *p == '.' && p > glyph_name )
-        {
-          dot = p;
-          break;
-        }
+        value = (FT_UInt32)ft_get_adobe_glyph_index( glyph_name, p );
+
+        if ( *p == '.' )
+          value |= (FT_UInt32)VARIANT_BIT;
       }
 
-      /* now look up the glyph in the Adobe Glyph List */
-      if ( !dot )
-        return (FT_UInt32)ft_get_adobe_glyph_index( glyph_name, p );
-      else
-        return (FT_UInt32)( ft_get_adobe_glyph_index( glyph_name, dot ) |
-                            VARIANT_BIT );
+      return value;
     }
   }
 
 
   /* ft_qsort callback to sort the unicode map */
-  FT_CALLBACK_DEF( int )
+  FT_COMPARE_DEF( int )
   compare_uni_maps( const void*  a,
                     const void*  b )
   {
@@ -326,9 +325,8 @@
 
     /* we first allocate the table */
     table->num_maps = 0;
-    table->maps     = NULL;
 
-    if ( !FT_NEW_ARRAY( table->maps, num_glyphs + EXTRA_GLYPH_LIST_SIZE ) )
+    if ( !FT_QNEW_ARRAY( table->maps, num_glyphs + EXTRA_GLYPH_LIST_SIZE ) )
     {
       FT_UInt     n;
       FT_UInt     count;
@@ -343,7 +341,7 @@
         const char*  gname = get_glyph_name( glyph_data, n );
 
 
-        if ( gname )
+        if ( gname && *gname )
         {
           ps_check_extra_glyph_name( gname, n,
                                      extra_glyphs, extra_glyph_list_states );
@@ -391,9 +389,9 @@
         /* Reallocate if the number of used entries is much smaller. */
         if ( count < num_glyphs / 2 )
         {
-          (void)FT_RENEW_ARRAY( table->maps,
-                                num_glyphs + EXTRA_GLYPH_LIST_SIZE,
-                                count );
+          FT_MEM_QRENEW_ARRAY( table->maps,
+                               num_glyphs + EXTRA_GLYPH_LIST_SIZE,
+                               count );
           error = FT_Err_Ok;
         }
 
@@ -414,20 +412,17 @@
   ps_unicodes_char_index( PS_Unicodes  table,
                           FT_UInt32    unicode )
   {
-    PS_UniMap  *min, *max, *mid, *result = NULL;
+    PS_UniMap  *result = NULL;
+    PS_UniMap  *min = table->maps;
+    PS_UniMap  *max = min + table->num_maps;
+    PS_UniMap  *mid = min + ( ( max - min ) >> 1 );
 
 
     /* Perform a binary search on the table. */
-
-    min = table->maps;
-    max = min + table->num_maps - 1;
-
-    while ( min <= max )
+    while ( min < max )
     {
       FT_UInt32  base_glyph;
 
-
-      mid = min + ( ( max - min ) >> 1 );
 
       if ( mid->unicode == unicode )
       {
@@ -440,13 +435,15 @@
       if ( base_glyph == unicode )
         result = mid; /* remember match but continue search for base glyph */
 
-      if ( min == max )
-        break;
-
       if ( base_glyph < unicode )
         min = mid + 1;
       else
-        max = mid - 1;
+        max = mid;
+
+      /* reasonable prediction in a continuous block */
+      mid += unicode - base_glyph;
+      if ( mid >= max || mid < min )
+        mid = min + ( ( max - min ) >> 1 );
     }
 
     if ( result )
@@ -467,14 +464,13 @@
     {
       FT_UInt     min = 0;
       FT_UInt     max = table->num_maps;
-      FT_UInt     mid;
+      FT_UInt     mid = min + ( ( max - min ) >> 1 );
       PS_UniMap*  map;
       FT_UInt32   base_glyph;
 
 
       while ( min < max )
       {
-        mid = min + ( ( max - min ) >> 1 );
         map = table->maps + mid;
 
         if ( map->unicode == char_code )
@@ -492,6 +488,11 @@
           min = mid + 1;
         else
           max = mid;
+
+        /* reasonable prediction in a continuous block */
+        mid += char_code - base_glyph;
+        if ( mid >= max || mid < min )
+          mid = min + ( max - min ) / 2;
       }
 
       if ( result )
