@@ -305,7 +305,7 @@ final class VirtualThread extends BaseVirtualThread {
             event.commit();
         }
 
-        Object bindings = scopedValueBindings();
+        Object bindings = Thread.scopedValueBindings();
         try {
             runWith(bindings, task);
         } catch (Throwable exc) {

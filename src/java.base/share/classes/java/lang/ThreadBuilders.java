@@ -433,7 +433,7 @@ class ThreadBuilders {
             // run is specified to do nothing when Thread is a virtual thread
             if (Thread.currentThread() == this && !runInvoked) {
                 runInvoked = true;
-                Object bindings = scopedValueBindings();
+                Object bindings = Thread.scopedValueBindings();
                 runWith(bindings, task);
             }
         }
