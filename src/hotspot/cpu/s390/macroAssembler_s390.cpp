@@ -3278,11 +3278,8 @@ void MacroAssembler::compiler_fast_unlock_object(Register oop, Register box, Reg
   } else {
     assert(LockingMode == LM_LIGHTWEIGHT, "must be");
 
-    z_lg(temp, hdr_offset, oop);
-    z_nill(temp, markWord::monitor_value);
-    z_brne(object_has_monitor);
-
-    z_lg(currentHeader, hdr_offset, oop);
+    // don't load currentHead again after monitor check, as it is possible
+    // some other thread modified it.
     fast_unlock(oop, currentHeader, temp, done);
     z_bru(done);
   }
