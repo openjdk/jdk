@@ -882,8 +882,8 @@ public class ClassWriter extends ClassFile {
         int acountIdx = beginAttrs();
         int acount = 0;
 
-        if (m.isMatcher() && target.hasMethodParameters() && (options.isSet(PARAMETERS))) {
-            acount += writeMethodParametersAttr(m);
+        if (m.isMatcher() && target.hasMethodParameters()) {
+            acount += writeMethodParametersAttr(m, requiresParamNames(m));
         }
 
         acount += writeMemberAttrs(m, false, true);

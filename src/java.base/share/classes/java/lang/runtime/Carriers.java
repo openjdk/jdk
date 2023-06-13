@@ -84,7 +84,7 @@ import static java.lang.invoke.MethodType.methodType;
  * Warning: This class is part of PreviewFeature.Feature.STRING_TEMPLATES.
  *          Do not rely on its availability.
  */
-final class Carriers {
+public final class Carriers {
     /**
      * Maximum number of components in a carrier (based on the maximum
      * number of args to a constructor.)

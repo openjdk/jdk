@@ -1371,6 +1371,9 @@ public class ClassfileInspector {
         public Void visitRecord(Record_attribute attr, T p) {
             return null;
         }
+
+        @Override
+        public Void visitMatcher(Matcher_attribute attr, T p) { return null; }
     }
 
     private static final Attribute.Visitor<Void, ExpectedTypeAnnotation> typeAnnoMatcher

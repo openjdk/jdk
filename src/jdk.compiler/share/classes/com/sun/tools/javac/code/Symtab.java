@@ -556,7 +556,7 @@ public class Symtab {
         methodHandlesType = enterClass("java.lang.invoke.MethodHandles");
         methodHandleLookupType = enterClass("java.lang.invoke.MethodHandles$Lookup");
         methodTypeType = enterClass("java.lang.invoke.MethodType");
-        carriersType = enterClass("java.lang.template.Carriers");
+        carriersType = enterClass("java.lang.runtime.Carriers");
 
         errorType = enterClass("java.lang.Error");
         illegalArgumentExceptionType = enterClass("java.lang.IllegalArgumentException");

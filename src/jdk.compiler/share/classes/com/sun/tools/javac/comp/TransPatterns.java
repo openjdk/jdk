@@ -341,10 +341,9 @@ public class TransPatterns extends TreeTranslator {
                 index++;
 
                 Type componentType = types.erasure(nestedFullComponentTypes.head);
-                JCPattern nestedPattern = TreeInfo.skipParens(nestedPatterns.head);
                 JCBindingPattern nestedBinding;
                 boolean allowNull;
-                if (nestedPattern instanceof JCRecordPattern nestedRecordPattern) {
+                if (nestedPatterns.head instanceof JCRecordPattern nestedRecordPattern) {
                     UnrolledRecordPattern nestedDesugared = unrollRecordPattern(nestedRecordPattern);
                     JCExpression newGuard = nestedDesugared.newGuard();
                     if (newGuard != null) {
@@ -357,7 +356,7 @@ public class TransPatterns extends TreeTranslator {
                     nestedBinding = nestedDesugared.primaryPattern();
                     allowNull = false;
                 } else {
-                    nestedBinding = (JCBindingPattern) nestedPattern;
+                    nestedBinding = (JCBindingPattern) nestedPatterns.head;
                     allowNull = types.isSubtype(componentType,
                                                 types.boxedTypeOrType(types.erasure(nestedBinding.type)));
                 }

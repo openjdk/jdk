@@ -42,6 +42,7 @@ class AttributeVisitor<R, P> implements Attribute.Visitor<R, P> {
     public R visitLineNumberTable(LineNumberTable_attribute attr, P p) { return null; }
     public R visitLocalVariableTable(LocalVariableTable_attribute attr, P p) { return null; }
     public R visitLocalVariableTypeTable(LocalVariableTypeTable_attribute attr, P p) { return null; }
+    public R visitMatcher(Matcher_attribute attr, P p) { return null; }
     public R visitNestHost(NestHost_attribute attr, P p) { return null; }
     public R visitMethodParameters(MethodParameters_attribute attr, P p) { return null; }
     public R visitModule(Module_attribute attr, P p) { return null; }

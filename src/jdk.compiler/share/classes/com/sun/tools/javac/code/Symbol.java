@@ -2079,7 +2079,11 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
             }
 
             protected Name toName() {
-                return sigbuf.toName(names);
+                try {
+                    return sigbuf.toName(names);
+                } catch (InvalidUtfException e) {
+                    throw new AssertionError(e);
+                }
             }
         }
 
