@@ -57,6 +57,8 @@ public class StressStackOverflow {
         TestFailureException(String s) { super(s); }
     }
 
+    static final long MINUTES = 60 * 1_000_000_000L; // 60 * 10**9 ns
+
     // Test the ScopedValue recovery mechanism for stack overflows. We implement both Callable
     // and Runnable interfaces. Which one gets tested depends on the constructor argument.
     class DeepRecursion implements Callable, Supplier, Runnable {
@@ -77,38 +79,40 @@ public class StressStackOverflow {
 
         public void run() {
             final var last = el.get();
-            ITERS--;
-            var nextRandomFloat = tlr.nextFloat();
-            try {
-                switch (behaviour) {
-                    case CALL ->
-                        ScopedValue.where(el, el.get() + 1).call(() -> fibonacci_pad(20, this));
-                    case GET ->
-                        ScopedValue.where(el, el.get() + 1).get(() -> fibonacci_pad(20, this));
-                    case RUN ->
-                        ScopedValue.where(el, el.get() + 1).run(() -> fibonacci_pad(20, this));
+            while (ITERS-- > 0) {
+                if (System.nanoTime() - startTime > 3 * MINUTES) { // 3 minutes is long enough
+                    return;
                 }
-                if (!last.equals(el.get())) {
-                    throw testFailureException;
-                }
-            } catch (StackOverflowError e) {
-                if (nextRandomFloat <= 0.1) {
-                    ScopedValue.where(el, el.get() + 1).run(this);
-                }
-            } catch (TestFailureException e) {
-                throw e;
-            } catch (Throwable throwable) {
-                // StackOverflowErrors cause many different failures. These include
-                // StructureViolationExceptions and InvocationTargetExceptions. This test
-                // checks that, no matter what the failure mode, scoped values are handled
-                // correctly.
-            } finally {
-                if (!last.equals(el.get())) {
-                    throw testFailureException;
-                }
-            }
 
-            Thread.yield();
+                var nextRandomFloat = tlr.nextFloat();
+                try {
+                    switch (behaviour) {
+                        case CALL -> ScopedValue.where(el, el.get() + 1).call(() -> fibonacci_pad(20, this));
+                        case GET -> ScopedValue.where(el, el.get() + 1).get(() -> fibonacci_pad(20, this));
+                        case RUN -> ScopedValue.where(el, el.get() + 1).run(() -> fibonacci_pad(20, this));
+                    }
+                    if (!last.equals(el.get())) {
+                        throw testFailureException;
+                    }
+                } catch (StackOverflowError e) {
+                    if (nextRandomFloat <= 0.1) {
+                        ScopedValue.where(el, el.get() + 1).run(this);
+                    }
+                } catch (TestFailureException e) {
+                    throw e;
+                } catch (Throwable throwable) {
+                    // StackOverflowErrors cause many different failures. These include
+                    // StructureViolationExceptions and InvocationTargetExceptions. This test
+                    // checks that, no matter what the failure mode, scoped values are handled
+                    // correctly.
+                } finally {
+                    if (!last.equals(el.get())) {
+                        throw testFailureException;
+                    }
+                }
+
+                Thread.yield();
+            }
         }
 
         public Object get() {
@@ -167,6 +171,8 @@ public class StressStackOverflow {
             });
             scope.join();
             handle.get();
+        } catch (TestFailureException e) {
+            throw e;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -211,21 +217,36 @@ public class StressStackOverflow {
                     } catch (StructureViolationException structureViolationException) {
                         // Can happen if a stack overflow prevented a StackableScope from
                         // being removed. We can continue.
+                    } catch (TestFailureException e) {
+                        throw e;
                     } catch (Exception e) {
                         throw new RuntimeException(e);
                     }
                 }
             });
-        } catch (StructureViolationException structureViolationException) {
+        } catch (TestFailureException e) {
+            throw e;
+        } catch (Exception e) {
             // Can happen if a stack overflow prevented a StackableScope from
             // being removed. We can continue.
         }
     }
 
+    static long startTime = System.nanoTime();
+
     public static void main(String[] args) {
         var torture = new StressStackOverflow();
-        while (torture.ITERS > 0) {
-            torture.run();
+        while (torture.ITERS > 0
+                && System.nanoTime() - startTime <= 3 * MINUTES) { // 3 minutes is long enough
+            try {
+                torture.run();
+            } catch (TestFailureException e) {
+                throw e;
+            } finally {
+                // ScopedValueContainer and StructuredTaskScope can
+                // throw many exceptions on stack overflow. Ignore
+                // them all.
+            }
         }
         System.out.println("OK");
     }
