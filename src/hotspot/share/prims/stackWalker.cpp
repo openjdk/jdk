@@ -362,11 +362,6 @@ void StackWalker::advance_normal() {
       advance_fully_c();
     } else if (!_inlined) {
       if (_frame.safe_for_sender(_thread)) {
-        if (is_stub_frame() && !_skip_c_frames) {
-          // we walk the stub frame as a C frame
-          _frame = os::get_sender_for_C_frame(&_frame);
-          return;
-        }
         _frame = _frame.sender(&_map);
       } else {
         in_c_on_top = true;
