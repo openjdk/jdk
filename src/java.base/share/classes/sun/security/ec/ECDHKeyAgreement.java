@@ -25,11 +25,13 @@
 
 package sun.security.ec;
 
+import sun.security.ec.point.AffinePoint;
 import sun.security.ec.point.Point;
 import sun.security.util.ArrayUtil;
 import sun.security.util.CurveDB;
 import sun.security.util.ECUtil;
 import sun.security.util.NamedCurve;
+import sun.security.util.math.ImmutableIntegerModuloP;
 import sun.security.util.math.IntegerFieldModuloP;
 import sun.security.util.math.MutableIntegerModuloP;
 import sun.security.util.math.SmallValue;
