@@ -486,6 +486,7 @@ class StubGenerator: public StubCodeGenerator {
   address generate_libmPow();
   address generate_libmLog();
   address generate_libmLog10();
+  address generate_libmFmod();
 
   // Shared constants
   static address ZERO;

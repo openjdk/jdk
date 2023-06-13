@@ -55,6 +55,7 @@ import java.lang.invoke.MethodType;
 import java.util.List;
 import java.nio.ByteOrder;
 import java.util.Objects;
+import java.util.Set;
 
 public abstract sealed class AbstractLinker implements Linker permits LinuxAArch64Linker, MacOsAArch64Linker,
                                                                       SysVx64Linker, WindowsAArch64Linker,
@@ -173,10 +174,10 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
     }
 
     private void checkLayoutRecursive(MemoryLayout layout) {
-        checkHasNaturalAlignment(layout);
         if (layout instanceof ValueLayout vl) {
-            checkByteOrder(vl);
+            checkSupported(vl);
         } else if (layout instanceof StructLayout sl) {
+            checkHasNaturalAlignment(layout);
             long offset = 0;
             long lastUnpaddedOffset = 0;
             for (MemoryLayout member : sl.memberLayouts()) {
@@ -192,6 +193,7 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
             }
             checkGroupSize(sl, lastUnpaddedOffset);
         } else if (layout instanceof UnionLayout ul) {
+            checkHasNaturalAlignment(layout);
             long maxUnpaddedLayout = 0;
             for (MemoryLayout member : ul.memberLayouts()) {
                 checkLayoutRecursive(member);
@@ -201,6 +203,7 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
             }
             checkGroupSize(ul, maxUnpaddedLayout);
         } else if (layout instanceof SequenceLayout sl) {
+            checkHasNaturalAlignment(layout);
             checkLayoutRecursive(sl.elementLayout());
         }
     }
@@ -222,6 +225,16 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
         if (expectedOffset != offset) {
             throw new IllegalArgumentException("Member layout '" + memberLayout + "', of '" + parent + "'" +
                     " found at unexpected offset: " + offset + " != " + expectedOffset);
+        }
+    }
+
+    private static void checkSupported(ValueLayout valueLayout) {
+        valueLayout = valueLayout.withoutName();
+        if (valueLayout instanceof AddressLayout addressLayout) {
+            valueLayout = addressLayout.withoutTargetLayout();
+        }
+        if (!SUPPORTED_LAYOUTS.contains(valueLayout.withoutName())) {
+            throw new IllegalArgumentException("Unsupported layout: " + valueLayout);
         }
     }
 
@@ -257,9 +270,15 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
                 .orElseGet(() -> FunctionDescriptor.ofVoid(stripNames(function.argumentLayouts())));
     }
 
-    private void checkByteOrder(ValueLayout vl) {
-        if (vl.order() != linkerByteOrder()) {
-            throw new IllegalArgumentException("Layout does not have the right byte order: " + vl);
-        }
-    }
+    private static final Set<MemoryLayout> SUPPORTED_LAYOUTS = Set.of(
+            ValueLayout.JAVA_BOOLEAN,
+            ValueLayout.JAVA_BYTE,
+            ValueLayout.JAVA_CHAR,
+            ValueLayout.JAVA_SHORT,
+            ValueLayout.JAVA_INT,
+            ValueLayout.JAVA_FLOAT,
+            ValueLayout.JAVA_LONG,
+            ValueLayout.JAVA_DOUBLE,
+            ValueLayout.ADDRESS
+    );
 }

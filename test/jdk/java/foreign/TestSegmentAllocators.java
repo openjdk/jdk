@@ -151,6 +151,11 @@ public class TestSegmentAllocators {
         allocator.allocateArray(ValueLayout.JAVA_BYTE, -1);
     }
 
+    @Test(dataProvider = "allocators", expectedExceptions = IllegalArgumentException.class)
+    public void testBadAllocationArrayOverflow(SegmentAllocator allocator) {
+        allocator.allocateArray(ValueLayout.JAVA_LONG,  Long.MAX_VALUE);
+    }
+
     @Test(expectedExceptions = OutOfMemoryError.class)
     public void testBadArenaNullReturn() {
         try (Arena arena = Arena.ofConfined()) {

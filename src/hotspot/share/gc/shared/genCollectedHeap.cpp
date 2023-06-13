@@ -95,8 +95,7 @@ GenCollectedHeap::GenCollectedHeap(Generation::Name young,
                                    MaxOldSize,
                                    GenAlignment)),
   _rem_set(nullptr),
-  _soft_ref_gen_policy(),
-  _size_policy(nullptr),
+  _soft_ref_policy(),
   _gc_policy_counters(new GCPolicyCounters(policy_counters_name, 2, 2)),
   _incremental_collection_failed(false),
   _full_collections_completed(0),
@@ -137,17 +136,6 @@ jint GenCollectedHeap::initialize() {
 
 CardTableRS* GenCollectedHeap::create_rem_set(const MemRegion& reserved_region) {
   return new CardTableRS(reserved_region);
-}
-
-void GenCollectedHeap::initialize_size_policy(size_t init_eden_size,
-                                              size_t init_promo_size,
-                                              size_t init_survivor_size) {
-  const double max_gc_pause_sec = ((double) MaxGCPauseMillis) / 1000.0;
-  _size_policy = new AdaptiveSizePolicy(init_eden_size,
-                                        init_promo_size,
-                                        init_survivor_size,
-                                        max_gc_pause_sec,
-                                        GCTimeRatio);
 }
 
 ReservedHeapSpace GenCollectedHeap::allocate(size_t alignment) {
@@ -193,10 +181,6 @@ void GenCollectedHeap::post_initialize() {
   DefNewGeneration* def_new_gen = (DefNewGeneration*)_young_gen;
 
   def_new_gen->ref_processor_init();
-
-  initialize_size_policy(def_new_gen->eden()->capacity(),
-                         _old_gen->capacity(),
-                         def_new_gen->from()->capacity());
 
   MarkSweep::initialize();
 
