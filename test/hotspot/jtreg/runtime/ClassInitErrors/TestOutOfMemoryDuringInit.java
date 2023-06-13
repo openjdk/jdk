@@ -29,7 +29,7 @@
  *          cause, even if we can't create the ExceptionInInitializerError
  *
  * @comment Enable logging to ease failure diagnosis
- * @run main/othervm -Xlog:class+init=debug,exceptions=debug -Xms64m -Xmx64m TestOutOfMemoryDuringInit
+ * @run main/othervm -Xms64m -Xmx64m TestOutOfMemoryDuringInit
  */
 
 import java.io.ByteArrayOutputStream;
