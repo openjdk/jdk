@@ -251,6 +251,12 @@
           "Regions with live bytes exceeding this will not be collected.")  \
           range(0, 100)                                                     \
                                                                             \
+  product(uintx, G1RetainRegionLiveThresholdPercent, 85, EXPERIMENTAL,      \
+          "Threshold for evacuation failed regions to be considered for "   \
+          "inclusion in the collection set candidates."                     \
+          "Regions with live bytes exceeding this will not be retained.")   \
+          range(0, 100)                                                     \
+                                                                            \
   product(uintx, G1HeapWastePercent, 5,                                     \
           "Amount of space, expressed as a percentage of the heap size, "   \
           "that G1 is willing not to collect to avoid expensive GCs.")      \

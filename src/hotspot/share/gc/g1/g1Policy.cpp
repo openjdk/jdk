@@ -651,7 +651,7 @@ bool G1Policy::retain_evac_failed_region(uint index) const {
          "live bytes not set for %u used %zu garbage %zu cm-live %zu",
          index, _g1h->region_at(index)->used(), _g1h->region_at(index)->garbage_bytes(), live_bytes);
 
-  size_t threshold = G1MixedGCLiveThresholdPercent * HeapRegion::GrainBytes / 100;
+  size_t threshold = G1RetainRegionLiveThresholdPercent * HeapRegion::GrainBytes / 100;
   return live_bytes < threshold;
 }
 
@@ -1039,7 +1039,7 @@ double G1Policy::predict_base_time_ms(size_t pending_cards,
   double survivor_evac_time = predict_survivor_regions_evac_time();
   double retained_evac_time = predict_retained_regions_evac_time();
 
-  double total_time = card_merge_time + card_scan_time + constant_other_time + survivor_evac_time;
+  double total_time = card_merge_time + card_scan_time + constant_other_time + survivor_evac_time + retained_evac_time;
 
   log_trace(gc, ergo, heap)("Predicted base time: total %f lb_cards %zu rs_length %zu effective_scanned_cards %zu "
                             "card_merge_time %f card_scan_time %f constant_other_time %f "

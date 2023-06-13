@@ -334,11 +334,11 @@ public:
   size_t num_dirtied()   const { return _num_dirtied; }
 };
 
-class G1PostEvacuateCollectionSetCleanupTask2::ClearRetainedRegionBitmaps : public G1AbstractSubTask {
+class G1PostEvacuateCollectionSetCleanupTask2::ClearRetainedRegionData : public G1AbstractSubTask {
   G1EvacFailureRegions* _evac_failure_regions;
   HeapRegionClaimer _claimer;
 
-  class ClearRetainedRegionBitmapsClosure : public HeapRegionClosure {
+  class ClearRetainedRegionDataClosure : public HeapRegionClosure {
   public:
 
     bool do_heap_region(HeapRegion* r) override {
@@ -346,12 +346,13 @@ class G1PostEvacuateCollectionSetCleanupTask2::ClearRetainedRegionBitmaps : publ
       G1ConcurrentMark* cm = g1h->concurrent_mark();
 
       // Concurrent mark does not mark through regions that we retain (they are root
-      // regions wrt to marking), so we can drop their mark data. The marking information
-      // is also only required in a Concurrent Start pause.
-      bool drop_mark_data = !g1h->collector_state()->in_concurrent_start_gc() ||
-                            g1h->policy()->retain_evac_failed_region(r);
+      // regions wrt to marking), so we must clear their mark data (tams, statistics)
+      // previously set eagerly. The marking information on the bitmap is also only
+      // required in a Concurrent Start pause for non-retained regions.
+      bool clear_mark_data = !g1h->collector_state()->in_concurrent_start_gc() ||
+                             g1h->policy()->retain_evac_failed_region(r);
 
-      if (drop_mark_data) {
+      if (clear_mark_data) {
         g1h->clear_bitmap_for_region(r);
         r->reset_top_at_mark_start();
         cm->clear_statistics(r);
@@ -366,8 +367,8 @@ class G1PostEvacuateCollectionSetCleanupTask2::ClearRetainedRegionBitmaps : publ
   };
 
 public:
-  ClearRetainedRegionBitmaps(G1EvacFailureRegions* evac_failure_regions) :
-    G1AbstractSubTask(G1GCPhaseTimes::ClearRetainedRegionBitmaps),
+  ClearRetainedRegionData(G1EvacFailureRegions* evac_failure_regions) :
+    G1AbstractSubTask(G1GCPhaseTimes::ClearRetainedRegionData),
     _evac_failure_regions(evac_failure_regions),
     _claimer(0) {
   }
@@ -381,7 +382,7 @@ public:
   }
 
   void do_work(uint worker_id) override {
-    ClearRetainedRegionBitmapsClosure cl;
+    ClearRetainedRegionDataClosure cl;
     _evac_failure_regions->par_iterate(&cl, &_claimer, worker_id);
   }
 };
@@ -766,7 +767,7 @@ G1PostEvacuateCollectionSetCleanupTask2::G1PostEvacuateCollectionSetCleanupTask2
 
   if (evac_failure_regions->evacuation_failed()) {
     add_parallel_task(new RestorePreservedMarksTask(per_thread_states->preserved_marks_set()));
-    add_parallel_task(new ClearRetainedRegionBitmaps(evac_failure_regions));
+    add_parallel_task(new ClearRetainedRegionData(evac_failure_regions));
   }
   add_parallel_task(new RedirtyLoggedCardsTask(per_thread_states->rdcqs(), evac_failure_regions));
   if (UseTLAB && ResizeTLAB) {
