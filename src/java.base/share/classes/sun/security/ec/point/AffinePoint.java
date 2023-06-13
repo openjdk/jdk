@@ -32,7 +32,7 @@ import java.util.Objects;
 
 /**
  * Elliptic curve point represented using affine coordinates (x, y). This class
- * is not part of the sun.security.point.ec.Point hierarchy because it is not
+ * is not part of the sun.security.ec.point.Point hierarchy because it is not
  * used to hold intermediate values during point arithmetic, and so it does not
  * have a mutable form.
  */

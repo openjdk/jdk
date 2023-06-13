@@ -358,27 +358,27 @@ public final class SunEC extends Provider {
         ATTRS.put("ImplementedIn", "Software");
 
         putService(new ProviderService(this, "KeyFactory",
-            "EdDSA", "sun.security.ed.ec.EdDSAKeyFactory", null, ATTRS));
+            "EdDSA", "sun.security.ec.ed.EdDSAKeyFactory", null, ATTRS));
         putService(new ProviderServiceA(this, "KeyFactory",
-            "Ed25519", "sun.security.ed.ec.EdDSAKeyFactory.Ed25519", ATTRS));
+            "Ed25519", "sun.security.ec.ed.EdDSAKeyFactory.Ed25519", ATTRS));
         putService(new ProviderServiceA(this, "KeyFactory",
-            "Ed448", "sun.security.ed.ec.EdDSAKeyFactory.Ed448", ATTRS));
+            "Ed448", "sun.security.ec.ed.EdDSAKeyFactory.Ed448", ATTRS));
 
         putService(new ProviderService(this, "KeyPairGenerator",
-            "EdDSA", "sun.security.ed.ec.EdDSAKeyPairGenerator", null, ATTRS));
+            "EdDSA", "sun.security.ec.ed.EdDSAKeyPairGenerator", null, ATTRS));
         putService(new ProviderServiceA(this, "KeyPairGenerator",
-            "Ed25519", "sun.security.ed.ec.EdDSAKeyPairGenerator.Ed25519",
+            "Ed25519", "sun.security.ec.ed.EdDSAKeyPairGenerator.Ed25519",
             ATTRS));
         putService(new ProviderServiceA(this, "KeyPairGenerator",
-            "Ed448", "sun.security.ed.ec.EdDSAKeyPairGenerator.Ed448",
+            "Ed448", "sun.security.ec.ed.EdDSAKeyPairGenerator.Ed448",
             ATTRS));
 
         putService(new ProviderService(this, "Signature",
-            "EdDSA", "sun.security.ed.ec.EdDSASignature", null, ATTRS));
+            "EdDSA", "sun.security.ec.ed.EdDSASignature", null, ATTRS));
         putService(new ProviderServiceA(this, "Signature",
-            "Ed25519", "sun.security.ed.ec.EdDSASignature.Ed25519", ATTRS));
+            "Ed25519", "sun.security.ec.ed.EdDSASignature.Ed25519", ATTRS));
         putService(new ProviderServiceA(this, "Signature",
-            "Ed448", "sun.security.ed.ec.EdDSASignature.Ed448", ATTRS));
+            "Ed448", "sun.security.ec.ed.EdDSASignature.Ed448", ATTRS));
 
     }
 }
