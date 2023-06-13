@@ -24,9 +24,9 @@
 /**
  * @test
  * @bug 8309034
- * @summary Test that when saving the cause of a class initialization failure
- *          and we encounter a StackOverflowError, that we record the SOE as
- *          the underlying cause
+ * @summary Test that when saving a class initialization failure caused by
+ *          a StackOverflowError, that we record the SOE as the underlying
+ *          cause, even if we can't create the ExceptionInInitializerError
  * @requires os.simpleArch == "x64"
  * @comment The reproducer only fails in the desired way on x64.
  * @requires vm.flagless

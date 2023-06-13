@@ -992,10 +992,10 @@ void InstanceKlass::add_initialization_error(JavaThread* current, Handle excepti
     // a stackoverflow error. If the original exception was either of those then we save
     // the shared, pre-allocated, stackless, instance of that exception.
     if (exception->klass() == vmClasses::StackOverflowError_klass()) {
-      log_trace(class, init)("Using shared StackOverflowError as initialization error for class %s", external_name());
+      log_debug(class, init)("Using shared StackOverflowError as initialization error for class %s", external_name());
       init_error = Handle(current, Universe::class_init_stack_overflow_error());
     } else if (exception->klass() == vmClasses::OutOfMemoryError_klass()) {
-      log_trace(class, init)("Using shared OutOfMemoryError as initialization error for class %s", external_name());
+      log_debug(class, init)("Using shared OutOfMemoryError as initialization error for class %s", external_name());
       init_error = Handle(current, Universe::class_init_out_of_memory_error());
     } else {
       return;
