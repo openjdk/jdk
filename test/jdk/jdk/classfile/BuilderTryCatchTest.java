@@ -190,7 +190,7 @@ class BuilderTryCatchTest {
                             xb.constantInstruction("S");
                             xb.astore(stringSlot);
 
-                            assertThrows(IllegalStateException.class, () -> {
+                            assertThrows(IllegalArgumentException.class, () -> {
                                 xb.trying(tb -> {
                                 }, catchBuilder -> {
                                     fail();

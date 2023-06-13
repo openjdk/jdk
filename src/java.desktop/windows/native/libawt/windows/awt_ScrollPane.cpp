@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -701,7 +701,7 @@ Java_sun_awt_windows_WScrollPanePeer_getOffset(JNIEnv *env, jobject self,
     gos->scrollpane = env->NewGlobalRef(self);
     gos->orient = orient;
 
-    return static_cast<jint>(reinterpret_cast<INT_PTR>(AwtToolkit::GetInstance().SyncCall(
+    return static_cast<jint>(reinterpret_cast<INT_PTR>(AwtToolkit::GetInstance().InvokeFunction(
         (void *(*)(void *))AwtScrollPane::_GetOffset, gos)));
     // global ref and gos are deleted in _GetOffset()
 
@@ -742,7 +742,7 @@ Java_sun_awt_windows_WScrollPanePeer_setScrollPosition(JNIEnv *env,
     ssps->x = x;
     ssps->y = y;
 
-    AwtToolkit::GetInstance().SyncCall(AwtScrollPane::_SetScrollPos, ssps);
+    AwtToolkit::GetInstance().InvokeFunctionLater(AwtScrollPane::_SetScrollPos, ssps);
     // global ref and ssps are deleted in _SetScrollPos()
 
     CATCH_BAD_ALLOC;
@@ -803,7 +803,7 @@ Java_sun_awt_windows_WScrollPanePeer_setSpans(JNIEnv *env, jobject self,
     sss->childWidth = childWidth;
     sss->childHeight = childHeight;
 
-    AwtToolkit::GetInstance().SyncCall(AwtScrollPane::_SetSpans, sss);
+    AwtToolkit::GetInstance().InvokeFunctionLater(AwtScrollPane::_SetSpans, sss);
     // global ref and sss are deleted in _SetSpans
 
     CATCH_BAD_ALLOC;

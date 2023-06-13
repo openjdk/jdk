@@ -108,8 +108,8 @@ public class TestIntrinsics extends NativeTestHelper {
         { // identity_va
             MemorySegment ma = findNativeOrThrow("identity_va");
             FunctionDescriptor fd = FunctionDescriptor.of(C_INT, C_INT,
-                                                                 C_DOUBLE, C_INT, C_FLOAT, C_LONG_LONG);
-            tests.add(abi.downcallHandle(ma, fd, firstVariadicArg(1)), 1, 1, 10D, 2, 3F, 4L);
+                                                                 C_DOUBLE, C_INT, C_DOUBLE, C_LONG_LONG);
+            tests.add(abi.downcallHandle(ma, fd, firstVariadicArg(1)), 1, 1, 10D, 2, 3D, 4L);
         }
 
         { // high_arity
