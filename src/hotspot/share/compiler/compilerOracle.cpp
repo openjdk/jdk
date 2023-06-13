@@ -1035,90 +1035,33 @@ bool compilerOracle_init() {
 }
 
 bool CompilerOracle::parse_compile_only(char* line) {
-  int i;
-  char name[1024];
-  const char* className = nullptr;
-  const char* methodName = nullptr;
-
-  bool have_colon = (strstr(line, "::") != nullptr);
-  char method_sep = have_colon ? ':' : '.';
-
-  if (Verbose) {
-    tty->print_cr("%s", line);
+  if (line[0] == '\0') {
+    return true;
   }
-
   ResourceMark rm;
-  while (*line != '\0') {
-    MethodMatcher::Mode c_match = MethodMatcher::Exact;
-    MethodMatcher::Mode m_match = MethodMatcher::Exact;
-
-    for (i = 0;
-         i < 1024 && *line != '\0' && *line != method_sep && *line != ',' && !isspace(*line);
-         line++, i++) {
-      name[i] = *line;
-      if (name[i] == '.')  name[i] = '/';  // package prefix uses '/'
+  char error_buf[1024] = {0};
+  LineCopy original(line);
+  char* method_pattern;
+  do {
+    if (line[0] == '\0') {
+      break;
     }
-
-    if (i > 0) {
-      char* newName = NEW_RESOURCE_ARRAY( char, i + 1);
-      if (newName == nullptr) {
-        return false;
-      }
-      strncpy(newName, name, i);
-      newName[i] = '\0';
-
-      if (className == nullptr) {
-        className = newName;
-      } else {
-        methodName = newName;
+    method_pattern = strtok_r(line, ",", &line);
+    if (method_pattern != nullptr) {
+      TypedMethodOptionMatcher* matcher = TypedMethodOptionMatcher::parse_method_pattern(method_pattern, error_buf, sizeof(error_buf));
+      if (matcher != nullptr) {
+        register_command(matcher, CompileCommand::CompileOnly, true);
+        continue;
       }
     }
-
-    if (*line == method_sep) {
-      if (className == nullptr) {
-        className = "";
-        c_match = MethodMatcher::Any;
-      }
-    } else {
-      // got foo or foo/bar
-      if (className == nullptr) {
-        ShouldNotReachHere();
-      } else {
-        // missing class name handled as "Any" class match
-        if (className[0] == '\0') {
-          c_match = MethodMatcher::Any;
-        }
-      }
+    ttyLocker ttyl;
+    tty->print_cr("CompileOnly: An error occurred during parsing");
+    if (*error_buf != '\0') {
+      tty->print_cr("Error: %s", error_buf);
     }
-
-    // each directive is terminated by , or NUL or . followed by NUL
-    if (*line == ',' || *line == '\0' || (line[0] == '.' && line[1] == '\0')) {
-      if (methodName == nullptr) {
-        methodName = "";
-        if (*line != method_sep) {
-          m_match = MethodMatcher::Any;
-        }
-      }
-
-      EXCEPTION_MARK;
-      Symbol* c_name = SymbolTable::new_symbol(className);
-      Symbol* m_name = SymbolTable::new_symbol(methodName);
-      Symbol* signature = nullptr;
-
-      TypedMethodOptionMatcher* tom = new TypedMethodOptionMatcher();
-      tom->init_matcher(c_name, c_match, m_name, m_match, signature);
-      register_command(tom, CompileCommand::CompileOnly, true);
-      if (PrintVMOptions) {
-        tty->print("CompileOnly: compileonly ");
-        tom->print();
-      }
-
-      className = nullptr;
-      methodName = nullptr;
-    }
-
-    line = *line == '\0' ? line : line + 1;
-  }
+    tty->print_cr("Line: '%s'", original.get());
+    return false;
+  } while (method_pattern != nullptr && line != nullptr);
   return true;
 }
 
