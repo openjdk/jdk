@@ -26,7 +26,7 @@
  * @bug 8301489
  * @summary ShortLoopOptimizer might lift instructions before their inputs
  * @requires vm.compiler1.enabled
- * @run main/othervm -Xcomp -XX:TieredStopAtLevel=1 -Xbatch
+ * @run main/othervm -Xcomp -XX:TieredStopAtLevel=1
  *                   -XX:CompileOnly=compiler/c1/Test8301489
  *                   compiler.c1.Test8301489
  */
