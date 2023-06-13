@@ -37,7 +37,7 @@ import java.util.List;
  *   (x,y)-> { return x + y; }
  * }</pre>
  *
- * @since 8
+ * @since 1.8
  */
 public interface LambdaExpressionTree extends ExpressionTree {
 
