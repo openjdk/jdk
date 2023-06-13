@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -27,7 +28,7 @@
  * @bug 8270307
  * @summary C2: assert(false) failed: bad AD file after JDK-8267687
  * @library /test/lib
- * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileOnly=TestCMoveHasTopInput.vMeth TestCMoveHasTopInput
+ * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileOnly=TestCMoveHasTopInput::vMeth TestCMoveHasTopInput
  */
 
 public class TestCMoveHasTopInput {

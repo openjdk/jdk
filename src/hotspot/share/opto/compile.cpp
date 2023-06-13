@@ -387,7 +387,7 @@ void Compile::remove_useless_node(Node* dead) {
     remove_expensive_node(dead);
   }
   if (dead->Opcode() == Op_Opaque4) {
-    remove_skeleton_predicate_opaq(dead);
+    remove_template_assertion_predicate_opaq(dead);
   }
   if (dead->for_post_loop_opts_igvn()) {
     remove_from_post_loop_opts_igvn(dead);
@@ -407,7 +407,7 @@ void Compile::remove_useless_node(Node* dead) {
 }
 
 // Disconnect all useless nodes by disconnecting those at the boundary.
-void Compile::disconnect_useless_nodes(Unique_Node_List &useful, Unique_Node_List* worklist) {
+void Compile::disconnect_useless_nodes(Unique_Node_List& useful, Unique_Node_List& worklist) {
   uint next = 0;
   while (next < useful.size()) {
     Node *n = useful.at(next++);
@@ -430,13 +430,14 @@ void Compile::disconnect_useless_nodes(Unique_Node_List &useful, Unique_Node_Lis
       }
     }
     if (n->outcnt() == 1 && n->has_special_unique_user()) {
-      worklist->push(n->unique_out());
+      assert(useful.member(n->unique_out()), "do not push a useless node");
+      worklist.push(n->unique_out());
     }
   }
 
   remove_useless_nodes(_macro_nodes,        useful); // remove useless macro nodes
-  remove_useless_nodes(_predicate_opaqs,    useful); // remove useless predicate opaque nodes
-  remove_useless_nodes(_skeleton_predicate_opaqs, useful);
+  remove_useless_nodes(_parse_predicate_opaqs, useful); // remove useless Parse Predicate opaque nodes
+  remove_useless_nodes(_template_assertion_predicate_opaqs, useful); // remove useless Assertion Predicate opaque nodes
   remove_useless_nodes(_expensive_nodes,    useful); // remove useless expensive nodes
   remove_useless_nodes(_for_post_loop_igvn, useful); // remove useless node recorded for post loop opts IGVN pass
   remove_useless_unstable_if_traps(useful);          // remove useless unstable_if traps
@@ -578,7 +579,6 @@ void Compile::print_ideal_ir(const char* phase_name) {
 
 // ============================================================================
 //------------------------------Compile standard-------------------------------
-debug_only( int Compile::_debug_idx = 100000; )
 
 // Compile a method.  entry_bci is -1 for normal compilations and indicates
 // the continuation bci for on stack replacement.
@@ -616,8 +616,8 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
                   _failure_reason(nullptr),
                   _intrinsics        (comp_arena(), 0, 0, nullptr),
                   _macro_nodes       (comp_arena(), 8, 0, nullptr),
-                  _predicate_opaqs   (comp_arena(), 8, 0, nullptr),
-                  _skeleton_predicate_opaqs (comp_arena(), 8, 0, nullptr),
+                  _parse_predicate_opaqs (comp_arena(), 8, 0, nullptr),
+                  _template_assertion_predicate_opaqs (comp_arena(), 8, 0, nullptr),
                   _expensive_nodes   (comp_arena(), 8, 0, nullptr),
                   _for_post_loop_igvn(comp_arena(), 8, 0, nullptr),
                   _unstable_if_traps (comp_arena(), 8, 0, nullptr),
@@ -631,7 +631,9 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
                   _mach_constant_base_node(nullptr),
                   _Compile_types(mtCompiler),
                   _initial_gvn(nullptr),
-                  _for_igvn(nullptr),
+                  _igvn_worklist(nullptr),
+                  _types(nullptr),
+                  _node_hash(nullptr),
                   _late_inlines(comp_arena(), 2, 0, nullptr),
                   _string_late_inlines(comp_arena(), 2, 0, nullptr),
                   _boxing_late_inlines(comp_arena(), 2, 0, nullptr),
@@ -678,11 +680,11 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
 
 #ifndef PRODUCT
   set_parsed_irreducible_loop(false);
+#endif
 
   if (directive->ReplayInlineOption) {
     _replay_inline_data = ciReplay::load_inline_data(method(), entry_bci(), ci_env->comp_level());
   }
-#endif
   set_print_inlining(directive->PrintInliningOption || PrintOptoInlining);
   set_print_intrinsics(directive->PrintIntrinsicsOption);
   set_has_irreducible_loop(true); // conservative until build_loop_tree() reset it
@@ -704,14 +706,14 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
   assert(num_alias_types() >= AliasIdxRaw, "");
 
 #define MINIMUM_NODE_HASH  1023
-  // Node list that Iterative GVN will start with
-  Unique_Node_List for_igvn(comp_arena());
-  set_for_igvn(&for_igvn);
 
   // GVN that will be run immediately on new nodes
   uint estimated_size = method()->code_size()*4+64;
   estimated_size = (estimated_size < MINIMUM_NODE_HASH ? MINIMUM_NODE_HASH : estimated_size);
-  PhaseGVN gvn(node_arena(), estimated_size);
+  _igvn_worklist = new (comp_arena()) Unique_Node_List(comp_arena());
+  _types = new (comp_arena()) Type_Array(comp_arena());
+  _node_hash = new (comp_arena()) NodeHash(comp_arena(), estimated_size);
+  PhaseGVN gvn;
   set_initial_gvn(&gvn);
 
   print_inlining_init();
@@ -801,7 +803,7 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
     // Remove clutter produced by parsing.
     if (!failing()) {
       ResourceMark rm;
-      PhaseRemoveUseless pru(initial_gvn(), &for_igvn);
+      PhaseRemoveUseless pru(initial_gvn(), *igvn_worklist());
     }
   }
 
@@ -918,7 +920,9 @@ Compile::Compile( ciEnv* ci_env,
     _mach_constant_base_node(nullptr),
     _Compile_types(mtCompiler),
     _initial_gvn(nullptr),
-    _for_igvn(nullptr),
+    _igvn_worklist(nullptr),
+    _types(nullptr),
+    _node_hash(nullptr),
     _number_of_mh_late_inlines(0),
     _print_inlining_stream(new (mtCompiler) stringStream()),
     _print_inlining_list(nullptr),
@@ -950,11 +954,11 @@ Compile::Compile( ciEnv* ci_env,
   Init(/*do_aliasing=*/ false);
   init_tf((*generator)());
 
+  _igvn_worklist = new (comp_arena()) Unique_Node_List(comp_arena());
+  _types = new (comp_arena()) Type_Array(comp_arena());
+  _node_hash = new (comp_arena()) NodeHash(comp_arena(), 255);
   {
-    // The following is a dummy for the sake of GraphKit::gen_stub
-    Unique_Node_List for_igvn(comp_arena());
-    set_for_igvn(&for_igvn);  // not used, but some GraphKit guys push on this
-    PhaseGVN gvn(Thread::current()->resource_area(),255);
+    PhaseGVN gvn;
     set_initial_gvn(&gvn);    // not significant, but GraphKit guys use it pervasively
     gvn.transform_no_reclaim(top());
 
@@ -1793,17 +1797,18 @@ bool Compile::can_alias(const TypePtr* adr_type, int alias_idx) {
   return adr_idx == alias_idx;
 }
 
-//---------------------cleanup_loop_predicates-----------------------
-// Remove the opaque nodes that protect the predicates so that all unused
-// checks and uncommon_traps will be eliminated from the ideal graph
-void Compile::cleanup_loop_predicates(PhaseIterGVN &igvn) {
-  if (predicate_count()==0) return;
-  for (int i = predicate_count(); i > 0; i--) {
-    Node * n = predicate_opaque1_node(i-1);
+// Remove the opaque nodes that protect the Parse Predicates so that all unused
+// checks and uncommon_traps will be eliminated from the ideal graph.
+void Compile::cleanup_parse_predicates(PhaseIterGVN& igvn) const {
+  if (parse_predicate_count() == 0) {
+    return;
+  }
+  for (int i = parse_predicate_count(); i > 0; i--) {
+    Node* n = parse_predicate_opaque1_node(i - 1);
     assert(n->Opcode() == Op_Opaque1, "must be");
     igvn.replace_node(n, n->in(1));
   }
-  assert(predicate_count()==0, "should be clean!");
+  assert(parse_predicate_count() == 0, "should be clean!");
 }
 
 void Compile::record_for_post_loop_opts_igvn(Node* n) {
@@ -1949,7 +1954,7 @@ void Compile::inline_string_calls(bool parse_time) {
   {
     // remove useless nodes to make the usage analysis simpler
     ResourceMark rm;
-    PhaseRemoveUseless pru(initial_gvn(), for_igvn());
+    PhaseRemoveUseless pru(initial_gvn(), *igvn_worklist());
   }
 
   {
@@ -1980,9 +1985,7 @@ void Compile::inline_boxing_calls(PhaseIterGVN& igvn) {
     PhaseGVN* gvn = initial_gvn();
     set_inlining_incrementally(true);
 
-    assert( igvn._worklist.size() == 0, "should be done with igvn" );
-    for_igvn()->clear();
-    gvn->replace_with(&igvn);
+    igvn_worklist()->ensure_empty(); // should be done with igvn
 
     _late_inlines_pos = _late_inlines.length();
 
@@ -2045,11 +2048,11 @@ void Compile::inline_incrementally_cleanup(PhaseIterGVN& igvn) {
   {
     TracePhase tp("incrementalInline_pru", &timers[_t_incrInline_pru]);
     ResourceMark rm;
-    PhaseRemoveUseless pru(initial_gvn(), for_igvn());
+    PhaseRemoveUseless pru(initial_gvn(), *igvn_worklist());
   }
   {
     TracePhase tp("incrementalInline_igvn", &timers[_t_incrInline_igvn]);
-    igvn = PhaseIterGVN(initial_gvn());
+    igvn.reset_from_gvn(initial_gvn());
     igvn.optimize();
   }
   print_method(PHASE_INCREMENTAL_INLINE_CLEANUP, 3);
@@ -2092,8 +2095,7 @@ void Compile::inline_incrementally(PhaseIterGVN& igvn) {
       }
     }
 
-    for_igvn()->clear();
-    initial_gvn()->replace_with(&igvn);
+    igvn_worklist()->ensure_empty(); // should be done with igvn
 
     while (inline_incrementally_one()) {
       assert(!failing(), "inconsistent");
@@ -2110,12 +2112,11 @@ void Compile::inline_incrementally(PhaseIterGVN& igvn) {
       break; // no more progress
     }
   }
-  assert( igvn._worklist.size() == 0, "should be done with igvn" );
+
+  igvn_worklist()->ensure_empty(); // should be done with igvn
 
   if (_string_late_inlines.length() > 0) {
     assert(has_stringbuilder(), "inconsistent");
-    for_igvn()->clear();
-    initial_gvn()->replace_with(&igvn);
 
     inline_string_calls(false);
 
@@ -2137,8 +2138,7 @@ void Compile::process_late_inline_calls_no_inline(PhaseIterGVN& igvn) {
   assert(_late_inlines.length() > 0, "sanity");
 
   while (_late_inlines.length() > 0) {
-    for_igvn()->clear();
-    initial_gvn()->replace_with(&igvn);
+    igvn_worklist()->ensure_empty(); // should be done with igvn
 
     while (inline_incrementally_one()) {
       assert(!failing(), "inconsistent");
@@ -2271,19 +2271,13 @@ void Compile::Optimize() {
 
   if (!failing() && RenumberLiveNodes && live_nodes() + NodeLimitFudgeFactor < unique()) {
     Compile::TracePhase tp("", &timers[_t_renumberLive]);
-    initial_gvn()->replace_with(&igvn);
-    Unique_Node_List* old_worklist = for_igvn();
-    old_worklist->clear();
-    Unique_Node_List new_worklist(C->comp_arena());
+    igvn_worklist()->ensure_empty(); // should be done with igvn
     {
       ResourceMark rm;
-      PhaseRenumberLive prl = PhaseRenumberLive(initial_gvn(), for_igvn(), &new_worklist);
+      PhaseRenumberLive prl(initial_gvn(), *igvn_worklist());
     }
-    Unique_Node_List* save_for_igvn = for_igvn();
-    set_for_igvn(&new_worklist);
-    igvn = PhaseIterGVN(initial_gvn());
+    igvn.reset_from_gvn(initial_gvn());
     igvn.optimize();
-    set_for_igvn(old_worklist); // new_worklist is dead beyond this point
   }
 
   // Now that all inlining is over and no PhaseRemoveUseless will run, cut edge from root to loop
@@ -2380,7 +2374,7 @@ void Compile::Optimize() {
   // Iterative Global Value Numbering, including ideal transforms
   {
     TracePhase tp("iterGVN2", &timers[_t_iterGVN2]);
-    igvn = ccp;
+    igvn.reset_from_igvn(&ccp);
     igvn.optimize();
   }
   print_method(PHASE_ITER_GVN2, 2);
@@ -2443,6 +2437,10 @@ void Compile::Optimize() {
  check_no_dead_use();
 
  process_print_inlining();
+
+ // We will never use the NodeHash table any more. Clear it so that final_graph_reshaping does not have
+ // to remove hashes to unlock nodes for modifications.
+ C->node_hash()->clear();
 
  // A method with only infinite loops has no edges entering loops from root
  {
@@ -2844,12 +2842,7 @@ void Compile::process_logic_cone_root(PhaseIterGVN &igvn, Node *n, VectorSet &vi
     if (mask == nullptr ||
         Matcher::match_rule_supported_vector_masked(Op_MacroLogicV, vt->length(), vt->element_basic_type())) {
       Node* macro_logic = xform_to_MacroLogicV(igvn, vt, partition, inputs);
-#ifdef ASSERT
-      if (TraceNewVectors) {
-        tty->print("new Vector node: ");
-        macro_logic->dump();
-      }
-#endif
+      VectorNode::trace_new_vector(macro_logic, "MacroLogic");
       igvn.replace_node(n, macro_logic);
     }
   }

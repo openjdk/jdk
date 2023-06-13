@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,14 @@ public class TestEnableJVMCIProduct {
     }
 
     public static void main(String[] args) throws Exception {
+        if (args.length != 0) {
+            // Called as subprocess. Print system properties named by
+            // `args` and then exit.
+            for (String arg : args) {
+                System.out.printf("%s=%s%n", arg, System.getProperty(arg));
+            }
+            return;
+        }
         // Test EnableJVMCIProduct without any other explicit JVMCI option
         test("-XX:-PrintWarnings",
             new Expectation("EnableJVMCI", "true", "default"),
@@ -67,24 +75,36 @@ public class TestEnableJVMCIProduct {
             new Expectation("EnableJVMCI", "false", "command line"),
             new Expectation("UseJVMCICompiler", "false", "default"));
         test("-XX:+EnableJVMCIProduct",
-            new Expectation("EnableJVMCIProduct", "true", "command line"),
+            new Expectation("EnableJVMCIProduct", "true", "(?:command line|jimage)"),
             new Expectation("EnableJVMCI", "true", "default"),
             new Expectation("UseJVMCICompiler", "true", "default"));
     }
 
     static void test(String explicitFlag, Expectation... expectations) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-            "-XX:+UnlockExperimentalVMOptions", "-XX:+EnableJVMCIProduct", "-XX:-UnlockExperimentalVMOptions",
-            explicitFlag,
-            "-XX:+PrintFlagsFinal", "-version");
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        for (Expectation expectation : expectations) {
-            output.stdoutShouldMatch(expectation.pattern);
-        }
-        if (output.getExitValue() != 0) {
-            // This should only happen when JVMCI compilation is requested and the VM has no
-            // JVMCI compiler (e.g. Graal is not included in the build)
-            output.stdoutShouldMatch("No JVMCI compiler found");
+        String[] flags = {"-XX:+EnableJVMCIProduct", "-XX:+UseGraalJIT"};
+        String cwd = System.getProperty("user.dir");
+        for (String flag : flags) {
+            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+                "-XX:+UnlockExperimentalVMOptions", flag, "-XX:-UnlockExperimentalVMOptions",
+                explicitFlag,
+                "-XX:+PrintFlagsFinal",
+                "--class-path=" + System.getProperty("java.class.path"),
+                "TestEnableJVMCIProduct", "jvmci.Compiler");
+            OutputAnalyzer output = new OutputAnalyzer(pb.start());
+            for (Expectation expectation : expectations) {
+                output.stdoutShouldMatch(expectation.pattern);
+            }
+            if (output.getExitValue() != 0) {
+                // This should only happen when JVMCI compilation is requested and the VM has no
+                // JVMCI compiler (e.g. Graal is not included in the build)
+                if (flag.equals("-XX:+UseGraalJIT")) {
+                    output.shouldContain("JVMCI compiler 'graal' specified by jvmci.Compiler not found");
+                } else {
+                    output.stdoutShouldMatch("No JVMCI compiler found");
+                }
+            } else if (flag.equals("-XX:+UseGraalJIT")) {
+                output.shouldContain("jvmci.Compiler=graal");
+            }
         }
     }
 }

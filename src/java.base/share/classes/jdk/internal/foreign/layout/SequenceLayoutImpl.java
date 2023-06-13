@@ -25,6 +25,8 @@
  */
 package jdk.internal.foreign.layout;
 
+import jdk.internal.foreign.Utils;
+
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.SequenceLayout;
 import java.util.Objects;
@@ -36,11 +38,11 @@ public final class SequenceLayoutImpl extends AbstractLayout<SequenceLayoutImpl>
     private final MemoryLayout elementLayout;
 
     private SequenceLayoutImpl(long elemCount, MemoryLayout elementLayout) {
-        this(elemCount, elementLayout, elementLayout.bitAlignment(), Optional.empty());
+        this(elemCount, elementLayout, elementLayout.byteAlignment(), Optional.empty());
     }
 
-    private SequenceLayoutImpl(long elemCount, MemoryLayout elementLayout, long bitAlignment, Optional<String> name) {
-        super(Math.multiplyExact(elemCount, elementLayout.bitSize()), bitAlignment, name);
+    private SequenceLayoutImpl(long elemCount, MemoryLayout elementLayout, long byteAlignment, Optional<String> name) {
+        super(Math.multiplyExact(elemCount, elementLayout.byteSize()), byteAlignment, name);
         this.elemCount = elemCount;
         this.elementLayout = elementLayout;
     }
@@ -68,7 +70,8 @@ public final class SequenceLayoutImpl extends AbstractLayout<SequenceLayoutImpl>
      * @throws IllegalArgumentException if {@code elementCount < 0}.
      */
     public SequenceLayout withElementCount(long elementCount) {
-        return new SequenceLayoutImpl(elementCount, elementLayout, bitAlignment(), name());
+        return Utils.wrapOverflow(() ->
+                new SequenceLayoutImpl(elementCount, elementLayout, byteAlignment(), name()));
     }
 
     /**
@@ -176,7 +179,7 @@ public final class SequenceLayoutImpl extends AbstractLayout<SequenceLayoutImpl>
 
     @Override
     public String toString() {
-        boolean max = (Long.MAX_VALUE / elementLayout.bitSize()) == elemCount;
+        boolean max = (Long.MAX_VALUE / elementLayout.byteSize()) == elemCount;
         return decorateLayoutString(String.format("[%s:%s]",
                 max ? "*" : elemCount, elementLayout));
     }
@@ -196,21 +199,21 @@ public final class SequenceLayoutImpl extends AbstractLayout<SequenceLayoutImpl>
     }
 
     @Override
-    SequenceLayoutImpl dup(long bitAlignment, Optional<String> name) {
-        return new SequenceLayoutImpl(elementCount(), elementLayout, bitAlignment, name);
+    SequenceLayoutImpl dup(long byteAlignment, Optional<String> name) {
+        return new SequenceLayoutImpl(elementCount(), elementLayout, byteAlignment, name);
     }
 
     @Override
-    public SequenceLayoutImpl withBitAlignment(long bitAlignment) {
-        if (bitAlignment < elementLayout.bitAlignment()) {
+    public SequenceLayoutImpl withByteAlignment(long byteAlignment) {
+        if (byteAlignment < elementLayout.byteAlignment()) {
             throw new IllegalArgumentException("Invalid alignment constraint");
         }
-        return super.withBitAlignment(bitAlignment);
+        return super.withByteAlignment(byteAlignment);
     }
 
     @Override
     public boolean hasNaturalAlignment() {
-        return bitAlignment() == elementLayout.bitAlignment();
+        return byteAlignment() == elementLayout.byteAlignment();
     }
 
     public static SequenceLayout of(long elementCount, MemoryLayout elementLayout) {

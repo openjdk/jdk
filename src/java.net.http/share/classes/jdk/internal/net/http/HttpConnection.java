@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,13 +98,13 @@ abstract class HttpConnection implements Closeable {
         private final Map<CompletionStage<?>, Boolean> operations =
                 new IdentityHashMap<>();
         void add(CompletionStage<?> cf) {
-            synchronized(operations) {
+            synchronized (operations) {
                 operations.put(cf, Boolean.TRUE);
                 cf.whenComplete((r,t)-> remove(cf));
             }
         }
         boolean remove(CompletionStage<?> cf) {
-            synchronized(operations) {
+            synchronized (operations) {
                 return operations.remove(cf);
             }
         }
@@ -427,10 +427,18 @@ abstract class HttpConnection implements Closeable {
     abstract ConnectionPool.CacheKey cacheKey();
 
     /**
-     * Closes this connection, by returning the socket to its connection pool.
+     * Closes this connection.
      */
     @Override
     public abstract void close();
+
+    /**
+     * Closes this connection due to the given cause.
+     * @param cause the cause for which the connection is closed, may be null
+     */
+    void close(Throwable cause) {
+        close();
+    }
 
     abstract FlowTube getConnectionFlow();
 

@@ -26,19 +26,7 @@
 #include "cds/archiveBuilder.hpp"
 #include "cds/lambdaProxyClassDictionary.hpp"
 #include "classfile/systemDictionaryShared.hpp"
-
-// This constructor is used only by SystemDictionaryShared::clone_dumptime_tables().
-// See comments there about the need for making a deep copy.
-DumpTimeLambdaProxyClassInfo::DumpTimeLambdaProxyClassInfo(const DumpTimeLambdaProxyClassInfo& src) {
-  _proxy_klasses = nullptr;
-  if (src._proxy_klasses != nullptr && src._proxy_klasses->length() > 0) {
-    int n = src._proxy_klasses->length();
-    _proxy_klasses = new (mtClassShared) GrowableArray<InstanceKlass*>(n, mtClassShared);
-    for (int i = 0; i < n; i++) {
-      _proxy_klasses->append(src._proxy_klasses->at(i));
-    }
-  }
-}
+#include "memory/resourceArea.hpp"
 
 DumpTimeLambdaProxyClassInfo::~DumpTimeLambdaProxyClassInfo() {
   if (_proxy_klasses != nullptr) {
@@ -46,13 +34,15 @@ DumpTimeLambdaProxyClassInfo::~DumpTimeLambdaProxyClassInfo() {
   }
 }
 
-void LambdaProxyClassKey::mark_pointers() {
-  ArchivePtrMarker::mark_pointer(&_caller_ik);
-  ArchivePtrMarker::mark_pointer(&_instantiated_method_type);
-  ArchivePtrMarker::mark_pointer(&_invoked_name);
-  ArchivePtrMarker::mark_pointer(&_invoked_type);
-  ArchivePtrMarker::mark_pointer(&_member_method);
-  ArchivePtrMarker::mark_pointer(&_method_type);
+void LambdaProxyClassKey::init_for_archive(LambdaProxyClassKey& dumptime_key) {
+  ArchiveBuilder* b = ArchiveBuilder::current();
+
+  b->write_pointer_in_buffer(&_caller_ik,                dumptime_key._caller_ik);
+  b->write_pointer_in_buffer(&_instantiated_method_type, dumptime_key._instantiated_method_type);
+  b->write_pointer_in_buffer(&_invoked_name,             dumptime_key._invoked_name);
+  b->write_pointer_in_buffer(&_invoked_type,             dumptime_key._invoked_type);
+  b->write_pointer_in_buffer(&_member_method,            dumptime_key._member_method);
+  b->write_pointer_in_buffer(&_method_type,              dumptime_key._method_type);
 }
 
 unsigned int LambdaProxyClassKey::hash() const {
@@ -61,4 +51,27 @@ unsigned int LambdaProxyClassKey::hash() const {
          SystemDictionaryShared::hash_for_shared_dictionary((address)_invoked_type) +
          SystemDictionaryShared::hash_for_shared_dictionary((address)_method_type) +
          SystemDictionaryShared::hash_for_shared_dictionary((address)_instantiated_method_type);
+}
+
+#ifndef PRODUCT
+void LambdaProxyClassKey::print_on(outputStream* st) const {
+  ResourceMark rm;
+  st->print_cr("LambdaProxyClassKey       : " INTPTR_FORMAT " hash: %0x08x", p2i(this), hash());
+  st->print_cr("_caller_ik                : %s", _caller_ik->external_name());
+  st->print_cr("_instantiated_method_type : %s", _instantiated_method_type->as_C_string());
+  st->print_cr("_invoked_name             : %s", _invoked_name->as_C_string());
+  st->print_cr("_invoked_type             : %s", _invoked_type->as_C_string());
+  st->print_cr("_member_method            : %s", _member_method->name()->as_C_string());
+  st->print_cr("_method_type              : %s", _method_type->as_C_string());
+}
+
+void RunTimeLambdaProxyClassInfo::print_on(outputStream* st) const {
+  _key.print_on(st);
+}
+#endif
+
+void RunTimeLambdaProxyClassInfo::init(LambdaProxyClassKey& key, DumpTimeLambdaProxyClassInfo& info) {
+  _key.init_for_archive(key);
+  ArchiveBuilder::current()->write_pointer_in_buffer(&_proxy_klass_head,
+                                                     info._proxy_klasses->at(0));
 }

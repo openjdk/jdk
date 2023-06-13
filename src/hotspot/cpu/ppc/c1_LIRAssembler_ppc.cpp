@@ -2686,7 +2686,7 @@ void LIR_Assembler::emit_lock(LIR_OpLock* op) {
   // Obj may not be an oop.
   if (op->code() == lir_lock) {
     MonitorEnterStub* stub = (MonitorEnterStub*)op->stub();
-    if (!UseHeavyMonitors) {
+    if (LockingMode != LM_MONITOR) {
       assert(BasicLock::displaced_header_offset_in_bytes() == 0, "lock_reg must point to the displaced header");
       // Add debug info for NullPointerException only if one is possible.
       if (op->info() != nullptr) {
@@ -2712,7 +2712,7 @@ void LIR_Assembler::emit_lock(LIR_OpLock* op) {
     }
   } else {
     assert (op->code() == lir_unlock, "Invalid code, expected lir_unlock");
-    if (!UseHeavyMonitors) {
+    if (LockingMode != LM_MONITOR) {
       assert(BasicLock::displaced_header_offset_in_bytes() == 0, "lock_reg must point to the displaced header");
       __ unlock_object(hdr, obj, lock, *op->stub()->entry());
     } else {

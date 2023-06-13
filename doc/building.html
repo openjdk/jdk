@@ -80,6 +80,7 @@ id="toc-getting-jdk-binaries">Getting JDK binaries</a></li>
 id="toc-external-library-requirements">External Library Requirements</a>
 <ul>
 <li><a href="#freetype" id="toc-freetype">FreeType</a></li>
+<li><a href="#fontconfig" id="toc-fontconfig">Fontconfig</a></li>
 <li><a href="#cups" id="toc-cups">CUPS</a></li>
 <li><a href="#x11" id="toc-x11">X11</a></li>
 <li><a href="#alsa" id="toc-alsa">ALSA</a></li>
@@ -323,6 +324,7 @@ GB of free disk space is required.</p>
 <p>Even for 32-bit builds, it is recommended to use a 64-bit build
 machine, and instead create a 32-bit target using
 <code>--with-target-bits=32</code>.</p>
+<p>Note: The Windows 32-bit x86 port is deprecated and may be removed in a future release.</p>
 <h3 id="building-on-aarch64">Building on aarch64</h3>
 <p>At a minimum, a machine with 8 cores is advisable, as well as 8 GB of
 RAM. (The more cores to use, the more memory you need.) At least 6 GB of
@@ -353,22 +355,22 @@ to date at the time of writing.</p>
 <table>
 <thead>
 <tr class="header">
-<th style="text-align: left;">Operating system</th>
-<th style="text-align: left;">Vendor/version used</th>
+<th>Operating system</th>
+<th>Vendor/version used</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td style="text-align: left;">Linux</td>
-<td style="text-align: left;">Oracle Enterprise Linux 6.4 / 7.6</td>
+<td>Linux</td>
+<td>Oracle Enterprise Linux 6.4 / 7.6</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">macOS</td>
-<td style="text-align: left;">Mac OS X 10.13 (High Sierra)</td>
+<td>macOS</td>
+<td>Mac OS X 10.13 (High Sierra)</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">Windows</td>
-<td style="text-align: left;">Windows Server 2012 R2</td>
+<td>Windows</td>
+<td>Windows Server 2012 R2</td>
 </tr>
 </tbody>
 </table>
@@ -399,6 +401,7 @@ to the build system, e.g. in arguments to <code>configure</code>. So,
 use <code>--with-msvcr-dll=/cygdrive/c/msvcr100.dll</code> rather than
 <code>--with-msvcr-dll=c:\msvcr100.dll</code>. For details on this
 conversion, see the section on <a href="#fixpath">Fixpath</a>.</p>
+<p>Note: The Windows 32-bit x86 port is deprecated and may be removed in a future release.</p>
 <h4 id="cygwin">Cygwin</h4>
 <p>A functioning <a href="http://www.cygwin.com/">Cygwin</a> environment
 is required for building the JDK on Windows. If you have a 64-bit OS, we
@@ -677,6 +680,19 @@ copy.</p>
 <p>Use <code>--with-freetype-include=&lt;path&gt;</code> and
 <code>--with-freetype-lib=&lt;path&gt;</code> if <code>configure</code>
 does not automatically locate the platform FreeType files.</p>
+<h3 id="fontconfig">Fontconfig</h3>
+<p>Fontconfig from <a href="http://fontconfig.org">freedesktop.org
+Fontconfig</a> is required on all platforms except Windows and
+macOS.</p>
+<ul>
+<li>To install on an apt-based Linux, try running
+<code>sudo apt-get install     libfontconfig-dev</code>.</li>
+<li>To install on an rpm-based Linux, try running
+<code>sudo yum install     fontconfig-devel</code>.</li>
+</ul>
+<p>Use <code>--with-fontconfig-include=&lt;path&gt;</code> and
+<code>--with-fontconfig=&lt;path&gt;</code> if <code>configure</code>
+does not automatically locate the platform Fontconfig files.</p>
 <h3 id="cups">CUPS</h3>
 <p>CUPS, <a href="http://www.cups.org">Common UNIX Printing System</a>
 header files are required on all platforms, except Windows. Often these
@@ -1195,27 +1211,27 @@ following targets are known to work:</p>
 <table>
 <thead>
 <tr class="header">
-<th style="text-align: left;">Supported devkit targets</th>
+<th>Supported devkit targets</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td style="text-align: left;">x86_64-linux-gnu</td>
+<td>x86_64-linux-gnu</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">aarch64-linux-gnu</td>
+<td>aarch64-linux-gnu</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">arm-linux-gnueabihf</td>
+<td>arm-linux-gnueabihf</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">ppc64-linux-gnu</td>
+<td>ppc64-linux-gnu</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">ppc64le-linux-gnu</td>
+<td>ppc64le-linux-gnu</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">s390x-linux-gnu</td>
+<td>s390x-linux-gnu</td>
 </tr>
 </tbody>
 </table>
@@ -1417,112 +1433,119 @@ example <code>${sysroot}/usr/lib/${target}/</code></p></li>
 <p>Architectures that are known to successfully cross-compile like this
 are:</p>
 <table>
+<colgroup>
+<col style="width: 13%" />
+<col style="width: 13%" />
+<col style="width: 15%" />
+<col style="width: 27%" />
+<col style="width: 29%" />
+</colgroup>
 <thead>
 <tr class="header">
-<th style="text-align: left;">Target</th>
-<th style="text-align: left;">Debian tree</th>
-<th style="text-align: left;">Debian arch</th>
-<th style="text-align: left;"><code>--openjdk-target=...</code></th>
+<th>Target</th>
+<th>Debian tree</th>
+<th>Debian arch</th>
+<th><code>--openjdk-target=...</code></th>
 <th><code>--with-jvm-variants=...</code></th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td style="text-align: left;">x86</td>
-<td style="text-align: left;">buster</td>
-<td style="text-align: left;">i386</td>
-<td style="text-align: left;">i386-linux-gnu</td>
+<td>x86</td>
+<td>buster</td>
+<td>i386</td>
+<td>i386-linux-gnu</td>
 <td>(all)</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">arm</td>
-<td style="text-align: left;">buster</td>
-<td style="text-align: left;">armhf</td>
-<td style="text-align: left;">arm-linux-gnueabihf</td>
+<td>arm</td>
+<td>buster</td>
+<td>armhf</td>
+<td>arm-linux-gnueabihf</td>
 <td>(all)</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">aarch64</td>
-<td style="text-align: left;">buster</td>
-<td style="text-align: left;">arm64</td>
-<td style="text-align: left;">aarch64-linux-gnu</td>
+<td>aarch64</td>
+<td>buster</td>
+<td>arm64</td>
+<td>aarch64-linux-gnu</td>
 <td>(all)</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">ppc64le</td>
-<td style="text-align: left;">buster</td>
-<td style="text-align: left;">ppc64el</td>
-<td style="text-align: left;">powerpc64le-linux-gnu</td>
+<td>ppc64le</td>
+<td>buster</td>
+<td>ppc64el</td>
+<td>powerpc64le-linux-gnu</td>
 <td>(all)</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">s390x</td>
-<td style="text-align: left;">buster</td>
-<td style="text-align: left;">s390x</td>
-<td style="text-align: left;">s390x-linux-gnu</td>
+<td>s390x</td>
+<td>buster</td>
+<td>s390x</td>
+<td>s390x-linux-gnu</td>
 <td>(all)</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">mipsle</td>
-<td style="text-align: left;">buster</td>
-<td style="text-align: left;">mipsel</td>
-<td style="text-align: left;">mipsel-linux-gnu</td>
+<td>mipsle</td>
+<td>buster</td>
+<td>mipsel</td>
+<td>mipsel-linux-gnu</td>
 <td>zero</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">mips64le</td>
-<td style="text-align: left;">buster</td>
-<td style="text-align: left;">mips64el</td>
-<td style="text-align: left;">mips64el-linux-gnueabi64</td>
+<td>mips64le</td>
+<td>buster</td>
+<td>mips64el</td>
+<td>mips64el-linux-gnueabi64</td>
 <td>zero</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">armel</td>
-<td style="text-align: left;">buster</td>
-<td style="text-align: left;">arm</td>
-<td style="text-align: left;">arm-linux-gnueabi</td>
+<td>armel</td>
+<td>buster</td>
+<td>arm</td>
+<td>arm-linux-gnueabi</td>
 <td>zero</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">ppc</td>
-<td style="text-align: left;">sid</td>
-<td style="text-align: left;">powerpc</td>
-<td style="text-align: left;">powerpc-linux-gnu</td>
+<td>ppc</td>
+<td>sid</td>
+<td>powerpc</td>
+<td>powerpc-linux-gnu</td>
 <td>zero</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">ppc64be</td>
-<td style="text-align: left;">sid</td>
-<td style="text-align: left;">ppc64</td>
-<td style="text-align: left;">powerpc64-linux-gnu</td>
+<td>ppc64be</td>
+<td>sid</td>
+<td>ppc64</td>
+<td>powerpc64-linux-gnu</td>
 <td>(all)</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">m68k</td>
-<td style="text-align: left;">sid</td>
-<td style="text-align: left;">m68k</td>
-<td style="text-align: left;">m68k-linux-gnu</td>
+<td>m68k</td>
+<td>sid</td>
+<td>m68k</td>
+<td>m68k-linux-gnu</td>
 <td>zero</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">alpha</td>
-<td style="text-align: left;">sid</td>
-<td style="text-align: left;">alpha</td>
-<td style="text-align: left;">alpha-linux-gnu</td>
+<td>alpha</td>
+<td>sid</td>
+<td>alpha</td>
+<td>alpha-linux-gnu</td>
 <td>zero</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">sh4</td>
-<td style="text-align: left;">sid</td>
-<td style="text-align: left;">sh4</td>
-<td style="text-align: left;">sh4-linux-gnu</td>
+<td>sh4</td>
+<td>sid</td>
+<td>sh4</td>
+<td>sh4-linux-gnu</td>
 <td>zero</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">riscv64</td>
-<td style="text-align: left;">sid</td>
-<td style="text-align: left;">riscv64</td>
-<td style="text-align: left;">riscv64-linux-gnu</td>
+<td>riscv64</td>
+<td>sid</td>
+<td>riscv64</td>
+<td>riscv64-linux-gnu</td>
 <td>(all)</td>
 </tr>
 </tbody>
