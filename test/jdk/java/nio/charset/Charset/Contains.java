@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /* @test
  * @summary Unit test for charset containment
- * @bug 6798572
+ * @bug 6798572 8167252
  * @modules jdk.charsets
  */
 
@@ -93,6 +93,8 @@ public class Contains {
         ck(cp1252, cp1252, true);
 
         checkUTF();
+
+        selfContainmentTest();
     }
 
     static void checkUTF() throws Exception {
@@ -101,6 +103,24 @@ public class Contains {
                 ck(Charset.forName(utfName),
                    Charset.forName(csName),
                    true);
+    }
+
+    static void selfContainmentTest() {
+        boolean failed = false;
+
+        for (var entry : Charset.availableCharsets().entrySet()) {
+            Charset charset = entry.getValue();
+            boolean contains = charset.contains(charset);
+
+            System.out.println("Charset(" + charset.name() + ").contains(Charset(" + charset.name()
+                        + ")) returns " + contains);
+            if (!contains) {
+                failed = true;
+            }
+        }
+        if (failed) {
+            throw new RuntimeException("Charset.contains(itself) returns false for some charsets");
+        }
     }
 
     static String[] utfNames = {"utf-16",
