@@ -48,10 +48,8 @@ import static java.lang.constant.ConstantDescs.CD_Object;
 public interface ClassHierarchyResolver {
 
     /**
-     * Returns a default instance of {@linkplain ClassHierarchyResolver}
-     * that reads from system class loader with
-     * {@link ClassLoader#getSystemResourceAsStream(String)} and falls
-     * back to reflection if a class is not found.
+     * Returns a default instance of {@linkplain ClassHierarchyResolver} that
+     * gets {@link ClassHierarchyInfo} from system class loader with reflection.
      */
     static ClassHierarchyResolver defaultResolver() {
         return ClassHierarchyImpl.DEFAULT_RESOLVER;

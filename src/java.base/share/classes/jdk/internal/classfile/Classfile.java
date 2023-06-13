@@ -44,6 +44,7 @@ import jdk.internal.classfile.attribute.CharacterRangeInfo;
 import jdk.internal.classfile.attribute.LocalVariableInfo;
 import jdk.internal.classfile.attribute.LocalVariableTypeInfo;
 import jdk.internal.classfile.instruction.ExceptionCatch;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Represents a context for parsing, transforming, and generating classfiles.
@@ -92,6 +93,7 @@ public sealed interface Classfile
          * @param attributeMapper a function mapping attribute names to attribute mappers
          */
         static AttributeMapperOption of(Function<Utf8Entry, AttributeMapper<?>> attributeMapper) {
+            requireNonNull(attributeMapper);
             return new ClassfileImpl.AttributeMapperOptionImpl(attributeMapper);
         }
 
@@ -111,6 +113,7 @@ public sealed interface Classfile
          * @param classHierarchyResolver the resolver
          */
         static ClassHierarchyResolverOption of(ClassHierarchyResolver classHierarchyResolver) {
+            requireNonNull(classHierarchyResolver);
             return new ClassfileImpl.ClassHierarchyResolverOptionImpl(classHierarchyResolver);
         }
 
