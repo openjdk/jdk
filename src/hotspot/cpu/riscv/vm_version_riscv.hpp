@@ -178,7 +178,7 @@ class VM_Version : public Abstract_VM_Version {
   static void setup_cpu_available_features();
   // Helper for specific queries
   static void os_aux_features();
-  static const char* os_uarch_additional_features();
+  static char* os_uarch_additional_features();
   static void vendor_features();
   // Vendors specific features
   static void rivos_features();

@@ -91,13 +91,14 @@ void VM_Version::setup_cpu_available_features() {
 
   RiscvHwprobe::probe_features();
   os_aux_features();
-  const char* uarch = os_uarch_additional_features();
+  char* uarch = os_uarch_additional_features();
   vendor_features();
 
   char buf[1024] = {};
   if (uarch != nullptr && strcmp(uarch, "") != 0) {
     snprintf(buf, sizeof(buf), "%s,", uarch);
   }
+  os::free((void*) uarch);
   strcat(buf, "rv64");
   int i = 0;
   while (_feature_list[i] != nullptr) {
@@ -159,7 +160,7 @@ VM_Version::VM_MODE VM_Version::parse_satp_mode(const char* vm_mode) {
   }
 }
 
-const char* VM_Version::os_uarch_additional_features() {
+char* VM_Version::os_uarch_additional_features() {
   char* ret = nullptr;
   VM_MODE mode = VM_NOTSET;
 
