@@ -54,10 +54,6 @@ public class Util {
     private Util() {
     }
 
-    public static String arrayOf(CharSequence s) {
-        return "[" + s;
-    }
-
     public static int parameterSlots(MethodTypeDesc mDesc) {
         int count = 0;
         for (int i = 0; i < mDesc.parameterCount(); i++) {
@@ -85,70 +81,19 @@ public class Util {
     }
 
     /**
-     * Convert a descriptor of classes or interfaces or arrays, or an internal
-     * name of a class or interface, into a fully qualified binary name, that can
-     * be resolved by {@link Class#forName(String) Class::forName}. Primitive type
-     * descriptors should never be passed into this method.
-     *
-     * @param descOrInternalName a descriptor or internal name
-     * @return the fully qualified binary name
+     * Converts a descriptor of classes or interfaces into
+     * a binary name. Rejects primitive types or arrays.
+     * This is an inverse of {@link ClassDesc#of(String)}.
      */
-    public static String toBinaryName(String descOrInternalName) {
-        if (descOrInternalName.startsWith("L")) {
-            // descriptors of classes or interfaces
-            if (descOrInternalName.length() <= 2 || !descOrInternalName.endsWith(";")) {
-                throw new IllegalArgumentException(descOrInternalName);
-            }
-            return descOrInternalName.substring(1, descOrInternalName.length() - 1).replace('/', '.');
-        } else {
-            // arrays, classes or interfaces' internal names
-            return descOrInternalName.replace('/', '.');
-        }
-    }
-
-    public static Iterator<String> parameterTypes(String s) {
-        //TODO: gracefully non-method types
-        return new Iterator<>() {
-            int ch = 1;
-
-            @Override
-            public boolean hasNext() {
-                return s.charAt(ch) != ')';
-            }
-
-            @Override
-            public String next() {
-                char curr = s.charAt(ch);
-                switch (curr) {
-                    case 'C', 'B', 'S', 'I', 'J', 'F', 'D', 'Z':
-                        ch++;
-                        return String.valueOf(curr);
-                    case '[':
-                        ch++;
-                        return "[" + next();
-                    case 'L': {
-                        int start = ch;
-                        while (s.charAt(++ch) != ';') { }
-                        ++ch;
-                        return s.substring(start, ch);
-                    }
-                    default:
-                        throw new AssertionError("cannot parse string: " + s);
-                }
-            }
-        };
-    }
-
-    public static String returnDescriptor(String s) {
-        return s.substring(s.indexOf(')') + 1);
+    public static String toBinaryName(ClassDesc cd) {
+        return toInternalName(cd).replace('/', '.');
     }
 
     public static String toInternalName(ClassDesc cd) {
         var desc = cd.descriptorString();
-        return switch (desc.charAt(0)) {
-            case 'L' -> desc.substring(1, desc.length() - 1);
-            default -> throw new IllegalArgumentException(desc);
-        };
+        if (desc.charAt(0) == 'L')
+            return desc.substring(1, desc.length() - 1);
+        throw new IllegalArgumentException(desc);
     }
 
     public static ClassDesc toClassDesc(String classInternalNameOrArrayDesc) {

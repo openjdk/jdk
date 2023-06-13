@@ -346,8 +346,8 @@ class G1RefineBufferedCards : public StackObj {
   G1ConcurrentRefineStats* _stats;
   G1RemSet* const _g1rs;
 
-  static inline int compare_card(const CardTable::CardValue* p1,
-                                 const CardTable::CardValue* p2) {
+  static inline ptrdiff_t compare_cards(const CardTable::CardValue* p1,
+                                        const CardTable::CardValue* p2) {
     return p2 - p1;
   }
 
@@ -357,7 +357,7 @@ class G1RefineBufferedCards : public StackObj {
   void sort_cards(size_t start_index) {
     QuickSort::sort(&_node_buffer[start_index],
                     _node_buffer_size - start_index,
-                    compare_card,
+                    compare_cards,
                     false);
   }
 
