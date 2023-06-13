@@ -87,7 +87,7 @@ public class BlockedAsyncClose extends SSLContextTemplate implements Runnable {
 
         // if the writeLock is not released by the other thread within 10
         // seconds it is probably blocked, and we can try to close the socket
-        while(writeLock.tryLock(10, TimeUnit.SECONDS)) {
+        while (writeLock.tryLock(10, TimeUnit.SECONDS)) {
             writeLock.unlock();
         }
 
