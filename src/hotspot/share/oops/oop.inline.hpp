@@ -296,20 +296,22 @@ oop oopDesc::forwardee() const {
 
 // The following method needs to be MT safe.
 uint oopDesc::age() const {
-  assert(!mark().is_marked(), "Attempt to read age from forwarded mark");
-  if (has_displaced_mark()) {
-    return displaced_mark().age();
+  markWord m = mark();
+  assert(!m.is_marked(), "Attempt to read age from forwarded mark");
+  if (m.has_displaced_mark_helper()) {
+    return m.displaced_mark_helper().age();
   } else {
-    return mark().age();
+    return m.age();
   }
 }
 
 void oopDesc::incr_age() {
-  assert(!mark().is_marked(), "Attempt to increment age of forwarded mark");
-  if (has_displaced_mark()) {
-    set_displaced_mark(displaced_mark().incr_age());
+  markWord m = mark();
+  assert(!m.is_marked(), "Attempt to increment age of forwarded mark");
+  if (m.has_displaced_mark_helper()) {
+    m.set_displaced_mark_helper(m.displaced_mark_helper().incr_age());
   } else {
-    set_mark(mark().incr_age());
+    set_mark(m.incr_age());
   }
 }
 
@@ -373,18 +375,6 @@ bool oopDesc::fast_no_hash_check() {
   markWord mrk = mark_acquire();
   assert(!mrk.is_marked(), "should never be marked");
   return mrk.is_unlocked() && mrk.has_no_hash();
-}
-
-bool oopDesc::has_displaced_mark() const {
-  return mark().has_displaced_mark_helper();
-}
-
-markWord oopDesc::displaced_mark() const {
-  return mark().displaced_mark_helper();
-}
-
-void oopDesc::set_displaced_mark(markWord m) {
-  mark().set_displaced_mark_helper(m);
 }
 
 bool oopDesc::mark_must_be_preserved() const {

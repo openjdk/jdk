@@ -297,11 +297,6 @@ class oopDesc {
   intptr_t slow_identity_hash();
   inline bool fast_no_hash_check();
 
-  // marks are forwarded to stack when object is locked
-  inline bool     has_displaced_mark() const;
-  inline markWord displaced_mark() const;
-  inline void     set_displaced_mark(markWord m);
-
   // Checks if the mark word needs to be preserved
   inline bool mark_must_be_preserved() const;
   inline bool mark_must_be_preserved(markWord m) const;
