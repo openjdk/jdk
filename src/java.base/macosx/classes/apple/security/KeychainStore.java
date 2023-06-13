@@ -69,7 +69,7 @@ public final class KeychainStore extends KeyStoreSpi {
         Certificate cert;
         long certRef;  // SecCertificateRef for this key
 
-        // Each KeyStore.TrustedCertificateEntry have 2 attributes:
+        // Each KeyStore.TrustedCertificateEntry has 2 attributes:
         // 1. "trustSettings" -> trustSettings.toString()
         // 2. "2.16.840.1.113894.746875.1.1" -> trustedKeyUsageValue
         // The 1st one is mainly for debugging use. The 2nd one is similar
@@ -660,7 +660,6 @@ public final class KeychainStore extends KeyStoreSpi {
                     _releaseKeychainItemRef(((TrustedCertEntry)entry).certRef);
                 }
             } else {
-                Certificate certElem;
                 KeyEntry keyEntry = (KeyEntry)entry;
 
                 if (keyEntry.chain != null) {
@@ -812,8 +811,26 @@ public final class KeychainStore extends KeyStoreSpi {
             tce.cert = cert;
             tce.certRef = keychainItemRef;
 
+            // Check whether a certificate with same alias already exists and is the same
+            // If yes, we can return here - the existing entry must have the same
+            // properties and trust settings
+            if (entries.contains(alias.toLowerCase())) {
+                int uniqueVal = 1;
+                String originalAlias = alias;
+                var co = entries.get(alias.toLowerCase());
+                while (co != null) {
+                    if (co instanceof TrustedCertEntry tco) {
+                        if (tco.cert.equals(tce.cert)) {
+                            return;
+                        }
+                    }
+                    alias = originalAlias + " " + uniqueVal++;
+                    co = entries.get(alias.toLowerCase());
+                }
+            }
+
             tce.trustSettings = new ArrayList<>();
-            Map<String,String> tmpMap = new LinkedHashMap<>();
+            Map<String, String> tmpMap = new LinkedHashMap<>();
             for (int i = 0; i < inputTrust.size(); i++) {
                 if (inputTrust.get(i) == null) {
                     tce.trustSettings.add(tmpMap);
@@ -836,9 +853,10 @@ public final class KeychainStore extends KeyStoreSpi {
             } catch (Exception e) {
                 isSelfSigned = false;
             }
+
             if (tce.trustSettings.isEmpty()) {
                 if (isSelfSigned) {
-                    // If a self-signed certificate has an empty trust settings,
+                    // If a self-signed certificate has trust settings without specific entries,
                     // trust it for all purposes
                     tce.trustedKeyUsageValue = KnownOIDs.anyExtendedKeyUsage.value();
                 } else {
@@ -851,11 +869,19 @@ public final class KeychainStore extends KeyStoreSpi {
                 for (var oneTrust : tce.trustSettings) {
                     var result = oneTrust.get("kSecTrustSettingsResult");
                     // https://developer.apple.com/documentation/security/sectrustsettingsresult?language=objc
-                    // 1 = kSecTrustSettingsResultTrustRoot, 2 = kSecTrustSettingsResultTrustAsRoot
+                    // 1 = kSecTrustSettingsResultTrustRoot, 2 = kSecTrustSettingsResultTrustAsRoot,
+                    // 3 = kSecTrustSettingsResultDeny
                     // If missing, a default value of kSecTrustSettingsResultTrustRoot is assumed
-                    // for self-signed certificates (see doc for SecTrustSettingsCopyTrustSettings).
+                    // (see doc for SecTrustSettingsCopyTrustSettings).
                     // Note that the same SecPolicyOid can appear in multiple trust settings
                     // for different kSecTrustSettingsAllowedError and/or kSecTrustSettingsPolicyString.
+
+                    // If we find explicit distrust in some record, we ignore the certificate
+                    if ("3".equals(result)) {
+                        return;
+                    }
+
+                    // Trust, if explicitly trusted or result is null and certificate is self signed
                     if ((result == null && isSelfSigned)
                             || "1".equals(result) || "2".equals(result)) {
                         // When no kSecTrustSettingsPolicy, it means everything
@@ -875,19 +901,12 @@ public final class KeychainStore extends KeyStoreSpi {
                     tce.trustedKeyUsageValue = values.toString();
                 }
             }
+
             // Make a creation date.
             if (creationDate != 0)
                 tce.date = new Date(creationDate);
             else
                 tce.date = new Date();
-
-            int uniqueVal = 1;
-            String originalAlias = alias;
-
-            while (entries.containsKey(alias.toLowerCase())) {
-                alias = originalAlias + " " + uniqueVal;
-                uniqueVal++;
-            }
 
             entries.put(alias.toLowerCase(), tce);
         } catch (Exception e) {
