@@ -221,6 +221,14 @@ ifeq ($(call isTargetOs, windows macosx), false)
       LIBAWT_XAWT_LIBS += -lpthread
     endif
 
+    # These are the object files provided by the awt native
+    # library. Do not include these external (non-awt_xawt library)
+    # objects in the static library. When statically linking the java
+    # launcher with all JDK and VM static libraries, we use the
+    # --whole-archive linker option. The duplicate objects in different
+    # static libraries cause linking errors due to duplicate symbols.
+    LIBAWT_XAWT_STATIC_EXCLUDE_OBJS := systemScale.o
+
     $(eval $(call SetupJdkLibrary, BUILD_LIBAWT_XAWT, \
         NAME := awt_xawt, \
         EXTRA_SRC := $(LIBAWT_XAWT_EXTRA_SRC), \
@@ -255,6 +263,7 @@ ifeq ($(call isTargetOs, windows macosx), false)
             $(call SET_SHARED_LIBRARY_ORIGIN) \
             -L$(INSTALL_LIBRARIES_HERE), \
         LIBS :=  $(X_LIBS) $(LIBAWT_XAWT_LIBS), \
+        STATIC_LIB_EXCLUDE_OBJS := $(LIBAWT_XAWT_STATIC_EXCLUDE_OBJS), \
     ))
 
     $(BUILD_LIBAWT_XAWT): $(call FindLib, java.base, java)
@@ -378,6 +387,14 @@ ifeq ($(call isTargetOs, windows macosx), false)
   LIBAWT_HEADLESS_CFLAGS := $(CUPS_CFLAGS) $(FONTCONFIG_CFLAGS) $(X_CFLAGS) \
       -DHEADLESS=true
 
+  # These are the object files provided by the awt native
+  # library. Do not include these external (non-awt_headless library)
+  # objects in the static library. When statically linking the java
+  # launcher with all JDK and VM static libraries, we use the
+  # --whole-archive linker option. The duplicate objects in different
+  # static libraries cause linking errors due to duplicate symbols.
+  LIBAWT_HEADLESS_STATIC_EXCLUDE_OBJS := systemScale.o
+
   $(eval $(call SetupJdkLibrary, BUILD_LIBAWT_HEADLESS, \
       NAME := awt_headless, \
       EXTRA_SRC := $(LIBAWT_HEADLESS_EXTRA_SRC), \
@@ -393,6 +410,7 @@ ifeq ($(call isTargetOs, windows macosx), false)
       LDFLAGS_unix := -L$(INSTALL_LIBRARIES_HERE), \
       LIBS_unix := -lawt -ljvm -ljava, \
       LIBS_linux := $(LIBM) $(LIBDL), \
+      STATIC_LIB_EXCLUDE_OBJS := $(LIBAWT_HEADLESS_STATIC_EXCLUDE_OBJS), \
   ))
 
   $(BUILD_LIBAWT_HEADLESS): $(BUILD_LIBAWT)

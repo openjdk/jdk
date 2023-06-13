@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,13 +21,19 @@
  * questions.
  */
 
-package nsk.share.gc.lock.jvmti;
+/*
+ * @test
+ * @bug 8308749
+ * @compile TestCountedLoopInsideInfiniteLoop.jasm
+ * @summary Counted Loops inside infinite loops are only detected later,
+ *          and may still be a Region and not a LoopNode as expected.
+ * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:PerMethodTrapLimit=0
+ *      -XX:CompileCommand=compileonly,TestCountedLoopInsideInfiniteLoop::test
+ *      TestCountedLoopInsideInfiniteLoopMain
+ */
 
-import nsk.share.gc.lock.Lockers;
-import nsk.share.gc.lock.Locker;
-
-public class JVMTIAllocLockers implements Lockers {
-        public Locker createLocker(Object obj) {
-                return new JVMTIAllocLocker();
-        }
+public class TestCountedLoopInsideInfiniteLoopMain {
+    public static void main (String[] args) {
+        TestCountedLoopInsideInfiniteLoop.test(0, 0, 0, 0);
+    }
 }

@@ -40,6 +40,9 @@ field name RELEASE_21 descriptor Ljavax/lang/model/SourceVersion; flags 4019
 class name javax/lang/model/element/Modifier
 header extends java/lang/Enum sealed true flags 4021 signature Ljava/lang/Enum<Ljavax/lang/model/element/Modifier;>;
 
+class name javax/lang/model/element/TypeElement
+method name isUnnamed descriptor ()Z flags 1 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;UNNAMED_CLASSES;,reflective=Ztrue)
+
 class name javax/lang/model/element/UnknownAnnotationValueException
 header extends javax/lang/model/UnknownEntityException flags 21
 innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
