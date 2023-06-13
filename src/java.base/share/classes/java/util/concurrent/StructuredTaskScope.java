@@ -971,6 +971,10 @@ public class StructuredTaskScope<T> implements AutoCloseable {
      * <p> Unless otherwise specified, passing a {@code null} argument to a method
      * in this class will cause a {@link NullPointerException} to be thrown.
      *
+     * @apiNote This class implements a policy to shut down the task scope when a subtask
+     * completes successfully. There shouldn't be any need to directly shut down the task
+     * scope with the {@link #shutdown() shutdown} method.
+     *
      * @param <T> the result type
      * @since 21
      */
@@ -1048,7 +1052,9 @@ public class StructuredTaskScope<T> implements AutoCloseable {
          * <p> This method waits for all subtasks by waiting for all threads {@linkplain
          * #fork(Callable) started} in this task scope to finish execution. It stops waiting
          * when all threads finish, a subtask completes successfully, or the current
-         * thread is {@linkplain Thread#interrupt() interrupted}.
+         * thread is {@linkplain Thread#interrupt() interrupted}. It also stops waiting
+         * if the {@link #shutdown() shutdown} method is invoked directly to shut down
+         * this task scope.
          *
          * <p> This method may only be invoked by the task scope owner.
          *
@@ -1070,6 +1076,8 @@ public class StructuredTaskScope<T> implements AutoCloseable {
          * #fork(Callable) started} in this task scope to finish execution. It stops waiting
          * when all threads finish, a subtask completes successfully, the deadline is
          * reached, or the current thread is {@linkplain Thread#interrupt() interrupted}.
+         * It also stops waiting if the {@link #shutdown() shutdown} method is invoked
+         * directly to shut down this task scope.
          *
          * <p> This method may only be invoked by the task scope owner.
          *
@@ -1155,6 +1163,10 @@ public class StructuredTaskScope<T> implements AutoCloseable {
      * <p> Unless otherwise specified, passing a {@code null} argument to a method
      * in this class will cause a {@link NullPointerException} to be thrown.
      *
+     * @apiNote This class implements a policy to shut down the task scope when a subtask
+     * fails. There shouldn't be any need to directly shut down the task scope with the
+     * {@link #shutdown() shutdown} method.
+     *
      * @since 21
      */
     @PreviewFeature(feature = PreviewFeature.Feature.STRUCTURED_CONCURRENCY)
@@ -1216,7 +1228,8 @@ public class StructuredTaskScope<T> implements AutoCloseable {
          * <p> This method waits for all subtasks by waiting for all threads {@linkplain
          * #fork(Callable) started} in this task scope to finish execution. It stops waiting
          * when all threads finish, a subtask fails, or the current thread is {@linkplain
-         * Thread#interrupt() interrupted}.
+         * Thread#interrupt() interrupted}. It also stops waiting if the {@link #shutdown()
+         * shutdown} method is invoked directly to shut down this task scope.
          *
          * <p> This method may only be invoked by the task scope owner.
          *
@@ -1236,7 +1249,9 @@ public class StructuredTaskScope<T> implements AutoCloseable {
          * <p> This method waits for all subtasks by waiting for all threads {@linkplain
          * #fork(Callable) started} in this task scope to finish execution. It stops waiting
          * when all threads finish, a subtask fails, the deadline is reached, or the current
-         * thread is {@linkplain Thread#interrupt() interrupted}.
+         * thread is {@linkplain Thread#interrupt() interrupted}. It also stops waiting
+         * if the {@link #shutdown() shutdown} method is invoked directly to shut down
+         * this task scope.
          *
          * <p> This method may only be invoked by the task scope owner.
          *
