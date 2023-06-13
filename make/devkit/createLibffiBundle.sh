@@ -60,11 +60,11 @@
 # ```
 # (`<install dest>` can be whatever you like. That's what you point `--with-libffi` to).
 #
-# 4. run `make install`. This should create the `<intstall dest>` directory with the files:
+# 4. run `make install`. This should create the `<install dest>` directory with the files:
 #    `include/ffi.h`, `include/ffitarget.h`, `lib/libffi.dll`. It also creates a `lib/libffi.lib` file,
 #    but it is of the wrong file type, `DLL` rather than `LIBRARY`.
 #
-# 5. Manually create a working `.lib` file:
+# 5. Manually create a working `.lib` file (in the <install dest>/lib dir):
 #   5.a use `dumpbin /exports libffi.dll` to get a list of exported symbols
 #   5.b put them in a `libffi.def` file: `EXPORTS` on the first line, then a symbol on each line following
 #   5.c run `lib /def:libffi.def /machine:x64 /out:libffi.lib` to create the right `.lib` file (`lib` is a visual studio tool)
