@@ -4514,6 +4514,8 @@ address MacroAssembler::has_negatives(Register ary1, Register len, Register resu
   return pc();
 }
 
+// Clobbers: rscratch1, rscratch2, rflags
+// May also clobber v0-v7 when (!UseSimpleArrayEquals && UseSIMDForArrayEquals)
 address MacroAssembler::arrays_equals(Register a1, Register a2, Register tmp3,
                                       Register tmp4, Register tmp5, Register result,
                                       Register cnt1, int elem_size) {
@@ -5049,10 +5051,12 @@ void MacroAssembler::fill_words(Register base, Register cnt, Register value)
 //       Using 'umaxv' in the ASCII-case comes with a small penalty but does
 //       avoid additional bloat.
 //
+// Clobbers: src, dst, res, rscratch1, rscratch2, rflags
 void MacroAssembler::encode_iso_array(Register src, Register dst,
                                       Register len, Register res, bool ascii,
                                       FloatRegister vtmp0, FloatRegister vtmp1,
-                                      FloatRegister vtmp2, FloatRegister vtmp3)
+                                      FloatRegister vtmp2, FloatRegister vtmp3,
+                                      FloatRegister vtmp4, FloatRegister vtmp5)
 {
   Register cnt = res;
   Register max = rscratch1;
@@ -5071,8 +5075,8 @@ void MacroAssembler::encode_iso_array(Register src, Register dst,
     br(LT, DONE_32);
     ld1(vtmp0, vtmp1, vtmp2, vtmp3, T8H, Address(post(src, 64)));
     // Extract lower bytes.
-    FloatRegister vlo0 = v4;
-    FloatRegister vlo1 = v5;
+    FloatRegister vlo0 = vtmp4;
+    FloatRegister vlo1 = vtmp5;
     uzp1(vlo0, T16B, vtmp0, vtmp1);
     uzp1(vlo1, T16B, vtmp2, vtmp3);
     // Merge bits...
@@ -5145,6 +5149,7 @@ void MacroAssembler::encode_iso_array(Register src, Register dst,
 }
 
 // Inflate byte[] array to char[].
+// Clobbers: src, dst, len, rflags, rscratch1, v0-v6
 address MacroAssembler::byte_array_inflate(Register src, Register dst, Register len,
                                            FloatRegister vtmp1, FloatRegister vtmp2,
                                            FloatRegister vtmp3, Register tmp4) {
@@ -5253,8 +5258,9 @@ address MacroAssembler::byte_array_inflate(Register src, Register dst, Register 
 void MacroAssembler::char_array_compress(Register src, Register dst, Register len,
                                          Register res,
                                          FloatRegister tmp0, FloatRegister tmp1,
-                                         FloatRegister tmp2, FloatRegister tmp3) {
-  encode_iso_array(src, dst, len, res, false, tmp0, tmp1, tmp2, tmp3);
+                                         FloatRegister tmp2, FloatRegister tmp3,
+                                         FloatRegister tmp4, FloatRegister tmp5) {
+  encode_iso_array(src, dst, len, res, false, tmp0, tmp1, tmp2, tmp3, tmp4, tmp5);
   // Adjust result: res == len ? len : 0
   cmp(len, res);
   csel(res, res, zr, EQ);

@@ -43,6 +43,7 @@
 typedef void (MacroAssembler::* chr_insn)(Register Rt, const Address &adr);
 
 // Search for str1 in str2 and return index or -1
+// Clobbers: rscratch1, rscratch2, rflags. May also clobber v0-v1, when icnt1==-1.
 void C2_MacroAssembler::string_indexof(Register str2, Register str1,
                                        Register cnt2, Register cnt1,
                                        Register tmp1, Register tmp2,
