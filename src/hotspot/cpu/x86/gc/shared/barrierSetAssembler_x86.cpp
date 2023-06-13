@@ -382,7 +382,7 @@ void BarrierSetAssembler::incr_allocated_bytes(MacroAssembler* masm, Register th
 #ifdef _LP64
 void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slow_path, Label* continuation) {
   BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
-  if (bs_nm == NULL) {
+  if (bs_nm == nullptr) {
     return;
   }
   Register thread = r15_thread;
@@ -396,7 +396,7 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slo
   uintptr_t after_cmp = (uintptr_t)__ pc();
   guarantee(after_cmp - before_cmp == 8, "Wrong assumed instruction length");
 
-  if (slow_path != NULL) {
+  if (slow_path != nullptr) {
     __ jcc(Assembler::notEqual, *slow_path);
     __ bind(*continuation);
   } else {
@@ -409,7 +409,7 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slo
 #else
 void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label*, Label*) {
   BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
-  if (bs_nm == NULL) {
+  if (bs_nm == nullptr) {
     return;
   }
 
@@ -430,7 +430,7 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label*, La
 
 void BarrierSetAssembler::c2i_entry_barrier(MacroAssembler* masm) {
   BarrierSetNMethod* bs = BarrierSet::barrier_set()->barrier_set_nmethod();
-  if (bs == NULL) {
+  if (bs == nullptr) {
     return;
   }
 

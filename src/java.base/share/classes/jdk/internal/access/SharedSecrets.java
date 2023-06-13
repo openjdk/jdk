@@ -30,7 +30,6 @@ import javax.crypto.spec.SecretKeySpec;
 import java.io.ObjectInputFilter;
 import java.lang.invoke.MethodHandles;
 import java.lang.module.ModuleDescriptor;
-import java.lang.template.StringTemplate;
 import java.security.Security;
 import java.security.spec.EncodedKeySpec;
 import java.util.ResourceBundle;
@@ -526,7 +525,7 @@ public class SharedSecrets {
         var access = javaTemplateAccess;
         if (access == null) {
             try {
-                Class.forName("java.lang.template.TemplateSupport", true, null);
+                Class.forName("java.lang.runtime.TemplateSupport", true, null);
                 access = javaTemplateAccess;
             } catch (ClassNotFoundException e) {}
         }

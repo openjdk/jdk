@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,15 +28,14 @@ package java.util;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-import java.lang.template.ProcessorLinkage;
-import java.lang.template.StringProcessor;
-import java.lang.template.StringTemplate;
+import java.lang.StringTemplate.Processor;
+import java.lang.StringTemplate.Processor.Linkage;
 import java.util.regex.Matcher;
 
 import jdk.internal.javac.PreviewFeature;
 
 /**
- * This {@link StringProcessor} constructs a {@link String} result using
+ * This {@link Processor} constructs a {@link String} result using
  * {@link Formatter} specifications and values found in the {@link StringTemplate}.
  * Unlike {@link Formatter}, {@link FormatProcessor} uses the value from the
  * embedded expression that immediately follows, without whitespace, the
@@ -93,10 +92,10 @@ import jdk.internal.javac.PreviewFeature;
  *
  * @since 21
  *
- * @see java.lang.template.StringProcessor
+ * @see Processor
  */
 @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
-public final class FormatProcessor implements StringProcessor, ProcessorLinkage {
+public final class FormatProcessor implements Processor<String, RuntimeException>, Linkage {
     /**
      * {@link Locale} used to format
      */
@@ -148,6 +147,7 @@ public final class FormatProcessor implements StringProcessor, ProcessorLinkage 
      *          formatting errors, see the
      *          <a href="../util/Formatter.html#detail">details</a>
      *          section of the formatter class specification.
+     * @throws NullPointerException if stringTemplate is null
      *
      * @see java.util.Formatter
      */
@@ -155,7 +155,7 @@ public final class FormatProcessor implements StringProcessor, ProcessorLinkage 
     public final String process(StringTemplate stringTemplate) {
         Objects.requireNonNull(stringTemplate);
         String format = stringTemplateFormat(stringTemplate.fragments());
-        Object[] values = stringTemplate.values().toArray(new Object[0]);
+        Object[] values = stringTemplate.values().toArray();
 
         return new Formatter(locale).format(format, values).toString();
     }
@@ -165,11 +165,11 @@ public final class FormatProcessor implements StringProcessor, ProcessorLinkage 
      * a {@link StringTemplate} will produce a result equivalent to that provided by
      * {@link FormatProcessor#process(StringTemplate)}. This {@link MethodHandle}
      * is used by {@link FormatProcessor#FMT} and the ilk to perform a more
-     * specialized composition of a result. This is specialization is done by
+     * specialized composition of a result. This specialization is done by
      * prescanning the fragments and value types of a {@link StringTemplate}.
      * <p>
      * Process template expressions can be specialized  when the processor is
-     * of type {@link ProcessorLinkage} and fetched from a static constant as is
+     * of type {@link Linkage} and fetched from a static constant as is
      * {@link FormatProcessor#FMT} ({@code static final FormatProcessor}).
      * <p>
      * Other {@link FormatProcessor FormatProcessors} can be specialized when stored in a static
@@ -191,6 +191,7 @@ public final class FormatProcessor implements StringProcessor, ProcessorLinkage 
      *          formatting errors, see the
      *          <a href="../util/Formatter.html#detail">details</a>
      *          section of the formatter class specification.
+     * @throws NullPointerException if fragments or type is null
      *
      * @see java.util.Formatter
      */

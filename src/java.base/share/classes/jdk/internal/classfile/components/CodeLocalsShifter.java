@@ -57,7 +57,7 @@ public sealed interface CodeLocalsShifter extends CodeTransform {
     static CodeLocalsShifter of(AccessFlags methodFlags, MethodTypeDesc methodDescriptor) {
         int fixed = methodFlags.has(AccessFlag.STATIC) ? 0 : 1;
         for (var param : methodDescriptor.parameterList())
-            fixed += TypeKind.fromDescriptor(param.descriptorString()).slotSize();
+            fixed += TypeKind.from(param).slotSize();
         return new CodeLocalsShifterImpl(fixed);
     }
 

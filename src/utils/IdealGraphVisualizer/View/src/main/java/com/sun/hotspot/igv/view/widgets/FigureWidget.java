@@ -106,7 +106,7 @@ public class FigureWidget extends Widget implements Properties.Provider, PopupMe
         middleWidget.setBackground(f.getColor());
         middleWidget.setOpaque(true);
         middleWidget.getActions().addAction(new DoubleClickAction(this));
-        middleWidget.setCheckClipping(true);
+        middleWidget.setCheckClipping(false);
 
         dummyTop = new Widget(scene);
         int extraTopHeight =
@@ -137,6 +137,7 @@ public class FigureWidget extends Widget implements Properties.Provider, PopupMe
             lw.setAlignment(LabelWidget.Alignment.CENTER);
             lw.setVerticalAlignment(LabelWidget.VerticalAlignment.CENTER);
             lw.setBorder(BorderFactory.createEmptyBorder());
+            lw.setCheckClipping(false);
         }
 
         if (getFigure().getWarning() != null) {

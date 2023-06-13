@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,6 @@
  * @enablePreview true
  */
 
-import java.lang.template.StringTemplate;
-import java.lang.template.StringProcessor;
 import java.util.FormatProcessor;
 import java.util.Objects;
 import java.util.Locale;
@@ -52,7 +50,7 @@ public class FormatterBuilder {
         }
     }
 
-    static void suite(StringProcessor fmt) {
+    static void suite(FormatProcessor fmt) {
         Object nullObject = null;
         test(String.format("%b", false), fmt."%b\{false}");
         test(String.format("%b", true), fmt."%b\{true}");

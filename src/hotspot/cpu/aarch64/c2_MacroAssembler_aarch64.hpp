@@ -77,13 +77,13 @@
 
   // SIMD&FP comparison
   void neon_compare(FloatRegister dst, BasicType bt, FloatRegister src1,
-                    FloatRegister src2, int cond, bool isQ);
+                    FloatRegister src2, Condition cond, bool isQ);
 
   void neon_compare_zero(FloatRegister dst, BasicType bt, FloatRegister src,
                          Condition cond, bool isQ);
 
   void sve_compare(PRegister pd, BasicType bt, PRegister pg,
-                   FloatRegister zn, FloatRegister zm, int cond);
+                   FloatRegister zn, FloatRegister zm, Condition cond);
 
   void sve_vmask_lasttrue(Register dst, BasicType bt, PRegister src, PRegister ptmp);
 
@@ -103,7 +103,7 @@
   void sve_vmaskcast_extend(PRegister dst, PRegister src,
                             uint dst_element_length_in_bytes, uint src_element_lenght_in_bytes);
 
-  void sve_vmaskcast_narrow(PRegister dst, PRegister src,
+  void sve_vmaskcast_narrow(PRegister dst, PRegister src, PRegister ptmp,
                             uint dst_element_length_in_bytes, uint src_element_lenght_in_bytes);
 
   // Vector reduction

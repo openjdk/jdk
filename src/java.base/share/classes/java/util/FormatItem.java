@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,6 @@ import java.util.Formatter.FormatSpecifier;
 
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.javac.PreviewFeature;
 import jdk.internal.util.FormatConcatItem;
 
 import static java.lang.invoke.MethodType.methodType;
@@ -46,8 +45,10 @@ import static java.lang.invoke.MethodType.methodType;
  * themselves into a concatenation performed by StringConcatFactory.
  *
  * @since 21
+ *
+ * Warning: This class is part of PreviewFeature.Feature.STRING_TEMPLATES.
+ *          Do not rely on its availability.
  */
-@PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
 class FormatItem {
     private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
 
@@ -68,7 +69,7 @@ class FormatItem {
             JLA.stringConcatHelper("selectPutChar",
                     MethodType.methodType(MethodHandle.class, long.class));
 
-    private static final long charMix(long lengthCoder, char value) {
+    private static long charMix(long lengthCoder, char value) {
         try {
             return (long)CHAR_MIX.invokeExact(lengthCoder, value);
         } catch (Error | RuntimeException ex) {
@@ -78,11 +79,11 @@ class FormatItem {
         }
     }
 
-    private static final long stringMix(long lengthCoder, String value) {
+    private static long stringMix(long lengthCoder, String value) {
         return JLA.stringConcatMix(lengthCoder, value);
     }
 
-    private static final long stringPrepend(long lengthCoder, byte[] buffer,
+    private static long stringPrepend(long lengthCoder, byte[] buffer,
                                             String value) throws Throwable {
         return (long)STRING_PREPEND.invokeExact(lengthCoder, buffer, value,
                 (String)null);

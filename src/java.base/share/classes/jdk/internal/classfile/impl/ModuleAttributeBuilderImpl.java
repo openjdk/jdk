@@ -49,9 +49,13 @@ public final class ModuleAttributeBuilderImpl
     private final Set<ClassEntry> uses = new LinkedHashSet<>();
     private final Set<ModuleProvideInfo> provides = new LinkedHashSet<>();
 
-    public ModuleAttributeBuilderImpl(ModuleDesc moduleName) {
-        this.moduleEntry = TemporaryConstantPool.INSTANCE.moduleEntry(TemporaryConstantPool.INSTANCE.utf8Entry(moduleName.moduleName()));
+    public ModuleAttributeBuilderImpl(ModuleEntry moduleName) {
+        this.moduleEntry = moduleName;
         this.moduleFlags = 0;
+    }
+
+    public ModuleAttributeBuilderImpl(ModuleDesc moduleName) {
+        this(TemporaryConstantPool.INSTANCE.moduleEntry(TemporaryConstantPool.INSTANCE.utf8Entry(moduleName.moduleName())));
     }
 
     @Override

@@ -60,7 +60,7 @@
 
 class ClassLoaderData;
 
-size_t CollectedHeap::_lab_alignment_reserve = ~(size_t)0;
+size_t CollectedHeap::_lab_alignment_reserve = SIZE_MAX;
 Klass* CollectedHeap::_filler_object_klass = nullptr;
 size_t CollectedHeap::_filler_array_max_size = 0;
 size_t CollectedHeap::_stack_chunk_max_size = 0;
@@ -637,10 +637,6 @@ void CollectedHeap::reset_promotion_should_fail() {
 }
 
 #endif  // #ifndef PRODUCT
-
-bool CollectedHeap::is_archived_object(oop object) const {
-  return false;
-}
 
 // It's the caller's responsibility to ensure glitch-freedom
 // (if required).

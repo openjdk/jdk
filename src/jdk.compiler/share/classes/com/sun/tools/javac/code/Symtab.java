@@ -239,8 +239,8 @@ public class Symtab {
     // For string templates
     public final Type stringTemplateType;
     public final Type templateRuntimeType;
-    public final Type validatingProcessorType;
-    public final Type processorLinkage;
+    public final Type processorType;
+    public final Type linkageType;
 
     /** The symbol representing the length field of an array.
      */
@@ -400,6 +400,7 @@ public class Symtab {
     /** Constructor; enters all predefined identifiers and operators
      *  into symbol table.
      */
+    @SuppressWarnings("this-escape")
     protected Symtab(Context context) throws CompletionFailure {
         context.put(symtabKey, this);
 
@@ -631,10 +632,10 @@ public class Symtab {
         synthesizeBoxTypeIfMissing(voidType);
 
         // For string templates
-        stringTemplateType = enterClass("java.lang.template.StringTemplate");
+        stringTemplateType = enterClass("java.lang.StringTemplate");
         templateRuntimeType = enterClass("java.lang.runtime.TemplateRuntime");
-        validatingProcessorType = enterClass("java.lang.template.ValidatingProcessor");
-        processorLinkage = enterClass("java.lang.template.ProcessorLinkage");
+        processorType = enterClass("java.lang.StringTemplate$Processor");
+        linkageType = enterClass("java.lang.StringTemplate$Processor$Linkage");
 
         // Enter a synthetic class that is used to mark internal
         // proprietary classes in ct.sym.  This class does not have a

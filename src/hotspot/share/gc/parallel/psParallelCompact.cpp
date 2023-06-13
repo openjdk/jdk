@@ -1017,11 +1017,11 @@ void PSParallelCompact::post_compact()
     to_space->is_empty();
 
   PSCardTable* ct = heap->card_table();
-  MemRegion old_mr = heap->old_gen()->reserved();
+  MemRegion old_mr = heap->old_gen()->committed();
   if (young_gen_empty) {
-    ct->clear(old_mr);
+    ct->clear_MemRegion(old_mr);
   } else {
-    ct->invalidate(old_mr);
+    ct->dirty_MemRegion(old_mr);
   }
 
   // Delete metaspaces for unloaded class loaders and clean up loader_data graph
@@ -1678,7 +1678,7 @@ void PSParallelCompact::summary_phase(bool maximum_compaction)
 // may be true because this method can be called without intervening
 // activity.  For example when the heap space is tight and full measure
 // are being taken to free space.
-void PSParallelCompact::invoke(bool maximum_heap_compaction) {
+bool PSParallelCompact::invoke(bool maximum_heap_compaction) {
   assert(SafepointSynchronize::is_at_safepoint(), "should be at safepoint");
   assert(Thread::current() == (Thread*)VMThread::vm_thread(),
          "should be in vm thread");
@@ -1695,8 +1695,8 @@ void PSParallelCompact::invoke(bool maximum_heap_compaction) {
   const bool clear_all_soft_refs =
     heap->soft_ref_policy()->should_clear_all_soft_refs();
 
-  PSParallelCompact::invoke_no_policy(clear_all_soft_refs ||
-                                      maximum_heap_compaction);
+  return PSParallelCompact::invoke_no_policy(clear_all_soft_refs ||
+                                             maximum_heap_compaction);
 }
 
 // This method contains no policy. You should probably
@@ -1749,7 +1749,7 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
     heap->pre_full_gc_dump(&_gc_timer);
 
     TraceCollectorStats tcs(counters());
-    TraceMemoryManagerStats tms(heap->old_gc_manager(), gc_cause);
+    TraceMemoryManagerStats tms(heap->old_gc_manager(), gc_cause, "end of major GC");
 
     if (log_is_enabled(Debug, gc, heap, exit)) {
       accumulated_time()->start();
@@ -2067,7 +2067,10 @@ void PSParallelCompact::marking_phase(ParallelOldTracer *gc_tracer) {
     JVMCI_ONLY(JVMCI::do_unloading(purged_class));
   }
 
-  _gc_tracer.report_object_count_after_gc(is_alive_closure());
+  {
+    GCTraceTime(Debug, gc, phases) tm("Report Object Count", &_gc_timer);
+    _gc_tracer.report_object_count_after_gc(is_alive_closure(), &ParallelScavengeHeap::heap()->workers());
+  }
 #if TASKQUEUE_STATS
   ParCompactionManager::oop_task_queues()->print_and_reset_taskqueue_stats("Oop Queue");
   ParCompactionManager::_objarray_task_queues->print_and_reset_taskqueue_stats("ObjArrayOop Queue");

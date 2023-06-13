@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2022 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,7 +82,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
   // construct the sender and do some validation of it. This goes a long way
   // toward eliminating issues when we get in frame construction code
 
-  if (_cb != NULL) {
+  if (_cb != nullptr) {
 
     // First check if the frame is complete and the test is reliable.
     // Unfortunately we can only check frame completeness for runtime stubs
@@ -111,13 +111,13 @@ bool frame::safe_for_sender(JavaThread *thread) {
     }
 
     // At this point, there still is a chance that fp_safe is false.
-    // In particular, (fp == NULL) might be true. So let's check and
+    // In particular, fp might be null. So let's check and
     // bail out before we actually dereference from fp.
     if (!fp_safe) {
       return false;
     }
 
-    abi_minframe* sender_abi = (abi_minframe*) fp;
+    common_abi* sender_abi = (common_abi*) fp;
     intptr_t* sender_sp = (intptr_t*) fp;
     address   sender_pc = (address) sender_abi->lr;;
 
@@ -130,7 +130,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
 
     // We must always be able to find a recognizable pc.
     CodeBlob* sender_blob = CodeCache::find_blob(sender_pc);
-    if (sender_blob == NULL) {
+    if (sender_blob == nullptr) {
       return false;
     }
 
@@ -186,7 +186,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
 }
 
 frame frame::sender_for_entry_frame(RegisterMap *map) const {
-  assert(map != NULL, "map must be set");
+  assert(map != nullptr, "map must be set");
   // Java frame called from C; skip all C frames and return top C
   // frame of that chunk as the sender.
   JavaFrameAnchor* jfa = entry_frame_call_wrapper()->anchor();
@@ -195,7 +195,7 @@ frame frame::sender_for_entry_frame(RegisterMap *map) const {
   map->clear();
   assert(map->include_argument_oops(), "should be set by clear");
 
-  if (jfa->last_Java_pc() != NULL) {
+  if (jfa->last_Java_pc() != nullptr) {
     frame fr(jfa->last_Java_sp(), jfa->last_Java_pc());
     return fr;
   }
@@ -262,7 +262,7 @@ void frame::patch_pc(Thread* thread, address pc) {
   own_abi()->lr = (uint64_t)pc;
   _pc = pc; // must be set before call to get_deopt_original_pc
   address original_pc = CompiledMethod::get_deopt_original_pc(this);
-  if (original_pc != NULL) {
+  if (original_pc != nullptr) {
     assert(original_pc == old_pc, "expected original PC to be stored before patching");
     _deopt_state = is_deoptimized;
     _pc = original_pc;
@@ -291,7 +291,7 @@ bool frame::is_interpreted_frame_valid(JavaThread* thread) const {
   if (sp() == 0 || (intptr_t(sp()) & (wordSize-1)) != 0) {
     return false;
   }
-  int min_frame_slots = (abi_minframe_size + ijava_state_size) / sizeof(intptr_t);
+  int min_frame_slots = (parent_ijava_frame_abi_size + ijava_state_size) / sizeof(intptr_t);
   if (fp() - min_frame_slots < sp()) {
     return false;
   }

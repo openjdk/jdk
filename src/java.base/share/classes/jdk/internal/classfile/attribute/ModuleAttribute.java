@@ -142,6 +142,19 @@ public sealed interface ModuleAttribute
         return  mb.build();
     }
 
+    /**
+     * {@return a {@code Module} attribute}
+     *
+     * @param moduleName the module name
+     * @param attrHandler a handler that receives a {@link ModuleAttributeBuilder}
+     */
+    static ModuleAttribute of(ModuleEntry moduleName,
+                              Consumer<ModuleAttributeBuilder> attrHandler) {
+        var mb = new ModuleAttributeBuilderImpl(moduleName);
+        attrHandler.accept(mb);
+        return  mb.build();
+    }
+
     public sealed interface ModuleAttributeBuilder
             permits ModuleAttributeBuilderImpl {
 

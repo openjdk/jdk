@@ -1,0 +1,621 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2023 Unicode, Inc.
+For terms of use, see http://www.unicode.org/copyright.html
+SPDX-License-Identifier: Unicode-DFS-2016
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+-->
+<ldml>
+	<identity>
+		<version number="$Revision$"/>
+		<language type="rhg"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="rhg" draft="contributed">𐴌𐴗𐴥𐴝𐴙𐴚𐴒𐴙𐴝</language>
+		</languages>
+	</localeDisplayNames>
+	<layout>
+		<orientation>
+			<characterOrder>right-to-left</characterOrder>
+		</orientation>
+	</layout>
+	<characters>
+		<exemplarCharacters draft="contributed">[\U00010D24\U00010D25\U00010D26\U00010D27 𐴀 𐴝 𐴞 𐴟 𐴠 𐴡 𐴁 𐴂 𐴃 𐴄 𐴅 𐴆 𐴇 𐴈 𐴉 𐴊 𐴋 𐴌 𐴍 𐴎 𐴏 𐴐 𐴑 𐴒 𐴓 𐴔 𐴕 𐴖 𐴗 𐴘 𐴙 𐴚 𐴛 𐴢 𐴣]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary" draft="contributed">[ـ]</exemplarCharacters>
+		<exemplarCharacters type="numbers" draft="contributed">[\- ‑ , . % + 0𐴰 1𐴱 2𐴲 3𐴳 4𐴴 5𐴵 6𐴶 7𐴷 8𐴸 9𐴹]</exemplarCharacters>
+		<exemplarCharacters type="punctuation" draft="contributed">[\- ‐ ‑ – — ، ؛ \: ! ؟ . … ' &quot; ( ) \[ \]]</exemplarCharacters>
+	</characters>
+	<dates>
+		<calendars>
+			<calendar type="gregorian">
+				<timeFormats>
+					<timeFormatLength type="full">
+						<timeFormat>
+							<pattern>HH:mm:ss zzzz</pattern>
+							<datetimeSkeleton>HHmmsszzzz</datetimeSkeleton>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="long">
+						<timeFormat>
+							<pattern>HH:mm:ss z</pattern>
+							<datetimeSkeleton>HHmmssz</datetimeSkeleton>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="medium">
+						<timeFormat>
+							<pattern>HH:mm:ss</pattern>
+							<datetimeSkeleton>HHmmss</datetimeSkeleton>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="short">
+						<timeFormat>
+							<pattern>H:mm</pattern>
+							<datetimeSkeleton>Hmm</datetimeSkeleton>
+						</timeFormat>
+					</timeFormatLength>
+				</timeFormats>
+			</calendar>
+		</calendars>
+		<fields>
+			<field type="era">
+				<displayName>𐴎𐴡𐴁𐴝𐴕𐴝</displayName>
+			</field>
+			<field type="era-short">
+				<displayName>𐴎𐴡𐴁𐴝𐴕𐴝</displayName>
+			</field>
+			<field type="era-narrow">
+				<displayName>𐴎𐴡𐴁𐴝𐴕𐴝</displayName>
+			</field>
+			<field type="year">
+				<displayName>𐴁𐴡𐴏𐴥𐴡𐴌</displayName>
+				<relative type="-1">𐴒𐴠𐴓𐴊𐴠 𐴁𐴡𐴏𐴥𐴡𐴌</relative>
+				<relative type="0">𐴀𐴠 𐴁𐴡𐴏𐴥𐴡𐴌</relative>
+				<relative type="1">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 𐴁𐴡𐴏𐴥𐴡𐴌</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 {0} 𐴁𐴡𐴏𐴥𐴡𐴌</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} 𐴁𐴡𐴏𐴥𐴡𐴌 𐴀𐴝𐴒𐴠</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="year-short">
+				<displayName>𐴁𐴡𐴏𐴥𐴡𐴌</displayName>
+				<relative type="-1">𐴒𐴠𐴓𐴊𐴠 𐴁𐴡𐴏𐴥𐴡𐴌</relative>
+				<relative type="0">𐴀𐴠 𐴁𐴡𐴏𐴥𐴡𐴌</relative>
+				<relative type="1">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 𐴁𐴡𐴏𐴥𐴡𐴌</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 {0} 𐴁𐴡𐴏𐴥𐴡𐴌</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} 𐴁𐴡𐴏𐴥𐴡𐴌 𐴀𐴝𐴒𐴠</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="year-narrow">
+				<displayName>𐴁𐴡𐴏𐴥𐴡𐴌</displayName>
+				<relative type="-1">𐴒𐴠𐴓𐴊𐴠 𐴁𐴡𐴏𐴥𐴡𐴌</relative>
+				<relative type="0">𐴀𐴠 𐴁𐴡𐴏𐴥𐴡𐴌</relative>
+				<relative type="1">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 𐴁𐴡𐴏𐴥𐴡𐴌</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 {0} 𐴁𐴡𐴏𐴥𐴡𐴌</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} 𐴁𐴡𐴏𐴥𐴡𐴌 𐴀𐴝𐴒𐴠</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="quarter">
+				<displayName>𐴉𐴝𐴁𐴝</displayName>
+				<relative type="-1">𐴀𐴝𐴈𐴥𐴠𐴌𐴞 𐴉𐴝𐴁𐴝</relative>
+				<relative type="0">𐴀𐴠 𐴉𐴝𐴁𐴝</relative>
+				<relative type="1">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 𐴉𐴝𐴁𐴝</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 {0} 𐴉𐴝𐴁𐴝</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} 𐴉𐴝𐴁𐴝 𐴀𐴝𐴒𐴠</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="quarter-short">
+				<displayName>𐴉𐴝𐴁𐴝</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 {0} 𐴉𐴝𐴁𐴝</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} 𐴉𐴝𐴁𐴝 𐴀𐴝𐴒𐴠</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="quarter-narrow">
+				<displayName>𐴉𐴝𐴁𐴝</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 {0} 𐴉𐴝𐴁𐴝</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} 𐴉𐴝𐴁𐴝 𐴀𐴝𐴒𐴠</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="month">
+				<displayName>𐴔𐴝𐴐𐴢</displayName>
+				<relative type="-1">𐴒𐴠𐴓𐴊𐴠 𐴔𐴥𐴝𐴐𐴢</relative>
+				<relative type="0">𐴀𐴠 𐴔𐴥𐴝𐴐𐴢</relative>
+				<relative type="1">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 𐴔𐴥𐴝𐴐𐴢</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 {0} 𐴔𐴥𐴝𐴐𐴢</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} 𐴔𐴝𐴐𐴢 𐴀𐴝𐴒𐴠</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="month-short">
+				<displayName>𐴔𐴝𐴐𐴢</displayName>
+				<relative type="-1">𐴒𐴠𐴓𐴊𐴠 𐴔𐴥𐴝𐴐𐴢</relative>
+				<relative type="0">𐴀𐴠 𐴔𐴥𐴝𐴐𐴢</relative>
+				<relative type="1">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 𐴔𐴥𐴝𐴐𐴢</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 {0} 𐴔𐴥𐴝𐴐𐴢</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} 𐴔𐴝𐴐𐴢 𐴀𐴝𐴒𐴠</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="month-narrow">
+				<displayName>𐴔𐴝𐴐𐴢</displayName>
+				<relative type="-1">𐴒𐴠𐴓𐴊𐴠 𐴔𐴥𐴝𐴐𐴢</relative>
+				<relative type="0">𐴀𐴠 𐴔𐴥𐴝𐴐𐴢</relative>
+				<relative type="1">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 𐴔𐴥𐴝𐴐𐴢</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 {0} 𐴔𐴥𐴝𐴐𐴢</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} 𐴔𐴝𐴐𐴢 𐴀𐴝𐴒𐴠</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="week">
+				<displayName>𐴇𐴥𐴝𐴉𐴃𐴝</displayName>
+				<relative type="-1">𐴒𐴠𐴓𐴊𐴠 𐴇𐴥𐴝𐴉𐴃𐴝</relative>
+				<relative type="0">𐴀𐴠 𐴇𐴥𐴝𐴉𐴃𐴝</relative>
+				<relative type="1">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 𐴇𐴥𐴝𐴉𐴃𐴝</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 {0} 𐴇𐴥𐴝𐴉𐴃𐴝</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} 𐴇𐴥𐴝𐴉𐴃𐴝 𐴀𐴝𐴒𐴠</relativeTimePattern>
+				</relativeTime>
+				<relativePeriod>𐴇𐴥𐴉𐴃𐴤𐴝𐴌 {0}</relativePeriod>
+			</field>
+			<field type="week-short">
+				<displayName>𐴇𐴥𐴝𐴉𐴃𐴝</displayName>
+				<relative type="-1">𐴒𐴠𐴓𐴊𐴠 𐴇𐴥𐴝𐴉𐴃𐴝</relative>
+				<relative type="0">𐴀𐴠 𐴇𐴥𐴝𐴉𐴃𐴝</relative>
+				<relative type="1">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 𐴇𐴥𐴝𐴉𐴃𐴝</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 {0} 𐴇𐴥𐴝𐴉𐴃𐴝</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} 𐴇𐴥𐴝𐴉𐴃𐴝 𐴀𐴝𐴒𐴠</relativeTimePattern>
+				</relativeTime>
+				<relativePeriod>𐴇𐴥𐴉𐴃𐴤𐴝𐴌 {0}</relativePeriod>
+			</field>
+			<field type="week-narrow">
+				<displayName>𐴇𐴥𐴝𐴉𐴃𐴝</displayName>
+				<relative type="-1">𐴒𐴠𐴓𐴊𐴠 𐴇𐴥𐴝𐴉𐴃𐴝</relative>
+				<relative type="0">𐴀𐴠 𐴇𐴥𐴝𐴉𐴃𐴝</relative>
+				<relative type="1">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 𐴇𐴥𐴝𐴉𐴃𐴝</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 {0} 𐴇𐴥𐴝𐴉𐴃𐴝</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} 𐴇𐴥𐴝𐴉𐴃𐴝 𐴀𐴝𐴒𐴠</relativeTimePattern>
+				</relativeTime>
+				<relativePeriod>𐴇𐴥𐴉𐴃𐴤𐴝𐴌 {0}</relativePeriod>
+			</field>
+			<field type="weekOfMonth">
+				<displayName>𐴔𐴝𐴐𐴤𐴡𐴌 𐴇𐴥𐴝𐴉𐴃𐴝</displayName>
+			</field>
+			<field type="weekOfMonth-short">
+				<displayName>𐴔𐴝𐴐𐴤𐴡𐴌 𐴇𐴥𐴝𐴉𐴃𐴝</displayName>
+			</field>
+			<field type="weekOfMonth-narrow">
+				<displayName>𐴔𐴝𐴐𐴤𐴡𐴌 𐴇𐴥𐴝𐴉𐴃𐴝</displayName>
+			</field>
+			<field type="day">
+				<displayName>𐴊𐴞𐴕</displayName>
+				<relative type="-1">𐴒𐴠𐴓𐴊𐴠 𐴈𐴝𐴙𐴓𐴧𐴝</relative>
+				<relative type="0">𐴀𐴝𐴙𐴅𐴧𐴙𐴝</relative>
+				<relative type="1">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 𐴈𐴝𐴙𐴓𐴧𐴝</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 {0} 𐴊𐴞𐴕</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} 𐴊𐴞𐴕 𐴀𐴝𐴒𐴠</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="day-short">
+				<displayName>𐴊𐴞𐴕</displayName>
+				<relative type="-1">𐴒𐴠𐴓𐴊𐴠 𐴈𐴝𐴙𐴓𐴧𐴝</relative>
+				<relative type="0">𐴀𐴝𐴙𐴅𐴧𐴙𐴝</relative>
+				<relative type="1">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 𐴈𐴝𐴙𐴓𐴧𐴝</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 {0} 𐴊𐴞𐴕</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} 𐴊𐴞𐴕 𐴀𐴝𐴒𐴠</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="day-narrow">
+				<displayName>𐴊𐴞𐴕</displayName>
+				<relative type="-1">𐴒𐴠𐴓𐴊𐴠 𐴈𐴝𐴙𐴓𐴧𐴝</relative>
+				<relative type="0">𐴀𐴝𐴙𐴅𐴧𐴙𐴝</relative>
+				<relative type="1">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 𐴈𐴝𐴙𐴓𐴧𐴝</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 {0} 𐴊𐴞𐴕</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} 𐴊𐴞𐴕 𐴀𐴝𐴒𐴠</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="dayOfYear">
+				<displayName>𐴁𐴡𐴏𐴥𐴡𐴌𐴡𐴌 𐴊𐴞𐴕</displayName>
+			</field>
+			<field type="dayOfYear-short">
+				<displayName>𐴁𐴡𐴏𐴥𐴡𐴌𐴡𐴌 𐴊𐴞𐴕</displayName>
+			</field>
+			<field type="dayOfYear-narrow">
+				<displayName>𐴁𐴡𐴏𐴥𐴡𐴌𐴡𐴌 𐴊𐴞𐴕</displayName>
+			</field>
+			<field type="weekday">
+				<displayName>𐴇𐴥𐴝𐴉𐴃𐴝𐴌 𐴊𐴞𐴕</displayName>
+			</field>
+			<field type="weekday-short">
+				<displayName>𐴇𐴥𐴝𐴉𐴃𐴝𐴌 𐴊𐴞𐴕</displayName>
+			</field>
+			<field type="weekday-narrow">
+				<displayName>𐴇𐴥𐴝𐴉𐴃𐴝𐴌 𐴊𐴞𐴕</displayName>
+			</field>
+			<field type="weekdayOfMonth">
+				<displayName>𐴔𐴝𐴐𐴤𐴡𐴌 𐴇𐴥𐴝𐴉𐴃𐴝𐴌 𐴊𐴞𐴕</displayName>
+			</field>
+			<field type="weekdayOfMonth-short">
+				<displayName>𐴔𐴝𐴐𐴤𐴡𐴌 𐴇𐴥𐴝𐴉𐴃𐴝𐴌 𐴊𐴞𐴕</displayName>
+			</field>
+			<field type="weekdayOfMonth-narrow">
+				<displayName>𐴔𐴝𐴐𐴤𐴡𐴌 𐴇𐴥𐴝𐴉𐴃𐴝𐴌 𐴊𐴞𐴕</displayName>
+			</field>
+			<field type="sun">
+				<relative type="-1">𐴒𐴠𐴓𐴊𐴠 𐴌𐴦𐴡𐴘 𐴁𐴝𐴌</relative>
+				<relative type="0">𐴀𐴠 𐴌𐴦𐴡𐴘 𐴁𐴝𐴌</relative>
+				<relative type="1">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 𐴌𐴦𐴡𐴘 𐴁𐴝𐴌</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 {0} 𐴌𐴦𐴡𐴘 𐴁𐴝𐴌</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} 𐴌𐴦𐴡𐴘 𐴁𐴝𐴌 𐴀𐴝𐴒𐴠</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sun-short">
+				<relative type="-1">𐴒𐴠𐴓𐴊𐴠 𐴌𐴦𐴡𐴘 𐴁𐴝𐴌</relative>
+				<relative type="0">𐴀𐴠 𐴌𐴦𐴡𐴘 𐴁𐴝𐴌</relative>
+				<relative type="1">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 𐴌𐴦𐴡𐴘 𐴁𐴝𐴌</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 {0} 𐴌𐴦𐴡𐴘 𐴁𐴝𐴌</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} 𐴌𐴦𐴡𐴘 𐴁𐴝𐴌 𐴀𐴝𐴒𐴠</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sun-narrow">
+				<relative type="-1">𐴒𐴠𐴓𐴊𐴠 𐴌𐴦𐴡𐴘 𐴁𐴝𐴌</relative>
+				<relative type="0">𐴀𐴠 𐴌𐴦𐴡𐴘 𐴁𐴝𐴌</relative>
+				<relative type="1">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 𐴌𐴦𐴡𐴘 𐴁𐴝𐴌</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 {0} 𐴌𐴦𐴡𐴘 𐴁𐴝𐴌</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} 𐴌𐴦𐴡𐴘 𐴁𐴝𐴌 𐴀𐴝𐴒𐴠</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="mon">
+				<relative type="-1">𐴒𐴠𐴓𐴊𐴠 𐴐𐴤𐴡𐴔 𐴁𐴝𐴌</relative>
+				<relative type="0">𐴀𐴠 𐴐𐴤𐴡𐴔 𐴁𐴝𐴌</relative>
+				<relative type="1">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 𐴐𐴤𐴡𐴔 𐴁𐴝𐴌</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 {0} 𐴐𐴤𐴡𐴔 𐴁𐴝𐴌</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} 𐴐𐴤𐴡𐴔 𐴁𐴝𐴌 𐴀𐴝𐴒𐴠</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="mon-short">
+				<relative type="-1">𐴒𐴠𐴓𐴊𐴠 𐴐𐴤𐴡𐴔 𐴁𐴝𐴌</relative>
+				<relative type="0">𐴀𐴠 𐴐𐴤𐴡𐴔 𐴁𐴝𐴌</relative>
+				<relative type="1">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 𐴐𐴤𐴡𐴔 𐴁𐴝𐴌</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 {0} 𐴐𐴤𐴡𐴔 𐴁𐴝𐴌</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} 𐴐𐴤𐴡𐴔 𐴁𐴝𐴌 𐴀𐴝𐴒𐴠</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="mon-narrow">
+				<relative type="-1">𐴒𐴠𐴓𐴊𐴠 𐴐𐴤𐴡𐴔 𐴁𐴝𐴌</relative>
+				<relative type="0">𐴀𐴠 𐴐𐴤𐴡𐴔 𐴁𐴝𐴌</relative>
+				<relative type="1">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 𐴐𐴤𐴡𐴔 𐴁𐴝𐴌</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 {0} 𐴐𐴤𐴡𐴔 𐴁𐴝𐴌</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} 𐴐𐴤𐴡𐴔 𐴁𐴝𐴌 𐴀𐴝𐴒𐴠</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="tue">
+				<relative type="-1">𐴒𐴠𐴓𐴊𐴠 𐴔𐴡𐴚𐴒𐴡𐴓 𐴁𐴝𐴌</relative>
+				<relative type="0">𐴀𐴠 𐴔𐴡𐴚𐴒𐴡𐴓 𐴁𐴝𐴌</relative>
+				<relative type="1">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴝 𐴔𐴡𐴚𐴒𐴡𐴓 𐴁𐴝𐴌</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 {0} 𐴔𐴡𐴚𐴒𐴡𐴓 𐴁𐴝𐴌</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} 𐴔𐴡𐴚𐴒𐴡𐴓 𐴁𐴝𐴌 𐴀𐴝𐴒𐴠</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="tue-short">
+				<relative type="-1">𐴒𐴠𐴓𐴊𐴠 𐴔𐴡𐴚𐴒𐴡𐴓 𐴁𐴝𐴌</relative>
+				<relative type="0">𐴀𐴠 𐴔𐴡𐴚𐴒𐴡𐴓 𐴁𐴝𐴌</relative>
+				<relative type="1">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴝 𐴔𐴡𐴚𐴒𐴡𐴓 𐴁𐴝𐴌</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 {0} 𐴔𐴡𐴚𐴒𐴡𐴓 𐴁𐴝𐴌</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} 𐴔𐴡𐴚𐴒𐴡𐴓 𐴁𐴝𐴌 𐴀𐴝𐴒𐴠</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="tue-narrow">
+				<relative type="-1">𐴒𐴠𐴓𐴊𐴠 𐴔𐴡𐴚𐴒𐴡𐴓 𐴁𐴝𐴌</relative>
+				<relative type="0">𐴀𐴠 𐴔𐴡𐴚𐴒𐴡𐴓 𐴁𐴝𐴌</relative>
+				<relative type="1">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴝 𐴔𐴡𐴚𐴒𐴡𐴓 𐴁𐴝𐴌</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 {0} 𐴔𐴡𐴚𐴒𐴡𐴓 𐴁𐴝𐴌</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} 𐴔𐴡𐴚𐴒𐴡𐴓 𐴁𐴝𐴌 𐴀𐴝𐴒𐴠</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="wed">
+				<relative type="-1">𐴒𐴠𐴓𐴊𐴠 𐴁𐴟𐴙𐴃 𐴁𐴝𐴌</relative>
+				<relative type="0">𐴀𐴠 𐴁𐴟𐴙𐴃 𐴁𐴝𐴌</relative>
+				<relative type="1">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 𐴁𐴟𐴙𐴃 𐴁𐴝𐴌</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 {0} 𐴁𐴟𐴙𐴃 𐴁𐴝𐴌</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} 𐴁𐴟𐴙𐴃 𐴁𐴝𐴌 𐴀𐴝𐴒𐴠</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="wed-short">
+				<relative type="-1">𐴒𐴠𐴓𐴊𐴠 𐴁𐴟𐴙𐴃 𐴁𐴝𐴌</relative>
+				<relative type="0">𐴀𐴠 𐴁𐴟𐴙𐴃 𐴁𐴝𐴌</relative>
+				<relative type="1">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 𐴁𐴟𐴙𐴃 𐴁𐴝𐴌</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 {0} 𐴁𐴟𐴙𐴃 𐴁𐴝𐴌</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} 𐴁𐴟𐴙𐴃 𐴁𐴝𐴌 𐴀𐴝𐴒𐴠</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="wed-narrow">
+				<relative type="-1">𐴒𐴠𐴓𐴊𐴠 𐴁𐴟𐴙𐴃 𐴁𐴝𐴌</relative>
+				<relative type="0">𐴀𐴠 𐴁𐴟𐴙𐴃 𐴁𐴝𐴌</relative>
+				<relative type="1">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 𐴁𐴟𐴙𐴃 𐴁𐴝𐴌</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 {0} 𐴁𐴟𐴙𐴃 𐴁𐴝𐴌</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} 𐴁𐴟𐴙𐴃 𐴁𐴝𐴌 𐴀𐴝𐴒𐴠</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="thu">
+				<relative type="-1">𐴒𐴠𐴓𐴊𐴠 𐴁𐴞𐴐𐴤𐴞𐴃 𐴁𐴝𐴌</relative>
+				<relative type="0">𐴀𐴠 𐴁𐴞𐴐𐴤𐴞𐴃 𐴁𐴝𐴌</relative>
+				<relative type="1">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 𐴁𐴞𐴐𐴤𐴞𐴃 𐴁𐴝𐴌</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 {0} 𐴁𐴞𐴐𐴤𐴞𐴃 𐴁𐴝𐴌</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} 𐴁𐴞𐴐𐴤𐴞𐴃 𐴁𐴝𐴌 𐴀𐴝𐴒𐴠</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="thu-short">
+				<relative type="-1">𐴒𐴠𐴓𐴊𐴠 𐴁𐴞𐴐𐴤𐴞𐴃 𐴁𐴝𐴌</relative>
+				<relative type="0">𐴀𐴠 𐴁𐴞𐴐𐴤𐴞𐴃 𐴁𐴝𐴌</relative>
+				<relative type="1">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 𐴁𐴞𐴐𐴤𐴞𐴃 𐴁𐴝𐴌</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 {0} 𐴁𐴞𐴐𐴤𐴞𐴃 𐴁𐴝𐴌</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} 𐴁𐴞𐴐𐴤𐴞𐴃 𐴁𐴝𐴌 𐴀𐴝𐴒𐴠</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="thu-narrow">
+				<relative type="-1">𐴒𐴠𐴓𐴊𐴠 𐴁𐴞𐴐𐴤𐴞𐴃 𐴁𐴝𐴌</relative>
+				<relative type="0">𐴀𐴠 𐴁𐴞𐴐𐴤𐴞𐴃 𐴁𐴝𐴌</relative>
+				<relative type="1">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 𐴁𐴞𐴐𐴤𐴞𐴃 𐴁𐴝𐴌</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 {0} 𐴁𐴞𐴐𐴤𐴞𐴃 𐴁𐴝𐴌</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} 𐴁𐴞𐴐𐴤𐴞𐴃 𐴁𐴝𐴌 𐴀𐴝𐴒𐴠</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="fri">
+				<relative type="-1">𐴒𐴠𐴓𐴊𐴠 𐴐𐴤𐴟𐴑𐴧𐴟𐴌 𐴁𐴝𐴌</relative>
+				<relative type="0">𐴀𐴠 𐴐𐴤𐴟𐴑𐴧𐴟𐴌 𐴁𐴝𐴌</relative>
+				<relative type="1">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴠 𐴐𐴤𐴟𐴑𐴧𐴟𐴌 𐴁𐴝𐴌</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 {0} 𐴐𐴤𐴟𐴑𐴧𐴟𐴌 𐴁𐴝𐴌</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} 𐴐𐴤𐴟𐴑𐴧𐴟𐴌 𐴁𐴝𐴌 𐴀𐴝𐴒𐴠</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="fri-short">
+				<relative type="-1">𐴒𐴠𐴓𐴊𐴠 𐴐𐴤𐴟𐴑𐴧𐴟𐴌 𐴁𐴝𐴌</relative>
+				<relative type="0">𐴀𐴠 𐴐𐴤𐴟𐴑𐴧𐴟𐴌 𐴁𐴝𐴌</relative>
+				<relative type="1">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴠 𐴐𐴤𐴟𐴑𐴧𐴟𐴌 𐴁𐴝𐴌</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 {0} 𐴐𐴤𐴟𐴑𐴧𐴟𐴌 𐴁𐴝𐴌</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} 𐴐𐴤𐴟𐴑𐴧𐴟𐴌 𐴁𐴝𐴌 𐴀𐴝𐴒𐴠</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="fri-narrow">
+				<relative type="-1">𐴒𐴠𐴓𐴊𐴠 𐴐𐴤𐴟𐴑𐴧𐴟𐴌 𐴁𐴝𐴌</relative>
+				<relative type="0">𐴀𐴠 𐴐𐴤𐴟𐴑𐴧𐴟𐴌 𐴁𐴝𐴌</relative>
+				<relative type="1">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴠 𐴐𐴤𐴟𐴑𐴧𐴟𐴌 𐴁𐴝𐴌</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 {0} 𐴐𐴤𐴟𐴑𐴧𐴟𐴌 𐴁𐴝𐴌</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} 𐴐𐴤𐴟𐴑𐴧𐴟𐴌 𐴁𐴝𐴌 𐴀𐴝𐴒𐴠</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sat">
+				<relative type="-1">𐴒𐴠𐴓𐴊𐴠 𐴐𐴤𐴡𐴕𐴞 𐴁𐴝𐴌</relative>
+				<relative type="0">𐴀𐴠 𐴐𐴤𐴡𐴕𐴞 𐴁𐴝𐴌</relative>
+				<relative type="1">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 𐴐𐴤𐴡𐴕𐴞 𐴁𐴝𐴌</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 {0} 𐴐𐴤𐴡𐴕𐴞 𐴁𐴝𐴌</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} 𐴐𐴤𐴡𐴕𐴞 𐴁𐴝𐴌 𐴀𐴝𐴒𐴠</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sat-short">
+				<relative type="-1">𐴒𐴠𐴓𐴊𐴠 𐴐𐴤𐴡𐴕𐴞 𐴁𐴝𐴌</relative>
+				<relative type="0">𐴀𐴠 𐴐𐴤𐴡𐴕𐴞 𐴁𐴝𐴌</relative>
+				<relative type="1">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 𐴐𐴤𐴡𐴕𐴞 𐴁𐴝𐴌</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 {0} 𐴐𐴤𐴡𐴕𐴞 𐴁𐴝𐴌</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} 𐴐𐴤𐴡𐴕𐴞 𐴁𐴝𐴌 𐴀𐴝𐴒𐴠</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sat-narrow">
+				<relative type="-1">𐴒𐴠𐴓𐴊𐴠 𐴐𐴤𐴡𐴕𐴞 𐴁𐴝𐴌</relative>
+				<relative type="0">𐴀𐴠 𐴐𐴤𐴡𐴕𐴞 𐴁𐴝𐴌</relative>
+				<relative type="1">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 𐴐𐴤𐴡𐴕𐴞 𐴁𐴝𐴌</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 {0} 𐴐𐴤𐴡𐴕𐴞 𐴁𐴝𐴌</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} 𐴐𐴤𐴡𐴕𐴞 𐴁𐴝𐴌 𐴀𐴝𐴒𐴠</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="dayperiod-short">
+				<displayName>𐴊𐴞𐴕 / 𐴌𐴝𐴙𐴃𐴢</displayName>
+			</field>
+			<field type="dayperiod">
+				<displayName>𐴊𐴞𐴕 / 𐴌𐴝𐴙𐴃𐴢</displayName>
+			</field>
+			<field type="dayperiod-narrow">
+				<displayName>𐴊𐴞𐴕 / 𐴌𐴝𐴙𐴃𐴢</displayName>
+			</field>
+			<field type="hour">
+				<displayName>𐴒𐴤𐴡𐴕𐴄𐴤𐴝</displayName>
+				<relative type="0">𐴀𐴠 𐴒𐴤𐴡𐴕𐴄𐴤𐴝</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 {0} 𐴒𐴤𐴡𐴕𐴄𐴤𐴝</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} 𐴒𐴤𐴡𐴕𐴄𐴤𐴝 𐴀𐴝𐴒𐴠</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="hour-short">
+				<displayName>𐴒𐴤𐴡𐴕𐴄𐴤𐴝</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 {0} 𐴒𐴤𐴡𐴕𐴄𐴤𐴝</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} 𐴒𐴤𐴡𐴕𐴄𐴤𐴝 𐴀𐴝𐴒𐴠</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="hour-narrow">
+				<displayName>𐴒𐴤𐴡𐴕𐴄𐴤𐴝</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 {0} 𐴒𐴤𐴡𐴕𐴄𐴤𐴝</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} 𐴒𐴤𐴡𐴕𐴄𐴤𐴝 𐴀𐴝𐴒𐴠</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="minute">
+				<displayName>𐴔𐴞𐴕𐴥𐴡𐴄𐴢</displayName>
+				<relative type="0">𐴀𐴠 𐴔𐴞𐴕𐴥𐴡𐴄</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 {0} 𐴔𐴞𐴕𐴥𐴡𐴄</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} 𐴔𐴞𐴕𐴥𐴡𐴄 𐴀𐴝𐴒𐴠</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="minute-short">
+				<displayName>𐴔𐴞𐴕𐴥𐴡𐴄𐴢</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 {0} 𐴔𐴞𐴕𐴥𐴡𐴄</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} 𐴔𐴞𐴕𐴥𐴡𐴄 𐴀𐴝𐴒𐴠</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="minute-narrow">
+				<displayName>𐴔𐴞𐴕𐴥𐴡𐴄𐴢</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 {0} 𐴔𐴞𐴕𐴥𐴡𐴄</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} 𐴔𐴞𐴕𐴥𐴡𐴄 𐴀𐴝𐴒𐴠</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="second">
+				<displayName>𐴏𐴠𐴑𐴤𐴠𐴕</displayName>
+				<relative type="0">𐴀𐴠𐴈𐴥𐴡𐴕</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 {0} 𐴏𐴠𐴑𐴤𐴠𐴕</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} 𐴏𐴠𐴑𐴤𐴠𐴕 𐴀𐴝𐴒𐴠</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="second-short">
+				<displayName>𐴏𐴠𐴑𐴤𐴠𐴕</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 {0} 𐴏𐴠𐴑𐴤𐴠𐴕</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} 𐴏𐴠𐴑𐴤𐴠𐴕 𐴀𐴝𐴒𐴠</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="second-narrow">
+				<displayName>𐴏𐴠𐴑𐴤𐴠𐴕</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 {0} 𐴏𐴠𐴑𐴤𐴠𐴕</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} 𐴏𐴠𐴑𐴤𐴠𐴕 𐴀𐴝𐴒𐴠</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="zone">
+				<displayName>𐴀𐴠𐴓𐴝𐴑𐴝𐴀𐴞 𐴄𐴝𐴙𐴔</displayName>
+			</field>
+			<field type="zone-short">
+				<displayName>𐴀𐴠𐴓𐴝𐴑𐴝𐴀𐴞 𐴄𐴝𐴙𐴔</displayName>
+			</field>
+			<field type="zone-narrow">
+				<displayName>𐴀𐴠𐴓𐴝𐴑𐴝𐴀𐴞 𐴄𐴝𐴙𐴔</displayName>
+			</field>
+		</fields>
+	</dates>
+	<personNames>
+		<nameOrderLocales order="givenFirst">und rhg</nameOrderLocales>
+	</personNames>
+</ldml>

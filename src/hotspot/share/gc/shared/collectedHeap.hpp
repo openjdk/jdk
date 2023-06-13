@@ -314,7 +314,7 @@ class CollectedHeap : public CHeapObj<mtGC> {
   }
 
   static size_t lab_alignment_reserve() {
-    assert(_lab_alignment_reserve != ~(size_t)0, "uninitialized");
+    assert(_lab_alignment_reserve != SIZE_MAX, "uninitialized");
     return _lab_alignment_reserve;
   }
 
@@ -512,9 +512,6 @@ class CollectedHeap : public CHeapObj<mtGC> {
   // These functions are potentially safepointing.
   virtual void pin_object(JavaThread* thread, oop obj) = 0;
   virtual void unpin_object(JavaThread* thread, oop obj) = 0;
-
-  // Is the given object inside a CDS archive area?
-  virtual bool is_archived_object(oop object) const;
 
   // Support for loading objects from CDS archive into the heap
   // (usually as a snapshot of the old generation).

@@ -78,7 +78,7 @@ public class ModuleExamples {
         });
 
         // Build it
-        byte[] moduleInfo = Classfile.buildModule(ModuleAttribute.of(moduleName, handler), List.of(), clb -> {
+        byte[] moduleInfo = Classfile.buildModule(ModuleAttribute.of(moduleName, handler), clb -> {
 
                 // Add an annotation to the module
                 clb.with(RuntimeVisibleAnnotationsAttribute.of(Annotation.of(ClassDesc.ofDescriptor("Ljava/lang/Deprecated;"),

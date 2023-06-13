@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,6 @@ import java.text.spi.NumberFormatProvider;
 import java.util.FormatItem.*;
 import java.util.Formatter.*;
 
-import jdk.internal.javac.PreviewFeature;
 import jdk.internal.util.FormatConcatItem;
 
 import sun.invoke.util.Wrapper;
@@ -52,8 +51,10 @@ import static java.lang.invoke.MethodType.*;
  * used by {@link FormatProcessor}.
  *
  * @since 21
+ *
+ * Warning: This class is part of PreviewFeature.Feature.STRING_TEMPLATES.
+ *          Do not rely on its availability.
  */
-@PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
 final class FormatterBuilder {
     private static final Lookup LOOKUP = lookup();
 
@@ -373,6 +374,9 @@ final class FormatterBuilder {
                     mh = filterReturnValue(mh,
                             insertArguments(FIHexadecimal_MH, 0, zeroPad, hasPrefix));
                 }
+            }
+            default -> {
+                // pass thru
             }
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  // key: compiler.err.string.template.is.not.well.formed
  // options: --enable-preview -source 21
 
-import java.lang.template.*;
+import java.lang.*;
 
 class StringTemplateUnclosedString {
     String m() {

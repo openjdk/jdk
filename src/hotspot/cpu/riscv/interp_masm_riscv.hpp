@@ -164,7 +164,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   void empty_expression_stack() {
     ld(esp, Address(fp, frame::interpreter_frame_monitor_block_top_offset * wordSize));
-    // NULL last_sp until next java call
+    // null last_sp until next java call
     sd(zr, Address(fp, frame::interpreter_frame_last_sp_offset * wordSize));
   }
 
@@ -299,8 +299,10 @@ class InterpreterMacroAssembler: public MacroAssembler {
     MacroAssembler::_call_Unimplemented(call_site);
   }
 
+  void load_resolved_indy_entry(Register cache, Register index);
+
 #ifdef ASSERT
-  void verify_access_flags(Register access_flags, uint32_t flag_bits,
+  void verify_access_flags(Register access_flags, uint32_t flag,
                            const char* msg, bool stop_by_hit = true);
   void verify_frame_setup();
 #endif

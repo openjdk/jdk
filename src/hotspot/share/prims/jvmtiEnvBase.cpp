@@ -27,6 +27,7 @@
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/symbolTable.hpp"
+#include "classfile/vmSymbols.hpp"
 #include "jvmtifiles/jvmtiEnv.hpp"
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
@@ -56,7 +57,7 @@
 #include "runtime/signature.hpp"
 #include "runtime/stackWatermarkSet.inline.hpp"
 #include "runtime/threads.hpp"
-#include "runtime/threadSMR.hpp"
+#include "runtime/threadSMR.inline.hpp"
 #include "runtime/vframe.inline.hpp"
 #include "runtime/vframe_hp.hpp"
 #include "runtime/vmThread.hpp"
@@ -1526,6 +1527,104 @@ JvmtiEnvBase::is_in_thread_list(jint count, const jthread* list, oop jt_oop) {
     }
   }
   return false;
+}
+
+class VM_SetNotifyJvmtiEventsMode : public VM_Operation {
+private:
+  static bool _whitebox_used;
+  bool _enable;
+
+  // This function is needed only for testing purposes to support multiple
+  // enable&disable notifyJvmti events. Otherwise, there can be only one call
+  // to enable_virtual_threads_notify_jvmti() for late binding agents. There
+  // have to be no JvmtiThreadState's and need to correct them in such a case.
+  static void correct_jvmti_thread_state(JavaThread* jt) {
+    oop  ct_oop = jt->threadObj();
+    oop  vt_oop = jt->vthread();
+    JvmtiThreadState* jt_state = jt->jvmti_thread_state();
+    JvmtiThreadState* ct_state = java_lang_Thread::jvmti_thread_state(jt->threadObj());
+    JvmtiThreadState* vt_state = vt_oop != nullptr ? java_lang_Thread::jvmti_thread_state(vt_oop) : nullptr;
+    bool virt = vt_oop != nullptr && java_lang_VirtualThread::is_instance(vt_oop);
+
+    // Correct jt->jvmti_thread_state() and jt->jvmti_vthread().
+    // It was not maintained while notifyJvmti was disabled but there can be
+    // a leftover from previous cycle when notification were enabled.
+    if (virt) {
+      jt->set_jvmti_thread_state(nullptr);  // reset jt->jvmti_thread_state()
+      jt->set_jvmti_vthread(vt_oop);        // restore jt->jvmti_vthread()
+    } else {
+      jt->set_jvmti_thread_state(ct_state); // restore jt->jvmti_thread_state()
+      jt->set_jvmti_vthread(ct_oop);        // restore jt->jvmti_vthread()
+    }
+  }
+
+  // This function is called only if _enable == true.
+  // Iterates over all JavaThread's, counts VTMS transitions and restores
+  // jt->jvmti_thread_state() and jt->jvmti_vthread() for VTMS transition protocol.
+  int count_transitions_and_correct_jvmti_thread_states() {
+    int count = 0;
+
+    for (JavaThread* jt : ThreadsListHandle()) {
+      if (jt->is_in_VTMS_transition()) {
+        count++;
+        continue; // no need in JvmtiThreadState correction below if in transition
+      }
+      if (_whitebox_used) {
+        correct_jvmti_thread_state(jt); // needed in testing environment only
+      }
+    }
+    return count;
+  }
+
+public:
+  VMOp_Type type() const { return VMOp_SetNotifyJvmtiEventsMode; }
+  bool allow_nested_vm_operations() const { return false; }
+  VM_SetNotifyJvmtiEventsMode(bool enable) : _enable(enable) {
+    if (!enable) {
+      _whitebox_used = true; // disabling is available via WhiteBox only
+    }
+  }
+
+  void doit() {
+    int count = _enable ? count_transitions_and_correct_jvmti_thread_states() : 0;
+
+    JvmtiVTMSTransitionDisabler::set_VTMS_transition_count(count);
+    JvmtiVTMSTransitionDisabler::set_VTMS_notify_jvmti_events(_enable);
+  }
+};
+
+bool VM_SetNotifyJvmtiEventsMode::_whitebox_used = false;
+
+// This function is to support agents loaded into running VM.
+// Must be called in thread-in-native mode.
+bool
+JvmtiEnvBase::enable_virtual_threads_notify_jvmti() {
+  if (!Continuations::enabled()) {
+    return false;
+  }
+  if (JvmtiVTMSTransitionDisabler::VTMS_notify_jvmti_events()) {
+    return false; // already enabled
+  }
+  VM_SetNotifyJvmtiEventsMode op(true);
+  VMThread::execute(&op);
+  return true;
+}
+
+// This function is used in WhiteBox, only needed to test the function above.
+// It is unsafe to use this function when virtual threads are executed.
+// Must be called in thread-in-native mode.
+bool
+JvmtiEnvBase::disable_virtual_threads_notify_jvmti() {
+  if (!Continuations::enabled()) {
+    return false;
+  }
+  if (!JvmtiVTMSTransitionDisabler::VTMS_notify_jvmti_events()) {
+    return false; // already disabled
+  }
+  JvmtiVTMSTransitionDisabler disabler(true); // ensure there are no other disablers
+  VM_SetNotifyJvmtiEventsMode op(false);
+  VMThread::execute(&op);
+  return true;
 }
 
 // java_thread - protected by ThreadsListHandle

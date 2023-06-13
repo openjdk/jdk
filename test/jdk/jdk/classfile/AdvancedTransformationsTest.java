@@ -116,7 +116,7 @@ class AdvancedTransformationsTest {
             var clm = Classfile.parse(in.readAllBytes());
             var remapped = Classfile.parse(ClassRemapper.of(map).remapClass(clm));
             assertEmpty(remapped.verify(
-                    ClassHierarchyResolver.of(Set.of(), Map.of(
+                    ClassHierarchyResolver.of(Set.of(ClassDesc.of("remapped.List")), Map.of(
                             ClassDesc.of("remapped.RemappedBytecode"), ConstantDescs.CD_Object,
                             ClassDesc.ofDescriptor(RawBytecodeHelper.class.descriptorString()), ClassDesc.of("remapped.RemappedBytecode")))
                                           .orElse(ClassHierarchyResolver.DEFAULT_CLASS_HIERARCHY_RESOLVER)
@@ -211,6 +211,7 @@ class AdvancedTransformationsTest {
                 "INVOKESTATIC, owner: AdvancedTransformationsTest$Bar, method name: fooMethod, method type: (LAdvancedTransformationsTest$Bar;)LAdvancedTransformationsTest$Bar",
                 "method type: ()LAdvancedTransformationsTest$Bar;",
                 "GETFIELD, owner: AdvancedTransformationsTest$Rec, field name: foo, field type: LAdvancedTransformationsTest$Bar;");
+        assertFalse(out.contains("bootstrap method arguments indexes: []"), "bootstrap arguments lost");
     }
 
     private static void assertContains(String actual, String... expected) {
@@ -319,7 +320,7 @@ class AdvancedTransformationsTest {
                                                 if (!mm.flags().has(AccessFlag.STATIC))
                                                     storeStack.push(StoreInstruction.of(TypeKind.ReferenceType, slot++));
                                                 for (var pt : mm.methodTypeSymbol().parameterList()) {
-                                                    var tk = TypeKind.fromDescriptor(pt.descriptorString());
+                                                    var tk = TypeKind.from(pt);
                                                     storeStack.push(StoreInstruction.of(tk, slot));
                                                     slot += tk.slotSize();
                                                 }

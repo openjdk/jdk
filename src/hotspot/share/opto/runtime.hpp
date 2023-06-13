@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,13 +73,13 @@ private:
 
  public:
   NamedCounter(const char *n, CounterTag tag = NoTag):
-    _name(n == NULL ? NULL : os::strdup(n)),
+    _name(n == nullptr ? nullptr : os::strdup(n)),
     _count(0),
     _tag(tag),
-    _next(NULL) {}
+    _next(nullptr) {}
 
   ~NamedCounter() {
-    if (_name != NULL) {
+    if (_name != nullptr) {
       os::free((void*)_name);
     }
   }
@@ -92,7 +92,7 @@ private:
 
   NamedCounter* next() const    { return _next; }
   void set_next(NamedCounter* next) {
-    assert(_next == NULL || next == NULL, "already set");
+    assert(_next == nullptr || next == nullptr, "already set");
     _next = next;
   }
 
@@ -135,6 +135,12 @@ class OptoRuntime : public AllStatic {
 
   static address _slow_arraycopy_Java;
   static address _register_finalizer_Java;
+#if INCLUDE_JVMTI
+  static address _notify_jvmti_vthread_start;
+  static address _notify_jvmti_vthread_end;
+  static address _notify_jvmti_vthread_mount;
+  static address _notify_jvmti_vthread_unmount;
+#endif
 
   //
   // Implementation of runtime methods
@@ -208,6 +214,12 @@ private:
 
   static address slow_arraycopy_Java()                   { return _slow_arraycopy_Java; }
   static address register_finalizer_Java()               { return _register_finalizer_Java; }
+#if INCLUDE_JVMTI
+  static address notify_jvmti_vthread_start()            { return _notify_jvmti_vthread_start; }
+  static address notify_jvmti_vthread_end()              { return _notify_jvmti_vthread_end; }
+  static address notify_jvmti_vthread_mount()            { return _notify_jvmti_vthread_mount; }
+  static address notify_jvmti_vthread_unmount()          { return _notify_jvmti_vthread_unmount; }
+#endif
 
   static ExceptionBlob*    exception_blob()                      { return _exception_blob; }
 
@@ -294,6 +306,9 @@ private:
   static const TypeFunc* register_finalizer_Type();
 
   JFR_ONLY(static const TypeFunc* class_id_load_barrier_Type();)
+#if INCLUDE_JVMTI
+  static const TypeFunc* notify_jvmti_vthread_Type();
+#endif
 
   // Dtrace support
   static const TypeFunc* dtrace_method_entry_exit_Type();

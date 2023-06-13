@@ -74,7 +74,7 @@ public final class GlobalSelectionAction extends CallableSystemAction {
         putValue(SELECTED_KEY, isSelected);
         EditorTopComponent editor = EditorTopComponent.getActive();
         if (editor != null) {
-            SwingUtilities.invokeLater(() -> editor.getModel().setGlobalSelection(isSelected));
+            SwingUtilities.invokeLater(() -> editor.getModel().setGlobalSelection(isSelected, true));
         }
     }
 

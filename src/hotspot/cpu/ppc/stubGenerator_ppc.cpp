@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2022 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,8 +91,8 @@ class StubGenerator: public StubCodeGenerator {
     address start = __ function_entry();
 
     // some sanity checks
-    assert((sizeof(frame::abi_minframe) % 16) == 0,           "unaligned");
-    assert((sizeof(frame::abi_reg_args) % 16) == 0,           "unaligned");
+    assert((sizeof(frame::native_abi_minframe) % 16) == 0,    "unaligned");
+    assert((sizeof(frame::native_abi_reg_args) % 16) == 0,    "unaligned");
     assert((sizeof(frame::spill_nonvolatiles) % 16) == 0,     "unaligned");
     assert((sizeof(frame::parent_ijava_frame_abi) % 16) == 0, "unaligned");
     assert((sizeof(frame::entry_frame_locals) % 16) == 0,     "unaligned");
@@ -412,7 +412,7 @@ class StubGenerator: public StubCodeGenerator {
     __ stw(exception_line, in_bytes(JavaThread::exception_line_offset()), R16_thread);
 
     // complete return to VM
-    assert(StubRoutines::_call_stub_return_address != NULL, "must have been generated before");
+    assert(StubRoutines::_call_stub_return_address != nullptr, "must have been generated before");
 
     __ mtlr(R4_ARG2);
     // continue in call stub
@@ -540,7 +540,7 @@ class StubGenerator: public StubCodeGenerator {
     MacroAssembler* masm = new MacroAssembler(&code);
 
     OopMapSet* oop_maps  = new OopMapSet();
-    int frame_size_in_bytes = frame::abi_reg_args_size;
+    int frame_size_in_bytes = frame::native_abi_reg_args_size;
     OopMap* map = new OopMap(frame_size_in_bytes / sizeof(jint), 0);
 
     address start = __ pc();
@@ -2134,7 +2134,7 @@ class StubGenerator: public StubCodeGenerator {
 
     Label L_miss;
 
-    __ check_klass_subtype_fast_path(sub_klass, super_klass, temp, R0, &L_success, &L_miss, NULL,
+    __ check_klass_subtype_fast_path(sub_klass, super_klass, temp, R0, &L_success, &L_miss, nullptr,
                                      super_check_offset);
     __ check_klass_subtype_slow_path(sub_klass, super_klass, temp, R0, &L_success);
 
@@ -2412,15 +2412,15 @@ class StubGenerator: public StubCodeGenerator {
     // (2) src_pos must not be negative.
     // (3) dst_pos must not be negative.
     // (4) length  must not be negative.
-    // (5) src klass and dst klass should be the same and not NULL.
+    // (5) src klass and dst klass should be the same and not null.
     // (6) src and dst should be arrays.
     // (7) src_pos + length must not exceed length of src.
     // (8) dst_pos + length must not exceed length of dst.
     BLOCK_COMMENT("arraycopy initial argument checks");
 
-    __ cmpdi(CCR1, src, 0);      // if (src == NULL) return -1;
+    __ cmpdi(CCR1, src, 0);      // if (src == nullptr) return -1;
     __ extsw_(src_pos, src_pos); // if (src_pos < 0) return -1;
-    __ cmpdi(CCR5, dst, 0);      // if (dst == NULL) return -1;
+    __ cmpdi(CCR5, dst, 0);      // if (dst == nullptr) return -1;
     __ cror(CCR1, Assembler::equal, CCR0, Assembler::less);
     __ extsw_(dst_pos, dst_pos); // if (src_pos < 0) return -1;
     __ cror(CCR5, Assembler::equal, CCR0, Assembler::less);
@@ -4553,7 +4553,7 @@ class StubGenerator: public StubCodeGenerator {
     __ mtctr(tmp1); __ bctr();
     __ bind(thaw_success);
 
-    __ addi(R3_RET, R3_RET, frame::abi_reg_args_size); // Large abi required for C++ calls.
+    __ addi(R3_RET, R3_RET, frame::native_abi_reg_args_size); // Large abi required for C++ calls.
     __ neg(R3_RET, R3_RET);
     // align down resulting in a smaller negative offset
     __ clrrdi(R3_RET, R3_RET, exact_log2(frame::alignment_in_bytes));
@@ -4576,8 +4576,11 @@ class StubGenerator: public StubCodeGenerator {
       Register ex_pc = R17_tos;   // nonvolatile register
       __ ld(ex_pc, _abi0(lr), R1_SP); // LR
       __ mr(nvtmp, R3_RET); // save return value containing the exception oop
+      // The thawed top frame has got a frame::java_abi. This is not sufficient for the runtime call.
+      __ push_frame_reg_args(0, tmp1);
       __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::exception_handler_for_return_address), R16_thread, ex_pc);
       __ mtlr(R3_RET); // the exception handler
+      __ pop_frame();
       // See OptoRuntime::generate_exception_blob for register arguments
       __ mr(R3_ARG1, nvtmp); // exception oop
       __ mr(R4_ARG2, ex_pc); // exception pc
@@ -4617,7 +4620,7 @@ class StubGenerator: public StubCodeGenerator {
     Register tmp1 = R10_ARG8;
     Register tmp2 = R9_ARG7;
 
-    int framesize = frame::abi_reg_args_size / VMRegImpl::stack_slot_size;
+    int framesize = frame::native_abi_reg_args_size / VMRegImpl::stack_slot_size;
     address start = __ pc();
     __ mflr(tmp1);
     __ std(tmp1, _abi0(lr), R1_SP);  // save return pc
@@ -4650,7 +4653,7 @@ class StubGenerator: public StubCodeGenerator {
 
 
   // Initialization
-  void generate_initial() {
+  void generate_initial_stubs() {
     // Generates all stubs and initializes the entry points
 
     // Entry points that exist in all platforms.
@@ -4662,6 +4665,10 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_forward_exception_entry          = generate_forward_exception();
     StubRoutines::_call_stub_entry                  = generate_call_stub(StubRoutines::_call_stub_return_address);
     StubRoutines::_catch_exception_entry            = generate_catch_exception();
+
+    if (UnsafeCopyMemory::_table == NULL) {
+      UnsafeCopyMemory::create_table(8);
+    }
 
     // Build this early so it's available for the interpreter.
     StubRoutines::_throw_StackOverflowError_entry   =
@@ -4684,7 +4691,7 @@ class StubGenerator: public StubCodeGenerator {
     }
   }
 
-  void generate_phase1() {
+  void generate_continuation_stubs() {
     // Continuation stubs:
     StubRoutines::_cont_thaw          = generate_cont_thaw();
     StubRoutines::_cont_returnBarrier = generate_cont_returnBarrier();
@@ -4694,7 +4701,7 @@ class StubGenerator: public StubCodeGenerator {
     JFR_ONLY(StubRoutines::_jfr_write_checkpoint = StubRoutines::_jfr_write_checkpoint_stub->entry_point();)
   }
 
-  void generate_all() {
+  void generate_final_stubs() {
     // Generates all stubs and initializes the entry points
 
     // These entry points require SharedInfo::stack0 to be set up in
@@ -4709,12 +4716,16 @@ class StubGenerator: public StubCodeGenerator {
 
     // nmethod entry barriers for concurrent class unloading
     BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
-    if (bs_nm != NULL) {
+    if (bs_nm != nullptr) {
       StubRoutines::ppc::_nmethod_entry_barrier            = generate_nmethod_entry_barrier();
     }
 
     // arraycopy stubs used by compilers
     generate_arraycopy_stubs();
+  }
+
+  void generate_compiler_stubs() {
+#if COMPILER2_OR_JVMCI
 
 #ifdef COMPILER2
     if (UseMultiplyToLenIntrinsic) {
@@ -4763,24 +4774,31 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::_base64_encodeBlock = generate_base64_encodeBlock();
     }
 #endif
+#endif // COMPILER2_OR_JVMCI
   }
 
  public:
-  StubGenerator(CodeBuffer* code, int phase) : StubCodeGenerator(code) {
-    if (phase == 0) {
-      generate_initial();
-    } else if (phase == 1) {
-      generate_phase1(); // stubs that must be available for the interpreter
-    } else {
-      generate_all();
-    }
+  StubGenerator(CodeBuffer* code, StubsKind kind) : StubCodeGenerator(code) {
+    switch(kind) {
+    case Initial_stubs:
+      generate_initial_stubs();
+      break;
+     case Continuation_stubs:
+      generate_continuation_stubs();
+      break;
+    case Compiler_stubs:
+      generate_compiler_stubs();
+      break;
+    case Final_stubs:
+      generate_final_stubs();
+      break;
+    default:
+      fatal("unexpected stubs kind: %d", kind);
+      break;
+    };
   }
 };
 
-#define UCM_TABLE_MAX_ENTRIES 8
-void StubGenerator_generate(CodeBuffer* code, int phase) {
-  if (UnsafeCopyMemory::_table == NULL) {
-    UnsafeCopyMemory::create_table(UCM_TABLE_MAX_ENTRIES);
-  }
-  StubGenerator g(code, phase);
+void StubGenerator_generate(CodeBuffer* code, StubCodeGenerator::StubsKind kind) {
+  StubGenerator g(code, kind);
 }

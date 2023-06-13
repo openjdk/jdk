@@ -361,6 +361,8 @@ final class StringConcatHelper {
                                 FormatConcatItem value) {
         try {
             return value.prepend(indexCoder, buf);
+        } catch (Error ex) {
+            throw ex;
         } catch (Throwable ex) {
             throw new AssertionError("FormatConcatItem prepend error", ex);
         }
@@ -520,7 +522,7 @@ final class StringConcatHelper {
     /*
      * Initialize after phase1.
      */
-    static class LateInit {
+    private static class LateInit {
         static final MethodHandle GETCHAR_LATIN1_MH;
 
         static final MethodHandle GETCHAR_UTF16_MH;

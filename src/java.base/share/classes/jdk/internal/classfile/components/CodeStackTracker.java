@@ -235,13 +235,13 @@ public sealed interface CodeStackTracker extends CodeTransform {
                 case InvokeDynamicInstruction i -> {
                     var type = i.typeSymbol();
                     pop(type.parameterCount());
-                    push(TypeKind.fromDescriptor(type.returnType().descriptorString()));
+                    push(TypeKind.from(type.returnType()));
                 }
                 case InvokeInstruction i -> {
                     var type = i.typeSymbol();
                     pop(type.parameterCount());
                     if (i.opcode() != Opcode.INVOKESTATIC) pop(1);
-                    push(TypeKind.fromDescriptor(type.returnType().descriptorString()));
+                    push(TypeKind.from(type.returnType()));
                 }
                 case LoadInstruction i ->
                     push(i.typeKind());

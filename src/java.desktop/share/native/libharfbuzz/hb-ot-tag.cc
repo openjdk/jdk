@@ -119,6 +119,17 @@ hb_ot_new_tag_to_script (hb_tag_t tag)
 }
 
 #ifndef HB_DISABLE_DEPRECATED
+/**
+ * hb_ot_tags_from_script:
+ * @script: an #hb_script_t to convert.
+ * @script_tag_1: (out): output #hb_tag_t.
+ * @script_tag_2: (out): output #hb_tag_t.
+ *
+ * Converts an #hb_script_t to script tags.
+ *
+ * Since: 0.6.0
+ * Deprecated: 2.0.0: use hb_ot_tags_from_script_and_language() instead
+ **/
 void
 hb_ot_tags_from_script (hb_script_t  script,
                         hb_tag_t    *script_tag_1,
@@ -214,6 +225,8 @@ lang_matches (const char *lang_str,
               const char *spec,
               unsigned    spec_len)
 {
+  /* Same as hb_language_matches(); duplicated. */
+
   if (likely ((unsigned) (limit - lang_str) < spec_len))
     return false;
 
@@ -247,6 +260,15 @@ struct LangTag
 /*{"zh?",       {HB_TAG('Z','H','P',' ')}},*/   /* Chinese Phonetic */
 
 #ifndef HB_DISABLE_DEPRECATED
+/**
+ * hb_ot_tag_from_language:
+ * @language: an #hb_language_t to convert.
+ *
+ * Converts an #hb_language_t to an #hb_tag_t.
+ *
+ * Since: 0.6.0
+ * Deprecated: 2.0.0: use hb_ot_tags_from_script_and_language() instead
+ **/
 hb_tag_t
 hb_ot_tag_from_language (hb_language_t language)
 {
@@ -305,12 +327,12 @@ hb_ot_tags_from_language (const char   *lang_str,
     hb_tag_t lang_tag = hb_tag_from_string (lang_str, first_len);
 
     static hb_atomic_int_t last_tag_idx; /* Poor man's cache. */
-    unsigned tag_idx = last_tag_idx.get_relaxed ();
+    unsigned tag_idx = last_tag_idx;
 
     if (likely (tag_idx < ot_languages_len && ot_languages[tag_idx].language == lang_tag) ||
         hb_sorted_array (ot_languages, ot_languages_len).bfind (lang_tag, &tag_idx))
     {
-      last_tag_idx.set_relaxed (tag_idx);
+      last_tag_idx = tag_idx;
       unsigned int i;
       while (tag_idx != 0 &&
              ot_languages[tag_idx].language == ot_languages[tag_idx - 1].language)
@@ -575,7 +597,7 @@ hb_ot_tags_to_script_and_language (hb_tag_t       script_tag,
       else
       {
         int shift;
-        memcpy (buf, lang_str, len);
+        hb_memcpy (buf, lang_str, len);
         if (lang_str[0] != 'x' || lang_str[1] != '-') {
           buf[len++] = '-';
           buf[len++] = 'x';
@@ -604,7 +626,7 @@ test_langs_sorted ()
     int c = ot_languages2[i].cmp (&ot_languages2[i - 1]);
     if (c > 0)
     {
-      fprintf (stderr, "ot_languages2 not sorted at index %d: %08x %d %08x\n",
+      fprintf (stderr, "ot_languages2 not sorted at index %u: %08x %d %08x\n",
                i, ot_languages2[i-1].language, c, ot_languages2[i].language);
       abort();
     }
@@ -615,7 +637,7 @@ test_langs_sorted ()
     int c = ot_languages3[i].cmp (&ot_languages3[i - 1]);
     if (c > 0)
     {
-      fprintf (stderr, "ot_languages3 not sorted at index %d: %08x %d %08x\n",
+      fprintf (stderr, "ot_languages3 not sorted at index %u: %08x %d %08x\n",
                i, ot_languages3[i-1].language, c, ot_languages3[i].language);
       abort();
     }

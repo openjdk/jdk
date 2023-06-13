@@ -50,7 +50,6 @@ bool emit_shared_stubs_to_interp(CodeBuffer* cb, SharedStubToInterpRequests* sha
   for (int i = 0; i < shared_stub_to_interp_requests->length();) {
     address stub = __ start_a_stub(CompiledStaticCall::to_interp_stub_size());
     if (stub == NULL) {
-      ciEnv::current()->record_failure("CodeCache is full");
       return false;
     }
 

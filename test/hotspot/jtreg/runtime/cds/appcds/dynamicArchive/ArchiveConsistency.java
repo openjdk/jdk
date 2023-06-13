@@ -242,7 +242,7 @@ public class ArchiveConsistency extends DynamicArchiveTestBase {
             "-cp",
             appJar, mainClass)
             .assertNormalExit(output -> {
-                output.shouldContain("VM warning: -XX:ArchiveClassesAtExit is unsupported when base CDS archive is not loaded");
+                output.shouldContain("-XX:ArchiveClassesAtExit is unsupported when base CDS archive is not loaded");
             });
       }
     }

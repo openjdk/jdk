@@ -213,15 +213,16 @@ public:
            region_index,
            BOOL_TO_STR(cm->is_marked_in_bitmap(obj)));
     _humongous_objects_reclaimed++;
-    do {
-      HeapRegion* next = _g1h->next_region_in_humongous(r);
+
+    auto free_humongous_region = [&] (HeapRegion* r) {
       _freed_bytes += r->used();
       r->set_containing_set(nullptr);
       _humongous_regions_reclaimed++;
       _g1h->free_humongous_region(r, nullptr);
       _g1h->hr_printer()->cleanup(r);
-      r = next;
-    } while (r != nullptr);
+    };
+
+    _g1h->humongous_obj_regions_iterate(r, free_humongous_region);
 
     return false;
   }
@@ -262,7 +263,7 @@ public:
   virtual ~EagerlyReclaimHumongousObjectsTask() {
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
-    g1h->remove_from_old_gen_sets(0, 0, _humongous_regions_reclaimed);
+    g1h->remove_from_old_gen_sets(0, _humongous_regions_reclaimed);
     g1h->decrement_summary_bytes(_bytes_freed);
   }
 
@@ -556,8 +557,7 @@ class FreeCSetClosure : public HeapRegionClosure {
     stats()->account_failed_region(r);
 
     G1GCPhaseTimes* p = _g1h->phase_times();
-    assert(!r->is_pinned(), "Unexpected pinned region at index %u", r->hrm_index());
-    assert(r->in_collection_set(), "bad CS");
+    assert(r->in_collection_set(), "Failed evacuation of region %u not in collection set", r->hrm_index());
 
     p->record_or_add_thread_work_item(G1GCPhaseTimes::RestoreRetainedRegions,
                                       _worker_id,

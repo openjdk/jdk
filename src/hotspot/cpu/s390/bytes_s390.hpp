@@ -50,9 +50,6 @@ class Bytes: AllStatic {
   static inline void put_native_u4(address p, u4 x) { *(u4*)p = x; }
   static inline void put_native_u8(address p, u8 x) { *(u8*)p = x; }
 
-  // The following header contains the implementations of swap_u2, swap_u4, and swap_u8.
-#include OS_CPU_HEADER(bytes)
-
   // Efficient reading and writing of unaligned unsigned data in Java byte ordering (i.e. big-endian ordering)
   static inline u2   get_Java_u2(address p) { return get_native_u2(p); }
   static inline u4   get_Java_u4(address p) { return get_native_u4(p); }

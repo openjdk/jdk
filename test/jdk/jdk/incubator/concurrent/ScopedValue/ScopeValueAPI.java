@@ -24,7 +24,6 @@
 /*
  * @test
  * @summary Test ScopedValue API
- * @enablePreview
  * @modules jdk.incubator.concurrent
  * @run junit ScopeValueAPI
  */

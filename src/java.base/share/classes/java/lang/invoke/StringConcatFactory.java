@@ -33,7 +33,6 @@ import jdk.internal.vm.annotation.Stable;
 import sun.invoke.util.Wrapper;
 
 import java.lang.invoke.MethodHandles.Lookup;
-import java.lang.template.StringTemplate;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -120,7 +119,10 @@ public final class StringConcatFactory {
      * @since 21
      */
     @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
-    public static final int MAX_INDY_CONCAT_ARG_SLOTS = 200;
+    public static final int MAX_INDY_CONCAT_ARG_SLOTS;
+    // Use static initialize block to avoid MAX_INDY_CONCAT_ARG_SLOTS being treating
+    // as a constant for constant folding.
+    static { MAX_INDY_CONCAT_ARG_SLOTS = 200; }
 
     private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
 
@@ -1044,15 +1046,16 @@ public final class StringConcatFactory {
      * interleaves fragments and values. fragment|value|fragment|value|...|value|fragment.
      * The number of fragments must be one more that the number of ptypes.
      * The total number of slots used by the ptypes must be less than or equal
-     * to MAX_INDY_CONCAT_ARG_SLOTS.
+     * to {@link #MAX_INDY_CONCAT_ARG_SLOTS}.
      *
      * @param fragments list of string fragments
      * @param ptypes    list of expression types
      *
-     * @return {@link MethodHandle}
+     * @return the {@link MethodHandle} for concatenation
      *
      * @throws StringConcatException If any of the linkage invariants are violated.
      * @throws NullPointerException If any of the incoming arguments is null.
+     * @throws IllegalArgumentException If the number of value slots exceed {@link #MAX_INDY_CONCAT_ARG_SLOTS}.
      *
      * @since 21
      */
@@ -1067,7 +1070,7 @@ public final class StringConcatFactory {
         ptypes = List.copyOf(ptypes);
 
         if (fragments.size() != ptypes.size() + 1) {
-            throw new StringConcatException("fragments size not equal ptypes size plus one");
+            throw new IllegalArgumentException("fragments size not equal ptypes size plus one");
         }
 
         if (ptypes.isEmpty()) {
@@ -1167,7 +1170,7 @@ public final class StringConcatFactory {
      * per {@link MethodHandle}. Each {@link MethodHandle} after the first will
      * have an extra {@link String} slot for the result from the previous
      * {@link MethodHandle}.
-     * {@link java.lang.invoke.StringConcatFactory#makeConcatWithTemplate}
+     * {@link #makeConcatWithTemplate}
      * is used to construct the {@link MethodHandle MethodHandles}. The total
      * number of slots used by the ptypes is open ended. However, care must
      * be given when combining the {@link MethodHandle MethodHandles} so that
@@ -1183,6 +1186,7 @@ public final class StringConcatFactory {
      *                                  MAX_INDY_CONCAT_ARG_SLOTS.
      * @throws StringConcatException If any of the linkage invariants are violated.
      * @throws NullPointerException If any of the incoming arguments is null.
+     * @throws IllegalArgumentException If the number of value slots exceed {@link #MAX_INDY_CONCAT_ARG_SLOTS}.
      *
      * @since 21
      */
@@ -1201,7 +1205,7 @@ public final class StringConcatFactory {
         }
 
         if (maxSlots < 1 || MAX_INDY_CONCAT_ARG_SLOTS < maxSlots) {
-            throw new StringConcatException("maxSlots must be between 1 and " +
+            throw new IllegalArgumentException("maxSlots must be between 1 and " +
                     MAX_INDY_CONCAT_ARG_SLOTS);
 
         }
@@ -1244,7 +1248,7 @@ public final class StringConcatFactory {
     /**
      * This method creates a {@link MethodHandle} expecting one input, the
      * receiver of the supplied getters. This method uses
-     * {@link java.lang.invoke.StringConcatFactory#makeConcatWithTemplateCluster}
+     * {@link #makeConcatWithTemplateCluster}
      * to create the intermediate {@link MethodHandle MethodHandles}.
      *
      * @param fragments list of string fragments
@@ -1252,13 +1256,14 @@ public final class StringConcatFactory {
      * @param maxSlots  maximum number of slots per {@link MethodHandle} in
      *                  cluster.
      *
-     * @return {@link MethodHandle}
+     * @return the {@link MethodHandle} for concatenation
      *
      * @throws IllegalArgumentException If maxSlots is not between 1 and
      *                                  MAX_INDY_CONCAT_ARG_SLOTS or if the
      *                                  getters don't use the same argument type
      * @throws StringConcatException If any of the linkage invariants are violated
      * @throws NullPointerException If any of the incoming arguments is null
+     * @throws IllegalArgumentException If the number of value slots exceed {@link #MAX_INDY_CONCAT_ARG_SLOTS}.
      *
      * @since 21
      */
@@ -1277,7 +1282,7 @@ public final class StringConcatFactory {
         }
 
         if (maxSlots < 1 || MAX_INDY_CONCAT_ARG_SLOTS < maxSlots) {
-            throw new StringConcatException("maxSlots must be between 1 and " +
+            throw new IllegalArgumentException("maxSlots must be between 1 and " +
                     MAX_INDY_CONCAT_ARG_SLOTS);
 
         }

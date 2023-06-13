@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,10 @@
 
  // key: compiler.note.preview.filename
  // key: compiler.note.preview.recompile
- // key: compiler.err.not.template.processor.type
+ // key: compiler.err.not.a.processor.type
  // options: --enable-preview  -source 21
 
-import java.lang.template.*;
+import java.lang.*;
 
 class StringTemplateNotProcessor {
     String m() {

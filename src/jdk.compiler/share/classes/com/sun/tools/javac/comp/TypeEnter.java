@@ -124,6 +124,7 @@ public class TypeEnter implements Completer {
         return instance;
     }
 
+    @SuppressWarnings("this-escape")
     protected TypeEnter(Context context) {
         context.put(typeEnterKey, this);
         names = Names.instance(context);
@@ -347,7 +348,7 @@ public class TypeEnter implements Completer {
                 try {
                     chk.disablePreviewCheck = true;
                     String autoImports = """
-                            import static java.lang.template.StringTemplate.STR;
+                            import static java.lang.StringTemplate.STR;
                             """;
                     Parser parser = parserFactory.newParser(autoImports, false, false, false, false);
                     JCCompilationUnit importTree = parser.parseCompilationUnit();
@@ -1409,7 +1410,7 @@ public class TypeEnter implements Completer {
 
         @Override
         public List<Name> superArgs() {
-            List<JCVariableDecl> params = make.Params(constructorType().getParameterTypes(), constructorSymbol());
+            List<JCVariableDecl> params = make.Params(constructorSymbol());
             if (!enclosingType().hasTag(NONE)) {
                 params = params.tail;
             }

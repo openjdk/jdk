@@ -179,13 +179,13 @@ void FreeHeap(void* p);
 
 class CHeapObjBase {
  public:
-  ALWAYSINLINE void* operator new(size_t size, MEMFLAGS f) throw() {
+  ALWAYSINLINE void* operator new(size_t size, MEMFLAGS f) {
     return AllocateHeap(size, f);
   }
 
   ALWAYSINLINE void* operator new(size_t size,
                                   MEMFLAGS f,
-                                  const NativeCallStack& stack) throw() {
+                                  const NativeCallStack& stack) {
     return AllocateHeap(size, f, stack);
   }
 
@@ -202,13 +202,13 @@ class CHeapObjBase {
     return AllocateHeap(size, f, AllocFailStrategy::RETURN_NULL);
   }
 
-  ALWAYSINLINE void* operator new[](size_t size, MEMFLAGS f) throw() {
+  ALWAYSINLINE void* operator new[](size_t size, MEMFLAGS f) {
     return AllocateHeap(size, f);
   }
 
   ALWAYSINLINE void* operator new[](size_t size,
                                     MEMFLAGS f,
-                                    const NativeCallStack& stack) throw() {
+                                    const NativeCallStack& stack) {
     return AllocateHeap(size, f, stack);
   }
 
@@ -233,12 +233,12 @@ class CHeapObjBase {
 template<MEMFLAGS F>
 class CHeapObj {
  public:
-  ALWAYSINLINE void* operator new(size_t size) throw() {
+  ALWAYSINLINE void* operator new(size_t size) {
     return CHeapObjBase::operator new(size, F);
   }
 
   ALWAYSINLINE void* operator new(size_t size,
-                                  const NativeCallStack& stack) throw() {
+                                  const NativeCallStack& stack) {
     return CHeapObjBase::operator new(size, F, stack);
   }
 
@@ -251,12 +251,12 @@ class CHeapObj {
     return CHeapObjBase::operator new(size, F, nt);
   }
 
-  ALWAYSINLINE void* operator new[](size_t size) throw() {
+  ALWAYSINLINE void* operator new[](size_t size) {
     return CHeapObjBase::operator new[](size, F);
   }
 
   ALWAYSINLINE void* operator new[](size_t size,
-                                    const NativeCallStack& stack) throw() {
+                                    const NativeCallStack& stack) {
     return CHeapObjBase::operator new[](size, F, stack);
   }
 
@@ -282,11 +282,11 @@ class CHeapObj {
 // Calling new or delete will result in fatal error.
 
 class StackObj {
- private:
-  void* operator new(size_t size) throw();
-  void* operator new [](size_t size) throw();
-  void  operator delete(void* p);
-  void  operator delete [](void* p);
+ public:
+  void* operator new(size_t size) = delete;
+  void* operator new [](size_t size) = delete;
+  void  operator delete(void* p) = delete;
+  void  operator delete [](void* p) = delete;
 };
 
 // Base class for objects stored in Metaspace.
@@ -432,7 +432,7 @@ extern void resource_free_bytes( Thread* thread, char *old, size_t size );
 // Base class for objects allocated in the resource area.
 class ResourceObj {
  public:
-  void* operator new(size_t size) throw() {
+  void* operator new(size_t size) {
     return resource_allocate_bytes(size);
   }
 
@@ -500,11 +500,11 @@ protected:
   void* operator new [](size_t size, const std::nothrow_t&  nothrow_constant, MEMFLAGS flags) throw() = delete;
 
   // Arena allocations
-  void* operator new(size_t size, Arena *arena) throw();
-  void* operator new [](size_t size, Arena *arena) throw() = delete;
+  void* operator new(size_t size, Arena *arena);
+  void* operator new [](size_t size, Arena *arena) = delete;
 
   // Resource allocations
-  void* operator new(size_t size) throw() {
+  void* operator new(size_t size) {
     address res = (address)resource_allocate_bytes(size);
     DEBUG_ONLY(set_allocation_type(res, RESOURCE_AREA);)
     return res;
@@ -515,8 +515,8 @@ protected:
     return res;
   }
 
-  void* operator new [](size_t size) throw() = delete;
-  void* operator new [](size_t size, const std::nothrow_t& nothrow_constant) throw() = delete;
+  void* operator new [](size_t size) = delete;
+  void* operator new [](size_t size, const std::nothrow_t& nothrow_constant) = delete;
   void  operator delete(void* p);
   void  operator delete [](void* p) = delete;
 

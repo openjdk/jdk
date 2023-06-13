@@ -56,7 +56,7 @@ class JdbLockTestTarg {
 }
 
 class Sleeper implements Runnable {
-    public static int started = 0;
+    public static volatile int started = 0;
     public void run() {
         started = 1;
         System.out.println("     sleeper starts sleeping");

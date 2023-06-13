@@ -69,6 +69,7 @@ public class ParserFactory {
     final ScannerFactory scannerFactory;
     final Locale locale;
 
+    @SuppressWarnings("this-escape")
     protected ParserFactory(Context context) {
         super();
         context.put(parserFactoryKey, this);

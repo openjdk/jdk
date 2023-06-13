@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -174,7 +174,7 @@ class IndexSet : public ResourceObj {
   // from a new arena.  It is essential that this method is called whenever
   // the Arena being used for BitBlock allocation is reset.
   static void reset_memory(Compile* compile, Arena *arena) {
-    compile->set_indexSet_free_block_list(NULL);
+    compile->set_indexSet_free_block_list(nullptr);
     compile->set_indexSet_arena(arena);
 
    // This should probably be done in a static initializer
@@ -401,7 +401,7 @@ class IndexSetIterator {
 
   // If the iterator was created from a non-const set, we replace
   // non-canonical empty blocks with the _empty_block pointer.  If
-  // _set is NULL, we do no replacement.
+  // _set is null, we do no replacement.
   IndexSet            *_set;
 
   // Advance to the next non-empty word and return the next
@@ -418,7 +418,7 @@ class IndexSetIterator {
     _next_word(IndexSet::words_per_block),
     _next_block(0),
     _max_blocks(set->is_empty() ? 0 : set->_current_block_limit),
-    _words(NULL),
+    _words(nullptr),
     _blocks(set->_blocks),
     _set(set) {
   #ifdef ASSERT
@@ -435,9 +435,9 @@ class IndexSetIterator {
     _next_word(IndexSet::words_per_block),
     _next_block(0),
     _max_blocks(set->is_empty() ? 0 : set->_current_block_limit),
-    _words(NULL),
+    _words(nullptr),
     _blocks(set->_blocks),
-    _set(NULL)
+    _set(nullptr)
   {
   #ifdef ASSERT
     if (CollectIndexSetStatistics) {

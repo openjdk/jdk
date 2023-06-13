@@ -255,6 +255,15 @@ hb_ot_layout_script_select_language (hb_face_t      *face,
                                      unsigned int   *language_index /* OUT */);
 
 HB_EXTERN hb_bool_t
+hb_ot_layout_script_select_language2 (hb_face_t      *face,
+                                     hb_tag_t        table_tag,
+                                     unsigned int    script_index,
+                                     unsigned int    language_count,
+                                     const hb_tag_t *language_tags,
+                                     unsigned int   *language_index /* OUT */,
+                                     hb_tag_t       *chosen_language /* OUT */);
+
+HB_EXTERN hb_bool_t
 hb_ot_layout_language_get_required_feature_index (hb_face_t    *face,
                                                   hb_tag_t      table_tag,
                                                   unsigned int  script_index,
@@ -403,6 +412,16 @@ hb_ot_layout_get_size_params (hb_face_t       *face,
                               unsigned int    *range_start,       /* OUT.  May be NULL */
                               unsigned int    *range_end          /* OUT.  May be NULL */);
 
+HB_EXTERN hb_position_t
+hb_ot_layout_lookup_get_optical_bound (hb_font_t      *font,
+                                       unsigned        lookup_index,
+                                       hb_direction_t  direction,
+                                       hb_codepoint_t  glyph);
+
+
+/*
+ * GSUB/GPOS
+ */
 
 HB_EXTERN hb_bool_t
 hb_ot_layout_feature_get_name_ids (hb_face_t       *face,
@@ -422,6 +441,7 @@ hb_ot_layout_feature_get_characters (hb_face_t      *face,
                                      unsigned int    start_offset,
                                      unsigned int   *char_count    /* IN/OUT.  May be NULL */,
                                      hb_codepoint_t *characters    /* OUT.     May be NULL */);
+
 
 /*
  * BASE

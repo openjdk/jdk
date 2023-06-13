@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@ package java.util;
 
 import java.lang.invoke.MethodHandle;
 
-import jdk.internal.javac.PreviewFeature;
+import jdk.internal.vm.annotation.Stable;
 
 /**
  * Digits provides a fast methodology for converting integers and longs to
@@ -35,7 +35,6 @@ import jdk.internal.javac.PreviewFeature;
  *
  * @since 21
  */
-@PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
 sealed interface Digits permits Digits.DecimalDigits, Digits.HexDigits, Digits.OctalDigits {
     /**
      * Insert digits for long value in buffer from high index to low index.
@@ -65,6 +64,7 @@ sealed interface Digits permits Digits.DecimalDigits, Digits.HexDigits, Digits.O
      * Digits class for decimal digits.
      */
     final class DecimalDigits implements Digits {
+        @Stable
         private static final short[] DIGITS;
 
         /**
@@ -166,6 +166,7 @@ sealed interface Digits permits Digits.DecimalDigits, Digits.HexDigits, Digits.O
      * Digits class for hexadecimal digits.
      */
     final class HexDigits implements Digits {
+        @Stable
         private static final short[] DIGITS;
 
         /**
@@ -225,10 +226,11 @@ sealed interface Digits permits Digits.DecimalDigits, Digits.HexDigits, Digits.O
      * Digits class for octal digits.
      */
     final class OctalDigits implements Digits {
+        @Stable
         private static final short[] DIGITS;
 
         /**
-         * Singleton instance of HexDigits.
+         * Singleton instance of OctalDigits.
          */
         static final Digits INSTANCE = new OctalDigits();
 
