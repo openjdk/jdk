@@ -68,9 +68,12 @@ public class Settings extends TestHelper {
     private static final String PROP_SETTINGS = "Property settings:";
     private static final String LOCALE_SETTINGS = "Locale settings:";
     private static final String SEC_PROPS_SETTINGS = "Security properties:";
+    private static final String SEC_SUMMARY_PROPS_SETTINGS =
+                "Security settings summary:";
     private static final String SEC_PROVIDER_SETTINGS =
-                            "Security provider static configuration:";
+                "Security provider static configuration:";
     private static final String SEC_TLS_SETTINGS = "Security TLS configuration:";
+    private static final String BAD_SEC_OPTION_MSG = "Unrecognized security sub-option.";
     private static final String SYSTEM_SETTINGS = "Operating System Metrics:";
     private static final String STACKSIZE_SETTINGS = "Stack Size:";
     private static final String TZDATA_SETTINGS = "tzdata version";
@@ -79,7 +82,9 @@ public class Settings extends TestHelper {
         checkContains(tr, VM_SETTINGS);
         checkContains(tr, PROP_SETTINGS);
         checkContains(tr, LOCALE_SETTINGS);
-        checkContains(tr, SEC_PROPS_SETTINGS);
+        // no verbose security settings unless "security" used
+        checkNotContains(tr, SEC_PROPS_SETTINGS);
+        checkContains(tr, SEC_SUMMARY_PROPS_SETTINGS);
         checkContains(tr, SEC_PROVIDER_SETTINGS);
         checkContains(tr, SEC_TLS_SETTINGS);
         checkContains(tr, TZDATA_SETTINGS);
@@ -187,6 +192,17 @@ public class Settings extends TestHelper {
         checkContains(tr, "TLSv1.2");
     }
 
+    // ensure error message is printed when unrecognized option used
+    static void runTestOptionBadSecurityOption() throws IOException {
+        TestResult tr = doExec(javaCmd, "-XshowSettings:security:bad");
+        checkContains(tr, BAD_SEC_OPTION_MSG);
+        // we print all security settings in such scenario
+        checkContains(tr, SEC_PROPS_SETTINGS);
+        checkContains(tr, SEC_PROVIDER_SETTINGS);
+        checkContains(tr, SEC_TLS_SETTINGS);
+        // test a well known TLS config for sanity
+        checkContains(tr, "TLSv1.2");
+    }
     static void runTestOptionSystem() throws IOException {
         TestResult tr = doExec(javaCmd, "-XshowSettings:system");
         if (System.getProperty("os.name").contains("Linux")) {
@@ -228,6 +244,7 @@ public class Settings extends TestHelper {
         runTestOptionSecurityProps();
         runTestOptionSecurityProv();
         runTestOptionSecurityTLS();
+        runTestOptionBadSecurityOption();
         runTestOptionSystem();
         runTestBadOptions();
         runTest7123582();

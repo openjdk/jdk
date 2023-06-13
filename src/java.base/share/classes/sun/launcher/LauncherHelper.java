@@ -62,8 +62,18 @@ import java.security.Provider;
 import java.security.Security;
 import java.text.MessageFormat;
 import java.text.Normalizer;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Locale;
 import java.util.Locale.Category;
+import java.util.Optional;
+import java.util.Properties;
+import java.util.ResourceBundle;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.jar.Attributes;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
@@ -111,6 +121,7 @@ public final class LauncherHelper {
     private static final String VM_SETTINGS     = "VM settings:";
     private static final String PROP_SETTINGS   = "Property settings:";
     private static final String LOCALE_SETTINGS = "Locale settings:";
+    private static final String PROV_INFO_STRING = "Provider information: ";
 
     // sync with java.c and jdk.internal.misc.VM
     private static final String diagprop = "sun.java.launcher.diag";
@@ -183,7 +194,7 @@ public final class LauncherHelper {
                 printVmSettings(initialHeapSize, maxHeapSize, stackSize);
                 printProperties();
                 printLocale();
-                printSecuritySettings("all");
+                printSecuritySummarySettings();
                 if (OperatingSystem.isLinux()) {
                     printSystemMetrics();
                 }
@@ -321,21 +332,38 @@ public final class LauncherHelper {
                 ostream.print(TWOINDENT);
             }
         }
-        ostream.print("\n");
+        ostream.println();
     }
 
     private static void printSecuritySettings(String arg) {
-        if (arg.toLowerCase(Locale.ROOT).equals("properties")) {
-            printSecurityProperties();
-        } else if(arg.toLowerCase(Locale.ROOT).equals("providers")) {
-            printSecurityProviderConfig();
-        } else if(arg.toLowerCase(Locale.ROOT).equals("tls")) {
-            printSecurityTLSConfig();
-        } else {
-            printSecurityProperties();
-            printSecurityProviderConfig();
-            printSecurityTLSConfig();
+        switch (arg.toLowerCase(Locale.ROOT)) {
+            case "properties" -> printSecurityProperties();
+            case "providers"  -> printSecurityProviderConfig(true);
+            case "tls"        -> printSecurityTLSConfig(true);
+            case "all"        -> printAllSecurityConfig();
+            default           -> {
+                ostream.println("Unrecognized security sub-option. Valid values are " +
+                        "\"all\", \"properties\", \"providers\", \"tls\". See \"java -X\"");
+                ostream.println("Printing all security settings\n");
+                printAllSecurityConfig();
+            }
+
         }
+    }
+
+    // A non-verbose description of some core security configuration settings
+    private static void printSecuritySummarySettings() {
+        ostream.println("Security settings summary: " + "\n" +
+                INDENT + "Use \"-XshowSettings:security\" for verbose details\n");
+        printSecurityProviderConfig(false);
+        printSecurityTLSConfig(false);
+    }
+
+    private static void printAllSecurityConfig() {
+        ostream.println("Security settings:\n");
+        printSecurityProperties();
+        printSecurityProviderConfig(true);
+        printSecurityTLSConfig(true);
     }
 
     private static void printSecurityProperties() {
@@ -346,21 +374,22 @@ public final class LauncherHelper {
             if (val.contains(",") && val.length() > 60) {
                 // split lines longer than 60 chars which have multiple values
                 ostream.println(TWOINDENT + key + "=");
-                List.of(val.split(",")).forEach(s -> ostream.println(THREEINDENT + s.trim()));
+                List.of(val.split(",")).forEach(
+                        s -> ostream.println(THREEINDENT + s.trim() + ","));
             } else {
                 ostream.println(TWOINDENT + key + "=" + val);
             }
         }
-        ostream.print("\n");
+        ostream.println();
     }
 
-    private static void printSecurityTLSConfig() {
+    private static void printSecurityTLSConfig(boolean verbose) {
         SSLSocket ssls;
         try {
             ssls = (SSLSocket)
                     SSLContext.getDefault().getSocketFactory().createSocket();
         } catch (IOException | NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
+            throw new InternalError("Failed to create SSL socket");
         }
 
         ostream.println(INDENT + "Security TLS configuration:");
@@ -369,46 +398,60 @@ public final class LauncherHelper {
             System.out.println(THREEINDENT + s);
         }
 
-        System.out.println("\n" + TWOINDENT + "Enabled Cipher Suites:");
-        for (String s : ssls.getEnabledCipherSuites()) {
-            System.out.println(THREEINDENT + s);
-        }
-        ostream.print("\n");
-    }
-
-    private static void printSecurityProviderConfig() {
-        ostream.println(INDENT + "Security provider static configuration:");
-        for (Provider p : Security.getProviders()) {
-            ostream.println(TWOINDENT + "Provider name: " + p.getName());
-            ostream.println(TWOINDENT + "Provider information: " + wrappedString(p.getInfo(), 80));
-            ostream.println(TWOINDENT + "Provider services: (type : algorithm)");
-            for (Provider.Service ps : p.getServices().stream()
-                    .sorted(Comparator.comparing(Provider.Service::getType)).toList()) {
-                ostream.println(THREEINDENT + ps.getType() + " : " + ps.getAlgorithm());
+        if (verbose) {
+            System.out.println("\n" + TWOINDENT + "Enabled Cipher Suites:");
+            for (String s : ssls.getEnabledCipherSuites()) {
+                System.out.println(THREEINDENT + s);
             }
         }
-        ostream.print("\n");
+        ostream.println();
     }
 
-    // return a string split across multiple lines which aims to limit max width
+    private static void printSecurityProviderConfig(boolean verbose) {
+        ostream.println(INDENT + "Security provider static configuration:");
+        for (Provider p : Security.getProviders()) {
+            if (verbose) {
+                // separate the views out
+                ostream.println(TWOINDENT + "-".repeat(40));
+            }
+            ostream.println(TWOINDENT + "Provider name: " + p.getName());
+            if (verbose) {
+                ostream.println(TWOINDENT + PROV_INFO_STRING + wrappedString(p.getInfo(), 80));
+                ostream.println(TWOINDENT + "Provider services: (type : algorithm)");
+                Set<Provider.Service> services = p.getServices();
+               if (!services.isEmpty()) {
+                   services.stream()
+                           .sorted(Comparator.comparing(Provider.Service::getType))
+                           .forEach(ps -> ostream.println(THREEINDENT +
+                                   ps.getType() + " : " + ps.getAlgorithm()));
+               } else {
+                   ostream.println(THREEINDENT + "<none>");
+               }
+            }
+        }
+        ostream.println();
+    }
+
+    // return a string split across multiple lines which aims to limit max length
     private static String wrappedString(String orig, int limit) {
         if (orig == null || orig.isEmpty() || limit <= 0) {
             // bad input
             return orig;
         }
-        StringTokenizer st = new StringTokenizer(orig, " ");
         StringBuilder sb = new StringBuilder();
-        int count = 0;
-        while (st.hasMoreElements()) {
-            String s = st.nextToken();
-            sb.append(s);
-            if (st.hasMoreElements()) {
-                if (count + s.length() > limit) {
-                    sb.append("\n" + THREEINDENT);
-                    count = 0;
+        int widthCount = 0;
+        for (String s : orig.split(" ")) {
+            if (widthCount == 0) {
+                // first iteration only
+                sb.append(s);
+                widthCount = PROV_INFO_STRING.length() + s.length();
+            } else {
+                if (widthCount + s.length() > limit) {
+                    sb.append("\n" + THREEINDENT + s);
+                    widthCount = s.length();
                 } else {
-                    sb.append(" ");
-                    count += s.length() + 1;
+                    sb.append(" " + s);
+                    widthCount += s.length() + 1;
                 }
             }
         }
