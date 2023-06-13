@@ -995,7 +995,7 @@ void VMError::report(outputStream* st, bool _verbose) {
       if (lastpc != nullptr) {
         const char* name = find_code_name(lastpc);
         if (name != nullptr) {
-          st->print_cr("the last pc belongs to %s (will be printed below)", name);
+          st->print_cr("The last pc belongs to %s (printed below).", name);
         }
       }
     } else {
