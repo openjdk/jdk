@@ -377,6 +377,18 @@ bool oopDesc::fast_no_hash_check() {
   return mrk.is_unlocked() && mrk.has_no_hash();
 }
 
+bool oopDesc::has_displaced_mark() const {
+  return mark().has_displaced_mark_helper();
+}
+
+markWord oopDesc::displaced_mark() const {
+  return mark().displaced_mark_helper();
+}
+
+void oopDesc::set_displaced_mark(markWord m) {
+  mark().set_displaced_mark_helper(m);
+}
+
 bool oopDesc::mark_must_be_preserved() const {
   return mark_must_be_preserved(mark());
 }
