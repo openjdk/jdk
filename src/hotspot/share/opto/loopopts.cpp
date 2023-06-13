@@ -2711,7 +2711,7 @@ Node* PhaseIdealLoop::stay_in_loop( Node* n, IdealLoopTree *loop) {
 
 //------------------------------ register_node -------------------------------------
 // Utility to register node "n" with PhaseIdealLoop
-void PhaseIdealLoop::register_node(Node* n, IdealLoopTree *loop, Node* pred, int ddepth) {
+void PhaseIdealLoop::register_node(Node* n, IdealLoopTree* loop, Node* pred, uint ddepth) {
   _igvn.register_new_node_with_optimizer(n);
   loop->_body.push(n);
   if (n->is_CFG()) {
@@ -2770,7 +2770,7 @@ ProjNode* PhaseIdealLoop::insert_if_before_proj(Node* left, bool Signed, BoolTes
   IfNode* iff = proj->in(0)->as_If();
   IdealLoopTree *loop = get_loop(proj);
   ProjNode *other_proj = iff->proj_out(!proj->is_IfTrue())->as_Proj();
-  int ddepth = dom_depth(proj);
+  uint ddepth = dom_depth(proj);
 
   _igvn.rehash_node_delayed(iff);
   _igvn.rehash_node_delayed(proj);
@@ -2831,7 +2831,7 @@ RegionNode* PhaseIdealLoop::insert_region_before_proj(ProjNode* proj) {
   IfNode* iff = proj->in(0)->as_If();
   IdealLoopTree *loop = get_loop(proj);
   ProjNode *other_proj = iff->proj_out(!proj->is_IfTrue())->as_Proj();
-  int ddepth = dom_depth(proj);
+  uint ddepth = dom_depth(proj);
 
   _igvn.rehash_node_delayed(iff);
   _igvn.rehash_node_delayed(proj);

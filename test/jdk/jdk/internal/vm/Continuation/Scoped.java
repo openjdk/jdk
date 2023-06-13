@@ -28,7 +28,7 @@
  * @modules java.base/jdk.internal.vm
  * @build java.base/java.lang.StackWalkerHelper
  * @run testng/othervm -XX:+UnlockDiagnosticVMOptions -XX:+ShowHiddenFrames -Xint Scoped
- * @run testng/othervm -XX:+UnlockDiagnosticVMOptions -XX:+ShowHiddenFrames -Xcomp -XX:CompileOnly=jdk/internal/vm/Continuation,Scoped Scoped
+ * @run testng/othervm -XX:+UnlockDiagnosticVMOptions -XX:+ShowHiddenFrames -Xcomp -XX:CompileOnly=jdk.internal.vm.Continuation::*,*Scoped::* Scoped
  */
 
 import jdk.internal.vm.Continuation;

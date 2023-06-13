@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1248,7 +1248,7 @@ Java_sun_nio_fs_UnixNativeDispatcher_fgetxattr0(JNIEnv* env, jclass clazz,
 
 #ifdef __linux__
     res = fgetxattr(fd, name, value, valueLen);
-#elif _ALLBSD_SOURCE
+#elif defined(_ALLBSD_SOURCE)
     res = fgetxattr(fd, name, value, valueLen, 0, 0);
 #else
     throwUnixException(env, ENOTSUP);
@@ -1269,7 +1269,7 @@ Java_sun_nio_fs_UnixNativeDispatcher_fsetxattr0(JNIEnv* env, jclass clazz,
 
 #ifdef __linux__
     res = fsetxattr(fd, name, value, valueLen, 0);
-#elif _ALLBSD_SOURCE
+#elif defined(_ALLBSD_SOURCE)
     res = fsetxattr(fd, name, value, valueLen, 0, 0);
 #else
     throwUnixException(env, ENOTSUP);
@@ -1288,7 +1288,7 @@ Java_sun_nio_fs_UnixNativeDispatcher_fremovexattr0(JNIEnv* env, jclass clazz,
 
 #ifdef __linux__
     res = fremovexattr(fd, name);
-#elif _ALLBSD_SOURCE
+#elif defined(_ALLBSD_SOURCE)
     res = fremovexattr(fd, name, 0);
 #else
     throwUnixException(env, ENOTSUP);
@@ -1307,7 +1307,7 @@ Java_sun_nio_fs_UnixNativeDispatcher_flistxattr(JNIEnv* env, jclass clazz,
 
 #ifdef __linux__
     res = flistxattr(fd, list, (size_t)size);
-#elif _ALLBSD_SOURCE
+#elif defined(_ALLBSD_SOURCE)
     res = flistxattr(fd, list, (size_t)size, 0);
 #else
     throwUnixException(env, ENOTSUP);
