@@ -125,7 +125,7 @@ public abstract sealed class AbstractMemorySegmentImpl
     public final MemorySegment reinterpret(long newSize, Arena arena, Consumer<MemorySegment> cleanup) {
         Objects.requireNonNull(arena);
         return reinterpretInternal(Reflection.getCallerClass(), newSize,
-                MemorySessionImpl.toMemorySession(arena), null);
+                MemorySessionImpl.toMemorySession(arena), cleanup);
     }
 
     @Override

@@ -50,6 +50,7 @@ import static java.lang.foreign.ValueLayout.JAVA_DOUBLE;
 import static java.lang.foreign.ValueLayout.JAVA_INT;
 import static java.lang.foreign.ValueLayout.JAVA_LONG;
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertTrue;
 
 public class TestCaptureCallState extends NativeTestHelper {
 
@@ -82,6 +83,21 @@ public class TestCaptureCallState extends NativeTestHelper {
             testCase.resultCheck().accept(result);
             int savedErrno = (int) errnoHandle.get(saveSeg);
             assertEquals(savedErrno, testValue);
+        }
+    }
+
+    @Test(dataProvider = "invalidCaptureSegmentCases")
+    public void testInvalidCaptureSegment(MemorySegment captureSegment,
+                                          Class<?> expectedExceptionType, String expectedExceptionMessage) {
+        Linker.Option stl = Linker.Option.captureCallState("errno");
+        MethodHandle handle = downcallHandle("set_errno_V", FunctionDescriptor.ofVoid(C_INT), stl);
+
+        try {
+            int testValue = 42;
+            handle.invoke(captureSegment, testValue); // should throw
+        } catch (Throwable t) {
+            assertTrue(expectedExceptionType.isInstance(t));
+            assertTrue(t.getMessage().matches(expectedExceptionMessage));
         }
     }
 
@@ -128,4 +144,13 @@ public class TestCaptureCallState extends NativeTestHelper {
         return new SaveValuesCase("set_errno_" + name, FunctionDescriptor.of(layout, JAVA_INT), "errno", check);
     }
 
+    @DataProvider
+    public static Object[][] invalidCaptureSegmentCases() {
+        return new Object[][]{
+            {Arena.ofAuto().allocate(1), IndexOutOfBoundsException.class, ".*Out of bound access on segment.*"},
+            {MemorySegment.NULL, IllegalArgumentException.class, ".*Capture segment is NULL.*"},
+            {Arena.ofAuto().allocate(Linker.Option.captureStateLayout().byteSize() + 3).asSlice(3), // misaligned
+                    IllegalArgumentException.class, ".*Target offset incompatible with alignment constraints.*"},
+        };
+    }
 }

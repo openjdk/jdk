@@ -486,7 +486,7 @@ void ObjectSynchronizer::handle_sync_on_value_based_class(Handle obj, JavaThread
 }
 
 static bool useHeavyMonitors() {
-#if defined(X86) || defined(AARCH64) || defined(PPC64) || defined(RISCV64)
+#if defined(X86) || defined(AARCH64) || defined(PPC64) || defined(RISCV64) || defined(S390)
   return LockingMode == LM_MONITOR;
 #else
   return false;
@@ -1645,6 +1645,15 @@ public:
   };
 };
 
+static size_t delete_monitors(GrowableArray<ObjectMonitor*>* delete_list) {
+  size_t count = 0;
+  for (ObjectMonitor* monitor: *delete_list) {
+    delete monitor;
+    count++;
+  }
+  return count;
+}
+
 // This function is called by the MonitorDeflationThread to deflate
 // ObjectMonitors. It is also called via do_final_audit_and_print_stats()
 // and VM_ThreadDump::doit() by the VMThread.
@@ -1719,16 +1728,30 @@ size_t ObjectSynchronizer::deflate_idle_monitors(ObjectMonitorsHashtable* table)
     }
 
     // After the handshake, safely free the ObjectMonitors that were
-    // deflated in this cycle.
-    for (ObjectMonitor* monitor: delete_list) {
-      delete monitor;
-      deleted_count++;
-
-      if (current->is_Java_thread()) {
-        // A JavaThread must check for a safepoint/handshake and honor it.
-        chk_for_block_req(JavaThread::cast(current), "deletion", "deleted_count",
-                          deleted_count, ls, &timer);
+    // deflated and unlinked in this cycle.
+    if (current->is_Java_thread()) {
+      if (ls != NULL) {
+        timer.stop();
+        ls->print_cr("before setting blocked: unlinked_count=" SIZE_FORMAT
+                     ", in_use_list stats: ceiling=" SIZE_FORMAT ", count="
+                     SIZE_FORMAT ", max=" SIZE_FORMAT,
+                     unlinked_count, in_use_list_ceiling(),
+                     _in_use_list.count(), _in_use_list.max());
       }
+      // Mark the calling JavaThread blocked (safepoint safe) while we free
+      // the ObjectMonitors so we don't delay safepoints whilst doing that.
+      ThreadBlockInVM tbivm(JavaThread::cast(current));
+      if (ls != NULL) {
+        ls->print_cr("after setting blocked: in_use_list stats: ceiling="
+                     SIZE_FORMAT ", count=" SIZE_FORMAT ", max=" SIZE_FORMAT,
+                     in_use_list_ceiling(), _in_use_list.count(), _in_use_list.max());
+        timer.start();
+      }
+      deleted_count = delete_monitors(&delete_list);
+      // ThreadBlockInVM is destroyed here
+    } else {
+      // A non-JavaThread can just free the ObjectMonitors:
+      deleted_count = delete_monitors(&delete_list);
     }
     assert(unlinked_count == deleted_count, "must be");
   }

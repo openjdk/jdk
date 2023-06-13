@@ -918,6 +918,8 @@ public:
   const G1CollectionSet* collection_set() const { return &_collection_set; }
   G1CollectionSet* collection_set() { return &_collection_set; }
 
+  inline bool is_collection_set_candidate(const HeapRegion* r) const;
+
   SoftRefPolicy* soft_ref_policy() override;
 
   void initialize_serviceability() override;

@@ -563,8 +563,8 @@ void MacroAssembler::resolve_jobject(Register value, Register tmp1, Register tmp
 
   beqz(value, done);           // Use null as-is.
   // Test for tag.
-  andi(t0, value, JNIHandles::tag_mask);
-  bnez(t0, tagged);
+  andi(tmp1, value, JNIHandles::tag_mask);
+  bnez(tmp1, tagged);
 
   // Resolve local handle
   access_load_at(T_OBJECT, IN_NATIVE | AS_RAW, value, Address(value, 0), tmp1, tmp2);
@@ -573,12 +573,14 @@ void MacroAssembler::resolve_jobject(Register value, Register tmp1, Register tmp
 
   bind(tagged);
   // Test for jweak tag.
-  test_bit(t0, value, exact_log2(JNIHandles::TypeTag::weak_global));
-  bnez(t0, weak_tagged);
+  STATIC_ASSERT(JNIHandles::TypeTag::weak_global == 0b1);
+  test_bit(tmp1, value, exact_log2(JNIHandles::TypeTag::weak_global));
+  bnez(tmp1, weak_tagged);
 
   // Resolve global handle
   access_load_at(T_OBJECT, IN_NATIVE, value,
                  Address(value, -JNIHandles::TypeTag::global), tmp1, tmp2);
+  verify_oop(value);
   j(done);
 
   bind(weak_tagged);
@@ -598,9 +600,10 @@ void MacroAssembler::resolve_global_jobject(Register value, Register tmp1, Regis
 
 #ifdef ASSERT
   {
+    STATIC_ASSERT(JNIHandles::TypeTag::global == 0b10);
     Label valid_global_tag;
-    test_bit(t0, value, exact_log2(JNIHandles::TypeTag::global)); // Test for global tag.
-    bnez(t0, valid_global_tag);
+    test_bit(tmp1, value, exact_log2(JNIHandles::TypeTag::global)); // Test for global tag.
+    bnez(tmp1, valid_global_tag);
     stop("non global jobject using resolve_global_jobject");
     bind(valid_global_tag);
   }
@@ -753,6 +756,11 @@ void MacroAssembler::la(Register Rd, const Address &adr) {
 void MacroAssembler::la(Register Rd, Label &label) {
   IncompressibleRegion ir(this);   // the label address may be patched back.
   wrap_label(Rd, label, &MacroAssembler::la);
+}
+
+void MacroAssembler::li16u(Register Rd, uint16_t imm) {
+  lui(Rd, (uint32_t)imm << 12);
+  srli(Rd, Rd, 12);
 }
 
 void MacroAssembler::li32(Register Rd, int32_t imm) {
@@ -1270,7 +1278,7 @@ int MacroAssembler::pop_v(unsigned int bitset, Register stack) {
   int count = bitset_to_regs(bitset, regs);
 
   for (int i = count - 1; i >= 0; i--) {
-    vl1re8_v(as_VectorRegister(regs[i]), stack);
+    vl1r_v(as_VectorRegister(regs[i]), stack);
     add(stack, stack, vector_size_in_bytes);
   }
 
@@ -1404,6 +1412,11 @@ static int patch_imm_in_li64(address branch, address target) {
   return LI64_INSTRUCTIONS_NUM * NativeInstruction::instruction_size;
 }
 
+static int patch_imm_in_li16u(address branch, uint16_t target) {
+  Assembler::patch(branch, 31, 12, target); // patch lui only
+  return NativeInstruction::instruction_size;
+}
+
 int MacroAssembler::patch_imm_in_li32(address branch, int32_t target) {
   const int LI32_INSTRUCTIONS_NUM = 2;                                          // lui + addiw
   int64_t upper = (intptr_t)target;
@@ -1418,7 +1431,7 @@ int MacroAssembler::patch_imm_in_li32(address branch, int32_t target) {
 static long get_offset_of_jal(address insn_addr) {
   assert_cond(insn_addr != nullptr);
   long offset = 0;
-  unsigned insn = *(unsigned*)insn_addr;
+  unsigned insn = Assembler::ld_instr(insn_addr);
   long val = (long)Assembler::sextract(insn, 31, 12);
   offset |= ((val >> 19) & 0x1) << 20;
   offset |= (val & 0xff) << 12;
@@ -1431,7 +1444,7 @@ static long get_offset_of_jal(address insn_addr) {
 static long get_offset_of_conditional_branch(address insn_addr) {
   long offset = 0;
   assert_cond(insn_addr != nullptr);
-  unsigned insn = *(unsigned*)insn_addr;
+  unsigned insn = Assembler::ld_instr(insn_addr);
   offset = (long)Assembler::sextract(insn, 31, 31);
   offset = (offset << 12) | (((long)(Assembler::sextract(insn, 7, 7) & 0x1)) << 11);
   offset = offset | (((long)(Assembler::sextract(insn, 30, 25) & 0x3f)) << 5);
@@ -1443,35 +1456,35 @@ static long get_offset_of_conditional_branch(address insn_addr) {
 static long get_offset_of_pc_relative(address insn_addr) {
   long offset = 0;
   assert_cond(insn_addr != nullptr);
-  offset = ((long)(Assembler::sextract(((unsigned*)insn_addr)[0], 31, 12))) << 12;                                  // Auipc.
-  offset += ((long)Assembler::sextract(((unsigned*)insn_addr)[1], 31, 20));                                         // Addi/Jalr/Load.
+  offset = ((long)(Assembler::sextract(Assembler::ld_instr(insn_addr), 31, 12))) << 12;                               // Auipc.
+  offset += ((long)Assembler::sextract(Assembler::ld_instr(insn_addr + 4), 31, 20));                                  // Addi/Jalr/Load.
   offset = (offset << 32) >> 32;
   return offset;
 }
 
 static address get_target_of_movptr(address insn_addr) {
   assert_cond(insn_addr != nullptr);
-  intptr_t target_address = (((int64_t)Assembler::sextract(((unsigned*)insn_addr)[0], 31, 12)) & 0xfffff) << 29;    // Lui.
-  target_address += ((int64_t)Assembler::sextract(((unsigned*)insn_addr)[1], 31, 20)) << 17;                        // Addi.
-  target_address += ((int64_t)Assembler::sextract(((unsigned*)insn_addr)[3], 31, 20)) << 6;                         // Addi.
-  target_address += ((int64_t)Assembler::sextract(((unsigned*)insn_addr)[5], 31, 20));                              // Addi/Jalr/Load.
+  intptr_t target_address = (((int64_t)Assembler::sextract(Assembler::ld_instr(insn_addr), 31, 12)) & 0xfffff) << 29; // Lui.
+  target_address += ((int64_t)Assembler::sextract(Assembler::ld_instr(insn_addr + 4), 31, 20)) << 17;                 // Addi.
+  target_address += ((int64_t)Assembler::sextract(Assembler::ld_instr(insn_addr + 12), 31, 20)) << 6;                 // Addi.
+  target_address += ((int64_t)Assembler::sextract(Assembler::ld_instr(insn_addr + 20), 31, 20));                      // Addi/Jalr/Load.
   return (address) target_address;
 }
 
 static address get_target_of_li64(address insn_addr) {
   assert_cond(insn_addr != nullptr);
-  intptr_t target_address = (((int64_t)Assembler::sextract(((unsigned*)insn_addr)[0], 31, 12)) & 0xfffff) << 44;    // Lui.
-  target_address += ((int64_t)Assembler::sextract(((unsigned*)insn_addr)[1], 31, 20)) << 32;                        // Addi.
-  target_address += ((int64_t)Assembler::sextract(((unsigned*)insn_addr)[3], 31, 20)) << 20;                        // Addi.
-  target_address += ((int64_t)Assembler::sextract(((unsigned*)insn_addr)[5], 31, 20)) << 8;                         // Addi.
-  target_address += ((int64_t)Assembler::sextract(((unsigned*)insn_addr)[7], 31, 20));                              // Addi.
+  intptr_t target_address = (((int64_t)Assembler::sextract(Assembler::ld_instr(insn_addr), 31, 12)) & 0xfffff) << 44; // Lui.
+  target_address += ((int64_t)Assembler::sextract(Assembler::ld_instr(insn_addr + 4), 31, 20)) << 32;                 // Addi.
+  target_address += ((int64_t)Assembler::sextract(Assembler::ld_instr(insn_addr + 12), 31, 20)) << 20;                // Addi.
+  target_address += ((int64_t)Assembler::sextract(Assembler::ld_instr(insn_addr + 20), 31, 20)) << 8;                 // Addi.
+  target_address += ((int64_t)Assembler::sextract(Assembler::ld_instr(insn_addr + 28), 31, 20));                      // Addi.
   return (address)target_address;
 }
 
 address MacroAssembler::get_target_of_li32(address insn_addr) {
   assert_cond(insn_addr != nullptr);
-  intptr_t target_address = (((int64_t)Assembler::sextract(((unsigned*)insn_addr)[0], 31, 12)) & 0xfffff) << 12;    // Lui.
-  target_address += ((int64_t)Assembler::sextract(((unsigned*)insn_addr)[1], 31, 20));                              // Addiw.
+  intptr_t target_address = (((int64_t)Assembler::sextract(Assembler::ld_instr(insn_addr), 31, 12)) & 0xfffff) << 12; // Lui.
+  target_address += ((int64_t)Assembler::sextract(Assembler::ld_instr(insn_addr + 4), 31, 20));                       // Addiw.
   return (address)target_address;
 }
 
@@ -1493,10 +1506,13 @@ int MacroAssembler::pd_patch_instruction_size(address branch, address target) {
   } else if (NativeInstruction::is_li32_at(branch)) {                 // li32
     int64_t imm = (intptr_t)target;
     return patch_imm_in_li32(branch, (int32_t)imm);
+  } else if (NativeInstruction::is_li16u_at(branch)) {
+    int64_t imm = (intptr_t)target;
+    return patch_imm_in_li16u(branch, (uint16_t)imm);
   } else {
 #ifdef ASSERT
     tty->print_cr("pd_patch_instruction_size: instruction 0x%x at " INTPTR_FORMAT " could not be patched!\n",
-                  *(unsigned*)branch, p2i(branch));
+                  Assembler::ld_instr(branch), p2i(branch));
     Disassembler::decode(branch - 16, branch + 16);
 #endif
     ShouldNotReachHere();
@@ -1626,23 +1642,17 @@ void MacroAssembler::subw(Register Rd, Register Rn, int32_t decrement, Register 
 
 void MacroAssembler::andrw(Register Rd, Register Rs1, Register Rs2) {
   andr(Rd, Rs1, Rs2);
-  // addw: The result is clipped to 32 bits, then the sign bit is extended,
-  // and the result is stored in Rd
-  addw(Rd, Rd, zr);
+  sign_extend(Rd, Rd, 32);
 }
 
 void MacroAssembler::orrw(Register Rd, Register Rs1, Register Rs2) {
   orr(Rd, Rs1, Rs2);
-  // addw: The result is clipped to 32 bits, then the sign bit is extended,
-  // and the result is stored in Rd
-  addw(Rd, Rd, zr);
+  sign_extend(Rd, Rd, 32);
 }
 
 void MacroAssembler::xorrw(Register Rd, Register Rs1, Register Rs2) {
   xorr(Rd, Rs1, Rs2);
-  // addw: The result is clipped to 32 bits, then the sign bit is extended,
-  // and the result is stored in Rd
-  addw(Rd, Rd, zr);
+  sign_extend(Rd, Rd, 32);
 }
 
 // Note: load_unsigned_short used to be called load_unsigned_word.
@@ -1689,6 +1699,93 @@ void MacroAssembler::store_sized_value(Address dst, Register src, size_t size_in
     default:  ShouldNotReachHere();
   }
 }
+
+// granularity is 1, 2 bytes per load
+void MacroAssembler::load_int_misaligned(Register dst, Address src, Register tmp, bool is_signed, int granularity) {
+  if (AvoidUnalignedAccesses && (granularity != 4)) {
+    assert_different_registers(dst, tmp, src.base());
+    switch(granularity) {
+      case 1:
+        lbu(dst, src);
+        lbu(tmp, Address(src.base(), src.offset() + 1));
+        slli(tmp, tmp, 8);
+        add(dst, dst, tmp);
+        lbu(tmp, Address(src.base(), src.offset() + 2));
+        slli(tmp, tmp, 16);
+        add(dst, dst, tmp);
+        is_signed ? lb(tmp, Address(src.base(), src.offset() + 3)) : lbu(tmp, Address(src.base(), src.offset() + 3));
+        slli(tmp, tmp, 24);
+        add(dst, dst, tmp);
+        break;
+      case 2:
+        lhu(dst, src);
+        is_signed ? lh(tmp, Address(src.base(), src.offset() + 2)) : lhu(tmp, Address(src.base(), src.offset() + 2));
+        slli(tmp, tmp, 16);
+        add(dst, dst, tmp);
+        break;
+      default:
+        ShouldNotReachHere();
+    }
+  } else {
+    is_signed ? lw(dst, src) : lwu(dst, src);
+  }
+}
+
+// granularity is 1, 2 or 4 bytes per load
+void MacroAssembler::load_long_misaligned(Register dst, Address src, Register tmp, int granularity) {
+  if (AvoidUnalignedAccesses && (granularity != 8)) {
+    assert_different_registers(dst, tmp, src.base());
+    switch(granularity){
+      case 1:
+        lbu(dst, src);
+        lbu(tmp, Address(src.base(), src.offset() + 1));
+        slli(tmp, tmp, 8);
+        add(dst, dst, tmp);
+        lbu(tmp, Address(src.base(), src.offset() + 2));
+        slli(tmp, tmp, 16);
+        add(dst, dst, tmp);
+        lbu(tmp, Address(src.base(), src.offset() + 3));
+        slli(tmp, tmp, 24);
+        add(dst, dst, tmp);
+        lbu(tmp, Address(src.base(), src.offset() + 4));
+        slli(tmp, tmp, 32);
+        add(dst, dst, tmp);
+        lbu(tmp, Address(src.base(), src.offset() + 5));
+        slli(tmp, tmp, 40);
+        add(dst, dst, tmp);
+        lbu(tmp, Address(src.base(), src.offset() + 6));
+        slli(tmp, tmp, 48);
+        add(dst, dst, tmp);
+        lbu(tmp, Address(src.base(), src.offset() + 7));
+        slli(tmp, tmp, 56);
+        add(dst, dst, tmp);
+        break;
+      case 2:
+        lhu(dst, src);
+        lhu(tmp, Address(src.base(), src.offset() + 2));
+        slli(tmp, tmp, 16);
+        add(dst, dst, tmp);
+        lhu(tmp, Address(src.base(), src.offset() + 4));
+        slli(tmp, tmp, 32);
+        add(dst, dst, tmp);
+        lhu(tmp, Address(src.base(), src.offset() + 6));
+        slli(tmp, tmp, 48);
+        add(dst, dst, tmp);
+        break;
+      case 4:
+        lwu(dst, src);
+        lwu(tmp, Address(src.base(), src.offset() + 4));
+        slli(tmp, tmp, 32);
+        add(dst, dst, tmp);
+        break;
+      default:
+        ShouldNotReachHere();
+    }
+  } else {
+    ld(dst, src);
+  }
+}
+
 
 // reverse bytes in halfword in lower 16 bits and sign-extend
 // Rd[15:0] = Rs[7:0] Rs[15:8] (sign-extend to 64 bits)
@@ -1982,7 +2079,7 @@ void MacroAssembler::load_mirror(Register dst, Register method, Register tmp1, R
   const int mirror_offset = in_bytes(Klass::java_mirror_offset());
   ld(dst, Address(xmethod, Method::const_offset()));
   ld(dst, Address(dst, ConstMethod::constants_offset()));
-  ld(dst, Address(dst, ConstantPool::pool_holder_offset_in_bytes()));
+  ld(dst, Address(dst, ConstantPool::pool_holder_offset()));
   ld(dst, Address(dst, mirror_offset));
   resolve_oop_handle(dst, tmp1, tmp2);
 }
@@ -2297,7 +2394,7 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
 
   // Compute start of first itableOffsetEntry (which is at the end of the vtable).
   int vtable_base = in_bytes(Klass::vtable_start_offset());
-  int itentry_off = itableMethodEntry::method_offset_in_bytes();
+  int itentry_off = in_bytes(itableMethodEntry::method_offset());
   int scan_step   = itableOffsetEntry::size() * wordSize;
   int vte_size    = vtableEntry::size_in_bytes();
   assert(vte_size == wordSize, "else adjust times_vte_scale");
@@ -2324,7 +2421,7 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
 
   Label search, found_method;
 
-  ld(method_result, Address(scan_tmp, itableOffsetEntry::interface_offset_in_bytes()));
+  ld(method_result, Address(scan_tmp, itableOffsetEntry::interface_offset()));
   beq(intf_klass, method_result, found_method);
   bind(search);
   // Check that the previous entry is non-null. A null entry means that
@@ -2332,14 +2429,14 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
   // same as when the caller was compiled.
   beqz(method_result, L_no_such_interface, /* is_far */ true);
   addi(scan_tmp, scan_tmp, scan_step);
-  ld(method_result, Address(scan_tmp, itableOffsetEntry::interface_offset_in_bytes()));
+  ld(method_result, Address(scan_tmp, itableOffsetEntry::interface_offset()));
   bne(intf_klass, method_result, search);
 
   bind(found_method);
 
   // Got a hit.
   if (return_method) {
-    lwu(scan_tmp, Address(scan_tmp, itableOffsetEntry::offset_offset_in_bytes()));
+    lwu(scan_tmp, Address(scan_tmp, itableOffsetEntry::offset_offset()));
     add(method_result, recv_klass, scan_tmp);
     ld(method_result, Address(method_result));
   }
@@ -2349,10 +2446,10 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
 void MacroAssembler::lookup_virtual_method(Register recv_klass,
                                            RegisterOrConstant vtable_index,
                                            Register method_result) {
-  const int base = in_bytes(Klass::vtable_start_offset());
+  const ByteSize base = Klass::vtable_start_offset();
   assert(vtableEntry::size() * wordSize == 8,
          "adjust the scaling in the code below");
-  int vtable_offset_in_bytes = base + vtableEntry::method_offset_in_bytes();
+  int vtable_offset_in_bytes = in_bytes(base + vtableEntry::method_offset());
 
   if (vtable_index.is_register()) {
     shadd(method_result, vtable_index.as_register(), recv_klass, method_result, LogBytesPerWord);
@@ -2426,6 +2523,10 @@ void MacroAssembler::safepoint_poll(Label& slow_path, bool at_return, bool acqui
 
 void MacroAssembler::cmpxchgptr(Register oldv, Register newv, Register addr, Register tmp,
                                 Label &succeed, Label *fail) {
+  assert_different_registers(addr, tmp);
+  assert_different_registers(newv, tmp);
+  assert_different_registers(oldv, tmp);
+
   // oldv holds comparison value
   // newv holds value to write in exchange
   // addr identifies memory word to compare against/update
@@ -2612,6 +2713,9 @@ void MacroAssembler::cmpxchg(Register addr, Register expected,
                              Assembler::Aqrl acquire, Assembler::Aqrl release,
                              Register result, bool result_as_bool) {
   assert(size != int8 && size != int16, "unsupported operand size");
+  assert_different_registers(addr, t0);
+  assert_different_registers(expected, t0);
+  assert_different_registers(new_val, t0);
 
   Label retry_load, done, ne_done;
   bind(retry_load);
@@ -2644,6 +2748,10 @@ void MacroAssembler::cmpxchg_weak(Register addr, Register expected,
                                   enum operand_size size,
                                   Assembler::Aqrl acquire, Assembler::Aqrl release,
                                   Register result) {
+  assert_different_registers(addr, t0);
+  assert_different_registers(expected, t0);
+  assert_different_registers(new_val, t0);
+
   Label fail, done;
   load_reserved(addr, size, acquire);
   bne(t0, expected, fail);
@@ -3269,7 +3377,7 @@ void MacroAssembler::load_method_holder_cld(Register result, Register method) {
 void MacroAssembler::load_method_holder(Register holder, Register method) {
   ld(holder, Address(method, Method::const_offset()));                      // ConstMethod*
   ld(holder, Address(holder, ConstMethod::constants_offset()));             // ConstantPool*
-  ld(holder, Address(holder, ConstantPool::pool_holder_offset_in_bytes())); // InstanceKlass*
+  ld(holder, Address(holder, ConstantPool::pool_holder_offset()));          // InstanceKlass*
 }
 
 // string indexof
@@ -4305,8 +4413,7 @@ void MacroAssembler::move32_64(VMRegPair src, VMRegPair dst, Register tmp) {
     sd(src.first()->as_Register(), Address(sp, reg2offset_out(dst.first())));
   } else {
     if (dst.first() != src.first()) {
-      // 32bits extend sign
-      addw(dst.first()->as_Register(), src.first()->as_Register(), zr);
+      sign_extend(dst.first()->as_Register(), src.first()->as_Register(), 32);
     }
   }
 }

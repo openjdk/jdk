@@ -61,7 +61,7 @@ import jdk.internal.classfile.instruction.ReturnInstruction;
 import jdk.internal.classfile.instruction.StoreInstruction;
 import java.lang.reflect.AccessFlag;
 import jdk.internal.classfile.components.CodeRelabeler;
-import jdk.internal.classfile.java.lang.constant.ModuleDesc;
+import java.lang.constant.ModuleDesc;
 import jdk.internal.classfile.components.ClassPrinter;
 import static java.lang.annotation.ElementType.*;
 import java.lang.annotation.Retention;
@@ -119,7 +119,7 @@ class AdvancedTransformationsTest {
                     ClassHierarchyResolver.of(Set.of(ClassDesc.of("remapped.List")), Map.of(
                             ClassDesc.of("remapped.RemappedBytecode"), ConstantDescs.CD_Object,
                             ClassDesc.ofDescriptor(RawBytecodeHelper.class.descriptorString()), ClassDesc.of("remapped.RemappedBytecode")))
-                                          .orElse(ClassHierarchyResolver.DEFAULT_CLASS_HIERARCHY_RESOLVER)
+                                          .orElse(ClassHierarchyResolver.defaultResolver())
                     , null)); //System.out::print));
             remapped.fields().forEach(f -> f.findAttribute(Attributes.SIGNATURE).ifPresent(sa ->
                     verifySignature(f.fieldTypeSymbol(), sa.asTypeSignature())));

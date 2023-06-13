@@ -28,7 +28,7 @@
 #include "gc/g1/g1Arguments.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectionSet.hpp"
-#include "gc/g1/g1CollectionSetCandidates.hpp"
+#include "gc/g1/g1CollectionSetCandidates.inline.hpp"
 #include "gc/g1/g1ConcurrentMark.hpp"
 #include "gc/g1/g1ConcurrentMarkThread.inline.hpp"
 #include "gc/g1/g1ConcurrentRefine.hpp"
@@ -485,21 +485,20 @@ uint G1Policy::calculate_desired_eden_length_before_young_only(double base_time_
 uint G1Policy::calculate_desired_eden_length_before_mixed(double base_time_ms,
                                                           uint min_eden_length,
                                                           uint max_eden_length) const {
-  G1CollectionSetCandidates* candidates = _collection_set->candidates();
-
-  uint min_old_regions_end = MIN2(candidates->cur_idx() + calc_min_old_cset_length(candidates->num_regions()),
-                                  candidates->num_regions());
+  uint min_marking_candidates = MIN2(calc_min_old_cset_length(candidates()->last_marking_candidates_length()),
+                                     candidates()->marking_regions_length());
   double predicted_region_evac_time_ms = base_time_ms;
-  for (uint i = candidates->cur_idx(); i < min_old_regions_end; i++) {
-    HeapRegion* r = candidates->at(i);
+  for (HeapRegion* r : candidates()->marking_regions()) {
+    if (min_marking_candidates == 0) {
+      break;
+    }
     predicted_region_evac_time_ms += predict_region_total_time_ms(r, false /* for_young_only_phase */);
+    min_marking_candidates--;
   }
-  uint desired_eden_length_by_min_cset_length =
-     calculate_desired_eden_length_before_young_only(predicted_region_evac_time_ms,
-                                                     min_eden_length,
-                                                     max_eden_length);
 
-  return desired_eden_length_by_min_cset_length;
+  return calculate_desired_eden_length_before_young_only(predicted_region_evac_time_ms,
+                                                         min_eden_length,
+                                                         max_eden_length);
 }
 
 double G1Policy::predict_survivor_regions_evac_time() const {
@@ -537,7 +536,7 @@ void G1Policy::record_full_collection_start() {
   // Release the future to-space so that it is available for compaction into.
   collector_state()->set_in_young_only_phase(false);
   collector_state()->set_in_full_gc(true);
-  _collection_set->clear_candidates();
+  _collection_set->abandon_all_candidates();
   _pending_cards_at_gc_start = 0;
 }
 
@@ -663,6 +662,10 @@ void G1Policy::record_concurrent_mark_remark_end() {
 
 void G1Policy::record_concurrent_mark_cleanup_start() {
   _mark_cleanup_start_sec = os::elapsedTime();
+}
+
+G1CollectionSetCandidates* G1Policy::candidates() const {
+  return _collection_set->candidates();
 }
 
 double G1Policy::average_time_ms(G1GCPhaseTimes::GCParPhases phase) const {
@@ -797,7 +800,9 @@ void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mar
     if (!next_gc_should_be_mixed("do not continue mixed GCs")) {
       collector_state()->set_in_young_only_phase(true);
 
-      clear_collection_set_candidates();
+      assert(!candidates()->has_more_marking_candidates(),
+             "only end mixed if all candidates from marking were processed");
+
       maybe_start_marking();
     }
   } else {
@@ -858,9 +863,9 @@ void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mar
                                                         _collection_set->young_region_length());
     }
 
-    if (_collection_set->old_region_length() > 0) {
+    if (_collection_set->initial_old_region_length() > 0) {
       _analytics->report_non_young_other_cost_per_region_ms(non_young_other_time_ms() /
-                                                            _collection_set->old_region_length());
+                                                            _collection_set->initial_old_region_length());
     }
 
     _analytics->report_constant_other_time_ms(constant_other_time_ms(pause_time_ms));
@@ -1212,7 +1217,7 @@ void G1Policy::decide_on_concurrent_start_pause() {
       // active. The following remark might change the change the "evacuation efficiency" of
       // the regions in this set, leading to failing asserts later.
       // Since the concurrent cycle will recreate the collection set anyway, simply drop it here.
-      clear_collection_set_candidates();
+      abandon_collection_set_candidates();
       abort_time_to_mixed_tracking();
       initiate_conc_mark();
       log_debug(gc, ergo)("Initiate concurrent cycle (%s requested concurrent cycle)",
@@ -1244,8 +1249,7 @@ void G1Policy::decide_on_concurrent_start_pause() {
 void G1Policy::record_concurrent_mark_cleanup_end(bool has_rebuilt_remembered_sets) {
   bool mixed_gc_pending = false;
   if (has_rebuilt_remembered_sets) {
-    G1CollectionSetCandidates* candidates = G1CollectionSetChooser::build(_g1h->workers(), _g1h->num_regions());
-    _collection_set->set_candidates(candidates);
+    G1CollectionSetChooser::build(_g1h->workers(), _g1h->num_regions(), candidates());
     mixed_gc_pending = next_gc_should_be_mixed("request young-only gcs");
   }
 
@@ -1255,7 +1259,6 @@ void G1Policy::record_concurrent_mark_cleanup_end(bool has_rebuilt_remembered_se
   }
 
   if (!mixed_gc_pending) {
-    clear_collection_set_candidates();
     abort_time_to_mixed_tracking();
   }
   collector_state()->set_in_young_gc_before_mixed(mixed_gc_pending);
@@ -1269,26 +1272,13 @@ void G1Policy::record_concurrent_mark_cleanup_end(bool has_rebuilt_remembered_se
   record_pause(G1GCPauseType::Cleanup, _mark_cleanup_start_sec, end_sec);
 }
 
-double G1Policy::reclaimable_bytes_percent(size_t reclaimable_bytes) const {
-  return percent_of(reclaimable_bytes, _g1h->capacity());
-}
-
-class G1ClearCollectionSetCandidateRemSets : public HeapRegionClosure {
-  virtual bool do_heap_region(HeapRegion* r) {
-    r->rem_set()->clear_locked(true /* only_cardset */);
-    return false;
-  }
-};
-
-void G1Policy::clear_collection_set_candidates() {
-  if (_collection_set->candidates() == nullptr) {
-    return;
-  }
+void G1Policy::abandon_collection_set_candidates() {
   // Clear remembered sets of remaining candidate regions and the actual candidate
   // set.
-  G1ClearCollectionSetCandidateRemSets cl;
-  _collection_set->candidates()->iterate(&cl);
-  _collection_set->clear_candidates();
+  for (HeapRegion* r : *candidates()) {
+    r->rem_set()->clear_locked(true /* only_cardset */);
+  }
+  _collection_set->abandon_all_candidates();
 }
 
 void G1Policy::maybe_start_marking() {
@@ -1371,9 +1361,7 @@ void G1Policy::abort_time_to_mixed_tracking() {
 }
 
 bool G1Policy::next_gc_should_be_mixed(const char* no_candidates_str) const {
-  G1CollectionSetCandidates* candidates = _collection_set->candidates();
-
-  if (candidates == nullptr || candidates->is_empty()) {
+  if (!candidates()->has_more_marking_candidates()) {
     if (no_candidates_str != nullptr) {
       log_debug(gc, ergo)("%s (candidate old regions not available)", no_candidates_str);
     }
@@ -1414,48 +1402,52 @@ uint G1Policy::calc_max_old_cset_length() const {
   return (uint)ceil(result);
 }
 
-void G1Policy::calculate_old_collection_set_regions(G1CollectionSetCandidates* candidates,
-                                                    double time_remaining_ms,
-                                                    uint& num_initial_regions,
-                                                    uint& num_optional_regions) {
-  assert(candidates != nullptr, "Must be");
+static void print_finish_message(const char* reason, bool from_marking) {
+  log_debug(gc, ergo, cset)("Finish adding %s candidates to collection set (%s).",
+                            from_marking ? "marking" : "retained", reason);
+}
 
-  num_initial_regions = 0;
-  num_optional_regions = 0;
+double G1Policy::select_candidates_from_marking(G1CollectionCandidateList* marking_list,
+                                                double time_remaining_ms,
+                                                G1CollectionCandidateRegionList* initial_old_regions,
+                                                G1CollectionCandidateRegionList* optional_old_regions) {
+  assert(marking_list != nullptr, "must be");
+
   uint num_expensive_regions = 0;
+
+  uint num_initial_regions_selected = 0;
+  uint num_optional_regions_selected = 0;
 
   double predicted_initial_time_ms = 0.0;
   double predicted_optional_time_ms = 0.0;
 
   double optional_threshold_ms = time_remaining_ms * optional_prediction_fraction();
 
-  const uint min_old_cset_length = calc_min_old_cset_length(candidates->num_regions());
+  const uint min_old_cset_length = calc_min_old_cset_length(candidates()->last_marking_candidates_length());
   const uint max_old_cset_length = MAX2(min_old_cset_length, calc_max_old_cset_length());
   const uint max_optional_regions = max_old_cset_length - min_old_cset_length;
   bool check_time_remaining = use_adaptive_young_list_length();
 
-  uint candidate_idx = candidates->cur_idx();
-
-  log_debug(gc, ergo, cset)("Start adding old regions to collection set. Min %u regions, max %u regions, "
+  log_debug(gc, ergo, cset)("Start adding marking candidates to collection set. "
+                            "Min %u regions, max %u regions, "
                             "time remaining %1.2fms, optional threshold %1.2fms",
                             min_old_cset_length, max_old_cset_length, time_remaining_ms, optional_threshold_ms);
 
-  HeapRegion* hr = candidates->at(candidate_idx);
-  while (hr != nullptr) {
-    if (num_initial_regions + num_optional_regions >= max_old_cset_length) {
+  G1CollectionCandidateListIterator iter = marking_list->begin();
+  for (; iter != marking_list->end(); ++iter) {
+    if (num_initial_regions_selected + num_optional_regions_selected >= max_old_cset_length) {
       // Added maximum number of old regions to the CSet.
-      log_debug(gc, ergo, cset)("Finish adding old regions to collection set (Maximum number of regions). "
-                                "Initial %u regions, optional %u regions",
-                                num_initial_regions, num_optional_regions);
+      print_finish_message("Maximum number of regions reached", true);
       break;
     }
-
+    HeapRegion* hr = *iter;
     double predicted_time_ms = predict_region_total_time_ms(hr, false);
     time_remaining_ms = MAX2(time_remaining_ms - predicted_time_ms, 0.0);
     // Add regions to old set until we reach the minimum amount
-    if (num_initial_regions < min_old_cset_length) {
+    if (initial_old_regions->length() < min_old_cset_length) {
+      initial_old_regions->append(hr);
+      num_initial_regions_selected++;
       predicted_initial_time_ms += predicted_time_ms;
-      num_initial_regions++;
       // Record the number of regions added with no time remaining
       if (time_remaining_ms == 0.0) {
         num_expensive_regions++;
@@ -1463,53 +1455,54 @@ void G1Policy::calculate_old_collection_set_regions(G1CollectionSetCandidates* c
     } else if (!check_time_remaining) {
       // In the non-auto-tuning case, we'll finish adding regions
       // to the CSet if we reach the minimum.
-      log_debug(gc, ergo, cset)("Finish adding old regions to collection set (Region amount reached min).");
+      print_finish_message("Region amount reached min", true);
       break;
     } else {
       // Keep adding regions to old set until we reach the optional threshold
       if (time_remaining_ms > optional_threshold_ms) {
         predicted_initial_time_ms += predicted_time_ms;
-        num_initial_regions++;
+        initial_old_regions->append(hr);
+        num_initial_regions_selected++;
       } else if (time_remaining_ms > 0) {
         // Keep adding optional regions until time is up.
-        assert(num_optional_regions < max_optional_regions, "Should not be possible.");
+        assert(optional_old_regions->length() < max_optional_regions, "Should not be possible.");
         predicted_optional_time_ms += predicted_time_ms;
-        num_optional_regions++;
+        optional_old_regions->append(hr);
+        num_optional_regions_selected++;
       } else {
-        log_debug(gc, ergo, cset)("Finish adding old regions to collection set (Predicted time too high).");
+        print_finish_message("Predicted time too high", true);
         break;
       }
     }
-    hr = candidates->at(++candidate_idx);
   }
-  if (hr == nullptr) {
-    log_debug(gc, ergo, cset)("Old candidate collection set empty.");
+  if (iter == marking_list->end()) {
+    log_debug(gc, ergo, cset)("Marking candidates exhausted.");
   }
 
   if (num_expensive_regions > 0) {
-    log_debug(gc, ergo, cset)("Added %u initial old regions to collection set although the predicted time was too high.",
+    log_debug(gc, ergo, cset)("Added %u marking candidates to collection set although the predicted time was too high.",
                               num_expensive_regions);
   }
 
-  log_debug(gc, ergo, cset)("Finish choosing collection set old regions. Initial: %u, optional: %u, "
-                            "predicted initial time: %1.2fms, predicted optional time: %1.2fms, time remaining: %1.2f",
-                            num_initial_regions, num_optional_regions,
+  log_debug(gc, ergo, cset)("Finish adding marking candidates to collection set. Initial: %u, optional: %u, "
+                            "predicted initial time: %1.2fms, predicted optional time: %1.2fms, time remaining: %1.2fms",
+                            num_initial_regions_selected, num_optional_regions_selected,
                             predicted_initial_time_ms, predicted_optional_time_ms, time_remaining_ms);
+
+  assert(initial_old_regions->length() == num_initial_regions_selected, "must be");
+  assert(optional_old_regions->length() == num_optional_regions_selected, "must be");
+  return time_remaining_ms;
 }
 
-void G1Policy::calculate_optional_collection_set_regions(G1CollectionSetCandidates* candidates,
-                                                         uint const max_optional_regions,
+void G1Policy::calculate_optional_collection_set_regions(G1CollectionCandidateRegionList* optional_regions,
                                                          double time_remaining_ms,
-                                                         uint& num_optional_regions) {
-  assert(_g1h->collector_state()->in_mixed_phase(), "Should only be called in mixed phase");
+                                                         G1CollectionCandidateRegionList* selected_regions) {
+  assert(_collection_set->optional_region_length() > 0,
+         "Should only be called when there are optional regions");
 
-  num_optional_regions = 0;
   double total_prediction_ms = 0.0;
-  uint candidate_idx = candidates->cur_idx();
 
-  HeapRegion* r = candidates->at(candidate_idx);
-  while (num_optional_regions < max_optional_regions) {
-    assert(r != nullptr, "Region must exist");
+  for (HeapRegion* r : *optional_regions) {
     double prediction_ms = predict_region_total_time_ms(r, false);
 
     if (prediction_ms > time_remaining_ms) {
@@ -1521,12 +1514,12 @@ void G1Policy::calculate_optional_collection_set_regions(G1CollectionSetCandidat
 
     total_prediction_ms += prediction_ms;
     time_remaining_ms -= prediction_ms;
-    num_optional_regions++;
-    r = candidates->at(++candidate_idx);
+
+    selected_regions->append(r);
   }
 
   log_debug(gc, ergo, cset)("Prepared %u regions out of %u for optional evacuation. Total predicted time: %.3fms",
-                            num_optional_regions, max_optional_regions, total_prediction_ms);
+                            selected_regions->length(), optional_regions->length(), total_prediction_ms);
 }
 
 void G1Policy::transfer_survivors_to_cset(const G1SurvivorRegions* survivors) {

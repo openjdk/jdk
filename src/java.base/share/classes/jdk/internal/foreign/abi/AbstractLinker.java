@@ -30,10 +30,13 @@ import jdk.internal.foreign.abi.aarch64.linux.LinuxAArch64Linker;
 import jdk.internal.foreign.abi.aarch64.macos.MacOsAArch64Linker;
 import jdk.internal.foreign.abi.aarch64.windows.WindowsAArch64Linker;
 import jdk.internal.foreign.abi.fallback.FallbackLinker;
+import jdk.internal.foreign.abi.ppc64.linux.LinuxPPC64leLinker;
 import jdk.internal.foreign.abi.riscv64.linux.LinuxRISCV64Linker;
 import jdk.internal.foreign.abi.x64.sysv.SysVx64Linker;
 import jdk.internal.foreign.abi.x64.windows.Windowsx64Linker;
 import jdk.internal.foreign.layout.AbstractLayout;
+import jdk.internal.reflect.CallerSensitive;
+import jdk.internal.reflect.Reflection;
 
 import java.lang.foreign.AddressLayout;
 import java.lang.foreign.GroupLayout;
@@ -55,8 +58,8 @@ import java.util.Objects;
 
 public abstract sealed class AbstractLinker implements Linker permits LinuxAArch64Linker, MacOsAArch64Linker,
                                                                       SysVx64Linker, WindowsAArch64Linker,
-                                                                      Windowsx64Linker, LinuxRISCV64Linker,
-                                                                      FallbackLinker {
+                                                                      Windowsx64Linker, LinuxPPC64leLinker,
+                                                                      LinuxRISCV64Linker, FallbackLinker {
 
     public interface UpcallStubFactory {
         MemorySegment makeStub(MethodHandle target, Arena arena);
@@ -67,25 +70,44 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
     private final SoftReferenceCache<LinkRequest, UpcallStubFactory> UPCALL_CACHE = new SoftReferenceCache<>();
 
     @Override
-    public MethodHandle downcallHandle(FunctionDescriptor function, Option... options) {
+    @CallerSensitive
+    public final MethodHandle downcallHandle(MemorySegment symbol, FunctionDescriptor function, Option... options) {
+        Reflection.ensureNativeAccess(Reflection.getCallerClass(), Linker.class, "downcallHandle");
+        SharedUtils.checkSymbol(symbol);
+        return downcallHandle0(function, options).bindTo(symbol);
+    }
+
+    @Override
+    @CallerSensitive
+    public final MethodHandle downcallHandle(FunctionDescriptor function, Option... options) {
+        Reflection.ensureNativeAccess(Reflection.getCallerClass(), Linker.class, "downcallHandle");
+        return downcallHandle0(function, options);
+    }
+
+    private final MethodHandle downcallHandle0(FunctionDescriptor function, Option... options) {
         Objects.requireNonNull(function);
         Objects.requireNonNull(options);
         checkLayouts(function);
         function = stripNames(function);
         LinkerOptions optionSet = LinkerOptions.forDowncall(function, options);
+        validateVariadicLayouts(function, optionSet);
 
         return DOWNCALL_CACHE.get(new LinkRequest(function, optionSet), linkRequest ->  {
             FunctionDescriptor fd = linkRequest.descriptor();
             MethodType type = fd.toMethodType();
             MethodHandle handle = arrangeDowncall(type, fd, linkRequest.options());
+            handle = SharedUtils.maybeCheckCaptureSegment(handle, linkRequest.options());
             handle = SharedUtils.maybeInsertAllocator(fd, handle);
             return handle;
         });
     }
+
     protected abstract MethodHandle arrangeDowncall(MethodType inferredMethodType, FunctionDescriptor function, LinkerOptions options);
 
     @Override
-    public MemorySegment upcallStub(MethodHandle target, FunctionDescriptor function, Arena arena, Linker.Option... options) {
+    @CallerSensitive
+    public final MemorySegment upcallStub(MethodHandle target, FunctionDescriptor function, Arena arena, Linker.Option... options) {
+        Reflection.ensureNativeAccess(Reflection.getCallerClass(), Linker.class, "upcallStub");
         Objects.requireNonNull(arena);
         Objects.requireNonNull(target);
         Objects.requireNonNull(function);
@@ -114,6 +136,28 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
     /** {@return byte order used by this linker} */
     protected abstract ByteOrder linkerByteOrder();
 
+    // C spec mandates that variadic arguments smaller than int are promoted to int,
+    // and float is promoted to double
+    // See: https://en.cppreference.com/w/c/language/conversion#Default_argument_promotions
+    // We reject the corresponding layouts here, to avoid issues where unsigned values
+    // are sign extended when promoted. (as we don't have a way to unambiguously represent signed-ness atm).
+    private void validateVariadicLayouts(FunctionDescriptor function, LinkerOptions optionSet) {
+        if (optionSet.isVariadicFunction()) {
+            List<MemoryLayout> argumentLayouts = function.argumentLayouts();
+            List<MemoryLayout> variadicLayouts = argumentLayouts.subList(optionSet.firstVariadicArgIndex(), argumentLayouts.size());
+
+            for (MemoryLayout variadicLayout : variadicLayouts) {
+                if (variadicLayout.equals(ValueLayout.JAVA_BOOLEAN)
+                    || variadicLayout.equals(ValueLayout.JAVA_BYTE)
+                    || variadicLayout.equals(ValueLayout.JAVA_CHAR)
+                    || variadicLayout.equals(ValueLayout.JAVA_SHORT)
+                    || variadicLayout.equals(ValueLayout.JAVA_FLOAT)) {
+                    throw new IllegalArgumentException("Invalid variadic argument layout: " + variadicLayout);
+                }
+            }
+        }
+    }
+
     private void checkLayouts(FunctionDescriptor descriptor) {
         descriptor.returnLayout().ifPresent(this::checkLayout);
         descriptor.argumentLayouts().forEach(this::checkLayout);
@@ -141,7 +185,7 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
                 checkMemberOffset(sl, member, lastUnpaddedOffset, offset);
                 checkLayoutRecursive(member);
 
-                offset += member.bitSize();
+                offset += member.byteSize();
                 if (!(member instanceof PaddingLayout)) {
                     lastUnpaddedOffset = offset;
                 }
@@ -152,7 +196,7 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
             for (MemoryLayout member : ul.memberLayouts()) {
                 checkLayoutRecursive(member);
                 if (!(member instanceof PaddingLayout)) {
-                    maxUnpaddedLayout = Long.max(maxUnpaddedLayout, member.bitSize());
+                    maxUnpaddedLayout = Long.max(maxUnpaddedLayout, member.byteSize());
                 }
             }
             checkGroupSize(ul, maxUnpaddedLayout);
@@ -163,10 +207,10 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
 
     // check for trailing padding
     private static void checkGroupSize(GroupLayout gl, long maxUnpaddedOffset) {
-        long expectedSize = Utils.alignUp(maxUnpaddedOffset, gl.bitAlignment());
-        if (gl.bitSize() != expectedSize) {
+        long expectedSize = Utils.alignUp(maxUnpaddedOffset, gl.byteAlignment());
+        if (gl.byteSize() != expectedSize) {
             throw new IllegalArgumentException("Layout '" + gl + "' has unexpected size: "
-                    + gl.bitSize() + " != " + expectedSize);
+                    + gl.byteSize() + " != " + expectedSize);
         }
     }
 
@@ -174,7 +218,7 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
     // the previous layout
     private static void checkMemberOffset(StructLayout parent, MemoryLayout memberLayout,
                                           long lastUnpaddedOffset, long offset) {
-        long expectedOffset = Utils.alignUp(lastUnpaddedOffset, memberLayout.bitAlignment());
+        long expectedOffset = Utils.alignUp(lastUnpaddedOffset, memberLayout.byteAlignment());
         if (expectedOffset != offset) {
             throw new IllegalArgumentException("Member layout '" + memberLayout + "', of '" + parent + "'" +
                     " found at unexpected offset: " + offset + " != " + expectedOffset);
@@ -183,7 +227,7 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
 
     private static void checkHasNaturalAlignment(MemoryLayout layout) {
         if (!((AbstractLayout<?>) layout).hasNaturalAlignment()) {
-            throw new IllegalArgumentException("Layout bit alignment must be natural alignment: " + layout);
+            throw new IllegalArgumentException("Layout alignment must be natural alignment: " + layout);
         }
     }
 

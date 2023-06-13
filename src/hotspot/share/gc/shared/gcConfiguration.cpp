@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 #include "precompiled.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/gcArguments.hpp"
 #include "gc/shared/gcConfiguration.hpp"
 #include "gc/shared/tlab_globals.hpp"
@@ -41,7 +42,15 @@ GCName GCConfiguration::young_collector() const {
     return ParallelScavenge;
   }
 
-  if (UseZGC || UseShenandoahGC) {
+  if (UseZGC) {
+    if (ZGenerational) {
+      return ZMinor;
+    } else {
+      return NA;
+    }
+  }
+
+  if (UseShenandoahGC) {
     return NA;
   }
 
@@ -58,7 +67,11 @@ GCName GCConfiguration::old_collector() const {
   }
 
   if (UseZGC) {
-    return Z;
+    if (ZGenerational) {
+      return ZMajor;
+    } else {
+      return Z;
+    }
   }
 
   if (UseShenandoahGC) {
