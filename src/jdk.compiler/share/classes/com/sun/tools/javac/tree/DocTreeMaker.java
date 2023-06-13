@@ -316,7 +316,7 @@ public class DocTreeMaker implements DocTreeFactory {
 
     @Override @DefinedBy(Api.COMPILER_TREE)
     public DCInheritDoc newInheritDocTree(ReferenceTree supertype) {
-        DCInheritDoc tree = new DCInheritDoc(supertype);
+        DCInheritDoc tree = new DCInheritDoc((DCReference) supertype);
         tree.pos = pos;
         return tree;
     }
