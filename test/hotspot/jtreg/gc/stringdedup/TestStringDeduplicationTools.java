@@ -392,7 +392,7 @@ class TestStringDeduplicationTools {
 
             forceDeduplication(ageThreshold, FullGC);
 
-            if (!waitForDeduplication(dupString3, baseString)) {
+            if (!waitForDeduplication(dupString3, internedString)) {
                 if (getValue(dupString3) != getValue(internedString)) {
                     throw new RuntimeException("String 3 doesn't match either");
                 }
