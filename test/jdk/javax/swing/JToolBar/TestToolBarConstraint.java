@@ -45,7 +45,7 @@ public class TestToolBarConstraint {
                 "\tA toolbar is docked at EAST side.\n" +
                 " \tPlease drag the toolbar in any direction\n" +
                 " \tthen release the mouse to make it floating \n" +
-		" \tand close the floating toolbar.\n" +
+                " \tand close the floating toolbar.\n" +
                 " \tIf it retains the docking position at EAST, press Pass\n" +
                 " \telse if it gets docked at NORTH press Fail.";
 
