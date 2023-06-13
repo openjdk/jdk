@@ -60,10 +60,12 @@ public abstract class AbstractTypeVisitor8<R, P> extends AbstractTypeVisitor7<R,
     }
 
     /**
-     * Visits an {@code IntersectionType} in a manner defined by a subclass.
+     * {@inhertiDoc TypeVisitor}
      *
-     * @param t  {@inheritDoc}
-     * @param p  {@inheritDoc}
+     * @implSpec Visits an {@code IntersectionType} in a manner defined by a subclass.
+     *
+     * @param t  {@inheritDoc TypeVisitor}
+     * @param p  {@inheritDoc TypeVisitor}
      * @return the result of the visit as defined by a subclass
      */
     @Override

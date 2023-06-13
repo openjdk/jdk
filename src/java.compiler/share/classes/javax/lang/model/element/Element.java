@@ -261,7 +261,7 @@ public interface Element extends javax.lang.model.AnnotatedConstruct {
     int hashCode();
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc AnnotatedConstruct}
      *
      * <p>To get inherited annotations as well, use {@link
      * Elements#getAllAnnotationMirrors(Element)
@@ -276,7 +276,7 @@ public interface Element extends javax.lang.model.AnnotatedConstruct {
     List<? extends AnnotationMirror> getAnnotationMirrors();
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc AnnotatedConstruct}
      *
      * <p>Note that any annotation returned by this method is a
      * declaration annotation.
@@ -287,7 +287,7 @@ public interface Element extends javax.lang.model.AnnotatedConstruct {
     <A extends Annotation> A getAnnotation(Class<A> annotationType);
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc AnnotatedConstruct}
      *
      * <p>Note that any annotations returned by this method are
      * declaration annotations.

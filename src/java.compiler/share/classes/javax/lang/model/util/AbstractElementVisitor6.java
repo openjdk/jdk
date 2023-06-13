@@ -107,16 +107,16 @@ public abstract class AbstractElementVisitor6<R, P> implements ElementVisitor<R,
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc ElementVisitor}
      *
      * @implSpec The default implementation of this method in
      * {@code AbstractElementVisitor6} will always throw
      * {@code new UnknownElementException(e, p)}.
      * This behavior is not required of a subclass.
      *
-     * @param e {@inheritDoc}
-     * @param p {@inheritDoc}
-     * @return  {@inheritDoc}
+     * @param e {@inheritDoc ElementVisitor}
+     * @param p {@inheritDoc ElementVisitor}
+     * @return  {@inheritDoc ElementVisitor}
      * @throws UnknownElementException
      *          a visitor implementation may optionally throw this exception
      */
@@ -126,14 +126,14 @@ public abstract class AbstractElementVisitor6<R, P> implements ElementVisitor<R,
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc ElementVisitor}
      *
      * @implSpec Visits a {@code ModuleElement} by calling {@code
      * visitUnknown}.
      *
-     * @param e  {@inheritDoc}
-     * @param p  {@inheritDoc}
-     * @return   {@inheritDoc}
+     * @param e  {@inheritDoc ElementVisitor}
+     * @param p  {@inheritDoc ElementVisitor}
+     * @return   {@inheritDoc ElementVisitor}
      *
      * @since 9
      */
@@ -144,14 +144,14 @@ public abstract class AbstractElementVisitor6<R, P> implements ElementVisitor<R,
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc ElementVisitor}
      *
      * @implSpec Visits a {@code RecordComponentElement} by calling {@code
      * visitUnknown}.
      *
-     * @param e  {@inheritDoc}
-     * @param p  {@inheritDoc}
-     * @return   {@inheritDoc}
+     * @param e  {@inheritDoc ElementVisitor}
+     * @param p  {@inheritDoc ElementVisitor}
+     * @return   {@inheritDoc ElementVisitor}
      *
      * @since 14
      */
