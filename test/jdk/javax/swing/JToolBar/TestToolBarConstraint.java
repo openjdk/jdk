@@ -27,7 +27,7 @@
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @summary Verifies docking point of a floating toolbar changes after closing
- * @run main/manual TestToolBarConstraint 
+ * @run main/manual TestToolBarConstraint
 */
 
 import java.awt.BorderLayout;
@@ -43,9 +43,9 @@ import javax.swing.WindowConstants;
 public class TestToolBarConstraint {
     static String instructions = "INSTRUCTIONS: \n" +
                 "\tA toolbar is docked at EAST side.\n" +
-                " \tPlease drag the toolbar in any direction\n" + 
+                " \tPlease drag the toolbar in any direction\n" +
                 " \tthen release the mouse to make it floating \n" +
-		" \tand close the floating toolbar.\n" + 
+		" \tand close the floating toolbar.\n" +
                 " \tIf it retains the docking position at EAST, press Pass\n" +
                 " \telse if it gets docked at NORTH press Fail.";
 
@@ -67,7 +67,7 @@ public class TestToolBarConstraint {
     }
 
     private static void creatUI() {
-        frame = new JFrame();	    
+        frame = new JFrame();
         JToolBar jToolBar1 = new JToolBar();
         JButton jButton1 = new JButton();
         JPanel jPanel1 = new JPanel();
@@ -95,7 +95,7 @@ public class TestToolBarConstraint {
         frame.getContentPane().add(jPanel1, BorderLayout.CENTER);
 
         frame.pack();
-	frame.setVisible(true);
+        frame.setVisible(true);
     }
 }
 
