@@ -120,7 +120,7 @@ public class Universe {
   // aligned 0 mod 8.  The typeArrayOop itself must be aligned at least this
   // strongly.
   public static boolean elementTypeShouldBeAligned(BasicType type) {
-    return type == BasicType.T_DOUBLE || type == BasicType.T_LONG;
+    return type == BasicType.T_DOUBLE || type == BasicType.T_LONG || (!VM.getVM().isCompressedOopsEnabled() && type == BasicType.T_OBJECT);
   }
 
   // Check whether an object field (static/non-static) of the given type must be
