@@ -501,11 +501,9 @@ final class HotSpotMethodData implements MetaspaceObject {
                 }
             }
 
-            totalCount += getTypesNotRecordedExecutionCount(data, position);
+            totalCount += getCounterValue(data, position);
             return new RawItemProfile<>(entries, types, counts, totalCount);
         }
-
-        protected abstract long getTypesNotRecordedExecutionCount(HotSpotMethodData data, int position);
 
         private JavaTypeProfile createTypeProfile(TriState nullSeen, RawItemProfile<ResolvedJavaType> profile) {
             if (profile.entries <= 0 || profile.totalCount <= 0) {
@@ -564,10 +562,6 @@ final class HotSpotMethodData implements MetaspaceObject {
         @Override
         public int getExecutionCount(HotSpotMethodData data, int position) {
             return -1;
-        }
-
-        protected long getTypesNotRecordedExecutionCount(HotSpotMethodData data, int position) {
-            return getCounterValue(data, position);
         }
     }
 

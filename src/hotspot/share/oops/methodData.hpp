@@ -1080,15 +1080,17 @@ public:
 // ReceiverTypeData
 //
 // A ReceiverTypeData is used to access profiling information about a
-// dynamic type check.  It consists of a counter which counts the total times
-// that the check is reached, and a series of (Klass*, count) pairs
-// which are used to store a type profile for the receiver of the check.
+// dynamic type check.  It consists of a series of (Klass*, count)
+// pairs which are used to store a type profile for the receiver of
+// the check, the associated count is incremented every time the type
+// is seen. A per ReceiverTypeData counter is incremented on type
+// overflow (when there's no more room for a not yet profiled Klass*).
+// 
 class ReceiverTypeData : public CounterData {
   friend class VMStructs;
   friend class JVMCIVMStructs;
 protected:
   enum {
-    //   count is incremented on type overflow
     receiver0_offset = counter_cell_count,
     count0_offset,
     receiver_type_row_cell_count = (count0_offset + 1) - receiver0_offset
