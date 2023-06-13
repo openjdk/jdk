@@ -1460,6 +1460,9 @@ Node* PhiNode::Identity(PhaseGVN* phase) {
 // Return nullptr if the inputs are not unique (multiple non-top, or top and non-top).
 // Return nullptr if the region has a top input.
 //
+// If the ith slot of the region is a nullptr, the ith slot should be ignored as non
+// existent. During IGVN the region removes those slots, but GVN cannot do that.
+//
 // It may sound like a great idea to just ignore top inputs, as they would presumably
 // die later anyway. The issue is that if the phi disappears before the region, then
 // the region realizes that it is phi-less, and concludes that it cannot be a loop head.
@@ -1487,9 +1490,14 @@ Node* PhiNode::unique_input(PhaseValues* phase, bool uncast) {
   Node* input = nullptr;
 
   for (uint i = 1, cnt = req(); i < cnt; ++i) {
-    // Check for dead control input to region.
+    // Check for dead and top control input to region.
     Node* rc = r->in(i);
-    if (rc == nullptr || phase->type(rc) == Type::TOP) {
+    if (rc == nullptr) {
+      // ith control is dead, ignore it.
+      continue;
+    }
+    if (phase->type(rc) == Type::TOP) {
+      // ith control is top, wait for Region to kill it.
       return nullptr;
     }
 
