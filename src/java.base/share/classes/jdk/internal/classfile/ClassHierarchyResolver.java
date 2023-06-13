@@ -196,7 +196,7 @@ public interface ClassHierarchyResolver {
             @Override
             public Class<?> apply(ClassDesc cd) {
                 try {
-                    return Class.forName(Util.toBinaryName(cd.descriptorString()), false, loader);
+                    return Class.forName(Util.toBinaryName(cd), false, loader);
                 } catch (ClassNotFoundException ex) {
                     return null;
                 }
