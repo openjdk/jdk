@@ -29,7 +29,6 @@ import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.SoftReference;
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicReference;
 
 // Maps Class instances to values of type T. Under memory pressure, the
 // mapping is released (under soft references GC policy) and would be
@@ -40,20 +39,24 @@ abstract class ClassCache<T> {
 
     private static class CacheRef<T> extends SoftReference<T> {
         private final Class<?> type;
-        private final AtomicReference<T> strongReferent;
+        private volatile T strongReferent;
 
         CacheRef(T referent, ReferenceQueue<T> queue, Class<?> type) {
             super(referent, queue);
             this.type = type;
-            this.strongReferent = new AtomicReference<T>(referent);
+            this.strongReferent = referent;
         }
 
         Class<?> getType() {
             return type;
         }
 
-        T getAndClearStrong() {
-            return strongReferent.getAndSet(null);
+        T getStrong() {
+            return strongReferent;
+        }
+
+        void clearStrong() {
+            strongReferent = null;
         }
     }
 
@@ -84,8 +87,9 @@ abstract class ClassCache<T> {
             // We might still have strong referent, and can return it.
             // This guarantees progress for at least one thread on every CacheRef.
             // Clear the strong referent before returning to make the cache soft.
-            T strongVal = ref.getAndClearStrong();
+            T strongVal = ref.getStrong();
             if (strongVal != null) {
+                ref.clearStrong();
                 return strongVal;
             }
 
