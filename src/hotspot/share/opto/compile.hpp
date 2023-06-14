@@ -809,7 +809,7 @@ private:
   uint         next_unique()               { return _unique++; }
   void         set_unique(uint i)          { _unique = i; }
   Arena*       node_arena()                { return _node_arena; }
-  Arena*       old_arena()                 { return &_node_arena_one == _node_arena ? &_node_arena_two : &_node_arena_one; }
+  Arena*       old_arena()                 { return (&_node_arena_one == _node_arena) ? &_node_arena_two : &_node_arena_one; }
   RootNode*    root() const                { return _root; }
   void         set_root(RootNode* r)       { _root = r; }
   StartNode*   start() const;              // (Derived from root.)
