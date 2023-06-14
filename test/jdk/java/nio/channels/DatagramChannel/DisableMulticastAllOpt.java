@@ -50,7 +50,7 @@ public class DisableMulticastAllOpt {
             Process p = new ProcessBuilder("uname", "-r").start();
             InputStream is = p.getInputStream();
             byte[] output = is.readAllBytes();
-	    is.close();
+            is.close();
             String verstring = new String(output, StandardCharsets.UTF_8);
             String[] vernumbers = verstring.split("\\.");
             if (vernumbers.length == 0)
@@ -92,9 +92,9 @@ public class DisableMulticastAllOpt {
     static {
         try {
             nif = NetworkConfiguration.probe()
-		.ip6MulticastInterfaces()
-		.findFirst()
-		.orElse(null);
+                .ip6MulticastInterfaces()
+                .findFirst()
+                .orElse(null);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -114,13 +114,13 @@ public class DisableMulticastAllOpt {
 
     public static void main(String[] args) throws Exception {
         if (nif == null) {
-	    System.out.println("Suitable multicast interface not available");
-	    return;
-  	}
+            System.out.println("Suitable multicast interface not available");
+            return;
+        }
         if (!is_4_20_orGreater()) {
-	    System.out.println("Kernel < 4.20. Not running test");
-	    return;
-  	}
+            System.out.println("Kernel < 4.20. Not running test");
+            return;
+        }
         System.out.println("Kernel >= 4.20. Running test");
         System.out.println("Using interface: " + nif.getName());
         var ch1 = getChannel(0);
@@ -144,12 +144,12 @@ public class DisableMulticastAllOpt {
         ch1.register(selector, SelectionKey.OP_READ);
         int ret = selector.select(2000);
         if (ret != 0) {
-	    System.out.println("No packet received. Test succeeded");
-	} else {
-	    throw new RuntimeException("Packet received. Test failed");
-    	}
-    	ch1.close();
-    	ch2.close();
-    	sender.close();
+            System.out.println("No packet received. Test succeeded");
+        } else {
+            throw new RuntimeException("Packet received. Test failed");
+        }
+        ch1.close();
+        ch2.close();
+        sender.close();
     }
 }
