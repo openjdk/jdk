@@ -22,6 +22,7 @@
  */
 
 #include "precompiled.hpp"
+#include "runtime/os.hpp"
 #include "services/memTracker.hpp"
 #include "services/virtualMemoryTracker.hpp"
 #include "unittest.hpp"
