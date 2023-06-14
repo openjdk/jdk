@@ -45,14 +45,6 @@
 #include <libperfstat.h>
 #endif
 
-#if defined(LINUX) && defined(VM_LITTLE_ENDIAN)
-#include <sys/auxv.h>
-
-#ifndef PPC_FEATURE2_HTM_NOSC
-#define PPC_FEATURE2_HTM_NOSC (1 << 24)
-#endif
-#endif
-
 bool VM_Version::_is_determine_features_test_running = false;
 uint64_t VM_Version::_dscr_val = 0;
 

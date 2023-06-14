@@ -53,17 +53,13 @@ public class TestUseRTMLockingOptionOnUnsupportedCPU {
             String shouldFailMessage = "JVM startup should fail with option " +
                                        "-XX:+UseRTMLocking on unsupported CPU";
 
-            try {
-                // verify that we get an error when use +UseRTMLocking
-                // on unsupported CPU
-                CommandLineOptionTest.verifySameJVMStartup(
-                        new String[] { errorMessage },
-                        new String[] { unrecognizedOption }, shouldFailMessage,
-                        shouldFailMessage + ". Error message should be shown.",
-                        ExitCode.FAIL, "-XX:+UseRTMLocking");
-            } catch (Throwable e) {
-                throw e; // checking unsupported OS error is not necessary
-            }
+            // verify that we get an error when use +UseRTMLocking
+            // on unsupported CPU
+            CommandLineOptionTest.verifySameJVMStartup(
+                    new String[] { errorMessage },
+                    new String[] { unrecognizedOption }, shouldFailMessage,
+                    shouldFailMessage + ". Error message should be shown.",
+                    ExitCode.FAIL, "-XX:+UseRTMLocking");
 
             String shouldPassMessage = "JVM startup should pass with option "
                     + "-XX:-UseRTMLocking even on unsupported CPU";
