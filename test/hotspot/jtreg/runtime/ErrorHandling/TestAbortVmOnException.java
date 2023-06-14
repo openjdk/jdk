@@ -39,10 +39,11 @@ public class TestAbortVmOnException {
 
     public static void main(String[] args) throws Exception {
         if (args.length == 1) {
-            if (args[0].equals("throwExceptionWithMessage"))
+            if (args[0].equals("throwExceptionWithMessage")) {
                 throw new MyAbortException("MyExceptionMessage");
-            else
+            } else {
                 throw new MyAbortException();
+            }
         }
         // Run process throwing MyException
         Process myExceptionThrowingProcess = runProcess( "MyAbortException", false, null);
@@ -57,15 +58,16 @@ public class TestAbortVmOnException {
     }
 
     private static Process runProcess(String exceptionName, boolean withMessage, String exceptionMessage) throws IOException {
-        if (exceptionMessage == null)
+        if (exceptionMessage == null) {
             return ProcessTools.createJavaProcessBuilder("-XX:+UnlockDiagnosticVMOptions",
                 "-XX:AbortVMOnException=" + exceptionName, "-Xcomp", "-Xbatch", "-XX:TieredStopAtLevel=3", TestAbortVmOnException.class.getName(),
                 withMessage ? "throwExceptionWithMessage" : "throwException").start();
-        else
+        } else {
             return ProcessTools.createJavaProcessBuilder("-XX:+UnlockDiagnosticVMOptions",
-                        "-XX:AbortVMOnException=" + exceptionName, "-XX:AbortVMOnExceptionMessage=" + exceptionMessage,
-                        "-Xcomp", "-Xbatch", "-XX:TieredStopAtLevel=3", TestAbortVmOnException.class.getName(),
-                        withMessage ? "throwExceptionWithMessage" : "throwException").start();
+                "-XX:AbortVMOnException=" + exceptionName, "-XX:AbortVMOnExceptionMessage=" + exceptionMessage,
+                "-Xcomp", "-Xbatch", "-XX:TieredStopAtLevel=3", TestAbortVmOnException.class.getName(),
+                withMessage ? "throwExceptionWithMessage" : "throwException").start();
+        }
     }
 
     private static void parseOutput(Process process, String expectedString) throws IOException {
