@@ -971,11 +971,6 @@ public class JavaCompiler {
         } catch (Abort ex) {
             if (devVerbose)
                 ex.printStackTrace(System.err);
-        } finally {
-            if (verbose) {
-                elapsed_msec = elapsed(start_msec);
-                log.printVerbose("total", Long.toString(elapsed_msec));
-            }
 
             // In case an Abort was thrown before processAnnotations could be called,
             // we could have deferred diagnostics that haven't been reported.
@@ -983,6 +978,12 @@ public class JavaCompiler {
                 deferredDiagnosticHandler.reportDeferredDiagnostics();
                 log.popDiagnosticHandler(deferredDiagnosticHandler);
             }
+        } finally {
+            if (verbose) {
+                elapsed_msec = elapsed(start_msec);
+                log.printVerbose("total", Long.toString(elapsed_msec));
+            }
+
             reportDeferredDiagnostics();
 
             if (!log.hasDiagnosticListener()) {
