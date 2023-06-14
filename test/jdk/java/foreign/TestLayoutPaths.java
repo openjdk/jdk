@@ -149,21 +149,17 @@ public class TestLayoutPaths {
 
             String expectedMessage = "Target offset incompatible with alignment constraints: " + struct.byteAlignment();
 
-            try {
-                VarHandle vhX = struct.varHandle(groupElement("x"));
-                vhX.set(seg, (short) 42); // should throw
-                fail("var handle didn't throw");
-            } catch (IllegalArgumentException e) {
-                assertEquals(e.getMessage(), expectedMessage);
-            }
+            VarHandle vhX = struct.varHandle(groupElement("x"));
+            IllegalArgumentException iae = expectThrows(IllegalArgumentException.class, () -> {
+                vhX.set(seg, (short) 42);
+            });
+            assertEquals(iae.getMessage(), expectedMessage);
 
-            try {
-                MethodHandle sliceX = struct.sliceHandle(groupElement("x"));
-                MemorySegment slice = (MemorySegment) sliceX.invokeExact(seg); // should throw
-                fail("slice handle didn't throw");
-            } catch (IllegalArgumentException e) {
-                assertEquals(e.getMessage(), expectedMessage);
-            }
+            MethodHandle sliceX = struct.sliceHandle(groupElement("x"));
+            iae = expectThrows(IllegalArgumentException.class, () -> {
+                MemorySegment slice = (MemorySegment) sliceX.invokeExact(seg);
+            });
+            assertEquals(iae.getMessage(), expectedMessage);
         }
     }
 
