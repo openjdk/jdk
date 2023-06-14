@@ -31,6 +31,7 @@
 #include "runtime/abstract_vm_version.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/globals_extension.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/sizes.hpp"
 
@@ -40,26 +41,25 @@ class VM_Version : public Abstract_VM_Version {
   friend RiscvHwprobe;
  private:
   class RVFeatureValue {
-    const char* _pretty;
-    bool        _feature_string;
-    uint64_t    _feature_bit;
-    bool        _enabled;
-    int64_t     _value;
+    const char* const _pretty;
+    const bool        _feature_string;
+    const uint64_t    _feature_bit;
+    bool              _enabled;
+    int64_t           _value;
    public:
     RVFeatureValue(const char* pretty, uint64_t bit, bool fstring) :
-      _pretty(pretty), _feature_string(fstring), _feature_bit(0),
+      _pretty(pretty), _feature_string(fstring), _feature_bit(nth_bit(bit)),
       _enabled(false), _value(-1) {
-        _feature_bit = (1ULL << bit);
     }
     void enable_feature(int64_t value = 0) {
       _enabled = true;
       _value = value;
     }
-    const char* pretty()   { return _pretty; }
-    uint64_t feature_bit() { return _feature_bit; }
-    bool feature_string()  { return _feature_string; }
-    bool enabled()         { return _enabled; }
-    int64_t value()        { return _value; }
+    const char* const pretty()   { return _pretty; }
+    const uint64_t feature_bit() { return _feature_bit; }
+    const bool feature_string()  { return _feature_string; }
+    bool enabled()               { return _enabled; }
+    int64_t value()              { return _value; }
     virtual void update_flag() = 0;
   };
 
@@ -105,11 +105,11 @@ class VM_Version : public Abstract_VM_Version {
   // Zihintpause Pause instruction HINT
   //
   // Other features and settings
-  // mvendorid Manufactory JEDEC
-  // marchid   Manufactory prop.
-  // mimpid    Manufactory prop.
+  // mvendorid Manufactory JEDEC id.
+  // marchid   Id for microarch. Mvendorid plus marchid uniquely identify the microarch.
+  // mimpid    A unique encoding of the version of the processor implementation.
   // unaligned_access Unaligned memory accesses (unknown, unspported, emulated, slow, firmware, fast)
-  // satp mode SATP bitsm mbare, sv39, sv48, sv57, sv64
+  // satp mode SATP bits (number of virtual addr bits) mbare, sv39, sv48, sv57, sv64
 
   // declaration name  , extension name,    bit pos ,in str, mapped flag)
   #define RV_FEATURE_FLAGS(decl)                                                             \
@@ -183,7 +183,7 @@ class VM_Version : public Abstract_VM_Version {
   // Vendors specific features
   static void rivos_features();
 
-  // Determine vector length iff ext_C/UseRVC
+  // Determine vector length iff ext_V/UseRVV
   static uint32_t cpu_vector_length();
   static uint32_t _initial_vector_length;
 

@@ -37,31 +37,39 @@
 #include <sys/auxv.h>
 
 #ifndef HWCAP_ISA_I
-#define HWCAP_ISA_I  (1ULL << ('I' - 'A'))
+#define HWCAP_ISA_I  nth_bit('I' - 'A')
 #endif
 
 #ifndef HWCAP_ISA_M
-#define HWCAP_ISA_M  (1ULL << ('M' - 'A'))
+#define HWCAP_ISA_M  nth_bit('M' - 'A')
 #endif
 
 #ifndef HWCAP_ISA_A
-#define HWCAP_ISA_A  (1ULL << ('A' - 'A'))
+#define HWCAP_ISA_A  nth_bit('A' - 'A')
 #endif
 
 #ifndef HWCAP_ISA_F
-#define HWCAP_ISA_F  (1ULL << ('F' - 'A'))
+#define HWCAP_ISA_F  nth_bit('F' - 'A')
 #endif
 
 #ifndef HWCAP_ISA_D
-#define HWCAP_ISA_D  (1ULL << ('D' - 'A'))
+#define HWCAP_ISA_D  nth_bit('D' - 'A')
 #endif
 
 #ifndef HWCAP_ISA_C
-#define HWCAP_ISA_C  (1ULL << ('C' - 'A'))
+#define HWCAP_ISA_C  nth_bit('C' - 'A')
+#endif
+
+#ifndef HWCAP_ISA_Q
+#define HWCAP_ISA_Q  nth_bit('Q' - 'A')
+#endif
+
+#ifndef HWCAP_ISA_H
+#define HWCAP_ISA_H  nth_bit('H' - 'A')
 #endif
 
 #ifndef HWCAP_ISA_V
-#define HWCAP_ISA_V  (1ULL << ('V' - 'A'))
+#define HWCAP_ISA_V  nth_bit('V' - 'A')
 #endif
 
 #define read_csr(csr)                                           \
@@ -87,16 +95,20 @@ void VM_Version::setup_cpu_available_features() {
   assert(ext_F.feature_bit() == HWCAP_ISA_F, "Bit for F must follow Linux HWCAP");
   assert(ext_D.feature_bit() == HWCAP_ISA_D, "Bit for D must follow Linux HWCAP");
   assert(ext_C.feature_bit() == HWCAP_ISA_C, "Bit for C must follow Linux HWCAP");
+  assert(ext_Q.feature_bit() == HWCAP_ISA_Q, "Bit for Q must follow Linux HWCAP");
+  assert(ext_H.feature_bit() == HWCAP_ISA_H, "Bit for H must follow Linux HWCAP");
   assert(ext_V.feature_bit() == HWCAP_ISA_V, "Bit for V must follow Linux HWCAP");
 
-  RiscvHwprobe::probe_features();
-  os_aux_features();
+  if (!RiscvHwprobe::probe_features()) {
+    os_aux_features();
+  }
   char* uarch = os_uarch_additional_features();
   vendor_features();
 
   char buf[1024] = {};
   if (uarch != nullptr && strcmp(uarch, "") != 0) {
-    snprintf(buf, sizeof(buf), "%s,", uarch);
+    // Use at max half the buffer.
+    snprintf(buf, sizeof(buf)/2, "%s,", uarch);
   }
   os::free((void*) uarch);
   strcat(buf, "rv64");
@@ -210,6 +222,7 @@ void VM_Version::vendor_features() {
 }
 
 void VM_Version::rivos_features() {
+  // Enable common features not dependent on marchid/mimpid.
   ext_I.enable_feature();
   ext_M.enable_feature();
   ext_A.enable_feature();
@@ -236,4 +249,7 @@ void VM_Version::rivos_features() {
 
   unaligned_access.enable_feature(MISALIGNED_FAST);
   satp_mode.enable_feature(VM_SV48);
+
+  // Features dependent on march/mimpid.
+  // I.e. march.value() and mimplid.value()
 }
