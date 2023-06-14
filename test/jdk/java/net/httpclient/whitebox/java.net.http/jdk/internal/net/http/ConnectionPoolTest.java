@@ -95,7 +95,7 @@ public class ConnectionPoolTest {
     }
 
     public static void testCacheCleaners() throws Exception {
-        ConnectionPool pool = new ConnectionPool(666);
+        ConnectionPool pool = new ConnectionPool(666, TimeSource.source());
         HttpClient client = new HttpClientStub(pool);
         InetSocketAddress proxy = InetSocketAddress.createUnresolved("bar", 80);
         System.out.println("Adding 20 connections to pool");

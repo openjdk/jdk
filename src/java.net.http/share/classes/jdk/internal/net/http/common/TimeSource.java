@@ -39,12 +39,21 @@ import java.time.InstantSource;
  * of monotonicity than the {@link System#nanoTime()} it is based on.
  */
 public final class TimeSource implements InstantSource {
+
     private static volatile NanoSource nanoSource = new NanoSource();
-    private NanoSource localSource = nanoSource;
     private static final TimeSource SOURCE = new TimeSource();
 
-    private static final class NanoSource implements InstantSource {
+    private NanoSource localSource = nanoSource;
+    private TimeSource() {}
+
+    private static final class NanoSource {
+        // Duration (in nanoseconds) for which the static nanoSource
+        // instance is considered valid.
+        // The use of Integer.MAX_VALUE is arbitrary.
+        // Any value not too close to Long.MAX_VALUE
+        // would do.
         static final int TIME_WINDOW = Integer.MAX_VALUE;
+
         final Instant first;
         final long firstNanos;
         NanoSource() {
@@ -54,12 +63,7 @@ public final class TimeSource implements InstantSource {
             this.first = first;
             this.firstNanos = firstNanos;
         }
-
-        @Override
-        public Instant instant() {
-            return instant(System.nanoTime());
-        }
-
+        
         Instant instant(long nanos) {
             return instant(nanos, nanos - firstNanos);
         }
@@ -71,20 +75,15 @@ public final class TimeSource implements InstantSource {
                 // prevent issues that may be caused by
                 // System.nanoTime() - firstNanos wrapping
                 // around.
-                // The use of Integer.MAX_VALUE is arbitrary.
-                // Any value not too close to Long.MAX_VALUE
-                // would do.
                 nanoSource = new NanoSource(now, nanos);
             }
             return now;
         }
 
-        // @ForceInline
         long delay(long nanos) {
             return nanos - firstNanos;
         }
 
-        // @ForceInline
         boolean isInWindow(long delay) {
             return delay >= 0 && delay <= TIME_WINDOW;
         }

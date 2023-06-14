@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.time.Instant;
+import java.time.InstantSource;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -64,7 +65,7 @@ final class ConnectionPool {
     private final HashMap<CacheKey,LinkedList<HttpConnection>> sslPool;
     private final ExpiryList expiryList;
     private final String dbgTag; // used for debug
-    private final TimeSource timeSource;
+    private final InstantSource timeSource;
     volatile boolean stopped;
 
     /**
@@ -129,14 +130,14 @@ final class ConnectionPool {
         this(clientId, TimeSource.source());
     }
 
-    ConnectionPool(long clientId, TimeSource timeSource) {
+    ConnectionPool(long clientId, InstantSource timeSource) {
         this("ConnectionPool("+clientId+")", Objects.requireNonNull(timeSource));
     }
 
         /**
          * There should be one of these per HttpClient.
          */
-    private ConnectionPool(String tag, TimeSource timeSource) {
+    private ConnectionPool(String tag, InstantSource timeSource) {
         dbgTag = tag;
         plainPool = new HashMap<>();
         sslPool = new HashMap<>();
@@ -378,10 +379,10 @@ final class ConnectionPool {
      */
     private static final class ExpiryList {
         private final LinkedList<ExpiryEntry> list = new LinkedList<>();
-        private final TimeSource timeSource;
+        private final InstantSource timeSource;
         private volatile boolean mayContainEntries;
 
-        ExpiryList(TimeSource timeSource) {
+        ExpiryList(InstantSource timeSource) {
             this.timeSource = timeSource;
         }
 
