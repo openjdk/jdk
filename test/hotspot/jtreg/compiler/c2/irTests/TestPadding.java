@@ -43,11 +43,8 @@ public class TestPadding {
 
     @Run(test = "test")
     public static void test_runner() {
-        tpf = new TestPadding();
-        for (int i = 0; i < 11000; i++) {
-            test(i);
-            tpf.b1++; // to take both branches in test()
-        }
+        test(42);
+        tpf.b1++; // to take both branches in test()
     }
 
     @Test
@@ -65,7 +62,7 @@ public class TestPadding {
     static TestPadding t3;
     static TestPadding t4;
 
-    static TestPadding tpf; // Static field offset > 128
+    static TestPadding tpf = new TestPadding(); // Static field offset > 128
 
     int i1;
 
