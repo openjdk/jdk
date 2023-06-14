@@ -1165,8 +1165,9 @@ class MethodType
      * Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[]) methodType}.
      * Any class or interface name embedded in the descriptor string will be
      * resolved by the given loader (or if it is null, on the system class loader).
-     * <p>
-     * Note that it is possible to encounter method types which cannot be
+     *
+     * @apiNote
+     * It is possible to encounter method types which cannot be
      * constructed by this method, because their component types are
      * not all reachable from a common class loader, or some component types
      * cannot be {@linkplain ##descriptor described nominally}.
