@@ -38,6 +38,38 @@
 # Note that the libtool and texinfo packages are needed to build libffi
 # $ sudo apt install libtool texinfo
 
+# Note that while the build system supports linking against libffi on Windows (x64),
+# I couldn't get this script working with a Windows devkit, and instead had to manually create
+# a libffi bundle for Windows. The steps I took were as follows:
+#
+# 1. run 'x64 Native Tools Command Prompt for VS 2022'. After that, cl.exe and link.exe should be on path
+#
+# 2. in the same shell, run `ucrt64` (this is one of the shell environments that comes with MSYS2).
+#    This should carry over the environment set up by the VS dev prompt into the ucrt64 prompt.
+#
+# 3. then, in the libffi repo root folder:
+#   3.a run `autogen.sh`
+#   3.b run:
+# ```
+# bash configure \
+#   CC="/path/to/libffi/msvcc.sh -m64" \
+#   CXX="/path/to/libffi/msvcc.sh -m64" \
+#   CPPFLAGS="-DFFI_BUILDING_DLL" \
+#   --disable-docs \
+#   --prefix=<install dest>
+# ```
+# (`<install dest>` can be whatever you like. That's what you point `--with-libffi` to).
+#
+# 4. run `make install`. This should create the `<install dest>` directory with the files:
+#    `include/ffi.h`, `include/ffitarget.h`, `lib/libffi.dll`. It also creates a `lib/libffi.lib` file,
+#    but it is of the wrong file type, `DLL` rather than `LIBRARY`.
+#
+# 5. Manually create a working `.lib` file (in the <install dest>/lib dir):
+#   5.a use `dumpbin /exports libffi.dll` to get a list of exported symbols
+#   5.b put them in a `libffi.def` file: `EXPORTS` on the first line, then a symbol on each line following
+#   5.c run `lib /def:libffi.def /machine:x64 /out:libffi.lib` to create the right `.lib` file (`lib` is a visual studio tool)
+#
+
 LIBFFI_VERSION=3.4.2
 
 BUNDLE_NAME=libffi-$LIBFFI_VERSION.tar.gz
@@ -49,6 +81,7 @@ SRC_DIR="$OUTPUT_DIR/src"
 DOWNLOAD_DIR="$OUTPUT_DIR/download"
 INSTALL_DIR="$OUTPUT_DIR/install"
 IMAGE_DIR="$OUTPUT_DIR/image"
+OS_NAME=$(uname -s)
 
 USAGE="$0 <devkit dir>"
 
@@ -81,8 +114,33 @@ cd $LIBFFI_DIR
 if [ ! -e $LIBFFI_DIR/configure ]; then
   bash ./autogen.sh
 fi
+
+case $OS_NAME in
+  Linux)
+    CC=$DEVKIT_DIR/bin/gcc
+    CXX=$DEVKIT_DIR/bin/g++
+    # For Linux/x86 it's under /lib/ instead of /lib64/
+    LIB_FOLDER=lib64
+    LIB_NAME=libffi.so*
+    ;;
+  Darwin)
+    CC=$DEVKIT_DIR/Xcode/Contents/Developer/usr/bin/gcc
+    CXX=$DEVKIT_DIR/Xcode/Contents/Developer/usr/bin/gcc
+    LIB_FOLDER=lib
+    LIB_NAME=libffi.*.dylib
+    ;;
+  *)
+    echo " Unsupported OS: $OS_NAME"
+    exit 1
+    ;;
+esac
+
 # For Linux/x86, add --build=i686-pc-linux-gnu CFLAGS=-m32 CXXFLAGS=-m32 LDFLAGS=-m32
-bash ./configure --prefix=$INSTALL_DIR CC=$DEVKIT_DIR/bin/gcc CXX=$DEVKIT_DIR/bin/g++
+bash ./configure \
+  --disable-docs \
+  --prefix=$INSTALL_DIR \
+  CC=$CC \
+  CXX=$CXX
 
 # Run with nice to keep system usable during build.
 nice make $MAKE_ARGS install
@@ -90,10 +148,9 @@ nice make $MAKE_ARGS install
 mkdir -p $IMAGE_DIR
 # Extract what we need into an image
 if [ ! -e $IMAGE_DIR/lib/libffi.so ]; then
-  echo "Copying libffi.so* to image"
+  echo "Copying ${LIB_NAME} to image"
   mkdir -p $IMAGE_DIR/lib
-  # For Linux/x86 it's under /lib/ instead of /lib64/
-  cp -a $INSTALL_DIR/lib64/libffi.so* $IMAGE_DIR/lib/
+  cp -a $INSTALL_DIR/${LIB_FOLDER}/${LIB_NAME} $IMAGE_DIR/lib/
 fi
 if [ ! -e $IMAGE_DIR/include/ ]; then
   echo "Copying include to image"
