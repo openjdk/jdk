@@ -28,13 +28,15 @@ package java.lang.foreign;
 import java.lang.invoke.VarHandle;
 import java.lang.reflect.Array;
 import java.nio.ByteOrder;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.function.Function;
 import jdk.internal.foreign.AbstractMemorySegmentImpl;
 import jdk.internal.foreign.SlicingAllocator;
-import jdk.internal.foreign.Utils;
+import jdk.internal.foreign.StringSupport;
 import jdk.internal.javac.PreviewFeature;
+import jdk.internal.vm.annotation.ForceInline;
 
 /**
  * An object that may be used to allocate {@linkplain MemorySegment memory segments}. Clients implementing this interface
@@ -77,8 +79,26 @@ import jdk.internal.javac.PreviewFeature;
 public interface SegmentAllocator {
 
     /**
-     * Converts a Java string into a UTF-8 encoded, null-terminated C string,
+     * Converts a Java string into a null-terminated C string using the {@linkplain StandardCharsets#UTF_8 UTF-8} charset,
      * storing the result into a memory segment.
+     * <p>
+     * Calling this method is equivalent to the following code:
+     * {@snippet lang = java:
+     * allocateString(str, StandardCharsets.UTF_8);
+     *}
+     *
+     * @param str the Java string to be converted into a C string.
+     * @return a new native segment containing the converted C string.
+     */
+    @ForceInline
+    default MemorySegment allocateString(String str) {
+        Objects.requireNonNull(str);
+        return allocateString(str, StandardCharsets.UTF_8);
+    }
+
+    /**
+     * Converts a Java string into a null-terminated C string using the provided charset,
+     * and storing the result into a memory segment.
      * <p>
      * This method always replaces malformed-input and unmappable-character
      * sequences with this charset's default replacement byte array.  The
@@ -87,17 +107,31 @@ public interface SegmentAllocator {
      * <p>
      * If the given string contains any {@code '\0'} characters, they will be
      * copied as well. This means that, depending on the method used to read
-     * the string, such as {@link MemorySegment#getUtf8String(long)}, the string
+     * the string, such as {@link MemorySegment#getString(long)}, the string
      * will appear truncated when read again.
      *
-     * @implSpec the default implementation for this method copies the contents of the provided Java string
-     * into a new memory segment obtained by calling {@code this.allocate(str.length() + 1)}.
-     * @param str the Java string to be converted into a C string.
+     * @param str     the Java string to be converted into a C string.
+     * @param charset the charset used to {@linkplain Charset#newEncoder() encode} the string bytes.
      * @return a new native segment containing the converted C string.
+     * @throws UnsupportedOperationException if {@code charset} is not a {@linkplain StandardCharsets standard charset}.
+     * @implSpec the default implementation for this method copies the contents of the provided Java string
+     * into a new memory segment obtained by calling {@code this.allocate(B + N)}, where:
+     * <ul>
+     *     <li>{@code B} is the size, in bytes, of the string encoded using the provided charset
+     *     (e.g. {@code str.getBytes(charset).length});</li>
+     *     <li>{@code N} is the size (in bytes) of the terminator char according to the provided charset. For instance,
+     *     this is 1 for {@link StandardCharsets#US_ASCII} and 2 for {@link StandardCharsets#UTF_16}.</li>
+     * </ul>
      */
-    default MemorySegment allocateUtf8String(String str) {
+    @ForceInline
+    default MemorySegment allocateString(String str, Charset charset) {
+        Objects.requireNonNull(charset);
         Objects.requireNonNull(str);
-        return Utils.toCString(str.getBytes(StandardCharsets.UTF_8), this);
+        int termCharSize = StringSupport.CharsetKind.of(charset).terminatorCharSize();
+        byte[] bytes = str.getBytes(charset);
+        MemorySegment segment = allocate(bytes.length + termCharSize);
+        MemorySegment.copy(bytes, 0, segment, ValueLayout.JAVA_BYTE, 0, bytes.length);
+        return segment;
     }
 
     /**

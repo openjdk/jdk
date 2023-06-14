@@ -31,7 +31,6 @@
 
 import java.lang.foreign.*;
 
-import jdk.internal.foreign.MappedMemorySegmentImpl;
 import jdk.internal.foreign.NativeMemorySegmentImpl;
 import org.testng.annotations.*;
 
@@ -204,7 +203,7 @@ public class TestSegmentAllocators {
                 return allocate(size, 1);
             };
         };
-        allocator.allocateUtf8String("Hello");
+        allocator.allocateString("Hello");
         assertEquals(calls.get(), 1);
     }
 

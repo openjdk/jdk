@@ -29,7 +29,6 @@ package jdk.internal.foreign;
 import java.lang.foreign.AddressLayout;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.SegmentAllocator;
 import java.lang.foreign.StructLayout;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
@@ -47,7 +46,6 @@ import jdk.internal.foreign.abi.SharedUtils;
 import jdk.internal.vm.annotation.ForceInline;
 import sun.invoke.util.Wrapper;
 
-import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 import static sun.security.action.GetPropertyAction.privilegedGetProperty;
 
 /**
@@ -147,18 +145,6 @@ public final class Utils {
             throw new IllegalArgumentException("Invalid alignment constraint for address: " + addr);
         }
         return NativeMemorySegmentImpl.makeNativeSegmentUnchecked(addr, size, scope);
-    }
-
-    public static void copy(MemorySegment addr, byte[] bytes) {
-        var heapSegment = MemorySegment.ofArray(bytes);
-        addr.copyFrom(heapSegment);
-        addr.set(JAVA_BYTE, bytes.length, (byte)0);
-    }
-
-    public static MemorySegment toCString(byte[] bytes, SegmentAllocator allocator) {
-        MemorySegment addr = allocator.allocate(bytes.length + 1);
-        copy(addr, bytes);
-        return addr;
     }
 
     @ForceInline

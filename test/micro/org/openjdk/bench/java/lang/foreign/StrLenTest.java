@@ -94,27 +94,27 @@ public class StrLenTest extends CLayouts {
     @Benchmark
     public int panama_strlen() throws Throwable {
         try (Arena arena = Arena.ofConfined()) {
-            MemorySegment segment = arena.allocateUtf8String(str);
+            MemorySegment segment = arena.allocateString(str);
             return (int)STRLEN.invokeExact(segment);
         }
     }
 
     @Benchmark
     public int panama_strlen_ring() throws Throwable {
-        return (int)STRLEN.invokeExact(arenaAllocator.allocateUtf8String(str));
+        return (int)STRLEN.invokeExact(arenaAllocator.allocateString(str));
     }
 
     @Benchmark
     public int panama_strlen_pool() throws Throwable {
         Arena arena = pool.acquire();
-        int l = (int) STRLEN.invokeExact(arena.allocateUtf8String(str));
+        int l = (int) STRLEN.invokeExact(arena.allocateString(str));
         arena.close();
         return l;
     }
 
     @Benchmark
     public int panama_strlen_prefix() throws Throwable {
-        return (int)STRLEN.invokeExact(segmentAllocator.allocateUtf8String(str));
+        return (int)STRLEN.invokeExact(segmentAllocator.allocateString(str));
     }
 
     @Benchmark

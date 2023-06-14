@@ -24,6 +24,9 @@
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
+import java.lang.reflect.Field;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 import org.testng.annotations.*;
 import static org.testng.Assert.*;
@@ -38,27 +41,53 @@ import static org.testng.Assert.*;
 public class TestStringEncoding {
 
     @Test(dataProvider = "strings")
-    public void testStrings(String testString, int expectedByteLength) {
-        try (Arena arena = Arena.ofConfined()) {
-            MemorySegment text = arena.allocateUtf8String(testString);
+    public void testStrings(String testString) throws ReflectiveOperationException {
+        for (Charset charset : Charset.availableCharsets().values()) {
+            if (isStandard(charset)) {
+                try (Arena arena = Arena.ofConfined()) {
+                    MemorySegment text = arena.allocateString(testString, charset);
 
-            assertEquals(text.byteSize(), expectedByteLength);
+                    int terminatorSize = "\0".getBytes(charset).length;
+                    if (charset == StandardCharsets.UTF_16) {
+                        terminatorSize -= 2; // drop BOM
+                    }
 
-            String roundTrip = text.getUtf8String(0);
-            assertEquals(roundTrip, testString);
+                    int expectedByteLength =
+                            testString.getBytes(charset).length +
+                            terminatorSize;
+
+                    assertEquals(text.byteSize(), expectedByteLength);
+
+                    String roundTrip = text.getString(0, charset);
+                    if (charset.newEncoder().canEncode(testString)) {
+                        assertEquals(roundTrip, testString);
+                    }
+                }
+            } else {
+                assertThrows(UnsupportedOperationException.class, () -> Arena.global().allocateString(testString, charset));
+            }
         }
     }
 
     @DataProvider
     public static Object[][] strings() {
         return new Object[][] {
-            { "testing",               8 },
-            { "",                      1 },
-            { "X",                     2 },
-            { "12345",                 6 },
-            { "yen \u00A5",            7 }, // in UTF-8 2 bytes: 0xC2 0xA5
-            { "snowman \u26C4",       12 }, // in UTF-8 three bytes: 0xE2 0x9B 0x84
-            { "rainbow \uD83C\uDF08", 13 }  // in UTF-8 four bytes: 0xF0 0x9F 0x8C 0x88
+            { "testing" },
+            { "" },
+            { "X" },
+            { "12345" },
+            { "yen \u00A5" },
+            { "snowman \u26C4" },
+            { "rainbow \uD83C\uDF08" }
         };
+    }
+
+    boolean isStandard(Charset charset) throws ReflectiveOperationException {
+        for (Field standardCharset : StandardCharsets.class.getDeclaredFields()) {
+            if (standardCharset.get(null) == charset) {
+                return true;
+            }
+        }
+        return false;
     }
 }

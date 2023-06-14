@@ -92,10 +92,10 @@ import java.util.stream.Stream;
  *
  * {@snippet lang = java:
  * try (Arena arena = Arena.ofConfined()) {
- *     MemorySegment str = arena.allocateUtf8String("Hello");
+ *     MemorySegment str = arena.allocateString("Hello");
  *     long len = (long) strlen.invokeExact(str);  // 5
  * }
- * }
+ *}
  * <h3 id="describing-c-sigs">Describing C signatures</h3>
  *
  * When interacting with the native linker, clients must provide a platform-dependent description of the signature
@@ -460,9 +460,9 @@ import java.util.stream.Stream;
  *
  * {@snippet lang = java:
  * try (Arena arena = Arena.ofConfined()) {
- *     int res = (int)printf.invokeExact(arena.allocateUtf8String("%d plus %d equals %d"), 2, 2, 4); //prints "2 plus 2 equals 4"
+ *     int res = (int)printf.invokeExact(arena.allocateString("%d plus %d equals %d"), 2, 2, 4); //prints "2 plus 2 equals 4"
  * }
- * }
+ *}
  *
  * <h2 id="safety">Safety considerations</h2>
  *

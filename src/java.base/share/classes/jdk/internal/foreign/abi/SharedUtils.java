@@ -247,24 +247,6 @@ public final class SharedUtils {
         };
     }
 
-    public static String toJavaStringInternal(MemorySegment segment, long start) {
-        int len = strlen(segment, start);
-        byte[] bytes = new byte[len];
-        MemorySegment.copy(segment, JAVA_BYTE, start, bytes, 0, len);
-        return new String(bytes, StandardCharsets.UTF_8);
-    }
-
-    private static int strlen(MemorySegment segment, long start) {
-        // iterate until overflow (String can only hold a byte[], whose length can be expressed as an int)
-        for (int offset = 0; offset >= 0; offset++) {
-            byte curr = segment.get(JAVA_BYTE, start + offset);
-            if (curr == 0) {
-                return offset;
-            }
-        }
-        throw new IllegalArgumentException("String too large");
-    }
-
     static Map<VMStorage, Integer> indexMap(Binding.Move[] moves) {
         return IntStream.range(0, moves.length)
                         .boxed()

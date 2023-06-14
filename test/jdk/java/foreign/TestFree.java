@@ -40,7 +40,7 @@ public class TestFree extends NativeTestHelper {
         MemorySegment addr = allocateMemory(str.length() + 1);
         addr.copyFrom(MemorySegment.ofArray(str.getBytes()));
         addr.set(C_CHAR, str.length(), (byte)0);
-        assertEquals(str, addr.getUtf8String(0));
+        assertEquals(str, addr.getString(0));
         freeMemory(addr);
     }
 }
