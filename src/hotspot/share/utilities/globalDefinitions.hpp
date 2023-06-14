@@ -38,6 +38,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <type_traits>
+#include <limits>
 
 class oopDesc;
 
@@ -512,15 +513,20 @@ inline size_t pointer_delta(const MetaWord* left, const MetaWord* right) {
 // warnings, for example when truncating a size_t to an int when we
 // know the size_t is a small struct. Such casts are risky because
 // they effectively disable useful compiler warnings. We can make our
-// lives safer with this function, which ensures that any cast is
-// reversible without loss of information. It doesn't check
-// everything: it isn't intended to make sure that pointer types are
+// lives safer with this function, which ensures that any cast
+// fits within the size of the type cast to, and tolerates sign extension.
+// It doesn't check everything: it isn't intended to make sure that pointer types are
 // compatible, for example.
 template <typename T2, typename T1>
 constexpr T2 checked_cast(T1 thing) {
-  T2 result = static_cast<T2>(thing);
-  assert(static_cast<T1>(result) == thing, "must be");
-  return result;
+#ifdef ASSERT
+  typedef typename std::make_signed<T1>::type S1;
+  S1 test = static_cast<S1>(thing);
+  S1 max = std::numeric_limits<T2>::max();
+  S1 min = (std::is_signed<T2>::value) ? std::numeric_limits<T2>::min() : -max;
+  assert(test <= max && test >= min, "out of range of destination type");
+#endif
+  return static_cast<T2>(thing);
 }
 
 // Need the correct linkage to call qsort without warnings

@@ -298,17 +298,21 @@ class AbstractAssembler : public ResourceObj  {
   // ensure buf contains all code (call this before using/copying the code)
   void flush();
 
-  // These take full width arguments and cast down without checking. Many callers have sign extension converting up to
-  // full int width arguments, so this casts this away.
-  void emit_int8(   uint32_t x1)                                    { code_section()->emit_int8((uint8_t)x1); }
+  void emit_int8(   uint32_t x1)                                    { code_section()->emit_int8(checked_cast<uint8_t>(x1)); }
 
-  void emit_int16(  uint32_t x)                                     { code_section()->emit_int16((uint16_t)x); }
-  void emit_int16(  uint32_t x1, uint32_t x2)                       { code_section()->emit_int16((uint8_t)x1, (uint8_t)x2); }
+  void emit_int16(  uint32_t x)                                     { code_section()->emit_int16(checked_cast<uint16_t>(x)); }
+  void emit_int16(  uint32_t x1, uint32_t x2)                       { code_section()->emit_int16(checked_cast<uint8_t>(x1),
+                                                                                                 checked_cast<uint8_t>(x2)); }
 
-  void emit_int24(  uint32_t x1, uint32_t x2, uint32_t x3)          { code_section()->emit_int24((uint8_t)x1, (uint8_t)x2, (uint8_t)x3); }
+  void emit_int24(  uint32_t x1, uint32_t x2, uint32_t x3)          { code_section()->emit_int24(checked_cast<uint8_t>(x1),
+                                                                                                 checked_cast<uint8_t>(x2),
+                                                                                                 checked_cast<uint8_t>(x3)); }
 
-  void emit_int32(  uint64_t x)                                     { code_section()->emit_int32((uint32_t)x); }
-  void emit_int32(  uint32_t x1, uint32_t x2, uint32_t x3, uint32_t x4) { code_section()->emit_int32((uint8_t)x1, (uint8_t)x2, (uint8_t)x3, (uint8_t)x4); }
+  void emit_int32(  uint64_t x)                                     { code_section()->emit_int32(checked_cast<uint32_t>(x)); }
+  void emit_int32(  uint32_t x1, uint32_t x2, uint32_t x3, uint32_t x4) { code_section()->emit_int32(checked_cast<uint8_t>(x1),
+                                                                                                     checked_cast<uint8_t>(x2),
+                                                                                                     checked_cast<uint8_t>(x3),
+                                                                                                     checked_cast<uint8_t>(x4)); }
 
   void emit_int64(  uint64_t x)                                     { code_section()->emit_int64(x); }
 
