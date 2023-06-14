@@ -217,12 +217,16 @@ public class ThreadContainers {
             return null;
         }
         @Override
-        public String toString() {
+        public String name() {
             return "<root>";
         }
         @Override
         public StackableScope previous() {
             return null;
+        }
+        @Override
+        public String toString() {
+            return name();
         }
 
         /**
