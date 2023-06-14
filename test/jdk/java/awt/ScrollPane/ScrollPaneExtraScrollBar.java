@@ -57,7 +57,7 @@ public class ScrollPaneExtraScrollBar {
             sp = new ScrollPane(ScrollPane.SCROLLBARS_AS_NEEDED);
             sp.add(new Button("TEST"));
             f.add("Center", sp);
-            f.pack();
+            // Frame must not be packed, otherwise the bug isn't reproduced
             f.setLocationRelativeTo(null);
             f.setVisible(true);
         });
