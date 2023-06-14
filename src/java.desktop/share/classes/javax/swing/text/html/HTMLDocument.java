@@ -545,10 +545,6 @@ public class HTMLDocument extends DefaultStyledDocument {
      * @see javax.swing.text.html.HTML.Tag
      */
     public Iterator getIterator(HTML.Tag t) {
-        if (t.isBlock()) {
-            // TBD
-            return null;
-        }
         return new LeafIterator(t, this);
     }
 
