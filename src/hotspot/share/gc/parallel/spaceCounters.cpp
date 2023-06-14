@@ -34,7 +34,8 @@
 
 SpaceCounters::SpaceCounters(const char* name, int ordinal, size_t max_size,
                              MutableSpace* m, GenerationCounters* gc) :
-   _object_space(m) {
+   _object_space(m),
+   _perf_used_helper(nullptr) {
 
   if (UsePerfData) {
     EXCEPTION_MARK;
@@ -59,8 +60,9 @@ SpaceCounters::SpaceCounters(const char* name, int ordinal, size_t max_size,
                                    _object_space->capacity_in_bytes(), CHECK);
 
     cname = PerfDataManager::counter_name(_name_space, "used");
+    _perf_used_helper = new MutableSpaceUsedHelper(_object_space);
     _used = PerfDataManager::create_variable(SUN_GC, cname, PerfData::U_Bytes,
-                                    new MutableSpaceUsedHelper(_object_space),
+                                    _perf_used_helper,
                                     CHECK);
 
     cname = PerfDataManager::counter_name(_name_space, "initCapacity");
@@ -70,6 +72,7 @@ SpaceCounters::SpaceCounters(const char* name, int ordinal, size_t max_size,
 }
 
 SpaceCounters::~SpaceCounters() {
+  delete _perf_used_helper;
   FREE_C_HEAP_ARRAY(char, _name_space);
 }
 

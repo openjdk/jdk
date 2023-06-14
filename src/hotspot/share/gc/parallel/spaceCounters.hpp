@@ -30,9 +30,10 @@
 #include "runtime/perfData.hpp"
 #include "utilities/macros.hpp"
 
+class MutableSpaceUsedHelper;
+
 // A SpaceCounter is a holder class for performance counters
 // that track a space;
-
 class SpaceCounters: public CHeapObj<mtGC> {
   friend class VMStructs;
 
@@ -47,6 +48,7 @@ class SpaceCounters: public CHeapObj<mtGC> {
   MutableSpace*     _object_space;
   char*             _name_space;
 
+  MutableSpaceUsedHelper* _perf_used_helper;
  public:
 
   SpaceCounters(const char* name, int ordinal, size_t max_size,
