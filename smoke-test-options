@@ -1,0 +1,1 @@
+-XX:+UnlockExperimentalVMOptions -XX:+DoPartialEscapeAnalysis -Xmx12g -Xms12g
