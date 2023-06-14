@@ -82,7 +82,7 @@ public class FileChooserSizeLabelCutOffTest {
                 Instructions to Test:
                 1. Verify that the UI scaling is set to 225%.
                 2. If Size label is cut off with table
-                 header cell, test FAIL else test is PASS.               
+                 header cell, test FAIL else test is PASS.
                 """;
         frame = new JFrame("JFileChooser Size Label test");
         jfc = new JFileChooser();
