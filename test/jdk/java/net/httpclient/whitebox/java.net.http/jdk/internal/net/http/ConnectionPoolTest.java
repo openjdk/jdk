@@ -38,6 +38,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.SelectorProvider;
 import java.time.Duration;
+import java.time.InstantSource;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -95,14 +96,15 @@ public class ConnectionPoolTest {
     }
 
     public static void testCacheCleaners() throws Exception {
-        ConnectionPool pool = new ConnectionPool(666, TimeSource.source());
+        final InstantSource instantSource = TimeSource.source();
+        ConnectionPool pool = new ConnectionPool(666, instantSource);
         HttpClient client = new HttpClientStub(pool);
         InetSocketAddress proxy = InetSocketAddress.createUnresolved("bar", 80);
         System.out.println("Adding 20 connections to pool");
         Random random = new Random();
 
         final int count = 20;
-        Instant now = TimeSource.now().truncatedTo(ChronoUnit.SECONDS);
+        Instant now = instantSource.instant().truncatedTo(ChronoUnit.SECONDS);
         int[] keepAlives = new int[count];
         HttpConnectionStub[] connections = new HttpConnectionStub[count];
         long purge = pool.purgeExpiredConnectionsAndReturnNextDeadline(now);
