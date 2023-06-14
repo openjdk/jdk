@@ -770,7 +770,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *
      * {@snippet lang=java :
      * for (long offset = 0; offset < segment.byteSize(); offset++) {
-     *     byteHandle.set(ValueLayout.JAVA_BYTE, offset, value);
+     *     segment.set(ValueLayout.JAVA_BYTE, offset, value);
      * }
      * }
      *

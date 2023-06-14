@@ -92,8 +92,9 @@ public sealed interface ValueLayout extends MemoryLayout permits
      * Is equivalent to the following code:
      *
      * {@snippet lang = java:
-     * SequenceLayout notionalLayout = MemoryLayout.sequenceLayout(
- *                                         MemoryLayout.sequenceLayout(10, MemoryLayout.sequenceLayout(20, ValueLayout.JAVA_INT)));
+     * MemoryLayout innerLayout = MemoryLayout.sequenceLayout(10,
+     *         MemoryLayout.sequenceLayout(20, ValueLayout.JAVA_INT));
+     * SequenceLayout notionalLayout = MemoryLayout.sequenceLayout(Long.MAX_VALUE / innerLayout.byteSize(), innerLayout);
      * VarHandle arrayHandle = notionalLayout.varHandle(PathElement.sequenceElement(),
      *                                                  PathElement.sequenceElement(),
      *                                                  PathElement.sequenceElement());

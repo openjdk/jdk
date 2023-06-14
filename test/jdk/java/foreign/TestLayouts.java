@@ -201,12 +201,7 @@ public class TestLayouts {
                 () -> MemoryLayout.sequenceLayout(-2, JAVA_SHORT));
     }
 
-    @Test(dataProvider = "basicLayouts")
-    public void testSequenceInferredCount(MemoryLayout layout) {
-        assertEquals(MemoryLayout.sequenceLayout(layout),
-                     MemoryLayout.sequenceLayout(Long.MAX_VALUE / layout.byteSize(), layout));
-    }
-
+    @Test
     public void testSequenceNegativeElementCount() {
         assertThrows(IllegalArgumentException.class, // negative
                 () -> MemoryLayout.sequenceLayout(-1, JAVA_SHORT));
@@ -300,14 +295,14 @@ public class TestLayouts {
     @Test(dataProvider="layoutsAndAlignments", expectedExceptions = IllegalArgumentException.class)
     public void testBadSequenceElementAlignmentTooBig(MemoryLayout layout, long byteAlign) {
         layout = layout.withByteAlignment(layout.byteSize() * 2); // hyper-align
-        MemoryLayout.sequenceLayout(layout);
+        MemoryLayout.sequenceLayout(1, layout);
     }
 
     @Test(dataProvider="layoutsAndAlignments")
     public void testBadSequenceElementSizeNotMultipleOfAlignment(MemoryLayout layout, long byteAlign) {
         boolean shouldFail = layout.byteSize() % layout.byteAlignment() != 0;
         try {
-            MemoryLayout.sequenceLayout(layout);
+            MemoryLayout.sequenceLayout(1, layout);
             assertFalse(shouldFail);
         } catch (IllegalArgumentException ex) {
             assertTrue(shouldFail);
@@ -496,7 +491,6 @@ public class TestLayouts {
     static Stream<MemoryLayout> groupLayoutStream() {
         return Stream.of(
                 MemoryLayout.sequenceLayout(10, JAVA_INT),
-                MemoryLayout.sequenceLayout(JAVA_INT),
                 MemoryLayout.structLayout(JAVA_INT, MemoryLayout.paddingLayout(4), JAVA_LONG),
                 MemoryLayout.unionLayout(JAVA_LONG, JAVA_DOUBLE)
         );

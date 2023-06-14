@@ -95,7 +95,7 @@ public sealed interface AddressLayout extends ValueLayout permits ValueLayouts.O
      * {@snippet lang = java:
      * AddressLayout addressLayout   = ...
      * AddressLayout unboundedLayout = addressLayout.withTargetLayout(
-     *         MemoryLayout.sequenceLayout(ValueLayout.JAVA_BYTE));
+     *         MemoryLayout.sequenceLayout(Long.MAX_VALUE, ValueLayout.JAVA_BYTE));
      *}
      * <p>
      * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.

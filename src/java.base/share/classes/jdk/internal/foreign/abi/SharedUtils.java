@@ -81,7 +81,7 @@ public final class SharedUtils {
     private static final MethodHandle MH_CHECK_CAPTURE_SEGMENT;
 
     public static final AddressLayout C_POINTER = ADDRESS
-            .withTargetLayout(MemoryLayout.sequenceLayout(JAVA_BYTE));
+            .withTargetLayout(MemoryLayout.sequenceLayout(Long.MAX_VALUE, JAVA_BYTE));
 
     public static final Arena DUMMY_ARENA = new Arena() {
         @Override

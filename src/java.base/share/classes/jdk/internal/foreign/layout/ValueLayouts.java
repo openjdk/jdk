@@ -128,7 +128,7 @@ public final class ValueLayouts {
                 layout = MemoryLayout.sequenceLayout(size, layout);
                 path.add(MemoryLayout.PathElement.sequenceElement());
             }
-            layout = MemoryLayout.sequenceLayout(layout);
+            layout = MemoryLayout.sequenceLayout(Long.MAX_VALUE / layout.byteSize(), layout);
             path.add(MemoryLayout.PathElement.sequenceElement());
             return layout.varHandle(path.toArray(new MemoryLayout.PathElement[0]));
         }

@@ -156,7 +156,7 @@ public class TestIllegalLink extends NativeTestHelper {
             },
             {
                     FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
-                            MemoryLayout.sequenceLayout(
+                            MemoryLayout.sequenceLayout(1,
                                 C_INT.withByteAlignment(1)
                             ))),
                     NO_OPTIONS,
@@ -181,7 +181,7 @@ public class TestIllegalLink extends NativeTestHelper {
                     "Unsupported layout: I4"
             },
             {
-                    FunctionDescriptor.of(MemoryLayout.structLayout(MemoryLayout.sequenceLayout(C_INT.withOrder(nonNativeOrder())))),
+                    FunctionDescriptor.of(MemoryLayout.structLayout(MemoryLayout.sequenceLayout(1, C_INT.withOrder(nonNativeOrder())))),
                     NO_OPTIONS,
                     "Unsupported layout: I4"
             },
@@ -212,7 +212,7 @@ public class TestIllegalLink extends NativeTestHelper {
         if (IS_SYSV) {
             cases.add(new Object[] {
                     FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
-                            MemoryLayout.sequenceLayout(
+                            MemoryLayout.sequenceLayout(Long.MAX_VALUE / C_INT.byteSize(),
                                 C_INT
                             ))),
                     NO_OPTIONS,

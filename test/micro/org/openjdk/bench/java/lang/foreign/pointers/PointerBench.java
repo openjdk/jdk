@@ -60,7 +60,7 @@ public class PointerBench {
     MemorySegment pointSegment = pointPointer.segment();
 
     public static final AddressLayout UNSAFE_ADDRESS = ValueLayout.ADDRESS
-            .withTargetLayout(MemoryLayout.sequenceLayout(ValueLayout.JAVA_BYTE));
+            .withTargetLayout(MemoryLayout.sequenceLayout(Long.MAX_VALUE, ValueLayout.JAVA_BYTE));
 
     @Setup
     public void setup() {

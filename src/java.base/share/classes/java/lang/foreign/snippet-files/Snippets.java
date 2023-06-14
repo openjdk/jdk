@@ -147,7 +147,7 @@ class Snippets {
         void withTargetLayout() {
             AddressLayout addressLayout = ADDRESS;
             AddressLayout unboundedLayout = addressLayout.withTargetLayout(
-                    sequenceLayout(ValueLayout.JAVA_BYTE));
+                    sequenceLayout(Long.MAX_VALUE, ValueLayout.JAVA_BYTE));
         }
     }
 
@@ -523,10 +523,8 @@ class Snippets {
             MemorySegment segment = null;
             byte value = 42;
 
-            var byteHandle = MemoryLayout.sequenceLayout(ValueLayout.JAVA_BYTE)
-                    .varHandle(MemoryLayout.PathElement.sequenceElement());
             for (long l = 0; l < segment.byteSize(); l++) {
-                byteHandle.set(segment.address(), l, value);
+                segment.set(JAVA_BYTE, l, value);
             }
         }
 
@@ -654,11 +652,12 @@ class Snippets {
     static class ValueLayoutSnippets {
 
         void arrayElementVarHandle() {
-            VarHandle arrayHandle = ValueLayout.JAVA_INT.arrayElementVarHandle(10, 20);
-
-            SequenceLayout arrayLayout = MemoryLayout.sequenceLayout(
-                    MemoryLayout.sequenceLayout(10,
-                            MemoryLayout.sequenceLayout(20, ValueLayout.JAVA_INT)));
+            MemoryLayout innerLayout = MemoryLayout.sequenceLayout(10,
+                    MemoryLayout.sequenceLayout(20, ValueLayout.JAVA_INT));
+            SequenceLayout notionalLayout = MemoryLayout.sequenceLayout(Long.MAX_VALUE / innerLayout.byteSize(), innerLayout);
+            VarHandle arrayHandle = notionalLayout.varHandle(PathElement.sequenceElement(),
+                                                             PathElement.sequenceElement(),
+                                                             PathElement.sequenceElement());
 
             int value1 = (int) arrayHandle.get(10, 2, 4); // ok, accessed offset = 8176
             int value2 = (int) arrayHandle.get(0, 0, 30); // out of bounds value for z
