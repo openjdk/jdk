@@ -38,7 +38,6 @@ import javax.swing.JToolBar;
 import javax.swing.GroupLayout;
 import javax.swing.SwingUtilities;
 import javax.swing.SwingConstants;
-import javax.swing.WindowConstants;
 
 public class TestToolBarConstraint {
     static String instructions = "INSTRUCTIONS: \n" +
@@ -55,7 +54,7 @@ public class TestToolBarConstraint {
     public static void main(String[] args) throws Exception {
         SwingUtilities.invokeAndWait(() -> {
             try {
-                creatUI();
+                createUI();
                 passFailJFrame = new PassFailJFrame(instructions);
                 PassFailJFrame.addTestWindow(frame);
                 PassFailJFrame.positionTestWindow(frame, PassFailJFrame.Position.HORIZONTAL);
@@ -66,7 +65,7 @@ public class TestToolBarConstraint {
         passFailJFrame.awaitAndCheck();
     }
 
-    private static void creatUI() {
+    private static void createUI() {
         frame = new JFrame();
         JToolBar jToolBar1 = new JToolBar();
         JButton jButton1 = new JButton();
