@@ -8188,8 +8188,8 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * filter function and the target var handle is then called on the modified (usually shortened)
      * coordinate list.
      * <p>
-     * If {@code R} is the return type of the filter (which cannot be void), the target var handle must accept a value of
-     * type {@code R} as its coordinate in position {@code pos}, preceded and/or followed by
+     * If {@code R} is the return type of the filter, then, unless {@code R} is void, the target var handle must accept
+     * a value of type {@code R} as its coordinate in position {@code pos}, preceded and/or followed by
      * any coordinate not passed to the filter.
      * No coordinates are reordered, and the result returned from the filter
      * replaces (in order) the whole subsequence of coordinates originally
@@ -8198,9 +8198,10 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * The argument types (if any) of the filter
      * replace zero or one coordinate types of the target var handle, at position {@code pos},
      * in the resulting adapted var handle.
-     * The return type of the filter must be identical to the
+     * If the return type of the filter is <em>not</em> void, it must be identical to the
      * coordinate type of the target var handle at position {@code pos}, and that target var handle
-     * coordinate is supplied by the return value of the filter.
+     * coordinate is supplied by the return value of the filter. If the return type of the filter <em>is</em> void,
+     * the filter will essentially act as a side effect that is executed before the var handle is invoked.
      * <p>
      * If any of the filters throws a checked exception when invoked, the resulting var handle will
      * throw an {@link IllegalStateException}.
@@ -8214,7 +8215,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * @return an adapter var handle which filters the incoming coordinate values,
      * before calling the target var handle
      * @throws IllegalArgumentException if the return type of {@code filter}
-     * is void, or it is not the same as the {@code pos} coordinate of the target var handle,
+     * is not void, and it is not the same as the {@code pos} coordinate of the target var handle,
      * if {@code pos} is not between 0 and the target var handle coordinate arity, inclusive,
      * if the resulting var handle's type would have <a href="MethodHandle.html#maxarity">too many coordinates</a>,
      * or if it's determined that {@code filter} throws any checked exceptions.
