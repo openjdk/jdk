@@ -924,10 +924,11 @@ public final class Class<T> implements java.io.Serializable,
      * </pre></blockquote>
      *
      * @apiNote
-     * This is not a strict inverse of {@link #forName(String) forName};
-     * distinct classes may share a common name but have different class loaders.
-     * In addition, {@linkplain #isHidden() hidden} classes cannot be discovered
-     * by {@code forName}.
+     * This is not a strict inverse of {@link #forName(String) forName}.
+     * For normal classes, distinct classes which share a common name but
+     * have different class loaders will have the identical name.
+     * In addition, {@linkplain #isHidden() hidden} classes cannot be
+     * discovered by {@code forName}.
      *
      * @return  the name of the class, interface, or other entity
      *          represented by this {@code Class} object.
