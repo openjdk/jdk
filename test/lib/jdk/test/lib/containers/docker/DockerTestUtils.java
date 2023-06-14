@@ -27,6 +27,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.FileVisitOption;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -36,6 +37,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
 import jdk.test.lib.Container;
 import jdk.test.lib.Utils;
@@ -164,7 +166,7 @@ public class DockerTestUtils {
         Path jdkSrcDir = Paths.get(JDK_UNDER_TEST);
         Path jdkDstDir = buildDir.resolve("jdk");
         Files.createDirectories(jdkDstDir);
-        Files.walkFileTree(jdkSrcDir, new CopyFileVisitor(jdkSrcDir, jdkDstDir));
+        Files.walkFileTree(jdkSrcDir, EnumSet.of(FileVisitOption.FOLLOW_LINKS), Integer.MAX_VALUE, new CopyFileVisitor(jdkSrcDir, jdkDstDir));
 
         buildImage(imageName, buildDir);
     }
