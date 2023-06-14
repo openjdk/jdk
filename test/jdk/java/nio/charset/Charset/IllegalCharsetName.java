@@ -22,15 +22,13 @@
  */
 
 /* @test
- * @bug 4448594 6330020 8184665 8310049
+ * @bug 4448594 4786884 6330020 8184665 8310049
  * @summary Ensure Charset.forName/isSupport throws the correct exception
  *          if the charset names passed in are illegal.
  * @run junit IllegalCharsetName
  */
 
-import java.nio.charset.Charset;
-import java.nio.charset.IllegalCharsetNameException;
-import java.nio.charset.StandardCharsets;
+import java.nio.charset.*;
 
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -67,6 +65,33 @@ public class IllegalCharsetName {
             assertThrows(IllegalCharsetNameException.class,
                     () -> Charset.forName(illegalName));
         }
+    }
+
+    // Charset.forName, Charset.isSupported, and the Charset constructor should
+    // throw an IllegalCharsetNameException when passed an empty name
+    @Test
+    public void emptyCharsets() {
+        assertThrows(IllegalCharsetNameException.class,
+                () -> Charset.forName(""));
+        assertThrows(IllegalCharsetNameException.class,
+                () -> Charset.forName(""));
+        assertThrows(IllegalCharsetNameException.class,
+                () -> new Charset("", new String[]{}) {
+                    @Override
+                    public boolean contains(Charset cs) {
+                        return false;
+                    }
+
+                    @Override
+                    public CharsetDecoder newDecoder() {
+                        return null;
+                    }
+
+                    @Override
+                    public CharsetEncoder newEncoder() {
+                        return null;
+                    }
+                });
     }
 
     // Standard charsets may bypass alias checking during startup, test that
