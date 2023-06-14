@@ -874,13 +874,14 @@ final class VirtualThread extends BaseVirtualThread {
     @Override
     boolean getAndClearInterrupt() {
         assert Thread.currentThread() == this;
-        synchronized (interruptLock) {
-            boolean oldValue = interrupted;
-            if (oldValue)
+        boolean oldValue = interrupted;
+        if (oldValue) {
+            synchronized (interruptLock) {
                 interrupted = false;
-            carrierThread.clearInterrupt();
-            return oldValue;
+                carrierThread.clearInterrupt();
+            }
         }
+        return oldValue;
     }
 
     @Override

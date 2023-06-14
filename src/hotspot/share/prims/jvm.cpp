@@ -722,7 +722,7 @@ JVM_ENTRY(jclass, JVM_GetCallerClass(JNIEnv* env))
   //
   // The call stack at this point looks something like this:
   //
-  // [0] [ @CallerSensitive public sun.reflect.Reflection.getCallerClass ]
+  // [0] [ @CallerSensitive public jdk.internal.reflect.Reflection.getCallerClass ]
   // [1] [ @CallerSensitive API.method                                   ]
   // [.] [ (skipped intermediate frames)                                 ]
   // [n] [ caller                                                        ]
@@ -1362,7 +1362,7 @@ class ScopedValueBindingsResolver {
 public:
   InstanceKlass* Carrier_klass;
   ScopedValueBindingsResolver(JavaThread* THREAD) {
-    Klass *k = SystemDictionary::resolve_or_fail(vmSymbols::jdk_incubator_concurrent_ScopedValue_Carrier(), true, THREAD);
+    Klass *k = SystemDictionary::resolve_or_fail(vmSymbols::java_lang_ScopedValue_Carrier(), true, THREAD);
     Carrier_klass = InstanceKlass::cast(k);
   }
 };
@@ -1395,7 +1395,7 @@ JVM_ENTRY(jobject, JVM_FindScopedValueBindings(JNIEnv *env, jclass cls))
     if (loc != -1) {
       javaVFrame *frame = vfst.asJavaVFrame();
       StackValueCollection* locals = frame->locals();
-      StackValue* head_sv = locals->at(loc); // jdk/incubator/concurrent/ScopedValue$Snapshot
+      StackValue* head_sv = locals->at(loc); // java/lang/ScopedValue$Snapshot
       Handle result = head_sv->get_obj();
       assert(!head_sv->obj_is_scalar_replaced(), "found scalar-replaced object");
       if (result() != nullptr) {
@@ -3294,8 +3294,7 @@ JVM_ENTRY(jobject, JVM_LatestUserDefinedLoader(JNIEnv *env))
     oop loader = ik->class_loader();
     if (loader != nullptr && !SystemDictionary::is_platform_class_loader(loader)) {
       // Skip reflection related frames
-      if (!ik->is_subclass_of(vmClasses::reflect_MethodAccessorImpl_klass()) &&
-          !ik->is_subclass_of(vmClasses::reflect_ConstructorAccessorImpl_klass())) {
+      if (!ik->is_subclass_of(vmClasses::reflect_SerializationConstructorAccessorImpl_klass())) {
         return JNIHandles::make_local(THREAD, loader);
       }
     }
