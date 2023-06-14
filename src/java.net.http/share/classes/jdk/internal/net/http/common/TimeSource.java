@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@ import java.time.Instant;
 import java.time.InstantSource;
 
 /**
- * An {@link InstantSource} based on {@link System#nanoTime()} for the
+ * A {@link TimeLine} based on {@link System#nanoTime()} for the
  * purpose of handling timeouts. This time source is intentionally not
  * based on the system clock, in order to not be sensitive to clock skews
  * caused by changes to the wall clock. Consequently, callers should use
@@ -38,7 +38,7 @@ import java.time.InstantSource;
  * of {@link System#nanoTime()}. This time source has the same property
  * of monotonicity than the {@link System#nanoTime()} it is based on.
  */
-public final class TimeSource implements InstantSource {
+public final class TimeSource implements TimeLine {
 
     private static volatile NanoSource nanoSource = new NanoSource();
     private static final TimeSource SOURCE = new TimeSource();
@@ -64,11 +64,11 @@ public final class TimeSource implements InstantSource {
             this.firstNanos = firstNanos;
         }
 
-        Instant instant(long nanos) {
+        Deadline instant(long nanos) {
             return instant(nanos, nanos - firstNanos);
         }
 
-        Instant instant(long nanos, long delay) {
+        Deadline instant(long nanos, long delay) {
             Instant now = first.plusNanos(delay);
             if (!isInWindow(delay)) {
                 // Shifts the time reference (firstNanos) to
@@ -77,7 +77,7 @@ public final class TimeSource implements InstantSource {
                 // around.
                 nanoSource = new NanoSource(now, nanos);
             }
-            return now;
+            return Deadline.of(now);
         }
 
         long delay(long nanos) {
@@ -91,7 +91,7 @@ public final class TimeSource implements InstantSource {
     }
 
     @Override
-    public Instant instant() {
+    public Deadline instant() {
         long nanos = System.nanoTime();
         long delay = localSource.delay(nanos);
         // use localSource if possible to avoid a volatile read
@@ -122,7 +122,7 @@ public final class TimeSource implements InstantSource {
      *     TimeSource.source().instant();
      * }
      */
-    public static Instant now() {
+    public static Deadline now() {
         return SOURCE.instant();
     }
 }

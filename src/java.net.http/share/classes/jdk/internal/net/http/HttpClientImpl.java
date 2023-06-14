@@ -53,7 +53,6 @@ import java.security.AccessController;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivilegedAction;
 import java.time.Duration;
-import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -87,6 +86,7 @@ import java.net.http.HttpResponse.PushPromiseHandler;
 import java.net.http.WebSocket;
 
 import jdk.internal.net.http.common.BufferSupplier;
+import jdk.internal.net.http.common.Deadline;
 import jdk.internal.net.http.common.HttpBodySubscriberWrapper;
 import jdk.internal.net.http.common.Log;
 import jdk.internal.net.http.common.Logger;
@@ -1746,7 +1746,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
         synchronized (this) {
             if (timeouts.isEmpty()) return 0L;
 
-            Instant now = TimeSource.now();
+            Deadline now = TimeSource.now();
             Iterator<TimeoutEvent> itr = timeouts.iterator();
             while (itr.hasNext()) {
                 TimeoutEvent event = itr.next();

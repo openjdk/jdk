@@ -28,8 +28,6 @@ package jdk.internal.net.http;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
-import java.time.Instant;
-import java.time.InstantSource;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -43,8 +41,11 @@ import java.util.Optional;
 import java.util.concurrent.Flow;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
+
+import jdk.internal.net.http.common.Deadline;
 import jdk.internal.net.http.common.FlowTube;
 import jdk.internal.net.http.common.Logger;
+import jdk.internal.net.http.common.TimeLine;
 import jdk.internal.net.http.common.TimeSource;
 import jdk.internal.net.http.common.Utils;
 import static jdk.internal.net.http.HttpClientImpl.KEEP_ALIVE_TIMEOUT; //seconds
@@ -65,7 +66,7 @@ final class ConnectionPool {
     private final HashMap<CacheKey,LinkedList<HttpConnection>> sslPool;
     private final ExpiryList expiryList;
     private final String dbgTag; // used for debug
-    private final InstantSource timeSource;
+    private final TimeLine timeSource;
     volatile boolean stopped;
 
     /**
@@ -130,14 +131,14 @@ final class ConnectionPool {
         this(clientId, TimeSource.source());
     }
 
-    ConnectionPool(long clientId, InstantSource timeSource) {
+    ConnectionPool(long clientId, TimeLine timeSource) {
         this("ConnectionPool("+clientId+")", Objects.requireNonNull(timeSource));
     }
 
         /**
          * There should be one of these per HttpClient.
          */
-    private ConnectionPool(String tag, InstantSource timeSource) {
+    private ConnectionPool(String tag, TimeLine timeSource) {
         dbgTag = tag;
         plainPool = new HashMap<>();
         sslPool = new HashMap<>();
@@ -193,7 +194,7 @@ final class ConnectionPool {
     }
 
     // Called also by whitebox tests
-    void returnToPool(HttpConnection conn, Instant now, long keepAlive) {
+    void returnToPool(HttpConnection conn, Deadline now, long keepAlive) {
 
         assert (conn instanceof PlainHttpConnection) || conn.isSecure()
             : "Attempting to return unsecure connection to SSL pool: "
@@ -303,7 +304,7 @@ final class ConnectionPool {
     }
 
     // Used for whitebox testing
-    long purgeExpiredConnectionsAndReturnNextDeadline(Instant now) {
+    long purgeExpiredConnectionsAndReturnNextDeadline(Deadline now) {
         long nextPurge = 0;
 
         // We may be in the process of adding new elements
@@ -363,8 +364,8 @@ final class ConnectionPool {
 
     static final class ExpiryEntry {
         final HttpConnection connection;
-        final Instant expiry; // absolute time in seconds of expiry time
-        ExpiryEntry(HttpConnection connection, Instant expiry) {
+        final Deadline expiry; // absolute time in seconds of expiry time
+        ExpiryEntry(HttpConnection connection, Deadline expiry) {
             this.connection = connection;
             this.expiry = expiry;
         }
@@ -379,10 +380,10 @@ final class ConnectionPool {
      */
     private static final class ExpiryList {
         private final LinkedList<ExpiryEntry> list = new LinkedList<>();
-        private final InstantSource timeSource;
+        private final TimeLine timeSource;
         private volatile boolean mayContainEntries;
 
-        ExpiryList(InstantSource timeSource) {
+        ExpiryList(TimeLine timeSource) {
             this.timeSource = timeSource;
         }
 
@@ -397,7 +398,7 @@ final class ConnectionPool {
 
         // Returns the next expiry deadline
         // should only be called while holding the ConnectionPool stateLock.
-        Optional<Instant> nextExpiryDeadline() {
+        Optional<Deadline> nextExpiryDeadline() {
             if (list.isEmpty()) return Optional.empty();
             else return Optional.of(list.getLast().expiry);
         }
@@ -414,8 +415,8 @@ final class ConnectionPool {
         }
 
         // Used by whitebox test.
-        void add(HttpConnection conn, Instant now, long keepAlive) {
-            Instant then = now.truncatedTo(ChronoUnit.SECONDS)
+        void add(HttpConnection conn, Deadline now, long keepAlive) {
+            Deadline then = now.truncatedTo(ChronoUnit.SECONDS)
                     .plus(keepAlive, ChronoUnit.SECONDS);
 
             // Elements with the farther deadline are at the head of
@@ -457,7 +458,7 @@ final class ConnectionPool {
 
         // should only be called while holding the ConnectionPool stateLock.
         // Purge all elements whose deadline is before now (now included).
-        List<HttpConnection> purgeUntil(Instant now) {
+        List<HttpConnection> purgeUntil(Deadline now) {
             if (list.isEmpty()) return Collections.emptyList();
 
             List<HttpConnection> closelist = new ArrayList<>();

@@ -29,6 +29,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.atomic.AtomicLong;
 
+import jdk.internal.net.http.common.Deadline;
 import jdk.internal.net.http.common.TimeSource;
 
 /**
@@ -46,7 +47,7 @@ abstract class TimeoutEvent implements Comparable<TimeoutEvent> {
     // see TimeoutEvent::compareTo below;
     private final long id = COUNTER.incrementAndGet();
     private final Duration duration;
-    private final Instant deadline;
+    private final Deadline deadline;
 
     TimeoutEvent(Duration duration) {
         this.duration = duration;
@@ -55,7 +56,7 @@ abstract class TimeoutEvent implements Comparable<TimeoutEvent> {
 
     public abstract void handle();
 
-    public Instant deadline() {
+    public Deadline deadline() {
         return deadline;
     }
 
