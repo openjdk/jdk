@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,16 +22,22 @@
  */
 
 /* @test
- * @bug 6330020 8184665
+ * @bug 4448594 6330020 8184665 8310049
  * @summary Ensure Charset.forName/isSupport throws the correct exception
  *          if the charset names passed in are illegal.
+ * @run junit IllegalCharsetName
  */
 
-import java.nio.charset.*;
+import java.nio.charset.Charset;
+import java.nio.charset.IllegalCharsetNameException;
+import java.nio.charset.StandardCharsets;
+
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class IllegalCharsetName {
-    public static void main(String[] args) throws Exception {
-        String[] illegalNames = {
+
+    static String[] illegalNames = {
             ".",
             "_",
             ":",
@@ -42,23 +48,31 @@ public class IllegalCharsetName {
             "-name",
             "name*name",
             "name?name"
-        };
-        for (int i = 0; i < illegalNames.length; i++) {
-            try {
-                Charset.forName(illegalNames[i]);
-                throw new Exception("Charset.forName(): No exception thrown");
-            } catch (IllegalCharsetNameException x) { //expected
-            }
+    };
 
-            try {
-                Charset.isSupported(illegalNames[i]);
-                throw new Exception("Charset.isSupported(): No exception thrown");
-            } catch (IllegalCharsetNameException x) { //expected
-            }
+    // Charset.forName should throw an exception when passed null
+    @Test
+    public void nullCharset() {
+        assertThrows(IllegalArgumentException.class,
+                () -> Charset.forName(null));
+    }
+
+    // Charset.forName and Charset.isSupported should throw an
+    // IllegalCharsetNameException when passed an illegal name
+    @Test
+    public void illegalCharsets() {
+        for (String illegalName : illegalNames) {
+            assertThrows(IllegalCharsetNameException.class,
+                    () -> Charset.forName(illegalName));
+            assertThrows(IllegalCharsetNameException.class,
+                    () -> Charset.forName(illegalName));
         }
+    }
 
-        // Standard charsets may bypass alias checking during startup, test that
-        // they're all well-behaved as a sanity test
+    // Standard charsets may bypass alias checking during startup, test that
+    // they're all well-behaved as a sanity test
+    @Test
+    public void aliasTest() {
         checkAliases(StandardCharsets.ISO_8859_1);
         checkAliases(StandardCharsets.US_ASCII);
         checkAliases(StandardCharsets.UTF_8);
