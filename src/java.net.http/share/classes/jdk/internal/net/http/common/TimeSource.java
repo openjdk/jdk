@@ -63,7 +63,7 @@ public final class TimeSource implements InstantSource {
             this.first = first;
             this.firstNanos = firstNanos;
         }
-        
+
         Instant instant(long nanos) {
             return instant(nanos, nanos - firstNanos);
         }
