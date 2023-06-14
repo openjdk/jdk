@@ -1118,7 +1118,7 @@ public class MetalBorders {
         }
 
         public Insets getBorderInsets(Component c, Insets insets) {
-            insets.set(2, 2, 2, 0);
+            insets.set(2, 2, 2, 2);
             return insets;
         }
     }
