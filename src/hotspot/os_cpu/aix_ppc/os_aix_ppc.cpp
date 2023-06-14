@@ -516,7 +516,7 @@ int os::extra_bang_size_in_bytes() {
   return 0;
 }
 
-bool os::Aix::platform_print_native_stack(outputStream* st, const void* context, char *buf, int buf_size) {
+bool os::Aix::platform_print_native_stack(outputStream* st, const void* context, char *buf, int buf_size, address& lastpc) {
   AixNativeCallstack::print_callstack_for_context(st, (const ucontext_t*)context, true, buf, (size_t) buf_size);
   return true;
 }

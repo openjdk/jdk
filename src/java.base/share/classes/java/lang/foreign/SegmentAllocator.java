@@ -38,16 +38,21 @@ import jdk.internal.javac.PreviewFeature;
 
 /**
  * An object that may be used to allocate {@linkplain MemorySegment memory segments}. Clients implementing this interface
- * must implement the {@link #allocate(long, long)} method. This interface defines several default methods
+ * must implement the {@link #allocate(long, long)} method. A segment allocator defines several methods
  * which can be useful to create segments from several kinds of Java values such as primitives and arrays.
- * This interface is a {@linkplain FunctionalInterface functional interface}: clients can easily obtain a new segment allocator
- * by using either a lambda expression or a method reference.
  * <p>
- * This interface also defines factories for commonly used allocators:
+ * {@code SegmentAllocator} is a {@linkplain FunctionalInterface functional interface}. Clients can easily obtain a new
+ * segment allocator by using either a lambda expression or a method reference:
+ *
+ * {@snippet lang=java :
+ * SegmentAllocator autoAllocator = (byteSize, byteAlignment) -> Arena.ofAuto().allocate(byteSize, byteAlignment);
+ * }
+ * <p>
+ * This interface defines factories for commonly used allocators:
  * <ul>
  *     <li>{@link #slicingAllocator(MemorySegment)} obtains an efficient slicing allocator, where memory
  *     is allocated by repeatedly slicing the provided memory segment;</li>
- *     <li>{@link #prefixAllocator(MemorySegment)} obtains an allocator which wraps a segment (either on-heap or off-heap)
+ *     <li>{@link #prefixAllocator(MemorySegment)} obtains an allocator which wraps a segment
  *     and recycles its content upon each new allocation request.</li>
  * </ul>
  * <p>
@@ -55,7 +60,15 @@ import jdk.internal.javac.PreviewFeature;
  * the results of a certain operation (performed by the API) should be stored, as a memory segment. For instance,
  * {@linkplain Linker#downcallHandle(FunctionDescriptor, Linker.Option...) downcall method handles} can accept an additional
  * {@link SegmentAllocator} parameter if the underlying foreign function is known to return a struct by-value. Effectively,
- * the allocator parameter tells the linker runtime where to store the return value of the foreign function.
+ * the allocator parameter tells the linker where to store the return value of the foreign function.
+ *
+ * @apiNote Unless otherwise specified, the {@link #allocate(long, long)} method is not thread-safe.
+ * Furthermore, memory segments allocated by a segment allocator can be associated with different
+ * lifetimes, and can even be backed by overlapping regions of memory. For these reasons, clients should generally
+ * only interact with a segment allocator they own.
+ * <p>
+ * Clients should consider using an {@linkplain Arena arena} instead, which, provides strong thread-safety,
+ * lifetime and non-overlapping guarantees.
  */
 @FunctionalInterface
 @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
@@ -311,6 +324,7 @@ public interface SegmentAllocator {
      * @param elementLayout the array element layout.
      * @param count the array element count.
      * @return a segment for the newly allocated memory block.
+     * @throws IllegalArgumentException if {@code elementLayout.byteSize() * count} overflows.
      * @throws IllegalArgumentException if {@code count < 0}.
      */
     default MemorySegment allocateArray(MemoryLayout elementLayout, long count) {
@@ -338,7 +352,7 @@ public interface SegmentAllocator {
      * @param byteAlignment the alignment (in bytes) of the block of memory to be allocated.
      * @return a segment for the newly allocated memory block.
      * @throws IllegalArgumentException if {@code byteSize < 0}, {@code byteAlignment <= 0},
-     * or if {@code alignmentBytes} is not a power of 2.
+     * or if {@code byteAlignment} is not a power of 2.
      */
     MemorySegment allocate(long byteSize, long byteAlignment);
 
@@ -347,8 +361,9 @@ public interface SegmentAllocator {
      * obtained from the provided segment. Each new allocation request will return a new slice starting at the
      * current offset (modulo additional padding to satisfy alignment constraint), with given size.
      * <p>
-     * When the returned allocator cannot satisfy an allocation request, e.g. because a slice of the provided
-     * segment with the requested size cannot be found, an {@link IndexOutOfBoundsException} is thrown.
+     * The returned allocator throws {@link IndexOutOfBoundsException} when a slice of the provided
+     * segment with the requested size and alignment cannot be found.
+     * @implNote A slicing allocator is not <em>thread-safe</em>.
      *
      * @param segment the segment which the returned allocator should slice from.
      * @return a new slicing allocator
@@ -365,14 +380,15 @@ public interface SegmentAllocator {
      * Equivalent to (but likely more efficient than) the following code:
      * {@snippet lang=java :
      * MemorySegment segment = ...
-     * SegmentAllocator prefixAllocator = (size, align) -> segment.asSlice(0, size);
+     * SegmentAllocator prefixAllocator = (size, align) -> segment.asSlice(0, size, align);
      * }
-     * <p>
-     * This allocator can be useful to limit allocation requests in case a client
+     * The returned allocator throws {@link IndexOutOfBoundsException} when a slice of the provided
+     * segment with the requested size and alignment cannot be found.
+     *
+     * @apiNote A prefix allocator can be useful to limit allocation requests in case a client
      * knows that they have fully processed the contents of the allocated segment before the subsequent allocation request
      * takes place.
-     * <p>
-     * While the allocator returned by this method is <em>thread-safe</em>, concurrent access on the same recycling
+     * @implNote While a prefix allocator is <em>thread-safe</em>, concurrent access on the same recycling
      * allocator might cause a thread to overwrite contents written to the underlying segment by a different thread.
      *
      * @param segment the memory segment to be recycled by the returned allocator.

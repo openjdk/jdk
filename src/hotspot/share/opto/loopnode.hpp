@@ -1483,7 +1483,7 @@ public:
   IfNode* insert_cmpi_loop_exit(IfNode* if_cmpu, IdealLoopTree *loop);
   void remove_cmpi_loop_exit(IfNode* if_cmp, IdealLoopTree *loop);
   // Utility to register node "n" with PhaseIdealLoop
-  void register_node(Node* n, IdealLoopTree *loop, Node* pred, int ddepth);
+  void register_node(Node* n, IdealLoopTree* loop, Node* pred, uint ddepth);
   // Utility to create an if-projection
   ProjNode* proj_clone(ProjNode* p, IfNode* iff);
   // Force the iff control output to be the live_proj
