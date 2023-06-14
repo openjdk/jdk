@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4448594 4786884 6330020 8184665 8310049
+ * @bug 4448594 4786884 6330020 8184665 8260265 8310049
  * @summary Ensure Charset.forName/isSupport throws the correct exception
  *          if the charset names passed in are illegal.
  * @run junit IllegalCharsetName
