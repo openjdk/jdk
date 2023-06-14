@@ -182,11 +182,8 @@ public final class LauncherHelper {
                 printLocale();
                 break;
             case "security":
-                if (opts.length > 2) {
-                    printSecuritySettings(opts[2].trim());
-                } else {
-                    printSecuritySettings("all");
-                }
+                var opt = opts.length > 2 ? opts[2].trim() : "all";
+                printSecuritySettings(opt);
                 break;
             case "system":
                 if (OperatingSystem.isLinux()) {
@@ -339,7 +336,7 @@ public final class LauncherHelper {
     }
 
     private static void printSecuritySettings(String arg) {
-        switch (arg.toLowerCase(Locale.ROOT)) {
+        switch (arg) {
             case "properties" -> printSecurityProperties();
             case "providers"  -> printSecurityProviderConfig(true);
             case "tls"        -> printSecurityTLSConfig(true);
@@ -398,20 +395,20 @@ public final class LauncherHelper {
         ostream.println(INDENT + "Security TLS configuration:");
         ostream.println(TWOINDENT + "Enabled Protocols:");
         for (String s : ssls.getEnabledProtocols()) {
-            System.out.println(THREEINDENT + s);
+            ostream.println(THREEINDENT + s);
         }
 
         if (verbose) {
-            System.out.println("\n" + TWOINDENT + "Enabled Cipher Suites:");
+            ostream.println("\n" + TWOINDENT + "Enabled Cipher Suites:");
             for (String s : ssls.getEnabledCipherSuites()) {
-                System.out.println(THREEINDENT + s);
+                ostream.println(THREEINDENT + s);
             }
         }
         ostream.println();
     }
 
     private static void printSecurityProviderConfig(boolean verbose) {
-        ostream.println(INDENT + "Security provider static configuration:");
+        ostream.println(INDENT + "Security provider static configuration: (in order of preference)");
         for (Provider p : Security.getProviders()) {
             if (verbose) {
                 // separate the views out
@@ -419,7 +416,7 @@ public final class LauncherHelper {
             }
             ostream.println(TWOINDENT + "Provider name: " + p.getName());
             if (verbose) {
-                ostream.println(TWOINDENT + PROV_INFO_STRING + wrappedString(p.getInfo(), 80));
+                ostream.println(wrappedString(PROV_INFO_STRING + p.getInfo(), 80));
                 ostream.println(TWOINDENT + "Provider services: (type : algorithm)");
                 Set<Provider.Service> services = p.getServices();
                if (!services.isEmpty()) {
@@ -446,12 +443,12 @@ public final class LauncherHelper {
         for (String s : orig.split(" ")) {
             if (widthCount == 0) {
                 // first iteration only
-                sb.append(s);
-                widthCount = PROV_INFO_STRING.length() + s.length();
+                sb.append(TWOINDENT + s);
+                widthCount = s.length() + TWOINDENT.length();
             } else {
                 if (widthCount + s.length() > limit) {
                     sb.append("\n" + THREEINDENT + s);
-                    widthCount = s.length();
+                    widthCount = s.length() + THREEINDENT.length();
                 } else {
                     sb.append(" " + s);
                     widthCount += s.length() + 1;
