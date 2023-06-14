@@ -96,7 +96,7 @@ class DiscontinuedInstructionsTest {
 
         //test failure of stack map generation when enforced to generate
         assertThrows(IllegalArgumentException.class, () ->
-                Classfile.of(Classfile.StackMapsOption.STACK_MAPS_ALWAYS)
+                Classfile.of(Classfile.StackMapsOption.GENERATE_STACK_MAPS)
                          .transform(clm, ClassTransform.transformingMethodBodies(CodeTransform.ACCEPT_ALL)));
     }
 }

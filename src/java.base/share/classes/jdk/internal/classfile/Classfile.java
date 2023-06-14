@@ -201,8 +201,8 @@ public sealed interface Classfile
      */
     enum StackMapsOption implements Option {
         STACK_MAPS_WHEN_REQUIRED,
-        STACK_MAPS_ALWAYS,
-        STACK_MAPS_NEVER
+        GENERATE_STACK_MAPS,
+        DROP_STACK_MAPS
     }
 
     /**

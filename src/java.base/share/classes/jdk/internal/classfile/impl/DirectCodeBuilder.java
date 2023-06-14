@@ -366,18 +366,18 @@ public final class DirectCodeBuilder
                             attributes.withAttribute(original.findAttribute(Attributes.STACK_MAP_TABLE).orElse(null));
                             writeCounters(true, buf);
                         }
-                        case STACK_MAPS_ALWAYS ->
+                        case GENERATE_STACK_MAPS ->
                             generateStackMaps(buf);
-                        case STACK_MAPS_NEVER ->
+                        case DROP_STACK_MAPS ->
                             writeCounters(true, buf);
                     }
                 } else {
                     switch (context.stackMapsOption()) {
                         case STACK_MAPS_WHEN_REQUIRED ->
                             tryGenerateStackMaps(false, buf);
-                        case STACK_MAPS_ALWAYS ->
+                        case GENERATE_STACK_MAPS ->
                             generateStackMaps(buf);
-                        case STACK_MAPS_NEVER ->
+                        case DROP_STACK_MAPS ->
                             writeCounters(false, buf);
                     }
                 }

@@ -146,7 +146,7 @@ class CorpusTest {
 
             try {
                 byte[] transformed = m.shared && m.classTransform != null
-                                     ? Classfile.of(Classfile.StackMapsOption.STACK_MAPS_NEVER)
+                                     ? Classfile.of(Classfile.StackMapsOption.DROP_STACK_MAPS)
                                                 .transform(Classfile.of().parse(bytes), m.classTransform)
                                      : m.transform.apply(bytes);
                 Map<Integer, Integer> newDups = findDups(transformed);
@@ -213,7 +213,7 @@ class CorpusTest {
         assertEmpty(newModel.verify(null));
 
         //testing maxStack and maxLocals are calculated identically by StackMapGenerator and StackCounter
-        byte[] noStackMaps = Classfile.of(Classfile.StackMapsOption.STACK_MAPS_NEVER)
+        byte[] noStackMaps = Classfile.of(Classfile.StackMapsOption.DROP_STACK_MAPS)
                                       .transform(newModel,
                                                          ClassTransform.transformingMethodBodies(CodeTransform.ACCEPT_ALL));
         var noStackModel = cc.parse(noStackMaps);
