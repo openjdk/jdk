@@ -48,6 +48,13 @@ public class IllegalCharsetName {
             "name?name"
     };
 
+    // Charset.forName should throw an exception when passed "default"
+    @Test
+    public void defaultCharset() {
+        assertThrows(UnsupportedCharsetException.class,
+                () -> Charset.forName("default"));
+    }
+
     // Charset.forName should throw an exception when passed null
     @Test
     public void nullCharset() {
