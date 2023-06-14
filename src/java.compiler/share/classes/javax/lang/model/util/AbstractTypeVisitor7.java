@@ -65,8 +65,8 @@ public abstract class AbstractTypeVisitor7<R, P> extends AbstractTypeVisitor6<R,
     /**
      * Visits a {@code UnionType} in a manner defined by a subclass.
      *
-     * @param t  {@inheritDoc}
-     * @param p  {@inheritDoc}
+     * @param t  {@inheritDoc TypeVisitor}
+     * @param p  {@inheritDoc TypeVisitor}
      * @return the result of the visit as defined by a subclass
      */
     @Override

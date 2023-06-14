@@ -102,7 +102,7 @@ public abstract class AbstractProcessor implements Processor {
      * then any leading {@linkplain Processor#getSupportedAnnotationTypes
      * module prefixes} are stripped from the names.
      *
-     * @return {@inheritDoc Prcoessor}
+     * @return {@inheritDoc Processor}
      */
     @Override
     public Set<String> getSupportedAnnotationTypes() {
@@ -187,10 +187,10 @@ public abstract class AbstractProcessor implements Processor {
     /**
      * {@return an empty iterable of completions}
      *
-     * @param element {@inheritDoc}
-     * @param annotation {@inheritDoc}
-     * @param member {@inheritDoc}
-     * @param userText {@inheritDoc}
+     * @param element {@inheritDoc Processor}
+     * @param annotation {@inheritDoc Processor}
+     * @param member {@inheritDoc Processor}
+     * @param userText {@inheritDoc Processor}
      */
     @Override
     public Iterable<? extends Completion> getCompletions(Element element,

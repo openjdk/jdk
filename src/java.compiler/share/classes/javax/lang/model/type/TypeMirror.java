@@ -27,6 +27,8 @@ package javax.lang.model.type;
 
 import java.lang.annotation.Annotation;
 import java.util.List;
+
+import javax.lang.model.AnnotatedConstruct;
 import javax.lang.model.element.*;
 import javax.lang.model.util.Types;
 
@@ -62,7 +64,7 @@ import javax.lang.model.util.Types;
  * @jls 10.1 Array Types
  * @since 1.6
  */
-public interface TypeMirror extends javax.lang.model.AnnotatedConstruct {
+public interface TypeMirror extends AnnotatedConstruct {
 
     /**
      * {@return the {@code kind} of this type}

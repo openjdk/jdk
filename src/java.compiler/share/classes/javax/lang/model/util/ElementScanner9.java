@@ -28,6 +28,7 @@ package javax.lang.model.util;
 import javax.lang.model.element.*;
 import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.SourceVersion;
+import javax.lang.model.element.ElementVisitor;
 import static javax.lang.model.SourceVersion.*;
 
 
@@ -97,13 +98,13 @@ public class ElementScanner9<R, P> extends ElementScanner8<R, P> {
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc ElementVisitor}
      *
      * @implSpec This implementation scans the enclosed elements.
      *
-     * @param e the element to visit
-     * @param p a visitor-specified parameter
-     * @return  the result of the scan
+     * @param e {@inheritDoc ElementVisitor}
+     * @param p {@inheritDoc ElementVisitor}
+     * @return  {@inheritDoc ElementScanner6}
      */
     @Override
     public R visitModule(ModuleElement e, P p) {

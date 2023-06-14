@@ -88,13 +88,13 @@ public class TypeKindVisitor7<R, P> extends TypeKindVisitor6<R, P> {
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc TypeVisitor}
      *
      * @implSpec This implementation calls {@code defaultAction}.
      *
-     * @param t  {@inheritDoc}
-     * @param p  {@inheritDoc}
-     * @return the result of {@code defaultAction}
+     * @param t  {@inheritDoc TypeVisitor}
+     * @param p  {@inheritDoc TypeVisitor}
+     * @return   {@inheritDoc TypeKindVisitor6}
      */
     @Override
     public R visitUnion(UnionType t, P p) {

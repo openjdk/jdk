@@ -32,6 +32,7 @@ import java.lang.annotation.IncompleteAnnotationException;
 import java.util.List;
 import java.util.Set;
 
+import javax.lang.model.AnnotatedConstruct;
 import javax.lang.model.type.*;
 import javax.lang.model.util.*;
 
@@ -56,7 +57,7 @@ import javax.lang.model.util.*;
  * @see TypeMirror
  * @since 1.6
  */
-public interface Element extends javax.lang.model.AnnotatedConstruct {
+public interface Element extends AnnotatedConstruct {
     /**
      * {@return the type defined by this element}
      *

@@ -27,8 +27,9 @@ package javax.lang.model.util;
 
 import javax.lang.model.element.*;
 import javax.annotation.processing.SupportedSourceVersion;
-import static javax.lang.model.SourceVersion.*;
 import javax.lang.model.SourceVersion;
+import javax.lang.model.element.ElementVisitor;
+import static javax.lang.model.SourceVersion.*;
 
 /**
  * A visitor of program elements based on their {@linkplain
@@ -82,12 +83,12 @@ public class ElementKindVisitor9<R, P> extends ElementKindVisitor8<R, P> {
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc ElementVisitor}
      *
      * @implSpec This implementation calls {@code defaultAction}.
      *
-     * @param e the element to visit
-     * @param p a visitor-specified parameter
+     * @param e {@inheritDoc ElementVisitor}
+     * @param p {@inheritDoc ElementVisitor}
      * @return  the result of {@code defaultAction}
      */
     @Override

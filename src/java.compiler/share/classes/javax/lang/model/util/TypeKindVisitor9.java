@@ -83,12 +83,12 @@ public class TypeKindVisitor9<R, P> extends TypeKindVisitor8<R, P> {
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc TypeKindVisitor6}
      *
      * @implSpec This implementation calls {@code defaultAction}.
      *
-     * @param t {@inheritDoc}
-     * @param p {@inheritDoc}
+     * @param t {@inheritDoc TypeKindVisitor6}
+     * @param p {@inheritDoc TypeKindVisitor6}
      * @return  the result of {@code defaultAction}
      *
      * @since 10

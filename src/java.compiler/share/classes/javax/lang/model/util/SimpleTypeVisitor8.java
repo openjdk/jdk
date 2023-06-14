@@ -29,6 +29,7 @@ import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.type.IntersectionType;
 import static javax.lang.model.SourceVersion.*;
+import javax.lang.model.type.TypeVisitor;
 
 /**
  * A simple visitor of types with default behavior appropriate for the
@@ -80,12 +81,12 @@ public class SimpleTypeVisitor8<R, P> extends SimpleTypeVisitor7<R, P> {
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc TypeVisitor}
      *
      * @implSpec This implementation calls {@code defaultAction}.
      *
-     * @param t {@inheritDoc}
-     * @param p {@inheritDoc}
+     * @param t {@inheritDoc TypeVisitor}
+     * @param p {@inheritDoc TypeVisitor}
      * @return  the result of {@code defaultAction}
      */
     @Override

@@ -88,12 +88,12 @@ public class ElementKindVisitor7<R, P> extends ElementKindVisitor6<R, P> {
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc ElementKindVisitor6}
      *
      * @implSpec This implementation calls {@code defaultAction}.
      *
-     * @param e {@inheritDoc}
-     * @param p {@inheritDoc}
+     * @param e {@inheritDoc ElementKindVisitor6}
+     * @param p {@inheritDoc ElementKindVisitor6}
      * @return  the result of {@code defaultAction}
      */
     @Override
