@@ -700,7 +700,10 @@ public interface ChronoLocalDate
      * This default implementation performs the comparison defined above.
      *
      * @param other  the other date to compare to, not null
-     * @return the comparator value, negative if less, positive if greater
+     * @return the comparator value is less than zero if the other is before,
+     *          zero if they are equal, greater than zero if the other is after
+     * @see #isBefore
+     * @see #isAfter
      */
     @Override
     default int compareTo(ChronoLocalDate other) {
