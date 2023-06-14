@@ -76,7 +76,7 @@ relocInfo* relocInfo::finish_prefix(short* prefix_limit) {
   assert(sizeof(relocInfo) == sizeof(short), "change this code");
   short* p = (short*)(this+1);
   assert(prefix_limit >= p, "must be a valid span of data");
-  int plen = prefix_limit - p;
+  int plen = checked_cast<int>(prefix_limit - p);
   if (plen == 0) {
     debug_only(_value = 0xFFFF);
     return this;                         // no data: remove self completely
