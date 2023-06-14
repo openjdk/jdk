@@ -553,10 +553,10 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         __ set_info("unwind_exception", dont_gc_arguments);
 
         if (AbortVMOnException) {
-          __ mov(R11_scratch1, Rexception);
+          __ mr(R11_scratch1, Rexception);
           save_live_registers(sasm);
           __ call_VM_leaf(CAST_FROM_FN_PTR(address, check_abort_on_vm_exception), Rexception);
-          restore_live_registers(sasm);
+          restore_live_registers(sasm, noreg, noreg);
         }
 
         __ ld(Rcaller_sp, 0, R1_SP);
