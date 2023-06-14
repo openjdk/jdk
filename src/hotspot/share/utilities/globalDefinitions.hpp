@@ -523,7 +523,7 @@ constexpr T2 checked_cast(T1 thing) {
   typedef typename std::make_signed<T1>::type S1;
   S1 test = static_cast<S1>(thing);
   S1 max = std::numeric_limits<T2>::max();
-  S1 min = (std::is_signed<T2>::value) ? std::numeric_limits<T2>::min() : -max;
+  S1 min = (std::is_signed<T2>::value) ? std::numeric_limits<T2>::min() : -(max - 1);
   assert(test <= max && test >= min, "out of range of destination type");
 #endif
   return static_cast<T2>(thing);
