@@ -2175,11 +2175,7 @@ address MacroAssembler::emit_trampoline_stub(int destination_toc_offset,
 
 // "The box" is the space on the stack where we copy the object mark.
 void MacroAssembler::compiler_fast_lock_object(ConditionRegister flag, Register oop, Register box,
-                                               Register temp, Register displaced_header, Register current_header,
-                                               RTMLockingCounters* rtm_counters,
-                                               RTMLockingCounters* stack_rtm_counters,
-                                               Metadata* method_data,
-                                               bool use_rtm, bool profile_rtm) {
+                                               Register temp, Register displaced_header, Register current_header) {
   assert_different_registers(oop, box, temp, displaced_header, current_header);
   assert(LockingMode != LM_LIGHTWEIGHT || flag == CCR0, "bad condition register");
   Label object_has_monitor;
@@ -2294,8 +2290,7 @@ void MacroAssembler::compiler_fast_lock_object(ConditionRegister flag, Register 
 }
 
 void MacroAssembler::compiler_fast_unlock_object(ConditionRegister flag, Register oop, Register box,
-                                                 Register temp, Register displaced_header, Register current_header,
-                                                 bool use_rtm) {
+                                                 Register temp, Register displaced_header, Register current_header) {
   assert_different_registers(oop, box, temp, displaced_header, current_header);
   assert(LockingMode != LM_LIGHTWEIGHT || flag == CCR0, "bad condition register");
   Label success, failure, object_has_monitor, notRecursive;
@@ -2311,7 +2306,6 @@ void MacroAssembler::compiler_fast_unlock_object(ConditionRegister flag, Registe
 
   // Handle existing monitor.
   // The object has an existing monitor iff (mark & monitor_value) != 0.
-  RTM_OPT_ONLY( if (!(UseRTMForStackLocks && use_rtm)) ) // skip load if already done
   ld(current_header, oopDesc::mark_offset_in_bytes(), oop);
   andi_(R0, current_header, markWord::monitor_value);
   bne(CCR0, object_has_monitor);

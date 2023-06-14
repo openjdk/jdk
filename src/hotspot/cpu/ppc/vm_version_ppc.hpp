@@ -49,7 +49,6 @@ protected:
     ldbrx,
     stdbrx,
     vshasig,
-    rtm,
     darn,
     brw,
     num_features // last entry to count features

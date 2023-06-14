@@ -28,7 +28,6 @@
 
 #include "asm/assembler.hpp"
 #include "oops/accessDecorators.hpp"
-#include "runtime/rtmLocking.hpp"
 #include "utilities/macros.hpp"
 
 // MacroAssembler extends Assembler by a few frequently used macros.
@@ -624,15 +623,10 @@ class MacroAssembler: public Assembler {
   address emit_trampoline_stub(int destination_toc_offset, int insts_call_instruction_offset, Register Rtoc = noreg);
 
   void compiler_fast_lock_object(ConditionRegister flag, Register oop, Register box,
-                                 Register tmp1, Register tmp2, Register tmp3,
-                                 RTMLockingCounters* rtm_counters = nullptr,
-                                 RTMLockingCounters* stack_rtm_counters = nullptr,
-                                 Metadata* method_data = nullptr,
-                                 bool use_rtm = false, bool profile_rtm = false);
+                                 Register tmp1, Register tmp2, Register tmp3);
 
   void compiler_fast_unlock_object(ConditionRegister flag, Register oop, Register box,
-                                   Register tmp1, Register tmp2, Register tmp3,
-                                   bool use_rtm = false);
+                                   Register tmp1, Register tmp2, Register tmp3);
 
   // Check if safepoint requested and if so branch
   void safepoint_poll(Label& slow_path, Register temp, bool at_return, bool in_nmethod);

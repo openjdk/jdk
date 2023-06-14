@@ -557,7 +557,6 @@ void VM_Version::determine_features() {
   a->ldbrx(R7, R3_ARG1, R4_ARG2);              // code[14] -> ldbrx
   a->stdbrx(R7, R3_ARG1, R4_ARG2);             // code[15] -> stdbrx
   a->vshasigmaw(VR0, VR1, 1, 0xF);             // code[16] -> vshasig
-  // rtm is determined by OS
   a->darn(R7);                                 // code[17] -> darn
   a->brw(R5, R6);                              // code[18] -> brw
   a->blr();
