@@ -128,10 +128,52 @@ public abstract class VectorAlignment {
 
     @Benchmark
     // Control: should always vectorize with SuperWord
-    public void bench000_control() {
+    public void bench000I_control() {
         for (int i = 0; i < COUNT; i++) {
             // Have multiple MUL operations to make loop compute bound (more compute than load/store)
             rI[i] = aI[i] * aI[i] * aI[i] * aI[i];
+        }
+    }
+
+    @Benchmark
+    public void bench000L_control() {
+        for (int i = 0; i < COUNT; i++) {
+            rL[i] = aL[i] * aL[i] * aL[i] * aL[i];
+        }
+    }
+
+    @Benchmark
+    public void bench000S_control() {
+        for (int i = 0; i < COUNT; i++) {
+            rS[i] = (short)(aS[i] * aS[i] * aS[i] * aS[i]);
+        }
+    }
+
+    @Benchmark
+    public void bench000C_control() {
+        for (int i = 0; i < COUNT; i++) {
+            rC[i] = (char)(aC[i] * aC[i] * aC[i] * aC[i]);
+        }
+    }
+
+    @Benchmark
+    public void bench000B_control() {
+        for (int i = 0; i < COUNT; i++) {
+            rB[i] = (byte)(aB[i] * aB[i] * aB[i] * aB[i]);
+        }
+    }
+
+    @Benchmark
+    public void bench000F_control() {
+        for (int i = 0; i < COUNT; i++) {
+            rF[i] = aF[i] * aF[i] * aF[i] * aF[i];
+        }
+    }
+
+    @Benchmark
+    public void bench000D_control() {
+        for (int i = 0; i < COUNT; i++) {
+            rD[i] = aD[i] * aD[i] * aD[i] * aD[i];
         }
     }
 
