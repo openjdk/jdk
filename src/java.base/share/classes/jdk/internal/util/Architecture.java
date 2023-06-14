@@ -109,7 +109,7 @@ public enum Architecture {
      */
     @ForceInline
     public static boolean isMIPSEL() {
-        return PlatformProps.TARGET_ARCH_IS_AARCH64;
+        return PlatformProps.TARGET_ARCH_IS_MIPSEL;
     }
 
     /**
@@ -117,7 +117,7 @@ public enum Architecture {
      */
     @ForceInline
     public static boolean isMIPS64EL() {
-        return PlatformProps.TARGET_ARCH_IS_AARCH64;
+        return PlatformProps.TARGET_ARCH_IS_MIPS64EL;
     }
 
     /**
