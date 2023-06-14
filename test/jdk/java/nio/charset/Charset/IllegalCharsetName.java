@@ -73,9 +73,9 @@ public class IllegalCharsetName {
     // they're all well-behaved as a sanity test
     @Test
     public void aliasTest() {
-        checkAliases(StandardCharsets.ISO_8859_1);
-        checkAliases(StandardCharsets.US_ASCII);
-        checkAliases(StandardCharsets.UTF_8);
+        for (Charset cs : Charset.availableCharsets().values()) {
+            checkAliases(cs);
+        }
     }
 
     private static void checkAliases(Charset cs) {
