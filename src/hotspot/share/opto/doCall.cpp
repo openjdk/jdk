@@ -664,23 +664,13 @@ void Parse::do_call() {
       // we have nothing to do but matertialize it.
       //
       // BCEscapeAnalyzer* bcea = cg->method()->get_bcea();
-      Node* ctrl = control();
-
       uint nargs = cg->method()->arg_size();
       for (uint i=0; i < nargs; ++i) {
         Node* arg = argument(i);
-        AllocateNode* alloc = state.is_alias(arg);
 
-       if (alloc != nullptr && state.get_object_state(alloc)->is_virtual()) {
-         EscapedState* es = state.materialize(this, arg);
-         Node* objx = es->get_materialized_value();
-         set_argument(i, objx);
-         AllocateNode* allocx = objx->in(1)->in(0)->as_Allocate();
-         CallProjections projs;
-
-         allocx->extract_projections(&projs, false, false);
-         ctrl = projs.fallthrough_catchproj;
-         // serialize objects using ctrl
+        if (state.as_virtual(arg)) {
+          Node* objx = state.materialize(this, arg);
+          set_argument(i, objx);
         }
       }
     }
