@@ -27,7 +27,7 @@
  * @library /test/lib
  * @build jdk.test.lib.NetworkConfiguration
  *        jdk.test.lib.Platform
- * @run main DisableMulticastAllOpt
+ * @run main/othervm DisableMulticastAllOpt
  * @summary Disable IPV6_MULTICAST_ALL to prevent interference from all multicast groups
  */
 
@@ -52,6 +52,7 @@ public class DisableMulticastAllOpt {
             byte[] output = is.readAllBytes();
             is.close();
             String verstring = new String(output, StandardCharsets.UTF_8);
+            System.out.println("Uname -r: " + verstring);
             String[] vernumbers = verstring.split("\\.");
             if (vernumbers.length == 0)
                 return false;
@@ -81,12 +82,6 @@ public class DisableMulticastAllOpt {
 
     private static final InetAddress all = getInetAddress("::0");
 
-    // Join this group
-    private static final InetAddress mc1 = getInetAddress("FF02:0:0:0:0:0:0:100");
-
-    // Send to this group without joining
-    private static final InetAddress mc2 = getInetAddress("FF02:0:0:0:0:0:0:101");
-
     private static final NetworkInterface nif;
 
     static {
@@ -96,9 +91,16 @@ public class DisableMulticastAllOpt {
                 .findFirst()
                 .orElse(null);
         } catch (IOException e) {
+            e.printStackTrace();
             throw new RuntimeException(e);
         }
     }
+
+    // Join this group
+    private static final InetAddress mc1 = getInetAddress("FF12::100");
+
+    // Send to this group without joining
+    private static final InetAddress mc2 = getInetAddress("FF12::101");
 
     static int getPortFromChannel(DatagramChannel channel) throws IOException {
         InetSocketAddress addr = (InetSocketAddress) channel.getLocalAddress();
@@ -135,15 +137,18 @@ public class DisableMulticastAllOpt {
         ByteBuffer txbuf = ByteBuffer.wrap("Hello world".getBytes(StandardCharsets.US_ASCII));
         ByteBuffer rxbuf = ByteBuffer.allocate(64);
         sender.send(txbuf, dest1);
-        ch1.receive(rxbuf);
-        txbuf.flip();
+        var addr = ch1.receive(rxbuf);
+        System.out.printf("First read from %s\n", addr.toString());
+        rxbuf.flip();
+        System.out.printf("First read received %d bytes\n", rxbuf.remaining());
+        txbuf = ByteBuffer.wrap("Goodbye world".getBytes(StandardCharsets.US_ASCII));
         rxbuf.clear();
         sender.send(txbuf, dest2);
         Selector selector = Selector.open();
         ch1.configureBlocking(false);
         ch1.register(selector, SelectionKey.OP_READ);
         int ret = selector.select(2000);
-        if (ret != 0) {
+        if (ret == 0) {
             System.out.println("No packet received. Test succeeded");
         } else {
             throw new RuntimeException("Packet received. Test failed");
