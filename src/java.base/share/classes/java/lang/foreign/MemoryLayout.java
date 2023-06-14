@@ -440,6 +440,10 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      * long size = select(elements).byteSize();
      * MemorySegment slice = segment.asSlice(offset, size);
      * }
+     * <p>
+     * The segment to be must be <a href="MemorySegment.html#segment-alignment">aligned</a> according to the {@linkplain
+     * #byteAlignment() alignment constraint} of the root layout (this layout). Note that this can be more strict
+     * (but not less) than the alignment constraint of the selected value layout.
      *
      * @apiNote The returned method handle can be used to obtain a memory segment slice, similarly to {@link MemorySegment#asSlice(long, long)},
      * but more flexibly, as some indices can be specified when invoking the method handle.
