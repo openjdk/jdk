@@ -4548,10 +4548,6 @@ public final class Class<T> implements java.io.Serializable,
      * is a one-letter code corresponding to a primitive type or {@code void}
      * ({@code "B", "C", "D", "F", "I", "J", "S", "Z", "V"}) (JVMS {@jvms 4.3.2}).
      *
-     * @apiNote
-     * Distinct classes which share a common name but have different class loaders
-     * will have identical descriptor strings.
-     *
      * @return the descriptor string for this {@code Class} object
      * @jvms 4.3.2 Field Descriptors
      * @since 12

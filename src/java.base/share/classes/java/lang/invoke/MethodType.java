@@ -1225,12 +1225,11 @@ class MethodType
      * is equivalent to calling {@link #descriptorString() MethodType::descriptorString}.
      *
      * @apiNote
-     * This is not a strict inverse of {@link #fromMethodDescriptorString fromMethodDescriptorString}
-     * because the latter requires a suitable class loader argument.
-     * Two distinct classes which share a common name but have different class loaders
-     * will appear identical when viewed within descriptor strings.
-     * In addition, the result string is not a bytecode descriptor if this
-     * method type cannot be {@linkplain ##descriptor described nominally}.
+     * This is not a strict inverse of {@link #fromMethodDescriptorString
+     * fromMethodDescriptorString} which requires a method type descriptor
+     * (JVMS {@jvms 4.3.3}) and a suitable class loader argument. Two distinct
+     * classes which share a common name but have different class loaders will
+     * appear identical when viewed within descriptor strings.
      * <p>
      * This method is included for the benefit of applications that must
      * generate bytecodes that process method handles and {@code invokedynamic}.
