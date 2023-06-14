@@ -1447,7 +1447,7 @@ bool BytecodeUtils::get_NPE_message_at(outputStream* ss, Method* method, int bci
 
   // If this NPE was created via reflection, we have no real NPE.
   if (method->method_holder() ==
-      vmClasses::reflect_NativeConstructorAccessorImpl_klass()) {
+      vmClasses::reflect_DirectConstructorHandleAccessor_NativeAccessor_klass()) {
     return false;
   }
 
