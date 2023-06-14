@@ -40,6 +40,7 @@
 #include "oops/methodData.hpp"
 #include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/resolvedIndyEntry.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/arguments.hpp"
