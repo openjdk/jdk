@@ -54,7 +54,7 @@ public class SerializationTest {
 
     final String EXPECTED_CAL = "0001-01-01T00:00:00.0000000-05:00";
     final String EXPECTED_DURATION = "P1Y1M1DT1H1M1S";
-    static String[] JDK = {"JDK6", "JDK7", "JDK8", "JDK9"};
+    static String[] JDK = {System.getProperty("java.version"), "JDK6", "JDK7", "JDK8", "JDK9"};
 
     private GregorianCalendarAndDurationSerData[] gregorianCalendarAndDurationSerData = {null, new JDK6GregorianCalendarAndDurationSerData(),
     new JDK7GregorianCalendarAndDurationSerData(), new JDK8GregorianCalendarAndDurationSerData(), new JDK9GregorianCalendarAndDurationSerData()};
@@ -122,11 +122,11 @@ public class SerializationTest {
      */
     @DataProvider(name = "GregorianCalendarData")
     public Object [][] gregorianCalendarDataBytes() {
-        return new Object [][] {{System.getProperty("java.version"), gregorianCalendarAndDurationSerData[0], EXPECTED_CAL},
-                {JDK[0], gregorianCalendarAndDurationSerData[1], EXPECTED_CAL},
-                {JDK[1], gregorianCalendarAndDurationSerData[2], EXPECTED_CAL},
-                {JDK[2], gregorianCalendarAndDurationSerData[3], EXPECTED_CAL},
-                {JDK[3], gregorianCalendarAndDurationSerData[4], EXPECTED_CAL}};
+        return new Object [][] {{JDK[0], gregorianCalendarAndDurationSerData[0], EXPECTED_CAL},
+                {JDK[1], gregorianCalendarAndDurationSerData[1], EXPECTED_CAL},
+                {JDK[2], gregorianCalendarAndDurationSerData[2], EXPECTED_CAL},
+                {JDK[3], gregorianCalendarAndDurationSerData[3], EXPECTED_CAL},
+                {JDK[4], gregorianCalendarAndDurationSerData[4], EXPECTED_CAL}};
     }
 
     /**
@@ -137,7 +137,7 @@ public class SerializationTest {
      */
     @DataProvider(name = "GregorianCalendarDataBase64")
     public Object [][] gregorianCalendarDataBase64() {
-        return new Object [][] {{System.getProperty("java.version"), gregorianCalendarAndDurationSerData[0], EXPECTED_CAL},
+        return new Object [][] {{JDK[0], gregorianCalendarAndDurationSerData[0], EXPECTED_CAL},
                 {JDK[2], gregorianCalendarAndDurationSerData[3], EXPECTED_CAL},
                 {JDK[3], gregorianCalendarAndDurationSerData[4], EXPECTED_CAL}};
     }
@@ -150,7 +150,7 @@ public class SerializationTest {
      */
     @DataProvider(name = "DurationData")
     public Object [][] DurationData() {
-        return new Object [][] {{System.getProperty("java.version"), gregorianCalendarAndDurationSerData[0], EXPECTED_DURATION},
+        return new Object [][] {{JDK[0], gregorianCalendarAndDurationSerData[0], EXPECTED_DURATION},
                 {JDK[0], gregorianCalendarAndDurationSerData[1], EXPECTED_DURATION},
                 {JDK[1], gregorianCalendarAndDurationSerData[2], EXPECTED_DURATION},
                 {JDK[2], gregorianCalendarAndDurationSerData[3], EXPECTED_DURATION},
