@@ -197,7 +197,8 @@ final class ProviderConfig {
                                         "apple.security.AppleProvider");
                                     if (Provider.class.isAssignableFrom(c)) {
                                         @SuppressWarnings("deprecation")
-                                        return (Provider) c.newInstance();
+                                        Object tmp = c.newInstance();
+                                        return (Provider) tmp;
                                     }
                                 } catch (Exception ex) {
                                     if (debug != null) {
