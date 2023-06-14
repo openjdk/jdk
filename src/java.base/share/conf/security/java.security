@@ -357,6 +357,17 @@ ssl.TrustManagerFactory.algorithm=PKIX
 #
 #networkaddress.cache.ttl=-1
 
+#
+# The Java-level namelookup cache stale policy:
+#
+# any positive value: the number of seconds to use the stale names
+# zero: do not use stale names
+# negative values are ignored
+#
+# default value is 0 (NEVER).
+#
+#networkaddress.cache.stale.ttl=0
+
 # The Java-level namelookup cache policy for failed lookups:
 #
 # any negative value: cache forever

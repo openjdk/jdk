@@ -68,22 +68,9 @@ import java.util.function.BiFunction;
     }
 
     @Override
-    public boolean isAccessModeSupported(AccessMode accessMode) {
-        return target.isAccessModeSupported(accessMode);
-    }
-
-    @Override
     @ForceInline
     VarHandle target() {
         return this.directTarget;
-    }
-
-    @Override
-    @ForceInline
-    boolean checkAccessModeThenIsDirect(VarHandle.AccessDescriptor ad) {
-        super.checkAccessModeThenIsDirect(ad);
-        // return false to indicate this is an IndirectVarHandle
-        return false;
     }
 
     @Override
@@ -98,6 +85,19 @@ import java.util.function.BiFunction;
         return !hasInvokeExactBehavior()
             ? this
             : new IndirectVarHandle(target, value, coordinates, handleFactory, vform, false);
+    }
+
+    @Override
+    @ForceInline
+    boolean checkAccessModeThenIsDirect(VarHandle.AccessDescriptor ad) {
+        super.checkAccessModeThenIsDirect(ad);
+        // return false to indicate this is an IndirectVarHandle
+        return false;
+    }
+
+    @Override
+    public boolean isAccessModeSupported(AccessMode accessMode) {
+        return directTarget.isAccessModeSupported(accessMode);
     }
 
     @Override
