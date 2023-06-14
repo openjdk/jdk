@@ -809,6 +809,11 @@ public class IRNode {
         beforeMatchingNameRegex(NEG_V, "NegV(F|D)");
     }
 
+    public static final String NOP = PREFIX + "NOP" + POSTFIX;
+    static {
+        machOnlyNameRegex(NOP, "Nop");
+    }
+
     public static final String NULL_ASSERT_TRAP = PREFIX + "NULL_ASSERT_TRAP" + POSTFIX;
     static {
         trapNodes(NULL_ASSERT_TRAP,"null_assert");
