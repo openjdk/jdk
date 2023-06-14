@@ -42,6 +42,31 @@ public abstract class VectorAlignment {
     private int[] bI;
     private int[] rI;
 
+    private long[] aL;
+    private long[] bL;
+    private long[] rL;
+
+    private short[] aS;
+    private short[] bS;
+    private short[] rS;
+
+    private char[] aC;
+    private char[] bC;
+    private char[] rC;
+
+    private byte[] aB;
+    private byte[] bB;
+    private byte[] rB;
+
+    private float[] aF;
+    private float[] bF;
+    private float[] rF;
+
+    private double[] aD;
+    private double[] bD;
+    private double[] rD;
+
+
     @Param("0")
     private int seed;
     private Random r = new Random(seed);
@@ -52,9 +77,52 @@ public abstract class VectorAlignment {
         bI = new int[COUNT];
         rI = new int[COUNT];
 
+        aL = new long[COUNT];
+        bL = new long[COUNT];
+        rL = new long[COUNT];
+
+        aS = new short[COUNT];
+        bS = new short[COUNT];
+        rS = new short[COUNT];
+
+        aC = new char[COUNT];
+        bC = new char[COUNT];
+        rC = new char[COUNT];
+
+        aB = new byte[COUNT];
+        bB = new byte[COUNT];
+        rB = new byte[COUNT];
+
+        aF = new float[COUNT];
+        bF = new float[COUNT];
+        rF = new float[COUNT];
+
+        aD = new double[COUNT];
+        bD = new double[COUNT];
+        rD = new double[COUNT];
+
+
         for (int i = 0; i < COUNT; i++) {
             aI[i] = r.nextInt();
             bI[i] = r.nextInt();
+
+            aL[i] = r.nextLong();
+            bL[i] = r.nextLong();
+
+            aS[i] = (short) r.nextInt();
+            bS[i] = (short) r.nextInt();
+
+            aC[i] = (char) r.nextInt();
+            bC[i] = (char) r.nextInt();
+
+            aB[i] = (byte) r.nextInt();
+            bB[i] = (byte) r.nextInt();
+
+            aF[i] = r.nextFloat();
+            bF[i] = r.nextFloat();
+
+            aD[i] = r.nextDouble();
+            bD[i] = r.nextDouble();
         }
     }
 
@@ -78,9 +146,52 @@ public abstract class VectorAlignment {
 
     @Benchmark
     // Vectorizes without AlignVector
-    public void bench100_misaligned_load() {
+    public void bench100I_misaligned_load() {
         for (int i = 0; i < COUNT-1; i++) {
             rI[i] = aI[i+1] * aI[i+1] * aI[i+1] * aI[i+1];
+        }
+    }
+
+    @Benchmark
+    public void bench100L_misaligned_load() {
+        for (int i = 0; i < COUNT-1; i++) {
+            rL[i] = aL[i+1] * aL[i+1] * aL[i+1] * aL[i+1];
+        }
+    }
+
+    @Benchmark
+    public void bench100S_misaligned_load() {
+        for (int i = 0; i < COUNT-1; i++) {
+            rS[i] = (short)(aS[i+1] * aS[i+1] * aS[i+1] * aS[i+1]);
+        }
+    }
+
+    @Benchmark
+    public void bench100C_misaligned_load() {
+        for (int i = 0; i < COUNT-1; i++) {
+            rC[i] = (char)(aC[i+1] * aC[i+1] * aC[i+1] * aC[i+1]);
+        }
+    }
+
+
+    @Benchmark
+    public void bench100B_misaligned_load() {
+        for (int i = 0; i < COUNT-1; i++) {
+            rB[i] = (byte)(aB[i+1] * aB[i+1] * aB[i+1] * aB[i+1]);
+        }
+    }
+
+    @Benchmark
+    public void bench100F_misaligned_load() {
+        for (int i = 0; i < COUNT-1; i++) {
+            rF[i] = aF[i+1] * aF[i+1] * aF[i+1] * aF[i+1];
+        }
+    }
+
+    @Benchmark
+    public void bench100D_misaligned_load() {
+        for (int i = 0; i < COUNT-1; i++) {
+            rD[i] = aD[i+1] * aD[i+1] * aD[i+1] * aD[i+1];
         }
     }
 
