@@ -20,8 +20,8 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
- 
- /*
+
+/*
  * @test
  * @bug 8309266
  * @summary Integer overflow in LoopLimit::Value during PhaseCCP::analyze, triggered by the Phi Node from "flag ? Integer.MAX_VALUE : 1000"
