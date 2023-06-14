@@ -59,9 +59,9 @@ public class TestStackOverflowDuringInit {
 
     private static void verify_stack(Throwable e, String expected, String cause) throws Exception {
         ByteArrayOutputStream byteOS = new ByteArrayOutputStream();
-        PrintStream printStream = new PrintStream(byteOS);
-        e.printStackTrace(printStream);
-        printStream.close();
+        try (PrintStream printStream = new PrintStream(byteOS)) {
+            e.printStackTrace(printStream);
+        }
         String stackTrace = byteOS.toString("ASCII");
         System.out.println(stackTrace);
         if (!stackTrace.contains(expected) ||
