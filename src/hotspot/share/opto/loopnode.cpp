@@ -2282,9 +2282,14 @@ const Type* LoopLimitNode::Value(PhaseGVN* phase) const {
   if (limit_t  == Type::TOP) return Type::TOP;
   if (stride_t == Type::TOP) return Type::TOP;
 
+  if(!(in(Init)->is_ConI() && in(Limit)->is_ConI() && in(Stride)->is_ConI())){
+    return bottom_type();
+  }
+
   int stride_con = stride_t->is_int()->get_con();
-  if (stride_con == 1)
+  if (stride_con == 1) {
     return bottom_type();  // Identity
+  }
 
   if (init_t->is_int()->is_con() && limit_t->is_int()->is_con()) {
     // Use jlongs to avoid integer overflow.
