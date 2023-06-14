@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,19 +99,6 @@ public class VMSupport {
 
     public static byte[] serializeAgentPropertiesToByteArray() throws IOException {
         return serializePropertiesToByteArray(onlyStrings(getAgentProperties()));
-    }
-
-    /**
-     * Serializes {@link VM#getSavedProperties()} to a byte array.
-     *
-     * Used by JVMCI to copy properties into libjvmci.
-     */
-    public static byte[] serializeSavedPropertiesToByteArray() throws IOException {
-        Properties props = new Properties();
-        for (var e : VM.getSavedProperties().entrySet()) {
-            props.put(e.getKey(), e.getValue());
-        }
-        return serializePropertiesToByteArray(props);
     }
 
     /*
