@@ -51,66 +51,6 @@ import java.util.List;
 
 
 public class TLSWontNegotiateDisabledCipherAlgos {
-    private static final String [] DISABLED_CIPHERS = {
-            "TLS_ECDHE_ECDSA_WITH_RC4_128_SHA",
-            "TLS_ECDHE_RSA_WITH_RC4_128_SHA",
-            "SSL_RSA_WITH_RC4_128_SHA",
-            "TLS_ECDH_ECDSA_WITH_RC4_128_SHA",
-            "TLS_ECDH_RSA_WITH_RC4_128_SHA",
-            "SSL_RSA_WITH_RC4_128_MD5",
-            "TLS_ECDH_anon_WITH_RC4_128_SHA",
-            "SSL_DH_anon_WITH_RC4_128_MD5",
-            "SSL_RSA_WITH_NULL_MD5",
-            "SSL_RSA_WITH_NULL_SHA",
-            "TLS_RSA_WITH_NULL_SHA256",
-            "TLS_ECDH_ECDSA_WITH_NULL_SHA",
-            "TLS_ECDHE_ECDSA_WITH_NULL_SHA",
-            "TLS_ECDH_RSA_WITH_NULL_SHA",
-            "TLS_ECDHE_RSA_WITH_NULL_SHA",
-            "TLS_ECDH_anon_WITH_NULL_SHA",
-            "SSL_DH_anon_EXPORT_WITH_DES40_CBC_SHA",
-            "SSL_DH_anon_EXPORT_WITH_RC4_40_MD5",
-            "SSL_DH_anon_WITH_3DES_EDE_CBC_SHA",
-            "SSL_DH_anon_WITH_DES_CBC_SHA",
-            "SSL_DH_anon_WITH_RC4_128_MD5",
-            "TLS_DH_anon_WITH_AES_128_CBC_SHA",
-            "TLS_DH_anon_WITH_AES_128_CBC_SHA256",
-            "TLS_DH_anon_WITH_AES_128_GCM_SHA256",
-            "TLS_DH_anon_WITH_AES_256_CBC_SHA",
-            "TLS_DH_anon_WITH_AES_256_CBC_SHA256",
-            "TLS_DH_anon_WITH_AES_256_GCM_SHA384",
-            "SSL_RSA_WITH_DES_CBC_SHA",
-            "SSL_DHE_RSA_WITH_DES_CBC_SHA",
-            "SSL_DHE_DSS_WITH_DES_CBC_SHA",
-            "SSL_RSA_EXPORT_WITH_DES40_CBC_SHA",
-            "SSL_DHE_RSA_EXPORT_WITH_DES40_CBC_SHA",
-            "SSL_DHE_DSS_EXPORT_WITH_DES40_CBC_SHA",
-            "SSL_RSA_EXPORT_WITH_RC4_40_MD5",
-            "TLS_ECDH_anon_WITH_3DES_EDE_CBC_SHA",
-            "TLS_ECDH_anon_WITH_AES_128_CBC_SHA",
-            "TLS_ECDH_anon_WITH_AES_256_CBC_SHA",
-            "TLS_ECDH_anon_WITH_NULL_SHA",
-            "TLS_ECDH_anon_WITH_RC4_128_SHA",
-            "TLS_ECDHE_ECDSA_WITH_3DES_EDE_CBC_SHA",
-            "TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA",
-            "SSL_DHE_RSA_WITH_3DES_EDE_CBC_SHA",
-            "SSL_DHE_DSS_WITH_3DES_EDE_CBC_SHA",
-            "TLS_ECDH_ECDSA_WITH_3DES_EDE_CBC_SHA",
-            "TLS_ECDH_RSA_WITH_3DES_EDE_CBC_SHA",
-            "SSL_RSA_WITH_3DES_EDE_CBC_SHA",
-            "TLS_ECDH_ECDSA_WITH_AES_256_GCM_SHA384",
-            "TLS_ECDH_RSA_WITH_AES_256_GCM_SHA384",
-            "TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256",
-            "TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256",
-            "TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA384",
-            "TLS_ECDH_RSA_WITH_AES_256_CBC_SHA384",
-            "TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256",
-            "TLS_ECDH_RSA_WITH_AES_128_CBC_SHA256",
-            "TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA",
-            "TLS_ECDH_RSA_WITH_AES_256_CBC_SHA",
-            "TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA",
-            "TLS_ECDH_RSA_WITH_AES_128_CBC_SHA"
-    };
 
     public static void main(String [] args) throws Exception {
         boolean useDisabledAlgo = Boolean.parseBoolean(args[1]);
@@ -146,7 +86,7 @@ public class TLSWontNegotiateDisabledCipherAlgos {
             SSLContext context = createClientSSLContext();
             socket = (SSLSocket)context.getSocketFactory().createSocket("localhost", portNumber);
             if (useDisableAlgo) {
-                socket.setEnabledCipherSuites(DISABLED_CIPHERS);
+                socket.setEnabledCipherSuites(DisabledAlgorithms.DISABLED_CIPHERSUITES);
             }
         }
 
@@ -175,7 +115,7 @@ public class TLSWontNegotiateDisabledCipherAlgos {
             SSLContext ctx = createServerSSLContext();
             serverSocket = (SSLServerSocket) ctx.getServerSocketFactory().createServerSocket(0);
             if (useDisableAlgo) {
-                serverSocket.setEnabledCipherSuites(DISABLED_CIPHERS);
+                serverSocket.setEnabledCipherSuites(DisabledAlgorithms.DISABLED_CIPHERSUITES);
             }
         }
 
