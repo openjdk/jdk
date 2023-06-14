@@ -51,23 +51,22 @@ public record ClassfileImpl(StackMapsOption stackMapsOption,
                             ClassHierarchyResolverOption classHierarchyResolverOption,
                             AttributeMapperOption attributeMapperOption) implements Classfile {
 
-    public ClassfileImpl() {
-        this(StackMapsOption.STACK_MAPS_WHEN_REQUIRED,
-             DebugElementsOption.PASS_DEBUG,
-             LineNumbersOption.PASS_LINE_NUMBERS,
-             UnknownAttributesOption.PASS_UNKNOWN_ATTRIBUTES,
-             ConstantPoolSharingOption.SHARED_POOL,
-             ShortJumpsOption.FIX_SHORT_JUMPS,
-             DeadCodeOption.PATCH_DEAD_CODE,
-             DeadLabelsOption.FAIL_ON_DEAD_LABELS,
-             new ClassHierarchyResolverOptionImpl(ClassHierarchyResolver.defaultResolver()),
-             new AttributeMapperOptionImpl(new Function<>() {
-                 @Override
-                 public AttributeMapper<?> apply(Utf8Entry k) {
-                     return null;
-                 }
-             }));
-    }
+    public static final ClassfileImpl DEFAULT_CONTEXT = new ClassfileImpl(
+            StackMapsOption.STACK_MAPS_WHEN_REQUIRED,
+            DebugElementsOption.PASS_DEBUG,
+            LineNumbersOption.PASS_LINE_NUMBERS,
+            UnknownAttributesOption.PASS_UNKNOWN_ATTRIBUTES,
+            ConstantPoolSharingOption.SHARED_POOL,
+            ShortJumpsOption.FIX_SHORT_JUMPS,
+            DeadCodeOption.PATCH_DEAD_CODE,
+            DeadLabelsOption.FAIL_ON_DEAD_LABELS,
+            new ClassHierarchyResolverOptionImpl(ClassHierarchyResolver.defaultResolver()),
+            new AttributeMapperOptionImpl(new Function<>() {
+                @Override
+                public AttributeMapper<?> apply(Utf8Entry k) {
+                    return null;
+                }
+            }));
 
     @SuppressWarnings("unchecked")
     @Override
