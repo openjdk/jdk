@@ -26,10 +26,14 @@
  * @bug 8309266
  * @summary Integer overflow in LoopLimit::Value during PhaseCCP::analyze,
  *          triggered by the Phi Node from "flag ? Integer.MAX_VALUE : 1000"
- * @run main/othervm -Xbatch -XX:CompileOnly=Test compiler.loopopts.TestLoopLimitOverflowDuringCCP
+ * @run main/othervm -Xbatch 
+ *					 -XX:CompileOnly=compiler/loopopts/TestLoopLimitOverflowDuringCCP
+ *      			 compiler.loopopts.TestLoopLimitOverflowDuringCCP
  */
 
-public class Test {
+package compiler.loopopts;
+
+public class TestLoopLimitOverflowDuringCCP {
     static boolean flag;
 
     public static void main(String[] strArr) {
