@@ -120,7 +120,8 @@ public final class ClassHierarchyImpl {
     }
 
     public static final class CachedClassHierarchyResolver implements ClassHierarchyResolver {
-        //this instance should leak out, appears only in cache in order to utilize Map.computeIfAbsent
+        // this instance should not leak out, appears only in cache in order to utilize Map.computeIfAbsent
+        // is already an invalid combination, so it can be compared with equals or as value class safely
         private static final ClassHierarchyResolver.ClassHierarchyInfo NOPE =
                 new ClassHierarchyInfoImpl(null, true);
 
@@ -221,7 +222,7 @@ public final class ClassHierarchyImpl {
             @Override
             public Class<?> apply(ClassDesc cd) {
                 try {
-                    return Class.forName(Util.toBinaryName(cd.descriptorString()), false, ClassLoader.getSystemClassLoader());
+                    return Class.forName(Util.toBinaryName(cd), false, ClassLoader.getSystemClassLoader());
                 } catch (ClassNotFoundException ex) {
                     return null;
                 }

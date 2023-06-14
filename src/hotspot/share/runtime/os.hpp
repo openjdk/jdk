@@ -1008,7 +1008,7 @@ class os: AllStatic {
 
  public:
   inline static bool platform_print_native_stack(outputStream* st, const void* context,
-                                                 char *buf, int buf_size);
+                                                 char *buf, int buf_size, address& lastpc);
 
   // debugging support (mostly used by debug.cpp but also fatal error handler)
   static bool find(address pc, outputStream* st = tty); // OS specific function to make sense out of an address
