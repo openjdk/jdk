@@ -142,7 +142,7 @@ public:
 
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual int Opcode() const;
-  bool can_be_counted_loop(PhaseTransform* phase) const {
+  bool can_be_counted_loop(PhaseValues* phase) const {
     return req() == 3 && in(0) != nullptr &&
       in(1) != nullptr && phase->type(in(1)) != Type::TOP &&
       in(2) != nullptr && phase->type(in(2)) != Type::TOP;
@@ -733,8 +733,8 @@ public:
   bool policy_range_check(PhaseIdealLoop* phase, bool provisional, BasicType bt) const;
 
   // Return TRUE if "iff" is a range check.
-  bool is_range_check_if(IfNode *iff, PhaseIdealLoop *phase, Invariance& invar DEBUG_ONLY(COMMA ProjNode *predicate_proj)) const;
-  bool is_range_check_if(IfNode* iff, PhaseIdealLoop* phase, BasicType bt, Node* iv, Node*& range, Node*& offset,
+  bool is_range_check_if(IfProjNode* if_success_proj, PhaseIdealLoop* phase, Invariance& invar DEBUG_ONLY(COMMA ProjNode* predicate_proj)) const;
+  bool is_range_check_if(IfProjNode* if_success_proj, PhaseIdealLoop* phase, BasicType bt, Node* iv, Node*& range, Node*& offset,
                          jlong& scale) const;
 
   // Estimate the number of nodes required when cloning a loop (body).
@@ -832,6 +832,9 @@ class PhaseIdealLoop : public PhaseTransform {
   friend class ShenandoahBarrierC2Support;
   friend class AutoNodeBudget;
 
+  // Map loop membership for CFG nodes, and ctrl for non-CFG nodes.
+  Node_List _loop_or_ctrl;
+
   // Pre-computed def-use info
   PhaseIterGVN &_igvn;
 
@@ -893,7 +896,7 @@ class PhaseIdealLoop : public PhaseTransform {
 public:
   // Set/get control node out.  Set lower bit to distinguish from IdealLoopTree
   // Returns true if "n" is a data node, false if it's a control node.
-  bool has_ctrl(const Node* n) const { return ((intptr_t)_nodes[n->_idx]) & 1; }
+  bool has_ctrl(const Node* n) const { return ((intptr_t)_loop_or_ctrl[n->_idx]) & 1; }
 
 private:
   // clear out dead code after build_loop_late
@@ -981,7 +984,7 @@ public:
 
   bool has_node(const Node* n) const {
     guarantee(n != nullptr, "No Node.");
-    return _nodes[n->_idx] != nullptr;
+    return _loop_or_ctrl[n->_idx] != nullptr;
   }
   // check if transform created new nodes that need _ctrl recorded
   Node *get_late_ctrl( Node *n, Node *early );
@@ -993,7 +996,7 @@ public:
     assert( !has_node(n) || has_ctrl(n), "" );
     assert( ctrl->in(0), "cannot set dead control node" );
     assert( ctrl == find_non_split_ctrl(ctrl), "must set legal crtl" );
-    _nodes.map( n->_idx, (Node*)((intptr_t)ctrl + 1) );
+    _loop_or_ctrl.map(n->_idx, (Node*)((intptr_t)ctrl + 1));
   }
   // Set control and update loop membership
   void set_ctrl_and_loop(Node* n, Node* ctrl) {
@@ -1013,7 +1016,7 @@ public:
   Node* get_ctrl(const Node* i) {
     assert(has_node(i), "");
     Node *n = get_ctrl_no_update(i);
-    _nodes.map( i->_idx, (Node*)((intptr_t)n + 1) );
+    _loop_or_ctrl.map(i->_idx, (Node*)((intptr_t)n + 1));
     assert(has_node(i) && has_ctrl(i), "");
     assert(n == find_non_split_ctrl(n), "must return legal ctrl" );
     return n;
@@ -1032,7 +1035,7 @@ public:
 
   Node* get_ctrl_no_update_helper(const Node* i) const {
     assert(has_ctrl(i), "should be control, not loop");
-    return (Node*)(((intptr_t)_nodes[i->_idx]) & ~1);
+    return (Node*)(((intptr_t)_loop_or_ctrl[i->_idx]) & ~1);
   }
 
   Node* get_ctrl_no_update(const Node* i) const {
@@ -1056,7 +1059,7 @@ public:
   }
   // Set loop
   void set_loop( Node *n, IdealLoopTree *loop ) {
-    _nodes.map(n->_idx, (Node*)loop);
+    _loop_or_ctrl.map(n->_idx, (Node*)loop);
   }
   // Lazy-dazy update of 'get_ctrl' and 'idom_at' mechanisms.  Replace
   // the 'old_node' with 'new_node'.  Kill old-node.  Add a reference
@@ -1066,7 +1069,7 @@ public:
     assert(old_node != new_node, "no cycles please");
     // Re-use the side array slot for this node to provide the
     // forwarding pointer.
-    _nodes.map(old_node->_idx, (Node*)((intptr_t)new_node + 1));
+    _loop_or_ctrl.map(old_node->_idx, (Node*)((intptr_t)new_node + 1));
   }
   void lazy_replace(Node *old_node, Node *new_node) {
     _igvn.replace_node(old_node, new_node);
@@ -1145,7 +1148,7 @@ public:
     Node* n = _idom[didx];
     assert(n != nullptr,"Bad immediate dominator info.");
     while (n->in(0) == nullptr) { // Skip dead CFG nodes
-      n = (Node*)(((intptr_t)_nodes[n->_idx]) & ~1);
+      n = (Node*)(((intptr_t)_loop_or_ctrl[n->_idx]) & ~1);
       assert(n != nullptr,"Bad immediate dominator info.");
     }
     return n;
@@ -1241,7 +1244,7 @@ public:
     // Dead nodes have no loop, so return the top level loop instead
     if (!has_node(n))  return _ltree_root;
     assert(!has_ctrl(n), "");
-    return (IdealLoopTree*)_nodes[n->_idx];
+    return (IdealLoopTree*)_loop_or_ctrl[n->_idx];
   }
 
   IdealLoopTree* ltree_root() const { return _ltree_root; }
@@ -1363,15 +1366,12 @@ public:
   void register_control(Node* n, IdealLoopTree *loop, Node* pred, bool update_body = true);
 
   // Construct a range check for a predicate if
-  BoolNode* rc_predicate(IdealLoopTree *loop, Node* ctrl,
-                         int scale, Node* offset,
-                         Node* init, Node* limit, jint stride,
-                         Node* range, bool upper, bool &overflow,
-                         bool negate);
+  BoolNode* rc_predicate(IdealLoopTree* loop, Node* ctrl, int scale, Node* offset, Node* init, Node* limit,
+                         jint stride, Node* range, bool upper, bool& overflow);
 
   // Implementation of the loop predication to promote checks outside the loop
   bool loop_predication_impl(IdealLoopTree *loop);
-  bool loop_predication_impl_helper(IdealLoopTree* loop, IfProjNode* if_proj,
+  bool loop_predication_impl_helper(IdealLoopTree* loop, IfProjNode* if_success_proj,
                                     ParsePredicateSuccessProj* parse_predicate_proj, CountedLoopNode* cl, ConNode* zero,
                                     Invariance& invar, Deoptimization::DeoptReason reason);
   bool loop_predication_should_follow_branches(IdealLoopTree* loop, IfProjNode* predicate_proj, float& loop_trip_cnt);
@@ -1483,7 +1483,7 @@ public:
   IfNode* insert_cmpi_loop_exit(IfNode* if_cmpu, IdealLoopTree *loop);
   void remove_cmpi_loop_exit(IfNode* if_cmp, IdealLoopTree *loop);
   // Utility to register node "n" with PhaseIdealLoop
-  void register_node(Node* n, IdealLoopTree *loop, Node* pred, int ddepth);
+  void register_node(Node* n, IdealLoopTree* loop, Node* pred, uint ddepth);
   // Utility to create an if-projection
   ProjNode* proj_clone(ProjNode* p, IfNode* iff);
   // Force the iff control output to be the live_proj
@@ -1666,7 +1666,7 @@ public:
   void dump(IdealLoopTree* loop, uint rpo_idx, Node_List &rpo_list) const;
   IdealLoopTree* get_loop_idx(Node* n) const {
     // Dead nodes have no loop, so return the top level loop instead
-    return _nodes[n->_idx] ? (IdealLoopTree*)_nodes[n->_idx] : _ltree_root;
+    return _loop_or_ctrl[n->_idx] ? (IdealLoopTree*)_loop_or_ctrl[n->_idx] : _ltree_root;
   }
   // Print some stats
   static void print_statistics();
@@ -1681,7 +1681,7 @@ public:
   void verify() const;
   bool verify_idom_and_nodes(Node* root, const PhaseIdealLoop* phase_verify) const;
   bool verify_idom(Node* n, const PhaseIdealLoop* phase_verify) const;
-  bool verify_nodes(Node* n, const PhaseIdealLoop* phase_verify) const;
+  bool verify_loop_ctrl(Node* n, const PhaseIdealLoop* phase_verify) const;
 #endif
 
   void rpo(Node* start, Node_Stack &stk, VectorSet &visited, Node_List &rpo_list) const;

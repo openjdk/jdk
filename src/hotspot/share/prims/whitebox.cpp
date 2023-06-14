@@ -1445,12 +1445,12 @@ WB_END
 WB_ENTRY(void, WB_FullGC(JNIEnv* env, jobject o))
   Universe::heap()->soft_ref_policy()->set_should_clear_all_soft_refs(true);
   Universe::heap()->collect(GCCause::_wb_full_gc);
-#if INCLUDE_G1GC
-  if (UseG1GC) {
-    // Needs to be cleared explicitly for G1
+#if INCLUDE_G1GC || INCLUDE_SERIALGC
+  if (UseG1GC || UseSerialGC) {
+    // Needs to be cleared explicitly for G1 and Serial GC.
     Universe::heap()->soft_ref_policy()->set_should_clear_all_soft_refs(false);
   }
-#endif // INCLUDE_G1GC
+#endif // INCLUDE_G1GC || INCLUDE_SERIALGC
 WB_END
 
 WB_ENTRY(void, WB_YoungGC(JNIEnv* env, jobject o))
@@ -1882,7 +1882,7 @@ WB_END
 WB_ENTRY(jint, WB_getIndyInfoLength(JNIEnv* env, jobject wb, jclass klass))
   InstanceKlass* ik = InstanceKlass::cast(java_lang_Class::as_Klass(JNIHandles::resolve(klass)));
   ConstantPool* cp = ik->constants();
-  if (cp->cache() == NULL) {
+  if (cp->cache() == nullptr) {
       return -1;
   }
   return cp->resolved_indy_entries_length();
@@ -1891,7 +1891,7 @@ WB_END
 WB_ENTRY(jint, WB_getIndyCPIndex(JNIEnv* env, jobject wb, jclass klass, jint index))
   InstanceKlass* ik = InstanceKlass::cast(java_lang_Class::as_Klass(JNIHandles::resolve(klass)));
   ConstantPool* cp = ik->constants();
-  if (cp->cache() == NULL) {
+  if (cp->cache() == nullptr) {
       return -1;
   }
   return cp->resolved_indy_entry_at(index)->constant_pool_index();

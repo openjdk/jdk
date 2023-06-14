@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8300543
+ * @bug 8300543 8309336
  * @summary Check switches work correctly with qualified enum constants
  * @compile/fail/ref=EnumSwitchQualifiedErrors.out -XDrawDiagnostics EnumSwitchQualifiedErrors.java
 */
@@ -51,8 +51,27 @@ public class EnumSwitchQualifiedErrors {
         };
     }
 
+    int testPatternMatchingSwitch4(E1 e) {
+        return switch(e) {
+            case E1A -> 1;
+            case (E1) null -> 1;
+            case E1 -> 1;
+            default -> {}
+        };
+    }
+
+    int testPatternMatchingSwitch5(Object e) {
+        return switch(e) {
+            case E1A -> 1;
+            case (E1) null -> 1;
+            case E1 -> 1;
+            default -> {}
+        };
+    }
+
     sealed interface I {}
     enum E1 implements I { A; }
     enum E2 { A; }
 
+    static final E1 E1A = null;
 }

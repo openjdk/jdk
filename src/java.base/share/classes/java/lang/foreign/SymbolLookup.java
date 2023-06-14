@@ -55,7 +55,7 @@ import java.util.function.BiFunction;
  *     <li>It can be passed to an existing {@linkplain Linker#downcallHandle(FunctionDescriptor, Linker.Option...) downcall method handle}, as an argument to the underlying foreign function.</li>
  *     <li>It can be {@linkplain MemorySegment#set(AddressLayout, long, MemorySegment) stored} inside another memory segment.</li>
  *     <li>It can be used to access the region of memory backing a global variable (this requires
- *     {@link MemorySegment#reinterpret(long)} () resizing} the segment first).</li>
+ *     {@linkplain MemorySegment#reinterpret(long) resizing} the segment first).</li>
  * </ul>
  *
  * <h2 id="obtaining">Obtaining a symbol lookup</h2>
@@ -65,7 +65,7 @@ import java.util.function.BiFunction;
  * The library is loaded if not already loaded. The symbol lookup, which is known as a <em>library lookup</em>, and its
  * lifetime is controlled by an {@linkplain Arena arena}. For instance, if the provided arena is a
  * confined arena, the library associated with the symbol lookup is unloaded when the confined arena
- * is {@linkplain Arena#close()}:
+ * is {@linkplain Arena#close() closed}:
  *
  * {@snippet lang = java:
  * try (Arena arena = Arena.ofConfined()) {
@@ -210,14 +210,15 @@ public interface SymbolLookup {
      * For instance, if the provided arena is a confined arena, the library
      * associated with the returned lookup will be unloaded when the provided confined arena is
      * {@linkplain Arena#close() closed}.
-     * @implNote The process of resolving a library name is OS-specific. For instance, in a POSIX-compliant OS,
-     * the library name is resolved according to the specification of the {@code dlopen} function for that OS.
-     * In Windows, the library name is resolved according to the specification of the {@code LoadLibrary} function.
      * <p>
      * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
      * Restricted methods are unsafe, and, if used incorrectly, their use might crash
      * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
      * restricted methods, and use safe and supported functionalities, where possible.
+     *
+     * @implNote The process of resolving a library name is OS-specific. For instance, in a POSIX-compliant OS,
+     * the library name is resolved according to the specification of the {@code dlopen} function for that OS.
+     * In Windows, the library name is resolved according to the specification of the {@code LoadLibrary} function.
      *
      * @param name the name of the library in which symbols should be looked up.
      * @param arena the arena associated with symbols obtained from the returned lookup.
