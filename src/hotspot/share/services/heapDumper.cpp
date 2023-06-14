@@ -1528,7 +1528,7 @@ private:
   void merge_file(char* path);
   void merge_done();
 public:
-  VM_HeapDumpMerge(const char* path, DumpWriter* writer, int dump_seq) : 
+  VM_HeapDumpMerge(const char* path, DumpWriter* writer, int dump_seq) :
     _writer(writer), _path(path), _has_error(_writer->has_error()), _dump_seq(dump_seq) {}
   VMOp_Type type() const { return VMOp_HeapDumpMerge; }
   // heap dump merge could happen outside safepoint

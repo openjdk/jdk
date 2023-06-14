@@ -491,6 +491,7 @@ void HeapDumpDCmd::execute(DCmdSource source, TRAPS) {
       return;
     }
   }
+
   // Request a full GC before heap dump if _all is false
   // This helps reduces the amount of unreachable objects in the dump
   // and makes it easier to browse.
