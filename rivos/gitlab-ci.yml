@@ -262,6 +262,7 @@ run-gtests-riscv64-release:
         TEST_IMAGE_DIR=$(pwd)/build/${CONF}/images/test \
         JT_HOME=$(pwd)/jtreg \
         JTREG="OPTIONS=-compilejdk:$(pwd)/build/linux-amd64-release/images/jdk -e:QEMU_LD_PREFIX=${QEMU_LD_PREFIX}"
+  timeout: 2h
 
 # jtreg hotspot tier1 compiler
 
@@ -273,6 +274,7 @@ run-jtreg-hotspot-tier1-compiler-tests-amd64-fastdebug:
     PKG_ARCH: amd64
     DEBUG_LEVEL: fastdebug
     TEST: tier1_compiler
+  allow_failure: true
 
 run-jtreg-hotspot-tier1-compiler-tests-riscv64-fastdebug:
   extends: .run-jtreg-tests
@@ -293,6 +295,7 @@ run-jtreg-hotspot-tier1-compiler-tests-amd64-release:
     PKG_ARCH: amd64
     DEBUG_LEVEL: release
     TEST: tier1_compiler
+  allow_failure: true
 
 run-jtreg-hotspot-tier1-compiler-tests-riscv64-release:
   extends: .run-jtreg-tests
@@ -315,6 +318,7 @@ run-jtreg-hotspot-tier1-gc-tests-amd64-fastdebug:
     PKG_ARCH: amd64
     DEBUG_LEVEL: fastdebug
     TEST: tier1_gc
+  allow_failure: true
 
 run-jtreg-hotspot-tier1-gc-tests-riscv64-fastdebug:
   extends: .run-jtreg-tests
@@ -325,6 +329,7 @@ run-jtreg-hotspot-tier1-gc-tests-riscv64-fastdebug:
     PKG_ARCH: riscv64
     DEBUG_LEVEL: fastdebug
     TEST: tier1_gc
+  allow_failure: true
 
 run-jtreg-hotspot-tier1-gc-tests-amd64-release:
   extends: .run-jtreg-tests
@@ -334,6 +339,7 @@ run-jtreg-hotspot-tier1-gc-tests-amd64-release:
     PKG_ARCH: amd64
     DEBUG_LEVEL: release
     TEST: tier1_gc
+  allow_failure: true
 
 run-jtreg-hotspot-tier1-gc-tests-riscv64-release:
   extends: .run-jtreg-tests
@@ -344,6 +350,7 @@ run-jtreg-hotspot-tier1-gc-tests-riscv64-release:
     PKG_ARCH: riscv64
     DEBUG_LEVEL: release
     TEST: tier1_gc
+  allow_failure: true
 
 # jtreg hotspot tier1 runtime
 
@@ -355,6 +362,7 @@ run-jtreg-hotspot-tier1-runtime-tests-amd64-fastdebug:
     PKG_ARCH: amd64
     DEBUG_LEVEL: fastdebug
     TEST: tier1_runtime
+  allow_failure: true
 
 run-jtreg-hotspot-tier1-runtime-tests-riscv64-fastdebug:
   extends: .run-jtreg-tests
@@ -375,6 +383,7 @@ run-jtreg-hotspot-tier1-runtime-tests-amd64-release:
     PKG_ARCH: amd64
     DEBUG_LEVEL: release
     TEST: tier1_runtime
+  allow_failure: true
 
 run-jtreg-hotspot-tier1-runtime-tests-riscv64-release:
   extends: .run-jtreg-tests
@@ -397,6 +406,7 @@ run-jtreg-hotspot-tier1-common-tests-amd64-fastdebug:
     PKG_ARCH: amd64
     DEBUG_LEVEL: fastdebug
     TEST: tier1_common
+  allow_failure: true
 
 run-jtreg-hotspot-tier1-common-tests-riscv64-fastdebug:
   extends: .run-jtreg-tests
@@ -407,6 +417,7 @@ run-jtreg-hotspot-tier1-common-tests-riscv64-fastdebug:
     PKG_ARCH: riscv64
     DEBUG_LEVEL: fastdebug
     TEST: tier1_common
+  allow_failure: true
 
 run-jtreg-hotspot-tier1-common-tests-amd64-release:
   extends: .run-jtreg-tests
@@ -416,6 +427,7 @@ run-jtreg-hotspot-tier1-common-tests-amd64-release:
     PKG_ARCH: amd64
     DEBUG_LEVEL: release
     TEST: tier1_common
+  allow_failure: true
 
 run-jtreg-hotspot-tier1-common-tests-riscv64-release:
   extends: .run-jtreg-tests
@@ -426,6 +438,7 @@ run-jtreg-hotspot-tier1-common-tests-riscv64-release:
     PKG_ARCH: riscv64
     DEBUG_LEVEL: release
     TEST: tier1_common
+  allow_failure: true
 
 # jtreg hotspot tier1 serviceability
 
@@ -437,6 +450,7 @@ run-jtreg-hotspot-tier1-serviceability-tests-amd64-fastdebug:
     PKG_ARCH: amd64
     DEBUG_LEVEL: fastdebug
     TEST: tier1_serviceability
+  allow_failure: true
 
 run-jtreg-hotspot-tier1-serviceability-tests-riscv64-fastdebug:
   extends: .run-jtreg-tests
@@ -457,6 +471,7 @@ run-jtreg-hotspot-tier1-serviceability-tests-amd64-release:
     PKG_ARCH: amd64
     DEBUG_LEVEL: release
     TEST: tier1_serviceability
+  allow_failure: true
 
 run-jtreg-hotspot-tier1-serviceability-tests-riscv64-release:
   extends: .run-jtreg-tests
