@@ -137,7 +137,9 @@ public class ThreadLists {
             }
             System.out.println("Set of Thread IDs from MXBean:");
             for (long tid : threadIdsBean) {
-                System.out.println(tid + " " + threadBean.getThreadInfo(tid));
+                System.out.print(tid + " ");
+                ThreadInfo threadInfo = threadBean.getThreadInfo(tid);
+                System.out.println(threadInfo != null ? threadInfo.getThreadName() : "");
             }
             throw new RuntimeException("inconsistent results");
         }
