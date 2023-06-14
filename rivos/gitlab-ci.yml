@@ -29,56 +29,9 @@ prepare-version:
     # Debugging helper
     - cat gitvars.env
 
-.create-sysroot:
-  stage: prebuild
-  image: ubuntu:20.04
-  cache:
-    - when: on_success
-      key: sysroot-${UBUNTU_CODENAME}-${PKG_ARCH}-${CACHE_VERSION}
-      paths:
-        - sysroot-${UBUNTU_CODENAME}-${PKG_ARCH}
-  script:
-    # early exit if sysroot-${UBUNTU_CODENAME}-${PKG_ARCH} is coming from the cache
-    - test -d sysroot-${UBUNTU_CODENAME}-${PKG_ARCH} && exit 0
-    - apt-get update
-    - apt-get install -y debootstrap qemu-user-static
-    - |
-      qemu-debootstrap                                                         \
-        --verbose                                                              \
-        --arch=${PKG_ARCH}                                                     \
-        --components=main,universe                                             \
-        --include=symlinks,build-essential,libx11-dev,libxext-dev,libxrender-dev,libxrandr-dev,libxtst-dev,libxt-dev,libcups2-dev,libfontconfig1-dev,libasound2-dev,libfreetype6-dev,libpng-dev \
-        ${UBUNTU_CODENAME}                                                     \
-        sysroot-${UBUNTU_CODENAME}-${PKG_ARCH}                                 \
-      || (cat sysroot-${UBUNTU_CODENAME}-${PKG_ARCH}/debootstrap/debootstrap.log; exit 1)
-    - chroot sysroot-${UBUNTU_CODENAME}-${PKG_ARCH} symlinks -cr .
-    - rm -rf sysroot-${UBUNTU_CODENAME}-${PKG_ARCH}/{dev,proc,run,sys}
-  artifacts:
-    when: always
-    paths:
-      - sysroot-${UBUNTU_CODENAME}-${PKG_ARCH}
-
-create-sysroot-amd64:
-  extends: .create-sysroot
-  dependencies:
-    - prepare-version
-  needs:
-    - prepare-version
-  variables:
-    PKG_ARCH: amd64
-
-create-sysroot-riscv64:
-  extends: .create-sysroot
-  dependencies:
-    - prepare-version
-  needs:
-    - prepare-version
-  variables:
-    PKG_ARCH: riscv64
-
 download-tools:
   stage: prebuild
-  image: ubuntu:20.04
+  image: gitlab.ba.rivosinc.com:5050/rv/it/int/rivos-sdk:latest
   script:
     - apt-get update
     - |
@@ -96,7 +49,7 @@ download-tools:
 
 .build-linux:
   stage: build
-  image: ubuntu:20.04
+  image: gitlab.ba.rivosinc.com:5050/rv/it/int/rivos-sdk:latest
   variables:
     CONF_NAME: linux-${PKG_ARCH}-${DEBUG_LEVEL}
   script:
@@ -132,7 +85,7 @@ download-tools:
         --with-vendor-name="Rivos Inc"                                         \
         --with-version-pre="${JDK_VERSION_PRE}"                                \
         --with-version-opt="${JDK_VERSION_OPT}"                                \
-        --with-sysroot=$(pwd)/sysroot-${UBUNTU_CODENAME}-${PKG_ARCH}           \
+        $(test "${PKG_ARCH}" = "riscv64" && echo "--with-sysroot=/rivos/sysroot/riscv" || true) \
         --with-boot-jdk=/usr/lib/jvm/temurin-${BUILD_JDK_VERSION}              \
         --disable-precompiled-headers                                          \
         --with-zlib=system                                                     \
@@ -157,13 +110,11 @@ download-tools:
   dependencies:
     - prepare-version
     - download-tools
-    - create-sysroot-amd64
 
 .build-dependencies-riscv64:
   dependencies:
     - prepare-version
     - download-tools
-    - create-sysroot-riscv64
 
 build-linux-amd64-fastdebug:
   extends: .build-linux
@@ -199,7 +150,7 @@ build-linux-riscv64-release:
 
 .run-gtests:
   stage: test
-  image: ubuntu:20.04
+  image: gitlab.ba.rivosinc.com:5050/rv/it/int/rivos-sdk:latest
   variables:
     CONF: linux-${PKG_ARCH}-${DEBUG_LEVEL}
   script:
@@ -212,9 +163,8 @@ build-linux-riscv64-release:
       mkdir -p /usr/lib/jvm/temurin-${BUILD_JDK_VERSION}
       curl -L https://api.adoptium.net/v3/binary/latest/${BUILD_JDK_VERSION}/ea/linux/x64/jdk/hotspot/normal/eclipse\?project\=jdk \
         | tar -xzf - -C /usr/lib/jvm/temurin-${BUILD_JDK_VERSION} --strip-components 1
-    # QEMU_LD_PREFIX is only needed for risc v but it's easier to just set it for all configurations
+    - if [[ "${PKG_ARCH}" = "riscv64" ]]; then export QEMU_LD_PREFIX=/rivos/sysroot/riscv; fi
     - make test-prebuilt-with-exit-code \
-        QEMU_LD_PREFIX=$(pwd)/sysroot-${UBUNTU_CODENAME}-${PKG_ARCH} \
         BOOT_JDK=/usr/lib/jvm/temurin-${BUILD_JDK_VERSION} \
         JDK_IMAGE_DIR=$(pwd)/build/${CONF}/images/jdk \
         TEST_IMAGE_DIR=$(pwd)/build/${CONF}/images/test \
@@ -229,7 +179,6 @@ build-linux-riscv64-release:
   dependencies:
     - prepare-version
     - download-tools
-    - create-sysroot-amd64
     - build-linux-amd64-release
     - build-linux-amd64-fastdebug
 
@@ -237,7 +186,6 @@ build-linux-riscv64-release:
   dependencies:
     - prepare-version
     - download-tools
-    - create-sysroot-riscv64
     - build-linux-amd64-release
     - build-linux-riscv64-fastdebug
 
@@ -245,14 +193,12 @@ build-linux-riscv64-release:
   dependencies:
     - prepare-version
     - download-tools
-    - create-sysroot-amd64
     - build-linux-amd64-release
 
 .test-dependencies-riscv64-release:
   dependencies:
     - prepare-version
     - download-tools
-    - create-sysroot-riscv64
     - build-linux-amd64-release
     - build-linux-riscv64-release
 
@@ -294,7 +240,7 @@ run-gtests-riscv64-release:
 
 .run-jtreg-tests:
   stage: test
-  image: ubuntu:20.04
+  image: gitlab.ba.rivosinc.com:5050/rv/it/int/rivos-sdk:latest
   variables:
     CONF: linux-${PKG_ARCH}-${DEBUG_LEVEL}
   script:
@@ -309,14 +255,13 @@ run-gtests-riscv64-release:
         | tar -xzf - -C /usr/lib/jvm/temurin-${BUILD_JDK_VERSION} --strip-components 1
     # Some of the variables and args (e.g., QEMU_LD_PREFIX, -compilejdk) are not really needed for amd64.
     # However, we just added them to keep the script simpler.
-    - export SYSROOT=$(pwd)/sysroot-${UBUNTU_CODENAME}-${PKG_ARCH}
+    - if [[ "${PKG_ARCH}" = "riscv64" ]]; then export QEMU_LD_PREFIX=/rivos/sysroot/riscv; fi
     - make test-prebuilt-with-exit-code \
-        QEMU_LD_PREFIX=${SYSROOT} \
         BOOT_JDK=/usr/lib/jvm/temurin-${BUILD_JDK_VERSION} \
         JDK_IMAGE_DIR=$(pwd)/build/${CONF}/images/jdk \
         TEST_IMAGE_DIR=$(pwd)/build/${CONF}/images/test \
         JT_HOME=$(pwd)/jtreg \
-        JTREG="OPTIONS=-compilejdk:$(pwd)/build/linux-amd64-release/images/jdk -e:QEMU_LD_PREFIX=${SYSROOT}"
+        JTREG="OPTIONS=-compilejdk:$(pwd)/build/linux-amd64-release/images/jdk -e:QEMU_LD_PREFIX=${QEMU_LD_PREFIX}"
 
 # jtreg hotspot tier1 compiler
 
@@ -526,7 +471,7 @@ run-jtreg-hotspot-tier1-serviceability-tests-riscv64-release:
 
 package-tar:
   stage: deploy
-  image: ubuntu:20.04
+  image: gitlab.ba.rivosinc.com:5050/rv/it/int/rivos-sdk:latest
   dependencies:
     - prepare-version
     - build-linux-amd64-release
