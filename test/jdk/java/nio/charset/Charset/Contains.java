@@ -94,7 +94,7 @@ public class Contains {
 
         checkUTF();
 
-        selfContainmentTest();
+        containsSelfTest();
     }
 
     static void checkUTF() throws Exception {
@@ -105,7 +105,10 @@ public class Contains {
                    true);
     }
 
-    static void selfContainmentTest() {
+    /**
+     * Tests the assertion in the contains() method: "Every charset contains itself."
+     */
+    static void containsSelfTest() {
         boolean failed = false;
 
         for (var entry : Charset.availableCharsets().entrySet()) {
