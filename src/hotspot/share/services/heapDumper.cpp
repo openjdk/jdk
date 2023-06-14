@@ -381,6 +381,7 @@ enum {
   INITIAL_CLASS_COUNT = 200
 };
 
+// Supports I/O operations for a dump
 // Base class for dump and parallel dump
 class AbstractDumpWriter : public ResourceObj {
  protected:
@@ -417,6 +418,11 @@ class AbstractDumpWriter : public ResourceObj {
     _pos(0),
     _in_dump_segment(false) { }
 
+  // Total number of bytes written to the disk
+  virtual julong bytes_written() const = 0;
+  // Return non-null if error occurred
+  virtual char const* error() const = 0;
+
   size_t position() const                       { return _pos; }
   // writer functions
   virtual void write_raw(const void* s, size_t len);
@@ -438,10 +444,6 @@ class AbstractDumpWriter : public ResourceObj {
   void finish_dump_segment();
   // Flush internal buffer to persistent storage
   virtual void flush() = 0;
-  // Total number of bytes written to the disk
-  virtual julong bytes_written() const = 0;
-  // Return non-null if error occurred
-  virtual char const* error() const = 0;
 };
 
 void AbstractDumpWriter::write_fast(const void* s, size_t len) {
@@ -574,7 +576,6 @@ void AbstractDumpWriter::start_sub_record(u1 tag, u4 len) {
     assert(Bytes::get_Java_u4((address)(buffer() + 5)) == len, "Inconsistent size!");
     _in_dump_segment = true;
     _is_huge_sub_record = len > buffer_size() - dump_segment_header_size;
-    ResourceMark rm;
   } else if (_is_huge_sub_record || (len > buffer_size() - position())) {
     // This object will not fit in completely or the last sub-record was huge.
     // Finish the current segment and try again.
@@ -1516,22 +1517,86 @@ class DumperController : public CHeapObj<mtInternal> {
    }
 };
 
+// The VM operation merges separate dump files into a complete one
 class VM_HeapDumpMerge : public VM_Operation {
 private:
   DumpWriter* _writer;
   const char* _path;
   bool _has_error;
+  int _dump_seq;
 
   void merge_file(char* path);
   void merge_done();
 public:
-  VM_HeapDumpMerge(const char* path, DumpWriter* writer)
-    : _writer(writer), _path(path), _has_error(_writer->has_error()) {}
+  VM_HeapDumpMerge(const char* path, DumpWriter* writer, int dump_seq) : 
+    _writer(writer), _path(path), _has_error(_writer->has_error()), _dump_seq(dump_seq) {}
   VMOp_Type type() const { return VMOp_HeapDumpMerge; }
   // heap dump merge could happen outside safepoint
   virtual bool evaluate_at_safepoint() const { return false; }
   void doit();
 };
+
+void VM_HeapDumpMerge::merge_done() {
+  // Writes the HPROF_HEAP_DUMP_END record.
+  if (!_has_error) {
+    DumperSupport::end_of_dump(_writer);
+    _writer->flush();
+  }
+  _dump_seq = 0; //reset
+}
+
+void VM_HeapDumpMerge::merge_file(char* path) {
+  assert(!SafepointSynchronize::is_at_safepoint(), "merging happens outside safepoint");
+  TraceTime timer("Merge segmented heap file", TRACETIME_LOG(Info, heapdump));
+
+  fileStream part_fs(path, "r");
+  if (!part_fs.is_open()) {
+    log_error(heapdump)("Can not open segmented heap file %s during merging", path);
+    _writer->set_error("Can not open segmented heap file during merging");
+    _has_error = true;
+    return;
+  }
+
+  jlong total = 0;
+  int cnt = 0;
+  char read_buf[4096];
+  while ((cnt = part_fs.read(read_buf, 1, 4096)) != 0) {
+    _writer->write_raw(read_buf, cnt);
+    total += cnt;
+  }
+
+  _writer->flush();
+  if (part_fs.fileSize() != total) {
+    log_error(heapdump)("Merged heap dump %s is incomplete", path);
+    _writer->set_error("Merged heap dump is incomplete");
+    _has_error = true;
+  }
+}
+
+void VM_HeapDumpMerge::doit() {
+  assert(!SafepointSynchronize::is_at_safepoint(), "merging happens outside safepoint");
+  TraceTime timer("Merge heap files complete", TRACETIME_LOG(Info, heapdump));
+
+  // Since contents in segmented heap file were already zipped, we don't need to zip
+  // them again during merging.
+  AbstractCompressor* saved_compressor = _writer->compressor();
+  _writer->set_compressor(nullptr);
+
+  // merge segmented heap file and remove it anyway
+  char path[JVM_MAXPATHLEN];
+  for (int i = 0; i < _dump_seq; i++) {
+    memset(path, 0, JVM_MAXPATHLEN);
+    os::snprintf(path, JVM_MAXPATHLEN, "%s.p%d", _path, i);
+    if (!_has_error) {
+      merge_file(path);
+    }
+    remove(path);
+  }
+
+  // restore compressor for further use
+  _writer->set_compressor(saved_compressor);
+  merge_done();
+}
 
 // The VM operation that performs the heap dump
 class VM_HeapDumper : public VM_GC_Operation, public WorkerTask {
@@ -1545,6 +1610,7 @@ class VM_HeapDumper : public VM_GC_Operation, public WorkerTask {
   GrowableArray<Klass*>*  _klass_map;
   ThreadStackTrace**      _stack_traces;
   int                     _num_threads;
+  volatile int            _dump_seq;
   // parallel heap dump support
   uint                    _num_dumper_threads;
   DumperController*       _dumper_controller;
@@ -1553,7 +1619,6 @@ class VM_HeapDumper : public VM_GC_Operation, public WorkerTask {
   static const size_t VMDumperWorkerId = 0;
   // VM dumper dumps both heap and non-heap data, other dumpers dump heap-only data.
   static bool is_vm_dumper(uint worker_id) { return worker_id == VMDumperWorkerId; }
-  static DumpWriter* create_dump_writer();
 
   // accessors and setters
   static VM_HeapDumper* dumper()         {  assert(_global_dumper != nullptr, "Error"); return _global_dumper; }
@@ -1570,6 +1635,9 @@ class VM_HeapDumper : public VM_GC_Operation, public WorkerTask {
   void clear_global_writer() { _global_writer = nullptr; }
 
   bool skip_operation() const;
+
+  // create dump writer for every parallel dump thread
+  DumpWriter* create_dump_writer();
 
   // writes a HPROF_LOAD_CLASS record
   static void do_load_class(Klass* k);
@@ -1600,6 +1668,7 @@ class VM_HeapDumper : public VM_GC_Operation, public WorkerTask {
     _klass_map = new (mtServiceability) GrowableArray<Klass*>(INITIAL_CLASS_COUNT, mtServiceability);
     _stack_traces = nullptr;
     _num_threads = 0;
+    _dump_seq = 0;
     _num_dumper_threads = num_dump_threads;
     _dumper_controller = nullptr;
     _poi = nullptr;
@@ -1630,6 +1699,7 @@ class VM_HeapDumper : public VM_GC_Operation, public WorkerTask {
     }
     delete _klass_map;
   }
+  int dump_seq()           { return _dump_seq; }
   bool is_parallel_dump()  { return _num_dumper_threads > 1; }
   bool can_parallel_dump() {
     const char* base_path = writer()->get_file_path();
@@ -1889,78 +1959,16 @@ void VM_HeapDumper::doit() {
   clear_global_writer();
 }
 
-static int volatile dump_seq = 0;
-
-void VM_HeapDumpMerge::merge_done() {
-  // Writes the HPROF_HEAP_DUMP_END record.
-  if (!_has_error) {
-    DumperSupport::end_of_dump(_writer);
-    _writer->flush();
-  }
-  dump_seq = 0; //reset
-}
-
-void VM_HeapDumpMerge::merge_file(char* path) {
-  assert(!SafepointSynchronize::is_at_safepoint(), "merging happens outside safepoint");
-  TraceTime timer("Merge segmented heap file", TRACETIME_LOG(Info, heapdump));
-
-  fileStream part_fs(path, "r");
-  if (!part_fs.is_open()) {
-    log_error(heapdump)("Can not open segmented heap file %s during merging", path);
-    _writer->set_error("Can not open segmented heap file during merging");
-    _has_error = true;
-    return;
-  }
-
-  jlong total = 0;
-  int cnt = 0;
-  char read_buf[4096];
-  while ((cnt = part_fs.read(read_buf, 1, 4096)) != 0) {
-    _writer->write_raw(read_buf, cnt);
-    total += cnt;
-  }
-
-  _writer->flush();
-  if (part_fs.fileSize() != total) {
-    log_error(heapdump)("Merged heap dump %s is incomplete", path);
-    _writer->set_error("Merged heap dump is incomplete");
-    _has_error = true;
-  }
-}
-
-void VM_HeapDumpMerge::doit() {
-  assert(!SafepointSynchronize::is_at_safepoint(), "merging happens outside safepoint");
-  TraceTime timer("Merge heap files complete", TRACETIME_LOG(Info, heapdump));
-
-  // Since contents in segmented heap file were already zipped, we don't need to zip
-  // them again during merging.
-  AbstractCompressor* saved_compressor = _writer->compressor();
-  _writer->set_compressor(nullptr);
-
-  // merge segmented heap file and remove it anyway
-  char path[JVM_MAXPATHLEN];
-  for (int i = 0; i < dump_seq; i++) {
-    memset(path, 0, JVM_MAXPATHLEN);
-    os::snprintf(path, JVM_MAXPATHLEN, "%s.p%d", _path, i);
-    if (!_has_error) {
-      merge_file(path);
-    }
-    remove(path);
-  }
-
-  // restore compressor for further use
-  _writer->set_compressor(saved_compressor);
-  merge_done();
-}
-
 // prepare DumpWriter for every parallel dump thread
 DumpWriter* VM_HeapDumper::create_dump_writer() {
   char* path = NEW_RESOURCE_ARRAY(char, JVM_MAXPATHLEN);
   memset(path, 0, JVM_MAXPATHLEN);
+  // generate segmented heap file path
   const char* base_path = writer()->get_file_path();
   AbstractCompressor* compressor = writer()->compressor();
-  int seq = Atomic::fetch_and_add(&dump_seq, 1);
+  int seq = Atomic::fetch_and_add(&_dump_seq, 1);
   os::snprintf(path, JVM_MAXPATHLEN, "%s.p%d", base_path, seq);
+  // create corresponding writer for that
   FileWriter* file_writer = new (std::nothrow) FileWriter(path, writer()->is_overwrite());
   DumpWriter* new_writer = new DumpWriter(file_writer, compressor);
   return new_writer;
@@ -2165,7 +2173,7 @@ int HeapDumper::dump(const char* path, outputStream* out, int compression, bool 
 
   // merge segmented dump files into a complete one, this is not required for serial dump
   if (dumper.is_parallel_dump()) {
-    VM_HeapDumpMerge op(path, &writer);
+    VM_HeapDumpMerge op(path, &writer, dumper.dump_seq());
     VMThread::execute(&op);
     set_error(writer.error());
   }
