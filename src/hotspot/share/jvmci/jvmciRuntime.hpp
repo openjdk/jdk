@@ -428,7 +428,10 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
 
   // Helper routine for determining the validity of a compilation
   // with respect to concurrent class loading.
-  static JVMCI::CodeInstallResult validate_compile_task_dependencies(Dependencies* target, JVMCICompileState* task, char** failure_detail);
+  static JVMCI::CodeInstallResult validate_compile_task_dependencies(Dependencies* target,
+                                                                     JVMCICompileState* task,
+                                                                     char** failure_detail,
+                                                                     bool& failing_dep_is_call_site);
 
   // Compiles `target` with the JVMCI compiler.
   void compile_method(JVMCIEnv* JVMCIENV, JVMCICompiler* compiler, const methodHandle& target, int entry_bci);
