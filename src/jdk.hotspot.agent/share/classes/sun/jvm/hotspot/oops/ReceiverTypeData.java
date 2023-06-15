@@ -38,18 +38,12 @@ import sun.jvm.hotspot.utilities.*;
 // that the check is reached, and a series of (Klass, count) pairs
 // which are used to store a type profile for the receiver of the check.
 public class ReceiverTypeData<K,M> extends CounterData {
-  static final int INCLUDE_JVMCI;
   static final int nonProfiledCountOffset = counterCellCount;
   static final int receiver0Offset;
   static final int count0Offset;
   static final int receiverTypeRowCellCount;
   static {
-    INCLUDE_JVMCI = VM.getVM().getTypeDataBase().lookupIntConstant("INCLUDE_JVMCI");
-    if (INCLUDE_JVMCI == 1) {
-        receiver0Offset = nonProfiledCountOffset + 1;
-    } else {
-        receiver0Offset = counterCellCount;
-    }
+    receiver0Offset = counterCellCount;
     count0Offset = receiver0Offset + 1;
     receiverTypeRowCellCount = (count0Offset + 1) - receiver0Offset;
   }
@@ -66,9 +60,6 @@ public class ReceiverTypeData<K,M> extends CounterData {
 
   static int staticCellCount() {
     int cellCount = counterCellCount + MethodData.TypeProfileWidth * receiverTypeRowCellCount;
-    if (INCLUDE_JVMCI == 1) {
-      cellCount += 1;
-    }
     return cellCount;
   }
 

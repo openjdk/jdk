@@ -1333,13 +1333,8 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
     Register recv = k_RInfo;
     __ load_klass(recv, obj);
     type_profile_helper(mdo, md, data, recv, &update_done);
-    Address nonprofiled_receiver_count_addr
-      = __ form_address(rscratch2, mdo,
-                        md->byte_offset_of_slot(data, CounterData::count_offset()),
-                        0);
-    __ ldr(rscratch1, nonprofiled_receiver_count_addr);
-    __ add(rscratch1, rscratch1, DataLayout::counter_increment);
-    __ str(rscratch1, nonprofiled_receiver_count_addr);
+    Address counter_addr(mdo, md->byte_offset_of_slot(data, CounterData::count_offset()));
+    __ addptr(counter_addr, DataLayout::counter_increment);
 
     __ bind(update_done);
   } else {
@@ -1454,9 +1449,7 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
       __ load_klass(recv, value);
       type_profile_helper(mdo, md, data, recv, &update_done);
       Address counter_addr(mdo, md->byte_offset_of_slot(data, CounterData::count_offset()));
-      __ ldr(rscratch1, counter_addr);
-      __ add(rscratch1, rscratch1, DataLayout::counter_increment);
-      __ str(rscratch1, counter_addr);
+      __ addptr(counter_addr, DataLayout::counter_increment);
       __ bind(update_done);
     } else {
       __ cbz(value, done);

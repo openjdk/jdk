@@ -222,10 +222,10 @@ public class TestIRMatching {
         } else {
             cmp = "cmp";
         }
-        runCheck(BadFailOnConstraint.create(CheckCastArray.class, "array()", 1, cmp, "precise"),
-                 BadFailOnConstraint.create(CheckCastArray.class, "array()", 2, 1,cmp, "precise", "MyClass"),
-                 BadFailOnConstraint.create(CheckCastArray.class, "array()", 2, 2,cmp, "precise", "ir_framework/tests/MyClass"),
-                 GoodFailOnConstraint.create(CheckCastArray.class, "array()", 3),
+        runCheck(BadFailOnConstraint.create(CheckCastArray.class, "array(java.lang.Object[])", 1, cmp, "precise"),
+                 BadFailOnConstraint.create(CheckCastArray.class, "array(java.lang.Object[])", 2, 1,cmp, "precise", "MyClass"),
+                 BadFailOnConstraint.create(CheckCastArray.class, "array(java.lang.Object[])", 2, 2,cmp, "precise", "ir_framework/tests/MyClass"),
+                 GoodFailOnConstraint.create(CheckCastArray.class, "array(java.lang.Object[])", 3),
                  Platform.isS390x() ? // There is no checkcast_arraycopy stub for C2 on s390
                      GoodFailOnConstraint.create(CheckCastArray.class, "arrayCopy(java.lang.Object[],java.lang.Class)", 1)
                      : BadFailOnConstraint.create(CheckCastArray.class, "arrayCopy(java.lang.Object[],java.lang.Class)", 1, "checkcast_arraycopy")
@@ -1236,10 +1236,16 @@ class CheckCastArray {
     @IR(failOn = {IRNode.CHECKCAST_ARRAY_OF, "MyClass", // fails
                   IRNode.CHECKCAST_ARRAY_OF, "ir_framework/tests/MyClass"}) // fails
     @IR(failOn = {IRNode.CHECKCAST_ARRAY_OF, "MyClasss", IRNode.CHECKCAST_ARRAY_OF, "Object"})
-    public boolean array() {
-        return oArr instanceof MyClass[];
+    public boolean array(Object[] arr) {
+        return arr instanceof MyClass[];
     }
 
+    @Run(test = "array")
+    public void testArray() {
+        array(oArr);
+        array(mArr);
+    }
+    
     @Test
     @IR(failOn = IRNode.CHECKCAST_ARRAYCOPY) // fails
     public Object[] arrayCopy(Object[] src, Class klass) {

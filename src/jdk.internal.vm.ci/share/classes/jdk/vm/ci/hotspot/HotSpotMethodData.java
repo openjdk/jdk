@@ -66,8 +66,8 @@ final class HotSpotMethodData implements MetaspaceObject {
         final int typeDataFirstTypeOffset = cellIndexToOffset(config.receiverTypeDataReceiver0Offset);
         final int typeDataFirstTypeCountOffset = cellIndexToOffset(config.receiverTypeDataCount0Offset);
 
-        final int typeCheckDataSize = cellIndexToOffset(2) + typeDataRowSize * config.typeProfileWidth;
-        final int virtualCallDataSize = cellIndexToOffset(2) + typeDataRowSize * (config.typeProfileWidth + config.methodProfileWidth);
+        final int typeCheckDataSize = cellIndexToOffset(1) + typeDataRowSize * config.typeProfileWidth;
+        final int virtualCallDataSize = cellIndexToOffset(1) + typeDataRowSize * (config.typeProfileWidth + config.methodProfileWidth);
         final int virtualCallDataFirstMethodOffset = typeDataFirstTypeOffset + typeDataRowSize * config.typeProfileWidth;
         final int virtualCallDataFirstMethodCountOffset = typeDataFirstTypeCountOffset + typeDataRowSize * config.typeProfileWidth;
 
