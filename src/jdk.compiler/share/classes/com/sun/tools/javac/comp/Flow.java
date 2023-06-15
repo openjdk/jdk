@@ -3501,7 +3501,7 @@ public class Flow {
             }
             return new RecordPattern(record.type, componentTypes, nestedDescriptions);
         } else if (pattern instanceof JCAnyPattern) {
-            Type type = types.isSubtype(selectorType, syms.objectType)
+            Type type = types.isSubtype(selectorType, syms.objectType) || selectorType.isPrimitive()
                     ? selectorType : syms.objectType;
             return new BindingPattern(type);
         } else {
