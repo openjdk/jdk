@@ -105,7 +105,7 @@ class VM_Version : public Abstract_VM_Version {
   // Zihintpause Pause instruction HINT
   //
   // Other features and settings
-  // mvendorid Manufactory JEDEC id.
+  // mvendorid Manufactory JEDEC id encoded, ISA vol 2 3.1.2..
   // marchid   Id for microarch. Mvendorid plus marchid uniquely identify the microarch.
   // mimpid    A unique encoding of the version of the processor implementation.
   // unaligned_access Unaligned memory accesses (unknown, unspported, emulated, slow, firmware, fast)
