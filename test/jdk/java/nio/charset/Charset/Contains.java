@@ -43,13 +43,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class Contains {
 
     /**
-     * Tests a variety of charsets with other charsets, and whether
-     * they should be contained. This test takes both true and false
-     *  for 'cont'.
+     * Tests the containment of standard charsets against itself and the
+     * other standard charset values. This test takes both true and false for 'cont'.
      */
     @ParameterizedTest
-    @MethodSource("otherCharsets")
-    public void testCharsets(Charset containerCs, Charset cs, boolean cont){
+    @MethodSource("standardCharsets")
+    public void testStandardCharsets(Charset containerCs, Charset cs, boolean cont){
         shouldContain(containerCs, cs, cont);
     }
 
@@ -156,7 +155,7 @@ public class Contains {
                 .map(cs2 -> Arguments.of(Charset.forName(cs1), Charset.forName(cs2), true)));
     }
 
-    private static Stream<Arguments> otherCharsets() {
+    private static Stream<Arguments> standardCharsets() {
         Charset us_ascii = Charset.forName("US-ASCII");
         Charset iso_8859_1 = Charset.forName("ISO-8859-1");
         Charset iso_8859_15 = Charset.forName("ISO-8859-15");
