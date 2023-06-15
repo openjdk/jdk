@@ -54,17 +54,10 @@ runs:
         path: jtreg/src
       if: steps.get-cached-jtreg.outputs.cache-hit != 'true'
 
-    - name: 'Install JDK'
-      uses: actions/setup-java@v3
-      with:
-        distribution: 'oracle'
-        java-version: '17'
-      if: steps.get-cached-jtreg.outputs.cache-hit != 'true'
-
     - name: 'Build JTReg'
       run: |
         # Build JTReg and move files to the proper locations
-        bash make/build.sh --jdk "$JAVA_HOME"
+        bash make/build.sh --jdk "$(realpath bootjdk/jdk)
         mkdir ../installed
         mv build/images/jtreg/* ../installed
       working-directory: jtreg/src
