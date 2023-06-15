@@ -6,7 +6,8 @@
  * @run main EncodingMutability
  */
 
-import java.security.*;
+import java.security.KeyPairGenerator;
+import java.security.PublicKey;
 
 public class EncodingMutability {
 
