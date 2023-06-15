@@ -35,6 +35,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class AvailableCharsetNames {
 
+    /**
+     * Test that the keys in Charset.availableCharsets()
+     * are equal to the associated Charset.name() value.
+     */
     @Test
     public void testCanonicalNames() {
         for (String charsetName : Charset.availableCharsets().keySet()) {
