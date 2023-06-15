@@ -2428,7 +2428,7 @@ void Assembler::jcc(Condition cc, Label& L, bool maybe_short) {
       assert(is_simm32(offs - long_size),
              "must be 32bit offset (call4)");
       emit_int16(0x0F, (0x80 | cc));
-      emit_int32(offs - long_size);
+      emit_int32((int)(offs - long_size));
     }
   } else {
     // Note: could eliminate cond. jumps to this jump if condition
@@ -2482,7 +2482,7 @@ void Assembler::jmp(Label& L, bool maybe_short) {
       emit_int16((unsigned char)0xEB, ((offs - short_size) & 0xFF));
     } else {
       emit_int8((unsigned char)0xE9);
-      emit_int32(offs - long_size);
+      emit_int32((int)(offs - long_size));
     }
   } else {
     // By default, forward jumps are always 32-bit displacements, since
@@ -6358,7 +6358,7 @@ void Assembler::xbegin(Label& abort, relocInfo::relocType rtype) {
     assert(entry != nullptr, "abort entry null");
     intptr_t offset = entry - pc();
     emit_int16((unsigned char)0xC7, (unsigned char)0xF8);
-    emit_int32(offset - 6); // 2 opcode + 4 address
+    emit_int32((int)(offset - 6)); // 2 opcode + 4 address
   } else {
     abort.add_patch_at(code(), locator());
     emit_int16((unsigned char)0xC7, (unsigned char)0xF8);

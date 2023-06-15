@@ -455,7 +455,7 @@ class Assembler : public AbstractAssembler  {
   friend class StubGenerator;
 
  public:
-  enum Condition {                     // The x86 condition codes used for conditional jumps/moves.
+  enum Condition : uint8_t {                     // The x86 condition codes used for conditional jumps/moves.
     zero          = 0x4,
     notZero       = 0x5,
     equal         = 0x4,
@@ -478,7 +478,7 @@ class Assembler : public AbstractAssembler  {
     noParity      = 0xb
   };
 
-  enum Prefix {
+  enum Prefix : uint8_t {
     // segment overrides
     CS_segment = 0x2e,
     SS_segment = 0x36,
@@ -513,14 +513,14 @@ class Assembler : public AbstractAssembler  {
     Prefix_EMPTY = 0x0
   };
 
-  enum VexPrefix {
+  enum VexPrefix : uint8_t {
     VEX_B = 0x20,
     VEX_X = 0x40,
     VEX_R = 0x80,
     VEX_W = 0x80
   };
 
-  enum ExexPrefix {
+  enum ExexPrefix : uint8_t {
     EVEX_F  = 0x04,
     EVEX_V  = 0x08,
     EVEX_Rb = 0x10,
@@ -528,14 +528,14 @@ class Assembler : public AbstractAssembler  {
     EVEX_Z  = 0x80
   };
 
-  enum VexSimdPrefix {
+  enum VexSimdPrefix : uint8_t {
     VEX_SIMD_NONE = 0x0,
     VEX_SIMD_66   = 0x1,
     VEX_SIMD_F3   = 0x2,
     VEX_SIMD_F2   = 0x3
   };
 
-  enum VexOpcode {
+  enum VexOpcode : uint8_t {
     VEX_OPCODE_NONE  = 0x0,
     VEX_OPCODE_0F    = 0x1,
     VEX_OPCODE_0F_38 = 0x2,
@@ -543,14 +543,14 @@ class Assembler : public AbstractAssembler  {
     VEX_OPCODE_MASK  = 0x1F
   };
 
-  enum AvxVectorLen {
+  enum AvxVectorLen : uint8_t {
     AVX_128bit = 0x0,
     AVX_256bit = 0x1,
     AVX_512bit = 0x2,
     AVX_NoVec  = 0x4
   };
 
-  enum EvexTupleType {
+  enum EvexTupleType : uint8_t {
     EVEX_FV   = 0,
     EVEX_HV   = 4,
     EVEX_FVM  = 6,
@@ -567,7 +567,7 @@ class Assembler : public AbstractAssembler  {
     EVEX_ETUP = 23
   };
 
-  enum EvexInputSizeInBits {
+  enum EvexInputSizeInBits : uint8_t {
     EVEX_8bit  = 0,
     EVEX_16bit = 1,
     EVEX_32bit = 2,
@@ -603,7 +603,7 @@ class Assembler : public AbstractAssembler  {
   // Comparison predicates for FP types when using AVX
   // O means ordered. U is unordered. When using ordered, any NaN comparison is false. Otherwise, it is true.
   // S means signaling. Q means non-signaling. When signaling is true, instruction signals #IA on NaN.
-  enum ComparisonPredicateFP {
+  enum ComparisonPredicateFP : uint8_t {
     EQ_OQ = 0,
     LT_OS = 1,
     LE_OS = 2,

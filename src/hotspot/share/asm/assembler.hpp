@@ -34,6 +34,8 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 
+#include <limits>
+
 // This file contains platform-independent assembler declarations.
 
 class MacroAssembler;
@@ -290,6 +292,8 @@ class AbstractAssembler : public ResourceObj  {
   };
 #endif
 
+  constexpr uint8_t cast(int x) const { return checked_cast<uint8_t>(x); }
+
  public:
 
   // Creation
@@ -298,21 +302,17 @@ class AbstractAssembler : public ResourceObj  {
   // ensure buf contains all code (call this before using/copying the code)
   void flush();
 
-  void emit_int8(   uint32_t x1)                                    { code_section()->emit_int8(checked_cast<uint8_t>(x1)); }
+  void emit_int8(uint8_t v) { code_section()->emit_int8(v); }
+  void emit_int8(int v)     { emit_int8(cast(v)); }
 
-  void emit_int16(  uint32_t x)                                     { code_section()->emit_int16(checked_cast<uint16_t>(x)); }
-  void emit_int16(  uint32_t x1, uint32_t x2)                       { code_section()->emit_int16(checked_cast<uint8_t>(x1),
-                                                                                                 checked_cast<uint8_t>(x2)); }
+  void emit_int16(uint16_t x)   { code_section()->emit_int16(x); }
+  void emit_int16(int x)        { emit_int16(checked_cast<uint16_t>(x)); }
 
-  void emit_int24(  uint32_t x1, uint32_t x2, uint32_t x3)          { code_section()->emit_int24(checked_cast<uint8_t>(x1),
-                                                                                                 checked_cast<uint8_t>(x2),
-                                                                                                 checked_cast<uint8_t>(x3)); }
+  void emit_int16(int x1, int x2)                                  { code_section()->emit_int16(cast(x1), cast(x2)); }
+  void emit_int24(int x1, int x2, int x3)                          { code_section()->emit_int24(cast(x1), cast(x2), cast(x3)); }
 
-  void emit_int32(  uint64_t x)                                     { code_section()->emit_int32(checked_cast<uint32_t>(x)); }
-  void emit_int32(  uint32_t x1, uint32_t x2, uint32_t x3, uint32_t x4) { code_section()->emit_int32(checked_cast<uint8_t>(x1),
-                                                                                                     checked_cast<uint8_t>(x2),
-                                                                                                     checked_cast<uint8_t>(x3),
-                                                                                                     checked_cast<uint8_t>(x4)); }
+  void emit_int32(uint32_t x)                                      { code_section()->emit_int32(x); }
+  void emit_int32(int x1, int x2, int x3, int x4)                  { code_section()->emit_int32(cast(x1), cast(x2), cast(x3), cast(x4)); }
 
   void emit_int64(  uint64_t x)                                     { code_section()->emit_int64(x); }
 

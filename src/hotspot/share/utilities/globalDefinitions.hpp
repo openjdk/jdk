@@ -25,6 +25,7 @@
 #ifndef SHARE_UTILITIES_GLOBALDEFINITIONS_HPP
 #define SHARE_UTILITIES_GLOBALDEFINITIONS_HPP
 
+#include "metaprogramming/enableIf.hpp"
 #include "utilities/attributeNoreturn.hpp"
 #include "utilities/compilerWarnings.hpp"
 #include "utilities/debug.hpp"
@@ -514,19 +515,25 @@ inline size_t pointer_delta(const MetaWord* left, const MetaWord* right) {
 // know the size_t is a small struct. Such casts are risky because
 // they effectively disable useful compiler warnings. We can make our
 // lives safer with this function, which ensures that any cast
-// fits within the size of the type cast to, and tolerates sign extension.
+// fits within the size of the type cast to, and tolerates -1
 // It doesn't check everything: it isn't intended to make sure that pointer types are
 // compatible, for example.
-template <typename T2, typename T1>
+template <typename T2, typename T1, ENABLE_IF(std::is_signed<T1>::value)>
 constexpr T2 checked_cast(T1 thing) {
-#ifdef ASSERT
-  typedef typename std::make_signed<T1>::type S1;
-  S1 test = static_cast<S1>(thing);
-  S1 max = std::numeric_limits<T2>::max();
-  S1 min = (std::is_signed<T2>::value) ? std::numeric_limits<T2>::min() : -(max - 1);
-  assert(test <= max && test >= min, "out of range of destination type");
-#endif
-  return static_cast<T2>(thing);
+  if (!std::is_signed<T2>::value && thing == -1) {
+    return std::numeric_limits<T2>::max();
+  } else {
+    T2 result = static_cast<T2>(thing);
+    assert(static_cast<T1>(result) == thing, "must be");
+    return result;
+  }
+}
+
+template <typename T2, typename T1, ENABLE_IF(!std::is_signed<T1>::value)>
+constexpr T2 checked_cast(T1 thing) {
+  T2 result = static_cast<T2>(thing);
+  assert(static_cast<T1>(result) == thing, "must be");
+  return result;
 }
 
 // Need the correct linkage to call qsort without warnings
