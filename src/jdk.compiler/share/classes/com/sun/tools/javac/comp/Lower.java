@@ -1270,7 +1270,7 @@ public class Lower extends TreeTranslator {
                 boolean baseReq =
                     base == null &&
                     sym.owner != syms.predefClass &&
-                    !sym.isMemberOf(currentClass, types);
+                    !sym.isMemberOf(currentClass, types) && !(sym instanceof DynamicVarSymbol);
 
                 if (accReq || baseReq) {
                     make.at(tree.pos);
