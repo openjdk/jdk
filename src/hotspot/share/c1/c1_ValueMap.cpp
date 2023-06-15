@@ -374,7 +374,11 @@ class CheckInsertionPoint: public ValueVisitor {
  public:
   bool is_valid() {return _valid; }
   CheckInsertionPoint(Value insert)
-    : _insert(insert) {}
+    : _insert(insert) {
+#ifdef ASSERT
+      assert(insert != nullptr, "insertion point should not be null");
+#endif
+  }
 };
 
 void LoopInvariantCodeMotion::process_block(BlockBegin* block) {
