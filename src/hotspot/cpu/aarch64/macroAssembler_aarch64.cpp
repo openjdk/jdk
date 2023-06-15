@@ -1625,7 +1625,7 @@ void MacroAssembler::super_call_VM_leaf(address entry_point, Register arg_0, Reg
 void MacroAssembler::super_call_VM_leaf(address entry_point, Register arg_0, Register arg_1, Register arg_2, Register arg_3) {
   assert_different_registers(arg_0, c_rarg1, c_rarg2, c_rarg3);
   assert_different_registers(arg_1, c_rarg2, c_rarg3);
-  assert_different_registers(arg_2, c_rarg2);
+  assert_different_registers(arg_2, c_rarg3);
   pass_arg3(this, arg_3);
   pass_arg2(this, arg_2);
   pass_arg1(this, arg_1);
