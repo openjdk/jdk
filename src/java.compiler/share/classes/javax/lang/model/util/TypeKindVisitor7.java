@@ -94,7 +94,7 @@ public class TypeKindVisitor7<R, P> extends TypeKindVisitor6<R, P> {
      *
      * @param t  {@inheritDoc TypeVisitor}
      * @param p  {@inheritDoc TypeVisitor}
-     * @return   {@inheritDoc TypeKindVisitor6}
+     * @return   the result of {@code defaultAction}
      */
     @Override
     public R visitUnion(UnionType t, P p) {

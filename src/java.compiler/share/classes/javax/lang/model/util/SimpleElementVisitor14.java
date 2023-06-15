@@ -86,7 +86,7 @@ public class SimpleElementVisitor14<R, P> extends SimpleElementVisitor9<R, P> {
      *
      * @param e {@inheritDoc ElementVisitor}
      * @param p {@inheritDoc ElementVisitor}
-     * @return  {@inheritDoc ElementVisitor}}
+     * @return  {@inheritDoc ElementVisitor}
      */
     @Override
     public R visitRecordComponent(RecordComponentElement e, P p) {
