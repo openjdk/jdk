@@ -4245,8 +4245,9 @@ void PhaseIdealLoop::move_unordered_reduction_out_of_loop(IdealLoopTree* loop) {
         current = nullptr;
         break; // Success.
       } else {
-        DEBUG_ONLY( current->dump(1); )
-        assert(false, "scalar_input is neither phi nor a matchin reduction");
+        // scalar_input is neither phi nor a matching reduction
+        // Can for example be scalar reduction when we have
+        // partial vectorization.
         break; // Chain traversal fails.
       }
     }
