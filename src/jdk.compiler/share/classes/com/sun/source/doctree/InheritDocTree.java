@@ -42,7 +42,7 @@ public interface InheritDocTree extends InlineTagTree {
      * to inherit documentation, or {@code null} if no reference was provided}
      *
      * @implSpec this implementation returns {@code null}.
-     * @since 21
+     * @since 22
      */
     default ReferenceTree getSupertype() {
         return null;

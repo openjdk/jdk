@@ -243,7 +243,7 @@ public interface DocTreeFactory {
      * @param supertype a superclass or superinterface reference
      * @return an {@code InheritDocTree} object
      * @implSpec This implementation throws {@code UnsupportedOperationException}.
-     * @since 21
+     * @since 22
      */
     default InheritDocTree newInheritDocTree(ReferenceTree supertype) {
         throw new UnsupportedOperationException();
