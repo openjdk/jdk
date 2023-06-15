@@ -5689,10 +5689,7 @@ void MacroAssembler::fast_lock(Register obj, Register hdr, Register temp, Label&
 // - obj: the object to be unlocked
 // - hdr: the (pre-loaded) header of the object, will be destroyed
 // - Z_R1_scratch: will be killed in case of Interpreter & C1 Compiler
-// - Z_R0_scratch: will be destroyed
 void MacroAssembler::fast_unlock(Register obj, Register hdr, Register tmp, Label& slow) {
-
-  const Register zero = Z_R0_scratch;
 
   assert(LockingMode == LM_LIGHTWEIGHT, "only used with new lightweight locking");
   assert_different_registers(obj, hdr, tmp, zero);
@@ -5736,12 +5733,12 @@ void MacroAssembler::fast_unlock(Register obj, Register hdr, Register tmp, Label
   branch_optimized(Assembler::bcondNotEqual, slow);
 
   // After successful unlock, pop object from lock-stack
-  z_lgf(tmp, Address(Z_thread, JavaThread::lock_stack_top_offset()));
-  z_afi(tmp, -oopSize);
 #ifdef ASSERT
-  z_lghi(zero, 0); // Z_R0_scratch
-  z_stg(zero, Address(Z_thread, tmp));
+  z_lgf(tmp, Address(Z_thread, JavaThread::lock_stack_top_offset()));
+  z_aghi(tmp, -oopSize);
+  z_agr(tmp, Z_thread);
+  z_xc(0, oopSize-1, tmp, 0, tmp);  // wipe out lock-stack entry
 #endif
-  z_st(tmp, Address(Z_thread, JavaThread::lock_stack_top_offset()));
+  z_alsi(in_bytes(JavaThread::lock_stack_top_offset()), Z_thread, -oopSize);  // pop object
   z_cr(tmp, tmp); // set CC to EQ
 }
