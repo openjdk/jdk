@@ -31,6 +31,8 @@ import java.nio.file.Files;
 import jdk.internal.classfile.ClassModel;
 import jdk.internal.classfile.ClassTransform;
 import jdk.internal.classfile.Classfile;
+import jdk.internal.classfile.CodeBuilder;
+import jdk.internal.classfile.CodeElement;
 import jdk.internal.classfile.CodeTransform;
 import jdk.internal.classfile.CompoundElement;
 import org.openjdk.jmh.annotations.Benchmark;
@@ -57,8 +59,9 @@ import org.openjdk.jmh.infra.Blackhole;
 public class ClassfileBenchmark {
     private byte[] benchBytes;
     private ClassModel benchModel;
-    private Classfile sharedCP, newCP, genSM;
+    private Classfile sharedCP, newCP;
     private ClassTransform threeLevelNoop;
+    private ClassTransform addNOP;
 
     @Setup
     public void setup() throws IOException {
@@ -67,9 +70,18 @@ public class ClassfileBenchmark {
                 .getPath("modules/java.base/java/util/AbstractMap.class"));
         sharedCP = Classfile.of();
         newCP = Classfile.of(Classfile.ConstantPoolSharingOption.NEW_POOL);
-        genSM = Classfile.of(Classfile.StackMapsOption.GENERATE_STACK_MAPS);
         benchModel = Classfile.of().parse(benchBytes);
         threeLevelNoop = ClassTransform.transformingMethodBodies(CodeTransform.ACCEPT_ALL);
+        addNOP = ClassTransform.transformingMethodBodies(new CodeTransform() {
+            @Override
+            public void atStart(CodeBuilder cob) {
+                cob.nop();
+            }
+            @Override
+            public void accept(CodeBuilder cob, CodeElement coe) {
+                cob.with(coe);
+            }
+        });
         //expand the model
         consume(benchModel);
     }
@@ -100,7 +112,7 @@ public class ClassfileBenchmark {
 
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
-    public void transformWithNewMaps(Blackhole bh) {
-        bh.consume(genSM.transform(benchModel, threeLevelNoop));
+    public void transformWithAddedNOP(Blackhole bh) {
+        bh.consume(sharedCP.transform(benchModel, addNOP));
     }
 }
