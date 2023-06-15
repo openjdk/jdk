@@ -41,8 +41,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class RegisteredCharsets {
 
+    /**
+     * Tests that the aliases of the input String convert
+     * to the same Charset. This is validated by ensuring the input String
+     * and Charset.name() values are equal.
+     */
     @ParameterizedTest
-    @MethodSource("charsets")
+    @MethodSource("aliases")
     public void testAliases(String canonicalName, String[] aliasNames) {
         for (String aliasName : aliasNames) {
             Charset cs = Charset.forName(aliasName);
@@ -50,18 +55,30 @@ public class RegisteredCharsets {
         }
     }
 
+    /**
+     * Tests charsets to ensure that they are registered in the
+     * IANA Charset Registry.
+     */
     @ParameterizedTest
     @MethodSource("ianaRegistered")
-    public void testRegistered(String cs) throws Exception {
+    public void registeredTest(String cs) throws Exception {
         check(cs, true);
     }
 
+    /**
+     * Tests charsets to ensure that they are NOT registered in the
+     * IANA Charset Registry.
+     */
     @ParameterizedTest
     @MethodSource("ianaUnregistered")
-    public void testUnregistered(String cs) throws Exception {
+    public void unregisteredTest(String cs) throws Exception {
         check(cs, false);
     }
 
+    /**
+     * Helper method which checks if a charset is registered and whether
+     * it should be.
+     */
     static void check(String csn, boolean testRegistered) throws Exception {
         if (!Charset.forName(csn).isRegistered() && testRegistered) {
             throw new Exception("Not registered: " + csn);
@@ -71,6 +88,7 @@ public class RegisteredCharsets {
         }
     }
 
+    // See https://www.iana.org/assignments/character-sets/character-sets.xhtml
     private static Stream<String> ianaRegistered() {
         return Stream.of(
                 "US-ASCII", "UTF8", "Big5", "EUC-JP",
@@ -212,7 +230,7 @@ public class RegisteredCharsets {
         );
     }
 
-    private static Stream<Arguments> charsets() {
+    private static Stream<Arguments> aliases() {
         // Check aliases registered with IANA for all NIO supported
         // Charset implementations.
         //
