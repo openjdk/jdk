@@ -38,6 +38,7 @@
 #include "oops/method.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/resolvedIndyEntry.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/frame.inline.hpp"
@@ -139,8 +140,8 @@ static Assembler::Condition j_not(TemplateTable::Condition cc) {
 
 
 // Miscellaneous helper routines
-// Store an oop (or NULL) at the Address described by obj.
-// If val == noreg this means store a NULL
+// Store an oop (or null) at the Address described by obj.
+// If val == noreg this means store a null
 static void do_oop_store(InterpreterMacroAssembler* _masm,
                          Address dst,
                          Register val,
@@ -414,7 +415,7 @@ void TemplateTable::fast_aldc(LdcType type)
     __ resolve_oop_handle(tmp, r5, rscratch2);
     __ cmpoop(result, tmp);
     __ br(Assembler::NE, notNull);
-    __ mov(result, 0);  // NULL object reference
+    __ mov(result, 0);  // null object reference
     __ bind(notNull);
   }
 
@@ -1109,7 +1110,7 @@ void TemplateTable::aastore() {
   index_check(r3, r2);     // kills r1
   __ add(r4, r2, arrayOopDesc::base_offset_in_bytes(T_OBJECT) >> LogBytesPerHeapOop);
 
-  // do array store check - check for NULL value first
+  // do array store check - check for null value first
   __ cbz(r0, is_null);
 
   // Move subklass into r1
@@ -1137,11 +1138,11 @@ void TemplateTable::aastore() {
   do_oop_store(_masm, element_address, r0, IS_ARRAY);
   __ b(done);
 
-  // Have a NULL in r0, r3=array, r2=index.  Store NULL at ary[idx]
+  // Have a null in r0, r3=array, r2=index.  Store null at ary[idx]
   __ bind(is_null);
   __ profile_null_seen(r2);
 
-  // Store a NULL
+  // Store a null
   do_oop_store(_masm, element_address, noreg, IS_ARRAY);
 
   // Pop stack arguments
@@ -1864,7 +1865,7 @@ void TemplateTable::branch(bool is_jsr, bool is_wide)
                r2);
     __ load_unsigned_byte(r1, Address(rbcp, 0));  // restore target bytecode
 
-    // r0: osr nmethod (osr ok) or NULL (osr not possible)
+    // r0: osr nmethod (osr ok) or null (osr not possible)
     // w1: target bytecode
     // r2: scratch
     __ cbz(r0, dispatch);     // test result -- no osr if null
@@ -2274,7 +2275,7 @@ void TemplateTable::resolve_cache_and_index(int byte_no,
   if (VM_Version::supports_fast_class_init_checks() && bytecode() == Bytecodes::_invokestatic) {
     __ load_resolved_method_at_index(byte_no, temp, Rcache);
     __ load_method_holder(temp, temp);
-    __ clinit_barrier(temp, rscratch1, NULL, &clinit_barrier_slow);
+    __ clinit_barrier(temp, rscratch1, nullptr, &clinit_barrier_slow);
   }
 }
 
@@ -2433,12 +2434,12 @@ void TemplateTable::jvmti_post_field_access(Register cache, Register index,
     __ lea(c_rarg2, Address(c_rarg2, in_bytes(ConstantPoolCache::base_offset())));
 
     if (is_static) {
-      __ mov(c_rarg1, zr); // NULL object reference
+      __ mov(c_rarg1, zr); // null object reference
     } else {
       __ ldr(c_rarg1, at_tos()); // get object pointer without popping it
       __ verify_oop(c_rarg1);
     }
-    // c_rarg1: object pointer or NULL
+    // c_rarg1: object pointer or null
     // c_rarg2: cache entry pointer
     // c_rarg3: jvalue object on the stack
     __ call_VM(noreg, CAST_FROM_FN_PTR(address,
@@ -2686,7 +2687,7 @@ void TemplateTable::jvmti_post_field_mod(Register cache, Register index, bool is
     __ add(c_rarg2, c_rarg2, in_bytes(cp_base_offset));
     // object (tos)
     __ mov(c_rarg3, esp);
-    // c_rarg1: object pointer set up above (NULL if static)
+    // c_rarg1: object pointer set up above (null if static)
     // c_rarg2: cache entry pointer
     // c_rarg3: jvalue object on the stack
     __ call_VM(noreg,
@@ -3683,7 +3684,7 @@ void TemplateTable::checkcast()
   __ bind(ok_is_subtype);
   __ mov(r0, r3); // Restore object in r3
 
-  // Collect counts on whether this test sees NULLs a lot or not.
+  // Collect counts on whether this test sees nulls a lot or not.
   if (ProfileInterpreter) {
     __ b(done);
     __ bind(is_null);
@@ -3736,7 +3737,7 @@ void TemplateTable::instanceof() {
   __ bind(ok_is_subtype);
   __ mov(r0, 1);
 
-  // Collect counts on whether this test sees NULLs a lot or not.
+  // Collect counts on whether this test sees nulls a lot or not.
   if (ProfileInterpreter) {
     __ b(done);
     __ bind(is_null);
@@ -3745,8 +3746,8 @@ void TemplateTable::instanceof() {
     __ bind(is_null);   // same as 'done'
   }
   __ bind(done);
-  // r0 = 0: obj == NULL or  obj is not an instanceof the specified klass
-  // r0 = 1: obj != NULL and obj is     an instanceof the specified klass
+  // r0 = 0: obj == nullptr or  obj is not an instanceof the specified klass
+  // r0 = 1: obj != nullptr and obj is     an instanceof the specified klass
 }
 
 //-----------------------------------------------------------------------------
@@ -3806,7 +3807,7 @@ void TemplateTable::monitorenter()
 {
   transition(atos, vtos);
 
-  // check for NULL object
+  // check for null object
   __ null_check(r0);
 
   const Address monitor_block_top(
@@ -3818,7 +3819,7 @@ void TemplateTable::monitorenter()
   Label allocated;
 
   // initialize entry pointer
-  __ mov(c_rarg1, zr); // points to free slot or NULL
+  __ mov(c_rarg1, zr); // points to free slot or null
 
   // find a free slot in the monitor block (result in c_rarg1)
   {
@@ -3832,7 +3833,7 @@ void TemplateTable::monitorenter()
     __ bind(loop);
     // check if current entry is used
     // if not used then remember entry in c_rarg1
-    __ ldr(rscratch1, Address(c_rarg3, BasicObjectLock::obj_offset_in_bytes()));
+    __ ldr(rscratch1, Address(c_rarg3, BasicObjectLock::obj_offset()));
     __ cmp(zr, rscratch1);
     __ csel(c_rarg1, c_rarg3, c_rarg1, Assembler::EQ);
     // check if current entry is for same object
@@ -3892,7 +3893,7 @@ void TemplateTable::monitorenter()
   __ increment(rbcp);
 
   // store object
-  __ str(r0, Address(c_rarg1, BasicObjectLock::obj_offset_in_bytes()));
+  __ str(r0, Address(c_rarg1, BasicObjectLock::obj_offset()));
   __ lock_object(c_rarg1);
 
   // check to make sure this monitor doesn't cause stack overflow after locking
@@ -3909,7 +3910,7 @@ void TemplateTable::monitorexit()
 {
   transition(atos, vtos);
 
-  // check for NULL object
+  // check for null object
   __ null_check(r0);
 
   const Address monitor_block_top(
@@ -3931,7 +3932,7 @@ void TemplateTable::monitorexit()
 
     __ bind(loop);
     // check if current entry is for same object
-    __ ldr(rscratch1, Address(c_rarg1, BasicObjectLock::obj_offset_in_bytes()));
+    __ ldr(rscratch1, Address(c_rarg1, BasicObjectLock::obj_offset()));
     __ cmp(r0, rscratch1);
     // if same object then stop searching
     __ br(Assembler::EQ, found);

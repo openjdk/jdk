@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ class ZHeapIteratorBitMap;
 class ZHeapIteratorContext;
 
 using ZHeapIteratorBitMaps = ZGranuleMap<ZHeapIteratorBitMap*>;
-using ZHeapIteratorBitMapsIterator = ZGranuleMapIterator<ZHeapIteratorBitMap*>;
+using ZHeapIteratorBitMapsIterator = ZGranuleMapIterator<ZHeapIteratorBitMap*, false /* Parallel */>;
 using ZHeapIteratorQueue = OverflowTaskQueue<oop, mtGC>;
 using ZHeapIteratorQueues = GenericTaskQueueSet<ZHeapIteratorQueue, mtGC>;
 using ZHeapIteratorArrayQueue = OverflowTaskQueue<ObjArrayTask, mtGC>;
@@ -44,17 +44,18 @@ using ZHeapIteratorArrayQueues = GenericTaskQueueSet<ZHeapIteratorArrayQueue, mt
 
 class ZHeapIterator : public ParallelObjectIteratorImpl {
   friend class ZHeapIteratorContext;
+  friend class ZHeapIteratorRootUncoloredOopClosure;
 
 private:
-  const bool               _visit_weaks;
-  ZStatTimerDisable        _timer_disable;
-  ZHeapIteratorBitMaps     _bitmaps;
-  ZLock                    _bitmaps_lock;
-  ZHeapIteratorQueues      _queues;
-  ZHeapIteratorArrayQueues _array_queues;
-  ZRootsIterator           _roots;
-  ZWeakRootsIterator       _weak_roots;
-  TaskTerminator           _terminator;
+  const bool                    _visit_weaks;
+  ZHeapIteratorBitMaps          _bitmaps;
+  ZLock                         _bitmaps_lock;
+  ZHeapIteratorQueues           _queues;
+  ZHeapIteratorArrayQueues      _array_queues;
+  ZRootsIteratorStrongColored   _roots_colored;
+  ZRootsIteratorStrongUncolored _roots_uncolored;
+  ZRootsIteratorWeakColored     _roots_weak_colored;
+  TaskTerminator                _terminator;
 
   ZHeapIteratorBitMap* object_bitmap(oop obj);
 
@@ -73,25 +74,26 @@ private:
   void follow_array_chunk(const ZHeapIteratorContext& context, const ObjArrayTask& array);
 
   template <bool VisitWeaks>
-  void visit_and_follow(const ZHeapIteratorContext& context, ObjectClosure* cl, oop obj);
+  void follow(const ZHeapIteratorContext& context, oop obj);
 
   template <bool VisitWeaks>
-  void drain(const ZHeapIteratorContext& context, ObjectClosure* cl);
+  void drain(const ZHeapIteratorContext& context);
 
   template <bool VisitWeaks>
-  void steal(const ZHeapIteratorContext& context, ObjectClosure* cl);
+  void steal(const ZHeapIteratorContext& context);
 
   template <bool VisitWeaks>
-  void drain_and_steal(const ZHeapIteratorContext& context, ObjectClosure* cl);
+  void drain_and_steal(const ZHeapIteratorContext& context);
 
   template <bool VisitWeaks>
-  void object_iterate_inner(const ZHeapIteratorContext& context, ObjectClosure* cl);
+  void object_iterate_inner(const ZHeapIteratorContext& context);
 
 public:
   ZHeapIterator(uint nworkers, bool visit_weaks);
   virtual ~ZHeapIterator();
 
-  virtual void object_iterate(ObjectClosure* cl, uint worker_id);
+  virtual void object_iterate(ObjectClosure* object_cl, uint worker_id);
+  void object_and_field_iterate(ObjectClosure* object_cl, OopFieldClosure* field_cl, uint worker_id);
 };
 
 #endif // SHARE_GC_Z_ZHEAPITERATOR_HPP

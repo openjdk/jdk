@@ -28,7 +28,7 @@
 #include "gc/g1/g1CardSetMemory.hpp"
 #include "gc/g1/g1CardTableEntryClosure.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
-#include "gc/g1/g1CollectionSetCandidates.hpp"
+#include "gc/g1/g1CollectionSetCandidates.inline.hpp"
 #include "gc/g1/g1ConcurrentMark.inline.hpp"
 #include "gc/g1/g1EvacStats.inline.hpp"
 #include "gc/g1/g1EvacInfo.hpp"
@@ -81,21 +81,14 @@ public:
   }
 
   void do_work(uint worker_id) override {
-
-    class G1SampleCollectionSetCandidatesClosure : public HeapRegionClosure {
-    public:
-      G1MonotonicArenaMemoryStats _total;
-
-      bool do_heap_region(HeapRegion* r) override {
-        _total.add(r->rem_set()->card_set_memory_stats());
-        return false;
-      }
-    } cl;
-
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
-    g1h->collection_set()->candidates()->iterate(&cl);
-    g1h->set_collection_set_candidates_stats(cl._total);
+    G1MonotonicArenaMemoryStats _total;
+    G1CollectionSetCandidates* candidates = g1h->collection_set()->candidates();
+    for (HeapRegion* r : *candidates) {
+      _total.add(r->rem_set()->card_set_memory_stats());
+    }
+    g1h->set_collection_set_candidates_stats(_total);
   }
 };
 
@@ -357,7 +350,6 @@ class G1PostEvacuateCollectionSetCleanupTask2::ClearRetainedRegionBitmaps : publ
   };
 
 public:
-
   ClearRetainedRegionBitmaps(G1EvacFailureRegions* evac_failure_regions) :
     G1AbstractSubTask(G1GCPhaseTimes::ClearRetainedRegionBitmaps),
     _evac_failure_regions(evac_failure_regions),
@@ -405,13 +397,13 @@ public:
 
   void do_work(uint worker_id) override {
     RedirtyLoggedCardTableEntryClosure cl(G1CollectedHeap::heap(), _evac_failure_regions);
-    const size_t buffer_size = _rdcqs->buffer_size();
+    const size_t buffer_capacity = _rdcqs->buffer_capacity();
     BufferNode* next = Atomic::load(&_nodes);
     while (next != nullptr) {
       BufferNode* node = next;
       next = Atomic::cmpxchg(&_nodes, node, node->next());
       if (next == node) {
-        cl.apply_to_buffer(node, buffer_size, worker_id);
+        cl.apply_to_buffer(node, buffer_capacity, worker_id);
         next = node->next();
       }
     }
@@ -557,8 +549,7 @@ class FreeCSetClosure : public HeapRegionClosure {
     stats()->account_failed_region(r);
 
     G1GCPhaseTimes* p = _g1h->phase_times();
-    assert(!r->is_pinned(), "Unexpected pinned region at index %u", r->hrm_index());
-    assert(r->in_collection_set(), "bad CS");
+    assert(r->in_collection_set(), "Failed evacuation of region %u not in collection set", r->hrm_index());
 
     p->record_or_add_thread_work_item(G1GCPhaseTimes::RestoreRetainedRegions,
                                       _worker_id,

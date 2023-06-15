@@ -83,6 +83,7 @@
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oopHandle.hpp"
+#include "oops/resolvedIndyEntry.hpp"
 #include "oops/symbol.hpp"
 #include "oops/typeArrayKlass.hpp"
 #include "oops/typeArrayOop.hpp"
@@ -556,6 +557,7 @@
      static_field(StubRoutines,                _dlog,                                         address)                               \
      static_field(StubRoutines,                _dlog10,                                       address)                               \
      static_field(StubRoutines,                _dpow,                                         address)                               \
+     static_field(StubRoutines,                _fmod,                                         address)                               \
      static_field(StubRoutines,                _dsin,                                         address)                               \
      static_field(StubRoutines,                _dcos,                                         address)                               \
      static_field(StubRoutines,                _dtan,                                         address)                               \
@@ -702,6 +704,9 @@
   nonstatic_field(ThreadShadow,                _exception_line,                               int)                                   \
   nonstatic_field(Thread,                      _tlab,                                         ThreadLocalAllocBuffer)                \
   nonstatic_field(Thread,                      _allocated_bytes,                              jlong)                                 \
+  nonstatic_field(JavaThread,                  _lock_stack,                                   LockStack)                             \
+  nonstatic_field(LockStack,                   _top,                                          uint32_t)                              \
+  nonstatic_field(LockStack,                   _base[0],                                      oop)                                   \
   nonstatic_field(NamedThread,                 _name,                                         char*)                                 \
   nonstatic_field(NamedThread,                 _processed_thread,                             Thread*)                               \
   nonstatic_field(JavaThread,                  _threadObj,                                    OopHandle)                             \
@@ -1317,6 +1322,7 @@
                                                                           \
   declare_toplevel_type(ThreadsSMRSupport)                                \
   declare_toplevel_type(ThreadsList)                                      \
+  declare_toplevel_type(LockStack)                                        \
                                                                           \
   /***************/                                                       \
   /* Interpreter */                                                       \
@@ -1685,7 +1691,6 @@
   declare_c2_type(MultiNode, Node)                                        \
   declare_c2_type(ProjNode, Node)                                         \
   declare_c2_type(TypeNode, Node)                                         \
-  declare_c2_type(NodeHash, StackObj)                                     \
   declare_c2_type(RootNode, LoopNode)                                     \
   declare_c2_type(HaltNode, Node)                                         \
   declare_c2_type(SubNode, Node)                                          \
@@ -1764,8 +1769,6 @@
   declare_c2_type(NegVDNode, NegVNode)                                    \
   declare_c2_type(FmaVDNode, VectorNode)                                  \
   declare_c2_type(FmaVFNode, VectorNode)                                  \
-  declare_c2_type(CMoveVFNode, VectorNode)                                \
-  declare_c2_type(CMoveVDNode, VectorNode)                                \
   declare_c2_type(CompressVNode, VectorNode)                              \
   declare_c2_type(CompressMNode, VectorNode)                              \
   declare_c2_type(ExpandVNode, VectorNode)                                \
@@ -2413,6 +2416,14 @@
   declare_constant(T_NARROWKLASS_size)                                    \
   declare_constant(T_VOID_size)                                           \
                                                                           \
+  /**********************************************/                        \
+  /* LockingMode enum (globalDefinitions.hpp) */                          \
+  /**********************************************/                        \
+                                                                          \
+  declare_constant(LM_MONITOR)                                            \
+  declare_constant(LM_LEGACY)                                             \
+  declare_constant(LM_LIGHTWEIGHT)                                        \
+                                                                          \
   /*********************/                                                 \
   /* Matcher (C2 only) */                                                 \
   /*********************/                                                 \
@@ -2597,8 +2608,10 @@
                                                                           \
   /* InvocationCounter constants */                                       \
   declare_constant(InvocationCounter::count_increment)                    \
-  declare_constant(InvocationCounter::count_shift)
-
+  declare_constant(InvocationCounter::count_shift)                        \
+                                                                          \
+  /* ObjectMonitor constants */                                           \
+  declare_constant(ObjectMonitor::ANONYMOUS_OWNER)                        \
 
 //--------------------------------------------------------------------------------
 //

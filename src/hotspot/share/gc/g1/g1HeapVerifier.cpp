@@ -126,7 +126,7 @@ class G1VerifyCodeRootOopClosure: public OopClosure {
 
 public:
   G1VerifyCodeRootOopClosure(G1CollectedHeap* g1h, OopClosure* root_cl, VerifyOption vo):
-    _g1h(g1h), _root_cl(root_cl), _nm(NULL), _vo(vo), _failures(false) {}
+    _g1h(g1h), _root_cl(root_cl), _nm(nullptr), _vo(vo), _failures(false) {}
 
   void do_oop(oop* p) { do_oop_work(p); }
   void do_oop(narrowOop* p) { do_oop_work(p); }
@@ -144,7 +144,7 @@ public:
 
   void do_code_blob(CodeBlob* cb) {
     nmethod* nm = cb->as_nmethod_or_null();
-    if (nm != NULL) {
+    if (nm != nullptr) {
       _oop_cl->set_nmethod(nm);
       nm->oops_do(_oop_cl);
     }
@@ -191,7 +191,7 @@ public:
 
   template <class T> void do_oop_work(T *p) {
     oop obj = RawAccess<>::oop_load(p);
-    guarantee(obj == NULL || !_g1h->is_obj_dead_cond(obj, _vo),
+    guarantee(obj == nullptr || !_g1h->is_obj_dead_cond(obj, _vo),
               "Dead object referenced by a not dead object");
   }
 };
@@ -210,7 +210,7 @@ public:
   }
   void do_object(oop o) {
     VerifyLivenessOopClosure isLive(_g1h, _vo);
-    assert(o != NULL, "Huh?");
+    assert(o != nullptr, "Huh?");
     if (!_g1h->is_obj_dead_cond(o, _vo)) {
       // If the object is alive according to the full gc mark,
       // then verify that the marking information agrees.
@@ -224,7 +224,7 @@ public:
       }
 
       o->oop_iterate(&isLive);
-      if (_hr->obj_in_unparsable_area(o, _hr->parsable_bottom())) {
+      if (!_hr->is_in_parsable_area(o)) {
         size_t obj_size = o->size();
         _live_bytes += (obj_size * HeapWordSize);
       }
@@ -409,10 +409,7 @@ public:
       assert(hr->containing_set() == _old_set, "Heap region %u is old but not in the old set.", hr->hrm_index());
       _old_count++;
     } else {
-      // There are no other valid region types. Check for one invalid
-      // one we can identify: pinned without old or humongous set.
-      assert(!hr->is_pinned(), "Heap region %u is pinned but not old or humongous.", hr->hrm_index());
-      ShouldNotReachHere();
+      fatal("Invalid region type for region %u (%s)", hr->hrm_index(), hr->get_short_type_str());
     }
     return false;
   }
@@ -436,6 +433,8 @@ void G1HeapVerifier::verify_region_sets() {
   VerifyRegionListsClosure cl(&_g1h->_old_set, &_g1h->_humongous_set, &_g1h->_hrm);
   _g1h->heap_region_iterate(&cl);
   cl.verify_counts(&_g1h->_old_set, &_g1h->_humongous_set, &_g1h->_hrm);
+
+  _g1h->collection_set()->candidates()->verify();
 }
 
 void G1HeapVerifier::prepare_for_verify() {

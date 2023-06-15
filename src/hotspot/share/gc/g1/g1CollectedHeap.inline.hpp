@@ -55,7 +55,7 @@ inline JavaThread* const* G1JavaThreadsListClaimer::claim(uint& count) {
   if (Atomic::load(&_cur_claim) >= _list.length()) {
     return nullptr;
   }
-  uint claim = Atomic::fetch_and_add(&_cur_claim, _claim_step);
+  uint claim = Atomic::fetch_then_add(&_cur_claim, _claim_step);
   if (claim >= _list.length()) {
     return nullptr;
   }
@@ -86,7 +86,7 @@ G1EvacStats* G1CollectedHeap::alloc_buffer_stats(G1HeapRegionAttr dest) {
       return &_old_evac_stats;
     default:
       ShouldNotReachHere();
-      return NULL; // Keep some compilers happy
+      return nullptr; // Keep some compilers happy
   }
 }
 
@@ -104,7 +104,7 @@ inline size_t G1CollectedHeap::clamp_plab_size(size_t value) const {
 // Return the region with the given index. It assumes the index is valid.
 inline HeapRegion* G1CollectedHeap::region_at(uint index) const { return _hrm.at(index); }
 
-// Return the region with the given index, or NULL if unmapped. It assumes the index is valid.
+// Return the region with the given index, or null if unmapped. It assumes the index is valid.
 inline HeapRegion* G1CollectedHeap::region_at_or_null(uint index) const { return _hrm.at_or_null(index); }
 
 template <typename Func>
@@ -230,15 +230,15 @@ void G1CollectedHeap::register_optional_region_with_region_attr(HeapRegion* r) {
 }
 
 inline bool G1CollectedHeap::is_in_young(const oop obj) const {
-  if (obj == NULL) {
+  if (obj == nullptr) {
     return false;
   }
   return heap_region_containing(obj)->is_young();
 }
 
 inline bool G1CollectedHeap::requires_barriers(stackChunkOop obj) const {
-  assert(obj != NULL, "");
-  return !heap_region_containing(obj)->is_young(); // is_in_young does an unnecessary NULL check
+  assert(obj != nullptr, "");
+  return !heap_region_containing(obj)->is_young(); // is_in_young does an unnecessary null check
 }
 
 inline bool G1CollectedHeap::is_obj_filler(const oop obj) {
@@ -247,13 +247,19 @@ inline bool G1CollectedHeap::is_obj_filler(const oop obj) {
 }
 
 inline bool G1CollectedHeap::is_obj_dead(const oop obj, const HeapRegion* hr) const {
-  return hr->is_obj_dead(obj, hr->parsable_bottom());
+  if (hr->is_in_parsable_area(obj)) {
+    // This object is in the parsable part of the heap, live unless scrubbed.
+    return is_obj_filler(obj);
+  } else {
+    // From Remark until a region has been concurrently scrubbed, parts of the
+    // region is not guaranteed to be parsable. Use the bitmap for liveness.
+    return !concurrent_mark()->mark_bitmap()->is_marked(obj);
+  }
 }
 
 inline bool G1CollectedHeap::is_obj_dead(const oop obj) const {
-  if (obj == NULL) {
-    return false;
-  }
+  assert(obj != nullptr, "precondition");
+
   return is_obj_dead(obj, heap_region_containing(obj));
 }
 
@@ -280,6 +286,11 @@ inline void G1CollectedHeap::set_humongous_is_live(oop obj) {
   if (_region_attr.is_humongous_candidate(region)) {
     _region_attr.clear_humongous_candidate(region);
   }
+}
+
+inline bool G1CollectedHeap::is_collection_set_candidate(const HeapRegion* r) const {
+  const G1CollectionSetCandidates* candidates = collection_set()->candidates();
+  return candidates->contains(r);
 }
 
 #endif // SHARE_GC_G1_G1COLLECTEDHEAP_INLINE_HPP

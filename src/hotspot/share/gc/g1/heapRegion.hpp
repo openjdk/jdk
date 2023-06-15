@@ -97,8 +97,8 @@ public:
     assert(is_in(pre_dummy_top) && pre_dummy_top <= top(), "pre-condition");
     _pre_dummy_top = pre_dummy_top;
   }
-  HeapWord* pre_dummy_top() const { return (_pre_dummy_top == NULL) ? top() : _pre_dummy_top; }
-  void reset_pre_dummy_top() { _pre_dummy_top = NULL; }
+  HeapWord* pre_dummy_top() const { return (_pre_dummy_top == nullptr) ? top() : _pre_dummy_top; }
+  void reset_pre_dummy_top() { _pre_dummy_top = nullptr; }
 
   // Returns true iff the given the heap  region contains the
   // given address as part of an allocated object. This may
@@ -128,13 +128,13 @@ private:
   void mangle_unused_area() PRODUCT_RETURN;
 
   // Try to allocate at least min_word_size and up to desired_size from this region.
-  // Returns NULL if not possible, otherwise sets actual_word_size to the amount of
+  // Returns null if not possible, otherwise sets actual_word_size to the amount of
   // space allocated.
   // This version assumes that all allocation requests to this HeapRegion are properly
   // synchronized.
   inline HeapWord* allocate_impl(size_t min_word_size, size_t desired_word_size, size_t* actual_word_size);
   // Try to allocate at least min_word_size and up to desired_size from this HeapRegion.
-  // Returns NULL if not possible, otherwise sets actual_word_size to the amount of
+  // Returns null if not possible, otherwise sets actual_word_size to the amount of
   // space allocated.
   // This version synchronizes with other calls to par_allocate_impl().
   inline HeapWord* par_allocate_impl(size_t min_word_size, size_t desired_word_size, size_t* actual_word_size);
@@ -181,10 +181,6 @@ public:
 
   // All allocated blocks are occupied by objects in a HeapRegion.
   bool block_is_obj(const HeapWord* p, HeapWord* pb) const;
-
-  // Returns whether the given object is dead based on the given parsable_bottom (pb).
-  // For an object to be considered dead it must be below pb and scrubbed.
-  bool is_obj_dead(oop obj, HeapWord* pb) const;
 
   // Returns the object size for all valid block starts. If parsable_bottom (pb)
   // is given, calculates the block size based on that parsable_bottom, not the
@@ -250,11 +246,7 @@ private:
   G1SurvRateGroup* _surv_rate_group;
   int  _age_index;
 
-  // Cached attributes used in the collection set policy information
-
-  // The calculated GC efficiency of the region.
-  double _gc_efficiency;
-
+  // NUMA node.
   uint _node_index;
 
   void report_region_type_change(G1HeapRegionTraceType::Type to);
@@ -269,7 +261,7 @@ private:
   // object and apply the given closure to them.
   // Humongous objects are allocated directly in the old-gen. So we need special
   // handling for concurrent processing encountering an in-progress allocation.
-  // Returns the address after the last actually scanned or NULL if the area could
+  // Returns the address after the last actually scanned or null if the area could
   // not be scanned (That should only happen when invoked concurrently with the
   // mutator).
   template <class Closure, bool in_gc_pause>
@@ -312,8 +304,8 @@ public:
   // Returns whether a field is in the same region as the obj it points to.
   template <typename T>
   static bool is_in_same_region(T* p, oop obj) {
-    assert(p != NULL, "p can't be NULL");
-    assert(obj != NULL, "obj can't be NULL");
+    assert(p != nullptr, "p can't be null");
+    assert(obj != nullptr, "obj can't be null");
     return (((uintptr_t) p ^ cast_from_oop<uintptr_t>(obj)) >> LogOfHRGrainBytes) == 0;
   }
 
@@ -341,9 +333,11 @@ public:
   // since it will also be reclaimed if we collect the region.
   size_t reclaimable_bytes() {
     size_t known_live_bytes = live_bytes();
-    assert(known_live_bytes <= capacity(), "sanity");
+    assert(known_live_bytes <= capacity(), "sanity %u %zu %zu %zu", hrm_index(), known_live_bytes, used(), garbage_bytes());
     return capacity() - known_live_bytes;
   }
+
+  inline bool is_collection_set_candidate() const;
 
   // Get the start of the unmarked area in this region.
   HeapWord* top_at_mark_start() const;
@@ -378,7 +372,7 @@ public:
   // This set only includes old regions - humongous regions only
   // contain a single object which is either dead or live, and young regions are never even
   // considered during concurrent scrub.
-  bool needs_scrubbing() const { return is_old(); }
+  bool needs_scrubbing() const;
   // Same question as above, during full gc. Full gc needs to scrub any region that
   // might be skipped for compaction. This includes young generation regions as the
   // region relabeling to old happens later than scrubbing.
@@ -401,10 +395,6 @@ public:
   bool is_old() const { return _type.is_old(); }
 
   bool is_old_or_humongous() const { return _type.is_old_or_humongous(); }
-
-  // A pinned region contains objects which are not moved by garbage collections.
-  // Humongous regions are pinned.
-  bool is_pinned() const { return _type.is_pinned(); }
 
   void set_free();
 
@@ -444,6 +434,8 @@ public:
 
   inline bool in_collection_set() const;
 
+  inline const char* collection_set_candidate_short_type_str() const;
+
   void prepare_remset_for_scan();
 
   // Methods used by the HeapRegionSetBase class and subclasses.
@@ -464,8 +456,8 @@ public:
   // available in non-product builds.
 #ifdef ASSERT
   void set_containing_set(HeapRegionSetBase* containing_set) {
-    assert((containing_set != NULL && _containing_set == NULL) ||
-            containing_set == NULL,
+    assert((containing_set != nullptr && _containing_set == nullptr) ||
+            containing_set == nullptr,
            "containing_set: " PTR_FORMAT " "
            "_containing_set: " PTR_FORMAT,
            p2i(containing_set), p2i(_containing_set));
@@ -505,8 +497,7 @@ public:
   void set_index_in_opt_cset(uint index) { _index_in_opt_cset = index; }
   void clear_index_in_opt_cset() { _index_in_opt_cset = InvalidCSetIndex; }
 
-  void calc_gc_efficiency(void);
-  double gc_efficiency() const { return _gc_efficiency;}
+  double calc_gc_efficiency();
 
   uint  young_index_in_cset() const { return _young_index_in_cset; }
   void clear_young_index_in_cset() { _young_index_in_cset = 0; }
@@ -529,9 +520,9 @@ public:
 
   void record_surv_words_in_group(size_t words_survived);
 
-  // Determine if an object is in the parsable or the to-be-scrubbed area.
-  inline static bool obj_in_parsable_area(const HeapWord* addr, HeapWord* pb);
-  inline static bool obj_in_unparsable_area(oop obj, HeapWord* pb);
+  // Determine if an address is in the parsable or the to-be-scrubbed area.
+  inline        bool is_in_parsable_area(const void* const addr) const;
+  inline static bool is_in_parsable_area(const void* const addr, const void* const pb);
 
   bool obj_allocated_since_marking_start(oop obj) const {
     return cast_from_oop<HeapWord*>(obj) >= top_at_mark_start();
@@ -546,7 +537,7 @@ public:
   // mr must not be empty. Must be trimmed to the allocated/parseable space in this region.
   // This region must be old or humongous.
   // Returns the next unscanned address if the designated objects were successfully
-  // processed, NULL if an unparseable part of the heap was encountered (That should
+  // processed, null if an unparseable part of the heap was encountered (That should
   // only happen when invoked concurrently with the mutator).
   template <bool in_gc_pause, class Closure>
   inline HeapWord* oops_on_memregion_seq_iterate_careful(MemRegion mr, Closure* cl);

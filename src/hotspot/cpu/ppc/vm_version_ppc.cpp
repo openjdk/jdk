@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2020 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,14 +43,6 @@
 #if defined(_AIX)
 #include "os_aix.hpp"
 #include <libperfstat.h>
-#endif
-
-#if defined(LINUX) && defined(VM_LITTLE_ENDIAN)
-#include <sys/auxv.h>
-
-#ifndef PPC_FEATURE2_HTM_NOSC
-#define PPC_FEATURE2_HTM_NOSC (1 << 24)
-#endif
 #endif
 
 bool VM_Version::_is_determine_features_test_running = false;
@@ -182,7 +174,7 @@ void VM_Version::initialize() {
   // Create and print feature-string.
   char buf[(num_features+1) * 16]; // Max 16 chars per feature.
   jio_snprintf(buf, sizeof(buf),
-               "ppc64%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
+               "ppc64%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
                (has_fsqrt()   ? " fsqrt"   : ""),
                (has_isel()    ? " isel"    : ""),
                (has_lxarxeh() ? " lxarxeh" : ""),
@@ -199,7 +191,6 @@ void VM_Version::initialize() {
                (has_ldbrx()   ? " ldbrx"   : ""),
                (has_stdbrx()  ? " stdbrx"  : ""),
                (has_vshasig() ? " sha"     : ""),
-               (has_tm()      ? " rtm"     : ""),
                (has_darn()    ? " darn"    : ""),
                (has_brw()     ? " brw"     : "")
                // Make sure number of %s matches num_features!
@@ -374,45 +365,6 @@ void VM_Version::initialize() {
   if (UseVectorizedMismatchIntrinsic) {
     warning("UseVectorizedMismatchIntrinsic specified, but not available on this CPU.");
     FLAG_SET_DEFAULT(UseVectorizedMismatchIntrinsic, false);
-  }
-
-
-  // Adjust RTM (Restricted Transactional Memory) flags.
-  if (UseRTMLocking) {
-    // If CPU or OS do not support RTM:
-    if (PowerArchitecturePPC64 < 8) {
-      vm_exit_during_initialization("RTM instructions are not available on this CPU.");
-    }
-
-    if (!has_tm()) {
-      vm_exit_during_initialization("RTM is not supported on this OS version.");
-    }
-
-#if INCLUDE_RTM_OPT
-    if (!FLAG_IS_CMDLINE(UseRTMLocking)) {
-      // RTM locking should be used only for applications with
-      // high lock contention. For now we do not use it by default.
-      vm_exit_during_initialization("UseRTMLocking flag should be only set on command line");
-    }
-#else
-    // Only C2 does RTM locking optimization.
-    vm_exit_during_initialization("RTM locking optimization is not supported in this VM");
-#endif
-  } else { // !UseRTMLocking
-    if (UseRTMForStackLocks) {
-      if (!FLAG_IS_DEFAULT(UseRTMForStackLocks)) {
-        warning("UseRTMForStackLocks flag should be off when UseRTMLocking flag is off");
-      }
-      FLAG_SET_DEFAULT(UseRTMForStackLocks, false);
-    }
-    if (UseRTMDeopt) {
-      FLAG_SET_DEFAULT(UseRTMDeopt, false);
-    }
-#ifdef COMPILER2
-    if (PrintPreciseRTMLockingStatistics) {
-      FLAG_SET_DEFAULT(PrintPreciseRTMLockingStatistics, false);
-    }
-#endif
   }
 
   // This machine allows unaligned memory accesses
@@ -597,7 +549,6 @@ void VM_Version::determine_features() {
   a->ldbrx(R7, R3_ARG1, R4_ARG2);              // code[14] -> ldbrx
   a->stdbrx(R7, R3_ARG1, R4_ARG2);             // code[15] -> stdbrx
   a->vshasigmaw(VR0, VR1, 1, 0xF);             // code[16] -> vshasig
-  // rtm is determined by OS
   a->darn(R7);                                 // code[17] -> darn
   a->brw(R5, R6);                              // code[18] -> brw
   a->blr();
@@ -651,7 +602,6 @@ void VM_Version::determine_features() {
   if (code[feature_cntr++]) features |= ldbrx_m;
   if (code[feature_cntr++]) features |= stdbrx_m;
   if (code[feature_cntr++]) features |= vshasig_m;
-  // feature rtm_m is determined by OS
   if (code[feature_cntr++]) features |= darn_m;
   if (code[feature_cntr++]) features |= brw_m;
 
@@ -663,37 +613,6 @@ void VM_Version::determine_features() {
   }
 
   _features = features;
-
-#ifdef AIX
-  // To enable it on AIX it's necessary POWER8 or above and at least AIX 7.2.
-  // Actually, this is supported since AIX 7.1.. Unfortunately, this first
-  // contained bugs, so that it can only be enabled after AIX 7.1.3.30.
-  // The Java property os.version, which is used in RTM tests to decide
-  // whether the feature is available, only knows major and minor versions.
-  // We don't want to change this property, as user code might depend on it.
-  // So the tests can not check on subversion 3.30, and we only enable RTM
-  // with AIX 7.2.
-  if (has_lqarx()) { // POWER8 or above
-    if (os::Aix::os_version() >= 0x07020000) { // At least AIX 7.2.
-      _features |= rtm_m;
-    }
-  }
-#endif
-#if defined(LINUX) && defined(VM_LITTLE_ENDIAN)
-  unsigned long auxv = getauxval(AT_HWCAP2);
-
-  if (auxv & PPC_FEATURE2_HTM_NOSC) {
-    if (auxv & PPC_FEATURE2_HAS_HTM) {
-      // TM on POWER8 and POWER9 in compat mode (VM) is supported by the JVM.
-      // TM on POWER9 DD2.1 NV (baremetal) is not supported by the JVM (TM on
-      // POWER9 DD2.1 NV has a few issues that need a couple of firmware
-      // and kernel workarounds, so there is a new mode only supported
-      // on non-virtualized P9 machines called HTM with no Suspend Mode).
-      // TM on POWER9 D2.2+ NV is not supported at all by Linux.
-      _features |= rtm_m;
-    }
-  }
-#endif
 }
 
 // Power 8: Configure Data Stream Control Register.

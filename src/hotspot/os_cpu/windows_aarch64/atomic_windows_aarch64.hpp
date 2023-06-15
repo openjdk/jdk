@@ -39,11 +39,11 @@
 template<size_t byte_size>
 struct Atomic::PlatformAdd {
   template<typename D, typename I>
-  D add_and_fetch(D volatile* dest, I add_value, atomic_memory_order order) const;
+  D add_then_fetch(D volatile* dest, I add_value, atomic_memory_order order) const;
 
   template<typename D, typename I>
-  D fetch_and_add(D volatile* dest, I add_value, atomic_memory_order order) const {
-    return add_and_fetch(dest, add_value, order) - add_value;
+  D fetch_then_add(D volatile* dest, I add_value, atomic_memory_order order) const {
+    return add_then_fetch(dest, add_value, order) - add_value;
   }
 };
 
@@ -53,9 +53,9 @@ struct Atomic::PlatformAdd {
 #define DEFINE_INTRINSIC_ADD(IntrinsicName, IntrinsicType)                \
   template<>                                                              \
   template<typename D, typename I>                                        \
-  inline D Atomic::PlatformAdd<sizeof(IntrinsicType)>::add_and_fetch(D volatile* dest, \
-                                                                     I add_value, \
-                                                                     atomic_memory_order order) const { \
+  inline D Atomic::PlatformAdd<sizeof(IntrinsicType)>::add_then_fetch(D volatile* dest, \
+                                                                      I add_value, \
+                                                                      atomic_memory_order order) const { \
     STATIC_ASSERT(sizeof(IntrinsicType) == sizeof(D));                    \
     return PrimitiveConversions::cast<D>(                                 \
       IntrinsicName(reinterpret_cast<IntrinsicType volatile *>(dest),     \

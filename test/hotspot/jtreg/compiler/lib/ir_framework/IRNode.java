@@ -304,16 +304,6 @@ public class IRNode {
         beforeMatchingNameRegex(CMOVE_I, "CMoveI");
     }
 
-    public static final String CMOVE_VD = PREFIX + "CMOVE_VD" + POSTFIX;
-    static {
-        superWordNodes(CMOVE_VD, "CMoveVD");
-    }
-
-    public static final String CMOVE_VF = PREFIX + "CMOVE_VF" + POSTFIX;
-    static {
-        superWordNodes(CMOVE_VF, "CMoveVF");
-    }
-
     public static final String CMP_I = PREFIX + "CMP_I" + POSTFIX;
     static {
         beforeMatchingNameRegex(CMP_I, "CmpI");
@@ -804,6 +794,16 @@ public class IRNode {
         superWordNodes(MUL_REDUCTION_VL, "MulReductionVL");
     }
 
+    public static final String MIN_REDUCTION_V = PREFIX + "MIN_REDUCTION_V" + POSTFIX;
+    static {
+        superWordNodes(MIN_REDUCTION_V, "MinReductionV");
+    }
+
+    public static final String MAX_REDUCTION_V = PREFIX + "MAX_REDUCTION_V" + POSTFIX;
+    static {
+        superWordNodes(MAX_REDUCTION_V, "MaxReductionV");
+    }
+
     public static final String NEG_V = PREFIX + "NEG_V" + POSTFIX;
     static {
         beforeMatchingNameRegex(NEG_V, "NegV(F|D)");
@@ -1278,6 +1278,11 @@ public class IRNode {
         beforeMatchingNameRegex(VECTOR_BLEND, "VectorBlend");
     }
 
+    public static final String VECTOR_MASK_CMP = PREFIX + "VECTOR_MASK_CMP" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(VECTOR_MASK_CMP, "VectorMaskCmp");
+    }
+
     public static final String VECTOR_CAST_B2X = PREFIX + "VECTOR_CAST_B2X" + POSTFIX;
     static {
         beforeMatchingNameRegex(VECTOR_CAST_B2X, "VectorCastB2X");
@@ -1418,6 +1423,46 @@ public class IRNode {
         machOnlyNameRegex(VMASK_CMP_ZERO_D_NEON, "vmaskcmp_zeroD_neon");
     }
 
+    public static final String VMASK_CMP_IMM_B_SVE = PREFIX + "VMASK_CMP_IMM_B_SVE" + POSTFIX;
+    static {
+        machOnlyNameRegex(VMASK_CMP_IMM_B_SVE, "vmaskcmp_immB_sve");
+    }
+
+    public static final String VMASK_CMPU_IMM_B_SVE = PREFIX + "VMASK_CMPU_IMM_B_SVE" + POSTFIX;
+    static {
+        machOnlyNameRegex(VMASK_CMPU_IMM_B_SVE, "vmaskcmpU_immB_sve");
+    }
+
+    public static final String VMASK_CMP_IMM_S_SVE = PREFIX + "VMASK_CMP_IMM_S_SVE" + POSTFIX;
+    static {
+        machOnlyNameRegex(VMASK_CMP_IMM_S_SVE, "vmaskcmp_immS_sve");
+    }
+
+    public static final String VMASK_CMPU_IMM_S_SVE = PREFIX + "VMASK_CMPU_IMM_S_SVE" + POSTFIX;
+    static {
+        machOnlyNameRegex(VMASK_CMPU_IMM_S_SVE, "vmaskcmpU_immS_sve");
+    }
+
+    public static final String VMASK_CMP_IMM_I_SVE = PREFIX + "VMASK_CMP_IMM_I_SVE" + POSTFIX;
+    static {
+        machOnlyNameRegex(VMASK_CMP_IMM_I_SVE, "vmaskcmp_immI_sve");
+    }
+
+    public static final String VMASK_CMPU_IMM_I_SVE = PREFIX + "VMASK_CMPU_IMM_I_SVE" + POSTFIX;
+    static {
+        machOnlyNameRegex(VMASK_CMPU_IMM_I_SVE, "vmaskcmpU_immI_sve");
+    }
+
+    public static final String VMASK_CMP_IMM_L_SVE = PREFIX + "VMASK_CMP_IMM_L_SVE" + POSTFIX;
+    static {
+        machOnlyNameRegex(VMASK_CMP_IMM_L_SVE, "vmaskcmp_immL_sve");
+    }
+
+    public static final String VMASK_CMPU_IMM_L_SVE = PREFIX + "VMASK_CMPU_IMM_L_SVE" + POSTFIX;
+    static {
+        machOnlyNameRegex(VMASK_CMPU_IMM_L_SVE, "vmaskcmpU_immL_sve");
+    }
+
     public static final String VNOT_I_MASKED = PREFIX + "VNOT_I_MASKED" + POSTFIX;
     static {
         machOnlyNameRegex(VNOT_I_MASKED, "vnotI_masked");
@@ -1426,6 +1471,11 @@ public class IRNode {
     public static final String VNOT_L_MASKED = PREFIX + "VNOT_L_MASKED" + POSTFIX;
     static {
         machOnlyNameRegex(VNOT_L_MASKED, "vnotL_masked");
+    }
+
+    public static final String VSTOREMASK_TRUECOUNT = PREFIX + "VSTOREMASK_TRUECOUNT" + POSTFIX;
+    static {
+        machOnlyNameRegex(VSTOREMASK_TRUECOUNT, "vstoremask_truecount_neon");
     }
 
     public static final String XOR = PREFIX + "XOR" + POSTFIX;
@@ -1476,6 +1526,24 @@ public class IRNode {
     public static final String EXPAND_BITSV = PREFIX + "EXPAND_BITSV" + POSTFIX;
     static {
         beforeMatchingNameRegex(EXPAND_BITSV, "ExpandBitsV");
+    }
+
+    public static final String Z_LOAD_P_WITH_BARRIER_FLAG = COMPOSITE_PREFIX + "Z_LOAD_P_WITH_BARRIER_FLAG" + POSTFIX;
+    static {
+        String regex = START + "zLoadP\\S*" + MID + "barrier\\(\\s*" + IS_REPLACED + "\\s*\\)" + END;
+        machOnly(Z_LOAD_P_WITH_BARRIER_FLAG, regex);
+    }
+
+    public static final String Z_STORE_P_WITH_BARRIER_FLAG = COMPOSITE_PREFIX + "Z_STORE_P_WITH_BARRIER_FLAG" + POSTFIX;
+    static {
+        String regex = START + "zStoreP\\S*" + MID + "barrier\\(\\s*" + IS_REPLACED + "\\s*\\)" + END;
+        machOnly(Z_STORE_P_WITH_BARRIER_FLAG, regex);
+    }
+
+    public static final String Z_GET_AND_SET_P_WITH_BARRIER_FLAG = COMPOSITE_PREFIX + "Z_GET_AND_SET_P_WITH_BARRIER_FLAG" + POSTFIX;
+    static {
+        String regex = START + "(zXChgP)|(zGetAndSetP\\S*)" + MID + "barrier\\(\\s*" + IS_REPLACED + "\\s*\\)" + END;
+        machOnly(Z_GET_AND_SET_P_WITH_BARRIER_FLAG, regex);
     }
 
     /*

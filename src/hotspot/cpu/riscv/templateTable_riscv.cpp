@@ -38,6 +38,7 @@
 #include "oops/methodData.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/resolvedIndyEntry.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/frame.inline.hpp"
@@ -280,9 +281,15 @@ void TemplateTable::bipush() {
 
 void TemplateTable::sipush() {
   transition(vtos, itos);
-  __ load_unsigned_short(x10, at_bcp(1));
-  __ revb_w_w(x10, x10);
-  __ sraiw(x10, x10, 16);
+  if (AvoidUnalignedAccesses) {
+    __ load_signed_byte(x10, at_bcp(1));
+    __ load_unsigned_byte(t1, at_bcp(2));
+    __ slli(x10, x10, 8);
+    __ add(x10, x10, t1);
+  } else {
+    __ load_unsigned_short(x10, at_bcp(1));
+    __ revb_h_h(x10, x10); // reverse bytes in half-word and sign-extend
+  }
 }
 
 void TemplateTable::ldc(LdcType type) {
@@ -368,7 +375,8 @@ void TemplateTable::fast_aldc(LdcType type) {
   // We are resolved if the resolved reference cache entry contains a
   // non-null object (String, MethodType, etc.)
   assert_different_registers(result, tmp);
-  __ get_cache_index_at_bcp(tmp, 1, index_size);
+  // register result is trashed by next load, let's use it as temporary register
+  __ get_cache_index_at_bcp(tmp, result, 1, index_size);
   __ load_resolved_reference_at_index(result, tmp);
   __ bnez(result, resolved);
 
@@ -697,7 +705,7 @@ void TemplateTable::index_check(Register array, Register index) {
     __ mv(x11, index);
   }
   Label ok;
-  __ addw(index, index, zr);
+  __ sign_extend(index, index, 32);
   __ bltu(index, length, ok);
   __ mv(x13, array);
   __ mv(t0, Interpreter::_throw_ArrayIndexOutOfBoundsException_entry);
@@ -715,7 +723,7 @@ void TemplateTable::iaload() {
   __ add(x11, x11, arrayOopDesc::base_offset_in_bytes(T_INT) >> 2);
   __ shadd(x10, x11, x10, t0, 2);
   __ access_load_at(T_INT, IN_HEAP | IS_ARRAY, x10, Address(x10), noreg, noreg);
-  __ addw(x10, x10, zr); // signed extended
+  __ sign_extend(x10, x10, 32);
 }
 
 void TemplateTable::laload() {
@@ -1536,7 +1544,7 @@ void TemplateTable::convert() {
       __ sign_extend(x10, x10, 16);
       break;
     case Bytecodes::_l2i:
-      __ addw(x10, x10, zr);
+      __ sign_extend(x10, x10, 32);
       break;
     case Bytecodes::_l2f:
       __ fcvt_s_l(f10, x10);
@@ -1608,8 +1616,15 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
 
   // load branch displacement
   if (!is_wide) {
-    __ lhu(x12, at_bcp(1));
-    __ revb_h_h(x12, x12); // reverse bytes in half-word and sign-extend
+    if (AvoidUnalignedAccesses) {
+      __ lb(x12, at_bcp(1));
+      __ lbu(t1, at_bcp(2));
+      __ slli(x12, x12, 8);
+      __ add(x12, x12, t1);
+    } else {
+      __ lhu(x12, at_bcp(1));
+      __ revb_h_h(x12, x12); // reverse bytes in half-word and sign-extend
+    }
   } else {
     __ lwu(x12, at_bcp(1));
     __ revb_w_w(x12, x12); // reverse bytes in word and sign-extend
@@ -1753,7 +1768,7 @@ void TemplateTable::if_0cmp(Condition cc) {
   // assume branch is more often taken than not (loops use backward branches)
   Label not_taken;
 
-  __ addw(x10, x10, zr);
+  __ sign_extend(x10, x10, 32);
   switch (cc) {
     case equal:
       __ bnez(x10, not_taken);
@@ -1787,7 +1802,7 @@ void TemplateTable::if_icmp(Condition cc) {
   // assume branch is more often taken than not (loops use backward branches)
   Label not_taken;
   __ pop_i(x11);
-  __ addw(x10, x10, zr);
+  __ sign_extend(x10, x10, 32);
   switch (cc) {
     case equal:
       __ bne(x11, x10, not_taken);
@@ -2008,7 +2023,7 @@ void TemplateTable::fast_binaryswitch() {
     // else [i = h]
     // Convert array[h].match to native byte-ordering before compare
     __ shadd(temp, h, array, temp, 3);
-    __ ld(temp, Address(temp, 0));
+    __ lwu(temp, Address(temp, 0));
     __ revb_w_w(temp, temp); // reverse bytes in word (32bit) and sign-extend
 
     Label L_done, L_greater;
@@ -2031,7 +2046,7 @@ void TemplateTable::fast_binaryswitch() {
   Label default_case;
   // Convert array[i].match to native byte-ordering before compare
   __ shadd(temp, i, array, temp, 3);
-  __ ld(temp, Address(temp, 0));
+  __ lwu(temp, Address(temp, 0));
   __ revb_w_w(temp, temp); // reverse bytes in word (32bit) and sign-extend
   __ bne(key, temp, default_case);
 
@@ -2429,7 +2444,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   __ bnez(t0, notInt);
   // itos
   __ access_load_at(T_INT, IN_HEAP, x10, field, noreg, noreg);
-  __ addw(x10, x10, zr); // signed extended
+  __ sign_extend(x10, x10, 32);
   __ push(itos);
   // Rewrite bytecode to be faster
   if (rc == may_rewrite) {
@@ -3029,7 +3044,7 @@ void TemplateTable::fast_accessfield(TosState state) {
       break;
     case Bytecodes::_fast_igetfield:
       __ access_load_at(T_INT, IN_HEAP, x10, field, noreg, noreg);
-      __ addw(x10, x10, zr); // signed extended
+      __ sign_extend(x10, x10, 32);
       break;
     case Bytecodes::_fast_bgetfield:
       __ access_load_at(T_BYTE, IN_HEAP, x10, field, noreg, noreg);
@@ -3076,7 +3091,7 @@ void TemplateTable::fast_xaccess(TosState state) {
     case itos:
       __ add(x10, x10, x11);
       __ access_load_at(T_INT, IN_HEAP, x10, Address(x10, 0), noreg, noreg);
-      __ addw(x10, x10, zr); // signed extended
+      __ sign_extend(x10, x10, 32);
       break;
     case atos:
       __ add(x10, x10, x11);
@@ -3744,7 +3759,7 @@ void TemplateTable::monitorenter() {
      __ bind(loop);
      // check if current entry is used
      // if not used then remember entry in c_rarg1
-     __ ld(t0, Address(c_rarg3, BasicObjectLock::obj_offset_in_bytes()));
+     __ ld(t0, Address(c_rarg3, BasicObjectLock::obj_offset()));
      __ bnez(t0, notUsed);
      __ mv(c_rarg1, c_rarg3);
      __ bind(notUsed);
@@ -3801,7 +3816,7 @@ void TemplateTable::monitorenter() {
    __ addi(xbcp, xbcp, 1);
 
    // store object
-   __ sd(x10, Address(c_rarg1, BasicObjectLock::obj_offset_in_bytes()));
+   __ sd(x10, Address(c_rarg1, BasicObjectLock::obj_offset()));
    __ lock_object(c_rarg1);
 
    // check to make sure this monitor doesn't cause stack overflow after locking
@@ -3838,7 +3853,7 @@ void TemplateTable::monitorexit() {
 
     __ bind(loop);
     // check if current entry is for same object
-    __ ld(t0, Address(c_rarg1, BasicObjectLock::obj_offset_in_bytes()));
+    __ ld(t0, Address(c_rarg1, BasicObjectLock::obj_offset()));
     // if same object then stop searching
     __ beq(x10, t0, found);
     // otherwise advance to next entry

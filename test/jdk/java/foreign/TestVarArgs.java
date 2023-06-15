@@ -25,7 +25,7 @@
 /*
  * @test
  * @enablePreview
- * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64" | os.arch == "riscv64"
+ * @requires jdk.foreign.linker != "UNSUPPORTED"
  * @modules java.base/jdk.internal.foreign
  * @run testng/othervm --enable-native-access=ALL-UNNAMED -Dgenerator.sample.factor=17 TestVarArgs
  */
@@ -34,6 +34,7 @@ import java.lang.foreign.Arena;
 import java.lang.foreign.Linker;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.ValueLayout;
 import java.lang.foreign.MemorySegment;
 
 import org.testng.annotations.DataProvider;
@@ -161,6 +162,9 @@ public class TestVarArgs extends CallGeneratorHelper {
         List<Arg> args = new ArrayList<>();
         for (ParamType pType : paramTypes) {
             MemoryLayout layout = pType.layout(fields);
+            if (layout instanceof ValueLayout.OfFloat) {
+                layout = C_DOUBLE; // promote to double, per C spec
+            }
             TestValue testValue = genTestValue(layout, arena);
             Arg.NativeType type = Arg.NativeType.of(pType.type(fields));
             args.add(pType == ParamType.STRUCT
@@ -232,7 +236,6 @@ public class TestVarArgs extends CallGeneratorHelper {
 
         enum NativeType {
             INT,
-            FLOAT,
             DOUBLE,
             POINTER,
             S_I,
@@ -325,7 +328,7 @@ public class TestVarArgs extends CallGeneratorHelper {
             public static NativeType of(String type) {
                 return NativeType.valueOf(switch (type) {
                     case "int" -> "INT";
-                    case "float" -> "FLOAT";
+                    case "float" -> "DOUBLE"; // promote
                     case "double" -> "DOUBLE";
                     case "void*" -> "POINTER";
                     default -> type.substring("struct ".length());

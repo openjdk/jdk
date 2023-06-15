@@ -43,6 +43,7 @@
 #include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/generation.hpp"
 #include "gc/shared/modRefBarrierSet.hpp"
+#include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/referenceProcessorPhaseTimes.hpp"
 #include "gc/shared/space.hpp"
@@ -140,6 +141,8 @@ void GenMarkSweep::allocate_stacks() {
 
   _preserved_marks = (PreservedMark*)scratch;
   _preserved_count = 0;
+
+  _preserved_overflow_stack_set.init(1);
 }
 
 
@@ -147,7 +150,7 @@ void GenMarkSweep::deallocate_stacks() {
   GenCollectedHeap* gch = GenCollectedHeap::heap();
   gch->release_scratch();
 
-  _preserved_overflow_stack.clear(true);
+  _preserved_overflow_stack_set.reclaim();
   _marking_stack.clear();
   _objarray_stack.clear(true);
 }
@@ -210,7 +213,10 @@ void GenMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
     JVMCI_ONLY(JVMCI::do_unloading(purged_class));
   }
 
-  gc_tracer()->report_object_count_after_gc(&is_alive);
+  {
+    GCTraceTime(Debug, gc, phases) tm_m("Report Object Count", gc_timer());
+    gc_tracer()->report_object_count_after_gc(&is_alive, nullptr);
+  }
 }
 
 

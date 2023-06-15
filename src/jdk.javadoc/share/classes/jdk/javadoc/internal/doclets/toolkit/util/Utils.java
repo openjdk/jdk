@@ -2178,8 +2178,14 @@ public class Utils {
         if (path != null || elementToTreePath.containsKey(e)) {
             // expedite the path and one that is a null
             return path;
+        } else {
+            var p = docTrees.getPath(e);
+            // if docTrees.getPath itself has put a path for e into elementToTreePath
+            // (see 8304878), we assume that the path already in the map is equivalent
+            // to the path we are about to put: hence, no harm if replaced
+            elementToTreePath.put(e, p);
+            return p;
         }
-        return elementToTreePath.computeIfAbsent(e, docTrees::getPath);
     }
 
     /**

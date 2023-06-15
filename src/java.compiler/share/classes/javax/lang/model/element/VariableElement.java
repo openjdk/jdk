@@ -25,6 +25,8 @@
 
 package javax.lang.model.element;
 
+import jdk.internal.javac.PreviewFeature;
+
 import javax.lang.model.util.Elements;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeKind;
@@ -81,6 +83,9 @@ public interface VariableElement extends Element {
      * parameters of the same executable.  If the original source
      * names are not available, an implementation may synthesize names
      * subject to the distinctness requirement above.
+     *
+     * <p>For variables, the name of each variable is returned, or an empty name
+     * if the variable is unnamed.
      */
     @Override
     Name getSimpleName();
@@ -93,4 +98,21 @@ public interface VariableElement extends Element {
      */
     @Override
     Element getEnclosingElement();
+
+    /**
+     * {@return {@code true} if this is an unnamed variable and {@code
+     * false} otherwise}
+     *
+     * @implSpec
+     * The default implementation of this method calls {@code
+     * getSimpleName()} and returns {@code true} if the result is
+     * empty and {@code false} otherwise.
+     *
+     * @jls 6.1 Declarations
+     * @jls 14.4 Local Variable Declarations
+     *
+     * @since 21
+     */
+    @PreviewFeature(feature=PreviewFeature.Feature.UNNAMED, reflective = true)
+    default boolean isUnnamed() { return getSimpleName().isEmpty(); }
 }

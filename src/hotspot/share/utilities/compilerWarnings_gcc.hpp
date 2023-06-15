@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,14 @@
 
 #define PRAGMA_DIAG_PUSH             _Pragma("GCC diagnostic push")
 #define PRAGMA_DIAG_POP              _Pragma("GCC diagnostic pop")
+
+#if !defined(__clang_major__) && (__GNUC__ >= 12)
+// Disable -Wdangling-pointer which is introduced in GCC 12.
+#define PRAGMA_DANGLING_POINTER_IGNORED PRAGMA_DISABLE_GCC_WARNING("-Wdangling-pointer")
+
+// Disable -Winfinite-recursion which is introduced in GCC 12.
+#define PRAGMA_INFINITE_RECURSION_IGNORED PRAGMA_DISABLE_GCC_WARNING("-Winfinite-recursion")
+#endif
 
 #define PRAGMA_FORMAT_NONLITERAL_IGNORED                \
   PRAGMA_DISABLE_GCC_WARNING("-Wformat-nonliteral")     \

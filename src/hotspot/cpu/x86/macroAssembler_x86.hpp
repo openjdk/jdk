@@ -149,6 +149,8 @@ class MacroAssembler: public Assembler {
 
   void increment(Register reg, int value = 1) { LP64_ONLY(incrementq(reg, value)) NOT_LP64(incrementl(reg, value)) ; }
   void decrement(Register reg, int value = 1) { LP64_ONLY(decrementq(reg, value)) NOT_LP64(decrementl(reg, value)) ; }
+  void increment(Address dst, int value = 1)  { LP64_ONLY(incrementq(dst, value)) NOT_LP64(incrementl(dst, value)) ; }
+  void decrement(Address dst, int value = 1)  { LP64_ONLY(decrementq(dst, value)) NOT_LP64(decrementl(dst, value)) ; }
 
   void decrementl(Address dst, int value = 1);
   void decrementl(Register reg, int value = 1);
@@ -600,6 +602,16 @@ public:
                                Register scan_temp,
                                Label& no_such_interface,
                                bool return_method = true);
+
+  void lookup_interface_method_stub(Register recv_klass,
+                                    Register holder_klass,
+                                    Register resolved_klass,
+                                    Register method_result,
+                                    Register scan_temp,
+                                    Register temp_reg2,
+                                    Register receiver,
+                                    int itable_index,
+                                    Label& L_no_such_interface);
 
   // virtual method calling
   void lookup_virtual_method(Register recv_klass,
@@ -2007,6 +2019,8 @@ public:
 
   void check_stack_alignment(Register sp, const char* msg, unsigned bias = 0, Register tmp = noreg);
 
+  void fast_lock_impl(Register obj, Register hdr, Register thread, Register tmp, Label& slow);
+  void fast_unlock_impl(Register obj, Register hdr, Register tmp, Label& slow);
 };
 
 /**
