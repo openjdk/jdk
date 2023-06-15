@@ -25,7 +25,6 @@
 
 package jdk.jfr.internal;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.channels.ReadableByteChannel;
@@ -61,7 +60,7 @@ public final class RepositoryChunk {
         this.unFinishedRAF = SecuritySupport.createRandomAccessFile(chunkFile);
     }
 
-    void finish(Instant endTime) throws FileNotFoundException, IOException {
+    void finish(Instant endTime) throws MissingChunkFileError, IOException {
         try {
             unFinishedRAF.close();
             this.size = SecuritySupport.getFileSize(chunkFile);
@@ -72,7 +71,7 @@ public final class RepositoryChunk {
         } catch (IOException e) {
             Logger.log(LogTag.JFR, LogLevel.ERROR, "Could not finish chunk. " + e.getClass() + " "+ e.getMessage());
             if (this.isMissingFile()) {
-                throw new FileNotFoundException();
+                throw new MissingChunkFileError(missingChunkFileErrorMessage(endTime));
             } else {
                 throw e;
             }
@@ -192,13 +191,12 @@ public final class RepositoryChunk {
         return false;
     }
 
-    void emitMissingChunkFileEvent() {
-        emitMissingChunkFileEvent(this.endTime);
+    String missingChunkFileErrorMessage() {
+        return missingChunkFileErrorMessage(this.endTime);
     }
 
-    void emitMissingChunkFileEvent(Instant endTime) {
-        String message = "Chunkfile \""+ chunkFile.toString() + "\" is missing.";
-        Logger.log(LogTag.JFR, LogLevel.ERROR, message + " Data loss might occur from " + startTime.toString() + (endTime != null ? " to " + endTime.toString() : ""));
-        ErrorThrownEvent.commit(startTime.getNano(), endTime != null ? Duration.between(startTime, endTime).toNanos() : 0L, message, MissingChunkFileError.class);
+    private String missingChunkFileErrorMessage(Instant endTime) {
+        return "Chunkfile \""+ chunkFile.toString() + "\" is missing. " +
+            "Data loss might occur from " + startTime.toString() + (endTime != null ? " to " + endTime.toString() : "");
     }
 }

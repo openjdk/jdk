@@ -722,7 +722,7 @@ public final class PlatformRecording implements AutoCloseable {
                     try {
                         transferChunks(userPath);
                     } catch (java.nio.file.NoSuchFileException nsfe) {
-                        Logger.log(LogTag.JFR, LogLevel.ERROR, "Chunkfile was missing when dumping recording: " + nsfe.getMessage() + ".");
+                        Logger.log(LogTag.JFR, LogLevel.ERROR, "Missing chunkfile when writing recording \"" + name + "\" (" + id + ") to " + userPath.getRealPathText() + ".");
                         // if one chunkfile was missing, its likely more are missing
                         removeNonExistantPaths();
                         // and try the transfer again
@@ -900,7 +900,7 @@ public final class PlatformRecording implements AutoCloseable {
             while (it.hasNext()) {
                 RepositoryChunk chunk = it.next();
                 if (chunk.isMissingFile()) {
-                    chunk.emitMissingChunkFileEvent();
+                    Logger.log(JFR, ERROR, chunk.missingChunkFileErrorMessage());
                     it.remove();
                     removed(chunk);
                 }

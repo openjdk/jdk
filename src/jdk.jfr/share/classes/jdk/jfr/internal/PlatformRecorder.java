@@ -457,8 +457,8 @@ public final class PlatformRecorder {
                     r.appendChunk(chunk);
                 }
             }
-        } catch (FileNotFoundException e)  {
-            chunk.emitMissingChunkFileEvent(time);
+        } catch (MissingChunkFileError e) {
+            Logger.log(LogTag.JFR, LogLevel.ERROR, e.getMessage());
             // With one chunkfile found missing, its likely more could've been removed too. Iterate through all recordings,
             // and check for missing files. This will emit more error logs that can be seen in subsequent recordings.
             for (PlatformRecording r : getRecordings()) {
