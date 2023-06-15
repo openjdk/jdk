@@ -689,8 +689,9 @@ public class ClassWriter implements /* imports */ ClassConstants
             classAttributeCount++;
 
         int bsmCount = klass.getConstants().getBootstrapMethodsCount();
-        if (bsmCount != 0)
+        if (bsmCount != 0) {
             classAttributeCount++;
+        }
 
         dos.writeShort(classAttributeCount);
         if (DEBUG) debugMessage("class attribute count = " + classAttributeCount);

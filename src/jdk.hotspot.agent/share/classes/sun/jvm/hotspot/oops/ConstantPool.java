@@ -471,7 +471,7 @@ public class ConstantPool extends Metadata implements ClassConstants {
     U2Array operands = getOperands();
     int count = 0;
     if (operands != null) {
-      count = getOperandOffsetAt(0) / 2;
+      count = getOperandOffsetAt(operands, 0) / 2;
     }
     if (DEBUG) {
       System.err.println("ConstantPool.getBootstrapMethodsCount: count = " + count);
@@ -484,7 +484,7 @@ public class ConstantPool extends Metadata implements ClassConstants {
     if (Assert.ASSERTS_ENABLED) {
       Assert.that(operands != null, "Operands is not present");
     }
-    int bsmOffset = getOperandOffsetAt(bsmIndex);
+    int bsmOffset = getOperandOffsetAt(operands, bsmIndex);
     int argc = operands.at(bsmOffset + INDY_ARGC_OFFSET);
     if (DEBUG) {
       System.err.println("ConstantPool.getBootstrapMethodArgsCount: bsm index = " + bsmIndex + ", args count = " + argc);
@@ -495,7 +495,7 @@ public class ConstantPool extends Metadata implements ClassConstants {
   public short[] getBootstrapMethodAt(int bsmIndex) {
     U2Array operands = getOperands();
     if (operands == null)  return null;  // safety first
-    int basePos = getOperandOffsetAt(bsmIndex);
+    int basePos = getOperandOffsetAt(operands, bsmIndex);
     int argv = basePos + INDY_ARGV_OFFSET;
     int argc = operands.at(basePos + INDY_ARGC_OFFSET);
     int endPos = argv + argc;
@@ -789,11 +789,7 @@ public class ConstantPool extends Metadata implements ClassConstants {
   }
 
   // Return the offset of the requested Bootstrap Method in the operands array
-  private int getOperandOffsetAt(int bsmIndex) {
-    U2Array operands = getOperands();
-    if (Assert.ASSERTS_ENABLED) {
-      Assert.that(operands != null, "Operands is not present");
-    }
+  private int getOperandOffsetAt(U2Array operands, int bsmIndex) {
     return VM.getVM().buildIntFromShorts(operands.at(bsmIndex * 2),
                                          operands.at(bsmIndex * 2 + 1));
   }
