@@ -45,6 +45,15 @@ import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 
+/*
+ * This test verifies that setEnabledProtocols() does not override the
+ * jdk.tls.disabledAlgorithms property. Both the client and server throw
+ * an exception when creating a handshake context.
+ *
+ * In the TLSWontNegotiateDisabledCipherAlgoos test, one side of the connection
+ * disables the cipher suites and the other side enables them and verifies
+ * that the handshake cannot complete successfully.
+ */
 public class DisabledAlgorithms {
 
     public static final SSLContextTemplate.Cert[] CERTIFICATES = {
