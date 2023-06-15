@@ -380,7 +380,7 @@ public class HtmlDoclet extends AbstractDoclet {
                                 if (Files.isRegularFile(descriptive_link)) {
                                     entry = descriptive_link;
                                 }
-                            } catch(InvalidPathException e) {}
+                            } catch (InvalidPathException e) {}
                         }
                     }
                     df.copyFile(DocFile.createFileForInput(configuration, entry));
