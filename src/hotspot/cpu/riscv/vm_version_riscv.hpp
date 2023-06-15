@@ -111,35 +111,35 @@ class VM_Version : public Abstract_VM_Version {
   // unaligned_access Unaligned memory accesses (unknown, unspported, emulated, slow, firmware, fast)
   // satp mode SATP bits (number of virtual addr bits) mbare, sv39, sv48, sv57, sv64
 
-  #define NO_BIT (BitsPerWord+1) // nth_bit will return 0 on values larger than BitsPerWord
+  #define RV_NO_FLAG_BIT (BitsPerWord+1) // nth_bit will return 0 on values larger than BitsPerWord
 
   // declaration name  , extension name,    bit pos ,in str, mapped flag)
-  #define RV_FEATURE_FLAGS(decl)                                                             \
-  decl(ext_I           , "i"           , ('I' - 'A'), true , NO_UPDATE_DEFAULT)              \
-  decl(ext_M           , "m"           , ('M' - 'A'), true , NO_UPDATE_DEFAULT)              \
-  decl(ext_A           , "a"           , ('A' - 'A'), true , NO_UPDATE_DEFAULT)              \
-  decl(ext_F           , "f"           , ('F' - 'A'), true , NO_UPDATE_DEFAULT)              \
-  decl(ext_D           , "d"           , ('D' - 'A'), true , NO_UPDATE_DEFAULT)              \
-  decl(ext_C           , "c"           , ('C' - 'A'), true , UPDATE_DEFAULT(UseRVC))         \
-  decl(ext_Q           , "q"           , ('Q' - 'A'), true , NO_UPDATE_DEFAULT)              \
-  decl(ext_H           , "h"           , ('H' - 'A'), true , NO_UPDATE_DEFAULT)              \
-  decl(ext_V           , "v"           , ('V' - 'A'), true , UPDATE_DEFAULT(UseRVV))         \
-  decl(ext_Zicbom      , "Zicbom"      ,      NO_BIT, true , UPDATE_DEFAULT(UseZicbom))      \
-  decl(ext_Zicboz      , "Zicboz"      ,      NO_BIT, true , UPDATE_DEFAULT(UseZicboz))      \
-  decl(ext_Zicbop      , "Zicbop"      ,      NO_BIT, true , UPDATE_DEFAULT(UseZicbop))      \
-  decl(ext_Zba         , "Zba"         ,      NO_BIT, true , UPDATE_DEFAULT(UseZba))         \
-  decl(ext_Zbb         , "Zbb"         ,      NO_BIT, true , UPDATE_DEFAULT(UseZbb))         \
-  decl(ext_Zbc         , "Zbc"         ,      NO_BIT, true , NO_UPDATE_DEFAULT)              \
-  decl(ext_Zbs         , "Zbs"         ,      NO_BIT, true , UPDATE_DEFAULT(UseZbs))         \
-  decl(ext_Zicsr       , "Zicsr"       ,      NO_BIT, true , NO_UPDATE_DEFAULT)              \
-  decl(ext_Zifencei    , "Zifencei"    ,      NO_BIT, true , NO_UPDATE_DEFAULT)              \
-  decl(ext_Zic64b      , "Zic64b"      ,      NO_BIT, true , UPDATE_DEFAULT(UseZic64b))      \
-  decl(ext_Zihintpause , "Zihintpause" ,      NO_BIT, true , UPDATE_DEFAULT(UseZihintpause)) \
-  decl(mvendorid       , "VendorId"    ,      NO_BIT, false, NO_UPDATE_DEFAULT)              \
-  decl(marchid         , "ArchId"      ,      NO_BIT, false, NO_UPDATE_DEFAULT)              \
-  decl(mimpid          , "ImpId"       ,      NO_BIT, false, NO_UPDATE_DEFAULT)              \
-  decl(unaligned_access, "Unaligned"   ,      NO_BIT, false, NO_UPDATE_DEFAULT)              \
-  decl(satp_mode       , "SATP"        ,      NO_BIT, false, NO_UPDATE_DEFAULT)              \
+  #define RV_FEATURE_FLAGS(decl)                                                                \
+  decl(ext_I           , "i"           ,    ('I' - 'A'), true , NO_UPDATE_DEFAULT)              \
+  decl(ext_M           , "m"           ,    ('M' - 'A'), true , NO_UPDATE_DEFAULT)              \
+  decl(ext_A           , "a"           ,    ('A' - 'A'), true , NO_UPDATE_DEFAULT)              \
+  decl(ext_F           , "f"           ,    ('F' - 'A'), true , NO_UPDATE_DEFAULT)              \
+  decl(ext_D           , "d"           ,    ('D' - 'A'), true , NO_UPDATE_DEFAULT)              \
+  decl(ext_C           , "c"           ,    ('C' - 'A'), true , UPDATE_DEFAULT(UseRVC))         \
+  decl(ext_Q           , "q"           ,    ('Q' - 'A'), true , NO_UPDATE_DEFAULT)              \
+  decl(ext_H           , "h"           ,    ('H' - 'A'), true , NO_UPDATE_DEFAULT)              \
+  decl(ext_V           , "v"           ,    ('V' - 'A'), true , UPDATE_DEFAULT(UseRVV))         \
+  decl(ext_Zicbom      , "Zicbom"      , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZicbom))      \
+  decl(ext_Zicboz      , "Zicboz"      , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZicboz))      \
+  decl(ext_Zicbop      , "Zicbop"      , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZicbop))      \
+  decl(ext_Zba         , "Zba"         , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZba))         \
+  decl(ext_Zbb         , "Zbb"         , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZbb))         \
+  decl(ext_Zbc         , "Zbc"         , RV_NO_FLAG_BIT, true , NO_UPDATE_DEFAULT)              \
+  decl(ext_Zbs         , "Zbs"         , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZbs))         \
+  decl(ext_Zicsr       , "Zicsr"       , RV_NO_FLAG_BIT, true , NO_UPDATE_DEFAULT)              \
+  decl(ext_Zifencei    , "Zifencei"    , RV_NO_FLAG_BIT, true , NO_UPDATE_DEFAULT)              \
+  decl(ext_Zic64b      , "Zic64b"      , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZic64b))      \
+  decl(ext_Zihintpause , "Zihintpause" , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZihintpause)) \
+  decl(mvendorid       , "VendorId"    , RV_NO_FLAG_BIT, false, NO_UPDATE_DEFAULT)              \
+  decl(marchid         , "ArchId"      , RV_NO_FLAG_BIT, false, NO_UPDATE_DEFAULT)              \
+  decl(mimpid          , "ImpId"       , RV_NO_FLAG_BIT, false, NO_UPDATE_DEFAULT)              \
+  decl(unaligned_access, "Unaligned"   , RV_NO_FLAG_BIT, false, NO_UPDATE_DEFAULT)              \
+  decl(satp_mode       , "SATP"        , RV_NO_FLAG_BIT, false, NO_UPDATE_DEFAULT)              \
 
   #define DECLARE_RV_FEATURE(NAME, PRETTY, BIT, FSTRING, FLAGF)        \
   struct NAME##RVFeatureValue : public RVFeatureValue {                \
