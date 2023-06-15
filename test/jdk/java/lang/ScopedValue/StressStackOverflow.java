@@ -238,7 +238,9 @@ public class StressStackOverflow {
                 if (inheritedValue.isBound()) {
                     throw new TestFailureException("Should not be bound here");
                 }
-            } finally {
+            } catch (TestFailureException e) {
+                throw e;
+            } catch (Exception e) {
                 // ScopedValueContainer and StructuredTaskScope can
                 // throw many exceptions on stack overflow. Ignore
                 // them all.
