@@ -75,7 +75,7 @@ public class ArchTest {
             case "s390x", "s390" -> S390;
             case "ppc64", "ppc64le" -> PPC64;
             case "mipsel" -> MIPSEL;
-            case "mip64sel" -> MIPS64EL;
+            case "mips64el" -> MIPS64EL;
             default -> OTHER;
         };
         assertEquals(Architecture.current(), arch, "mismatch in Architecture.current vs " + osArch);
