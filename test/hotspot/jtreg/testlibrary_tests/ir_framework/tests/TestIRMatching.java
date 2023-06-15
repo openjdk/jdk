@@ -1245,7 +1245,7 @@ class CheckCastArray {
         array(oArr);
         array(mArr);
     }
-    
+
     @Test
     @IR(failOn = IRNode.CHECKCAST_ARRAYCOPY) // fails
     public Object[] arrayCopy(Object[] src, Class klass) {

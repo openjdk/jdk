@@ -1085,7 +1085,7 @@ public:
 // the check, the associated count is incremented every time the type
 // is seen. A per ReceiverTypeData counter is incremented on type
 // overflow (when there's no more room for a not yet profiled Klass*).
-// 
+//
 class ReceiverTypeData : public CounterData {
   friend class VMStructs;
   friend class JVMCIVMStructs;
