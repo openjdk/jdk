@@ -41,8 +41,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class CharsetContainmentTest {
 
+    /**
+     * Test that the charsets in 'encodings' contain the charsets
+     * inside 'contains'. Each value in 'encodings' is mapped to a String
+     * array in 'contains'. For example, the value, "TIS-620" in 'encodings'
+     * should contain "US-ASCII", "TIS-620".
+     */
     @ParameterizedTest
-    @MethodSource("utfCharsets")
+    @MethodSource("charsets")
     public void testInterContainment(String containerName, String containedName) {
         Charset container = Charset.forName(containerName);
         Charset contained = Charset.forName(containedName);
@@ -50,7 +56,7 @@ public class CharsetContainmentTest {
                 String.format("Charset: %s does not contain: %s", containerName, containedName));
     }
 
-    private static Stream<Arguments> utfCharsets() {
+    private static Stream<Arguments> charsets() {
         String[] encodings = {
                 "US-ASCII", "UTF-16", "UTF-16BE", "UTF-16LE", "UTF-8",
                 "windows-1252", "ISO-8859-1", "ISO-8859-2", "ISO-8859-3",
