@@ -30,7 +30,6 @@ import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 
 import java.util.Optional;
-import java.util.function.Function;
 
 import static java.lang.invoke.MethodHandleStatics.UNSAFE;
 import static java.lang.invoke.MethodHandleStatics.uncaughtException;
@@ -43,19 +42,9 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
  */
 final class LazyInitializingVarHandle extends VarHandle {
 
-    private static final MethodHandle MH_ensureInitialized;
     private final VarHandle target;
     private final Class<?> refc;
     private @Stable boolean initialized;
-
-    static {
-        try {
-            MH_ensureInitialized = IMPL_LOOKUP.findVirtual(LazyInitializingVarHandle.class, "ensureInitialized",
-                    MethodType.methodType(void.class));
-        } catch (Throwable ex) {
-            throw uncaughtException(ex);
-        }
-    }
 
     LazyInitializingVarHandle(VarHandle target, Class<?> refc) {
         super(target.vform, target.exact);
@@ -65,13 +54,12 @@ final class LazyInitializingVarHandle extends VarHandle {
 
     @Override
     MethodType accessModeTypeUncached(AccessType at) {
-        return target.accessModeTypeUncached(at);
+        return target.accessModeType(at.ordinal());
     }
 
     @Override
     @ForceInline
     VarHandle target() {
-        ensureInitialized();
         return target;
     }
 
@@ -96,6 +84,12 @@ final class LazyInitializingVarHandle extends VarHandle {
         return target.describeConstable();
     }
 
+    @Override
+    public MethodHandle getMethodHandleUncached(int accessMode) {
+        ensureInitialized();
+        return methodHandleTable[accessMode];
+    }
+
     @ForceInline
     private void ensureInitialized() {
         if (this.initialized)
@@ -108,45 +102,34 @@ final class LazyInitializingVarHandle extends VarHandle {
         UNSAFE.ensureClassInitialized(refc);
         this.initialized = true;
 
-        var cache = this.methodHandleTable;
-        if (cache == null)
-            return;
-        int len = cache.length;
-        for (int i = 0; i < len; i++) {
-            var mh = cache[i];
-            if (mh != null) {
-                var callTarget = target.getMethodHandle(i);
-                mh.updateForm(new Function<>() {
-                    @Override
-                    public LambdaForm apply(LambdaForm lambdaForm) {
-                        return callTarget.form;
-                    }
-                });
-            }
-        }
         this.methodHandleTable = target.methodHandleTable;
     }
 
-    @Override
-    public MethodHandle getMethodHandleUncached(int accessMode) {
-        var callTarget = target.getMethodHandle(accessMode);
-        if (initialized)
-            return callTarget;
+    private static @Stable MethodHandle MH_ensureInitialized;
 
-        return MethodHandles.collectArguments(callTarget, 0, MH_ensureInitialized)
-                .bindTo(this);
+    private static MethodHandle ensureInitializedMh() {
+        var mh = MH_ensureInitialized;
+        if (mh != null)
+            return mh;
+
+        try {
+            return MH_ensureInitialized = IMPL_LOOKUP.findVirtual(LazyInitializingVarHandle.class,
+                    "ensureInitialized",
+                    MethodType.methodType(void.class));
+        } catch (Throwable ex) {
+            throw uncaughtException(ex);
+        }
     }
 
+    // regular impl uses getMethodHandle which we avoid, for our getMethodHandle
+    // serves as an initialization barrier
     @Override
     public MethodHandle toMethodHandle(AccessMode accessMode) {
-        if (isAccessModeSupported(accessMode)) {
-            MethodHandle mh = getMethodHandle(accessMode.ordinal());
-            return mh.bindTo(target); // prevents unnecessary initialization
-        }
-        else {
-            // Ensure an UnsupportedOperationException is thrown
-            return MethodHandles.varHandleInvoker(accessMode, accessModeType(accessMode)).
-                    bindTo(this);
-        }
+        var mh = target.toMethodHandle(accessMode);
+        if (initialized)
+            return mh;
+
+        // Add barrier
+        return MethodHandles.filterArgument(mh, 0, ensureInitializedMh()).bindTo(this);
     }
 }
