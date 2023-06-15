@@ -49,7 +49,7 @@ public class CharsetContainmentTest {
      */
     @ParameterizedTest
     @MethodSource("charsets")
-    public void testInterContainment(String containerName, String containedName) {
+    public void interContainmentTest(String containerName, String containedName) {
         Charset container = Charset.forName(containerName);
         Charset contained = Charset.forName(containedName);
         assertTrue(container.contains(contained),

@@ -48,7 +48,7 @@ public class Contains {
      */
     @ParameterizedTest
     @MethodSource("standardCharsets")
-    public void testStandardCharsets(Charset containerCs, Charset cs, boolean cont){
+    public void standardCharsetsTest(Charset containerCs, Charset cs, boolean cont){
         shouldContain(containerCs, cs, cont);
     }
 
@@ -59,7 +59,7 @@ public class Contains {
      */
     @ParameterizedTest
     @MethodSource("utfCharsets")
-    public void testUTFCharsets(Charset containerCs, Charset cs, boolean cont){
+    public void UTFCharsetsTest(Charset containerCs, Charset cs, boolean cont){
         shouldContain(containerCs, cs, cont);
     }
 

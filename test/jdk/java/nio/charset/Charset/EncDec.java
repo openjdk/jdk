@@ -32,6 +32,7 @@ import java.util.stream.Stream;
 
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class EncDec {
@@ -42,7 +43,7 @@ public class EncDec {
      */
     @ParameterizedTest
     @MethodSource("stringProvider")
-    public void testRoundTrip(String pre) {
+    public void roundTripTest(String pre) {
         ByteBuffer bb = ByteBuffer.allocate(100);
         Charset preCs = Charset.forName("ISO-8859-15");
         if (!preCs.canEncode()) {

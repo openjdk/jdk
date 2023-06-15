@@ -33,7 +33,7 @@ import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.IllegalCharsetNameException;
 import java.nio.charset.UnsupportedCharsetException;
-import java.util.stream.*;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -45,14 +45,14 @@ public class IllegalCharsetName {
 
     // Charset.forName should throw an exception when passed "default"
     @Test
-    public void defaultCharset() {
+    public void defaultCharsetTest() {
         assertThrows(UnsupportedCharsetException.class,
                 () -> Charset.forName("default"));
     }
 
     // Charset.forName should throw an exception when passed null
     @Test
-    public void nullCharset() {
+    public void nullCharsetTest() {
         assertThrows(IllegalArgumentException.class,
                 () -> Charset.forName(null));
     }
@@ -61,7 +61,7 @@ public class IllegalCharsetName {
     // IllegalCharsetNameException when passed an illegal name
     @ParameterizedTest
     @MethodSource("illegalNames")
-    public void illegalCharsets(String name) {
+    public void illegalCharsetsTest(String name) {
         assertThrows(IllegalCharsetNameException.class,
                 () -> Charset.forName(name));
         assertThrows(IllegalCharsetNameException.class,
@@ -71,7 +71,7 @@ public class IllegalCharsetName {
     // Charset.forName, Charset.isSupported, and the Charset constructor should
     // throw an IllegalCharsetNameException when passed an empty name
     @Test
-    public void emptyCharsets() {
+    public void emptyCharsetsTest() {
         assertThrows(IllegalCharsetNameException.class,
                 () -> Charset.forName(""));
         assertThrows(IllegalCharsetNameException.class,

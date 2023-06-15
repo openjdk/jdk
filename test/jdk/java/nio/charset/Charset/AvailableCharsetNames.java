@@ -31,6 +31,7 @@
 import java.nio.charset.Charset;
 
 import org.junit.jupiter.api.Test;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class AvailableCharsetNames {
@@ -40,7 +41,7 @@ public class AvailableCharsetNames {
      * are equal to the associated Charset.name() value.
      */
     @Test
-    public void testCanonicalNames() {
+    public void canonicalNamesTest() {
         for (String charsetName : Charset.availableCharsets().keySet()) {
             Charset charset = Charset.forName(charsetName);
             assertEquals(charset.name(), charsetName, "Charset name mismatch");
