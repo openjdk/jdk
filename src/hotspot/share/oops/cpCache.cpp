@@ -46,6 +46,7 @@
 #include "oops/cpCache.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/resolvedIndyEntry.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
@@ -940,6 +941,12 @@ void ConstantPoolCache::print_value_on(outputStream* st) const {
   constant_pool()->print_value_on(st);
 }
 
+
+void ConstantPoolCache::print_resolved_indy_entries(outputStream* st)   const {
+  for (int i = 0; i < _resolved_indy_entries->length(); i++) {
+    _resolved_indy_entries->at(i).print_on(st);
+  }
+}
 
 // Verification
 
