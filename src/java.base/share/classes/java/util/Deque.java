@@ -617,8 +617,13 @@ public interface Deque<E> extends Queue<E>, SequencedCollection<E> {
      * {@inheritDoc}
      *
      * @implSpec
-     * The implementation in this interface returns an instance of a reverse-ordered
-     * Deque that delegates its operations to this Deque.
+     * The implementation in this interface returns a reverse-ordered Deque
+     * view that delegates its operations to this Deque. Methods that are
+     * order-insensitive delegate to the corresponding method of this Deque.
+     * Methods that are order-sensitive delegate to the corresponding but
+     * inverse-ordered method of this Deque. For example, the {@code getFirst}
+     * method of the returned view delegates to the {@code getLast} method of
+     * this Deque.
      *
      * @return a reverse-ordered view of this collection, as a {@code Deque}
      * @since 21
