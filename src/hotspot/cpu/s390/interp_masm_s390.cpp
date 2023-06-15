@@ -1173,7 +1173,7 @@ void InterpreterMacroAssembler::unlock_object(Register monitor, Register object)
     // Then check if the top of the lock-stack matches the unlocked object.
     z_aghi(tmp, -oopSize);
     z_lg(tmp, Address(Z_thread, tmp));
-    z_cgrj(tmp, object, Assembler::bcondNotEqual, slow_case);
+    compare64_and_branch(tmp, object, Assembler::bcondNotEqual, slow_case);
 
     z_lg(header, Address(object, hdr_offset));
     z_lgr(tmp, header);

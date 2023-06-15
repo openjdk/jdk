@@ -5692,7 +5692,7 @@ void MacroAssembler::fast_lock(Register obj, Register hdr, Register temp, Label&
 void MacroAssembler::fast_unlock(Register obj, Register hdr, Register tmp, Label& slow) {
 
   assert(LockingMode == LM_LIGHTWEIGHT, "only used with new lightweight locking");
-  assert_different_registers(obj, hdr, tmp, zero);
+  assert_different_registers(obj, hdr, tmp);
 
 #ifdef ASSERT
   {
@@ -5721,7 +5721,7 @@ void MacroAssembler::fast_unlock(Register obj, Register hdr, Register tmp, Label
     Label tos_ok;
     z_aghi(tmp, -oopSize);
     z_lg(tmp, Address(Z_thread, tmp));
-    z_cgrj(tmp, obj, Assembler::bcondEqual, tos_ok);
+    compare64_and_branch(tmp, obj, Assembler::bcondEqual, tos_ok);
     stop("Top of lock-stack does not match the unlocked object");
     bind(tos_ok);
   }
