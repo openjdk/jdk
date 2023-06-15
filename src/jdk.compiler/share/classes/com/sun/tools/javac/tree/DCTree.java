@@ -748,9 +748,20 @@ public abstract class DCTree implements DocTree {
     }
 
     public static class DCInheritDoc extends DCInlineTag<DCInheritDoc> implements InheritDocTree {
+        public final DCReference supertype;
+
+        public DCInheritDoc(DCReference supertype) {
+            this.supertype = supertype;
+        }
+
         @Override @DefinedBy(Api.COMPILER_TREE)
         public Kind getKind() {
             return Kind.INHERIT_DOC;
+        }
+
+        @Override
+        public ReferenceTree getSupertype() {
+            return supertype;
         }
 
         @Override @DefinedBy(Api.COMPILER_TREE)
