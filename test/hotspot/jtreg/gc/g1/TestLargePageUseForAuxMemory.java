@@ -101,11 +101,11 @@ public class TestLargePageUseForAuxMemory {
     }
 
     static void checkSmallTables(OutputAnalyzer output, long expectedPageSize) throws Exception {
-        checkSize(output, expectedPageSize, "Block Offset Table: .*page_size=([^ ]+)");
+        checkSize(output, expectedPageSize, "Block Offset Table: .* page_size=([^ ]+)$");
     }
 
     static void checkBitmap(OutputAnalyzer output, long expectedPageSize) throws Exception {
-        checkSize(output, expectedPageSize, "Mark Bitmap: .*page_size=([^ ]+)");
+        checkSize(output, expectedPageSize, "Mark Bitmap: .* page_size=([^ ]+)$");
     }
 
     static List<String> getOpts(long heapsize, boolean largePageEnabled) {
@@ -126,6 +126,8 @@ public class TestLargePageUseForAuxMemory {
         pb = ProcessTools.createJavaProcessBuilder(getOpts(heapsize, true));
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        output.reportDiagnosticSummary();
+
         // Only expect large page size if large pages are enabled.
         if (largePagesEnabled(output)) {
             checkSmallTables(output, (cardsShouldUseLargePages ? largePageSize : smallPageSize));
