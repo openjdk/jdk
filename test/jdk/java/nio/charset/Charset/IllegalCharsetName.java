@@ -33,24 +33,15 @@ import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.IllegalCharsetNameException;
 import java.nio.charset.UnsupportedCharsetException;
+import java.util.stream.*;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class IllegalCharsetName {
-
-    static String[] illegalNames = {
-            ".",
-            "_",
-            ":",
-            "-",
-            ".name",
-            "_name",
-            ":name",
-            "-name",
-            "name*name",
-            "name?name"
-    };
 
     // Charset.forName should throw an exception when passed "default"
     @Test
@@ -68,14 +59,13 @@ public class IllegalCharsetName {
 
     // Charset.forName and Charset.isSupported should throw an
     // IllegalCharsetNameException when passed an illegal name
-    @Test
-    public void illegalCharsets() {
-        for (String illegalName : illegalNames) {
-            assertThrows(IllegalCharsetNameException.class,
-                    () -> Charset.forName(illegalName));
-            assertThrows(IllegalCharsetNameException.class,
-                    () -> Charset.forName(illegalName));
-        }
+    @ParameterizedTest
+    @MethodSource("illegalNames")
+    public void illegalCharsets(String name) {
+        assertThrows(IllegalCharsetNameException.class,
+                () -> Charset.forName(name));
+        assertThrows(IllegalCharsetNameException.class,
+                () -> Charset.forName(name));
     }
 
     // Charset.forName, Charset.isSupported, and the Charset constructor should
@@ -119,5 +109,20 @@ public class IllegalCharsetName {
             Charset.forName(alias);
             Charset.isSupported(alias);
         }
+    }
+
+    static Stream<String> illegalNames() {
+        return Stream.of(
+                ".",
+                "_",
+                ":",
+                "-",
+                ".name",
+                "_name",
+                ":name",
+                "-name",
+                "name*name",
+                "name?name"
+        );
     }
 }
