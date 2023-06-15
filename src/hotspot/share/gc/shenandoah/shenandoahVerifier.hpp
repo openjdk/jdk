@@ -88,7 +88,12 @@ public:
 
     // Objects should be marked in "complete" bitmap, except j.l.r.Reference referents, which
     // may be dangling after marking but before conc-weakrefs-processing.
-    _verify_marked_complete_except_references
+    _verify_marked_complete_except_references,
+
+    // Objects should be marked in "complete" bitmap, except j.l.r.Reference referents, which
+    // may be dangling after marking but before conc-weakrefs-processing. All SATB buffers must
+    // be empty.
+    _verify_marked_complete_satb_empty,
   } VerifyMarked;
 
   typedef enum {

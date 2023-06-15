@@ -125,15 +125,6 @@ void ShenandoahDegenGC::op_degenerated() {
       // we can do the most aggressive degen cycle, which includes processing references and
       // class unloading, unless those features are explicitly disabled.
 
-      if (heap->is_concurrent_old_mark_in_progress()) {
-        // We have come straight into a degenerated cycle without running a concurrent cycle
-        // first and the SATB barrier is enabled to support concurrent old marking. The SATB buffer
-        // may hold a mix of old and young pointers. The old pointers need to be transferred
-        // to the old generation mark queues and the young pointers are _not_ part of this
-        // snapshot, so they must be dropped here.
-        heap->transfer_old_pointers_from_satb();
-      }
-
       // Note that we can only do this for "outside-cycle" degens, otherwise we would risk
       // changing the cycle parameters mid-cycle during concurrent -> degenerated handover.
       heap->set_unload_classes(_generation->heuristics()->can_unload_classes() &&
@@ -156,8 +147,19 @@ void ShenandoahDegenGC::op_degenerated() {
         if (_generation->is_concurrent_mark_in_progress()) {
           // We want to allow old generation marking to be punctuated by young collections
           // (even if they have degenerated). If this is a global cycle, we'd have cancelled
-          // the entire old gc before coming into this switch.
+          // the entire old gc before coming into this switch. Note that cancel_marking on
+          // the generation does NOT abandon incomplete SATB buffers as cancel_concurrent_mark does.
+          // We need to separate out the old pointers which is done below.
           _generation->cancel_marking();
+        }
+
+        if (heap->is_concurrent_mark_in_progress()) {
+          // If either old or young marking is in progress, the SATB barrier will be enabled.
+          // The SATB buffer may hold a mix of old and young pointers. The old pointers need to be
+          // transferred to the old generation mark queues and the young pointers are NOT part
+          // of this snapshot, so they must be dropped here. It is safe to drop them here because
+          // we will rescan the roots on this safepoint.
+          heap->transfer_old_pointers_from_satb();
         }
       }
 

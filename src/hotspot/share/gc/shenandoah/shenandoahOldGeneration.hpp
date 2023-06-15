@@ -65,7 +65,7 @@ public:
   // We leave the SATB barrier on for the entirety of the old generation
   // marking phase. In some cases, this can cause a write to a perfectly
   // reachable oop to enqueue a pointer that later becomes garbage (because
-  // it points at an object in the collection set, for example). There are
+  // it points at an object that is later chosen for the collection set). There are
   // also cases where the referent of a weak reference ends up in the SATB
   // and is later collected. In these cases the oop in the SATB buffer becomes
   // invalid and the _next_ cycle will crash during its marking phase. To

@@ -87,6 +87,7 @@ public:
     _loc(nullptr),
     _generation(nullptr) {
     if (options._verify_marked == ShenandoahVerifier::_verify_marked_complete_except_references ||
+        options._verify_marked == ShenandoahVerifier::_verify_marked_complete_satb_empty ||
         options._verify_marked == ShenandoahVerifier::_verify_marked_disable) {
       set_ref_discoverer_internal(new ShenandoahIgnoreReferenceDiscoverer());
     }
@@ -257,6 +258,7 @@ private:
                "Must be marked in complete bitmap");
         break;
       case ShenandoahVerifier::_verify_marked_complete_except_references:
+      case ShenandoahVerifier::_verify_marked_complete_satb_empty:
         check(ShenandoahAsserts::_safe_all, obj, _heap->complete_marking_context()->is_marked_or_old(obj),
               "Must be marked in complete bitmap, except j.l.r.Reference referents");
         break;
@@ -597,6 +599,20 @@ public:
   }
 };
 
+class ShenandoahVerifyNoIncompleteSatbBuffers : public ThreadClosure {
+public:
+  virtual void do_thread(Thread* thread) {
+    SATBMarkQueue& queue = ShenandoahThreadLocalData::satb_mark_queue(thread);
+    if (!is_empty(queue)) {
+      fatal("All SATB buffers should have been flushed during mark");
+    }
+  }
+private:
+  bool is_empty(SATBMarkQueue& queue) {
+    return queue.buffer() == nullptr || queue.index() == queue.capacity();
+  }
+};
+
 class ShenandoahVerifierMarkedRegionTask : public WorkerTask {
 private:
   const char* _label;
@@ -622,6 +638,10 @@ public:
           _claimed(0),
           _processed(0),
           _generation(nullptr) {
+    if (_options._verify_marked == ShenandoahVerifier::_verify_marked_complete_satb_empty) {
+      Threads::change_thread_claim_token();
+    }
+
     if (_heap->mode()->is_generational()) {
       _generation = _heap->active_generation();
       assert(_generation != nullptr, "Expected active generation in this mode.");
@@ -633,6 +653,11 @@ public:
   }
 
   virtual void work(uint worker_id) {
+    if (_options._verify_marked == ShenandoahVerifier::_verify_marked_complete_satb_empty) {
+      ShenandoahVerifyNoIncompleteSatbBuffers verify_satb;
+      Threads::possibly_parallel_threads_do(true, &verify_satb);
+    }
+
     ShenandoahVerifierStack stack;
     ShenandoahVerifyOopClosure cl(&stack, _bitmap, _ld,
                                   ShenandoahMessageBuffer("%s, Marked", _label),
@@ -945,7 +970,10 @@ void ShenandoahVerifier::verify_at_safepoint(const char* label,
   // version
 
   size_t count_marked = 0;
-  if (ShenandoahVerifyLevel >= 4 && (marked == _verify_marked_complete || marked == _verify_marked_complete_except_references)) {
+  if (ShenandoahVerifyLevel >= 4 &&
+        (marked == _verify_marked_complete ||
+         marked == _verify_marked_complete_except_references ||
+         marked == _verify_marked_complete_satb_empty)) {
     guarantee(_heap->marking_context()->is_complete(), "Marking context should be complete");
     ShenandoahVerifierMarkedRegionTask task(_verification_bit_map, ld, label, options);
     _heap->workers()->run_task(&task);
@@ -1031,7 +1059,7 @@ void ShenandoahVerifier::verify_after_concmark() {
           "After Mark",
           _verify_remembered_disable,  // do not verify remembered set
           _verify_forwarded_none,      // no forwarded references
-          _verify_marked_complete_except_references,
+          _verify_marked_complete_satb_empty,
                                        // bitmaps as precise as we can get, except dangling j.l.r.Refs
           _verify_cset_none,           // no references to cset anymore
           _verify_liveness_complete,   // liveness data must be complete here
