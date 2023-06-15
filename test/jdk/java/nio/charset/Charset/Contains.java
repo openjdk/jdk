@@ -23,7 +23,7 @@
 
 /* @test
  * @summary Unit test for charset containment
- * @bug 6798572 8167252 8310049
+ * @bug 6798572 8167252
  * @modules jdk.charsets
  * @run junit Contains
  */

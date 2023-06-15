@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4626545 4696726 8310049
+ * @bug 4626545 4696726
  * @summary Checks the inter containment relationships between NIO charsets
  * @modules jdk.charsets
  * @run junit CharsetContainmentTest

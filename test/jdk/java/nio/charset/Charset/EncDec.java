@@ -22,7 +22,6 @@
  */
 
 /* @test
- * @bug 8310049
  * @summary Unit test for encode/decode convenience methods
  * @run junit EncDec
  */

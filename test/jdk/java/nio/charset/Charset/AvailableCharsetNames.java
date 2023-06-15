@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4422044 8310049
+ * @bug 4422044
  * @summary Ensure that keys in available-charset map
  *          are identical to canonical names
  * @run junit AvailableCharsetNames
