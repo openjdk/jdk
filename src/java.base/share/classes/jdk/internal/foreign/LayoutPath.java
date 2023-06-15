@@ -204,7 +204,11 @@ public class LayoutPath {
         ValueLayout accessedLayout = enclosing != null ? valueLayout.withByteAlignment(1) : valueLayout;
         VarHandle handle = Utils.makeSegmentViewVarHandle(accessedLayout);
         handle = MethodHandles.collectCoordinates(handle, 1, offsetHandle());
-        if (enclosing != null) {
+
+        // we only have to check the alignment of the root layout for the first dereference we do,
+        // as each dereference checks the alignment of the target address when constructing its segment
+        // (see Utils::longToAddress)
+        if (derefAdapters.length == 0 && enclosing != null) {
             MethodHandle checkHandle = MethodHandles.insertArguments(MH_CHECK_ALIGN, 1, rootLayout());
             handle = MethodHandles.filterCoordinates(handle, 0, checkHandle);
         }

@@ -380,7 +380,7 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      * Additionally, the provided dynamic values must conform to bounds which are derived from the layout path, that is,
      * {@code 0 <= x_i < b_i}, where {@code 1 <= i <= n}, or {@link IndexOutOfBoundsException} is thrown.
      * <p>
-     * The accessed address must be <a href="MemorySegment.html#segment-alignment">aligned</a> according to the {@linkplain
+     * The base address must be <a href="MemorySegment.html#segment-alignment">aligned</a> according to the {@linkplain
      * #byteAlignment() alignment constraint} of the root layout (this layout). Note that this can be more strict
      * (but not less) than the alignment constraint of the selected value layout.
      * <p>
