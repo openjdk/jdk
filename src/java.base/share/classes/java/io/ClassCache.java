@@ -39,7 +39,7 @@ abstract class ClassCache<T> {
 
     private static class CacheRef<T> extends SoftReference<T> {
         private final Class<?> type;
-        private volatile T strongReferent;
+        private T strongReferent;
 
         CacheRef(T referent, ReferenceQueue<T> queue, Class<?> type) {
             super(referent, queue);
@@ -87,6 +87,10 @@ abstract class ClassCache<T> {
             // We might still have strong referent, and can return it.
             // This guarantees progress for at least one thread on every CacheRef.
             // Clear the strong referent before returning to make the cache soft.
+            // A benign data race exists on CacheRef.strongReferent field if
+            // multiple threads calls get() with the same Class parameter.
+            // Fixing this race could introduce noticeable performance penalty.
+            // See the review thread for JDK-8309688 for details.
             T strongVal = ref.getStrong();
             if (strongVal != null) {
                 ref.clearStrong();
