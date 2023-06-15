@@ -56,10 +56,8 @@ runs:
 
     - name: 'Build JTReg'
       run: |
-        # Prevent "Bad address" errors
-        export MSYS2_ARG_CONV_EXCL='*'
         # Build JTReg and move files to the proper locations
-        bash make/build.sh --jdk "$JAVA_HOME_11_X64"
+        bash make/build.sh --jdk bootjdk/jdk
         mkdir ../installed
         mv build/images/jtreg/* ../installed
       working-directory: jtreg/src
