@@ -114,6 +114,16 @@ public class DisableMulticastAllOpt {
         return chan;
     }
 
+   /**
+    * Creates one sending channel and two receiving channels which join
+    * two different multicast groups on the same port.
+    * A packet is then sent to each destination
+    *
+    * We then attempt to read two packets off the first channel
+    * The first packet should always be received and without this change
+    * the second packet will also be received, which should not happen
+    * going forward on a 4.20+ kernel
+    */
     public static void main(String[] args) throws Exception {
         if (nif == null) {
             System.out.println("Suitable multicast interface not available");
