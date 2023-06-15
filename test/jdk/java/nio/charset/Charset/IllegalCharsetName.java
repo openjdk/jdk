@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4448594 4786884 6330020 8184665 8260265
+ * @bug 4448594 4786884 6330020 8184665
  * @summary Ensure Charset.forName/isSupport throws the correct exception
  *          if the charset names passed in are illegal.
  * @run junit IllegalCharsetName
@@ -32,7 +32,6 @@ import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.IllegalCharsetNameException;
-import java.nio.charset.UnsupportedCharsetException;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
@@ -42,13 +41,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class IllegalCharsetName {
-
-    // Charset.forName should throw an exception when passed "default"
-    @Test
-    public void defaultCharsetTest() {
-        assertThrows(UnsupportedCharsetException.class,
-                () -> Charset.forName("default"));
-    }
 
     // Charset.forName should throw an exception when passed null
     @Test

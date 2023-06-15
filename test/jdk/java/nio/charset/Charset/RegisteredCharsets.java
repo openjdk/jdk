@@ -23,7 +23,7 @@
 
 /* @test
  * @bug 4473201 4696726 4652234 4482298 4784385 4966197 4267354 5015668
-        6911753 8071447 8186751 8242541 8301119
+        6911753 8071447 8186751 8242541 8260265 8301119
  * @summary Check that registered charsets are actually registered
  * @modules jdk.charsets
  * @run junit RegisteredCharsets
@@ -31,15 +31,25 @@
  */
 
 import java.nio.charset.Charset;
+import java.nio.charset.UnsupportedCharsetException;
 import java.util.stream.Stream;
 
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class RegisteredCharsets {
+
+    // Charset.forName should throw an exception when passed "default"
+    @Test
+    public void defaultCharsetTest() {
+        assertThrows(UnsupportedCharsetException.class,
+                () -> Charset.forName("default"));
+    }
 
     /**
      * Tests that the aliases of the input String convert
