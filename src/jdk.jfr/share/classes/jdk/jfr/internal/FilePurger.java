@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ import java.util.Set;
 import jdk.jfr.internal.SecuritySupport.SafePath;
 
 // This class keeps track of files that can't be deleted
-// so they can a later staged be removed.
+// so they can at a later staged be removed.
 final class FilePurger {
 
     private static final Set<SafePath> paths = new LinkedHashSet<>();
