@@ -42,12 +42,22 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class Contains {
 
+    /**
+     * Tests a variety of charsets with other charsets, and whether
+     * they should be contained. This test takes both true and false
+     *  for 'cont'.
+     */
     @ParameterizedTest
     @MethodSource("otherCharsets")
     public void testCharsets(Charset containerCs, Charset cs, boolean cont){
         shouldContain(containerCs, cs, cont);
     }
 
+    /**
+     * Tests UTF charsets with other charsets. In this case, each UTF charset
+     * should contain every single charset they are tested against. 'cont' is
+     * always true.
+     */
     @ParameterizedTest
     @MethodSource("utfCharsets")
     public void testUTFCharsets(Charset containerCs, Charset cs, boolean cont){
@@ -67,6 +77,9 @@ public class Contains {
         }
     }
 
+    /**
+     * Helper method that checks if a charset should contain another charset.
+     */
     static void shouldContain(Charset containerCs, Charset cs, boolean cont){
         assertEquals((containerCs.contains(cs)), cont, String.format("%s %s %s",
                 containerCs.name(), (cont ? " contains " : " does not contain "), cs.name()));
