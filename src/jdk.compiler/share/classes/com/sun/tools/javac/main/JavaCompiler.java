@@ -84,7 +84,10 @@ import com.sun.tools.javac.util.Log.WriterKind;
 
 import static com.sun.tools.javac.code.Kinds.Kind.*;
 
+import com.sun.tools.javac.code.Lint;
+import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.code.Symbol.ModuleSymbol;
+
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.resources.CompilerProperties.Fragments;
 import com.sun.tools.javac.resources.CompilerProperties.Notes;
@@ -231,6 +234,10 @@ public class JavaCompiler {
     /** The log to be used for error reporting.
      */
     public Log log;
+
+    /** The Lint to be used.
+     */
+    public Lint lint;
 
     /** Factory for creating diagnostic objects
      */
@@ -382,6 +389,7 @@ public class JavaCompiler {
 
         names = Names.instance(context);
         log = Log.instance(context);
+        lint = Lint.instance(context);
         diagFactory = JCDiagnostic.Factory.instance(context);
         finder = ClassFinder.instance(context);
         reader = ClassReader.instance(context);
@@ -1132,6 +1140,11 @@ public class JavaCompiler {
             processAnnotations = procEnvImpl.atLeastOneProcessor();
 
             if (processAnnotations) {
+                if (!explicitAnnotationProcessingRequested() &&
+                    lint.isSuppressed(LintCategory.OPTIONS)) {
+                    log.note(Notes.ImplicitAnnotationProcessing);
+                }
+
                 options.put("parameters", "parameters");
                 reader.saveParameterNames = true;
                 keepComments = true;
