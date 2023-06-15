@@ -114,6 +114,7 @@ public abstract class AbstractAnnotationValueVisitor6<R, P>
      * @param av {@inheritDoc AnnotationValueVisitor}
      * @param p  {@inheritDoc AnnotationValueVisitor}
      * @return   {@inheritDoc AnnotationValueVisitor}
+     * @throws UnknownAnnotationValueException {@inheritDoc AnnotationValueVisitor}
      */
     @Override
     public R visitUnknown(AnnotationValue av, P p) {

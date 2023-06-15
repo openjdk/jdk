@@ -117,8 +117,7 @@ public abstract class AbstractElementVisitor6<R, P> implements ElementVisitor<R,
      * @param e {@inheritDoc ElementVisitor}
      * @param p {@inheritDoc ElementVisitor}
      * @return  {@inheritDoc ElementVisitor}
-     * @throws UnknownElementException
-     *          a visitor implementation may optionally throw this exception
+     * @throws UnknownElementException {@inheritDoc ElementVisitor}
      */
     @Override
     public R visitUnknown(Element e, P p) {

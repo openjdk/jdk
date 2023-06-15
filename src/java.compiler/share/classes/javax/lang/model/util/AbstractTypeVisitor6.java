@@ -149,8 +149,7 @@ public abstract class AbstractTypeVisitor6<R, P> implements TypeVisitor<R, P> {
      * @param t  {@inheritDoc TypeVisitor}
      * @param p  {@inheritDoc TypeVisitor}
      * @return a visitor-specified result
-     * @throws UnknownTypeException
-     *  a visitor implementation may optionally throw this exception
+     * @throws UnknownTypeException {@inheritDoc TypeVisitor}
      */
     @Override
     public R visitUnknown(TypeMirror t, P p) {
