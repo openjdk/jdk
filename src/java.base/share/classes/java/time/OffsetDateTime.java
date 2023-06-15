@@ -169,8 +169,8 @@ public final class OffsetDateTime
      *
      * @param datetime1  the first date-time to compare, not null
      * @param datetime2  the other date-time to compare to, not null
-     * @return the comparator value is less than zero if the other is before,
-     *          zero if they are equal, greater than zero if the other is after
+     * @return the comparator value is less than zero if datetime2 is before datetime1,
+     *          zero if they are equal, greater than zero if datetime2 is after datetime1
      */
     private static int compareInstant(OffsetDateTime datetime1, OffsetDateTime datetime2) {
         if (datetime1.getOffset().equals(datetime2.getOffset())) {
