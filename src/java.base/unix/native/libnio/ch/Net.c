@@ -315,7 +315,7 @@ Java_sun_nio_ch_Net_socket0(JNIEnv *env, jclass cl, jboolean preferIPv6,
 
         /* Disable IPV6_MULTICAST_ALL if option supported */
         arg = 0;
-        if ((setsockopt(fd, level, IPV6_MULTICAST_ALL, (char*)&arg, sizeof(arg)) < 0) &&
+        if ((setsockopt(fd, IPPROTO_IPV6, IPV6_MULTICAST_ALL, (char*)&arg, sizeof(arg)) < 0) &&
             (errno != ENOPROTOOPT)) {
             JNU_ThrowByNameWithLastError(env,
                                      JNU_JAVANETPKG "SocketException",
