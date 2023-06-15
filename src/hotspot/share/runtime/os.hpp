@@ -414,10 +414,10 @@ class os: AllStatic {
                                const size_t size);
   static void trace_page_sizes_for_requested_size(const char* str,
                                                   const size_t requested_size,
-                                                  const size_t page_size,
-                                                  const size_t alignment,
+                                                  const size_t requested_page_size,
                                                   const char* base,
-                                                  const size_t size);
+                                                  const size_t size,
+                                                  const size_t page_size);
 
   static size_t vm_allocation_granularity() { return OSInfo::vm_allocation_granularity(); }
 

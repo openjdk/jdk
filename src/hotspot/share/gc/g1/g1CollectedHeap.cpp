@@ -1307,10 +1307,10 @@ G1RegionToSpaceMapper* G1CollectedHeap::create_aux_memory_mapper(const char* des
 
   os::trace_page_sizes_for_requested_size(description,
                                           size,
-                                          page_size,
                                           preferred_page_size,
                                           rs.base(),
-                                          rs.size());
+                                          rs.size(),
+                                          page_size);
 
   return result;
 }
