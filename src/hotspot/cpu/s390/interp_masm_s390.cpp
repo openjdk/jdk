@@ -1171,7 +1171,7 @@ void InterpreterMacroAssembler::unlock_object(Register monitor, Register object)
     compareU32_and_branch(tmp, (unsigned)LockStack::start_offset(), Assembler::bcondNotHigh, slow_case);
 
     // Then check if the top of the lock-stack matches the unlocked object.
-    z_afi(tmp, -oopSize);
+    z_aghi(tmp, -oopSize);
     z_lg(tmp, Address(Z_thread, tmp));
     z_cgrj(tmp, object, Assembler::bcondNotEqual, slow_case);
 

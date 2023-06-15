@@ -5675,12 +5675,11 @@ void MacroAssembler::fast_lock(Register obj, Register hdr, Register temp, Label&
   // After successful lock, push object on lock-stack
   z_lgf(temp, Address(Z_thread, JavaThread::lock_stack_top_offset()));
   z_stg(obj, Address(Z_thread, temp));
-  z_afi(temp, oopSize);
+  z_ahi(temp, oopSize);
   z_st(temp, Address(Z_thread, JavaThread::lock_stack_top_offset()));
 
   // as locking was successful, set CC to EQ
-  z_lghi(temp, 0);
-  z_ltgr(temp, temp);
+  z_cr(temp, temp);
 }
 
 // Implements fast-unlocking.
@@ -5723,7 +5722,7 @@ void MacroAssembler::fast_unlock(Register obj, Register hdr, Register tmp, Label
   {
     // Check if the top of the lock-stack matches the unlocked object.
     Label tos_ok;
-    z_afi(tmp, -oopSize);
+    z_aghi(tmp, -oopSize);
     z_lg(tmp, Address(Z_thread, tmp));
     z_cgrj(tmp, obj, Assembler::bcondEqual, tos_ok);
     stop("Top of lock-stack does not match the unlocked object");
@@ -5739,10 +5738,10 @@ void MacroAssembler::fast_unlock(Register obj, Register hdr, Register tmp, Label
   // After successful unlock, pop object from lock-stack
   z_lgf(tmp, Address(Z_thread, JavaThread::lock_stack_top_offset()));
   z_afi(tmp, -oopSize);
-  z_lghi(zero, 0); // Z_R0_scratch
 #ifdef ASSERT
+  z_lghi(zero, 0); // Z_R0_scratch
   z_stg(zero, Address(Z_thread, tmp));
 #endif
   z_st(tmp, Address(Z_thread, JavaThread::lock_stack_top_offset()));
-  z_ltgr(zero, zero); // set CC to EQ
+  z_cr(tmp, tmp); // set CC to EQ
 }
