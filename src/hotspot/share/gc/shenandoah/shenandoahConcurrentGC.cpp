@@ -766,7 +766,6 @@ void ShenandoahConcurrentGC::op_final_mark() {
     heap->prepare_concurrent_roots();
 
     if (heap->mode()->is_generational()) {
-      ShenandoahGeneration* young_gen = heap->young_generation();
       size_t humongous_regions_promoted = heap->get_promotable_humongous_regions();
       size_t regular_regions_promoted_in_place = heap->get_regular_regions_promoted_in_place();
       if (!heap->collection_set()->is_empty() || (humongous_regions_promoted + regular_regions_promoted_in_place > 0)) {
@@ -795,9 +794,13 @@ void ShenandoahConcurrentGC::op_final_mark() {
           heap->verifier()->verify_during_evacuation();
         }
 
-        // Arm nmethods/stack for concurrent processing
-        ShenandoahCodeRoots::arm_nmethods();
-        ShenandoahStackWatermark::change_epoch_id();
+        if (!heap->collection_set()->is_empty()) {
+          // Iff objects will be evaluated, arm the nmethod barriers. These will be disarmed
+          // under the same condition (established in preprare_concurrent_roots) after strong
+          // root evacuation has completed (see op_strong_roots).
+          ShenandoahCodeRoots::arm_nmethods();
+          ShenandoahStackWatermark::change_epoch_id();
+        }
 
         if (ShenandoahPacing) {
           heap->pacer()->setup_for_evac();
