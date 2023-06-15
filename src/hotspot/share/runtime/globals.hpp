@@ -932,6 +932,11 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, TraceCompilerThreads, false, DIAGNOSTIC,                    \
              "Trace creation and removal of compiler threads")              \
                                                                             \
+  product(ccstr, TraceClassLoadingCause, nullptr, DIAGNOSTIC,               \
+          "Print a stack trace when loading a class whose fully"            \
+          "qualified name contains this string (\"*\" matches "             \
+          "any class).")                                                    \
+                                                                            \
   develop(bool, InjectCompilerCreationFailure, false,                       \
           "Inject thread creation failures for "                            \
           "UseDynamicNumberOfCompilerThreads")                              \

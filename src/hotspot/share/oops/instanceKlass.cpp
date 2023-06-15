@@ -3739,6 +3739,15 @@ const char* InstanceKlass::internal_name() const {
 void InstanceKlass::print_class_load_logging(ClassLoaderData* loader_data,
                                              const ModuleEntry* module_entry,
                                              const ClassFileStream* cfs) const {
+  if (TraceClassLoadingCause != nullptr &&
+      (strcmp(TraceClassLoadingCause, "*") == 0 || strstr(external_name(), TraceClassLoadingCause) != nullptr))
+  {
+    stringStream st;
+    st.print_cr("Loading %s", external_name());
+    JavaThread::current()->print_stack_on(&st);
+    tty->print_raw(st.as_string());
+  }
+
   if (ClassListWriter::is_enabled()) {
     ClassListWriter::write(this, cfs);
   }
