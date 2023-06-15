@@ -32,7 +32,6 @@ import static jdk.jfr.internal.LogLevel.WARN;
 import static jdk.jfr.internal.LogTag.JFR;
 import static jdk.jfr.internal.LogTag.JFR_SYSTEM;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.security.AccessControlContext;
 import java.security.AccessController;
