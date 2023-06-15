@@ -64,6 +64,7 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/resolvedIndyEntry.hpp"
 #include "oops/symbolHandle.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
@@ -1663,7 +1664,7 @@ void ciEnv::dump_replay_data_helper(outputStream* out) {
   NoSafepointVerifier no_safepoint;
   ResourceMark rm;
 
-  out->print_cr("version %d", REPLAY_VERSION);
+  dump_replay_data_version(out);
 #if INCLUDE_JVMTI
   out->print_cr("JvmtiExport can_access_local_variables %d",     _jvmti_can_access_local_variables);
   out->print_cr("JvmtiExport can_hotswap_or_post_breakpoint %d", _jvmti_can_hotswap_or_post_breakpoint);
@@ -1731,6 +1732,7 @@ void ciEnv::dump_inline_data(int compile_id) {
         fileStream replay_data_stream(inline_data_file, /*need_close=*/true);
         GUARDED_VM_ENTRY(
           MutexLocker ml(Compile_lock);
+          dump_replay_data_version(&replay_data_stream);
           dump_compile_data(&replay_data_stream);
         )
         replay_data_stream.flush();
@@ -1741,4 +1743,8 @@ void ciEnv::dump_inline_data(int compile_id) {
       }
     }
   }
+}
+
+void ciEnv::dump_replay_data_version(outputStream* out) {
+  out->print_cr("version %d", REPLAY_VERSION);
 }

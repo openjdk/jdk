@@ -113,6 +113,7 @@ public class SwitchBootstrapsTest {
         testType("", 0, 0, String.class, String.class, String.class);
         testType("", 1, 1, String.class, String.class, String.class);
         testType("", 2, 2, String.class, String.class, String.class);
+        testType("", 0, 0);
     }
 
     public void testEnums() throws Throwable {
@@ -131,6 +132,12 @@ public class SwitchBootstrapsTest {
         } catch (IllegalArgumentException ex) {
             //OK
         }
+        testEnum(E1.B, 0, 0, "B", "A");
+        testEnum(E1.A, 0, 1, "B", "A");
+        testEnum(E1.A, 0, 0, "A", "A", "B");
+        testEnum(E1.A, 1, 1, "A", "A", "B");
+        testEnum(E1.A, 2, 3, "A", "A", "B");
+        testEnum(E1.A, 0, 0);
     }
 
     public void testWrongSwitchTypes() throws Throwable {

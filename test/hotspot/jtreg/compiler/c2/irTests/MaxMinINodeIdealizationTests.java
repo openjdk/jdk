@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2022, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -39,22 +40,38 @@ public class MaxMinINodeIdealizationTests {
         TestFramework.run();
     }
 
-    @Run(test = {"testMax1", "testMax2", "testMax3", "testMin1", "testMin2", "testMin3"})
-    public void runMethod() {
+    @Run(test = {"testMax1LL", "testMax1LR", "testMax1RL", "testMax1RR",
+                 "testMax1LLNoInnerAdd", "testMax1LLNoInnerAdd2", "testMax1LLNoOuterAdd", "testMax1LLNoAdd",
+                 "testMax2L", "testMax2R",
+                 "testMax2LNoLeftAdd",
+                 "testMax3",
+                 "testMin1",
+                 "testMin2",
+                 "testMin3"})
+    public void runPositiveTests() {
         int a = RunInfo.getRandom().nextInt();
         int min = Integer.MIN_VALUE;
         int max = Integer.MAX_VALUE;
 
-        assertResult(a);
-        assertResult(0);
-        assertResult(min);
-        assertResult(max);
+        assertPositiveResult(a);
+        assertPositiveResult(0);
+        assertPositiveResult(min);
+        assertPositiveResult(max);
     }
 
     @DontCompile
-    public void assertResult(int a) {
-        Asserts.assertEQ(Math.max(((a >> 1) + 100), Math.max(((a >> 1) + 150), 200)), testMax1(a));
-        Asserts.assertEQ(Math.max(((a >> 1) + 10), ((a >> 1) + 11))                 , testMax2(a));
+    public void assertPositiveResult(int a) {
+        Asserts.assertEQ(Math.max(Math.max(((a >> 1) + 150), 200), ((a >> 1) + 100)), testMax1LL(a));
+        Asserts.assertEQ(testMax1LL(a)                                              , testMax1LR(a));
+        Asserts.assertEQ(testMax1LL(a)                                              , testMax1RL(a));
+        Asserts.assertEQ(testMax1LL(a)                                              , testMax1RR(a));
+        Asserts.assertEQ(Math.max(Math.max((a >> 1), 200), (a >> 1) + 100)          , testMax1LLNoInnerAdd(a));
+        Asserts.assertEQ(Math.max(Math.max((a >> 1), (a << 1)), (a >> 1) + 100)     , testMax1LLNoInnerAdd2(a));
+        Asserts.assertEQ(Math.max(Math.max(((a >> 1) + 150), 200), a >> 1)          , testMax1LLNoOuterAdd(a));
+        Asserts.assertEQ(Math.max(Math.max((a >> 1), 200), a >> 1)                  , testMax1LLNoAdd(a));
+        Asserts.assertEQ(Math.max(((a >> 1) + 10), ((a >> 1) + 11))                 , testMax2L(a));
+        Asserts.assertEQ(testMax2L(a)                                               , testMax2R(a));
+        Asserts.assertEQ(Math.max(a >> 1, ((a >> 1) + 11))                          , testMax2LNoLeftAdd(a));
         Asserts.assertEQ(Math.max(a, a)                                             , testMax3(a));
 
         Asserts.assertEQ(Math.min(((a >> 1) + 100), Math.min(((a >> 1) + 150), 200)), testMin1(a));
@@ -72,8 +89,63 @@ public class MaxMinINodeIdealizationTests {
     @IR(counts = {IRNode.MAX_I, "1",
                   IRNode.ADD  , "1",
                  })
-    public int testMax1(int i) {
+    public int testMax1LL(int i) {
+        return Math.max(Math.max(((i >> 1) + 150), 200), ((i >> 1) + 100));
+    }
+
+    @Test
+    @IR(counts = {IRNode.MAX_I, "1",
+                  IRNode.ADD  , "1",
+                 })
+    public int testMax1LR(int i) {
+        return Math.max(Math.max(200, ((i >> 1) + 150)), ((i >> 1) + 100));
+    }
+
+    @Test
+    @IR(counts = {IRNode.MAX_I, "1",
+                  IRNode.ADD  , "1",
+                 })
+    public int testMax1RL(int i) {
         return Math.max(((i >> 1) + 100), Math.max(((i >> 1) + 150), 200));
+    }
+
+    @Test
+    @IR(counts = {IRNode.MAX_I, "1",
+                  IRNode.ADD  , "1",
+                 })
+    public int testMax1RR(int i) {
+        return Math.max(((i >> 1) + 100), Math.max(200, ((i >> 1) + 150)));
+    }
+
+    @Test
+    @IR(counts = {IRNode.MAX_I, "1",
+                  IRNode.ADD  , "1",
+                 })
+    public int testMax1LLNoInnerAdd(int i) {
+        return Math.max(Math.max((i >> 1), 200), (i >> 1) + 100);
+    }
+
+    @Test
+    @IR(counts = {IRNode.MAX_I, "1",
+                  IRNode.ADD  , "1",
+                 })
+    public int testMax1LLNoInnerAdd2(int i) {
+        return Math.max(Math.max((i >> 1), (i << 1)), (i >> 1) + 100);
+    }
+
+    @Test
+    @IR(counts = {IRNode.MAX_I, "1",
+                  IRNode.ADD  , "1",
+                 })
+    public int testMax1LLNoOuterAdd(int i) {
+        return Math.max(Math.max(((i >> 1) + 150), 200), i >> 1);
+    }
+
+    @Test
+    @IR(failOn = {IRNode.ADD})
+    @IR(counts = {IRNode.MAX_I, "1"})
+    public int testMax1LLNoAdd(int i) {
+        return Math.max(Math.max((i >> 1), 200), i >> 1);
     }
 
     // Similarly, transform min(x + c0, min(y + c1, z)) to min(add(x, c2), z) if x == y, where c2 = MIN2(c0, c1).
@@ -91,8 +163,22 @@ public class MaxMinINodeIdealizationTests {
     @Test
     @IR(failOn = {IRNode.MAX_I})
     @IR(counts = {IRNode.ADD, "1"})
-    public int testMax2(int i) {
+    public int testMax2L(int i) {
         return Math.max((i >> 1) + 10, (i >> 1) + 11);
+    }
+
+    @Test
+    @IR(failOn = {IRNode.MAX_I})
+    @IR(counts = {IRNode.ADD, "1"})
+    public int testMax2R(int i) {
+        return Math.max((i >> 1) + 11, (i >> 1) + 10);
+    }
+
+    @Test
+    @IR(failOn = {IRNode.MAX_I})
+    @IR(counts = {IRNode.ADD, "1"})
+    public int testMax2LNoLeftAdd(int i) {
+        return Math.max(i >> 1, (i >> 1) + 11);
     }
 
     // Similarly, transform min(x + c0, y + c1) to add(x, c2) if x == y, where c2 = MIN2(c0, c1).
@@ -116,4 +202,76 @@ public class MaxMinINodeIdealizationTests {
     public int testMin3(int i) {
         return Math.min(i, i);
     }
+
+    @Run(test = {"testTwoLevelsDifferentXY",
+                 "testTwoLevelsNoLeftConstant",
+                 "testTwoLevelsNoRightConstant",
+                 "testDifferentXY",
+                 "testNoLeftConstant",
+                 "testNoRightConstant"})
+    public void runNegativeTests() {
+        int a = RunInfo.getRandom().nextInt();
+        int min = Integer.MIN_VALUE;
+        int max = Integer.MAX_VALUE;
+
+        assertNegativeResult(a);
+        assertNegativeResult(0);
+        assertNegativeResult(min);
+        assertNegativeResult(max);
+
+        testTwoLevelsDifferentXY(10);
+        testTwoLevelsNoLeftConstant(10, 42);
+        testTwoLevelsNoRightConstant(10, 42);
+        testDifferentXY(10);
+        testNoLeftConstant(10, 42);
+        testNoRightConstant(10, 42);
+    }
+
+    @DontCompile
+    public void assertNegativeResult(int a) {
+        Asserts.assertEQ(Math.max(Math.max(((a >> 1) + 150), 200), ((a >> 2) + 100)), testTwoLevelsDifferentXY(a));
+        Asserts.assertEQ(Math.max(Math.max(((a >> 1) + a*2), 200), ((a >> 1) + 100)),  testTwoLevelsNoLeftConstant(a, a*2));
+        Asserts.assertEQ(Math.max(Math.max(((a >> 1) + 150), 200), ((a >> 1) + a*2)),  testTwoLevelsNoRightConstant(a, a*2));
+        Asserts.assertEQ(Math.max((a >> 1) + 10, (a >> 2) + 11), testDifferentXY(a));
+        Asserts.assertEQ(Math.max((a >> 1) + a*2, (a >> 1) + 11), testNoLeftConstant(a, a*2));
+        Asserts.assertEQ(Math.max((a >> 1) + 10, (a >> 1) + a*2), testNoRightConstant(a, a*2));
+    }
+
+    @Test
+    @IR(counts = {IRNode.MAX_I, "2"})
+    public int testTwoLevelsDifferentXY(int i) {
+        return Math.max(Math.max(((i >> 1) + 150), 200), ((i >> 2) + 100));
+    }
+
+    @Test
+    @IR(counts = {IRNode.MAX_I, "2"})
+    public int testTwoLevelsNoLeftConstant(int i, int c0) {
+        return Math.max(Math.max(((i >> 1) + c0), 200), ((i >> 1) + 100));
+    }
+
+    @Test
+    @IR(counts = {IRNode.MAX_I, "2"})
+    public int testTwoLevelsNoRightConstant(int i, int c1) {
+        return Math.max(Math.max(((i >> 1) + 150), 200), ((i >> 1) + c1));
+    }
+
+    @Test
+    @IR(counts = {IRNode.MAX_I, "1"})
+    public int testDifferentXY(int i) {
+        return Math.max((i >> 1) + 10, (i >> 2) + 11);
+    }
+
+    @Test
+    @IR(counts = {IRNode.MAX_I, "1"})
+    public int testNoLeftConstant(int i, int c0) {
+        return Math.max((i >> 1) + c0, (i >> 1) + 11);
+    }
+
+    @Test
+    @IR(counts = {IRNode.MAX_I, "1"})
+    public int testNoRightConstant(int i, int c1) {
+        return Math.max((i >> 1) + 10, (i >> 1) + c1);
+    }
+
+
 }

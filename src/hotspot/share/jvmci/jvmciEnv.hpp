@@ -183,12 +183,6 @@ class JVMCIEnv : public ResourceObj {
   // The translated exception is pending in hotspot_env upon returning.
   static void translate_from_jni_exception(JavaThread* THREAD, jthrowable throwable, JVMCIEnv* hotspot_env, JVMCIEnv* jni_env);
 
-  // Used by copy_saved_properties() to avoid OutOfMemoryErrors when
-  // initializing a libjvmci runtime in low HotSpot heap conditions.
-  // Must hold JVMCI_lock when initializing.
-  static jbyte* _serialized_saved_properties;
-  static int _serialized_saved_properties_len;
-
 public:
   // Opens a JVMCIEnv scope for a Java to VM call (e.g., via CompilerToVM).
   // An exception occurring within the scope is left pending when the
@@ -237,14 +231,6 @@ public:
     return _runtime;
   }
 
-  // Gets the serialized saved properties from the HotSpot heap.
-  // The length of the returned array is saved in `len`.
-  jbyte* get_serialized_saved_properties(int& len, TRAPS);
-
-  // Initializes Services.savedProperties in the shared library from the given
-  // properties in the format produced by `get_serialized_saved_properties`.
-  void copy_saved_properties(jbyte* properties, int properties_len, JVMCI_TRAPS);
-
   jboolean has_pending_exception();
   void clear_pending_exception();
 
@@ -258,10 +244,16 @@ public:
   // Returns true if a pending exception was transferred, false otherwise.
   static jboolean transfer_pending_exception_to_jni(JavaThread* THREAD, JVMCIEnv* hotspot_env, JVMCIEnv* jni_env);
 
-  // Prints the toString() and stack trace of a pending exception.
+  // Prints the stack trace of a pending exception to `st` and clears the exception.
   // If there is no pending exception, this is a nop.
-  // If `clear` is false, the pending exception will remain pending upon return.
-  void describe_pending_exception(bool clear);
+  void describe_pending_exception(outputStream* st);
+
+  // Gets the output of calling toString and/or printStactTrace on the pending exception.
+  // If to_string is not null, the output of toString is returned in it.
+  // If stack_trace is not null, the output of printStackTrace is returned in it.
+  // Returns false if there is no pending exception otherwise clears the pending
+  // exception and returns true.
+  bool pending_exception_as_string(const char** to_string, const char** stack_trace);
 
   int get_length(JVMCIArray array);
 
@@ -341,8 +333,6 @@ public:
   JVMCIObject call_HotSpotJVMCIRuntime_runtime(JVMCI_TRAPS);
   JVMCIObject call_JVMCI_getRuntime(JVMCI_TRAPS);
   JVMCIObject call_HotSpotJVMCIRuntime_getCompiler(JVMCIObject runtime, JVMCI_TRAPS);
-
-  JVMCIObject call_HotSpotJVMCIRuntime_callToString(JVMCIObject object, JVMCI_TRAPS);
 
   JVMCIObject call_JavaConstant_forPrimitive(jchar type_char, jlong value, JVMCI_TRAPS);
 
@@ -505,7 +495,7 @@ public:
 #define STATIC_BOOLEAN_FIELD(className, name) STATIC_FIELD(className, name, jboolean)
 #define STATIC_OBJECT_FIELD(className, name, signature) STATIC_OOPISH_FIELD(className, name, JVMCIObject, oop)
 #define STATIC_OBJECTARRAY_FIELD(className, name, signature) STATIC_OOPISH_FIELD(className, name, JVMCIObjectArray, objArrayOop)
-#define METHOD(jniCallType, jniGetMethod, hsCallType, returnType, className, methodName, signatureSymbolName, args)
+#define METHOD(jniCallType, jniGetMethod, hsCallType, returnType, className, methodName, signatureSymbolName)
 #define CONSTRUCTOR(className, signature)
 
   JVMCI_CLASSES_DO(START_CLASS, END_CLASS, CHAR_FIELD, INT_FIELD, BOOLEAN_FIELD, LONG_FIELD, FLOAT_FIELD, OBJECT_FIELD, PRIMARRAY_FIELD, OBJECTARRAY_FIELD, STATIC_OBJECT_FIELD, STATIC_OBJECTARRAY_FIELD, STATIC_INT_FIELD, STATIC_BOOLEAN_FIELD, METHOD, CONSTRUCTOR)

@@ -758,8 +758,8 @@ void MacroAssembler::la(Register Rd, Label &label) {
   wrap_label(Rd, label, &MacroAssembler::la);
 }
 
-void MacroAssembler::li16u(Register Rd, int32_t imm) {
-  lui(Rd, imm << 12);
+void MacroAssembler::li16u(Register Rd, uint16_t imm) {
+  lui(Rd, (uint32_t)imm << 12);
   srli(Rd, Rd, 12);
 }
 
@@ -1278,7 +1278,7 @@ int MacroAssembler::pop_v(unsigned int bitset, Register stack) {
   int count = bitset_to_regs(bitset, regs);
 
   for (int i = count - 1; i >= 0; i--) {
-    vl1re8_v(as_VectorRegister(regs[i]), stack);
+    vl1r_v(as_VectorRegister(regs[i]), stack);
     add(stack, stack, vector_size_in_bytes);
   }
 
@@ -1412,8 +1412,8 @@ static int patch_imm_in_li64(address branch, address target) {
   return LI64_INSTRUCTIONS_NUM * NativeInstruction::instruction_size;
 }
 
-static int patch_imm_in_li16u(address branch, int32_t target) {
-  Assembler::patch(branch, 31, 12, target & 0xfffff); // patch lui only
+static int patch_imm_in_li16u(address branch, uint16_t target) {
+  Assembler::patch(branch, 31, 12, target); // patch lui only
   return NativeInstruction::instruction_size;
 }
 
@@ -1508,7 +1508,7 @@ int MacroAssembler::pd_patch_instruction_size(address branch, address target) {
     return patch_imm_in_li32(branch, (int32_t)imm);
   } else if (NativeInstruction::is_li16u_at(branch)) {
     int64_t imm = (intptr_t)target;
-    return patch_imm_in_li16u(branch, (int32_t)imm);
+    return patch_imm_in_li16u(branch, (uint16_t)imm);
   } else {
 #ifdef ASSERT
     tty->print_cr("pd_patch_instruction_size: instruction 0x%x at " INTPTR_FORMAT " could not be patched!\n",
@@ -1642,23 +1642,17 @@ void MacroAssembler::subw(Register Rd, Register Rn, int32_t decrement, Register 
 
 void MacroAssembler::andrw(Register Rd, Register Rs1, Register Rs2) {
   andr(Rd, Rs1, Rs2);
-  // addw: The result is clipped to 32 bits, then the sign bit is extended,
-  // and the result is stored in Rd
-  addw(Rd, Rd, zr);
+  sign_extend(Rd, Rd, 32);
 }
 
 void MacroAssembler::orrw(Register Rd, Register Rs1, Register Rs2) {
   orr(Rd, Rs1, Rs2);
-  // addw: The result is clipped to 32 bits, then the sign bit is extended,
-  // and the result is stored in Rd
-  addw(Rd, Rd, zr);
+  sign_extend(Rd, Rd, 32);
 }
 
 void MacroAssembler::xorrw(Register Rd, Register Rs1, Register Rs2) {
   xorr(Rd, Rs1, Rs2);
-  // addw: The result is clipped to 32 bits, then the sign bit is extended,
-  // and the result is stored in Rd
-  addw(Rd, Rd, zr);
+  sign_extend(Rd, Rd, 32);
 }
 
 // Note: load_unsigned_short used to be called load_unsigned_word.
@@ -1706,12 +1700,29 @@ void MacroAssembler::store_sized_value(Address dst, Register src, size_t size_in
   }
 }
 
-// granularity is 1, 2 bytes per load
+// granularity is 1 OR 2 bytes per load. dst and src.base() allowed to be the same register
+void MacroAssembler::load_short_misaligned(Register dst, Address src, Register tmp, bool is_signed, int granularity) {
+  if (granularity != 1 && granularity != 2) {
+    ShouldNotReachHere();
+  }
+  if (AvoidUnalignedAccesses && (granularity != 2)) {
+    assert_different_registers(dst, tmp);
+    assert_different_registers(tmp, src.base());
+    is_signed ? lb(tmp, Address(src.base(), src.offset() + 1)) : lbu(tmp, Address(src.base(), src.offset() + 1));
+    slli(tmp, tmp, 8);
+    lbu(dst, src);
+    add(dst, dst, tmp);
+  } else {
+    is_signed ? lh(dst, src) : lhu(dst, src);
+  }
+}
+
+// granularity is 1, 2 OR 4 bytes per load, if granularity 2 or 4 then dst and src.base() allowed to be the same register
 void MacroAssembler::load_int_misaligned(Register dst, Address src, Register tmp, bool is_signed, int granularity) {
   if (AvoidUnalignedAccesses && (granularity != 4)) {
-    assert_different_registers(dst, tmp, src.base());
     switch(granularity) {
       case 1:
+        assert_different_registers(dst, tmp, src.base());
         lbu(dst, src);
         lbu(tmp, Address(src.base(), src.offset() + 1));
         slli(tmp, tmp, 8);
@@ -1724,9 +1735,11 @@ void MacroAssembler::load_int_misaligned(Register dst, Address src, Register tmp
         add(dst, dst, tmp);
         break;
       case 2:
-        lhu(dst, src);
+        assert_different_registers(dst, tmp);
+        assert_different_registers(tmp, src.base());
         is_signed ? lh(tmp, Address(src.base(), src.offset() + 2)) : lhu(tmp, Address(src.base(), src.offset() + 2));
         slli(tmp, tmp, 16);
+        lhu(dst, src);
         add(dst, dst, tmp);
         break;
       default:
@@ -1737,12 +1750,12 @@ void MacroAssembler::load_int_misaligned(Register dst, Address src, Register tmp
   }
 }
 
-// granularity is 1, 2 or 4 bytes per load
+// granularity is 1, 2, 4 or 8 bytes per load, if granularity 4 or 8 then dst and src.base() allowed to be same register
 void MacroAssembler::load_long_misaligned(Register dst, Address src, Register tmp, int granularity) {
   if (AvoidUnalignedAccesses && (granularity != 8)) {
-    assert_different_registers(dst, tmp, src.base());
     switch(granularity){
       case 1:
+        assert_different_registers(dst, tmp, src.base());
         lbu(dst, src);
         lbu(tmp, Address(src.base(), src.offset() + 1));
         slli(tmp, tmp, 8);
@@ -1767,6 +1780,7 @@ void MacroAssembler::load_long_misaligned(Register dst, Address src, Register tm
         add(dst, dst, tmp);
         break;
       case 2:
+        assert_different_registers(dst, tmp, src.base());
         lhu(dst, src);
         lhu(tmp, Address(src.base(), src.offset() + 2));
         slli(tmp, tmp, 16);
@@ -1779,9 +1793,11 @@ void MacroAssembler::load_long_misaligned(Register dst, Address src, Register tm
         add(dst, dst, tmp);
         break;
       case 4:
-        lwu(dst, src);
+        assert_different_registers(dst, tmp);
+        assert_different_registers(tmp, src.base());
         lwu(tmp, Address(src.base(), src.offset() + 4));
         slli(tmp, tmp, 32);
+        lwu(dst, src);
         add(dst, dst, tmp);
         break;
       default:
@@ -4419,8 +4435,7 @@ void MacroAssembler::move32_64(VMRegPair src, VMRegPair dst, Register tmp) {
     sd(src.first()->as_Register(), Address(sp, reg2offset_out(dst.first())));
   } else {
     if (dst.first() != src.first()) {
-      // 32bits extend sign
-      addw(dst.first()->as_Register(), src.first()->as_Register(), zr);
+      sign_extend(dst.first()->as_Register(), src.first()->as_Register(), 32);
     }
   }
 }
