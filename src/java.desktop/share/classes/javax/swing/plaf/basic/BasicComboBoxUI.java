@@ -1118,12 +1118,7 @@ public class BasicComboBoxUI extends ComboBoxUI {
     // This is currently hacky...
     @Override
     public int getAccessibleChildrenCount(JComponent c) {
-        if ( comboBox.isEditable() ) {
-            return 2;
-        }
-        else {
-            return 1;
-        }
+        return 2;
     }
 
     // This is currently hacky...
@@ -1132,21 +1127,24 @@ public class BasicComboBoxUI extends ComboBoxUI {
         // 0 = the popup
         // 1 = the editor
         switch ( i ) {
-        case 0:
-            if ( popup instanceof Accessible ) {
-                AccessibleContext ac = ((Accessible) popup).getAccessibleContext();
-                ac.setAccessibleParent(comboBox);
-                return(Accessible) popup;
-            }
-            break;
-        case 1:
-            if ( comboBox.isEditable()
-                 && (editor instanceof Accessible) ) {
-                AccessibleContext ac = ((Accessible) editor).getAccessibleContext();
-                ac.setAccessibleParent(comboBox);
-                return(Accessible) editor;
-            }
-            break;
+            case 0:
+                if ( popup instanceof Accessible ) {
+                    AccessibleContext ac = ((Accessible) popup).getAccessibleContext();
+                    ac.setAccessibleParent(comboBox);
+                    return (Accessible) popup;
+                }
+                break;
+            case 1:
+                if (comboBox.isEditable()
+                        && (editor instanceof Accessible)) {
+                    AccessibleContext ac = ((Accessible) editor).getAccessibleContext();
+                    ac.setAccessibleParent(comboBox);
+                    return (Accessible) editor;
+                } else if (!comboBox.isEditable()
+                        && (arrowButton instanceof Accessible)) {
+                    return (Accessible) arrowButton;
+                }
+                break;
         }
         return null;
     }

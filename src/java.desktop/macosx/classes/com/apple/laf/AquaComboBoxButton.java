@@ -33,6 +33,8 @@ import javax.swing.plaf.UIResource;
 import apple.laf.JRSUIState;
 import apple.laf.JRSUIConstants.*;
 
+import javax.accessibility.AccessibleContext;
+
 @SuppressWarnings("serial") // Superclass is not serializable across versions
 class AquaComboBoxButton extends JButton {
     protected final JComboBox<Object> comboBox;
@@ -153,6 +155,11 @@ class AquaComboBoxButton extends JButton {
                 painter.state.set(isSquare ? Widget.BUTTON_POP_DOWN_SQUARE : Widget.BUTTON_POP_DOWN);
             } else {
                 painter.state.set(isSquare ? Widget.BUTTON_POP_UP_SQUARE : Widget.BUTTON_POP_UP);
+            }
+
+            AccessibleContext ac = this.getAccessibleContext();
+            if (ac != null && (comboBox.getSelectedItem() != null)) {
+                ac.setAccessibleName(comboBox.getSelectedItem().toString());
             }
         }
         painter.state.set(hasFocus ? Focused.YES : Focused.NO);
