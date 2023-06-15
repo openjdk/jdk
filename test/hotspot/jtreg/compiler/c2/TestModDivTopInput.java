@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2022, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,9 +27,9 @@
  * @bug 8283451
  * @summary C2: assert(_base == Long) failed: Not a Long
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+StressLCM -XX:+StressGCM -XX:+StressCCP -XX:+StressIGVN
- *                   -Xcomp -XX:CompileOnly=TestModDivTopInput -XX:-TieredCompilation -XX:StressSeed=87628618 TestModDivTopInput
+ *                   -Xcomp -XX:CompileOnly=TestModDivTopInput::* -XX:-TieredCompilation -XX:StressSeed=87628618 TestModDivTopInput
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+StressLCM -XX:+StressGCM -XX:+StressCCP -XX:+StressIGVN
- *                   -Xcomp -XX:CompileOnly=TestModDivTopInput -XX:-TieredCompilation TestModDivTopInput
+ *                   -Xcomp -XX:CompileOnly=TestModDivTopInput::* -XX:-TieredCompilation TestModDivTopInput
  */
 
 public class TestModDivTopInput {

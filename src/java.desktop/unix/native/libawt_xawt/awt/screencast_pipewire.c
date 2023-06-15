@@ -49,6 +49,11 @@ static struct PwLoopData pw = {0};
 jclass tokenStorageClass = NULL;
 jmethodID storeTokenMethodID = NULL;
 
+#if defined(AIX) && defined(__open_xl_version__) && __open_xl_version__ >= 17
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+
 inline void debug_screencast(
         const char *__restrict fmt,
         ...
