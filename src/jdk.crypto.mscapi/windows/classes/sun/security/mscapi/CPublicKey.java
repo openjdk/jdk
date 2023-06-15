@@ -93,7 +93,7 @@ public abstract class CPublicKey extends CKey implements PublicKey {
                     // ignore
                 }
             }
-            return encoding.clone();
+            return (encoding == null) ? null : encoding.clone();
         }
 
         @Override
@@ -179,7 +179,7 @@ public abstract class CPublicKey extends CKey implements PublicKey {
                     // ignore
                 }
             }
-            return encoding.clone();
+            return (encoding == null) ? null : encoding.clone();
         }
 
         private native byte[] getExponent(byte[] keyBlob) throws KeyException;

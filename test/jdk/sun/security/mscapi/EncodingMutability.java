@@ -2,7 +2,7 @@
  * @test
  * @bug 8308808
  * @requires os.family == "windows"
- * @modules jdk.crypto.mscapi/sun.security.mscapi
+ * @modules jdk.crypto.mscapi
  * @run main EncodingMutability
  */
 
