@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -163,16 +163,22 @@ public class SimpleTaglet extends BaseTaglet implements InheritableTaglet {
     }
 
     @Override
-    public Output inherit(Element owner, DocTree tag, boolean isFirstSentence, BaseConfiguration configuration) {
-        assert owner.getKind() == ElementKind.METHOD;
+    public Output inherit(Element dst, Element src, DocTree tag, boolean isFirstSentence, BaseConfiguration configuration) {
+        assert dst.getKind() == ElementKind.METHOD;
         assert !isFirstSentence;
         try {
             var docFinder = configuration.utils.docFinder();
-            var r = docFinder.trySearch((ExecutableElement) owner,
-                    m -> Result.fromOptional(extractFirst(m, configuration.utils))).toOptional();
+            Optional<Documentation> r;
+            if (src == null) {
+                r = docFinder.find((ExecutableElement) dst,
+                        m -> Result.fromOptional(extractFirst(m, configuration.utils))).toOptional();
+            } else {
+                r = docFinder.search((ExecutableElement) src,
+                        m -> Result.fromOptional(extractFirst(m, configuration.utils))).toOptional();
+            }
             return r.map(result -> new Output(result.tag, result.method, result.description, true))
                     .orElseGet(()->new Output(null, null, List.of(), true));
-        } catch (DocFinder.NoOverriddenMethodsFound e) {
+        } catch (DocFinder.NoOverriddenMethodFound e) {
             return new Output(null, null, List.of(), false);
         }
     }

@@ -28,7 +28,7 @@
  * @library  /tools/lib ../../lib
  * @modules  jdk.javadoc/jdk.javadoc.internal.tool
  * @build    toolbox.ToolBox javadoc.tester.*
- * @run main Unnamed
+ * @run main TestUnnamed
  */
 
 import java.io.File;
@@ -39,14 +39,14 @@ import java.nio.file.Path;
 import javadoc.tester.JavadocTester;
 import toolbox.ToolBox;
 
-public class Unnamed extends JavadocTester {
+public class TestUnnamed extends JavadocTester {
 
     private static final String thisVersion = System.getProperty("java.specification.version");
 
     private static final ToolBox tb = new ToolBox();
 
     public static void main(String... args) throws Exception {
-        new Unnamed().runTests();
+        new TestUnnamed().runTests();
     }
 
     @Test
