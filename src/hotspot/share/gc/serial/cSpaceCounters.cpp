@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,8 @@
 
 CSpaceCounters::CSpaceCounters(const char* name, int ordinal, size_t max_size,
                                ContiguousSpace* s, GenerationCounters* gc) :
-   _space(s) {
+   _space(s),
+   _perf_used_helper(nullptr) {
 
   if (UsePerfData) {
     EXCEPTION_MARK;
@@ -54,8 +55,9 @@ CSpaceCounters::CSpaceCounters(const char* name, int ordinal, size_t max_size,
                                                  _space->capacity(), CHECK);
 
     cname = PerfDataManager::counter_name(_name_space, "used");
+    _perf_used_helper = new ContiguousSpaceUsedHelper(_space);
     _used = PerfDataManager::create_variable(SUN_GC, cname, PerfData::U_Bytes,
-                                    new ContiguousSpaceUsedHelper(_space),
+                                    _perf_used_helper,
                                     CHECK);
 
     cname = PerfDataManager::counter_name(_name_space, "initCapacity");
@@ -65,6 +67,7 @@ CSpaceCounters::CSpaceCounters(const char* name, int ordinal, size_t max_size,
 }
 
 CSpaceCounters::~CSpaceCounters() {
+  delete _perf_used_helper;
   FREE_C_HEAP_ARRAY(char, _name_space);
 }
 
