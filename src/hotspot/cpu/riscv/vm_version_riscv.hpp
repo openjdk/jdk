@@ -47,8 +47,8 @@ class VM_Version : public Abstract_VM_Version {
     bool              _enabled;
     int64_t           _value;
    public:
-    RVFeatureValue(const char* pretty, uint64_t bit, bool fstring) :
-      _pretty(pretty), _feature_string(fstring), _feature_bit(nth_bit(bit)),
+    RVFeatureValue(const char* pretty, int bit_num, bool fstring) :
+      _pretty(pretty), _feature_string(fstring), _feature_bit(nth_bit(bit_num)),
       _enabled(false), _value(-1) {
     }
     void enable_feature(int64_t value = 0) {
@@ -111,6 +111,8 @@ class VM_Version : public Abstract_VM_Version {
   // unaligned_access Unaligned memory accesses (unknown, unspported, emulated, slow, firmware, fast)
   // satp mode SATP bits (number of virtual addr bits) mbare, sv39, sv48, sv57, sv64
 
+  #define NO_BIT (BitsPerWord+1) // nth_bit will return 0 on values larger than BitsPerWord
+
   // declaration name  , extension name,    bit pos ,in str, mapped flag)
   #define RV_FEATURE_FLAGS(decl)                                                             \
   decl(ext_I           , "i"           , ('I' - 'A'), true , NO_UPDATE_DEFAULT)              \
@@ -122,24 +124,24 @@ class VM_Version : public Abstract_VM_Version {
   decl(ext_Q           , "q"           , ('Q' - 'A'), true , NO_UPDATE_DEFAULT)              \
   decl(ext_H           , "h"           , ('H' - 'A'), true , NO_UPDATE_DEFAULT)              \
   decl(ext_V           , "v"           , ('V' - 'A'), true , UPDATE_DEFAULT(UseRVV))         \
-  decl(ext_Zicbom      , "Zicbom"      ,           0, true , UPDATE_DEFAULT(UseZicbom))      \
-  decl(ext_Zicboz      , "Zicboz"      ,           0, true , UPDATE_DEFAULT(UseZicboz))      \
-  decl(ext_Zicbop      , "Zicbop"      ,           0, true , UPDATE_DEFAULT(UseZicbop))      \
-  decl(ext_Zba         , "Zba"         ,           0, true , UPDATE_DEFAULT(UseZba))         \
-  decl(ext_Zbb         , "Zbb"         ,           0, true , UPDATE_DEFAULT(UseZbb))         \
-  decl(ext_Zbc         , "Zbc"         ,           0, true , NO_UPDATE_DEFAULT)              \
-  decl(ext_Zbs         , "Zbs"         ,           0, true , UPDATE_DEFAULT(UseZbs))         \
-  decl(ext_Zicsr       , "Zicsr"       ,           0, true , NO_UPDATE_DEFAULT)              \
-  decl(ext_Zifencei    , "Zifencei"    ,           0, true , NO_UPDATE_DEFAULT)              \
-  decl(ext_Zic64b      , "Zic64b"      ,           0, true , UPDATE_DEFAULT(UseZic64b))      \
-  decl(ext_Zihintpause , "Zihintpause" ,           0, true , UPDATE_DEFAULT(UseZihintpause)) \
-  decl(mvendorid       , "VendorId"    ,           0, false, NO_UPDATE_DEFAULT)              \
-  decl(marchid         , "ArchId"      ,           0, false, NO_UPDATE_DEFAULT)              \
-  decl(mimpid          , "ImpId"       ,           0, false, NO_UPDATE_DEFAULT)              \
-  decl(unaligned_access, "Unaligned"   ,           0, false, NO_UPDATE_DEFAULT)              \
-  decl(satp_mode       , "SATP"        ,           0, false, NO_UPDATE_DEFAULT)              \
+  decl(ext_Zicbom      , "Zicbom"      ,      NO_BIT, true , UPDATE_DEFAULT(UseZicbom))      \
+  decl(ext_Zicboz      , "Zicboz"      ,      NO_BIT, true , UPDATE_DEFAULT(UseZicboz))      \
+  decl(ext_Zicbop      , "Zicbop"      ,      NO_BIT, true , UPDATE_DEFAULT(UseZicbop))      \
+  decl(ext_Zba         , "Zba"         ,      NO_BIT, true , UPDATE_DEFAULT(UseZba))         \
+  decl(ext_Zbb         , "Zbb"         ,      NO_BIT, true , UPDATE_DEFAULT(UseZbb))         \
+  decl(ext_Zbc         , "Zbc"         ,      NO_BIT, true , NO_UPDATE_DEFAULT)              \
+  decl(ext_Zbs         , "Zbs"         ,      NO_BIT, true , UPDATE_DEFAULT(UseZbs))         \
+  decl(ext_Zicsr       , "Zicsr"       ,      NO_BIT, true , NO_UPDATE_DEFAULT)              \
+  decl(ext_Zifencei    , "Zifencei"    ,      NO_BIT, true , NO_UPDATE_DEFAULT)              \
+  decl(ext_Zic64b      , "Zic64b"      ,      NO_BIT, true , UPDATE_DEFAULT(UseZic64b))      \
+  decl(ext_Zihintpause , "Zihintpause" ,      NO_BIT, true , UPDATE_DEFAULT(UseZihintpause)) \
+  decl(mvendorid       , "VendorId"    ,      NO_BIT, false, NO_UPDATE_DEFAULT)              \
+  decl(marchid         , "ArchId"      ,      NO_BIT, false, NO_UPDATE_DEFAULT)              \
+  decl(mimpid          , "ImpId"       ,      NO_BIT, false, NO_UPDATE_DEFAULT)              \
+  decl(unaligned_access, "Unaligned"   ,      NO_BIT, false, NO_UPDATE_DEFAULT)              \
+  decl(satp_mode       , "SATP"        ,      NO_BIT, false, NO_UPDATE_DEFAULT)              \
 
-  #define DECLARE_RV_FEATURE(NAME, PRETTY, BIT, FSTRING, FLAGF)   \
+  #define DECLARE_RV_FEATURE(NAME, PRETTY, BIT, FSTRING, FLAGF)        \
   struct NAME##RVFeatureValue : public RVFeatureValue {                \
     NAME##RVFeatureValue(const char* pretty, int bit, bool fstring) :  \
       RVFeatureValue(pretty, bit, fstring) {}                          \
