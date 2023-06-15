@@ -21,22 +21,25 @@
  * questions.
  */
 
-import java.security.KeyPairGenerator;
+import java.util.Optional;
 
 /*
  * @test
  * @bug 8308398
  * @summary Verify jdk.crypto.ec dummy module exists
- * @library /test/lib
- * @module jdk.crypto.ec
- * @run ecModuleCheck
- *
- * This test verifies that with jdk.crypto.ec loaded that the EC modules is
+ * @modules jdk.crypto.ec
+ * @run main ecModuleCheck
+ */
+
+/* This test verifies that with jdk.crypto.ec loaded that the EC modules is
  * available. The KeyPairGenerator is just to verify SunEC is working.  Other
  * tests access internal sun.security.ec APIs from java.base (see TestEC.java)
  */
 public class ecModuleCheck {
     public static void main(String[] args) throws Exception {
-        KeyPairGenerator.getInstance("secp256r1");
+        if (!ModuleLayer.boot().findModule("jdk.crypto.ec").isPresent()) {
+            throw new AssertionError("jdk.crypto.ec module does not exist");
+        }
+        System.out.println("jdk.crypto.ec module exists");
     }
 }
