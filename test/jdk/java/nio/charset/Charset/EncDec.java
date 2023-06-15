@@ -36,11 +36,20 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class EncDec {
 
+    /**
+     * Test that the input String is the same after round tripping
+     * the Charset.encode() and Charset.decode() methods.
+     */
     @ParameterizedTest
     @MethodSource("stringProvider")
     public void testRoundTrip(String pre) {
         ByteBuffer bb = ByteBuffer.allocate(100);
-        bb.put(Charset.forName("ISO-8859-15").encode(pre)).flip();
+        Charset preCs = Charset.forName("ISO-8859-15");
+        if (!preCs.canEncode()) {
+            throw new RuntimeException("Error: Trying to test encode and " +
+                    "decode methods on a charset that does not support encoding");
+        }
+        bb.put(preCs.encode(pre)).flip();
         String post = Charset.forName("UTF-8").decode(bb).toString();
         assertEquals(pre, post, "Mismatch after encoding + decoding, :");
     }
