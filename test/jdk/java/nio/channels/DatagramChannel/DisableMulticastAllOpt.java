@@ -131,6 +131,12 @@ public class DisableMulticastAllOpt {
         }
         if (!is_4_20_orGreater()) {
             System.out.println("Kernel < 4.20. Not running test");
+            /* Just check that attempting to create a socket
+             * does not throw an exception. The setsockopt()
+             * should fail silently
+             */
+            var ch1 = getChannel(0);
+            ch1.close();
             return;
         }
         System.out.println("Kernel >= 4.20. Running test");

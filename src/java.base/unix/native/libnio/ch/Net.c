@@ -299,26 +299,27 @@ Java_sun_nio_ch_Net_socket0(JNIEnv *env, jclass cl, jboolean preferIPv6,
             close(fd);
             return -1;
         }
-        if (level == IPPROTO_IPV6) {
-            if ((setsockopt(fd, level, IPV6_MULTICAST_ALL, (char*)&arg, sizeof(arg)) < 0) &&
-                (errno != ENOPROTOOPT)) {
-                JNU_ThrowByNameWithLastError(env,
-                                         JNU_JAVANETPKG "SocketException",
-                                         "Unable to set IPV6_MULTICAST_ALL");
-                close(fd);
-                return -1;
-            }
-        }
     }
 
-    /* By default, Linux uses the route default */
     if (domain == AF_INET6 && type == SOCK_DGRAM) {
+        /* By default, Linux uses the route default */
         int arg = 1;
         if (setsockopt(fd, IPPROTO_IPV6, IPV6_MULTICAST_HOPS, &arg,
                        sizeof(arg)) < 0) {
             JNU_ThrowByNameWithLastError(env,
                                          JNU_JAVANETPKG "SocketException",
                                          "Unable to set IPV6_MULTICAST_HOPS");
+            close(fd);
+            return -1;
+        }
+
+        /* Disable IPV6_MULTICAST_ALL if option supported */
+        arg = 0;
+        if ((setsockopt(fd, level, IPV6_MULTICAST_ALL, (char*)&arg, sizeof(arg)) < 0) &&
+            (errno != ENOPROTOOPT)) {
+            JNU_ThrowByNameWithLastError(env,
+                                     JNU_JAVANETPKG "SocketException",
+                                     "Unable to set IPV6_MULTICAST_ALL");
             close(fd);
             return -1;
         }
