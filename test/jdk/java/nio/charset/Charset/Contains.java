@@ -23,7 +23,7 @@
 
 /* @test
  * @summary Unit test for charset containment
- * @bug 6798572 8310049
+ * @bug 6798572 8167252 8310049
  * @modules jdk.charsets
  * @run junit Contains
  */
@@ -32,11 +32,13 @@ import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.stream.Stream;
 
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class Contains {
 
@@ -52,14 +54,24 @@ public class Contains {
         shouldContain(containerCs, cs, cont);
     }
 
-    static void shouldContain(Charset containerCs, Charset cs, boolean cont){
-        assertEquals((containerCs.contains(cs)), cont);
-        System.err.printf("%s %s %s", containerCs.name(),
-                (cont ? " contains " : " does not contain "), cs.name());
+    /**
+     * Tests the assertion in the contains() method: "Every charset contains itself."
+     */
+    @Test
+    public void containsSelfTest() {
+        for (var entry : Charset.availableCharsets().entrySet()) {
+            Charset charset = entry.getValue();
+            boolean contains = charset.contains(charset);
+            assertTrue(contains, String.format("Charset(%s).contains(Charset(%s)) returns %s",
+                    charset.name(), charset.name(), contains));
+        }
     }
 
-    // All charsets in utfNames should contain
-    // all the charsets in charsetNames
+    static void shouldContain(Charset containerCs, Charset cs, boolean cont){
+        assertEquals((containerCs.contains(cs)), cont, String.format("%s %s %s",
+                containerCs.name(), (cont ? " contains " : " does not contain "), cs.name()));
+    }
+
     private static Stream<Arguments> utfCharsets() {
         String[] utfNames = {
                 "utf-16",
@@ -125,6 +137,8 @@ public class Contains {
                 "Shift_JIS"
         };
 
+        // All charsets in utfNames should contain
+        // all charsets in charsetNames
         return Arrays.stream(utfNames).flatMap(cs1 -> Arrays.stream(charsetNames)
                 .map(cs2 -> Arguments.of(Charset.forName(cs1), Charset.forName(cs2), true)));
     }
