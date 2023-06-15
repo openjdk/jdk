@@ -1122,10 +1122,9 @@ public class JavaCompiler {
     public void initProcessAnnotations(Iterable<? extends Processor> processors,
                                        Collection<? extends JavaFileObject> initialFiles,
                                        Collection<String> initialClassNames) {
-        // Process annotations if processing is requested and there is
-        // at least one Processor available.
-        if (options.isSet(PROC, "none") &&
-            !explicitAnnotationProcessingRequested()) {
+        // Process annotations if processing is not disabled and there
+        // is at least one Processor available.
+        if (options.isSet(PROC, "none")) {
             processAnnotations = false;
         } else if (procEnvImpl == null) {
             procEnvImpl = JavacProcessingEnvironment.instance(context);
