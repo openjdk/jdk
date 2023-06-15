@@ -58,6 +58,8 @@ import javadoc.tester.JavadocTester;
 import jtreg.SkippedException;
 import toolbox.ToolBox;
 
+import static javadoc.tester.JavadocTester.Exit.OK;
+
 /*
  * These tests assert search order for _undirected_ documentation inheritance by
  * following a series of javadoc runs on a progressively undocumented hierarchy
@@ -220,7 +222,7 @@ public class TestMethodCommentsAlgorithm extends JavadocTester {
                 "--module-source-path", src.toAbsolutePath().toString(),
                 "mymodule/x");
 
-        checkExit(Exit.OK);
+        checkExit(OK);
     }
 
     private static String generateDocComment(int index, int run) {
@@ -290,6 +292,75 @@ public class TestMethodCommentsAlgorithm extends JavadocTester {
     }
 
     /*
+     * Nested/recursive `{@inheritDoc}` are processed before the comments that
+     * refer to them. This test highlights that a lone `{@inheritDoc}` is
+     * different from a missing/empty comment part.
+     *
+     * Whenever doclet sees `{@inheritDoc}` or `{@inheritDoc <supertype>}`
+     * while searching for a comment to inherit from up the hierarchy, it
+     * considers the comment found. A separate and unrelated search is
+     * then performed for that found `{@inheritDoc}`.
+     *
+     * The test case is wrapped in a module in order to be able to patch
+     * java.base (otherwise it doesn't seem to work).
+     */
+    @Test
+    public void testRecursiveInheritDocTagsAreProcessedFirst(Path base) throws Exception {
+        Path p = Path.of(System.getProperty("test.src", ".")).toAbsolutePath();
+        while (!Files.exists(p.resolve("TEST.ROOT"))) {
+            p = p.getParent();
+            if (p == null) {
+                throw new SkippedException("can't find TEST.ROOT");
+            }
+        }
+        System.err.println("Test suite root: " + p);
+        Path javaBase = p.resolve("../../src/java.base").normalize();
+        if (!Files.exists(javaBase)) {
+            throw new SkippedException("can't find java.base");
+        }
+        System.err.println("java.base: " + javaBase);
+
+        Path src = base.resolve("src");
+        tb.writeJavaFiles(src.resolve("mymodule"), """
+                package x;
+                public class S {
+                    /** {@inheritDoc} */
+                    public boolean equals(Object obj) { return super.equals(obj); }
+                }
+                """, """
+                package x;
+                public interface I {
+                    /** I::equals */
+                    boolean equals(Object obj);
+                }
+                """, """
+                package x;
+                public class T extends S implements I {
+                    public boolean equals(Object obj) { return super.equals(obj); }
+                }
+                """, """
+                module mymodule {}
+                """);
+
+        createPatchedJavaLangObject(javaBase.resolve("share").resolve("classes").toAbsolutePath(),
+                Files.createDirectories(src.resolve("java.base")).toAbsolutePath(),
+                "Object::equals");
+
+        javadoc("-d", base.resolve("out").toString(),
+                "-tag", "apiNote:a:API Note:",
+                "-tag", "implSpec:a:Implementation Requirements:",
+                "-tag", "implNote:a:Implementation Note:",
+                "--patch-module", "java.base=" + src.resolve("java.base").toAbsolutePath().toString(),
+                "--module-source-path", src.toAbsolutePath().toString(),
+                "mymodule/x");
+
+        checkExit(Exit.OK);
+
+        new OutputChecker("mymodule/x/T.html").check("""
+                <div class="block">Object::equals</div>""");
+    }
+
+    /*
      * Generates source for the i-th run such that types whose index is less
      * than i provide no documentation and those whose index is greater or
      * equal to i provide documentation.
@@ -343,7 +414,7 @@ public class TestMethodCommentsAlgorithm extends JavadocTester {
                 "--module-source-path", src.toAbsolutePath().toString(),
                 "mymodule/x");
 
-        checkExit(Exit.OK);
+        checkExit(OK);
     }
 
     /*
