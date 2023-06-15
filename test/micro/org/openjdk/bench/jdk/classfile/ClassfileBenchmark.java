@@ -70,8 +70,8 @@ public class ClassfileBenchmark {
         genSM = Classfile.of(Classfile.StackMapsOption.GENERATE_STACK_MAPS);
         benchModel = Classfile.of().parse(benchBytes);
         threeLevelNoop = ClassTransform.transformingMethodBodies(CodeTransform.ACCEPT_ALL);
-        //warmup the model
-        sharedCP.transform(benchModel, threeLevelNoop);
+        //expand the model
+        consume(benchModel);
     }
 
     @Benchmark
