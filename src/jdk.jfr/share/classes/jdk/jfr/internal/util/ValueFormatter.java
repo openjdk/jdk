@@ -146,11 +146,13 @@ public final class ValueFormatter {
         return name;
     }
 
-    // handle Long.MIN_VALUE as a special case since its absolute value is negative
     private static String formatDataAmount(String formatter, long amount) {
-        int exp = (amount == Long.MIN_VALUE) ? 6 : (int) (Math.log(Math.abs(amount)) / Math.log(1024));
-        char unitPrefix = "kMGTPE".charAt(exp - 1);
-        return String.format(formatter, amount / Math.pow(1024, exp), unitPrefix);
+        if (amount == Long.MIN_VALUE) {
+            return "N/A";
+        }
+        int exp = (int) (Math.log(Math.abs(amount)) / Math.log(1024));
+        char unit = "kMGTPE".charAt(exp - 1);
+        return String.format(formatter, amount / Math.pow(1024, exp), unit);
     }
 
     public static String formatBytesCompact(long bytes) {
