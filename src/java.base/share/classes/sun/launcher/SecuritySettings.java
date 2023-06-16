@@ -25,11 +25,10 @@
 
 package sun.launcher;
 
-import jdk.internal.access.SharedSecrets;
-
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocket;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
 import java.security.Security;
@@ -40,10 +39,9 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import jdk.internal.access.SharedSecrets;
 import static sun.launcher.LauncherHelper.INDENT;
 import static sun.launcher.LauncherHelper.TWOINDENT;
-import static sun.launcher.LauncherHelper.ostream;
-
 
 /**
  * A utility class for security libs functionality
@@ -53,8 +51,10 @@ public final class SecuritySettings {
 
     private static final String THREEINDENT = TWOINDENT + INDENT;
     private static final String PROV_INFO_STRING = "Provider information: ";
+    private static PrintStream ostream = null;
 
-    static void printSecuritySettings(String arg) {
+    static void printSecuritySettings(String arg, PrintStream stream) {
+        ostream = stream;
         switch (arg) {
             case "properties" -> printSecurityProperties();
             case "providers"  -> printSecurityProviderConfig(true);
@@ -70,7 +70,8 @@ public final class SecuritySettings {
     }
 
     // A non-verbose description of some core security configuration settings
-    static void printSecuritySummarySettings() {
+    static void printSecuritySummarySettings(PrintStream stream) {
+        ostream = stream;
         ostream.println("Security settings summary: " + "\n" +
                 INDENT + "See \"java -X\" for verbose security settings options");
         printSecurityProviderConfig(false);

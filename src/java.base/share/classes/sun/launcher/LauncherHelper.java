@@ -129,7 +129,7 @@ public final class LauncherHelper {
         private static final ResourceBundle RB =
                 ResourceBundle.getBundle(defaultBundleName);
     }
-    static PrintStream ostream;
+    private static PrintStream ostream;
     private static Class<?> appClass; // application class, for GUI/reporting purposes
 
     /*
@@ -175,7 +175,7 @@ public final class LauncherHelper {
                 break;
             case "security":
                 var opt = opts.length > 2 ? opts[2].trim() : "all";
-                SecuritySettings.printSecuritySettings(opt);
+                SecuritySettings.printSecuritySettings(opt, ostream);
                 break;
             case "system":
                 if (OperatingSystem.isLinux()) {
@@ -186,7 +186,7 @@ public final class LauncherHelper {
                 printVmSettings(initialHeapSize, maxHeapSize, stackSize);
                 printProperties();
                 printLocale();
-                SecuritySettings.printSecuritySummarySettings();
+                SecuritySettings.printSecuritySummarySettings(ostream);
                 if (OperatingSystem.isLinux()) {
                     printSystemMetrics();
                 }
