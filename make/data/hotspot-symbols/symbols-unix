@@ -181,6 +181,7 @@ JVM_NewArray
 JVM_NewInstanceFromConstructor
 JVM_NewMultiArray
 JVM_PhantomReferenceRefersTo
+JVM_PrintWarningAtDynamicAgentLoad
 JVM_RaiseSignal
 JVM_RawMonitorCreate
 JVM_RawMonitorDestroy
@@ -199,7 +200,7 @@ JVM_SetNativeThreadName
 JVM_SetPrimitiveArrayElement
 JVM_SetStackWalkContinuation
 JVM_SetThreadPriority
-JVM_Sleep
+JVM_SleepNanos
 JVM_StartThread
 JVM_SupportsCX8
 JVM_TotalMemory

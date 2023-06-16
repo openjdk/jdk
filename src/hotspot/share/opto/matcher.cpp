@@ -62,6 +62,7 @@ const uint Matcher::_end_rematerialize   = _END_REMATERIALIZE;
 Matcher::Matcher()
 : PhaseTransform( Phase::Ins_Select ),
   _states_arena(Chunk::medium_size, mtCompiler),
+  _new_nodes(C->comp_arena()),
   _visited(&_states_arena),
   _shared(&_states_arena),
   _dontcare(&_states_arena),
@@ -334,7 +335,7 @@ void Matcher::match( ) {
   Node* new_ideal_null = ConNode::make(TypePtr::NULL_PTR);
 
   // Swap out to old-space; emptying new-space
-  Arena *old = C->node_arena()->move_contents(C->old_arena());
+  Arena* old = C->swap_old_and_new();
 
   // Save debug and profile information for nodes in old space:
   _old_node_note_array = C->node_note_array();
@@ -2379,20 +2380,6 @@ void Matcher::find_shared_post_visit(Node* n, uint opcode) {
       // or vice-versa, but I do not want to debug this for Ladybird.
       // 10/2/2000 CNC.
       Node* pair1 = new BinaryNode(n->in(1), n->in(1)->in(1));
-      n->set_req(1, pair1);
-      Node* pair2 = new BinaryNode(n->in(2), n->in(3));
-      n->set_req(2, pair2);
-      n->del_req(3);
-      break;
-    }
-    case Op_CMoveVF:
-    case Op_CMoveVD: {
-      // Restructure into a binary tree for Matching:
-      // CMoveVF (Binary bool mask) (Binary src1 src2)
-      Node* in_cc = n->in(1);
-      assert(in_cc->is_Con(), "The condition input of cmove vector node must be a constant.");
-      Node* bol = new BoolNode(in_cc, (BoolTest::mask)in_cc->get_int());
-      Node* pair1 = new BinaryNode(bol, in_cc);
       n->set_req(1, pair1);
       Node* pair2 = new BinaryNode(n->in(2), n->in(3));
       n->set_req(2, pair2);

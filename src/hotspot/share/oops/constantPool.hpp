@@ -259,15 +259,13 @@ class ConstantPool : public Metadata {
   // Given the per-instruction index of an indy instruction, report the
   // main constant pool entry for its bootstrap specifier.
   // From there, uncached_name/signature_ref_at will get the name/type.
-  int invokedynamic_bootstrap_ref_index_at(int indy_index) const {
-    return cache()->resolved_indy_entry_at(decode_invokedynamic_index(indy_index))->constant_pool_index();
-  }
+  inline u2 invokedynamic_bootstrap_ref_index_at(int indy_index) const;
 
   // Assembly code support
-  static int tags_offset_in_bytes()         { return offset_of(ConstantPool, _tags); }
-  static int cache_offset_in_bytes()        { return offset_of(ConstantPool, _cache); }
-  static int pool_holder_offset_in_bytes()  { return offset_of(ConstantPool, _pool_holder); }
-  static int resolved_klasses_offset_in_bytes()    { return offset_of(ConstantPool, _resolved_klasses); }
+  static ByteSize tags_offset()         { return byte_offset_of(ConstantPool, _tags); }
+  static ByteSize cache_offset()        { return byte_offset_of(ConstantPool, _cache); }
+  static ByteSize pool_holder_offset()  { return byte_offset_of(ConstantPool, _pool_holder); }
+  static ByteSize resolved_klasses_offset()    { return byte_offset_of(ConstantPool, _resolved_klasses); }
 
   // Storing constants
 
@@ -501,26 +499,26 @@ class ConstantPool : public Metadata {
   // Derived queries:
   Symbol* method_handle_name_ref_at(int which) {
     int member = method_handle_index_at(which);
-    return impl_name_ref_at(member, true);
+    return uncached_name_ref_at(member);
   }
   Symbol* method_handle_signature_ref_at(int which) {
     int member = method_handle_index_at(which);
-    return impl_signature_ref_at(member, true);
+    return uncached_signature_ref_at(member);
   }
-  int method_handle_klass_index_at(int which) {
+  u2 method_handle_klass_index_at(int which) {
     int member = method_handle_index_at(which);
-    return impl_klass_ref_index_at(member, true);
+    return uncached_klass_ref_index_at(member);
   }
   Symbol* method_type_signature_at(int which) {
     int sym = method_type_index_at(which);
     return symbol_at(sym);
   }
 
-  int bootstrap_name_and_type_ref_index_at(int which) {
+  u2 bootstrap_name_and_type_ref_index_at(int which) {
     assert(tag_at(which).has_bootstrap(), "Corrupted constant pool");
     return extract_high_short_from_int(*int_at_addr(which));
   }
-  int bootstrap_methods_attribute_index(int which) {
+  u2 bootstrap_methods_attribute_index(int which) {
     assert(tag_at(which).has_bootstrap(), "Corrupted constant pool");
     return extract_low_short_from_int(*int_at_addr(which));
   }
@@ -657,21 +655,29 @@ class ConstantPool : public Metadata {
   // FIXME: Remove the dynamic check, and adjust all callers to specify the correct mode.
 
   // Lookup for entries consisting of (klass_index, name_and_type index)
-  Klass* klass_ref_at(int which, TRAPS);
-  Symbol* klass_ref_at_noresolve(int which);
-  Symbol* name_ref_at(int which)                { return impl_name_ref_at(which, false); }
-  Symbol* signature_ref_at(int which)           { return impl_signature_ref_at(which, false); }
+  Klass* klass_ref_at(int which, Bytecodes::Code code, TRAPS);
+  Symbol* klass_ref_at_noresolve(int which, Bytecodes::Code code);
+  Symbol* name_ref_at(int which, Bytecodes::Code code) {
+    int name_index = name_ref_index_at(name_and_type_ref_index_at(which, code));
+    return symbol_at(name_index);
+  }
+  Symbol* signature_ref_at(int which, Bytecodes::Code code) {
+    int signature_index = signature_ref_index_at(name_and_type_ref_index_at(which, code));
+    return symbol_at(signature_index);
+  }
 
-  int klass_ref_index_at(int which)               { return impl_klass_ref_index_at(which, false); }
-  int name_and_type_ref_index_at(int which)       { return impl_name_and_type_ref_index_at(which, false); }
+  u2 klass_ref_index_at(int which, Bytecodes::Code code);
+  u2 name_and_type_ref_index_at(int which, Bytecodes::Code code);
 
   int remap_instruction_operand_from_cache(int operand);  // operand must be biased by CPCACHE_INDEX_TAG
 
-  constantTag tag_ref_at(int cp_cache_index)      { return impl_tag_ref_at(cp_cache_index, false); }
+  constantTag tag_ref_at(int cp_cache_index, Bytecodes::Code code);
+
+  int to_cp_index(int which, Bytecodes::Code code);
 
   // Lookup for entries consisting of (name_index, signature_index)
-  int name_ref_index_at(int which_nt);            // ==  low-order jshort of name_and_type_at(which_nt)
-  int signature_ref_index_at(int which_nt);       // == high-order jshort of name_and_type_at(which_nt)
+  u2 name_ref_index_at(int which_nt);            // ==  low-order jshort of name_and_type_at(which_nt)
+  u2 signature_ref_index_at(int which_nt);       // == high-order jshort of name_and_type_at(which_nt)
 
   BasicType basic_type_for_signature_at(int which) const;
 
@@ -769,11 +775,17 @@ class ConstantPool : public Metadata {
   // Routines currently used for annotations (only called by jvm.cpp) but which might be used in the
   // future by other Java code. These take constant pool indices rather than
   // constant pool cache indices as do the peer methods above.
-  Symbol* uncached_klass_ref_at_noresolve(int which);
-  Symbol* uncached_name_ref_at(int which)                 { return impl_name_ref_at(which, true); }
-  Symbol* uncached_signature_ref_at(int which)            { return impl_signature_ref_at(which, true); }
-  int       uncached_klass_ref_index_at(int which)          { return impl_klass_ref_index_at(which, true); }
-  int       uncached_name_and_type_ref_index_at(int which)  { return impl_name_and_type_ref_index_at(which, true); }
+  Symbol* uncached_klass_ref_at_noresolve(int cp_index);
+  Symbol* uncached_name_ref_at(int cp_index) {
+    int name_index = name_ref_index_at(uncached_name_and_type_ref_index_at(cp_index));
+    return symbol_at(name_index);
+  }
+  Symbol* uncached_signature_ref_at(int cp_index) {
+    int signature_index = signature_ref_index_at(uncached_name_and_type_ref_index_at(cp_index));
+    return symbol_at(signature_index);
+  }
+  u2 uncached_klass_ref_index_at(int cp_index);
+  u2 uncached_name_and_type_ref_index_at(int cp_index);
 
   // Sharing
   int pre_resolve_shared_klasses(TRAPS);
@@ -799,13 +811,6 @@ class ConstantPool : public Metadata {
   void set_resolved_references(OopHandle s) { _cache->set_resolved_references(s); }
   Array<u2>* reference_map() const        {  return (_cache == nullptr) ? nullptr :  _cache->reference_map(); }
   void set_reference_map(Array<u2>* o)    { _cache->set_reference_map(o); }
-
-  Symbol* impl_name_ref_at(int which, bool uncached);
-  Symbol* impl_signature_ref_at(int which, bool uncached);
-
-  int       impl_klass_ref_index_at(int which, bool uncached);
-  int       impl_name_and_type_ref_index_at(int which, bool uncached);
-  constantTag impl_tag_ref_at(int which, bool uncached);
 
   // Used while constructing constant pool (only by ClassFileParser)
   jint klass_index_at(int which) {
@@ -915,15 +920,9 @@ class ConstantPool : public Metadata {
   const char* internal_name() const { return "{constant pool}"; }
 
   // ResolvedIndyEntry getters
-  ResolvedIndyEntry* resolved_indy_entry_at(int index) {
-    return cache()->resolved_indy_entry_at(index);
-  }
-  int resolved_indy_entries_length() {
-    return cache()->resolved_indy_entries_length();
-  }
-  oop resolved_reference_from_indy(int index) {
-    return resolved_references()->obj_at(cache()->resolved_indy_entry_at(index)->resolved_references_index());
-  }
+  inline ResolvedIndyEntry* resolved_indy_entry_at(int index);
+  inline int resolved_indy_entries_length() const;
+  inline oop resolved_reference_from_indy(int index) const;
 };
 
 #endif // SHARE_OOPS_CONSTANTPOOL_HPP

@@ -127,12 +127,13 @@ inline void SlidingForwarding::forward_to_impl(oop from, oop to) {
   }
 }
 
+template<bool ALT_FWD>
 inline void SlidingForwarding::forward_to(oop obj, oop fwd) {
 #ifdef _LP64
-  if (UseAltGCForwarding) {
+  if (ALT_FWD) {
     assert(_bases_table != nullptr, "expect sliding forwarding initialized");
     forward_to_impl(obj, fwd);
-    assert(forwardee(obj) == fwd, "must be forwarded to correct forwardee");
+    assert(forwardee<ALT_FWD>(obj) == fwd, "must be forwarded to correct forwardee");
   } else
 #endif
   {
@@ -154,9 +155,10 @@ inline oop SlidingForwarding::forwardee_impl(oop from) {
   return cast_to_oop(to);
 }
 
+template<bool ALT_FWD>
 inline oop SlidingForwarding::forwardee(oop obj) {
 #ifdef _LP64
-  if (UseAltGCForwarding) {
+  if (ALT_FWD) {
     assert(_bases_table != nullptr, "expect sliding forwarding initialized");
     return forwardee_impl(obj);
   } else

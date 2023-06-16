@@ -976,14 +976,13 @@ void LIR_Assembler::emit_opConvert(LIR_OpConvert* op) {
     case Bytecodes::_i2c:
       __ zero_extend(dest->as_register(), src->as_register(), 16); break;
     case Bytecodes::_i2l:
-      __ addw(dest->as_register_lo(), src->as_register(), zr); break;
+      __ sign_extend(dest->as_register_lo(), src->as_register(), 32); break;
     case Bytecodes::_i2s:
       __ sign_extend(dest->as_register(), src->as_register(), 16); break;
     case Bytecodes::_i2b:
       __ sign_extend(dest->as_register(), src->as_register(), 8); break;
     case Bytecodes::_l2i:
-      _masm->block_comment("FIXME: This coulde be no-op");
-      __ addw(dest->as_register(), src->as_register_lo(), zr); break;
+      __ sign_extend(dest->as_register(), src->as_register_lo(), 32); break;
     case Bytecodes::_d2l:
       __ fcvt_l_d_safe(dest->as_register_lo(), src->as_double_reg()); break;
     case Bytecodes::_f2i:
@@ -1304,7 +1303,7 @@ void LIR_Assembler::logic_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr
       int right_const = right->as_jint();
       if (Assembler::is_simm12(right_const)) {
         logic_op_imm(Rdst, Rleft, right_const, code);
-        __ addw(Rdst, Rdst, zr);
+        __ sign_extend(Rdst, Rdst, 32);
      } else {
         __ mv(t0, right_const);
         logic_op_reg32(Rdst, Rleft, t0, code);

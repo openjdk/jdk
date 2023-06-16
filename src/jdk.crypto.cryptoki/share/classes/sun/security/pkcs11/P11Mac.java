@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,11 @@ import java.nio.ByteBuffer;
 
 import java.security.*;
 import java.security.spec.AlgorithmParameterSpec;
+import java.security.spec.InvalidKeySpecException;
 
 import javax.crypto.MacSpi;
+import javax.crypto.spec.PBEKeySpec;
+import javax.crypto.spec.PBEParameterSpec;
 
 import jdk.internal.access.JavaNioAccess;
 import jdk.internal.access.SharedSecrets;
@@ -39,6 +42,7 @@ import sun.nio.ch.DirectBuffer;
 import sun.security.pkcs11.wrapper.*;
 import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
 import static sun.security.pkcs11.wrapper.PKCS11Exception.RV.*;
+import sun.security.util.PBEUtil;
 
 /**
  * MAC implementation class. This class currently supports HMAC using
@@ -65,6 +69,9 @@ final class P11Mac extends MacSpi {
     // algorithm name
     private final String algorithm;
 
+    // PBEKeyInfo if algorithm is PBE-related, otherwise null
+    private final P11SecretKeyFactory.PBEKeyInfo svcPbeKi;
+
     // mechanism object
     private final CK_MECHANISM ckMechanism;
 
@@ -88,6 +95,7 @@ final class P11Mac extends MacSpi {
         super();
         this.token = token;
         this.algorithm = algorithm;
+        this.svcPbeKi = P11SecretKeyFactory.getPBEKeyInfo(algorithm);
         Long params = null;
         macLength = switch ((int) mechanism) {
             case (int) CKM_MD5_HMAC -> 16;
@@ -192,12 +200,53 @@ final class P11Mac extends MacSpi {
     // see JCE spec
     protected void engineInit(Key key, AlgorithmParameterSpec params)
             throws InvalidKeyException, InvalidAlgorithmParameterException {
-        if (params != null) {
-            throw new InvalidAlgorithmParameterException
-                ("Parameters not supported");
-        }
         reset(true);
-        p11Key = P11SecretKeyFactory.convertKey(token, key, algorithm);
+        p11Key = null;
+        if (svcPbeKi != null) {
+            if (key instanceof P11Key) {
+                // If the key is a P11Key, it must come from a PBE derivation
+                // because this is a PBE Mac service. In addition to checking
+                // the key, check that params (if passed) are consistent.
+                PBEUtil.checkKeyAndParams(key, params, algorithm);
+            } else {
+                // If the key is not a P11Key, a derivation is needed. Data for
+                // derivation has to be carried either as part of the key or
+                // params. Use SunPKCS11 PBE key derivation to obtain a P11Key.
+                // Assign the derived key to p11Key because conversion is never
+                // needed for this case.
+                PBEKeySpec pbeKeySpec = PBEUtil.getPBAKeySpec(key, params);
+                try {
+                    P11Key.P11PBEKey p11PBEKey =
+                            P11SecretKeyFactory.derivePBEKey(token,
+                            pbeKeySpec, svcPbeKi);
+                    // This Mac service uses the token where the derived key
+                    // lives so there won't be any need to re-derive and use
+                    // the password. The p11Key cannot be accessed out of this
+                    // class.
+                    p11PBEKey.clearPassword();
+                    p11Key = p11PBEKey;
+                } catch (InvalidKeySpecException e) {
+                    throw new InvalidKeyException(e);
+                } finally {
+                    pbeKeySpec.clearPassword();
+                }
+            }
+            if (params instanceof PBEParameterSpec pbeParams) {
+                // For PBE services, reassign params to the underlying
+                // service params. Notice that Mac services expect this
+                // value to be null.
+                params = pbeParams.getParameterSpec();
+            }
+        }
+        if (params != null) {
+            throw new InvalidAlgorithmParameterException(
+                    "Parameters not supported");
+        }
+        // In non-PBE cases and PBE cases where we didn't derive,
+        // a key conversion might be needed.
+        if (p11Key == null) {
+            p11Key = P11SecretKeyFactory.convertKey(token, key, algorithm);
+        }
         try {
             initialize();
         } catch (PKCS11Exception e) {

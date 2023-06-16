@@ -7,6 +7,11 @@
 
 <configuration version="2.0" label="Continuous" description="Low overhead configuration safe for continuous use in production environments, typically less than 1 % overhead." provider="Oracle">
 
+    <event name="jdk.ResidentSetSize">
+      <setting name="enabled">true</setting>
+      <setting name="period">1000 ms</setting>
+    </event>
+
     <event name="jdk.ThreadAllocationStatistics">
       <setting name="enabled">true</setting>
       <setting name="period">everyChunk</setting>

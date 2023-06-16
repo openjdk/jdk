@@ -325,15 +325,15 @@ inline bool java_lang_Module::is_instance(oop obj) {
 inline int Backtrace::merge_bci_and_version(int bci, int version) {
   // only store u2 for version, checking for overflow.
   if (version > USHRT_MAX || version < 0) version = USHRT_MAX;
-  assert((jushort)bci == bci, "bci should be short");
-  return build_int_from_shorts(version, bci);
+  assert((u2)bci == bci, "bci should be short");
+  return build_int_from_shorts((u2)version, (u2)bci);
 }
 
 inline int Backtrace::merge_mid_and_cpref(int mid, int cpref) {
   // only store u2 for mid and cpref, checking for overflow.
-  assert((jushort)mid == mid, "mid should be short");
-  assert((jushort)cpref == cpref, "cpref should be short");
-  return build_int_from_shorts(cpref, mid);
+  assert((u2)mid == mid, "mid should be short");
+  assert((u2)cpref == cpref, "cpref should be short");
+  return build_int_from_shorts((u2)cpref, (u2)mid);
 }
 
 inline int Backtrace::bci_at(unsigned int merged) {

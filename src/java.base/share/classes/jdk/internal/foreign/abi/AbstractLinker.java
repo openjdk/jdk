@@ -30,6 +30,7 @@ import jdk.internal.foreign.abi.aarch64.linux.LinuxAArch64Linker;
 import jdk.internal.foreign.abi.aarch64.macos.MacOsAArch64Linker;
 import jdk.internal.foreign.abi.aarch64.windows.WindowsAArch64Linker;
 import jdk.internal.foreign.abi.fallback.FallbackLinker;
+import jdk.internal.foreign.abi.ppc64.linux.LinuxPPC64leLinker;
 import jdk.internal.foreign.abi.riscv64.linux.LinuxRISCV64Linker;
 import jdk.internal.foreign.abi.x64.sysv.SysVx64Linker;
 import jdk.internal.foreign.abi.x64.windows.Windowsx64Linker;
@@ -54,11 +55,12 @@ import java.lang.invoke.MethodType;
 import java.util.List;
 import java.nio.ByteOrder;
 import java.util.Objects;
+import java.util.Set;
 
 public abstract sealed class AbstractLinker implements Linker permits LinuxAArch64Linker, MacOsAArch64Linker,
                                                                       SysVx64Linker, WindowsAArch64Linker,
-                                                                      Windowsx64Linker, LinuxRISCV64Linker,
-                                                                      FallbackLinker {
+                                                                      Windowsx64Linker, LinuxPPC64leLinker,
+                                                                      LinuxRISCV64Linker, FallbackLinker {
 
     public interface UpcallStubFactory {
         MemorySegment makeStub(MethodHandle target, Arena arena);
@@ -89,11 +91,13 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
         checkLayouts(function);
         function = stripNames(function);
         LinkerOptions optionSet = LinkerOptions.forDowncall(function, options);
+        validateVariadicLayouts(function, optionSet);
 
         return DOWNCALL_CACHE.get(new LinkRequest(function, optionSet), linkRequest ->  {
             FunctionDescriptor fd = linkRequest.descriptor();
             MethodType type = fd.toMethodType();
             MethodHandle handle = arrangeDowncall(type, fd, linkRequest.options());
+            handle = SharedUtils.maybeCheckCaptureSegment(handle, linkRequest.options());
             handle = SharedUtils.maybeInsertAllocator(fd, handle);
             return handle;
         });
@@ -133,6 +137,28 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
     /** {@return byte order used by this linker} */
     protected abstract ByteOrder linkerByteOrder();
 
+    // C spec mandates that variadic arguments smaller than int are promoted to int,
+    // and float is promoted to double
+    // See: https://en.cppreference.com/w/c/language/conversion#Default_argument_promotions
+    // We reject the corresponding layouts here, to avoid issues where unsigned values
+    // are sign extended when promoted. (as we don't have a way to unambiguously represent signed-ness atm).
+    private void validateVariadicLayouts(FunctionDescriptor function, LinkerOptions optionSet) {
+        if (optionSet.isVariadicFunction()) {
+            List<MemoryLayout> argumentLayouts = function.argumentLayouts();
+            List<MemoryLayout> variadicLayouts = argumentLayouts.subList(optionSet.firstVariadicArgIndex(), argumentLayouts.size());
+
+            for (MemoryLayout variadicLayout : variadicLayouts) {
+                if (variadicLayout.equals(ValueLayout.JAVA_BOOLEAN)
+                    || variadicLayout.equals(ValueLayout.JAVA_BYTE)
+                    || variadicLayout.equals(ValueLayout.JAVA_CHAR)
+                    || variadicLayout.equals(ValueLayout.JAVA_SHORT)
+                    || variadicLayout.equals(ValueLayout.JAVA_FLOAT)) {
+                    throw new IllegalArgumentException("Invalid variadic argument layout: " + variadicLayout);
+                }
+            }
+        }
+    }
+
     private void checkLayouts(FunctionDescriptor descriptor) {
         descriptor.returnLayout().ifPresent(this::checkLayout);
         descriptor.argumentLayouts().forEach(this::checkLayout);
@@ -148,10 +174,10 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
     }
 
     private void checkLayoutRecursive(MemoryLayout layout) {
-        checkHasNaturalAlignment(layout);
         if (layout instanceof ValueLayout vl) {
-            checkByteOrder(vl);
+            checkSupported(vl);
         } else if (layout instanceof StructLayout sl) {
+            checkHasNaturalAlignment(layout);
             long offset = 0;
             long lastUnpaddedOffset = 0;
             for (MemoryLayout member : sl.memberLayouts()) {
@@ -160,32 +186,34 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
                 checkMemberOffset(sl, member, lastUnpaddedOffset, offset);
                 checkLayoutRecursive(member);
 
-                offset += member.bitSize();
+                offset += member.byteSize();
                 if (!(member instanceof PaddingLayout)) {
                     lastUnpaddedOffset = offset;
                 }
             }
             checkGroupSize(sl, lastUnpaddedOffset);
         } else if (layout instanceof UnionLayout ul) {
+            checkHasNaturalAlignment(layout);
             long maxUnpaddedLayout = 0;
             for (MemoryLayout member : ul.memberLayouts()) {
                 checkLayoutRecursive(member);
                 if (!(member instanceof PaddingLayout)) {
-                    maxUnpaddedLayout = Long.max(maxUnpaddedLayout, member.bitSize());
+                    maxUnpaddedLayout = Long.max(maxUnpaddedLayout, member.byteSize());
                 }
             }
             checkGroupSize(ul, maxUnpaddedLayout);
         } else if (layout instanceof SequenceLayout sl) {
+            checkHasNaturalAlignment(layout);
             checkLayoutRecursive(sl.elementLayout());
         }
     }
 
     // check for trailing padding
     private static void checkGroupSize(GroupLayout gl, long maxUnpaddedOffset) {
-        long expectedSize = Utils.alignUp(maxUnpaddedOffset, gl.bitAlignment());
-        if (gl.bitSize() != expectedSize) {
+        long expectedSize = Utils.alignUp(maxUnpaddedOffset, gl.byteAlignment());
+        if (gl.byteSize() != expectedSize) {
             throw new IllegalArgumentException("Layout '" + gl + "' has unexpected size: "
-                    + gl.bitSize() + " != " + expectedSize);
+                    + gl.byteSize() + " != " + expectedSize);
         }
     }
 
@@ -193,16 +221,26 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
     // the previous layout
     private static void checkMemberOffset(StructLayout parent, MemoryLayout memberLayout,
                                           long lastUnpaddedOffset, long offset) {
-        long expectedOffset = Utils.alignUp(lastUnpaddedOffset, memberLayout.bitAlignment());
+        long expectedOffset = Utils.alignUp(lastUnpaddedOffset, memberLayout.byteAlignment());
         if (expectedOffset != offset) {
             throw new IllegalArgumentException("Member layout '" + memberLayout + "', of '" + parent + "'" +
                     " found at unexpected offset: " + offset + " != " + expectedOffset);
         }
     }
 
+    private static void checkSupported(ValueLayout valueLayout) {
+        valueLayout = valueLayout.withoutName();
+        if (valueLayout instanceof AddressLayout addressLayout) {
+            valueLayout = addressLayout.withoutTargetLayout();
+        }
+        if (!SUPPORTED_LAYOUTS.contains(valueLayout.withoutName())) {
+            throw new IllegalArgumentException("Unsupported layout: " + valueLayout);
+        }
+    }
+
     private static void checkHasNaturalAlignment(MemoryLayout layout) {
         if (!((AbstractLayout<?>) layout).hasNaturalAlignment()) {
-            throw new IllegalArgumentException("Layout bit alignment must be natural alignment: " + layout);
+            throw new IllegalArgumentException("Layout alignment must be natural alignment: " + layout);
         }
     }
 
@@ -232,9 +270,15 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
                 .orElseGet(() -> FunctionDescriptor.ofVoid(stripNames(function.argumentLayouts())));
     }
 
-    private void checkByteOrder(ValueLayout vl) {
-        if (vl.order() != linkerByteOrder()) {
-            throw new IllegalArgumentException("Layout does not have the right byte order: " + vl);
-        }
-    }
+    private static final Set<MemoryLayout> SUPPORTED_LAYOUTS = Set.of(
+            ValueLayout.JAVA_BOOLEAN,
+            ValueLayout.JAVA_BYTE,
+            ValueLayout.JAVA_CHAR,
+            ValueLayout.JAVA_SHORT,
+            ValueLayout.JAVA_INT,
+            ValueLayout.JAVA_FLOAT,
+            ValueLayout.JAVA_LONG,
+            ValueLayout.JAVA_DOUBLE,
+            ValueLayout.ADDRESS
+    );
 }
