@@ -188,6 +188,10 @@ public class MemberEnter extends JCTree.Visitor {
         m.flags_field = chk.checkFlags(tree.pos(), tree.mods.flags, m, tree);
         tree.sym = m;
 
+        if (tree.sym.isMatcher()) {
+            m.flags_field |= SYNTHETIC;
+        }
+
         //if this is a default method, add the DEFAULT flag to the enclosing interface
         if ((tree.mods.flags & DEFAULT) != 0) {
             m.owner.flags_field |= DEFAULT;

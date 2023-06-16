@@ -2031,11 +2031,16 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
 
         public Name externalName(Types types) {
             if ((flags() & MATCHER) != 0) {
-                return owner.name.append('$', name.table.names.fromString(params().map(param -> {
+                /** TODO: improve perf
+                 * e.g., Point\%Ljava\|lang\|Integer\?\%Ljava\|lang\|Integer\?(Point)
+                 */
+                Name postFix = name.table.names.fromString(params().map(param -> {
                     var g = new UnSharedSignatureGenerator(types, name.table.names);
                     g.assembleSig(param.erasure(types));
                     return name.table.names.fromString(g.toName().toString().replace("/", "\\\u007C").replace(";", "\\\u003F"));
-                }).stream().collect(Collectors.joining("$"))));
+                }).stream().collect(Collectors.joining("\\\u0025")));
+
+                return name.table.names.fromString(owner.name.toString() + "\\\u0025" + postFix);
             } else {
                 return name;
             }
