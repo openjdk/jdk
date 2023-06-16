@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -167,17 +167,26 @@ public final class OffsetDateTime
      * Compares this {@code OffsetDateTime} to another date-time.
      * The comparison is based on the instant.
      *
+     * When two values represent the same instant, the local date-time is compared
+     * to distinguish them. This step is needed to make the ordering
+     * consistent with {@code equals()}.
+     *
      * @param datetime1  the first date-time to compare, not null
      * @param datetime2  the other date-time to compare to, not null
      * @return the comparator value, negative if less, positive if greater
      */
     private static int compareInstant(OffsetDateTime datetime1, OffsetDateTime datetime2) {
+        int cmp;
         if (datetime1.getOffset().equals(datetime2.getOffset())) {
-            return datetime1.toLocalDateTime().compareTo(datetime2.toLocalDateTime());
+            cmp = 0;
+        } else {
+            cmp = Long.compare(datetime1.toEpochSecond(), datetime2.toEpochSecond());
+            if (cmp == 0) {
+                cmp = datetime1.toLocalTime().getNano() - datetime2.toLocalTime().getNano();
+            }
         }
-        int cmp = Long.compare(datetime1.toEpochSecond(), datetime2.toEpochSecond());
         if (cmp == 0) {
-            cmp = datetime1.toLocalTime().getNano() - datetime2.toLocalTime().getNano();
+            cmp = datetime1.toLocalDateTime().compareTo(datetime2.toLocalDateTime());
         }
         return cmp;
     }
@@ -1805,11 +1814,7 @@ public final class OffsetDateTime
      */
     @Override
     public int compareTo(OffsetDateTime other) {
-        int cmp = compareInstant(this, other);
-        if (cmp == 0) {
-            cmp = toLocalDateTime().compareTo(other.toLocalDateTime());
-        }
-        return cmp;
+        return compareInstant(this, other);
     }
 
     //-----------------------------------------------------------------------
