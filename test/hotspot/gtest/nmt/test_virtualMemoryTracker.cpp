@@ -78,7 +78,7 @@ TEST_VM(VirtualMemoryTracker, missing_remove_released_region) {
 
     if (i == 0) {
       EXPECT_TRUE(new_sz == init_sz) << "new_sz " << new_sz << ", init_sz " << init_sz << 
-	                                ", diff " << (new_sz - init_sz) << ", region size " << size << ", i" + i;
+	                                ", diff " << (new_sz - init_sz) << ", region size " << size;
     }
   }
 }
