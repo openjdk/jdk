@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,40 +20,57 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 /*
  * @test
  * @bug 4122700
  * @summary Verify that list of available locales is non-empty, and print the list
+ * @run junit bug4122700
  */
 
 import java.util.Locale;
 
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 public class bug4122700 {
-    public static void main(String[] args) throws Exception {
+
+    /**
+     * Test that Locale.getAvailableLocales() is non-empty.
+     * Print out the locales.
+     */
+    @Test
+    public void nonEmptyLocalesTest() {
         Locale[] systemLocales = Locale.getAvailableLocales();
-        if (systemLocales.length == 0)
-            throw new Exception("Available locale list is empty!");
+        assertNotEquals(systemLocales.length, 0, "Available locale list is empty!");
         System.out.println("Found " + systemLocales.length + " locales:");
+        printLocales(systemLocales);
+    }
+
+    // Helper method to print out all the system locales
+    private void printLocales(Locale[] systemLocales) {
         Locale[] locales = new Locale[systemLocales.length];
         for (int i = 0; i < locales.length; i++) {
             Locale lowest = null;
-            for (int j = 0; j < systemLocales.length; j++) {
-                if (i > 0 && locales[i - 1].toString().compareTo(systemLocales[j].toString()) >= 0)
+            for (Locale systemLocale : systemLocales) {
+                if (i > 0 && locales[i - 1].toString().compareTo(systemLocale.toString()) >= 0)
                     continue;
-                if (lowest == null || systemLocales[j].toString().compareTo(lowest.toString()) < 0)
-                    lowest = systemLocales[j];
+                if (lowest == null || systemLocale.toString().compareTo(lowest.toString()) < 0)
+                    lowest = systemLocale;
             }
             locales[i] = lowest;
         }
-        for (int i = 0; i < locales.length; i++) {
-            if (locales[i].getCountry().length() == 0)
-                System.out.println("    " + locales[i].getDisplayLanguage() + ":");
+        for (Locale locale : locales) {
+            if (locale.getCountry().length() == 0)
+                System.out.println("    " + locale.getDisplayLanguage() + ":");
             else {
-                if (locales[i].getVariant().length() == 0)
-                    System.out.println("        " + locales[i].getDisplayCountry());
+                if (locale.getVariant().length() == 0)
+                    System.out.println("        " + locale.getDisplayCountry());
                 else
-                    System.out.println("        " + locales[i].getDisplayCountry() + ", "
-                                    + locales[i].getDisplayVariant());
+                    System.out.println("        " + locale.getDisplayCountry() + ", "
+                            + locale.getDisplayVariant());
             }
         }
     }
