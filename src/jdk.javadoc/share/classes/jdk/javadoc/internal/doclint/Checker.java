@@ -492,15 +492,21 @@ public class Checker extends DocTreePathScanner<Void, Void> {
                     case START_ELEMENT -> {
                         if (top.tag.blockType == HtmlTag.BlockType.INLINE) {
                             Name name = ((StartElementTree) top.tree).getName();
-                            env.messages.error(HTML, tree, "dc.tag.not.allowed.inline.element",
-                                    treeName, name);
+                            // Links may use block display style so issue warning instead of error
+                            if ("a".equalsIgnoreCase(name.toString())) {
+                                env.messages.warning(HTML, tree, "dc.tag.not.allowed.element.default.style",
+                                        treeName, name);
+                            } else {
+                                env.messages.error(HTML, tree, "dc.tag.not.allowed.inline.element",
+                                        treeName, name);
+                            }
                             return;
                         }
                     }
 
                     case LINK, LINK_PLAIN -> {
                         String name = top.tree.getKind().tagName;
-                        env.messages.error(HTML, tree, "dc.tag.not.allowed.inline.tag",
+                        env.messages.warning(HTML, tree, "dc.tag.not.allowed.tag.default.style",
                                 treeName, name);
                         return;
                     }

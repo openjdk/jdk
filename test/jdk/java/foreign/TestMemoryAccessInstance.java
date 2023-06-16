@@ -27,12 +27,12 @@
  * @run testng/othervm --enable-native-access=ALL-UNNAMED TestMemoryAccessInstance
  */
 
+import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.Arena;
 import java.lang.foreign.ValueLayout;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.function.Function;
 
 import org.testng.annotations.*;
 import org.testng.SkipException;
@@ -40,14 +40,14 @@ import static org.testng.Assert.*;
 
 public class TestMemoryAccessInstance {
 
-    static class Accessor<T, X, L extends ValueLayout> {
+    static class Accessor<X, L extends ValueLayout> {
 
-        interface SegmentGetter<T, X, L> {
-            X get(T buffer, L layout, long offset);
+        interface SegmentGetter<X, L> {
+            X get(MemorySegment segment, L layout, long offset);
         }
 
-        interface SegmentSetter<T, X, L> {
-            void set(T buffer, L layout, long offset, X o);
+        interface SegmentSetter<X, L> {
+            void set(MemorySegment segment, L layout, long offset, X o);
         }
 
         interface BufferGetter<X> {
@@ -60,16 +60,14 @@ public class TestMemoryAccessInstance {
 
         final X value;
         final L layout;
-        final Function<MemorySegment, T> transform;
-        final SegmentGetter<T, X, L> segmentGetter;
-        final SegmentSetter<T, X, L> segmentSetter;
+        final SegmentGetter<X, L> segmentGetter;
+        final SegmentSetter<X, L> segmentSetter;
         final BufferGetter<X> bufferGetter;
         final BufferSetter<X> bufferSetter;
 
-        Accessor(Function<MemorySegment, T> transform, L layout, X value,
-                 SegmentGetter<T, X, L> segmentGetter, SegmentSetter<T, X, L> segmentSetter,
+        Accessor(L layout, X value,
+                 SegmentGetter<X, L> segmentGetter, SegmentSetter<X, L> segmentSetter,
                  BufferGetter<X> bufferGetter, BufferSetter<X> bufferSetter) {
-            this.transform = transform;
             this.layout = layout;
             this.value = value;
             this.segmentGetter = segmentGetter;
@@ -82,11 +80,10 @@ public class TestMemoryAccessInstance {
             try (Arena arena = Arena.ofConfined()) {
                 MemorySegment segment = arena.allocate(128, 1);
                 ByteBuffer buffer = segment.asByteBuffer();
-                T t = transform.apply(segment);
-                segmentSetter.set(t, layout, 8, value);
+                segmentSetter.set(segment, layout, 8, value);
                 assertEquals(bufferGetter.get(buffer, 8), value);
                 bufferSetter.set(buffer, 8, value);
-                assertEquals(value, segmentGetter.get(t, layout, 8));
+                assertEquals(value, segmentGetter.get(segment, layout, 8));
             }
         }
 
@@ -94,16 +91,15 @@ public class TestMemoryAccessInstance {
         void testHyperAligned() {
             try (Arena arena = Arena.ofConfined()) {
                 MemorySegment segment = arena.allocate(64, 1);
-                T t = transform.apply(segment);
                 L alignedLayout = (L)layout.withByteAlignment(layout.byteSize() * 2);
                 try {
-                    segmentSetter.set(t, alignedLayout, 0, value);
+                    segmentSetter.set(segment, alignedLayout, 0, value);
                     fail();
                 } catch (IllegalArgumentException exception) {
                     assertTrue(exception.getMessage().contains("greater"));
                 }
                 try {
-                    segmentGetter.get(t, alignedLayout, 0);
+                    segmentGetter.get(segment, alignedLayout, 0);
                     fail();
                 } catch (IllegalArgumentException exception) {
                     assertTrue(exception.getMessage().contains("greater"));
@@ -111,20 +107,28 @@ public class TestMemoryAccessInstance {
             }
         }
 
-        static <L extends ValueLayout, X> Accessor<MemorySegment, X, L> ofSegment(L layout, X value,
-                         SegmentGetter<MemorySegment, X, L> segmentGetter, SegmentSetter<MemorySegment, X, L> segmentSetter,
-                         BufferGetter<X> bufferGetter, BufferSetter<X> bufferSetter) {
-            return new Accessor<>(Function.identity(), layout, value, segmentGetter, segmentSetter, bufferGetter, bufferSetter);
+        X get(MemorySegment segment, long offset) {
+            return segmentGetter.get(segment, layout, offset);
+        }
+
+        void set(MemorySegment segment, long offset, X value) {
+            segmentSetter.set(segment, layout, offset, value);
+        }
+
+        static <L extends ValueLayout, X> Accessor<X, L> of(L layout, X value,
+                                                            SegmentGetter<X, L> segmentGetter, SegmentSetter<X, L> segmentSetter,
+                                                            BufferGetter<X> bufferGetter, BufferSetter<X> bufferSetter) {
+            return new Accessor<>(layout, value, segmentGetter, segmentSetter, bufferGetter, bufferSetter);
         }
     }
 
     @Test(dataProvider = "segmentAccessors")
-    public void testSegmentAccess(String testName, Accessor<?, ?, ?> accessor) {
+    public void testSegmentAccess(String testName, Accessor<?, ?> accessor) {
         accessor.test();
     }
 
     @Test(dataProvider = "segmentAccessors")
-    public void testSegmentAccessHyper(String testName, Accessor<?, ?, ?> accessor) {
+    public void testSegmentAccessHyper(String testName, Accessor<?, ?> accessor) {
         if (testName.contains("index")) {
             accessor.testHyperAligned();
         } else {
@@ -152,45 +156,54 @@ public class TestMemoryAccessInstance {
         targetSegment.setAtIndex(ValueLayout.ADDRESS, 0, segment); // should throw
     }
 
+    @Test(dataProvider = "segmentAccessors")
+    public <X, L extends ValueLayout> void badAccessOverflowInIndexedAccess(String testName, Accessor<X, L> accessor) {
+        MemorySegment segment = MemorySegment.ofArray(new byte[100]);
+        if (testName.contains("/index") && accessor.layout.byteSize() > 1) {
+            assertThrows(IndexOutOfBoundsException.class, () -> accessor.get(segment, Long.MAX_VALUE));
+            assertThrows(IndexOutOfBoundsException.class, () -> accessor.set(segment, Long.MAX_VALUE, accessor.value));
+        }
+    }
+
     static final ByteOrder NE = ByteOrder.nativeOrder();
 
     @DataProvider(name = "segmentAccessors")
     static Object[][] segmentAccessors() {
         return new Object[][]{
 
-                {"byte", Accessor.ofSegment(ValueLayout.JAVA_BYTE, (byte) 42,
+                {"byte", Accessor.of(ValueLayout.JAVA_BYTE, (byte) 42,
                         MemorySegment::get, MemorySegment::set,
                         ByteBuffer::get, ByteBuffer::put)
                 },
-                {"boolean", Accessor.ofSegment(ValueLayout.JAVA_BOOLEAN, false,
+                {"boolean", Accessor.of(ValueLayout.JAVA_BOOLEAN, false,
                         MemorySegment::get, MemorySegment::set,
                         (bb, pos) -> bb.get(pos) != 0, (bb, pos, v) -> bb.put(pos, v ? (byte)1 : (byte)0))
                 },
-                {"char", Accessor.ofSegment(ValueLayout.JAVA_CHAR, (char) 42,
+                {"char", Accessor.of(ValueLayout.JAVA_CHAR, (char) 42,
                         MemorySegment::get, MemorySegment::set,
                         (bb, pos) -> bb.order(NE).getChar(pos), (bb, pos, v) -> bb.order(NE).putChar(pos, v))
                 },
-                {"short", Accessor.ofSegment(ValueLayout.JAVA_SHORT, (short) 42,
+                {"short", Accessor.of(ValueLayout.JAVA_SHORT, (short) 42,
                         MemorySegment::get, MemorySegment::set,
                         (bb, pos) -> bb.order(NE).getShort(pos), (bb, pos, v) -> bb.order(NE).putShort(pos, v))
                 },
-                {"int", Accessor.ofSegment(ValueLayout.JAVA_INT, 42,
+                {"int", Accessor.of(ValueLayout.JAVA_INT, 42,
                         MemorySegment::get, MemorySegment::set,
                         (bb, pos) -> bb.order(NE).getInt(pos), (bb, pos, v) -> bb.order(NE).putInt(pos, v))
                 },
-                {"float", Accessor.ofSegment(ValueLayout.JAVA_FLOAT, 42f,
+                {"float", Accessor.of(ValueLayout.JAVA_FLOAT, 42f,
                         MemorySegment::get, MemorySegment::set,
                         (bb, pos) -> bb.order(NE).getFloat(pos), (bb, pos, v) -> bb.order(NE).putFloat(pos, v))
                 },
-                {"long", Accessor.ofSegment(ValueLayout.JAVA_LONG, 42L,
+                {"long", Accessor.of(ValueLayout.JAVA_LONG, 42L,
                         MemorySegment::get, MemorySegment::set,
                         (bb, pos) -> bb.order(NE).getLong(pos), (bb, pos, v) -> bb.order(NE).putLong(pos, v))
                 },
-                {"double", Accessor.ofSegment(ValueLayout.JAVA_DOUBLE, 42d,
+                {"double", Accessor.of(ValueLayout.JAVA_DOUBLE, 42d,
                         MemorySegment::get, MemorySegment::set,
                         (bb, pos) -> bb.order(NE).getDouble(pos), (bb, pos, v) -> bb.order(NE).putDouble(pos, v))
                 },
-                { "address", Accessor.ofSegment(ValueLayout.ADDRESS, MemorySegment.ofAddress(42),
+                { "address", Accessor.of(ValueLayout.ADDRESS, MemorySegment.ofAddress(42),
                         MemorySegment::get, MemorySegment::set,
                         (bb, pos) -> {
                             ByteBuffer nb = bb.order(NE);
@@ -208,39 +221,39 @@ public class TestMemoryAccessInstance {
                         })
                 },
 
-                {"byte/index", Accessor.ofSegment(ValueLayout.JAVA_BYTE, (byte) 42,
+                {"byte/index", Accessor.of(ValueLayout.JAVA_BYTE, (byte) 42,
                         MemorySegment::getAtIndex, MemorySegment::setAtIndex,
                         (bb, pos) -> bb.order(NE).get(pos), (bb, pos, v) -> bb.order(NE).put(pos, v))
                 },
-                {"boolean/index", Accessor.ofSegment(ValueLayout.JAVA_BOOLEAN, true,
+                {"boolean/index", Accessor.of(ValueLayout.JAVA_BOOLEAN, true,
                         MemorySegment::getAtIndex, MemorySegment::setAtIndex,
                         (bb, pos) -> bb.order(NE).get(pos) != 0, (bb, pos, v) -> bb.order(NE).put(pos, (byte) (v ? 1 : 0)))
                 },
-                {"char/index", Accessor.ofSegment(ValueLayout.JAVA_CHAR, (char) 42,
+                {"char/index", Accessor.of(ValueLayout.JAVA_CHAR, (char) 42,
                         MemorySegment::getAtIndex, MemorySegment::setAtIndex,
                         (bb, pos) -> bb.order(NE).getChar(pos * 2), (bb, pos, v) -> bb.order(NE).putChar(pos * 2, v))
                 },
-                {"short/index", Accessor.ofSegment(ValueLayout.JAVA_SHORT, (short) 42,
+                {"short/index", Accessor.of(ValueLayout.JAVA_SHORT, (short) 42,
                         MemorySegment::getAtIndex, MemorySegment::setAtIndex,
                         (bb, pos) -> bb.order(NE).getShort(pos * 2), (bb, pos, v) -> bb.order(NE).putShort(pos * 2, v))
                 },
-                {"int/index", Accessor.ofSegment(ValueLayout.JAVA_INT, 42,
+                {"int/index", Accessor.of(ValueLayout.JAVA_INT, 42,
                         MemorySegment::getAtIndex, MemorySegment::setAtIndex,
                         (bb, pos) -> bb.order(NE).getInt(pos * 4), (bb, pos, v) -> bb.order(NE).putInt(pos * 4, v))
                 },
-                {"float/index", Accessor.ofSegment(ValueLayout.JAVA_FLOAT, 42f,
+                {"float/index", Accessor.of(ValueLayout.JAVA_FLOAT, 42f,
                         MemorySegment::getAtIndex, MemorySegment::setAtIndex,
                         (bb, pos) -> bb.order(NE).getFloat(pos * 4), (bb, pos, v) -> bb.order(NE).putFloat(pos * 4, v))
                 },
-                {"long/index", Accessor.ofSegment(ValueLayout.JAVA_LONG, 42L,
+                {"long/index", Accessor.of(ValueLayout.JAVA_LONG, 42L,
                         MemorySegment::getAtIndex, MemorySegment::setAtIndex,
                         (bb, pos) -> bb.order(NE).getLong(pos * 8), (bb, pos, v) -> bb.order(NE).putLong(pos * 8, v))
                 },
-                {"double/index", Accessor.ofSegment(ValueLayout.JAVA_DOUBLE, 42d,
+                {"double/index", Accessor.of(ValueLayout.JAVA_DOUBLE, 42d,
                         MemorySegment::getAtIndex, MemorySegment::setAtIndex,
                         (bb, pos) -> bb.order(NE).getDouble(pos * 8), (bb, pos, v) -> bb.order(NE).putDouble(pos * 8, v))
                 },
-                { "address/index", Accessor.ofSegment(ValueLayout.ADDRESS, MemorySegment.ofAddress(42),
+                { "address/index", Accessor.of(ValueLayout.ADDRESS, MemorySegment.ofAddress(42),
                         MemorySegment::getAtIndex, MemorySegment::setAtIndex,
                         (bb, pos) -> {
                             ByteBuffer nb = bb.order(NE);
