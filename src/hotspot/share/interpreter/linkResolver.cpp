@@ -1350,25 +1350,28 @@ void LinkResolver::runtime_resolve_virtual_method(CallInfo& result,
     THROW(vmSymbols::java_lang_NullPointerException());
   }
 
-  // Virtual methods cannot be resolved before its klass has been linked, for otherwise the Method*'s
-  // has not been rewritten, and the vtable initialized. Make sure to do this after the nullcheck, since
-  // a missing receiver might result in a bogus lookup.
-  if (!resolved_method->method_holder()->is_linked()) {
-    ResourceMark rm(THREAD);
-    stringStream ss;
-    ss.print("Resolved method holder class %s", resolved_method->method_holder()->external_name());
-    ss.print(" must be linked");
-    THROW_MSG(vmSymbols::java_lang_IncompatibleClassChangeError(), ss.as_string());
-  }
+  // Perform additional type checks before virtual call
+  if (CheckJNICalls) {
+    // Virtual methods cannot be resolved before its klass has been linked, for otherwise the Method*'s
+    // has not been rewritten, and the vtable initialized. Make sure to do this after the nullcheck, since
+    // a missing receiver might result in a bogus lookup.
+    if (!resolved_method->method_holder()->is_linked()) {
+      ResourceMark rm(THREAD);
+      stringStream ss;
+      ss.print("Resolved method holder class %s", resolved_method->method_holder()->external_name());
+      ss.print(" must be linked.");
+      THROW_MSG(vmSymbols::java_lang_IncompatibleClassChangeError(), ss.as_string());
+    }
 
-  // Receriver should be compatible with resolved klass, i.e. it must be a type of resolved klass
-  // or a subtype of resolved klass(receiver instanceof resolved_klass)
-  if (!recv.is_null() && !recv_klass->is_subtype_of(resolved_klass)) {
-    ResourceMark rm(THREAD);
-    stringStream ss;
-    ss.print("The type of receiver %s", recv_klass->external_name());
-    ss.print(" should be or subtype of %s", resolved_klass->external_name());
-    THROW_MSG(vmSymbols::java_lang_IncompatibleClassChangeError(), ss.as_string());
+    // Receiver should be compatible with resolved klass, i.e. it must be a type of resolved klass
+    // or a subtype of resolved klass(receiver instanceof resolved_klass).
+    if (!recv.is_null() && !recv_klass->is_subtype_of(resolved_klass)) {
+      ResourceMark rm(THREAD);
+      stringStream ss;
+      ss.print("The type of receiver %s", recv_klass->external_name());
+      ss.print(" should be or subtype of %s.", resolved_klass->external_name());
+      THROW_MSG(vmSymbols::java_lang_IncompatibleClassChangeError(), ss.as_string());
+    }
   }
 
   // do lookup based on receiver klass using the vtable index
