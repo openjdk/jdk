@@ -331,7 +331,9 @@ void frame::interpreter_frame_set_monitor_end(BasicObjectLock* value) {
 
 // Used by template based interpreter deoptimization
 void frame::interpreter_frame_set_last_sp(intptr_t* last_sp) {
-  *((intptr_t**)addr_at(interpreter_frame_last_sp_offset)) = last_sp;
+  assert(is_interpreted_frame(), "interpreted frame expected");
+  // set relativized last_sp
+  ptr_at_put(interpreter_frame_last_sp_offset, last_sp != nullptr ? (last_sp - fp()) : 0);
 }
 
 void frame::interpreter_frame_set_extended_sp(intptr_t* sp) {

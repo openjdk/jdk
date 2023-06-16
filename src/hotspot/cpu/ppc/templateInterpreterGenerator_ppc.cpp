@@ -1063,6 +1063,9 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call, Regist
   // Store sender's SP and this frame's top SP.
   __ subf(R12_scratch2, Rtop_frame_size, R1_SP);
   __ std(R21_sender_SP, _ijava_state_neg(sender_sp), R1_SP);
+  __ sub(R12_scratch2, R12_scratch2, R1_SP);
+  __ sradi(R12_scratch2, R12_scratch2, Interpreter::logStackElementSize);
+  // Store relativized top_frame_sp
   __ std(R12_scratch2, _ijava_state_neg(top_frame_sp), R1_SP);
 
   // Push top frame.

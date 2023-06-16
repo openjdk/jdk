@@ -86,7 +86,7 @@ inline void ContinuationHelper::InterpretedFrame::patch_sender_sp(frame& f, cons
   intptr_t* sp = caller.unextended_sp();
   if (!f.is_heap_frame() && caller.is_interpreted_frame()) {
     // See diagram "Interpreter Calling Procedure on PPC" at the end of continuationFreezeThaw_ppc.inline.hpp
-    sp = (intptr_t*)caller.at(ijava_idx(top_frame_sp));
+    sp = (intptr_t*)caller.at_relative(ijava_idx(top_frame_sp));
   }
   assert(f.is_interpreted_frame(), "");
   assert(f.is_heap_frame() || is_aligned(sp, frame::alignment_in_bytes), "");
