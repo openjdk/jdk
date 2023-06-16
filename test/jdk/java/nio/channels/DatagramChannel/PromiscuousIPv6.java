@@ -145,6 +145,7 @@ public class PromiscuousIPv6 {
 
     static void test(ProtocolFamily family,
                      NetworkInterface nif,
+                     boolean bindToWildCard,
                      InetAddress group1,
                      InetAddress group2)
             throws IOException
@@ -154,8 +155,13 @@ public class PromiscuousIPv6 {
 
         // Bind addresses should include the same network interface / scope, so
         // as to not reply on the default route when there are multiple interfaces
-        InetAddress bindAddr1 = Inet6Address.getByAddress(null, group1.getAddress(), nif);
-        InetAddress bindAddr2 = Inet6Address.getByAddress(null, group2.getAddress(), nif);
+        InetAddress bindAddr1 = bindToWildCard 
+                ? InetAddress.getByName("::0")
+                : Inet6Address.getByAddress(null, group1.getAddress(), nif);
+
+        InetAddress bindAddr2 = bindToWildCard
+                ? InetAddress.getByName("::0")
+                : Inet6Address.getByAddress(null, group2.getAddress(), nif);
 
         DatagramChannel dc1 = (family == UNSPEC) ?
                 DatagramChannel.open() : DatagramChannel.open(family);
@@ -226,8 +232,10 @@ public class PromiscuousIPv6 {
         InetAddress linkLocal2 = InetAddress.getByName("ff12::6.7.8.9");
 
         for (NetworkInterface nif : nifs) {
-            test(INET6, nif, interfaceLocal1, interfaceLocal2);
-            test(INET6, nif, linkLocal1, linkLocal2);
+            test(INET6, nif, false, interfaceLocal1, interfaceLocal2);
+            test(INET6, nif, false, linkLocal1, linkLocal2);
+            test(INET6, nif, true, interfaceLocal1, interfaceLocal2);
+            test(INET6, nif, true, linkLocal1, linkLocal2);
         }
     }
 }
