@@ -23,19 +23,23 @@
 
 /*
  * @test
- * @bug 4122700
- * @summary Verify that list of available locales is non-empty, and print the list
- * @run junit bug4122700
+ * @bug 4122700 8282319
+ * @summary Verify implementation of getAvailableLocales() and availableLocales()
+ * @run junit AvailableLocalesTest
  */
 
+import java.util.Arrays;
 import java.util.Locale;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.Arguments;
 
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class bug4122700 {
+public class AvailableLocalesTest {
 
     /**
      * Test that Locale.getAvailableLocales() is non-empty.
@@ -47,6 +51,40 @@ public class bug4122700 {
         assertNotEquals(systemLocales.length, 0, "Available locale list is empty!");
         System.out.println("Found " + systemLocales.length + " locales:");
         printLocales(systemLocales);
+    }
+
+    /**
+     * Test to validate that the methods: Locale.getAvailableLocales()
+     * and Locale.availableLocales() contain the same underlying elements
+     */
+    @Test
+    public void StreamEqualsArrayTest() {
+        Locale[] arrayLocales = Locale.getAvailableLocales();
+        Stream<Locale> streamedLocales = Locale.availableLocales();
+        Locale[] convertedLocales = streamedLocales.toArray(Locale[]::new);
+        if (Arrays.equals(arrayLocales, convertedLocales)) {
+            System.out.println("$$$ Passed: The underlying elements" +
+                    " of getAvailableLocales() and availableLocales() are the same!");
+        } else {
+            throw new RuntimeException("$$$ Error: The underlying elements" +
+                    " of getAvailableLocales() and availableLocales()" +
+                    " are not the same.");
+        }
+    }
+
+    /**
+     * Test to validate that the stream has the required
+     * Locale.ROOT and Locale.US.
+     */
+    @ParameterizedTest
+    @MethodSource("requiredLocaleProvider")
+    public void requiredLocalesTest(Locale requiredLocale, String localeName) {
+        if (Locale.availableLocales().anyMatch(loc -> (loc.equals(requiredLocale)))) {
+            System.out.printf("$$$ Passed: Stream has %s!%n", localeName);
+        } else {
+            throw new RuntimeException(String.format("$$$ Error:" +
+                    " Stream is missing %s!", localeName));
+        }
     }
 
     // Helper method to print out all the system locales
@@ -73,5 +111,13 @@ public class bug4122700 {
                             + locale.getDisplayVariant());
             }
         }
+    }
+
+    // Data provider for testStreamRequirements
+    private static Stream<Arguments> requiredLocaleProvider() {
+        return Stream.of(
+                Arguments.of(Locale.ROOT, "Root locale"),
+                Arguments.of(Locale.US, "US locale")
+        );
     }
 }
