@@ -377,7 +377,7 @@ public final class Class<T> implements java.io.Serializable,
      * the current class.
      *
      * <p> For example, the following code fragment returns the
-     * runtime {@code Class} descriptor for the class named
+     * runtime {@code Class} object for the class named
      * {@code java.lang.Thread}:
      *
      * {@snippet lang="java" :
@@ -392,9 +392,10 @@ public final class Class<T> implements java.io.Serializable,
      * caller frame on the stack (e.g. when called directly from a JNI
      * attached thread), the system class loader is used.
      *
-     * @param      className   the fully qualified name of the desired class.
-     * @return     the {@code Class} object for the class with the
-     *             specified name.
+     * @param     className the <a href="#binary-name">binary name</a> of the class
+     *                      or the string representing an array type
+     * @return    the {@code Class} object for the class with the
+     *            specified name.
      * @throws    LinkageError if the linkage fails
      * @throws    ExceptionInInitializerError if the initialization provoked
      *            by this method fails
@@ -423,11 +424,10 @@ public final class Class<T> implements java.io.Serializable,
     /**
      * Returns the {@code Class} object associated with the class or
      * interface with the given string name, using the given class loader.
-     * Given the fully qualified name for a class or interface (in the same
-     * format returned by {@code getName}) this method attempts to
-     * locate and load the class or interface.  The specified class
-     * loader is used to load the class or interface.  If the parameter
-     * {@code loader} is null, the class is loaded through the bootstrap
+     * Given the {@linkplain ##binary-name binary name} for a class or interface,
+     * this method attempts to locate and load the class or interface. The specified
+     * class loader is used to load the class or interface.  If the parameter
+     * {@code loader} is {@code null}, the class is loaded through the bootstrap
      * class loader.  The class is initialized only if the
      * {@code initialize} parameter is {@code true} and if it has
      * not been initialized earlier.
@@ -438,8 +438,10 @@ public final class Class<T> implements java.io.Serializable,
      * obtain any of the {@code Class} objects representing primitive
      * types or void.
      *
-     * <p> If {@code name} denotes an array class, the component type of
-     * the array class is loaded but not initialized.
+     * <p> If {@code name} denotes an array class, i.e. the name consists of
+     * one or more {@code '['} followed by the binary name of the element type
+     * and {@code ';'}, the element type of the array class is loaded but
+     * not initialized.
      *
      * <p> For example, in an instance method the expression:
      *
@@ -460,8 +462,9 @@ public final class Class<T> implements java.io.Serializable,
      * Note that this method does not check whether the requested class
      * is accessible to its caller.
      *
-     * @param name       fully qualified name of the desired class
-
+     * @param name       the <a href="#binary-name">binary name</a> of the class
+     *                   or the string representing an array class
+     *
      * @param initialize if {@code true} the class will be initialized
      *                   (which implies linking). See Section {@jls
      *                   12.4} of <cite>The Java Language
@@ -486,6 +489,7 @@ public final class Class<T> implements java.io.Serializable,
      * @jls 12.2 Loading of Classes and Interfaces
      * @jls 12.3 Linking of Classes and Interfaces
      * @jls 12.4 Initialization of Classes and Interfaces
+     * @jls 13.1 The Form of a Binary
      * @since     1.2
      */
     @CallerSensitive
