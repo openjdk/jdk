@@ -1400,9 +1400,9 @@ jint G1CollectedHeap::initialize() {
   os::trace_page_sizes("Heap",
                        MinHeapSize,
                        reserved_byte_size,
-                       page_size,
                        heap_rs.base(),
-                       heap_rs.size());
+                       heap_rs.size(),
+                       page_size);
   heap_storage->set_mapping_changed_listener(&_listener);
 
   // Create storage for the BOT, card table and the bitmap.

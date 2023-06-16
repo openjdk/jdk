@@ -101,11 +101,11 @@ public class TestLargePageUseForAuxMemory {
     }
 
     static void checkSmallTables(OutputAnalyzer output, long expectedPageSize) throws Exception {
-        checkSize(output, expectedPageSize, "Block Offset Table: .* page_size=([^ ]+)$");
+        checkSize(output, expectedPageSize, "Block Offset Table: .* page_size=(\\d+[BKMG])");
     }
 
     static void checkBitmap(OutputAnalyzer output, long expectedPageSize) throws Exception {
-        checkSize(output, expectedPageSize, "Mark Bitmap: .* page_size=([^ ]+)$");
+        checkSize(output, expectedPageSize, "Mark Bitmap: .* page_size=(i\\d+[BKMG])");
     }
 
     static List<String> getOpts(long heapsize, boolean largePageEnabled) {
