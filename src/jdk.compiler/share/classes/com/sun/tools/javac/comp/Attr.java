@@ -1520,13 +1520,14 @@ public class Attr extends JCTree.Visitor {
         }
 
         var searchEnv = env;
-        while (searchEnv.tree instanceof JCLabeledStatement labeled /*&&
-               labeled.body == introducingStatement*/) {
+        while (searchEnv.tree instanceof JCLabeledStatement labeled &&
+               labeled.body == introducingStatement) {
             if (breaksTo(env, labeled, labeled.body)) {
                 //breaking to an immediately enclosing labeled statement
                 return ;
             }
             searchEnv = searchEnv.next;
+            introducingStatement = labeled;
         }
 
         //include condition's body when false after the while, if cannot get out of the loop
