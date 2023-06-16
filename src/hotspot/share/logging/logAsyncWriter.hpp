@@ -168,10 +168,6 @@ class AsyncLogWriter : public NonJavaThread {
   void enqueue_locked(LogFileStreamOutput* output, const LogDecorations& decorations, const char* msg);
   void write();
   void run() override;
-  void pre_run() override {
-    NonJavaThread::pre_run();
-    log_debug(logging, thread)("starting AsyncLog Thread tid = " INTX_FORMAT, os::current_thread_id());
-  }
   const char* name() const override { return "AsyncLog Thread"; }
   const char* type_name() const override { return "AsyncLogWriter"; }
   void print_on(outputStream* st) const override {
