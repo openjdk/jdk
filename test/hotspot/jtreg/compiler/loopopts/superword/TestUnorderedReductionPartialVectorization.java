@@ -71,7 +71,7 @@ public class TestUnorderedReductionPartialVectorization {
             // with vectorization. That means we have a mixed scalar/vector reduction
             // chain. This way it is possible that a vector-reduction has a scalar
             // reduction as input, which is neigher a phi nor a vector reduction.
-            // In such a case, we must bail out of the optimization in 
+            // In such a case, we must bail out of the optimization in
             // PhaseIdealLoop::move_unordered_reduction_out_of_loop
             int v = data[i]; // int read
             data[0] = 0;     // ruin the first pack
