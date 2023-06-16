@@ -105,7 +105,7 @@ public class TestLargePageUseForAuxMemory {
     }
 
     static void checkBitmap(OutputAnalyzer output, long expectedPageSize) throws Exception {
-        checkSize(output, expectedPageSize, "Mark Bitmap: .* page_size=(i\\d+[BKMG])");
+        checkSize(output, expectedPageSize, "Mark Bitmap: .* page_size=(\\d+[BKMG])");
     }
 
     static List<String> getOpts(long heapsize, boolean largePageEnabled) {
