@@ -201,8 +201,7 @@ class CFileDialog implements FileDialogPeer {
 
     @Override
     public GraphicsConfiguration getAppropriateGraphicsConfiguration(
-            GraphicsConfiguration gc)
-    {
+            GraphicsConfiguration gc) {
         return gc;
     }
 

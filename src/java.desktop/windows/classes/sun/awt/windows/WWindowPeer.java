@@ -663,13 +663,6 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
      public native void repositionSecurityWarning();
 
     @Override
-    public GraphicsConfiguration getAppropriateGraphicsConfiguration(
-            GraphicsConfiguration gc)
-    {
-        return gc;
-    }
-
-    @Override
     public void print(Graphics g) {
         // We assume we print the whole frame,
         // so we expect no clip was set previously

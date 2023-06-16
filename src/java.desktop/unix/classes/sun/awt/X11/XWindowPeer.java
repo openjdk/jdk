@@ -207,39 +207,6 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         ((X11GraphicsDevice)gc.getDevice()).addDisplayChangedListener(this);
     }
 
-    public GraphicsConfiguration getAppropriateGraphicsConfiguration(
-            GraphicsConfiguration gc)
-    {
-        if (graphicsConfig == null || gc == null) {
-            return gc;
-        }
-
-        final X11GraphicsDevice newDev = getSameScreenDevice(gc);
-        final int visualToLookFor = graphicsConfig.getVisual();
-
-        final GraphicsConfiguration[] configurations = newDev.getConfigurations();
-        for (final GraphicsConfiguration config : configurations) {
-            final X11GraphicsConfig x11gc = (X11GraphicsConfig) config;
-            if (visualToLookFor == x11gc.getVisual()) {
-                graphicsConfig = x11gc;
-            }
-        }
-        return graphicsConfig;
-    }
-
-    private X11GraphicsDevice getSameScreenDevice(GraphicsConfiguration gc) {
-        XToolkit.awtLock();
-        try {
-            final int screenNum = ((X11GraphicsDevice) gc.getDevice()).getScreen();
-            return (X11GraphicsDevice) GraphicsEnvironment.
-                    getLocalGraphicsEnvironment().
-                    getScreenDevices()[screenNum];
-        } finally {
-            XToolkit.awtUnlock();
-        }
-    }
-
-
     protected String getWMName() {
         String name = target.getName();
         if (name == null || name.trim().isEmpty()) {
