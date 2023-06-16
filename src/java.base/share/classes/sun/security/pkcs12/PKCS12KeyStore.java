@@ -237,7 +237,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
             this.keyId = keyId;
             this.alias = alias;
             this.trustedKeyUsage = trustedKeyUsage;
-            this.attributes = new HashSet<>();
+            this.attributes = ConcurrentHashMap.newKeySet();
             if (attributes != null) {
                 this.attributes.addAll(attributes);
             }
@@ -697,7 +697,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                 throw new KeyStoreException("Unsupported Key type");
             }
 
-            entry.attributes = new HashSet<>();
+            entry.attributes = ConcurrentHashMap.newKeySet();
             if (attributes != null) {
                 entry.attributes.addAll(attributes);
             }
@@ -2432,7 +2432,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
             String alias = null;
             byte[] keyId = null;
             ObjectIdentifier[] trustedKeyUsage = null;
-            Set<PKCS12Attribute> attributes = ConcurrentHashMap.newKeySet();
+            Set<PKCS12Attribute> attributes = new HashSet<>();
 
             if (attrSet != null) {
                 for (int j = 0; j < attrSet.length; j++) {
@@ -2516,7 +2516,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                     keyList.add(entry);
                 }
                 if (entry.attributes == null) {
-                    entry.attributes = new HashSet<>();
+                    entry.attributes = ConcurrentHashMap.newKeySet();
                 }
                 entry.attributes.addAll(attributes);
                 if (alias == null) {
