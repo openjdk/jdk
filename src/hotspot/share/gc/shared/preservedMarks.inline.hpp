@@ -26,6 +26,7 @@
 #define SHARE_GC_SHARED_PRESERVEDMARKS_INLINE_HPP
 
 #include "gc/shared/preservedMarks.hpp"
+#include "gc/shared/slidingForwarding.inline.hpp"
 
 #include "logging/log.hpp"
 #include "oops/oop.inline.hpp"
@@ -37,27 +38,35 @@ inline bool PreservedMarks::should_preserve_mark(oop obj, markWord m) const {
 
 inline void PreservedMarks::push_if_necessary(oop obj, markWord m) {
   if (should_preserve_mark(obj, m)) {
-    OopAndMarkWord elem(obj, m);
+    PreservedMark elem(obj, m);
     _stack.push(elem);
   }
 }
 
 inline void PreservedMarks::push_always(oop obj, markWord m) {
   assert(!m.is_marked(), "precondition");
-  OopAndMarkWord elem(obj, m);
+  PreservedMark elem(obj, m);
   _stack.push(elem);
 }
 
 inline PreservedMarks::PreservedMarks()
-    : _stack(OopAndMarkWordStack::default_segment_size(),
+    : _stack(PreservedMarkStack::default_segment_size(),
              // This stack should be used very infrequently so there's
              // no point in caching stack segments (there will be a
              // waste of space most of the time). So we set the max
              // cache size to 0.
              0 /* max_cache_size */) { }
 
-void PreservedMarks::OopAndMarkWord::set_mark() const {
+void PreservedMark::set_mark() const {
   _o->set_mark(_m);
+}
+
+template<bool ALT_FWD>
+inline void PreservedMarks::adjust_preserved_mark(PreservedMark* elem) {
+  oop obj = elem->get_oop();
+  if (obj->is_forwarded()) {
+    elem->set_oop(SlidingForwarding::forwardee<ALT_FWD>(obj));
+  }
 }
 
 #endif // SHARE_GC_SHARED_PRESERVEDMARKS_INLINE_HPP

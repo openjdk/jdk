@@ -526,8 +526,6 @@ public abstract sealed class VarHandle implements Constable
         return this;
     }
 
-    VarHandle target() { return null; }
-
     /**
      * Returns {@code true} if this VarHandle has <a href="#invoke-exact-behavior"><em>invoke-exact behavior</em></a>.
      *
@@ -2120,7 +2118,7 @@ public abstract sealed class VarHandle implements Constable
      * @return {@code true} if the given access mode is supported, otherwise
      * {@code false}.
      */
-    public final boolean isAccessModeSupported(AccessMode accessMode) {
+    public boolean isAccessModeSupported(AccessMode accessMode) {
         return vform.getMemberNameOrNull(accessMode.ordinal()) != null;
     }
 
@@ -2176,7 +2174,7 @@ public abstract sealed class VarHandle implements Constable
     MethodHandle[] methodHandleTable;
 
     @ForceInline
-    MethodHandle getMethodHandle(int mode) {
+    final MethodHandle getMethodHandle(int mode) {
         MethodHandle[] mhTable = methodHandleTable;
         if (mhTable == null) {
             mhTable = methodHandleTable = new MethodHandle[AccessMode.COUNT];
@@ -2188,7 +2186,7 @@ public abstract sealed class VarHandle implements Constable
         return mh;
     }
 
-    private final MethodHandle getMethodHandleUncached(int mode) {
+    MethodHandle getMethodHandleUncached(int mode) {
         MethodType mt = accessModeType(AccessMode.values()[mode]).
                 insertParameterTypes(0, VarHandle.class);
         MemberName mn = vform.getMemberName(mode);

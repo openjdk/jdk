@@ -29,7 +29,7 @@
 #include "gc/shared/generation.hpp"
 #include "gc/shared/oopStorageParState.hpp"
 #include "gc/shared/preGCValues.hpp"
-#include "gc/shared/softRefGenPolicy.hpp"
+#include "gc/shared/softRefPolicy.hpp"
 
 class AdaptiveSizePolicy;
 class CardTableRS;
@@ -72,10 +72,7 @@ private:
   // The singleton CardTable Remembered Set.
   CardTableRS* _rem_set;
 
-  SoftRefGenPolicy _soft_ref_gen_policy;
-
-  // The sizing of the heap is controlled by a sizing policy.
-  AdaptiveSizePolicy* _size_policy;
+  SoftRefPolicy _soft_ref_policy;
 
   GCPolicyCounters* _gc_policy_counters;
 
@@ -139,10 +136,6 @@ public:
   jint initialize() override;
   virtual CardTableRS* create_rem_set(const MemRegion& reserved_region);
 
-  void initialize_size_policy(size_t init_eden_size,
-                              size_t init_promo_size,
-                              size_t init_survivor_size);
-
   // Does operations required after initialization has been done.
   void post_initialize() override;
 
@@ -158,12 +151,7 @@ public:
   GenerationSpec* young_gen_spec() const;
   GenerationSpec* old_gen_spec() const;
 
-  SoftRefPolicy* soft_ref_policy() override { return &_soft_ref_gen_policy; }
-
-  // Adaptive size policy
-  virtual AdaptiveSizePolicy* size_policy() {
-    return _size_policy;
-  }
+  SoftRefPolicy* soft_ref_policy() override { return &_soft_ref_policy; }
 
   // Performance Counter support
   GCPolicyCounters* counters()     { return _gc_policy_counters; }
@@ -376,8 +364,7 @@ private:
   HeapWord* expand_heap_and_allocate(size_t size, bool is_tlab);
 
   HeapWord* mem_allocate_work(size_t size,
-                              bool is_tlab,
-                              bool* gc_overhead_limit_was_exceeded);
+                              bool is_tlab);
 
 #if INCLUDE_SERIALGC
   // For use by mark-sweep.  As implemented, mark-sweep-compact is global

@@ -35,6 +35,7 @@
 #include "jvmci/jvmciRuntime.hpp"
 #include "jvmci/metadataHandles.hpp"
 #include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/universe.hpp"
 #include "oops/constantPool.inline.hpp"
@@ -45,6 +46,7 @@
 #include "oops/typeArrayOop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
@@ -752,6 +754,21 @@ JVM_ENTRY_NO_ENV(jobject, JVM_GetJVMCIRuntime(JNIEnv *env, jclass c))
   return JVMCIENV->get_jobject(runtime);
 JVM_END
 
+// private static long Services.readSystemPropertiesInfo(int[] offsets)
+JVM_ENTRY_NO_ENV(jlong, JVM_ReadSystemPropertiesInfo(JNIEnv *env, jclass c, jintArray offsets_handle))
+  JNI_JVMCIENV(thread, env);
+  if (!EnableJVMCI) {
+    JVMCI_THROW_MSG_0(InternalError, "JVMCI is not enabled");
+  }
+  JVMCIPrimitiveArray offsets = JVMCIENV->wrap(offsets_handle);
+  JVMCIENV->put_int_at(offsets, 0, SystemProperty::next_offset_in_bytes());
+  JVMCIENV->put_int_at(offsets, 1, SystemProperty::key_offset_in_bytes());
+  JVMCIENV->put_int_at(offsets, 2, PathString::value_offset_in_bytes());
+
+  return (jlong) Arguments::system_properties();
+JVM_END
+
+
 void JVMCIRuntime::call_getCompiler(TRAPS) {
   THREAD_JVMCIENV(JavaThread::current());
   JVMCIObject jvmciRuntime = JVMCIRuntime::get_HotSpotJVMCIRuntime(JVMCI_CHECK);
@@ -1225,10 +1242,16 @@ bool JVMCIRuntime::detach_thread(JavaThread* thread, const char* reason, bool ca
   return destroyed_javavm;
 }
 
-JNIEnv* JVMCIRuntime::init_shared_library_javavm() {
+JNIEnv* JVMCIRuntime::init_shared_library_javavm(int* create_JavaVM_err) {
   MutexLocker locker(_lock);
   JavaVM* javaVM = _shared_library_javavm;
   if (javaVM == nullptr) {
+    const char* val = Arguments::PropertyList_get_value(Arguments::system_properties(), "test.jvmci.forceEnomemOnLibjvmciInit");
+    if (val != nullptr && strcmp(val, "true") == 0) {
+      *create_JavaVM_err = JNI_ENOMEM;
+      return nullptr;
+    }
+
     char* sl_path;
     void* sl_handle = JVMCI::get_shared_library(sl_path, true);
 
@@ -1275,7 +1298,7 @@ JNIEnv* JVMCIRuntime::init_shared_library_javavm() {
       JVMCI_event_1("created JavaVM[%ld]@" PTR_FORMAT " for JVMCI runtime %d", javaVM_id, p2i(javaVM), _id);
       return env;
     } else {
-      fatal("JNI_CreateJavaVM failed with return value %d", result);
+      *create_JavaVM_err = result;
     }
   }
   return nullptr;
@@ -1391,9 +1414,6 @@ void JVMCIRuntime::initialize(JVMCI_TRAPS) {
 
   JavaThread* THREAD = JavaThread::current();
 
-  int properties_len = 0;
-  jbyte* properties = nullptr;
-
   MutexLocker locker(_lock);
   // Check again under _lock
   if (_init_state == fully_initialized) {
@@ -1456,15 +1476,6 @@ void JVMCIRuntime::initialize(JVMCI_TRAPS) {
     create_jvmci_primitive_type(T_VOID, JVMCI_CHECK_EXIT_((void)0));
 
     DEBUG_ONLY(CodeInstaller::verify_bci_constants(JVMCIENV);)
-
-    if (!JVMCIENV->is_hotspot()) {
-      Handle properties_exception;
-      properties = JVMCIENV->get_serialized_saved_properties(properties_len, THREAD);
-      if (JVMCIEnv::transfer_pending_exception_to_jni(THREAD, nullptr, JVMCIENV)) {
-        return;
-      }
-      JVMCIENV->copy_saved_properties(properties, properties_len, JVMCI_CHECK);
-    }
   }
 
   _init_state = fully_initialized;
@@ -1548,8 +1559,9 @@ JVM_END
 
 void JVMCIRuntime::shutdown() {
   if (_HotSpotJVMCIRuntime_instance.is_non_null()) {
+    bool jni_enomem_is_fatal = true;
     JVMCI_event_1("shutting down HotSpotJVMCIRuntime for JVMCI runtime %d", _id);
-    JVMCIEnv __stack_jvmci_env__(JavaThread::current(), _HotSpotJVMCIRuntime_instance.is_hotspot(), __FILE__, __LINE__);
+    JVMCIEnv __stack_jvmci_env__(JavaThread::current(), _HotSpotJVMCIRuntime_instance.is_hotspot(), jni_enomem_is_fatal, __FILE__, __LINE__);
     JVMCIEnv* JVMCIENV = &__stack_jvmci_env__;
     JVMCIENV->call_HotSpotJVMCIRuntime_shutdown(_HotSpotJVMCIRuntime_instance);
     if (_num_attached_threads == cannot_be_attached) {
@@ -1601,19 +1613,14 @@ void JVMCIRuntime::bootstrap_finished(TRAPS) {
   }
 }
 
-void JVMCIRuntime::describe_pending_hotspot_exception(JavaThread* THREAD, bool clear) {
+void JVMCIRuntime::describe_pending_hotspot_exception(JavaThread* THREAD) {
   if (HAS_PENDING_EXCEPTION) {
     Handle exception(THREAD, PENDING_EXCEPTION);
-    const char* exception_file = THREAD->exception_file();
-    int exception_line = THREAD->exception_line();
     CLEAR_PENDING_EXCEPTION;
     java_lang_Throwable::print_stack_trace(exception, tty);
 
     // Clear and ignore any exceptions raised during printing
     CLEAR_PENDING_EXCEPTION;
-    if (!clear) {
-      THREAD->set_pending_exception(exception(), exception_file, exception_line);
-    }
   }
 }
 
@@ -1626,15 +1633,15 @@ void JVMCIRuntime::fatal_exception(JVMCIEnv* JVMCIENV, const char* message) {
     // Only report an error once
     tty->print_raw_cr(message);
     if (JVMCIENV != nullptr) {
-      JVMCIENV->describe_pending_exception(true);
+      JVMCIENV->describe_pending_exception(tty);
     } else {
-      describe_pending_hotspot_exception(THREAD, true);
+      describe_pending_hotspot_exception(THREAD);
     }
   } else {
-    // Allow error reporting thread to print the stack trace.
+    // Allow error reporting thread time to print the stack trace.
     THREAD->sleep(200);
   }
-  fatal("Fatal exception in JVMCI: %s", message);
+  fatal("Fatal JVMCI exception (see JVMCI Events for stack trace): %s", message);
 }
 
 // ------------------------------------------------------------------
@@ -1798,7 +1805,7 @@ Klass* JVMCIRuntime::get_klass_by_index(const constantPoolHandle& cpool,
 // Implementation note: the results of field lookups are cached
 // in the accessor klass.
 void JVMCIRuntime::get_field_by_index_impl(InstanceKlass* klass, fieldDescriptor& field_desc,
-                                        int index) {
+                                        int index, Bytecodes::Code bc) {
   JVMCI_EXCEPTION_CONTEXT;
 
   assert(klass->is_linked(), "must be linked before using its constant-pool");
@@ -1806,14 +1813,14 @@ void JVMCIRuntime::get_field_by_index_impl(InstanceKlass* klass, fieldDescriptor
   constantPoolHandle cpool(thread, klass->constants());
 
   // Get the field's name, signature, and type.
-  Symbol* name  = cpool->name_ref_at(index);
+  Symbol* name  = cpool->name_ref_at(index, bc);
 
-  int nt_index = cpool->name_and_type_ref_index_at(index);
+  int nt_index = cpool->name_and_type_ref_index_at(index, bc);
   int sig_index = cpool->signature_ref_index_at(nt_index);
   Symbol* signature = cpool->symbol_at(sig_index);
 
   // Get the field's declared holder.
-  int holder_index = cpool->klass_ref_index_at(index);
+  int holder_index = cpool->klass_ref_index_at(index, bc);
   bool holder_is_accessible;
   Klass* declared_holder = get_klass_by_index(cpool, holder_index,
                                                holder_is_accessible,
@@ -1838,9 +1845,9 @@ void JVMCIRuntime::get_field_by_index_impl(InstanceKlass* klass, fieldDescriptor
 
 // ------------------------------------------------------------------
 // Get a field by index from a klass's constant pool.
-void JVMCIRuntime::get_field_by_index(InstanceKlass* accessor, fieldDescriptor& fd, int index) {
+void JVMCIRuntime::get_field_by_index(InstanceKlass* accessor, fieldDescriptor& fd, int index, Bytecodes::Code bc) {
   ResourceMark rm;
-  return get_field_by_index_impl(accessor, fd, index);
+  return get_field_by_index_impl(accessor, fd, index, bc);
 }
 
 // ------------------------------------------------------------------
@@ -1888,13 +1895,13 @@ Method* JVMCIRuntime::get_method_by_index_impl(const constantPoolHandle& cpool,
     return nullptr;
   }
 
-  int holder_index = cpool->klass_ref_index_at(index);
+  int holder_index = cpool->klass_ref_index_at(index, bc);
   bool holder_is_accessible;
   Klass* holder = get_klass_by_index_impl(cpool, holder_index, holder_is_accessible, accessor);
 
   // Get the method's name and signature.
-  Symbol* name_sym = cpool->name_ref_at(index);
-  Symbol* sig_sym  = cpool->signature_ref_at(index);
+  Symbol* name_sym = cpool->name_ref_at(index, bc);
+  Symbol* sig_sym  = cpool->signature_ref_at(index, bc);
 
   if (cpool->has_preresolution()
       || ((holder == vmClasses::MethodHandle_klass() || holder == vmClasses::VarHandle_klass()) &&
@@ -1920,7 +1927,7 @@ Method* JVMCIRuntime::get_method_by_index_impl(const constantPoolHandle& cpool,
   }
 
   if (holder_is_accessible) { // Our declared holder is loaded.
-    constantTag tag = cpool->tag_ref_at(index);
+    constantTag tag = cpool->tag_ref_at(index, bc);
     Method* m = lookup_method(accessor, holder, name_sym, sig_sym, bc, tag);
     if (m != nullptr) {
       // We found the method.
@@ -1961,7 +1968,12 @@ Method* JVMCIRuntime::get_method_by_index(const constantPoolHandle& cpool,
 // ------------------------------------------------------------------
 // Check for changes to the system dictionary during compilation
 // class loads, evolution, breakpoints
-JVMCI::CodeInstallResult JVMCIRuntime::validate_compile_task_dependencies(Dependencies* dependencies, JVMCICompileState* compile_state, char** failure_detail) {
+JVMCI::CodeInstallResult JVMCIRuntime::validate_compile_task_dependencies(Dependencies* dependencies,
+                                                                          JVMCICompileState* compile_state,
+                                                                          char** failure_detail,
+                                                                          bool& failing_dep_is_call_site)
+{
+  failing_dep_is_call_site = false;
   // If JVMTI capabilities were enabled during compile, the compilation is invalidated.
   if (compile_state != nullptr && compile_state->jvmti_state_changed()) {
     *failure_detail = (char*) "Jvmti state change during compilation invalidated dependencies";
@@ -1970,11 +1982,48 @@ JVMCI::CodeInstallResult JVMCIRuntime::validate_compile_task_dependencies(Depend
 
   CompileTask* task = compile_state == nullptr ? nullptr : compile_state->task();
   Dependencies::DepType result = dependencies->validate_dependencies(task, failure_detail);
+
   if (result == Dependencies::end_marker) {
     return JVMCI::ok;
   }
-
+  if (result == Dependencies::call_site_target_value) {
+    failing_dep_is_call_site = true;
+  }
   return JVMCI::dependencies_failed;
+}
+
+// Called after an upcall to `function` while compiling `method`.
+// If an exception occurred, it is cleared, the compilation state
+// is updated with the failure and this method returns true.
+// Otherwise, it returns false.
+static bool after_compiler_upcall(JVMCIEnv* JVMCIENV, JVMCICompiler* compiler, const methodHandle& method, const char* function) {
+  if (JVMCIENV->has_pending_exception()) {
+    ResourceMark rm;
+    bool reason_on_C_heap = true;
+    const char* pending_string = nullptr;
+    const char* pending_stack_trace = nullptr;
+    JVMCIENV->pending_exception_as_string(&pending_string, &pending_stack_trace);
+    if (pending_string == nullptr) pending_string = "null";
+    const char* failure_reason = os::strdup(err_msg("uncaught exception in %s [%s]", function, pending_string), mtJVMCI);
+    if (failure_reason == nullptr) {
+      failure_reason = "uncaught exception";
+      reason_on_C_heap = false;
+    }
+    JVMCI_event_1("%s", failure_reason);
+    Log(jit, compilation) log;
+    if (log.is_info()) {
+      log.info("%s while compiling %s", failure_reason, method->name_and_sig_as_C_string());
+      if (pending_stack_trace != nullptr) {
+        LogStream ls(log.info());
+        ls.print_raw_cr(pending_stack_trace);
+      }
+    }
+    JVMCICompileState* compile_state = JVMCIENV->compile_state();
+    compile_state->set_failure(true, failure_reason, reason_on_C_heap);
+    compiler->on_upcall(failure_reason, compile_state);
+    return true;
+  }
+  return false;
 }
 
 void JVMCIRuntime::compile_method(JVMCIEnv* JVMCIENV, JVMCICompiler* compiler, const methodHandle& method, int entry_bci) {
@@ -2002,53 +2051,43 @@ void JVMCIRuntime::compile_method(JVMCIEnv* JVMCIENV, JVMCICompiler* compiler, c
 
   HandleMark hm(thread);
   JVMCIObject receiver = get_HotSpotJVMCIRuntime(JVMCIENV);
-  if (JVMCIENV->has_pending_exception()) {
-    if (PrintWarnings) {
-      ResourceMark rm(thread);
-      warning("HotSpotJVMCIRuntime initialization failed when compiling %s", method->name_and_sig_as_C_string());
-      JVMCIENV->describe_pending_exception(true);
-    }
-    compile_state->set_failure(false, "exception during HotSpotJVMCIRuntime initialization");
+  if (after_compiler_upcall(JVMCIENV, compiler, method, "get_HotSpotJVMCIRuntime")) {
     return;
   }
   JVMCIObject jvmci_method = JVMCIENV->get_jvmci_method(method, JVMCIENV);
-  if (JVMCIENV->has_pending_exception()) {
-    if (PrintWarnings) {
-      ResourceMark rm(thread);
-      warning("Error creating JVMCI wrapper for %s", method->name_and_sig_as_C_string());
-      JVMCIENV->describe_pending_exception(true);
-    }
-    compile_state->set_failure(false, "exception getting JVMCI wrapper method");
+  if (after_compiler_upcall(JVMCIENV, compiler, method, "get_jvmci_method")) {
     return;
   }
 
   JVMCIObject result_object = JVMCIENV->call_HotSpotJVMCIRuntime_compileMethod(receiver, jvmci_method, entry_bci,
                                                                      (jlong) compile_state, compile_state->task()->compile_id());
-  if (!JVMCIENV->has_pending_exception()) {
-    if (result_object.is_non_null()) {
-      JVMCIObject failure_message = JVMCIENV->get_HotSpotCompilationRequestResult_failureMessage(result_object);
-      if (failure_message.is_non_null()) {
-        // Copy failure reason into resource memory first ...
-        const char* failure_reason = JVMCIENV->as_utf8_string(failure_message);
-        // ... and then into the C heap.
-        failure_reason = os::strdup(failure_reason, mtJVMCI);
-        bool retryable = JVMCIENV->get_HotSpotCompilationRequestResult_retry(result_object) != 0;
-        compile_state->set_failure(retryable, failure_reason, true);
-      } else {
-        if (!compile_state->task()->is_success()) {
-          compile_state->set_failure(true, "no nmethod produced");
-        } else {
-          compile_state->task()->set_num_inlined_bytecodes(JVMCIENV->get_HotSpotCompilationRequestResult_inlinedBytecodes(result_object));
-          compiler->inc_methods_compiled();
-        }
-      }
-    } else {
-      assert(false, "JVMCICompiler.compileMethod should always return non-null");
+  if (JVMCIENV->has_pending_exception()) {
+    const char* val = Arguments::PropertyList_get_value(Arguments::system_properties(), "test.jvmci.compileMethodExceptionIsFatal");
+    if (val != nullptr && strcmp(val, "true") == 0) {
+      fatal_exception(JVMCIENV, "testing JVMCI fatal exception handling");
     }
+  }
+
+  if (after_compiler_upcall(JVMCIENV, compiler, method, "call_HotSpotJVMCIRuntime_compileMethod")) {
+    return;
+  }
+  compiler->on_upcall(nullptr);
+  guarantee(result_object.is_non_null(), "call_HotSpotJVMCIRuntime_compileMethod returned null");
+  JVMCIObject failure_message = JVMCIENV->get_HotSpotCompilationRequestResult_failureMessage(result_object);
+  if (failure_message.is_non_null()) {
+    // Copy failure reason into resource memory first ...
+    const char* failure_reason = JVMCIENV->as_utf8_string(failure_message);
+    // ... and then into the C heap.
+    failure_reason = os::strdup(failure_reason, mtJVMCI);
+    bool retryable = JVMCIENV->get_HotSpotCompilationRequestResult_retry(result_object) != 0;
+    compile_state->set_failure(retryable, failure_reason, true);
   } else {
-    // An uncaught exception here implies failure during compiler initialization.
-    // The only sensible thing to do here is to exit the VM.
-    fatal_exception(JVMCIENV, "Exception during JVMCI compiler initialization");
+    if (!compile_state->task()->is_success()) {
+      compile_state->set_failure(true, "no nmethod produced");
+    } else {
+      compile_state->task()->set_num_inlined_bytecodes(JVMCIENV->get_HotSpotCompilationRequestResult_inlinedBytecodes(result_object));
+      compiler->inc_methods_compiled();
+    }
   }
   if (compiler->is_bootstrapping()) {
     compiler->set_bootstrap_compilation_request_handled();
@@ -2138,11 +2177,13 @@ JVMCI::CodeInstallResult JVMCIRuntime::register_method(JVMCIEnv* JVMCIENV,
     }
 
     // Check for {class loads, evolution, breakpoints} during compilation
-    result = validate_compile_task_dependencies(dependencies, JVMCIENV->compile_state(), &failure_detail);
+    JVMCICompileState* compile_state = JVMCIENV->compile_state();
+    bool failing_dep_is_call_site;
+    result = validate_compile_task_dependencies(dependencies, compile_state, &failure_detail, failing_dep_is_call_site);
     if (result != JVMCI::ok) {
       // While not a true deoptimization, it is a preemptive decompile.
       MethodData* mdp = method()->method_data();
-      if (mdp != nullptr) {
+      if (mdp != nullptr && !failing_dep_is_call_site) {
         mdp->inc_decompile_count();
 #ifdef ASSERT
         if (mdp->decompile_count() > (uint)PerMethodRecompilationCutoff) {

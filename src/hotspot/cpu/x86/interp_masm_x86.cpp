@@ -32,6 +32,7 @@
 #include "oops/markWord.hpp"
 #include "oops/methodData.hpp"
 #include "oops/method.hpp"
+#include "oops/resolvedIndyEntry.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/basicLock.hpp"
@@ -189,7 +190,7 @@ void InterpreterMacroAssembler::profile_return_type(Register mdp, Register ret, 
       cmpb(Address(_bcp_register, 0), Bytecodes::_invokehandle);
       jcc(Assembler::equal, do_profile);
       get_method(tmp);
-      cmpw(Address(tmp, Method::intrinsic_id_offset_in_bytes()), static_cast<int>(vmIntrinsics::_compiledLambdaForm));
+      cmpw(Address(tmp, Method::intrinsic_id_offset()), static_cast<int>(vmIntrinsics::_compiledLambdaForm));
       jcc(Assembler::notEqual, profile_continue);
 
       bind(do_profile);
@@ -300,7 +301,7 @@ void InterpreterMacroAssembler::call_VM_base(Register oop_result,
     cmpptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), NULL_WORD);
     jcc(Assembler::equal, L);
     stop("InterpreterMacroAssembler::call_VM_base:"
-         " last_sp != nullptr");
+         " last_sp isn't null");
     bind(L);
   }
 #endif /* ASSERT */
@@ -510,8 +511,8 @@ void InterpreterMacroAssembler::load_resolved_reference_at_index(Register result
 
   get_constant_pool(result);
   // load pointer for resolved_references[] objArray
-  movptr(result, Address(result, ConstantPool::cache_offset_in_bytes()));
-  movptr(result, Address(result, ConstantPoolCache::resolved_references_offset_in_bytes()));
+  movptr(result, Address(result, ConstantPool::cache_offset()));
+  movptr(result, Address(result, ConstantPoolCache::resolved_references_offset()));
   resolve_oop_handle(result, tmp);
   load_heap_oop(result, Address(result, index,
                                 UseCompressedOops ? Address::times_4 : Address::times_ptr,
@@ -526,7 +527,7 @@ void InterpreterMacroAssembler::load_resolved_klass_at_index(Register klass,
 
   movw(index, Address(cpool, index, Address::times_ptr, sizeof(ConstantPool)));
   Register resolved_klasses = cpool;
-  movptr(resolved_klasses, Address(cpool, ConstantPool::resolved_klasses_offset_in_bytes()));
+  movptr(resolved_klasses, Address(cpool, ConstantPool::resolved_klasses_offset()));
   movptr(klass, Address(resolved_klasses, index, Address::times_ptr, Array<Klass*>::base_offset_in_bytes()));
 }
 
@@ -1038,7 +1039,7 @@ void InterpreterMacroAssembler::remove_activation(
   // register for unlock_object to pass to VM directly
   lea(robj, monitor); // address of first monitor
 
-  movptr(rax, Address(robj, BasicObjectLock::obj_offset_in_bytes()));
+  movptr(rax, Address(robj, BasicObjectLock::obj_offset()));
   testptr(rax, rax);
   jcc(Assembler::notZero, unlock);
 
@@ -1121,7 +1122,7 @@ void InterpreterMacroAssembler::remove_activation(
 
     bind(loop);
     // check if current entry is used
-    cmpptr(Address(rmon, BasicObjectLock::obj_offset_in_bytes()), NULL_WORD);
+    cmpptr(Address(rmon, BasicObjectLock::obj_offset()), NULL_WORD);
     jcc(Assembler::notEqual, exception);
 
     addptr(rmon, entry_size); // otherwise advance to next entry
@@ -1208,8 +1209,8 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg) {
     const Register obj_reg = LP64_ONLY(c_rarg3) NOT_LP64(rcx); // Will contain the oop
     const Register rklass_decode_tmp = rscratch1;
 
-    const int obj_offset = BasicObjectLock::obj_offset_in_bytes();
-    const int lock_offset = BasicObjectLock::lock_offset_in_bytes ();
+    const int obj_offset = in_bytes(BasicObjectLock::obj_offset());
+    const int lock_offset = in_bytes(BasicObjectLock::lock_offset());
     const int mark_offset = lock_offset +
                             BasicLock::displaced_header_offset_in_bytes();
 
@@ -1338,14 +1339,14 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg) {
     if (LockingMode != LM_LIGHTWEIGHT) {
       // Convert from BasicObjectLock structure to object and BasicLock
       // structure Store the BasicLock address into %rax
-      lea(swap_reg, Address(lock_reg, BasicObjectLock::lock_offset_in_bytes()));
+      lea(swap_reg, Address(lock_reg, BasicObjectLock::lock_offset()));
     }
 
     // Load oop into obj_reg(%c_rarg3)
-    movptr(obj_reg, Address(lock_reg, BasicObjectLock::obj_offset_in_bytes()));
+    movptr(obj_reg, Address(lock_reg, BasicObjectLock::obj_offset()));
 
     // Free entry
-    movptr(Address(lock_reg, BasicObjectLock::obj_offset_in_bytes()), NULL_WORD);
+    movptr(Address(lock_reg, BasicObjectLock::obj_offset()), NULL_WORD);
 
     if (LockingMode == LM_LIGHTWEIGHT) {
 #ifdef _LP64
@@ -1388,7 +1389,7 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg) {
 
     bind(slow_case);
     // Call the runtime routine for slow case.
-    movptr(Address(lock_reg, BasicObjectLock::obj_offset_in_bytes()), obj_reg); // restore obj
+    movptr(Address(lock_reg, BasicObjectLock::obj_offset()), obj_reg); // restore obj
     call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorexit), lock_reg);
 
     bind(done);

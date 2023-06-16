@@ -118,6 +118,8 @@
   template(java_lang_StringBuilder,                   "java/lang/StringBuilder")                  \
   template(java_lang_CharSequence,                    "java/lang/CharSequence")                   \
   template(java_lang_SecurityManager,                 "java/lang/SecurityManager")                \
+  template(java_lang_ScopedValue,                     "java/lang/ScopedValue")                    \
+  template(java_lang_ScopedValue_Carrier,             "java/lang/ScopedValue$Carrier")            \
   template(java_security_AccessControlContext,        "java/security/AccessControlContext")       \
   template(java_security_AccessController,            "java/security/AccessController")           \
   template(executePrivileged_name,                    "executePrivileged")                        \
@@ -157,8 +159,6 @@
   template(jdk_internal_loader_BuiltinClassLoader,    "jdk/internal/loader/BuiltinClassLoader")   \
   template(jdk_internal_loader_ClassLoaders_AppClassLoader,      "jdk/internal/loader/ClassLoaders$AppClassLoader")      \
   template(jdk_internal_loader_ClassLoaders_PlatformClassLoader, "jdk/internal/loader/ClassLoaders$PlatformClassLoader") \
-  template(jdk_incubator_concurrent_ScopedValue,      "jdk/incubator/concurrent/ScopedValue")     \
-  template(jdk_incubator_concurrent_ScopedValue_Carrier, "jdk/incubator/concurrent/ScopedValue$Carrier") \
                                                                                                   \
   /* Java runtime version access */                                                               \
   template(java_lang_VersionProps,                    "java/lang/VersionProps")                   \
@@ -271,14 +271,13 @@
   /* Support for reflection based on dynamic bytecode generation (JDK 1.4 and above) */           \
                                                                                                   \
   template(jdk_internal_reflect,                      "jdk/internal/reflect")                     \
-  template(reflect_MagicAccessorImpl,                 "jdk/internal/reflect/MagicAccessorImpl")       \
   template(reflect_MethodAccessorImpl,                "jdk/internal/reflect/MethodAccessorImpl")      \
-  template(reflect_ConstructorAccessorImpl,           "jdk/internal/reflect/ConstructorAccessorImpl") \
   template(reflect_DelegatingClassLoader,             "jdk/internal/reflect/DelegatingClassLoader")   \
   template(reflect_Reflection,                        "jdk/internal/reflect/Reflection")              \
   template(reflect_CallerSensitive,                   "jdk/internal/reflect/CallerSensitive")         \
   template(reflect_CallerSensitive_signature,         "Ljdk/internal/reflect/CallerSensitive;")       \
-  template(reflect_NativeConstructorAccessorImpl,     "jdk/internal/reflect/NativeConstructorAccessorImpl")\
+  template(reflect_DirectConstructorHandleAccessor_NativeAccessor,   "jdk/internal/reflect/DirectConstructorHandleAccessor$NativeAccessor") \
+  template(reflect_SerializationConstructorAccessorImpl,             "jdk/internal/reflect/SerializationConstructorAccessorImpl") \
   template(checkedExceptions_name,                    "checkedExceptions")                        \
   template(clazz_name,                                "clazz")                                    \
   template(exceptionTypes_name,                       "exceptionTypes")                           \
@@ -307,7 +306,6 @@
   template(parameter_annotations_name,                "parameterAnnotations")                     \
   template(annotation_default_name,                   "annotationDefault")                        \
   template(reflect_ConstantPool,                      "jdk/internal/reflect/ConstantPool")        \
-  template(reflect_UnsafeStaticFieldAccessorImpl,     "jdk/internal/reflect/UnsafeStaticFieldAccessorImpl")\
   template(base_name,                                 "base")                                     \
   /* Type Annotations (JDK 8 and above) */                                                        \
   template(type_annotations_name,                     "typeAnnotations")                          \
@@ -754,7 +752,6 @@
   do_alias(appendToClassPathForInstrumentation_signature, string_void_signature)                                  \
   template(serializePropertiesToByteArray_name,        "serializePropertiesToByteArray")                          \
   template(serializeAgentPropertiesToByteArray_name,   "serializeAgentPropertiesToByteArray")                     \
-  template(serializeSavedPropertiesToByteArray_name,   "serializeSavedPropertiesToByteArray")                     \
   template(encodeThrowable_name,                       "encodeThrowable")                                         \
   template(encodeThrowable_signature,                  "(Ljava/lang/Throwable;JI)I")                              \
   template(decodeAndThrowThrowable_name,               "decodeAndThrowThrowable")                                 \

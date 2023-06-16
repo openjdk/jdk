@@ -26,6 +26,7 @@
 #define SHARE_GC_SERIAL_MARKSWEEP_HPP
 
 #include "gc/shared/collectedHeap.hpp"
+#include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/taskqueue.hpp"
@@ -97,7 +98,7 @@ class MarkSweep : AllStatic {
   static Stack<ObjArrayTask, mtGC>             _objarray_stack;
 
   // Space for storing/restoring mark word
-  static Stack<PreservedMark, mtGC>      _preserved_overflow_stack;
+  static PreservedMarksSet               _preserved_overflow_stack_set;
   static size_t                          _preserved_count;
   static size_t                          _preserved_count_max;
   static PreservedMark*                  _preserved_marks;
@@ -147,10 +148,10 @@ class MarkSweep : AllStatic {
   // Check mark and maybe push on marking stack
   template <class T> static void mark_and_push(T* p);
 
-  template <bool ALT_FWD>
-  static void adjust_marks();
-
 private:
+  template <bool ALT_FWD>
+  static void adjust_marks_impl();
+
   // Call backs for marking
   static void mark_object(oop obj);
   // Mark pointer and follow contents.  Empty marking stack afterwards.
@@ -185,18 +186,6 @@ class AdjustPointerClosure: public BasicOopIterateClosure {
   virtual void do_oop(oop* p);
   virtual void do_oop(narrowOop* p);
   virtual ReferenceIterationMode reference_iteration_mode() { return DO_FIELDS; }
-};
-
-class PreservedMark {
-private:
-  oop _obj;
-  markWord _mark;
-
-public:
-  PreservedMark(oop obj, markWord mark) : _obj(obj), _mark(mark) {}
-  template<bool ALT_FWD>
-  void adjust_pointer();
-  void restore();
 };
 
 #endif // SHARE_GC_SERIAL_MARKSWEEP_HPP

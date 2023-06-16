@@ -190,6 +190,8 @@ static bool stack_has_headroom(size_t headroom) {
 }
 
 #ifdef ASSERT
+PRAGMA_DIAG_PUSH
+PRAGMA_INFINITE_RECURSION_IGNORED
 void VMError::reattempt_test_hit_stack_limit(outputStream* st) {
   if (stack_has_headroom(_reattempt_required_stack_headroom)) {
     // Use all but (_reattempt_required_stack_headroom - K) unguarded stack space.
@@ -220,6 +222,7 @@ void VMError::reattempt_test_hit_stack_limit(outputStream* st) {
   }
   controlled_crash(14);
 }
+PRAGMA_DIAG_POP
 #endif // ASSERT
 
 bool VMError::can_reattempt_step(const char* &stop_reason) {
@@ -382,6 +385,27 @@ static bool print_code(outputStream* st, Thread* thread, address pc, bool is_cra
     }
   }
   return false;
+}
+
+// Like above, but only try to figure out a short name. Return nullptr if not found.
+static const char* find_code_name(address pc) {
+  if (Interpreter::contains(pc)) {
+    InterpreterCodelet* codelet = Interpreter::codelet_containing(pc);
+    if (codelet != nullptr) {
+      return codelet->description();
+    }
+  } else {
+    StubCodeDesc* desc = StubCodeDesc::desc_for(pc);
+    if (desc != nullptr) {
+      return desc->name();
+    } else {
+      CodeBlob* cb = CodeCache::find_blob(pc);
+      if (cb != nullptr) {
+        return cb->name();
+      }
+    }
+  }
+  return nullptr;
 }
 
 /**
@@ -672,6 +696,10 @@ void VMError::report(outputStream* st, bool _verbose) {
   // don't allocate large buffer on stack
   static char buf[O_BUFLEN];
 
+  // Native stack trace may get stuck. We try to handle the last pc if it
+  // belongs to VM generated code.
+  address lastpc = nullptr;
+
   BEGIN
 
   STEP("printing fatal error message")
@@ -960,9 +988,16 @@ void VMError::report(outputStream* st, bool _verbose) {
     st->cr();
 
   STEP_IF("printing native stack (with source info)", _verbose)
-    if (os::platform_print_native_stack(st, _context, buf, sizeof(buf))) {
+    if (os::platform_print_native_stack(st, _context, buf, sizeof(buf), lastpc)) {
       // We have printed the native stack in platform-specific code
       // Windows/x64 needs special handling.
+      // Stack walking may get stuck. Try to find the calling code.
+      if (lastpc != nullptr) {
+        const char* name = find_code_name(lastpc);
+        if (name != nullptr) {
+          st->print_cr("The last pc belongs to %s (printed below).", name);
+        }
+      }
     } else {
       frame fr = _context ? os::fetch_frame_from_context(_context)
                           : os::current_frame();
@@ -1067,6 +1102,13 @@ void VMError::report(outputStream* st, bool _verbose) {
     // value outside the range.
     int limit = MIN2(ErrorLogPrintCodeLimit, printed_capacity);
     if (limit > 0) {
+      // Check if a pc was found by native stack trace above.
+      if (lastpc != nullptr) {
+        if (print_code(st, _thread, lastpc, true, printed, printed_capacity)) {
+          printed_len++;
+        }
+      }
+
       // Scan the native stack
       if (!_print_native_stack_used) {
         // Only try to print code of the crashing frame since

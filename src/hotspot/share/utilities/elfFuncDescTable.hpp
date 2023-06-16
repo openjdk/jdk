@@ -132,7 +132,7 @@ public:
   ElfFuncDescTable(FILE* file, Elf_Shdr shdr, int index);
   ~ElfFuncDescTable();
 
-  // return the function address for the function descriptor at 'index' or nullptr on error
+  // return the function address for the function descriptor at 'index' or null on error
   address lookup(Elf_Word index);
 
   int get_index() const { return _index; };
