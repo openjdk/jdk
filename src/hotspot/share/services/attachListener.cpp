@@ -371,7 +371,7 @@ static AttachOperationFunctionInfo funcs[] = {
 // from the queue, examines the operation name (command), and dispatches
 // to the corresponding function to perform the operation.
 
-static void attach_listener_thread_entry(JavaThread* thread, TRAPS) {
+void AttachListenerThread::thread_entry(JavaThread* thread, TRAPS) {
   os::set_priority(thread, NearMaxPriority);
 
   assert(thread == Thread::current(), "Must be");
@@ -460,7 +460,7 @@ void AttachListener::init() {
     return;
   }
 
-  JavaThread* thread = new JavaThread(&attach_listener_thread_entry);
+  JavaThread* thread = new AttachListenerThread();
   JavaThread::vm_exit_on_osthread_failure(thread);
 
   JavaThread::start_internal_daemon(THREAD, thread, thread_oop, NoPriority);

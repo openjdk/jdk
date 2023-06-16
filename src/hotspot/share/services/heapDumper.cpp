@@ -1517,8 +1517,8 @@ class DumperController : public CHeapObj<mtInternal> {
    }
 };
 
-// The VM operation merges separate dump files into a complete one
-class VM_HeapDumpMerge : public VM_Operation {
+// DumpMerger merges separate dump files into a complete one
+class DumpMerger {
 private:
   DumpWriter* _writer;
   const char* _path;
@@ -1527,16 +1527,15 @@ private:
 
   void merge_file(char* path);
   void merge_done();
+
 public:
-  VM_HeapDumpMerge(const char* path, DumpWriter* writer, int dump_seq) :
-    _writer(writer), _path(path), _has_error(_writer->has_error()), _dump_seq(dump_seq) {}
-  VMOp_Type type() const { return VMOp_HeapDumpMerge; }
-  // heap dump merge could happen outside safepoint
-  virtual bool evaluate_at_safepoint() const { return false; }
-  void doit();
+  DumpMerger(const char* path, DumpWriter* writer, int dump_seq)
+    : _writer(writer), _path(path), _has_error(_writer->has_error()), _dump_seq(dump_seq) {}
+
+  void do_merge();
 };
 
-void VM_HeapDumpMerge::merge_done() {
+void DumpMerger::merge_done() {
   // Writes the HPROF_HEAP_DUMP_END record.
   if (!_has_error) {
     DumperSupport::end_of_dump(_writer);
@@ -1545,7 +1544,7 @@ void VM_HeapDumpMerge::merge_done() {
   _dump_seq = 0; //reset
 }
 
-void VM_HeapDumpMerge::merge_file(char* path) {
+void DumpMerger::merge_file(char* path) {
   assert(!SafepointSynchronize::is_at_safepoint(), "merging happens outside safepoint");
   TraceTime timer("Merge segmented heap file", TRACETIME_LOG(Info, heapdump));
 
@@ -1573,7 +1572,7 @@ void VM_HeapDumpMerge::merge_file(char* path) {
   }
 }
 
-void VM_HeapDumpMerge::doit() {
+void DumpMerger::do_merge() {
   assert(!SafepointSynchronize::is_at_safepoint(), "merging happens outside safepoint");
   TraceTime timer("Merge heap files complete", TRACETIME_LOG(Info, heapdump));
 
@@ -1597,6 +1596,20 @@ void VM_HeapDumpMerge::doit() {
   _writer->set_compressor(saved_compressor);
   merge_done();
 }
+
+// The VM operation wraps DumpMerger so that it could be performed by VM thread
+class VM_HeapDumpMerge : public VM_Operation {
+private:
+  DumpMerger* _merger;
+public:
+  VM_HeapDumpMerge(DumpMerger* merger) : _merger(merger) {}
+  VMOp_Type type() const { return VMOp_HeapDumpMerge; }
+  // heap dump merge could happen outside safepoint
+  virtual bool evaluate_at_safepoint() const { return false; }
+  void doit() {
+    _merger->do_merge();
+  }
+};
 
 // The VM operation that performs the heap dump
 class VM_HeapDumper : public VM_GC_Operation, public WorkerTask {
@@ -1963,11 +1976,13 @@ void VM_HeapDumper::doit() {
 DumpWriter* VM_HeapDumper::create_dump_writer() {
   char* path = NEW_RESOURCE_ARRAY(char, JVM_MAXPATHLEN);
   memset(path, 0, JVM_MAXPATHLEN);
+
   // generate segmented heap file path
   const char* base_path = writer()->get_file_path();
   AbstractCompressor* compressor = writer()->compressor();
   int seq = Atomic::fetch_and_add(&_dump_seq, 1);
   os::snprintf(path, JVM_MAXPATHLEN, "%s.p%d", base_path, seq);
+
   // create corresponding writer for that
   FileWriter* file_writer = new (std::nothrow) FileWriter(path, writer()->is_overwrite());
   DumpWriter* new_writer = new DumpWriter(file_writer, compressor);
@@ -2044,10 +2059,12 @@ void VM_HeapDumper::work(uint worker_id) {
     ResourceMark rm;
     TraceTime timer("Dump heap objects in parallel", TRACETIME_LOG(Info, heapdump));
     DumpWriter* dw = is_vm_dumper(worker_id) ? writer() : create_dump_writer();
-    HeapObjectDumper obj_dumper(dw);
-    _poi->object_iterate(&obj_dumper, worker_id);
-    dw->finish_dump_segment();
-    dw->flush();
+    if (!dw->has_error()) {
+      HeapObjectDumper obj_dumper(dw);
+      _poi->object_iterate(&obj_dumper, worker_id);
+      dw->finish_dump_segment();
+      dw->flush();
+    }
     if (is_vm_dumper(worker_id)) {
       _dumper_controller->wait_all_dumpers_complete();
     } else {
@@ -2173,8 +2190,18 @@ int HeapDumper::dump(const char* path, outputStream* out, int compression, bool 
 
   // merge segmented dump files into a complete one, this is not required for serial dump
   if (dumper.is_parallel_dump()) {
-    VM_HeapDumpMerge op(path, &writer, dumper.dump_seq());
-    VMThread::execute(&op);
+    DumpMerger merger(path, &writer, dumper.dump_seq());
+    Thread* current_thread = Thread::current();
+    // perform heapdump file merge operation in the current thread prevents us
+    // from occupying the VM Thread, which in turn affects the occurrence of
+    // GC and other VM operations.
+    if (current_thread->is_AttachListener_thread()) {
+      merger.do_merge();
+    } else {
+      // otherwise, performs it by VM thread
+      VM_HeapDumpMerge op(&merger);
+      VMThread::execute(&op);
+    }
     set_error(writer.error());
   }
 

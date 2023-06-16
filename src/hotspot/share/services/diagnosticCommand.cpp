@@ -471,7 +471,8 @@ HeapDumpDCmd::HeapDumpDCmd(outputStream* output, bool heap) :
                "9 the strongest compression.", "INT", false, "1"),
   _overwrite("-overwrite", "If specified, the dump file will be overwritten if it exists",
            "BOOLEAN", false, "false"),
-  _parallel("-parallel", "Number of parallel dump thread, it should be less than ParallelGCThread",
+  _parallel("-parallel", "Number of parallel threads to use for heap dump. The VM "
+                          "will try to use the specified number of threads, but might use fewer.",
             "INT", false, "1") {
   _dcmdparser.add_dcmd_option(&_all);
   _dcmdparser.add_dcmd_argument(&_filename);
