@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,7 @@ import java.io.IOException;
 import java.util.stream.Collectors;
 
 import jdk.test.lib.NetworkConfiguration;
+import jdk.test.lib.Platform;
 import jdk.test.lib.net.IPSupport;
 
 public class Promiscuous {
@@ -195,21 +196,6 @@ public class Promiscuous {
     public static void main(String[] args) throws IOException {
         IPSupport.throwSkippedExceptionIfNonOperational();
 
-        String os = System.getProperty("os.name");
-
-        // Requires IP_MULTICAST_ALL on Linux (new since 2.6.31) so skip
-        // on older kernels. Note that we skip on <= version 3 to keep the
-        // parsing simple
-        if (os.equals("Linux")) {
-            String osversion = System.getProperty("os.version");
-            String[] vers = osversion.split("\\.", 0);
-            int major = Integer.parseInt(vers[0]);
-            if (major < 3) {
-                System.out.format("Kernel version is %s, test skipped%n", osversion);
-                return;
-            }
-        }
-
         // get local network configuration to use
         NetworkConfiguration config = NetworkConfiguration.probe();
 
@@ -222,8 +208,8 @@ public class Promiscuous {
             InetAddress source = config.ip4Addresses(nif).iterator().next();
             test(INET, nif, ip4Group1, ip4Group2);
 
-            // Solaris and Linux allow IPv6 sockets join IPv4 multicast groups
-            if (os.equals("Linux"))
+            // Linux allows IPv6 sockets join IPv4 multicast groups
+            if (Platform.isLinux())
                 test(UNSPEC, nif, ip4Group1, ip4Group2);
         }
     }
