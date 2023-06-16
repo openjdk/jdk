@@ -52,17 +52,17 @@ bool PhaseConditionalPropagation::valid_use(Node* u, Node* c) {
     _control_dependent_node[iterations%2].set(u->_idx);
     return false;
   }
-  if (u->is_CMove()) {
-    if (_phase->get_ctrl(u) == c) {
-      return true;
-    }
-    if (u->in(0) != nullptr && u->in(0)->is_CFG() && _phase->is_dominator(c, u->in(0))) {
-      assert(!_visited.test(u->in(0)->_idx), "");
-      _control_dependent_node[_iterations % 2].set(u->in(0)->_idx);
-      _control_dependent_node[_iterations % 2].set(u->_idx);
-    }
-    return false;
-  }
+//  if (u->is_CMove()) {
+//    if (_phase->get_ctrl(u) == c) {
+//      return true;
+//    }
+//    if (u->in(0) != nullptr && u->in(0)->is_CFG() && _phase->is_dominator(c, u->in(0))) {
+//      assert(!_visited.test(u->in(0)->_idx), "");
+//      _control_dependent_node[_iterations % 2].set(u->in(0)->_idx);
+//      _control_dependent_node[_iterations % 2].set(u->_idx);
+//    }
+//    return false;
+//  }
   Node* u_c = _phase->ctrl_or_self(u);
   if (!_phase->is_dominator(c, u_c) && (u->is_CFG() || !_phase->is_dominator(u_c, c))) {
     return false;
@@ -396,6 +396,9 @@ PhaseConditionalPropagation::one_iteration(int rpo, Node* c, bool has_infinite_l
     while(updates != nullptr && updates->below(_dom_updates, _phase)) {
       for (int j = 0; j < updates->length(); ++j) {
         Node* n = updates->node_at(j);
+        if (n->is_CMove()) {
+          continue;
+        }
 //          tty->print_cr("XXX %d %d %d %d", iterations, c->_idx, n->_idx, c->req());
         const Type* t = find_type_between(n, in, dom);
 //          tty->print_cr("XXXX %d %d %d %d", iterations, c->_idx, n->_idx, c->req());
