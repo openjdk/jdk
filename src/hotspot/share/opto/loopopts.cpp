@@ -4224,7 +4224,8 @@ void PhaseIdealLoop::move_unordered_reduction_out_of_loop(IdealLoopTree* loop) {
           if (use != phi && ctrl_or_self(use) == cl) {
             DEBUG_ONLY( current->dump(-1); )
             assert(false, "reduction has use inside loop");
-            break; // Chain traversal fails.
+            // Should not be allowed by SuperWord::mark_reductions
+            return; // bail out of optimization
           }
         }
       } else {
