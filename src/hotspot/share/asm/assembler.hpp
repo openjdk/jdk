@@ -292,7 +292,14 @@ class AbstractAssembler : public ResourceObj  {
   };
 #endif
 
-  constexpr uint8_t cast(int x) const { return checked_cast<uint8_t>(x); }
+  // -1 tolerant cast needed by callers of emit_int8 and emit_int16
+  template <typename T>
+  constexpr T cast(int x) const {
+   if (x == -1) {
+    return std::numeric_limits<T>::max();
+   } else {
+     return checked_cast<T>(x); }
+  }
 
  public:
 
@@ -303,22 +310,24 @@ class AbstractAssembler : public ResourceObj  {
   void flush();
 
   void emit_int8(uint8_t v) { code_section()->emit_int8(v); }
-  void emit_int8(int v)     { emit_int8(cast(v)); }
+  void emit_int8(int v)     { emit_int8(cast<uint8_t>(v)); }
 
   void emit_int16(uint16_t x)   { code_section()->emit_int16(x); }
-  void emit_int16(int x)        { emit_int16(checked_cast<uint16_t>(x)); }
+  void emit_int16(int x)        { emit_int16(cast<uint16_t>(x)); }
 
-  void emit_int16(int x1, int x2)                                  { code_section()->emit_int16(cast(x1), cast(x2)); }
-  void emit_int24(int x1, int x2, int x3)                          { code_section()->emit_int24(cast(x1), cast(x2), cast(x3)); }
+  void emit_int16(int x1, int x2)                 { code_section()->emit_int16(cast<uint8_t>(x1), cast<uint8_t>(x2)); }
+  void emit_int24(int x1, int x2, int x3)         { code_section()->emit_int24(cast<uint8_t>(x1), cast<uint8_t>(x2),
+                                                                               cast<uint8_t>(x3)); }
 
-  void emit_int32(uint32_t x)                                      { code_section()->emit_int32(x); }
-  void emit_int32(int x1, int x2, int x3, int x4)                  { code_section()->emit_int32(cast(x1), cast(x2), cast(x3), cast(x4)); }
+  void emit_int32(uint32_t x)                     { code_section()->emit_int32(x); }
+  void emit_int32(int x1, int x2, int x3, int x4) { code_section()->emit_int32(cast<uint8_t>(x1), cast<uint8_t>(x2),
+                                                                               cast<uint8_t>(x3), cast<uint8_t>(x4)); }
 
-  void emit_int64(  uint64_t x)                                     { code_section()->emit_int64(x); }
+  void emit_int64(  uint64_t x)                   { code_section()->emit_int64(x); }
 
-  void emit_float(  jfloat  x)                                      { code_section()->emit_float(x); }
-  void emit_double( jdouble x)                                      { code_section()->emit_double(x); }
-  void emit_address(address x)                                      { code_section()->emit_address(x); }
+  void emit_float(  jfloat  x)                    { code_section()->emit_float(x); }
+  void emit_double( jdouble x)                    { code_section()->emit_double(x); }
+  void emit_address(address x)                    { code_section()->emit_address(x); }
 
   enum { min_simm10 = -512 };
 
