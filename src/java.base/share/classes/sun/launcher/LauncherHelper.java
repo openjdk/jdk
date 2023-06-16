@@ -47,8 +47,8 @@ import java.lang.module.ModuleDescriptor.Requires;
 import java.lang.module.ModuleFinder;
 import java.lang.module.ModuleReference;
 import java.lang.module.ResolvedModule;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.math.BigDecimal;
@@ -58,9 +58,6 @@ import java.nio.charset.Charset;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.security.NoSuchAlgorithmException;
-import java.security.Provider;
-import java.security.Security;
 import java.text.MessageFormat;
 import java.text.Normalizer;
 import java.util.ArrayList;
@@ -80,11 +77,7 @@ import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSocket;
 
-import jdk.internal.access.SharedSecrets;
-import jdk.internal.util.OperatingSystem;
 import jdk.internal.misc.MainMethodFinder;
 import jdk.internal.misc.PreviewFeatures;
 import jdk.internal.misc.VM;
@@ -92,6 +85,7 @@ import jdk.internal.module.ModuleBootstrap;
 import jdk.internal.module.Modules;
 import jdk.internal.platform.Container;
 import jdk.internal.platform.Metrics;
+import jdk.internal.util.OperatingSystem;
 import sun.util.calendar.ZoneInfoFile;
 
 /**
@@ -118,13 +112,11 @@ public final class LauncherHelper {
 
     private static StringBuilder outBuf = new StringBuilder();
 
-    private static final String INDENT = "    ";
-    private static final String TWOINDENT = INDENT + INDENT;
-    private static final String THREEINDENT = TWOINDENT + INDENT;
+    static final String INDENT = "    ";
+    static final String TWOINDENT = INDENT + INDENT;
     private static final String VM_SETTINGS     = "VM settings:";
     private static final String PROP_SETTINGS   = "Property settings:";
     private static final String LOCALE_SETTINGS = "Locale settings:";
-    private static final String PROV_INFO_STRING = "Provider information: ";
 
     // sync with java.c and jdk.internal.misc.VM
     private static final String diagprop = "sun.java.launcher.diag";
@@ -137,7 +129,7 @@ public final class LauncherHelper {
         private static final ResourceBundle RB =
                 ResourceBundle.getBundle(defaultBundleName);
     }
-    private static PrintStream ostream;
+    static PrintStream ostream;
     private static Class<?> appClass; // application class, for GUI/reporting purposes
 
     /*
@@ -183,7 +175,7 @@ public final class LauncherHelper {
                 break;
             case "security":
                 var opt = opts.length > 2 ? opts[2].trim() : "all";
-                printSecuritySettings(opt);
+                SecuritySettings.printSecuritySettings(opt);
                 break;
             case "system":
                 if (OperatingSystem.isLinux()) {
@@ -194,7 +186,7 @@ public final class LauncherHelper {
                 printVmSettings(initialHeapSize, maxHeapSize, stackSize);
                 printProperties();
                 printLocale();
-                printSecuritySummarySettings();
+                SecuritySettings.printSecuritySummarySettings();
                 if (OperatingSystem.isLinux()) {
                     printSystemMetrics();
                 }
@@ -333,156 +325,6 @@ public final class LauncherHelper {
             }
         }
         ostream.println();
-    }
-
-    private static void printSecuritySettings(String arg) {
-        switch (arg) {
-            case "properties" -> printSecurityProperties();
-            case "providers"  -> printSecurityProviderConfig(true);
-            case "tls"        -> printSecurityTLSConfig(true);
-            case "all"        -> printAllSecurityConfig();
-            default           -> {
-                ostream.println("Unrecognized security subcommand. See \"java -X\" for help");
-                ostream.println("Printing all security settings");
-                printAllSecurityConfig();
-            }
-
-        }
-    }
-
-    // A non-verbose description of some core security configuration settings
-    private static void printSecuritySummarySettings() {
-        ostream.println("Security settings summary: " + "\n" +
-                INDENT + "See \"java -X\" for verbose security settings options");
-        printSecurityProviderConfig(false);
-        printSecurityTLSConfig(false);
-    }
-
-    private static void printAllSecurityConfig() {
-        ostream.println("Security settings:\n");
-        printSecurityProperties();
-        printSecurityProviderConfig(true);
-        printSecurityTLSConfig(true);
-    }
-
-    private static void printSecurityProperties() {
-        ostream.println(INDENT + "Security properties:");
-        Properties p = SharedSecrets.getJavaSecurityPropertiesAccess().getInitialProperties();
-        for (String key : p.stringPropertyNames().stream().sorted().toList()) {
-            String val = p.getProperty(key);
-            if (val.contains(",") && val.length() > 60) {
-                // split lines longer than 60 chars which have multiple values
-                ostream.println(TWOINDENT + key + "=");
-                String[] values = val.split(",");
-                String lastValue = values[values.length -1].trim();
-                List.of(values).forEach(
-                        s -> ostream.println(THREEINDENT + s.trim() +
-                            (s.trim().equals(lastValue) ? "" : ",")));
-            } else {
-                ostream.println(TWOINDENT + key + "=" + val);
-            }
-        }
-        ostream.println();
-    }
-
-    private static void printSecurityTLSConfig(boolean verbose) {
-        SSLSocket ssls;
-        try {
-            ssls = (SSLSocket)
-                    SSLContext.getDefault().getSocketFactory().createSocket();
-        } catch (IOException | NoSuchAlgorithmException e) {
-            throw new InternalError("Failed to create SSL socket");
-        }
-
-        ostream.println(INDENT + "Security TLS configuration:");
-        ostream.println(TWOINDENT + "Enabled Protocols:");
-        for (String s : ssls.getEnabledProtocols()) {
-            ostream.println(THREEINDENT + s);
-        }
-
-        if (verbose) {
-            ostream.println("\n" + TWOINDENT + "Enabled Cipher Suites:");
-            for (String s : ssls.getEnabledCipherSuites()) {
-                ostream.println(THREEINDENT + s);
-            }
-        }
-        ostream.println();
-    }
-
-    private static void printSecurityProviderConfig(boolean verbose) {
-        ostream.println(INDENT + "Security provider static configuration: (in order of preference)");
-        for (Provider p : Security.getProviders()) {
-            if (verbose) {
-                // separate the views out
-                ostream.println(TWOINDENT + "-".repeat(40));
-            }
-            ostream.println(TWOINDENT + "Provider name: " + p.getName());
-            if (verbose) {
-                ostream.println(wrappedString(PROV_INFO_STRING + p.getInfo(), 80,
-                        TWOINDENT, THREEINDENT));
-                ostream.println(TWOINDENT + "Provider services: (type : algorithm)");
-                Set<Provider.Service> services = p.getServices();
-                Set<String> keys = Collections.list(p.keys())
-                        .stream()
-                        .map(String.class::cast)
-                        .filter(s -> s.startsWith("Alg.Alias."))
-                        .collect(Collectors.toSet());
-                if (!services.isEmpty()) {
-                    services.stream()
-                        .sorted(Comparator.comparing(Provider.Service::getType)
-                                .thenComparing(Provider.Service::getAlgorithm))
-                        .forEach(ps -> {
-                            ostream.println(THREEINDENT +
-                                    ps.getType() + "." + ps.getAlgorithm());
-                            List<String> aliases = keys
-                                    .stream()
-                                    .filter(s -> s.startsWith("Alg.Alias." + ps.getType()))
-                                    .filter(s -> p.getProperty(s).equals(ps.getAlgorithm()))
-                                    .map(s -> s.substring(("Alg.Alias." + ps.getType() + ".").length()))
-                                    .toList();
-
-                            if (!aliases.isEmpty()) {
-                                ostream.println(wrappedString(
-                                        aliases.stream()
-                                        .collect(Collectors.joining(", ", INDENT + " aliases: [", "]")),
-                                        80, " " + TWOINDENT, INDENT + THREEINDENT));
-                            }
-                        });
-               } else {
-                   ostream.println(THREEINDENT + "<none>");
-               }
-            }
-        }
-        if (verbose) {
-            ostream.println();
-        }
-    }
-
-    // return a string split across multiple lines which aims to limit max length
-    private static String wrappedString(String orig, int limit,
-                                        String initIndent, String successiveIndent) {
-        if (orig == null || orig.isEmpty() || limit <= 0) {
-            // bad input
-            return orig;
-        }
-        StringBuilder sb = new StringBuilder();
-        int widthCount = 0;
-        for (String s : orig.split(" ")) {
-            if (widthCount == 0) {
-                // first iteration only
-                sb.append(initIndent + s);
-                widthCount = s.length() + initIndent.length();
-            } else {
-                if (widthCount + s.length() > limit) {
-                    sb.append("\n" + successiveIndent + s);
-                    widthCount = s.length() + successiveIndent.length();
-                } else {
-                    sb.append(" " + s);
-                    widthCount += s.length() + 1;
-                }
-            }
-        }
-        return sb.toString();
     }
 
     private static void printSystemMetrics() {
