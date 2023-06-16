@@ -668,6 +668,8 @@ class name java/lang/invoke/VarHandle
 header extends java/lang/Object implements java/lang/constant/Constable nestMembers java/lang/invoke/VarHandle$VarHandleDesc,java/lang/invoke/VarHandle$AccessMode sealed true flags 421
 innerclass innerClass java/lang/invoke/VarHandle$AccessMode outerClass java/lang/invoke/VarHandle innerClassName AccessMode flags 4019
 innerclass innerClass java/lang/invoke/VarHandle$VarHandleDesc outerClass java/lang/invoke/VarHandle innerClassName VarHandleDesc flags 19
+-method name isAccessModeSupported descriptor (Ljava/lang/invoke/VarHandle$AccessMode;)Z
+method name isAccessModeSupported descriptor (Ljava/lang/invoke/VarHandle$AccessMode;)Z flags 1
 
 class name java/lang/module/Configuration
 header extends java/lang/Object flags 31

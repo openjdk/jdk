@@ -44,6 +44,9 @@ import java.util.function.Predicate;
 import java.net.http.HttpClient;
 import java.net.http.HttpClient.Version;
 import java.net.http.HttpHeaders;
+
+import javax.net.ssl.SNIServerName;
+
 import jdk.internal.net.http.common.Demand;
 import jdk.internal.net.http.common.FlowTube;
 import jdk.internal.net.http.common.Logger;
@@ -422,6 +425,17 @@ abstract class HttpConnection implements Closeable {
 
     final InetSocketAddress address() {
         return address;
+    }
+
+    /**
+     * Returns an unmodifiable list of {@link SNIServerName}s that were used during TLS handshake
+     * of this connection. If this connection doesn't represent a TLS based connection or if no SNI
+     * server names were used during the handshake, then this method returns an empty list.
+     *
+     * @return the SNI server names
+     */
+    public List<SNIServerName> getSNIServerNames() {
+        return List.of();
     }
 
     abstract ConnectionPool.CacheKey cacheKey();
