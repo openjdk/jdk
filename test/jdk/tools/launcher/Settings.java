@@ -73,7 +73,7 @@ public class Settings extends TestHelper {
     private static final String SEC_PROVIDER_SETTINGS =
                 "Security provider static configuration:";
     private static final String SEC_TLS_SETTINGS = "Security TLS configuration:";
-    private static final String BAD_SEC_OPTION_MSG = "Unrecognized security sub-option.";
+    private static final String BAD_SEC_OPTION_MSG = "Unrecognized security subcommand";
     private static final String SYSTEM_SETTINGS = "Operating System Metrics:";
     private static final String STACKSIZE_SETTINGS = "Stack Size:";
     private static final String TZDATA_SETTINGS = "tzdata version";
@@ -181,6 +181,9 @@ public class Settings extends TestHelper {
         checkNotContains(tr, SEC_TLS_SETTINGS);
         // test a well known Provider for sanity
         checkContains(tr, "Provider name: SUN");
+        // test for a well known alias (SunJCE: AlgorithmParameterGenerator.DiffieHellman)
+        checkContains(tr, "aliases: [1.2.840.113549.1.3.1, " +
+                "DH, OID.1.2.840.113549.1.3.1]");
     }
 
     static void runTestOptionSecurityTLS() throws IOException {

@@ -342,9 +342,8 @@ public final class LauncherHelper {
             case "tls"        -> printSecurityTLSConfig(true);
             case "all"        -> printAllSecurityConfig();
             default           -> {
-                ostream.println("Unrecognized security sub-option. Valid values are " +
-                        "\"all\", \"properties\", \"providers\", \"tls\". See \"java -X\"");
-                ostream.println("Printing all security settings\n");
+                ostream.println("Unrecognized security subcommand. See \"java -X\" for help");
+                ostream.println("Printing all security settings");
                 printAllSecurityConfig();
             }
 
@@ -354,7 +353,7 @@ public final class LauncherHelper {
     // A non-verbose description of some core security configuration settings
     private static void printSecuritySummarySettings() {
         ostream.println("Security settings summary: " + "\n" +
-                INDENT + "Use \"-XshowSettings:security\" for verbose details\n");
+                INDENT + "See \"java -X\" for verbose security settings options");
         printSecurityProviderConfig(false);
         printSecurityTLSConfig(false);
     }
@@ -374,8 +373,11 @@ public final class LauncherHelper {
             if (val.contains(",") && val.length() > 60) {
                 // split lines longer than 60 chars which have multiple values
                 ostream.println(TWOINDENT + key + "=");
-                List.of(val.split(",")).forEach(
-                        s -> ostream.println(THREEINDENT + s.trim() + ","));
+                String[] values = val.split(",");
+                String lastValue = values[values.length -1].trim();
+                List.of(values).forEach(
+                        s -> ostream.println(THREEINDENT + s.trim() +
+                            (s.trim().equals(lastValue) ? "" : ",")));
             } else {
                 ostream.println(TWOINDENT + key + "=" + val);
             }
@@ -416,24 +418,49 @@ public final class LauncherHelper {
             }
             ostream.println(TWOINDENT + "Provider name: " + p.getName());
             if (verbose) {
-                ostream.println(wrappedString(PROV_INFO_STRING + p.getInfo(), 80));
+                ostream.println(wrappedString(PROV_INFO_STRING + p.getInfo(), 80,
+                        TWOINDENT, THREEINDENT));
                 ostream.println(TWOINDENT + "Provider services: (type : algorithm)");
                 Set<Provider.Service> services = p.getServices();
-               if (!services.isEmpty()) {
-                   services.stream()
-                           .sorted(Comparator.comparing(Provider.Service::getType))
-                           .forEach(ps -> ostream.println(THREEINDENT +
-                                   ps.getType() + " : " + ps.getAlgorithm()));
+                Set<String> keys = Collections.list(p.keys())
+                        .stream()
+                        .map(String.class::cast)
+                        .filter(s -> s.startsWith("Alg.Alias."))
+                        .collect(Collectors.toSet());
+                if (!services.isEmpty()) {
+                    services.stream()
+                        .sorted(Comparator.comparing(Provider.Service::getType)
+                                .thenComparing(Provider.Service::getAlgorithm))
+                        .forEach(ps -> {
+                            ostream.println(THREEINDENT +
+                                    ps.getType() + "." + ps.getAlgorithm());
+                            List<String> aliases = keys
+                                    .stream()
+                                    .filter(s -> s.startsWith("Alg.Alias." + ps.getType()))
+                                    .filter(s -> p.getProperty(s).equals(ps.getAlgorithm()))
+                                    .map(s -> s.substring(("Alg.Alias." + ps.getType() + ".").length()))
+                                    .toList();
+
+                            if (!aliases.isEmpty()) {
+                                ostream.println(wrappedString(
+                                        aliases.stream()
+                                        .collect(Collectors.joining(", ", INDENT + " aliases: [", "]")),
+                                        80, " " + TWOINDENT, INDENT + THREEINDENT));
+                            }
+                        });
                } else {
                    ostream.println(THREEINDENT + "<none>");
                }
             }
         }
-        ostream.println();
+        if (verbose) {
+            ostream.println();
+        }
     }
 
     // return a string split across multiple lines which aims to limit max length
-    private static String wrappedString(String orig, int limit) {
+    private static String wrappedString(String orig, int limit,
+                                        String initIndent, String successiveIndent) {
         if (orig == null || orig.isEmpty() || limit <= 0) {
             // bad input
             return orig;
@@ -443,12 +470,12 @@ public final class LauncherHelper {
         for (String s : orig.split(" ")) {
             if (widthCount == 0) {
                 // first iteration only
-                sb.append(TWOINDENT + s);
-                widthCount = s.length() + TWOINDENT.length();
+                sb.append(initIndent + s);
+                widthCount = s.length() + initIndent.length();
             } else {
                 if (widthCount + s.length() > limit) {
-                    sb.append("\n" + THREEINDENT + s);
-                    widthCount = s.length() + THREEINDENT.length();
+                    sb.append("\n" + successiveIndent + s);
+                    widthCount = s.length() + successiveIndent.length();
                 } else {
                     sb.append(" " + s);
                     widthCount += s.length() + 1;
