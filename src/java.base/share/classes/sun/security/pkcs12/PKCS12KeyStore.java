@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.security.AlgorithmParameters;
 import java.security.InvalidAlgorithmParameterException;
+import java.util.concurrent.ConcurrentHashMap;
 import javax.crypto.spec.PBEParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
@@ -1434,7 +1435,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
     private Set<KeyStore.Entry.Attribute> getAttributes(Entry entry) {
 
         if (entry.attributes == null) {
-            entry.attributes = new HashSet<>();
+            entry.attributes = ConcurrentHashMap.newKeySet();
         }
 
         // friendlyName
@@ -2431,7 +2432,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
             String alias = null;
             byte[] keyId = null;
             ObjectIdentifier[] trustedKeyUsage = null;
-            Set<PKCS12Attribute> attributes = new HashSet<>();
+            Set<PKCS12Attribute> attributes = ConcurrentHashMap.newKeySet();
 
             if (attrSet != null) {
                 for (int j = 0; j < attrSet.length; j++) {
