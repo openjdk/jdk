@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,7 @@ import java.util.jar.JarException;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 
+import sun.security.action.GetIntegerAction;
 import sun.security.jca.Providers;
 import sun.security.pkcs.PKCS7;
 import sun.security.pkcs.SignerInfo;
@@ -96,6 +97,12 @@ public class SignatureFileVerifier {
 
     /** ConstraintsParameters for checking disabled algorithms */
     private JarConstraintsParameters params;
+
+    // the maximum allowed size in bytes for the signature-related files
+    public static final int MAX_SIG_FILE_SIZE = initializeMaxSigFileSize();
+
+    // The maximum size of array to allocate. Some VMs reserve some header words in an array.
+    private static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
 
     /**
      * Create the named SignatureFileVerifier.
@@ -841,5 +848,25 @@ public class SignatureFileVerifier {
         }
         signerCache.add(cachedSigners);
         signers.put(name, cachedSigners);
+    }
+
+    private static int initializeMaxSigFileSize() {
+        /*
+         * System property "jdk.jar.maxSignatureFileSize" used to configure
+         * the maximum allowed number of bytes for the signature-related files
+         * in a JAR file.
+         */
+        Integer tmp = GetIntegerAction.privilegedGetProperty(
+                "jdk.jar.maxSignatureFileSize", 8000000);
+        if (tmp < 0 || tmp > MAX_ARRAY_SIZE) {
+            if (debug != null) {
+                debug.println("Default signature file size 8000000 bytes " +
+                        "is used as the specified size for the " +
+                        "jdk.jar.maxSignatureFileSize system property " +
+                        "is out of range: " + tmp);
+            }
+            tmp = 8000000;
+        }
+        return tmp;
     }
 }
