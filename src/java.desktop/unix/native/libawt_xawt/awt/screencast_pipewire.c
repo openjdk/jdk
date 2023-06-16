@@ -89,8 +89,10 @@ static void doCleanup() {
         struct ScreenProps *screenProps = &screenSpace.screens[i];
         if (screenProps->data) {
             if (screenProps->data->stream) {
+                fp_pw_thread_loop_lock(pw.loop);
                 fp_pw_stream_disconnect(screenProps->data->stream);
                 fp_pw_stream_destroy(screenProps->data->stream);
+                fp_pw_thread_loop_unlock(pw.loop);
                 screenProps->data->stream = NULL;
             }
             free(screenProps->data);
@@ -892,8 +894,10 @@ JNIEXPORT jint JNICALL Java_sun_awt_screencast_ScreencastHelper_getRGBPixelsImpl
             screenProps->captureData = NULL;
             screenProps->shouldCapture = FALSE;
 
+            fp_pw_thread_loop_lock(pw.loop);
             fp_pw_stream_set_active(screenProps->data->stream, FALSE);
             fp_pw_stream_disconnect(screenProps->data->stream);
+            fp_pw_thread_loop_unlock(pw.loop);
         }
     }
     doCleanup();
