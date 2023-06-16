@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,8 @@
  *          java.base/jdk.internal.misc
  *          java.base/jdk.internal.reflect
  *          java.management
- * @build sun.hotspot.WhiteBox Foo Bar
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox Foo Bar
+ * @build jdk.test.whitebox.WhiteBox Foo Bar
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox Foo Bar
  * @run driver ClassesListTest prepare
  * @run driver/timeout=600 ClassesListTest compile classes.lst
  * @run driver ClassesListTest check

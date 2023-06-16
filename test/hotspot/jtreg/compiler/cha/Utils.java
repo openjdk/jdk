@@ -26,7 +26,7 @@ import jdk.internal.misc.Unsafe;
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
 import jdk.internal.vm.annotation.DontInline;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 import sun.hotspot.code.NMethod;
 
 import java.io.IOException;

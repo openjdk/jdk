@@ -34,8 +34,8 @@ package gc.g1;
  * @library /
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/timeout=720 gc.g1.TestShrinkAuxiliaryData27
  */
 public class TestShrinkAuxiliaryData27 {

@@ -41,7 +41,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 import jdk.internal.misc.Unsafe; // for ADDRESS_SIZE
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 public class TestShrinkAuxiliaryData {
     private static final Random RNG = Utils.getRandomInstance();

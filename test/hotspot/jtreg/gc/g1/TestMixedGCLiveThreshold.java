@@ -29,8 +29,8 @@ package gc.g1;
  * the region should not be selected for mixed GC cycle.
  * @requires vm.gc.G1
  * @library /test/lib
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run driver gc.g1.TestMixedGCLiveThreshold 0 false
  */
 
@@ -40,8 +40,8 @@ package gc.g1;
  * the region should not be selected for mixed GC cycle.
  * @requires vm.gc.G1
  * @library /test/lib
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run driver gc.g1.TestMixedGCLiveThreshold 25 false
  */
 
@@ -51,8 +51,8 @@ package gc.g1;
  * the region should be selected for mixed GC cycle.
  * @requires vm.gc.G1
  * @library /test/lib
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run driver gc.g1.TestMixedGCLiveThreshold 100 true
  */
 
@@ -64,7 +64,7 @@ import java.util.regex.Matcher;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.Asserts;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 public class TestMixedGCLiveThreshold {
     private static final String pattern = "Remembered Set Tracking update regions total ([0-9]+), selected ([0-9]+)$";

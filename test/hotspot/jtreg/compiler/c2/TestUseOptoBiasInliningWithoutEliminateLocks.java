@@ -30,9 +30,9 @@
  *
  * @library /test/lib /test/hotspot/jtreg
  *
- * @build sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
  *
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions
  *                   -XX:CompileCommand=compileonly,*.TestUseOptoBiasInliningWithoutEliminateLocks::dontinline_testMethod
@@ -46,7 +46,7 @@
 
 package compiler.c2;
 
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 public class TestUseOptoBiasInliningWithoutEliminateLocks {
 

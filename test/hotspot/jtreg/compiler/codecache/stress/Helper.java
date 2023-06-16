@@ -26,7 +26,7 @@ package compiler.codecache.stress;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.ByteCodeLoader;
 import jdk.test.lib.InfiniteLoop;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;

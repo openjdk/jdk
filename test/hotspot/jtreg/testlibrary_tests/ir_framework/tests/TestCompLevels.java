@@ -35,8 +35,8 @@ import java.lang.reflect.Method;
  * @summary Test if compilation levels are used correctly in the framework.
  *          This test partly runs directly the test VM which normally does and should not happen in user tests.
  * @library /test/lib /
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -DSkipWhiteBoxInstall=true -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
  *                   -Xbatch -XX:+WhiteBoxAPI ir_framework.tests.TestCompLevels
  */

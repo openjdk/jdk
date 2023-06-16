@@ -25,7 +25,7 @@
 import java.io.File;
 import java.net.URL;
 import java.net.URLClassLoader;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 public class OldClassApp {
     public static void main(String args[]) throws Exception {

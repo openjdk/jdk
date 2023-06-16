@@ -32,7 +32,7 @@ import jdk.test.lib.dcmd.CommandExecutorException;
 import jdk.test.lib.dcmd.PidJcmdExecutor;
 import jdk.test.lib.process.OutputAnalyzer;
 import jtreg.SkippedException;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 
 public abstract class JCmdTestDumpBase {

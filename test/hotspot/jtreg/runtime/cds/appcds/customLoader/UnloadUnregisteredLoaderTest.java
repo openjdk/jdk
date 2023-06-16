@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,9 +30,9 @@
  * @requires vm.cds.custom.loaders
  * @requires vm.opt.final.ClassUnloading
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
- * @build sun.hotspot.WhiteBox jdk.test.lib.classloader.ClassUnloadCommon
+ * @build jdk.test.whitebox.WhiteBox jdk.test.lib.classloader.ClassUnloadCommon
  * @compile test-classes/UnloadUnregisteredLoader.java test-classes/CustomLoadee.java
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *                 jdk.test.lib.classloader.ClassUnloadCommon
  *                 jdk.test.lib.classloader.ClassUnloadCommon$1
  *                 jdk.test.lib.classloader.ClassUnloadCommon$TestFailure
@@ -40,7 +40,7 @@
  */
 
 import jdk.test.lib.process.OutputAnalyzer;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 public class UnloadUnregisteredLoaderTest {
     public static void main(String[] args) throws Exception {
@@ -50,7 +50,7 @@ public class UnloadUnregisteredLoaderTest {
                                           "jdk/test/lib/classloader/ClassUnloadCommon$1",
                                           "jdk/test/lib/classloader/ClassUnloadCommon$TestFailure");
         String customJarPath = JarBuilder.build("UnloadUnregisteredLoader_custom", "CustomLoadee");
-        String wbJar = JarBuilder.build(true, "WhiteBox", "sun/hotspot/WhiteBox");
+        String wbJar = JarBuilder.build(true, "WhiteBox", "jdk/test/whitebox/WhiteBox");
         String use_whitebox_jar = "-Xbootclasspath/a:" + wbJar;
 
         String classpath = TestCommon.concatPaths(appJar1, appJar2);

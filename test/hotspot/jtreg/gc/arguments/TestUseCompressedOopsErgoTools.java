@@ -35,7 +35,7 @@ import jdk.test.lib.Asserts;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 import java.lang.management.ManagementFactory;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 class DetermineMaxHeapForCompressedOops {
   public static void main(String[] args) throws Exception {

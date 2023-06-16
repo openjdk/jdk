@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,13 +33,13 @@
  * @compile test-classes/CustomLoadee.java
  *     test-classes/CustomLoadee3.java
  *     test-classes/SameNameUnrelatedLoaders.java
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run driver SameNameInTwoLoadersTest
  */
 
 import jdk.test.lib.process.OutputAnalyzer;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 
 public class SameNameInTwoLoadersTest {
@@ -54,7 +54,7 @@ public class SameNameInTwoLoadersTest {
         customJar = JarBuilder.build("SameNameInTwoLoadersTest_custom", "CustomLoadee", "CustomLoadee3");
 
         useWbParam = "-Xbootclasspath/a:" +
-            JarBuilder.build(true, "WhiteBox", "sun/hotspot/WhiteBox");;
+            JarBuilder.build(true, "WhiteBox", "jdk/test/whitebox/WhiteBox");;
 
         // ====== unrelated loaders
         executeTestCase(getClassList_FP(),

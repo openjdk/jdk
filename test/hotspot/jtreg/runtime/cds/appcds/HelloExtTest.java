@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,8 @@
  * @requires vm.cds
  * @library /test/lib
  * @compile test-classes/HelloExt.java
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run driver HelloExtTest
  */
 
@@ -42,7 +42,7 @@ public class HelloExtTest {
     JarBuilder.build("helloExt", "HelloExt");
 
     String appJar = TestCommon.getTestJar("helloExt.jar");
-    JarBuilder.build(true, "WhiteBox", "sun/hotspot/WhiteBox");
+    JarBuilder.build(true, "WhiteBox", "jdk/test/whitebox/WhiteBox");
     String whiteBoxJar = TestCommon.getTestJar("WhiteBox.jar");
     String bootClassPath = "-Xbootclasspath/a:" + whiteBoxJar;
 

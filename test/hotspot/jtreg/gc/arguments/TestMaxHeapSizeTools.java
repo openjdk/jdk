@@ -30,7 +30,7 @@ import java.util.Arrays;
 
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 class ErgoArgsPrinter {
   public static void main(String[] args) throws Exception {

@@ -30,8 +30,8 @@
  *          need to be relocked.
  * @requires ((vm.compMode == "Xmixed") & vm.compiler2.enabled & vm.jvmti)
  * @library /test/lib /test/hotspot/jtreg
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @compile IterateHeapWithEscapeAnalysisEnabled.java
  *
  * @comment BLOCK BEGIN EXCLUSIVE TESTCASES {
@@ -140,7 +140,7 @@
 
 import compiler.whitebox.CompilerWhiteBoxTest;
 import jdk.test.lib.Asserts;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 public class IterateHeapWithEscapeAnalysisEnabled {
 
