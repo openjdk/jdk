@@ -549,8 +549,10 @@ size_t ShenandoahHeapRegion::setup_sizes(size_t max_heap_size) {
 
   // Make sure region size and heap size are page aligned.
   // If large pages are used, we ensure that region size is aligned to large page size if
-  // heap size is large enough to accommodate minimal number of regions. Otherwise, we align
-  // region size to regular page size.
+  // heap size is large enough to accommodate minimal number of regions. Otherwise, multiple
+  // regions may share one large page. This is allowed, but prevents us from uncommitting
+  // individual regions. Typically, this does not matter, since on most OSes large pages are
+  // "special": hotspot pre-commits them, and they cannot be uncommitted.
 
   // Figure out page size to use, and aligns up heap to page size
   size_t page_size = os::vm_page_size();

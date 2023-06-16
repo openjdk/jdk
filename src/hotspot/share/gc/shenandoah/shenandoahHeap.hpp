@@ -34,6 +34,7 @@
 #include "gc/shenandoah/shenandoahLock.hpp"
 #include "gc/shenandoah/shenandoahEvacOOMHandler.hpp"
 #include "gc/shenandoah/shenandoahPadding.hpp"
+#include "gc/shenandoah/shenandoahReservedSubSpace.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
 #include "gc/shenandoah/shenandoahUnload.hpp"
 #include "memory/metaspace.hpp"
@@ -547,20 +548,16 @@ public:
 //
 private:
   ShenandoahMarkingContext* _marking_context;
-  MemRegion  _bitmap_region;
-  MemRegion  _aux_bitmap_region;
+  SubSpace   _bitmap_region;
+  SubSpace   _aux_bitmap_region;
   MarkBitMap _verification_bit_map;
   MarkBitMap _aux_bit_map;
 
-  size_t _bitmap_size;
   size_t _bitmap_regions_per_slice;
   size_t _bitmap_bytes_per_slice;
 
   size_t _pretouch_heap_page_size;
   size_t _pretouch_bitmap_page_size;
-
-  bool _bitmap_region_special;
-  bool _aux_bitmap_region_special;
 
   ShenandoahLiveData** _liveness_cache;
 
