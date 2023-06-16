@@ -311,11 +311,16 @@ private:
 
   static inline void clear_empty_region(ContiguousSpace* space);
 
+#if INCLUDE_SERIALGC
   template<bool ALT_FWD>
   void prepare_for_compaction_impl(CompactPoint* cp);
 
   template<bool ALT_FWD>
+  void adjust_pointers_impl();
+
+  template<bool ALT_FWD>
   void compact_impl();
+#endif
 
 protected:
   HeapWord* _top;

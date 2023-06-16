@@ -379,7 +379,8 @@ void ContiguousSpace::prepare_for_compaction(CompactPoint* cp) {
   }
 }
 
-void ContiguousSpace::adjust_pointers() {
+template<bool ALT_FWD>
+void ContiguousSpace::adjust_pointers_impl() {
   // Check first is there is any work to do.
   if (used() == 0) {
     return;   // Nothing to do.
@@ -402,7 +403,7 @@ void ContiguousSpace::adjust_pointers() {
     if (cur_obj < first_dead || cast_to_oop(cur_obj)->is_gc_marked()) {
       // cur_obj is alive
       // point all the oops to the new location
-      size_t size = MarkSweep::adjust_pointers(cast_to_oop(cur_obj));
+      size_t size = MarkSweep::adjust_pointers<ALT_FWD>(cast_to_oop(cur_obj));
       debug_only(prev_obj = cur_obj);
       cur_obj += size;
     } else {
@@ -414,6 +415,14 @@ void ContiguousSpace::adjust_pointers() {
   }
 
   assert(cur_obj == end_of_live, "just checking");
+}
+
+void ContiguousSpace::adjust_pointers() {
+  if (UseAltGCForwarding) {
+    adjust_pointers_impl<true>();
+  } else {
+    adjust_pointers_impl<false>();
+  }
 }
 
 template<bool ALT_FWD>

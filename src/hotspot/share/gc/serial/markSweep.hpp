@@ -138,7 +138,8 @@ class MarkSweep : AllStatic {
   static void adjust_marks();   // Adjust the pointers in the preserved marks table
   static void restore_marks();  // Restore the marks that we saved in preserve_mark
 
-  static size_t adjust_pointers(oop obj);
+  template<bool ALT_FWD>
+  static inline size_t adjust_pointers(oop obj);
 
   static void follow_stack();   // Empty marking stack.
 
