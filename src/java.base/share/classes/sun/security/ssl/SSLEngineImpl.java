@@ -1048,13 +1048,7 @@ final class SSLEngineImpl extends SSLEngine implements SSLTransport {
 
     @Override
     public String getHandshakeApplicationProtocol() {
-        engineLock.lock();
-        try {
-            return conContext.handshakeContext == null ?
-                    null : conContext.handshakeContext.applicationProtocol;
-        } finally {
-            engineLock.unlock();
-        }
+        return conContext.getHandshakeApplicationProtocol();
     }
 
     @Override
