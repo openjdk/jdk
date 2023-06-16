@@ -61,7 +61,7 @@ public class TestUnorderedReductionPartialVectorization {
     @Test
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0",
                   IRNode.OR_REDUCTION_V, "> 0",},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true"})
     static long test1(int[] data, long sum) {
         for (int i = 0; i < data.length; i++) {
             // Mixing int and long ops means we only end up allowing half of the int
