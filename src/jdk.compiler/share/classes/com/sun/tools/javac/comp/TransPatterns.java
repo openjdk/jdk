@@ -296,32 +296,50 @@ public class TransPatterns extends TreeTranslator {
     }
 
     private UnrolledRecordPattern unrollRecordPattern(JCRecordPattern recordPattern) {
+        //Convert a record pattern in the basic binding pattern and additional conditions
+        //implementing the record pattern:
+        //$record($nestedPattern1, $nestedPattern2, ...) $r
+        //=>
+        //$record $r; type-test-of($nestedPattern1) && type-test-of($nestedPattern2) && ... &&
+        //            nested-conditions-of($nestedPattern1) && nested-conditions-of($nestedPattern2)
+
+        // A record pattern that comes with a matcher is desugared into the following structure (utilizing DynamicVarSymbols)
         // if (o instanceof Matcher $m && Matcher."Matcher$Ljava\\|lang\\|String\\?$I"($m)) instanceof Object unmatched) {
         //      MethodType methodType = MethodType.methodType(Object.class, String.class, int.class); // represented as a DynamicVarSymbol
         //      os = (String) Carriers.component(methodType, 0).invoke(unmatched); // where Carriers.component(methodType, 0) is a DynamicVarSymbol
         //      oi = (int) Carriers.component(methodType, 1).invoke(unmatched); // where Carriers.component(methodType, 1) is a DynamicVarSymbol
         //      ...
         // }
-        if (recordPattern.matcher != null) {
-            Type recordType = recordPattern.record.erasure(types);
-            BindingSymbol tempBind = new BindingSymbol(Flags.SYNTHETIC,
-                names.fromString(target.syntheticNameChar() + "b" + target.syntheticNameChar() + variableIndex++), recordType,
-                                 currentMethodSym);
-            JCVariableDecl recordBindingVar = make.VarDef(tempBind, null);
-            BindingSymbol unmatched = new BindingSymbol(Flags.SYNTHETIC,
-                names.fromString(target.syntheticNameChar() + "m" + target.syntheticNameChar() + variableIndex++), syms.objectType,
-                                 currentMethodSym);
-            JCVariableDecl unmatchedVar = make.VarDef(unmatched, null);
-            JCExpression nullCheck = make.TypeTest(make.App(make.Select(make.Ident(recordPattern.matcher.owner), recordPattern.matcher), List.of(make.Ident(tempBind))).setType(syms.objectType),
-                          (JCBindingPattern) make.BindingPattern(unmatchedVar).setType(unmatched.type)).setType(syms.booleanType);
+        Type recordType = recordPattern.record.erasure(types);
+        BindingSymbol tempBind = new BindingSymbol(Flags.SYNTHETIC,
+            names.fromString(target.syntheticNameChar() + "b" + target.syntheticNameChar() + variableIndex++), recordType,
+                             currentMethodSym);
+        JCVariableDecl recordBindingVar = make.at(recordPattern.pos()).VarDef(tempBind, null);
 
-            VarSymbol recordBinding = recordBindingVar.sym;
-            List<? extends RecordComponent> components = recordPattern.record.getRecordComponents();
-            List<? extends Type> nestedFullComponentTypes = recordPattern.fullComponentTypes;
-            List<? extends JCPattern> nestedPatterns = recordPattern.nested;
-            JCExpression firstLevelChecks = nullCheck;
-            JCExpression secondLevelChecks = null;
-            int index = -1;
+        VarSymbol recordBinding = recordBindingVar.sym;
+        List<? extends RecordComponent> components = recordPattern.record.getRecordComponents();
+        List<? extends Type> nestedFullComponentTypes = recordPattern.fullComponentTypes;
+        List<? extends JCPattern> nestedPatterns = recordPattern.nested;
+
+        JCExpression firstLevelChecks = null;
+        JCExpression secondLevelChecks = null;
+        int index = -1; // needed for the Carriers.component in the case of a matcher
+
+        BindingSymbol    unmatched = null;
+        DynamicVarSymbol methodTypeDynamicVar = null;
+        MethodSymbol     carriersComponentCallSym = null;
+
+        if (recordPattern.matcher != null) {
+            unmatched = new BindingSymbol(Flags.SYNTHETIC,
+                    names.fromString(target.syntheticNameChar() + "m" + target.syntheticNameChar() + variableIndex++), syms.objectType,
+                    currentMethodSym);
+            JCVariableDecl unmatchedVar = make.VarDef(unmatched, null);
+            JCExpression nullCheck = make.TypeTest(
+                    make.App(make.Select(make.Ident(recordPattern.matcher.owner), recordPattern.matcher),
+                                     List.of(make.Ident(tempBind))).setType(syms.objectType),
+                    make.BindingPattern(unmatchedVar).setType(unmatched.type)).setType(syms.booleanType);
+
+            firstLevelChecks = nullCheck;
 
             MethodSymbol methodTypeCallSym =
                     rs.resolveInternalMethod(recordPattern.pos(),
@@ -332,60 +350,34 @@ public class TransPatterns extends TreeTranslator {
                             List.nil());
 
             List<LoadableConstant> params = recordPattern.matcher.params
-                            .map(v -> (LoadableConstant) types.erasure(v.type))
-                            .prepend((LoadableConstant) syms.objectType);
+                    .map(v -> (LoadableConstant) types.erasure(v.type))
+                    .prepend((LoadableConstant) syms.objectType);
 
-            DynamicVarSymbol methodTypeDynamicVar = (DynamicVarSymbol)
+            methodTypeDynamicVar = (DynamicVarSymbol)
                     invokeMethodWrapper(names.methodType,
                             recordPattern.pos(),
                             methodTypeCallSym.asHandle(),
                             params.toArray(LoadableConstant[]::new));
 
-            VarSymbol methodTypeVar = new VarSymbol(Flags.SYNTHETIC,
-                    names.fromString("index" + target.syntheticNameChar() + variableIndex++),
-                    syms.methodTypeType,
-                    currentMethodSym);
-
-            JCVariableDecl returnTypeVar = make.VarDef(methodTypeVar, make.Ident(methodTypeDynamicVar));
-
             // Resolve Carriers.component(methodType, index) for subsequent constant dynamic call results
-            MethodSymbol carriersComponentCallSym =
+            carriersComponentCallSym =
                     rs.resolveInternalMethod(recordPattern.pos(),
                             env,
                             syms.carriersType,
                             names.component,
                             List.of(syms.methodTypeType, syms.intType),
                             List.nil());
+        }
 
-            // TODO: cleanup duplication
-            while (components.nonEmpty()) {
-                index++;
-
-                Type componentType = types.erasure(nestedFullComponentTypes.head);
-                JCBindingPattern nestedBinding;
-                boolean allowNull;
-                if (nestedPatterns.head instanceof JCRecordPattern nestedRecordPattern) {
-                    UnrolledRecordPattern nestedDesugared = unrollRecordPattern(nestedRecordPattern);
-                    JCExpression newGuard = nestedDesugared.newGuard();
-                    if (newGuard != null) {
-                        if (secondLevelChecks == null) {
-                            secondLevelChecks = newGuard;
-                        } else {
-                            secondLevelChecks = mergeConditions(secondLevelChecks, newGuard);
-                        }
-                    }
-                    nestedBinding = nestedDesugared.primaryPattern();
-                    allowNull = false;
-                } else {
-                    nestedBinding = (JCBindingPattern) nestedPatterns.head;
-                    allowNull = types.isSubtype(componentType,
-                                                types.boxedTypeOrType(types.erasure(nestedBinding.type)));
-                }
-
+        while (components.nonEmpty()) {
+            Type componentType = types.erasure(nestedFullComponentTypes.head);
+            JCExpression accessedComponentValue;
+            index++;
+            if (recordPattern.matcher != null) {
                 /*
-                *  Generate invoke call for component X
-                *       component$X.invoke(carrier);
-                * */
+                 *  Generate invoke call for component X
+                 *       component$X.invoke(carrier);
+                 * */
                 List<LoadableConstant> carriersComponentParams =
                         List.of(methodTypeDynamicVar,
                                 LoadableConstant.Int(index));
@@ -407,57 +399,22 @@ public class TransPatterns extends TreeTranslator {
 
                 JCMethodInvocation invokeComponentCall =
                         make.App(make.Select(make.Ident(carriersComponentCallDynamicVar),
-                                             invokeComponentCallSym), invokeComponentParams);
+                                invokeComponentCallSym), invokeComponentParams);
 
-                JCExpression accessedComponentValue = convert(invokeComponentCall, componentType);
-                JCInstanceOf firstLevelCheck = (JCInstanceOf) make.TypeTest(accessedComponentValue, nestedBinding).setType(syms.booleanType);
-                //TODO: verify deep/complex nesting with nulls
-                firstLevelCheck.allowNull = allowNull;
-                if (firstLevelChecks == null) {
-                    firstLevelChecks = firstLevelCheck;
-                } else {
-                    firstLevelChecks = mergeConditions(firstLevelChecks, firstLevelCheck);
+                accessedComponentValue = convert(invokeComponentCall, componentType);
+            } else {
+                RecordComponent component = components.head;
+                JCMethodInvocation componentAccessor =
+                        make.at(recordPattern.pos()).App(
+                                make.Select(convert(make.Ident(recordBinding), recordBinding.type),
+                                            component.accessor)).setType(types.erasure(component.accessor.getReturnType()));
+                if (deconstructorCalls == null) {
+                    deconstructorCalls = Collections.newSetFromMap(new IdentityHashMap<>());
                 }
-                components = components.tail;
-                nestedFullComponentTypes = nestedFullComponentTypes.tail;
-                nestedPatterns = nestedPatterns.tail;
+                deconstructorCalls.add(componentAccessor);
+                accessedComponentValue = convert(componentAccessor, componentType);
             }
 
-            Assert.check(components.isEmpty() == nestedPatterns.isEmpty());
-            JCExpression guard = null;
-            if (firstLevelChecks != null) {
-                guard = firstLevelChecks;
-                if (secondLevelChecks != null) {
-                    guard = mergeConditions(guard, secondLevelChecks);
-                }
-            }
-
-            LetExpr let = (LetExpr) make.LetExpr(returnTypeVar, guard).setType(syms.booleanType);
-            let.needsCond = true;
-            return new UnrolledRecordPattern((JCBindingPattern) make.BindingPattern(recordBindingVar).setType(recordBinding.type), let);
-        }
-        //Convert a record pattern in the basic binding pattern and additional conditions
-        //implementing the record pattern:
-        //$record($nestedPattern1, $nestedPattern2, ...) $r
-        //=>
-        //$record $r; type-test-of($nestedPattern1) && type-test-of($nestedPattern2) && ... &&
-        //            nested-conditions-of($nestedPattern1) && nested-conditions-of($nestedPattern2)
-        Type recordType = recordPattern.record.erasure(types);
-        BindingSymbol tempBind = new BindingSymbol(Flags.SYNTHETIC,
-            names.fromString(target.syntheticNameChar() + "b" + target.syntheticNameChar() + variableIndex++), recordType,
-                             currentMethodSym);
-        JCVariableDecl recordBindingVar = make.at(recordPattern.pos()).VarDef(tempBind, null);
-
-        VarSymbol recordBinding = recordBindingVar.sym;
-        List<? extends RecordComponent> components = recordPattern.record.getRecordComponents();
-        List<? extends Type> nestedFullComponentTypes = recordPattern.fullComponentTypes;
-        List<? extends JCPattern> nestedPatterns = recordPattern.nested;
-        JCExpression firstLevelChecks = null;
-        JCExpression secondLevelChecks = null;
-
-        while (components.nonEmpty()) {
-            RecordComponent component = components.head;
-            Type componentType = types.erasure(nestedFullComponentTypes.head);
             JCPattern nestedPattern = nestedPatterns.head;
             JCPattern nestedBinding;
             boolean allowNull;
@@ -480,18 +437,11 @@ public class TransPatterns extends TreeTranslator {
             else {
                 nestedBinding = (JCBindingPattern) nestedPattern;
                 allowNull = types.isSubtype(componentType,
-                                            types.boxedTypeOrType(types.erasure(nestedBinding.type)));
+                        types.boxedTypeOrType(types.erasure(nestedBinding.type)));
             }
-            JCMethodInvocation componentAccessor =
-                    make.at(recordPattern.pos()).App(make.Select(convert(make.Ident(recordBinding), recordBinding.type),
-                             component.accessor)).setType(types.erasure(component.accessor.getReturnType()));
-            if (deconstructorCalls == null) {
-                deconstructorCalls = Collections.newSetFromMap(new IdentityHashMap<>());
-            }
-            deconstructorCalls.add(componentAccessor);
-            JCExpression accessedComponentValue =
-                    convert(componentAccessor, componentType);
+
             JCInstanceOf firstLevelCheck = (JCInstanceOf) make.TypeTest(accessedComponentValue, nestedBinding).setType(syms.booleanType);
+
             //TODO: verify deep/complex nesting with nulls
             firstLevelCheck.allowNull = allowNull;
             if (firstLevelChecks == null) {
@@ -512,7 +462,21 @@ public class TransPatterns extends TreeTranslator {
                 guard = mergeConditions(guard, secondLevelChecks);
             }
         }
-        return new UnrolledRecordPattern((JCBindingPattern) make.BindingPattern(recordBindingVar).setType(recordBinding.type), guard);
+
+        JCExpression unrolledGuard = guard;
+        if (recordPattern.matcher != null) {
+            VarSymbol methodTypeVar = new VarSymbol(Flags.SYNTHETIC,
+                    names.fromString("index" + target.syntheticNameChar() + variableIndex++),
+                    syms.methodTypeType,
+                    currentMethodSym);
+
+            JCVariableDecl returnTypeVar = make.VarDef(methodTypeVar, make.Ident(methodTypeDynamicVar));
+
+            LetExpr let = (LetExpr) make.LetExpr(returnTypeVar, guard).setType(syms.booleanType);
+            let.needsCond = true;
+            unrolledGuard = let;
+        }
+        return new UnrolledRecordPattern((JCBindingPattern) make.BindingPattern(recordBindingVar).setType(recordBinding.type), unrolledGuard);
     }
 
     record UnrolledRecordPattern(JCBindingPattern primaryPattern, JCExpression newGuard) {}
