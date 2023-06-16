@@ -133,9 +133,11 @@ class DynamicLoadWarningTest {
                 .stderrShouldNotContain(JVMTI_AGENT_WARNING);
 
         // start loadJvmtiAgent1 via the command line, then dynamically load loadJvmtiAgent1
-        test().withOpts("-agentpath:" + jvmtiAgentPath1)
-                .whenRunning(loadJvmtiAgent1)
-                .stderrShouldNotContain(JVMTI_AGENT_WARNING);
+        if (!Platform.isAix()) {
+            test().withOpts("-agentpath:" + jvmtiAgentPath1)
+                    .whenRunning(loadJvmtiAgent1)
+                    .stderrShouldNotContain(JVMTI_AGENT_WARNING);
+        }
     }
 
     /**
