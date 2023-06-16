@@ -299,10 +299,6 @@ void ZHeap::object_iterate(ObjectClosure* object_cl, bool visit_weaks) {
 
 void ZHeap::object_and_field_iterate_for_verify(ObjectClosure* object_cl, OopFieldClosure* field_cl, bool visit_weaks) {
   assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
-  // We use AtMark to make sure that verification catches broken objects as
-  // soon as they are encountered. The AtMark location has stricter
-  // requirements on the passed in closures. The reason for this is because the
-  // closures will be called during root iteraiton, which takes various locks.
   ZHeapIterator iter(1 /* nworkers */, visit_weaks, true /* for_verify */);
   iter.object_and_field_iterate(object_cl, field_cl, 0 /* worker_id */);
 }
