@@ -8198,7 +8198,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * <li>if {@code R} <em>is</em> {@code void}, {@code pos} indicates the space between two coordinate types in the
      * coordinate list of the target var handle, where {@code 0} indicates the space before the first coordinate, and
      * {@code target.coordinateTypes().size()} indicates the space after the last coordinate. The parameter types of the
-     * filter will be inserted in the coordinate type list of the returned var handle in that space. In this case, when
+     * filter will be inserted in the coordinate type list of the target var handle in that space. In this case, when
      * the returned var handle is invoked, the filter essentially acts as a side effect, consuming some of the coordinate
      * values, before a downstream invocation of the target var handle.</li>
      * </ul>
