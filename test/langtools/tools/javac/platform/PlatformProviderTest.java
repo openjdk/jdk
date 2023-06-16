@@ -239,7 +239,7 @@ public class PlatformProviderTest implements PlatformProvider {
 
         @Override
         public List<String> getAdditionalOptions() {
-            return Arrays.asList("-Xlint:rawtypes", "-XDrawDiagnostics");
+            return Arrays.asList("-Xlint:rawtypes", "-XDrawDiagnostics", "-proc:full");
         }
 
         @Override

@@ -235,9 +235,9 @@ public class JavaCompiler {
      */
     public Log log;
 
-    /** The Lint to be used.
+    /** Whether or not the options lint category was initially disabled
      */
-    public Lint lint;
+    boolean optionsCheckingInitiallyDisabled;
 
     /** Factory for creating diagnostic objects
      */
@@ -389,7 +389,6 @@ public class JavaCompiler {
 
         names = Names.instance(context);
         log = Log.instance(context);
-        lint = Lint.instance(context);
         diagFactory = JCDiagnostic.Factory.instance(context);
         finder = ClassFinder.instance(context);
         reader = ClassReader.instance(context);
@@ -432,6 +431,9 @@ public class JavaCompiler {
         moduleFinder.moduleNameFromSourceReader = this::readModuleName;
 
         options = Options.instance(context);
+        optionsCheckingInitiallyDisabled =
+            options.isSet(Option.XLINT_CUSTOM, "-options") ||
+            options.isSet(Option.XLINT_CUSTOM, "none");
 
         verbose       = options.isSet(VERBOSE);
         sourceOutput  = options.isSet(PRINTSOURCE); // used to be -s
@@ -1141,7 +1143,7 @@ public class JavaCompiler {
 
             if (processAnnotations) {
                 if (!explicitAnnotationProcessingRequested() &&
-                    lint.isSuppressed(LintCategory.OPTIONS)) {
+                    !optionsCheckingInitiallyDisabled) {
                     log.note(Notes.ImplicitAnnotationProcessing);
                 }
 
