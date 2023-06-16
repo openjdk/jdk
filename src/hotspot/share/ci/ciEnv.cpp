@@ -64,6 +64,7 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/resolvedIndyEntry.hpp"
 #include "oops/symbolHandle.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
