@@ -61,7 +61,6 @@ import sun.awt.DisplayChangedListener;
 import sun.awt.IconInfo;
 import sun.awt.SunToolkit;
 import sun.awt.X11GraphicsDevice;
-import sun.awt.X11GraphicsConfig;
 import sun.awt.X11GraphicsEnvironment;
 import sun.java2d.pipe.Region;
 import sun.util.logging.PlatformLogger;
