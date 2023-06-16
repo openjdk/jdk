@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -400,8 +400,8 @@ public final class ZoneOffsetTransition
      * The offsets are ignored, making this order inconsistent with equals.
      *
      * @param transition  the transition to compare to, not null
-     * @return the comparator value is less than zero if the other transition is before,
-     *          zero if they are equal, greater than zero if the other transition is after
+     * @return the comparator value is less than zero if the {@code transition} is before,
+     *          zero if they are equal, greater than zero if the {@code transition} is after
      */
     @Override
     public int compareTo(ZoneOffsetTransition transition) {

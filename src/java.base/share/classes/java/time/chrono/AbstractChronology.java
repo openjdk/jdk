@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -656,8 +656,8 @@ public abstract class AbstractChronology implements Chronology {
      * Subclasses must compare any additional state that they store.
      *
      * @param other  the other chronology to compare to, not null
-     * @return the comparator value is less than zero if the other ID string is before,
-     *          zero if they are equal, greater than zero if the other ID string is after
+     * @return the comparator value is less than zero if the {@code other} ID string is before,
+     *          zero if they are equal, greater than zero if the {@code other} ID string is after
      */
     @Override
     public int compareTo(Chronology other) {

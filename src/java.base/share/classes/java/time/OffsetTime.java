@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1281,8 +1281,9 @@ public final class OffsetTime
      * use {@link ChronoField#NANO_OF_DAY} as a comparator.
      *
      * @param other  the other time to compare to, not null
-     * @return the comparator value is less than zero if the other is before,
-     *          zero if they are equal, greater than zero if the other is after
+     * @return the comparator value is less than zero if the {@code other} is before,
+     *          zero if they are equal, greater than zero if the {@code other} is after
+
      * @see #isBefore
      * @see #isAfter
      */
