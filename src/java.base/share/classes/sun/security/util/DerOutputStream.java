@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -480,6 +480,15 @@ public final class DerOutputStream
         putLength(data.length);
         writeBytes(data);
         return this;
+    }
+
+    /**
+     * Takes a Date and chooses UTC or GeneralizedTime as per RFC 2630
+     */
+    public DerOutputStream putTime(Date d) {
+        Date low = new Date(1950,1,1);
+        Date high = new Date(2049,12,31);
+        return (d.before(low) || d.after(high)) ? putGeneralizedTime(d) : putUTCTime(d);
     }
 
     /**

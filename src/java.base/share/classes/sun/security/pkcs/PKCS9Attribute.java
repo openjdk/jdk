@@ -570,7 +570,7 @@ public class PKCS9Attribute implements DerEncoder {
         case 5:     // signing time
             {
                 DerOutputStream temp2 = new DerOutputStream();
-                temp2.putUTCTime((Date) value);
+                temp2.putTime((Date) value);
                 temp.write(DerValue.tag_Set, temp2.toByteArray());
             }
             break;
