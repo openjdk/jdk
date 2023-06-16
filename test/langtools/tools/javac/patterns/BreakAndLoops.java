@@ -116,8 +116,8 @@ public class BreakAndLoops extends ComboInstance<BreakAndLoops> {
                      };
                  };
             } else {
-                 shouldPass = false;
-             } 
+                shouldPass = false;
+            }
             if (!(shouldPass ^ result.hasErrors())) {
                 throw new AssertionError("Unexpected result: " + result.compilationInfo());
             }
