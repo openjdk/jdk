@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
 
 import java.awt.Cursor;
 import java.awt.Dimension;
+import java.awt.MouseInfo;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Robot;
@@ -47,12 +48,15 @@ public class bug6889007 {
     static JFrame frame;
     static Robot robot;
     static volatile Point point;
+    static volatile Point mouseLoc;
     static volatile int width;
     static volatile int height;
+    static volatile boolean ignoreFirst = false;
 
     public static void main(String[] args) throws Exception {
         try {
             robot = new Robot();
+            robot.mouseMove(100, 100);
 
             SwingUtilities.invokeAndWait(() -> {
                 frame = new JFrame();
@@ -74,14 +78,21 @@ public class bug6889007 {
             robot.waitForIdle();
             robot.delay(1000);
             SwingUtilities.invokeAndWait(() -> {
+                mouseLoc = MouseInfo.getPointerInfo().getLocation();
                 point = frame.getLocationOnScreen();
                 width = frame.getWidth();
                 height = frame.getHeight();
             });
+            if ((mouseLoc.x >= point.x) && (mouseLoc.x < point.x + width) &&
+                (mouseLoc.y >= point.y) && (mouseLoc.y < point.y + height)) {
+                 System.out.println("pointer is within window");
+                 ignoreFirst = true;
+                 MyTableHeaderUI.testValue = 0;
+            }
             int shift = 10;
             int x = point.x;
             int y = point.y + height/2;
-            for(int i = -shift; i < width + 2*shift; i++) {
+            for (int i = -shift; i < width + 2*shift; i++) {
                 robot.mouseMove(x++, y);
                 robot.delay(100);
             }
@@ -102,15 +113,21 @@ public class bug6889007 {
     }
 
     static class MyTableHeaderUI extends BasicTableHeaderUI {
-        private static int testValue;
+        private static volatile int testValue;
 
         protected void rolloverColumnUpdated(int oldColumn, int newColumn) {
             increaseTestValue(newColumn);
             Cursor cursor = Cursor.getPredefinedCursor(Cursor.E_RESIZE_CURSOR);
+            System.out.println("oldColumn " + oldColumn + " newColumn " + newColumn +
+                        " header.getCursor " + header.getCursor() + " cursor " + cursor);
+            if (ignoreFirst) {
+                ignoreFirst = false;
+                if (newColumn == 0) {
+                    return;
+                }
+            }
             if (oldColumn != -1 && newColumn != -1 &&
                     header.getCursor() != cursor) {
-                System.out.println("oldColumn " + oldColumn + " newColumn " + newColumn +
-                        "header.getCursor " + header.getCursor() + " cursor " + cursor);
                 try {
                     Dimension screenSize =
                                Toolkit.getDefaultToolkit().getScreenSize();
