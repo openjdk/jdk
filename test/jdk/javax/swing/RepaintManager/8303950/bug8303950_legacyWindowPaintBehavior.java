@@ -65,7 +65,7 @@ public class bug8303950_legacyWindowPaintBehavior {
                 Window w1 = createWindow( WINDOW_BACKGROUND, null, x, y, 400, 400, false, "window 1");
                 Window w2 = createWindow( WINDOW_BACKGROUND, ROOTPANE_BACKGROUND, x + 400, y, 400, 400, false, "window 2");
                 Window w3 = createWindow( WINDOW_BACKGROUND, null, x, y + 400, 400, 400, true, "window 3");
-                Window w4 =  createWindow( WINDOW_BACKGROUND, ROOTPANE_BACKGROUND, x + 400, y + 400, 400, 400, true, "window 4");
+                Window w4 = createWindow( WINDOW_BACKGROUND, ROOTPANE_BACKGROUND, x + 400, y + 400, 400, 400, true, "window 4");
 
                 // using a white background helps keep the colors we detect constant (because some windows
                 // are translucent)
