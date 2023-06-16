@@ -438,10 +438,15 @@ public final class Class<T> implements java.io.Serializable,
      * obtain any of the {@code Class} objects representing primitive
      * types or void.
      *
-     * <p> If {@code name} denotes an array class, i.e. the name consists of
-     * one or more {@code '['} followed by the binary name of the element type
-     * and {@code ';'}, the element type of the array class is loaded but
-     * not initialized.
+     * <p> If {@code name} denotes an array class whose element type
+     * is a class or interface, i.e. the name consists of one or more {@code '['}
+     * followed by the binary name of the element type and {@code ';'}
+     * the element type of the array class is loaded but not initialized.
+     *
+     * <p> To find an array class of a primitive type, the name string
+     * consists of one or more {@code '['} followed by the field type descriptor
+     * of the primitive type (JVMS {@jvms 4.3.2 }) e.g. {@code "[I"} to
+     * represent an array of {@code int}.
      *
      * <p> For example, in an instance method the expression:
      *
