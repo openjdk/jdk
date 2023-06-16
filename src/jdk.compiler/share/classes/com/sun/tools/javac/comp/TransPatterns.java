@@ -297,9 +297,9 @@ public class TransPatterns extends TreeTranslator {
 
     private UnrolledRecordPattern unrollRecordPattern(JCRecordPattern recordPattern) {
         // if (o instanceof Matcher $m && Matcher."Matcher$Ljava\\|lang\\|String\\?$I"($m)) instanceof Object unmatched) {
-        //      MethodType returnType = MethodType.methodType(Object.class, String.class, int.class); //TODO: return type of the Carrier constructor?
-        //      os = (String) Carriers.component(returnType, 0).invoke(unmatched);
-        //      oi = (int) Carriers.component(returnType, 1).invoke(unmatched);
+        //      MethodType methodType = MethodType.methodType(Object.class, String.class, int.class); // represented as a DynamicVarSymbol
+        //      os = (String) Carriers.component(methodType, 0).invoke(unmatched); // where Carriers.component(methodType, 0) is a DynamicVarSymbol
+        //      oi = (int) Carriers.component(methodType, 1).invoke(unmatched); // where Carriers.component(methodType, 1) is a DynamicVarSymbol
         //      ...
         // }
         if (recordPattern.matcher != null) {
@@ -323,18 +323,39 @@ public class TransPatterns extends TreeTranslator {
             JCExpression secondLevelChecks = null;
             int index = -1;
 
-            // TODO: Load it through ConstantDynamic for perf
-            MethodSymbol methodTypeCallSym = rs.resolveInternalMethod(recordPattern.pos(), env, syms.methodTypeType, names.fromString("methodType"), List.of(syms.classType, types.makeArrayType(types.erasure(syms.classType))), List.nil());
-            List<JCExpression> params =  recordPattern.matcher.params.map(v -> classOfType(types.erasure(v.type), recordPattern.pos())).prepend(classOfType(syms.objectType, recordPattern.pos()));
-            JCMethodInvocation methodTypeCall = make.App(make.QualIdent(methodTypeCallSym), params).setType(syms.methodTypeType);
-            methodTypeCall.varargsElement = types.erasure(types.elemtype(methodTypeCallSym.type.getParameterTypes().last()));
+            MethodSymbol methodTypeCallSym =
+                    rs.resolveInternalMethod(recordPattern.pos(),
+                            env,
+                            syms.methodTypeType,
+                            names.methodType,
+                            List.of(syms.classType, syms.classType, types.makeArrayType(types.erasure(syms.classType))),
+                            List.nil());
+
+            List<LoadableConstant> params = recordPattern.matcher.params
+                            .map(v -> (LoadableConstant) types.erasure(v.type))
+                            .prepend((LoadableConstant) syms.objectType);
+
+            DynamicVarSymbol methodTypeDynamicVar = (DynamicVarSymbol)
+                    invokeMethodWrapper(names.methodType,
+                            recordPattern.pos(),
+                            methodTypeCallSym.asHandle(),
+                            params.toArray(LoadableConstant[]::new));
 
             VarSymbol methodTypeVar = new VarSymbol(Flags.SYNTHETIC,
                     names.fromString("index" + target.syntheticNameChar() + variableIndex++),
                     syms.methodTypeType,
                     currentMethodSym);
 
-            JCVariableDecl returnTypeVar = make.VarDef(methodTypeVar, methodTypeCall);
+            JCVariableDecl returnTypeVar = make.VarDef(methodTypeVar, make.Ident(methodTypeDynamicVar));
+
+            // Resolve Carriers.component(methodType, index) for subsequent constant dynamic call results
+            MethodSymbol carriersComponentCallSym =
+                    rs.resolveInternalMethod(recordPattern.pos(),
+                            env,
+                            syms.carriersType,
+                            names.component,
+                            List.of(syms.methodTypeType, syms.intType),
+                            List.nil());
 
             // TODO: cleanup duplication
             while (components.nonEmpty()) {
@@ -362,16 +383,31 @@ public class TransPatterns extends TreeTranslator {
                 }
 
                 /*
-                *  Generate:
-                *       Carriers.component(returnType, componentIndex).invoke(carrier);
+                *  Generate invoke call for component X
+                *       component$X.invoke(carrier);
                 * */
-                MethodSymbol carriersComponentCallSym = rs.resolveInternalMethod(recordPattern.pos(), env, syms.carriersType, names.fromString("component"), List.of(syms.methodTypeType, syms.intType), List.nil());
-                List<JCExpression> carriersComponentParams = List.of(methodTypeCall, makeLit(syms.intType, index));
-                JCMethodInvocation carriersComponentCall = make.App(make.QualIdent(carriersComponentCallSym), carriersComponentParams).setType(syms.methodHandleType);
+                List<LoadableConstant> carriersComponentParams =
+                        List.of(methodTypeDynamicVar,
+                                LoadableConstant.Int(index));
+
+                DynamicVarSymbol carriersComponentCallDynamicVar = (DynamicVarSymbol)
+                        invokeMethodWrapper(names.fromString("component$" + index), recordPattern.pos(),
+                                carriersComponentCallSym.asHandle(),
+                                carriersComponentParams.toArray(LoadableConstant[]::new));
 
                 List<JCExpression> invokeComponentParams = List.of(make.Ident(unmatched));
-                MethodSymbol invokeComponentCallSym = rs.resolveInternalMethod(recordPattern.pos(), env, syms.methodHandleType, names.fromString("invoke"), List.of(syms.objectType), List.nil());
-                JCMethodInvocation invokeComponentCall = make.App(make.Select(carriersComponentCall, invokeComponentCallSym), invokeComponentParams);
+
+                MethodSymbol invokeComponentCallSym =
+                        rs.resolveInternalMethod(recordPattern.pos(),
+                                env,
+                                syms.methodHandleType,
+                                names.invoke,
+                                List.of(syms.objectType),
+                                List.nil());
+
+                JCMethodInvocation invokeComponentCall =
+                        make.App(make.Select(make.Ident(carriersComponentCallDynamicVar),
+                                             invokeComponentCallSym), invokeComponentParams);
 
                 JCExpression accessedComponentValue = convert(invokeComponentCall, componentType);
                 JCInstanceOf firstLevelCheck = (JCInstanceOf) make.TypeTest(accessedComponentValue, nestedBinding).setType(syms.booleanType);
@@ -1055,6 +1091,10 @@ public class TransPatterns extends TreeTranslator {
     }
 
     private LoadableConstant invokeMethodWrapper(DiagnosticPosition pos, MethodHandleSymbol toCall, LoadableConstant... params) {
+        return invokeMethodWrapper(names.invoke, pos, toCall, params);
+    }
+
+    private LoadableConstant invokeMethodWrapper(Name varName, DiagnosticPosition pos, MethodHandleSymbol toCall, LoadableConstant... params) {
         List<Type> bsm_staticArgs = List.of(syms.methodHandleLookupType,
                                             syms.stringType,
                                             new ClassType(syms.classType.getEnclosingType(),
@@ -1072,7 +1112,7 @@ public class TransPatterns extends TreeTranslator {
 
         System.arraycopy(params, 0, actualParams, 1, params.length);
 
-        return new DynamicVarSymbol(bsm.name, bsm.owner, bsm.asHandle(), toCall.getReturnType(), actualParams);
+        return new DynamicVarSymbol(varName, bsm.owner, bsm.asHandle(), toCall.getReturnType(), actualParams);
     }
 
     @Override
@@ -1189,7 +1229,7 @@ public class TransPatterns extends TreeTranslator {
                             rs.resolveInternalMethod(tree.pos(),
                                     env,
                                     syms.methodTypeType,
-                                    names.fromString("methodType"),
+                                    names.methodType,
                                     paramsForMethodType,
                                     List.nil());
 

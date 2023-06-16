@@ -94,6 +94,8 @@ public class Names {
     public final Name hashCode;
     public final Name init;
     public final Name invoke;
+    public final Name component;
+    public final Name methodType;
     public final Name iterator;
     public final Name length;
     public final Name next;
@@ -290,6 +292,8 @@ public class Names {
         hashCode = fromString("hashCode");
         init = fromString("<init>");
         invoke = fromString("invoke");
+        component = fromString("component");
+        methodType = fromString("methodType");
         iterator = fromString("iterator");
         length = fromString("length");
         next = fromString("next");
