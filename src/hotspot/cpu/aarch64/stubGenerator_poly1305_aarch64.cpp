@@ -170,17 +170,19 @@ address generate_poly1305_processBlocks2() {
     __ align(OptoLoopAlignment);
     __ bind(LOOP);
     {
-      __ poly1305_load(S0, input_start);
-      __ poly1305_load(S1, input_start);
+      // __ poly1305_load(S0, input_start);
+      // __ poly1305_load(S1, input_start);
 
       constexpr int COLS = 3;
       LambdaAccumulator gen[COLS];
 
-      __ poly1305_add(gen[0], S0, u0);
+      // __ poly1305_add(gen[0], S0, u0);
+      __ poly1305_step(gen[0], S0, u0, input_start);
       __ poly1305_multiply(gen[0], u0, S0, R, RR2, regs);
       __ poly1305_reduce(gen[0], u0);
 
-      __ poly1305_add(gen[1], S1, u1);
+      // __ poly1305_add(gen[1], S1, u1);
+      __ poly1305_step(gen[1], S1, u1, input_start);
       __ poly1305_multiply(gen[1], u1, S1, R, RR2, regs);
       __ poly1305_reduce(gen[1], u1);
 
@@ -200,7 +202,7 @@ address generate_poly1305_processBlocks2() {
 
       int err[COLS];
       for (int col = 0; col < COLS; col++) {
-        err[col] = l_max / 2;
+        err[col] = 0;
       }
 
       for (int i = 0; i < l_max; i++) {
