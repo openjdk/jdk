@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8215294
+ * @bug 8215294 8241800
  * @requires os.family == "linux"
  * @library /test/lib
  * @build jdk.test.lib.NetworkConfiguration
