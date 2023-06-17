@@ -73,8 +73,6 @@ public abstract class AbstractCollection<E> implements Collection<E> {
     // Query Operations
 
     /**
-     * Returns an iterator over the elements contained in this collection.
-     *
      * @return an iterator over the elements contained in this collection
      */
     public abstract Iterator<E> iterator();
