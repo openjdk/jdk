@@ -891,9 +891,12 @@ void PhaseIterGVN::verify_step(Node* n) {
 }
 
 void PhaseIterGVN::trace_PhaseIterGVN(Node* n, Node* nn, const Type* oldtype) {
+  const Type* newtype = type_or_null(n);
+  if (nn != n || oldtype != newtype) {
+    C->print_method(PHASE_AFTER_ITER_GVN_STEP, 4, n);
+  }
   if (TraceIterativeGVN) {
     uint wlsize = _worklist.size();
-    const Type* newtype = type_or_null(n);
     if (nn != n) {
       // print old node
       tty->print("< ");

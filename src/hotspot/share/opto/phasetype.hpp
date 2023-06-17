@@ -31,6 +31,7 @@
   flags(BEFORE_REMOVEUSELESS,         "Before RemoveUseless") \
   flags(AFTER_PARSING,                "After Parsing") \
   flags(ITER_GVN1,                    "Iter GVN 1") \
+  flags(AFTER_ITER_GVN_STEP,          "After Iter GVN Step") \
   flags(INCREMENTAL_INLINE_STEP,      "Incremental Inline Step") \
   flags(INCREMENTAL_INLINE_CLEANUP,   "Incremental Inline Cleanup") \
   flags(INCREMENTAL_INLINE,           "Incremental Inline") \
