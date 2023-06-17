@@ -440,8 +440,10 @@ public final class Class<T> implements java.io.Serializable,
      *
      * <p> If {@code name} denotes an array class whose element type
      * is a class or interface, the name consists of one or more {@code '['}
-     * followed by the binary name of the element type and {@code ';'},
-     * the element type of the array class is loaded but not initialized.
+     * followed by {@code 'L'}, the binary name of the element type and {@code ';'}
+     * for example {@code "[Ljava.lang.String;"}, this method attempts to
+     * load the element type but not initialize it regardless of the value
+     * of the {@code initialize} parameter.
      *
      * <p> To find an array class of a primitive type, the name string
      * consists of one or more {@code '['} followed by the field type descriptor
