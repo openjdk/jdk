@@ -499,6 +499,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
 
   // Free thread local resources used by this method on exit.
   ResourceMark rm(split_arena);
+  ResourceMark rm2;
 
   uint                 bidx, pidx, slidx, insidx, inpidx, twoidx;
   uint                 non_phi = 1, spill_cnt = 0;
