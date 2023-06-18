@@ -61,7 +61,7 @@ public class TestArrayInformation {
                 recording.enable(EventNames.OldObjectSample).withoutStackTrace().with("cutoff", "infinity");
                 recording.start();
                 for(int i = 0; i < 25; i++) {
-                  leak.add( buildNestedArray(CHAIN_DEPTH));
+                  leak.add(buildNestedArray(CHAIN_DEPTH));
                 }
                 recording.stop();
                 List<RecordedEvent> events = Events.fromRecording(recording);
