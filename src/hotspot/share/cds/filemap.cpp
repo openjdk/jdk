@@ -1567,7 +1567,6 @@ void FileMapInfo::write_region(int region, char* base, size_t size,
       mapping_offset = (size_t)((address)requested_base - CompressedOops::base());
       assert((mapping_offset >> CompressedOops::shift()) << CompressedOops::shift() == mapping_offset, "must be");
     } else {
-      assert(UseG1GC, "used by G1 only");
       mapping_offset = requested_base - (char*)Universe::heap()->reserved_region().start();
     }
 #endif // INCLUDE_CDS_JAVA_HEAP
@@ -2094,12 +2093,10 @@ bool FileMapInfo::map_heap_region() {
     MemRegion heap_range = Universe::heap()->reserved_region();
     assert(heap_range.contains(_mapped_heap_memregion), "must be");
 
-    if (UseG1GC) {
-      address heap_end = (address)heap_range.end();
-      address mapped_heap_region_end = (address)_mapped_heap_memregion.end();
-      assert(heap_end - mapped_heap_region_end < (intx)(HeapRegion::GrainBytes),
-             "must be at the top of the heap to avoid fragmentation");
-    }
+    address heap_end = (address)heap_range.end();
+    address mapped_heap_region_end = (address)_mapped_heap_memregion.end();
+    assert(heap_end - mapped_heap_region_end < (intx)(HeapRegion::GrainBytes),
+           "must be at the top of the heap to avoid fragmentation");
 #endif
 
     ArchiveHeapLoader::set_mapped();
