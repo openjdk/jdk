@@ -898,7 +898,6 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
       mv(tmp1, tmp3);
       sub(cnt2, zr, cnt2);
       addi(cnt1, cnt1, 4);
-
     } else { // UL case
       ld(tmp1, Address(str1));
       lwu(tmp2, Address(str2));
@@ -949,7 +948,7 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
     bltz(cnt2, NEXT_WORD);
     bind(TAIL);
 
-    if (AvoidUnalignedAccesses){
+    if (AvoidUnalignedAccesses) {
       if (str1_isL == str2_isL) { // LL or UU
         Label TAIL02, TAIL01, TAIL08;
         beqz(cnt2, TAIL08); // if cnt2 is zero then we need to copy one more aligned long
