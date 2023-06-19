@@ -27,6 +27,7 @@
  *   port but joined to different multicast groups
  * @library /test/lib
  * @build jdk.test.lib.NetworkConfiguration
+ *        jdk.test.lib.Platform
  *        Promiscuous
  * @run main Promiscuous
  * @run main/othervm -Djava.net.preferIPv4Stack=true Promiscuous
@@ -43,6 +44,7 @@ import java.util.stream.Collectors;
 
 import jdk.test.lib.NetworkConfiguration;
 import jdk.test.lib.net.IPSupport;
+import jdk.test.lib.Platform;
 
 public class Promiscuous {
 
@@ -191,6 +193,10 @@ public class Promiscuous {
         }
     }
 
+    private static boolean supportedByPlatform() {
+        return Platform.isOSX() || Platform.isWindows() || Platform.isLinux();
+    }
+
     public static void main(String[] args) throws IOException {
         IPSupport.throwSkippedExceptionIfNonOperational();
 
@@ -207,7 +213,8 @@ public class Promiscuous {
             test(INET, nif, ip4Group1, ip4Group2);
 
             // test IPv6 sockets joining IPv4 multicast groups
-            test(UNSPEC, nif, ip4Group1, ip4Group2);
+            if (supportedByPlatform())
+                test(UNSPEC, nif, ip4Group1, ip4Group2);
         }
     }
 }

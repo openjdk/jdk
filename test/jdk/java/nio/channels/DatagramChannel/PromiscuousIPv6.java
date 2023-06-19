@@ -201,16 +201,22 @@ public class PromiscuousIPv6 {
         }
     }
 
+    private static boolean supportedByPlatform() {
+        return Platform.isOSX() || Platform.isLinux();
+    }
+
     public static void main(String[] args) throws IOException {
 
         boolean hasIPV6MulticastAll;
 
-        if (Platform.isWindows()) {
-            throw new SkippedException("This test should not be run on Windows");
+        if (!supportedByPlatform()) {
+            throw new SkippedException("This test should not be run on this platform");
         } else {
             int major = Platform.getOsVersionMajor();
             int minor = Platform.getOsVersionMinor();
-            hasIPV6MulticastAll = Platform.isOSX() || ((major > 4) || ((major == 4 && minor >= 20)));
+            hasIPV6MulticastAll =
+                Platform.isOSX() ||
+                (Platform.isLinux() && ((major > 4) || ((major == 4 && minor >= 20))));
         }
 
         NetworkConfiguration.printSystemConfiguration(System.out);
