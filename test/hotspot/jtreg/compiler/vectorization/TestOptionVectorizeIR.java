@@ -34,8 +34,8 @@ package compiler.vectorization;
 import compiler.lib.ir_framework.*;
 
 public class TestOptionVectorizeIR {
-    static final int RANGE = 512;
-    static final int ITER  = 100;
+    static int RANGE = 1024*2;
+    static int ITER  = 100;
     int[] gold1 = new int[RANGE];
     int[] gold2 = new int[RANGE];
     int[] gold3 = new int[RANGE];

@@ -92,7 +92,7 @@ public class RawIRNode {
                         sizes_regex += ((i > 0) ? "|" : "") + s;
                     }
                     if (sizes.length > 1) {
-                       sizes_regex += "(" + sizes_regex + ")";
+                       sizes_regex = "(" + sizes_regex + ")";
                     }
                 }
                 nodeRegex = nodeRegex.replaceAll(IRNode.IS_REPLACED, "vector[A-Za-z]\\\\[" + sizes_regex + "\\\\]:\\\\{" + type + "\\\\}");
