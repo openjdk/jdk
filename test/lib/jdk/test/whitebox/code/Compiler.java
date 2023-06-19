@@ -63,7 +63,6 @@ public class Compiler {
      * Graal is enabled if following conditions are true:
      * - we are not in Interpreter mode
      * - UseJVMCICompiler flag is true
-     * - jvmci.Compiler variable is equal to 'graal'
      * - TieredCompilation is not used or TieredStopAtLevel is greater than 3
      * No need to check client mode because it set UseJVMCICompiler to false.
      *

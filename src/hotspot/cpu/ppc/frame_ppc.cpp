@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2022 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,7 +117,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
       return false;
     }
 
-    abi_minframe* sender_abi = (abi_minframe*) fp;
+    common_abi* sender_abi = (common_abi*) fp;
     intptr_t* sender_sp = (intptr_t*) fp;
     address   sender_pc = (address) sender_abi->lr;;
 
@@ -206,13 +206,32 @@ frame frame::sender_for_entry_frame(RegisterMap *map) const {
 }
 
 UpcallStub::FrameData* UpcallStub::frame_data_for_frame(const frame& frame) const {
-  ShouldNotCallThis();
-  return nullptr;
+  assert(frame.is_upcall_stub_frame(), "wrong frame");
+  // need unextended_sp here, since normal sp is wrong for interpreter callees
+  return reinterpret_cast<UpcallStub::FrameData*>(
+    reinterpret_cast<address>(frame.unextended_sp()) + in_bytes(_frame_data_offset));
 }
 
 bool frame::upcall_stub_frame_is_first() const {
-  ShouldNotCallThis();
-  return false;
+  assert(is_upcall_stub_frame(), "must be optimzed entry frame");
+  UpcallStub* blob = _cb->as_upcall_stub();
+  JavaFrameAnchor* jfa = blob->jfa_for_frame(*this);
+  return jfa->last_Java_sp() == nullptr;
+}
+
+frame frame::sender_for_upcall_stub_frame(RegisterMap* map) const {
+  assert(map != nullptr, "map must be set");
+  UpcallStub* blob = _cb->as_upcall_stub();
+  // Java frame called from C; skip all C frames and return top C
+  // frame of that chunk as the sender
+  JavaFrameAnchor* jfa = blob->jfa_for_frame(*this);
+  assert(!upcall_stub_frame_is_first(), "must have a frame anchor to go back to");
+  assert(jfa->last_Java_sp() > sp(), "must be above this frame on stack");
+  map->clear();
+  assert(map->include_argument_oops(), "should be set by clear");
+  frame fr(jfa->last_Java_sp(), jfa->last_Java_pc());
+
+  return fr;
 }
 
 frame frame::sender_for_interpreter_frame(RegisterMap *map) const {
@@ -291,7 +310,7 @@ bool frame::is_interpreted_frame_valid(JavaThread* thread) const {
   if (sp() == 0 || (intptr_t(sp()) & (wordSize-1)) != 0) {
     return false;
   }
-  int min_frame_slots = (abi_minframe_size + ijava_state_size) / sizeof(intptr_t);
+  int min_frame_slots = (parent_ijava_frame_abi_size + ijava_state_size) / sizeof(intptr_t);
   if (fp() - min_frame_slots < sp()) {
     return false;
   }

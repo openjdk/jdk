@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,11 @@
  * @summary Testing Classfile Util.
  * @run junit UtilTest
  */
+import java.lang.constant.MethodTypeDesc;
 import jdk.internal.classfile.impl.Util;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -37,36 +40,42 @@ import static org.junit.jupiter.api.Assertions.*;
  * UtilTest
  */
 class UtilTest {
-    @Test
-    void testFindParams() {
-        assertEquals(Util.findParams("(IIII)V").cardinality(), 4);
-        assertEquals(Util.findParams("([I[I[I[I)V").cardinality(), 4);
-        assertEquals(Util.findParams("(IJLFoo;IJ)V").cardinality(), 5);
-        assertEquals(Util.findParams("([[[[I)V").cardinality(), 1);
-        assertEquals(Util.findParams("([[[[LFoo;)V").cardinality(), 1);
-        assertEquals(Util.findParams("([I[LFoo;)V").cardinality(), 2);
-        assertEquals(Util.findParams("()V").cardinality(), 0);
+    @ParameterizedTest
+    @ValueSource(classes = {
+            Long.class,
+            Object.class,
+            Util.class,
+            Test.class,
+    })
+    void testDescToBinaryName(Class<?> type) throws ReflectiveOperationException {
+        var cd = type.describeConstable().orElseThrow();
+        assertEquals(type, Class.forName(Util.toBinaryName(cd)));
+        assertEquals(type.getName(), Util.toBinaryName(cd));
     }
 
     @Test
     void testParameterSlots() {
-        assertEquals(Util.parameterSlots("(IIII)V"), 4);
-        assertEquals(Util.parameterSlots("([I[I[I[I)V"), 4);
-        assertEquals(Util.parameterSlots("(IJLFoo;IJ)V"), 7);
-        assertEquals(Util.parameterSlots("([[[[I)V"), 1);
-        assertEquals(Util.parameterSlots("([[[[LFoo;)V"), 1);
-        assertEquals(Util.parameterSlots("([I[LFoo;)V"), 2);
-        assertEquals(Util.parameterSlots("()V"), 0);
-        assertEquals(Util.parameterSlots("(I)V"), 1);
-        assertEquals(Util.parameterSlots("(S)V"), 1);
-        assertEquals(Util.parameterSlots("(C)V"), 1);
-        assertEquals(Util.parameterSlots("(B)V"), 1);
-        assertEquals(Util.parameterSlots("(Z)V"), 1);
-        assertEquals(Util.parameterSlots("(F)V"), 1);
-        assertEquals(Util.parameterSlots("(LFoo;)V"), 1);
-        assertEquals(Util.parameterSlots("(J)V"), 2);
-        assertEquals(Util.parameterSlots("(D)V"), 2);
-        assertEquals(Util.parameterSlots("([J)V"), 1);
-        assertEquals(Util.parameterSlots("([D)V"), 1);
+        assertSlots("(IIII)V", 4);
+        assertSlots("([I[I[I[I)V", 4);
+        assertSlots("(IJLFoo;IJ)V", 7);
+        assertSlots("([[[[I)V", 1);
+        assertSlots("([[[[LFoo;)V", 1);
+        assertSlots("([I[LFoo;)V", 2);
+        assertSlots("()V", 0);
+        assertSlots("(I)V", 1);
+        assertSlots("(S)V", 1);
+        assertSlots("(C)V", 1);
+        assertSlots("(B)V", 1);
+        assertSlots("(Z)V", 1);
+        assertSlots("(F)V", 1);
+        assertSlots("(LFoo;)V", 1);
+        assertSlots("(J)V", 2);
+        assertSlots("(D)V", 2);
+        assertSlots("([J)V", 1);
+        assertSlots("([D)V", 1);
+    }
+
+    private void assertSlots(String methodDesc, int slots) {
+        assertEquals(Util.parameterSlots(MethodTypeDesc.ofDescriptor(methodDesc)), slots);
     }
 }

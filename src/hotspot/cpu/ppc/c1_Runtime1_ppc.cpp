@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2018 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -153,7 +153,7 @@ static int fpu_reg_save_offsets[FrameMap::nof_fpu_regs];
 static int frame_size_in_bytes = -1;
 
 static OopMap* generate_oop_map(StubAssembler* sasm, bool save_fpu_registers) {
-  assert(frame_size_in_bytes > frame::abi_reg_args_size, "init");
+  assert(frame_size_in_bytes > frame::native_abi_reg_args_size, "init");
   sasm->set_frame_size(frame_size_in_bytes / BytesPerWord);
   int frame_size_in_slots = frame_size_in_bytes / sizeof(jint);
   OopMap* oop_map = new OopMap(frame_size_in_slots, 0);
@@ -241,7 +241,7 @@ static void restore_live_registers(StubAssembler* sasm, Register result1, Regist
 
 void Runtime1::initialize_pd() {
   int i;
-  int sp_offset = frame::abi_reg_args_size;
+  int sp_offset = frame::native_abi_reg_args_size;
 
   for (i = 0; i < FrameMap::nof_cpu_regs; i++) {
     Register r = as_Register(i);
@@ -487,9 +487,9 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
 
         __ mflr(R0);
         __ std(R0, _abi0(lr), R1_SP);
-        __ push_frame(frame::abi_reg_args_size, R0); // Empty dummy frame (no callee-save regs).
-        sasm->set_frame_size(frame::abi_reg_args_size / BytesPerWord);
-        OopMap* oop_map = new OopMap(frame::abi_reg_args_size / sizeof(jint), 0);
+        __ push_frame(frame::native_abi_reg_args_size, R0); // Empty dummy frame (no callee-save regs).
+        sasm->set_frame_size(frame::native_abi_reg_args_size / BytesPerWord);
+        OopMap* oop_map = new OopMap(frame::native_abi_reg_args_size / sizeof(jint), 0);
         int call_offset = __ call_RT(noreg, noreg,
                                      CAST_FROM_FN_PTR(address, SharedRuntime::register_finalizer), R3_ARG1);
         oop_maps = new OopMapSet();
@@ -732,9 +732,9 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         __ set_info("unimplemented entry", dont_gc_arguments);
         __ mflr(R0);
         __ std(R0, _abi0(lr), R1_SP);
-        __ push_frame(frame::abi_reg_args_size, R0); // empty dummy frame
-        sasm->set_frame_size(frame::abi_reg_args_size / BytesPerWord);
-        OopMap* oop_map = new OopMap(frame::abi_reg_args_size / sizeof(jint), 0);
+        __ push_frame(frame::native_abi_reg_args_size, R0); // empty dummy frame
+        sasm->set_frame_size(frame::native_abi_reg_args_size / BytesPerWord);
+        OopMap* oop_map = new OopMap(frame::native_abi_reg_args_size / sizeof(jint), 0);
 
         __ load_const_optimized(R4_ARG2, (int)id);
         int call_offset = __ call_RT(noreg, noreg, CAST_FROM_FN_PTR(address, unimplemented_entry), R4_ARG2);

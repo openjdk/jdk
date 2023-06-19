@@ -7,6 +7,11 @@
 
 <configuration version="2.0" label="Profiling" description="Low overhead configuration for profiling, typically around 2 % overhead." provider="Oracle">
 
+    <event name="jdk.ResidentSetSize">
+      <setting name="enabled">true</setting>
+      <setting name="period">1000 ms</setting>
+    </event>
+
     <event name="jdk.ThreadAllocationStatistics">
       <setting name="enabled">true</setting>
       <setting name="period">everyChunk</setting>
@@ -322,6 +327,16 @@
       <setting name="enabled">false</setting>
     </event>
 
+    <event name="jdk.GCHeapMemoryUsage">
+      <setting name="enabled" control="gc-enabled-normal">true</setting>
+      <setting name="period">everyChunk</setting>
+    </event>
+
+    <event name="jdk.GCHeapMemoryPoolUsage">
+      <setting name="enabled" control="gc-enabled-normal">true</setting>
+      <setting name="period">everyChunk</setting>
+    </event>
+
     <event name="jdk.GCHeapSummary">
       <setting name="enabled" control="gc-enabled-normal">true</setting>
     </event>
@@ -418,6 +433,11 @@
     </event>
 
     <event name="jdk.GCPhaseConcurrentLevel1">
+      <setting name="enabled" control="gc-enabled-high">true</setting>
+      <setting name="threshold">0 ms</setting>
+    </event>
+
+    <event name="jdk.GCPhaseConcurrentLevel2">
       <setting name="enabled" control="gc-enabled-high">true</setting>
       <setting name="threshold">0 ms</setting>
     </event>
@@ -831,6 +851,16 @@
       <setting name="threshold">0 ms</setting>
     </event>
 
+    <event name="jdk.ZYoungGarbageCollection">
+      <setting name="enabled">true</setting>
+      <setting name="threshold">0 ms</setting>
+    </event>
+
+    <event name="jdk.ZOldGarbageCollection">
+      <setting name="enabled">true</setting>
+      <setting name="threshold">0 ms</setting>
+    </event>
+
     <event name="jdk.Deoptimization">
       <setting name="enabled">true</setting>
       <setting name="stackTrace">true</setting>
@@ -858,7 +888,15 @@
       <setting name="period">endChunk</setting>
     </event>
 
+    <event name="jdk.JavaAgent">
+      <setting name="enabled">true</setting>
+      <setting name="period">endChunk</setting>
+    </event>
 
+    <event name="jdk.NativeAgent">
+      <setting name="enabled">true</setting>
+      <setting name="period">endChunk</setting>
+    </event>
 
 
 

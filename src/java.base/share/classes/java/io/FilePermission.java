@@ -1030,7 +1030,7 @@ public final class FilePermission extends Permission implements Serializable {
      * <p>and you are calling the {@code implies} method with the FilePermission:
      *
      * <pre>
-     *   "/tmp/scratch/foo", "read,write",
+     *     "/tmp/scratch/foo", "read,write",
      * </pre>
      *
      * then the {@code implies} function must

@@ -64,7 +64,7 @@ class VerifierSelfTest {
     void testFailedDump() throws IOException {
         Path path = FileSystems.getFileSystem(URI.create("jrt:/")).getPath("modules/java.base/java/util/HashMap.class");
         var classModel = Classfile.parse(path, Classfile.Option.classHierarchyResolver(
-                className -> new ClassHierarchyResolver.ClassHierarchyInfo(className, false, null)));
+                className -> ClassHierarchyResolver.ClassHierarchyInfo.ofClass(null)));
         byte[] brokenClassBytes = classModel.transform(
                 (clb, cle) -> {
                     if (cle instanceof MethodModel mm) {

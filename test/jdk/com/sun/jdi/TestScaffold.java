@@ -361,8 +361,44 @@ abstract public class TestScaffold extends TargetAdapter {
     }
 
     protected void startUp(String targetName) {
-        List<String> argList = new ArrayList(Arrays.asList(args));
-        argList.add(targetName);
+        /*
+         * args[] contains all VM arguments followed by the app arguments.
+         * We need to insert targetName between the two types of arguments.
+         */
+        boolean expectSecondArg = false;
+        boolean foundFirstAppArg = false;
+        List<String> argList = new ArrayList();
+        for (int i = 0; i < args.length; i++) {
+            String arg = args[i].trim();
+            if (foundFirstAppArg) {
+                argList.add(arg);
+                continue;
+            }
+            if (expectSecondArg) {
+                expectSecondArg = false;
+                argList.add(arg);
+                continue;
+            }
+            if (doubleWordArgs.contains(arg)) {
+                expectSecondArg = true;
+                argList.add(arg);
+                continue;
+            }
+            if (arg.startsWith("-")) {
+                argList.add(arg);
+                continue;
+            }
+            // We reached the first app argument.
+            argList.add(targetName);
+            argList.add(arg);
+            foundFirstAppArg = true;
+        }
+
+        if (!foundFirstAppArg) {
+            // Add the target since we didn't do that in the above loop.
+            argList.add(targetName);
+        }
+
         println("run args: " + argList);
         connect(argList.toArray(args));
         waitForVMStart();
@@ -461,8 +497,11 @@ abstract public class TestScaffold extends TargetAdapter {
         testFailed = true;
     }
 
-    final List<String> doubleWordArgs = List.of("-cp", "-classpath", "--add-opens", "--class-path",
-            "--upgrade-module-path", "--add-modules", "-d", "--add-exports", "--patch-module", "--module-path");
+    final List<String> doubleWordArgs = List.of(
+            "-connect", "-trace",   // special TestScaffold args
+            "-cp", "-classpath", "--add-opens", "--class-path",
+            "--upgrade-module-path", "--add-modules", "-d", "--add-exports",
+            "--patch-module", "--module-path");
 
     private ArgInfo parseArgs(String args[]) {
         ArgInfo argInfo = new ArgInfo();
@@ -513,6 +552,7 @@ abstract public class TestScaffold extends TargetAdapter {
         // Need to change args to run wrapper using command like 'TestScaffold Virtual <app-name>'
         String mainWrapper = System.getProperty("main.wrapper");
         if (mainWrapper != null && !argInfo.targetAppCommandLine.isEmpty()) {
+            argInfo.targetVMArgs += "-Dmain.wrapper=" + mainWrapper;
             argInfo.targetAppCommandLine = TestScaffold.class.getName() + ' '
                     + mainWrapper + ' ' + argInfo.targetAppCommandLine;
         } else if ("true".equals(System.getProperty("test.enable.preview"))) {
@@ -721,6 +761,13 @@ abstract public class TestScaffold extends TargetAdapter {
         return vmStartThread;
     }
 
+    /*
+     * Tests that expect an exitValue other than 0 or 1 will need to override this method.
+     */
+    protected boolean allowedExitValue(int exitValue) {
+        return exitValue == 0;
+    }
+
     public synchronized void waitForVMDisconnect() {
         traceln("TS: waitForVMDisconnect");
         while (!vmDisconnected) {
@@ -737,11 +784,9 @@ abstract public class TestScaffold extends TargetAdapter {
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
-        int res = p.exitValue();
-        // Some tests purposefully exit with an exception, which produces exitValue
-        // 1, so we have to allow it also.
-        if (res != 0 && res != 1) {
-            throw new RuntimeException("Non-zero debuggee exitValue: " + res);
+        int exitValue = p.exitValue();
+        if (!allowedExitValue(exitValue)) {
+            throw new RuntimeException("Invalid debuggee exitValue: " + exitValue);
         }
 
         traceln("TS: waitForVMDisconnect: done");
@@ -1027,6 +1072,15 @@ abstract public class TestScaffold extends TargetAdapter {
             vthread.setName("main");
             vthread.start();
             vthread.join();
+            if (tg.uncaughtThrowable != null) {
+                // Note we cant just rethrow tg.uncaughtThrowable because there are tests
+                // that track ExceptionEvents, and they will complain about the extra
+                // exception. So instead mimic what happens when the main thread exits
+                // with an exception.
+                System.out.println("Uncaught Exception: " + tg.uncaughtThrowable);
+                tg.uncaughtThrowable.printStackTrace(System.out);
+                System.exit(1);
+            }
         } else if (wrapper.equals("Kernel")) {
             MainThreadGroup tg = new MainThreadGroup();
             Thread t = new Thread(tg, () -> {
