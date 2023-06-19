@@ -156,7 +156,7 @@ public class PromiscuousIPv6 {
 
         // Bind addresses should include the same network interface / scope, so
         // as to not reply on the default route when there are multiple interfaces
-        InetAddress bindAddr1 = bindToWildcard 
+        InetAddress bindAddr1 = bindToWildcard
                 ? InetAddress.getByName("::0")
                 : Inet6Address.getByAddress(null, group1.getAddress(), nif);
 
