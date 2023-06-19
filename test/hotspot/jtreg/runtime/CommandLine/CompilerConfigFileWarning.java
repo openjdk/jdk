@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,8 +48,7 @@ public class CompilerConfigFileWarning {
 
         pb = ProcessTools.createJavaProcessBuilder("-XX:CompileCommandFile=hs_comp.txt", "-version");
         output = new OutputAnalyzer(pb.start());
-        // problems in CompileCommandFile are treated as warnings
-        output.shouldHaveExitValue(0);
+        output.shouldHaveExitValue(1);
         output.shouldContain("An error occurred during parsing");
         output.shouldContain("Unrecognized option 'aaa'");
         output.shouldContain("aaa, aaa");
