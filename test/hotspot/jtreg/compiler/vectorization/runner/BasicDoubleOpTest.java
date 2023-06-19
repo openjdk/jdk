@@ -131,7 +131,7 @@ public class BasicDoubleOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.ADD_V, ">0"})
+        counts = {IRNode.ADD_VD, ">0"})
     public double[] vectorAdd() {
         double[] res = new double[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -153,7 +153,7 @@ public class BasicDoubleOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.MUL_V, ">0"})
+        counts = {IRNode.MUL_VD, ">0"})
     public double[] vectorMul() {
         double[] res = new double[SIZE];
         for (int i = 0; i < SIZE; i++) {

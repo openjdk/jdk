@@ -98,7 +98,7 @@ public class BasicFloatOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.ADD_V, ">0"})
+        counts = {IRNode.ADD_VF, ">0"})
     public float[] vectorAdd() {
         float[] res = new float[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -120,7 +120,7 @@ public class BasicFloatOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.MUL_V, ">0"})
+        counts = {IRNode.MUL_VF, ">0"})
     public float[] vectorMul() {
         float[] res = new float[SIZE];
         for (int i = 0; i < SIZE; i++) {

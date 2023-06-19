@@ -90,7 +90,7 @@ public class BasicCharOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.ADD_V, ">0"})
+        counts = {IRNode.ADD_VS, ">0"}) // char add same as for short
     public char[] vectorAdd() {
         char[] res = new char[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -112,7 +112,7 @@ public class BasicCharOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.MUL_V, ">0"})
+        counts = {IRNode.MUL_VS, ">0"})
     public char[] vectorMul() {
         char[] res = new char[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -123,7 +123,8 @@ public class BasicCharOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.MUL_V, ">0", IRNode.ADD_V, ">0"})
+        counts = {IRNode.MUL_VS, ">0",
+                  IRNode.ADD_VS, ">0"}) // char add same as for short
     public char[] vectorMulAdd() {
         char[] res = new char[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -134,7 +135,7 @@ public class BasicCharOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.MUL_V, ">0", IRNode.SUB_V, ">0"})
+        counts = {IRNode.MUL_VS, ">0", IRNode.SUB_V, ">0"})
     public char[] vectorMulSub() {
         char[] res = new char[SIZE];
         for (int i = 0; i < SIZE; i++) {

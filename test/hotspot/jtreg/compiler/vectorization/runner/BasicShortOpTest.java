@@ -89,7 +89,7 @@ public class BasicShortOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.ADD_V, ">0"})
+        counts = {IRNode.ADD_VS, ">0"})
     public short[] vectorAdd() {
         short[] res = new short[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -111,7 +111,7 @@ public class BasicShortOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.MUL_V, ">0"})
+        counts = {IRNode.MUL_VS, ">0"})
     public short[] vectorMul() {
         short[] res = new short[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -122,7 +122,7 @@ public class BasicShortOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.MUL_V, ">0", IRNode.ADD_V, ">0"})
+        counts = {IRNode.MUL_VS, ">0", IRNode.ADD_VS, ">0"})
     public short[] vectorMulAdd() {
         short[] res = new short[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -133,7 +133,7 @@ public class BasicShortOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.MUL_V, ">0", IRNode.SUB_V, ">0"})
+        counts = {IRNode.MUL_VS, ">0", IRNode.SUB_V, ">0"})
     public short[] vectorMulSub() {
         short[] res = new short[SIZE];
         for (int i = 0; i < SIZE; i++) {

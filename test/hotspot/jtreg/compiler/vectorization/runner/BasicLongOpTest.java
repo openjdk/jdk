@@ -88,7 +88,7 @@ public class BasicLongOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.ADD_V, ">0"})
+        counts = {IRNode.ADD_VL, ">0"})
     public long[] vectorAdd() {
         long[] res = new long[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -110,7 +110,7 @@ public class BasicLongOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"sve", "true", "avx512dq", "true"},
-        counts = {IRNode.MUL_V, ">0"})
+        counts = {IRNode.MUL_VL, ">0"})
     public long[] vectorMul() {
         long[] res = new long[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -121,9 +121,9 @@ public class BasicLongOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"sve", "true", "sse4.1", "true"},
-        counts = {IRNode.ADD_V, ">0"})
+        counts = {IRNode.ADD_VL, ">0"})
     @IR(applyIfCPUFeatureOr = {"sve", "true", "sse4.1", "true"},
-        counts = {IRNode.MUL_V, ">0"})
+        counts = {IRNode.MUL_VL, ">0"})
     public long[] vectorMulAdd() {
         long[] res = new long[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -134,7 +134,7 @@ public class BasicLongOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"sve", "true", "sse4.1", "true"},
-        counts = {IRNode.MUL_V, ">0", IRNode.SUB_V, ">0"})
+        counts = {IRNode.MUL_VL, ">0", IRNode.SUB_V, ">0"})
     public long[] vectorMulSub() {
         long[] res = new long[SIZE];
         for (int i = 0; i < SIZE; i++) {

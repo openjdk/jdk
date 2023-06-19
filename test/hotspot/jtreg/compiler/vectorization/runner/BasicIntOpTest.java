@@ -87,7 +87,7 @@ public class BasicIntOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.ADD_V, ">0"})
+        counts = {IRNode.ADD_VI, ">0"})
     public int[] vectorAdd() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -109,7 +109,7 @@ public class BasicIntOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true"},
-        counts = {IRNode.MUL_V, ">0"})
+        counts = {IRNode.MUL_VI, ">0"})
     public int[] vectorMul() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -120,7 +120,7 @@ public class BasicIntOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true"},
-        counts = {IRNode.MUL_V, ">0", IRNode.ADD_V, ">0"})
+        counts = {IRNode.MUL_VI, ">0", IRNode.ADD_VI, ">0"})
     public int[] vectorMulAdd() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -131,7 +131,7 @@ public class BasicIntOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true"},
-        counts = {IRNode.MUL_V, ">0", IRNode.SUB_V, ">0"})
+        counts = {IRNode.MUL_VI, ">0", IRNode.SUB_V, ">0"})
     public int[] vectorMulSub() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
