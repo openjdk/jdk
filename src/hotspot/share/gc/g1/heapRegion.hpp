@@ -182,10 +182,6 @@ public:
   // All allocated blocks are occupied by objects in a HeapRegion.
   bool block_is_obj(const HeapWord* p, HeapWord* pb) const;
 
-  // Returns whether the given object is dead based on the given parsable_bottom (pb).
-  // For an object to be considered dead it must be below pb and scrubbed.
-  bool is_obj_dead(oop obj, HeapWord* pb) const;
-
   // Returns the object size for all valid block starts. If parsable_bottom (pb)
   // is given, calculates the block size based on that parsable_bottom, not the
   // current value of this HeapRegion.
@@ -524,9 +520,9 @@ public:
 
   void record_surv_words_in_group(size_t words_survived);
 
-  // Determine if an object is in the parsable or the to-be-scrubbed area.
-  inline static bool obj_in_parsable_area(const HeapWord* addr, HeapWord* pb);
-  inline static bool obj_in_unparsable_area(oop obj, HeapWord* pb);
+  // Determine if an address is in the parsable or the to-be-scrubbed area.
+  inline        bool is_in_parsable_area(const void* const addr) const;
+  inline static bool is_in_parsable_area(const void* const addr, const void* const pb);
 
   bool obj_allocated_since_marking_start(oop obj) const {
     return cast_from_oop<HeapWord*>(obj) >= top_at_mark_start();

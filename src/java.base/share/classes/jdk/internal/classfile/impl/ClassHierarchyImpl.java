@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,16 +25,21 @@ package jdk.internal.classfile.impl;
 
 import java.io.BufferedInputStream;
 import java.io.DataInputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.lang.constant.ClassDesc;
-import java.lang.constant.ConstantDescs;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import jdk.internal.classfile.ClassHierarchyResolver;
+
+import static java.lang.constant.ConstantDescs.CD_Object;
+import static jdk.internal.classfile.Classfile.*;
 
 /**
  * Class hierarchy resolution framework is answering questions about classes assignability, common classes ancestor and whether the class represents an interface.
@@ -42,6 +47,20 @@ import jdk.internal.classfile.ClassHierarchyResolver;
  *
  */
 public final class ClassHierarchyImpl {
+
+    public record ClassHierarchyInfoImpl(ClassDesc superClass, boolean isInterface) implements ClassHierarchyResolver.ClassHierarchyInfo {
+        static final ClassHierarchyResolver.ClassHierarchyInfo OBJECT_INFO = new ClassHierarchyInfoImpl(null, false);
+    }
+
+    public static final ClassHierarchyResolver DEFAULT_RESOLVER = ClassHierarchyResolver
+            .ofResourceParsing(ResourceParsingClassHierarchyResolver.SYSTEM_STREAM_PROVIDER)
+            .orElse(new ClassLoadingClassHierarchyResolver(ClassLoadingClassHierarchyResolver.SYSTEM_CLASS_PROVIDER))
+            .cached(new Supplier<>() {
+                @Override
+                public Map<ClassDesc, ClassHierarchyResolver.ClassHierarchyInfo> get() {
+                    return new ConcurrentHashMap<>();
+                }
+            });
 
     private final ClassHierarchyResolver resolver;
 
@@ -53,9 +72,9 @@ public final class ClassHierarchyImpl {
         this.resolver = classHierarchyResolver;
     }
 
-    private ClassHierarchyResolver.ClassHierarchyInfo resolve(ClassDesc classDesc) {
+    private ClassHierarchyInfoImpl resolve(ClassDesc classDesc) {
         var res = resolver.getClassInfo(classDesc);
-        if (res != null) return res;
+        if (res != null) return (ClassHierarchyInfoImpl) res;
         throw new IllegalArgumentException("Could not resolve class " + classDesc.displayName());
     }
 
@@ -79,7 +98,7 @@ public final class ClassHierarchyImpl {
         //calculation of common ancestor is a robust (yet fast) way to decide about assignability in incompletely resolved class hierarchy
         //exact order of symbol loops is critical for performance of the above isAssignableFrom method, so standard situations are resolved in linear time
         //this method returns null if common ancestor could not be identified
-        if (isInterface(symbol1) || isInterface(symbol2)) return ConstantDescs.CD_Object;
+        if (isInterface(symbol1) || isInterface(symbol2)) return CD_Object;
         for (var s1 = symbol1; s1 != null; s1 = resolve(s1).superClass()) {
             for (var s2 = symbol2; s2 != null; s2 = resolve(s2).superClass()) {
                 if (s1.equals(s2)) return s1;
@@ -101,88 +120,135 @@ public final class ClassHierarchyImpl {
     }
 
     public static final class CachedClassHierarchyResolver implements ClassHierarchyResolver {
-
-        //this instance should never appear in the cache nor leak out
+        // this instance should not leak out, appears only in cache in order to utilize Map.computeIfAbsent
+        // is already an invalid combination, so it can be compared with equals or as value class safely
         private static final ClassHierarchyResolver.ClassHierarchyInfo NOPE =
-                new ClassHierarchyResolver.ClassHierarchyInfo(null, false, null);
+                new ClassHierarchyInfoImpl(null, true);
 
-        private final Function<ClassDesc, InputStream> streamProvider;
-        private final Map<ClassDesc, ClassHierarchyResolver.ClassHierarchyInfo> resolvedCache;
+        private final Map<ClassDesc, ClassHierarchyInfo> resolvedCache;
+        private final Function<ClassDesc, ClassHierarchyInfo> delegateFunction;
 
-        public CachedClassHierarchyResolver(Function<ClassDesc, InputStream> classStreamProvider) {
-            this.streamProvider = classStreamProvider;
-            this.resolvedCache = Collections.synchronizedMap(new HashMap<>());
+        public CachedClassHierarchyResolver(ClassHierarchyResolver delegate, Map<ClassDesc, ClassHierarchyInfo> resolvedCache) {
+            this.resolvedCache = resolvedCache;
+            this.delegateFunction = new Function<>() {
+                @Override
+                public ClassHierarchyInfo apply(ClassDesc classDesc) {
+                    var ret = delegate.getClassInfo(classDesc);
+                    return ret == null ? NOPE : ret;
+                }
+            };
         }
 
+        @Override
+        public ClassHierarchyInfo getClassInfo(ClassDesc classDesc) {
+            var ret = resolvedCache.computeIfAbsent(classDesc, delegateFunction);
+            return ret == NOPE ? null : ret;
+        }
+    }
+
+    public static final class ResourceParsingClassHierarchyResolver implements ClassHierarchyResolver {
+        public static final Function<ClassDesc, InputStream> SYSTEM_STREAM_PROVIDER = new Function<>() {
+            @Override
+            public InputStream apply(ClassDesc cd) {
+                return ClassLoader.getSystemClassLoader().getResourceAsStream(Util.toInternalName(cd) + ".class");
+            }
+        };
+        private final Function<ClassDesc, InputStream> streamProvider;
+
+        public ResourceParsingClassHierarchyResolver(Function<ClassDesc, InputStream> classStreamProvider) {
+            this.streamProvider = classStreamProvider;
+        }
 
         // resolve method looks for the class file using <code>ClassStreamResolver</code> instance and tries to briefly scan it just for minimal information necessary
         // minimal information includes: identification of the class as interface, obtaining its superclass name and identification of all potential interfaces (to avoid unnecessary future resolutions of them)
         // empty ClInfo is stored in case of an exception to avoid repeated scanning failures
         @Override
         public ClassHierarchyResolver.ClassHierarchyInfo getClassInfo(ClassDesc classDesc) {
-            //using NOPE to distinguish between null value and non-existent record in the cache
-            //this code is on JDK bootstrap critical path, so cannot use lambdas here
-            var res = resolvedCache.getOrDefault(classDesc, NOPE);
-            if (res == NOPE) {
-                res = null;
-                var ci = streamProvider.apply(classDesc);
-                if (ci != null) {
-                    try (var in = new DataInputStream(new BufferedInputStream(ci))) {
-                        in.skipBytes(8);
-                        int cpLength = in.readUnsignedShort();
-                        String[] cpStrings = new String[cpLength];
-                        int[] cpClasses = new int[cpLength];
-                        for (int i=1; i<cpLength; i++) {
-                            switch (in.readUnsignedByte()) {
-                                case 1 -> cpStrings[i] = in.readUTF();
-                                case 7 -> cpClasses[i] = in.readUnsignedShort();
-                                case 8, 16, 19, 20 -> in.skipBytes(2);
-                                case 15 -> in.skipBytes(3);
-                                case 3, 4, 9, 10, 11, 12, 17, 18 -> in.skipBytes(4);
-                                case 5, 6 -> {in.skipBytes(8); i++;}
-                            }
+            var ci = streamProvider.apply(classDesc);
+            if (ci == null) return null;
+            try (var in = new DataInputStream(new BufferedInputStream(ci))) {
+                in.skipBytes(8);
+                int cpLength = in.readUnsignedShort();
+                String[] cpStrings = new String[cpLength];
+                int[] cpClasses = new int[cpLength];
+                for (int i = 1; i < cpLength; i++) {
+                    int tag;
+                    switch (tag = in.readUnsignedByte()) {
+                        case TAG_UTF8 -> cpStrings[i] = in.readUTF();
+                        case TAG_CLASS -> cpClasses[i] = in.readUnsignedShort();
+                        case TAG_STRING, TAG_METHODTYPE, TAG_MODULE, TAG_PACKAGE -> in.skipBytes(2);
+                        case TAG_METHODHANDLE -> in.skipBytes(3);
+                        case TAG_INTEGER, TAG_FLOAT, TAG_FIELDREF, TAG_METHODREF, TAG_INTERFACEMETHODREF,
+                                TAG_NAMEANDTYPE, TAG_CONSTANTDYNAMIC, TAG_INVOKEDYNAMIC -> in.skipBytes(4);
+                        case TAG_LONG, TAG_DOUBLE -> {
+                            in.skipBytes(8);
+                            i++;
                         }
-                        boolean isInterface = (in.readUnsignedShort() & 0x0200) != 0;
-                        in.skipBytes(2);
-                        int superIndex = in.readUnsignedShort();
-                        var superClass = superIndex > 0 ? ClassDesc.ofInternalName(cpStrings[cpClasses[superIndex]]) : null;
-                        res = new ClassHierarchyInfo(classDesc, isInterface, superClass);
-                        int interfCount = in.readUnsignedShort();
-                        for (int i=0; i<interfCount; i++) {
-                            //all listed interfaces are cached without resolution
-                            var intDesc = ClassDesc.ofInternalName(cpStrings[cpClasses[in.readUnsignedShort()]]);
-                            resolvedCache.put(intDesc, new ClassHierarchyResolver.ClassHierarchyInfo(intDesc, true, null));
-                        }
-                    } catch (Exception ignore) {
-                        //ignore
+                        default -> throw new IllegalStateException("Bad tag (" + tag + ") at index (" + i + ")");
                     }
                 }
-                //null ClassHierarchyInfo value is also cached to avoid repeated resolution attempts
-                resolvedCache.put(classDesc, res);
+                boolean isInterface = (in.readUnsignedShort() & ACC_INTERFACE) != 0;
+                in.skipBytes(2);
+                int superIndex = in.readUnsignedShort();
+                var superClass = superIndex > 0 ? ClassDesc.ofInternalName(cpStrings[cpClasses[superIndex]]) : null;
+                return new ClassHierarchyInfoImpl(superClass, isInterface);
+            } catch (IOException ioe) {
+                throw new UncheckedIOException(ioe);
             }
-            return res;
         }
     }
 
     public static final class StaticClassHierarchyResolver implements ClassHierarchyResolver {
 
-        private static final ClassHierarchyInfo CHI_Object =
-                new ClassHierarchyInfo(ConstantDescs.CD_Object, false, null);
-
         private final Map<ClassDesc, ClassHierarchyInfo> map;
 
         public StaticClassHierarchyResolver(Collection<ClassDesc> interfaceNames, Map<ClassDesc, ClassDesc> classToSuperClass) {
             map = HashMap.newHashMap(interfaceNames.size() + classToSuperClass.size() + 1);
-            map.put(ConstantDescs.CD_Object, CHI_Object);
+            map.put(CD_Object, ClassHierarchyInfoImpl.OBJECT_INFO);
             for (var e : classToSuperClass.entrySet())
-                map.put(e.getKey(), new ClassHierarchyInfo(e.getKey(), false, e.getValue()));
+                map.put(e.getKey(), ClassHierarchyInfo.ofClass(e.getValue()));
             for (var i : interfaceNames)
-                map.put(i, new ClassHierarchyInfo(i, true, null));
+                map.put(i, ClassHierarchyInfo.ofInterface());
         }
 
         @Override
         public ClassHierarchyInfo getClassInfo(ClassDesc classDesc) {
             return map.get(classDesc);
+        }
+    }
+
+    public static final class ClassLoadingClassHierarchyResolver implements ClassHierarchyResolver {
+        public static final Function<ClassDesc, Class<?>> SYSTEM_CLASS_PROVIDER = new Function<>() {
+            @Override
+            public Class<?> apply(ClassDesc cd) {
+                try {
+                    return Class.forName(Util.toBinaryName(cd), false, ClassLoader.getSystemClassLoader());
+                } catch (ClassNotFoundException ex) {
+                    return null;
+                }
+            }
+        };
+        private final Function<ClassDesc, Class<?>> classProvider;
+
+        public ClassLoadingClassHierarchyResolver(Function<ClassDesc, Class<?>> classProvider) {
+            this.classProvider = classProvider;
+        }
+
+        @Override
+        public ClassHierarchyInfo getClassInfo(ClassDesc cd) {
+            if (!cd.isClassOrInterface())
+                return null;
+
+            if (cd.equals(CD_Object))
+                return ClassHierarchyInfo.ofClass(null);
+
+            var cl = classProvider.apply(cd);
+            if (cl == null) {
+                return null;
+            }
+
+            return cl.isInterface() ? ClassHierarchyInfo.ofInterface()
+                    : ClassHierarchyInfo.ofClass(cl.getSuperclass().describeConstable().orElseThrow());
         }
     }
 }

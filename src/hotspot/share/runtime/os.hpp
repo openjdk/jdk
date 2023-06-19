@@ -791,6 +791,9 @@ class os: AllStatic {
   static size_t lasterror(char *buf, size_t len);
   static int get_last_error();
 
+  // Send JFR memory info event
+  static void jfr_report_memory_info() NOT_JFR_RETURN();
+
   // Replacement for strerror().
   // Will return the english description of the error (e.g. "File not found", as
   //  suggested in the POSIX standard.
@@ -1005,7 +1008,7 @@ class os: AllStatic {
 
  public:
   inline static bool platform_print_native_stack(outputStream* st, const void* context,
-                                                 char *buf, int buf_size);
+                                                 char *buf, int buf_size, address& lastpc);
 
   // debugging support (mostly used by debug.cpp but also fatal error handler)
   static bool find(address pc, outputStream* st = tty); // OS specific function to make sense out of an address

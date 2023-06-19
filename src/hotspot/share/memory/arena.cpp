@@ -231,23 +231,6 @@ Arena::Arena(MEMFLAGS flag) : _flags(flag), _size_in_bytes(0) {
   set_size_in_bytes(Chunk::init_size);
 }
 
-Arena *Arena::move_contents(Arena *copy) {
-  copy->destruct_contents();
-  copy->_chunk = _chunk;
-  copy->_hwm   = _hwm;
-  copy->_max   = _max;
-  copy->_first = _first;
-
-  // workaround rare racing condition, which could double count
-  // the arena size by native memory tracking
-  size_t size = size_in_bytes();
-  set_size_in_bytes(0);
-  copy->set_size_in_bytes(size);
-  // Destroy original arena
-  reset();
-  return copy;            // Return Arena with contents
-}
-
 Arena::~Arena() {
   destruct_contents();
   MemTracker::record_arena_free(_flags);

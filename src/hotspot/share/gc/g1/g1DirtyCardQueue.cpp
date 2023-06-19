@@ -58,7 +58,6 @@ G1DirtyCardQueue::G1DirtyCardQueue(G1DirtyCardQueueSet* qset) :
 { }
 
 G1DirtyCardQueue::~G1DirtyCardQueue() {
-  G1BarrierSet::dirty_card_queue_set().flush_queue(*this);
   delete _refinement_stats;
 }
 
@@ -87,7 +86,7 @@ uint G1DirtyCardQueueSet::num_par_ids() {
 void G1DirtyCardQueueSet::flush_queue(G1DirtyCardQueue& queue) {
   if (queue.buffer() != nullptr) {
     G1ConcurrentRefineStats* stats = queue.refinement_stats();
-    stats->inc_dirtied_cards(buffer_size() - queue.index());
+    stats->inc_dirtied_cards(buffer_capacity() - queue.index());
   }
   PtrQueueSet::flush_queue(queue);
 }
@@ -106,7 +105,7 @@ void G1DirtyCardQueueSet::handle_zero_index(G1DirtyCardQueue& queue) {
   BufferNode* old_node = exchange_buffer_with_new(queue);
   if (old_node != nullptr) {
     G1ConcurrentRefineStats* stats = queue.refinement_stats();
-    stats->inc_dirtied_cards(buffer_size());
+    stats->inc_dirtied_cards(buffer_capacity());
     handle_completed_buffer(old_node, stats);
   }
 }
@@ -124,7 +123,7 @@ void G1DirtyCardQueueSet::enqueue_completed_buffer(BufferNode* cbn) {
   assert(cbn != nullptr, "precondition");
   // Increment _num_cards before adding to queue, so queue removal doesn't
   // need to deal with _num_cards possibly going negative.
-  Atomic::add(&_num_cards, buffer_size() - cbn->index());
+  Atomic::add(&_num_cards, buffer_capacity() - cbn->index());
   // Perform push in CS.  The old tail may be popped while the push is
   // observing it (attaching it to the new buffer).  We need to ensure it
   // can't be reused until the push completes, to avoid ABA problems.
@@ -160,7 +159,7 @@ BufferNode* G1DirtyCardQueueSet::get_completed_buffer() {
     result = dequeue_completed_buffer();
     if (result == nullptr) return nullptr;
   }
-  Atomic::sub(&_num_cards, buffer_size() - result->index());
+  Atomic::sub(&_num_cards, buffer_capacity() - result->index());
   return result;
 }
 
@@ -170,7 +169,7 @@ void G1DirtyCardQueueSet::verify_num_cards() const {
   for (BufferNode* cur = _completed.first();
        !_completed.is_end(cur);
        cur = cur->next()) {
-    actual += buffer_size() - cur->index();
+    actual += buffer_capacity() - cur->index();
   }
   assert(actual == Atomic::load(&_num_cards),
          "Num entries in completed buffers should be " SIZE_FORMAT " but are " SIZE_FORMAT,
@@ -286,7 +285,7 @@ void G1DirtyCardQueueSet::record_paused_buffer(BufferNode* node) {
   // notification checking after the coming safepoint if it doesn't GC.
   // Note that this means the queue's _num_cards differs from the number
   // of cards in the queued buffers when there are paused buffers.
-  Atomic::add(&_num_cards, buffer_size() - node->index());
+  Atomic::add(&_num_cards, buffer_capacity() - node->index());
   _paused.add(node);
 }
 
@@ -342,30 +341,30 @@ BufferNodeList G1DirtyCardQueueSet::take_all_completed_buffers() {
 class G1RefineBufferedCards : public StackObj {
   BufferNode* const _node;
   CardTable::CardValue** const _node_buffer;
-  const size_t _node_buffer_size;
+  const size_t _node_buffer_capacity;
   const uint _worker_id;
   G1ConcurrentRefineStats* _stats;
   G1RemSet* const _g1rs;
 
-  static inline int compare_card(const CardTable::CardValue* p1,
-                                 const CardTable::CardValue* p2) {
+  static inline ptrdiff_t compare_cards(const CardTable::CardValue* p1,
+                                        const CardTable::CardValue* p2) {
     return p2 - p1;
   }
 
-  // Sorts the cards from start_index to _node_buffer_size in *decreasing*
+  // Sorts the cards from start_index to _node_buffer_capacity in *decreasing*
   // address order. Tests showed that this order is preferable to not sorting
   // or increasing address order.
   void sort_cards(size_t start_index) {
     QuickSort::sort(&_node_buffer[start_index],
-                    _node_buffer_size - start_index,
-                    compare_card,
+                    _node_buffer_capacity - start_index,
+                    compare_cards,
                     false);
   }
 
   // Returns the index to the first clean card in the buffer.
   size_t clean_cards() {
     const size_t start = _node->index();
-    assert(start <= _node_buffer_size, "invariant");
+    assert(start <= _node_buffer_capacity, "invariant");
 
     // Two-fingered compaction algorithm similar to the filtering mechanism in
     // SATBMarkQueue. The main difference is that clean_card_before_refine()
@@ -373,7 +372,7 @@ class G1RefineBufferedCards : public StackObj {
     // We don't check for SuspendibleThreadSet::should_yield(), because
     // cleaning and redirtying the cards is fast.
     CardTable::CardValue** src = &_node_buffer[start];
-    CardTable::CardValue** dst = &_node_buffer[_node_buffer_size];
+    CardTable::CardValue** dst = &_node_buffer[_node_buffer_capacity];
     assert(src <= dst, "invariant");
     for ( ; src < dst; ++src) {
       // Search low to high for a card to keep.
@@ -392,7 +391,7 @@ class G1RefineBufferedCards : public StackObj {
     // dst points to the first retained clean card, or the end of the buffer
     // if all the cards were discarded.
     const size_t first_clean = dst - _node_buffer;
-    assert(first_clean >= start && first_clean <= _node_buffer_size, "invariant");
+    assert(first_clean >= start && first_clean <= _node_buffer_capacity, "invariant");
     // Discarded cards are considered as refined.
     _stats->inc_refined_cards(first_clean - start);
     _stats->inc_precleaned_cards(first_clean - start);
@@ -402,7 +401,7 @@ class G1RefineBufferedCards : public StackObj {
   bool refine_cleaned_cards(size_t start_index) {
     bool result = true;
     size_t i = start_index;
-    for ( ; i < _node_buffer_size; ++i) {
+    for ( ; i < _node_buffer_capacity; ++i) {
       if (SuspendibleThreadSet::should_yield()) {
         redirty_unrefined_cards(i);
         result = false;
@@ -416,26 +415,26 @@ class G1RefineBufferedCards : public StackObj {
   }
 
   void redirty_unrefined_cards(size_t start) {
-    for ( ; start < _node_buffer_size; ++start) {
+    for ( ; start < _node_buffer_capacity; ++start) {
       *_node_buffer[start] = G1CardTable::dirty_card_val();
     }
   }
 
 public:
   G1RefineBufferedCards(BufferNode* node,
-                        size_t node_buffer_size,
+                        size_t node_buffer_capacity,
                         uint worker_id,
                         G1ConcurrentRefineStats* stats) :
     _node(node),
     _node_buffer(reinterpret_cast<CardTable::CardValue**>(BufferNode::make_buffer_from_node(node))),
-    _node_buffer_size(node_buffer_size),
+    _node_buffer_capacity(node_buffer_capacity),
     _worker_id(worker_id),
     _stats(stats),
     _g1rs(G1CollectedHeap::heap()->rem_set()) {}
 
   bool refine() {
     size_t first_clean_index = clean_cards();
-    if (first_clean_index == _node_buffer_size) {
+    if (first_clean_index == _node_buffer_capacity) {
       _node->set_index(first_clean_index);
       return true;
     }
@@ -458,7 +457,7 @@ bool G1DirtyCardQueueSet::refine_buffer(BufferNode* node,
                                         G1ConcurrentRefineStats* stats) {
   Ticks start_time = Ticks::now();
   G1RefineBufferedCards buffered_cards(node,
-                                       buffer_size(),
+                                       buffer_capacity(),
                                        worker_id,
                                        stats);
   bool result = buffered_cards.refine();
@@ -469,12 +468,12 @@ bool G1DirtyCardQueueSet::refine_buffer(BufferNode* node,
 void G1DirtyCardQueueSet::handle_refined_buffer(BufferNode* node,
                                                 bool fully_processed) {
   if (fully_processed) {
-    assert(node->index() == buffer_size(),
+    assert(node->index() == buffer_capacity(),
            "Buffer not fully consumed: index: " SIZE_FORMAT ", size: " SIZE_FORMAT,
-           node->index(), buffer_size());
+           node->index(), buffer_capacity());
     deallocate_buffer(node);
   } else {
-    assert(node->index() < buffer_size(), "Buffer fully consumed.");
+    assert(node->index() < buffer_capacity(), "Buffer fully consumed.");
     // Buffer incompletely processed because there is a pending safepoint.
     // Record partially processed buffer, to be finished later.
     record_paused_buffer(node);
@@ -577,7 +576,7 @@ G1ConcurrentRefineStats G1DirtyCardQueueSet::concatenate_log_and_stats(Thread* t
   // Flush the buffer if non-empty.  Flush before accumulating and
   // resetting stats, since flushing may modify the stats.
   if ((queue.buffer() != nullptr) &&
-    (queue.index() != buffer_size())) {
+      (queue.index() != buffer_capacity())) {
     flush_queue(queue);
   }
 
