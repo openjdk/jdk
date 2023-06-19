@@ -45,8 +45,7 @@
 // We need a separate file to avoid circular references
 
 markWord oopDesc::mark() const {
-  uintptr_t v = HeapAccess<MO_RELAXED>::load_at(as_oop(), mark_offset_in_bytes());
-  return markWord(v);
+  return Atomic::load(&_mark);
 }
 
 markWord* oopDesc::mark_addr() const {
@@ -54,7 +53,7 @@ markWord* oopDesc::mark_addr() const {
 }
 
 void oopDesc::set_mark(markWord m) {
-  HeapAccess<MO_RELAXED>::store_at(as_oop(), mark_offset_in_bytes(), m.value());
+  Atomic::store(&_mark, m);
 }
 
 void oopDesc::set_mark(HeapWord* mem, markWord m) {
@@ -62,12 +61,11 @@ void oopDesc::set_mark(HeapWord* mem, markWord m) {
 }
 
 void oopDesc::release_set_mark(markWord m) {
-  HeapAccess<MO_RELEASE>::store_at(as_oop(), mark_offset_in_bytes(), m.value());
+  Atomic::release_store(&_mark, m);
 }
 
 markWord oopDesc::cas_set_mark(markWord new_mark, markWord old_mark) {
-  uintptr_t v = HeapAccess<>::atomic_cmpxchg_at(as_oop(), mark_offset_in_bytes(), old_mark.value(), new_mark.value());
-  return markWord(v);
+  return Atomic::cmpxchg(&_mark, old_mark, new_mark);
 }
 
 markWord oopDesc::cas_set_mark(markWord new_mark, markWord old_mark, atomic_memory_order order) {
