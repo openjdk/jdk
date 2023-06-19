@@ -467,7 +467,6 @@ public:
 
   bool requires_barriers(stackChunkOop obj) const override;
 
-  MemRegion reserved_region() const { return _reserved; }
   bool is_in_reserved(const void* addr) const { return _reserved.contains(addr); }
 
   void collect(GCCause::Cause cause) override;

@@ -25,6 +25,7 @@
 #ifndef SHARE_GC_SHARED_COLLECTEDHEAP_HPP
 #define SHARE_GC_SHARED_COLLECTEDHEAP_HPP
 
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/gcCause.hpp"
 #include "gc/shared/gcWhen.hpp"
 #include "gc/shared/verifyOption.hpp"
@@ -32,6 +33,7 @@
 #include "memory/metaspace.hpp"
 #include "memory/universe.hpp"
 #include "oops/stackChunkOop.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/perfDataTypes.hpp"
 #include "runtime/safepoint.hpp"
@@ -207,6 +209,10 @@ class CollectedHeap : public CHeapObj<mtGC> {
   }
 
  public:
+  MemRegion reserved_region() const {
+    assert(!UseZGC, "Not supported for ZGC");
+    return _reserved;
+  }
 
   static inline size_t filler_array_max_size() {
     return _filler_array_max_size;

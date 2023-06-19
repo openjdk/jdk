@@ -212,8 +212,8 @@ void FileMapHeader::populate(FileMapInfo *info, size_t core_region_alignment,
       _heap_end = CompressedOops::end();
     } else {
 #if INCLUDE_G1GC
-      address start = (address)G1CollectedHeap::heap()->reserved().start();
-      address end = (address)G1CollectedHeap::heap()->reserved().end();
+      address start = (address)G1CollectedHeap::heap()->reserved_region().start();
+      address end = (address)G1CollectedHeap::heap()->reserved_region().end();
       _heap_begin = HeapShared::to_requested_address(start);
       _heap_end = HeapShared::to_requested_address(end);
 #endif
@@ -1570,7 +1570,7 @@ void FileMapInfo::write_region(int region, char* base, size_t size,
       assert((mapping_offset >> CompressedOops::shift()) << CompressedOops::shift() == mapping_offset, "must be");
     } else {
 #if INCLUDE_G1GC
-      mapping_offset = requested_base - (char*)G1CollectedHeap::heap()->reserved().start();
+      mapping_offset = requested_base - (char*)G1CollectedHeap::heap()->reserved_region().start();
 #endif
     }
 #endif // INCLUDE_CDS_JAVA_HEAP
@@ -2033,9 +2033,9 @@ bool FileMapInfo::can_use_heap_region() {
                 CompressedOops::mode(), p2i(CompressedOops::base()), CompressedOops::shift());
   log_info(cds)("    heap range = [" PTR_FORMAT " - "  PTR_FORMAT "]",
                 UseCompressedOops ? p2i(CompressedOops::begin()) :
-                                    UseG1GC ? p2i((address)G1CollectedHeap::heap()->reserved().start()) : 0L,
+                                    UseG1GC ? p2i((address)G1CollectedHeap::heap()->reserved_region().start()) : 0L,
                 UseCompressedOops ? p2i(CompressedOops::end()) :
-                                    UseG1GC ? p2i((address)G1CollectedHeap::heap()->reserved().end()) : 0L);
+                                    UseG1GC ? p2i((address)G1CollectedHeap::heap()->reserved_region().end()) : 0L);
 
   if (narrow_klass_base() != CompressedKlassPointers::base() ||
       narrow_klass_shift() != CompressedKlassPointers::shift()) {
@@ -2094,7 +2094,7 @@ bool FileMapInfo::map_heap_region() {
 
     // Make sure we map at the very top of the heap - see comments in
     // init_heap_region_relocation().
-    MemRegion heap_range = G1CollectedHeap::heap()->reserved();
+    MemRegion heap_range = G1CollectedHeap::heap()->reserved_region();
     assert(heap_range.contains(_mapped_heap_memregion), "must be");
 
     address heap_end = (address)heap_range.end();

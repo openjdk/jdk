@@ -121,12 +121,12 @@ inline void G1CollectedHeap::humongous_obj_regions_iterate(HeapRegion* start, co
 inline uint G1CollectedHeap::addr_to_region(const void* addr) const {
   assert(is_in_reserved(addr),
          "Cannot calculate region index for address " PTR_FORMAT " that is outside of the heap [" PTR_FORMAT ", " PTR_FORMAT ")",
-         p2i(addr), p2i(reserved().start()), p2i(reserved().end()));
-  return (uint)(pointer_delta(addr, reserved().start(), sizeof(uint8_t)) >> HeapRegion::LogOfHRGrainBytes);
+         p2i(addr), p2i(reserved_region().start()), p2i(reserved_region().end()));
+  return (uint)(pointer_delta(addr, reserved_region().start(), sizeof(uint8_t)) >> HeapRegion::LogOfHRGrainBytes);
 }
 
 inline HeapWord* G1CollectedHeap::bottom_addr_for_region(uint index) const {
-  return _hrm.reserved().start() + index * HeapRegion::GrainWords;
+  return reserved_region().start() + index * HeapRegion::GrainWords;
 }
 
 

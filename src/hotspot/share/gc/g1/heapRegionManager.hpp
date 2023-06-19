@@ -243,8 +243,6 @@ public:
 
   MemoryUsage get_auxiliary_data_memory_usage() const;
 
-  MemRegion reserved() const { return MemRegion(heap_bottom(), heap_end()); }
-
   // Expand the sequence to reflect that the heap has grown. Either create new
   // HeapRegions, or re-use existing ones. Returns the number of regions the
   // sequence was expanded by. If a HeapRegion allocation fails, the resulting

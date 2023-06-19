@@ -186,7 +186,6 @@ class ParallelScavengeHeap : public CollectedHeap {
 
   bool requires_barriers(stackChunkOop obj) const override;
 
-  MemRegion reserved_region() const { return _reserved; }
   HeapWord* base() const { return _reserved.start(); }
 
   // Memory allocation.   "gc_time_limit_was_exceeded" will

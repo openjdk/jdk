@@ -156,7 +156,7 @@ HeapRegion* HeapRegionManager::new_heap_region(uint hrm_index) {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   HeapWord* bottom = g1h->bottom_addr_for_region(hrm_index);
   MemRegion mr(bottom, bottom + HeapRegion::GrainWords);
-  assert(reserved().contains(mr), "invariant");
+  assert(g1h->reserved_region().contains(mr), "invariant");
   return g1h->new_heap_region(hrm_index, mr);
 }
 

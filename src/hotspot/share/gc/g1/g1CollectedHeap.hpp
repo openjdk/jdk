@@ -1045,12 +1045,8 @@ public:
   inline G1HeapRegionAttr region_attr(const void* obj) const;
   inline G1HeapRegionAttr region_attr(uint idx) const;
 
-  MemRegion reserved() const {
-    return _hrm.reserved();
-  }
-
   bool is_in_reserved(const void* addr) const {
-    return reserved().contains(addr);
+    return reserved_region().contains(addr);
   }
 
   G1CardTable* card_table() const {
