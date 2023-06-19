@@ -90,19 +90,28 @@ public final class SecuritySettings {
         Properties p = SharedSecrets.getJavaSecurityPropertiesAccess().getInitialProperties();
         for (String key : p.stringPropertyNames().stream().sorted().toList()) {
             String val = p.getProperty(key);
-            if (val.contains(",") && val.length() > 60) {
-                // split lines longer than 60 chars which have multiple values
-                ostream.println(TWOINDENT + key + "=");
-                String[] values = val.split(",");
-                String lastValue = values[values.length -1].trim();
-                List.of(values).forEach(
-                        s -> ostream.println(THREEINDENT + s.trim() +
-                                (s.trim().equals(lastValue) ? "" : ",")));
+            if (val.length() > 60) {
+                splitLongPropertyLines(key, val);
             } else {
                 ostream.println(TWOINDENT + key + "=" + val);
             }
         }
         ostream.println();
+    }
+
+    private static void splitLongPropertyLines(String key, String val) {
+        // split long property values which use well known separator
+        if (val.contains(",") || val.contains(";")) {
+            String separator = (val.contains(",")) ? "," : ";";
+            ostream.println(TWOINDENT + key + "=");
+            String[] values = val.split(separator);
+            String lastValue = values[values.length -1].trim();
+            List.of(values).forEach(
+                    s -> ostream.println(THREEINDENT + s.trim() +
+                            (s.trim().equals(lastValue) ? "" : separator)));
+        } else {
+            ostream.println(TWOINDENT + key + "=" + val);
+        }
     }
 
     private static void printSecurityTLSConfig(boolean verbose) {
