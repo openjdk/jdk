@@ -339,9 +339,9 @@ class Compile : public Phase {
   // JSR 292
   bool                  _has_method_handle_invokes; // True if this method has MethodHandle invokes.
   bool                  _has_monitors;          // Metadata transfered to nmethod to enable Continuations lock-detection fastpath
+  bool                  _clinit_barrier_on_entry; // True if clinit barrier is needed on nmethod entry
   RTMState              _rtm_state;             // State of Restricted Transactional Memory usage
   int                   _loop_opts_cnt;         // loop opts round
-  bool                  _clinit_barrier_on_entry; // True if clinit barrier is needed on nmethod entry
   uint                  _stress_seed;           // Seed for stress testing
 
   // Compilation environment.
@@ -369,14 +369,27 @@ class Compile : public Phase {
 
   // Node management
   uint                  _unique;                // Counter for unique Node indices
-  VectorSet             _dead_node_list;        // Set of dead nodes
   uint                  _dead_node_count;       // Number of dead nodes; VectorSet::Size() is O(N).
                                                 // So use this to keep count and make the call O(1).
+  VectorSet             _dead_node_list;        // Set of dead nodes
   DEBUG_ONLY(Unique_Node_List* _modified_nodes;)   // List of nodes which inputs were modified
   DEBUG_ONLY(bool       _phase_optimize_finished;) // Used for live node verification while creating new nodes
 
-  Arena                 _node_arena;            // Arena for new-space Nodes
-  Arena                 _old_arena;             // Arena for old-space Nodes, lifetime during xform
+  // Arenas for new-space and old-space nodes.
+  // Swapped between using _node_arena.
+  // The lifetime of the old-space nodes is during xform.
+  Arena                 _node_arena_one;
+  Arena                 _node_arena_two;
+  Arena*                _node_arena;
+public:
+  Arena* swap_old_and_new() {
+    Arena* filled_arena_ptr = _node_arena;
+    Arena* old_arena_ptr = old_arena();
+    old_arena_ptr->destruct_contents();
+    _node_arena = old_arena_ptr;
+    return filled_arena_ptr;
+  }
+private:
   RootNode*             _root;                  // Unique root of compilation, or null after bail-out.
   Node*                 _top;                   // Unique top node.  (Reset by various phases.)
 
@@ -801,8 +814,8 @@ class Compile : public Phase {
   uint         unique() const              { return _unique; }
   uint         next_unique()               { return _unique++; }
   void         set_unique(uint i)          { _unique = i; }
-  Arena*       node_arena()                { return &_node_arena; }
-  Arena*       old_arena()                 { return &_old_arena; }
+  Arena*       node_arena()                { return _node_arena; }
+  Arena*       old_arena()                 { return (&_node_arena_one == _node_arena) ? &_node_arena_two : &_node_arena_one; }
   RootNode*    root() const                { return _root; }
   void         set_root(RootNode* r)       { _root = r; }
   StartNode*   start() const;              // (Derived from root.)

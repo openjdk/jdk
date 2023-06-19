@@ -1385,9 +1385,8 @@ JVM_ENTRY(jobject, JVM_FindScopedValueBindings(JNIEnv *env, jclass cls))
 
     InstanceKlass* holder = method->method_holder();
     if (name == vmSymbols::runWith_method_name()) {
-      if ((holder == resolver.Carrier_klass
-           || holder == vmClasses::VirtualThread_klass()
-           || holder == vmClasses::Thread_klass())) {
+      if (holder == vmClasses::Thread_klass()
+          || holder == resolver.Carrier_klass) {
         loc = 1;
       }
     }
@@ -3044,7 +3043,7 @@ JVM_LEAF(void, JVM_Yield(JNIEnv *env, jclass threadClass))
   os::naked_yield();
 JVM_END
 
-JVM_ENTRY(void, JVM_Sleep(JNIEnv* env, jclass threadClass, jlong nanos))
+JVM_ENTRY(void, JVM_SleepNanos(JNIEnv* env, jclass threadClass, jlong nanos))
   if (nanos < 0) {
     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), "nanosecond timeout value out of range");
   }

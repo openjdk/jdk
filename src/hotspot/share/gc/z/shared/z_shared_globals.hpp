@@ -61,6 +61,13 @@
           "Uncommit memory if it has been unused for the specified "        \
           "amount of time (in seconds)")                                    \
                                                                             \
+  product(double, ZAsyncUnmappingLimit, 100.0, DIAGNOSTIC,                  \
+          "Specify the max amount (percentage of max heap size) of async "  \
+          "unmapping that can be in-flight before unmapping requests are "  \
+          "temporarily forced to be synchronous instead. "                  \
+          "The default means after an amount of pages proportional to the " \
+          "max capacity is enqueued, we resort to synchronous unmapping.")  \
+                                                                            \
   product(uint, ZStatisticsInterval, 10, DIAGNOSTIC,                        \
           "Time between statistics print outs (in seconds)")                \
           range(1, (uint)-1)                                                \

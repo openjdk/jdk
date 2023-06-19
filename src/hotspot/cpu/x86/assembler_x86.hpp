@@ -984,8 +984,10 @@ private:
   void adcq(Register dst, Register src);
 
   void addb(Address dst, int imm8);
+  void addb(Address dst, Register src);
   void addw(Register dst, Register src);
   void addw(Address dst, int imm16);
+  void addw(Address dst, Register src);
 
   void addl(Address dst, int32_t imm32);
   void addl(Address dst, Register src);
