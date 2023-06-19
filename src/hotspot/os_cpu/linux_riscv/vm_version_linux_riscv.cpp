@@ -193,7 +193,7 @@ char* VM_Version::os_uarch_additional_features() {
       if (ret == nullptr) {
         if (strncmp(buf, "uarch", sizeof "uarch" - 1) == 0) {
           ret = os::strdup(p + 2);
-          ret[strcspn(p, "\n")] = '\0';
+          ret[strcspn(ret, "\n")] = '\0';
         }
       }
     }
