@@ -528,7 +528,7 @@ void G1CollectedHeap::iterate_regions_in_range(MemRegion range, const Func& func
   }
 }
 
-HeapWord* G1CollectedHeap::alloc_archive_space(size_t word_size, HeapWord* preferred_addr) {
+HeapWord* G1CollectedHeap::allocate_archive_space(size_t word_size, HeapWord* preferred_addr) {
   assert(!is_init_completed(), "Expect to be called at JVM init time");
   MutexLocker x(Heap_lock);
 

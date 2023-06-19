@@ -525,9 +525,9 @@ class CollectedHeap : public CHeapObj<mtGC> {
   // Preferred address is treated as a hint for the location of the archive area in the heap.
   // The returned memory range may or may start at the preferred address.
   // Return MemRegion corresponding to the commited heap memory.
-  virtual HeapWord* alloc_archive_space(size_t word_size, HeapWord* preferred_addr) { return nullptr; }
+  virtual HeapWord* allocate_archive_space(size_t word_size, HeapWord* preferred_addr) { return nullptr; }
 
-  // This must be called after alloc_archive_space, and after class loading has occurred.
+  // This must be called after allocate_archive_space, and after class loading has occurred.
   // GC policy can take necessary actions to make the archive space usable,
   // such as inserting filler objects to make it parseable, or updating block offset table.
   virtual void fixup_archive_space(MemRegion range) { return; }

@@ -711,7 +711,7 @@ public:
   // not be same as the preferred address.
   // This API is only used for allocating heap space for the archived heap objects
   // in the CDS archive.
-  HeapWord* alloc_archive_space(size_t word_size, HeapWord* preferred_addr) override;
+  HeapWord* allocate_archive_space(size_t word_size, HeapWord* preferred_addr) override;
 
   // Populate the G1BlockOffsetTableParts for the archived regions in the given range.
   // That ensures fast G1BlockOffsetTablePart::block_start operations for any given
@@ -720,7 +720,7 @@ public:
   void fixup_archive_space(MemRegion range) override;
 
   // For the specified range, uncommit the containing G1 regions
-  // which had been allocated by alloc_archive_space. This should be called
+  // which had been allocated by allocate_archive_space. This should be called
   // at JVM init time if the archive heap's contents cannot be used (e.g., if
   // CRC check fails).
   void handle_archive_space_failure(MemRegion range) override;

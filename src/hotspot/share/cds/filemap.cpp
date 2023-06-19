@@ -2124,7 +2124,7 @@ bool FileMapInfo::map_heap_region_impl() {
   log_info(cds)("Preferred address to map heap data (to avoid relocation) is " INTPTR_FORMAT, p2i(requested_start));
 
   // allocate from java heap
-  HeapWord* start = Universe::heap()->alloc_archive_space(word_size, (HeapWord*)requested_start);
+  HeapWord* start = Universe::heap()->allocate_archive_space(word_size, (HeapWord*)requested_start);
   if (start == nullptr) {
     log_info(cds)("UseSharedSpaces: Unable to allocate java heap region for archive heap.");
     return false;
