@@ -178,7 +178,7 @@ public class TestIRMatching {
                  GoodRuleConstraint.create(Traps.class, "predicateTrap()", 4),
                  BadFailOnConstraint.create(Traps.class, "nullCheck()", 1, "CallStaticJava", "uncommon_trap"),
                  BadFailOnConstraint.create(Traps.class, "nullCheck()", 2, "CallStaticJava", "uncommon_trap", "null_check"),
-                 BadFailOnConstraint.create(Traps.class, "nullCheck()", 3, "uncommon_trap", "unstable_if"),
+                 BadFailOnConstraint.create(Traps.class, "nullCheck()", 3, "uncommon_trap", "class_check"),
                  GoodRuleConstraint.create(Traps.class, "nullCheck()", 4),
                  BadFailOnConstraint.create(Traps.class, "nullAssert()", 1, "CallStaticJava", "uncommon_trap"),
                  BadFailOnConstraint.create(Traps.class, "nullAssert()", 2, "CallStaticJava", "uncommon_trap", "null_assert"),
@@ -1079,11 +1079,11 @@ class Traps {
     @Test
     @IR(failOn = IRNode.TRAP) // fails
     @IR(failOn = IRNode.NULL_CHECK_TRAP) // fails
-    @IR(failOn = IRNode.UNSTABLE_IF_TRAP) // fails
+    @IR(failOn = IRNode.CLASS_CHECK_TRAP) // fails
     @IR(failOn = {IRNode.PREDICATE_TRAP,
                   IRNode.NULL_ASSERT_TRAP,
                   IRNode.RANGE_CHECK_TRAP,
-                  IRNode.CLASS_CHECK_TRAP,
+                  IRNode.UNSTABLE_IF_TRAP,
                   IRNode.INTRINSIC_TRAP,
                   IRNode.INTRINSIC_OR_TYPE_CHECKED_INLINING_TRAP,
                   IRNode.UNHANDLED_TRAP})
