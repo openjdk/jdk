@@ -27,7 +27,7 @@
  * @summary NULLCHK is emitted as Object.getClass
  * @compile -source 7 -target 7 TestSyntheticNullChecks.java
  * @run main TestSyntheticNullChecks 7
- * @clean TestSyntheticNullChecks*
+ * @clean *
  * @compile TestSyntheticNullChecks.java
  * @run main TestSyntheticNullChecks 9
  */
