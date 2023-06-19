@@ -6,3 +6,6 @@ class Nested {}
 void main() {
     System.err.println("");
 }
+void test() {
+    System.err.println("");
+}
