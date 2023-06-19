@@ -24,7 +24,6 @@
 /*
  * @test
  * @bug 8215294 8241800
- * @requires os.family == "linux"
  * @library /test/lib
  * @build jdk.test.lib.NetworkConfiguration
  *        jdk.test.lib.Platform
@@ -147,7 +146,7 @@ public class PromiscuousIPv6 {
 
     static void test(ProtocolFamily family,
                      NetworkInterface nif,
-                     boolean bindToWildCard,
+                     boolean bindToWildcard,
                      InetAddress group1,
                      InetAddress group2)
             throws IOException
@@ -157,11 +156,11 @@ public class PromiscuousIPv6 {
 
         // Bind addresses should include the same network interface / scope, so
         // as to not reply on the default route when there are multiple interfaces
-        InetAddress bindAddr1 = bindToWildCard 
+        InetAddress bindAddr1 = bindToWildcard 
                 ? InetAddress.getByName("::0")
                 : Inet6Address.getByAddress(null, group1.getAddress(), nif);
 
-        InetAddress bindAddr2 = bindToWildCard
+        InetAddress bindAddr2 = bindToWildcard
                 ? InetAddress.getByName("::0")
                 : Inet6Address.getByAddress(null, group2.getAddress(), nif);
 
@@ -206,12 +205,12 @@ public class PromiscuousIPv6 {
 
         boolean hasIPV6MulticastAll;
 
-        if (!Platform.isLinux()) {
-            throw new SkippedException("This test should be run only on Linux");
+        if (Platform.isWindows()) {
+            throw new SkippedException("This test should not be run on Windows");
         } else {
             int major = Platform.getOsVersionMajor();
             int minor = Platform.getOsVersionMinor();
-            hasIPV6MulticastAll = (major > 4) || ((major == 4 && minor >= 20));
+            hasIPV6MulticastAll = Platform.isOSX() || (major > 4) || ((major == 4 && minor >= 20));
         }
 
         NetworkConfiguration.printSystemConfiguration(System.out);

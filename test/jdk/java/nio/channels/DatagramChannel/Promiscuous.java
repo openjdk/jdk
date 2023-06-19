@@ -208,9 +208,8 @@ public class Promiscuous {
             InetAddress source = config.ip4Addresses(nif).iterator().next();
             test(INET, nif, ip4Group1, ip4Group2);
 
-            // Linux allows IPv6 sockets join IPv4 multicast groups
-            if (Platform.isLinux())
-                test(UNSPEC, nif, ip4Group1, ip4Group2);
+            // test IPv6 sockets joining IPv4 multicast groups
+            test(UNSPEC, nif, ip4Group1, ip4Group2);
         }
     }
 }
