@@ -25,7 +25,6 @@
 #ifndef SHARE_OOPS_GENERATEOOPMAP_HPP
 #define SHARE_OOPS_GENERATEOOPMAP_HPP
 
-#include "interpreter/bytecodeStream.hpp"
 #include "memory/allocation.hpp"
 #include "oops/method.hpp"
 #include "oops/oopsHierarchy.hpp"
@@ -33,6 +32,7 @@
 #include "utilities/bitMap.hpp"
 
 // Forward definition
+class BytecodeStream;
 class GenerateOopMap;
 class BasicBlock;
 class CellTypeState;

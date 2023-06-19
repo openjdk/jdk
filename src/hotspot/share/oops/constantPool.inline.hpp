@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "oops/constantPool.hpp"
 
 #include "oops/cpCache.inline.hpp"
+#include "oops/resolvedIndyEntry.hpp"
 #include "runtime/atomic.hpp"
 
 inline Klass* ConstantPool::resolved_klass_at(int which) const {  // Used by Compiler
@@ -41,4 +42,19 @@ inline Klass* ConstantPool::resolved_klass_at(int which) const {  // Used by Com
   return Atomic::load_acquire(adr);
 }
 
+inline u2 ConstantPool::invokedynamic_bootstrap_ref_index_at(int indy_index) const {
+  return cache()->resolved_indy_entry_at(decode_invokedynamic_index(indy_index))->constant_pool_index();
+}
+
+inline ResolvedIndyEntry* ConstantPool::resolved_indy_entry_at(int index) {
+  return cache()->resolved_indy_entry_at(index);
+}
+
+inline int ConstantPool::resolved_indy_entries_length() const {
+  return cache()->resolved_indy_entries_length();
+}
+
+inline oop ConstantPool::resolved_reference_from_indy(int index) const {
+  return resolved_references()->obj_at(cache()->resolved_indy_entry_at(index)->resolved_references_index());
+}
 #endif // SHARE_OOPS_CONSTANTPOOL_INLINE_HPP

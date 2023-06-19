@@ -23,9 +23,11 @@
  */
 
 #include "precompiled.hpp"
+#include "interpreter/bytecodeStream.hpp"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/constantPool.inline.hpp"
+#include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
 #include "prims/methodComparator.hpp"

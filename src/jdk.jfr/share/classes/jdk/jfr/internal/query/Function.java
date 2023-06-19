@@ -74,7 +74,7 @@ abstract class Function {
         }
 
         if (aggregator == Aggregator.P90) {
-            return createPercentile(field, 0.95);
+            return createPercentile(field, 0.90);
         }
 
         if (aggregator == Aggregator.P95) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,9 +52,9 @@ typedef BufferNode::TestSupport::ProcessorThread ProcessorThread;
 
 // Some basic testing of BufferNode::Allocator.
 TEST_VM(PtrQueueBufferAllocatorTest, test) {
-  const size_t buffer_size = 256;
-  BufferNode::Allocator allocator("Test Buffer Allocator", buffer_size);
-  ASSERT_EQ(buffer_size, allocator.buffer_size());
+  const size_t buffer_capacity = 256;
+  BufferNode::Allocator allocator("Test Buffer Allocator", buffer_capacity);
+  ASSERT_EQ(buffer_capacity, allocator.buffer_capacity());
 
   // Allocate some new nodes for use in testing.
   BufferNode* nodes[10] = {};
@@ -233,10 +233,9 @@ static void run_test(BufferNode::Allocator* allocator, CompletedList* cbl) {
   tty->print_cr("allocator free count: " SIZE_FORMAT, allocator->free_count());
 }
 
-const size_t buffer_size = 1024;
-
 TEST_VM(PtrQueueBufferAllocatorTest, stress_free_list_allocator) {
-  BufferNode::Allocator allocator("Test Allocator", buffer_size);
+  const size_t buffer_capacity = 1024;
+  BufferNode::Allocator allocator("Test Allocator", buffer_capacity);
   CompletedList completed;
   run_test(&allocator, &completed);
 }
