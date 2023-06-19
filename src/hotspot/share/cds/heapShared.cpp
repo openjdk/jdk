@@ -532,9 +532,9 @@ void HeapShared::archive_objects(ArchiveHeapInfo *heap_info) {
 
     log_info(cds)("Heap range = [" PTR_FORMAT " - "  PTR_FORMAT "]",
                    UseCompressedOops ? p2i(CompressedOops::begin()) :
-                                       p2i((address)G1CollectedHeap::heap()->reserved().start()),
+                                       p2i((address)G1CollectedHeap::heap()->reserved_region().start()),
                    UseCompressedOops ? p2i(CompressedOops::end()) :
-                                       p2i((address)G1CollectedHeap::heap()->reserved().end()));
+                                       p2i((address)G1CollectedHeap::heap()->reserved_region().end()));
     copy_objects();
 
     CDSHeapVerifier::verify();
@@ -1700,8 +1700,8 @@ address HeapShared::to_requested_address(address dumptime_addr) {
 
   // With UseCompressedOops==false, actual_base is selected by the OS so
   // it's different across -Xshare:dump runs.
-  address actual_base = (address)G1CollectedHeap::heap()->reserved().start();
-  address actual_end  = (address)G1CollectedHeap::heap()->reserved().end();
+  address actual_base = (address)G1CollectedHeap::heap()->reserved_region().start();
+  address actual_end  = (address)G1CollectedHeap::heap()->reserved_region().end();
   assert(actual_base <= dumptime_addr && dumptime_addr <= actual_end, "must be an address in the heap");
 
   // We always write the objects as if the heap started at this address. This

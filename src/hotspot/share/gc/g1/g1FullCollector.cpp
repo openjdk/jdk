@@ -149,7 +149,7 @@ G1FullCollector::G1FullCollector(G1CollectedHeap* heap,
     _oop_queue_set.register_queue(i, marker(i)->oop_stack());
     _array_queue_set.register_queue(i, marker(i)->objarray_stack());
   }
-  _region_attr_table.initialize(heap->reserved(), HeapRegion::GrainBytes);
+  _region_attr_table.initialize(heap->reserved_region(), HeapRegion::GrainBytes);
 }
 
 G1FullCollector::~G1FullCollector() {

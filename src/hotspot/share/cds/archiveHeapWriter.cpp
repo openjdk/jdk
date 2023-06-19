@@ -333,7 +333,7 @@ size_t ArchiveHeapWriter::copy_one_source_obj_to_buffer(oop src_obj) {
 void ArchiveHeapWriter::set_requested_address(ArchiveHeapInfo* info) {
   assert(!info->is_used(), "only set once");
   assert(UseG1GC, "must be");
-  address heap_end = (address)G1CollectedHeap::heap()->reserved().end();
+  address heap_end = (address)G1CollectedHeap::heap()->reserved_region().end();
   log_info(cds, heap)("Heap end = %p", heap_end);
 
   size_t heap_region_byte_size = _buffer_used;

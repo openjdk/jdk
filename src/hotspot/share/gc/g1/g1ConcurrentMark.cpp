@@ -368,7 +368,7 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h,
 
   _mark_bitmap(),
 
-  _heap(_g1h->reserved()),
+  _heap(_g1h->reserved_region()),
 
   _root_regions(_g1h->max_regions()),
 
@@ -416,7 +416,7 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h,
 {
   assert(CGC_lock != nullptr, "CGC_lock must be initialized");
 
-  _mark_bitmap.initialize(g1h->reserved(), bitmap_storage);
+  _mark_bitmap.initialize(g1h->reserved_region(), bitmap_storage);
 
   // Create & start ConcurrentMark thread.
   _cm_thread = new G1ConcurrentMarkThread(this);
@@ -2930,7 +2930,7 @@ G1PrintRegionLivenessInfoClosure::G1PrintRegionLivenessInfoClosure(const char* p
   }
 
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
-  MemRegion reserved = g1h->reserved();
+  MemRegion reserved = g1h->reserved_region();
   double now = os::elapsedTime();
 
   // Print the header of the output.

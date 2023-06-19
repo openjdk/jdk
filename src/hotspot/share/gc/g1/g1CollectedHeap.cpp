@@ -532,7 +532,7 @@ HeapWord* G1CollectedHeap::allocate_archive_space(size_t word_size, HeapWord* pr
   assert(!is_init_completed(), "Expect to be called at JVM init time");
   MutexLocker x(Heap_lock);
 
-  MemRegion reserved = _hrm.reserved();
+  MemRegion reserved = reserved_region();
 
   if (reserved.word_size() <= word_size) {
     log_info(gc, heap)("Unable to allocate regions as archive heap is too large; size requested = " SIZE_FORMAT
@@ -586,7 +586,7 @@ void G1CollectedHeap::fixup_archive_space(MemRegion range) {
 
 void G1CollectedHeap::handle_archive_space_failure(MemRegion range) {
   assert(!is_init_completed(), "Expect to be called at JVM init time");
-  MemRegion reserved = _hrm.reserved();
+  MemRegion reserved = reserved_region();
   size_t size_used = 0;
   uint shrink_count = 0;
 
@@ -1445,12 +1445,12 @@ jint G1CollectedHeap::initialize() {
 
   FreeRegionList::set_unrealistically_long_length(max_regions() + 1);
 
-  _bot = new G1BlockOffsetTable(reserved(), bot_storage);
+  _bot = new G1BlockOffsetTable(reserved_region(), bot_storage);
 
   {
     size_t granularity = HeapRegion::GrainBytes;
 
-    _region_attr.initialize(reserved(), granularity);
+    _region_attr.initialize(reserved_region(), granularity);
   }
 
   _workers = new WorkerThreads("GC Thread", ParallelGCThreads);
@@ -2202,8 +2202,8 @@ void G1CollectedHeap::print_on(outputStream* st) const {
   st->print(" total " SIZE_FORMAT "K, used " SIZE_FORMAT "K",
             capacity()/K, heap_used/K);
   st->print(" [" PTR_FORMAT ", " PTR_FORMAT ")",
-            p2i(_hrm.reserved().start()),
-            p2i(_hrm.reserved().end()));
+            p2i(reserved_region().start()),
+            p2i(reserved_region().end()));
   st->cr();
   st->print("  region size " SIZE_FORMAT "K, ", HeapRegion::GrainBytes / K);
   uint young_regions = young_regions_count();

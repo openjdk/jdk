@@ -207,7 +207,7 @@ class CollectedHeap : public CHeapObj<mtGC> {
   }
 
  public:
-  MemRegion reserved() const {
+  MemRegion reserved_region() const {
     return _reserved;
   }
 

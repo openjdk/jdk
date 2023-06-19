@@ -211,8 +211,8 @@ void FileMapHeader::populate(FileMapInfo *info, size_t core_region_alignment,
       _heap_end = CompressedOops::end();
     } else {
       assert(UseG1GC, "used by G1 only");
-      address start = (address)Universe::heap()->reserved().start();
-      address end = (address)Universe::heap()->reserved().end();
+      address start = (address)Universe::heap()->reserved_region().start();
+      address end = (address)Universe::heap()->reserved_region().end();
       _heap_begin = HeapShared::to_requested_address(start);
       _heap_end = HeapShared::to_requested_address(end);
     }
@@ -1568,7 +1568,7 @@ void FileMapInfo::write_region(int region, char* base, size_t size,
       assert((mapping_offset >> CompressedOops::shift()) << CompressedOops::shift() == mapping_offset, "must be");
     } else {
       assert(UseG1GC, "used by G1 only");
-      mapping_offset = requested_base - (char*)Universe::heap()->reserved().start();
+      mapping_offset = requested_base - (char*)Universe::heap()->reserved_region().start();
     }
 #endif // INCLUDE_CDS_JAVA_HEAP
   } else {
@@ -2031,8 +2031,8 @@ bool FileMapInfo::can_use_heap_region() {
   log_info(cds)("    narrow_oop_mode = %d, narrow_oop_base = " PTR_FORMAT ", narrow_oop_shift = %d",
                 CompressedOops::mode(), p2i(CompressedOops::base()), CompressedOops::shift());
   log_info(cds)("    heap range = [" PTR_FORMAT " - "  PTR_FORMAT "]",
-                UseCompressedOops ? p2i(CompressedOops::begin()) : p2i((address)Universe::heap()->reserved().start()),
-                UseCompressedOops ? p2i(CompressedOops::end()) : p2i((address)Universe::heap()->reserved().end()));
+                UseCompressedOops ? p2i(CompressedOops::begin()) : p2i((address)Universe::heap()->reserved_region().start()),
+                UseCompressedOops ? p2i(CompressedOops::end()) : p2i((address)Universe::heap()->reserved_region().end()));
 
   if (narrow_klass_base() != CompressedKlassPointers::base() ||
       narrow_klass_shift() != CompressedKlassPointers::shift()) {
@@ -2091,7 +2091,7 @@ bool FileMapInfo::map_heap_region() {
 
     // Make sure we map at the very top of the heap - see comments in
     // init_heap_region_relocation().
-    MemRegion heap_range = Universe::heap()->reserved();
+    MemRegion heap_range = Universe::heap()->reserved_region();
     assert(heap_range.contains(_mapped_heap_memregion), "must be");
 
     if (UseG1GC) {
