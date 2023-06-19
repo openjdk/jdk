@@ -300,7 +300,14 @@ public class IndexBuilder {
     }
 
     private static Character keyCharacter(String s) {
-        return s.isEmpty() ? '*' : Character.toUpperCase(s.charAt(0));
+        // Use first valid java identifier start character as key,
+        // or '*' for strings that do not contain one.
+        for (int i = 0; i < s.length(); i++) {
+            if (Character.isJavaIdentifierStart(s.charAt(i))) {
+                return Character.toUpperCase(s.charAt(i));
+            }
+        }
+        return '*';
     }
 
 
