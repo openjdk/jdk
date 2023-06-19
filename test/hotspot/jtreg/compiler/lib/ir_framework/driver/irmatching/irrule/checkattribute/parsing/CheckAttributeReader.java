@@ -68,6 +68,17 @@ public class CheckAttributeReader<R> {
             TestFormat.checkNoReport(userPostfix.isValidUserPostfix(), "Provided empty string for composite node " +
                                                                        irNode + " at index " + nextIndex);
             return userPostfix;
+        } else if (IRNode.isVectorIRNode(node)) {
+            String irNode = IRNode.getIRNodeAccessString(node);
+            if (iterator.hasNext()) {
+                String maybe_vt = iterator.next();
+                if (IRNode.isVectorType(maybe_vt)) {
+                    return new CheckAttributeString(maybe_vt);
+                }
+                // If we do not find that pattern, then revert the iterator once
+                iterator.previous();
+            }
+            return CheckAttributeString.invalid();
         } else {
             return CheckAttributeString.invalid();
         }

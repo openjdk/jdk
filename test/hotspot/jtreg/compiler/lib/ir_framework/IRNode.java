@@ -24,6 +24,7 @@
 package compiler.lib.ir_framework;
 
 import compiler.lib.ir_framework.driver.irmatching.mapping.*;
+import compiler.lib.ir_framework.driver.irmatching.parser.VMInfo;
 import compiler.lib.ir_framework.shared.CheckedTestFrameworkException;
 import compiler.lib.ir_framework.shared.TestFormat;
 import compiler.lib.ir_framework.shared.TestFormatException;
@@ -69,6 +70,7 @@ import java.util.Map;
  *                                 Using this IR node expects another user provided string in the constraint list of
  *                                 {@link IR#failOn()} and {@link IR#counts()}. They cannot be used as normal IR nodes.
  *                                 Trying to do so will result in a format violation error.</li>
+ *     <li><p>Vector IR nodes:  TODO.
  * </ul>
  */
 public class IRNode {
@@ -80,6 +82,11 @@ public class IRNode {
      * Prefix for composite IR nodes.
      */
     private static final String COMPOSITE_PREFIX = PREFIX + "C#";
+    /**
+     * Prefix for vector IR nodes.
+     */
+    private static final String VECTOR_PREFIX = PREFIX + "V#";
+
     private static final String POSTFIX = "#_";
 
     private static final String START = "(\\d+(\\s){2}(";
@@ -90,20 +97,26 @@ public class IRNode {
 
     public static final String IS_REPLACED = "#IS_REPLACED#"; // Is replaced by an additional user-defined string.
 
+    public static final String VECTOR_TYPE = "_@";
 
     /**
      * IR placeholder string to regex-for-compile-phase map.
      */
     private static final Map<String, IRNodeMapEntry> IR_NODE_MAPPINGS = new HashMap<>();
 
+    /**
+     * Map every vectorNode to a type string.
+     */
+    private static final Map<String, String> VECTOR_NODE_TYPE = new HashMap<>();
+
     /*
      * Start of IR placeholder string definitions followed by a static block defining the regex-for-compile-phase mapping.
      * An IR node placeholder string must start with PREFIX for normal IR nodes or COMPOSITE_PREFIX for composite IR
-     * nodes (see class description above).
+     * nodes, or VECTOR_PREFIX for vector nodes (see class description above).
      *
      * An IR node definition looks like this:
      *
-     * public static final String IR_NODE = [PREFIX|COMPOSITE_PREFIX] + "IR_NODE" + POSTFIX;
+     * public static final String IR_NODE = [PREFIX|COMPOSITE_PREFIX|VECTOR_PREFIX] + "IR_NODE" + POSTFIX;
      * static {
      *    // Define IR_NODE to regex-for-compile-phase mapping. Create a new IRNodeMapEntry object and add it to
      *    // IR_NODE_MAPPINGS. This can be done by using the helper methods defined after all IR node placeholder string
@@ -133,6 +146,7 @@ public class IRNode {
 
     public static final String ABS_V = PREFIX + "ABS_V" + POSTFIX;
     static {
+        // TODO vectorNode
         beforeMatchingNameRegex(ABS_V, "AbsV(B|S|I|L|F|D)");
     }
 
@@ -153,47 +167,49 @@ public class IRNode {
 
     public static final String ADD_V = PREFIX + "ADD_V" + POSTFIX;
     static {
+        // TODO vectorNode
         beforeMatchingNameRegex(ADD_V, "AddV(B|S|I|L|F|D)");
     }
 
     public static final String ADD_VD = PREFIX + "ADD_VD" + POSTFIX;
     static {
-        beforeMatchingNameRegex(ADD_VD, "AddVD");
+        vectorNode(ADD_VD, "AddVD", "double");
     }
 
-    public static final String ADD_VI = PREFIX + "ADD_VI" + POSTFIX;
+    public static final String ADD_VI = VECTOR_PREFIX + "ADD_VI" + POSTFIX;
     static {
-        beforeMatchingNameRegex(ADD_VI, "AddVI");
+        vectorNode(ADD_VI, "AddVI", "int");
     }
 
     public static final String ADD_VF = PREFIX + "ADD_VF" + POSTFIX;
     static {
-        beforeMatchingNameRegex(ADD_VF, "AddVF");
+        vectorNode(ADD_VF, "AddVF", "float");
     }
 
     public static final String ADD_REDUCTION_V = PREFIX + "ADD_REDUCTION_V" + POSTFIX;
     static {
+        // TODO vectorNode
         beforeMatchingNameRegex(ADD_REDUCTION_V, "AddReductionV(B|S|I|L|F|D)");
     }
 
     public static final String ADD_REDUCTION_VD = PREFIX + "ADD_REDUCTION_VD" + POSTFIX;
     static {
-        superWordNodes(ADD_REDUCTION_VD, "AddReductionVD");
+        vectorNode(ADD_REDUCTION_VD, "AddReductionVD", "double");
     }
 
     public static final String ADD_REDUCTION_VF = PREFIX + "ADD_REDUCTION_VF" + POSTFIX;
     static {
-        superWordNodes(ADD_REDUCTION_VF, "AddReductionVF");
+        vectorNode(ADD_REDUCTION_VF, "AddReductionVF", "float");
     }
 
     public static final String ADD_REDUCTION_VI = PREFIX + "ADD_REDUCTION_VI" + POSTFIX;
     static {
-        superWordNodes(ADD_REDUCTION_VI, "AddReductionVI");
+        vectorNode(ADD_REDUCTION_VI, "AddReductionVI", "int");
     }
 
     public static final String ADD_REDUCTION_VL = PREFIX + "ADD_REDUCTION_VL" + POSTFIX;
     static {
-        superWordNodes(ADD_REDUCTION_VL, "AddReductionVL");
+        vectorNode(ADD_REDUCTION_VL, "AddReductionVL", "long");
     }
 
     public static final String ALLOC = PREFIX + "ALLOC" + POSTFIX;
@@ -237,16 +253,19 @@ public class IRNode {
 
     public static final String AND_V = PREFIX + "AND_V" + POSTFIX;
     static {
+        // TODO vectorNode
         beforeMatchingNameRegex(AND_V, "AndV");
     }
 
     public static final String AND_V_MASK = PREFIX + "AND_V_MASK" + POSTFIX;
     static {
+        // TODO vectorNode
         beforeMatchingNameRegex(AND_V_MASK, "AndVMask");
     }
 
     public static final String AND_REDUCTION_V = PREFIX + "AND_REDUCTION_V" + POSTFIX;
     static {
+        // TODO vectorNode
         superWordNodes(AND_REDUCTION_V, "AndReductionV");
     }
 
@@ -388,6 +407,7 @@ public class IRNode {
 
     public static final String DIV_V = PREFIX + "DIV_V" + POSTFIX;
     static {
+        // TODO vectorNode
         beforeMatchingNameRegex(DIV_V, "DivV(F|D)");
     }
 
@@ -420,6 +440,7 @@ public class IRNode {
 
     public static final String FMA_V = PREFIX + "FMA_V" + POSTFIX;
     static {
+        // TODO vectorNode
         beforeMatchingNameRegex(FMA_V, "FmaV(F|D)");
     }
 
@@ -584,16 +605,19 @@ public class IRNode {
 
     public static final String LOAD_VECTOR = PREFIX + "LOAD_VECTOR" + POSTFIX;
     static {
+        // TODO vectorNode
         beforeMatchingNameRegex(LOAD_VECTOR, "LoadVector");
     }
 
     public static final String LOAD_VECTOR_GATHER = PREFIX + "LOAD_VECTOR_GATHER" + POSTFIX;
     static {
+        // TODO vectorNode
         beforeMatchingNameRegex(LOAD_VECTOR_GATHER, "LoadVectorGather");
     }
 
     public static final String LOAD_VECTOR_GATHER_MASKED = PREFIX + "LOAD_VECTOR_GATHER_MASKED" + POSTFIX;
     static {
+        // TODO vectorNode
         beforeMatchingNameRegex(LOAD_VECTOR_GATHER_MASKED, "LoadVectorGatherMasked");
     }
 
@@ -626,11 +650,13 @@ public class IRNode {
 
     public static final String LSHIFT_V = PREFIX + "LSHIFT_V" + POSTFIX;
     static {
+        // TODO vectorNode
         beforeMatchingNameRegex(LSHIFT_V, "LShiftV(B|S|I|L)");
     }
 
     public static final String MACRO_LOGIC_V = PREFIX + "MACRO_LOGIC_V" + POSTFIX;
     static {
+        // TODO vectorNode
         afterBarrierExpansionToBeforeMatching(MACRO_LOGIC_V, "MacroLogicV");
     }
 
@@ -671,6 +697,7 @@ public class IRNode {
 
     public static final String MAX_V = PREFIX + "MAX_V" + POSTFIX;
     static {
+        // TODO vectorNode
         beforeMatchingNameRegex(MAX_V, "MaxV");
     }
 
@@ -721,6 +748,7 @@ public class IRNode {
 
     public static final String MIN_V = PREFIX + "MIN_V" + POSTFIX;
     static {
+        // TODO vectorNode
         beforeMatchingNameRegex(MIN_V, "MinV");
     }
 
@@ -751,61 +779,65 @@ public class IRNode {
 
     public static final String MUL_V = PREFIX + "MUL_V" + POSTFIX;
     static {
+        // TODO vectorNode
         beforeMatchingNameRegex(MUL_V, "MulV(B|S|I|L|F|D)");
     }
 
     public static final String MUL_VL = PREFIX + "MUL_VL" + POSTFIX;
     static {
-        beforeMatchingNameRegex(MUL_VL, "MulVL");
+        vectorNode(MUL_VL, "MulVL", "long");
     }
 
     public static final String MUL_VI = PREFIX + "MUL_VI" + POSTFIX;
     static {
-        beforeMatchingNameRegex(MUL_VI, "MulVI");
+        vectorNode(MUL_VI, "MulVI", "int");
     }
 
     public static final String MUL_VF = PREFIX + "MUL_VF" + POSTFIX;
     static {
-        beforeMatchingNameRegex(MUL_VF, "MulVF");
+        vectorNode(MUL_VF, "MulVF", "float");
     }
 
     public static final String MUL_VD = PREFIX + "MUL_VD" + POSTFIX;
     static {
-        beforeMatchingNameRegex(MUL_VD, "MulVD");
+        vectorNode(MUL_VD, "MulVD", "double");
     }
 
     public static final String MUL_REDUCTION_VD = PREFIX + "MUL_REDUCTION_VD" + POSTFIX;
     static {
-        superWordNodes(MUL_REDUCTION_VD, "MulReductionVD");
+        vectorNode(MUL_REDUCTION_VD, "MulReductionVD", "double");
     }
 
     public static final String MUL_REDUCTION_VF = PREFIX + "MUL_REDUCTION_VF" + POSTFIX;
     static {
-        superWordNodes(MUL_REDUCTION_VF, "MulReductionVF");
+        vectorNode(MUL_REDUCTION_VF, "MulReductionVF", "float");
     }
 
     public static final String MUL_REDUCTION_VI = PREFIX + "MUL_REDUCTION_VI" + POSTFIX;
     static {
-        superWordNodes(MUL_REDUCTION_VI, "MulReductionVI");
+        vectorNode(MUL_REDUCTION_VI, "MulReductionVI", "int");
     }
 
     public static final String MUL_REDUCTION_VL = PREFIX + "MUL_REDUCTION_VL" + POSTFIX;
     static {
-        superWordNodes(MUL_REDUCTION_VL, "MulReductionVL");
+        vectorNode(MUL_REDUCTION_VL, "MulReductionVL", "long");
     }
 
     public static final String MIN_REDUCTION_V = PREFIX + "MIN_REDUCTION_V" + POSTFIX;
     static {
+        // TODO vectorNode
         superWordNodes(MIN_REDUCTION_V, "MinReductionV");
     }
 
     public static final String MAX_REDUCTION_V = PREFIX + "MAX_REDUCTION_V" + POSTFIX;
     static {
+        // TODO vectorNode
         superWordNodes(MAX_REDUCTION_V, "MaxReductionV");
     }
 
     public static final String NEG_V = PREFIX + "NEG_V" + POSTFIX;
     static {
+        // TODO vectorNode
         beforeMatchingNameRegex(NEG_V, "NegV(F|D)");
     }
 
@@ -821,16 +853,19 @@ public class IRNode {
 
     public static final String OR_V = PREFIX + "OR_V" + POSTFIX;
     static {
+        // TODO vectorNode
         beforeMatchingNameRegex(OR_V, "OrV");
     }
 
     public static final String OR_V_MASK = PREFIX + "OR_V_MASK" + POSTFIX;
     static {
+        // TODO vectorNode
         beforeMatchingNameRegex(OR_V_MASK, "OrVMask");
     }
 
     public static final String OR_REDUCTION_V = PREFIX + "OR_REDUCTION_V" + POSTFIX;
     static {
+        // TODO vectorNode
         superWordNodes(OR_REDUCTION_V, "OrReductionV");
     }
 
@@ -852,21 +887,23 @@ public class IRNode {
 
     public static final String POPCOUNT_VI = PREFIX + "POPCOUNT_VI" + POSTFIX;
     static {
-        superWordNodes(POPCOUNT_VI, "PopCountVI");
+        vectorNode(POPCOUNT_VI, "PopCountVI", "int");
     }
 
     public static final String POPCOUNT_VL = PREFIX + "POPCOUNT_VL" + POSTFIX;
     static {
-        superWordNodes(POPCOUNT_VL, "PopCountVL");
+        vectorNode(POPCOUNT_VL, "PopCountVL", "long");
     }
 
     public static final String COUNTTRAILINGZEROS_VL = PREFIX + "COUNTTRAILINGZEROS_VL" + POSTFIX;
     static {
+        // TODO vectorNode
         superWordNodes(COUNTTRAILINGZEROS_VL, "CountTrailingZerosV");
     }
 
     public static final String COUNTLEADINGZEROS_VL = PREFIX + "COUNTLEADINGZEROS_VL" + POSTFIX;
     static {
+        // TODO vectorNode
         superWordNodes(COUNTLEADINGZEROS_VL, "CountLeadingZerosV");
     }
 
@@ -938,6 +975,7 @@ public class IRNode {
 
     public static final String REVERSE_BYTES_V = PREFIX + "REVERSE_BYTES_V" + POSTFIX;
     static {
+        // TODO vectorNode
         beforeMatchingNameRegex(REVERSE_BYTES_V, "ReverseBytesV");
     }
 
@@ -953,17 +991,18 @@ public class IRNode {
 
     public static final String REVERSE_V = PREFIX + "REVERSE_V" + POSTFIX;
     static {
+        // TODO vectorNode
         beforeMatchingNameRegex(REVERSE_V, "ReverseV");
     }
 
     public static final String ROUND_VD = PREFIX + "ROUND_VD" + POSTFIX;
     static {
-        beforeMatchingNameRegex(ROUND_VD, "RoundVD");
+        vectorNode(ROUND_VD, "RoundVD", "double");
     }
 
     public static final String ROUND_VF = PREFIX + "ROUND_VF" + POSTFIX;
     static {
-        beforeMatchingNameRegex(ROUND_VF, "RoundVF");
+        vectorNode(ROUND_VF, "RoundVF", "float");
     }
 
     public static final String ROTATE_LEFT = PREFIX + "ROTATE_LEFT" + POSTFIX;
@@ -978,16 +1017,19 @@ public class IRNode {
 
     public static final String ROTATE_LEFT_V = PREFIX + "ROTATE_LEFT_V" + POSTFIX;
     static {
+        // TODO vectorNode
         beforeMatchingNameRegex(ROTATE_LEFT_V, "RotateLeftV");
     }
 
     public static final String ROTATE_RIGHT_V = PREFIX + "ROTATE_RIGHT_V" + POSTFIX;
     static {
+        // TODO vectorNode
         beforeMatchingNameRegex(ROTATE_RIGHT_V, "RotateRightV");
     }
 
     public static final String ROUND_DOUBLE_MODE_V = PREFIX + "ROUND_DOUBLE_MODE_V" + POSTFIX;
     static {
+        // TODO vectorNode
         beforeMatchingNameRegex(ROUND_DOUBLE_MODE_V, "RoundDoubleModeV");
     }
 
@@ -1008,16 +1050,17 @@ public class IRNode {
 
     public static final String RSHIFT_VB = PREFIX + "RSHIFT_VB" + POSTFIX;
     static {
-        beforeMatchingNameRegex(RSHIFT_VB, "RShiftVB");
+        vectorNode(RSHIFT_VB, "RShiftVB", "byte");
     }
 
     public static final String RSHIFT_VS = PREFIX + "RSHIFT_VS" + POSTFIX;
     static {
-        beforeMatchingNameRegex(RSHIFT_VS, "RShiftVS");
+        vectorNode(RSHIFT_VS, "RShiftVS", "short");
     }
 
     public static final String RSHIFT_V = PREFIX + "RSHIFT_V" + POSTFIX;
     static {
+        // TODO vectorNode
         beforeMatchingNameRegex(RSHIFT_V, "RShiftV(B|S|I|L)");
     }
 
@@ -1034,16 +1077,17 @@ public class IRNode {
 
     public static final String SIGNUM_VD = PREFIX + "SIGNUM_VD" + POSTFIX;
     static {
-        beforeMatchingNameRegex(SIGNUM_VD, "SignumVD");
+        vectorNode(SIGNUM_VD, "SignumVD", "double");
     }
 
     public static final String SIGNUM_VF = PREFIX + "SIGNUM_VF" + POSTFIX;
     static {
-        beforeMatchingNameRegex(SIGNUM_VF, "SignumVF");
+        vectorNode(SIGNUM_VF, "SignumVF", "float");
     }
 
     public static final String SQRT_V = PREFIX + "SQRT_V" + POSTFIX;
     static {
+        // TODO vectorNode
         beforeMatchingNameRegex(SQRT_V, "SqrtV(F|D)");
     }
 
@@ -1145,16 +1189,19 @@ public class IRNode {
 
     public static final String STORE_VECTOR = PREFIX + "STORE_VECTOR" + POSTFIX;
     static {
+        // TODO vectorNode
         beforeMatchingNameRegex(STORE_VECTOR, "StoreVector");
     }
 
     public static final String STORE_VECTOR_SCATTER = PREFIX + "STORE_VECTOR_SCATTER" + POSTFIX;
     static {
+        // TODO vectorNode
         beforeMatchingNameRegex(STORE_VECTOR_SCATTER, "StoreVectorScatter");
     }
 
     public static final String STORE_VECTOR_SCATTER_MASKED = PREFIX + "STORE_VECTOR_SCATTER_MASKED" + POSTFIX;
     static {
+        // TODO vectorNode
         beforeMatchingNameRegex(STORE_VECTOR_SCATTER_MASKED, "StoreVectorScatterMasked");
     }
 
@@ -1185,6 +1232,7 @@ public class IRNode {
 
     public static final String SUB_V = PREFIX + "SUB_V" + POSTFIX;
     static {
+        // TODO vectorNode
         beforeMatchingNameRegex(SUB_V, "SubV(B|S|I|L|F|D)");
     }
 
@@ -1260,6 +1308,7 @@ public class IRNode {
 
     public static final String URSHIFT_V = PREFIX + "URSHIFT_V" + POSTFIX;
     static {
+        // TODO vectorNode
         beforeMatchingNameRegex(URSHIFT_V, "URShiftV(B|S|I|L)");
     }
 
@@ -1275,81 +1324,97 @@ public class IRNode {
 
     public static final String VECTOR_BLEND = PREFIX + "VECTOR_BLEND" + POSTFIX;
     static {
+        // TODO vectorNode
         beforeMatchingNameRegex(VECTOR_BLEND, "VectorBlend");
     }
 
     public static final String VECTOR_MASK_CMP = PREFIX + "VECTOR_MASK_CMP" + POSTFIX;
     static {
+        // TODO vectorNode
         beforeMatchingNameRegex(VECTOR_MASK_CMP, "VectorMaskCmp");
     }
 
     public static final String VECTOR_CAST_B2X = PREFIX + "VECTOR_CAST_B2X" + POSTFIX;
     static {
+        // TODO vectorNode
         beforeMatchingNameRegex(VECTOR_CAST_B2X, "VectorCastB2X");
     }
 
     public static final String VECTOR_CAST_D2X = PREFIX + "VECTOR_CAST_D2X" + POSTFIX;
     static {
+        // TODO vectorNode
         beforeMatchingNameRegex(VECTOR_CAST_D2X, "VectorCastD2X");
     }
 
     public static final String VECTOR_CAST_F2X = PREFIX + "VECTOR_CAST_F2X" + POSTFIX;
     static {
+        // TODO vectorNode
         beforeMatchingNameRegex(VECTOR_CAST_F2X, "VectorCastF2X");
     }
 
     public static final String VECTOR_CAST_I2X = PREFIX + "VECTOR_CAST_I2X" + POSTFIX;
     static {
+        // TODO vectorNode
         beforeMatchingNameRegex(VECTOR_CAST_I2X, "VectorCastI2X");
     }
 
     public static final String VECTOR_CAST_L2X = PREFIX + "VECTOR_CAST_L2X" + POSTFIX;
     static {
+        // TODO vectorNode
         beforeMatchingNameRegex(VECTOR_CAST_L2X, "VectorCastL2X");
     }
 
     public static final String VECTOR_CAST_S2X = PREFIX + "VECTOR_CAST_S2X" + POSTFIX;
     static {
+        // TODO vectorNode
         beforeMatchingNameRegex(VECTOR_CAST_S2X, "VectorCastS2X");
     }
 
     public static final String VECTOR_CAST_F2HF = PREFIX + "VECTOR_CAST_F2HF" + POSTFIX;
     static {
+        // TODO vectorNode
         beforeMatchingNameRegex(VECTOR_CAST_F2HF, "VectorCastF2HF");
     }
 
     public static final String VECTOR_CAST_HF2F = PREFIX + "VECTOR_CAST_HF2F" + POSTFIX;
     static {
+        // TODO vectorNode
         beforeMatchingNameRegex(VECTOR_CAST_HF2F, "VectorCastHF2F");
     }
 
     public static final String VECTOR_MASK_CAST = PREFIX + "VECTOR_MASK_CAST" + POSTFIX;
     static {
+        // TODO vectorNode
         beforeMatchingNameRegex(VECTOR_MASK_CAST, "VectorMaskCast");
     }
 
     public static final String VECTOR_REINTERPRET = PREFIX + "VECTOR_REINTERPRET" + POSTFIX;
     static {
+        // TODO vectorNode
         beforeMatchingNameRegex(VECTOR_REINTERPRET, "VectorReinterpret");
     }
 
     public static final String VECTOR_UCAST_B2X = PREFIX + "VECTOR_UCAST_B2X" + POSTFIX;
     static {
+        // TODO vectorNode
         beforeMatchingNameRegex(VECTOR_UCAST_B2X, "VectorUCastB2X");
     }
 
     public static final String VECTOR_UCAST_I2X = PREFIX + "VECTOR_UCAST_I2X" + POSTFIX;
     static {
+        // TODO vectorNode
         beforeMatchingNameRegex(VECTOR_UCAST_I2X, "VectorUCastI2X");
     }
 
     public static final String VECTOR_UCAST_S2X = PREFIX + "VECTOR_UCAST_S2X" + POSTFIX;
     static {
+        // TODO vectorNode
         beforeMatchingNameRegex(VECTOR_UCAST_S2X, "VectorUCastS2X");
     }
 
     public static final String VECTOR_TEST = PREFIX + "VECTOR_TEST" + POSTFIX;
     static {
+        // TODO vectorNode
         beforeMatchingNameRegex(VECTOR_TEST, "VectorTest");
     }
 
@@ -1495,16 +1560,19 @@ public class IRNode {
 
     public static final String XOR_V = PREFIX + "XOR_V" + POSTFIX;
     static {
+        // TODO vectorNode
         beforeMatchingNameRegex(XOR_V, "XorV");
     }
 
     public static final String XOR_V_MASK = PREFIX + "XOR_V_MASK" + POSTFIX;
     static {
+        // TODO vectorNode
         beforeMatchingNameRegex(XOR_V_MASK, "XorVMask");
     }
 
     public static final String XOR_REDUCTION_V = PREFIX + "XOR_REDUCTION_V" + POSTFIX;
     static {
+        // TODO vectorNode
         superWordNodes(XOR_REDUCTION_V, "XorReductionV");
     }
 
@@ -1520,11 +1588,13 @@ public class IRNode {
 
     public static final String COMPRESS_BITSV = PREFIX + "COMPRESS_BITSV" + POSTFIX;
     static {
+        // TODO vectorNode
         beforeMatchingNameRegex(COMPRESS_BITSV, "CompressBitsV");
     }
 
     public static final String EXPAND_BITSV = PREFIX + "EXPAND_BITSV" + POSTFIX;
     static {
+        // TODO vectorNode
         beforeMatchingNameRegex(EXPAND_BITSV, "ExpandBitsV");
     }
 
@@ -1565,6 +1635,15 @@ public class IRNode {
     private static void beforeMatchingNameRegex(String irNodePlaceholder, String irNodeRegex) {
         String regex = START + irNodeRegex + MID + END;
         IR_NODE_MAPPINGS.put(irNodePlaceholder, new RegexTypeEntry(RegexType.IDEAL_INDEPENDENT, regex));
+    }
+
+    /**
+     * TODO IS_REPLACED may get replaced with nothing
+     */
+    private static void vectorNode(String irNodePlaceholder, String irNodeRegex, String typeString) {
+        String regex = START + irNodeRegex + MID  + IS_REPLACED + " " + END;
+        IR_NODE_MAPPINGS.put(irNodePlaceholder, new RegexTypeEntry(RegexType.IDEAL_INDEPENDENT, regex));
+        VECTOR_NODE_TYPE.put(irNodePlaceholder, typeString);
     }
 
     private static void allocNodes(String irNode, String irNodeName, String optoRegex) {
@@ -1683,6 +1762,56 @@ public class IRNode {
     }
 
     /**
+     * Is {@code irVectorNodeString} an IR vector node placeholder string?
+     */
+    public static boolean isVectorIRNode(String irVectorNodeString) {
+        return irVectorNodeString.startsWith(VECTOR_PREFIX);
+    }
+
+    /**
+     * Is {@code irVectorTypeString} a vector type string?
+     */
+    public static boolean isVectorType(String irVectorTypeString) {
+        return irVectorTypeString.startsWith(VECTOR_TYPE);
+    }
+ 
+    /**
+     * If {@code sizeTagString} is a size tag, return the list of accepted sizes, else return sizeTagString.
+     */
+    public static String parseSizeTags(String sizeTagString, String typeString, VMInfo vmInfo) {
+        int bytes = getTypeSizeInBytes(typeString);
+        long maxBytes = vmInfo.getLong("MaxVectorSize", 0);
+        TestFramework.check(maxBytes > 0, "VMInfo: MaxVectorSize is not larger than zero");
+        switch (sizeTagString) {
+        case "max":
+            return String.valueOf(maxBytes / bytes);
+        default:
+            return sizeTagString;
+        }
+    }
+
+    /**
+     * Return size in bytes of type named by {@code typeString}, return 0 if it does not name a type.
+     */
+    public static int getTypeSizeInBytes(String typeString) {
+        switch (typeString) {
+        case "byte":
+            return 1;
+        case "char":
+        case "short":
+            return 2;
+        case "int":
+        case "float":
+            return 4;
+        case "long":
+        case "double":
+            return 8;
+        default:
+            return 0;
+        }
+    }
+
+    /**
      * Returns "IRNode.XYZ", where XYZ is one of the IR node placeholder variable names defined above.
      */
     public static String getIRNodeAccessString(String irNodeString) {
@@ -1691,6 +1820,10 @@ public class IRNode {
             TestFramework.check(irNodeString.length() > COMPOSITE_PREFIX.length() + POSTFIX.length(),
                                 "Invalid composite node placeholder: " + irNodeString);
             prefixLength = COMPOSITE_PREFIX.length();
+        } else if (isVectorIRNode(irNodeString)) {
+            TestFramework.check(irNodeString.length() > VECTOR_PREFIX.length() + POSTFIX.length(),
+                                "Invalid vector node placeholder: " + irNodeString);
+            prefixLength = VECTOR_PREFIX.length();
         } else {
             prefixLength = PREFIX.length();
         }
@@ -1764,5 +1897,12 @@ public class IRNode {
                          "   Violation";
         TestFormat.checkNoReport(entry != null, failMsg);
         return entry.defaultCompilePhase();
+    }
+
+    public static String getVectorNodeType(String irNode) {
+        String typeString = VECTOR_NODE_TYPE.get(irNode);
+        String failMsg = "\"" + irNode + "\" is not a Vector IR node defined in class IRNode";
+        TestFormat.checkNoReport(typeString != null, failMsg);
+        return typeString;
     }
 }

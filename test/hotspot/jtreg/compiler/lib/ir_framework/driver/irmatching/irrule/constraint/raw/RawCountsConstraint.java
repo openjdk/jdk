@@ -30,6 +30,8 @@ import compiler.lib.ir_framework.TestFramework;
 import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.parsing.RawIRNode;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.Constraint;
 import compiler.lib.ir_framework.shared.Comparison;
+import compiler.lib.ir_framework.shared.TestFormat;
+import compiler.lib.ir_framework.driver.irmatching.parser.VMInfo;
 
 /**
  * This class represents a raw constraint of a {@link IR#counts()} attribute.
@@ -52,9 +54,35 @@ public class RawCountsConstraint implements RawConstraint {
         return rawIRNode.defaultCompilePhase();
     }
 
+    private boolean expectMaxSizeForVectorNode() {
+        switch (comparison.getComparator()) {
+        case "<":
+            TestFormat.checkNoReport(comparison.getGivenValue() > 1, "Comparator < should compare with at least 2, but got: " + comparison.getGivenValue());
+            return false; // any
+        case "<=":
+            TestFormat.checkNoReport(comparison.getGivenValue() > 0, "Comparator <= should compare with at least 1, but got: " + comparison.getGivenValue());
+            return false; // any
+        case "=":
+            // if 0, we expect none -> expect to not find any with any size
+            return comparison.getGivenValue() > 0;
+        case ">":
+            return true; // max
+        case ">=":
+            TestFormat.checkNoReport(comparison.getGivenValue() > 0, "Comparator >= should compare with at least 1, but got: " + comparison.getGivenValue());
+            return true; // max
+        case "!=":
+            TestFormat.checkNoReport(false, "Comparator not supprted: " + comparison.getComparator());
+            return false; // any
+        default:
+            TestFormat.checkNoReport(false, "Comparator not handled: " + comparison.getComparator());
+            return false; // any
+        }
+    }
+
     @Override
-    public Constraint parse(CompilePhase compilePhase, String compilationOutput) {
+    public Constraint parse(CompilePhase compilePhase, String compilationOutput, VMInfo vmInfo) {
         TestFramework.check(compilePhase != CompilePhase.DEFAULT, "must not be default");
-        return Constraint.createCounts(rawIRNode.regex(compilePhase), constraintIndex, comparison, compilationOutput);
+        String vectorSizeTag = expectMaxSizeForVectorNode() ? "max" : "any";
+        return Constraint.createCounts(rawIRNode.regex(compilePhase, vmInfo, vectorSizeTag), constraintIndex, comparison, compilationOutput);
     }
 }
