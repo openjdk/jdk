@@ -502,12 +502,11 @@ public sealed class RecordedObject
         if (o instanceof Byte b) {
             return b;
         }
-        if (o instanceof UnsignedValue unsigned) {
-            Object u = unsigned.value();
-            if (u instanceof Short s) {
+        if (o instanceof UnsignedValue(Object unsigned)) {
+            if (unsigned instanceof Short s) {
                 return s;
             }
-            if (u instanceof Byte b) {
+            if (unsigned instanceof Byte b) {
                 return (short) Byte.toUnsignedInt(b);
             }
         }
@@ -555,15 +554,14 @@ public sealed class RecordedObject
         if (o instanceof Byte b) {
             return b;
         }
-        if (o instanceof UnsignedValue unsigned) {
-            Object u = unsigned.value();
-            if (u instanceof Integer i) {
+        if (o instanceof UnsignedValue(Object unsigned)) {
+            if (unsigned instanceof Integer i) {
                 return i;
             }
-            if (u instanceof Short s) {
+            if (unsigned instanceof Short s) {
                 return Short.toUnsignedInt(s);
             }
-            if (u instanceof Byte b) {
+            if (unsigned instanceof Byte b) {
                 return Byte.toUnsignedInt(b);
             }
         }
@@ -661,15 +659,14 @@ public sealed class RecordedObject
         if (o instanceof Byte b) {
             return b.longValue();
         }
-        if (o instanceof UnsignedValue unsigned) {
-            Object u = unsigned.value();
-            if (u instanceof Integer i) {
+        if (o instanceof UnsignedValue(Object unsigned)) {
+            if (unsigned instanceof Integer i) {
                 return Integer.toUnsignedLong(i);
             }
-            if (u instanceof Short s) {
+            if (unsigned instanceof Short s) {
                 return Short.toUnsignedLong(s);
             }
-            if (u instanceof Byte b) {
+            if (unsigned instanceof Byte b) {
                 return Byte.toUnsignedLong(b);
             }
         }
@@ -793,15 +790,14 @@ public sealed class RecordedObject
         if (o instanceof Byte b) {
             return getDuration(b, name);
         }
-        if (o instanceof UnsignedValue unsigned) {
-            Object u = unsigned.value();
-            if (u instanceof Integer i) {
+        if (o instanceof UnsignedValue(Object unsigned)) {
+            if (unsigned instanceof Integer i) {
                 return getDuration(Integer.toUnsignedLong(i), name);
             }
-            if (u instanceof Short s) {
+            if (unsigned instanceof Short s) {
                 return getDuration(Short.toUnsignedLong(s), name);
             }
-            if (u instanceof Byte b) {
+            if (unsigned instanceof Byte b) {
                 return getDuration(Short.toUnsignedLong(b), name);
             }
         }
@@ -821,19 +817,14 @@ public sealed class RecordedObject
         }
         Timespan ts = v.getAnnotation(Timespan.class);
         if (ts != null) {
-            switch (ts.value()) {
-            case Timespan.MICROSECONDS:
-                return Duration.ofNanos(1000 * timespan);
-            case Timespan.SECONDS:
-                return Duration.ofSeconds(timespan);
-            case Timespan.MILLISECONDS:
-                return Duration.ofMillis(timespan);
-            case Timespan.NANOSECONDS:
-                return Duration.ofNanos(timespan);
-            case Timespan.TICKS:
-                return Duration.ofNanos(objectContext.convertTimespan(timespan));
-            }
-            throw new IllegalArgumentException("Attempt to get " + v.getTypeName() + " field \"" + name + "\" with illegal timespan unit " + ts.value());
+            return switch (ts.value()) {
+                case Timespan.MICROSECONDS -> Duration.ofNanos(1000 * timespan);
+                case Timespan.SECONDS -> Duration.ofSeconds(timespan);
+                case Timespan.MILLISECONDS -> Duration.ofMillis(timespan);
+                case Timespan.NANOSECONDS -> Duration.ofNanos(timespan);
+                case Timespan.TICKS -> Duration.ofNanos(objectContext.convertTimespan(timespan));
+                default ->  throw new IllegalArgumentException("Attempt to get " + v.getTypeName() + " field \"" + name + "\" with illegal timespan unit " + ts.value());
+            };
         }
         throw new IllegalArgumentException("Attempt to get " + v.getTypeName() + " field \"" + name + "\" with missing @Timespan");
     }
@@ -878,15 +869,14 @@ public sealed class RecordedObject
         if (o instanceof Byte b) {
             return getInstant(b, name);
         }
-        if (o instanceof UnsignedValue unsigned) {
-            Object u = unsigned.value();
-            if (u instanceof Integer i) {
+        if (o instanceof UnsignedValue(Object unsigned)) {
+            if (unsigned instanceof Integer i) {
                 return getInstant(Integer.toUnsignedLong(i), name);
             }
-            if (u instanceof Short s) {
+            if (unsigned instanceof Short s) {
                 return getInstant(Short.toUnsignedLong(s), name);
             }
-            if (u instanceof Byte b) {
+            if (unsigned instanceof Byte b) {
                 return getInstant(Short.toUnsignedLong(b), name);
             }
         }
@@ -900,13 +890,11 @@ public sealed class RecordedObject
             if (timestamp == Long.MIN_VALUE) {
                 return Instant.MIN;
             }
-            switch (ts.value()) {
-            case Timestamp.MILLISECONDS_SINCE_EPOCH:
-                return Instant.ofEpochMilli(timestamp);
-            case Timestamp.TICKS:
-                return Instant.ofEpochSecond(0, objectContext.convertTimestamp(timestamp));
-            }
-            throw new IllegalArgumentException("Attempt to get " + v.getTypeName() + " field \"" + name + "\" with illegal timestamp unit " + ts.value());
+            return switch (ts.value()) {
+                case Timestamp.MILLISECONDS_SINCE_EPOCH -> Instant.ofEpochMilli(timestamp);
+                case Timestamp.TICKS -> Instant.ofEpochSecond(0, objectContext.convertTimestamp(timestamp));
+                default -> throw new IllegalArgumentException("Attempt to get " + v.getTypeName() + " field \"" + name + "\" with illegal timestamp unit " + ts.value());
+            };
         }
         throw new IllegalArgumentException("Attempt to get " + v.getTypeName() + " field \"" + name + "\" with missing @Timestamp");
     }

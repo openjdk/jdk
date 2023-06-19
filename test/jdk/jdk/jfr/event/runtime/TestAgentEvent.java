@@ -85,7 +85,7 @@ public final class TestAgentEvent {
             r.start();
             r.stop();
             List<RecordedEvent> events = Events.fromRecording(r);
-            RecordedEvent e = events.get(0);
+            RecordedEvent e = events.getFirst();
             System.out.println(e);
             Events.assertField(e, "name").equal(JAVA_AGENT_JAR);
             Events.assertField(e, "options").equal("foo=bar");
@@ -104,7 +104,7 @@ public final class TestAgentEvent {
             r.start();
             r.stop();
             List<RecordedEvent> events = Events.fromRecording(r);
-            RecordedEvent e = events.get(0);
+            RecordedEvent e = events.getFirst();
             System.out.println(e);
             Events.assertField(e, "name").equal("jdwp");
             Events.assertField(e, "options").equal("transport=dt_socket,server=y,address=any,onjcmd=y");
