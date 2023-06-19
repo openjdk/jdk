@@ -139,11 +139,6 @@ public:
   }
 };
 
-static void do_trace_pagesize(const char* description, size_t req_size, size_t req_page_size, const ReservedSpace* rs) {
-  os::trace_page_sizes_for_requested_size(description, req_size, rs->page_size(),  req_page_size,
-                                          rs->base(), rs->size());
-}
-
 jint ShenandoahHeap::initialize() {
   //
   // Figure out heap sizing
@@ -197,7 +192,8 @@ jint ShenandoahHeap::initialize() {
 
   assert((((size_t) base()) & ShenandoahHeapRegion::region_size_bytes_mask()) == 0,
          "Misaligned heap: " PTR_FORMAT, p2i(base()));
-  do_trace_pagesize("Heap", max_byte_size, heap_alignment, &heap_rs);
+  os::trace_page_sizes_for_requested_size("Heap", max_byte_size, heap_alignment,
+                                          heap_rs.base(), heap_rs.size(), heap_rs.page_size());
 
 #if SHENANDOAH_OPTIMIZED_MARKTASK
   // The optimized ShenandoahMarkTask takes some bits away from the full object bits.
@@ -248,7 +244,8 @@ jint ShenandoahHeap::initialize() {
             _bitmap_bytes_per_slice, bitmap_page_size);
 
   ReservedSpace bitmap(_bitmap_size, bitmap_page_size);
-  do_trace_pagesize("Mark Bitmap", bitmap_size_orig, bitmap_page_size, &bitmap);
+  os::trace_page_sizes_for_requested_size("Mark Bitmap", bitmap_size_orig, bitmap_page_size,
+                                          bitmap.base(), bitmap.size(), bitmap.page_size());
   MemTracker::record_virtual_memory_type(bitmap.base(), mtGC);
   _bitmap_region = MemRegion((HeapWord*) bitmap.base(), bitmap.size() / HeapWordSize);
   _bitmap_region_special = bitmap.special();
@@ -265,7 +262,8 @@ jint ShenandoahHeap::initialize() {
 
   if (ShenandoahVerify) {
     ReservedSpace verify_bitmap(_bitmap_size, bitmap_page_size);
-    do_trace_pagesize("Verify Bitmap", bitmap_size_orig, bitmap_page_size, &bitmap);
+    os::trace_page_sizes_for_requested_size("Verify Bitmap", bitmap_size_orig, bitmap_page_size,
+                                            verify_bitmap.base(), verify_bitmap.size(), verify_bitmap.page_size());
     if (!verify_bitmap.special()) {
       os::commit_memory_or_exit(verify_bitmap.base(), verify_bitmap.size(), bitmap_page_size, false,
                                 "Cannot commit verification bitmap memory");
@@ -278,7 +276,8 @@ jint ShenandoahHeap::initialize() {
 
   // Reserve aux bitmap for use in object_iterate(). We don't commit it here.
   ReservedSpace aux_bitmap(_bitmap_size, bitmap_page_size);
-  do_trace_pagesize("Aux Bitmap", bitmap_size_orig, bitmap_page_size, &bitmap);
+  os::trace_page_sizes_for_requested_size("Aux Bitmap", bitmap_size_orig, bitmap_page_size,
+                                          aux_bitmap.base(), aux_bitmap.size(), aux_bitmap.page_size());
   MemTracker::record_virtual_memory_type(aux_bitmap.base(), mtGC);
   _aux_bitmap_region = MemRegion((HeapWord*) aux_bitmap.base(), aux_bitmap.size() / HeapWordSize);
   _aux_bitmap_region_special = aux_bitmap.special();
@@ -293,7 +292,8 @@ jint ShenandoahHeap::initialize() {
                                         MAX2(region_page_size, os::vm_allocation_granularity()));
 
   ReservedSpace region_storage(region_storage_size, region_page_size);
-  do_trace_pagesize("Region Storage", region_storage_size_orig, region_page_size, &region_storage);
+  os::trace_page_sizes_for_requested_size("Region Storage", region_storage_size_orig, region_page_size,
+                                          region_storage.base(), region_storage.size(), region_storage.page_size());
   MemTracker::record_virtual_memory_type(region_storage.base(), mtGC);
   if (!region_storage.special()) {
     os::commit_memory_or_exit(region_storage.base(), region_storage_size, region_page_size, false,
@@ -304,8 +304,9 @@ jint ShenandoahHeap::initialize() {
   // Go up until a sensible limit (subject to encoding constraints) and try to reserve the space there.
   // If not successful, bite a bullet and allocate at whatever address.
   {
-    size_t cset_align = MAX2<size_t>(os::vm_page_size(), os::vm_allocation_granularity());
-    size_t cset_size = align_up(((size_t) sh_rs.base() + sh_rs.size()) >> ShenandoahHeapRegion::region_size_bytes_shift(), cset_align);
+    const size_t cset_align = MAX2<size_t>(os::vm_page_size(), os::vm_allocation_granularity());
+    const size_t cset_size = align_up(((size_t) sh_rs.base() + sh_rs.size()) >> ShenandoahHeapRegion::region_size_bytes_shift(), cset_align);
+    const size_t cset_page_size = os::vm_page_size();
 
     uintptr_t min = round_up_power_of_2(cset_align);
     uintptr_t max = (1u << 30u);
@@ -314,7 +315,7 @@ jint ShenandoahHeap::initialize() {
     for (uintptr_t addr = min; addr <= max; addr <<= 1u) {
       char* req_addr = (char*)addr;
       assert(is_aligned(req_addr, cset_align), "Should be aligned");
-      ReservedSpace cset_rs(cset_size, cset_align, os::vm_page_size(), req_addr);
+      ReservedSpace cset_rs(cset_size, cset_align, cset_page_size, req_addr);
       if (cset_rs.is_reserved()) {
         assert(cset_rs.base() == req_addr, "Allocated where requested: " PTR_FORMAT ", " PTR_FORMAT, p2i(cset_rs.base()), addr);
         _collection_set = new ShenandoahCollectionSet(this, cset_rs, sh_rs.base());
@@ -328,7 +329,8 @@ jint ShenandoahHeap::initialize() {
       _collection_set = new ShenandoahCollectionSet(this, cset_rs, sh_rs.base());
       rs = &cset_rs;
     }
-    do_trace_pagesize("Collection Set", cset_size, os::vm_page_size(), rs);
+    os::trace_page_sizes_for_requested_size("Collection Set", cset_size, cset_page_size,
+                                            rs->base(), rs->size(), rs->page_size());
   }
 
   _regions = NEW_C_HEAP_ARRAY(ShenandoahHeapRegion*, _num_regions, mtGC);
