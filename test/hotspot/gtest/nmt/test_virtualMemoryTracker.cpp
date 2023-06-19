@@ -34,15 +34,15 @@ TEST_VM(VirtualMemoryTracker, missing_remove_released_region) {
   }
 
   // Simulate the case where we miss the ending of a thread.
-  for (int i = 10; i >= 0; --i) {
+  for (int i = 100; i >= 0; --i) {
     size_t size = 1024 * 1024;
     NativeCallStack empty_stack;
 
     // Get a region of mapped memory not tracked by the virtual memory tracker.
-    address base = (address)os::reserve_memory(size * 2, false);
+    address base = (address) os::reserve_memory(2 * size, false);
     VirtualMemoryTracker::remove_released_region(base, 2 * size);
 
-    // Get the baseline snapshot.
+    // Get the initial snapshot.
     VirtualMemorySnapshot initial_snapshot;
     VirtualMemorySummary::snapshot(&initial_snapshot);
 
@@ -51,12 +51,13 @@ TEST_VM(VirtualMemoryTracker, missing_remove_released_region) {
     VirtualMemoryTracker::add_committed_region(base + size / 2, size / 2, empty_stack);
 
     // Now pretend we have forgotten to call remove_released_region and allocate an new
-    // overlapping region.
+    // overlapping region with some commited memory.
     VirtualMemoryTracker::add_reserved_region(base + size / 2, size, empty_stack, mtThreadStack);
     VirtualMemoryTracker::add_committed_region(base + size, size / 2, empty_stack);
 
-    // And remove it again. In theory this should mean the committed memory is now
-    // the same as the initial committed memory.
+    // And remove the committed memory again by reserving a partially overlappinbg region.
+    // This should mean the committed memory is now the same as the initial committed memory,
+    // since the new region has no committed memory.
     VirtualMemoryTracker::add_reserved_region(base, size, empty_stack, mtThreadStack);
 
     // Get the new snapshot.
@@ -77,9 +78,10 @@ TEST_VM(VirtualMemoryTracker, missing_remove_released_region) {
       break;
     }
 
+    // Trigger a test failure on the last run.
     if (i == 0) {
-      EXPECT_TRUE(new_sz == init_sz) << "new_sz " << new_sz << ", init_sz " << init_sz <<
-                                        ", diff " << (new_sz - init_sz) << ", region size " << size;
+      EXPECT_TRUE(new_sz == init_sz) << "new_sz: " << new_sz << ", init_sz: " << init_sz <<
+                                        ", diff: " << (new_sz - init_sz) << ", region size: " << size;
     }
   }
 }
