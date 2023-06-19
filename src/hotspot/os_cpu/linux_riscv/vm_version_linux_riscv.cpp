@@ -230,7 +230,6 @@ void VM_Version::rivos_features() {
   ext_F.enable_feature();
   ext_D.enable_feature();
   ext_C.enable_feature();
-  ext_Q.enable_feature();
   ext_H.enable_feature();
   ext_V.enable_feature();
 
@@ -240,7 +239,6 @@ void VM_Version::rivos_features() {
 
   ext_Zba.enable_feature();
   ext_Zbb.enable_feature();
-  ext_Zbc.enable_feature();
   ext_Zbs.enable_feature();
 
   ext_Zicsr.enable_feature();
