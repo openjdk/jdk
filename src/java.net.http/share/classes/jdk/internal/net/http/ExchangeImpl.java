@@ -194,7 +194,8 @@ abstract class ExchangeImpl<T> {
      * @param response a response info
      * @return a new {@code HttpBodySubscriberWrapper} to handle the response
      */
-    HttpBodySubscriberWrapper<T> createResponseSubscriber(HttpResponse.BodyHandler<T> handler, ResponseInfo response) {
+    HttpBodySubscriberWrapper<T> createResponseSubscriber(
+            HttpResponse.BodyHandler<T> handler, ResponseInfo response) {
         return new HttpBodySubscriberWrapper<>(handler.apply(response));
     }
 
