@@ -31,6 +31,7 @@
 #include "memory/metadataFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/generateOopMap.hpp"
+#include "oops/resolvedIndyEntry.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"

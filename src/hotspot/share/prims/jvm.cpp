@@ -722,7 +722,7 @@ JVM_ENTRY(jclass, JVM_GetCallerClass(JNIEnv* env))
   //
   // The call stack at this point looks something like this:
   //
-  // [0] [ @CallerSensitive public sun.reflect.Reflection.getCallerClass ]
+  // [0] [ @CallerSensitive public jdk.internal.reflect.Reflection.getCallerClass ]
   // [1] [ @CallerSensitive API.method                                   ]
   // [.] [ (skipped intermediate frames)                                 ]
   // [n] [ caller                                                        ]
@@ -3294,8 +3294,7 @@ JVM_ENTRY(jobject, JVM_LatestUserDefinedLoader(JNIEnv *env))
     oop loader = ik->class_loader();
     if (loader != nullptr && !SystemDictionary::is_platform_class_loader(loader)) {
       // Skip reflection related frames
-      if (!ik->is_subclass_of(vmClasses::reflect_MethodAccessorImpl_klass()) &&
-          !ik->is_subclass_of(vmClasses::reflect_ConstructorAccessorImpl_klass())) {
+      if (!ik->is_subclass_of(vmClasses::reflect_SerializationConstructorAccessorImpl_klass())) {
         return JNIHandles::make_local(THREAD, loader);
       }
     }

@@ -1274,7 +1274,7 @@ const int ObjectAlignmentInBytes = 8;
           "(0.0 means off)")                                                \
           range(0.0, (double)max_intx)                                      \
                                                                             \
-  product(intx, MaxJavaStackTraceDepth, 1024,                               \
+  product(int, MaxJavaStackTraceDepth, 1024,                                \
           "The maximum number of lines in the stack trace for Java "        \
           "exceptions (0 means all)")                                       \
           range(0, max_jint/2)                                              \

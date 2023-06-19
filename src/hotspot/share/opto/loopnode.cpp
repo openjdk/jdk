@@ -1745,6 +1745,21 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
   // =================================================
   // ---- SUCCESS!   Found A Trip-Counted Loop!  -----
   //
+
+  if (x->Opcode() == Op_Region) {
+    // x has not yet been transformed to Loop or LongCountedLoop.
+    // This should only happen if we are inside an infinite loop.
+    // It happens like this:
+    //   build_loop_tree -> do not attach infinite loop and nested loops
+    //   beautify_loops  -> does not transform the infinite and nested loops to LoopNode, because not attached yet
+    //   build_loop_tree -> find and attach infinite and nested loops
+    //   counted_loop    -> nested Regions are not yet transformed to LoopNodes, we land here
+    assert(x->as_Region()->is_in_infinite_subgraph(),
+           "x can only be a Region and not Loop if inside infinite loop");
+    // Come back later when Region is transformed to LoopNode
+    return false;
+  }
+
   assert(x->Opcode() == Op_Loop || x->Opcode() == Op_LongCountedLoop, "regular loops only");
   C->print_method(PHASE_BEFORE_CLOOPS, 3);
 

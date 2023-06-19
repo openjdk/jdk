@@ -123,17 +123,17 @@ public class TestIllegalLink extends NativeTestHelper {
             {
                     FunctionDescriptor.ofVoid(C_INT.withByteAlignment(2)),
                     NO_OPTIONS,
-                    "Layout alignment must be natural alignment"
+                    "Unsupported layout: 2%i4"
             },
             {
                     FunctionDescriptor.ofVoid(C_POINTER.withByteAlignment(2)),
                     NO_OPTIONS,
-                    "Layout alignment must be natural alignment"
+                    "Unsupported layout: 2%a8"
             },
             {
                     FunctionDescriptor.ofVoid(ValueLayout.JAVA_CHAR.withByteAlignment(4)),
                     NO_OPTIONS,
-                    "Layout alignment must be natural alignment"
+                    "Unsupported layout: 4%c2"
             },
             {
                     FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
@@ -142,7 +142,7 @@ public class TestIllegalLink extends NativeTestHelper {
                             C_INT.withName("z").withByteAlignment(1)
                             ).withByteAlignment(1)),
                     NO_OPTIONS,
-                    "Layout alignment must be natural alignment"
+                    "Unsupported layout: 1%s2"
             },
             {
                     FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
@@ -152,7 +152,7 @@ public class TestIllegalLink extends NativeTestHelper {
                                 C_INT.withName("z").withByteAlignment(1)
                             ))),
                     NO_OPTIONS,
-                    "Layout alignment must be natural alignment"
+                    "Unsupported layout: 1%s2"
             },
             {
                     FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
@@ -160,7 +160,7 @@ public class TestIllegalLink extends NativeTestHelper {
                                 C_INT.withByteAlignment(1)
                             ))),
                     NO_OPTIONS,
-                    "Layout alignment must be natural alignment"
+                    "Unsupported layout: 1%i4"
             },
             {
                     FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
@@ -173,17 +173,17 @@ public class TestIllegalLink extends NativeTestHelper {
             {
                     FunctionDescriptor.of(C_INT.withOrder(nonNativeOrder())),
                     NO_OPTIONS,
-                    "Layout does not have the right byte order"
+                    "Unsupported layout: I4"
             },
             {
                     FunctionDescriptor.of(MemoryLayout.structLayout(C_INT.withOrder(nonNativeOrder()))),
                     NO_OPTIONS,
-                    "Layout does not have the right byte order"
+                    "Unsupported layout: I4"
             },
             {
                     FunctionDescriptor.of(MemoryLayout.structLayout(MemoryLayout.sequenceLayout(C_INT.withOrder(nonNativeOrder())))),
                     NO_OPTIONS,
-                    "Layout does not have the right byte order"
+                    "Unsupported layout: I4"
             },
             {
                     FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
