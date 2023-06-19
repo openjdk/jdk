@@ -158,7 +158,7 @@ public class BasicCharOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.AND_V, ">0"})
+        counts = {IRNode.AND_VS, ">0"})
     public char[] vectorAnd() {
         char[] res = new char[SIZE];
         for (int i = 0; i < SIZE; i++) {

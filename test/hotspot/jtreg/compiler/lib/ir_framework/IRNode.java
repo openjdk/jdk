@@ -285,10 +285,29 @@ public class IRNode {
         beforeMatchingNameRegex(AND_L, "AndL");
     }
 
-    public static final String AND_V = PREFIX + "AND_V" + POSTFIX;
+    public static final String AND_VB = VECTOR_PREFIX + "AND_VB" + POSTFIX;
     static {
-        // TODO vectorNode
-        beforeMatchingNameRegex(AND_V, "AndV");
+        vectorNode(AND_VB, "AndV", "byte");
+    }
+
+    public static final String AND_VC = VECTOR_PREFIX + "AND_VC" + POSTFIX;
+    static {
+        vectorNode(AND_VC, "AndV", "char");
+    }
+
+    public static final String AND_VS = VECTOR_PREFIX + "AND_VS" + POSTFIX;
+    static {
+        vectorNode(AND_VS, "AndV", "short");
+    }
+
+    public static final String AND_VI = VECTOR_PREFIX + "AND_VI" + POSTFIX;
+    static {
+        vectorNode(AND_VI, "AndV", "int");
+    }
+
+    public static final String AND_VL = VECTOR_PREFIX + "AND_VL" + POSTFIX;
+    static {
+        vectorNode(AND_VL, "AndV", "long");
     }
 
     public static final String AND_V_MASK = PREFIX + "AND_V_MASK" + POSTFIX;

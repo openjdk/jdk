@@ -165,7 +165,7 @@ public class BasicIntOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.AND_V, ">0"})
+        counts = {IRNode.AND_VI, ">0"})
     public int[] vectorAnd() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {

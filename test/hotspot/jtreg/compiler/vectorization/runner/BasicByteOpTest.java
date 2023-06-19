@@ -156,7 +156,7 @@ public class BasicByteOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.AND_V, ">0"})
+        counts = {IRNode.AND_VB, ">0"})
     public byte[] vectorAnd() {
         byte[] res = new byte[SIZE];
         for (int i = 0; i < SIZE; i++) {
