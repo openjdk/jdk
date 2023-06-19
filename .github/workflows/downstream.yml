@@ -73,6 +73,16 @@ jobs:
 
           if [ "${{ steps.configure.outputs.diff }}" = "true" ]; then
             git branch -f rivos/merge-${{ steps.configure.outputs.tag }} ${{ steps.configure.outputs.tag }}
+
+            git checkout rivos/merge-${{ steps.configure.outputs.tag }}
+            if ! git merge --no-ff --no-edit origin/rivos/main; then
+              # Print the conflicts
+              git diff
+
+              # Abort the merge and let assignee manually resolve them
+              git merge --abort
+            fi
+
             git push origin rivos/merge-${{ steps.configure.outputs.tag }}
           fi
 
