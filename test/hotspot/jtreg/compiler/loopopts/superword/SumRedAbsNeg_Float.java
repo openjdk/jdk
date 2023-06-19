@@ -90,10 +90,10 @@ public class SumRedAbsNeg_Float {
 
     @Test
     @IR(applyIf = {"SuperWordReductions", "false"},
-        failOn = {IRNode.ADD_REDUCTION_VF, IRNode.ABS_V, IRNode.NEG_V})
+        failOn = {IRNode.ADD_REDUCTION_VF, IRNode.ABS_VF, IRNode.NEG_V})
     @IR(applyIfCPUFeature = {"sse2", "true"},
         applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
-        counts = {IRNode.ADD_REDUCTION_VF, ">= 1", IRNode.ABS_V, ">= 1", IRNode.NEG_V, ">= 1"})
+        counts = {IRNode.ADD_REDUCTION_VF, ">= 1", IRNode.ABS_VF, ">= 1", IRNode.NEG_V, ">= 1"})
     public static float sumReductionImplement(
             float[] a,
             float[] b,

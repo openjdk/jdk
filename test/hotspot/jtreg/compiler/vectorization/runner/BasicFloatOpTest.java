@@ -76,7 +76,7 @@ public class BasicFloatOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse", "true"},
-        counts = {IRNode.ABS_V, ">0"})
+        counts = {IRNode.ABS_VF, ">0"})
     public float[] vectorAbs() {
         float[] res = new float[SIZE];
         for (int i = 0; i < SIZE; i++) {

@@ -76,7 +76,7 @@ public class BasicIntOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "ssse3", "true"},
-        counts = {IRNode.ABS_V, ">0"})
+        counts = {IRNode.ABS_VI, ">0"})
     public int[] vectorAbs() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {

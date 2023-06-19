@@ -78,7 +78,7 @@ public class BasicShortOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "ssse3", "true"},
-        counts = {IRNode.ABS_V, ">0"})
+        counts = {IRNode.ABS_VS, ">0"})
     public short[] vectorAbs() {
         short[] res = new short[SIZE];
         for (int i = 0; i < SIZE; i++) {

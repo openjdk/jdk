@@ -79,7 +79,7 @@ public class BasicCharOpTest extends VectorizationTestRunner {
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "ssse3", "true"},
         counts = {IRNode.STORE_VECTOR, ">0"})
-    @IR(failOn = {IRNode.ABS_V})
+    @IR(failOn = {IRNode.ABS_VI, IRNode.ABS_VB, IRNode.ABS_VL}) // AVS_VC does not exist
     public char[] vectorAbs() {
         char[] res = new char[SIZE];
         for (int i = 0; i < SIZE; i++) {

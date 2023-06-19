@@ -76,7 +76,7 @@ public class BasicDoubleOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.ABS_V, ">0"})
+        counts = {IRNode.ABS_VD, ">0"})
     public double[] vectorAbs() {
         double[] res = new double[SIZE];
         for (int i = 0; i < SIZE; i++) {

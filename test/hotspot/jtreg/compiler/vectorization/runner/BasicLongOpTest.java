@@ -77,7 +77,7 @@ public class BasicLongOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx512vl", "true"},
-        counts = {IRNode.ABS_V, ">0"})
+        counts = {IRNode.ABS_VF, ">0"})
     public long[] vectorAbs() {
         long[] res = new long[SIZE];
         for (int i = 0; i < SIZE; i++) {

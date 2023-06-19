@@ -34,6 +34,8 @@
  * @run main/othervm -Xbootclasspath/a:.
  *                   -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI
+ *                   -XX:CompileCommand=CompileOnly,compiler.vectorization.runner.BasicByteOpTest::*
+ *                   -XX:LoopUnrollLimit=1000
  *                   compiler.vectorization.runner.BasicByteOpTest
  *
  * @requires vm.compiler2.enabled & vm.flagless
@@ -45,7 +47,7 @@ import compiler.lib.ir_framework.*;
 
 public class BasicByteOpTest extends VectorizationTestRunner {
 
-    private static final int SIZE = 543;
+    private static int SIZE = 6543;
 
     private byte[] a;
     private byte[] b;
@@ -76,7 +78,7 @@ public class BasicByteOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "ssse3", "true"},
-        counts = {IRNode.ABS_V, ">0"})
+        counts = {IRNode.ABS_VB, ">0"})
     public byte[] vectorAbs() {
         byte[] res = new byte[SIZE];
         for (int i = 0; i < SIZE; i++) {

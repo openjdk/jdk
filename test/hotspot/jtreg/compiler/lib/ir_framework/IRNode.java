@@ -144,10 +144,36 @@ public class IRNode {
         beforeMatchingNameRegex(ABS_L, "AbsL");
     }
 
-    public static final String ABS_V = PREFIX + "ABS_V" + POSTFIX;
+    public static final String ABS_VB = VECTOR_PREFIX + "ABS_VB" + POSTFIX;
     static {
-        // TODO vectorNode
-        beforeMatchingNameRegex(ABS_V, "AbsV(B|S|I|L|F|D)");
+        vectorNode(ABS_VB, "AbsVB", "byte");
+    }
+
+    // ABS_VC / AbsVC does not exist (char is 2 byte unsigned)
+
+    public static final String ABS_VS = VECTOR_PREFIX + "ABS_VS" + POSTFIX;
+    static {
+        vectorNode(ABS_VS, "AbsVS", "short");
+    }
+
+    public static final String ABS_VI = VECTOR_PREFIX + "ABS_VI" + POSTFIX;
+    static {
+        vectorNode(ABS_VI, "AbsVI", "int");
+    }
+
+    public static final String ABS_VL = VECTOR_PREFIX + "ABS_VL" + POSTFIX;
+    static {
+        vectorNode(ABS_VL, "AbsVL", "long");
+    }
+
+    public static final String ABS_VF = VECTOR_PREFIX + "ABS_VF" + POSTFIX;
+    static {
+        vectorNode(ABS_VF, "AbsVF", "float");
+    }
+
+    public static final String ABS_VD = VECTOR_PREFIX + "ABS_VD" + POSTFIX;
+    static {
+        vectorNode(ABS_VD, "AbsVD", "double");
     }
 
     public static final String ADD = PREFIX + "ADD" + POSTFIX;
@@ -171,7 +197,7 @@ public class IRNode {
         beforeMatchingNameRegex(ADD_V, "AddV(B|S|I|L|F|D)");
     }
 
-    public static final String ADD_VD = PREFIX + "ADD_VD" + POSTFIX;
+    public static final String ADD_VD = VECTOR_PREFIX + "ADD_VD" + POSTFIX;
     static {
         vectorNode(ADD_VD, "AddVD", "double");
     }
@@ -181,7 +207,7 @@ public class IRNode {
         vectorNode(ADD_VI, "AddVI", "int");
     }
 
-    public static final String ADD_VF = PREFIX + "ADD_VF" + POSTFIX;
+    public static final String ADD_VF = VECTOR_PREFIX + "ADD_VF" + POSTFIX;
     static {
         vectorNode(ADD_VF, "AddVF", "float");
     }
@@ -192,22 +218,22 @@ public class IRNode {
         beforeMatchingNameRegex(ADD_REDUCTION_V, "AddReductionV(B|S|I|L|F|D)");
     }
 
-    public static final String ADD_REDUCTION_VD = PREFIX + "ADD_REDUCTION_VD" + POSTFIX;
+    public static final String ADD_REDUCTION_VD = VECTOR_PREFIX + "ADD_REDUCTION_VD" + POSTFIX;
     static {
         vectorNode(ADD_REDUCTION_VD, "AddReductionVD", "double");
     }
 
-    public static final String ADD_REDUCTION_VF = PREFIX + "ADD_REDUCTION_VF" + POSTFIX;
+    public static final String ADD_REDUCTION_VF = VECTOR_PREFIX + "ADD_REDUCTION_VF" + POSTFIX;
     static {
         vectorNode(ADD_REDUCTION_VF, "AddReductionVF", "float");
     }
 
-    public static final String ADD_REDUCTION_VI = PREFIX + "ADD_REDUCTION_VI" + POSTFIX;
+    public static final String ADD_REDUCTION_VI = VECTOR_PREFIX + "ADD_REDUCTION_VI" + POSTFIX;
     static {
         vectorNode(ADD_REDUCTION_VI, "AddReductionVI", "int");
     }
 
-    public static final String ADD_REDUCTION_VL = PREFIX + "ADD_REDUCTION_VL" + POSTFIX;
+    public static final String ADD_REDUCTION_VL = VECTOR_PREFIX + "ADD_REDUCTION_VL" + POSTFIX;
     static {
         vectorNode(ADD_REDUCTION_VL, "AddReductionVL", "long");
     }
@@ -783,42 +809,42 @@ public class IRNode {
         beforeMatchingNameRegex(MUL_V, "MulV(B|S|I|L|F|D)");
     }
 
-    public static final String MUL_VL = PREFIX + "MUL_VL" + POSTFIX;
+    public static final String MUL_VL = VECTOR_PREFIX + "MUL_VL" + POSTFIX;
     static {
         vectorNode(MUL_VL, "MulVL", "long");
     }
 
-    public static final String MUL_VI = PREFIX + "MUL_VI" + POSTFIX;
+    public static final String MUL_VI = VECTOR_PREFIX + "MUL_VI" + POSTFIX;
     static {
         vectorNode(MUL_VI, "MulVI", "int");
     }
 
-    public static final String MUL_VF = PREFIX + "MUL_VF" + POSTFIX;
+    public static final String MUL_VF = VECTOR_PREFIX + "MUL_VF" + POSTFIX;
     static {
         vectorNode(MUL_VF, "MulVF", "float");
     }
 
-    public static final String MUL_VD = PREFIX + "MUL_VD" + POSTFIX;
+    public static final String MUL_VD = VECTOR_PREFIX + "MUL_VD" + POSTFIX;
     static {
         vectorNode(MUL_VD, "MulVD", "double");
     }
 
-    public static final String MUL_REDUCTION_VD = PREFIX + "MUL_REDUCTION_VD" + POSTFIX;
+    public static final String MUL_REDUCTION_VD = VECTOR_PREFIX + "MUL_REDUCTION_VD" + POSTFIX;
     static {
         vectorNode(MUL_REDUCTION_VD, "MulReductionVD", "double");
     }
 
-    public static final String MUL_REDUCTION_VF = PREFIX + "MUL_REDUCTION_VF" + POSTFIX;
+    public static final String MUL_REDUCTION_VF = VECTOR_PREFIX + "MUL_REDUCTION_VF" + POSTFIX;
     static {
         vectorNode(MUL_REDUCTION_VF, "MulReductionVF", "float");
     }
 
-    public static final String MUL_REDUCTION_VI = PREFIX + "MUL_REDUCTION_VI" + POSTFIX;
+    public static final String MUL_REDUCTION_VI = VECTOR_PREFIX + "MUL_REDUCTION_VI" + POSTFIX;
     static {
         vectorNode(MUL_REDUCTION_VI, "MulReductionVI", "int");
     }
 
-    public static final String MUL_REDUCTION_VL = PREFIX + "MUL_REDUCTION_VL" + POSTFIX;
+    public static final String MUL_REDUCTION_VL = VECTOR_PREFIX + "MUL_REDUCTION_VL" + POSTFIX;
     static {
         vectorNode(MUL_REDUCTION_VL, "MulReductionVL", "long");
     }
@@ -885,12 +911,12 @@ public class IRNode {
         beforeMatchingNameRegex(POPCOUNT_L, "PopCountL");
     }
 
-    public static final String POPCOUNT_VI = PREFIX + "POPCOUNT_VI" + POSTFIX;
+    public static final String POPCOUNT_VI = VECTOR_PREFIX + "POPCOUNT_VI" + POSTFIX;
     static {
         vectorNode(POPCOUNT_VI, "PopCountVI", "int");
     }
 
-    public static final String POPCOUNT_VL = PREFIX + "POPCOUNT_VL" + POSTFIX;
+    public static final String POPCOUNT_VL = VECTOR_PREFIX + "POPCOUNT_VL" + POSTFIX;
     static {
         vectorNode(POPCOUNT_VL, "PopCountVL", "long");
     }
@@ -995,12 +1021,12 @@ public class IRNode {
         beforeMatchingNameRegex(REVERSE_V, "ReverseV");
     }
 
-    public static final String ROUND_VD = PREFIX + "ROUND_VD" + POSTFIX;
+    public static final String ROUND_VD = VECTOR_PREFIX + "ROUND_VD" + POSTFIX;
     static {
         vectorNode(ROUND_VD, "RoundVD", "double");
     }
 
-    public static final String ROUND_VF = PREFIX + "ROUND_VF" + POSTFIX;
+    public static final String ROUND_VF = VECTOR_PREFIX + "ROUND_VF" + POSTFIX;
     static {
         vectorNode(ROUND_VF, "RoundVF", "float");
     }
@@ -1048,12 +1074,12 @@ public class IRNode {
         beforeMatchingNameRegex(RSHIFT_L, "RShiftL");
     }
 
-    public static final String RSHIFT_VB = PREFIX + "RSHIFT_VB" + POSTFIX;
+    public static final String RSHIFT_VB = VECTOR_PREFIX + "RSHIFT_VB" + POSTFIX;
     static {
         vectorNode(RSHIFT_VB, "RShiftVB", "byte");
     }
 
-    public static final String RSHIFT_VS = PREFIX + "RSHIFT_VS" + POSTFIX;
+    public static final String RSHIFT_VS = VECTOR_PREFIX + "RSHIFT_VS" + POSTFIX;
     static {
         vectorNode(RSHIFT_VS, "RShiftVS", "short");
     }
@@ -1075,12 +1101,12 @@ public class IRNode {
         optoOnly(SCOPE_OBJECT, regex);
     }
 
-    public static final String SIGNUM_VD = PREFIX + "SIGNUM_VD" + POSTFIX;
+    public static final String SIGNUM_VD = VECTOR_PREFIX + "SIGNUM_VD" + POSTFIX;
     static {
         vectorNode(SIGNUM_VD, "SignumVD", "double");
     }
 
-    public static final String SIGNUM_VF = PREFIX + "SIGNUM_VF" + POSTFIX;
+    public static final String SIGNUM_VF = VECTOR_PREFIX + "SIGNUM_VF" + POSTFIX;
     static {
         vectorNode(SIGNUM_VF, "SignumVF", "float");
     }
@@ -1641,6 +1667,7 @@ public class IRNode {
      * TODO IS_REPLACED may get replaced with nothing
      */
     private static void vectorNode(String irNodePlaceholder, String irNodeRegex, String typeString) {
+        TestFramework.check(isVectorIRNode(irNodePlaceholder), "vectorNode: failed check for irNodePlaceholder " + irNodePlaceholder);
         String regex = START + irNodeRegex + MID  + IS_REPLACED + " " + END;
         IR_NODE_MAPPINGS.put(irNodePlaceholder, new RegexTypeEntry(RegexType.IDEAL_INDEPENDENT, regex));
         VECTOR_NODE_TYPE.put(irNodePlaceholder, typeString);
