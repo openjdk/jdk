@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1125,24 +1125,24 @@ public class BasicComboBoxUI extends ComboBoxUI {
     @Override
     public Accessible getAccessibleChild(JComponent c, int i) {
         // 0 = the popup
-        // 1 = the editor
+        // 1 = the editor for editable combobox and the arrow button for non-editable combobox
         switch ( i ) {
             case 0:
-                if ( popup instanceof Accessible ) {
-                    AccessibleContext ac = ((Accessible) popup).getAccessibleContext();
+                if ( popup instanceof Accessible accessiblePopup) {
+                    AccessibleContext ac = accessiblePopup.getAccessibleContext();
                     ac.setAccessibleParent(comboBox);
-                    return (Accessible) popup;
+                    return accessiblePopup;
                 }
                 break;
             case 1:
                 if (comboBox.isEditable()
-                        && (editor instanceof Accessible)) {
-                    AccessibleContext ac = ((Accessible) editor).getAccessibleContext();
+                        && (editor instanceof Accessible accessibleEditor)) {
+                    AccessibleContext ac = accessibleEditor.getAccessibleContext();
                     ac.setAccessibleParent(comboBox);
-                    return (Accessible) editor;
+                    return accessibleEditor;
                 } else if (!comboBox.isEditable()
-                        && (arrowButton instanceof Accessible)) {
-                    return (Accessible) arrowButton;
+                        && (arrowButton instanceof Accessible accessibleArrowButton)) {
+                    return accessibleArrowButton;
                 }
                 break;
         }
