@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -27,152 +27,221 @@ import java.util.Random;
 import jdk.incubator.vector.*;
 import java.util.concurrent.TimeUnit;
 import org.openjdk.jmh.annotations.*;
-import org.openjdk.jmh.infra.Blackhole;
 
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Thread)
 @Fork(jvmArgsPrepend = {"--add-modules=jdk.incubator.vector"})
 public class MaskQueryOperationsBenchmark {
-    @Param({"128","256","512"})
-    int bits;
-
     @Param({"1","2","3"})
     int inputs;
 
-    VectorSpecies<Byte> bspecies;
-    VectorSpecies<Short> sspecies;
-    VectorSpecies<Integer> ispecies;
-    VectorSpecies<Long> lspecies;
-    VectorMask<Byte> bmask;
-    VectorMask<Short> smask;
-    VectorMask<Integer> imask;
-    VectorMask<Long> lmask;
+    static final Random RD = new Random();
+    static final VectorSpecies<Byte> bspecies = ByteVector.SPECIES_PREFERRED;
+    static final VectorSpecies<Short> sspecies = ShortVector.SPECIES_PREFERRED;
+    static final VectorSpecies<Integer> ispecies = IntVector.SPECIES_PREFERRED;
+    static final VectorSpecies<Long> lspecies = LongVector.SPECIES_PREFERRED;
     boolean [] mask_arr;
+    static final int LENGTH = 512;
 
-    static final boolean [] mask_avg_case = {
-       false, false, false, true, false, false, false, false,
-       false, false, false, true, false, false, false, false,
-       false, false, false, true, false, false, false, false,
-       true, true, true, true, true, true, true, true,
-       true, true, true, true, true, true, true, true,
-       false, false, false, true, false, false, false, false,
-       false, false, false, true, false, false, false, false,
-       false, false, false, true, false, false, false, false
-    };
+    static final boolean [] mask_avg_case;
+    static final boolean [] mask_best_case;
+    static final boolean [] mask_worst_case;
+    static {
+        mask_avg_case = new boolean[LENGTH];
+        mask_best_case = new boolean[LENGTH];
+        mask_worst_case = new boolean[LENGTH];
 
-    static final boolean [] mask_best_case  = {
-       true, true, true, true, true, true, true, true,
-       true, true, true, true, true, true, true, true,
-       true, true, true, true, true, true, true, true,
-       true, true, true, true, true, true, true, true,
-       true, true, true, true, true, true, true, true,
-       true, true, true, true, true, true, true, true,
-       true, true, true, true, true, true, true, true,
-       true, true, true, true, true, true, true, true
-    };
-
-    static final boolean [] mask_worst_case  = {
-       false, false, false, false, false, false, false, false,
-       false, false, false, false, false, false, false, false,
-       false, false, false, false, false, false, false, false,
-       false, false, false, false, false, false, false, false,
-       false, false, false, false, false, false, false, false,
-       false, false, false, false, false, false, false, false,
-       false, false, false, false, false, false, false, false,
-       false, false, false, false, false, false, false, false
-    };
+        for (int i = 0; i < LENGTH; i++) {
+            mask_best_case[i] = true;
+            mask_worst_case[i] = false;
+            mask_avg_case[i] = RD.nextBoolean();
+        }
+    }
 
     @Setup(Level.Trial)
-    public void BmSetup() {
-        bspecies = VectorSpecies.of(byte.class, VectorShape.forBitSize(bits));
-        sspecies = VectorSpecies.of(short.class, VectorShape.forBitSize(bits));
-        ispecies = VectorSpecies.of(int.class, VectorShape.forBitSize(bits));
-        lspecies = VectorSpecies.of(long.class, VectorShape.forBitSize(bits));
-
-        if( 1 == inputs) {
+    public void bmSetup() {
+        if (1 == inputs) {
           mask_arr = mask_best_case;
-        } else if ( 2 == inputs ) {
+        } else if (2 == inputs) {
           mask_arr = mask_worst_case;
         } else {
           mask_arr = mask_avg_case;
         }
-
-        bmask   = VectorMask.fromArray(bspecies, mask_arr, 0);
-        smask   = VectorMask.fromArray(sspecies, mask_arr, 0);
-        imask   = VectorMask.fromArray(ispecies, mask_arr, 0);
-        lmask   = VectorMask.fromArray(lspecies, mask_arr, 0);
     }
 
     @Benchmark
-    public int testTrueCountByte(Blackhole bh) {
-        return bmask.trueCount();
+    public int testTrueCountByte() {
+        int res = 0;
+        for (int i = 0; i < LENGTH; i += bspecies.length()) {
+            VectorMask<Byte> m = VectorMask.fromArray(bspecies, mask_arr, i);
+            res += m.trueCount();
+        }
+
+        return res;
     }
 
     @Benchmark
-    public int testTrueCountShort(Blackhole bh) {
-        return smask.trueCount();
-    }
-    @Benchmark
-    public int testTrueCountInt(Blackhole bh) {
-        return imask.trueCount();
-    }
-    @Benchmark
-    public int testTrueCountLong(Blackhole bh) {
-        return lmask.trueCount();
+    public int testTrueCountShort() {
+        int res = 0;
+        for (int i = 0; i < LENGTH; i += sspecies.length()) {
+            VectorMask<Short> m = VectorMask.fromArray(sspecies, mask_arr, i);
+            res += m.trueCount();
+        }
+
+        return res;
     }
 
     @Benchmark
-    public int testFirstTrueByte(Blackhole bh) {
-        return bmask.firstTrue();
+    public int testTrueCountInt() {
+        int res = 0;
+        for (int i = 0; i < LENGTH; i += ispecies.length()) {
+            VectorMask<Integer> m = VectorMask.fromArray(ispecies, mask_arr, i);
+            res += m.trueCount();
+        }
+
+        return res;
     }
 
     @Benchmark
-    public int testFirstTrueShort(Blackhole bh) {
-        return smask.firstTrue();
-    }
-    @Benchmark
-    public int testFirstTrueInt(Blackhole bh) {
-        return imask.firstTrue();
-    }
-    @Benchmark
-    public int testFirstTrueLong(Blackhole bh) {
-        return lmask.firstTrue();
+    public int testTrueCountLong() {
+        int res = 0;
+        for (int i = 0; i < LENGTH; i += lspecies.length()) {
+            VectorMask<Long> m = VectorMask.fromArray(lspecies, mask_arr, i);
+            res += m.trueCount();
+        }
+
+        return res;
     }
 
     @Benchmark
-    public int testLastTrueByte(Blackhole bh) {
-        return bmask.lastTrue();
+    public int testFirstTrueByte() {
+        int res = 0;
+        for (int i = 0; i < LENGTH; i += bspecies.length()) {
+            VectorMask<Byte> m = VectorMask.fromArray(bspecies, mask_arr, i);
+            res += m.firstTrue();
+        }
+
+        return res;
     }
 
     @Benchmark
-    public int testLastTrueShort(Blackhole bh) {
-        return smask.lastTrue();
-    }
-    @Benchmark
-    public int testLastTrueInt(Blackhole bh) {
-        return imask.lastTrue();
-    }
-    @Benchmark
-    public int testLastTrueLong(Blackhole bh) {
-        return lmask.lastTrue();
+    public int testFirstTrueShort() {
+        int res = 0;
+        for (int i = 0; i < LENGTH; i += sspecies.length()) {
+            VectorMask<Short> m = VectorMask.fromArray(sspecies, mask_arr, i);
+            res += m.firstTrue();
+        }
+
+        return res;
     }
 
     @Benchmark
-    public long testToLongByte(Blackhole bh) {
-        return bmask.toLong();
+    public int testFirstTrueInt() {
+        int res = 0;
+        for (int i = 0; i < LENGTH; i += ispecies.length()) {
+            VectorMask<Integer> m = VectorMask.fromArray(ispecies, mask_arr, i);
+            res += m.firstTrue();
+        }
+
+        return res;
     }
 
     @Benchmark
-    public long testToLongShort(Blackhole bh) {
-        return smask.toLong();
-    }
-    @Benchmark
-    public long testToLongInt(Blackhole bh) {
-        return imask.toLong();
-    }
-    @Benchmark
-    public long testToLongLong(Blackhole bh) {
-        return lmask.toLong();
+    public int testFirstTrueLong() {
+        int res = 0;
+        for (int i = 0; i < LENGTH; i += lspecies.length()) {
+            VectorMask<Long> m = VectorMask.fromArray(lspecies, mask_arr, i);
+            res += m.firstTrue();
+        }
+
+        return res;
     }
 
+    @Benchmark
+    public int testLastTrueByte() {
+        int res = 0;
+        for (int i = 0; i < LENGTH; i += bspecies.length()) {
+            VectorMask<Byte> m = VectorMask.fromArray(bspecies, mask_arr, i);
+            res += m.lastTrue();
+        }
+
+        return res;
+    }
+
+    @Benchmark
+    public int testLastTrueShort() {
+        int res = 0;
+        for (int i = 0; i < LENGTH; i += sspecies.length()) {
+            VectorMask<Short> m = VectorMask.fromArray(sspecies, mask_arr, i);
+            res += m.lastTrue();
+        }
+
+        return res;
+    }
+
+    @Benchmark
+    public int testLastTrueInt() {
+        int res = 0;
+        for (int i = 0; i < LENGTH; i += ispecies.length()) {
+            VectorMask<Integer> m = VectorMask.fromArray(ispecies, mask_arr, i);
+            res += m.lastTrue();
+        }
+
+        return res;
+    }
+
+    @Benchmark
+    public int testLastTrueLong() {
+        int res = 0;
+        for (int i = 0; i < LENGTH; i += lspecies.length()) {
+            VectorMask<Long> m = VectorMask.fromArray(lspecies, mask_arr, i);
+            res += m.lastTrue();
+        }
+
+        return res;
+    }
+
+    @Benchmark
+    public long testToLongByte() {
+        long res = 0;
+        for (int i = 0; i < LENGTH; i += bspecies.length()) {
+            VectorMask<Byte> m = VectorMask.fromArray(bspecies, mask_arr, i);
+            res += m.toLong();
+        }
+
+        return res;
+    }
+
+    @Benchmark
+    public long testToLongShort() {
+        long res = 0;
+        for (int i = 0; i < LENGTH; i += sspecies.length()) {
+            VectorMask<Short> m = VectorMask.fromArray(sspecies, mask_arr, i);
+            res += m.toLong();
+        }
+
+        return res;
+    }
+
+    @Benchmark
+    public long testToLongInt() {
+        long res = 0;
+        for (int i = 0; i < LENGTH; i += ispecies.length()) {
+            VectorMask<Integer> m = VectorMask.fromArray(ispecies, mask_arr, i);
+            res += m.toLong();
+        }
+
+        return res;
+    }
+
+    @Benchmark
+    public long testToLongLong() {
+        long res = 0;
+        for (int i = 0; i < LENGTH; i += lspecies.length()) {
+            VectorMask<Long> m = VectorMask.fromArray(lspecies, mask_arr, i);
+            res += m.toLong();
+        }
+
+        return res;
+    }
 }
