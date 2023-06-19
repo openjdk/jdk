@@ -51,12 +51,12 @@ public class MultiCommand extends AbstractTestBase {
      * @return test instance to run
      */
     public static AbstractTestBase generateRandomTest(boolean validOnly) {
-        boolean isValid = true;
         CommandGenerator cmdGen = new CommandGenerator();
         List<Command> commands = cmdGen.generateCommands();
         List<CompileCommand> testCases = new ArrayList<>();
 
         for (Command cmd : commands) {
+            boolean isValid = true;
             String argument = null;
 
             if (validOnly && cmd == Command.NONEXISTENT) {
@@ -80,7 +80,7 @@ public class MultiCommand extends AbstractTestBase {
                 md = AbstractTestBase.getValidMethodDescriptor(exec);
             } else {
                 md = AbstractTestBase.METHOD_GEN.generateRandomDescriptor(exec);
-                isValid = false;
+                isValid &= md.isValid();
             }
             CompileCommand cc;
             if (cmd == Command.INTRINSIC) {
