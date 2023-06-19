@@ -1992,7 +1992,7 @@ DumpWriter* VM_HeapDumper::create_dump_writer() {
   // generate segmented heap file path
   const char* base_path = writer()->get_file_path();
   AbstractCompressor* compressor = writer()->compressor();
-  int seq = Atomic::fetch_and_add(&_dump_seq, 1);
+  int seq = Atomic::fetch_then_add(&_dump_seq, 1);
   os::snprintf(path, JVM_MAXPATHLEN, "%s.p%d", base_path, seq);
 
   // create corresponding writer for that
