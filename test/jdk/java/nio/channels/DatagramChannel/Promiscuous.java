@@ -27,7 +27,6 @@
  *   port but joined to different multicast groups
  * @library /test/lib
  * @build jdk.test.lib.NetworkConfiguration
- *        jdk.test.lib.Platform
  *        Promiscuous
  * @run main Promiscuous
  * @run main/othervm -Djava.net.preferIPv4Stack=true Promiscuous
@@ -43,7 +42,6 @@ import java.io.IOException;
 import java.util.stream.Collectors;
 
 import jdk.test.lib.NetworkConfiguration;
-import jdk.test.lib.Platform;
 import jdk.test.lib.net.IPSupport;
 
 public class Promiscuous {

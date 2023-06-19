@@ -210,7 +210,7 @@ public class PromiscuousIPv6 {
         } else {
             int major = Platform.getOsVersionMajor();
             int minor = Platform.getOsVersionMinor();
-            hasIPV6MulticastAll = Platform.isOSX() || (major > 4) || ((major == 4 && minor >= 20));
+            hasIPV6MulticastAll = Platform.isOSX() || ((major > 4) || ((major == 4 && minor >= 20)));
         }
 
         NetworkConfiguration.printSystemConfiguration(System.out);
