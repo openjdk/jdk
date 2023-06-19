@@ -61,7 +61,8 @@ public final class SecuritySettings {
             case "tls"        -> printSecurityTLSConfig(true);
             case "all"        -> printAllSecurityConfig();
             default           -> {
-                ostream.println("Unrecognized security subcommand. See \"java -X\" for help");
+                ostream.println("Unrecognized security subcommand. Valid values are " +
+                        "\"all\", \"properties\", \"providers\", \"tls\". See \"java -X\"");
                 ostream.println("Printing all security settings");
                 printAllSecurityConfig();
             }
