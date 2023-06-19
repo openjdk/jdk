@@ -1244,7 +1244,7 @@ private:
         // There may be dead oops in weak roots in concurrent root phase, do not touch them.
         return;
       }
-      obj = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
+      obj = ShenandoahBarrierSet::barrier_set()->load_reference_barrier(obj);
 
       assert(oopDesc::is_oop(obj), "must be a valid oop");
       if (!_bitmap->is_marked(obj)) {
@@ -1353,7 +1353,7 @@ private:
         // There may be dead oops in weak roots in concurrent root phase, do not touch them.
         return;
       }
-      obj = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
+      obj = ShenandoahBarrierSet::barrier_set()->load_reference_barrier(obj);
 
       assert(oopDesc::is_oop(obj), "Must be a valid oop");
       if (_bitmap->par_mark(obj)) {
