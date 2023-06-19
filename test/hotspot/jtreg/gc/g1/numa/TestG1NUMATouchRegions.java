@@ -95,7 +95,7 @@ public class TestG1NUMATouchRegions {
     }
 
     static long heapPageSize(OutputAnalyzer output) {
-        String HeapPageSizePattern = "Heap:  .*page_size=([^ ]+)";
+        String HeapPageSizePattern = "Heap:  .* page_size=(\\d+[BKMG])";
         String str = output.firstMatch(HeapPageSizePattern, 1);
 
         if (str == null) {
