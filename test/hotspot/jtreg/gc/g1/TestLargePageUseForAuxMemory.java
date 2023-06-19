@@ -126,7 +126,6 @@ public class TestLargePageUseForAuxMemory {
         pb = ProcessTools.createJavaProcessBuilder(getOpts(heapsize, true));
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.reportDiagnosticSummary();
 
         // Only expect large page size if large pages are enabled.
         if (largePagesEnabled(output)) {
