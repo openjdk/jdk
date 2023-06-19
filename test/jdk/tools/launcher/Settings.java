@@ -200,11 +200,9 @@ public class Settings extends TestHelper {
         TestResult tr = doExec(javaCmd, "-XshowSettings:security:bad");
         checkContains(tr, BAD_SEC_OPTION_MSG);
         // we print all security settings in such scenario
-        checkContains(tr, SEC_PROPS_SETTINGS);
-        checkContains(tr, SEC_PROVIDER_SETTINGS);
-        checkContains(tr, SEC_TLS_SETTINGS);
-        // test a well known TLS config for sanity
-        checkContains(tr, "TLSv1.2");
+        checkNotContains(tr, SEC_PROPS_SETTINGS);
+        checkNotContains(tr, SEC_PROVIDER_SETTINGS);
+        checkNotContains(tr, SEC_TLS_SETTINGS);
     }
     static void runTestOptionSystem() throws IOException {
         TestResult tr = doExec(javaCmd, "-XshowSettings:system");
