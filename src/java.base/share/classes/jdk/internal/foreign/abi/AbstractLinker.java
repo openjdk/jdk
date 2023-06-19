@@ -52,6 +52,7 @@ import java.lang.foreign.UnionLayout;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
+import java.util.HashSet;
 import java.util.List;
 import java.nio.ByteOrder;
 import java.util.Objects;
@@ -69,6 +70,7 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
     private record LinkRequest(FunctionDescriptor descriptor, LinkerOptions options) {}
     private final SoftReferenceCache<LinkRequest, MethodHandle> DOWNCALL_CACHE = new SoftReferenceCache<>();
     private final SoftReferenceCache<LinkRequest, UpcallStubFactory> UPCALL_CACHE = new SoftReferenceCache<>();
+    private final Set<MemoryLayout> CANONICAL_LAYOUTS_CACHE = new HashSet<>(canonicalLayouts().values());
 
     @Override
     @CallerSensitive
@@ -209,7 +211,7 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
     }
 
     // check for trailing padding
-    private static void checkGroupSize(GroupLayout gl, long maxUnpaddedOffset) {
+    private void checkGroupSize(GroupLayout gl, long maxUnpaddedOffset) {
         long expectedSize = Utils.alignUp(maxUnpaddedOffset, gl.byteAlignment());
         if (gl.byteSize() != expectedSize) {
             throw new IllegalArgumentException("Layout '" + gl + "' has unexpected size: "
@@ -219,7 +221,7 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
 
     // checks both that there is no excess padding between 'memberLayout' and
     // the previous layout
-    private static void checkMemberOffset(StructLayout parent, MemoryLayout memberLayout,
+    private void checkMemberOffset(StructLayout parent, MemoryLayout memberLayout,
                                           long lastUnpaddedOffset, long offset) {
         long expectedOffset = Utils.alignUp(lastUnpaddedOffset, memberLayout.byteAlignment());
         if (expectedOffset != offset) {
@@ -228,17 +230,17 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
         }
     }
 
-    private static void checkSupported(ValueLayout valueLayout) {
+    private void checkSupported(ValueLayout valueLayout) {
         valueLayout = valueLayout.withoutName();
         if (valueLayout instanceof AddressLayout addressLayout) {
             valueLayout = addressLayout.withoutTargetLayout();
         }
-        if (!SUPPORTED_LAYOUTS.contains(valueLayout.withoutName())) {
+        if (!CANONICAL_LAYOUTS_CACHE.contains(valueLayout.withoutName())) {
             throw new IllegalArgumentException("Unsupported layout: " + valueLayout);
         }
     }
 
-    private static void checkHasNaturalAlignment(MemoryLayout layout) {
+    private void checkHasNaturalAlignment(MemoryLayout layout) {
         if (!((AbstractLayout<?>) layout).hasNaturalAlignment()) {
             throw new IllegalArgumentException("Layout alignment must be natural alignment: " + layout);
         }
@@ -269,16 +271,4 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
                 .map(rl -> FunctionDescriptor.of(stripNames(rl), stripNames(function.argumentLayouts())))
                 .orElseGet(() -> FunctionDescriptor.ofVoid(stripNames(function.argumentLayouts())));
     }
-
-    private static final Set<MemoryLayout> SUPPORTED_LAYOUTS = Set.of(
-            ValueLayout.JAVA_BOOLEAN,
-            ValueLayout.JAVA_BYTE,
-            ValueLayout.JAVA_CHAR,
-            ValueLayout.JAVA_SHORT,
-            ValueLayout.JAVA_INT,
-            ValueLayout.JAVA_FLOAT,
-            ValueLayout.JAVA_LONG,
-            ValueLayout.JAVA_DOUBLE,
-            ValueLayout.ADDRESS
-    );
 }
