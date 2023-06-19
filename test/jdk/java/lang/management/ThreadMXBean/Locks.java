@@ -69,7 +69,7 @@ public class Locks {
                 TM.getThreadInfo(TM.getAllThreadIds(), true, true))
                                             .filter(Objects::nonNull)
                                             .filter(i -> name.equals(i.getLockOwnerName()))
-                                            .filter(x -> !x.toString().contains("java.lang.VirtualThread"))
+                                            .filter(i  -> !i.getLockName().contains("java.lang.VirtualThread"))
                                             .findAny();
         if (result.isPresent()) {
             throw new RuntimeException("Thread " + t.getName() + " is not "
