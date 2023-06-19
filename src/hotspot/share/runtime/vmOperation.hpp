@@ -48,7 +48,6 @@
   template(ZombieAll)                             \
   template(Verify)                                \
   template(HeapDumper)                            \
-  template(HeapDumpMerge)                         \
   template(CollectForMetadataAllocation)          \
   template(CollectForCodeCacheAllocation)         \
   template(GC_HeapInspection)                     \

@@ -91,6 +91,7 @@ class AttachListener: AllStatic {
 #else
 
  private:
+  static AttachListenerThread* _attach_listener_thread;
   static volatile AttachListenerState _state;
 
  public:
@@ -114,6 +115,8 @@ class AttachListener: AllStatic {
   static void set_initialized() {
     Atomic::store(&_state, AL_INITIALIZED);
   }
+
+  static AttachListenerThread* attach_listener_thread() { return _attach_listener_thread; }
 
   // indicates if this VM supports attach-on-demand
   static bool is_attach_supported()             { return !DisableAttachMechanism; }
