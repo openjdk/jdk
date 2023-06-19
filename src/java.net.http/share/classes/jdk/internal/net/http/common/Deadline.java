@@ -200,7 +200,7 @@ public final class Deadline implements Comparable<Deadline> {
 
     @Override
     public String toString() {
-        return "Deadline("+deadline+")";
+        return "Deadline(" + deadline + ")";
     }
 
     @Override
