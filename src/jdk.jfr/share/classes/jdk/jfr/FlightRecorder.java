@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,8 @@ import jdk.jfr.internal.Options;
 import jdk.jfr.internal.PlatformRecorder;
 import jdk.jfr.internal.PlatformRecording;
 import jdk.jfr.internal.Repository;
-import jdk.jfr.internal.Utils;
+import jdk.jfr.internal.SecuritySupport;
+import jdk.jfr.internal.util.Utils;
 import jdk.jfr.internal.periodic.PeriodicEvents;
 
 /**
@@ -164,7 +165,7 @@ public final class FlightRecorder {
      */
     public static FlightRecorder getFlightRecorder() throws IllegalStateException, SecurityException {
         synchronized (PlatformRecorder.class) {
-            Utils.checkAccessFlightRecorder();
+            SecuritySupport.checkAccessFlightRecorder();
             JVMSupport.ensureWithIllegalStateException();
             if (platformRecorder == null) {
                 try {
@@ -222,7 +223,7 @@ public final class FlightRecorder {
         }
 
         Utils.ensureValidEventSubclass(eventClass);
-        Utils.checkRegisterPermission();
+        SecuritySupport.checkRegisterPermission();
         @SuppressWarnings("removal")
         AccessControlContext acc = AccessController.getContext();
         PeriodicEvents.addUserEvent(acc, eventClass, hook);
@@ -238,7 +239,7 @@ public final class FlightRecorder {
      */
     public static boolean removePeriodicEvent(Runnable hook) throws SecurityException {
         Objects.requireNonNull(hook, "hook");
-        Utils.checkRegisterPermission();
+        SecuritySupport.checkRegisterPermission();
         if (JVMSupport.isNotAvailable()) {
             return false;
         }
@@ -275,7 +276,7 @@ public final class FlightRecorder {
      */
     public static void addListener(FlightRecorderListener changeListener) {
         Objects.requireNonNull(changeListener, "changeListener");
-        Utils.checkAccessFlightRecorder();
+        SecuritySupport.checkAccessFlightRecorder();
         if (JVMSupport.isNotAvailable()) {
             return;
         }
@@ -299,7 +300,7 @@ public final class FlightRecorder {
      */
     public static boolean removeListener(FlightRecorderListener changeListener) {
         Objects.requireNonNull(changeListener, "changeListener");
-        Utils.checkAccessFlightRecorder();
+        SecuritySupport.checkAccessFlightRecorder();
         if (JVMSupport.isNotAvailable()) {
             return false;
         }
