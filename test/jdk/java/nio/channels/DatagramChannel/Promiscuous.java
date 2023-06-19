@@ -193,6 +193,9 @@ public class Promiscuous {
         }
     }
 
+    /*
+     * returns true if platform allows an IPv6 socket join an IPv4 multicast group
+     */
     private static boolean supportedByPlatform() {
         return Platform.isOSX() || Platform.isWindows() || Platform.isLinux();
     }
