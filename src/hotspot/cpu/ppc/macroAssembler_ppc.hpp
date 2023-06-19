@@ -28,7 +28,6 @@
 
 #include "asm/assembler.hpp"
 #include "oops/accessDecorators.hpp"
-#include "runtime/rtmLocking.hpp"
 #include "utilities/macros.hpp"
 
 // MacroAssembler extends Assembler by a few frequently used macros.
@@ -606,6 +605,9 @@ class MacroAssembler: public Assembler {
   void pop_cont_fastpath();
   void inc_held_monitor_count(Register tmp);
   void dec_held_monitor_count(Register tmp);
+  void atomically_flip_locked_state(bool is_unlock, Register obj, Register tmp, Label& failed, int semantics);
+  void fast_lock(Register obj, Register hdr, Register t1, Label& slow);
+  void fast_unlock(Register obj, Register hdr, Label& slow);
 
   // allocation (for C1)
   void tlab_allocate(
@@ -620,41 +622,11 @@ class MacroAssembler: public Assembler {
   enum { trampoline_stub_size = 6 * 4 };
   address emit_trampoline_stub(int destination_toc_offset, int insts_call_instruction_offset, Register Rtoc = noreg);
 
-  void atomic_inc_ptr(Register addr, Register result, int simm16 = 1);
-  void atomic_ori_int(Register addr, Register result, int uimm16);
-
-#if INCLUDE_RTM_OPT
-  void rtm_counters_update(Register abort_status, Register rtm_counters);
-  void branch_on_random_using_tb(Register tmp, int count, Label& brLabel);
-  void rtm_abort_ratio_calculation(Register rtm_counters_reg, RTMLockingCounters* rtm_counters,
-                                   Metadata* method_data);
-  void rtm_profiling(Register abort_status_Reg, Register temp_Reg,
-                     RTMLockingCounters* rtm_counters, Metadata* method_data, bool profile_rtm);
-  void rtm_retry_lock_on_abort(Register retry_count, Register abort_status,
-                               Label& retryLabel, Label* checkRetry = nullptr);
-  void rtm_retry_lock_on_busy(Register retry_count, Register owner_addr, Label& retryLabel);
-  void rtm_stack_locking(ConditionRegister flag, Register obj, Register mark_word, Register tmp,
-                         Register retry_on_abort_count,
-                         RTMLockingCounters* stack_rtm_counters,
-                         Metadata* method_data, bool profile_rtm,
-                         Label& DONE_LABEL, Label& IsInflated);
-  void rtm_inflated_locking(ConditionRegister flag, Register obj, Register mark_word, Register box,
-                            Register retry_on_busy_count, Register retry_on_abort_count,
-                            RTMLockingCounters* rtm_counters,
-                            Metadata* method_data, bool profile_rtm,
-                            Label& DONE_LABEL);
-#endif
-
   void compiler_fast_lock_object(ConditionRegister flag, Register oop, Register box,
-                                 Register tmp1, Register tmp2, Register tmp3,
-                                 RTMLockingCounters* rtm_counters = nullptr,
-                                 RTMLockingCounters* stack_rtm_counters = nullptr,
-                                 Metadata* method_data = nullptr,
-                                 bool use_rtm = false, bool profile_rtm = false);
+                                 Register tmp1, Register tmp2, Register tmp3);
 
   void compiler_fast_unlock_object(ConditionRegister flag, Register oop, Register box,
-                                   Register tmp1, Register tmp2, Register tmp3,
-                                   bool use_rtm = false);
+                                   Register tmp1, Register tmp2, Register tmp3);
 
   // Check if safepoint requested and if so branch
   void safepoint_poll(Label& slow_path, Register temp, bool at_return, bool in_nmethod);
@@ -732,7 +704,7 @@ class MacroAssembler: public Assembler {
 
   // Load/Store klass oop from klass field. Compress.
   void load_klass(Register dst, Register src);
-  void load_klass_check_null(Register dst, Register src, Label* is_null = NULL);
+  void load_klass_check_null(Register dst, Register src, Label* is_null = nullptr);
   void store_klass(Register dst_oop, Register klass, Register tmp = R0);
   void store_klass_gap(Register dst_oop, Register val = noreg); // Will store 0 if val not specified.
 

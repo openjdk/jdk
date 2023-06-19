@@ -1736,7 +1736,7 @@ int ConnectionGraph::find_init_values_phantom(JavaObjectNode* pta) {
 }
 
 // Find fields initializing values for allocations.
-int ConnectionGraph::find_init_values_null(JavaObjectNode* pta, PhaseTransform* phase) {
+int ConnectionGraph::find_init_values_null(JavaObjectNode* pta, PhaseValues* phase) {
   assert(pta->escape_state() == PointsToNode::NoEscape, "Not escaped Allocate nodes only");
   Node* alloc = pta->ideal_node();
   // Do nothing for Call nodes since its fields values are unknown.
@@ -2498,7 +2498,7 @@ bool ConnectionGraph::is_captured_store_address(Node* addp) {
   return false;
 }
 
-int ConnectionGraph::address_offset(Node* adr, PhaseTransform *phase) {
+int ConnectionGraph::address_offset(Node* adr, PhaseValues* phase) {
   const Type *adr_type = phase->type(adr);
   if (adr->is_AddP() && adr_type->isa_oopptr() == nullptr && is_captured_store_address(adr)) {
     // We are computing a raw address for a store captured by an Initialize

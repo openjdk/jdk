@@ -830,10 +830,6 @@ void DefNewGeneration::collect(bool   full,
 
     adjust_desired_tenuring_threshold();
 
-    // A successful scavenge should restart the GC time limit count which is
-    // for full GC's.
-    AdaptiveSizePolicy* size_policy = heap->size_policy();
-    size_policy->reset_gc_overhead_limit_count();
     assert(!heap->incremental_collection_failed(), "Should be clear");
   } else {
     assert(_promo_failure_scan_stack.is_empty(), "post condition");

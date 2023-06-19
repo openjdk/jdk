@@ -474,8 +474,6 @@ public:
   }
 
   static void allocate_shared_path_table(TRAPS);
-  static void copy_shared_path_table(ClassLoaderData* loader_data, TRAPS);
-  static void clone_shared_path_table(TRAPS);
   static int add_shared_classpaths(int i, const char* which, ClassPathEntry *cpe, TRAPS);
   static void check_nonempty_dir_in_shared_path_table();
   bool check_module_paths();
@@ -565,7 +563,6 @@ public:
 public:
   address heap_region_dumptime_address() NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
   address heap_region_requested_address() NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
-  address heap_region_mapped_address() NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
   narrowOop encoded_heap_region_dumptime_address();
 
 private:

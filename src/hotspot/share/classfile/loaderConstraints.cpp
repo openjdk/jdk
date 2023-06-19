@@ -89,6 +89,9 @@ class ConstraintSet {                               // copied into hashtable as 
   }
 
   ~ConstraintSet() {
+    while (!_constraints->is_empty()) {
+      delete _constraints->pop();
+    }
     delete _constraints;
   }
 

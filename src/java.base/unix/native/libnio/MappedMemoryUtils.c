@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,7 +110,7 @@ Java_java_nio_MappedMemoryUtils_load0(JNIEnv *env, jobject obj, jlong address,
     char *a = (char *)jlong_to_ptr(address);
     int result = madvise((caddr_t)a, (size_t)len, MADV_WILLNEED);
     if (result == -1) {
-        JNU_ThrowIOExceptionWithLastError(env, "madvise failed");
+        JNU_ThrowIOExceptionWithMessageAndLastError(env, "madvise with advise MADV_WILLNEED failed");
     }
 }
 
@@ -121,7 +121,7 @@ Java_java_nio_MappedMemoryUtils_unload0(JNIEnv *env, jobject obj, jlong address,
     char *a = (char *)jlong_to_ptr(address);
     int result = madvise((caddr_t)a, (size_t)len, MADV_DONTNEED);
     if (result == -1) {
-        JNU_ThrowIOExceptionWithLastError(env, "madvise failed");
+        JNU_ThrowIOExceptionWithMessageAndLastError(env, "madvise with advise MADV_DONTNEED failed");
     }
 }
 
@@ -132,6 +132,6 @@ Java_java_nio_MappedMemoryUtils_force0(JNIEnv *env, jobject obj, jobject fdo,
     void* a = (void *)jlong_to_ptr(address);
     int result = msync(a, (size_t)len, MS_SYNC);
     if (result == -1) {
-        JNU_ThrowIOExceptionWithLastError(env, "msync failed");
+        JNU_ThrowIOExceptionWithMessageAndLastError(env, "msync with parameter MS_SYNC failed");
     }
 }

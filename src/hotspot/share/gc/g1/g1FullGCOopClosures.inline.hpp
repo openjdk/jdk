@@ -52,7 +52,8 @@ inline void G1MarkAndPushClosure::do_oop(narrowOop* p) {
   do_oop_work(p);
 }
 
-template <class T> inline void G1AdjustClosure::adjust_pointer(T* p) {
+template<bool ALT_FWD>
+template <class T> inline void G1AdjustClosure<ALT_FWD>::adjust_pointer(T* p) {
   T heap_oop = RawAccess<>::oop_load(p);
   if (CompressedOops::is_null(heap_oop)) {
     return;
@@ -67,7 +68,7 @@ template <class T> inline void G1AdjustClosure::adjust_pointer(T* p) {
   }
 
   if (SlidingForwarding::is_forwarded(obj)) {
-    oop forwardee = SlidingForwarding::forwardee(obj);
+    oop forwardee = SlidingForwarding::forwardee<ALT_FWD>(obj);
     // Forwarded, just update.
     assert(G1CollectedHeap::heap()->is_in_reserved(forwardee), "should be in object space");
     RawAccess<IS_NOT_NULL>::oop_store(p, forwardee);
@@ -75,8 +76,10 @@ template <class T> inline void G1AdjustClosure::adjust_pointer(T* p) {
 
 }
 
-inline void G1AdjustClosure::do_oop(oop* p)       { do_oop_work(p); }
-inline void G1AdjustClosure::do_oop(narrowOop* p) { do_oop_work(p); }
+template<bool ALT_FWD>
+inline void G1AdjustClosure<ALT_FWD>::do_oop(oop* p)       { do_oop_work(p); }
+template<bool ALT_FWD>
+inline void G1AdjustClosure<ALT_FWD>::do_oop(narrowOop* p) { do_oop_work(p); }
 
 inline bool G1IsAliveClosure::do_object_b(oop p) {
   return _bitmap->is_marked(p);

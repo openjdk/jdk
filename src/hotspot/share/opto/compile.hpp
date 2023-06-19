@@ -66,6 +66,7 @@ class Node;
 class Node_Array;
 class Node_List;
 class Node_Notes;
+class NodeHash;
 class NodeCloneInfo;
 class OptoReg;
 class PhaseCFG;
@@ -87,6 +88,7 @@ class TypePtr;
 class TypeOopPtr;
 class TypeFunc;
 class TypeVect;
+class Type_Array;
 class Unique_Node_List;
 class UnstableIfTrap;
 class nmethod;
@@ -337,9 +339,9 @@ class Compile : public Phase {
   // JSR 292
   bool                  _has_method_handle_invokes; // True if this method has MethodHandle invokes.
   bool                  _has_monitors;          // Metadata transfered to nmethod to enable Continuations lock-detection fastpath
+  bool                  _clinit_barrier_on_entry; // True if clinit barrier is needed on nmethod entry
   RTMState              _rtm_state;             // State of Restricted Transactional Memory usage
   int                   _loop_opts_cnt;         // loop opts round
-  bool                  _clinit_barrier_on_entry; // True if clinit barrier is needed on nmethod entry
   uint                  _stress_seed;           // Seed for stress testing
 
   // Compilation environment.
@@ -367,14 +369,27 @@ class Compile : public Phase {
 
   // Node management
   uint                  _unique;                // Counter for unique Node indices
-  VectorSet             _dead_node_list;        // Set of dead nodes
   uint                  _dead_node_count;       // Number of dead nodes; VectorSet::Size() is O(N).
                                                 // So use this to keep count and make the call O(1).
+  VectorSet             _dead_node_list;        // Set of dead nodes
   DEBUG_ONLY(Unique_Node_List* _modified_nodes;)   // List of nodes which inputs were modified
   DEBUG_ONLY(bool       _phase_optimize_finished;) // Used for live node verification while creating new nodes
 
-  Arena                 _node_arena;            // Arena for new-space Nodes
-  Arena                 _old_arena;             // Arena for old-space Nodes, lifetime during xform
+  // Arenas for new-space and old-space nodes.
+  // Swapped between using _node_arena.
+  // The lifetime of the old-space nodes is during xform.
+  Arena                 _node_arena_one;
+  Arena                 _node_arena_two;
+  Arena*                _node_arena;
+public:
+  Arena* swap_old_and_new() {
+    Arena* filled_arena_ptr = _node_arena;
+    Arena* old_arena_ptr = old_arena();
+    old_arena_ptr->destruct_contents();
+    _node_arena = old_arena_ptr;
+    return filled_arena_ptr;
+  }
+private:
   RootNode*             _root;                  // Unique root of compilation, or null after bail-out.
   Node*                 _top;                   // Unique top node.  (Reset by various phases.)
 
@@ -414,7 +429,16 @@ class Compile : public Phase {
 
   // Parsing, optimization
   PhaseGVN*             _initial_gvn;           // Results of parse-time PhaseGVN
-  Unique_Node_List*     _for_igvn;              // Initial work-list for next round of Iterative GVN
+
+  // Shared worklist for all IGVN rounds. Nodes can be pushed to it at any time.
+  // If pushed outside IGVN, the Node is processed in the next IGVN round.
+  Unique_Node_List*     _igvn_worklist;
+
+  // Shared type array for GVN, IGVN and CCP. It maps node idx -> Type*.
+  Type_Array*           _types;
+
+  // Shared node hash table for GVN, IGVN and CCP.
+  NodeHash*             _node_hash;
 
   GrowableArray<CallGenerator*> _late_inlines;        // List of CallGenerators to be revisited after main parsing has finished.
   GrowableArray<CallGenerator*> _string_late_inlines; // same but for string operations
@@ -661,6 +685,12 @@ class Compile : public Phase {
   void print_method(CompilerPhaseType cpt, int level, Node* n = nullptr);
 
 #ifndef PRODUCT
+  void dump_igv(const char* graph_name, int level = 3) {
+    if (should_print_igv(level)) {
+      _igv_printer->print_method(graph_name, level);
+    }
+  }
+
   void igv_print_method_to_file(const char* phase_name = "Debug", bool append = false);
   void igv_print_method_to_network(const char* phase_name = "Debug");
   static IdealGraphPrinter* debug_file_printer() { return _debug_file_printer; }
@@ -784,8 +814,8 @@ class Compile : public Phase {
   uint         unique() const              { return _unique; }
   uint         next_unique()               { return _unique++; }
   void         set_unique(uint i)          { _unique = i; }
-  Arena*       node_arena()                { return &_node_arena; }
-  Arena*       old_arena()                 { return &_old_arena; }
+  Arena*       node_arena()                { return _node_arena; }
+  Arena*       old_arena()                 { return (&_node_arena_one == _node_arena) ? &_node_arena_two : &_node_arena_one; }
   RootNode*    root() const                { return _root; }
   void         set_root(RootNode* r)       { _root = r; }
   StartNode*   start() const;              // (Derived from root.)
@@ -937,11 +967,21 @@ class Compile : public Phase {
 
   // Parsing, optimization
   PhaseGVN*         initial_gvn()               { return _initial_gvn; }
-  Unique_Node_List* for_igvn()                  { return _for_igvn; }
+  Unique_Node_List* igvn_worklist() {
+    assert(_igvn_worklist != nullptr, "must be created in Compile::Compile");
+    return _igvn_worklist;
+  }
+  Type_Array* types() {
+    assert(_types != nullptr, "must be created in Compile::Compile");
+    return _types;
+  }
+  NodeHash* node_hash() {
+    assert(_node_hash != nullptr, "must be created in Compile::Compile");
+    return _node_hash;
+  }
   inline void       record_for_igvn(Node* n);   // Body is after class Unique_Node_List in node.hpp.
   inline void       remove_for_igvn(Node* n);   // Body is after class Unique_Node_List in node.hpp.
   void          set_initial_gvn(PhaseGVN *gvn)           { _initial_gvn = gvn; }
-  void          set_for_igvn(Unique_Node_List *for_igvn) { _for_igvn = for_igvn; }
 
   // Replace n by nn using initial_gvn, calling hash_delete and
   // record_for_igvn as needed.
@@ -950,7 +990,7 @@ class Compile : public Phase {
 
   void              identify_useful_nodes(Unique_Node_List &useful);
   void              update_dead_node_list(Unique_Node_List &useful);
-  void              disconnect_useless_nodes(Unique_Node_List &useful, Unique_Node_List* worklist);
+  void              disconnect_useless_nodes(Unique_Node_List& useful, Unique_Node_List& worklist);
 
   void              remove_useless_node(Node* dead);
 

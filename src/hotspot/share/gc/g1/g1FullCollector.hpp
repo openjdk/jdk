@@ -158,7 +158,11 @@ private:
 
   void phase2a_determine_worklists();
   bool phase2b_forward_oops();
+  template<bool ALT_FWD>
+  void phase2c_prepare_serial_compaction_impl();
   void phase2c_prepare_serial_compaction();
+  template<bool ALT_FWD>
+  void phase2d_prepare_humongous_compaction_impl();
   void phase2d_prepare_humongous_compaction();
 
   void phase3_adjust_pointers();

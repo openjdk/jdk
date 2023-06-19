@@ -36,6 +36,7 @@
 #include "oops/methodData.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/resolvedIndyEntry.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/frame.inline.hpp"
@@ -4357,11 +4358,11 @@ void TemplateTable::monitorenter() {
 
     __ bind(loop);
     // check if current entry is used
-    __ cmpptr(Address(rtop, BasicObjectLock::obj_offset_in_bytes()), NULL_WORD);
+    __ cmpptr(Address(rtop, BasicObjectLock::obj_offset()), NULL_WORD);
     // if not used then remember entry in rmon
     __ cmovptr(Assembler::equal, rmon, rtop);   // cmov => cmovptr
     // check if current entry is for same object
-    __ cmpptr(rax, Address(rtop, BasicObjectLock::obj_offset_in_bytes()));
+    __ cmpptr(rax, Address(rtop, BasicObjectLock::obj_offset()));
     // if same object then stop searching
     __ jccb(Assembler::equal, exit);
     // otherwise advance to next entry
@@ -4410,7 +4411,7 @@ void TemplateTable::monitorenter() {
   __ increment(rbcp);
 
   // store object
-  __ movptr(Address(rmon, BasicObjectLock::obj_offset_in_bytes()), rax);
+  __ movptr(Address(rmon, BasicObjectLock::obj_offset()), rax);
   __ lock_object(rmon);
 
   // check to make sure this monitor doesn't cause stack overflow after locking
@@ -4450,7 +4451,7 @@ void TemplateTable::monitorexit() {
 
     __ bind(loop);
     // check if current entry is for same object
-    __ cmpptr(rax, Address(rtop, BasicObjectLock::obj_offset_in_bytes()));
+    __ cmpptr(rax, Address(rtop, BasicObjectLock::obj_offset()));
     // if same object then stop searching
     __ jcc(Assembler::equal, found);
     // otherwise advance to next entry

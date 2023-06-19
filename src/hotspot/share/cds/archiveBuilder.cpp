@@ -68,7 +68,7 @@ ArchiveBuilder::SourceObjList::~SourceObjList() {
   delete _objs;
 }
 
-void ArchiveBuilder::SourceObjList::append(MetaspaceClosure::Ref* enclosing_ref, SourceObjInfo* src_info) {
+void ArchiveBuilder::SourceObjList::append(SourceObjInfo* src_info) {
   // Save this source object for copying
   _objs->append(src_info);
 
@@ -86,13 +86,8 @@ void ArchiveBuilder::SourceObjList::append(MetaspaceClosure::Ref* enclosing_ref,
 
 void ArchiveBuilder::SourceObjList::remember_embedded_pointer(SourceObjInfo* src_info, MetaspaceClosure::Ref* ref) {
   // src_obj contains a pointer. Remember the location of this pointer in _ptrmap,
-  // so that we can copy/relocate it later. E.g., if we have
-  //    class Foo { intx scala; Bar* ptr; }
-  //    Foo *f = 0x100;
-  // To mark the f->ptr pointer on 64-bit platform, this function is called with
-  //    src_info()->obj() == 0x100
-  //    ref->addr() == 0x108
-  address src_obj = src_info->obj();
+  // so that we can copy/relocate it later.
+  address src_obj = src_info->source_addr();
   address* field_addr = ref->addr();
   assert(src_info->ptrmap_start() < _total_bytes, "sanity");
   assert(src_info->ptrmap_end() <= _total_bytes, "sanity");
@@ -175,8 +170,6 @@ ArchiveBuilder::ArchiveBuilder() :
 ArchiveBuilder::~ArchiveBuilder() {
   assert(_current == this, "must be");
   _current = nullptr;
-
-  clean_up_src_obj_table();
 
   for (int i = 0; i < _symbols->length(); i++) {
     _symbols->at(i)->decrement_refcount();
@@ -411,24 +404,16 @@ public:
   GatherSortedSourceObjs(ArchiveBuilder* builder) : _builder(builder) {}
 
   virtual bool do_ref(Ref* ref, bool read_only) {
-    return _builder->gather_one_source_obj(enclosing_ref(), ref, read_only);
-  }
-
-  virtual void do_pending_ref(Ref* ref) {
-    if (ref->obj() != nullptr) {
-      _builder->remember_embedded_pointer_in_gathered_obj(enclosing_ref(), ref);
-    }
+    return _builder->gather_one_source_obj(ref, read_only);
   }
 };
 
-bool ArchiveBuilder::gather_one_source_obj(MetaspaceClosure::Ref* enclosing_ref,
-                                           MetaspaceClosure::Ref* ref, bool read_only) {
+bool ArchiveBuilder::gather_one_source_obj(MetaspaceClosure::Ref* ref, bool read_only) {
   address src_obj = ref->obj();
   if (src_obj == nullptr) {
     return false;
   }
-  ref->set_keep_after_pushing();
-  remember_embedded_pointer_in_gathered_obj(enclosing_ref, ref);
+  remember_embedded_pointer_in_enclosing_obj(ref);
 
   FollowMode follow_mode = get_follow_mode(ref);
   SourceObjInfo src_info(ref, read_only, follow_mode);
@@ -443,11 +428,10 @@ bool ArchiveBuilder::gather_one_source_obj(MetaspaceClosure::Ref* enclosing_ref,
   assert(p->read_only() == src_info.read_only(), "must be");
 
   if (created && src_info.should_copy()) {
-    ref->set_user_data((void*)p);
     if (read_only) {
-      _ro_src_objs.append(enclosing_ref, p);
+      _ro_src_objs.append(p);
     } else {
-      _rw_src_objs.append(enclosing_ref, p);
+      _rw_src_objs.append(p);
     }
     return true; // Need to recurse into this ref only if we are copying it
   } else {
@@ -455,21 +439,42 @@ bool ArchiveBuilder::gather_one_source_obj(MetaspaceClosure::Ref* enclosing_ref,
   }
 }
 
-void ArchiveBuilder::remember_embedded_pointer_in_gathered_obj(MetaspaceClosure::Ref* enclosing_ref,
-                                                               MetaspaceClosure::Ref* ref) {
+// Remember that we have a pointer inside ref->enclosing_obj() that points to ref->obj()
+void ArchiveBuilder::remember_embedded_pointer_in_enclosing_obj(MetaspaceClosure::Ref* ref) {
   assert(ref->obj() != nullptr, "should have checked");
 
-  if (enclosing_ref != nullptr) {
-    SourceObjInfo* src_info = (SourceObjInfo*)enclosing_ref->user_data();
-    if (src_info == nullptr) {
-      // source objects of point_to_it/set_to_null types are not copied
-      // so we don't need to remember their pointers.
+  address enclosing_obj = ref->enclosing_obj();
+  if (enclosing_obj == nullptr) {
+    return;
+  }
+
+  // We are dealing with 3 addresses:
+  // address o    = ref->obj(): We have found an object whose address is o.
+  // address* mpp = ref->mpp(): The object o is pointed to by a pointer whose address is mpp.
+  //                            I.e., (*mpp == o)
+  // enclosing_obj            : If non-null, it is the object which has a field that points to o.
+  //                            mpp is the address if that field.
+  //
+  // Example: We have an array whose first element points to a Method:
+  //     Method* o                     = 0x0000abcd;
+  //     Array<Method*>* enclosing_obj = 0x00001000;
+  //     enclosing_obj->at_put(0, o);
+  //
+  // We the MetaspaceClosure iterates on the very first element of this array, we have
+  //     ref->obj()           == 0x0000abcd   (the Method)
+  //     ref->mpp()           == 0x00001008   (the location of the first element in the array)
+  //     ref->enclosing_obj() == 0x00001000   (the Array that contains the Method)
+  //
+  // We use the above information to mark the bitmap to indicate that there's a pointer on address 0x00001008.
+  SourceObjInfo* src_info = _src_obj_table.get(enclosing_obj);
+  if (src_info == nullptr || !src_info->should_copy()) {
+    // source objects of point_to_it/set_to_null types are not copied
+    // so we don't need to remember their pointers.
+  } else {
+    if (src_info->read_only()) {
+      _ro_src_objs.remember_embedded_pointer(src_info, ref);
     } else {
-      if (src_info->read_only()) {
-        _ro_src_objs.remember_embedded_pointer(src_info, ref);
-      } else {
-        _rw_src_objs.remember_embedded_pointer(src_info, ref);
-      }
+      _rw_src_objs.remember_embedded_pointer(src_info, ref);
     }
   }
 }
@@ -589,15 +594,14 @@ void ArchiveBuilder::make_shallow_copies(DumpRegion *dump_region,
 }
 
 void ArchiveBuilder::make_shallow_copy(DumpRegion *dump_region, SourceObjInfo* src_info) {
-  MetaspaceClosure::Ref* ref = src_info->ref();
-  address src = ref->obj();
+  address src = src_info->source_addr();
   int bytes = src_info->size_in_bytes();
   char* dest;
   char* oldtop;
   char* newtop;
 
   oldtop = dump_region->top();
-  if (ref->msotype() == MetaspaceObj::ClassType) {
+  if (src_info->msotype() == MetaspaceObj::ClassType) {
     // Save a pointer immediate in front of an InstanceKlass, so
     // we can do a quick lookup from InstanceKlass* -> RunTimeClassInfo*
     // without building another hashtable. See RunTimeClassInfo::get_for()
@@ -621,7 +625,7 @@ void ArchiveBuilder::make_shallow_copy(DumpRegion *dump_region, SourceObjInfo* s
     }
   }
 
-  intptr_t* archived_vtable = CppVtables::get_archived_vtable(ref->msotype(), (address)dest);
+  intptr_t* archived_vtable = CppVtables::get_archived_vtable(src_info->msotype(), (address)dest);
   if (archived_vtable != nullptr) {
     *(address*)dest = (address)archived_vtable;
     ArchivePtrMarker::mark_pointer((address*)dest);
@@ -630,7 +634,7 @@ void ArchiveBuilder::make_shallow_copy(DumpRegion *dump_region, SourceObjInfo* s
   log_trace(cds)("Copy: " PTR_FORMAT " ==> " PTR_FORMAT " %d", p2i(src), p2i(dest), bytes);
   src_info->set_buffered_addr((address)dest);
 
-  _alloc_stats.record(ref->msotype(), int(newtop - oldtop), src_info->read_only());
+  _alloc_stats.record(src_info->msotype(), int(newtop - oldtop), src_info->read_only());
 }
 
 // This is used by code that hand-assemble data structures, such as the LambdaProxyClassKey, that are
@@ -1102,11 +1106,6 @@ public:
 
 void ArchiveBuilder::print_stats() {
   _alloc_stats.print_stats(int(_ro_region.used()), int(_rw_region.used()));
-}
-
-void ArchiveBuilder::clean_up_src_obj_table() {
-  SrcObjTableCleaner cleaner;
-  _src_obj_table.iterate(&cleaner);
 }
 
 void ArchiveBuilder::write_archive(FileMapInfo* mapinfo, ArchiveHeapInfo* heap_info) {

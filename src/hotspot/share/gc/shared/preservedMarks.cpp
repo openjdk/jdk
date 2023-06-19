@@ -35,21 +35,26 @@
 
 void PreservedMarks::restore() {
   while (!_stack.is_empty()) {
-    const OopAndMarkWord elem = _stack.pop();
+    const PreservedMark elem = _stack.pop();
     elem.set_mark();
   }
   assert_empty();
 }
 
-void PreservedMarks::adjust_during_full_gc() {
-  StackIterator<OopAndMarkWord, mtGC> iter(_stack);
+template<bool ALT_FWD>
+void PreservedMarks::adjust_during_full_gc_impl() {
+  StackIterator<PreservedMark, mtGC> iter(_stack);
   while (!iter.is_empty()) {
-    OopAndMarkWord* elem = iter.next_addr();
+    PreservedMark* elem = iter.next_addr();
+    adjust_preserved_mark<ALT_FWD>(elem);
+  }
+}
 
-    oop obj = elem->get_oop();
-    if (SlidingForwarding::is_forwarded(obj)) {
-      elem->set_oop(SlidingForwarding::forwardee(obj));
-    }
+void PreservedMarks::adjust_during_full_gc() {
+  if (UseAltGCForwarding) {
+    adjust_during_full_gc_impl<true>();
+  } else {
+    adjust_during_full_gc_impl<false>();
   }
 }
 
