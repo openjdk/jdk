@@ -486,6 +486,9 @@
   product(bool, DoPartialEscapeAnalysis, false, EXPERIMENTAL,               \
           "Perform partial escape analysis")                                \
                                                                             \
+  product(ccstr, PEAMethodOnly, nullptr, EXPERIMENTAL,                      \
+          "perform PEA for only matched methods")                           \
+                                                                            \
   notproduct(bool, PEAVerbose, false,                                       \
           "trace PEA in verbose")                                           \
                                                                             \

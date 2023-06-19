@@ -294,7 +294,7 @@ void Parse::do_new() {
 
   if (DoPartialEscapeAnalysis) {
     // obj is a CheckCastPP Node, aka. cooked oop.
-    jvms()->alloc_state().add_new_allocation(obj);
+    jvms()->alloc_state().add_new_allocation(this, obj);
   }
 }
 
@@ -318,6 +318,33 @@ void Parse::dump_map_adr_mem() const {
 }
 
 #endif
+
+#include "ci/ciUtilities.inline.hpp"
+#include "compiler/methodMatcher.hpp"
+
+class PEAContext {
+private:
+  BasicMatcher* _matcher;
+
+  PEAContext() {
+    if (PEAMethodOnly != nullptr) {
+      const char* error_msg = nullptr;
+      _matcher = BasicMatcher::parse_method_pattern((char*)PEAMethodOnly, error_msg, false);
+      if (error_msg != nullptr) {
+        tty->print_cr("Invalid PEAMethodOnly: %s", error_msg);
+      }
+    }
+  }
+
+  NONCOPYABLE(PEAContext);
+public:
+  bool match(ciMethod* method) const;
+  // mayer's singleton.
+  static PEAContext& instance() {
+    static PEAContext s;
+    return s;
+  }
+};
 
 //
 // Partial Escape Analysis
@@ -437,7 +464,7 @@ void VirtualState::print_on(outputStream* os) const {
 }
 #endif
 
-void PEAState::add_new_allocation(Node* obj) {
+void PEAState::add_new_allocation(GraphKit* kit, Node* obj) {
   int nfields;
   const TypeOopPtr* oop_type = obj->as_Type()->type()->is_oopptr();
 
@@ -483,9 +510,21 @@ void PEAState::add_new_allocation(Node* obj) {
     if (idx < PEA_debug_start || idx >= PEA_debug_stop) {
       return;
     }
-    bool result = _state.put(alloc, new VirtualState(oop_type));
-    assert(result, "the key existed in _state");
-    add_alias(alloc, obj);
+
+    ciMethod* method = kit->jvms()->method();
+    if (PEAContext::instance().match(method)) {
+#ifndef PRODUCT
+      if (PEAVerbose) {
+        if (method != nullptr) {
+          method->dump_name_as_ascii(tty);
+        }
+        tty->print_cr(" start tracking %d | obj#%d", idx, alloc->_idx);
+      }
+#endif
+      bool result = _state.put(alloc, new VirtualState(oop_type));
+      assert(result, "the key existed in _state");
+      add_alias(alloc, obj);
+    }
   }
 }
 
@@ -805,4 +844,13 @@ AllocationStateMerger::~AllocationStateMerger() {
 }
 
 void AllocationStateMerger::process_phi(PhiNode* phi, Node* old) {
+}
+
+bool PEAContext::match(ciMethod* method) const {
+  if (_matcher != nullptr && method != nullptr) {
+    VM_ENTRY_MARK;
+    methodHandle mh(THREAD, method->get_Method());
+    return _matcher->match(mh);
+  }
+  return true;
 }
