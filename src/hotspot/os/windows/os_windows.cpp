@@ -2548,19 +2548,12 @@ LONG WINAPI Uncaugh_Exception_Handler(struct _EXCEPTION_POINTERS* exceptionInfo)
 }
 #endif
 
-template<typename... Ts>
 static inline void report_error(Thread* t, DWORD exception_code,
-                                address addr, void* siginfo, void* context,
-                                const char* detail_fmt, Ts... fmt_args) {
-  VMError::report_and_die(t, exception_code, addr, siginfo, context, detail_fmt, fmt_args...);
+                                address addr, void* siginfo, void* context) {
+  VMError::report_and_die(t, exception_code, addr, siginfo, context);
 
   // If UseOSErrorReporting, this will return here and save the error file
   // somewhere where we can find it in the minidump.
-}
-
-static inline void report_error(Thread* t, DWORD exception_code,
-                                address addr, void* siginfo, void* context) {
-  report_error(t, exception_code, addr, siginfo, context, "%s", "");
 }
 
 //-----------------------------------------------------------------------------
@@ -2835,7 +2828,7 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
 #if !defined(USE_VECTORED_EXCEPTION_HANDLING)
   if (exception_code != EXCEPTION_BREAKPOINT) {
     report_error(t, exception_code, pc, exception_record,
-                 exceptionInfo->ContextRecord, "Uncaught native exception");
+                 exceptionInfo->ContextRecord);
   }
 #endif
   return EXCEPTION_CONTINUE_SEARCH;
