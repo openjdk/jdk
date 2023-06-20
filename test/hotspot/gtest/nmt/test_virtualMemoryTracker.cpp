@@ -78,6 +78,12 @@ TEST_VM(VirtualMemoryTracker, missing_remove_released_region) {
       break;
     }
 
+    // If it fails too often log the values we see.
+    if (i < 50) {
+      tty->print_cr("new_sz: %d, init_sz %d, diff %d, region_size %d", (int) new_sz, (int) init_sz,
+                    (int) (new_sz - init_sz), (int) size);
+    }
+
     // Trigger a test failure on the last run.
     if (i == 0) {
       EXPECT_TRUE(new_sz == init_sz) << "new_sz: " << new_sz << ", init_sz: " << init_sz <<
