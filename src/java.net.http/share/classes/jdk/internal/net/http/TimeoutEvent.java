@@ -26,7 +26,6 @@
 package jdk.internal.net.http;
 
 import java.time.Duration;
-import java.time.Instant;
 import java.util.concurrent.atomic.AtomicLong;
 
 import jdk.internal.net.http.common.Deadline;

@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -20,18 +22,16 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package jdk.internal.net.http.common;
 
-/*
- * @test
- * @modules java.net.http/jdk.internal.net.http
- * @summary Verifies that the HTTP Client, by default, uses the system-wide
- * proxy selector, and that that selector supports the standard HTTP proxy
- * system properties.
- * @run testng/othervm
- *     -Dhttp.proxyHost=foo.proxy.com
- *     -Dhttp.proxyPort=9876
- *     -Dhttp.nonProxyHosts=*.direct.com
- *     -Dhttps.proxyHost=secure.proxy.com
- *     -Dhttps.proxyPort=5443
- *     java.net.http/jdk.internal.net.http.DefaultProxy
+/**
+ * A static class to define ALPN constant strings used
+ * internally by the HttpClient
  */
+public final class Alpns {
+    private Alpns() { throw new InternalError(); }
+
+    public static final String HTTP_1_1 = "http/1.1";
+    public static final String H2 = "h2";
+    public static final String H2C = "h2c";
+}

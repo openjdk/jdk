@@ -1483,10 +1483,10 @@ final class HttpClientImpl extends HttpClient implements Trackable {
             SelectionKey key = channel.keyFor(selmgr.selector);
             if (key == null) return "channel not registered with selector";
             String keyInterestOps = key.isValid()
-                    ? "key.interestOps=" + key.interestOps() : "invalid key";
+                    ? "key.interestOps=" + Utils.interestOps(key) : "invalid key";
             return String.format("channel registered with selector, %s, sa.interestOps=%s",
-                                 keyInterestOps,
-                                 ((SelectorAttachment)key.attachment()).interestOps);
+                    keyInterestOps,
+                    Utils.describeOps(((SelectorAttachment)key.attachment()).interestOps));
         } catch (Throwable t) {
             return String.valueOf(t);
         }
@@ -1525,7 +1525,8 @@ final class HttpClientImpl extends HttpClient implements Trackable {
             interestOps |= newOps;
             pending.add(e);
             if (debug.on())
-                debug.log("Registering %s for %d (%s)", e, newOps, reRegister);
+                debug.log("Registering %s for %d (%s)",
+                        e, Utils.describeOps(newOps), reRegister);
             if (reRegister) {
                 // first time registration happens here also
                 try {
@@ -1841,7 +1842,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
                 if (timeoutVal >= 0) return timeoutVal;
             }
         } catch (NumberFormatException ignored) {
-            Log.logTrace("Invalid value set for " + prop + " property: " + ignored.toString());
+            Log.logTrace("Invalid value set for " + prop + " property: " + ignored);
         }
         return def;
     }
