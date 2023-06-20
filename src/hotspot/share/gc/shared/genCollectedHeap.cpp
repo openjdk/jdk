@@ -159,9 +159,9 @@ ReservedHeapSpace GenCollectedHeap::allocate(size_t alignment) {
   os::trace_page_sizes("Heap",
                        MinHeapSize,
                        total_reserved,
-                       used_page_size,
                        heap_rs.base(),
-                       heap_rs.size());
+                       heap_rs.size(),
+                       used_page_size);
 
   return heap_rs;
 }

@@ -35,15 +35,6 @@
  */
 
 
-import jdk.internal.net.http.common.HttpHeadersBuilder;
-import jdk.internal.net.http.frame.ContinuationFrame;
-import jdk.internal.net.http.frame.HeaderFrame;
-import org.testng.TestException;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.Test;
-
 import javax.net.ssl.SSLSession;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -63,6 +54,7 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.BiPredicate;
+
 import jdk.httpclient.test.lib.http2.Http2TestServer;
 import jdk.httpclient.test.lib.http2.Http2TestExchange;
 import jdk.httpclient.test.lib.http2.Http2TestExchangeImpl;
@@ -71,8 +63,19 @@ import jdk.httpclient.test.lib.http2.BodyOutputStream;
 import jdk.httpclient.test.lib.http2.OutgoingPushPromise;
 import jdk.httpclient.test.lib.http2.Http2TestServerConnection;
 
+import jdk.internal.net.http.common.HttpHeadersBuilder;
+import jdk.internal.net.http.frame.ContinuationFrame;
+import jdk.internal.net.http.frame.HeaderFrame;
+
+import org.testng.TestException;
+import org.testng.annotations.AfterTest;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.BeforeTest;
+import org.testng.annotations.Test;
+
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testng.Assert.*;
+
 
 public class PushPromiseContinuation {
 
