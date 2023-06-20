@@ -211,13 +211,22 @@ class MyByteBuffer {
 
     void ck(long x, long y) {
         if (x != y) {
-            throw new RuntimeException(" x = " + Long.toHexString(x) + ", y = " + Long.toHexString(y));
+            throw new RuntimeException("expect x == y: x = " + Long.toHexString(x) + ", y = " + Long.toHexString(y));
         }
     }
 
     void ck(double x, double y) {
-        if (x == x && y == y && x != y) {
-            ck(x, y);
+        // Check if x and y have identical values.
+        // Remember: NaN == x is false for ANY x, including if x is NaN (IEEE standard).
+        // Therefore, if x and y are NaN, x != y would return true, which is not what we want.
+        // We do not want an Exception if both are NaN.
+        // Double.compare takes care of these special cases
+        // including NaNs, and comparing -0.0 to 0.0
+        if (Double.compare(x,y) != 0) {
+            throw new RuntimeException("expect x == y:"
+                                    + "  x = " + Double.toString(x) + ", y = " + Double.toString(y)
+                                    + " (x = " + Long.toHexString(Double.doubleToRawLongBits(x))
+                                    + ", y = " + Long.toHexString(Double.doubleToRawLongBits(y)) + ")");
         }
     }
 
