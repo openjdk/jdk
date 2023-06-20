@@ -65,7 +65,7 @@ public class BasicDoubleOpTest extends VectorizationTestRunner {
     // ---------------- Arithmetic ----------------
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.NEG_V, ">0"})
+        counts = {IRNode.NEG_VD, ">0"})
     public double[] vectorNeg() {
         double[] res = new double[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -87,7 +87,7 @@ public class BasicDoubleOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx", "true"},
-        counts = {IRNode.SQRT_V, ">0"})
+        counts = {IRNode.SQRT_VD, ">0"})
     public double[] vectorSqrt() {
         double[] res = new double[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -164,7 +164,7 @@ public class BasicDoubleOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.DIV_V, ">0"})
+        counts = {IRNode.DIV_VD, ">0"})
     public double[] vectorDiv() {
         double[] res = new double[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -197,9 +197,9 @@ public class BasicDoubleOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeature = {"asimd", "true"},
-        counts = {IRNode.FMA_V, ">0"})
+        counts = {IRNode.FMA_VD, ">0"})
     @IR(applyIfCPUFeatureAnd = {"fma", "true", "avx", "true"},
-        counts = {IRNode.FMA_V, ">0"})
+        counts = {IRNode.FMA_VD, ">0"})
     public double[] vectorMulAdd() {
         double[] res = new double[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -210,9 +210,9 @@ public class BasicDoubleOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeature = {"asimd", "true"},
-        counts = {IRNode.FMA_V, ">0"})
+        counts = {IRNode.FMA_VD, ">0"})
     @IR(applyIfCPUFeatureAnd = {"fma", "true", "avx", "true"},
-        counts = {IRNode.FMA_V, ">0"})
+        counts = {IRNode.FMA_VD, ">0"})
     public double[] vectorMulSub1() {
         double[] res = new double[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -223,9 +223,9 @@ public class BasicDoubleOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeature = {"asimd", "true"},
-        counts = {IRNode.FMA_V, ">0"})
+        counts = {IRNode.FMA_VD, ">0"})
     @IR(applyIfCPUFeatureAnd = {"fma", "true", "avx", "true"},
-        counts = {IRNode.FMA_V, ">0"})
+        counts = {IRNode.FMA_VD, ">0"})
     public double[] vectorMulSub2() {
         double[] res = new double[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -236,9 +236,9 @@ public class BasicDoubleOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeature = {"asimd", "true"},
-        counts = {IRNode.FMA_V, ">0"})
+        counts = {IRNode.FMA_VD, ">0"})
     @IR(applyIfCPUFeatureAnd = {"fma", "true", "avx", "true"},
-        counts = {IRNode.FMA_V, ">0"})
+        counts = {IRNode.FMA_VD, ">0"})
     public double[] vectorNegateMulAdd1() {
         double[] res = new double[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -249,9 +249,9 @@ public class BasicDoubleOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeature = {"asimd", "true"},
-        counts = {IRNode.FMA_V, ">0"})
+        counts = {IRNode.FMA_VD, ">0"})
     @IR(applyIfCPUFeatureAnd = {"fma", "true", "avx", "true"},
-        counts = {IRNode.FMA_V, ">0"})
+        counts = {IRNode.FMA_VD, ">0"})
     public double[] vectorNegateMulAdd2() {
         double[] res = new double[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -262,9 +262,9 @@ public class BasicDoubleOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeature = {"asimd", "true"},
-        counts = {IRNode.FMA_V, ">0"})
+        counts = {IRNode.FMA_VD, ">0"})
     @IR(applyIfCPUFeatureAnd = {"fma", "true", "avx", "true"},
-        counts = {IRNode.FMA_V, ">0"})
+        counts = {IRNode.FMA_VD, ">0"})
     public double[] vectorNegateMulSub() {
         double[] res = new double[SIZE];
         for (int i = 0; i < SIZE; i++) {

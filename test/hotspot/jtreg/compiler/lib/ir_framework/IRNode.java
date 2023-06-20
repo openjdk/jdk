@@ -457,10 +457,14 @@ public class IRNode {
         beforeMatchingNameRegex(DIV_L, "DivL");
     }
 
-    public static final String DIV_V = PREFIX + "DIV_V" + POSTFIX;
+    public static final String DIV_VF = VECTOR_PREFIX + "DIV_VF" + POSTFIX;
     static {
-        // TODO vectorNode
-        beforeMatchingNameRegex(DIV_V, "DivV(F|D)");
+        vectorNode(DIV_VF, "DivVF", "float");
+    }
+
+    public static final String DIV_VD = VECTOR_PREFIX + "DIV_VD" + POSTFIX;
+    static {
+        vectorNode(DIV_VD, "DivVD", "double");
     }
 
     public static final String DYNAMIC_CALL_OF_METHOD = COMPOSITE_PREFIX + "DYNAMIC_CALL_OF_METHOD" + POSTFIX;
@@ -490,10 +494,14 @@ public class IRNode {
         optoOnly(FIELD_ACCESS, regex);
     }
 
-    public static final String FMA_V = PREFIX + "FMA_V" + POSTFIX;
+    public static final String FMA_VF = VECTOR_PREFIX + "FMA_VF" + POSTFIX;
     static {
-        // TODO vectorNode
-        beforeMatchingNameRegex(FMA_V, "FmaV(F|D)");
+        vectorNode(FMA_VF, "FmaVF", "float");
+    }
+
+    public static final String FMA_VD = VECTOR_PREFIX + "FMA_VD" + POSTFIX;
+    static {
+        vectorNode(FMA_VD, "FmaVD", "double");
     }
 
     public static final String IF = PREFIX + "IF" + POSTFIX;
@@ -889,10 +897,14 @@ public class IRNode {
         superWordNodes(MAX_REDUCTION_V, "MaxReductionV");
     }
 
-    public static final String NEG_V = PREFIX + "NEG_V" + POSTFIX;
+    public static final String NEG_VF = VECTOR_PREFIX + "NEG_VF" + POSTFIX;
     static {
-        // TODO vectorNode
-        beforeMatchingNameRegex(NEG_V, "NegV(F|D)");
+        vectorNode(NEG_VF, "NegVF", "float");
+    }
+
+    public static final String NEG_VD = VECTOR_PREFIX + "NEG_VD" + POSTFIX;
+    static {
+        vectorNode(NEG_VD, "NegVD", "double");
     }
 
     public static final String NULL_ASSERT_TRAP = PREFIX + "NULL_ASSERT_TRAP" + POSTFIX;
@@ -1138,10 +1150,14 @@ public class IRNode {
         vectorNode(SIGNUM_VF, "SignumVF", "float");
     }
 
-    public static final String SQRT_V = PREFIX + "SQRT_V" + POSTFIX;
+    public static final String SQRT_VF = VECTOR_PREFIX + "SQRT_VF" + POSTFIX;
     static {
-        // TODO vectorNode
-        beforeMatchingNameRegex(SQRT_V, "SqrtV(F|D)");
+        vectorNode(SQRT_VF, "SqrtVF", "float");
+    }
+
+    public static final String SQRT_VD = VECTOR_PREFIX + "SQRT_VD" + POSTFIX;
+    static {
+        vectorNode(SQRT_VD, "SqrtVD", "double");
     }
 
     public static final String STORE = PREFIX + "STORE" + POSTFIX;
