@@ -185,7 +185,7 @@ public class CodeCacheStress {
                 + "    int instD = 0;"
                 + " "
                 + " "
-                + "   public Integer get( Map m, String k, Integer depth) { "
+                + "   public Integer get(Map m, String k, Integer depth) { "
                 + "       if (depth > 0) {"
                 + "         instA += ((depth % 2) + staticA);"
                 + "         return (Integer) m.get(k) + get2(m, k, --depth);"
