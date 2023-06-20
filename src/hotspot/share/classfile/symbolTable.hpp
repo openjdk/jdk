@@ -195,6 +195,11 @@ public:
   static Symbol* new_permanent_symbol(const char* name);
 
   // Rehash the string table if it gets out of balance
+private:
+  static bool should_grow();
+
+public:
+  static bool rehash_table_expects_safepoint_rehashing();
   static void rehash_table();
   static bool needs_rehashing() { return _needs_rehashing; }
   static inline void update_needs_rehash(bool rehash) {
