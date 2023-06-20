@@ -570,7 +570,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
 
   // Initialize to array of empty vectorsets
   for( slidx = 0; slidx < spill_cnt; slidx++ )
-    UP_entry[slidx] = new VectorSet(split_arena);
+    UP_entry[slidx] = new(split_arena) VectorSet(split_arena);
 
   //----------PASS 1----------
   //----------Propagation & Node Insertion Code----------
