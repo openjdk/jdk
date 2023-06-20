@@ -4000,6 +4000,7 @@ public class JavacParser implements Parser {
                 }
 
                 if (isTopLevelMethodOrField) {
+                    checkSourceLevel(token.pos, Feature.UNNAMED_CLASSES);
                     defs.appendList(topLevelMethodOrFieldDeclaration(mods));
                     isUnnamedClass = true;
                 } else {
@@ -4030,8 +4031,6 @@ public class JavacParser implements Parser {
 
     // Restructure top level to be an unnamed class.
     private List<JCTree> constructUnnamedClass(List<JCTree> origDefs) {
-        checkSourceLevel(Feature.UNNAMED_CLASSES);
-
         ListBuffer<JCTree> topDefs = new ListBuffer<>();
         ListBuffer<JCTree> defs = new ListBuffer<>();
 
