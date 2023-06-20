@@ -39,6 +39,7 @@ public enum Architecture {
     AARCH64,
     ARM,
     RISCV64,
+    LOONGARCH64,
     S390,
     PPC64,
     ;
@@ -67,6 +68,14 @@ public enum Architecture {
     @ForceInline
     public static boolean isRISCV64() {
         return PlatformProps.TARGET_ARCH_IS_RISCV64;
+    }
+
+    /**
+     * {@return {@code true} if the current architecture is LOONGARCH64}
+     */
+    @ForceInline
+    public static boolean isLOONGARCH64() {
+        return PlatformProps.TARGET_ARCH_IS_LOONGARCH64;
     }
 
     /**
