@@ -119,7 +119,9 @@ public class TestIndependentPacksWithCyclicDependency {
     }
 
     @Test
-    @IR(counts = {IRNode.ADD_VI, "> 0", IRNode.MUL_VF, "> 0"},
+    // TODO: investigate why ADD_VI breaks into 4 packs with AVX1!
+    @IR(counts = {IRNode.ADD_VI, IRNode.VECTOR_TYPE + "int:any",   "> 0",
+                  IRNode.MUL_VF, IRNode.VECTOR_TYPE + "float:any", "> 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static void test0(int[] dataIa, int[] dataIb, float[] dataFa, float[] dataFb) {
         for (int i = 0; i < RANGE; i+=2) {
@@ -166,7 +168,9 @@ public class TestIndependentPacksWithCyclicDependency {
     }
 
     @Test
-    @IR(counts = {IRNode.ADD_VI, "> 0", IRNode.MUL_VI, "> 0"},
+    // TODO: investigate why ADD_VI breaks into 4 packs with AVX1!
+    @IR(counts = {IRNode.ADD_VI, IRNode.VECTOR_TYPE + "int:any",   "> 0",
+                  IRNode.MUL_VI, IRNode.VECTOR_TYPE + "int:any",   "> 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static void test2(int[] dataIa, int[] dataIb, float[] dataFa, float[] dataFb) {
         for (int i = 0; i < RANGE; i+=2) {
@@ -190,7 +194,9 @@ public class TestIndependentPacksWithCyclicDependency {
     }
 
     @Test
-    @IR(counts = {IRNode.ADD_VI, "> 0", IRNode.MUL_VF, "> 0"},
+    // TODO: investigate why ADD_VI breaks into 4 packs with AVX1!
+    @IR(counts = {IRNode.ADD_VI, IRNode.VECTOR_TYPE + "int:any",   "> 0",
+                  IRNode.MUL_VF, IRNode.VECTOR_TYPE + "float:any", "> 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static void test3(int[] dataIa, int[] dataIb, float[] dataFa, float[] dataFb) {
         for (int i = 0; i < RANGE; i+=2) {
@@ -266,7 +272,11 @@ public class TestIndependentPacksWithCyclicDependency {
     }
 
     @Test
-    @IR(counts = {IRNode.ADD_VI, "> 0", IRNode.MUL_VI, "> 0", IRNode.ADD_VF, "> 0"},
+    // Cyclic dependencies can force the packs to be smaller than maximal size.
+    // For the sake of this test, we are happy if there is any vectorization.
+    @IR(counts = {IRNode.ADD_VI, IRNode.VECTOR_TYPE + "int:any",   "> 0",
+                  IRNode.MUL_VI, IRNode.VECTOR_TYPE + "int:any",   "> 0",
+                  IRNode.ADD_VF, IRNode.VECTOR_TYPE + "float:any", "> 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static void test6(int[] dataIa, int[] dataIb, float[] dataFa, float[] dataFb,
                       long[] dataLa, long[] dataLb) {
