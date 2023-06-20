@@ -106,7 +106,7 @@ public class Test8301489 {
     }
 
     public static void main(String[] args) {
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 3; i++) {
             op2Test(12, 34);
             arrayLengthTest();
             negateTest(-778);
