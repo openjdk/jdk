@@ -1748,12 +1748,6 @@ void TemplateTable::float_cmp(bool is_float, int unordered_result)
 
 void TemplateTable::branch(bool is_jsr, bool is_wide)
 {
-  // We might be moving to a safepoint.  The thread which calls
-  // Interpreter::notice_safepoints() will effectively flush its cache
-  // when it makes a system call, but we need to do something to
-  // ensure that we see the changed dispatch table.
-  __ membar(MacroAssembler::LoadLoad);
-
   __ profile_taken_branch(r0, r1);
   const ByteSize be_offset = MethodCounters::backedge_counter_offset() +
                              InvocationCounter::counter_offset();
@@ -1969,12 +1963,6 @@ void TemplateTable::if_acmp(Condition cc)
 
 void TemplateTable::ret() {
   transition(vtos, vtos);
-  // We might be moving to a safepoint.  The thread which calls
-  // Interpreter::notice_safepoints() will effectively flush its cache
-  // when it makes a system call, but we need to do something to
-  // ensure that we see the changed dispatch table.
-  __ membar(MacroAssembler::LoadLoad);
-
   locals_index(r1);
   __ ldr(r1, aaddress(r1)); // get return bci, compute return bcp
   __ profile_ret(r1, r2);
