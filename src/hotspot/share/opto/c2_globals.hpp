@@ -489,6 +489,10 @@
   product(ccstr, PEAMethodOnly, nullptr, EXPERIMENTAL,                      \
           "perform PEA for only matched methods")                           \
                                                                             \
+  product(bool, PEAParanoid, false, EXPERIMENTAL,                           \
+          "Abort when C2 expands an object which has been materialized."    \
+          "Duplicated allocation is detected caused by PEA.")               \
+                                                                            \
   notproduct(bool, PEAVerbose, false,                                       \
           "trace PEA in verbose")                                           \
                                                                             \

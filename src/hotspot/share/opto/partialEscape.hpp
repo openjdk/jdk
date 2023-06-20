@@ -157,32 +157,7 @@ class PEAState {
   // p is the new alias of obj#id. If materialized is true, the materiazation has taken place in code.
   // PEA expects to replace all appearances of the object with its java_oop, or materilzied_value().
   // refer to GraphKit::backfill_materialized.
-  EscapedState* escape(ObjID id, Node* p, bool materialized) {
-    assert(p != nullptr, "the new alias must be non-null");
-    Node* old = nullptr;
-
-    EscapedState* es;
-    if (contains(id)) {
-      ObjectState* os = get_object_state(id);
-      // if os is EscapedState and its materialized_value is not-null,
-      if (!os->is_virtual()) {
-        materialized |= static_cast<EscapedState*>(os)->materialized_value() != nullptr;
-      }
-      es = new EscapedState(materialized ? p : nullptr);
-      es->ref_cnt(os->ref_cnt()); // copy the refcnt from the original ObjectState.
-      old = get_java_oop(id, false);
-    } else {
-      es = new EscapedState(materialized ? p : nullptr);
-    }
-    _state.put(id, es);
-    // if p == old, no-op
-    add_alias(id, p);
-    if (old != nullptr && old != p) {
-      remove_alias(id, old);
-    }
-    assert(contains(id), "sanity check");
-    return es;
-  }
+  EscapedState* escape(ObjID id, Node* p, bool materialized);
 
   // refcount is the no. of aliases which refer to the object.
   // we do garbage collection if refcnt drops to 0.

@@ -869,6 +869,9 @@ public:
 //  those on the exception return path.
 //
 class AllocateNode : public CallNode {
+private:
+  int _materialized; // materializaiton counts by PEA
+
 public:
   enum {
     // Output:
@@ -977,6 +980,14 @@ public:
   Node* make_ideal_mark(PhaseGVN *phase, Node* obj, Node* control, Node* mem);
 
   const TypeOopPtr* oop_type(const PhaseValues& phase) const;
+
+  void inc_materialized() {
+    _materialized++;
+  }
+
+  int materialized_cnt() const {
+    return _materialized;
+  }
 };
 
 //------------------------------AllocateArray---------------------------------

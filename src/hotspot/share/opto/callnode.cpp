@@ -1535,7 +1535,7 @@ uint AllocateNode::size_of() const { return sizeof(*this); }
 AllocateNode::AllocateNode(Compile* C, const TypeFunc *atype,
                            Node *ctrl, Node *mem, Node *abio,
                            Node *size, Node *klass_node, Node *initial_test)
-  : CallNode(atype, nullptr, TypeRawPtr::BOTTOM)
+  : CallNode(atype, nullptr, TypeRawPtr::BOTTOM), _materialized(0)
 {
   init_class_id(Class_Allocate);
   init_flags(Flag_is_macro);

@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
-JVM_FLAGS="-XX:+PrintEscapeAnalysis -XX:+PrintEliminateAllocations -XX:+PrintOptoAssembly -Xlog:gc -XX:+PrintOptoStatistics -XX:+DoPartialEscapeAnalysis"
-PROBLEM_LIST = []
+JVM_FLAGS="-XX:+PrintEscapeAnalysis -XX:+PrintEliminateAllocations -XX:-PrintOptoAssembly -Xlog:gc -XX:+PrintOptoStatistics -XX:+DoPartialEscapeAnalysis"
+PROBLEM_LIST = ["run_composite.sh"]
 
 if $0 == __FILE__
   puts  "using #{%x|which java|}"

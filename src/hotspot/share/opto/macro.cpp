@@ -1260,6 +1260,10 @@ void PhaseMacroExpand::expand_allocate_common(
   Node *slow_region = nullptr;
   Node *toobig_false = ctrl;
 
+  if (PEAParanoid && alloc->materialized_cnt() > 0) {
+    fatal("[PEA] Expanding obj#%d which has been materialized.", alloc->_idx);
+  }
+
   // generate the initial test if necessary
   if (initial_slow_test != nullptr ) {
     assert (expand_fast_path, "Only need test if there is a fast path");

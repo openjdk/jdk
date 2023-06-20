@@ -519,6 +519,7 @@ void PEAState::add_new_allocation(GraphKit* kit, Node* obj) {
           method->dump_name_as_ascii(tty);
         }
         tty->print_cr(" start tracking %d | obj#%d", idx, alloc->_idx);
+        alloc->dump();
       }
 #endif
       bool result = _state.put(alloc, new VirtualState(oop_type));
@@ -853,4 +854,35 @@ bool PEAContext::match(ciMethod* method) const {
     return _matcher->match(mh);
   }
   return true;
+}
+
+EscapedState* PEAState::escape(ObjID id, Node* p, bool materialized) {
+  assert(p != nullptr, "the new alias must be non-null");
+  Node* old = nullptr;
+
+  EscapedState* es;
+  if (contains(id)) {
+    ObjectState* os = get_object_state(id);
+    // if os is EscapedState and its materialized_value is not-null,
+    if (!os->is_virtual()) {
+      materialized |= static_cast<EscapedState*>(os)->materialized_value() != nullptr;
+    }
+    es = new EscapedState(materialized ? p : nullptr);
+    es->ref_cnt(os->ref_cnt()); // copy the refcnt from the original ObjectState.
+    old = get_java_oop(id, false);
+  } else {
+    es = new EscapedState(materialized ? p : nullptr);
+  }
+  _state.put(id, es);
+  // if p == old, no-op
+  add_alias(id, p);
+  if (old != nullptr && old != p) {
+    remove_alias(id, old);
+  }
+
+  if (materialized) {
+    static_cast<AllocateNode*>(id)->inc_materialized();
+  }
+  assert(contains(id), "sanity check");
+  return es;
 }
