@@ -497,7 +497,7 @@ spawnChild(JNIEnv *env, jobject process, ChildStuff *c, const char *helperpath) 
     snprintf(buf1, sizeof(buf1), "%d:%d:%d", c->childenv[0], c->childenv[1], c->fail[1]);
     /* NULL-terminated argv array.
      * argv[0] contains path to jspawnhelper, to follow conventions.
-     * argv[1] contains the fd string as argument to the helper cmd
+     * argv[1] contains the fd string as argument to jspawnhelper
      */
     hlpargs[0] = (char*)helperpath;
     hlpargs[1] = buf1;
