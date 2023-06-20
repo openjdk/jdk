@@ -75,6 +75,11 @@ public class TestSafepointWhilePrinting {
                 testCompilePhaseBackToBackFirst,1
                 testCompilePhaseBackToBackLast,1
                 ----- END -----
+		##### IRMatchingVMInfo - used by TestFramework #####
+                <key>:<value>
+                cpuFeatures:empty_cpu_info
+                MaxVectorSize:64
+                ----- END VMInfo -----
                 """;
         TestClassParser testClassParser = new TestClassParser(TestSafepointWhilePrinting.class);
         Matchable testClassMatchable = testClassParser.parse(hotspotPidFileName, irEncoding);

@@ -1832,15 +1832,46 @@ public class IRNode {
      * If {@code sizeTagString} is a size tag, return the list of accepted sizes, else return sizeTagString.
      */
     public static String parseSizeTags(String sizeTagString, String typeString, VMInfo vmInfo) {
-        int bytes = getTypeSizeInBytes(typeString);
-        long maxBytes = vmInfo.getLong("MaxVectorSize", 0);
-        TestFramework.check(maxBytes > 0, "VMInfo: MaxVectorSize is not larger than zero");
         switch (sizeTagString) {
-        case "max":
-            return String.valueOf(maxBytes / bytes);
+        case "max_for_type":
+            return String.valueOf(getMaxElementsForType(typeString, vmInfo));
+        case "max_int":
+            return parseSizeTags("max_for_type", "int", vmInfo);
         default:
             return sizeTagString;
         }
+    }
+
+    /**
+     * Return maximal number of elements that can fit in a vector of the specified type.
+     */
+    public static long getMaxElementsForType(String typeString, VMInfo vmInfo) {
+        int bytes = getTypeSizeInBytes(typeString);
+        long maxBytes = vmInfo.getLong("MaxVectorSize", 0);
+        TestFramework.check(maxBytes > 0, "VMInfo: MaxVectorSize is not larger than zero");
+
+        // restrict maxBytes for specific features, see Matcher::vector_width_in_bytes:
+        //  -> x86:
+        boolean avx1 = vmInfo.hasCPUFeature("avx");
+        boolean avx2 = vmInfo.hasCPUFeature("avx2");
+        boolean avx512 = vmInfo.hasCPUFeature("avx512f");
+        boolean avx512bw = vmInfo.hasCPUFeature("avx512bw");
+        if (avx512) {
+            maxBytes = Math.min(maxBytes, 64);
+	} else if (avx2) {
+            maxBytes = Math.min(maxBytes, 32);
+	} else if (avx1) {
+            maxBytes = Math.min(maxBytes, 16);
+        }
+        if (avx1 && (typeString.equals("float") || typeString.equals("double"))) {
+            maxBytes = Math.min(maxBytes, avx512 ? 64 : 32);
+        }
+        if (avx512 && (typeString.equals("byte") || typeString.equals("short") || typeString.equals("char"))) {
+            maxBytes = Math.min(maxBytes, avx512bw ? 64 : 32);
+        }
+
+        // compute elements per vector: vector bytes divided by bytes per element
+        return maxBytes / bytes;
     }
 
     /**

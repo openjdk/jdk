@@ -23,6 +23,8 @@
 
 package compiler.lib.ir_framework.driver.irmatching.parser;
 
+import compiler.lib.ir_framework.TestFramework;
+
 import java.util.Map;
 
 /**
@@ -40,7 +42,7 @@ public class VMInfo {
         this.keyValueMap = map;
     }
 
-    public String getLong(String key, String otherwise) {
+    public String getString(String key, String otherwise) {
         if (isKey(key)) {
             return keyValueMap.get(key);
         }
@@ -54,6 +56,12 @@ public class VMInfo {
             } catch (NumberFormatException e) {}
         }
         return otherwise;
+    }
+
+    public boolean hasCPUFeature(String feature) {
+        TestFramework.check(isKey("cpuFeatures"), "VMInfo does not contain cpuFeatures");
+        String features = getString("cpuFeatures", null) + ",";
+        return features.contains(" " + feature + ",");
     }
 
     public boolean isKey(String key) {

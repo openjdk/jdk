@@ -82,7 +82,7 @@ public class RawCountsConstraint implements RawConstraint {
     @Override
     public Constraint parse(CompilePhase compilePhase, String compilationOutput, VMInfo vmInfo) {
         TestFramework.check(compilePhase != CompilePhase.DEFAULT, "must not be default");
-        String vectorSizeTag = expectMaxSizeForVectorNode() ? "max" : "any";
+        String vectorSizeTag = expectMaxSizeForVectorNode() ? "max_for_type" : "any";
         return Constraint.createCounts(rawIRNode.regex(compilePhase, vmInfo, vectorSizeTag), constraintIndex, comparison, compilationOutput);
     }
 }
