@@ -518,11 +518,6 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
   //----------Setup Code----------
   // Create a convenient mapping from lrg numbers to reaches/leaves indices
   uint *lrg2reach = NEW_SPLIT_ARRAY(uint, maxlrg);
-  // Keep track of DEFS & Phis for later passes
-  Arena defs_arena{mtCompiler, Chunk::medium_size};
-  Arena phis_arena{mtCompiler, Chunk::medium_size}
-  Node_List defs{&defs_arena};
-  Node_List phis{&phis_arena};
   // Gather info on which LRG's are spilling, and build maps
   for (bidx = 1; bidx < maxlrg; bidx++) {
     if (lrgs(bidx).alive() && lrgs(bidx).reg() >= LRG::SPILL_REG) {
@@ -574,6 +569,10 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
   for (slidx = 0; slidx < spill_cnt; slidx++) {
     UP_entry[slidx] = new(split_arena) VectorSet(split_arena);
   }
+
+  // Keep track of DEFS & Phis for later passes
+  Node_List defs{split_arena, 128}; // Typically less than 128
+  Node_List phis{split_arena, 256}; // Typically less than 256
 
   //----------PASS 1----------
   //----------Propagation & Node Insertion Code----------
