@@ -320,22 +320,6 @@ final class DebugLogger implements Logger {
         return sb;
     }
 
-    private StringBuilder getFormat(StringBuilder sb, String format, Object[] params) {
-        if (format == null || params == null || params.length == 0) {
-            return decorate(sb, format);
-        } else if (format.contains("{0}") || format.contains("{1}")) {
-            return decorate(sb, format);
-        } else if (format.contains("%s") || format.contains("%d")) {
-            try {
-                return decorate(sb, String.format(format, params));
-            } catch (Throwable t) {
-                return decorate(sb, format);
-            }
-        } else {
-            return decorate(sb, format);
-        }
-    }
-
     // Only called when params[] is not empty.
     // Simplified detection of String.format: if the format
     // string contains at least one % and if that percent
