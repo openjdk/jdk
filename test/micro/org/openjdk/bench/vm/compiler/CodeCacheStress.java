@@ -73,7 +73,7 @@ public class CodeCacheStress {
     @Param({"20"})
     public int recurse;
 
-    // How many instances of each generated class to create and call in the measured phase
+    // How many instances of each generated class to create and call in the measurement phase
     @Param({"100"})
     public int instanceCount;
 
